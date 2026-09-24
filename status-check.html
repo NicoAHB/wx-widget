@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow,noarchive"><meta name="referrer" content="no-referrer">
+<title>Status-Check</title>
+<style>
+  :root{
+    --bg:#EDF1F5; --panel:#FFFFFF; --ink:#16283A; --muted:#5B6B7C; --line:#D3DBE4;
+    --brand:#1F4E78; --ok:#2E7D4F; --warn:#A8690F; --bad:#B3261E; --idle:#8A97A6;
+    --font:"Avenir Next","Segoe UI",system-ui,-apple-system,sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0F1A24; --panel:#172532; --ink:#E6EDF3; --muted:#9AAABB; --line:#2A3A4A;
+           --brand:#7FB3E0; --ok:#5CC08A; --warn:#E0A84A; --bad:#F07A70; --idle:#6B7A8A; }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);
+    -webkit-text-size-adjust:100%}
+  body{padding:calc(env(safe-area-inset-top,0px) + 20px) 16px calc(env(safe-area-inset-bottom,0px) + 32px)}
+  main{max-width:720px;margin:0 auto}
+  h1{font-size:1rem;font-weight:600;color:var(--brand);margin:0 0 14px;letter-spacing:.01em}
+  #verdict{font-size:1.6rem;line-height:1.25;font-weight:700;margin:0 0 10px}
+  #verdict[data-state=ok]{color:var(--ok)} #verdict[data-state=warn]{color:var(--warn)}
+  #verdict[data-state=bad]{color:var(--bad)}
+  #advice{font-size:1rem;line-height:1.5;color:var(--ink);margin:0 0 18px;max-width:62ch}
+  #env{font-size:.85rem;color:var(--muted);line-height:1.5;margin:0 0 20px}
+  #env b{color:var(--ink);font-weight:600}
+  .group{font-size:.85rem;font-weight:600;color:var(--muted);margin:22px 0 8px}
+  ul{list-style:none;margin:0;padding:0;background:var(--panel);border:1px solid var(--line);border-radius:10px}
+  li{display:grid;grid-template-columns:14px 1fr auto;gap:4px 12px;padding:13px 14px;border-top:1px solid var(--line)}
+  li:first-child{border-top:0}
+  .lamp{width:12px;height:12px;border-radius:50%;margin-top:5px;background:var(--idle)}
+  li[data-state=ok] .lamp{background:var(--ok)} li[data-state=warn] .lamp{background:var(--warn)}
+  li[data-state=bad] .lamp{background:var(--bad)}
+  li[data-state=run] .lamp{animation:pulse 1s ease-in-out infinite}
+  @keyframes pulse{50%{opacity:.35}}
+  @media (prefers-reduced-motion: reduce){ li[data-state=run] .lamp{animation:none} }
+  .name{font-weight:600}
+  .ms{font-variant-numeric:tabular-nums;color:var(--muted);font-size:.85rem;text-align:right}
+  .path{grid-column:2 / 4;font-size:.78rem;color:var(--muted);word-break:break-all}
+  .msg{grid-column:2 / 4;font-size:.92rem;line-height:1.45}
+  li[data-state=bad] .msg{color:var(--bad)} li[data-state=warn] .msg{color:var(--warn)}
+  .actions{display:flex;flex-wrap:wrap;gap:10px;margin:22px 0 0}
+  button{font:inherit;font-weight:600;font-size:1rem;padding:11px 18px;border-radius:8px;cursor:pointer;
+    border:1px solid var(--brand);background:var(--brand);color:#fff}
+  button.secondary{background:transparent;color:var(--brand)}
+  button:disabled{opacity:.5;cursor:default}
+  button:focus-visible{outline:3px solid var(--warn);outline-offset:2px}
+  textarea{width:100%;min-height:180px;margin-top:12px;font:.8rem/1.4 ui-monospace,Menlo,monospace;
+    color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px}
+  footer{margin-top:26px;font-size:.82rem;line-height:1.5;color:var(--muted);max-width:62ch}
+</style>
+</head>
+<body>
+<main>
+  <h1>Status-Check · Verbindungstest</h1>
+  <p id="verdict" data-state="bad">JavaScript läuft in dieser Ansicht nicht.</p>
+  <p id="advice">Wenn dieser Satz stehen bleibt, zeigt dein Gerät nur eine Vorschau der Datei (auf dem iPad typisch für die Dateien-App). Dort kann auch das Dashboard keine Daten laden. Öffne die Seite über eine https-Adresse in Safari.</p>
+  <p id="env"></p>
+
+  <div class="group">Spot</div>
+  <ul id="list-spot"></ul>
+  <div class="group">Futures</div>
+  <ul id="list-futures"></ul>
+
+  <div class="actions">
+    <button id="run" type="button">Erneut testen</button>
+    <button id="copy" type="button" class="secondary">Ergebnis kopieren</button>
+  </div>
+  <textarea id="report" readonly hidden aria-label="Testergebnis zum Kopieren"></textarea>
+
+  <footer>Diese Seite ruft die Binance-Endpunkte genauso ab wie das Dashboard: per Browser-Abruf von genau dieser Adresse aus. Ein Link, der im Browser-Tab Zahlen zeigt, beweist das noch nicht. Es werden nur öffentliche Marktdaten gelesen, keine Schlüssel, keine Orders.</footer>
+</main>
+
+<script>
+(() => {
+  "use strict";
+  const TIMEOUT_MS = 8000;
+  const nf = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 6 });
+  const tf = new Intl.DateTimeFormat("de-DE", { hour: "2-digit", minute: "2-digit" });
+  const num = v => nf.format(Number(v));
+
+  const TESTS = [
+    { group: "spot", name: "Kerzen über data-api.binance.vision",
+      url: "https://data-api.binance.vision/api/v3/klines?symbol=BTCUSDT&interval=1m&limit=2",
+      read: j => Array.isArray(j) && j.length ? "BTCUSDT, letzter Schluss " + num(j[j.length - 1][4]) + " USDT" : null },
+    { group: "spot", name: "Kerzen über api.binance.com",
+      url: "https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1m&limit=2",
+      read: j => Array.isArray(j) && j.length ? "BTCUSDT, letzter Schluss " + num(j[j.length - 1][4]) + " USDT" : null },
+    { group: "spot", name: "EUR/USDT-Kurs",
+      url: "https://data-api.binance.vision/api/v3/ticker/price?symbol=EURUSDT",
+      read: j => j && j.price ? "1 EUR = " + num(j.price) + " USDT" : null },
+    { group: "futures", name: "Funding Rate",
+      url: "https://fapi.binance.com/fapi/v1/premiumIndex?symbol=BTCUSDT",
+      read: j => j && j.lastFundingRate != null ? "Funding " + (Number(j.lastFundingRate) * 100).toFixed(4).replace(".", ",") + " %" : null },
+    { group: "futures", name: "Open Interest aktuell",
+      url: "https://fapi.binance.com/fapi/v1/openInterest?symbol=BTCUSDT",
+      read: j => j && j.openInterest != null ? num(j.openInterest) + " BTC offen" : null },
+    { group: "futures", name: "Open Interest historisch",
+      url: "https://fapi.binance.com/futures/data/openInterestHist?symbol=BTCUSDT&period=5m&limit=13",
+      read: j => Array.isArray(j) && j.length ? j.length + " Werte, " + tf.format(j[0].timestamp) + " bis " + tf.format(j[j.length - 1].timestamp) + " Uhr" : null }
+  ];
+
+  const $ = id => document.getElementById(id);
+  const cspHosts = new Set();
+  document.addEventListener("securitypolicyviolation", e => {
+    try { cspHosts.add(new URL(e.blockedURI).host); } catch (_) { cspHosts.add(String(e.blockedURI)); }
+  });
+
+  function httpMessage(status, retryAfter) {
+    const wait = retryAfter ? " Laut Binance " + retryAfter + " s warten." : "";
+    if (status === 451) return "Aus dieser Region gesperrt (HTTP 451).";
+    if (status === 403) return "Zugriff verweigert (HTTP 403), z. B. durch Firewall oder Region.";
+    if (status === 429) return "Zu viele Anfragen (HTTP 429)." + wait;
+    if (status === 418) return "IP vorübergehend gesperrt nach zu vielen Anfragen (HTTP 418)." + wait;
+    if (status === 400) return "Anfrage abgelehnt (HTTP 400), z. B. ungültiges Symbol.";
+    if (status >= 500) return "Binance-Serverfehler (HTTP " + status + "). Später erneut testen.";
+    return "Unerwartete Antwort (HTTP " + status + ").";
+  }
+
+  async function runOne(t) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
+    const t0 = performance.now();
+    try {
+      const res = await fetch(t.url, { cache: "no-store", credentials: "omit", signal: ctrl.signal });
+      const ms = Math.round(performance.now() - t0);
+      if (!res.ok) return { state: "bad", kind: "http", status: res.status, ms,
+        msg: httpMessage(res.status, res.headers.get("Retry-After")) };
+      let json;
+      try { json = await res.json(); } catch (_) {
+        return { state: "warn", kind: "parse", status: res.status, ms, msg: "Antwort erhalten, aber kein gültiges JSON." };
+      }
+      const sample = t.read(json);
+      if (sample == null) return { state: "warn", kind: "parse", status: res.status, ms, msg: "Antwort erhalten, aber nicht im erwarteten Format." };
+      return { state: "ok", kind: "ok", status: res.status, ms, msg: "Abruf erfolgreich: " + sample };
+    } catch (e) {
+      const ms = Math.round(performance.now() - t0);
+      if (e && e.name === "AbortError") return { state: "bad", kind: "timeout", ms, msg: "Keine Antwort nach " + TIMEOUT_MS / 1000 + " s (Timeout)." };
+      return { state: "bad", kind: "network", ms, msg: null };
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  function networkMessage(url) {
+    if (cspHosts.has(new URL(url).host)) return "Von der Sicherheitsrichtlinie (CSP) dieser Umgebung blockiert. Die Seite muss woanders laufen.";
+    if (location.protocol === "file:") return "Abruf aus lokaler Datei blockiert. Seite über eine https-Adresse öffnen.";
+    return "Keine lesbare Antwort: Netzwerk, Content-Blocker, VPN/DNS-Filter oder Sicherheitsrichtlinie der Umgebung.";
+  }
+
+  function row(t) {
+    const li = document.createElement("li");
+    li.dataset.state = "run";
+    li.innerHTML = '<span class="lamp" aria-hidden="true"></span><span class="name"></span><span class="ms"></span>' +
+                   '<span class="path"></span><span class="msg">Wird geprüft …</span>';
+    li.querySelector(".name").textContent = t.name;
+    const u = new URL(t.url);
+    li.querySelector(".path").textContent = u.host + u.pathname;
+    return li;
+  }
+
+  function verdict(results) {
+    const spot = results.filter(r => r.t.group === "spot"), fut = results.filter(r => r.t.group === "futures");
+    const ok = a => a.every(r => r.state === "ok"), none = a => a.every(r => r.state !== "ok");
+    const all451 = a => a.every(r => r.status === 451);
+    if (ok(results)) return ["ok", "Alle Abrufe funktionieren hier.",
+      "Läuft das Dashboard an derselben Adresse trotzdem nicht, liegt der Fehler im Dashboard-Code, nicht bei Binance oder der Verbindung."];
+    if (none(results) && location.protocol === "file:") return ["bad", "Die lokale Datei darf hier nichts abrufen.",
+      "Lege Dashboard und Test auf eine https-Adresse (z. B. GitHub Pages) und öffne sie in Safari."];
+    if (none(results)) return ["bad", "Aus dieser Umgebung ist Binance nicht erreichbar.",
+      "Prüfe Content-Blocker, VPN oder DNS-Filter und ob die Seite in Safari direkt über ihre https-Adresse läuft."];
+    const spotOk = spot.some(r => r.state === "ok");
+    if (spotOk && none(fut) && all451(fut)) return ["warn", "Spot erreichbar, Futures aus dieser Region gesperrt.",
+      "Kerzen und Indikatoren funktionieren. Funding und Open Interest kann das Dashboard von hier aus nicht laden und sollte sie als nicht verfügbar kennzeichnen."];
+    if (spotOk && none(fut)) return ["warn", "Spot erreichbar, Futures nicht.",
+      "Kerzen und Indikatoren funktionieren. Die Futures-Werte fehlen; Details unten."];
+    return ["warn", "Teilweise erreichbar.", "Details stehen unten bei den einzelnen Endpunkten."];
+  }
+
+  let last = [];
+  async function runAll() {
+    $("run").disabled = true;
+    $("report").hidden = true;
+    cspHosts.clear();
+    $("verdict").dataset.state = "";
+    $("verdict").textContent = "Teste Verbindungen …";
+    $("advice").textContent = "Das dauert höchstens " + TIMEOUT_MS / 1000 + " Sekunden.";
+    $("env").innerHTML = "";
+    const env = [["Adresse", location.protocol === "file:" ? "lokale Datei (file:)" : location.origin],
+                 ["Online laut Gerät", navigator.onLine ? "ja" : "nein"],
+                 ["Zeit", new Date().toLocaleString("de-DE")]];
+    env.forEach(([k, v], i) => {
+      if (i) $("env").append(document.createElement("br"));
+      const b = document.createElement("b"); b.textContent = k + ": ";
+      $("env").append(b, document.createTextNode(v));
+    });
+    $("list-spot").innerHTML = ""; $("list-futures").innerHTML = "";
+    const rows = TESTS.map(t => { const li = row(t); $(t.group === "spot" ? "list-spot" : "list-futures").append(li); return li; });
+
+    const results = await Promise.all(TESTS.map(t => runOne(t).then(r => Object.assign(r, { t }))));
+    await new Promise(r => setTimeout(r, 150)); // CSP-Ereignisse kommen asynchron
+    results.forEach((r, i) => {
+      if (r.kind === "network") r.msg = networkMessage(r.t.url);
+      rows[i].dataset.state = r.state;
+      rows[i].querySelector(".msg").textContent = r.msg;
+      rows[i].querySelector(".ms").textContent = r.ms + " ms";
+    });
+    const [state, head, advice] = verdict(results);
+    $("verdict").dataset.state = state;
+    $("verdict").textContent = head;
+    $("advice").textContent = advice;
+    last = results;
+    $("run").disabled = false;
+  }
+
+  function reportText() {
+    const lines = ["Verbindungstest, " + new Date().toLocaleString("de-DE"),
+                   "Adresse: " + (location.protocol === "file:" ? "lokale Datei" : location.origin),
+                   "Browser: " + navigator.userAgent, "Ergebnis: " + $("verdict").textContent, ""];
+    last.forEach(r => lines.push("[" + (r.state === "ok" ? "OK" : r.state === "warn" ? "WARN" : "FEHLER") + "] " +
+      r.t.name + " (" + new URL(r.t.url).host + ", " + r.ms + " ms): " + r.msg));
+    return lines.join("\n");
+  }
+
+  $("run").addEventListener("click", runAll);
+  $("copy").addEventListener("click", async () => {
+    const text = reportText();
+    try { await navigator.clipboard.writeText(text); $("copy").textContent = "Kopiert"; setTimeout(() => $("copy").textContent = "Ergebnis kopieren", 2000); }
+    catch (_) { const ta = $("report"); ta.value = text; ta.hidden = false; ta.focus(); ta.select(); }
+  });
+  runAll();
+})();
+</script>
+</body>
+</html>
