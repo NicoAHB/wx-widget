@@ -2,7 +2,7 @@
 // Seiten: zuerst Netz (damit Updates sofort ankommen), bei Ausfall die gespeicherte Fassung.
 // Dateien wie Icons und Scanner: aus dem Speicher, im Hintergrund aufgefrischt.
 // Anfragen an andere Adressen (Binance-Kurse, Streams) laufen nie über den Speicher.
-const VERSION = '3.2.1';
+const VERSION = '3.3.0';
 const CACHE = 'scalpdesk-' + VERSION;
 const CORE = ['./weather-widget-v2.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png', './icons/apple-touch-icon.png', './vendor/jsQR.js', './status-check.html'];
 
