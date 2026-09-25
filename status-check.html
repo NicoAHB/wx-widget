@@ -66,6 +66,8 @@
   <ul id="list-futures"></ul>
   <div class="group">Live-Streams (WebSocket)</div>
   <ul id="list-live"></ul>
+  <div class="group">Benachrichtigungen aufs Smartphone (optional)</div>
+  <ul id="list-notify"></ul>
 
   <div class="actions">
     <button id="run" type="button">Erneut testen</button>
@@ -73,7 +75,7 @@
   </div>
   <textarea id="report" readonly hidden aria-label="Testergebnis zum Kopieren"></textarea>
 
-  <footer>Diese Seite ruft die Binance-Endpunkte genauso ab wie das Dashboard: per Browser-Abruf von genau dieser Adresse aus, dazu die Live-Streams per WebSocket. Ein Link, der im Browser-Tab Zahlen zeigt, beweist das noch nicht. Es werden nur öffentliche Marktdaten gelesen, keine Schlüssel, keine Orders.</footer>
+  <footer>Diese Seite ruft die Binance-Endpunkte genauso ab wie das Dashboard: per Browser-Abruf von genau dieser Adresse aus, dazu die Live-Streams per WebSocket. Ein Link, der im Browser-Tab Zahlen zeigt, beweist das noch nicht. Es werden nur öffentliche Marktdaten gelesen, keine Schlüssel, keine Orders. Telegram und Discord werden nur ohne Zugangsdaten angefragt, um die Erreichbarkeit zu prüfen.</footer>
 </main>
 
 <script>
@@ -109,7 +111,12 @@
     { group: "live", ws: true, name: "Spot-Stream stream.binance.com (Ersatz)",
       url: "wss://stream.binance.com:9443/stream?streams=btcusdt@kline_1m" },
     { group: "live", ws: true, name: "Futures-Stream fstream.binance.com",
-      url: "wss://fstream.binance.com/market/stream?streams=btcusdt@kline_1m" }
+      url: "wss://fstream.binance.com/market/stream?streams=btcusdt@kline_1m" },
+    // Telegram und Discord: nur Erreichbarkeit prüfen. Ohne Zugangsdaten ist eine Fehlerantwort (401/404) das erwartete Ergebnis.
+    { group: "notify", probe: true, name: "Telegram Bot API",
+      url: "https://api.telegram.org/bot0:status-check/getMe" },
+    { group: "notify", probe: true, name: "Discord-Webhooks",
+      url: "https://discord.com/api/webhooks/0/status-check" }
   ];
 
   const $ = id => document.getElementById(id);
@@ -146,8 +153,9 @@
     const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
     const t0 = performance.now();
     try {
-      const res = await fetch(t.url, { cache: "no-store", credentials: "omit", signal: ctrl.signal });
+      const res = await fetch(t.url, { cache: "no-store", credentials: "omit", referrerPolicy: "no-referrer", signal: ctrl.signal });
       const ms = Math.round(performance.now() - t0);
+      if (t.probe) return { state: "ok", kind: "ok", status: res.status, ms, msg: "Erreichbar (HTTP " + res.status + ", ohne Zugangsdaten erwartet). Meldungen können von hier gesendet werden." };
       if (!res.ok) return { state: "bad", kind: "http", status: res.status, ms,
         msg: httpMessage(res.status, res.headers.get("Retry-After")) };
       let json;
@@ -166,7 +174,8 @@
     }
   }
 
-  function networkMessage(url) {
+  function networkMessage(url, probe) {
+    if (probe && !cspHosts.has(new URL(url).host) && location.protocol !== "file:") return "Keine lesbare Antwort: gesperrt (Firmen-Netz, Werbeblocker, DNS-Filter) – oder der Dienst gibt die Antwort nicht für Browser frei. Im zweiten Fall sendet das Dashboard trotzdem, kann die Zustellung aber nicht bestätigen: mit „Test senden“ prüfen.";
     if (cspHosts.has(new URL(url).host)) return "Von der Sicherheitsrichtlinie (CSP) dieser Umgebung blockiert. Die Seite muss woanders laufen.";
     if (location.protocol === "file:") return "Abruf aus lokaler Datei blockiert. Seite über eine https-Adresse öffnen.";
     return "Keine lesbare Antwort: Netzwerk, Content-Blocker, VPN/DNS-Filter oder Sicherheitsrichtlinie der Umgebung.";
@@ -184,6 +193,10 @@
   }
 
   function verdict(all) {
+    const [state, head, advice] = marketVerdict(all.filter(r => !r.t.probe)), probes = all.filter(r => r.t.probe && r.state !== "ok");
+    return [state, head, advice + (probes.length ? " Nicht erreichbar: " + probes.map(r => r.t.name).join(" und ") + " – Benachrichtigungen aufs Smartphone kommen von hier eventuell nicht an." : "")];
+  }
+  function marketVerdict(all) {
     const live = all.filter(r => r.t.ws), liveOk = live.some(r => r.state === "ok"), rest = restVerdict(all.filter(r => !r.t.ws));
     if (rest[0] === "ok" && !liveOk) return ["warn", "Abrufe funktionieren, Live-Streams nicht.",
       "Das Dashboard fragt dann alle 15 Sekunden per REST ab statt in Echtzeit, Alarme reagieren entsprechend später. Firewall, Proxy, VPN oder Content-Blocker lassen WebSockets eventuell nicht durch."];
@@ -226,13 +239,13 @@
       const b = document.createElement("b"); b.textContent = k + ": ";
       $("env").append(b, document.createTextNode(v));
     });
-    $("list-spot").innerHTML = ""; $("list-futures").innerHTML = ""; $("list-live").innerHTML = "";
+    $("list-spot").innerHTML = ""; $("list-futures").innerHTML = ""; $("list-live").innerHTML = ""; $("list-notify").innerHTML = "";
     const rows = TESTS.map(t => { const li = row(t); $("list-" + t.group).append(li); return li; });
 
     const results = await Promise.all(TESTS.map(t => runOne(t).then(r => Object.assign(r, { t }))));
     await new Promise(r => setTimeout(r, 150)); // CSP-Ereignisse kommen asynchron
     results.forEach((r, i) => {
-      if (r.kind === "network") r.msg = networkMessage(r.t.url);
+      if (r.kind === "network") { r.msg = networkMessage(r.t.url, r.t.probe); if (r.t.probe) r.state = "warn"; }
       rows[i].dataset.state = r.state;
       rows[i].querySelector(".msg").textContent = r.msg;
       rows[i].querySelector(".ms").textContent = r.ms + " ms";
