@@ -4012,11 +4012,17 @@ function setMagnet(on) {
   magnet.on = !!on; $('magnet').setAttribute('aria-pressed', String(magnet.on)); $('chart').classList.toggle('magnet', magnet.on);
   if (!magnet.on && magnet.at?.touch) magnetHide();
 }
+// Nach dem Antippen erzeugt der Browser noch einen Klick an derselben Stelle. Der darf nicht im gerade geöffneten
+// Dialog landen – sonst überschreibt z. B. der Knopf „+0,5 %“ unter dem Finger den eingerasteten Preis.
+function eatGhostClick() {
+  const until = Date.now() + 700, eat = ev => { removeEventListener('click', eat, true); if (Date.now() < until) { ev.preventDefault(); ev.stopPropagation(); } };
+  addEventListener('click', eat, true); setTimeout(() => removeEventListener('click', eat, true), 800);
+}
 // Alarm mit dem Preis unter dem Zeiger vorbereiten: am iPad/Handy im Schnell-Alarm, am Computer im Formular „Kurs-Alarme“
 function magnetCommit(e) {
   const m = magnetAt(e.clientX, e.clientY, e.pointerType === 'touch' || e.pointerType === 'pen'); if (!m) return false;
   const note = m.name ? `${m.name} (${state.interval})` : '';
-  setMagnet(false); if (e.pointerType !== 'mouse') magnetHide();
+  setMagnet(false); if (e.pointerType !== 'mouse') { magnetHide(); eatGhostClick(); }
   if (docEl.dataset.layout === 'tablet') openQuickAlarm({ price: m.price, note, label: m.name });
   else { openAlarmForm(true, state.symbol, m.price); $('al-note').value = note; alarmPreview(); }
   return true;
