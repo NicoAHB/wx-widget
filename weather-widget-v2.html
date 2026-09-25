@@ -198,6 +198,10 @@ main>footer{position:sticky;bottom:0;z-index:5;background:var(--bg);border-top:1
 .pos-alert.tp{background:#1c3128;color:var(--mint);border:1px solid #3f6b56}.pos-alert.sl{background:#34212a;color:#f2b1bd;border:1px solid #6b3a46}
 .pos-alert button{min-height:36px;padding:0 12px;font-size:.8125rem}
 .toasts{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);left:50%;transform:translateX(-50%);z-index:50;display:grid;gap:8px;width:min(92vw,520px)}
+@keyframes alarm-pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,204,0,.0),0 8px 24px rgba(0,0,0,.45)}50%{box-shadow:0 0 0 4px rgba(255,204,0,.75),0 8px 24px rgba(0,0,0,.45)}}
+.toast{animation:alarm-pulse 1.1s ease-in-out infinite}
+@media(prefers-reduced-motion:reduce){.toast{animation:none;outline:3px solid #ffcc00}}
+.needs-permission{border-color:#6b5a33!important;color:var(--amber)!important}
 .toast{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-radius:10px;font-weight:600;font-size:.9rem;box-shadow:0 8px 24px rgba(0,0,0,.45)}
 .toast.tp{background:#1c3128;color:var(--mint);border:1px solid #3f6b56}.toast.sl{background:#34212a;color:#f2b1bd;border:1px solid #6b3a46}
 .toast button{min-height:38px;padding:0 14px}
@@ -1616,31 +1620,81 @@ function drawEquity(pts, dd) {
   box.replaceChildren(svg);
 }
 // ---------- Desktop-Pop-ups ----------
-const NOTIFY_KEY = 'scalpdesk.notify.v1', notifySupported = 'Notification' in window && window.isSecureContext !== false;
+const NOTIFY_KEY = 'scalpdesk.notify.v1', BLINK_KEY = 'scalpdesk.blink.v1', notifySupported = 'Notification' in window && window.isSecureContext !== false;
 const isAppleMobile = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-let notifyOn = (() => { try { return localStorage.getItem(NOTIFY_KEY) === '1'; } catch { return false; } })();
+const browserName = /Edg\//.test(navigator.userAgent) ? 'Edge' : /Firefox\//.test(navigator.userAgent) ? 'Firefox' : /OPR\//.test(navigator.userAgent) ? 'Opera' : /Chrome\//.test(navigator.userAgent) ? 'Chrome' : 'Browser';
+// notifyWanted = du möchtest Pop-ups; aktiv sind sie erst, wenn der Browser die Erlaubnis erteilt hat.
+let notifyWanted = (() => { try { return localStorage.getItem(NOTIFY_KEY) === '1'; } catch { return false; } })(), notifyPending = false, notifyAsked = false;
+let blinkOn = (() => { try { return localStorage.getItem(BLINK_KEY) !== '0'; } catch { return true; } })();
+const notifyActive = () => notifySupported && notifyWanted && Notification.permission === 'granted';
+function permissionHelp() {
+  if (browserName === 'Edge') return 'In Edge: links neben der Adresse auf das Schloss klicken → „Berechtigungen für diese Website“ → Benachrichtigungen auf „Zulassen“ → Seite neu laden. Zeigt Edge rechts in der Adressleiste eine durchgestrichene Glocke, dort auf „Zulassen“ klicken.';
+  if (browserName === 'Firefox') return 'In Firefox: links neben der Adresse auf das Symbol klicken → bei „Benachrichtigungen senden“ die Blockierung aufheben → Seite neu laden.';
+  return `In ${browserName}: links neben der Adresse auf das Symbol (Schieberegler bzw. Schloss) klicken → „Benachrichtigungen“ auf „Zulassen“ stellen → Seite neu laden. Zeigt ${browserName} rechts in der Adressleiste eine durchgestrichene Glocke, dort auf „Zulassen“ klicken.`;
+}
 function renderNotify() {
-  const b = $('notify-toggle'), perm = notifySupported ? Notification.permission : 'unsupported', on = notifyOn && perm === 'granted';
-  b.disabled = !notifySupported; b.textContent = !notifySupported ? '🖥️ Pop-up hier nicht verfügbar' : on ? '🖥️ Pop-up an' : '🖥️ Pop-up aus';
-  b.setAttribute('aria-pressed', String(on)); b.classList.toggle('sound-on', on);
+  const b = $('notify-toggle'), perm = notifySupported ? Notification.permission : 'unsupported', on = notifyActive();
+  b.disabled = !notifySupported;
+  b.textContent = !notifySupported ? '🖥️ Pop-up hier nicht verfügbar' : on ? '🖥️ Pop-up an' : notifyPending ? '🖥️ Pop-up: warte auf Erlaubnis …' : notifyWanted ? '🖥️ Pop-up: Erlaubnis fehlt' : '🖥️ Pop-up aus';
+  b.setAttribute('aria-pressed', String(on)); b.classList.toggle('sound-on', on); b.classList.toggle('needs-permission', notifyWanted && !on && notifySupported);
+  const tt = $('title-toggle'); tt.textContent = titlePriceOn ? '🏷️ Kurs im Tab-Titel: an' : '🏷️ Kurs im Tab-Titel: aus'; tt.setAttribute('aria-pressed', String(titlePriceOn)); tt.classList.toggle('sound-on', titlePriceOn);
+  const blink = $('blink-toggle'); blink.textContent = blinkOn ? '🟡 Tab blinkt bei Alarm: an' : '🟡 Tab blinkt bei Alarm: aus'; blink.setAttribute('aria-pressed', String(blinkOn)); blink.classList.toggle('sound-on', blinkOn);
   put('notify-status', !notifySupported ? (isAppleMobile ? 'Auf iPad und iPhone zeigt Safari keine Pop-ups von Webseiten. Dort erscheint der Hinweis in der App, auf Wunsch mit Ton.' : 'Dieser Browser erlaubt hier keine Pop-ups (nur über eine https-Adresse).')
-    : perm === 'denied' ? 'Im Browser blockiert. Erlauben: auf das Symbol links neben der Adresse klicken → Benachrichtigungen → Zulassen.'
-    : on ? 'Pop-ups erscheinen auch, wenn der Tab im Hintergrund ist – bis du sie wegklickst.' : 'Beim Einschalten fragt der Browser einmal nach Erlaubnis.');
+    : on ? `Pop-ups sind an und erscheinen auch, wenn der Tab im Hintergrund ist. Kein Pop-up zu sehen? In Windows: Einstellungen → System → Benachrichtigungen → ${browserName} einschalten und „Nicht stören“ ausschalten.`
+    : notifyPending ? `Warte auf deine Erlaubnis: ${browserName} zeigt oben links eine Abfrage oder rechts in der Adressleiste ein Glocken-Symbol – dort „Zulassen“ wählen.`
+    : perm === 'denied' ? `Die Seite ist für Benachrichtigungen gesperrt, deshalb lässt sich das Pop-up nicht einschalten. ${permissionHelp()}`
+    : notifyWanted && notifyAsked ? `${browserName} hat die Anfrage nicht angezeigt oder sie wurde geschlossen. ${permissionHelp()}`
+    : 'Beim Einschalten fragt der Browser einmal nach Erlaubnis.');
 }
 async function toggleNotify() {
   if (!notifySupported) return;
-  if (!notifyOn || Notification.permission !== 'granted') { let p = Notification.permission; if (p === 'default') { try { p = await Notification.requestPermission(); } catch { p = 'denied'; } } notifyOn = p === 'granted'; }
-  else notifyOn = false;
-  try { localStorage.setItem(NOTIFY_KEY, notifyOn ? '1' : '0'); } catch {}
+  if (notifyActive()) notifyWanted = false;
+  else {
+    notifyWanted = true;
+    if (Notification.permission === 'default') {
+      notifyPending = true; notifyAsked = true; renderNotify();
+      try { const r = Notification.requestPermission(); if (r && typeof r.then === 'function') await r; } catch {}
+      notifyPending = false;
+    }
+    if (notifyActive()) desktopNotify('🔔 Pop-ups sind eingeschaltet', 'So sieht ein Alarm-Pop-up aus.', 'notify-on');
+  }
+  try { localStorage.setItem(NOTIFY_KEY, notifyWanted ? '1' : '0'); } catch {}
   renderNotify();
 }
 function desktopNotify(title, body, tag) {
-  if (!notifySupported || !notifyOn || Notification.permission !== 'granted') return;
+  if (!notifyActive()) return;
   try { const n = new Notification(title, { body, tag, requireInteraction: true, renotify: true }); n.onclick = () => { window.focus(); n.close(); }; } catch {}
 }
-// Offene Hinweise als Zahl im Tab-Titel, z. B. „(1) Widget-Test v2“
-const BASE_TITLE = document.title;
-new MutationObserver(() => { const n = $('toasts').children.length; document.title = n ? `(${n}) ${BASE_TITLE}` : BASE_TITLE; }).observe($('toasts'), { childList: true });
+// Erlaubnis nachträglich in den Website-Einstellungen erteilt → automatisch übernehmen
+let lastPerm = notifySupported ? Notification.permission : null;
+function checkPermissionChange() {
+  if (!notifySupported) return; const p = Notification.permission; if (p === lastPerm) return;
+  lastPerm = p; renderNotify(); if (p === 'granted' && notifyWanted) desktopNotify('🔔 Pop-ups sind eingeschaltet', 'Die Erlaubnis wurde erteilt.', 'notify-on');
+}
+window.addEventListener('focus', checkPermissionChange); document.addEventListener('visibilitychange', checkPermissionChange);
+try { navigator.permissions?.query({ name: 'notifications' }).then(s => { s.onchange = checkPermissionChange; }).catch(() => {}); } catch {}
+// ---------- Tab gelb blinken lassen, bis alle Hinweise weggeklickt sind ----------
+const BASE_TITLE = document.title, iconLink = document.querySelector('link[rel="icon"]'), BASE_ICON = iconLink?.getAttribute('href') || '';
+// Tab-Titel: „XRP – 1,4906“, aktualisiert mit jedem Abruf. ⏸ = pausiert, ⚠ = letzter Kurs, aktuell kein gültiger Abruf.
+const TITLE_KEY = 'scalpdesk.titleprice.v1';
+let titlePriceOn = (() => { try { return localStorage.getItem(TITLE_KEY) !== '0'; } catch { return true; } })();
+function baseTitle() {
+  const p = state.candles.length ? state.candles.at(-1).close : null;
+  if (!titlePriceOn || !p || state.loadedSymbol !== state.symbol) return BASE_TITLE;
+  return `${state.symbol.slice(0, -4)} – ${priceText(p)}${state.marketError ? ' ⚠' : state.paused ? ' ⏸' : ''}`;
+}
+function updateTitle() { if (!$('toasts').children.length) document.title = baseTitle(); }
+const ALARM_ICON = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23ffcc00'/%3E%3Cpath d='M16 6v13' stroke='%23111' stroke-width='4.5' stroke-linecap='round'/%3E%3Ccircle cx='16' cy='25' r='2.8' fill='%23111'/%3E%3C/svg%3E";
+let blinkTimer = null, blinkPhase = false;
+function setIcon(href) { if (iconLink && iconLink.getAttribute('href') !== href) iconLink.setAttribute('href', href); }
+function updateAlarmState() {
+  const n = $('toasts').children.length;
+  document.documentElement.classList.toggle('alarm-active', n > 0);
+  if (!n) { clearInterval(blinkTimer); blinkTimer = null; blinkPhase = false; document.title = baseTitle(); setIcon(BASE_ICON); return; }
+  const tick = () => { blinkPhase = !blinkPhase; document.title = blinkOn && blinkPhase ? `🟡 (${$('toasts').children.length}) Alarm` : `(${$('toasts').children.length}) ${baseTitle()}`; setIcon(blinkOn ? (blinkPhase ? ALARM_ICON : BASE_ICON) : BASE_ICON); };
+  if (!blinkTimer) { tick(); blinkTimer = setInterval(tick, 800); } else if (!blinkOn) { document.title = `(${n}) ${baseTitle()}`; setIcon(BASE_ICON); }
+}
+new MutationObserver(updateAlarmState).observe($('toasts'), { childList: true });
 // ---------- Bereiche ein-/ausklappen ----------
 const COLLAPSE_KEY = 'scalpdesk.collapsed.v1', DETAILS_KEY = 'scalpdesk.details.v1';
 const SECTIONS = [['positions', '.positions-head'], ['alarms', '.alarms-head'], ['chart-sec', '.chart-heading'], ['signals', '.signals-head'], ['zones-sec', '.section-heading'], ['ind-sec', '.section-heading'], ['calc-sec', '.calculator-heading']];
@@ -1793,7 +1847,7 @@ function renderChart(levels={}, ov={}, start=null, end=null) {
   container.setAttribute('aria-label',`${state.symbol}, ${state.interval}, ${data.length} Kerzen. Letzter Kurs ${priceText(last.close)} USDT. Pfeiltasten wählen Kerzen.`);
 }
 
-function render() {renderFx();renderMarket();renderFutures();renderCalculator();renderSignals();renderWatchlist();renderPositions();renderRisk();}
+function render() {renderFx();renderMarket();renderFutures();renderCalculator();renderSignals();renderWatchlist();renderPositions();renderRisk();updateTitle();}
 function zoom(factor) {setView(state.count*factor, state.pan>0 ? .5 : 1);}
 function setMarket(symbol,interval=state.interval) {
   const normalized=normalizeSymbol(symbol); if(!INTERVALS.includes(interval)) throw new Error('Unbekanntes Intervall.');
@@ -1804,7 +1858,7 @@ function setMarket(symbol,interval=state.interval) {
   document.querySelectorAll('[data-interval]').forEach(b=>{const active=b.dataset.interval===interval;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});
   render();return refresh();
 }
-function pause() {state.paused=!state.paused;if(state.paused)cancel();else void refresh();status();renderMarket();renderCalculator();renderSignals();renderPositions();}
+function pause() {state.paused=!state.paused;if(state.paused)cancel();else void refresh();status();renderMarket();renderCalculator();renderSignals();renderPositions();updateTitle();}
 $('market-form').addEventListener('submit',e=>{e.preventDefault();try{void setMarket($('symbol').value);}catch(error){showNotice('market-error',error.message);}});
 document.querySelectorAll('[data-interval]').forEach(b=>b.addEventListener('click',()=>void setMarket(state.symbol,b.dataset.interval)));
 document.querySelectorAll('[data-side]').forEach(b=>b.addEventListener('click',()=>{state.side=b.dataset.side;document.querySelectorAll('[data-side]').forEach(el=>{const active=el.dataset.side===state.side;el.classList.toggle('active',active);el.setAttribute('aria-pressed',String(active));});renderCalculator();}));
@@ -1917,6 +1971,8 @@ renderAlarms();
 $('notify-menu').addEventListener('click',e=>{e.stopPropagation();const p=$('notify-panel');p.hidden=!p.hidden;$('notify-menu').setAttribute('aria-expanded',String(!p.hidden));renderNotify();});
 document.addEventListener('click',e=>{if(!$('notify-panel').hidden&&!e.target.closest('.notify-wrap')){$('notify-panel').hidden=true;$('notify-menu').setAttribute('aria-expanded','false');}});
 $('notify-toggle').addEventListener('click',()=>void toggleNotify());
+$('title-toggle').addEventListener('click',()=>{titlePriceOn=!titlePriceOn;try{localStorage.setItem(TITLE_KEY,titlePriceOn?'1':'0');}catch{}renderNotify();updateTitle();updateAlarmState();});
+$('blink-toggle').addEventListener('click',()=>{blinkOn=!blinkOn;try{localStorage.setItem(BLINK_KEY,blinkOn?'1':'0');}catch{}renderNotify();updateAlarmState();});
 $('notify-test').addEventListener('click',()=>{unlockAudio();beep();desktopNotify('🔔 Test-Hinweis','So sieht ein Alarm aus.','test');simpleToast('test','alarm','🔔 Test-Hinweis: So sieht ein Alarm im Dashboard aus.');});
 renderNotify();
 document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>{const id=b.dataset.go;if(collapsedState[id])setCollapsed(id,false);$(id).scrollIntoView({behavior:'smooth',block:'start'});}));
@@ -1989,7 +2045,7 @@ render();void refresh();
 <div class="app">
   <header class="topbar">
     <a class="brand" href="weather-widget-v2.html" aria-label="Scalp Desk neu laden"><span class="brand-icon" aria-hidden="true">▥</span>Scalp<span>Desk</span><span class="tag">MARKET WORKSPACE</span></a>
-    <div class="update-controls"><span class="status" id="status" role="status">Verbindung wird aufgebaut</span><span class="notify-wrap"><button id="notify-menu" class="button ghost" type="button" aria-expanded="false" aria-controls="notify-panel">🔔 Hinweise</button><div class="notify-panel" id="notify-panel" hidden><h3>Hinweise bei Stop, Ziel und Kurs-Alarm</h3><button type="button" class="button ghost" id="notify-toggle" aria-pressed="false">🖥️ Pop-up aus</button><small id="notify-status"></small><button type="button" class="button ghost" id="sound-toggle" aria-pressed="false" title="Ton, wenn Stop-Loss, Take-Profit oder ein Kurs-Alarm erreicht wird">🔕 Alarm-Ton</button><button type="button" class="button ghost" id="notify-test">Test-Hinweis senden</button><small>Geprüft wird bei jeder Aktualisierung (alle 15 s). In einem Hintergrund-Tab drosseln Browser das teils auf etwa einmal pro Minute. Bei geschlossener Seite gibt es keine Hinweise.</small></div></span><button id="pause" class="button ghost" type="button" aria-pressed="false">Ⅱ Pause</button><button id="refresh" class="button icon" type="button" aria-label="Daten jetzt aktualisieren" title="Jetzt aktualisieren">↻</button></div>
+    <div class="update-controls"><span class="status" id="status" role="status">Verbindung wird aufgebaut</span><span class="notify-wrap"><button id="notify-menu" class="button ghost" type="button" aria-expanded="false" aria-controls="notify-panel">🔔 Hinweise</button><div class="notify-panel" id="notify-panel" hidden><h3>Hinweise bei Stop, Ziel und Kurs-Alarm</h3><button type="button" class="button ghost" id="notify-toggle" aria-pressed="false">🖥️ Pop-up aus</button><small id="notify-status"></small><button type="button" class="button ghost" id="title-toggle" aria-pressed="true">🏷️ Kurs im Tab-Titel: an</button><button type="button" class="button ghost" id="blink-toggle" aria-pressed="true">🟡 Tab blinkt bei Alarm: an</button><button type="button" class="button ghost" id="sound-toggle" aria-pressed="false" title="Ton, wenn Stop-Loss, Take-Profit oder ein Kurs-Alarm erreicht wird">🔕 Alarm-Ton</button><button type="button" class="button ghost" id="notify-test">Test-Hinweis senden</button><small>Geprüft wird bei jeder Aktualisierung (alle 15 s). In einem Hintergrund-Tab drosseln Browser das teils auf etwa einmal pro Minute. Bei geschlossener Seite gibt es keine Hinweise.</small></div></span><button id="pause" class="button ghost" type="button" aria-pressed="false">Ⅱ Pause</button><button id="refresh" class="button icon" type="button" aria-label="Daten jetzt aktualisieren" title="Jetzt aktualisieren">↻</button></div>
   </header>
   <div class="toasts" id="toasts" aria-live="assertive"></div>
   <main>
