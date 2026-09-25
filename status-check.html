@@ -102,9 +102,12 @@
     { group: "futures", name: "Open Interest aktuell",
       url: "https://fapi.binance.com/fapi/v1/openInterest?symbol=BTCUSDT",
       read: j => j && j.openInterest != null ? num(j.openInterest) + " BTC offen" : null },
-    { group: "futures", name: "Open Interest historisch",
+    { group: "futures", name: "Open Interest historisch (auch Liq-Heatmap)",
       url: "https://fapi.binance.com/futures/data/openInterestHist?symbol=BTCUSDT&period=5m&limit=13",
       read: j => Array.isArray(j) && j.length ? j.length + " Werte, " + tf.format(j[0].timestamp) + " bis " + tf.format(j[j.length - 1].timestamp) + " Uhr" : null },
+    { group: "futures", name: "Futures-Kerzen mit Taker-Volumen (Liq-Heatmap)",
+      url: "https://fapi.binance.com/fapi/v1/klines?symbol=BTCUSDT&interval=5m&limit=2",
+      read: j => Array.isArray(j) && j.length && j[0].length > 9 ? "Taker-Käufe " + Math.round(Number(j[0][9]) / Number(j[0][5]) * 100) + " % des Volumens" : null },
     // Live-Streams wie im Dashboard: erste Kerzenmeldung abwarten
     { group: "live", ws: true, name: "Spot-Stream data-stream.binance.vision",
       url: "wss://data-stream.binance.vision/stream?streams=btcusdt@kline_1m" },
