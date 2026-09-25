@@ -17,7 +17,7 @@
     var t = g('theme.v1'), l = g('layout.v1'), tab = g('tab.v1');
     d.setAttribute('data-theme', t === 'light' ? 'light' : 'dark');
     d.setAttribute('data-layout', l === 'desktop' || l === 'tablet' ? l : (window.matchMedia && matchMedia('(min-width:1100px) and (hover:hover) and (pointer:fine)').matches ? 'desktop' : 'tablet'));
-    d.setAttribute('data-active-tab', tab === 'pos' || tab === 'ind' ? tab : 'chart');
+    d.setAttribute('data-active-tab', tab === 'calc' || tab === 'pos' || tab === 'ind' ? tab : 'chart');
     if (t === 'light') { var m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', '#eef1f5'); }
   })();
   </script>
@@ -187,10 +187,13 @@ body::before{content:"";position:fixed;inset:0 0 auto 0;height:env(safe-area-ins
 .heat b{margin-left:6px;font-size:.75rem;color:var(--muted);font-weight:500}
 /* ---------- Tab-Leiste (iPad/Smartphone) ---------- */
 .tabbar{display:none}
-html[data-layout=tablet] .tabbar{display:grid;grid-template-columns:repeat(3,1fr);position:fixed;left:0;right:0;bottom:0;z-index:35;padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px));background:var(--backdrop);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-top:1px solid var(--border);gap:6px}
+html[data-layout=tablet] .tabbar{display:grid;grid-template-columns:1fr 1fr auto 1fr 1fr;align-items:end;position:fixed;left:0;right:0;bottom:0;z-index:35;padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px));background:var(--backdrop);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-top:1px solid var(--border);gap:6px}
 .tabbar button{min-height:54px;border:0;background:none;border-radius:10px;display:grid;place-items:center;gap:0;font-size:.78rem;font-weight:600;color:var(--muted);padding:4px 2px;line-height:1.2}
 .tabbar button b{font-size:1.25rem;line-height:1;font-weight:400}
-.tabbar button[aria-selected=true]{color:var(--up-text);background:var(--up-bg)}
+.tabbar button[aria-current=page]{color:var(--up-text);background:var(--up-bg)}
+.tabbar .tab-fab{width:66px;height:66px;min-height:66px;margin:-26px 4px 0;border-radius:50%;background:var(--mint);color:var(--mint-ink);border:4px solid var(--bg);box-shadow:0 6px 18px rgba(0,0,0,.35);font-size:.68rem;font-weight:700;align-self:start}
+.tabbar .tab-fab b{font-size:1.3rem}
+.tabbar .tab-fab:hover{background:var(--mint-hover)}
 .tabbar .tab-badge{display:inline-block;min-width:18px;padding:0 5px;margin-left:4px;border-radius:9px;background:var(--amber);color:var(--bg);font-size:.68rem;font-weight:700}
 /* ---------- Seitenraster ---------- */
 .dash{padding:20px 24px 28px}
@@ -213,11 +216,12 @@ html[data-layout=desktop] .chart{height:clamp(340px,44vh,560px)}
   html[data-layout=desktop] .col-control{order:1}
   html[data-layout=desktop] .col-input{order:2}
 }
-html[data-layout=tablet] .dash{display:flex;flex-direction:column;gap:16px;padding:14px 16px calc(84px + env(safe-area-inset-bottom,0px))}
+html[data-layout=tablet] .dash{display:flex;flex-direction:column;gap:16px;padding:14px 16px calc(100px + env(safe-area-inset-bottom,0px))}
 html[data-layout=tablet] .col,html[data-layout=tablet] .col-side,html[data-layout=tablet] .dash-top,html[data-layout=tablet] .dash-bottom{display:contents}
 html[data-layout=tablet][data-active-tab=chart] [data-tabs]:not([data-tabs~=chart]),
 html[data-layout=tablet][data-active-tab=pos] [data-tabs]:not([data-tabs~=pos]),
-html[data-layout=tablet][data-active-tab=ind] [data-tabs]:not([data-tabs~=ind]){display:none!important}
+html[data-layout=tablet][data-active-tab=ind] [data-tabs]:not([data-tabs~=ind]),
+html[data-layout=tablet][data-active-tab=calc] [data-tabs]:not([data-tabs~=calc]){display:none!important}
 html[data-layout=tablet] #chart-sec{order:1}html[data-layout=tablet] #signals{order:2}html[data-layout=tablet] #alarms{order:3}
 html[data-layout=tablet] #positions{order:1}html[data-layout=tablet] #journal{order:2}html[data-layout=tablet] #calc-sec{order:3}
 html[data-layout=tablet] #zones-sec{order:1}html[data-layout=tablet] #ind-sec{order:2}html[data-layout=tablet] .methodology{order:3}
@@ -682,6 +686,115 @@ dialog.sheet::backdrop{background:rgba(0,0,0,.6)}
   .tip>summary{width:44px;height:44px;margin:-10px -8px}
 }
 @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}.toast{animation:none;outline:3px solid #ffcc00}}
+
+/* ---------- Ladezustand: Skeleton-Platzhalter ---------- */
+:root{--skel-a:#1a2129;--skel-b:#28313c}
+[data-theme=light]{--skel-a:#e3e8ee;--skel-b:#f2f5f8}
+.skel{color:transparent!important;background:linear-gradient(100deg,var(--skel-a) 40%,var(--skel-b) 50%,var(--skel-a) 60%) 0 0/300% 100%;animation:skel 1.5s linear infinite;border-radius:6px;-webkit-user-select:none;user-select:none;border-color:transparent!important}
+.skel *,.skel::before{visibility:hidden}
+@keyframes skel{from{background-position:100% 0}to{background-position:0 0}}
+.metric.skel{display:block;width:min(70%,9em)}
+#price.skel,.lb-price.skel{display:inline-block;min-width:6.5em}
+.zone-note.skel,.indicator p.skel{min-height:2.7em}
+small.skel,span.skel,strong.skel:not(.metric){display:inline-block;min-width:5em;min-height:1.1em;line-height:1.2}
+.ohlc.skel{width:min(24em,70%);min-height:1.1em;margin:12px 20px 6px;padding:0}
+.verdict.skel{min-width:6.5em}
+.rules.skel{width:min(100%,16em);min-height:1.1em}
+.chart-skel{position:absolute;inset:22px 90px 44px 18px;display:flex;align-items:flex-end;gap:5px}
+.chart-skel i{flex:1;border-radius:3px}
+@media (prefers-reduced-motion:reduce){.skel{animation:none;background:var(--skel-a)}}
+/* ---------- Signal-Verlauf ---------- */
+.sig-trend{display:flex;align-items:center;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+.spark{width:132px;height:34px;display:block;overflow:visible}
+.spark .zero{stroke:var(--tick);stroke-width:1;stroke-dasharray:2 3}
+.spark .line{fill:none;stroke:var(--text);stroke-width:1.6;stroke-linejoin:round}
+.spark .pos{fill:var(--t-p2)}.spark .neg{fill:var(--t-m2)}
+.spark .now{fill:var(--text)}
+.score{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.trend{font-weight:800;margin-left:3px}.trend.up{color:var(--up-text)}.trend.down{color:var(--down-text)}.trend.flat{color:var(--muted)}
+.signal-row .pts .trend{font-size:.8rem}
+.lb-trend{font-size:.75rem;font-weight:700;margin-left:4px;white-space:nowrap}
+@container (max-width:600px){.sig-trend{justify-content:flex-start}}
+/* ---------- Bottom-Sheet (Schnell-Alarm) ---------- */
+dialog.sheet.bottom{margin:auto auto 0;width:min(640px,100vw);max-width:100vw;border-radius:18px 18px 0 0;border-bottom:0;padding-bottom:env(safe-area-inset-bottom,0px)}
+dialog.sheet.bottom[open]{animation:sheet-up .22s ease-out}
+@keyframes sheet-up{from{transform:translateY(48px);opacity:.3}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){dialog.sheet.bottom[open]{animation:none}}
+.qa-now{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;font-size:.875rem;color:var(--muted)}
+.qa-now b{color:var(--text);font-size:1rem}
+.qa-now strong{font-size:1.7rem;color:var(--text);font-weight:600;letter-spacing:-.03em}
+.qa-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.qa-steps button{min-height:48px;border-radius:12px;font-weight:650;font-variant-numeric:tabular-nums;background:var(--field);border:1px solid var(--field-border)}
+.qa-steps button[data-qa^="-"]{color:var(--down-text)}.qa-steps button:not([data-qa^="-"]){color:var(--up-text)}
+.qa-save{min-height:54px!important;width:100%;justify-content:center!important;font-size:1rem!important}
+/* ---------- Gestaffelte Take-Profits ---------- */
+.ladder{margin:4px 0 18px;border:1px solid var(--border);border-radius:9px;background:var(--surface-2);padding:0 14px}
+.ladder>summary{padding:12px 0;font-weight:600;font-size:.9rem}
+.ladder>summary small{display:block;font-weight:400;margin-top:2px;font-size:.8rem}
+.ladder-hint{font-size:.8125rem;color:var(--muted);margin:0 0 10px}
+.ladder-rows{display:grid;gap:8px}
+.ladder-row{display:grid;grid-template-columns:52px minmax(0,1fr) minmax(0,1fr);gap:8px;align-items:end}
+.ladder-row>b{font-size:.8125rem;padding-bottom:13px}
+.ladder-rows .ladder-row:not(:first-child) .lh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.ladder-sl{margin-top:6px}
+.ladder-sl .check{grid-column:2/-1;min-height:40px}
+.ladder-row label{font-size:.75rem;color:var(--label);min-width:0}
+.ladder .presets{margin:10px 0 4px}
+.ladder .check{display:flex;align-items:center;gap:10px;font-size:.8125rem;color:var(--text-2);min-height:44px}
+.ladder .check input{width:22px;min-height:22px;height:22px;accent-color:var(--mint)}
+.ladder-out{display:grid;gap:6px;margin:8px 0 14px;font-size:.8125rem}
+.ladder-out .lrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;border-top:1px solid var(--line);padding-top:6px}
+.ladder-out .lrow span{color:var(--muted)}.ladder-out .lrow strong{font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
+.ladder-out .lrow small{grid-column:1/-1;font-size:.75rem}
+.ladder-out .total strong{font-size:1.05rem}
+.ladder-out .note{color:var(--muted);font-size:.78rem}
+.ladder-out .err{color:var(--down-text-2)}
+/* ---------- Telegram / Discord ---------- */
+.chan{border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:grid;gap:10px;background:var(--surface-2)}
+.chan h3{display:flex;align-items:center;gap:8px;font-size:.95rem;font-weight:650}
+.chan ol{margin:0;padding-left:20px;font-size:.8125rem;color:var(--text-2);display:grid;gap:5px;line-height:1.45}
+.chan .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.chan .row button{min-height:44px;padding:0 14px;font-size:.8125rem}
+.chan-status{font-size:.8125rem;color:var(--muted);overflow-wrap:anywhere}
+.chan-status.ok{color:var(--up-text)}.chan-status.err{color:var(--down-text-2)}
+.chan a{color:var(--mint)}
+.switch{display:flex;align-items:center;gap:10px;font-size:.875rem;min-height:44px;color:var(--text-2)}
+.switch input{width:22px;min-height:22px;height:22px;accent-color:var(--mint)}
+#chan-summary{margin-top:-4px}
+/* ---------- Smartphone: Kopfzeile nur mit Symbolen ---------- */
+@media (max-width:600px){.update-controls .lbl{display:none}.update-controls .button{min-width:44px;padding:0 10px}.backup-badge .due{margin-left:-2px}}
+
+/* ---------- Ergänzungen: Signal-Trend, Schnell-Alarm, Kanäle ---------- */
+.overall .spark{margin:2px 0}
+.overall .sig-trend .verdict{margin:0}
+.score .trend{font-size:1.05rem}
+#qa-levels{margin:0}
+#qa-levels button{font-size:.78rem}
+#qa-levels button small{color:var(--muted);margin-left:4px;font-weight:500}
+#qa-preview{font-size:.8125rem;color:var(--muted);min-height:1.2em}
+.chan-guide{border-top:1px solid var(--line);padding-top:6px}
+.chan-guide>summary{min-height:40px;display:flex;align-items:center;font-size:.8125rem;font-weight:600;color:var(--mint)}
+.chan code{font-size:.78rem;background:var(--field);padding:1px 4px;border-radius:4px}
+.chan label{display:grid;gap:4px}
+.chan label.switch{display:flex}
+fieldset.chan{margin:0;min-width:0}
+fieldset.chan legend{font-size:.875rem;font-weight:650;padding:0 4px;color:var(--text)}
+.chan-note{font-size:.8125rem!important;color:var(--muted)!important}
+.toast.info{animation:none;background:var(--surface-3);color:var(--text);border:1px solid var(--border);font-weight:500}
+
+.spark-wrap{display:grid;gap:0}
+.spark-cap{display:flex;justify-content:space-between;width:132px;font-size:.66rem!important;color:var(--muted);line-height:1.2}
+.spark .mid{fill:var(--muted);opacity:.55}
+@media (max-width:600px){
+  .topbar{position:relative}
+  .update-controls{flex-wrap:nowrap;width:100%}
+  .status{flex:1 1 auto;min-width:0;max-width:none;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .menu-wrap{position:static}
+  .menu-panel{left:8px;right:8px;width:auto;top:calc(100% + 4px);max-height:calc(100dvh - 200px)}
+}
+.qa-steps button[aria-pressed=true]{outline:2px solid currentColor;outline-offset:-3px;background:var(--surface-3)}
+#chan-open{flex:1 1 auto;justify-content:flex-start;text-align:left;min-height:44px;font-size:.875rem}
+@media (max-width:600px){.status{padding-left:4px}.status::before{margin-right:7px;vertical-align:-1px}}
 .chart-panel>.notice{margin:12px 20px 0}
 html{scroll-padding-top:calc(var(--lb-h,56px) + 16px)}
 html[data-layout=desktop] .col-input,html[data-layout=desktop] .col-control{top:calc(env(safe-area-inset-top,0px) + var(--lb-h,56px) + 12px);max-height:calc(100dvh - var(--lb-h,56px) - 28px)}
@@ -801,7 +914,12 @@ function bandContainment(closes, bands, lookback = 100, skipLast = 0) {
   }
   return total ? { inside, total, share: inside / total * 100 } : null;
 }
-// Volumenprofil aus OHLCV: Volumen jeder Kerze gleichmäßig über [Tief, Hoch] verteilt (Näherung).
+// Volumenprofil aus OHLCV. Binance-Kerzen enthalten kein Volumen je Preisstufe; verteilt wird deshalb nach einer Normalverteilung
+// um die Mitte des Kerzenkörpers, begrenzt auf [Tief, Hoch]: σ = halbe Körperhöhe, mindestens ein Sechstel der Spanne.
+// So bekommen Dochte (kurz gehandelte Preise) weniger Volumen als der Körper; bei Doji-Kerzen liegt es eng um Eröffnung/Schluss.
+const erf = x => { const s = Math.sign(x), a = Math.abs(x), t = 1 / (1 + 0.3275911 * a); return s * (1 - ((((1.061405429 * t - 1.453152027) * t + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-a * a)); };
+const normCdf = z => 0.5 * (1 + erf(z / Math.SQRT2));
+function candleSpread(c) { return { mu: (c.open + c.close) / 2, sigma: Math.max(Math.abs(c.close - c.open) / 2, (c.high - c.low) / 6) }; }
 function volumeProfile(candles, bins = 40, valueArea = 0.7) {
   if (candles.length < 10) return null;
   const lo = Math.min(...candles.map(c => c.low)), hi = Math.max(...candles.map(c => c.high));
@@ -809,10 +927,14 @@ function volumeProfile(candles, bins = 40, valueArea = 0.7) {
   const step = (hi - lo) / bins, vol = Array(bins).fill(0), idx = v => Math.min(bins - 1, Math.max(0, Math.floor((v - lo) / step)));
   for (const c of candles) {
     if (!(c.volume > 0)) continue;
-    if (c.high === c.low) { vol[idx(c.low)] += c.volume; continue; }
-    for (let i = idx(c.low); i <= idx(c.high); i++) {
-      const overlap = Math.min(c.high, lo + (i + 1) * step) - Math.max(c.low, lo + i * step);
-      if (overlap > 0) vol[i] += c.volume * overlap / (c.high - c.low);
+    if (!(c.high > c.low)) { vol[idx(c.low)] += c.volume; continue; }
+    const { mu, sigma } = candleSpread(c), cdf = x => normCdf((x - mu) / sigma), base = cdf(c.low), mass = cdf(c.high) - base;
+    if (!(mass > 1e-9)) { vol[idx(Math.min(c.high, Math.max(c.low, mu)))] += c.volume; continue; }
+    let prev = base;
+    for (let i = idx(c.low), last = idx(c.high); i <= last; i++) {
+      const cur = i === last ? cdf(c.high) : cdf(Math.min(c.high, lo + (i + 1) * step));
+      if (cur > prev) vol[i] += c.volume * (cur - prev) / mass;
+      prev = cur;
     }
   }
   const total = vol.reduce((a, b) => a + b, 0);
@@ -1279,7 +1401,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Alle Werte liegen zusätzlich im Arbeitsspeicher und sind dadurch synchron lesbar. Schreiben geht sofort in den
 // localStorage und gebündelt in die IndexedDB; beim Start gewinnt die zuletzt vollständig geschriebene Kopie.
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
-const APP_VERSION = '3.0.0', docEl = document.documentElement;
+const APP_VERSION = '3.1.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -1312,6 +1434,21 @@ const store = (() => {
     });
   }
   const schedule = () => { if (!timer) timer = setTimeout(flush, 250); };
+  const CLAIM_KEY = IDB_ONLY + 'claims.v1';
+  function claimTx(change) {
+    if (!db) return Promise.resolve(true);
+    return new Promise(resolve => {
+      let result = true, tx;
+      try { tx = db.transaction('kv', 'readwrite'); } catch { return resolve(true); }
+      const st = tx.objectStore('kv'), r = st.get(CLAIM_KEY);
+      r.onsuccess = () => {
+        const map = r.result && typeof r.result === 'object' ? { ...r.result } : {}, now = Date.now();
+        for (const k of Object.keys(map)) if (!(now - map[k] < 864e5)) delete map[k]; // nach einem Tag vergessen
+        result = change(map); if (result) st.put(map, CLAIM_KEY);
+      };
+      tx.oncomplete = () => resolve(result); tx.onerror = tx.onabort = () => resolve(true);
+    });
+  }
   const touch = () => { const now = Date.now(); cache.set(SAVED_KEY, now); pending.add(SAVED_KEY); if (lsReliable) lsSet(SAVED_KEY, now); };
   return {
     info,
@@ -1346,6 +1483,10 @@ const store = (() => {
     adopt(k, v) { cache.set(k, v); const j = json(v); if (j !== null) lastJson.set(k, j); },
     flush,
     get ok() { return !!db || lsReliable; },
+    // Ein Ereignis tab-übergreifend für sich beanspruchen (z. B. eine Benachrichtigung nur einmal senden): Lesen und Schreiben
+    // in einer IndexedDB-Transaktion laufen über alle Tabs hinweg nacheinander ab. Ohne IndexedDB gewinnt jeder Tab (lieber doppelt als gar nicht).
+    claim(key, ttl) { return claimTx(map => { const now = Date.now(); if (map[key] && now - map[key] < ttl) return false; map[key] = now; return true; }); },
+    release(key) { return claimTx(map => { if (!(key in map)) return false; delete map[key]; return true; }); },
     // Dauerhaften Speicher höchstens einmal je Sitzung erbitten (Firefox fragt dabei per Dialog nach)
     async persist() { if (persistAsked || info.persisted === true || !navigator.storage?.persist) return info.persisted; persistAsked = true; try { info.persisted = await navigator.storage.persist(); } catch {} return info.persisted; },
   };
@@ -1407,7 +1548,8 @@ function status() {
     : state.marketError ? `Datenfehler · Versuch in ${secs} s` : `${feed === 'partial' ? 'Teils live' : 'Auto'} · in ${secs} s`;
   s.title = feedDetail();
   $('refresh').disabled = state.busy;
-  put('pause', state.paused ? '▶ Fortsetzen' : 'Ⅱ Pause');
+  put('pause-ico', state.paused ? '▶' : 'Ⅱ'); put('pause-lbl', state.paused ? ' Fortsetzen' : ' Pause');
+  $('pause').setAttribute('aria-label', state.paused ? 'Fortsetzen' : 'Pause'); $('pause').title = state.paused ? 'Aktualisierung fortsetzen' : 'Aktualisierung anhalten';
   $('pause').setAttribute('aria-pressed', String(state.paused));
 }
 function cancel() { state.seq++; state.controller?.abort(); state.controller = null; state.busy = false; }
@@ -1432,7 +1574,7 @@ async function refresh() {
   ];
   // Signal-Zeiträume nur laden, wenn dort seit dem letzten Abruf eine Kerze geschlossen hat (oder noch nichts vorliegt)
   const mtfIntervals = SIGNAL_INTERVALS.filter(iv => iv !== interval && !(state.mtf[iv] && !state.mtf[iv].error && state.mtf[iv].nextAt > Date.now()));
-  const mtfPending = Promise.allSettled(mtfIntervals.map(iv => klinesFor(symbol, iv, iv === '1d' ? 500 : 200, controller.signal)));
+  const mtfPending = Promise.allSettled(mtfIntervals.map(iv => klinesFor(symbol, iv, MTF_LIMIT(iv), controller.signal)));
   const results = await Promise.allSettled(jobs);
   if (seq !== state.seq) return;
   const [market, funding, oi, history, posPrices, fx] = results, now = Date.now();
@@ -1480,13 +1622,16 @@ function mergeLive(rest) {
   if (live0.time === r.time && live0.volume > r.volume) return [...rest.slice(0, -1), live0];
   return rest;
 }
+// Je Zeitraum werden 60 Kerzen mehr geladen als bewertet: So lässt sich die Bewertung jeder Minute der letzten Stunde
+// mit demselben Fenster nachrechnen (Trend-Verlauf), wie sie damals angezeigt worden wäre.
+const MTF_LIMIT = iv => iv === '1d' ? 500 : 260, MTF_WINDOW = iv => iv === '1d' ? 499 : 199;
 function applyMtf(iv, r) {
   const prev = state.mtf[iv], now = Date.now();
   if (r.status === 'fulfilled') {
     const c = r.value.candles, fresh = c.at(-1).closeTime >= now - 30000, closed = c.filter(x => x.closeTime < now);
-    state.mtf[iv] = fresh ? { rating: signalRating(closed), at: now, error: null, ema200: ema200Closed(closed), nextAt: c.at(-1).closeTime + 1 + 2500 }
-                          : { rating: prev?.rating ?? null, at: prev?.at ?? 0, error: 'Letzte Kerze veraltet.', ema200: prev?.ema200 ?? null, nextAt: now + 60000 };
-  } else state.mtf[iv] = { rating: prev?.rating ?? null, at: prev?.at ?? 0, error: r.reason.message, ema200: prev?.ema200 ?? null, nextAt: now + 30000 };
+    state.mtf[iv] = fresh ? { rating: signalRating(closed.slice(-MTF_WINDOW(iv))), closed, at: now, error: null, ema200: ema200Closed(closed), nextAt: c.at(-1).closeTime + 1 + 2500 }
+                          : { rating: prev?.rating ?? null, closed: prev?.closed ?? null, at: prev?.at ?? 0, error: 'Letzte Kerze veraltet.', ema200: prev?.ema200 ?? null, nextAt: now + 60000 };
+  } else state.mtf[iv] = { rating: prev?.rating ?? null, closed: prev?.closed ?? null, at: prev?.at ?? 0, error: r.reason.message, ema200: prev?.ema200 ?? null, nextAt: now + 30000 };
 }
 // Einzelne Signal-Zeiträume direkt nach Kerzenschluss nachladen, statt alle Zeiträume bei jedem Abruf
 const mtfBusy = new Set();
@@ -1495,7 +1640,7 @@ function refreshDueMtf(now = Date.now()) {
     const m = state.mtf[iv];
     if (iv === state.interval || !m?.nextAt || now < m.nextAt || mtfBusy.has(iv)) continue;
     mtfBusy.add(iv); const symbol = state.symbol;
-    klinesFor(symbol, iv, iv === '1d' ? 500 : 200).then(value => ({ status: 'fulfilled', value }), reason => ({ status: 'rejected', reason }))
+    klinesFor(symbol, iv, MTF_LIMIT(iv)).then(value => ({ status: 'fulfilled', value }), reason => ({ status: 'rejected', reason }))
       .then(r => { if (symbol !== state.symbol) return; applyMtf(iv, r); renderSignals(); if (iv === '1d') drawChart(); })
       .finally(() => mtfBusy.delete(iv));
   }
@@ -1596,7 +1741,7 @@ function renderZones(z) {
     put('poc-dist', pct(d));
     put('poc-va', `${priceText(pr.vaLow)} – ${priceText(pr.vaHigh)}`);
     put('poc-note', Math.abs(d) < 0.05 ? 'Kurs liegt praktisch am POC.' : p > pr.vaHigh ? 'Kurs oberhalb der Value Area, also über der Zone mit dem meisten Umsatz.' : p < pr.vaLow ? 'Kurs unterhalb der Value Area, also unter der Zone mit dem meisten Umsatz.' : `Kurs innerhalb der Value Area, ${d > 0 ? 'über' : 'unter'} dem POC.`);
-    put('poc-foot', `${pr.count} sichtbare Kerzen (${iv})${live ? ', inkl. laufender Kerze' : ''} · 40 Stufen à ${priceText(pr.step)} · Näherung`);
+    put('poc-foot', `${pr.count} sichtbare Kerzen (${iv})${live ? ', inkl. laufender Kerze' : ''} · 40 Stufen à ${priceText(pr.step)} · Glockenkurve je Kerze`);
   } else { put('poc-value', '—'); put('poc-dist', '—'); put('poc-va', '—'); put('poc-note', state.candles.length ? 'Mindestens 10 Kerzen mit Volumen nötig.' : 'Wartet auf Kerzendaten.'); put('poc-foot', 'Näherung aus Kerzendaten'); }
   // EMA 200 (1D)
   const daily = iv === '1d' ? ema200Closed(state.candles.filter(x => x.closeTime < Date.now())) : state.mtf['1d']?.ema200 ?? null;
@@ -1648,43 +1793,96 @@ function ratingFor(iv) {
 const toneOf = r => !r ? 'none' : r.score >= 3 ? 'p3' : r.score === 2 ? 'p2' : r.score === 1 ? 'p1' : r.score === 0 ? '0' : r.score === -1 ? 'm1' : r.score === -2 ? 'm2' : 'm3';
 const scoreText = s => (s > 0 ? '+' : s < 0 ? '−' : '') + Math.abs(s);
 function signalState() { const all = SIGNAL_INTERVALS.map(iv => ({ iv, ...ratingFor(iv) })); return { all, overall: overallRating(all.map(x => x.rating)), anyStale: all.some(x => x.rating && x.stale) }; }
-// Signal-Ampel: eine Zelle je Zeitraum, dazu das Gesamturteil
-function heatNodes({ all, overall, anyStale }) {
+// ---------- Trend: Bewertung, wie sie zu einem früheren Zeitpunkt angezeigt worden wäre ----------
+// Gerechnet wird nur mit Kerzen, die vor diesem Zeitpunkt geschlossen haben – je Zeitraum mit demselben Fenster wie beim Abruf.
+const TREND_MIN = 60, TREND_REF = 5, ratingCache = new Map();
+function closedBefore(arr, t) { let lo = 0, hi = arr.length; while (lo < hi) { const m = (lo + hi) >> 1; if (arr[m].closeTime < t) lo = m + 1; else hi = m; } return lo; }
+function ratingAt(iv, t) {
+  const chart = iv === state.interval, src = chart ? state.candles : state.mtf[iv]?.closed;
+  if (!src?.length || (chart && state.loadedSymbol !== state.symbol)) return null;
+  const n = closedBefore(src, t), w = chart ? n : Math.min(n, MTF_WINDOW(iv));
+  if (w < 60) return null;
+  const key = `${iv}|${chart ? 'c' : 'm'}|${src[n - w].time}|${src[n - 1].closeTime}|${w}`;
+  if (!ratingCache.has(key)) { if (ratingCache.size > 4000) ratingCache.clear(); ratingCache.set(key, signalRating(src.slice(n - w, n))); }
+  return ratingCache.get(key);
+}
+// Gesamtscore (Kauf- minus Verkaufssignale) für jede Minute der letzten Stunde; letzter Wert = jetzt
+function signalTrend(now = Date.now()) {
+  const net = [];
+  for (let j = TREND_MIN; j >= 0; j--) { const o = overallRating(SIGNAL_INTERVALS.map(iv => ratingAt(iv, now - j * 60000))); net.push(o ? o.net : null); }
+  const cur = net.at(-1), ref = net.at(-1 - TREND_REF);
+  return { net, cur, ref, dir: cur === null || ref === null ? null : cur > ref ? 'up' : cur < ref ? 'down' : 'flat' };
+}
+const TREND_ARROW = { up: '↗', down: '↘', flat: '→' };
+function trendNode(tr, cls = 'trend') {
+  const s = el('span', `${cls} ${tr.dir}`, TREND_ARROW[tr.dir]);
+  s.title = `vor ${TREND_REF} Min.: ${scoreText(tr.ref)}`; return s;
+}
+function renderSpark(tr) {
+  const svg = $('overall-spark'), W = 132, H = 34, mid = H / 2, bw = W / tr.net.length, kids = [node('line', { x1: 0, x2: W, y1: mid, y2: mid, class: 'zero' })];
+  const first = tr.net.findIndex(v => v !== null), known = tr.net.filter(v => v !== null), scale = Math.max(2, ...known.map(Math.abs)), y = v => mid - v / scale * (mid - 2);
+  tr.net.forEach((v, i) => {
+    if (v === null) return;
+    const x = (i * bw).toFixed(2), w = Math.max(1, bw - .5).toFixed(2);
+    if (!v) { kids.push(node('rect', { x, y: mid - .6, width: w, height: 1.2, class: 'mid' })); return; }
+    kids.push(node('rect', { x, y: Math.min(y(v), mid).toFixed(2), width: w, height: Math.abs(y(v) - mid).toFixed(2), class: v > 0 ? 'pos' : 'neg' }));
+  });
+  if (tr.cur !== null) kids.push(node('circle', { cx: W - bw / 2, cy: y(tr.cur).toFixed(2), r: 2.4, class: 'now' }));
+  svg.replaceChildren(...kids);
+  $('overall-spark-wrap').hidden = !known.length;
+  svg.setAttribute('aria-label', known.length ? `Gesamtscore der letzten ${TREND_MIN - first} Minuten: zu Beginn ${scoreText(tr.net[first])}, höchstens ${scoreText(Math.max(...known))}, mindestens ${scoreText(Math.min(...known))}, jetzt ${tr.cur === null ? 'ohne Wert' : scoreText(tr.cur)}.` : 'Noch kein Verlauf');
+}
+// Signal-Ampel: eine Zelle je Zeitraum, dazu das Gesamturteil mit Trendpfeil
+function heatNodes({ all, overall, anyStale }, tr) {
   const cells = all.map(({ iv, rating, stale }) => {
     const i = el('i', iv === state.interval ? 'cur' : '', iv); i.dataset.tone = toneOf(rating); if (stale) i.style.opacity = '.55';
     i.title = `${iv}: ${rating ? `${VERDICT[rating.verdict]} (${scoreText(rating.score)}/4)` : 'keine Bewertung'}`; return i;
   });
-  return [...cells, verdictNode(overall, anyStale)];
+  const out = [...cells, verdictNode(overall, anyStale)];
+  if (overall && tr?.dir) out.push(trendNode(tr, 'lb-trend trend'));
+  return out;
 }
-const heatLabel = ({ all, overall }) => `Signale: ${all.map(x => `${x.iv} ${x.rating ? `${VERDICT[x.rating.verdict]} ${scoreText(x.rating.score)}` : 'ohne Bewertung'}`).join(', ')}${overall ? `. Gesamt ${VERDICT[overall.verdict]}` : ''}. Zur Signal-Übersicht.`;
-// Nur neu zeichnen, wenn sich eine Bewertung ändert – sonst würden Klicks auf die Zeilen beim Live-Update verloren gehen
+const heatLabel = ({ all, overall }, tr) => `Signale: ${all.map(x => `${x.iv} ${x.rating ? `${VERDICT[x.rating.verdict]} ${scoreText(x.rating.score)}` : 'ohne Bewertung'}`).join(', ')}${overall ? `. Gesamt ${VERDICT[overall.verdict]}, Score ${scoreText(overall.net)}${tr?.dir ? `, vor ${TREND_REF} Minuten ${scoreText(tr.ref)}` : ''}` : ''}. Zur Signal-Übersicht.`;
+// Nur neu zeichnen, wenn sich eine Bewertung ändert (oder eine neue Minute für den Verlauf beginnt) –
+// sonst würden Klicks auf die Zeilen beim Live-Update verloren gehen
 let sigKey = '';
 function renderSignals() {
-  const st = signalState(), rows = $('signal-rows');
-  const key = state.interval + '|' + st.all.map(x => `${x.iv}:${x.rating ? x.rating.verdict + x.rating.score + x.rating.closeTime + x.rating.rules.map(r => r.label + r.score).join() : '-'}:${x.stale}:${x.error || ''}:${x.loading ? 1 : 0}`).join('|');
+  const st = signalState(), rows = $('signal-rows'), now = Date.now();
+  const key = state.interval + '|' + Math.floor(now / 60000) + '|' + state.paused + '|' + st.all.map(x => `${x.iv}:${x.rating ? x.rating.verdict + x.rating.score + x.rating.closeTime + x.rating.rules.map(r => r.label + r.score).join() : '-'}:${x.stale}:${x.error || ''}:${x.loading ? 1 : 0}`).join('|');
   if (key === sigKey) return; sigKey = key;
-  rows.replaceChildren(...st.all.map(({ iv, rating, stale, error, at, loading }) => {
+  const tr = signalTrend(now), waiting = !state.paused && st.all.some(x => !x.rating && x.loading && !x.error);
+  rows.replaceChildren(...st.all.map(({ iv, rating, stale, error, loading }) => {
     const row = document.createElement('button'); row.type = 'button'; row.className = 'signal-row' + (iv === state.interval ? ' current' : '');
     row.dataset.signalInterval = iv; row.dataset.tone = toneOf(rating);
     const label = document.createElement('b'); label.textContent = iv;
     const pts = document.createElement('span'); pts.className = 'pts'; pts.textContent = rating ? scoreText(rating.score) + '/4' : '';
+    const before = rating ? ratingAt(iv, now - TREND_REF * 60000) : null, moved = before && before.score !== rating.score;
+    if (moved) { const a = el('span', 'trend ' + (rating.score > before.score ? 'up' : 'down'), rating.score > before.score ? '↗' : '↘'); a.title = `vor ${TREND_REF} Min.: ${scoreText(before.score)}/4`; pts.append(a); }
     const rules = document.createElement('span'); rules.className = 'rules';
+    const skel = !rating && loading && !error && !state.paused;
     if (rating) rating.rules.forEach(x => { const s = document.createElement('span'); s.className = x.score > 0 ? 'up' : x.score < 0 ? 'down' : ''; s.textContent = `${x.label} ${x.score > 0 ? '▲' : x.score < 0 ? '▼' : '–'}`; s.title = x.detail; rules.append(s); });
     else rules.textContent = error || (loading ? (state.paused ? 'Pausiert, noch keine Daten.' : 'Wartet auf Kerzendaten …') : 'Zu wenige abgeschlossene Kerzen (mind. 60).');
+    if (skel) rules.classList.add('skel');
     if (rating && error) { const e = document.createElement('span'); e.textContent = 'veraltet: ' + error; rules.append(e); }
     const time = document.createElement('time'); time.textContent = rating ? `Kerze bis ${utcTime(rating.closeTime + 1).slice(0, 5)} UTC` : '';
-    row.append(label, verdictNode(rating, stale), pts, rules, time);
-    row.setAttribute('aria-label', `${iv}: ${rating ? VERDICT[rating.verdict] + ', ' + rating.score + ' von 4 Punkten' : 'keine Bewertung'}${stale ? ', veraltet' : ''}. Chart auf ${iv} umschalten.`);
+    const verdict = verdictNode(rating, stale); if (skel) verdict.classList.add('skel');
+    row.append(label, verdict, pts, rules, time);
+    row.setAttribute('aria-label', `${iv}: ${rating ? VERDICT[rating.verdict] + ', ' + rating.score + ' von 4 Punkten' : 'keine Bewertung'}${moved ? `, vor ${TREND_REF} Minuten ${before.score}` : ''}${stale ? ', veraltet' : ''}. Chart auf ${iv} umschalten.`);
     return row;
   }));
-  const { overall, anyStale } = st;
-  const ov = $('overall-verdict'); ov.className = 'verdict' + (overall ? ' ' + overall.verdict : '') + (anyStale ? ' stale' : ''); ov.textContent = overall ? VERDICT[overall.verdict] : '—';
-  put('overall-detail', overall ? `${overall.buy} Kauf · ${overall.hold} Halten · ${overall.sell} Verkauf${anyStale ? ' · teils veraltet' : ''}` : 'Mindestens 4 bewertete Zeiträume nötig.');
+  const { overall, anyStale } = st, pend = !overall && waiting;
+  const ov = $('overall-verdict'); ov.className = 'verdict' + (overall ? ' ' + overall.verdict : '') + (anyStale ? ' stale' : '') + (pend ? ' skel' : ''); ov.textContent = overall ? VERDICT[overall.verdict] : '—';
+  const sc = $('overall-score'); sc.classList.toggle('skel', pend);
+  if (overall) { sc.replaceChildren(document.createTextNode(scoreText(overall.net))); if (tr.dir) sc.append(trendNode(tr)); sc.title = `Gesamtscore: ${overall.buy} Kauf- minus ${overall.sell} Verkaufssignale${tr.dir ? ` · vor ${TREND_REF} Min.: ${scoreText(tr.ref)}` : ''}`; }
+  else { sc.textContent = pend ? '—' : ''; sc.title = ''; }
+  renderSpark(tr);
+  put('overall-detail', overall ? `${overall.buy} Kauf · ${overall.hold} Halten · ${overall.sell} Verkauf${anyStale ? ' · teils veraltet' : ''}` : pend ? 'Wartet auf Kerzendaten.' : 'Mindestens 4 bewertete Zeiträume nötig.');
+  $('overall-detail').classList.toggle('skel', pend);
   const line = $('signal-line'), any = st.all.some(x => x.rating);
   line.hidden = !any;
-  const link = document.createElement('a'); link.href = '#signals'; link.className = 'heat'; link.dataset.goto = 'signals'; link.setAttribute('aria-label', heatLabel(st));
-  link.append(...heatNodes(st)); line.replaceChildren(link);
-  const lb = $('lb-heat'); lb.replaceChildren(...heatNodes(st)); lb.setAttribute('aria-label', heatLabel(st));
+  const link = document.createElement('a'); link.href = '#signals'; link.className = 'heat'; link.dataset.goto = 'signals'; link.setAttribute('aria-label', heatLabel(st, tr));
+  link.append(...heatNodes(st, tr)); line.replaceChildren(link);
+  const lb = $('lb-heat'); lb.replaceChildren(...heatNodes(st, tr)); lb.setAttribute('aria-label', heatLabel(st, tr));
 }
 function renderWatchlist() {
   const box = $('watchlist'), base = state.symbol.slice(0, -4), parts = [];
@@ -1747,11 +1945,12 @@ function renderCalculator() {
     if (state.marketError) warnings.push('Kursabhängige Ergebnisse sind bis zum nächsten gültigen Abruf ausgesetzt.');
     if (state.paused && state.marketAt) warnings.push(`Berechnung mit pausiertem Kursstand von ${utcTime(state.marketAt)} UTC.`);
     showNotice('scenario-warning',warnings.join(' '));
+    renderLadder(result);
     return result;
   } catch(error) {
     showNotice('calc-error',error.message); showNotice('scenario-warning',null);
     for(const id of ['share','notional','quantity','entry','target','pnl','pnl-eur','liq-distance','liq-price']) put(id,id==='pnl-eur' ? '' : '—');
-    put('pnl-note','Bitte Eingaben korrigieren.'); $('share-bar').style.width='0%'; return null;
+    put('pnl-note','Bitte Eingaben korrigieren.'); $('share-bar').style.width='0%'; renderLadder(null); return null;
   }
 }
 
@@ -2037,7 +2236,7 @@ function openPosForm(open, pos = null) {
   $('pos-more').open = !!(pos && (pos.liqExchange || pos.preRealized || pos.note));
   put('pos-save', pos ? 'Änderungen speichern' : 'Position speichern');
   setToggle('pos-side', f.side); setToggle('pos-mode', f.mode); renderPosChips(); syncSize(); updateEntryNow(); posFormPreview(); renderPositions(); syncLevUi('pos-lev');
-  $('pos-form').scrollIntoView({ behavior: 'smooth', block: 'start' }); (pos ? $('pos-qty') : $('pos-qty')).focus({ preventScroll: true });
+  goTo('pos-form'); (pos ? $('pos-qty') : $('pos-qty')).focus({ preventScroll: true });
 }
 async function addPosition(e) {
   e.preventDefault();
@@ -2244,18 +2443,25 @@ function toast(pos, type, price, info = {}) {
 function raisePosAlert(pos, type, price, info = {}) {
   const key = pos.id + ':' + type; if (alerted.has(key)) return;
   alerted.add(key); alertInfo.set(key, info); toast(pos, type, price, info); beep();
-  desktopNotify(`🔔 ${coin(pos.symbol)} ${pos.side === 'long' ? 'Long' : 'Short'}: ${type === 'tp' ? 'Take-Profit' : 'Stop-Loss'} erreicht`, alertText(pos, type, price, info), key);
+  const title = `${coin(pos.symbol)} ${pos.side === 'long' ? 'Long' : 'Short'}: ${type === 'tp' ? 'Take-Profit' : 'Stop-Loss'} erreicht`;
+  desktopNotify(`🔔 ${title}`, alertText(pos, type, price, info), key);
+  void notifyChannels('pos', posChanKey(pos, type), `${type === 'tp' ? '🎯' : '🛑'} ${title}\n${alertText(pos, type, price, info)}`, 6 * 3600e3);
 }
+// Je Position und Marke eine Meldung pro Berührung; entfernt sich der Kurs wieder, darf die nächste Berührung erneut melden
+const posChanKey = (pos, type) => `pos:${pos.id}:${type}:${pos.slTpAt || pos.openedAt}`;
 function triggerAlarm(a, price, info = {}) {
   a.triggeredAt = info.missedAt || Date.now(); a.triggerPrice = price; a.touch = info.wick ? info.extreme : null; a.missed = !!info.missedAt; beep();
   const what = `${coin(a.symbol)} ${a.dir === 'above' ? 'auf/über' : 'auf/unter'} ${priceText(a.price)}`;
   desktopNotify(`🔔 Kurs-Alarm ${coin(a.symbol)}`, `${what} ${howReached(info)} · Kurs ${priceText(price)}${a.note ? ' · ' + a.note : ''}`, 'al:' + a.id);
+  void notifyChannels('alarm', `al:${a.id}:${a.armedAt || a.createdAt}`, `🔔 Kurs-Alarm ${coin(a.symbol)}\n${what} USDT ${howReached(info)} · Kurs ${priceText(price)}${a.note ? '\nNotiz: ' + a.note : ''}`, 864e5);
   simpleToast('al:' + a.id, 'alarm ' + (a.dir === 'above' ? 'up' : 'down'), `🔔 ${what} ${howReached(info)} · Kurs ${priceText(price)}${a.note ? ' – ' + a.note : ''}`, null, a.dir === 'above' ? 'green' : 'orange');
 }
 // Stop, Ziel und Kurs-Alarme prüfen – bei jeder Kursmeldung aus dem Stream und nach jedem REST-Abruf.
 // liveRanges: seit der letzten Prüfung gehandelte Spanne je Symbol (aus den 1m-Kerzen), damit auch kurze Dochte zählen.
 // Eine Spanne zählt nur, wenn sie komplett nach dem Scharfschalten liegt; sonst nur der aktuelle Kurs.
 let liveRanges = new Map();
+// Wieder scharf geschaltete Marken (Kurs nach einem Treffer wieder weg): Spannen, die davor begonnen haben, zählen nicht mehr
+const rearmedAt = new Map();
 function checkAlerts() {
   let changed = false; const ranges = liveRanges; liveRanges = new Map();
   const view = (sym, armedAt) => {
@@ -2265,13 +2471,15 @@ function checkAlerts() {
   };
   for (const pos of state.positions) for (const type of ['sl', 'tp']) {
     const lvl = pos[type]; if (!(lvl > 0)) continue;
-    const v = view(pos.symbol, pos.slTpAt || pos.openedAt); if (!v) continue;
-    const below = (type === 'sl') === (pos.side === 'long'), key = pos.id + ':' + type; // Long-Stop und Short-Ziel liegen unter dem Kurs
+    const key = pos.id + ':' + type, v = view(pos.symbol, Math.max(pos.slTpAt || pos.openedAt, rearmedAt.get(key) || 0)); if (!v) continue;
+    const below = (type === 'sl') === (pos.side === 'long'); // Long-Stop und Short-Ziel liegen unter dem Kurs
     const hitNow = below ? v.price <= lvl : v.price >= lvl, touched = hitNow || (below ? v.lo <= lvl : v.hi >= lvl);
     if (touched) { if (!pos.ack[type]) raisePosAlert(pos, type, v.price, { wick: !hitNow, extreme: below ? v.lo : v.hi }); }
     else {
+      if (pos.ack[type] || alerted.has(key)) rearmedAt.set(key, Date.now());
       if (pos.ack[type]) { pos.ack = { ...pos.ack, [type]: false }; changed = true; } // Kurs zurück: Marke wieder scharf
       if (!$('toasts').querySelector(`.toast[data-id="${pos.id}"][data-type="${type}"]`)) { alerted.delete(key); alertInfo.delete(key); }
+      chanRelease(posChanKey(pos, type));
     }
   }
   for (const a of state.alarms) {
@@ -2485,7 +2693,7 @@ new MutationObserver(updateAlarmState).observe($('toasts'), { childList: true })
 // Zonen, Indikatoren und Methodik: am Desktop standardmäßig offen, im iPad-Layout zu (spart Scroll-Weg); je Layout gemerkt.
 const DETAILS_KEY = 'scalpdesk.details.v1', detailsState = { ...(store.get(DETAILS_KEY) || {}) };
 const saveDetails = () => store.set(DETAILS_KEY, { ...detailsState });
-for (const id of ['history', 'analysis', 'money', 'risk-calc', 'model-settings']) { const d = $(id); if (id in detailsState) d.open = !!detailsState[id]; d.addEventListener('toggle', () => { detailsState[id] = d.open; saveDetails(); }); }
+for (const id of ['history', 'analysis', 'money', 'risk-calc', 'model-settings', 'ladder']) { const d = $(id); if (id in detailsState) d.open = !!detailsState[id]; d.addEventListener('toggle', () => { detailsState[id] = d.open; saveDetails(); }); }
 const FOLDS = [['zones-sec', true], ['ind-sec', true], ['method-sec', false]];
 function applyFoldDefaults() { const lay = docEl.dataset.layout; for (const [id, desk] of FOLDS) { const k = lay + ':' + id; $(id).open = k in detailsState ? !!detailsState[k] : lay === 'desktop' && desk; } }
 for (const [id] of FOLDS) $(id).querySelector(':scope > summary').addEventListener('click', () => setTimeout(() => { detailsState[docEl.dataset.layout + ':' + id] = $(id).open; saveDetails(); }));
@@ -2531,7 +2739,7 @@ function renderDay(unrealized = 0) {
     ban.replaceChildren(el('span', '', st.state === 'reached' ? `Tages-Verlustlimit erreicht: heute ${signed(d.pnl)} USDT realisiert (Limit ${number(lim)} USDT).` : `Achtung: mit den offenen Positionen läge der heutige Verlust über deinem Limit von ${number(lim)} USDT.`));
     ban.firstChild.append(el('small', '', st.state === 'reached' ? 'Laut deinem eigenen Limit ist für heute Schluss mit neuen Trades.' : `Realisiert ${signed(d.pnl)} USDT, offen ${signed(unrealized)} USDT.`));
     if (st.state === 'reached') { const noted = String(store.get(DAYNOTE_KEY, ''));
-      if (noted !== dayKey(Date.now())) { store.set(DAYNOTE_KEY, dayKey(Date.now())); beep(); desktopNotify('⛔ Tages-Verlustlimit erreicht', `Heute ${signed(d.pnl)} USDT · Limit ${number(lim)} USDT`, 'daylimit'); simpleToast('daylimit', 'sl', `⛔ Tages-Verlustlimit erreicht: ${signed(d.pnl)} USDT`); } }
+      if (noted !== dayKey(Date.now())) { store.set(DAYNOTE_KEY, dayKey(Date.now())); void notifyChannels('day', 'day:' + dayKey(Date.now()), `⛔ Tages-Verlustlimit erreicht\nHeute ${signed(d.pnl)} USDT realisiert · Limit ${number(lim)} USDT`, 864e5); beep(); desktopNotify('⛔ Tages-Verlustlimit erreicht', `Heute ${signed(d.pnl)} USDT · Limit ${number(lim)} USDT`, 'daylimit'); simpleToast('daylimit', 'sl', `⛔ Tages-Verlustlimit erreicht: ${signed(d.pnl)} USDT`); } }
   } else ban.hidden = true;
   return st;
 }
@@ -2554,6 +2762,7 @@ function node(tag,attributes,text) { const el=document.createElementNS(NS,tag); 
 function renderChart(levels={}, ov={}, start=null, end=null) {
   const container=$('chart'), offset=start ?? Math.max(0,state.candles.length-state.count), stop=end ?? state.candles.length, data=state.candles.slice(offset, stop);
   if (!data.length) {
+    if (!state.marketError && !state.paused) { container.replaceChildren(chartSkeleton()); return; }
     const empty=document.createElement('div'); empty.className='chart-empty';
     const mark=document.createElement('span');mark.className='empty-mark';mark.textContent='▥';mark.setAttribute('aria-hidden','true');
     const title=document.createElement('strong');title.textContent=state.marketError ? 'Keine Marktdaten verfügbar' : state.paused ? 'Aktualisierung pausiert' : 'Marktdaten werden geladen';
@@ -2620,7 +2829,7 @@ function renderChart(levels={}, ov={}, start=null, end=null) {
   container.setAttribute('aria-label',`${state.symbol}, ${state.interval}, ${data.length} Kerzen. Letzter Kurs ${priceText(last.close)} USDT. Pfeiltasten wählen Kerzen.`);
 }
 
-function render() {renderFx();renderMarket();renderFutures();renderCalculator();renderSignals();renderWatchlist();renderPositions();renderAlarms();renderRisk();renderLivebar();updateTitle();syncStreams();}
+function render() {renderFx();renderMarket();renderFutures();renderCalculator();renderSignals();renderWatchlist();renderPositions();renderAlarms();renderRisk();renderLivebar();updateTitle();syncStreams();renderSkeletons();}
 function zoom(factor) {setView(state.count*factor, state.pan>0 ? .5 : 1);}
 function setMarket(symbol,interval=state.interval) {
   const normalized=normalizeSymbol(symbol); if(!INTERVALS.includes(interval)) throw new Error('Unbekanntes Intervall.');
@@ -2632,7 +2841,7 @@ function setMarket(symbol,interval=state.interval) {
   document.querySelectorAll('[data-interval]').forEach(b=>{const active=b.dataset.interval===interval;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});
   render();return refresh();
 }
-function pause() {state.paused=!state.paused;live.post({t:'pause',on:state.paused});if(state.paused)cancel();else{live.post({t:'wake'});void refresh();}status();renderMarket();renderCalculator();renderSignals();renderPositions();renderLivebar();updateTitle();syncStreams();}
+function pause() {state.paused=!state.paused;live.post({t:'pause',on:state.paused});if(state.paused)cancel();else{live.post({t:'wake'});void refresh();}status();renderMarket();renderCalculator();renderSignals();renderPositions();renderLivebar();updateTitle();syncStreams();renderSkeletons();}
 $('market-form').addEventListener('submit',e=>{e.preventDefault();try{void setMarket($('symbol').value);}catch(error){showNotice('market-error',error.message);}});
 document.querySelectorAll('[data-interval]').forEach(b=>b.addEventListener('click',()=>void setMarket(state.symbol,b.dataset.interval)));
 document.querySelectorAll('[data-side]').forEach(b=>b.addEventListener('click',()=>{state.side=b.dataset.side;document.querySelectorAll('[data-side]').forEach(el=>{const active=el.dataset.side===state.side;el.classList.toggle('active',active);el.setAttribute('aria-pressed',String(active));});renderCalculator();}));
@@ -2867,7 +3076,43 @@ function liveFeed(port) {
       else if (c.ws && c.ws.readyState === 0 && now - c.last > 12000) fail(c, 'Verbindungsaufbau dauert zu lange');
     }
   }, 1000);
+  // Benachrichtigungen an Telegram/Discord: hier gesendet, damit Wiederholungen auch in Hintergrund-Tabs pünktlich laufen.
+  // Einfache Anfragen (Formular-Daten) ohne CORS-Vorabprüfung; je Dienst nacheinander mit gut 1 s Abstand (Ratenlimits).
+  const queue = {}, busy = {}, noCors = {}, sleep = ms => new Promise(r => setTimeout(r, ms));
+  function body(m) {
+    if (m.kind === 'telegram') { const b = new URLSearchParams(); for (const k in m.fields) b.append(k, m.fields[k]); return b; }
+    const f = new FormData(); f.append('payload_json', JSON.stringify(m.fields)); return f;
+  }
+  const req = (m, mode) => fetch(m.url, { method: 'POST', body: body(m), mode, credentials: 'omit', referrerPolicy: 'no-referrer', cache: 'no-store' });
+  async function deliver(m) {
+    for (let attempt = 1; ; attempt++) {
+      let res = null, err = 'Keine Verbindung';
+      try {
+        if (noCors[m.kind]) { await req(m, 'no-cors'); return { ok: true, unconfirmed: true }; }
+        res = await req(m, 'cors');
+      } catch {
+        // Antwort nicht lesbar: Netzfehler oder fehlende CORS-Freigabe. Einmal ohne Antwort senden (Zustellung dann unbestätigt).
+        if (!noCors[m.kind]) { try { await req(m, 'no-cors'); noCors[m.kind] = true; return { ok: true, unconfirmed: true }; } catch {} }
+      }
+      let wait = [2000, 5000, 15000, 30000][attempt - 1] || 30000;
+      if (res) {
+        let d = null; try { d = await res.json(); } catch {}
+        if (res.ok && (!d || d.ok !== false)) return { ok: true };
+        err = String((d && (d.description || d.message)) || 'HTTP ' + res.status).slice(0, 200);
+        if (res.status === 429) wait = Math.min(120, Number((d && ((d.parameters && d.parameters.retry_after) || d.retry_after)) || res.headers.get('retry-after')) || 5) * 1000 + 300;
+        else if (res.status < 500) return { ok: false, code: res.status, msg: err };
+      }
+      if (m.test || attempt > 4) return { ok: false, code: res ? res.status : 0, msg: err };
+      await sleep(wait);
+    }
+  }
+  async function pump(kind) {
+    if (busy[kind]) return; busy[kind] = true;
+    while (queue[kind].length) { const m = queue[kind].shift(), r = await deliver(m); port.post(Object.assign({ t: 'sent', id: m.id, kind }, r)); await sleep(1100); }
+    busy[kind] = false;
+  }
   port.on(m => {
+    if (m.t === 'send') { (queue[m.kind] = queue[m.kind] || []).push(m); pump(m.kind); return; }
     if (m.t === 'want') { const c = conn(m.m); c.want = new Set(m.streams); later(c); }
     else if (m.t === 'pause') { paused = !!m.on; for (const k in M) { M[k].fails = 0; sync(M[k]); } }
     else if (m.t === 'wake') { const now = Date.now(); for (const k in M) { const c = M[k]; if (wanted(c).size && (!c.ws || (c.ws.readyState === 1 && now - c.last > 5000))) { c.fails = 0; connect(c); } } }
@@ -2895,6 +3140,7 @@ function onLive(m) {
   if (m.t === 'beat') { live.lastMsg[m.m] = Date.now(); return; }
   if (m.t === 'k') return onKline(m);
   if (m.t === 'a') return onTrades(m);
+  if (m.t === 'sent') return onSent(m);
   if (m.t === 'st') {
     const prev = live.markets[m.m]?.st; live.markets[m.m] = m;
     if (m.st === 'live') { live.lastMsg[m.m] = Date.now(); if (prev !== 'live') onFeedUp(m.m); }
@@ -3090,11 +3336,13 @@ function applyLayout(pref, save = true) {
   if (changed) requestAnimationFrame(() => renderMarket());
 }
 desktopMq.addEventListener?.('change', () => { if (store.get(LAYOUT_KEY, 'auto') === 'auto') applyLayout('auto', false); });
+const TABS = ['chart', 'calc', 'pos', 'ind'];
 function setTab(tab, save = true) {
-  tab = ['chart', 'pos', 'ind'].includes(tab) ? tab : 'chart';
+  tab = TABS.includes(tab) ? tab : 'chart';
   const changed = docEl.dataset.activeTab !== tab; docEl.dataset.activeTab = tab; if (save) store.set(TAB_KEY, tab);
-  document.querySelectorAll('#tabbar [data-tab]').forEach(b => { const on = b.dataset.tab === tab; b.setAttribute('aria-selected', String(on)); b.tabIndex = on ? 0 : -1; });
+  document.querySelectorAll('#tabbar [data-tab]').forEach(b => { if (b.dataset.tab === tab) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
   if (changed && docEl.dataset.layout === 'tablet') { window.scrollTo({ top: 0 }); if (tab === 'chart') requestAnimationFrame(() => renderMarket()); }
+  return changed;
 }
 // Ziel anspringen; im iPad-Layout vorher den passenden Tab öffnen
 function goTo(id) {
@@ -3109,16 +3357,76 @@ function measureLivebar() { docEl.style.setProperty('--lb-h', $('livebar').offse
 new ResizeObserver(measureLivebar).observe($('livebar'));
 document.querySelectorAll('[data-theme-set]').forEach(b => b.addEventListener('click', () => applyTheme(b.dataset.themeSet)));
 document.querySelectorAll('[data-layout-set]').forEach(b => b.addEventListener('click', () => applyLayout(b.dataset.layoutSet)));
-$('tabbar').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b) setTab(b.dataset.tab); });
-$('tabbar').addEventListener('keydown', e => {
-  if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
-  const tabs = [...$('tabbar').querySelectorAll('[data-tab]')], i = tabs.findIndex(t => t.getAttribute('aria-selected') === 'true');
-  const j = e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1 : (i + (e.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
-  e.preventDefault(); setTab(tabs[j].dataset.tab); tabs[j].focus();
-});
+// Erneutes Tippen auf den aktiven Bereich springt nach oben
+$('tabbar').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b && !setTab(b.dataset.tab)) window.scrollTo({ top: 0, behavior: 'smooth' }); });
 document.addEventListener('click', e => { const g = e.target.closest('[data-goto]'); if (g) { e.preventDefault(); goTo(g.dataset.goto); } });
+// ---------- Schnell-Alarm aus der unteren Leiste ----------
+// Zwei Fingertipps: Abstand oder Chart-Marke wählen, „Alarm setzen“. Für andere Kürzel oder eine Notiz: das volle Formular.
+const qa = { sym: null };
+const roundPrice = v => Number(v.toFixed(v >= 100 ? 2 : v >= 1 ? 4 : Math.min(10, 3 - Math.floor(Math.log10(v)))));
+function qaLevels(cur) {
+  if (!cur || state.loadedSymbol !== qa.sym || !state.candles.length) return [];
+  const lv = lastChart?.levels || {}, out = [];
+  if (lv.resistance) out.push(['Widerstand', lv.resistance]);
+  if (lv.support) out.push(['Unterstützung', lv.support]);
+  const { start, end } = viewWindow(), prof = volumeProfile(state.candles.slice(start, end)); if (prof) out.push(['POC', prof.poc]);
+  const d = state.interval === '1d' ? ema200Closed(state.candles.filter(x => x.closeTime < Date.now())) : state.mtf['1d']?.ema200; if (d?.value) out.push(['EMA 200 (1D)', d.value]);
+  return out.filter(([, v]) => v > 0 && Math.abs(v / cur - 1) > 0.0005);
+}
+function openQuickAlarm() {
+  qa.sym = state.symbol; const cur = knownPrice(qa.sym);
+  put('qa-sym', coin(qa.sym)); put('qa-cur', cur ? priceText(cur) : '—'); $('qa-cur').classList.toggle('skel', !cur && !state.marketError && !state.paused);
+  $('qa-price').value = ''; showNotice('qa-error', null);
+  const lv = qaLevels(cur); $('qa-levels').hidden = !lv.length;
+  $('qa-levels').replaceChildren(...lv.map(([name, v]) => { const b = btn('', `${name} ${priceText(v)}`); b.type = 'button'; b.dataset.qaPrice = String(roundPrice(v)); b.append(el('small', '', `${signed((v / cur - 1) * 100)} %`)); return b; }));
+  qaPreview(); if (!$('qa-dialog').open) $('qa-dialog').showModal();
+}
+function qaPreview() {
+  const target = parseNum($('qa-price').value), cur = knownPrice(qa.sym), dir = target > 0 ? alarmDirection(target, cur) : null;
+  document.querySelectorAll('#qa-dialog [data-qa], #qa-dialog [data-qa-price]').forEach(b => b.setAttribute('aria-pressed', String(target > 0 && Math.abs(Number(b.dataset.qaPrice || roundPrice(cur * (1 + Number(b.dataset.qa) / 100))) - target) < 1e-12)));
+  put('qa-preview', !cur ? (state.marketError ? 'Kein aktueller Kurs – erst wieder Marktdaten laden.' : 'Kurs wird geladen …') : !(target > 0) ? 'Abstand oder Marke antippen – oder einen Preis eingeben.' : !dir ? 'Das ist der aktuelle Kurs – etwas darüber oder darunter wählen.'
+    : `Meldet sich, sobald ${coin(qa.sym)} ${dir === 'above' ? 'auf oder über' : 'auf oder unter'} ${priceText(target)} USDT ${dir === 'above' ? 'steigt' : 'fällt'} (${signed((target / cur - 1) * 100)} %).`);
+  $('qa-save').disabled = !dir;
+}
+function infoToast(text, ms = 3500) { const t = el('div', 'toast info'); t.setAttribute('role', 'status'); t.append(el('span', '', text)); $('toasts').append(t); setTimeout(() => t.remove(), ms); }
+function qaSave(e) {
+  e.preventDefault();
+  const sym = qa.sym, target = parseNum($('qa-price').value), cur = knownPrice(sym), dir = target > 0 ? alarmDirection(target, cur) : null;
+  if (!dir) { qaPreview(); return; }
+  const source = state.positions.find(p => p.symbol === sym)?.source || state.alarms.find(a => a.symbol === sym)?.source || (state.sourceFor === sym ? state.source : 'spot');
+  state.alarms.push({ id: newId(), symbol: sym, dir, price: target, note: '', source, createdAt: Date.now(), triggeredAt: null, triggerPrice: null });
+  persist(); renderAlarms(); renderMarket(); renderLivebar(); $('qa-dialog').close();
+  infoToast(`🔔 Alarm gesetzt: ${coin(sym)} ${dir === 'above' ? 'steigt auf/über' : 'fällt auf/unter'} ${priceText(target)} USDT`);
+}
+$('qa-open').addEventListener('click', () => { unlockAudio(); openQuickAlarm(); });
+$('qa-close').addEventListener('click', () => $('qa-dialog').close());
+$('qa-dialog').addEventListener('click', e => {
+  if (e.target === $('qa-dialog')) return $('qa-dialog').close(); // Tippen neben das Blatt schließt es
+  const b = e.target.closest('[data-qa], [data-qa-price]'), cur = knownPrice(qa.sym); if (!b || !cur) return;
+  $('qa-price').value = plain(b.dataset.qaPrice ? Number(b.dataset.qaPrice) : roundPrice(cur * (1 + Number(b.dataset.qa) / 100))); showNotice('qa-error', null); qaPreview();
+});
+$('qa-price').addEventListener('input', qaPreview);
+$('qa-form').addEventListener('submit', qaSave);
+$('qa-more').addEventListener('click', () => { const p = parseNum($('qa-price').value); $('qa-dialog').close(); goTo('alarms'); openAlarmForm(true, qa.sym, p > 0 ? p : null); });
+// ---------- Ladezustand: grau pulsierende Platzhalter statt Strichen ----------
+const SKEL_BARS = [38, 52, 46, 61, 57, 70, 64, 49, 55, 68, 74, 66, 58, 63, 77, 71, 80, 69, 62, 72, 84, 78, 73, 88];
+function chartSkeleton() {
+  const box = el('div', 'chart-skel'); box.setAttribute('aria-hidden', 'true');
+  for (const h of SKEL_BARS) { const i = el('i', 'skel'); i.style.height = h + '%'; box.append(i); }
+  const f = document.createDocumentFragment(); f.append(box, el('span', 'sr-only', 'Marktdaten werden geladen')); return f;
+}
+const SKEL_MARKET = ['price', 'candle-change', 'ohlc', 'lb-price', 'lg-support', 'lg-resistance', 'poc-value', 'poc-note', 'poc-dist', 'poc-va', 'bb-value', 'bb-note', 'bb-bands', 'bb-stat', 'ema-chart',
+  'rsi-value', 'rsi-note', 'atr-value', 'atr-note', 'volume-value', 'volume-note', 'support', 'support-dist', 'resistance', 'resistance-dist', 'quantity', 'entry', 'target'];
+function renderSkeletons() {
+  const mkt = !state.candles.length && !state.marketError && !state.paused, set = (ids, on) => ids.forEach(id => $(id).classList.toggle('skel', on));
+  set(SKEL_MARKET, mkt);
+  set(['ema-value', 'ema-note', 'ema-dist'], mkt || (!state.paused && state.interval !== '1d' && !state.mtf['1d']));
+  set(['funding-value', 'funding-note'], !state.paused && !state.funding && !state.fundingError);
+  set(['oi-value', 'oi-note'], !state.paused && !state.oi && !state.oiError);
+  $('dash').setAttribute('aria-busy', String(mkt));
+}
 // ---------- Menüs und Info-Symbole ----------
-const MENUS = [['notify-menu', 'notify-panel', () => { renderNotify(); renderWake(); }], ['view-menu', 'view-panel', () => { renderInstall(); renderStorageInfo(); }]];
+const MENUS = [['notify-menu', 'notify-panel', () => { renderNotify(); renderWake(); renderChanSummary(); }], ['view-menu', 'view-panel', () => { renderInstall(); renderStorageInfo(); }]];
 function closeMenus() { for (const [b, p] of MENUS) if (!$(p).hidden) { $(p).hidden = true; $(b).setAttribute('aria-expanded', 'false'); } }
 for (const [b, p, onOpen] of MENUS) $(b).addEventListener('click', e => { e.stopPropagation(); const open = $(p).hidden; closeMenus(); $(p).hidden = !open; $(b).setAttribute('aria-expanded', String(open)); if (open) onOpen(); });
 document.addEventListener('click', e => {
@@ -3176,7 +3484,7 @@ addEventListener('beforeunload', e => {
 });
 // ---------- Abgleich zwischen offenen Tabs ----------
 const bc = (() => { try { return new BroadcastChannel('scalpdesk'); } catch { return null; } })();
-const SYNC_KEYS = [POS_KEY, HIST_KEY, MONEY_KEY, ALARM_KEY, SETUP_KEY, WATCH_KEY, CHANGES_KEY];
+const SYNC_KEYS = [POS_KEY, HIST_KEY, MONEY_KEY, ALARM_KEY, SETUP_KEY, WATCH_KEY, CHANGES_KEY, 'scalpdesk.channels.v1'];
 function broadcastData(keys) { if (!bc || !keys.length) return; try { bc.postMessage({ t: 'data', from: TAB_ID, items: keys.map(k => [k, store.get(k)]) }); } catch {} }
 function adoptData(items) {
   for (const [k, v] of items) {
@@ -3188,6 +3496,7 @@ function adoptData(items) {
     else if (k === ALARM_KEY) state.alarms = loadRecords(ALARM_KEY, loadAlarm);
     else if (k === SETUP_KEY) state.setups = loadSetups();
     else if (k === WATCH_KEY) state.watch = loadWatch();
+    else if (k === CHAN_KEY) { chan = loadChannels(); renderChanSummary(); if ($('chan-dialog').open) fillChanForm(); }
   }
   importantSig = dataSig(); posStructure = ''; histStructure = ''; alarmKey = ''; render();
 }
@@ -3377,6 +3686,198 @@ $('backup-share').hidden = !canShareFiles;
 importantSig = dataSig();
 catchUpQueue = Object.keys(lastSeen).length ? { ...lastSeen } : null;
 renderInstall(); renderWake();
+// ---------- Gestaffelte Take-Profits (Teil-Schließungen) im Szenario-Rechner ----------
+// Reine Rechnung: Jede Tranche wird zu ihrem Zielkurs geschlossen. Abstände in % in Gewinnrichtung, Anteile in % der Position.
+// Ein nicht verteilter Rest wird zum Kurs des letzten Ziels bewertet. Vor Gebühren, Funding und Slippage.
+function tpLadder({ notional, stake = null, side, price = null, tps, slPct = null, breakEven = false, liqDistance = null }) {
+  if (!(notional > 0)) throw new Error('Erst Einsatz und Hebel oben eintragen.');
+  const legs = tps.map((t, i) => ({ n: i + 1, move: t.move, share: t.share })).filter(t => t.share !== 0 && !(Number.isNaN(t.share) && Number.isNaN(t.move)));
+  if (!legs.length) return { empty: true };
+  for (const t of legs) {
+    if (!(t.move > 0 && t.move < 1000)) throw new Error(`TP ${t.n}: Abstand größer als 0 % eintragen.`);
+    if (!(t.share > 0 && t.share <= 100)) throw new Error(`TP ${t.n}: Anteil zwischen 0 und 100 % eintragen.`);
+  }
+  for (let i = 1; i < legs.length; i++) if (legs[i].move <= legs[i - 1].move) throw new Error(`TP ${legs[i].n} muss weiter entfernt liegen als TP ${legs[i - 1].n}.`);
+  const total = legs.reduce((a, t) => a + t.share, 0);
+  if (total > 100.0001) throw new Error(`Die Anteile ergeben zusammen ${number(total, 0)} % – mehr als 100 % lässt sich nicht schließen.`);
+  if (slPct !== null && !(slPct > 0 && slPct < 100)) throw new Error('Stop-Loss-Abstand zwischen 0 und 100 % eintragen.');
+  const dir = side === 'short' ? -1 : 1, px = m => Number.isFinite(price) && price > 0 ? price * (1 + dir * m / 100) : null;
+  let open = 100, sum = 0;
+  const rows = legs.map(t => { const pnl = notional * t.share / 100 * t.move / 100; open -= t.share; sum += pnl; return { ...t, price: px(t.move), pnl, cum: sum, open: Math.max(0, open) }; });
+  const last = legs.at(-1), restShare = Math.max(0, 100 - total), restPnl = notional * restShare / 100 * last.move / 100, all = sum + restPnl;
+  const out = { rows, total, restShare, restPnl, all, avgMove: all / notional * 100, roe: stake > 0 ? all / stake * 100 : null, firstAll: notional * legs[0].move / 100, lastAll: notional * last.move / 100 };
+  if (slPct !== null) {
+    out.slPrice = px(-slPct); out.stopLoss = -notional * slPct / 100;
+    out.afterTp1 = rows[0].pnl + (breakEven ? 0 : -notional * (100 - rows[0].share) / 100 * slPct / 100);
+    out.crv = all / -out.stopLoss; out.beyondLiq = Number.isFinite(liqDistance) && slPct >= liqDistance;
+  }
+  return out;
+}
+const LADDER_KEY = 'scalpdesk.ladder.v1', LADDER_IDS = ['tp1-move', 'tp1-share', 'tp2-move', 'tp2-share', 'tp3-move', 'tp3-share', 'ladder-sl'];
+(() => { const v = store.get(LADDER_KEY); if (!v || typeof v !== 'object') return; for (const id of LADDER_IDS) if (typeof v[id] === 'string') $(id).value = v[id].slice(0, 20); $('ladder-be').checked = !!v.be; })();
+function readLadder() {
+  const raw = Object.fromEntries(LADDER_IDS.map(id => [id, $(id).value])); raw.be = $('ladder-be').checked; store.set(LADDER_KEY, raw);
+  const sl = parseNum(raw['ladder-sl']);
+  return { tps: [1, 2, 3].map(i => ({ move: parseNum(raw[`tp${i}-move`]), share: parseNum(raw[`tp${i}-share`]) })), sl: Number.isNaN(sl) ? null : sl, be: raw.be };
+}
+function renderLadder(res) {
+  const box = $('ladder-out'), v = readLadder(), shares = v.tps.map(t => Number.isNaN(t.share) ? 0 : t.share).join(',');
+  document.querySelectorAll('[data-split]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.split === shares)));
+  $('ladder-be').disabled = v.sl === null;
+  const note = (cls, text) => { box.replaceChildren(el('p', cls, text)); put('ladder-sum', 'Teil-Schließungen, z. B. 50 % bei TP 1'); };
+  if (!res) return note('note', 'Erst die Eingaben oben korrigieren.');
+  let L; try { L = tpLadder({ notional: res.notional, stake: value('stake'), side: state.side, price: state.marketError ? null : currentPrice(), tps: v.tps, slPct: v.sl, breakEven: v.be, liqDistance: res.liqDistance }); }
+  catch (e) { return note('err', e.message); }
+  if (L.empty) return note('note', 'Mindestens ein Ziel mit Abstand und Anteil eintragen.');
+  const line = (label, val, sub, x, cls = '') => { const r = el('div', 'lrow' + (cls ? ' ' + cls : '')), s = el('strong', '', val); if (x !== undefined) { s.classList.toggle('positive', x > 0); s.classList.toggle('negative', x < 0); } r.append(el('span', '', label), s); if (sub) r.append(el('small', '', sub)); return r; };
+  const pctTxt = x => number(x, x % 1 ? 2 : 0), nodes = L.rows.map(r => line(`TP ${r.n} · ${number(r.move)} % → ${r.price ? priceText(r.price) + ' USDT' : 'Kurs ausstehend'}`, `${signed(r.pnl)} USDT`, `${pctTxt(r.share)} % schließen · danach ${pctTxt(r.open)} % offen`, r.pnl));
+  if (L.restShare > 0) nodes.push(line(`Rest ${pctTxt(L.restShare)} % – zum Kurs von TP ${L.rows.at(-1).n} bewertet`, `${signed(L.restPnl)} USDT`, null, L.restPnl));
+  nodes.push(line('Alle Ziele erreicht', usdt(L.all, 2, true), `${L.roe !== null ? `${signed(L.roe, 1)} % auf den Einsatz · ` : ''}Ø Ausstieg ${number(L.avgMove)} % vom Einstieg`, L.all, 'total'));
+  if (L.stopLoss !== undefined) {
+    nodes.push(line(`TP ${L.rows[0].n} erreicht, danach ${v.be ? 'Stop auf Einstieg' : 'Stop-Loss'}`, `${signed(L.afterTp1)} USDT`, null, L.afterTp1));
+    nodes.push(line(`Stop-Loss vor TP ${L.rows[0].n} · −${number(v.sl)} %${L.slPrice ? ` → ${priceText(L.slPrice)} USDT` : ''}`, `${signed(L.stopLoss)} USDT`, null, L.stopLoss));
+    nodes.push(line('Chance / Risiko (alle Ziele : Stop)', `${number(L.crv, 1)} : 1`));
+    if (L.beyondLiq) nodes.push(el('p', 'err', `Der Stop liegt hinter der modellierten Liquidation (≈ ${number(res.liqDistance)} %): Die Position würde vorher liquidiert.`));
+  }
+  nodes.push(el('p', 'note', `Zum Vergleich: alles bei TP ${L.rows[0].n} ${signed(L.firstAll)} USDT · alles bei TP ${L.rows.at(-1).n} ${signed(L.lastAll)} USDT. Vor Gebühren und Funding.`));
+  box.replaceChildren(...nodes);
+  put('ladder-sum', `Alle Ziele ${signed(L.all)} USDT${L.crv !== undefined ? ` · Chance/Risiko ${number(L.crv, 1)} : 1` : ''}`);
+}
+$('ladder').addEventListener('input', () => renderCalculator());
+$('ladder-presets').addEventListener('click', e => { const b = e.target.closest('[data-split]'); if (!b) return; b.dataset.split.split(',').forEach((x, i) => { $(`tp${i + 1}-share`).value = x; }); renderCalculator(); });
+// ---------- Benachrichtigungs-Kanäle: Telegram-Bot und Discord-Webhook ----------
+// Kein eigener Server: Der Browser, in dem das Dashboard offen ist, schickt die Meldung selbst – über den Web Worker (siehe liveFeed).
+// Token und Webhook-URL bleiben lokal (nicht im Backup, nicht im QR-Code) und gehen nur an Telegram bzw. Discord.
+const CHAN_KEY = 'scalpdesk.channels.v1';
+const TG_TOKEN_RE = /^\d{5,15}:[A-Za-z0-9_-]{30,80}$/, TG_CHAT_RE = /^(-?\d{1,20}|@[A-Za-z][A-Za-z0-9_]{4,31})$/;
+const DC_URL_RE = /^https:\/\/(?:(?:ptb|canary)\.)?discord(?:app)?\.com\/api(?:\/v\d{1,2})?\/webhooks\/\d{5,25}\/[A-Za-z0-9_-]{20,120}(?:\?thread_id=\d{5,25})?$/;
+function loadChannels() {
+  const v = store.get(CHAN_KEY), o = v && typeof v === 'object' ? v : {}, str = (x, n) => typeof x === 'string' ? x.trim().slice(0, n) : '';
+  return { tg: { token: str(o.tg?.token, 120), chat: str(o.tg?.chat, 40), on: o.tg?.on !== false }, dc: { url: str(o.dc?.url, 300), on: o.dc?.on !== false },
+    ev: { alarm: o.ev?.alarm !== false, pos: o.ev?.pos !== false, day: o.ev?.day !== false } };
+}
+let chan = loadChannels();
+const chanState = { tg: null, dc: null }, chanClaimed = new Set(), sendWait = new Map(), CHAN_NAME = { tg: 'Telegram', dc: 'Discord' };
+let sendSeq = 0;
+const chanValid = k => k === 'tg' ? TG_TOKEN_RE.test(chan.tg.token) && TG_CHAT_RE.test(chan.tg.chat) : DC_URL_RE.test(chan.dc.url);
+const chanReady = k => chan[k].on && chanValid(k);
+function saveChannels() { if (store.set(CHAN_KEY, chan)) broadcastData([CHAN_KEY]); renderChanSummary(); }
+// Nachricht über den Worker senden; das Ergebnis kommt als {t:'sent'} zurück (onSent)
+function chanSend(k, text, test = false) {
+  const id = ++sendSeq, m = k === 'tg'
+    ? { t: 'send', id, kind: 'telegram', test, url: `https://api.telegram.org/bot${chan.tg.token}/sendMessage`, fields: { chat_id: chan.tg.chat, text: text.slice(0, 4000), link_preview_options: JSON.stringify({ is_disabled: true }) } }
+    : { t: 'send', id, kind: 'discord', test, url: chan.dc.url, fields: { content: text.slice(0, 1900), allowed_mentions: { parse: [] } } };
+  return new Promise(resolve => { sendWait.set(id, { k, resolve }); live.post(m); });
+}
+function chanError(k, m) {
+  if (!m.code) return `Keine Verbindung zu ${CHAN_NAME[k]} – Internet, Werbeblocker oder Firmen-Firewall prüfen.`;
+  if (m.code === 429) return 'Zu viele Nachrichten in kurzer Zeit – bitte etwas später erneut.';
+  if (k === 'tg') {
+    if (m.code === 401 || m.code === 404) return 'Token ungültig – bitte neu aus @BotFather kopieren.';
+    if (m.code === 400 && /chat not found/i.test(m.msg)) return 'Chat nicht gefunden – dem Bot zuerst eine Nachricht schreiben und die Chat-ID neu ermitteln.';
+    if (m.code === 403) return 'Der Bot darf dir nicht schreiben (blockiert oder nie gestartet) – im Bot „Start“ tippen.';
+  } else {
+    if (m.code === 401 || m.code === 404) return 'Diesen Webhook gibt es nicht mehr – in Discord neu anlegen und die URL einfügen.';
+  }
+  return `${CHAN_NAME[k]} meldet Fehler ${m.code}: ${m.msg}`;
+}
+function onSent(m) {
+  const w = sendWait.get(m.id); if (!w) return; sendWait.delete(m.id);
+  chanState[w.k] = { ok: m.ok, at: Date.now(), text: m.ok ? (m.unconfirmed ? 'gesendet – der Browser kann die Zustellung hier nicht bestätigen' : 'zugestellt') : chanError(w.k, m) };
+  renderChanStatus(); renderChanSummary(); w.resolve(m);
+}
+// Meldung an alle aktiven Kanäle; je Ereignis nur einmal, auch wenn mehrere Tabs offen sind (Abstimmung über die IndexedDB)
+async function notifyChannels(type, key, text, ttl) {
+  if (!chan.ev[type]) return;
+  const ks = ['tg', 'dc'].filter(chanReady); if (!ks.length) return;
+  if (!(await store.claim(key, ttl))) return;
+  chanClaimed.add(key);
+  const msg = `${text}\n${new Date().toLocaleTimeString('de-DE')} Uhr`;
+  for (const k of ks) void chanSend(k, msg);
+}
+// Kurs wieder weg von der Marke: nächste Berührung darf erneut melden (nur für selbst gesendete Meldungen)
+function chanRelease(key) { if (chanClaimed.delete(key)) void store.release(key); }
+// ---------- Einrichtungs-Fenster ----------
+const hhmmss = ms => new Date(ms).toLocaleTimeString('de-DE');
+function chanLine(k) {
+  if (!chan[k][k === 'tg' ? 'token' : 'url']) return 'nicht eingerichtet';
+  if (!chanValid(k)) return k === 'tg' ? 'unvollständig (Token oder Chat-ID fehlt)' : 'Webhook-URL unvollständig';
+  const s = chanState[k];
+  return `${chan[k].on ? 'aktiv' : 'pausiert'}${s ? ` · ${hhmmss(s.at)} ${s.ok ? s.text : 'Fehler'}` : ''}`;
+}
+function renderChanSummary() {
+  const any = chan.tg.token || chan.dc.url;
+  put('chan-summary', any ? `Telegram: ${chanLine('tg')} · Discord: ${chanLine('dc')}` : 'Noch kein Kanal eingerichtet – Anleitung im Fenster.');
+}
+function chanMsg(k, ok, text) { const p = $(k + '-status'); p.textContent = text; p.className = 'chan-status' + (ok === true ? ' ok' : ok === false ? ' err' : ''); }
+function renderChanStatus() {
+  for (const k of ['tg', 'dc']) {
+    const s = chanState[k], has = chan[k][k === 'tg' ? 'token' : 'url'];
+    if (s) chanMsg(k, s.ok, `${hhmmss(s.at)}: ${s.ok ? 'Nachricht ' + s.text + '.' : s.text}`);
+    else if (!has) chanMsg(k, null, k === 'tg' ? 'Noch nicht eingerichtet.' : 'Noch nicht eingerichtet.');
+    else chanMsg(k, chanValid(k) ? null : false, chanValid(k) ? (chan[k].on ? 'Eingerichtet und aktiv. Mit „Test senden“ prüfen.' : 'Eingerichtet, aber pausiert.') : k === 'tg' ? (TG_TOKEN_RE.test(chan.tg.token) ? 'Chat-ID fehlt: dem Bot schreiben, dann „Chat-ID ermitteln“.' : 'Das sieht nicht wie ein Bot-Token aus (Format 123456789:AA…).') : 'Das sieht nicht wie eine Discord-Webhook-URL aus (https://discord.com/api/webhooks/…).');
+  }
+}
+function fillChanForm() {
+  $('tg-token').value = chan.tg.token; $('tg-chat').value = chan.tg.chat; $('tg-on').checked = chan.tg.on;
+  $('dc-url').value = chan.dc.url; $('dc-on').checked = chan.dc.on;
+  $('chan-ev-alarm').checked = chan.ev.alarm; $('chan-ev-pos').checked = chan.ev.pos; $('chan-ev-day').checked = chan.ev.day;
+  renderChanStatus();
+}
+function readChanForm() {
+  chan = { tg: { token: $('tg-token').value.trim(), chat: $('tg-chat').value.trim(), on: $('tg-on').checked }, dc: { url: $('dc-url').value.trim(), on: $('dc-on').checked },
+    ev: { alarm: $('chan-ev-alarm').checked, pos: $('chan-ev-pos').checked, day: $('chan-ev-day').checked } };
+  saveChannels(); renderChanStatus();
+}
+function openChan() {
+  closeMenus(); fillChanForm();
+  $('tg-guide').open = !chan.tg.token && !chan.dc.url; $('dc-guide').open = false;
+  if (!$('chan-dialog').open) $('chan-dialog').showModal();
+}
+async function tgApi(token, method, params) {
+  let res; const url = `https://api.telegram.org/bot${token}/${method}${params ? '?' + new URLSearchParams(params) : ''}`;
+  try { res = await fetch(url, { credentials: 'omit', referrerPolicy: 'no-referrer', cache: 'no-store' }); }
+  catch { throw new Error('Telegram nicht erreichbar – Internet, Werbeblocker oder Firmen-Firewall prüfen.'); }
+  let d = null; try { d = await res.json(); } catch {}
+  if (!res.ok || !d?.ok) throw new Error(res.status === 401 || res.status === 404 ? 'Token ungültig – bitte neu aus @BotFather kopieren.' : res.status === 409 ? 'Für diesen Bot ist ein Webhook eingerichtet; Chat-ID bitte von Hand eintragen (z. B. über @userinfobot).' : `Telegram meldet Fehler ${res.status}${d?.description ? ': ' + d.description : ''}`);
+  return d.result;
+}
+async function tgDetect() {
+  readChanForm();
+  if (!TG_TOKEN_RE.test(chan.tg.token)) return chanMsg('tg', false, 'Bitte zuerst den Bot-Token aus @BotFather einfügen (Format 123456789:AA…).');
+  chanMsg('tg', null, 'Frage Telegram …'); $('tg-detect').disabled = true;
+  try {
+    const me = await tgApi(chan.tg.token, 'getMe'), ups = await tgApi(chan.tg.token, 'getUpdates', { limit: 100, timeout: 0 });
+    const chats = (Array.isArray(ups) ? ups : []).map(u => (u.message || u.edited_message || u.my_chat_member || u.channel_post)?.chat).filter(c => c && c.id !== undefined);
+    const c = chats.reverse().find(x => x.type === 'private') || chats[0];
+    if (!c) return chanMsg('tg', false, `Bot @${me.username} gefunden, aber er hat noch keine Nachricht von dir. In Telegram den Bot öffnen, „Start“ tippen oder „Hallo“ schreiben und dann erneut „Chat-ID ermitteln“.`);
+    $('tg-chat').value = String(c.id); readChanForm();
+    chanMsg('tg', true, `Gefunden: ${c.first_name || c.title || c.username || 'Chat'} (ID ${c.id}) über Bot @${me.username}. Jetzt „Test senden“.`);
+  } catch (e) { chanMsg('tg', false, e.message); }
+  finally { $('tg-detect').disabled = false; }
+}
+async function chanTest(k) {
+  readChanForm();
+  if (!chanValid(k)) { renderChanStatus(); return; }
+  const b = $(k + '-test'); b.disabled = true; chanMsg(k, null, 'Sende Testnachricht …');
+  const r = await chanSend(k, `✅ Test von Scalp Desk: Alarme kommen hier an.\n${hhmmss(Date.now())} Uhr`, true);
+  b.disabled = false;
+  if (r.ok && !chan[k].on) { chan[k].on = true; $(k + '-on').checked = true; saveChannels(); renderChanStatus(); }
+}
+$('chan-open').addEventListener('click', openChan);
+$('chan-close').addEventListener('click', () => $('chan-dialog').close());
+$('chan-done').addEventListener('click', () => $('chan-dialog').close());
+$('chan-dialog').addEventListener('change', readChanForm);
+for (const id of ['tg-token', 'tg-chat', 'dc-url']) $(id).addEventListener('blur', readChanForm);
+$('tg-detect').addEventListener('click', () => void tgDetect());
+$('tg-test').addEventListener('click', () => void chanTest('tg'));
+$('dc-test').addEventListener('click', () => void chanTest('dc'));
+$('chan-clear').addEventListener('click', () => {
+  if (!confirm('Bot-Token, Chat-ID und Webhook-URL auf diesem Gerät löschen?')) return;
+  chan = { tg: { token: '', chat: '', on: true }, dc: { url: '', on: true }, ev: chan.ev }; chanState.tg = chanState.dc = null;
+  saveChannels(); fillChanForm();
+});
+renderChanSummary();
 render();startLive();void refresh();void initAutoBackup();void requestWake();
 </script>
 </head>
@@ -3386,8 +3887,8 @@ render();startLive();void refresh();void initAutoBackup();void requestWake();
     <a class="brand" href="weather-widget-v2.html" aria-label="Scalp Desk neu laden"><span class="brand-icon" aria-hidden="true">▥</span>Scalp<span>Desk</span><span class="tag">MARKET WORKSPACE</span></a>
     <div class="update-controls">
       <span class="status" id="status" role="status" data-feed="off">Verbindung wird aufgebaut</span>
-      <button id="backup-badge" class="button ghost backup-badge" type="button" aria-controls="data-panel">⤓ Backup <span class="due" id="backup-count" hidden></span></button>
-      <span class="menu-wrap"><button id="notify-menu" class="button ghost" type="button" aria-expanded="false" aria-controls="notify-panel">🔔 Hinweise</button>
+      <button id="backup-badge" class="button ghost backup-badge" type="button" aria-controls="data-panel" title="Datensicherung">💾<span class="lbl"> Backup</span> <span class="due" id="backup-count" hidden></span></button>
+      <span class="menu-wrap"><button id="notify-menu" class="button ghost" type="button" aria-expanded="false" aria-controls="notify-panel" title="Hinweise &amp; Benachrichtigungen">🔔<span class="lbl"> Hinweise</span></button>
         <div class="menu-panel" id="notify-panel" hidden>
           <h3>Hinweise bei Stop, Ziel und Kurs-Alarm</h3>
           <button type="button" class="button ghost" id="notify-toggle" aria-pressed="false">🖥️ Pop-up aus</button><small id="notify-status"></small>
@@ -3396,9 +3897,11 @@ render();startLive();void refresh();void initAutoBackup();void requestWake();
           <button type="button" class="button ghost" id="sound-toggle" aria-pressed="false" title="Ton, wenn Stop-Loss, Take-Profit oder ein Kurs-Alarm erreicht wird">🔕 Alarm-Ton</button>
           <button type="button" class="button ghost" id="wake-toggle" aria-pressed="false" hidden>🔆 Bildschirm wach halten: aus</button><small id="wake-note" hidden></small>
           <button type="button" class="button ghost" id="notify-test">Test-Hinweis senden</button>
-          <small id="feed-note">Live-Kurse kommen per WebSocket direkt von Binance. Jede Kursmeldung wird sofort gegen Stop, Ziel und Alarme geprüft, auch kurze Dochte. Der Datenstrom läuft in einem eigenen Hintergrund-Thread und wird dadurch in Hintergrund-Tabs nicht gedrosselt. iPad und iPhone pausieren Webseiten im Hintergrund; beim Zurückkehren prüft das Dashboard die verpasste Zeit anhand der 1-Minuten-Kerzen nach. Bei geschlossener Seite gibt es keine Hinweise.</small>
+          <div class="head-line"><button type="button" class="button ghost" id="chan-open" aria-haspopup="dialog">📨 Telegram / Discord einrichten …</button><details class="tip left"><summary aria-label="Wozu Telegram oder Discord?"><span>i</span></summary><div class="tip-body"><p>Schickt Kurs-Alarme, Stop-Loss/Take-Profit und das Tages-Verlustlimit zusätzlich über deinen eigenen Telegram-Bot oder einen Discord-Webhook – die Meldung kommt dann als Push aufs Smartphone, auch wenn Safari dort schläft.</p><p>Gesendet wird von dem Gerät, auf dem das Dashboard gerade geöffnet ist (z. B. dein Computer). Eine Schritt-für-Schritt-Anleitung steht im Fenster.</p></div></details></div>
+          <small id="chan-summary"></small>
+          <small id="feed-note">Live-Kurse kommen per WebSocket direkt von Binance. Jede Kursmeldung wird sofort gegen Stop, Ziel und Alarme geprüft, auch kurze Dochte. Der Datenstrom läuft in einem eigenen Hintergrund-Thread und wird dadurch in Hintergrund-Tabs nicht gedrosselt. iPad und iPhone pausieren Webseiten im Hintergrund; beim Zurückkehren prüft das Dashboard die verpasste Zeit anhand der 1-Minuten-Kerzen nach. Bei geschlossener Seite gibt es keine Hinweise – auch nicht per Telegram oder Discord.</small>
         </div></span>
-      <span class="menu-wrap"><button id="view-menu" class="button ghost" type="button" aria-expanded="false" aria-controls="view-panel">◐ Ansicht</button>
+      <span class="menu-wrap"><button id="view-menu" class="button ghost" type="button" aria-expanded="false" aria-controls="view-panel" title="Ansicht">🌓<span class="lbl"> Ansicht</span></button>
         <div class="menu-panel" id="view-panel" hidden>
           <h3>Ansicht</h3>
           <h4>Design</h4>
@@ -3411,12 +3914,12 @@ render();startLive();void refresh();void initAutoBackup();void requestWake();
           <small id="install-note"></small>
           <small id="storage-note"></small>
         </div></span>
-      <button id="pause" class="button ghost" type="button" aria-pressed="false">Ⅱ Pause</button>
+      <button id="pause" class="button ghost" type="button" aria-pressed="false" aria-label="Pause" title="Aktualisierung anhalten"><span id="pause-ico" aria-hidden="true">Ⅱ</span><span class="lbl" id="pause-lbl"> Pause</span></button>
       <button id="refresh" class="button icon" type="button" aria-label="Daten jetzt aktualisieren" title="Jetzt aktualisieren">↻</button>
     </div>
   </header>
   <div class="livebar" id="livebar" aria-label="Live-Überblick">
-    <button type="button" class="lb-market" data-goto="chart-sec" aria-label="Zum Chart"><span class="lb-sym" id="lb-sym">BTC</span><span class="lb-price" id="lb-price">—</span><span class="change" id="lb-change"></span></button>
+    <button type="button" class="lb-market" data-goto="chart-sec" aria-label="Zum Chart"><span class="lb-sym" id="lb-sym">BTC</span><span class="lb-price skel" id="lb-price">—</span><span class="change" id="lb-change"></span></button>
     <a class="heat" id="lb-heat" href="#signals" data-goto="signals" aria-label="Signale je Zeitraum, zur Signal-Übersicht"></a>
     <span class="lb-spacer"></span>
     <span class="lb-alarm" id="lb-alarm" hidden></span>
@@ -3434,43 +3937,43 @@ render();startLive();void refresh();void initAutoBackup();void requestWake();
           <div class="watchlist" id="watchlist" role="group" aria-label="Vorauswahl"></div>
         </form>
         <div id="market-error" class="notice error" role="alert" hidden></div>
-        <div class="chart-heading"><div><div class="pair-title"><span class="coin-icon" id="coin-icon">B</span><h2 id="pair-label">BTC <span>/ USDT</span></h2><span class="badge" id="market-badge">SPOT</span></div><div class="price-row"><strong id="price">—</strong><span class="unit">USDT</span><span class="change" id="candle-change">—</span></div><div class="signal-line" id="signal-line" hidden></div><button type="button" class="button ghost alarm-btn" id="alarm-here">🔔 Alarm für diesen Kurs</button></div><div class="chart-meta"><span id="price-eur">Eurokurs ausstehend</span><span id="updated">Noch keine Marktdaten</span></div></div>
+        <div class="chart-heading"><div><div class="pair-title"><span class="coin-icon" id="coin-icon">B</span><h2 id="pair-label">BTC <span>/ USDT</span></h2><span class="badge" id="market-badge">SPOT</span></div><div class="price-row"><strong id="price" class="skel">—</strong><span class="unit">USDT</span><span class="change skel" id="candle-change">—</span></div><div class="signal-line" id="signal-line" hidden></div><button type="button" class="button ghost alarm-btn" id="alarm-here">🔔 Alarm für diesen Kurs</button></div><div class="chart-meta"><span id="price-eur">Eurokurs ausstehend</span><span id="updated">Noch keine Marktdaten</span></div></div>
         <div class="chart-toolbar"><div class="intervals" role="group" aria-label="Kerzenintervall"><button type="button" data-interval="1m" class="active" aria-pressed="true">1m</button><button type="button" data-interval="5m" aria-pressed="false">5m</button><button type="button" data-interval="15m" aria-pressed="false">15m</button><button type="button" data-interval="1h" aria-pressed="false">1h</button><button type="button" data-interval="4h" aria-pressed="false">4h</button><button type="button" data-interval="1d" aria-pressed="false">1d</button><button type="button" data-interval="1w" aria-pressed="false">1w</button><button type="button" data-interval="1M" aria-pressed="false" title="1 Monat">1M</button></div><div class="zoom-controls" role="group" aria-label="Chart zoomen und blättern"><button id="pan-back" type="button" aria-label="Weiter zurück in der Zeit">◀</button><button id="zoom-out" type="button" aria-label="Herauszoomen, mehr Kerzen">−</button><button id="zoom-in" type="button" aria-label="Hineinzoomen, weniger Kerzen">+</button><button id="pan-fwd" type="button" aria-label="Weiter Richtung jetzt">▶</button><button id="pan-now" type="button" hidden>Jetzt</button><details class="tip"><summary aria-label="Bedienung des Charts"><span>i</span></summary><div class="tip-body"><p>Zoomen: zwei Finger auseinander/zusammen, Strg + Mausrad oder − / +.</p><p>Zurückblättern: mit einem Finger wischen, waagrecht scrollen oder ◀ ▶. Doppelt tippen: zurück zu jetzt.</p><p>Tastatur: Pfeiltasten wählen Kerzen, + und − zoomen.</p></div></details></div></div>
-        <div class="ohlc" id="ohlc">O — &nbsp; H — &nbsp; L — &nbsp; C —</div>
-        <div id="chart" class="chart" tabindex="0" role="img" aria-label="Kerzenchart. Mit Pfeiltasten Kerzen auswählen, mit Plus und Minus zoomen."><div class="chart-empty"><span class="empty-mark" aria-hidden="true">▥</span><strong>Marktdaten werden geladen</strong><span>Öffentliche Binance-Marktdaten</span></div></div>
-        <div class="chart-footer"><div class="chart-legend"><span class="lg"><i class="legend-line support"></i><span>Unterstützung<small id="lg-support">—</small></span></span><span class="lg"><i class="legend-line resistance"></i><span>Widerstand<small id="lg-resistance">—</small></span></span><span class="overlay-toggles" role="group" aria-label="Chart-Ebenen ein- und ausblenden"><button type="button" data-overlay="vp" aria-pressed="true"><i class="sw vp"></i>Volumenprofil · POC</button><button type="button" data-overlay="ema200" aria-pressed="true"><i class="sw ema"></i>EMA 200</button><button type="button" data-overlay="bb" aria-pressed="true"><i class="sw bb"></i>Bollinger</button></span></div><span id="chart-caption">Zeitachse UTC · 1m</span></div>
+        <div class="ohlc skel" id="ohlc">O — &nbsp; H — &nbsp; L — &nbsp; C —</div>
+        <div id="chart" class="chart" tabindex="0" role="img" aria-label="Kerzenchart. Mit Pfeiltasten Kerzen auswählen, mit Plus und Minus zoomen."><div class="chart-skel" aria-hidden="true"><i class="skel" style="height:38%"></i><i class="skel" style="height:52%"></i><i class="skel" style="height:46%"></i><i class="skel" style="height:61%"></i><i class="skel" style="height:57%"></i><i class="skel" style="height:70%"></i><i class="skel" style="height:64%"></i><i class="skel" style="height:49%"></i><i class="skel" style="height:55%"></i><i class="skel" style="height:68%"></i><i class="skel" style="height:74%"></i><i class="skel" style="height:66%"></i><i class="skel" style="height:58%"></i><i class="skel" style="height:63%"></i><i class="skel" style="height:77%"></i><i class="skel" style="height:71%"></i><i class="skel" style="height:80%"></i><i class="skel" style="height:69%"></i><i class="skel" style="height:62%"></i><i class="skel" style="height:72%"></i><i class="skel" style="height:84%"></i><i class="skel" style="height:78%"></i><i class="skel" style="height:73%"></i><i class="skel" style="height:88%"></i></div><span class="sr-only">Marktdaten werden geladen</span></div>
+        <div class="chart-footer"><div class="chart-legend"><span class="lg"><i class="legend-line support"></i><span>Unterstützung<small id="lg-support" class="skel">—</small></span></span><span class="lg"><i class="legend-line resistance"></i><span>Widerstand<small id="lg-resistance" class="skel">—</small></span></span><span class="overlay-toggles" role="group" aria-label="Chart-Ebenen ein- und ausblenden"><button type="button" data-overlay="vp" aria-pressed="true"><i class="sw vp"></i>Volumenprofil · POC</button><button type="button" data-overlay="ema200" aria-pressed="true"><i class="sw ema"></i>EMA 200</button><button type="button" data-overlay="bb" aria-pressed="true"><i class="sw bb"></i>Bollinger</button></span></div><span id="chart-caption">Zeitachse UTC · 1m</span></div>
       </section>
       <section class="panel signals cq" id="signals" data-tabs="chart" aria-labelledby="signals-title">
-        <div class="signals-head"><div><div class="head-line"><h2 id="signals-title">Signal-Übersicht</h2><details class="tip left"><summary aria-label="So entsteht die Bewertung"><span>i</span></summary><div class="tip-body"><p>Je Zeitraum vier Regeln mit +1, 0 oder −1: EMA 20 über/unter EMA 50 · Schluss über/unter EMA 20 · RSI unter 30 und steigend (+1) bzw. über 70 und fallend (−1) · MACD über/unter Signallinie.</p><p>Ab +2 Punkten Kaufsignal, ab −2 Verkaufssignal, dazwischen Halten. Gesamt: Anzahl Kauf- minus Verkaufssignale, ab ±2.</p><p>Mechanische Auswertung vergangener Kurse, keine Vorhersage; Gebühren, Funding und Hebel sind nicht berücksichtigt.</p></div></details></div><p>Trend, Kurslage, RSI und MACD · nur abgeschlossene Kerzen · Zeile antippen wechselt den Chart</p></div><div class="overall"><span>Gesamt über alle Zeiträume</span><strong id="overall-verdict" class="verdict">—</strong><small id="overall-detail">Wartet auf Kerzendaten.</small></div></div>
+        <div class="signals-head"><div><div class="head-line"><h2 id="signals-title">Signal-Übersicht</h2><details class="tip left"><summary aria-label="So entsteht die Bewertung"><span>i</span></summary><div class="tip-body"><p>Je Zeitraum vier Regeln mit +1, 0 oder −1: EMA 20 über/unter EMA 50 · Schluss über/unter EMA 20 · RSI unter 30 und steigend (+1) bzw. über 70 und fallend (−1) · MACD über/unter Signallinie.</p><p>Ab +2 Punkten Kaufsignal, ab −2 Verkaufssignal, dazwischen Halten. Gesamt: Anzahl Kauf- minus Verkaufssignale, ab ±2.</p><p>Trend: Der Pfeil vergleicht den Gesamtscore mit dem Stand vor 5 Minuten (↗ gestiegen, ↘ gefallen, → gleich), die Balken zeigen die letzten 60 Minuten. Pfeile in den Zeilen: Punkte eines Zeitraums haben sich in den letzten 5 Minuten geändert. Rekonstruiert aus abgeschlossenen Kerzen, gilt also auch direkt nach dem Öffnen.</p><p>Mechanische Auswertung vergangener Kurse, keine Vorhersage; Gebühren, Funding und Hebel sind nicht berücksichtigt.</p></div></details></div><p>Trend, Kurslage, RSI und MACD · nur abgeschlossene Kerzen · Zeile antippen wechselt den Chart</p></div><div class="overall"><span>Gesamt über alle Zeiträume</span><div class="sig-trend"><strong id="overall-verdict" class="verdict skel">—</strong><span class="score skel" id="overall-score">—</span></div><div class="spark-wrap" id="overall-spark-wrap"><svg class="spark" id="overall-spark" viewBox="0 0 132 34" preserveAspectRatio="none" role="img" aria-label="Verlauf der Gesamtwertung"></svg><small class="spark-cap" aria-hidden="true"><span>vor 60 Min.</span><span>jetzt</span></small></div><small id="overall-detail" class="skel">Wartet auf Kerzendaten.</small></div></div>
         <div class="signal-rows" id="signal-rows"></div>
       </section>
       <details class="fold cq" id="zones-sec" data-tabs="ind" open>
         <summary><h2>Mittelwert-Zonen</h2><span id="zones-context">Bezugspunkte für den „mittleren“ Preis</span></summary>
         <div class="zones" id="zones">
-          <article class="panel indicator zone"><div class="indicator-title"><div class="head-line"><h3><i class="sw vp"></i>Volumen-Zentrum</h3><details class="tip left"><summary aria-label="Was ist der POC?"><span>i</span></summary><div class="tip-body">Der Preis, zu dem im sichtbaren Chartbereich am meisten gehandelt wurde. Viele Trader sehen darin den „fairen“ Preis dieses Zeitraums; Rückkehrbewegungen dorthin kommen oft vor, sind aber keine Regel.</div></details></div><span>POC · VOLUMENPROFIL</span></div>
-            <div class="metric" id="poc-value">—</div><p class="zone-note" id="poc-note">Wartet auf Kerzendaten.</p>
-            <div class="zone-rows"><div><span>Kurs zum POC</span><strong id="poc-dist">—</strong></div><div><span>Value Area 70 %</span><strong id="poc-va">—</strong></div></div>
+          <article class="panel indicator zone"><div class="indicator-title"><div class="head-line"><h3><i class="sw vp"></i>Volumen-Zentrum</h3><details class="tip left"><summary aria-label="Was ist der POC?"><span>i</span></summary><div class="tip-body"><p>Der Preis, zu dem im sichtbaren Chartbereich am meisten gehandelt wurde. Viele Trader sehen darin den „fairen“ Preis dieses Zeitraums; Rückkehrbewegungen dorthin kommen oft vor, sind aber keine Regel.</p><p>Geschätzt: Binance liefert kein Volumen je Preis. Das Volumen jeder Kerze wird deshalb als Glockenkurve um den Kerzenkörper verteilt – Dochte zählen weniger als der Bereich, in dem die Kerze eröffnet und geschlossen hat.</p></div></details></div><span>POC · VOLUMENPROFIL</span></div>
+            <div class="metric skel" id="poc-value">—</div><p class="zone-note skel" id="poc-note">Wartet auf Kerzendaten.</p>
+            <div class="zone-rows"><div><span>Kurs zum POC</span><strong id="poc-dist" class="skel">—</strong></div><div><span>Value Area 70 %</span><strong id="poc-va" class="skel">—</strong></div></div>
             <div class="metric-foot" id="poc-foot">Näherung aus Kerzendaten</div></article>
           <article class="panel indicator zone"><div class="indicator-title"><div class="head-line"><h3><i class="sw ema"></i>Gleitender Durchschnitt</h3><details class="tip left"><summary aria-label="Was ist die EMA 200?"><span>i</span></summary><div class="tip-body">Durchschnitt der letzten 200 Kerzen, jüngere Kurse zählen stärker. Im Tageschart ein verbreiteter Trendfilter: Rücksetzer bis zur Linie kommen vor, Durchbrüche ebenso.</div></details></div><span>EMA · 200</span></div>
-            <div class="metric" id="ema-value">—</div><p class="zone-note" id="ema-note">Wartet auf Tageskerzen.</p>
-            <div class="zone-rows"><div><span>Kurs zur EMA (1D)</span><strong id="ema-dist">—</strong></div><div><span id="ema-chart-label">Chart-Intervall</span><strong id="ema-chart">—</strong></div></div>
+            <div class="metric skel" id="ema-value">—</div><p class="zone-note skel" id="ema-note">Wartet auf Tageskerzen.</p>
+            <div class="zone-rows"><div><span>Kurs zur EMA (1D)</span><strong id="ema-dist" class="skel">—</strong></div><div><span id="ema-chart-label">Chart-Intervall</span><strong id="ema-chart" class="skel">—</strong></div></div>
             <div class="metric-foot" id="ema-foot">1D aus abgeschlossenen Tageskerzen</div></article>
           <article class="panel indicator zone"><div class="indicator-title"><div class="head-line"><h3><i class="sw bb"></i>Statistischer Korridor</h3><details class="tip left"><summary aria-label="Was sind Bollinger-Bänder?"><span>i</span></summary><div class="tip-body">Mittellinie = Durchschnitt der letzten 20 Schlusskurse, Bänder = ± 2 Standardabweichungen. Außerhalb gilt der Kurs als weit vom Mittel entfernt; in starken Trends kann er länger am Band entlanglaufen.</div></details></div><span>BOLLINGER · 20/2</span></div>
-            <div class="metric" id="bb-value">—</div><p class="zone-note" id="bb-note">Wartet auf Kerzendaten.</p>
+            <div class="metric skel" id="bb-value">—</div><p class="zone-note skel" id="bb-note">Wartet auf Kerzendaten.</p>
             <div class="band-scale" aria-hidden="true"><span id="bb-marker" hidden></span></div><div class="scale-labels"><span>unten</span><span>Mitte</span><span>oben</span></div>
-            <div class="zone-rows"><div><span>Bänder</span><strong id="bb-bands">—</strong></div><div><span>Innerhalb (100 Kerzen)</span><strong id="bb-stat">—</strong></div></div>
+            <div class="zone-rows"><div><span>Bänder</span><strong id="bb-bands" class="skel">—</strong></div><div><span>Innerhalb (100 Kerzen)</span><strong id="bb-stat" class="skel">—</strong></div></div>
             <div class="metric-foot" id="bb-foot">Chart-Intervall</div></article>
         </div>
       </details>
       <details class="fold cq" id="ind-sec" data-tabs="ind" open>
         <summary><h2>Marktindikatoren</h2><span id="indicator-context">1m · laufende Kerze vorläufig</span></summary>
         <div class="indicators">
-          <article class="panel indicator"><div class="indicator-title"><h3>Relative Stärke</h3><span>RSI · 14</span></div><div class="metric" id="rsi-value">—</div><p id="rsi-note">Wartet auf Kerzendaten.</p><div class="rsi-scale"><span id="rsi-marker" hidden></span></div><div class="scale-labels"><span>0</span><span>30</span><span>70</span><span>100</span></div></article>
-          <article class="panel indicator"><div class="indicator-title"><h3>Volatilität</h3><span>ATR · 14</span></div><div class="metric" id="atr-value">—</div><p id="atr-note">Wartet auf Kerzendaten.</p><div class="metric-foot">Wilder-Glättung · USDT pro Kerze</div></article>
-          <article class="panel indicator"><div class="indicator-title"><h3>Volumen</h3><span>RELATIV · 20</span></div><div class="metric" id="volume-value">—</div><p id="volume-note">Wartet auf Kerzendaten.</p><div class="metric-foot" id="volume-detail">Aktuelle Kerze / 20 vorherige Kerzen</div></article>
-          <article class="panel indicator levels"><div class="indicator-title"><h3>Lokale Kurslevel</h3><span>PIVOTS · 50</span></div><div class="level-row"><span><i class="legend-line support"></i>Unterstützung</span><strong id="support">—</strong><span id="support-dist">—</span></div><div class="level-row"><span><i class="legend-line resistance"></i>Widerstand</span><strong id="resistance">—</strong><span id="resistance-dist">—</span></div><p id="level-note">Je zwei abgeschlossene Nachbarkerzen bestätigen ein lokales Hoch oder Tief.</p></article>
-          <article class="panel indicator"><div class="indicator-title"><h3>Funding Rate</h3><span>FUTURES</span></div><div class="metric" id="funding-value">—</div><p id="funding-note">Wartet auf Futures-Daten.</p><div class="metric-foot" id="funding-detail">Aktuelle Rate · unabhängig vom Chartintervall</div></article>
-          <article class="panel indicator"><div class="indicator-title"><h3>Open Interest</h3><span>Δ CA. 1H</span></div><div class="metric" id="oi-value">—</div><p id="oi-note">Wartet auf Futures-Daten.</p><div class="metric-foot" id="oi-detail">Offene Positionen · keine Kursrichtung</div></article>
+          <article class="panel indicator"><div class="indicator-title"><h3>Relative Stärke</h3><span>RSI · 14</span></div><div class="metric skel" id="rsi-value">—</div><p id="rsi-note" class="skel">Wartet auf Kerzendaten.</p><div class="rsi-scale"><span id="rsi-marker" hidden></span></div><div class="scale-labels"><span>0</span><span>30</span><span>70</span><span>100</span></div></article>
+          <article class="panel indicator"><div class="indicator-title"><h3>Volatilität</h3><span>ATR · 14</span></div><div class="metric skel" id="atr-value">—</div><p id="atr-note" class="skel">Wartet auf Kerzendaten.</p><div class="metric-foot">Wilder-Glättung · USDT pro Kerze</div></article>
+          <article class="panel indicator"><div class="indicator-title"><h3>Volumen</h3><span>RELATIV · 20</span></div><div class="metric skel" id="volume-value">—</div><p id="volume-note" class="skel">Wartet auf Kerzendaten.</p><div class="metric-foot" id="volume-detail">Aktuelle Kerze / 20 vorherige Kerzen</div></article>
+          <article class="panel indicator levels"><div class="indicator-title"><h3>Lokale Kurslevel</h3><span>PIVOTS · 50</span></div><div class="level-row"><span><i class="legend-line support"></i>Unterstützung</span><strong id="support" class="skel">—</strong><span id="support-dist" class="skel">—</span></div><div class="level-row"><span><i class="legend-line resistance"></i>Widerstand</span><strong id="resistance" class="skel">—</strong><span id="resistance-dist" class="skel">—</span></div><p id="level-note">Je zwei abgeschlossene Nachbarkerzen bestätigen ein lokales Hoch oder Tief.</p></article>
+          <article class="panel indicator"><div class="indicator-title"><h3>Funding Rate</h3><span>FUTURES</span></div><div class="metric skel" id="funding-value">—</div><p id="funding-note" class="skel">Wartet auf Futures-Daten.</p><div class="metric-foot" id="funding-detail">Aktuelle Rate · unabhängig vom Chartintervall</div></article>
+          <article class="panel indicator"><div class="indicator-title"><h3>Open Interest</h3><span>Δ CA. 1H</span></div><div class="metric skel" id="oi-value">—</div><p id="oi-note" class="skel">Wartet auf Futures-Daten.</p><div class="metric-foot" id="oi-detail">Offene Positionen · keine Kursrichtung</div></article>
         </div>
       </details>
     </div>
@@ -3489,7 +3992,7 @@ render();startLive();void refresh();void initAutoBackup();void requestWake();
           </form>
           <div class="alarm-list" id="alarm-list"></div>
         </section>
-        <aside class="panel calculator cq" id="calc-sec" data-tabs="pos" aria-labelledby="calculator-title">
+        <aside class="panel calculator cq" id="calc-sec" data-tabs="calc" aria-labelledby="calculator-title">
           <div class="calculator-heading"><span class="eyebrow">SZENARIO</span><div class="head-line"><h2 id="calculator-title">Positionsrechner</h2><details class="tip left"><summary aria-label="Annahmen des Rechners"><span>i</span></summary><div class="tip-body"><p>Isolierte, lineare USDT-Position. Keine zusätzlichen Margins, Gebühren, Funding-Kosten, Slippage oder Maintenance-Abzüge; der Eurokurs bleibt im Szenario konstant.</p><p>Die tatsächliche Liquidation hängt u. a. von Mark Price, Risikostufe und Konto ab. Nicht für Cross Margin.</p></div></details></div><p>Was bedeutet eine Kursbewegung für deinen Einsatz?</p></div>
           <div class="calc-grid">
             <div class="calc-main">
@@ -3504,10 +4007,21 @@ render();startLive();void refresh();void initAutoBackup();void requestWake();
                 <small id="move-help">+ = Kurs steigt · − = Kurs fällt</small></div>
               <div id="calc-error" class="notice error" role="alert" hidden></div>
               <div class="allocation"><div><span>Einsatz / Guthaben</span><strong id="share">5,00 %</strong></div><div class="allocation-track"><span id="share-bar" style="width:5%"></span></div><small>Reine Anteilsanzeige</small></div>
-              <div class="calc-rows"><div><span>Positionsgröße</span><strong id="notional">—</strong></div><div><span>Menge</span><strong id="quantity">—</strong></div><div><span>Szenario-Einstieg <small id="entry-source">(Spot)</small></span><strong id="entry">—</strong></div><div><span>Zielkurs</span><strong id="target">—</strong></div></div>
+              <div class="calc-rows"><div><span>Positionsgröße</span><strong id="notional">—</strong></div><div><span>Menge</span><strong id="quantity" class="skel">—</strong></div><div><span>Szenario-Einstieg <small id="entry-source">(Spot)</small></span><strong id="entry" class="skel">—</strong></div><div><span>Zielkurs</span><strong id="target" class="skel">—</strong></div></div>
               <div class="pnl-box"><span>Rechnerischer Gewinn / Verlust</span><strong id="pnl">—</strong><small id="pnl-eur"></small><small id="pnl-note">Bei +0,50 % Kursbewegung · vor Kosten</small></div>
               <div class="liquidation-box"><div><span>Gegenbewegung bis Liquidation</span><span class="badge">MODELL</span></div><strong id="liq-distance">—</strong><small id="liq-price">Isolierte Margin · Näherung</small></div>
               <div id="scenario-warning" class="notice warning" role="status" hidden></div>
+              <details class="ladder" id="ladder"><summary>Gestaffelte Take-Profits <small id="ladder-sum">Teil-Schließungen, z. B. 50 % bei TP 1</small></summary>
+                <div class="head-line"><p class="ladder-hint">Schließe die Position in Tranchen, z. B. die Hälfte bei TP 1. Abstand in Gewinnrichtung: Long über, Short unter dem Einstieg.</p><details class="tip left"><summary aria-label="So rechnet die Staffel"><span>i</span></summary><div class="tip-body"><p>Jede Tranche wird zu ihrem Zielkurs geschlossen: Gewinn = Positionsgröße × Anteil × Abstand. Der Rest läuft bis zum nächsten Ziel weiter; ein nicht verteilter Rest wird zum Kurs des letzten Ziels bewertet.</p><p>Mit Stop-Loss zeigt der Rechner auch den ungünstigen Fall: TP 1 erreicht, danach Stop – wahlweise mit Stop auf Einstieg (Break-even) nach TP 1. Wie der übrige Rechner vor Gebühren, Funding und Slippage.</p></div></details></div>
+                <div class="ladder-rows" id="ladder-rows">
+                  <div class="ladder-row"><b>TP 1</b><label><span class="lh">Abstand</span><span class="input-wrap"><input id="tp1-move" type="text" inputmode="decimal" autocomplete="off" value="0,5"><span>%</span></span></label><label><span class="lh">Schließen</span><span class="input-wrap"><input id="tp1-share" type="text" inputmode="decimal" autocomplete="off" value="50"><span>%</span></span></label></div>
+                  <div class="ladder-row"><b>TP 2</b><label><span class="lh">Abstand</span><span class="input-wrap"><input id="tp2-move" type="text" inputmode="decimal" autocomplete="off" value="1"><span>%</span></span></label><label><span class="lh">Schließen</span><span class="input-wrap"><input id="tp2-share" type="text" inputmode="decimal" autocomplete="off" value="30"><span>%</span></span></label></div>
+                  <div class="ladder-row"><b>TP 3</b><label><span class="lh">Abstand</span><span class="input-wrap"><input id="tp3-move" type="text" inputmode="decimal" autocomplete="off" value="2"><span>%</span></span></label><label><span class="lh">Schließen</span><span class="input-wrap"><input id="tp3-share" type="text" inputmode="decimal" autocomplete="off" value="20"><span>%</span></span></label></div>
+                </div>
+                <div class="presets" id="ladder-presets" role="group" aria-label="Aufteilung wählen"><button type="button" data-split="50,30,20">50 / 30 / 20</button><button type="button" data-split="50,50,0">50 / 50</button><button type="button" data-split="33,33,34">⅓ / ⅓ / ⅓</button><button type="button" data-split="25,25,50">25 / 25 / 50</button></div>
+                <div class="ladder-row ladder-sl"><b>Stop</b><label><span class="lh">Stop-Loss-Abstand <small>(optional)</small></span><span class="input-wrap"><input id="ladder-sl" type="text" inputmode="decimal" autocomplete="off" placeholder="z. B. 0,5"><span>%</span></span></label><label class="check"><input type="checkbox" id="ladder-be"> Nach TP 1 den Stop auf den Einstieg ziehen (Break-even)</label></div>
+                <div class="ladder-out" id="ladder-out" aria-live="polite"></div>
+              </details>
             </div>
             <div class="calc-side">
               <details class="risk-calc" id="risk-calc" open><summary>Positionsgröße aus Risiko</summary>
@@ -3532,7 +4046,7 @@ render();startLive();void refresh();void initAutoBackup();void requestWake();
           <div class="positions-head">
             <div><h2 id="positions-title">Meine Positionen</h2><p>Von dir erfasst · Live-Kurs von Binance · USDT (Euro)</p></div>
             <div class="pos-totals"><div><span>Offen, nicht realisiert</span><strong id="open-total">—</strong><small id="open-total-eur"></small></div><div><span id="realized-label">Realisiert gesamt</span><strong id="realized-total">—</strong><small id="realized-total-eur"></small></div></div>
-            <div class="pos-head-actions"><button type="button" class="button ghost backup-badge" id="data-toggle" aria-expanded="false" aria-controls="data-panel">⤓ Backup <span class="due" id="backup-due" hidden>FÄLLIG</span></button><button type="button" class="button primary-lite" id="pos-add-toggle" aria-expanded="false" aria-controls="pos-form">+ Position erfassen</button></div>
+            <div class="pos-head-actions"><button type="button" class="button ghost backup-badge" id="data-toggle" aria-expanded="false" aria-controls="data-panel">💾 Backup <span class="due" id="backup-due" hidden>FÄLLIG</span></button><button type="button" class="button primary-lite" id="pos-add-toggle" aria-expanded="false" aria-controls="pos-form">+ Position erfassen</button></div>
           </div>
           <div class="day-strip" id="day-strip"><span>Heute realisiert</span><strong class="day-pnl" id="day-pnl">—</strong><span id="day-info"></span><div class="day-bar" id="day-bar" title="Verbrauchtes Tages-Verlustlimit"><span></span></div><label>Tages-Verlustlimit<span class="input-wrap"><input id="day-limit" type="text" inputmode="decimal" autocomplete="off" placeholder="z. B. 30"><span>USDT</span></span></label></div>
           <div class="data-panel" id="data-panel" hidden>
@@ -3636,15 +4150,73 @@ render();startLive();void refresh();void initAutoBackup();void requestWake();
       </div>
     </div>
     <div class="dash-bottom">
-      <details class="methodology panel fold cq" id="method-sec" data-tabs="ind"><summary><h2>Berechnung &amp; Datenquellen</h2><span>Methodik ansehen</span></summary><div class="method-grid"><div><h3>Kerzen &amp; Indikatoren</h3><p>Spot-Daten von data-api.binance.vision, dem offiziellen Binance-Endpunkt für öffentliche Marktdaten; nur bei einem Netzwerkfehler ersatzweise von api.binance.com. Bis zu 500 Kerzen im gewählten Intervall. RSI und ATR verwenden auch die letzte, gegebenenfalls noch offene Kerze. RSI startet nach 14 Kursänderungen; ATR mit dem Durchschnitt der ersten 14 True Ranges. Bei der ersten Kerze ist True Range = Hoch − Tief. RSI bei ausschließlich unveränderten Kursen: 50 als neutrale Konvention.</p><p>Pivots: strikte lokale Hochs/Tiefs mit je zwei Nachbarn innerhalb der letzten 50 abgeschlossenen Kerzen. Nächstes Pivot-Tief unter dem Kurs und nächstes Pivot-Hoch darüber; keine Ersatzlevel, falls keines existiert. Abstand = absolute Differenz / aktueller Kurs.</p></div><div><h3>Live-Daten &amp; Alarme</h3><p>Laufende Kerzen und Kurse kommen per WebSocket von data-stream.binance.vision (Spot, ersatzweise stream.binance.com) und fstream.binance.com/market (Futures). Die Verbindung läuft in einem Web Worker, damit Browser sie in Hintergrund-Tabs nicht drosseln. Jede Meldung einer 1-Minuten-Kerze wird mit der vorherigen verglichen: Ist das Hoch gestiegen oder das Tief gefallen, wurde dieser Kurs seit der letzten Meldung gehandelt – so erkennt das Dashboard auch kurze Dochte.</p><p>Fällt der Datenstrom aus, lädt das Dashboard alle 15 s per REST nach, sonst einmal pro Minute zum Abgleich. Nach einer Unterbrechung (z. B. iPad gesperrt) prüft es verpasste Alarme anhand der 1-Minuten-Kerzen.</p></div><div><h3>Signal-Übersicht</h3><p>Pro Zeitraum (1m, 5m, 15m, 1h, 4h, 1d) bis zu 200 Kerzen, ausgewertet nur auf abgeschlossenen Kerzen; neu geladen, sobald eine Kerze des Zeitraums schließt. EMA mit SMA-Start, MACD 12/26/9, RSI 14 nach Wilder. Gibt es kein Spot-Paar (z. B. BSV), nutzt das Dashboard die Kerzen des USDT-Perpetual-Futures und kennzeichnet das.</p></div><div><h3>Mittelwert-Zonen</h3><p>Volumenprofil: sichtbare Kerzen, 40 Preisstufen; das Volumen jeder Kerze wird gleichmäßig über ihre Spanne Hoch–Tief verteilt, weil Binance-Kerzen kein Volumen je Preis enthalten. POC = Mitte der Stufe mit dem höchsten Volumen; Value Area = um den POC erweitert, bis 70 % des Volumens enthalten sind. EMA 200 mit SMA-Start; im Tageschart aus abgeschlossenen Tageskerzen, im Chart-Intervall inklusive laufender Kerze. Bollinger: SMA 20 ± 2 Standardabweichungen (Grundgesamtheit). Der Lehrbuchwert von rund 95 % innerhalb der Bänder setzt normalverteilte Kurse voraus; angezeigt wird deshalb der tatsächliche Anteil der letzten 100 abgeschlossenen Kerzen.</p></div><div><h3>Futures &amp; Szenario</h3><p>Funding und Open Interest stammen vom gleichnamigen USDT-Futures-Paar, unabhängig vom Chartintervall. OI vergleicht den aktuellen Mengenbestand mit dem jüngsten 5-Minuten-Snapshot vor dem Zeitpunkt vor einer Stunde; der tatsächliche Zeitraum wird angezeigt.</p><p>Liquidationsabstand: Long = (1/Hebel − MMR) / (1 − MMR), Short = (1/Hebel − MMR) / (1 + MMR). MMR als Dezimalzahl. Dies ist ein vereinfachtes Modell; 1/Hebel allein beschreibt den vollständigen Margin-Verbrauch ohne Maintenance Margin.</p></div><div><h3>Speicher &amp; Abgleich</h3><p>Positionen, Trades und Einstellungen liegen in der IndexedDB des Browsers, gespiegelt im localStorage. Offene Tabs gleichen Änderungen untereinander ab. Der QR-Abgleich komprimiert die Daten, verschlüsselt sie mit AES-256-GCM (Schlüssel per PBKDF2 aus deinem Passwort) und teilt sie bei Bedarf auf mehrere Codes auf.</p></div></div><div class="source-links"><a href="https://developers.binance.com/docs/binance-spot-api-docs/web-socket-streams" target="_blank" rel="noopener noreferrer">Binance Spot-Streams ↗</a><a href="https://developers.binance.com/docs/binance-spot-api-docs/rest-api/market-data-endpoints" target="_blank" rel="noopener noreferrer">Binance Spot ↗</a><a href="https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/Open-Interest-Statistics" target="_blank" rel="noopener noreferrer">Binance Futures ↗</a><a href="https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi" target="_blank" rel="noopener noreferrer">RSI-Referenz ↗</a></div></details>
-      <footer class="foot" data-tabs="chart pos ind"><span>Keine Anlageberatung · keine Order-Ausführung · nur Anzeige</span><details class="tip left"><summary aria-label="Hinweis zur Nutzung"><span>i</span></summary><div class="tip-body">Diese Anzeige ist keine Anlageberatung und keine Garantie für einen sicheren Einstieg. Indikatoren zeigen Wahrscheinlichkeiten, keine Gewissheiten. Das Dashboard liest nur öffentliche Marktdaten und führt keine Orders aus.</div></details><span id="app-version"></span></footer>
+      <details class="methodology panel fold cq" id="method-sec" data-tabs="ind"><summary><h2>Berechnung &amp; Datenquellen</h2><span>Methodik ansehen</span></summary><div class="method-grid"><div><h3>Kerzen &amp; Indikatoren</h3><p>Spot-Daten von data-api.binance.vision, dem offiziellen Binance-Endpunkt für öffentliche Marktdaten; nur bei einem Netzwerkfehler ersatzweise von api.binance.com. Bis zu 500 Kerzen im gewählten Intervall. RSI und ATR verwenden auch die letzte, gegebenenfalls noch offene Kerze. RSI startet nach 14 Kursänderungen; ATR mit dem Durchschnitt der ersten 14 True Ranges. Bei der ersten Kerze ist True Range = Hoch − Tief. RSI bei ausschließlich unveränderten Kursen: 50 als neutrale Konvention.</p><p>Pivots: strikte lokale Hochs/Tiefs mit je zwei Nachbarn innerhalb der letzten 50 abgeschlossenen Kerzen. Nächstes Pivot-Tief unter dem Kurs und nächstes Pivot-Hoch darüber; keine Ersatzlevel, falls keines existiert. Abstand = absolute Differenz / aktueller Kurs.</p></div><div><h3>Live-Daten &amp; Alarme</h3><p>Laufende Kerzen und Kurse kommen per WebSocket von data-stream.binance.vision (Spot, ersatzweise stream.binance.com) und fstream.binance.com/market (Futures). Die Verbindung läuft in einem Web Worker, damit Browser sie in Hintergrund-Tabs nicht drosseln. Jede Meldung einer 1-Minuten-Kerze wird mit der vorherigen verglichen: Ist das Hoch gestiegen oder das Tief gefallen, wurde dieser Kurs seit der letzten Meldung gehandelt – so erkennt das Dashboard auch kurze Dochte.</p><p>Fällt der Datenstrom aus, lädt das Dashboard alle 15 s per REST nach, sonst einmal pro Minute zum Abgleich. Nach einer Unterbrechung (z. B. iPad gesperrt) prüft es verpasste Alarme anhand der 1-Minuten-Kerzen.</p></div><div><h3>Signal-Übersicht</h3><p>Pro Zeitraum (1m, 5m, 15m, 1h, 4h, 1d) bis zu 200 Kerzen, ausgewertet nur auf abgeschlossenen Kerzen; neu geladen, sobald eine Kerze des Zeitraums schließt. EMA mit SMA-Start, MACD 12/26/9, RSI 14 nach Wilder. Gibt es kein Spot-Paar (z. B. BSV), nutzt das Dashboard die Kerzen des USDT-Perpetual-Futures und kennzeichnet das.</p><p>Trend-Verlauf: Für jede Minute der letzten Stunde wird die Bewertung mit den damals abgeschlossenen Kerzen (je Zeitraum wie beim Abruf höchstens 199, im Tageschart 499) neu berechnet. Gesamtscore = Kauf- minus Verkaufssignale.</p></div><div><h3>Mittelwert-Zonen</h3><p>Volumenprofil: sichtbare Kerzen, 40 Preisstufen. Binance-Kerzen enthalten kein Volumen je Preis; das Dashboard verteilt das Volumen jeder Kerze deshalb als Normalverteilung (Glockenkurve) um die Mitte des Kerzenkörpers, begrenzt auf Hoch–Tief. Breite σ = halbe Körperhöhe, mindestens ein Sechstel der Spanne: Dochte bekommen weniger Volumen als der Körper, bei Doji-Kerzen konzentriert es sich um den Schlusskurs. POC = Mitte der Stufe mit dem höchsten Volumen; Value Area = um den POC erweitert, bis 70 % des Volumens enthalten sind. EMA 200 mit SMA-Start; im Tageschart aus abgeschlossenen Tageskerzen, im Chart-Intervall inklusive laufender Kerze. Bollinger: SMA 20 ± 2 Standardabweichungen (Grundgesamtheit). Der Lehrbuchwert von rund 95 % innerhalb der Bänder setzt normalverteilte Kurse voraus; angezeigt wird deshalb der tatsächliche Anteil der letzten 100 abgeschlossenen Kerzen.</p></div><div><h3>Futures &amp; Szenario</h3><p>Funding und Open Interest stammen vom gleichnamigen USDT-Futures-Paar, unabhängig vom Chartintervall. OI vergleicht den aktuellen Mengenbestand mit dem jüngsten 5-Minuten-Snapshot vor dem Zeitpunkt vor einer Stunde; der tatsächliche Zeitraum wird angezeigt.</p><p>Liquidationsabstand: Long = (1/Hebel − MMR) / (1 − MMR), Short = (1/Hebel − MMR) / (1 + MMR). MMR als Dezimalzahl. Dies ist ein vereinfachtes Modell; 1/Hebel allein beschreibt den vollständigen Margin-Verbrauch ohne Maintenance Margin.</p></div><div><h3>Telegram &amp; Discord</h3><p>Optional. Der Web Worker sendet per HTTPS direkt an api.telegram.org (sendMessage) bzw. an die Discord-Webhook-Adresse; bei Netzfehlern bis zu viermal mit wachsender Pause, bei „zu viele Anfragen“ nach der von Telegram/Discord genannten Wartezeit. Offene Tabs stimmen sich über die IndexedDB ab, damit jede Meldung nur einmal gesendet wird.</p></div><div><h3>Speicher &amp; Abgleich</h3><p>Positionen, Trades und Einstellungen liegen in der IndexedDB des Browsers, gespiegelt im localStorage. Offene Tabs gleichen Änderungen untereinander ab. Der QR-Abgleich komprimiert die Daten, verschlüsselt sie mit AES-256-GCM (Schlüssel per PBKDF2 aus deinem Passwort) und teilt sie bei Bedarf auf mehrere Codes auf.</p></div></div><div class="source-links"><a href="https://developers.binance.com/docs/binance-spot-api-docs/web-socket-streams" target="_blank" rel="noopener noreferrer">Binance Spot-Streams ↗</a><a href="https://developers.binance.com/docs/binance-spot-api-docs/rest-api/market-data-endpoints" target="_blank" rel="noopener noreferrer">Binance Spot ↗</a><a href="https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/Open-Interest-Statistics" target="_blank" rel="noopener noreferrer">Binance Futures ↗</a><a href="https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi" target="_blank" rel="noopener noreferrer">RSI-Referenz ↗</a></div></details>
+      <footer class="foot" data-tabs="chart calc pos ind"><span>Keine Anlageberatung · keine Order-Ausführung · nur Anzeige</span><details class="tip left"><summary aria-label="Hinweis zur Nutzung"><span>i</span></summary><div class="tip-body">Diese Anzeige ist keine Anlageberatung und keine Garantie für einen sicheren Einstieg. Indikatoren zeigen Wahrscheinlichkeiten, keine Gewissheiten. Das Dashboard liest nur öffentliche Marktdaten und führt keine Orders aus.</div></details><span id="app-version"></span></footer>
     </div>
   </main>
-  <nav class="tabbar" id="tabbar" role="tablist" aria-label="Bereiche">
-    <button type="button" role="tab" data-tab="chart" aria-selected="true" aria-controls="dash"><b aria-hidden="true">▥</b>Chart &amp; Alarme</button>
-    <button type="button" role="tab" data-tab="pos" aria-selected="false" aria-controls="dash"><b aria-hidden="true">▤</b><span>Positionen &amp; Rechner<span class="tab-badge" id="tab-pos-badge" hidden></span></span></button>
-    <button type="button" role="tab" data-tab="ind" aria-selected="false" aria-controls="dash"><b aria-hidden="true">∿</b>Indikatoren</button>
+  <nav class="tabbar" id="tabbar" aria-label="Bereiche">
+    <button type="button" data-tab="chart" aria-current="page"><b aria-hidden="true">▥</b>Chart</button>
+    <button type="button" data-tab="calc"><b aria-hidden="true">±</b>Rechner</button>
+    <button type="button" class="tab-fab" id="qa-open" aria-haspopup="dialog" title="Schnell-Alarm für den Chart-Kurs"><b aria-hidden="true">🔔</b>Alarm</button>
+    <button type="button" data-tab="pos"><b aria-hidden="true">▤</b><span>Positionen<span class="tab-badge" id="tab-pos-badge" hidden></span></span></button>
+    <button type="button" data-tab="ind"><b aria-hidden="true">∿</b>Indikatoren</button>
   </nav>
+  <dialog class="sheet bottom" id="qa-dialog" aria-labelledby="qa-title">
+    <div class="sheet-head"><h2 id="qa-title">Schnell-Alarm</h2><button type="button" class="button ghost icon" id="qa-close" aria-label="Schließen">×</button></div>
+    <form class="sheet-body" id="qa-form" novalidate>
+      <div class="qa-now"><b id="qa-sym">BTC</b><strong id="qa-cur">—</strong><span>USDT aktuell</span></div>
+      <div class="qa-steps" role="group" aria-label="Abstand zum aktuellen Kurs"><button type="button" data-qa="-2">−2 %</button><button type="button" data-qa="-1">−1 %</button><button type="button" data-qa="-0.5">−0,5 %</button><button type="button" data-qa="-0.25">−0,25 %</button><button type="button" data-qa="0.25">+0,25 %</button><button type="button" data-qa="0.5">+0,5 %</button><button type="button" data-qa="1">+1 %</button><button type="button" data-qa="2">+2 %</button></div>
+      <div class="presets" id="qa-levels" role="group" aria-label="Marken aus dem Chart"></div>
+      <label>Alarm bei<span class="input-wrap"><input id="qa-price" type="text" inputmode="decimal" autocomplete="off" enterkeyhint="done" placeholder="Kurs"><span>USDT</span></span></label>
+      <p id="qa-preview"></p>
+      <div id="qa-error" class="notice error" role="alert" hidden></div>
+      <button type="submit" class="button primary qa-save" id="qa-save">🔔 Alarm setzen</button>
+      <button type="button" class="button ghost" id="qa-more">Andere Kryptowährung oder Notiz …</button>
+    </form>
+  </dialog>
+  <dialog class="sheet" id="chan-dialog" aria-labelledby="chan-title">
+    <div class="sheet-head"><h2 id="chan-title">Alarme aufs Smartphone</h2><button type="button" class="button ghost icon" id="chan-close" aria-label="Schließen">×</button></div>
+    <div class="sheet-body">
+      <div class="head-line"><p>Kurs-Alarme, Stop-Loss/Take-Profit und das Tages-Verlustlimit zusätzlich per <b>Telegram</b> oder <b>Discord</b> senden. Das Handy meldet sie per Push – auch wenn Safari dort gerade schläft.</p><details class="tip left"><summary aria-label="Wie funktioniert das?"><span>i</span></summary><div class="tip-body"><p>Das Dashboard hat keinen eigenen Server. Es prüft die Kurse in dem Browser, in dem es geöffnet ist, und schickt eine Meldung direkt an Telegram bzw. Discord – im Hintergrund über den Web Worker, der auch die Live-Kurse empfängt.</p><p>Darum muss das Dashboard auf mindestens einem Gerät geöffnet bleiben, z. B. am Computer (Bildschirm darf aus sein, kein Ruhezustand). Ist es nirgends offen, prüft niemand die Kurse.</p><p>Ist es auf mehreren Geräten mit eingerichtetem Kanal offen, kann eine Meldung mehrfach ankommen. Tabs im selben Browser senden nur einmal.</p></div></details></div>
+      <section class="chan" aria-labelledby="tg-title">
+        <div class="head-line"><h3 id="tg-title">✈️ Telegram-Bot</h3><details class="tip left"><summary aria-label="Hinweise zu Telegram"><span>i</span></summary><div class="tip-body"><p>Der Bot gehört dir: Nur wer den Token kennt, kann über ihn Nachrichten senden. Er schreibt nur Chats an, die ihm zuvor selbst geschrieben haben.</p><p>Kommt nichts an? Prüfen, ob du dem Bot geschrieben und ihn nicht blockiert hast. Werbeblocker oder Firmen-Netzwerke können api.telegram.org sperren.</p></div></details></div>
+        <details class="chan-guide" id="tg-guide"><summary>Anleitung: Bot in 3 Minuten einrichten</summary>
+          <ol>
+            <li>In Telegram den offiziellen Kontakt <a href="https://t.me/BotFather" target="_blank" rel="noopener noreferrer">@BotFather</a> öffnen (blauer Haken) und <b>/newbot</b> senden.</li>
+            <li>Einen Namen (z. B. „Mein Kurs-Alarm“) und einen Benutzernamen, der auf <b>bot</b> endet, wählen.</li>
+            <li>BotFather antwortet mit einem <b>Token</b> wie <code>123456789:AAH…</code>. Diesen kopieren und unten einfügen.</li>
+            <li>Deinen neuen Bot über den Link in der Antwort öffnen und <b>Start</b> tippen bzw. „Hallo“ schreiben – erst dann darf er dir schreiben.</li>
+            <li>Hier <b>Chat-ID ermitteln</b> tippen, dann <b>Test senden</b>. Kommt die Testnachricht an, ist alles fertig.</li>
+          </ol>
+        </details>
+        <label>Bot-Token<span class="input-wrap"><input id="tg-token" type="password" autocomplete="off" spellcheck="false" placeholder="123456789:AA…"></span></label>
+        <label>Chat-ID<span class="input-wrap"><input id="tg-chat" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="wird ermittelt"></span></label>
+        <div class="row"><button type="button" class="button ghost" id="tg-detect">Chat-ID ermitteln</button><button type="button" class="button primary-lite" id="tg-test">Test senden</button><label class="switch"><input type="checkbox" id="tg-on"> Aktiv</label></div>
+        <p class="chan-status" id="tg-status" role="status"></p>
+      </section>
+      <section class="chan" aria-labelledby="dc-title">
+        <div class="head-line"><h3 id="dc-title">💬 Discord-Webhook</h3><details class="tip left"><summary aria-label="Hinweise zu Discord"><span>i</span></summary><div class="tip-body"><p>Ein Webhook ist eine geheime Adresse, über die Nachrichten in einen Kanal geschrieben werden. Wer sie kennt, kann dort posten – nicht weitergeben.</p><p>Damit das Handy klingelt: In der Discord-App für den Kanal bzw. Server „Benachrichtigungen: Alle Nachrichten“ einstellen.</p></div></details></div>
+        <details class="chan-guide" id="dc-guide"><summary>Anleitung: Webhook in 2 Minuten einrichten</summary>
+          <ol>
+            <li>In Discord einen eigenen Server anlegen (Plus-Symbol links → „Eigenen erstellen“) oder einen nutzen, auf dem du Admin bist.</li>
+            <li>Beim gewünschten Textkanal auf das Zahnrad (<b>Kanal bearbeiten</b>) → <b>Integrationen</b> → <b>Webhooks</b> → <b>Neuer Webhook</b>.</li>
+            <li>Namen vergeben, dann <b>Webhook-URL kopieren</b> und unten einfügen.</li>
+            <li><b>Test senden</b> tippen. In der Discord-App am Handy für diesen Kanal „Alle Nachrichten“ als Benachrichtigung wählen.</li>
+          </ol>
+        </details>
+        <label>Webhook-URL<span class="input-wrap"><input id="dc-url" type="password" autocomplete="off" spellcheck="false" placeholder="https://discord.com/api/webhooks/…"></span></label>
+        <div class="row"><button type="button" class="button primary-lite" id="dc-test">Test senden</button><label class="switch"><input type="checkbox" id="dc-on"> Aktiv</label></div>
+        <p class="chan-status" id="dc-status" role="status"></p>
+      </section>
+      <fieldset class="chan chan-events"><legend>Was soll gesendet werden?</legend>
+        <label class="switch"><input type="checkbox" id="chan-ev-alarm" checked> Kurs-Alarme</label>
+        <label class="switch"><input type="checkbox" id="chan-ev-pos" checked> Stop-Loss und Take-Profit meiner Positionen</label>
+        <label class="switch"><input type="checkbox" id="chan-ev-day" checked> Tages-Verlustlimit erreicht</label>
+      </fieldset>
+      <p class="chan-note">🔒 Token und Webhook-URL bleiben nur in diesem Browser. Sie stehen in keinem Backup und keinem QR-Code und werden nur an Telegram bzw. Discord geschickt. Auf jedem Gerät, das senden soll, einzeln einrichten.</p>
+      <div class="sheet-actions"><button type="button" class="button ghost" id="chan-clear">Zugangsdaten löschen</button><button type="button" class="button primary" id="chan-done">Fertig</button></div>
+    </div>
+  </dialog>
   <dialog class="sheet" id="qr-dialog" aria-labelledby="qr-title">
     <div class="sheet-head"><h2 id="qr-title">Geräte abgleichen</h2><button type="button" class="button ghost icon" id="qr-close" aria-label="Schließen">×</button></div>
     <div class="sheet-body" id="qr-export-view" hidden>
