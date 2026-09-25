@@ -804,6 +804,45 @@ svg .magnet-price{fill:#1d1606;font-size:11.5px;font-weight:700}
 svg .magnet-label{font-size:12px;font-weight:700;paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round}
 .liq-chart-note{display:block;margin-top:4px;font-size:.75rem}
 .cached{opacity:.55;transition:opacity .25s}
+/* ---------- Ruhiges Layout: Live-Werte dürfen keine Höhen verändern ---------- */
+/* Gleich breite Ziffern: Zahlen ändern ihre Breite nur, wenn sich die Anzahl der Zeichen ändert */
+body{font-variant-numeric:tabular-nums}
+/* Statusanzeige mit fester Breite: wechselnder Text kann die Kopfzeile nicht mehr umbrechen */
+.status{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (min-width:601px){.status{display:block;width:11.5em;flex:0 0 auto}}
+/* Live-Leiste: nie umbrechen. Breit eine Zeile (Positionsteil wird notfalls gekürzt), schmal zwei feste Zeilen */
+.livebar{flex-wrap:nowrap}
+.livebar>*{white-space:nowrap;flex-shrink:0}
+.livebar .lb-pos{display:block;min-width:0;flex-shrink:1;overflow:hidden;text-overflow:ellipsis;text-align:right}
+.livebar .lb-pos>span{display:inline}
+.livebar .lb-pos>span+span{margin-left:8px}
+.heat{flex-wrap:nowrap}
+@media (max-width:999px){.lb-pos .opt{display:none}}
+@media (max-width:760px) and (min-width:601px){.lb-market .change{display:none}}
+@media (max-width:600px){
+  .livebar,html[data-layout=tablet] .livebar{display:grid;grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"m sp pos" "heat heat al";align-items:center;gap:2px 10px}
+  .livebar .lb-market{grid-area:m}.livebar .lb-spacer{grid-area:sp}.livebar .lb-pos{grid-area:pos;justify-self:end;max-width:100%}
+  .livebar .heat{grid-area:heat;justify-self:start}.livebar .lb-alarm{grid-area:al;justify-self:end}
+}
+/* Chart-Kopf: Kursangaben und Zeitstempel einzeilig; die rechte Spalte hat eine feste Breite */
+.chart-heading>div:first-child{min-width:0;flex:1 1 auto}
+.chart-meta{flex:0 0 14.5em;min-width:0}
+.chart-meta span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.price-row{flex-wrap:nowrap;min-width:0}
+.price-row .change{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.signal-line,.signal-line a{flex-wrap:nowrap}
+@container (max-width:560px){.chart-meta{flex:1 1 100%;display:grid;grid-template-columns:minmax(0,1fr) auto}}
+/* Rechner und Positionen: Werte mit Euro-Angabe umbrechen in schmalen Spalten immer (zwei feste Zeilen) */
+.pos-grid strong,.calc-rows strong,#liq-price{white-space:pre-line}
+.calc-inputs small{min-height:3em}
+.calc-rows strong{min-width:0}
+#risk-now{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pos-stops .st{display:grid;grid-template-columns:minmax(0,1fr);gap:1px}
+.pos-stops .st strong{text-align:left}
+/* Mittelwert-Zonen: Bezeichnung und Wert in einer Zeile */
+.zone-rows>div{flex-wrap:nowrap}
+.zone-rows span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.zone-rows strong{white-space:nowrap;flex-shrink:0}
 .chart-panel>.notice{margin:12px 20px 0}
 html{scroll-padding-top:calc(var(--lb-h,56px) + 16px)}
 html[data-layout=desktop] .col-input,html[data-layout=desktop] .col-control{top:calc(env(safe-area-inset-top,0px) + var(--lb-h,56px) + 12px);max-height:calc(100dvh - var(--lb-h,56px) - 28px)}
@@ -1410,7 +1449,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Alle Werte liegen zusätzlich im Arbeitsspeicher und sind dadurch synchron lesbar. Schreiben geht sofort in den
 // localStorage und gebündelt in die IndexedDB; beim Start gewinnt die zuletzt vollständig geschriebene Kopie.
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
-const APP_VERSION = '3.2.0', docEl = document.documentElement;
+const APP_VERSION = '3.2.1', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -1553,8 +1592,10 @@ function currentPrice() { return state.candles.at(-1)?.close ?? null; }
 function status() {
   const feed = state.paused ? 'off' : feedState(), secs = Math.max(0, Math.ceil((state.next - Date.now()) / 1000)), s = $('status');
   s.dataset.feed = state.paused ? 'off' : feed === 'live' ? 'live' : state.marketError ? 'error' : 'rest';
-  s.textContent = state.paused ? 'Aktualisierung pausiert' : !state.marketAt && state.busy ? 'Daten werden geladen …' : feed === 'live' ? 'Live · Echtzeit'
-    : state.marketError ? `Datenfehler · Versuch in ${secs} s` : `${feed === 'partial' ? 'Teils live' : 'Auto'} · in ${secs} s`;
+  // Kurze Texte: die Anzeige hat eine feste Breite (Details im Tooltip), damit die Kopfzeile nie umbricht
+  const text = state.paused ? 'Pausiert' : !state.marketAt && state.busy ? 'Lädt …' : feed === 'live' ? 'Live · Echtzeit'
+    : state.marketError ? `Datenfehler · ${secs} s` : `${feed === 'partial' ? 'Teils live' : 'Auto'} · ${secs} s`;
+  if (s.textContent !== text) s.textContent = text;
   s.title = feedDetail();
   $('refresh').disabled = state.busy;
   put('pause-ico', state.paused ? '▶' : 'Ⅱ'); put('pause-lbl', state.paused ? ' Fortsetzen' : ' Pause');
@@ -1614,13 +1655,13 @@ async function refresh() {
     state.fxError = fx.status === 'rejected' ? fx.reason.message : null;
     state.fxAt = fx.status === 'fulfilled' ? Date.now() : 0;
   }
-  render(); status();                       // Chart und Indikatoren sofort, Signale folgen
+  calmRender(); status();                   // Chart und Indikatoren sofort, Signale folgen (beim Scrollen danach)
   const mtfResults = await mtfPending;
   if (seq !== state.seq) return;
   mtfIntervals.forEach((iv, i) => applyMtf(iv, mtfResults[i]));
   // Mit Live-Stream reicht ein Abgleich pro Minute, ohne Stream alle 15 s
   state.busy=false; state.controller=null; state.next=Date.now()+(liveOk()?60000:15000);
-  render(); status();
+  calmRender(); status();
   if (catchUpQueue) { const q = catchUpQueue; catchUpQueue = null; void catchUp(q); }
 }
 // REST-Kerzen mit der laufenden Kerze aus dem Stream zusammenführen: die neuere Fassung gewinnt (Volumen wächst innerhalb einer Kerze nur).
@@ -1650,7 +1691,7 @@ function refreshDueMtf(now = Date.now()) {
     if (iv === state.interval || !m?.nextAt || now < m.nextAt || mtfBusy.has(iv)) continue;
     mtfBusy.add(iv); const symbol = state.symbol;
     cachedKlines(symbol, iv, MTF_LIMIT(iv)).then(value => ({ status: 'fulfilled', value }), reason => ({ status: 'rejected', reason }))
-      .then(r => { if (symbol !== state.symbol) return; applyMtf(iv, r); renderSignals(); if (iv === '1d') drawChart(); })
+      .then(r => { if (symbol !== state.symbol) return; applyMtf(iv, r); calmDo(() => { renderSignals(); if (iv === '1d') drawChart(); }); })
       .finally(() => mtfBusy.delete(iv));
   }
 }
@@ -1705,7 +1746,7 @@ function viewWindow() {
 function drawChart() {
   if (!lastChart) return;
   const { start, end } = viewWindow(), vis = state.candles.slice(start, end), profile = vis.length ? volumeProfile(vis) : null;
-  renderChart(lastChart.levels, { bb: lastChart.bb, ema200: lastChart.ema200, profile }, start, end);
+  if (chartOnScreen) renderChart(lastChart.levels, { bb: lastChart.bb, ema200: lastChart.ema200, profile }, start, end); else chartStale = true;
   renderZones({ bb: lastChart.bb, ema200: lastChart.ema200, profile, live: lastChart.live });
   updateNav();
 }
@@ -1941,13 +1982,13 @@ function renderCalculator() {
     const result=position({balance:value('balance'),stake:value('stake'),leverage:value('leverage'),move:value('move'),side:state.side,mmr:value('mmr'),price:state.marketError ? null : currentPrice(),fx});
     showNotice('calc-error',null);
     put('share',number(result.share)+' %'); $('share-bar').style.width=`${Math.min(100,result.share)}%`;
-    put('notional',usdt(result.notional)); put('quantity',result.quantity===null ? '—' : number(result.quantity,8)+' '+state.symbol.slice(0,-4));
-    put('entry',!state.marketError && currentPrice() ? priceUE(currentPrice()) : 'Kurs ausstehend');
-    put('target',priceUE(result.targetPrice));
+    put('notional',euroLine(usdt(result.notional))); put('quantity',result.quantity===null ? '—' : number(result.quantity,8)+' '+state.symbol.slice(0,-4));
+    put('entry',!state.marketError && currentPrice() ? euroLine(priceUE(currentPrice())) : 'Kurs ausstehend');
+    put('target',euroLine(priceUE(result.targetPrice)));
     put('pnl',signed(result.pnl)+' USDT'); put('pnl-eur', eurPart(result.pnl, 2, true)); color('pnl',result.pnl); $('pnl').parentElement.classList.toggle('loss',result.pnl<0);
     put('pnl-note',`Bei ${signed(value('move'))} % Kursbewegung · vor Kosten`);
     put('liq-distance',`≈ ${number(result.liqDistance)} %`);
-    put('liq-price',result.liqPrice===null ? 'Isolierte Margin · Näherung' : `Modellpreis ≈ ${priceUE(result.liqPrice)}`);
+    put('liq-price',result.liqPrice===null ? 'Isolierte Margin · Näherung' : euroLine(`Modellpreis ≈ ${priceUE(result.liqPrice)}`));
     const warnings=[];
     if (result.crossesLiquidation) warnings.push('Die Zielbewegung erreicht oder überschreitet die modellierte Liquidation. Der lineare Gewinn/Verlust ist dann kein erreichbares Ergebnis einer fortbestehenden Position.');
     if (!fx) warnings.push('Euro-Werte ausstehend: kein gültiger EUR/USDT-Kurs.');
@@ -2027,11 +2068,11 @@ function updateCard(card, pos) {
   const big = setF(card, 'pnl', m.pnl === null ? 'Kurs ausstehend' : signed(m.pnl) + ' USDT'); big.classList.toggle('positive', m.pnl > 0); big.classList.toggle('negative', m.pnl < 0);
   setF(card, 'pnl-sub', m.pnl === null ? (pr?.error || 'Wartet auf den nächsten Abruf.')
     : `${eurPart(m.pnl, 2, true)} · ROE ${signed(m.roe)} % · Kurs ${signed(m.move)} %${pos.preRealized ? ` · bisher realisiert ${signed(pos.preRealized, 4)} · netto ${signed(m.net)} USDT` : ''}`);
-  setF(card, 'entry', priceUE(pos.entry));
-  setF(card, 'price', price ? priceUE(price) : '—');
+  setF(card, 'entry', euroLine(priceUE(pos.entry)));
+  setF(card, 'price', price ? euroLine(priceUE(price)) : '—');
   setF(card, 'price-at', !pr ? '' : pr.error && pr.at ? `Stand ${new Date(pr.at).toLocaleTimeString('de-DE')} · veraltet` : pr.at ? `${pr.live && !state.paused && Date.now() - pr.at < 15000 ? 'Live' : 'Stand'} ${new Date(pr.at).toLocaleTimeString('de-DE')}${state.paused ? ' · pausiert' : ''}` : '');
   setF(card, 'qty', `${qtyText(m.qty)} ${coin(pos.symbol)}`);
-  setF(card, 'size', `${number(m.margin)} · ${usdt(m.notional)}`);
+  setF(card, 'size', euroLine(`${number(m.margin)} · ${usdt(m.notional)}`));
   setF(card, 'liq', m.liqPrice === null ? (pos.mode === 'cross' ? 'Cross: Liquidation hängt vom ganzen Konto ab – Liq.-Preis der Börse über „Bearbeiten“ eintragen.' : 'Liquidation: Maintenance Margin im Rechner prüfen.')
     : `${m.liqSource === 'exchange' ? 'Liquidation laut Börse' : 'Liquidation (Modell, isoliert)'} ≈ ${priceText(m.liqPrice)} USDT · ${m.remaining === null ? `${number(m.liqDistance)} % vom Einstieg` : `${number(m.remaining, 0)} % des Abstands übrig`}`);
   const bar = card.querySelector('[data-f="liq-bar"]'); bar.hidden = m.remaining === null && m.liqPrice === null;
@@ -2497,7 +2538,7 @@ function checkAlerts() {
     const hitNow = alarmHit(a, v.price), touched = hitNow || (a.dir === 'above' ? v.hi >= a.price : v.lo <= a.price);
     if (touched) { triggerAlarm(a, v.price, { wick: !hitNow, extreme: a.dir === 'above' ? v.hi : v.lo }); changed = true; }
   }
-  if (changed) { persist(); renderAlarms(); renderLivebar(); }
+  if (changed) { persist(); withAnchor(() => { renderAlarms(); renderLivebar(); }); }
   return changed;
 }
 // Alarmliste: Zeilen nur neu aufbauen, wenn sich die Alarme ändern; sonst nur die Kursangaben aktualisieren (Knöpfe bleiben bedienbar)
@@ -2737,7 +2778,7 @@ function renderRisk() {
 }
 // ---------- Tages-Verlustlimit ----------
 function renderDay(unrealized = 0) {
-  const d = dayStats(state.trades), st = limitStatus(d.pnl, unrealized, state.dayLimit), lim = state.dayLimit;
+  const d = dayStats(state.trades), lim = state.dayLimit, st = dayLimitHysteresis(limitStatus(d.pnl, unrealized, lim), d.pnl, unrealized, lim);
   $('day-pnl').textContent = d.n ? `${signed(d.pnl)} USDT` : '0,00 USDT'; color('day-pnl', d.pnl);
   put('day-info', `${d.n} ${d.n === 1 ? 'Trade' : 'Trades'}${lim ? ` · Limit ${usdt(lim)}${st.state === 'reached' ? ' · erreicht' : ` · noch ${number(Math.max(0, st.rest))} USDT Spielraum`}` : ' · kein Limit gesetzt'}`);
   const bar = $('day-bar'); bar.hidden = !lim; bar.firstChild.style.width = `${st.used ?? 0}%`; bar.classList.toggle('warn', st.state === 'near' || st.state === 'open-over'); bar.classList.toggle('over', st.state === 'reached');
@@ -3264,16 +3305,25 @@ function onKline(m) {
   else if (m.i === '1m' && watchSymbols().has(m.s)) scheduleLiveRender(false);
 }
 // Höchstens zweimal pro Sekunde zeichnen; in einem verdeckten Tab gar nicht (die Alarmprüfung läuft trotzdem).
-let liveTimer = null, liveLast = 0, liveFull = false, liveDirty = false;
+// Vollständig (mit Chart) höchstens einmal pro Sekunde, sonst höchstens zweimal. Während gewischt oder gescrollt wird,
+// wartet die Anzeige und holt alles danach in einem Schritt nach (die Alarmprüfung läuft unabhängig davon weiter).
+let liveTimer = null, liveLast = 0, liveLastFull = 0, liveFull = false, liveDirty = false;
 function scheduleLiveRender(full) {
   if (full) liveFull = true;
   if (liveTimer) return;
-  liveTimer = setTimeout(() => { liveTimer = null; liveLast = Date.now(); const f = liveFull; liveFull = false; renderLive(f); }, Math.max(0, liveLast + 500 - Date.now()));
+  const wait = Math.max(liveLast + 500, liveFull ? liveLastFull + 1000 : 0) - Date.now();
+  liveTimer = setTimeout(() => {
+    liveTimer = null;
+    if (userScrolling()) { liveTimer = setTimeout(() => { liveTimer = null; scheduleLiveRender(false); }, 200); return; }
+    liveLast = Date.now(); const f = liveFull; liveFull = false; if (f) liveLastFull = liveLast; renderLive(f);
+  }, Math.max(0, wait));
 }
 function renderLive(full) {
   if (document.hidden) { liveDirty = true; return; }
-  if (full) { renderMarket(); renderCalculator(); renderSignals(); renderRisk(); }
-  renderOpenPositions(); renderAlarms(); renderLivebar();
+  withAnchor(() => {
+    if (full) { renderMarket(); renderCalculator(); renderSignals(); renderRisk(); }
+    renderOpenPositions(); renderAlarms(); renderLivebar();
+  });
 }
 // ---------- Nachprüfung nach Unterbrechungen ----------
 // Zuletzt gesehener Kurszeitpunkt je beobachtetem Kürzel; überdauert auch ein Neuladen (iPad lädt Tabs oft neu).
@@ -3515,7 +3565,7 @@ function adoptData(items) {
     else if (k === WATCH_KEY) state.watch = loadWatch();
     else if (k === CHAN_KEY) { chan = loadChannels(); renderChanSummary(); if ($('chan-dialog').open) fillChanForm(); }
   }
-  importantSig = dataSig(); posStructure = ''; histStructure = ''; alarmKey = ''; render();
+  importantSig = dataSig(); posStructure = ''; histStructure = ''; alarmKey = ''; withAnchor(render);   // Änderung aus einem zweiten Tab: Ansicht bleibt stehen
 }
 bc?.addEventListener('message', e => { const m = e.data; if (!m || m.from === TAB_ID) return; if (m.t === 'data') adoptData(m.items); else if (m.t === 'theme') applyTheme(m.theme, false); });
 addEventListener('storage', e => { if (bc || !SYNC_KEYS.includes(e.key) || e.newValue === null) return; try { adoptData([[e.key, JSON.parse(e.newValue)]]); } catch {} });
@@ -4146,6 +4196,77 @@ function renderCacheInfo() {
 $('kc-clear').addEventListener('click', async () => { await kcClear(); renderCacheInfo(); put('kc-note', 'Kerzen-Zwischenspeicher geleert – beim nächsten Abruf wird alles neu geladen.'); });
 document.addEventListener('visibilitychange', () => { if (document.hidden) void kcFlush(); });
 addEventListener('pagehide', () => void kcFlush());
+// ---------- Ruhiges Scrollen ----------
+// 1. Solange ein Finger auf dem Bildschirm liegt oder die Seite scrollt, warten Live-Updates und kommen danach gebündelt.
+// 2. Browser ohne eingebauten Scroll-Anker (Safari): Ändert sich oberhalb des sichtbaren Bereichs eine Höhe,
+//    wird die Scrollposition um genau diesen Betrag ausgeglichen – der sichtbare Inhalt bleibt stehen.
+// 3. Der Chart wird nur neu gezeichnet, wenn er im Bild ist.
+const smooth = { touching: false, touchAt: 0, scrollAt: 0, timer: null, jobs: new Set() };
+const nativeAnchor = !!(globalThis.CSS && CSS.supports && CSS.supports('overflow-anchor', 'auto'));
+// Ein ruhender Finger zählt nach 4 s nicht mehr: Wird das berührte Element ersetzt, erreicht „touchend“ die Seite nicht –
+// ohne diese Grenze blieben die Live-Werte dann stehen. Ein Antippen ohne Scrollen verzögert nichts.
+const userScrolling = () => (smooth.touching && Date.now() - smooth.touchAt < 4000) || Date.now() - smooth.scrollAt < 250;
+const calmOpt = { passive: true, capture: true };
+addEventListener('scroll', () => { smooth.scrollAt = Date.now(); }, calmOpt);
+for (const t of ['touchstart', 'touchmove']) addEventListener(t, () => { smooth.touching = true; smooth.touchAt = Date.now(); }, calmOpt);
+for (const t of ['touchend', 'touchcancel']) addEventListener(t, e => { if (!e.touches?.length) smooth.touching = false; }, calmOpt);
+addEventListener('visibilitychange', () => { if (document.hidden) smooth.touching = false; });
+// Element am oberen Rand des sichtbaren Inhalts (unter der Live-Leiste), das beim Aktualisieren stehen bleiben soll:
+// nach sichtbarer Lage (im iPad-Layout ordnet CSS die Bereiche um) das oberste Element, das die Linie schneidet oder
+// darunter beginnt; ist es größer als ein Drittel des Bildschirms und beginnt oberhalb, wird darin weitergesucht.
+function boxChildren(e, out = []) {
+  for (const c of e.children) {
+    if (c.matches('script, style, template, .signal-row')) continue;
+    if (getComputedStyle(c).display === 'contents') boxChildren(c, out); else out.push(c);
+  }
+  return out;
+}
+function anchorEl() {
+  if (scrollY < 4) return null;
+  const line = Math.max(0, $('livebar').getBoundingClientRect().bottom) + 4;
+  let e = docEl.dataset.layout === 'desktop' ? $('chart-sec').closest('.col') || $('dash') : $('dash'), best = null;
+  for (let depth = 0; e && depth < 14; depth++) {
+    let pick = null, pickTop = Infinity;
+    for (const c of boxChildren(e)) { const r = c.getBoundingClientRect(); if (r.height > 0 && r.bottom > line && r.top < pickTop) { pick = c; pickTop = r.top; } }
+    if (!pick) break;
+    best = pick;
+    if (pickTop >= line - 1 || pick.getBoundingClientRect().height < innerHeight / 3) break;
+    e = pick;
+  }
+  return best;
+}
+function withAnchor(fn) {
+  if (nativeAnchor) return fn();
+  const a = anchorEl(), before = a ? a.getBoundingClientRect().top : 0;
+  fn();
+  if (a && a.isConnected) { const d = a.getBoundingClientRect().top - before; if (Math.abs(d) >= 1) scrollBy(0, d); }
+}
+// Aufgabe sofort ausführen – oder, während gescrollt wird, einmal danach
+function calmDo(fn) {
+  if (!userScrolling()) return withAnchor(fn);
+  smooth.jobs.add(fn);
+  if (!smooth.timer) smooth.timer = setTimeout(function again() {
+    if (userScrolling()) { smooth.timer = setTimeout(again, 200); return; }
+    smooth.timer = null; const jobs = [...smooth.jobs]; smooth.jobs.clear(); withAnchor(() => jobs.forEach(j => j()));
+  }, 200);
+}
+const calmRender = () => calmDo(render);
+// Chart nur zeichnen, wenn er (fast) im Bild ist; beim Hineinscrollen nachholen
+let chartOnScreen = true, chartStale = false;
+if ('IntersectionObserver' in window) new IntersectionObserver(es => {
+  for (const e of es) { chartOnScreen = e.isIntersecting; if (chartOnScreen && chartStale) { chartStale = false; drawChart(); } }
+}, { rootMargin: '150px 0px' }).observe($('chart'));
+// Tages-Verlustlimit: den Hinweis „mit offenen Positionen über dem Limit“ erst ausblenden, wenn sich der Verlust
+// um 10 % des Limits erholt hat – sonst blinkt der Hinweis bei jedem Kursticken und die Seite springt
+let dayOpenOver = false;
+function dayLimitHysteresis(st, pnl, unrealized, lim) {
+  if (st.state === 'open-over') dayOpenOver = true;
+  else if (dayOpenOver && st.state !== 'reached' && lim > 0 && -(pnl + Math.min(0, unrealized || 0)) >= 0.9 * lim) return { ...st, state: 'open-over' };
+  else dayOpenOver = false;
+  return st;
+}
+// „64.112,86 USDT (55.110,29 €)“ → Euro in eigener Zeile (mit white-space: pre-line dargestellt)
+function euroLine(s) { return String(s).replace(/ \((?=[^()]*€[^()]*\)$)/, '\n('); }
 render();startLive();void showCachedChart();void refresh();void initAutoBackup();void requestWake();
 </script>
 </head>
@@ -4193,7 +4314,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
     <a class="heat" id="lb-heat" href="#signals" data-goto="signals" aria-label="Signale je Zeitraum, zur Signal-Übersicht"></a>
     <span class="lb-spacer"></span>
     <span class="lb-alarm" id="lb-alarm" hidden></span>
-    <button type="button" class="lb-pos" data-goto="positions" aria-label="Zu den Positionen"><span class="lb-label">Offen</span><span class="lb-num" id="lb-open">—</span><span class="lb-label opt">Heute</span><span class="lb-num" id="lb-day">—</span></button>
+    <button type="button" class="lb-pos" data-goto="positions" aria-label="Zu den Positionen"><span class="lb-label">Offen</span><span class="lb-num" id="lb-open">—</span><span class="lb-label opt">Heute</span><span class="lb-num opt" id="lb-day">—</span></button>
   </div>
   <div class="toasts" id="toasts" aria-live="assertive"></div>
   <main class="dash" id="dash">
