@@ -245,6 +245,10 @@ main>footer{position:sticky;bottom:0;z-index:5;background:var(--bg);border-top:1
 .al-row.done{opacity:.6}.al-row .x{min-height:34px;width:34px;padding:0;border:0;background:none;color:var(--muted);font-size:1rem}
 .al-row .re{min-height:34px;padding:0 10px;font-size:.78rem}
 .toast.alarm{background:#3a2f1c;color:var(--amber);border:1px solid #6b5a33}
+.toast.alarm.up{background:#16301f;color:#7ee2a0;border-color:#2f6b45}.toast.alarm.down{background:#3a2615;color:#ffb561;border-color:#7a4a1c}
+@keyframes alarm-pulse-green{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,0),0 8px 24px rgba(0,0,0,.45)}50%{box-shadow:0 0 0 4px rgba(34,197,94,.8),0 8px 24px rgba(0,0,0,.45)}}
+@keyframes alarm-pulse-orange{0%,100%{box-shadow:0 0 0 0 rgba(255,138,0,0),0 8px 24px rgba(0,0,0,.45)}50%{box-shadow:0 0 0 4px rgba(255,138,0,.85),0 8px 24px rgba(0,0,0,.45)}}
+.toast[data-color=green]{animation-name:alarm-pulse-green}.toast[data-color=orange]{animation-name:alarm-pulse-orange}
 .alarm-btn{min-height:32px;padding:0 10px;font-size:.75rem;border-radius:16px}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 html{scroll-padding-top:70px}
@@ -1485,14 +1489,15 @@ function beep() {
   try { const t = audioCtx.currentTime; [[880, 0], [1175, .22], [880, .44]].forEach(([f, d]) => { const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.frequency.value = f; g.gain.setValueAtTime(.0001, t + d); g.gain.exponentialRampToValueAtTime(.25, t + d + .02); g.gain.exponentialRampToValueAtTime(.0001, t + d + .18); o.connect(g).connect(audioCtx.destination); o.start(t + d); o.stop(t + d + .2); }); } catch {}
 }
 function renderSound() { const b = $('sound-toggle'); b.textContent = soundOn ? '🔔 Alarm-Ton an' : '🔕 Alarm-Ton'; b.setAttribute('aria-pressed', String(soundOn)); b.classList.toggle('sound-on', soundOn); }
-function simpleToast(key, cls, text, onOk) {
+function simpleToast(key, cls, text, onOk, color = 'yellow') {
   if ($('toasts').querySelector(`.toast[data-key="${key}"]`)) return;
-  const t = el('div', 'toast ' + cls); t.dataset.key = key; t.setAttribute('role', 'alert');
+  const t = el('div', 'toast ' + cls); t.dataset.key = key; t.dataset.color = color; t.setAttribute('role', 'alert');
   const ok = btn('button ghost', 'OK'); ok.addEventListener('click', () => { t.remove(); onOk?.(); }); t.append(el('span', '', text), ok); $('toasts').append(t);
 }
 function toast(pos, type, price) {
   if ($('toasts').querySelector(`.toast[data-id="${pos.id}"][data-type="${type}"]`)) return;
   const t = el('div', 'toast ' + type); t.dataset.id = pos.id; t.dataset.type = type; t.setAttribute('role', 'alert');
+  t.dataset.color = (pos.side === 'long') === (type === 'tp') ? 'green' : 'orange'; // Long-Ziel/Short-Stop = Kurs gestiegen
   const ok = btn('button ghost', 'OK'); ok.addEventListener('click', () => { const p = state.positions.find(x => x.id === pos.id); if (p) { p.ack = { ...p.ack, [type]: true }; persist(); } t.remove(); renderPositions(); });
   t.append(el('span', '', `${coin(pos.symbol)} ${pos.side === 'long' ? 'Long' : 'Short'}: ${type === 'tp' ? 'Take-Profit' : 'Stop-Loss'} ${priceText(type === 'tp' ? pos.tp : pos.sl)} erreicht (Kurs ${priceText(price)})`), ok);
   $('toasts').append(t);
@@ -1513,7 +1518,7 @@ function checkAlerts() {
     if (a.triggeredAt) continue; const pr = state.prices[a.symbol]; if (!pr?.price || pr.error) continue;
     if (alarmHit(a, pr.price)) { a.triggeredAt = Date.now(); a.triggerPrice = pr.price; changed = true; beep();
       desktopNotify(`🔔 Kurs-Alarm ${coin(a.symbol)}`, `${a.dir === 'above' ? 'Auf/über' : 'Auf/unter'} ${priceText(a.price)} · Kurs ${priceText(pr.price)}${a.note ? ' · ' + a.note : ''}`, 'al:' + a.id);
-      simpleToast('al:' + a.id, 'alarm', `🔔 ${coin(a.symbol)} ${a.dir === 'above' ? 'ist auf/über' : 'ist auf/unter'} ${priceText(a.price)} (Kurs ${priceText(pr.price)})${a.note ? ' – ' + a.note : ''}`); }
+      simpleToast('al:' + a.id, 'alarm ' + (a.dir === 'above' ? 'up' : 'down'), `🔔 ${coin(a.symbol)} ${a.dir === 'above' ? 'ist auf/über' : 'ist auf/unter'} ${priceText(a.price)} (Kurs ${priceText(pr.price)})${a.note ? ' – ' + a.note : ''}`, null, a.dir === 'above' ? 'green' : 'orange'); }
   }
   if (changed) persist();
   renderAlarms();
@@ -1684,15 +1689,28 @@ function baseTitle() {
   return `${state.symbol.slice(0, -4)} – ${priceText(p)}${state.marketError ? ' ⚠' : state.paused ? ' ⏸' : ''}`;
 }
 function updateTitle() { if (!$('toasts').children.length) document.title = baseTitle(); }
-const ALARM_ICON = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23ffcc00'/%3E%3Cpath d='M16 6v13' stroke='%23111' stroke-width='4.5' stroke-linecap='round'/%3E%3Ccircle cx='16' cy='25' r='2.8' fill='%23111'/%3E%3C/svg%3E";
-let blinkTimer = null, blinkPhase = false;
+const iconFor = (fill, mark) => "data:image/svg+xml," + encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='${fill}'/>${mark}</svg>`);
+const ALARM_ICONS = {
+  yellow: iconFor('#ffcc00', "<path d='M16 6v13' stroke='#111' stroke-width='4.5' stroke-linecap='round'/><circle cx='16' cy='25' r='2.8' fill='#111'/>"),
+  green: iconFor('#22c55e', "<path d='M16 6 L27 22 H5 Z' fill='#0b1a10'/>"),
+  orange: iconFor('#ff8a00', "<path d='M16 26 L27 10 H5 Z' fill='#231202'/>")
+};
+const ALARM_EMOJI = { yellow: '🟡', green: '🟢', orange: '🟠' };
+const ALARM_ICON = ALARM_ICONS.yellow;
+let blinkTimer = null, blinkPhase = false, blinkStep = -1;
 function setIcon(href) { if (iconLink && iconLink.getAttribute('href') !== href) iconLink.setAttribute('href', href); }
 function updateAlarmState() {
-  const n = $('toasts').children.length;
+  const items = [...$('toasts').children], n = items.length;
   document.documentElement.classList.toggle('alarm-active', n > 0);
   if (!n) { clearInterval(blinkTimer); blinkTimer = null; blinkPhase = false; document.title = baseTitle(); setIcon(BASE_ICON); return; }
-  const tick = () => { blinkPhase = !blinkPhase; document.title = blinkOn && blinkPhase ? `🟡 (${$('toasts').children.length}) Alarm` : `(${$('toasts').children.length}) ${baseTitle()}`; setIcon(blinkOn ? (blinkPhase ? ALARM_ICON : BASE_ICON) : BASE_ICON); };
-  if (!blinkTimer) { tick(); blinkTimer = setInterval(tick, 800); } else if (!blinkOn) { document.title = `(${n}) ${baseTitle()}`; setIcon(BASE_ICON); }
+  // Mehrere Alarme mit unterschiedlicher Richtung: die Farben wechseln sich ab (grün → normal → orange → normal …)
+  const tick = () => {
+    const list = [...$('toasts').children], cnt = list.length; if (!cnt) return;
+    const cols = [...new Set(list.map(t => t.dataset.color || 'yellow'))]; blinkPhase = !blinkPhase; if (blinkPhase) blinkStep++;
+    const col = cols[blinkStep % cols.length], on = blinkOn && blinkPhase;
+    document.title = on ? `${ALARM_EMOJI[col]} (${cnt}) Alarm` : `(${cnt}) ${baseTitle()}`; setIcon(on ? ALARM_ICONS[col] : BASE_ICON);
+  };
+  if (!blinkTimer) { blinkStep = -1; tick(); blinkTimer = setInterval(tick, 800); } else if (!blinkOn) { document.title = `(${n}) ${baseTitle()}`; setIcon(BASE_ICON); }
 }
 new MutationObserver(updateAlarmState).observe($('toasts'), { childList: true });
 // ---------- Bereiche ein-/ausklappen ----------
