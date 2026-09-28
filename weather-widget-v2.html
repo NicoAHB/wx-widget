@@ -968,7 +968,7 @@ html[data-chartfull] #chart{order:4}
 /* Vollbild am iPhone hochkant: Chart ins Querformat gedreht (siehe chartfull); Ränder für Notch und Home-Leiste mitgedreht */
 html[data-chartfull] #chart{touch-action:none}
 @media (orientation:portrait) and (max-width:600px) and (pointer:coarse){
-  html[data-chartfull] #chart-sec{inset:auto;top:0;left:0;width:100vh;height:100vw;width:100dvh;height:100dvw;transform-origin:0 0;transform:rotate(90deg) translateY(-100%);
+  html[data-chartfull]:not([data-fsnative]) #chart-sec{inset:auto;top:0;left:0;width:100vh;height:100vw;width:100dvh;height:100dvw;transform-origin:0 0;transform:rotate(90deg) translateY(-100%);
     padding:calc(env(safe-area-inset-right,0px) + 8px) calc(env(safe-area-inset-bottom,0px) + 12px) calc(env(safe-area-inset-left,0px) + 8px) calc(env(safe-area-inset-top,0px) + 12px)}
   /* gedreht ist die Zeile breit genug: Werkzeuge und OHLC einzeilig, damit der Chart die Höhe bekommt */
   html[data-chartfull] .chart-toolbar{display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:8px}
@@ -995,6 +995,10 @@ html[data-chartfull] .zoom-controls{flex:0 0 auto}
 html[data-chartfull] .chart-toolbar,html[data-chartfull] .chart-footer,html[data-chartfull] #ohlc{max-height:200px;transition:max-height .25s ease,opacity .2s ease,margin .25s ease,padding .25s ease,visibility 0s}
 html[data-chartfull]:not([data-chartbar=open]) .chart-toolbar,html[data-chartfull]:not([data-chartbar=open]) .chart-footer,html[data-chartfull]:not([data-chartbar=open]) #ohlc{max-height:0;min-height:0 !important;opacity:0;margin-top:0;margin-bottom:0;padding-top:0;padding-bottom:0;border-width:0;overflow:hidden;visibility:hidden;transition:max-height .25s ease,opacity .2s ease,margin .25s ease,padding .25s ease,visibility 0s linear .25s}
 @media (prefers-reduced-motion:reduce){html[data-chartfull] .chart-toolbar,html[data-chartfull] .chart-footer,html[data-chartfull] #ohlc,#fb-tools .fb-chev{transition:none !important}}
+/* Umschalter für die eigene Drehung: nur am Handy hochkant; gedrückt = App dreht, sonst dreht das iPhone selbst */
+#fb-rot{display:none;padding:0 8px}
+#fb-rot[aria-pressed=true]{border-color:var(--up-border);color:var(--mint)}
+@media (orientation:portrait) and (max-width:600px) and (pointer:coarse){html[data-chartfull] #fb-rot{display:inline-flex}}
 .chart-panel>.notice{margin:12px 20px 0}
 html{scroll-padding-top:calc(var(--lb-h,56px) + 16px)}
 html[data-layout=desktop] .col-input,html[data-layout=desktop] .col-control{top:calc(env(safe-area-inset-top,0px) + var(--lb-h,56px) + 12px);max-height:calc(100dvh - var(--lb-h,56px) - 28px)}
@@ -1601,7 +1605,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Alle Werte liegen zusätzlich im Arbeitsspeicher und sind dadurch synchron lesbar. Schreiben geht sofort in den
 // localStorage und gebündelt in die IndexedDB; beim Start gewinnt die zuletzt vollständig geschriebene Kopie.
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
-const APP_VERSION = '3.5.5', docEl = document.documentElement;
+const APP_VERSION = '3.5.6', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -4889,7 +4893,7 @@ function setChartFull(on) {
     chartHold = document.createElement('div'); chartHold.className = 'chart-hold'; chartHold.setAttribute('aria-hidden', 'true');
     chartHold.style.height = sec.offsetHeight + 'px'; chartHold.style.margin = getComputedStyle(sec).margin; sec.before(chartHold);
     delete docEl.dataset.chartbar; $('fb-tools').setAttribute('aria-expanded', 'false'); // Werkzeuge standardmäßig eingeklappt
-    docEl.dataset.chartfull = '1'; renderFullBar(); $('chart').focus({ preventScroll: true });
+    applyFsRotate(); docEl.dataset.chartfull = '1'; renderFullBar(); $('chart').focus({ preventScroll: true });
   } else {
     delete docEl.dataset.chartfull; delete docEl.dataset.chartbar; chartHold?.remove(); chartHold = null;
     const y = chartFullY, back = () => { if (Math.abs(scrollY - y) > 1) scrollTo({ top: y, behavior: 'instant' }); }; back(); requestAnimationFrame(back);
@@ -4914,7 +4918,20 @@ addEventListener('keydown', e => {
 // Bildschirm-Koordinaten; im gedrehten Zustand werden Zeiger-Ereignisse und das Chart-Rechteck deshalb in die
 // Koordinaten des gedrehten Charts übersetzt – Tippen, Wischen, Zoomen und der Magnet funktionieren unverändert.
 const CHART_ROT_MQ = matchMedia('(orientation: portrait) and (max-width: 600px) and (pointer: coarse)');
-const chartRotated = () => docEl.dataset.chartfull === '1' && CHART_ROT_MQ.matches;
+const chartRotated = () => docEl.dataset.chartfull === '1' && !docEl.dataset.fsnative && CHART_ROT_MQ.matches;
+// Dreht das iPhone die Oberfläche selbst (Rotationssperre aus), animiert iOS beim Quer-Halten die schon gedrehte Ansicht
+// ein zweites Mal – das lässt sich von einer Webseite nicht verhindern. Deshalb merkt sich die App, sobald die Seite am
+// Handy einmal von selbst ins Querformat gewechselt ist, und dreht im Vollbild dann nicht mehr selbst: iOS dreht genau
+// einmal. Mit Rotationssperre (Seite bleibt hochkant) dreht weiter die App. Der Knopf ⟳ in der Kopfzeile schaltet um.
+var FSROT_KEY = 'scalpdesk.fsrotate.v1';
+const PHONE_LAND_MQ = matchMedia('(orientation: landscape) and (max-height: 600px) and (pointer: coarse)');
+function applyFsRotate() {
+  const own = store.get(FSROT_KEY) !== 'native';
+  if (own) delete docEl.dataset.fsnative; else docEl.dataset.fsnative = '1';
+  $('fb-rot').setAttribute('aria-pressed', String(own));
+}
+function learnNativeRotate() { if (PHONE_LAND_MQ.matches && store.get(FSROT_KEY) !== 'native') { store.set(FSROT_KEY, 'native'); applyFsRotate(); } }
+PHONE_LAND_MQ.addEventListener?.('change', learnNativeRotate); learnNativeRotate();
 (() => {
   const box = $('chart'), realRect = () => Element.prototype.getBoundingClientRect.call(box);
   box.getBoundingClientRect = () => chartRotated() ? new DOMRect(0, 0, box.offsetWidth, box.offsetHeight) : realRect();
@@ -4951,6 +4968,7 @@ $('fb-tools').addEventListener('click', () => setChartBar(docEl.dataset.chartbar
 $('fb-swap').addEventListener('click', swapChart);
 $('fb-exit').addEventListener('click', () => setChartFull(false));
 setInterval(renderFullBar, 1000);
+$('fb-rot').addEventListener('click', () => { store.set(FSROT_KEY, docEl.dataset.fsnative ? 'own' : 'native'); applyFsRotate(); });
 render();startLive();void showCachedChart();void refresh();void initAutoBackup();void requestWake();
 </script>
 </head>
@@ -5007,7 +5025,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
     <div class="dash-top"><noscript><div>JavaScript läuft in dieser Ansicht nicht, daher lädt das Dashboard keine Daten. Auf dem iPad zeigt die Dateien-App HTML-Dateien nur als Vorschau – Dashboard über seine https-Adresse in Safari öffnen.</div></noscript><div class="day-banner" id="day-banner" role="alert" hidden></div><div class="hint-banner" id="install-hint" hidden><span id="install-hint-text"></span><button type="button" class="button ghost" id="install-hint-close">Verstanden</button></div></div>
     <div class="col col-market">
       <section class="panel chart-panel cq" id="chart-sec" data-tabs="chart" aria-label="Kurschart">
-        <div class="full-bar" id="full-bar"><button type="button" id="fb-tools" aria-expanded="false" title="Werkzeuge ein- und ausblenden (Taste T)"><span class="fb-chev" aria-hidden="true">▾</span><span id="fb-title">Chart</span></button><span class="fb-space"></span><button type="button" id="fb-swap" hidden title="Chart wechseln (Taste B)"><span id="fb-sym"></span><strong id="fb-price">…</strong></button><button type="button" id="fb-exit" aria-label="Vollbild beenden" title="Vollbild beenden (Esc)"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
+        <div class="full-bar" id="full-bar"><button type="button" id="fb-tools" aria-expanded="false" title="Werkzeuge ein- und ausblenden (Taste T)"><span class="fb-chev" aria-hidden="true">▾</span><span id="fb-title">Chart</span></button><span class="fb-space"></span><button type="button" id="fb-rot" aria-pressed="true" aria-label="Chart selbst ins Querformat drehen" title="Querformat: App dreht den Chart (für Rotationssperre) – aus: iPhone dreht selbst"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button type="button" id="fb-swap" hidden title="Chart wechseln (Taste B)"><span id="fb-sym"></span><strong id="fb-price">…</strong></button><button type="button" id="fb-exit" aria-label="Vollbild beenden" title="Vollbild beenden (Esc)"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
         <form id="market-form" class="market-form">
           <label>Kryptowährung <span class="input-wrap"><input id="symbol" value="BTC" maxlength="24" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Kürzel oder USDT-Paar" required><span>/ USDT</span></span></label>
           <button class="button primary" type="submit">Markt laden <span aria-hidden="true">→</span></button>
