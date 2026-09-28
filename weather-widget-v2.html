@@ -4792,6 +4792,29 @@ $('tgb-now').addEventListener('click', () => void sendTgBackup(true));
 $('tgb-setup').addEventListener('click', () => openChan());
 $('chan-done').addEventListener('click', () => setTimeout(renderTgbInfo));
 renderTgbInfo();
+// ---------- Speicher-Hausmeister ----------
+// Einzelne Ticks werden nirgends aufbewahrt: der Hintergrund-Thread fasst alle Trades eines Symbols alle 200 ms zu
+// Tief/Hoch/Letzter zusammen und verwirft sie, die Alarmprüfung beginnt ihre Spannen bei jeder Prüfung neu, und die
+// Kerzenreihe ist ein Ringpuffer mit höchstens 500 Kerzen (vorne raus, hinten rein). Der Hausmeister räumt einmal pro
+// Minute die Reste auf, die sonst über Tage mitwachsen würden: Kurse und Live-Spuren von Symbolen, die seit 10 Minuten
+// niemand mehr braucht, und Alarm-Merker gelöschter Positionen.
+const SWEEP_STALE = 10 * 60e3;
+function sweepMemory(now = Date.now()) {
+  const need = new Set([state.symbol, ...state.positions.map(p => p.symbol), ...state.alarms.filter(a => !a.triggeredAt).map(a => a.symbol), ...state.watch.map(w => String(w).toUpperCase() + 'USDT')]);
+  let n = 0;
+  for (const sym of Object.keys(state.prices)) if (!need.has(sym) && now - (state.prices[sym]?.at || 0) > SWEEP_STALE) { delete state.prices[sym]; n++; }
+  for (const [sym, t] of liveTrack) if (!need.has(sym) && now - (t.at || 0) > SWEEP_STALE) { liveTrack.delete(sym); n++; }
+  for (const sym of nearSyms) if (!need.has(sym)) { nearSyms.delete(sym); n++; }
+  const ids = new Set(state.positions.map(p => p.id)), gone = k => !ids.has(String(k).split(':')[0]);
+  for (const m of [alerted, alertInfo, rearmedAt]) for (const k of [...m.keys()]) if (gone(k)) { m.delete(k); n++; }
+  if (ratingCache.size > 2000) { n += ratingCache.size; ratingCache.clear(); }
+  if (state.candles.length > 500) { n += state.candles.length - 500; state.candles.splice(0, state.candles.length - 500); }
+  return n;
+}
+setInterval(() => sweepMemory(), 60000);
+// Diagnose (Konsole, Tests): Größe der langlebigen Sammlungen
+window.__sdMem = () => ({ candles: state.candles.length, prices: Object.keys(state.prices), liveTrack: [...liveTrack.keys()], nearSyms: [...nearSyms], alerted: [...alerted], alertInfo: alertInfo.size, rearmedAt: [...rearmedAt.keys()], ratingCache: ratingCache.size });
+window.__sdSweep = now => sweepMemory(now);
 render();startLive();void showCachedChart();void refresh();void initAutoBackup();void requestWake();
 </script>
 </head>
