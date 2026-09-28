@@ -952,6 +952,8 @@ html[data-chartfull] #chart-sec>*{flex:0 0 auto}
 html[data-chartfull] #market-form{display:none}
 html[data-chartfull] #chart{flex:1 1 0;height:auto;min-height:160px}
 html[data-chartfull] .chart-heading,html[data-chartfull] .chart-footer,html[data-chartfull] #lmap-strip{display:none}
+/* Schmale Handys: sieben Werkzeuge (mit Vollbild) passen in eine Zeile */
+@media (max-width:380px){.chart-toolbar .zoom-controls button{min-width:38px;padding:0 4px}}
 .chart-panel>.notice{margin:12px 20px 0}
 html{scroll-padding-top:calc(var(--lb-h,56px) + 16px)}
 html[data-layout=desktop] .col-input,html[data-layout=desktop] .col-control{top:calc(env(safe-area-inset-top,0px) + var(--lb-h,56px) + 12px);max-height:calc(100dvh - var(--lb-h,56px) - 28px)}
