@@ -917,6 +917,26 @@ html[data-layout=tablet] .tabbar{grid-template-columns:repeat(2,minmax(0,1fr)) a
   .livebar .lb-spacer{display:none}
   .livebar .lb-alarm{grid-area:al;justify-self:end;min-width:0;max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 }
+/* Verbindungsanzeige: oben rechts in der Kopfzeile, beim Scrollen als Punkt rechts in der mitlaufenden Live-Leiste */
+.status[data-feed=offline]::before{background:var(--down)}
+.lb-conn{flex:0 0 auto;align-self:center;width:10px;height:10px;margin:0 2px 0 4px;border-radius:50%;background:var(--faint)}
+.lb-conn[data-feed=live]{background:var(--buy);box-shadow:0 0 0 3px color-mix(in srgb,var(--buy) 25%,transparent)}
+.lb-conn[data-feed=rest]{background:var(--amber)}
+.lb-conn[data-feed=error],.lb-conn[data-feed=offline]{background:var(--down)}
+/* Breit (eine Zeile): ganz rechts nach den Knöpfen. Schmaler: rechts neben dem Logo, die Knöpfe in der zweiten Zeile */
+@media (min-width:1101px){.update-controls .status{order:9;margin:0 0 0 8px}.update-controls .status::before{margin-right:8px;vertical-align:-1px}}
+@media (max-width:1100px){
+  .topbar{position:relative}
+  .update-controls{flex:1 0 100%}
+  .topbar .status{position:absolute;top:calc(env(safe-area-inset-top,0px) + 14px);right:24px;height:34px;display:flex;align-items:center;margin:0}
+  .topbar .status::before{flex:0 0 auto;margin-right:0}
+}
+@media (max-width:600px){
+  .topbar .status{top:calc(env(safe-area-inset-top,0px) + 10px);right:12px;width:auto;max-width:calc(100% - 180px);padding-left:0;flex:none}
+  .update-controls{justify-content:space-between}
+  .livebar,html[data-layout=tablet] .livebar{grid-template-columns:auto minmax(0,1fr) auto auto;grid-template-areas:"m al pos cn" "heat heat heat heat"}
+  .livebar .lb-conn{grid-area:cn;margin:0}
+}
 .chart-panel>.notice{margin:12px 20px 0}
 html{scroll-padding-top:calc(var(--lb-h,56px) + 16px)}
 html[data-layout=desktop] .col-input,html[data-layout=desktop] .col-control{top:calc(env(safe-area-inset-top,0px) + var(--lb-h,56px) + 12px);max-height:calc(100dvh - var(--lb-h,56px) - 28px)}
@@ -1523,7 +1543,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Alle Werte liegen zusätzlich im Arbeitsspeicher und sind dadurch synchron lesbar. Schreiben geht sofort in den
 // localStorage und gebündelt in die IndexedDB; beim Start gewinnt die zuletzt vollständig geschriebene Kopie.
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
-const APP_VERSION = '3.4.0', docEl = document.documentElement;
+const APP_VERSION = '3.5.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -1663,14 +1683,22 @@ const state = {symbol:'BTCUSDT', interval:'1m', side:'long', paused:false, busy:
 
 function currentFx() { return state.fxMode === 'manual' ? value('fx') : state.fx; }
 function currentPrice() { return state.candles.at(-1)?.close ?? null; }
+// Verbindungsanzeige oben rechts (Kopfzeile) und als Punkt in der mitlaufenden Live-Leiste:
+// grün live · gelb verzögert (Abruf alle paar Sekunden, Neuverbindung) · rot offline oder Datenfehler · grau pausiert
 function status() {
   const feed = state.paused ? 'off' : feedState(), secs = Math.max(0, Math.ceil((state.next - Date.now()) / 1000)), s = $('status');
-  s.dataset.feed = state.paused ? 'off' : feed === 'live' ? 'live' : state.marketError ? 'error' : 'rest';
+  const offline = !state.paused && navigator.onLine === false;
+  s.dataset.feed = state.paused ? 'off' : offline ? 'offline' : feed === 'live' ? 'live' : state.marketError ? 'error' : 'rest';
   // Kurze Texte: die Anzeige hat eine feste Breite (Details im Tooltip), damit die Kopfzeile nie umbricht
-  const text = state.paused ? 'Pausiert' : !state.marketAt && state.busy ? 'Lädt …' : feed === 'live' ? 'Live · Echtzeit'
+  const text = state.paused ? 'Pausiert' : offline ? 'Offline' : !state.marketAt && state.busy ? 'Lädt …' : feed === 'live' ? 'Live · Echtzeit'
     : state.marketError ? `Datenfehler · ${secs} s` : `${feed === 'partial' ? 'Teils live' : 'Auto'} · ${secs} s`;
   if (s.textContent !== text) s.textContent = text;
-  s.title = feedDetail();
+  const detail = (offline ? 'Das Gerät meldet keine Internetverbindung – sobald sie zurück ist, wird sofort neu verbunden.\n' : '') + feedDetail();
+  s.title = detail;
+  const dot = $('lb-conn');
+  if (dot.dataset.feed !== s.dataset.feed) dot.dataset.feed = s.dataset.feed;
+  const lbl = `Verbindung: ${text}`; if (dot.getAttribute('aria-label') !== lbl) dot.setAttribute('aria-label', lbl);
+  dot.title = `${text}\n${detail}`;
   $('refresh').disabled = state.busy;
   put('pause-ico', state.paused ? '▶' : 'Ⅱ'); put('pause-lbl', state.paused ? ' Fortsetzen' : ' Pause');
   $('pause').setAttribute('aria-label', state.paused ? 'Fortsetzen' : 'Pause'); $('pause').title = state.paused ? 'Aktualisierung fortsetzen' : 'Aktualisierung anhalten';
@@ -3153,9 +3181,14 @@ if(document.modelContext?.registerTool){const lifecycle=new AbortController();wi
 // Die Funktion wird als Quelltext in den Worker gegeben und darf deshalb nichts von außerhalb verwenden.
 function liveFeed(port) {
   const HOSTS = { spot: ['wss://data-stream.binance.vision/stream', 'wss://stream.binance.com:9443/stream'], futures: ['wss://fstream.binance.com/market/stream'] };
-  const BEAT = { spot: 'btcusdt@kline_1m', futures: 'btcusdt@markPrice' }; // liquider Stream als Lebenszeichen der Verbindung
+  const BEAT = { spot: 'btcusdt@kline_1m', futures: 'btcusdt@markPrice@1s' }; // liquider Stream als Lebenszeichen der Verbindung (alle 1–2 s)
+  // Wächter: prüft alle 3 s jede Verbindung. Kam 1,5 s lang nichts an, geht eine kleine Kontrollanfrage an Binance
+  // (LIST_SUBSCRIPTIONS, die Antwort kommt sofort). Bleibt bis zur nächsten Prüfung jede Nachricht aus, ist die Verbindung tot –
+  // typisch nach Standby oder WLAN-Wechsel, wenn der Browser das selbst erst nach rund 30 s merkt. Dann wird der Socket sofort
+  // hart geschlossen und ohne Wartezeit ein neuer geöffnet. Kommen zwar Antworten, aber 20 s keine Kursdaten, ebenso.
+  const WATCH = 3000, PROBE_IDLE = 1500, DATA_MAX = 20000, OPEN_MAX = 9000;
   const M = {}, agg = {}; let paused = false;
-  const conn = m => M[m] || (M[m] = { market: m, want: new Set(), active: new Set(), ws: null, host: 0, fails: 0, retry: null, sync: null, lastSync: 0, last: 0, beat: 0, opened: 0, id: 0 });
+  const conn = m => M[m] || (M[m] = { market: m, want: new Set(), active: new Set(), ws: null, host: 0, fails: 0, retry: null, sync: null, lastSync: 0, last: 0, data: 0, probe: 0, beat: 0, opened: 0, id: 0 });
   const wanted = c => { const s = new Set(paused ? [] : c.want); if (s.size) s.add(BEAT[c.market]); return s; };
   const status = (c, st, detail = '') => port.post({ t: 'st', m: c.market, st, host: HOSTS[c.market][c.host].replace(/^wss:\/\/|\/.*$/g, ''), detail });
   function drop(c) { const ws = c.ws; c.ws = null; c.active = new Set(); if (ws) { ws.onopen = ws.onmessage = ws.onclose = ws.onerror = null; try { ws.close(1000); } catch {} } }
@@ -3163,21 +3196,37 @@ function liveFeed(port) {
     clearTimeout(c.retry); c.retry = null; drop(c);
     const streams = [...wanted(c)]; if (!streams.length) return status(c, 'idle');
     let ws; try { ws = new WebSocket(HOSTS[c.market][c.host] + '?streams=' + streams.join('/')); } catch { return fail(c, 'Verbindung nicht möglich'); }
-    c.ws = ws; c.active = new Set(streams); c.last = Date.now(); c.opened = 0; status(c, 'connecting');
-    ws.onopen = () => { c.opened = c.last = Date.now(); c.fails = 0; status(c, 'live'); sync(c); };
-    ws.onmessage = e => { c.last = Date.now(); let d; try { d = JSON.parse(e.data); } catch { return; } handle(c, d); };
+    c.ws = ws; c.active = new Set(streams); c.last = c.data = Date.now(); c.probe = 0; c.opened = 0; status(c, 'connecting');
+    ws.onopen = () => { c.opened = c.last = c.data = Date.now(); c.fails = 0; status(c, 'live'); sync(c); };
+    ws.onmessage = e => { c.last = Date.now(); c.probe = 0; let d; try { d = JSON.parse(e.data); } catch { return; } handle(c, d); };
     ws.onclose = e => { if (c.ws === ws) { c.ws = null; fail(c, e.code === 1006 ? 'Verbindung abgebrochen' : 'Verbindung beendet (' + e.code + ')'); } };
     ws.onerror = () => {};
   }
-  function fail(c, why) {
+  // fast: vom Wächter als tot erkannt. Tote oder länger gelaufene Verbindungen werden beim ersten Versuch ohne Wartezeit ersetzt,
+  // danach wachsen die Abstände (1, 2, 4 … 30 s), damit ein gesperrtes Netz nicht mit Versuchen überschüttet wird.
+  function fail(c, why, fast = false) {
+    const wasUp = c.opened > 0 && Date.now() - c.opened > 10000;
     drop(c);
     if (!wanted(c).size) return status(c, 'idle');
     c.fails++;
     if (!c.opened && c.fails % 2 === 0) c.host = (c.host + 1) % HOSTS[c.market].length; // zweimal ohne Verbindung: Ersatzadresse
-    const wait = Math.round(Math.min(30000, 1000 * 2 ** Math.min(c.fails - 1, 5)) * (0.8 + Math.random() * 0.4));
-    status(c, 'retry', why + ' · neuer Versuch in ' + Math.ceil(wait / 1000) + ' s');
+    const wait = (fast || wasUp) && c.fails === 1 ? 0 : Math.round(Math.min(30000, 1000 * 2 ** Math.min(c.fails - 1, 5)) * (0.8 + Math.random() * 0.4));
+    status(c, 'retry', why + (wait ? ' · neuer Versuch in ' + Math.ceil(wait / 1000) + ' s' : ' · verbinde sofort neu'));
     c.retry = setTimeout(() => connect(c), wait);
   }
+  function watch() {
+    const now = Date.now();
+    for (const k in M) {
+      const c = M[k], ws = c.ws; if (!ws) continue;
+      if (ws.readyState === 0) { if (now - c.last > OPEN_MAX) fail(c, 'Verbindungsaufbau dauert zu lange', true); continue; }
+      if (ws.readyState !== 1) { fail(c, 'Verbindung hängt beim Schließen', true); continue; }
+      if (c.probe) { fail(c, 'keine Antwort seit ' + Math.round((now - c.last) / 1000) + ' s', true); continue; }
+      if (now - c.data > DATA_MAX) { fail(c, 'keine Daten seit 20 s', true); continue; }
+      if (now - c.last > PROBE_IDLE) { c.probe = now; try { ws.send(JSON.stringify({ method: 'LIST_SUBSCRIPTIONS', id: ++c.id })); } catch { fail(c, 'Senden nicht möglich', true); } }
+    }
+  }
+  // Zurück aus Standby, Hintergrund oder Funkloch: wer seit über 3 s nichts gehört hat, wird sofort neu verbunden
+  function wake() { const now = Date.now(); for (const k in M) { const c = M[k]; if (wanted(c).size && (!c.ws || now - c.last > WATCH)) { c.fails = 0; connect(c); } } }
   // Gewünschte und abonnierte Streams abgleichen. Binance erlaubt 5 Steuernachrichten pro Sekunde: höchstens zwei je Abgleich.
   function sync(c) {
     clearTimeout(c.sync); c.sync = null;
@@ -3197,18 +3246,16 @@ function liveFeed(port) {
     if (d.result !== undefined && d.id !== undefined) return;
     if (d.error) return port.post({ t: 'err', m: c.market, msg: String(d.error.msg || 'Stream-Fehler') });
     const p = d.data; if (!p || typeof p !== 'object') return;
+    c.data = now;
     if (p.e === 'kline' && p.k) { const k = p.k; port.post({ t: 'k', m: c.market, s: p.s, i: k.i, E: p.E, k: { t: k.t, T: k.T, o: +k.o, h: +k.h, l: +k.l, c: +k.c, v: +k.v, x: !!k.x } }); }
     else if (p.e === 'aggTrade') { const px = +p.p, k = c.market + '|' + p.s, a = agg[k]; if (!(px > 0)) return; if (a) { if (px < a.lo) a.lo = px; if (px > a.hi) a.hi = px; a.last = px; } else agg[k] = { t: 'a', m: c.market, s: p.s, lo: px, hi: px, last: px }; }
     else if (p.e === 'serverShutdown') { c.fails = 0; connect(c); }
   }
   setInterval(() => { for (const k in agg) { port.post(agg[k]); delete agg[k]; } }, 200);
-  setInterval(() => {
-    const now = Date.now(); port.post({ t: 'tick', now });
-    for (const k in M) { const c = M[k];
-      if (c.ws && c.ws.readyState === 1 && now - c.last > 20000) fail(c, 'keine Daten seit 20 s');
-      else if (c.ws && c.ws.readyState === 0 && now - c.last > 12000) fail(c, 'Verbindungsaufbau dauert zu lange');
-    }
-  }, 1000);
+  // Takt für die Oberfläche. Eine Lücke von über 5 s heißt: Timer standen still (Standby, eingefrorener Tab) – sofort prüfen.
+  let lastTick = Date.now();
+  setInterval(() => { const now = Date.now(), gap = now - lastTick; lastTick = now; port.post({ t: 'tick', now }); if (gap > 5000) wake(); }, 1000);
+  setInterval(watch, WATCH);
   // Benachrichtigungen an Telegram/Discord: hier gesendet, damit Wiederholungen auch in Hintergrund-Tabs pünktlich laufen.
   // Einfache Anfragen (Formular-Daten) ohne CORS-Vorabprüfung; je Dienst nacheinander mit gut 1 s Abstand (Ratenlimits).
   const queue = {}, busy = {}, noCors = {}, sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -3248,7 +3295,7 @@ function liveFeed(port) {
     if (m.t === 'send') { (queue[m.kind] = queue[m.kind] || []).push(m); pump(m.kind); return; }
     if (m.t === 'want') { const c = conn(m.m); c.want = new Set(m.streams); later(c); }
     else if (m.t === 'pause') { paused = !!m.on; for (const k in M) { M[k].fails = 0; sync(M[k]); } }
-    else if (m.t === 'wake') { const now = Date.now(); for (const k in M) { const c = M[k]; if (wanted(c).size && (!c.ws || (c.ws.readyState === 1 && now - c.last > 5000))) { c.fails = 0; connect(c); } } }
+    else if (m.t === 'wake') wake();
   });
 }
 const live = { post: () => {}, via: 'aus', markets: {}, lastMsg: { spot: 0, futures: 0 }, wantKey: {}, need: new Set(), downSince: {}, everUp: {}, chartAt: 0 };
@@ -3290,7 +3337,7 @@ function onFeedUp(m) {
   }
   live.everUp[m] = true;
 }
-const feedFresh = m => live.markets[m]?.st === 'live' && Date.now() - (live.lastMsg[m] || 0) < 12000;
+const feedFresh = m => live.markets[m]?.st === 'live' && Date.now() - (live.lastMsg[m] || 0) < 9000; // drei Wächter-Runden
 function feedState() { const need = [...live.need]; if (!need.length) return 'idle'; const n = need.filter(feedFresh).length; return n === need.length ? 'live' : n ? 'partial' : 'down'; }
 const liveOk = () => feedState() === 'live';
 const chartMarket = () => state.sourceFor === state.symbol ? state.source : null;
@@ -3827,6 +3874,9 @@ document.addEventListener('visibilitychange', () => {
   hiddenAt = 0;
 });
 addEventListener('pageshow', e => { if (e.persisted) { live.post({ t: 'wake' }); state.next = Math.min(state.next, Date.now() + 500); } });
+// WLAN-Wechsel, Funkloch: offline sofort rot anzeigen, wieder online sofort neu verbinden und nachladen
+addEventListener('offline', () => status());
+addEventListener('online', () => { live.post({ t: 'wake' }); state.next = Math.min(state.next, Date.now() + 500); status(); });
 // ---------- Start ----------
 put('app-version', `Version ${APP_VERSION}`);
 readPalette(); applyTheme(store.get(THEME_KEY, 'dark'), false); applyLayout(store.get(LAYOUT_KEY, 'auto'), false); setTab(store.get(TAB_KEY, 'chart'), false);
@@ -4742,6 +4792,29 @@ $('tgb-now').addEventListener('click', () => void sendTgBackup(true));
 $('tgb-setup').addEventListener('click', () => openChan());
 $('chan-done').addEventListener('click', () => setTimeout(renderTgbInfo));
 renderTgbInfo();
+// ---------- Speicher-Hausmeister ----------
+// Einzelne Ticks werden nirgends aufbewahrt: der Hintergrund-Thread fasst alle Trades eines Symbols alle 200 ms zu
+// Tief/Hoch/Letzter zusammen und verwirft sie, die Alarmprüfung beginnt ihre Spannen bei jeder Prüfung neu, und die
+// Kerzenreihe ist ein Ringpuffer mit höchstens 500 Kerzen (vorne raus, hinten rein). Der Hausmeister räumt einmal pro
+// Minute die Reste auf, die sonst über Tage mitwachsen würden: Kurse und Live-Spuren von Symbolen, die seit 10 Minuten
+// niemand mehr braucht, und Alarm-Merker gelöschter Positionen.
+const SWEEP_STALE = 10 * 60e3;
+function sweepMemory(now = Date.now()) {
+  const need = new Set([state.symbol, ...state.positions.map(p => p.symbol), ...state.alarms.filter(a => !a.triggeredAt).map(a => a.symbol), ...state.watch.map(w => String(w).toUpperCase() + 'USDT')]);
+  let n = 0;
+  for (const sym of Object.keys(state.prices)) if (!need.has(sym) && now - (state.prices[sym]?.at || 0) > SWEEP_STALE) { delete state.prices[sym]; n++; }
+  for (const [sym, t] of liveTrack) if (!need.has(sym) && now - (t.at || 0) > SWEEP_STALE) { liveTrack.delete(sym); n++; }
+  for (const sym of nearSyms) if (!need.has(sym)) { nearSyms.delete(sym); n++; }
+  const ids = new Set(state.positions.map(p => p.id)), gone = k => !ids.has(String(k).split(':')[0]);
+  for (const m of [alerted, alertInfo, rearmedAt]) for (const k of [...m.keys()]) if (gone(k)) { m.delete(k); n++; }
+  if (ratingCache.size > 2000) { n += ratingCache.size; ratingCache.clear(); }
+  if (state.candles.length > 500) { n += state.candles.length - 500; state.candles.splice(0, state.candles.length - 500); }
+  return n;
+}
+setInterval(() => sweepMemory(), 60000);
+// Diagnose (Konsole, Tests): Größe der langlebigen Sammlungen
+window.__sdMem = () => ({ candles: state.candles.length, prices: Object.keys(state.prices), liveTrack: [...liveTrack.keys()], nearSyms: [...nearSyms], alerted: [...alerted], alertInfo: alertInfo.size, rearmedAt: [...rearmedAt.keys()], ratingCache: ratingCache.size });
+window.__sdSweep = now => sweepMemory(now);
 render();startLive();void showCachedChart();void refresh();void initAutoBackup();void requestWake();
 </script>
 </head>
@@ -4763,7 +4836,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
           <button type="button" class="button ghost" id="notify-test">Test-Hinweis senden</button>
           <div class="head-line"><button type="button" class="button ghost" id="chan-open" aria-haspopup="dialog">📨 Telegram / Discord einrichten …</button><details class="tip left"><summary aria-label="Wozu Telegram oder Discord?"><span>i</span></summary><div class="tip-body"><p>Schickt Kurs-Alarme, Stop-Loss/Take-Profit und das Tages-Verlustlimit zusätzlich über deinen eigenen Telegram-Bot oder einen Discord-Webhook – die Meldung kommt dann als Push aufs Smartphone, auch wenn Safari dort schläft.</p><p>Gesendet wird von dem Gerät, auf dem das Dashboard gerade geöffnet ist (z. B. dein Computer). Eine Schritt-für-Schritt-Anleitung steht im Fenster.</p></div></details></div>
           <small id="chan-summary"></small>
-          <small id="feed-note">Live-Kurse kommen per WebSocket direkt von Binance. Jede Kursmeldung wird sofort gegen Stop, Ziel und Alarme geprüft, auch kurze Dochte. Der Datenstrom läuft in einem eigenen Hintergrund-Thread und wird dadurch in Hintergrund-Tabs nicht gedrosselt. iPad und iPhone pausieren Webseiten im Hintergrund; beim Zurückkehren prüft das Dashboard die verpasste Zeit anhand der 1-Minuten-Kerzen nach. Bei geschlossener Seite gibt es keine Hinweise – auch nicht per Telegram oder Discord.</small>
+          <small id="feed-note">Live-Kurse kommen per WebSocket direkt von Binance. Jede Kursmeldung wird sofort gegen Stop, Ziel und Alarme geprüft, auch kurze Dochte. Der Datenstrom läuft in einem eigenen Hintergrund-Thread und wird dadurch in Hintergrund-Tabs nicht gedrosselt. Ein Wächter prüft alle 3 s, ob die Verbindung noch lebt; eine tote Verbindung (etwa nach Standby oder WLAN-Wechsel) wird sofort geschlossen und neu aufgebaut. Der Punkt oben rechts zeigt den Zustand: grün live, gelb verzögert oder verbindet neu, rot offline oder Datenfehler, grau pausiert. iPad und iPhone pausieren Webseiten im Hintergrund; beim Zurückkehren prüft das Dashboard die verpasste Zeit anhand der 1-Minuten-Kerzen nach. Bei geschlossener Seite gibt es keine Hinweise – auch nicht per Telegram oder Discord.</small>
         </div></span>
       <span class="menu-wrap"><button id="view-menu" class="button ghost" type="button" aria-expanded="false" aria-controls="view-panel" title="Ansicht">🌓<span class="lbl"> Ansicht</span></button>
         <div class="menu-panel" id="view-panel" hidden>
@@ -4790,6 +4863,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
     <span class="lb-spacer"></span>
     <span class="lb-alarm" id="lb-alarm" hidden></span>
     <button type="button" class="lb-pos" data-goto="positions" aria-label="Zu den Positionen"><span class="lb-label">Offen</span><span class="lb-num" id="lb-open">—</span><span class="lb-label opt">Heute</span><span class="lb-num opt" id="lb-day">—</span></button>
+    <span class="lb-conn" id="lb-conn" role="img" aria-label="Verbindung" data-feed="off"></span>
   </div>
   <div class="toasts" id="toasts" aria-live="assertive"></div>
   <main class="dash" id="dash">
