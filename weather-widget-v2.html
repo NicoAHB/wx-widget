@@ -1015,6 +1015,7 @@ html[data-chartfull]:not([data-chartbar=open]) .chart-toolbar,html[data-chartful
 #chart .zz-fc-cone{fill:var(--c-zz);opacity:.12;stroke:none}
 #chart .zz-fc-dot{fill:none;stroke:var(--c-zz);stroke-width:1.5}
 #chart .zz-fc-label,#chart .zz-fc-note{fill:var(--c-zz);font-weight:600}
+#chart .zz-fc-label{paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round}
 .zz-fc-btn:disabled{opacity:.45;cursor:not-allowed}
 .chart-panel>.notice{margin:12px 20px 0}
 html{scroll-padding-top:calc(var(--lb-h,56px) + 16px)}
@@ -1622,7 +1623,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Alle Werte liegen zusätzlich im Arbeitsspeicher und sind dadurch synchron lesbar. Schreiben geht sofort in den
 // localStorage und gebündelt in die IndexedDB; beim Start gewinnt die zuletzt vollständig geschriebene Kopie.
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
-const APP_VERSION = '3.6.1', docEl = document.documentElement;
+const APP_VERSION = '3.6.2', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -4996,25 +4997,34 @@ $('fb-rot').addEventListener('click', () => { store.set(FSROT_KEY, docEl.dataset
 // Pivots wechseln sich immer ab (H, L, H …), jeder bestätigte Schenkel ist mindestens so groß wie die Mindestbewegung.
 // Innerhalb einer Kerze ist die Reihenfolge von Hoch und Tief unbekannt: eine Kerze liefert höchstens einen Pivot, und
 // macht sie ein neues Extrem in Trendrichtung, zählt ihr Gegen-Extrem nicht als Umkehr (übliche ZigZag-Regel).
+// Schrittweise Erkennung: Kerze für Kerze fortschreibbar (für die Walk-Forward-Auswertung der Prognose); zigzag()
+// ist derselbe Ablauf über alle Kerzen.
+function zzStepper(pct) {
+  const f = pct / 100, conf = []; let dir = 0, hi = 0, hiI = -1, hiT = 0, lo = 0, loI = -1, loT = 0;
+  const pivot = (i, t, price, type) => conf.push({ i, t, price, type, ok: true });
+  return {
+    conf,
+    push(k, i) {
+      const h = k.high, l = k.low;
+      if (hiI < 0) { hi = h; hiI = i; hiT = k.time; lo = l; loI = i; loT = k.time; return; }
+      if (dir === 0) { // Richtung noch offen: die erste Bewegung um die Mindestgröße entscheidet
+        if (h > hi) { hi = h; hiI = i; hiT = k.time; }
+        if (l < lo) { lo = l; loI = i; loT = k.time; }
+        if (loI < hiI && hi >= lo * (1 + f)) { pivot(loI, loT, lo, 'L'); dir = 1; }
+        else if (hiI < loI && lo <= hi * (1 - f)) { pivot(hiI, hiT, hi, 'H'); dir = -1; }
+      } else if (dir === 1) { // aufwärts: Hoch nachziehen, Umkehr erst nach einem Rückgang um die Mindestgröße
+        if (h >= hi) { hi = h; hiI = i; hiT = k.time; } else if (l <= hi * (1 - f)) { pivot(hiI, hiT, hi, 'H'); dir = -1; lo = l; loI = i; loT = k.time; }
+      } else { // abwärts: Tief nachziehen, Umkehr erst nach einem Anstieg um die Mindestgröße
+        if (l <= lo) { lo = l; loI = i; loT = k.time; } else if (h >= lo * (1 + f)) { pivot(loI, loT, lo, 'L'); dir = 1; hi = h; hiI = i; hiT = k.time; }
+      }
+    },
+    open() { return dir === 1 ? { i: hiI, t: hiT, price: hi, type: 'H', ok: false } : dir === -1 ? { i: loI, t: loT, price: lo, type: 'L', ok: false } : null; },
+  };
+}
 function zigzag(c, pct) {
-  const out = [], f = pct / 100; if (!(c?.length > 1) || !(f > 0)) return out;
-  const pivot = (i, price, type, ok = true) => out.push({ i, t: c[i].time, price, type, ok });
-  let dir = 0, hi = c[0].high, hiI = 0, lo = c[0].low, loI = 0;
-  for (let i = 1; i < c.length; i++) {
-    const h = c[i].high, l = c[i].low;
-    if (dir === 0) { // Richtung noch offen: die erste Bewegung um die Mindestgröße entscheidet
-      if (h > hi) { hi = h; hiI = i; }
-      if (l < lo) { lo = l; loI = i; }
-      if (loI < hiI && hi >= lo * (1 + f)) { pivot(loI, lo, 'L'); dir = 1; }
-      else if (hiI < loI && lo <= hi * (1 - f)) { pivot(hiI, hi, 'H'); dir = -1; }
-    } else if (dir === 1) { // aufwärts: Hoch nachziehen, Umkehr erst nach einem Rückgang um die Mindestgröße
-      if (h >= hi) { hi = h; hiI = i; } else if (l <= hi * (1 - f)) { pivot(hiI, hi, 'H'); dir = -1; lo = l; loI = i; }
-    } else { // abwärts: Tief nachziehen, Umkehr erst nach einem Anstieg um die Mindestgröße
-      if (l <= lo) { lo = l; loI = i; } else if (h >= lo * (1 + f)) { pivot(loI, lo, 'L'); dir = 1; hi = h; hiI = i; }
-    }
-  }
-  if (dir === 1) pivot(hiI, hi, 'H', false); else if (dir === -1) pivot(loI, lo, 'L', false);
-  return out;
+  if (!(c?.length > 1) || !(pct > 0)) return [];
+  const s = zzStepper(pct); c.forEach((k, i) => s.push(k, i));
+  const o = s.open(); return o ? [...s.conf, o] : [...s.conf];
 }
 // var statt const/let: renderChart kann schon laufen, bevor dieser Abschnitt ausgewertet ist
 var ZZ_KEY = 'scalpdesk.zigzag.v1', ZZ_STEPS = [0.25, 0.5, 1, 2, 3, 5, 8], zzCache = { key: '', piv: [] };
@@ -5056,6 +5066,56 @@ function zzForecast(piv = pivotsFor(), n = state.candles.length) {
   const at = p => last.price * (1 + (up ? 1 : -1) * p / 100);
   return { from: last, up, n: same.length, pct: med, p25, p75, bars, to: { i: Math.max(last.i + bars, n), price: at(med) }, lo: at(p25), hi: at(p75) };
 }
+// ---------- Lernen aus eingetroffenen und verfehlten Prognosen (Walk-Forward) ----------
+// Die App geht die geladenen Kerzen durch und rechnet zu jedem Zeitpunkt nur mit dem, was damals bekannt war:
+// – Lernfaktor: für jeden abgeschlossenen Schwung das Verhältnis tatsächliche Größe / damalige Prognose; der Median der
+//   letzten (bis zu 12) Verhältnisse je Richtung korrigiert die nächste Prognose (bisher zu groß geschätzt → kleiner und
+//   umgekehrt). Ein ZigZag-Schwung ist nie kleiner als die Mindestbewegung, das Ziel also auch nicht.
+//   Angewendet wird er nur, solange er die Größenschätzung in diesem Chart bisher genauer gemacht hat (Summe der
+//   Abweichungen |ln(tatsächlich / geschätzt)| mit und ohne Korrektur, mind. 6 Schwünge mit Korrektur). Bei zufälligem
+//   Kursverlauf gibt es nichts zu lernen – dann würde die Korrektur nur Rauschen hinzufügen.
+// – Trefferquote: Anteil der Zeitpunkte, an denen der Kurs das Prognoseziel innerhalb der doppelten erwarteten Dauer
+//   erreichte, bevor er den Extrempunkt um mehr als die halbe Mindestbewegung überschritt (gleiche Kerze: zählt als Fehler).
+//   Gezählt wird, was die App zum jeweiligen Zeitpunkt angezeigt hätte; zum Vergleich auch ohne Lernfaktor.
+//   Die laufende letzte Kerze bleibt außen vor.
+function zzLearn(c, pct) {
+  const n = c.length - 1, f = pct / 100, out = { n: 0, hits: 0, plain: 0, corr: { up: 1, down: 1 }, raw: { up: 1, down: 1 }, use: false, swings: 0, k: 0, dev: { c: 0, p: 0 } };
+  if (!(n >= 40) || !(f > 0)) return out;
+  const s = zzStepper(pct), ratios = { up: [], down: [] }, pend = [], err = { c: 0, p: 0 };
+  const med = a => { const x = [...a].sort((p, q) => p - q), m = x.length >> 1; return x.length % 2 ? x[m] : (x[m - 1] + x[m]) / 2; };
+  const corrOf = up => { const r = ratios[up ? 'up' : 'down'].slice(-12); return r.length >= 3 ? Math.min(2, Math.max(.4, med(r))) : 1; };
+  const use = () => out.k >= 6 && err.c < err.p;
+  const at = (fc, p) => fc.from.price * (1 + (fc.up ? 1 : -1) * Math.max(pct, p) / 100);
+  for (let t = 0; t < n; t++) {
+    const k = c[t];
+    for (let j = pend.length - 1; j >= 0; j--) { // Stichproben früherer Zeitpunkte mit dieser Kerze auflösen
+      const p = pend[j], broke = p.up ? k.low <= p.stop : k.high >= p.stop, late = t > p.until;
+      for (const key of ['c', 'p']) if (p[key] === undefined) p[key] = broke || late ? false : (p.up ? k.high >= p[key + 't'] : k.low <= p[key + 't']) || undefined;
+      if (p.c !== undefined && p.p !== undefined) { out.n++; out.hits += p.c ? 1 : 0; out.plain += p.p ? 1 : 0; pend.splice(j, 1); }
+    }
+    const before = s.conf.length; s.push(k, t);
+    for (let q = Math.max(2, before); q < s.conf.length; q++) { // Schwung abgeschlossen: tatsächliche Größe / damalige Prognose
+      const a = s.conf[q - 1], b = s.conf[q], fc = zzForecast([...s.conf.slice(0, q - 1), { ...a, ok: false }], a.i + 1);
+      if (!fc) continue;
+      const real = Math.abs(b.price / a.price - 1) * 100, corr = corrOf(fc.up);
+      err.p += Math.abs(Math.log(real / fc.pct)); err.c += Math.abs(Math.log(real / Math.max(pct, fc.pct * corr)));
+      out.swings++; if (corr !== 1) out.k++;
+      ratios[fc.up ? 'up' : 'down'].push(real / fc.pct);
+    }
+    const o = s.open(); if (!o) continue;
+    const fc = zzForecast([...s.conf, o], t + 1); if (!fc) continue;
+    pend.push({ up: fc.up, ct: at(fc, fc.pct * (use() ? corrOf(fc.up) : 1)), pt: at(fc, fc.pct), stop: fc.from.price * (1 - (fc.up ? 1 : -1) * f / 2), until: t + Math.max(3, 2 * fc.bars) });
+  }
+  out.use = use(); out.raw = { up: corrOf(true), down: corrOf(false) }; if (out.use) out.corr = out.raw;
+  if (out.swings) out.dev = { c: Math.exp(err.c / out.swings) - 1, p: Math.exp(err.p / out.swings) - 1 }; // typische Abweichung
+  return out;
+}
+var zzLearnCache = { key: '', v: null };
+function zzLearnFor(c = state.candles, pct = zzPct()) {
+  const key = [state.symbol, state.interval, pct, c.length, c.at(-2)?.time].join('|');
+  if (zzLearnCache.key !== key) zzLearnCache = { key, v: zzLearn(c, pct) };
+  return zzLearnCache.v;
+}
 // Platz rechts im Chart für die Prognose – nur am aktuellen Rand (nicht beim Zurückblättern)
 function chartFutureSlots(len) {
   if (!zzFcOn() || state.pan > 0) return 0;
@@ -5067,14 +5127,30 @@ function drawZigzagForecast(g, { offset, x, y, top, bottom, left }) {
   if (!zzFcOn() || state.pan > 0) return;
   const f = zzForecast();
   if (!f) { g.append(node('text', { x: left + 6, y: top + 30, class: 'axis-label zz-fc-note' }, 'Prognose: zu wenige Schwünge – Mindestbewegung verkleinern')); return; }
-  const x0 = x(f.from.i - offset), y0 = y(f.from.price), x1 = x(f.to.i - offset), y1 = y(f.to.price), sign = f.up ? '+' : '−';
-  const tip = `Statistische Projektion: Median der letzten ${f.n} ${f.up ? 'Aufwärts' : 'Abwärts'}schwünge dieses Charts (${sign}${number(f.pct)} %, ≈ ${f.bars} Kerzen). Band: mittlere Hälfte (${sign}${number(f.p25)} bis ${sign}${number(f.p75)} %). Annahme: der aktuelle Extrempunkt ist die Umkehr. Keine Vorhersage.`;
+  const L = zzLearnFor(), corr = f.up ? L.corr.up : L.corr.down, pct = zzPct(), sign = f.up ? '+' : '−';
+  const adj = p => f.from.price * (1 + (f.up ? 1 : -1) * Math.max(pct, p * corr) / 100), tp = Math.max(pct, f.pct * corr);
+  f.to.price = adj(f.pct); f.lo = adj(f.p25); f.hi = adj(f.p75);
+  const x0 = x(f.from.i - offset), y0 = y(f.from.price), x1 = x(f.to.i - offset), y1 = y(f.to.price);
+  const rate = L.n >= 20 ? Math.round(L.hits / L.n * 100) : null, plain = L.n >= 20 ? Math.round(L.plain / L.n * 100) : null;
+  const tip = `Statistische Projektion: Median der letzten ${f.n} ${f.up ? 'Aufwärts' : 'Abwärts'}schwünge dieses Charts (${sign}${number(f.pct)} %, ≈ ${f.bars} Kerzen)`
+    + (corr !== 1 ? `, mit Lernfaktor ×${number(corr)} → ${sign}${number(tp)} % (die letzten Schwünge fielen ${corr < 1 ? 'kleiner' : 'größer'} aus als geschätzt)` : '') + '. '
+    + (L.k < 6 ? 'Lernfaktor: noch zu wenige abgeschlossene Schwünge zum Prüfen. '
+      : `${L.use ? 'Der Lernfaktor hat' : 'Lernfaktor nicht angewendet: er hätte'} die Größenschätzung in diesem Chart bisher ${L.use ? '' : 'nicht '}verbessert (typische Abweichung ${Math.round(L.dev.c * 100)} % statt ${Math.round(L.dev.p * 100)} %). `)
+    + (rate !== null ? `Trefferquote ${rate} %: in ${L.hits} von ${L.n} Momenten der geladenen Kerzen erreichte der Kurs das damalige Prognoseziel rechtzeitig, bevor er den Extrempunkt deutlich überschritt (ohne Lernfaktor: ${plain} %). ` : 'Für eine Trefferquote gibt es noch zu wenige vergleichbare Momente (mind. 20). ')
+    + 'Band: mittlere Hälfte der Schwünge. Annahme: der aktuelle Extrempunkt ist die Umkehr. Keine Vorhersage.';
   const grp = node('g', { class: 'zz-fc' }); grp.append(node('title', {}, tip));
   grp.append(node('polygon', { class: 'zz-fc-cone', points: `${x0.toFixed(1)},${y0.toFixed(1)} ${x1.toFixed(1)},${y(f.lo).toFixed(1)} ${x1.toFixed(1)},${y(f.hi).toFixed(1)}` }));
   grp.append(node('line', { class: 'zz-fc-line', x1: x0.toFixed(1), y1: y0.toFixed(1), x2: x1.toFixed(1), y2: y1.toFixed(1) }));
   grp.append(node('circle', { class: 'zz-fc-dot', cx: x1.toFixed(1), cy: y1.toFixed(1), r: 3.2 }));
-  const ly = Math.min(bottom - 6, Math.max(top + 12, f.up ? y(f.hi) - 6 : y(f.lo) + 14)), out = y1 < top || y1 > bottom ? ` (${y1 < top ? '↑' : '↓'} außerhalb)` : '';
-  grp.append(node('text', { x: x1 - 6, y: ly, class: 'axis-label zz-fc-label', 'text-anchor': 'end' }, `Prognose ${sign}${number(f.pct)} % · ${f.bars} K.${out}`));
+  // Beschriftung neben dem Linienende; passt sie nicht in eine Zeile (schmaler Chart am Handy), zweizeilig
+  const head = `Prognose ${sign}${number(tp)} % · ${f.bars} K.`, hit = rate !== null ? `${rate} % Treffer` : 'zu wenig Daten';
+  const arrow = y1 < top ? '↑' : y1 > bottom ? '↓' : '', out = arrow ? ` (${arrow} außerhalb)` : '', fits = t => t.length * 7.2 <= x1 - 6 - left;
+  const lines = fits(`${head} · ${hit}${out}`) ? [`${head} · ${hit}${out}`] : [head, hit + (fits(hit + out) ? out : arrow ? ' ' + arrow : '')];
+  // die beiden Randzeilen oben und unten bleiben frei: dort stehen Hinweise auf Marken außerhalb des Ausschnitts
+  const lh = 14, span = (lines.length - 1) * lh, ly = Math.min(bottom - 35 - span, Math.max(top + 41, f.up ? y(f.hi) - 6 - span : y(f.lo) + 14));
+  const label = node('text', { x: x1 - 6, y: ly, class: 'axis-label zz-fc-label', 'text-anchor': 'end' });
+  lines.forEach((t, k) => label.append(node('tspan', { x: x1 - 6, dy: k ? lh : 0 }, t)));
+  grp.append(label);
   g.append(grp);
 }
 $('zz-fc').setAttribute('aria-pressed', String(!!zzCfg().fc));
