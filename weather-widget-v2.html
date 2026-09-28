@@ -875,8 +875,8 @@ svg .lm-label{font-size:11.5px;font-weight:700;paint-order:stroke;stroke:var(--s
 @media (max-width:600px){
   .heat .v-long{display:none}
   .heat .v-short{display:inline}
-  .livebar .heat,.signal-line a.heat{display:grid;grid-template-columns:repeat(6,minmax(0,34px)) auto auto;gap:3px;justify-self:stretch}
-  .heat i{min-width:0;padding:0 2px;overflow:hidden}
+  .livebar .heat,.signal-line a.heat{display:grid;grid-template-columns:repeat(6,minmax(0,40px)) auto auto;gap:3px;justify-self:stretch}
+  .heat i{min-width:0;padding:0 1px;overflow:hidden;font-size:.7rem;letter-spacing:-.01em}
   .heat .verdict{padding:2px 7px}
   .signal-line a.heat{flex:1 1 auto;min-width:0}
 }
@@ -910,6 +910,13 @@ html[data-layout=tablet] .tabbar{grid-template-columns:repeat(2,minmax(0,1fr)) a
 @media (max-width:380px){.livebar .lb-market .change,.livebar .lb-pos>.lb-label{display:none}}
 .tgb-info{color:var(--muted)}
 .tgb-info.err{color:var(--err-text)}
+@media (max-width:360px){.heat i{font-size:.64rem}}
+/* Live-Leiste am Handy: Zeile 1 Kurs · Alarm-Hinweis · Offen, Zeile 2 die Signal-Zeile in voller Breite */
+@media (max-width:600px){
+  .livebar,html[data-layout=tablet] .livebar{grid-template-areas:"m al pos" "heat heat heat"}
+  .livebar .lb-spacer{display:none}
+  .livebar .lb-alarm{grid-area:al;justify-self:end;min-width:0;max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+}
 .chart-panel>.notice{margin:12px 20px 0}
 html{scroll-padding-top:calc(var(--lb-h,56px) + 16px)}
 html[data-layout=desktop] .col-input,html[data-layout=desktop] .col-control{top:calc(env(safe-area-inset-top,0px) + var(--lb-h,56px) + 12px);max-height:calc(100dvh - var(--lb-h,56px) - 28px)}
