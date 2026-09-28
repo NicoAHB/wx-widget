@@ -868,6 +868,55 @@ svg .lm-label{font-size:11.5px;font-weight:700;paint-order:stroke;stroke:var(--s
 @container (max-width:560px){.lmap-strip{padding:8px 14px 10px}.lm-scale small{display:none}}
 @container (max-width:400px){.lm-chip .lm-side{display:none}}
 @media (pointer:coarse){.lm-chip{min-height:44px}.lmap-strip{grid-template-rows:24px minmax(44px,auto)}}
+/* ---------- Smartphone hochkant: nichts breiter als der Bildschirm ---------- */
+/* Signal-Zeilen (Live-Leiste und unter dem Kurs): die sechs Zeiträume teilen sich den Platz, das Gesamturteil steht kurz da */
+.heat{min-width:0;max-width:100%}
+.heat .v-short{display:none}
+@media (max-width:600px){
+  .heat .v-long{display:none}
+  .heat .v-short{display:inline}
+  .livebar .heat,.signal-line a.heat{display:grid;grid-template-columns:repeat(6,minmax(0,40px)) auto auto;gap:3px;justify-self:stretch}
+  .heat i{min-width:0;padding:0 1px;overflow:hidden;font-size:.7rem;letter-spacing:-.01em}
+  .heat .verdict{padding:2px 7px}
+  .signal-line a.heat{flex:1 1 auto;min-width:0}
+}
+/* Live-Leiste: „Heute“ nur auf breiten Bildschirmen (die Regel für die Einzelteile weiter oben ist spezifischer) */
+@media (max-width:999px){.livebar .lb-pos>.opt{display:none}}
+/* Sicherheitsnetz: die Seite scrollt nie seitlich (einzelne Tabellen scrollen in sich) */
+html{overflow-x:hidden}
+@supports (overflow:clip){html,body{overflow-x:clip}}
+/* ---------- Handy: Live-Texte mit festen Zeilen ---------- */
+/* Positionskarten: Euro, ROE/Kurs, Liquidation, Stops und Hinweise stehen je in eigenen Zeilen statt je nach Ziffernzahl umzubrechen */
+.pos-pnl [data-f="pnl-sub"]{display:block;white-space:pre-line}
+.pos-pnl strong{white-space:nowrap}
+.pos-card [data-f="liq"],.pos-stops .st strong,.pos-alert>span,#day-info{white-space:pre-line}
+@media (max-width:600px){#ohlc{white-space:pre-line}}
+/* Abschnitts-Titel: der Zusatz rechts („1m · laufende Kerze vorläufig“) bleibt einzeilig */
+.fold>summary>h2{flex:0 0 auto}
+.fold>summary>span{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.day-banner small{white-space:pre-line}
+/* ---------- Handy: Raster und Leisten nie breiter als der Platz ---------- */
+.pos-list{grid-template-columns:repeat(auto-fill,minmax(min(300px,100%),1fr))}
+.breakdowns{grid-template-columns:repeat(auto-fit,minmax(min(280px,100%),1fr))}
+#monthly{overflow-x:auto;overscroll-behavior-x:contain}
+/* Untere Tab-Leiste: die Spalten teilen sich den Platz, lange Namen werden notfalls gekürzt */
+html[data-layout=tablet] .tabbar{grid-template-columns:repeat(2,minmax(0,1fr)) auto repeat(2,minmax(0,1fr))}
+.tabbar button{min-width:0}
+.tabbar .tl{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tabbar .tab-badge{margin:2px 0 0}
+@media (max-width:420px){.tabbar button{font-size:.7rem}.tabbar .tab-fab{width:60px;height:60px;min-height:60px;margin:-24px 2px 0}}
+@media (max-width:370px){.tabbar button{font-size:.66rem;letter-spacing:-.01em}}
+/* Live-Leiste auf sehr schmalen Handys: Tagesänderung und „Offen“ weglassen (stehen im Chart bzw. bei den Positionen) */
+@media (max-width:380px){.livebar .lb-market .change,.livebar .lb-pos>.lb-label{display:none}}
+.tgb-info{color:var(--muted)}
+.tgb-info.err{color:var(--err-text)}
+@media (max-width:360px){.heat i{font-size:.64rem}}
+/* Live-Leiste am Handy: Zeile 1 Kurs · Alarm-Hinweis · Offen, Zeile 2 die Signal-Zeile in voller Breite */
+@media (max-width:600px){
+  .livebar,html[data-layout=tablet] .livebar{grid-template-areas:"m al pos" "heat heat heat"}
+  .livebar .lb-spacer{display:none}
+  .livebar .lb-alarm{grid-area:al;justify-self:end;min-width:0;max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+}
 .chart-panel>.notice{margin:12px 20px 0}
 html{scroll-padding-top:calc(var(--lb-h,56px) + 16px)}
 html[data-layout=desktop] .col-input,html[data-layout=desktop] .col-control{top:calc(env(safe-area-inset-top,0px) + var(--lb-h,56px) + 12px);max-height:calc(100dvh - var(--lb-h,56px) - 28px)}
@@ -1474,7 +1523,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Alle Werte liegen zusätzlich im Arbeitsspeicher und sind dadurch synchron lesbar. Schreiben geht sofort in den
 // localStorage und gebündelt in die IndexedDB; beim Start gewinnt die zuletzt vollständig geschriebene Kopie.
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
-const APP_VERSION = '3.3.0', docEl = document.documentElement;
+const APP_VERSION = '3.4.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -1914,10 +1963,14 @@ function heatNodes({ all, overall, anyStale }, tr) {
     const i = el('i', iv === state.interval ? 'cur' : '', iv); i.dataset.tone = toneOf(rating); if (stale) i.style.opacity = '.55';
     i.title = `${iv}: ${rating ? `${VERDICT[rating.verdict]} (${scoreText(rating.score)}/4)` : 'keine Bewertung'}`; return i;
   });
-  const out = [...cells, verdictNode(overall, anyStale)];
+  // Gesamturteil lang und kurz: am Handy passt nur „Kauf“ / „Verkauf“ / „Halten“ neben die sechs Zeiträume
+  const v = verdictNode(overall, anyStale);
+  if (overall) v.replaceChildren(el('span', 'v-long', VERDICT[overall.verdict]), el('span', 'v-short', VERDICT_SHORT[overall.verdict]));
+  const out = [...cells, v];
   if (overall && tr?.dir) out.push(trendNode(tr, 'lb-trend trend'));
   return out;
 }
+const VERDICT_SHORT = { buy: 'Kauf', sell: 'Verkauf', hold: 'Halten' };
 const heatLabel = ({ all, overall }, tr) => `Signale: ${all.map(x => `${x.iv} ${x.rating ? `${VERDICT[x.rating.verdict]} ${scoreText(x.rating.score)}` : 'ohne Bewertung'}`).join(', ')}${overall ? `. Gesamt ${VERDICT[overall.verdict]}, Score ${scoreText(overall.net)}${tr?.dir ? `, vor ${TREND_REF} Minuten ${scoreText(tr.ref)}` : ''}` : ''}. Zur Signal-Übersicht.`;
 // Nur neu zeichnen, wenn sich eine Bewertung ändert (oder eine neue Minute für den Verlauf beginnt) –
 // sonst würden Klicks auf die Zeilen beim Live-Update verloren gehen
@@ -2093,22 +2146,22 @@ function updateCard(card, pos) {
   card.classList.toggle('stale', !!price && (!!pr?.error || state.paused)); card.classList.toggle('liquidated', m.liquidated);
   const big = setF(card, 'pnl', m.pnl === null ? 'Kurs ausstehend' : signed(m.pnl) + ' USDT'); big.classList.toggle('positive', m.pnl > 0); big.classList.toggle('negative', m.pnl < 0);
   setF(card, 'pnl-sub', m.pnl === null ? (pr?.error || 'Wartet auf den nächsten Abruf.')
-    : `${eurPart(m.pnl, 2, true)} · ROE ${signed(m.roe)} % · Kurs ${signed(m.move)} %${pos.preRealized ? ` · bisher realisiert ${signed(pos.preRealized, 4)} · netto ${signed(m.net)} USDT` : ''}`);
+    : [eurPart(m.pnl, 2, true), `ROE ${signed(m.roe)} % · Kurs ${signed(m.move)} %`, ...(pos.preRealized ? [`bisher realisiert ${signed(pos.preRealized, 4)}`, `netto ${signed(m.net)} USDT`] : [])].filter(Boolean).join('\n'));
   setF(card, 'entry', euroLine(priceUE(pos.entry)));
   setF(card, 'price', price ? euroLine(priceUE(price)) : '—');
   setF(card, 'price-at', !pr ? '' : pr.error && pr.at ? `Stand ${new Date(pr.at).toLocaleTimeString('de-DE')} · veraltet` : pr.at ? `${pr.live && !state.paused && Date.now() - pr.at < 15000 ? 'Live' : 'Stand'} ${new Date(pr.at).toLocaleTimeString('de-DE')}${state.paused ? ' · pausiert' : ''}` : '');
   setF(card, 'qty', `${qtyText(m.qty)} ${coin(pos.symbol)}`);
-  setF(card, 'size', euroLine(`${number(m.margin)} · ${usdt(m.notional)}`));
+  setF(card, 'size', euroLine(`${number(m.margin)}\n${usdt(m.notional)}`));
   setF(card, 'liq', m.liqPrice === null ? (pos.mode === 'cross' ? 'Cross: Liquidation hängt vom ganzen Konto ab – Liq.-Preis der Börse über „Bearbeiten“ eintragen.' : 'Liquidation: Maintenance Margin im Rechner prüfen.')
-    : `${m.liqSource === 'exchange' ? 'Liquidation laut Börse' : 'Liquidation (Modell, isoliert)'} ≈ ${priceText(m.liqPrice)} USDT · ${m.remaining === null ? `${number(m.liqDistance)} % vom Einstieg` : `${number(m.remaining, 0)} % des Abstands übrig`}`);
+    : `${m.liqSource === 'exchange' ? 'Liquidation laut Börse' : 'Liquidation (Modell, isoliert)'} ≈ ${priceText(m.liqPrice)} USDT\n${m.remaining === null ? `${number(m.liqDistance)} % vom Einstieg` : `${number(m.remaining, 0)} % des Abstands übrig`}`);
   const bar = card.querySelector('[data-f="liq-bar"]'); bar.hidden = m.remaining === null && m.liqPrice === null;
   bar.firstChild.style.width = `${m.remaining ?? 100}%`; bar.classList.toggle('warn', m.remaining !== null && m.remaining < 50); bar.classList.toggle('danger', m.remaining !== null && m.remaining < 25);
   const warn = card.querySelector('[data-f="warn"]');
-  warn.textContent = m.liquidated ? 'Der Kurs hat den Liquidationspreis erreicht. Die Position wurde wahrscheinlich geschlossen – bitte an der Börse prüfen.' : m.remaining !== null && m.remaining < 25 ? 'Kurs nahe am Liquidationspreis.' : '';
+  warn.textContent = m.liquidated ? 'Der Kurs hat den Liquidationspreis erreicht. Die Position wurde wahrscheinlich geschlossen – bitte an der Börse prüfen.' : liqNearHold(pos.id, m.remaining) ? 'Kurs nahe am Liquidationspreis.' : '';
   warn.hidden = !warn.textContent;
   const s = stopTarget(pos, price), stops = card.querySelector('[data-f="stops"]');
   if (s.sl || s.tp) {
-    const line = (label, leg) => { const d = el('div', 'st'); d.append(el('span', '', label), el('strong', '', `${priceText(leg.price)} · ${signed(leg.pnl)} USDT${leg.dist !== null ? ` · ${number(leg.dist)} % entfernt` : ''}`)); return d; };
+    const line = (label, leg) => { const d = el('div', 'st'); d.append(el('span', '', label), el('strong', '', `${priceText(leg.price)} · ${signed(leg.pnl)} USDT${leg.dist !== null ? `\n${number(leg.dist)} % entfernt` : ''}`)); return d; };
     const parts = []; if (s.sl) parts.push(line('Stop-Loss', s.sl)); if (s.tp) parts.push(line('Take-Profit', s.tp));
     if (s.sl && s.tp) {
       const bar = el('div', 'st-bar'), entryPos = Math.max(0, Math.min(100, (pos.entry - pos.sl) / (pos.tp - pos.sl) * 100)), tick = el('u'); tick.style.left = entryPos + '%'; tick.title = 'Einstieg'; bar.append(tick);
@@ -2122,7 +2175,7 @@ function updateCard(card, pos) {
   const shown = t => !pos.ack[t] && (alerted.has(pos.id + ':' + t) || !!s[t]?.hit);
   const al = card.querySelector('[data-f="alert"]'), hitType = shown('tp') ? 'tp' : shown('sl') ? 'sl' : null;
   al.hidden = !hitType;
-  if (hitType) { const info = alertInfo.get(pos.id + ':' + hitType) || {}, text = `${hitType === 'tp' ? 'Take-Profit' : 'Stop-Loss'} ${priceText(hitType === 'tp' ? pos.tp : pos.sl)} ${howReached(info)} · Kurs ${price ? priceText(price) : '—'}`;
+  if (hitType) { const info = alertInfo.get(pos.id + ':' + hitType) || {}, text = `${hitType === 'tp' ? 'Take-Profit' : 'Stop-Loss'} ${priceText(hitType === 'tp' ? pos.tp : pos.sl)} ${howReached(info)}\nKurs ${price ? priceText(price) : '—'}`;
     if (al.dataset.text !== text) { al.dataset.text = text; al.className = 'pos-alert ' + hitType; const ok = btn('button ghost', 'Gesehen', 'ack'); ok.dataset.type = hitType; al.replaceChildren(el('span', '', text), ok); } } else al.dataset.text = '';
   const pv = card.querySelector('[data-f="realize-preview"]');
   if (pv) {
@@ -2233,7 +2286,7 @@ const dataSig = () => JSON.stringify([state.positions.map(({ ack, ...p }) => p),
 function persist() {
   const lists = [[POS_KEY, state.positions], [HIST_KEY, state.trades], [MONEY_KEY, state.movements], [ALARM_KEY, state.alarms], [SETUP_KEY, state.setups]];
   const changed = lists.filter(([k, v]) => store.set(k, v)).map(([k]) => k), sig = dataSig();
-  if (importantSig !== null && sig !== importantSig) { store.set(CHANGES_KEY, changeCount() + 1); changed.push(CHANGES_KEY); scheduleAutoBackup(); void store.persist(); }
+  if (importantSig !== null && sig !== importantSig) { store.set(CHANGES_KEY, changeCount() + 1); changed.push(CHANGES_KEY); scheduleAutoBackup(); scheduleTgBackup(); void store.persist(); }
   importantSig = sig;
   if (changed.length) broadcastData(changed);
   if (!store.ok) { $('data-panel').hidden = false; put('history-status', 'Speichern im Browser nicht möglich – bitte jetzt ein Backup herunterladen!'); }
@@ -2352,7 +2405,7 @@ function renderBackupInfo() {
   const warn = ab === 'active' ? !!autoBackup.error : ab === 'paused' || n > 0 || due;
   for (const id of ['backup-due', 'backup-count']) { const b = $(id); b.hidden = !label; b.textContent = label; b.parentElement.classList.toggle('ok', !warn); b.parentElement.title = warn ? 'Änderungen seit dem letzten Backup – Backup erstellen' : 'Backup aktuell'; }
   $('tab-pos-badge').hidden = !warn || !has; put('tab-pos-badge', '!');
-  put('backup-info', `${m ? `Letztes Backup auf diesem Gerät: ${new Date(m.at).toLocaleString('de-DE')} · ${m.kind === 'auto' ? 'automatisch' : m.kind === 'share' ? 'geteilt' : m.encrypted ? 'verschlüsselt' : 'unverschlüsselt'} · ${m.positions} Positionen, ${m.trades} Trades${m.movements ? `, ${m.movements} Geldbewegungen` : ''}` : 'Auf diesem Gerät wurde noch kein Backup erstellt.'}${n ? ` · Seitdem ${n} ${n === 1 ? 'Änderung' : 'Änderungen'}.` : ''}`);
+  put('backup-info', `${m ? `Letztes Backup auf diesem Gerät: ${new Date(m.at).toLocaleString('de-DE')} · ${m.kind === 'auto' ? 'automatisch' : m.kind === 'telegram' ? 'per Telegram' : m.kind === 'share' ? 'geteilt' : m.encrypted ? 'verschlüsselt' : 'unverschlüsselt'} · ${m.positions} Positionen, ${m.trades} Trades${m.movements ? `, ${m.movements} Geldbewegungen` : ''}` : 'Auf diesem Gerät wurde noch kein Backup erstellt.'}${n ? ` · Seitdem ${n} ${n === 1 ? 'Änderung' : 'Änderungen'}.` : ''}`);
   if (autoBackup.supported) {
     $('autobackup-row').hidden = false; $('autobackup-setup').hidden = ab !== 'off'; $('autobackup-resume').hidden = ab !== 'paused'; $('autobackup-stop').hidden = ab === 'off';
     put('autobackup-info', ab === 'active' ? `Automatisches Backup aktiv: ${autoBackup.handle?.name || 'Datei'} · zuletzt ${autoBackup.at ? new Date(autoBackup.at).toLocaleString('de-DE') : 'noch nicht geschrieben'}${autoBackup.error ? ` · Fehler: ${autoBackup.error}` : ''}`
@@ -2806,14 +2859,14 @@ function renderRisk() {
 function renderDay(unrealized = 0) {
   const d = dayStats(state.trades), lim = state.dayLimit, st = dayLimitHysteresis(limitStatus(d.pnl, unrealized, lim), d.pnl, unrealized, lim);
   $('day-pnl').textContent = d.n ? `${signed(d.pnl)} USDT` : '0,00 USDT'; color('day-pnl', d.pnl);
-  put('day-info', `${d.n} ${d.n === 1 ? 'Trade' : 'Trades'}${lim ? ` · Limit ${usdt(lim)}${st.state === 'reached' ? ' · erreicht' : ` · noch ${number(Math.max(0, st.rest))} USDT Spielraum`}` : ' · kein Limit gesetzt'}`);
+  put('day-info', `${d.n} ${d.n === 1 ? 'Trade' : 'Trades'}${lim ? ` · Limit ${usdt(lim)}${st.state === 'reached' ? '\nerreicht' : `\nnoch ${number(Math.max(0, st.rest))} USDT Spielraum`}` : ' · kein Limit gesetzt'}`);
   const bar = $('day-bar'); bar.hidden = !lim; bar.firstChild.style.width = `${st.used ?? 0}%`; bar.classList.toggle('warn', st.state === 'near' || st.state === 'open-over'); bar.classList.toggle('over', st.state === 'reached');
   if (document.activeElement !== $('day-limit')) $('day-limit').value = lim ? plain(lim) : '';
   const ban = $('day-banner');
   if (st.state === 'reached' || st.state === 'open-over') {
     ban.hidden = false;
     ban.replaceChildren(el('span', '', st.state === 'reached' ? `Tages-Verlustlimit erreicht: heute ${signed(d.pnl)} USDT realisiert (Limit ${number(lim)} USDT).` : `Achtung: mit den offenen Positionen läge der heutige Verlust über deinem Limit von ${number(lim)} USDT.`));
-    ban.firstChild.append(el('small', '', st.state === 'reached' ? 'Laut deinem eigenen Limit ist für heute Schluss mit neuen Trades.' : `Realisiert ${signed(d.pnl)} USDT, offen ${signed(unrealized)} USDT.`));
+    ban.firstChild.append(el('small', '', st.state === 'reached' ? 'Laut deinem eigenen Limit ist für heute Schluss mit neuen Trades.' : `Realisiert ${signed(d.pnl)} USDT\noffen ${signed(unrealized)} USDT`));
     if (st.state === 'reached') { const noted = String(store.get(DAYNOTE_KEY, ''));
       if (noted !== dayKey(Date.now())) { store.set(DAYNOTE_KEY, dayKey(Date.now())); void notifyChannels('day', 'day:' + dayKey(Date.now()), `⛔ Tages-Verlustlimit erreicht\nHeute ${signed(d.pnl)} USDT realisiert · Limit ${number(lim)} USDT`, 864e5); beep(); desktopNotify('⛔ Tages-Verlustlimit erreicht', `Heute ${signed(d.pnl)} USDT · Limit ${number(lim)} USDT`, 'daylimit'); simpleToast('daylimit', 'sl', `⛔ Tages-Verlustlimit erreicht: ${signed(d.pnl)} USDT`); } }
   } else ban.hidden = true;
@@ -2897,13 +2950,13 @@ function renderChart(levels={}, ov={}, start=null, end=null) {
   const labels=w<500 ? 3 : 5;
   for(let j=0;j<labels;j++){const i=Math.round(j*(data.length-1)/(labels-1));const d=new Date(data[i].time);const label=['1m','5m','15m','1h'].includes(state.interval) ? d.toLocaleTimeString('de-DE',{timeZone:'UTC',hour:'2-digit',minute:'2-digit'}) : d.toLocaleDateString('de-DE',{timeZone:'UTC',day:'2-digit',month:'2-digit',...(state.interval==='1M'?{year:'2-digit'}:{})});svg.append(node('text',{x:x(i),y:h-10,class:'axis-label','text-anchor':j===0?'start':j===labels-1?'end':'middle'},label));}
   const cross=node('line',{x1:0,y1:top,x2:0,y2:h-30,class:'crosshair',visibility:'hidden'});svg.append(cross);
-  function select(i) {i=Math.max(0,Math.min(data.length-1,i));state.selected=i;const c=data[i];state.selectedTime=c.time;cross.setAttribute('x1',x(i));cross.setAttribute('x2',x(i));cross.setAttribute('visibility','visible');put('ohlc',`${utcDate(c.time)} UTC · O ${priceText(c.open)}  H ${priceText(c.high)}  L ${priceText(c.low)}  C ${priceText(c.close)}`);}
-  const clear=()=>{cross.setAttribute('visibility','hidden');state.selected=null;state.selectedTime=null;put('ohlc',`O ${priceText(last.open)}  H ${priceText(last.high)}  L ${priceText(last.low)}  C ${priceText(last.close)}`);};
+  function select(i) {i=Math.max(0,Math.min(data.length-1,i));state.selected=i;const c=data[i];state.selectedTime=c.time;cross.setAttribute('x1',x(i));cross.setAttribute('x2',x(i));cross.setAttribute('visibility','visible');put('ohlc',`${utcDate(c.time)} UTC · O ${priceText(c.open)}  H ${priceText(c.high)}\nL ${priceText(c.low)}  C ${priceText(c.close)}`);}
+  const clear=()=>{cross.setAttribute('visibility','hidden');state.selected=null;state.selectedTime=null;put('ohlc',`O ${priceText(last.open)}  H ${priceText(last.high)}\nL ${priceText(last.low)}  C ${priceText(last.close)}`);};
   chartGeom={w,h,left,pw,step,top,bottom,min,max,y,count:data.length,data,levels,prof,bbU,bbL,bbM,e200,select,clear};
   container.onkeydown=event=>{if(['ArrowLeft','ArrowRight'].includes(event.key)){event.preventDefault();select((state.selected??data.length-1)+(event.key==='ArrowLeft'?-1:1));}if(event.key==='+' || event.key==='-'){event.preventDefault();zoom(event.key==='+'?.7:1.4);}};
   container.replaceChildren(svg);
   const keep=state.selectedTime!=null?data.findIndex(c=>c.time===state.selectedTime):-1;
-  if(keep>=0)select(keep);else{state.selected=null;put('ohlc',`O ${priceText(last.open)}  H ${priceText(last.high)}  L ${priceText(last.low)}  C ${priceText(last.close)}`);}
+  if(keep>=0)select(keep);else{state.selected=null;put('ohlc',`O ${priceText(last.open)}  H ${priceText(last.high)}\nL ${priceText(last.low)}  C ${priceText(last.close)}`);}
   magnetRedraw();
   put('chart-caption',state.pan>0 ? `Kerzen ${offset+1}–${stop} von ${state.candles.length} · UTC · ${state.interval}` : `${data.length} / ${state.candles.length} Kerzen · UTC · ${state.interval}`);
   container.setAttribute('aria-label',`${state.symbol}, ${state.interval}, ${data.length} Kerzen. Letzter Kurs ${priceText(last.close)} USDT. Pfeiltasten wählen Kerzen.`);
@@ -4275,10 +4328,11 @@ function anchorEl() {
   return best;
 }
 function withAnchor(fn) {
-  if (nativeAnchor) return fn();
+  if (nativeAnchor) { const r = fn(); steadyHeights(); return r; }
   const a = anchorEl(), before = a ? a.getBoundingClientRect().top : 0;
-  fn();
+  const r = fn(); steadyHeights();
   if (a && a.isConnected) { const d = a.getBoundingClientRect().top - before; if (Math.abs(d) >= 1) scrollBy(0, d); }
+  return r;
 }
 // Aufgabe sofort ausführen – oder, während gescrollt wird, einmal danach
 function calmDo(fn) {
@@ -4295,12 +4349,13 @@ let chartOnScreen = true, chartStale = false;
 if ('IntersectionObserver' in window) new IntersectionObserver(es => {
   for (const e of es) { chartOnScreen = e.isIntersecting; if (chartOnScreen && chartStale) { chartStale = false; drawChart(); } }
 }, { rootMargin: '150px 0px' }).observe($('chart'));
-// Tages-Verlustlimit: den Hinweis „mit offenen Positionen über dem Limit“ erst ausblenden, wenn sich der Verlust
-// um 10 % des Limits erholt hat – sonst blinkt der Hinweis bei jedem Kursticken und die Seite springt
+// Tages-Verlustlimit: den Hinweis „mit offenen Positionen über dem Limit“ erst ausblenden, wenn der Verlust unter die Hälfte
+// des Limits gefallen ist – sonst taucht das Banner oben bei jedem Pendeln um die Grenze auf und verschwindet wieder,
+// und die ganze Seite springt um seine Höhe
 let dayOpenOver = false;
 function dayLimitHysteresis(st, pnl, unrealized, lim) {
   if (st.state === 'open-over') dayOpenOver = true;
-  else if (dayOpenOver && st.state !== 'reached' && lim > 0 && -(pnl + Math.min(0, unrealized || 0)) >= 0.9 * lim) return { ...st, state: 'open-over' };
+  else if (dayOpenOver && st.state !== 'reached' && lim > 0 && -(pnl + Math.min(0, unrealized || 0)) >= 0.5 * lim) return { ...st, state: 'open-over' };
   else dayOpenOver = false;
   return st;
 }
@@ -4605,6 +4660,88 @@ addEventListener('pagehide', () => void lmDbFlush());
 $('kc-clear').addEventListener('click', () => void lmDbClear());
 // Ebene ein-/ausschalten: Leiste zeigen und Daten laden (der allgemeine Umschalter hat den Zustand schon gewechselt)
 document.querySelector('[data-overlay="lmap"]')?.addEventListener('click', () => { renderLmStrip(); if (lmOn()) void lmRefresh(true); });
+// ---------- Ruhige Handy-Ansicht ----------
+// Live-Texte dürfen wachsen, aber nicht wieder schrumpfen. Wechselt ein Text wie „ROE +9,45 %“ ↔ „ROE +10,16 %“ in einer
+// schmalen Spalte zwischen zwei und drei Zeilen, sprang bisher alles darunter im Sekundentakt hin und her. Die Mindesthöhe
+// wächst mit; zurückgesetzt wird beim Wechsel von Tab, Kürzel, Intervall, Layout oder Bildschirmbreite.
+const STEADY_SEL = ['.zone-note', '.indicator p', '.metric-foot', '.zone-rows > div', '.level-row', '.pos-pnl', '.pos-grid > div', '.liq-meter',
+  '.pos-stops .st', '.pos-alert', '.pos-warn', '.day-strip', '.day-banner', '#ohlc', '.al-row', '.calc-rows > div', '#risk-note', '#pnl-note'].join(', ');
+let steadyKey = '';
+function steadyHeights() {
+  const key = [innerWidth, state.symbol, state.interval, docEl.dataset.activeTab || '', docEl.dataset.layout || ''].join('|'), els = [...document.querySelectorAll(STEADY_SEL)];
+  if (key !== steadyKey) { steadyKey = key; for (const e of els) if (e.style.minHeight) e.style.minHeight = ''; return; }
+  // erst alle Höhen lesen, dann schreiben (ein Layout-Durchgang)
+  const hs = els.map(e => e.getClientRects().length ? e.getBoundingClientRect().height : 0);
+  els.forEach((e, i) => { if (hs[i] > (parseFloat(e.style.minHeight) || 0) + .5) e.style.minHeight = hs[i] + 'px'; });
+}
+// Hinweis „Kurs nahe am Liquidationspreis“: an unter 25 % Restabstand, aus erst wieder über 30 % – sonst blinkt er an der Grenze
+const liqNear = new Set();
+function liqNearHold(id, remaining) {
+  const on = remaining !== null && (remaining < 25 || (liqNear.has(id) && remaining < 30));
+  if (on) liqNear.add(id); else liqNear.delete(id);
+  return on;
+}
+// ---------- Sicherung über Telegram (vor allem für iPhone/iPad) ----------
+// Safari erlaubt Webseiten nicht, still in eine Datei zu schreiben – das automatische Datei-Backup gibt es nur in Chrome/Edge
+// am Computer. Eingeschaltet schickt das Dashboard die Sicherungsdatei nach jeder Änderung an den eigenen Telegram-Chat
+// und ersetzt dort die vorige Datei (editMessageMedia): eine Nachricht, immer aktuell. Zugangsdaten für Telegram/Discord
+// stehen nie in der Datei. Mehrere offene Tabs senden über eine Absprache in der IndexedDB nur einmal.
+const TGB_KEY = 'scalpdesk.tgbackup.v1';
+// var statt const: persist() kann das Senden anstoßen, bevor dieser Abschnitt ausgewertet ist
+var tgb = { cfg: loadTgb(), timer: null, busy: false, error: '' };
+function loadTgb() { const v = store.get(TGB_KEY); return { on: !!v?.on, chat: typeof v?.chat === 'string' ? v.chat : '', msg: Number(v?.msg) || 0, at: Number(v?.at) || 0 }; }
+function saveTgb() { store.set(TGB_KEY, { ...tgb.cfg }); }
+function tgConfigured() { return TG_TOKEN_RE.test(chan.tg.token) && TG_CHAT_RE.test(chan.tg.chat); }
+function tgbReady() { return !!tgb && tgb.cfg.on && tgConfigured(); }
+function scheduleTgBackup(delay = 4000) { if (!tgbReady()) return; clearTimeout(tgb.timer); tgb.timer = setTimeout(() => void sendTgBackup(), delay); }
+async function tgPost(method, fd) {
+  let r; try { r = await fetch(`https://api.telegram.org/bot${chan.tg.token}/${method}`, { method: 'POST', body: fd, credentials: 'omit', referrerPolicy: 'no-referrer', cache: 'no-store' }); }
+  catch { throw Object.assign(new Error('Telegram nicht erreichbar – Internet oder Werbeblocker prüfen.'), { code: 0 }); }
+  let d = null; try { d = await r.json(); } catch {}
+  if (!r.ok || !d?.ok) throw Object.assign(new Error(r.status === 401 || r.status === 404 ? 'Token ungültig – in „Telegram / Discord einrichten“ prüfen.' : r.status === 429 ? 'Zu viele Nachrichten – nächster Versuch bei der nächsten Änderung.' : `Telegram meldet Fehler ${d?.error_code ?? r.status}: ${d?.description || ''}`), { code: d?.error_code ?? r.status });
+  return d.result;
+}
+async function sendTgBackup(force = false) {
+  if (!tgbReady() || tgb.busy || (!force && !changeCount())) return;
+  if (!(await store.claim('tgbackup', 20000))) return;   // ein anderer Tab sendet gerade
+  tgb.busy = true; tgb.cfg = loadTgb(); renderTgbInfo();
+  const name = 'scalpdesk-sicherung.json', file = new Blob([JSON.stringify(backupPayload(), null, 1)], { type: 'application/json' });
+  const caption = `💾 Scalp-Desk-Sicherung · ${new Date().toLocaleString('de-DE')}\n${state.positions.length} offene Positionen · ${state.trades.length} Trades${state.movements.length ? ` · ${state.movements.length} Geldbewegungen` : ''}\nWiederherstellen: Datei speichern, im Dashboard „Backup einspielen“.`;
+  try {
+    let msg = tgb.cfg.chat === chan.tg.chat ? tgb.cfg.msg : 0, done = false;
+    if (msg) {
+      const fd = new FormData(); fd.append('chat_id', chan.tg.chat); fd.append('message_id', String(msg));
+      fd.append('media', JSON.stringify({ type: 'document', media: 'attach://file', caption })); fd.append('file', file, name);
+      try { await tgPost('editMessageMedia', fd); done = true; } catch (e) { if (e.code !== 400) throw e; }   // Nachricht gelöscht: neu senden
+    }
+    if (!done) {
+      const fd = new FormData(); fd.append('chat_id', chan.tg.chat); fd.append('caption', caption); fd.append('disable_notification', 'true'); fd.append('document', file, name);
+      msg = (await tgPost('sendDocument', fd))?.message_id || 0;
+    }
+    tgb.cfg = { ...tgb.cfg, chat: chan.tg.chat, msg, at: Date.now() }; saveTgb(); tgb.error = '';
+    markBackedUp('telegram');
+  } catch (e) { tgb.error = e.message; }
+  finally { tgb.busy = false; void store.release('tgbackup'); renderTgbInfo(); }
+}
+function renderTgbInfo() {
+  if (!tgb) return;
+  const ok = tgConfigured(), c = tgb.cfg;
+  $('tgb-on').checked = c.on && ok; $('tgb-on').disabled = !ok; $('tgb-setup').hidden = ok; $('tgb-now').hidden = !(c.on && ok);
+  put('tgb-info', !ok ? 'Für iPhone/iPad: Safari erlaubt kein automatisches Speichern in Dateien. Stattdessen kann die Sicherung nach jeder Änderung an deinen Telegram-Chat gehen – dafür zuerst Telegram einrichten.'
+    : !c.on ? 'Die Datei (unverschlüsselt, ohne Telegram- oder Discord-Zugangsdaten) liegt dann in deinem Telegram-Chat; jede neue Sicherung ersetzt die vorige.'
+    : tgb.busy ? 'Sende Sicherung …'
+    : tgb.error ? `Fehler: ${tgb.error}`
+    : c.at ? `Aktiv · zuletzt gesendet ${new Date(c.at).toLocaleString('de-DE')} · ersetzt jeweils die vorige Nachricht` : 'Aktiv · die erste Sicherung wird gleich gesendet');
+  $('tgb-info').classList.toggle('err', !!tgb.error && c.on && ok);
+}
+$('tgb-on').addEventListener('change', () => {
+  tgb.cfg = { ...loadTgb(), on: $('tgb-on').checked }; saveTgb(); tgb.error = ''; renderTgbInfo();
+  if (tgb.cfg.on) void sendTgBackup(true);
+});
+$('tgb-now').addEventListener('click', () => void sendTgBackup(true));
+$('tgb-setup').addEventListener('click', () => openChan());
+$('chan-done').addEventListener('click', () => setTimeout(renderTgbInfo));
+renderTgbInfo();
 render();startLive();void showCachedChart();void refresh();void initAutoBackup();void requestWake();
 </script>
 </head>
@@ -4780,13 +4917,19 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
           </div>
           <div class="day-strip" id="day-strip"><span>Heute realisiert</span><strong class="day-pnl" id="day-pnl">—</strong><span id="day-info"></span><div class="day-bar" id="day-bar" title="Verbrauchtes Tages-Verlustlimit"><span></span></div><label>Tages-Verlustlimit<span class="input-wrap"><input id="day-limit" type="text" inputmode="decimal" autocomplete="off" placeholder="z. B. 30"><span>USDT</span></span></label></div>
           <div class="data-panel" id="data-panel" hidden>
-            <div class="head-line"><h3>Datensicherung</h3><details class="tip left"><summary aria-label="Wo liegen meine Daten?"><span>i</span></summary><div class="tip-body"><p>Daten liegen nur in diesem Browser auf diesem Gerät, nicht bei GitHub: in der IndexedDB, dazu eine Spiegelkopie im localStorage.</p><p>Safari kann Website-Daten löschen, wenn eine Seite länger nicht geöffnet wurde. Als App auf dem Home-Bildschirm gilt diese Frist nicht; ein Backup ist trotzdem der sicherste Schutz.</p><p>Mit Passwort wird ein Backup verschlüsselt (AES-256). Ein vergessenes Passwort lässt sich nicht wiederherstellen.</p></div></details></div>
+            <div class="head-line"><h3>Datensicherung</h3><details class="tip left"><summary aria-label="Wo liegen meine Daten?"><span>i</span></summary><div class="tip-body"><p>Daten liegen nur in diesem Browser auf diesem Gerät, nicht bei GitHub: in der IndexedDB, dazu eine Spiegelkopie im localStorage.</p><p>Safari kann Website-Daten löschen, wenn eine Seite länger nicht geöffnet wurde. Als App auf dem Home-Bildschirm gilt diese Frist nicht; ein Backup ist trotzdem der sicherste Schutz.</p><p>Mit Passwort wird ein Backup verschlüsselt (AES-256). Ein vergessenes Passwort lässt sich nicht wiederherstellen.</p><p>Automatisch sichern: Am Computer (Chrome/Edge) schreibt das Dashboard nach jeder Änderung in eine Datei deiner Wahl. Auf iPhone und iPad erlaubt Safari das nicht – dort kann die Sicherung stattdessen nach jeder Änderung an deinen Telegram-Chat gehen; die neue Datei ersetzt jeweils die vorige. Diese Datei ist unverschlüsselt und liegt auf den Servern von Telegram; Zugangsdaten für Telegram und Discord sind nie enthalten.</p></div></details></div>
             <p id="storage-info">Speicher wird geprüft …</p>
             <div class="data-row" id="autobackup-row" hidden>
               <button type="button" class="button primary-lite" id="autobackup-setup">Automatisches Backup einrichten …</button>
               <button type="button" class="button primary-lite" id="autobackup-resume" hidden>Auto-Backup fortsetzen</button>
               <button type="button" class="button ghost" id="autobackup-stop" hidden>Auto-Backup beenden</button>
               <span id="autobackup-info" style="color:var(--muted)">Schreibt nach jeder Änderung und beim Verlassen der Seite in eine Datei deiner Wahl (Chrome/Edge am Computer).</span>
+            </div>
+            <div class="data-row" id="tgbackup-row">
+              <label class="check"><input type="checkbox" id="tgb-on"> Nach jeder Änderung an Telegram senden (ersetzt die vorige Sicherung)</label>
+              <button type="button" class="button ghost" id="tgb-now" hidden>Jetzt senden</button>
+              <button type="button" class="button ghost" id="tgb-setup">📨 Telegram einrichten …</button>
+              <span id="tgb-info" class="tgb-info"></span>
             </div>
             <div class="data-row data-sep">
               <label>Passwort <small>(optional)</small><span class="input-wrap"><input id="backup-pass" type="password" autocomplete="new-password" placeholder="leer lassen = unverschlüsselt"></span></label>
@@ -4880,16 +5023,16 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
       </div>
     </div>
     <div class="dash-bottom">
-      <details class="methodology panel fold cq" id="method-sec" data-tabs="ind"><summary><h2>Berechnung &amp; Datenquellen</h2><span>Methodik ansehen</span></summary><div class="method-grid"><div><h3>Kerzen &amp; Indikatoren</h3><p>Spot-Daten von data-api.binance.vision, dem offiziellen Binance-Endpunkt für öffentliche Marktdaten; nur bei einem Netzwerkfehler ersatzweise von api.binance.com. Bis zu 500 Kerzen im gewählten Intervall. RSI und ATR verwenden auch die letzte, gegebenenfalls noch offene Kerze. RSI startet nach 14 Kursänderungen; ATR mit dem Durchschnitt der ersten 14 True Ranges. Bei der ersten Kerze ist True Range = Hoch − Tief. RSI bei ausschließlich unveränderten Kursen: 50 als neutrale Konvention.</p><p>Pivots: strikte lokale Hochs/Tiefs mit je zwei Nachbarn innerhalb der letzten 50 abgeschlossenen Kerzen. Nächstes Pivot-Tief unter dem Kurs und nächstes Pivot-Hoch darüber; keine Ersatzlevel, falls keines existiert. Abstand = absolute Differenz / aktueller Kurs.</p></div><div><h3>Live-Daten &amp; Alarme</h3><p>Laufende Kerzen und Kurse kommen per WebSocket von data-stream.binance.vision (Spot, ersatzweise stream.binance.com) und fstream.binance.com/market (Futures). Die Verbindung läuft in einem Web Worker, damit Browser sie in Hintergrund-Tabs nicht drosseln. Jede Meldung einer 1-Minuten-Kerze wird mit der vorherigen verglichen: Ist das Hoch gestiegen oder das Tief gefallen, wurde dieser Kurs seit der letzten Meldung gehandelt – so erkennt das Dashboard auch kurze Dochte.</p><p>Fällt der Datenstrom aus, lädt das Dashboard alle 15 s per REST nach, sonst einmal pro Minute zum Abgleich. Nach einer Unterbrechung (z. B. iPad gesperrt) prüft es verpasste Alarme anhand der 1-Minuten-Kerzen.</p></div><div><h3>Signal-Übersicht</h3><p>Pro Zeitraum (1m, 5m, 15m, 1h, 4h, 1d) bis zu 200 Kerzen, ausgewertet nur auf abgeschlossenen Kerzen; neu geladen, sobald eine Kerze des Zeitraums schließt. EMA mit SMA-Start, MACD 12/26/9, RSI 14 nach Wilder. Gibt es kein Spot-Paar, nutzt das Dashboard die Kerzen des USDT-Perpetual-Futures und kennzeichnet das.</p><p>Trend-Verlauf: Für jede Minute der letzten Stunde wird die Bewertung mit den damals abgeschlossenen Kerzen (je Zeitraum wie beim Abruf höchstens 199, im Tageschart 499) neu berechnet. Gesamtscore = Kauf- minus Verkaufssignale.</p></div><div><h3>Mittelwert-Zonen</h3><p>Volumenprofil: sichtbare Kerzen, 40 Preisstufen. Binance-Kerzen enthalten kein Volumen je Preis; das Dashboard verteilt das Volumen jeder Kerze deshalb als Normalverteilung (Glockenkurve) um die Mitte des Kerzenkörpers, begrenzt auf Hoch–Tief. Breite σ = halbe Körperhöhe, mindestens ein Sechstel der Spanne: Dochte bekommen weniger Volumen als der Körper, bei Doji-Kerzen konzentriert es sich um den Schlusskurs. POC = Mitte der Stufe mit dem höchsten Volumen; Value Area = um den POC erweitert, bis 70 % des Volumens enthalten sind. EMA 200 mit SMA-Start; im Tageschart aus abgeschlossenen Tageskerzen, im Chart-Intervall inklusive laufender Kerze. Bollinger: SMA 20 ± 2 Standardabweichungen (Grundgesamtheit). Der Lehrbuchwert von rund 95 % innerhalb der Bänder setzt normalverteilte Kurse voraus; angezeigt wird deshalb der tatsächliche Anteil der letzten 100 abgeschlossenen Kerzen.</p></div><div><h3>Futures &amp; Szenario</h3><p>Funding und Open Interest stammen vom gleichnamigen USDT-Futures-Paar, unabhängig vom Chartintervall. OI vergleicht den aktuellen Mengenbestand mit dem jüngsten 5-Minuten-Snapshot vor dem Zeitpunkt vor einer Stunde; der tatsächliche Zeitraum wird angezeigt.</p><p>Liquidationsabstand: Long = (1/Hebel − MMR) / (1 − MMR), Short = (1/Hebel − MMR) / (1 + MMR). MMR als Dezimalzahl. Dies ist ein vereinfachtes Modell; 1/Hebel allein beschreibt den vollständigen Margin-Verbrauch ohne Maintenance Margin.</p></div><div><h3>Liquidations-Heatmap</h3><p>Schätzung aus der Open-Interest-Historie (futures/data/openInterestHist, bis 500 Werte, höchstens 30 Tage) und den USDT-Futures-Kerzen desselben Zeitraums: 5 Minuten für die Chart-Intervalle 1m und 5m, sonst das Chart-Intervall selbst (bis 1d). Jeder OI-Anstieg gilt als neu eröffnete Positionen zum VWAP des Zeitraums (Quote- durch Basisvolumen), aufgeteilt nach dem Anteil der Taker-Käufe (10–90 %) auf Longs und Shorts und nach der Hebelverteilung 5×/10×/20×/50×/100× mit 10/25/30/20/15 %. Liquidationspreis wie im Rechner: Long = Einstieg × (1 − 1/Hebel) / (1 − MMR), Short = Einstieg × (1 + 1/Hebel) / (1 + MMR). Ein OI-Rückgang verkleinert alle offenen Zonen im selben Verhältnis; eine Zone endet bei der ersten Kerze, deren Tief (Long) bzw. Hoch (Short) sie erreicht. Farbe und Deckkraft nach dem Anteil am Höchstwert im sichtbaren Ausschnitt (hoch 0,75); schwache Zonen bleiben fast durchsichtig. Cluster: stärkste Summe je Seite in 0,1-%-Stufen, geglättet über ±0,2 %, im Bereich ±10 % um den Kurs. Neu geladen wird nur, wenn ein neuer OI-Wert fällig ist, und dann nur ab dem vorletzten Wert. Die Werte liegen zusätzlich in einer eigenen IndexedDB (höchstens 12 Reihen, nicht im Backup), damit die Heatmap nach dem Neuladen sofort erscheint; „Kerzen-Zwischenspeicher leeren“ leert sie mit.</p></div><div><h3>Kerzen-Zwischenspeicher</h3><p>Abgeschlossene Kerzen werden je Markt, Kürzel und Intervall in einer eigenen IndexedDB gespeichert (höchstens 40 Reihen à 500 Kerzen, nicht im Backup). Beim nächsten Abruf – auch nach dem Neuladen – lädt das Dashboard nur die Kerzen ab der zuletzt gespeicherten nach und vergleicht diese eine Kerze mit Binance; passt sie nicht, wird die Reihe vollständig neu geladen. Fehlt höchstens eine Kerze, zeigt der Chart beim Wechsel sofort den gespeicherten Stand, als vorläufig markiert, bis Nachladen oder Live-Stream frische Daten liefern.</p><p>Liquidationslinie im Chart: bei eingetragenem Liq.-Preis der Börse dieser, sonst bei isolierter Margin das Modell oben mit der Maintenance Margin aus den Modellannahmen; bei Cross ohne Börsenwert keine Linie.</p></div><div><h3>Telegram &amp; Discord</h3><p>Optional. Der Web Worker sendet per HTTPS direkt an api.telegram.org (sendMessage) bzw. an die Discord-Webhook-Adresse; bei Netzfehlern bis zu viermal mit wachsender Pause, bei „zu viele Anfragen“ nach der von Telegram/Discord genannten Wartezeit. Offene Tabs stimmen sich über die IndexedDB ab, damit jede Meldung nur einmal gesendet wird.</p></div><div><h3>Speicher &amp; Abgleich</h3><p>Positionen, Trades und Einstellungen liegen in der IndexedDB des Browsers, gespiegelt im localStorage. Offene Tabs gleichen Änderungen untereinander ab. Der QR-Abgleich komprimiert die Daten, verschlüsselt sie mit AES-256-GCM (Schlüssel per PBKDF2 aus deinem Passwort) und teilt sie bei Bedarf auf mehrere Codes auf.</p></div></div><div class="source-links"><a href="https://developers.binance.com/docs/binance-spot-api-docs/web-socket-streams" target="_blank" rel="noopener noreferrer">Binance Spot-Streams ↗</a><a href="https://developers.binance.com/docs/binance-spot-api-docs/rest-api/market-data-endpoints" target="_blank" rel="noopener noreferrer">Binance Spot ↗</a><a href="https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/Open-Interest-Statistics" target="_blank" rel="noopener noreferrer">Binance Futures ↗</a><a href="https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi" target="_blank" rel="noopener noreferrer">RSI-Referenz ↗</a></div></details>
+      <details class="methodology panel fold cq" id="method-sec" data-tabs="ind"><summary><h2>Berechnung &amp; Datenquellen</h2><span>Methodik ansehen</span></summary><div class="method-grid"><div><h3>Kerzen &amp; Indikatoren</h3><p>Spot-Daten von data-api.binance.vision, dem offiziellen Binance-Endpunkt für öffentliche Marktdaten; nur bei einem Netzwerkfehler ersatzweise von api.binance.com. Bis zu 500 Kerzen im gewählten Intervall. RSI und ATR verwenden auch die letzte, gegebenenfalls noch offene Kerze. RSI startet nach 14 Kursänderungen; ATR mit dem Durchschnitt der ersten 14 True Ranges. Bei der ersten Kerze ist True Range = Hoch − Tief. RSI bei ausschließlich unveränderten Kursen: 50 als neutrale Konvention.</p><p>Pivots: strikte lokale Hochs/Tiefs mit je zwei Nachbarn innerhalb der letzten 50 abgeschlossenen Kerzen. Nächstes Pivot-Tief unter dem Kurs und nächstes Pivot-Hoch darüber; keine Ersatzlevel, falls keines existiert. Abstand = absolute Differenz / aktueller Kurs.</p></div><div><h3>Live-Daten &amp; Alarme</h3><p>Laufende Kerzen und Kurse kommen per WebSocket von data-stream.binance.vision (Spot, ersatzweise stream.binance.com) und fstream.binance.com/market (Futures). Die Verbindung läuft in einem Web Worker, damit Browser sie in Hintergrund-Tabs nicht drosseln. Jede Meldung einer 1-Minuten-Kerze wird mit der vorherigen verglichen: Ist das Hoch gestiegen oder das Tief gefallen, wurde dieser Kurs seit der letzten Meldung gehandelt – so erkennt das Dashboard auch kurze Dochte.</p><p>Fällt der Datenstrom aus, lädt das Dashboard alle 15 s per REST nach, sonst einmal pro Minute zum Abgleich. Nach einer Unterbrechung (z. B. iPad gesperrt) prüft es verpasste Alarme anhand der 1-Minuten-Kerzen.</p></div><div><h3>Signal-Übersicht</h3><p>Pro Zeitraum (1m, 5m, 15m, 1h, 4h, 1d) bis zu 200 Kerzen, ausgewertet nur auf abgeschlossenen Kerzen; neu geladen, sobald eine Kerze des Zeitraums schließt. EMA mit SMA-Start, MACD 12/26/9, RSI 14 nach Wilder. Gibt es kein Spot-Paar, nutzt das Dashboard die Kerzen des USDT-Perpetual-Futures und kennzeichnet das.</p><p>Trend-Verlauf: Für jede Minute der letzten Stunde wird die Bewertung mit den damals abgeschlossenen Kerzen (je Zeitraum wie beim Abruf höchstens 199, im Tageschart 499) neu berechnet. Gesamtscore = Kauf- minus Verkaufssignale.</p></div><div><h3>Mittelwert-Zonen</h3><p>Volumenprofil: sichtbare Kerzen, 40 Preisstufen. Binance-Kerzen enthalten kein Volumen je Preis; das Dashboard verteilt das Volumen jeder Kerze deshalb als Normalverteilung (Glockenkurve) um die Mitte des Kerzenkörpers, begrenzt auf Hoch–Tief. Breite σ = halbe Körperhöhe, mindestens ein Sechstel der Spanne: Dochte bekommen weniger Volumen als der Körper, bei Doji-Kerzen konzentriert es sich um den Schlusskurs. POC = Mitte der Stufe mit dem höchsten Volumen; Value Area = um den POC erweitert, bis 70 % des Volumens enthalten sind. EMA 200 mit SMA-Start; im Tageschart aus abgeschlossenen Tageskerzen, im Chart-Intervall inklusive laufender Kerze. Bollinger: SMA 20 ± 2 Standardabweichungen (Grundgesamtheit). Der Lehrbuchwert von rund 95 % innerhalb der Bänder setzt normalverteilte Kurse voraus; angezeigt wird deshalb der tatsächliche Anteil der letzten 100 abgeschlossenen Kerzen.</p></div><div><h3>Futures &amp; Szenario</h3><p>Funding und Open Interest stammen vom gleichnamigen USDT-Futures-Paar, unabhängig vom Chartintervall. OI vergleicht den aktuellen Mengenbestand mit dem jüngsten 5-Minuten-Snapshot vor dem Zeitpunkt vor einer Stunde; der tatsächliche Zeitraum wird angezeigt.</p><p>Liquidationsabstand: Long = (1/Hebel − MMR) / (1 − MMR), Short = (1/Hebel − MMR) / (1 + MMR). MMR als Dezimalzahl. Dies ist ein vereinfachtes Modell; 1/Hebel allein beschreibt den vollständigen Margin-Verbrauch ohne Maintenance Margin.</p></div><div><h3>Liquidations-Heatmap</h3><p>Schätzung aus der Open-Interest-Historie (futures/data/openInterestHist, bis 500 Werte, höchstens 30 Tage) und den USDT-Futures-Kerzen desselben Zeitraums: 5 Minuten für die Chart-Intervalle 1m und 5m, sonst das Chart-Intervall selbst (bis 1d). Jeder OI-Anstieg gilt als neu eröffnete Positionen zum VWAP des Zeitraums (Quote- durch Basisvolumen), aufgeteilt nach dem Anteil der Taker-Käufe (10–90 %) auf Longs und Shorts und nach der Hebelverteilung 5×/10×/20×/50×/100× mit 10/25/30/20/15 %. Liquidationspreis wie im Rechner: Long = Einstieg × (1 − 1/Hebel) / (1 − MMR), Short = Einstieg × (1 + 1/Hebel) / (1 + MMR). Ein OI-Rückgang verkleinert alle offenen Zonen im selben Verhältnis; eine Zone endet bei der ersten Kerze, deren Tief (Long) bzw. Hoch (Short) sie erreicht. Farbe und Deckkraft nach dem Anteil am Höchstwert im sichtbaren Ausschnitt (hoch 0,75); schwache Zonen bleiben fast durchsichtig. Cluster: stärkste Summe je Seite in 0,1-%-Stufen, geglättet über ±0,2 %, im Bereich ±10 % um den Kurs. Neu geladen wird nur, wenn ein neuer OI-Wert fällig ist, und dann nur ab dem vorletzten Wert. Die Werte liegen zusätzlich in einer eigenen IndexedDB (höchstens 12 Reihen, nicht im Backup), damit die Heatmap nach dem Neuladen sofort erscheint; „Kerzen-Zwischenspeicher leeren“ leert sie mit.</p></div><div><h3>Kerzen-Zwischenspeicher</h3><p>Abgeschlossene Kerzen werden je Markt, Kürzel und Intervall in einer eigenen IndexedDB gespeichert (höchstens 40 Reihen à 500 Kerzen, nicht im Backup). Beim nächsten Abruf – auch nach dem Neuladen – lädt das Dashboard nur die Kerzen ab der zuletzt gespeicherten nach und vergleicht diese eine Kerze mit Binance; passt sie nicht, wird die Reihe vollständig neu geladen. Fehlt höchstens eine Kerze, zeigt der Chart beim Wechsel sofort den gespeicherten Stand, als vorläufig markiert, bis Nachladen oder Live-Stream frische Daten liefern.</p><p>Liquidationslinie im Chart: bei eingetragenem Liq.-Preis der Börse dieser, sonst bei isolierter Margin das Modell oben mit der Maintenance Margin aus den Modellannahmen; bei Cross ohne Börsenwert keine Linie.</p></div><div><h3>Telegram &amp; Discord</h3><p>Optional. Der Web Worker sendet per HTTPS direkt an api.telegram.org (sendMessage) bzw. an die Discord-Webhook-Adresse; bei Netzfehlern bis zu viermal mit wachsender Pause, bei „zu viele Anfragen“ nach der von Telegram/Discord genannten Wartezeit. Offene Tabs stimmen sich über die IndexedDB ab, damit jede Meldung nur einmal gesendet wird.</p></div><div><h3>Speicher &amp; Abgleich</h3><p>Sicherung über Telegram (optional): etwa 4 Sekunden nach einer Änderung sendet das Dashboard die Backup-Datei (JSON, wie „Backup herunterladen“ ohne Passwort) per sendDocument an den eigenen Chat und ersetzt sie danach per editMessageMedia in derselben Nachricht; fehlt die Nachricht, wird neu gesendet. Mehrere offene Tabs stimmen sich über die IndexedDB ab. Positionen, Trades und Einstellungen liegen in der IndexedDB des Browsers, gespiegelt im localStorage. Offene Tabs gleichen Änderungen untereinander ab. Der QR-Abgleich komprimiert die Daten, verschlüsselt sie mit AES-256-GCM (Schlüssel per PBKDF2 aus deinem Passwort) und teilt sie bei Bedarf auf mehrere Codes auf.</p></div></div><div class="source-links"><a href="https://developers.binance.com/docs/binance-spot-api-docs/web-socket-streams" target="_blank" rel="noopener noreferrer">Binance Spot-Streams ↗</a><a href="https://developers.binance.com/docs/binance-spot-api-docs/rest-api/market-data-endpoints" target="_blank" rel="noopener noreferrer">Binance Spot ↗</a><a href="https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/Open-Interest-Statistics" target="_blank" rel="noopener noreferrer">Binance Futures ↗</a><a href="https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi" target="_blank" rel="noopener noreferrer">RSI-Referenz ↗</a></div></details>
       <footer class="foot" data-tabs="chart calc pos ind"><span>Keine Anlageberatung · keine Order-Ausführung · nur Anzeige</span><details class="tip left"><summary aria-label="Hinweis zur Nutzung"><span>i</span></summary><div class="tip-body">Diese Anzeige ist keine Anlageberatung und keine Garantie für einen sicheren Einstieg. Indikatoren zeigen Wahrscheinlichkeiten, keine Gewissheiten. Das Dashboard liest nur öffentliche Marktdaten und führt keine Orders aus.</div></details><span id="app-version"></span></footer>
     </div>
   </main>
   <nav class="tabbar" id="tabbar" aria-label="Bereiche">
-    <button type="button" data-tab="chart" aria-current="page"><b aria-hidden="true">▥</b>Chart</button>
-    <button type="button" data-tab="calc"><b aria-hidden="true">±</b>Rechner</button>
-    <button type="button" class="tab-fab" id="qa-open" aria-haspopup="dialog" title="Schnell-Alarm für den Chart-Kurs"><b aria-hidden="true">🔔</b>Alarm</button>
-    <button type="button" data-tab="pos"><b aria-hidden="true">▤</b><span>Positionen<span class="tab-badge" id="tab-pos-badge" hidden></span></span></button>
-    <button type="button" data-tab="ind"><b aria-hidden="true">∿</b>Indikatoren</button>
+    <button type="button" data-tab="chart" aria-current="page"><b aria-hidden="true">▥</b><span class="tl">Chart</span></button>
+    <button type="button" data-tab="calc"><b aria-hidden="true">±</b><span class="tl">Rechner</span></button>
+    <button type="button" class="tab-fab" id="qa-open" aria-haspopup="dialog" title="Schnell-Alarm für den Chart-Kurs"><b aria-hidden="true">🔔</b><span class="tl">Alarm</span></button>
+    <button type="button" data-tab="pos"><b aria-hidden="true">▤</b><span class="tl">Positionen</span><span class="tab-badge" id="tab-pos-badge" hidden></span></button>
+    <button type="button" data-tab="ind"><b aria-hidden="true">∿</b><span class="tl">Indikatoren</span></button>
   </nav>
   <dialog class="sheet bottom" id="qa-dialog" aria-labelledby="qa-title">
     <div class="sheet-head"><h2 id="qa-title">Schnell-Alarm</h2><button type="button" class="button ghost icon" id="qa-close" aria-label="Schließen">×</button></div>
