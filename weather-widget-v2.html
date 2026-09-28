@@ -801,6 +801,8 @@ fieldset.chan legend{font-size:.875rem;font-weight:650;padding:0 4px;color:var(-
 .chart.magnet{touch-action:none;cursor:copy}
 .chart.magnet::after{content:"🧲 Auf ein Level tippen oder klicken – der Alarm wird vorausgefüllt";position:absolute;top:6px;left:50%;transform:translateX(-50%);padding:4px 10px;border-radius:999px;background:var(--amber-bg);border:1px solid var(--amber-border);color:var(--amber);font-size:.75rem;font-weight:600;white-space:nowrap;pointer-events:none;max-width:calc(100% - 16px);overflow:hidden;text-overflow:ellipsis}
 svg .magnet-price{fill:#1d1606;font-size:11.5px;font-weight:700}
+/* Handy hochkant: Kurse auf Schildchen im Chart statt in einer eigenen Spalte */
+svg .axis-tag{fill:var(--surface);opacity:.82}svg .axis-label.axis-in{font-weight:600}
 svg .magnet-label{font-size:12px;font-weight:700;paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round}
 .liq-chart-note{display:block;margin-top:4px;font-size:.75rem}
 .cached{opacity:.55;transition:opacity .25s}
@@ -1625,7 +1627,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Alle Werte liegen zusätzlich im Arbeitsspeicher und sind dadurch synchron lesbar. Schreiben geht sofort in den
 // localStorage und gebündelt in die IndexedDB; beim Start gewinnt die zuletzt vollständig geschriebene Kopie.
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
-const APP_VERSION = '3.7.0', docEl = document.documentElement;
+const APP_VERSION = '3.7.1', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -3011,7 +3013,7 @@ function renderChart(levels={}, ov={}, start=null, end=null) {
     empty.append(mark,title,note);container.replaceChildren(empty);return;
   }
   if (!container.clientHeight) return; // verdeckt (anderer Tab): beim Sichtbarwerden neu zeichnen
-  const w=Math.max(280,container.clientWidth), h=container.clientHeight, left=15, right=82, top=18, bottom=h-77, pw=w-left-right, step=pw/(data.length+chartFutureSlots(data.length));
+  const w=Math.max(280,container.clientWidth), h=container.clientHeight, left=15, axisIn=w<520, right=axisIn?4:82, top=18, bottom=h-77, pw=w-left-right, step=pw/(data.length+chartFutureSlots(data.length));
   const show=state.overlays, vis=a=>a ? a.slice(offset, stop) : null;
   const bbU=show.bb && ov.bb ? vis(ov.bb.upper) : null, bbL=bbU ? vis(ov.bb.lower) : null, bbM=bbU ? vis(ov.bb.mid) : null, e200=show.ema200 && ov.ema200 ? vis(ov.ema200) : null, prof=show.vp ? ov.profile : null;
   let min=Math.min(...data.map(c=>c.low)),max=Math.max(...data.map(c=>c.high));
@@ -3019,7 +3021,11 @@ function renderChart(levels={}, ov={}, start=null, end=null) {
   const padding=(max-min || max*.005)*.12;min-=padding;max+=padding;
   const y=v=>top+(max-v)/(max-min)*(bottom-top), x=i=>left+(i+.5)*step;
   const svg=node('svg',{viewBox:`0 0 ${w} ${h}`,role:'presentation','aria-hidden':'true'});
-  for(let i=0;i<5;i++) {const v=min+(max-min)*i/4,yy=y(v);svg.append(node('line',{x1:left,y1:yy,x2:w-right+4,y2:yy,class:'grid-line'}),node('text',{x:w-right+10,y:yy+4,class:'axis-label'},priceText(v)));}
+  // Schmaler Chart (Handy hochkant): Kurse nicht in einer eigenen Spalte, sondern auf Schildchen im Chart am rechten Rand –
+  // nur an den inneren Linien (die Randzeilen bleiben für „außerhalb“-Hinweise frei); hohe Charts bekommen mehr Linien.
+  const gridN=axisIn && bottom-top>420 ? 6 : 4, axisTags=[];
+  for(let i=0;i<=gridN;i++) {const v=min+(max-min)*i/gridN,yy=y(v);svg.append(node('line',{x1:left,y1:yy,x2:w-right+4,y2:yy,class:'grid-line'}));
+    if(!axisIn) svg.append(node('text',{x:w-right+10,y:yy+4,class:'axis-label'},priceText(v))); else if(i>0 && i<gridN) axisTags.push([yy,priceText(v)]);}
   const defs=node('defs',{}), clip=node('clipPath',{id:'plot-clip'}); clip.append(node('rect',{x:left,y:top,width:pw,height:bottom-top})); defs.append(clip); svg.append(defs);
   const under=node('g',{'clip-path':'url(#plot-clip)'}), over=node('g',{'clip-path':'url(#plot-clip)'});
   const pathOf=arr=>{let d='',pen=false;arr.forEach((v,i)=>{if(Number.isFinite(v)){d+=`${pen?'L':'M'}${x(i).toFixed(1)} ${y(v).toFixed(1)}`;pen=true;}else pen=false;});return d;};
@@ -3061,12 +3067,13 @@ function renderChart(levels={}, ov={}, start=null, end=null) {
   if (e200) { const le=e200.at(-1); if (Number.isFinite(le) && (le>max || le<min)) svg.append(node('text',{x:left+6,y:le>max?top+13:bottom-7,class:'axis-label',style:'fill:'+PAL.ema},`EMA 200 ${le>max?'↑':'↓'} ${priceText(le)} (außerhalb)`)); }
   const last=data.at(-1),nowClose=state.candles.at(-1).close;
   if (nowClose>=min && nowClose<=max) { const py=y(nowClose); svg.append(node('line',{x1:left,y1:py,x2:w-right+4,y2:py,stroke:PAL.last,'stroke-dasharray':'2 4',opacity:.45})); }
+  for(const [yy,t] of axisTags) { const tw=t.length*7+10; svg.append(node('rect',{x:w-2-tw,y:yy-9,width:tw,height:18,rx:4,class:'axis-tag'}),node('text',{x:w-7,y:yy+4,class:'axis-label axis-in','text-anchor':'end'},t)); } // über allem, damit lesbar
   const labels=w<500 ? 3 : 5;
   for(let j=0;j<labels;j++){const i=Math.round(j*(data.length-1)/(labels-1));const d=new Date(data[i].time);const label=['1m','5m','15m','1h'].includes(state.interval) ? d.toLocaleTimeString('de-DE',{timeZone:'UTC',hour:'2-digit',minute:'2-digit'}) : d.toLocaleDateString('de-DE',{timeZone:'UTC',day:'2-digit',month:'2-digit',...(state.interval==='1M'?{year:'2-digit'}:{})});svg.append(node('text',{x:x(i),y:h-10,class:'axis-label','text-anchor':j===0?'start':j===labels-1?'end':'middle'},label));}
   const cross=node('line',{x1:0,y1:top,x2:0,y2:h-30,class:'crosshair',visibility:'hidden'});svg.append(cross);
   function select(i) {i=Math.max(0,Math.min(data.length-1,i));state.selected=i;const c=data[i];state.selectedTime=c.time;cross.setAttribute('x1',x(i));cross.setAttribute('x2',x(i));cross.setAttribute('visibility','visible');put('ohlc',`${utcDate(c.time)} UTC · O ${priceText(c.open)}  H ${priceText(c.high)}\nL ${priceText(c.low)}  C ${priceText(c.close)}`);}
   const clear=()=>{cross.setAttribute('visibility','hidden');state.selected=null;state.selectedTime=null;put('ohlc',`O ${priceText(last.open)}  H ${priceText(last.high)}\nL ${priceText(last.low)}  C ${priceText(last.close)}`);};
-  chartGeom={w,h,left,pw:step*data.length,step,top,bottom,min,max,y,count:data.length,data,levels,prof,bbU,bbL,bbM,e200,select,clear};
+  chartGeom={w,h,left,pw:step*data.length,step,top,bottom,min,max,y,count:data.length,data,levels,prof,bbU,bbL,bbM,e200,select,clear,axisIn};
   container.onkeydown=event=>{if(['ArrowLeft','ArrowRight'].includes(event.key)){event.preventDefault();select((state.selected??data.length-1)+(event.key==='ArrowLeft'?-1:1));}if(event.key==='+' || event.key==='-'){event.preventDefault();zoom(event.key==='+'?.7:1.4);}};
   container.replaceChildren(svg);
   const keep=state.selectedTime!=null?data.findIndex(c=>c.time===state.selectedTime):-1;
@@ -4221,12 +4228,13 @@ function magnetDraw() {
   const yl = G.y(m.price), col = PAL.magnet, g = node('g', { class: 'magnet-g', 'pointer-events': 'none' });
   g.append(node('line', { x1: G.left, y1: yl, x2: G.left + G.pw, y2: yl, stroke: col, 'stroke-width': 1.2, 'stroke-dasharray': '6 3', opacity: .95 }));
   if (m.k !== null) g.append(node('circle', { cx: G.left + (m.k + .5) * G.step, cy: yl, r: 4.5, fill: 'none', stroke: col, 'stroke-width': 1.8 }));
-  const tagW = G.w - G.left - G.pw - 4;
-  g.append(node('rect', { x: G.left + G.pw + 2, y: yl - 10, width: tagW, height: 20, rx: 4, fill: col }), node('text', { x: G.left + G.pw + 2 + tagW / 2, y: yl + 4, 'text-anchor': 'middle', class: 'magnet-price' }, priceText(m.price)));
+  // Kursschild in der Kursspalte rechts; am Handy hochkant (keine Spalte) im Chart am rechten Rand
+  const pt = priceText(m.price), tagW = G.axisIn ? pt.length * 7.4 + 14 : G.w - G.left - G.pw - 4, tagX = G.axisIn ? G.w - 2 - tagW : G.left + G.pw + 2;
+  g.append(node('rect', { x: tagX, y: yl - 10, width: tagW, height: 20, rx: 4, fill: col }), node('text', { x: tagX + tagW / 2, y: yl + 4, 'text-anchor': 'middle', class: 'magnet-price' }, pt));
   // Beschriftung am Zeiger (nicht am linken Rand, dort stehen POC- und Liq.-Beschriftungen)
   const box = $('chart').getBoundingClientRect(), px = (magnet.at.x - box.left) * G.w / box.width, right = px > G.left + G.pw * .6;
   const hint = `${magnet.on ? '🔔 ' : ''}${m.name || 'Kurs'}`, above = yl - G.top > 26;
-  g.append(node('text', { x: clamp(right ? px - 12 : px + 12, G.left + 6, G.left + G.pw - 6), y: above ? yl - 7 : yl + 16, 'text-anchor': right ? 'end' : 'start', class: 'magnet-label', style: `fill:${col}` }, hint));
+  g.append(node('text', { x: clamp(right ? px - 12 : px + 12, G.left + 6, G.axisIn ? tagX - 6 : G.left + G.pw - 6), y: above ? yl - 7 : yl + 16, 'text-anchor': right ? 'end' : 'start', class: 'magnet-label', style: `fill:${col}` }, hint));
   svg.append(g);
 }
 function magnetHide() { magnet.at = null; $('chart').querySelector('.magnet-g')?.remove(); }
