@@ -951,7 +951,18 @@ html[data-chartfull] #chart-sec{position:fixed;inset:0;z-index:200;margin:0;max-
 html[data-chartfull] #chart-sec>*{flex:0 0 auto}
 html[data-chartfull] #market-form{display:none}
 html[data-chartfull] #chart{flex:1 1 0;height:auto;min-height:160px}
-html[data-chartfull] .chart-heading,html[data-chartfull] .chart-footer,html[data-chartfull] #lmap-strip{display:none}
+html[data-chartfull] .chart-heading,html[data-chartfull] #lmap-strip{display:none}
+/* Vollbild: die Ebenen-Schalter (Volumenprofil, EMA, Bollinger, Liquidation, Heatmap) als kompakte Zeile direkt unter der
+   Werkzeugleiste – so lassen sich Daten auch im Vollbild ein- und ausblenden; Legende und Zeitachsen-Hinweis bleiben weg */
+html[data-chartfull] .chart-toolbar{order:1}
+html[data-chartfull] .chart-footer{order:2;display:block;margin:2px 0 4px;padding:0;border:0}
+html[data-chartfull] .chart-footer .lg,html[data-chartfull] #chart-caption{display:none}
+html[data-chartfull] .chart-legend{display:block;margin:0}
+html[data-chartfull] .overlay-toggles{display:flex;flex-wrap:nowrap;gap:6px;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;margin:0}
+html[data-chartfull] .overlay-toggles::-webkit-scrollbar{display:none}
+html[data-chartfull] .overlay-toggles button{flex:0 0 auto;white-space:nowrap;min-height:34px}
+html[data-chartfull] #ohlc{order:3}
+html[data-chartfull] #chart{order:4}
 /* Schmale Handys: sieben Werkzeuge (mit Vollbild) passen in eine Zeile */
 @media (max-width:380px){.chart-toolbar .zoom-controls button{min-width:38px;padding:0 4px}}
 .chart-panel>.notice{margin:12px 20px 0}
@@ -1560,7 +1571,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Alle Werte liegen zusätzlich im Arbeitsspeicher und sind dadurch synchron lesbar. Schreiben geht sofort in den
 // localStorage und gebündelt in die IndexedDB; beim Start gewinnt die zuletzt vollständig geschriebene Kopie.
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
-const APP_VERSION = '3.5.2', docEl = document.documentElement;
+const APP_VERSION = '3.5.3', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
