@@ -4,7 +4,7 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="robots" content="noindex,nofollow,noarchive"><meta name="referrer" content="no-referrer">
   <meta name="apple-mobile-web-app-title" content="Widget v2"><meta name="description" content="Widget-Test">
-  <meta name="theme-color" content="#0b0f13">
+  <meta name="theme-color" content="#000000">
   <meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Widget-Test v2</title>
   <link rel="manifest" href="manifest.webmanifest">
@@ -937,6 +937,9 @@ html[data-layout=tablet] .tabbar{grid-template-columns:repeat(2,minmax(0,1fr)) a
   .livebar,html[data-layout=tablet] .livebar{grid-template-columns:auto minmax(0,1fr) auto auto;grid-template-areas:"m al pos cn" "heat heat heat heat"}
   .livebar .lb-conn{grid-area:cn;margin:0}
 }
+/* AMOLED: im Dunkelmodus echtes Schwarz für Seite und Karten – OLED-Bildpunkte bleiben aus und sparen im Dauerbetrieb Akku.
+   Karten grenzen sich über ihre Rahmen ab; Eingabefelder, Hover und Lade-Platzhalter nur ganz leicht aufgehellt. */
+:root:not([data-theme=light]){--bg:#000;--surface:#000;--surface-2:#0a0c0f;--surface-3:#0f1216;--field:#050608;--field-2:#000;--hover:#1c232b;--hover-2:#0d1115;--backdrop:rgba(0,0,0,.94);--statusbar:#000;--skel-a:#111418;--skel-b:#1c2127}
 .chart-panel>.notice{margin:12px 20px 0}
 html{scroll-padding-top:calc(var(--lb-h,56px) + 16px)}
 html[data-layout=desktop] .col-input,html[data-layout=desktop] .col-control{top:calc(env(safe-area-inset-top,0px) + var(--lb-h,56px) + 12px);max-height:calc(100dvh - var(--lb-h,56px) - 28px)}
@@ -1543,7 +1546,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Alle Werte liegen zusätzlich im Arbeitsspeicher und sind dadurch synchron lesbar. Schreiben geht sofort in den
 // localStorage und gebündelt in die IndexedDB; beim Start gewinnt die zuletzt vollständig geschriebene Kopie.
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
-const APP_VERSION = '3.5.0', docEl = document.documentElement;
+const APP_VERSION = '3.5.1', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -3511,7 +3514,7 @@ let PAL = {};
 function readPalette() { const cs = getComputedStyle(docEl), g = n => cs.getPropertyValue(n).trim(); PAL = { up: g('--c-up'), down: g('--c-down'), bb: g('--c-bb'), ema: g('--c-ema'), vp: g('--c-vp'), vpBar: g('--c-vpbar'), short: g('--c-short'), last: g('--c-last'), zero: g('--c-zero'), liq: g('--c-liq'), lm: [1, 2, 3, 4, 5].map(i => g('--c-lm' + i)), magnet: g('--c-magnet') }; }
 function applyTheme(t, save = true) {
   t = t === 'light' ? 'light' : 'dark'; docEl.dataset.theme = t;
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', t === 'light' ? '#eef1f5' : '#0b0f13');
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', t === 'light' ? '#eef1f5' : '#000000');
   document.querySelectorAll('[data-theme-set]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.themeSet === t)));
   readPalette();
   if (save) { store.set(THEME_KEY, t); try { bc?.postMessage({ t: 'theme', from: TAB_ID, theme: t }); } catch {} if (lastChart) drawChart(); if ($('analysis').open) renderAnalysis(); }
