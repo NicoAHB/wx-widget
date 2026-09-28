@@ -1016,6 +1016,8 @@ html[data-chartfull]:not([data-chartbar=open]) .chart-toolbar,html[data-chartful
 #chart .zz-fc-dot{fill:none;stroke:var(--c-zz);stroke-width:1.5}
 #chart .zz-fc-label,#chart .zz-fc-note{fill:var(--c-zz);font-weight:600}
 #chart .zz-fc-label{paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round}
+#chart .zz-fc-p{font-weight:800}#chart .zz-fc-p.up{fill:var(--mint)}#chart .zz-fc-p.down{fill:var(--down)}
+#chart .zz-fc.contra .zz-fc-line,#chart .zz-fc.contra .zz-fc-cone,#chart .zz-fc.contra .zz-fc-dot{opacity:.4}
 .zz-fc-btn:disabled{opacity:.45;cursor:not-allowed}
 .chart-panel>.notice{margin:12px 20px 0}
 html{scroll-padding-top:calc(var(--lb-h,56px) + 16px)}
@@ -1623,7 +1625,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Alle Werte liegen zusätzlich im Arbeitsspeicher und sind dadurch synchron lesbar. Schreiben geht sofort in den
 // localStorage und gebündelt in die IndexedDB; beim Start gewinnt die zuletzt vollständig geschriebene Kopie.
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
-const APP_VERSION = '3.6.2', docEl = document.documentElement;
+const APP_VERSION = '3.7.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -1716,6 +1718,7 @@ const store = (() => {
 const flag = (k, dflt) => { const v = store.get(k); return v === undefined || v === null ? dflt : v === true || v === 1 || v === '1'; };
 const WATCH_KEY = 'scalpdesk.watchlist.v1';
 const POS_KEY = 'scalpdesk.positions.v1', HIST_KEY = 'scalpdesk.history.v1', MONEY_KEY = 'scalpdesk.money.v1', TAX_KEY = 'scalpdesk.taxrate.v1', SETUP_KEY = 'scalpdesk.setups.v1', ALARM_KEY = 'scalpdesk.alarms.v1';
+const ZZP_KEY = 'scalpdesk.zzpatterns.v1'; // gelernte Muster der ZigZag-Prognose (still in der Sicherung)
 const RISK_KEY = 'scalpdesk.risk.v1', DAYLIMIT_KEY = 'scalpdesk.daylimit.v1', DAYNOTE_KEY = 'scalpdesk.daylimitnote.v1';
 function loadRiskSettings() { const d = { riskPct: 1, feePct: 0.06 }, v = store.get(RISK_KEY); if (v?.riskPct > 0 && v.riskPct <= 100) d.riskPct = v.riskPct; if (v?.feePct >= 0 && v.feePct < 5) d.feePct = v.feePct; return d; }
 function loadDayLimit() { const v = Number(store.get(DAYLIMIT_KEY)); return v > 0 ? v : null; }
@@ -2524,7 +2527,7 @@ function renderBackupInfo() {
   renderStorageInfo();
 }
 function backupStatus(msg) { put('history-status', msg); }
-function backupPayload() { return { app: 'scalp-desk', version: 6, settings: { dayLimit: state.dayLimit, risk: state.risk }, exportedAt: Date.now(), positions: state.positions, history: state.trades, movements: state.movements, alarms: state.alarms, setups: state.setups, watchlist: state.watch, taxRate: state.taxRate }; }
+function backupPayload() { return { app: 'scalp-desk', version: 6, settings: { dayLimit: state.dayLimit, risk: state.risk }, exportedAt: Date.now(), positions: state.positions, history: state.trades, movements: state.movements, alarms: state.alarms, setups: state.setups, watchlist: state.watch, taxRate: state.taxRate, patterns: zzpExport() }; }
 function markBackedUp(kind, encrypted = false) {
   store.set(CHANGES_KEY, 0);
   store.set(BACKUP_META_KEY, { at: Date.now(), kind, encrypted, positions: state.positions.length, trades: state.trades.length, movements: state.movements.length });
@@ -2584,6 +2587,7 @@ function applyBackup(data) {
   state.watch.push(...watch); state.setups.push(...new Set(setups));
   if (!state.dayLimit && data.settings?.dayLimit > 0) { state.dayLimit = data.settings.dayLimit; store.set(DAYLIMIT_KEY, state.dayLimit); }
   if (!state.taxRate && data.taxRate > 0 && data.taxRate < 100) { state.taxRate = data.taxRate; store.set(TAX_KEY, data.taxRate); }
+  zzpImport(data.patterns); // gelernte Muster: still übernehmen, ohne Meldung
   posStructure = ''; histStructure = '';
   persist(); saveWatch();
   render(); if ((n.added || n.updated) && !state.busy && !state.paused) void refresh();
@@ -3763,9 +3767,10 @@ addEventListener('beforeunload', e => {
 });
 // ---------- Abgleich zwischen offenen Tabs ----------
 const bc = (() => { try { return new BroadcastChannel('scalpdesk'); } catch { return null; } })();
-const SYNC_KEYS = [POS_KEY, HIST_KEY, MONEY_KEY, ALARM_KEY, SETUP_KEY, WATCH_KEY, CHANGES_KEY, 'scalpdesk.channels.v1'];
+const SYNC_KEYS = [POS_KEY, HIST_KEY, MONEY_KEY, ALARM_KEY, SETUP_KEY, WATCH_KEY, CHANGES_KEY, 'scalpdesk.channels.v1', ZZP_KEY];
 function broadcastData(keys) { if (!bc || !keys.length) return; try { bc.postMessage({ t: 'data', from: TAB_ID, items: keys.map(k => [k, store.get(k)]) }); } catch {} }
 function adoptData(items) {
+  const pat = items.find(([k]) => k === ZZP_KEY); if (pat) { store.adopt(ZZP_KEY, pat[1]); zzpMem = null; items = items.filter(([k]) => k !== ZZP_KEY); if (!items.length) return; }
   for (const [k, v] of items) {
     if (!SYNC_KEYS.includes(k)) continue;
     store.adopt(k, v);
@@ -5116,6 +5121,110 @@ function zzLearnFor(c = state.candles, pct = zzPct()) {
   if (zzLearnCache.key !== key) zzLearnCache = { key, v: zzLearn(c, pct) };
   return zzLearnCache.v;
 }
+// ---------- Gelernte Muster: Richtung mit Wahrscheinlichkeit – nur bei nachgewiesenem Vorteil nach Gebühren ----------
+// Frage je Moment (abgeschlossene Kerze mit Prognose): Erreicht der Kurs ab dem Schlusskurs zuerst +Mindestbewegung oder
+// −Mindestbewegung? Berühren beide Schwellen dieselbe Kerze, zählt der Moment nicht. Muster = drei Merkmale relativ zur
+// Prognoserichtung (+ dafür, − dagegen):
+//   T Trend: Schlusskurs auf der Seite der EMA 200, in die die Prognose zeigt
+//   S Signal-Bewertung (die vier Regeln der Signal-Übersicht): Summe ≥ 2 in Prognoserichtung (+), ≤ −2 (−), sonst 0
+//   R RSI 14: + unter 35 bei Aufwärts- bzw. über 65 bei Abwärtsprognose, − umgekehrt, sonst 0
+// Backtest mit echten BTC-Stundenkerzen (Coinbase und Bitfinex 2017–2019, Walk-Forward, Gebühr 0,06 % je Seite): Die
+// ZigZag-Umkehr allein trifft die Richtung zu 47–50 %. Mit diesen Mustern – Umkehr oder Fortsetzung – zeigte die
+// App-Simulation bei 2–3 % Mindestbewegung 55,6–57,1 %, nach Gebühren im Schnitt +0,14 bis +0,24 % je Trade (auch im
+// späteren Testzeitraum im Plus); bei 1 % keine einzige Zahl.
+// Klassische Muster (Doppelboden/-top, RSI-Divergenz, Bollinger-Ausbruch) verschlechterten das Ergebnis und fehlen deshalb.
+// Gelernt wird je Intervall, Mindestbewegung und Muster über alle Symbole, eine Stichprobe je Muster und Extrempunkt,
+// dauerhaft gespeichert und in der Sicherung enthalten. Eine Zahl erscheint nur, wenn das Muster mit hoher Sicherheit
+// (untere Grenze bei z = 2,77, mind. 100 Fälle) über der Gewinnschwelle nach Gebühren liegt und die untere 95-%-Grenze
+// sie um mind. 3 Punkte übertrifft. Angezeigt wird die untere 99-%-Grenze (vorsichtige Schätzung): In der Simulation
+// der App (500-Kerzen-Fenster) lag die tatsächliche Trefferquote im Mittel so hoch wie die angezeigte; bei Zufallskursen
+// erschien fast nie eine Zahl.
+var ZZP = { nMin: 100, zGate: 2.77, zEst: 1.645, margin: .03, zShow: 2.33, from: 250 }, zzpMem = null, zzpRun = '', zzpIndCache = { key: '', v: null };
+function wilsonLow(k, n, z) { if (!(n > 0)) return 0; const p = k / n, z2 = z * z; return (p + z2 / (2 * n) - z * Math.sqrt(p * (1 - p) / n + z2 / (4 * n * n))) / (1 + z2 / n); }
+function zzpIndicators(closes) { return { e200: ema(closes, 200), e20: ema(closes, 20), e50: ema(closes, 50), r: rsi(closes), m: macd(closes) }; }
+function zzpKey(closes, ind, t, dir) {
+  const { e200, e20, e50, r, m } = ind, cl = closes[t];
+  if (![e200[t], e20[t], e50[t], r[t], r[t - 1], m.line[t], m.signal[t]].every(Number.isFinite)) return null;
+  const score = Math.sign(e20[t] - e50[t]) + Math.sign(cl - e20[t]) + (r[t] < 30 && r[t] > r[t - 1] ? 1 : r[t] > 70 && r[t] < r[t - 1] ? -1 : 0) + Math.sign(m.line[t] - m.signal[t]);
+  const T = Math.sign(cl - e200[t]) === dir ? '+' : '-', S = score * dir >= 2 ? '+' : score * dir <= -2 ? '-' : '0';
+  const R = dir > 0 ? (r[t] < 35 ? '+' : r[t] > 65 ? '-' : '0') : (r[t] > 65 ? '+' : r[t] < 35 ? '-' : '0');
+  return `T${T}S${S}R${R}`;
+}
+const zzpWords = k => `Trend ${k[1] === '+' ? 'dafür' : 'dagegen'}, Signal-Bewertung ${k[3] === '+' ? 'dafür' : k[3] === '-' ? 'dagegen' : 'neutral'}, RSI ${k[5] === '+' ? 'günstig' : k[5] === '-' ? 'ungünstig' : 'neutral'}`;
+// Momente der abgeschlossenen Kerzen c: hit true = zuerst in Prognoserichtung, false = zuerst dagegen, null = beide in einer
+// Kerze, undefined = noch offen
+function zzMoments(c, pct) {
+  const n = c.length, f = pct / 100, out = []; if (!(n > ZZP.from + 1) || !(f > 0)) return out;
+  const closes = c.map(k => k.close), ind = zzpIndicators(closes), s = zzStepper(pct);
+  for (let t = 0; t < n; t++) {
+    s.push(c[t], t);
+    if (t < ZZP.from) continue;
+    const o = s.open(); if (!o) continue;
+    const fc = zzForecast([...s.conf, o], t + 1); if (!fc) continue;
+    const dir = fc.up ? 1 : -1, key = zzpKey(closes, ind, t, dir); if (!key) continue;
+    const hi = closes[t] * (1 + f), lo = closes[t] * (1 - f); let hit;
+    for (let j = t + 1; j < n; j++) { const u = c[j].high >= hi, d = c[j].low <= lo; if (u && d) { hit = null; break; } if (u || d) { hit = (u ? 1 : -1) === dir; break; } }
+    out.push({ time: c[t].time, ext: o.t, key, up: fc.up, hit });
+  }
+  return out;
+}
+function zzpData() {
+  if (!zzpMem) { const v = store.get(ZZP_KEY); zzpMem = v?.v === 1 && v.s && typeof v.s === 'object' && v.r && typeof v.r === 'object' ? v : { v: 1, s: {}, r: {} }; }
+  return zzpMem;
+}
+// Neue, aufgelöste Momente einer Reihe (Symbol|Intervall|Mindestbewegung) in zeitlicher Folge übernehmen: bis zum ersten
+// noch offenen Moment, jeder Moment genau einmal (Merker „bis“ je Reihe), je Muster und Extrempunkt eine Stichprobe.
+function zzpApply(P, ms, series, prefix) {
+  const rec = P.r[series] || [0, 0, ''], seen = new Set(rec[2] ? rec[2].split(',') : []); let [until, ext] = rec, moved = false;
+  for (const m of ms) {
+    if (m.time <= until) continue;
+    if (m.hit === undefined) break;
+    until = m.time; moved = true;
+    if (m.hit === null) continue;
+    if (m.ext !== ext) { ext = m.ext; seen.clear(); }
+    if (seen.has(m.key)) continue; seen.add(m.key);
+    const k = `${prefix}|${m.key}`, st = P.s[k] || (P.s[k] = [0, 0]); st[0]++; if (m.hit) st[1]++;
+  }
+  if (!moved) return false;
+  P.r[series] = [until, ext, [...seen].join(',')];
+  const rk = Object.keys(P.r); if (rk.length > 300) rk.sort((a, b) => P.r[a][0] - P.r[b][0]).slice(0, rk.length - 300).forEach(k => delete P.r[k]);
+  return true;
+}
+// Still im Hintergrund, einmal je abgeschlossener Kerze des angezeigten Charts; bei mehreren Tabs lernt nur einer.
+function zzpLearn(c = state.candles, pct = zzPct()) {
+  if (!ZZP) return; const closed = c.length - 1, last = c[closed - 1]; if (!last || closed < ZZP.from + 2) return;
+  const series = `${state.symbol}|${state.interval}|${pct}`, prefix = `${state.interval}|${pct}`, run = `${series}|${last.time}|${closed}`;
+  if (zzpRun === run) return; zzpRun = run;
+  const cc = c.slice(0, closed);
+  store.claim('zzp|' + series, 3e4).then(ok => { // ein Merker je Chart, 30 s gültig: zum selben Kerzenschluss lernt nur ein Tab
+    if (!ok) return; zzpMem = null;
+    const P = zzpData(); if (zzpApply(P, zzMoments(cc, pct), series, prefix)) { store.set(ZZP_KEY, P); broadcastData([ZZP_KEY]); }
+  });
+}
+// Urteil für die aktuelle Prognose: Merkmale der letzten abgeschlossenen Kerze, Statistik des Musters, Gewinnschwelle
+// be = (1 + Gebühren hin und zurück / Mindestbewegung) / 2 bei Ziel und Stopp je eine Mindestbewegung.
+function zzpVerdict(up, pct = zzPct(), c = state.candles) {
+  if (!ZZP) return null; const closed = c.length - 1; if (closed < 210) return null;
+  const ik = [state.symbol, state.interval, closed, c[closed - 1].time, c[closed - 1].close].join('|');
+  if (zzpIndCache.key !== ik) { const closes = c.slice(0, closed).map(k => k.close); zzpIndCache = { key: ik, v: { closes, ind: zzpIndicators(closes) } }; }
+  const { closes, ind } = zzpIndCache.v, key = zzpKey(closes, ind, closed - 1, up ? 1 : -1); if (!key) return null;
+  const st = zzpData().s[`${state.interval}|${pct}|${key}`] || [0, 0], n = st[0], fee = state.risk?.feePct >= 0 ? state.risk.feePct : .06, be = (1 + 2 * fee / pct) / 2;
+  const v = { key, n, rev: st[1], be, fee, ok: false };
+  if (n >= ZZP.nMin) for (const [h, sign] of [[st[1], 1], [n - st[1], -1]]) {
+    const lo = wilsonLow(h, n, ZZP.zGate), est = wilsonLow(h, n, ZZP.zEst), p = wilsonLow(h, n, ZZP.zShow);
+    if (lo > be && est >= be + ZZP.margin && (!v.ok || lo > v.lo)) Object.assign(v, { ok: true, sign, h, lo, p, ev: (2 * p - 1) * pct - 2 * fee });
+  }
+  return v;
+}
+// Sicherung: still mitführen; beim Einspielen je Muster die Fassung mit mehr Fällen, je Reihe den späteren Stand behalten
+function zzpExport() { return zzpData(); }
+function zzpImport(x) {
+  if (x?.v !== 1 || !x.s || typeof x.s !== 'object' || !x.r || typeof x.r !== 'object') return;
+  const P = zzpData(); let changed = false;
+  for (const [k, v] of Object.entries(x.s)) if (Array.isArray(v) && v[0] >= 0 && v[1] >= 0 && v[1] <= v[0] && Number.isInteger(v[0]) && Number.isInteger(v[1]) && !(P.s[k]?.[0] >= v[0])) { P.s[k] = [v[0], v[1]]; changed = true; }
+  for (const [k, v] of Object.entries(x.r)) if (Array.isArray(v) && Number.isFinite(v[0]) && !(P.r[k]?.[0] >= v[0])) { P.r[k] = [v[0], Number(v[1]) || 0, typeof v[2] === 'string' ? v[2] : '']; changed = true; }
+  if (changed) { store.set(ZZP_KEY, P); broadcastData([ZZP_KEY]); }
+}
 // Platz rechts im Chart für die Prognose – nur am aktuellen Rand (nicht beim Zurückblättern)
 function chartFutureSlots(len) {
   if (!zzFcOn() || state.pan > 0) return 0;
@@ -5124,6 +5233,7 @@ function chartFutureSlots(len) {
 }
 function drawZigzagForecast(g, { offset, x, y, top, bottom, left }) {
   $('zz-fc').disabled = !state.overlays?.zz;
+  zzpLearn();
   if (!zzFcOn() || state.pan > 0) return;
   const f = zzForecast();
   if (!f) { g.append(node('text', { x: left + 6, y: top + 30, class: 'axis-label zz-fc-note' }, 'Prognose: zu wenige Schwünge – Mindestbewegung verkleinern')); return; }
@@ -5131,25 +5241,30 @@ function drawZigzagForecast(g, { offset, x, y, top, bottom, left }) {
   const adj = p => f.from.price * (1 + (f.up ? 1 : -1) * Math.max(pct, p * corr) / 100), tp = Math.max(pct, f.pct * corr);
   f.to.price = adj(f.pct); f.lo = adj(f.p25); f.hi = adj(f.p75);
   const x0 = x(f.from.i - offset), y0 = y(f.from.price), x1 = x(f.to.i - offset), y1 = y(f.to.price);
-  const rate = L.n >= 20 ? Math.round(L.hits / L.n * 100) : null, plain = L.n >= 20 ? Math.round(L.plain / L.n * 100) : null;
+  // Richtung mit Wahrscheinlichkeit aus den gelernten Mustern – nur bei nachgewiesenem Vorteil nach Gebühren
+  const V = zzpVerdict(f.up, pct), pS = number(pct, Number.isInteger(pct) ? 0 : Number.isInteger(pct * 10) ? 1 : 2), rise = V?.ok ? (V.sign > 0) === f.up : null;
+  const badge = V?.ok ? `${V.sign < 0 ? 'weiter ' : ''}${rise ? '↑' : '↓'} ${Math.floor(V.p * 100)} %` : '';
+  const why = !V ? '' : V.ok
+    ? `Richtung ${rise ? '↑' : '↓'} ${Math.floor(V.p * 100)} % (vorsichtig geschätzt): In ${V.n} vergleichbaren Situationen (${zzpWords(V.key)}) ${rise ? 'stieg' : 'fiel'} der Kurs in ${V.h} Fällen zuerst um ${pS} %, bevor er sich ${pS} % in die Gegenrichtung bewegte${V.sign < 0 ? ' – eher Fortsetzung als die eingezeichnete Umkehr' : ''}. Gewinnschwelle nach Gebühren (${number(V.fee)} % je Seite): ${Math.round(V.be * 100)} %. Erwartung je Trade mit Ziel und Stopp je ${pS} %: ${signed(V.ev)} %. `
+    : `Keine Prozentzahl: Für dieses Muster (${zzpWords(V.key)}) ist noch kein Vorteil nach Gebühren nachgewiesen – ${V.n} ${V.n === 1 ? 'Fall' : 'Fälle'}${V.n ? `, davon ${Math.round(V.rev / V.n * 100)} % zuerst in Prognoserichtung` : ''}. Nötig sind mind. ${ZZP.nMin} Fälle und ein sicherer Abstand zur Gewinnschwelle von ${Math.round(V.be * 100)} % (Ziel und Stopp je ${pS} %, Gebühr ${number(V.fee)} % je Seite).${V.be >= .6 ? ' So eine hohe Schwelle erreicht kaum ein Muster – eine größere Mindestbewegung senkt sie.' : ''} `;
   const tip = `Statistische Projektion: Median der letzten ${f.n} ${f.up ? 'Aufwärts' : 'Abwärts'}schwünge dieses Charts (${sign}${number(f.pct)} %, ≈ ${f.bars} Kerzen)`
     + (corr !== 1 ? `, mit Lernfaktor ×${number(corr)} → ${sign}${number(tp)} % (die letzten Schwünge fielen ${corr < 1 ? 'kleiner' : 'größer'} aus als geschätzt)` : '') + '. '
     + (L.k < 6 ? 'Lernfaktor: noch zu wenige abgeschlossene Schwünge zum Prüfen. '
       : `${L.use ? 'Der Lernfaktor hat' : 'Lernfaktor nicht angewendet: er hätte'} die Größenschätzung in diesem Chart bisher ${L.use ? '' : 'nicht '}verbessert (typische Abweichung ${Math.round(L.dev.c * 100)} % statt ${Math.round(L.dev.p * 100)} %). `)
-    + (rate !== null ? `Trefferquote ${rate} %: in ${L.hits} von ${L.n} Momenten der geladenen Kerzen erreichte der Kurs das damalige Prognoseziel rechtzeitig, bevor er den Extrempunkt deutlich überschritt (ohne Lernfaktor: ${plain} %). ` : 'Für eine Trefferquote gibt es noch zu wenige vergleichbare Momente (mind. 20). ')
-    + 'Band: mittlere Hälfte der Schwünge. Annahme: der aktuelle Extrempunkt ist die Umkehr. Keine Vorhersage.';
-  const grp = node('g', { class: 'zz-fc' }); grp.append(node('title', {}, tip));
+    + 'Band: mittlere Hälfte der Schwünge. Annahme: der aktuelle Extrempunkt ist die Umkehr. ' + why + 'Keine Garantie.';
+  const grp = node('g', { class: V?.ok && V.sign < 0 ? 'zz-fc contra' : 'zz-fc' }); grp.append(node('title', {}, tip));
   grp.append(node('polygon', { class: 'zz-fc-cone', points: `${x0.toFixed(1)},${y0.toFixed(1)} ${x1.toFixed(1)},${y(f.lo).toFixed(1)} ${x1.toFixed(1)},${y(f.hi).toFixed(1)}` }));
   grp.append(node('line', { class: 'zz-fc-line', x1: x0.toFixed(1), y1: y0.toFixed(1), x2: x1.toFixed(1), y2: y1.toFixed(1) }));
   grp.append(node('circle', { class: 'zz-fc-dot', cx: x1.toFixed(1), cy: y1.toFixed(1), r: 3.2 }));
   // Beschriftung neben dem Linienende; passt sie nicht in eine Zeile (schmaler Chart am Handy), zweizeilig
-  const head = `Prognose ${sign}${number(tp)} % · ${f.bars} K.`, hit = rate !== null ? `${rate} % Treffer` : 'zu wenig Daten';
-  const arrow = y1 < top ? '↑' : y1 > bottom ? '↓' : '', out = arrow ? ` (${arrow} außerhalb)` : '', fits = t => t.length * 7.2 <= x1 - 6 - left;
-  const lines = fits(`${head} · ${hit}${out}`) ? [`${head} · ${hit}${out}`] : [head, hit + (fits(hit + out) ? out : arrow ? ' ' + arrow : '')];
+  const head = `Prognose ${sign}${number(tp)} % · ${f.bars} K.`, arrow = y1 < top ? '↑' : y1 > bottom ? '↓' : '', out = arrow ? ` (${arrow} außerhalb)` : '';
+  const fits = t => t.length * 7.2 <= x1 - 6 - left, tail = t => fits(t + out) ? out : arrow ? ' ' + arrow : '';
+  const lines = badge ? (fits(`${head} · ${badge}${out}`) ? [[head + ' · ', badge, out]] : [[head], ['', badge, tail(badge)]]) : [[head + tail(head)]];
   // die beiden Randzeilen oben und unten bleiben frei: dort stehen Hinweise auf Marken außerhalb des Ausschnitts
   const lh = 14, span = (lines.length - 1) * lh, ly = Math.min(bottom - 35 - span, Math.max(top + 41, f.up ? y(f.hi) - 6 - span : y(f.lo) + 14));
   const label = node('text', { x: x1 - 6, y: ly, class: 'axis-label zz-fc-label', 'text-anchor': 'end' });
-  lines.forEach((t, k) => label.append(node('tspan', { x: x1 - 6, dy: k ? lh : 0 }, t)));
+  // je Zeile [Text, Prozentzahl, Rest]; die Prozentzahl in der Farbe ihrer Richtung
+  lines.forEach(([t, b, r], k) => { const sp = node('tspan', { x: x1 - 6, dy: k ? lh : 0 }, t); if (b) sp.append(node('tspan', { class: rise ? 'zz-fc-p up' : 'zz-fc-p down' }, b)); if (r) sp.append(r); label.append(sp); });
   grp.append(label);
   g.append(grp);
 }
