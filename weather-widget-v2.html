@@ -965,6 +965,15 @@ html[data-chartfull] #ohlc{order:3}
 html[data-chartfull] #chart{order:4}
 /* Schmale Handys: sieben Werkzeuge (mit Vollbild) passen in eine Zeile */
 @media (max-width:380px){.chart-toolbar .zoom-controls button{min-width:38px;padding:0 4px}}
+/* Vollbild am iPhone hochkant: Chart ins Querformat gedreht (siehe chartfull); Ränder für Notch und Home-Leiste mitgedreht */
+html[data-chartfull] #chart{touch-action:none}
+@media (orientation:portrait) and (max-width:600px) and (pointer:coarse){
+  html[data-chartfull] #chart-sec{inset:auto;top:0;left:0;width:100vh;height:100vw;width:100dvh;height:100dvw;transform-origin:0 0;transform:rotate(90deg) translateY(-100%);
+    padding:calc(env(safe-area-inset-right,0px) + 8px) calc(env(safe-area-inset-bottom,0px) + 12px) calc(env(safe-area-inset-left,0px) + 8px) calc(env(safe-area-inset-top,0px) + 12px)}
+  /* gedreht ist die Zeile breit genug: Werkzeuge und OHLC einzeilig, damit der Chart die Höhe bekommt */
+  html[data-chartfull] .chart-toolbar{display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:8px}
+  html[data-chartfull] #ohlc{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+}
 .chart-panel>.notice{margin:12px 20px 0}
 html{scroll-padding-top:calc(var(--lb-h,56px) + 16px)}
 html[data-layout=desktop] .col-input,html[data-layout=desktop] .col-control{top:calc(env(safe-area-inset-top,0px) + var(--lb-h,56px) + 12px);max-height:calc(100dvh - var(--lb-h,56px) - 28px)}
@@ -1571,7 +1580,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Alle Werte liegen zusätzlich im Arbeitsspeicher und sind dadurch synchron lesbar. Schreiben geht sofort in den
 // localStorage und gebündelt in die IndexedDB; beim Start gewinnt die zuletzt vollständig geschriebene Kopie.
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
-const APP_VERSION = '3.5.3', docEl = document.documentElement;
+const APP_VERSION = '3.5.4', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -4749,7 +4758,8 @@ function steadyHeights() {
   const key = [innerWidth, state.symbol, state.interval, docEl.dataset.activeTab || '', docEl.dataset.layout || ''].join('|'), els = [...document.querySelectorAll(STEADY_SEL)];
   if (key !== steadyKey) { steadyKey = key; for (const e of els) if (e.style.minHeight) e.style.minHeight = ''; return; }
   // erst alle Höhen lesen, dann schreiben (ein Layout-Durchgang)
-  const hs = els.map(e => e.getClientRects().length ? e.getBoundingClientRect().height : 0);
+  // Layout-Höhe (offsetHeight), nicht die Bildschirm-Höhe: im gedrehten Vollbild-Chart wäre das die Breite
+  const hs = els.map(e => e.getClientRects().length ? e.offsetHeight : 0);
   els.forEach((e, i) => { if (hs[i] > (parseFloat(e.style.minHeight) || 0) + .5) e.style.minHeight = hs[i] + 'px'; });
 }
 // Hinweis „Kurs nahe am Liquidationspreis“: an unter 25 % Restabstand, aus erst wieder über 30 % – sonst blinkt er an der Grenze
@@ -4862,12 +4872,34 @@ function setChartFull(on) {
     const y = chartFullY, back = () => { if (Math.abs(scrollY - y) > 1) scrollTo({ top: y, behavior: 'instant' }); }; back(); requestAnimationFrame(back);
   }
   b.setAttribute('aria-pressed', String(on)); b.setAttribute('aria-label', on ? 'Vollbild beenden' : 'Chart im Vollbild');
+  // Querformat: wo der Browser es erlaubt (Android als installierte App), dreht er wirklich; eine native iOS-Hülle
+  // (WKWebView) kann die Nachricht annehmen und per UIWindowScene.requestGeometryUpdate drehen. Sonst dreht das CSS unten.
+  try { if (on) screen.orientation?.lock?.('landscape')?.catch?.(() => {}); else screen.orientation?.unlock?.(); } catch {}
+  try { window.webkit?.messageHandlers?.orientation?.postMessage(on ? 'landscape' : 'portrait'); } catch {}
 }
 $('chart-full').addEventListener('click', () => setChartFull(docEl.dataset.chartfull !== '1'));
 addEventListener('keydown', e => {
   if (docEl.dataset.chartfull !== '1' || e.defaultPrevented) return;
   if (e.key === 'Escape' || (e.key === 'Enter' && !e.target.closest?.('input, textarea, select, button, a, summary'))) { e.preventDefault(); setChartFull(false); }
 });
+// iPhone hochkant: iOS lässt Webseiten die Bildschirmdrehung nicht erzwingen (kein screen.orientation.lock in Safari).
+// Deshalb dreht das CSS den Vollbild-Chart um 90° ins Querformat, auch bei aktiver Rotationssperre. Dreht man das Gerät
+// wirklich quer, entfällt die Drehung (Media Query), beim Beenden ist sofort wieder Hochformat. Die Chart-Logik rechnet in
+// Bildschirm-Koordinaten; im gedrehten Zustand werden Zeiger-Ereignisse und das Chart-Rechteck deshalb in die
+// Koordinaten des gedrehten Charts übersetzt – Tippen, Wischen, Zoomen und der Magnet funktionieren unverändert.
+const CHART_ROT_MQ = matchMedia('(orientation: portrait) and (max-width: 600px) and (pointer: coarse)');
+const chartRotated = () => docEl.dataset.chartfull === '1' && CHART_ROT_MQ.matches;
+(() => {
+  const box = $('chart'), realRect = () => Element.prototype.getBoundingClientRect.call(box);
+  box.getBoundingClientRect = () => chartRotated() ? new DOMRect(0, 0, box.offsetWidth, box.offsetHeight) : realRect();
+  const turn = e => {
+    if (e.__chartTurned || !chartRotated()) return;
+    const R = realRect(), x = e.clientY - R.top, y = R.right - e.clientX; // gedreht um 90° im Uhrzeigersinn
+    Object.defineProperty(e, 'clientX', { value: x, configurable: true }); Object.defineProperty(e, 'clientY', { value: y, configurable: true });
+    e.__chartTurned = true;
+  };
+  for (const t of ['pointerdown', 'pointermove', 'pointerup', 'pointercancel', 'click', 'dblclick', 'contextmenu']) box.addEventListener(t, turn, true);
+})();
 render();startLive();void showCachedChart();void refresh();void initAutoBackup();void requestWake();
 </script>
 </head>
