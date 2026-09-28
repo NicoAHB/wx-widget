@@ -3062,7 +3062,7 @@ function renderChart(levels={}, ov={}, start=null, end=null) {
   drawLiqLines(svg, over, {left, pw, top, bottom, min, max, y});
   drawLiqClusters(svg, over, {left, pw, top, bottom, min, max, y});
   drawZigzag(over, {offset, stop, x, y});
-  drawZigzagForecast(over, {offset, x, y, top, bottom, left});
+  drawZigzagForecast(over, {offset, x, y, top, bottom, left, laneX: axisTags.length ? w-6-Math.max(...axisTags.map(([,t])=>t.length*7+10)) : Infinity}); // Beschriftung endet vor den Kurs-Schildchen
   svg.append(over);
   if (e200) { const le=e200.at(-1); if (Number.isFinite(le) && (le>max || le<min)) svg.append(node('text',{x:left+6,y:le>max?top+13:bottom-7,class:'axis-label',style:'fill:'+PAL.ema},`EMA 200 ${le>max?'↑':'↓'} ${priceText(le)} (außerhalb)`)); }
   const last=data.at(-1),nowClose=state.candles.at(-1).close;
@@ -5239,7 +5239,7 @@ function chartFutureSlots(len) {
   const f = zzForecast(); if (!f) return 0;
   return Math.max(2, Math.min(f.to.i - (state.candles.length - 1) + 2, Math.floor(len * .35)));
 }
-function drawZigzagForecast(g, { offset, x, y, top, bottom, left }) {
+function drawZigzagForecast(g, { offset, x, y, top, bottom, left, laneX = Infinity }) {
   $('zz-fc').disabled = !state.overlays?.zz;
   zzpLearn();
   if (!zzFcOn() || state.pan > 0) return;
@@ -5266,13 +5266,14 @@ function drawZigzagForecast(g, { offset, x, y, top, bottom, left }) {
   grp.append(node('circle', { class: 'zz-fc-dot', cx: x1.toFixed(1), cy: y1.toFixed(1), r: 3.2 }));
   // Beschriftung neben dem Linienende; passt sie nicht in eine Zeile (schmaler Chart am Handy), zweizeilig
   const head = `Prognose ${sign}${number(tp)} % · ${f.bars} K.`, arrow = y1 < top ? '↑' : y1 > bottom ? '↓' : '', out = arrow ? ` (${arrow} außerhalb)` : '';
-  const fits = t => t.length * 7.2 <= x1 - 6 - left, tail = t => fits(t + out) ? out : arrow ? ' ' + arrow : '';
+  const xe = Math.min(x1 - 6, laneX); // rechtes Ende; am Handy hochkant vor den Kurs-Schildchen am rechten Rand
+  const fits = t => t.length * 7.2 <= xe - left, tail = t => fits(t + out) ? out : arrow ? ' ' + arrow : '';
   const lines = badge ? (fits(`${head} · ${badge}${out}`) ? [[head + ' · ', badge, out]] : [[head], ['', badge, tail(badge)]]) : [[head + tail(head)]];
   // die beiden Randzeilen oben und unten bleiben frei: dort stehen Hinweise auf Marken außerhalb des Ausschnitts
   const lh = 14, span = (lines.length - 1) * lh, ly = Math.min(bottom - 35 - span, Math.max(top + 41, f.up ? y(f.hi) - 6 - span : y(f.lo) + 14));
-  const label = node('text', { x: x1 - 6, y: ly, class: 'axis-label zz-fc-label', 'text-anchor': 'end' });
+  const label = node('text', { x: xe, y: ly, class: 'axis-label zz-fc-label', 'text-anchor': 'end' });
   // je Zeile [Text, Prozentzahl, Rest]; die Prozentzahl in der Farbe ihrer Richtung
-  lines.forEach(([t, b, r], k) => { const sp = node('tspan', { x: x1 - 6, dy: k ? lh : 0 }, t); if (b) sp.append(node('tspan', { class: rise ? 'zz-fc-p up' : 'zz-fc-p down' }, b)); if (r) sp.append(r); label.append(sp); });
+  lines.forEach(([t, b, r], k) => { const sp = node('tspan', { x: xe, dy: k ? lh : 0 }, t); if (b) sp.append(node('tspan', { class: rise ? 'zz-fc-p up' : 'zz-fc-p down' }, b)); if (r) sp.append(r); label.append(sp); });
   grp.append(label);
   g.append(grp);
 }
