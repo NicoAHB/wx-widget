@@ -999,6 +999,16 @@ html[data-chartfull]:not([data-chartbar=open]) .chart-toolbar,html[data-chartful
 #fb-rot{display:none;padding:0 8px}
 #fb-rot[aria-pressed=true]{border-color:var(--up-border);color:var(--mint)}
 @media (orientation:portrait) and (max-width:600px) and (pointer:coarse){html[data-chartfull] #fb-rot{display:inline-flex}}
+/* ZigZag (Pivot-Erkennung): eigene Farbe, bestätigte Schenkel durchgezogen, offener letzter Schenkel gestrichelt */
+:root{--c-zz:#5ee0f0}
+[data-theme=light]{--c-zz:#0b8ea3}
+.sw.zz{height:8px;background:linear-gradient(135deg,transparent 40%,var(--c-zz) 40% 60%,transparent 60%) 0 0/7px 8px repeat-x}
+#chart .zz-line,#chart .zz-open{fill:none;stroke:var(--c-zz);stroke-linejoin:round;stroke-linecap:round}
+#chart .zz-line{stroke-width:1.7;opacity:.95}
+#chart .zz-open{stroke-width:1.4;stroke-dasharray:5 4;opacity:.8}
+#chart .zz-dot{fill:var(--c-zz);stroke:var(--c-zz);stroke-width:1.2}
+#chart .zz-dot.open{fill:var(--bg)}
+.zz-pct{min-height:34px;border:1px solid var(--border);border-radius:999px;background:var(--field);color:var(--text-2);font:inherit;font-size:.8125rem;padding:0 8px;flex:0 0 auto}
 .chart-panel>.notice{margin:12px 20px 0}
 html{scroll-padding-top:calc(var(--lb-h,56px) + 16px)}
 html[data-layout=desktop] .col-input,html[data-layout=desktop] .col-control{top:calc(env(safe-area-inset-top,0px) + var(--lb-h,56px) + 12px);max-height:calc(100dvh - var(--lb-h,56px) - 28px)}
@@ -1605,7 +1615,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Alle Werte liegen zusätzlich im Arbeitsspeicher und sind dadurch synchron lesbar. Schreiben geht sofort in den
 // localStorage und gebündelt in die IndexedDB; beim Start gewinnt die zuletzt vollständig geschriebene Kopie.
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
-const APP_VERSION = '3.5.8', docEl = document.documentElement;
+const APP_VERSION = '3.6.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -1938,7 +1948,7 @@ function ema200Closed(closed) {
   return { value: ema(closed.map(x => x.close), 200).at(-1), closeTime: closed.at(-1).closeTime, count: closed.length };
 }
 function loadOverlays() {
-  const d = { vp: true, ema200: true, bb: true, liq: true, lmap: true };
+  const d = { vp: true, ema200: true, bb: true, liq: true, lmap: true, zz: true };
   const v = store.get(OVERLAY_KEY); if (v && typeof v === 'object') for (const k of Object.keys(d)) if (typeof v[k] === 'boolean') d[k] = v[k];
   return d;
 }
@@ -3033,6 +3043,7 @@ function renderChart(levels={}, ov={}, start=null, end=null) {
   }
   drawLiqLines(svg, over, {left, pw, top, bottom, min, max, y});
   drawLiqClusters(svg, over, {left, pw, top, bottom, min, max, y});
+  drawZigzag(over, {offset, stop, x, y});
   svg.append(over);
   if (e200) { const le=e200.at(-1); if (Number.isFinite(le) && (le>max || le<min)) svg.append(node('text',{x:left+6,y:le>max?top+13:bottom-7,class:'axis-label',style:'fill:'+PAL.ema},`EMA 200 ${le>max?'↑':'↓'} ${priceText(le)} (außerhalb)`)); }
   const last=data.at(-1),nowClose=state.candles.at(-1).close;
@@ -4969,6 +4980,57 @@ $('fb-swap').addEventListener('click', swapChart);
 $('fb-exit').addEventListener('click', () => setChartFull(false));
 setInterval(renderFullBar, 1000);
 $('fb-rot').addEventListener('click', () => { store.set(FSROT_KEY, docEl.dataset.fsnative ? 'own' : 'native'); applyFsRotate(); });
+// ---------- Zentrale Pivot-Erkennung (ZigZag) ----------
+// Umkehrpunkte (Pivots) ab einer einstellbaren Mindest-Kursbewegung (Standard 3 %). Eine Logik für alle späteren Analysen:
+// RSI-Divergenzen, Elliott-Wellen und Fibonacci greifen über pivotsFor() auf dieselben Punkte zu.
+// Hoch-Pivots liegen am Kerzenhoch, Tief-Pivots am Kerzentief. Ein Pivot gilt als bestätigt, sobald sich der Kurs um die
+// Mindestbewegung davon entfernt hat; der letzte, noch laufende Extrempunkt ist unbestätigt (ok: false).
+// Pivots wechseln sich immer ab (H, L, H …), jeder bestätigte Schenkel ist mindestens so groß wie die Mindestbewegung.
+// Innerhalb einer Kerze ist die Reihenfolge von Hoch und Tief unbekannt: eine Kerze liefert höchstens einen Pivot, und
+// macht sie ein neues Extrem in Trendrichtung, zählt ihr Gegen-Extrem nicht als Umkehr (übliche ZigZag-Regel).
+function zigzag(c, pct) {
+  const out = [], f = pct / 100; if (!(c?.length > 1) || !(f > 0)) return out;
+  const pivot = (i, price, type, ok = true) => out.push({ i, t: c[i].time, price, type, ok });
+  let dir = 0, hi = c[0].high, hiI = 0, lo = c[0].low, loI = 0;
+  for (let i = 1; i < c.length; i++) {
+    const h = c[i].high, l = c[i].low;
+    if (dir === 0) { // Richtung noch offen: die erste Bewegung um die Mindestgröße entscheidet
+      if (h > hi) { hi = h; hiI = i; }
+      if (l < lo) { lo = l; loI = i; }
+      if (loI < hiI && hi >= lo * (1 + f)) { pivot(loI, lo, 'L'); dir = 1; }
+      else if (hiI < loI && lo <= hi * (1 - f)) { pivot(hiI, hi, 'H'); dir = -1; }
+    } else if (dir === 1) { // aufwärts: Hoch nachziehen, Umkehr erst nach einem Rückgang um die Mindestgröße
+      if (h >= hi) { hi = h; hiI = i; } else if (l <= hi * (1 - f)) { pivot(hiI, hi, 'H'); dir = -1; lo = l; loI = i; }
+    } else { // abwärts: Tief nachziehen, Umkehr erst nach einem Anstieg um die Mindestgröße
+      if (l <= lo) { lo = l; loI = i; } else if (h >= lo * (1 + f)) { pivot(loI, lo, 'L'); dir = 1; hi = h; hiI = i; }
+    }
+  }
+  if (dir === 1) pivot(hiI, hi, 'H', false); else if (dir === -1) pivot(loI, lo, 'L', false);
+  return out;
+}
+// var statt const/let: renderChart kann schon laufen, bevor dieser Abschnitt ausgewertet ist
+var ZZ_KEY = 'scalpdesk.zigzag.v1', ZZ_STEPS = [0.25, 0.5, 1, 2, 3, 5, 8], zzCache = { key: '', piv: [] };
+function zzPct() { const v = Number(store.get(ZZ_KEY)?.pct); return ZZ_STEPS.includes(v) ? v : 3; }
+function pivotsFor(candles = state.candles, pct = zzPct()) {
+  const a = candles[0], b = candles.at(-1), key = a && b ? [state.symbol, state.interval, candles.length, a.time, b.time, b.high, b.low, pct].join('|') : '';
+  if (zzCache.key !== key || !key) zzCache = { key, piv: key ? zigzag(candles, pct) : [] };
+  return zzCache.piv;
+}
+// Im Chart: bestätigte Schenkel durchgezogen, der offene letzte Schenkel gestrichelt, Punkte an den Umkehrstellen.
+// Je ein Punkt links und rechts außerhalb des Ausschnitts wird mitgenommen, damit die Linie bis an den Rand reicht.
+function drawZigzag(g, { offset, stop, x, y }) {
+  if (!state.overlays?.zz) return;
+  const piv = pivotsFor(), n = piv.length; if (n < 2) return;
+  let a = piv.findIndex(p => p.i >= offset); a = a < 0 ? n - 2 : Math.max(0, a - 1);
+  let b = piv.findIndex(p => p.i >= stop); b = b < 0 ? n - 1 : b;
+  const pts = piv.slice(a, b + 1); if (pts.length < 2) return;
+  const P = p => `${x(p.i - offset).toFixed(1)},${y(p.price).toFixed(1)}`, solid = pts.filter(p => p.ok), last = pts.at(-1);
+  if (solid.length >= 2) g.append(node('polyline', { class: 'zz-line', points: solid.map(P).join(' ') }));
+  if (!last.ok && solid.length) g.append(node('polyline', { class: 'zz-open', points: `${P(solid.at(-1))} ${P(last)}` }));
+  for (const p of pts) if (p.i >= offset && p.i < stop) g.append(node('circle', { class: p.ok ? 'zz-dot' : 'zz-dot open', cx: x(p.i - offset).toFixed(1), cy: y(p.price).toFixed(1), r: 2.8 }));
+}
+$('zz-pct').value = String(zzPct());
+$('zz-pct').addEventListener('change', e => { store.set(ZZ_KEY, { pct: Number(e.target.value) }); zzCache.key = ''; renderMarket(); });
 render();startLive();void showCachedChart();void refresh();void initAutoBackup();void requestWake();
 </script>
 </head>
@@ -5037,7 +5099,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
         <div class="ohlc skel" id="ohlc">O — &nbsp; H — &nbsp; L — &nbsp; C —</div>
         <div id="chart" class="chart" tabindex="0" role="img" aria-label="Kerzenchart. Mit Pfeiltasten Kerzen auswählen, mit Plus und Minus zoomen."><div class="chart-skel" aria-hidden="true"><i class="skel" style="height:38%"></i><i class="skel" style="height:52%"></i><i class="skel" style="height:46%"></i><i class="skel" style="height:61%"></i><i class="skel" style="height:57%"></i><i class="skel" style="height:70%"></i><i class="skel" style="height:64%"></i><i class="skel" style="height:49%"></i><i class="skel" style="height:55%"></i><i class="skel" style="height:68%"></i><i class="skel" style="height:74%"></i><i class="skel" style="height:66%"></i><i class="skel" style="height:58%"></i><i class="skel" style="height:63%"></i><i class="skel" style="height:77%"></i><i class="skel" style="height:71%"></i><i class="skel" style="height:80%"></i><i class="skel" style="height:69%"></i><i class="skel" style="height:62%"></i><i class="skel" style="height:72%"></i><i class="skel" style="height:84%"></i><i class="skel" style="height:78%"></i><i class="skel" style="height:73%"></i><i class="skel" style="height:88%"></i></div><span class="sr-only">Marktdaten werden geladen</span></div>
         <div class="lmap-strip" id="lmap-strip" hidden><span class="lm-head"><b>Liq-Heatmap</b><span class="lm-src" id="lm-src">Schätzung aus Open Interest</span><span class="lm-scale" role="img" aria-label="Farbskala: je kräftiger, desto mehr geschätzte Liquidationen"><small>wenig</small><i></i><small>viel</small></span><details class="tip left"><summary aria-label="So entsteht die Liquidations-Heatmap"><span>i</span></summary><div class="tip-body"><p><b>Wo würden viele gehebelte Positionen liquidiert?</b> Binance veröffentlicht das nicht – die Heatmap schätzt es aus öffentlichen Futures-Daten.</p><p>Steigt das Open Interest (offene Kontrakte) in einem Zeitraum, wurden neue Positionen eröffnet – zum Durchschnittspreis dieses Zeitraums. Den Long-/Short-Anteil liefern die Taker-Käufe. Für die Hebel gilt eine typische Verteilung (5× 10 %, 10× 25 %, 20× 30 %, 50× 20 %, 100× 15 %); die Liquidationspreise rechnet das Dashboard wie im Rechner, mit der dort eingestellten Maintenance Margin.</p><p>Sinkt das Open Interest, werden alle Zonen anteilig schwächer. Läuft der Kurs durch eine Zone, gilt sie als aufgelöst und endet im Chart. Je kräftiger die Farbe, desto mehr geschätzte Positionen.</p><p>Oberhalb des Kurses liegen Short-, unterhalb Long-Liquidationen. Die Knöpfe zeigen das stärkste Cluster je Seite im Bereich ±10 % – antippen legt einen Alarm an. Viele Trader sehen große Cluster als mögliche Kursziele; eine Garantie ist das nicht.</p></div></details></span><button type="button" class="lm-chip" id="lm-short" data-lm="short" disabled><span class="lm-side">Shorts ▲</span><span class="lm-val skel" id="lm-short-v">—</span></button><button type="button" class="lm-chip" id="lm-long" data-lm="long" disabled><span class="lm-side">Longs ▼</span><span class="lm-val skel" id="lm-long-v">—</span></button><span class="lm-note" id="lm-note" hidden></span></div>
-        <div class="chart-footer"><div class="chart-legend"><span class="lg"><i class="legend-line support"></i><span>Unterstützung<small id="lg-support" class="skel">—</small></span></span><span class="lg"><i class="legend-line resistance"></i><span>Widerstand<small id="lg-resistance" class="skel">—</small></span></span><span class="overlay-toggles" role="group" aria-label="Chart-Ebenen ein- und ausblenden"><button type="button" data-overlay="vp" aria-pressed="true"><i class="sw vp"></i>Volumenprofil · POC</button><button type="button" data-overlay="ema200" aria-pressed="true"><i class="sw ema"></i>EMA 200</button><button type="button" data-overlay="bb" aria-pressed="true"><i class="sw bb"></i>Bollinger</button><button type="button" data-overlay="liq" aria-pressed="true" title="Liquidationspreise: offene Positionen (Wert der Börse oder Modell bei isolierter Margin) und Rechner-Szenario"><i class="sw liq"></i>Liquidation</button><button type="button" data-overlay="lmap" aria-pressed="true" title="Liquidations-Heatmap: geschätzte Zonen aus Open Interest und typischen Hebeln"><i class="sw lmap"></i>Liq-Heatmap</button></span></div><span id="chart-caption">Zeitachse UTC · 1m</span></div>
+        <div class="chart-footer"><div class="chart-legend"><span class="lg"><i class="legend-line support"></i><span>Unterstützung<small id="lg-support" class="skel">—</small></span></span><span class="lg"><i class="legend-line resistance"></i><span>Widerstand<small id="lg-resistance" class="skel">—</small></span></span><span class="overlay-toggles" role="group" aria-label="Chart-Ebenen ein- und ausblenden"><button type="button" data-overlay="vp" aria-pressed="true"><i class="sw vp"></i>Volumenprofil · POC</button><button type="button" data-overlay="ema200" aria-pressed="true"><i class="sw ema"></i>EMA 200</button><button type="button" data-overlay="bb" aria-pressed="true"><i class="sw bb"></i>Bollinger</button><button type="button" data-overlay="liq" aria-pressed="true" title="Liquidationspreise: offene Positionen (Wert der Börse oder Modell bei isolierter Margin) und Rechner-Szenario"><i class="sw liq"></i>Liquidation</button><button type="button" data-overlay="lmap" aria-pressed="true" title="Liquidations-Heatmap: geschätzte Zonen aus Open Interest und typischen Hebeln"><i class="sw lmap"></i>Liq-Heatmap</button><button type="button" data-overlay="zz" aria-pressed="true" title="ZigZag: Umkehrpunkte (Pivots) ab der eingestellten Mindestbewegung – Grundlage für Divergenzen, Elliott-Wellen und Fibonacci"><i class="sw zz"></i>ZigZag</button><select id="zz-pct" class="zz-pct" aria-label="ZigZag: Mindestbewegung für einen Umkehrpunkt" title="Mindestbewegung für einen Umkehrpunkt"><option value="0.25">0,25 %</option><option value="0.5">0,5 %</option><option value="1">1 %</option><option value="2">2 %</option><option value="3">3 %</option><option value="5">5 %</option><option value="8">8 %</option></select></span></div><span id="chart-caption">Zeitachse UTC · 1m</span></div>
       </section>
       <section class="panel signals cq" id="signals" data-tabs="chart" aria-labelledby="signals-title">
         <div class="signals-head"><div><div class="head-line"><h2 id="signals-title">Signal-Übersicht</h2><details class="tip left"><summary aria-label="So entsteht die Bewertung"><span>i</span></summary><div class="tip-body"><p>Je Zeitraum vier Regeln mit +1, 0 oder −1: EMA 20 über/unter EMA 50 · Schluss über/unter EMA 20 · RSI unter 30 und steigend (+1) bzw. über 70 und fallend (−1) · MACD über/unter Signallinie.</p><p>Ab +2 Punkten Kaufsignal, ab −2 Verkaufssignal, dazwischen Halten. Gesamt: Anzahl Kauf- minus Verkaufssignale, ab ±2.</p><p>Trend: Der Pfeil vergleicht den Gesamtscore mit dem Stand vor 5 Minuten (↗ gestiegen, ↘ gefallen, → gleich), die Balken zeigen die letzten 60 Minuten. Pfeile in den Zeilen: Punkte eines Zeitraums haben sich in den letzten 5 Minuten geändert. Rekonstruiert aus abgeschlossenen Kerzen, gilt also auch direkt nach dem Öffnen.</p><p>Mechanische Auswertung vergangener Kurse, keine Vorhersage; Gebühren, Funding und Hebel sind nicht berücksichtigt.</p></div></details></div><p>Trend, Kurslage, RSI und MACD · nur abgeschlossene Kerzen · Zeile antippen wechselt den Chart</p></div><div class="overall"><span>Gesamt über alle Zeiträume</span><div class="sig-trend"><strong id="overall-verdict" class="verdict skel">—</strong><span class="score skel" id="overall-score">—</span></div><div class="spark-wrap" id="overall-spark-wrap"><svg class="spark" id="overall-spark" viewBox="0 0 132 34" preserveAspectRatio="none" role="img" aria-label="Verlauf der Gesamtwertung"></svg><small class="spark-cap" aria-hidden="true"><span>vor 60 Min.</span><span>jetzt</span></small></div><small id="overall-detail" class="skel">Wartet auf Kerzendaten.</small></div></div>
