@@ -968,7 +968,9 @@ html[data-chartfull] #chart{order:4}
 /* Vollbild am iPhone hochkant: Chart ins Querformat gedreht (siehe chartfull); Ränder für Notch und Home-Leiste mitgedreht */
 html[data-chartfull] #chart{touch-action:none}
 @media (orientation:portrait) and (max-width:600px) and (pointer:coarse){
-  html[data-chartfull]:not([data-fsnative]) #chart-sec{inset:auto;top:0;left:0;width:100vh;height:100vw;width:100dvh;height:100dvw;transform-origin:0 0;transform:rotate(90deg) translateY(-100%);
+  html[data-chartfull][data-rot=ccw] #chart-sec{inset:auto;top:0;left:0;width:100vh;height:100vw;width:100dvh;height:100dvw;transform-origin:0 0;transform:rotate(-90deg) translateX(-100%);
+    padding:calc(env(safe-area-inset-left,0px) + 8px) calc(env(safe-area-inset-top,0px) + 12px) calc(env(safe-area-inset-right,0px) + 8px) calc(env(safe-area-inset-bottom,0px) + 12px)}
+  html[data-chartfull][data-rot=cw] #chart-sec{inset:auto;top:0;left:0;width:100vh;height:100vw;width:100dvh;height:100dvw;transform-origin:0 0;transform:rotate(90deg) translateY(-100%);
     padding:calc(env(safe-area-inset-right,0px) + 8px) calc(env(safe-area-inset-bottom,0px) + 12px) calc(env(safe-area-inset-left,0px) + 8px) calc(env(safe-area-inset-top,0px) + 12px)}
   /* gedreht ist die Zeile breit genug: Werkzeuge und OHLC einzeilig, damit der Chart die Höhe bekommt */
   html[data-chartfull] .chart-toolbar{display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:8px}
@@ -999,6 +1001,7 @@ html[data-chartfull]:not([data-chartbar=open]) .chart-toolbar,html[data-chartful
 #fb-rot{display:none;padding:0 8px}
 #fb-rot[aria-pressed=true]{border-color:var(--up-border);color:var(--mint)}
 @media (orientation:portrait) and (max-width:600px) and (pointer:coarse){html[data-chartfull] #fb-rot{display:inline-flex}}
+html[data-motion] #fb-rot{display:none !important} /* mit Bewegungssensor entscheidet die App selbst */
 .chart-panel>.notice{margin:12px 20px 0}
 html{scroll-padding-top:calc(var(--lb-h,56px) + 16px)}
 html[data-layout=desktop] .col-input,html[data-layout=desktop] .col-control{top:calc(env(safe-area-inset-top,0px) + var(--lb-h,56px) + 12px);max-height:calc(100dvh - var(--lb-h,56px) - 28px)}
@@ -1605,7 +1608,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Alle Werte liegen zusätzlich im Arbeitsspeicher und sind dadurch synchron lesbar. Schreiben geht sofort in den
 // localStorage und gebündelt in die IndexedDB; beim Start gewinnt die zuletzt vollständig geschriebene Kopie.
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
-const APP_VERSION = '3.5.6', docEl = document.documentElement;
+const APP_VERSION = '3.5.7', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -4893,9 +4896,9 @@ function setChartFull(on) {
     chartHold = document.createElement('div'); chartHold.className = 'chart-hold'; chartHold.setAttribute('aria-hidden', 'true');
     chartHold.style.height = sec.offsetHeight + 'px'; chartHold.style.margin = getComputedStyle(sec).margin; sec.before(chartHold);
     delete docEl.dataset.chartbar; $('fb-tools').setAttribute('aria-expanded', 'false'); // Werkzeuge standardmäßig eingeklappt
-    applyFsRotate(); docEl.dataset.chartfull = '1'; renderFullBar(); $('chart').focus({ preventScroll: true });
+    startMotion(); docEl.dataset.chartfull = '1'; updateRot(); renderFullBar(); $('chart').focus({ preventScroll: true });
   } else {
-    delete docEl.dataset.chartfull; delete docEl.dataset.chartbar; chartHold?.remove(); chartHold = null;
+    stopMotion(); delete docEl.dataset.chartfull; delete docEl.dataset.chartbar; delete docEl.dataset.rot; chartHold?.remove(); chartHold = null;
     const y = chartFullY, back = () => { if (Math.abs(scrollY - y) > 1) scrollTo({ top: y, behavior: 'instant' }); }; back(); requestAnimationFrame(back);
   }
   b.setAttribute('aria-pressed', String(on)); b.setAttribute('aria-label', on ? 'Vollbild beenden' : 'Chart im Vollbild');
@@ -4913,31 +4916,65 @@ addEventListener('keydown', e => {
   if (e.key === 'Escape' || (e.key === 'Enter' && !e.target.closest?.('input, textarea, select, button, a, summary'))) { e.preventDefault(); setChartFull(false); }
 });
 // iPhone hochkant: iOS lässt Webseiten die Bildschirmdrehung nicht erzwingen (kein screen.orientation.lock in Safari).
-// Deshalb dreht das CSS den Vollbild-Chart um 90° ins Querformat, auch bei aktiver Rotationssperre. Dreht man das Gerät
-// wirklich quer, entfällt die Drehung (Media Query), beim Beenden ist sofort wieder Hochformat. Die Chart-Logik rechnet in
-// Bildschirm-Koordinaten; im gedrehten Zustand werden Zeiger-Ereignisse und das Chart-Rechteck deshalb in die
-// Koordinaten des gedrehten Charts übersetzt – Tippen, Wischen, Zoomen und der Magnet funktionieren unverändert.
+// Mit Bewegungssensor (einmalige Erlaubnis beim ersten Vollbild) sieht die App, wie das iPhone gehalten wird:
+// – hochkant gehalten: keine Drehung;
+// – quer gehalten und iOS dreht die Seite selbst (Rotationssperre aus): die App dreht nicht – genau eine Drehung durch iOS;
+// – quer gehalten, die Seite bleibt hochkant (Rotationssperre an): die App dreht den Chart ins Querformat, passend zur Seite,
+//   zu der das iPhone gekippt ist. Sie wartet dafür 0,7 s – so lange hat iOS Zeit, selbst zu drehen, sonst drehte es doppelt.
+// Ohne Sensor (Erlaubnis abgelehnt, kein Sensor): die App dreht hochkant selbst; hat sich die Seite am Handy einmal von
+// selbst quer gedreht, merkt sie sich das und lässt iOS drehen (Knopf ⟳ schaltet um).
+// Im gedrehten Zustand werden Zeiger-Ereignisse und das Chart-Rechteck in Chart-Koordinaten übersetzt.
 const CHART_ROT_MQ = matchMedia('(orientation: portrait) and (max-width: 600px) and (pointer: coarse)');
-const chartRotated = () => docEl.dataset.chartfull === '1' && !docEl.dataset.fsnative && CHART_ROT_MQ.matches;
-// Dreht das iPhone die Oberfläche selbst (Rotationssperre aus), animiert iOS beim Quer-Halten die schon gedrehte Ansicht
-// ein zweites Mal – das lässt sich von einer Webseite nicht verhindern. Deshalb merkt sich die App, sobald die Seite am
-// Handy einmal von selbst ins Querformat gewechselt ist, und dreht im Vollbild dann nicht mehr selbst: iOS dreht genau
-// einmal. Mit Rotationssperre (Seite bleibt hochkant) dreht weiter die App. Der Knopf ⟳ in der Kopfzeile schaltet um.
-var FSROT_KEY = 'scalpdesk.fsrotate.v1';
 const PHONE_LAND_MQ = matchMedia('(orientation: landscape) and (max-height: 600px) and (pointer: coarse)');
-function applyFsRotate() {
-  const own = store.get(FSROT_KEY) !== 'native';
-  if (own) delete docEl.dataset.fsnative; else docEl.dataset.fsnative = '1';
-  $('fb-rot').setAttribute('aria-pressed', String(own));
+const chartRotated = () => docEl.dataset.chartfull === '1' && CHART_ROT_MQ.matches ? (docEl.dataset.rot || '') : '';
+var FSROT_KEY = 'scalpdesk.fsrotate.v1', FSWAIT_KEY = 'scalpdesk.fsrotwait.v1', fsMotion = '', fsTilt = '', fsUp = 0; // fsMotion: '' · 'wait' · 'on' · 'off'
+let tiltCand = '', tiltSince = 0, motionWait = null;
+function updateRot() {
+  let r = '';
+  if (docEl.dataset.chartfull === '1' && CHART_ROT_MQ.matches) {
+    if (fsMotion === 'on') r = fsTilt === 'land-l' ? 'cw' : fsTilt === 'land-r' ? 'ccw' : '';
+    else if (fsMotion === 'off' && store.get(FSROT_KEY) !== 'native') r = 'cw';
+  }
+  if ((docEl.dataset.rot || '') !== r) { if (r) docEl.dataset.rot = r; else delete docEl.dataset.rot; }
+  if (fsMotion === 'on') docEl.dataset.motion = '1'; else delete docEl.dataset.motion;
+  $('fb-rot').setAttribute('aria-pressed', String(store.get(FSROT_KEY) !== 'native'));
 }
-function learnNativeRotate() { if (PHONE_LAND_MQ.matches && store.get(FSROT_KEY) !== 'native') { store.set(FSROT_KEY, 'native'); applyFsRotate(); } }
+function onMotion(e) {
+  const g = e.accelerationIncludingGravity, x = g?.x, y = g?.y; if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+  if (fsMotion !== 'on') { fsMotion = 'on'; clearTimeout(motionWait); updateRot(); }
+  // Vorzeichen je Gerät verschieden (iOS: hochkant y ≈ −9,8, Android +9,8) – beim Hochkant-Halten lernen
+  if (CHART_ROT_MQ.matches && Math.abs(y) > 7 && Math.abs(y) > Math.abs(x) * 1.5) fsUp = Math.sign(y);
+  const up = fsUp || (typeof window.DeviceMotionEvent?.requestPermission === 'function' ? -1 : 1), ax = Math.abs(x), ay = Math.abs(y);
+  const t = ax > 6 && ax > ay * 1.4 ? (x * up > 0 ? 'land-l' : 'land-r') : ay > 6 && ay > ax * 1.4 ? 'portrait' : tiltCand;
+  const now = performance.now();
+  if (t !== tiltCand) { tiltCand = t; tiltSince = now; }
+  if (t && t !== fsTilt && now - tiltSince >= (t === 'portrait' ? 200 : Number(store.get(FSWAIT_KEY)) || 700)) { fsTilt = t; updateRot(); }
+}
+function startMotion() {
+  if (!CHART_ROT_MQ.matches && !PHONE_LAND_MQ.matches) { if (fsMotion !== 'on') fsMotion = 'off'; return; } // kein Handy
+  const listen = () => { addEventListener('devicemotion', onMotion); if (fsMotion !== 'on') { fsMotion = 'wait'; clearTimeout(motionWait); motionWait = setTimeout(() => { if (fsMotion !== 'on') { fsMotion = 'off'; updateRot(); } }, 600); } };
+  const req = window.DeviceMotionEvent?.requestPermission;
+  if (typeof req === 'function') { if (fsMotion !== 'on') fsMotion = 'wait'; req.call(DeviceMotionEvent).then(r => { if (r === 'granted') listen(); else { fsMotion = 'off'; updateRot(); } }, () => { fsMotion = 'off'; updateRot(); }); }
+  else if ('DeviceMotionEvent' in window) listen(); else fsMotion = 'off';
+}
+function stopMotion() { removeEventListener('devicemotion', onMotion); clearTimeout(motionWait); fsTilt = tiltCand = ''; if (fsMotion === 'wait') fsMotion = ''; }
+function learnNativeRotate() {
+  if (!PHONE_LAND_MQ.matches) return;
+  if (store.get(FSROT_KEY) !== 'native') { store.set(FSROT_KEY, 'native'); updateRot(); }
+}
 PHONE_LAND_MQ.addEventListener?.('change', learnNativeRotate); learnNativeRotate();
+// iOS hat die Seite gedreht: Lage neu bewerten, damit beim Zurückdrehen nicht kurz die App-Drehung aufblitzt
+CHART_ROT_MQ.addEventListener?.('change', () => {
+  // iOS hat erst gedreht, nachdem die App schon gedreht hatte: beim nächsten Mal länger warten (bis 2 s)
+  if (!CHART_ROT_MQ.matches && fsMotion === 'on' && docEl.dataset.rot) store.set(FSWAIT_KEY, Math.min(2000, (Number(store.get(FSWAIT_KEY)) || 700) + 400));
+  fsTilt = tiltCand = ''; updateRot();
+});
 (() => {
   const box = $('chart'), realRect = () => Element.prototype.getBoundingClientRect.call(box);
   box.getBoundingClientRect = () => chartRotated() ? new DOMRect(0, 0, box.offsetWidth, box.offsetHeight) : realRect();
   const turn = e => {
-    if (e.__chartTurned || !chartRotated()) return;
-    const R = realRect(), x = e.clientY - R.top, y = R.right - e.clientX; // gedreht um 90° im Uhrzeigersinn
+    const r = chartRotated(); if (e.__chartTurned || !r) return;
+    const R = realRect(), x = r === 'cw' ? e.clientY - R.top : R.bottom - e.clientY, y = r === 'cw' ? R.right - e.clientX : e.clientX - R.left;
     Object.defineProperty(e, 'clientX', { value: x, configurable: true }); Object.defineProperty(e, 'clientY', { value: y, configurable: true });
     e.__chartTurned = true;
   };
@@ -4968,7 +5005,7 @@ $('fb-tools').addEventListener('click', () => setChartBar(docEl.dataset.chartbar
 $('fb-swap').addEventListener('click', swapChart);
 $('fb-exit').addEventListener('click', () => setChartFull(false));
 setInterval(renderFullBar, 1000);
-$('fb-rot').addEventListener('click', () => { store.set(FSROT_KEY, docEl.dataset.fsnative ? 'own' : 'native'); applyFsRotate(); });
+$('fb-rot').addEventListener('click', () => { store.set(FSROT_KEY, store.get(FSROT_KEY) === 'native' ? 'own' : 'native'); updateRot(); });
 render();startLive();void showCachedChart();void refresh();void initAutoBackup();void requestWake();
 </script>
 </head>
