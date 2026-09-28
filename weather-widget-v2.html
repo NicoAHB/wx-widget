@@ -974,6 +974,27 @@ html[data-chartfull] #chart{touch-action:none}
   html[data-chartfull] .chart-toolbar{display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:8px}
   html[data-chartfull] #ohlc{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 }
+/* Vollbild-Kopfzeile: Werkzeuge ein-/ausklappen (Taste T), Kurs oben rechts mit Wechsel BTC ↔ vorheriges Paar (Taste B), Beenden */
+.full-bar{display:none}
+html[data-chartfull] .full-bar{order:0;display:flex;align-items:center;gap:8px;min-height:38px;margin:0 0 4px;flex:0 0 auto}
+.full-bar button{min-height:36px;border:1px solid var(--border);border-radius:8px;background:var(--field);color:var(--text);padding:0 10px;display:inline-flex;align-items:center;gap:6px;font:inherit;font-size:.8125rem;cursor:pointer;white-space:nowrap}
+.full-bar button:hover{background:var(--hover)}
+#fb-tools{min-width:0;overflow:hidden;text-overflow:ellipsis}
+#fb-tools .fb-chev{display:inline-block;transition:transform .25s ease}
+html[data-chartbar=open] #fb-tools .fb-chev{transform:rotate(180deg)}
+.fb-space{flex:1 1 auto}
+#fb-swap strong{font-variant-numeric:tabular-nums;color:var(--text)}
+#fb-swap #fb-sym{color:var(--muted);font-weight:600}
+#fb-exit{padding:0 8px}
+/* Werkzeuge im Vollbild einzeilig: Zeiträume wischbar statt Umbruch */
+html[data-chartfull] .chart-toolbar{display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:8px}
+html[data-chartfull] .intervals{flex:1 1 auto;min-width:0;display:flex;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+html[data-chartfull] .intervals::-webkit-scrollbar{display:none}
+html[data-chartfull] .zoom-controls{flex:0 0 auto}
+/* Eingeklappt (Standard beim Öffnen): Werkzeuge, Ebenen-Schalter und OHLC gleiten weg, der Chart wächst mit */
+html[data-chartfull] .chart-toolbar,html[data-chartfull] .chart-footer,html[data-chartfull] #ohlc{max-height:200px;transition:max-height .25s ease,opacity .2s ease,margin .25s ease,padding .25s ease,visibility 0s}
+html[data-chartfull]:not([data-chartbar=open]) .chart-toolbar,html[data-chartfull]:not([data-chartbar=open]) .chart-footer,html[data-chartfull]:not([data-chartbar=open]) #ohlc{max-height:0;min-height:0 !important;opacity:0;margin-top:0;margin-bottom:0;padding-top:0;padding-bottom:0;border-width:0;overflow:hidden;visibility:hidden;transition:max-height .25s ease,opacity .2s ease,margin .25s ease,padding .25s ease,visibility 0s linear .25s}
+@media (prefers-reduced-motion:reduce){html[data-chartfull] .chart-toolbar,html[data-chartfull] .chart-footer,html[data-chartfull] #ohlc,#fb-tools .fb-chev{transition:none !important}}
 .chart-panel>.notice{margin:12px 20px 0}
 html{scroll-padding-top:calc(var(--lb-h,56px) + 16px)}
 html[data-layout=desktop] .col-input,html[data-layout=desktop] .col-control{top:calc(env(safe-area-inset-top,0px) + var(--lb-h,56px) + 12px);max-height:calc(100dvh - var(--lb-h,56px) - 28px)}
@@ -1580,7 +1601,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Alle Werte liegen zusätzlich im Arbeitsspeicher und sind dadurch synchron lesbar. Schreiben geht sofort in den
 // localStorage und gebündelt in die IndexedDB; beim Start gewinnt die zuletzt vollständig geschriebene Kopie.
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
-const APP_VERSION = '3.5.4', docEl = document.documentElement;
+const APP_VERSION = '3.5.5', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -3398,6 +3419,7 @@ function syncStreams() {
       want[m].add(`${s}@kline_1m`);
       if (nearLevel(it.symbol)) want[m].add(`${s}@aggTrade`); // nahe einer Marke: jeden Trade prüfen
     }
+    for (const s of fullBarSyms()) want.spot.add(`${s.toLowerCase()}@kline_1m`); // Vollbild: Kurs-Wechsler oben rechts
   }
   live.need = new Set(Object.keys(want).filter(m => want[m].size));
   for (const m of ['spot', 'futures']) { const key = [...want[m]].sort().join('/'); if (live.wantKey[m] !== key) { live.wantKey[m] = key; live.post({ t: 'want', m, streams: [...want[m]] }); } }
@@ -4866,9 +4888,10 @@ function setChartFull(on) {
     chartFullY = scrollY;
     chartHold = document.createElement('div'); chartHold.className = 'chart-hold'; chartHold.setAttribute('aria-hidden', 'true');
     chartHold.style.height = sec.offsetHeight + 'px'; chartHold.style.margin = getComputedStyle(sec).margin; sec.before(chartHold);
-    docEl.dataset.chartfull = '1'; $('chart').focus({ preventScroll: true });
+    delete docEl.dataset.chartbar; $('fb-tools').setAttribute('aria-expanded', 'false'); // Werkzeuge standardmäßig eingeklappt
+    docEl.dataset.chartfull = '1'; renderFullBar(); $('chart').focus({ preventScroll: true });
   } else {
-    delete docEl.dataset.chartfull; chartHold?.remove(); chartHold = null;
+    delete docEl.dataset.chartfull; delete docEl.dataset.chartbar; chartHold?.remove(); chartHold = null;
     const y = chartFullY, back = () => { if (Math.abs(scrollY - y) > 1) scrollTo({ top: y, behavior: 'instant' }); }; back(); requestAnimationFrame(back);
   }
   b.setAttribute('aria-pressed', String(on)); b.setAttribute('aria-label', on ? 'Vollbild beenden' : 'Chart im Vollbild');
@@ -4876,10 +4899,13 @@ function setChartFull(on) {
   // (WKWebView) kann die Nachricht annehmen und per UIWindowScene.requestGeometryUpdate drehen. Sonst dreht das CSS unten.
   try { if (on) screen.orientation?.lock?.('landscape')?.catch?.(() => {}); else screen.orientation?.unlock?.(); } catch {}
   try { window.webkit?.messageHandlers?.orientation?.postMessage(on ? 'landscape' : 'portrait'); } catch {}
+  syncStreams(); // Kurse für den Wechsler (BTC und das vorherige Paar) live mitnehmen
 }
 $('chart-full').addEventListener('click', () => setChartFull(docEl.dataset.chartfull !== '1'));
 addEventListener('keydown', e => {
   if (docEl.dataset.chartfull !== '1' || e.defaultPrevented) return;
+  const typing = e.target.closest?.('input, textarea, select, [contenteditable]');
+  if (!typing && !e.ctrlKey && !e.metaKey && !e.altKey && /^[tb]$/i.test(e.key)) { e.preventDefault(); if (e.key.toLowerCase() === 't') setChartBar(docEl.dataset.chartbar !== 'open'); else swapChart(); return; }
   if (e.key === 'Escape' || (e.key === 'Enter' && !e.target.closest?.('input, textarea, select, button, a, summary'))) { e.preventDefault(); setChartFull(false); }
 });
 // iPhone hochkant: iOS lässt Webseiten die Bildschirmdrehung nicht erzwingen (kein screen.orientation.lock in Safari).
@@ -4900,6 +4926,31 @@ const chartRotated = () => docEl.dataset.chartfull === '1' && CHART_ROT_MQ.match
   };
   for (const t of ['pointerdown', 'pointermove', 'pointerup', 'pointercancel', 'click', 'dblclick', 'contextmenu']) box.addEventListener(t, turn, true);
 })();
+// ---------- Vollbild-Kopfzeile ----------
+// Werkzeuge (Zeiträume, Zoom, Ebenen, OHLC) ein- und ausklappen – beim Öffnen eingeklappt, damit der Chart die volle Höhe hat.
+// Oben rechts der Kurs zum Wechseln: auf einem anderen Paar BTC, auf BTC das zuvor angesehene Paar (Tippen, Klicken oder B).
+var FULL_BTC = 'BTCUSDT', fullAlt = '';
+function fullBarSyms() { return docEl.dataset.chartfull === '1' ? [FULL_BTC, fullAlt].filter(Boolean) : []; }
+function swapTarget() { return state.symbol === FULL_BTC ? fullAlt : FULL_BTC; }
+function setChartBar(open) {
+  if (open) docEl.dataset.chartbar = 'open'; else delete docEl.dataset.chartbar;
+  $('fb-tools').setAttribute('aria-expanded', String(!!open));
+  // während des Gleitens mitzeichnen, damit der Chart flüssig auf die neue Höhe wächst
+  const t0 = performance.now(), step = () => { scheduleDraw(); if (performance.now() - t0 < 340) requestAnimationFrame(step); }; requestAnimationFrame(step);
+}
+function renderFullBar() {
+  if (state.symbol && state.symbol !== FULL_BTC) fullAlt = state.symbol;
+  if (docEl.dataset.chartfull !== '1') return;
+  put('fb-title', `${state.symbol.slice(0, -4)} · ${state.interval}`);
+  const t = swapTarget(), b = $('fb-swap'); b.hidden = !t; if (!t) return;
+  const p = state.prices[t]?.price, txt = p > 0 ? priceText(p) : '…';
+  put('fb-sym', t.slice(0, -4)); put('fb-price', txt); b.setAttribute('aria-label', `Zum ${t.slice(0, -4)}-Chart wechseln, Kurs ${txt} USDT`);
+}
+function swapChart() { const t = swapTarget(); if (!t) return; try { void setMarket(t); } catch {} renderFullBar(); syncStreams(); }
+$('fb-tools').addEventListener('click', () => setChartBar(docEl.dataset.chartbar !== 'open'));
+$('fb-swap').addEventListener('click', swapChart);
+$('fb-exit').addEventListener('click', () => setChartFull(false));
+setInterval(renderFullBar, 1000);
 render();startLive();void showCachedChart();void refresh();void initAutoBackup();void requestWake();
 </script>
 </head>
@@ -4956,6 +5007,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
     <div class="dash-top"><noscript><div>JavaScript läuft in dieser Ansicht nicht, daher lädt das Dashboard keine Daten. Auf dem iPad zeigt die Dateien-App HTML-Dateien nur als Vorschau – Dashboard über seine https-Adresse in Safari öffnen.</div></noscript><div class="day-banner" id="day-banner" role="alert" hidden></div><div class="hint-banner" id="install-hint" hidden><span id="install-hint-text"></span><button type="button" class="button ghost" id="install-hint-close">Verstanden</button></div></div>
     <div class="col col-market">
       <section class="panel chart-panel cq" id="chart-sec" data-tabs="chart" aria-label="Kurschart">
+        <div class="full-bar" id="full-bar"><button type="button" id="fb-tools" aria-expanded="false" title="Werkzeuge ein- und ausblenden (Taste T)"><span class="fb-chev" aria-hidden="true">▾</span><span id="fb-title">Chart</span></button><span class="fb-space"></span><button type="button" id="fb-swap" hidden title="Chart wechseln (Taste B)"><span id="fb-sym"></span><strong id="fb-price">…</strong></button><button type="button" id="fb-exit" aria-label="Vollbild beenden" title="Vollbild beenden (Esc)"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
         <form id="market-form" class="market-form">
           <label>Kryptowährung <span class="input-wrap"><input id="symbol" value="BTC" maxlength="24" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Kürzel oder USDT-Paar" required><span>/ USDT</span></span></label>
           <button class="button primary" type="submit">Markt laden <span aria-hidden="true">→</span></button>
