@@ -5129,8 +5129,9 @@ function zzLearnFor(c = state.candles, pct = zzPct()) {
 //   S Signal-Bewertung (die vier Regeln der Signal-Übersicht): Summe ≥ 2 in Prognoserichtung (+), ≤ −2 (−), sonst 0
 //   R RSI 14: + unter 35 bei Aufwärts- bzw. über 65 bei Abwärtsprognose, − umgekehrt, sonst 0
 // Backtest mit echten BTC-Stundenkerzen (Coinbase und Bitfinex 2017–2019, Walk-Forward, Gebühr 0,06 % je Seite): Die
-// ZigZag-Umkehr allein trifft die Richtung zu 47–50 %. Mit diesen Mustern – Umkehr oder Fortsetzung – bei 2–3 %
-// Mindestbewegung 55–58 %, nach Gebühren im Schnitt +0,15 bis +0,23 % je Trade; bei 1 % und darunter keine Zahl.
+// ZigZag-Umkehr allein trifft die Richtung zu 47–50 %. Mit diesen Mustern – Umkehr oder Fortsetzung – zeigte die
+// App-Simulation bei 2–3 % Mindestbewegung 55,6–57,1 %, nach Gebühren im Schnitt +0,14 bis +0,24 % je Trade (auch im
+// späteren Testzeitraum im Plus); bei 1 % keine einzige Zahl.
 // Klassische Muster (Doppelboden/-top, RSI-Divergenz, Bollinger-Ausbruch) verschlechterten das Ergebnis und fehlen deshalb.
 // Gelernt wird je Intervall, Mindestbewegung und Muster über alle Symbole, eine Stichprobe je Muster und Extrempunkt,
 // dauerhaft gespeichert und in der Sicherung enthalten. Eine Zahl erscheint nur, wenn das Muster mit hoher Sicherheit
