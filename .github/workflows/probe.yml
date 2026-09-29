@@ -20,9 +20,14 @@ jobs:
             const l = await get(`https://www.binance.com/bapi/composite/v1/public/cms/article/catalog/list/query?catalogId=${cat}&pageNo=1&pageSize=20`);
             console.log(`\nCATALOG ${cat}: ${l.status} ${l.text.slice(0, 160)}`);
           }
-          const list = JSON.parse((await get('https://www.binance.com/bapi/composite/v1/public/cms/article/list/query?type=1&pageNo=1&pageSize=30')).text);
-          const all = list.data.catalogs.flatMap(c => c.articles.map(a => ({ ...a, cat: c.catalogId })));
-          console.log('ANZAHL', all.length, list.data.catalogs.map(c => `${c.catalogId}:${c.articles.length}`).join(' '));
+          const all = [];
+          for (const cat of [48, 49, 161, 157]) {
+            const r = await get(`https://www.binance.com/bapi/composite/v1/public/cms/article/catalog/list/query?catalogId=${cat}&pageNo=1&pageSize=20`);
+            let arts = []; try { arts = JSON.parse(r.text).data.articles; } catch (e) { console.log('LISTE', cat, r.status, e.message, r.text.slice(0, 100)); }
+            console.log(`KATALOG ${cat}: ${r.status}, ${arts.length} Artikel, Felder ${Object.keys(arts[0] || {}).join(',')}`);
+            all.push(...arts.map(a => ({ ...a, cat })));
+            await sleep(300);
+          }
           const show = all.filter(a => /Removal of Spot|Margin And Loans Token Delist|Will Delist|Monitoring Tag|Network Upgrade|Migration|Will List|Futures Will Delist|Swap|Merge/i.test(a.title)).slice(0, 9);
           for (const a of show) {
             const d = JSON.parse((await get(`https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=${a.code}`)).text).data;
