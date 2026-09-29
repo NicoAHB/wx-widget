@@ -1332,6 +1332,15 @@ html[data-layout=tablet] #econ{order:1}
 .wl-sig[data-tone=none]{background:transparent;border:1px dashed var(--field-border);color:var(--muted)}
 .wl-item .chip-x{position:absolute;top:-8px;right:-8px;z-index:1;width:28px;min-height:28px;height:28px;margin:0;border:1px solid var(--field-border);border-radius:50%;background:var(--surface);line-height:1}
 html[data-layout=tablet] .wl-tile{height:52px}
+/* schmale Handys (bis 340 px Panelbreite): auch 2 Spalten, Kacheln kompakter – sonst 6 Reihen, und der Chart rutscht weit nach unten */
+@container (max-width:340px){
+  .wl-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .wl-tile{grid-template-columns:auto minmax(0,1fr) 1.9em;column-gap:4px;padding:4px 6px}
+  .wl-sym,.wl-price{font-size:.75rem}
+  .wl-spark{width:28px;height:12px}
+  .wl-chg{font-size:.66rem}
+  .wl-sig{width:1.9em;height:16px;font-size:.66rem}
+}
 @media (pointer:coarse){.wl-item .chip-x{width:40px;height:40px;min-width:40px;min-height:40px;top:-14px;right:-12px}}
 /* 3.20: News & Termine zum Coin – unter dem Wirtschaftskalender */
 html[data-layout=tablet] #cnews{order:1}
