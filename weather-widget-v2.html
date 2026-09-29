@@ -185,8 +185,8 @@ body::before{content:"";position:fixed;inset:0 0 auto 0;height:env(safe-area-ins
 .heat .hc[data-tone=m1]{background:var(--t-m2);color:var(--text)}
 .heat .hc[data-tone=m2],.heat .hc[data-tone=m3]{background:var(--sell);color:var(--sell-ink)}
 .heat .hc[data-tone=none]{background:transparent;border:1px dashed var(--field-border);color:var(--muted)}
-/* Gesamturteil mit Trendpfeil: Link zur Signal-Übersicht */
-.heat .hv{display:inline-flex;align-items:center;min-width:0;color:inherit;text-decoration:none}
+/* Gesamturteil mit Trendpfeil: Link zur Signal-Übersicht – behält seine volle Breite (am Handy schrumpfen die Zeiträume) */
+.heat .hv{display:inline-flex;align-items:center;flex:0 0 auto;color:inherit;text-decoration:none}
 .heat b{margin-left:6px;font-size:.75rem;color:var(--muted);font-weight:500}
 /* ---------- Tab-Leiste (iPad/Smartphone) ---------- */
 .tabbar{display:none}
