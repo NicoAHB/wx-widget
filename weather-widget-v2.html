@@ -1270,6 +1270,8 @@ svg .hl-mark.lo text{fill:var(--c-down)}
 .sw.hilo{height:8px;background:linear-gradient(180deg,var(--c-up) 0 2px,transparent 2px 6px,var(--c-down) 6px)}
 
 /* ---------- 4.1 Wirtschaftskalender unter dem Chart, Warnung in der Live-Leiste ---------- */
+/* Tablet/Handy (Reihenfolge per order): direkt nach dem Chart (gleiche Stufe, im Dokument dahinter), vor der Signal-Übersicht */
+html[data-layout=tablet] #econ{order:1}
 .econ-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 12px}
 .econ-src{color:var(--muted);font-size:.75rem}
 .econ-src.err{color:var(--err-text)}
