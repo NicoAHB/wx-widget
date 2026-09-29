@@ -1762,7 +1762,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Alle Werte liegen zusätzlich im Arbeitsspeicher und sind dadurch synchron lesbar. Schreiben geht sofort in den
 // localStorage und gebündelt in die IndexedDB; beim Start gewinnt die zuletzt vollständig geschriebene Kopie.
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
-const APP_VERSION = '3.14.0', docEl = document.documentElement;
+const APP_VERSION = '3.14.1', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -3041,7 +3041,8 @@ window.addEventListener('focus', checkPermissionChange); document.addEventListen
 try { navigator.permissions?.query({ name: 'notifications' }).then(s => { s.onchange = checkPermissionChange; }).catch(() => {}); } catch {}
 // ---------- Tab gelb blinken lassen, bis alle Hinweise weggeklickt sind ----------
 const BASE_TITLE = document.title, iconLink = document.querySelector('link[rel="icon"]'), BASE_ICON = iconLink?.getAttribute('href') || '';
-// Tab-Titel: „BTC - 95.200,00“; bei anderen Coins mit dem BTC-Kurs als Referenz „NEAR - 4,7290 / (BTC - 95.200,00)“.
+// Tab-Titel: „BTC - 95.200,00“; bei anderen Coins mit dem BTC-Kurs als Referenz „NEAR - 4,7290 / BTC - 95.200“ –
+// ohne Klammern und BTC ohne Nachkommastellen, damit der Titel meist ganz in den Tab passt (3.14.1).
 // Aktualisiert mit jeder Kursmeldung und jede Sekunde (Takt aus dem Web Worker, läuft auch im Hintergrund-Tab).
 // ⏸ = pausiert, ⚠ = letzter Kurs, aktuell kein gültiger Abruf.
 const TITLE_KEY = 'scalpdesk.titleprice.v1';
@@ -3051,7 +3052,7 @@ function baseTitle() {
   if (!titlePriceOn || !p || state.loadedSymbol !== state.symbol) return BASE_TITLE;
   const coin = state.symbol.slice(0, -4), mark = state.marketError ? ' ⚠' : state.paused ? ' ⏸' : '';
   const btc = state.symbol === 'BTCUSDT' ? null : btcRefPrice();
-  return `${coin} - ${priceText(p)}${btc ? ` / (BTC - ${priceText(btc)})` : ''}${mark}`;
+  return `${coin} - ${priceText(p)}${btc ? ` / BTC - ${btc >= 1000 ? number(btc, 0) : priceText(btc)}` : ''}${mark}`;
 }
 function updateTitle() { if ($('toasts').children.length) return; const t = baseTitle(); if (document.title !== t) document.title = t; }
 const iconFor = (fill, mark) => "data:image/svg+xml," + encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='${fill}'/>${mark}</svg>`);
@@ -3707,7 +3708,7 @@ function titleCoinPrice() { const c = state.candles.at(-1)?.close ?? null, t = t
 // Rückfallebene: Sind die Live-Streams nicht frisch (gesperrt, getrennt), holt der Takt beide Kurse alle 2 s per Kurs-Abruf
 // (leicht: Gewicht 1–4) – so bleibt der Titel auch ohne WebSocket höchstens 3 s alt
 async function pollTitlePrices(now) {
-  const t = titlePoll; if (t.busy || now - t.at < 2000) return;
+  const t = titlePoll; if (t.busy || now - t.at < 1500) return; // am Sekundentakt: jeder zweite Takt, also alle 2 s (nie 3 s)
   t.at = now; t.busy = true;
   const sym = state.symbol, items = [{ symbol: sym, source: chartMarket() || 'spot' }]; if (sym !== 'BTCUSDT') items.push({ symbol: 'BTCUSDT', source: 'spot' });
   try { const r = await positionPrices(items); if (sym === state.symbol) Object.assign(t, { sym, price: r[sym] || 0, btc: r.BTCUSDT || 0, got: Date.now() }); updateTitle(); }
@@ -4592,9 +4593,11 @@ async function kcClear() {
 }
 // Kerzen laden: aus dem Zwischenspeicher plus fehlende Kerzen, sonst vollständig (klinesFor)
 async function cachedKlines(symbol, interval, limit, signal) {
-  const e = await kcGet(symbol, interval);
-  if (e && (e.candles.length >= limit - 1 || e.complete)) {
-    const last = e.candles.at(-1), missing = Math.ceil((Date.now() - last.closeTime) / (IV_MS[interval] || 6e4)) + 2;
+  const e = await kcGet(symbol, interval), ms = IV_MS[interval] || 6e4;
+  // Reicht der Speicher zusammen mit dem Nachladen für `limit` Kerzen? Gespeichert sind nur Kerzen, die seit 5 s geschlossen
+  // sind – kurz nach Beginn einer neuen Kerze fehlt deshalb auch die vorletzte; das Nachladen ab der letzten gespeicherten bringt sie mit.
+  if (e && (e.complete || e.candles.length + Math.floor((Date.now() - e.candles.at(-1).time) / ms) >= limit)) {
+    const last = e.candles.at(-1), missing = Math.ceil((Date.now() - last.closeTime) / ms) + 2;
     if (missing < 999) {
       const params = { symbol, interval, startTime: last.time, limit: Math.min(1000, missing + 1) };
       let rows = null;
