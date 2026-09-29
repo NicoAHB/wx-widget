@@ -1719,7 +1719,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Alle Werte liegen zusätzlich im Arbeitsspeicher und sind dadurch synchron lesbar. Schreiben geht sofort in den
 // localStorage und gebündelt in die IndexedDB; beim Start gewinnt die zuletzt vollständig geschriebene Kopie.
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
-const APP_VERSION = '3.12.0', docEl = document.documentElement;
+const APP_VERSION = '3.13.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -2992,15 +2992,20 @@ window.addEventListener('focus', checkPermissionChange); document.addEventListen
 try { navigator.permissions?.query({ name: 'notifications' }).then(s => { s.onchange = checkPermissionChange; }).catch(() => {}); } catch {}
 // ---------- Tab gelb blinken lassen, bis alle Hinweise weggeklickt sind ----------
 const BASE_TITLE = document.title, iconLink = document.querySelector('link[rel="icon"]'), BASE_ICON = iconLink?.getAttribute('href') || '';
-// Tab-Titel: „XRP – 1,4906“, aktualisiert mit jedem Abruf. ⏸ = pausiert, ⚠ = letzter Kurs, aktuell kein gültiger Abruf.
+// Tab-Titel: „BTC – 95.200,00“; bei anderen Coins mit dem BTC-Kurs als Referenz „NEAR - 4,7290 / (BTC - 95.200,00)“.
+// Aktualisiert mit jeder Kursmeldung und jede Sekunde (Takt aus dem Web Worker, läuft auch im Hintergrund-Tab).
+// ⏸ = pausiert, ⚠ = letzter Kurs, aktuell kein gültiger Abruf.
 const TITLE_KEY = 'scalpdesk.titleprice.v1';
 let titlePriceOn = flag(TITLE_KEY, true);
 function baseTitle() {
-  const p = state.candles.length ? state.candles.at(-1).close : null;
+  const p = state.candles.length ? titleCoinPrice() : null;
   if (!titlePriceOn || !p || state.loadedSymbol !== state.symbol) return BASE_TITLE;
-  return `${state.symbol.slice(0, -4)} – ${priceText(p)}${state.marketError ? ' ⚠' : state.paused ? ' ⏸' : ''}`;
+  const coin = state.symbol.slice(0, -4), mark = state.marketError ? ' ⚠' : state.paused ? ' ⏸' : '';
+  if (state.symbol === 'BTCUSDT') return `${coin} – ${priceText(p)}${mark}`;
+  const btc = btcRefPrice();
+  return `${coin} - ${priceText(p)}${btc ? ` / (BTC - ${priceText(btc)})` : ''}${mark}`;
 }
-function updateTitle() { if (!$('toasts').children.length) document.title = baseTitle(); }
+function updateTitle() { if ($('toasts').children.length) return; const t = baseTitle(); if (document.title !== t) document.title = t; }
 const iconFor = (fill, mark) => "data:image/svg+xml," + encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='${fill}'/>${mark}</svg>`);
 const ALARM_ICONS = {
   yellow: iconFor('#ffcc00', "<path d='M16 6v13' stroke='#111' stroke-width='4.5' stroke-linecap='round'/><circle cx='16' cy='25' r='2.8' fill='#111'/>"),
@@ -3307,7 +3312,7 @@ $('alarm-list').addEventListener('click',e=>{
 });
 renderAlarms();
 $('notify-toggle').addEventListener('click',()=>void toggleNotify());
-$('title-toggle').addEventListener('click',()=>{titlePriceOn=!titlePriceOn;store.set(TITLE_KEY,titlePriceOn);renderNotify();updateTitle();updateAlarmState();});
+$('title-toggle').addEventListener('click',()=>{titlePriceOn=!titlePriceOn;store.set(TITLE_KEY,titlePriceOn);renderNotify();updateTitle();updateAlarmState();syncStreams();});
 $('blink-toggle').addEventListener('click',()=>{blinkOn=!blinkOn;store.set(BLINK_KEY,blinkOn);renderNotify();updateAlarmState();});
 $('notify-test').addEventListener('click',()=>{unlockAudio();beep();desktopNotify('🔔 Test-Hinweis','So sieht ein Alarm aus.','test');simpleToast('test','alarm','🔔 Test-Hinweis: So sieht ein Alarm im Dashboard aus.');});
 renderNotify();
@@ -3556,6 +3561,8 @@ function syncStreams() {
       if (nearLevel(it.symbol)) want[m].add(`${s}@aggTrade`); // nahe einer Marke: jeden Trade prüfen
     }
     for (const s of fullBarSyms()) want.spot.add(`${s.toLowerCase()}@kline_1m`); // Vollbild: Kurs-Wechsler oben rechts
+    // Tab-Titel mit BTC-Referenzkurs (anderer Coin im Chart): BTC-Spot-1m – auch wenn der Chart aus den Futures kommt
+    if (titlePriceOn && state.symbol !== 'BTCUSDT') want.spot.add('btcusdt@kline_1m');
   }
   live.need = new Set(Object.keys(want).filter(m => want[m].size));
   for (const m of ['spot', 'futures']) { const key = [...want[m]].sort().join('/'); if (live.wantKey[m] !== key) { live.wantKey[m] = key; live.post({ t: 'want', m, streams: [...want[m]] }); } }
@@ -3572,7 +3579,8 @@ function nearLevel(sym) {
 }
 let lastStreamSync = 0;
 function onTick(now) {
-  status();
+  status(); updateTitle(); // Tab-Titel spätestens jede Sekunde aktuell, auch im Hintergrund-Tab
+  if (titleNeedsPoll(now)) void pollTitlePrices(now);
   if (now - lastStreamSync > 5000) { lastStreamSync = now; syncStreams(); }
   if (Date.now() - lastSeenSaved > 30000) saveLastSeen();
   if (state.paused || state.busy) return;
@@ -3620,9 +3628,32 @@ function onTrades(m) {
   state.prices[m.s] = { price: m.last, at: now, error: null, live: true }; noteSeen(m.s, now);
   scheduleAlertCheck(); if (watchSymbols().has(m.s)) scheduleLiveRender(false);
 }
+// BTC-Referenzkurs für den Tab-Titel anderer Coins: aus dem BTC-Spot-Stream (var: der Titel kann schon vorher gebaut werden);
+// ohne Meldung seit 10 s der zuletzt bekannte BTC-Kurs aus Abruf oder Stream
+var btcRef = null, titlePoll = { at: 0, busy: false, sym: '', price: 0, btc: 0, got: 0 };
+// Der jüngste BTC-Spot-Kurs aus Stream oder Kurs-Abruf; nur ohne beides der sonst bekannte BTC-Kurs
+function btcRefPrice() {
+  const t = titlePoll || {}, poll = t.btc > 0 ? { price: t.btc, at: t.got } : null, best = btcRef && poll ? (poll.at > btcRef.at ? poll : btcRef) : btcRef || poll;
+  return best ? best.price : state.prices.BTCUSDT?.price ?? null;
+}
+// Kurs des Coins für den Tab-Titel: letzte Kerze – oder der Kurs-Abruf, wenn der neuer ist (Streams gerade nicht live)
+function titleCoinPrice() { const c = state.candles.at(-1)?.close ?? null, t = titlePoll || {}; return t.sym === state.symbol && t.price > 0 && t.got > state.marketAt ? t.price : c; }
+// Rückfallebene: Sind die Live-Streams nicht frisch (gesperrt, getrennt), holt der Takt beide Kurse alle 2 s per Kurs-Abruf
+// (leicht: Gewicht 1–4) – so bleibt der Titel auch ohne WebSocket höchstens 3 s alt
+async function pollTitlePrices(now) {
+  const t = titlePoll; if (t.busy || now - t.at < 2000) return;
+  t.at = now; t.busy = true;
+  const sym = state.symbol, items = [{ symbol: sym, source: chartMarket() || 'spot' }]; if (sym !== 'BTCUSDT') items.push({ symbol: 'BTCUSDT', source: 'spot' });
+  try { const r = await positionPrices(items); if (sym === state.symbol) Object.assign(t, { sym, price: r[sym] || 0, btc: r.BTCUSDT || 0, got: Date.now() }); updateTitle(); }
+  catch {} finally { t.busy = false; }
+}
+function titleNeedsPoll(now) {
+  return titlePriceOn && !state.paused && state.loadedSymbol === state.symbol && (!chartFeedFresh() || (state.symbol !== 'BTCUSDT' && !(btcRef && now - btcRef.at < 10000)));
+}
 function onKline(m) {
   const now = Date.now(); live.lastMsg[m.m] = now;
   if (state.paused) return;
+  if (m.i === '1m' && m.s === 'BTCUSDT' && m.m === 'spot' && m.k.c > 0) { btcRef = { price: m.k.c, at: now }; if (state.symbol !== 'BTCUSDT') updateTitle(); }
   if (m.i === '1m') trackLivePrice(m.s, m.k, now);
   if (m.s === state.symbol && m.m === chartMarket() && m.i === state.interval && applyLiveCandle(m.k)) { live.chartAt = now; updateTitle(); scheduleLiveRender(true); }
   else if (m.i === '1m' && watchSymbols().has(m.s)) scheduleLiveRender(false);
