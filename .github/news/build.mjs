@@ -136,7 +136,9 @@ export function gnForCoin(items, sym, now) {
 export const gnUrl = c => `https://news.google.com/rss/search?q=${encodeURIComponent(`${c[1]} when:3d`)}&hl=de&gl=DE&ceid=DE:de`;
 
 // ---------- Binance: Ankündigungen ----------
-export const BN_CATALOGS = [48, 49, 161, 157]; // neue Listings, Neuigkeiten, Delistings, Wartung/Netzwerk-Upgrades
+export const BN_CATALOGS = [48, 49, 128, 161, 157]; // neue Listings, Neuigkeiten, Airdrops, Delistings, Wartung/Netzwerk-Upgrades
+// Übersicht: die 15 neuesten Ankündigungen je Kategorie mit Datum (größere Seiten liefert Binance leer); ersatzweise je Kategorie
+const BN_ALL = 'https://www.binance.com/bapi/composite/v1/public/cms/article/list/query?type=1&pageNo=1&pageSize=15';
 const BN_LIST = id => `https://www.binance.com/bapi/composite/v1/public/cms/article/catalog/list/query?catalogId=${id}&pageNo=1&pageSize=20`;
 const BN_DETAIL = code => `https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=${code}`;
 const TICK = /^[A-Z0-9]{2,15}$/;
@@ -201,19 +203,27 @@ export function eventTime(title, body) {
   return ((day && times.find(x => x.day === day)) || times[0]).t;
 }
 const keepBn = (b, now) => now - b.t <= BN_WINDOW && (b.at != null ? b.at >= now - BN_PAST : now - b.t <= 7 * D);
-// Liste(n) und Texte → Ankündigungen mit Coins und Termin. getBody(code) lädt den vollständigen Text (die Liste enthält ihn
-// höchstens gekürzt; nur wenn das Laden scheitert, zählt der aus der Liste). stats zählt mit, was wegfiel.
-export async function bnItems(articles, now, getBody, stats = {}) {
-  Object.assign(stats, { read: 0, relevant: 0, noCoins: 0, past: 0 });
+// Datum als Millisekunden, Ziffernfolge oder Datumstext
+const toMs = v => (typeof v === 'number' ? v : typeof v === 'string' ? (/^\d{10,}$/.test(v) ? Number(v) : Date.parse(v)) : NaN);
+// Liste(n) und Texte → Ankündigungen mit Coins und Termin. getDetail(code) lädt die vollständige Ankündigung ({ body,
+// publishDate } oder nur den Text); die Liste enthält den Text höchstens gekürzt und nicht immer ein Datum. Nur wenn das Laden
+// scheitert, zählt der Text aus der Liste. stats zählt mit, was wegfiel.
+export async function bnItems(articles, now, getDetail, stats = {}) {
+  Object.assign(stats, { read: 0, relevant: 0, old: 0, noCoins: 0, past: 0 });
   const items = [], seen = new Set();
   for (const a of articles) {
-    const t = Number(a?.publishDate ?? a?.releaseDate), code = String(a?.code || ''), title = String(a?.title || '').replace(/\s+/g, ' ').trim();
-    if (!/^[0-9a-f]{32}$/.test(code) || seen.has(code) || !Number.isFinite(t) || now - t > BN_WINDOW) continue;
+    const code = String(a?.code || ''), title = String(a?.title || '').replace(/\s+/g, ' ').trim();
+    let t = toMs(a?.releaseDate ?? a?.publishDate);
+    if (!/^[0-9a-f]{32}$/.test(code) || seen.has(code)) continue;
     seen.add(code); stats.read++;
+    if (now - t > BN_WINDOW) { stats.old++; continue; }
     const k = bnKind(title);
     if (!k) continue;
     stats.relevant++;
-    const body = bodyText(await getBody(code)) || bodyText(a.body);
+    const got = await getDetail(code), d = typeof got === 'string' ? { body: got } : got || {};
+    if (!Number.isFinite(t)) t = toMs(d.publishDate ?? d.releaseDate);
+    if (!Number.isFinite(t) || now - t > BN_WINDOW) { stats.old++; continue; }
+    const body = bodyText(d.body) || bodyText(a.body);
     const { coins, pairs } = bnCoins(k.kind, title, body);
     if (!coins.length) { stats.noCoins++; continue; }
     const item = { code, t, at: eventTime(title, body), kind: k.kind, imp: k.imp, coins, title: title.slice(0, 200) };
@@ -258,20 +268,29 @@ async function main([prevFile, outFile]) {
   const now = Date.now(), state = {};
   let binance = null;
   try {
-    const articles = [];
-    for (const id of BN_CATALOGS) {
-      const list = JSON.parse(await get(BN_LIST(id)))?.data?.articles;
-      if (!Array.isArray(list)) throw new Error(`Katalog ${id}: unerwartetes Format`);
-      articles.push(...list);
-      await sleep(400);
+    let articles = [];
+    try {
+      const cats = JSON.parse(await get(BN_ALL))?.data?.catalogs;
+      if (!Array.isArray(cats)) throw new Error('unerwartetes Format');
+      articles = cats.filter(c => BN_CATALOGS.includes(c?.catalogId)).flatMap(c => (Array.isArray(c.articles) ? c.articles : []));
+      if (!articles.length) throw new Error('keine Ankündigungen');
+    } catch (e) {
+      console.log(`Binance-Übersicht: ${e.message} – lade die Kategorien einzeln.`);
+      articles = [];
+      for (const id of BN_CATALOGS) {
+        const list = JSON.parse(await get(BN_LIST(id)))?.data?.articles;
+        if (!Array.isArray(list)) throw new Error(`Katalog ${id}: unerwartetes Format`);
+        articles.push(...list);
+        await sleep(400);
+      }
     }
     const st = {};
     binance = await bnItems(articles, now, async code => {
       await sleep(400);
-      try { return JSON.parse(await get(BN_DETAIL(code), 2))?.data?.body; } catch (e) { console.log(`Ankündigung ${code}: ${e.message}`); return ''; }
+      try { return JSON.parse(await get(BN_DETAIL(code), 2))?.data; } catch (e) { console.log(`Ankündigung ${code}: ${e.message}`); return null; }
     }, st);
     state.binance = 'ok';
-    console.log(`Binance: ${st.read} Ankündigungen gelesen, ${st.relevant} zählen, davon ${st.noCoins} ohne erkennbaren Coin, ${st.past} mit vergangenem Termin, ${binance.length} übernommen`);
+    console.log(`Binance: ${st.read} Ankündigungen gelesen, ${st.old} älter als 3 Wochen, ${st.relevant} zählen, davon ${st.noCoins} ohne erkennbaren Coin und ${st.past} mit vergangenem Termin; ${binance.length} übernommen`);
   } catch (e) { state.binance = 'fehler'; console.log(`::warning::Binance-Ankündigungen nicht abrufbar (${e.message}) – bisheriger Stand bleibt.`); }
   const news = {};
   let ok = 0, fail = 0, stop = '';
