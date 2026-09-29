@@ -177,13 +177,16 @@ body::before{content:"";position:fixed;inset:0 0 auto 0;height:env(safe-area-ins
 .lb-alarm{color:var(--amber);font-weight:600}
 /* Signal-Ampel: je Zeitraum eine Zelle, eingefärbt nach Punktzahl */
 .heat{display:inline-flex;align-items:center;gap:3px;text-decoration:none}
-.heat i{font-style:normal;display:grid;place-items:center;min-width:34px;height:26px;padding:0 5px;border-radius:5px;font-size:.72rem;font-weight:700;background:var(--hold);color:var(--hold-ink);font-variant-numeric:tabular-nums}
-.heat i.cur{outline:2px solid var(--text);outline-offset:1px}
-.heat i[data-tone=p3],.heat i[data-tone=p2]{background:var(--buy);color:var(--buy-ink)}
-.heat i[data-tone=p1]{background:var(--t-p2);color:var(--text)}
-.heat i[data-tone=m1]{background:var(--t-m2);color:var(--text)}
-.heat i[data-tone=m2],.heat i[data-tone=m3]{background:var(--sell);color:var(--sell-ink)}
-.heat i[data-tone=none]{background:transparent;border:1px dashed var(--field-border);color:var(--muted)}
+.heat .hc{font:inherit;font-style:normal;display:grid;place-items:center;min-width:34px;min-height:0;height:26px;margin:0;padding:0 5px;border:0;border-radius:5px;font-size:.72rem;font-weight:700;line-height:1;background:var(--hold);color:var(--hold-ink);font-variant-numeric:tabular-nums;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.heat .hc.cur{outline:2px solid var(--text);outline-offset:1px}
+.heat .hc:not(.cur):hover{filter:brightness(1.1)}
+.heat .hc[data-tone=p3],.heat .hc[data-tone=p2]{background:var(--buy);color:var(--buy-ink)}
+.heat .hc[data-tone=p1]{background:var(--t-p2);color:var(--text)}
+.heat .hc[data-tone=m1]{background:var(--t-m2);color:var(--text)}
+.heat .hc[data-tone=m2],.heat .hc[data-tone=m3]{background:var(--sell);color:var(--sell-ink)}
+.heat .hc[data-tone=none]{background:transparent;border:1px dashed var(--field-border);color:var(--muted)}
+/* Gesamturteil mit Trendpfeil: Link zur Signal-Übersicht – behält seine volle Breite (am Handy schrumpfen die Zeiträume) */
+.heat .hv{display:inline-flex;align-items:center;flex:0 0 auto;color:inherit;text-decoration:none}
 .heat b{margin-left:6px;font-size:.75rem;color:var(--muted);font-weight:500}
 /* ---------- Tab-Leiste (iPad/Smartphone) ---------- */
 .tabbar{display:none}
@@ -264,7 +267,7 @@ html[data-layout=tablet] .livebar{padding:6px 12px;gap:4px 12px}
 .change{font-size:.8125rem;color:var(--muted)}
 .chart-meta{text-align:right;color:var(--muted);font-size:.8125rem;display:grid;gap:5px;justify-items:end}
 .signal-line{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-top:10px;font-size:.8125rem;color:var(--muted)}
-.signal-line a{text-decoration:none;display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap}
+.signal-line .heat{display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap}
 .alarm-btn{min-height:36px;padding:0 12px;font-size:.78rem;border-radius:18px;margin-top:10px}
 .chart-toolbar{border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:6px 12px;display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap}
 .intervals{display:flex;gap:3px;flex-wrap:wrap}
@@ -669,7 +672,7 @@ dialog.sheet::backdrop{background:rgba(0,0,0,.6)}
   .chart{height:300px}
   .calc-inputs{grid-template-columns:1fr 1fr}
   .positions,.alarms,.journal,.signals,.calculator{padding:14px}
-  .heat i{min-width:28px;padding:0 3px}
+  .heat .hc{min-width:28px;padding:0 3px}
   .lb-label.opt{display:none}
 }
 @media (max-width:420px){
@@ -834,7 +837,7 @@ body{font-variant-numeric:tabular-nums}
 .chart-meta span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .price-row{flex-wrap:nowrap;min-width:0}
 .price-row .change{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-.signal-line,.signal-line a{flex-wrap:nowrap}
+.signal-line,.signal-line .heat{flex-wrap:nowrap}
 @container (max-width:560px){.chart-meta{flex:1 1 100%;display:grid;grid-template-columns:minmax(0,1fr) auto}}
 /* Rechner und Positionen: Werte mit Euro-Angabe umbrechen in schmalen Spalten immer (zwei feste Zeilen) */
 .pos-grid strong,.calc-rows strong,#liq-price{white-space:pre-line}
@@ -887,10 +890,10 @@ svg .lm-label{font-size:11.5px;font-weight:700;paint-order:stroke;stroke:var(--s
 @media (max-width:600px){
   .heat .v-long{display:none}
   .heat .v-short{display:inline}
-  .livebar .heat,.signal-line a.heat{display:grid;grid-template-columns:repeat(6,minmax(0,40px)) auto auto;gap:3px;justify-self:stretch}
-  .heat i{min-width:0;padding:0 1px;overflow:hidden;font-size:.7rem;letter-spacing:-.01em}
+  .livebar .heat,.signal-line .heat{display:grid;grid-template-columns:repeat(6,minmax(0,40px)) auto;gap:3px;justify-self:stretch}
+  .heat .hc{min-width:0;padding:0 1px;overflow:hidden;font-size:.7rem;letter-spacing:-.01em}
   .heat .verdict{padding:2px 7px}
-  .signal-line a.heat{flex:1 1 auto;min-width:0}
+  .signal-line .heat{flex:1 1 auto;min-width:0}
 }
 /* Live-Leiste: „Heute“ nur auf breiten Bildschirmen (die Regel für die Einzelteile weiter oben ist spezifischer) */
 @media (max-width:999px){.livebar .lb-pos>.opt{display:none}}
@@ -922,7 +925,7 @@ html[data-layout=tablet] .tabbar{grid-template-columns:repeat(2,minmax(0,1fr)) a
 @media (max-width:380px){.livebar .lb-market .change,.livebar .lb-pos>.lb-label{display:none}}
 .tgb-info{color:var(--muted)}
 .tgb-info.err{color:var(--err-text)}
-@media (max-width:360px){.heat i{font-size:.64rem}}
+@media (max-width:360px){.heat .hc{font-size:.64rem}}
 /* Live-Leiste am Handy: Zeile 1 Kurs · Alarm-Hinweis · Offen, Zeile 2 die Signal-Zeile in voller Breite */
 @media (max-width:600px){
   .livebar,html[data-layout=tablet] .livebar{grid-template-areas:"m al pos" "heat heat heat"}
@@ -1719,7 +1722,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Alle Werte liegen zusätzlich im Arbeitsspeicher und sind dadurch synchron lesbar. Schreiben geht sofort in den
 // localStorage und gebündelt in die IndexedDB; beim Start gewinnt die zuletzt vollständig geschriebene Kopie.
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
-const APP_VERSION = '3.13.0', docEl = document.documentElement;
+const APP_VERSION = '3.13.1', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -2163,21 +2166,27 @@ function renderSpark(tr) {
   $('overall-spark-wrap').hidden = !known.length;
   svg.setAttribute('aria-label', known.length ? `Gesamtscore der letzten ${TREND_MIN - first} Minuten: zu Beginn ${scoreText(tr.net[first])}, höchstens ${scoreText(Math.max(...known))}, mindestens ${scoreText(Math.min(...known))}, jetzt ${tr.cur === null ? 'ohne Wert' : scoreText(tr.cur)}.` : 'Noch kein Verlauf');
 }
-// Signal-Ampel: eine Zelle je Zeitraum, dazu das Gesamturteil mit Trendpfeil
+// Signal-Ampel: eine Zelle je Zeitraum, dazu das Gesamturteil mit Trendpfeil.
+// 3.13.1: Die Zellen sind Knöpfe – antippen wechselt das Chart-Intervall genau wie die Leiste über dem Chart; das aktuelle
+// Intervall ist in allen drei Leisten markiert. Das Gesamturteil führt weiter zur Signal-Übersicht.
 function heatNodes({ all, overall, anyStale }, tr) {
   const cells = all.map(({ iv, rating, stale }) => {
-    const i = el('i', iv === state.interval ? 'cur' : '', iv); i.dataset.tone = toneOf(rating); if (stale) i.style.opacity = '.55';
-    i.title = `${iv}: ${rating ? `${VERDICT[rating.verdict]} (${scoreText(rating.score)}/4)` : 'keine Bewertung'}`; return i;
+    const cur = iv === state.interval, b = el('button', 'hc' + (cur ? ' cur' : ''), iv); b.type = 'button'; b.dataset.iv = iv; b.dataset.tone = toneOf(rating);
+    b.setAttribute('aria-pressed', String(cur)); if (stale) b.style.opacity = '.55';
+    b.title = `${iv}: ${rating ? `${VERDICT[rating.verdict]} (${scoreText(rating.score)}/4)` : 'keine Bewertung'} · Chart auf ${iv}`; return b;
   });
   // Gesamturteil lang und kurz: am Handy passt nur „Kauf“ / „Verkauf“ / „Halten“ neben die sechs Zeiträume
   const v = verdictNode(overall, anyStale);
   if (overall) v.replaceChildren(el('span', 'v-long', VERDICT[overall.verdict]), el('span', 'v-short', VERDICT_SHORT[overall.verdict]));
-  const out = [...cells, v];
-  if (overall && tr?.dir) out.push(trendNode(tr, 'lb-trend trend'));
-  return out;
+  const go = el('a', 'hv'); go.href = '#signals'; go.dataset.goto = 'signals'; go.append(v);
+  if (overall && tr?.dir) go.append(trendNode(tr, 'lb-trend trend'));
+  go.setAttribute('aria-label', `${overall ? `Gesamt ${VERDICT[overall.verdict]}, Score ${scoreText(overall.net)}` : 'Gesamturteil'} – zur Signal-Übersicht`);
+  return [...cells, go];
 }
 const VERDICT_SHORT = { buy: 'Kauf', sell: 'Verkauf', hold: 'Halten' };
-const heatLabel = ({ all, overall }, tr) => `Signale: ${all.map(x => `${x.iv} ${x.rating ? `${VERDICT[x.rating.verdict]} ${scoreText(x.rating.score)}` : 'ohne Bewertung'}`).join(', ')}${overall ? `. Gesamt ${VERDICT[overall.verdict]}, Score ${scoreText(overall.net)}${tr?.dir ? `, vor ${TREND_REF} Minuten ${scoreText(tr.ref)}` : ''}` : ''}. Zur Signal-Übersicht.`;
+const heatLabel = ({ all, overall }, tr) => `Signale: ${all.map(x => `${x.iv} ${x.rating ? `${VERDICT[x.rating.verdict]} ${scoreText(x.rating.score)}` : 'ohne Bewertung'}`).join(', ')}${overall ? `. Gesamt ${VERDICT[overall.verdict]}, Score ${scoreText(overall.net)}${tr?.dir ? `, vor ${TREND_REF} Minuten ${scoreText(tr.ref)}` : ''}` : ''}. Zeitraum antippen wechselt das Chart-Intervall.`;
+// Zeitraum in der Live-Leiste oder unter dem Kurs antippen: dieselbe Logik wie die Intervall-Leiste über dem Chart
+document.addEventListener('click', e => { const b = e.target.closest('.heat [data-iv]'); if (b) void setMarket(state.symbol, b.dataset.iv); });
 // Nur neu zeichnen, wenn sich eine Bewertung ändert (oder eine neue Minute für den Verlauf beginnt) –
 // sonst würden Klicks auf die Zeilen beim Live-Update verloren gehen
 let sigKey = '';
@@ -2215,8 +2224,8 @@ function renderSignals() {
   $('overall-detail').classList.toggle('skel', pend);
   const line = $('signal-line'), any = st.all.some(x => x.rating);
   line.hidden = !any;
-  const link = document.createElement('a'); link.href = '#signals'; link.className = 'heat'; link.dataset.goto = 'signals'; link.setAttribute('aria-label', heatLabel(st, tr));
-  link.append(...heatNodes(st, tr)); line.replaceChildren(link);
+  const box = el('div', 'heat'); box.setAttribute('role', 'group'); box.setAttribute('aria-label', heatLabel(st, tr));
+  box.append(...heatNodes(st, tr)); line.replaceChildren(box);
   const lb = $('lb-heat'); lb.replaceChildren(...heatNodes(st, tr)); lb.setAttribute('aria-label', heatLabel(st, tr));
 }
 function renderWatchlist() {
@@ -2992,7 +3001,7 @@ window.addEventListener('focus', checkPermissionChange); document.addEventListen
 try { navigator.permissions?.query({ name: 'notifications' }).then(s => { s.onchange = checkPermissionChange; }).catch(() => {}); } catch {}
 // ---------- Tab gelb blinken lassen, bis alle Hinweise weggeklickt sind ----------
 const BASE_TITLE = document.title, iconLink = document.querySelector('link[rel="icon"]'), BASE_ICON = iconLink?.getAttribute('href') || '';
-// Tab-Titel: „BTC – 95.200,00“; bei anderen Coins mit dem BTC-Kurs als Referenz „NEAR - 4,7290 / (BTC - 95.200,00)“.
+// Tab-Titel: „BTC - 95.200,00“; bei anderen Coins mit dem BTC-Kurs als Referenz „NEAR - 4,7290 / (BTC - 95.200,00)“.
 // Aktualisiert mit jeder Kursmeldung und jede Sekunde (Takt aus dem Web Worker, läuft auch im Hintergrund-Tab).
 // ⏸ = pausiert, ⚠ = letzter Kurs, aktuell kein gültiger Abruf.
 const TITLE_KEY = 'scalpdesk.titleprice.v1';
@@ -3001,8 +3010,7 @@ function baseTitle() {
   const p = state.candles.length ? titleCoinPrice() : null;
   if (!titlePriceOn || !p || state.loadedSymbol !== state.symbol) return BASE_TITLE;
   const coin = state.symbol.slice(0, -4), mark = state.marketError ? ' ⚠' : state.paused ? ' ⏸' : '';
-  if (state.symbol === 'BTCUSDT') return `${coin} – ${priceText(p)}${mark}`;
-  const btc = btcRefPrice();
+  const btc = state.symbol === 'BTCUSDT' ? null : btcRefPrice();
   return `${coin} - ${priceText(p)}${btc ? ` / (BTC - ${priceText(btc)})` : ''}${mark}`;
 }
 function updateTitle() { if ($('toasts').children.length) return; const t = baseTitle(); if (document.title !== t) document.title = t; }
@@ -5803,7 +5811,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
   </header>
   <div class="livebar" id="livebar" aria-label="Live-Überblick">
     <button type="button" class="lb-market" data-goto="chart-sec" aria-label="Zum Chart"><span class="lb-sym" id="lb-sym">BTC</span><span class="lb-price skel" id="lb-price">—</span><span class="change" id="lb-change"></span></button>
-    <a class="heat" id="lb-heat" href="#signals" data-goto="signals" aria-label="Signale je Zeitraum, zur Signal-Übersicht"></a>
+    <div class="heat" id="lb-heat" role="group" aria-label="Signale je Zeitraum – Zeitraum antippen wechselt das Chart-Intervall"></div>
     <span class="lb-spacer"></span>
     <span class="lb-alarm" id="lb-alarm" hidden></span>
     <button type="button" class="lb-pos" data-goto="positions" aria-label="Zu den Positionen"><span class="lb-label">Offen</span><span class="lb-num" id="lb-open">—</span><span class="lb-label opt">Heute</span><span class="lb-num opt" id="lb-day">—</span></button>
