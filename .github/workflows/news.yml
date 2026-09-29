@@ -1,0 +1,54 @@
+# Coin-News für Scalp Desk (3.20.0): sammelt stündlich ganz wichtige Meldungen und Termine je Kryptowährung –
+# Ankündigungen von Binance (Listings, Delistings, entfernte Handelspaare, Netzwerk-Upgrades, Beobachtungsliste) und
+# Schlagzeilen deutschsprachiger Medien über die Google-News-Suche – und legt sie als news.json im Zweig „news“ ab.
+# Die App liest die Datei über raw.githubusercontent.com (Abruf aus dem Browser erlaubt).
+# Der Zweig enthält immer nur eine Version (wird jedes Mal ersetzt), die Historie wächst also nicht.
+# Ist eine Quelle nicht erreichbar, bleibt deren bisheriger Stand stehen (Warnung im Lauf, kein Fehler).
+name: Coin-News
+
+on:
+  schedule:
+    - cron: '41 * * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/news.yml', '.github/news/**']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: news
+  cancel-in-progress: false
+
+jobs:
+  news:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: .github/news
+          persist-credentials: false
+
+      - name: Meldungen sammeln
+        id: build
+        run: |
+          curl -fsS --max-time 30 -o prev.json "https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/news/news.json" || echo "Noch kein voriger Stand."
+          code=0
+          node .github/news/build.mjs prev.json news.json || code=$?
+          if [ "$code" = 3 ]; then echo "skip=1" >> "$GITHUB_OUTPUT"; exit 0; fi
+          exit "$code"
+
+      - name: Im Zweig „news“ ablegen
+        if: steps.build.outputs.skip != '1'
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir out && cp news.json out/ && cd out
+          git init -q -b news
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add news.json
+          git commit -q -m "Coin-News $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push -q -f "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" news
