@@ -4593,9 +4593,11 @@ async function kcClear() {
 }
 // Kerzen laden: aus dem Zwischenspeicher plus fehlende Kerzen, sonst vollständig (klinesFor)
 async function cachedKlines(symbol, interval, limit, signal) {
-  const e = await kcGet(symbol, interval);
-  if (e && (e.candles.length >= limit - 1 || e.complete)) {
-    const last = e.candles.at(-1), missing = Math.ceil((Date.now() - last.closeTime) / (IV_MS[interval] || 6e4)) + 2;
+  const e = await kcGet(symbol, interval), ms = IV_MS[interval] || 6e4;
+  // Reicht der Speicher zusammen mit dem Nachladen für `limit` Kerzen? Gespeichert sind nur Kerzen, die seit 5 s geschlossen
+  // sind – kurz nach Beginn einer neuen Kerze fehlt deshalb auch die vorletzte; das Nachladen ab der letzten gespeicherten bringt sie mit.
+  if (e && (e.complete || e.candles.length + Math.floor((Date.now() - e.candles.at(-1).time) / ms) >= limit)) {
+    const last = e.candles.at(-1), missing = Math.ceil((Date.now() - last.closeTime) / ms) + 2;
     if (missing < 999) {
       const params = { symbol, interval, startTime: last.time, limit: Math.min(1000, missing + 1) };
       let rows = null;
