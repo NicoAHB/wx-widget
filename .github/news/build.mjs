@@ -59,11 +59,11 @@ const mentions = (text, c) => c[2].test(text) || (!!c[3] && c[3].test(text));
 
 // ---------- Google News: Schlagzeilen je Coin ----------
 // Kursprognosen, Kursziele, Marktberichte und Werbung fallen weg
-export const NOISE = /prognose|kursziel|preisvorhersage|price prediction|so viel (wert|gewinn|verlust|hätte|bringt)|investition von vor|investment in .{0,40} von vor|wie sich die kryptokurse|so bewegen sich|am (vor|nach)mittag|am (morgen|abend)\b|\btop[- ]?\d|kaufen\?|lohnt sich|chartanalyse|trading[- ]?setup|presale|vorverkauf|kaufsignal|verkaufssignal|kursexplosion|explodier|verdoppel|verdreifach|\b\d+\s?x\b|nächste[nr]? \w*coin|gewinnspiel|sponsored|anzeige:/i;
+export const NOISE = /prognose|kursziel|preisvorhersage|price prediction|so viel (wert|gewinn|verlust|hätte|bringt)|investition von vor|investment in .{0,40} von vor|wie sich die kryptokurse|so bewegen sich|am (vor|nach)mittag|am (morgen|abend)\b|\btop[- ]?\d|kaufen\?|lohnt sich|chartanalyse|trading[- ]?setup|presale|vorverkauf|kaufsignal|verkaufssignal|kursexplosion|explodier|verdoppel|verdreifach|\b\d+\s?x\b|nächste[nr]? \w*coin|gewinnspiel|sponsored|anzeige:|\([a-z0-9]{8,}\)\s*$/i;
 // Was als wichtig gilt; Reihenfolge = Vorrang. high = sehr wichtig, medium = wichtig
 export const CATS = [
   { id: 'sicherheit', imp: 'high', re: /hack|exploit|gestohlen|diebstahl|sicherheitslücke|schwachstelle|\bbug\b|51[ -]?%|rug[- ]?pull|betrug|geldwäsch/i },
-  { id: 'etf', imp: 'high', re: /\berste[nrs]?\b.{0,40}\bET[FP]s?\b|\bET[FP]s?\b.{0,50}(zugelassen|zulassung|genehmig|abgelehnt|ablehnung|entscheid|\bfrist|startet|debüt|handelsstart|\bSEC\b)|(zulassung|genehmigung|ablehnung|entscheidung|\bSEC\b).{0,50}\bET[FP]s?\b/i },
+  { id: 'etf', imp: 'high', re: /\berste[nrs]?\b.{0,40}\bET[FP]s?\b|\bET[FP]s?\b.{0,50}(zugelassen|zulassung|genehmig|abgelehnt|ablehnung|entscheid|\bfrist|debüt|handelsstart|\bSEC\b)|(zulassung|genehmigung|ablehnung|entscheidung|\bSEC\b).{0,50}\bET[FP]s?\b/i },
   { id: 'recht', imp: 'high', re: /\bSEC\b|\bCFTC\b|\bDOJ\b|\bFBI\b|klage|verklagt|gericht|urteil|richter|anklage|festgenommen|verhaftet|festnahme|geldstrafe|strafzahlung|sanktion|verbot|verbiet|\bbafin\b|staatsanwalt/i },
   { id: 'netz', imp: 'high', re: /hard[- ]?fork|\bforks?\b|mainnet|upgrade|halving|halbierung|(netzwerk|protokoll|ledger|batch|software|core|node)[- ]?update|\bupdate\b.{0,30}\b(aktiviert|bestätigt|live)|amendment|(\bnetzwerk|\bnetz|\bblockchain|\bchain|\b)[- ]?(ausfall|störung|stillstand)|\boutage\b|\bhalted\b/i },
   { id: 'boerse', imp: 'high', re: /delist|handel (wird |ist )?(eingestellt|ausgesetzt|gestoppt)|(listet|listing|gelistet|aufgenommen).{0,40}(coinbase|binance|robinhood|upbit|kraken|bithumb|bybit|okx)|(coinbase|binance|robinhood|upbit|kraken|bithumb|bybit|okx).{0,40}(listet|listing|gelistet|nimmt .{0,20} auf)/i },
@@ -100,19 +100,21 @@ export function gnParse(xml) {
     return { t: Date.parse(f('pubDate')), title: title.slice(0, 200), outlet, url: f('link') };
   }).filter(i => Number.isFinite(i.t) && i.title && /^https:\/\/news\.google\.com\/[\w./?=&%-]+$/.test(i.url) && i.url.length < 600);
 }
-// Gleiche Geschichte aus mehreren Medien zusammenfassen: gleicher Coin, höchstens 36 Stunden auseinander und mindestens
-// ein gemeinsames markantes Wort (z. B. „Bitget“). Angezeigt wird die neueste der wichtigsten Schlagzeilen.
+// Gleiche Geschichte aus mehreren Medien zusammenfassen: gleicher Coin, höchstens 48 Stunden auseinander und mindestens
+// ein gemeinsames markantes Wort (z. B. „Bitget“; einfache Wortstämme, „Verzögerungen“ = „Verzögerung“). Angezeigt wird die
+// neueste der wichtigsten Schlagzeilen.
 const STOP = new Set(('krypto kryptowährung kryptowährungen kryptomarkt aktuell aktuelle kurse preis dollar millionen milliarden ' +
   'prozent markt märkte anleger trader investoren token coins netzwerk blockchain nach doch noch jetzt warum wieder neue neuen neuer ' +
   'neues erste ersten erster diese dieser dieses einen einer nicht mehr über unter gegen wird werden wurde sind seit beim durch trotz ' +
   'damit steht stehen könnte könnten bringt macht zeigt sorgt droht kommt heute news update upgrade upgrades hacker gestohlen ' +
   'diebstahl klage urteil gericht zuflüsse abflüsse delisting listing börse börsen fork hardfork bitcoin ethereum ripple solana').split(' '));
-const words = title => new Set(title.toLowerCase().split(/[^a-z0-9äöüß]+/).filter(w => w.length >= 5 && !STOP.has(w)));
+const stem = w => (w.length > 6 ? w.replace(/(en|er|es|e|n|s)$/, '') : w);
+const words = title => new Set(title.toLowerCase().split(/[^a-z0-9äöüß]+/).filter(w => w.length >= 5 && !STOP.has(w)).map(stem));
 export function gnCluster(items) {
   const clusters = [];
   for (const it of [...items].sort((a, b) => b.t - a.t)) {
     const w = words(it.title), key = it.title.toLowerCase().replace(/[^a-z0-9äöüß]+/g, '');
-    const c = clusters.find(k => k.first - it.t <= 36 * H && (k.keys.has(key) || [...w].some(x => k.words.has(x))));
+    const c = clusters.find(k => k.first - it.t <= 48 * H && (k.keys.has(key) || [...w].some(x => k.words.has(x))));
     if (c) { c.members.push(it); c.keys.add(key); w.forEach(x => c.words.add(x)); c.first = it.t; }
     else clusters.push({ members: [it], words: w, keys: new Set([key]), first: it.t });
   }
@@ -199,21 +201,24 @@ export function eventTime(title, body) {
   return ((day && times.find(x => x.day === day)) || times[0]).t;
 }
 const keepBn = (b, now) => now - b.t <= BN_WINDOW && (b.at != null ? b.at >= now - BN_PAST : now - b.t <= 7 * D);
-// Liste(n) und Texte → Ankündigungen mit Coins und Termin. getBody(code) lädt den Text, falls die Liste ihn nicht enthält.
-export async function bnItems(articles, now, getBody) {
+// Liste(n) und Texte → Ankündigungen mit Coins und Termin. getBody(code) lädt den vollständigen Text (die Liste enthält ihn
+// höchstens gekürzt; nur wenn das Laden scheitert, zählt der aus der Liste). stats zählt mit, was wegfiel.
+export async function bnItems(articles, now, getBody, stats = {}) {
+  Object.assign(stats, { read: 0, relevant: 0, noCoins: 0, past: 0 });
   const items = [], seen = new Set();
   for (const a of articles) {
     const t = Number(a?.publishDate ?? a?.releaseDate), code = String(a?.code || ''), title = String(a?.title || '').replace(/\s+/g, ' ').trim();
     if (!/^[0-9a-f]{32}$/.test(code) || seen.has(code) || !Number.isFinite(t) || now - t > BN_WINDOW) continue;
-    seen.add(code);
+    seen.add(code); stats.read++;
     const k = bnKind(title);
     if (!k) continue;
-    const body = bodyText(a.body) || bodyText(await getBody(code));
+    stats.relevant++;
+    const body = bodyText(await getBody(code)) || bodyText(a.body);
     const { coins, pairs } = bnCoins(k.kind, title, body);
-    if (!coins.length) continue;
+    if (!coins.length) { stats.noCoins++; continue; }
     const item = { code, t, at: eventTime(title, body), kind: k.kind, imp: k.imp, coins, title: title.slice(0, 200) };
     if (pairs.length) item.pairs = pairs;
-    if (keepBn(item, now)) items.push(item);
+    if (keepBn(item, now)) items.push(item); else stats.past++;
   }
   return items.sort((a, b) => b.t - a.t);
 }
@@ -260,11 +265,13 @@ async function main([prevFile, outFile]) {
       articles.push(...list);
       await sleep(400);
     }
+    const st = {};
     binance = await bnItems(articles, now, async code => {
       await sleep(400);
       try { return JSON.parse(await get(BN_DETAIL(code), 2))?.data?.body; } catch (e) { console.log(`Ankündigung ${code}: ${e.message}`); return ''; }
-    });
+    }, st);
     state.binance = 'ok';
+    console.log(`Binance: ${st.read} Ankündigungen gelesen, ${st.relevant} zählen, davon ${st.noCoins} ohne erkennbaren Coin, ${st.past} mit vergangenem Termin, ${binance.length} übernommen`);
   } catch (e) { state.binance = 'fehler'; console.log(`::warning::Binance-Ankündigungen nicht abrufbar (${e.message}) – bisheriger Stand bleibt.`); }
   const news = {};
   let ok = 0, fail = 0, stop = '';
