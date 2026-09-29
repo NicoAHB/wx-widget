@@ -1934,7 +1934,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Alle Werte liegen zusätzlich im Arbeitsspeicher und sind dadurch synchron lesbar. Schreiben geht sofort in den
 // localStorage und gebündelt in die IndexedDB; beim Start gewinnt die zuletzt vollständig geschriebene Kopie.
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
-const APP_VERSION = '3.20.0', docEl = document.documentElement;
+const APP_VERSION = '3.20.1', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -6520,6 +6520,10 @@ var CN_KIND = {
   'monitor-off': ['Beobachtung beendet', 'Binance hat den Coin von der Beobachtungsliste genommen.'],
   upgrade: ['Netzwerk-Upgrade', 'Ein- und Auszahlungen bei Binance ruhen um diese Zeit; der Handel läuft meist weiter.'],
 };
+// Token-Tausch, Zusammenlegung, Migration, Umbenennung: Binance meldet sie als „Support“ wie Netzwerk-Upgrades, der alte Token
+// wird aber umgetauscht – dafür kann auch der Handel ruhen (3.20.1)
+var CN_SWAP = ['Token-Tausch', 'Binance tauscht den Token um; dafür können Handel sowie Ein- und Auszahlungen ruhen – Details in der Ankündigung.'];
+var cnKind = x => (x.kind === 'upgrade' && /swap|merge|migration|redenomination|rebranding|ticker change/i.test(x.title) ? CN_SWAP : CN_KIND[x.kind]);
 var CN_CAT = { sicherheit: 'Sicherheit', etf: 'ETF', recht: 'Recht', netz: 'Netzwerk', boerse: 'Börse', firma: 'Unternehmen', angebot: 'Angebot', regulierung: 'Regulierung' };
 function loadCn() { return { imp: store.get(CN_KEY)?.imp === 'medium' ? 'medium' : 'high' }; }
 var cn = { cfg: loadCn(), data: null, at: 0, error: '', busy: false, retryAt: 0, more: false, base: '', rev: 0, key: '', list: '' };
@@ -6579,7 +6583,7 @@ function cnRow(x, now, base) {
   imp.title = x.imp === 'high' ? 'sehr wichtig' : 'wichtig';
   if (x.src === 'b') {
     // Termin: Tag und Uhrzeit, dazu bis 48 h vorher der Countdown („in 3 h 20 min“, ab 12 h „in 30 h“), bis 12 h danach „vor 2 h“
-    const [label, note] = CN_KIND[x.kind], d = x.at - now;
+    const [label, note] = cnKind(x), d = x.at - now;
     const when = x.at == null ? cnAgo(x.t, now) : `${ecDay(x.at, now)} ${ecTime(x.at)}${d > 0 && d < 48 * 3600e3 ? ` · ${d < 12 * 3600e3 ? ecIn(d) : `in ${Math.round(d / 3600e3)} h`}` : d <= 0 && d > -12 * 3600e3 ? ` · ${cnAgo(x.at, now)}` : ''}`;
     meta.append(el('b', 'cn-when', when), ` · ${label} · Binance`);
     main.append(meta, cnLink(`https://www.binance.com/de/support/announcement/detail/${x.code}`, x.title),
