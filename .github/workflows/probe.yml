@@ -1,5 +1,5 @@
-# Vorübergehend: prüft, welche Nachrichten- und Terminquellen für Kryptowährungen von GitHub aus erreichbar sind.
-# Läuft nur auf Arbeitszweigen und wird vor dem nächsten Pull Request wieder entfernt.
+# Vorübergehend: prüft, welche Nachrichten- und Terminquellen für Kryptowährungen von GitHub aus erreichbar sind und wie
+# ihre Daten aussehen. Läuft nur auf Arbeitszweigen und wird vor dem nächsten Pull Request wieder entfernt.
 name: Quellen-Test (vorübergehend)
 on:
   push:
@@ -10,21 +10,34 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Quellen abfragen
+      - name: Binance-Ankündigungen und Google News ansehen
         run: |
-          probe() {
-            r=$(curl -sS -m 20 -A "Mozilla/5.0 (ScalpDesk-Test)" -H "Origin: https://nicoahb.github.io" -D hdr -o body -w '%{http_code} | %{content_type} | %{size_download} Bytes' "$1" 2>&1) || true
-            echo "== $1"; echo "   $r"; grep -i '^access-control-allow-origin' hdr | tr -d '\r' | sed 's/^/   /'
-            head -c 500 body | tr '\n\r\t' '   ' | cut -c1-500; echo; echo
+          cat > probe.mjs <<'EOF'
+          const get = async (u) => { const r = await fetch(u, { headers: { 'user-agent': 'Mozilla/5.0 (ScalpDesk-Test)', 'accept-language': 'de-DE,de;q=0.9,en;q=0.8' } }); return { status: r.status, text: await r.text() }; };
+          const list = await get('https://www.binance.com/bapi/composite/v1/public/cms/article/list/query?type=1&pageNo=1&pageSize=15');
+          console.log('LIST', list.status);
+          const j = JSON.parse(list.text);
+          for (const c of j.data.catalogs) {
+            console.log(`\n# ${c.catalogId} ${c.catalogName} (total ${c.total})`);
+            for (const a of c.articles.slice(0, 8)) console.log(`  ${new Date(a.releaseDate).toISOString()} ${a.code} | ${a.title}`);
           }
-          probe "https://min-api.cryptocompare.com/data/v2/news/?lang=EN&categories=XRP"
-          probe "https://data-api.coindesk.com/news/v1/article/list?lang=EN&limit=5&categories=XRP"
-          probe "https://cryptopanic.com/api/developer/v2/posts/?public=true&currencies=XRP&filter=important"
-          probe "https://cryptopanic.com/api/v1/posts/?public=true&currencies=XRP&filter=important"
-          probe "https://developers.coinmarketcal.com/v1/events"
-          probe "https://www.binance.com/bapi/composite/v1/public/cms/article/list/query?type=1&pageNo=1&pageSize=5"
-          probe "https://cointelegraph.com/rss/tag/xrp"
-          probe "https://www.coindesk.com/arc/outboundfeeds/rss/"
-          probe "https://decrypt.co/feed"
-          probe "https://news.google.com/rss/search?q=XRP+when:2d&hl=de&gl=DE&ceid=DE:de"
-          probe "https://data.messari.io/api/v1/news/xrp"
+          console.log('\nKEYS article:', Object.keys(j.data.catalogs[0].articles[0]).join(','));
+          // Details zu einer Netzwerk-Ankündigung (Upgrade/Hard Fork/Wallet) – Zeitangaben im Text?
+          const all = j.data.catalogs.flatMap(c => c.articles.map(a => ({ ...a, cat: c.catalogName })));
+          const pick = all.find(a => /upgrade|hard fork|network|delist/i.test(a.title)) || all[0];
+          const det = await get(`https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=${pick.code}`);
+          console.log('\nDETAIL', det.status, pick.title);
+          try { const d = JSON.parse(det.text).data; console.log('detail keys:', Object.keys(d).join(','));
+            const body = typeof d.body === 'string' ? d.body : JSON.stringify(d.body); const plain = body.replace(/\\n|<[^>]+>|"[a-z]+":/g, ' ').replace(/\s+/g, ' ');
+            console.log('UTC-Zeiten:', [...plain.matchAll(/\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}(?::\d{2})?\s*\(UTC\)/g)].map(m => m[0]).slice(0, 6).join(' | '));
+            console.log('Text:', plain.slice(0, 700));
+          } catch (e) { console.log('detail parse', e.message, det.text.slice(0, 300)); }
+          for (const q of ['XRP OR Ripple', '"Bitcoin Cash"']) {
+            const g = await get(`https://news.google.com/rss/search?q=${encodeURIComponent(q + ' when:2d')}&hl=de&gl=DE&ceid=DE:de`);
+            const items = [...g.text.matchAll(/<item>([\s\S]*?)<\/item>/g)].map(m => m[1]);
+            console.log(`\nGOOGLE ${q}: ${g.status}, ${items.length} Meldungen`);
+            for (const it of items.slice(0, 8)) { const f = t => (it.match(new RegExp(`<${t}[^>]*>([\\s\\S]*?)</${t}>`)) || [])[1] || ''; console.log(`  ${f('pubDate')} | ${f('source')} | ${f('title')}`); }
+            if (items[0]) console.log('  ITEM-ROH:', items[0].slice(0, 600));
+          }
+          EOF
+          node probe.mjs
