@@ -1245,6 +1245,13 @@ details.div-tip.bull .div-title{color:var(--mint)}details.div-tip.bear .div-titl
 html[data-chartfull] .ohlc-row{order:3}
 html[data-chartfull]:not([data-chartbar=open]) .div-tip{display:none}
 html[data-chartfull] details.div-tip .tip-body{max-height:min(60vh,60vw,420px)}
+
+/* ---------- 3.16.1 ---------- */
+/* Bildschirmtastatur offen (Handy/iPad): untere Leiste ausblenden, statt sie über dem Formular schweben zu lassen */
+html[data-kbd] .tabbar{display:none}
+/* Live-Leiste: Tagesergebnis zusätzlich in Euro, direkt hinter dem USDT-Wert */
+.livebar .lb-pos>.lb-eur{margin-left:4px;font-weight:500}
+.lb-eur:empty{display:none}
 .chart-panel>.notice{margin:12px 20px 0}
 html{scroll-padding-top:calc(var(--lb-h,56px) + 16px)}
 /* nur als eigene Spalten (ab 1400 px) begrenzt; darunter stehen beide untereinander in der gemeinsamen Seitenspalte und
@@ -1853,7 +1860,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Alle Werte liegen zusätzlich im Arbeitsspeicher und sind dadurch synchron lesbar. Schreiben geht sofort in den
 // localStorage und gebündelt in die IndexedDB; beim Start gewinnt die zuletzt vollständig geschriebene Kopie.
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
-const APP_VERSION = '3.16.0', docEl = document.documentElement;
+const APP_VERSION = '3.16.1', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -2711,7 +2718,7 @@ function openPosForm(open, pos = null) {
   $('pos-more').open = !!(pos && (pos.liqExchange || pos.preRealized || pos.note));
   put('pos-save', pos ? 'Änderungen speichern' : 'Position speichern');
   setToggle('pos-side', f.side); setToggle('pos-mode', f.mode); renderPosChips(); syncSize(); updateEntryNow(); posFormPreview(); renderPositions(); syncLevUi('pos-lev');
-  goTo('pos-form'); (pos ? $('pos-qty') : $('pos-qty')).focus({ preventScroll: true });
+  goTo('pos-form'); focusSoft($('pos-qty')); // 3.16.1: am Handy/iPad keine Tastatur von selbst
 }
 async function addPosition(e) {
   e.preventDefault();
@@ -3002,7 +3009,7 @@ function openAlarmForm(open, sym = null, price = null) {
   $('alarm-form').hidden = !open; $('alarm-toggle').setAttribute('aria-expanded', String(open)); showNotice('al-error', null);
   if (!open) return;
   state.alDirManual = false; $('al-symbol').value = sym ? coin(sym) : coin(state.symbol); $('al-price').value = price ? plain(price) : ''; $('al-note').value = '';
-  alarmPreview(); $('alarms').scrollIntoView({ behavior: 'smooth', block: 'start' }); $('al-price').focus({ preventScroll: true });
+  alarmPreview(); $('alarms').scrollIntoView({ behavior: 'smooth', block: 'start' }); focusSoft($('al-price'));
 }
 async function saveAlarm(e) {
   e.preventDefault();
@@ -3375,7 +3382,7 @@ $('pos-form').addEventListener('input',e=>{
   if(e.target.id==='pos-symbol'){renderPosChips();updateEntryNow();}
   formError(null);posFormPreview();
 });
-$('pos-chips').addEventListener('click',e=>{const b=e.target.closest('[data-poschip]');if(!b)return;$('pos-symbol').value=b.dataset.poschip;renderPosChips();updateEntryNow();posFormPreview();$('pos-qty').focus();});
+$('pos-chips').addEventListener('click',e=>{const b=e.target.closest('[data-poschip]');if(!b)return;$('pos-symbol').value=b.dataset.poschip;renderPosChips();updateEntryNow();posFormPreview();focusSoft($('pos-qty'));});
 $('pos-entry-now').addEventListener('click',()=>{const p=knownPrice(formSymbol());if(p){$('pos-entry').value=plain(p);syncSize();posFormPreview();}});
 document.querySelectorAll('[data-pos-side]').forEach(b=>b.addEventListener('click',()=>{state.posForm.side=b.dataset.posSide;setToggle('pos-side',state.posForm.side);posFormPreview();}));
 document.querySelectorAll('[data-pos-mode]').forEach(b=>b.addEventListener('click',()=>{state.posForm.mode=b.dataset.posMode;setToggle('pos-mode',state.posForm.mode);posFormPreview();}));
@@ -3885,7 +3892,8 @@ function renderLivebar() {
   const ch = last ? (last.close / last.open - 1) * 100 : null; put('lb-change', ch === null ? '' : `${signed(ch)} %`); color('lb-change', ch ?? 0);
   $('lb-change').title = 'Veränderung der laufenden Kerze';
   const o = state.openTotal; put('lb-open', !o?.n ? '—' : `${signed(o.total)} USDT${o.n > 1 ? ` · ${o.n}` : ''}`); color('lb-open', o?.n ? o.total : 0);
-  const d = dayStats(state.trades); put('lb-day', `${signed(d.pnl)} USDT`); color('lb-day', d.pnl);
+  const d = dayStats(state.trades), fx = fxNow(); put('lb-day', `${signed(d.pnl)} USDT`); color('lb-day', d.pnl);
+  put('lb-day-eur', fx ? `(≈ ${signed(d.pnl / fx)} €)` : ''); color('lb-day-eur', d.pnl); // Euro zum aktuellen Kurs, daher „≈“
   const act = state.alarms.filter(a => !a.triggeredAt).length; $('lb-alarm').hidden = !act; put('lb-alarm', `🔔 ${act}`); $('lb-alarm').title = `${act} aktive Kurs-${act === 1 ? 'Alarm' : 'Alarme'}`;
 }
 // ---------- Design, Layout, Tabs ----------
@@ -3934,6 +3942,26 @@ document.querySelectorAll('[data-layout-set]').forEach(b => b.addEventListener('
 // Erneutes Tippen auf den aktiven Bereich springt nach oben
 $('tabbar').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b && !setTab(b.dataset.tab)) window.scrollTo({ top: 0, behavior: 'smooth' }); });
 document.addEventListener('click', e => { const g = e.target.closest('[data-goto]'); if (g) { e.preventDefault(); goTo(g.dataset.goto); } });
+// ---------- 3.16.1: Bildschirmtastatur am Handy/iPad ----------
+// Felder nur dort von selbst fokussieren, wo keine Bildschirmtastatur aufspringt: Am Handy/iPad öffnet sich die Tastatur
+// erst, wenn man ein Feld antippt; am Computer springt der Cursor wie bisher gleich ins Feld.
+var kbdTouch = matchMedia('(hover: none) and (pointer: coarse)'); // var: kann früh gebraucht werden
+function focusSoft(field) { if (field && !kbdTouch.matches) field.focus({ preventScroll: true }); }
+// Untere Leiste bei offener Tastatur ausblenden: Safari lässt fest positionierte Leisten dann mitten über dem Formular
+// schweben (sie hängen am Layout-Viewport, nicht am sichtbaren Bereich) – genau über den Feldern, die man gerade
+// ausfüllt. Wie in nativen Apps verschwindet die Leiste, solange die Tastatur offen ist; danach steht sie fest unten.
+// Erkennung: Eingabefeld hat den Fokus und der sichtbare Bereich ist deutlich kleiner als das Fenster (Hardware-
+// Tastatur am iPad: kein Schrumpfen, Leiste bleibt).
+(function keyboardBar() {
+  const vv = window.visualViewport, typing = e => !!e && (e.isContentEditable || e.tagName === 'TEXTAREA' || e.tagName === 'SELECT'
+    || (e.tagName === 'INPUT' && !/^(checkbox|radio|range|button|submit|reset|color|file|image|hidden)$/i.test(e.type)));
+  let t = null;
+  const set = on => { if (on) docEl.dataset.kbd = '1'; else delete docEl.dataset.kbd; };
+  const check = () => set(kbdTouch.matches && typing(document.activeElement) && (!vv || vv.height < innerHeight * 0.85));
+  document.addEventListener('focusin', e => { if (!kbdTouch.matches || !typing(e.target)) return; set(true); clearTimeout(t); t = setTimeout(check, 700); }); // sofort weg, nach der Tastatur-Animation prüfen
+  document.addEventListener('focusout', () => { clearTimeout(t); t = setTimeout(check, 150); }); // Feldwechsel (∧ ∨) ohne Flackern
+  vv?.addEventListener('resize', () => { clearTimeout(t); t = setTimeout(check, 60); });
+})();
 // ---------- Schnell-Alarm aus der unteren Leiste ----------
 // Zwei Fingertipps: Abstand oder Chart-Marke wählen, „Alarm setzen“. Für andere Kürzel oder eine Notiz: das volle Formular.
 const qa = { sym: null, pre: null };
@@ -5128,42 +5156,55 @@ function liqNearHold(id, remaining) {
 // am Computer. Eingeschaltet schickt das Dashboard die Sicherungsdatei nach jeder Änderung an den eigenen Telegram-Chat
 // und ersetzt dort die vorige Datei (editMessageMedia): eine Nachricht, immer aktuell. Zugangsdaten für Telegram/Discord
 // stehen nie in der Datei. Mehrere offene Tabs senden über eine Absprache in der IndexedDB nur einmal.
+// 3.16.1: Gesendet wird, wenn sich die Daten seit der letzten Telegram-Sicherung geändert haben (eigener Fingerabdruck) –
+// nicht mehr über den gemeinsamen Änderungszähler, den jede Datei- oder Teilen-Sicherung auf 0 setzt. Offenes wird beim
+// Verlassen der Seite sofort gesendet und beim nächsten Öffnen nachgeholt: Am iPhone friert Safari eine Seite im
+// Hintergrund ein oder verwirft sie – ein wartender Timer lief dann nie.
 const TGB_KEY = 'scalpdesk.tgbackup.v1';
 // var statt const: persist() kann das Senden anstoßen, bevor dieser Abschnitt ausgewertet ist
 var tgb = { cfg: loadTgb(), timer: null, busy: false, error: '' };
-function loadTgb() { const v = store.get(TGB_KEY); return { on: !!v?.on, chat: typeof v?.chat === 'string' ? v.chat : '', msg: Number(v?.msg) || 0, at: Number(v?.at) || 0 }; }
+function loadTgb() { const v = store.get(TGB_KEY); return { on: !!v?.on, chat: typeof v?.chat === 'string' ? v.chat : '', msg: Number(v?.msg) || 0, at: Number(v?.at) || 0, sig: typeof v?.sig === 'string' ? v.sig : '' }; }
 function saveTgb() { store.set(TGB_KEY, { ...tgb.cfg }); }
 function tgConfigured() { return TG_TOKEN_RE.test(chan.tg.token) && TG_CHAT_RE.test(chan.tg.chat); }
 function tgbReady() { return !!tgb && tgb.cfg.on && tgConfigured(); }
-function scheduleTgBackup(delay = 4000) { if (!tgbReady()) return; clearTimeout(tgb.timer); tgb.timer = setTimeout(() => void sendTgBackup(), delay); }
-async function tgPost(method, fd) {
-  let r; try { r = await fetch(`https://api.telegram.org/bot${chan.tg.token}/${method}`, { method: 'POST', body: fd, credentials: 'omit', referrerPolicy: 'no-referrer', cache: 'no-store' }); }
+// Fingerabdruck der gesicherten Daten – ohne Zeitstempel und ohne die still gelernten Muster (die ändern sich mit jeder
+// Kerze; sie reisen in der Datei mit, lösen aber allein kein neues Senden aus)
+function tgbSig(p) { const j = JSON.stringify({ ...p, exportedAt: 0, patterns: null }); let h = 0; for (let i = 0; i < j.length; i++) h = (h * 31 + j.charCodeAt(i)) | 0; return `${j.length}:${h >>> 0}`; }
+function scheduleTgBackup(delay = 4000) { if (!tgbReady()) return; clearTimeout(tgb.timer); tgb.timer = setTimeout(() => { tgb.timer = null; void sendTgBackup(); }, delay); }
+async function tgPost(method, fd, keepalive = false) {
+  let r; try { r = await fetch(`https://api.telegram.org/bot${chan.tg.token}/${method}`, { method: 'POST', body: fd, credentials: 'omit', referrerPolicy: 'no-referrer', cache: 'no-store', keepalive }); }
   catch { throw Object.assign(new Error('Telegram nicht erreichbar – Internet oder Werbeblocker prüfen.'), { code: 0 }); }
   let d = null; try { d = await r.json(); } catch {}
   if (!r.ok || !d?.ok) throw Object.assign(new Error(r.status === 401 || r.status === 404 ? 'Token ungültig – in „Telegram / Discord einrichten“ prüfen.' : r.status === 429 ? 'Zu viele Nachrichten – nächster Versuch bei der nächsten Änderung.' : `Telegram meldet Fehler ${d?.error_code ?? r.status}: ${d?.description || ''}`), { code: d?.error_code ?? r.status });
   return d.result;
 }
-async function sendTgBackup(force = false) {
-  if (!tgbReady() || tgb.busy || (!force && !changeCount())) return;
-  if (!(await store.claim('tgbackup', 20000))) return;   // ein anderer Tab sendet gerade
+// leaving: Seite wird gerade verlassen – der Upload muss noch im selben Ereignis starten (ohne Warten auf die Tab-Absprache;
+// doppelt ist besser als gar nicht) und bei kleinen Dateien mit keepalive, damit er das Einfrieren der Seite überlebt
+async function sendTgBackup(force = false, leaving = false) {
+  if (!tgbReady() || tgb.busy) return;
+  const payload = backupPayload(), sig = tgbSig(payload);
+  if (!force && sig === tgb.cfg.sig && tgb.cfg.chat === chan.tg.chat) return; // Telegram hat schon diesen Stand
+  const claimed = !leaving && await store.claim('tgbackup', 20000);
+  if (!leaving && !claimed) return;   // ein anderer Tab sendet gerade
   tgb.busy = true; tgb.cfg = loadTgb(); renderTgbInfo();
-  const name = 'scalpdesk-sicherung.json', file = new Blob([JSON.stringify(backupPayload(), null, 1)], { type: 'application/json' });
-  const caption = `💾 Scalp-Desk-Sicherung · ${new Date().toLocaleString('de-DE')}\n${state.positions.length} offene Positionen · ${state.trades.length} Trades${state.movements.length ? ` · ${state.movements.length} Geldbewegungen` : ''}\nWiederherstellen: Datei speichern, im Dashboard „Backup einspielen“.`;
   try {
+    const name = 'scalpdesk-sicherung.json', text = JSON.stringify(payload, null, 1), file = new Blob([text], { type: 'application/json' });
+    const caption = `💾 Scalp-Desk-Sicherung · ${new Date().toLocaleString('de-DE')}\n${state.positions.length} offene Positionen · ${state.trades.length} Trades${state.movements.length ? ` · ${state.movements.length} Geldbewegungen` : ''}\nWiederherstellen: Datei speichern, im Dashboard „Backup einspielen“.`;
+    const keep = leaving && text.length < 60000; // keepalive erlaubt höchstens 64 KB
     let msg = tgb.cfg.chat === chan.tg.chat ? tgb.cfg.msg : 0, done = false;
     if (msg) {
       const fd = new FormData(); fd.append('chat_id', chan.tg.chat); fd.append('message_id', String(msg));
       fd.append('media', JSON.stringify({ type: 'document', media: 'attach://file', caption })); fd.append('file', file, name);
-      try { await tgPost('editMessageMedia', fd); done = true; } catch (e) { if (e.code !== 400) throw e; }   // Nachricht gelöscht: neu senden
+      try { await tgPost('editMessageMedia', fd, keep); done = true; } catch (e) { if (e.code !== 400) throw e; }   // Nachricht gelöscht: neu senden
     }
     if (!done) {
       const fd = new FormData(); fd.append('chat_id', chan.tg.chat); fd.append('caption', caption); fd.append('disable_notification', 'true'); fd.append('document', file, name);
-      msg = (await tgPost('sendDocument', fd))?.message_id || 0;
+      msg = (await tgPost('sendDocument', fd, keep))?.message_id || 0;
     }
-    tgb.cfg = { ...tgb.cfg, chat: chan.tg.chat, msg, at: Date.now() }; saveTgb(); tgb.error = '';
+    tgb.cfg = { ...tgb.cfg, chat: chan.tg.chat, msg, at: Date.now(), sig }; saveTgb(); tgb.error = '';
     markBackedUp('telegram');
-  } catch (e) { tgb.error = e.message; }
-  finally { tgb.busy = false; void store.release('tgbackup'); renderTgbInfo(); }
+  } catch (e) { tgb.error = e?.message || String(e); }
+  finally { tgb.busy = false; if (claimed) void store.release('tgbackup'); renderTgbInfo(); }
 }
 function renderTgbInfo() {
   if (!tgb) return;
@@ -5183,7 +5224,14 @@ $('tgb-on').addEventListener('change', () => {
 $('tgb-now').addEventListener('click', () => void sendTgBackup(true));
 $('tgb-setup').addEventListener('click', () => openChan());
 $('chan-done').addEventListener('click', () => setTimeout(renderTgbInfo));
+// Seite wird verlassen: Wartendes sofort senden. Zurück oder neu geöffnet: nachholen, falls Telegram einen älteren Stand hat.
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { if (tgb.timer) { clearTimeout(tgb.timer); tgb.timer = null; void sendTgBackup(false, true); } }
+  else scheduleTgBackup(2000);
+});
+addEventListener('pagehide', () => { if (tgb.timer) { clearTimeout(tgb.timer); tgb.timer = null; void sendTgBackup(false, true); } });
 renderTgbInfo();
+scheduleTgBackup(3000);
 // ---------- Speicher-Hausmeister ----------
 // Einzelne Ticks werden nirgends aufbewahrt: der Hintergrund-Thread fasst alle Trades eines Symbols alle 200 ms zu
 // Tief/Hoch/Letzter zusammen und verwirft sie, die Alarmprüfung beginnt ihre Spannen bei jeder Prüfung neu, und die
@@ -6218,7 +6266,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
     <div class="heat" id="lb-heat" role="group" aria-label="Signale je Zeitraum – Zeitraum antippen wechselt das Chart-Intervall"></div>
     <span class="lb-spacer"></span>
     <span class="lb-alarm" id="lb-alarm" hidden></span>
-    <button type="button" class="lb-pos" data-goto="positions" aria-label="Zu den Positionen"><span class="lb-label">Offen</span><span class="lb-num" id="lb-open">—</span><span class="lb-label opt">Heute</span><span class="lb-num opt" id="lb-day">—</span></button>
+    <button type="button" class="lb-pos" data-goto="positions" aria-label="Zu den Positionen"><span class="lb-label">Offen</span><span class="lb-num" id="lb-open">—</span><span class="lb-label opt">Heute</span><span class="lb-num opt" id="lb-day">—</span><span class="lb-num opt lb-eur" id="lb-day-eur"></span></button>
     <span class="lb-conn" id="lb-conn" role="img" aria-label="Verbindung" data-feed="off"></span>
   </div>
   <div class="toasts" id="toasts" aria-live="assertive"></div>
