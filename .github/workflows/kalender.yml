@@ -1,0 +1,71 @@
+# Wirtschaftskalender für Scalp Desk (Schritt 4.1): holt alle 3 Stunden den Wochenkalender von Forex Factory
+# (JSON-Export von nfs.faireconomy.media, kostenlos, ohne Schlüssel) und legt ihn aufbereitet als calendar.json im Zweig
+# „kalender“ ab. Die App liest die Datei über raw.githubusercontent.com (Abruf aus dem Browser erlaubt).
+# Der Zweig enthält immer nur eine Version (wird jedes Mal ersetzt), die Historie wächst also nicht.
+# Ist die Quelle nicht erreichbar, bleibt der bisherige Stand stehen (Warnung im Lauf, kein Fehler); liefert sie etwas,
+# das sich nicht aufbereiten lässt (geändertes Format), schlägt der Lauf fehl.
+name: Wirtschaftskalender
+
+on:
+  schedule:
+    - cron: '17 */3 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/kalender.yml', '.github/kalender/**']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: kalender
+  cancel-in-progress: false
+
+jobs:
+  kalender:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/kalender
+
+      - name: Kalender von Forex Factory holen
+        id: get
+        run: |
+          get() {
+            for i in 1 2 3; do
+              code=$(curl -sS --max-time 30 -A "Mozilla/5.0 (ScalpDesk-Kalender; github.com/${GITHUB_REPOSITORY})" \
+                -o "ff_$1.json" -w '%{http_code}' "https://nfs.faireconomy.media/ff_calendar_$1.json") || true
+              if [ "$code" = 200 ]; then echo "$1: $(wc -c < "ff_$1.json") Bytes"; return 0; fi
+              rm -f "ff_$1.json"
+              if [ "$code" = 404 ]; then echo "$1: nicht vorhanden"; return 0; fi
+              echo "$1: Versuch $i, Antwort $code"
+              if [ "$i" -lt 3 ]; then sleep 60; fi
+            done
+            echo "::warning::Forex Factory ($1) nicht abrufbar"
+          }
+          get thisweek
+          get nextweek
+          if [ ! -s ff_thisweek.json ] && [ ! -s ff_nextweek.json ]; then
+            echo "::warning::Keine Kalenderdaten erhalten – der bisherige Stand bleibt."
+            echo "skip=1" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Aufbereiten
+        if: steps.get.outputs.skip != '1'
+        run: node .github/kalender/normalize.mjs ff_thisweek.json ff_nextweek.json > calendar.json
+
+      - name: Im Zweig „kalender“ ablegen
+        if: steps.get.outputs.skip != '1'
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir out && cp calendar.json out/ && cd out
+          git init -q -b kalender
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add calendar.json
+          git commit -q -m "Wirtschaftskalender $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push -q -f "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" kalender
+          echo "$(node -e 'const d=require("./calendar.json");console.log(d.events.length+" Termine, Stand "+d.fetchedAt)')"
