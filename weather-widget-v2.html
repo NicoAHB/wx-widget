@@ -4424,13 +4424,6 @@ document.addEventListener('toggle', e => {
   body.style.maxWidth = ''; body.style.left = ''; t.classList.toggle('left', t.dataset.side === 'left');
   // passt keine Seite (sehr schmales Handy): an den linken Rand des sichtbaren Bereichs, Breite darauf begrenzt (4.1)
   if (!fits()) { t.classList.toggle('left'); if (!fits()) { t.classList.add('left'); body.style.maxWidth = `${maxX - minX}px`; body.style.left = `${minX - t.getBoundingClientRect().left}px`; } }
-  // Hinweis mit eigener Bildlaufleiste (RSI-Divergenz): höchstens bis zum unteren Rand des Fensters bzw. über der Tab-Leiste –
-  // lag der Chart tiefer (höhere Kacheln, 3.24.0), ragte er sonst ein Stück heraus
-  body.style.maxHeight = '';
-  if (/auto|scroll/.test(getComputedStyle(body).overflowY)) {
-    const tb = $('tabbar'), bottom = tb && getComputedStyle(tb).display !== 'none' ? tb.getBoundingClientRect().top : innerHeight, r = body.getBoundingClientRect(), room = Math.floor(bottom - r.top - 8);
-    if (r.bottom > bottom - 8 && room >= 160) body.style.maxHeight = `${room}px`;
-  }
 }, true);
 // ---------- Schnellwahl: Hebel, Einsatz, Zielbewegung ----------
 // Hebel-Schieberegler mit logarithmischer Skala: 1× bis 10× nehmen fast die Hälfte des Wegs ein.
@@ -6725,11 +6718,12 @@ function renderDivTip() {
   box.addEventListener('toggle', () => {
     if (!box.open) return;
     divgAck(divgList()); divgShown = ''; renderDivTip();
-    // Höhe bis zum unteren Fensterrand bzw. bis über die Tab-Leiste am iPad/Handy (220–520 px), der Rest scrollt in der
-    // Erklärung; im Vollbild begrenzt das CSS
+    // Höhe bis zum unteren Fensterrand bzw. bis über die Tab-Leiste am iPad/Handy (160–520 px), der Rest scrollt in der
+    // Erklärung; im Vollbild begrenzt das CSS. Erst unter 160 px Platz bleibt es bei 220 px (die Seite scrollt). Bis 3.24.0 galten
+    // immer mindestens 220 px – seit die Kacheln höher sind, ragte die Erklärung am Computer sonst ein Stück heraus
     const body = box.querySelector('.tip-body'), nav = $('tabbar'), end = nav?.getClientRects().length ? nav.getBoundingClientRect().top : innerHeight;
     body.style.maxHeight = '';
-    if (!docEl.hasAttribute('data-chartfull')) body.style.maxHeight = Math.round(Math.max(220, Math.min(520, end - body.getBoundingClientRect().top - 12))) + 'px';
+    if (!docEl.hasAttribute('data-chartfull')) { const room = end - body.getBoundingClientRect().top - 12; body.style.maxHeight = Math.round(Math.min(520, room >= 160 ? room : 220)) + 'px'; }
   });
   // Alarm am Extrempunkt: iPad/Handy im Schnell-Alarm, am Computer im Formular (wie Fibonacci- und Orderbuch-Leiste)
   $('div-alarm').addEventListener('click', () => {
