@@ -1566,6 +1566,13 @@ html[data-layout=tablet] .wl-detail{scroll-margin-bottom:calc(84px + env(safe-ar
 /* 3.24.0 BTC-Puls: Erklärung und aktuelle Schwellen unter dem Schalter */
 .pulse-info{display:block;margin:-2px 0 6px 2.6em;font-size:.75rem;line-height:1.45;color:var(--muted)}
 #pulse-info{color:var(--text-2);font-weight:600}
+/* 3.24.0: obere Zeile der Live-Leiste am Handy verdichten, statt Live-Ergebnis oder Glocke abzuschneiden (lbFit, Stufen 1–6) */
+:root .livebar[data-fit~="1"] .lb-pos>.lb-label,:root .livebar[data-fit~="2"] .lb-market .change{display:none}
+:root .livebar[data-fit~="3"]{column-gap:6px}
+:root .livebar[data-fit~="4"] .lb-pos{font-size:.9em}
+:root .livebar[data-fit~="5"] .lb-pos{font-size:.82em}
+:root .livebar[data-fit~="5"]{column-gap:4px}
+:root .livebar[data-fit~="6"] .lb-market{font-size:.9em}:root .livebar[data-fit~="6"] .lb-price{font-size:1.02rem}
 .chart-panel>.notice{margin:12px 20px 0}
 html{scroll-padding-top:calc(var(--lb-h,56px) + 16px)}
 /* nur als eigene Spalten (ab 1400 px) begrenzt; darunter stehen beide untereinander in der gemeinsamen Seitenspalte und
@@ -4273,6 +4280,26 @@ function renderLivebar() {
   const d = dayStats(state.trades), fx = fxNow(); put('lb-day', `${signed(d.pnl)} USDT`); color('lb-day', d.pnl);
   put('lb-day-eur', fx ? `(≈ ${signed(d.pnl / fx)} €)` : ''); color('lb-day-eur', d.pnl); // Euro zum aktuellen Kurs, daher „≈“
   const act = state.alarms.filter(a => !a.triggeredAt).length; $('lb-alarm').hidden = !act; put('lb-alarm', `🔔 ${act}`); $('lb-alarm').title = `${act} aktive Kurs-${act === 1 ? 'Alarm' : 'Alarme'}`;
+  lbFit();
+}
+// Live-Ergebnis am Handy: Passt die obere Zeile nicht (ab 1.000 USDT, mit Alarm-Punkt, am iPhone mit „Offen“ und Kerzen-
+// Veränderung), wird stufenweise verdichtet statt abgeschnitten – auch die Glocke daneben (flexible Spalte) darf nicht
+// zusammengedrückt werden: 1 ohne „Offen“, 2 ohne Veränderung der laufenden Kerze (wie unter 380 px), 3 Spaltenabstand 6 px,
+// 4 Betrag 90 %, 5 Betrag 82 % und Abstand 4 px, 6 Kurs-Anzeige 90 %. Gemessen wird nur, wenn sich Betrag, Breite, Glocke oder Alarm-Punkt ändern –
+// oder die Breite von Kurs-Anzeige bzw. Glocke (Platzhalter weg, Schrift geladen), nie bei jedem Kurs. Am iPad und Computer
+// wird nichts abgeschnitten, dort bleibt es bei Stufe 0.
+var lbFitKey, lbFitRaf = 0;
+function lbFit(force) {
+  const bar = $('livebar'), b = $('lb-pos'), al = $('lb-alarm'); if (!bar || !b || !al) return;
+  const key = [innerWidth, $('lb-open').textContent.length, al.hidden, al.textContent, b.dataset.pnl || ''].join('|');
+  if (!force && key === lbFitKey) return; lbFitKey = key;
+  if (bar.dataset.fit) delete bar.dataset.fit;
+  const over = e => e.scrollWidth > e.clientWidth + 1;
+  for (let i = 1, lv = '1'; i <= 6 && (over(b) || !al.hidden && over(al)); lv += ` ${++i}`) bar.dataset.fit = lv;
+}
+if (window.ResizeObserver) {
+  const ro = new ResizeObserver(() => { if (!lbFitRaf) lbFitRaf = requestAnimationFrame(() => { lbFitRaf = 0; lbFit(true); }); });
+  for (const e of [document.querySelector('.livebar .lb-market'), $('lb-alarm')]) if (e) ro.observe(e);
 }
 // ---------- Design, Layout, Tabs ----------
 const THEME_KEY = 'scalpdesk.theme.v1', LAYOUT_KEY = 'scalpdesk.layout.v1', TAB_KEY = 'scalpdesk.tab.v1';
@@ -7404,7 +7431,7 @@ function pnlAdopt(x) { if (!x || typeof x !== 'object' || !(Number(x.u) > pnlGet
 function pnlBadge(d = pnlGet()) {
   const b = $('lb-pos'); if (!b || !PNL_KINDS) return;
   const on = PNL_KINDS.filter(k => d[k].on && d[k].value), fired = on.some(k => d[k].state === 'fired'), v = fired ? 'fired' : on.length ? 'on' : '';
-  if (b.dataset.pnl !== v) b.dataset.pnl = v;
+  if (b.dataset.pnl !== v) { b.dataset.pnl = v; lbFit(); } // der Punkt braucht Platz: Live-Ergebnis am Handy neu einpassen
   const label = `Live-Ergebnis der offenen Positionen – Gewinn- und Verlust-Alarm${fired ? ' (ausgelöst)' : on.length ? ' (aktiv)' : ''} einstellen`;
   if (b.getAttribute('aria-label') !== label) b.setAttribute('aria-label', label);
 }
