@@ -1547,6 +1547,15 @@ html[data-layout=tablet] .wl-detail{scroll-margin-bottom:calc(84px + env(safe-ar
 .pnl-note{margin:8px 0 0;font-size:.72rem;color:var(--muted)}
 @media (pointer:coarse){.livebar .pnl-panel .pnl-x{width:44px;height:44px;min-height:44px}.livebar .pnl-panel .pnl-actions button,.livebar .pnl-panel .pnl-rearm{min-height:44px}.pnl-in input{min-height:44px}}
 @media (max-width:600px){.livebar .pnl-panel{right:8px;left:8px;width:auto}}
+/* 3.24.0 Ablaufplan Schritt 8: „Datensicherung“ als kompakte Zeile mit Pfeil – beim Start und nach dem Neuladen zugeklappt */
+.data-head{display:flex;align-items:center;gap:10px;width:100%;min-height:48px;margin-top:14px;padding:0 14px;border:1px solid var(--border);border-radius:9px;background:var(--surface-2);color:var(--text);font-size:.9rem;font-weight:650;text-align:left}
+.data-head:hover{background:var(--hover)}
+.data-chev{display:inline-grid;place-items:center;width:1.1em;font-size:1.05rem;line-height:1;color:var(--text-2);transition:transform .18s ease}
+.data-head[aria-expanded=true] .data-chev{transform:rotate(90deg)}
+.data-head[aria-expanded=true]{border-bottom-left-radius:0;border-bottom-right-radius:0}
+.data-last{margin-left:auto;font-size:.75rem;font-weight:400;color:var(--muted);white-space:nowrap}
+.data-head+.data-panel{margin-top:0;border-top:0;border-top-left-radius:0;border-top-right-radius:0}
+@media (prefers-reduced-motion:reduce){.data-chev{transition:none}}
 .chart-panel>.notice{margin:12px 20px 0}
 html{scroll-padding-top:calc(var(--lb-h,56px) + 16px)}
 /* nur als eigene Spalten (ab 1400 px) begrenzt; darunter stehen beide untereinander in der gemeinsamen Seitenspalte und
@@ -3096,6 +3105,8 @@ function renderBackupInfo() {
   const warn = ab === 'active' ? !!autoBackup.error : ab === 'paused' || n > 0 || due;
   for (const id of ['backup-due', 'backup-count']) { const b = $(id); b.hidden = !label; b.textContent = label; b.parentElement.classList.toggle('ok', !warn); b.parentElement.title = warn ? 'Änderungen seit dem letzten Backup – Backup erstellen' : 'Backup aktuell'; }
   $('tab-pos-badge').hidden = !warn || !has; put('tab-pos-badge', '!');
+  // 3.24.0 Schritt 8: kurzer Stand in der zugeklappten Zeile „Datensicherung“
+  put('data-last', m ? `zuletzt ${new Date(m.at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}` : has ? 'noch keine Sicherung' : '');
   put('backup-info', `${m ? `Letztes Backup auf diesem Gerät: ${new Date(m.at).toLocaleString('de-DE')} · ${m.kind === 'auto' ? 'automatisch' : m.kind === 'telegram' ? 'per Telegram' : m.kind === 'share' ? 'geteilt' : m.encrypted ? 'verschlüsselt' : 'unverschlüsselt'} · ${m.positions} Positionen, ${m.trades} Trades${m.movements ? `, ${m.movements} Geldbewegungen` : ''}` : 'Auf diesem Gerät wurde noch kein Backup erstellt.'}${n ? ` · Seitdem ${n} ${n === 1 ? 'Änderung' : 'Änderungen'}.` : ''}`);
   if (autoBackup.supported) {
     $('autobackup-row').hidden = false; $('autobackup-setup').hidden = ab !== 'off'; $('autobackup-resume').hidden = ab !== 'paused'; $('autobackup-stop').hidden = ab === 'off';
@@ -8258,11 +8269,12 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
           <div class="positions-head">
             <div><h2 id="positions-title">Meine Positionen</h2><p>Von dir erfasst · Live-Kurs von Binance · USDT (Euro)</p></div>
             <div class="pos-totals"><div><span>Offen, nicht realisiert</span><strong id="open-total">—</strong><small id="open-total-eur"></small></div><div><span id="realized-label">Realisiert gesamt</span><strong id="realized-total">—</strong><small id="realized-total-eur"></small></div></div>
-            <div class="pos-head-actions"><button type="button" class="button ghost backup-badge" id="data-toggle" aria-expanded="false" aria-controls="data-panel">💾 Backup <span class="due" id="backup-due" hidden>FÄLLIG</span></button><button type="button" class="button primary-lite" id="pos-add-toggle" aria-expanded="false" aria-controls="pos-form">+ Position erfassen</button></div>
+            <div class="pos-head-actions"><button type="button" class="button primary-lite" id="pos-add-toggle" aria-expanded="false" aria-controls="pos-form">+ Position erfassen</button></div>
           </div>
           <div class="day-strip" id="day-strip"><span>Heute realisiert</span><strong class="day-pnl" id="day-pnl">—</strong><span id="day-info"></span><div class="day-bar" id="day-bar" title="Verbrauchtes Tages-Verlustlimit"><span></span></div><label>Tages-Verlustlimit<span class="input-wrap"><input id="day-limit" type="text" inputmode="decimal" autocomplete="off" placeholder="z. B. 30"><span>USDT</span></span></label></div>
+          <button type="button" class="data-head backup-badge" id="data-toggle" aria-expanded="false" aria-controls="data-panel"><span class="data-chev" aria-hidden="true">▸</span><span class="data-title">💾 Datensicherung</span><span class="due" id="backup-due" hidden>FÄLLIG</span><small class="data-last" id="data-last"></small></button>
           <div class="data-panel" id="data-panel" hidden>
-            <div class="head-line"><h3>Datensicherung</h3><details class="tip left"><summary aria-label="Wo liegen meine Daten?"><span>i</span></summary><div class="tip-body"><p>Daten liegen nur in diesem Browser auf diesem Gerät, nicht bei GitHub: in der IndexedDB, dazu eine Spiegelkopie im localStorage.</p><p>Safari kann Website-Daten löschen, wenn eine Seite länger nicht geöffnet wurde. Als App auf dem Home-Bildschirm gilt diese Frist nicht; ein Backup ist trotzdem der sicherste Schutz.</p><p>Mit Passwort wird ein Backup verschlüsselt (AES-256). Ein vergessenes Passwort lässt sich nicht wiederherstellen.</p><p>Automatisch sichern: Am Computer (Chrome/Edge) schreibt das Dashboard nach jeder Änderung in eine Datei deiner Wahl. Auf iPhone und iPad erlaubt Safari das nicht – dort kann die Sicherung stattdessen nach jeder Änderung an deinen Telegram-Chat gehen; die neue Datei ersetzt jeweils die vorige. Diese Datei ist unverschlüsselt und liegt auf den Servern von Telegram; Zugangsdaten für Telegram und Discord sind nie enthalten.</p></div></details></div>
+            <div class="head-line"><h3>Sichern, einspielen, abgleichen</h3><details class="tip left"><summary aria-label="Wo liegen meine Daten?"><span>i</span></summary><div class="tip-body"><p>Daten liegen nur in diesem Browser auf diesem Gerät, nicht bei GitHub: in der IndexedDB, dazu eine Spiegelkopie im localStorage.</p><p>Safari kann Website-Daten löschen, wenn eine Seite länger nicht geöffnet wurde. Als App auf dem Home-Bildschirm gilt diese Frist nicht; ein Backup ist trotzdem der sicherste Schutz.</p><p>Mit Passwort wird ein Backup verschlüsselt (AES-256). Ein vergessenes Passwort lässt sich nicht wiederherstellen.</p><p>Automatisch sichern: Am Computer (Chrome/Edge) schreibt das Dashboard nach jeder Änderung in eine Datei deiner Wahl. Auf iPhone und iPad erlaubt Safari das nicht – dort kann die Sicherung stattdessen nach jeder Änderung an deinen Telegram-Chat gehen; die neue Datei ersetzt jeweils die vorige. Diese Datei ist unverschlüsselt und liegt auf den Servern von Telegram; Zugangsdaten für Telegram und Discord sind nie enthalten.</p></div></details></div>
             <p id="storage-info">Speicher wird geprüft …</p>
             <div class="data-row" id="autobackup-row" hidden>
               <button type="button" class="button primary-lite" id="autobackup-setup">Automatisches Backup einrichten …</button>
