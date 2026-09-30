@@ -1362,6 +1362,70 @@ html[data-layout=tablet] #cnews{order:1}
 /* schmales Tablet: während einer Warnung „Offen“ nur als Zahl, damit die Positionsanzeige nicht halb abgeschnitten wird */
 @media (min-width:601px) and (max-width:760px){.livebar:has(.lb-news:not([hidden])) .lb-pos>.lb-label{display:none}}
 @media (max-width:600px){.livebar .lb-news{grid-column:1/-1;justify-self:stretch;min-width:0;max-width:none;min-height:32px;text-align:left;padding:0 4px}}
+/* 4.3: Volatilität nach Uhrzeit – unter den News zum Coin; feste Höhen (Säulen, Zeilen), Live-Werte ändern nur Inhalte */
+html[data-layout=tablet] #vola{order:1}
+/* Kalender, News zum Coin und Volatilität: Innenabstand wie die übrigen Bereiche (Kalender und News hatten keinen) */
+.econ,.cnews,.vola{padding:16px 20px}
+@media (max-width:700px){.econ,.cnews,.vola{padding:14px}}
+.vola .vola-src{flex:1 0 100%;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+@container (max-width:320px){.vola-long{display:none}} /* schmale Handys: Überschrift einzeilig */
+.vola-bars{position:relative;display:grid;grid-template-columns:repeat(24,minmax(0,1fr));column-gap:2px;height:80px;margin-top:10px;padding-top:14px;border-bottom:1px solid var(--border);cursor:pointer;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+.vb{position:relative;min-width:0}
+.vb::before{content:"";position:absolute;inset:-14px 0 0;border-radius:4px 4px 0 0;pointer-events:none}
+.vb.now::before{background:var(--hover-2)}
+.vb.sel::before{box-shadow:inset 0 0 0 1px var(--muted)}
+.vb-p90,.vb-med{position:absolute;left:0;right:0;bottom:0;height:0;border-radius:2px 2px 0 0}
+.vb-p90{background:color-mix(in srgb,var(--c-bb) 30%,transparent)}
+.vb-med{background:var(--c-bb)}
+.vb.few .vb-p90,.vb.few .vb-med{opacity:.35}
+.vb-dir{position:absolute;top:-13px;left:50%;transform:translateX(-50%);font-size:.625rem;line-height:12px;font-weight:700}
+.vb-dir.up{color:var(--up-text)}
+.vb-dir.down{color:var(--down-text)}
+.vb-live{position:absolute;left:-3px;right:-3px;height:3px;margin-bottom:-1px;border-radius:2px;background:var(--text-2);pointer-events:none}
+.vb-live.lv1{background:var(--amber)}
+.vb-live.lv2{background:var(--down-text)}
+.vola-hours{position:relative;display:grid;grid-template-columns:repeat(24,minmax(0,1fr));column-gap:2px;height:14px;margin-top:2px;font-size:.625rem;line-height:14px;color:var(--muted);font-variant-numeric:tabular-nums}
+.vola-hours span{justify-self:center;white-space:nowrap}
+.vola-info,.vola-hour{display:grid;gap:6px}
+.vola-info{margin-top:8px}
+.vola-selrow{display:flex;align-items:center;gap:8px;height:26px;min-width:0}
+.vola-sel{flex:1 1 auto;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:.8125rem;font-weight:600;color:var(--text)}
+.vola .vola-back{position:relative;flex:0 0 auto;min-height:0;height:26px;padding:0 10px;border-radius:13px;font-size:.75rem;color:var(--text-2)}
+.vola .vola-back::before{content:"";position:absolute;inset:-9px -4px}
+.vola-strip{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.vs{min-width:0;display:grid;padding:4px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2)}
+.vs-k,.vs-v{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.vs-k{font-size:.7rem;line-height:16px;color:var(--muted)}
+.vs-v{font-size:.875rem;line-height:20px;font-weight:650;font-variant-numeric:tabular-nums;color:var(--text)}
+.vs-now .vs-k{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.vs-now .vs-k>span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.vola-badge{flex:0 0 auto;font-size:.66rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.vs-now[data-level="1"]{background:var(--amber-bg);border-color:var(--amber-border)}
+.vs-now[data-level="1"] .vs-v,.vs-now[data-level="1"] .vola-badge{color:var(--amber)}
+.vs-now[data-level="2"]{background:var(--down-bg-2);border-color:var(--down-border)}
+.vs-now[data-level="2"] .vs-v,.vs-now[data-level="2"] .vola-badge{color:var(--down-text)}
+.vola-dirrow{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;height:36px;overflow:hidden;font-size:.8125rem;line-height:18px;color:var(--text-2)}
+.vola-k{color:var(--muted)}
+.vola-dirv.up{color:var(--up-text);font-weight:600}
+.vola-dirv.down{color:var(--down-text);font-weight:600}
+.vola .econ-foot .side-toggle button{flex:0 0 auto;min-width:4.6em}
+/* Warnung in der Live-Leiste: wie die Termin-Warnung. Am Handy stehen beide in einer eigenen Zeile – gleichzeitig nebeneinander,
+   die Volatilität dann kurz („⚡ Vola 2,3×“) */
+.lb-warns{display:contents}
+.livebar .lb-vola{display:block;flex-shrink:1;min-width:6em;max-width:24em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--amber);font-weight:700}
+.livebar .lb-vola.strong{color:var(--down-text)}
+.lb-vola .lv-short{display:none}
+@media (min-width:601px) and (max-width:760px){.livebar:has(.lb-vola:not([hidden])) .lb-pos>.lb-label{display:none}}
+@media (min-width:601px) and (max-width:900px){.livebar .lb-vola{flex-shrink:0;min-width:0}.lb-vola .lv-full{display:none}.lb-vola .lv-short{display:inline}} /* schmales Tablet: kurz, nie abgeschnitten */
+@media (max-width:600px){
+  .livebar .lb-warns{grid-column:1/-1;display:flex;align-items:center;gap:6px;min-width:0}
+  .livebar .lb-warns:not(:has(>:not([hidden]))){display:none}
+  .livebar .lb-warns>*{flex:1 1 auto;min-width:0}
+  .livebar .lb-vola{max-width:none;min-height:32px;text-align:left;padding:0 4px}
+  .livebar .lb-news:not([hidden])~.lb-vola{flex:0 0 auto;max-width:40%}
+  .livebar .lb-news:not([hidden])~.lb-vola .lv-full{display:none}
+  .livebar .lb-news:not([hidden])~.lb-vola .lv-short{display:inline}
+}
 /* 3.21.2: Sprung-Rekorder (Fehlersuche) – feste Anzeige unten links, verschiebt nichts */
 .rec-badge{position:fixed;left:8px;bottom:calc(env(safe-area-inset-bottom,0px) + 78px);z-index:60;max-width:calc(100vw - 16px);min-height:32px;padding:6px 12px;border:1px solid var(--border);border-radius:999px;background:var(--surface);color:var(--text);font-size:.75rem;font-weight:600;line-height:1.2;box-shadow:var(--shadow);opacity:.94;text-align:left}
 #rec-text{width:100%;font-family:ui-monospace,Menlo,monospace;font-size:.7rem;line-height:1.3}
@@ -1981,7 +2045,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Alle Werte liegen zusätzlich im Arbeitsspeicher und sind dadurch synchron lesbar. Schreiben geht sofort in den
 // localStorage und gebündelt in die IndexedDB; beim Start gewinnt die zuletzt vollständig geschriebene Kopie.
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
-const APP_VERSION = '3.21.3', docEl = document.documentElement;
+const APP_VERSION = '3.22.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -3895,6 +3959,7 @@ function onTick(now) {
   econTick(); // 4.1: Wirtschaftskalender abrufen, Warnung vor Terminen
   cnewsTick(); // 3.20: wichtige News und Termine zum geöffneten Coin
   wlTick(now); // 4.2: Mini-Watchlist laden und malen
+  volaTick(now); // 4.3: Volatilität nach Uhrzeit, Warnung bei erhöhter Volatilität
   if (now - lastStreamSync > 5000) { lastStreamSync = now; syncStreams(); }
   if (Date.now() - lastSeenSaved > 30000) saveLastSeen();
   if (state.paused || state.busy) return;
@@ -3969,7 +4034,7 @@ function onKline(m) {
   const now = Date.now(); live.lastMsg[m.m] = now; clockSample(m.E); // 3.3: Binance-Zeit für den Countdown
   if (state.paused) return;
   if (m.i === '1m' && m.s === 'BTCUSDT' && m.m === 'spot' && m.k.c > 0) { btcRef = { price: m.k.c, at: now }; if (state.symbol !== 'BTCUSDT') updateTitle(); }
-  if (m.i === '1m') { trackLivePrice(m.s, m.k, now); wlKline(m, now); } // 4.2: Mini-Watchlist
+  if (m.i === '1m') { trackLivePrice(m.s, m.k, now); wlKline(m, now); volaKline(m); } // 4.2: Mini-Watchlist, 4.3: Volatilität der letzten 60 Minuten
   if (m.s === state.symbol && m.m === chartMarket() && m.i === state.interval && applyLiveCandle(m.k)) { live.chartAt = now; updateTitle(); scheduleLiveRender(true); }
   else if (m.i === '1m' && watchSymbols().has(m.s)) scheduleLiveRender(false);
 }
@@ -6839,6 +6904,263 @@ function wlTick(now) {
   wlPaint(now);
 }
 if ('IntersectionObserver' in window) new IntersectionObserver(es => { for (const e of es) { wl.vis = e.isIntersecting; if (wl.vis) wlPaint(Date.now(), true); } }).observe($('watchlist'));
+// ---------- Schritt 4.3: Volatilität und Richtung nach Uhrzeit (3.22.0) ----------
+// Aus den letzten 2.000 Stundenkerzen des geöffneten Coins (rund 83 Tage, Markt wie im Chart): je Uhrzeit (Ortszeit) und
+// Tagesart (Mo–Fr, Sa–So), wie weit der Kurs innerhalb einer Stunde schwankt – Spanne Hoch bis Tief in % der Eröffnung.
+// Verglichen mit der Spanne der letzten 60 Minuten (1m-Kerzen): Gehört sie zu den stärksten 10/5/1 % der vergleichbaren
+// Stunden, warnt die Live-Leiste. Richtung ehrlich: ▲/▼ nur, wenn die mittlere Stundenbewegung auch nach Gebühren (hin und
+// zurück, Einstellung im Positionsrechner) gesichert über bzw. unter null liegt – Student-t, 95 % für alle 48 Zellen
+// zugleich (Bonferroni). Sonst „keine nachweisbare Tendenz“, ohne Prozentzahl und ohne Trefferquoten.
+// var statt const/let: volaTick und volaKline können über Sekundentakt und Stream schon laufen, bevor dieser Abschnitt ausgewertet ist
+var VOLA_KEY = 'scalpdesk.vola.v1', VOLA_DB = 'vola|', VOLA_IDX = 'vola|__index', VOLA_HOURS = 2000, VOLA_KEEP = 8;
+var VOLA_EVERY = 6 * 3600e3, VOLA_RETRY = 5 * 60e3, VOLA_Z = 3.279, VOLA_MIN_N = 10, VOLA_MIN_DIR = 20, VOLA_MIN_POOL = 30, VOLA_MIN_MIN = 45;
+var vola = { sym: '', loaded: false, rows: null, market: '', at: 0, busy: false, error: '', retryAt: 0, stats: null, statsKey: '',
+  m1: [], m1sym: '', m1market: '', m1busy: false, m1retry: 0, sel: null, day: null, level: 0, key: '', rev: 0, cfg: null, built: false };
+// Spanne (Hoch–Tief) und Bewegung (Schluss zu Eröffnung) einer Stundenkerze, beides in % (4 Nachkommastellen genügen)
+var volaRow = c => [c.time, +((c.high - c.low) / c.open * 100).toFixed(4), +((c.close / c.open - 1) * 100).toFixed(4)];
+// Uhrzeit (Ortszeit) und Tagesart eines Zeitpunkts
+function volaSlot(t) { const d = new Date(t), wd = d.getDay(); return { h: d.getHours(), we: wd === 0 || wd === 6 }; }
+// Anteil q einer aufsteigend sortierten Liste (lineare Interpolation)
+function volaQ(sorted, q) {
+  if (!sorted.length) return null;
+  const i = (sorted.length - 1) * q, lo = Math.floor(i), hi = Math.ceil(i);
+  return sorted[lo] + (sorted[hi] - sorted[lo]) * (i - lo);
+}
+// Student-t-Schranke für 48 Tests zugleich (24 Stunden × 2 Tagesarten, Bonferroni, gemeinsam 95 %): Cornish-Fisher-Näherung
+// aus dem Normalwert 3,279; bei 19 Freiheitsgraden 3,87, bei 58 Freiheitsgraden 3,45
+function volaT(df) {
+  const z = VOLA_Z, z2 = z * z;
+  return z + (z2 + 1) * z / (4 * df) + ((5 * z2 + 16) * z2 + 3) * z / (96 * df ** 2) + (((3 * z2 + 19) * z2 + 17) * z2 - 15) * z / (384 * df ** 3)
+    + ((((79 * z2 + 776) * z2 + 1482) * z2 - 1920) * z2 - 945) * z / (92160 * df ** 4);
+}
+// Statistik je Tagesart und Stunde. Median und Richtung aus der Stunde selbst; die Schwellen (90/95/99 %) aus der Stunde und
+// ihren beiden Nachbarn (dreimal so viele Fälle – am Wochenende sonst zu wenige für seltene Werte).
+function volaStats(rows, fee = 0.06) {
+  const mk = () => Array.from({ length: 24 }, () => ({ r: [], m: [] })), b = { wd: mk(), we: mk() }, asc = (p, q) => p - q, cost = 2 * fee;
+  for (const [t, r, m] of rows) { if (!(r >= 0) || !Number.isFinite(m)) continue; const s = volaSlot(t), x = b[s.we ? 'we' : 'wd'][s.h]; x.r.push(r); x.m.push(m); }
+  const out = { wd: [], we: [], n: rows.length, from: rows[0]?.[0] ?? null, to: rows.at(-1)?.[0] ?? null, fee };
+  for (const k of ['wd', 'we']) for (let h = 0; h < 24; h++) {
+    const x = b[k][h], own = x.r.slice().sort(asc), pool = [...b[k][(h + 23) % 24].r, ...x.r, ...b[k][(h + 1) % 24].r].sort(asc);
+    const n = x.m.length, mean = n ? x.m.reduce((s, v) => s + v, 0) / n : 0, sd = n > 1 ? Math.sqrt(x.m.reduce((s, v) => s + (v - mean) ** 2, 0) / (n - 1)) : 0;
+    const half = n >= VOLA_MIN_DIR ? volaT(n - 1) * sd / Math.sqrt(n) : Infinity, lo = mean - half, hi = mean + half;
+    out[k].push({ n, np: pool.length, med: volaQ(own, 0.5), p90: volaQ(pool, 0.9), p95: volaQ(pool, 0.95), p99: volaQ(pool, 0.99), mean, lo, hi,
+      tend: lo > cost ? 'up' : hi < -cost ? 'down' : null });
+  }
+  return out;
+}
+// Spanne der letzten 60 Minuten aus 1m-Kerzen (laufende eingeschlossen) in % des Kurses zu Beginn des Fensters. Zu wenige
+// Minuten (kurz nach dem Laden, nach einer Lücke): nichts behaupten.
+function volaRange60(m1, now = Date.now()) {
+  const from = now - 3600e3, xs = m1.filter(c => c.time + 60e3 > from && c.time <= now);
+  if (xs.length < VOLA_MIN_MIN || !(xs[0].open > 0)) return null;
+  let hi = -Infinity, lo = Infinity; for (const c of xs) { if (c.high > hi) hi = c.high; if (c.low < lo) lo = c.low; }
+  return (hi - lo) / xs[0].open * 100;
+}
+// Warnstufe: 0 üblich, 1 über der eingestellten Schwelle, 2 über dem 99-%-Wert. Einmal an, geht die Warnung erst unter 90 %
+// der Schwelle wieder aus (kein Flackern an der Grenze).
+function volaLevel(cur, b, thr, was = 0) {
+  if (cur == null || !thr || !b || b.np < VOLA_MIN_POOL) return 0;
+  const lim = b['p' + thr]; if (!(lim > 0)) return 0;
+  if (thr < 99 && cur >= b.p99) return 2;
+  return cur >= lim || (was && cur >= lim * 0.9) ? (thr === 99 ? 2 : 1) : 0;
+}
+var volaHours = h => `${h}–${(h + 1) % 24} Uhr`;
+var volaDayName = k => (k === 'we' ? 'Sa–So' : 'Mo–Fr');
+var volaPct = v => (v == null || !Number.isFinite(v) ? '—' : `${number(v, v < 10 ? 2 : 1)} %`);
+function volaDirText(b) {
+  if (!b || b.n < VOLA_MIN_DIR) return 'zu wenige Stunden für eine Aussage';
+  return b.tend === 'up' ? `▲ steigt im Schnitt um ${volaPct(b.mean)} – auch nach Gebühren gesichert`
+    : b.tend === 'down' ? `▼ fällt im Schnitt um ${volaPct(-b.mean)} – auch nach Gebühren gesichert` : 'keine nachweisbare Tendenz';
+}
+function volaStamp(t, now) {
+  const d = new Date(t);
+  return d.toDateString() === new Date(now).toDateString() ? ecTime(t) : `${d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })} ${ecTime(t)}`;
+}
+// ---- Zwischenspeicher: im Kerzen-Speicher der App (IndexedDB „scalpdesk-candles“), eigener Schlüssel je Coin, höchstens
+// VOLA_KEEP Coins (die zuletzt geladenen bleiben). „Kerzen-Zwischenspeicher leeren“ löscht ihn mit.
+async function volaDbGet(sym) {
+  const db = await kcOpen(); if (!db) return null;
+  const v = await new Promise(res => { try { const q = db.transaction('series').objectStore('series').get(VOLA_DB + sym); q.onsuccess = () => res(q.result); q.onerror = () => res(null); } catch { res(null); } });
+  return v && (v.m === 'spot' || v.m === 'futures') && Array.isArray(v.rows) && v.rows.every(r => Array.isArray(r) && r.length === 3 && r.every(Number.isFinite)) ? v : null;
+}
+async function volaDbPut(sym, v) {
+  const db = await kcOpen(); if (!db) return;
+  try {
+    const tx = db.transaction('series', 'readwrite'), st = tx.objectStore('series'), ix = st.get(VOLA_IDX);
+    ix.onsuccess = () => {
+      const index = ix.result && typeof ix.result === 'object' ? ix.result : {};
+      st.put(v, VOLA_DB + sym); index[sym] = v.at;
+      for (const [s] of Object.entries(index).sort((a, b) => b[1] - a[1]).slice(VOLA_KEEP)) { st.delete(VOLA_DB + s); delete index[s]; }
+      st.put(index, VOLA_IDX);
+    };
+    await new Promise(res => { tx.oncomplete = tx.onerror = tx.onabort = res; });
+  } catch { /* nur eine Beschleunigung */ }
+}
+// ---- Laden: Stundenkerzen (erst alles in zwei Abrufen, danach nur Neues) und 1m-Kerzen für die letzten 60 Minuten ----
+async function volaFetch(sym, cm) {
+  vola.busy = true;
+  const now = Date.now(), get = async p => {
+    const raw = cm === 'futures' ? await api.get(FUTURES, '/fapi/v1/klines', p) : await spotGet('/api/v3/klines', p);
+    return Array.isArray(raw) && raw.length ? normalizeKlines(raw) : [];
+  };
+  try {
+    const have = vola.sym === sym && vola.market === cm && vola.rows ? vola.rows : [], lastT = have.at(-1)?.[0];
+    let add;
+    if (lastT && now - lastT < 900 * 3600e3) add = await get({ symbol: sym, interval: '1h', startTime: lastT + 3600e3, limit: 1000 });
+    else {
+      const a = await get({ symbol: sym, interval: '1h', limit: 1000 });
+      add = [...(a.length >= 1000 ? await get({ symbol: sym, interval: '1h', limit: 1000, endTime: a[0].time - 1 }) : []), ...a];
+    }
+    const seen = new Set(), rows = [...have, ...add.filter(c => c.closeTime < now).map(volaRow)]
+      .filter(r => !seen.has(r[0]) && seen.add(r[0])).sort((p, q) => p[0] - q[0]).slice(-VOLA_HOURS);
+    if (!rows.length) throw new Error('Keine Stundenkerzen für diesen Coin.');
+    const at = Date.now();
+    if (vola.sym === sym) Object.assign(vola, { rows, market: cm, at, error: '', retryAt: 0 });
+    void volaDbPut(sym, { m: cm, at, rows });
+  } catch (e) {
+    if (vola.sym === sym) { vola.error = e?.message || 'Stundenkerzen nicht erreichbar.'; vola.retryAt = Date.now() + VOLA_RETRY; }
+  } finally { vola.busy = false; vola.rev++; }
+}
+async function volaLoadM1(sym) {
+  vola.m1busy = true;
+  try {
+    const r = await cachedKlines(sym, '1m', 75);
+    if (vola.sym === sym) { vola.m1 = r.candles.slice(-80).map(c => ({ time: c.time, open: c.open, high: c.high, low: c.low, close: c.close })); vola.m1sym = sym; vola.m1market = r.source; vola.rev++; }
+  } catch { if (vola.sym === sym) vola.m1retry = Date.now() + VOLA_RETRY; }
+  finally { vola.m1busy = false; }
+}
+// Aus dem Live-Stream (onKline): 1m-Kerzen des geöffneten Coins mitschreiben; fehlt eine Minute, neu laden
+function volaKline(m) {
+  if (!vola || m.i !== '1m' || m.s !== vola.m1sym || m.m !== vola.m1market || !vola.m1.length) return;
+  const k = m.k, c = { time: k.t, open: k.o, high: k.h, low: k.l, close: k.c }, last = vola.m1.at(-1);
+  if (![c.time, c.open, c.high, c.low, c.close].every(Number.isFinite)) return;
+  if (c.time === last.time) vola.m1[vola.m1.length - 1] = c;
+  else if (c.time > last.time) {
+    if (c.time > last.time + 60e3) { vola.m1 = []; vola.m1sym = ''; return; } // Lücke (z. B. Handy gesperrt): neu laden
+    vola.m1.push(c); if (vola.m1.length > 90) vola.m1.splice(0, vola.m1.length - 90);
+  }
+}
+function volaStatsNow() {
+  if (!vola.rows?.length) return null;
+  const fee = state.risk?.feePct >= 0 ? state.risk.feePct : 0.06, k = `${vola.sym}|${vola.at}|${vola.rows.length}|${fee}`;
+  if (vola.statsKey !== k) { vola.stats = volaStats(vola.rows, fee); vola.statsKey = k; }
+  return vola.stats;
+}
+// ---- Anzeige: feste Größen (24 Säulen, vier einzeilige Zeilen); Live-Werte ändern nur Inhalte, nie Höhen ----
+function volaBuild() {
+  const bars = $('vola-bars'), hours = $('vola-hours'); if (!bars || vola.built) return;
+  for (let h = 0; h < 24; h++) {
+    const g = document.createElement('span'); g.className = 'vb'; g.dataset.h = String(h);
+    g.append(el('i', 'vb-p90'), el('i', 'vb-med'), el('b', 'vb-dir'));
+    bars.append(g);
+    if (h % 3 === 0) { const l = el('span', '', String(h)); l.style.gridColumn = String(h + 1); hours.append(l); }
+  }
+  const live = el('i', 'vb-live'); live.id = 'vola-live'; live.hidden = true; bars.append(live);
+  vola.built = true;
+}
+function renderVola(now = Date.now()) {
+  const box = $('vola'); if (!box || !vola.cfg) return;
+  volaBuild();
+  const put = (e, t) => { if (e && e.textContent !== t) e.textContent = t; };
+  const st = volaStatsNow(), slot = volaSlot(now), todayK = slot.we ? 'we' : 'wd', day = vola.day || todayK, today = day === todayK, bs = st?.[day];
+  const cur = vola.m1sym === state.symbol ? volaRange60(vola.m1, now) : null, selH = vola.sel ?? slot.h;
+  put($('vola-coin'), coin(state.symbol));
+  const days = st?.from ? Math.round((st.to - st.from) / 864e5) : 0;
+  put($('vola-src'), st ? `${days} Tage · ${number(st.n, 0)} Stunden · Stand ${volaStamp(vola.at, now)}${vola.market === 'futures' ? ' · Futures' : ''}${vola.error ? ' · Nachladen fehlgeschlagen' : ''}`
+    : vola.error || 'Stundenkerzen werden geladen …');
+  $('vola-src').classList.toggle('err', !!vola.error);
+  for (const b of box.querySelectorAll('[data-vday]')) { const on = String(b.dataset.vday === day); if (b.getAttribute('aria-pressed') !== on) b.setAttribute('aria-pressed', on); }
+  // Säulen: typische Spanne (Median) kräftig, 9 von 10 Stunden darunter hell; Maßstab: größter 90-%-Wert oder die aktuelle Spanne
+  const bars = $('vola-bars'), top = Math.max(0.0001, ...(bs || []).map(b => b.p90 || 0), today && cur ? cur : 0) * 1.05, pct = v => `${Math.min(100, (v || 0) / top * 100).toFixed(1)}%`;
+  const label = `Typische Spanne je Stunde (${volaDayName(day)}). Pfeiltasten wählen eine Stunde.`; if (bars.getAttribute('aria-label') !== label) bars.setAttribute('aria-label', label);
+  bars.querySelectorAll('.vb').forEach((g, h) => {
+    const b = bs?.[h], [p90, med, dir] = g.children, few = !b || b.n < VOLA_MIN_N;
+    const h90 = few ? '0%' : pct(b.p90), hm = few ? '0%' : pct(b.med); if (p90.style.height !== h90) p90.style.height = h90; if (med.style.height !== hm) med.style.height = hm;
+    g.classList.toggle('now', today && h === slot.h); g.classList.toggle('sel', h === selH); g.classList.toggle('few', !!st && few);
+    const tend = few ? null : b.tend; put(dir, tend === 'up' ? '▲' : tend === 'down' ? '▼' : ''); const dc = `vb-dir${tend ? ' ' + tend : ''}`; if (dir.className !== dc) dir.className = dc;
+  });
+  // Strich „letzte 60 Minuten“ auf der Säule der aktuellen Stunde
+  const live = $('vola-live'), showLive = today && cur != null;
+  if (showLive) { const g = bars.children[slot.h]; if (live.parentElement !== g) g.append(live); const y = pct(cur); if (live.style.bottom !== y) live.style.bottom = y; }
+  if (live.hidden === showLive) live.hidden = !showLive;
+  // Gewählte (sonst aktuelle) Stunde: typische Spanne, 9 von 10 darunter, Richtung; daneben die letzten 60 Minuten
+  const b = bs?.[selH], few = !b || b.n < VOLA_MIN_N;
+  put($('vola-sel-t'), `${volaHours(selH)}${today && selH === slot.h ? ' (jetzt)' : ''} · ${volaDayName(day)}${st ? ` · ${few ? 'zu wenige Stunden' : number(b.n, 0) + ' Std.'}` : ''}`);
+  const back = $('vola-back'), away = vola.sel != null || vola.day != null; if (back.hidden === away) back.hidden = !away;
+  put($('vola-med'), st && !few ? volaPct(b.med) : '—'); put($('vola-p90'), st && !few ? volaPct(b.p90) : '—');
+  put($('vola-dir'), st ? volaDirText(b) : '');
+  const dirCls = `vola-dirv${!few && b.n >= VOLA_MIN_DIR && b.tend ? ' ' + b.tend : ''}`; if ($('vola-dir').className !== dirCls) $('vola-dir').className = dirCls;
+  const bNow = st?.[todayK][slot.h], thr = vola.cfg.warn;
+  vola.level = state.paused ? 0 : volaLevel(cur, bNow, thr, vola.level);
+  // Einstufung in der Übersicht: wie die Warnung; ist die Warnung aus, nach den stärksten 5 % (die Übersicht bleibt ehrlich)
+  const lv = thr ? vola.level : volaLevel(cur, bNow, 95, 0);
+  const ratio = cur != null && bNow?.med > 0 && bNow.n >= VOLA_MIN_N ? cur / bNow.med : null;
+  const verdict = cur == null || ratio == null ? '' : lv === 2 ? 'stark erhöht' : lv === 1 ? 'erhöht' : ratio < 0.6 ? 'ruhiger als üblich' : 'im üblichen Rahmen';
+  put($('vola-now'), cur == null ? (st && (vola.m1busy || !vola.m1retry) ? 'wird geladen …' : '—') : `${volaPct(cur)} Spanne${ratio != null ? ` · ${number(ratio, 1)}× üblich` : ''}`);
+  put($('vola-badge'), !verdict ? '' : lv === 2 ? 'stark erhöht' : lv === 1 ? 'erhöht' : ratio < 0.6 ? 'ruhig' : 'üblich');
+  const nb = $('vola-nowbox'); if (nb.dataset.level !== String(lv)) nb.dataset.level = String(lv);
+  const nt = cur == null ? 'Spanne der letzten 60 Minuten (Hoch bis Tief aus den 1m-Kerzen)' : `Spanne der letzten 60 Minuten: ${volaPct(cur)}${ratio != null ? ` = ${number(ratio, 1)}-mal die typische Spanne um ${volaHours(slot.h)} (${volaDayName(todayK)})` : ''} – ${verdict || 'noch kein Vergleich'}`;
+  if (nb.title !== nt) nb.title = nt;
+  live.classList.toggle('lv2', lv === 2); live.classList.toggle('lv1', lv === 1);
+  // Warnung in der Live-Leiste (antippen: zur Übersicht)
+  const chip = $('lb-vola'), warnOn = vola.level > 0;
+  if (warnOn) {
+    const full = `⚡ Volatilität ${vola.level === 2 ? 'stark ' : ''}erhöht${ratio != null ? ` · ${number(ratio, 1)}× üblich` : ''}`;
+    put(chip.querySelector('.lv-full'), full); put(chip.querySelector('.lv-short'), `⚡ Vola ${ratio != null ? number(ratio, 1) + '×' : vola.level === 2 ? 'stark erhöht' : 'erhöht'}`);
+    const q = vola.level === 2 ? 99 : thr;
+    const ct = `${coin(state.symbol)}: Spanne der letzten 60 Minuten ${volaPct(cur)} – stärker als in ${q} % der vergleichbaren Stunden (${volaDayName(todayK)}, ${volaHours(slot.h)} ± 1 Stunde, ab ${volaPct(bNow['p' + q])}). Der Kurs schwankt stärker als üblich, in beide Richtungen.`;
+    if (chip.title !== ct) chip.title = ct;
+    chip.classList.toggle('strong', vola.level === 2);
+  }
+  if (chip.hidden === warnOn) chip.hidden = !warnOn;
+}
+// Sekundentakt: Zwischenspeicher beim Coinwechsel, Stundenkerzen alle 6 h (nur Neues), 1m-Kerzen einmal je Coin (danach der
+// Stream); Anzeige alle 5 s oder bei neuen Daten – über calmDo wie alle Live-Anzeigen (beim Scrollen wartet sie, danach bleibt
+// der sichtbare Inhalt stehen)
+var volaCalm = () => renderVola();
+function volaTick(now) {
+  if (!vola?.cfg || !$('vola')) return;
+  if (state.paused) { if (!$('lb-vola').hidden) calmDo(volaCalm); return; }
+  const sym = state.symbol;
+  if (vola.sym !== sym) {
+    Object.assign(vola, { sym, loaded: false, rows: null, market: '', at: 0, error: '', retryAt: 0, stats: null, statsKey: '', m1: [], m1sym: '', m1market: '', m1retry: 0, sel: null, level: 0 });
+    vola.rev++;
+    void volaDbGet(sym).then(v => { if (vola.sym !== sym) return; if (v && !vola.rows) Object.assign(vola, { rows: v.rows, market: v.m, at: v.at }); vola.loaded = true; vola.rev++; });
+  }
+  const cm = chartMarket();
+  if (vola.loaded && cm && state.loadedSymbol === sym) {
+    if (!vola.busy && now >= vola.retryAt && (!vola.at || now - vola.at > VOLA_EVERY || vola.market !== cm)) void volaFetch(sym, cm).then(() => calmDo(volaCalm));
+    if (vola.m1sym === sym && !(vola.m1.at(-1)?.time > now - 3 * 60e3)) vola.m1sym = ''; // Stream steht (nur REST, Verbindung weg): neu laden
+    if (!vola.m1busy && vola.m1sym !== sym && now >= vola.m1retry) void volaLoadM1(sym).then(() => calmDo(volaCalm));
+  }
+  if (document.hidden) return;
+  const k = `${Math.floor(now / 5e3)}|${vola.rev}|${sym}`;
+  if (k !== vola.key) { vola.key = k; calmDo(volaCalm); }
+}
+(function volaUi() {
+  const box = $('vola'); if (!box) return;
+  const v = store.get(VOLA_KEY); vola.cfg = { warn: [0, 90, 95, 99].includes(v?.warn) ? v.warn : 95 };
+  const sel = $('vola-warn'), bars = $('vola-bars'), nowH = () => volaSlot(Date.now()).h;
+  const redraw = () => { vola.rev++; calmDo(volaCalm); }, pick = h => { vola.sel = h === nowH() && !vola.day ? null : h; redraw(); };
+  sel.value = String(vola.cfg.warn);
+  sel.addEventListener('change', () => { vola.cfg = { ...vola.cfg, warn: Number(sel.value) }; store.set(VOLA_KEY, vola.cfg); vola.level = 0; redraw(); });
+  for (const b of box.querySelectorAll('[data-vday]')) b.addEventListener('click', () => { vola.day = b.dataset.vday === (volaSlot(Date.now()).we ? 'we' : 'wd') ? null : b.dataset.vday; redraw(); });
+  // Säule antippen oder Pfeiltasten: diese Stunde beschreiben; „jetzt“ (oder Esc) zurück zur aktuellen Stunde und Tagesart
+  bars.addEventListener('click', e => {
+    const g = e.target.closest('.vb'), r = bars.getBoundingClientRect();
+    pick(g ? Number(g.dataset.h) : Math.max(0, Math.min(23, Math.floor((e.clientX - r.left) / r.width * 24))));
+  });
+  bars.addEventListener('keydown', e => {
+    const d = { ArrowLeft: -1, ArrowDown: -1, ArrowRight: 1, ArrowUp: 1 }[e.key], cur = vola.sel ?? nowH();
+    if (d) pick((cur + d + 24) % 24);
+    else if (e.key === 'Home' || e.key === 'End') pick(e.key === 'Home' ? 0 : 23);
+    else if (e.key === 'Escape' && (vola.sel != null || vola.day)) { vola.sel = null; vola.day = null; redraw(); }
+    else return;
+    e.preventDefault();
+  });
+  $('vola-back').addEventListener('click', () => { vola.sel = null; vola.day = null; redraw(); });
+  renderVola();
+})();
 // ---------- Beschriftungen im Chart entzerren ----------
 // Läuft nach dem Zeichnen, wenn das SVG im Dokument hängt. Gemessen wird in SVG-Einheiten (getBBox), das passt auch im
 // gedrehten Vollbild. Beschriftungen rücken nur senkrecht, jede an die nächste freie Stelle, in dieser Reihenfolge:
@@ -7089,7 +7411,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
     <div class="heat" id="lb-heat" role="group" aria-label="Signale je Zeitraum – Zeitraum antippen wechselt das Chart-Intervall"></div>
     <span class="lb-spacer"></span>
     <span class="lb-alarm" id="lb-alarm" hidden></span>
-    <button type="button" class="lb-news" id="lb-news" data-goto="econ" hidden></button>
+    <div class="lb-warns"><button type="button" class="lb-news" id="lb-news" data-goto="econ" hidden></button><button type="button" class="lb-vola" id="lb-vola" data-goto="vola" hidden><span class="lv-full"></span><span class="lv-short"></span></button></div>
     <button type="button" class="lb-pos" data-goto="positions" aria-label="Zu den Positionen"><span class="lb-label">Offen</span><span class="lb-num" id="lb-open">—</span><span class="lb-label opt">Heute</span><span class="lb-num opt" id="lb-day">—</span><span class="lb-num opt lb-eur" id="lb-day-eur"></span></button>
     <span class="lb-conn" id="lb-conn" role="img" aria-label="Verbindung" data-feed="off"></span>
   </div>
@@ -7118,6 +7440,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
       </section>
       <section class="panel econ cq" id="econ" data-tabs="chart" aria-labelledby="econ-title"><div class="econ-head"><div class="head-line"><h2 id="econ-title">Wirtschaftskalender</h2><details class="tip left"><summary aria-label="Woher die Termine kommen und wann gewarnt wird"><span>i</span></summary><div class="tip-body"><p>Wichtige Wirtschaftstermine wie Zinsentscheide der US-Notenbank (Fed), Inflations- und Arbeitsmarktdaten. Um solche Termine schwankt der Kurs oft stark, auch bei Kryptowährungen.</p><p>Quelle: Wochenkalender von Forex Factory. Ein GitHub-Job im Repository holt ihn alle 3 Stunden ab, die App lädt ihn alle 30 Minuten. Titel im Original (englisch), Zeiten in deiner Ortszeit. Angaben ohne Gewähr.</p><p>Warnung: ab der eingestellten Zeit vor einem Termin mit hoher Bedeutung bis 15 Minuten danach, oben in der Live-Leiste und hier. Vorab einmal als Hinweis mit Ton und, falls eingerichtet, an Telegram/Discord – nur solange die App offen ist.</p><p>Punkte: rot hohe, orange mittlere Bedeutung. Feiertage bedeuten oft wenig Handel.</p></div></details></div><span class="econ-src" id="econ-src"></span></div><div class="econ-warn" id="econ-warn" role="status" hidden></div><div class="econ-list" id="econ-list"></div><div class="econ-foot"><label>Währung <select id="econ-cur"><option value="usd">USD</option><option value="all">alle</option></select></label><label>Bedeutung <select id="econ-imp"><option value="high">hoch</option><option value="medium">hoch + mittel</option></select></label><label>Warnen <select id="econ-warn-min"><option value="0">aus</option><option value="5">5 min vorher</option><option value="15">15 min vorher</option><option value="30">30 min vorher</option><option value="60">60 min vorher</option></select></label><button type="button" class="button ghost econ-more" id="econ-more" hidden>Ganze Woche</button></div></section>
       <section class="panel cnews cq" id="cnews" data-tabs="chart" aria-labelledby="cnews-title"><div class="econ-head"><div class="head-line"><h2 id="cnews-title">News &amp; Termine · <span id="cnews-coin">BTC</span></h2><details class="tip left"><summary aria-label="Woher die Meldungen kommen und was als wichtig gilt"><span>i</span></summary><div class="tip-body"><p>Nur ganz wichtige Meldungen und Termine zum geöffneten Coin.</p><p><b>Binance:</b> Listings, Delistings, entfernte USDT-Handelspaare, Netzwerk-Upgrades und Hard Forks (Ein- und Auszahlungen ruhen dann), Token-Tausch und die Beobachtungsliste (Monitoring-Tag: erhöhtes Risiko, ein Delisting ist möglich).</p><p><b>Schlagzeilen</b> deutschsprachiger Medien über Google News, für 36 bekannte Coins. Sehr wichtig: Hacks und gestohlene Gelder, ETF-Entscheidungen, Behörden und Gerichte (z. B. SEC, Klagen), Upgrades, Forks und Netzwerk-Ausfälle, Delistings und Listings großer Börsen, Insolvenzen. Mit „auch wichtig“ dazu ETF-Zuflüsse, Escrow und Token-Freigaben, Regulierung und Übernahmen. Kursprognosen und Marktberichte fallen weg; dieselbe Geschichte aus mehreren Medien steht nur einmal da.</p><p>Ausgewählt wird über Stichwörter – Wichtiges kann fehlen, Unwichtiges durchrutschen. Ein GitHub-Job sammelt stündlich, die App lädt alle 15 Minuten. Kein Kauf- oder Verkaufssignal.</p></div></details></div><span class="econ-src" id="cnews-src"></span></div><div class="cn-list" id="cnews-list"></div><div class="econ-foot"><label>Bedeutung <select id="cnews-imp"><option value="high">sehr wichtig</option><option value="medium">auch wichtig</option></select></label><button type="button" class="button ghost econ-more" id="cnews-more" hidden>Alle anzeigen</button></div></section>
+      <section class="panel vola cq" id="vola" data-tabs="chart" aria-labelledby="vola-title"><div class="econ-head"><div class="head-line"><h2 id="vola-title">Volatilität<span class="vola-long"> nach Uhrzeit</span> · <span id="vola-coin">BTC</span></h2><details class="tip left"><summary aria-label="Was die Säulen zeigen und wann gewarnt wird"><span>i</span></summary><div class="tip-body"><p>Wie stark schwankt der Kurs des geöffneten Coins normalerweise zu welcher Uhrzeit? Grundlage sind die letzten 2.000 Stundenkerzen von Binance (rund 83 Tage), getrennt nach Werktagen (Mo–Fr) und Wochenende (Sa–So), Uhrzeiten in deiner Ortszeit.</p><p><b>Säulen:</b> Spanne einer Stunde = Hoch minus Tief in Prozent. Kräftig die typische Spanne (die Hälfte der Stunden liegt darunter), hell der Wert, unter dem 9 von 10 Stunden bleiben (diese Stunde und ihre Nachbarn). Säule antippen zeigt die Stunde genauer.</p><p><b>Strich und Warnung:</b> Der Strich auf der aktuellen Stunde ist die Spanne der letzten 60 Minuten, „1,9×“ heißt fast doppelt so viel wie typisch. Gehört sie zu den stärksten 10, 5 oder 1 % der vergleichbaren Stunden (Einstellung „Warnen bei“), erscheint oben in der Live-Leiste eine Warnung: Der Kurs schwankt dann stärker als üblich, in beide Richtungen.</p><p><b>Richtung:</b> ▲ oder ▼ nur, wenn eine Stunde im Schnitt auch nach Gebühren (hin und zurück, wie im Positionsrechner eingestellt) sicher steigt oder fällt – mit 95 % Sicherheit für alle Stunden zugleich geprüft. Meist ist das nicht so, dann steht dort „keine nachweisbare Tendenz“. Vergangene Muster sind keine Garantie.</p></div></details></div><span class="econ-src vola-src" id="vola-src"></span></div><div class="vola-bars" id="vola-bars" role="group" tabindex="0" aria-label="Typische Spanne je Stunde"></div><div class="vola-hours" id="vola-hours" aria-hidden="true"></div><div class="vola-info"><div class="vola-hour" aria-live="polite"><div class="vola-selrow"><span class="vola-sel" id="vola-sel-t"></span><button type="button" class="vola-back" id="vola-back" hidden>↺ jetzt</button></div><div class="vola-strip"><div class="vs"><span class="vs-k">typisch</span><span class="vs-v" id="vola-med">—</span></div><div class="vs"><span class="vs-k">9 von 10 unter</span><span class="vs-v" id="vola-p90">—</span></div></div><p class="vola-dirrow"><span class="vola-k">Richtung:</span> <span class="vola-dirv" id="vola-dir"></span></p></div><div class="vs vs-now" id="vola-nowbox" data-level="0"><span class="vs-k"><span>Letzte 60 Minuten</span><span class="vola-badge" id="vola-badge"></span></span><span class="vs-v" id="vola-now">—</span></div></div><div class="econ-foot"><div class="side-toggle vola-days" role="group" aria-label="Tage"><button type="button" data-vday="wd" aria-pressed="true">Mo–Fr</button><button type="button" data-vday="we" aria-pressed="false">Sa–So</button></div><label>Warnen bei <select id="vola-warn"><option value="0">aus</option><option value="90">stärkste 10 %</option><option value="95">stärkste 5 %</option><option value="99">stärkste 1 %</option></select></label></div></section>
       <section class="panel signals cq" id="signals" data-tabs="chart" aria-labelledby="signals-title">
         <div class="signals-head"><div><div class="head-line"><h2 id="signals-title">Signal-Übersicht</h2><details class="tip left"><summary aria-label="So entsteht die Bewertung"><span>i</span></summary><div class="tip-body"><p>Je Zeitraum vier Regeln mit +1, 0 oder −1: EMA 20 über/unter EMA 50 · Schluss über/unter EMA 20 · RSI unter 30 und steigend (+1) bzw. über 70 und fallend (−1) · MACD über/unter Signallinie.</p><p>Ab +2 Punkten Kaufsignal, ab −2 Verkaufssignal, dazwischen Halten. Gesamt: Anzahl Kauf- minus Verkaufssignale, ab ±2.</p><p>Trend: Der Pfeil vergleicht den Gesamtscore mit dem Stand vor 5 Minuten (↗ gestiegen, ↘ gefallen, → gleich), die Balken zeigen die letzten 60 Minuten. Pfeile in den Zeilen: Punkte eines Zeitraums haben sich in den letzten 5 Minuten geändert. Rekonstruiert aus abgeschlossenen Kerzen, gilt also auch direkt nach dem Öffnen.</p><p>Mechanische Auswertung vergangener Kurse, keine Vorhersage; Gebühren, Funding und Hebel sind nicht berücksichtigt.</p></div></details></div><p>Trend, Kurslage, RSI und MACD · nur abgeschlossene Kerzen · Zeile antippen wechselt den Chart</p></div><div class="overall"><span>Gesamt über alle Zeiträume</span><div class="sig-trend"><strong id="overall-verdict" class="verdict skel">—</strong><span class="score skel" id="overall-score">—</span></div><div class="spark-wrap" id="overall-spark-wrap"><svg class="spark" id="overall-spark" viewBox="0 0 132 34" preserveAspectRatio="none" role="img" aria-label="Verlauf der Gesamtwertung"></svg><small class="spark-cap" aria-hidden="true"><span>vor 60 Min.</span><span>jetzt</span></small></div><small id="overall-detail" class="skel">Wartet auf Kerzendaten.</small></div></div>
         <div class="signal-rows" id="signal-rows"></div>
@@ -7331,7 +7654,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
       </div>
     </div>
     <div class="dash-bottom">
-      <details class="methodology panel fold cq" id="method-sec" data-tabs="ind"><summary><h2>Berechnung &amp; Datenquellen</h2><span>Methodik ansehen</span></summary><div class="method-grid"><div><h3>Kerzen &amp; Indikatoren</h3><p>Spot-Daten von data-api.binance.vision, dem offiziellen Binance-Endpunkt für öffentliche Marktdaten; nur bei einem Netzwerkfehler ersatzweise von api.binance.com. Bis zu 500 Kerzen im gewählten Intervall. RSI und ATR verwenden auch die letzte, gegebenenfalls noch offene Kerze. RSI startet nach 14 Kursänderungen; ATR mit dem Durchschnitt der ersten 14 True Ranges. Bei der ersten Kerze ist True Range = Hoch − Tief. RSI bei ausschließlich unveränderten Kursen: 50 als neutrale Konvention.</p><p>Pivots: strikte lokale Hochs/Tiefs mit je zwei Nachbarn innerhalb der letzten 50 abgeschlossenen Kerzen. Nächstes Pivot-Tief unter dem Kurs und nächstes Pivot-Hoch darüber; keine Ersatzlevel, falls keines existiert. Abstand = absolute Differenz / aktueller Kurs.</p></div><div><h3>Live-Daten &amp; Alarme</h3><p>Laufende Kerzen und Kurse kommen per WebSocket von data-stream.binance.vision (Spot, ersatzweise stream.binance.com) und fstream.binance.com/market (Futures). Die Verbindung läuft in einem Web Worker, damit Browser sie in Hintergrund-Tabs nicht drosseln. Jede Meldung einer 1-Minuten-Kerze wird mit der vorherigen verglichen: Ist das Hoch gestiegen oder das Tief gefallen, wurde dieser Kurs seit der letzten Meldung gehandelt – so erkennt das Dashboard auch kurze Dochte.</p><p>Fällt der Datenstrom aus, lädt das Dashboard alle 15 s per REST nach, sonst einmal pro Minute zum Abgleich. Nach einer Unterbrechung (z. B. iPad gesperrt) prüft es verpasste Alarme anhand der 1-Minuten-Kerzen.</p></div><div><h3>Signal-Übersicht</h3><p>Pro Zeitraum (1m, 5m, 15m, 1h, 4h, 1d) bis zu 200 Kerzen, ausgewertet nur auf abgeschlossenen Kerzen; neu geladen, sobald eine Kerze des Zeitraums schließt. EMA mit SMA-Start, MACD 12/26/9, RSI 14 nach Wilder. Gibt es kein Spot-Paar, nutzt das Dashboard die Kerzen des USDT-Perpetual-Futures und kennzeichnet das.</p><p>Trend-Verlauf: Für jede Minute der letzten Stunde wird die Bewertung mit den damals abgeschlossenen Kerzen (je Zeitraum wie beim Abruf höchstens 199, im Tageschart 499) neu berechnet. Gesamtscore = Kauf- minus Verkaufssignale.</p></div><div><h3>Mittelwert-Zonen</h3><p>Volumenprofil: sichtbare Kerzen, 40 Preisstufen. Binance-Kerzen enthalten kein Volumen je Preis; das Dashboard verteilt das Volumen jeder Kerze deshalb als Normalverteilung (Glockenkurve) um die Mitte des Kerzenkörpers, begrenzt auf Hoch–Tief. Breite σ = halbe Körperhöhe, mindestens ein Sechstel der Spanne: Dochte bekommen weniger Volumen als der Körper, bei Doji-Kerzen konzentriert es sich um den Schlusskurs. POC = Mitte der Stufe mit dem höchsten Volumen; Value Area = um den POC erweitert, bis 70 % des Volumens enthalten sind. EMA 200 mit SMA-Start; im Tageschart aus abgeschlossenen Tageskerzen, im Chart-Intervall inklusive laufender Kerze. Bollinger: SMA 20 ± 2 Standardabweichungen (Grundgesamtheit). Der Lehrbuchwert von rund 95 % innerhalb der Bänder setzt normalverteilte Kurse voraus; angezeigt wird deshalb der tatsächliche Anteil der letzten 100 abgeschlossenen Kerzen.</p></div><div><h3>Chart-Analyse</h3><p>ZigZag: Umkehrpunkte ab der eingestellten Mindestbewegung (0,25–8 %, Standard 3 %) am Kerzenhoch bzw. -tief. Ein Punkt gilt als bestätigt, sobald sich der Kurs um die Mindestbewegung davon entfernt hat; der letzte, noch laufende Extrempunkt ist vorläufig. Prognose, Divergenzen und Elliott-Wellen nutzen dieselben Punkte.</p><p>Prognose: Median und mittlere Hälfte (25–75 %) der bisherigen Gegenschwünge dieses Charts, ab dem laufenden Extrempunkt. Ein Lernfaktor passt sie nur an, wenn frühere Prognosen dieses Charts damit nachweislich besser lagen. Eine Prozentzahl erscheint nur, wenn ein gelerntes Muster (Trend, Signal-Bewertung, RSI) nach Gebühren einen statistisch gesicherten Vorteil zeigt (mindestens 100 Fälle, strenge Grenze); die Muster lernt die App still aus abgeschlossenen Kerzen und führt sie in der Sicherung mit.</p><p>RSI-Divergenzen: jüngster und vorheriger Umkehrpunkt gleicher Art, der jüngste in den letzten 40 abgeschlossenen Kerzen. Bullisch bei tieferem Kurs-Tief und höherem RSI-Tief (mindestens 2 Punkte), bärisch spiegelbildlich; vorläufig, solange der jüngste Punkt nicht bestätigt ist.</p><p>Elliott-Wellen (schematisch, ab 50 Kerzen): das jüngste Muster aus sechs Umkehrpunkten, das die drei Grundregeln erfüllt – Welle 2 läuft nicht über den Start von Welle 1 zurück, Welle 3 ist nicht die kürzeste der Wellen 1, 3 und 5, Welle 4 reicht nicht in den Bereich von Welle 1 – und dessen Welle 5 über Welle 3 hinausgeht. Danach A, B, C, solange B das Impulsende nicht überschreitet und C über A hinausläuft. Andere Zählungen sind möglich.</p><p>Wellen-Prognose (schematisch, nur bei einer aktuellen Zählung): Richtwerte nach den üblichen Faustregeln – nach Welle 5 folgt A mit 38,2 % Rückgang des Impulses, B erholt 61,8 % von A, C ist so lang wie A; nach C ein neuer Impuls bis 61,8 % zurück Richtung Ende von Welle 5. Die Dauer richtet sich nach den bisherigen Wellen des Charts; solange A oder B laufen, ist die Prognose ungültig, sobald der Kurs über das Ende von Welle 5 hinausläuft.</p><p>Fibonacci-Retracement: letzter abgeschlossener ZigZag-Schwung (zwischen den beiden jüngsten bestätigten Umkehrpunkten), Marken bei 23,6 / 38,2 / 50 / 61,8 / 78,6 % Rücklauf vom Schwungende, dazu leicht hinterlegt die „goldene Zone“ 50–61,8 %. Liegen die Marken sehr dicht, sind nur 23,6 / 50 / 78,6 % bzw. die goldene Zone angeschrieben. Die Leiste unter dem Chart nennt 38,2 / 50 / 61,8 % mit Kurs und Abstand zum aktuellen Kurs; Antippen legt dort einen Alarm an, und der Magnet rastet an den Marken ein. Das ⓘ neben „Fib“ erklärt die fünf Marken mit ihren aktuellen Kursen.</p><p><b>Whale-Alert</b>: große Marktorders im Chart-Kürzel ab der gewählten Schwelle (Standard 100.000 USDT) aus dem Einzel-Trade-Stream von Binance. Teil-Ausführungen einer Order (gleiche Handelszeit, gleiche Seite, Preis läuft in Order-Richtung weiter) zählen als eine Order. Dazu der Anteil der Taker-Käufe am gesamten Umsatz der letzten 60 s. Beschreibung des laufenden Handels, keine Vorhersage – ob große Orders den Kurs weitertreiben, ist nicht geprüft.</p><p><b>Orderbuch-Wände</b> (Reiter in der Whales-Leiste): größte Kauf- und Verkaufs-Wand im Bereich ±2 % aus dem Orderbuch von Binance (1000 Stufen je Seite, alle 10 s, nur bei offenem Reiter). Wand = Preiszone von 0,1 % des Kurses mit mindestens doppelt so viel wie im Schnitt. Limit-Orders können zurückgezogen werden; Momentaufnahme, kein Versprechen.</p><p><b>RSI-Divergenz – Leuchten und Leitfaden:</b> Eine aktuelle Divergenz leuchtet im Chart am jüngsten Umkehrpunkt (grün bullisch, rot bärisch); rechts über dem Chart öffnet ein Knopf die Erklärung mit Kursen, RSI-Werten und Handlungsleitfaden. Neue Divergenzen pulsieren, bis die Erklärung einmal geöffnet wurde. Backtest der Leitfaden-Regeln: Warten auf Bestätigung verbesserte nichts (44–48 % bzw. 21–39 %).</p><p><b>Countdown bis Kerzenschluss:</b> Die gestrichelte Kurslinie in der Farbe der laufenden Kerze trägt am rechten Ende ein Schild mit dem aktuellen Kurs, darunter die Zeit bis zum Schluss der laufenden Kerze (unter 1 h „m:ss“, unter 1 Tag „h:mm:ss“, darüber „3T 05:12“). Am Handy hochkant steht das Schild im Chart und hängt über oder unter der Linie, damit es die laufende Kerze nicht verdeckt. Gerechnet wird mit der Uhr von Binance: Die Abweichung der Geräteuhr ergibt sich aus den Zeitstempeln im Live-Stream.</p><p><b>Hoch und Tief:</b> Das höchste Hoch und das tiefste Tief der sichtbaren Kerzen stehen fett in Grün bzw. Rot an der Dochtspitze, am Computer mit „Hoch“ bzw. „Tief“, am Handy hochkant nur mit dem Kurs. Es gilt der sichtbare Ausschnitt: Zoomen oder Zurückblättern ändert ihn. Bei gleich hohen Spitzen zählt die jüngste.</p><p><b>Wirtschaftskalender:</b> Wochenkalender von Forex Factory (nfs.faireconomy.media). Ein GitHub-Job im Repository (.github/workflows/kalender.yml) holt ihn alle 3 Stunden und legt ihn als calendar.json im Zweig „kalender“ ab; die App liest ihn von raw.githubusercontent.com alle 30 Minuten. Gewarnt wird vor Terminen mit hoher Bedeutung, ab der eingestellten Zeit vorher bis 15 Minuten danach. Keine Aussage über die Richtung der Kursbewegung.</p><p><b>News &amp; Termine zum Coin:</b> Ein GitHub-Job im Repository (.github/workflows/news.yml) holt stündlich die neuesten Ankündigungen von Binance (Kategorien neue Listings, Neuigkeiten, Airdrops, Delistings und Wartung, die 15 neuesten je Kategorie; bapi/composite/v1/public/cms) und je Coin die Google-News-Suche (RSS, deutsch, letzte 3 Tage) für 36 bekannte Coins. Binance-Ankündigungen zählen, wenn sie ein Listing, Delisting, ein entferntes USDT-Paar, einen Futures-Kontrakt, ein Netzwerk-Upgrade, einen Token-Tausch oder die Beobachtungsliste betreffen; der Termin ist die UTC-Zeit am Datum im Titel. Schlagzeilen zählen, wenn sie den Coin nennen und ein Stichwort aus den Gruppen Sicherheit, ETF, Recht, Netzwerk, Börse oder Unternehmen enthalten; nennen sie zwei Coins, muss das Stichwort beim jeweiligen Coin stehen, ab drei gelten sie als Marktbericht. Kursprognosen fallen weg. Meldungen mit einem gemeinsamen markanten Wort innerhalb von 36 Stunden gelten als eine Geschichte. Ablage als news.json im Zweig „news“; die App lädt sie von raw.githubusercontent.com alle 15 Minuten.</p><p><b>Mini-Watchlist (Vorauswahl):</b> Je Coin der Kurs aus den 1m-Kerzen des Live-Streams (Startwerte aus dem Kerzen-Zwischenspeicher bzw. per REST, 260 Kerzen je Coin, nacheinander geladen; ohne Spot-Paar die USDT-Futures). Veränderung = aktueller Kurs zum Kurs vor 60 s (direkt nach dem Laden: Schlusskurs der damals laufenden 1m-Kerze). Verlauf = Schlusskurse der letzten 30 abgeschlossenen 1m-Kerzen und der aktuelle Kurs. 1m-Tendenz = die Regeln der Signal-Übersicht auf den letzten 199 abgeschlossenen 1m-Kerzen (mindestens 60). Fehlt eine Minute (z. B. Handy gesperrt), wird die Reihe neu geladen.</p><p>Backtests mit echten BTC-Stundenkerzen (Coinbase und Bitfinex, 2017–2019): Weder Divergenzen noch die Elliott-Zählung und ihre Prognose-Ziele noch die Fibonacci-Marken zeigten einen verlässlichen Vorteil – alle daher ohne Prozentzahl, als Hinweis und nicht als Handelssignal.</p></div><div><h3>Futures &amp; Szenario</h3><p>Funding und Open Interest stammen vom gleichnamigen USDT-Futures-Paar, unabhängig vom Chartintervall. OI vergleicht den aktuellen Mengenbestand mit dem jüngsten 5-Minuten-Snapshot vor dem Zeitpunkt vor einer Stunde; der tatsächliche Zeitraum wird angezeigt.</p><p>Liquidationsabstand: Long = (1/Hebel − MMR) / (1 − MMR), Short = (1/Hebel − MMR) / (1 + MMR). MMR als Dezimalzahl. Dies ist ein vereinfachtes Modell; 1/Hebel allein beschreibt den vollständigen Margin-Verbrauch ohne Maintenance Margin.</p></div><div><h3>Liquidations-Heatmap</h3><p>Schätzung aus der Open-Interest-Historie (futures/data/openInterestHist, bis 500 Werte, höchstens 30 Tage) und den USDT-Futures-Kerzen desselben Zeitraums: 5 Minuten für die Chart-Intervalle 1m und 5m, sonst das Chart-Intervall selbst (bis 1d). Jeder OI-Anstieg gilt als neu eröffnete Positionen zum VWAP des Zeitraums (Quote- durch Basisvolumen), aufgeteilt nach dem Anteil der Taker-Käufe (10–90 %) auf Longs und Shorts und nach der Hebelverteilung 5×/10×/20×/50×/100× mit 10/25/30/20/15 %. Liquidationspreis wie im Rechner: Long = Einstieg × (1 − 1/Hebel) / (1 − MMR), Short = Einstieg × (1 + 1/Hebel) / (1 + MMR). Ein OI-Rückgang verkleinert alle offenen Zonen im selben Verhältnis; eine Zone endet bei der ersten Kerze, deren Tief (Long) bzw. Hoch (Short) sie erreicht. Farbe und Deckkraft nach dem Anteil am Höchstwert im sichtbaren Ausschnitt (hoch 0,75); schwache Zonen bleiben fast durchsichtig. Cluster: stärkste Summe je Seite in 0,1-%-Stufen, geglättet über ±0,2 %, im Bereich ±10 % um den Kurs. Neu geladen wird nur, wenn ein neuer OI-Wert fällig ist, und dann nur ab dem vorletzten Wert. Die Werte liegen zusätzlich in einer eigenen IndexedDB (höchstens 12 Reihen, nicht im Backup), damit die Heatmap nach dem Neuladen sofort erscheint; „Kerzen-Zwischenspeicher leeren“ leert sie mit.</p></div><div><h3>Kerzen-Zwischenspeicher</h3><p>Abgeschlossene Kerzen werden je Markt, Kürzel und Intervall in einer eigenen IndexedDB gespeichert (höchstens 40 Reihen à 500 Kerzen, nicht im Backup). Beim nächsten Abruf – auch nach dem Neuladen – lädt das Dashboard nur die Kerzen ab der zuletzt gespeicherten nach und vergleicht diese eine Kerze mit Binance; passt sie nicht, wird die Reihe vollständig neu geladen. Fehlt höchstens eine Kerze, zeigt der Chart beim Wechsel sofort den gespeicherten Stand, als vorläufig markiert, bis Nachladen oder Live-Stream frische Daten liefern.</p><p>Liquidationslinie im Chart: bei eingetragenem Liq.-Preis der Börse dieser, sonst bei isolierter Margin das Modell oben mit der Maintenance Margin aus den Modellannahmen; bei Cross ohne Börsenwert keine Linie.</p></div><div><h3>Telegram &amp; Discord</h3><p>Optional. Der Web Worker sendet per HTTPS direkt an api.telegram.org (sendMessage) bzw. an die Discord-Webhook-Adresse; bei Netzfehlern bis zu viermal mit wachsender Pause, bei „zu viele Anfragen“ nach der von Telegram/Discord genannten Wartezeit. Offene Tabs stimmen sich über die IndexedDB ab, damit jede Meldung nur einmal gesendet wird.</p></div><div><h3>Speicher &amp; Abgleich</h3><p>Sicherung über Telegram (optional): etwa 4 Sekunden nach einer Änderung sendet das Dashboard die Backup-Datei (JSON, wie „Backup herunterladen“ ohne Passwort) per sendDocument an den eigenen Chat und ersetzt sie danach per editMessageMedia in derselben Nachricht; fehlt die Nachricht, wird neu gesendet. Mehrere offene Tabs stimmen sich über die IndexedDB ab. Positionen, Trades und Einstellungen liegen in der IndexedDB des Browsers, gespiegelt im localStorage. Offene Tabs gleichen Änderungen untereinander ab. Der QR-Abgleich komprimiert die Daten, verschlüsselt sie mit AES-256-GCM (Schlüssel per PBKDF2 aus deinem Passwort) und teilt sie bei Bedarf auf mehrere Codes auf.</p></div></div><div class="source-links"><a href="https://developers.binance.com/docs/binance-spot-api-docs/web-socket-streams" target="_blank" rel="noopener noreferrer">Binance Spot-Streams ↗</a><a href="https://developers.binance.com/docs/binance-spot-api-docs/rest-api/market-data-endpoints" target="_blank" rel="noopener noreferrer">Binance Spot ↗</a><a href="https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/Open-Interest-Statistics" target="_blank" rel="noopener noreferrer">Binance Futures ↗</a><a href="https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi" target="_blank" rel="noopener noreferrer">RSI-Referenz ↗</a></div></details>
+      <details class="methodology panel fold cq" id="method-sec" data-tabs="ind"><summary><h2>Berechnung &amp; Datenquellen</h2><span>Methodik ansehen</span></summary><div class="method-grid"><div><h3>Kerzen &amp; Indikatoren</h3><p>Spot-Daten von data-api.binance.vision, dem offiziellen Binance-Endpunkt für öffentliche Marktdaten; nur bei einem Netzwerkfehler ersatzweise von api.binance.com. Bis zu 500 Kerzen im gewählten Intervall. RSI und ATR verwenden auch die letzte, gegebenenfalls noch offene Kerze. RSI startet nach 14 Kursänderungen; ATR mit dem Durchschnitt der ersten 14 True Ranges. Bei der ersten Kerze ist True Range = Hoch − Tief. RSI bei ausschließlich unveränderten Kursen: 50 als neutrale Konvention.</p><p>Pivots: strikte lokale Hochs/Tiefs mit je zwei Nachbarn innerhalb der letzten 50 abgeschlossenen Kerzen. Nächstes Pivot-Tief unter dem Kurs und nächstes Pivot-Hoch darüber; keine Ersatzlevel, falls keines existiert. Abstand = absolute Differenz / aktueller Kurs.</p></div><div><h3>Live-Daten &amp; Alarme</h3><p>Laufende Kerzen und Kurse kommen per WebSocket von data-stream.binance.vision (Spot, ersatzweise stream.binance.com) und fstream.binance.com/market (Futures). Die Verbindung läuft in einem Web Worker, damit Browser sie in Hintergrund-Tabs nicht drosseln. Jede Meldung einer 1-Minuten-Kerze wird mit der vorherigen verglichen: Ist das Hoch gestiegen oder das Tief gefallen, wurde dieser Kurs seit der letzten Meldung gehandelt – so erkennt das Dashboard auch kurze Dochte.</p><p>Fällt der Datenstrom aus, lädt das Dashboard alle 15 s per REST nach, sonst einmal pro Minute zum Abgleich. Nach einer Unterbrechung (z. B. iPad gesperrt) prüft es verpasste Alarme anhand der 1-Minuten-Kerzen.</p></div><div><h3>Signal-Übersicht</h3><p>Pro Zeitraum (1m, 5m, 15m, 1h, 4h, 1d) bis zu 200 Kerzen, ausgewertet nur auf abgeschlossenen Kerzen; neu geladen, sobald eine Kerze des Zeitraums schließt. EMA mit SMA-Start, MACD 12/26/9, RSI 14 nach Wilder. Gibt es kein Spot-Paar, nutzt das Dashboard die Kerzen des USDT-Perpetual-Futures und kennzeichnet das.</p><p>Trend-Verlauf: Für jede Minute der letzten Stunde wird die Bewertung mit den damals abgeschlossenen Kerzen (je Zeitraum wie beim Abruf höchstens 199, im Tageschart 499) neu berechnet. Gesamtscore = Kauf- minus Verkaufssignale.</p></div><div><h3>Mittelwert-Zonen</h3><p>Volumenprofil: sichtbare Kerzen, 40 Preisstufen. Binance-Kerzen enthalten kein Volumen je Preis; das Dashboard verteilt das Volumen jeder Kerze deshalb als Normalverteilung (Glockenkurve) um die Mitte des Kerzenkörpers, begrenzt auf Hoch–Tief. Breite σ = halbe Körperhöhe, mindestens ein Sechstel der Spanne: Dochte bekommen weniger Volumen als der Körper, bei Doji-Kerzen konzentriert es sich um den Schlusskurs. POC = Mitte der Stufe mit dem höchsten Volumen; Value Area = um den POC erweitert, bis 70 % des Volumens enthalten sind. EMA 200 mit SMA-Start; im Tageschart aus abgeschlossenen Tageskerzen, im Chart-Intervall inklusive laufender Kerze. Bollinger: SMA 20 ± 2 Standardabweichungen (Grundgesamtheit). Der Lehrbuchwert von rund 95 % innerhalb der Bänder setzt normalverteilte Kurse voraus; angezeigt wird deshalb der tatsächliche Anteil der letzten 100 abgeschlossenen Kerzen.</p></div><div><h3>Chart-Analyse</h3><p>ZigZag: Umkehrpunkte ab der eingestellten Mindestbewegung (0,25–8 %, Standard 3 %) am Kerzenhoch bzw. -tief. Ein Punkt gilt als bestätigt, sobald sich der Kurs um die Mindestbewegung davon entfernt hat; der letzte, noch laufende Extrempunkt ist vorläufig. Prognose, Divergenzen und Elliott-Wellen nutzen dieselben Punkte.</p><p>Prognose: Median und mittlere Hälfte (25–75 %) der bisherigen Gegenschwünge dieses Charts, ab dem laufenden Extrempunkt. Ein Lernfaktor passt sie nur an, wenn frühere Prognosen dieses Charts damit nachweislich besser lagen. Eine Prozentzahl erscheint nur, wenn ein gelerntes Muster (Trend, Signal-Bewertung, RSI) nach Gebühren einen statistisch gesicherten Vorteil zeigt (mindestens 100 Fälle, strenge Grenze); die Muster lernt die App still aus abgeschlossenen Kerzen und führt sie in der Sicherung mit.</p><p>RSI-Divergenzen: jüngster und vorheriger Umkehrpunkt gleicher Art, der jüngste in den letzten 40 abgeschlossenen Kerzen. Bullisch bei tieferem Kurs-Tief und höherem RSI-Tief (mindestens 2 Punkte), bärisch spiegelbildlich; vorläufig, solange der jüngste Punkt nicht bestätigt ist.</p><p>Elliott-Wellen (schematisch, ab 50 Kerzen): das jüngste Muster aus sechs Umkehrpunkten, das die drei Grundregeln erfüllt – Welle 2 läuft nicht über den Start von Welle 1 zurück, Welle 3 ist nicht die kürzeste der Wellen 1, 3 und 5, Welle 4 reicht nicht in den Bereich von Welle 1 – und dessen Welle 5 über Welle 3 hinausgeht. Danach A, B, C, solange B das Impulsende nicht überschreitet und C über A hinausläuft. Andere Zählungen sind möglich.</p><p>Wellen-Prognose (schematisch, nur bei einer aktuellen Zählung): Richtwerte nach den üblichen Faustregeln – nach Welle 5 folgt A mit 38,2 % Rückgang des Impulses, B erholt 61,8 % von A, C ist so lang wie A; nach C ein neuer Impuls bis 61,8 % zurück Richtung Ende von Welle 5. Die Dauer richtet sich nach den bisherigen Wellen des Charts; solange A oder B laufen, ist die Prognose ungültig, sobald der Kurs über das Ende von Welle 5 hinausläuft.</p><p>Fibonacci-Retracement: letzter abgeschlossener ZigZag-Schwung (zwischen den beiden jüngsten bestätigten Umkehrpunkten), Marken bei 23,6 / 38,2 / 50 / 61,8 / 78,6 % Rücklauf vom Schwungende, dazu leicht hinterlegt die „goldene Zone“ 50–61,8 %. Liegen die Marken sehr dicht, sind nur 23,6 / 50 / 78,6 % bzw. die goldene Zone angeschrieben. Die Leiste unter dem Chart nennt 38,2 / 50 / 61,8 % mit Kurs und Abstand zum aktuellen Kurs; Antippen legt dort einen Alarm an, und der Magnet rastet an den Marken ein. Das ⓘ neben „Fib“ erklärt die fünf Marken mit ihren aktuellen Kursen.</p><p><b>Whale-Alert</b>: große Marktorders im Chart-Kürzel ab der gewählten Schwelle (Standard 100.000 USDT) aus dem Einzel-Trade-Stream von Binance. Teil-Ausführungen einer Order (gleiche Handelszeit, gleiche Seite, Preis läuft in Order-Richtung weiter) zählen als eine Order. Dazu der Anteil der Taker-Käufe am gesamten Umsatz der letzten 60 s. Beschreibung des laufenden Handels, keine Vorhersage – ob große Orders den Kurs weitertreiben, ist nicht geprüft.</p><p><b>Orderbuch-Wände</b> (Reiter in der Whales-Leiste): größte Kauf- und Verkaufs-Wand im Bereich ±2 % aus dem Orderbuch von Binance (1000 Stufen je Seite, alle 10 s, nur bei offenem Reiter). Wand = Preiszone von 0,1 % des Kurses mit mindestens doppelt so viel wie im Schnitt. Limit-Orders können zurückgezogen werden; Momentaufnahme, kein Versprechen.</p><p><b>RSI-Divergenz – Leuchten und Leitfaden:</b> Eine aktuelle Divergenz leuchtet im Chart am jüngsten Umkehrpunkt (grün bullisch, rot bärisch); rechts über dem Chart öffnet ein Knopf die Erklärung mit Kursen, RSI-Werten und Handlungsleitfaden. Neue Divergenzen pulsieren, bis die Erklärung einmal geöffnet wurde. Backtest der Leitfaden-Regeln: Warten auf Bestätigung verbesserte nichts (44–48 % bzw. 21–39 %).</p><p><b>Countdown bis Kerzenschluss:</b> Die gestrichelte Kurslinie in der Farbe der laufenden Kerze trägt am rechten Ende ein Schild mit dem aktuellen Kurs, darunter die Zeit bis zum Schluss der laufenden Kerze (unter 1 h „m:ss“, unter 1 Tag „h:mm:ss“, darüber „3T 05:12“). Am Handy hochkant steht das Schild im Chart und hängt über oder unter der Linie, damit es die laufende Kerze nicht verdeckt. Gerechnet wird mit der Uhr von Binance: Die Abweichung der Geräteuhr ergibt sich aus den Zeitstempeln im Live-Stream.</p><p><b>Hoch und Tief:</b> Das höchste Hoch und das tiefste Tief der sichtbaren Kerzen stehen fett in Grün bzw. Rot an der Dochtspitze, am Computer mit „Hoch“ bzw. „Tief“, am Handy hochkant nur mit dem Kurs. Es gilt der sichtbare Ausschnitt: Zoomen oder Zurückblättern ändert ihn. Bei gleich hohen Spitzen zählt die jüngste.</p><p><b>Wirtschaftskalender:</b> Wochenkalender von Forex Factory (nfs.faireconomy.media). Ein GitHub-Job im Repository (.github/workflows/kalender.yml) holt ihn alle 3 Stunden und legt ihn als calendar.json im Zweig „kalender“ ab; die App liest ihn von raw.githubusercontent.com alle 30 Minuten. Gewarnt wird vor Terminen mit hoher Bedeutung, ab der eingestellten Zeit vorher bis 15 Minuten danach. Keine Aussage über die Richtung der Kursbewegung.</p><p><b>News &amp; Termine zum Coin:</b> Ein GitHub-Job im Repository (.github/workflows/news.yml) holt stündlich die neuesten Ankündigungen von Binance (Kategorien neue Listings, Neuigkeiten, Airdrops, Delistings und Wartung, die 15 neuesten je Kategorie; bapi/composite/v1/public/cms) und je Coin die Google-News-Suche (RSS, deutsch, letzte 3 Tage) für 36 bekannte Coins. Binance-Ankündigungen zählen, wenn sie ein Listing, Delisting, ein entferntes USDT-Paar, einen Futures-Kontrakt, ein Netzwerk-Upgrade, einen Token-Tausch oder die Beobachtungsliste betreffen; der Termin ist die UTC-Zeit am Datum im Titel. Schlagzeilen zählen, wenn sie den Coin nennen und ein Stichwort aus den Gruppen Sicherheit, ETF, Recht, Netzwerk, Börse oder Unternehmen enthalten; nennen sie zwei Coins, muss das Stichwort beim jeweiligen Coin stehen, ab drei gelten sie als Marktbericht. Kursprognosen fallen weg. Meldungen mit einem gemeinsamen markanten Wort innerhalb von 36 Stunden gelten als eine Geschichte. Ablage als news.json im Zweig „news“; die App lädt sie von raw.githubusercontent.com alle 15 Minuten.</p><p><b>Mini-Watchlist (Vorauswahl):</b> Je Coin der Kurs aus den 1m-Kerzen des Live-Streams (Startwerte aus dem Kerzen-Zwischenspeicher bzw. per REST, 260 Kerzen je Coin, nacheinander geladen; ohne Spot-Paar die USDT-Futures). Veränderung = aktueller Kurs zum Kurs vor 60 s (direkt nach dem Laden: Schlusskurs der damals laufenden 1m-Kerze). Verlauf = Schlusskurse der letzten 30 abgeschlossenen 1m-Kerzen und der aktuelle Kurs. 1m-Tendenz = die Regeln der Signal-Übersicht auf den letzten 199 abgeschlossenen 1m-Kerzen (mindestens 60). Fehlt eine Minute (z. B. Handy gesperrt), wird die Reihe neu geladen.</p><p><b>Volatilität nach Uhrzeit:</b> Grundlage sind die letzten 2.000 abgeschlossenen Stundenkerzen des geöffneten Coins (rund 83 Tage, Markt wie im Chart), je Uhrzeit (Ortszeit) und Tagesart (Mo–Fr, Sa–So). Spanne = (Hoch − Tief) / Eröffnung. Säule kräftig: Median der Spanne dieser Stunde; hell: 90-%-Wert aus der Stunde und ihren beiden Nachbarn (dieselbe Tagesart). Letzte 60 Minuten: Hoch bis Tief der 1m-Kerzen (mindestens 45) im Verhältnis zum Kurs zu Beginn; Faktor = Spanne / Median der aktuellen Stunde. Warnung: Spanne über dem 90-, 95- oder 99-%-Wert der vergleichbaren Stunden (Stunde ± 1, mindestens 30 Stunden), „stark erhöht“ ab dem 99-%-Wert; aus erst unter 90 % der Schwelle. Richtung: mittlere Bewegung (Schluss zu Eröffnung) je Stunde mit Student-t-Vertrauensbereich; ▲/▼ nur, wenn der ganze Bereich über der doppelten Gebühr je Seite (Einstellung im Positionsrechner) bzw. unter deren Negativ liegt – Bonferroni über 48 Zellen (24 Stunden × 2 Tagesarten), gemeinsam 95 %, mindestens 20 Stunden je Zelle; sonst keine Zahl. Stundenkerzen alle 6 Stunden ergänzt (nur neue), im Kerzen-Zwischenspeicher für höchstens 8 Coins.</p><p>Backtests mit echten BTC-Stundenkerzen (Coinbase und Bitfinex, 2017–2019): Weder Divergenzen noch die Elliott-Zählung und ihre Prognose-Ziele noch die Fibonacci-Marken zeigten einen verlässlichen Vorteil – alle daher ohne Prozentzahl, als Hinweis und nicht als Handelssignal.</p></div><div><h3>Futures &amp; Szenario</h3><p>Funding und Open Interest stammen vom gleichnamigen USDT-Futures-Paar, unabhängig vom Chartintervall. OI vergleicht den aktuellen Mengenbestand mit dem jüngsten 5-Minuten-Snapshot vor dem Zeitpunkt vor einer Stunde; der tatsächliche Zeitraum wird angezeigt.</p><p>Liquidationsabstand: Long = (1/Hebel − MMR) / (1 − MMR), Short = (1/Hebel − MMR) / (1 + MMR). MMR als Dezimalzahl. Dies ist ein vereinfachtes Modell; 1/Hebel allein beschreibt den vollständigen Margin-Verbrauch ohne Maintenance Margin.</p></div><div><h3>Liquidations-Heatmap</h3><p>Schätzung aus der Open-Interest-Historie (futures/data/openInterestHist, bis 500 Werte, höchstens 30 Tage) und den USDT-Futures-Kerzen desselben Zeitraums: 5 Minuten für die Chart-Intervalle 1m und 5m, sonst das Chart-Intervall selbst (bis 1d). Jeder OI-Anstieg gilt als neu eröffnete Positionen zum VWAP des Zeitraums (Quote- durch Basisvolumen), aufgeteilt nach dem Anteil der Taker-Käufe (10–90 %) auf Longs und Shorts und nach der Hebelverteilung 5×/10×/20×/50×/100× mit 10/25/30/20/15 %. Liquidationspreis wie im Rechner: Long = Einstieg × (1 − 1/Hebel) / (1 − MMR), Short = Einstieg × (1 + 1/Hebel) / (1 + MMR). Ein OI-Rückgang verkleinert alle offenen Zonen im selben Verhältnis; eine Zone endet bei der ersten Kerze, deren Tief (Long) bzw. Hoch (Short) sie erreicht. Farbe und Deckkraft nach dem Anteil am Höchstwert im sichtbaren Ausschnitt (hoch 0,75); schwache Zonen bleiben fast durchsichtig. Cluster: stärkste Summe je Seite in 0,1-%-Stufen, geglättet über ±0,2 %, im Bereich ±10 % um den Kurs. Neu geladen wird nur, wenn ein neuer OI-Wert fällig ist, und dann nur ab dem vorletzten Wert. Die Werte liegen zusätzlich in einer eigenen IndexedDB (höchstens 12 Reihen, nicht im Backup), damit die Heatmap nach dem Neuladen sofort erscheint; „Kerzen-Zwischenspeicher leeren“ leert sie mit.</p></div><div><h3>Kerzen-Zwischenspeicher</h3><p>Abgeschlossene Kerzen werden je Markt, Kürzel und Intervall in einer eigenen IndexedDB gespeichert (höchstens 40 Reihen à 500 Kerzen, nicht im Backup). Beim nächsten Abruf – auch nach dem Neuladen – lädt das Dashboard nur die Kerzen ab der zuletzt gespeicherten nach und vergleicht diese eine Kerze mit Binance; passt sie nicht, wird die Reihe vollständig neu geladen. Fehlt höchstens eine Kerze, zeigt der Chart beim Wechsel sofort den gespeicherten Stand, als vorläufig markiert, bis Nachladen oder Live-Stream frische Daten liefern.</p><p>Liquidationslinie im Chart: bei eingetragenem Liq.-Preis der Börse dieser, sonst bei isolierter Margin das Modell oben mit der Maintenance Margin aus den Modellannahmen; bei Cross ohne Börsenwert keine Linie.</p></div><div><h3>Telegram &amp; Discord</h3><p>Optional. Der Web Worker sendet per HTTPS direkt an api.telegram.org (sendMessage) bzw. an die Discord-Webhook-Adresse; bei Netzfehlern bis zu viermal mit wachsender Pause, bei „zu viele Anfragen“ nach der von Telegram/Discord genannten Wartezeit. Offene Tabs stimmen sich über die IndexedDB ab, damit jede Meldung nur einmal gesendet wird.</p></div><div><h3>Speicher &amp; Abgleich</h3><p>Sicherung über Telegram (optional): etwa 4 Sekunden nach einer Änderung sendet das Dashboard die Backup-Datei (JSON, wie „Backup herunterladen“ ohne Passwort) per sendDocument an den eigenen Chat und ersetzt sie danach per editMessageMedia in derselben Nachricht; fehlt die Nachricht, wird neu gesendet. Mehrere offene Tabs stimmen sich über die IndexedDB ab. Positionen, Trades und Einstellungen liegen in der IndexedDB des Browsers, gespiegelt im localStorage. Offene Tabs gleichen Änderungen untereinander ab. Der QR-Abgleich komprimiert die Daten, verschlüsselt sie mit AES-256-GCM (Schlüssel per PBKDF2 aus deinem Passwort) und teilt sie bei Bedarf auf mehrere Codes auf.</p></div></div><div class="source-links"><a href="https://developers.binance.com/docs/binance-spot-api-docs/web-socket-streams" target="_blank" rel="noopener noreferrer">Binance Spot-Streams ↗</a><a href="https://developers.binance.com/docs/binance-spot-api-docs/rest-api/market-data-endpoints" target="_blank" rel="noopener noreferrer">Binance Spot ↗</a><a href="https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/Open-Interest-Statistics" target="_blank" rel="noopener noreferrer">Binance Futures ↗</a><a href="https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi" target="_blank" rel="noopener noreferrer">RSI-Referenz ↗</a></div></details>
       <footer class="foot" data-tabs="chart calc pos ind"><span>Keine Anlageberatung · keine Order-Ausführung · nur Anzeige</span><details class="tip left"><summary aria-label="Hinweis zur Nutzung"><span>i</span></summary><div class="tip-body">Diese Anzeige ist keine Anlageberatung und keine Garantie für einen sicheren Einstieg. Indikatoren zeigen Wahrscheinlichkeiten, keine Gewissheiten. Das Dashboard liest nur öffentliche Marktdaten und führt keine Orders aus.</div></details><span id="app-version"></span></footer>
     </div>
   </main>
