@@ -1946,12 +1946,17 @@ class BinanceClient {
 
 const $ = id => document.getElementById(id);
 const put = (id, value) => { $(id).textContent = value; };
-const number = (x, decimals = 2) => x === null || !Number.isFinite(x) ? '—' : x.toLocaleString('de-DE', {minimumFractionDigits:decimals, maximumFractionDigits:decimals});
+// Formatierer einmal anlegen und wiederverwenden: toLocaleString mit Optionen baut bei jedem Aufruf einen neuen – der Chart
+// formatiert je Neuzeichnen hunderte Zahlen (kostete Zeit und viel Speicher). Das Ergebnis ist dasselbe (3.21.1).
+const NUM_F = new Map();
+const number = (x, decimals = 2) => { if (x === null || !Number.isFinite(x)) return '—'; let f = NUM_F.get(decimals); if (!f) NUM_F.set(decimals, f = new Intl.NumberFormat('de-DE', {minimumFractionDigits:decimals, maximumFractionDigits:decimals})); return f.format(x); };
 const priceText = x => number(x, x > 0 && x < 1 ? Math.min(10, 3 - Math.floor(Math.log10(x))) : x && x < 100 ? 4 : 2); // unter 1: 4 signifikante Stellen
 const signed = (x, decimals = 2) => Number.isFinite(x) ? `${x > 0 ? '+' : x < 0 ? '−' : ''}${number(Math.abs(x), decimals)}` : '—';
 const euro = x => Number.isFinite(x) ? number(x) + ' €' : '—';
-const utcTime = ms => new Date(ms).toLocaleTimeString('de-DE', {timeZone:'UTC', hour:'2-digit', minute:'2-digit', second:'2-digit'});
-const utcDate = ms => new Date(ms).toLocaleString('de-DE', {timeZone:'UTC', day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+const UTC_T = new Intl.DateTimeFormat('de-DE', {timeZone:'UTC', hour:'2-digit', minute:'2-digit', second:'2-digit'}), UTC_D = new Intl.DateTimeFormat('de-DE', {timeZone:'UTC', day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+const fmtDate = (f, ms) => { const d = new Date(ms); return Number.isNaN(d.getTime()) ? 'Invalid Date' : f.format(d); }; // wie toLocale…String bei ungültigem Datum
+const utcTime = ms => fmtDate(UTC_T, ms);
+const utcDate = ms => fmtDate(UTC_D, ms);
 const value = id => $(id).value === '' ? NaN : Number($(id).value);
 const showNotice = (id, message) => { put(id, message || ''); $(id).hidden = !message; };
 const color = (id, x) => { $(id).classList.toggle('positive', x > 0); $(id).classList.toggle('negative', x < 0); };
@@ -2569,7 +2574,8 @@ const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2
 const localTime = ms => new Date(ms).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 const coin = sym => sym.slice(0, -4);
 const mmrNow = () => { const m = value('mmr'); return Number.isFinite(m) ? m / 100 : NaN; };
-const plain = x => Number.isFinite(x) ? x.toLocaleString('de-DE', { maximumFractionDigits: 10, useGrouping: false }) : '';
+const PLAIN_F = new Intl.NumberFormat('de-DE', { maximumFractionDigits: 10, useGrouping: false });
+const plain = x => Number.isFinite(x) ? PLAIN_F.format(x) : '';
 const qtyText = q => number(q, q < 10 ? 6 : q < 1000 ? 4 : 2).replace(/,?0+$/, '');
 const levText = l => number(l, l % 1 ? 1 : 0);
 function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; }
