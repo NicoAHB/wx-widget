@@ -1439,6 +1439,43 @@ html[data-layout=tablet] #vola{order:1}
 /* 3.21.3: Safari (WebKit) verankert nicht selbst – die App gleicht aus (smooth.js); Safaris overflow-anchor verschob sonst nach
    dem Wischen beim Neuzeichnen des Charts die ganze Seite */
 html[data-anchor=app],html[data-anchor=app] *{overflow-anchor:none}
+/* 3.24.0 Schritt 2: gelernte Muster und normaler Reset in der Datensicherung */
+.zzp-row{align-items:center}.zzp-row>span{flex:1 1 18em;font-size:.8125rem;color:var(--muted);line-height:1.5}.zzp-row>span b{color:var(--text)}
+.reset-note{flex:1 1 18em;font-size:.8125rem;color:var(--muted);line-height:1.5}
+.reset-body p{font-size:.875rem;line-height:1.55;margin:0 0 10px}
+/* 3.24.0 Schritt 3: zwei Telegram-Ziele */
+.tg-targets{border:1px solid var(--line);border-radius:8px;padding:8px 10px 10px;display:grid;gap:10px;min-width:0}
+.tg-targets legend{font-size:.8125rem;font-weight:600;padding:0 4px}
+.tg-target{display:grid;gap:6px;min-width:0}.tg-target p{margin:0;font-size:.875rem;line-height:1.4}.tg-target small{color:var(--muted);display:block}
+.tg-ids{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,8.5em);gap:8px}
+.tg-found{display:grid;gap:6px}.tg-found-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px}.tg-found-name{flex:1 1 14em;font-size:.8125rem;overflow-wrap:anywhere}
+.tg-found-row button{min-height:40px;padding:0 10px;font-size:.8125rem}
+/* 3.24.0 Ablaufplan Schritt 4: Das Live-Ergebnis der offenen Positionen („Offen …“) steht immer vollständig oben rechts – auf
+   dem iPad hoch und quer. Bisher lief die Leiste ab 601 px in einer Zeile, und ausgerechnet das Live-Ergebnis durfte schrumpfen
+   (am iPad hochkant blieb „Offe…“). Jetzt: 601–1179 px wie am Handy in Zeilen – oben Kurs, Alarm-Glocke, Live-Ergebnis;
+   darunter die Signal-Leiste, die Warnungen in einer eigenen Zeile. Ab 1180 px (iPad quer) eine Zeile: Warnungen zwischen
+   Signal-Leiste und Glocke im freien Platz (notfalls mit „…“ gekürzt), Live-Ergebnis und Verbindungspunkt ganz rechts.
+   Das Live-Ergebnis schrumpft nie. */
+.livebar .lb-pos{flex-shrink:0;overflow:visible}
+@media (min-width:1180px){
+  .livebar{flex-wrap:nowrap}
+  .livebar .lb-market{order:1}.livebar .heat{order:2}.livebar .lb-warns{order:3}.livebar .lb-spacer{order:4}.livebar .lb-alarm{order:5}.livebar .lb-pos{order:6}.livebar .lb-conn{order:7}
+  .livebar .lb-warns{display:flex;flex:1 1 0;align-items:center;gap:8px 18px;min-width:0}
+  .livebar .lb-warns:not(:has(>:not([hidden]))){display:none}
+  .livebar:has(.lb-warns>:not([hidden])) .lb-spacer{display:none}
+  .livebar .lb-warns>*{flex:0 1 auto;min-width:0}
+}
+@media (min-width:601px) and (max-width:1179px){
+  .livebar,html[data-layout=tablet] .livebar{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto auto;grid-template-areas:"m sp al pos cn" "heat heat heat heat heat";align-items:center;gap:2px 12px}
+  .livebar .lb-market{grid-area:m;min-width:0}.livebar .lb-spacer{grid-area:sp}.livebar .lb-alarm{grid-area:al}.livebar .lb-conn{grid-area:cn;margin:0}
+  .livebar .lb-pos{grid-area:pos;justify-self:end;min-width:max-content}
+  .livebar .heat{grid-area:heat;justify-self:start}
+  .livebar .lb-warns{grid-column:1/-1;display:flex;align-items:center;gap:6px 12px;min-width:0}
+  .livebar .lb-warns:not(:has(>:not([hidden]))){display:none}
+  .livebar .lb-warns>*{flex:1 1 auto;min-width:0}
+  .livebar .lb-vola{max-width:none;min-height:32px;text-align:left;padding:0 4px}
+  .livebar .lb-news:not([hidden])~.lb-vola{flex:0 0 auto;max-width:40%}
+}
 .chart-panel>.notice{margin:12px 20px 0}
 html{scroll-padding-top:calc(var(--lb-h,56px) + 16px)}
 /* nur als eigene Spalten (ab 1400 px) begrenzt; darunter stehen beide untereinander in der gemeinsamen Seitenspalte und
@@ -2986,7 +3023,7 @@ function renderBackupInfo() {
       : 'Schreibt nach jeder Änderung und beim Verlassen der Seite in eine Datei deiner Wahl (Chrome/Edge am Computer). Die Datei ist unverschlüsselt – an einem sicheren Ort ablegen.');
   }
   $('warn-close').checked = flag(WARN_KEY, !isAppleMobile);
-  renderStorageInfo();
+  renderStorageInfo(); renderZzpInfo();
 }
 function backupStatus(msg) { put('history-status', msg); }
 function backupPayload() { return { app: 'scalp-desk', version: 6, settings: { dayLimit: state.dayLimit, risk: state.risk }, exportedAt: Date.now(), positions: state.positions, history: state.trades, movements: state.movements, alarms: state.alarms, setups: state.setups, watchlist: state.watch, taxRate: state.taxRate, patterns: zzpExport() }; }
@@ -3071,6 +3108,7 @@ async function loadBackupFile(file) {
   if (!file) return;
   if (file.size > 5e6) { backupStatus('Datei ist zu groß für ein Backup.'); return; }
   let data; try { data = JSON.parse(await file.text()); } catch { backupStatus('Datei ist kein gültiges Backup (kein JSON).'); return; }
+  if (data?.kind === 'scalpdesk-patterns') { const n = zzpImport(data); backupStatus(n ? `Musterbestand übernommen: ${n} ${n === 1 ? 'Eintrag' : 'Einträge'} ergänzt (je Muster zählt die Fassung mit mehr Fällen).` : 'Musterbestand: nichts Neues – alle Einträge waren schon enthalten.'); return; }
   if (data?.format === 'aes-gcm-v1') {
     if (!globalThis.crypto?.subtle) { backupStatus('Zum Entschlüsseln muss die Seite über https geöffnet sein.'); return; }
     pendingEncrypted = data; $('decrypt-row').hidden = false; backupStatus(''); $('backup-pass').focus(); return;
@@ -4600,23 +4638,36 @@ $('ladder-presets').addEventListener('click', e => { const b = e.target.closest(
 // 5.1: Ist ein 24/7-Dienst eingerichtet, aktiv und auf dem Stand dieser App, meldet er Alarme, Stop/Ziel und Termine (s247.js).
 // Token und Webhook-URL bleiben lokal (nicht im Backup, nicht im QR-Code) und gehen nur an Telegram bzw. Discord.
 const CHAN_KEY = 'scalpdesk.channels.v1';
-const TG_TOKEN_RE = /^\d{5,15}:[A-Za-z0-9_-]{30,80}$/, TG_CHAT_RE = /^(-?\d{1,20}|@[A-Za-z][A-Za-z0-9_]{4,31})$/;
+const TG_TOKEN_RE = /^\d{5,15}:[A-Za-z0-9_-]{30,80}$/, TG_CHAT_RE = /^(-?\d{1,20}|@[A-Za-z][A-Za-z0-9_]{4,31})$/, TG_THREAD_RE = /^\d{1,10}$/;
 const DC_URL_RE = /^https:\/\/(?:(?:ptb|canary)\.)?discord(?:app)?\.com\/api(?:\/v\d{1,2})?\/webhooks\/\d{5,25}\/[A-Za-z0-9_-]{20,120}(?:\?thread_id=\d{5,25})?$/;
 function loadChannels() {
   const v = store.get(CHAN_KEY), o = v && typeof v === 'object' ? v : {}, str = (x, n) => typeof x === 'string' ? x.trim().slice(0, n) : '';
-  return { tg: { token: str(o.tg?.token, 120), chat: str(o.tg?.chat, 40), on: o.tg?.on !== false }, dc: { url: str(o.dc?.url, 300), on: o.dc?.on !== false },
-    ev: { alarm: o.ev?.alarm !== false, pos: o.ev?.pos !== false, day: o.ev?.day !== false, news: o.ev?.news !== false } };
+  return { tg: { token: str(o.tg?.token, 120), chat: str(o.tg?.chat, 40), thread: str(o.tg?.thread, 10), bchat: str(o.tg?.bchat, 40), bthread: str(o.tg?.bthread, 10), on: o.tg?.on !== false }, dc: { url: str(o.dc?.url, 300), on: o.dc?.on !== false },
+    ev: { alarm: o.ev?.alarm !== false, pos: o.ev?.pos !== false, day: o.ev?.day !== false, news: o.ev?.news !== false, pnl: o.ev?.pnl !== false, pulse: o.ev?.pulse !== false } };
 }
 let chan = loadChannels();
 const chanState = { tg: null, dc: null }, chanClaimed = new Set(), sendWait = new Map(), CHAN_NAME = { tg: 'Telegram', dc: 'Discord' };
 let sendSeq = 0;
-const chanValid = k => k === 'tg' ? TG_TOKEN_RE.test(chan.tg.token) && TG_CHAT_RE.test(chan.tg.chat) : DC_URL_RE.test(chan.dc.url);
+const tgOk = t => TG_TOKEN_RE.test(t.token) && TG_CHAT_RE.test(t.chat) && (!t.thread || TG_THREAD_RE.test(t.thread)) && (!t.bchat || TG_CHAT_RE.test(t.bchat)) && (!t.bthread || TG_THREAD_RE.test(t.bthread));
+const chanValid = k => k === 'tg' ? tgOk(chan.tg) : DC_URL_RE.test(chan.dc.url);
 const chanReady = k => chan[k].on && chanValid(k);
+// Ablaufplan Schritt 3 (3.24.0): Ziel jeder Nachrichtenart zentral an einer Stelle. „Kursalarm“ ist der Chat (optional mit
+// Thema) für alle Alarme und Hinweise, der „Sicherungschat“ bekommt nur die Datensicherung. Unbekannte Arten gehen immer zu
+// „Kursalarm“, nie in den Sicherungschat. Vorher gab es nur eine Chat-ID für alles – News landeten so im Sicherungschat.
+const TG_ROUTE = { alarm: 'alert', pos: 'alert', day: 'alert', news: 'alert', pnl: 'alert', pulse: 'alert', s247: 'alert', test: 'alert', backup: 'backup' };
+function tgTarget(kind) {
+  const t = chan.tg;
+  if (TG_ROUTE[kind] !== 'backup') return { chat: t.chat, thread: t.thread };
+  return t.bchat ? { chat: t.bchat, thread: t.bthread } : { chat: t.chat, thread: t.bthread || t.thread }; // ohne eigenen Chat: wie Kursalarm (ggf. eigenes Thema)
+}
+const tgFields = T => ({ chat_id: T.chat, ...(T.thread ? { message_thread_id: T.thread } : {}) });
+const tgKey = T => `${T.chat}|${T.thread || ''}`;
+const tgSeparate = () => tgKey(tgTarget('backup')) !== tgKey(tgTarget('alarm'));
 function saveChannels() { if (store.set(CHAN_KEY, chan)) broadcastData([CHAN_KEY]); renderChanSummary(); scheduleS247(); }
 // Nachricht über den Worker senden; das Ergebnis kommt als {t:'sent'} zurück (onSent)
-function chanSend(k, text, test = false) {
+function chanSend(k, text, test = false, kind = 'test') {
   const id = ++sendSeq, m = k === 'tg'
-    ? { t: 'send', id, kind: 'telegram', test, url: `https://api.telegram.org/bot${chan.tg.token}/sendMessage`, fields: { chat_id: chan.tg.chat, text: text.slice(0, 4000), link_preview_options: JSON.stringify({ is_disabled: true }) } }
+    ? { t: 'send', id, kind: 'telegram', test, url: `https://api.telegram.org/bot${chan.tg.token}/sendMessage`, fields: { ...tgFields(tgTarget(kind)), text: text.slice(0, 4000), link_preview_options: JSON.stringify({ is_disabled: true }) } }
     : { t: 'send', id, kind: 'discord', test, url: chan.dc.url, fields: { content: text.slice(0, 1900), allowed_mentions: { parse: [] } } };
   return new Promise(resolve => { sendWait.set(id, { k, resolve }); live.post(m); });
 }
@@ -4645,7 +4696,7 @@ async function notifyChannels(type, key, text, ttl) {
   if (!(await store.claim(key, ttl))) return;
   chanClaimed.add(key);
   const msg = `${text}\n${new Date().toLocaleTimeString('de-DE')} Uhr`;
-  for (const k of ks) void chanSend(k, msg);
+  for (const k of ks) void chanSend(k, msg, false, type);
 }
 // Kurs wieder weg von der Marke: nächste Berührung darf erneut melden (nur für selbst gesendete Meldungen)
 function chanRelease(key) { if (chanClaimed.delete(key)) void store.release(key); }
@@ -4659,7 +4710,7 @@ function chanLine(k) {
 }
 function renderChanSummary() {
   const any = chan.tg.token || chan.dc.url;
-  put('chan-summary', any ? `Telegram: ${chanLine('tg')} · Discord: ${chanLine('dc')}${s247Active() ? ' · 24/7-Dienst: aktiv' : ''}` : 'Noch kein Kanal eingerichtet – Anleitung im Fenster.');
+  put('chan-summary', any ? `Telegram: ${chanLine('tg')}${chanValid('tg') ? ` · Sicherung: ${tgSeparate() ? 'eigener Chat' : 'wie Kursalarm'}` : ''} · Discord: ${chanLine('dc')}${s247Active() ? ' · 24/7-Dienst: aktiv' : ''}` : 'Noch kein Kanal eingerichtet – Anleitung im Fenster.');
 }
 function chanMsg(k, ok, text) { const p = $(k + '-status'); p.textContent = text; p.className = 'chan-status' + (ok === true ? ' ok' : ok === false ? ' err' : ''); }
 function renderChanStatus() {
@@ -4671,14 +4722,14 @@ function renderChanStatus() {
   }
 }
 function fillChanForm() {
-  $('tg-token').value = chan.tg.token; $('tg-chat').value = chan.tg.chat; $('tg-on').checked = chan.tg.on;
+  $('tg-token').value = chan.tg.token; $('tg-chat').value = chan.tg.chat; $('tg-thread').value = chan.tg.thread; $('tg-bchat').value = chan.tg.bchat; $('tg-bthread').value = chan.tg.bthread; $('tg-on').checked = chan.tg.on;
   $('dc-url').value = chan.dc.url; $('dc-on').checked = chan.dc.on;
-  $('chan-ev-alarm').checked = chan.ev.alarm; $('chan-ev-pos').checked = chan.ev.pos; $('chan-ev-day').checked = chan.ev.day; $('chan-ev-news').checked = chan.ev.news;
+  $('chan-ev-alarm').checked = chan.ev.alarm; $('chan-ev-pos').checked = chan.ev.pos; $('chan-ev-day').checked = chan.ev.day; $('chan-ev-news').checked = chan.ev.news; $('chan-ev-pnl').checked = chan.ev.pnl; $('chan-ev-pulse').checked = chan.ev.pulse;
   renderChanStatus();
 }
 function readChanForm() {
-  chan = { tg: { token: $('tg-token').value.trim(), chat: $('tg-chat').value.trim(), on: $('tg-on').checked }, dc: { url: $('dc-url').value.trim(), on: $('dc-on').checked },
-    ev: { alarm: $('chan-ev-alarm').checked, pos: $('chan-ev-pos').checked, day: $('chan-ev-day').checked, news: $('chan-ev-news').checked } };
+  chan = { tg: { token: $('tg-token').value.trim(), chat: $('tg-chat').value.trim(), thread: $('tg-thread').value.trim(), bchat: $('tg-bchat').value.trim(), bthread: $('tg-bthread').value.trim(), on: $('tg-on').checked }, dc: { url: $('dc-url').value.trim(), on: $('dc-on').checked },
+    ev: { alarm: $('chan-ev-alarm').checked, pos: $('chan-ev-pos').checked, day: $('chan-ev-day').checked, news: $('chan-ev-news').checked, pnl: $('chan-ev-pnl').checked, pulse: $('chan-ev-pulse').checked } };
   saveChannels(); renderChanStatus();
 }
 function openChan() {
@@ -4700,13 +4751,42 @@ async function tgDetect() {
   chanMsg('tg', null, 'Frage Telegram …'); $('tg-detect').disabled = true;
   try {
     const me = await tgApi(chan.tg.token, 'getMe'), ups = await tgApi(chan.tg.token, 'getUpdates', { limit: 100, timeout: 0 });
-    const chats = (Array.isArray(ups) ? ups : []).map(u => (u.message || u.edited_message || u.my_chat_member || u.channel_post)?.chat).filter(c => c && c.id !== undefined);
-    const c = chats.reverse().find(x => x.type === 'private') || chats[0];
-    if (!c) return chanMsg('tg', false, `Bot @${me.username} gefunden, aber er hat noch keine Nachricht von dir. In Telegram den Bot öffnen, „Start“ tippen oder „Hallo“ schreiben und dann erneut „Chat-ID ermitteln“.`);
-    $('tg-chat').value = String(c.id); readChanForm();
-    chanMsg('tg', true, `Gefunden: ${c.first_name || c.title || c.username || 'Chat'} (ID ${c.id}) über Bot @${me.username}. Jetzt „Test senden“.`);
+    // Chats und Themen, die der Bot gesehen hat (neueste zuerst) – zum Zuordnen: Kursalarm oder Sicherungschat
+    const seen = new Map();
+    for (const u of (Array.isArray(ups) ? ups : []).reverse()) {
+      const m = u.message || u.edited_message || u.channel_post || u.my_chat_member, c = m?.chat; if (!c || c.id === undefined) continue;
+      const thread = m.is_topic_message && m.message_thread_id ? String(m.message_thread_id) : '', key = `${c.id}|${thread}`;
+      if (!seen.has(key)) seen.set(key, { chat: String(c.id), thread, name: c.first_name || c.title || c.username || 'Chat', topic: m.reply_to_message?.forum_topic_created?.name || m.forum_topic_created?.name || '', priv: c.type === 'private' });
+    }
+    const list = [...seen.values()];
+    if (!list.length) return chanMsg('tg', false, `Bot @${me.username} gefunden, aber er hat noch keine Nachricht von dir. In Telegram den Bot öffnen, „Start“ tippen oder „Hallo“ schreiben und dann erneut „Chat-ID ermitteln“.`);
+    if (!chan.tg.chat) { const c = list.find(x => x.priv) || list[0]; $('tg-chat').value = c.chat; $('tg-thread').value = c.thread; readChanForm(); }
+    renderTgFound(list);
+    chanMsg('tg', true, `Bot @${me.username}: ${list.length === 1 ? 'ein Chat' : `${list.length} Chats bzw. Themen`} gefunden – unten „Kursalarm“ und „Sicherungschat“ zuordnen, dann „Test je Nachrichtenart“.`);
   } catch (e) { chanMsg('tg', false, e.message); }
   finally { $('tg-detect').disabled = false; }
+}
+function renderTgFound(list) {
+  const box = $('tg-found'); box.hidden = !list.length;
+  box.replaceChildren(...list.map(x => {
+    const row = el('div', 'tg-found-row'), a = btn('button ghost', '→ Kursalarm'), b = btn('button ghost', '→ Sicherungschat');
+    a.addEventListener('click', () => { $('tg-chat').value = x.chat; $('tg-thread').value = x.thread; readChanForm(); chanMsg('tg', true, `Kursalarm: ${x.name}${x.topic ? ` › ${x.topic}` : ''}.`); });
+    b.addEventListener('click', () => { $('tg-bchat').value = x.chat; $('tg-bthread').value = x.thread; readChanForm(); chanMsg('tg', true, `Sicherungschat: ${x.name}${x.topic ? ` › ${x.topic}` : ''}.`); });
+    row.append(el('span', 'tg-found-name', `${x.name}${x.topic ? ` › ${x.topic}` : ''} · ID ${x.chat}${x.thread ? ` · Thema ${x.thread}` : ''}`), a, b); return row;
+  }));
+}
+// Ablaufplan Schritt 3: je Nachrichtenart eine Testnachricht an ihr Ziel – so lässt sich die Zuordnung in Telegram prüfen
+const TG_TESTS = [['alarm', 'Kurs-Alarm'], ['pos', 'Stop-Loss/Take-Profit'], ['day', 'Tages-Verlustlimit'], ['news', 'News-Alarm (Wirtschaftstermin)'], ['pnl', 'Gewinn-/Verlust-Alarm'], ['pulse', 'BTC-Puls'], ['backup', 'Datensicherung']];
+async function chanTestAll() {
+  readChanForm(); if (!chanValid('tg')) { renderChanStatus(); return; }
+  const b = $('tg-testall'); b.disabled = true; let ok = 0;
+  for (const [kind, name] of TG_TESTS) {
+    const r = await chanSend('tg', `🧪 Test „${name}“ – gehört in: ${TG_ROUTE[kind] === 'backup' ? 'Sicherungschat' : 'Kursalarm'}\n${hhmmss(Date.now())} Uhr`, true, kind);
+    if (r.ok) ok++;
+    await new Promise(res => setTimeout(res, 1100)); // Telegram: etwa eine Nachricht pro Sekunde je Chat
+  }
+  b.disabled = false;
+  chanMsg('tg', ok === TG_TESTS.length, `${ok} von ${TG_TESTS.length} Testnachrichten zugestellt: ${TG_TESTS.length - 1} an Kursalarm, 1 an ${tgSeparate() ? 'den Sicherungschat' : 'Kursalarm (kein eigener Sicherungschat eingetragen)'}.`);
 }
 async function chanTest(k) {
   readChanForm();
@@ -4720,13 +4800,14 @@ $('chan-open').addEventListener('click', openChan);
 $('chan-close').addEventListener('click', () => $('chan-dialog').close());
 $('chan-done').addEventListener('click', () => $('chan-dialog').close());
 $('chan-dialog').addEventListener('change', readChanForm);
-for (const id of ['tg-token', 'tg-chat', 'dc-url']) $(id).addEventListener('blur', readChanForm);
+for (const id of ['tg-token', 'tg-chat', 'tg-thread', 'tg-bchat', 'tg-bthread', 'dc-url']) $(id).addEventListener('blur', readChanForm);
+$('tg-testall').addEventListener('click', () => void chanTestAll());
 $('tg-detect').addEventListener('click', () => void tgDetect());
 $('tg-test').addEventListener('click', () => void chanTest('tg'));
 $('dc-test').addEventListener('click', () => void chanTest('dc'));
 $('chan-clear').addEventListener('click', () => {
   if (!confirm('Bot-Token, Chat-ID und Webhook-URL auf diesem Gerät löschen?')) return;
-  chan = { tg: { token: '', chat: '', on: true }, dc: { url: '', on: true }, ev: chan.ev }; chanState.tg = chanState.dc = null;
+  chan = { tg: { token: '', chat: '', thread: '', bchat: '', bthread: '', on: true }, dc: { url: '', on: true }, ev: chan.ev }; chanState.tg = chanState.dc = null; $('tg-found').hidden = true;
   saveChannels(); fillChanForm();
 });
 renderChanSummary();
@@ -5452,11 +5533,11 @@ const TGB_KEY = 'scalpdesk.tgbackup.v1';
 var tgb = { cfg: loadTgb(), timer: null, busy: false, error: '' };
 function loadTgb() { const v = store.get(TGB_KEY); return { on: !!v?.on, chat: typeof v?.chat === 'string' ? v.chat : '', msg: Number(v?.msg) || 0, at: Number(v?.at) || 0, sig: typeof v?.sig === 'string' ? v.sig : '' }; }
 function saveTgb() { store.set(TGB_KEY, { ...tgb.cfg }); }
-function tgConfigured() { return TG_TOKEN_RE.test(chan.tg.token) && TG_CHAT_RE.test(chan.tg.chat); }
+function tgConfigured() { return chanValid('tg'); }
 function tgbReady() { return !!tgb && tgb.cfg.on && tgConfigured(); }
-// Fingerabdruck der gesicherten Daten – ohne Zeitstempel und ohne die still gelernten Muster (die ändern sich mit jeder
-// Kerze; sie reisen in der Datei mit, lösen aber allein kein neues Senden aus)
-function tgbSig(p) { const j = JSON.stringify({ ...p, exportedAt: 0, patterns: null }); let h = 0; for (let i = 0; i < j.length; i++) h = (h * 31 + j.charCodeAt(i)) | 0; return `${j.length}:${h >>> 0}`; }
+// Fingerabdruck der gesicherten Daten – ohne Zeitstempel. Die still gelernten Muster ändern sich mit jeder Kerze; sie reisen
+// immer in der Datei mit und lösen allein höchstens alle 6 Stunden ein neues Senden aus (3.24.0, zzpStamp)
+function tgbSig(p) { const j = JSON.stringify({ ...p, exportedAt: 0, patterns: zzpStamp() }); let h = 0; for (let i = 0; i < j.length; i++) h = (h * 31 + j.charCodeAt(i)) | 0; return `${j.length}:${h >>> 0}`; }
 function scheduleTgBackup(delay = 4000) { if (!tgbReady()) return; clearTimeout(tgb.timer); tgb.timer = setTimeout(() => { tgb.timer = null; void sendTgBackup(); }, delay); }
 async function tgPost(method, fd, keepalive = false) {
   let r; try { r = await fetch(`https://api.telegram.org/bot${chan.tg.token}/${method}`, { method: 'POST', body: fd, credentials: 'omit', referrerPolicy: 'no-referrer', cache: 'no-store', keepalive }); }
@@ -5470,7 +5551,8 @@ async function tgPost(method, fd, keepalive = false) {
 async function sendTgBackup(force = false, leaving = false) {
   if (!(force ? tgConfigured() : tgbReady()) || tgb.busy) return; // „Jetzt senden“ geht auch ohne die Automatik (3.19.1)
   const payload = backupPayload(), sig = tgbSig(payload);
-  if (!force && sig === tgb.cfg.sig && tgb.cfg.chat === chan.tg.chat) return; // Telegram hat schon diesen Stand
+  const T = tgTarget('backup'), where = tgKey(T); // 3.24.0: eigenes Ziel „Sicherungschat“ (Ablaufplan Schritt 3)
+  if (!force && sig === tgb.cfg.sig && tgb.cfg.chat === where) return; // Telegram hat schon diesen Stand
   const claimed = !leaving && await store.claim('tgbackup', 20000);
   if (!leaving && !claimed) return;   // ein anderer Tab sendet gerade
   tgb.busy = true; tgb.cfg = loadTgb(); renderTgbInfo();
@@ -5478,17 +5560,17 @@ async function sendTgBackup(force = false, leaving = false) {
     const name = 'scalpdesk-sicherung.json', text = JSON.stringify(payload, null, 1), file = new Blob([text], { type: 'application/json' });
     const caption = `💾 Scalp-Desk-Sicherung · ${new Date().toLocaleString('de-DE')}\n${state.positions.length} offene Positionen · ${state.trades.length} Trades${state.movements.length ? ` · ${state.movements.length} Geldbewegungen` : ''}\nWiederherstellen: Datei speichern, im Dashboard „Backup einspielen“.`;
     const keep = leaving && text.length < 60000; // keepalive erlaubt höchstens 64 KB
-    let msg = tgb.cfg.chat === chan.tg.chat ? tgb.cfg.msg : 0, done = false;
+    let msg = tgb.cfg.chat === where ? tgb.cfg.msg : 0, done = false;
     if (msg) {
-      const fd = new FormData(); fd.append('chat_id', chan.tg.chat); fd.append('message_id', String(msg));
+      const fd = new FormData(); fd.append('chat_id', T.chat); fd.append('message_id', String(msg));
       fd.append('media', JSON.stringify({ type: 'document', media: 'attach://file', caption })); fd.append('file', file, name);
       try { await tgPost('editMessageMedia', fd, keep); done = true; } catch (e) { if (e.code !== 400) throw e; }   // Nachricht gelöscht: neu senden
     }
     if (!done) {
-      const fd = new FormData(); fd.append('chat_id', chan.tg.chat); fd.append('caption', caption); fd.append('disable_notification', 'true'); fd.append('document', file, name);
+      const fd = new FormData(); fd.append('chat_id', T.chat); if (T.thread) fd.append('message_thread_id', T.thread); fd.append('caption', caption); fd.append('disable_notification', 'true'); fd.append('document', file, name);
       msg = (await tgPost('sendDocument', fd, keep))?.message_id || 0;
     }
-    tgb.cfg = { ...tgb.cfg, chat: chan.tg.chat, msg, at: Date.now(), sig }; saveTgb(); tgb.error = '';
+    tgb.cfg = { ...tgb.cfg, chat: where, msg, at: Date.now(), sig }; saveTgb(); tgb.error = '';
     markBackedUp('telegram');
   } catch (e) { tgb.error = e?.message || String(e); }
   finally { tgb.busy = false; if (claimed) void store.release('tgbackup'); renderTgbInfo(); }
@@ -5836,7 +5918,7 @@ function zzpLearn(c = state.candles, pct = zzPct()) {
   const cc = c.slice(0, closed);
   store.claim('zzp|' + series, 3e4).then(ok => { // ein Merker je Chart, 30 s gültig: zum selben Kerzenschluss lernt nur ein Tab
     if (!ok) return; zzpMem = null;
-    const P = zzpData(); if (zzpApply(P, zzMoments(cc, pct), series, prefix)) { store.set(ZZP_KEY, P); broadcastData([ZZP_KEY]); }
+    const P = zzpData(); if (zzpApply(P, zzMoments(cc, pct), series, prefix)) zzpSave(P);
   });
 }
 // Urteil für die aktuelle Prognose: Merkmale der letzten abgeschlossenen Kerze, Statistik des Musters, Gewinnschwelle
@@ -5856,12 +5938,42 @@ function zzpVerdict(up, pct = zzPct(), c = state.candles) {
 }
 // Sicherung: still mitführen; beim Einspielen je Muster die Fassung mit mehr Fällen, je Reihe den späteren Stand behalten
 function zzpExport() { return zzpData(); }
-function zzpImport(x) {
-  if (x?.v !== 1 || !x.s || typeof x.s !== 'object' || !x.r || typeof x.r !== 'object') return;
-  const P = zzpData(); let changed = false;
-  for (const [k, v] of Object.entries(x.s)) if (Array.isArray(v) && v[0] >= 0 && v[1] >= 0 && v[1] <= v[0] && Number.isInteger(v[0]) && Number.isInteger(v[1]) && !(P.s[k]?.[0] >= v[0])) { P.s[k] = [v[0], v[1]]; changed = true; }
-  for (const [k, v] of Object.entries(x.r)) if (Array.isArray(v) && Number.isFinite(v[0]) && !(P.r[k]?.[0] >= v[0])) { P.r[k] = [v[0], Number(v[1]) || 0, typeof v[2] === 'string' ? v[2] : '']; changed = true; }
-  if (changed) { store.set(ZZP_KEY, P); broadcastData([ZZP_KEY]); }
+// base: Version eines eingespielten Startbestands (Ablaufplan Schritt 2); Rückgabe: Zahl der übernommenen Einträge
+function zzpImport(x, base = '') {
+  if (x?.v !== 1 || !x.s || typeof x.s !== 'object' || !x.r || typeof x.r !== 'object') return 0;
+  const P = zzpData(); let changed = 0;
+  for (const [k, v] of Object.entries(x.s)) if (Array.isArray(v) && v[0] >= 0 && v[1] >= 0 && v[1] <= v[0] && Number.isInteger(v[0]) && Number.isInteger(v[1]) && !(P.s[k]?.[0] >= v[0])) { P.s[k] = [v[0], v[1]]; changed++; }
+  for (const [k, v] of Object.entries(x.r)) if (Array.isArray(v) && Number.isFinite(v[0]) && !(P.r[k]?.[0] >= v[0])) { P.r[k] = [v[0], Number(v[1]) || 0, typeof v[2] === 'string' ? v[2] : '']; changed++; }
+  const n = changed; if (base && P.base !== base) { P.base = base; changed++; }
+  if (changed) zzpSave(P);
+  return n;
+}
+// Ablaufplan Schritt 2 (3.24.0): Musterbestand mit Versionsstand – rev zählt die Änderungen, at ist die letzte, base der
+// eingespielte Startbestand. Nach jeder Änderung sofort dauerhaft gespeichert (IndexedDB mit Kopie im localStorage), an offene
+// Tabs verteilt und – falls eingeschaltet – spätestens alle 6 Stunden mit der Telegram-Sicherung verschickt.
+function zzpSave(P) {
+  P.rev = (Number(P.rev) || 0) + 1; P.at = Date.now();
+  store.set(ZZP_KEY, P); broadcastData([ZZP_KEY]);
+  if (tgb && !tgb.timer) scheduleTgBackup(30000);
+  renderZzpInfo();
+}
+// Für den Fingerabdruck der Telegram-Sicherung: ändert sich höchstens alle 6 Stunden (die Muster ändern sich mit jeder Kerze)
+function zzpStamp() { const at = Number(zzpData().at) || 0; return at ? Math.floor(at / 216e5) : 0; }
+function zzpInfo() { const P = zzpData(), s = Object.values(P.s); return { patterns: s.length, cases: s.reduce((a, v) => a + (v[0] || 0), 0), base: P.base || '', at: Number(P.at) || 0, rev: Number(P.rev) || 0 }; }
+// Nur die Muster (ohne Positionen, Trades, Zugänge): Datei für einen neuen Startbestand
+function zzpExportFile() {
+  const P = zzpData(), d = new Date().toISOString().slice(0, 10);
+  return { name: `muster-${d}.json`, text: JSON.stringify({ kind: 'scalpdesk-patterns', v: 1, version: `${d}.${Number(P.rev) || 0}`, created: d, source: 'Export aus Scalp Desk: gelernte Chartmuster, ohne persönliche Daten', base: P.base || '', s: P.s, r: P.r }) };
+}
+// Startbestand aus dem GitHub-Projekt (data/muster-start.json): beim Programmstart einmal je Version wie eine Sicherung
+// eingespielt – je Muster die Fassung mit mehr Fällen, je Reihe der spätere Stand, nichts doppelt. Neue Nutzer, ein neues Gerät
+// oder ein geleerter Browser-Speicher haben so sofort den Bestand; eigenes Lernen zählt danach weiter.
+async function zzpStart() {
+  try {
+    const r = await fetch('data/muster-start.json', { cache: 'no-cache' }); if (!r.ok) return;
+    const x = await r.json(); if (x?.kind !== 'scalpdesk-patterns' || x.v !== 1 || !x.version) return;
+    if (zzpData().base !== String(x.version)) zzpImport(x, String(x.version));
+  } catch { /* ohne Netz: beim nächsten Start */ }
 }
 // Platz rechts im Chart für die Prognose – nur am aktuellen Rand (nicht beim Zurückblättern)
 // narrow: Handy hochkant – rechts liegen die Kurs-Schildchen über dem Chart, dafür etwa ein Fünftel mehr Platz
@@ -5913,6 +6025,36 @@ function drawZigzagForecast(g, { offset, x, y, top, bottom, left, laneX = Infini
 }
 $('zz-fc').setAttribute('aria-pressed', String(!!zzCfg().fc));
 $('zz-fc').addEventListener('click', () => { const on = !zzCfg().fc; store.set(ZZ_KEY, { ...zzCfg(), fc: on }); $('zz-fc').setAttribute('aria-pressed', String(on)); renderMarket(); });
+// ---------- Ablaufplan Schritt 2 (3.24.0): gelernte Chartmuster dauerhaft, Startbestand, normaler Reset ----------
+// Gelernt werden nur die Treffer der ZigZag-Prognose je Muster (zigzag.js, Schlüssel scalpdesk.zzpatterns.v1); die Muster-
+// Merkmale selbst stehen fest im Programm. Der Bestand liegt im Browser-Speicher des Geräts (IndexedDB mit Kopie im
+// localStorage), wird nach jeder Änderung sofort gespeichert (mit Versionsstand rev/at), reist still in jeder Sicherung mit und
+// kommt über den Startbestand im GitHub-Projekt (data/muster-start.json) auf neue Geräte und nach einem geleerten Speicher.
+// „Handelsdaten zurücksetzen“ ist der normale Reset: Er löscht Positionen, Trades, Geldbewegungen und Alarme, nie die Muster.
+function renderZzpInfo() {
+  if (!$('zzp-info')) return;
+  const i = zzpInfo(), when = i.at ? new Date(i.at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+  put('zzp-info', i.cases ? `${number(i.cases, 0)} Fälle in ${i.patterns} Mustern${i.base ? ` · Startbestand Version ${i.base} eingespielt` : ''}${when ? ` · zuletzt geändert ${when}` : ''}` : 'noch keine – sie entstehen beim Beobachten des Charts (ZigZag-Prognose).');
+}
+// Nur die Muster, ohne persönliche Daten: Grundlage für einen neuen Startbestand im GitHub-Projekt
+$('zzp-export').addEventListener('click', () => { const f = zzpExportFile(); download(f.name, f.text, 'application/json'); backupStatus(`Musterbestand gespeichert: ${f.name}${isAppleMobile ? ' (in der Dateien-App unter „Downloads“)' : ''} – enthält nur die gelernten Muster, keine persönlichen Daten.`); });
+// ---- Normaler Reset ----
+function openReset() { if (!$('reset-dialog').open) $('reset-dialog').showModal(); }
+function resetTradingData() {
+  // 1. Sicherung davor als Datei (unverschlüsselt): am iPad in der Dateien-App unter „Downloads“
+  const d = new Date().toISOString().slice(0, 10), name = `backup-vor-zuruecksetzen-${d}.json`;
+  download(name, JSON.stringify(backupPayload(), null, 1), 'application/json'); markBackedUp('download');
+  // 2. Handelsdaten leeren; Muster, Einstellungen, Vorauswahl und Zugänge bleiben
+  state.positions = []; state.trades = []; state.movements = []; state.alarms = [];
+  // 3. Telegram: die nächste Sicherung kommt als neue Nachricht, die bisherige bleibt als Stand vor dem Zurücksetzen im Chat
+  if (tgb) { tgb.cfg = { ...tgb.cfg, msg: 0, sig: '' }; saveTgb(); }
+  posStructure = ''; histStructure = ''; alarmKey = '';
+  persist(); render();
+  backupStatus(`Handelsdaten zurückgesetzt. Die Sicherung davor: „${name}“${isAppleMobile ? ' in der Dateien-App unter „Downloads“' : ' bei den Downloads'}. Gelernte Muster, Einstellungen und Zugänge sind erhalten.`);
+}
+$('reset-open').addEventListener('click', openReset);
+for (const id of ['reset-close', 'reset-cancel']) $(id).addEventListener('click', () => $('reset-dialog').close());
+$('reset-go').addEventListener('click', () => { $('reset-dialog').close(); resetTradingData(); });
 // ---------- Schritt 2.2: RSI-Divergenz-Scanner ----------
 // Hintergrund-Analyse der letzten 40 abgeschlossenen Kerzen (die laufende Kerze bleibt außen vor). Je Art – Tief und Hoch –
 // wird der jüngste ZigZag-Umkehrpunkt (auch der noch laufende Extrempunkt) mit dem vorherigen bestätigten Umkehrpunkt
@@ -7290,7 +7432,7 @@ async function sendS247(force = false, leaving = false) {
       try { await tgPost('editMessageMedia', fd, keep); done = true; } catch (e) { if (e.code !== 400) throw e; } // Nachricht gelöscht: neu senden
     }
     if (!done) {
-      const fd = new FormData(); fd.append('chat_id', chan.tg.chat); fd.append('caption', cap); fd.append('disable_notification', 'true'); fd.append('document', file, S247_FILE);
+      const fd = new FormData(); fd.append('chat_id', chan.tg.chat); if (chan.tg.thread) fd.append('message_thread_id', chan.tg.thread); fd.append('caption', cap); fd.append('disable_notification', 'true'); fd.append('document', file, S247_FILE);
       msg = (await tgPost('sendDocument', fd, keep))?.message_id || 0;
       const pin = new FormData(); pin.append('chat_id', chan.tg.chat); pin.append('message_id', String(msg)); pin.append('disable_notification', 'true');
       try { await tgPost('pinChatMessage', pin, keep); }
@@ -7578,7 +7720,7 @@ async function recCopy() {
   $('rec-badge').addEventListener('click', () => void recCopy());
   if (store.get(REC_KEY)?.on) recStart(); else recRender();
 })();
-render();startLive();void showCachedChart();void refresh();void initAutoBackup();void requestWake();
+render();startLive();void showCachedChart();void refresh();void initAutoBackup();void requestWake();void zzpStart();
 </script>
 </head>
 <body>
@@ -7793,6 +7935,8 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
             <div class="data-row" id="decrypt-row" hidden><span id="decrypt-note">Diese Datei ist verschlüsselt. Passwort oben eingeben, dann:</span><button type="button" class="button primary-lite" id="backup-decrypt">Entschlüsseln &amp; einspielen</button><button type="button" class="button ghost" id="decrypt-cancel">Abbrechen</button></div>
             <div class="data-row data-sep"><button type="button" class="button ghost" id="qr-export">▦ QR-Code anzeigen</button><button type="button" class="button ghost" id="qr-scan">📷 QR-Code scannen</button><span style="color:var(--muted)">Abgleich zwischen Geräten: am Computer anzeigen, mit dem iPad scannen – verschlüsselt, ohne Server.</span></div>
             <div class="data-row"><label class="check"><input type="checkbox" id="warn-close"> Beim Schließen warnen, solange Änderungen nicht gesichert sind</label></div>
+            <div class="data-row data-sep zzp-row"><span><b>🧠 Gelernte Chartmuster:</b> <span id="zzp-info">…</span></span><details class="tip left"><summary aria-label="Wie bleiben die Muster erhalten?"><span>i</span></summary><div class="tip-body"><p>Die ZigZag-Prognose lernt still mit, wie oft sich ein Muster bestätigt hat. Der Bestand wird nach jeder Änderung sofort auf diesem Gerät gespeichert und reist in jeder Sicherung mit (Datei, Teilen, Telegram).</p><p><b>Startbestand:</b> Aus dem GitHub-Projekt (<code>data/muster-start.json</code>) lädt die App beim Start einen Musterbestand mit Versionsnummer. Neue Nutzer, ein neues Gerät oder ein geleerter Browser-Speicher haben ihn sofort; eigenes Lernen zählt danach weiter, nichts wird doppelt gezählt.</p><p><b>Musterbestand exportieren</b> speichert nur die Muster, ohne Positionen, Trades oder Zugänge – so lässt sich dein Wissen als neuer Startbestand ins GitHub-Projekt übernehmen.</p></div></details><button type="button" class="button ghost" id="zzp-export">Musterbestand exportieren</button></div>
+            <div class="data-row data-sep"><button type="button" class="button ghost danger-btn" id="reset-open">Handelsdaten zurücksetzen …</button><span class="reset-note">Löscht Positionen, Trades, Geldbewegungen und Alarme – vorher wird gesichert. Gelernte Muster, Einstellungen und Zugänge bleiben.</span></div>
             <small id="backup-info"></small>
           </div>
           <form id="pos-form" class="pos-form" hidden novalidate>
@@ -7910,11 +8054,18 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
             <li>BotFather antwortet mit einem <b>Token</b> wie <code>123456789:AAH…</code>. Diesen kopieren und unten einfügen.</li>
             <li>Deinen neuen Bot über den Link in der Antwort öffnen und <b>Start</b> tippen bzw. „Hallo“ schreiben – erst dann darf er dir schreiben.</li>
             <li>Hier <b>Chat-ID ermitteln</b> tippen, dann <b>Test senden</b>. Kommt die Testnachricht an, ist alles fertig.</li>
+            <li>Datensicherung getrennt halten (empfohlen): eine eigene Gruppe „Sicherung“ mit dem Bot anlegen oder in einer Gruppe mit Themen ein Thema „Sicherung“, dort eine Nachricht schreiben, <b>Chat-ID ermitteln</b> und beim gefundenen Chat <b>→ Sicherungschat</b> tippen. <b>Test je Nachrichtenart</b> zeigt, was wohin geht.</li>
           </ol>
         </details>
         <label>Bot-Token<span class="input-wrap"><input id="tg-token" type="password" autocomplete="off" spellcheck="false" placeholder="123456789:AA…"></span></label>
-        <label>Chat-ID<span class="input-wrap"><input id="tg-chat" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="wird ermittelt"></span></label>
-        <div class="row"><button type="button" class="button ghost" id="tg-detect">Chat-ID ermitteln</button><button type="button" class="button primary-lite" id="tg-test">Test senden</button><label class="switch"><input type="checkbox" id="tg-on"> Aktiv</label></div>
+        <fieldset class="tg-targets"><legend>Wohin gehen die Nachrichten?</legend>
+          <div class="tg-target"><p><b>🔔 Kursalarm</b> <small>Kurs-Alarme, Stop/Ziel, Tages-Verlustlimit, News-Termine, Gewinn/Verlust, BTC-Puls</small></p>
+            <div class="tg-ids"><label>Chat-ID<span class="input-wrap"><input id="tg-chat" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="wird ermittelt"></span></label><label>Thema <small>(optional)</small><span class="input-wrap"><input id="tg-thread" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="–"></span></label></div></div>
+          <div class="tg-target"><p><b>💾 Sicherungschat</b> <small>nur die Datensicherung · leer = wie Kursalarm</small></p>
+            <div class="tg-ids"><label>Chat-ID<span class="input-wrap"><input id="tg-bchat" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="wie Kursalarm"></span></label><label>Thema <small>(optional)</small><span class="input-wrap"><input id="tg-bthread" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="–"></span></label></div></div>
+        </fieldset>
+        <div class="tg-found" id="tg-found" hidden></div>
+        <div class="row"><button type="button" class="button ghost" id="tg-detect">Chat-ID ermitteln</button><button type="button" class="button primary-lite" id="tg-test">Test senden</button><button type="button" class="button ghost" id="tg-testall">Test je Nachrichtenart</button><label class="switch"><input type="checkbox" id="tg-on"> Aktiv</label></div>
         <p class="chan-status" id="tg-status" role="status"></p>
       </section>
       <section class="chan" aria-labelledby="dc-title">
@@ -7936,10 +8087,21 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
         <label class="switch"><input type="checkbox" id="chan-ev-pos" checked> Stop-Loss und Take-Profit meiner Positionen</label>
         <label class="switch"><input type="checkbox" id="chan-ev-day" checked> Tages-Verlustlimit erreicht</label>
         <label class="switch"><input type="checkbox" id="chan-ev-news" checked> Warnung vor wichtigen Wirtschaftsterminen</label>
+        <label class="switch"><input type="checkbox" id="chan-ev-pnl" checked> Gewinn- und Verlust-Alarm (Live-Ergebnis oben rechts)</label>
+        <label class="switch"><input type="checkbox" id="chan-ev-pulse" checked> BTC-Puls: ungewöhnlich starke Bitcoin-Bewegung</label>
       </fieldset>
       <section class="chan" aria-labelledby="s247-title" id="s247"><div class="head-line"><h3 id="s247-title">🌙 24/7-Dienst</h3><details class="tip left"><summary aria-label="Wie funktioniert der 24/7-Dienst?"><span>i</span></summary><div class="tip-body"><p>Ein kleines Programm auf einem eigenen Server, der rund um die Uhr läuft (z. B. kostenlos bei Oracle Cloud), prüft die Kurse und meldet Kurs-Alarme, Stop-Loss/Take-Profit und die Warnung vor wichtigen Terminen per Telegram – auch wenn die App überall geschlossen ist.</p><p><b>Übergabe:</b> Die App legt die aktiven Alarme und die Stop-/Ziel-Marken deiner Positionen als Datei in deinen Telegram-Chat, heftet sie oben an und ersetzt sie nach jeder Änderung. Mengen, Einstiege, Trades und Notizen zu Positionen bleiben in der App. Der Dienst liest die Datei mit demselben Bot und bestätigt in der angehefteten Nachricht („Dienst: aktiv“).</p><p><b>Nicht doppelt:</b> Solange der Dienst aktiv ist und den aktuellen Stand hat, sendet diese App Kurs-Alarme, Stop/Ziel und Termin-Warnungen nicht zusätzlich. Meldet er sich 20 Minuten nicht oder meldet er eine Störung, sendet die App wieder selbst. Das Tages-Verlustlimit meldet immer die App.</p><p><b>Token:</b> Den Bot-Token gibst du am Server selbst ein – die App schickt ihn weiterhin nur an Telegram.</p><p>Nur auf einem Gerät einschalten – dem, auf dem du Alarme und Positionen pflegst.</p></div></details></div><p class="chan-sub">Meldungen auch bei geschlossener App – über ein kleines Programm auf einem eigenen Server, der rund um die Uhr läuft.</p><details class="chan-guide" id="s247-guide"><summary>Anleitung: kostenlos bei Oracle Cloud einrichten (ca. 20 Minuten)</summary><ol><li><b>Konto:</b> Auf <a href="https://www.oracle.com/cloud/free/" target="_blank" rel="noopener noreferrer">oracle.com/cloud/free</a> „Start for free“. Als Heimatregion <b>Germany Central (Frankfurt)</b> wählen – sie lässt sich später nicht ändern, und von US-Servern aus sperrt Binance den Zugriff. Die Kreditkarte dient nur der Prüfung; „Always Free“ kostet nichts.</li><li><b>Server anlegen:</b> In der Konsole „Create a VM instance“. Bei <i>Image</i> auf <b>Ubuntu</b> wechseln, bei <i>Shape</i> eine mit „Always Free-eligible“ lassen (z. B. VM.Standard.E2.1.Micro). Bei <i>Add SSH keys</i> „Generate a key pair for me“ und <b>Save private key</b> – diese Datei ist der Schlüssel zum Server, gut aufbewahren. Dann <b>Create</b>. Nach 1–2 Minuten steht der Server auf „Running“; die <b>Public IP address</b> notieren.</li><li><b>Verbinden:</b> Oben rechts in der Konsole die <b>Cloud Shell</b> öffnen (Symbol &gt;_). Im Menü des Cloud-Shell-Fensters <b>Upload</b> wählen und den privaten Schlüssel hochladen. Dann eingeben (IP ersetzen) und die Frage „Are you sure …“ mit <b>yes</b> beantworten:<span class="s247-cmd"><code>chmod 600 ssh-key-*.key &amp;&amp; ssh -i ssh-key-*.key ubuntu@IP</code><button type="button" class="button ghost" data-copy="chmod 600 ssh-key-*.key &amp;&amp; ssh -i ssh-key-*.key ubuntu@IP">Kopieren</button></span></li><li><b>Dienst installieren:</b> Im Server-Fenster eingeben:<span class="s247-cmd"><code>curl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/install.sh | sudo bash</code><button type="button" class="button ghost" data-copy="curl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/install.sh | sudo bash">Kopieren</button></span>Es fragt nach <b>Bot-Token</b> und <b>Chat-ID</b> (oben in diesem Fenster; den Token zeigt auch @BotFather mit /mybots → API Token). Am Ende kommt eine Testnachricht in Telegram.</li><li><b>Übergeben:</b> Unten „An den 24/7-Dienst übergeben“ einschalten. Nach spätestens einer Minute steht hier „✓ Aktiv“, und im Telegram-Chat ist oben „📌 Scalp Desk · 24/7-Dienst“ angeheftet – diese Nachricht nicht löschen.</li></ol><ul class="s247-tips"><li><b>Aktualisieren:</b> den Befehl aus Schritt 4 erneut ausführen; die Einstellungen bleiben.</li><li><b>Andere Rechner:</b> läuft auf jedem Linux-Rechner mit Internet, z. B. einem Raspberry Pi – derselbe Befehl.</li><li><b>Oracle:</b> Always-Free-Server, die 7 Tage kaum ausgelastet sind, kann Oracle anhalten – und der Dienst braucht sehr wenig. Abhilfe laut Oracle: das Konto auf „Pay As You Go“ umstellen; es bleibt kostenlos, solange nur Always-Free-Angebote genutzt werden. Sonst nach einer E-Mail von Oracle den Server in der Konsole wieder starten.</li><li><b>Am Server:</b> Status <code>systemctl status scalpdesk-247</code>, Protokoll <code>journalctl -u scalpdesk-247 -f</code>, entfernen <code>sudo bash /opt/scalpdesk-247/install.sh --remove</code></li></ul></details><label class="switch"><input type="checkbox" id="s247-on"> An den 24/7-Dienst übergeben (Alarme, Stop/Ziel, Termin-Warnungen)</label><div class="row"><button type="button" class="button ghost" id="s247-check">Status prüfen</button></div><p class="chan-status" id="s247-status" role="status"></p></section>
       <p class="chan-note">🔒 Token und Webhook-URL bleiben nur in diesem Browser. Sie stehen in keinem Backup und keinem QR-Code und werden nur an Telegram bzw. Discord geschickt. Auf jedem Gerät, das senden soll, einzeln einrichten.</p>
       <div class="sheet-actions"><button type="button" class="button ghost" id="chan-clear">Zugangsdaten löschen</button><button type="button" class="button primary" id="chan-done">Fertig</button></div>
+    </div>
+  </dialog>
+  <dialog class="sheet" id="reset-dialog" aria-labelledby="reset-title">
+    <div class="sheet-head"><h2 id="reset-title">Handelsdaten zurücksetzen</h2><button type="button" class="button ghost icon" id="reset-close" aria-label="Schließen">×</button></div>
+    <div class="sheet-body reset-body">
+      <p><b>Gelöscht werden:</b> offene Positionen, Trades, Geldbewegungen, Kurs-Alarme sowie Gewinn- und Verlust-Alarme.</p>
+      <p><b>Erhalten bleiben:</b> die gelernten Chartmuster, alle Einstellungen (Risiko, Tages-Verlustlimit, Steuersatz, Setups, Vorauswahl, Darstellung) und die Telegram- und Discord-Zugänge.</p>
+      <p>Vorher speichert die App eine Sicherungsdatei (am iPad in der Dateien-App unter „Downloads“). Mit eingeschalteter Telegram-Sicherung bleibt die bisherige Sicherung im Chat stehen; die nächste kommt als neue Nachricht.</p>
+      <div class="sheet-actions"><button type="button" class="button ghost" id="reset-cancel">Abbrechen</button><button type="button" class="button danger-btn" id="reset-go">Sichern und zurücksetzen</button></div>
     </div>
   </dialog>
   <dialog class="sheet" id="qr-dialog" aria-labelledby="qr-title">
