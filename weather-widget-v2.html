@@ -1365,6 +1365,9 @@ html[data-layout=tablet] #cnews{order:1}
 /* 3.21.2: Sprung-Rekorder (Fehlersuche) – feste Anzeige unten links, verschiebt nichts */
 .rec-badge{position:fixed;left:8px;bottom:calc(env(safe-area-inset-bottom,0px) + 78px);z-index:60;max-width:calc(100vw - 16px);min-height:32px;padding:6px 12px;border:1px solid var(--border);border-radius:999px;background:var(--surface);color:var(--text);font-size:.75rem;font-weight:600;line-height:1.2;box-shadow:var(--shadow);opacity:.94;text-align:left}
 #rec-text{width:100%;font-family:ui-monospace,Menlo,monospace;font-size:.7rem;line-height:1.3}
+/* 3.21.3: Safari (WebKit) verankert nicht selbst – die App gleicht aus (smooth.js); Safaris overflow-anchor verschob sonst nach
+   dem Wischen beim Neuzeichnen des Charts die ganze Seite */
+html[data-anchor=app],html[data-anchor=app] *{overflow-anchor:none}
 .chart-panel>.notice{margin:12px 20px 0}
 html{scroll-padding-top:calc(var(--lb-h,56px) + 16px)}
 /* nur als eigene Spalten (ab 1400 px) begrenzt; darunter stehen beide untereinander in der gemeinsamen Seitenspalte und
@@ -1978,7 +1981,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Alle Werte liegen zusätzlich im Arbeitsspeicher und sind dadurch synchron lesbar. Schreiben geht sofort in den
 // localStorage und gebündelt in die IndexedDB; beim Start gewinnt die zuletzt vollständig geschriebene Kopie.
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
-const APP_VERSION = '3.21.2', docEl = document.documentElement;
+const APP_VERSION = '3.21.3', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -4910,7 +4913,13 @@ addEventListener('pagehide', () => void kcFlush());
 //    wird die Scrollposition um genau diesen Betrag ausgeglichen – der sichtbare Inhalt bleibt stehen.
 // 3. Der Chart wird nur neu gezeichnet, wenn er im Bild ist.
 const smooth = { touching: false, touchAt: 0, scrollAt: 0, timer: null, jobs: new Set() };
-const nativeAnchor = !!(globalThis.CSS && CSS.supports && CSS.supports('overflow-anchor', 'auto'));
+// Safari (WebKit: iPhone, iPad, Mac – auf iPhone und iPad auch Chrome & Co.) verankert seit Safari 26/27 selbst
+// (overflow-anchor). Nach dem Wischen verschob das beim Neuzeichnen des Charts die ganze Seite um 12–92 px, obwohl sich keine
+// Höhe änderte (Sprung-Rekorder auf dem iPhone, Safari 27: 16 von 35 Mal). Dort deshalb aus: Die App gleicht wie bei älterem
+// Safari selbst aus – und nur, wenn sich oberhalb wirklich eine Höhe ändert (3.21.3). Chrome, Edge, Firefox: unverändert.
+const safariAnchorOff = navigator.vendor === 'Apple Computer, Inc.';
+if (safariAnchorOff) docEl.dataset.anchor = 'app';
+const nativeAnchor = !safariAnchorOff && !!(globalThis.CSS && CSS.supports && CSS.supports('overflow-anchor', 'auto'));
 // Ein ruhender Finger zählt nach 4 s nicht mehr: Wird das berührte Element ersetzt, erreicht „touchend“ die Seite nicht –
 // ohne diese Grenze blieben die Live-Werte dann stehen. Ein Antippen ohne Scrollen verzögert nichts.
 const userScrolling = () => (smooth.touching && Date.now() - smooth.touchAt < 4000) || Date.now() - smooth.scrollAt < 250;
@@ -4944,17 +4953,17 @@ function anchorEl() {
   return best;
 }
 function withAnchor(fn) {
-  const rb = rec?.on ? recHeights() : null; // 3.21.2: Sprung-Rekorder (Fehlersuche)
-  if (nativeAnchor) { const r = fn(); steadyHeights(); if (rb) recAnchor(rb, null, 0, 'Ausgleich durch den Browser'); return r; }
+  const rb = rec?.on ? recHeights() : null, y0 = scrollY; // 3.21.2: Sprung-Rekorder (Fehlersuche)
+  if (nativeAnchor) { const r = fn(); steadyHeights(); if (rb) recAnchor(rb, null, 0, 'Ausgleich durch den Browser', y0, 0); return r; }
   // Bezug: das Element am oberen Rand und seine Eltern. Ersetzt die Aktualisierung das Element selbst (z. B. eine Zeile im
   // Kalender oder in den Coin-News), gleicht der nächste noch vorhandene Elternteil aus (3.21.1)
   const chain = [];
   for (let e = anchorEl(); e && e !== document.body && chain.length < 5; e = e.parentElement) chain.push([e, e.getBoundingClientRect().top]);
   const r = fn(); steadyHeights();
   const hit = chain.find(([e]) => e.isConnected);
-  let d = 0;
-  if (hit) { d = hit[0].getBoundingClientRect().top - hit[1]; if (Math.abs(d) >= 1) scrollBy(0, d); }
-  if (rb) recAnchor(rb, hit?.[0], d, !chain.length ? 'kein Bezug (ganz oben)' : Math.abs(d) >= 1 ? 'App gleicht aus' : 'kein Ausgleich nötig');
+  let d = 0, applied = 0;
+  if (hit) { d = hit[0].getBoundingClientRect().top - hit[1]; if (Math.abs(d) >= 1) { const b = scrollY; scrollBy(0, d); applied = scrollY - b; } }
+  if (rb) recAnchor(rb, hit?.[0], d, !chain.length ? 'kein Bezug (ganz oben)' : Math.abs(d) >= 1 ? 'App gleicht aus' : 'kein Ausgleich nötig', y0, applied);
   return r;
 }
 // Aufgabe sofort ausführen – oder, während gescrollt wird, einmal danach
@@ -6875,7 +6884,7 @@ function declutterChart(svg, { top, bottom, left, right }) {
 // kopiert wird (antippen der Anzeige unten links). Ausgeschaltet kostet der Rekorder nichts.
 // var statt const/let: withAnchor und calmDo fragen rec schon ab, bevor dieser Abschnitt ausgewertet ist
 var REC_KEY = 'scalpdesk.sprungrec.v1', REC_MAX = 5000;
-var rec = { on: false, t0: 0, log: [], jumps: 0, refs: null, lastSH: 0, prog: 0, lastY: 0, scrollLog: 0, scrollEnd: null, lastScrollAt: 0, ended: false, touching: false, follow: 0, copied: 0, flushing: false, ro: null, sizes: new WeakMap(), scan: null };
+var rec = { on: false, t0: 0, log: [], jumps: 0, refs: null, lastSH: 0, prog: 0, lastY: 0, scrollLog: 0, scrollEnd: null, lastScrollAt: 0, ended: false, touching: false, follow: 0, copied: 0, flushing: false, ro: null, sizes: new WeakMap(), scan: null, appUntil: 0 };
 function recT() { return Math.round(performance.now() - rec.t0); }
 function recAdd(s) { if (!rec.on) return; rec.log.push(recT() + ' ' + s); if (rec.log.length > REC_MAX) rec.log.splice(0, rec.log.length - REC_MAX); }
 var recN = v => (v >= 0 ? '+' : '') + Math.round(v * 10) / 10;
@@ -6918,7 +6927,7 @@ function recObserve() {
   for (const sec of document.querySelectorAll('#livebar, [data-tabs]')) for (const e of [sec, ...sec.children]) if (!rec.sizes.has(e)) { rec.sizes.set(e, null); rec.ro.observe(e); }
 }
 // Aus withAnchor: was sich beim Aktualisieren verändert hat und wie ausgeglichen wurde
-function recAnchor(before, anchor, d, how) {
+function recAnchor(before, anchor, d, how, y0 = scrollY, applied = 0) {
   try {
     const after = recHeights(), line = Math.max(0, $('livebar').getBoundingClientRect().bottom), ch = [];
     for (const [e, b] of before) {
@@ -6926,8 +6935,9 @@ function recAnchor(before, anchor, d, how) {
       if (!a) { if (!e.isConnected) ch.push(`${recLabel(e)} ersetzt (${b.h})`); continue; }
       if (Math.abs(a.h - b.h) >= 0.5) ch.push(`${recLabel(e)} ${b.h}→${a.h}${b.top < line ? ' oberhalb' : b.top > innerHeight ? ' unterhalb' : ' im Bild'}`);
     }
-    if (!ch.length && Math.abs(d) < 0.05 && !rec.flushing) return;
-    recAdd(`A ${how}${anchor ? ' Bezug ' + recLabel(anchor) : ''} d=${recN(d)} y=${recY()}${ch.length ? ' · ' + ch.slice(0, 8).join(' · ') : ' · keine Höhenänderung'}`);
+    const browser = scrollY - y0 - applied;
+    if (!ch.length && Math.abs(d) < 0.05 && Math.abs(browser) < 0.5 && !rec.flushing) return;
+    recAdd(`A ${how}${anchor ? ' Bezug ' + recLabel(anchor) : ''} d=${recN(d)} y=${recY()}${ch.length ? ' · ' + ch.slice(0, 8).join(' · ') : ' · keine Höhenänderung'}${Math.abs(browser) >= 0.5 ? ` · Browser scrollt dabei selbst ${recN(browser)}` : ''}`);
     rec.follow = performance.now() + 700; // die nächsten Bilder genau mitschreiben
   } catch (err) { recAdd('A Fehler ' + err.message); }
 }
@@ -6937,12 +6947,12 @@ function recWrapScroll() {
     const orig = window[name].bind(window);
     window[name] = function recWrap(...a) {
       const y0 = scrollY, r = orig(...a);
-      if (rec.on) { const got = scrollY - y0; rec.prog += got; recAdd(`P ${name}(${a.map(x => typeof x === 'object' ? JSON.stringify(x) : Math.round(x * 10) / 10).join(', ')}) angewandt ${recN(got)} y=${recY()} ← ${recCaller()}`); rec.follow = performance.now() + 700; }
+      if (rec.on) { const got = scrollY - y0; rec.prog += got; if (a.some(x => x && typeof x === 'object' && x.behavior === 'smooth')) rec.appUntil = performance.now() + 1500; recAdd(`P ${name}(${a.map(x => typeof x === 'object' ? JSON.stringify(x) : Math.round(x * 10) / 10).join(', ')}) angewandt ${recN(got)} y=${recY()} ← ${recCaller()}`); rec.follow = performance.now() + 700; }
       return r;
     };
   }
   const siv = Element.prototype.scrollIntoView;
-  Element.prototype.scrollIntoView = function (...a) { if (rec.on) { recAdd(`P scrollIntoView ${recLabel(this)} ← ${recCaller()}`); rec.follow = performance.now() + 700; } return siv.apply(this, a); };
+  Element.prototype.scrollIntoView = function (...a) { if (rec.on) { recAdd(`P scrollIntoView ${recLabel(this)} ← ${recCaller()}`); rec.follow = performance.now() + 700; rec.appUntil = performance.now() + 1500; } return siv.apply(this, a); };
 }
 // Bild für Bild: Lage von drei Bezugspunkten (25/50/75 % der Höhe) im Dokument. Ändert sie sich, hat sich der Inhalt
 // verschoben; minus dem Scrollen der App (scrollBy) bleibt, was man sieht – außerhalb des Wischens zählt jedes Scrollen mit.
@@ -6963,17 +6973,18 @@ function recFrame() {
       const top = r.el.getBoundingClientRect().top + y; ds.push(top - r.top); r.top = top;
     });
     const prog = rec.prog; rec.prog = 0;
-    const scrolling = userScrolling(), moved = ds.length ? ds.sort((a, b) => a - b)[Math.floor(ds.length / 2)] : 0;
-    // sichtbar: Verschiebung im Dokument minus Ausgleich; in Ruhe ist jedes Scrollen „von selbst“ und zählt mit
-    const vis = scrolling ? moved - prog : moved - dy;
+    const scrolling = rec.touching || !rec.ended, appScroll = now < rec.appUntil, moved = ds.length ? ds.sort((a, b) => a - b)[Math.floor(ds.length / 2)] : 0;
+    // sichtbar: Verschiebung im Dokument minus Ausgleich; nach dem Scroll-Ende ohne Finger ist jedes Scrollen „von selbst“ und
+    // zählt mit (so verschob Safaris eigene Verankerung die Seite). Absichtliches Scrollen der App zählt nicht.
+    const vis = appScroll ? 0 : scrolling ? moved - prog : moved - dy;
     if (Math.abs(vis) >= 1) { rec.jumps++; recAdd(`J sichtbar ${recN(vis)} · Inhalt ${recN(moved)} · Scroll ${recN(dy)} (App ${recN(prog)}) · ${scrolling ? 'beim Wischen' : 'in Ruhe'} y=${recY()}`); recBadge(); }
-    else if (now < rec.follow && (Math.abs(dy) >= 0.1 || Math.abs(moved) >= 0.1)) recAdd(`Y Scroll ${recN(dy)} · Inhalt ${recN(moved)} · ${scrolling ? 'Wischen' : 'Ruhe'} y=${recY()}`);
+    else if (now < rec.follow && (Math.abs(dy) >= 0.1 || Math.abs(moved) >= 0.1)) recAdd(`Y Scroll ${recN(dy)} · Inhalt ${recN(moved)} · ${appScroll ? 'App scrollt' : scrolling ? 'Wischen' : 'Ruhe'} y=${recY()}`);
     else if (!scrolling && Math.abs(dy) >= 0.5) recAdd(`Y in Ruhe gescrollt ${recN(dy)} y=${recY()}`);
   } catch (err) { recAdd('J Fehler ' + err.message); }
 }
 function recHead() {
   const vv = window.visualViewport;
-  return `Sprung-Rekorder ${typeof APP_VERSION === 'string' ? APP_VERSION : ''} · ${navigator.userAgent} · ${typeof standalone !== 'undefined' && standalone ? 'Home-Bildschirm' : 'Browser'} · Ausgleich ${nativeAnchor ? 'durch den Browser' : 'durch die App'} · ${innerWidth}×${innerHeight} @${devicePixelRatio}${vv ? ` · sichtbar ${Math.round(vv.width)}×${Math.round(vv.height)}` : ''} · Layout ${docEl.dataset.layout || '–'} · Tab ${docEl.dataset.activeTab || '–'} · y=${recY()}`;
+  return `Sprung-Rekorder ${typeof APP_VERSION === 'string' ? APP_VERSION : ''} · ${navigator.userAgent} · ${typeof standalone !== 'undefined' && standalone ? 'Home-Bildschirm' : 'Browser'} · Ausgleich ${nativeAnchor ? 'durch den Browser' : docEl.dataset.anchor === 'app' ? 'durch die App (Safari-Verankerung aus)' : 'durch die App'} · ${innerWidth}×${innerHeight} @${devicePixelRatio}${vv ? ` · sichtbar ${Math.round(vv.width)}×${Math.round(vv.height)}` : ''} · Layout ${docEl.dataset.layout || '–'} · Tab ${docEl.dataset.activeTab || '–'} · y=${recY()}`;
 }
 function recBadge() {
   const b = $('rec-badge'); if (!b) return;
@@ -7004,8 +7015,12 @@ async function recCopy() {
   recWrapScroll();
   // Finger und Scrollen (passiv, verzögert nichts)
   const opt = { passive: true, capture: true };
-  addEventListener('touchstart', e => { rec.touching = true; if (rec.on && e.touches.length === 1) recAdd(`T+ Finger auf y=${recY()}`); }, opt);
-  addEventListener('touchend', e => { if (!e.touches.length) rec.touching = false; if (rec.on && !e.touches.length) recAdd(`T- Finger ab y=${recY()}`); }, opt);
+  addEventListener('touchstart', e => { rec.touching = true; rec.ended = false; if (rec.on && e.touches.length === 1) recAdd(`T+ Finger auf y=${recY()}`); }, opt);
+  addEventListener('touchend', e => {
+    if (e.touches.length) return;
+    rec.touching = false; if (rec.on) recAdd(`T- Finger ab y=${recY()}`);
+    clearTimeout(rec.scrollEnd); rec.scrollEnd = setTimeout(() => { if (!rec.ended && !rec.touching) { rec.ended = true; recAdd(`S. 250 ms ohne Scroll-Ereignis (die App hält das Scrollen für beendet) y=${recY()}`); } }, 250);
+  }, opt);
   addEventListener('scroll', () => {
     const now = performance.now(), gap = now - rec.lastScrollAt; rec.lastScrollAt = now;
     if (!rec.on) return;
@@ -7013,8 +7028,7 @@ async function recCopy() {
     if (rec.ended && !rec.touching) recAdd(`S weiter ohne Finger nach ${Math.round(gap)} ms Pause (Nachschwung) y=${recY()}`);
     else if (gap > 100 && gap < 5000) recAdd(`S nach ${Math.round(gap)} ms Pause y=${recY()}`);
     else if (now - rec.scrollLog > 150) { rec.scrollLog = now; recAdd(`S y=${recY()}`); }
-    rec.ended = false;
-    clearTimeout(rec.scrollEnd); rec.scrollEnd = setTimeout(() => { rec.ended = true; recAdd(`S. 250 ms ohne Scroll-Ereignis (die App hält das Scrollen für beendet) y=${recY()}`); }, 250);
+    clearTimeout(rec.scrollEnd); rec.scrollEnd = setTimeout(() => { if (!rec.ended && !rec.touching) { rec.ended = true; recAdd(`S. 250 ms ohne Scroll-Ereignis (die App hält das Scrollen für beendet) y=${recY()}`); } }, 250);
   }, opt);
   window.visualViewport?.addEventListener('resize', () => { if (rec.on) recAdd(`V sichtbarer Bereich ${Math.round(visualViewport.width)}×${Math.round(visualViewport.height)}`); });
   document.addEventListener('visibilitychange', () => { if (rec.on) { recAdd(document.hidden ? 'X App verdeckt' : 'X App wieder sichtbar'); if (!document.hidden) rec.lastY = scrollY; } });
