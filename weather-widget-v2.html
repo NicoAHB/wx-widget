@@ -5296,8 +5296,9 @@ function lmModelNow(sync = false) {
   return { ...c.model, key: c.modelKey, liveHit, liveSig, now };
 }
 // 3.23.1: Nachrechnen in eigenen Schritten nach dem Zeichnen, jeder für sich kurz: erst das Modell, dann das Bild für den
-// zuletzt gezeichneten Ausschnitt, dann den Chart mit dem neuen Stand zeichnen. Vorher lief das beim Kerzenschluss im
-// selben Schritt wie das Zeichnen des Charts und der Signale, zusammen über 50 ms.
+// zuletzt gezeichneten Ausschnitt. Gezeichnet wird das neue Bild mit der nächsten Live-Anzeige (höchstens einmal pro Sekunde,
+// ohne zusätzliches Zeichnen). Vorher lief das beim Kerzenschluss im selben Schritt wie das Zeichnen des Charts und der
+// Signale, zusammen über 50 ms.
 let lmTimer = null;
 function lmSoon() { if (!lmTimer) lmTimer = setTimeout(lmStep, 0); }
 function lmStep() {
@@ -5306,7 +5307,7 @@ function lmStep() {
   if (lmCache.modelKey !== before) { lmSoon(); return; }
   const g = lmCache.geo;
   if (g && !lmFits(m, g)) { lmPaintNow(m, g); lmSoon(); return; }
-  if (lmCache.drawn !== lmCache.imgKey) calmDo(drawChart);
+  if (lmCache.drawn !== lmCache.imgKey) scheduleLiveRender(true);
 }
 function lmClustersNow() {
   const m = lmModelNow(), price = currentPrice();
