@@ -3,7 +3,8 @@
 Kleines Programm für einen eigenen Server, der rund um die Uhr läuft (z. B. kostenlos bei Oracle Cloud, „Always Free“). Es meldet per Telegram, auf Wunsch zusätzlich per Discord, auch wenn die App überall geschlossen ist:
 - Kurs-Alarme,
 - Stop-Loss/Take-Profit offener Positionen,
-- wichtige Wirtschaftstermine.
+- wichtige Wirtschaftstermine,
+- den BTC-Puls (ab Version 1.1): ungewöhnlich starke Bitcoin-Bewegung in 5 oder 15 Minuten.
 
 ## So arbeitet er mit der App zusammen
 - **Übergabe:**
@@ -14,6 +15,11 @@ Kleines Programm für einen eigenen Server, der rund um die Uhr läuft (z. B. ko
   - Er prüft alle 15 Sekunden die 1m-Kerzen bei Binance; auch kurze Dochte zählen.
   - Er bestätigt in der angehefteten Nachricht („Dienst: aktiv …“).
 - **Keine doppelten Nachrichten:** Solange die Bestätigung frisch ist, sendet die App diese Meldungen nicht zusätzlich.
+- **BTC-Puls (ab 1.1):**
+  - Die App berechnet aus den BTC-Kerzen der letzten 35 Tage, welche Bewegung um welche Uhrzeit ungewöhnlich ist (99 % der üblichen, je Stunde und Tagesart), und legt diese Schwellen mit in die Datei.
+  - Der Dienst prüft damit alle 15 Sekunden die Bewegung der letzten 5 und 15 Minuten (mindestens 0,5 % bzw. 0,8 %).
+  - Je Richtung höchstens eine Nachricht in 30 Minuten, außer die Bewegung legt deutlich zu; nachts (22–7 Uhr) lautlos.
+  - In seiner Bestätigung steht dann „· Puls“; erst dann sendet die App den Puls nicht mehr selbst. Ein älterer Dienst (1.0) kennt den Puls nicht – dann sendet ihn weiter die geöffnete App. Aktualisieren: den Installationsbefehl erneut ausführen.
 - **Netz:** Der Server braucht nur ausgehende Verbindungen (Telegram, Binance, GitHub): keine offenen Ports, keine Domain.
 
 ## Einrichten

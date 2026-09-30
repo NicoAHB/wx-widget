@@ -1311,19 +1311,28 @@ html[data-layout=tablet] #econ{order:1}
 .wl-head{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;min-height:36px;margin-bottom:6px}
 .wl-label{font-size:.8125rem;color:var(--muted)}
 .wl-tools{display:inline-flex;flex-wrap:wrap;align-items:center;gap:4px;margin-left:auto}
-.wl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:6px}
-.wl-item{position:relative;display:block;min-width:0}
-.wl-tile{display:grid;width:100%;height:50px;grid-template-columns:44px minmax(0,1fr) 2.2em;grid-template-rows:1fr 1fr;grid-template-areas:"sym price price" "spark chg sig";column-gap:6px;align-items:center;padding:4px 8px;border:1px solid var(--field-border);border-radius:10px;background:var(--field);color:var(--text-2);font:inherit;text-align:left;overflow:hidden}
-.wl-tile[aria-pressed=true]{background:var(--up-bg-2);border-color:var(--up-border)}
+/* 3.24.0 Ablaufplan Schritt 5: Kacheln in drei Zeilen – Kürzel, 30-Minuten-Verlauf, Kurs, 1m-Tendenz / „1 Min. …“ und
+   „30 Min. …“ / Trend · Kurs · RSI · MACD mit farbigen Pfeilen. Schmale Kacheln (Handy) in fünf Zeilen, siehe unten. */
+.wl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(198px,1fr));gap:6px}
+.wl-item{position:relative;display:block;min-width:0;container:wlt/inline-size}
+.wl-tile{display:grid;width:100%;height:62px;grid-template-columns:auto minmax(0,1fr) auto auto;grid-template-rows:auto auto auto;grid-template-areas:"sym spark price sig" "r2 r2 r2 r2" "rules rules rules rules";column-gap:6px;row-gap:1px;align-content:center;align-items:center;padding:4px 8px;border:1px solid var(--field-border);border-radius:10px;background:var(--field);color:var(--text-2);font:inherit;line-height:1.3;text-align:left;overflow:hidden}
+.wl-tile[aria-current=true]{background:var(--up-bg-2);border-color:var(--up-border)}
+.wl-tile[aria-expanded=true]{box-shadow:0 0 0 2px var(--mint);border-color:var(--mint)}
 .wl-sym{grid-area:sym;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.8125rem;font-weight:700;color:var(--text)}
 .wl-price{grid-area:price;justify-self:end;max-width:100%;overflow:hidden;white-space:nowrap;font-size:.8125rem;font-weight:600;font-variant-numeric:tabular-nums}
-.wl-spark{grid-area:spark;width:44px;height:16px;overflow:visible;color:var(--muted)}
+.wl-spark{grid-area:spark;justify-self:center;width:100%;max-width:64px;height:16px;overflow:visible;color:var(--muted)}
 .wl-spark polyline{fill:none;stroke:currentColor;stroke-width:1.4;stroke-linejoin:round;stroke-linecap:round;vector-effect:non-scaling-stroke}
 .wl-spark.up{color:var(--up-text)}
 .wl-spark.down{color:var(--down-text)}
-.wl-chg{grid-area:chg;justify-self:end;overflow:hidden;white-space:nowrap;font-size:.72rem;font-weight:600;font-variant-numeric:tabular-nums;color:var(--muted)}
-.wl-chg.up{color:var(--up-text)}
-.wl-chg.down{color:var(--down-text)}
+.wl-r2{grid-area:r2;display:flex;justify-content:space-between;gap:8px;min-width:0;overflow:hidden}
+.wl-chg,.wl-chg30{white-space:nowrap;font-size:.72rem;font-weight:600;font-variant-numeric:tabular-nums;color:var(--muted)}
+.wl-chg{grid-area:c1}.wl-chg30{grid-area:c30;text-align:right}
+.wl-chg.up,.wl-chg30.up{color:var(--up-text)}
+.wl-chg.down,.wl-chg30.down{color:var(--down-text)}
+.wl-rules{grid-area:rules;display:flex;justify-content:space-between;gap:4px;min-width:0;overflow:hidden;white-space:nowrap;font-size:.6875rem;font-weight:600;font-variant-numeric:tabular-nums;color:var(--text-2)}
+.wl-rule i{margin-left:3px;font-style:normal;color:var(--muted)}
+.wl-rule.up i{color:var(--up-text)}.wl-rule.down i{color:var(--down-text)}
+.wl-rule.none{color:var(--muted)}
 .wl-sig{grid-area:sig;justify-self:end;display:grid;place-items:center;width:2.2em;height:18px;border-radius:4px;background:var(--hold);color:var(--hold-ink);font-size:.7rem;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
 .wl-sig[data-tone=p3],.wl-sig[data-tone=p2]{background:var(--buy);color:var(--buy-ink)}
 .wl-sig[data-tone=p1]{background:var(--t-p2);color:var(--text)}
@@ -1331,16 +1340,25 @@ html[data-layout=tablet] #econ{order:1}
 .wl-sig[data-tone=m2],.wl-sig[data-tone=m3]{background:var(--sell);color:var(--sell-ink)}
 .wl-sig[data-tone=none]{background:transparent;border:1px dashed var(--field-border);color:var(--muted)}
 .wl-item .chip-x{position:absolute;top:-8px;right:-8px;z-index:1;width:28px;min-height:28px;height:28px;margin:0;border:1px solid var(--field-border);border-radius:50%;background:var(--surface);line-height:1}
-html[data-layout=tablet] .wl-tile{height:52px}
-/* schmale Handys (bis 340 px Panelbreite): auch 2 Spalten, Kacheln kompakter – sonst 6 Reihen, und der Chart rutscht weit nach unten */
-@container (max-width:340px){
-  .wl-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .wl-tile{grid-template-columns:auto minmax(0,1fr) 1.9em;column-gap:4px;padding:4px 6px}
+html[data-layout=tablet] .wl-tile{height:64px}
+/* Handys (bis 460 px Panelbreite): 2 Spalten statt einer langen Reihe – der Chart rutscht sonst weit nach unten */
+@container (max-width:460px){.wl-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* schmale Kachel (unter 190 px): Kürzel und Kurs / 1 Min. und Tendenz / 30 Min. mit Verlauf / Regeln in zwei Zeilen.
+   Der Kurs hat eine eigene Spur, unter der „1 Min.“ und „30 Min.“ weiterlaufen – rechts bleibt nur die schmale Spalte für
+   Tendenz und Verlauf. Sonst bestimmte der Kurs die rechte Spalte (BTC „64.141,32“), und bei 320 px ragte „30 Min. …“ bis
+   23 px aus seiner Zelle, mit langen Werten bis in den Verlauf */
+@container wlt (max-width:189px){
+  .wl-tile,html[data-layout=tablet] .wl-tile{height:86px;grid-template-columns:minmax(0,1fr) auto auto;grid-template-rows:repeat(4,auto);grid-template-areas:"sym price price" "c1 c1 sig" "c30 c30 spark" "rules rules rules";column-gap:4px;padding:4px 6px}
+  .wl-r2{display:contents}
+  .wl-chg30{text-align:left}
   .wl-sym,.wl-price{font-size:.75rem}
-  .wl-spark{width:28px;height:12px}
-  .wl-chg{font-size:.66rem}
+  .wl-spark{width:28px;height:12px;justify-self:end}
+  .wl-chg,.wl-chg30{font-size:.66rem}
   .wl-sig{width:1.9em;height:16px;font-size:.66rem}
+  .wl-rules{display:grid;grid-template-columns:auto auto;justify-content:space-between;column-gap:6px;row-gap:1px;font-size:.625rem}
 }
+/* sehr schmale Kachel (Handy 320 px): Werte so groß wie die Regelzeile, damit auch „30 Min. −10,98 %“ neben den Verlauf passt */
+@container wlt (max-width:132px){.wl-chg,.wl-chg30{font-size:.625rem}}
 @media (pointer:coarse){.wl-item .chip-x{width:40px;height:40px;min-width:40px;min-height:40px;top:-14px;right:-12px}}
 /* 3.20: News & Termine zum Coin – unter dem Wirtschaftskalender */
 html[data-layout=tablet] #cnews{order:1}
@@ -1439,6 +1457,122 @@ html[data-layout=tablet] #vola{order:1}
 /* 3.21.3: Safari (WebKit) verankert nicht selbst – die App gleicht aus (smooth.js); Safaris overflow-anchor verschob sonst nach
    dem Wischen beim Neuzeichnen des Charts die ganze Seite */
 html[data-anchor=app],html[data-anchor=app] *{overflow-anchor:none}
+/* 3.24.0 Schritt 2: gelernte Muster und normaler Reset in der Datensicherung */
+.zzp-row{align-items:center}.zzp-row>span{flex:1 1 18em;font-size:.8125rem;color:var(--muted);line-height:1.5}.zzp-row>span b{color:var(--text)}
+.reset-note{flex:1 1 18em;font-size:.8125rem;color:var(--muted);line-height:1.5}
+.reset-body p{font-size:.875rem;line-height:1.55;margin:0 0 10px}
+/* 3.24.0 Schritt 3: zwei Telegram-Ziele */
+.tg-targets{border:1px solid var(--line);border-radius:8px;padding:8px 10px 10px;display:grid;gap:10px;min-width:0}
+.tg-targets legend{font-size:.8125rem;font-weight:600;padding:0 4px}
+.tg-target{display:grid;gap:6px;min-width:0}.tg-target p{margin:0;font-size:.875rem;line-height:1.4}.tg-target small{color:var(--muted);display:block}
+.tg-ids{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,8.5em);gap:8px}
+.tg-found{display:grid;gap:6px}.tg-found-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px}.tg-found-name{flex:1 1 14em;font-size:.8125rem;overflow-wrap:anywhere}
+.tg-found-row button{min-height:40px;padding:0 10px;font-size:.8125rem}
+/* 3.24.0 Ablaufplan Schritt 4: Das Live-Ergebnis der offenen Positionen („Offen …“) steht immer vollständig oben rechts – auf
+   dem iPad hoch und quer. Bisher lief die Leiste ab 601 px in einer Zeile, und ausgerechnet das Live-Ergebnis durfte schrumpfen
+   (am iPad hochkant blieb „Offe…“). Jetzt: 601–1179 px wie am Handy in Zeilen – oben Kurs, Alarm-Glocke, Live-Ergebnis;
+   darunter die Signal-Leiste, die Warnungen in einer eigenen Zeile. Ab 1180 px (iPad quer) eine Zeile: Warnungen zwischen
+   Signal-Leiste und Glocke im freien Platz (notfalls mit „…“ gekürzt), Live-Ergebnis und Verbindungspunkt ganz rechts.
+   Das Live-Ergebnis schrumpft nie. */
+.livebar .lb-pos{flex-shrink:0;overflow:visible}
+@media (min-width:1180px){
+  .livebar{flex-wrap:nowrap}
+  .livebar .lb-market{order:1}.livebar .heat{order:2}.livebar .lb-warns{order:3}.livebar .lb-spacer{order:4}.livebar .lb-alarm{order:5}.livebar .lb-pos{order:6}.livebar .lb-conn{order:7}
+  .livebar .lb-warns{display:flex;flex:1 1 0;align-items:center;gap:8px 18px;min-width:0}
+  .livebar .lb-warns:not(:has(>:not([hidden]))){display:none}
+  .livebar:has(.lb-warns>:not([hidden])) .lb-spacer{display:none}
+  .livebar .lb-warns>*{flex:0 1 auto;min-width:0}
+}
+@media (min-width:601px) and (max-width:1179px){
+  .livebar,html[data-layout=tablet] .livebar{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto auto;grid-template-areas:"m sp al pos cn" "heat heat heat heat heat";align-items:center;gap:2px 12px}
+  .livebar .lb-market{grid-area:m;min-width:0}.livebar .lb-spacer{grid-area:sp}.livebar .lb-alarm{grid-area:al}.livebar .lb-conn{grid-area:cn;margin:0}
+  .livebar .lb-pos{grid-area:pos;justify-self:end;min-width:max-content}
+  .livebar .heat{grid-area:heat;justify-self:start}
+  .livebar .lb-warns{grid-column:1/-1;display:flex;align-items:center;gap:6px 12px;min-width:0}
+  .livebar .lb-warns:not(:has(>:not([hidden]))){display:none}
+  .livebar .lb-warns>*{flex:1 1 auto;min-width:0}
+  .livebar .lb-vola{max-width:none;min-height:32px;text-align:left;padding:0 4px}
+  .livebar .lb-news:not([hidden])~.lb-vola{flex:0 0 auto;max-width:40%}
+}
+/* 3.24.0 Ablaufplan Schritt 6: Detailfeld unter den Kacheln – klappt weich auf und zu (Höhe über grid-template-rows) */
+.wl-detail{display:grid;grid-template-rows:0fr;transition:grid-template-rows .24s ease;scroll-margin-bottom:16px}
+html[data-layout=tablet] .wl-detail{scroll-margin-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+.wl-detail[data-open="1"]{grid-template-rows:1fr}
+.wl-d-clip{min-height:0;overflow:hidden;visibility:hidden;transition:visibility 0s linear .24s}
+.wl-detail[data-open="1"] .wl-d-clip{visibility:visible;transition-delay:0s}
+.wl-detail.shown .wl-d-clip{overflow:visible}
+.wl-d-box{margin-top:8px;padding:8px 12px 10px;border:1px solid var(--field-border);border-radius:12px;background:var(--field);container:wld/inline-size}
+.wl-d-head{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;min-height:40px}
+@container wld (max-width:520px){.wl-d-meta{order:3;flex-basis:100%}.wl-d-head .wl-d-chart{margin-left:auto}.wl-d-sig{font-size:.8125rem}}
+.wl-d-title{margin:0;font-size:1.0625rem;font-weight:700;color:var(--text);letter-spacing:.01em}
+.wl-d-meta{flex:1 1 12em;min-width:0;font-size:.75rem;color:var(--muted)}
+.wl-d-head .wl-d-chart{min-height:36px}
+.wl-d-close{display:grid;place-items:center;width:36px;height:36px;min-height:36px;padding:0;border:1px solid var(--field-border);border-radius:50%;background:var(--surface);color:var(--text-2);font:inherit;font-size:1.1rem;line-height:1;cursor:pointer}
+@media (pointer:coarse){.wl-d-close,.wl-d-head .wl-d-chart{min-width:44px;min-height:44px;height:44px}}
+.wl-d-body{display:flow-root}
+.wl-d-grp h4{margin:6px 0 2px;font-size:.75rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.wl-d-grp ul{display:grid;gap:0;margin:0;padding:0;list-style:none}
+.wl-d-sig{display:flex;align-items:center;gap:6px;min-height:34px;font-size:.875rem;font-weight:600;line-height:1.35}
+.wl-d-grp.up h4,.wl-d-grp.up .wl-d-sig{color:var(--up-text)}
+.wl-d-grp.down h4,.wl-d-grp.down .wl-d-sig{color:var(--down-text)}
+.wl-d-arrow{flex:0 0 auto;width:1em;text-align:center}
+.wl-d-txt{min-width:0}
+.wl-d-tip{flex:0 0 auto;color:var(--text-2)}
+.wl-d-tip .tip-body{font-weight:400;color:var(--text-2)}
+.wl-d-none{margin:8px 0 4px;font-size:.875rem;color:var(--muted)}
+.wl-d-foot{margin:6px 0 0;font-size:.75rem;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){.wl-detail,.wl-d-clip{transition:none}}
+/* 3.24.0 Ablaufplan Schritt 7: Gewinn- und Verlust-Alarm – Feld unter dem Live-Ergebnis oben rechts */
+.livebar .lb-pos{cursor:pointer}
+/* Punkt „Alarm scharf“ (grün) bzw. „ausgelöst“ (gelb) direkt vor dem Betrag – nicht am Wort „Offen“, das am Handy und am
+   iPad mini mit Warnung aus Platzgründen ausgeblendet wird (der Punkt wäre dann unsichtbar) */
+.lb-pos[data-pnl=on]>#lb-open::before,.lb-pos[data-pnl=fired]>#lb-open::before{content:"";display:inline-block;width:7px;height:7px;margin-right:5px;border-radius:50%;background:var(--mint);vertical-align:middle}
+.lb-pos[data-pnl=fired]>#lb-open::before{background:var(--amber)}
+.livebar .pnl-panel{position:absolute;top:calc(100% + 6px);right:12px;z-index:40;width:min(400px,calc(100vw - 24px));overflow:auto;overscroll-behavior:contain;padding:12px 14px;border:1px solid var(--border);border-radius:14px;background:var(--surface);box-shadow:var(--shadow);color:var(--text-2);font-size:.8125rem;line-height:1.45;white-space:normal;text-align:left}
+.livebar .pnl-panel[hidden]{display:none}
+.pnl-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px}
+.pnl-head b{font-size:.9375rem;color:var(--text)}
+/* Knöpfe im Feld wie sonst in der App – nicht wie die flachen Knöpfe der Leiste */
+.livebar .pnl-panel button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:0 14px;border:1px solid var(--border);border-radius:9px;background:var(--surface-2);color:var(--text);font-weight:600;white-space:nowrap}
+.livebar .pnl-panel button:hover{background:var(--hover)}
+.livebar .pnl-panel .primary{background:var(--mint);border-color:var(--mint);color:var(--mint-ink)}
+.livebar .pnl-panel .primary:hover{background:var(--mint-hover)}
+.livebar .pnl-panel .pnl-x{width:36px;height:36px;min-height:36px;padding:0;border-radius:50%;font-size:1.1rem;font-weight:400}
+.pnl-ref{margin:0 0 6px;color:var(--muted)}.pnl-ref b{color:var(--text)}
+#pnl-now{display:block;margin-top:2px;color:var(--text-2);font-weight:600}
+.pnl-row{display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:10px 0;border-top:1px solid var(--border)}
+.pnl-on{display:flex;align-items:center;gap:10px;min-height:32px;font-weight:600;color:var(--text)}
+.pnl-on input{flex:0 0 auto;width:22px;min-height:22px;height:22px;margin:0;accent-color:var(--mint)}
+.pnl-in{display:flex;align-items:center;gap:8px;color:var(--muted)}
+.pnl-in input{width:8em;min-height:40px;padding:0 10px;border:1px solid var(--field-border);border-radius:10px;background:var(--field);color:var(--text);font-size:1rem;text-align:right}
+.pnl-in input[aria-invalid=true]{border-color:var(--down-text);box-shadow:0 0 0 1px var(--down-text)}
+.pnl-st{font-size:.75rem;color:var(--muted)}
+.pnl-st.on{color:var(--up-text)}.pnl-st.fired{color:var(--amber);font-weight:600}
+.pnl-err{margin:4px 0;color:var(--down-text);font-weight:600}
+.pnl-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding-top:10px;border-top:1px solid var(--border)}
+.pnl-msg{flex:1 1 auto;min-width:4em;color:var(--up-text);font-size:.75rem}
+.pnl-note{margin:8px 0 0;font-size:.72rem;color:var(--muted)}
+@media (pointer:coarse){.livebar .pnl-panel .pnl-x{width:44px;height:44px;min-height:44px}.livebar .pnl-panel .pnl-actions button,.livebar .pnl-panel .pnl-rearm{min-height:44px}.pnl-in input{min-height:44px}}
+@media (max-width:600px){.livebar .pnl-panel{right:8px;left:8px;width:auto}}
+/* 3.24.0 Ablaufplan Schritt 8: „Datensicherung“ als kompakte Zeile mit Pfeil – beim Start und nach dem Neuladen zugeklappt */
+.data-head{display:flex;flex-wrap:wrap;align-items:center;gap:2px 10px;width:100%;min-height:48px;margin-top:14px;padding:6px 14px;border:1px solid var(--border);border-radius:9px;background:var(--surface-2);color:var(--text);font-size:.9rem;font-weight:650;text-align:left}
+.data-head:hover{background:var(--hover)}
+.data-chev{display:inline-grid;place-items:center;width:1.1em;font-size:1.05rem;line-height:1;color:var(--text-2);transition:transform .18s ease}
+.data-head[aria-expanded=true] .data-chev{transform:rotate(90deg)}
+.data-head[aria-expanded=true]{border-bottom-left-radius:0;border-bottom-right-radius:0}
+.data-last{margin-left:auto;font-size:.75rem;font-weight:400;color:var(--muted);white-space:nowrap} /* schmales Handy: rutscht in eine zweite Zeile */
+.data-head+.data-panel{margin-top:0;border-top:0;border-top-left-radius:0;border-top-right-radius:0}
+@media (prefers-reduced-motion:reduce){.data-chev{transition:none}}
+/* 3.24.0 BTC-Puls: Erklärung und aktuelle Schwellen unter dem Schalter */
+.pulse-info{display:block;margin:-2px 0 6px 2.6em;font-size:.75rem;line-height:1.45;color:var(--muted)}
+#pulse-info{color:var(--text-2);font-weight:600}
+/* 3.24.0: obere Zeile der Live-Leiste am Handy verdichten, statt Live-Ergebnis oder Glocke abzuschneiden (lbFit, Stufen 1–6) */
+:root .livebar[data-fit~="1"] .lb-pos>.lb-label,:root .livebar[data-fit~="2"] .lb-market .change{display:none}
+:root .livebar[data-fit~="3"]{column-gap:6px}
+:root .livebar[data-fit~="4"] .lb-pos{font-size:.9em}
+:root .livebar[data-fit~="5"] .lb-pos{font-size:.82em}
+:root .livebar[data-fit~="5"]{column-gap:4px}
+:root .livebar[data-fit~="6"] .lb-market{font-size:.9em}:root .livebar[data-fit~="6"] .lb-price{font-size:1.02rem}
 .chart-panel>.notice{margin:12px 20px 0}
 html{scroll-padding-top:calc(var(--lb-h,56px) + 16px)}
 /* nur als eigene Spalten (ab 1400 px) begrenzt; darunter stehen beide untereinander in der gemeinsamen Seitenspalte und
@@ -2052,7 +2186,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Alle Werte liegen zusätzlich im Arbeitsspeicher und sind dadurch synchron lesbar. Schreiben geht sofort in den
 // localStorage und gebündelt in die IndexedDB; beim Start gewinnt die zuletzt vollständig geschriebene Kopie.
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
-const APP_VERSION = '3.23.1', docEl = document.documentElement;
+const APP_VERSION = '3.24.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -2566,22 +2700,26 @@ function renderSignals() {
   box.append(...heatNodes(st, tr)); line.replaceChildren(box);
   const lb = $('lb-heat'); lb.replaceChildren(...heatNodes(st, tr)); lb.setAttribute('aria-label', heatLabel(st, tr));
 }
-// Vorauswahl als Mini-Watchlist (4.2): je Coin eine Kachel mit Live-Kurs, Veränderung der letzten Minute, 30-Minuten-Verlauf
-// und 1m-Tendenz; Antippen öffnet den Coin. Neu aufgebaut wird nur, wenn sich Liste, Bearbeiten-Modus oder der geöffnete Coin
-// ändern – die Live-Werte schreibt wlPaint() in die bestehenden Felder. „+ Coin“ steht in der Kopfzeile, damit beim Laden
-// eines neuen Coins keine Kachelreihe dazukommt und nichts darunter verrutscht.
+// Vorauswahl als Mini-Watchlist (4.2; Ablaufplan Schritte 5 und 6, 3.24.0): je Coin eine Kachel mit Live-Kurs, Verlauf der
+// letzten 30 Minuten und 1m-Tendenz, darunter die Veränderung über 1 und über 30 Minuten („1 Min. +0,54 %“, „30 Min. +1,33 %“)
+// und die Zeile Trend · Kurs · RSI · MACD mit farbigen Pfeilen. Antippen öffnet unter den Kacheln das Detailfeld mit den
+// Signalen dieses Coins (wldetail.js), „Im Chart öffnen“ im Feld lädt den Coin. Neu aufgebaut wird nur, wenn sich Liste,
+// Bearbeiten-Modus oder der geöffnete Coin ändern – die Live-Werte schreibt wlPaint() in die bestehenden Felder. „+ Coin“ steht in
+// der Kopfzeile, damit beim Laden eines neuen Coins keine Kachelreihe dazukommt und nichts darunter verrutscht.
 let watchKey = '';
 function renderWatchlist() {
   const box = $('watchlist'), base = state.symbol.slice(0, -4), showAdd = !state.watch.includes(base) && state.loadedSymbol === state.symbol;
+  // Ausgewählte Kachel entfernt (Bearbeiten, „Standard“, Sicherung eingespielt): Detailfeld schließen, keine falsche Auswahl
+  if (wldSel && !state.watch.includes(wldSel)) wldClose(false);
   const key = JSON.stringify([state.watch, state.watchEdit, base, showAdd]);
   if (key === watchKey && box.firstChild) return;
   watchKey = key;
   const head = el('div', 'wl-head'), tip = el('details', 'tip left wl-tip'), sum = el('summary');
   sum.setAttribute('aria-label', 'Was die Kacheln der Vorauswahl zeigen'); sum.append(el('span', '', 'i'));
   const body = el('div', 'tip-body');
-  body.append(el('p', '', 'Je Coin: Live-Kurs, darunter der Verlauf der letzten 30 Minuten, die Veränderung der letzten Minute (▲ gestiegen, ▼ gefallen) und rechts die 1m-Tendenz.'),
-    el('p', '', '1m-Tendenz: dieselben vier Regeln wie in der Signal-Übersicht (Trend, Kurs, RSI, MACD) auf abgeschlossenen 1-Minuten-Kerzen, von −4 bis +4; ab +2 grün, ab −2 rot. Eine Beschreibung der letzten Minuten, kein Handelssignal mit nachgewiesenem Vorteil.'),
-    el('p', '', 'Antippen öffnet den Coin im Chart. „Bearbeiten“ entfernt Coins, „+ Coin“ nimmt den geöffneten Coin auf.'));
+  body.append(el('p', '', 'Je Coin: Live-Kurs, der Verlauf der letzten 30 Minuten und rechts die 1m-Tendenz. Darunter die Veränderung über 1 Minute und über 30 Minuten und die Zeile Trend · Kurs · RSI (mit Wert) · MACD: ▲ grün = bullish, ▼ rot = bearish, – = neutral.'),
+    el('p', '', '1m-Tendenz: die Summe dieser vier Regeln – dieselben wie in der Signal-Übersicht – auf abgeschlossenen 1-Minuten-Kerzen, von −4 bis +4; ab +2 grün, ab −2 rot. Eine Beschreibung der letzten Minuten, kein Handelssignal mit nachgewiesenem Vorteil.'),
+    el('p', '', 'Antippen zeigt darunter die Signale des Coins mit Erklärungen; dort öffnet „Im Chart öffnen“ den Coin im Chart. „Bearbeiten“ entfernt Coins, „+ Coin“ nimmt den geöffneten Coin auf. Fehlen Daten (Coin lädt noch, keine Verbindung), steht neutral „–“.'));
   tip.append(sum, body);
   head.append(el('span', 'wl-label', 'Vorauswahl'), tip);
   const tools = el('span', 'wl-tools');
@@ -2592,15 +2730,20 @@ function renderWatchlist() {
   const grid = el('div', 'wl-grid');
   for (const coin of state.watch) {
     const item = el('span', 'wl-item'), tile = btn('wl-tile'), svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    tile.dataset.watch = coin; tile.setAttribute('aria-pressed', String(coin === base));
-    svg.setAttribute('class', 'wl-spark'); svg.setAttribute('viewBox', '0 0 44 16'); svg.setAttribute('aria-hidden', 'true');
+    tile.dataset.watch = coin; tile.setAttribute('aria-expanded', String(coin === wldSel)); tile.setAttribute('aria-controls', 'wl-detail');
+    if (coin === base) tile.setAttribute('aria-current', 'true');
+    svg.setAttribute('class', 'wl-spark'); svg.setAttribute('viewBox', '0 0 44 16'); svg.setAttribute('preserveAspectRatio', 'none'); svg.setAttribute('aria-hidden', 'true');
     svg.append(document.createElementNS('http://www.w3.org/2000/svg', 'polyline'));
-    tile.append(el('b', 'wl-sym', coin), el('span', 'wl-price', '…'), svg, el('span', 'wl-chg', ''), el('span', 'wl-sig', '·'));
+    const r2 = el('span', 'wl-r2'), rules = el('span', 'wl-rules');
+    r2.append(el('span', 'wl-chg flat', '1 Min. –'), el('span', 'wl-chg30 flat', '30 Min. –'));
+    for (const x of wlRules(null)) { const s = el('span', `wl-rule ${x.dir}`); s.append(el('span', '', x.label), el('i', '', x.arrow)); rules.append(s); }
+    tile.append(el('b', 'wl-sym', coin), svg, el('span', 'wl-price', '…'), el('span', 'wl-sig', '·'), r2, rules);
+    if (coin === base) tile.append(el('span', 'sr-only', ' (im Chart geöffnet)'));
     item.append(tile);
     if (state.watchEdit) { const x = btn('chip-x', '×'); x.dataset.unwatch = coin; x.setAttribute('aria-label', `${coin} aus der Vorauswahl entfernen`); item.append(x); }
     grid.append(item);
   }
-  box.replaceChildren(head, grid);
+  box.replaceChildren(head, grid, wldBox());
   if (typeof wlPaint === 'function') wlPaint(Date.now(), true);
 }
 
@@ -2769,6 +2912,7 @@ function renderOpenPositions() {
   put('open-total-eur', state.positions.length ? `${eurPart(total, 2, true)}${missing ? ` · ${missing} ohne Kurs` : ''} · ${state.positions.length} offen` : 'keine offene Position');
   if (!$('pos-form').hidden) updateEntryNow();
   state.openTotal = { total, missing, n: state.positions.length };
+  pnlCheck(); // 3.24.0 Schritt 7: Gewinn-/Verlust-Alarm am Live-Ergebnis
 }
 function yearOptions() {
   const now = new Date().getFullYear(), years = new Set([now, ...state.trades.map(t => yearOf(t.closedAt)), ...state.movements.map(m => yearOf(m.date))]);
@@ -2978,6 +3122,8 @@ function renderBackupInfo() {
   const warn = ab === 'active' ? !!autoBackup.error : ab === 'paused' || n > 0 || due;
   for (const id of ['backup-due', 'backup-count']) { const b = $(id); b.hidden = !label; b.textContent = label; b.parentElement.classList.toggle('ok', !warn); b.parentElement.title = warn ? 'Änderungen seit dem letzten Backup – Backup erstellen' : 'Backup aktuell'; }
   $('tab-pos-badge').hidden = !warn || !has; put('tab-pos-badge', '!');
+  // 3.24.0 Schritt 8: kurzer Stand in der zugeklappten Zeile „Datensicherung“
+  put('data-last', m ? `zuletzt ${new Date(m.at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}` : has ? 'noch keine Sicherung' : '');
   put('backup-info', `${m ? `Letztes Backup auf diesem Gerät: ${new Date(m.at).toLocaleString('de-DE')} · ${m.kind === 'auto' ? 'automatisch' : m.kind === 'telegram' ? 'per Telegram' : m.kind === 'share' ? 'geteilt' : m.encrypted ? 'verschlüsselt' : 'unverschlüsselt'} · ${m.positions} Positionen, ${m.trades} Trades${m.movements ? `, ${m.movements} Geldbewegungen` : ''}` : 'Auf diesem Gerät wurde noch kein Backup erstellt.'}${n ? ` · Seitdem ${n} ${n === 1 ? 'Änderung' : 'Änderungen'}.` : ''}`);
   if (autoBackup.supported) {
     $('autobackup-row').hidden = false; $('autobackup-setup').hidden = ab !== 'off'; $('autobackup-resume').hidden = ab !== 'paused'; $('autobackup-stop').hidden = ab === 'off';
@@ -2986,10 +3132,10 @@ function renderBackupInfo() {
       : 'Schreibt nach jeder Änderung und beim Verlassen der Seite in eine Datei deiner Wahl (Chrome/Edge am Computer). Die Datei ist unverschlüsselt – an einem sicheren Ort ablegen.');
   }
   $('warn-close').checked = flag(WARN_KEY, !isAppleMobile);
-  renderStorageInfo();
+  renderStorageInfo(); renderZzpInfo();
 }
 function backupStatus(msg) { put('history-status', msg); }
-function backupPayload() { return { app: 'scalp-desk', version: 6, settings: { dayLimit: state.dayLimit, risk: state.risk }, exportedAt: Date.now(), positions: state.positions, history: state.trades, movements: state.movements, alarms: state.alarms, setups: state.setups, watchlist: state.watch, taxRate: state.taxRate, patterns: zzpExport() }; }
+function backupPayload() { return { app: 'scalp-desk', version: 6, settings: { dayLimit: state.dayLimit, risk: state.risk }, exportedAt: Date.now(), positions: state.positions, history: state.trades, movements: state.movements, alarms: state.alarms, setups: state.setups, watchlist: state.watch, taxRate: state.taxRate, patterns: zzpExport(), pnlAlarms: store.get('scalpdesk.pnlalarm.v1', null) }; }
 function markBackedUp(kind, encrypted = false) {
   store.set(CHANGES_KEY, 0);
   store.set(BACKUP_META_KEY, { at: Date.now(), kind, encrypted, positions: state.positions.length, trades: state.trades.length, movements: state.movements.length });
@@ -3053,6 +3199,7 @@ function applyBackup(data) {
   if (!state.dayLimit && data.settings?.dayLimit > 0) { state.dayLimit = data.settings.dayLimit; store.set(DAYLIMIT_KEY, state.dayLimit); }
   if (!state.taxRate && data.taxRate > 0 && data.taxRate < 100) { state.taxRate = data.taxRate; store.set(TAX_KEY, data.taxRate); }
   zzpImport(data.patterns); // gelernte Muster: still übernehmen, ohne Meldung
+  const pnlNew = pnlAdopt(data.pnlAlarms); // Gewinn-/Verlust-Alarm (3.24.0): die neuere Fassung gewinnt
   posStructure = ''; histStructure = '';
   persist(); saveWatch();
   render(); if ((n.added || n.updated) && !state.busy && !state.paused) void refresh();
@@ -3063,6 +3210,7 @@ function applyBackup(data) {
   if (n.trades) parts.push(`${n.trades} ${n.trades === 1 ? 'Trade' : 'Trades'}`);
   if (n.mv) parts.push(`${n.mv} Geldbewegungen`);
   if (n.alarms) parts.push(`${n.alarms} Kurs-Alarme`);
+  if (pnlNew) parts.push('Gewinn-/Verlust-Alarm');
   if (watch.length) parts.push(`${watch.length} Kürzel in der Vorauswahl`);
   return parts.length ? `Übernommen: ${parts.join(', ')}${n.same ? ` · ${n.same} Einträge waren schon aktuell` : ''}.` : `Nichts Neues – alle ${n.same} Einträge waren schon aktuell.`;
 }
@@ -3071,6 +3219,7 @@ async function loadBackupFile(file) {
   if (!file) return;
   if (file.size > 5e6) { backupStatus('Datei ist zu groß für ein Backup.'); return; }
   let data; try { data = JSON.parse(await file.text()); } catch { backupStatus('Datei ist kein gültiges Backup (kein JSON).'); return; }
+  if (data?.kind === 'scalpdesk-patterns') { const n = zzpImport(data); backupStatus(n ? `Musterbestand übernommen: ${n} ${n === 1 ? 'Eintrag' : 'Einträge'} ergänzt (je Muster zählt die Fassung mit mehr Fällen).` : 'Musterbestand: nichts Neues – alle Einträge waren schon enthalten.'); return; }
   if (data?.format === 'aes-gcm-v1') {
     if (!globalThis.crypto?.subtle) { backupStatus('Zum Entschlüsseln muss die Seite über https geöffnet sein.'); return; }
     pendingEncrypted = data; $('decrypt-row').hidden = false; backupStatus(''); $('backup-pass').focus(); return;
@@ -3592,7 +3741,8 @@ $('fx-mode').addEventListener('change',()=>{state.fxMode=$('fx-mode').value;rend
 $('signal-rows').addEventListener('click',e=>{const row=e.target.closest('[data-signal-interval]');if(row && row.dataset.signalInterval!==state.interval){void setMarket(state.symbol,row.dataset.signalInterval);$('chart').scrollIntoView({behavior:'smooth',block:'center'});}});
 $('watchlist').addEventListener('click',e=>{
   const t=e.target.closest('button'); if(!t) return;
-  if(t.dataset.watch){try{void setMarket(t.dataset.watch);}catch(error){showNotice('market-error',error.message);}return;}
+  if(t.classList.contains('wl-tile')){wldToggle(t.dataset.watch);return;}
+  if(t.dataset.chartwatch){try{void setMarket(t.dataset.chartwatch);}catch(error){showNotice('market-error',error.message);}return;}
   if(t.dataset.addwatch){if(!state.watch.includes(t.dataset.addwatch))state.watch.push(t.dataset.addwatch);saveWatch();renderWatchlist();return;}
   if(t.dataset.unwatch){state.watch=state.watch.filter(s=>s!==t.dataset.unwatch);saveWatch();renderWatchlist();return;}
   if(t.dataset.watchedit){state.watchEdit=!state.watchEdit;renderWatchlist();return;}
@@ -3951,6 +4101,7 @@ function syncStreams() {
     }
     for (const s of fullBarSyms()) want.spot.add(`${s.toLowerCase()}@kline_1m`); // Vollbild: Kurs-Wechsler oben rechts
     for (const w of wlStreams()) want[w.m].add(w.s); // 4.2: Mini-Watchlist – 1m-Kerzen aller Vorauswahl-Coins
+    if (pulseWants()) want.spot.add('btcusdt@kline_1m'); // 3.24.0: BTC-Puls
     // Tab-Titel mit BTC-Referenzkurs (anderer Coin im Chart): BTC-Spot-1m – auch wenn der Chart aus den Futures kommt
     if (titlePriceOn && state.symbol !== 'BTCUSDT') want.spot.add('btcusdt@kline_1m');
   }
@@ -3976,6 +4127,7 @@ function onTick(now) {
   cnewsTick(); // 3.20: wichtige News und Termine zum geöffneten Coin
   wlTick(now); // 4.2: Mini-Watchlist laden und malen
   volaTick(now); // 4.3: Volatilität nach Uhrzeit, Warnung bei erhöhter Volatilität
+  pulseTick(now); // 3.24.0: BTC-Puls – Schwellen je Uhrzeit, 1m-Kerzen von BTC
   s247Tick(now); // 5.1: meldet sich der 24/7-Dienst?
   if (now - lastStreamSync > 5000) { lastStreamSync = now; syncStreams(); }
   if (Date.now() - lastSeenSaved > 30000) saveLastSeen();
@@ -4051,7 +4203,7 @@ function onKline(m) {
   const now = Date.now(); live.lastMsg[m.m] = now; clockSample(m.E); // 3.3: Binance-Zeit für den Countdown
   if (state.paused) return;
   if (m.i === '1m' && m.s === 'BTCUSDT' && m.m === 'spot' && m.k.c > 0) { btcRef = { price: m.k.c, at: now }; if (state.symbol !== 'BTCUSDT') updateTitle(); }
-  if (m.i === '1m') { trackLivePrice(m.s, m.k, now); wlKline(m, now); volaKline(m); } // 4.2: Mini-Watchlist, 4.3: Volatilität der letzten 60 Minuten
+  if (m.i === '1m') { trackLivePrice(m.s, m.k, now); wlKline(m, now); volaKline(m); pulseKline(m, now); } // 4.2: Mini-Watchlist, 4.3: Volatilität der letzten 60 Minuten
   if (m.s === state.symbol && m.m === chartMarket() && m.i === state.interval && applyLiveCandle(m.k)) { live.chartAt = now; updateTitle(); scheduleLiveRender(true); }
   else if (m.i === '1m' && watchSymbols().has(m.s)) scheduleLiveRender(false);
 }
@@ -4128,6 +4280,26 @@ function renderLivebar() {
   const d = dayStats(state.trades), fx = fxNow(); put('lb-day', `${signed(d.pnl)} USDT`); color('lb-day', d.pnl);
   put('lb-day-eur', fx ? `(≈ ${signed(d.pnl / fx)} €)` : ''); color('lb-day-eur', d.pnl); // Euro zum aktuellen Kurs, daher „≈“
   const act = state.alarms.filter(a => !a.triggeredAt).length; $('lb-alarm').hidden = !act; put('lb-alarm', `🔔 ${act}`); $('lb-alarm').title = `${act} aktive Kurs-${act === 1 ? 'Alarm' : 'Alarme'}`;
+  lbFit();
+}
+// Live-Ergebnis am Handy: Passt die obere Zeile nicht (ab 1.000 USDT, mit Alarm-Punkt, am iPhone mit „Offen“ und Kerzen-
+// Veränderung), wird stufenweise verdichtet statt abgeschnitten – auch die Glocke daneben (flexible Spalte) darf nicht
+// zusammengedrückt werden: 1 ohne „Offen“, 2 ohne Veränderung der laufenden Kerze (wie unter 380 px), 3 Spaltenabstand 6 px,
+// 4 Betrag 90 %, 5 Betrag 82 % und Abstand 4 px, 6 Kurs-Anzeige 90 %. Gemessen wird nur, wenn sich Betrag, Breite, Glocke oder Alarm-Punkt ändern –
+// oder die Breite von Kurs-Anzeige bzw. Glocke (Platzhalter weg, Schrift geladen), nie bei jedem Kurs. Am iPad und Computer
+// wird nichts abgeschnitten, dort bleibt es bei Stufe 0.
+var lbFitKey, lbFitRaf = 0;
+function lbFit(force) {
+  const bar = $('livebar'), b = $('lb-pos'), al = $('lb-alarm'); if (!bar || !b || !al) return;
+  const key = [innerWidth, $('lb-open').textContent.length, al.hidden, al.textContent, b.dataset.pnl || ''].join('|');
+  if (!force && key === lbFitKey) return; lbFitKey = key;
+  if (bar.dataset.fit) delete bar.dataset.fit;
+  const over = e => e.scrollWidth > e.clientWidth + 1;
+  for (let i = 1, lv = '1'; i <= 6 && (over(b) || !al.hidden && over(al)); lv += ` ${++i}`) bar.dataset.fit = lv;
+}
+if (window.ResizeObserver) {
+  const ro = new ResizeObserver(() => { if (!lbFitRaf) lbFitRaf = requestAnimationFrame(() => { lbFitRaf = 0; lbFit(true); }); });
+  for (const e of [document.querySelector('.livebar .lb-market'), $('lb-alarm')]) if (e) ro.observe(e);
 }
 // ---------- Design, Layout, Tabs ----------
 const THEME_KEY = 'scalpdesk.theme.v1', LAYOUT_KEY = 'scalpdesk.layout.v1', TAB_KEY = 'scalpdesk.tab.v1';
@@ -4326,7 +4498,7 @@ addEventListener('beforeunload', e => {
 });
 // ---------- Abgleich zwischen offenen Tabs ----------
 const bc = (() => { try { return new BroadcastChannel('scalpdesk'); } catch { return null; } })();
-const SYNC_KEYS = [POS_KEY, HIST_KEY, MONEY_KEY, ALARM_KEY, SETUP_KEY, WATCH_KEY, CHANGES_KEY, 'scalpdesk.channels.v1', ZZP_KEY, 'scalpdesk.s247.v1'];
+const SYNC_KEYS = [POS_KEY, HIST_KEY, MONEY_KEY, ALARM_KEY, SETUP_KEY, WATCH_KEY, CHANGES_KEY, 'scalpdesk.channels.v1', ZZP_KEY, 'scalpdesk.s247.v1', 'scalpdesk.pnlalarm.v1'];
 function broadcastData(keys) { if (!bc || !keys.length) return; try { bc.postMessage({ t: 'data', from: TAB_ID, items: keys.map(k => [k, store.get(k)]) }); } catch {} }
 function adoptData(items) {
   const pat = items.find(([k]) => k === ZZP_KEY); if (pat) { store.adopt(ZZP_KEY, pat[1]); zzpMem = null; items = items.filter(([k]) => k !== ZZP_KEY); if (!items.length) return; }
@@ -4379,6 +4551,7 @@ async function makeQr() {
   if (!globalThis.crypto?.subtle) return showNotice('qr-error', 'Verschlüsseln geht nur, wenn die Seite über https geöffnet ist.');
   const payload = backupPayload(), all = document.querySelector('input[name="qr-scope"]:checked')?.value === 'all';
   if (!all) { payload.history = []; payload.movements = []; payload.scope = 'open'; }
+  payload.patterns = await zzpDelta(); // 3.24.0: nur das eigene Lernen, der Startbestand kommt aus dem GitHub-Projekt
   $('qr-make').disabled = true; showNotice('qr-error', null); $('qr-out').hidden = true;
   try {
     const bytes = await packSync(payload, pass), parts = syncParts(base45Encode(bytes), QR_CHUNK);
@@ -4600,23 +4773,36 @@ $('ladder-presets').addEventListener('click', e => { const b = e.target.closest(
 // 5.1: Ist ein 24/7-Dienst eingerichtet, aktiv und auf dem Stand dieser App, meldet er Alarme, Stop/Ziel und Termine (s247.js).
 // Token und Webhook-URL bleiben lokal (nicht im Backup, nicht im QR-Code) und gehen nur an Telegram bzw. Discord.
 const CHAN_KEY = 'scalpdesk.channels.v1';
-const TG_TOKEN_RE = /^\d{5,15}:[A-Za-z0-9_-]{30,80}$/, TG_CHAT_RE = /^(-?\d{1,20}|@[A-Za-z][A-Za-z0-9_]{4,31})$/;
+const TG_TOKEN_RE = /^\d{5,15}:[A-Za-z0-9_-]{30,80}$/, TG_CHAT_RE = /^(-?\d{1,20}|@[A-Za-z][A-Za-z0-9_]{4,31})$/, TG_THREAD_RE = /^\d{1,10}$/;
 const DC_URL_RE = /^https:\/\/(?:(?:ptb|canary)\.)?discord(?:app)?\.com\/api(?:\/v\d{1,2})?\/webhooks\/\d{5,25}\/[A-Za-z0-9_-]{20,120}(?:\?thread_id=\d{5,25})?$/;
 function loadChannels() {
   const v = store.get(CHAN_KEY), o = v && typeof v === 'object' ? v : {}, str = (x, n) => typeof x === 'string' ? x.trim().slice(0, n) : '';
-  return { tg: { token: str(o.tg?.token, 120), chat: str(o.tg?.chat, 40), on: o.tg?.on !== false }, dc: { url: str(o.dc?.url, 300), on: o.dc?.on !== false },
-    ev: { alarm: o.ev?.alarm !== false, pos: o.ev?.pos !== false, day: o.ev?.day !== false, news: o.ev?.news !== false } };
+  return { tg: { token: str(o.tg?.token, 120), chat: str(o.tg?.chat, 40), thread: str(o.tg?.thread, 10), bchat: str(o.tg?.bchat, 40), bthread: str(o.tg?.bthread, 10), on: o.tg?.on !== false }, dc: { url: str(o.dc?.url, 300), on: o.dc?.on !== false },
+    ev: { alarm: o.ev?.alarm !== false, pos: o.ev?.pos !== false, day: o.ev?.day !== false, news: o.ev?.news !== false, pnl: o.ev?.pnl !== false, pulse: o.ev?.pulse !== false } };
 }
 let chan = loadChannels();
 const chanState = { tg: null, dc: null }, chanClaimed = new Set(), sendWait = new Map(), CHAN_NAME = { tg: 'Telegram', dc: 'Discord' };
 let sendSeq = 0;
-const chanValid = k => k === 'tg' ? TG_TOKEN_RE.test(chan.tg.token) && TG_CHAT_RE.test(chan.tg.chat) : DC_URL_RE.test(chan.dc.url);
+const tgOk = t => TG_TOKEN_RE.test(t.token) && TG_CHAT_RE.test(t.chat) && (!t.thread || TG_THREAD_RE.test(t.thread)) && (!t.bchat || TG_CHAT_RE.test(t.bchat)) && (!t.bthread || TG_THREAD_RE.test(t.bthread));
+const chanValid = k => k === 'tg' ? tgOk(chan.tg) : DC_URL_RE.test(chan.dc.url);
 const chanReady = k => chan[k].on && chanValid(k);
+// Ablaufplan Schritt 3 (3.24.0): Ziel jeder Nachrichtenart zentral an einer Stelle. „Kursalarm“ ist der Chat (optional mit
+// Thema) für alle Alarme und Hinweise, der „Sicherungschat“ bekommt nur die Datensicherung. Unbekannte Arten gehen immer zu
+// „Kursalarm“, nie in den Sicherungschat. Vorher gab es nur eine Chat-ID für alles – News landeten so im Sicherungschat.
+const TG_ROUTE = { alarm: 'alert', pos: 'alert', day: 'alert', news: 'alert', pnl: 'alert', pulse: 'alert', s247: 'alert', test: 'alert', backup: 'backup' };
+function tgTarget(kind) {
+  const t = chan.tg;
+  if (TG_ROUTE[kind] !== 'backup') return { chat: t.chat, thread: t.thread };
+  return t.bchat ? { chat: t.bchat, thread: t.bthread } : { chat: t.chat, thread: t.bthread || t.thread }; // ohne eigenen Chat: wie Kursalarm (ggf. eigenes Thema)
+}
+const tgFields = T => ({ chat_id: T.chat, ...(T.thread ? { message_thread_id: T.thread } : {}) });
+const tgKey = T => `${T.chat}|${T.thread || ''}`;
+const tgSeparate = () => tgKey(tgTarget('backup')) !== tgKey(tgTarget('alarm'));
 function saveChannels() { if (store.set(CHAN_KEY, chan)) broadcastData([CHAN_KEY]); renderChanSummary(); scheduleS247(); }
 // Nachricht über den Worker senden; das Ergebnis kommt als {t:'sent'} zurück (onSent)
-function chanSend(k, text, test = false) {
+function chanSend(k, text, test = false, kind = 'test', opts = {}) {
   const id = ++sendSeq, m = k === 'tg'
-    ? { t: 'send', id, kind: 'telegram', test, url: `https://api.telegram.org/bot${chan.tg.token}/sendMessage`, fields: { chat_id: chan.tg.chat, text: text.slice(0, 4000), link_preview_options: JSON.stringify({ is_disabled: true }) } }
+    ? { t: 'send', id, kind: 'telegram', test, url: `https://api.telegram.org/bot${chan.tg.token}/sendMessage`, fields: { ...tgFields(tgTarget(kind)), text: text.slice(0, 4000), link_preview_options: JSON.stringify({ is_disabled: true }), ...(opts.silent ? { disable_notification: 'true' } : {}) } }
     : { t: 'send', id, kind: 'discord', test, url: chan.dc.url, fields: { content: text.slice(0, 1900), allowed_mentions: { parse: [] } } };
   return new Promise(resolve => { sendWait.set(id, { k, resolve }); live.post(m); });
 }
@@ -4638,14 +4824,14 @@ function onSent(m) {
   renderChanStatus(); renderChanSummary(); w.resolve(m);
 }
 // Meldung an alle aktiven Kanäle; je Ereignis nur einmal, auch wenn mehrere Tabs offen sind (Abstimmung über die IndexedDB)
-async function notifyChannels(type, key, text, ttl) {
+async function notifyChannels(type, key, text, ttl, opts = {}) {
   if (!chan.ev[type]) return;
   if (s247Covers(type, key)) return; // 5.1: kommt vom 24/7-Dienst – nicht doppelt senden
   const ks = ['tg', 'dc'].filter(chanReady); if (!ks.length) return;
   if (!(await store.claim(key, ttl))) return;
   chanClaimed.add(key);
   const msg = `${text}\n${new Date().toLocaleTimeString('de-DE')} Uhr`;
-  for (const k of ks) void chanSend(k, msg);
+  for (const k of ks) void chanSend(k, msg, false, type, opts); // opts.silent: lautlos (BTC-Puls nachts)
 }
 // Kurs wieder weg von der Marke: nächste Berührung darf erneut melden (nur für selbst gesendete Meldungen)
 function chanRelease(key) { if (chanClaimed.delete(key)) void store.release(key); }
@@ -4659,7 +4845,7 @@ function chanLine(k) {
 }
 function renderChanSummary() {
   const any = chan.tg.token || chan.dc.url;
-  put('chan-summary', any ? `Telegram: ${chanLine('tg')} · Discord: ${chanLine('dc')}${s247Active() ? ' · 24/7-Dienst: aktiv' : ''}` : 'Noch kein Kanal eingerichtet – Anleitung im Fenster.');
+  put('chan-summary', any ? `Telegram: ${chanLine('tg')}${chanValid('tg') ? ` · Sicherung: ${tgSeparate() ? 'eigener Chat' : 'wie Kursalarm'}` : ''} · Discord: ${chanLine('dc')}${s247Active() ? ' · 24/7-Dienst: aktiv' : ''}` : 'Noch kein Kanal eingerichtet – Anleitung im Fenster.');
 }
 function chanMsg(k, ok, text) { const p = $(k + '-status'); p.textContent = text; p.className = 'chan-status' + (ok === true ? ' ok' : ok === false ? ' err' : ''); }
 function renderChanStatus() {
@@ -4671,14 +4857,14 @@ function renderChanStatus() {
   }
 }
 function fillChanForm() {
-  $('tg-token').value = chan.tg.token; $('tg-chat').value = chan.tg.chat; $('tg-on').checked = chan.tg.on;
+  $('tg-token').value = chan.tg.token; $('tg-chat').value = chan.tg.chat; $('tg-thread').value = chan.tg.thread; $('tg-bchat').value = chan.tg.bchat; $('tg-bthread').value = chan.tg.bthread; $('tg-on').checked = chan.tg.on;
   $('dc-url').value = chan.dc.url; $('dc-on').checked = chan.dc.on;
-  $('chan-ev-alarm').checked = chan.ev.alarm; $('chan-ev-pos').checked = chan.ev.pos; $('chan-ev-day').checked = chan.ev.day; $('chan-ev-news').checked = chan.ev.news;
-  renderChanStatus();
+  $('chan-ev-alarm').checked = chan.ev.alarm; $('chan-ev-pos').checked = chan.ev.pos; $('chan-ev-day').checked = chan.ev.day; $('chan-ev-news').checked = chan.ev.news; $('chan-ev-pnl').checked = chan.ev.pnl; $('chan-ev-pulse').checked = chan.ev.pulse;
+  renderChanStatus(); renderPulseInfo();
 }
 function readChanForm() {
-  chan = { tg: { token: $('tg-token').value.trim(), chat: $('tg-chat').value.trim(), on: $('tg-on').checked }, dc: { url: $('dc-url').value.trim(), on: $('dc-on').checked },
-    ev: { alarm: $('chan-ev-alarm').checked, pos: $('chan-ev-pos').checked, day: $('chan-ev-day').checked, news: $('chan-ev-news').checked } };
+  chan = { tg: { token: $('tg-token').value.trim(), chat: $('tg-chat').value.trim(), thread: $('tg-thread').value.trim(), bchat: $('tg-bchat').value.trim(), bthread: $('tg-bthread').value.trim(), on: $('tg-on').checked }, dc: { url: $('dc-url').value.trim(), on: $('dc-on').checked },
+    ev: { alarm: $('chan-ev-alarm').checked, pos: $('chan-ev-pos').checked, day: $('chan-ev-day').checked, news: $('chan-ev-news').checked, pnl: $('chan-ev-pnl').checked, pulse: $('chan-ev-pulse').checked } };
   saveChannels(); renderChanStatus();
 }
 function openChan() {
@@ -4700,13 +4886,46 @@ async function tgDetect() {
   chanMsg('tg', null, 'Frage Telegram …'); $('tg-detect').disabled = true;
   try {
     const me = await tgApi(chan.tg.token, 'getMe'), ups = await tgApi(chan.tg.token, 'getUpdates', { limit: 100, timeout: 0 });
-    const chats = (Array.isArray(ups) ? ups : []).map(u => (u.message || u.edited_message || u.my_chat_member || u.channel_post)?.chat).filter(c => c && c.id !== undefined);
-    const c = chats.reverse().find(x => x.type === 'private') || chats[0];
-    if (!c) return chanMsg('tg', false, `Bot @${me.username} gefunden, aber er hat noch keine Nachricht von dir. In Telegram den Bot öffnen, „Start“ tippen oder „Hallo“ schreiben und dann erneut „Chat-ID ermitteln“.`);
-    $('tg-chat').value = String(c.id); readChanForm();
-    chanMsg('tg', true, `Gefunden: ${c.first_name || c.title || c.username || 'Chat'} (ID ${c.id}) über Bot @${me.username}. Jetzt „Test senden“.`);
+    // Chats und Themen, die der Bot gesehen hat (neueste zuerst) – zum Zuordnen: Kursalarm oder Sicherungschat
+    const seen = new Map();
+    for (const u of (Array.isArray(ups) ? ups : []).reverse()) {
+      const m = u.message || u.edited_message || u.channel_post || u.my_chat_member, c = m?.chat; if (!c || c.id === undefined) continue;
+      const thread = m.is_topic_message && m.message_thread_id ? String(m.message_thread_id) : '', key = `${c.id}|${thread}`;
+      if (!seen.has(key)) seen.set(key, { chat: String(c.id), thread, name: c.first_name || c.title || c.username || 'Chat', topic: m.reply_to_message?.forum_topic_created?.name || m.forum_topic_created?.name || '', priv: c.type === 'private' });
+    }
+    const list = [...seen.values()];
+    if (!list.length) return chanMsg('tg', false, `Bot @${me.username} gefunden, aber er hat noch keine Nachricht von dir. In Telegram den Bot öffnen, „Start“ tippen oder „Hallo“ schreiben und dann erneut „Chat-ID ermitteln“.`);
+    // Erste Einrichtung: den Privatchat (sonst den neuesten) gleich als Kursalarm eintragen – wie bisher, ohne Extra-Tippen
+    const auto = chan.tg.chat ? null : list.find(x => x.priv) || list[0];
+    if (auto) { $('tg-chat').value = auto.chat; $('tg-thread').value = auto.thread; readChanForm(); }
+    renderTgFound(list);
+    chanMsg('tg', true, auto
+      ? `Gefunden: ${auto.name}${auto.topic ? ` › ${auto.topic}` : ''} (ID ${auto.chat}) über Bot @${me.username} – als „Kursalarm“ eingetragen. ${list.length > 1 ? 'Weitere Chats unten: für die Datensicherung „→ Sicherungschat“ tippen, dann „Test je Nachrichtenart“.' : 'Jetzt „Test senden“.'}`
+      : `Bot @${me.username}: ${list.length === 1 ? 'ein Chat' : `${list.length} Chats bzw. Themen`} gefunden – unten „Kursalarm“ und „Sicherungschat“ zuordnen, dann „Test je Nachrichtenart“.`);
   } catch (e) { chanMsg('tg', false, e.message); }
   finally { $('tg-detect').disabled = false; }
+}
+function renderTgFound(list) {
+  const box = $('tg-found'); box.hidden = !list.length;
+  box.replaceChildren(...list.map(x => {
+    const row = el('div', 'tg-found-row'), a = btn('button ghost', '→ Kursalarm'), b = btn('button ghost', '→ Sicherungschat');
+    a.addEventListener('click', () => { $('tg-chat').value = x.chat; $('tg-thread').value = x.thread; readChanForm(); chanMsg('tg', true, `Kursalarm: ${x.name}${x.topic ? ` › ${x.topic}` : ''}.`); });
+    b.addEventListener('click', () => { $('tg-bchat').value = x.chat; $('tg-bthread').value = x.thread; readChanForm(); chanMsg('tg', true, `Sicherungschat: ${x.name}${x.topic ? ` › ${x.topic}` : ''}.`); });
+    row.append(el('span', 'tg-found-name', `${x.name}${x.topic ? ` › ${x.topic}` : ''} · ID ${x.chat}${x.thread ? ` · Thema ${x.thread}` : ''}`), a, b); return row;
+  }));
+}
+// Ablaufplan Schritt 3: je Nachrichtenart eine Testnachricht an ihr Ziel – so lässt sich die Zuordnung in Telegram prüfen
+const TG_TESTS = [['alarm', 'Kurs-Alarm'], ['pos', 'Stop-Loss/Take-Profit'], ['day', 'Tages-Verlustlimit'], ['news', 'News-Alarm (Wirtschaftstermin)'], ['pnl', 'Gewinn-/Verlust-Alarm'], ['pulse', 'BTC-Puls'], ['backup', 'Datensicherung']];
+async function chanTestAll() {
+  readChanForm(); if (!chanValid('tg')) { renderChanStatus(); return; }
+  const b = $('tg-testall'); b.disabled = true; let ok = 0;
+  for (const [kind, name] of TG_TESTS) {
+    const r = await chanSend('tg', `🧪 Test „${name}“ – gehört in: ${TG_ROUTE[kind] === 'backup' ? 'Sicherungschat' : 'Kursalarm'}\n${hhmmss(Date.now())} Uhr`, true, kind);
+    if (r.ok) ok++;
+    await new Promise(res => setTimeout(res, 1100)); // Telegram: etwa eine Nachricht pro Sekunde je Chat
+  }
+  b.disabled = false;
+  chanMsg('tg', ok === TG_TESTS.length, `${ok} von ${TG_TESTS.length} Testnachrichten zugestellt: ${TG_TESTS.length - 1} an Kursalarm, 1 an ${tgSeparate() ? 'den Sicherungschat' : 'Kursalarm (kein eigener Sicherungschat eingetragen)'}.`);
 }
 async function chanTest(k) {
   readChanForm();
@@ -4720,13 +4939,14 @@ $('chan-open').addEventListener('click', openChan);
 $('chan-close').addEventListener('click', () => $('chan-dialog').close());
 $('chan-done').addEventListener('click', () => $('chan-dialog').close());
 $('chan-dialog').addEventListener('change', readChanForm);
-for (const id of ['tg-token', 'tg-chat', 'dc-url']) $(id).addEventListener('blur', readChanForm);
+for (const id of ['tg-token', 'tg-chat', 'tg-thread', 'tg-bchat', 'tg-bthread', 'dc-url']) $(id).addEventListener('blur', readChanForm);
+$('tg-testall').addEventListener('click', () => void chanTestAll());
 $('tg-detect').addEventListener('click', () => void tgDetect());
 $('tg-test').addEventListener('click', () => void chanTest('tg'));
 $('dc-test').addEventListener('click', () => void chanTest('dc'));
 $('chan-clear').addEventListener('click', () => {
   if (!confirm('Bot-Token, Chat-ID und Webhook-URL auf diesem Gerät löschen?')) return;
-  chan = { tg: { token: '', chat: '', on: true }, dc: { url: '', on: true }, ev: chan.ev }; chanState.tg = chanState.dc = null;
+  chan = { tg: { token: '', chat: '', thread: '', bchat: '', bthread: '', on: true }, dc: { url: '', on: true }, ev: chan.ev }; chanState.tg = chanState.dc = null; $('tg-found').hidden = true;
   saveChannels(); fillChanForm();
 });
 renderChanSummary();
@@ -5452,11 +5672,11 @@ const TGB_KEY = 'scalpdesk.tgbackup.v1';
 var tgb = { cfg: loadTgb(), timer: null, busy: false, error: '' };
 function loadTgb() { const v = store.get(TGB_KEY); return { on: !!v?.on, chat: typeof v?.chat === 'string' ? v.chat : '', msg: Number(v?.msg) || 0, at: Number(v?.at) || 0, sig: typeof v?.sig === 'string' ? v.sig : '' }; }
 function saveTgb() { store.set(TGB_KEY, { ...tgb.cfg }); }
-function tgConfigured() { return TG_TOKEN_RE.test(chan.tg.token) && TG_CHAT_RE.test(chan.tg.chat); }
+function tgConfigured() { return chanValid('tg'); }
 function tgbReady() { return !!tgb && tgb.cfg.on && tgConfigured(); }
-// Fingerabdruck der gesicherten Daten – ohne Zeitstempel und ohne die still gelernten Muster (die ändern sich mit jeder
-// Kerze; sie reisen in der Datei mit, lösen aber allein kein neues Senden aus)
-function tgbSig(p) { const j = JSON.stringify({ ...p, exportedAt: 0, patterns: null }); let h = 0; for (let i = 0; i < j.length; i++) h = (h * 31 + j.charCodeAt(i)) | 0; return `${j.length}:${h >>> 0}`; }
+// Fingerabdruck der gesicherten Daten – ohne Zeitstempel. Die still gelernten Muster ändern sich mit jeder Kerze; sie reisen
+// immer in der Datei mit und lösen allein höchstens alle 6 Stunden ein neues Senden aus (3.24.0, zzpStamp)
+function tgbSig(p) { const j = JSON.stringify({ ...p, exportedAt: 0, patterns: zzpStamp() }); let h = 0; for (let i = 0; i < j.length; i++) h = (h * 31 + j.charCodeAt(i)) | 0; return `${j.length}:${h >>> 0}`; }
 function scheduleTgBackup(delay = 4000) { if (!tgbReady()) return; clearTimeout(tgb.timer); tgb.timer = setTimeout(() => { tgb.timer = null; void sendTgBackup(); }, delay); }
 async function tgPost(method, fd, keepalive = false) {
   let r; try { r = await fetch(`https://api.telegram.org/bot${chan.tg.token}/${method}`, { method: 'POST', body: fd, credentials: 'omit', referrerPolicy: 'no-referrer', cache: 'no-store', keepalive }); }
@@ -5470,7 +5690,8 @@ async function tgPost(method, fd, keepalive = false) {
 async function sendTgBackup(force = false, leaving = false) {
   if (!(force ? tgConfigured() : tgbReady()) || tgb.busy) return; // „Jetzt senden“ geht auch ohne die Automatik (3.19.1)
   const payload = backupPayload(), sig = tgbSig(payload);
-  if (!force && sig === tgb.cfg.sig && tgb.cfg.chat === chan.tg.chat) return; // Telegram hat schon diesen Stand
+  const T = tgTarget('backup'), where = tgKey(T); // 3.24.0: eigenes Ziel „Sicherungschat“ (Ablaufplan Schritt 3)
+  if (!force && sig === tgb.cfg.sig && tgb.cfg.chat === where) return; // Telegram hat schon diesen Stand
   const claimed = !leaving && await store.claim('tgbackup', 20000);
   if (!leaving && !claimed) return;   // ein anderer Tab sendet gerade
   tgb.busy = true; tgb.cfg = loadTgb(); renderTgbInfo();
@@ -5478,17 +5699,17 @@ async function sendTgBackup(force = false, leaving = false) {
     const name = 'scalpdesk-sicherung.json', text = JSON.stringify(payload, null, 1), file = new Blob([text], { type: 'application/json' });
     const caption = `💾 Scalp-Desk-Sicherung · ${new Date().toLocaleString('de-DE')}\n${state.positions.length} offene Positionen · ${state.trades.length} Trades${state.movements.length ? ` · ${state.movements.length} Geldbewegungen` : ''}\nWiederherstellen: Datei speichern, im Dashboard „Backup einspielen“.`;
     const keep = leaving && text.length < 60000; // keepalive erlaubt höchstens 64 KB
-    let msg = tgb.cfg.chat === chan.tg.chat ? tgb.cfg.msg : 0, done = false;
+    let msg = tgb.cfg.chat === where ? tgb.cfg.msg : 0, done = false;
     if (msg) {
-      const fd = new FormData(); fd.append('chat_id', chan.tg.chat); fd.append('message_id', String(msg));
+      const fd = new FormData(); fd.append('chat_id', T.chat); fd.append('message_id', String(msg));
       fd.append('media', JSON.stringify({ type: 'document', media: 'attach://file', caption })); fd.append('file', file, name);
       try { await tgPost('editMessageMedia', fd, keep); done = true; } catch (e) { if (e.code !== 400) throw e; }   // Nachricht gelöscht: neu senden
     }
     if (!done) {
-      const fd = new FormData(); fd.append('chat_id', chan.tg.chat); fd.append('caption', caption); fd.append('disable_notification', 'true'); fd.append('document', file, name);
+      const fd = new FormData(); fd.append('chat_id', T.chat); if (T.thread) fd.append('message_thread_id', T.thread); fd.append('caption', caption); fd.append('disable_notification', 'true'); fd.append('document', file, name);
       msg = (await tgPost('sendDocument', fd, keep))?.message_id || 0;
     }
-    tgb.cfg = { ...tgb.cfg, chat: chan.tg.chat, msg, at: Date.now(), sig }; saveTgb(); tgb.error = '';
+    tgb.cfg = { ...tgb.cfg, chat: where, msg, at: Date.now(), sig }; saveTgb(); tgb.error = '';
     markBackedUp('telegram');
   } catch (e) { tgb.error = e?.message || String(e); }
   finally { tgb.busy = false; if (claimed) void store.release('tgbackup'); renderTgbInfo(); }
@@ -5836,7 +6057,7 @@ function zzpLearn(c = state.candles, pct = zzPct()) {
   const cc = c.slice(0, closed);
   store.claim('zzp|' + series, 3e4).then(ok => { // ein Merker je Chart, 30 s gültig: zum selben Kerzenschluss lernt nur ein Tab
     if (!ok) return; zzpMem = null;
-    const P = zzpData(); if (zzpApply(P, zzMoments(cc, pct), series, prefix)) { store.set(ZZP_KEY, P); broadcastData([ZZP_KEY]); }
+    const P = zzpData(); if (zzpApply(P, zzMoments(cc, pct), series, prefix)) zzpSave(P);
   });
 }
 // Urteil für die aktuelle Prognose: Merkmale der letzten abgeschlossenen Kerze, Statistik des Musters, Gewinnschwelle
@@ -5856,12 +6077,55 @@ function zzpVerdict(up, pct = zzPct(), c = state.candles) {
 }
 // Sicherung: still mitführen; beim Einspielen je Muster die Fassung mit mehr Fällen, je Reihe den späteren Stand behalten
 function zzpExport() { return zzpData(); }
-function zzpImport(x) {
-  if (x?.v !== 1 || !x.s || typeof x.s !== 'object' || !x.r || typeof x.r !== 'object') return;
-  const P = zzpData(); let changed = false;
-  for (const [k, v] of Object.entries(x.s)) if (Array.isArray(v) && v[0] >= 0 && v[1] >= 0 && v[1] <= v[0] && Number.isInteger(v[0]) && Number.isInteger(v[1]) && !(P.s[k]?.[0] >= v[0])) { P.s[k] = [v[0], v[1]]; changed = true; }
-  for (const [k, v] of Object.entries(x.r)) if (Array.isArray(v) && Number.isFinite(v[0]) && !(P.r[k]?.[0] >= v[0])) { P.r[k] = [v[0], Number(v[1]) || 0, typeof v[2] === 'string' ? v[2] : '']; changed = true; }
-  if (changed) { store.set(ZZP_KEY, P); broadcastData([ZZP_KEY]); }
+// base: Version eines eingespielten Startbestands (Ablaufplan Schritt 2); Rückgabe: Zahl der übernommenen Einträge
+function zzpImport(x, base = '') {
+  if (x?.v !== 1 || !x.s || typeof x.s !== 'object' || !x.r || typeof x.r !== 'object') return 0;
+  const P = zzpData(); let changed = 0;
+  for (const [k, v] of Object.entries(x.s)) if (Array.isArray(v) && v[0] >= 0 && v[1] >= 0 && v[1] <= v[0] && Number.isInteger(v[0]) && Number.isInteger(v[1]) && !(P.s[k]?.[0] >= v[0])) { P.s[k] = [v[0], v[1]]; changed++; }
+  for (const [k, v] of Object.entries(x.r)) if (Array.isArray(v) && Number.isFinite(v[0]) && !(P.r[k]?.[0] >= v[0])) { P.r[k] = [v[0], Number(v[1]) || 0, typeof v[2] === 'string' ? v[2] : '']; changed++; }
+  const n = changed; if (base && P.base !== base) { P.base = base; changed++; }
+  if (changed) zzpSave(P);
+  return n;
+}
+// Ablaufplan Schritt 2 (3.24.0): Musterbestand mit Versionsstand – rev zählt die Änderungen, at ist die letzte, base der
+// eingespielte Startbestand. Nach jeder Änderung sofort dauerhaft gespeichert (IndexedDB mit Kopie im localStorage), an offene
+// Tabs verteilt und – falls eingeschaltet – spätestens alle 6 Stunden mit der Telegram-Sicherung verschickt.
+function zzpSave(P) {
+  P.rev = (Number(P.rev) || 0) + 1; P.at = Date.now();
+  store.set(ZZP_KEY, P); broadcastData([ZZP_KEY]);
+  if (tgb && !tgb.timer) scheduleTgBackup(30000);
+  renderZzpInfo();
+}
+// Für den Fingerabdruck der Telegram-Sicherung: ändert sich höchstens alle 6 Stunden (die Muster ändern sich mit jeder Kerze)
+function zzpStamp() { const at = Number(zzpData().at) || 0; return at ? Math.floor(at / 216e5) : 0; }
+function zzpInfo() { const P = zzpData(), s = Object.values(P.s); return { patterns: s.length, cases: s.reduce((a, v) => a + (v[0] || 0), 0), base: P.base || '', at: Number(P.at) || 0, rev: Number(P.rev) || 0 }; }
+// QR-Abgleich (3.24.0): nur Einträge, die vom eingespielten Startbestand abweichen (das eigene Lernen) und die Merker je Reihe –
+// den Startbestand holt sich das andere Gerät selbst aus dem GitHub-Projekt. Hält den QR-Code klein (ohne: +3 Codes).
+// Beim Einspielen zählt je Muster die Fassung mit mehr Fällen, also geht nichts verloren. Datei- und Telegram-Sicherung
+// enthalten weiter den ganzen Bestand. Ohne Startbestand oder ohne Netz: der ganze Bestand.
+async function zzpDelta() {
+  const P = zzpData(); if (!P.base) return P;
+  try {
+    const r = await fetch('data/muster-start.json'), x = r.ok ? await r.json() : null;
+    if (String(x?.version) !== P.base || !x.s || typeof x.s !== 'object') return P;
+    const s = {}; for (const [k, v] of Object.entries(P.s)) { const b = x.s[k]; if (!Array.isArray(b) || b[0] !== v[0] || b[1] !== v[1]) s[k] = v; }
+    return { v: 1, s, r: P.r, base: P.base };
+  } catch { return P; }
+}
+// Nur die Muster (ohne Positionen, Trades, Zugänge): Datei für einen neuen Startbestand
+function zzpExportFile() {
+  const P = zzpData(), d = new Date().toISOString().slice(0, 10);
+  return { name: `muster-${d}.json`, text: JSON.stringify({ kind: 'scalpdesk-patterns', v: 1, version: `${d}.${Number(P.rev) || 0}`, created: d, source: 'Export aus Scalp Desk: gelernte Chartmuster, ohne persönliche Daten', base: P.base || '', s: P.s, r: P.r }) };
+}
+// Startbestand aus dem GitHub-Projekt (data/muster-start.json): beim Programmstart einmal je Version wie eine Sicherung
+// eingespielt – je Muster die Fassung mit mehr Fällen, je Reihe der spätere Stand, nichts doppelt. Neue Nutzer, ein neues Gerät
+// oder ein geleerter Browser-Speicher haben so sofort den Bestand; eigenes Lernen zählt danach weiter.
+async function zzpStart() {
+  try {
+    const r = await fetch('data/muster-start.json', { cache: 'no-cache' }); if (!r.ok) return;
+    const x = await r.json(); if (x?.kind !== 'scalpdesk-patterns' || x.v !== 1 || !x.version) return;
+    if (zzpData().base !== String(x.version)) zzpImport(x, String(x.version));
+  } catch { /* ohne Netz: beim nächsten Start */ }
 }
 // Platz rechts im Chart für die Prognose – nur am aktuellen Rand (nicht beim Zurückblättern)
 // narrow: Handy hochkant – rechts liegen die Kurs-Schildchen über dem Chart, dafür etwa ein Fünftel mehr Platz
@@ -5893,7 +6157,8 @@ function drawZigzagForecast(g, { offset, x, y, top, bottom, left, laneX = Infini
     + (corr !== 1 ? `, mit Lernfaktor ×${number(corr)} → ${sign}${number(tp)} % (die letzten Schwünge fielen ${corr < 1 ? 'kleiner' : 'größer'} aus als geschätzt)` : '') + '. '
     + (L.k < 6 ? 'Lernfaktor: noch zu wenige abgeschlossene Schwünge zum Prüfen. '
       : `${L.use ? 'Der Lernfaktor hat' : 'Lernfaktor nicht angewendet: er hätte'} die Größenschätzung in diesem Chart bisher ${L.use ? '' : 'nicht '}verbessert (typische Abweichung ${Math.round(L.dev.c * 100)} % statt ${Math.round(L.dev.p * 100)} %). `)
-    + 'Band: mittlere Hälfte der Schwünge. Annahme: der aktuelle Extrempunkt ist die Umkehr. ' + why + 'Keine Garantie.';
+    + 'Band: mittlere Hälfte der Schwünge. Annahme: der aktuelle Extrempunkt ist die Umkehr. ' + why
+    + (V && zzpData().base ? `Die Fälle umfassen den Startbestand (Version ${zzpData().base}) und dein eigenes Lernen auf diesem Gerät. ` : '') + 'Keine Garantie.'; // 3.24.0: Startbestand
   const grp = node('g', { class: V?.ok && V.sign < 0 ? 'zz-fc contra' : 'zz-fc' }); grp.append(node('title', {}, tip));
   grp.append(node('polygon', { class: 'zz-fc-cone', points: `${x0.toFixed(1)},${y0.toFixed(1)} ${x1.toFixed(1)},${y(f.lo).toFixed(1)} ${x1.toFixed(1)},${y(f.hi).toFixed(1)}` }));
   grp.append(node('line', { class: 'zz-fc-line', x1: x0.toFixed(1), y1: y0.toFixed(1), x2: x1.toFixed(1), y2: y1.toFixed(1) }));
@@ -5913,6 +6178,36 @@ function drawZigzagForecast(g, { offset, x, y, top, bottom, left, laneX = Infini
 }
 $('zz-fc').setAttribute('aria-pressed', String(!!zzCfg().fc));
 $('zz-fc').addEventListener('click', () => { const on = !zzCfg().fc; store.set(ZZ_KEY, { ...zzCfg(), fc: on }); $('zz-fc').setAttribute('aria-pressed', String(on)); renderMarket(); });
+// ---------- Ablaufplan Schritt 2 (3.24.0): gelernte Chartmuster dauerhaft, Startbestand, normaler Reset ----------
+// Gelernt werden nur die Treffer der ZigZag-Prognose je Muster (zigzag.js, Schlüssel scalpdesk.zzpatterns.v1); die Muster-
+// Merkmale selbst stehen fest im Programm. Der Bestand liegt im Browser-Speicher des Geräts (IndexedDB mit Kopie im
+// localStorage), wird nach jeder Änderung sofort gespeichert (mit Versionsstand rev/at), reist still in jeder Sicherung mit und
+// kommt über den Startbestand im GitHub-Projekt (data/muster-start.json) auf neue Geräte und nach einem geleerten Speicher.
+// „Handelsdaten zurücksetzen“ ist der normale Reset: Er löscht Positionen, Trades, Geldbewegungen und Alarme, nie die Muster.
+function renderZzpInfo() {
+  if (!$('zzp-info')) return;
+  const i = zzpInfo(), when = i.at ? new Date(i.at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+  put('zzp-info', i.cases ? `${number(i.cases, 0)} Fälle in ${i.patterns} Mustern${i.base ? ` · Startbestand Version ${i.base} eingespielt` : ''}${when ? ` · zuletzt geändert ${when}` : ''}` : 'noch keine – sie entstehen beim Beobachten des Charts (ZigZag-Prognose).');
+}
+// Nur die Muster, ohne persönliche Daten: Grundlage für einen neuen Startbestand im GitHub-Projekt
+$('zzp-export').addEventListener('click', () => { const f = zzpExportFile(); download(f.name, f.text, 'application/json'); backupStatus(`Musterbestand gespeichert: ${f.name}${isAppleMobile ? ' (in der Dateien-App unter „Downloads“)' : ''} – enthält nur die gelernten Muster, keine persönlichen Daten.`); });
+// ---- Normaler Reset ----
+function openReset() { if (!$('reset-dialog').open) $('reset-dialog').showModal(); }
+function resetTradingData() {
+  // 1. Sicherung davor als Datei (unverschlüsselt): am iPad in der Dateien-App unter „Downloads“
+  const d = new Date().toISOString().slice(0, 10), name = `backup-vor-zuruecksetzen-${d}.json`;
+  download(name, JSON.stringify(backupPayload(), null, 1), 'application/json'); markBackedUp('download');
+  // 2. Handelsdaten leeren; Muster, Einstellungen, Vorauswahl und Zugänge bleiben
+  state.positions = []; state.trades = []; state.movements = []; state.alarms = []; pnlResetAll();
+  // 3. Telegram: die nächste Sicherung kommt als neue Nachricht, die bisherige bleibt als Stand vor dem Zurücksetzen im Chat
+  if (tgb) { tgb.cfg = { ...tgb.cfg, msg: 0, sig: '' }; saveTgb(); }
+  posStructure = ''; histStructure = ''; alarmKey = '';
+  persist(); render();
+  backupStatus(`Handelsdaten zurückgesetzt. Die Sicherung davor: „${name}“${isAppleMobile ? ' in der Dateien-App unter „Downloads“' : ' bei den Downloads'}. Gelernte Muster, Einstellungen und Zugänge sind erhalten.`);
+}
+$('reset-open').addEventListener('click', openReset);
+for (const id of ['reset-close', 'reset-cancel']) $(id).addEventListener('click', () => $('reset-dialog').close());
+$('reset-go').addEventListener('click', () => { $('reset-dialog').close(); resetTradingData(); });
 // ---------- Schritt 2.2: RSI-Divergenz-Scanner ----------
 // Hintergrund-Analyse der letzten 40 abgeschlossenen Kerzen (die laufende Kerze bleibt außen vor). Je Art – Tief und Hoch –
 // wird der jüngste ZigZag-Umkehrpunkt (auch der noch laufende Extrempunkt) mit dem vorherigen bestätigten Umkehrpunkt
@@ -6457,11 +6752,12 @@ function renderDivTip() {
   box.addEventListener('toggle', () => {
     if (!box.open) return;
     divgAck(divgList()); divgShown = ''; renderDivTip();
-    // Höhe bis zum unteren Fensterrand bzw. bis über die Tab-Leiste am iPad/Handy (220–520 px), der Rest scrollt in der
-    // Erklärung; im Vollbild begrenzt das CSS
+    // Höhe bis zum unteren Fensterrand bzw. bis über die Tab-Leiste am iPad/Handy (160–520 px), der Rest scrollt in der
+    // Erklärung; im Vollbild begrenzt das CSS. Erst unter 160 px Platz bleibt es bei 220 px (die Seite scrollt). Bis 3.24.0 galten
+    // immer mindestens 220 px – seit die Kacheln höher sind, ragte die Erklärung am Computer sonst ein Stück heraus
     const body = box.querySelector('.tip-body'), nav = $('tabbar'), end = nav?.getClientRects().length ? nav.getBoundingClientRect().top : innerHeight;
     body.style.maxHeight = '';
-    if (!docEl.hasAttribute('data-chartfull')) body.style.maxHeight = Math.round(Math.max(220, Math.min(520, end - body.getBoundingClientRect().top - 12))) + 'px';
+    if (!docEl.hasAttribute('data-chartfull')) { const room = end - body.getBoundingClientRect().top - 12; body.style.maxHeight = Math.round(Math.min(520, room >= 160 ? room : 220)) + 'px'; }
   });
   // Alarm am Extrempunkt: iPad/Handy im Schnell-Alarm, am Computer im Formular (wie Fibonacci- und Orderbuch-Leiste)
   $('div-alarm').addEventListener('click', () => {
@@ -6894,17 +7190,26 @@ function wlSpark(e, w = 44, h = 16) {
   const lo = Math.min(...vals), hi = Math.max(...vals), span = hi - lo || 1, step = w / (vals.length - 1);
   return vals.map((v, i) => `${(i * step).toFixed(1)},${(h - 1 - ((v - lo) / span) * (h - 2)).toFixed(1)}`).join(' ');
 }
-// Anzeige-Werte einer Kachel (auch für die Tests): Kurs, 1m-Veränderung, 30-Minuten-Richtung, Tendenz
+// Die vier Regeln der 1m-Tendenz für Kachel und Detailfeld – dieselbe Grundlage (e.rating aus signalRating): ▲ bullish,
+// ▼ bearish, – neutral; ohne Bewertung (Coin lädt, zu wenige Kerzen, Fehler) alle vier neutral und der RSI ohne Zahl (3.24.0)
+function wlRules(r) {
+  return [['trend', 'Trend'], ['kurs', 'Kurs'], ['rsi', 'RSI'], ['macd', 'MACD']].map(([k, name], i) => {
+    const x = r?.rules[i], s = x ? x.score : 0;
+    return { k, label: x ? x.label : name, arrow: s > 0 ? '▲' : s < 0 ? '▼' : '–', dir: s > 0 ? 'up' : s < 0 ? 'down' : x ? 'flat' : 'none', score: s };
+  });
+}
+// Anzeige-Werte einer Kachel (auch für die Tests): Kurs, Veränderung über 1 und über 30 Minuten – beschriftet wie „1 Min. +0,54 %“
+// und „30 Min. +1,33 %“ (Ablaufplan Schritt 5), fehlende Werte neutral „–“ –, Tendenz und die vier Regeln
 function wlView(e, now) {
   const price = wlPrice(e), ref = wlRef(e, now), first = e.closed.at(-WL_SPARK)?.close;
   const chg = price > 0 && ref > 0 ? (price / ref - 1) * 100 : null, chg30 = price > 0 && first > 0 ? (price / first - 1) * 100 : null;
-  const dir = v => (v == null || Math.abs(v) < 0.005 ? 'flat' : v > 0 ? 'up' : 'down');
+  const dir = v => (v == null || Math.abs(v) < 0.005 ? 'flat' : v > 0 ? 'up' : 'down'), pctOf = v => v == null ? '–' : dir(v) === 'flat' ? '±0,00 %' : `${signed(v)} %`;
   return {
     price, chg, chg30, rating: e.rating,
     priceText: price > 0 ? priceText(price) : e.error ? '—' : '…',
-    chgText: chg == null ? '' : `${dir(chg) === 'up' ? '▲' : dir(chg) === 'down' ? '▼' : '±'}${number(Math.abs(chg), 2)} %`,
+    chgText: `1 Min. ${pctOf(chg)}`, chg30Text: `30 Min. ${pctOf(chg30)}`,
     chgDir: dir(chg), sparkDir: dir(chg30),
-    sigText: e.rating ? scoreText(e.rating.score) : e.error ? '' : '·', tone: toneOf(e.rating)
+    sigText: e.rating ? scoreText(e.rating.score) : e.error ? '' : '·', tone: toneOf(e.rating), rules: wlRules(e.rating)
   };
 }
 // Werte in die bestehenden Felder schreiben (nur was sich geändert hat)
@@ -6918,15 +7223,17 @@ function wlPaint(now = Date.now(), force = false) {
     const v = wlView(e, now), q = s => tile.querySelector(s);
     wlSet(q('.wl-price'), 'textContent', v.priceText);
     const chg = q('.wl-chg'); wlSet(chg, 'textContent', v.chgText); wlSet(chg, 'className', `wl-chg ${v.chgDir}`);
+    const c30 = q('.wl-chg30'); wlSet(c30, 'textContent', v.chg30Text); wlSet(c30, 'className', `wl-chg30 ${v.sparkDir}`);
+    const rs = q('.wl-rules'); if (rs) v.rules.forEach((x, i) => { const n = rs.children[i]; if (!n) return; wlSet(n.firstChild, 'textContent', x.label); wlSet(n.lastChild, 'textContent', x.arrow); wlSet(n, 'className', `wl-rule ${x.dir}`); });
     const sig = q('.wl-sig'); wlSet(sig, 'textContent', v.sigText); if (sig && sig.dataset.tone !== v.tone) sig.dataset.tone = v.tone;
     const svg = q('.wl-spark'), pts = wlSpark(e); svg?.setAttribute('class', `wl-spark ${v.sparkDir}`);
     const line = svg?.firstChild; if (line && line.getAttribute('points') !== pts) line.setAttribute('points', pts);
     const r = v.rating, title = e.error ? `${coin}: ${e.error}`
-      : `${coin}/USDT${e.market === 'futures' ? ' (Futures)' : ''}: ${v.priceText} USDT${v.chg != null ? ` · letzte Minute ${v.chgText.slice(1)} ${v.chgDir === 'down' ? 'gefallen' : v.chgDir === 'up' ? 'gestiegen' : 'unverändert'}` : ''}`
-        + `${v.chg30 != null ? ` · 30 Minuten ${number(v.chg30, 2)} %` : ''}`
-        + ` · 1m-Tendenz ${r ? `${scoreText(r.score)}/4 (${r.rules.map(x => `${x.label} ${x.score > 0 ? '↑' : x.score < 0 ? '↓' : '–'}`).join(', ')})` : 'noch keine (mindestens 60 Kerzen)'} · antippen öffnet den Chart`;
+      : `${coin}/USDT${e.market === 'futures' ? ' (Futures)' : ''}: ${v.priceText} USDT · ${v.chgText} · ${v.chg30Text}`
+        + ` · 1m-Tendenz ${r ? `${scoreText(r.score)}/4 (${v.rules.map(x => `${x.label} ${x.arrow}`).join(', ')})` : 'noch keine (mindestens 60 Kerzen)'} · antippen zeigt die Signale`;
     wlSet(tile, 'title', title);
   }
+  wldPaint(now, force); // Detailfeld (Schritt 6) im selben Takt
 }
 // Reihe laden (Zwischenspeicher, sonst REST; ohne Spot-Paar die USDT-Futures)
 async function wlLoad(e) {
@@ -6960,6 +7267,253 @@ function wlTick(now) {
   wlPaint(now);
 }
 if ('IntersectionObserver' in window) new IntersectionObserver(es => { for (const e of es) { wl.vis = e.isIntersecting; if (wl.vis) wlPaint(Date.now(), true); } }).observe($('watchlist'));
+// ---------- Ablaufplan Schritt 6 (3.24.0): Detailfeld unter den Krypto-Kacheln ----------
+// Antippen einer Kachel öffnet darunter ein Feld mit den aktuellen Signalen dieses Coins: oben der Coin, darunter die bullishen
+// Signale in Grün und die bearishen in Rot, jedes mit Info-Symbol – Erklärung per Tippen/Klick, mit der Maus auch beim Überfahren.
+// Dieselbe Grundlage wie die Kachel: die vier Regeln der 1m-Tendenz (signalRating auf abgeschlossenen 1-Minuten-Kerzen, e.rating
+// aus watchlive.js); die Zahlen in den Erklärungen rechnet wldVals() aus denselben Kerzen. Nur ein Feld zugleich: eine andere
+// Kachel wechselt den Inhalt, dieselbe Kachel, „×“ oder Esc schließen es, wird die ausgewählte Kachel entfernt, schließt es
+// (renderWatchlist). Leere Gruppen bleiben verborgen, sind beide leer: „Aktuell keine Signale“. Bei Live-Änderungen wächst das
+// Feld nur, es schrumpft nicht wieder (wie steadyHeights) – sonst spränge der Chart darunter bei jedem Regelwechsel.
+// var statt let: renderWatchlist() kann laufen, bevor dieser Abschnitt ausgewertet ist
+// (ohne Startwert: hat renderWatchlist das Feld schon angelegt, bleibt es erhalten; leer heißt „kein Feld offen“)
+var wldSel, wld;
+function wldBox() {
+  if (wld) return wld.box;
+  const box = el('div', 'wl-detail'), clip = el('div', 'wl-d-clip'), sec = el('section', 'wl-d-box');
+  box.id = 'wl-detail'; box.dataset.open = '0'; clip.inert = true; sec.setAttribute('aria-labelledby', 'wl-d-title');
+  const head = el('div', 'wl-d-head'), title = el('h3', 'wl-d-title'), meta = el('span', 'wl-d-meta');
+  const chart = btn('chip-tool wl-d-chart', 'Im Chart öffnen'), close = btn('wl-d-close', '×');
+  title.id = 'wl-d-title'; close.setAttribute('aria-label', 'Detailfeld schließen'); close.title = 'Schließen (Esc)';
+  head.append(title, meta, chart, close);
+  const group = (cls, name) => { const g = el('div', `wl-d-grp ${cls}`); g.append(el('h4', '', name), el('ul')); g.hidden = true; return g; };
+  const up = group('up', 'Bullish'), down = group('down', 'Bearish'), none = el('p', 'wl-d-none', ''), body = el('div', 'wl-d-body');
+  none.hidden = true; body.append(up, down, none);
+  // die vier Signalzeilen: einmal angelegt, danach nur Texte und Gruppe geändert – ein offenes Info-Fenster bleibt offen
+  const items = ['trend', 'kurs', 'rsi', 'macd'].map(k => {
+    const li = el('li', 'wl-d-sig'), tip = el('details', 'tip left wl-d-tip'), sum = el('summary');
+    li.dataset.k = k; li.hidden = true; tip.dataset.side = 'left'; sum.append(el('span', '', 'i')); tip.append(sum, el('div', 'tip-body'));
+    li.append(el('span', 'wl-d-arrow', ''), el('span', 'wl-d-txt', ''), tip); return li;
+  });
+  sec.append(head, body, el('p', 'wl-d-foot', 'Beschreibt die letzten Minuten – kein Handelssignal mit nachgewiesenem Vorteil.'));
+  clip.append(sec); box.append(clip);
+  close.addEventListener('click', () => wldClose(true));
+  // Erklärung auch beim Überfahren mit der Maus (am iPad mit Trackpad ebenso); Klick auf ein so geöffnetes Info-Symbol heftet
+  // die Erklärung an, statt sie zu schließen. Finger und Stift: Antippen wie bei allen Info-Symbolen.
+  box.addEventListener('pointerover', e => { if (e.pointerType !== 'mouse') return; const t = e.target.closest('details.wl-d-tip'); if (t && !t.open) { t.dataset.hover = '1'; t.open = true; } });
+  box.addEventListener('pointerout', e => { if (e.pointerType !== 'mouse') return; const t = e.target.closest('details.wl-d-tip'); if (t?.dataset.hover && !t.contains(e.relatedTarget)) { delete t.dataset.hover; t.open = false; } });
+  box.addEventListener('click', e => { const t = e.target.closest('details.wl-d-tip'); if (t?.dataset.hover && e.target.closest('summary')) { e.preventDefault(); delete t.dataset.hover; } }, true);
+  wld = { box, clip, body, title, meta, chart, up, down, none, items, key: '', minH: 0, timer: 0 };
+  return box;
+}
+function wldTiles(fn) { for (const t of document.querySelectorAll('#watchlist .wl-tile')) fn(t); }
+function wldToggle(coin) { if (wldSel === coin) wldClose(false); else wldOpen(coin); }
+function wldOpen(coin) {
+  wldBox(); const was = wldSel; wldSel = coin;
+  for (const d of wld.box.querySelectorAll('details[open]')) d.open = false;
+  wldTiles(t => t.setAttribute('aria-expanded', String(t.dataset.watch === coin)));
+  // anderer Coin: Mindesthöhe neu – der Wechsel kommt vom Nutzer, da darf sich die Höhe ändern
+  wld.minH = 0; wld.body.style.minHeight = ''; wld.key = '';
+  wldPaint(Date.now(), true);
+  if (was) return;
+  wld.clip.inert = false; wld.box.dataset.open = '1'; clearTimeout(wld.timer);
+  // nach dem Aufklappen: Info-Fenster dürfen über den Rand ragen; liegt das Feld unter dem Bildrand, so weit scrollen, bis es ganz zu sehen ist
+  wld.timer = setTimeout(() => { if (!wldSel) return; wld.box.classList.add('shown'); wld.box.scrollIntoView({ block: 'nearest', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); }, 280);
+}
+function wldClose(focusTile) {
+  if (!wld || !wldSel) { wldSel = ''; return; }
+  const coin = wldSel; wldSel = '';
+  for (const d of wld.box.querySelectorAll('details[open]')) d.open = false;
+  clearTimeout(wld.timer); wld.box.classList.remove('shown'); wld.box.dataset.open = '0'; wld.clip.inert = true;
+  wldTiles(t => t.setAttribute('aria-expanded', 'false'));
+  // mit „×“ geschlossen: der Fokus geht zurück auf die Kachel (sonst stünde er im geschlossenen Feld)
+  if (focusTile) document.querySelector(`#watchlist .wl-tile[data-watch="${coin}"]`)?.focus({ preventScroll: true });
+}
+// Zahlen für die Erklärungen: aus denselben abgeschlossenen 1-Minuten-Kerzen wie e.rating (einmal je Kerzenschluss)
+function wldVals(e) {
+  const r = e.rating; if (e.vals?.t === r.closeTime) return e.vals;
+  const cl = e.closed.slice(-WL_WINDOW).map(c => c.close), R = rsi(cl), M = macd(cl);
+  return (e.vals = { t: r.closeTime, last: cl.at(-1), e20: ema(cl, 20).at(-1), e50: ema(cl, 50).at(-1), rNow: R.at(-1), rPrev: R.at(-2), mLine: M.line.at(-1), mSig: M.signal.at(-1) });
+}
+const wldNum = x => { const a = Math.abs(x); return signed(x, a >= 100 ? 1 : a >= 1 ? 2 : a >= 0.01 ? 4 : 6); };
+// Kurztext und Erklärung je Regel und Richtung (s > 0 bullish, s < 0 bearish)
+function wldText(k, s, label, v) {
+  const up = s > 0, kind = up ? 'Bullish' : 'Bearish', P = priceText, over = up ? 'über' : 'unter';
+  if (k === 'trend') return { short: `Trend: EMA 20 ${over} EMA 50`, long: [`${kind}, weil der kurzfristige Durchschnitt (EMA 20: ${P(v.e20)}) ${over} dem längerfristigen (EMA 50: ${P(v.e50)}) liegt – die Kurse der letzten Minuten ${up ? 'steigen' : 'fallen'} im Schnitt.`] };
+  if (k === 'kurs') return { short: `Kurs ${over} EMA 20`, long: [`${kind}, weil der letzte Schlusskurs (${P(v.last)}) ${over} dem kurzfristigen Durchschnitt (EMA 20: ${P(v.e20)}) liegt.`] };
+  if (k === 'rsi') return { short: `${label}: ${up ? 'überverkauft und steigend' : 'überkauft und fallend'}`, long: [`${kind}, weil der RSI 14 mit ${number(v.rNow, 1)} ${up ? 'unter 30 liegt (überverkauft) und gegenüber der Vorminute steigt' : 'über 70 liegt (überkauft) und gegenüber der Vorminute fällt'} (vorher ${number(v.rPrev, 1)}).`, 'Zwischen 30 und 70 zählt der RSI nicht als Signal.'] };
+  return { short: `MACD ${over} Signallinie`, long: [`${kind}, weil die MACD-Linie (${wldNum(v.mLine)}) ${over} ihrer Signallinie (${wldNum(v.mSig)}) liegt – der Schwung zeigt ${up ? 'nach oben' : 'nach unten'}.`, 'MACD 12/26/9.'] };
+}
+const WLD_T = new Intl.DateTimeFormat('de-DE', { hour: '2-digit', minute: '2-digit' });
+// Inhalt schreiben – aus wlPaint() (höchstens einmal je Sekunde, nur sichtbar) und beim Öffnen; neu nur, wenn sich Coin,
+// Bewertung, Chart-Coin oder Ladezustand ändern
+function wldPaint(now = Date.now(), force = false) {
+  if (!wld || !wldSel) return;
+  const coin = wldSel, e = wl?.c.get(wlSym(coin)), r = e?.rating || null, onChart = state.symbol === wlSym(coin);
+  const key = [coin, onChart, r ? r.closeTime + ':' + r.rules.map(x => x.score).join() : '-', e?.error || '', e ? 1 : 0].join('|');
+  if (key === wld.key && !force) return;
+  wld.key = key;
+  wld.title.textContent = coin;
+  wld.meta.textContent = r ? `Signale der 1-Minuten-Kerzen · Stand ${WLD_T.format(r.closeTime + 1)}` : e?.error ? 'keine Daten' : 'Daten werden geladen …';
+  wld.chart.dataset.chartwatch = coin; wld.chart.disabled = onChart; wld.chart.textContent = onChart ? 'Im Chart geöffnet' : 'Im Chart öffnen';
+  const v = r ? wldVals(e) : null, lists = { up: [], down: [] };
+  wld.items.forEach((li, i) => {
+    const x = r?.rules[i], s = x?.score || 0; li.hidden = !s; if (!s) return;
+    const t = wldText(li.dataset.k, s, x.label, v), tb = li.querySelector('.tip-body'), txt = li.querySelector('.wl-d-txt');
+    li.querySelector('.wl-d-arrow').textContent = s > 0 ? '▲' : '▼';
+    if (txt.textContent !== t.short) { txt.textContent = t.short; li.querySelector('summary').setAttribute('aria-label', `Erklärung: ${t.short}`); }
+    if (tb.textContent !== t.long.join('')) tb.replaceChildren(...t.long.map(p => el('p', '', p)));
+    lists[s > 0 ? 'up' : 'down'].push(li);
+  });
+  for (const k of ['up', 'down']) {
+    const ul = wld[k].querySelector('ul'); wld[k].hidden = !lists[k].length;
+    if ([...ul.children].some((c, i) => c !== lists[k][i]) || ul.children.length !== lists[k].length) ul.replaceChildren(...lists[k]);
+  }
+  wld.none.hidden = !!(lists.up.length || lists.down.length);
+  wld.none.textContent = r ? 'Aktuell keine Signale' : e?.error ? `Keine Daten für ${coin}: ${e.error}` : 'Noch keine Daten – die Signale erscheinen, sobald 60 abgeschlossene 1-Minuten-Kerzen vorliegen.';
+  // nur wachsen: die Mindesthöhe folgt dem größten Inhalt seit dem Öffnen
+  const h = Math.ceil(wld.body.getBoundingClientRect().height); if (h > wld.minH) { wld.minH = h; wld.body.style.minHeight = h + 'px'; }
+}
+// Tastatur: Esc schließt das Feld (ist darin ein Info-Fenster offen, schließt Esc zuerst nur dieses – das erledigt der
+// allgemeine Esc-Handler, der nach diesem läuft)
+$('watchlist').addEventListener('keydown', e => { if (e.key !== 'Escape' || !wldSel || wld.box.querySelector('details.tip[open]')) return; const inPanel = wld.box.contains(document.activeElement); wldClose(inPanel || document.activeElement?.dataset.watch === wldSel); });
+// ---------- Ablaufplan Schritt 7 (3.24.0): Gewinn- und Verlust-Alarm am Live-Ergebnis ----------
+// Antippen des Live-Ergebnisses „Offen …“ oben rechts öffnet ein Feld mit „Benachrichtigung bei Gewinn“ und „Benachrichtigung
+// bei Verlust“. Bezug ist der dort angezeigte Gesamtwert aller offenen Positionen (unrealisiert, in USDT, state.openTotal),
+// beide Grenzen werden als positiver Betrag eingegeben: Gewinn 100 meldet bei Offen ≥ +100 USDT, Verlust 50 bei Offen ≤ −50
+// USDT – verglichen wird der angezeigte, auf Cent gerundete Wert. Jede Grenze meldet einmal (Telegram „Kursalarm“ bzw. Discord,
+// dazu Ton, Hinweis und Systemmeldung) und wartet dann auf ein bewusstes „Wieder aktivieren“. Ist sie beim Aktivieren schon
+// erreicht, meldet sie erst, wenn das Ergebnis sie erneut erreicht – kein sofortiges Duplikat. Ohne offene Positionen und
+// solange zu einer Position der Kurs fehlt, wird nicht geprüft. Zustand in scalpdesk.pnlalarm.v1 (bleibt nach dem Neuladen,
+// Abgleich zwischen Tabs, in der Sicherung); zwischen Tabs sendet nur einer (store.claim in notifyChannels).
+// Zustände je Grenze: armed (wartet auf die Grenze), wait (Grenze beim Aktivieren schon erreicht – erst wieder darunter),
+// fired (ausgelöst – bis „Wieder aktivieren“ oder eine neue Grenze).
+var PNL_KINDS = ['profit', 'loss'];
+function pnlGet() {
+  const d = store.get('scalpdesk.pnlalarm.v1', null), one = a => ({ on: !!a?.on, value: Number(a?.value) > 0 ? Number(a.value) : null, state: ['armed', 'wait', 'fired'].includes(a?.state) ? a.state : 'armed', at: Number(a?.at) || 0, firedAt: Number(a?.firedAt) || 0, firedVal: Number.isFinite(a?.firedVal) ? a.firedVal : null });
+  return { profit: one(d?.profit), loss: one(d?.loss), u: Number(d?.u) || 0 };
+}
+function pnlSet(d) { d.u = Date.now(); store.set('scalpdesk.pnlalarm.v1', d); broadcastData(['scalpdesk.pnlalarm.v1']); renderPnl(); }
+// Aktueller Vergleichswert: das angezeigte Live-Ergebnis in Cent genau; null ohne offene Positionen oder mit fehlendem Kurs
+function pnlNow() { const o = state.openTotal; return o?.n && !o.missing && Number.isFinite(o.total) ? Math.round(o.total * 100) / 100 : null; }
+// Funktionen statt Konstanten: renderOpenPositions() kann pnlCheck() aufrufen, bevor dieser Abschnitt ausgewertet ist
+function pnlMet(k, v, cur) { return cur !== null && (k === 'profit' ? cur >= v : cur <= -v); }
+function pnlCond(k, v) { return k === 'profit' ? `≥ +${number(v)} USDT` : `≤ −${number(v)} USDT`; }
+function pnlName(k) { return k === 'profit' ? 'Gewinn-Alarm' : 'Verlust-Alarm'; }
+// Scharf schalten (Speichern mit neuer Grenze, „Wieder aktivieren“): schon erreicht → erst warten, bis das Ergebnis darunter liegt
+function pnlArm(k, a, cur = pnlNow()) { a.state = pnlMet(k, a.value, cur) ? 'wait' : 'armed'; a.at = Date.now(); a.firedAt = 0; a.firedVal = null; }
+// Bei jeder Aktualisierung der offenen Positionen (renderOpenPositions)
+function pnlCheck() {
+  if (!PNL_KINDS || !$('pnl-panel')) return; // Abschnitt noch nicht ausgewertet
+  const cur = pnlNow(), d = pnlGet(); let changed = false;
+  for (const k of PNL_KINDS) {
+    const a = d[k]; if (!a.on || !a.value) continue;
+    const met = pnlMet(k, a.value, cur);
+    if (a.state === 'wait' && !met && cur !== null) { a.state = 'armed'; changed = true; }
+    else if (a.state === 'armed' && met) { a.state = 'fired'; a.firedAt = Date.now(); a.firedVal = cur; changed = true; pnlFire(k, a, cur); }
+  }
+  if (changed) pnlSet(d); else if (!$('pnl-panel').hidden) renderPnl(); else pnlBadge(d);
+}
+function pnlFire(k, a, cur) {
+  const n = state.openTotal?.n || 0, title = `${k === 'profit' ? '📈' : '📉'} ${pnlName(k)}`;
+  const text = `Live-Ergebnis ${signed(cur)} USDT (${n} ${n === 1 ? 'offene Position' : 'offene Positionen'}) · Schwelle ${pnlCond(k, a.value)} erreicht`;
+  beep(); desktopNotify(title, text, 'pnl:' + k);
+  simpleToast('pnl:' + k, 'alarm ' + (k === 'profit' ? 'up' : 'down'), `${title}: ${text}`, null, k === 'profit' ? 'green' : 'orange');
+  // je Aktivierung genau eine Nachricht (auch mit mehreren offenen Tabs)
+  void notifyChannels('pnl', `pnl:${k}:${a.at}`, `${title}\n${text}`, 30 * 864e5);
+}
+// Normaler Reset (Handelsdaten zurücksetzen): Gewinn- und Verlust-Alarme gehören zu den Handelsdaten
+function pnlResetAll() { store.del('scalpdesk.pnlalarm.v1'); broadcastData(['scalpdesk.pnlalarm.v1']); renderPnl(); }
+// Sicherung einspielen: die neuere Fassung gewinnt
+function pnlAdopt(x) { if (!x || typeof x !== 'object' || !(Number(x.u) > pnlGet().u)) return false; store.set('scalpdesk.pnlalarm.v1', x); broadcastData(['scalpdesk.pnlalarm.v1']); renderPnl(); return true; }
+// ---- Anzeige ----
+// Merker am Live-Ergebnis: Punkt, solange ein Alarm aktiv ist, gelb nach dem Auslösen
+function pnlBadge(d = pnlGet()) {
+  const b = $('lb-pos'); if (!b || !PNL_KINDS) return;
+  const on = PNL_KINDS.filter(k => d[k].on && d[k].value), fired = on.some(k => d[k].state === 'fired'), v = fired ? 'fired' : on.length ? 'on' : '';
+  if (b.dataset.pnl !== v) { b.dataset.pnl = v; lbFit(); } // der Punkt braucht Platz: Live-Ergebnis am Handy neu einpassen
+  const label = `Live-Ergebnis der offenen Positionen – Gewinn- und Verlust-Alarm${fired ? ' (ausgelöst)' : on.length ? ' (aktiv)' : ''} einstellen`;
+  if (b.getAttribute('aria-label') !== label) b.setAttribute('aria-label', label);
+}
+function pnlStatus(k, a) {
+  if (!a.value) return { text: 'aus – kein Betrag eingetragen', cls: '' };
+  if (!a.on) return { text: `deaktiviert (Grenze ${pnlCond(k, a.value)})`, cls: '' };
+  if (a.state === 'fired') return { text: `ausgelöst um ${new Date(a.firedAt).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr bei ${signed(a.firedVal)} USDT – meldet erst nach „Wieder aktivieren“ erneut`, cls: 'fired' };
+  if (a.state === 'wait') return { text: `aktiv – die Grenze ist schon erreicht; meldet, sobald das Ergebnis sie erneut erreicht (${pnlCond(k, a.value)})`, cls: 'on' };
+  return { text: `aktiv – meldet einmal bei Offen ${pnlCond(k, a.value)}`, cls: 'on' };
+}
+function renderPnl() {
+  const d = pnlGet(); pnlBadge(d);
+  if (!$('pnl-panel') || $('pnl-panel').hidden) return;
+  const o = state.openTotal, cur = pnlNow();
+  put('pnl-now', !o?.n ? 'keine offene Position – die Alarme prüfen, sobald eine Position offen ist' : cur === null ? `${o.n} offen · ohne vollständige Kurse (wird nicht geprüft)` : `jetzt ${signed(cur)} USDT · ${o.n} ${o.n === 1 ? 'Position' : 'Positionen'}`);
+  for (const k of PNL_KINDS) {
+    const a = d[k], st = pnlStatus(k, a), s = $(`pnl-${k}-st`);
+    if (s.textContent !== st.text) s.textContent = st.text; s.className = `pnl-st ${st.cls}`;
+    $(`pnl-${k}-rearm`).hidden = !(a.on && a.value && a.state === 'fired');
+  }
+}
+// Formular mit den gespeicherten Werten füllen (beim Öffnen und nach einer Änderung aus einem anderen Tab)
+function pnlFill() {
+  const d = pnlGet();
+  for (const k of PNL_KINDS) { $(`pnl-${k}`).value = d[k].value ? plain(d[k].value) : ''; $(`pnl-${k}-on`).checked = d[k].on; $(`pnl-${k}`).removeAttribute('aria-invalid'); }
+  $('pnl-err').hidden = true; put('pnl-msg', '');
+}
+function pnlOpen(open = $('pnl-panel').hidden) {
+  $('pnl-panel').hidden = !open; $('lb-pos').setAttribute('aria-expanded', String(open));
+  if (open) { pnlFill(); renderPnl(); pnlFit(); if (!matchMedia('(pointer:coarse)').matches) $('pnl-profit').focus(); }
+}
+// Höhe auf den sichtbaren Bereich unter der Leiste begrenzen (über der Tab-Leiste); der Inhalt scrollt dann im Feld
+function pnlFit() {
+  const p = $('pnl-panel'); if (p.hidden) return;
+  const tb = $('tabbar'), bottom = tb && getComputedStyle(tb).display !== 'none' ? tb.getBoundingClientRect().top : innerHeight;
+  p.style.maxHeight = `${Math.max(180, Math.floor(bottom - p.getBoundingClientRect().top - 8))}px`;
+}
+addEventListener('resize', pnlFit);
+// Eingabe prüfen: leer = kein Alarm; sonst positiver Betrag in USDT (Komma oder Punkt), höchstens 1 Mrd.
+function pnlParse(raw) {
+  const t = String(raw).trim().replace(/\s|USDT/gi, ''); if (!t) return { v: null };
+  if (/^[-−]/.test(t)) return { err: 'als positiven Betrag eingeben – die Richtung ergibt sich aus Gewinn bzw. Verlust' };
+  const v = parseNum(t);
+  if (!Number.isFinite(v)) return { err: 'kein gültiger Betrag (z. B. 100 oder 25,50)' };
+  if (v <= 0) return { err: 'muss größer als 0 sein' };
+  if (v > 1e9) return { err: 'ist zu groß' };
+  return { v: Math.round(v * 100) / 100 };
+}
+function pnlSave() {
+  const d = pnlGet(), errs = []; let saved = 0;
+  const parsed = Object.fromEntries(PNL_KINDS.map(k => [k, pnlParse($(`pnl-${k}`).value)]));
+  for (const k of PNL_KINDS) {
+    const p = parsed[k], on = $(`pnl-${k}-on`).checked, inp = $(`pnl-${k}`), name = k === 'profit' ? 'Gewinn' : 'Verlust';
+    if (p.err) { errs.push(`${name}: ${p.err}.`); inp.setAttribute('aria-invalid', 'true'); continue; }
+    if (on && p.v === null) { errs.push(`${name}: Betrag fehlt – zum Aktivieren einen Betrag in USDT eintragen.`); inp.setAttribute('aria-invalid', 'true'); continue; }
+    inp.removeAttribute('aria-invalid');
+    const a = d[k], changedVal = a.value !== p.v, turnedOn = on && !a.on;
+    a.value = p.v; a.on = on && p.v !== null;
+    if (a.on && (changedVal || turnedOn)) pnlArm(k, a); // neue Grenze oder wieder eingeschaltet: neu scharf
+    if (!a.on && changedVal) { a.state = 'armed'; a.firedAt = 0; a.firedVal = null; }
+    saved++;
+  }
+  $('pnl-err').hidden = !errs.length; $('pnl-err').textContent = errs.join(' ');
+  if (saved) { pnlSet(d); pnlRefill(parsed); }
+  put('pnl-msg', errs.length ? (saved ? 'Gültige Eingaben gespeichert.' : '') : 'Gespeichert.');
+  pnlCheck();
+}
+// nach dem Speichern: gültige Felder neu formatiert, fehlerhafte behalten die Eingabe zum Korrigieren
+function pnlRefill(parsed) { const d = pnlGet(); for (const k of PNL_KINDS) if (!parsed[k].err) { $(`pnl-${k}`).value = d[k].value ? plain(d[k].value) : ''; $(`pnl-${k}-on`).checked = d[k].on; } }
+$('lb-pos').addEventListener('click', () => pnlOpen());
+$('pnl-close').addEventListener('click', () => { pnlOpen(false); $('lb-pos').focus({ preventScroll: true }); });
+$('pnl-form').addEventListener('submit', e => { e.preventDefault(); pnlSave(); });
+for (const k of PNL_KINDS) {
+  $(`pnl-${k}-rearm`).addEventListener('click', () => { const d = pnlGet(); pnlArm(k, d[k]); pnlSet(d); put('pnl-msg', `${pnlName(k)} wieder aktiv.`); pnlCheck(); });
+  // Betrag eingetippt: „aktiv“ gleich mit ankreuzen, Feld geleert: aus (Speichern bleibt nötig)
+  $(`pnl-${k}`).addEventListener('input', () => { $(`pnl-${k}-on`).checked = !!$(`pnl-${k}`).value.trim(); });
+}
+$('pnl-goto').addEventListener('click', () => pnlOpen(false));
+// außerhalb tippen oder Esc: Feld schließen
+document.addEventListener('click', e => { if (!$('pnl-panel').hidden && !e.target.closest('#pnl-panel, #lb-pos')) pnlOpen(false); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('pnl-panel').hidden) { pnlOpen(false); $('lb-pos').focus({ preventScroll: true }); } });
+renderPnl();
 // ---------- Schritt 4.3: Volatilität und Richtung nach Uhrzeit (3.22.0) ----------
 // Aus den letzten 2.000 Stundenkerzen des geöffneten Coins (rund 83 Tage, Markt wie im Chart): je Uhrzeit (Ortszeit) und
 // Tagesart (Mo–Fr, Sa–So), wie weit der Kurs innerhalb einer Stunde schwankt – Spanne Hoch bis Tief in % der Eröffnung.
@@ -7217,6 +7771,147 @@ function volaTick(now) {
   $('vola-back').addEventListener('click', () => { vola.sel = null; vola.day = null; redraw(); });
   renderVola();
 })();
+// ---------- BTC-Puls (3.24.0): Nachricht bei ungewöhnlich starker Bitcoin-Bewegung ----------
+// Nur BTC: Bewegt sich Bitcoin stark, laufen die meisten Altcoins mit – eine Nachricht statt vieler. Auslöser: Die Bewegung der
+// letzten 5 bzw. 15 Minuten (Spot, Kurs jetzt gegen den Schluss der 1m-Kerze vor 5 bzw. 15 Minuten) ist größer als 99 % der
+// Bewegungen, die zu dieser Uhrzeit üblich sind, und mindestens 0,5 % bzw. 0,8 % (Mindestgröße). „Üblich“ kommt aus den
+// 5m-Kerzen der letzten 35 Tage: je Stunde (UTC) und Tagesart (Mo–Fr, Sa–So), zusammen mit den beiden Nachbarstunden –
+// wie die Statistik aus Schritt 4.3 –, einmal am Tag neu. Keine festen Prozente: die wären zur US-Eröffnung zu empfindlich
+// und nachts zu träge. Höchstens eine Nachricht je Richtung in 30 Minuten, außer die Bewegung legt deutlich weiter zu
+// (mindestens das 1,5-Fache der gemeldeten; auch dann höchstens eine weitere). Inhalt nur Fakten: Richtung, Größe, Fenster,
+// Kurs, „ungewöhnlich stark für 14 Uhr“ mit der Schwelle und die Bewegung der Vorauswahl-Coins im selben Fenster – keine
+// Prognose. Nachts (22–7 Uhr Ortszeit) kommt sie lautlos. Ziel: Telegram „Kursalarm“ (bzw. Discord). Mit dem 24/7-Dienst ab
+// Version 1.1 übernimmt dieser die Meldung, auch bei geschlossener App: Die Schwellen reisen in der angehefteten Datei mit,
+// und die App sendet dann nicht zusätzlich (s247Covers).
+// var statt const/let: pulseKline und syncStreams können über Stream und Sekundentakt schon laufen, bevor dieser Abschnitt ausgewertet ist
+var PULSE_WIN = [5, 15], PULSE_FLOOR = { 5: 0.5, 15: 0.8 }, PULSE_DAYS = 35, PULSE_EVERY = 24 * 3600e3, PULSE_RETRY = 15 * 60e3;
+var PULSE_GAP = 30 * 60e3, PULSE_MORE = 1.5, PULSE_MIN_N = 90, PULSE_KEY = 'scalpdesk.pulse.v1', PULSE_DB = 'pulse|BTCUSDT';
+var pulse = { rows: null, at: 0, busy: false, error: '', retryAt: 0, thr: null, m1: [], run: null, m1busy: false, m1at: 0, loaded: false };
+// Nur mit Kanal (Telegram oder Discord) und eingeschalteter Meldung – sonst keine Abrufe
+function pulseOn() { return !!chan?.ev?.pulse && ['tg', 'dc'].some(chanReady); }
+function pulseWants() { return !!pulse && pulseOn(); }
+// Stunde (UTC) und Tagesart eines Fensters, das zum Zeitpunkt t endet
+function pulseSlot(t) { const d = new Date(t - 1), wd = d.getUTCDay(); return { h: d.getUTCHours(), we: wd === 0 || wd === 6 }; }
+// Schwellen aus 5m-Schlusskursen [[Beginn, Schluss], …]: je Tagesart und Stunde der 99-%-Wert der Beträge der 5- und
+// 15-Minuten-Bewegungen (in %), aus der Stunde und ihren beiden Nachbarn; zu wenige Fälle: beide Tagesarten zusammen, sonst null
+function pulseStats(rows) {
+  const b = { wd: [], we: [] }; for (const k of ['wd', 'we']) for (let h = 0; h < 24; h++) b[k].push({ 5: [], 15: [] });
+  for (let i = 1; i < rows.length; i++) {
+    const [t, c] = rows[i], end = t + 3e5, s = pulseSlot(end), x = b[s.we ? 'we' : 'wd'][s.h];
+    if (t - rows[i - 1][0] === 3e5) x[5].push(Math.abs(c / rows[i - 1][1] - 1) * 100);
+    if (i >= 3 && t - rows[i - 3][0] === 9e5) x[15].push(Math.abs(c / rows[i - 3][1] - 1) * 100);
+  }
+  const asc = (p, q) => p - q, pool = (k, h, w) => [-1, 0, 1].flatMap(d => b[k][(h + d + 24) % 24][w]);
+  const out = { wd: [], we: [], n: rows.length, from: rows[0]?.[0] ?? null, to: rows.at(-1)?.[0] ?? null };
+  for (const k of ['wd', 'we']) for (let h = 0; h < 24; h++) {
+    out[k].push(PULSE_WIN.map(w => {
+      let xs = pool(k, h, w); if (xs.length < PULSE_MIN_N) xs = [...pool('wd', h, w), ...pool('we', h, w)];
+      return xs.length < PULSE_MIN_N ? null : +volaQ(xs.sort(asc), 0.99).toFixed(3);
+    }));
+  }
+  return out;
+}
+// Schwelle für ein Fenster, das jetzt endet: 99-%-Wert der Uhrzeit, mindestens die Mindestgröße
+function pulseLimit(thr, w, now) { const s = pulseSlot(now), v = thr?.[s.we ? 'we' : 'wd']?.[s.h]?.[PULSE_WIN.indexOf(w)]; return Math.max(v > 0 ? v : 0, PULSE_FLOOR[w]); }
+// Bewegung über w Minuten aus 1m-Kerzen: Kurs jetzt gegen den Schluss der Kerze, die vor w Minuten lief; nur ohne Lücke
+function pulseMove(closed, price, w) {
+  const ref = closed.at(-w), last = closed.at(-1);
+  if (!ref || !last || !(price > 0) || last.time - ref.time !== (w - 1) * 6e4) return null;
+  return (price / ref.close - 1) * 100;
+}
+// Entscheidung (auch für die Tests): Welches Fenster ist am ungewöhnlichsten? Darf gemeldet werden (Sperre je Richtung)?
+// last: { up|down: { t, mag, more } } – zuletzt gemeldete Bewegung je Richtung
+function pulseDecide(moves, thr, now, last = {}) {
+  let best = null;
+  for (const w of PULSE_WIN) { const mv = moves[w]; if (mv == null) continue; const lim = pulseLimit(thr, w, now), r = Math.abs(mv) / lim; if (r >= 1 && (!best || r > best.r)) best = { w, mv, lim, r }; }
+  if (!best) return null;
+  const d = best.mv > 0 ? 'up' : 'down', l = last[d], mag = Math.abs(best.mv);
+  if (l && now - l.t < PULSE_GAP) { if (l.more || mag < l.mag * PULSE_MORE) return null; return { ...best, d, mag, more: true }; }
+  return { ...best, d, mag, more: false };
+}
+// Nachrichtentext: nur Fakten
+function pulseText(p, price, hourLocal, others) {
+  const pc = v => `${signed(v)} %`;
+  return `⚡ BTC-Puls: BTC ${pc(p.mv)} in ${p.w} Min. (${priceText(price)} USDT)${p.more ? ' – Bewegung legt weiter zu' : ''} – ungewöhnlich stark für ${hourLocal} Uhr (Schwelle ${number(p.lim)} %)`
+    + (others.length ? `\nVorauswahl im selben Zeitraum: ${others.map(([c, v]) => `${c} ${pc(v)}`).join(' · ')}` : '');
+}
+// ---- Daten ----
+async function pulseDbGet() {
+  const db = await kcOpen(); if (!db) return null;
+  const v = await new Promise(res => { try { const q = db.transaction('series').objectStore('series').get(PULSE_DB); q.onsuccess = () => res(q.result); q.onerror = () => res(null); } catch { res(null); } });
+  return v && Array.isArray(v.rows) && v.rows.every(r => Array.isArray(r) && r.length === 2 && r.every(Number.isFinite)) ? v : null;
+}
+async function pulseDbPut(v) { const db = await kcOpen(); if (!db) return; try { const tx = db.transaction('series', 'readwrite'); tx.objectStore('series').put(v, PULSE_DB); await new Promise(res => { tx.oncomplete = tx.onerror = tx.onabort = res; }); } catch { /* nur eine Beschleunigung */ } }
+// 5m-Kerzen der letzten 35 Tage: beim ersten Mal rückwärts in Schritten zu 1000, danach nur Neues
+async function pulseFetch() {
+  pulse.busy = true;
+  try {
+    const now = Date.now(), from = now - PULSE_DAYS * 864e5, get = async p => { const r = await spotGet('/api/v3/klines', { symbol: 'BTCUSDT', interval: '5m', limit: 1000, ...p }); return Array.isArray(r) && r.length ? normalizeKlines(r) : []; };
+    if (!pulse.loaded) { const v = await pulseDbGet(); pulse.loaded = true; if (v && !pulse.rows) { pulse.rows = v.rows; pulse.at = v.at || 0; } }
+    const have = (pulse.rows || []).filter(r => r[0] >= from), lastT = have.at(-1)?.[0], add = [];
+    if (lastT && now - lastT < 3 * 864e5) {
+      let start = lastT + 3e5;
+      for (let i = 0; i < 4 && start < now - 3e5; i++) { const a = await get({ startTime: start }); if (!a.length) break; add.push(...a); start = a.at(-1).time + 3e5; }
+    } else {
+      let end = now;
+      for (let i = 0; i < 12; i++) { const a = await get({ endTime: end }); if (!a.length) break; add.unshift(...a); if (a[0].time <= from) break; end = a[0].time - 1; }
+    }
+    const seen = new Set(), rows = [...have, ...add.filter(c => c.closeTime < now && c.close > 0).map(c => [c.time, c.close])]
+      .filter(r => r[0] >= from && !seen.has(r[0]) && seen.add(r[0])).sort((p, q) => p[0] - q[0]);
+    if (rows.length < 1000) throw new Error('Zu wenige BTC-Kerzen für die Schwellen.');
+    Object.assign(pulse, { rows, at: Date.now(), thr: pulseStats(rows), error: '', retryAt: 0 });
+    void pulseDbPut({ at: pulse.at, rows });
+    if (typeof scheduleS247 === 'function') scheduleS247(); // neue Schwellen an den 24/7-Dienst
+  } catch (e) { pulse.error = e?.message || 'BTC-Kerzen nicht erreichbar.'; pulse.retryAt = Date.now() + PULSE_RETRY; }
+  finally { pulse.busy = false; renderPulseInfo(); }
+}
+// Live: 1m-Kerzen von BTC (Spot) – Startwerte per REST, danach aus dem Stream
+async function pulseLoadM1() {
+  pulse.m1busy = true;
+  try { const r = await spotGet('/api/v3/klines', { symbol: 'BTCUSDT', interval: '1m', limit: 20 }), cs = Array.isArray(r) ? normalizeKlines(r) : [], now = Date.now(); pulse.m1 = cs.filter(c => c.closeTime < now); pulse.run = cs.at(-1)?.closeTime >= now ? cs.at(-1) : null; pulse.m1at = now; }
+  catch { pulse.m1at = Date.now() - 50e3; } // in 10 s erneut
+  finally { pulse.m1busy = false; }
+}
+function pulseKline(m, now = Date.now()) {
+  if (!pulse || m.i !== '1m' || m.s !== 'BTCUSDT' || m.m !== 'spot' || !pulse.m1at) return;
+  const c = { time: m.k.t, open: m.k.o, high: m.k.h, low: m.k.l, close: m.k.c, closeTime: m.k.T }, last = pulse.m1.at(-1);
+  if (last && c.time <= last.time) return;
+  if (last && c.time > last.closeTime + 1) { pulse.m1 = []; pulse.m1at = 0; return; } // Lücke: neu laden
+  if (m.k.x) { pulse.m1.push(c); if (pulse.m1.length > 30) pulse.m1.splice(0, pulse.m1.length - 30); pulse.run = null; } else pulse.run = c;
+  pulseCheck(now);
+}
+// ---- Prüfen und melden ----
+function pulseLast() { const v = store.get(PULSE_KEY, null) || {}, one = x => x && Number.isFinite(x.t) && x.mag > 0 ? { t: x.t, mag: x.mag, more: !!x.more } : null; return { up: one(v.up), down: one(v.down) }; }
+function pulseCheck(now = Date.now()) {
+  if (!pulseOn() || !pulse.thr) return;
+  const price = pulse.run?.close ?? pulse.m1.at(-1)?.close, moves = Object.fromEntries(PULSE_WIN.map(w => [w, pulseMove(pulse.m1, price, w)]));
+  const last = pulseLast(), p = pulseDecide(moves, pulse.thr, now, last); if (!p) return;
+  store.set(PULSE_KEY, { ...last, [p.d]: { t: now, mag: p.more ? Math.max(p.mag, last[p.d]?.mag || 0) : p.mag, more: p.more } }); broadcastData([PULSE_KEY]);
+  // Vorauswahl im selben Fenster (Kacheln, 1m-Kerzen) – ohne BTC selbst, nur mit lückenlosen Daten
+  const others = state.watch.filter(c => c !== 'BTC').map(c => { const e = wl?.c.get(wlSym(c)); if (!e || e.error) return null; const v = pulseMove(e.closed, wlPrice(e), p.w); return v == null ? null : [c, v]; }).filter(Boolean);
+  const hLocal = new Date(now).getHours(), text = pulseText(p, price, String(hLocal).padStart(2, '0'), others), silent = hLocal >= 22 || hLocal < 7;
+  simpleToast('pulse:' + p.d, 'alarm ' + p.d, text.split('\n')[0], null, p.d === 'up' ? 'green' : 'orange');
+  desktopNotify(`⚡ BTC ${signed(p.mv)} % in ${p.w} Min.`, text.replace(/\n/g, ' – '), 'pulse');
+  // je Richtung höchstens eine Nachricht in 30 Minuten (auch über Tabs hinweg), dazu höchstens eine „legt weiter zu“
+  void notifyChannels('pulse', `pulse:${p.d}${p.more ? ':more' : ''}`, text, PULSE_GAP, { silent });
+}
+// Sekundentakt: Schwellen einmal am Tag (bei Fehler nach 15 min erneut), 1m-Startwerte, Prüfen auch ohne neue Stream-Nachricht
+function pulseTick(now) {
+  if (!pulse || state.paused || !pulseOn()) return;
+  if (!pulse.busy && (!pulse.thr || now - pulse.at > PULSE_EVERY) && now >= pulse.retryAt) void pulseFetch();
+  if (!pulse.m1busy && !pulse.m1at) void pulseLoadM1();
+  else if (!pulse.m1busy && now - pulse.m1at > 60e3 && !pulse.run && (!pulse.m1.length || now - pulse.m1.at(-1).closeTime > 150e3)) void pulseLoadM1();
+}
+// Für den 24/7-Dienst: Schwellen je Stunde (UTC) und Tagesart, Mindestgrößen, Vorauswahl
+function pulseHandover() { return pulse?.thr ? { thr: { wd: pulse.thr.wd, we: pulse.thr.we }, floor: [PULSE_FLOOR[5], PULSE_FLOOR[15]], watch: state.watch.filter(c => c !== 'BTC').slice(0, 12) } : null; }
+// Anzeige im Einrichtungsfenster (unter „BTC-Puls“)
+function renderPulseInfo() {
+  if (!$('pulse-info')) return;
+  const now = Date.now(), t = pulse?.thr;
+  put('pulse-info', !chan?.ev?.pulse ? 'aus' : !['tg', 'dc'].some(chanReady) ? 'wartet auf Telegram oder Discord' : t
+    ? `jetzt (${String(new Date(now).getHours()).padStart(2, '0')} Uhr) ab ${number(pulseLimit(t, 5, now))} % in 5 Min. oder ${number(pulseLimit(t, 15, now))} % in 15 Min. · aus ${Math.round((t.to - t.from) / 864e5)} Tagen BTC-Kerzen`
+    : pulse?.error ? `Schwellen noch nicht berechnet: ${pulse.error}` : 'Schwellen werden berechnet …');
+}
 // ---------- Schritt 5.1: 24/7-Dienst – Übergabe an einen eigenen Server (3.23.0) ----------
 // Ein kleines Programm auf einem Server, der rund um die Uhr läuft (server/scalpdesk-247.mjs, z. B. kostenlos bei Oracle
 // Cloud), meldet Kurs-Alarme, Stop-Loss/Take-Profit und Termin-Warnungen per Telegram – auch wenn die App geschlossen ist.
@@ -7233,7 +7928,7 @@ var s247 = { cfg: null, timer: null, busy: false, error: '', st: null, checking:
 s247.cfg = loadS247();
 function loadS247() {
   const v = store.get(S247_KEY), s = x => (typeof x === 'string' ? x : '');
-  return { on: !!v?.on, sentOn: !!v?.sentOn, chat: s(v?.chat), msg: Number(v?.msg) || 0, tag: s(v?.tag), at: Number(v?.at) || 0, sig: s(v?.sig),
+  return { on: !!v?.on, sentOn: !!v?.sentOn, pulse: !!v?.pulse, chat: s(v?.chat), msg: Number(v?.msg) || 0, tag: s(v?.tag), at: Number(v?.at) || 0, sig: s(v?.sig),
     keys: Array.isArray(v?.keys) ? v.keys.filter(k => typeof k === 'string') : [], econ: s(v?.econ), n: v?.n && typeof v.n === 'object' ? { a: Number(v.n.a) || 0, p: Number(v.n.p) || 0 } : { a: 0, p: 0 } };
 }
 function saveS247() { if (store.set(S247_KEY, { ...s247.cfg })) broadcastData([S247_KEY]); }
@@ -7256,8 +7951,9 @@ function s247Payload() {
   const positions = on ? state.positions.filter(p => p.sl > 0 || p.tp > 0).map(p => ({ id: p.id, symbol: p.symbol, source: p.source, side: p.side, tp: p.tp > 0 ? p.tp : null, sl: p.sl > 0 ? p.sl : null,
     since: p.slTpAt || p.openedAt, ack: { tp: !!p.ack?.tp, sl: !!p.ack?.sl } })) : [];
   let tz = 'UTC'; try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch { /* alter Browser */ }
-  return { kind: 'scalpdesk-247', v: 1, on, app: APP_VERSION, dev: s247Device(), tz, ev: { alarm: chan.ev.alarm, pos: chan.ev.pos, news: chan.ev.news },
-    econ: { warn: ec?.cfg?.warn ?? 0, cur: ec?.cfg?.cur === 'all' ? 'all' : 'usd' }, alarms, positions };
+  return { kind: 'scalpdesk-247', v: 1, on, app: APP_VERSION, dev: s247Device(), tz, ev: { alarm: chan.ev.alarm, pos: chan.ev.pos, news: chan.ev.news, pulse: !!chan.ev.pulse },
+    econ: { warn: ec?.cfg?.warn ?? 0, cur: ec?.cfg?.cur === 'all' ? 'all' : 'usd' }, alarms, positions,
+    pulse: on && chan.ev.pulse ? pulseHandover() : null }; // 3.24.0: Schwellen des BTC-Pulses je Stunde (UTC), Mindestgrößen, Vorauswahl
 }
 function s247Sig(p) { const j = JSON.stringify(p); let h = 0; for (let i = 0; i < j.length; i++) h = (h * 31 + j.charCodeAt(i)) | 0; return `${j.length}:${h >>> 0}`; }
 // Schlüssel der Meldungen, die der Dienst mit diesem Stand übernimmt – dieselben wie in notifyChannels
@@ -7290,13 +7986,13 @@ async function sendS247(force = false, leaving = false) {
       try { await tgPost('editMessageMedia', fd, keep); done = true; } catch (e) { if (e.code !== 400) throw e; } // Nachricht gelöscht: neu senden
     }
     if (!done) {
-      const fd = new FormData(); fd.append('chat_id', chan.tg.chat); fd.append('caption', cap); fd.append('disable_notification', 'true'); fd.append('document', file, S247_FILE);
+      const fd = new FormData(); fd.append('chat_id', chan.tg.chat); if (chan.tg.thread) fd.append('message_thread_id', chan.tg.thread); fd.append('caption', cap); fd.append('disable_notification', 'true'); fd.append('document', file, S247_FILE);
       msg = (await tgPost('sendDocument', fd, keep))?.message_id || 0;
       const pin = new FormData(); pin.append('chat_id', chan.tg.chat); pin.append('message_id', String(msg)); pin.append('disable_notification', 'true');
       try { await tgPost('pinChatMessage', pin, keep); }
       catch (e) { throw Object.assign(new Error(`Anheften nicht erlaubt (${e.message}) – bei einer Gruppe braucht der Bot das Recht „Nachrichten anheften“.`), { code: e.code }); }
     }
-    s247.cfg = { ...s247.cfg, chat: chan.tg.chat, msg, tag, at: body.at, sig, keys: s247Keys(p), econ: p.on && p.ev.news && p.econ.warn ? `${p.econ.cur}|${p.econ.warn}` : '', sentOn: p.on, n: { a: p.alarms.length, p: p.positions.length } };
+    s247.cfg = { ...s247.cfg, chat: chan.tg.chat, msg, tag, at: body.at, sig, keys: s247Keys(p), econ: p.on && p.ev.news && p.econ.warn ? `${p.econ.cur}|${p.econ.warn}` : '', pulse: !!(p.on && p.ev.pulse && p.pulse), sentOn: p.on, n: { a: p.alarms.length, p: p.positions.length } };
     saveS247();
     // Was jetzt angeheftet ist, wissen wir; die Rückmeldung des Dienstes (falls er schon lief) bleibt bis zur nächsten Abfrage
     s247.st = s247.st?.found && s247.st.msg === msg ? { ...s247.st, tag } : { found: true, msg, tag, dev: body.dev, svc: null, beat: 0, fresh: false };
@@ -7311,7 +8007,7 @@ function s247Parse(pm, now = Date.now()) {
   const lines = String(pm.caption || '').replace(/\r/g, '').split('\n'), app = lines.find(l => l.startsWith('App:')) || '', svc = lines.find(l => l.startsWith('Dienst:')) || '', parts = app.split(' · ');
   const m = /^Dienst: (aktiv|Störung) · .*? · #([a-z0-9]{2,12}) übernommen(?: · (.*))?$/.exec(svc), beat = (pm.edit_date || pm.date || 0) * 1000;
   return { found: true, msg: pm.message_id, tag: /#([a-z0-9]{2,12})$/.exec(app)?.[1] || '', dev: parts.length >= 4 ? parts.at(-2) : '',
-    svc: m ? { ok: m[1] === 'aktiv', tag: m[2], problem: m[3] || '' } : null, beat, fresh: !!m && now - beat < S247_STALE };
+    svc: m ? { ok: m[1] === 'aktiv', tag: m[2], problem: m[3] || '', pulse: / · Puls · #/.test(svc) } : null, beat, fresh: !!m && now - beat < S247_STALE };
 }
 async function checkS247() {
   if (!s247?.cfg || typeof tgConfigured !== 'function' || !tgConfigured() || s247.checking) return;
@@ -7326,10 +8022,18 @@ async function checkS247() {
 }
 // Kennt der Dienst diese Meldung und meldet er sich? Dann sendet die App sie nicht selbst (siehe notifyChannels).
 function s247Covers(type, key) {
-  if (!s247?.cfg?.on || !['alarm', 'pos', 'news'].includes(type)) return false;
+  if (!s247?.cfg?.on || !['alarm', 'pos', 'news', 'pulse'].includes(type)) return false;
   const st = s247.st, c = s247.cfg, now = Date.now();
   if (!st?.found || st.msg !== c.msg || !st.svc?.ok || st.svc.tag !== c.tag || now - st.beat > S247_STALE || now - s247.checkAt > S247_STALE) return false;
-  return type === 'news' ? !!c.econ : c.keys.includes(key);
+  // BTC-Puls: nur wenn der Dienst ihn kann (ab 1.1 steht „Puls“ in seiner Zeile) und die Schwellen übergeben sind
+  return type === 'news' ? !!c.econ : type === 'pulse' ? !!(c.pulse && st.svc.pulse) : c.keys.includes(key);
+}
+// 3.24.0 BTC-Puls: kommt er vom Dienst? Ein älterer Dienst (1.0) kennt ihn nicht – dann sendet ihn weiter die geöffnete App
+function s247PulseText(c, st) {
+  if (!chan?.ev?.pulse) return '';
+  if (st.svc?.pulse && c.pulse) return ' Der BTC-Puls kommt ebenfalls vom Dienst.';
+  if (st.svc?.pulse) return ' Den BTC-Puls übernimmt der Dienst, sobald die Schwellen berechnet und übergeben sind.';
+  return ' Den BTC-Puls sendet weiter diese App, solange sie geöffnet ist: Der Dienst kennt ihn erst ab Version 1.1 – am Server den Installationsbefehl erneut ausführen.';
 }
 function s247Active() { const st = s247?.st, c = s247?.cfg; return !!(c?.on && st?.found && st.msg === c.msg && st.svc?.ok && st.svc.tag === c.tag && Date.now() - st.beat < S247_STALE); }
 function renderS247() {
@@ -7345,7 +8049,7 @@ function renderS247() {
   else if (!c.msg || !st) text = s247.checking ? 'Frage Telegram …' : 'Wird gleich übergeben …';
   else if (s247.checkErr && now - s247.checkAt < 60e3) { text = `Status nicht lesbar: ${s247.checkErr}`; cls = false; }
   else if (!st.found) text = 'Die angeheftete Datei fehlt im Chat – wird neu übergeben …';
-  else if (s247Active()) { text = `✓ Aktiv – der Dienst hat den aktuellen Stand (${counts}) und meldete sich um ${hm(st.beat)}. Kurs-Alarme, Stop/Ziel und Termin-Warnungen kommen jetzt vom Dienst; diese App sendet sie nicht zusätzlich.${other}`; cls = true; }
+  else if (s247Active()) { text = `✓ Aktiv – der Dienst hat den aktuellen Stand (${counts}) und meldete sich um ${hm(st.beat)}. Kurs-Alarme, Stop/Ziel und Termin-Warnungen kommen jetzt vom Dienst; diese App sendet sie nicht zusätzlich.${s247PulseText(c, st)}${other}`; cls = true; }
   else if (st.svc && st.fresh && !st.svc.ok) { text = `⚠ Der Dienst meldet eine Störung: ${st.svc.problem || 'Kurse nicht abrufbar'}. Die App sendet deshalb selbst.${other}`; cls = false; }
   else if (st.svc && st.fresh) text = `Übergeben um ${hm(c.at)} (${counts}) – der Dienst übernimmt den neuen Stand in spätestens einer Minute.${other}`;
   else if (st.svc) { text = `⚠ Der Dienst hat sich seit ${hm(st.beat)} nicht gemeldet – die App sendet wieder selbst. Läuft der Server? Am Server: systemctl status scalpdesk-247${other}`; cls = false; }
@@ -7578,7 +8282,7 @@ async function recCopy() {
   $('rec-badge').addEventListener('click', () => void recCopy());
   if (store.get(REC_KEY)?.on) recStart(); else recRender();
 })();
-render();startLive();void showCachedChart();void refresh();void initAutoBackup();void requestWake();
+render();startLive();void showCachedChart();void refresh();void initAutoBackup();void requestWake();void zzpStart();
 </script>
 </head>
 <body>
@@ -7631,8 +8335,19 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
     <span class="lb-spacer"></span>
     <span class="lb-alarm" id="lb-alarm" hidden></span>
     <div class="lb-warns"><button type="button" class="lb-news" id="lb-news" data-goto="econ" hidden></button><button type="button" class="lb-vola" id="lb-vola" data-goto="vola" hidden><span class="lv-full"></span><span class="lv-short"></span></button></div>
-    <button type="button" class="lb-pos" data-goto="positions" aria-label="Zu den Positionen"><span class="lb-label">Offen</span><span class="lb-num" id="lb-open">—</span><span class="lb-label opt">Heute</span><span class="lb-num opt" id="lb-day">—</span><span class="lb-num opt lb-eur" id="lb-day-eur"></span></button>
+    <button type="button" class="lb-pos" id="lb-pos" aria-haspopup="dialog" aria-expanded="false" aria-controls="pnl-panel" aria-label="Live-Ergebnis der offenen Positionen – Gewinn- und Verlust-Alarm einstellen"><span class="lb-label">Offen</span><span class="lb-num" id="lb-open">—</span><span class="lb-label opt">Heute</span><span class="lb-num opt" id="lb-day">—</span><span class="lb-num opt lb-eur" id="lb-day-eur"></span></button>
     <span class="lb-conn" id="lb-conn" role="img" aria-label="Verbindung" data-feed="off"></span>
+    <div class="pnl-panel" id="pnl-panel" role="dialog" aria-labelledby="pnl-title" hidden>
+      <form id="pnl-form" novalidate>
+        <div class="pnl-head"><b id="pnl-title">Gewinn- und Verlust-Alarm</b><button type="button" class="pnl-x" id="pnl-close" aria-label="Schließen">×</button></div>
+        <p class="pnl-ref">Bezug: das Live-Ergebnis „Offen“ oben rechts – Summe der unrealisierten Gewinne und Verluste aller offenen Positionen, in <b>USDT</b>. <span id="pnl-now"></span></p>
+        <div class="pnl-row"><label class="check pnl-on"><input type="checkbox" id="pnl-profit-on"> Benachrichtigung bei Gewinn</label><span class="pnl-in"><span aria-hidden="true">ab +</span><input id="pnl-profit" inputmode="decimal" autocomplete="off" enterkeyhint="done" placeholder="z. B. 100" aria-label="Gewinn-Grenze in USDT" aria-describedby="pnl-profit-st"><span>USDT</span></span><span class="pnl-st" id="pnl-profit-st"></span><button type="button" class="button ghost pnl-rearm" id="pnl-profit-rearm" hidden>Wieder aktivieren</button></div>
+        <div class="pnl-row"><label class="check pnl-on"><input type="checkbox" id="pnl-loss-on"> Benachrichtigung bei Verlust</label><span class="pnl-in"><span aria-hidden="true">ab −</span><input id="pnl-loss" inputmode="decimal" autocomplete="off" enterkeyhint="done" placeholder="z. B. 50" aria-label="Verlust-Grenze in USDT (als positiver Betrag)" aria-describedby="pnl-loss-st"><span>USDT</span></span><span class="pnl-st" id="pnl-loss-st"></span><button type="button" class="button ghost pnl-rearm" id="pnl-loss-rearm" hidden>Wieder aktivieren</button></div>
+        <p class="pnl-err" id="pnl-err" role="alert" hidden></p>
+        <div class="pnl-actions"><button type="submit" class="button primary">Speichern</button><span class="pnl-msg" id="pnl-msg" role="status"></span><button type="button" class="button ghost" id="pnl-goto" data-goto="positions">Zu den Positionen</button></div>
+        <p class="pnl-note">Beide Grenzen als positiven Betrag eingeben: Gewinn 100 meldet bei Offen ≥ +100 USDT, Verlust 50 bei Offen ≤ −50 USDT. Jede meldet einmal – an Telegram „Kursalarm“ (bzw. Discord), dazu Ton und Hinweis – und danach erst wieder nach „Wieder aktivieren“. Geprüft wird, solange die App geöffnet ist; ohne offene Position ruht der Alarm.</p>
+      </form>
+    </div>
   </div>
   <div class="toasts" id="toasts" aria-live="assertive"></div>
   <button type="button" class="rec-badge" id="rec-badge" hidden></button>
@@ -7763,11 +8478,12 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
           <div class="positions-head">
             <div><h2 id="positions-title">Meine Positionen</h2><p>Von dir erfasst · Live-Kurs von Binance · USDT (Euro)</p></div>
             <div class="pos-totals"><div><span>Offen, nicht realisiert</span><strong id="open-total">—</strong><small id="open-total-eur"></small></div><div><span id="realized-label">Realisiert gesamt</span><strong id="realized-total">—</strong><small id="realized-total-eur"></small></div></div>
-            <div class="pos-head-actions"><button type="button" class="button ghost backup-badge" id="data-toggle" aria-expanded="false" aria-controls="data-panel">💾 Backup <span class="due" id="backup-due" hidden>FÄLLIG</span></button><button type="button" class="button primary-lite" id="pos-add-toggle" aria-expanded="false" aria-controls="pos-form">+ Position erfassen</button></div>
+            <div class="pos-head-actions"><button type="button" class="button primary-lite" id="pos-add-toggle" aria-expanded="false" aria-controls="pos-form">+ Position erfassen</button></div>
           </div>
           <div class="day-strip" id="day-strip"><span>Heute realisiert</span><strong class="day-pnl" id="day-pnl">—</strong><span id="day-info"></span><div class="day-bar" id="day-bar" title="Verbrauchtes Tages-Verlustlimit"><span></span></div><label>Tages-Verlustlimit<span class="input-wrap"><input id="day-limit" type="text" inputmode="decimal" autocomplete="off" placeholder="z. B. 30"><span>USDT</span></span></label></div>
+          <button type="button" class="data-head backup-badge" id="data-toggle" aria-expanded="false" aria-controls="data-panel"><span class="data-chev" aria-hidden="true">▸</span><span class="data-title">💾 Datensicherung</span><span class="due" id="backup-due" hidden>FÄLLIG</span><small class="data-last" id="data-last"></small></button>
           <div class="data-panel" id="data-panel" hidden>
-            <div class="head-line"><h3>Datensicherung</h3><details class="tip left"><summary aria-label="Wo liegen meine Daten?"><span>i</span></summary><div class="tip-body"><p>Daten liegen nur in diesem Browser auf diesem Gerät, nicht bei GitHub: in der IndexedDB, dazu eine Spiegelkopie im localStorage.</p><p>Safari kann Website-Daten löschen, wenn eine Seite länger nicht geöffnet wurde. Als App auf dem Home-Bildschirm gilt diese Frist nicht; ein Backup ist trotzdem der sicherste Schutz.</p><p>Mit Passwort wird ein Backup verschlüsselt (AES-256). Ein vergessenes Passwort lässt sich nicht wiederherstellen.</p><p>Automatisch sichern: Am Computer (Chrome/Edge) schreibt das Dashboard nach jeder Änderung in eine Datei deiner Wahl. Auf iPhone und iPad erlaubt Safari das nicht – dort kann die Sicherung stattdessen nach jeder Änderung an deinen Telegram-Chat gehen; die neue Datei ersetzt jeweils die vorige. Diese Datei ist unverschlüsselt und liegt auf den Servern von Telegram; Zugangsdaten für Telegram und Discord sind nie enthalten.</p></div></details></div>
+            <div class="head-line"><h3>Sichern, einspielen, abgleichen</h3><details class="tip left"><summary aria-label="Wo liegen meine Daten?"><span>i</span></summary><div class="tip-body"><p>Daten liegen nur in diesem Browser auf diesem Gerät, nicht bei GitHub: in der IndexedDB, dazu eine Spiegelkopie im localStorage.</p><p>Safari kann Website-Daten löschen, wenn eine Seite länger nicht geöffnet wurde. Als App auf dem Home-Bildschirm gilt diese Frist nicht; ein Backup ist trotzdem der sicherste Schutz.</p><p>Mit Passwort wird ein Backup verschlüsselt (AES-256). Ein vergessenes Passwort lässt sich nicht wiederherstellen.</p><p>Automatisch sichern: Am Computer (Chrome/Edge) schreibt das Dashboard nach jeder Änderung in eine Datei deiner Wahl. Auf iPhone und iPad erlaubt Safari das nicht – dort kann die Sicherung stattdessen nach jeder Änderung an deinen Telegram-Chat gehen; die neue Datei ersetzt jeweils die vorige. Diese Datei ist unverschlüsselt und liegt auf den Servern von Telegram; Zugangsdaten für Telegram und Discord sind nie enthalten.</p></div></details></div>
             <p id="storage-info">Speicher wird geprüft …</p>
             <div class="data-row" id="autobackup-row" hidden>
               <button type="button" class="button primary-lite" id="autobackup-setup">Automatisches Backup einrichten …</button>
@@ -7793,6 +8509,8 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
             <div class="data-row" id="decrypt-row" hidden><span id="decrypt-note">Diese Datei ist verschlüsselt. Passwort oben eingeben, dann:</span><button type="button" class="button primary-lite" id="backup-decrypt">Entschlüsseln &amp; einspielen</button><button type="button" class="button ghost" id="decrypt-cancel">Abbrechen</button></div>
             <div class="data-row data-sep"><button type="button" class="button ghost" id="qr-export">▦ QR-Code anzeigen</button><button type="button" class="button ghost" id="qr-scan">📷 QR-Code scannen</button><span style="color:var(--muted)">Abgleich zwischen Geräten: am Computer anzeigen, mit dem iPad scannen – verschlüsselt, ohne Server.</span></div>
             <div class="data-row"><label class="check"><input type="checkbox" id="warn-close"> Beim Schließen warnen, solange Änderungen nicht gesichert sind</label></div>
+            <div class="data-row data-sep zzp-row"><span><b>🧠 Gelernte Chartmuster:</b> <span id="zzp-info">…</span></span><details class="tip left"><summary aria-label="Wie bleiben die Muster erhalten?"><span>i</span></summary><div class="tip-body"><p>Die ZigZag-Prognose lernt still mit, wie oft sich ein Muster bestätigt hat. Der Bestand wird nach jeder Änderung sofort auf diesem Gerät gespeichert und reist in jeder Sicherung mit (Datei, Teilen, Telegram).</p><p><b>Startbestand:</b> Aus dem GitHub-Projekt (<code>data/muster-start.json</code>) lädt die App beim Start einen Musterbestand mit Versionsnummer. Neue Nutzer, ein neues Gerät oder ein geleerter Browser-Speicher haben ihn sofort; eigenes Lernen zählt danach weiter, nichts wird doppelt gezählt.</p><p><b>Musterbestand exportieren</b> speichert nur die Muster, ohne Positionen, Trades oder Zugänge – so lässt sich dein Wissen als neuer Startbestand ins GitHub-Projekt übernehmen.</p></div></details><button type="button" class="button ghost" id="zzp-export">Musterbestand exportieren</button></div>
+            <div class="data-row data-sep"><button type="button" class="button ghost danger-btn" id="reset-open">Handelsdaten zurücksetzen …</button><span class="reset-note">Löscht Positionen, Trades, Geldbewegungen und Alarme – vorher wird gesichert. Gelernte Muster, Einstellungen und Zugänge bleiben.</span></div>
             <small id="backup-info"></small>
           </div>
           <form id="pos-form" class="pos-form" hidden novalidate>
@@ -7910,11 +8628,18 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
             <li>BotFather antwortet mit einem <b>Token</b> wie <code>123456789:AAH…</code>. Diesen kopieren und unten einfügen.</li>
             <li>Deinen neuen Bot über den Link in der Antwort öffnen und <b>Start</b> tippen bzw. „Hallo“ schreiben – erst dann darf er dir schreiben.</li>
             <li>Hier <b>Chat-ID ermitteln</b> tippen, dann <b>Test senden</b>. Kommt die Testnachricht an, ist alles fertig.</li>
+            <li>Datensicherung getrennt halten (empfohlen): eine eigene Gruppe „Sicherung“ mit dem Bot anlegen oder in einer Gruppe mit Themen ein Thema „Sicherung“, dort eine Nachricht schreiben, <b>Chat-ID ermitteln</b> und beim gefundenen Chat <b>→ Sicherungschat</b> tippen. <b>Test je Nachrichtenart</b> zeigt, was wohin geht.</li>
           </ol>
         </details>
         <label>Bot-Token<span class="input-wrap"><input id="tg-token" type="password" autocomplete="off" spellcheck="false" placeholder="123456789:AA…"></span></label>
-        <label>Chat-ID<span class="input-wrap"><input id="tg-chat" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="wird ermittelt"></span></label>
-        <div class="row"><button type="button" class="button ghost" id="tg-detect">Chat-ID ermitteln</button><button type="button" class="button primary-lite" id="tg-test">Test senden</button><label class="switch"><input type="checkbox" id="tg-on"> Aktiv</label></div>
+        <fieldset class="tg-targets"><legend>Wohin gehen die Nachrichten?</legend>
+          <div class="tg-target"><p><b>🔔 Kursalarm</b> <small>Kurs-Alarme, Stop/Ziel, Tages-Verlustlimit, News-Termine, Gewinn/Verlust, BTC-Puls</small></p>
+            <div class="tg-ids"><label>Chat-ID<span class="input-wrap"><input id="tg-chat" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="wird ermittelt"></span></label><label>Thema <small>(optional)</small><span class="input-wrap"><input id="tg-thread" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="–"></span></label></div></div>
+          <div class="tg-target"><p><b>💾 Sicherungschat</b> <small>nur die Datensicherung · leer = wie Kursalarm</small></p>
+            <div class="tg-ids"><label>Chat-ID<span class="input-wrap"><input id="tg-bchat" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="wie Kursalarm"></span></label><label>Thema <small>(optional)</small><span class="input-wrap"><input id="tg-bthread" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="–"></span></label></div></div>
+        </fieldset>
+        <div class="tg-found" id="tg-found" hidden></div>
+        <div class="row"><button type="button" class="button ghost" id="tg-detect">Chat-ID ermitteln</button><button type="button" class="button primary-lite" id="tg-test">Test senden</button><button type="button" class="button ghost" id="tg-testall">Test je Nachrichtenart</button><label class="switch"><input type="checkbox" id="tg-on"> Aktiv</label></div>
         <p class="chan-status" id="tg-status" role="status"></p>
       </section>
       <section class="chan" aria-labelledby="dc-title">
@@ -7936,10 +8661,22 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
         <label class="switch"><input type="checkbox" id="chan-ev-pos" checked> Stop-Loss und Take-Profit meiner Positionen</label>
         <label class="switch"><input type="checkbox" id="chan-ev-day" checked> Tages-Verlustlimit erreicht</label>
         <label class="switch"><input type="checkbox" id="chan-ev-news" checked> Warnung vor wichtigen Wirtschaftsterminen</label>
+        <label class="switch"><input type="checkbox" id="chan-ev-pnl" checked> Gewinn- und Verlust-Alarm (Live-Ergebnis oben rechts)</label>
+        <label class="switch"><input type="checkbox" id="chan-ev-pulse" checked> BTC-Puls: ungewöhnlich starke Bitcoin-Bewegung</label>
+        <small class="pulse-info">Meldet, wenn BTC sich in 5 oder 15 Minuten stärker bewegt als 99 % der üblichen Bewegungen zu dieser Uhrzeit (mindestens 0,5 % bzw. 0,8 %), mit der Vorauswahl im selben Zeitraum; je Richtung höchstens alle 30 Minuten, nachts lautlos. <span id="pulse-info"></span></small>
       </fieldset>
-      <section class="chan" aria-labelledby="s247-title" id="s247"><div class="head-line"><h3 id="s247-title">🌙 24/7-Dienst</h3><details class="tip left"><summary aria-label="Wie funktioniert der 24/7-Dienst?"><span>i</span></summary><div class="tip-body"><p>Ein kleines Programm auf einem eigenen Server, der rund um die Uhr läuft (z. B. kostenlos bei Oracle Cloud), prüft die Kurse und meldet Kurs-Alarme, Stop-Loss/Take-Profit und die Warnung vor wichtigen Terminen per Telegram – auch wenn die App überall geschlossen ist.</p><p><b>Übergabe:</b> Die App legt die aktiven Alarme und die Stop-/Ziel-Marken deiner Positionen als Datei in deinen Telegram-Chat, heftet sie oben an und ersetzt sie nach jeder Änderung. Mengen, Einstiege, Trades und Notizen zu Positionen bleiben in der App. Der Dienst liest die Datei mit demselben Bot und bestätigt in der angehefteten Nachricht („Dienst: aktiv“).</p><p><b>Nicht doppelt:</b> Solange der Dienst aktiv ist und den aktuellen Stand hat, sendet diese App Kurs-Alarme, Stop/Ziel und Termin-Warnungen nicht zusätzlich. Meldet er sich 20 Minuten nicht oder meldet er eine Störung, sendet die App wieder selbst. Das Tages-Verlustlimit meldet immer die App.</p><p><b>Token:</b> Den Bot-Token gibst du am Server selbst ein – die App schickt ihn weiterhin nur an Telegram.</p><p>Nur auf einem Gerät einschalten – dem, auf dem du Alarme und Positionen pflegst.</p></div></details></div><p class="chan-sub">Meldungen auch bei geschlossener App – über ein kleines Programm auf einem eigenen Server, der rund um die Uhr läuft.</p><details class="chan-guide" id="s247-guide"><summary>Anleitung: kostenlos bei Oracle Cloud einrichten (ca. 20 Minuten)</summary><ol><li><b>Konto:</b> Auf <a href="https://www.oracle.com/cloud/free/" target="_blank" rel="noopener noreferrer">oracle.com/cloud/free</a> „Start for free“. Als Heimatregion <b>Germany Central (Frankfurt)</b> wählen – sie lässt sich später nicht ändern, und von US-Servern aus sperrt Binance den Zugriff. Die Kreditkarte dient nur der Prüfung; „Always Free“ kostet nichts.</li><li><b>Server anlegen:</b> In der Konsole „Create a VM instance“. Bei <i>Image</i> auf <b>Ubuntu</b> wechseln, bei <i>Shape</i> eine mit „Always Free-eligible“ lassen (z. B. VM.Standard.E2.1.Micro). Bei <i>Add SSH keys</i> „Generate a key pair for me“ und <b>Save private key</b> – diese Datei ist der Schlüssel zum Server, gut aufbewahren. Dann <b>Create</b>. Nach 1–2 Minuten steht der Server auf „Running“; die <b>Public IP address</b> notieren.</li><li><b>Verbinden:</b> Oben rechts in der Konsole die <b>Cloud Shell</b> öffnen (Symbol &gt;_). Im Menü des Cloud-Shell-Fensters <b>Upload</b> wählen und den privaten Schlüssel hochladen. Dann eingeben (IP ersetzen) und die Frage „Are you sure …“ mit <b>yes</b> beantworten:<span class="s247-cmd"><code>chmod 600 ssh-key-*.key &amp;&amp; ssh -i ssh-key-*.key ubuntu@IP</code><button type="button" class="button ghost" data-copy="chmod 600 ssh-key-*.key &amp;&amp; ssh -i ssh-key-*.key ubuntu@IP">Kopieren</button></span></li><li><b>Dienst installieren:</b> Im Server-Fenster eingeben:<span class="s247-cmd"><code>curl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/install.sh | sudo bash</code><button type="button" class="button ghost" data-copy="curl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/install.sh | sudo bash">Kopieren</button></span>Es fragt nach <b>Bot-Token</b> und <b>Chat-ID</b> (oben in diesem Fenster; den Token zeigt auch @BotFather mit /mybots → API Token). Am Ende kommt eine Testnachricht in Telegram.</li><li><b>Übergeben:</b> Unten „An den 24/7-Dienst übergeben“ einschalten. Nach spätestens einer Minute steht hier „✓ Aktiv“, und im Telegram-Chat ist oben „📌 Scalp Desk · 24/7-Dienst“ angeheftet – diese Nachricht nicht löschen.</li></ol><ul class="s247-tips"><li><b>Aktualisieren:</b> den Befehl aus Schritt 4 erneut ausführen; die Einstellungen bleiben.</li><li><b>Andere Rechner:</b> läuft auf jedem Linux-Rechner mit Internet, z. B. einem Raspberry Pi – derselbe Befehl.</li><li><b>Oracle:</b> Always-Free-Server, die 7 Tage kaum ausgelastet sind, kann Oracle anhalten – und der Dienst braucht sehr wenig. Abhilfe laut Oracle: das Konto auf „Pay As You Go“ umstellen; es bleibt kostenlos, solange nur Always-Free-Angebote genutzt werden. Sonst nach einer E-Mail von Oracle den Server in der Konsole wieder starten.</li><li><b>Am Server:</b> Status <code>systemctl status scalpdesk-247</code>, Protokoll <code>journalctl -u scalpdesk-247 -f</code>, entfernen <code>sudo bash /opt/scalpdesk-247/install.sh --remove</code></li></ul></details><label class="switch"><input type="checkbox" id="s247-on"> An den 24/7-Dienst übergeben (Alarme, Stop/Ziel, Termin-Warnungen)</label><div class="row"><button type="button" class="button ghost" id="s247-check">Status prüfen</button></div><p class="chan-status" id="s247-status" role="status"></p></section>
+      <section class="chan" aria-labelledby="s247-title" id="s247"><div class="head-line"><h3 id="s247-title">🌙 24/7-Dienst</h3><details class="tip left"><summary aria-label="Wie funktioniert der 24/7-Dienst?"><span>i</span></summary><div class="tip-body"><p>Ein kleines Programm auf einem eigenen Server, der rund um die Uhr läuft (z. B. kostenlos bei Oracle Cloud), prüft die Kurse und meldet Kurs-Alarme, Stop-Loss/Take-Profit, die Warnung vor wichtigen Terminen und ab Version 1.1 den BTC-Puls per Telegram – auch wenn die App überall geschlossen ist.</p><p><b>Übergabe:</b> Die App legt die aktiven Alarme und die Stop-/Ziel-Marken deiner Positionen als Datei in deinen Telegram-Chat, heftet sie oben an und ersetzt sie nach jeder Änderung. Mengen, Einstiege, Trades und Notizen zu Positionen bleiben in der App. Der Dienst liest die Datei mit demselben Bot und bestätigt in der angehefteten Nachricht („Dienst: aktiv“).</p><p><b>Nicht doppelt:</b> Solange der Dienst aktiv ist und den aktuellen Stand hat, sendet diese App Kurs-Alarme, Stop/Ziel und Termin-Warnungen nicht zusätzlich. Meldet er sich 20 Minuten nicht oder meldet er eine Störung, sendet die App wieder selbst. Das Tages-Verlustlimit und den Gewinn-/Verlust-Alarm meldet immer die App – der Dienst kennt keine Mengen und Einstiege.</p><p><b>BTC-Puls:</b> Die App gibt dem Dienst die Schwellen je Uhrzeit mit. Bestätigt er mit „· Puls“ (ab Version 1.1), meldet er den Puls und die App nicht zusätzlich; ein älterer Dienst kennt ihn nicht – dann sendet ihn weiter die geöffnete App.</p><p><b>Token:</b> Den Bot-Token gibst du am Server selbst ein – die App schickt ihn weiterhin nur an Telegram.</p><p>Nur auf einem Gerät einschalten – dem, auf dem du Alarme und Positionen pflegst.</p></div></details></div><p class="chan-sub">Meldungen auch bei geschlossener App – über ein kleines Programm auf einem eigenen Server, der rund um die Uhr läuft.</p><details class="chan-guide" id="s247-guide"><summary>Anleitung: kostenlos bei Oracle Cloud einrichten (ca. 20 Minuten)</summary><ol><li><b>Konto:</b> Auf <a href="https://www.oracle.com/cloud/free/" target="_blank" rel="noopener noreferrer">oracle.com/cloud/free</a> „Start for free“. Als Heimatregion <b>Germany Central (Frankfurt)</b> wählen – sie lässt sich später nicht ändern, und von US-Servern aus sperrt Binance den Zugriff. Die Kreditkarte dient nur der Prüfung; „Always Free“ kostet nichts.</li><li><b>Server anlegen:</b> In der Konsole „Create a VM instance“. Bei <i>Image</i> auf <b>Ubuntu</b> wechseln, bei <i>Shape</i> eine mit „Always Free-eligible“ lassen (z. B. VM.Standard.E2.1.Micro). Bei <i>Add SSH keys</i> „Generate a key pair for me“ und <b>Save private key</b> – diese Datei ist der Schlüssel zum Server, gut aufbewahren. Dann <b>Create</b>. Nach 1–2 Minuten steht der Server auf „Running“; die <b>Public IP address</b> notieren.</li><li><b>Verbinden:</b> Oben rechts in der Konsole die <b>Cloud Shell</b> öffnen (Symbol &gt;_). Im Menü des Cloud-Shell-Fensters <b>Upload</b> wählen und den privaten Schlüssel hochladen. Dann eingeben (IP ersetzen) und die Frage „Are you sure …“ mit <b>yes</b> beantworten:<span class="s247-cmd"><code>chmod 600 ssh-key-*.key &amp;&amp; ssh -i ssh-key-*.key ubuntu@IP</code><button type="button" class="button ghost" data-copy="chmod 600 ssh-key-*.key &amp;&amp; ssh -i ssh-key-*.key ubuntu@IP">Kopieren</button></span></li><li><b>Dienst installieren:</b> Im Server-Fenster eingeben:<span class="s247-cmd"><code>curl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/install.sh | sudo bash</code><button type="button" class="button ghost" data-copy="curl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/install.sh | sudo bash">Kopieren</button></span>Es fragt nach <b>Bot-Token</b> und <b>Chat-ID</b> (oben in diesem Fenster; den Token zeigt auch @BotFather mit /mybots → API Token). Am Ende kommt eine Testnachricht in Telegram.</li><li><b>Übergeben:</b> Unten „An den 24/7-Dienst übergeben“ einschalten. Nach spätestens einer Minute steht hier „✓ Aktiv“, und im Telegram-Chat ist oben „📌 Scalp Desk · 24/7-Dienst“ angeheftet – diese Nachricht nicht löschen.</li></ol><ul class="s247-tips"><li><b>Aktualisieren:</b> den Befehl aus Schritt 4 erneut ausführen; die Einstellungen bleiben.</li><li><b>Andere Rechner:</b> läuft auf jedem Linux-Rechner mit Internet, z. B. einem Raspberry Pi – derselbe Befehl.</li><li><b>Oracle:</b> Always-Free-Server, die 7 Tage kaum ausgelastet sind, kann Oracle anhalten – und der Dienst braucht sehr wenig. Abhilfe laut Oracle: das Konto auf „Pay As You Go“ umstellen; es bleibt kostenlos, solange nur Always-Free-Angebote genutzt werden. Sonst nach einer E-Mail von Oracle den Server in der Konsole wieder starten.</li><li><b>Am Server:</b> Status <code>systemctl status scalpdesk-247</code>, Protokoll <code>journalctl -u scalpdesk-247 -f</code>, entfernen <code>sudo bash /opt/scalpdesk-247/install.sh --remove</code></li></ul></details><label class="switch"><input type="checkbox" id="s247-on"> An den 24/7-Dienst übergeben (Alarme, Stop/Ziel, Termin-Warnungen)</label><div class="row"><button type="button" class="button ghost" id="s247-check">Status prüfen</button></div><p class="chan-status" id="s247-status" role="status"></p></section>
       <p class="chan-note">🔒 Token und Webhook-URL bleiben nur in diesem Browser. Sie stehen in keinem Backup und keinem QR-Code und werden nur an Telegram bzw. Discord geschickt. Auf jedem Gerät, das senden soll, einzeln einrichten.</p>
       <div class="sheet-actions"><button type="button" class="button ghost" id="chan-clear">Zugangsdaten löschen</button><button type="button" class="button primary" id="chan-done">Fertig</button></div>
+    </div>
+  </dialog>
+  <dialog class="sheet" id="reset-dialog" aria-labelledby="reset-title">
+    <div class="sheet-head"><h2 id="reset-title">Handelsdaten zurücksetzen</h2><button type="button" class="button ghost icon" id="reset-close" aria-label="Schließen">×</button></div>
+    <div class="sheet-body reset-body">
+      <p><b>Gelöscht werden:</b> offene Positionen, Trades, Geldbewegungen, Kurs-Alarme sowie Gewinn- und Verlust-Alarme.</p>
+      <p><b>Erhalten bleiben:</b> die gelernten Chartmuster, alle Einstellungen (Risiko, Tages-Verlustlimit, Steuersatz, Setups, Vorauswahl, Darstellung) und die Telegram- und Discord-Zugänge.</p>
+      <p>Vorher speichert die App eine Sicherungsdatei (am iPad in der Dateien-App unter „Downloads“). Mit eingeschalteter Telegram-Sicherung bleibt die bisherige Sicherung im Chat stehen; die nächste kommt als neue Nachricht.</p>
+      <div class="sheet-actions"><button type="button" class="button ghost" id="reset-cancel">Abbrechen</button><button type="button" class="button danger-btn" id="reset-go">Sichern und zurücksetzen</button></div>
     </div>
   </dialog>
   <dialog class="sheet" id="qr-dialog" aria-labelledby="qr-title">

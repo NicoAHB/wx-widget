@@ -1,10 +1,11 @@
 // Service Worker des Dashboards: macht es installierbar und startet es auch ohne Netz.
 // Seiten: zuerst Netz (damit Updates sofort ankommen), bei Ausfall die gespeicherte Fassung.
-// Dateien wie Icons und Scanner: aus dem Speicher, im Hintergrund aufgefrischt.
+// Dateien wie Icons und Scanner: aus dem Speicher, im Hintergrund aufgefrischt. Daten aus data/ (Startbestand der Chartmuster,
+// 3.24.0): zuerst Netz wie die Seiten – eine neue Version soll gleich beim nächsten Start ankommen.
 // Anfragen an andere Adressen (Binance-Kurse, Streams) laufen nie über den Speicher.
-const VERSION = '3.23.1';
+const VERSION = '3.24.0';
 const CACHE = 'scalpdesk-' + VERSION;
-const CORE = ['./weather-widget-v2.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png', './icons/apple-touch-icon.png', './vendor/jsQR.js', './status-check.html'];
+const CORE = ['./weather-widget-v2.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png', './icons/apple-touch-icon.png', './vendor/jsQR.js', './status-check.html', './data/muster-start.json'];
 
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
@@ -45,6 +46,6 @@ async function staleWhileRevalidate(request, event) {
 self.addEventListener('fetch', event => {
   const request = event.request, url = new URL(request.url);
   if (request.method !== 'GET' || url.origin !== self.location.origin) return;
-  if (request.mode === 'navigate' || url.pathname.endsWith('.html')) event.respondWith(networkFirst(request, event));
+  if (request.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname.includes('/data/')) event.respondWith(networkFirst(request, event));
   else event.respondWith(staleWhileRevalidate(request, event));
 });
