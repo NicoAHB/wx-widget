@@ -1343,9 +1343,12 @@ html[data-layout=tablet] #econ{order:1}
 html[data-layout=tablet] .wl-tile{height:64px}
 /* Handys (bis 460 px Panelbreite): 2 Spalten statt einer langen Reihe – der Chart rutscht sonst weit nach unten */
 @container (max-width:460px){.wl-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-/* schmale Kachel (unter 190 px): Kürzel und Kurs / 1 Min. und Tendenz / 30 Min. mit Verlauf / Regeln in zwei Zeilen */
+/* schmale Kachel (unter 190 px): Kürzel und Kurs / 1 Min. und Tendenz / 30 Min. mit Verlauf / Regeln in zwei Zeilen.
+   Der Kurs hat eine eigene Spur, unter der „1 Min.“ und „30 Min.“ weiterlaufen – rechts bleibt nur die schmale Spalte für
+   Tendenz und Verlauf. Sonst bestimmte der Kurs die rechte Spalte (BTC „64.141,32“), und bei 320 px ragte „30 Min. …“ bis
+   23 px aus seiner Zelle, mit langen Werten bis in den Verlauf */
 @container wlt (max-width:189px){
-  .wl-tile,html[data-layout=tablet] .wl-tile{height:86px;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:repeat(4,auto);grid-template-areas:"sym price" "c1 sig" "c30 spark" "rules rules";column-gap:4px;padding:4px 6px}
+  .wl-tile,html[data-layout=tablet] .wl-tile{height:86px;grid-template-columns:minmax(0,1fr) auto auto;grid-template-rows:repeat(4,auto);grid-template-areas:"sym price price" "c1 c1 sig" "c30 c30 spark" "rules rules rules";column-gap:4px;padding:4px 6px}
   .wl-r2{display:contents}
   .wl-chg30{text-align:left}
   .wl-sym,.wl-price{font-size:.75rem}
@@ -1354,6 +1357,8 @@ html[data-layout=tablet] .wl-tile{height:64px}
   .wl-sig{width:1.9em;height:16px;font-size:.66rem}
   .wl-rules{display:grid;grid-template-columns:auto auto;justify-content:space-between;column-gap:6px;row-gap:1px;font-size:.625rem}
 }
+/* sehr schmale Kachel (Handy 320 px): Werte so groß wie die Regelzeile, damit auch „30 Min. −10,98 %“ neben den Verlauf passt */
+@container wlt (max-width:132px){.wl-chg,.wl-chg30{font-size:.625rem}}
 @media (pointer:coarse){.wl-item .chip-x{width:40px;height:40px;min-width:40px;min-height:40px;top:-14px;right:-12px}}
 /* 3.20: News & Termine zum Coin – unter dem Wirtschaftskalender */
 html[data-layout=tablet] #cnews{order:1}
