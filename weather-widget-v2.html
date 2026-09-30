@@ -1362,6 +1362,9 @@ html[data-layout=tablet] #cnews{order:1}
 /* schmales Tablet: während einer Warnung „Offen“ nur als Zahl, damit die Positionsanzeige nicht halb abgeschnitten wird */
 @media (min-width:601px) and (max-width:760px){.livebar:has(.lb-news:not([hidden])) .lb-pos>.lb-label{display:none}}
 @media (max-width:600px){.livebar .lb-news{grid-column:1/-1;justify-self:stretch;min-width:0;max-width:none;min-height:32px;text-align:left;padding:0 4px}}
+/* 3.21.2: Sprung-Rekorder (Fehlersuche) – feste Anzeige unten links, verschiebt nichts */
+.rec-badge{position:fixed;left:8px;bottom:calc(env(safe-area-inset-bottom,0px) + 78px);z-index:60;max-width:calc(100vw - 16px);min-height:32px;padding:6px 12px;border:1px solid var(--border);border-radius:999px;background:var(--surface);color:var(--text);font-size:.75rem;font-weight:600;line-height:1.2;box-shadow:var(--shadow);opacity:.94;text-align:left}
+#rec-text{width:100%;font-family:ui-monospace,Menlo,monospace;font-size:.7rem;line-height:1.3}
 .chart-panel>.notice{margin:12px 20px 0}
 html{scroll-padding-top:calc(var(--lb-h,56px) + 16px)}
 /* nur als eigene Spalten (ab 1400 px) begrenzt; darunter stehen beide untereinander in der gemeinsamen Seitenspalte und
@@ -1975,7 +1978,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Alle Werte liegen zusätzlich im Arbeitsspeicher und sind dadurch synchron lesbar. Schreiben geht sofort in den
 // localStorage und gebündelt in die IndexedDB; beim Start gewinnt die zuletzt vollständig geschriebene Kopie.
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
-const APP_VERSION = '3.21.1', docEl = document.documentElement;
+const APP_VERSION = '3.21.2', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -3970,15 +3973,16 @@ function onKline(m) {
 // Höchstens zweimal pro Sekunde zeichnen; in einem verdeckten Tab gar nicht (die Alarmprüfung läuft trotzdem).
 // Vollständig (mit Chart) höchstens einmal pro Sekunde, sonst höchstens zweimal. Während gewischt oder gescrollt wird,
 // wartet die Anzeige und holt alles danach in einem Schritt nach (die Alarmprüfung läuft unabhängig davon weiter).
-let liveTimer = null, liveLast = 0, liveLastFull = 0, liveFull = false, liveDirty = false;
+let liveTimer = null, liveLast = 0, liveLastFull = 0, liveFull = false, liveDirty = false, liveHeld = false;
 function scheduleLiveRender(full) {
   if (full) liveFull = true;
   if (liveTimer) return;
   const wait = Math.max(liveLast + 500, liveFull ? liveLastFull + 1000 : 0) - Date.now();
   liveTimer = setTimeout(() => {
     liveTimer = null;
-    if (userScrolling()) { liveTimer = setTimeout(() => { liveTimer = null; scheduleLiveRender(false); }, 200); return; }
-    liveLast = Date.now(); const f = liveFull; liveFull = false; if (f) liveLastFull = liveLast; renderLive(f);
+    if (userScrolling()) { liveHeld = true; liveTimer = setTimeout(() => { liveTimer = null; scheduleLiveRender(false); }, 200); return; }
+    liveLast = Date.now(); const f = liveFull; liveFull = false; if (f) liveLastFull = liveLast;
+    if (liveHeld && rec?.on) { liveHeld = false; recFlush(`Live-Anzeige${f ? ' mit Chart' : ''}`, () => renderLive(f)); } else { liveHeld = false; renderLive(f); }
   }, Math.max(0, wait));
 }
 function renderLive(full) {
@@ -4940,14 +4944,17 @@ function anchorEl() {
   return best;
 }
 function withAnchor(fn) {
-  if (nativeAnchor) { const r = fn(); steadyHeights(); return r; }
+  const rb = rec?.on ? recHeights() : null; // 3.21.2: Sprung-Rekorder (Fehlersuche)
+  if (nativeAnchor) { const r = fn(); steadyHeights(); if (rb) recAnchor(rb, null, 0, 'Ausgleich durch den Browser'); return r; }
   // Bezug: das Element am oberen Rand und seine Eltern. Ersetzt die Aktualisierung das Element selbst (z. B. eine Zeile im
   // Kalender oder in den Coin-News), gleicht der nächste noch vorhandene Elternteil aus (3.21.1)
   const chain = [];
   for (let e = anchorEl(); e && e !== document.body && chain.length < 5; e = e.parentElement) chain.push([e, e.getBoundingClientRect().top]);
   const r = fn(); steadyHeights();
   const hit = chain.find(([e]) => e.isConnected);
-  if (hit) { const d = hit[0].getBoundingClientRect().top - hit[1]; if (Math.abs(d) >= 1) scrollBy(0, d); }
+  let d = 0;
+  if (hit) { d = hit[0].getBoundingClientRect().top - hit[1]; if (Math.abs(d) >= 1) scrollBy(0, d); }
+  if (rb) recAnchor(rb, hit?.[0], d, !chain.length ? 'kein Bezug (ganz oben)' : Math.abs(d) >= 1 ? 'App gleicht aus' : 'kein Ausgleich nötig');
   return r;
 }
 // Aufgabe sofort ausführen – oder, während gescrollt wird, einmal danach
@@ -4956,14 +4963,15 @@ function calmDo(fn) {
   smooth.jobs.add(fn);
   if (!smooth.timer) smooth.timer = setTimeout(function again() {
     if (userScrolling()) { smooth.timer = setTimeout(again, 200); return; }
-    smooth.timer = null; const jobs = [...smooth.jobs]; smooth.jobs.clear(); withAnchor(() => jobs.forEach(j => j()));
+    smooth.timer = null; const jobs = [...smooth.jobs]; smooth.jobs.clear(); const run = () => withAnchor(() => jobs.forEach(j => j()));
+    if (rec?.on) recFlush(jobs.map(j => j.name || 'anonym').join(', '), run); else run();
   }, 200);
 }
 const calmRender = () => calmDo(render);
 // Chart nur zeichnen, wenn er (fast) im Bild ist; beim Hineinscrollen nachholen
 let chartOnScreen = true, chartStale = false;
 if ('IntersectionObserver' in window) new IntersectionObserver(es => {
-  for (const e of es) { chartOnScreen = e.isIntersecting; if (chartOnScreen && chartStale) { chartStale = false; drawChart(); } }
+  for (const e of es) { chartOnScreen = e.isIntersecting; if (chartOnScreen && chartStale) { chartStale = false; if (rec?.on) { const rb = recHeights(); recAdd('C Chart kommt ins Bild und wird nachgezeichnet'); drawChart(); recAnchor(rb, null, 0, 'Chart nachgezeichnet, ohne Ausgleich'); } else drawChart(); } }
 }, { rootMargin: '150px 0px' }).observe($('chart'));
 // Tages-Verlustlimit: den Hinweis „mit offenen Positionen über dem Limit“ erst ausblenden, wenn der Verlust unter die Hälfte
 // des Limits gefallen ist – sonst taucht das Banner oben bei jedem Pendeln um die Grenze auf und verschwindet wieder,
@@ -6859,6 +6867,162 @@ function declutterChart(svg, { top, bottom, left, right }) {
   }
   for (const o of todo) shift(o.el, o.dy);
 }
+// ---------- Fehlersuche: Sprung-Rekorder (3.21.2) ----------
+// Auf Wunsch (Menü „Ansicht“ → „Sprung-Rekorder einschalten“) schreibt die App mit, was rund ums Wischen passiert: Finger
+// auf und ab, Scrollen und dessen Ende, nachgeholte Live-Updates, der Ausgleich der Scrollposition (scrollBy), Höhen-
+// änderungen der Bereiche und – Bild für Bild – ob sich der Inhalt im Dokument verschiebt. Keine Kurse, Notizen oder
+// Zugangsdaten: nur Zeiten, Pixelwerte und Namen von Seitenbereichen. Das Protokoll bleibt im Arbeitsspeicher, bis es
+// kopiert wird (antippen der Anzeige unten links). Ausgeschaltet kostet der Rekorder nichts.
+// var statt const/let: withAnchor und calmDo fragen rec schon ab, bevor dieser Abschnitt ausgewertet ist
+var REC_KEY = 'scalpdesk.sprungrec.v1', REC_MAX = 5000;
+var rec = { on: false, t0: 0, log: [], jumps: 0, refs: null, lastSH: 0, prog: 0, lastY: 0, scrollLog: 0, scrollEnd: null, lastScrollAt: 0, ended: false, touching: false, follow: 0, copied: 0, flushing: false, ro: null, sizes: new WeakMap(), scan: null };
+function recT() { return Math.round(performance.now() - rec.t0); }
+function recAdd(s) { if (!rec.on) return; rec.log.push(recT() + ' ' + s); if (rec.log.length > REC_MAX) rec.log.splice(0, rec.log.length - REC_MAX); }
+var recN = v => (v >= 0 ? '+' : '') + Math.round(v * 10) / 10;
+// Scrollwert der Seite; weicht der sichtbare Ausschnitt (visualViewport) davon ab, steht der Unterschied dabei
+var recY = () => { const y = Math.round(scrollY * 10) / 10, vv = window.visualViewport, d = vv ? vv.pageTop - scrollY : 0; return Math.abs(d) >= 0.5 ? `${y} (Ausschnitt ${recN(d)})` : String(y); };
+// Name eines Elements ohne seinen Text: tag#id.klasse, sonst mit dem nächsten Vorfahren, der eine id hat
+function recLabel(e) {
+  if (!e || !e.tagName) return '–';
+  const own = e.tagName.toLowerCase() + (e.id ? '#' + e.id : '') + (typeof e.className === 'string' && e.className.trim() ? '.' + e.className.trim().split(/\s+/)[0] : '');
+  if (e.id) return own;
+  for (let p = e.parentElement, i = 0; p && i < 8; p = p.parentElement, i++) if (p.id) return `${own} in #${p.id}`;
+  return own;
+}
+// Aufrufer aus dem Stapel (Chrome „at name (…)“, Safari „name@…“)
+function recCaller() {
+  const names = (new Error().stack || '').split('\n').map(l => (l.trim().match(/^(?:at\s+)?([^\s@(]+)/) || [])[1]).filter(n => n && !/^(Error|recCaller|recWrap|scrollBy|scrollTo|scrollIntoView)$/.test(n));
+  return names.slice(0, 3).join(' ← ') || '?';
+}
+// Höhen der Seitenbereiche und ihrer direkten Teile (vorher/nachher bei jedem Ausgleich)
+function recHeights() {
+  const m = new Map(), add = e => { if (e.getClientRects().length) { const r = e.getBoundingClientRect(); m.set(e, { h: Math.round(r.height * 10) / 10, top: Math.round(r.top) }); } };
+  for (const s of document.querySelectorAll('#livebar, [data-tabs]')) { add(s); for (const c of s.children) add(c); }
+  return m;
+}
+// Nachholen nach dem Scrollen (aus calmDo und scheduleLiveRender): wann, und was dabei passiert
+function recFlush(what, fn) {
+  recAdd(`F nachgeholt: ${what} · ${Math.round(performance.now() - rec.lastScrollAt)} ms nach dem letzten Scroll-Ereignis, y=${recY()}`);
+  rec.flushing = true; try { return fn(); } finally { rec.flushing = false; }
+}
+// Höhenänderungen, auch außerhalb von withAnchor (z. B. Leisten im Sekundentakt): Bereiche und ihre direkten Teile beobachten
+function recObserve() {
+  if (!('ResizeObserver' in window)) return;
+  if (!rec.ro) rec.ro = new ResizeObserver(es => {
+    if (!rec.on) return;
+    for (const x of es) {
+      const e = x.target, h = Math.round((x.borderBoxSize?.[0]?.blockSize ?? e.getBoundingClientRect().height) * 10) / 10, old = rec.sizes.get(e); rec.sizes.set(e, h);
+      if (old !== undefined && old !== null && Math.abs(old - h) >= 0.5 && e.isConnected) recAdd(`R ${recLabel(e)} ${old}→${h} oben=${Math.round(e.getBoundingClientRect().top)}`);
+    }
+  });
+  for (const sec of document.querySelectorAll('#livebar, [data-tabs]')) for (const e of [sec, ...sec.children]) if (!rec.sizes.has(e)) { rec.sizes.set(e, null); rec.ro.observe(e); }
+}
+// Aus withAnchor: was sich beim Aktualisieren verändert hat und wie ausgeglichen wurde
+function recAnchor(before, anchor, d, how) {
+  try {
+    const after = recHeights(), line = Math.max(0, $('livebar').getBoundingClientRect().bottom), ch = [];
+    for (const [e, b] of before) {
+      const a = after.get(e);
+      if (!a) { if (!e.isConnected) ch.push(`${recLabel(e)} ersetzt (${b.h})`); continue; }
+      if (Math.abs(a.h - b.h) >= 0.5) ch.push(`${recLabel(e)} ${b.h}→${a.h}${b.top < line ? ' oberhalb' : b.top > innerHeight ? ' unterhalb' : ' im Bild'}`);
+    }
+    if (!ch.length && Math.abs(d) < 0.05 && !rec.flushing) return;
+    recAdd(`A ${how}${anchor ? ' Bezug ' + recLabel(anchor) : ''} d=${recN(d)} y=${recY()}${ch.length ? ' · ' + ch.slice(0, 8).join(' · ') : ' · keine Höhenänderung'}`);
+    rec.follow = performance.now() + 700; // die nächsten Bilder genau mitschreiben
+  } catch (err) { recAdd('A Fehler ' + err.message); }
+}
+// Programmatisches Scrollen der App mitschreiben (mit tatsächlich angewandtem Betrag)
+function recWrapScroll() {
+  for (const name of ['scrollBy', 'scrollTo']) {
+    const orig = window[name].bind(window);
+    window[name] = function recWrap(...a) {
+      const y0 = scrollY, r = orig(...a);
+      if (rec.on) { const got = scrollY - y0; rec.prog += got; recAdd(`P ${name}(${a.map(x => typeof x === 'object' ? JSON.stringify(x) : Math.round(x * 10) / 10).join(', ')}) angewandt ${recN(got)} y=${recY()} ← ${recCaller()}`); rec.follow = performance.now() + 700; }
+      return r;
+    };
+  }
+  const siv = Element.prototype.scrollIntoView;
+  Element.prototype.scrollIntoView = function (...a) { if (rec.on) { recAdd(`P scrollIntoView ${recLabel(this)} ← ${recCaller()}`); rec.follow = performance.now() + 700; } return siv.apply(this, a); };
+}
+// Bild für Bild: Lage von drei Bezugspunkten (25/50/75 % der Höhe) im Dokument. Ändert sie sich, hat sich der Inhalt
+// verschoben; minus dem Scrollen der App (scrollBy) bleibt, was man sieht – außerhalb des Wischens zählt jedes Scrollen mit.
+const REC_SKIP = '#livebar, header, .tabbar, #tabbar, #toasts, #rec-badge, .menu-panel, dialog';
+function recFrame() {
+  if (!rec.on) return;
+  requestAnimationFrame(recFrame);
+  if (document.hidden) { rec.refs = null; return; }
+  try {
+    const y = scrollY, now = performance.now(), sh = document.scrollingElement.scrollHeight, dy = y - rec.lastY; rec.lastY = y;
+    if (sh !== rec.lastSH) { if (rec.lastSH) recAdd(`H Seitenhöhe ${recN(sh - rec.lastSH)} → ${sh}`); rec.lastSH = sh; }
+    if (!rec.refs) rec.refs = [null, null, null];
+    const ds = [];
+    [0.25, 0.5, 0.75].forEach((f, i) => {
+      let r = rec.refs[i];
+      if (r && !r.el.isConnected) rec.refs[i] = r = null;
+      if (!r) { const el = document.elementFromPoint(innerWidth / 2, innerHeight * f); if (el && el !== document.body && el !== docEl && !el.closest(REC_SKIP)) rec.refs[i] = { el, top: el.getBoundingClientRect().top + y }; return; }
+      const top = r.el.getBoundingClientRect().top + y; ds.push(top - r.top); r.top = top;
+    });
+    const prog = rec.prog; rec.prog = 0;
+    const scrolling = userScrolling(), moved = ds.length ? ds.sort((a, b) => a - b)[Math.floor(ds.length / 2)] : 0;
+    // sichtbar: Verschiebung im Dokument minus Ausgleich; in Ruhe ist jedes Scrollen „von selbst“ und zählt mit
+    const vis = scrolling ? moved - prog : moved - dy;
+    if (Math.abs(vis) >= 1) { rec.jumps++; recAdd(`J sichtbar ${recN(vis)} · Inhalt ${recN(moved)} · Scroll ${recN(dy)} (App ${recN(prog)}) · ${scrolling ? 'beim Wischen' : 'in Ruhe'} y=${recY()}`); recBadge(); }
+    else if (now < rec.follow && (Math.abs(dy) >= 0.1 || Math.abs(moved) >= 0.1)) recAdd(`Y Scroll ${recN(dy)} · Inhalt ${recN(moved)} · ${scrolling ? 'Wischen' : 'Ruhe'} y=${recY()}`);
+    else if (!scrolling && Math.abs(dy) >= 0.5) recAdd(`Y in Ruhe gescrollt ${recN(dy)} y=${recY()}`);
+  } catch (err) { recAdd('J Fehler ' + err.message); }
+}
+function recHead() {
+  const vv = window.visualViewport;
+  return `Sprung-Rekorder ${typeof APP_VERSION === 'string' ? APP_VERSION : ''} · ${navigator.userAgent} · ${typeof standalone !== 'undefined' && standalone ? 'Home-Bildschirm' : 'Browser'} · Ausgleich ${nativeAnchor ? 'durch den Browser' : 'durch die App'} · ${innerWidth}×${innerHeight} @${devicePixelRatio}${vv ? ` · sichtbar ${Math.round(vv.width)}×${Math.round(vv.height)}` : ''} · Layout ${docEl.dataset.layout || '–'} · Tab ${docEl.dataset.activeTab || '–'} · y=${recY()}`;
+}
+function recBadge() {
+  const b = $('rec-badge'); if (!b) return;
+  b.hidden = !rec.on;
+  const t = performance.now() < rec.copied ? 'Protokoll kopiert ✓ – bitte im Chat einfügen' : `● Rekorder · ${rec.jumps} ${rec.jumps === 1 ? 'Sprung' : 'Sprünge'} · antippen = kopieren`;
+  if (b.textContent !== t) b.textContent = t;
+}
+function recRender() {
+  const t = $('rec-toggle'); if (!t) return;
+  t.textContent = rec.on ? 'Sprung-Rekorder ausschalten' : 'Sprung-Rekorder einschalten'; t.setAttribute('aria-pressed', String(rec.on));
+  $('rec-copy').hidden = !rec.log.length; recBadge();
+}
+function recStart() {
+  Object.assign(rec, { on: true, t0: performance.now(), log: [], jumps: 0, refs: null, lastSH: 0, prog: 0, lastY: scrollY, follow: 0, ended: true });
+  recAdd(recHead()); recObserve(); clearInterval(rec.scan); rec.scan = setInterval(() => { if (rec.on) recObserve(); else clearInterval(rec.scan); }, 2000);
+  requestAnimationFrame(recFrame); recRender();
+}
+async function recCopy() {
+  const text = rec.log.join('\n') + '\nEnde des Protokolls';
+  try { await navigator.clipboard.writeText(text); rec.copied = performance.now() + 4000; recBadge(); setTimeout(recBadge, 4100); }
+  catch {
+    // Ohne Zugriff auf die Zwischenablage: Text zum Markieren anzeigen
+    const ta = $('rec-text'); ta.hidden = false; ta.value = text; ta.focus(); ta.select();
+  }
+}
+(function recInit() {
+  if (!$('rec-toggle')) return;
+  recWrapScroll();
+  // Finger und Scrollen (passiv, verzögert nichts)
+  const opt = { passive: true, capture: true };
+  addEventListener('touchstart', e => { rec.touching = true; if (rec.on && e.touches.length === 1) recAdd(`T+ Finger auf y=${recY()}`); }, opt);
+  addEventListener('touchend', e => { if (!e.touches.length) rec.touching = false; if (rec.on && !e.touches.length) recAdd(`T- Finger ab y=${recY()}`); }, opt);
+  addEventListener('scroll', () => {
+    const now = performance.now(), gap = now - rec.lastScrollAt; rec.lastScrollAt = now;
+    if (!rec.on) return;
+    // Scrollt es nach dem „Ende“ (250 ms Ruhe) ohne Finger weiter, schwingt die Seite noch nach – das ist wichtig
+    if (rec.ended && !rec.touching) recAdd(`S weiter ohne Finger nach ${Math.round(gap)} ms Pause (Nachschwung) y=${recY()}`);
+    else if (gap > 100 && gap < 5000) recAdd(`S nach ${Math.round(gap)} ms Pause y=${recY()}`);
+    else if (now - rec.scrollLog > 150) { rec.scrollLog = now; recAdd(`S y=${recY()}`); }
+    rec.ended = false;
+    clearTimeout(rec.scrollEnd); rec.scrollEnd = setTimeout(() => { rec.ended = true; recAdd(`S. 250 ms ohne Scroll-Ereignis (die App hält das Scrollen für beendet) y=${recY()}`); }, 250);
+  }, opt);
+  window.visualViewport?.addEventListener('resize', () => { if (rec.on) recAdd(`V sichtbarer Bereich ${Math.round(visualViewport.width)}×${Math.round(visualViewport.height)}`); });
+  document.addEventListener('visibilitychange', () => { if (rec.on) { recAdd(document.hidden ? 'X App verdeckt' : 'X App wieder sichtbar'); if (!document.hidden) rec.lastY = scrollY; } });
+  $('rec-toggle').addEventListener('click', () => { if (rec.on) { rec.on = false; recRender(); store.del(REC_KEY); } else { recStart(); store.set(REC_KEY, { on: true }); } });
+  $('rec-copy').addEventListener('click', () => void recCopy());
+  $('rec-badge').addEventListener('click', () => void recCopy());
+  if (store.get(REC_KEY)?.on) recStart(); else recRender();
+})();
 render();startLive();void showCachedChart();void refresh();void initAutoBackup();void requestWake();
 </script>
 </head>
@@ -6896,6 +7060,11 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
           <small id="storage-note"></small>
           <small id="kc-note"></small>
           <button type="button" class="button ghost" id="kc-clear">Kerzen-Zwischenspeicher leeren</button>
+          <h4>Fehlersuche</h4>
+          <button type="button" class="button ghost" id="rec-toggle" aria-pressed="false">Sprung-Rekorder einschalten</button>
+          <button type="button" class="button ghost" id="rec-copy" hidden>Protokoll kopieren</button>
+          <small id="rec-note">Schreibt mit, was beim und nach dem Wischen springt: nur Zeiten, Pixelwerte und Namen von Seitenbereichen, keine Kurse, Notizen oder Zugangsdaten. Unten links erscheint eine Anzeige; antippen kopiert das Protokoll.</small>
+          <textarea id="rec-text" rows="5" readonly hidden aria-label="Protokoll des Sprung-Rekorders"></textarea>
         </div></span>
       <button id="pause" class="button ghost" type="button" aria-pressed="false" aria-label="Pause" title="Aktualisierung anhalten"><span id="pause-ico" aria-hidden="true">Ⅱ</span><span class="lbl" id="pause-lbl"> Pause</span></button>
       <button id="refresh" class="button icon" type="button" aria-label="Daten jetzt aktualisieren" title="Jetzt aktualisieren">↻</button>
@@ -6911,6 +7080,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
     <span class="lb-conn" id="lb-conn" role="img" aria-label="Verbindung" data-feed="off"></span>
   </div>
   <div class="toasts" id="toasts" aria-live="assertive"></div>
+  <button type="button" class="rec-badge" id="rec-badge" hidden></button>
   <main class="dash" id="dash">
     <h1 class="sr-only">Marktüberblick</h1>
     <div class="dash-top"><noscript><div>JavaScript läuft in dieser Ansicht nicht, daher lädt das Dashboard keine Daten. Auf dem iPad zeigt die Dateien-App HTML-Dateien nur als Vorschau – Dashboard über seine https-Adresse in Safari öffnen.</div></noscript><div class="day-banner" id="day-banner" role="alert" hidden></div><div class="hint-banner" id="install-hint" hidden><span id="install-hint-text"></span><button type="button" class="button ghost" id="install-hint-close">Verstanden</button></div></div>
