@@ -2052,7 +2052,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Alle Werte liegen zusätzlich im Arbeitsspeicher und sind dadurch synchron lesbar. Schreiben geht sofort in den
 // localStorage und gebündelt in die IndexedDB; beim Start gewinnt die zuletzt vollständig geschriebene Kopie.
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
-const APP_VERSION = '3.23.0', docEl = document.documentElement;
+const APP_VERSION = '3.23.1', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -2274,7 +2274,9 @@ async function refresh() {
   mtfIntervals.forEach((iv, i) => applyMtf(iv, mtfResults[i]));
   // Mit Live-Stream reicht ein Abgleich pro Minute, ohne Stream alle 15 s
   state.busy=false; state.controller=null; state.next=Date.now()+(liveOk()?60000:15000);
-  calmRender(); status();
+  // 3.23.1: Neu zeichnen nur, wenn Signal-Zeiträume nachgeladen wurden, und in einem eigenen Schritt – vorher folgte hier ein
+  // zweites vollständiges Zeichnen oft direkt auf das erste, im selben Schritt (zusammen über 50 ms)
+  if (mtfIntervals.length) setTimeout(calmRender); status();
   if (catchUpQueue) { const q = catchUpQueue; catchUpQueue = null; void catchUp(q); }
 }
 // REST-Kerzen mit der laufenden Kerze aus dem Stream zusammenführen: die neuere Fassung gewinnt (Volumen wächst innerhalb einer Kerze nur).
@@ -2461,19 +2463,25 @@ function signalState() { const all = SIGNAL_INTERVALS.map(iv => ({ iv, ...rating
 // Gerechnet wird nur mit Kerzen, die vor diesem Zeitpunkt geschlossen haben – je Zeitraum mit demselben Fenster wie beim Abruf.
 const TREND_MIN = 60, TREND_REF = 5, ratingCache = new Map();
 function closedBefore(arr, t) { let lo = 0, hi = arr.length; while (lo < hi) { const m = (lo + hi) >> 1; if (arr[m].closeTime < t) lo = m + 1; else hi = m; } return lo; }
-function ratingAt(iv, t) {
+// Schlüssel mit Kürzel (die Kerzenzeiten sind bei allen Paaren gleich) und getrennt für Kerzen aus dem Zwischenspeicher.
+// 3.23.1: Beim Chart-Intervall rückt der Anfang des Fensters jede Minute weiter (es bleiben 500 Kerzen). Frühere Punkte (past)
+// behalten deshalb die Bewertung, mit der sie gerechnet wurden – so wurden sie damals angezeigt. Neu gerechnet wird je Minute
+// nur der jüngste Punkt; vorher waren es alle 61, im selben Schritt wie der Kerzenschluss im Chart.
+function ratingAt(iv, t, past = true) {
   const chart = iv === state.interval, src = chart ? state.candles : state.mtf[iv]?.closed;
   if (!src?.length || (chart && state.loadedSymbol !== state.symbol)) return null;
   const n = closedBefore(src, t), w = chart ? n : Math.min(n, MTF_WINDOW(iv));
   if (w < 60) return null;
-  const key = `${iv}|${chart ? 'c' : 'm'}|${src[n - w].time}|${src[n - 1].closeTime}|${w}`;
-  if (!ratingCache.has(key)) { if (ratingCache.size > 4000) ratingCache.clear(); ratingCache.set(key, signalRating(src.slice(n - w, n))); }
-  return ratingCache.get(key);
+  const end = `${state.symbol}|${iv}|${chart ? (state.fromCache ? 'k' : 'c') : 'm'}|${src[n - 1].closeTime}`, key = `${end}|${src[n - w].time}|${w}`;
+  if (ratingCache.has(key)) return ratingCache.get(key);
+  if (past && ratingCache.has(end)) return ratingCache.get(end);
+  if (ratingCache.size > 4000) ratingCache.clear();
+  const r = signalRating(src.slice(n - w, n)); ratingCache.set(key, r); ratingCache.set(end, r); return r;
 }
 // Gesamtscore (Kauf- minus Verkaufssignale) für jede Minute der letzten Stunde; letzter Wert = jetzt
 function signalTrend(now = Date.now()) {
   const net = [];
-  for (let j = TREND_MIN; j >= 0; j--) { const o = overallRating(SIGNAL_INTERVALS.map(iv => ratingAt(iv, now - j * 60000))); net.push(o ? o.net : null); }
+  for (let j = TREND_MIN; j >= 0; j--) { const o = overallRating(SIGNAL_INTERVALS.map(iv => ratingAt(iv, now - j * 60000, j > 0))); net.push(o ? o.net : null); }
   const cur = net.at(-1), ref = net.at(-1 - TREND_REF);
   return { net, cur, ref, dir: cur === null || ref === null ? null : cur > ref ? 'up' : cur < ref ? 'down' : 'flat' };
 }
@@ -3493,7 +3501,7 @@ function renderChart(levels={}, ov={}, start=null, end=null) {
   const defs=node('defs',{}), clip=node('clipPath',{id:'plot-clip'}); clip.append(node('rect',{x:left,y:top,width:pw,height:bottom-top})); defs.append(clip); svg.append(defs);
   const under=node('g',{'clip-path':'url(#plot-clip)'}), over=node('g',{'clip-path':'url(#plot-clip)'});
   const pathOf=arr=>{let d='',pen=false;arr.forEach((v,i)=>{if(Number.isFinite(v)){d+=`${pen?'L':'M'}${x(i).toFixed(1)} ${y(v).toFixed(1)}`;pen=true;}else pen=false;});return d;};
-  drawLiqHeat(under, {left, pw, top, bottom, min, max, data});
+  drawLiqHeat(under, {left, top, bottom, min, max, data, step});
   if (bbU) {
     const idx=bbU.map((v,i)=>Number.isFinite(v)?i:-1).filter(i=>i>=0);
     if (idx.length>1) under.append(node('path',{d:'M'+idx.map(i=>`${x(i).toFixed(1)} ${y(bbU[i]).toFixed(1)}`).join('L')+'L'+idx.slice().reverse().map(i=>`${x(i).toFixed(1)} ${y(bbL[i]).toFixed(1)}`).join('L')+'Z',fill:PAL.bb,opacity:.07}));
@@ -5183,7 +5191,7 @@ function lmPrice(p) { return number(p, clamp(4 - Math.floor(Math.log10(p)), 0, 1
 
 // ----- Daten -----
 const lm = { key: '', oi: [], kl: [], ver: 0, nextAt: 0, error: null, busy: false, ctrl: null, at: 0 };
-const lmCache = { modelKey: '', model: null, imgKey: '', img: null };
+const lmCache = { base: '', levels: [], decay: [], lmKey: '', until: -Infinity, modelKey: '', model: null, geo: null, look: '', imgKey: '', img: null, lo: 0, hi: 0, span: 0, t0: 0, cols: 0, drawn: '' };
 // Zwischenspeicher: eigene IndexedDB (nicht im Backup, höchstens 12 Reihen). Nach dem Neuladen – auf dem iPad passiert das
 // oft beim Tab-Wechsel – zeichnet die Heatmap sofort aus dem Speicher und holt nur die fehlenden Werte nach.
 const LM_DB = 'scalpdesk-liqmap', LM_DB_MAX = 12, LM_DB_INDEX = '__index';
@@ -5262,24 +5270,44 @@ async function lmRefresh(force = false) {
   }
   calmDo(() => { drawChart(); renderLmStrip(); });
 }
-// Modell für den aktuellen Stand: Zonen, Schwund und Treffer bis zur letzten abgeschlossenen Chart-Kerze (gecacht);
-// die laufende Kerze wird bei jedem Zeichnen geprüft
-function lmModelNow() {
+// Modell für den aktuellen Stand: Zonen, Schwund und Treffer bis zur letzten abgeschlossenen Chart-Kerze (gecacht). Die Kerzen
+// danach werden bei jedem Zeichnen geprüft: die laufende und – bis das Modell nachgerechnet ist – eben geschlossene.
+// 3.23.1: Beim Zeichnen gerechnet wird nur, wenn es für Kürzel und Intervall noch kein Modell gibt; nach neuen Kerzen oder
+// Daten in einem eigenen Schritt danach (lmSoon). Die Zonen entstehen nur mit neuen Open-Interest-Daten neu.
+function lmModelNow(sync = false) {
   const P = lmPeriod(); if (!lmOn() || !P || !lm.oi.length || lm.key !== state.symbol + '|' + P) return null;
-  const ms = LM_MS[P], m = mmrNow(), mmr = Number.isFinite(m) && m >= 0 && m < .5 ? m : .005, now = Date.now();
-  const cs = state.loadedSymbol === state.symbol ? state.candles : [], closed = cs.filter(c => c.closeTime < now);
-  const key = [lm.ver, mmr, closed.length, closed[0]?.time, closed.at(-1)?.time].join('|');
-  if (lmCache.modelKey !== key) {
-    const { levels, decay } = lmLevels(lm.oi, lm.kl, ms, mmr), first = closed[0]?.time ?? Infinity;
-    // Kursverlauf: Futures-Kerzen des OI-Zeitraums bis zum Beginn der Chart-Kerzen, danach die (feineren) Chart-Kerzen
-    const bars = [...lm.kl.filter(k => k.t + ms <= Math.min(first, now)).map(k => ({ t: k.t, h: k.h, l: k.l })), ...closed.map(c => ({ t: c.time, h: c.high, l: c.low }))];
-    lmHits(levels, bars);
-    lmCache.model = { levels, decay }; lmCache.modelKey = key;
+  const ms = LM_MS[P], m = mmrNow(), mmr = Number.isFinite(m) && m >= 0 && m < .5 ? m : .005, now = Date.now(), c = lmCache;
+  const cs = state.loadedSymbol === state.symbol ? state.candles : [], closed = cs.filter(k => k.closeTime < now);
+  const lmKey = lm.key + '|' + state.interval, base = [lmKey, lm.ver, mmr].join('|'), key = [base, closed.length, closed[0]?.time, closed.at(-1)?.time].join('|');
+  if (c.modelKey !== key) {
+    if (sync || c.lmKey !== lmKey) {
+      if (c.base !== base) Object.assign(c, { base }, lmLevels(lm.oi, lm.kl, ms, mmr));
+      // Kursverlauf: Futures-Kerzen des OI-Zeitraums bis zum Beginn der Chart-Kerzen, danach die (feineren) Chart-Kerzen
+      const first = closed[0]?.time ?? Infinity;
+      const bars = [...lm.kl.filter(k => k.t + ms <= Math.min(first, now)).map(k => ({ t: k.t, h: k.h, l: k.l })), ...closed.map(k => ({ t: k.time, h: k.high, l: k.low }))];
+      lmHits(c.levels, bars);
+      Object.assign(c, { lmKey, modelKey: key, until: closed.at(-1)?.time ?? -Infinity, model: { levels: c.levels, decay: c.decay } });
+    } else lmSoon();
   }
-  const live = cs.at(-1), open = !!live && live.closeTime >= now;
-  const liveHit = L => L.hit == null && open && (L.side === 'long' ? live.low <= L.price : live.high >= L.price) ? live.time : null;
-  let liveSig = 0; if (open) for (const L of lmCache.model.levels) if (liveHit(L) != null) liveSig++;
-  return { ...lmCache.model, key, liveHit, liveSig, now };
+  const recent = []; for (let i = cs.length - 1; i >= 0 && cs[i].time > c.until; i--) recent.push(cs[i]);
+  recent.reverse();
+  const liveHit = L => { if (L.hit != null) return null; for (const k of recent) if (k.time >= L.t && (L.side === 'long' ? k.low <= L.price : k.high >= L.price)) return k.time; return null; };
+  let liveSig = 0; if (recent.length) for (const L of c.model.levels) if (liveHit(L) != null) liveSig++;
+  return { ...c.model, key: c.modelKey, liveHit, liveSig, now };
+}
+// 3.23.1: Nachrechnen in eigenen Schritten nach dem Zeichnen, jeder für sich kurz: erst das Modell, dann das Bild für den
+// zuletzt gezeichneten Ausschnitt. Gezeichnet wird das neue Bild mit der nächsten Live-Anzeige (höchstens einmal pro Sekunde,
+// ohne zusätzliches Zeichnen). Vorher lief das beim Kerzenschluss im selben Schritt wie das Zeichnen des Charts und der
+// Signale, zusammen über 50 ms.
+let lmTimer = null;
+function lmSoon() { if (!lmTimer) lmTimer = setTimeout(lmStep, 0); }
+function lmStep() {
+  lmTimer = null;
+  const before = lmCache.modelKey, m = lmModelNow(true); if (!m) return;
+  if (lmCache.modelKey !== before) { lmSoon(); return; }
+  const g = lmCache.geo;
+  if (g && !lmFits(m, g)) { lmPaintNow(m, g); lmSoon(); return; }
+  if (lmCache.drawn !== lmCache.imgKey) scheduleLiveRender(true);
 }
 function lmClustersNow() {
   const m = lmModelNow(), price = currentPrice();
@@ -5294,9 +5322,10 @@ function lmMagnetLevels() {
 // ----- Zeichnen -----
 const lmRgb = hex => { const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(String(hex).trim()); return m ? m.slice(1).map(x => parseInt(x, 16)) : [240, 144, 46]; };
 // Hitze-Farbskala (heller = mehr im dunklen Design, dunkler = mehr im hellen). Stärke = (Anteil am Höchstwert)^0,75;
-// schwache Zonen bleiben fast durchsichtig, damit die Kerzen lesbar bleiben und nur dichte Cluster hervortreten
-function lmPaint(grid, rows, cols) {
-  let vmax = 0; for (const v of grid) if (v > vmax) vmax = v;
+// schwache Zonen bleiben fast durchsichtig, damit die Kerzen lesbar bleiben und nur dichte Cluster hervortreten.
+// Höchstwert nur aus den Zeilen r0 bis r1 − 1, dem sichtbaren Ausschnitt (das Bild hat oben und unten einen Rand)
+function lmPaint(grid, rows, cols, r0 = 0, r1 = rows) {
+  let vmax = 0; for (let i = r0 * cols; i < r1 * cols; i++) if (grid[i] > vmax) vmax = grid[i];
   if (!(vmax > 0)) return null;
   const stops = (PAL.lm || []).map(lmRgb), light = docEl.dataset.theme === 'light';
   if (stops.length < 2) return null;
@@ -5304,7 +5333,7 @@ function lmPaint(grid, rows, cols) {
   const ctx = cv.getContext('2d'); if (!ctx) return null;
   const img = ctx.createImageData(cols, rows), px = img.data;
   for (let i = 0; i < grid.length; i++) {
-    const s = (grid[i] / vmax) ** .75; if (s < .12) continue;
+    const s = Math.min(1, grid[i] / vmax) ** .75; if (s < .12) continue;
     const f = s * (stops.length - 1), k = Math.min(stops.length - 2, Math.floor(f)), u = f - k, a = stops[k], b = stops[k + 1];
     px[i * 4] = a[0] + (b[0] - a[0]) * u; px[i * 4 + 1] = a[1] + (b[1] - a[1]) * u; px[i * 4 + 2] = a[2] + (b[2] - a[2]) * u;
     px[i * 4 + 3] = 255 * ((light ? .1 : .08) + .72 * s ** 1.5);
@@ -5312,16 +5341,31 @@ function lmPaint(grid, rows, cols) {
   ctx.putImageData(img, 0, 0);
   try { return cv.toDataURL('image/png'); } catch { return null; }
 }
-// Aus renderChart: Heatmap als Bild unter Bollinger-Fläche, Volumenprofil und Kerzen
-function drawLiqHeat(under, g) {
+// Aus renderChart: Heatmap als Bild unter Bollinger-Fläche, Volumenprofil und Kerzen.
+// 3.23.1: Der Preisbereich des Charts folgt den Bollinger-Bändern der laufenden Kerze und verschiebt sich fast jede Sekunde
+// ein wenig; bisher wurde das Bild dann jedes Mal neu gerechnet. Jetzt hat es oben und unten einen Rand von 10 % und bleibt,
+// solange der Ausschnitt darin liegt und sich um höchstens 10 % streckt oder staucht (der Chart schneidet den Rand ab).
+// Ändert sich etwas (neue Kerze, neue Daten, Treffer der laufenden Kerze, anderer Ausschnitt), steht das bisherige Bild an
+// seinem Zeitraum und Preisbereich weiter, bis das neue in einem eigenen Schritt fertig ist (lmSoon). Nur das erste Bild
+// (neues Kürzel, Intervall, Design, Chart-Höhe) entsteht beim Zeichnen.
+const lmImgKey = (m, g) => [g.look, m.key, m.liveSig, g.times[0], g.times.length].join('|');
+function lmFits(m, g) { const c = lmCache; return c.imgKey === lmImgKey(m, g) && c.lo <= g.min && c.hi >= g.max && g.span > c.span * .9 && g.span < c.span * 1.1; }
+function lmPaintNow(m, g) {
+  const extra = Math.ceil(g.rows * .1), lo = g.min - extra * g.span / g.rows, hi = g.max + extra * g.span / g.rows, rows = g.rows + 2 * extra;   // Zeilen so hoch wie im Ausschnitt
+  Object.assign(lmCache, { imgKey: lmImgKey(m, g), look: g.look, lo, hi, span: g.span, t0: g.times[0], cols: g.times.length, img: lmPaint(lmGrid(m.levels, m.decay, g.times, g.I, lo, hi, rows, m.liveHit), rows, g.times.length, extra, extra + g.rows) });
+}
+function drawLiqHeat(under, { left, top, bottom, min, max, data, step }) {
   const m = lmModelNow(); if (!m) return;
-  const { left, pw, top, bottom, min, max, data } = g, rows = clamp(Math.round((bottom - top) / 2), 40, 240), I = data[0].closeTime - data[0].time + 1, times = data.map(c => c.time);
-  const key = [m.key, m.liveSig, times[0], times.at(-1), times.length, rows, min.toPrecision(8), max.toPrecision(8), docEl.dataset.theme, (PAL.lm || []).join()].join('|');
-  if (lmCache.imgKey !== key) { lmCache.img = lmPaint(lmGrid(m.levels, m.decay, times, I, min, max, rows, m.liveHit), rows, times.length); lmCache.imgKey = key; }
-  if (!lmCache.img) return;
-  const im = document.createElementNS(NS, 'image');
-  for (const [k, v] of Object.entries({ x: left, y: top, width: pw, height: bottom - top, preserveAspectRatio: 'none', class: 'lmap', href: lmCache.img })) im.setAttribute(k, String(v));
-  im.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', lmCache.img);
+  const I = data[0].closeTime - data[0].time + 1, rows = clamp(Math.round((bottom - top) / 2), 40, 240), c = lmCache;
+  const g = c.geo = { times: data.map(k => k.time), I, min, max, span: max - min, rows, look: [lm.key, I, rows, docEl.dataset.theme, (PAL.lm || []).join()].join('|') };
+  if (!lmFits(m, g)) { if (c.look === g.look) lmSoon(); else lmPaintNow(m, g); }
+  if (!c.img || c.look !== g.look) return;
+  c.drawn = c.imgKey;
+  // Spalten genau unter den Kerzen: Mit Prognose rechts ist die Kerzenfläche schmaler als der Chart
+  let i0 = g.times.indexOf(c.t0); if (i0 < 0) i0 = Math.round((c.t0 - g.times[0]) / I);
+  const y = v => top + (max - v) / g.span * (bottom - top), im = document.createElementNS(NS, 'image');
+  for (const [k, v] of Object.entries({ x: left + i0 * step, y: y(c.hi), width: step * c.cols, height: y(c.lo) - y(c.hi), preserveAspectRatio: 'none', class: 'lmap', href: c.img })) im.setAttribute(k, String(v));
+  im.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', c.img);
   under.append(im);
 }
 // Aus renderChart: stärkste Cluster beschriften (außerhalb des Ausschnitts am Rand) und die Leiste unter dem Chart füllen
