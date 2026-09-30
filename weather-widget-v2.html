@@ -1556,6 +1556,9 @@ html[data-layout=tablet] .wl-detail{scroll-margin-bottom:calc(84px + env(safe-ar
 .data-last{margin-left:auto;font-size:.75rem;font-weight:400;color:var(--muted);white-space:nowrap}
 .data-head+.data-panel{margin-top:0;border-top:0;border-top-left-radius:0;border-top-right-radius:0}
 @media (prefers-reduced-motion:reduce){.data-chev{transition:none}}
+/* 3.24.0 BTC-Puls: Erklärung und aktuelle Schwellen unter dem Schalter */
+.pulse-info{display:block;margin:-2px 0 6px 2.6em;font-size:.75rem;line-height:1.45;color:var(--muted)}
+#pulse-info{color:var(--text-2);font-weight:600}
 .chart-panel>.notice{margin:12px 20px 0}
 html{scroll-padding-top:calc(var(--lb-h,56px) + 16px)}
 /* nur als eigene Spalten (ab 1400 px) begrenzt; darunter stehen beide untereinander in der gemeinsamen Seitenspalte und
@@ -4084,6 +4087,7 @@ function syncStreams() {
     }
     for (const s of fullBarSyms()) want.spot.add(`${s.toLowerCase()}@kline_1m`); // Vollbild: Kurs-Wechsler oben rechts
     for (const w of wlStreams()) want[w.m].add(w.s); // 4.2: Mini-Watchlist – 1m-Kerzen aller Vorauswahl-Coins
+    if (pulseWants()) want.spot.add('btcusdt@kline_1m'); // 3.24.0: BTC-Puls
     // Tab-Titel mit BTC-Referenzkurs (anderer Coin im Chart): BTC-Spot-1m – auch wenn der Chart aus den Futures kommt
     if (titlePriceOn && state.symbol !== 'BTCUSDT') want.spot.add('btcusdt@kline_1m');
   }
@@ -4109,6 +4113,7 @@ function onTick(now) {
   cnewsTick(); // 3.20: wichtige News und Termine zum geöffneten Coin
   wlTick(now); // 4.2: Mini-Watchlist laden und malen
   volaTick(now); // 4.3: Volatilität nach Uhrzeit, Warnung bei erhöhter Volatilität
+  pulseTick(now); // 3.24.0: BTC-Puls – Schwellen je Uhrzeit, 1m-Kerzen von BTC
   s247Tick(now); // 5.1: meldet sich der 24/7-Dienst?
   if (now - lastStreamSync > 5000) { lastStreamSync = now; syncStreams(); }
   if (Date.now() - lastSeenSaved > 30000) saveLastSeen();
@@ -4184,7 +4189,7 @@ function onKline(m) {
   const now = Date.now(); live.lastMsg[m.m] = now; clockSample(m.E); // 3.3: Binance-Zeit für den Countdown
   if (state.paused) return;
   if (m.i === '1m' && m.s === 'BTCUSDT' && m.m === 'spot' && m.k.c > 0) { btcRef = { price: m.k.c, at: now }; if (state.symbol !== 'BTCUSDT') updateTitle(); }
-  if (m.i === '1m') { trackLivePrice(m.s, m.k, now); wlKline(m, now); volaKline(m); } // 4.2: Mini-Watchlist, 4.3: Volatilität der letzten 60 Minuten
+  if (m.i === '1m') { trackLivePrice(m.s, m.k, now); wlKline(m, now); volaKline(m); pulseKline(m, now); } // 4.2: Mini-Watchlist, 4.3: Volatilität der letzten 60 Minuten
   if (m.s === state.symbol && m.m === chartMarket() && m.i === state.interval && applyLiveCandle(m.k)) { live.chartAt = now; updateTitle(); scheduleLiveRender(true); }
   else if (m.i === '1m' && watchSymbols().has(m.s)) scheduleLiveRender(false);
 }
@@ -4760,9 +4765,9 @@ const tgKey = T => `${T.chat}|${T.thread || ''}`;
 const tgSeparate = () => tgKey(tgTarget('backup')) !== tgKey(tgTarget('alarm'));
 function saveChannels() { if (store.set(CHAN_KEY, chan)) broadcastData([CHAN_KEY]); renderChanSummary(); scheduleS247(); }
 // Nachricht über den Worker senden; das Ergebnis kommt als {t:'sent'} zurück (onSent)
-function chanSend(k, text, test = false, kind = 'test') {
+function chanSend(k, text, test = false, kind = 'test', opts = {}) {
   const id = ++sendSeq, m = k === 'tg'
-    ? { t: 'send', id, kind: 'telegram', test, url: `https://api.telegram.org/bot${chan.tg.token}/sendMessage`, fields: { ...tgFields(tgTarget(kind)), text: text.slice(0, 4000), link_preview_options: JSON.stringify({ is_disabled: true }) } }
+    ? { t: 'send', id, kind: 'telegram', test, url: `https://api.telegram.org/bot${chan.tg.token}/sendMessage`, fields: { ...tgFields(tgTarget(kind)), text: text.slice(0, 4000), link_preview_options: JSON.stringify({ is_disabled: true }), ...(opts.silent ? { disable_notification: 'true' } : {}) } }
     : { t: 'send', id, kind: 'discord', test, url: chan.dc.url, fields: { content: text.slice(0, 1900), allowed_mentions: { parse: [] } } };
   return new Promise(resolve => { sendWait.set(id, { k, resolve }); live.post(m); });
 }
@@ -4784,14 +4789,14 @@ function onSent(m) {
   renderChanStatus(); renderChanSummary(); w.resolve(m);
 }
 // Meldung an alle aktiven Kanäle; je Ereignis nur einmal, auch wenn mehrere Tabs offen sind (Abstimmung über die IndexedDB)
-async function notifyChannels(type, key, text, ttl) {
+async function notifyChannels(type, key, text, ttl, opts = {}) {
   if (!chan.ev[type]) return;
   if (s247Covers(type, key)) return; // 5.1: kommt vom 24/7-Dienst – nicht doppelt senden
   const ks = ['tg', 'dc'].filter(chanReady); if (!ks.length) return;
   if (!(await store.claim(key, ttl))) return;
   chanClaimed.add(key);
   const msg = `${text}\n${new Date().toLocaleTimeString('de-DE')} Uhr`;
-  for (const k of ks) void chanSend(k, msg, false, type);
+  for (const k of ks) void chanSend(k, msg, false, type, opts); // opts.silent: lautlos (BTC-Puls nachts)
 }
 // Kurs wieder weg von der Marke: nächste Berührung darf erneut melden (nur für selbst gesendete Meldungen)
 function chanRelease(key) { if (chanClaimed.delete(key)) void store.release(key); }
@@ -4820,7 +4825,7 @@ function fillChanForm() {
   $('tg-token').value = chan.tg.token; $('tg-chat').value = chan.tg.chat; $('tg-thread').value = chan.tg.thread; $('tg-bchat').value = chan.tg.bchat; $('tg-bthread').value = chan.tg.bthread; $('tg-on').checked = chan.tg.on;
   $('dc-url').value = chan.dc.url; $('dc-on').checked = chan.dc.on;
   $('chan-ev-alarm').checked = chan.ev.alarm; $('chan-ev-pos').checked = chan.ev.pos; $('chan-ev-day').checked = chan.ev.day; $('chan-ev-news').checked = chan.ev.news; $('chan-ev-pnl').checked = chan.ev.pnl; $('chan-ev-pulse').checked = chan.ev.pulse;
-  renderChanStatus();
+  renderChanStatus(); renderPulseInfo();
 }
 function readChanForm() {
   chan = { tg: { token: $('tg-token').value.trim(), chat: $('tg-chat').value.trim(), thread: $('tg-thread').value.trim(), bchat: $('tg-bchat').value.trim(), bthread: $('tg-bthread').value.trim(), on: $('tg-on').checked }, dc: { url: $('dc-url').value.trim(), on: $('dc-on').checked },
@@ -7712,6 +7717,147 @@ function volaTick(now) {
   $('vola-back').addEventListener('click', () => { vola.sel = null; vola.day = null; redraw(); });
   renderVola();
 })();
+// ---------- BTC-Puls (3.24.0): Nachricht bei ungewöhnlich starker Bitcoin-Bewegung ----------
+// Nur BTC: Bewegt sich Bitcoin stark, laufen die meisten Altcoins mit – eine Nachricht statt vieler. Auslöser: Die Bewegung der
+// letzten 5 bzw. 15 Minuten (Spot, Kurs jetzt gegen den Schluss der 1m-Kerze vor 5 bzw. 15 Minuten) ist größer als 99 % der
+// Bewegungen, die zu dieser Uhrzeit üblich sind, und mindestens 0,5 % bzw. 0,8 % (Mindestgröße). „Üblich“ kommt aus den
+// 5m-Kerzen der letzten 35 Tage: je Stunde (UTC) und Tagesart (Mo–Fr, Sa–So), zusammen mit den beiden Nachbarstunden –
+// wie die Statistik aus Schritt 4.3 –, einmal am Tag neu. Keine festen Prozente: die wären zur US-Eröffnung zu empfindlich
+// und nachts zu träge. Höchstens eine Nachricht je Richtung in 30 Minuten, außer die Bewegung legt deutlich weiter zu
+// (mindestens das 1,5-Fache der gemeldeten; auch dann höchstens eine weitere). Inhalt nur Fakten: Richtung, Größe, Fenster,
+// Kurs, „ungewöhnlich stark für 14 Uhr“ mit der Schwelle und die Bewegung der Vorauswahl-Coins im selben Fenster – keine
+// Prognose. Nachts (22–7 Uhr Ortszeit) kommt sie lautlos. Ziel: Telegram „Kursalarm“ (bzw. Discord). Mit dem 24/7-Dienst ab
+// Version 1.1 übernimmt dieser die Meldung, auch bei geschlossener App: Die Schwellen reisen in der angehefteten Datei mit,
+// und die App sendet dann nicht zusätzlich (s247Covers).
+// var statt const/let: pulseKline und syncStreams können über Stream und Sekundentakt schon laufen, bevor dieser Abschnitt ausgewertet ist
+var PULSE_WIN = [5, 15], PULSE_FLOOR = { 5: 0.5, 15: 0.8 }, PULSE_DAYS = 35, PULSE_EVERY = 24 * 3600e3, PULSE_RETRY = 15 * 60e3;
+var PULSE_GAP = 30 * 60e3, PULSE_MORE = 1.5, PULSE_MIN_N = 90, PULSE_KEY = 'scalpdesk.pulse.v1', PULSE_DB = 'pulse|BTCUSDT';
+var pulse = { rows: null, at: 0, busy: false, error: '', retryAt: 0, thr: null, m1: [], run: null, m1busy: false, m1at: 0, loaded: false };
+// Nur mit Kanal (Telegram oder Discord) und eingeschalteter Meldung – sonst keine Abrufe
+function pulseOn() { return !!chan?.ev?.pulse && ['tg', 'dc'].some(chanReady); }
+function pulseWants() { return !!pulse && pulseOn(); }
+// Stunde (UTC) und Tagesart eines Fensters, das zum Zeitpunkt t endet
+function pulseSlot(t) { const d = new Date(t - 1), wd = d.getUTCDay(); return { h: d.getUTCHours(), we: wd === 0 || wd === 6 }; }
+// Schwellen aus 5m-Schlusskursen [[Beginn, Schluss], …]: je Tagesart und Stunde der 99-%-Wert der Beträge der 5- und
+// 15-Minuten-Bewegungen (in %), aus der Stunde und ihren beiden Nachbarn; zu wenige Fälle: beide Tagesarten zusammen, sonst null
+function pulseStats(rows) {
+  const b = { wd: [], we: [] }; for (const k of ['wd', 'we']) for (let h = 0; h < 24; h++) b[k].push({ 5: [], 15: [] });
+  for (let i = 1; i < rows.length; i++) {
+    const [t, c] = rows[i], end = t + 3e5, s = pulseSlot(end), x = b[s.we ? 'we' : 'wd'][s.h];
+    if (t - rows[i - 1][0] === 3e5) x[5].push(Math.abs(c / rows[i - 1][1] - 1) * 100);
+    if (i >= 3 && t - rows[i - 3][0] === 9e5) x[15].push(Math.abs(c / rows[i - 3][1] - 1) * 100);
+  }
+  const asc = (p, q) => p - q, pool = (k, h, w) => [-1, 0, 1].flatMap(d => b[k][(h + d + 24) % 24][w]);
+  const out = { wd: [], we: [], n: rows.length, from: rows[0]?.[0] ?? null, to: rows.at(-1)?.[0] ?? null };
+  for (const k of ['wd', 'we']) for (let h = 0; h < 24; h++) {
+    out[k].push(PULSE_WIN.map(w => {
+      let xs = pool(k, h, w); if (xs.length < PULSE_MIN_N) xs = [...pool('wd', h, w), ...pool('we', h, w)];
+      return xs.length < PULSE_MIN_N ? null : +volaQ(xs.sort(asc), 0.99).toFixed(3);
+    }));
+  }
+  return out;
+}
+// Schwelle für ein Fenster, das jetzt endet: 99-%-Wert der Uhrzeit, mindestens die Mindestgröße
+function pulseLimit(thr, w, now) { const s = pulseSlot(now), v = thr?.[s.we ? 'we' : 'wd']?.[s.h]?.[PULSE_WIN.indexOf(w)]; return Math.max(v > 0 ? v : 0, PULSE_FLOOR[w]); }
+// Bewegung über w Minuten aus 1m-Kerzen: Kurs jetzt gegen den Schluss der Kerze, die vor w Minuten lief; nur ohne Lücke
+function pulseMove(closed, price, w) {
+  const ref = closed.at(-w), last = closed.at(-1);
+  if (!ref || !last || !(price > 0) || last.time - ref.time !== (w - 1) * 6e4) return null;
+  return (price / ref.close - 1) * 100;
+}
+// Entscheidung (auch für die Tests): Welches Fenster ist am ungewöhnlichsten? Darf gemeldet werden (Sperre je Richtung)?
+// last: { up|down: { t, mag, more } } – zuletzt gemeldete Bewegung je Richtung
+function pulseDecide(moves, thr, now, last = {}) {
+  let best = null;
+  for (const w of PULSE_WIN) { const mv = moves[w]; if (mv == null) continue; const lim = pulseLimit(thr, w, now), r = Math.abs(mv) / lim; if (r >= 1 && (!best || r > best.r)) best = { w, mv, lim, r }; }
+  if (!best) return null;
+  const d = best.mv > 0 ? 'up' : 'down', l = last[d], mag = Math.abs(best.mv);
+  if (l && now - l.t < PULSE_GAP) { if (l.more || mag < l.mag * PULSE_MORE) return null; return { ...best, d, mag, more: true }; }
+  return { ...best, d, mag, more: false };
+}
+// Nachrichtentext: nur Fakten
+function pulseText(p, price, hourLocal, others) {
+  const pc = v => `${signed(v)} %`;
+  return `⚡ BTC-Puls: BTC ${pc(p.mv)} in ${p.w} Min. (${priceText(price)} USDT)${p.more ? ' – Bewegung legt weiter zu' : ''} – ungewöhnlich stark für ${hourLocal} Uhr (Schwelle ${number(p.lim)} %)`
+    + (others.length ? `\nVorauswahl im selben Zeitraum: ${others.map(([c, v]) => `${c} ${pc(v)}`).join(' · ')}` : '');
+}
+// ---- Daten ----
+async function pulseDbGet() {
+  const db = await kcOpen(); if (!db) return null;
+  const v = await new Promise(res => { try { const q = db.transaction('series').objectStore('series').get(PULSE_DB); q.onsuccess = () => res(q.result); q.onerror = () => res(null); } catch { res(null); } });
+  return v && Array.isArray(v.rows) && v.rows.every(r => Array.isArray(r) && r.length === 2 && r.every(Number.isFinite)) ? v : null;
+}
+async function pulseDbPut(v) { const db = await kcOpen(); if (!db) return; try { const tx = db.transaction('series', 'readwrite'); tx.objectStore('series').put(v, PULSE_DB); await new Promise(res => { tx.oncomplete = tx.onerror = tx.onabort = res; }); } catch { /* nur eine Beschleunigung */ } }
+// 5m-Kerzen der letzten 35 Tage: beim ersten Mal rückwärts in Schritten zu 1000, danach nur Neues
+async function pulseFetch() {
+  pulse.busy = true;
+  try {
+    const now = Date.now(), from = now - PULSE_DAYS * 864e5, get = async p => { const r = await spotGet('/api/v3/klines', { symbol: 'BTCUSDT', interval: '5m', limit: 1000, ...p }); return Array.isArray(r) && r.length ? normalizeKlines(r) : []; };
+    if (!pulse.loaded) { const v = await pulseDbGet(); pulse.loaded = true; if (v && !pulse.rows) { pulse.rows = v.rows; pulse.at = v.at || 0; } }
+    const have = (pulse.rows || []).filter(r => r[0] >= from), lastT = have.at(-1)?.[0], add = [];
+    if (lastT && now - lastT < 3 * 864e5) {
+      let start = lastT + 3e5;
+      for (let i = 0; i < 4 && start < now - 3e5; i++) { const a = await get({ startTime: start }); if (!a.length) break; add.push(...a); start = a.at(-1).time + 3e5; }
+    } else {
+      let end = now;
+      for (let i = 0; i < 12; i++) { const a = await get({ endTime: end }); if (!a.length) break; add.unshift(...a); if (a[0].time <= from) break; end = a[0].time - 1; }
+    }
+    const seen = new Set(), rows = [...have, ...add.filter(c => c.closeTime < now && c.close > 0).map(c => [c.time, c.close])]
+      .filter(r => r[0] >= from && !seen.has(r[0]) && seen.add(r[0])).sort((p, q) => p[0] - q[0]);
+    if (rows.length < 1000) throw new Error('Zu wenige BTC-Kerzen für die Schwellen.');
+    Object.assign(pulse, { rows, at: Date.now(), thr: pulseStats(rows), error: '', retryAt: 0 });
+    void pulseDbPut({ at: pulse.at, rows });
+    if (typeof scheduleS247 === 'function') scheduleS247(); // neue Schwellen an den 24/7-Dienst
+  } catch (e) { pulse.error = e?.message || 'BTC-Kerzen nicht erreichbar.'; pulse.retryAt = Date.now() + PULSE_RETRY; }
+  finally { pulse.busy = false; renderPulseInfo(); }
+}
+// Live: 1m-Kerzen von BTC (Spot) – Startwerte per REST, danach aus dem Stream
+async function pulseLoadM1() {
+  pulse.m1busy = true;
+  try { const r = await spotGet('/api/v3/klines', { symbol: 'BTCUSDT', interval: '1m', limit: 20 }), cs = Array.isArray(r) ? normalizeKlines(r) : [], now = Date.now(); pulse.m1 = cs.filter(c => c.closeTime < now); pulse.run = cs.at(-1)?.closeTime >= now ? cs.at(-1) : null; pulse.m1at = now; }
+  catch { pulse.m1at = Date.now() - 50e3; } // in 10 s erneut
+  finally { pulse.m1busy = false; }
+}
+function pulseKline(m, now = Date.now()) {
+  if (!pulse || m.i !== '1m' || m.s !== 'BTCUSDT' || m.m !== 'spot' || !pulse.m1at) return;
+  const c = { time: m.k.t, open: m.k.o, high: m.k.h, low: m.k.l, close: m.k.c, closeTime: m.k.T }, last = pulse.m1.at(-1);
+  if (last && c.time <= last.time) return;
+  if (last && c.time > last.closeTime + 1) { pulse.m1 = []; pulse.m1at = 0; return; } // Lücke: neu laden
+  if (m.k.x) { pulse.m1.push(c); if (pulse.m1.length > 30) pulse.m1.splice(0, pulse.m1.length - 30); pulse.run = null; } else pulse.run = c;
+  pulseCheck(now);
+}
+// ---- Prüfen und melden ----
+function pulseLast() { const v = store.get(PULSE_KEY, null) || {}, one = x => x && Number.isFinite(x.t) && x.mag > 0 ? { t: x.t, mag: x.mag, more: !!x.more } : null; return { up: one(v.up), down: one(v.down) }; }
+function pulseCheck(now = Date.now()) {
+  if (!pulseOn() || !pulse.thr) return;
+  const price = pulse.run?.close ?? pulse.m1.at(-1)?.close, moves = Object.fromEntries(PULSE_WIN.map(w => [w, pulseMove(pulse.m1, price, w)]));
+  const last = pulseLast(), p = pulseDecide(moves, pulse.thr, now, last); if (!p) return;
+  store.set(PULSE_KEY, { ...last, [p.d]: { t: now, mag: p.more ? Math.max(p.mag, last[p.d]?.mag || 0) : p.mag, more: p.more } }); broadcastData([PULSE_KEY]);
+  // Vorauswahl im selben Fenster (Kacheln, 1m-Kerzen) – ohne BTC selbst, nur mit lückenlosen Daten
+  const others = state.watch.filter(c => c !== 'BTC').map(c => { const e = wl?.c.get(wlSym(c)); if (!e || e.error) return null; const v = pulseMove(e.closed, wlPrice(e), p.w); return v == null ? null : [c, v]; }).filter(Boolean);
+  const hLocal = new Date(now).getHours(), text = pulseText(p, price, String(hLocal).padStart(2, '0'), others), silent = hLocal >= 22 || hLocal < 7;
+  simpleToast('pulse:' + p.d, 'alarm ' + p.d, text.split('\n')[0], null, p.d === 'up' ? 'green' : 'orange');
+  desktopNotify(`⚡ BTC ${signed(p.mv)} % in ${p.w} Min.`, text.replace(/\n/g, ' – '), 'pulse');
+  // je Richtung höchstens eine Nachricht in 30 Minuten (auch über Tabs hinweg), dazu höchstens eine „legt weiter zu“
+  void notifyChannels('pulse', `pulse:${p.d}${p.more ? ':more' : ''}`, text, PULSE_GAP, { silent });
+}
+// Sekundentakt: Schwellen einmal am Tag (bei Fehler nach 15 min erneut), 1m-Startwerte, Prüfen auch ohne neue Stream-Nachricht
+function pulseTick(now) {
+  if (!pulse || state.paused || !pulseOn()) return;
+  if (!pulse.busy && (!pulse.thr || now - pulse.at > PULSE_EVERY) && now >= pulse.retryAt) void pulseFetch();
+  if (!pulse.m1busy && !pulse.m1at) void pulseLoadM1();
+  else if (!pulse.m1busy && now - pulse.m1at > 60e3 && !pulse.run && (!pulse.m1.length || now - pulse.m1.at(-1).closeTime > 150e3)) void pulseLoadM1();
+}
+// Für den 24/7-Dienst: Schwellen je Stunde (UTC) und Tagesart, Mindestgrößen, Vorauswahl
+function pulseHandover() { return pulse?.thr ? { thr: { wd: pulse.thr.wd, we: pulse.thr.we }, floor: [PULSE_FLOOR[5], PULSE_FLOOR[15]], watch: state.watch.filter(c => c !== 'BTC').slice(0, 12) } : null; }
+// Anzeige im Einrichtungsfenster (unter „BTC-Puls“)
+function renderPulseInfo() {
+  if (!$('pulse-info')) return;
+  const now = Date.now(), t = pulse?.thr;
+  put('pulse-info', !chan?.ev?.pulse ? 'aus' : !['tg', 'dc'].some(chanReady) ? 'wartet auf Telegram oder Discord' : t
+    ? `jetzt (${String(new Date(now).getHours()).padStart(2, '0')} Uhr) ab ${number(pulseLimit(t, 5, now))} % in 5 Min. oder ${number(pulseLimit(t, 15, now))} % in 15 Min. · aus ${Math.round((t.to - t.from) / 864e5)} Tagen BTC-Kerzen`
+    : pulse?.error ? `Schwellen noch nicht berechnet: ${pulse.error}` : 'Schwellen werden berechnet …');
+}
 // ---------- Schritt 5.1: 24/7-Dienst – Übergabe an einen eigenen Server (3.23.0) ----------
 // Ein kleines Programm auf einem Server, der rund um die Uhr läuft (server/scalpdesk-247.mjs, z. B. kostenlos bei Oracle
 // Cloud), meldet Kurs-Alarme, Stop-Loss/Take-Profit und Termin-Warnungen per Telegram – auch wenn die App geschlossen ist.
@@ -7728,7 +7874,7 @@ var s247 = { cfg: null, timer: null, busy: false, error: '', st: null, checking:
 s247.cfg = loadS247();
 function loadS247() {
   const v = store.get(S247_KEY), s = x => (typeof x === 'string' ? x : '');
-  return { on: !!v?.on, sentOn: !!v?.sentOn, chat: s(v?.chat), msg: Number(v?.msg) || 0, tag: s(v?.tag), at: Number(v?.at) || 0, sig: s(v?.sig),
+  return { on: !!v?.on, sentOn: !!v?.sentOn, pulse: !!v?.pulse, chat: s(v?.chat), msg: Number(v?.msg) || 0, tag: s(v?.tag), at: Number(v?.at) || 0, sig: s(v?.sig),
     keys: Array.isArray(v?.keys) ? v.keys.filter(k => typeof k === 'string') : [], econ: s(v?.econ), n: v?.n && typeof v.n === 'object' ? { a: Number(v.n.a) || 0, p: Number(v.n.p) || 0 } : { a: 0, p: 0 } };
 }
 function saveS247() { if (store.set(S247_KEY, { ...s247.cfg })) broadcastData([S247_KEY]); }
@@ -7751,8 +7897,9 @@ function s247Payload() {
   const positions = on ? state.positions.filter(p => p.sl > 0 || p.tp > 0).map(p => ({ id: p.id, symbol: p.symbol, source: p.source, side: p.side, tp: p.tp > 0 ? p.tp : null, sl: p.sl > 0 ? p.sl : null,
     since: p.slTpAt || p.openedAt, ack: { tp: !!p.ack?.tp, sl: !!p.ack?.sl } })) : [];
   let tz = 'UTC'; try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch { /* alter Browser */ }
-  return { kind: 'scalpdesk-247', v: 1, on, app: APP_VERSION, dev: s247Device(), tz, ev: { alarm: chan.ev.alarm, pos: chan.ev.pos, news: chan.ev.news },
-    econ: { warn: ec?.cfg?.warn ?? 0, cur: ec?.cfg?.cur === 'all' ? 'all' : 'usd' }, alarms, positions };
+  return { kind: 'scalpdesk-247', v: 1, on, app: APP_VERSION, dev: s247Device(), tz, ev: { alarm: chan.ev.alarm, pos: chan.ev.pos, news: chan.ev.news, pulse: !!chan.ev.pulse },
+    econ: { warn: ec?.cfg?.warn ?? 0, cur: ec?.cfg?.cur === 'all' ? 'all' : 'usd' }, alarms, positions,
+    pulse: on && chan.ev.pulse ? pulseHandover() : null }; // 3.24.0: Schwellen des BTC-Pulses je Stunde (UTC), Mindestgrößen, Vorauswahl
 }
 function s247Sig(p) { const j = JSON.stringify(p); let h = 0; for (let i = 0; i < j.length; i++) h = (h * 31 + j.charCodeAt(i)) | 0; return `${j.length}:${h >>> 0}`; }
 // Schlüssel der Meldungen, die der Dienst mit diesem Stand übernimmt – dieselben wie in notifyChannels
@@ -7791,7 +7938,7 @@ async function sendS247(force = false, leaving = false) {
       try { await tgPost('pinChatMessage', pin, keep); }
       catch (e) { throw Object.assign(new Error(`Anheften nicht erlaubt (${e.message}) – bei einer Gruppe braucht der Bot das Recht „Nachrichten anheften“.`), { code: e.code }); }
     }
-    s247.cfg = { ...s247.cfg, chat: chan.tg.chat, msg, tag, at: body.at, sig, keys: s247Keys(p), econ: p.on && p.ev.news && p.econ.warn ? `${p.econ.cur}|${p.econ.warn}` : '', sentOn: p.on, n: { a: p.alarms.length, p: p.positions.length } };
+    s247.cfg = { ...s247.cfg, chat: chan.tg.chat, msg, tag, at: body.at, sig, keys: s247Keys(p), econ: p.on && p.ev.news && p.econ.warn ? `${p.econ.cur}|${p.econ.warn}` : '', pulse: !!(p.on && p.ev.pulse && p.pulse), sentOn: p.on, n: { a: p.alarms.length, p: p.positions.length } };
     saveS247();
     // Was jetzt angeheftet ist, wissen wir; die Rückmeldung des Dienstes (falls er schon lief) bleibt bis zur nächsten Abfrage
     s247.st = s247.st?.found && s247.st.msg === msg ? { ...s247.st, tag } : { found: true, msg, tag, dev: body.dev, svc: null, beat: 0, fresh: false };
@@ -7806,7 +7953,7 @@ function s247Parse(pm, now = Date.now()) {
   const lines = String(pm.caption || '').replace(/\r/g, '').split('\n'), app = lines.find(l => l.startsWith('App:')) || '', svc = lines.find(l => l.startsWith('Dienst:')) || '', parts = app.split(' · ');
   const m = /^Dienst: (aktiv|Störung) · .*? · #([a-z0-9]{2,12}) übernommen(?: · (.*))?$/.exec(svc), beat = (pm.edit_date || pm.date || 0) * 1000;
   return { found: true, msg: pm.message_id, tag: /#([a-z0-9]{2,12})$/.exec(app)?.[1] || '', dev: parts.length >= 4 ? parts.at(-2) : '',
-    svc: m ? { ok: m[1] === 'aktiv', tag: m[2], problem: m[3] || '' } : null, beat, fresh: !!m && now - beat < S247_STALE };
+    svc: m ? { ok: m[1] === 'aktiv', tag: m[2], problem: m[3] || '', pulse: / · Puls · #/.test(svc) } : null, beat, fresh: !!m && now - beat < S247_STALE };
 }
 async function checkS247() {
   if (!s247?.cfg || typeof tgConfigured !== 'function' || !tgConfigured() || s247.checking) return;
@@ -7821,10 +7968,11 @@ async function checkS247() {
 }
 // Kennt der Dienst diese Meldung und meldet er sich? Dann sendet die App sie nicht selbst (siehe notifyChannels).
 function s247Covers(type, key) {
-  if (!s247?.cfg?.on || !['alarm', 'pos', 'news'].includes(type)) return false;
+  if (!s247?.cfg?.on || !['alarm', 'pos', 'news', 'pulse'].includes(type)) return false;
   const st = s247.st, c = s247.cfg, now = Date.now();
   if (!st?.found || st.msg !== c.msg || !st.svc?.ok || st.svc.tag !== c.tag || now - st.beat > S247_STALE || now - s247.checkAt > S247_STALE) return false;
-  return type === 'news' ? !!c.econ : c.keys.includes(key);
+  // BTC-Puls: nur wenn der Dienst ihn kann (ab 1.1 steht „Puls“ in seiner Zeile) und die Schwellen übergeben sind
+  return type === 'news' ? !!c.econ : type === 'pulse' ? !!(c.pulse && st.svc.pulse) : c.keys.includes(key);
 }
 function s247Active() { const st = s247?.st, c = s247?.cfg; return !!(c?.on && st?.found && st.msg === c.msg && st.svc?.ok && st.svc.tag === c.tag && Date.now() - st.beat < S247_STALE); }
 function renderS247() {
@@ -8454,6 +8602,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
         <label class="switch"><input type="checkbox" id="chan-ev-news" checked> Warnung vor wichtigen Wirtschaftsterminen</label>
         <label class="switch"><input type="checkbox" id="chan-ev-pnl" checked> Gewinn- und Verlust-Alarm (Live-Ergebnis oben rechts)</label>
         <label class="switch"><input type="checkbox" id="chan-ev-pulse" checked> BTC-Puls: ungewöhnlich starke Bitcoin-Bewegung</label>
+        <small class="pulse-info">Meldet, wenn BTC sich in 5 oder 15 Minuten stärker bewegt als 99 % der üblichen Bewegungen zu dieser Uhrzeit (mindestens 0,5 % bzw. 0,8 %), mit der Vorauswahl im selben Zeitraum; je Richtung höchstens alle 30 Minuten, nachts lautlos. <span id="pulse-info"></span></small>
       </fieldset>
       <section class="chan" aria-labelledby="s247-title" id="s247"><div class="head-line"><h3 id="s247-title">🌙 24/7-Dienst</h3><details class="tip left"><summary aria-label="Wie funktioniert der 24/7-Dienst?"><span>i</span></summary><div class="tip-body"><p>Ein kleines Programm auf einem eigenen Server, der rund um die Uhr läuft (z. B. kostenlos bei Oracle Cloud), prüft die Kurse und meldet Kurs-Alarme, Stop-Loss/Take-Profit und die Warnung vor wichtigen Terminen per Telegram – auch wenn die App überall geschlossen ist.</p><p><b>Übergabe:</b> Die App legt die aktiven Alarme und die Stop-/Ziel-Marken deiner Positionen als Datei in deinen Telegram-Chat, heftet sie oben an und ersetzt sie nach jeder Änderung. Mengen, Einstiege, Trades und Notizen zu Positionen bleiben in der App. Der Dienst liest die Datei mit demselben Bot und bestätigt in der angehefteten Nachricht („Dienst: aktiv“).</p><p><b>Nicht doppelt:</b> Solange der Dienst aktiv ist und den aktuellen Stand hat, sendet diese App Kurs-Alarme, Stop/Ziel und Termin-Warnungen nicht zusätzlich. Meldet er sich 20 Minuten nicht oder meldet er eine Störung, sendet die App wieder selbst. Das Tages-Verlustlimit meldet immer die App.</p><p><b>Token:</b> Den Bot-Token gibst du am Server selbst ein – die App schickt ihn weiterhin nur an Telegram.</p><p>Nur auf einem Gerät einschalten – dem, auf dem du Alarme und Positionen pflegst.</p></div></details></div><p class="chan-sub">Meldungen auch bei geschlossener App – über ein kleines Programm auf einem eigenen Server, der rund um die Uhr läuft.</p><details class="chan-guide" id="s247-guide"><summary>Anleitung: kostenlos bei Oracle Cloud einrichten (ca. 20 Minuten)</summary><ol><li><b>Konto:</b> Auf <a href="https://www.oracle.com/cloud/free/" target="_blank" rel="noopener noreferrer">oracle.com/cloud/free</a> „Start for free“. Als Heimatregion <b>Germany Central (Frankfurt)</b> wählen – sie lässt sich später nicht ändern, und von US-Servern aus sperrt Binance den Zugriff. Die Kreditkarte dient nur der Prüfung; „Always Free“ kostet nichts.</li><li><b>Server anlegen:</b> In der Konsole „Create a VM instance“. Bei <i>Image</i> auf <b>Ubuntu</b> wechseln, bei <i>Shape</i> eine mit „Always Free-eligible“ lassen (z. B. VM.Standard.E2.1.Micro). Bei <i>Add SSH keys</i> „Generate a key pair for me“ und <b>Save private key</b> – diese Datei ist der Schlüssel zum Server, gut aufbewahren. Dann <b>Create</b>. Nach 1–2 Minuten steht der Server auf „Running“; die <b>Public IP address</b> notieren.</li><li><b>Verbinden:</b> Oben rechts in der Konsole die <b>Cloud Shell</b> öffnen (Symbol &gt;_). Im Menü des Cloud-Shell-Fensters <b>Upload</b> wählen und den privaten Schlüssel hochladen. Dann eingeben (IP ersetzen) und die Frage „Are you sure …“ mit <b>yes</b> beantworten:<span class="s247-cmd"><code>chmod 600 ssh-key-*.key &amp;&amp; ssh -i ssh-key-*.key ubuntu@IP</code><button type="button" class="button ghost" data-copy="chmod 600 ssh-key-*.key &amp;&amp; ssh -i ssh-key-*.key ubuntu@IP">Kopieren</button></span></li><li><b>Dienst installieren:</b> Im Server-Fenster eingeben:<span class="s247-cmd"><code>curl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/install.sh | sudo bash</code><button type="button" class="button ghost" data-copy="curl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/install.sh | sudo bash">Kopieren</button></span>Es fragt nach <b>Bot-Token</b> und <b>Chat-ID</b> (oben in diesem Fenster; den Token zeigt auch @BotFather mit /mybots → API Token). Am Ende kommt eine Testnachricht in Telegram.</li><li><b>Übergeben:</b> Unten „An den 24/7-Dienst übergeben“ einschalten. Nach spätestens einer Minute steht hier „✓ Aktiv“, und im Telegram-Chat ist oben „📌 Scalp Desk · 24/7-Dienst“ angeheftet – diese Nachricht nicht löschen.</li></ol><ul class="s247-tips"><li><b>Aktualisieren:</b> den Befehl aus Schritt 4 erneut ausführen; die Einstellungen bleiben.</li><li><b>Andere Rechner:</b> läuft auf jedem Linux-Rechner mit Internet, z. B. einem Raspberry Pi – derselbe Befehl.</li><li><b>Oracle:</b> Always-Free-Server, die 7 Tage kaum ausgelastet sind, kann Oracle anhalten – und der Dienst braucht sehr wenig. Abhilfe laut Oracle: das Konto auf „Pay As You Go“ umstellen; es bleibt kostenlos, solange nur Always-Free-Angebote genutzt werden. Sonst nach einer E-Mail von Oracle den Server in der Konsole wieder starten.</li><li><b>Am Server:</b> Status <code>systemctl status scalpdesk-247</code>, Protokoll <code>journalctl -u scalpdesk-247 -f</code>, entfernen <code>sudo bash /opt/scalpdesk-247/install.sh --remove</code></li></ul></details><label class="switch"><input type="checkbox" id="s247-on"> An den 24/7-Dienst übergeben (Alarme, Stop/Ziel, Termin-Warnungen)</label><div class="row"><button type="button" class="button ghost" id="s247-check">Status prüfen</button></div><p class="chan-status" id="s247-status" role="status"></p></section>
       <p class="chan-note">🔒 Token und Webhook-URL bleiben nur in diesem Browser. Sie stehen in keinem Backup und keinem QR-Code und werden nur an Telegram bzw. Discord geschickt. Auf jedem Gerät, das senden soll, einzeln einrichten.</p>
