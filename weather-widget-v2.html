@@ -1519,8 +1519,10 @@ html[data-layout=tablet] .wl-detail{scroll-margin-bottom:calc(84px + env(safe-ar
 @media (prefers-reduced-motion:reduce){.wl-detail,.wl-d-clip{transition:none}}
 /* 3.24.0 Ablaufplan Schritt 7: Gewinn- und Verlust-Alarm – Feld unter dem Live-Ergebnis oben rechts */
 .livebar .lb-pos{cursor:pointer}
-.lb-pos[data-pnl=on]>.lb-label:first-child::after,.lb-pos[data-pnl=fired]>.lb-label:first-child::after{content:"";display:inline-block;width:7px;height:7px;margin-left:4px;border-radius:50%;background:var(--mint);vertical-align:middle}
-.lb-pos[data-pnl=fired]>.lb-label:first-child::after{background:var(--amber)}
+/* Punkt „Alarm scharf“ (grün) bzw. „ausgelöst“ (gelb) direkt vor dem Betrag – nicht am Wort „Offen“, das am Handy und am
+   iPad mini mit Warnung aus Platzgründen ausgeblendet wird (der Punkt wäre dann unsichtbar) */
+.lb-pos[data-pnl=on]>#lb-open::before,.lb-pos[data-pnl=fired]>#lb-open::before{content:"";display:inline-block;width:7px;height:7px;margin-right:5px;border-radius:50%;background:var(--mint);vertical-align:middle}
+.lb-pos[data-pnl=fired]>#lb-open::before{background:var(--amber)}
 .livebar .pnl-panel{position:absolute;top:calc(100% + 6px);right:12px;z-index:40;width:min(400px,calc(100vw - 24px));overflow:auto;overscroll-behavior:contain;padding:12px 14px;border:1px solid var(--border);border-radius:14px;background:var(--surface);box-shadow:var(--shadow);color:var(--text-2);font-size:.8125rem;line-height:1.45;white-space:normal;text-align:left}
 .livebar .pnl-panel[hidden]{display:none}
 .pnl-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px}
