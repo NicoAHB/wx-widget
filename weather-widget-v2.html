@@ -1517,6 +1517,36 @@ html[data-layout=tablet] .wl-detail{scroll-margin-bottom:calc(84px + env(safe-ar
 .wl-d-none{margin:8px 0 4px;font-size:.875rem;color:var(--muted)}
 .wl-d-foot{margin:6px 0 0;font-size:.75rem;color:var(--muted)}
 @media (prefers-reduced-motion:reduce){.wl-detail,.wl-d-clip{transition:none}}
+/* 3.24.0 Ablaufplan Schritt 7: Gewinn- und Verlust-Alarm – Feld unter dem Live-Ergebnis oben rechts */
+.livebar .lb-pos{cursor:pointer}
+.lb-pos[data-pnl=on]>.lb-label:first-child::after,.lb-pos[data-pnl=fired]>.lb-label:first-child::after{content:"";display:inline-block;width:7px;height:7px;margin-left:4px;border-radius:50%;background:var(--mint);vertical-align:middle}
+.lb-pos[data-pnl=fired]>.lb-label:first-child::after{background:var(--amber)}
+.livebar .pnl-panel{position:absolute;top:calc(100% + 6px);right:12px;z-index:40;width:min(400px,calc(100vw - 24px));overflow:auto;overscroll-behavior:contain;padding:12px 14px;border:1px solid var(--border);border-radius:14px;background:var(--surface);box-shadow:var(--shadow);color:var(--text-2);font-size:.8125rem;line-height:1.45;white-space:normal;text-align:left}
+.livebar .pnl-panel[hidden]{display:none}
+.pnl-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px}
+.pnl-head b{font-size:.9375rem;color:var(--text)}
+/* Knöpfe im Feld wie sonst in der App – nicht wie die flachen Knöpfe der Leiste */
+.livebar .pnl-panel button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:0 14px;border:1px solid var(--border);border-radius:9px;background:var(--surface-2);color:var(--text);font-weight:600;white-space:nowrap}
+.livebar .pnl-panel button:hover{background:var(--hover)}
+.livebar .pnl-panel .primary{background:var(--mint);border-color:var(--mint);color:var(--mint-ink)}
+.livebar .pnl-panel .primary:hover{background:var(--mint-hover)}
+.livebar .pnl-panel .pnl-x{width:36px;height:36px;min-height:36px;padding:0;border-radius:50%;font-size:1.1rem;font-weight:400}
+.pnl-ref{margin:0 0 6px;color:var(--muted)}.pnl-ref b{color:var(--text)}
+#pnl-now{display:block;margin-top:2px;color:var(--text-2);font-weight:600}
+.pnl-row{display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:10px 0;border-top:1px solid var(--border)}
+.pnl-on{display:flex;align-items:center;gap:10px;min-height:32px;font-weight:600;color:var(--text)}
+.pnl-on input{flex:0 0 auto;width:22px;min-height:22px;height:22px;margin:0;accent-color:var(--mint)}
+.pnl-in{display:flex;align-items:center;gap:8px;color:var(--muted)}
+.pnl-in input{width:8em;min-height:40px;padding:0 10px;border:1px solid var(--field-border);border-radius:10px;background:var(--field);color:var(--text);font-size:1rem;text-align:right}
+.pnl-in input[aria-invalid=true]{border-color:var(--down-text);box-shadow:0 0 0 1px var(--down-text)}
+.pnl-st{font-size:.75rem;color:var(--muted)}
+.pnl-st.on{color:var(--up-text)}.pnl-st.fired{color:var(--amber);font-weight:600}
+.pnl-err{margin:4px 0;color:var(--down-text);font-weight:600}
+.pnl-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding-top:10px;border-top:1px solid var(--border)}
+.pnl-msg{flex:1 1 auto;min-width:4em;color:var(--up-text);font-size:.75rem}
+.pnl-note{margin:8px 0 0;font-size:.72rem;color:var(--muted)}
+@media (pointer:coarse){.livebar .pnl-panel .pnl-x{width:44px;height:44px;min-height:44px}.livebar .pnl-panel .pnl-actions button,.livebar .pnl-panel .pnl-rearm{min-height:44px}.pnl-in input{min-height:44px}}
+@media (max-width:600px){.livebar .pnl-panel{right:8px;left:8px;width:auto}}
 .chart-panel>.notice{margin:12px 20px 0}
 html{scroll-padding-top:calc(var(--lb-h,56px) + 16px)}
 /* nur als eigene Spalten (ab 1400 px) begrenzt; darunter stehen beide untereinander in der gemeinsamen Seitenspalte und
@@ -2856,6 +2886,7 @@ function renderOpenPositions() {
   put('open-total-eur', state.positions.length ? `${eurPart(total, 2, true)}${missing ? ` · ${missing} ohne Kurs` : ''} · ${state.positions.length} offen` : 'keine offene Position');
   if (!$('pos-form').hidden) updateEntryNow();
   state.openTotal = { total, missing, n: state.positions.length };
+  pnlCheck(); // 3.24.0 Schritt 7: Gewinn-/Verlust-Alarm am Live-Ergebnis
 }
 function yearOptions() {
   const now = new Date().getFullYear(), years = new Set([now, ...state.trades.map(t => yearOf(t.closedAt)), ...state.movements.map(m => yearOf(m.date))]);
@@ -3076,7 +3107,7 @@ function renderBackupInfo() {
   renderStorageInfo(); renderZzpInfo();
 }
 function backupStatus(msg) { put('history-status', msg); }
-function backupPayload() { return { app: 'scalp-desk', version: 6, settings: { dayLimit: state.dayLimit, risk: state.risk }, exportedAt: Date.now(), positions: state.positions, history: state.trades, movements: state.movements, alarms: state.alarms, setups: state.setups, watchlist: state.watch, taxRate: state.taxRate, patterns: zzpExport() }; }
+function backupPayload() { return { app: 'scalp-desk', version: 6, settings: { dayLimit: state.dayLimit, risk: state.risk }, exportedAt: Date.now(), positions: state.positions, history: state.trades, movements: state.movements, alarms: state.alarms, setups: state.setups, watchlist: state.watch, taxRate: state.taxRate, patterns: zzpExport(), pnlAlarms: store.get('scalpdesk.pnlalarm.v1', null) }; }
 function markBackedUp(kind, encrypted = false) {
   store.set(CHANGES_KEY, 0);
   store.set(BACKUP_META_KEY, { at: Date.now(), kind, encrypted, positions: state.positions.length, trades: state.trades.length, movements: state.movements.length });
@@ -3140,6 +3171,7 @@ function applyBackup(data) {
   if (!state.dayLimit && data.settings?.dayLimit > 0) { state.dayLimit = data.settings.dayLimit; store.set(DAYLIMIT_KEY, state.dayLimit); }
   if (!state.taxRate && data.taxRate > 0 && data.taxRate < 100) { state.taxRate = data.taxRate; store.set(TAX_KEY, data.taxRate); }
   zzpImport(data.patterns); // gelernte Muster: still übernehmen, ohne Meldung
+  const pnlNew = pnlAdopt(data.pnlAlarms); // Gewinn-/Verlust-Alarm (3.24.0): die neuere Fassung gewinnt
   posStructure = ''; histStructure = '';
   persist(); saveWatch();
   render(); if ((n.added || n.updated) && !state.busy && !state.paused) void refresh();
@@ -3150,6 +3182,7 @@ function applyBackup(data) {
   if (n.trades) parts.push(`${n.trades} ${n.trades === 1 ? 'Trade' : 'Trades'}`);
   if (n.mv) parts.push(`${n.mv} Geldbewegungen`);
   if (n.alarms) parts.push(`${n.alarms} Kurs-Alarme`);
+  if (pnlNew) parts.push('Gewinn-/Verlust-Alarm');
   if (watch.length) parts.push(`${watch.length} Kürzel in der Vorauswahl`);
   return parts.length ? `Übernommen: ${parts.join(', ')}${n.same ? ` · ${n.same} Einträge waren schon aktuell` : ''}.` : `Nichts Neues – alle ${n.same} Einträge waren schon aktuell.`;
 }
@@ -4415,7 +4448,7 @@ addEventListener('beforeunload', e => {
 });
 // ---------- Abgleich zwischen offenen Tabs ----------
 const bc = (() => { try { return new BroadcastChannel('scalpdesk'); } catch { return null; } })();
-const SYNC_KEYS = [POS_KEY, HIST_KEY, MONEY_KEY, ALARM_KEY, SETUP_KEY, WATCH_KEY, CHANGES_KEY, 'scalpdesk.channels.v1', ZZP_KEY, 'scalpdesk.s247.v1'];
+const SYNC_KEYS = [POS_KEY, HIST_KEY, MONEY_KEY, ALARM_KEY, SETUP_KEY, WATCH_KEY, CHANGES_KEY, 'scalpdesk.channels.v1', ZZP_KEY, 'scalpdesk.s247.v1', 'scalpdesk.pnlalarm.v1'];
 function broadcastData(keys) { if (!bc || !keys.length) return; try { bc.postMessage({ t: 'data', from: TAB_ID, items: keys.map(k => [k, store.get(k)]) }); } catch {} }
 function adoptData(items) {
   const pat = items.find(([k]) => k === ZZP_KEY); if (pat) { store.adopt(ZZP_KEY, pat[1]); zzpMem = null; items = items.filter(([k]) => k !== ZZP_KEY); if (!items.length) return; }
@@ -6096,7 +6129,7 @@ function resetTradingData() {
   const d = new Date().toISOString().slice(0, 10), name = `backup-vor-zuruecksetzen-${d}.json`;
   download(name, JSON.stringify(backupPayload(), null, 1), 'application/json'); markBackedUp('download');
   // 2. Handelsdaten leeren; Muster, Einstellungen, Vorauswahl und Zugänge bleiben
-  state.positions = []; state.trades = []; state.movements = []; state.alarms = [];
+  state.positions = []; state.trades = []; state.movements = []; state.alarms = []; pnlResetAll();
   // 3. Telegram: die nächste Sicherung kommt als neue Nachricht, die bisherige bleibt als Stand vor dem Zurücksetzen im Chat
   if (tgb) { tgb.cfg = { ...tgb.cfg, msg: 0, sig: '' }; saveTgb(); }
   posStructure = ''; histStructure = ''; alarmKey = '';
@@ -7274,6 +7307,143 @@ function wldPaint(now = Date.now(), force = false) {
 // Tastatur: Esc schließt das Feld (ist darin ein Info-Fenster offen, schließt Esc zuerst nur dieses – das erledigt der
 // allgemeine Esc-Handler, der nach diesem läuft)
 $('watchlist').addEventListener('keydown', e => { if (e.key !== 'Escape' || !wldSel || wld.box.querySelector('details.tip[open]')) return; const inPanel = wld.box.contains(document.activeElement); wldClose(inPanel || document.activeElement?.dataset.watch === wldSel); });
+// ---------- Ablaufplan Schritt 7 (3.24.0): Gewinn- und Verlust-Alarm am Live-Ergebnis ----------
+// Antippen des Live-Ergebnisses „Offen …“ oben rechts öffnet ein Feld mit „Benachrichtigung bei Gewinn“ und „Benachrichtigung
+// bei Verlust“. Bezug ist der dort angezeigte Gesamtwert aller offenen Positionen (unrealisiert, in USDT, state.openTotal),
+// beide Grenzen werden als positiver Betrag eingegeben: Gewinn 100 meldet bei Offen ≥ +100 USDT, Verlust 50 bei Offen ≤ −50
+// USDT – verglichen wird der angezeigte, auf Cent gerundete Wert. Jede Grenze meldet einmal (Telegram „Kursalarm“ bzw. Discord,
+// dazu Ton, Hinweis und Systemmeldung) und wartet dann auf ein bewusstes „Wieder aktivieren“. Ist sie beim Aktivieren schon
+// erreicht, meldet sie erst, wenn das Ergebnis sie erneut erreicht – kein sofortiges Duplikat. Ohne offene Positionen und
+// solange zu einer Position der Kurs fehlt, wird nicht geprüft. Zustand in scalpdesk.pnlalarm.v1 (bleibt nach dem Neuladen,
+// Abgleich zwischen Tabs, in der Sicherung); zwischen Tabs sendet nur einer (store.claim in notifyChannels).
+// Zustände je Grenze: armed (wartet auf die Grenze), wait (Grenze beim Aktivieren schon erreicht – erst wieder darunter),
+// fired (ausgelöst – bis „Wieder aktivieren“ oder eine neue Grenze).
+var PNL_KINDS = ['profit', 'loss'];
+function pnlGet() {
+  const d = store.get('scalpdesk.pnlalarm.v1', null), one = a => ({ on: !!a?.on, value: Number(a?.value) > 0 ? Number(a.value) : null, state: ['armed', 'wait', 'fired'].includes(a?.state) ? a.state : 'armed', at: Number(a?.at) || 0, firedAt: Number(a?.firedAt) || 0, firedVal: Number.isFinite(a?.firedVal) ? a.firedVal : null });
+  return { profit: one(d?.profit), loss: one(d?.loss), u: Number(d?.u) || 0 };
+}
+function pnlSet(d) { d.u = Date.now(); store.set('scalpdesk.pnlalarm.v1', d); broadcastData(['scalpdesk.pnlalarm.v1']); renderPnl(); }
+// Aktueller Vergleichswert: das angezeigte Live-Ergebnis in Cent genau; null ohne offene Positionen oder mit fehlendem Kurs
+function pnlNow() { const o = state.openTotal; return o?.n && !o.missing && Number.isFinite(o.total) ? Math.round(o.total * 100) / 100 : null; }
+// Funktionen statt Konstanten: renderOpenPositions() kann pnlCheck() aufrufen, bevor dieser Abschnitt ausgewertet ist
+function pnlMet(k, v, cur) { return cur !== null && (k === 'profit' ? cur >= v : cur <= -v); }
+function pnlCond(k, v) { return k === 'profit' ? `≥ +${number(v)} USDT` : `≤ −${number(v)} USDT`; }
+function pnlName(k) { return k === 'profit' ? 'Gewinn-Alarm' : 'Verlust-Alarm'; }
+// Scharf schalten (Speichern mit neuer Grenze, „Wieder aktivieren“): schon erreicht → erst warten, bis das Ergebnis darunter liegt
+function pnlArm(k, a, cur = pnlNow()) { a.state = pnlMet(k, a.value, cur) ? 'wait' : 'armed'; a.at = Date.now(); a.firedAt = 0; a.firedVal = null; }
+// Bei jeder Aktualisierung der offenen Positionen (renderOpenPositions)
+function pnlCheck() {
+  if (!PNL_KINDS || !$('pnl-panel')) return; // Abschnitt noch nicht ausgewertet
+  const cur = pnlNow(), d = pnlGet(); let changed = false;
+  for (const k of PNL_KINDS) {
+    const a = d[k]; if (!a.on || !a.value) continue;
+    const met = pnlMet(k, a.value, cur);
+    if (a.state === 'wait' && !met && cur !== null) { a.state = 'armed'; changed = true; }
+    else if (a.state === 'armed' && met) { a.state = 'fired'; a.firedAt = Date.now(); a.firedVal = cur; changed = true; pnlFire(k, a, cur); }
+  }
+  if (changed) pnlSet(d); else if (!$('pnl-panel').hidden) renderPnl(); else pnlBadge(d);
+}
+function pnlFire(k, a, cur) {
+  const n = state.openTotal?.n || 0, title = `${k === 'profit' ? '📈' : '📉'} ${pnlName(k)}`;
+  const text = `Live-Ergebnis ${signed(cur)} USDT (${n} ${n === 1 ? 'offene Position' : 'offene Positionen'}) · Schwelle ${pnlCond(k, a.value)} erreicht`;
+  beep(); desktopNotify(title, text, 'pnl:' + k);
+  simpleToast('pnl:' + k, 'alarm ' + (k === 'profit' ? 'up' : 'down'), `${title}: ${text}`, null, k === 'profit' ? 'green' : 'orange');
+  // je Aktivierung genau eine Nachricht (auch mit mehreren offenen Tabs)
+  void notifyChannels('pnl', `pnl:${k}:${a.at}`, `${title}\n${text}`, 30 * 864e5);
+}
+// Normaler Reset (Handelsdaten zurücksetzen): Gewinn- und Verlust-Alarme gehören zu den Handelsdaten
+function pnlResetAll() { store.del('scalpdesk.pnlalarm.v1'); broadcastData(['scalpdesk.pnlalarm.v1']); renderPnl(); }
+// Sicherung einspielen: die neuere Fassung gewinnt
+function pnlAdopt(x) { if (!x || typeof x !== 'object' || !(Number(x.u) > pnlGet().u)) return false; store.set('scalpdesk.pnlalarm.v1', x); broadcastData(['scalpdesk.pnlalarm.v1']); renderPnl(); return true; }
+// ---- Anzeige ----
+// Merker am Live-Ergebnis: Punkt, solange ein Alarm aktiv ist, gelb nach dem Auslösen
+function pnlBadge(d = pnlGet()) {
+  const b = $('lb-pos'); if (!b || !PNL_KINDS) return;
+  const on = PNL_KINDS.filter(k => d[k].on && d[k].value), fired = on.some(k => d[k].state === 'fired'), v = fired ? 'fired' : on.length ? 'on' : '';
+  if (b.dataset.pnl !== v) b.dataset.pnl = v;
+  const label = `Live-Ergebnis der offenen Positionen – Gewinn- und Verlust-Alarm${fired ? ' (ausgelöst)' : on.length ? ' (aktiv)' : ''} einstellen`;
+  if (b.getAttribute('aria-label') !== label) b.setAttribute('aria-label', label);
+}
+function pnlStatus(k, a) {
+  if (!a.value) return { text: 'aus – kein Betrag eingetragen', cls: '' };
+  if (!a.on) return { text: `deaktiviert (Grenze ${pnlCond(k, a.value)})`, cls: '' };
+  if (a.state === 'fired') return { text: `ausgelöst um ${new Date(a.firedAt).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr bei ${signed(a.firedVal)} USDT – meldet erst nach „Wieder aktivieren“ erneut`, cls: 'fired' };
+  if (a.state === 'wait') return { text: `aktiv – die Grenze ist schon erreicht; meldet, sobald das Ergebnis sie erneut erreicht (${pnlCond(k, a.value)})`, cls: 'on' };
+  return { text: `aktiv – meldet einmal bei Offen ${pnlCond(k, a.value)}`, cls: 'on' };
+}
+function renderPnl() {
+  const d = pnlGet(); pnlBadge(d);
+  if (!$('pnl-panel') || $('pnl-panel').hidden) return;
+  const o = state.openTotal, cur = pnlNow();
+  put('pnl-now', !o?.n ? 'keine offene Position – die Alarme prüfen, sobald eine Position offen ist' : cur === null ? `${o.n} offen · ohne vollständige Kurse (wird nicht geprüft)` : `jetzt ${signed(cur)} USDT · ${o.n} ${o.n === 1 ? 'Position' : 'Positionen'}`);
+  for (const k of PNL_KINDS) {
+    const a = d[k], st = pnlStatus(k, a), s = $(`pnl-${k}-st`);
+    if (s.textContent !== st.text) s.textContent = st.text; s.className = `pnl-st ${st.cls}`;
+    $(`pnl-${k}-rearm`).hidden = !(a.on && a.value && a.state === 'fired');
+  }
+}
+// Formular mit den gespeicherten Werten füllen (beim Öffnen und nach einer Änderung aus einem anderen Tab)
+function pnlFill() {
+  const d = pnlGet();
+  for (const k of PNL_KINDS) { $(`pnl-${k}`).value = d[k].value ? plain(d[k].value) : ''; $(`pnl-${k}-on`).checked = d[k].on; $(`pnl-${k}`).removeAttribute('aria-invalid'); }
+  $('pnl-err').hidden = true; put('pnl-msg', '');
+}
+function pnlOpen(open = $('pnl-panel').hidden) {
+  $('pnl-panel').hidden = !open; $('lb-pos').setAttribute('aria-expanded', String(open));
+  if (open) { pnlFill(); renderPnl(); pnlFit(); if (!matchMedia('(pointer:coarse)').matches) $('pnl-profit').focus(); }
+}
+// Höhe auf den sichtbaren Bereich unter der Leiste begrenzen (über der Tab-Leiste); der Inhalt scrollt dann im Feld
+function pnlFit() {
+  const p = $('pnl-panel'); if (p.hidden) return;
+  const tb = $('tabbar'), bottom = tb && getComputedStyle(tb).display !== 'none' ? tb.getBoundingClientRect().top : innerHeight;
+  p.style.maxHeight = `${Math.max(180, Math.floor(bottom - p.getBoundingClientRect().top - 8))}px`;
+}
+addEventListener('resize', pnlFit);
+// Eingabe prüfen: leer = kein Alarm; sonst positiver Betrag in USDT (Komma oder Punkt), höchstens 1 Mrd.
+function pnlParse(raw) {
+  const t = String(raw).trim().replace(/\s|USDT/gi, ''); if (!t) return { v: null };
+  if (/^[-−]/.test(t)) return { err: 'als positiven Betrag eingeben – die Richtung ergibt sich aus Gewinn bzw. Verlust' };
+  const v = parseNum(t);
+  if (!Number.isFinite(v)) return { err: 'kein gültiger Betrag (z. B. 100 oder 25,50)' };
+  if (v <= 0) return { err: 'muss größer als 0 sein' };
+  if (v > 1e9) return { err: 'ist zu groß' };
+  return { v: Math.round(v * 100) / 100 };
+}
+function pnlSave() {
+  const d = pnlGet(), errs = []; let saved = 0;
+  const parsed = Object.fromEntries(PNL_KINDS.map(k => [k, pnlParse($(`pnl-${k}`).value)]));
+  for (const k of PNL_KINDS) {
+    const p = parsed[k], on = $(`pnl-${k}-on`).checked, inp = $(`pnl-${k}`), name = k === 'profit' ? 'Gewinn' : 'Verlust';
+    if (p.err) { errs.push(`${name}: ${p.err}.`); inp.setAttribute('aria-invalid', 'true'); continue; }
+    if (on && p.v === null) { errs.push(`${name}: Betrag fehlt – zum Aktivieren einen Betrag in USDT eintragen.`); inp.setAttribute('aria-invalid', 'true'); continue; }
+    inp.removeAttribute('aria-invalid');
+    const a = d[k], changedVal = a.value !== p.v, turnedOn = on && !a.on;
+    a.value = p.v; a.on = on && p.v !== null;
+    if (a.on && (changedVal || turnedOn)) pnlArm(k, a); // neue Grenze oder wieder eingeschaltet: neu scharf
+    if (!a.on && changedVal) { a.state = 'armed'; a.firedAt = 0; a.firedVal = null; }
+    saved++;
+  }
+  $('pnl-err').hidden = !errs.length; $('pnl-err').textContent = errs.join(' ');
+  if (saved) { pnlSet(d); pnlRefill(parsed); }
+  put('pnl-msg', errs.length ? (saved ? 'Gültige Eingaben gespeichert.' : '') : 'Gespeichert.');
+  pnlCheck();
+}
+// nach dem Speichern: gültige Felder neu formatiert, fehlerhafte behalten die Eingabe zum Korrigieren
+function pnlRefill(parsed) { const d = pnlGet(); for (const k of PNL_KINDS) if (!parsed[k].err) { $(`pnl-${k}`).value = d[k].value ? plain(d[k].value) : ''; $(`pnl-${k}-on`).checked = d[k].on; } }
+$('lb-pos').addEventListener('click', () => pnlOpen());
+$('pnl-close').addEventListener('click', () => { pnlOpen(false); $('lb-pos').focus({ preventScroll: true }); });
+$('pnl-form').addEventListener('submit', e => { e.preventDefault(); pnlSave(); });
+for (const k of PNL_KINDS) {
+  $(`pnl-${k}-rearm`).addEventListener('click', () => { const d = pnlGet(); pnlArm(k, d[k]); pnlSet(d); put('pnl-msg', `${pnlName(k)} wieder aktiv.`); pnlCheck(); });
+  // Betrag eingetippt: „aktiv“ gleich mit ankreuzen, Feld geleert: aus (Speichern bleibt nötig)
+  $(`pnl-${k}`).addEventListener('input', () => { $(`pnl-${k}-on`).checked = !!$(`pnl-${k}`).value.trim(); });
+}
+$('pnl-goto').addEventListener('click', () => pnlOpen(false));
+// außerhalb tippen oder Esc: Feld schließen
+document.addEventListener('click', e => { if (!$('pnl-panel').hidden && !e.target.closest('#pnl-panel, #lb-pos')) pnlOpen(false); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('pnl-panel').hidden) { pnlOpen(false); $('lb-pos').focus({ preventScroll: true }); } });
+renderPnl();
 // ---------- Schritt 4.3: Volatilität und Richtung nach Uhrzeit (3.22.0) ----------
 // Aus den letzten 2.000 Stundenkerzen des geöffneten Coins (rund 83 Tage, Markt wie im Chart): je Uhrzeit (Ortszeit) und
 // Tagesart (Mo–Fr, Sa–So), wie weit der Kurs innerhalb einer Stunde schwankt – Spanne Hoch bis Tief in % der Eröffnung.
@@ -7945,8 +8115,19 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
     <span class="lb-spacer"></span>
     <span class="lb-alarm" id="lb-alarm" hidden></span>
     <div class="lb-warns"><button type="button" class="lb-news" id="lb-news" data-goto="econ" hidden></button><button type="button" class="lb-vola" id="lb-vola" data-goto="vola" hidden><span class="lv-full"></span><span class="lv-short"></span></button></div>
-    <button type="button" class="lb-pos" data-goto="positions" aria-label="Zu den Positionen"><span class="lb-label">Offen</span><span class="lb-num" id="lb-open">—</span><span class="lb-label opt">Heute</span><span class="lb-num opt" id="lb-day">—</span><span class="lb-num opt lb-eur" id="lb-day-eur"></span></button>
+    <button type="button" class="lb-pos" id="lb-pos" aria-haspopup="dialog" aria-expanded="false" aria-controls="pnl-panel" aria-label="Live-Ergebnis der offenen Positionen – Gewinn- und Verlust-Alarm einstellen"><span class="lb-label">Offen</span><span class="lb-num" id="lb-open">—</span><span class="lb-label opt">Heute</span><span class="lb-num opt" id="lb-day">—</span><span class="lb-num opt lb-eur" id="lb-day-eur"></span></button>
     <span class="lb-conn" id="lb-conn" role="img" aria-label="Verbindung" data-feed="off"></span>
+    <div class="pnl-panel" id="pnl-panel" role="dialog" aria-labelledby="pnl-title" hidden>
+      <form id="pnl-form" novalidate>
+        <div class="pnl-head"><b id="pnl-title">Gewinn- und Verlust-Alarm</b><button type="button" class="pnl-x" id="pnl-close" aria-label="Schließen">×</button></div>
+        <p class="pnl-ref">Bezug: das Live-Ergebnis „Offen“ oben rechts – Summe der unrealisierten Gewinne und Verluste aller offenen Positionen, in <b>USDT</b>. <span id="pnl-now"></span></p>
+        <div class="pnl-row"><label class="check pnl-on"><input type="checkbox" id="pnl-profit-on"> Benachrichtigung bei Gewinn</label><span class="pnl-in"><span aria-hidden="true">ab +</span><input id="pnl-profit" inputmode="decimal" autocomplete="off" enterkeyhint="done" placeholder="z. B. 100" aria-label="Gewinn-Grenze in USDT" aria-describedby="pnl-profit-st"><span>USDT</span></span><span class="pnl-st" id="pnl-profit-st"></span><button type="button" class="button ghost pnl-rearm" id="pnl-profit-rearm" hidden>Wieder aktivieren</button></div>
+        <div class="pnl-row"><label class="check pnl-on"><input type="checkbox" id="pnl-loss-on"> Benachrichtigung bei Verlust</label><span class="pnl-in"><span aria-hidden="true">ab −</span><input id="pnl-loss" inputmode="decimal" autocomplete="off" enterkeyhint="done" placeholder="z. B. 50" aria-label="Verlust-Grenze in USDT (als positiver Betrag)" aria-describedby="pnl-loss-st"><span>USDT</span></span><span class="pnl-st" id="pnl-loss-st"></span><button type="button" class="button ghost pnl-rearm" id="pnl-loss-rearm" hidden>Wieder aktivieren</button></div>
+        <p class="pnl-err" id="pnl-err" role="alert" hidden></p>
+        <div class="pnl-actions"><button type="submit" class="button primary">Speichern</button><span class="pnl-msg" id="pnl-msg" role="status"></span><button type="button" class="button ghost" id="pnl-goto" data-goto="positions">Zu den Positionen</button></div>
+        <p class="pnl-note">Beide Grenzen als positiven Betrag eingeben: Gewinn 100 meldet bei Offen ≥ +100 USDT, Verlust 50 bei Offen ≤ −50 USDT. Jede meldet einmal – an Telegram „Kursalarm“ (bzw. Discord), dazu Ton und Hinweis – und danach erst wieder nach „Wieder aktivieren“. Geprüft wird, solange die App geöffnet ist; ohne offene Position ruht der Alarm.</p>
+      </form>
+    </div>
   </div>
   <div class="toasts" id="toasts" aria-live="assertive"></div>
   <button type="button" class="rec-badge" id="rec-badge" hidden></button>
