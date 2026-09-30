@@ -1946,12 +1946,17 @@ class BinanceClient {
 
 const $ = id => document.getElementById(id);
 const put = (id, value) => { $(id).textContent = value; };
-const number = (x, decimals = 2) => x === null || !Number.isFinite(x) ? '—' : x.toLocaleString('de-DE', {minimumFractionDigits:decimals, maximumFractionDigits:decimals});
+// Formatierer einmal anlegen und wiederverwenden: toLocaleString mit Optionen baut bei jedem Aufruf einen neuen – der Chart
+// formatiert je Neuzeichnen hunderte Zahlen (kostete Zeit und viel Speicher). Das Ergebnis ist dasselbe (3.21.1).
+const NUM_F = new Map();
+const number = (x, decimals = 2) => { if (x === null || !Number.isFinite(x)) return '—'; let f = NUM_F.get(decimals); if (!f) NUM_F.set(decimals, f = new Intl.NumberFormat('de-DE', {minimumFractionDigits:decimals, maximumFractionDigits:decimals})); return f.format(x); };
 const priceText = x => number(x, x > 0 && x < 1 ? Math.min(10, 3 - Math.floor(Math.log10(x))) : x && x < 100 ? 4 : 2); // unter 1: 4 signifikante Stellen
 const signed = (x, decimals = 2) => Number.isFinite(x) ? `${x > 0 ? '+' : x < 0 ? '−' : ''}${number(Math.abs(x), decimals)}` : '—';
 const euro = x => Number.isFinite(x) ? number(x) + ' €' : '—';
-const utcTime = ms => new Date(ms).toLocaleTimeString('de-DE', {timeZone:'UTC', hour:'2-digit', minute:'2-digit', second:'2-digit'});
-const utcDate = ms => new Date(ms).toLocaleString('de-DE', {timeZone:'UTC', day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+const UTC_T = new Intl.DateTimeFormat('de-DE', {timeZone:'UTC', hour:'2-digit', minute:'2-digit', second:'2-digit'}), UTC_D = new Intl.DateTimeFormat('de-DE', {timeZone:'UTC', day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+const fmtDate = (f, ms) => { const d = new Date(ms); return Number.isNaN(d.getTime()) ? 'Invalid Date' : f.format(d); }; // wie toLocale…String bei ungültigem Datum
+const utcTime = ms => fmtDate(UTC_T, ms);
+const utcDate = ms => fmtDate(UTC_D, ms);
 const value = id => $(id).value === '' ? NaN : Number($(id).value);
 const showNotice = (id, message) => { put(id, message || ''); $(id).hidden = !message; };
 const color = (id, x) => { $(id).classList.toggle('positive', x > 0); $(id).classList.toggle('negative', x < 0); };
@@ -1970,7 +1975,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Alle Werte liegen zusätzlich im Arbeitsspeicher und sind dadurch synchron lesbar. Schreiben geht sofort in den
 // localStorage und gebündelt in die IndexedDB; beim Start gewinnt die zuletzt vollständig geschriebene Kopie.
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
-const APP_VERSION = '3.21.0', docEl = document.documentElement;
+const APP_VERSION = '3.21.1', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -2569,7 +2574,8 @@ const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2
 const localTime = ms => new Date(ms).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 const coin = sym => sym.slice(0, -4);
 const mmrNow = () => { const m = value('mmr'); return Number.isFinite(m) ? m / 100 : NaN; };
-const plain = x => Number.isFinite(x) ? x.toLocaleString('de-DE', { maximumFractionDigits: 10, useGrouping: false }) : '';
+const PLAIN_F = new Intl.NumberFormat('de-DE', { maximumFractionDigits: 10, useGrouping: false });
+const plain = x => Number.isFinite(x) ? PLAIN_F.format(x) : '';
 const qtyText = q => number(q, q < 10 ? 6 : q < 1000 ? 4 : 2).replace(/,?0+$/, '');
 const levText = l => number(l, l % 1 ? 1 : 0);
 function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; }
@@ -4935,9 +4941,13 @@ function anchorEl() {
 }
 function withAnchor(fn) {
   if (nativeAnchor) { const r = fn(); steadyHeights(); return r; }
-  const a = anchorEl(), before = a ? a.getBoundingClientRect().top : 0;
+  // Bezug: das Element am oberen Rand und seine Eltern. Ersetzt die Aktualisierung das Element selbst (z. B. eine Zeile im
+  // Kalender oder in den Coin-News), gleicht der nächste noch vorhandene Elternteil aus (3.21.1)
+  const chain = [];
+  for (let e = anchorEl(); e && e !== document.body && chain.length < 5; e = e.parentElement) chain.push([e, e.getBoundingClientRect().top]);
   const r = fn(); steadyHeights();
-  if (a && a.isConnected) { const d = a.getBoundingClientRect().top - before; if (Math.abs(d) >= 1) scrollBy(0, d); }
+  const hit = chain.find(([e]) => e.isConnected);
+  if (hit) { const d = hit[0].getBoundingClientRect().top - hit[1]; if (Math.abs(d) >= 1) scrollBy(0, d); }
   return r;
 }
 // Aufgabe sofort ausführen – oder, während gescrollt wird, einmal danach
@@ -5273,7 +5283,7 @@ document.querySelector('[data-overlay="lmap"]')?.addEventListener('click', () =>
 // wächst mit; zurückgesetzt wird beim Wechsel von Kürzel, Intervall, Layout oder Bildschirmbreite – nicht beim Tab-Wechsel:
 // sonst wüchsen die Texte nach jeder Rückkehr zur Seite beim Lesen erneut, und alles darunter spränge wieder.
 const STEADY_SEL = ['.zone-note', '.indicator p', '.metric', '.metric-foot', '.zone-rows > div', '.level-row', '.pos-pnl', '.pos-grid > div', '.liq-meter',
-  '.pos-stops .st', '.pos-alert', '.pos-warn', '.day-strip', '.day-banner', '#ohlc', '.al-row', '.calc-rows > div', '#risk-note', '#pnl-note'].join(', ');
+  '.pos-stops .st', '.pos-alert', '.pos-warn', '.day-strip', '.day-banner', '#ohlc', '.al-row', '.calc-rows > div', '#risk-note', '#pnl-note', '#econ-warn', '.econ-src'].join(', ');
 let steadyKey = '';
 function steadyHeights() {
   const key = [innerWidth, state.symbol, state.interval, docEl.dataset.layout || ''].join('|'), els = [...document.querySelectorAll(STEADY_SEL)];
@@ -6537,13 +6547,15 @@ async function ecNotify(g, now) {
   const vals = g.list.map(e => [e.forecast && `Prognose ${e.forecast}`, e.previous && `vorher ${e.previous}`].filter(Boolean).join(', ')).filter(Boolean);
   void notifyChannels('news', `econ-chan:${g.t}`, `${title}\n${body}${vals.length ? `\n${vals.join(' · ')}` : ''}`, 24 * 3600e3);
 }
-// Sekundentakt: abrufen, wenn fällig; Anzeige alle 15 s oder bei neuen Daten und Einstellungen
+// Sekundentakt: abrufen, wenn fällig; Anzeige alle 15 s oder bei neuen Daten und Einstellungen – wie alle Live-Anzeigen über
+// calmDo: während des Scrollens wartet sie, danach bleibt der sichtbare Inhalt stehen (3.21.1: sonst Seitensprünge am Handy)
+var ecCalm = () => renderEcon();
 function econTick() {
   if (!ec || !$('econ')) return;
   const now = Date.now();
-  if (!ec.busy && now >= ec.retryAt && (!ec.at || now - ec.at > EC_EVERY)) void ecFetch().then(() => renderEcon());
+  if (!ec.busy && now >= ec.retryAt && (!ec.at || now - ec.at > EC_EVERY)) void ecFetch().then(() => calmDo(ecCalm));
   const k = `${Math.floor(now / 15e3)}|${ec.rev}`;
-  if (k !== ec.key) { ec.key = k; renderEcon(now); }
+  if (k !== ec.key) { ec.key = k; calmDo(ecCalm); }
 }
 function saveEc() { store.set(EC_KEY, ec.cfg); ec.rev++; renderEcon(); }
 (function econUi() {
@@ -6680,13 +6692,15 @@ function renderCnews(now = Date.now()) {
   if (src.textContent !== srcText) src.textContent = srcText;
   src.classList.toggle('err', stale || (!!cn.error && !!cn.data));
 }
-// Sekundentakt: abrufen, wenn fällig; Anzeige alle 30 s, bei neuen Daten, Einstellungen oder einem anderen Coin
+// Sekundentakt: abrufen, wenn fällig; Anzeige alle 30 s, bei neuen Daten, Einstellungen oder einem anderen Coin – über calmDo
+// wie alle Live-Anzeigen (3.21.1: sonst Seitensprünge am Handy)
+var cnCalm = () => renderCnews();
 function cnewsTick() {
   if (!cn || !$('cnews')) return;
   const now = Date.now();
-  if (!cn.busy && now >= cn.retryAt && (!cn.at || now - cn.at > CN_EVERY)) void cnFetch().then(() => renderCnews());
+  if (!cn.busy && now >= cn.retryAt && (!cn.at || now - cn.at > CN_EVERY)) void cnFetch().then(() => calmDo(cnCalm));
   const k = `${Math.floor(now / 30e3)}|${cn.rev}|${state.symbol}`;
-  if (k !== cn.key) { cn.key = k; renderCnews(now); }
+  if (k !== cn.key) { cn.key = k; calmDo(cnCalm); }
 }
 (function cnewsUi() {
   const s = $('cnews-imp'); s.value = cn.cfg.imp;
