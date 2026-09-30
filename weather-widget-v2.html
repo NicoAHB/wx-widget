@@ -1548,12 +1548,12 @@ html[data-layout=tablet] .wl-detail{scroll-margin-bottom:calc(84px + env(safe-ar
 @media (pointer:coarse){.livebar .pnl-panel .pnl-x{width:44px;height:44px;min-height:44px}.livebar .pnl-panel .pnl-actions button,.livebar .pnl-panel .pnl-rearm{min-height:44px}.pnl-in input{min-height:44px}}
 @media (max-width:600px){.livebar .pnl-panel{right:8px;left:8px;width:auto}}
 /* 3.24.0 Ablaufplan Schritt 8: „Datensicherung“ als kompakte Zeile mit Pfeil – beim Start und nach dem Neuladen zugeklappt */
-.data-head{display:flex;align-items:center;gap:10px;width:100%;min-height:48px;margin-top:14px;padding:0 14px;border:1px solid var(--border);border-radius:9px;background:var(--surface-2);color:var(--text);font-size:.9rem;font-weight:650;text-align:left}
+.data-head{display:flex;flex-wrap:wrap;align-items:center;gap:2px 10px;width:100%;min-height:48px;margin-top:14px;padding:6px 14px;border:1px solid var(--border);border-radius:9px;background:var(--surface-2);color:var(--text);font-size:.9rem;font-weight:650;text-align:left}
 .data-head:hover{background:var(--hover)}
 .data-chev{display:inline-grid;place-items:center;width:1.1em;font-size:1.05rem;line-height:1;color:var(--text-2);transition:transform .18s ease}
 .data-head[aria-expanded=true] .data-chev{transform:rotate(90deg)}
 .data-head[aria-expanded=true]{border-bottom-left-radius:0;border-bottom-right-radius:0}
-.data-last{margin-left:auto;font-size:.75rem;font-weight:400;color:var(--muted);white-space:nowrap}
+.data-last{margin-left:auto;font-size:.75rem;font-weight:400;color:var(--muted);white-space:nowrap} /* schmales Handy: rutscht in eine zweite Zeile */
 .data-head+.data-panel{margin-top:0;border-top:0;border-top-left-radius:0;border-top-right-radius:0}
 @media (prefers-reduced-motion:reduce){.data-chev{transition:none}}
 /* 3.24.0 BTC-Puls: Erklärung und aktuelle Schwellen unter dem Schalter */
@@ -4424,6 +4424,13 @@ document.addEventListener('toggle', e => {
   body.style.maxWidth = ''; body.style.left = ''; t.classList.toggle('left', t.dataset.side === 'left');
   // passt keine Seite (sehr schmales Handy): an den linken Rand des sichtbaren Bereichs, Breite darauf begrenzt (4.1)
   if (!fits()) { t.classList.toggle('left'); if (!fits()) { t.classList.add('left'); body.style.maxWidth = `${maxX - minX}px`; body.style.left = `${minX - t.getBoundingClientRect().left}px`; } }
+  // Hinweis mit eigener Bildlaufleiste (RSI-Divergenz): höchstens bis zum unteren Rand des Fensters bzw. über der Tab-Leiste –
+  // lag der Chart tiefer (höhere Kacheln, 3.24.0), ragte er sonst ein Stück heraus
+  body.style.maxHeight = '';
+  if (/auto|scroll/.test(getComputedStyle(body).overflowY)) {
+    const tb = $('tabbar'), bottom = tb && getComputedStyle(tb).display !== 'none' ? tb.getBoundingClientRect().top : innerHeight, r = body.getBoundingClientRect(), room = Math.floor(bottom - r.top - 8);
+    if (r.bottom > bottom - 8 && room >= 160) body.style.maxHeight = `${room}px`;
+  }
 }, true);
 // ---------- Schnellwahl: Hebel, Einsatz, Zielbewegung ----------
 // Hebel-Schieberegler mit logarithmischer Skala: 1× bis 10× nehmen fast die Hälfte des Wegs ein.
@@ -4861,9 +4868,13 @@ async function tgDetect() {
     }
     const list = [...seen.values()];
     if (!list.length) return chanMsg('tg', false, `Bot @${me.username} gefunden, aber er hat noch keine Nachricht von dir. In Telegram den Bot öffnen, „Start“ tippen oder „Hallo“ schreiben und dann erneut „Chat-ID ermitteln“.`);
-    if (!chan.tg.chat) { const c = list.find(x => x.priv) || list[0]; $('tg-chat').value = c.chat; $('tg-thread').value = c.thread; readChanForm(); }
+    // Erste Einrichtung: den Privatchat (sonst den neuesten) gleich als Kursalarm eintragen – wie bisher, ohne Extra-Tippen
+    const auto = chan.tg.chat ? null : list.find(x => x.priv) || list[0];
+    if (auto) { $('tg-chat').value = auto.chat; $('tg-thread').value = auto.thread; readChanForm(); }
     renderTgFound(list);
-    chanMsg('tg', true, `Bot @${me.username}: ${list.length === 1 ? 'ein Chat' : `${list.length} Chats bzw. Themen`} gefunden – unten „Kursalarm“ und „Sicherungschat“ zuordnen, dann „Test je Nachrichtenart“.`);
+    chanMsg('tg', true, auto
+      ? `Gefunden: ${auto.name}${auto.topic ? ` › ${auto.topic}` : ''} (ID ${auto.chat}) über Bot @${me.username} – als „Kursalarm“ eingetragen. ${list.length > 1 ? 'Weitere Chats unten: für die Datensicherung „→ Sicherungschat“ tippen, dann „Test je Nachrichtenart“.' : 'Jetzt „Test senden“.'}`
+      : `Bot @${me.username}: ${list.length === 1 ? 'ein Chat' : `${list.length} Chats bzw. Themen`} gefunden – unten „Kursalarm“ und „Sicherungschat“ zuordnen, dann „Test je Nachrichtenart“.`);
   } catch (e) { chanMsg('tg', false, e.message); }
   finally { $('tg-detect').disabled = false; }
 }
