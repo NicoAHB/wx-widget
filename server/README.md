@@ -18,7 +18,7 @@ Kleines Programm für einen eigenen Server, der rund um die Uhr läuft (z. B. ko
   - Der Dienst liest die Datei mit demselben Bot jede Minute.
   - Er prüft alle 15 Sekunden die 1m-Kerzen bei Binance; auch kurze Dochte zählen.
   - Er bestätigt in der angehefteten Nachricht („Dienst: aktiv …“).
-- **Keine doppelten Nachrichten:** Solange die Bestätigung frisch ist, sendet die App diese Meldungen nicht zusätzlich.
+- **Keine doppelten Nachrichten:** Solange die Bestätigung frisch ist, sendet die App Kurs-Alarme, Stop/Ziel, Termin-Warnungen und den BTC-Puls nicht zusätzlich.
 - **BTC-Puls (ab 1.1):**
   - Die App berechnet aus den BTC-Kerzen der letzten 35 Tage, welche Bewegung um welche Uhrzeit ungewöhnlich ist (99 % der üblichen, je Stunde und Tagesart), und legt diese Schwellen mit in die Datei.
   - Der Dienst prüft damit alle 15 Sekunden die Bewegung der letzten 5 und 15 Minuten (mindestens 0,5 % bzw. 0,8 %).
@@ -26,8 +26,9 @@ Kleines Programm für einen eigenen Server, der rund um die Uhr läuft (z. B. ko
   - In seiner Bestätigung steht dann „· Puls“; erst dann sendet die App den Puls nicht mehr selbst. Ein älterer Dienst (1.0) kennt den Puls nicht – dann sendet ihn weiter die geöffnete App. Aktualisieren: den Installationsbefehl erneut ausführen.
 - **Gewinn-/Verlust-Alarm (ab 1.2):**
   - Die App übergibt die Grenzen (z. B. „ab +100 USDT“) zusammen mit Einstieg, Menge, Richtung und Markt jeder offenen Position.
-  - Der Dienst rechnet alle 15 Sekunden mit dem aktuellen Kurs das Live-Ergebnis und meldet jede Grenze einmal. Eine Spitze, die kürzer als 15 Sekunden dauert, kann er übersehen.
-  - In seiner Bestätigung steht dann „· GV“, und in der angehefteten Nachricht eine Zeile „GV: Gewinn-Alarm ausgelöst …“. Die App übernimmt die Grenze danach als „ausgelöst“ und sendet nicht zusätzlich. Erst nach „Wieder aktivieren“ in der App meldet sie sich erneut.
+  - Der Dienst rechnet alle 15 Sekunden mit dem aktuellen Kurs das Live-Ergebnis. Eine Spitze, die kürzer als 15 Sekunden dauert, kann er übersehen.
+  - Erreicht es eine Grenze, wartet er etwa 10 Sekunden und liest die Datei der App neu. Die geöffnete App meldet die Grenze selbst (sofort, auch kurze Spitzen) und vermerkt das in ihrer Datei; dann schweigt der Dienst. Sonst meldet er, einmal je Grenze.
+  - Er bestätigt mit „· GV“ und vermerkt eigene Meldungen in der angehefteten Nachricht („GV: Gewinn-Alarm ausgelöst …“). Die App übernimmt die Grenze beim Öffnen als „ausgelöst“. Erst nach „Wieder aktivieren“ in der App meldet sie sich erneut.
   - Ein älterer Dienst (bis 1.1) kann es nicht. Dann prüft weiter nur die geöffnete App. Das Tages-Verlustlimit meldet immer die App.
 - **Netz:** Der Server braucht nur ausgehende Verbindungen (Telegram, Binance, GitHub): keine offenen Ports, keine Domain.
 

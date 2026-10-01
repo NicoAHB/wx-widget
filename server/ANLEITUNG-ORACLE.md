@@ -132,13 +132,15 @@ Der Dienst startet ab jetzt mit dem Server und nach Fehlern von selbst neu. Du k
 1. Oben rechts auf das Live-Ergebnis **„Offen“** tippen.
 2. Bei „Benachrichtigung bei Gewinn“ einen Betrag knapp über dem aktuellen Live-Ergebnis eintragen (oder bei „Verlust“ knapp darunter) und **„Speichern“** tippen. Darunter erscheint „✓ Auch bei geschlossener App …“.
 3. Die App schließen.
-4. Erreicht das Live-Ergebnis die Grenze, kommt zum Beispiel:
+4. Erreicht das Live-Ergebnis die Grenze, kommt etwa 10 Sekunden später zum Beispiel:
    ```
    📈 Gewinn-Alarm
    Live-Ergebnis +106,20 USDT (2 offene Positionen) · Schwelle ≥ +100,00 USDT erreicht
    14:32:05 Uhr · 24/7-Dienst
    ```
 5. Öffnest du die App danach, steht die Grenze auf **„ausgelöst um … (Meldung vom 24/7-Dienst)“**. Es kommt keine zweite Nachricht. Mit **„Wieder aktivieren“** meldet sie sich erneut; der Dienst übernimmt das innerhalb einer Minute.
+
+Bleibt die App dabei geöffnet, meldet sie die Grenze selbst, sofort und ohne „· 24/7-Dienst“ am Ende. Der Dienst schweigt dann (siehe unten).
 
 ---
 
@@ -157,11 +159,13 @@ Der Dienst startet ab jetzt mit dem Server und nach Fehlern von selbst neu. Du k
 - Alle **15 Sekunden**.
 - **Kurs-Alarme** und Stop/Ziel prüft er mit den 1-Minuten-Kerzen von Binance. Auch kurze Dochte zählen.
 - Den **Gewinn-/Verlust-Alarm** rechnet er mit dem jeweils aktuellen Kurs. Eine Spitze, die kürzer als 15 Sekunden dauert, kann er übersehen. Die geöffnete App prüft zusätzlich laufend.
+- Erreicht das Ergebnis eine Grenze, wartet er etwa **10 Sekunden** und liest die Datei der App neu. Hat die geöffnete App die Grenze in der Zeit selbst gemeldet, schweigt er. Bei geschlossener App kommt seine Meldung also etwa 10 Sekunden nach dem Erreichen.
 - Jede Grenze meldet er **einmal**. Danach erst wieder nach „Wieder aktivieren“ in der App.
 - Das **Tages-Verlustlimit** meldet weiterhin nur die geöffnete App.
 
 **Keine doppelten Nachrichten**
-- Solange der Dienst aktiv ist und den aktuellen Stand bestätigt hat, sendet die App diese Meldungen nicht zusätzlich. Sie zeigt sie aber mit Ton und Hinweis an.
+- **Kurs-Alarme, Stop/Ziel, Termin-Warnungen, BTC-Puls:** Solange der Dienst aktiv ist und den aktuellen Stand bestätigt hat, sendet die App sie nicht zusätzlich. Sie zeigt sie aber mit Ton und Hinweis an.
+- **Gewinn-/Verlust-Alarm:** Ist die App geöffnet, meldet sie ihn selbst, sofort und auch bei kurzen Spitzen, und vermerkt das in ihrer Datei. Der Dienst meldet ihn nur, wenn die App das nicht getan hat, also vor allem bei geschlossener App.
 - Meldet sich der Dienst 20 Minuten nicht, sendet die geöffnete App wieder selbst.
 - Ein ausgelöster Kurs-Alarm bleibt noch 3 Minuten in der Datei. So meldet ihn der Dienst sicher, auch wenn die App ihn zuerst gesehen hat.
 
