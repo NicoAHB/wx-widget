@@ -7,6 +7,8 @@ Kleines Programm für einen eigenen Server, der rund um die Uhr läuft (z. B. ko
 - den BTC-Puls (ab Version 1.1): ungewöhnlich starke Bitcoin-Bewegung in 5 oder 15 Minuten,
 - den Gewinn-/Verlust-Alarm am Live-Ergebnis der offenen Positionen (ab Version 1.2).
 
+Ab Version 1.3 prüft er, ob Telegram jede Meldung angenommen hat. Wenn nicht, versucht er es erneut und meldet eine Störung.
+
 **Schritt-für-Schritt-Anleitung für Oracle Cloud (Neueinrichtung, Aktualisieren, Fehlerhilfe): [ANLEITUNG-ORACLE.md](ANLEITUNG-ORACLE.md)**
 
 ## So arbeitet er mit der App zusammen
@@ -19,6 +21,14 @@ Kleines Programm für einen eigenen Server, der rund um die Uhr läuft (z. B. ko
   - Er prüft alle 15 Sekunden die 1m-Kerzen bei Binance; auch kurze Dochte zählen.
   - Er bestätigt in der angehefteten Nachricht („Dienst: aktiv …“).
 - **Keine doppelten Nachrichten:** Solange die Bestätigung frisch ist, sendet die App Kurs-Alarme, Stop/Ziel, Termin-Warnungen und den BTC-Puls nicht zusätzlich.
+- **Zustellung (ab 1.3):**
+  - Jede Meldung kommt erst in einen Ausgang. Als zugestellt gilt sie, wenn Telegram sie angenommen hat. Sonst folgt ein neuer Versuch nach 15 und 30 Sekunden, nach 1 und 2 Minuten, dann alle 5 Minuten; bei „Too Many Requests“ nach Telegrams Vorgabe.
+  - Der Ausgang übersteht einen Neustart. Was nach 24 Stunden noch nicht angenommen ist, verwirft der Dienst mit einer Zeile im Protokoll.
+  - Eine verspätete Meldung (über 2 Minuten) trägt die Uhrzeit des Auslösens und den Vermerk „verspätet zugestellt um … – Telegram war nicht erreichbar“ (bzw. „hatte gebremst“, „hatte sie zuerst abgelehnt“).
+  - Lehnt Telegram ab (z. B. „chat not found“) oder ist es länger als eine Minute nicht erreichbar, steht in der angehefteten Nachricht „Dienst: Störung · … · Telegram-Nachricht nicht zustellbar seit …“. Dann sendet die geöffnete App wieder selbst. Eine Meldung kann dabei doppelt ankommen: sofort von der App und später verspätet vom Dienst.
+  - Darunter steht „Zustellung: zuletzt 01.10. 14:32 · Kurs-Alarm BTC“, vor der ersten Meldung „Zustellung: geprüft, noch keine Meldung“. Die App zeigt das unter „Status prüfen“.
+  - Bis 1.2 galt eine Meldung schon vor dem Senden als erledigt. Lehnte Telegram sie ab, ging sie verloren, und der Dienst meldete weiter „aktiv“.
+  - Kurse fragt er für bis zu 4 Kürzel gleichzeitig ab. Ein langsames Kürzel hält die anderen nicht auf, ein Fehler betrifft nur dieses Kürzel.
 - **BTC-Puls (ab 1.1):**
   - Die App berechnet aus den BTC-Kerzen der letzten 35 Tage, welche Bewegung um welche Uhrzeit ungewöhnlich ist (99 % der üblichen, je Stunde und Tagesart), und legt diese Schwellen mit in die Datei.
   - Der Dienst prüft damit alle 15 Sekunden die Bewegung der letzten 5 und 15 Minuten (mindestens 0,5 % bzw. 0,8 %).
@@ -58,9 +68,12 @@ Bot-Token und Chat-ID sind dieselben wie in der App unter „Kursalarm“, nicht
 - Einstellungen neu eingeben: `curl -fsSL …/install.sh | sudo bash -s -- --neu`
 - Entfernen: `sudo bash /opt/scalpdesk-247/install.sh --remove`
 
+## Selbsttest
+`node selbsttest.mjs` im Ordner `server` prüft den Dienst ohne Netz und ohne Konten: Telegram und Binance sind darin nachgebaut. Geprüft werden vor allem die Zustellung (Ablehnung, Wiederholen mit wachsender Pause, Neustart, Nachstellen mit Vermerk, Störung nach einer Minute ohne Telegram, Verwerfen nach 24 Stunden) und die gleichzeitigen Kursabfragen. Am Ende steht „… von … bestanden“.
+
 ## Dateien und Sicherheit
 - `/opt/scalpdesk-247/scalpdesk-247.mjs` ist das Programm: ohne Abhängigkeiten, Node.js ab 18.
 - `/etc/scalpdesk-247.json` enthält Bot-Token, Chat-ID und den optionalen Discord-Webhook. Sie ist nur für root und den Dienst-Benutzer `scalpdesk` lesbar.
-- `/var/lib/scalpdesk-247/state.json` enthält die zuletzt übernommene Datei und die schon gesendeten Meldungen.
+- `/var/lib/scalpdesk-247/state.json` enthält die zuletzt übernommene Datei, die schon gesendeten Meldungen und den Ausgang (noch nicht zugestellte Meldungen).
 - Der Dienst läuft als eigener Benutzer ohne Anmeldung, mit schreibgeschütztem System (`ProtectSystem=strict`). Er startet mit dem Server und nach Fehlern von selbst neu.
 - Den Token schreibt er nie ins Protokoll.

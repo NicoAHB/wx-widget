@@ -6,7 +6,9 @@ Mit dem 24/7-Dienst kommen deine Meldungen per Telegram auch dann, wenn die App 
 - Stop-Loss und Take-Profit deiner offenen Positionen
 - Warnungen vor wichtigen Wirtschaftsterminen
 - der BTC-Puls (ab Version 1.1)
-- **der Gewinn-/Verlust-Alarm am Live-Ergebnis (ab Version 1.2)**
+- der Gewinn-/Verlust-Alarm am Live-Ergebnis (ab Version 1.2)
+
+**Neu in Version 1.3:** Der Dienst prüft, ob Telegram jede Meldung angenommen hat. Wenn nicht, versucht er es erneut und zeigt eine Störung an, statt die Meldung stillschweigend als erledigt abzuhaken.
 
 Der Dienst ist ein kleines Programm auf einem eigenen Server, der rund um die Uhr läuft. Bei Oracle Cloud gibt es dafür einen dauerhaft kostenlosen Server („Always Free“).
 
@@ -19,9 +21,9 @@ Der Dienst ist ein kleines Programm auf einem eigenen Server, der rund um die Uh
 
 ---
 
-## Du hast den Dienst schon? Auf Version 1.2 aktualisieren (5 Minuten)
+## Du hast den Dienst schon? Auf Version 1.3 aktualisieren (5 Minuten)
 
-Den Gewinn-/Verlust-Alarm bei geschlossener App kann der Dienst erst ab Version 1.2. Ein vorhandener Dienst wird so aktualisiert. Token, Chat und Einstellungen bleiben dabei erhalten.
+Den Gewinn-/Verlust-Alarm bei geschlossener App kann der Dienst ab Version 1.2. Ab Version 1.3 prüft er außerdem, ob Telegram jede Meldung angenommen hat. Ein vorhandener Dienst wird so aktualisiert. Token, Chat und Einstellungen bleiben dabei erhalten.
 
 1. Auf [cloud.oracle.com](https://cloud.oracle.com) anmelden und die **Cloud Shell** öffnen. Sie liegt oben rechts unter „Developer tools“ (Symbol `</>`), in älteren Ansichten direkt hinter dem Symbol `>_`.
 2. Mit dem Server verbinden. Die Schlüsseldatei liegt noch von der Einrichtung in der Cloud Shell. Ersetze `IP` durch die öffentliche IP deines Servers (Konsole → Compute → Instances → dein Server → „Public IP address“):
@@ -33,9 +35,10 @@ Den Gewinn-/Verlust-Alarm bei geschlossener App kann der Dienst erst ab Version 
    ```
    curl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/install.sh | sudo bash
    ```
-   Der Installer zeigt `2/5 Programm 1.2.0 …` und am Ende `5/5 Dienst läuft ✓`. In Telegram kommt eine Testnachricht.
+   Der Installer zeigt `2/5 Programm 1.3.0 …` und am Ende `5/5 Dienst läuft ✓`. In Telegram kommt eine Testnachricht.
 4. Kontrolle nach höchstens einer Minute:
-   - Im Telegram-Chat steht in der angehefteten Nachricht `Dienst: aktiv · … · GV · …`.
+   - Im Telegram-Chat steht in der angehefteten Nachricht `Dienst: aktiv · …` und darunter `Zustellung: geprüft, noch keine Meldung` (nach der ersten Meldung `Zustellung: zuletzt …`). Bei aktivem Gewinn-/Verlust-Alarm steht in der Dienst-Zeile auch `· GV`.
+   - In der App unter **🔔 Hinweise → „Telegram / Discord einrichten“ → „Status prüfen“**: „✓ Aktiv … Zugestellt hat er noch keine Meldung.“ bzw. „Zuletzt zugestellt: …“.
    - In der App: Tippe oben rechts auf das Live-Ergebnis „Offen“. Im Feld „Gewinn- und Verlust-Alarm“ steht bei aktiver Grenze: **„✓ Auch bei geschlossener App: Der 24/7-Dienst prüft mit und meldet die Grenze.“**
 
 Mehr ist nicht zu tun.
@@ -105,7 +108,7 @@ curl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/insta
 Der Installer arbeitet fünf Schritte ab:
 
 1. **Node.js** installieren (bei einem neuen Server 1–3 Minuten)
-2. **Programm** laden: zeigt `Programm 1.2.0`
+2. **Programm** laden: zeigt `Programm 1.3.0`
 3. **Einstellungen** abfragen:
    - **Bot-Token:** einfügen und Enter. Die Eingabe bleibt aus Sicherheitsgründen unsichtbar.
    - **Chat-ID:** zum Beispiel `987654321`, bei Gruppen mit Minus davor
@@ -169,10 +172,16 @@ Bleibt die App dabei geöffnet, meldet sie die Grenze selbst, sofort und ohne �
 - Meldet sich der Dienst 20 Minuten nicht, sendet die geöffnete App wieder selbst.
 - Ein ausgelöster Kurs-Alarm bleibt noch 3 Minuten in der Datei. So meldet ihn der Dienst sicher, auch wenn die App ihn zuerst gesehen hat.
 
+**Zustellung (ab Version 1.3)**
+- Jede Meldung gilt erst als zugestellt, wenn Telegram sie angenommen hat. Sonst versucht der Dienst es erneut: nach 15 und 30 Sekunden, nach 1 und 2 Minuten, dann alle 5 Minuten, höchstens einen Tag lang. Das übersteht auch einen Neustart.
+- Kommt eine Meldung über 2 Minuten zu spät an, trägt sie die Uhrzeit des Auslösens und den Vermerk „verspätet zugestellt um …“ mit dem Grund.
+- Lehnt Telegram ab oder ist es länger als eine Minute nicht erreichbar, steht in der App „⚠ Der Dienst meldet eine Störung: Telegram-Nachricht nicht zustellbar seit …“. Die geöffnete App sendet dann wieder selbst. Eine Meldung kann so doppelt ankommen: sofort von der App, später verspätet vom Dienst.
+- Unter „Status prüfen“ steht, wann der Dienst zuletzt etwas zugestellt hat und was.
+
 **Ältere Dienste**
-- Version 1.0 kennt den BTC-Puls nicht, Version 1.1 den Gewinn-/Verlust-Alarm nicht.
-- Diese Meldungen sendet dann nur die geöffnete App.
-- Die App zeigt das unter „Status prüfen“ an. Abhilfe: [aktualisieren](#du-hast-den-dienst-schon-auf-version-12-aktualisieren-5-minuten).
+- Version 1.0 kennt den BTC-Puls nicht, Version 1.1 den Gewinn-/Verlust-Alarm nicht. Diese Meldungen sendet dann nur die geöffnete App.
+- Version 1.2 prüft die Zustellung nicht: Lehnt Telegram eine Meldung ab, geht sie verloren, und der Dienst meldet weiter „aktiv“.
+- Die App zeigt das unter „Status prüfen“ an. Abhilfe: [aktualisieren](#du-hast-den-dienst-schon-auf-version-13-aktualisieren-5-minuten).
 
 ---
 
@@ -199,7 +208,7 @@ Zuerst wie in [Schritt 4](#schritt-4--mit-dem-server-verbinden) verbinden.
 | Server neu starten | `sudo reboot` (der Dienst startet von selbst wieder) |
 | Dienst entfernen | `sudo bash /opt/scalpdesk-247/install.sh --remove` |
 
-Im Protokoll steht beim Start zum Beispiel `Scalp Desk 24/7-Dienst 1.2.0 gestartet · Bot @…`. Nach jeder Übergabe folgt eine Zeile wie `Datei der App übernommen (#ab12): 3 Alarme, 2 Positionen, Gewinn-/Verlust-Alarm (≥ +100 USDT, 2 offene Positionen)`.
+Im Protokoll steht beim Start zum Beispiel `Scalp Desk 24/7-Dienst 1.3.0 gestartet · Bot @…`. Nach jeder Übergabe folgt eine Zeile wie `Datei der App übernommen (#ab12): 3 Alarme, 2 Positionen, Gewinn-/Verlust-Alarm (≥ +100 USDT, 2 offene Positionen)`.
 
 ---
 
@@ -216,8 +225,9 @@ Im Protokoll steht beim Start zum Beispiel `Scalp Desk 24/7-Dienst 1.2.0 gestart
 | Binance nicht erreichbar | Läuft der Server in einer US-Region? Dann sperrt Binance. Ein neues Konto mit Heimatregion Frankfurt ist nötig. |
 | App: „Anheften nicht erlaubt“ | In einer Gruppe braucht der Bot das Admin-Recht „Nachrichten anheften“. |
 | App: „⚠ Der Dienst hat sich seit … nicht gemeldet“ oder „… wartet auf den 24/7-Dienst“ | Am Server `systemctl status scalpdesk-247` prüfen. Steht er nicht auf „active (running)“, den Installationsbefehl erneut ausführen. Hat Oracle den Server angehalten: in der Konsole starten. |
-| App: „⚠ Der Dienst meldet eine Störung: …“ | Meist erreicht der Server Binance nicht. Das Protokoll zeigt den Grund: `journalctl -u scalpdesk-247 -n 50`. |
-| App: „Der Dienst kann ihn erst ab Version 1.2“ | Dienst aktualisieren (siehe oben). |
+| App: „⚠ Der Dienst meldet eine Störung: Kurse nicht abrufbar …“ | Der Server erreicht Binance nicht. Das Protokoll zeigt den Grund: `journalctl -u scalpdesk-247 -n 50`. |
+| App: „⚠ Der Dienst meldet eine Störung: Telegram-Nachricht nicht zustellbar seit …“ | Telegram nimmt die Meldungen des Dienstes nicht an; der Grund steht in Klammern. „chat not found“: dem Bot `/start` schreiben bzw. ihn wieder in die Gruppe aufnehmen. „Unauthorized“: Token geändert – mit `--neu` neu eingeben (siehe Tabelle oben). War Telegram nur kurz nicht erreichbar, verschwindet die Störung mit der nächsten Zustellung von selbst; bis dahin sendet die geöffnete App. |
+| App: „Der Dienst kann ihn erst ab Version 1.2“ oder „… prüft der Dienst erst ab Version 1.3“ | Dienst aktualisieren (siehe oben). |
 | Angeheftete Nachricht gelöscht | In der App „An den 24/7-Dienst übergeben“ aus- und wieder einschalten; die App legt die Datei neu an. Sonst passiert das bei der nächsten Änderung von selbst. |
 
 ---
