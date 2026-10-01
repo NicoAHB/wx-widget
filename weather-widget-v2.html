@@ -4777,32 +4777,35 @@ const TG_TOKEN_RE = /^\d{5,15}:[A-Za-z0-9_-]{30,80}$/, TG_CHAT_RE = /^(-?\d{1,20
 const DC_URL_RE = /^https:\/\/(?:(?:ptb|canary)\.)?discord(?:app)?\.com\/api(?:\/v\d{1,2})?\/webhooks\/\d{5,25}\/[A-Za-z0-9_-]{20,120}(?:\?thread_id=\d{5,25})?$/;
 function loadChannels() {
   const v = store.get(CHAN_KEY), o = v && typeof v === 'object' ? v : {}, str = (x, n) => typeof x === 'string' ? x.trim().slice(0, n) : '';
-  return { tg: { token: str(o.tg?.token, 120), chat: str(o.tg?.chat, 40), thread: str(o.tg?.thread, 10), bchat: str(o.tg?.bchat, 40), bthread: str(o.tg?.bthread, 10), on: o.tg?.on !== false }, dc: { url: str(o.dc?.url, 300), on: o.dc?.on !== false },
+  return { tg: { token: str(o.tg?.token, 120), chat: str(o.tg?.chat, 40), thread: str(o.tg?.thread, 10), bchat: str(o.tg?.bchat, 40), bthread: str(o.tg?.bthread, 10), btoken: str(o.tg?.btoken, 120), on: o.tg?.on !== false }, dc: { url: str(o.dc?.url, 300), on: o.dc?.on !== false },
     ev: { alarm: o.ev?.alarm !== false, pos: o.ev?.pos !== false, day: o.ev?.day !== false, news: o.ev?.news !== false, pnl: o.ev?.pnl !== false, pulse: o.ev?.pulse !== false } };
 }
 let chan = loadChannels();
 const chanState = { tg: null, dc: null }, chanClaimed = new Set(), sendWait = new Map(), CHAN_NAME = { tg: 'Telegram', dc: 'Discord' };
 let sendSeq = 0;
-const tgOk = t => TG_TOKEN_RE.test(t.token) && TG_CHAT_RE.test(t.chat) && (!t.thread || TG_THREAD_RE.test(t.thread)) && (!t.bchat || TG_CHAT_RE.test(t.bchat)) && (!t.bthread || TG_THREAD_RE.test(t.bthread));
+const tgOk = t => TG_TOKEN_RE.test(t.token) && TG_CHAT_RE.test(t.chat) && (!t.thread || TG_THREAD_RE.test(t.thread)) && (!t.bchat || TG_CHAT_RE.test(t.bchat)) && (!t.bthread || TG_THREAD_RE.test(t.bthread)) && (!t.btoken || TG_TOKEN_RE.test(t.btoken));
 const chanValid = k => k === 'tg' ? tgOk(chan.tg) : DC_URL_RE.test(chan.dc.url);
 const chanReady = k => chan[k].on && chanValid(k);
 // Ablaufplan Schritt 3 (3.24.0): Ziel jeder Nachrichtenart zentral an einer Stelle. „Kursalarm“ ist der Chat (optional mit
 // Thema) für alle Alarme und Hinweise, der „Sicherungschat“ bekommt nur die Datensicherung. Unbekannte Arten gehen immer zu
 // „Kursalarm“, nie in den Sicherungschat. Vorher gab es nur eine Chat-ID für alles – News landeten so im Sicherungschat.
 const TG_ROUTE = { alarm: 'alert', pos: 'alert', day: 'alert', news: 'alert', pnl: 'alert', pulse: 'alert', s247: 'alert', test: 'alert', backup: 'backup' };
+// 3.25.0: Der Sicherungschat darf auch über einen eigenen Bot laufen (eigener Token, z. B. ein Bot „Sicherung“ neben „Kursalarm“)
 function tgTarget(kind) {
   const t = chan.tg;
-  if (TG_ROUTE[kind] !== 'backup') return { chat: t.chat, thread: t.thread };
-  return t.bchat ? { chat: t.bchat, thread: t.bthread } : { chat: t.chat, thread: t.bthread || t.thread }; // ohne eigenen Chat: wie Kursalarm (ggf. eigenes Thema)
+  if (TG_ROUTE[kind] !== 'backup') return { token: t.token, chat: t.chat, thread: t.thread };
+  const token = t.btoken || t.token;
+  return t.bchat ? { token, chat: t.bchat, thread: t.bthread } : { token, chat: t.chat, thread: t.bthread || t.thread }; // ohne eigenen Chat: wie Kursalarm (ggf. eigenes Thema)
 }
+function tgBot(token) { return /^(\d+):/.exec(token || '')?.[1] || ''; } // die Zahl vor dem Doppelpunkt kennzeichnet den Bot
 const tgFields = T => ({ chat_id: T.chat, ...(T.thread ? { message_thread_id: T.thread } : {}) });
-const tgKey = T => `${T.chat}|${T.thread || ''}`;
+const tgKey = T => `${tgBot(T.token)}|${T.chat}|${T.thread || ''}`;
 const tgSeparate = () => tgKey(tgTarget('backup')) !== tgKey(tgTarget('alarm'));
 function saveChannels() { if (store.set(CHAN_KEY, chan)) broadcastData([CHAN_KEY]); renderChanSummary(); scheduleS247(); }
 // Nachricht über den Worker senden; das Ergebnis kommt als {t:'sent'} zurück (onSent)
 function chanSend(k, text, test = false, kind = 'test', opts = {}) {
   const id = ++sendSeq, m = k === 'tg'
-    ? { t: 'send', id, kind: 'telegram', test, url: `https://api.telegram.org/bot${chan.tg.token}/sendMessage`, fields: { ...tgFields(tgTarget(kind)), text: text.slice(0, 4000), link_preview_options: JSON.stringify({ is_disabled: true }), ...(opts.silent ? { disable_notification: 'true' } : {}) } }
+    ? { t: 'send', id, kind: 'telegram', test, url: `https://api.telegram.org/bot${tgTarget(kind).token}/sendMessage`, fields: { ...tgFields(tgTarget(kind)), text: text.slice(0, 4000), link_preview_options: JSON.stringify({ is_disabled: true }), ...(opts.silent ? { disable_notification: 'true' } : {}) } }
     : { t: 'send', id, kind: 'discord', test, url: chan.dc.url, fields: { content: text.slice(0, 1900), allowed_mentions: { parse: [] } } };
   return new Promise(resolve => { sendWait.set(id, { k, resolve }); live.post(m); });
 }
@@ -4845,7 +4848,7 @@ function chanLine(k) {
 }
 function renderChanSummary() {
   const any = chan.tg.token || chan.dc.url;
-  put('chan-summary', any ? `Telegram: ${chanLine('tg')}${chanValid('tg') ? ` · Sicherung: ${tgSeparate() ? 'eigener Chat' : 'wie Kursalarm'}` : ''} · Discord: ${chanLine('dc')}${s247Active() ? ' · 24/7-Dienst: aktiv' : ''}` : 'Noch kein Kanal eingerichtet – Anleitung im Fenster.');
+  put('chan-summary', any ? `Telegram: ${chanLine('tg')}${chanValid('tg') ? ` · Sicherung: ${tgSeparate() ? (chan.tg.btoken && chan.tg.btoken !== chan.tg.token ? 'eigener Bot' : 'eigener Chat') : 'wie Kursalarm'}` : ''} · Discord: ${chanLine('dc')}${s247Active() ? ' · 24/7-Dienst: aktiv' : ''}` : 'Noch kein Kanal eingerichtet – Anleitung im Fenster.');
 }
 function chanMsg(k, ok, text) { const p = $(k + '-status'); p.textContent = text; p.className = 'chan-status' + (ok === true ? ' ok' : ok === false ? ' err' : ''); }
 function renderChanStatus() {
@@ -4857,15 +4860,22 @@ function renderChanStatus() {
   }
 }
 function fillChanForm() {
-  $('tg-token').value = chan.tg.token; $('tg-chat').value = chan.tg.chat; $('tg-thread').value = chan.tg.thread; $('tg-bchat').value = chan.tg.bchat; $('tg-bthread').value = chan.tg.bthread; $('tg-on').checked = chan.tg.on;
+  $('tg-token').value = chan.tg.token; $('tg-chat').value = chan.tg.chat; $('tg-thread').value = chan.tg.thread; $('tg-bchat').value = chan.tg.bchat; $('tg-bthread').value = chan.tg.bthread; $('tg-btoken').value = chan.tg.btoken; $('tg-on').checked = chan.tg.on;
   $('dc-url').value = chan.dc.url; $('dc-on').checked = chan.dc.on;
   $('chan-ev-alarm').checked = chan.ev.alarm; $('chan-ev-pos').checked = chan.ev.pos; $('chan-ev-day').checked = chan.ev.day; $('chan-ev-news').checked = chan.ev.news; $('chan-ev-pnl').checked = chan.ev.pnl; $('chan-ev-pulse').checked = chan.ev.pulse;
   renderChanStatus(); renderPulseInfo();
 }
 function readChanForm() {
-  chan = { tg: { token: $('tg-token').value.trim(), chat: $('tg-chat').value.trim(), thread: $('tg-thread').value.trim(), bchat: $('tg-bchat').value.trim(), bthread: $('tg-bthread').value.trim(), on: $('tg-on').checked }, dc: { url: $('dc-url').value.trim(), on: $('dc-on').checked },
+  const was = tgTarget('backup'), implicit = !chan.tg.bchat && !chan.tg.btoken;
+  chan = { tg: { token: $('tg-token').value.trim(), chat: $('tg-chat').value.trim(), thread: $('tg-thread').value.trim(), bchat: $('tg-bchat').value.trim(), bthread: $('tg-bthread').value.trim(), btoken: $('tg-btoken').value.trim(), on: $('tg-on').checked }, dc: { url: $('dc-url').value.trim(), on: $('dc-on').checked },
     ev: { alarm: $('chan-ev-alarm').checked, pos: $('chan-ev-pos').checked, day: $('chan-ev-day').checked, news: $('chan-ev-news').checked, pnl: $('chan-ev-pnl').checked, pulse: $('chan-ev-pulse').checked } };
+  // 3.25.0: Ohne eigenen Sicherungschat folgte die Sicherung jeder Änderung am Kursalarm-Ziel – so landete sie plötzlich im
+  // Kursalarm-Chat. Jetzt bleibt sie, wo ihre Datei liegt: Der bisherige Ort (Chat, Thema, Bot) wird als Sicherungschat eingetragen.
+  const t = chan.tg, kept = implicit && !t.bchat && !t.btoken && tgbHasMsg(tgKey(was)) && tgKey(tgTarget('backup')) !== tgKey(was);
+  if (kept) { t.bchat = was.chat; t.bthread = was.thread || ''; if (was.token !== t.token) t.btoken = was.token; $('tg-bchat').value = t.bchat; $('tg-bthread').value = t.bthread; $('tg-btoken').value = t.btoken; }
   saveChannels(); renderChanStatus();
+  if (kept) chanMsg('tg', true, 'Kursalarm geändert – die Datensicherung bleibt im bisherigen Chat und ist dort jetzt als Sicherungschat eingetragen.');
+  return kept;
 }
 function openChan() {
   closeMenus(); fillChanForm();
@@ -4887,31 +4897,45 @@ async function tgDetect() {
   try {
     const me = await tgApi(chan.tg.token, 'getMe'), ups = await tgApi(chan.tg.token, 'getUpdates', { limit: 100, timeout: 0 });
     // Chats und Themen, die der Bot gesehen hat (neueste zuerst) – zum Zuordnen: Kursalarm oder Sicherungschat
-    const seen = new Map();
-    for (const u of (Array.isArray(ups) ? ups : []).reverse()) {
-      const m = u.message || u.edited_message || u.channel_post || u.my_chat_member, c = m?.chat; if (!c || c.id === undefined) continue;
-      const thread = m.is_topic_message && m.message_thread_id ? String(m.message_thread_id) : '', key = `${c.id}|${thread}`;
-      if (!seen.has(key)) seen.set(key, { chat: String(c.id), thread, name: c.first_name || c.title || c.username || 'Chat', topic: m.reply_to_message?.forum_topic_created?.name || m.forum_topic_created?.name || '', priv: c.type === 'private' });
+    const list = tgSeen(ups);
+    // 3.25.0: eigener Sicherungs-Bot – seine Chats kommen dazu, nur zum Zuordnen als Sicherungschat
+    let extra = '';
+    if (TG_TOKEN_RE.test(chan.tg.btoken) && chan.tg.btoken !== chan.tg.token) {
+      try {
+        const me2 = await tgApi(chan.tg.btoken, 'getMe'), more = tgSeen(await tgApi(chan.tg.btoken, 'getUpdates', { limit: 100, timeout: 0 }));
+        for (const x of more) list.push({ ...x, via: me2.username, only: 'backup' });
+        if (!more.length) extra = ` Sicherungs-Bot @${me2.username}: noch keine Nachricht – dort „Start“ tippen.`;
+      } catch (e) { extra = ` Sicherungs-Bot: ${e.message}`; }
     }
-    const list = [...seen.values()];
     if (!list.length) return chanMsg('tg', false, `Bot @${me.username} gefunden, aber er hat noch keine Nachricht von dir. In Telegram den Bot öffnen, „Start“ tippen oder „Hallo“ schreiben und dann erneut „Chat-ID ermitteln“.`);
     // Erste Einrichtung: den Privatchat (sonst den neuesten) gleich als Kursalarm eintragen – wie bisher, ohne Extra-Tippen
-    const auto = chan.tg.chat ? null : list.find(x => x.priv) || list[0];
+    const auto = chan.tg.chat ? null : list.find(x => x.priv && !x.only) || list.find(x => !x.only);
     if (auto) { $('tg-chat').value = auto.chat; $('tg-thread').value = auto.thread; readChanForm(); }
     renderTgFound(list);
-    chanMsg('tg', true, auto
+    chanMsg('tg', true, (auto
       ? `Gefunden: ${auto.name}${auto.topic ? ` › ${auto.topic}` : ''} (ID ${auto.chat}) über Bot @${me.username} – als „Kursalarm“ eingetragen. ${list.length > 1 ? 'Weitere Chats unten: für die Datensicherung „→ Sicherungschat“ tippen, dann „Test je Nachrichtenart“.' : 'Jetzt „Test senden“.'}`
-      : `Bot @${me.username}: ${list.length === 1 ? 'ein Chat' : `${list.length} Chats bzw. Themen`} gefunden – unten „Kursalarm“ und „Sicherungschat“ zuordnen, dann „Test je Nachrichtenart“.`);
+      : `Bot @${me.username}: ${list.length === 1 ? 'ein Chat' : `${list.length} Chats bzw. Themen`} gefunden – unten „Kursalarm“ und „Sicherungschat“ zuordnen, dann „Test je Nachrichtenart“.`) + extra);
   } catch (e) { chanMsg('tg', false, e.message); }
   finally { $('tg-detect').disabled = false; }
+}
+// Chats und Themen, die ein Bot gesehen hat (neueste zuerst) – zum Zuordnen: Kursalarm oder Sicherungschat
+function tgSeen(ups) {
+  const seen = new Map();
+  for (const u of (Array.isArray(ups) ? ups : []).reverse()) {
+    const m = u.message || u.edited_message || u.channel_post || u.my_chat_member, c = m?.chat; if (!c || c.id === undefined) continue;
+    const thread = m.is_topic_message && m.message_thread_id ? String(m.message_thread_id) : '', key = `${c.id}|${thread}`;
+    if (!seen.has(key)) seen.set(key, { chat: String(c.id), thread, name: c.first_name || c.title || c.username || 'Chat', topic: m.reply_to_message?.forum_topic_created?.name || m.forum_topic_created?.name || '', priv: c.type === 'private' });
+  }
+  return [...seen.values()];
 }
 function renderTgFound(list) {
   const box = $('tg-found'); box.hidden = !list.length;
   box.replaceChildren(...list.map(x => {
-    const row = el('div', 'tg-found-row'), a = btn('button ghost', '→ Kursalarm'), b = btn('button ghost', '→ Sicherungschat');
-    a.addEventListener('click', () => { $('tg-chat').value = x.chat; $('tg-thread').value = x.thread; readChanForm(); chanMsg('tg', true, `Kursalarm: ${x.name}${x.topic ? ` › ${x.topic}` : ''}.`); });
-    b.addEventListener('click', () => { $('tg-bchat').value = x.chat; $('tg-bthread').value = x.thread; readChanForm(); chanMsg('tg', true, `Sicherungschat: ${x.name}${x.topic ? ` › ${x.topic}` : ''}.`); });
-    row.append(el('span', 'tg-found-name', `${x.name}${x.topic ? ` › ${x.topic}` : ''} · ID ${x.chat}${x.thread ? ` · Thema ${x.thread}` : ''}`), a, b); return row;
+    const row = el('div', 'tg-found-row'), a = btn('button ghost', '→ Kursalarm'), b = btn('button ghost', '→ Sicherungschat'), name = `${x.name}${x.topic ? ` › ${x.topic}` : ''}`;
+    a.addEventListener('click', () => { $('tg-chat').value = x.chat; $('tg-thread').value = x.thread; const kept = readChanForm(); chanMsg('tg', true, `Kursalarm: ${name}.${kept ? ' Die Datensicherung bleibt im bisherigen Chat (als Sicherungschat eingetragen).' : ''}`); });
+    // Ziel ist genau der gelistete Chat samt Bot: über den Haupt-Bot gefunden → ohne eigenen Sicherungs-Token
+    b.addEventListener('click', () => { $('tg-bchat').value = x.chat; $('tg-bthread').value = x.thread; if (!x.only) $('tg-btoken').value = ''; readChanForm(); chanMsg('tg', true, `Sicherungschat: ${name}${x.via ? ` (über @${x.via})` : ''}.`); });
+    row.append(el('span', 'tg-found-name', `${name} · ID ${x.chat}${x.thread ? ` · Thema ${x.thread}` : ''}${x.via ? ` · über @${x.via}` : ''}`), ...(x.only ? [b] : [a, b])); return row;
   }));
 }
 // Ablaufplan Schritt 3: je Nachrichtenart eine Testnachricht an ihr Ziel – so lässt sich die Zuordnung in Telegram prüfen
@@ -4939,14 +4963,14 @@ $('chan-open').addEventListener('click', openChan);
 $('chan-close').addEventListener('click', () => $('chan-dialog').close());
 $('chan-done').addEventListener('click', () => $('chan-dialog').close());
 $('chan-dialog').addEventListener('change', readChanForm);
-for (const id of ['tg-token', 'tg-chat', 'tg-thread', 'tg-bchat', 'tg-bthread', 'dc-url']) $(id).addEventListener('blur', readChanForm);
+for (const id of ['tg-token', 'tg-chat', 'tg-thread', 'tg-bchat', 'tg-bthread', 'tg-btoken', 'dc-url']) $(id).addEventListener('blur', readChanForm);
 $('tg-testall').addEventListener('click', () => void chanTestAll());
 $('tg-detect').addEventListener('click', () => void tgDetect());
 $('tg-test').addEventListener('click', () => void chanTest('tg'));
 $('dc-test').addEventListener('click', () => void chanTest('dc'));
 $('chan-clear').addEventListener('click', () => {
   if (!confirm('Bot-Token, Chat-ID und Webhook-URL auf diesem Gerät löschen?')) return;
-  chan = { tg: { token: '', chat: '', thread: '', bchat: '', bthread: '', on: true }, dc: { url: '', on: true }, ev: chan.ev }; chanState.tg = chanState.dc = null; $('tg-found').hidden = true;
+  chan = { tg: { token: '', chat: '', thread: '', bchat: '', bthread: '', btoken: '', on: true }, dc: { url: '', on: true }, ev: chan.ev }; chanState.tg = chanState.dc = null; $('tg-found').hidden = true;
   saveChannels(); fillChanForm();
 });
 renderChanSummary();
@@ -5660,69 +5684,105 @@ function liqNearHold(id, remaining) {
 }
 // ---------- Sicherung über Telegram (vor allem für iPhone/iPad) ----------
 // Safari erlaubt Webseiten nicht, still in eine Datei zu schreiben – das automatische Datei-Backup gibt es nur in Chrome/Edge
-// am Computer. Eingeschaltet schickt das Dashboard die Sicherungsdatei nach jeder Änderung an den eigenen Telegram-Chat
-// und ersetzt dort die vorige Datei (editMessageMedia): eine Nachricht, immer aktuell. Zugangsdaten für Telegram/Discord
-// stehen nie in der Datei. Mehrere offene Tabs senden über eine Absprache in der IndexedDB nur einmal.
+// am Computer. Eingeschaltet schickt das Dashboard die Sicherungsdatei nach jeder Änderung an den Sicherungschat und ersetzt
+// dort die vorige Datei (editMessageMedia): eine Nachricht, immer aktuell. Zugangsdaten für Telegram/Discord stehen nie in
+// der Datei. Mehrere offene Tabs senden über eine Absprache in der IndexedDB nur einmal.
 // 3.16.1: Gesendet wird, wenn sich die Daten seit der letzten Telegram-Sicherung geändert haben (eigener Fingerabdruck) –
 // nicht mehr über den gemeinsamen Änderungszähler, den jede Datei- oder Teilen-Sicherung auf 0 setzt. Offenes wird beim
 // Verlassen der Seite sofort gesendet und beim nächsten Öffnen nachgeholt: Am iPhone friert Safari eine Seite im
 // Hintergrund ein oder verwirft sie – ein wartender Timer lief dann nie.
-const TGB_KEY = 'scalpdesk.tgbackup.v1';
+// 3.25.0: Ziel ist der Sicherungschat (eigener Chat, eigenes Thema oder eigener Sicherungs-Bot, siehe tgTarget). Die
+// Sicherungsnachricht wird dort angeheftet: So finden alle Geräte (iPhone, iPad, Computer) dieselbe Nachricht und ersetzen
+// sie – im Chat liegt immer genau eine Sicherungsdatei. Bisher merkte sich jedes Gerät nur seine eigene Nachricht, und nach
+// dem Update auf 3.24.0 wurde die alte Nachricht wegen eines neuen Speicherformats nicht wiedererkannt (zweite Datei). Im
+// Kursalarm-Chat wird nichts angeheftet, solange dort die Datei des 24/7-Dienstes hängt – dann ersetzt jedes Gerät seine eigene.
+const TGB_KEY = 'scalpdesk.tgbackup.v1', TGB_FILE = 'scalpdesk-sicherung.json';
 // var statt const: persist() kann das Senden anstoßen, bevor dieser Abschnitt ausgewertet ist
-var tgb = { cfg: loadTgb(), timer: null, busy: false, error: '' };
-function loadTgb() { const v = store.get(TGB_KEY); return { on: !!v?.on, chat: typeof v?.chat === 'string' ? v.chat : '', msg: Number(v?.msg) || 0, at: Number(v?.at) || 0, sig: typeof v?.sig === 'string' ? v.sig : '' }; }
+var tgb = { cfg: loadTgb(), timer: null, busy: false, error: '', note: '' };
+function loadTgb() { const v = store.get(TGB_KEY); return { on: !!v?.on, chat: typeof v?.chat === 'string' ? v.chat : '', msg: Number(v?.msg) || 0, at: Number(v?.at) || 0, sig: typeof v?.sig === 'string' ? v.sig : '', name: typeof v?.name === 'string' ? v.name.slice(0, 60) : '' }; }
 function saveTgb() { store.set(TGB_KEY, { ...tgb.cfg }); }
+// Gemerktes Ziel einheitlich als „Bot|Chat|Thema“: bis 3.23.1 nur „Chat“, in 3.24.0 „Chat|Thema“ (beides über den Haupt-Bot)
+function tgbNormKey(k) { if (!k) return ''; const p = String(k).split('|'); return p.length >= 3 ? p.slice(0, 3).join('|') : `${tgBot(chan.tg.token)}|${p[0]}|${p[1] || ''}`; }
+function tgbHasMsg(key) { return !!tgb?.cfg?.msg && tgbNormKey(tgb.cfg.chat) === key; }
+// Unsere Sicherungsnachricht: richtige Datei und (soweit Telegram den Absender nennt) von diesem Bot
+function tgbIsOurs(pm, bot) { return pm?.document?.file_name === TGB_FILE && (!pm.from || String(pm.from.id) === bot); }
+// Anheften nur, wo es nichts verdrängt: nicht im Kursalarm-Chat, solange dort die angeheftete Datei des 24/7-Dienstes gilt
+function tgbPinOk(T) { return !(tgBot(T.token) === tgBot(chan.tg.token) && String(T.chat) === String(chan.tg.chat) && !!s247?.cfg?.on); }
 function tgConfigured() { return chanValid('tg'); }
 function tgbReady() { return !!tgb && tgb.cfg.on && tgConfigured(); }
 // Fingerabdruck der gesicherten Daten – ohne Zeitstempel. Die still gelernten Muster ändern sich mit jeder Kerze; sie reisen
 // immer in der Datei mit und lösen allein höchstens alle 6 Stunden ein neues Senden aus (3.24.0, zzpStamp)
 function tgbSig(p) { const j = JSON.stringify({ ...p, exportedAt: 0, patterns: zzpStamp() }); let h = 0; for (let i = 0; i < j.length; i++) h = (h * 31 + j.charCodeAt(i)) | 0; return `${j.length}:${h >>> 0}`; }
 function scheduleTgBackup(delay = 4000) { if (!tgbReady()) return; clearTimeout(tgb.timer); tgb.timer = setTimeout(() => { tgb.timer = null; void sendTgBackup(); }, delay); }
-async function tgPost(method, fd, keepalive = false) {
-  let r; try { r = await fetch(`https://api.telegram.org/bot${chan.tg.token}/${method}`, { method: 'POST', body: fd, credentials: 'omit', referrerPolicy: 'no-referrer', cache: 'no-store', keepalive }); }
+async function tgPost(method, fd, keepalive = false, token = chan.tg.token) {
+  let r; try { r = await fetch(`https://api.telegram.org/bot${token}/${method}`, { method: 'POST', body: fd, credentials: 'omit', referrerPolicy: 'no-referrer', cache: 'no-store', keepalive }); }
   catch { throw Object.assign(new Error('Telegram nicht erreichbar – Internet oder Werbeblocker prüfen.'), { code: 0 }); }
   let d = null; try { d = await r.json(); } catch {}
   if (!r.ok || !d?.ok) throw Object.assign(new Error(r.status === 401 || r.status === 404 ? 'Token ungültig – in „Telegram / Discord einrichten“ prüfen.' : r.status === 429 ? 'Zu viele Nachrichten – nächster Versuch bei der nächsten Änderung.' : `Telegram meldet Fehler ${d?.error_code ?? r.status}: ${d?.description || ''}`), { code: d?.error_code ?? r.status });
   return d.result;
 }
-// leaving: Seite wird gerade verlassen – der Upload muss noch im selben Ereignis starten (ohne Warten auf die Tab-Absprache;
-// doppelt ist besser als gar nicht) und bei kleinen Dateien mit keepalive, damit er das Einfrieren der Seite überlebt
+const tgbForm = (o, file) => { const fd = new FormData(); for (const [k, v] of Object.entries(o)) if (v !== '' && v !== undefined && v !== null) fd.append(k, String(v)); if (file) fd.append(file.field, file.blob, TGB_FILE); return fd; };
+// leaving: Seite wird gerade verlassen – der Upload muss noch im selben Ereignis starten (ohne Warten auf die Tab-Absprache und
+// ohne Rückfrage bei Telegram; doppelt ist besser als gar nicht) und bei kleinen Dateien mit keepalive, damit er das Einfrieren
+// der Seite überlebt
 async function sendTgBackup(force = false, leaving = false) {
   if (!(force ? tgConfigured() : tgbReady()) || tgb.busy) return; // „Jetzt senden“ geht auch ohne die Automatik (3.19.1)
   const payload = backupPayload(), sig = tgbSig(payload);
-  const T = tgTarget('backup'), where = tgKey(T); // 3.24.0: eigenes Ziel „Sicherungschat“ (Ablaufplan Schritt 3)
-  if (!force && sig === tgb.cfg.sig && tgb.cfg.chat === where) return; // Telegram hat schon diesen Stand
+  const T = tgTarget('backup'), where = tgKey(T), bot = tgBot(T.token);
+  if (!force && sig === tgb.cfg.sig && tgbNormKey(tgb.cfg.chat) === where) return; // Telegram hat schon diesen Stand
   const claimed = !leaving && await store.claim('tgbackup', 20000);
   if (!leaving && !claimed) return;   // ein anderer Tab sendet gerade
   tgb.busy = true; tgb.cfg = loadTgb(); renderTgbInfo();
   try {
-    const name = 'scalpdesk-sicherung.json', text = JSON.stringify(payload, null, 1), file = new Blob([text], { type: 'application/json' });
+    const text = JSON.stringify(payload, null, 1), blob = new Blob([text], { type: 'application/json' });
     const caption = `💾 Scalp-Desk-Sicherung · ${new Date().toLocaleString('de-DE')}\n${state.positions.length} offene Positionen · ${state.trades.length} Trades${state.movements.length ? ` · ${state.movements.length} Geldbewegungen` : ''}\nWiederherstellen: Datei speichern, im Dashboard „Backup einspielen“.`;
     const keep = leaving && text.length < 60000; // keepalive erlaubt höchstens 64 KB
-    let msg = tgb.cfg.chat === where ? tgb.cfg.msg : 0, done = false;
-    if (msg) {
-      const fd = new FormData(); fd.append('chat_id', T.chat); fd.append('message_id', String(msg));
-      fd.append('media', JSON.stringify({ type: 'document', media: 'attach://file', caption })); fd.append('file', file, name);
-      try { await tgPost('editMessageMedia', fd, keep); done = true; } catch (e) { if (e.code !== 400) throw e; }   // Nachricht gelöscht: neu senden
+    const pinOk = tgbPinOk(T), own = tgbNormKey(tgb.cfg.chat) === where ? tgb.cfg.msg : 0;
+    // Welche Nachricht ersetzen? Zuerst die angeheftete (gilt für alle Geräte), sonst die zuletzt von diesem Gerät gesendete
+    let pinned = 0;
+    if (pinOk && !leaving) { try { const pm = (await tgApi(T.token, 'getChat', { chat_id: T.chat }))?.pinned_message; if (tgbIsOurs(pm, bot)) pinned = pm.message_id; } catch {} }
+    let msg = 0, res = null; const gone = new Set();
+    for (const id of [...new Set([pinned, own])].filter(Boolean)) {
+      try { res = await tgPost('editMessageMedia', tgbForm({ chat_id: T.chat, message_id: id, media: JSON.stringify({ type: 'document', media: 'attach://file', caption }) }, { field: 'file', blob }), keep, T.token); msg = id; break; }
+      catch (e) { if (e.code !== 400) throw e; gone.add(id); } // gelöscht oder nicht mehr änderbar: nächste bzw. neu senden
     }
-    if (!done) {
-      const fd = new FormData(); fd.append('chat_id', T.chat); if (T.thread) fd.append('message_thread_id', T.thread); fd.append('caption', caption); fd.append('disable_notification', 'true'); fd.append('document', file, name);
-      msg = (await tgPost('sendDocument', fd, keep))?.message_id || 0;
+    if (!msg) {
+      res = await tgPost('sendDocument', tgbForm({ chat_id: T.chat, message_thread_id: T.thread, caption, disable_notification: 'true' }, { field: 'document', blob }), keep, T.token);
+      msg = res?.message_id || 0;
     }
-    tgb.cfg = { ...tgb.cfg, chat: where, msg, at: Date.now(), sig }; saveTgb(); tgb.error = '';
+    tgb.note = '';
+    if (msg && !leaving) {
+      // neue Nachricht anheften (für die anderen Geräte), die alte lösen; eigene ältere Datei löschen – im Chat bleibt eine
+      if (pinOk && msg !== pinned) {
+        try { await tgPost('pinChatMessage', tgbForm({ chat_id: T.chat, message_id: msg, disable_notification: 'true' }), false, T.token); }
+        catch { tgb.note = 'Anheften nicht erlaubt – in einer Gruppe braucht der Bot das Recht „Nachrichten anheften“. Bis dahin ersetzt jedes Gerät nur seine eigene Datei.'; }
+        if (pinned) try { await tgPost('unpinChatMessage', tgbForm({ chat_id: T.chat, message_id: pinned }), false, T.token); } catch {}
+      }
+      if (own && own !== msg && !gone.has(own)) try { await tgPost('deleteMessage', tgbForm({ chat_id: T.chat, message_id: own }), false, T.token); } catch {}
+    }
+    const c = res?.chat, name = c ? c.title || [c.first_name, c.last_name].filter(Boolean).join(' ') || (c.username ? '@' + c.username : '') : '';
+    tgb.cfg = { ...tgb.cfg, chat: where, msg, at: Date.now(), sig, name: name || (tgbNormKey(tgb.cfg.chat) === where ? tgb.cfg.name : '') }; saveTgb(); tgb.error = '';
     markBackedUp('telegram');
   } catch (e) { tgb.error = e?.message || String(e); }
   finally { tgb.busy = false; if (claimed) void store.release('tgbackup'); renderTgbInfo(); }
 }
+// Wohin geht die Sicherung? Eigener Sicherungschat oder (ohne Eintrag) der Kursalarm-Chat – das steht jetzt immer dabei
+function tgbWhere() {
+  const c = tgb.cfg, sep = tgSeparate(), named = tgbHasMsg(tgKey(tgTarget('backup'))) && c.name ? ` „${c.name}“` : '';
+  return sep ? `Ziel: Sicherungschat${named}` : `Ziel: Kursalarm-Chat${named} – kein eigener Sicherungschat eingetragen`;
+}
 function renderTgbInfo() {
   if (!tgb) return;
-  const ok = tgConfigured(), c = tgb.cfg;
-  $('tgb-on').checked = c.on && ok; $('tgb-on').disabled = !ok; $('tgb-setup').hidden = ok; $('tgb-now').hidden = !ok;
-  put('tgb-info', !ok ? 'Für iPhone/iPad: Safari erlaubt kein automatisches Speichern in Dateien. Stattdessen kann die Sicherung nach jeder Änderung an deinen Telegram-Chat gehen – dafür zuerst Telegram einrichten.'
+  const ok = tgConfigured(), c = tgb.cfg, sep = ok && tgSeparate();
+  $('tgb-on').checked = c.on && ok; $('tgb-on').disabled = !ok; $('tgb-now').hidden = !ok;
+  // ohne eigenen Sicherungschat: derselbe Knopf führt direkt zur Einrichtung des Sicherungschats
+  $('tgb-setup').hidden = sep; put('tgb-setup', ok ? '💾 Sicherungschat festlegen …' : '📨 Telegram einrichten …');
+  put('tgb-info', !ok ? 'Für iPhone/iPad: Safari erlaubt kein automatisches Speichern in Dateien. Stattdessen kann die Sicherung nach jeder Änderung an deinen Telegram-Sicherungschat gehen – dafür zuerst Telegram einrichten.'
     : tgb.busy ? 'Sende Sicherung …'
     : tgb.error ? `Fehler: ${tgb.error}`
-    : !c.on ? `„Jetzt an Telegram senden“ schickt die Datei einmal direkt in deinen Chat (unverschlüsselt, ohne Telegram- oder Discord-Zugangsdaten); mit dem Häkchen nach jeder Änderung. Jede neue Sicherung ersetzt die vorige.${c.at ? ` Zuletzt gesendet ${new Date(c.at).toLocaleString('de-DE')}.` : ''}`
-    : c.at ? `Aktiv · zuletzt gesendet ${new Date(c.at).toLocaleString('de-DE')} · ersetzt jeweils die vorige Nachricht` : 'Aktiv · die erste Sicherung wird gleich gesendet');
+    : (!c.on ? `„Jetzt an Telegram senden“ schickt die Datei einmal direkt in den Sicherungschat (unverschlüsselt, ohne Telegram- oder Discord-Zugangsdaten); mit dem Häkchen nach jeder Änderung. Jede neue Sicherung ersetzt die vorige.${c.at ? ` Zuletzt gesendet ${new Date(c.at).toLocaleString('de-DE')}.` : ''}`
+      : c.at ? `Aktiv · zuletzt gesendet ${new Date(c.at).toLocaleString('de-DE')} · ersetzt jeweils die vorige Datei` : 'Aktiv · die erste Sicherung wird gleich gesendet')
+      + ` · ${tgbWhere()}${tgb.note ? ` · ${tgb.note}` : ''}`);
   $('tgb-info').classList.toggle('err', !!tgb.error && ok);
 }
 $('tgb-on').addEventListener('change', () => {
@@ -5730,7 +5790,7 @@ $('tgb-on').addEventListener('change', () => {
   if (tgb.cfg.on) void sendTgBackup(true);
 });
 $('tgb-now').addEventListener('click', () => void sendTgBackup(true));
-$('tgb-setup').addEventListener('click', () => openChan());
+$('tgb-setup').addEventListener('click', () => { openChan(); if (tgConfigured()) requestAnimationFrame(() => document.querySelector('#chan-dialog .tg-target.backup')?.scrollIntoView({ block: 'center' })); });
 $('chan-done').addEventListener('click', () => setTimeout(renderTgbInfo));
 // Seite wird verlassen: Wartendes sofort senden. Zurück oder neu geöffnet: nachholen, falls Telegram einen älteren Stand hat.
 document.addEventListener('visibilitychange', () => {
@@ -8628,15 +8688,16 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
             <li>BotFather antwortet mit einem <b>Token</b> wie <code>123456789:AAH…</code>. Diesen kopieren und unten einfügen.</li>
             <li>Deinen neuen Bot über den Link in der Antwort öffnen und <b>Start</b> tippen bzw. „Hallo“ schreiben – erst dann darf er dir schreiben.</li>
             <li>Hier <b>Chat-ID ermitteln</b> tippen, dann <b>Test senden</b>. Kommt die Testnachricht an, ist alles fertig.</li>
-            <li>Datensicherung getrennt halten (empfohlen): eine eigene Gruppe „Sicherung“ mit dem Bot anlegen oder in einer Gruppe mit Themen ein Thema „Sicherung“, dort eine Nachricht schreiben, <b>Chat-ID ermitteln</b> und beim gefundenen Chat <b>→ Sicherungschat</b> tippen. <b>Test je Nachrichtenart</b> zeigt, was wohin geht.</li>
+            <li>Datensicherung getrennt halten (empfohlen): eine eigene Gruppe „Sicherung“ mit dem Bot anlegen oder in einer Gruppe mit Themen ein Thema „Sicherung“, dort eine Nachricht schreiben, <b>Chat-ID ermitteln</b> und beim gefundenen Chat <b>→ Sicherungschat</b> tippen. Hast du für die Sicherung einen eigenen Bot, dessen Token unter „💾 Sicherungschat“ eintragen, im Bot <b>Start</b> tippen und ebenso zuordnen. <b>Test je Nachrichtenart</b> zeigt, was wohin geht.</li>
           </ol>
         </details>
         <label>Bot-Token<span class="input-wrap"><input id="tg-token" type="password" autocomplete="off" spellcheck="false" placeholder="123456789:AA…"></span></label>
         <fieldset class="tg-targets"><legend>Wohin gehen die Nachrichten?</legend>
           <div class="tg-target"><p><b>🔔 Kursalarm</b> <small>Kurs-Alarme, Stop/Ziel, Tages-Verlustlimit, News-Termine, Gewinn/Verlust, BTC-Puls</small></p>
             <div class="tg-ids"><label>Chat-ID<span class="input-wrap"><input id="tg-chat" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="wird ermittelt"></span></label><label>Thema <small>(optional)</small><span class="input-wrap"><input id="tg-thread" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="–"></span></label></div></div>
-          <div class="tg-target"><p><b>💾 Sicherungschat</b> <small>nur die Datensicherung · leer = wie Kursalarm</small></p>
-            <div class="tg-ids"><label>Chat-ID<span class="input-wrap"><input id="tg-bchat" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="wie Kursalarm"></span></label><label>Thema <small>(optional)</small><span class="input-wrap"><input id="tg-bthread" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="–"></span></label></div></div>
+          <div class="tg-target backup"><p><b>💾 Sicherungschat</b> <small>nur die Datensicherung · leer = wie Kursalarm</small></p>
+            <div class="tg-ids"><label>Chat-ID<span class="input-wrap"><input id="tg-bchat" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="wie Kursalarm"></span></label><label>Thema <small>(optional)</small><span class="input-wrap"><input id="tg-bthread" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="–"></span></label></div>
+            <label>Eigener Bot-Token <small>(nur bei einem eigenen Sicherungs-Bot)</small><span class="input-wrap"><input id="tg-btoken" type="password" autocomplete="off" spellcheck="false" placeholder="leer = derselbe Bot"></span></label></div>
         </fieldset>
         <div class="tg-found" id="tg-found" hidden></div>
         <div class="row"><button type="button" class="button ghost" id="tg-detect">Chat-ID ermitteln</button><button type="button" class="button primary-lite" id="tg-test">Test senden</button><button type="button" class="button ghost" id="tg-testall">Test je Nachrichtenart</button><label class="switch"><input type="checkbox" id="tg-on"> Aktiv</label></div>
