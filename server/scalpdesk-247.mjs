@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Scalp Desk – 24/7-Dienst (Schritt 5.1; BTC-Puls ab 1.1, Gewinn-/Verlust-Alarm ab 1.2)
+// Scalp Desk – 24/7-Dienst (Schritt 5.1; BTC-Puls ab 1.1, Gewinn-/Verlust-Alarm ab 1.2, gesicherte Zustellung ab 1.3)
 // Meldet Kurs-Alarme, Stop-Loss/Take-Profit offener Positionen, wichtige Wirtschaftstermine, den BTC-Puls (ungewöhnlich
 // starke Bitcoin-Bewegung) und den Gewinn-/Verlust-Alarm (Live-Ergebnis aller offenen Positionen erreicht eine Grenze) per
 // Telegram (auf Wunsch zusätzlich Discord) – rund um die Uhr, auch wenn die App überall geschlossen ist.
@@ -7,6 +7,10 @@
 // Gewinn- oder Verlust-Alarm aktiv ist; sonst bleiben Mengen und Einstiege in der App. Ist die App geöffnet, meldet sie ihn
 // selbst (sofort, auch kurze Spitzen) und vermerkt das in der Datei; der Dienst wartet deshalb nach dem Erreichen kurz und
 // liest die Datei vor seiner Meldung neu.
+// Zustellung (ab 1.3): Jede Meldung wartet in einem Ausgang (Zustandsdatei), bis Telegram sie angenommen hat – Fehlschläge
+// werden mit wachsender Pause wiederholt, auch nach einem Neustart. Lehnt Telegram ab oder ist es länger nicht erreichbar,
+// steht „Störung“ in der angehefteten Nachricht; dann meldet die geöffnete App wieder selbst. Die letzte erfolgreiche
+// Zustellung steht dort als eigene Zeile („Zustellung: zuletzt …“).
 //
 // Woher er die Daten hat: Die App legt die aktiven Alarme und Positionen als Datei „scalpdesk-247.json“ in deinen
 // Telegram-Chat und heftet sie oben an. Dieser Dienst liest sie mit demselben Bot (getChat → angepinnte Nachricht →
@@ -21,7 +25,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-export const VERSION = '1.2.0';
+export const VERSION = '1.3.0';
 const E = process.env;
 // Adressen (für Tests über Umgebungsvariablen änderbar)
 export const API = {
@@ -212,6 +216,12 @@ export function statusLine({ ok, now, c, problem }) {
 }
 // darunter je vom Dienst gesendetem Gewinn-/Verlust-Alarm eine Zeile (pnlLine) – so übernimmt die App „ausgelöst“
 export const caption = (c, status, extra = []) => [MARK, appLine(c), status, ...extra].join('\n').slice(0, 1024);
+// 1.3: letzte von Telegram angenommene Meldung (Zeitpunkt und Art) – die App zeigt sie unter „Status prüfen“. Die Zeile steht
+// immer da (auch vor der ersten Meldung): Daran erkennt die App, dass der Dienst die Zustellung prüft.
+export const lastLine = (last, tz) => `Zustellung: ${last?.t ? `zuletzt ${stamp(last.t, tz)}${last.label ? ` · ${last.label}` : ''}` : 'geprüft, noch keine Meldung'}`;
+// Ausgang: Pause bis zum nächsten Versuch nach n Fehlschlägen; älter als einen Tag: verwerfen (mit Protokollzeile)
+export const outDelay = n => [15e3, 30e3, 60e3, 120e3, 300e3][Math.min(Math.max(n, 1), 5) - 1];
+export const OUT_MAX_AGE = 24 * 3600e3;
 
 // ---------- Einstellungen des Servers ----------
 export function readServerConfig(file) {
@@ -233,6 +243,8 @@ export class Watcher {
     // Gewinn-/Verlust-Alarm je Scharfschalten: wait/armed; erreicht und wartet auf die App { t, val }; gemeldet { t, val }
     // (by: 'app' = die App hat gemeldet oder die Meldung übernommen)
     this.pnlSt = {}; this.pnlPend = {}; this.pnlFired = {};
+    // 1.3: Ausgang (noch nicht zugestellte Meldungen), letzte Zustellung, laufender Sendefehler { since, msg, code }
+    this.out = []; this.last = null; this.sendErr = null; this.beatFailAt = 0;
     this.loadState();
   }
   // ---- Zustand (ausgelöste Meldungen, zuletzt gelesene Datei, Kalender) über Neustarts hinweg ----
@@ -241,10 +253,11 @@ export class Watcher {
     try {
       const s = JSON.parse(fs.readFileSync(this.statePath, 'utf8'));
       if (s && s.v === 1) { this.fired = s.fired && typeof s.fired === 'object' ? s.fired : {}; if (s.pulse && typeof s.pulse === 'object') this.pulseLast = { up: s.pulse.up || null, down: s.pulse.down || null };
-        if (s.pnl && typeof s.pnl === 'object') { this.pnlSt = s.pnl.st && typeof s.pnl.st === 'object' ? s.pnl.st : {}; this.pnlFired = s.pnl.fired && typeof s.pnl.fired === 'object' ? s.pnl.fired : {}; this.pnlPend = s.pnl.pend && typeof s.pnl.pend === 'object' ? s.pnl.pend : {}; } if (s.conf?.data) this.conf = { ...s.conf, data: parseConfig({ kind: 'scalpdesk-247', v: 1, ...s.conf.data }) }; if (Array.isArray(s.cal?.events)) { this.cal = s.cal.events; this.calAt = s.cal.at || 0; } }
+        if (s.pnl && typeof s.pnl === 'object') { this.pnlSt = s.pnl.st && typeof s.pnl.st === 'object' ? s.pnl.st : {}; this.pnlFired = s.pnl.fired && typeof s.pnl.fired === 'object' ? s.pnl.fired : {}; this.pnlPend = s.pnl.pend && typeof s.pnl.pend === 'object' ? s.pnl.pend : {}; }
+        if (Array.isArray(s.out)) this.out = s.out.filter(m => m && typeof m.text === 'string' && Number.isFinite(m.at)); if (s.last?.t) this.last = s.last; if (s.sendErr?.since) this.sendErr = s.sendErr; if (s.conf?.data) this.conf = { ...s.conf, data: parseConfig({ kind: 'scalpdesk-247', v: 1, ...s.conf.data }) }; if (Array.isArray(s.cal?.events)) { this.cal = s.cal.events; this.calAt = s.cal.at || 0; } }
     } catch { /* erster Start oder beschädigt: neu anfangen */ }
   }
-  stateJson() { const c = this.conf; return JSON.stringify({ v: 1, fired: this.fired, pulse: this.pulseLast, pnl: { st: this.pnlSt, pend: this.pnlPend, fired: this.pnlFired }, conf: c && { msgId: c.msgId, fileUid: c.fileUid, data: c.data }, cal: this.cal && { at: this.calAt, events: this.cal } }); }
+  stateJson() { const c = this.conf; return JSON.stringify({ v: 1, fired: this.fired, pulse: this.pulseLast, pnl: { st: this.pnlSt, pend: this.pnlPend, fired: this.pnlFired }, out: this.out, last: this.last, sendErr: this.sendErr, conf: c && { msgId: c.msgId, fileUid: c.fileUid, data: c.data }, cal: this.cal && { at: this.calAt, events: this.cal } }); }
   saveStateNow() {
     if (!this.statePath) return;
     try { fs.mkdirSync(path.dirname(this.statePath), { recursive: true }); const tmp = this.statePath + '.tmp'; fs.writeFileSync(tmp, this.stateJson()); fs.renameSync(tmp, this.statePath); }
@@ -267,16 +280,43 @@ export class Watcher {
     if (!r.ok || !d?.ok) throw Object.assign(new Error(`Telegram ${method}: ${d?.description || 'Fehler ' + r.status}`), { code: d?.error_code || r.status, retry: d?.parameters?.retry_after || 0 });
     return d.result;
   }
-  async send(text, tz, opts = {}) {
-    const full = `${text}\n${timeText(this.now(), tz, true)} Uhr · 24/7-Dienst`;
-    for (let i = 0; i < 3; i++) {
-      try { await this.tg('sendMessage', { chat_id: this.chat, text: full.slice(0, 4000), link_preview_options: { is_disabled: true }, ...(opts.silent ? { disable_notification: true } : {}) }); break; }
-      catch (e) { this.log('Telegram:', e.message); if (e.code === 429 && e.retry) await sleep(e.retry * 1000); else if (e.code && e.code !== 429 && e.code < 500) break; else await sleep(2000 * (i + 1)); }
+  // ---- Zustellung (ab 1.3) ----
+  // Meldung in den Ausgang; sie bleibt dort (auch über Neustarts), bis Telegram sie angenommen hat. label: Art für die Zeile
+  // „Zustellung: zuletzt …“, silent: ohne Ton (BTC-Puls nachts)
+  async queue(text, tz, { label = '', silent = false } = {}) {
+    const t = this.now();
+    this.out.push({ id: `${t}-${Math.random().toString(36).slice(2, 7)}`, text, tz, label, silent, at: t, tries: 0, next: 0, err: '', dc: false });
+    this.saveStateNow();
+    await this.deliver();
+  }
+  // Fällige Meldungen senden: angenommen → aus dem Ausgang, als letzte Zustellung merken; abgelehnt oder nicht erreichbar →
+  // später erneut (15 s, 30 s, 1, 2, dann alle 5 Minuten; bei „Too Many Requests“ nach Telegrams Vorgabe). Zeit der Meldung ist
+  // die des Auslösens; kommt sie über 2 Minuten später an, steht das dabei (mit dem Grund: nicht erreichbar, gebremst, abgelehnt).
+  // Discord (falls eingerichtet) einmal, gleich beim ersten Versuch.
+  async deliver() {
+    const t0 = this.now(), old = this.out.filter(m => t0 - m.at > OUT_MAX_AGE);
+    if (old.length) { for (const m of old) this.log(`Meldung verworfen (über 24 Stunden nicht zustellbar): ${m.label || m.text.split('\n')[0]}`); this.out = this.out.filter(m => !old.includes(m)); this.saveState(); }
+    for (const m of [...this.out]) {
+      const t = this.now(); if (m.next > t) continue;
+      const why = !m.code ? 'Telegram war nicht erreichbar' : m.code === 429 ? 'Telegram hatte gebremst' : 'Telegram hatte sie zuerst abgelehnt';
+      const late = t - m.at > 120e3, full = `${m.text}\n${timeText(m.at, m.tz, true)} Uhr · 24/7-Dienst${late ? `\n(verspätet zugestellt um ${timeText(t, m.tz)} Uhr – ${why})` : ''}`;
+      if (this.discord && !m.dc) { m.dc = true; await this.discordPost(full); }
+      try {
+        await this.tg('sendMessage', { chat_id: this.chat, text: full.slice(0, 4000), link_preview_options: { is_disabled: true }, ...(m.silent ? { disable_notification: true } : {}) });
+        this.out = this.out.filter(x => x !== m); this.last = { t, label: m.label };
+        if (this.sendErr && !this.out.some(x => x.tries)) { this.log('Telegram: Zustellung wieder in Ordnung'); this.sendErr = null; }
+        this.next.beat = 0; this.saveState(); // Zeile „Zustellung: zuletzt …“ gleich aktualisieren
+      } catch (e) {
+        m.tries++; m.code = e.code || 0; m.err = this.secret(e.message).slice(0, 160); m.next = t + (e.code === 429 && e.retry ? e.retry * 1000 : outDelay(m.tries));
+        this.sendErr = { since: this.sendErr?.since || t, msg: m.err, code: e.code || 0 };
+        this.note('Telegram', `${m.err} – noch nicht zugestellt: ${m.label || m.text.split('\n')[0]}; neuer Versuch in ${Math.round((m.next - t) / 1000)} s`);
+        this.saveState();
+      }
     }
-    if (this.discord) {
-      try { const r = await fetch(this.discord, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ content: full.slice(0, 1900), allowed_mentions: { parse: [] } }), signal: AbortSignal.timeout(15000) }); if (!r.ok && r.status !== 204) this.log('Discord: Fehler', r.status); }
-      catch (e) { this.log('Discord nicht erreichbar:', e.cause?.code || e.message); }
-    }
+  }
+  async discordPost(text) {
+    try { const r = await fetch(this.discord, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ content: text.slice(0, 1900), allowed_mentions: { parse: [] } }), signal: AbortSignal.timeout(15000) }); if (!r.ok && r.status !== 204) this.log('Discord:', r.status); }
+    catch (e) { this.log('Discord nicht erreichbar:', e.cause?.code || e.message); }
   }
   // ---- angepinnte Datei der App lesen ----
   async syncConfig() {
@@ -321,9 +361,11 @@ export class Watcher {
     if (pnlOn(c)) for (const p of c.pnl.pos) add(p, 'pnl');
     if (!groups.size) { this.feed = { okAt: this.now(), error: '', since: 0 }; return; }
     let bad = ''; const prices = new Map();
-    for (const [k, g] of groups) {
-      let rows;
-      try { rows = await klines(g.source, g.symbol); } catch (e) { bad = `${coin(g.symbol)}: ${e.message}`; continue; }
+    // 1.3: Kerzen gleichzeitig holen (höchstens 4 Abrufe parallel) – ein langsames Kürzel hält die übrigen nicht mehr auf
+    const list = [...groups.entries()], got = await mapLimit(list, 4, ([, g]) => klines(g.source, g.symbol));
+    for (const [i, [k, g]] of list.entries()) {
+      if (!got[i].ok) { bad = `${coin(g.symbol)}: ${got[i].error.message}`; continue; }
+      const rows = got[i].value;
       const t = this.now(), from = this.lastCheck.get(k) ?? t, prev = this.prevCandle.get(k) || null, last = candles(rows).at(-1);
       if (last) prices.set(k, last.c);
       this.lastCheck.set(k, t); if (last) this.prevCandle.set(k, { t: last.t, h: last.h, l: last.l, at: t });
@@ -333,14 +375,14 @@ export class Watcher {
         const key = alarmKey(a); if (this.fired[key]) continue;
         const v = rangeView(rows, from, Math.max(a.armedAt, armed(key)), prev); if (!v) continue;
         const hit = touched(a.price, a.dir === 'below', v);
-        if (hit) { this.fired[key] = t; this.saveState(); this.log(`Alarm ${coin(a.symbol)} ${a.dir === 'above' ? '≥' : '≤'} ${a.price} (Kurs ${v.price})`); await this.send(alarmText(a, v.price, hit), c.tz); }
+        if (hit) { this.fired[key] = t; this.saveState(); this.log(`Alarm ${coin(a.symbol)} ${a.dir === 'above' ? '≥' : '≤'} ${a.price} (Kurs ${v.price})`); await this.queue(alarmText(a, v.price, hit), c.tz, { label: `Kurs-Alarm ${coin(a.symbol)}` }); }
       }
       for (const p of g.positions) for (const type of ['sl', 'tp']) {
         if (!(p[type] > 0)) continue;
         const key = posKey(p, type), v = rangeView(rows, from, Math.max(p.since, armed(key)), prev); if (!v) continue;
         const hit = touched(p[type], (type === 'sl') === (p.side === 'long'), v);
         if (hit) {
-          if (!this.fired[key] && !p.ack[type]) { this.fired[key] = t; this.saveState(); this.log(`${type.toUpperCase()} ${coin(p.symbol)} ${p.side} ${p[type]} (Kurs ${v.price})`); await this.send(posText(p, type, v.price, hit), c.tz); }
+          if (!this.fired[key] && !p.ack[type]) { this.fired[key] = t; this.saveState(); this.log(`${type.toUpperCase()} ${coin(p.symbol)} ${p.side} ${p[type]} (Kurs ${v.price})`); await this.queue(posText(p, type, v.price, hit), c.tz, { label: `${type === 'tp' ? 'Take-Profit' : 'Stop-Loss'} ${coin(p.symbol)}` }); }
         } else if (this.fired[key]) { delete this.fired[key]; this.rearm.set(key, t); this.saveState(); } // Kurs wieder weg: nächste Berührung meldet erneut
       }
     }
@@ -376,7 +418,7 @@ export class Watcher {
       if (!l || this.pnlFired[k]) continue;
       this.pnlFired[k] = { t: p.t, val: p.val }; this.saveState(); this.next.beat = 0; // gleich in der angepinnten Nachricht vermerken
       this.log(`${pnlName(l.k)} gemeldet: Live-Ergebnis ${p.val} USDT`);
-      await this.send(pnlText(l, p.val, c.pnl.pos.length), c.tz);
+      await this.queue(pnlText(l, p.val, c.pnl.pos.length), c.tz, { label: pnlName(l.k) });
     }
     this.saveState();
   }
@@ -391,7 +433,7 @@ export class Watcher {
     for (const cn of c.pulse.watch) { try { const r = candles(await klines('spot', cn + 'USDT', 17)), v = pulseMove(r.filter(x => x.T < t), r.at(-1)?.c, p.w); if (v != null) others.push([cn, v]); } catch { /* Coin ohne Spot-Paar: weglassen */ } }
     const h = Number(parts(t, c.tz, { hour: '2-digit' }).hour);
     this.log(`BTC-Puls ${p.d === 'up' ? '▲' : '▼'} ${p.mv.toFixed(2)} % in ${p.w} min (Schwelle ${p.lim} %)`);
-    await this.send(pulseText(p, price, String(h).padStart(2, '0'), others), c.tz, { silent: h >= 22 || h < 7 });
+    await this.queue(pulseText(p, price, String(h).padStart(2, '0'), others), c.tz, { label: 'BTC-Puls', silent: h >= 22 || h < 7 });
   }
   // ---- Termine ----
   async loadCalendar() {
@@ -405,7 +447,7 @@ export class Watcher {
     for (const g of econDue(this.cal, t, c.econ)) {
       const key = `econ-chan:${g.t}`; if (this.fired[key]) continue;
       this.fired[key] = t; this.saveState(); this.log(`Termin ${new Date(g.t).toISOString()}: ${g.list.map(e => e.title).join(', ')}`);
-      await this.send(econText(g, t, c.tz), c.tz);
+      await this.queue(econText(g, t, c.tz), c.tz, { label: 'Termin-Warnung' });
     }
     for (const [k, at] of Object.entries(this.fired)) if (k.startsWith('econ-chan:') && t - at > 2 * 864e5) delete this.fired[k];
   }
@@ -414,12 +456,17 @@ export class Watcher {
     const c = this.conf?.data, t = this.now();
     if (!c?.on) return { ok: true, problem: '' };
     const stale = this.feed.since && t - this.feed.since > EVERY.feedStale;
-    return stale ? { ok: false, problem: `Kurse nicht abrufbar seit ${timeText(this.feed.since, c.tz)} (${this.feed.error.slice(0, 120)})` } : { ok: true, problem: '' };
+    if (stale) return { ok: false, problem: `Kurse nicht abrufbar seit ${timeText(this.feed.since, c.tz)} (${this.feed.error.slice(0, 120)})` };
+    // 1.3: Meldung nicht zustellbar – sofort, wenn Telegram ablehnt (4xx außer „Too Many Requests“), sonst nach einer Minute.
+    // „Störung“ heißt für die App: Sie meldet wieder selbst.
+    const e = this.sendErr, refused = e && e.code >= 400 && e.code < 500 && e.code !== 429;
+    if (e && this.out.some(m => m.tries) && (refused || t - e.since > 60e3)) return { ok: false, problem: `Telegram-Nachricht nicht zustellbar seit ${timeText(e.since, c.tz)} (${e.msg.slice(0, 100)})` };
+    return { ok: true, problem: '' };
   }
   async heartbeat() {
     if (!this.conf) return;
     const c = this.conf.data, h = this.health(), gv = pnlOn(c) ? c.pnl.lim.map(l => [l, this.pnlFired[pnlKey(l)]]).filter(([, f]) => f && f.by !== 'app').map(([l, f]) => pnlLine(l, f, c.tz)) : [];
-    const text = caption(c, statusLine({ ok: h.ok, now: this.now(), c, problem: h.problem }), gv);
+    const text = caption(c, statusLine({ ok: h.ok, now: this.now(), c, problem: h.problem }), [lastLine(this.last, c.tz), ...gv].filter(Boolean));
     try { await this.tg('editMessageCaption', { chat_id: this.chat, message_id: this.conf.msgId, caption: text }); this.beatOk = h.ok; }
     catch (e) {
       if (/not modified/i.test(e.message)) return;
@@ -433,11 +480,18 @@ export class Watcher {
     if (t >= this.next.config) { this.next.config = t + EVERY.config; await run('Datei der App', () => this.syncConfig()); }
     if (c()?.on && t >= this.next.price) { this.next.price = t + EVERY.price; await run('Kursprüfung', () => this.checkPrices()); if (pulseOn(c())) await run('BTC-Puls', () => this.checkPulse()); } // Abruffehler je Kürzel meldet checkPrices selbst („Kurse“)
     if (c()?.on && Object.keys(this.pnlPend).length) await run('Gewinn/Verlust', () => this.flushPnl()); // erreichte Grenzen nach der Wartezeit
+    if (this.out.length) await run('Zustellung', () => this.deliver()); // noch nicht zugestellte Meldungen
     const needCal = c()?.on && c().ev.news && c().econ.warn;
     if (needCal && t >= this.next.cal) { this.next.cal = t + 5 * 60e3; await run('Kalender', async () => { await this.loadCalendar(); this.next.cal = t + EVERY.cal; }); } // Fehler: in 5 min erneut
     if (needCal && t >= this.next.econ) { this.next.econ = t + EVERY.econ; await run('Termine', () => this.checkEcon()); }
     const h = this.health();
-    if (this.conf && (t >= this.next.beat || (this.beatOk !== null && h.ok !== this.beatOk))) { this.next.beat = t + EVERY.beat; await run('Lebenszeichen', () => this.heartbeat()); }
+    // Zustand geändert (aktiv ↔ Störung): gleich vermerken – misslingt das (Telegram gestört), nach einer Minute erneut, nicht in
+    // jedem Takt; das reguläre Lebenszeichen dann ebenfalls nach spätestens einer Minute
+    const changed = this.beatOk !== null && h.ok !== this.beatOk && t - this.beatFailAt >= Math.min(60e3, EVERY.beat);
+    if (this.conf && (t >= this.next.beat || changed)) {
+      this.next.beat = t + EVERY.beat;
+      await run('Lebenszeichen', async () => { try { await this.heartbeat(); this.beatFailAt = 0; } catch (e) { this.beatFailAt = t; this.next.beat = t + Math.min(60e3, EVERY.beat); throw e; } });
+    }
   }
   async start() {
     const me = await this.tg('getMe').catch(e => { this.log('Bot nicht erreichbar:', e.message); return null; });
@@ -468,6 +522,13 @@ export class Watcher {
   }
 }
 export const sleep = ms => new Promise(r => setTimeout(r, ms));
+// fn für alle Einträge, höchstens n gleichzeitig; Ergebnis je Eintrag { ok, value } oder { ok: false, error } in derselben Reihenfolge
+export async function mapLimit(items, n, fn) {
+  const out = new Array(items.length); let next = 0;
+  const worker = async () => { while (next < items.length) { const i = next++; try { out[i] = { ok: true, value: await fn(items[i], i) }; } catch (error) { out[i] = { ok: false, error }; } } };
+  await Promise.all(Array.from({ length: Math.min(n, items.length) }, worker));
+  return out;
+}
 export async function klines(source, symbol, limit = 3) {
   const bases = source === 'futures' ? [API.fut] : API.spot, p = source === 'futures' ? '/fapi/v1/klines' : '/api/v3/klines';
   let last = new Error('keine Adresse');

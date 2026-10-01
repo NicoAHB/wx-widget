@@ -1590,6 +1590,15 @@ html[data-layout=tablet] .wl-detail{scroll-margin-bottom:calc(84px + env(safe-ar
 .wl-d-verdict[hidden],.wl-d-move[hidden]{display:none}
 /* 3.26.0: Gewinn-/Verlust-Feld – prüft der 24/7-Dienst mit (auch bei geschlossener App)? */
 .pnl-svc{margin:2px 0 0;font-size:.78rem;line-height:1.45;color:var(--muted)}.pnl-svc.ok{color:var(--up-text)}.pnl-svc[hidden]{display:none}
+/* 3.27.0: Vorschau vor dem Abgleich (Datei, QR-Code) und „Weitere Trades anzeigen“ */
+.sync-preview{margin:8px 0 4px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2);font-size:.8125rem;line-height:1.45;color:var(--text)}
+.sync-preview[hidden]{display:none}.sync-preview .sp-head{margin:0 0 6px;color:var(--text-2)}
+.sync-preview .sp-list{margin:0;padding-left:18px}.sync-preview .sp-list>li{margin:3px 0;overflow-wrap:anywhere}
+.sync-preview .sp-ex{margin:2px 0 4px;padding-left:16px;color:var(--muted)}
+.sync-preview .sp-restore{display:flex;gap:8px;align-items:center;margin:8px 0 0;min-height:40px}
+.sync-preview .sp-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.sync-preview .sp-actions .button{min-height:40px}
+.hist-more{display:block;margin:10px auto 0;min-height:40px}.hist-more[hidden]{display:none}
+@media (pointer:coarse){.sync-preview .sp-actions .button,.sync-preview .sp-restore,.hist-more{min-height:44px}}
 .chart-panel>.notice{margin:12px 20px 0}
 html{scroll-padding-top:calc(var(--lb-h,56px) + 16px)}
 /* nur als eigene Spalten (ab 1400 px) begrenzt; darunter stehen beide untereinander in der gemeinsamen Seitenspalte und
@@ -2203,7 +2212,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Alle Werte liegen zusätzlich im Arbeitsspeicher und sind dadurch synchron lesbar. Schreiben geht sofort in den
 // localStorage und gebündelt in die IndexedDB; beim Start gewinnt die zuletzt vollständig geschriebene Kopie.
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
-const APP_VERSION = '3.26.0', docEl = document.documentElement;
+const APP_VERSION = '3.27.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -2322,14 +2331,26 @@ async function klinesFor(symbol, interval, limit, signal) {
 }
 let spotBackupUntil = 0; // nach einem Netzwerkfehler 5 Minuten direkt die Ersatzadresse verwenden
 function watchItems() { return [...state.positions, ...state.alarms.filter(a => !a.triggeredAt)]; }
-async function positionPrices(positions, signal) {
-  const out = {}, spot = [...new Set(positions.filter(p => p.source !== 'futures').map(p => p.symbol))], fut = [...new Set(positions.filter(p => p.source === 'futures').map(p => p.symbol))];
-  if (spot.length) {
-    const d = await spotGet('/api/v3/ticker/price', spot.length === 1 ? { symbol: spot[0] } : { symbols: JSON.stringify(spot) }, signal);
-    for (const r of Array.isArray(d) ? d : [d]) { const v = Number(r?.price); if (r && spot.includes(r.symbol) && v > 0) out[r.symbol] = v; }
-  }
-  for (const s of fut) { const r = await api.get(FUTURES, '/fapi/v1/ticker/price', { symbol: s }, signal); const v = Number(r?.price); if (r?.symbol === s && v > 0) out[s] = v; }
+// 3.27.0: Kurse für Positionen und Alarme – Spot in einer Anfrage, Futures parallel (höchstens 4 gleichzeitig) mit Fehlern je
+// Kürzel: Ein langsames oder fehlerhaftes Kürzel hält die anderen nicht mehr auf und nimmt ihnen nicht den Kurs. Erst wenn gar
+// kein Kurs kam, gilt der Abruf als gescheitert.
+async function mapLimit(items, n, fn) {
+  const out = new Array(items.length); let next = 0;
+  const worker = async () => { while (next < items.length) { const i = next++; try { out[i] = { ok: true, value: await fn(items[i], i) }; } catch (error) { out[i] = { ok: false, error }; } } };
+  await Promise.all(Array.from({ length: Math.min(n, items.length) }, worker));
   return out;
+}
+async function positionPrices(positions, signal) {
+  const out = {}, errors = {}, spot = [...new Set(positions.filter(p => p.source !== 'futures').map(p => p.symbol))], fut = [...new Set(positions.filter(p => p.source === 'futures').map(p => p.symbol))];
+  const spotJob = !spot.length ? null : spotGet('/api/v3/ticker/price', spot.length === 1 ? { symbol: spot[0] } : { symbols: JSON.stringify(spot) }, signal)
+    .then(d => { for (const r of Array.isArray(d) ? d : [d]) { const v = Number(r?.price); if (r && spot.includes(r.symbol) && v > 0) out[r.symbol] = v; } }, e => { for (const s of spot) errors[s] = e; });
+  const got = await mapLimit(fut, 4, s => api.get(FUTURES, '/fapi/v1/ticker/price', { symbol: s }, signal));
+  await spotJob;
+  got.forEach((r, i) => { const s = fut[i], v = Number(r.value?.price); if (!r.ok) errors[s] = r.error; else if (r.value?.symbol === s && v > 0) out[s] = v; });
+  if (signal?.aborted) throw new DOMException('Abgebrochen', 'AbortError');
+  const failed = Object.values(errors);
+  if (failed.length && !Object.keys(out).length) throw failed[0];
+  return Object.defineProperty(out, 'errors', { value: Object.fromEntries(Object.entries(errors).map(([s, e]) => [s, e?.message || String(e)])) });
 }
 async function spotGet(path, params, signal) {
   const primary = Date.now() < spotBackupUntil ? SPOT_FALLBACK : SPOT, secondary = primary === SPOT ? SPOT_FALLBACK : SPOT;
@@ -2396,7 +2417,7 @@ async function refresh() {
     for (const p of restItems) {
       if (livePriceFresh(p.symbol)) continue;
       const v = posPrices.value[p.symbol];
-      state.prices[p.symbol] = v ? { price: v, at: now, error: null } : { ...(state.prices[p.symbol] || { price: null, at: 0 }), error: 'Kein Kurs erhalten.' };
+      state.prices[p.symbol] = v ? { price: v, at: now, error: null } : { ...(state.prices[p.symbol] || { price: null, at: 0 }), error: posPrices.value.errors?.[p.symbol] || 'Kein Kurs erhalten.' };
       if (v) noteSeen(p.symbol, now);
     }
   } else if (posPrices.status === 'rejected') for (const p of restItems) if (!livePriceFresh(p.symbol)) state.prices[p.symbol] = { ...(state.prices[p.symbol] || { price: null, at: 0 }), error: posPrices.reason.message };
@@ -2956,7 +2977,20 @@ function yearOptions() {
   if (sel.dataset.opts !== want) { sel.dataset.opts = want; sel.replaceChildren(...want.split(',').map(v => { const o = el('option', '', v === 'all' ? 'Alle Jahre' : v); o.value = v; return o; })); }
   sel.value = String(state.year);
 }
-let histStructure = '';
+let histStructure = '', histRows = new Map();
+const HIST_PAGE = 200;
+// 3.27.0: eine Zeile des Verlaufs (vorher direkt in renderHistory) – unveränderte Zeilen werden wiederverwendet
+function tradeRow(t) {
+  const r = el('div', 'trade-row'), ui = state.histUi[t.id]; r.dataset.trade = t.id;
+  r.append(el('time', '', localTime(t.closedAt)), el('span', '', `${coin(t.symbol)} ${t.side === 'long' ? 'Long' : 'Short'} ${levText(t.leverage)}× ${t.mode === 'cross' ? 'Cross' : 'Isoliert'} · ${qtyText(t.qty)} ${coin(t.symbol)} · ${priceText(t.entry)} → ${priceText(t.exit)}${t.pnlSource === 'exchange' ? ' · G/V laut Börse' : ''}${t.setup ? ` · Setup: ${t.setup}` : ''}`));
+  const v = el('strong', t.pnl > 0 ? 'positive' : t.pnl < 0 ? 'negative' : '', `${signed(t.pnl)} USDT`); v.append(el('small', '', `${t.fx > 0 ? `(${signed(t.pnl / t.fx)} €)` : '(€ n. v.)'} · ${signed(t.pnl / t.margin * 100)} %`)); r.append(v);
+  const tools = el('span', 'tools'), nb = btn('x', '✎', 'trade-note'), x = btn('x', '×', 'trade-delete');
+  nb.setAttribute('aria-label', `Notiz zum Trade ${coin(t.symbol)} vom ${localTime(t.closedAt)} bearbeiten`); x.setAttribute('aria-label', `Trade ${coin(t.symbol)} vom ${localTime(t.closedAt)} löschen`); tools.append(nb, x); r.append(tools);
+  if (t.note && ui?.mode !== 'note') r.append(el('p', 'trade-note', t.note));
+  if (ui === 'delete') { const c = el('div', 'confirm'); c.append(el('span', '', 'Trade endgültig löschen?'), btn('button danger-btn', 'Ja', 'trade-confirm'), btn('button ghost', 'Nein', 'trade-cancel')); r.append(c); }
+  if (ui?.mode === 'note') { const c = el('div', 'confirm'), ta = el('textarea', 'note-box'); ta.dataset.note = t.id; ta.maxLength = 1000; ta.value = ui.text ?? t.note ?? ''; ta.placeholder = 'Notiz zum Trade'; const sel = el('select'); sel.dataset.setupFor = t.id; sel.setAttribute('aria-label', 'Setup'); [['', 'ohne Setup'], ...[...new Set([...state.setups, ...(t.setup ? [t.setup] : [])])].map(s => [s, s])].forEach(([v, l]) => { const o = el('option', '', l); o.value = v; sel.append(o); }); sel.value = ui.setup ?? t.setup ?? ''; c.append(sel, ta, btn('button primary-lite', 'Notiz speichern', 'note-save'), btn('button ghost', 'Abbrechen', 'trade-cancel')); r.append(c); }
+  return r;
+}
 function renderHistory() {
   yearOptions();
   const trades = state.trades.filter(t => inYear(t.closedAt, state.year)), s = historySummary(trades, fxNow());
@@ -2973,21 +3007,26 @@ function renderHistory() {
     box('Netto', s.n ? `${signed(s.net)} USDT` : '—', s.n ? eur(s.eurNet) : '', s.net > 0 ? 'positive' : s.net < 0 ? 'negative' : ''));
   const sorted = trades.slice().sort((a, b) => b.closedAt - a.closedAt);
   const uiMode = u => (typeof u === 'object' && u ? u.mode : u) || '';
-  const key = state.year + '|' + sorted.map(t => `${t.id}:${t.pnl}:${t.note || ''}:${t.setup || ''}:${uiMode(state.histUi[t.id])}`).join('|');
+  // 3.27.0: Nur die neuesten Trades zeichnen (je 200, „Weitere … anzeigen“) und unveränderte Zeilen wiederverwenden. Vorher baute
+  // jede Änderung (z. B. eine Notiz) alle Zeilen neu – gemessen bei 5.000 Trades rund 2 Sekunden, bei 10.000 rund 4.
+  const limit = Math.max(HIST_PAGE, state.histLimit || HIST_PAGE), shown = sorted.length > limit ? sorted.slice(0, limit) : sorted;
+  const keys = shown.map(t => JSON.stringify([t.id, t.closedAt, t.symbol, t.side, t.leverage, t.mode, t.qty, t.entry, t.exit, t.pnlSource, t.setup || '', t.pnl, t.fx, t.margin, t.note || '', uiMode(state.histUi[t.id])]));
+  const key = state.year + '|' + limit + '|' + keys.join('|');
   if (key !== histStructure) {
     histStructure = key;
-    $('history-list').replaceChildren(...sorted.map(t => {
-      const r = el('div', 'trade-row'), ui = state.histUi[t.id]; r.dataset.trade = t.id;
-      r.append(el('time', '', localTime(t.closedAt)), el('span', '', `${coin(t.symbol)} ${t.side === 'long' ? 'Long' : 'Short'} ${levText(t.leverage)}× ${t.mode === 'cross' ? 'Cross' : 'Isoliert'} · ${qtyText(t.qty)} ${coin(t.symbol)} · ${priceText(t.entry)} → ${priceText(t.exit)}${t.pnlSource === 'exchange' ? ' · G/V laut Börse' : ''}${t.setup ? ` · Setup: ${t.setup}` : ''}`));
-      const v = el('strong', t.pnl > 0 ? 'positive' : t.pnl < 0 ? 'negative' : '', `${signed(t.pnl)} USDT`); v.append(el('small', '', `${t.fx > 0 ? `(${signed(t.pnl / t.fx)} €)` : '(€ n. v.)'} · ${signed(t.pnl / t.margin * 100)} %`)); r.append(v);
-      const tools = el('span', 'tools'), nb = btn('x', '✎', 'trade-note'), x = btn('x', '×', 'trade-delete');
-      nb.setAttribute('aria-label', `Notiz zum Trade ${coin(t.symbol)} vom ${localTime(t.closedAt)} bearbeiten`); x.setAttribute('aria-label', `Trade ${coin(t.symbol)} vom ${localTime(t.closedAt)} löschen`); tools.append(nb, x); r.append(tools);
-      if (t.note && ui?.mode !== 'note') r.append(el('p', 'trade-note', t.note));
-      if (ui === 'delete') { const c = el('div', 'confirm'); c.append(el('span', '', 'Trade endgültig löschen?'), btn('button danger-btn', 'Ja', 'trade-confirm'), btn('button ghost', 'Nein', 'trade-cancel')); r.append(c); }
-      if (ui?.mode === 'note') { const c = el('div', 'confirm'), ta = el('textarea', 'note-box'); ta.dataset.note = t.id; ta.maxLength = 1000; ta.value = ui.text ?? t.note ?? ''; ta.placeholder = 'Notiz zum Trade'; const sel = el('select'); sel.dataset.setupFor = t.id; sel.setAttribute('aria-label', 'Setup'); [['', 'ohne Setup'], ...[...new Set([...state.setups, ...(t.setup ? [t.setup] : [])])].map(s => [s, s])].forEach(([v, l]) => { const o = el('option', '', l); o.value = v; sel.append(o); }); sel.value = ui.setup ?? t.setup ?? ''; c.append(sel, ta, btn('button primary-lite', 'Notiz speichern', 'note-save'), btn('button ghost', 'Abbrechen', 'trade-cancel')); r.append(c); }
-      return r;
-    }));
+    const list = $('history-list'), rows = new Map(), nodes = shown.map((t, i) => {
+      let c = histRows.get(t.id); if (!c || c.key !== keys[i]) c = { key: keys[i], node: tradeRow(t) };
+      rows.set(t.id, c); return c.node;
+    });
+    histRows = rows;
+    // nur verschieben, was nicht schon an seiner Stelle steht – eine offene Notiz behält so ihren Fokus
+    let ref = list.firstChild;
+    for (const n of nodes) { if (n === ref) ref = ref.nextSibling; else list.insertBefore(n, ref); }
+    while (ref) { const nx = ref.nextSibling; ref.remove(); ref = nx; }
   }
+  const more = sorted.length - shown.length;
+  $('history-more').hidden = more <= 0;
+  if (more > 0) put('history-more', `Weitere ${number(Math.min(HIST_PAGE, more), 0)} anzeigen (noch ${number(more, 0)} ältere)`);
   renderAnalysis();
   renderMoney();
 }
@@ -3048,7 +3087,25 @@ function persist() {
 function formError(msg) { showNotice('pos-form-error', msg || null); }
 // ---- Erfassungsformular ----
 function formSymbol() { try { return normalizeSymbol($('pos-symbol').value); } catch { return null; } }
-function knownPrice(sym) { return sym && sym === state.symbol && !state.marketError && !(state.fromCache && !chartFeedFresh()) && currentPrice() ? currentPrice() : state.prices[sym]?.price ?? null; }
+// 3.27.0: maxAge – nur ein Kurs, der höchstens so alt ist (Richtung eines Kurs-Alarms, „Aktuellen Kurs einsetzen“): der Chart-Kurs
+// bei laufendem Live-Strom oder kurz nach dem letzten Abruf, sonst ein gespeicherter Kurs mit passendem Abrufzeitpunkt. Ohne maxAge
+// wie bisher (Anzeige): auch ein älterer gespeicherter Kurs. Vorher konnte ein alter Kurs die Richtung eines Alarms umdrehen.
+const ALARM_FRESH = 30e3;
+function knownPrice(sym, maxAge = Infinity) {
+  if (!sym) return null;
+  if (maxAge === Infinity) return sym === state.symbol && !state.marketError && !(state.fromCache && !chartFeedFresh()) && currentPrice() ? currentPrice() : state.prices[sym]?.price ?? null;
+  if (sym === state.symbol && state.loadedSymbol === sym && !state.marketError && currentPrice() && (chartFeedFresh() || (!state.fromCache && Date.now() - (state.marketAt || 0) <= maxAge))) return currentPrice();
+  const p = state.prices[sym];
+  return p?.price > 0 && !p.error && Date.now() - (p.at || 0) <= maxAge ? p.price : null;
+}
+// aktueller Kurs direkt von Binance (Spot oder Futures wie beim Alarm); null, wenn Binance nicht erreichbar ist
+async function freshPrice(sym, source) {
+  try {
+    const r = source === 'futures' ? await api.get(FUTURES, '/fapi/v1/ticker/price', { symbol: sym }) : await spotGet('/api/v3/ticker/price', { symbol: sym });
+    const v = Number(r?.price); if (!(v > 0)) return null;
+    state.prices[sym] = { price: v, at: Date.now(), error: null }; return v;
+  } catch { return null; }
+}
 function setToggle(attr, val) { document.querySelectorAll(`[data-${attr}]`).forEach(b => { const a = b.dataset[attr === 'pos-side' ? 'posSide' : 'posMode'] === val; b.classList.toggle('active', a); b.setAttribute('aria-pressed', String(a)); }); }
 function syncSize() {
   const f = state.posForm, entry = parseNum($('pos-entry').value), lev = parseNum($('pos-lev').value), ok = entry > 0 && lev >= 1;
@@ -3057,7 +3114,7 @@ function syncSize() {
   to.value = ok && v > 0 ? plain(f.sizeBy === 'qty' ? +(v * entry / lev).toFixed(4) : +(v * lev / entry).toPrecision(8)) : '';
 }
 function updateEntryNow() {
-  const sym = formSymbol(), p = knownPrice(sym), b = $('pos-entry-now');
+  const sym = formSymbol(), p = knownPrice(sym, 60e3), b = $('pos-entry-now'); // 3.27.0: nur ein frischer Kurs
   b.hidden = !p; if (p) b.textContent = `Aktuellen Kurs einsetzen: ${priceText(p)}`;
 }
 function renderPosChips() {
@@ -3171,7 +3228,8 @@ function renderBackupInfo() {
   renderStorageInfo(); renderZzpInfo();
 }
 function backupStatus(msg) { put('history-status', msg); }
-function backupPayload() { return { app: 'scalp-desk', version: 6, settings: { dayLimit: state.dayLimit, risk: state.risk }, exportedAt: Date.now(), positions: state.positions, history: state.trades, movements: state.movements, alarms: state.alarms, setups: state.setups, watchlist: state.watch, taxRate: state.taxRate, patterns: zzpExport(), pnlAlarms: store.get('scalpdesk.pnlalarm.v1', null) }; }
+// 3.27.0 (Version 7): mit Änderungszeitpunkten der Einstellungen und Listen sowie den Löschungen der letzten 400 Tage
+function backupPayload() { return { app: 'scalp-desk', version: 7, settings: { dayLimit: state.dayLimit, risk: state.risk, taxRate: state.taxRate, at: stampsOf(SETTINGS_AT_KEY) }, exportedAt: Date.now(), positions: state.positions, history: state.trades, movements: state.movements, alarms: state.alarms, setups: state.setups, watchlist: state.watch, listsAt: stampsOf(LISTS_AT_KEY), deleted: tombs(), taxRate: state.taxRate, patterns: zzpExport(), pnlAlarms: store.get('scalpdesk.pnlalarm.v1', null) }; }
 function markBackedUp(kind, encrypted = false) {
   store.set(CHANGES_KEY, 0);
   store.set(BACKUP_META_KEY, { at: Date.now(), kind, encrypted, positions: state.positions.length, trades: state.trades.length, movements: state.movements.length });
@@ -3209,49 +3267,165 @@ async function shareBackup() {
     else { shareReady = null; b0.textContent = 'Teilen / in Dateien sichern'; backupStatus(`Teilen nicht möglich: ${e?.message || e}. Alternativ „Jetzt an Telegram senden“ oder „Backup herunterladen“.`); }
   }
 }
-// Einspielen als Abgleich: Fehlendes kommt dazu, neuere Fassungen ersetzen ältere, auf dem anderen Gerät geschlossene Positionen werden hier geschlossen.
-function applyBackup(data) {
+// ---------- 3.27.0: Abgleich mit Zeitstempeln, Löschungen, Einstellungen und Vorschau ----------
+// Jeder Eintrag zählt mit seinem letzten Änderungszeitpunkt (recStamp). Gelöschte Einträge merkt sich die App mit Zeitpunkt
+// (DELETED_KEY, 400 Tage) und gibt sie im Backup mit – so löscht der Abgleich sie auch auf dem anderen Gerät. Fehlt ein Eintrag
+// nur in der Datei, gilt er nie als gelöscht (z. B. QR-Code nur mit offenen Positionen). Eine Löschung gewinnt nur gegen eine
+// ältere oder gleich alte Fassung, eine später geänderte Fassung bleibt. Einstellungen und Listen (Vorauswahl, Setups) tragen
+// ihren Änderungszeitpunkt: Die neuere Fassung gewinnt. Dateien bis 3.26 (ohne Zeitpunkte) ergänzen nur, was hier fehlt.
+// Positionen und Trades teilen sich die Kennung (Schließen macht aus der Position einen Trade): Grabstein „pt:“.
+const DELETED_KEY = 'scalpdesk.deleted.v1', SETTINGS_AT_KEY = 'scalpdesk.settingsat.v1', LISTS_AT_KEY = 'scalpdesk.listsat.v1', TOMB_KEEP = 400 * 864e5;
+const recStamp = x => Math.max(0, ...['updatedAt', 'closedAt', 'openedAt', 'armedAt', 'createdAt', 'triggeredAt'].map(k => Number(x?.[k]) || 0));
+function cleanTombs(o, now = Date.now()) {
+  const out = {};
+  if (o && typeof o === 'object' && !Array.isArray(o)) for (const [k, t] of Object.entries(o)) if (/^(pt|m|a):.{1,80}$/.test(k) && Number.isFinite(t) && t > now - TOMB_KEEP && t < now + 864e5) out[k] = t;
+  return out;
+}
+const tombs = () => cleanTombs(store.get(DELETED_KEY));
+function tomb(ns, id) { const d = tombs(); d[`${ns}:${id}`] = Date.now(); if (store.set(DELETED_KEY, d)) broadcastData([DELETED_KEY]); }
+function stampsOf(k) { const v = store.get(k); return v && typeof v === 'object' && !Array.isArray(v) ? v : {}; }
+function touchStamp(k, f) { if (store.set(k, { ...stampsOf(k), [f]: Date.now() })) broadcastData([k]); }
+const PLAN_KINDS = [['trade', 'pt', 'history'], ['pos', 'pt', 'positions'], ['mv', 'm', 'movements'], ['alarm', 'a', 'alarms']];
+const planList = kind => kind === 'trade' ? state.trades : kind === 'pos' ? state.positions : kind === 'mv' ? state.movements : state.alarms;
+const planLoad = kind => kind === 'trade' ? loadTrade : kind === 'pos' ? loadPosition : kind === 'mv' ? loadMovement : loadAlarm;
+// Was ein Abgleich mit dieser Datei ändern würde – ohne etwas zu ändern (Vorschau)
+function planBackup(data) {
   if (data?.app !== 'scalp-desk' || !Array.isArray(data.positions)) throw new Error('Datei ist kein gültiges Backup dieses Dashboards.');
-  const stamp = x => Math.max(Number(x.updatedAt) || 0, Number(x.openedAt) || 0, Number(x.armedAt) || 0, Number(x.createdAt) || 0, Number(x.triggeredAt) || 0);
-  const n = { added: 0, updated: 0, closed: 0, same: 0, trades: 0, mv: 0, alarms: 0 };
-  for (const t of (Array.isArray(data.history) ? data.history : []).map(loadTrade).filter(Boolean)) {
-    if (state.trades.some(q => q.id === t.id)) { n.same++; continue; }
-    state.trades.push(t); n.trades++;
-    const i = state.positions.findIndex(p => p.id === t.id); if (i >= 0) { state.positions.splice(i, 1); n.closed++; }
+  const mine = tombs(), theirs = cleanTombs(data.deleted), p = { data, add: [], upd: [], del: [], blocked: [], closed: [], same: 0, settings: [], lists: [], theirs };
+  for (const [kind, ns, field] of PLAN_KINDS) {
+    const here = planList(kind), byId = new Map(here.map(x => [x.id, x])), seen = new Set();
+    const incoming = (Array.isArray(data[field]) ? data[field] : []).map(planLoad(kind)).filter(x => x && !seen.has(x.id) && seen.add(x.id));
+    for (const r of incoming) {
+      const s = recStamp(r), cur = byId.get(r.id);
+      if (kind === 'pos' && state.trades.some(t => t.id === r.id)) { p.same++; continue; } // hier schon geschlossen
+      if (cur) { if (s > recStamp(cur)) p.upd.push({ kind, ns, rec: r, cur }); else p.same++; continue; }
+      if (mine[`${ns}:${r.id}`] >= s) { p.blocked.push({ kind, ns, rec: r }); continue; } // hier gelöscht – bleibt gelöscht
+      const open = kind === 'trade' && state.positions.find(x => x.id === r.id);
+      if (open) p.closed.push({ kind, ns, rec: r, cur: open }); else p.add.push({ kind, ns, rec: r });
+    }
+    // auf dem anderen Gerät gelöscht (und dort nicht wieder neuer angelegt)
+    for (const cur of here) { const t = theirs[`${ns}:${cur.id}`]; if (t >= recStamp(cur) && !incoming.some(r => r.id === cur.id && recStamp(r) > t)) p.del.push({ kind, ns, cur }); }
   }
-  for (const p of data.positions.map(loadPosition).filter(Boolean)) {
-    if (state.trades.some(t => t.id === p.id)) { n.same++; continue; }
-    const i = state.positions.findIndex(q => q.id === p.id);
-    if (i < 0) { state.positions.push(p); n.added++; } else if (stamp(p) > stamp(state.positions[i])) { state.positions[i] = p; n.updated++; } else n.same++;
+  // Einstellungen: neuerer Zeitpunkt gewinnt; ohne Zeitpunkte nur übernehmen, was hier noch nicht eingestellt ist
+  const S = data.settings && typeof data.settings === 'object' ? data.settings : {}, sAt = S.at && typeof S.at === 'object' ? S.at : {}, myS = stampsOf(SETTINGS_AT_KEY);
+  const risk = S.risk && S.risk.riskPct > 0 && S.risk.riskPct <= 100 && S.risk.feePct >= 0 && S.risk.feePct < 5 ? { riskPct: Number(S.risk.riskPct), feePct: Number(S.risk.feePct) } : undefined;
+  const lim = 'dayLimit' in S ? (S.dayLimit > 0 ? Number(S.dayLimit) : null) : undefined, taxIn = 'taxRate' in S ? S.taxRate : data.taxRate;
+  const tax = taxIn === undefined ? undefined : taxIn > 0 && taxIn < 100 ? Number(taxIn) : null;
+  for (const [f, name, cur, inc, unset, fmt] of [
+    ['risk', 'Risiko-Rechner', state.risk, risk, store.get(RISK_KEY) == null, v => `Risiko ${plain(v.riskPct)} % · Gebühr ${plain(v.feePct)} %`],
+    ['dayLimit', 'Tages-Verlustlimit', state.dayLimit, lim, !state.dayLimit, v => v ? `${number(v)} USDT` : 'aus'],
+    ['taxRate', 'Rücklage-Satz', state.taxRate, tax, !state.taxRate, v => v ? `${plain(v)} %` : 'aus']]) {
+    if (inc === undefined) continue;
+    const ia = Number(sAt[f]) || 0, ma = Number(myS[f]) || 0;
+    if ((ia > ma || (!ia && !ma && unset && inc !== null)) && JSON.stringify(inc) !== JSON.stringify(cur ?? null)) p.settings.push({ f, name, from: fmt(cur), to: fmt(inc), value: inc, at: ia });
   }
-  for (const m of (Array.isArray(data.movements) ? data.movements : []).map(loadMovement).filter(Boolean)) { if (state.movements.some(q => q.id === m.id)) n.same++; else { state.movements.push(m); n.mv++; } }
-  for (const a of (Array.isArray(data.alarms) ? data.alarms : []).map(loadAlarm).filter(Boolean)) {
-    const i = state.alarms.findIndex(q => q.id === a.id);
-    if (i < 0) { state.alarms.push(a); n.alarms++; } else if (stamp(a) > stamp(state.alarms[i])) { state.alarms[i] = a; n.alarms++; } else n.same++;
+  // Listen: neuere Fassung ersetzt; ohne Zeitpunkte (bis 3.26 oder nie geändert) zusammenführen wie bisher
+  const L = data.listsAt && typeof data.listsAt === 'object' ? data.listsAt : {}, myL = stampsOf(LISTS_AT_KEY);
+  const inWatch = Array.isArray(data.watchlist) ? [...new Set(data.watchlist.filter(s => typeof s === 'string' && /^[A-Z0-9]{2,20}$/.test(s)))] : null;
+  const inSetups = Array.isArray(data.setups) ? [...new Set(data.setups.map(cleanSetup).filter(Boolean))] : null;
+  for (const [f, name, cur, inc] of [['watch', 'Vorauswahl', state.watch, inWatch], ['setups', 'Setups', state.setups, inSetups]]) {
+    if (!inc) continue;
+    const ia = Number(L[f]) || 0, ma = Number(myL[f]) || 0, next = ia > ma ? inc : !ia && !ma ? [...cur, ...inc.filter(s => !cur.includes(s))] : null;
+    if (next && JSON.stringify(next) !== JSON.stringify(cur)) p.lists.push({ f, name, list: next, at: ia, plus: next.filter(s => !cur.includes(s)), minus: cur.filter(s => !next.includes(s)) });
   }
-  const watch = Array.isArray(data.watchlist) ? data.watchlist.filter(s => typeof s === 'string' && /^[A-Z0-9]{2,20}$/.test(s) && !state.watch.includes(s)) : [];
-  const setups = Array.isArray(data.setups) ? data.setups.map(cleanSetup).filter(s => s && !state.setups.includes(s)) : [];
-  state.watch.push(...watch); state.setups.push(...new Set(setups));
-  if (!state.dayLimit && data.settings?.dayLimit > 0) { state.dayLimit = data.settings.dayLimit; store.set(DAYLIMIT_KEY, state.dayLimit); }
-  if (!state.taxRate && data.taxRate > 0 && data.taxRate < 100) { state.taxRate = data.taxRate; store.set(TAX_KEY, data.taxRate); }
-  zzpImport(data.patterns); // gelernte Muster: still übernehmen, ohne Meldung
-  const pnlNew = pnlAdopt(data.pnlAlarms); // Gewinn-/Verlust-Alarm (3.24.0): die neuere Fassung gewinnt
+  return p;
+}
+const planChanges = p => p.add.length + p.upd.length + p.del.length + p.closed.length + p.settings.length + p.lists.length;
+// Abgleich ausführen. Neu geplant, weil sich seit der Vorschau hier etwas geändert haben kann (z. B. ein ausgelöster Alarm).
+function commitPlan(p0, restore = false) {
+  const p = planBackup(p0.data), T = tombs(), key = x => `${x.ns}:${(x.rec || x.cur).id}`, n = { pos: 0, posUpd: 0, trades: 0, tradesUpd: 0, mv: 0, alarms: 0 };
+  const drop = (kind, id) => { if (kind === 'trade') state.trades = state.trades.filter(x => x.id !== id); else if (kind === 'pos') state.positions = state.positions.filter(x => x.id !== id); else if (kind === 'mv') state.movements = state.movements.filter(x => x.id !== id); else state.alarms = state.alarms.filter(x => x.id !== id); };
+  const count = (x, upd) => { if (x.kind === 'pos') n[upd ? 'posUpd' : 'pos']++; else if (x.kind === 'trade') n[upd ? 'tradesUpd' : 'trades']++; else if (x.kind === 'mv') n.mv++; else n.alarms++; };
+  for (const x of p.add) { planList(x.kind).push(x.rec); delete T[key(x)]; count(x, false); }
+  for (const x of p.upd) { const a = planList(x.kind), i = a.findIndex(q => q.id === x.rec.id); if (i >= 0) { a[i] = x.rec; count(x, true); } }
+  for (const x of p.closed) { drop('pos', x.cur.id); state.trades.push(x.rec); }
+  for (const x of p.del) drop(x.kind, x.cur.id);
+  if (restore) for (const x of p.blocked) { planList(x.kind).push(x.rec); delete T[key(x)]; }
+  for (const [k, t] of Object.entries(p.theirs)) if (!(T[k] >= t)) T[k] = t;
+  if (store.set(DELETED_KEY, cleanTombs(T))) broadcastData([DELETED_KEY]);
+  const myS = stampsOf(SETTINGS_AT_KEY), myL = stampsOf(LISTS_AT_KEY);
+  for (const s of p.settings) {
+    if (s.f === 'risk') { state.risk = { ...s.value }; store.set(RISK_KEY, { ...state.risk }); }
+    else if (s.f === 'dayLimit') { state.dayLimit = s.value; if (s.value) store.set(DAYLIMIT_KEY, s.value); else store.del(DAYLIMIT_KEY); }
+    else { state.taxRate = s.value; if (s.value) store.set(TAX_KEY, s.value); else store.del(TAX_KEY); }
+    if (s.at) myS[s.f] = s.at;
+  }
+  for (const l of p.lists) { if (l.f === 'watch') state.watch = [...l.list]; else state.setups = [...l.list]; if (l.at) myL[l.f] = l.at; }
+  if (p.settings.length && store.set(SETTINGS_AT_KEY, myS)) broadcastData([SETTINGS_AT_KEY]);
+  if (p.lists.length && store.set(LISTS_AT_KEY, myL)) broadcastData([LISTS_AT_KEY]);
+  zzpImport(p.data.patterns); // gelernte Muster: still übernehmen, ohne Meldung
+  const pnlNew = pnlAdopt(p.data.pnlAlarms); // Gewinn-/Verlust-Alarm (3.24.0): die neuere Fassung gewinnt
   posStructure = ''; histStructure = '';
   persist(); saveWatch();
-  render(); if ((n.added || n.updated) && !state.busy && !state.paused) void refresh();
-  const parts = [];
-  if (n.added) parts.push(`${n.added} ${n.added === 1 ? 'Position' : 'Positionen'} neu`);
-  if (n.updated) parts.push(`${n.updated} ${n.updated === 1 ? 'Position' : 'Positionen'} aktualisiert`);
-  if (n.closed) parts.push(`${n.closed} als geschlossen übernommen`);
-  if (n.trades) parts.push(`${n.trades} ${n.trades === 1 ? 'Trade' : 'Trades'}`);
+  render(); if ((n.pos || n.posUpd) && !state.busy && !state.paused) void refresh();
+  const pl = (k, a, b) => `${k} ${k === 1 ? a : b}`, parts = [];
+  if (n.pos) parts.push(`${pl(n.pos, 'Position', 'Positionen')} neu`);
+  if (n.posUpd) parts.push(`${pl(n.posUpd, 'Position', 'Positionen')} aktualisiert`);
+  if (p.closed.length) parts.push(`${p.closed.length} als geschlossen übernommen`);
+  if (n.trades) parts.push(pl(n.trades, 'Trade', 'Trades'));
+  if (n.tradesUpd) parts.push(`${pl(n.tradesUpd, 'Trade', 'Trades')} geändert`);
   if (n.mv) parts.push(`${n.mv} Geldbewegungen`);
   if (n.alarms) parts.push(`${n.alarms} Kurs-Alarme`);
+  if (p.del.length) parts.push(`${p.del.length} gelöscht wie auf dem anderen Gerät`);
+  if (restore && p.blocked.length) parts.push(`${p.blocked.length} wiederhergestellt`);
   if (pnlNew) parts.push('Gewinn-/Verlust-Alarm');
-  if (watch.length) parts.push(`${watch.length} Kürzel in der Vorauswahl`);
-  return parts.length ? `Übernommen: ${parts.join(', ')}${n.same ? ` · ${n.same} Einträge waren schon aktuell` : ''}.` : `Nichts Neues – alle ${n.same} Einträge waren schon aktuell.`;
+  for (const l of p.lists) parts.push(l.minus.length ? `${l.name} wie auf dem anderen Gerät` : l.f === 'watch' ? `${l.plus.length} Kürzel in der Vorauswahl` : pl(l.plus.length, 'Setup', 'Setups'));
+  if (p.settings.length) parts.push(`Einstellungen: ${p.settings.map(s => s.name).join(', ')}`);
+  const kept = p.blocked.length && !restore ? ` · ${pl(p.blocked.length, 'hier gelöschter Eintrag bleibt', 'hier gelöschte Einträge bleiben')} gelöscht` : '';
+  return parts.length ? `Übernommen: ${parts.join(', ')}${p.same ? ` · ${p.same} Einträge waren schon aktuell` : ''}${kept}.` : `Nichts Neues – alle ${p.same} Einträge waren schon aktuell${kept}.`;
+}
+// ---- Vorschau ----
+const KIND_N = { pos: ['Position', 'Positionen'], trade: ['Trade', 'Trades'], mv: ['Geldbewegung', 'Geldbewegungen'], alarm: ['Kurs-Alarm', 'Kurs-Alarme'] };
+function kindsText(items) { const c = {}; for (const x of items) c[x.kind] = (c[x.kind] || 0) + 1; return Object.keys(KIND_N).filter(k => c[k]).map(k => `${c[k]} ${KIND_N[k][c[k] === 1 ? 0 : 1]}`).join(', '); }
+function recText(kind, r) {
+  const d = ms => new Date(ms).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }), side = r.side === 'short' ? 'Short' : 'Long';
+  if (kind === 'trade') return `Trade ${coin(r.symbol)} ${side} vom ${d(r.closedAt)} (${signed(r.pnl)} USDT)`;
+  if (kind === 'pos') return `Position ${coin(r.symbol)} ${side}, Einstieg ${priceText(r.entry)}`;
+  if (kind === 'mv') return `${MV_TYPES[r.type] || 'Geldbewegung'} ${number(r.amount)} ${r.currency || ''} vom ${new Date(r.date).toLocaleDateString('de-DE')}`.replace(/ {2}/g, ' ');
+  return `Kurs-Alarm ${coin(r.symbol)} ${r.dir === 'below' ? 'auf/unter' : 'auf/über'} ${priceText(r.price)}${r.triggeredAt ? ' (ausgelöst)' : ''}`;
+}
+const DIFF_F = [['note', 'Notiz'], ['setup', 'Setup'], ['entry', 'Einstieg'], ['qty', 'Menge'], ['leverage', 'Hebel'], ['margin', 'Margin'], ['mode', 'Modus'], ['sl', 'Stop-Loss'], ['tp', 'Take-Profit'], ['exit', 'Ausstieg'], ['fees', 'Gebühren'], ['pnl', 'Ergebnis'], ['price', 'Preis'], ['dir', 'Richtung'], ['triggeredAt', 'ausgelöst'], ['armedAt', 'wieder scharf']];
+function diffText(a, b) { const f = DIFF_F.filter(([k]) => JSON.stringify(a[k] ?? null) !== JSON.stringify(b[k] ?? null)).map(x => x[1]); return f.length ? f.join(', ') : 'neuere Fassung'; }
+function planLines(p) {
+  const ex = (items, f) => items.slice(0, 3).map(f).concat(items.length > 3 ? [`… und ${items.length - 3} weitere`] : []), out = [];
+  if (p.add.length) out.push(['Neu', kindsText(p.add)]);
+  if (p.upd.length) out.push(['Geändert', kindsText(p.upd), ex(p.upd, x => `${recText(x.kind, x.cur)}: ${diffText(x.cur, x.rec)}`)]);
+  if (p.closed.length) out.push(['Auf dem anderen Gerät geschlossen', p.closed.length === 1 ? '1 Position – wird hier zum Trade' : `${p.closed.length} Positionen – werden hier zu Trades`, ex(p.closed, x => recText('pos', x.cur))]);
+  if (p.del.length) out.push(['Auf dem anderen Gerät gelöscht', `${kindsText(p.del)} – ${p.del.length === 1 ? 'wird' : 'werden'} hier gelöscht`, ex(p.del, x => recText(x.kind, x.cur))]);
+  if (p.blocked.length) out.push(['Hier gelöscht', `${kindsText(p.blocked)} – noch in der Datei, ${p.blocked.length === 1 ? 'bleibt' : 'bleiben'} hier gelöscht`, ex(p.blocked, x => recText(x.kind, x.rec))]);
+  for (const s of p.settings) out.push([s.name, `${s.from} → ${s.to}`]);
+  for (const l of p.lists) out.push([l.name, [l.plus.length ? `+ ${l.plus.join(', ')}` : '', l.minus.length ? `− ${l.minus.join(', ')}` : ''].filter(Boolean).join(' · ')]);
+  if (p.same) out.push(['Schon aktuell', `${p.same} ${p.same === 1 ? 'Eintrag' : 'Einträge'}`]);
+  return out;
+}
+// Vorschau in box zeigen; „Übernehmen“ oder „Abbrechen“ ruft done(Meldung | null)
+function showPlan(id, p, done) {
+  const box = $(id), list = el('ul', 'sp-list');
+  for (const [b, t, exs] of planLines(p)) {
+    const li = el('li'); li.append(el('b', '', `${b}: `), document.createTextNode(t));
+    if (exs?.length) { const sub = el('ul', 'sp-ex'); for (const e of exs) sub.append(el('li', '', e)); li.append(sub); }
+    list.append(li);
+  }
+  const kids = [el('p', 'sp-head', 'Vorschau – noch ist nichts geändert. Übernommen wird, was hier fehlt oder neuer ist; auf dem anderen Gerät Gelöschtes wird hier ebenfalls gelöscht.'), list];
+  let cb = null;
+  if (p.blocked.length) { const lab = el('label', 'check sp-restore'); cb = el('input'); cb.type = 'checkbox'; lab.append(cb, document.createTextNode(` Hier gelöschte Einträge wiederherstellen (${p.blocked.length})`)); kids.push(lab); }
+  const ok = btn('button primary-lite', 'Übernehmen'), no = btn('button ghost', 'Abbrechen'), act = el('div', 'sp-actions');
+  act.append(ok, no); kids.push(act);
+  box.replaceChildren(...kids); box.hidden = false;
+  const close = () => { box.hidden = true; box.replaceChildren(); };
+  ok.addEventListener('click', () => { let msg; try { msg = commitPlan(p, !!cb?.checked); } catch (e) { msg = e?.message || String(e); } close(); done(msg); });
+  no.addEventListener('click', () => { close(); done(null); });
+  focusSoft(ok);
+}
+// Datei prüfen: nichts zu entscheiden → gleich übernehmen (still: Muster, Gewinn-/Verlust-Alarm), sonst Vorschau
+function reviewBackup(data) {
+  const p = planBackup(data);
+  if (!planChanges(p) && !p.blocked.length) { backupStatus(commitPlan(p)); return; }
+  backupStatus('Vorschau unten prüfen, dann „Übernehmen“.');
+  showPlan('sync-preview', p, msg => backupStatus(msg ?? 'Abgleich abgebrochen – nichts geändert.'));
 }
 async function loadBackupFile(file) {
-  pendingEncrypted = null; $('decrypt-row').hidden = true;
+  pendingEncrypted = null; $('decrypt-row').hidden = true; $('sync-preview').hidden = true; $('sync-preview').replaceChildren();
   if (!file) return;
   if (file.size > 5e6) { backupStatus('Datei ist zu groß für ein Backup.'); return; }
   let data; try { data = JSON.parse(await file.text()); } catch { backupStatus('Datei ist kein gültiges Backup (kein JSON).'); return; }
@@ -3260,12 +3434,12 @@ async function loadBackupFile(file) {
     if (!globalThis.crypto?.subtle) { backupStatus('Zum Entschlüsseln muss die Seite über https geöffnet sein.'); return; }
     pendingEncrypted = data; $('decrypt-row').hidden = false; backupStatus(''); $('backup-pass').focus(); return;
   }
-  try { backupStatus(applyBackup(data)); } catch (err) { backupStatus(err.message); }
+  try { reviewBackup(data); } catch (err) { backupStatus(err.message); }
 }
 async function decryptPending() {
   if (!pendingEncrypted) return;
   $('backup-decrypt').disabled = true; backupStatus('Entschlüssele …');
-  try { backupStatus(applyBackup(await decryptBackup(pendingEncrypted, $('backup-pass').value))); pendingEncrypted = null; $('decrypt-row').hidden = true; }
+  try { const data = await decryptBackup(pendingEncrypted, $('backup-pass').value); pendingEncrypted = null; $('decrypt-row').hidden = true; reviewBackup(data); }
   catch (err) { backupStatus(err.message); }
   finally { $('backup-decrypt').disabled = false; }
 }
@@ -3410,10 +3584,12 @@ function renderAlarms() {
   }));
 }
 function alarmPreview() {
-  const sym = (() => { try { return normalizeSymbol($('al-symbol').value); } catch { return null; } })(), target = parseNum($('al-price').value), cur = sym ? knownPrice(sym) : null;
+  const sym = (() => { try { return normalizeSymbol($('al-symbol').value); } catch { return null; } })(), target = parseNum($('al-price').value), cur = sym ? knownPrice(sym, ALARM_FRESH) : null;
+  // 3.27.0: Richtung nur aus einem frischen Kurs. Ein älterer steht mit Uhrzeit da; beim Speichern holt die App den aktuellen.
+  const old = !cur && sym ? state.prices[sym] : null, oldTxt = old?.price > 0 && old.at ? `zuletzt ${priceText(old.price)} um ${new Date(old.at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}` : '';
   if (!state.alDirManual && target > 0 && cur) { const d = alarmDirection(target, cur); if (d) { state.alDir = d; setAlDir(d); } }
-  put('al-preview', !sym ? 'Kürzel eingeben, z. B. XRP.' : !(target > 0) ? (cur ? `Aktueller Kurs ${priceText(cur)} USDT.` : 'Preis eingeben.')
-    : `Meldet sich, sobald ${coin(sym)} ${state.alDir === 'above' ? 'auf oder über' : 'auf oder unter'} ${priceText(target)} USDT liegt${cur ? ` (aktuell ${priceText(cur)}, ${number(Math.abs((target / cur - 1) * 100))} % entfernt)` : ''}.`);
+  put('al-preview', !sym ? 'Kürzel eingeben, z. B. XRP.' : !(target > 0) ? (cur ? `Aktueller Kurs ${priceText(cur)} USDT.` : oldTxt ? `Kein aktueller Kurs (${oldTxt}) – beim Speichern holt die App ihn.` : 'Preis eingeben.')
+    : `Meldet sich, sobald ${coin(sym)} ${state.alDir === 'above' ? 'auf oder über' : 'auf oder unter'} ${priceText(target)} USDT liegt${cur ? ` (aktuell ${priceText(cur)}, ${number(Math.abs((target / cur - 1) * 100))} % entfernt)` : oldTxt ? ` (${oldTxt}; die Richtung prüft die App beim Speichern mit dem aktuellen Kurs)` : ''}.`);
 }
 function setAlDir(d) { document.querySelectorAll('[data-al-dir]').forEach(b => { const a = b.dataset.alDir === d; b.classList.toggle('active', a); b.setAttribute('aria-pressed', String(a)); }); }
 function openAlarmForm(open, sym = null, price = null) {
@@ -3436,7 +3612,10 @@ async function saveAlarm(e) {
     }
     if (price > 0) state.prices[sym] = { price, at: Date.now(), error: null };
   }
-  const cur = knownPrice(sym) || price;
+  // 3.27.0: Richtung nur aus einem frischen Kurs (höchstens 30 s alt), sonst den aktuellen holen. Gibt es keinen, gilt die gewählte
+  // Richtung; ohne Wahl speichert die App nicht. Vorher konnte ein alter Kurs die Richtung umdrehen.
+  const cur = knownPrice(sym, ALARM_FRESH) || (price > 0 ? price : null) || await freshPrice(sym, source);
+  if (!cur && !state.alDirManual) { $('al-save').disabled = false; showNotice('al-error', `Kein aktueller Kurs für ${coin(sym)} – die Richtung lässt sich nicht sicher bestimmen. Bitte oben „steigt auf/über“ oder „fällt auf/unter“ antippen und erneut speichern.`); return; }
   const dir = !state.alDirManual && cur ? alarmDirection(target, cur) || state.alDir : state.alDir;
   const a = { id: newId(), symbol: sym, dir, price: target, note: $('al-note').value.trim().slice(0, 200), source, createdAt: Date.now(), triggeredAt: null, triggerPrice: null };
   $('al-save').disabled = false;
@@ -3768,11 +3947,11 @@ document.querySelectorAll('[data-interval]').forEach(b=>b.addEventListener('clic
 document.querySelectorAll('[data-side]').forEach(b=>b.addEventListener('click',()=>{state.side=b.dataset.side;document.querySelectorAll('[data-side]').forEach(el=>{const active=el.dataset.side===state.side;el.classList.toggle('active',active);el.setAttribute('aria-pressed',String(active));});renderCalculator();}));
 for(const id of ['balance','stake','leverage','move','mmr']) $(id).addEventListener('input',renderCalculator);
 for(const id of ['balance','stake','leverage','mmr','risk-entry','risk-stop']) $(id).addEventListener('input',renderRisk);
-$('risk-pct').addEventListener('input',()=>{const v=parseNum($('risk-pct').value);if(v>0&&v<=100){state.risk.riskPct=v;store.set(RISK_KEY,{...state.risk});}renderRisk();});
-$('risk-fee').addEventListener('input',()=>{const v=parseNum($('risk-fee').value);if(v>=0&&v<5){state.risk.feePct=v;store.set(RISK_KEY,{...state.risk});}renderRisk();});
+$('risk-pct').addEventListener('input',()=>{const v=parseNum($('risk-pct').value);if(v>0&&v<=100){state.risk.riskPct=v;if(store.set(RISK_KEY,{...state.risk}))touchStamp(SETTINGS_AT_KEY,'risk');}renderRisk();});
+$('risk-fee').addEventListener('input',()=>{const v=parseNum($('risk-fee').value);if(v>=0&&v<5){state.risk.feePct=v;if(store.set(RISK_KEY,{...state.risk}))touchStamp(SETTINGS_AT_KEY,'risk');}renderRisk();});
 $('risk-now').addEventListener('click',()=>{const p=currentPrice();if(p){$('risk-entry').value=plain(p);renderRisk();}});
 $('risk-to-pos').addEventListener('click',()=>{if(!riskResult)return;openPosForm(true);state.posForm.side=riskResult.side;setToggle('pos-side',riskResult.side);$('pos-lev').value=plain(value('leverage'));syncLevUi('pos-lev');$('pos-entry').value=$('risk-entry').value;$('pos-qty').value=plain(+riskResult.qty.toPrecision(6));state.posForm.sizeBy='qty';$('pos-sl').value=$('risk-stop').value;syncSize();posFormPreview();});
-$('day-limit').addEventListener('input',()=>{const v=parseNum($('day-limit').value);state.dayLimit=v>0?v:null;state.dayLimit?store.set(DAYLIMIT_KEY,state.dayLimit):store.del(DAYLIMIT_KEY);renderPositions();});
+$('day-limit').addEventListener('input',()=>{const v=parseNum($('day-limit').value),was=state.dayLimit;state.dayLimit=v>0?v:null;state.dayLimit?store.set(DAYLIMIT_KEY,state.dayLimit):store.del(DAYLIMIT_KEY);if(state.dayLimit!==was)touchStamp(SETTINGS_AT_KEY,'dayLimit');renderPositions();});
 $('monthly-csv').addEventListener('click',()=>{const sum=monthlySummary(state.trades,state.movements,fxNow(),state.year);if(!sum.rows.length)return;download(`monatsuebersicht-${state.year}.csv`,monthlyCsv(sum),'text/csv;charset=utf-8');});
 $('mmr').addEventListener('input',()=>{renderPositions();posFormPreview();});
 $('fx').addEventListener('input',()=>{renderCalculator();renderMarket();renderPositions();});
@@ -3781,10 +3960,10 @@ $('signal-rows').addEventListener('click',e=>{const row=e.target.closest('[data-
 $('watchlist').addEventListener('click',e=>{
   const t=e.target.closest('button'); if(!t) return;
   if(t.classList.contains('wl-tile')){const c=t.dataset.watch;wldToggle(c);if(wldSel===c&&state.symbol!==c+'USDT'){try{void setMarket(c);}catch(error){showNotice('market-error',error.message);}}return;}
-  if(t.dataset.addwatch){if(!state.watch.includes(t.dataset.addwatch))state.watch.push(t.dataset.addwatch);saveWatch();renderWatchlist();return;}
-  if(t.dataset.unwatch){state.watch=state.watch.filter(s=>s!==t.dataset.unwatch);saveWatch();renderWatchlist();return;}
+  if(t.dataset.addwatch){if(!state.watch.includes(t.dataset.addwatch)){state.watch.push(t.dataset.addwatch);touchStamp(LISTS_AT_KEY,'watch');}saveWatch();renderWatchlist();return;}
+  if(t.dataset.unwatch){state.watch=state.watch.filter(s=>s!==t.dataset.unwatch);touchStamp(LISTS_AT_KEY,'watch');saveWatch();renderWatchlist();return;}
   if(t.dataset.watchedit){state.watchEdit=!state.watchEdit;renderWatchlist();return;}
-  if(t.dataset.watchreset){state.watch=[...DEFAULT_WATCH];saveWatch();renderWatchlist();}
+  if(t.dataset.watchreset){state.watch=[...DEFAULT_WATCH];touchStamp(LISTS_AT_KEY,'watch');saveWatch();renderWatchlist();}
 });
 document.querySelectorAll('[data-overlay]').forEach(b=>{b.setAttribute('aria-pressed',String(state.overlays[b.dataset.overlay]));b.addEventListener('click',()=>{if(b.getAttribute('aria-disabled')==='true')return;const k=b.dataset.overlay;state.overlays[k]=!state.overlays[k];b.setAttribute('aria-pressed',String(state.overlays[k]));store.set(OVERLAY_KEY,{...state.overlays});renderMarket();});});
 $('pos-add-toggle').addEventListener('click',()=>openPosForm($('pos-form').hidden));
@@ -3797,7 +3976,7 @@ $('pos-form').addEventListener('input',e=>{
   formError(null);posFormPreview();
 });
 $('pos-chips').addEventListener('click',e=>{const b=e.target.closest('[data-poschip]');if(!b)return;$('pos-symbol').value=b.dataset.poschip;renderPosChips();updateEntryNow();posFormPreview();focusSoft($('pos-qty'));});
-$('pos-entry-now').addEventListener('click',()=>{const p=knownPrice(formSymbol());if(p){$('pos-entry').value=plain(p);syncSize();posFormPreview();}});
+$('pos-entry-now').addEventListener('click',()=>{const p=knownPrice(formSymbol(),60e3);if(p){$('pos-entry').value=plain(p);syncSize();posFormPreview();}else updateEntryNow();});
 document.querySelectorAll('[data-pos-side]').forEach(b=>b.addEventListener('click',()=>{state.posForm.side=b.dataset.posSide;setToggle('pos-side',state.posForm.side);posFormPreview();}));
 document.querySelectorAll('[data-pos-mode]').forEach(b=>b.addEventListener('click',()=>{state.posForm.mode=b.dataset.posMode;setToggle('pos-mode',state.posForm.mode);posFormPreview();}));
 $('pos-list').addEventListener('input',e=>{const card=e.target.closest('.pos-card'),k=e.target.dataset.input;if(!card||!k)return;state.posUi[card.dataset.id]={...state.posUi[card.dataset.id],[k]:e.target.value};const pos=state.positions.find(p=>p.id===card.dataset.id);if(pos)updateCard(card,pos);});
@@ -3810,7 +3989,7 @@ $('pos-list').addEventListener('click',e=>{
   if(act==='realize'){const pr=state.prices[pos.symbol]?.price;state.posUi[id]={mode:'realize',exit:pr?plain(pr):'',fees:'',override:'',note:pos.note||''};}
   else if(act==='delete')state.posUi[id]={mode:'delete'};
   else if(act==='cancel')delete state.posUi[id];
-  else if(act==='confirm-delete'){state.positions=state.positions.filter(p=>p.id!==id);delete state.posUi[id];persist();renderMarket();}
+  else if(act==='confirm-delete'){state.positions=state.positions.filter(p=>p.id!==id);delete state.posUi[id];tomb('pt',id);persist();renderMarket();}
   else if(act==='save-realize'){
     const r=realizeResult(pos,state.posUi[id]||{});
     if(r.error){const pv=card.querySelector('[data-f="realize-preview"]');if(pv)pv.textContent=r.error;return;}
@@ -3824,36 +4003,37 @@ $('history-list').addEventListener('click',e=>{
   const b=e.target.closest('button[data-action]'),row=e.target.closest('[data-trade]');if(!b||!row)return;
   const id=row.dataset.trade,act=b.dataset.action;
   if(act==='trade-delete')state.histUi[id]='delete';
-  else if(act==='trade-note'){const t=state.trades.find(x=>x.id===id);state.histUi[id]={mode:'note',text:t?.note||'',setup:t?.setup||''};renderPositions();row.parentElement.querySelector(`[data-note="${id}"]`)?.focus();return;}
-  else if(act==='note-save'){const t=state.trades.find(x=>x.id===id);if(t){t.note=String(state.histUi[id]?.text||'').trim().slice(0,1000);if(state.histUi[id]&&'setup' in state.histUi[id])t.setup=state.histUi[id].setup||null;persist();}delete state.histUi[id];}
+  else if(act==='trade-note'){const t=state.trades.find(x=>x.id===id);state.histUi[id]={mode:'note',text:t?.note||'',setup:t?.setup||''};renderPositions();$('history-list').querySelector(`[data-note="${id}"]`)?.focus();return;}
+  else if(act==='note-save'){const t=state.trades.find(x=>x.id===id);if(t){const was=JSON.stringify([t.note||'',t.setup||null]);t.note=String(state.histUi[id]?.text||'').trim().slice(0,1000);if(state.histUi[id]&&'setup' in state.histUi[id])t.setup=state.histUi[id].setup||null;if(JSON.stringify([t.note||'',t.setup||null])!==was)t.updatedAt=Date.now();persist();}delete state.histUi[id];}
   else if(act==='trade-cancel')delete state.histUi[id];
-  else if(act==='trade-confirm'){state.trades=state.trades.filter(t=>t.id!==id);delete state.histUi[id];persist();}
+  else if(act==='trade-confirm'){state.trades=state.trades.filter(t=>t.id!==id);delete state.histUi[id];tomb('pt',id);persist();}
   renderPositions();
 });
 $('history-list').addEventListener('input',e=>{const id=e.target.dataset.note;if(id&&state.histUi[id]?.mode==='note')state.histUi[id].text=e.target.value;});
-$('year-filter').addEventListener('change',e=>{state.year=e.target.value==='all'?'all':Number(e.target.value);renderHistory();});
+$('year-filter').addEventListener('change',e=>{state.year=e.target.value==='all'?'all':Number(e.target.value);state.histLimit=HIST_PAGE;renderHistory();});
+$('history-more').addEventListener('click',()=>{state.histLimit=(state.histLimit||HIST_PAGE)+HIST_PAGE;renderHistory();});
 $('money-form').addEventListener('submit',addMovement);
 $('balance-to-calc').addEventListener('click',()=>{const v=Number($('balance-to-calc').dataset.value);if(v>0){$('balance').value=String(v);$('balance').dispatchEvent(new Event('input',{bubbles:true}));goTo('calc-sec');}});
 $('mv-date').value=localDate();
 document.querySelectorAll('[data-mv-cur]').forEach(b=>b.addEventListener('click',()=>{state.mvCur=b.dataset.mvCur;document.querySelectorAll('[data-mv-cur]').forEach(x=>{const a=x.dataset.mvCur===state.mvCur;x.classList.toggle('active',a);x.setAttribute('aria-pressed',String(a));});}));
-$('tax-rate').addEventListener('input',()=>{const v=parseNum($('tax-rate').value);state.taxRate=v>0&&v<100?v:null;state.taxRate?store.set(TAX_KEY,state.taxRate):store.del(TAX_KEY);renderMoney();});
+$('tax-rate').addEventListener('input',()=>{const v=parseNum($('tax-rate').value),was=state.taxRate;state.taxRate=v>0&&v<100?v:null;state.taxRate?store.set(TAX_KEY,state.taxRate):store.del(TAX_KEY);if(state.taxRate!==was)touchStamp(SETTINGS_AT_KEY,'taxRate');renderMoney();});
 $('money-list').addEventListener('click',e=>{
   const b=e.target.closest('button[data-action]'),row=e.target.closest('[data-mv]');if(!b||!row)return;
   const id=row.dataset.mv,act=b.dataset.action;
   if(act==='mv-delete')state.mvUi[id]='delete';
   else if(act==='mv-cancel')delete state.mvUi[id];
-  else if(act==='mv-confirm'){state.movements=state.movements.filter(m=>m.id!==id);delete state.mvUi[id];persist();}
+  else if(act==='mv-confirm'){state.movements=state.movements.filter(m=>m.id!==id);delete state.mvUi[id];tomb('m',id);persist();}
   renderHistory();
 });
 $('money-csv').addEventListener('click',()=>{const list=state.movements.slice().sort((a,b)=>a.date-b.date);if(!list.length)return;download(`geldbewegungen-${new Date().toISOString().slice(0,10)}.csv`,movementsCsv(list),'text/csv;charset=utf-8');});
 $('setup-chips').addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b)return;const f=state.posForm;
   if(b.dataset.setup){f.setup=f.setup===b.dataset.setup?null:b.dataset.setup;renderSetupChips();posFormPreview();return;}
-  if(b.dataset.setupDel){state.setups=state.setups.filter(s=>s!==b.dataset.setupDel);if(f.setup===b.dataset.setupDel)f.setup=null;persist();renderSetupChips();return;}
+  if(b.dataset.setupDel){state.setups=state.setups.filter(s=>s!==b.dataset.setupDel);if(f.setup===b.dataset.setupDel)f.setup=null;touchStamp(LISTS_AT_KEY,'setups');persist();renderSetupChips();return;}
   if(b.dataset.setupNew){$('setup-add').hidden=false;$('setup-new').value='';$('setup-new').focus();return;}
   if(b.dataset.setupEditToggle){state.setupEdit=!state.setupEdit;renderSetupChips();}
 });
-const addSetup=()=>{const s=cleanSetup($('setup-new').value);if(!s)return;if(!state.setups.includes(s))state.setups.push(s);state.posForm.setup=s;persist();$('setup-add').hidden=true;renderSetupChips();posFormPreview();};
+const addSetup=()=>{const s=cleanSetup($('setup-new').value);if(!s)return;if(!state.setups.includes(s)){state.setups.push(s);touchStamp(LISTS_AT_KEY,'setups');}state.posForm.setup=s;persist();$('setup-add').hidden=true;renderSetupChips();posFormPreview();};
 $('setup-add-ok').addEventListener('click',addSetup);
 $('setup-new').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addSetup();}});
 $('setup-add-cancel').addEventListener('click',()=>{$('setup-add').hidden=true;});
@@ -3867,7 +4047,7 @@ document.querySelectorAll('[data-al-dir]').forEach(b=>b.addEventListener('click'
 $('alarm-list').addEventListener('click',e=>{
   const b=e.target.closest('button[data-action]'),row=e.target.closest('[data-alarm]');if(!b||!row)return;
   const a=state.alarms.find(x=>x.id===row.dataset.alarm);if(!a)return;
-  if(b.dataset.action==='al-delete'){state.alarms=state.alarms.filter(x=>x.id!==a.id);$('toasts').querySelector(`.toast[data-key="al:${a.id}"]`)?.remove();}
+  if(b.dataset.action==='al-delete'){state.alarms=state.alarms.filter(x=>x.id!==a.id);tomb('a',a.id);$('toasts').querySelector(`.toast[data-key="al:${a.id}"]`)?.remove();}
   else if(b.dataset.action==='al-rearm'){const cur=state.prices[a.symbol]?.price;if(cur&&alarmHit(a,cur)){a.dir=a.dir==='above'?'below':'above';}a.triggeredAt=null;a.triggerPrice=null;a.touch=null;a.missed=false;a.armedAt=Date.now();$('toasts').querySelector(`.toast[data-key="al:${a.id}"]`)?.remove();}
   persist();renderAlarms();renderMarket();
 });
@@ -4049,7 +4229,7 @@ function liveFeed(port) {
         // Antwort nicht lesbar: Netzfehler oder fehlende CORS-Freigabe. Einmal ohne Antwort senden (Zustellung dann unbestätigt).
         if (!noCors[m.kind]) { try { await req(m, 'no-cors'); noCors[m.kind] = true; return { ok: true, unconfirmed: true }; } catch {} }
       }
-      let wait = [2000, 5000, 15000, 30000][attempt - 1] || 30000;
+      let wait = [2000, 5000, 15000, 30000, 60000, 120000, 120000][attempt - 1] || 120000; // 3.27.0: gut 6 Minuten statt knapp einer
       if (res) {
         let d = null; try { d = await res.json(); } catch {}
         if (res.ok && (!d || d.ok !== false)) return { ok: true };
@@ -4057,7 +4237,7 @@ function liveFeed(port) {
         if (res.status === 429) wait = Math.min(120, Number((d && ((d.parameters && d.parameters.retry_after) || d.retry_after)) || res.headers.get('retry-after')) || 5) * 1000 + 300;
         else if (res.status < 500) return { ok: false, code: res.status, msg: err };
       }
-      if (m.test || attempt > 4) return { ok: false, code: res ? res.status : 0, msg: err };
+      if (m.test || attempt > 7) return { ok: false, code: res ? res.status : 0, msg: err };
       await sleep(wait);
     }
   }
@@ -4548,7 +4728,7 @@ addEventListener('beforeunload', e => {
 });
 // ---------- Abgleich zwischen offenen Tabs ----------
 const bc = (() => { try { return new BroadcastChannel('scalpdesk'); } catch { return null; } })();
-const SYNC_KEYS = [POS_KEY, HIST_KEY, MONEY_KEY, ALARM_KEY, SETUP_KEY, WATCH_KEY, CHANGES_KEY, 'scalpdesk.channels.v1', ZZP_KEY, 'scalpdesk.s247.v1', 'scalpdesk.pnlalarm.v1'];
+const SYNC_KEYS = [POS_KEY, HIST_KEY, MONEY_KEY, ALARM_KEY, SETUP_KEY, WATCH_KEY, CHANGES_KEY, 'scalpdesk.channels.v1', ZZP_KEY, 'scalpdesk.s247.v1', 'scalpdesk.pnlalarm.v1', 'scalpdesk.deleted.v1', 'scalpdesk.settingsat.v1', 'scalpdesk.listsat.v1'];
 function broadcastData(keys) { if (!bc || !keys.length) return; try { bc.postMessage({ t: 'data', from: TAB_ID, items: keys.map(k => [k, store.get(k)]) }); } catch {} }
 function adoptData(items) {
   const pat = items.find(([k]) => k === ZZP_KEY); if (pat) { store.adopt(ZZP_KEY, pat[1]); zzpMem = null; items = items.filter(([k]) => k !== ZZP_KEY); if (!items.length) return; }
@@ -4651,7 +4831,7 @@ function onScanText(text) {
 }
 async function startScan() {
   const session = ++qr.session;
-  qr.got = new Map(); qr.total = 0; qr.id = null; qr.bytes = null; $('qr-unlock').hidden = true; put('qr-apply', 'Entschlüsseln & übernehmen'); renderScan();
+  qr.got = new Map(); qr.total = 0; qr.id = null; qr.bytes = null; $('qr-unlock').hidden = true; put('qr-apply', 'Entschlüsseln & prüfen'); $('qr-preview').hidden = true; $('qr-preview').replaceChildren(); renderScan();
   put('qr-scan-status', 'Kamera wird gestartet …');
   try { await qrDetector(); } catch (e) { put('qr-scan-status', ''); return showNotice('qr-scan-error', e.message); }
   if (session !== qr.session) return;
@@ -4680,7 +4860,13 @@ async function scanPhoto(file) {
 async function applyQr() {
   if (!qr.bytes) { $('qr-dialog').close(); return; }
   $('qr-apply').disabled = true; showNotice('qr-scan-error', null); put('qr-scan-status', 'Entschlüssele …');
-  try { const msg = applyBackup(await unpackSync(qr.bytes, $('qr-scan-pass').value)); qr.bytes = null; $('qr-unlock').hidden = false; put('qr-scan-status', msg); put('qr-apply', 'Schließen'); backupStatus(msg); }
+  try {
+    const p = planBackup(await unpackSync(qr.bytes, $('qr-scan-pass').value)); qr.bytes = null; put('qr-apply', 'Schließen');
+    // 3.27.0: erst die Vorschau (neu, geändert, gelöscht), dann übernehmen – wie beim Einspielen einer Datei
+    const finish = msg => { put('qr-scan-status', msg); backupStatus(msg); $('qr-unlock').hidden = false; };
+    if (!planChanges(p) && !p.blocked.length) finish(commitPlan(p));
+    else { $('qr-unlock').hidden = true; put('qr-scan-status', 'Vorschau prüfen, dann „Übernehmen“.'); showPlan('qr-preview', p, msg => finish(msg ?? 'Abgleich abgebrochen – nichts geändert.')); }
+  }
   catch (e) { put('qr-scan-status', ''); showNotice('qr-scan-error', e?.message || String(e)); }
   finally { $('qr-apply').disabled = false; }
 }
@@ -4822,7 +5008,7 @@ $('ladder-presets').addEventListener('click', e => { const b = e.target.closest(
 // Kein eigener Server: Der Browser, in dem das Dashboard offen ist, schickt die Meldung selbst – über den Web Worker (siehe liveFeed).
 // 5.1: Ist ein 24/7-Dienst eingerichtet, aktiv und auf dem Stand dieser App, meldet er Alarme, Stop/Ziel und Termine (s247.js).
 // Token und Webhook-URL bleiben lokal (nicht im Backup, nicht im QR-Code) und gehen nur an Telegram bzw. Discord.
-const CHAN_KEY = 'scalpdesk.channels.v1';
+const CHAN_KEY = 'scalpdesk.channels.v1', CHANLAST_KEY = 'scalpdesk.chanlast.v1';
 const TG_TOKEN_RE = /^\d{5,15}:[A-Za-z0-9_-]{30,80}$/, TG_CHAT_RE = /^(-?\d{1,20}|@[A-Za-z][A-Za-z0-9_]{4,31})$/, TG_THREAD_RE = /^\d{1,10}$/;
 const DC_URL_RE = /^https:\/\/(?:(?:ptb|canary)\.)?discord(?:app)?\.com\/api(?:\/v\d{1,2})?\/webhooks\/\d{5,25}\/[A-Za-z0-9_-]{20,120}(?:\?thread_id=\d{5,25})?$/;
 function loadChannels() {
@@ -4832,6 +5018,14 @@ function loadChannels() {
 }
 let chan = loadChannels();
 const chanState = { tg: null, dc: null }, chanClaimed = new Set(), sendWait = new Map(), CHAN_NAME = { tg: 'Telegram', dc: 'Discord' };
+// 3.27.0: letzte zugestellte Meldung je Kanal (keine Tests) – bleibt gespeichert, damit sie auch nach dem Neuladen zu sehen ist.
+// u: Der Browser konnte die Antwort nicht lesen (Zustellung unbestätigt).
+function chanLast(k) { const v = store.get(CHANLAST_KEY)?.[k]; return v && Number.isFinite(v.at) ? v : null; }
+const chanLabel = text => String(text).split('\n')[0].replace(/^[^\p{L}\p{N}]+/u, '').slice(0, 60);
+function chanLastText(k) {
+  const L = chanLast(k); if (!L) return '';
+  return `zuletzt ${L.u ? 'gesendet' : 'zugestellt'} ${new Date(L.at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}${L.label ? ` (${L.label})` : ''}`;
+}
 let sendSeq = 0;
 const tgOk = t => TG_TOKEN_RE.test(t.token) && TG_CHAT_RE.test(t.chat) && (!t.thread || TG_THREAD_RE.test(t.thread)) && (!t.bchat || TG_CHAT_RE.test(t.bchat)) && (!t.bthread || TG_THREAD_RE.test(t.bthread)) && (!t.btoken || TG_TOKEN_RE.test(t.btoken));
 const chanValid = k => k === 'tg' ? tgOk(chan.tg) : DC_URL_RE.test(chan.dc.url);
@@ -4857,7 +5051,7 @@ function chanSend(k, text, test = false, kind = 'test', opts = {}) {
   const id = ++sendSeq, m = k === 'tg'
     ? { t: 'send', id, kind: 'telegram', test, url: `https://api.telegram.org/bot${tgTarget(kind).token}/sendMessage`, fields: { ...tgFields(tgTarget(kind)), text: text.slice(0, 4000), link_preview_options: JSON.stringify({ is_disabled: true }), ...(opts.silent ? { disable_notification: 'true' } : {}) } }
     : { t: 'send', id, kind: 'discord', test, url: chan.dc.url, fields: { content: text.slice(0, 1900), allowed_mentions: { parse: [] } } };
-  return new Promise(resolve => { sendWait.set(id, { k, resolve }); live.post(m); });
+  return new Promise(resolve => { sendWait.set(id, { k, resolve, test, label: test ? '' : chanLabel(text) }); live.post(m); });
 }
 function chanError(k, m) {
   if (!m.code) return `Keine Verbindung zu ${CHAN_NAME[k]} – Internet, Werbeblocker oder Firmen-Firewall prüfen.`;
@@ -4874,6 +5068,7 @@ function chanError(k, m) {
 function onSent(m) {
   const w = sendWait.get(m.id); if (!w) return; sendWait.delete(m.id);
   chanState[w.k] = { ok: m.ok, at: Date.now(), text: m.ok ? (m.unconfirmed ? 'gesendet – der Browser kann die Zustellung hier nicht bestätigen' : 'zugestellt') : chanError(w.k, m) };
+  if (m.ok && !w.test) store.set(CHANLAST_KEY, { ...(store.get(CHANLAST_KEY) || {}), [w.k]: { at: Date.now(), label: w.label, ...(m.unconfirmed ? { u: true } : {}) } });
   renderChanStatus(); renderChanSummary(); w.resolve(m);
 }
 // Meldung an alle aktiven Kanäle; je Ereignis nur einmal, auch wenn mehrere Tabs offen sind (Abstimmung über die IndexedDB)
@@ -4894,20 +5089,20 @@ const hhmmss = ms => new Date(ms).toLocaleTimeString('de-DE');
 function chanLine(k) {
   if (!chan[k][k === 'tg' ? 'token' : 'url']) return 'nicht eingerichtet';
   if (!chanValid(k)) return k === 'tg' ? 'unvollständig (Token oder Chat-ID fehlt)' : 'Webhook-URL unvollständig';
-  const s = chanState[k];
-  return `${chan[k].on ? 'aktiv' : 'pausiert'}${s ? ` · ${hhmmss(s.at)} ${s.ok ? s.text : 'Fehler'}` : ''}`;
+  const s = chanState[k], last = chanLastText(k);
+  return `${chan[k].on ? 'aktiv' : 'pausiert'}${s && !s.ok ? ` · ${hhmmss(s.at)} Fehler` : last ? ` · ${last}` : s ? ` · ${hhmmss(s.at)} ${s.text}` : ''}`;
 }
 function renderChanSummary() {
   const any = chan.tg.token || chan.dc.url;
-  put('chan-summary', any ? `Telegram: ${chanLine('tg')}${chanValid('tg') ? ` · Sicherung: ${tgSeparate() ? (chan.tg.btoken && chan.tg.btoken !== chan.tg.token ? 'eigener Bot' : 'eigener Chat') : 'wie Kursalarm'}` : ''} · Discord: ${chanLine('dc')}${s247Active() ? ' · 24/7-Dienst: aktiv' : ''}` : 'Noch kein Kanal eingerichtet – Anleitung im Fenster.');
+  put('chan-summary', any ? `Telegram: ${chanLine('tg')}${chanValid('tg') ? ` · Sicherung: ${tgSeparate() ? (chan.tg.btoken && chan.tg.btoken !== chan.tg.token ? 'eigener Bot' : 'eigener Chat') : 'wie Kursalarm'}` : ''} · Discord: ${chanLine('dc')}${s247SumText()}` : 'Noch kein Kanal eingerichtet – Anleitung im Fenster.');
 }
 function chanMsg(k, ok, text) { const p = $(k + '-status'); p.textContent = text; p.className = 'chan-status' + (ok === true ? ' ok' : ok === false ? ' err' : ''); }
 function renderChanStatus() {
   for (const k of ['tg', 'dc']) {
-    const s = chanState[k], has = chan[k][k === 'tg' ? 'token' : 'url'];
-    if (s) chanMsg(k, s.ok, `${hhmmss(s.at)}: ${s.ok ? 'Nachricht ' + s.text + '.' : s.text}`);
+    const s = chanState[k], has = chan[k][k === 'tg' ? 'token' : 'url'], L = chanLastText(k), last = L && has ? ` Letzte Meldung ${L.replace(/^zuletzt /, '')}.` : '';
+    if (s) chanMsg(k, s.ok, `${hhmmss(s.at)}: ${s.ok ? 'Nachricht ' + s.text + '.' : s.text}${s.ok ? '' : last}`);
     else if (!has) chanMsg(k, null, k === 'tg' ? 'Noch nicht eingerichtet.' : 'Noch nicht eingerichtet.');
-    else chanMsg(k, chanValid(k) ? null : false, chanValid(k) ? (chan[k].on ? 'Eingerichtet und aktiv. Mit „Test senden“ prüfen.' : 'Eingerichtet, aber pausiert.') : k === 'tg' ? (TG_TOKEN_RE.test(chan.tg.token) ? 'Chat-ID fehlt: dem Bot schreiben, dann „Chat-ID ermitteln“.' : 'Das sieht nicht wie ein Bot-Token aus (Format 123456789:AA…).') : 'Das sieht nicht wie eine Discord-Webhook-URL aus (https://discord.com/api/webhooks/…).');
+    else chanMsg(k, chanValid(k) ? null : false, chanValid(k) ? (chan[k].on ? 'Eingerichtet und aktiv. Mit „Test senden“ prüfen.' + last : 'Eingerichtet, aber pausiert.' + last) : k === 'tg' ? (TG_TOKEN_RE.test(chan.tg.token) ? 'Chat-ID fehlt: dem Bot schreiben, dann „Chat-ID ermitteln“.' : 'Das sieht nicht wie ein Bot-Token aus (Format 123456789:AA…).') : 'Das sieht nicht wie eine Discord-Webhook-URL aus (https://discord.com/api/webhooks/…).');
   }
 }
 function fillChanForm() {
@@ -8274,14 +8469,22 @@ async function sendS247(force = false, leaving = false) {
   } catch (e) { s247.error = e?.message || String(e); }
   finally { s247.busy = false; if (claimed) void store.release('s247'); renderS247(); if (s247.again && !leaving) { s247.again = false; scheduleS247(300); } }
 }
+// 3.27.0 (Dienst ab 1.3): „Zustellung: zuletzt 01.10. 14:32 · Kurs-Alarm BTC“ – Zeit in der Zeitzone der App, Jahr ergänzt.
+// Vor der ersten Meldung steht „Zustellung: geprüft, noch keine Meldung“; ein Dienst bis 1.2 schreibt die Zeile nicht.
+function s247Last(line, now) {
+  const m = /^Zustellung: zuletzt (\d\d)\.(\d\d)\. (\d\d):(\d\d)(?: · (.*))?$/.exec(line || ''); if (!m) return null;
+  const y = new Date(now).getFullYear(), at = yy => new Date(yy, +m[2] - 1, +m[1], +m[3], +m[4]).getTime();
+  let t = at(y); if (t > now + 864e5) t = at(y - 1);
+  return { t, label: (m[5] || '').slice(0, 80) };
+}
 // Angeheftete Nachricht lesen: Zeile des Dienstes und Zeitpunkt der letzten Änderung (Lebenszeichen)
 function s247Parse(pm, now = Date.now()) {
   if (!s247IsOurs(pm)) return { found: false };
-  const lines = String(pm.caption || '').replace(/\r/g, '').split('\n'), app = lines.find(l => l.startsWith('App:')) || '', svc = lines.find(l => l.startsWith('Dienst:')) || '', parts = app.split(' · ');
+  const lines = String(pm.caption || '').replace(/\r/g, '').split('\n'), app = lines.find(l => l.startsWith('App:')) || '', svc = lines.find(l => l.startsWith('Dienst:')) || '', parts = app.split(' · '), zl = lines.find(l => l.startsWith('Zustellung:'));
   const m = /^Dienst: (aktiv|Störung) · .*? · #([a-z0-9]{2,12}) übernommen(?: · (.*))?$/.exec(svc), beat = (pm.edit_date || pm.date || 0) * 1000, flags = svc.split(' · ');
   const gv = lines.map(l => /^GV: .* · @([pl]):(\d{10,15}):(\d{10,15}):(-?\d+(?:\.\d+)?)$/.exec(l)).filter(Boolean).map(x => ({ k: x[1] === 'p' ? 'profit' : 'loss', at: +x[2], t: +x[3], val: +x[4] }));
   return { found: true, msg: pm.message_id, tag: /#([a-z0-9]{2,12})$/.exec(app)?.[1] || '', dev: parts.length >= 4 ? parts.at(-2) : '',
-    svc: m ? { ok: m[1] === 'aktiv', tag: m[2], problem: m[3] || '', pulse: flags.includes('Puls'), gv: flags.includes('GV') } : null, gv, beat, fresh: !!m && now - beat < S247_STALE };
+    svc: m ? { ok: m[1] === 'aktiv', tag: m[2], problem: m[3] || '', pulse: flags.includes('Puls'), gv: flags.includes('GV'), zv: !!zl } : null, gv, last: s247Last(zl, now), beat, fresh: !!m && now - beat < S247_STALE };
 }
 async function checkS247() {
   if (!s247?.cfg || typeof tgConfigured !== 'function' || !tgConfigured() || s247.checking) return;
@@ -8325,6 +8528,14 @@ function s247Settled() {
   if (!s247?.cfg?.on || s247.checkAt) return Promise.resolve();
   return Promise.race([s247.first || Promise.resolve(), new Promise(r => setTimeout(r, 8000))]);
 }
+// 3.27.0: Wann hat der Dienst zuletzt etwas zugestellt? Ein Dienst bis 1.2 prüft die Zustellung nicht – Hinweis aufs Update
+function s247LastText(st) {
+  if (!st.svc?.zv) return ' Ob Telegram seine Meldungen annimmt, prüft der Dienst erst ab Version 1.3 – am Server den Installationsbefehl erneut ausführen.';
+  const dm = t => new Date(t).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  return st.last ? ` Zuletzt zugestellt: ${dm(st.last.t)}${st.last.label ? ` (${st.last.label})` : ''}.` : ' Zugestellt hat er noch keine Meldung.';
+}
+// Kurzform für die Übersicht im Hinweis-Menü
+function s247SumText() { const st = s247?.st; return s247Active() ? ' · 24/7-Dienst: aktiv' : s247?.cfg?.on && st?.svc && st.fresh && !st.svc.ok ? ' · 24/7-Dienst: Störung' : ''; }
 function s247Active() { const st = s247?.st, c = s247?.cfg; return !!(c?.on && st?.found && st.msg === c.msg && st.svc?.ok && st.svc.tag === c.tag && Date.now() - st.beat < S247_STALE); }
 function renderS247() {
   if (!s247?.cfg || !$('s247-on')) return;
@@ -8339,8 +8550,8 @@ function renderS247() {
   else if (!c.msg || !st) text = s247.checking ? 'Frage Telegram …' : 'Wird gleich übergeben …';
   else if (s247.checkErr && now - s247.checkAt < 60e3) { text = `Status nicht lesbar: ${s247.checkErr}`; cls = false; }
   else if (!st.found) text = 'Die angeheftete Datei fehlt im Chat – wird neu übergeben …';
-  else if (s247Active()) { text = `✓ Aktiv – der Dienst hat den aktuellen Stand (${counts}) und meldete sich um ${hm(st.beat)}. Kurs-Alarme, Stop/Ziel und Termin-Warnungen kommen jetzt vom Dienst; diese App sendet sie nicht zusätzlich.${s247PulseText(c, st)}${s247GvText(c, st)}${other}`; cls = true; }
-  else if (st.svc && st.fresh && !st.svc.ok) { text = `⚠ Der Dienst meldet eine Störung: ${st.svc.problem || 'Kurse nicht abrufbar'}. Die App sendet deshalb selbst.${other}`; cls = false; }
+  else if (s247Active()) { text = `✓ Aktiv – der Dienst hat den aktuellen Stand (${counts}) und meldete sich um ${hm(st.beat)}.${s247LastText(st)} Kurs-Alarme, Stop/Ziel und Termin-Warnungen kommen jetzt vom Dienst; diese App sendet sie nicht zusätzlich.${s247PulseText(c, st)}${s247GvText(c, st)}${other}`; cls = true; }
+  else if (st.svc && st.fresh && !st.svc.ok) { text = `⚠ Der Dienst meldet eine Störung: ${st.svc.problem || 'Kurse nicht abrufbar'}. Die App sendet deshalb selbst.${st.svc.zv ? s247LastText(st) : ''}${other}`; cls = false; }
   else if (st.svc && st.fresh) text = `Übergeben um ${hm(c.at)} (${counts}) – der Dienst übernimmt den neuen Stand in spätestens einer Minute.${other}`;
   else if (st.svc) { text = `⚠ Der Dienst hat sich seit ${hm(st.beat)} nicht gemeldet – die App sendet wieder selbst. Läuft der Server? Am Server: systemctl status scalpdesk-247${other}`; cls = false; }
   else { text = `Übergeben um ${hm(c.at)} (${counts}) – wartet auf den 24/7-Dienst.${now - c.at > 3 * 60e3 ? ' Er hat sich noch nicht gemeldet: Ist er eingerichtet (Anleitung oben)?' : ''}${other}`; cls = now - c.at > 3 * 60e3 ? false : null; }
@@ -8592,7 +8803,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
           <button type="button" class="button ghost" id="sound-toggle" aria-pressed="false" title="Ton, wenn Stop-Loss, Take-Profit oder ein Kurs-Alarm erreicht wird">🔕 Alarm-Ton</button>
           <button type="button" class="button ghost" id="wake-toggle" aria-pressed="false" hidden>🔆 Bildschirm wach halten: aus</button><small id="wake-note" hidden></small>
           <button type="button" class="button ghost" id="notify-test">Test-Hinweis senden</button>
-          <div class="head-line"><button type="button" class="button ghost" id="chan-open" aria-haspopup="dialog">📨 Telegram / Discord einrichten …</button><details class="tip left"><summary aria-label="Wozu Telegram oder Discord?"><span>i</span></summary><div class="tip-body"><p>Schickt Kurs-Alarme, Stop-Loss/Take-Profit und das Tages-Verlustlimit zusätzlich über deinen eigenen Telegram-Bot oder einen Discord-Webhook – die Meldung kommt dann als Push aufs Smartphone, auch wenn Safari dort schläft.</p><p>Gesendet wird von dem Gerät, auf dem das Dashboard gerade geöffnet ist (z. B. dein Computer). Eine Schritt-für-Schritt-Anleitung steht im Fenster.</p></div></details></div>
+          <div class="head-line"><button type="button" class="button ghost" id="chan-open" aria-haspopup="dialog">📨 Telegram / Discord einrichten …</button><details class="tip left"><summary aria-label="Wozu Telegram oder Discord?"><span>i</span></summary><div class="tip-body"><p>Schickt Kurs-Alarme, Stop-Loss/Take-Profit und das Tages-Verlustlimit zusätzlich über deinen eigenen Telegram-Bot oder einen Discord-Webhook – die Meldung kommt dann als Push aufs Smartphone, auch wenn Safari dort schläft.</p><p>Gesendet wird von dem Gerät, auf dem das Dashboard gerade geöffnet ist (z. B. dein Computer). Ist Telegram oder Discord kurz nicht erreichbar, wiederholt die App die Meldung gut 6 Minuten lang, solange sie geöffnet ist. Wann zuletzt etwas zugestellt wurde, steht unter dem Knopf. Eine Schritt-für-Schritt-Anleitung steht im Fenster.</p></div></details></div>
           <small id="chan-summary"></small>
           <small id="feed-note">Live-Kurse kommen per WebSocket direkt von Binance. Jede Kursmeldung wird sofort gegen Stop, Ziel und Alarme geprüft, auch kurze Dochte. Der Datenstrom läuft in einem eigenen Hintergrund-Thread und wird dadurch in Hintergrund-Tabs nicht gedrosselt. Ein Wächter prüft alle 3 s, ob die Verbindung noch lebt; eine tote Verbindung (etwa nach Standby oder WLAN-Wechsel) wird sofort geschlossen und neu aufgebaut. Der Punkt oben rechts zeigt den Zustand: grün live, gelb verzögert oder verbindet neu, rot offline oder Datenfehler, grau pausiert. iPad und iPhone pausieren Webseiten im Hintergrund; beim Zurückkehren prüft das Dashboard die verpasste Zeit anhand der 1-Minuten-Kerzen nach. Bei geschlossener Seite gibt es keine Hinweise – auch nicht per Telegram oder Discord.</small>
         </div></span>
@@ -8775,7 +8986,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
           <div class="day-strip" id="day-strip"><span>Heute realisiert</span><strong class="day-pnl" id="day-pnl">—</strong><span id="day-info"></span><div class="day-bar" id="day-bar" title="Verbrauchtes Tages-Verlustlimit"><span></span></div><label>Tages-Verlustlimit<span class="input-wrap"><input id="day-limit" type="text" inputmode="decimal" autocomplete="off" placeholder="z. B. 30"><span>USDT</span></span></label></div>
           <button type="button" class="data-head backup-badge" id="data-toggle" aria-expanded="false" aria-controls="data-panel"><span class="data-chev" aria-hidden="true">▸</span><span class="data-title">💾 Datensicherung</span><span class="due" id="backup-due" hidden>FÄLLIG</span><small class="data-last" id="data-last"></small></button>
           <div class="data-panel" id="data-panel" hidden>
-            <div class="head-line"><h3>Sichern, einspielen, abgleichen</h3><details class="tip left"><summary aria-label="Wo liegen meine Daten?"><span>i</span></summary><div class="tip-body"><p>Daten liegen nur in diesem Browser auf diesem Gerät, nicht bei GitHub: in der IndexedDB, dazu eine Spiegelkopie im localStorage.</p><p>Safari kann Website-Daten löschen, wenn eine Seite länger nicht geöffnet wurde. Als App auf dem Home-Bildschirm gilt diese Frist nicht; ein Backup ist trotzdem der sicherste Schutz.</p><p>Mit Passwort wird ein Backup verschlüsselt (AES-256). Ein vergessenes Passwort lässt sich nicht wiederherstellen.</p><p>Automatisch sichern: Am Computer (Chrome/Edge) schreibt das Dashboard nach jeder Änderung in eine Datei deiner Wahl. Auf iPhone und iPad erlaubt Safari das nicht – dort kann die Sicherung stattdessen nach jeder Änderung an deinen Telegram-Chat gehen; die neue Datei ersetzt jeweils die vorige. Diese Datei ist unverschlüsselt und liegt auf den Servern von Telegram; Zugangsdaten für Telegram und Discord sind nie enthalten.</p></div></details></div>
+            <div class="head-line"><h3>Sichern, einspielen, abgleichen</h3><details class="tip left"><summary aria-label="Wo liegen meine Daten?"><span>i</span></summary><div class="tip-body"><p>Daten liegen nur in diesem Browser auf diesem Gerät, nicht bei GitHub: in der IndexedDB, dazu eine Spiegelkopie im localStorage.</p><p>Safari kann Website-Daten löschen, wenn eine Seite länger nicht geöffnet wurde. Als App auf dem Home-Bildschirm gilt diese Frist nicht; ein Backup ist trotzdem der sicherste Schutz.</p><p>Mit Passwort wird ein Backup verschlüsselt (AES-256). Ein vergessenes Passwort lässt sich nicht wiederherstellen.</p><p><b>Einspielen und QR-Abgleich:</b> Vorher zeigt die App eine Vorschau – was neu ist, was sich geändert hat und was gelöscht wird. Je Eintrag zählt die neuere Fassung. Gelöschte Einträge merkt sich die App mit Zeitpunkt (400 Tage) und gibt sie im Backup mit, damit der Abgleich sie auch auf dem anderen Gerät löscht. Fehlt ein Eintrag nur in der Datei, bleibt er hier. Risiko-Rechner, Tages-Verlustlimit, Rücklage-Satz, Vorauswahl und Setups kommen mit, wenn sie auf dem anderen Gerät später geändert wurden.</p><p>Automatisch sichern: Am Computer (Chrome/Edge) schreibt das Dashboard nach jeder Änderung in eine Datei deiner Wahl. Auf iPhone und iPad erlaubt Safari das nicht – dort kann die Sicherung stattdessen nach jeder Änderung an deinen Telegram-Chat gehen; die neue Datei ersetzt jeweils die vorige. Diese Datei ist unverschlüsselt und liegt auf den Servern von Telegram; Zugangsdaten für Telegram und Discord sind nie enthalten.</p></div></details></div>
             <p id="storage-info">Speicher wird geprüft …</p>
             <div class="data-row" id="autobackup-row" hidden>
               <button type="button" class="button primary-lite" id="autobackup-setup">Automatisches Backup einrichten …</button>
@@ -8798,7 +9009,8 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
               <input type="file" id="backup-file" accept=".json,application/json" hidden>
             </div>
             <small id="history-status" role="status"></small>
-            <div class="data-row" id="decrypt-row" hidden><span id="decrypt-note">Diese Datei ist verschlüsselt. Passwort oben eingeben, dann:</span><button type="button" class="button primary-lite" id="backup-decrypt">Entschlüsseln &amp; einspielen</button><button type="button" class="button ghost" id="decrypt-cancel">Abbrechen</button></div>
+            <div class="data-row" id="decrypt-row" hidden><span id="decrypt-note">Diese Datei ist verschlüsselt. Passwort oben eingeben, dann:</span><button type="button" class="button primary-lite" id="backup-decrypt">Entschlüsseln &amp; prüfen</button><button type="button" class="button ghost" id="decrypt-cancel">Abbrechen</button></div>
+            <div class="sync-preview" id="sync-preview" role="region" aria-label="Vorschau des Abgleichs" hidden></div>
             <div class="data-row data-sep"><button type="button" class="button ghost" id="qr-export">▦ QR-Code anzeigen</button><button type="button" class="button ghost" id="qr-scan">📷 QR-Code scannen</button><span style="color:var(--muted)">Abgleich zwischen Geräten: am Computer anzeigen, mit dem iPad scannen – verschlüsselt, ohne Server.</span></div>
             <div class="data-row"><label class="check"><input type="checkbox" id="warn-close"> Beim Schließen warnen, solange Änderungen nicht gesichert sind</label></div>
             <div class="data-row data-sep zzp-row"><span><b>🧠 Gelernte Chartmuster:</b> <span id="zzp-info">…</span></span><details class="tip left"><summary aria-label="Wie bleiben die Muster erhalten?"><span>i</span></summary><div class="tip-body"><p>Die ZigZag-Prognose lernt still mit, wie oft sich ein Muster bestätigt hat. Der Bestand wird nach jeder Änderung sofort auf diesem Gerät gespeichert und reist in jeder Sicherung mit (Datei, Teilen, Telegram).</p><p><b>Startbestand:</b> Aus dem GitHub-Projekt (<code>data/muster-start.json</code>) lädt die App beim Start einen Musterbestand mit Versionsnummer. Neue Nutzer, ein neues Gerät oder ein geleerter Browser-Speicher haben ihn sofort; eigenes Lernen zählt danach weiter, nichts wird doppelt gezählt.</p><p><b>Musterbestand exportieren</b> speichert nur die Muster, ohne Positionen, Trades oder Zugänge – so lässt sich dein Wissen als neuer Startbestand ins GitHub-Projekt übernehmen.</p></div></details><button type="button" class="button ghost" id="zzp-export">Musterbestand exportieren</button></div>
@@ -8852,7 +9064,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
           <div class="eval-row"><label for="year-filter">Auswertung für</label><select id="year-filter"></select><span>gilt für Trades, Auswertung und Geldbewegungen</span></div>
           <details class="history" id="history"><summary>Abgeschlossene Trades <span id="history-count">(0)</span></summary>
             <div class="history-summary" id="history-summary"></div>
-            <div class="history-list" id="history-list"></div>
+            <div class="history-list" id="history-list"></div><button type="button" class="button ghost hist-more" id="history-more" hidden></button>
           </details>
           <details class="history" id="analysis"><summary>Auswertung &amp; Kapitalkurve <span id="analysis-count"></span></summary>
             <div class="history-summary kpis" id="analysis-kpis"></div>
@@ -8958,7 +9170,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
         <label class="switch"><input type="checkbox" id="chan-ev-pulse" checked> BTC-Puls: ungewöhnlich starke Bitcoin-Bewegung</label>
         <small class="pulse-info">Meldet, wenn BTC sich in 5 oder 15 Minuten stärker bewegt als 99 % der üblichen Bewegungen zu dieser Uhrzeit (mindestens 0,5 % bzw. 0,8 %), mit der Vorauswahl im selben Zeitraum; je Richtung höchstens alle 30 Minuten, nachts lautlos. <span id="pulse-info"></span></small>
       </fieldset>
-      <section class="chan" aria-labelledby="s247-title" id="s247"><div class="head-line"><h3 id="s247-title">🌙 24/7-Dienst</h3><details class="tip left"><summary aria-label="Wie funktioniert der 24/7-Dienst?"><span>i</span></summary><div class="tip-body"><p>Ein kleines Programm auf einem eigenen Server, der rund um die Uhr läuft (z. B. kostenlos bei Oracle Cloud), prüft die Kurse und meldet Kurs-Alarme, Stop-Loss/Take-Profit, die Warnung vor wichtigen Terminen, ab Version 1.1 den BTC-Puls und ab Version 1.2 den Gewinn-/Verlust-Alarm per Telegram – auch wenn die App überall geschlossen ist.</p><p><b>Übergabe:</b> Die App legt die aktiven Alarme und die Stop-/Ziel-Marken deiner Positionen als Datei in deinen Telegram-Chat, heftet sie oben an und ersetzt sie nach jeder Änderung. Einstiege und Mengen der offenen Positionen stehen nur darin, solange ein Gewinn- oder Verlust-Alarm aktiv ist – der Dienst braucht sie, um das Live-Ergebnis zu rechnen. Trades und Notizen bleiben in der App. Der Dienst liest die Datei mit demselben Bot und bestätigt in der angehefteten Nachricht („Dienst: aktiv“).</p><p><b>Nicht doppelt:</b> Solange der Dienst aktiv ist und den aktuellen Stand hat, sendet diese App Kurs-Alarme, Stop/Ziel und Termin-Warnungen nicht zusätzlich. Meldet er sich 20 Minuten nicht oder meldet er eine Störung, sendet die App wieder selbst. Das Tages-Verlustlimit meldet immer die App.</p><p><b>Gewinn-/Verlust-Alarm:</b> Bestätigt der Dienst mit „· GV“ (ab Version 1.2), prüft er das Live-Ergebnis alle 15 Sekunden mit. Erreicht es eine Grenze, wartet er einige Sekunden: Ist die App geöffnet, meldet sie selbst – sofort und auch bei kurzen Spitzen –, und der Dienst schweigt. Sonst meldet er, einmal je Grenze; die App übernimmt das beim Öffnen als „ausgelöst“. Ein älterer Dienst kann es nicht – dann prüft nur die geöffnete App.</p><p><b>BTC-Puls:</b> Die App gibt dem Dienst die Schwellen je Uhrzeit mit. Bestätigt er mit „· Puls“ (ab Version 1.1), meldet er den Puls und die App nicht zusätzlich; ein älterer Dienst kennt ihn nicht – dann sendet ihn weiter die geöffnete App.</p><p><b>Token:</b> Den Bot-Token gibst du am Server selbst ein – die App schickt ihn weiterhin nur an Telegram.</p><p>Nur auf einem Gerät einschalten – dem, auf dem du Alarme und Positionen pflegst.</p></div></details></div><p class="chan-sub">Meldungen auch bei geschlossener App – über ein kleines Programm auf einem eigenen Server, der rund um die Uhr läuft.</p><details class="chan-guide" id="s247-guide"><summary>Anleitung: kostenlos bei Oracle Cloud einrichten (ca. 20 Minuten)</summary><ol><li><b>Konto:</b> Auf <a href="https://www.oracle.com/cloud/free/" target="_blank" rel="noopener noreferrer">oracle.com/cloud/free</a> „Start for free“. Als Heimatregion <b>Germany Central (Frankfurt)</b> wählen – sie lässt sich später nicht ändern, und von US-Servern aus sperrt Binance den Zugriff. Die Kreditkarte dient nur der Prüfung; „Always Free“ kostet nichts.</li><li><b>Server anlegen:</b> In der Konsole „Create a VM instance“. Bei <i>Image</i> auf <b>Ubuntu</b> wechseln, bei <i>Shape</i> eine mit „Always Free-eligible“ lassen (z. B. VM.Standard.E2.1.Micro). Bei <i>Add SSH keys</i> „Generate a key pair for me“ und <b>Save private key</b> – diese Datei ist der Schlüssel zum Server, gut aufbewahren. Dann <b>Create</b>. Nach 1–2 Minuten steht der Server auf „Running“; die <b>Public IP address</b> notieren.</li><li><b>Verbinden:</b> Oben rechts in der Konsole die <b>Cloud Shell</b> öffnen (Symbol &gt;_). Im Menü des Cloud-Shell-Fensters <b>Upload</b> wählen und den privaten Schlüssel hochladen. Dann eingeben (IP ersetzen) und die Frage „Are you sure …“ mit <b>yes</b> beantworten:<span class="s247-cmd"><code>chmod 600 ssh-key-*.key &amp;&amp; ssh -i ssh-key-*.key ubuntu@IP</code><button type="button" class="button ghost" data-copy="chmod 600 ssh-key-*.key &amp;&amp; ssh -i ssh-key-*.key ubuntu@IP">Kopieren</button></span></li><li><b>Dienst installieren:</b> Im Server-Fenster eingeben:<span class="s247-cmd"><code>curl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/install.sh | sudo bash</code><button type="button" class="button ghost" data-copy="curl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/install.sh | sudo bash">Kopieren</button></span>Es fragt nach <b>Bot-Token</b> und <b>Chat-ID</b> – dieselben wie oben unter „Kursalarm“ (nicht der Sicherungs-Bot; den Token zeigt auch @BotFather mit /mybots → API Token). Am Ende kommt eine Testnachricht in Telegram.</li><li><b>Übergeben:</b> Unten „An den 24/7-Dienst übergeben“ einschalten. Nach spätestens einer Minute steht hier „✓ Aktiv“, und im Telegram-Chat ist oben „📌 Scalp Desk · 24/7-Dienst“ angeheftet – diese Nachricht nicht löschen.</li></ol><ul class="s247-tips"><li><b>Ausführlich</b> – mit Aktualisieren, Ausprobieren und Hilfe bei Fehlermeldungen: <a href="https://github.com/NicoAHB/wx-widget/blob/main/server/ANLEITUNG-ORACLE.md" target="_blank" rel="noopener noreferrer">Anleitung auf GitHub</a></li><li><b>Aktualisieren:</b> den Befehl aus Schritt 4 erneut ausführen; die Einstellungen bleiben. Für den Gewinn-/Verlust-Alarm braucht es Version 1.2 – ein vorhandener Dienst einmal so aktualisieren.</li><li><b>Server-Größe:</b> „VM.Standard.E2.1.Micro“ reicht und ist fast immer verfügbar; „Ampere A1“ meldet oft „Out of capacity“.</li><li><b>Andere Rechner:</b> läuft auf jedem Linux-Rechner mit Internet, z. B. einem Raspberry Pi – derselbe Befehl.</li><li><b>Oracle:</b> Always-Free-Server, die 7 Tage kaum ausgelastet sind, kann Oracle anhalten – und der Dienst braucht sehr wenig. Abhilfe laut Oracle: das Konto auf „Pay As You Go“ umstellen; es bleibt kostenlos, solange nur Always-Free-Angebote genutzt werden. Sonst nach einer E-Mail von Oracle den Server in der Konsole wieder starten.</li><li><b>Am Server:</b> Status <code>systemctl status scalpdesk-247</code>, Protokoll <code>journalctl -u scalpdesk-247 -f</code>, entfernen <code>sudo bash /opt/scalpdesk-247/install.sh --remove</code></li></ul></details><label class="switch"><input type="checkbox" id="s247-on"> An den 24/7-Dienst übergeben (Alarme, Stop/Ziel, Termin-Warnungen, Gewinn-/Verlust-Alarm)</label><div class="row"><button type="button" class="button ghost" id="s247-check">Status prüfen</button></div><p class="chan-status" id="s247-status" role="status"></p></section>
+      <section class="chan" aria-labelledby="s247-title" id="s247"><div class="head-line"><h3 id="s247-title">🌙 24/7-Dienst</h3><details class="tip left"><summary aria-label="Wie funktioniert der 24/7-Dienst?"><span>i</span></summary><div class="tip-body"><p>Ein kleines Programm auf einem eigenen Server, der rund um die Uhr läuft (z. B. kostenlos bei Oracle Cloud), prüft die Kurse und meldet Kurs-Alarme, Stop-Loss/Take-Profit, die Warnung vor wichtigen Terminen, ab Version 1.1 den BTC-Puls und ab Version 1.2 den Gewinn-/Verlust-Alarm per Telegram – auch wenn die App überall geschlossen ist.</p><p><b>Übergabe:</b> Die App legt die aktiven Alarme und die Stop-/Ziel-Marken deiner Positionen als Datei in deinen Telegram-Chat, heftet sie oben an und ersetzt sie nach jeder Änderung. Einstiege und Mengen der offenen Positionen stehen nur darin, solange ein Gewinn- oder Verlust-Alarm aktiv ist – der Dienst braucht sie, um das Live-Ergebnis zu rechnen. Trades und Notizen bleiben in der App. Der Dienst liest die Datei mit demselben Bot und bestätigt in der angehefteten Nachricht („Dienst: aktiv“).</p><p><b>Nicht doppelt:</b> Solange der Dienst aktiv ist und den aktuellen Stand hat, sendet diese App Kurs-Alarme, Stop/Ziel und Termin-Warnungen nicht zusätzlich. Meldet er sich 20 Minuten nicht oder meldet er eine Störung, sendet die App wieder selbst. Das Tages-Verlustlimit meldet immer die App.</p><p><b>Zustellung (ab Version 1.3):</b> Der Dienst prüft, ob Telegram jede Meldung angenommen hat. Wenn nicht, versucht er es erneut – nach 15 und 30 Sekunden, dann in wachsenden Abständen bis alle 5 Minuten, höchstens einen Tag lang. Eine verspätete Meldung trägt die ursprüngliche Uhrzeit und den Vermerk „verspätet“. Lehnt Telegram ab oder ist es länger als eine Minute nicht erreichbar, meldet der Dienst „Störung“ – dann sendet die App wieder selbst. Unter „Status prüfen“ steht, wann er zuletzt etwas zugestellt hat.</p><p><b>Gewinn-/Verlust-Alarm:</b> Bestätigt der Dienst mit „· GV“ (ab Version 1.2), prüft er das Live-Ergebnis alle 15 Sekunden mit. Erreicht es eine Grenze, wartet er einige Sekunden: Ist die App geöffnet, meldet sie selbst – sofort und auch bei kurzen Spitzen –, und der Dienst schweigt. Sonst meldet er, einmal je Grenze; die App übernimmt das beim Öffnen als „ausgelöst“. Ein älterer Dienst kann es nicht – dann prüft nur die geöffnete App.</p><p><b>BTC-Puls:</b> Die App gibt dem Dienst die Schwellen je Uhrzeit mit. Bestätigt er mit „· Puls“ (ab Version 1.1), meldet er den Puls und die App nicht zusätzlich; ein älterer Dienst kennt ihn nicht – dann sendet ihn weiter die geöffnete App.</p><p><b>Token:</b> Den Bot-Token gibst du am Server selbst ein – die App schickt ihn weiterhin nur an Telegram.</p><p>Nur auf einem Gerät einschalten – dem, auf dem du Alarme und Positionen pflegst.</p></div></details></div><p class="chan-sub">Meldungen auch bei geschlossener App – über ein kleines Programm auf einem eigenen Server, der rund um die Uhr läuft.</p><details class="chan-guide" id="s247-guide"><summary>Anleitung: kostenlos bei Oracle Cloud einrichten (ca. 20 Minuten)</summary><ol><li><b>Konto:</b> Auf <a href="https://www.oracle.com/cloud/free/" target="_blank" rel="noopener noreferrer">oracle.com/cloud/free</a> „Start for free“. Als Heimatregion <b>Germany Central (Frankfurt)</b> wählen – sie lässt sich später nicht ändern, und von US-Servern aus sperrt Binance den Zugriff. Die Kreditkarte dient nur der Prüfung; „Always Free“ kostet nichts.</li><li><b>Server anlegen:</b> In der Konsole „Create a VM instance“. Bei <i>Image</i> auf <b>Ubuntu</b> wechseln, bei <i>Shape</i> eine mit „Always Free-eligible“ lassen (z. B. VM.Standard.E2.1.Micro). Bei <i>Add SSH keys</i> „Generate a key pair for me“ und <b>Save private key</b> – diese Datei ist der Schlüssel zum Server, gut aufbewahren. Dann <b>Create</b>. Nach 1–2 Minuten steht der Server auf „Running“; die <b>Public IP address</b> notieren.</li><li><b>Verbinden:</b> Oben rechts in der Konsole die <b>Cloud Shell</b> öffnen (Symbol &gt;_). Im Menü des Cloud-Shell-Fensters <b>Upload</b> wählen und den privaten Schlüssel hochladen. Dann eingeben (IP ersetzen) und die Frage „Are you sure …“ mit <b>yes</b> beantworten:<span class="s247-cmd"><code>chmod 600 ssh-key-*.key &amp;&amp; ssh -i ssh-key-*.key ubuntu@IP</code><button type="button" class="button ghost" data-copy="chmod 600 ssh-key-*.key &amp;&amp; ssh -i ssh-key-*.key ubuntu@IP">Kopieren</button></span></li><li><b>Dienst installieren:</b> Im Server-Fenster eingeben:<span class="s247-cmd"><code>curl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/install.sh | sudo bash</code><button type="button" class="button ghost" data-copy="curl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/install.sh | sudo bash">Kopieren</button></span>Es fragt nach <b>Bot-Token</b> und <b>Chat-ID</b> – dieselben wie oben unter „Kursalarm“ (nicht der Sicherungs-Bot; den Token zeigt auch @BotFather mit /mybots → API Token). Am Ende kommt eine Testnachricht in Telegram.</li><li><b>Übergeben:</b> Unten „An den 24/7-Dienst übergeben“ einschalten. Nach spätestens einer Minute steht hier „✓ Aktiv“, und im Telegram-Chat ist oben „📌 Scalp Desk · 24/7-Dienst“ angeheftet – diese Nachricht nicht löschen.</li></ol><ul class="s247-tips"><li><b>Ausführlich</b> – mit Aktualisieren, Ausprobieren und Hilfe bei Fehlermeldungen: <a href="https://github.com/NicoAHB/wx-widget/blob/main/server/ANLEITUNG-ORACLE.md" target="_blank" rel="noopener noreferrer">Anleitung auf GitHub</a></li><li><b>Aktualisieren:</b> den Befehl aus Schritt 4 erneut ausführen; die Einstellungen bleiben. Für den Gewinn-/Verlust-Alarm braucht es Version 1.2, für die geprüfte Zustellung 1.3 – ein vorhandener Dienst einmal so aktualisieren.</li><li><b>Server-Größe:</b> „VM.Standard.E2.1.Micro“ reicht und ist fast immer verfügbar; „Ampere A1“ meldet oft „Out of capacity“.</li><li><b>Andere Rechner:</b> läuft auf jedem Linux-Rechner mit Internet, z. B. einem Raspberry Pi – derselbe Befehl.</li><li><b>Oracle:</b> Always-Free-Server, die 7 Tage kaum ausgelastet sind, kann Oracle anhalten – und der Dienst braucht sehr wenig. Abhilfe laut Oracle: das Konto auf „Pay As You Go“ umstellen; es bleibt kostenlos, solange nur Always-Free-Angebote genutzt werden. Sonst nach einer E-Mail von Oracle den Server in der Konsole wieder starten.</li><li><b>Am Server:</b> Status <code>systemctl status scalpdesk-247</code>, Protokoll <code>journalctl -u scalpdesk-247 -f</code>, entfernen <code>sudo bash /opt/scalpdesk-247/install.sh --remove</code></li></ul></details><label class="switch"><input type="checkbox" id="s247-on"> An den 24/7-Dienst übergeben (Alarme, Stop/Ziel, Termin-Warnungen, Gewinn-/Verlust-Alarm)</label><div class="row"><button type="button" class="button ghost" id="s247-check">Status prüfen</button></div><p class="chan-status" id="s247-status" role="status"></p></section>
       <p class="chan-note">🔒 Token und Webhook-URL bleiben nur in diesem Browser. Sie stehen in keinem Backup und keinem QR-Code und werden nur an Telegram bzw. Discord geschickt. Auf jedem Gerät, das senden soll, einzeln einrichten.</p>
       <div class="sheet-actions"><button type="button" class="button ghost" id="chan-clear">Zugangsdaten löschen</button><button type="button" class="button primary" id="chan-done">Fertig</button></div>
     </div>
@@ -8968,6 +9180,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
     <div class="sheet-body reset-body">
       <p><b>Gelöscht werden:</b> offene Positionen, Trades, Geldbewegungen, Kurs-Alarme sowie Gewinn- und Verlust-Alarme.</p>
       <p><b>Erhalten bleiben:</b> die gelernten Chartmuster, alle Einstellungen (Risiko, Tages-Verlustlimit, Steuersatz, Setups, Vorauswahl, Darstellung) und die Telegram- und Discord-Zugänge.</p>
+      <p><b>Nur auf diesem Gerät:</b> Gleichst du danach mit einem anderen Gerät ab, kommen dessen Positionen und Trades wieder dazu – dort ebenfalls zurücksetzen.</p>
       <p>Vorher speichert die App eine Sicherungsdatei (am iPad in der Dateien-App unter „Downloads“). Mit eingeschalteter Telegram-Sicherung bleibt die bisherige Sicherung im Chat stehen; die nächste kommt als neue Nachricht.</p>
       <div class="sheet-actions"><button type="button" class="button ghost" id="reset-cancel">Abbrechen</button><button type="button" class="button danger-btn" id="reset-go">Sichern und zurücksetzen</button></div>
     </div>
@@ -8975,7 +9188,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
   <dialog class="sheet" id="qr-dialog" aria-labelledby="qr-title">
     <div class="sheet-head"><h2 id="qr-title">Geräte abgleichen</h2><button type="button" class="button ghost icon" id="qr-close" aria-label="Schließen">×</button></div>
     <div class="sheet-body" id="qr-export-view" hidden>
-      <p>Zeigt deine Daten verschlüsselt als QR-Code. Auf dem anderen Gerät unter <b>Backup → QR-Code scannen</b> die Kamera darauf halten. Übernommen wird nur, was dort fehlt oder neuer ist.</p>
+      <p>Zeigt deine Daten verschlüsselt als QR-Code. Auf dem anderen Gerät unter <b>Backup → QR-Code scannen</b> die Kamera darauf halten. Dort zeigt eine Vorschau, was neu ist, was sich geändert hat und was gelöscht wird; übernommen wird erst danach.</p>
       <div id="qr-form" class="sheet-form">
       <div class="choice" role="radiogroup" aria-label="Inhalt">
         <label><input type="radio" name="qr-scope" value="open" checked><span><b>Offene Positionen, Alarme &amp; Einstellungen</b><small>schnell, meist ein bis zwei Codes</small></span></label>
@@ -9000,8 +9213,9 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
       <div class="qr-parts" id="qr-scan-parts" aria-hidden="true"></div>
       <div id="qr-unlock" hidden>
         <label>Passwort vom anderen Gerät<span class="input-wrap"><input id="qr-scan-pass" type="password" autocomplete="off"></span></label>
-        <div class="sheet-actions" style="margin-top:10px"><button type="button" class="button primary" id="qr-apply">Entschlüsseln &amp; übernehmen</button></div>
+        <div class="sheet-actions" style="margin-top:10px"><button type="button" class="button primary" id="qr-apply">Entschlüsseln &amp; prüfen</button></div>
       </div>
+      <div class="sync-preview" id="qr-preview" role="region" aria-label="Vorschau des Abgleichs" hidden></div>
       <div class="sheet-actions"><button type="button" class="button ghost" id="qr-photo-btn">Stattdessen Foto aufnehmen</button><input id="qr-photo" type="file" accept="image/*" capture="environment" hidden></div>
       <div id="qr-scan-error" class="notice error" role="alert" hidden></div>
     </div>
