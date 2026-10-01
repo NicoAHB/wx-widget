@@ -1573,6 +1573,22 @@ html[data-layout=tablet] .wl-detail{scroll-margin-bottom:calc(84px + env(safe-ar
 :root .livebar[data-fit~="5"] .lb-pos{font-size:.82em}
 :root .livebar[data-fit~="5"]{column-gap:4px}
 :root .livebar[data-fit~="6"] .lb-market{font-size:.9em}:root .livebar[data-fit~="6"] .lb-price{font-size:1.02rem}
+/* 3.25.0: Vorauswahl über einen wählbaren Zeitraum – eine Veränderung je Kachel; in der schmalen Kachel nimmt der Verlauf
+   die frei gewordene Zeile ganz ein */
+@container wlt (max-width:189px){
+  .wl-tile,html[data-layout=tablet] .wl-tile{grid-template-areas:"sym price price" "c1 c1 sig" "spark spark spark" "rules rules rules"}
+  .wl-spark{width:100%;justify-self:stretch}
+}
+/* Detailfeld: Zeitraum in der Überschrift wählbar – sichtbar der Text, darüber unsichtbar die echte Auswahl (16 px: kein Zoom am iPhone) */
+.wl-d-pick{position:relative;display:inline-block;padding-right:.95em;border-bottom:1px dashed currentColor;cursor:pointer;white-space:nowrap}
+.wl-d-pick::after{content:"▾";position:absolute;right:0;top:50%;transform:translateY(-50%);font-size:.85em;pointer-events:none}
+.wl-d-pick select{position:absolute;left:0;top:-10px;width:100%;height:calc(100% + 20px);margin:0;padding:0;border:0;opacity:0;font-size:16px;cursor:pointer;-webkit-appearance:none;appearance:none;background:transparent;color:inherit}
+.wl-d-pick:focus-within{outline:2px solid var(--mint);outline-offset:2px;border-radius:3px}
+.wl-d-verdict{margin:10px 0 0;font-weight:700;font-size:.875rem;color:var(--text-2)}
+@container wld (max-width:520px){.wl-d-verdict{font-size:.8125rem}}
+.wl-d-verdict.long{color:var(--up-text)}.wl-d-verdict.short{color:var(--down-text)}
+.wl-d-move{display:flex;align-items:center;gap:6px;margin:6px 0 0;font-size:.8125rem;color:var(--amber)}
+.wl-d-verdict[hidden],.wl-d-move[hidden]{display:none}
 .chart-panel>.notice{margin:12px 20px 0}
 html{scroll-padding-top:calc(var(--lb-h,56px) + 16px)}
 /* nur als eigene Spalten (ab 1400 px) begrenzt; darunter stehen beide untereinander in der gemeinsamen Seitenspalte und
@@ -2186,7 +2202,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Alle Werte liegen zusätzlich im Arbeitsspeicher und sind dadurch synchron lesbar. Schreiben geht sofort in den
 // localStorage und gebündelt in die IndexedDB; beim Start gewinnt die zuletzt vollständig geschriebene Kopie.
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
-const APP_VERSION = '3.24.0', docEl = document.documentElement;
+const APP_VERSION = '3.25.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -2700,8 +2716,8 @@ function renderSignals() {
   box.append(...heatNodes(st, tr)); line.replaceChildren(box);
   const lb = $('lb-heat'); lb.replaceChildren(...heatNodes(st, tr)); lb.setAttribute('aria-label', heatLabel(st, tr));
 }
-// Vorauswahl als Mini-Watchlist (4.2; Ablaufplan Schritte 5 und 6, 3.24.0): je Coin eine Kachel mit Live-Kurs, Verlauf der
-// letzten 30 Minuten und 1m-Tendenz, darunter die Veränderung über 1 und über 30 Minuten („1 Min. +0,54 %“, „30 Min. +1,33 %“)
+// Vorauswahl als Mini-Watchlist (4.2; Ablaufplan Schritte 5 und 6, 3.24.0): je Coin eine Kachel mit Live-Kurs, Verlauf und
+// Tendenz des gewählten Zeitraums (3.25.0, Standard 1 Stunde), darunter die Veränderung über den Zeitraum („1 Std. +0,54 %“)
 // und die Zeile Trend · Kurs · RSI · MACD mit farbigen Pfeilen. Antippen öffnet unter den Kacheln das Detailfeld mit den
 // Signalen dieses Coins (wldetail.js), „Im Chart öffnen“ im Feld lädt den Coin. Neu aufgebaut wird nur, wenn sich Liste,
 // Bearbeiten-Modus oder der geöffnete Coin ändern – die Live-Werte schreibt wlPaint() in die bestehenden Felder. „+ Coin“ steht in
@@ -2711,14 +2727,14 @@ function renderWatchlist() {
   const box = $('watchlist'), base = state.symbol.slice(0, -4), showAdd = !state.watch.includes(base) && state.loadedSymbol === state.symbol;
   // Ausgewählte Kachel entfernt (Bearbeiten, „Standard“, Sicherung eingespielt): Detailfeld schließen, keine falsche Auswahl
   if (wldSel && !state.watch.includes(wldSel)) wldClose(false);
-  const key = JSON.stringify([state.watch, state.watchEdit, base, showAdd]);
+  const S = wlSpan(), key = JSON.stringify([state.watch, state.watchEdit, base, showAdd, S.label]);
   if (key === watchKey && box.firstChild) return;
   watchKey = key;
   const head = el('div', 'wl-head'), tip = el('details', 'tip left wl-tip'), sum = el('summary');
   sum.setAttribute('aria-label', 'Was die Kacheln der Vorauswahl zeigen'); sum.append(el('span', '', 'i'));
   const body = el('div', 'tip-body');
-  body.append(el('p', '', 'Je Coin: Live-Kurs, der Verlauf der letzten 30 Minuten und rechts die 1m-Tendenz. Darunter die Veränderung über 1 Minute und über 30 Minuten und die Zeile Trend · Kurs · RSI (mit Wert) · MACD: ▲ grün = bullish, ▼ rot = bearish, – = neutral.'),
-    el('p', '', '1m-Tendenz: die Summe dieser vier Regeln – dieselben wie in der Signal-Übersicht – auf abgeschlossenen 1-Minuten-Kerzen, von −4 bis +4; ab +2 grün, ab −2 rot. Eine Beschreibung der letzten Minuten, kein Handelssignal mit nachgewiesenem Vorteil.'),
+  body.append(el('p', '', `Je Coin: Live-Kurs, der Verlauf ${S.of} und rechts die Tendenz. Darunter die Veränderung über ${S.name} („${S.label} …“) und die Zeile Trend · Kurs · RSI (mit Wert) · MACD: ▲ grün = bullish, ▼ rot = bearish, – = neutral.`),
+    el('p', '', `Tendenz: die Summe dieser vier Regeln – dieselben wie in der Signal-Übersicht – auf abgeschlossenen ${S.ivName}-Kerzen, von −4 bis +4, neu bei jedem Kerzenschluss. Kräftig grün bzw. rot erst, wenn mindestens 3 der 4 Regeln in dieselbe Richtung zeigen (Long- bzw. Short-Tendenz). Den Zeitraum (1 Minute bis 1 Tag) wählst du im Detailfeld; die Zeitraum-Knöpfe des Charts ändern ihn nicht. Eine Beschreibung ${S.of}, kein Handelssignal mit nachgewiesenem Vorteil.`),
     el('p', '', 'Antippen zeigt darunter die Signale des Coins mit Erklärungen; dort öffnet „Im Chart öffnen“ den Coin im Chart. „Bearbeiten“ entfernt Coins, „+ Coin“ nimmt den geöffneten Coin auf. Fehlen Daten (Coin lädt noch, keine Verbindung), steht neutral „–“.'));
   tip.append(sum, body);
   head.append(el('span', 'wl-label', 'Vorauswahl'), tip);
@@ -2735,7 +2751,7 @@ function renderWatchlist() {
     svg.setAttribute('class', 'wl-spark'); svg.setAttribute('viewBox', '0 0 44 16'); svg.setAttribute('preserveAspectRatio', 'none'); svg.setAttribute('aria-hidden', 'true');
     svg.append(document.createElementNS('http://www.w3.org/2000/svg', 'polyline'));
     const r2 = el('span', 'wl-r2'), rules = el('span', 'wl-rules');
-    r2.append(el('span', 'wl-chg flat', '1 Min. –'), el('span', 'wl-chg30 flat', '30 Min. –'));
+    r2.append(el('span', 'wl-chg flat', `${S.label} –`));
     for (const x of wlRules(null)) { const s = el('span', `wl-rule ${x.dir}`); s.append(el('span', '', x.label), el('i', '', x.arrow)); rules.append(s); }
     tile.append(el('b', 'wl-sym', coin), svg, el('span', 'wl-price', '…'), el('span', 'wl-sig', '·'), r2, rules);
     if (coin === base) tile.append(el('span', 'sr-only', ' (im Chart geöffnet)'));
@@ -2743,7 +2759,9 @@ function renderWatchlist() {
     if (state.watchEdit) { const x = btn('chip-x', '×'); x.dataset.unwatch = coin; x.setAttribute('aria-label', `${coin} aus der Vorauswahl entfernen`); item.append(x); }
     grid.append(item);
   }
-  box.replaceChildren(head, grid, wldBox());
+  // das Detailfeld bleibt eingehängt (3.25.0): sonst verlöre die Zeitraum-Auswahl darin beim Wechsel den Fokus
+  const d = wldBox();
+  if (d.parentNode === box) { for (const n of [...box.childNodes]) if (n !== d) n.remove(); d.before(head, grid); } else box.replaceChildren(head, grid, d);
   if (typeof wlPaint === 'function') wlPaint(Date.now(), true);
 }
 
@@ -4100,7 +4118,7 @@ function syncStreams() {
       if (nearLevel(it.symbol)) want[m].add(`${s}@aggTrade`); // nahe einer Marke: jeden Trade prüfen
     }
     for (const s of fullBarSyms()) want.spot.add(`${s.toLowerCase()}@kline_1m`); // Vollbild: Kurs-Wechsler oben rechts
-    for (const w of wlStreams()) want[w.m].add(w.s); // 4.2: Mini-Watchlist – 1m-Kerzen aller Vorauswahl-Coins
+    for (const w of wlStreams()) want[w.m].add(w.s); // 4.2/3.25.0: Mini-Watchlist – Kerzen aller Vorauswahl-Coins im Intervall des Zeitraums
     if (pulseWants()) want.spot.add('btcusdt@kline_1m'); // 3.24.0: BTC-Puls
     // Tab-Titel mit BTC-Referenzkurs (anderer Coin im Chart): BTC-Spot-1m – auch wenn der Chart aus den Futures kommt
     if (titlePriceOn && state.symbol !== 'BTCUSDT') want.spot.add('btcusdt@kline_1m');
@@ -4203,7 +4221,8 @@ function onKline(m) {
   const now = Date.now(); live.lastMsg[m.m] = now; clockSample(m.E); // 3.3: Binance-Zeit für den Countdown
   if (state.paused) return;
   if (m.i === '1m' && m.s === 'BTCUSDT' && m.m === 'spot' && m.k.c > 0) { btcRef = { price: m.k.c, at: now }; if (state.symbol !== 'BTCUSDT') updateTitle(); }
-  if (m.i === '1m') { trackLivePrice(m.s, m.k, now); wlKline(m, now); volaKline(m); pulseKline(m, now); } // 4.2: Mini-Watchlist, 4.3: Volatilität der letzten 60 Minuten
+  if (m.i === '1m') { trackLivePrice(m.s, m.k, now); volaKline(m); pulseKline(m, now); } // 4.3: Volatilität der letzten 60 Minuten
+  wlKline(m, now); // 4.2/3.25.0: Mini-Watchlist – Kerzen im Intervall des gewählten Zeitraums (wlKline prüft Intervall, Coin und Markt)
   if (m.s === state.symbol && m.m === chartMarket() && m.i === state.interval && applyLiveCandle(m.k)) { live.chartAt = now; updateTitle(); scheduleLiveRender(true); }
   else if (m.i === '1m' && watchSymbols().has(m.s)) scheduleLiveRender(false);
 }
@@ -4777,32 +4796,35 @@ const TG_TOKEN_RE = /^\d{5,15}:[A-Za-z0-9_-]{30,80}$/, TG_CHAT_RE = /^(-?\d{1,20
 const DC_URL_RE = /^https:\/\/(?:(?:ptb|canary)\.)?discord(?:app)?\.com\/api(?:\/v\d{1,2})?\/webhooks\/\d{5,25}\/[A-Za-z0-9_-]{20,120}(?:\?thread_id=\d{5,25})?$/;
 function loadChannels() {
   const v = store.get(CHAN_KEY), o = v && typeof v === 'object' ? v : {}, str = (x, n) => typeof x === 'string' ? x.trim().slice(0, n) : '';
-  return { tg: { token: str(o.tg?.token, 120), chat: str(o.tg?.chat, 40), thread: str(o.tg?.thread, 10), bchat: str(o.tg?.bchat, 40), bthread: str(o.tg?.bthread, 10), on: o.tg?.on !== false }, dc: { url: str(o.dc?.url, 300), on: o.dc?.on !== false },
+  return { tg: { token: str(o.tg?.token, 120), chat: str(o.tg?.chat, 40), thread: str(o.tg?.thread, 10), bchat: str(o.tg?.bchat, 40), bthread: str(o.tg?.bthread, 10), btoken: str(o.tg?.btoken, 120), on: o.tg?.on !== false }, dc: { url: str(o.dc?.url, 300), on: o.dc?.on !== false },
     ev: { alarm: o.ev?.alarm !== false, pos: o.ev?.pos !== false, day: o.ev?.day !== false, news: o.ev?.news !== false, pnl: o.ev?.pnl !== false, pulse: o.ev?.pulse !== false } };
 }
 let chan = loadChannels();
 const chanState = { tg: null, dc: null }, chanClaimed = new Set(), sendWait = new Map(), CHAN_NAME = { tg: 'Telegram', dc: 'Discord' };
 let sendSeq = 0;
-const tgOk = t => TG_TOKEN_RE.test(t.token) && TG_CHAT_RE.test(t.chat) && (!t.thread || TG_THREAD_RE.test(t.thread)) && (!t.bchat || TG_CHAT_RE.test(t.bchat)) && (!t.bthread || TG_THREAD_RE.test(t.bthread));
+const tgOk = t => TG_TOKEN_RE.test(t.token) && TG_CHAT_RE.test(t.chat) && (!t.thread || TG_THREAD_RE.test(t.thread)) && (!t.bchat || TG_CHAT_RE.test(t.bchat)) && (!t.bthread || TG_THREAD_RE.test(t.bthread)) && (!t.btoken || TG_TOKEN_RE.test(t.btoken));
 const chanValid = k => k === 'tg' ? tgOk(chan.tg) : DC_URL_RE.test(chan.dc.url);
 const chanReady = k => chan[k].on && chanValid(k);
 // Ablaufplan Schritt 3 (3.24.0): Ziel jeder Nachrichtenart zentral an einer Stelle. „Kursalarm“ ist der Chat (optional mit
 // Thema) für alle Alarme und Hinweise, der „Sicherungschat“ bekommt nur die Datensicherung. Unbekannte Arten gehen immer zu
 // „Kursalarm“, nie in den Sicherungschat. Vorher gab es nur eine Chat-ID für alles – News landeten so im Sicherungschat.
 const TG_ROUTE = { alarm: 'alert', pos: 'alert', day: 'alert', news: 'alert', pnl: 'alert', pulse: 'alert', s247: 'alert', test: 'alert', backup: 'backup' };
+// 3.25.0: Der Sicherungschat darf auch über einen eigenen Bot laufen (eigener Token, z. B. ein Bot „Sicherung“ neben „Kursalarm“)
 function tgTarget(kind) {
   const t = chan.tg;
-  if (TG_ROUTE[kind] !== 'backup') return { chat: t.chat, thread: t.thread };
-  return t.bchat ? { chat: t.bchat, thread: t.bthread } : { chat: t.chat, thread: t.bthread || t.thread }; // ohne eigenen Chat: wie Kursalarm (ggf. eigenes Thema)
+  if (TG_ROUTE[kind] !== 'backup') return { token: t.token, chat: t.chat, thread: t.thread };
+  const token = t.btoken || t.token;
+  return t.bchat ? { token, chat: t.bchat, thread: t.bthread } : { token, chat: t.chat, thread: t.bthread || t.thread }; // ohne eigenen Chat: wie Kursalarm (ggf. eigenes Thema)
 }
+function tgBot(token) { return /^(\d+):/.exec(token || '')?.[1] || ''; } // die Zahl vor dem Doppelpunkt kennzeichnet den Bot
 const tgFields = T => ({ chat_id: T.chat, ...(T.thread ? { message_thread_id: T.thread } : {}) });
-const tgKey = T => `${T.chat}|${T.thread || ''}`;
+const tgKey = T => `${tgBot(T.token)}|${T.chat}|${T.thread || ''}`;
 const tgSeparate = () => tgKey(tgTarget('backup')) !== tgKey(tgTarget('alarm'));
 function saveChannels() { if (store.set(CHAN_KEY, chan)) broadcastData([CHAN_KEY]); renderChanSummary(); scheduleS247(); }
 // Nachricht über den Worker senden; das Ergebnis kommt als {t:'sent'} zurück (onSent)
 function chanSend(k, text, test = false, kind = 'test', opts = {}) {
   const id = ++sendSeq, m = k === 'tg'
-    ? { t: 'send', id, kind: 'telegram', test, url: `https://api.telegram.org/bot${chan.tg.token}/sendMessage`, fields: { ...tgFields(tgTarget(kind)), text: text.slice(0, 4000), link_preview_options: JSON.stringify({ is_disabled: true }), ...(opts.silent ? { disable_notification: 'true' } : {}) } }
+    ? { t: 'send', id, kind: 'telegram', test, url: `https://api.telegram.org/bot${tgTarget(kind).token}/sendMessage`, fields: { ...tgFields(tgTarget(kind)), text: text.slice(0, 4000), link_preview_options: JSON.stringify({ is_disabled: true }), ...(opts.silent ? { disable_notification: 'true' } : {}) } }
     : { t: 'send', id, kind: 'discord', test, url: chan.dc.url, fields: { content: text.slice(0, 1900), allowed_mentions: { parse: [] } } };
   return new Promise(resolve => { sendWait.set(id, { k, resolve }); live.post(m); });
 }
@@ -4845,7 +4867,7 @@ function chanLine(k) {
 }
 function renderChanSummary() {
   const any = chan.tg.token || chan.dc.url;
-  put('chan-summary', any ? `Telegram: ${chanLine('tg')}${chanValid('tg') ? ` · Sicherung: ${tgSeparate() ? 'eigener Chat' : 'wie Kursalarm'}` : ''} · Discord: ${chanLine('dc')}${s247Active() ? ' · 24/7-Dienst: aktiv' : ''}` : 'Noch kein Kanal eingerichtet – Anleitung im Fenster.');
+  put('chan-summary', any ? `Telegram: ${chanLine('tg')}${chanValid('tg') ? ` · Sicherung: ${tgSeparate() ? (chan.tg.btoken && chan.tg.btoken !== chan.tg.token ? 'eigener Bot' : 'eigener Chat') : 'wie Kursalarm'}` : ''} · Discord: ${chanLine('dc')}${s247Active() ? ' · 24/7-Dienst: aktiv' : ''}` : 'Noch kein Kanal eingerichtet – Anleitung im Fenster.');
 }
 function chanMsg(k, ok, text) { const p = $(k + '-status'); p.textContent = text; p.className = 'chan-status' + (ok === true ? ' ok' : ok === false ? ' err' : ''); }
 function renderChanStatus() {
@@ -4857,15 +4879,22 @@ function renderChanStatus() {
   }
 }
 function fillChanForm() {
-  $('tg-token').value = chan.tg.token; $('tg-chat').value = chan.tg.chat; $('tg-thread').value = chan.tg.thread; $('tg-bchat').value = chan.tg.bchat; $('tg-bthread').value = chan.tg.bthread; $('tg-on').checked = chan.tg.on;
+  $('tg-token').value = chan.tg.token; $('tg-chat').value = chan.tg.chat; $('tg-thread').value = chan.tg.thread; $('tg-bchat').value = chan.tg.bchat; $('tg-bthread').value = chan.tg.bthread; $('tg-btoken').value = chan.tg.btoken; $('tg-on').checked = chan.tg.on;
   $('dc-url').value = chan.dc.url; $('dc-on').checked = chan.dc.on;
   $('chan-ev-alarm').checked = chan.ev.alarm; $('chan-ev-pos').checked = chan.ev.pos; $('chan-ev-day').checked = chan.ev.day; $('chan-ev-news').checked = chan.ev.news; $('chan-ev-pnl').checked = chan.ev.pnl; $('chan-ev-pulse').checked = chan.ev.pulse;
   renderChanStatus(); renderPulseInfo();
 }
 function readChanForm() {
-  chan = { tg: { token: $('tg-token').value.trim(), chat: $('tg-chat').value.trim(), thread: $('tg-thread').value.trim(), bchat: $('tg-bchat').value.trim(), bthread: $('tg-bthread').value.trim(), on: $('tg-on').checked }, dc: { url: $('dc-url').value.trim(), on: $('dc-on').checked },
+  const was = tgTarget('backup'), implicit = !chan.tg.bchat && !chan.tg.btoken;
+  chan = { tg: { token: $('tg-token').value.trim(), chat: $('tg-chat').value.trim(), thread: $('tg-thread').value.trim(), bchat: $('tg-bchat').value.trim(), bthread: $('tg-bthread').value.trim(), btoken: $('tg-btoken').value.trim(), on: $('tg-on').checked }, dc: { url: $('dc-url').value.trim(), on: $('dc-on').checked },
     ev: { alarm: $('chan-ev-alarm').checked, pos: $('chan-ev-pos').checked, day: $('chan-ev-day').checked, news: $('chan-ev-news').checked, pnl: $('chan-ev-pnl').checked, pulse: $('chan-ev-pulse').checked } };
+  // 3.25.0: Ohne eigenen Sicherungschat folgte die Sicherung jeder Änderung am Kursalarm-Ziel – so landete sie plötzlich im
+  // Kursalarm-Chat. Jetzt bleibt sie, wo ihre Datei liegt: Der bisherige Ort (Chat, Thema, Bot) wird als Sicherungschat eingetragen.
+  const t = chan.tg, kept = implicit && !t.bchat && !t.btoken && tgbHasMsg(tgKey(was)) && tgKey(tgTarget('backup')) !== tgKey(was);
+  if (kept) { t.bchat = was.chat; t.bthread = was.thread || ''; if (was.token !== t.token) t.btoken = was.token; $('tg-bchat').value = t.bchat; $('tg-bthread').value = t.bthread; $('tg-btoken').value = t.btoken; }
   saveChannels(); renderChanStatus();
+  if (kept) chanMsg('tg', true, 'Kursalarm geändert – die Datensicherung bleibt im bisherigen Chat und ist dort jetzt als Sicherungschat eingetragen.');
+  return kept;
 }
 function openChan() {
   closeMenus(); fillChanForm();
@@ -4887,31 +4916,45 @@ async function tgDetect() {
   try {
     const me = await tgApi(chan.tg.token, 'getMe'), ups = await tgApi(chan.tg.token, 'getUpdates', { limit: 100, timeout: 0 });
     // Chats und Themen, die der Bot gesehen hat (neueste zuerst) – zum Zuordnen: Kursalarm oder Sicherungschat
-    const seen = new Map();
-    for (const u of (Array.isArray(ups) ? ups : []).reverse()) {
-      const m = u.message || u.edited_message || u.channel_post || u.my_chat_member, c = m?.chat; if (!c || c.id === undefined) continue;
-      const thread = m.is_topic_message && m.message_thread_id ? String(m.message_thread_id) : '', key = `${c.id}|${thread}`;
-      if (!seen.has(key)) seen.set(key, { chat: String(c.id), thread, name: c.first_name || c.title || c.username || 'Chat', topic: m.reply_to_message?.forum_topic_created?.name || m.forum_topic_created?.name || '', priv: c.type === 'private' });
+    const list = tgSeen(ups);
+    // 3.25.0: eigener Sicherungs-Bot – seine Chats kommen dazu, nur zum Zuordnen als Sicherungschat
+    let extra = '';
+    if (TG_TOKEN_RE.test(chan.tg.btoken) && chan.tg.btoken !== chan.tg.token) {
+      try {
+        const me2 = await tgApi(chan.tg.btoken, 'getMe'), more = tgSeen(await tgApi(chan.tg.btoken, 'getUpdates', { limit: 100, timeout: 0 }));
+        for (const x of more) list.push({ ...x, via: me2.username, only: 'backup' });
+        if (!more.length) extra = ` Sicherungs-Bot @${me2.username}: noch keine Nachricht – dort „Start“ tippen.`;
+      } catch (e) { extra = ` Sicherungs-Bot: ${e.message}`; }
     }
-    const list = [...seen.values()];
     if (!list.length) return chanMsg('tg', false, `Bot @${me.username} gefunden, aber er hat noch keine Nachricht von dir. In Telegram den Bot öffnen, „Start“ tippen oder „Hallo“ schreiben und dann erneut „Chat-ID ermitteln“.`);
     // Erste Einrichtung: den Privatchat (sonst den neuesten) gleich als Kursalarm eintragen – wie bisher, ohne Extra-Tippen
-    const auto = chan.tg.chat ? null : list.find(x => x.priv) || list[0];
+    const auto = chan.tg.chat ? null : list.find(x => x.priv && !x.only) || list.find(x => !x.only);
     if (auto) { $('tg-chat').value = auto.chat; $('tg-thread').value = auto.thread; readChanForm(); }
     renderTgFound(list);
-    chanMsg('tg', true, auto
+    chanMsg('tg', true, (auto
       ? `Gefunden: ${auto.name}${auto.topic ? ` › ${auto.topic}` : ''} (ID ${auto.chat}) über Bot @${me.username} – als „Kursalarm“ eingetragen. ${list.length > 1 ? 'Weitere Chats unten: für die Datensicherung „→ Sicherungschat“ tippen, dann „Test je Nachrichtenart“.' : 'Jetzt „Test senden“.'}`
-      : `Bot @${me.username}: ${list.length === 1 ? 'ein Chat' : `${list.length} Chats bzw. Themen`} gefunden – unten „Kursalarm“ und „Sicherungschat“ zuordnen, dann „Test je Nachrichtenart“.`);
+      : `Bot @${me.username}: ${list.length === 1 ? 'ein Chat' : `${list.length} Chats bzw. Themen`} gefunden – unten „Kursalarm“ und „Sicherungschat“ zuordnen, dann „Test je Nachrichtenart“.`) + extra);
   } catch (e) { chanMsg('tg', false, e.message); }
   finally { $('tg-detect').disabled = false; }
+}
+// Chats und Themen, die ein Bot gesehen hat (neueste zuerst) – zum Zuordnen: Kursalarm oder Sicherungschat
+function tgSeen(ups) {
+  const seen = new Map();
+  for (const u of (Array.isArray(ups) ? ups : []).reverse()) {
+    const m = u.message || u.edited_message || u.channel_post || u.my_chat_member, c = m?.chat; if (!c || c.id === undefined) continue;
+    const thread = m.is_topic_message && m.message_thread_id ? String(m.message_thread_id) : '', key = `${c.id}|${thread}`;
+    if (!seen.has(key)) seen.set(key, { chat: String(c.id), thread, name: c.first_name || c.title || c.username || 'Chat', topic: m.reply_to_message?.forum_topic_created?.name || m.forum_topic_created?.name || '', priv: c.type === 'private' });
+  }
+  return [...seen.values()];
 }
 function renderTgFound(list) {
   const box = $('tg-found'); box.hidden = !list.length;
   box.replaceChildren(...list.map(x => {
-    const row = el('div', 'tg-found-row'), a = btn('button ghost', '→ Kursalarm'), b = btn('button ghost', '→ Sicherungschat');
-    a.addEventListener('click', () => { $('tg-chat').value = x.chat; $('tg-thread').value = x.thread; readChanForm(); chanMsg('tg', true, `Kursalarm: ${x.name}${x.topic ? ` › ${x.topic}` : ''}.`); });
-    b.addEventListener('click', () => { $('tg-bchat').value = x.chat; $('tg-bthread').value = x.thread; readChanForm(); chanMsg('tg', true, `Sicherungschat: ${x.name}${x.topic ? ` › ${x.topic}` : ''}.`); });
-    row.append(el('span', 'tg-found-name', `${x.name}${x.topic ? ` › ${x.topic}` : ''} · ID ${x.chat}${x.thread ? ` · Thema ${x.thread}` : ''}`), a, b); return row;
+    const row = el('div', 'tg-found-row'), a = btn('button ghost', '→ Kursalarm'), b = btn('button ghost', '→ Sicherungschat'), name = `${x.name}${x.topic ? ` › ${x.topic}` : ''}`;
+    a.addEventListener('click', () => { $('tg-chat').value = x.chat; $('tg-thread').value = x.thread; const kept = readChanForm(); chanMsg('tg', true, `Kursalarm: ${name}.${kept ? ' Die Datensicherung bleibt im bisherigen Chat (als Sicherungschat eingetragen).' : ''}`); });
+    // Ziel ist genau der gelistete Chat samt Bot: über den Haupt-Bot gefunden → ohne eigenen Sicherungs-Token
+    b.addEventListener('click', () => { $('tg-bchat').value = x.chat; $('tg-bthread').value = x.thread; if (!x.only) $('tg-btoken').value = ''; readChanForm(); chanMsg('tg', true, `Sicherungschat: ${name}${x.via ? ` (über @${x.via})` : ''}.`); });
+    row.append(el('span', 'tg-found-name', `${name} · ID ${x.chat}${x.thread ? ` · Thema ${x.thread}` : ''}${x.via ? ` · über @${x.via}` : ''}`), ...(x.only ? [b] : [a, b])); return row;
   }));
 }
 // Ablaufplan Schritt 3: je Nachrichtenart eine Testnachricht an ihr Ziel – so lässt sich die Zuordnung in Telegram prüfen
@@ -4939,14 +4982,14 @@ $('chan-open').addEventListener('click', openChan);
 $('chan-close').addEventListener('click', () => $('chan-dialog').close());
 $('chan-done').addEventListener('click', () => $('chan-dialog').close());
 $('chan-dialog').addEventListener('change', readChanForm);
-for (const id of ['tg-token', 'tg-chat', 'tg-thread', 'tg-bchat', 'tg-bthread', 'dc-url']) $(id).addEventListener('blur', readChanForm);
+for (const id of ['tg-token', 'tg-chat', 'tg-thread', 'tg-bchat', 'tg-bthread', 'tg-btoken', 'dc-url']) $(id).addEventListener('blur', readChanForm);
 $('tg-testall').addEventListener('click', () => void chanTestAll());
 $('tg-detect').addEventListener('click', () => void tgDetect());
 $('tg-test').addEventListener('click', () => void chanTest('tg'));
 $('dc-test').addEventListener('click', () => void chanTest('dc'));
 $('chan-clear').addEventListener('click', () => {
   if (!confirm('Bot-Token, Chat-ID und Webhook-URL auf diesem Gerät löschen?')) return;
-  chan = { tg: { token: '', chat: '', thread: '', bchat: '', bthread: '', on: true }, dc: { url: '', on: true }, ev: chan.ev }; chanState.tg = chanState.dc = null; $('tg-found').hidden = true;
+  chan = { tg: { token: '', chat: '', thread: '', bchat: '', bthread: '', btoken: '', on: true }, dc: { url: '', on: true }, ev: chan.ev }; chanState.tg = chanState.dc = null; $('tg-found').hidden = true;
   saveChannels(); fillChanForm();
 });
 renderChanSummary();
@@ -5093,7 +5136,7 @@ function drawLiqLines(svg, over, G) {
 // (nicht im Backup). Beim nächsten Abruf lädt das Dashboard nur die Kerzen ab der zuletzt gespeicherten nach. Diese letzte
 // Kerze wird dabei mitgeladen und verglichen; weicht sie ab, wird die Reihe verworfen und vollständig neu geladen.
 const KC_DB = 'scalpdesk-candles', KC_MAX = 40, KC_KEEP = 500, KC_INDEX = '__index';
-const IV_MS = { '1m': 6e4, '5m': 3e5, '15m': 9e5, '1h': 36e5, '4h': 144e5, '1d': 864e5, '1w': 6048e5, '1M': 2678e6 };
+const IV_MS = { '1m': 6e4, '3m': 18e4, '5m': 3e5, '15m': 9e5, '1h': 36e5, '2h': 72e5, '4h': 144e5, '1d': 864e5, '1w': 6048e5, '1M': 2678e6 }; // 3m und 2h: Zeiträume der Vorauswahl (3.25.0)
 const kc = { mem: new Map(), db: undefined, dirty: new Set(), drop: new Set(), timer: null, stats: { full: 0, delta: 0, shown: 0 } };
 const kcKey = (source, symbol, interval) => `${source}|${symbol}|${interval}`;
 const kcRow = c => [c.time, c.open, c.high, c.low, c.close, c.volume, c.closeTime];
@@ -5660,69 +5703,105 @@ function liqNearHold(id, remaining) {
 }
 // ---------- Sicherung über Telegram (vor allem für iPhone/iPad) ----------
 // Safari erlaubt Webseiten nicht, still in eine Datei zu schreiben – das automatische Datei-Backup gibt es nur in Chrome/Edge
-// am Computer. Eingeschaltet schickt das Dashboard die Sicherungsdatei nach jeder Änderung an den eigenen Telegram-Chat
-// und ersetzt dort die vorige Datei (editMessageMedia): eine Nachricht, immer aktuell. Zugangsdaten für Telegram/Discord
-// stehen nie in der Datei. Mehrere offene Tabs senden über eine Absprache in der IndexedDB nur einmal.
+// am Computer. Eingeschaltet schickt das Dashboard die Sicherungsdatei nach jeder Änderung an den Sicherungschat und ersetzt
+// dort die vorige Datei (editMessageMedia): eine Nachricht, immer aktuell. Zugangsdaten für Telegram/Discord stehen nie in
+// der Datei. Mehrere offene Tabs senden über eine Absprache in der IndexedDB nur einmal.
 // 3.16.1: Gesendet wird, wenn sich die Daten seit der letzten Telegram-Sicherung geändert haben (eigener Fingerabdruck) –
 // nicht mehr über den gemeinsamen Änderungszähler, den jede Datei- oder Teilen-Sicherung auf 0 setzt. Offenes wird beim
 // Verlassen der Seite sofort gesendet und beim nächsten Öffnen nachgeholt: Am iPhone friert Safari eine Seite im
 // Hintergrund ein oder verwirft sie – ein wartender Timer lief dann nie.
-const TGB_KEY = 'scalpdesk.tgbackup.v1';
+// 3.25.0: Ziel ist der Sicherungschat (eigener Chat, eigenes Thema oder eigener Sicherungs-Bot, siehe tgTarget). Die
+// Sicherungsnachricht wird dort angeheftet: So finden alle Geräte (iPhone, iPad, Computer) dieselbe Nachricht und ersetzen
+// sie – im Chat liegt immer genau eine Sicherungsdatei. Bisher merkte sich jedes Gerät nur seine eigene Nachricht, und nach
+// dem Update auf 3.24.0 wurde die alte Nachricht wegen eines neuen Speicherformats nicht wiedererkannt (zweite Datei). Im
+// Kursalarm-Chat wird nichts angeheftet, solange dort die Datei des 24/7-Dienstes hängt – dann ersetzt jedes Gerät seine eigene.
+const TGB_KEY = 'scalpdesk.tgbackup.v1', TGB_FILE = 'scalpdesk-sicherung.json';
 // var statt const: persist() kann das Senden anstoßen, bevor dieser Abschnitt ausgewertet ist
-var tgb = { cfg: loadTgb(), timer: null, busy: false, error: '' };
-function loadTgb() { const v = store.get(TGB_KEY); return { on: !!v?.on, chat: typeof v?.chat === 'string' ? v.chat : '', msg: Number(v?.msg) || 0, at: Number(v?.at) || 0, sig: typeof v?.sig === 'string' ? v.sig : '' }; }
+var tgb = { cfg: loadTgb(), timer: null, busy: false, error: '', note: '' };
+function loadTgb() { const v = store.get(TGB_KEY); return { on: !!v?.on, chat: typeof v?.chat === 'string' ? v.chat : '', msg: Number(v?.msg) || 0, at: Number(v?.at) || 0, sig: typeof v?.sig === 'string' ? v.sig : '', name: typeof v?.name === 'string' ? v.name.slice(0, 60) : '' }; }
 function saveTgb() { store.set(TGB_KEY, { ...tgb.cfg }); }
+// Gemerktes Ziel einheitlich als „Bot|Chat|Thema“: bis 3.23.1 nur „Chat“, in 3.24.0 „Chat|Thema“ (beides über den Haupt-Bot)
+function tgbNormKey(k) { if (!k) return ''; const p = String(k).split('|'); return p.length >= 3 ? p.slice(0, 3).join('|') : `${tgBot(chan.tg.token)}|${p[0]}|${p[1] || ''}`; }
+function tgbHasMsg(key) { return !!tgb?.cfg?.msg && tgbNormKey(tgb.cfg.chat) === key; }
+// Unsere Sicherungsnachricht: richtige Datei und (soweit Telegram den Absender nennt) von diesem Bot
+function tgbIsOurs(pm, bot) { return pm?.document?.file_name === TGB_FILE && (!pm.from || String(pm.from.id) === bot); }
+// Anheften nur, wo es nichts verdrängt: nicht im Kursalarm-Chat, solange dort die angeheftete Datei des 24/7-Dienstes gilt
+function tgbPinOk(T) { return !(tgBot(T.token) === tgBot(chan.tg.token) && String(T.chat) === String(chan.tg.chat) && !!s247?.cfg?.on); }
 function tgConfigured() { return chanValid('tg'); }
 function tgbReady() { return !!tgb && tgb.cfg.on && tgConfigured(); }
 // Fingerabdruck der gesicherten Daten – ohne Zeitstempel. Die still gelernten Muster ändern sich mit jeder Kerze; sie reisen
 // immer in der Datei mit und lösen allein höchstens alle 6 Stunden ein neues Senden aus (3.24.0, zzpStamp)
 function tgbSig(p) { const j = JSON.stringify({ ...p, exportedAt: 0, patterns: zzpStamp() }); let h = 0; for (let i = 0; i < j.length; i++) h = (h * 31 + j.charCodeAt(i)) | 0; return `${j.length}:${h >>> 0}`; }
 function scheduleTgBackup(delay = 4000) { if (!tgbReady()) return; clearTimeout(tgb.timer); tgb.timer = setTimeout(() => { tgb.timer = null; void sendTgBackup(); }, delay); }
-async function tgPost(method, fd, keepalive = false) {
-  let r; try { r = await fetch(`https://api.telegram.org/bot${chan.tg.token}/${method}`, { method: 'POST', body: fd, credentials: 'omit', referrerPolicy: 'no-referrer', cache: 'no-store', keepalive }); }
+async function tgPost(method, fd, keepalive = false, token = chan.tg.token) {
+  let r; try { r = await fetch(`https://api.telegram.org/bot${token}/${method}`, { method: 'POST', body: fd, credentials: 'omit', referrerPolicy: 'no-referrer', cache: 'no-store', keepalive }); }
   catch { throw Object.assign(new Error('Telegram nicht erreichbar – Internet oder Werbeblocker prüfen.'), { code: 0 }); }
   let d = null; try { d = await r.json(); } catch {}
   if (!r.ok || !d?.ok) throw Object.assign(new Error(r.status === 401 || r.status === 404 ? 'Token ungültig – in „Telegram / Discord einrichten“ prüfen.' : r.status === 429 ? 'Zu viele Nachrichten – nächster Versuch bei der nächsten Änderung.' : `Telegram meldet Fehler ${d?.error_code ?? r.status}: ${d?.description || ''}`), { code: d?.error_code ?? r.status });
   return d.result;
 }
-// leaving: Seite wird gerade verlassen – der Upload muss noch im selben Ereignis starten (ohne Warten auf die Tab-Absprache;
-// doppelt ist besser als gar nicht) und bei kleinen Dateien mit keepalive, damit er das Einfrieren der Seite überlebt
+const tgbForm = (o, file) => { const fd = new FormData(); for (const [k, v] of Object.entries(o)) if (v !== '' && v !== undefined && v !== null) fd.append(k, String(v)); if (file) fd.append(file.field, file.blob, TGB_FILE); return fd; };
+// leaving: Seite wird gerade verlassen – der Upload muss noch im selben Ereignis starten (ohne Warten auf die Tab-Absprache und
+// ohne Rückfrage bei Telegram; doppelt ist besser als gar nicht) und bei kleinen Dateien mit keepalive, damit er das Einfrieren
+// der Seite überlebt
 async function sendTgBackup(force = false, leaving = false) {
   if (!(force ? tgConfigured() : tgbReady()) || tgb.busy) return; // „Jetzt senden“ geht auch ohne die Automatik (3.19.1)
   const payload = backupPayload(), sig = tgbSig(payload);
-  const T = tgTarget('backup'), where = tgKey(T); // 3.24.0: eigenes Ziel „Sicherungschat“ (Ablaufplan Schritt 3)
-  if (!force && sig === tgb.cfg.sig && tgb.cfg.chat === where) return; // Telegram hat schon diesen Stand
+  const T = tgTarget('backup'), where = tgKey(T), bot = tgBot(T.token);
+  if (!force && sig === tgb.cfg.sig && tgbNormKey(tgb.cfg.chat) === where) return; // Telegram hat schon diesen Stand
   const claimed = !leaving && await store.claim('tgbackup', 20000);
   if (!leaving && !claimed) return;   // ein anderer Tab sendet gerade
   tgb.busy = true; tgb.cfg = loadTgb(); renderTgbInfo();
   try {
-    const name = 'scalpdesk-sicherung.json', text = JSON.stringify(payload, null, 1), file = new Blob([text], { type: 'application/json' });
+    const text = JSON.stringify(payload, null, 1), blob = new Blob([text], { type: 'application/json' });
     const caption = `💾 Scalp-Desk-Sicherung · ${new Date().toLocaleString('de-DE')}\n${state.positions.length} offene Positionen · ${state.trades.length} Trades${state.movements.length ? ` · ${state.movements.length} Geldbewegungen` : ''}\nWiederherstellen: Datei speichern, im Dashboard „Backup einspielen“.`;
     const keep = leaving && text.length < 60000; // keepalive erlaubt höchstens 64 KB
-    let msg = tgb.cfg.chat === where ? tgb.cfg.msg : 0, done = false;
-    if (msg) {
-      const fd = new FormData(); fd.append('chat_id', T.chat); fd.append('message_id', String(msg));
-      fd.append('media', JSON.stringify({ type: 'document', media: 'attach://file', caption })); fd.append('file', file, name);
-      try { await tgPost('editMessageMedia', fd, keep); done = true; } catch (e) { if (e.code !== 400) throw e; }   // Nachricht gelöscht: neu senden
+    const pinOk = tgbPinOk(T), own = tgbNormKey(tgb.cfg.chat) === where ? tgb.cfg.msg : 0;
+    // Welche Nachricht ersetzen? Zuerst die angeheftete (gilt für alle Geräte), sonst die zuletzt von diesem Gerät gesendete
+    let pinned = 0;
+    if (pinOk && !leaving) { try { const pm = (await tgApi(T.token, 'getChat', { chat_id: T.chat }))?.pinned_message; if (tgbIsOurs(pm, bot)) pinned = pm.message_id; } catch {} }
+    let msg = 0, res = null; const gone = new Set();
+    for (const id of [...new Set([pinned, own])].filter(Boolean)) {
+      try { res = await tgPost('editMessageMedia', tgbForm({ chat_id: T.chat, message_id: id, media: JSON.stringify({ type: 'document', media: 'attach://file', caption }) }, { field: 'file', blob }), keep, T.token); msg = id; break; }
+      catch (e) { if (e.code !== 400) throw e; gone.add(id); } // gelöscht oder nicht mehr änderbar: nächste bzw. neu senden
     }
-    if (!done) {
-      const fd = new FormData(); fd.append('chat_id', T.chat); if (T.thread) fd.append('message_thread_id', T.thread); fd.append('caption', caption); fd.append('disable_notification', 'true'); fd.append('document', file, name);
-      msg = (await tgPost('sendDocument', fd, keep))?.message_id || 0;
+    if (!msg) {
+      res = await tgPost('sendDocument', tgbForm({ chat_id: T.chat, message_thread_id: T.thread, caption, disable_notification: 'true' }, { field: 'document', blob }), keep, T.token);
+      msg = res?.message_id || 0;
     }
-    tgb.cfg = { ...tgb.cfg, chat: where, msg, at: Date.now(), sig }; saveTgb(); tgb.error = '';
+    tgb.note = '';
+    if (msg && !leaving) {
+      // neue Nachricht anheften (für die anderen Geräte), die alte lösen; eigene ältere Datei löschen – im Chat bleibt eine
+      if (pinOk && msg !== pinned) {
+        try { await tgPost('pinChatMessage', tgbForm({ chat_id: T.chat, message_id: msg, disable_notification: 'true' }), false, T.token); }
+        catch { tgb.note = 'Anheften nicht erlaubt – in einer Gruppe braucht der Bot das Recht „Nachrichten anheften“. Bis dahin ersetzt jedes Gerät nur seine eigene Datei.'; }
+        if (pinned) try { await tgPost('unpinChatMessage', tgbForm({ chat_id: T.chat, message_id: pinned }), false, T.token); } catch {}
+      }
+      if (own && own !== msg && !gone.has(own)) try { await tgPost('deleteMessage', tgbForm({ chat_id: T.chat, message_id: own }), false, T.token); } catch {}
+    }
+    const c = res?.chat, name = c ? c.title || [c.first_name, c.last_name].filter(Boolean).join(' ') || (c.username ? '@' + c.username : '') : '';
+    tgb.cfg = { ...tgb.cfg, chat: where, msg, at: Date.now(), sig, name: name || (tgbNormKey(tgb.cfg.chat) === where ? tgb.cfg.name : '') }; saveTgb(); tgb.error = '';
     markBackedUp('telegram');
   } catch (e) { tgb.error = e?.message || String(e); }
   finally { tgb.busy = false; if (claimed) void store.release('tgbackup'); renderTgbInfo(); }
 }
+// Wohin geht die Sicherung? Eigener Sicherungschat oder (ohne Eintrag) der Kursalarm-Chat – das steht jetzt immer dabei
+function tgbWhere() {
+  const c = tgb.cfg, sep = tgSeparate(), named = tgbHasMsg(tgKey(tgTarget('backup'))) && c.name ? ` „${c.name}“` : '';
+  return sep ? `Ziel: Sicherungschat${named}` : `Ziel: Kursalarm-Chat${named} – kein eigener Sicherungschat eingetragen`;
+}
 function renderTgbInfo() {
   if (!tgb) return;
-  const ok = tgConfigured(), c = tgb.cfg;
-  $('tgb-on').checked = c.on && ok; $('tgb-on').disabled = !ok; $('tgb-setup').hidden = ok; $('tgb-now').hidden = !ok;
-  put('tgb-info', !ok ? 'Für iPhone/iPad: Safari erlaubt kein automatisches Speichern in Dateien. Stattdessen kann die Sicherung nach jeder Änderung an deinen Telegram-Chat gehen – dafür zuerst Telegram einrichten.'
+  const ok = tgConfigured(), c = tgb.cfg, sep = ok && tgSeparate();
+  $('tgb-on').checked = c.on && ok; $('tgb-on').disabled = !ok; $('tgb-now').hidden = !ok;
+  // ohne eigenen Sicherungschat: derselbe Knopf führt direkt zur Einrichtung des Sicherungschats
+  $('tgb-setup').hidden = sep; put('tgb-setup', ok ? '💾 Sicherungschat festlegen …' : '📨 Telegram einrichten …');
+  put('tgb-info', !ok ? 'Für iPhone/iPad: Safari erlaubt kein automatisches Speichern in Dateien. Stattdessen kann die Sicherung nach jeder Änderung an deinen Telegram-Sicherungschat gehen – dafür zuerst Telegram einrichten.'
     : tgb.busy ? 'Sende Sicherung …'
     : tgb.error ? `Fehler: ${tgb.error}`
-    : !c.on ? `„Jetzt an Telegram senden“ schickt die Datei einmal direkt in deinen Chat (unverschlüsselt, ohne Telegram- oder Discord-Zugangsdaten); mit dem Häkchen nach jeder Änderung. Jede neue Sicherung ersetzt die vorige.${c.at ? ` Zuletzt gesendet ${new Date(c.at).toLocaleString('de-DE')}.` : ''}`
-    : c.at ? `Aktiv · zuletzt gesendet ${new Date(c.at).toLocaleString('de-DE')} · ersetzt jeweils die vorige Nachricht` : 'Aktiv · die erste Sicherung wird gleich gesendet');
+    : (!c.on ? `„Jetzt an Telegram senden“ schickt die Datei einmal direkt in den Sicherungschat (unverschlüsselt, ohne Telegram- oder Discord-Zugangsdaten); mit dem Häkchen nach jeder Änderung. Jede neue Sicherung ersetzt die vorige.${c.at ? ` Zuletzt gesendet ${new Date(c.at).toLocaleString('de-DE')}.` : ''}`
+      : c.at ? `Aktiv · zuletzt gesendet ${new Date(c.at).toLocaleString('de-DE')} · ersetzt jeweils die vorige Datei` : 'Aktiv · die erste Sicherung wird gleich gesendet')
+      + ` · ${tgbWhere()}${tgb.note ? ` · ${tgb.note}` : ''}`);
   $('tgb-info').classList.toggle('err', !!tgb.error && ok);
 }
 $('tgb-on').addEventListener('change', () => {
@@ -5730,7 +5809,7 @@ $('tgb-on').addEventListener('change', () => {
   if (tgb.cfg.on) void sendTgBackup(true);
 });
 $('tgb-now').addEventListener('click', () => void sendTgBackup(true));
-$('tgb-setup').addEventListener('click', () => openChan());
+$('tgb-setup').addEventListener('click', () => { openChan(); if (tgConfigured()) requestAnimationFrame(() => document.querySelector('#chan-dialog .tg-target.backup')?.scrollIntoView({ block: 'center' })); });
 $('chan-done').addEventListener('click', () => setTimeout(renderTgbInfo));
 // Seite wird verlassen: Wartendes sofort senden. Zurück oder neu geöffnet: nachholen, falls Telegram einen älteren Stand hat.
 document.addEventListener('visibilitychange', () => {
@@ -7142,21 +7221,46 @@ function cnewsTick() {
   $('cnews-more').addEventListener('click', () => { cn.more = !cn.more; cn.rev++; renderCnews(); });
   renderCnews();
 })();
-// ---------- Schritt 4.2: Mini-Watchlist – die Vorauswahl als Live-Kacheln mit 1m-Tendenz ----------
-// Je Coin der Vorauswahl: Live-Kurs, Veränderung der letzten Minute, Verlauf der letzten 30 Minuten und die 1m-Tendenz –
-// dieselben vier Regeln wie die Signal-Übersicht (Trend, Kurs, RSI, MACD), auf abgeschlossenen 1-Minuten-Kerzen, −4 bis +4.
-// Startwerte aus dem Kerzen-Zwischenspeicher bzw. per REST (je Coin 260 1m-Kerzen, nacheinander), danach laufen die
-// 1m-Kerzen aller Vorauswahl-Coins über den Live-Stream mit. Gemalt wird höchstens einmal pro Sekunde und nur, solange die
-// Kacheln im Bild sind und nicht gescrollt wird; alle Felder haben feste Größen, damit sich beim Aktualisieren nichts
-// verschiebt. Die Kacheln selbst baut renderWatchlist() (r-watch.js), nur wenn sich Liste oder Auswahl ändern.
+// ---------- Vorauswahl (Mini-Watchlist): Live-Kacheln mit der Tendenz eines wählbaren Zeitraums ----------
+// Je Coin der Vorauswahl: Live-Kurs, Veränderung und Verlauf über den Zeitraum und die Tendenz – dieselben vier Regeln wie die
+// Signal-Übersicht (Trend, Kurs, RSI, MACD) auf abgeschlossenen Kerzen, −4 bis +4.
+// 3.25.0: Die Bewertung läuft über einen wählbaren Zeitraum, Standard die letzte Stunde: 5-Minuten-Kerzen (12 im Zeitraum) mit
+// Vorlauf, damit EMA 50 und MACD eingeschwungen sind (260 geladen, die letzten 199 gerechnet). Neu gerechnet wird bei jedem Schluss
+// einer Kerze, der Kurs läuft über die laufende Kerze live weiter. Die Zeitraum-Knöpfe des Charts ändern daran nichts. Zeiträume
+// (je etwa 12 Kerzen): 1 Minute (1m-Kerzen, wie bis 3.24.0), 30 Minuten (3m), 1 Stunde (5m), 4 Stunden (15m), 1 Tag (2h).
+// Startwerte aus dem Kerzen-Zwischenspeicher bzw. per REST (nacheinander), danach laufen die Kerzen aller Vorauswahl-Coins über
+// den Live-Stream mit. Gemalt wird höchstens einmal pro Sekunde und nur, solange die Kacheln im Bild sind und nicht gescrollt
+// wird; alle Felder haben feste Größen. Die Kacheln selbst baut renderWatchlist() (r-watch.js).
 // var statt const/let: wlKline/wlTick können über Stream und Sekundentakt schon laufen, bevor dieser Abschnitt ausgewertet ist
-var WL_LIMIT = 260, WL_WINDOW = 199, WL_SPARK = 30, WL_RETRY = 60e3;
-var wl = { c: new Map(), vis: true, loadAt: 0 };
+var WL_LIMIT = 260, WL_WINDOW = 199, WL_RETRY = 60e3, WL_SPAN_KEY = 'scalpdesk.wlspan.v1', WL_TARGET = 1;
+// Die Zeiträume als Funktion: Sie stehen auch bereit, wenn renderWatchlist() schon vor diesem Abschnitt läuft (eine var wäre dann
+// noch leer)
+function wlSpans() {
+  return wlSpans.t || (wlSpans.t = {
+    '1m': { iv: '1m', n: 1, ms: 60e3, label: '1 Min.', of: 'der letzten Minute', the: 'die letzte Minute', name: '1 Minute', ivName: '1-Minuten' },
+    '30m': { iv: '3m', n: 10, ms: 18e5, label: '30 Min.', of: 'der letzten 30 Minuten', the: 'die letzten 30 Minuten', name: '30 Minuten', ivName: '3-Minuten' },
+    '1h': { iv: '5m', n: 12, ms: 36e5, label: '1 Std.', of: 'der letzten Stunde', the: 'die letzte Stunde', name: '1 Stunde', ivName: '5-Minuten' },
+    '4h': { iv: '15m', n: 16, ms: 144e5, label: '4 Std.', of: 'der letzten 4 Stunden', the: 'die letzten 4 Stunden', name: '4 Stunden', ivName: '15-Minuten' },
+    '1d': { iv: '2h', n: 12, ms: 864e5, label: '1 Tag', of: 'des letzten Tages', the: 'den letzten Tag', name: '1 Tag', ivName: '2-Stunden' }
+  });
+}
+function wlSpanKey() { const v = store.get(WL_SPAN_KEY); return wlSpans()[v] ? v : '1h'; }
+var wl = { c: new Map(), vis: true, loadAt: 0, span: '' };
+// gewählter Zeitraum – beim ersten Zugriff aus dem Speicher (Standard: 1 Stunde)
+function wlSpan() { if (wl && !wl.span) wl.span = wlSpanKey(); const T = wlSpans(); return T[wl?.span] || T['1h']; }
 var wlSym = coin => `${coin}USDT`;
+// Zeitraum wechseln (Auswahl im Detailfeld): gespeichert; alle Reihen im neuen Kerzen-Intervall neu laden, Streams umstellen
+function wlSetSpan(k) {
+  if (!wlSpans()[k] || !wl) return;
+  wlSpan(); if (k === wl.span) return;
+  wl.span = k; store.set(WL_SPAN_KEY, k);
+  wl.c.clear(); wl.loadAt = 0;
+  syncStreams(); renderWatchlist(); wlTick(Date.now());
+}
 // Kerze aus dem Stream (Format des Workers) ins Format der REST-Kerzen
 var wlCandle = k => ({ time: k.t, open: k.o, high: k.h, low: k.l, close: k.c, volume: k.v, closeTime: k.T });
-// Neue Stream-Kerze einordnen: abgeschlossen → an die Reihe (höchstens WL_LIMIT), laufend → als aktuelle Kerze.
-// Fehlt dazwischen eine Minute (Handy gesperrt, Verbindung weg), wird die Reihe neu geladen.
+// Neue Stream-Kerze einordnen: abgeschlossen → an die Reihe (höchstens WL_LIMIT) und neu bewerten, laufend → als aktuelle
+// Kerze (Live-Kurs). Fehlt dazwischen eine Kerze (Handy gesperrt, Verbindung weg), wird die Reihe neu geladen.
 function wlAdd(e, k, now) {
   const c = wlCandle(k), last = e.closed.at(-1);
   if (last && c.time <= last.time) return;
@@ -7168,48 +7272,69 @@ function wlAdd(e, k, now) {
   if (!h.length || now - h.at(-1)[0] >= 1000) h.push([now, p]); else h.at(-1)[1] = p;
   while (h.length && now - h[0][0] > 180e3) h.shift();
 }
-// Aus dem Live-Stream (onKline): nur 1m-Kerzen der Vorauswahl
+// Aus dem Live-Stream (onKline): nur Kerzen des Zeitraum-Intervalls der Vorauswahl
 function wlKline(m, now) {
-  if (!wl || m.i !== '1m') return;
+  if (!wl || m.i !== wlSpan().iv) return;
   const e = wl.c.get(m.s);
-  if (e && !e.loading && e.market === m.m) wlAdd(e, m.k, now);
+  if (e && !e.loading && e.market === m.m && e.iv === m.i) wlAdd(e, m.k, now);
 }
-// Kurs vor einer Minute: aus dem mitgeschriebenen Verlauf; kurz nach dem Laden (noch keine Minute mitgeschrieben) der
-// Schlusskurs der 1m-Kerze, die damals lief
+// Kurs zu Beginn des Zeitraums: für 1 Minute aus dem mitgeschriebenen Verlauf (kurz nach dem Laden der Schluss der Kerze, die
+// damals lief), sonst der Schluss der letzten Kerze, die vor Beginn des Zeitraums abgeschlossen war (auf ein Intervall genau)
 function wlRef(e, now) {
-  const t = now - 60e3;
-  for (let i = e.hist.length - 1; i >= 0; i--) if (e.hist[i][0] <= t) return e.hist[i][1];
-  for (let i = e.closed.length - 1; i >= 0; i--) if (e.closed[i].time <= t) return e.closed[i].close;
+  const S = wlSpan(), t = now - S.ms, minute = S.ms <= 120e3, at = minute ? 'time' : 'closeTime';
+  if (minute) for (let i = e.hist.length - 1; i >= 0; i--) if (e.hist[i][0] <= t) return e.hist[i][1];
+  for (let i = e.closed.length - 1; i >= 0; i--) if (e.closed[i][at] <= t) return e.closed[i].close;
   return null;
 }
 function wlPrice(e) { return e.run?.close ?? e.hist.at(-1)?.[1] ?? e.closed.at(-1)?.close ?? null; }
-// Verlauf der letzten 30 Minuten als Linie in einem Feld w × h (oben = höchster Kurs)
+// Verlauf des Zeitraums (mindestens 12 Kerzen) als Linie in einem Feld w × h (oben = höchster Kurs)
 function wlSpark(e, w = 44, h = 16) {
-  const vals = [...e.closed.slice(-WL_SPARK).map(c => c.close), wlPrice(e)].filter(v => v > 0);
+  const vals = [...e.closed.slice(-Math.max(wlSpan().n, 12)).map(c => c.close), wlPrice(e)].filter(v => v > 0);
   if (vals.length < 2) return '';
   const lo = Math.min(...vals), hi = Math.max(...vals), span = hi - lo || 1, step = w / (vals.length - 1);
   return vals.map((v, i) => `${(i * step).toFixed(1)},${(h - 1 - ((v - lo) / span) * (h - 2)).toFixed(1)}`).join(' ');
 }
-// Die vier Regeln der 1m-Tendenz für Kachel und Detailfeld – dieselbe Grundlage (e.rating aus signalRating): ▲ bullish,
-// ▼ bearish, – neutral; ohne Bewertung (Coin lädt, zu wenige Kerzen, Fehler) alle vier neutral und der RSI ohne Zahl (3.24.0)
+// Die vier Regeln für Kachel und Detailfeld – dieselbe Grundlage (e.rating aus signalRating): ▲ bullish, ▼ bearish, – neutral;
+// ohne Bewertung (Coin lädt, zu wenige Kerzen, Fehler) alle vier neutral und der RSI ohne Zahl (3.24.0)
 function wlRules(r) {
   return [['trend', 'Trend'], ['kurs', 'Kurs'], ['rsi', 'RSI'], ['macd', 'MACD']].map(([k, name], i) => {
     const x = r?.rules[i], s = x ? x.score : 0;
     return { k, label: x ? x.label : name, arrow: s > 0 ? '▲' : s < 0 ? '▼' : '–', dir: s > 0 ? 'up' : s < 0 ? 'down' : x ? 'flat' : 'none', score: s };
   });
 }
-// Anzeige-Werte einer Kachel (auch für die Tests): Kurs, Veränderung über 1 und über 30 Minuten – beschriftet wie „1 Min. +0,54 %“
-// und „30 Min. +1,33 %“ (Ablaufplan Schritt 5), fehlende Werte neutral „–“ –, Tendenz und die vier Regeln
+// 3.25.0 Gesamtbewertung: Long- bzw. Short-Tendenz nur, wenn mindestens 3 der 4 Signale in dieselbe Richtung zeigen
+function wlVerdict(r) {
+  if (!r) return null;
+  const bull = r.rules.filter(x => x.score > 0).length, bear = r.rules.filter(x => x.score < 0).length;
+  return { bull, bear, dir: bull >= 3 ? 'long' : bear >= 3 ? 'short' : 'wait' };
+}
+// Farbe des Tendenz-Kästchens: kräftig nur bei Long-/Short-Tendenz, sonst hell (Richtung der Summe) oder neutral
+function wlTone(r) { const v = wlVerdict(r); return !v ? 'none' : v.dir === 'long' ? 'p3' : v.dir === 'short' ? 'm3' : r.score > 0 ? 'p1' : r.score < 0 ? 'm1' : '0'; }
+// 3.25.0 Filter: Bewegung im Zeitraum. ATR = mittlere wahre Spanne je Kerze über die Kerzen des Zeitraums (bei 1 Minute die
+// üblichen 14); über den Zeitraum bewegt sich der Kurs typischerweise etwa ATR × √Anzahl der Kerzen (Faustregel für einen
+// Zufallspfad). Liegt das unter 1 %, ist ein Ziel von 1 % gerade unrealistisch → „Zu wenig Bewegung“. Einmal je Kerzenschluss.
+function wlMove(e) {
+  const S = wlSpan(), c = e.closed, len = S.n >= 10 ? S.n : 14, t = c.at(-1)?.closeTime;
+  if (e.move && e.move.t === t && e.move.span === wl.span) return e.move.v;
+  let v = null;
+  if (c.length > len) {
+    let sum = 0; for (let i = c.length - len; i < c.length; i++) { const k = c[i], pc = c[i - 1].close; sum += Math.max(k.high - k.low, Math.abs(k.high - pc), Math.abs(k.low - pc)); }
+    const last = c.at(-1).close, atrPct = sum / len / last * 100, movePct = atrPct * Math.sqrt(S.n);
+    if (Number.isFinite(atrPct) && last > 0) v = { atrPct, movePct, low: movePct < WL_TARGET, len };
+  }
+  e.move = { t, span: wl.span, v }; return v;
+}
+// Anzeige-Werte einer Kachel (auch für die Tests): Kurs, Veränderung über den Zeitraum – beschriftet wie „1 Std. +0,54 %“,
+// fehlende Werte neutral „–“ –, Tendenz, die vier Regeln, Gesamtbewertung und Bewegung
 function wlView(e, now) {
-  const price = wlPrice(e), ref = wlRef(e, now), first = e.closed.at(-WL_SPARK)?.close;
-  const chg = price > 0 && ref > 0 ? (price / ref - 1) * 100 : null, chg30 = price > 0 && first > 0 ? (price / first - 1) * 100 : null;
+  const S = wlSpan(), price = wlPrice(e), ref = wlRef(e, now), chg = price > 0 && ref > 0 ? (price / ref - 1) * 100 : null;
   const dir = v => (v == null || Math.abs(v) < 0.005 ? 'flat' : v > 0 ? 'up' : 'down'), pctOf = v => v == null ? '–' : dir(v) === 'flat' ? '±0,00 %' : `${signed(v)} %`;
   return {
-    price, chg, chg30, rating: e.rating,
+    price, chg, rating: e.rating, span: S,
     priceText: price > 0 ? priceText(price) : e.error ? '—' : '…',
-    chgText: `1 Min. ${pctOf(chg)}`, chg30Text: `30 Min. ${pctOf(chg30)}`,
-    chgDir: dir(chg), sparkDir: dir(chg30),
-    sigText: e.rating ? scoreText(e.rating.score) : e.error ? '' : '·', tone: toneOf(e.rating), rules: wlRules(e.rating)
+    chgText: `${S.label} ${pctOf(chg)}`, chgDir: dir(chg), sparkDir: dir(chg),
+    sigText: e.rating ? scoreText(e.rating.score) : e.error ? '' : '·', tone: wlTone(e.rating), rules: wlRules(e.rating),
+    verdict: wlVerdict(e.rating), move: e.rating ? wlMove(e) : null
   };
 }
 // Werte in die bestehenden Felder schreiben (nur was sich geändert hat)
@@ -7223,23 +7348,22 @@ function wlPaint(now = Date.now(), force = false) {
     const v = wlView(e, now), q = s => tile.querySelector(s);
     wlSet(q('.wl-price'), 'textContent', v.priceText);
     const chg = q('.wl-chg'); wlSet(chg, 'textContent', v.chgText); wlSet(chg, 'className', `wl-chg ${v.chgDir}`);
-    const c30 = q('.wl-chg30'); wlSet(c30, 'textContent', v.chg30Text); wlSet(c30, 'className', `wl-chg30 ${v.sparkDir}`);
     const rs = q('.wl-rules'); if (rs) v.rules.forEach((x, i) => { const n = rs.children[i]; if (!n) return; wlSet(n.firstChild, 'textContent', x.label); wlSet(n.lastChild, 'textContent', x.arrow); wlSet(n, 'className', `wl-rule ${x.dir}`); });
     const sig = q('.wl-sig'); wlSet(sig, 'textContent', v.sigText); if (sig && sig.dataset.tone !== v.tone) sig.dataset.tone = v.tone;
     const svg = q('.wl-spark'), pts = wlSpark(e); svg?.setAttribute('class', `wl-spark ${v.sparkDir}`);
     const line = svg?.firstChild; if (line && line.getAttribute('points') !== pts) line.setAttribute('points', pts);
-    const r = v.rating, title = e.error ? `${coin}: ${e.error}`
-      : `${coin}/USDT${e.market === 'futures' ? ' (Futures)' : ''}: ${v.priceText} USDT · ${v.chgText} · ${v.chg30Text}`
-        + ` · 1m-Tendenz ${r ? `${scoreText(r.score)}/4 (${v.rules.map(x => `${x.label} ${x.arrow}`).join(', ')})` : 'noch keine (mindestens 60 Kerzen)'} · antippen zeigt die Signale`;
+    const r = v.rating, vd = v.verdict, title = e.error ? `${coin}: ${e.error}`
+      : `${coin}/USDT${e.market === 'futures' ? ' (Futures)' : ''}: ${v.priceText} USDT · ${v.chgText}`
+        + ` · Tendenz ${v.span.of} ${r ? `${scoreText(r.score)}/4 (${v.rules.map(x => `${x.label} ${x.arrow}`).join(', ')}) · ${vd.dir === 'long' ? 'Long-Tendenz' : vd.dir === 'short' ? 'Short-Tendenz' : 'Abwarten'}${v.move?.low ? ' · zu wenig Bewegung' : ''}` : 'noch keine (mindestens 60 Kerzen)'} · antippen zeigt die Signale`;
     wlSet(tile, 'title', title);
   }
   wldPaint(now, force); // Detailfeld (Schritt 6) im selben Takt
 }
-// Reihe laden (Zwischenspeicher, sonst REST; ohne Spot-Paar die USDT-Futures)
+// Reihe laden (Zwischenspeicher, sonst REST; ohne Spot-Paar die USDT-Futures) – im Intervall des gewählten Zeitraums
 async function wlLoad(e) {
   e.loading = true;
   try {
-    const r = await cachedKlines(e.sym, '1m', WL_LIMIT), now = Date.now();
+    const r = await cachedKlines(e.sym, e.iv, WL_LIMIT), now = Date.now();
     e.closed = r.candles.filter(c => c.closeTime < now).slice(-WL_LIMIT);
     const last = r.candles.at(-1); e.run = last && last.closeTime >= now ? last : null;
     e.market = r.source === 'futures' ? 'futures' : 'spot'; e.rating = signalRating(e.closed.slice(-WL_WINDOW));
@@ -7248,17 +7372,18 @@ async function wlLoad(e) {
     e.error = err?.message || String(err); e.retryAt = Date.now() + WL_RETRY;
   } finally { e.loading = false; wlPaint(Date.now(), true); syncStreams(); }
 }
-// Streams für syncStreams: 1m-Kerzen aller Vorauswahl-Coins (Markt wie geladen; ohne Spot-Paar die Futures)
+// Streams für syncStreams: Kerzen des Zeitraum-Intervalls aller Vorauswahl-Coins (Markt wie geladen; ohne Spot-Paar die Futures)
 function wlStreams() {
   if (!wl) return [];
-  return state.watch.map(coin => { const s = wlSym(coin), e = wl.c.get(s); return e?.error ? null : { m: e?.market === 'futures' ? 'futures' : 'spot', s: `${s.toLowerCase()}@kline_1m` }; }).filter(Boolean);
+  const iv = wlSpan().iv;
+  return state.watch.map(coin => { const s = wlSym(coin), e = wl.c.get(s); return e?.error ? null : { m: e?.market === 'futures' ? 'futures' : 'spot', s: `${s.toLowerCase()}@kline_${iv}` }; }).filter(Boolean);
 }
 // Sekundentakt: Einträge anlegen und aufräumen, fehlende Reihen nacheinander laden (höchstens eine gleichzeitig), malen
 function wlTick(now) {
   if (!wl || state.paused) return;
-  const want = new Set(state.watch.map(wlSym));
+  const want = new Set(state.watch.map(wlSym)), iv = wlSpan().iv;
   for (const s of wl.c.keys()) if (!want.has(s)) wl.c.delete(s);
-  for (const s of want) if (!wl.c.has(s)) wl.c.set(s, { sym: s, closed: [], run: null, hist: [], rating: null, market: 'spot', loading: false, error: '', retryAt: 0, gap: false, at: 0 });
+  for (const s of want) if (!wl.c.has(s)) wl.c.set(s, { sym: s, iv, closed: [], run: null, hist: [], rating: null, market: 'spot', loading: false, error: '', retryAt: 0, gap: false, at: 0 });
   const busy = [...wl.c.values()].some(e => e.loading);
   if (!busy && now - wl.loadAt > 300) {
     const next = [...wl.c.values()].find(e => (!e.at && !e.error) || e.gap || (e.error && now >= e.retryAt) || (e.at && !e.run && e.closed.length && now - e.closed.at(-1).closeTime > 150e3));
@@ -7270,8 +7395,10 @@ if ('IntersectionObserver' in window) new IntersectionObserver(es => { for (cons
 // ---------- Ablaufplan Schritt 6 (3.24.0): Detailfeld unter den Krypto-Kacheln ----------
 // Antippen einer Kachel öffnet darunter ein Feld mit den aktuellen Signalen dieses Coins: oben der Coin, darunter die bullishen
 // Signale in Grün und die bearishen in Rot, jedes mit Info-Symbol – Erklärung per Tippen/Klick, mit der Maus auch beim Überfahren.
-// Dieselbe Grundlage wie die Kachel: die vier Regeln der 1m-Tendenz (signalRating auf abgeschlossenen 1-Minuten-Kerzen, e.rating
-// aus watchlive.js); die Zahlen in den Erklärungen rechnet wldVals() aus denselben Kerzen. Nur ein Feld zugleich: eine andere
+// Dieselbe Grundlage wie die Kachel: die vier Regeln (signalRating auf den abgeschlossenen Kerzen des gewählten Zeitraums, e.rating
+// aus watchlive.js); die Zahlen in den Erklärungen rechnet wldVals() aus denselben Kerzen. 3.25.0: In der Überschrift lässt sich der
+// Zeitraum wählen (1 Minute bis 1 Tag, Standard 1 Stunde); darunter die Gesamtbewertung (Long-/Short-Tendenz ab 3 von 4 Signalen)
+// und, wenn der Kurs sich zu wenig bewegt für ein Ziel von 1 %, der Hinweis „Zu wenig Bewegung“. Nur ein Feld zugleich: eine andere
 // Kachel wechselt den Inhalt, dieselbe Kachel, „×“ oder Esc schließen es, wird die ausgewählte Kachel entfernt, schließt es
 // (renderWatchlist). Leere Gruppen bleiben verborgen, sind beide leer: „Aktuell keine Signale“. Bei Live-Änderungen wächst das
 // Feld nur, es schrumpft nicht wieder (wie steadyHeights) – sonst spränge der Chart darunter bei jedem Regelwechsel.
@@ -7283,6 +7410,13 @@ function wldBox() {
   const box = el('div', 'wl-detail'), clip = el('div', 'wl-d-clip'), sec = el('section', 'wl-d-box');
   box.id = 'wl-detail'; box.dataset.open = '0'; clip.inert = true; sec.setAttribute('aria-labelledby', 'wl-d-title');
   const head = el('div', 'wl-d-head'), title = el('h3', 'wl-d-title'), meta = el('span', 'wl-d-meta');
+  // Zeitraum direkt in der Überschrift: „Signale ‹der letzten Stunde ▾› · Stand 01:55“. Sichtbar ist nur der Text in der Schrift
+  // der Zeile; darüber liegt unsichtbar die echte Auswahl (16 px – sonst zoomt Safari am iPhone beim Antippen heran)
+  const pick = document.createElement('select'), pickv = el('span', 'wl-d-pickv', ''), pickw = el('span', 'wl-d-pick'), stand = el('span', 'wl-d-stand', '');
+  pick.className = 'wl-d-span'; pick.setAttribute('aria-label', 'Zeitraum der Signalbewertung'); pickv.setAttribute('aria-hidden', 'true'); pickw.append(pickv, pick);
+  for (const [k, S] of Object.entries(wlSpans())) { const o = document.createElement('option'); o.value = k; o.textContent = S.of; pick.append(o); }
+  pick.addEventListener('change', () => wlSetSpan(pick.value));
+  meta.append('Signale ', pickw, stand);
   const chart = btn('chip-tool wl-d-chart', 'Im Chart öffnen'), close = btn('wl-d-close', '×');
   title.id = 'wl-d-title'; close.setAttribute('aria-label', 'Detailfeld schließen'); close.title = 'Schließen (Esc)';
   head.append(title, meta, chart, close);
@@ -7295,7 +7429,14 @@ function wldBox() {
     li.dataset.k = k; li.hidden = true; tip.dataset.side = 'left'; sum.append(el('span', '', 'i')); tip.append(sum, el('div', 'tip-body'));
     li.append(el('span', 'wl-d-arrow', ''), el('span', 'wl-d-txt', ''), tip); return li;
   });
-  sec.append(head, body, el('p', 'wl-d-foot', 'Beschreibt die letzten Minuten – kein Handelssignal mit nachgewiesenem Vorteil.'));
+  // Gesamtbewertung, Bewegungs-Hinweis (mit Erklärung) und der Hinweis, dass es kein nachgewiesener Vorteil ist
+  const verdict = el('p', 'wl-d-verdict', ''), move = el('p', 'wl-d-move', ''), mtip = el('details', 'tip left wl-d-tip'), msum = el('summary'), foot = el('p', 'wl-d-foot', '');
+  verdict.hidden = true; move.hidden = true; mtip.dataset.side = 'left'; msum.setAttribute('aria-label', 'Erklärung: Zu wenig Bewegung'); msum.append(el('span', '', 'i')); mtip.append(msum, el('div', 'tip-body'));
+  move.append(el('span', 'wl-d-movetxt', ''), mtip);
+  // Gesamtbewertung und Bewegungs-Hinweis im Rumpf: dessen Mindesthöhe gilt auch für sie, das Feld schrumpft nicht, wenn sie
+  // kurz wegfallen (Zeitraum gewechselt, Reihe lädt neu)
+  body.append(verdict, move);
+  sec.append(head, body, foot);
   clip.append(sec); box.append(clip);
   close.addEventListener('click', () => wldClose(true));
   // Erklärung auch beim Überfahren mit der Maus (am iPad mit Trackpad ebenso); Klick auf ein so geöffnetes Info-Symbol heftet
@@ -7303,7 +7444,7 @@ function wldBox() {
   box.addEventListener('pointerover', e => { if (e.pointerType !== 'mouse') return; const t = e.target.closest('details.wl-d-tip'); if (t && !t.open) { t.dataset.hover = '1'; t.open = true; } });
   box.addEventListener('pointerout', e => { if (e.pointerType !== 'mouse') return; const t = e.target.closest('details.wl-d-tip'); if (t?.dataset.hover && !t.contains(e.relatedTarget)) { delete t.dataset.hover; t.open = false; } });
   box.addEventListener('click', e => { const t = e.target.closest('details.wl-d-tip'); if (t?.dataset.hover && e.target.closest('summary')) { e.preventDefault(); delete t.dataset.hover; } }, true);
-  wld = { box, clip, body, title, meta, chart, up, down, none, items, key: '', minH: 0, timer: 0 };
+  wld = { box, clip, body, title, meta, pick, pickv, stand, chart, up, down, none, items, verdict, move, mtip, foot, key: '', minH: 0, timer: 0 };
   return box;
 }
 function wldTiles(fn) { for (const t of document.querySelectorAll('#watchlist .wl-tile')) fn(t); }
@@ -7329,7 +7470,7 @@ function wldClose(focusTile) {
   // mit „×“ geschlossen: der Fokus geht zurück auf die Kachel (sonst stünde er im geschlossenen Feld)
   if (focusTile) document.querySelector(`#watchlist .wl-tile[data-watch="${coin}"]`)?.focus({ preventScroll: true });
 }
-// Zahlen für die Erklärungen: aus denselben abgeschlossenen 1-Minuten-Kerzen wie e.rating (einmal je Kerzenschluss)
+// Zahlen für die Erklärungen: aus denselben abgeschlossenen Kerzen wie e.rating (einmal je Kerzenschluss)
 function wldVals(e) {
   const r = e.rating; if (e.vals?.t === r.closeTime) return e.vals;
   const cl = e.closed.slice(-WL_WINDOW).map(c => c.close), R = rsi(cl), M = macd(cl);
@@ -7337,11 +7478,11 @@ function wldVals(e) {
 }
 const wldNum = x => { const a = Math.abs(x); return signed(x, a >= 100 ? 1 : a >= 1 ? 2 : a >= 0.01 ? 4 : 6); };
 // Kurztext und Erklärung je Regel und Richtung (s > 0 bullish, s < 0 bearish)
-function wldText(k, s, label, v) {
-  const up = s > 0, kind = up ? 'Bullish' : 'Bearish', P = priceText, over = up ? 'über' : 'unter';
-  if (k === 'trend') return { short: `Trend: EMA 20 ${over} EMA 50`, long: [`${kind}, weil der kurzfristige Durchschnitt (EMA 20: ${P(v.e20)}) ${over} dem längerfristigen (EMA 50: ${P(v.e50)}) liegt – die Kurse der letzten Minuten ${up ? 'steigen' : 'fallen'} im Schnitt.`] };
-  if (k === 'kurs') return { short: `Kurs ${over} EMA 20`, long: [`${kind}, weil der letzte Schlusskurs (${P(v.last)}) ${over} dem kurzfristigen Durchschnitt (EMA 20: ${P(v.e20)}) liegt.`] };
-  if (k === 'rsi') return { short: `${label}: ${up ? 'überverkauft und steigend' : 'überkauft und fallend'}`, long: [`${kind}, weil der RSI 14 mit ${number(v.rNow, 1)} ${up ? 'unter 30 liegt (überverkauft) und gegenüber der Vorminute steigt' : 'über 70 liegt (überkauft) und gegenüber der Vorminute fällt'} (vorher ${number(v.rPrev, 1)}).`, 'Zwischen 30 und 70 zählt der RSI nicht als Signal.'] };
+function wldText(k, s, label, v, S = wlSpan()) {
+  const up = s > 0, kind = up ? 'Bullish' : 'Bearish', P = priceText, over = up ? 'über' : 'unter', iv = `${S.ivName}-Kerze`;
+  if (k === 'trend') return { short: `Trend: EMA 20 ${over} EMA 50`, long: [`${kind}, weil der kurzfristige Durchschnitt (EMA 20: ${P(v.e20)}) ${over} dem längerfristigen (EMA 50: ${P(v.e50)}) liegt, gerechnet auf ${S.ivName}-Kerzen – die Kurse ${up ? 'steigen' : 'fallen'} im Schnitt.`] };
+  if (k === 'kurs') return { short: `Kurs ${over} EMA 20`, long: [`${kind}, weil der letzte Schlusskurs (${P(v.last)}, Schluss der letzten ${iv}) ${over} dem kurzfristigen Durchschnitt (EMA 20: ${P(v.e20)}) liegt.`] };
+  if (k === 'rsi') return { short: `${label}: ${up ? 'überverkauft und steigend' : 'überkauft und fallend'}`, long: [`${kind}, weil der RSI 14 mit ${number(v.rNow, 1)} ${up ? `unter 30 liegt (überverkauft) und gegenüber der vorigen ${iv} steigt` : `über 70 liegt (überkauft) und gegenüber der vorigen ${iv} fällt`} (vorher ${number(v.rPrev, 1)}).`, 'Zwischen 30 und 70 zählt der RSI nicht als Signal.'] };
   return { short: `MACD ${over} Signallinie`, long: [`${kind}, weil die MACD-Linie (${wldNum(v.mLine)}) ${over} ihrer Signallinie (${wldNum(v.mSig)}) liegt – der Schwung zeigt ${up ? 'nach oben' : 'nach unten'}.`, 'MACD 12/26/9.'] };
 }
 const WLD_T = new Intl.DateTimeFormat('de-DE', { hour: '2-digit', minute: '2-digit' });
@@ -7350,16 +7491,18 @@ const WLD_T = new Intl.DateTimeFormat('de-DE', { hour: '2-digit', minute: '2-dig
 function wldPaint(now = Date.now(), force = false) {
   if (!wld || !wldSel) return;
   const coin = wldSel, e = wl?.c.get(wlSym(coin)), r = e?.rating || null, onChart = state.symbol === wlSym(coin);
-  const key = [coin, onChart, r ? r.closeTime + ':' + r.rules.map(x => x.score).join() : '-', e?.error || '', e ? 1 : 0].join('|');
+  const S = wlSpan(), mv = r ? wlMove(e) : null, key = [coin, onChart, wl?.span, r ? r.closeTime + ':' + r.rules.map(x => x.score).join() : '-', mv ? mv.movePct.toFixed(3) : '', e?.error || '', e ? 1 : 0].join('|');
   if (key === wld.key && !force) return;
   wld.key = key;
   wld.title.textContent = coin;
-  wld.meta.textContent = r ? `Signale der 1-Minuten-Kerzen · Stand ${WLD_T.format(r.closeTime + 1)}` : e?.error ? 'keine Daten' : 'Daten werden geladen …';
+  if (wld.pick.value !== wl.span) wld.pick.value = wl.span;
+  if (wld.pickv.textContent !== S.of) wld.pickv.textContent = S.of;
+  wld.stand.textContent = r ? ` · Stand ${WLD_T.format(r.closeTime + 1)}` : e?.error ? ' · keine Daten' : ' · Daten werden geladen …';
   wld.chart.dataset.chartwatch = coin; wld.chart.disabled = onChart; wld.chart.textContent = onChart ? 'Im Chart geöffnet' : 'Im Chart öffnen';
   const v = r ? wldVals(e) : null, lists = { up: [], down: [] };
   wld.items.forEach((li, i) => {
     const x = r?.rules[i], s = x?.score || 0; li.hidden = !s; if (!s) return;
-    const t = wldText(li.dataset.k, s, x.label, v), tb = li.querySelector('.tip-body'), txt = li.querySelector('.wl-d-txt');
+    const t = wldText(li.dataset.k, s, x.label, v, S), tb = li.querySelector('.tip-body'), txt = li.querySelector('.wl-d-txt');
     li.querySelector('.wl-d-arrow').textContent = s > 0 ? '▲' : '▼';
     if (txt.textContent !== t.short) { txt.textContent = t.short; li.querySelector('summary').setAttribute('aria-label', `Erklärung: ${t.short}`); }
     if (tb.textContent !== t.long.join('')) tb.replaceChildren(...t.long.map(p => el('p', '', p)));
@@ -7370,7 +7513,24 @@ function wldPaint(now = Date.now(), force = false) {
     if ([...ul.children].some((c, i) => c !== lists[k][i]) || ul.children.length !== lists[k].length) ul.replaceChildren(...lists[k]);
   }
   wld.none.hidden = !!(lists.up.length || lists.down.length);
-  wld.none.textContent = r ? 'Aktuell keine Signale' : e?.error ? `Keine Daten für ${coin}: ${e.error}` : 'Noch keine Daten – die Signale erscheinen, sobald 60 abgeschlossene 1-Minuten-Kerzen vorliegen.';
+  wld.none.textContent = r ? 'Aktuell keine Signale' : e?.error ? `Keine Daten für ${coin}: ${e.error}` : `Noch keine Daten – die Signale erscheinen, sobald 60 abgeschlossene ${S.ivName}-Kerzen vorliegen.`;
+  // Gesamtbewertung: Long-/Short-Tendenz nur bei mindestens 3 von 4 Signalen in derselben Richtung, sonst Abwarten
+  const vd = wlVerdict(r); wld.verdict.hidden = !vd;
+  if (vd) {
+    const n = vd.dir === 'long' ? vd.bull : vd.bear;
+    wld.verdict.textContent = vd.dir === 'long' ? `▲ Long-Tendenz – ${n} von 4 Signalen bullish` : vd.dir === 'short' ? `▼ Short-Tendenz – ${n} von 4 Signalen bearish`
+      : vd.bull + vd.bear ? 'Abwarten – Signale widersprechen sich' : 'Abwarten – keine Signale';
+    wld.verdict.className = `wl-d-verdict ${vd.dir}`;
+  }
+  // Filter: zu wenig Bewegung für ein Ziel von 1 % (ATR des Zeitraums, siehe wlMove)
+  wld.move.hidden = !mv?.low;
+  if (mv?.low) {
+    const a = number(mv.atrPct, 2), m = number(mv.movePct, 2);
+    wld.move.querySelector('.wl-d-movetxt').textContent = `⚠ Zu wenig Bewegung – über ${S.name} etwa ${m} %, ein Ziel von ${WL_TARGET} % ist unrealistisch`;
+    const tb = wld.mtip.querySelector('.tip-body'), long = [`ATR (mittlere wahre Spanne) der letzten ${mv.len} ${S.ivName}-Kerzen: ${a} % je Kerze.`, S.n > 1 ? `Über ${S.name} bewegt sich der Kurs damit typischerweise etwa ${m} % (Faustregel: ATR × √${S.n}, ${S.n} Kerzen im Zeitraum). Das reicht nicht für ein Ziel von ${WL_TARGET} %.` : `In 1 Minute bewegt sich der Kurs damit typischerweise etwa ${m} % (eine Kerze: die ATR selbst). Das reicht nicht für ein Ziel von ${WL_TARGET} %.`];
+    if (tb.textContent !== long.join('')) tb.replaceChildren(...long.map(x => el('p', '', x)));
+  }
+  wld.foot.textContent = `Beschreibt ${S.the} – kein Handelssignal mit nachgewiesenem Vorteil.`;
   // nur wachsen: die Mindesthöhe folgt dem größten Inhalt seit dem Öffnen
   const h = Math.ceil(wld.body.getBoundingClientRect().height); if (h > wld.minH) { wld.minH = h; wld.body.style.minHeight = h + 'px'; }
 }
@@ -7887,8 +8047,23 @@ function pulseCheck(now = Date.now()) {
   const price = pulse.run?.close ?? pulse.m1.at(-1)?.close, moves = Object.fromEntries(PULSE_WIN.map(w => [w, pulseMove(pulse.m1, price, w)]));
   const last = pulseLast(), p = pulseDecide(moves, pulse.thr, now, last); if (!p) return;
   store.set(PULSE_KEY, { ...last, [p.d]: { t: now, mag: p.more ? Math.max(p.mag, last[p.d]?.mag || 0) : p.mag, more: p.more } }); broadcastData([PULSE_KEY]);
-  // Vorauswahl im selben Fenster (Kacheln, 1m-Kerzen) – ohne BTC selbst, nur mit lückenlosen Daten
-  const others = state.watch.filter(c => c !== 'BTC').map(c => { const e = wl?.c.get(wlSym(c)); if (!e || e.error) return null; const v = pulseMove(e.closed, wlPrice(e), p.w); return v == null ? null : [c, v]; }).filter(Boolean);
+  void pulseSend(p, price, now);
+}
+// Vorauswahl im selben Fenster – ohne BTC selbst, nur mit lückenlosen 1m-Kerzen. Seit 3.25.0 laufen die Kacheln im Intervall
+// ihres Zeitraums (Standard 5m): Dann holt die App die wenigen 1m-Kerzen je Coin per REST – selten, höchstens ein Puls je
+// Richtung und halbe Stunde – und wartet darauf höchstens 2,5 s; was bis dahin fehlt, bleibt in der Nachricht weg.
+async function pulseOthers(w, now) {
+  const one = async c => {
+    const e = wl?.c.get(wlSym(c)); if (!e || e.error) return null;
+    let closed = e.closed;
+    if (e.iv !== '1m') { const q = { symbol: e.sym, interval: '1m', limit: w + 2 }; closed = normalizeKlines(await (e.market === 'futures' ? api.get(FUTURES, '/fapi/v1/klines', q) : spotGet('/api/v3/klines', q))).filter(k => k.closeTime < now); }
+    const v = pulseMove(closed, wlPrice(e), w); return v == null ? null : [c, v];
+  };
+  const late = new Promise(r => setTimeout(() => r(null), 2500)); // gemeinsame Frist für alle Coins
+  return (await Promise.all(state.watch.filter(c => c !== 'BTC').map(c => Promise.race([one(c).catch(() => null), late])))).filter(Boolean);
+}
+async function pulseSend(p, price, now) {
+  const others = await pulseOthers(p.w, now);
   const hLocal = new Date(now).getHours(), text = pulseText(p, price, String(hLocal).padStart(2, '0'), others), silent = hLocal >= 22 || hLocal < 7;
   simpleToast('pulse:' + p.d, 'alarm ' + p.d, text.split('\n')[0], null, p.d === 'up' ? 'green' : 'orange');
   desktopNotify(`⚡ BTC ${signed(p.mv)} % in ${p.w} Min.`, text.replace(/\n/g, ' – '), 'pulse');
@@ -8591,7 +8766,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
       </div>
     </div>
     <div class="dash-bottom">
-      <details class="methodology panel fold cq" id="method-sec" data-tabs="ind"><summary><h2>Berechnung &amp; Datenquellen</h2><span>Methodik ansehen</span></summary><div class="method-grid"><div><h3>Kerzen &amp; Indikatoren</h3><p>Spot-Daten von data-api.binance.vision, dem offiziellen Binance-Endpunkt für öffentliche Marktdaten; nur bei einem Netzwerkfehler ersatzweise von api.binance.com. Bis zu 500 Kerzen im gewählten Intervall. RSI und ATR verwenden auch die letzte, gegebenenfalls noch offene Kerze. RSI startet nach 14 Kursänderungen; ATR mit dem Durchschnitt der ersten 14 True Ranges. Bei der ersten Kerze ist True Range = Hoch − Tief. RSI bei ausschließlich unveränderten Kursen: 50 als neutrale Konvention.</p><p>Pivots: strikte lokale Hochs/Tiefs mit je zwei Nachbarn innerhalb der letzten 50 abgeschlossenen Kerzen. Nächstes Pivot-Tief unter dem Kurs und nächstes Pivot-Hoch darüber; keine Ersatzlevel, falls keines existiert. Abstand = absolute Differenz / aktueller Kurs.</p></div><div><h3>Live-Daten &amp; Alarme</h3><p>Laufende Kerzen und Kurse kommen per WebSocket von data-stream.binance.vision (Spot, ersatzweise stream.binance.com) und fstream.binance.com/market (Futures). Die Verbindung läuft in einem Web Worker, damit Browser sie in Hintergrund-Tabs nicht drosseln. Jede Meldung einer 1-Minuten-Kerze wird mit der vorherigen verglichen: Ist das Hoch gestiegen oder das Tief gefallen, wurde dieser Kurs seit der letzten Meldung gehandelt – so erkennt das Dashboard auch kurze Dochte.</p><p>Fällt der Datenstrom aus, lädt das Dashboard alle 15 s per REST nach, sonst einmal pro Minute zum Abgleich. Nach einer Unterbrechung (z. B. iPad gesperrt) prüft es verpasste Alarme anhand der 1-Minuten-Kerzen.</p></div><div><h3>Signal-Übersicht</h3><p>Pro Zeitraum (1m, 5m, 15m, 1h, 4h, 1d) bis zu 200 Kerzen, ausgewertet nur auf abgeschlossenen Kerzen; neu geladen, sobald eine Kerze des Zeitraums schließt. EMA mit SMA-Start, MACD 12/26/9, RSI 14 nach Wilder. Gibt es kein Spot-Paar, nutzt das Dashboard die Kerzen des USDT-Perpetual-Futures und kennzeichnet das.</p><p>Trend-Verlauf: Für jede Minute der letzten Stunde wird die Bewertung mit den damals abgeschlossenen Kerzen (je Zeitraum wie beim Abruf höchstens 199, im Tageschart 499) neu berechnet. Gesamtscore = Kauf- minus Verkaufssignale.</p></div><div><h3>Mittelwert-Zonen</h3><p>Volumenprofil: sichtbare Kerzen, 40 Preisstufen. Binance-Kerzen enthalten kein Volumen je Preis; das Dashboard verteilt das Volumen jeder Kerze deshalb als Normalverteilung (Glockenkurve) um die Mitte des Kerzenkörpers, begrenzt auf Hoch–Tief. Breite σ = halbe Körperhöhe, mindestens ein Sechstel der Spanne: Dochte bekommen weniger Volumen als der Körper, bei Doji-Kerzen konzentriert es sich um den Schlusskurs. POC = Mitte der Stufe mit dem höchsten Volumen; Value Area = um den POC erweitert, bis 70 % des Volumens enthalten sind. EMA 200 mit SMA-Start; im Tageschart aus abgeschlossenen Tageskerzen, im Chart-Intervall inklusive laufender Kerze. Bollinger: SMA 20 ± 2 Standardabweichungen (Grundgesamtheit). Der Lehrbuchwert von rund 95 % innerhalb der Bänder setzt normalverteilte Kurse voraus; angezeigt wird deshalb der tatsächliche Anteil der letzten 100 abgeschlossenen Kerzen.</p></div><div><h3>Chart-Analyse</h3><p>ZigZag: Umkehrpunkte ab der eingestellten Mindestbewegung (0,25–8 %, Standard 3 %) am Kerzenhoch bzw. -tief. Ein Punkt gilt als bestätigt, sobald sich der Kurs um die Mindestbewegung davon entfernt hat; der letzte, noch laufende Extrempunkt ist vorläufig. Prognose, Divergenzen und Elliott-Wellen nutzen dieselben Punkte.</p><p>Prognose: Median und mittlere Hälfte (25–75 %) der bisherigen Gegenschwünge dieses Charts, ab dem laufenden Extrempunkt. Ein Lernfaktor passt sie nur an, wenn frühere Prognosen dieses Charts damit nachweislich besser lagen. Eine Prozentzahl erscheint nur, wenn ein gelerntes Muster (Trend, Signal-Bewertung, RSI) nach Gebühren einen statistisch gesicherten Vorteil zeigt (mindestens 100 Fälle, strenge Grenze); die Muster lernt die App still aus abgeschlossenen Kerzen und führt sie in der Sicherung mit.</p><p>RSI-Divergenzen: jüngster und vorheriger Umkehrpunkt gleicher Art, der jüngste in den letzten 40 abgeschlossenen Kerzen. Bullisch bei tieferem Kurs-Tief und höherem RSI-Tief (mindestens 2 Punkte), bärisch spiegelbildlich; vorläufig, solange der jüngste Punkt nicht bestätigt ist.</p><p>Elliott-Wellen (schematisch, ab 50 Kerzen): das jüngste Muster aus sechs Umkehrpunkten, das die drei Grundregeln erfüllt – Welle 2 läuft nicht über den Start von Welle 1 zurück, Welle 3 ist nicht die kürzeste der Wellen 1, 3 und 5, Welle 4 reicht nicht in den Bereich von Welle 1 – und dessen Welle 5 über Welle 3 hinausgeht. Danach A, B, C, solange B das Impulsende nicht überschreitet und C über A hinausläuft. Andere Zählungen sind möglich.</p><p>Wellen-Prognose (schematisch, nur bei einer aktuellen Zählung): Richtwerte nach den üblichen Faustregeln – nach Welle 5 folgt A mit 38,2 % Rückgang des Impulses, B erholt 61,8 % von A, C ist so lang wie A; nach C ein neuer Impuls bis 61,8 % zurück Richtung Ende von Welle 5. Die Dauer richtet sich nach den bisherigen Wellen des Charts; solange A oder B laufen, ist die Prognose ungültig, sobald der Kurs über das Ende von Welle 5 hinausläuft.</p><p>Fibonacci-Retracement: letzter abgeschlossener ZigZag-Schwung (zwischen den beiden jüngsten bestätigten Umkehrpunkten), Marken bei 23,6 / 38,2 / 50 / 61,8 / 78,6 % Rücklauf vom Schwungende, dazu leicht hinterlegt die „goldene Zone“ 50–61,8 %. Liegen die Marken sehr dicht, sind nur 23,6 / 50 / 78,6 % bzw. die goldene Zone angeschrieben. Die Leiste unter dem Chart nennt 38,2 / 50 / 61,8 % mit Kurs und Abstand zum aktuellen Kurs; Antippen legt dort einen Alarm an, und der Magnet rastet an den Marken ein. Das ⓘ neben „Fib“ erklärt die fünf Marken mit ihren aktuellen Kursen.</p><p><b>Whale-Alert</b>: große Marktorders im Chart-Kürzel ab der gewählten Schwelle (Standard 100.000 USDT) aus dem Einzel-Trade-Stream von Binance. Teil-Ausführungen einer Order (gleiche Handelszeit, gleiche Seite, Preis läuft in Order-Richtung weiter) zählen als eine Order. Dazu der Anteil der Taker-Käufe am gesamten Umsatz der letzten 60 s. Beschreibung des laufenden Handels, keine Vorhersage – ob große Orders den Kurs weitertreiben, ist nicht geprüft.</p><p><b>Orderbuch-Wände</b> (Reiter in der Whales-Leiste): größte Kauf- und Verkaufs-Wand im Bereich ±2 % aus dem Orderbuch von Binance (1000 Stufen je Seite, alle 10 s, nur bei offenem Reiter). Wand = Preiszone von 0,1 % des Kurses mit mindestens doppelt so viel wie im Schnitt. Limit-Orders können zurückgezogen werden; Momentaufnahme, kein Versprechen.</p><p><b>RSI-Divergenz – Leuchten und Leitfaden:</b> Eine aktuelle Divergenz leuchtet im Chart am jüngsten Umkehrpunkt (grün bullisch, rot bärisch); rechts über dem Chart öffnet ein Knopf die Erklärung mit Kursen, RSI-Werten und Handlungsleitfaden. Neue Divergenzen pulsieren, bis die Erklärung einmal geöffnet wurde. Backtest der Leitfaden-Regeln: Warten auf Bestätigung verbesserte nichts (44–48 % bzw. 21–39 %).</p><p><b>Countdown bis Kerzenschluss:</b> Die gestrichelte Kurslinie in der Farbe der laufenden Kerze trägt am rechten Ende ein Schild mit dem aktuellen Kurs, darunter die Zeit bis zum Schluss der laufenden Kerze (unter 1 h „m:ss“, unter 1 Tag „h:mm:ss“, darüber „3T 05:12“). Am Handy hochkant steht das Schild im Chart und hängt über oder unter der Linie, damit es die laufende Kerze nicht verdeckt. Gerechnet wird mit der Uhr von Binance: Die Abweichung der Geräteuhr ergibt sich aus den Zeitstempeln im Live-Stream.</p><p><b>Hoch und Tief:</b> Das höchste Hoch und das tiefste Tief der sichtbaren Kerzen stehen fett in Grün bzw. Rot an der Dochtspitze, am Computer mit „Hoch“ bzw. „Tief“, am Handy hochkant nur mit dem Kurs. Es gilt der sichtbare Ausschnitt: Zoomen oder Zurückblättern ändert ihn. Bei gleich hohen Spitzen zählt die jüngste.</p><p><b>Wirtschaftskalender:</b> Wochenkalender von Forex Factory (nfs.faireconomy.media). Ein GitHub-Job im Repository (.github/workflows/kalender.yml) holt ihn alle 3 Stunden und legt ihn als calendar.json im Zweig „kalender“ ab; die App liest ihn von raw.githubusercontent.com alle 30 Minuten. Gewarnt wird vor Terminen mit hoher Bedeutung, ab der eingestellten Zeit vorher bis 15 Minuten danach. Keine Aussage über die Richtung der Kursbewegung.</p><p><b>News &amp; Termine zum Coin:</b> Ein GitHub-Job im Repository (.github/workflows/news.yml) holt stündlich die neuesten Ankündigungen von Binance (Kategorien neue Listings, Neuigkeiten, Airdrops, Delistings und Wartung, die 15 neuesten je Kategorie; bapi/composite/v1/public/cms) und je Coin die Google-News-Suche (RSS, deutsch, letzte 3 Tage) für 36 bekannte Coins. Binance-Ankündigungen zählen, wenn sie ein Listing, Delisting, ein entferntes USDT-Paar, einen Futures-Kontrakt, ein Netzwerk-Upgrade, einen Token-Tausch oder die Beobachtungsliste betreffen; der Termin ist die UTC-Zeit am Datum im Titel. Schlagzeilen zählen, wenn sie den Coin nennen und ein Stichwort aus den Gruppen Sicherheit, ETF, Recht, Netzwerk, Börse oder Unternehmen enthalten; nennen sie zwei Coins, muss das Stichwort beim jeweiligen Coin stehen, ab drei gelten sie als Marktbericht. Kursprognosen fallen weg. Meldungen mit einem gemeinsamen markanten Wort innerhalb von 36 Stunden gelten als eine Geschichte. Ablage als news.json im Zweig „news“; die App lädt sie von raw.githubusercontent.com alle 15 Minuten.</p><p><b>Mini-Watchlist (Vorauswahl):</b> Je Coin der Kurs aus den 1m-Kerzen des Live-Streams (Startwerte aus dem Kerzen-Zwischenspeicher bzw. per REST, 260 Kerzen je Coin, nacheinander geladen; ohne Spot-Paar die USDT-Futures). Veränderung = aktueller Kurs zum Kurs vor 60 s (direkt nach dem Laden: Schlusskurs der damals laufenden 1m-Kerze). Verlauf = Schlusskurse der letzten 30 abgeschlossenen 1m-Kerzen und der aktuelle Kurs. 1m-Tendenz = die Regeln der Signal-Übersicht auf den letzten 199 abgeschlossenen 1m-Kerzen (mindestens 60). Fehlt eine Minute (z. B. Handy gesperrt), wird die Reihe neu geladen.</p><p><b>Volatilität nach Uhrzeit:</b> Grundlage sind die letzten 2.000 abgeschlossenen Stundenkerzen des geöffneten Coins (rund 83 Tage, Markt wie im Chart), je Uhrzeit (Ortszeit) und Tagesart (Mo–Fr, Sa–So). Spanne = (Hoch − Tief) / Eröffnung. Säule kräftig: Median der Spanne dieser Stunde; hell: 90-%-Wert aus der Stunde und ihren beiden Nachbarn (dieselbe Tagesart). Letzte 60 Minuten: Hoch bis Tief der 1m-Kerzen (mindestens 45) im Verhältnis zum Kurs zu Beginn; Faktor = Spanne / Median der aktuellen Stunde. Warnung: Spanne über dem 90-, 95- oder 99-%-Wert der vergleichbaren Stunden (Stunde ± 1, mindestens 30 Stunden), „stark erhöht“ ab dem 99-%-Wert; aus erst unter 90 % der Schwelle. Richtung: mittlere Bewegung (Schluss zu Eröffnung) je Stunde mit Student-t-Vertrauensbereich; ▲/▼ nur, wenn der ganze Bereich über der doppelten Gebühr je Seite (Einstellung im Positionsrechner) bzw. unter deren Negativ liegt – Bonferroni über 48 Zellen (24 Stunden × 2 Tagesarten), gemeinsam 95 %, mindestens 20 Stunden je Zelle; sonst keine Zahl. Stundenkerzen alle 6 Stunden ergänzt (nur neue), im Kerzen-Zwischenspeicher für höchstens 8 Coins.</p><p><b>24/7-Dienst:</b> Übergabe als Datei scalpdesk-247.json im eigenen Telegram-Chat, angeheftet und nach jeder Änderung per editMessageMedia ersetzt: aktive Kurs-Alarme (Kürzel, Markt, Richtung, Preis, Notiz, Zeitpunkt des Scharfschaltens), Stop und Ziel offener Positionen (ohne Menge, Einstieg und Notiz), Termin-Warnung (Minuten, Währung), gewählte Meldungen und Zeitzone. Der Dienst (server/scalpdesk-247.mjs, Node.js ab 18) liest sie jede Minute (getChat, getFile), prüft alle 15 s die 1m-Kerzen der betroffenen Kürzel (Spot über data-api.binance.vision, Futures über fapi.binance.com; Hoch und Tief seit der letzten Prüfung, erst nach dem Scharfschalten), lädt den Kalender alle 30 min und schreibt alle 10 min „Dienst: aktiv“ mit dem übernommenen Stand in die Beschriftung. Die App sendet eine Meldung nicht selbst, wenn diese Bestätigung höchstens 20 Minuten alt ist, zum zuletzt übergebenen Stand gehört und die Meldung darin enthalten ist.</p><p>Backtests mit echten BTC-Stundenkerzen (Coinbase und Bitfinex, 2017–2019): Weder Divergenzen noch die Elliott-Zählung und ihre Prognose-Ziele noch die Fibonacci-Marken zeigten einen verlässlichen Vorteil – alle daher ohne Prozentzahl, als Hinweis und nicht als Handelssignal.</p></div><div><h3>Futures &amp; Szenario</h3><p>Funding und Open Interest stammen vom gleichnamigen USDT-Futures-Paar, unabhängig vom Chartintervall. OI vergleicht den aktuellen Mengenbestand mit dem jüngsten 5-Minuten-Snapshot vor dem Zeitpunkt vor einer Stunde; der tatsächliche Zeitraum wird angezeigt.</p><p>Liquidationsabstand: Long = (1/Hebel − MMR) / (1 − MMR), Short = (1/Hebel − MMR) / (1 + MMR). MMR als Dezimalzahl. Dies ist ein vereinfachtes Modell; 1/Hebel allein beschreibt den vollständigen Margin-Verbrauch ohne Maintenance Margin.</p></div><div><h3>Liquidations-Heatmap</h3><p>Schätzung aus der Open-Interest-Historie (futures/data/openInterestHist, bis 500 Werte, höchstens 30 Tage) und den USDT-Futures-Kerzen desselben Zeitraums: 5 Minuten für die Chart-Intervalle 1m und 5m, sonst das Chart-Intervall selbst (bis 1d). Jeder OI-Anstieg gilt als neu eröffnete Positionen zum VWAP des Zeitraums (Quote- durch Basisvolumen), aufgeteilt nach dem Anteil der Taker-Käufe (10–90 %) auf Longs und Shorts und nach der Hebelverteilung 5×/10×/20×/50×/100× mit 10/25/30/20/15 %. Liquidationspreis wie im Rechner: Long = Einstieg × (1 − 1/Hebel) / (1 − MMR), Short = Einstieg × (1 + 1/Hebel) / (1 + MMR). Ein OI-Rückgang verkleinert alle offenen Zonen im selben Verhältnis; eine Zone endet bei der ersten Kerze, deren Tief (Long) bzw. Hoch (Short) sie erreicht. Farbe und Deckkraft nach dem Anteil am Höchstwert im sichtbaren Ausschnitt (hoch 0,75); schwache Zonen bleiben fast durchsichtig. Cluster: stärkste Summe je Seite in 0,1-%-Stufen, geglättet über ±0,2 %, im Bereich ±10 % um den Kurs. Neu geladen wird nur, wenn ein neuer OI-Wert fällig ist, und dann nur ab dem vorletzten Wert. Die Werte liegen zusätzlich in einer eigenen IndexedDB (höchstens 12 Reihen, nicht im Backup), damit die Heatmap nach dem Neuladen sofort erscheint; „Kerzen-Zwischenspeicher leeren“ leert sie mit.</p></div><div><h3>Kerzen-Zwischenspeicher</h3><p>Abgeschlossene Kerzen werden je Markt, Kürzel und Intervall in einer eigenen IndexedDB gespeichert (höchstens 40 Reihen à 500 Kerzen, nicht im Backup). Beim nächsten Abruf – auch nach dem Neuladen – lädt das Dashboard nur die Kerzen ab der zuletzt gespeicherten nach und vergleicht diese eine Kerze mit Binance; passt sie nicht, wird die Reihe vollständig neu geladen. Fehlt höchstens eine Kerze, zeigt der Chart beim Wechsel sofort den gespeicherten Stand, als vorläufig markiert, bis Nachladen oder Live-Stream frische Daten liefern.</p><p>Liquidationslinie im Chart: bei eingetragenem Liq.-Preis der Börse dieser, sonst bei isolierter Margin das Modell oben mit der Maintenance Margin aus den Modellannahmen; bei Cross ohne Börsenwert keine Linie.</p></div><div><h3>Telegram &amp; Discord</h3><p>Optional. Der Web Worker sendet per HTTPS direkt an api.telegram.org (sendMessage) bzw. an die Discord-Webhook-Adresse; bei Netzfehlern bis zu viermal mit wachsender Pause, bei „zu viele Anfragen“ nach der von Telegram/Discord genannten Wartezeit. Offene Tabs stimmen sich über die IndexedDB ab, damit jede Meldung nur einmal gesendet wird.</p></div><div><h3>Speicher &amp; Abgleich</h3><p>Sicherung über Telegram (optional): etwa 4 Sekunden nach einer Änderung sendet das Dashboard die Backup-Datei (JSON, wie „Backup herunterladen“ ohne Passwort) per sendDocument an den eigenen Chat und ersetzt sie danach per editMessageMedia in derselben Nachricht; fehlt die Nachricht, wird neu gesendet. Mehrere offene Tabs stimmen sich über die IndexedDB ab. Positionen, Trades und Einstellungen liegen in der IndexedDB des Browsers, gespiegelt im localStorage. Offene Tabs gleichen Änderungen untereinander ab. Der QR-Abgleich komprimiert die Daten, verschlüsselt sie mit AES-256-GCM (Schlüssel per PBKDF2 aus deinem Passwort) und teilt sie bei Bedarf auf mehrere Codes auf.</p></div></div><div class="source-links"><a href="https://developers.binance.com/docs/binance-spot-api-docs/web-socket-streams" target="_blank" rel="noopener noreferrer">Binance Spot-Streams ↗</a><a href="https://developers.binance.com/docs/binance-spot-api-docs/rest-api/market-data-endpoints" target="_blank" rel="noopener noreferrer">Binance Spot ↗</a><a href="https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/Open-Interest-Statistics" target="_blank" rel="noopener noreferrer">Binance Futures ↗</a><a href="https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi" target="_blank" rel="noopener noreferrer">RSI-Referenz ↗</a></div></details>
+      <details class="methodology panel fold cq" id="method-sec" data-tabs="ind"><summary><h2>Berechnung &amp; Datenquellen</h2><span>Methodik ansehen</span></summary><div class="method-grid"><div><h3>Kerzen &amp; Indikatoren</h3><p>Spot-Daten von data-api.binance.vision, dem offiziellen Binance-Endpunkt für öffentliche Marktdaten; nur bei einem Netzwerkfehler ersatzweise von api.binance.com. Bis zu 500 Kerzen im gewählten Intervall. RSI und ATR verwenden auch die letzte, gegebenenfalls noch offene Kerze. RSI startet nach 14 Kursänderungen; ATR mit dem Durchschnitt der ersten 14 True Ranges. Bei der ersten Kerze ist True Range = Hoch − Tief. RSI bei ausschließlich unveränderten Kursen: 50 als neutrale Konvention.</p><p>Pivots: strikte lokale Hochs/Tiefs mit je zwei Nachbarn innerhalb der letzten 50 abgeschlossenen Kerzen. Nächstes Pivot-Tief unter dem Kurs und nächstes Pivot-Hoch darüber; keine Ersatzlevel, falls keines existiert. Abstand = absolute Differenz / aktueller Kurs.</p></div><div><h3>Live-Daten &amp; Alarme</h3><p>Laufende Kerzen und Kurse kommen per WebSocket von data-stream.binance.vision (Spot, ersatzweise stream.binance.com) und fstream.binance.com/market (Futures). Die Verbindung läuft in einem Web Worker, damit Browser sie in Hintergrund-Tabs nicht drosseln. Jede Meldung einer 1-Minuten-Kerze wird mit der vorherigen verglichen: Ist das Hoch gestiegen oder das Tief gefallen, wurde dieser Kurs seit der letzten Meldung gehandelt – so erkennt das Dashboard auch kurze Dochte.</p><p>Fällt der Datenstrom aus, lädt das Dashboard alle 15 s per REST nach, sonst einmal pro Minute zum Abgleich. Nach einer Unterbrechung (z. B. iPad gesperrt) prüft es verpasste Alarme anhand der 1-Minuten-Kerzen.</p></div><div><h3>Signal-Übersicht</h3><p>Pro Zeitraum (1m, 5m, 15m, 1h, 4h, 1d) bis zu 200 Kerzen, ausgewertet nur auf abgeschlossenen Kerzen; neu geladen, sobald eine Kerze des Zeitraums schließt. EMA mit SMA-Start, MACD 12/26/9, RSI 14 nach Wilder. Gibt es kein Spot-Paar, nutzt das Dashboard die Kerzen des USDT-Perpetual-Futures und kennzeichnet das.</p><p>Trend-Verlauf: Für jede Minute der letzten Stunde wird die Bewertung mit den damals abgeschlossenen Kerzen (je Zeitraum wie beim Abruf höchstens 199, im Tageschart 499) neu berechnet. Gesamtscore = Kauf- minus Verkaufssignale.</p></div><div><h3>Mittelwert-Zonen</h3><p>Volumenprofil: sichtbare Kerzen, 40 Preisstufen. Binance-Kerzen enthalten kein Volumen je Preis; das Dashboard verteilt das Volumen jeder Kerze deshalb als Normalverteilung (Glockenkurve) um die Mitte des Kerzenkörpers, begrenzt auf Hoch–Tief. Breite σ = halbe Körperhöhe, mindestens ein Sechstel der Spanne: Dochte bekommen weniger Volumen als der Körper, bei Doji-Kerzen konzentriert es sich um den Schlusskurs. POC = Mitte der Stufe mit dem höchsten Volumen; Value Area = um den POC erweitert, bis 70 % des Volumens enthalten sind. EMA 200 mit SMA-Start; im Tageschart aus abgeschlossenen Tageskerzen, im Chart-Intervall inklusive laufender Kerze. Bollinger: SMA 20 ± 2 Standardabweichungen (Grundgesamtheit). Der Lehrbuchwert von rund 95 % innerhalb der Bänder setzt normalverteilte Kurse voraus; angezeigt wird deshalb der tatsächliche Anteil der letzten 100 abgeschlossenen Kerzen.</p></div><div><h3>Chart-Analyse</h3><p>ZigZag: Umkehrpunkte ab der eingestellten Mindestbewegung (0,25–8 %, Standard 3 %) am Kerzenhoch bzw. -tief. Ein Punkt gilt als bestätigt, sobald sich der Kurs um die Mindestbewegung davon entfernt hat; der letzte, noch laufende Extrempunkt ist vorläufig. Prognose, Divergenzen und Elliott-Wellen nutzen dieselben Punkte.</p><p>Prognose: Median und mittlere Hälfte (25–75 %) der bisherigen Gegenschwünge dieses Charts, ab dem laufenden Extrempunkt. Ein Lernfaktor passt sie nur an, wenn frühere Prognosen dieses Charts damit nachweislich besser lagen. Eine Prozentzahl erscheint nur, wenn ein gelerntes Muster (Trend, Signal-Bewertung, RSI) nach Gebühren einen statistisch gesicherten Vorteil zeigt (mindestens 100 Fälle, strenge Grenze); die Muster lernt die App still aus abgeschlossenen Kerzen und führt sie in der Sicherung mit.</p><p>RSI-Divergenzen: jüngster und vorheriger Umkehrpunkt gleicher Art, der jüngste in den letzten 40 abgeschlossenen Kerzen. Bullisch bei tieferem Kurs-Tief und höherem RSI-Tief (mindestens 2 Punkte), bärisch spiegelbildlich; vorläufig, solange der jüngste Punkt nicht bestätigt ist.</p><p>Elliott-Wellen (schematisch, ab 50 Kerzen): das jüngste Muster aus sechs Umkehrpunkten, das die drei Grundregeln erfüllt – Welle 2 läuft nicht über den Start von Welle 1 zurück, Welle 3 ist nicht die kürzeste der Wellen 1, 3 und 5, Welle 4 reicht nicht in den Bereich von Welle 1 – und dessen Welle 5 über Welle 3 hinausgeht. Danach A, B, C, solange B das Impulsende nicht überschreitet und C über A hinausläuft. Andere Zählungen sind möglich.</p><p>Wellen-Prognose (schematisch, nur bei einer aktuellen Zählung): Richtwerte nach den üblichen Faustregeln – nach Welle 5 folgt A mit 38,2 % Rückgang des Impulses, B erholt 61,8 % von A, C ist so lang wie A; nach C ein neuer Impuls bis 61,8 % zurück Richtung Ende von Welle 5. Die Dauer richtet sich nach den bisherigen Wellen des Charts; solange A oder B laufen, ist die Prognose ungültig, sobald der Kurs über das Ende von Welle 5 hinausläuft.</p><p>Fibonacci-Retracement: letzter abgeschlossener ZigZag-Schwung (zwischen den beiden jüngsten bestätigten Umkehrpunkten), Marken bei 23,6 / 38,2 / 50 / 61,8 / 78,6 % Rücklauf vom Schwungende, dazu leicht hinterlegt die „goldene Zone“ 50–61,8 %. Liegen die Marken sehr dicht, sind nur 23,6 / 50 / 78,6 % bzw. die goldene Zone angeschrieben. Die Leiste unter dem Chart nennt 38,2 / 50 / 61,8 % mit Kurs und Abstand zum aktuellen Kurs; Antippen legt dort einen Alarm an, und der Magnet rastet an den Marken ein. Das ⓘ neben „Fib“ erklärt die fünf Marken mit ihren aktuellen Kursen.</p><p><b>Whale-Alert</b>: große Marktorders im Chart-Kürzel ab der gewählten Schwelle (Standard 100.000 USDT) aus dem Einzel-Trade-Stream von Binance. Teil-Ausführungen einer Order (gleiche Handelszeit, gleiche Seite, Preis läuft in Order-Richtung weiter) zählen als eine Order. Dazu der Anteil der Taker-Käufe am gesamten Umsatz der letzten 60 s. Beschreibung des laufenden Handels, keine Vorhersage – ob große Orders den Kurs weitertreiben, ist nicht geprüft.</p><p><b>Orderbuch-Wände</b> (Reiter in der Whales-Leiste): größte Kauf- und Verkaufs-Wand im Bereich ±2 % aus dem Orderbuch von Binance (1000 Stufen je Seite, alle 10 s, nur bei offenem Reiter). Wand = Preiszone von 0,1 % des Kurses mit mindestens doppelt so viel wie im Schnitt. Limit-Orders können zurückgezogen werden; Momentaufnahme, kein Versprechen.</p><p><b>RSI-Divergenz – Leuchten und Leitfaden:</b> Eine aktuelle Divergenz leuchtet im Chart am jüngsten Umkehrpunkt (grün bullisch, rot bärisch); rechts über dem Chart öffnet ein Knopf die Erklärung mit Kursen, RSI-Werten und Handlungsleitfaden. Neue Divergenzen pulsieren, bis die Erklärung einmal geöffnet wurde. Backtest der Leitfaden-Regeln: Warten auf Bestätigung verbesserte nichts (44–48 % bzw. 21–39 %).</p><p><b>Countdown bis Kerzenschluss:</b> Die gestrichelte Kurslinie in der Farbe der laufenden Kerze trägt am rechten Ende ein Schild mit dem aktuellen Kurs, darunter die Zeit bis zum Schluss der laufenden Kerze (unter 1 h „m:ss“, unter 1 Tag „h:mm:ss“, darüber „3T 05:12“). Am Handy hochkant steht das Schild im Chart und hängt über oder unter der Linie, damit es die laufende Kerze nicht verdeckt. Gerechnet wird mit der Uhr von Binance: Die Abweichung der Geräteuhr ergibt sich aus den Zeitstempeln im Live-Stream.</p><p><b>Hoch und Tief:</b> Das höchste Hoch und das tiefste Tief der sichtbaren Kerzen stehen fett in Grün bzw. Rot an der Dochtspitze, am Computer mit „Hoch“ bzw. „Tief“, am Handy hochkant nur mit dem Kurs. Es gilt der sichtbare Ausschnitt: Zoomen oder Zurückblättern ändert ihn. Bei gleich hohen Spitzen zählt die jüngste.</p><p><b>Wirtschaftskalender:</b> Wochenkalender von Forex Factory (nfs.faireconomy.media). Ein GitHub-Job im Repository (.github/workflows/kalender.yml) holt ihn alle 3 Stunden und legt ihn als calendar.json im Zweig „kalender“ ab; die App liest ihn von raw.githubusercontent.com alle 30 Minuten. Gewarnt wird vor Terminen mit hoher Bedeutung, ab der eingestellten Zeit vorher bis 15 Minuten danach. Keine Aussage über die Richtung der Kursbewegung.</p><p><b>News &amp; Termine zum Coin:</b> Ein GitHub-Job im Repository (.github/workflows/news.yml) holt stündlich die neuesten Ankündigungen von Binance (Kategorien neue Listings, Neuigkeiten, Airdrops, Delistings und Wartung, die 15 neuesten je Kategorie; bapi/composite/v1/public/cms) und je Coin die Google-News-Suche (RSS, deutsch, letzte 3 Tage) für 36 bekannte Coins. Binance-Ankündigungen zählen, wenn sie ein Listing, Delisting, ein entferntes USDT-Paar, einen Futures-Kontrakt, ein Netzwerk-Upgrade, einen Token-Tausch oder die Beobachtungsliste betreffen; der Termin ist die UTC-Zeit am Datum im Titel. Schlagzeilen zählen, wenn sie den Coin nennen und ein Stichwort aus den Gruppen Sicherheit, ETF, Recht, Netzwerk, Börse oder Unternehmen enthalten; nennen sie zwei Coins, muss das Stichwort beim jeweiligen Coin stehen, ab drei gelten sie als Marktbericht. Kursprognosen fallen weg. Meldungen mit einem gemeinsamen markanten Wort innerhalb von 36 Stunden gelten als eine Geschichte. Ablage als news.json im Zweig „news“; die App lädt sie von raw.githubusercontent.com alle 15 Minuten.</p><p><b>Mini-Watchlist (Vorauswahl):</b> Bewertet wird ein wählbarer Zeitraum (Auswahl in der Überschrift des Detailfelds, gespeichert nur auf diesem Gerät): 1 Minute (1m-Kerzen), 30 Minuten (3m), 1 Stunde (5m, Standard), 4 Stunden (15m) oder 1 Tag (2h). Je Coin 260 Kerzen dieses Intervalls (aus dem Kerzen-Zwischenspeicher bzw. per REST, nacheinander geladen; ohne Spot-Paar die USDT-Futures), danach über den Live-Stream; der Kurs läuft mit der laufenden Kerze live. Tendenz = die vier Regeln der Signal-Übersicht (Trend EMA 20 zu EMA 50, Kurs zu EMA 20, RSI 14, MACD 12/26/9) auf den letzten 199 abgeschlossenen Kerzen (mindestens 60), neu bei jedem Kerzenschluss; Long- bzw. Short-Tendenz ab 3 von 4 Signalen in derselben Richtung, sonst Abwarten. Veränderung = aktueller Kurs zum Schluss der letzten Kerze vor Beginn des Zeitraums (1 Minute: Kurs vor 60 s). Verlauf = Schlusskurse der Kerzen des Zeitraums (mindestens 12) und der aktuelle Kurs. Bewegung = ATR über die Kerzen des Zeitraums (1 Minute: ATR 14) × √Anzahl der Kerzen; unter 1 % erscheint „Zu wenig Bewegung“. Die Zeitrahmen-Knöpfe des Charts ändern daran nichts. Fehlt eine Kerze (z. B. Handy gesperrt), wird die Reihe neu geladen.</p><p><b>Volatilität nach Uhrzeit:</b> Grundlage sind die letzten 2.000 abgeschlossenen Stundenkerzen des geöffneten Coins (rund 83 Tage, Markt wie im Chart), je Uhrzeit (Ortszeit) und Tagesart (Mo–Fr, Sa–So). Spanne = (Hoch − Tief) / Eröffnung. Säule kräftig: Median der Spanne dieser Stunde; hell: 90-%-Wert aus der Stunde und ihren beiden Nachbarn (dieselbe Tagesart). Letzte 60 Minuten: Hoch bis Tief der 1m-Kerzen (mindestens 45) im Verhältnis zum Kurs zu Beginn; Faktor = Spanne / Median der aktuellen Stunde. Warnung: Spanne über dem 90-, 95- oder 99-%-Wert der vergleichbaren Stunden (Stunde ± 1, mindestens 30 Stunden), „stark erhöht“ ab dem 99-%-Wert; aus erst unter 90 % der Schwelle. Richtung: mittlere Bewegung (Schluss zu Eröffnung) je Stunde mit Student-t-Vertrauensbereich; ▲/▼ nur, wenn der ganze Bereich über der doppelten Gebühr je Seite (Einstellung im Positionsrechner) bzw. unter deren Negativ liegt – Bonferroni über 48 Zellen (24 Stunden × 2 Tagesarten), gemeinsam 95 %, mindestens 20 Stunden je Zelle; sonst keine Zahl. Stundenkerzen alle 6 Stunden ergänzt (nur neue), im Kerzen-Zwischenspeicher für höchstens 8 Coins.</p><p><b>24/7-Dienst:</b> Übergabe als Datei scalpdesk-247.json im eigenen Telegram-Chat, angeheftet und nach jeder Änderung per editMessageMedia ersetzt: aktive Kurs-Alarme (Kürzel, Markt, Richtung, Preis, Notiz, Zeitpunkt des Scharfschaltens), Stop und Ziel offener Positionen (ohne Menge, Einstieg und Notiz), Termin-Warnung (Minuten, Währung), gewählte Meldungen und Zeitzone. Der Dienst (server/scalpdesk-247.mjs, Node.js ab 18) liest sie jede Minute (getChat, getFile), prüft alle 15 s die 1m-Kerzen der betroffenen Kürzel (Spot über data-api.binance.vision, Futures über fapi.binance.com; Hoch und Tief seit der letzten Prüfung, erst nach dem Scharfschalten), lädt den Kalender alle 30 min und schreibt alle 10 min „Dienst: aktiv“ mit dem übernommenen Stand in die Beschriftung. Die App sendet eine Meldung nicht selbst, wenn diese Bestätigung höchstens 20 Minuten alt ist, zum zuletzt übergebenen Stand gehört und die Meldung darin enthalten ist.</p><p>Backtests mit echten BTC-Stundenkerzen (Coinbase und Bitfinex, 2017–2019): Weder Divergenzen noch die Elliott-Zählung und ihre Prognose-Ziele noch die Fibonacci-Marken zeigten einen verlässlichen Vorteil – alle daher ohne Prozentzahl, als Hinweis und nicht als Handelssignal.</p></div><div><h3>Futures &amp; Szenario</h3><p>Funding und Open Interest stammen vom gleichnamigen USDT-Futures-Paar, unabhängig vom Chartintervall. OI vergleicht den aktuellen Mengenbestand mit dem jüngsten 5-Minuten-Snapshot vor dem Zeitpunkt vor einer Stunde; der tatsächliche Zeitraum wird angezeigt.</p><p>Liquidationsabstand: Long = (1/Hebel − MMR) / (1 − MMR), Short = (1/Hebel − MMR) / (1 + MMR). MMR als Dezimalzahl. Dies ist ein vereinfachtes Modell; 1/Hebel allein beschreibt den vollständigen Margin-Verbrauch ohne Maintenance Margin.</p></div><div><h3>Liquidations-Heatmap</h3><p>Schätzung aus der Open-Interest-Historie (futures/data/openInterestHist, bis 500 Werte, höchstens 30 Tage) und den USDT-Futures-Kerzen desselben Zeitraums: 5 Minuten für die Chart-Intervalle 1m und 5m, sonst das Chart-Intervall selbst (bis 1d). Jeder OI-Anstieg gilt als neu eröffnete Positionen zum VWAP des Zeitraums (Quote- durch Basisvolumen), aufgeteilt nach dem Anteil der Taker-Käufe (10–90 %) auf Longs und Shorts und nach der Hebelverteilung 5×/10×/20×/50×/100× mit 10/25/30/20/15 %. Liquidationspreis wie im Rechner: Long = Einstieg × (1 − 1/Hebel) / (1 − MMR), Short = Einstieg × (1 + 1/Hebel) / (1 + MMR). Ein OI-Rückgang verkleinert alle offenen Zonen im selben Verhältnis; eine Zone endet bei der ersten Kerze, deren Tief (Long) bzw. Hoch (Short) sie erreicht. Farbe und Deckkraft nach dem Anteil am Höchstwert im sichtbaren Ausschnitt (hoch 0,75); schwache Zonen bleiben fast durchsichtig. Cluster: stärkste Summe je Seite in 0,1-%-Stufen, geglättet über ±0,2 %, im Bereich ±10 % um den Kurs. Neu geladen wird nur, wenn ein neuer OI-Wert fällig ist, und dann nur ab dem vorletzten Wert. Die Werte liegen zusätzlich in einer eigenen IndexedDB (höchstens 12 Reihen, nicht im Backup), damit die Heatmap nach dem Neuladen sofort erscheint; „Kerzen-Zwischenspeicher leeren“ leert sie mit.</p></div><div><h3>Kerzen-Zwischenspeicher</h3><p>Abgeschlossene Kerzen werden je Markt, Kürzel und Intervall in einer eigenen IndexedDB gespeichert (höchstens 40 Reihen à 500 Kerzen, nicht im Backup). Beim nächsten Abruf – auch nach dem Neuladen – lädt das Dashboard nur die Kerzen ab der zuletzt gespeicherten nach und vergleicht diese eine Kerze mit Binance; passt sie nicht, wird die Reihe vollständig neu geladen. Fehlt höchstens eine Kerze, zeigt der Chart beim Wechsel sofort den gespeicherten Stand, als vorläufig markiert, bis Nachladen oder Live-Stream frische Daten liefern.</p><p>Liquidationslinie im Chart: bei eingetragenem Liq.-Preis der Börse dieser, sonst bei isolierter Margin das Modell oben mit der Maintenance Margin aus den Modellannahmen; bei Cross ohne Börsenwert keine Linie.</p></div><div><h3>Telegram &amp; Discord</h3><p>Optional. Der Web Worker sendet per HTTPS direkt an api.telegram.org (sendMessage) bzw. an die Discord-Webhook-Adresse; bei Netzfehlern bis zu viermal mit wachsender Pause, bei „zu viele Anfragen“ nach der von Telegram/Discord genannten Wartezeit. Offene Tabs stimmen sich über die IndexedDB ab, damit jede Meldung nur einmal gesendet wird.</p></div><div><h3>Speicher &amp; Abgleich</h3><p>Sicherung über Telegram (optional): etwa 4 Sekunden nach einer Änderung sendet das Dashboard die Backup-Datei (JSON, wie „Backup herunterladen“ ohne Passwort) per sendDocument an den eigenen Chat und ersetzt sie danach per editMessageMedia in derselben Nachricht; fehlt die Nachricht, wird neu gesendet. Mehrere offene Tabs stimmen sich über die IndexedDB ab. Positionen, Trades und Einstellungen liegen in der IndexedDB des Browsers, gespiegelt im localStorage. Offene Tabs gleichen Änderungen untereinander ab. Der QR-Abgleich komprimiert die Daten, verschlüsselt sie mit AES-256-GCM (Schlüssel per PBKDF2 aus deinem Passwort) und teilt sie bei Bedarf auf mehrere Codes auf.</p></div></div><div class="source-links"><a href="https://developers.binance.com/docs/binance-spot-api-docs/web-socket-streams" target="_blank" rel="noopener noreferrer">Binance Spot-Streams ↗</a><a href="https://developers.binance.com/docs/binance-spot-api-docs/rest-api/market-data-endpoints" target="_blank" rel="noopener noreferrer">Binance Spot ↗</a><a href="https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/Open-Interest-Statistics" target="_blank" rel="noopener noreferrer">Binance Futures ↗</a><a href="https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/relative-strength-index-rsi" target="_blank" rel="noopener noreferrer">RSI-Referenz ↗</a></div></details>
       <footer class="foot" data-tabs="chart calc pos ind"><span>Keine Anlageberatung · keine Order-Ausführung · nur Anzeige</span><details class="tip left"><summary aria-label="Hinweis zur Nutzung"><span>i</span></summary><div class="tip-body">Diese Anzeige ist keine Anlageberatung und keine Garantie für einen sicheren Einstieg. Indikatoren zeigen Wahrscheinlichkeiten, keine Gewissheiten. Das Dashboard liest nur öffentliche Marktdaten und führt keine Orders aus.</div></details><span id="app-version"></span></footer>
     </div>
   </main>
@@ -8628,15 +8803,16 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
             <li>BotFather antwortet mit einem <b>Token</b> wie <code>123456789:AAH…</code>. Diesen kopieren und unten einfügen.</li>
             <li>Deinen neuen Bot über den Link in der Antwort öffnen und <b>Start</b> tippen bzw. „Hallo“ schreiben – erst dann darf er dir schreiben.</li>
             <li>Hier <b>Chat-ID ermitteln</b> tippen, dann <b>Test senden</b>. Kommt die Testnachricht an, ist alles fertig.</li>
-            <li>Datensicherung getrennt halten (empfohlen): eine eigene Gruppe „Sicherung“ mit dem Bot anlegen oder in einer Gruppe mit Themen ein Thema „Sicherung“, dort eine Nachricht schreiben, <b>Chat-ID ermitteln</b> und beim gefundenen Chat <b>→ Sicherungschat</b> tippen. <b>Test je Nachrichtenart</b> zeigt, was wohin geht.</li>
+            <li>Datensicherung getrennt halten (empfohlen): eine eigene Gruppe „Sicherung“ mit dem Bot anlegen oder in einer Gruppe mit Themen ein Thema „Sicherung“, dort eine Nachricht schreiben, <b>Chat-ID ermitteln</b> und beim gefundenen Chat <b>→ Sicherungschat</b> tippen. Hast du für die Sicherung einen eigenen Bot, dessen Token unter „💾 Sicherungschat“ eintragen, im Bot <b>Start</b> tippen und ebenso zuordnen. <b>Test je Nachrichtenart</b> zeigt, was wohin geht.</li>
           </ol>
         </details>
         <label>Bot-Token<span class="input-wrap"><input id="tg-token" type="password" autocomplete="off" spellcheck="false" placeholder="123456789:AA…"></span></label>
         <fieldset class="tg-targets"><legend>Wohin gehen die Nachrichten?</legend>
           <div class="tg-target"><p><b>🔔 Kursalarm</b> <small>Kurs-Alarme, Stop/Ziel, Tages-Verlustlimit, News-Termine, Gewinn/Verlust, BTC-Puls</small></p>
             <div class="tg-ids"><label>Chat-ID<span class="input-wrap"><input id="tg-chat" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="wird ermittelt"></span></label><label>Thema <small>(optional)</small><span class="input-wrap"><input id="tg-thread" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="–"></span></label></div></div>
-          <div class="tg-target"><p><b>💾 Sicherungschat</b> <small>nur die Datensicherung · leer = wie Kursalarm</small></p>
-            <div class="tg-ids"><label>Chat-ID<span class="input-wrap"><input id="tg-bchat" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="wie Kursalarm"></span></label><label>Thema <small>(optional)</small><span class="input-wrap"><input id="tg-bthread" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="–"></span></label></div></div>
+          <div class="tg-target backup"><p><b>💾 Sicherungschat</b> <small>nur die Datensicherung · leer = wie Kursalarm</small></p>
+            <div class="tg-ids"><label>Chat-ID<span class="input-wrap"><input id="tg-bchat" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="wie Kursalarm"></span></label><label>Thema <small>(optional)</small><span class="input-wrap"><input id="tg-bthread" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="–"></span></label></div>
+            <label>Eigener Bot-Token <small>(nur bei einem eigenen Sicherungs-Bot)</small><span class="input-wrap"><input id="tg-btoken" type="password" autocomplete="off" spellcheck="false" placeholder="leer = derselbe Bot"></span></label></div>
         </fieldset>
         <div class="tg-found" id="tg-found" hidden></div>
         <div class="row"><button type="button" class="button ghost" id="tg-detect">Chat-ID ermitteln</button><button type="button" class="button primary-lite" id="tg-test">Test senden</button><button type="button" class="button ghost" id="tg-testall">Test je Nachrichtenart</button><label class="switch"><input type="checkbox" id="tg-on"> Aktiv</label></div>
