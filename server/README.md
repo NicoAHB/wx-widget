@@ -68,6 +68,9 @@ Bot-Token und Chat-ID sind dieselben wie in der App unter „Kursalarm“, nicht
 - Einstellungen neu eingeben: `curl -fsSL …/install.sh | sudo bash -s -- --neu`
 - Entfernen: `sudo bash /opt/scalpdesk-247/install.sh --remove`
 
+## Selbsttest
+`node selbsttest.mjs` im Ordner `server` prüft den Dienst ohne Netz und ohne Konten: Telegram und Binance sind darin nachgebaut. Geprüft werden vor allem die Zustellung (Ablehnung, Wiederholen mit wachsender Pause, Neustart, Nachstellen mit Vermerk, Störung nach einer Minute ohne Telegram, Verwerfen nach 24 Stunden) und die gleichzeitigen Kursabfragen. Am Ende steht „… von … bestanden“.
+
 ## Dateien und Sicherheit
 - `/opt/scalpdesk-247/scalpdesk-247.mjs` ist das Programm: ohne Abhängigkeiten, Node.js ab 18.
 - `/etc/scalpdesk-247.json` enthält Bot-Token, Chat-ID und den optionalen Discord-Webhook. Sie ist nur für root und den Dienst-Benutzer `scalpdesk` lesbar.
