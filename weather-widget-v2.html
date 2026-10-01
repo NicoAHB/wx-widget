@@ -2202,7 +2202,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Alle Werte liegen zusätzlich im Arbeitsspeicher und sind dadurch synchron lesbar. Schreiben geht sofort in den
 // localStorage und gebündelt in die IndexedDB; beim Start gewinnt die zuletzt vollständig geschriebene Kopie.
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
-const APP_VERSION = '3.24.0', docEl = document.documentElement;
+const APP_VERSION = '3.25.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -2759,7 +2759,9 @@ function renderWatchlist() {
     if (state.watchEdit) { const x = btn('chip-x', '×'); x.dataset.unwatch = coin; x.setAttribute('aria-label', `${coin} aus der Vorauswahl entfernen`); item.append(x); }
     grid.append(item);
   }
-  box.replaceChildren(head, grid, wldBox());
+  // das Detailfeld bleibt eingehängt (3.25.0): sonst verlöre die Zeitraum-Auswahl darin beim Wechsel den Fokus
+  const d = wldBox();
+  if (d.parentNode === box) { for (const n of [...box.childNodes]) if (n !== d) n.remove(); d.before(head, grid); } else box.replaceChildren(head, grid, d);
   if (typeof wlPaint === 'function') wlPaint(Date.now(), true);
 }
 
@@ -4116,7 +4118,7 @@ function syncStreams() {
       if (nearLevel(it.symbol)) want[m].add(`${s}@aggTrade`); // nahe einer Marke: jeden Trade prüfen
     }
     for (const s of fullBarSyms()) want.spot.add(`${s.toLowerCase()}@kline_1m`); // Vollbild: Kurs-Wechsler oben rechts
-    for (const w of wlStreams()) want[w.m].add(w.s); // 4.2: Mini-Watchlist – 1m-Kerzen aller Vorauswahl-Coins
+    for (const w of wlStreams()) want[w.m].add(w.s); // 4.2/3.25.0: Mini-Watchlist – Kerzen aller Vorauswahl-Coins im Intervall des Zeitraums
     if (pulseWants()) want.spot.add('btcusdt@kline_1m'); // 3.24.0: BTC-Puls
     // Tab-Titel mit BTC-Referenzkurs (anderer Coin im Chart): BTC-Spot-1m – auch wenn der Chart aus den Futures kommt
     if (titlePriceOn && state.symbol !== 'BTCUSDT') want.spot.add('btcusdt@kline_1m');
@@ -4219,7 +4221,8 @@ function onKline(m) {
   const now = Date.now(); live.lastMsg[m.m] = now; clockSample(m.E); // 3.3: Binance-Zeit für den Countdown
   if (state.paused) return;
   if (m.i === '1m' && m.s === 'BTCUSDT' && m.m === 'spot' && m.k.c > 0) { btcRef = { price: m.k.c, at: now }; if (state.symbol !== 'BTCUSDT') updateTitle(); }
-  if (m.i === '1m') { trackLivePrice(m.s, m.k, now); wlKline(m, now); volaKline(m); pulseKline(m, now); } // 4.2: Mini-Watchlist, 4.3: Volatilität der letzten 60 Minuten
+  if (m.i === '1m') { trackLivePrice(m.s, m.k, now); volaKline(m); pulseKline(m, now); } // 4.3: Volatilität der letzten 60 Minuten
+  wlKline(m, now); // 4.2/3.25.0: Mini-Watchlist – Kerzen im Intervall des gewählten Zeitraums (wlKline prüft Intervall, Coin und Markt)
   if (m.s === state.symbol && m.m === chartMarket() && m.i === state.interval && applyLiveCandle(m.k)) { live.chartAt = now; updateTitle(); scheduleLiveRender(true); }
   else if (m.i === '1m' && watchSymbols().has(m.s)) scheduleLiveRender(false);
 }
@@ -7426,7 +7429,10 @@ function wldBox() {
   const verdict = el('p', 'wl-d-verdict', ''), move = el('p', 'wl-d-move', ''), mtip = el('details', 'tip left wl-d-tip'), msum = el('summary'), foot = el('p', 'wl-d-foot', '');
   verdict.hidden = true; move.hidden = true; mtip.dataset.side = 'left'; msum.setAttribute('aria-label', 'Erklärung: Zu wenig Bewegung'); msum.append(el('span', '', 'i')); mtip.append(msum, el('div', 'tip-body'));
   move.append(el('span', 'wl-d-movetxt', ''), mtip);
-  sec.append(head, body, verdict, move, foot);
+  // Gesamtbewertung und Bewegungs-Hinweis im Rumpf: dessen Mindesthöhe gilt auch für sie, das Feld schrumpft nicht, wenn sie
+  // kurz wegfallen (Zeitraum gewechselt, Reihe lädt neu)
+  body.append(verdict, move);
+  sec.append(head, body, foot);
   clip.append(sec); box.append(clip);
   close.addEventListener('click', () => wldClose(true));
   // Erklärung auch beim Überfahren mit der Maus (am iPad mit Trackpad ebenso); Klick auf ein so geöffnetes Info-Symbol heftet
@@ -7517,7 +7523,7 @@ function wldPaint(now = Date.now(), force = false) {
   if (mv?.low) {
     const a = number(mv.atrPct, 2), m = number(mv.movePct, 2);
     wld.move.querySelector('.wl-d-movetxt').textContent = `⚠ Zu wenig Bewegung – über ${S.name} etwa ${m} %, ein Ziel von ${WL_TARGET} % ist unrealistisch`;
-    const tb = wld.mtip.querySelector('.tip-body'), long = [`ATR (mittlere wahre Spanne) der letzten ${mv.len} ${S.ivName}-Kerzen: ${a} % je Kerze.`, `Über ${S.name} bewegt sich der Kurs damit typischerweise etwa ${m} % (Faustregel: ATR × √${S.n}, ${S.n} Kerzen im Zeitraum). Das reicht nicht für ein Ziel von ${WL_TARGET} %.`];
+    const tb = wld.mtip.querySelector('.tip-body'), long = [`ATR (mittlere wahre Spanne) der letzten ${mv.len} ${S.ivName}-Kerzen: ${a} % je Kerze.`, S.n > 1 ? `Über ${S.name} bewegt sich der Kurs damit typischerweise etwa ${m} % (Faustregel: ATR × √${S.n}, ${S.n} Kerzen im Zeitraum). Das reicht nicht für ein Ziel von ${WL_TARGET} %.` : `In 1 Minute bewegt sich der Kurs damit typischerweise etwa ${m} % (eine Kerze: die ATR selbst). Das reicht nicht für ein Ziel von ${WL_TARGET} %.`];
     if (tb.textContent !== long.join('')) tb.replaceChildren(...long.map(x => el('p', '', x)));
   }
   wld.foot.textContent = `Beschreibt ${S.the} – kein Handelssignal mit nachgewiesenem Vorteil.`;
