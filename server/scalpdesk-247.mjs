@@ -1,7 +1,10 @@
 #!/usr/bin/env node
-// Scalp Desk – 24/7-Dienst (Schritt 5.1; BTC-Puls ab 1.1)
-// Meldet Kurs-Alarme, Stop-Loss/Take-Profit offener Positionen, wichtige Wirtschaftstermine und den BTC-Puls (ungewöhnlich
-// starke Bitcoin-Bewegung) per Telegram (auf Wunsch zusätzlich Discord) – rund um die Uhr, auch wenn die App überall geschlossen ist.
+// Scalp Desk – 24/7-Dienst (Schritt 5.1; BTC-Puls ab 1.1, Gewinn-/Verlust-Alarm ab 1.2)
+// Meldet Kurs-Alarme, Stop-Loss/Take-Profit offener Positionen, wichtige Wirtschaftstermine, den BTC-Puls (ungewöhnlich
+// starke Bitcoin-Bewegung) und den Gewinn-/Verlust-Alarm (Live-Ergebnis aller offenen Positionen erreicht eine Grenze) per
+// Telegram (auf Wunsch zusätzlich Discord) – rund um die Uhr, auch wenn die App überall geschlossen ist.
+// Für den Gewinn-/Verlust-Alarm stehen Einstieg und Menge der offenen Positionen in der Datei – nur solange dort ein
+// Gewinn- oder Verlust-Alarm aktiv ist; sonst bleiben Mengen und Einstiege in der App.
 //
 // Woher er die Daten hat: Die App legt die aktiven Alarme und Positionen als Datei „scalpdesk-247.json“ in deinen
 // Telegram-Chat und heftet sie oben an. Dieser Dienst liest sie mit demselben Bot (getChat → angepinnte Nachricht →
@@ -16,7 +19,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-export const VERSION = '1.1.0';
+export const VERSION = '1.2.0';
 const E = process.env;
 // Adressen (für Tests über Umgebungsvariablen änderbar)
 export const API = {
@@ -61,10 +64,24 @@ export function parseConfig(j) {
       since: p.since, ack: { tp: !!p.ack?.tp, sl: !!p.ack?.sl } }));
   return {
     tag: /^[a-z0-9]{2,12}$/.test(j.tag) ? j.tag : '', at: Number.isFinite(j.at) ? j.at : 0, on: j.on !== false, tz: validTz(j.tz), app: str(j.app, 20), dev: str(j.dev, 60),
-    ev: { alarm: j.ev?.alarm !== false, pos: j.ev?.pos !== false, news: j.ev?.news !== false, pulse: j.ev?.pulse === true },
+    ev: { alarm: j.ev?.alarm !== false, pos: j.ev?.pos !== false, news: j.ev?.news !== false, pulse: j.ev?.pulse === true, pnl: j.ev?.pnl !== false },
     econ: { warn: [0, 5, 15, 30, 60].includes(j.econ?.warn) ? j.econ.warn : 0, cur: j.econ?.cur === 'all' ? 'all' : 'usd' },
-    alarms, positions, pulse: parsePulse(j.pulse)
+    alarms, positions, pulse: parsePulse(j.pulse), pnl: parsePnl(j.pnl)
   };
+}
+// Gewinn-/Verlust-Alarm (ab 1.2): alle offenen Positionen mit Einstieg und Menge (n = Anzahl in der App – fehlt eine, wird
+// nicht geprüft, wie in der App) und je Art höchstens eine Grenze: k profit/loss, v Betrag in USDT (positiv), at Zeitpunkt
+// des Scharfschaltens (gehört zum Schlüssel), w beim Scharfschalten schon erreicht (erst wieder darunter), done die App hat
+// diese Meldung selbst gesendet (dann nicht noch einmal).
+export function parsePnl(x) {
+  if (!x || typeof x !== 'object') return null;
+  const fin = v => typeof v === 'number' && Number.isFinite(v), str = (v, n) => (typeof v === 'string' ? v.slice(0, n) : '');
+  const pos = (Array.isArray(x.pos) ? x.pos : []).filter(p => p && typeof p.id === 'string' && SYM_RE.test(p.symbol) && (p.side === 'long' || p.side === 'short') && fin(p.entry) && p.entry > 0 && fin(p.qty) && p.qty > 0)
+    .slice(0, 300).map(p => ({ id: str(p.id, 40), symbol: p.symbol, source: p.source === 'futures' ? 'futures' : 'spot', side: p.side, entry: p.entry, qty: p.qty }));
+  const lim = [];
+  for (const l of Array.isArray(x.lim) ? x.lim : []) if (l && (l.k === 'profit' || l.k === 'loss') && fin(l.v) && l.v > 0 && l.v <= 1e9 && fin(l.at) && !lim.some(m => m.k === l.k)) lim.push({ k: l.k, v: l.v, at: l.at, w: !!l.w, done: !!l.done });
+  const n = Number.isInteger(x.n) && x.n >= 0 ? x.n : pos.length;
+  return lim.length ? { n, pos, lim } : null;
 }
 // BTC-Puls (ab 1.1): Schwellen der App je Tagesart (wd Mo–Fr, we Sa–So) und Stunde (UTC) für 5 und 15 Minuten in %, dazu die
 // Mindestgrößen und die Vorauswahl-Coins für die zweite Zeile. Fehlt etwas oder ist es unplausibel: kein Puls.
@@ -111,6 +128,24 @@ export function posText(p, type, price, info) {
   return `${type === 'tp' ? '🎯' : '🛑'} ${what} erreicht\n${what} ${priceText(p[type])} ${howReached(info)} · Kurs ${priceText(price)}`;
 }
 export const alarmKey = a => `al:${a.id}:${a.armedAt}`;
+// ---- Gewinn-/Verlust-Alarm (ab 1.2): dieselbe Regel wie in der App ----
+// Live-Ergebnis = Summe Menge × (Kurs − Einstieg) × Richtung über alle offenen Positionen, auf Cent gerundet; ohne offene
+// Position oder solange ein Kurs fehlt: keine Prüfung. Gewinn v meldet bei ≥ +v, Verlust v bei ≤ −v – je Scharfschalten einmal.
+export const pnlKey = l => `pnl:${l.k}:${l.at}`;
+export const pnlMet = (k, v, cur) => cur !== null && (k === 'profit' ? cur >= v : cur <= -v);
+export function pnlTotal(pnl, prices) {
+  if (!pnl?.pos.length || pnl.pos.length !== pnl.n) return null;
+  let total = 0;
+  for (const p of pnl.pos) { const pr = prices.get(`${p.source}:${p.symbol}`); if (!(pr > 0)) return null; total += p.qty * (pr - p.entry) * (p.side === 'long' ? 1 : -1); }
+  return Math.round(total * 100) / 100;
+}
+const pnlCond = l => (l.k === 'profit' ? `≥ +${number(l.v)} USDT` : `≤ −${number(l.v)} USDT`);
+export const pnlName = k => (k === 'profit' ? 'Gewinn-Alarm' : 'Verlust-Alarm');
+export function pnlText(l, cur, n) {
+  return `${l.k === 'profit' ? '📈' : '📉'} ${pnlName(l.k)}\nLive-Ergebnis ${signedText(cur)} USDT (${n} ${n === 1 ? 'offene Position' : 'offene Positionen'}) · Schwelle ${pnlCond(l)} erreicht`;
+}
+// Zeile in der angepinnten Nachricht, an der die App eine vom Dienst gesendete Meldung erkennt (Art, Scharfschalten, Zeitpunkt, Wert)
+export const pnlLine = (l, f, tz) => `GV: ${pnlName(l.k)} ausgelöst ${stamp(f.t, tz)} bei ${signedText(f.val)} USDT · @${l.k === 'profit' ? 'p' : 'l'}:${l.at}:${f.t}:${f.val}`;
 export const posKey = (p, type) => `pos:${p.id}:${type}:${p.since}`;
 
 // ---------- BTC-Puls (ab 1.1): dieselbe Regel wie in der App (pulse.js) ----------
@@ -134,7 +169,7 @@ export function pulseDecide(moves, pc, now, last = {}) {
   if (l && now - l.t < PULSE_GAP) { if (l.more || mag < l.mag * PULSE_MORE) return null; return { ...best, d, mag, more: true }; }
   return { ...best, d, mag, more: false };
 }
-const signedText = v => `${v > 0 ? '+' : v < 0 ? '−' : ''}${number(Math.abs(v))}`;
+function signedText(v) { return `${v > 0 ? '+' : v < 0 ? '−' : ''}${number(Math.abs(v))}`; }
 export function pulseText(p, price, hourLocal, others) {
   const pc = v => `${signedText(v)} %`;
   return `⚡ BTC-Puls: BTC ${pc(p.mv)} in ${p.w} Min. (${priceText(price)} USDT)${p.more ? ' – Bewegung legt weiter zu' : ''} – ungewöhnlich stark für ${hourLocal} Uhr (Schwelle ${number(p.lim)} %)`
@@ -167,11 +202,14 @@ export function appLine(c) {
 }
 // ok: Kurse kommen an; problem: Grund der Störung. „#tag übernommen“ liest die App als Bestätigung.
 // „· Puls“ (ab 1.1): der Dienst meldet den BTC-Puls – dann sendet die App ihn nicht zusätzlich
+// „· GV“ (ab 1.2): der Dienst prüft den Gewinn-/Verlust-Alarm; steht vor „· Puls“, damit ältere Apps „· Puls · #“ weiter erkennen
 export const pulseOn = c => !!(c?.on && c.ev.pulse && c.pulse);
+export const pnlOn = c => !!(c?.on && c.ev.pnl && c.pnl);
 export function statusLine({ ok, now, c, problem }) {
-  return `${LINE} ${ok ? 'aktiv' : 'Störung'} · ${stamp(now, c.tz)}${pulseOn(c) ? ' · Puls' : ''} · #${c.tag} übernommen${ok ? '' : ` · ${problem}`}`;
+  return `${LINE} ${ok ? 'aktiv' : 'Störung'} · ${stamp(now, c.tz)}${pnlOn(c) ? ' · GV' : ''}${pulseOn(c) ? ' · Puls' : ''} · #${c.tag} übernommen${ok ? '' : ` · ${problem}`}`;
 }
-export const caption = (c, status) => [MARK, appLine(c), status].join('\n').slice(0, 1024);
+// darunter je vom Dienst gesendetem Gewinn-/Verlust-Alarm eine Zeile (pnlLine) – so übernimmt die App „ausgelöst“
+export const caption = (c, status, extra = []) => [MARK, appLine(c), status, ...extra].join('\n').slice(0, 1024);
 
 // ---------- Einstellungen des Servers ----------
 export function readServerConfig(file) {
@@ -189,17 +227,20 @@ export class Watcher {
     Object.assign(this, { token, chat, discord, statePath, now, log });
     this.conf = null; this.fired = {}; this.seen = new Map(); this.rearm = new Map(); this.lastCheck = new Map(); this.prevCandle = new Map();
     this.cal = null; this.calAt = 0; this.feed = { okAt: 0, error: '', since: 0 }; this.next = { config: 0, price: 0, beat: 0, cal: 0, econ: 0 };
-    this.beatOk = null; this.stopped = false; this.saveTimer = null; this.errors = new Map(); this.waiting = false; this.pulseLast = { up: null, down: null }; this.loadState();
+    this.beatOk = null; this.stopped = false; this.saveTimer = null; this.errors = new Map(); this.waiting = false; this.pulseLast = { up: null, down: null };
+    this.pnlSt = {}; this.pnlFired = {}; // Gewinn-/Verlust-Alarm je Scharfschalten: wait/armed; gesendet { t, val } (by: 'app' = die App hat selbst gesendet)
+    this.loadState();
   }
   // ---- Zustand (ausgelöste Meldungen, zuletzt gelesene Datei, Kalender) über Neustarts hinweg ----
   loadState() {
     if (!this.statePath) return;
     try {
       const s = JSON.parse(fs.readFileSync(this.statePath, 'utf8'));
-      if (s && s.v === 1) { this.fired = s.fired && typeof s.fired === 'object' ? s.fired : {}; if (s.pulse && typeof s.pulse === 'object') this.pulseLast = { up: s.pulse.up || null, down: s.pulse.down || null }; if (s.conf?.data) this.conf = { ...s.conf, data: parseConfig({ kind: 'scalpdesk-247', v: 1, ...s.conf.data }) }; if (Array.isArray(s.cal?.events)) { this.cal = s.cal.events; this.calAt = s.cal.at || 0; } }
+      if (s && s.v === 1) { this.fired = s.fired && typeof s.fired === 'object' ? s.fired : {}; if (s.pulse && typeof s.pulse === 'object') this.pulseLast = { up: s.pulse.up || null, down: s.pulse.down || null };
+        if (s.pnl && typeof s.pnl === 'object') { this.pnlSt = s.pnl.st && typeof s.pnl.st === 'object' ? s.pnl.st : {}; this.pnlFired = s.pnl.fired && typeof s.pnl.fired === 'object' ? s.pnl.fired : {}; } if (s.conf?.data) this.conf = { ...s.conf, data: parseConfig({ kind: 'scalpdesk-247', v: 1, ...s.conf.data }) }; if (Array.isArray(s.cal?.events)) { this.cal = s.cal.events; this.calAt = s.cal.at || 0; } }
     } catch { /* erster Start oder beschädigt: neu anfangen */ }
   }
-  stateJson() { const c = this.conf; return JSON.stringify({ v: 1, fired: this.fired, pulse: this.pulseLast, conf: c && { msgId: c.msgId, fileUid: c.fileUid, data: c.data }, cal: this.cal && { at: this.calAt, events: this.cal } }); }
+  stateJson() { const c = this.conf; return JSON.stringify({ v: 1, fired: this.fired, pulse: this.pulseLast, pnl: { st: this.pnlSt, fired: this.pnlFired }, conf: c && { msgId: c.msgId, fileUid: c.fileUid, data: c.data }, cal: this.cal && { at: this.calAt, events: this.cal } }); }
   saveStateNow() {
     if (!this.statePath) return;
     try { fs.mkdirSync(path.dirname(this.statePath), { recursive: true }); const tmp = this.statePath + '.tmp'; fs.writeFileSync(tmp, this.stateJson()); fs.renameSync(tmp, this.statePath); }
@@ -255,22 +296,30 @@ export class Watcher {
     for (const k of keys) if (!this.seen.has(k)) this.seen.set(k, t);
     for (const k of Object.keys(this.fired)) if ((k.startsWith('al:') || k.startsWith('pos:')) && !keys.has(k)) delete this.fired[k];
     for (const k of [...this.seen.keys()]) if (!keys.has(k)) this.seen.delete(k);
-    this.log(`Datei der App übernommen (#${data.tag}): ${data.on ? `${plural(data.alarms.length, 'Alarm', 'Alarme')}, ${plural(data.positions.length, 'Position', 'Positionen')}${data.econ.warn && data.ev.news ? `, Termin-Warnung ${data.econ.warn} min vorher` : ''}${pulseOn(data) ? ', BTC-Puls' : ''}` : 'Übergabe in der App ausgeschaltet'}`);
+    // Gewinn-/Verlust-Grenzen: neu scharf geschaltete übernehmen (beim Scharfschalten schon erreicht → erst wieder darunter),
+    // von der App selbst gesendete nicht noch einmal; entfernte und neu scharf geschaltete (anderer Zeitpunkt) vergessen
+    const lims = pnlOn(data) ? data.pnl.lim : [], pk = new Set(lims.map(pnlKey));
+    for (const l of lims) { const k = pnlKey(l); if (!this.pnlSt[k]) this.pnlSt[k] = l.w ? 'wait' : 'armed'; if (l.done && !this.pnlFired[k]) this.pnlFired[k] = { t, val: null, by: 'app' }; }
+    for (const k of Object.keys(this.pnlSt)) if (!pk.has(k)) delete this.pnlSt[k];
+    for (const k of Object.keys(this.pnlFired)) if (!pk.has(k)) delete this.pnlFired[k];
+    this.log(`Datei der App übernommen (#${data.tag}): ${data.on ? `${plural(data.alarms.length, 'Alarm', 'Alarme')}, ${plural(data.positions.length, 'Position', 'Positionen')}${data.econ.warn && data.ev.news ? `, Termin-Warnung ${data.econ.warn} min vorher` : ''}${pulseOn(data) ? ', BTC-Puls' : ''}${pnlOn(data) ? `, Gewinn-/Verlust-Alarm (${lims.map(l => `${l.k === 'profit' ? '≥ +' : '≤ −'}${l.v} USDT`).join(', ')}, ${plural(data.pnl.n, 'offene Position', 'offene Positionen')})` : ''}` : 'Übergabe in der App ausgeschaltet'}`);
     if (!old || old.tag !== data.tag) this.next.beat = 0; // gleich bestätigen
     this.saveState();
   }
   // ---- Kurse prüfen ----
   async checkPrices() {
     const c = this.conf?.data; if (!c?.on) return;
-    const groups = new Map(), add = (it, kind) => { const k = `${it.source}:${it.symbol}`; if (!groups.has(k)) groups.set(k, { source: it.source, symbol: it.symbol, alarms: [], positions: [] }); groups.get(k)[kind].push(it); };
+    const groups = new Map(), add = (it, kind) => { const k = `${it.source}:${it.symbol}`; if (!groups.has(k)) groups.set(k, { source: it.source, symbol: it.symbol, alarms: [], positions: [], pnl: [] }); groups.get(k)[kind].push(it); };
     if (c.ev.alarm) for (const a of c.alarms) add(a, 'alarms');
     if (c.ev.pos) for (const p of c.positions) add(p, 'positions');
+    if (pnlOn(c)) for (const p of c.pnl.pos) add(p, 'pnl');
     if (!groups.size) { this.feed = { okAt: this.now(), error: '', since: 0 }; return; }
-    let bad = '';
+    let bad = ''; const prices = new Map();
     for (const [k, g] of groups) {
       let rows;
       try { rows = await klines(g.source, g.symbol); } catch (e) { bad = `${coin(g.symbol)}: ${e.message}`; continue; }
       const t = this.now(), from = this.lastCheck.get(k) ?? t, prev = this.prevCandle.get(k) || null, last = candles(rows).at(-1);
+      if (last) prices.set(k, last.c);
       this.lastCheck.set(k, t); if (last) this.prevCandle.set(k, { t: last.t, h: last.h, l: last.l, at: t });
       // beobachtet ab dem ersten Blick des Dienstes auf diese Marke (nach einem Neustart: ab dann), nach einem Treffer ab dem Wegbewegen
       const armed = key => { if (!this.seen.has(key)) this.seen.set(key, t); return Math.max(this.seen.get(key), this.rearm.get(key) || 0); };
@@ -289,9 +338,24 @@ export class Watcher {
         } else if (this.fired[key]) { delete this.fired[key]; this.rearm.set(key, t); this.saveState(); } // Kurs wieder weg: nächste Berührung meldet erneut
       }
     }
+    if (pnlOn(c)) await this.checkPnl(c, prices);
     const t = this.now();
     if (!bad) { this.feed = { okAt: t, error: '', since: 0 }; this.clear('Kurse'); }
     else { if (!this.feed.since) this.feed.since = t; this.feed.error = bad; this.note('Kurse', bad); }
+  }
+  // ---- Gewinn-/Verlust-Alarm (ab 1.2): dieselbe Regel wie in der App, mit den Kursen dieser Prüfung ----
+  async checkPnl(c, prices) {
+    const cur = pnlTotal(c.pnl, prices); if (cur === null) return; // ohne offene Position oder mit fehlendem Kurs: keine Prüfung
+    const t = this.now();
+    for (const l of c.pnl.lim) {
+      const k = pnlKey(l); if (this.pnlFired[k]) continue;
+      const met = pnlMet(l.k, l.v, cur), st = this.pnlSt[k] || (l.w ? 'wait' : 'armed');
+      if (st === 'wait') { if (!met) { this.pnlSt[k] = 'armed'; this.saveState(); } continue; }
+      if (!met) continue;
+      this.pnlFired[k] = { t, val: cur }; this.saveState(); this.next.beat = 0; // gleich in der angepinnten Nachricht vermerken
+      this.log(`${pnlName(l.k)}: Live-Ergebnis ${cur} USDT (Grenze ${l.k === 'profit' ? '≥ +' : '≤ −'}${l.v})`);
+      await this.send(pnlText(l, cur, c.pnl.pos.length), c.tz);
+    }
   }
   // ---- BTC-Puls (ab 1.1): dieselbe Regel wie in der App ----
   async checkPulse() {
@@ -331,7 +395,8 @@ export class Watcher {
   }
   async heartbeat() {
     if (!this.conf) return;
-    const c = this.conf.data, h = this.health(), text = caption(c, statusLine({ ok: h.ok, now: this.now(), c, problem: h.problem }));
+    const c = this.conf.data, h = this.health(), gv = pnlOn(c) ? c.pnl.lim.map(l => [l, this.pnlFired[pnlKey(l)]]).filter(([, f]) => f && f.by !== 'app').map(([l, f]) => pnlLine(l, f, c.tz)) : [];
+    const text = caption(c, statusLine({ ok: h.ok, now: this.now(), c, problem: h.problem }), gv);
     try { await this.tg('editMessageCaption', { chat_id: this.chat, message_id: this.conf.msgId, caption: text }); this.beatOk = h.ok; }
     catch (e) {
       if (/not modified/i.test(e.message)) return;
@@ -363,7 +428,7 @@ export class Watcher {
     try { const me = await this.tg('getMe'); say(true, `Bot @${me.username} erreichbar`); }
     catch (e) { say(false, e.code === 401 || e.code === 404 ? 'Bot-Token ungültig – in @BotFather mit /mybots → API Token nachsehen.' : e.message); return false; }
     try {
-      await this.tg('sendMessage', { chat_id: this.chat, text: `✅ Scalp Desk 24/7-Dienst ist eingerichtet (Server ${os.hostname()}).\nEr meldet Kurs-Alarme, Stop-Loss/Take-Profit, wichtige Termine und den BTC-Puls – auch wenn die App geschlossen ist. In der App unter 🔔 Hinweise → „Telegram / Discord einrichten“ jetzt „An den 24/7-Dienst übergeben“ einschalten.` });
+      await this.tg('sendMessage', { chat_id: this.chat, text: `✅ Scalp Desk 24/7-Dienst ist eingerichtet (Server ${os.hostname()}).\nEr meldet Kurs-Alarme, Stop-Loss/Take-Profit, wichtige Termine, den BTC-Puls und den Gewinn-/Verlust-Alarm – auch wenn die App geschlossen ist. In der App unter 🔔 Hinweise → „Telegram / Discord einrichten“ jetzt „An den 24/7-Dienst übergeben“ einschalten.` });
       say(true, 'Testnachricht an deinen Telegram-Chat gesendet');
     } catch (e) { say(false, e.code === 400 ? 'Chat nicht gefunden – Chat-ID prüfen und dem Bot in Telegram zuerst „Start“ schreiben.' : e.code === 403 ? 'Der Bot darf dir nicht schreiben – in Telegram den Bot öffnen und „Start“ tippen.' : e.message); return false; }
     for (const [src, sym] of [['spot', 'BTCUSDT'], ['futures', 'BTCUSDT']]) {

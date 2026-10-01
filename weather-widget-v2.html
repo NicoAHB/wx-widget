@@ -1503,12 +1503,11 @@ html[data-layout=tablet] .wl-detail{scroll-margin-bottom:calc(84px + env(safe-ar
 .wl-detail.shown .wl-d-clip{overflow:visible}
 .wl-d-box{margin-top:8px;padding:8px 12px 10px;border:1px solid var(--field-border);border-radius:12px;background:var(--field);container:wld/inline-size}
 .wl-d-head{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;min-height:40px}
-@container wld (max-width:520px){.wl-d-meta{order:3;flex-basis:100%}.wl-d-head .wl-d-chart{margin-left:auto}.wl-d-sig{font-size:.8125rem}}
+@container wld (max-width:520px){.wl-d-meta{order:3;flex-basis:100%}.wl-d-head .wl-d-close{margin-left:auto}.wl-d-sig{font-size:.8125rem}}
 .wl-d-title{margin:0;font-size:1.0625rem;font-weight:700;color:var(--text);letter-spacing:.01em}
 .wl-d-meta{flex:1 1 12em;min-width:0;font-size:.75rem;color:var(--muted)}
-.wl-d-head .wl-d-chart{min-height:36px}
 .wl-d-close{display:grid;place-items:center;width:36px;height:36px;min-height:36px;padding:0;border:1px solid var(--field-border);border-radius:50%;background:var(--surface);color:var(--text-2);font:inherit;font-size:1.1rem;line-height:1;cursor:pointer}
-@media (pointer:coarse){.wl-d-close,.wl-d-head .wl-d-chart{min-width:44px;min-height:44px;height:44px}}
+@media (pointer:coarse){.wl-d-close{min-width:44px;min-height:44px;height:44px}}
 .wl-d-body{display:flow-root}
 .wl-d-grp h4{margin:6px 0 2px;font-size:.75rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
 .wl-d-grp ul{display:grid;gap:0;margin:0;padding:0;list-style:none}
@@ -1589,6 +1588,8 @@ html[data-layout=tablet] .wl-detail{scroll-margin-bottom:calc(84px + env(safe-ar
 .wl-d-verdict.long{color:var(--up-text)}.wl-d-verdict.short{color:var(--down-text)}
 .wl-d-move{display:flex;align-items:center;gap:6px;margin:6px 0 0;font-size:.8125rem;color:var(--amber)}
 .wl-d-verdict[hidden],.wl-d-move[hidden]{display:none}
+/* 3.26.0: Gewinn-/Verlust-Feld – prüft der 24/7-Dienst mit (auch bei geschlossener App)? */
+.pnl-svc{margin:2px 0 0;font-size:.78rem;line-height:1.45;color:var(--muted)}.pnl-svc.ok{color:var(--up-text)}.pnl-svc[hidden]{display:none}
 .chart-panel>.notice{margin:12px 20px 0}
 html{scroll-padding-top:calc(var(--lb-h,56px) + 16px)}
 /* nur als eigene Spalten (ab 1400 px) begrenzt; darunter stehen beide untereinander in der gemeinsamen Seitenspalte und
@@ -2202,7 +2203,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Alle Werte liegen zusätzlich im Arbeitsspeicher und sind dadurch synchron lesbar. Schreiben geht sofort in den
 // localStorage und gebündelt in die IndexedDB; beim Start gewinnt die zuletzt vollständig geschriebene Kopie.
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
-const APP_VERSION = '3.25.0', docEl = document.documentElement;
+const APP_VERSION = '3.26.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -2719,7 +2720,7 @@ function renderSignals() {
 // Vorauswahl als Mini-Watchlist (4.2; Ablaufplan Schritte 5 und 6, 3.24.0): je Coin eine Kachel mit Live-Kurs, Verlauf und
 // Tendenz des gewählten Zeitraums (3.25.0, Standard 1 Stunde), darunter die Veränderung über den Zeitraum („1 Std. +0,54 %“)
 // und die Zeile Trend · Kurs · RSI · MACD mit farbigen Pfeilen. Antippen öffnet unter den Kacheln das Detailfeld mit den
-// Signalen dieses Coins (wldetail.js), „Im Chart öffnen“ im Feld lädt den Coin. Neu aufgebaut wird nur, wenn sich Liste,
+// Signalen dieses Coins (wldetail.js) und lädt den Coin im Chart (3.26.0, ohne zum Chart zu springen). Neu aufgebaut wird nur, wenn sich Liste,
 // Bearbeiten-Modus oder der geöffnete Coin ändern – die Live-Werte schreibt wlPaint() in die bestehenden Felder. „+ Coin“ steht in
 // der Kopfzeile, damit beim Laden eines neuen Coins keine Kachelreihe dazukommt und nichts darunter verrutscht.
 let watchKey = '';
@@ -2735,7 +2736,7 @@ function renderWatchlist() {
   const body = el('div', 'tip-body');
   body.append(el('p', '', `Je Coin: Live-Kurs, der Verlauf ${S.of} und rechts die Tendenz. Darunter die Veränderung über ${S.name} („${S.label} …“) und die Zeile Trend · Kurs · RSI (mit Wert) · MACD: ▲ grün = bullish, ▼ rot = bearish, – = neutral.`),
     el('p', '', `Tendenz: die Summe dieser vier Regeln – dieselben wie in der Signal-Übersicht – auf abgeschlossenen ${S.ivName}-Kerzen, von −4 bis +4, neu bei jedem Kerzenschluss. Kräftig grün bzw. rot erst, wenn mindestens 3 der 4 Regeln in dieselbe Richtung zeigen (Long- bzw. Short-Tendenz). Den Zeitraum (1 Minute bis 1 Tag) wählst du im Detailfeld; die Zeitraum-Knöpfe des Charts ändern ihn nicht. Eine Beschreibung ${S.of}, kein Handelssignal mit nachgewiesenem Vorteil.`),
-    el('p', '', 'Antippen zeigt darunter die Signale des Coins mit Erklärungen; dort öffnet „Im Chart öffnen“ den Coin im Chart. „Bearbeiten“ entfernt Coins, „+ Coin“ nimmt den geöffneten Coin auf. Fehlen Daten (Coin lädt noch, keine Verbindung), steht neutral „–“.'));
+    el('p', '', 'Antippen zeigt darunter die Signale des Coins mit Erklärungen und lädt ihn im Chart weiter unten – die Seite springt nicht dorthin. „Bearbeiten“ entfernt Coins, „+ Coin“ nimmt den geöffneten Coin auf. Fehlen Daten (Coin lädt noch, keine Verbindung), steht neutral „–“.'));
   tip.append(sum, body);
   head.append(el('span', 'wl-label', 'Vorauswahl'), tip);
   const tools = el('span', 'wl-tools');
@@ -3326,7 +3327,10 @@ function triggerAlarm(a, price, info = {}) {
   a.triggeredAt = info.missedAt || Date.now(); a.triggerPrice = price; a.touch = info.wick ? info.extreme : null; a.missed = !!info.missedAt; beep();
   const what = `${coin(a.symbol)} ${a.dir === 'above' ? 'auf/über' : 'auf/unter'} ${priceText(a.price)}`;
   desktopNotify(`🔔 Kurs-Alarm ${coin(a.symbol)}`, `${what} ${howReached(info)} · Kurs ${priceText(price)}${a.note ? ' · ' + a.note : ''}`, 'al:' + a.id);
-  void notifyChannels('alarm', `al:${a.id}:${a.armedAt || a.createdAt}`, `🔔 Kurs-Alarm ${coin(a.symbol)}\n${what} USDT ${howReached(info)} · Kurs ${priceText(price)}${a.note ? '\nNotiz: ' + a.note : ''}`, 864e5);
+  // 3.26.0: meldet der 24/7-Dienst diesen Alarm, bleibt er noch 3 Minuten in der Übergabe (sonst könnte er ihn verpassen)
+  const key = `al:${a.id}:${a.armedAt || a.createdAt}`; a.svcAt = s247Covers('alarm', key) ? Date.now() : 0;
+  if (a.svcAt) setTimeout(() => scheduleS247(0), S247_GRACE + 1500);
+  void notifyChannels('alarm', key, `🔔 Kurs-Alarm ${coin(a.symbol)}\n${what} USDT ${howReached(info)} · Kurs ${priceText(price)}${a.note ? '\nNotiz: ' + a.note : ''}`, 864e5);
   simpleToast('al:' + a.id, 'alarm ' + (a.dir === 'above' ? 'up' : 'down'), `🔔 ${what} ${howReached(info)} · Kurs ${priceText(price)}${a.note ? ' – ' + a.note : ''}`, null, a.dir === 'above' ? 'green' : 'orange');
 }
 // Stop, Ziel und Kurs-Alarme prüfen – bei jeder Kursmeldung aus dem Stream und nach jedem REST-Abruf.
@@ -3759,8 +3763,7 @@ $('fx-mode').addEventListener('change',()=>{state.fxMode=$('fx-mode').value;rend
 $('signal-rows').addEventListener('click',e=>{const row=e.target.closest('[data-signal-interval]');if(row && row.dataset.signalInterval!==state.interval){void setMarket(state.symbol,row.dataset.signalInterval);$('chart').scrollIntoView({behavior:'smooth',block:'center'});}});
 $('watchlist').addEventListener('click',e=>{
   const t=e.target.closest('button'); if(!t) return;
-  if(t.classList.contains('wl-tile')){wldToggle(t.dataset.watch);return;}
-  if(t.dataset.chartwatch){try{void setMarket(t.dataset.chartwatch);}catch(error){showNotice('market-error',error.message);}return;}
+  if(t.classList.contains('wl-tile')){const c=t.dataset.watch;wldToggle(c);if(wldSel===c&&state.symbol!==c+'USDT'){try{void setMarket(c);}catch(error){showNotice('market-error',error.message);}}return;}
   if(t.dataset.addwatch){if(!state.watch.includes(t.dataset.addwatch))state.watch.push(t.dataset.addwatch);saveWatch();renderWatchlist();return;}
   if(t.dataset.unwatch){state.watch=state.watch.filter(s=>s!==t.dataset.unwatch);saveWatch();renderWatchlist();return;}
   if(t.dataset.watchedit){state.watchEdit=!state.watchEdit;renderWatchlist();return;}
@@ -4460,7 +4463,18 @@ function renderSkeletons() {
 // ---------- Menüs und Info-Symbole ----------
 const MENUS = [['notify-menu', 'notify-panel', () => { renderNotify(); renderWake(); renderChanSummary(); }], ['view-menu', 'view-panel', () => { renderInstall(); renderStorageInfo(); renderCacheInfo(); }]];
 function closeMenus() { for (const [b, p] of MENUS) if (!$(p).hidden) { $(p).hidden = true; $(b).setAttribute('aria-expanded', 'false'); } }
-for (const [b, p, onOpen] of MENUS) $(b).addEventListener('click', e => { e.stopPropagation(); const open = $(p).hidden; closeMenus(); $(p).hidden = !open; $(b).setAttribute('aria-expanded', String(open)); if (open) onOpen(); });
+for (const [b, p, onOpen] of MENUS) $(b).addEventListener('click', e => { e.stopPropagation(); const open = $(p).hidden; closeMenus(); $(p).hidden = !open; $(b).setAttribute('aria-expanded', String(open)); if (open) { onOpen(); placeMenu($(b), $(p)); } });
+// 3.26.0: Menü immer ganz im Bild. Am iPad hochkant stehen die Knöpfe links in der zweiten Zeile – dort ragte das am Knopf
+// rechtsbündige Menü links aus dem Bild; jetzt öffnet es mittig im Fenster. Rechts stehende Knöpfe (quer, Computer): wie bisher
+// am Knopf. Handy: volle Breite (CSS).
+function placeMenu(b, p) {
+  p.style.left = ''; p.style.right = '';
+  if (innerWidth <= 600) return;
+  const br = b.getBoundingClientRect(), pr = p.getBoundingClientRect(), wrap = p.offsetParent?.getBoundingClientRect() || { left: 0 };
+  if ((br.left + br.right) / 2 >= innerWidth / 2 && pr.left >= 8 && pr.right <= innerWidth - 8) return;
+  p.style.right = 'auto'; p.style.left = `${Math.round((innerWidth - pr.width) / 2 - wrap.left)}px`;
+}
+addEventListener('resize', () => { for (const [b, p] of MENUS) if (!$(p).hidden) placeMenu($(b), $(p)); });
 document.addEventListener('click', e => {
   if (!e.target.closest('.menu-wrap')) closeMenus();
   for (const t of document.querySelectorAll('details.tip[open]')) if (!t.contains(e.target)) t.open = false;
@@ -7354,7 +7368,7 @@ function wlPaint(now = Date.now(), force = false) {
     const line = svg?.firstChild; if (line && line.getAttribute('points') !== pts) line.setAttribute('points', pts);
     const r = v.rating, vd = v.verdict, title = e.error ? `${coin}: ${e.error}`
       : `${coin}/USDT${e.market === 'futures' ? ' (Futures)' : ''}: ${v.priceText} USDT · ${v.chgText}`
-        + ` · Tendenz ${v.span.of} ${r ? `${scoreText(r.score)}/4 (${v.rules.map(x => `${x.label} ${x.arrow}`).join(', ')}) · ${vd.dir === 'long' ? 'Long-Tendenz' : vd.dir === 'short' ? 'Short-Tendenz' : 'Abwarten'}${v.move?.low ? ' · zu wenig Bewegung' : ''}` : 'noch keine (mindestens 60 Kerzen)'} · antippen zeigt die Signale`;
+        + ` · Tendenz ${v.span.of} ${r ? `${scoreText(r.score)}/4 (${v.rules.map(x => `${x.label} ${x.arrow}`).join(', ')}) · ${vd.dir === 'long' ? 'Long-Tendenz' : vd.dir === 'short' ? 'Short-Tendenz' : 'Abwarten'}${v.move?.low ? ' · zu wenig Bewegung' : ''}` : 'noch keine (mindestens 60 Kerzen)'} · antippen zeigt die Signale und lädt den Coin im Chart`;
     wlSet(tile, 'title', title);
   }
   wldPaint(now, force); // Detailfeld (Schritt 6) im selben Takt
@@ -7417,9 +7431,10 @@ function wldBox() {
   for (const [k, S] of Object.entries(wlSpans())) { const o = document.createElement('option'); o.value = k; o.textContent = S.of; pick.append(o); }
   pick.addEventListener('change', () => wlSetSpan(pick.value));
   meta.append('Signale ', pickw, stand);
-  const chart = btn('chip-tool wl-d-chart', 'Im Chart öffnen'), close = btn('wl-d-close', '×');
+  // 3.26.0: kein Knopf „Im Chart öffnen“ mehr – das Antippen der Kachel lädt den Coin selbst im Chart (ohne dorthin zu springen)
+  const close = btn('wl-d-close', '×');
   title.id = 'wl-d-title'; close.setAttribute('aria-label', 'Detailfeld schließen'); close.title = 'Schließen (Esc)';
-  head.append(title, meta, chart, close);
+  head.append(title, meta, close);
   const group = (cls, name) => { const g = el('div', `wl-d-grp ${cls}`); g.append(el('h4', '', name), el('ul')); g.hidden = true; return g; };
   const up = group('up', 'Bullish'), down = group('down', 'Bearish'), none = el('p', 'wl-d-none', ''), body = el('div', 'wl-d-body');
   none.hidden = true; body.append(up, down, none);
@@ -7444,7 +7459,7 @@ function wldBox() {
   box.addEventListener('pointerover', e => { if (e.pointerType !== 'mouse') return; const t = e.target.closest('details.wl-d-tip'); if (t && !t.open) { t.dataset.hover = '1'; t.open = true; } });
   box.addEventListener('pointerout', e => { if (e.pointerType !== 'mouse') return; const t = e.target.closest('details.wl-d-tip'); if (t?.dataset.hover && !t.contains(e.relatedTarget)) { delete t.dataset.hover; t.open = false; } });
   box.addEventListener('click', e => { const t = e.target.closest('details.wl-d-tip'); if (t?.dataset.hover && e.target.closest('summary')) { e.preventDefault(); delete t.dataset.hover; } }, true);
-  wld = { box, clip, body, title, meta, pick, pickv, stand, chart, up, down, none, items, verdict, move, mtip, foot, key: '', minH: 0, timer: 0 };
+  wld = { box, clip, body, title, meta, pick, pickv, stand, up, down, none, items, verdict, move, mtip, foot, key: '', minH: 0, timer: 0 };
   return box;
 }
 function wldTiles(fn) { for (const t of document.querySelectorAll('#watchlist .wl-tile')) fn(t); }
@@ -7487,18 +7502,17 @@ function wldText(k, s, label, v, S = wlSpan()) {
 }
 const WLD_T = new Intl.DateTimeFormat('de-DE', { hour: '2-digit', minute: '2-digit' });
 // Inhalt schreiben – aus wlPaint() (höchstens einmal je Sekunde, nur sichtbar) und beim Öffnen; neu nur, wenn sich Coin,
-// Bewertung, Chart-Coin oder Ladezustand ändern
+// Bewertung oder Ladezustand ändern
 function wldPaint(now = Date.now(), force = false) {
   if (!wld || !wldSel) return;
-  const coin = wldSel, e = wl?.c.get(wlSym(coin)), r = e?.rating || null, onChart = state.symbol === wlSym(coin);
-  const S = wlSpan(), mv = r ? wlMove(e) : null, key = [coin, onChart, wl?.span, r ? r.closeTime + ':' + r.rules.map(x => x.score).join() : '-', mv ? mv.movePct.toFixed(3) : '', e?.error || '', e ? 1 : 0].join('|');
+  const coin = wldSel, e = wl?.c.get(wlSym(coin)), r = e?.rating || null;
+  const S = wlSpan(), mv = r ? wlMove(e) : null, key = [coin, wl?.span, r ? r.closeTime + ':' + r.rules.map(x => x.score).join() : '-', mv ? mv.movePct.toFixed(3) : '', e?.error || '', e ? 1 : 0].join('|');
   if (key === wld.key && !force) return;
   wld.key = key;
   wld.title.textContent = coin;
   if (wld.pick.value !== wl.span) wld.pick.value = wl.span;
   if (wld.pickv.textContent !== S.of) wld.pickv.textContent = S.of;
   wld.stand.textContent = r ? ` · Stand ${WLD_T.format(r.closeTime + 1)}` : e?.error ? ' · keine Daten' : ' · Daten werden geladen …';
-  wld.chart.dataset.chartwatch = coin; wld.chart.disabled = onChart; wld.chart.textContent = onChart ? 'Im Chart geöffnet' : 'Im Chart öffnen';
   const v = r ? wldVals(e) : null, lists = { up: [], down: [] };
   wld.items.forEach((li, i) => {
     const x = r?.rules[i], s = x?.score || 0; li.hidden = !s; if (!s) return;
@@ -7548,12 +7562,20 @@ $('watchlist').addEventListener('keydown', e => { if (e.key !== 'Escape' || !wld
 // Abgleich zwischen Tabs, in der Sicherung); zwischen Tabs sendet nur einer (store.claim in notifyChannels).
 // Zustände je Grenze: armed (wartet auf die Grenze), wait (Grenze beim Aktivieren schon erreicht – erst wieder darunter),
 // fired (ausgelöst – bis „Wieder aktivieren“ oder eine neue Grenze).
+// 3.26.0: Auch bei geschlossener App – über den 24/7-Dienst (ab Version 1.2). Solange eine Grenze aktiv ist, übergibt die App
+// dafür die offenen Positionen mit Einstieg und Menge und die Grenzen samt Zeitpunkt des Scharfschaltens (pnlHandover). Der
+// Dienst rechnet dasselbe Live-Ergebnis, meldet je Scharfschalten einmal und vermerkt das in der angehefteten Nachricht; die
+// App übernimmt es von dort als „ausgelöst“ (pnlFromSvc). Bestätigt der Dienst „· GV“, sendet die App die Meldung nicht
+// zusätzlich (s247Covers) – Ton und Hinweis in der geöffneten App bleiben. svc: die Meldung kommt vom Dienst (sonst hat die
+// App sie selbst gesendet – dann nicht noch einmal vom Dienst).
 var PNL_KINDS = ['profit', 'loss'];
 function pnlGet() {
-  const d = store.get('scalpdesk.pnlalarm.v1', null), one = a => ({ on: !!a?.on, value: Number(a?.value) > 0 ? Number(a.value) : null, state: ['armed', 'wait', 'fired'].includes(a?.state) ? a.state : 'armed', at: Number(a?.at) || 0, firedAt: Number(a?.firedAt) || 0, firedVal: Number.isFinite(a?.firedVal) ? a.firedVal : null });
+  const d = store.get('scalpdesk.pnlalarm.v1', null), one = a => ({ on: !!a?.on, value: Number(a?.value) > 0 ? Number(a.value) : null, state: ['armed', 'wait', 'fired'].includes(a?.state) ? a.state : 'armed', at: Number(a?.at) || 0, firedAt: Number(a?.firedAt) || 0, firedVal: Number.isFinite(a?.firedVal) ? a.firedVal : null, svc: !!a?.svc });
   return { profit: one(d?.profit), loss: one(d?.loss), u: Number(d?.u) || 0 };
 }
-function pnlSet(d) { d.u = Date.now(); store.set('scalpdesk.pnlalarm.v1', d); broadcastData(['scalpdesk.pnlalarm.v1']); renderPnl(); }
+function pnlSet(d) { d.u = Date.now(); store.set('scalpdesk.pnlalarm.v1', d); broadcastData(['scalpdesk.pnlalarm.v1']); renderPnl(); pnlToSvc(); }
+// geänderte Grenzen oder Zustände an den 24/7-Dienst (übergeben wird nur, was sich für ihn geändert hat)
+function pnlToSvc() { if (typeof scheduleS247 === 'function') scheduleS247(); }
 // Aktueller Vergleichswert: das angezeigte Live-Ergebnis in Cent genau; null ohne offene Positionen oder mit fehlendem Kurs
 function pnlNow() { const o = state.openTotal; return o?.n && !o.missing && Number.isFinite(o.total) ? Math.round(o.total * 100) / 100 : null; }
 // Funktionen statt Konstanten: renderOpenPositions() kann pnlCheck() aufrufen, bevor dieser Abschnitt ausgewertet ist
@@ -7561,7 +7583,7 @@ function pnlMet(k, v, cur) { return cur !== null && (k === 'profit' ? cur >= v :
 function pnlCond(k, v) { return k === 'profit' ? `≥ +${number(v)} USDT` : `≤ −${number(v)} USDT`; }
 function pnlName(k) { return k === 'profit' ? 'Gewinn-Alarm' : 'Verlust-Alarm'; }
 // Scharf schalten (Speichern mit neuer Grenze, „Wieder aktivieren“): schon erreicht → erst warten, bis das Ergebnis darunter liegt
-function pnlArm(k, a, cur = pnlNow()) { a.state = pnlMet(k, a.value, cur) ? 'wait' : 'armed'; a.at = Date.now(); a.firedAt = 0; a.firedVal = null; }
+function pnlArm(k, a, cur = pnlNow()) { a.state = pnlMet(k, a.value, cur) ? 'wait' : 'armed'; a.svc = false; a.at = Date.now(); a.firedAt = 0; a.firedVal = null; }
 // Bei jeder Aktualisierung der offenen Positionen (renderOpenPositions)
 function pnlCheck() {
   if (!PNL_KINDS || !$('pnl-panel')) return; // Abschnitt noch nicht ausgewertet
@@ -7579,13 +7601,44 @@ function pnlFire(k, a, cur) {
   const text = `Live-Ergebnis ${signed(cur)} USDT (${n} ${n === 1 ? 'offene Position' : 'offene Positionen'}) · Schwelle ${pnlCond(k, a.value)} erreicht`;
   beep(); desktopNotify(title, text, 'pnl:' + k);
   simpleToast('pnl:' + k, 'alarm ' + (k === 'profit' ? 'up' : 'down'), `${title}: ${text}`, null, k === 'profit' ? 'green' : 'orange');
-  // je Aktivierung genau eine Nachricht (auch mit mehreren offenen Tabs)
-  void notifyChannels('pnl', `pnl:${k}:${a.at}`, `${title}\n${text}`, 30 * 864e5);
+  // je Aktivierung genau eine Nachricht (auch mit mehreren offenen Tabs); prüft der 24/7-Dienst mit, sendet er sie (3.26.0)
+  const key = `pnl:${k}:${a.at}`; a.svc = typeof s247Covers === 'function' && s247Covers('pnl', key);
+  void notifyChannels('pnl', key, `${title}\n${text}`, 30 * 864e5);
+}
+// ---- 24/7-Dienst (3.26.0) ----
+function pnlActive(d = pnlGet()) { return PNL_KINDS.some(k => d[k].on && d[k].value); }
+// Was der Dienst für den Gewinn-/Verlust-Alarm braucht – nur solange eine Grenze aktiv ist: alle offenen Positionen (Einstieg,
+// Menge, Richtung, Markt) und die aktiven Grenzen; w = wartet gerade (Grenze schon erreicht, erst wieder darunter),
+// done = die App hat diese Meldung schon selbst gesendet
+function pnlHandover() {
+  const d = pnlGet(), lim = PNL_KINDS.filter(k => d[k].on && d[k].value).map(k => ({ k, v: d[k].value, at: d[k].at, w: d[k].state === 'wait', done: d[k].state === 'fired' && !d[k].svc }));
+  if (!lim.length) return null;
+  return { n: state.positions.length, pos: state.positions.map(p => ({ id: p.id, symbol: p.symbol, source: p.source === 'futures' ? 'futures' : 'spot', side: p.side, entry: p.entry, qty: p.qty })), lim };
+}
+// Vom Dienst gesendet (Zeile in der angehefteten Nachricht): als „ausgelöst“ übernehmen – nur für dieselbe Aktivierung
+function pnlFromSvc(list) {
+  const d = pnlGet(); let changed = false;
+  for (const f of list || []) {
+    const a = d[f.k]; if (!a || !a.on || !a.value || a.at !== f.at || a.state === 'fired') continue;
+    a.state = 'fired'; a.firedAt = f.t; a.firedVal = f.val; a.svc = true; changed = true;
+    simpleToast('pnl:' + f.k, 'alarm ' + (f.k === 'profit' ? 'up' : 'down'), `${f.k === 'profit' ? '📈' : '📉'} ${pnlName(f.k)} – vom 24/7-Dienst gemeldet um ${new Date(f.t).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr: Live-Ergebnis ${signed(f.val)} USDT`, null, f.k === 'profit' ? 'green' : 'orange');
+  }
+  if (changed) pnlSet(d);
+}
+// Hinweis im Feld: prüft der 24/7-Dienst mit (auch bei geschlossener App)?
+function pnlSvcText(d) {
+  if (!pnlActive(d)) return '';
+  if (!chan?.ev?.pnl) return 'Telegram/Discord-Meldung für diesen Alarm ist unter 🔔 Hinweise ausgeschaltet – es kommen nur Ton und Hinweis in der geöffneten App.';
+  const c = s247?.cfg, st = s247?.st;
+  if (!c?.on) return 'Bei geschlossener App: nur mit dem 24/7-Dienst – einrichten unter 🔔 Hinweise → „Telegram / Discord einrichten“ → 🌙 24/7-Dienst.';
+  if (s247Active() && st.svc?.gv && c.gv) return '✓ Auch bei geschlossener App: Der 24/7-Dienst prüft mit und meldet die Grenze.';
+  if (s247Active()) return 'Bei geschlossener App: Der 24/7-Dienst kann den Gewinn-/Verlust-Alarm erst ab Version 1.2 – am Server den Installationsbefehl erneut ausführen.';
+  return 'Bei geschlossener App: nur wenn der 24/7-Dienst läuft – er meldet sich gerade nicht (Status unter 🔔 Hinweise → „Telegram / Discord einrichten“).';
 }
 // Normaler Reset (Handelsdaten zurücksetzen): Gewinn- und Verlust-Alarme gehören zu den Handelsdaten
-function pnlResetAll() { store.del('scalpdesk.pnlalarm.v1'); broadcastData(['scalpdesk.pnlalarm.v1']); renderPnl(); }
+function pnlResetAll() { store.del('scalpdesk.pnlalarm.v1'); broadcastData(['scalpdesk.pnlalarm.v1']); renderPnl(); pnlToSvc(); }
 // Sicherung einspielen: die neuere Fassung gewinnt
-function pnlAdopt(x) { if (!x || typeof x !== 'object' || !(Number(x.u) > pnlGet().u)) return false; store.set('scalpdesk.pnlalarm.v1', x); broadcastData(['scalpdesk.pnlalarm.v1']); renderPnl(); return true; }
+function pnlAdopt(x) { if (!x || typeof x !== 'object' || !(Number(x.u) > pnlGet().u)) return false; store.set('scalpdesk.pnlalarm.v1', x); broadcastData(['scalpdesk.pnlalarm.v1']); renderPnl(); pnlToSvc(); return true; }
 // ---- Anzeige ----
 // Merker am Live-Ergebnis: Punkt, solange ein Alarm aktiv ist, gelb nach dem Auslösen
 function pnlBadge(d = pnlGet()) {
@@ -7598,7 +7651,7 @@ function pnlBadge(d = pnlGet()) {
 function pnlStatus(k, a) {
   if (!a.value) return { text: 'aus – kein Betrag eingetragen', cls: '' };
   if (!a.on) return { text: `deaktiviert (Grenze ${pnlCond(k, a.value)})`, cls: '' };
-  if (a.state === 'fired') return { text: `ausgelöst um ${new Date(a.firedAt).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr bei ${signed(a.firedVal)} USDT – meldet erst nach „Wieder aktivieren“ erneut`, cls: 'fired' };
+  if (a.state === 'fired') return { text: `ausgelöst um ${new Date(a.firedAt).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr bei ${a.firedVal === null ? '—' : signed(a.firedVal)} USDT${a.svc ? ' (Meldung vom 24/7-Dienst)' : ''} – meldet erst nach „Wieder aktivieren“ erneut`, cls: 'fired' };
   if (a.state === 'wait') return { text: `aktiv – die Grenze ist schon erreicht; meldet, sobald das Ergebnis sie erneut erreicht (${pnlCond(k, a.value)})`, cls: 'on' };
   return { text: `aktiv – meldet einmal bei Offen ${pnlCond(k, a.value)}`, cls: 'on' };
 }
@@ -7612,6 +7665,7 @@ function renderPnl() {
     if (s.textContent !== st.text) s.textContent = st.text; s.className = `pnl-st ${st.cls}`;
     $(`pnl-${k}-rearm`).hidden = !(a.on && a.value && a.state === 'fired');
   }
+  const sv = $('pnl-svc'); if (sv) { const t = pnlSvcText(d); if (sv.textContent !== t) sv.textContent = t; sv.hidden = !t; sv.classList.toggle('ok', t.startsWith('✓')); }
 }
 // Formular mit den gespeicherten Werten füllen (beim Öffnen und nach einer Änderung aus einem anderen Tab)
 function pnlFill() {
@@ -8090,6 +8144,11 @@ function renderPulseInfo() {
 // ---------- Schritt 5.1: 24/7-Dienst – Übergabe an einen eigenen Server (3.23.0) ----------
 // Ein kleines Programm auf einem Server, der rund um die Uhr läuft (server/scalpdesk-247.mjs, z. B. kostenlos bei Oracle
 // Cloud), meldet Kurs-Alarme, Stop-Loss/Take-Profit und Termin-Warnungen per Telegram – auch wenn die App geschlossen ist.
+// 3.26.0: ab Dienst 1.2 auch den Gewinn-/Verlust-Alarm. Nur solange dort eine Grenze aktiv ist, übergibt die App dafür
+// zusätzlich die offenen Positionen mit Einstieg und Menge (pnlHandover); der Dienst bestätigt mit „· GV“ und vermerkt eine
+// gesendete Meldung in der angehefteten Nachricht, die App übernimmt sie als „ausgelöst“ (pnlFromSvc).
+// Ausgelöste Kurs-Alarme, die der Dienst melden soll, bleiben noch 3 Minuten in der Übergabe – sonst könnte er die neue
+// Datei lesen, bevor er die Berührung bei seiner nächsten Kursprüfung selbst gesehen und gemeldet hat.
 // Übergabe über den eigenen Telegram-Chat: Die App legt die aktiven Alarme und die Marken der offenen Positionen (Kürzel,
 // Richtung, Stop und Ziel – keine Mengen, Einstiege, Trades oder Notizen zu Positionen) als Datei „scalpdesk-247.json“ in
 // den Chat, heftet sie an und ersetzt sie nach jeder Änderung (editMessageMedia: eine Nachricht, immer aktuell). Der Dienst
@@ -8098,12 +8157,12 @@ function renderPulseInfo() {
 // Stand, sendet die App Meldungen, die der Dienst kennt, nicht selbst – keine doppelten Nachrichten. Sonst wie bisher.
 // Der Bot-Token verlässt die App dafür nicht: Am Server gibt man ihn selbst ein.
 // var statt const/let: persist() und notifyChannels() können schon laufen, bevor dieser Abschnitt ausgewertet ist
-var S247_KEY = 'scalpdesk.s247.v1', S247_FILE = 'scalpdesk-247.json', S247_MARK = '📌 Scalp Desk · 24/7-Dienst', S247_STALE = 20 * 60e3, S247_POLL = 2 * 60e3;
+var S247_KEY = 'scalpdesk.s247.v1', S247_FILE = 'scalpdesk-247.json', S247_MARK = '📌 Scalp Desk · 24/7-Dienst', S247_STALE = 20 * 60e3, S247_POLL = 2 * 60e3, S247_GRACE = 3 * 60e3;
 var s247 = { cfg: null, timer: null, busy: false, error: '', st: null, checking: false, checkAt: 0, checkErr: '', recheck: null };
 s247.cfg = loadS247();
 function loadS247() {
   const v = store.get(S247_KEY), s = x => (typeof x === 'string' ? x : '');
-  return { on: !!v?.on, sentOn: !!v?.sentOn, pulse: !!v?.pulse, chat: s(v?.chat), msg: Number(v?.msg) || 0, tag: s(v?.tag), at: Number(v?.at) || 0, sig: s(v?.sig),
+  return { on: !!v?.on, sentOn: !!v?.sentOn, pulse: !!v?.pulse, gv: !!v?.gv, chat: s(v?.chat), msg: Number(v?.msg) || 0, tag: s(v?.tag), at: Number(v?.at) || 0, sig: s(v?.sig),
     keys: Array.isArray(v?.keys) ? v.keys.filter(k => typeof k === 'string') : [], econ: s(v?.econ), n: v?.n && typeof v.n === 'object' ? { a: Number(v.n.a) || 0, p: Number(v.n.p) || 0 } : { a: 0, p: 0 } };
 }
 function saveS247() { if (store.set(S247_KEY, { ...s247.cfg })) broadcastData([S247_KEY]); }
@@ -8122,17 +8181,18 @@ const s247Plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 // Was der Dienst braucht – und nur das
 function s247Payload() {
   const on = s247.cfg.on && chan.tg.on;
-  const alarms = on ? state.alarms.filter(a => !a.triggeredAt).map(a => ({ id: a.id, symbol: a.symbol, source: a.source, dir: a.dir, price: a.price, note: a.note || '', armedAt: a.armedAt || a.createdAt })) : [];
+  const alarms = on ? state.alarms.filter(a => !a.triggeredAt || (a.svcAt > 0 && Date.now() - a.svcAt < S247_GRACE)).map(a => ({ id: a.id, symbol: a.symbol, source: a.source, dir: a.dir, price: a.price, note: a.note || '', armedAt: a.armedAt || a.createdAt })) : [];
   const positions = on ? state.positions.filter(p => p.sl > 0 || p.tp > 0).map(p => ({ id: p.id, symbol: p.symbol, source: p.source, side: p.side, tp: p.tp > 0 ? p.tp : null, sl: p.sl > 0 ? p.sl : null,
     since: p.slTpAt || p.openedAt, ack: { tp: !!p.ack?.tp, sl: !!p.ack?.sl } })) : [];
   let tz = 'UTC'; try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch { /* alter Browser */ }
-  return { kind: 'scalpdesk-247', v: 1, on, app: APP_VERSION, dev: s247Device(), tz, ev: { alarm: chan.ev.alarm, pos: chan.ev.pos, news: chan.ev.news, pulse: !!chan.ev.pulse },
+  return { kind: 'scalpdesk-247', v: 1, on, app: APP_VERSION, dev: s247Device(), tz, ev: { alarm: chan.ev.alarm, pos: chan.ev.pos, news: chan.ev.news, pulse: !!chan.ev.pulse, pnl: !!chan.ev.pnl },
     econ: { warn: ec?.cfg?.warn ?? 0, cur: ec?.cfg?.cur === 'all' ? 'all' : 'usd' }, alarms, positions,
-    pulse: on && chan.ev.pulse ? pulseHandover() : null }; // 3.24.0: Schwellen des BTC-Pulses je Stunde (UTC), Mindestgrößen, Vorauswahl
+    pulse: on && chan.ev.pulse ? pulseHandover() : null, // 3.24.0: Schwellen des BTC-Pulses je Stunde (UTC), Mindestgrößen, Vorauswahl
+    pnl: on && chan.ev.pnl ? pnlHandover() : null }; // 3.26.0: Gewinn-/Verlust-Alarm – nur bei aktiver Grenze, dann mit Einstieg und Menge
 }
 function s247Sig(p) { const j = JSON.stringify(p); let h = 0; for (let i = 0; i < j.length; i++) h = (h * 31 + j.charCodeAt(i)) | 0; return `${j.length}:${h >>> 0}`; }
 // Schlüssel der Meldungen, die der Dienst mit diesem Stand übernimmt – dieselben wie in notifyChannels
-function s247Keys(p) { return [...p.alarms.map(a => `al:${a.id}:${a.armedAt}`), ...p.positions.flatMap(x => ['tp', 'sl'].filter(t => x[t] > 0).map(t => `pos:${x.id}:${t}:${x.since}`))]; }
+function s247Keys(p) { return [...p.alarms.map(a => `al:${a.id}:${a.armedAt}`), ...p.positions.flatMap(x => ['tp', 'sl'].filter(t => x[t] > 0).map(t => `pos:${x.id}:${t}:${x.since}`)), ...(p.pnl?.lim || []).map(l => `pnl:${l.k}:${l.at}`)]; }
 function s247Caption(p) {
   return [S247_MARK, `App: ${s247Stamp(p.at)} · ${p.on ? `${s247Plural(p.alarms.length, 'Alarm', 'Alarme')}, ${s247Plural(p.positions.length, 'Position', 'Positionen')}` : 'Übergabe ausgeschaltet'} · ${p.dev} · #${p.tag}`,
     'Dienst: wartet auf Rückmeldung …'].join('\n');
@@ -8167,7 +8227,7 @@ async function sendS247(force = false, leaving = false) {
       try { await tgPost('pinChatMessage', pin, keep); }
       catch (e) { throw Object.assign(new Error(`Anheften nicht erlaubt (${e.message}) – bei einer Gruppe braucht der Bot das Recht „Nachrichten anheften“.`), { code: e.code }); }
     }
-    s247.cfg = { ...s247.cfg, chat: chan.tg.chat, msg, tag, at: body.at, sig, keys: s247Keys(p), econ: p.on && p.ev.news && p.econ.warn ? `${p.econ.cur}|${p.econ.warn}` : '', pulse: !!(p.on && p.ev.pulse && p.pulse), sentOn: p.on, n: { a: p.alarms.length, p: p.positions.length } };
+    s247.cfg = { ...s247.cfg, chat: chan.tg.chat, msg, tag, at: body.at, sig, keys: s247Keys(p), econ: p.on && p.ev.news && p.econ.warn ? `${p.econ.cur}|${p.econ.warn}` : '', pulse: !!(p.on && p.ev.pulse && p.pulse), gv: !!(p.on && p.ev.pnl && p.pnl), sentOn: p.on, n: { a: p.alarms.length, p: p.positions.length } };
     saveS247();
     // Was jetzt angeheftet ist, wissen wir; die Rückmeldung des Dienstes (falls er schon lief) bleibt bis zur nächsten Abfrage
     s247.st = s247.st?.found && s247.st.msg === msg ? { ...s247.st, tag } : { found: true, msg, tag, dev: body.dev, svc: null, beat: 0, fresh: false };
@@ -8180,9 +8240,10 @@ async function sendS247(force = false, leaving = false) {
 function s247Parse(pm, now = Date.now()) {
   if (!s247IsOurs(pm)) return { found: false };
   const lines = String(pm.caption || '').replace(/\r/g, '').split('\n'), app = lines.find(l => l.startsWith('App:')) || '', svc = lines.find(l => l.startsWith('Dienst:')) || '', parts = app.split(' · ');
-  const m = /^Dienst: (aktiv|Störung) · .*? · #([a-z0-9]{2,12}) übernommen(?: · (.*))?$/.exec(svc), beat = (pm.edit_date || pm.date || 0) * 1000;
+  const m = /^Dienst: (aktiv|Störung) · .*? · #([a-z0-9]{2,12}) übernommen(?: · (.*))?$/.exec(svc), beat = (pm.edit_date || pm.date || 0) * 1000, flags = svc.split(' · ');
+  const gv = lines.map(l => /^GV: .* · @([pl]):(\d{10,15}):(\d{10,15}):(-?\d+(?:\.\d+)?)$/.exec(l)).filter(Boolean).map(x => ({ k: x[1] === 'p' ? 'profit' : 'loss', at: +x[2], t: +x[3], val: +x[4] }));
   return { found: true, msg: pm.message_id, tag: /#([a-z0-9]{2,12})$/.exec(app)?.[1] || '', dev: parts.length >= 4 ? parts.at(-2) : '',
-    svc: m ? { ok: m[1] === 'aktiv', tag: m[2], problem: m[3] || '', pulse: / · Puls · #/.test(svc) } : null, beat, fresh: !!m && now - beat < S247_STALE };
+    svc: m ? { ok: m[1] === 'aktiv', tag: m[2], problem: m[3] || '', pulse: flags.includes('Puls'), gv: flags.includes('GV') } : null, gv, beat, fresh: !!m && now - beat < S247_STALE };
 }
 async function checkS247() {
   if (!s247?.cfg || typeof tgConfigured !== 'function' || !tgConfigured() || s247.checking) return;
@@ -8190,6 +8251,7 @@ async function checkS247() {
   try {
     const pm = (await tgApi(chan.tg.token, 'getChat', { chat_id: chan.tg.chat }))?.pinned_message;
     s247.st = s247Parse(pm); s247.checkErr = '';
+    if (s247.cfg.on && s247.st.gv?.length && typeof pnlFromSvc === 'function') pnlFromSvc(s247.st.gv); // vom Dienst gesendeter Gewinn-/Verlust-Alarm
     // Angeheftete Datei fehlt oder ist eine andere (gelöscht, vom Nutzer ersetzt): neu übergeben
     if (s247.cfg.on && (!s247.st.found || (s247.cfg.msg && s247.st.msg !== s247.cfg.msg && s247.st.tag !== s247.cfg.tag))) { s247.cfg = { ...s247.cfg, sig: '' }; scheduleS247(1000); }
   } catch (e) { s247.checkErr = e?.message || String(e); }
@@ -8197,11 +8259,12 @@ async function checkS247() {
 }
 // Kennt der Dienst diese Meldung und meldet er sich? Dann sendet die App sie nicht selbst (siehe notifyChannels).
 function s247Covers(type, key) {
-  if (!s247?.cfg?.on || !['alarm', 'pos', 'news', 'pulse'].includes(type)) return false;
+  if (!s247?.cfg?.on || !['alarm', 'pos', 'news', 'pulse', 'pnl'].includes(type)) return false;
   const st = s247.st, c = s247.cfg, now = Date.now();
   if (!st?.found || st.msg !== c.msg || !st.svc?.ok || st.svc.tag !== c.tag || now - st.beat > S247_STALE || now - s247.checkAt > S247_STALE) return false;
   // BTC-Puls: nur wenn der Dienst ihn kann (ab 1.1 steht „Puls“ in seiner Zeile) und die Schwellen übergeben sind
-  return type === 'news' ? !!c.econ : type === 'pulse' ? !!(c.pulse && st.svc.pulse) : c.keys.includes(key);
+  // Gewinn-/Verlust-Alarm: nur wenn der Dienst ihn kann (ab 1.2 steht „GV“ in seiner Zeile) und die Grenze übergeben ist
+  return type === 'news' ? !!c.econ : type === 'pulse' ? !!(c.pulse && st.svc.pulse) : type === 'pnl' ? !!(c.gv && st.svc.gv && c.keys.includes(key)) : c.keys.includes(key);
 }
 // 3.24.0 BTC-Puls: kommt er vom Dienst? Ein älterer Dienst (1.0) kennt ihn nicht – dann sendet ihn weiter die geöffnete App
 function s247PulseText(c, st) {
@@ -8209,6 +8272,12 @@ function s247PulseText(c, st) {
   if (st.svc?.pulse && c.pulse) return ' Der BTC-Puls kommt ebenfalls vom Dienst.';
   if (st.svc?.pulse) return ' Den BTC-Puls übernimmt der Dienst, sobald die Schwellen berechnet und übergeben sind.';
   return ' Den BTC-Puls sendet weiter diese App, solange sie geöffnet ist: Der Dienst kennt ihn erst ab Version 1.1 – am Server den Installationsbefehl erneut ausführen.';
+}
+// 3.26.0 Gewinn-/Verlust-Alarm: prüft der Dienst mit? Ein älterer Dienst (bis 1.1) kann es nicht – dann nur die geöffnete App
+function s247GvText(c, st) {
+  if (!chan?.ev?.pnl || typeof pnlActive !== 'function' || !pnlActive()) return '';
+  if (st.svc?.gv && c.gv) return ' Den Gewinn-/Verlust-Alarm prüft der Dienst ebenfalls – auch bei geschlossener App.';
+  return ' Den Gewinn-/Verlust-Alarm prüft weiter nur diese App, solange sie geöffnet ist: Der Dienst kann ihn erst ab Version 1.2 – am Server den Installationsbefehl erneut ausführen.';
 }
 function s247Active() { const st = s247?.st, c = s247?.cfg; return !!(c?.on && st?.found && st.msg === c.msg && st.svc?.ok && st.svc.tag === c.tag && Date.now() - st.beat < S247_STALE); }
 function renderS247() {
@@ -8224,12 +8293,13 @@ function renderS247() {
   else if (!c.msg || !st) text = s247.checking ? 'Frage Telegram …' : 'Wird gleich übergeben …';
   else if (s247.checkErr && now - s247.checkAt < 60e3) { text = `Status nicht lesbar: ${s247.checkErr}`; cls = false; }
   else if (!st.found) text = 'Die angeheftete Datei fehlt im Chat – wird neu übergeben …';
-  else if (s247Active()) { text = `✓ Aktiv – der Dienst hat den aktuellen Stand (${counts}) und meldete sich um ${hm(st.beat)}. Kurs-Alarme, Stop/Ziel und Termin-Warnungen kommen jetzt vom Dienst; diese App sendet sie nicht zusätzlich.${s247PulseText(c, st)}${other}`; cls = true; }
+  else if (s247Active()) { text = `✓ Aktiv – der Dienst hat den aktuellen Stand (${counts}) und meldete sich um ${hm(st.beat)}. Kurs-Alarme, Stop/Ziel und Termin-Warnungen kommen jetzt vom Dienst; diese App sendet sie nicht zusätzlich.${s247PulseText(c, st)}${s247GvText(c, st)}${other}`; cls = true; }
   else if (st.svc && st.fresh && !st.svc.ok) { text = `⚠ Der Dienst meldet eine Störung: ${st.svc.problem || 'Kurse nicht abrufbar'}. Die App sendet deshalb selbst.${other}`; cls = false; }
   else if (st.svc && st.fresh) text = `Übergeben um ${hm(c.at)} (${counts}) – der Dienst übernimmt den neuen Stand in spätestens einer Minute.${other}`;
   else if (st.svc) { text = `⚠ Der Dienst hat sich seit ${hm(st.beat)} nicht gemeldet – die App sendet wieder selbst. Läuft der Server? Am Server: systemctl status scalpdesk-247${other}`; cls = false; }
   else { text = `Übergeben um ${hm(c.at)} (${counts}) – wartet auf den 24/7-Dienst.${now - c.at > 3 * 60e3 ? ' Er hat sich noch nicht gemeldet: Ist er eingerichtet (Anleitung oben)?' : ''}${other}`; cls = now - c.at > 3 * 60e3 ? false : null; }
   const p = $('s247-status'); if (p.textContent !== text) p.textContent = text; p.className = 'chan-status' + (cls === true ? ' ok' : cls === false ? ' err' : '');
+  if (typeof renderPnl === 'function') renderPnl();
   if (typeof renderChanSummary === 'function') renderChanSummary();
 }
 // Sekundentakt: solange eingeschaltet alle 2 Minuten nachsehen, ob der Dienst sich meldet
@@ -8520,7 +8590,8 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
         <div class="pnl-row"><label class="check pnl-on"><input type="checkbox" id="pnl-loss-on"> Benachrichtigung bei Verlust</label><span class="pnl-in"><span aria-hidden="true">ab −</span><input id="pnl-loss" inputmode="decimal" autocomplete="off" enterkeyhint="done" placeholder="z. B. 50" aria-label="Verlust-Grenze in USDT (als positiver Betrag)" aria-describedby="pnl-loss-st"><span>USDT</span></span><span class="pnl-st" id="pnl-loss-st"></span><button type="button" class="button ghost pnl-rearm" id="pnl-loss-rearm" hidden>Wieder aktivieren</button></div>
         <p class="pnl-err" id="pnl-err" role="alert" hidden></p>
         <div class="pnl-actions"><button type="submit" class="button primary">Speichern</button><span class="pnl-msg" id="pnl-msg" role="status"></span><button type="button" class="button ghost" id="pnl-goto" data-goto="positions">Zu den Positionen</button></div>
-        <p class="pnl-note">Beide Grenzen als positiven Betrag eingeben: Gewinn 100 meldet bei Offen ≥ +100 USDT, Verlust 50 bei Offen ≤ −50 USDT. Jede meldet einmal – an Telegram „Kursalarm“ (bzw. Discord), dazu Ton und Hinweis – und danach erst wieder nach „Wieder aktivieren“. Geprüft wird, solange die App geöffnet ist; ohne offene Position ruht der Alarm.</p>
+        <p class="pnl-note">Beide Grenzen als positiven Betrag eingeben: Gewinn 100 meldet bei Offen ≥ +100 USDT, Verlust 50 bei Offen ≤ −50 USDT. Jede meldet einmal – an Telegram „Kursalarm“ (bzw. Discord), dazu Ton und Hinweis – und danach erst wieder nach „Wieder aktivieren“. Ohne offene Position ruht der Alarm. Die App prüft, solange sie geöffnet ist; bei geschlossener App prüft der 24/7-Dienst mit (ab Version 1.2).</p>
+        <p class="pnl-svc" id="pnl-svc" role="status" hidden></p>
       </form>
     </div>
   </div>
@@ -8841,7 +8912,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
         <label class="switch"><input type="checkbox" id="chan-ev-pulse" checked> BTC-Puls: ungewöhnlich starke Bitcoin-Bewegung</label>
         <small class="pulse-info">Meldet, wenn BTC sich in 5 oder 15 Minuten stärker bewegt als 99 % der üblichen Bewegungen zu dieser Uhrzeit (mindestens 0,5 % bzw. 0,8 %), mit der Vorauswahl im selben Zeitraum; je Richtung höchstens alle 30 Minuten, nachts lautlos. <span id="pulse-info"></span></small>
       </fieldset>
-      <section class="chan" aria-labelledby="s247-title" id="s247"><div class="head-line"><h3 id="s247-title">🌙 24/7-Dienst</h3><details class="tip left"><summary aria-label="Wie funktioniert der 24/7-Dienst?"><span>i</span></summary><div class="tip-body"><p>Ein kleines Programm auf einem eigenen Server, der rund um die Uhr läuft (z. B. kostenlos bei Oracle Cloud), prüft die Kurse und meldet Kurs-Alarme, Stop-Loss/Take-Profit, die Warnung vor wichtigen Terminen und ab Version 1.1 den BTC-Puls per Telegram – auch wenn die App überall geschlossen ist.</p><p><b>Übergabe:</b> Die App legt die aktiven Alarme und die Stop-/Ziel-Marken deiner Positionen als Datei in deinen Telegram-Chat, heftet sie oben an und ersetzt sie nach jeder Änderung. Mengen, Einstiege, Trades und Notizen zu Positionen bleiben in der App. Der Dienst liest die Datei mit demselben Bot und bestätigt in der angehefteten Nachricht („Dienst: aktiv“).</p><p><b>Nicht doppelt:</b> Solange der Dienst aktiv ist und den aktuellen Stand hat, sendet diese App Kurs-Alarme, Stop/Ziel und Termin-Warnungen nicht zusätzlich. Meldet er sich 20 Minuten nicht oder meldet er eine Störung, sendet die App wieder selbst. Das Tages-Verlustlimit und den Gewinn-/Verlust-Alarm meldet immer die App – der Dienst kennt keine Mengen und Einstiege.</p><p><b>BTC-Puls:</b> Die App gibt dem Dienst die Schwellen je Uhrzeit mit. Bestätigt er mit „· Puls“ (ab Version 1.1), meldet er den Puls und die App nicht zusätzlich; ein älterer Dienst kennt ihn nicht – dann sendet ihn weiter die geöffnete App.</p><p><b>Token:</b> Den Bot-Token gibst du am Server selbst ein – die App schickt ihn weiterhin nur an Telegram.</p><p>Nur auf einem Gerät einschalten – dem, auf dem du Alarme und Positionen pflegst.</p></div></details></div><p class="chan-sub">Meldungen auch bei geschlossener App – über ein kleines Programm auf einem eigenen Server, der rund um die Uhr läuft.</p><details class="chan-guide" id="s247-guide"><summary>Anleitung: kostenlos bei Oracle Cloud einrichten (ca. 20 Minuten)</summary><ol><li><b>Konto:</b> Auf <a href="https://www.oracle.com/cloud/free/" target="_blank" rel="noopener noreferrer">oracle.com/cloud/free</a> „Start for free“. Als Heimatregion <b>Germany Central (Frankfurt)</b> wählen – sie lässt sich später nicht ändern, und von US-Servern aus sperrt Binance den Zugriff. Die Kreditkarte dient nur der Prüfung; „Always Free“ kostet nichts.</li><li><b>Server anlegen:</b> In der Konsole „Create a VM instance“. Bei <i>Image</i> auf <b>Ubuntu</b> wechseln, bei <i>Shape</i> eine mit „Always Free-eligible“ lassen (z. B. VM.Standard.E2.1.Micro). Bei <i>Add SSH keys</i> „Generate a key pair for me“ und <b>Save private key</b> – diese Datei ist der Schlüssel zum Server, gut aufbewahren. Dann <b>Create</b>. Nach 1–2 Minuten steht der Server auf „Running“; die <b>Public IP address</b> notieren.</li><li><b>Verbinden:</b> Oben rechts in der Konsole die <b>Cloud Shell</b> öffnen (Symbol &gt;_). Im Menü des Cloud-Shell-Fensters <b>Upload</b> wählen und den privaten Schlüssel hochladen. Dann eingeben (IP ersetzen) und die Frage „Are you sure …“ mit <b>yes</b> beantworten:<span class="s247-cmd"><code>chmod 600 ssh-key-*.key &amp;&amp; ssh -i ssh-key-*.key ubuntu@IP</code><button type="button" class="button ghost" data-copy="chmod 600 ssh-key-*.key &amp;&amp; ssh -i ssh-key-*.key ubuntu@IP">Kopieren</button></span></li><li><b>Dienst installieren:</b> Im Server-Fenster eingeben:<span class="s247-cmd"><code>curl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/install.sh | sudo bash</code><button type="button" class="button ghost" data-copy="curl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/install.sh | sudo bash">Kopieren</button></span>Es fragt nach <b>Bot-Token</b> und <b>Chat-ID</b> (oben in diesem Fenster; den Token zeigt auch @BotFather mit /mybots → API Token). Am Ende kommt eine Testnachricht in Telegram.</li><li><b>Übergeben:</b> Unten „An den 24/7-Dienst übergeben“ einschalten. Nach spätestens einer Minute steht hier „✓ Aktiv“, und im Telegram-Chat ist oben „📌 Scalp Desk · 24/7-Dienst“ angeheftet – diese Nachricht nicht löschen.</li></ol><ul class="s247-tips"><li><b>Aktualisieren:</b> den Befehl aus Schritt 4 erneut ausführen; die Einstellungen bleiben.</li><li><b>Andere Rechner:</b> läuft auf jedem Linux-Rechner mit Internet, z. B. einem Raspberry Pi – derselbe Befehl.</li><li><b>Oracle:</b> Always-Free-Server, die 7 Tage kaum ausgelastet sind, kann Oracle anhalten – und der Dienst braucht sehr wenig. Abhilfe laut Oracle: das Konto auf „Pay As You Go“ umstellen; es bleibt kostenlos, solange nur Always-Free-Angebote genutzt werden. Sonst nach einer E-Mail von Oracle den Server in der Konsole wieder starten.</li><li><b>Am Server:</b> Status <code>systemctl status scalpdesk-247</code>, Protokoll <code>journalctl -u scalpdesk-247 -f</code>, entfernen <code>sudo bash /opt/scalpdesk-247/install.sh --remove</code></li></ul></details><label class="switch"><input type="checkbox" id="s247-on"> An den 24/7-Dienst übergeben (Alarme, Stop/Ziel, Termin-Warnungen)</label><div class="row"><button type="button" class="button ghost" id="s247-check">Status prüfen</button></div><p class="chan-status" id="s247-status" role="status"></p></section>
+      <section class="chan" aria-labelledby="s247-title" id="s247"><div class="head-line"><h3 id="s247-title">🌙 24/7-Dienst</h3><details class="tip left"><summary aria-label="Wie funktioniert der 24/7-Dienst?"><span>i</span></summary><div class="tip-body"><p>Ein kleines Programm auf einem eigenen Server, der rund um die Uhr läuft (z. B. kostenlos bei Oracle Cloud), prüft die Kurse und meldet Kurs-Alarme, Stop-Loss/Take-Profit, die Warnung vor wichtigen Terminen, ab Version 1.1 den BTC-Puls und ab Version 1.2 den Gewinn-/Verlust-Alarm per Telegram – auch wenn die App überall geschlossen ist.</p><p><b>Übergabe:</b> Die App legt die aktiven Alarme und die Stop-/Ziel-Marken deiner Positionen als Datei in deinen Telegram-Chat, heftet sie oben an und ersetzt sie nach jeder Änderung. Einstiege und Mengen der offenen Positionen stehen nur darin, solange ein Gewinn- oder Verlust-Alarm aktiv ist – der Dienst braucht sie, um das Live-Ergebnis zu rechnen. Trades und Notizen bleiben in der App. Der Dienst liest die Datei mit demselben Bot und bestätigt in der angehefteten Nachricht („Dienst: aktiv“).</p><p><b>Nicht doppelt:</b> Solange der Dienst aktiv ist und den aktuellen Stand hat, sendet diese App Kurs-Alarme, Stop/Ziel und Termin-Warnungen nicht zusätzlich. Meldet er sich 20 Minuten nicht oder meldet er eine Störung, sendet die App wieder selbst. Das Tages-Verlustlimit meldet immer die App.</p><p><b>Gewinn-/Verlust-Alarm:</b> Bestätigt der Dienst mit „· GV“ (ab Version 1.2), prüft er das Live-Ergebnis alle 15 Sekunden mit und meldet jede Grenze einmal; die App übernimmt das danach als „ausgelöst“. Ein älterer Dienst kann es nicht – dann prüft weiter nur die geöffnete App.</p><p><b>BTC-Puls:</b> Die App gibt dem Dienst die Schwellen je Uhrzeit mit. Bestätigt er mit „· Puls“ (ab Version 1.1), meldet er den Puls und die App nicht zusätzlich; ein älterer Dienst kennt ihn nicht – dann sendet ihn weiter die geöffnete App.</p><p><b>Token:</b> Den Bot-Token gibst du am Server selbst ein – die App schickt ihn weiterhin nur an Telegram.</p><p>Nur auf einem Gerät einschalten – dem, auf dem du Alarme und Positionen pflegst.</p></div></details></div><p class="chan-sub">Meldungen auch bei geschlossener App – über ein kleines Programm auf einem eigenen Server, der rund um die Uhr läuft.</p><details class="chan-guide" id="s247-guide"><summary>Anleitung: kostenlos bei Oracle Cloud einrichten (ca. 20 Minuten)</summary><ol><li><b>Konto:</b> Auf <a href="https://www.oracle.com/cloud/free/" target="_blank" rel="noopener noreferrer">oracle.com/cloud/free</a> „Start for free“. Als Heimatregion <b>Germany Central (Frankfurt)</b> wählen – sie lässt sich später nicht ändern, und von US-Servern aus sperrt Binance den Zugriff. Die Kreditkarte dient nur der Prüfung; „Always Free“ kostet nichts.</li><li><b>Server anlegen:</b> In der Konsole „Create a VM instance“. Bei <i>Image</i> auf <b>Ubuntu</b> wechseln, bei <i>Shape</i> eine mit „Always Free-eligible“ lassen (z. B. VM.Standard.E2.1.Micro). Bei <i>Add SSH keys</i> „Generate a key pair for me“ und <b>Save private key</b> – diese Datei ist der Schlüssel zum Server, gut aufbewahren. Dann <b>Create</b>. Nach 1–2 Minuten steht der Server auf „Running“; die <b>Public IP address</b> notieren.</li><li><b>Verbinden:</b> Oben rechts in der Konsole die <b>Cloud Shell</b> öffnen (Symbol &gt;_). Im Menü des Cloud-Shell-Fensters <b>Upload</b> wählen und den privaten Schlüssel hochladen. Dann eingeben (IP ersetzen) und die Frage „Are you sure …“ mit <b>yes</b> beantworten:<span class="s247-cmd"><code>chmod 600 ssh-key-*.key &amp;&amp; ssh -i ssh-key-*.key ubuntu@IP</code><button type="button" class="button ghost" data-copy="chmod 600 ssh-key-*.key &amp;&amp; ssh -i ssh-key-*.key ubuntu@IP">Kopieren</button></span></li><li><b>Dienst installieren:</b> Im Server-Fenster eingeben:<span class="s247-cmd"><code>curl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/install.sh | sudo bash</code><button type="button" class="button ghost" data-copy="curl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/install.sh | sudo bash">Kopieren</button></span>Es fragt nach <b>Bot-Token</b> und <b>Chat-ID</b> – dieselben wie oben unter „Kursalarm“ (nicht der Sicherungs-Bot; den Token zeigt auch @BotFather mit /mybots → API Token). Am Ende kommt eine Testnachricht in Telegram.</li><li><b>Übergeben:</b> Unten „An den 24/7-Dienst übergeben“ einschalten. Nach spätestens einer Minute steht hier „✓ Aktiv“, und im Telegram-Chat ist oben „📌 Scalp Desk · 24/7-Dienst“ angeheftet – diese Nachricht nicht löschen.</li></ol><ul class="s247-tips"><li><b>Aktualisieren:</b> den Befehl aus Schritt 4 erneut ausführen; die Einstellungen bleiben. Für den Gewinn-/Verlust-Alarm braucht es Version 1.2 – ein vorhandener Dienst einmal so aktualisieren.</li><li><b>Server-Größe:</b> „VM.Standard.E2.1.Micro“ reicht und ist fast immer verfügbar; „Ampere A1“ meldet oft „Out of capacity“.</li><li><b>Andere Rechner:</b> läuft auf jedem Linux-Rechner mit Internet, z. B. einem Raspberry Pi – derselbe Befehl.</li><li><b>Oracle:</b> Always-Free-Server, die 7 Tage kaum ausgelastet sind, kann Oracle anhalten – und der Dienst braucht sehr wenig. Abhilfe laut Oracle: das Konto auf „Pay As You Go“ umstellen; es bleibt kostenlos, solange nur Always-Free-Angebote genutzt werden. Sonst nach einer E-Mail von Oracle den Server in der Konsole wieder starten.</li><li><b>Am Server:</b> Status <code>systemctl status scalpdesk-247</code>, Protokoll <code>journalctl -u scalpdesk-247 -f</code>, entfernen <code>sudo bash /opt/scalpdesk-247/install.sh --remove</code></li></ul></details><label class="switch"><input type="checkbox" id="s247-on"> An den 24/7-Dienst übergeben (Alarme, Stop/Ziel, Termin-Warnungen, Gewinn-/Verlust-Alarm)</label><div class="row"><button type="button" class="button ghost" id="s247-check">Status prüfen</button></div><p class="chan-status" id="s247-status" role="status"></p></section>
       <p class="chan-note">🔒 Token und Webhook-URL bleiben nur in diesem Browser. Sie stehen in keinem Backup und keinem QR-Code und werden nur an Telegram bzw. Discord geschickt. Auf jedem Gerät, das senden soll, einzeln einrichten.</p>
       <div class="sheet-actions"><button type="button" class="button ghost" id="chan-clear">Zugangsdaten löschen</button><button type="button" class="button primary" id="chan-done">Fertig</button></div>
     </div>
