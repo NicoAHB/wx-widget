@@ -4,7 +4,9 @@
 // starke Bitcoin-Bewegung) und den Gewinn-/Verlust-Alarm (Live-Ergebnis aller offenen Positionen erreicht eine Grenze) per
 // Telegram (auf Wunsch zusätzlich Discord) – rund um die Uhr, auch wenn die App überall geschlossen ist.
 // Für den Gewinn-/Verlust-Alarm stehen Einstieg und Menge der offenen Positionen in der Datei – nur solange dort ein
-// Gewinn- oder Verlust-Alarm aktiv ist; sonst bleiben Mengen und Einstiege in der App.
+// Gewinn- oder Verlust-Alarm aktiv ist; sonst bleiben Mengen und Einstiege in der App. Ist die App geöffnet, meldet sie ihn
+// selbst (sofort, auch kurze Spitzen) und vermerkt das in der Datei; der Dienst wartet deshalb nach dem Erreichen kurz und
+// liest die Datei vor seiner Meldung neu.
 //
 // Woher er die Daten hat: Die App legt die aktiven Alarme und Positionen als Datei „scalpdesk-247.json“ in deinen
 // Telegram-Chat und heftet sie oben an. Dieser Dienst liest sie mit demselben Bot (getChat → angepinnte Nachricht →
@@ -30,8 +32,8 @@ export const API = {
 };
 // Takt: Kurse alle 15 s, angepinnte Datei jede Minute, Lebenszeichen alle 10 min, Kalender alle 30 min
 export const EVERY = E.SCALPDESK_FAST
-  ? { tick: 300, price: 1500, config: 2000, beat: 15e3, cal: 60e3, econ: 1500, feedStale: 12e3 }
-  : { tick: 5e3, price: 15e3, config: 60e3, beat: 10 * 60e3, cal: 30 * 60e3, econ: 20e3, feedStale: 3 * 60e3 };
+  ? { tick: 300, price: 1500, config: 2000, beat: 15e3, cal: 60e3, econ: 1500, feedStale: 12e3, pnlHold: 1200 }
+  : { tick: 5e3, price: 15e3, config: 60e3, beat: 10 * 60e3, cal: 30 * 60e3, econ: 20e3, feedStale: 3 * 60e3, pnlHold: 8e3 }; // pnlHold: Gewinn/Verlust erreicht → so lange auf die App warten
 export const MARK = '📌 Scalp Desk · 24/7-Dienst', FILE = 'scalpdesk-247.json', LINE = 'Dienst:';
 const TOKEN_RE = /^\d{5,15}:[A-Za-z0-9_-]{30,80}$/, CHAT_RE = /^(-?\d{1,20}|@[A-Za-z][A-Za-z0-9_]{4,31})$/;
 const DC_RE = /^https:\/\/(?:(?:ptb|canary)\.)?discord(?:app)?\.com\/api(?:\/v\d{1,2})?\/webhooks\/\d{5,25}\/[A-Za-z0-9_-]{20,120}(?:\?thread_id=\d{5,25})?$/;
@@ -228,7 +230,9 @@ export class Watcher {
     this.conf = null; this.fired = {}; this.seen = new Map(); this.rearm = new Map(); this.lastCheck = new Map(); this.prevCandle = new Map();
     this.cal = null; this.calAt = 0; this.feed = { okAt: 0, error: '', since: 0 }; this.next = { config: 0, price: 0, beat: 0, cal: 0, econ: 0 };
     this.beatOk = null; this.stopped = false; this.saveTimer = null; this.errors = new Map(); this.waiting = false; this.pulseLast = { up: null, down: null };
-    this.pnlSt = {}; this.pnlFired = {}; // Gewinn-/Verlust-Alarm je Scharfschalten: wait/armed; gesendet { t, val } (by: 'app' = die App hat selbst gesendet)
+    // Gewinn-/Verlust-Alarm je Scharfschalten: wait/armed; erreicht und wartet auf die App { t, val }; gemeldet { t, val }
+    // (by: 'app' = die App hat gemeldet oder die Meldung übernommen)
+    this.pnlSt = {}; this.pnlPend = {}; this.pnlFired = {};
     this.loadState();
   }
   // ---- Zustand (ausgelöste Meldungen, zuletzt gelesene Datei, Kalender) über Neustarts hinweg ----
@@ -237,10 +241,10 @@ export class Watcher {
     try {
       const s = JSON.parse(fs.readFileSync(this.statePath, 'utf8'));
       if (s && s.v === 1) { this.fired = s.fired && typeof s.fired === 'object' ? s.fired : {}; if (s.pulse && typeof s.pulse === 'object') this.pulseLast = { up: s.pulse.up || null, down: s.pulse.down || null };
-        if (s.pnl && typeof s.pnl === 'object') { this.pnlSt = s.pnl.st && typeof s.pnl.st === 'object' ? s.pnl.st : {}; this.pnlFired = s.pnl.fired && typeof s.pnl.fired === 'object' ? s.pnl.fired : {}; } if (s.conf?.data) this.conf = { ...s.conf, data: parseConfig({ kind: 'scalpdesk-247', v: 1, ...s.conf.data }) }; if (Array.isArray(s.cal?.events)) { this.cal = s.cal.events; this.calAt = s.cal.at || 0; } }
+        if (s.pnl && typeof s.pnl === 'object') { this.pnlSt = s.pnl.st && typeof s.pnl.st === 'object' ? s.pnl.st : {}; this.pnlFired = s.pnl.fired && typeof s.pnl.fired === 'object' ? s.pnl.fired : {}; this.pnlPend = s.pnl.pend && typeof s.pnl.pend === 'object' ? s.pnl.pend : {}; } if (s.conf?.data) this.conf = { ...s.conf, data: parseConfig({ kind: 'scalpdesk-247', v: 1, ...s.conf.data }) }; if (Array.isArray(s.cal?.events)) { this.cal = s.cal.events; this.calAt = s.cal.at || 0; } }
     } catch { /* erster Start oder beschädigt: neu anfangen */ }
   }
-  stateJson() { const c = this.conf; return JSON.stringify({ v: 1, fired: this.fired, pulse: this.pulseLast, pnl: { st: this.pnlSt, fired: this.pnlFired }, conf: c && { msgId: c.msgId, fileUid: c.fileUid, data: c.data }, cal: this.cal && { at: this.calAt, events: this.cal } }); }
+  stateJson() { const c = this.conf; return JSON.stringify({ v: 1, fired: this.fired, pulse: this.pulseLast, pnl: { st: this.pnlSt, pend: this.pnlPend, fired: this.pnlFired }, conf: c && { msgId: c.msgId, fileUid: c.fileUid, data: c.data }, cal: this.cal && { at: this.calAt, events: this.cal } }); }
   saveStateNow() {
     if (!this.statePath) return;
     try { fs.mkdirSync(path.dirname(this.statePath), { recursive: true }); const tmp = this.statePath + '.tmp'; fs.writeFileSync(tmp, this.stateJson()); fs.renameSync(tmp, this.statePath); }
@@ -297,11 +301,13 @@ export class Watcher {
     for (const k of Object.keys(this.fired)) if ((k.startsWith('al:') || k.startsWith('pos:')) && !keys.has(k)) delete this.fired[k];
     for (const k of [...this.seen.keys()]) if (!keys.has(k)) this.seen.delete(k);
     // Gewinn-/Verlust-Grenzen: neu scharf geschaltete übernehmen (beim Scharfschalten schon erreicht → erst wieder darunter),
-    // von der App selbst gesendete nicht noch einmal; entfernte und neu scharf geschaltete (anderer Zeitpunkt) vergessen
+    // von der App gemeldete (done) nicht noch einmal – auch nicht, wenn sie gerade auf die App wartet; entfernte und neu scharf
+    // geschaltete (anderer Zeitpunkt) vergessen
     const lims = pnlOn(data) ? data.pnl.lim : [], pk = new Set(lims.map(pnlKey));
     for (const l of lims) { const k = pnlKey(l); if (!this.pnlSt[k]) this.pnlSt[k] = l.w ? 'wait' : 'armed'; if (l.done && !this.pnlFired[k]) this.pnlFired[k] = { t, val: null, by: 'app' }; }
     for (const k of Object.keys(this.pnlSt)) if (!pk.has(k)) delete this.pnlSt[k];
     for (const k of Object.keys(this.pnlFired)) if (!pk.has(k)) delete this.pnlFired[k];
+    for (const k of Object.keys(this.pnlPend)) if (!pk.has(k) || this.pnlFired[k]) { if (this.pnlFired[k]?.by === 'app') this.log(`${pnlName(k.split(':')[1])}: die App hat selbst gemeldet`); delete this.pnlPend[k]; }
     this.log(`Datei der App übernommen (#${data.tag}): ${data.on ? `${plural(data.alarms.length, 'Alarm', 'Alarme')}, ${plural(data.positions.length, 'Position', 'Positionen')}${data.econ.warn && data.ev.news ? `, Termin-Warnung ${data.econ.warn} min vorher` : ''}${pulseOn(data) ? ', BTC-Puls' : ''}${pnlOn(data) ? `, Gewinn-/Verlust-Alarm (${lims.map(l => `${l.k === 'profit' ? '≥ +' : '≤ −'}${l.v} USDT`).join(', ')}, ${plural(data.pnl.n, 'offene Position', 'offene Positionen')})` : ''}` : 'Übergabe in der App ausgeschaltet'}`);
     if (!old || old.tag !== data.tag) this.next.beat = 0; // gleich bestätigen
     this.saveState();
@@ -344,18 +350,35 @@ export class Watcher {
     else { if (!this.feed.since) this.feed.since = t; this.feed.error = bad; this.note('Kurse', bad); }
   }
   // ---- Gewinn-/Verlust-Alarm (ab 1.2): dieselbe Regel wie in der App, mit den Kursen dieser Prüfung ----
+  // Erreicht: noch nicht senden, sondern EVERY.pnlHold auf die App warten (sie meldet bei geöffneter App selbst und vermerkt
+  // das in ihrer Datei) – die Datei gleich neu lesen; gemeldet wird in flushPnl
   async checkPnl(c, prices) {
     const cur = pnlTotal(c.pnl, prices); if (cur === null) return; // ohne offene Position oder mit fehlendem Kurs: keine Prüfung
     const t = this.now();
     for (const l of c.pnl.lim) {
-      const k = pnlKey(l); if (this.pnlFired[k]) continue;
+      const k = pnlKey(l); if (this.pnlFired[k] || this.pnlPend[k]) continue;
       const met = pnlMet(l.k, l.v, cur), st = this.pnlSt[k] || (l.w ? 'wait' : 'armed');
       if (st === 'wait') { if (!met) { this.pnlSt[k] = 'armed'; this.saveState(); } continue; }
       if (!met) continue;
-      this.pnlFired[k] = { t, val: cur }; this.saveState(); this.next.beat = 0; // gleich in der angepinnten Nachricht vermerken
-      this.log(`${pnlName(l.k)}: Live-Ergebnis ${cur} USDT (Grenze ${l.k === 'profit' ? '≥ +' : '≤ −'}${l.v})`);
-      await this.send(pnlText(l, cur, c.pnl.pos.length), c.tz);
+      this.pnlPend[k] = { t, val: cur }; this.next.config = 0; this.saveState();
+      this.log(`${pnlName(l.k)}: Live-Ergebnis ${cur} USDT (Grenze ${l.k === 'profit' ? '≥ +' : '≤ −'}${l.v}) – meldet in ${EVERY.pnlHold / 1000} s, falls die App es nicht schon tut`);
     }
+  }
+  // Wartende Gewinn-/Verlust-Meldungen nach EVERY.pnlHold senden – vorher die Datei der App frisch lesen: Hat sie inzwischen
+  // selbst gemeldet (done), nichts senden. Ist Telegram dabei nicht lesbar, trotzdem senden (lieber doppelt als gar nicht).
+  async flushPnl() {
+    const due = () => Object.entries(this.pnlPend).filter(([, p]) => this.now() - p.t >= EVERY.pnlHold);
+    if (!due().length) return;
+    try { await this.syncConfig(); } catch (e) { this.note('Datei der App', e.message); }
+    const c = this.conf?.data; if (!pnlOn(c)) return;
+    for (const [k, p] of due()) {
+      delete this.pnlPend[k]; const l = c.pnl.lim.find(x => pnlKey(x) === k);
+      if (!l || this.pnlFired[k]) continue;
+      this.pnlFired[k] = { t: p.t, val: p.val }; this.saveState(); this.next.beat = 0; // gleich in der angepinnten Nachricht vermerken
+      this.log(`${pnlName(l.k)} gemeldet: Live-Ergebnis ${p.val} USDT`);
+      await this.send(pnlText(l, p.val, c.pnl.pos.length), c.tz);
+    }
+    this.saveState();
   }
   // ---- BTC-Puls (ab 1.1): dieselbe Regel wie in der App ----
   async checkPulse() {
@@ -409,6 +432,7 @@ export class Watcher {
     const t = this.now(), c = () => this.conf?.data, run = async (name, fn) => { try { await fn(); this.clear(name); } catch (e) { this.note(name, e.message); } };
     if (t >= this.next.config) { this.next.config = t + EVERY.config; await run('Datei der App', () => this.syncConfig()); }
     if (c()?.on && t >= this.next.price) { this.next.price = t + EVERY.price; await run('Kursprüfung', () => this.checkPrices()); if (pulseOn(c())) await run('BTC-Puls', () => this.checkPulse()); } // Abruffehler je Kürzel meldet checkPrices selbst („Kurse“)
+    if (c()?.on && Object.keys(this.pnlPend).length) await run('Gewinn/Verlust', () => this.flushPnl()); // erreichte Grenzen nach der Wartezeit
     const needCal = c()?.on && c().ev.news && c().econ.warn;
     if (needCal && t >= this.next.cal) { this.next.cal = t + 5 * 60e3; await run('Kalender', async () => { await this.loadCalendar(); this.next.cal = t + EVERY.cal; }); } // Fehler: in 5 min erneut
     if (needCal && t >= this.next.econ) { this.next.econ = t + EVERY.econ; await run('Termine', () => this.checkEcon()); }

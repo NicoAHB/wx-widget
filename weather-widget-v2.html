@@ -7582,10 +7582,10 @@ $('watchlist').addEventListener('keydown', e => { if (e.key !== 'Escape' || !wld
 // fired (ausgelöst – bis „Wieder aktivieren“ oder eine neue Grenze).
 // 3.26.0: Auch bei geschlossener App – über den 24/7-Dienst (ab Version 1.2). Solange eine Grenze aktiv ist, übergibt die App
 // dafür die offenen Positionen mit Einstieg und Menge und die Grenzen samt Zeitpunkt des Scharfschaltens (pnlHandover). Der
-// Dienst rechnet dasselbe Live-Ergebnis, meldet je Scharfschalten einmal und vermerkt das in der angehefteten Nachricht; die
-// App übernimmt es von dort als „ausgelöst“ (pnlFromSvc). Bestätigt der Dienst „· GV“, sendet die App die Meldung nicht
-// zusätzlich (s247Covers) – Ton und Hinweis in der geöffneten App bleiben. svc: die Meldung kommt vom Dienst (sonst hat die
-// App sie selbst gesendet – dann nicht noch einmal vom Dienst).
+// Dienst rechnet dasselbe Live-Ergebnis alle 15 s. Ist die App geöffnet, meldet sie selbst – sofort und auch bei kurzen
+// Spitzen, die der Dienst nicht sieht – und vermerkt das in ihrer Datei (done). Der Dienst wartet nach dem Erreichen einige
+// Sekunden, liest die Datei neu und meldet nur, was die App nicht schon gemeldet hat; seine Meldung vermerkt er in der
+// angehefteten Nachricht, die App übernimmt sie von dort als „ausgelöst“ (pnlFromSvc). svc: die Meldung kam vom Dienst.
 var PNL_KINDS = ['profit', 'loss'];
 function pnlGet() {
   const d = store.get('scalpdesk.pnlalarm.v1', null), one = a => ({ on: !!a?.on, value: Number(a?.value) > 0 ? Number(a.value) : null, state: ['armed', 'wait', 'fired'].includes(a?.state) ? a.state : 'armed', at: Number(a?.at) || 0, firedAt: Number(a?.firedAt) || 0, firedVal: Number.isFinite(a?.firedVal) ? a.firedVal : null, svc: !!a?.svc });
@@ -7622,17 +7622,32 @@ function pnlFire(k, a, cur) {
   const text = `Live-Ergebnis ${signed(cur)} USDT (${n} ${n === 1 ? 'offene Position' : 'offene Positionen'}) · Schwelle ${pnlCond(k, a.value)} erreicht`;
   beep(); desktopNotify(title, text, 'pnl:' + k);
   simpleToast('pnl:' + k, 'alarm ' + (k === 'profit' ? 'up' : 'down'), `${title}: ${text}`, null, k === 'profit' ? 'green' : 'orange');
-  // je Aktivierung genau eine Nachricht (auch mit mehreren offenen Tabs); prüft der 24/7-Dienst mit, sendet er sie (3.26.0)
-  const key = `pnl:${k}:${a.at}`; a.svc = typeof s247Covers === 'function' && s247Covers('pnl', key);
-  void notifyChannels('pnl', key, `${title}\n${text}`, 30 * 864e5);
+  a.svc = false; void pnlSend(k, a.at, `${title}\n${text}`);
 }
+// Telegram/Discord: je Aktivierung genau eine Nachricht (auch mit mehreren offenen Tabs). 3.26.0 mit 24/7-Dienst: vorher in
+// die angeheftete Nachricht schauen – hat der Dienst diese Grenze schon gemeldet (App kam gerade erst in den Vordergrund),
+// das übernehmen statt noch einmal senden. Sonst senden und „gemeldet“ sofort übergeben: Der Dienst liest die Datei vor seiner
+// eigenen Meldung neu und schweigt dann.
+async function pnlSend(k, at, msg) {
+  if (s247?.cfg?.on && chan.ev.pnl && typeof s247Parse === 'function' && tgConfigured()) {
+    try {
+      const pm = (await tgApi(chan.tg.token, 'getChat', { chat_id: chan.tg.chat }))?.pinned_message, f = s247Parse(pm).gv?.find(x => x.k === k && x.at === at);
+      if (f) { pnlTakeSvc(k, at, f); return; }
+    } catch { /* Telegram gerade nicht lesbar: lieber selbst senden */ }
+    scheduleS247(0);
+  }
+  void notifyChannels('pnl', `pnl:${k}:${at}`, msg, 30 * 864e5);
+}
+// Der Dienst hat diese Grenze schon gemeldet: dessen Zeit und Wert übernehmen, nichts senden
+function pnlTakeSvc(k, at, f) { const d = pnlGet(), a = d[k]; if (a.at !== at) return; a.state = 'fired'; a.firedAt = f.t; a.firedVal = f.val; a.svc = true; pnlSet(d); }
 // ---- 24/7-Dienst (3.26.0) ----
 function pnlActive(d = pnlGet()) { return PNL_KINDS.some(k => d[k].on && d[k].value); }
 // Was der Dienst für den Gewinn-/Verlust-Alarm braucht – nur solange eine Grenze aktiv ist: alle offenen Positionen (Einstieg,
 // Menge, Richtung, Markt) und die aktiven Grenzen; w = wartet gerade (Grenze schon erreicht, erst wieder darunter),
-// done = die App hat diese Meldung schon selbst gesendet
+// done = ausgelöst und gemeldet (von der App oder vom Dienst) – der Dienst meldet sie dann nicht (noch einmal), auch nicht,
+// wenn er seinen eigenen Stand verloren hat
 function pnlHandover() {
-  const d = pnlGet(), lim = PNL_KINDS.filter(k => d[k].on && d[k].value).map(k => ({ k, v: d[k].value, at: d[k].at, w: d[k].state === 'wait', done: d[k].state === 'fired' && !d[k].svc }));
+  const d = pnlGet(), lim = PNL_KINDS.filter(k => d[k].on && d[k].value).map(k => ({ k, v: d[k].value, at: d[k].at, w: d[k].state === 'wait', done: d[k].state === 'fired' }));
   if (!lim.length) return null;
   return { n: state.positions.length, pos: state.positions.map(p => ({ id: p.id, symbol: p.symbol, source: p.source === 'futures' ? 'futures' : 'spot', side: p.side, entry: p.entry, qty: p.qty })), lim };
 }
@@ -8184,7 +8199,8 @@ s247.cfg = loadS247();
 function loadS247() {
   const v = store.get(S247_KEY), s = x => (typeof x === 'string' ? x : '');
   return { on: !!v?.on, sentOn: !!v?.sentOn, pulse: !!v?.pulse, gv: !!v?.gv, chat: s(v?.chat), msg: Number(v?.msg) || 0, tag: s(v?.tag), at: Number(v?.at) || 0, sig: s(v?.sig),
-    keys: Array.isArray(v?.keys) ? v.keys.filter(k => typeof k === 'string') : [], econ: s(v?.econ), n: v?.n && typeof v.n === 'object' ? { a: Number(v.n.a) || 0, p: Number(v.n.p) || 0 } : { a: 0, p: 0 } };
+    keys: Array.isArray(v?.keys) ? v.keys.filter(k => typeof k === 'string') : [], econ: s(v?.econ),
+    hist: Array.isArray(v?.hist) ? v.hist.filter(h => typeof h?.tag === 'string' && Array.isArray(h.keys)).slice(0, 6).map(h => ({ tag: h.tag, keys: h.keys.filter(k => typeof k === 'string') })) : [], n: v?.n && typeof v.n === 'object' ? { a: Number(v.n.a) || 0, p: Number(v.n.p) || 0 } : { a: 0, p: 0 } };
 }
 function saveS247() { if (store.set(S247_KEY, { ...s247.cfg })) broadcastData([S247_KEY]); }
 // „30.09. 12:40“ in Ortszeit – dasselbe Format schreibt der Dienst
@@ -8224,7 +8240,8 @@ const s247IsOurs = m => !!m?.document && (m.document.file_name === S247_FILE || 
 // Übergeben: angeheftete Datei ersetzen (auch wenn ein anderer Tab sie angelegt hat), sonst neu senden und anheften.
 // leaving: Seite wird verlassen – ohne Rückfrage bei Telegram und ohne Tab-Absprache sofort, mit keepalive
 async function sendS247(force = false, leaving = false) {
-  if (!s247Ready() || s247.busy) return;
+  if (!s247Ready()) return;
+  if (s247.busy) { s247.again = true; return; } // läuft gerade: danach noch einmal
   const p = s247Payload(), sig = s247Sig(p), c = s247.cfg;
   if (!force && sig === c.sig && c.chat === chan.tg.chat && c.msg) return;
   const claimed = !leaving && await store.claim('s247', 20000);
@@ -8248,14 +8265,14 @@ async function sendS247(force = false, leaving = false) {
       try { await tgPost('pinChatMessage', pin, keep); }
       catch (e) { throw Object.assign(new Error(`Anheften nicht erlaubt (${e.message}) – bei einer Gruppe braucht der Bot das Recht „Nachrichten anheften“.`), { code: e.code }); }
     }
-    s247.cfg = { ...s247.cfg, chat: chan.tg.chat, msg, tag, at: body.at, sig, keys: s247Keys(p), econ: p.on && p.ev.news && p.econ.warn ? `${p.econ.cur}|${p.econ.warn}` : '', pulse: !!(p.on && p.ev.pulse && p.pulse), gv: !!(p.on && p.ev.pnl && p.pnl), sentOn: p.on, n: { a: p.alarms.length, p: p.positions.length } };
+    s247.cfg = { ...s247.cfg, chat: chan.tg.chat, msg, tag, at: body.at, sig, keys: s247Keys(p), hist: [{ tag, keys: s247Keys(p) }, ...(s247.cfg.hist || []).filter(h => h.tag !== tag)].slice(0, 6), econ: p.on && p.ev.news && p.econ.warn ? `${p.econ.cur}|${p.econ.warn}` : '', pulse: !!(p.on && p.ev.pulse && p.pulse), gv: !!(p.on && p.ev.pnl && p.pnl), sentOn: p.on, n: { a: p.alarms.length, p: p.positions.length } };
     saveS247();
     // Was jetzt angeheftet ist, wissen wir; die Rückmeldung des Dienstes (falls er schon lief) bleibt bis zur nächsten Abfrage
     s247.st = s247.st?.found && s247.st.msg === msg ? { ...s247.st, tag } : { found: true, msg, tag, dev: body.dev, svc: null, beat: 0, fresh: false };
     // Bestätigung des Dienstes abwarten: er liest jede Minute
     clearTimeout(s247.recheck); if (!leaving) s247.recheck = setTimeout(() => void checkS247(), 70e3);
   } catch (e) { s247.error = e?.message || String(e); }
-  finally { s247.busy = false; if (claimed) void store.release('s247'); renderS247(); }
+  finally { s247.busy = false; if (claimed) void store.release('s247'); renderS247(); if (s247.again && !leaving) { s247.again = false; scheduleS247(300); } }
 }
 // Angeheftete Nachricht lesen: Zeile des Dienstes und Zeitpunkt der letzten Änderung (Lebenszeichen)
 function s247Parse(pm, now = Date.now()) {
@@ -8280,12 +8297,15 @@ async function checkS247() {
 }
 // Kennt der Dienst diese Meldung und meldet er sich? Dann sendet die App sie nicht selbst (siehe notifyChannels).
 function s247Covers(type, key) {
-  if (!s247?.cfg?.on || !['alarm', 'pos', 'news', 'pulse', 'pnl'].includes(type)) return false;
+  if (!s247?.cfg?.on || !['alarm', 'pos', 'news', 'pulse'].includes(type)) return false;
   const st = s247.st, c = s247.cfg, now = Date.now();
-  if (!st?.found || st.msg !== c.msg || !st.svc?.ok || st.svc.tag !== c.tag || now - st.beat > S247_STALE || now - s247.checkAt > S247_STALE) return false;
+  if (!st?.found || st.msg !== c.msg || !st.svc?.ok || now - st.beat > S247_STALE || now - s247.checkAt > S247_STALE) return false;
+  // 3.26.0: bestätigt ist der neueste Stand – oder ein kürzlich übergebener, der diesen Alarm schon enthielt (die App hat seitdem
+  // erneut übergeben, der Dienst liest das erst in bis zu einer Minute; den Alarm meldet er auch mit dem älteren Stand)
+  const cur = st.svc.tag === c.tag, seen = cur ? c : (c.hist || []).find(h => h.tag === st.svc.tag);
+  if (!seen) return false;
   // BTC-Puls: nur wenn der Dienst ihn kann (ab 1.1 steht „Puls“ in seiner Zeile) und die Schwellen übergeben sind
-  // Gewinn-/Verlust-Alarm: nur wenn der Dienst ihn kann (ab 1.2 steht „GV“ in seiner Zeile) und die Grenze übergeben ist
-  return type === 'news' ? !!c.econ : type === 'pulse' ? !!(c.pulse && st.svc.pulse) : type === 'pnl' ? !!(c.gv && st.svc.gv && c.keys.includes(key)) : c.keys.includes(key);
+  return type === 'news' ? cur && !!c.econ : type === 'pulse' ? cur && !!(c.pulse && st.svc.pulse) : seen.keys.includes(key) && c.keys.includes(key);
 }
 // 3.24.0 BTC-Puls: kommt er vom Dienst? Ein älterer Dienst (1.0) kennt ihn nicht – dann sendet ihn weiter die geöffnete App
 function s247PulseText(c, st) {
@@ -8297,7 +8317,7 @@ function s247PulseText(c, st) {
 // 3.26.0 Gewinn-/Verlust-Alarm: prüft der Dienst mit? Ein älterer Dienst (bis 1.1) kann es nicht – dann nur die geöffnete App
 function s247GvText(c, st) {
   if (!chan?.ev?.pnl || typeof pnlActive !== 'function' || !pnlActive()) return '';
-  if (st.svc?.gv && c.gv) return ' Den Gewinn-/Verlust-Alarm prüft der Dienst ebenfalls – auch bei geschlossener App.';
+  if (st.svc?.gv && c.gv) return ' Den Gewinn-/Verlust-Alarm meldet bei geschlossener App der Dienst, bei geöffneter App diese App selbst.';
   return ' Den Gewinn-/Verlust-Alarm prüft weiter nur diese App, solange sie geöffnet ist: Der Dienst kann ihn erst ab Version 1.2 – am Server den Installationsbefehl erneut ausführen.';
 }
 // Stand des Dienstes nach dem Öffnen: Erst nach der ersten Abfrage entscheidet die App, ob sie eine Meldung selbst sendet
@@ -8938,7 +8958,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
         <label class="switch"><input type="checkbox" id="chan-ev-pulse" checked> BTC-Puls: ungewöhnlich starke Bitcoin-Bewegung</label>
         <small class="pulse-info">Meldet, wenn BTC sich in 5 oder 15 Minuten stärker bewegt als 99 % der üblichen Bewegungen zu dieser Uhrzeit (mindestens 0,5 % bzw. 0,8 %), mit der Vorauswahl im selben Zeitraum; je Richtung höchstens alle 30 Minuten, nachts lautlos. <span id="pulse-info"></span></small>
       </fieldset>
-      <section class="chan" aria-labelledby="s247-title" id="s247"><div class="head-line"><h3 id="s247-title">🌙 24/7-Dienst</h3><details class="tip left"><summary aria-label="Wie funktioniert der 24/7-Dienst?"><span>i</span></summary><div class="tip-body"><p>Ein kleines Programm auf einem eigenen Server, der rund um die Uhr läuft (z. B. kostenlos bei Oracle Cloud), prüft die Kurse und meldet Kurs-Alarme, Stop-Loss/Take-Profit, die Warnung vor wichtigen Terminen, ab Version 1.1 den BTC-Puls und ab Version 1.2 den Gewinn-/Verlust-Alarm per Telegram – auch wenn die App überall geschlossen ist.</p><p><b>Übergabe:</b> Die App legt die aktiven Alarme und die Stop-/Ziel-Marken deiner Positionen als Datei in deinen Telegram-Chat, heftet sie oben an und ersetzt sie nach jeder Änderung. Einstiege und Mengen der offenen Positionen stehen nur darin, solange ein Gewinn- oder Verlust-Alarm aktiv ist – der Dienst braucht sie, um das Live-Ergebnis zu rechnen. Trades und Notizen bleiben in der App. Der Dienst liest die Datei mit demselben Bot und bestätigt in der angehefteten Nachricht („Dienst: aktiv“).</p><p><b>Nicht doppelt:</b> Solange der Dienst aktiv ist und den aktuellen Stand hat, sendet diese App Kurs-Alarme, Stop/Ziel und Termin-Warnungen nicht zusätzlich. Meldet er sich 20 Minuten nicht oder meldet er eine Störung, sendet die App wieder selbst. Das Tages-Verlustlimit meldet immer die App.</p><p><b>Gewinn-/Verlust-Alarm:</b> Bestätigt der Dienst mit „· GV“ (ab Version 1.2), prüft er das Live-Ergebnis alle 15 Sekunden mit und meldet jede Grenze einmal; die App übernimmt das danach als „ausgelöst“. Ein älterer Dienst kann es nicht – dann prüft weiter nur die geöffnete App.</p><p><b>BTC-Puls:</b> Die App gibt dem Dienst die Schwellen je Uhrzeit mit. Bestätigt er mit „· Puls“ (ab Version 1.1), meldet er den Puls und die App nicht zusätzlich; ein älterer Dienst kennt ihn nicht – dann sendet ihn weiter die geöffnete App.</p><p><b>Token:</b> Den Bot-Token gibst du am Server selbst ein – die App schickt ihn weiterhin nur an Telegram.</p><p>Nur auf einem Gerät einschalten – dem, auf dem du Alarme und Positionen pflegst.</p></div></details></div><p class="chan-sub">Meldungen auch bei geschlossener App – über ein kleines Programm auf einem eigenen Server, der rund um die Uhr läuft.</p><details class="chan-guide" id="s247-guide"><summary>Anleitung: kostenlos bei Oracle Cloud einrichten (ca. 20 Minuten)</summary><ol><li><b>Konto:</b> Auf <a href="https://www.oracle.com/cloud/free/" target="_blank" rel="noopener noreferrer">oracle.com/cloud/free</a> „Start for free“. Als Heimatregion <b>Germany Central (Frankfurt)</b> wählen – sie lässt sich später nicht ändern, und von US-Servern aus sperrt Binance den Zugriff. Die Kreditkarte dient nur der Prüfung; „Always Free“ kostet nichts.</li><li><b>Server anlegen:</b> In der Konsole „Create a VM instance“. Bei <i>Image</i> auf <b>Ubuntu</b> wechseln, bei <i>Shape</i> eine mit „Always Free-eligible“ lassen (z. B. VM.Standard.E2.1.Micro). Bei <i>Add SSH keys</i> „Generate a key pair for me“ und <b>Save private key</b> – diese Datei ist der Schlüssel zum Server, gut aufbewahren. Dann <b>Create</b>. Nach 1–2 Minuten steht der Server auf „Running“; die <b>Public IP address</b> notieren.</li><li><b>Verbinden:</b> Oben rechts in der Konsole die <b>Cloud Shell</b> öffnen (Symbol &gt;_). Im Menü des Cloud-Shell-Fensters <b>Upload</b> wählen und den privaten Schlüssel hochladen. Dann eingeben (IP ersetzen) und die Frage „Are you sure …“ mit <b>yes</b> beantworten:<span class="s247-cmd"><code>chmod 600 ssh-key-*.key &amp;&amp; ssh -i ssh-key-*.key ubuntu@IP</code><button type="button" class="button ghost" data-copy="chmod 600 ssh-key-*.key &amp;&amp; ssh -i ssh-key-*.key ubuntu@IP">Kopieren</button></span></li><li><b>Dienst installieren:</b> Im Server-Fenster eingeben:<span class="s247-cmd"><code>curl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/install.sh | sudo bash</code><button type="button" class="button ghost" data-copy="curl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/install.sh | sudo bash">Kopieren</button></span>Es fragt nach <b>Bot-Token</b> und <b>Chat-ID</b> – dieselben wie oben unter „Kursalarm“ (nicht der Sicherungs-Bot; den Token zeigt auch @BotFather mit /mybots → API Token). Am Ende kommt eine Testnachricht in Telegram.</li><li><b>Übergeben:</b> Unten „An den 24/7-Dienst übergeben“ einschalten. Nach spätestens einer Minute steht hier „✓ Aktiv“, und im Telegram-Chat ist oben „📌 Scalp Desk · 24/7-Dienst“ angeheftet – diese Nachricht nicht löschen.</li></ol><ul class="s247-tips"><li><b>Ausführlich</b> – mit Aktualisieren, Ausprobieren und Hilfe bei Fehlermeldungen: <a href="https://github.com/NicoAHB/wx-widget/blob/main/server/ANLEITUNG-ORACLE.md" target="_blank" rel="noopener noreferrer">Anleitung auf GitHub</a></li><li><b>Aktualisieren:</b> den Befehl aus Schritt 4 erneut ausführen; die Einstellungen bleiben. Für den Gewinn-/Verlust-Alarm braucht es Version 1.2 – ein vorhandener Dienst einmal so aktualisieren.</li><li><b>Server-Größe:</b> „VM.Standard.E2.1.Micro“ reicht und ist fast immer verfügbar; „Ampere A1“ meldet oft „Out of capacity“.</li><li><b>Andere Rechner:</b> läuft auf jedem Linux-Rechner mit Internet, z. B. einem Raspberry Pi – derselbe Befehl.</li><li><b>Oracle:</b> Always-Free-Server, die 7 Tage kaum ausgelastet sind, kann Oracle anhalten – und der Dienst braucht sehr wenig. Abhilfe laut Oracle: das Konto auf „Pay As You Go“ umstellen; es bleibt kostenlos, solange nur Always-Free-Angebote genutzt werden. Sonst nach einer E-Mail von Oracle den Server in der Konsole wieder starten.</li><li><b>Am Server:</b> Status <code>systemctl status scalpdesk-247</code>, Protokoll <code>journalctl -u scalpdesk-247 -f</code>, entfernen <code>sudo bash /opt/scalpdesk-247/install.sh --remove</code></li></ul></details><label class="switch"><input type="checkbox" id="s247-on"> An den 24/7-Dienst übergeben (Alarme, Stop/Ziel, Termin-Warnungen, Gewinn-/Verlust-Alarm)</label><div class="row"><button type="button" class="button ghost" id="s247-check">Status prüfen</button></div><p class="chan-status" id="s247-status" role="status"></p></section>
+      <section class="chan" aria-labelledby="s247-title" id="s247"><div class="head-line"><h3 id="s247-title">🌙 24/7-Dienst</h3><details class="tip left"><summary aria-label="Wie funktioniert der 24/7-Dienst?"><span>i</span></summary><div class="tip-body"><p>Ein kleines Programm auf einem eigenen Server, der rund um die Uhr läuft (z. B. kostenlos bei Oracle Cloud), prüft die Kurse und meldet Kurs-Alarme, Stop-Loss/Take-Profit, die Warnung vor wichtigen Terminen, ab Version 1.1 den BTC-Puls und ab Version 1.2 den Gewinn-/Verlust-Alarm per Telegram – auch wenn die App überall geschlossen ist.</p><p><b>Übergabe:</b> Die App legt die aktiven Alarme und die Stop-/Ziel-Marken deiner Positionen als Datei in deinen Telegram-Chat, heftet sie oben an und ersetzt sie nach jeder Änderung. Einstiege und Mengen der offenen Positionen stehen nur darin, solange ein Gewinn- oder Verlust-Alarm aktiv ist – der Dienst braucht sie, um das Live-Ergebnis zu rechnen. Trades und Notizen bleiben in der App. Der Dienst liest die Datei mit demselben Bot und bestätigt in der angehefteten Nachricht („Dienst: aktiv“).</p><p><b>Nicht doppelt:</b> Solange der Dienst aktiv ist und den aktuellen Stand hat, sendet diese App Kurs-Alarme, Stop/Ziel und Termin-Warnungen nicht zusätzlich. Meldet er sich 20 Minuten nicht oder meldet er eine Störung, sendet die App wieder selbst. Das Tages-Verlustlimit meldet immer die App.</p><p><b>Gewinn-/Verlust-Alarm:</b> Bestätigt der Dienst mit „· GV“ (ab Version 1.2), prüft er das Live-Ergebnis alle 15 Sekunden mit. Erreicht es eine Grenze, wartet er einige Sekunden: Ist die App geöffnet, meldet sie selbst – sofort und auch bei kurzen Spitzen –, und der Dienst schweigt. Sonst meldet er, einmal je Grenze; die App übernimmt das beim Öffnen als „ausgelöst“. Ein älterer Dienst kann es nicht – dann prüft nur die geöffnete App.</p><p><b>BTC-Puls:</b> Die App gibt dem Dienst die Schwellen je Uhrzeit mit. Bestätigt er mit „· Puls“ (ab Version 1.1), meldet er den Puls und die App nicht zusätzlich; ein älterer Dienst kennt ihn nicht – dann sendet ihn weiter die geöffnete App.</p><p><b>Token:</b> Den Bot-Token gibst du am Server selbst ein – die App schickt ihn weiterhin nur an Telegram.</p><p>Nur auf einem Gerät einschalten – dem, auf dem du Alarme und Positionen pflegst.</p></div></details></div><p class="chan-sub">Meldungen auch bei geschlossener App – über ein kleines Programm auf einem eigenen Server, der rund um die Uhr läuft.</p><details class="chan-guide" id="s247-guide"><summary>Anleitung: kostenlos bei Oracle Cloud einrichten (ca. 20 Minuten)</summary><ol><li><b>Konto:</b> Auf <a href="https://www.oracle.com/cloud/free/" target="_blank" rel="noopener noreferrer">oracle.com/cloud/free</a> „Start for free“. Als Heimatregion <b>Germany Central (Frankfurt)</b> wählen – sie lässt sich später nicht ändern, und von US-Servern aus sperrt Binance den Zugriff. Die Kreditkarte dient nur der Prüfung; „Always Free“ kostet nichts.</li><li><b>Server anlegen:</b> In der Konsole „Create a VM instance“. Bei <i>Image</i> auf <b>Ubuntu</b> wechseln, bei <i>Shape</i> eine mit „Always Free-eligible“ lassen (z. B. VM.Standard.E2.1.Micro). Bei <i>Add SSH keys</i> „Generate a key pair for me“ und <b>Save private key</b> – diese Datei ist der Schlüssel zum Server, gut aufbewahren. Dann <b>Create</b>. Nach 1–2 Minuten steht der Server auf „Running“; die <b>Public IP address</b> notieren.</li><li><b>Verbinden:</b> Oben rechts in der Konsole die <b>Cloud Shell</b> öffnen (Symbol &gt;_). Im Menü des Cloud-Shell-Fensters <b>Upload</b> wählen und den privaten Schlüssel hochladen. Dann eingeben (IP ersetzen) und die Frage „Are you sure …“ mit <b>yes</b> beantworten:<span class="s247-cmd"><code>chmod 600 ssh-key-*.key &amp;&amp; ssh -i ssh-key-*.key ubuntu@IP</code><button type="button" class="button ghost" data-copy="chmod 600 ssh-key-*.key &amp;&amp; ssh -i ssh-key-*.key ubuntu@IP">Kopieren</button></span></li><li><b>Dienst installieren:</b> Im Server-Fenster eingeben:<span class="s247-cmd"><code>curl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/install.sh | sudo bash</code><button type="button" class="button ghost" data-copy="curl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/install.sh | sudo bash">Kopieren</button></span>Es fragt nach <b>Bot-Token</b> und <b>Chat-ID</b> – dieselben wie oben unter „Kursalarm“ (nicht der Sicherungs-Bot; den Token zeigt auch @BotFather mit /mybots → API Token). Am Ende kommt eine Testnachricht in Telegram.</li><li><b>Übergeben:</b> Unten „An den 24/7-Dienst übergeben“ einschalten. Nach spätestens einer Minute steht hier „✓ Aktiv“, und im Telegram-Chat ist oben „📌 Scalp Desk · 24/7-Dienst“ angeheftet – diese Nachricht nicht löschen.</li></ol><ul class="s247-tips"><li><b>Ausführlich</b> – mit Aktualisieren, Ausprobieren und Hilfe bei Fehlermeldungen: <a href="https://github.com/NicoAHB/wx-widget/blob/main/server/ANLEITUNG-ORACLE.md" target="_blank" rel="noopener noreferrer">Anleitung auf GitHub</a></li><li><b>Aktualisieren:</b> den Befehl aus Schritt 4 erneut ausführen; die Einstellungen bleiben. Für den Gewinn-/Verlust-Alarm braucht es Version 1.2 – ein vorhandener Dienst einmal so aktualisieren.</li><li><b>Server-Größe:</b> „VM.Standard.E2.1.Micro“ reicht und ist fast immer verfügbar; „Ampere A1“ meldet oft „Out of capacity“.</li><li><b>Andere Rechner:</b> läuft auf jedem Linux-Rechner mit Internet, z. B. einem Raspberry Pi – derselbe Befehl.</li><li><b>Oracle:</b> Always-Free-Server, die 7 Tage kaum ausgelastet sind, kann Oracle anhalten – und der Dienst braucht sehr wenig. Abhilfe laut Oracle: das Konto auf „Pay As You Go“ umstellen; es bleibt kostenlos, solange nur Always-Free-Angebote genutzt werden. Sonst nach einer E-Mail von Oracle den Server in der Konsole wieder starten.</li><li><b>Am Server:</b> Status <code>systemctl status scalpdesk-247</code>, Protokoll <code>journalctl -u scalpdesk-247 -f</code>, entfernen <code>sudo bash /opt/scalpdesk-247/install.sh --remove</code></li></ul></details><label class="switch"><input type="checkbox" id="s247-on"> An den 24/7-Dienst übergeben (Alarme, Stop/Ziel, Termin-Warnungen, Gewinn-/Verlust-Alarm)</label><div class="row"><button type="button" class="button ghost" id="s247-check">Status prüfen</button></div><p class="chan-status" id="s247-status" role="status"></p></section>
       <p class="chan-note">🔒 Token und Webhook-URL bleiben nur in diesem Browser. Sie stehen in keinem Backup und keinem QR-Code und werden nur an Telegram bzw. Discord geschickt. Auf jedem Gerät, das senden soll, einzeln einrichten.</p>
       <div class="sheet-actions"><button type="button" class="button ghost" id="chan-clear">Zugangsdaten löschen</button><button type="button" class="button primary" id="chan-done">Fertig</button></div>
     </div>
