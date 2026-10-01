@@ -2723,14 +2723,20 @@ function renderSignals() {
 // Signalen dieses Coins (wldetail.js) und lädt den Coin im Chart (3.26.0, ohne zum Chart zu springen). Neu aufgebaut wird nur, wenn sich Liste,
 // Bearbeiten-Modus oder der geöffnete Coin ändern – die Live-Werte schreibt wlPaint() in die bestehenden Felder. „+ Coin“ steht in
 // der Kopfzeile, damit beim Laden eines neuen Coins keine Kachelreihe dazukommt und nichts darunter verrutscht.
-let watchKey = '';
+let watchKey = '', watchCurKey = '';
 function renderWatchlist() {
   const box = $('watchlist'), base = state.symbol.slice(0, -4), showAdd = !state.watch.includes(base) && state.loadedSymbol === state.symbol;
   // Ausgewählte Kachel entfernt (Bearbeiten, „Standard“, Sicherung eingespielt): Detailfeld schließen, keine falsche Auswahl
   if (wldSel && !state.watch.includes(wldSel)) wldClose(false);
-  const S = wlSpan(), key = JSON.stringify([state.watch, state.watchEdit, base, showAdd, S.label]);
-  if (key === watchKey && box.firstChild) return;
-  watchKey = key;
+  const S = wlSpan(), key = JSON.stringify([state.watch, state.watchEdit, S.label]), curKey = JSON.stringify([key, base, showAdd]);
+  // 3.26.0: Wechselt nur der Coin im Chart (Kachel angetippt), bleiben Kopfzeile und Kacheln stehen; neu sind nur die
+  // Markierung „im Chart geöffnet“ und „+ Coin“. Der Neuaufbau nahm der angetippten Kachel den Tastatur-Fokus, und Chrome
+  // verschob dabei die Seite (Scroll-Anker in den ersetzten Kacheln).
+  if (key === watchKey && box.querySelector('.wl-grid')) {
+    if (curKey !== watchCurKey) { watchCurKey = curKey; wlMarkCurrent(base, showAdd); }
+    return;
+  }
+  watchKey = key; watchCurKey = curKey;
   const head = el('div', 'wl-head'), tip = el('details', 'tip left wl-tip'), sum = el('summary');
   sum.setAttribute('aria-label', 'Was die Kacheln der Vorauswahl zeigen'); sum.append(el('span', '', 'i'));
   const body = el('div', 'tip-body');
@@ -2740,7 +2746,6 @@ function renderWatchlist() {
   tip.append(sum, body);
   head.append(el('span', 'wl-label', 'Vorauswahl'), tip);
   const tools = el('span', 'wl-tools');
-  if (showAdd) { const add = btn('chip add', '+ ' + base); add.dataset.addwatch = base; add.setAttribute('aria-label', `${base} zur Vorauswahl hinzufügen`); tools.append(add); }
   if (state.watchEdit && state.watch.join() !== DEFAULT_WATCH.join()) { const reset = btn('chip-tool', 'Standard'); reset.dataset.watchreset = '1'; tools.append(reset); }
   const edit = btn('chip-tool', state.watchEdit ? 'Fertig' : 'Bearbeiten'); edit.dataset.watchedit = '1'; edit.setAttribute('aria-pressed', String(state.watchEdit)); tools.append(edit);
   head.append(tools);
@@ -2748,14 +2753,12 @@ function renderWatchlist() {
   for (const coin of state.watch) {
     const item = el('span', 'wl-item'), tile = btn('wl-tile'), svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     tile.dataset.watch = coin; tile.setAttribute('aria-expanded', String(coin === wldSel)); tile.setAttribute('aria-controls', 'wl-detail');
-    if (coin === base) tile.setAttribute('aria-current', 'true');
     svg.setAttribute('class', 'wl-spark'); svg.setAttribute('viewBox', '0 0 44 16'); svg.setAttribute('preserveAspectRatio', 'none'); svg.setAttribute('aria-hidden', 'true');
     svg.append(document.createElementNS('http://www.w3.org/2000/svg', 'polyline'));
     const r2 = el('span', 'wl-r2'), rules = el('span', 'wl-rules');
     r2.append(el('span', 'wl-chg flat', `${S.label} –`));
     for (const x of wlRules(null)) { const s = el('span', `wl-rule ${x.dir}`); s.append(el('span', '', x.label), el('i', '', x.arrow)); rules.append(s); }
     tile.append(el('b', 'wl-sym', coin), svg, el('span', 'wl-price', '…'), el('span', 'wl-sig', '·'), r2, rules);
-    if (coin === base) tile.append(el('span', 'sr-only', ' (im Chart geöffnet)'));
     item.append(tile);
     if (state.watchEdit) { const x = btn('chip-x', '×'); x.dataset.unwatch = coin; x.setAttribute('aria-label', `${coin} aus der Vorauswahl entfernen`); item.append(x); }
     grid.append(item);
@@ -2763,7 +2766,21 @@ function renderWatchlist() {
   // das Detailfeld bleibt eingehängt (3.25.0): sonst verlöre die Zeitraum-Auswahl darin beim Wechsel den Fokus
   const d = wldBox();
   if (d.parentNode === box) { for (const n of [...box.childNodes]) if (n !== d) n.remove(); d.before(head, grid); } else box.replaceChildren(head, grid, d);
+  wlMarkCurrent(base, showAdd);
   if (typeof wlPaint === 'function') wlPaint(Date.now(), true);
+}
+// Kachel des Coins im Chart markieren (Rahmen, Vorlesetext) und „+ Coin“ zeigen, ohne etwas neu aufzubauen
+function wlMarkCurrent(base, showAdd) {
+  const box = $('watchlist');
+  for (const t of box.querySelectorAll('.wl-tile')) {
+    const cur = t.dataset.watch === base, sr = t.querySelector('.sr-only');
+    if (cur) t.setAttribute('aria-current', 'true'); else t.removeAttribute('aria-current');
+    if (cur && !sr) t.append(el('span', 'sr-only', ' (im Chart geöffnet)')); else if (!cur && sr) sr.remove();
+  }
+  const tools = box.querySelector('.wl-tools'), old = tools?.querySelector('[data-addwatch]');
+  if (!tools || (old && showAdd && old.dataset.addwatch === base) || (!old && !showAdd)) return;
+  old?.remove();
+  if (showAdd) { const add = btn('chip add', '+ ' + base); add.dataset.addwatch = base; add.setAttribute('aria-label', `${base} zur Vorauswahl hinzufügen`); tools.prepend(add); }
 }
 
 function renderFutures() {
@@ -4862,6 +4879,7 @@ function onSent(m) {
 // Meldung an alle aktiven Kanäle; je Ereignis nur einmal, auch wenn mehrere Tabs offen sind (Abstimmung über die IndexedDB)
 async function notifyChannels(type, key, text, ttl, opts = {}) {
   if (!chan.ev[type]) return;
+  if (typeof s247Settled === 'function') await s247Settled(); // 3.26.0: nach dem Öffnen erst den Stand des Dienstes kennen
   if (s247Covers(type, key)) return; // 5.1: kommt vom 24/7-Dienst – nicht doppelt senden
   const ks = ['tg', 'dc'].filter(chanReady); if (!ks.length) return;
   if (!(await store.claim(key, ttl))) return;
@@ -7587,6 +7605,9 @@ function pnlArm(k, a, cur = pnlNow()) { a.state = pnlMet(k, a.value, cur) ? 'wai
 // Bei jeder Aktualisierung der offenen Positionen (renderOpenPositions)
 function pnlCheck() {
   if (!PNL_KINDS || !$('pnl-panel')) return; // Abschnitt noch nicht ausgewertet
+  // 3.26.0: Mit 24/7-Dienst erst nach dessen erstem Stand prüfen (höchstens 15 s nach dem Öffnen) – sonst meldete die App beim
+  // Öffnen eine Grenze, die der Dienst bei geschlossener App schon gemeldet hat; checkS247 ruft danach pnlCheck auf
+  if (s247?.cfg?.on && !s247.checkAt && performance.now() < 15000) { pnlBadge(); return; }
   const cur = pnlNow(), d = pnlGet(); let changed = false;
   for (const k of PNL_KINDS) {
     const a = d[k]; if (!a.on || !a.value) continue;
@@ -8255,7 +8276,7 @@ async function checkS247() {
     // Angeheftete Datei fehlt oder ist eine andere (gelöscht, vom Nutzer ersetzt): neu übergeben
     if (s247.cfg.on && (!s247.st.found || (s247.cfg.msg && s247.st.msg !== s247.cfg.msg && s247.st.tag !== s247.cfg.tag))) { s247.cfg = { ...s247.cfg, sig: '' }; scheduleS247(1000); }
   } catch (e) { s247.checkErr = e?.message || String(e); }
-  finally { s247.checking = false; s247.checkAt = Date.now(); renderS247(); }
+  finally { s247.checking = false; s247.checkAt = Date.now(); renderS247(); if (typeof pnlCheck === 'function') pnlCheck(); }
 }
 // Kennt der Dienst diese Meldung und meldet er sich? Dann sendet die App sie nicht selbst (siehe notifyChannels).
 function s247Covers(type, key) {
@@ -8278,6 +8299,11 @@ function s247GvText(c, st) {
   if (!chan?.ev?.pnl || typeof pnlActive !== 'function' || !pnlActive()) return '';
   if (st.svc?.gv && c.gv) return ' Den Gewinn-/Verlust-Alarm prüft der Dienst ebenfalls – auch bei geschlossener App.';
   return ' Den Gewinn-/Verlust-Alarm prüft weiter nur diese App, solange sie geöffnet ist: Der Dienst kann ihn erst ab Version 1.2 – am Server den Installationsbefehl erneut ausführen.';
+}
+// Stand des Dienstes nach dem Öffnen: Erst nach der ersten Abfrage entscheidet die App, ob sie eine Meldung selbst sendet
+function s247Settled() {
+  if (!s247?.cfg?.on || s247.checkAt) return Promise.resolve();
+  return Promise.race([s247.first || Promise.resolve(), new Promise(r => setTimeout(r, 8000))]);
 }
 function s247Active() { const st = s247?.st, c = s247?.cfg; return !!(c?.on && st?.found && st.msg === c.msg && st.svc?.ok && st.svc.tag === c.tag && Date.now() - st.beat < S247_STALE); }
 function renderS247() {
@@ -8327,7 +8353,7 @@ function s247Tick(now) { if (s247?.cfg?.on && !s247.checking && now - s247.check
   });
   addEventListener('pagehide', () => { if (s247.timer) { clearTimeout(s247.timer); s247.timer = null; void sendS247(false, true); } });
   renderS247();
-  if (s247.cfg.on) { scheduleS247(3000); void checkS247(); }
+  if (s247.cfg.on) { scheduleS247(3000); s247.first = checkS247(); }
 })();
 // ---------- Beschriftungen im Chart entzerren ----------
 // Läuft nach dem Zeichnen, wenn das SVG im Dokument hängt. Gemessen wird in SVG-Einheiten (getBBox), das passt auch im
