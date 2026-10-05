@@ -57,7 +57,8 @@ const kbd = (page, on) => page.evaluate(on => { const vv = visualViewport; if (o
       const lb = await d.evaluate(() => { const g = id => document.getElementById(id), p = document.querySelector('.livebar .lb-pos'), vis = e => !!e && e.getClientRects().length > 0;
         return { usdt: g('lb-day').textContent, eur: g('lb-day-eur').textContent, vis: vis(g('lb-day-eur')), cut: p.scrollWidth > p.clientWidth + 1, right: Math.round(p.getBoundingClientRect().right), vw: innerWidth, fx: document.getElementById('price-eur')?.textContent || '' }; });
       if (w === 1440) {
-        check('Computer: Live-Leiste „Heute +12,50 USDT (≈ +10,74 €)“', lb.usdt === '+12,50 USDT' && lb.eur === '(≈ +10,74 €)' && lb.vis, JSON.stringify(lb));
+        // 3.31.0 (G03): „Heute“ in Euro aus dem eingefrorenen Wert des Trades (Kurs 1,164 beim Abschluss) – genau, daher ohne „≈“
+        check('Computer: Live-Leiste „Heute +12,50 USDT (+10,74 €)“', lb.usdt === '+12,50 USDT' && lb.eur === '(+10,74 €)' && lb.vis, JSON.stringify(lb));
         await d.click('#pos-add-toggle'); await d.waitForTimeout(500); const f1 = await st(d);
         await d.click('#alarm-toggle'); await d.waitForTimeout(700); const f2 = await st(d);
         check('Computer: Formulare setzen den Cursor wie bisher gleich ins Feld (Größe bzw. Alarm-Kurs)', f1.focus === 'pos-qty' && f2.focus === 'al-price', JSON.stringify({ position: f1.focus, alarm: f2.focus }));
