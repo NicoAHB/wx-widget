@@ -2453,7 +2453,7 @@ function relation(inc, loc) {
 const QUAR_KEY = 'scalpdesk.quarantine.v1', CONF_KEY = 'scalpdesk.conflicts.v1', NOTE_MAX_LOAD = 10000, REASONS_MAX_LOAD = 200, REASON_LEN_LOAD = 200;
 // Sicherung: Schema 8 (3.29.0); Grenzen beim Einspielen (gepackt, entpackt, Datei)
 const BK_SCHEMA = 8, BK_MAX_JSON = 30e6, BK_MAX_PACKED = 8e6, BK_MAX_FILE = 12e6;
-const T_MIN = Date.UTC(2017, 0, 1), T_MAX = Date.UTC(2100, 0, 1);
+const T_MIN = Date.UTC(2009, 0, 1), T_MAX = Date.UTC(2100, 0, 1); // plausibel: ab dem Start von Bitcoin, vor 2100 (gilt auch für selbst eingegebene Daten)
 const isNum = v => typeof v === 'number' && Number.isFinite(v), absent = v => v === undefined || v === null, okTime = t => isNum(t) && t >= T_MIN && t < T_MAX;
 const POS_CHECKS = [
   [p => typeof p.id === 'string' && p.id.length >= 1 && p.id.length <= 80, 'Kennung fehlt oder ist ungültig'],
@@ -3285,7 +3285,7 @@ function addMovement(e) {
   const amount = parseNum($('mv-amount').value), dateStr = $('mv-date').value, type = $('mv-type').value;
   if (!(amount > 0)) { showNotice('mv-error', 'Betrag größer als null eingeben.'); return; }
   const [y, mo, d] = (dateStr || localDate()).split('-').map(Number), date = new Date(y, mo - 1, d, 12).getTime();
-  if (!Number.isFinite(date)) { showNotice('mv-error', 'Datum prüfen.'); return; }
+  if (!okTime(date)) { showNotice('mv-error', 'Datum prüfen – möglich ist 2009 bis 2099.'); return; } // 3.29.0: sonst läge die Buchung nach dem Neuladen in der Prüfliste
   const m = { id: newId(), type, amount, currency: state.mvCur, fx: fxNow(), date, note: $('mv-note').value.trim().slice(0, 300), createdAt: Date.now() };
   state.movements.push(m); persist(); showNotice('mv-error', null);
   $('mv-amount').value = ''; $('mv-note').value = '';
@@ -10048,7 +10048,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
               <label>Art<select id="mv-type"><option value="payout">Auszahlung an mich</option><option value="tax">Steuer-Rücklage (auf anderes Konto)</option><option value="keep">Gewinn im Tradingguthaben gelassen</option><option value="deposit">Einzahlung aufs Tradingkonto</option></select></label>
               <label>Betrag<span class="input-wrap"><input id="mv-amount" type="text" inputmode="decimal" autocomplete="off" placeholder="z. B. 150"></span></label>
               <div class="side-toggle" role="group" aria-label="Währung"><button type="button" data-mv-cur="EUR" class="active" aria-pressed="true">EUR</button><button type="button" data-mv-cur="USDT" aria-pressed="false">USDT</button></div>
-              <label>Datum<input id="mv-date" type="date"></label>
+              <label>Datum<input id="mv-date" type="date" min="2009-01-01" max="2099-12-31"></label>
               <label class="wide">Notiz (optional)<span class="input-wrap"><input id="mv-note" maxlength="300" autocomplete="off" placeholder="z. B. auf Tagesgeldkonto überwiesen"></span></label>
               <button type="submit" class="button primary-lite">Eintragen</button>
               <div id="mv-error" class="notice error" role="alert" hidden></div>
