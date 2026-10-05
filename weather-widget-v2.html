@@ -1630,6 +1630,38 @@ html{scroll-padding-top:calc(var(--lb-h,56px) + 16px)}
    dürfen nicht gekappt werden, sonst läuft das aufgeklappte Journal über Kurs-Alarme und Rechner */
 @media (min-width:1400px){html[data-layout=desktop] .col-input,html[data-layout=desktop] .col-control{top:calc(env(safe-area-inset-top,0px) + var(--lb-h,56px) + 12px);max-height:calc(100dvh - var(--lb-h,56px) - 28px)}}
 @media (max-width:1399px){html[data-layout=desktop] .col-side{top:calc(env(safe-area-inset-top,0px) + var(--lb-h,56px) + 12px);max-height:calc(100dvh - var(--lb-h,56px) - 28px)}}
+/* 3.29.0 (G01): Prüfliste, Konflikte, Textcode, QR-Teile */
+.integrity{border:1px solid var(--warn-border);background:var(--warn-bg);border-radius:9px;padding:12px;display:grid;gap:8px}
+.integrity[hidden]{display:none}
+.integrity h3{color:var(--warn-text)}
+.integrity>p{color:var(--warn-text)!important}
+.quar-list{margin:0;padding:0;list-style:none;display:grid;gap:8px}
+.quar-item{display:grid;gap:3px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);font-size:.8125rem;overflow-wrap:anywhere;color:var(--text)}
+.quar-item .quar-why{color:var(--text-2)}.quar-item small{color:var(--muted)}
+.quar-act{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}.quar-act .button{min-height:44px;font-size:.8125rem}
+.integrity-banner{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin:8px 0}.integrity-banner[hidden]{display:none}
+.integrity-banner .ib-act{display:flex;gap:8px;flex-wrap:wrap}.integrity-banner .button{min-height:44px;font-size:.8125rem}
+.data-row>.data-lead{color:var(--text-2)}
+.code-box{width:100%;min-height:120px;font:12px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);word-break:break-all;resize:vertical}
+.code-out{display:grid;gap:10px}
+.code-foot{padding:0 18px 16px;display:grid;gap:8px}.code-foot small{font-size:.8125rem;color:var(--text-2)}
+.conf-count{font-size:.8125rem;color:var(--muted)!important}
+.conf-table-wrap{overflow:auto;max-height:46dvh;border:1px solid var(--border);border-radius:8px}
+.conf-table{width:100%;border-collapse:collapse;font-size:.8125rem}
+.conf-table th,.conf-table td{border-bottom:1px solid var(--border);padding:7px 9px;text-align:left;vertical-align:top;overflow-wrap:anywhere}
+.conf-table thead th{background:var(--surface-2);position:sticky;top:0}.conf-table thead th small{display:block;font-weight:400;color:var(--muted)}
+.conf-table tbody th{font-weight:600;color:var(--label);width:28%}
+.conf-note{font-size:.8125rem!important}
+.conf-act .button{flex:1 1 180px}
+#conf-title:focus{outline:none}
+.qr-calc{font-size:.8125rem;color:var(--text-2)}
+.qr-stage{overflow:auto}
+.qr-stage canvas{max-width:none}
+.qr-ctl{align-items:center}.qr-speed{display:flex;gap:6px;align-items:center;font-size:.8125rem;color:var(--label)}.qr-speed select{min-height:46px}
+.qr-scan-parts i{width:24px;height:20px;font:600 10px/20px system-ui,sans-serif;text-align:center;color:var(--muted)}.qr-scan-parts i.ok{color:#04130c}
+.qr-scan-warn{font-size:.8125rem;color:var(--amber)!important;min-height:1.2em;margin:0}
+.qr-tight{font-size:.8125rem;color:var(--amber)!important}
+.sync-preview .sp-all summary{cursor:pointer;color:var(--accent,var(--mint));margin:2px 0 2px 16px;min-height:32px;display:flex;align-items:center}
 </style>
   <script type="module">
 // Pure, unrounded calculations. Prices are USDT per unit; FX is USDT per EUR.
@@ -1789,20 +1821,48 @@ function parseNum(v) {
   return /^[+-]?(\d+\.?\d*|\.\d+)$/.test(s) ? Number(s) : NaN;
 }
 function normalizePosition(p) {
-  if (!p || typeof p !== 'object') return null;
-  const q = { ...p };
-  if (!(q.qty > 0) && q.margin > 0 && q.leverage > 0 && q.entry > 0) q.qty = q.margin * q.leverage / q.entry; // Einträge älterer Versionen
+  if (!p || typeof p !== 'object' || Array.isArray(p)) return null;
+  const q = { ...p }, bad = { ...(isObj(p.invalid) ? p.invalid : {}) };
+  // 3.29.0: Nur fehlende Felder älterer Versionen werden ergänzt; ein vorhandener, aber ungültiger Wert wird nicht still ersetzt
+  // (Pflichtangaben → Prüfliste, Zusatzangaben → ohne diesen Wert, Original in „invalid“).
+  if (absent(q.qty) && q.margin > 0 && q.leverage > 0 && q.entry > 0) q.qty = q.margin * q.leverage / q.entry; // Einträge älterer Versionen
   if (q.qty > 0 && q.entry > 0 && q.leverage > 0) q.margin = q.qty * q.entry / q.leverage;
-  q.mode = q.mode === 'cross' ? 'cross' : 'isolated';
-  q.liqExchange = q.liqExchange > 0 ? Number(q.liqExchange) : null;
-  q.preRealized = Number.isFinite(q.preRealized) ? q.preRealized : 0;
-  q.sl = q.sl > 0 ? Number(q.sl) : null; q.tp = q.tp > 0 ? Number(q.tp) : null;
+  if (absent(q.mode) || q.mode === '') q.mode = 'isolated'; // ältere Einträge ohne Modus
+  if (absent(q.preRealized)) q.preRealized = 0;
+  for (const k of ['sl', 'tp', 'liqExchange']) softNum(q, k, bad);
+  if ('fx' in q || 'exit' in q || 'closedAt' in q) softNum(q, 'fx', bad); // Trades: fehlender EUR-Kurs = unbekannt (null), einheitlich auf allen Geräten
+  softText(q, 'note', NOTE_MAX_LOAD, 1000, bad);
   q.ack = { sl: !!q.ack?.sl, tp: !!q.ack?.tp };
-  // 3.28.0: Gründe. Ältere Einträge mit „setup“ werden zu einem Grund. Weicht „setup“ vom ersten Grund ab, hat eine ältere
-  // App-Version (kennt nur ein Setup) es geändert oder entfernt – diese Änderung gilt, die übrigen Gründe bleiben.
-  const rs = Array.isArray(q.reasons) ? cleanReasons(q.reasons) : null, su = cleanSetup(q.setup) || null;
-  q.reasons = !rs ? (su ? [su] : []) : (rs[0] || null) === su ? rs : cleanReasons(su ? [su, ...rs.slice(1)] : rs.slice(1)); q.setup = q.reasons[0] || null;
-  return q;
+  // Gründe (3.28.0): Einträge mit einem „setup“ werden zu einer Auswahl mit diesem einen Grund. Beim Laden kürzt die App nichts –
+  // die Grenzen 20 Gründe und 40 Zeichen gelten nur für neue Eingaben. „setupSeen“ (3.29.0) ist das Setup, das diese App zuletzt
+  // geschrieben hat: Weicht „setup“ davon ab, hat nachweisbar eine ältere App-Version (kennt nur ein Setup) es geändert – das gilt.
+  // Ohne diesen Nachweis bleiben beide Fassungen erhalten und du entscheidest (Konflikt).
+  const su = typeof q.setup === 'string' ? q.setup.replace(/\s+/g, ' ').trim() || null : null;
+  let rs = null;
+  if (Array.isArray(q.reasons)) rs = loadReasons(q.reasons, bad); else if (!absent(q.reasons)) bad.reasons = q.reasons;
+  if (!rs) q.reasons = su ? [su] : [];
+  else {
+    const first = rs[0] ?? null, seen = 'setupSeen' in q ? (typeof q.setupSeen === 'string' ? q.setupSeen : null) : undefined;
+    const applied = su ? [su, ...rs.slice(1).filter(x => x !== su)] : rs.slice(1);
+    if (first === su) q.reasons = rs;
+    else if (seen !== undefined && su !== seen) q.reasons = applied;
+    else { q.reasons = rs; Object.defineProperty(q, ALT, { value: { ...q, reasons: applied, setup: applied[0] ?? null, setupSeen: applied[0] ?? null }, enumerable: false }); }
+  }
+  q.setup = q.reasons[0] ?? null; q.setupSeen = q.setup;
+  return withInvalid(q, bad);
+}
+// Gründe beim Laden: Leerraum vereinheitlichen, doppelte zusammenfassen – nichts kürzen. Nur völlig unplausible Mengen (über 200 Gründe
+// oder 200 Zeichen) werden eingeschränkt geladen; die ursprüngliche Liste bleibt in „invalid“ erhalten.
+function loadReasons(list, bad) {
+  const out = []; let cut = false;
+  for (const r of list) {
+    if (typeof r !== 'string') { cut = true; continue; }
+    const s = r.replace(/\s+/g, ' ').trim(); if (!s || out.includes(s)) continue;
+    if (s.length > REASON_LEN_LOAD || out.length >= REASONS_MAX_LOAD) { cut = true; continue; }
+    out.push(s);
+  }
+  if (cut) bad.reasons = list;
+  return out;
 }
 function positionMetrics(pos, price, mmr) {
   const dir = pos.side === 'long' ? 1 : -1, qty = pos.qty, notional = qty * pos.entry, margin = notional / pos.leverage;
@@ -1873,17 +1933,13 @@ const REASON_GROUPS = [
   { key: 'markt', label: 'Markt & Orderflow', list: ['Liquidations-Heatmap', 'Whale-Trades', 'Orderbuch', 'Open Interest', 'Funding'] },
   { key: 'umfeld', label: 'Umfeld', list: ['Volatilität', 'News', 'Wirtschaftstermine'] }];
 const REASON_OF = new Map(REASON_GROUPS.flatMap(g => (g.list || []).map(r => [r, g]))), MAX_REASONS = 20;
-function cleanReasons(list) { const out = []; for (const r of Array.isArray(list) ? list : []) { const s = cleanSetup(r); if (s && !out.includes(s) && out.length < MAX_REASONS) out.push(s); } return out; }
+// Neue Eingaben: höchstens 20 Gründe zu je 40 Zeichen. keep = schon vorhandene Gründe eines Eintrags – sie bleiben unverändert
+// erhalten, auch wenn sie diese Grenzen überschreiten (z. B. aus einer Sicherung); es kommen dann nur keine neuen mehr dazu.
+function cleanReasons(list, keep = null) { const out = []; for (const r of Array.isArray(list) ? list : []) { const kept = !!keep && keep.has(r), s = kept ? r : cleanSetup(r); if (s && !out.includes(s) && (kept || out.length < MAX_REASONS)) out.push(s); } return out; }
 function reasonsOf(x) { return Array.isArray(x?.reasons) ? x.reasons : x?.setup ? [x.setup] : []; }
 // Kurs-Alarme
 function alarmDirection(target, current) { return Number.isFinite(current) && current > 0 && target !== current ? (target > current ? 'above' : 'below') : null; }
 function alarmHit(a, price) { return Number.isFinite(price) && price > 0 && (a.dir === 'above' ? price >= a.price : price <= a.price); }
-function validAlarm(a) {
-  return !!a && typeof a.id === 'string' && SYMBOL_RE.test(a.symbol) && (a.dir === 'above' || a.dir === 'below') && a.price > 0 && Number.isFinite(a.price)
-    && (a.source === 'spot' || a.source === 'futures') && Number.isFinite(a.createdAt) && (a.triggeredAt === null || Number.isFinite(a.triggeredAt))
-    && (a.triggerPrice === null || a.triggerPrice > 0) && typeof a.note === 'string' && a.note.length <= 200;
-}
-const loadAlarm = a => { if (!a || typeof a !== 'object') return null; const q = { note: '', triggeredAt: null, triggerPrice: null, source: 'spot', ...a }; return validAlarm(q) ? q : null; };
 // Positionsgröße aus Risiko: Verlust bis Stop (inkl. Gebühren beider Seiten) = Risikobetrag
 function riskSize({ balance, riskPct, entry, stop, feePct = 0, leverage = 1 }) {
   if (!(balance > 0)) return { error: 'Gesamtguthaben im Rechner eintragen.' };
@@ -1934,17 +1990,6 @@ function historySummary(trades, fxNow) {
     eurWin: sum(wins, eurOf), eurLoss: sum(losses, eurOf), eurNet: sum(trades, eurOf), eurApprox: trades.some(t => !(t.fx > 0)) };
 }
 const SYMBOL_RE = /^[A-Z0-9]{2,20}USDT$/;
-function validPosition(p) {
-  return !!p && typeof p.id === 'string' && SYMBOL_RE.test(p.symbol) && (p.side === 'long' || p.side === 'short') && p.entry > 0 && Number.isFinite(p.entry)
-    && p.leverage >= 1 && p.leverage <= 125 && p.qty > 0 && Number.isFinite(p.qty) && p.margin > 0 && Number.isFinite(p.openedAt)
-    && (p.source === 'spot' || p.source === 'futures') && (p.mode === 'cross' || p.mode === 'isolated') && (p.liqExchange === null || p.liqExchange > 0) && Number.isFinite(p.preRealized)
-    && (p.note === undefined || (typeof p.note === 'string' && p.note.length <= 1000)) && (p.sl === null || p.sl > 0) && (p.tp === null || p.tp > 0)
-    && (p.setup === undefined || p.setup === null || (typeof p.setup === 'string' && p.setup.length <= 40));
-}
-function validTrade(t) { return validPosition(t) && t.exit > 0 && Number.isFinite(t.exit) && t.fees >= 0 && Number.isFinite(t.pnl) && Number.isFinite(t.closedAt) && (t.fx === null || t.fx > 0); }
-const loadPosition = p => { const q = normalizePosition(p); return q && validPosition(q) ? q : null; };
-const validNote = n => n === undefined || (typeof n === 'string' && n.length <= 1000);
-const loadTrade = t => { const q = normalizePosition(t); return q && validTrade(q) ? q : null; };
 // Backup-Verschlüsselung: PBKDF2-SHA256 (600.000 Runden) → AES-256-GCM, alles mit der Web Crypto API des Browsers.
 const BACKUP_ITER = 600000;
 const toB64 = u8 => { let s = ''; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s); };
@@ -1967,11 +2012,6 @@ async function decryptBackup(file, password) {
 }
 // Geldbewegungen: Auszahlung, Steuer-Rücklage, im Guthaben gelassener Gewinn, Einzahlung.
 const MV_TYPES = { payout: 'Auszahlung an mich', tax: 'Steuer-Rücklage', keep: 'Im Tradingguthaben gelassen', deposit: 'Einzahlung aufs Tradingkonto' };
-function validMovement(m) {
-  return !!m && typeof m.id === 'string' && m.type in MV_TYPES && m.amount > 0 && Number.isFinite(m.amount) && (m.currency === 'EUR' || m.currency === 'USDT')
-    && (m.fx === null || m.fx > 0) && Number.isFinite(m.date) && typeof m.note === 'string' && m.note.length <= 300;
-}
-const loadMovement = m => { if (!m || typeof m !== 'object') return null; const q = { note: '', fx: null, ...m }; return validMovement(q) ? q : null; };
 function mvUsdt(m, fxNow) { if (m.currency === 'USDT') return m.amount; const f = m.fx > 0 ? m.fx : fxNow > 0 ? fxNow : null; return f ? m.amount * f : null; }
 function mvEur(m, fxNow) { if (m.currency === 'EUR') return m.amount; const f = m.fx > 0 ? m.fx : fxNow > 0 ? fxNow : null; return f ? m.amount / f : null; }
 const yearOf = ms => new Date(ms).getFullYear();
@@ -2042,13 +2082,17 @@ function position({ balance, stake, leverage, move, side, mmr, price, fx }) {
     targetPrice: usablePrice ? price * (1 + move / 100) : null, crossesLiquidation: (side === 'long' ? -move : move) >= liqDistance };
 }
 
-// ---------- QR-Code (ISO/IEC 18004, Modell 2, Fehlerkorrektur L) ----------
-// Alphanumerik-Modus, wenn alle Zeichen dazu passen, sonst Byte-Modus (UTF-8). Liefert die Modulmatrix.
+// ---------- QR-Code (ISO/IEC 18004, Modell 2, Fehlerkorrektur L oder M) ----------
+// Alphanumerik-Modus, wenn alle Zeichen dazu passen, sonst Byte-Modus (UTF-8). Liefert die Modulmatrix. 3.29.0: Sicherungen mit
+// Fehlerkorrektur M (rund 15 % der Fläche dürfen unlesbar sein) und höchstens Version 20.
 const QR_ECC_L = [-1, 7, 10, 15, 20, 26, 18, 20, 24, 30, 18, 20, 24, 26, 30, 22, 24, 28, 30, 28, 28, 28, 28, 30, 30, 26, 28, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30];
 const QR_BLOCKS_L = [-1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 4, 4, 4, 4, 4, 6, 6, 6, 6, 7, 8, 8, 9, 9, 10, 12, 12, 12, 13, 14, 15, 16, 17, 18, 19, 19, 20, 21, 22, 24, 25];
+const QR_ECC_M = [-1, 10, 16, 26, 18, 24, 16, 18, 22, 22, 26, 30, 22, 22, 24, 24, 28, 28, 26, 26, 26, 26, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28];
+const QR_BLOCKS_M = [-1, 1, 1, 1, 2, 2, 4, 4, 4, 5, 5, 5, 8, 9, 9, 10, 10, 11, 13, 14, 16, 17, 17, 18, 20, 21, 23, 25, 26, 28, 29, 31, 33, 35, 37, 38, 40, 43, 45, 47, 49];
+const QR_EC = { L: [QR_ECC_L, QR_BLOCKS_L, 1], M: [QR_ECC_M, QR_BLOCKS_M, 0] };
 const QR_ALNUM = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:';
 function qrRawModules(v) { let r = (16 * v + 128) * v + 64; if (v >= 2) { const n = Math.floor(v / 7) + 2; r -= (25 * n - 10) * n - 55; if (v >= 7) r -= 36; } return r; }
-const qrDataCodewords = v => Math.floor(qrRawModules(v) / 8) - QR_ECC_L[v] * QR_BLOCKS_L[v];
+const qrDataCodewords = (v, ecl = 'L') => Math.floor(qrRawModules(v) / 8) - QR_EC[ecl][0][v] * QR_EC[ecl][1][v];
 function qrAlign(v) { if (v === 1) return []; const n = Math.floor(v / 7) + 2, step = Math.floor((v * 8 + n * 3 + 5) / (n * 4 - 4)) * 2, r = [6]; for (let p = v * 4 + 10; r.length < n; p -= step) r.splice(1, 0, p); return r; }
 function rsMul(x, y) { let z = 0; for (let i = 7; i >= 0; i--) { z = (z << 1) ^ ((z >>> 7) * 0x11D); z ^= ((y >>> i) & 1) * x; } return z; }
 function rsDivisor(deg) { const r = Array(deg).fill(0); r[deg - 1] = 1; let root = 1; for (let i = 0; i < deg; i++) { for (let j = 0; j < deg; j++) { r[j] = rsMul(r[j], root); if (j + 1 < deg) r[j] ^= r[j + 1]; } root = rsMul(root, 2); } return r; }
@@ -2067,22 +2111,22 @@ function qrPenalty(m, size) {
   for (let y = 0; y + 1 < size; y++) for (let x = 0; x + 1 < size; x++) { const c = m[y * size + x]; if (c === m[y * size + x + 1] && c === m[(y + 1) * size + x] && c === m[(y + 1) * size + x + 1]) s += 3; }
   const total = size * size; return s + (Math.ceil(Math.abs(dark * 20 - total * 10) / total) - 1) * 10;
 }
-function qrEncode(text) {
+function qrEncode(text, { ecl = 'L', maxVer = 40 } = {}) {
   const alnum = [...text].every(ch => QR_ALNUM.includes(ch)), bytes = alnum ? null : new TextEncoder().encode(text), n = alnum ? text.length : bytes.length;
   const ccBits = v => alnum ? (v < 10 ? 9 : v < 27 ? 11 : 13) : (v < 10 ? 8 : 16);
   const need = v => 4 + ccBits(v) + (alnum ? 11 * Math.floor(n / 2) + 6 * (n % 2) : 8 * n);
-  let ver = 1; while (ver <= 40 && need(ver) > qrDataCodewords(ver) * 8) ver++;
-  if (ver > 40) throw new Error('Zu viele Daten für einen QR-Code.');
+  let ver = 1; while (ver <= maxVer && need(ver) > qrDataCodewords(ver, ecl) * 8) ver++;
+  if (ver > maxVer) throw new Error('Zu viele Daten für einen QR-Code.');
   const bits = [], push = (val, len) => { for (let i = len - 1; i >= 0; i--) bits.push((val >>> i) & 1); };
   push(alnum ? 2 : 4, 4); push(n, ccBits(ver));
   if (alnum) { for (let i = 0; i + 1 < n; i += 2) push(QR_ALNUM.indexOf(text[i]) * 45 + QR_ALNUM.indexOf(text[i + 1]), 11); if (n % 2) push(QR_ALNUM.indexOf(text[n - 1]), 6); }
   else for (const b of bytes) push(b, 8);
-  const cap = qrDataCodewords(ver) * 8;
+  const cap = qrDataCodewords(ver, ecl) * 8;
   push(0, Math.min(4, cap - bits.length)); push(0, (8 - bits.length % 8) % 8);
   for (let pad = 0xEC; bits.length < cap; pad ^= 0xEC ^ 0x11) push(pad, 8);
   const data = []; for (let i = 0; i < bits.length; i += 8) { let b = 0; for (let j = 0; j < 8; j++) b = (b << 1) | bits[i + j]; data.push(b); }
   // Reed-Solomon je Block, danach blockweise verschränken
-  const nb = QR_BLOCKS_L[ver], ecLen = QR_ECC_L[ver], raw = Math.floor(qrRawModules(ver) / 8), nShort = nb - raw % nb, shortLen = Math.floor(raw / nb);
+  const nb = QR_EC[ecl][1][ver], ecLen = QR_EC[ecl][0][ver], raw = Math.floor(qrRawModules(ver) / 8), nShort = nb - raw % nb, shortLen = Math.floor(raw / nb);
   const div = rsDivisor(ecLen), blocks = [];
   for (let i = 0, k = 0; i < nb; i++) { const dat = data.slice(k, k + shortLen - ecLen + (i < nShort ? 0 : 1)); k += dat.length; const ecc = rsRemainder(dat, div); if (i < nShort) dat.push(0); blocks.push(dat.concat(ecc)); }
   const cw = []; for (let i = 0; i < blocks[0].length; i++) blocks.forEach((b, j) => { if (i !== shortLen - ecLen || j >= nShort) cw.push(b[i]); });
@@ -2094,7 +2138,7 @@ function qrEncode(text) {
   const al = qrAlign(ver), na = al.length;
   for (let i = 0; i < na; i++) for (let j = 0; j < na; j++) { if ((i === 0 && j === 0) || (i === 0 && j === na - 1) || (i === na - 1 && j === 0)) continue; for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) set(al[i] + dx, al[j] + dy, Math.max(Math.abs(dx), Math.abs(dy)) !== 1); }
   const format = mask => {
-    const d = (1 << 3) | mask; let rem = d; for (let i = 0; i < 10; i++) rem = (rem << 1) ^ ((rem >>> 9) * 0x537);
+    const d = (QR_EC[ecl][2] << 3) | mask; let rem = d; for (let i = 0; i < 10; i++) rem = (rem << 1) ^ ((rem >>> 9) * 0x537);
     const b = ((d << 10) | rem) ^ 0x5412, g = i => (b >>> i) & 1;
     for (let i = 0; i <= 5; i++) set(8, i, g(i)); set(8, 7, g(6)); set(8, 8, g(7)); set(7, 8, g(8)); for (let i = 9; i < 15; i++) set(14 - i, 8, g(i));
     for (let i = 0; i < 8; i++) set(size - 1 - i, 8, g(i)); for (let i = 8; i < 15; i++) set(8, size - 15 + i, g(i)); set(8, size - 8, 1);
@@ -2114,7 +2158,7 @@ function qrEncode(text) {
   let best = 0, bestScore = Infinity;
   for (let k = 0; k < 8; k++) { flip(k); format(k); const sc = qrPenalty(mod, size); if (sc < bestScore) { best = k; bestScore = sc; } flip(k); }
   flip(best); format(best);
-  return { size, version: ver, modules: mod };
+  return { size, version: ver, ecl, modules: mod };
 }
 // Base45 (RFC 9285): Bytes → Zeichen des QR-Alphanumerik-Satzes, 3 Zeichen je 2 Bytes
 function base45Encode(u8) {
@@ -2133,18 +2177,9 @@ function base45Decode(s) {
   }
   return new Uint8Array(out);
 }
-// Abgleich-Paket: JSON → (deflate-raw) → AES-256-GCM. Kopf "SD", Version, Flags, PBKDF2-Runden als Zusatzdaten authentisiert.
+// Abgleich-Paket bis 3.28 (JSON → deflate-raw → AES-256-GCM, Kopf "SD"): nur noch zum Einlesen von QR-Codes älterer App-Versionen.
 const concatBytes = (...parts) => { const out = new Uint8Array(parts.reduce((s, p) => s + p.length, 0)); let o = 0; for (const p of parts) { out.set(p, o); o += p.length; } return out; };
 async function streamBytes(bytes, transform) { return new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(transform)).arrayBuffer()); }
-async function packSync(payload, password, iterations = BACKUP_ITER) {
-  const plain = new TextEncoder().encode(JSON.stringify(payload));
-  let body = plain, flags = 0;
-  if (globalThis.CompressionStream) { try { const z = await streamBytes(plain, new CompressionStream('deflate-raw')); if (z.length < plain.length) { body = z; flags = 1; } } catch {} }
-  const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
-  const head = new Uint8Array([0x53, 0x44, 1, flags, (iterations >>> 24) & 255, (iterations >>> 16) & 255, (iterations >>> 8) & 255, iterations & 255]);
-  const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv, additionalData: head }, await backupKey(password, salt, iterations), body));
-  return concatBytes(head, salt, iv, ct);
-}
 async function unpackSync(bytes, password) {
   if (bytes.length < 52 || bytes[0] !== 0x53 || bytes[1] !== 0x44 || bytes[2] !== 1) throw new Error('Kein Abgleich-Code dieses Dashboards.');
   const head = bytes.slice(0, 8), iterations = ((bytes[4] << 24) >>> 0) + (bytes[5] << 16) + (bytes[6] << 8) + bytes[7];
@@ -2158,11 +2193,7 @@ async function unpackSync(bytes, password) {
   }
   return JSON.parse(new TextDecoder().decode(plain));
 }
-// Teilt den Base45-Text in QR-Teile: "SD1:Teil:Anzahl:ID:Länge:Daten". Die Länge stellt am Ende abgeschnittene Leerzeichen wieder her.
-function syncParts(text, chunk = 1000) {
-  const n = Math.max(1, Math.ceil(text.length / chunk)), id = Array.from(crypto.getRandomValues(new Uint8Array(5)), b => QR_ALNUM[b % 36]).join('');
-  return Array.from({ length: n }, (_, i) => { const part = text.slice(i * chunk, (i + 1) * chunk); return `SD1:${i + 1}:${n}:${id}:${part.length}:${part}`; });
-}
+// QR-Teile bis 3.28: "SD1:Teil:Anzahl:ID:Länge:Daten" (nur noch Einlesen). Die Länge stellt am Ende abgeschnittene Leerzeichen wieder her.
 function parseSyncPart(raw) {
   const m = /^SD1:(\d{1,3}):(\d{1,3}):([0-9A-Z]{5}):(\d{1,5}):([\s\S]*)$/.exec(String(raw || ''));
   if (!m) return null;
@@ -2256,7 +2287,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Alle Werte liegen zusätzlich im Arbeitsspeicher und sind dadurch synchron lesbar. Schreiben geht sofort in den
 // localStorage und gebündelt in die IndexedDB; beim Start gewinnt die zuletzt vollständig geschriebene Kopie.
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
-const APP_VERSION = '3.28.0', docEl = document.documentElement;
+const APP_VERSION = '3.29.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -2283,8 +2314,10 @@ const store = (() => {
     return new Promise(resolve => {
       let tx; try { tx = db.transaction('kv', 'readwrite'); } catch (e) { info.error = e.message; keys.forEach(k => pending.add(k)); return resolve(false); }
       const st = tx.objectStore('kv');
-      for (const k of keys) { const v = cache.get(k); try { if (v === undefined) st.delete(k); else st.put(v, k); } catch (e) { info.error = e.message; } }
-      tx.oncomplete = () => { info.error = null; resolve(true); };
+      // 3.29.0: Scheitert ein Eintrag, meldet flush() false und schreibt ihn beim nächsten Mal erneut – ein Import kann dann zum bisherigen Stand zurückkehren
+      let bad = null;
+      for (const k of keys) { const v = cache.get(k); try { if (v === undefined) st.delete(k); else st.put(v, k); } catch (e) { info.error = e.message; (bad = bad || []).push(k); } }
+      tx.oncomplete = () => { if (bad) { bad.forEach(k => pending.add(k)); resolve(false); } else { info.error = null; resolve(true); } };
       tx.onerror = tx.onabort = () => { info.error = tx.error?.message || 'Schreibfehler'; keys.forEach(k => pending.add(k)); resolve(false); };
     });
   }
@@ -2357,7 +2390,142 @@ function loadRiskSettings() { const d = { riskPct: 1, feePct: 0.06 }, v = store.
 function loadDayLimit() { const v = Number(store.get(DAYLIMIT_KEY)); return v > 0 ? v : null; }
 function loadSetups() { const v = store.get(SETUP_KEY); return Array.isArray(v) ? [...new Set(v.map(cleanSetup).filter(Boolean))] : [...DEFAULT_SETUPS]; }
 function loadTaxRate() { const v = Number(store.get(TAX_KEY)); return v > 0 && v < 100 ? v : null; }
-function loadRecords(key, load) { const v = store.get(key); return Array.isArray(v) ? v.map(load).filter(Boolean) : []; }
+// ---------- 3.29.0 (G01): Datenintegrität – Fingerabdruck, Abstammung, Prüfregeln, Prüfliste ----------
+// Fingerabdruck (cyrb53, 53 Bit) über einen kanonischen Text mit sortierten Schlüsseln: gleicher Inhalt ergibt auf jedem Gerät
+// denselben Wert. CRC-32 als Prüfsumme der Sicherungen – sie erkennt Übertragungsfehler, schützt aber nicht vor Mitlesen.
+function canon(v) {
+  if (Array.isArray(v)) return '[' + v.map(canon).join(',') + ']';
+  if (v && typeof v === 'object') return '{' + Object.keys(v).filter(k => v[k] !== undefined).sort().map(k => JSON.stringify(k) + ':' + canon(v[k])).join(',') + '}';
+  return v === undefined ? 'null' : JSON.stringify(v);
+}
+function fp(s) {
+  let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+  for (let i = 0; i < s.length; i++) { const c = s.charCodeAt(i); h1 = Math.imul(h1 ^ c, 2654435761); h2 = Math.imul(h2 ^ c, 1597334677); }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
+}
+const CRC_T = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(u8) { let c = 0xFFFFFFFF; for (let i = 0; i < u8.length; i++) c = CRC_T[(c ^ u8[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+const hex8 = n => (n >>> 0).toString(16).toUpperCase().padStart(8, '0');
+// Abstammung je Eintrag: h = Fingerabdruck des Inhalts (ohne Verwaltungsfelder), hist = Fingerabdrücke früherer und bewusst
+// abgelehnter Fassungen (höchstens 30), rev = Revisionsnummer (nur zur Anzeige). Der Abgleich entscheidet allein damit: Baut eine
+// Fassung auf der anderen auf, gilt die weiterentwickelte; haben beide Geräte dieselbe Grundlage verschieden geändert, entscheidest
+// du. Gerätezeit, „zuletzt geändert“ und Revisionsnummer entscheiden nie.
+const META_KEYS = new Set(['h', 'hist', 'rev', 'ack', 'updatedAt', 'slTpAt', 'margin', 'setup', 'setupSeen']), HIST_MAX = 30;
+const LIST_TAG = { pos: 'pos', dpos: 'dpos', trade: 'trade', dtrade: 'dtrade', mv: '', alarm: '' }, GROUP_OF = { pos: 'P', dpos: 'P', trade: 'T', dtrade: 'T', mv: 'M', alarm: 'A' };
+function recHash(r, kind) { const o = {}; for (const k of Object.keys(r)) if (!META_KEYS.has(k)) o[k] = r[k]; if (LIST_TAG[kind]) o['@'] = LIST_TAG[kind]; return fp(canon(o)); }
+function histAdd(hist, ...hs) { const add = hs.filter(x => typeof x === 'string' && x), out = (Array.isArray(hist) ? hist : []).filter(x => typeof x === 'string' && !add.includes(x)); return [...out, ...add].slice(-HIST_MAX); }
+const histOf = r => Array.isArray(r?.hist) ? r.hist : [];
+// Neue Fassung (beim Speichern): der bisherige Fingerabdruck wandert in die Vorgeschichte, Revision +1. Baut der Code einen
+// Eintrag neu auf (z. B. beim Bearbeiten), übernimmt er die Abstammung der letzten Fassung derselben Kennung. Hat eine ältere
+// App-Version den Inhalt geändert (h passt nicht mehr), zählt das ebenso als neue Fassung.
+const lineage = new Map();
+function fixHash(r, kind) {
+  const h = recHash(r, kind); if (r.h === h) return false;
+  if (typeof r.h === 'string' && r.h) { r.hist = histAdd(r.hist, r.h); r.rev = (Number(r.rev) || 1) + 1; } else r.rev = Number(r.rev) || 1;
+  r.h = h; return true;
+}
+function stampRec(r, kind) {
+  const key = GROUP_OF[kind] + ':' + r.id, prev = lineage.get(key);
+  if (!r.h && prev) { r.h = prev.h; r.hist = prev.hist; r.rev = prev.rev; }
+  const changed = fixHash(r, kind);
+  lineage.set(key, { h: r.h, hist: histOf(r), rev: r.rev });
+  return changed;
+}
+// Vor jedem Speichern und jeder Sicherung: geänderte Listen neu stempeln (unveränderte Listen werden übersprungen)
+const stampSeen = new Map();
+function stampLists() {
+  for (const [kind, arr] of [['pos', state.positions], ['dpos', state.demoPositions], ['trade', state.trades], ['dtrade', state.demoTrades], ['mv', state.movements], ['alarm', state.alarms]]) {
+    const j = JSON.stringify(arr); if (stampSeen.get(kind) === j) continue;
+    let ch = false; for (const r of arr) ch = stampRec(r, kind) || ch;
+    stampSeen.set(kind, ch ? JSON.stringify(arr) : j);
+  }
+}
+// Abstammung zweier Fassungen derselben Kennung: same | newer (die eingelesene baut auf der hiesigen auf) | older | conflict
+function relation(inc, loc) {
+  if (inc.h === loc.h) return 'same';
+  if (histOf(inc).includes(loc.h)) return 'newer';
+  if (histOf(loc).includes(inc.h)) return 'older';
+  return 'conflict';
+}
+// ---- Prüfregeln: verständlicher Grund statt stillem Verwerfen ----
+const QUAR_KEY = 'scalpdesk.quarantine.v1', CONF_KEY = 'scalpdesk.conflicts.v1', NOTE_MAX_LOAD = 10000, REASONS_MAX_LOAD = 200, REASON_LEN_LOAD = 200;
+// Sicherung: Schema 8 (3.29.0); Grenzen beim Einspielen (gepackt, entpackt, Datei)
+const BK_SCHEMA = 8, BK_MAX_JSON = 30e6, BK_MAX_PACKED = 8e6, BK_MAX_FILE = 12e6;
+const T_MIN = Date.UTC(2009, 0, 1), T_MAX = Date.UTC(2100, 0, 1); // plausibel: ab dem Start von Bitcoin, vor 2100 (gilt auch für selbst eingegebene Daten)
+const isNum = v => typeof v === 'number' && Number.isFinite(v), absent = v => v === undefined || v === null, okTime = t => isNum(t) && t >= T_MIN && t < T_MAX;
+const POS_CHECKS = [
+  [p => typeof p.id === 'string' && p.id.length >= 1 && p.id.length <= 80, 'Kennung fehlt oder ist ungültig'],
+  [p => SYMBOL_RE.test(p.symbol), p => `Kürzel ungültig („${String(p.symbol ?? '–').slice(0, 30)}“)`],
+  [p => p.side === 'long' || p.side === 'short', 'Richtung (Long/Short) fehlt oder ist ungültig'],
+  [p => isNum(p.entry) && p.entry > 0, 'Einstieg fehlt oder ist nicht positiv'],
+  [p => isNum(p.leverage) && p.leverage >= 1 && p.leverage <= 125, 'Hebel fehlt oder liegt nicht zwischen 1 und 125'],
+  [p => isNum(p.qty) && p.qty > 0, 'Größe fehlt oder ist nicht positiv'],
+  [p => okTime(p.openedAt), 'Eröffnungszeit fehlt oder ist unplausibel'],
+  [p => p.source === 'spot' || p.source === 'futures', 'Kursquelle (Spot/Futures) fehlt'],
+  [p => p.mode === 'cross' || p.mode === 'isolated', p => `Margin-Modus ungültig („${String(p.mode).slice(0, 20)}“)`],
+  [p => isNum(p.preRealized), 'Vorher realisierter Betrag ist keine Zahl']];
+const TRADE_CHECKS = [
+  [t => isNum(t.exit) && t.exit > 0, 'Ausstieg fehlt oder ist nicht positiv'],
+  [t => isNum(t.fees) && t.fees >= 0, 'Gebühren fehlen oder sind negativ'],
+  [t => isNum(t.pnl), 'Gewinn/Verlust fehlt oder ist keine Zahl'],
+  [t => okTime(t.closedAt), 'Schließzeit fehlt oder ist unplausibel']];
+const ALARM_CHECKS = [
+  [a => typeof a.id === 'string' && a.id.length >= 1 && a.id.length <= 80, 'Kennung fehlt oder ist ungültig'],
+  [a => SYMBOL_RE.test(a.symbol), a => `Kürzel ungültig („${String(a.symbol ?? '–').slice(0, 30)}“)`],
+  [a => a.dir === 'above' || a.dir === 'below', 'Richtung (über/unter) fehlt'],
+  [a => isNum(a.price) && a.price > 0, 'Alarmkurs fehlt oder ist nicht positiv'],
+  [a => a.source === 'spot' || a.source === 'futures', 'Kursquelle (Spot/Futures) fehlt'],
+  [a => okTime(a.createdAt), 'Erstellzeit fehlt oder ist unplausibel'],
+  [a => a.triggeredAt === null || okTime(a.triggeredAt), 'Auslösezeit ungültig']];
+const MV_CHECKS = [
+  [m => typeof m.id === 'string' && m.id.length >= 1 && m.id.length <= 80, 'Kennung fehlt oder ist ungültig'],
+  [m => m.type in MV_TYPES, m => `Art unbekannt („${String(m.type).slice(0, 20)}“)`],
+  [m => isNum(m.amount) && m.amount > 0, 'Betrag fehlt oder ist nicht positiv'],
+  [m => m.currency === 'EUR' || m.currency === 'USDT', 'Währung fehlt (EUR oder USDT)'],
+  [m => okTime(m.date), 'Datum fehlt oder ist unplausibel']];
+// Text- und Zahlfelder, die einen Eintrag nicht unbrauchbar machen: ungültig → ohne diesen Wert laden, Original in invalid.
+function softNum(q, k, bad) { const v0 = q[k], v = typeof v0 === 'string' && v0.trim() && Number.isFinite(Number(v0)) ? Number(v0) : v0; if (absent(v) || v === 0 || v === '') q[k] = null; else if (isNum(v) && v > 0) q[k] = v; else { bad[k] = v0; q[k] = null; } }
+function softText(q, k, max, keep, bad) { const v = q[k]; if (v === undefined) return; if (typeof v !== 'string') { bad[k] = v; q[k] = ''; } else if (v.length > max) { bad[k] = v; q[k] = v.slice(0, keep); } }
+function withInvalid(q, bad) { if (Object.keys(bad).length) q.invalid = bad; else delete q.invalid; return q; }
+const normAlarm = a => { const q = { note: '', triggeredAt: null, triggerPrice: null, source: 'spot', ...a }, bad = { ...(isObj(a.invalid) ? a.invalid : {}) }; softNum(q, 'triggerPrice', bad); softText(q, 'note', 2000, 200, bad); return withInvalid(q, bad); };
+const normMovement = m => { const q = { note: '', fx: null, ...m }, bad = { ...(isObj(m.invalid) ? m.invalid : {}) }; softNum(q, 'fx', bad); softText(q, 'note', 3000, 300, bad); return withInvalid(q, bad); };
+const isObj = v => !!v && typeof v === 'object' && !Array.isArray(v);
+// Ein Eintrag aus Speicher, Tab-Abgleich oder Sicherung: { rec } oder { reason }; alt = zweite Fassung bei unklarer Herkunft der Gründe
+function checkRecord(kind, raw) {
+  if (!isObj(raw)) return { reason: 'Kein gültiger Eintrag (kein Objekt)' };
+  let q; try { q = kind === 'mv' ? normMovement(raw) : kind === 'alarm' ? normAlarm(raw) : normalizePosition(raw); } catch (e) { return { reason: 'Nicht lesbar: ' + (e?.message || e) }; }
+  const rules = kind === 'mv' ? MV_CHECKS : kind === 'alarm' ? ALARM_CHECKS : kind === 'trade' || kind === 'dtrade' ? [...POS_CHECKS, ...TRADE_CHECKS] : POS_CHECKS;
+  for (const [ok, why] of rules) if (!ok(q)) return { reason: typeof why === 'function' ? why(q) : why };
+  return { rec: q, alt: q[ALT] || null };
+}
+const ALT = Symbol('zweite Fassung der Gründe');
+// Prüfliste: Originaldaten mit Grund, Fundort und Zeitpunkt. Gleiche Daten nur einmal (Fingerabdruck hq).
+function quarList() { const v = store.get(QUAR_KEY); return Array.isArray(v) ? v.filter(isObj) : []; }
+let loadingData = true; // bis der Zustand aufgebaut ist: Prüfliste und Konflikte speichern, aber noch nicht an andere Tabs senden
+function quarAdd(items) {
+  const list = quarList(), seen = new Set(list.map(x => x.hq)); let n = 0;
+  for (const it of items) { const hq = it.hq || fp(it.kind + '|' + canon(it.raw)); if (seen.has(hq)) continue; seen.add(hq); list.push({ hq, kind: it.kind, raw: it.raw, why: String(it.why || 'ungültig').slice(0, 300), at: it.at || Date.now(), from: it.from || 'load', src: String(it.src || '').slice(0, 120) }); n++; }
+  if (n && store.set(QUAR_KEY, list) && !loadingData) broadcastData([QUAR_KEY]);
+  return n;
+}
+// 3.29.0: statt v.map(load).filter(Boolean) – ungültige Einträge landen in der Prüfliste, nichts verschwindet still
+function loadRecords(key, kind, from = 'load') {
+  const v = store.get(key), out = [], bad = [], ids = new Map();
+  if (v === undefined || v === null) return out;
+  if (!Array.isArray(v)) { quarAdd([{ kind: 'list', raw: { key, value: v }, why: 'Gespeicherte Liste ist beschädigt (keine Liste)', from }]); return out; }
+  for (const raw of v) {
+    const c = checkRecord(kind, raw);
+    if (!c.rec) { bad.push({ kind, raw, why: c.reason, from }); continue; }
+    const twin = ids.get(c.rec.id);
+    if (twin) { if (recHash(twin, kind) !== recHash(c.rec, kind)) bad.push({ kind, raw, why: 'Kennung doppelt – zweite, abweichende Fassung', from }); continue; }
+    ids.set(c.rec.id, c.rec); stampRec(c.rec, kind); out.push(c.rec);
+    if (c.alt) confAdd([{ kind, id: c.rec.id, local: c.rec, draft: c.alt, why: 'setup', src: 'Gründe: Herkunft unklar' }]);
+  }
+  if (bad.length) quarAdd(bad);
+  return out;
+}
 const POS_DEFAULTS_KEY = 'scalpdesk.posdefaults.v1';
 function loadPosDefaults() { const d = { side: 'long', mode: 'cross', leverage: 20 }, v = store.get(POS_DEFAULTS_KEY); if (v?.side === 'short' || v?.side === 'long') d.side = v.side; if (v?.mode === 'cross' || v?.mode === 'isolated') d.mode = v.mode; if (v?.leverage >= 1 && v?.leverage <= 125) d.leverage = v.leverage; return d; }
 const OVERLAY_KEY = 'scalpdesk.overlays.v1'; // vor state definiert, da loadOverlays() beim Start läuft
@@ -2407,7 +2575,8 @@ async function spotGet(path, params, signal) {
     catch (second) { throw second?.network ? error : second; }
   }
 }
-const state = {symbol:'BTCUSDT', interval:'1m', side:'long', paused:false, busy:false, seq:0, controller:null, candles:[], marketError:null, marketAt:0, funding:null, fundingError:null, oi:null, oiError:null, history:null, historyError:null, fx:null, fxError:null, fxAt:0, fxMode:'auto', next:Date.now(), count:80, selected:null, source:'spot', sourceFor:null, loadedSymbol:null, mtf:{}, watch:loadWatch(), watchEdit:false, overlays:loadOverlays(), pan:0, anchorTime:null, positions:loadRecords(POS_KEY, loadPosition), trades:loadRecords(HIST_KEY, loadTrade), demoPositions:loadRecords(DEMO_POS_KEY, loadPosition), demoTrades:loadRecords(DEMO_HIST_KEY, loadTrade), demoLimit:0, prices:{}, posUi:{}, histUi:{}, posDefaults:loadPosDefaults(), posForm:{side:'long',mode:'cross',sizeBy:'qty',editingId:null,demo:false,reasons:[]}, movements:loadRecords(MONEY_KEY, loadMovement), mvUi:{}, setups:loadSetups(), setupEdit:false, risk:loadRiskSettings(), dayLimit:loadDayLimit(), alarms:loadRecords(ALARM_KEY, loadAlarm), alDir:'above', alDirManual:false, mvCur:'EUR', year:new Date().getFullYear(), taxRate:loadTaxRate(), restNote:null, openTotal:null, selectedTime:null, fromCache:false};
+const state = {symbol:'BTCUSDT', interval:'1m', side:'long', paused:false, busy:false, seq:0, controller:null, candles:[], marketError:null, marketAt:0, funding:null, fundingError:null, oi:null, oiError:null, history:null, historyError:null, fx:null, fxError:null, fxAt:0, fxMode:'auto', next:Date.now(), count:80, selected:null, source:'spot', sourceFor:null, loadedSymbol:null, mtf:{}, watch:loadWatch(), watchEdit:false, overlays:loadOverlays(), pan:0, anchorTime:null, positions:loadRecords(POS_KEY, 'pos'), trades:loadRecords(HIST_KEY, 'trade'), demoPositions:loadRecords(DEMO_POS_KEY, 'dpos'), demoTrades:loadRecords(DEMO_HIST_KEY, 'dtrade'), demoLimit:0, prices:{}, posUi:{}, histUi:{}, posDefaults:loadPosDefaults(), posForm:{side:'long',mode:'cross',sizeBy:'qty',editingId:null,demo:false,reasons:[]}, movements:loadRecords(MONEY_KEY, 'mv'), mvUi:{}, setups:loadSetups(), setupEdit:false, risk:loadRiskSettings(), dayLimit:loadDayLimit(), alarms:loadRecords(ALARM_KEY, 'alarm'), alDir:'above', alDirManual:false, mvCur:'EUR', year:new Date().getFullYear(), taxRate:loadTaxRate(), restNote:null, openTotal:null, selectedTime:null, fromCache:false};
+loadingData = false; // 3.29.0: ab jetzt Prüfliste und Konflikte auch an andere Tabs
 
 function currentFx() { return state.fxMode === 'manual' ? value('fx') : state.fx; }
 function currentPrice() { return state.candles.at(-1)?.close ?? null; }
@@ -3014,7 +3183,7 @@ function renderOpenPositions() {
   for (const card of list.children) { const pos = state.positions.find(p => p.id === card.dataset.id); if (!pos) continue; const m = updateCard(card, pos); if (m.pnl === null) missing++; else total += m.pnl; }
   $('open-total').textContent = state.positions.length ? `${signed(total)} USDT` : '—'; color('open-total', state.positions.length ? total : 0);
   renderDay(total);
-  put('open-total-eur', state.positions.length ? `${eurPart(total, 2, true)}${missing ? ` · ${missing} ohne Kurs` : ''} · ${state.positions.length} offen` : 'keine offene Position');
+  put('open-total-eur', (state.positions.length ? `${eurPart(total, 2, true)}${missing ? ` · ${missing} ohne Kurs` : ''} · ${state.positions.length} offen` : 'keine offene Position') + quarMark('pos'));
   if (!$('pos-form').hidden) updateEntryNow();
   state.openTotal = { total, missing, n: state.positions.length };
   pnlCheck(); // 3.24.0 Schritt 7: Gewinn-/Verlust-Alarm am Live-Ergebnis
@@ -3048,11 +3217,11 @@ function renderHistory() {
   put('history-count', `(${s.n}${state.year === 'all' ? '' : ` in ${state.year}`})`);
   put('realized-label', state.year === 'all' ? 'Realisiert gesamt' : `Realisiert ${state.year}`);
   put('realized-total', s.n ? `${signed(s.net)} USDT` : '—'); color('realized-total', s.n ? s.net : 0);
-  put('realized-total-eur', s.n ? `${s.eurNet === null ? '(€ ausstehend)' : `(${signed(s.eurNet)} €${s.eurApprox ? ', teils zum aktuellen Kurs' : ''})`} · ${s.n} ${s.n === 1 ? 'Trade' : 'Trades'}` : 'noch keine Trades');
+  put('realized-total-eur', (s.n ? `${s.eurNet === null ? '(€ ausstehend)' : `(${signed(s.eurNet)} €${s.eurApprox ? ', teils zum aktuellen Kurs' : ''})`} · ${s.n} ${s.n === 1 ? 'Trade' : 'Trades'}` : 'noch keine Trades') + quarMark('trade'));
   const box = (label, main, sub, cls) => { const d = el('div'); d.append(el('span', '', label)); d.append(el('strong', cls || '', main)); if (sub) d.append(el('small', '', sub)); return d; };
   const eur = v => v === null ? '€ ausstehend' : `${signed(v)} €`;
   $('history-summary').replaceChildren(
-    box('Trades', String(s.n), s.n ? `${s.wins} Gewinner · ${s.losses} Verlierer · ${number(s.hitRate, 0)} % Treffer` : ''),
+    box('Trades', String(s.n), (s.n ? `${s.wins} Gewinner · ${s.losses} Verlierer · ${number(s.hitRate, 0)} % Treffer` : '') + quarMark('trade')),
     box('Gewinne', s.n ? `${signed(s.sumWin)} USDT` : '—', s.n ? eur(s.eurWin) : '', 'positive'),
     box('Verluste', s.n ? `${signed(s.sumLoss)} USDT` : '—', s.n ? eur(s.eurLoss) : '', 'negative'),
     box('Netto', s.n ? `${signed(s.net)} USDT` : '—', s.n ? eur(s.eurNet) : '', s.net > 0 ? 'positive' : s.net < 0 ? 'negative' : ''));
@@ -3116,7 +3285,7 @@ function addMovement(e) {
   const amount = parseNum($('mv-amount').value), dateStr = $('mv-date').value, type = $('mv-type').value;
   if (!(amount > 0)) { showNotice('mv-error', 'Betrag größer als null eingeben.'); return; }
   const [y, mo, d] = (dateStr || localDate()).split('-').map(Number), date = new Date(y, mo - 1, d, 12).getTime();
-  if (!Number.isFinite(date)) { showNotice('mv-error', 'Datum prüfen.'); return; }
+  if (!okTime(date)) { showNotice('mv-error', 'Datum prüfen – möglich ist 2009 bis 2099.'); return; } // 3.29.0: sonst läge die Buchung nach dem Neuladen in der Prüfliste
   const m = { id: newId(), type, amount, currency: state.mvCur, fx: fxNow(), date, note: $('mv-note').value.trim().slice(0, 300), createdAt: Date.now() };
   state.movements.push(m); persist(); showNotice('mv-error', null);
   $('mv-amount').value = ''; $('mv-note').value = '';
@@ -3127,6 +3296,7 @@ function addMovement(e) {
 let importantSig = null;
 const dataSig = () => JSON.stringify([state.positions.map(({ ack, ...p }) => p), state.trades, state.movements, state.demoPositions.map(({ ack, ...p }) => p), state.demoTrades]);
 function persist() {
+  stampLists(); // 3.29.0: neue Fassungen bekommen Fingerabdruck und Vorgeschichte
   const lists = [[POS_KEY, state.positions], [HIST_KEY, state.trades], [MONEY_KEY, state.movements], [ALARM_KEY, state.alarms], [SETUP_KEY, state.setups], [DEMO_POS_KEY, state.demoPositions], [DEMO_HIST_KEY, state.demoTrades]];
   const changed = lists.filter(([k, v]) => store.set(k, v)).map(([k]) => k), sig = dataSig();
   if (importantSig !== null && sig !== importantSig) { store.set(CHANGES_KEY, changeCount() + 1); changed.push(CHANGES_KEY); scheduleAutoBackup(); scheduleTgBackup(); void store.persist(); }
@@ -3273,7 +3443,7 @@ function renderBackupInfo() {
   $('tab-pos-badge').hidden = !warn || !has; put('tab-pos-badge', '!');
   // 3.24.0 Schritt 8: kurzer Stand in der zugeklappten Zeile „Datensicherung“
   put('data-last', m ? `zuletzt ${new Date(m.at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}` : has ? 'noch keine Sicherung' : '');
-  put('backup-info', `${m ? `Letztes Backup auf diesem Gerät: ${new Date(m.at).toLocaleString('de-DE')} · ${m.kind === 'auto' ? 'automatisch' : m.kind === 'telegram' ? 'per Telegram' : m.kind === 'share' ? 'geteilt' : m.encrypted ? 'verschlüsselt' : 'unverschlüsselt'} · ${m.positions} Positionen, ${m.trades} Trades${m.movements ? `, ${m.movements} Geldbewegungen` : ''}` : 'Auf diesem Gerät wurde noch kein Backup erstellt.'}${n ? ` · Seitdem ${n} ${n === 1 ? 'Änderung' : 'Änderungen'}.` : ''}`);
+  put('backup-info', `${m ? `Letztes Backup auf diesem Gerät: ${new Date(m.at).toLocaleString('de-DE')} · ${m.kind === 'auto' ? 'automatisch' : m.kind === 'telegram' ? 'per Telegram' : m.kind === 'share' ? 'geteilt' : m.kind === 'code' ? (m.encrypted ? 'als Textcode, verschlüsselt' : 'als Textcode') : m.encrypted ? 'verschlüsselt' : 'unverschlüsselt'} · ${m.positions} Positionen, ${m.trades} Trades${m.movements ? `, ${m.movements} Geldbewegungen` : ''}` : 'Auf diesem Gerät wurde noch kein Backup erstellt.'}${n ? ` · Seitdem ${n} ${n === 1 ? 'Änderung' : 'Änderungen'}.` : ''}`);
   if (autoBackup.supported) {
     $('autobackup-row').hidden = false; $('autobackup-setup').hidden = ab !== 'off'; $('autobackup-resume').hidden = ab !== 'paused'; $('autobackup-stop').hidden = ab === 'off';
     put('autobackup-info', ab === 'active' ? `Automatisches Backup aktiv: ${autoBackup.handle?.name || 'Datei'} · zuletzt ${autoBackup.at ? new Date(autoBackup.at).toLocaleString('de-DE') : 'noch nicht geschrieben'}${autoBackup.error ? ` · Fehler: ${autoBackup.error}` : ''}`
@@ -3282,10 +3452,21 @@ function renderBackupInfo() {
   }
   $('warn-close').checked = flag(WARN_KEY, !isAppleMobile);
   renderStorageInfo(); renderZzpInfo();
+  const u = store.get(UNDO_KEY); $('undo-row').hidden = !isObj(u); if (isObj(u)) put('undo-info', `Letzter Import: ${new Date(u.at).toLocaleString('de-DE')} (${u.src}) – der Stand davor ist gesichert.`);
+  renderIntegrity();
 }
 function backupStatus(msg) { put('history-status', msg); }
-// 3.27.0 (Version 7): mit Änderungszeitpunkten der Einstellungen und Listen sowie den Löschungen der letzten 400 Tage
-function backupPayload() { return { app: 'scalp-desk', version: 7, settings: { dayLimit: state.dayLimit, risk: state.risk, taxRate: state.taxRate, at: stampsOf(SETTINGS_AT_KEY) }, exportedAt: Date.now(), positions: state.positions, history: state.trades, demoPositions: state.demoPositions, demoHistory: state.demoTrades, movements: state.movements, alarms: state.alarms, setups: state.setups, watchlist: state.watch, listsAt: stampsOf(LISTS_AT_KEY), deleted: tombs(), taxRate: state.taxRate, patterns: zzpExport(), pnlAlarms: store.get('scalpdesk.pnlalarm.v1', null) }; }
+// 3.29.0 (Schema 8, G01): immer die vollständige persönliche Sicherung – offene Positionen, alle Trades (ohne Jahresgrenze), Demo,
+// Geldbewegungen, Alarme samt Kennung und Aktivierung, Einstellungen mit Abstammung, Listen und Reihenfolge, Gewinn-/Verlust-Alarm,
+// Löschungen, Prüfliste, offene Konflikte, Anzeige-Einstellungen und das eigene Musterlernen (der öffentliche Startbestand nur als
+// Verweis mit Version). Nie enthalten: Zugangsdaten (Telegram-Token, Discord-Webhook), die Übergabe an den 24/7-Dienst, Sendesperren
+// und andere gerätegebundene Zustände. Alle Felder von Schema 7 bleiben gleich – ältere App-Versionen lesen die Datei weiter.
+const PREF_KEYS = ['scalpdesk.theme.v1', 'scalpdesk.overlays.v1', 'scalpdesk.zigzag.v1', 'scalpdesk.whale.v1', 'scalpdesk.orderbook.v1', 'scalpdesk.ladder.v1', 'scalpdesk.vola.v1', 'scalpdesk.econ.v1', 'scalpdesk.cnews.v1', 'scalpdesk.wlspan.v1', 'scalpdesk.titleprice.v1', 'scalpdesk.details.v1', 'scalpdesk.posdefaults.v1', 'scalpdesk.daylimitnote.v1', 'scalpdesk.warnclose.v1'];
+function backupPayload() {
+  stampLists(); for (const f of SET_FIELDS) stampSetting(f);
+  const prefs = {}; for (const k of PREF_KEYS) { const v = store.get(k); if (v !== undefined) prefs[k] = v; }
+  return { app: 'scalp-desk', version: BK_SCHEMA, kind: 'full', appVersion: APP_VERSION, settings: { dayLimit: state.dayLimit, risk: state.risk, taxRate: state.taxRate, at: stampsOf(SETTINGS_AT_KEY) }, settingsH: setLin(), exportedAt: Date.now(), positions: state.positions, history: state.trades, demoPositions: state.demoPositions, demoHistory: state.demoTrades, movements: state.movements, alarms: state.alarms, setups: state.setups, watchlist: state.watch, listsAt: stampsOf(LISTS_AT_KEY), deleted: tombs(), deletedH: tombHs(), taxRate: state.taxRate, patterns: zzpBackup(), pnlAlarms: store.get('scalpdesk.pnlalarm.v1', null), prefs, quarantine: quarList(), conflicts: confList() };
+}
 function markBackedUp(kind, encrypted = false) {
   store.set(CHANGES_KEY, 0);
   store.set(BACKUP_META_KEY, { at: Date.now(), kind, encrypted, positions: state.positions.length, trades: state.trades.length, movements: state.movements.length });
@@ -3294,7 +3475,7 @@ function markBackedUp(kind, encrypted = false) {
 async function backupFile() {
   const pass = $('backup-pass').value, date = new Date().toISOString().slice(0, 10), payload = backupPayload();
   if (pass && !globalThis.crypto?.subtle) throw new Error('Verschlüsseln geht nur, wenn die Seite über https geöffnet ist. Ohne Passwort speichern oder die https-Adresse nutzen.');
-  const file = pass ? await encryptBackup(payload, pass) : payload;
+  const full = withIntegrity(payload), file = pass ? await encryptBackup(full, pass) : full;
   return { name: `backup-${date}${pass ? '-verschluesselt' : ''}.json`, text: JSON.stringify(file, null, pass ? 0 : 1), encrypted: !!pass };
 }
 async function saveBackup() {
@@ -3310,7 +3491,7 @@ async function saveBackup() {
 async function shareBackup() {
   const b0 = $('backup-share'), pass = $('backup-pass').value;
   try {
-    if (!shareReady && !pass) shareReady = { file: new File([JSON.stringify(backupPayload(), null, 1)], `backup-${new Date().toISOString().slice(0, 10)}.json`, { type: 'application/json' }), encrypted: false };
+    if (!shareReady && !pass) shareReady = { file: new File([JSON.stringify(withIntegrity(backupPayload()), null, 1)], `backup-${new Date().toISOString().slice(0, 10)}.json`, { type: 'application/json' }), encrypted: false };
     if (!shareReady) { b0.disabled = true; backupStatus('Verschlüssele …'); const b = await backupFile(); shareReady = { file: new File([b.text], b.name, { type: 'application/json' }), encrypted: b.encrypted }; }
     b0.disabled = false; const r = shareReady;
     await navigator.share({ files: [r.file] });
@@ -3323,142 +3504,335 @@ async function shareBackup() {
     else { shareReady = null; b0.textContent = 'Teilen / in Dateien sichern'; backupStatus(`Teilen nicht möglich: ${e?.message || e}. Alternativ „Jetzt an Telegram senden“ oder „Backup herunterladen“.`); }
   }
 }
-// ---------- 3.27.0: Abgleich mit Zeitstempeln, Löschungen, Einstellungen und Vorschau ----------
-// Jeder Eintrag zählt mit seinem letzten Änderungszeitpunkt (recStamp). Gelöschte Einträge merkt sich die App mit Zeitpunkt
-// (DELETED_KEY, 400 Tage) und gibt sie im Backup mit – so löscht der Abgleich sie auch auf dem anderen Gerät. Fehlt ein Eintrag
-// nur in der Datei, gilt er nie als gelöscht (z. B. QR-Code nur mit offenen Positionen). Eine Löschung gewinnt nur gegen eine
-// ältere oder gleich alte Fassung, eine später geänderte Fassung bleibt. Einstellungen und Listen (Vorauswahl, Setups) tragen
-// ihren Änderungszeitpunkt: Die neuere Fassung gewinnt. Dateien bis 3.26 (ohne Zeitpunkte) ergänzen nur, was hier fehlt.
-// Positionen und Trades teilen sich die Kennung (Schließen macht aus der Position einen Trade): Grabstein „pt:“.
-const DELETED_KEY = 'scalpdesk.deleted.v1', SETTINGS_AT_KEY = 'scalpdesk.settingsat.v1', LISTS_AT_KEY = 'scalpdesk.listsat.v1', TOMB_KEEP = 400 * 864e5;
-const recStamp = x => Math.max(0, ...['updatedAt', 'closedAt', 'openedAt', 'armedAt', 'createdAt', 'triggeredAt'].map(k => Number(x?.[k]) || 0));
+// ---------- 3.29.0 (G01): Abgleich nach Abstammung – Konflikte entscheidest du ----------
+// Beim Einspielen einer Sicherung (Datei, Textcode, QR-Code) zählt je Eintrag die Abstammung (h/hist, siehe stampRec):
+// • gleiche Fassung → nichts zu tun · die eingelesene baut auf der hiesigen auf → übernehmen · die hiesige baut auf der
+//   eingelesenen auf → bleibt · beide Geräte haben dieselbe Grundlage verschieden geändert → Konflikt: du entscheidest
+//   („Bestätigten Stand behalten“, „Entwurf übernehmen“ oder „Später entscheiden“); bis dahin gilt der Stand dieses Geräts.
+// • Löschungen tragen die Fingerabdrücke der gelöschten Fassung (deletedH): Gelöscht wird nur, was das andere Gerät so kannte;
+//   wurde der Eintrag hier danach geändert, entscheidest du. Ältere Löschungen ohne Fingerabdruck (bis 3.28) ebenso.
+// • Handelsereignisse gehen nicht verloren: Ist eine Position auf dem anderen Gerät zum Trade geworden, wird sie es hier auch.
+//   Ein auf beiden Geräten ausgelöster Kurs-Alarm wird zusammengeführt (frühere Auslösung), eine Quittierung gilt überall.
+// • Uhrzeit, „zuletzt geändert“ und Revisionsnummer entscheiden nie. Ein erneutes Einspielen ändert nichts (idempotent).
+const DELETED_KEY = 'scalpdesk.deleted.v1', DELETEDH_KEY = 'scalpdesk.deletedh.v1', SETTINGS_AT_KEY = 'scalpdesk.settingsat.v1', LISTS_AT_KEY = 'scalpdesk.listsat.v1', SETH_KEY = 'scalpdesk.settingsh.v1', TOMB_KEEP = 400 * 864e5;
+const IMPORTS_KEY = 'scalpdesk.imports.v1', UNDO_KEY = 'scalpdesk.idb.preimport.v1';
 function cleanTombs(o, now = Date.now()) {
   const out = {};
   if (o && typeof o === 'object' && !Array.isArray(o)) for (const [k, t] of Object.entries(o)) if (/^(pt|m|a):.{1,80}$/.test(k) && Number.isFinite(t) && t > now - TOMB_KEEP && t < now + 864e5) out[k] = t;
   return out;
 }
-const tombs = () => cleanTombs(store.get(DELETED_KEY));
-function tomb(ns, id) { const d = tombs(); d[`${ns}:${id}`] = Date.now(); if (store.set(DELETED_KEY, d)) broadcastData([DELETED_KEY]); }
+function cleanTombH(o) { const out = {}; if (isObj(o)) for (const [k, v] of Object.entries(o)) if (/^(pt|m|a):.{1,80}$/.test(k) && Array.isArray(v)) { const l = v.filter(x => typeof x === 'string' && x.length <= 24).slice(-62); if (l.length) out[k] = l; } return out; }
+const tombs = () => cleanTombs(store.get(DELETED_KEY)), tombHs = () => cleanTombH(store.get(DELETEDH_KEY));
+// Löschen merkt sich Zeitpunkt (für ältere App-Versionen) und Fingerabdrücke der gelöschten Fassung (für den Abgleich)
+function tomb(ns, id) {
+  const d = tombs(), k = `${ns}:${id}`, L = [];
+  d[k] = Date.now();
+  for (const g of ns === 'pt' ? ['P', 'T'] : ns === 'm' ? ['M'] : ['A']) { const x = lineage.get(`${g}:${id}`); if (x) L.push(...histOf(x).filter(h => !h.startsWith('x:')), x.h); }
+  const H = tombHs(); if (L.length) H[k] = [...new Set([...(H[k] || []), ...L])].slice(-62);
+  const ch = [store.set(DELETED_KEY, d) && DELETED_KEY, L.length && store.set(DELETEDH_KEY, H) && DELETEDH_KEY].filter(Boolean);
+  if (ch.length) broadcastData(ch);
+}
 function stampsOf(k) { const v = store.get(k); return v && typeof v === 'object' && !Array.isArray(v) ? v : {}; }
-function touchStamp(k, f) { if (store.set(k, { ...stampsOf(k), [f]: Date.now() })) broadcastData([k]); }
+function touchStamp(k, f) { if (store.set(k, { ...stampsOf(k), [f]: Date.now() })) broadcastData([k]); stampSetting(f); }
+// Einstellungen und Listen: Abstammung wie bei Einträgen – Fingerabdruck des Werts und der früheren Werte
+const SET_FIELDS = ['risk', 'dayLimit', 'taxRate', 'watch', 'setups', 'pnl'];
+const SET_NAME = { risk: 'Risiko-Rechner', dayLimit: 'Tages-Verlustlimit', taxRate: 'Rücklage-Satz', watch: 'Vorauswahl', setups: 'Setups & eigene Gründe', pnl: 'Gewinn-/Verlust-Alarm' };
+function pnlCfgOf(d) { const one = a => ({ on: !!a?.on, value: Number(a?.value) > 0 ? Number(a.value) : null }); return { profit: one(d?.profit), loss: one(d?.loss) }; }
+function setVal(f) { return f === 'risk' ? { ...state.risk } : f === 'dayLimit' ? state.dayLimit ?? null : f === 'taxRate' ? state.taxRate ?? null : f === 'watch' ? [...state.watch] : f === 'setups' ? [...state.setups] : pnlCfgOf(pnlGet()); }
+const valHash = v => fp(canon(v ?? null));
+function setLin() { const v = store.get(SETH_KEY); return isObj(v) ? v : {}; }
+function stampSetting(f, L = setLin()) {
+  if (!SET_FIELDS.includes(f)) return false;
+  const cur = isObj(L[f]) ? L[f] : {}, h = valHash(setVal(f)); if (cur.h === h) return false;
+  L[f] = { h, hist: cur.h ? histAdd(cur.hist, cur.h) : histOf(cur) };
+  if (store.set(SETH_KEY, L) && !loadingData) broadcastData([SETH_KEY]);
+  return true;
+}
+function setFmt(f, v) {
+  if (v === null || v === undefined) return 'aus';
+  if (f === 'risk') return `Risiko ${plain(v.riskPct)} % · Gebühr ${plain(v.feePct)} %`;
+  if (f === 'dayLimit') return `${number(v)} USDT`;
+  if (f === 'taxRate') return `${plain(v)} %`;
+  if (f === 'pnl') return ['profit', 'loss'].map(k => `${k === 'profit' ? 'Gewinn' : 'Verlust'} ${v[k]?.on && v[k].value ? `${number(v[k].value)} USDT` : 'aus'}`).join(' · ');
+  return Array.isArray(v) ? (v.length ? v.join(', ') : '(leer)') : String(v);
+}
 // 3.28.0: Demo-Positionen und Demo-Trades als eigene Arten. Eine Position kann beim Bearbeiten zwischen ECHT und DEMO wechseln:
-// dieselbe Kennung in der anderen Liste – die neuere Fassung bestimmt die Liste.
+// dieselbe Kennung in der anderen Liste (die Liste gehört zum Inhalt, ein Wechsel ist eine neue Fassung).
 const PLAN_KINDS = [['trade', 'pt', 'history'], ['dtrade', 'pt', 'demoHistory'], ['pos', 'pt', 'positions'], ['dpos', 'pt', 'demoPositions'], ['mv', 'm', 'movements'], ['alarm', 'a', 'alarms']];
 const planList = kind => kind === 'trade' ? state.trades : kind === 'dtrade' ? state.demoTrades : kind === 'pos' ? state.positions : kind === 'dpos' ? state.demoPositions : kind === 'mv' ? state.movements : state.alarms;
-const planLoad = kind => kind === 'trade' || kind === 'dtrade' ? loadTrade : kind === 'pos' || kind === 'dpos' ? loadPosition : kind === 'mv' ? loadMovement : loadAlarm;
-const PLAN_OTHER = { pos: 'dpos', dpos: 'pos' };
-// Was ein Abgleich mit dieser Datei ändern würde – ohne etwas zu ändern (Vorschau)
-function planBackup(data) {
-  if (data?.app !== 'scalp-desk' || !Array.isArray(data.positions)) throw new Error('Datei ist kein gültiges Backup dieses Dashboards.');
-  const mine = tombs(), theirs = cleanTombs(data.deleted), p = { data, add: [], upd: [], del: [], blocked: [], closed: [], same: 0, settings: [], lists: [], theirs };
-  for (const [kind, ns, field] of PLAN_KINDS) {
-    const here = planList(kind), byId = new Map(here.map(x => [x.id, x])), seen = new Set();
-    const incoming = (Array.isArray(data[field]) ? data[field] : []).map(planLoad(kind)).filter(x => x && !seen.has(x.id) && seen.add(x.id));
-    for (const r of incoming) {
-      const s = recStamp(r), cur = byId.get(r.id);
-      if ((kind === 'pos' || kind === 'dpos') && (state.trades.some(t => t.id === r.id) || state.demoTrades.some(t => t.id === r.id))) { p.same++; continue; } // hier schon geschlossen
-      if (cur) { if (s > recStamp(cur)) p.upd.push({ kind, ns, rec: r, cur }); else p.same++; continue; }
-      const moved = PLAN_OTHER[kind] && planList(PLAN_OTHER[kind]).find(x => x.id === r.id); // ECHT ↔ DEMO gewechselt
-      if (moved) { if (s > recStamp(moved)) p.upd.push({ kind, ns, rec: r, cur: moved, from: PLAN_OTHER[kind] }); else p.same++; continue; }
-      if (mine[`${ns}:${r.id}`] >= s) { p.blocked.push({ kind, ns, rec: r }); continue; } // hier gelöscht – bleibt gelöscht
-      const open = (kind === 'trade' || kind === 'dtrade') && (state.positions.find(x => x.id === r.id) || state.demoPositions.find(x => x.id === r.id));
-      if (open) p.closed.push({ kind, ns, rec: r, cur: open }); else p.add.push({ kind, ns, rec: r });
+const PLAN_OTHER = { pos: 'dpos', dpos: 'pos', trade: 'dtrade', dtrade: 'trade' }, NS_OF = { trade: 'pt', dtrade: 'pt', pos: 'pt', dpos: 'pt', mv: 'm', alarm: 'a' };
+// Wo liegt diese Kennung hier (eigene oder Gegen-Liste derselben Gruppe)?
+function hereOf(kind, id) { for (const k of [kind, PLAN_OTHER[kind]].filter(Boolean)) { const r = planList(k).find(x => x.id === id); if (r) return { kind: k, rec: r }; } return null; }
+const ackMore = (inc, loc) => !!inc.ack && ((inc.ack.sl && !loc.ack?.sl) || (inc.ack.tp && !loc.ack?.tp));
+// Fachliches Zusammenführen ohne Rückfrage: ein Kurs-Alarm, der auf beiden Geräten ausgelöst hat (sonst gleich) → frühere Auslösung
+function domainMerge(kind, inc, loc) {
+  if (kind !== 'alarm' || !inc.triggeredAt || !loc.triggeredAt) return null;
+  const strip = a => { const o = { ...a }; for (const k of ['triggeredAt', 'triggerPrice', 'touch', 'missed', 'svcAt']) delete o[k]; return recHash(o, kind); }; // Einzelheiten der Auslösung
+  if (strip(inc) !== strip(loc)) return null;
+  const first = inc.triggeredAt < loc.triggeredAt ? inc : loc, m = { ...first, hist: histAdd([...histOf(inc), ...histOf(loc)], inc.h, loc.h) };
+  m.h = recHash(m, kind);
+  return m.h === loc.h ? null : m;
+}
+function planBackup(data, src = 'Sicherung') {
+  if (!isObj(data) || data.app !== 'scalp-desk' || !Array.isArray(data.positions)) throw new Error('Datei ist kein gültiges Backup dieses Dashboards.');
+  const ver = Number(data.version) || 1;
+  if (ver > BK_SCHEMA) throw new Error(`Diese Sicherung stammt aus einer neueren App-Version (Schema ${ver}). Bitte zuerst die App aktualisieren, dann erneut einspielen.`);
+  stampLists(); // hiesige Fassungen aktuell, auch wenn seit der letzten Änderung nicht gespeichert wurde
+  const p = { data, src, ver, id: fp(canon(data)), add: [], upd: [], del: [], blocked: [], closed: [], merged: [], acks: [], conflicts: [], bad: [], same: 0, older: 0, settings: [], lists: [], pnlRun: null, quar: [], prefs: null }, alts = [];
+  const myT = tombs(), myH = tombHs(), inT = cleanTombs(data.deleted), inH = cleanTombH(data.deletedH), incoming = new Map();
+  p.inT = inT; p.inH = inH;
+  for (const [kind, , field] of PLAN_KINDS) {
+    const list = [], seen = new Map(), raw = data[field];
+    incoming.set(kind, list);
+    if (raw === undefined || raw === null) continue;
+    if (!Array.isArray(raw)) { p.bad.push({ kind: 'list', raw: { field, value: raw }, why: `Feld „${field}“ ist keine Liste` }); continue; }
+    for (const r of raw) {
+      const c = checkRecord(kind, r);
+      if (!c.rec) { p.bad.push({ kind, raw: r, why: c.reason }); continue; }
+      fixHash(c.rec, kind);
+      const tw = seen.get(c.rec.id);
+      if (tw) { if (tw.h !== c.rec.h) p.bad.push({ kind, raw: r, why: 'Kennung doppelt in der Sicherung – zweite, abweichende Fassung' }); continue; }
+      seen.set(c.rec.id, c.rec); list.push(c.rec);
+      if (c.alt) { fixHash(c.alt, kind); alts.push({ kind, draft: c.alt }); }
     }
-    // auf dem anderen Gerät gelöscht (und dort nicht wieder neuer angelegt)
-    for (const cur of here) { const t = theirs[`${ns}:${cur.id}`]; if (t >= recStamp(cur) && !incoming.some(r => r.id === cur.id && recStamp(r) > t)) p.del.push({ kind, ns, cur }); }
   }
-  // Einstellungen: neuerer Zeitpunkt gewinnt; ohne Zeitpunkte nur übernehmen, was hier noch nicht eingestellt ist
-  const S = data.settings && typeof data.settings === 'object' ? data.settings : {}, sAt = S.at && typeof S.at === 'object' ? S.at : {}, myS = stampsOf(SETTINGS_AT_KEY);
+  for (const [kind, ns] of PLAN_KINDS) for (const r of incoming.get(kind)) {
+    const key = `${ns}:${r.id}`, g = GROUP_OF[kind];
+    if (g === 'P' && (state.trades.some(t => t.id === r.id) || state.demoTrades.some(t => t.id === r.id))) { p.same++; continue; } // hier schon geschlossen
+    const here = hereOf(kind, r.id);
+    if (here) {
+      const cur = here.rec, from = here.kind !== kind ? here.kind : undefined, rel = relation(r, cur);
+      if (rel === 'same' || rel === 'older') { if (ackMore(r, cur)) p.acks.push({ kind: here.kind, id: r.id, ack: { sl: !!(r.ack?.sl || cur.ack?.sl), tp: !!(r.ack?.tp || cur.ack?.tp) } }); if (rel === 'same') p.same++; else p.older++; continue; }
+      if (rel === 'newer') { p.upd.push({ kind, ns, rec: r, cur, from }); continue; }
+      const m = domainMerge(kind, r, cur); if (m) { p.merged.push({ kind, ns, rec: m, cur, from }); continue; }
+      p.conflicts.push({ kind, id: r.id, localKind: here.kind, local: cur, draft: r, why: 'both' }); continue;
+    }
+    if (g === 'T') { const open = state.positions.find(x => x.id === r.id) || state.demoPositions.find(x => x.id === r.id); if (open) { p.closed.push({ kind, ns, rec: r, cur: open }); continue; } }
+    const L = myH[key];
+    if (L) { if (L.includes(r.h)) p.blocked.push({ kind, ns, rec: r }); else p.conflicts.push({ kind, id: r.id, localKind: kind, local: null, draft: r, why: 'deletedHere' }); continue; }
+    if (myT[key]) { p.blocked.push({ kind, ns, rec: r }); continue; } // ältere Löschung ohne Fingerabdruck: bleibt gelöscht, außer du stellst sie wieder her
+    p.add.push({ kind, ns, rec: r });
+  }
+  // auf dem anderen Gerät gelöscht
+  const inIds = new Set(); for (const l of incoming.values()) for (const r of l) inIds.add(r.id);
+  for (const [kind, ns] of PLAN_KINDS) for (const cur of planList(kind)) {
+    const key = `${ns}:${cur.id}`, L = inH[key], t = inT[key];
+    if ((!L && !t) || inIds.has(cur.id)) continue; // dieselbe Sicherung enthält die Kennung noch: keine Löschung
+    const mark = 'x:' + (L ? L.at(-1) : 't' + t);
+    if (histOf(cur).includes(mark)) continue; // diese Löschung hast du hier schon abgelehnt
+    if (L && L.includes(cur.h)) p.del.push({ kind, ns, cur });
+    else p.conflicts.push({ kind, id: cur.id, localKind: kind, local: cur, draft: null, why: 'deletedThere', mark });
+  }
+  // offene Konflikte des anderen Geräts und unklare Gründe: Entwurf gegen den Stand, den dieses Gerät nach dem Abgleich hat
+  const drafts = [...alts.map(a => ({ kind: a.kind, rec: a.draft, why: 'setup' }))];
+  for (const c of Array.isArray(data.conflicts) ? data.conflicts.slice(0, 500) : []) {
+    if (!isObj(c) || !NS_OF[c.kind] || !isObj(c.draft)) continue;
+    const ch = checkRecord(c.kind, c.draft); if (!ch.rec) { p.bad.push({ kind: c.kind, raw: c.draft, why: 'Offener Konflikt der Sicherung: ' + ch.reason }); continue; }
+    fixHash(ch.rec, c.kind); drafts.push({ kind: c.kind, rec: ch.rec, why: 'imported' });
+  }
+  for (const { kind, rec: dr, why } of drafts) {
+    const c = { kind }, ch = { rec: dr };
+    const after = [...p.add, ...p.upd, ...p.merged].find(x => x.rec.id === ch.rec.id), here = hereOf(c.kind, ch.rec.id), eff = after ? after.rec : here?.rec || null;
+    if (eff && ['same', 'older'].includes(relation(ch.rec, eff))) continue;
+    if (p.conflicts.some(x => x.id === ch.rec.id && x.draft?.h === ch.rec.h)) continue;
+    p.conflicts.push({ kind: c.kind, id: ch.rec.id, localKind: after ? after.kind : here?.kind || c.kind, local: eff, draft: ch.rec, why });
+  }
+  planSettings(p);
+  // Schon offene Konflikte (derselbe Entwurf wartet bereits auf deine Entscheidung) zählen nicht noch einmal als neu
+  const openKeys = new Set(confList().map(confKey)), fresh = p.conflicts.filter(c => !openKeys.has(confKey(c)));
+  p.pending = p.conflicts.length - fresh.length; p.conflicts = fresh;
+  // Prüfliste und Anzeige-Einstellungen des anderen Geräts
+  const myQ = new Set(quarList().map(x => x.hq));
+  for (const q of Array.isArray(data.quarantine) ? data.quarantine.slice(0, 2000) : []) if (isObj(q) && q.raw !== undefined && !myQ.has(q.hq || fp((q.kind || '') + '|' + canon(q.raw)))) p.quar.push(q);
+  if (isObj(data.prefs)) { const keys = Object.keys(data.prefs).filter(k => PREF_KEYS.includes(k) && canon(data.prefs[k]) !== canon(store.get(k) ?? null)); if (keys.length) p.prefs = { keys, values: data.prefs }; }
+  return p;
+}
+// Einstellungen, Listen und Gewinn-/Verlust-Alarm: wie Einträge nach Abstammung. Sicherungen bis 3.28 tragen keine Abstammung:
+// Hat das andere Gerät den Wert nie geändert (Standardwert ohne Änderungsvermerk), bleibt der hiesige; steht hier noch der nie
+// geänderte Standardwert, wird ihr Wert übernommen; sonst entscheidest du (auch bei Listen – ein bloßes Zusammenführen brächte hier
+// bewusst entfernte Einträge zurück). Die Vermerke älterer Versionen („settings.at“, „listsAt“) zählen nur als „wurde geändert“,
+// ihr Zeitpunkt entscheidet nichts.
+function planSettings(p) {
+  const data = p.data, S = isObj(data.settings) ? data.settings : {}, inLin = isObj(data.settingsH) ? data.settingsH : {}, myLin = setLin();
+  const inAt = { ...(isObj(S.at) ? S.at : {}), ...(isObj(data.listsAt) ? data.listsAt : {}) }, myAt = { ...stampsOf(SETTINGS_AT_KEY), ...stampsOf(LISTS_AT_KEY) };
   const risk = S.risk && S.risk.riskPct > 0 && S.risk.riskPct <= 100 && S.risk.feePct >= 0 && S.risk.feePct < 5 ? { riskPct: Number(S.risk.riskPct), feePct: Number(S.risk.feePct) } : undefined;
   const lim = 'dayLimit' in S ? (S.dayLimit > 0 ? Number(S.dayLimit) : null) : undefined, taxIn = 'taxRate' in S ? S.taxRate : data.taxRate;
   const tax = taxIn === undefined ? undefined : taxIn > 0 && taxIn < 100 ? Number(taxIn) : null;
-  for (const [f, name, cur, inc, unset, fmt] of [
-    ['risk', 'Risiko-Rechner', state.risk, risk, store.get(RISK_KEY) == null, v => `Risiko ${plain(v.riskPct)} % · Gebühr ${plain(v.feePct)} %`],
-    ['dayLimit', 'Tages-Verlustlimit', state.dayLimit, lim, !state.dayLimit, v => v ? `${number(v)} USDT` : 'aus'],
-    ['taxRate', 'Rücklage-Satz', state.taxRate, tax, !state.taxRate, v => v ? `${plain(v)} %` : 'aus']]) {
+  const watch = Array.isArray(data.watchlist) ? [...new Set(data.watchlist.filter(s => typeof s === 'string' && /^[A-Z0-9]{2,20}$/.test(s)))] : undefined;
+  const setups = Array.isArray(data.setups) ? [...new Set(data.setups.filter(s => typeof s === 'string').map(s => s.replace(/\s+/g, ' ').trim()).filter(Boolean))] : undefined;
+  const pnlIn = isObj(data.pnlAlarms) ? data.pnlAlarms : undefined;
+  const DEF = { risk: { riskPct: 1, feePct: 0.06 }, dayLimit: null, taxRate: null, watch: DEFAULT_WATCH, setups: DEFAULT_SETUPS, pnl: pnlCfgOf(null) };
+  const isDef = (f, v) => valHash(v) === valHash(DEF[f]);
+  const unset = f => isDef(f, setVal(f)) && !histOf(myLin[f]).length && !myAt[f]; // hier nie geändert: Standardwert ohne Vorgeschichte
+  const unsetThere = (f, v) => isDef(f, v) && !inAt[f]; // dort nie geändert
+  for (const [f, inc] of [['risk', risk], ['dayLimit', lim], ['taxRate', tax], ['watch', watch], ['setups', setups], ['pnl', pnlIn && pnlCfgOf(pnlIn)]]) {
     if (inc === undefined) continue;
-    const ia = Number(sAt[f]) || 0, ma = Number(myS[f]) || 0;
-    if ((ia > ma || (!ia && !ma && unset && inc !== null)) && JSON.stringify(inc) !== JSON.stringify(cur ?? null)) p.settings.push({ f, name, from: fmt(cur), to: fmt(inc), value: inc, at: ia });
+    const cur = setVal(f), hi = valHash(inc), hl = valHash(cur), li = isObj(inLin[f]) ? inLin[f] : null, lm = isObj(myLin[f]) ? myLin[f] : null;
+    const item = { f, name: SET_NAME[f], from: setFmt(f, cur), to: setFmt(f, inc), value: inc, lin: li };
+    if (hi === hl) { if (f === 'pnl') pnlRunMerge(p, pnlIn); continue; }
+    const inHist = li ? [...histOf(li), ...(li.h && li.h !== hi ? [li.h] : [])] : [];
+    if (inHist.includes(hl)) { (Array.isArray(inc) ? p.lists : p.settings).push(item); if (f === 'pnl') item.full = pnlIn; continue; }
+    if (lm && histOf(lm).includes(hi)) continue;
+    if (!li && unsetThere(f, inc)) continue;
+    if (!li && unset(f) && inc !== null) { (Array.isArray(inc) ? p.lists : p.settings).push(item); if (f === 'pnl') item.full = pnlIn; continue; }
+    p.conflicts.push({ kind: 'set', f, local: cur, draft: inc, draftLin: li, full: f === 'pnl' ? pnlIn : undefined, why: 'both' });
   }
-  // Listen: neuere Fassung ersetzt; ohne Zeitpunkte (bis 3.26 oder nie geändert) zusammenführen wie bisher
-  const L = data.listsAt && typeof data.listsAt === 'object' ? data.listsAt : {}, myL = stampsOf(LISTS_AT_KEY);
-  const inWatch = Array.isArray(data.watchlist) ? [...new Set(data.watchlist.filter(s => typeof s === 'string' && /^[A-Z0-9]{2,20}$/.test(s)))] : null;
-  const inSetups = Array.isArray(data.setups) ? [...new Set(data.setups.map(cleanSetup).filter(Boolean))] : null;
-  for (const [f, name, cur, inc] of [['watch', 'Vorauswahl', state.watch, inWatch], ['setups', 'Setups', state.setups, inSetups]]) {
-    if (!inc) continue;
-    const ia = Number(L[f]) || 0, ma = Number(myL[f]) || 0, next = ia > ma ? inc : !ia && !ma ? [...cur, ...inc.filter(s => !cur.includes(s))] : null;
-    if (next && JSON.stringify(next) !== JSON.stringify(cur)) p.lists.push({ f, name, list: next, at: ia, plus: next.filter(s => !cur.includes(s)), minus: cur.filter(s => !next.includes(s)) });
-  }
-  return p;
 }
-const planChanges = p => p.add.length + p.upd.length + p.del.length + p.closed.length + p.settings.length + p.lists.length;
-// Abgleich ausführen. Neu geplant, weil sich seit der Vorschau hier etwas geändert haben kann (z. B. ein ausgelöster Alarm).
-function commitPlan(p0, restore = false) {
-  const p = planBackup(p0.data), T = tombs(), key = x => `${x.ns}:${(x.rec || x.cur).id}`, n = { pos: 0, posUpd: 0, trades: 0, tradesUpd: 0, mv: 0, alarms: 0, dpos: 0, dtrade: 0 };
-  const drop = (kind, id) => { if (kind === 'trade') state.trades = state.trades.filter(x => x.id !== id); else if (kind === 'dtrade') state.demoTrades = state.demoTrades.filter(x => x.id !== id); else if (kind === 'pos') state.positions = state.positions.filter(x => x.id !== id); else if (kind === 'dpos') state.demoPositions = state.demoPositions.filter(x => x.id !== id); else if (kind === 'mv') state.movements = state.movements.filter(x => x.id !== id); else state.alarms = state.alarms.filter(x => x.id !== id); };
-  const count = (x, upd) => { if (x.kind === 'pos') n[upd ? 'posUpd' : 'pos']++; else if (x.kind === 'trade') n[upd ? 'tradesUpd' : 'trades']++; else if (x.kind === 'dpos' || x.kind === 'dtrade') n[x.kind]++; else if (x.kind === 'mv') n.mv++; else n.alarms++; };
-  for (const x of p.add) { planList(x.kind).push(x.rec); delete T[key(x)]; count(x, false); }
-  for (const x of p.upd) { if (x.from) { drop(x.from, x.rec.id); planList(x.kind).push(x.rec); count(x, true); continue; } const a = planList(x.kind), i = a.findIndex(q => q.id === x.rec.id); if (i >= 0) { a[i] = x.rec; count(x, true); } }
-  for (const x of p.closed) { drop('pos', x.cur.id); drop('dpos', x.cur.id); planList(x.kind).push(x.rec); }
-  for (const x of p.del) drop(x.kind, x.cur.id);
-  if (restore) for (const x of p.blocked) { planList(x.kind).push(x.rec); delete T[key(x)]; }
-  for (const [k, t] of Object.entries(p.theirs)) if (!(T[k] >= t)) T[k] = t;
-  if (store.set(DELETED_KEY, cleanTombs(T))) broadcastData([DELETED_KEY]);
-  const myS = stampsOf(SETTINGS_AT_KEY), myL = stampsOf(LISTS_AT_KEY);
-  for (const s of p.settings) {
-    if (s.f === 'risk') { state.risk = { ...s.value }; store.set(RISK_KEY, { ...state.risk }); }
-    else if (s.f === 'dayLimit') { state.dayLimit = s.value; if (s.value) store.set(DAYLIMIT_KEY, s.value); else store.del(DAYLIMIT_KEY); }
-    else { state.taxRate = s.value; if (s.value) store.set(TAX_KEY, s.value); else store.del(TAX_KEY); }
-    if (s.at) myS[s.f] = s.at;
-  }
-  for (const l of p.lists) { if (l.f === 'watch') state.watch = [...l.list]; else state.setups = [...l.list]; if (l.at) myL[l.f] = l.at; }
-  if (p.settings.length && store.set(SETTINGS_AT_KEY, myS)) broadcastData([SETTINGS_AT_KEY]);
-  if (p.lists.length && store.set(LISTS_AT_KEY, myL)) broadcastData([LISTS_AT_KEY]);
-  zzpImport(p.data.patterns); // gelernte Muster: still übernehmen, ohne Meldung
-  const pnlNew = pnlAdopt(p.data.pnlAlarms); // Gewinn-/Verlust-Alarm (3.24.0): die neuere Fassung gewinnt
-  posStructure = null; demoStructure = null; histStructure = '';
-  persist(); saveWatch();
-  render(); if ((n.pos || n.posUpd) && !state.busy && !state.paused) void refresh();
-  const pl = (k, a, b) => `${k} ${k === 1 ? a : b}`, parts = [];
-  if (n.pos) parts.push(`${pl(n.pos, 'Position', 'Positionen')} neu`);
-  if (n.posUpd) parts.push(`${pl(n.posUpd, 'Position', 'Positionen')} aktualisiert`);
-  if (p.closed.length) parts.push(`${p.closed.length} als geschlossen übernommen`);
-  if (n.trades) parts.push(pl(n.trades, 'Trade', 'Trades'));
-  if (n.tradesUpd) parts.push(`${pl(n.tradesUpd, 'Trade', 'Trades')} geändert`);
-  if (n.mv) parts.push(`${n.mv} Geldbewegungen`);
-  if (n.alarms) parts.push(`${n.alarms} Kurs-Alarme`);
-  if (n.dpos) parts.push(pl(n.dpos, 'Demo-Position', 'Demo-Positionen'));
-  if (n.dtrade) parts.push(pl(n.dtrade, 'Demo-Trade', 'Demo-Trades'));
-  if (p.del.length) parts.push(`${p.del.length} gelöscht wie auf dem anderen Gerät`);
-  if (restore && p.blocked.length) parts.push(`${p.blocked.length} wiederhergestellt`);
-  if (pnlNew) parts.push('Gewinn-/Verlust-Alarm');
-  for (const l of p.lists) parts.push(l.minus.length ? `${l.name} wie auf dem anderen Gerät` : l.f === 'watch' ? `${l.plus.length} Kürzel in der Vorauswahl` : pl(l.plus.length, 'Setup', 'Setups'));
-  if (p.settings.length) parts.push(`Einstellungen: ${p.settings.map(s => s.name).join(', ')}`);
-  const kept = p.blocked.length && !restore ? ` · ${pl(p.blocked.length, 'hier gelöschter Eintrag bleibt', 'hier gelöschte Einträge bleiben')} gelöscht` : '';
-  return parts.length ? `Übernommen: ${parts.join(', ')}${p.same ? ` · ${p.same} Einträge waren schon aktuell` : ''}${kept}.` : `Nichts Neues – alle ${p.same} Einträge waren schon aktuell${kept}.`;
+// Gleiche Grenzen auf beiden Geräten: eine Auslösung gilt überall (sonst meldet das zweite Gerät dieselbe Grenze noch einmal)
+function pnlRunMerge(p, inc) {
+  const cur = pnlGet(), rank = s => s === 'fired' ? 2 : s === 'wait' ? 1 : 0; let ch = false; const next = { ...cur };
+  for (const k of PNL_KINDS) { const a = inc?.[k]; if (a && rank(a.state) > rank(cur[k].state)) { next[k] = { ...cur[k], state: a.state, firedAt: Number(a.firedAt) || cur[k].firedAt, firedVal: Number.isFinite(a.firedVal) ? a.firedVal : cur[k].firedVal }; ch = true; } }
+  if (ch) p.pnlRun = next;
+}
+// Abweichende Anzeige-Einstellungen allein lösen keine Vorschau aus (jedes Gerät darf sein eigenes Design behalten); sie werden in einer
+// Vorschau angeboten, die wegen echter Änderungen ohnehin kommt – etwa beim Einrichten eines neuen Geräts.
+const planChanges = p => p.add.length + p.upd.length + p.del.length + p.closed.length + p.merged.length + p.acks.length + p.settings.length + p.lists.length + (p.pnlRun ? 1 : 0) + p.conflicts.length + p.bad.length + p.quar.length;
+// ---- Übernehmen: alles oder nichts ----
+// Vorher wird der bisherige Stand gesichert („Letzten Import rückgängig machen“). Die neuen Listen entstehen als Kopien und werden
+// in einem Schritt gesetzt und gespeichert; schlägt das Speichern fehl, kehrt die App zum bisherigen Stand zurück.
+const UNDO_KEYS = [POS_KEY, HIST_KEY, DEMO_POS_KEY, DEMO_HIST_KEY, MONEY_KEY, ALARM_KEY, SETUP_KEY, WATCH_KEY, DELETED_KEY, DELETEDH_KEY, SETTINGS_AT_KEY, LISTS_AT_KEY, SETH_KEY, RISK_KEY, DAYLIMIT_KEY, TAX_KEY, 'scalpdesk.pnlalarm.v1', QUAR_KEY, CONF_KEY, ZZP_KEY];
+let commitBusy = false;
+async function commitPlan(p0, opt = {}) {
+  if (commitBusy) return 'Der Abgleich läuft bereits.';
+  commitBusy = true;
+  try {
+    const p = planBackup(p0.data, p0.src), keys = [...UNDO_KEYS, ...(opt.prefs && p.prefs ? p.prefs.keys : [])];
+    const before = keys.map(k => { const v = store.get(k); return [k, v === undefined ? undefined : structuredClone(v)]; }), oldState = { positions: state.positions, trades: state.trades, demoPositions: state.demoPositions, demoTrades: state.demoTrades, movements: state.movements, alarms: state.alarms, watch: state.watch, setups: state.setups, risk: state.risk, dayLimit: state.dayLimit, taxRate: state.taxRate };
+    const changes = planChanges(p) + (opt.restore ? p.blocked.length : 0) + (opt.prefs && p.prefs ? 1 : 0);
+    if (changes) store.set(UNDO_KEY, { at: Date.now(), src: p.src, items: before }, { force: true }); // ohne Änderung bleibt der Stand vor dem letzten echten Import
+    const L = { pos: [...state.positions], dpos: [...state.demoPositions], trade: [...state.trades], dtrade: [...state.demoTrades], mv: [...state.movements], alarm: [...state.alarms] };
+    const drop = (k, id) => { L[k] = L[k].filter(x => x.id !== id); }, place = (k, rec) => { const i = L[k].findIndex(x => x.id === rec.id); if (i >= 0) L[k][i] = rec; else L[k].push(rec); };
+    const T = tombs(), H = tombHs(), n = { pos: 0, posUpd: 0, trades: 0, tradesUpd: 0, mv: 0, alarms: 0, dpos: 0, dtrade: 0 };
+    const count = (x, upd) => { if (x.kind === 'pos') n[upd ? 'posUpd' : 'pos']++; else if (x.kind === 'trade') n[upd ? 'tradesUpd' : 'trades']++; else if (x.kind === 'dpos' || x.kind === 'dtrade') n[x.kind]++; else if (x.kind === 'mv') n.mv++; else n.alarms++; };
+    const unTomb = x => { delete T[`${x.ns}:${x.rec.id}`]; delete H[`${x.ns}:${x.rec.id}`]; };
+    for (const x of p.add) { place(x.kind, x.rec); unTomb(x); count(x, false); }
+    for (const x of [...p.upd, ...p.merged]) { if (x.from) drop(x.from, x.rec.id); place(x.kind, x.rec); count(x, true); }
+    for (const x of p.closed) { drop('pos', x.cur.id); drop('dpos', x.cur.id); place(x.kind, x.rec); }
+    for (const x of p.del) { drop(x.kind, x.cur.id); const k = `${x.ns}:${x.cur.id}`; T[k] = Math.max(T[k] || 0, p.inT[k] || Date.now()); H[k] = [...new Set([...(H[k] || []), ...(p.inH[k] || []), ...histOf(x.cur).filter(h => !h.startsWith('x:')), x.cur.h])].slice(-62); }
+    for (const a of p.acks) { const r = L[a.kind].find(x => x.id === a.id); if (r) { const i = L[a.kind].indexOf(r); L[a.kind][i] = { ...r, ack: a.ack }; } }
+    if (opt.restore) for (const x of p.blocked) { place(x.kind, x.rec); unTomb(x); }
+    // Löschungen des anderen Geräts übernehmen – nur für Kennungen, die hier nicht (mehr) bestehen
+    const alive = new Set(Object.values(L).flatMap(l => l.map(r => r.id)));
+    for (const [k, t] of Object.entries(p.inT)) if (!alive.has(k.slice(k.indexOf(':') + 1)) && !(T[k] >= t)) T[k] = t;
+    for (const [k, l] of Object.entries(p.inH)) if (!alive.has(k.slice(k.indexOf(':') + 1))) H[k] = [...new Set([...(H[k] || []), ...l])].slice(-62);
+    // ab hier wird gesetzt
+    state.positions = L.pos; state.demoPositions = L.dpos; state.trades = L.trade; state.demoTrades = L.dtrade; state.movements = L.mv; state.alarms = L.alarm;
+    const T2 = cleanTombs(T), H2 = {}; for (const k of Object.keys(H)) if (T2[k]) H2[k] = H[k];
+    store.set(DELETED_KEY, T2); store.set(DELETEDH_KEY, H2);
+    const myS = stampsOf(SETTINGS_AT_KEY), myL = stampsOf(LISTS_AT_KEY), lin = setLin();
+    for (const s of [...p.settings, ...p.lists]) {
+      applySetting(s.f, s.f === 'pnl' ? s.full || s.value : s.value);
+      lin[s.f] = { h: valHash(setVal(s.f)), hist: histAdd([...histOf(s.lin), ...histOf(lin[s.f])], ...[s.lin?.h, lin[s.f]?.h].filter(h => h && h !== valHash(setVal(s.f)))) };
+      if (['risk', 'dayLimit', 'taxRate'].includes(s.f)) myS[s.f] = Date.now(); else if (s.f !== 'pnl') myL[s.f] = Date.now();
+    }
+    if (p.pnlRun) pnlSet(p.pnlRun);
+    store.set(SETH_KEY, lin); store.set(SETTINGS_AT_KEY, myS); store.set(LISTS_AT_KEY, myL);
+    const nq = quarAdd([...p.bad.map(b => ({ ...b, from: 'import', src: p.src })), ...p.quar]);
+    const nc = confAdd(p.conflicts.map(c => ({ ...c, src: p.src })));
+    zzpImport(p.data.patterns); // gelernte Muster: still übernehmen, je Muster die Fassung mit mehr Fällen
+    if (opt.prefs && p.prefs) for (const k of p.prefs.keys) store.set(k, p.prefs.values[k]);
+    posStructure = null; demoStructure = null; histStructure = '';
+    persist(); saveWatch();
+    const ok = await store.flush();
+    if (!ok) { // Speichern fehlgeschlagen: zurück zum bisherigen Stand
+      Object.assign(state, oldState);
+      for (const [k, v] of before) { if (v === undefined) store.del(k); else store.set(k, v, { force: true }); }
+      posStructure = null; demoStructure = null; histStructure = ''; persist(); render();
+      throw new Error(`Speichern fehlgeschlagen (${store.info.error || 'Speicher voll oder gesperrt'}) – der bisherige Stand bleibt, nichts wurde übernommen. Speicherplatz prüfen und erneut versuchen.`);
+    }
+    logImport(p);
+    broadcastData([...UNDO_KEYS.filter(k => SYNC_KEYS.includes(k)), CONF_KEY, QUAR_KEY, SETH_KEY, DELETEDH_KEY]);
+    render(); renderIntegrity(); if ((n.pos || n.posUpd) && !state.busy && !state.paused) void refresh();
+    if (opt.prefs && p.prefs) setTimeout(() => location.reload(), 900);
+    const pl = (k, a, b) => `${k} ${k === 1 ? a : b}`, parts = [];
+    if (n.pos) parts.push(`${pl(n.pos, 'Position', 'Positionen')} neu`);
+    if (n.posUpd) parts.push(`${pl(n.posUpd, 'Position', 'Positionen')} aktualisiert`);
+    if (p.closed.length) parts.push(`${p.closed.length} als geschlossen übernommen`);
+    if (n.trades) parts.push(pl(n.trades, 'Trade', 'Trades'));
+    if (n.tradesUpd) parts.push(`${pl(n.tradesUpd, 'Trade', 'Trades')} geändert`);
+    if (n.mv) parts.push(pl(n.mv, 'Geldbewegung', 'Geldbewegungen'));
+    if (n.alarms) parts.push(pl(n.alarms, 'Kurs-Alarm', 'Kurs-Alarme'));
+    if (n.dpos) parts.push(pl(n.dpos, 'Demo-Position', 'Demo-Positionen'));
+    if (n.dtrade) parts.push(pl(n.dtrade, 'Demo-Trade', 'Demo-Trades'));
+    if (p.del.length) parts.push(`${p.del.length} gelöscht wie auf dem anderen Gerät`);
+    if (opt.restore && p.blocked.length) parts.push(`${p.blocked.length} wiederhergestellt`);
+    if (p.acks.length) parts.push(pl(p.acks.length, 'Quittierung', 'Quittierungen'));
+    if (p.pnlRun) parts.push('Gewinn-/Verlust-Alarm als ausgelöst');
+    for (const l of p.lists) parts.push(`${l.name} wie auf dem anderen Gerät`);
+    if (p.settings.length) parts.push(`Einstellungen: ${p.settings.map(s => s.name).join(', ')}`);
+    if (opt.prefs && p.prefs) parts.push('Anzeige-Einstellungen (die App lädt neu)');
+    const kept = p.blocked.length && !opt.restore ? ` · ${pl(p.blocked.length, 'hier gelöschter Eintrag bleibt', 'hier gelöschte Einträge bleiben')} gelöscht` : '';
+    const waiting = nc + p.pending;
+    const extra = `${waiting ? ` · ⚖ ${pl(waiting, 'Konflikt wartet', 'Konflikte warten')} auf deine Entscheidung${p.pending ? (nc ? ` (${nc} neu)` : ' (schon offen)') : ''}` : ''}${nq ? ` · ⚠ ${pl(nq, 'fehlerhafter Eintrag', 'fehlerhafte Einträge')} in der Prüfliste` : ''}`;
+    return (parts.length ? `Übernommen: ${parts.join(', ')}${p.same + p.older ? ` · ${p.same + p.older} Einträge waren schon aktuell` : ''}` : `Nichts Neues – alle ${p.same + p.older} Einträge waren schon aktuell`) + kept + extra + '.';
+  } finally { commitBusy = false; }
+}
+function applySetting(f, v) {
+  if (f === 'risk') { state.risk = { ...v }; store.set(RISK_KEY, { ...state.risk }); }
+  else if (f === 'dayLimit') { state.dayLimit = v; if (v) store.set(DAYLIMIT_KEY, v); else store.del(DAYLIMIT_KEY); }
+  else if (f === 'taxRate') { state.taxRate = v; if (v) store.set(TAX_KEY, v); else store.del(TAX_KEY); }
+  else if (f === 'watch') state.watch = [...v];
+  else if (f === 'setups') state.setups = [...v];
+  else if (f === 'pnl') { const cur = pnlGet(), full = isObj(v) ? v : {}, next = { ...cur }; for (const k of PNL_KINDS) next[k] = full[k] && 'state' in full[k] ? { ...cur[k], ...full[k] } : { ...cur[k], on: !!full[k]?.on, value: full[k]?.value ?? null }; pnlSet(next); }
+}
+function logImport(p) {
+  const id = p.id, list = (store.get(IMPORTS_KEY) || []).filter(x => isObj(x) && x.id !== id).slice(-29);
+  list.push({ id, at: Date.now(), src: String(p.src).slice(0, 80), exportedAt: Number(p.data.exportedAt) || 0 }); store.set(IMPORTS_KEY, list);
+}
+const importedBefore = id => (store.get(IMPORTS_KEY) || []).find(x => isObj(x) && x.id === id) || null;
+// „Letzten Import rückgängig machen“: bisherigen Stand zurückschreiben, dann neu laden
+async function undoImport() {
+  const u = store.get(UNDO_KEY); if (!isObj(u) || !Array.isArray(u.items)) return;
+  if (!confirm(`Stand vor dem Import vom ${new Date(u.at).toLocaleString('de-DE')} (${u.src}) wiederherstellen? Was seitdem auf diesem Gerät geändert wurde, geht dabei verloren.`)) return;
+  for (const [k, v] of u.items) { if (v === undefined) store.del(k); else store.set(k, v, { force: true }); }
+  store.del(UNDO_KEY); await store.flush(); location.reload();
 }
 // ---- Vorschau ----
-const KIND_N = { pos: ['Position', 'Positionen'], trade: ['Trade', 'Trades'], dpos: ['Demo-Position', 'Demo-Positionen'], dtrade: ['Demo-Trade', 'Demo-Trades'], mv: ['Geldbewegung', 'Geldbewegungen'], alarm: ['Kurs-Alarm', 'Kurs-Alarme'] };
+const KIND_N = { pos: ['Position', 'Positionen'], trade: ['Trade', 'Trades'], dpos: ['Demo-Position', 'Demo-Positionen'], dtrade: ['Demo-Trade', 'Demo-Trades'], mv: ['Geldbewegung', 'Geldbewegungen'], alarm: ['Kurs-Alarm', 'Kurs-Alarme'], list: ['Liste', 'Listen'], set: ['Einstellung', 'Einstellungen'] };
 function kindsText(items) { const c = {}; for (const x of items) c[x.kind] = (c[x.kind] || 0) + 1; return Object.keys(KIND_N).filter(k => c[k]).map(k => `${c[k]} ${KIND_N[k][c[k] === 1 ? 0 : 1]}`).join(', '); }
 function recText(kind, r) {
-  const d = ms => new Date(ms).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }), side = r.side === 'short' ? 'Short' : 'Long';
-  if (kind === 'trade' || kind === 'dtrade') return `${kind === 'dtrade' ? 'Demo-Trade' : 'Trade'} ${coin(r.symbol)} ${side} vom ${d(r.closedAt)} (${signed(r.pnl)} USDT)`;
-  if (kind === 'pos' || kind === 'dpos') return `${kind === 'dpos' ? 'Demo-Position' : 'Position'} ${coin(r.symbol)} ${side}, Einstieg ${priceText(r.entry)}`;
-  if (kind === 'mv') return `${MV_TYPES[r.type] || 'Geldbewegung'} ${number(r.amount)} ${r.currency || ''} vom ${new Date(r.date).toLocaleDateString('de-DE')}`.replace(/ {2}/g, ' ');
-  return `Kurs-Alarm ${coin(r.symbol)} ${r.dir === 'below' ? 'auf/unter' : 'auf/über'} ${priceText(r.price)}${r.triggeredAt ? ' (ausgelöst)' : ''}`;
+  if (!isObj(r)) return KIND_N[kind]?.[0] || 'Eintrag';
+  const d = ms => Number.isFinite(ms) ? new Date(ms).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '?', side = r.side === 'short' ? 'Short' : 'Long', sym = typeof r.symbol === 'string' && r.symbol.endsWith('USDT') ? coin(r.symbol) : String(r.symbol ?? '?');
+  if (kind === 'trade' || kind === 'dtrade') return `${kind === 'dtrade' ? 'Demo-Trade' : 'Trade'} ${sym} ${side} vom ${d(r.closedAt)} (${signed(r.pnl)} USDT)`;
+  if (kind === 'pos' || kind === 'dpos') return `${kind === 'dpos' ? 'Demo-Position' : 'Position'} ${sym} ${side}, Einstieg ${isNum(r.entry) ? priceText(r.entry) : '?'}`;
+  if (kind === 'mv') return `${MV_TYPES[r.type] || 'Geldbewegung'} ${isNum(r.amount) ? number(r.amount) : '?'} ${r.currency || ''} vom ${isNum(r.date) ? new Date(r.date).toLocaleDateString('de-DE') : '?'}`.replace(/ {2}/g, ' ');
+  if (kind === 'alarm') return `Kurs-Alarm ${sym} ${r.dir === 'below' ? 'auf/unter' : 'auf/über'} ${isNum(r.price) ? priceText(r.price) : '?'}${r.triggeredAt ? ' (ausgelöst)' : ''}`;
+  return 'Eintrag';
 }
-const DIFF_F = [['note', 'Notiz'], ['reasons', 'Gründe'], ['entry', 'Einstieg'], ['qty', 'Menge'], ['leverage', 'Hebel'], ['margin', 'Margin'], ['mode', 'Modus'], ['sl', 'Stop-Loss'], ['tp', 'Take-Profit'], ['exit', 'Ausstieg'], ['fees', 'Gebühren'], ['pnl', 'Ergebnis'], ['price', 'Preis'], ['dir', 'Richtung'], ['triggeredAt', 'ausgelöst'], ['armedAt', 'wieder scharf']];
-function diffText(a, b) { const f = DIFF_F.filter(([k]) => JSON.stringify(a[k] ?? null) !== JSON.stringify(b[k] ?? null)).map(x => x[1]); return f.length ? f.join(', ') : 'neuere Fassung'; }
+const DIFF_F = [['note', 'Notiz'], ['reasons', 'Gründe'], ['entry', 'Einstieg'], ['qty', 'Menge'], ['leverage', 'Hebel'], ['mode', 'Modus'], ['side', 'Richtung'], ['symbol', 'Kürzel'], ['sl', 'Stop-Loss'], ['tp', 'Take-Profit'], ['liqExchange', 'Liq.-Preis (Börse)'], ['preRealized', 'Vorher realisiert'], ['exit', 'Ausstieg'], ['fees', 'Gebühren'], ['pnl', 'Ergebnis'], ['pnlSource', 'Quelle Ergebnis'], ['fx', 'EUR/USDT'], ['openedAt', 'Eröffnet'], ['closedAt', 'Geschlossen'], ['price', 'Preis'], ['dir', 'Richtung'], ['source', 'Kursquelle'], ['triggeredAt', 'ausgelöst'], ['triggerPrice', 'Auslösekurs'], ['touch', 'Docht bis'], ['missed', 'nachträglich erkannt'], ['svcAt', '24/7-Dienst zuständig'], ['armedAt', 'wieder scharf'], ['type', 'Art'], ['amount', 'Betrag'], ['currency', 'Währung'], ['date', 'Datum'], ['invalid', 'Ungültige Originalwerte'], ['@', 'Handelsmodus']];
+const DIFF_LABEL = new Map(DIFF_F);
+function diffFields(a, b, kindA, kindB) {
+  const ca = {}, cb = {}; for (const [o, r, k] of [[ca, a, kindA], [cb, b, kindB]]) if (isObj(r)) { for (const x of Object.keys(r)) if (!META_KEYS.has(x)) o[x] = r[x]; if (LIST_TAG[k]) o['@'] = LIST_TAG[k] === 'dpos' || LIST_TAG[k] === 'dtrade' ? 'DEMO' : 'ECHT'; }
+  return [...new Set([...Object.keys(ca), ...Object.keys(cb)])].filter(k => canon(ca[k]) !== canon(cb[k])).sort((x, y) => (DIFF_F.findIndex(f => f[0] === x) + 1 || 99) - (DIFF_F.findIndex(f => f[0] === y) + 1 || 99));
+}
+function diffText(a, b, kind) { const f = diffFields(a, b, kind, kind).map(k => DIFF_LABEL.get(k) || k); return f.length ? f.join(', ') : 'weiterentwickelte Fassung'; }
+function fieldVal(k, v) {
+  if (v === undefined) return '(fehlt)';
+  if (v === null) return '–';
+  if (/At$|^date$/.test(k) && isNum(v)) return new Date(v).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  if (isNum(v)) return k === 'entry' || k === 'exit' || k === 'price' || k === 'sl' || k === 'tp' || k === 'triggerPrice' || k === 'liqExchange' ? priceText(v) : plain(v);
+  if (Array.isArray(v)) return v.length ? v.map(x => typeof x === 'string' ? x : JSON.stringify(x)).join(', ') : '(keine)';
+  if (k === 'side') return v === 'short' ? 'Short' : v === 'long' ? 'Long' : String(v);
+  if (k === 'dir') return v === 'below' ? 'auf/unter' : v === 'above' ? 'auf/über' : String(v);
+  return typeof v === 'string' ? v : JSON.stringify(v);
+}
 function planLines(p) {
-  const ex = (items, f) => items.slice(0, 3).map(f).concat(items.length > 3 ? [`… und ${items.length - 3} weitere`] : []), out = [];
-  if (p.add.length) out.push(['Neu', kindsText(p.add)]);
-  if (p.upd.length) out.push(['Geändert', kindsText(p.upd), ex(p.upd, x => `${recText(x.from || x.kind, x.cur)}: ${x.from ? (x.kind === 'dpos' ? 'jetzt DEMO' : 'jetzt ECHT') : diffText(x.cur, x.rec)}`)]);
+  const out = [], ex = (items, f) => items.map(f);
+  if (p.add.length) out.push(['Neu', kindsText(p.add), ex(p.add, x => recText(x.kind, x.rec))]);
+  if (p.upd.length) out.push(['Geändert', kindsText(p.upd), ex(p.upd, x => `${recText(x.from || x.kind, x.cur)}: ${x.from ? (x.kind === 'dpos' ? 'jetzt DEMO' : 'jetzt ECHT') : diffText(x.cur, x.rec, x.kind)}`)]);
+  if (p.merged.length) out.push(['Zusammengeführt', `${kindsText(p.merged)} – auf beiden Geräten ausgelöst, die frühere Auslösung gilt`, ex(p.merged, x => recText(x.kind, x.rec))]);
   if (p.closed.length) out.push(['Auf dem anderen Gerät geschlossen', p.closed.length === 1 ? '1 Position – wird hier zum Trade' : `${p.closed.length} Positionen – werden hier zu Trades`, ex(p.closed, x => recText(isDemoPos(x.cur) ? 'dpos' : 'pos', x.cur))]);
   if (p.del.length) out.push(['Auf dem anderen Gerät gelöscht', `${kindsText(p.del)} – ${p.del.length === 1 ? 'wird' : 'werden'} hier gelöscht`, ex(p.del, x => recText(x.kind, x.cur))]);
-  if (p.blocked.length) out.push(['Hier gelöscht', `${kindsText(p.blocked)} – noch in der Datei, ${p.blocked.length === 1 ? 'bleibt' : 'bleiben'} hier gelöscht`, ex(p.blocked, x => recText(x.kind, x.rec))]);
+  if (p.blocked.length) out.push(['Hier gelöscht', `${kindsText(p.blocked)} – noch in der Sicherung, ${p.blocked.length === 1 ? 'bleibt' : 'bleiben'} hier gelöscht`, ex(p.blocked, x => recText(x.kind, x.rec))]);
+  if (p.conflicts.length) out.push(['⚖ Konflikte', `${p.conflicts.length} – beide Geräte haben dasselbe verschieden geändert. Nach „Übernehmen“ entscheidest du einzeln; bis dahin gilt der Stand dieses Geräts.`, ex(p.conflicts, c => c.kind === 'set' ? SET_NAME[c.f] : `${recText(c.localKind || c.kind, c.local || c.draft)}${c.why === 'deletedHere' ? ' – hier gelöscht, dort geändert' : c.why === 'deletedThere' ? ' – dort gelöscht, hier vorhanden' : c.why === 'setup' ? ' – Gründe: Herkunft unklar' : ''}`)]);
+  if (p.pending) out.push(['⚖ Schon offen', `${p.pending} ${p.pending === 1 ? 'Konflikt' : 'Konflikte'} aus einem früheren Abgleich – ${p.pending === 1 ? 'wartet' : 'warten'} weiter auf deine Entscheidung`]);
+  if (p.bad.length) out.push(['⚠ Fehlerhaft in der Sicherung', `${p.bad.length} – ${p.bad.length === 1 ? 'kommt' : 'kommen'} in die Prüfliste (nichts geht verloren)`, ex(p.bad, b => `${recText(b.kind, b.raw)}: ${b.why}`)]);
+  if (p.quar.length) out.push(['Prüfliste des anderen Geräts', `${p.quar.length} ${p.quar.length === 1 ? 'Eintrag' : 'Einträge'} – ${p.quar.length === 1 ? 'kommt' : 'kommen'} in die Prüfliste`]);
+  if (p.acks.length) out.push(['Quittierungen', `${p.acks.length} – auf dem anderen Gerät bestätigt`]);
   for (const s of p.settings) out.push([s.name, `${s.from} → ${s.to}`]);
-  for (const l of p.lists) out.push([l.name, [l.plus.length ? `+ ${l.plus.join(', ')}` : '', l.minus.length ? `− ${l.minus.join(', ')}` : ''].filter(Boolean).join(' · ')]);
-  if (p.same) out.push(['Schon aktuell', `${p.same} ${p.same === 1 ? 'Eintrag' : 'Einträge'}`]);
+  for (const l of p.lists) { const cur = setVal(l.f), plus = l.value.filter(x => !cur.includes(x)), minus = cur.filter(x => !l.value.includes(x)); out.push([l.name, [plus.length ? `+ ${plus.join(', ')}` : '', minus.length ? `− ${minus.join(', ')}` : ''].filter(Boolean).join(' · ') || 'neue Reihenfolge']); }
+  if (p.pnlRun) out.push(['Gewinn-/Verlust-Alarm', 'auf dem anderen Gerät ausgelöst – gilt hier ebenfalls als ausgelöst']);
+  if (p.same + p.older) out.push(['Schon aktuell', `${p.same + p.older} ${p.same + p.older === 1 ? 'Eintrag' : 'Einträge'}`]);
   return out;
 }
 // Vorschau in box zeigen; „Übernehmen“ oder „Abbrechen“ ruft done(Meldung | null)
@@ -3466,44 +3840,212 @@ function showPlan(id, p, done) {
   const box = $(id), list = el('ul', 'sp-list');
   for (const [b, t, exs] of planLines(p)) {
     const li = el('li'); li.append(el('b', '', `${b}: `), document.createTextNode(t));
-    if (exs?.length) { const sub = el('ul', 'sp-ex'); for (const e of exs) sub.append(el('li', '', e)); li.append(sub); }
+    if (exs?.length) {
+      const sub = el('ul', 'sp-ex'); for (const e of exs.slice(0, 3)) sub.append(el('li', '', e)); li.append(sub);
+      if (exs.length > 3) { const d = el('details', 'sp-all'), s = el('summary', '', `Alle ${exs.length} anzeigen`), all = el('ul', 'sp-ex'); for (const e of exs.slice(3)) all.append(el('li', '', e)); d.append(s, all); li.append(d); }
+    }
     list.append(li);
   }
-  const kids = [el('p', 'sp-head', 'Vorschau – noch ist nichts geändert. Übernommen wird, was hier fehlt oder neuer ist; auf dem anderen Gerät Gelöschtes wird hier ebenfalls gelöscht.'), list];
-  let cb = null;
+  const d = p.data, meta = [d.version ? `Schema ${d.version}` : 'ältere Version', d.appVersion ? `App ${d.appVersion}` : '', isNum(d.exportedAt) ? `erstellt ${new Date(d.exportedAt).toLocaleString('de-DE')}` : ''].filter(Boolean).join(' · '), seen = importedBefore(p.id);
+  const kids = [el('p', 'sp-head', `Vorschau – noch ist nichts geändert. Quelle: ${p.src}${meta ? ` (${meta})` : ''}.${seen ? ` Diese Sicherung wurde am ${new Date(seen.at).toLocaleString('de-DE')} schon eingespielt.` : ''}`), list];
+  let cb = null, cp = null;
   if (p.blocked.length) { const lab = el('label', 'check sp-restore'); cb = el('input'); cb.type = 'checkbox'; lab.append(cb, document.createTextNode(` Hier gelöschte Einträge wiederherstellen (${p.blocked.length})`)); kids.push(lab); }
+  if (p.prefs) { const lab = el('label', 'check sp-restore'); cp = el('input'); cp.type = 'checkbox'; lab.append(cp, document.createTextNode(` Auch die Anzeige-Einstellungen des anderen Geräts übernehmen (${p.prefs.keys.length}) – die App lädt danach neu`)); kids.push(lab); }
   const ok = btn('button primary-lite', 'Übernehmen'), no = btn('button ghost', 'Abbrechen'), act = el('div', 'sp-actions');
   act.append(ok, no); kids.push(act);
   box.replaceChildren(...kids); box.hidden = false;
   const close = () => { box.hidden = true; box.replaceChildren(); };
-  ok.addEventListener('click', () => { let msg; try { msg = commitPlan(p, !!cb?.checked); } catch (e) { msg = e?.message || String(e); } close(); done(msg); });
+  ok.addEventListener('click', async () => {
+    ok.disabled = true; no.disabled = true; let msg;
+    try { msg = await commitPlan(p, { restore: !!cb?.checked, prefs: !!cp?.checked }); } catch (e) { msg = e?.message || String(e); }
+    close(); done(msg); if (confList().length) openConflicts();
+  });
   no.addEventListener('click', () => { close(); done(null); });
   focusSoft(ok);
 }
-// Datei prüfen: nichts zu entscheiden → gleich übernehmen (still: Muster, Gewinn-/Verlust-Alarm), sonst Vorschau
-function reviewBackup(data) {
-  const p = planBackup(data);
-  if (!planChanges(p) && !p.blocked.length) { backupStatus(commitPlan(p)); return; }
-  backupStatus('Vorschau unten prüfen, dann „Übernehmen“.');
-  showPlan('sync-preview', p, msg => backupStatus(msg ?? 'Abgleich abgebrochen – nichts geändert.'));
+// Sicherung prüfen: nichts zu entscheiden → gleich übernehmen (still: Muster), sonst Vorschau
+async function reviewBackup(data, src = 'Datei', box = 'sync-preview', status = backupStatus) {
+  const p = planBackup(data, src);
+  if (!planChanges(p) && !p.blocked.length) { status(await commitPlan(p)); return; }
+  status('Vorschau prüfen, dann „Übernehmen“.');
+  showPlan(box, p, msg => status(msg ?? 'Abgleich abgebrochen – nichts geändert.'));
 }
+// ---------- 3.29.0 (G01): Konflikte vergleichen und entscheiden, Prüfliste ----------
+// Offene Konflikte: hiesige (bestätigte) Fassung und Entwurf des anderen Geräts. Bis zu deiner Entscheidung gilt der bestätigte
+// Stand; beide Fassungen bleiben gespeichert (auch in jeder Sicherung). Gleicher Entwurf derselben Kennung nur einmal.
+function confList() { const v = store.get(CONF_KEY); return Array.isArray(v) ? v.filter(isObj) : []; }
+function confKey(c) { return c.kind === 'set' ? `set:${c.f}:${valHash(c.draft)}` : `${GROUP_OF[c.kind] || c.kind}:${c.id}:${c.draft ? c.draft.h || recHash(c.draft, c.kind) : 'del:' + (c.mark || '')}`; }
+function confAdd(items) {
+  const list = confList(), seen = new Set(list.map(confKey)); let n = 0;
+  for (const c of items) {
+    const k = confKey(c); if (seen.has(k)) continue; seen.add(k);
+    list.push({ cid: 'c' + fp(k + Date.now() + Math.random()), kind: c.kind, id: c.id, f: c.f, localKind: c.localKind, local: c.local ?? null, draft: c.draft ?? null, draftLin: c.draftLin, full: c.full, mark: c.mark, why: c.why, src: String(c.src || '').slice(0, 120), at: Date.now() });
+    n++;
+  }
+  if (n && store.set(CONF_KEY, list) && !loadingData) broadcastData([CONF_KEY]);
+  return n;
+}
+function confDrop(cid) { const list = confList().filter(c => c.cid !== cid); if (store.set(CONF_KEY, list)) broadcastData([CONF_KEY]); }
+const confState = { list: [], i: 0 };
+function openConflicts(cid) {
+  confState.list = confList(); if (!confState.list.length) return;
+  confState.i = Math.max(0, confState.list.findIndex(c => c.cid === cid));
+  if (!$('conf-dialog').open) $('conf-dialog').showModal();
+  showConflict();
+}
+// Aktuelle hiesige Fassung (kann sich seit dem Abgleich geändert haben)
+function confCurrent(c) { if (c.kind === 'set') return setVal(c.f); const h = hereOf(c.localKind || c.kind, c.id) || hereOf(c.kind, c.id); return h ? h.rec : null; }
+function showConflict() {
+  const list = confState.list, c = list[confState.i];
+  if (!c) { $('conf-dialog').close(); renderIntegrity(); return; }
+  const cur = confCurrent(c), here = c.kind === 'set' ? null : hereOf(c.localKind || c.kind, c.id) || hereOf(c.kind, c.id);
+  put('conf-count', `Konflikt ${confState.i + 1} von ${list.length}${c.src ? ` · aus: ${c.src}` : ''}`);
+  const what = c.kind === 'set' ? `${SET_NAME[c.f]}: auf beiden Geräten verschieden geändert.`
+    : c.why === 'deletedThere' ? `${recText(here?.kind || c.kind, cur)} – auf dem anderen Gerät gelöscht, hier noch vorhanden.`
+    : c.why === 'deletedHere' ? `${recText(c.kind, c.draft)} – hier gelöscht, auf dem anderen Gerät geändert.`
+    : c.why === 'setup' ? `${recText(c.kind, cur || c.draft)} – die Gründe passen nicht zum Setup einer älteren App-Version; die Herkunft ist nicht nachweisbar.`
+    : `${recText(here?.kind || c.kind, cur || c.draft)} – auf beiden Geräten seit dem letzten gemeinsamen Stand verschieden geändert.`;
+  put('conf-what', what);
+  const tb = $('conf-table').querySelector('tbody'), rows = [];
+  const row = (label, a, b) => { const tr = el('tr'); tr.append(el('th', '', label), el('td', '', a), el('td', '', b)); rows.push(tr); };
+  if (c.kind === 'set') row(SET_NAME[c.f], setFmt(c.f, cur), setFmt(c.f, c.draft));
+  else if (!c.draft) row('Eintrag', cur ? recText(here?.kind || c.kind, cur) : 'nicht mehr vorhanden', 'gelöscht');
+  else if (!cur) row('Eintrag', 'gelöscht', recText(c.kind, c.draft));
+  else { const ks = diffFields(cur, c.draft, here?.kind || c.kind, c.kind); for (const k of ks) row(DIFF_LABEL.get(k) || k, fieldVal(k, k === '@' ? (LIST_TAG[here?.kind] === 'dpos' || LIST_TAG[here?.kind] === 'dtrade' ? 'DEMO' : 'ECHT') : cur[k]), fieldVal(k, k === '@' ? (c.kind === 'dpos' || c.kind === 'dtrade' ? 'DEMO' : 'ECHT') : c.draft[k])); if (!ks.length) row('Inhalt', 'gleich', 'gleich'); }
+  tb.replaceChildren(...rows);
+  const changed = c.kind !== 'set' && c.local && cur && isObj(c.local) && recHash(c.local, c.localKind || c.kind) !== recHash(cur, here?.kind || c.kind);
+  put('conf-note', `Bis zu deiner Entscheidung gilt der bestätigte Stand dieses Geräts; beide Fassungen bleiben gespeichert.${changed ? ' Der bestätigte Stand wurde seit dem Abgleich hier geändert – verglichen wird mit dem aktuellen.' : ''}`);
+  put('conf-take', !c.draft ? 'Löschung übernehmen' : !cur && c.kind !== 'set' ? 'Wiederherstellen (Entwurf)' : 'Entwurf übernehmen');
+  $('conf-title').focus({ preventScroll: true }); // keine Auswahl vorausgewählt
+}
+function decideConflict(choice) {
+  const c = confState.list[confState.i]; if (!c) return;
+  if (choice === 'later') { confState.i++; return showConflict(); }
+  if (c.kind === 'set') {
+    const L = setLin(), cur = isObj(L[c.f]) ? L[c.f] : { h: valHash(setVal(c.f)), hist: [] }, dh = valHash(c.draft);
+    if (choice === 'keep') L[c.f] = { h: cur.h || valHash(setVal(c.f)), hist: histAdd(cur.hist, dh) };
+    else { const oldH = valHash(setVal(c.f)); applySetting(c.f, c.f === 'pnl' ? c.full || c.draft : c.draft); if (c.f === 'watch' || c.f === 'setups') saveWatch(); L[c.f] = { h: valHash(setVal(c.f)), hist: histAdd([...histOf(c.draftLin), ...histOf(cur)], oldH) }; }
+    // Vermerk „geändert“ für ältere App-Versionen, die nach diesem Zeitpunkt abgleichen: deine Entscheidung ist der neueste Stand
+    const atKey = ['risk', 'dayLimit', 'taxRate'].includes(c.f) ? SETTINGS_AT_KEY : c.f === 'watch' || c.f === 'setups' ? LISTS_AT_KEY : null;
+    if (atKey) store.set(atKey, { ...stampsOf(atKey), [c.f]: Date.now() });
+    store.set(SETH_KEY, L); broadcastData([SETH_KEY, ...(atKey ? [atKey] : [])]); persist(); saveWatch();
+  } else {
+    const here = hereOf(c.localKind || c.kind, c.id) || hereOf(c.kind, c.id), cur = here?.rec || null, ns = NS_OF[c.kind], key = `${ns}:${c.id}`;
+    const setKind = (k, arr) => { if (k === 'pos') state.positions = arr; else if (k === 'dpos') state.demoPositions = arr; else if (k === 'trade') state.trades = arr; else if (k === 'dtrade') state.demoTrades = arr; else if (k === 'mv') state.movements = arr; else state.alarms = arr; };
+    const remove = (keep = null) => { if (cur) for (const k of [here.kind, PLAN_OTHER[here.kind]].filter(k => k && k !== keep)) setKind(k, planList(k).filter(x => x.id !== c.id)); }; // ganze Gruppe (ECHT und DEMO)
+    if (choice === 'keep') {
+      if (cur) cur.hist = histAdd(cur.hist, c.draft ? c.draft.h || recHash(c.draft, c.kind) : c.mark);
+      else if (c.draft) { const H = tombHs(); H[key] = [...new Set([...(H[key] || []), c.draft.h || recHash(c.draft, c.kind)])].slice(-62); store.set(DELETEDH_KEY, H); broadcastData([DELETEDH_KEY]); }
+    } else if (!c.draft) { // Löschung übernehmen
+      if (cur) { remove(); tomb(ns, c.id); }
+    } else { // Entwurf übernehmen: die hiesige Fassung wird zur Vorgeschichte; der Eintrag behält seine Stelle in der Liste
+      const rec = { ...c.draft, hist: histAdd(histOf(c.draft), ...(cur ? [...histOf(cur).filter(h => !h.startsWith('x:')), cur.h] : [])) };
+      const at = cur && here.kind === c.kind ? planList(c.kind).indexOf(cur) : -1;
+      if (at >= 0) { setKind(c.kind, planList(c.kind).map((x, i) => i === at ? rec : x)); remove(c.kind); }
+      else { remove(); setKind(c.kind, [...planList(c.kind), rec]); }
+      lineage.delete(`${GROUP_OF[c.kind]}:${c.id}`);
+      const T = tombs(), H = tombHs(); if (key in T || key in H) { delete T[key]; delete H[key]; store.set(DELETED_KEY, T); store.set(DELETEDH_KEY, H); broadcastData([DELETED_KEY, DELETEDH_KEY]); }
+    }
+    posStructure = null; demoStructure = null; histStructure = ''; alarmKey = '';
+    persist();
+  }
+  confDrop(c.cid); confState.list.splice(confState.i, 1);
+  render(); showConflict();
+}
+// ---- Prüfliste: fehlerhafte Einträge (nicht geladen) und eingeschränkt geladene Werte ----
+const QK_NAME = { pos: 'Position', dpos: 'Demo-Position', trade: 'Trade', dtrade: 'Demo-Trade', mv: 'Geldbewegung', alarm: 'Kurs-Alarm', list: 'Liste' };
+function fieldIssues() {
+  const out = [], NAMES = { sl: 'Stop-Loss', tp: 'Take-Profit', liqExchange: 'Liq.-Preis (Börse)', fx: 'EUR/USDT', note: 'Notiz', reasons: 'Gründe', triggerPrice: 'Auslösekurs' };
+  for (const [kind] of PLAN_KINDS) for (const r of planList(kind)) if (isObj(r.invalid)) for (const [k, v] of Object.entries(r.invalid)) out.push({ kind, r, k, v, name: NAMES[k] || k });
+  return out;
+}
+let integrityKey = '';
+function renderIntegrity() {
+  const q = quarList(), f = fieldIssues(), c = confList(), box = $('integrity'), banner = $('integrity-banner');
+  if (!box || !banner) return;
+  const key = [q.map(x => x.hq).join(), f.map(x => `${x.kind}:${x.r.id}:${x.k}`).join(), c.length].join('|'); if (key === integrityKey) return; integrityKey = key;
+  const parts = [];
+  if (c.length) parts.push(`⚖ ${c.length} ${c.length === 1 ? 'Konflikt wartet' : 'Konflikte warten'} auf deine Entscheidung`);
+  if (q.length) { const t = q.filter(x => x.kind === 'trade').length, p = q.filter(x => x.kind === 'pos').length; parts.push(`⚠ ${q.length} ${q.length === 1 ? 'Eintrag konnte' : 'Einträge konnten'} nicht geladen werden${t || p ? ` (${[p && `${p} ${p === 1 ? 'Position' : 'Positionen'}`, t && `${t} ${t === 1 ? 'Trade' : 'Trades'}`].filter(Boolean).join(', ')})` : ''} und ${q.length === 1 ? 'fehlt' : 'fehlen'} in Anzeigen und Summen`); }
+  if (f.length) parts.push(`⚠ ${f.length} ${f.length === 1 ? 'Wert' : 'Werte'} ungültig – ohne diesen Wert geladen`);
+  banner.hidden = !parts.length; put('integrity-text', parts.join(' · '));
+  $('integrity-conf').hidden = !c.length; $('integrity-quar').hidden = !q.length && !f.length;
+  box.hidden = !q.length && !f.length;
+  const ul = $('quar-list'), items = [];
+  for (const x of q) {
+    const li = el('li', 'quar-item'), what = x.kind === 'list' ? `Liste ${x.raw?.key || x.raw?.field || ''}` : `${QK_NAME[x.kind] || 'Eintrag'}${isObj(x.raw) ? ` · ${recText(x.kind, x.raw)}` : ''}`;
+    li.append(el('b', '', what), el('span', 'quar-why', `Grund: ${x.why}`), el('small', '', `${x.from === 'import' ? 'beim Einspielen' : x.from === 'sync' ? 'beim Abgleich zwischen Tabs' : 'beim Laden'}${x.src ? ` (${x.src})` : ''} am ${new Date(x.at).toLocaleString('de-DE')}`));
+    const act = el('div', 'quar-act'), e = btn('button ghost', 'Ansehen / korrigieren'), d = btn('button ghost danger-btn', 'Löschen');
+    e.dataset.quarEdit = x.hq; d.dataset.quarDel = x.hq; act.append(e, d); li.append(act); items.push(li);
+  }
+  for (const x of f) {
+    const li = el('li', 'quar-item soft');
+    li.append(el('b', '', `${QK_NAME[x.kind]} · ${recText(x.kind, x.r)}`), el('span', 'quar-why', `${x.name}: Originalwert „${String(typeof x.v === 'string' ? x.v : JSON.stringify(x.v)).slice(0, 120)}“ ungültig – ohne diesen Wert geladen, Original gesichert`));
+    const act = el('div', 'quar-act'), ok = btn('button ghost', 'Erledigt'); ok.dataset.quarSoft = `${x.kind}|${x.r.id}|${x.k}`; act.append(ok); li.append(act); items.push(li);
+  }
+  ul.replaceChildren(...items);
+  put('quar-head', `${q.length + f.length} ${q.length + f.length === 1 ? 'Eintrag' : 'Einträge'} zu prüfen`);
+}
+const quarFind = hq => quarList().find(x => x.hq === hq);
+function quarRemove(hq) { const list = quarList().filter(x => x.hq !== hq); if (store.set(QUAR_KEY, list)) broadcastData([QUAR_KEY]); renderIntegrity(); }
+function quarOpen(hq) {
+  const x = quarFind(hq); if (!x) return;
+  $('quar-dialog').dataset.hq = hq; put('quar-dlg-why', `${QK_NAME[x.kind] || 'Eintrag'} – Grund: ${x.why}`);
+  $('quar-json').value = JSON.stringify(x.raw, null, 2); showNotice('quar-dlg-error', null);
+  $('quar-take').hidden = x.kind === 'list';
+  $('quar-dialog').showModal();
+}
+// Korrigierte Daten prüfen und als normalen Eintrag übernehmen (gleiche Kennung schon vorhanden → nicht überschreiben)
+function quarTake() {
+  const hq = $('quar-dialog').dataset.hq, x = quarFind(hq); if (!x) return;
+  let raw; try { raw = JSON.parse($('quar-json').value); } catch (e) { return showNotice('quar-dlg-error', 'Kein gültiges JSON: ' + e.message); }
+  const c = checkRecord(x.kind, raw); if (!c.rec) return showNotice('quar-dlg-error', 'Noch nicht gültig – ' + c.reason);
+  if (hereOf(x.kind, c.rec.id)) return showNotice('quar-dlg-error', 'Es gibt schon einen gültigen Eintrag mit dieser Kennung. Erst diesen löschen oder die Kennung („id“) ändern.');
+  planList(x.kind).push(c.rec);
+  if (x.kind === 'pos' || x.kind === 'dpos') posStructure = null;
+  persist(); quarRemove(hq); $('quar-dialog').close(); render(); backupStatus('Eintrag aus der Prüfliste übernommen.');
+}
+function quarExport() {
+  const d = new Date().toISOString().slice(0, 10);
+  download(`pruefliste-${d}.json`, JSON.stringify({ app: 'scalp-desk', kind: 'scalpdesk-quarantine', exportedAt: Date.now(), items: quarList(), fieldIssues: fieldIssues().map(x => ({ kind: x.kind, id: x.r.id, field: x.k, original: x.v })) }, null, 1), 'application/json');
+}
+// Summen ohne fehlerhafte Einträge: das sagt die Anzeige dazu
+function quarMark(kind) {
+  const key = kind === 'pos' ? POS_KEY : HIST_KEY, n = quarList().filter(x => x.kind === kind || (x.kind === 'list' && x.raw?.key === key)).length;
+  return n ? ` · ⚠ ohne ${n} fehlerhafte${kind === 'pos' ? (n === 1 ? ' Position' : ' Positionen') : n === 1 ? 'n Trade' : ' Trades'} (Prüfliste)` : '';
+}
+// Datei einspielen: Sicherungsdatei (JSON, auch verschlüsselt, alle Versionen ab 1), Textcode als Datei, Musterbestand oder Prüfliste
 async function loadBackupFile(file) {
   pendingEncrypted = null; $('decrypt-row').hidden = true; $('sync-preview').hidden = true; $('sync-preview').replaceChildren();
   if (!file) return;
-  if (file.size > 5e6) { backupStatus('Datei ist zu groß für ein Backup.'); return; }
-  let data; try { data = JSON.parse(await file.text()); } catch { backupStatus('Datei ist kein gültiges Backup (kein JSON).'); return; }
-  if (data?.kind === 'scalpdesk-patterns') { const n = zzpImport(data); backupStatus(n ? `Musterbestand übernommen: ${n} ${n === 1 ? 'Eintrag' : 'Einträge'} ergänzt (je Muster zählt die Fassung mit mehr Fällen).` : 'Musterbestand: nichts Neues – alle Einträge waren schon enthalten.'); return; }
-  if (data?.format === 'aes-gcm-v1') {
-    if (!globalThis.crypto?.subtle) { backupStatus('Zum Entschlüsseln muss die Seite über https geöffnet sein.'); return; }
-    pendingEncrypted = data; $('decrypt-row').hidden = false; backupStatus(''); $('backup-pass').focus(); return;
-  }
-  try { reviewBackup(data); } catch (err) { backupStatus(err.message); }
+  if (file.size > BK_MAX_FILE) { backupStatus(`Datei ist zu groß für eine Sicherung (${number(file.size / 1e6, 1)} MB, höchstens ${number(BK_MAX_FILE / 1e6, 0)} MB).`); return; }
+  const src = `Datei ${file.name}`.slice(0, 80);
+  try {
+    const text = await file.text();
+    if (!/^\s*[{[]/.test(text) && text.includes(TEXT_PREFIX)) { // Textcode als Datei gespeichert
+      const bytes = fromTextCode(text);
+      try { const { payload } = await unpackBackup(bytes, ''); return await reviewBackup(payload, src); }
+      catch (e) { if (!e?.needPass) throw e; pendingEncrypted = { code: bytes, src }; $('decrypt-row').hidden = false; backupStatus('Dieser Textcode ist verschlüsselt – Passwort oben eingeben.'); focusSoft($('backup-pass')); return; }
+    }
+    let data; try { data = JSON.parse(text); } catch { backupStatus('Datei ist kein gültiges Backup (weder JSON noch Textcode).'); return; }
+    if (data?.kind === 'scalpdesk-patterns') { const n = zzpImport(data); backupStatus(n ? `Musterbestand übernommen: ${n} ${n === 1 ? 'Eintrag' : 'Einträge'} ergänzt (je Muster zählt die Fassung mit mehr Fällen).` : 'Musterbestand: nichts Neues – alle Einträge waren schon enthalten.'); return; }
+    if (data?.kind === 'scalpdesk-quarantine') { const n = quarAdd((Array.isArray(data.items) ? data.items : []).filter(isObj).map(x => ({ ...x, from: x.from || 'import', src: x.src || src }))); renderIntegrity(); backupStatus(n ? `Prüfliste: ${n} ${n === 1 ? 'Eintrag' : 'Einträge'} übernommen.` : 'Prüfliste: nichts Neues.'); return; }
+    if (data?.format === 'aes-gcm-v1') {
+      if (!globalThis.crypto?.subtle) { backupStatus('Zum Entschlüsseln muss die Seite über https geöffnet sein.'); return; }
+      pendingEncrypted = { file: data, src }; $('decrypt-row').hidden = false; backupStatus(''); focusSoft($('backup-pass')); return;
+    }
+    checkIntegrity(data);
+    await reviewBackup(data, src);
+  } catch (err) { backupStatus(err?.message || String(err)); }
 }
 async function decryptPending() {
   if (!pendingEncrypted) return;
   $('backup-decrypt').disabled = true; backupStatus('Entschlüssele …');
-  try { const data = await decryptBackup(pendingEncrypted, $('backup-pass').value); pendingEncrypted = null; $('decrypt-row').hidden = true; reviewBackup(data); }
-  catch (err) { backupStatus(err.message); }
+  try {
+    const pe = pendingEncrypted, data = pe.code ? (await unpackBackup(pe.code, $('backup-pass').value)).payload : await decryptBackup(pe.file, $('backup-pass').value);
+    pendingEncrypted = null; $('decrypt-row').hidden = true; checkIntegrity(data); await reviewBackup(data, pe.src);
+  }
+  catch (err) { backupStatus(err?.message || String(err)); }
   finally { $('backup-decrypt').disabled = false; }
 }
 async function initAutoBackup() {
@@ -3536,7 +4078,7 @@ function writeAutoBackup(force = false) {
   if (autoBackup.writing) return autoBackup.writing;
   autoBackup.writing = (async () => {
     try {
-      const w = await autoBackup.handle.createWritable(); await w.write(JSON.stringify(backupPayload(), null, 1)); await w.close();
+      const w = await autoBackup.handle.createWritable(); await w.write(JSON.stringify(withIntegrity(backupPayload()), null, 1)); await w.close();
       autoBackup.at = Date.now(); autoBackup.error = ''; store.set(AB_KEY, { handle: autoBackup.handle, at: autoBackup.at }, { force: true }); markBackedUp('auto');
     } catch (e) { autoBackup.error = e?.message || String(e); if (e?.name === 'NotAllowedError' || e?.name === 'SecurityError') autoBackup.state = 'paused'; }
     finally { autoBackup.writing = null; renderBackupInfo(); }
@@ -4078,7 +4620,7 @@ const histClick=e=>{
   const act=b.dataset.action;
   if(act==='trade-delete')state.histUi[id]='delete';
   else if(act==='trade-note'){const t=find();state.histUi[id]={mode:'note',text:t?.note||'',reasons:[...reasonsOf(t)]};renderPositions();box.querySelector(`[data-note="${id}"]`)?.focus();return;}
-  else if(act==='note-save'){const t=find();if(t){const was=JSON.stringify([t.note||'',reasonsOf(t)]);t.note=String(ui?.text||'').trim().slice(0,1000);if(ui&&Array.isArray(ui.reasons)){t.reasons=cleanReasons(ui.reasons);t.setup=t.reasons[0]||null;}if(JSON.stringify([t.note||'',reasonsOf(t)])!==was)t.updatedAt=Date.now();persist();}delete state.histUi[id];}
+  else if(act==='note-save'){const t=find();if(t){const was=JSON.stringify([t.note||'',reasonsOf(t)]);t.note=String(ui?.text||'').trim().slice(0,1000);if(ui&&Array.isArray(ui.reasons)){t.reasons=cleanReasons(ui.reasons,new Set(reasonsOf(t)));t.setup=t.reasons[0]||null;t.setupSeen=t.setup;}if(JSON.stringify([t.note||'',reasonsOf(t)])!==was)t.updatedAt=Date.now();persist();}delete state.histUi[id];}
   else if(act==='trade-cancel')delete state.histUi[id];
   else if(act==='trade-confirm'){if(demo)state.demoTrades=state.demoTrades.filter(t=>t.id!==id);else state.trades=state.trades.filter(t=>t.id!==id);delete state.histUi[id];tomb('pt',id);persist();}
   renderPositions();
@@ -4104,12 +4646,12 @@ $('money-list').addEventListener('click',e=>{
 $('money-csv').addEventListener('click',()=>{const list=state.movements.slice().sort((a,b)=>a.date-b.date);if(!list.length)return;download(`geldbewegungen-${new Date().toISOString().slice(0,10)}.csv`,movementsCsv(list),'text/csv;charset=utf-8');});
 $('setup-chips').addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b)return;const f=state.posForm;
-  if(b.dataset.reason){const r=b.dataset.reason;f.reasons=f.reasons.includes(r)?f.reasons.filter(x=>x!==r):[...f.reasons,r].slice(0,MAX_REASONS);renderSetupChips();posFormPreview();return;}
+  if(b.dataset.reason){const r=b.dataset.reason;f.reasons=f.reasons.includes(r)?f.reasons.filter(x=>x!==r):f.reasons.length<MAX_REASONS?[...f.reasons,r]:f.reasons;renderSetupChips();posFormPreview();return;}
   if(b.dataset.setupDel){state.setups=state.setups.filter(s=>s!==b.dataset.setupDel);f.reasons=f.reasons.filter(x=>x!==b.dataset.setupDel);touchStamp(LISTS_AT_KEY,'setups');persist();renderSetupChips();return;}
   if(b.dataset.setupNew){$('setup-add').hidden=false;$('setup-new').value='';$('setup-new').focus();return;}
   if(b.dataset.setupEditToggle){state.setupEdit=!state.setupEdit;renderSetupChips();}
 });
-const addSetup=()=>{const s=cleanSetup($('setup-new').value);if(!s)return;if(!state.setups.includes(s)&&!REASON_OF.has(s)){state.setups.push(s);touchStamp(LISTS_AT_KEY,'setups');}if(!state.posForm.reasons.includes(s))state.posForm.reasons=[...state.posForm.reasons,s].slice(0,MAX_REASONS);persist();$('setup-add').hidden=true;renderSetupChips();posFormPreview();};
+const addSetup=()=>{const s=cleanSetup($('setup-new').value);if(!s)return;if(!state.setups.includes(s)&&!REASON_OF.has(s)){state.setups.push(s);touchStamp(LISTS_AT_KEY,'setups');}if(!state.posForm.reasons.includes(s)&&state.posForm.reasons.length<MAX_REASONS)state.posForm.reasons=[...state.posForm.reasons,s];persist();$('setup-add').hidden=true;renderSetupChips();posFormPreview();};
 $('setup-add-ok').addEventListener('click',addSetup);
 $('setup-new').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addSetup();}});
 $('setup-add-cancel').addEventListener('click',()=>{$('setup-add').hidden=true;});
@@ -4804,73 +5346,233 @@ addEventListener('beforeunload', e => {
 });
 // ---------- Abgleich zwischen offenen Tabs ----------
 const bc = (() => { try { return new BroadcastChannel('scalpdesk'); } catch { return null; } })();
-const SYNC_KEYS = [POS_KEY, HIST_KEY, MONEY_KEY, ALARM_KEY, SETUP_KEY, WATCH_KEY, CHANGES_KEY, 'scalpdesk.channels.v1', ZZP_KEY, 'scalpdesk.s247.v1', 'scalpdesk.pnlalarm.v1', 'scalpdesk.deleted.v1', 'scalpdesk.settingsat.v1', 'scalpdesk.listsat.v1', 'scalpdesk.demopositions.v1', 'scalpdesk.demohistory.v1'];
+const SYNC_KEYS = [POS_KEY, HIST_KEY, MONEY_KEY, ALARM_KEY, SETUP_KEY, WATCH_KEY, CHANGES_KEY, 'scalpdesk.channels.v1', ZZP_KEY, 'scalpdesk.s247.v1', 'scalpdesk.pnlalarm.v1', 'scalpdesk.deleted.v1', 'scalpdesk.settingsat.v1', 'scalpdesk.listsat.v1', 'scalpdesk.demopositions.v1', 'scalpdesk.demohistory.v1', 'scalpdesk.quarantine.v1', 'scalpdesk.conflicts.v1', 'scalpdesk.settingsh.v1', 'scalpdesk.deletedh.v1'];
 function broadcastData(keys) { if (!bc || !keys.length) return; try { bc.postMessage({ t: 'data', from: TAB_ID, items: keys.map(k => [k, store.get(k)]) }); } catch {} }
 function adoptData(items) {
   const pat = items.find(([k]) => k === ZZP_KEY); if (pat) { store.adopt(ZZP_KEY, pat[1]); zzpMem = null; items = items.filter(([k]) => k !== ZZP_KEY); if (!items.length) return; }
   for (const [k, v] of items) {
     if (!SYNC_KEYS.includes(k)) continue;
     store.adopt(k, v);
-    if (k === POS_KEY) state.positions = loadRecords(POS_KEY, loadPosition);
-    else if (k === HIST_KEY) state.trades = loadRecords(HIST_KEY, loadTrade);
-    else if (k === DEMO_POS_KEY) state.demoPositions = loadRecords(DEMO_POS_KEY, loadPosition); // 3.28.0
-    else if (k === DEMO_HIST_KEY) state.demoTrades = loadRecords(DEMO_HIST_KEY, loadTrade);
-    else if (k === MONEY_KEY) state.movements = loadRecords(MONEY_KEY, loadMovement);
-    else if (k === ALARM_KEY) state.alarms = loadRecords(ALARM_KEY, loadAlarm);
+    if (k === POS_KEY) state.positions = loadRecords(POS_KEY, 'pos', 'sync');
+    else if (k === HIST_KEY) state.trades = loadRecords(HIST_KEY, 'trade', 'sync');
+    else if (k === DEMO_POS_KEY) state.demoPositions = loadRecords(DEMO_POS_KEY, 'dpos', 'sync'); // 3.28.0
+    else if (k === DEMO_HIST_KEY) state.demoTrades = loadRecords(DEMO_HIST_KEY, 'dtrade', 'sync');
+    else if (k === MONEY_KEY) state.movements = loadRecords(MONEY_KEY, 'mv', 'sync');
+    else if (k === ALARM_KEY) state.alarms = loadRecords(ALARM_KEY, 'alarm', 'sync');
     else if (k === SETUP_KEY) state.setups = loadSetups();
     else if (k === WATCH_KEY) state.watch = loadWatch();
     else if (k === CHAN_KEY) { chan = loadChannels(); renderChanSummary(); if ($('chan-dialog').open) fillChanForm(); }
     else if (k === 'scalpdesk.s247.v1') { s247.cfg = loadS247(); renderS247(); } // 5.1: Übergabe an den 24/7-Dienst aus einem anderen Tab
   }
-  importantSig = dataSig(); posStructure = null; histStructure = ''; demoStructure = null; alarmKey = ''; withAnchor(render);   // Änderung aus einem zweiten Tab: Ansicht bleibt stehen
+  importantSig = dataSig(); posStructure = null; histStructure = ''; demoStructure = null; alarmKey = ''; withAnchor(render); renderIntegrity();   // Änderung aus einem zweiten Tab: Ansicht bleibt stehen
 }
 bc?.addEventListener('message', e => { const m = e.data; if (!m || m.from === TAB_ID) return; if (m.t === 'data') adoptData(m.items); else if (m.t === 'theme') applyTheme(m.theme, false); });
 addEventListener('storage', e => { if (bc || !SYNC_KEYS.includes(e.key) || e.newValue === null) return; try { adoptData([[e.key, JSON.parse(e.newValue)]]); } catch {} });
-// ---------- QR-Abgleich zwischen Geräten ----------
-// Am Computer: Daten verschlüsselt als QR-Code(s) anzeigen. Am iPad: mit der Kamera scannen und übernehmen.
-// Teile bleiben bei QR-Version 18: jsQR (Scanner auf dem iPad) liest Version 23 nicht zuverlässig.
-const QR_CHUNK = 1000;
-const qr = { codes: [], idx: 0, timer: null, speed: 650, paused: false, stream: null, raf: 0, detector: null, got: new Map(), total: 0, id: null, bytes: null, session: 0 };
+// ---------- 3.29.0 (G01): Sicherungscode – ein Format für Textcode, QR-Code und Datei ----------
+// Kopf (16 Byte): 'S','B', Format 1, Merker (1 = gepackt, 2 = verschlüsselt), Inhalt (1 = vollständige Sicherung), Schema (2 Byte),
+// Länge des JSON in Byte (4), CRC-32 des JSON (4), frei (1). Verschlüsselt folgen PBKDF2-Runden (4), Salz (16) und IV (12); dieser
+// ganze Kopf ist als Zusatzdaten mitgeprüft (AES-256-GCM). Danach der Inhalt: JSON → deflate-raw → (verschlüsselt).
+// Die Prüfsumme erkennt Übertragungsfehler, schützt aber nicht vor Mitlesen – dafür das optionale Passwort.
+const BK_TYPE_FULL = 1, TEXT_PREFIX = 'SDB1:';
+async function packBackup(payload, password = '') {
+  const plain = new TextEncoder().encode(JSON.stringify(payload));
+  if (plain.length > BK_MAX_JSON) throw new Error(`Sicherung zu groß (${number(plain.length / 1e6, 1)} MB).`);
+  let body = plain, flags = 0;
+  if (globalThis.CompressionStream) { try { const z = await streamBytes(plain, new CompressionStream('deflate-raw')); if (z.length < plain.length) { body = z; flags |= 1; } } catch {} }
+  let head = new Uint8Array(16); const dv = new DataView(head.buffer);
+  head.set([0x53, 0x42, 1, 0, BK_TYPE_FULL]); dv.setUint16(5, BK_SCHEMA); dv.setUint32(7, plain.length); dv.setUint32(11, crc32(plain));
+  if (password) {
+    if (!globalThis.crypto?.subtle) throw new Error('Verschlüsseln geht nur, wenn die Seite über https geöffnet ist. Ohne Passwort erzeugen oder die https-Adresse nutzen.');
+    flags |= 2;
+    const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12)), it = new Uint8Array(4);
+    new DataView(it.buffer).setUint32(0, BACKUP_ITER); head[3] = flags; head = concatBytes(head, it, salt, iv);
+    body = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv, additionalData: head }, await backupKey(password, salt, BACKUP_ITER), body));
+  }
+  head[3] = flags;
+  return concatBytes(head, body);
+}
+// → { payload, info } · needPass: verschlüsselt und kein Passwort angegeben
+async function unpackBackup(bytes, password = '') {
+  if (!(bytes instanceof Uint8Array) || bytes.length < 16 || bytes[0] !== 0x53 || bytes[1] !== 0x42) throw new Error('Kein Sicherungscode dieses Dashboards.');
+  if (bytes[2] !== 1) throw new Error(`Sicherungscode im Format ${bytes[2]} – bitte zuerst die App aktualisieren.`);
+  if (bytes.length > BK_MAX_PACKED + 64) throw new Error('Sicherungscode zu groß.');
+  const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength), flags = bytes[3], type = bytes[4], schema = dv.getUint16(5), len = dv.getUint32(7), crc = dv.getUint32(11);
+  if (type !== BK_TYPE_FULL) throw new Error('Unbekannter Inhalt im Sicherungscode.');
+  if (schema > BK_SCHEMA) throw new Error(`Diese Sicherung stammt aus einer neueren App-Version (Schema ${schema}). Bitte zuerst die App aktualisieren.`);
+  if (len > BK_MAX_JSON) throw new Error('Entpackt wäre die Sicherung zu groß.');
+  let off = 16, body;
+  if (flags & 2) {
+    if (bytes.length < 48 + 16) throw new Error('Sicherungscode unvollständig.');
+    if (!password) { const e = new Error('Dieser Code ist mit einem Passwort verschlüsselt.'); e.needPass = true; throw e; }
+    if (!globalThis.crypto?.subtle) throw new Error('Zum Entschlüsseln muss die Seite über https geöffnet sein.');
+    const it = dv.getUint32(16); if (!(it >= 1000 && it <= 5e6)) throw new Error('Unbekanntes Format.');
+    const head = bytes.slice(0, 48); off = 48;
+    try { body = new Uint8Array(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: bytes.slice(36, 48), additionalData: head }, await backupKey(password, bytes.slice(20, 36), it), bytes.slice(off))); }
+    catch { const e = new Error('Passwort falsch oder Code beschädigt/unvollständig.'); e.badPass = true; throw e; }
+  } else body = bytes.slice(off);
+  let plain = body;
+  if (flags & 1) {
+    if (!globalThis.DecompressionStream) throw new Error('Dieser Browser kann den Code nicht entpacken (iPhone/iPad: iOS 16.4 oder neuer nötig).');
+    try { plain = await inflateLimited(body, len); } catch (e) { throw e?.tooBig ? e : new Error('Sicherungscode beschädigt oder unvollständig (Entpacken fehlgeschlagen).'); }
+  }
+  if (plain.length !== len || crc32(plain) !== crc) throw new Error('Prüfsumme stimmt nicht – der Code ist beschädigt oder unvollständig. Bitte neu übertragen.');
+  let payload; try { payload = JSON.parse(new TextDecoder().decode(plain)); } catch { throw new Error('Sicherungscode enthält kein gültiges JSON.'); }
+  return { payload, info: { schema, encrypted: !!(flags & 2), packed: bytes.length, plain: len, crc: hex8(crc) } };
+}
+// Entpacken mit Grenze: höchstens die im Kopf angegebene Länge (schützt vor manipulierten „Zip-Bomben“)
+async function inflateLimited(bytes, max) {
+  const rd = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw')).getReader(), parts = []; let n = 0;
+  for (;;) {
+    const { done, value } = await rd.read(); if (done) break;
+    n += value.length; if (n > max) { try { await rd.cancel(); } catch {} const e = new Error('Entpackt größer als angegeben – Code abgelehnt.'); e.tooBig = true; throw e; }
+    parts.push(value);
+  }
+  return concatBytes(...parts);
+}
+// Textcode: "SDB1:" + Base64 + "." – der Punkt markiert das Ende. So stört Text davor oder danach nicht, Zeilenumbrüche werden
+// ignoriert, und ein unvollständig kopierter Code fällt sofort auf.
+const toTextCode = bytes => TEXT_PREFIX + toB64(bytes) + '.';
+function fromTextCode(text) {
+  const s = String(text || ''), i = s.indexOf(TEXT_PREFIX); if (i < 0) throw new Error('Kein Sicherungscode gefunden – er beginnt mit „SDB1:“.');
+  const j = s.indexOf('.', i + TEXT_PREFIX.length);
+  if (j < 0) throw new Error('Textcode unvollständig – das Ende (ein Punkt nach dem Code) fehlt. Bitte den ganzen Code kopieren.');
+  const b = s.slice(i + TEXT_PREFIX.length, j).replace(/\s+/g, '');
+  if (!b) throw new Error('Textcode ist leer.');
+  if (b.length > BK_MAX_PACKED * 1.4) throw new Error('Textcode zu groß.');
+  if (/[^A-Za-z0-9+/=]/.test(b)) throw new Error('Textcode beschädigt (ungültige Zeichen im Code).');
+  try { return fromB64(b); } catch { throw new Error('Textcode beschädigt oder unvollständig (ungültige Zeichen).'); }
+}
+// Sicherungsdatei (JSON) mit Prüfsumme über den Inhalt: lesbar und weiter mit älteren App-Versionen einspielbar
+function withIntegrity(payload) { const u8 = new TextEncoder().encode(JSON.stringify(payload)); return { ...payload, integrity: { schema: BK_SCHEMA, type: 'full', bytes: u8.length, crc32: hex8(crc32(u8)) } }; }
+function checkIntegrity(data) {
+  if (!isObj(data?.integrity)) return null;
+  const { integrity, ...rest } = data, u8 = new TextEncoder().encode(JSON.stringify(rest));
+  if (u8.length !== integrity.bytes || hex8(crc32(u8)) !== String(integrity.crc32).toUpperCase()) throw new Error('Prüfsumme der Sicherungsdatei stimmt nicht – die Datei ist beschädigt oder wurde verändert. Nichts übernommen.');
+  return integrity;
+}
+// Gesamtumfang für die Anzeige („3 Positionen, 120 Trades …“)
+function payloadSummary(d) {
+  const n = (a, one, more) => Array.isArray(a) && a.length ? `${a.length} ${a.length === 1 ? one : more}` : '';
+  return [n(d.positions, 'Position', 'Positionen'), n(d.history, 'Trade', 'Trades'), n(d.demoPositions, 'Demo-Position', 'Demo-Positionen'), n(d.demoHistory, 'Demo-Trade', 'Demo-Trades'), n(d.movements, 'Geldbewegung', 'Geldbewegungen'), n(d.alarms, 'Kurs-Alarm', 'Kurs-Alarme'), n(d.quarantine, 'Eintrag der Prüfliste', 'Einträge der Prüfliste'), n(d.conflicts, 'offener Konflikt', 'offene Konflikte')].filter(Boolean).join(', ') || 'keine Positionen oder Trades';
+}
+const kb = n => n < 1024 ? `${n} Byte` : `${number(n / 1024, 1)} KB`;
+// ---- Textcode ----
+async function openCode(mode) {
+  stopCycle(); stopScan();
+  $('code-export-view').hidden = mode !== 'export'; $('code-import-view').hidden = mode !== 'import';
+  put('code-title', mode === 'export' ? 'Textcode anzeigen / kopieren' : 'Textcode einfügen / importieren');
+  showNotice('code-error', null); put('code-status', '');
+  if (mode === 'export') { $('code-out').hidden = true; $('code-text').value = ''; put('code-info', `Vollständige Sicherung: ${payloadSummary(backupPayload())}.`); }
+  else { $('code-in').value = ''; $('code-unlock').hidden = true; $('code-preview').hidden = true; $('code-preview').replaceChildren(); codeBytes = null; }
+  if (!$('code-dialog').open) $('code-dialog').showModal();
+}
+let codeBytes = null;
+async function makeCode() {
+  const pass = $('code-pass').value; showNotice('code-error', null);
+  if (pass && pass.length < 6) return showNotice('code-error', 'Passwort mit mindestens 6 Zeichen wählen – oder leer lassen.');
+  $('code-make').disabled = true; put('code-status', pass ? 'Verschlüssele …' : 'Erzeuge …');
+  try {
+    const bytes = await packBackup(backupPayload(), pass), text = toTextCode(bytes);
+    $('code-text').value = text; $('code-out').hidden = false;
+    put('code-status', `${number(text.length / 1024, 1)} KB Text (${kb(bytes.length)} gepackt${pass ? ', verschlüsselt' : ', ohne Passwort lesbar'}) · Prüfsumme ${hex8(crc32(bytes))}.`);
+    $('code-text').dataset.enc = pass ? '1' : '';
+  } catch (e) { showNotice('code-error', 'Textcode konnte nicht erzeugt werden: ' + (e?.message || e)); put('code-status', ''); }
+  finally { $('code-make').disabled = false; }
+}
+async function copyCode() {
+  const t = $('code-text').value; if (!t) return;
+  try { await navigator.clipboard.writeText(t); put('code-status', 'Kopiert – auf dem anderen Gerät unter „Textcode einfügen“ einfügen.'); markBackedUp('code', !!$('code-text').dataset.enc); }
+  catch { $('code-text').focus(); $('code-text').select(); put('code-status', 'Automatisches Kopieren nicht erlaubt – der Code ist markiert: jetzt kopieren (Strg+C bzw. „Kopieren“).'); }
+}
+async function checkCode() {
+  showNotice('code-error', null); $('code-preview').hidden = true;
+  try {
+    if (!codeBytes) codeBytes = fromTextCode($('code-in').value);
+    const { payload } = await unpackBackup(codeBytes, $('code-unlock').hidden ? '' : $('code-in-pass').value);
+    $('code-unlock').hidden = true; codeBytes = null;
+    await reviewBackup(payload, 'Textcode', 'code-preview', msg => put('code-status', msg));
+  } catch (e) {
+    if (e?.needPass) { $('code-unlock').hidden = false; put('code-status', 'Verschlüsselt – Passwort vom anderen Gerät eingeben.'); $('code-in-pass').focus(); return; }
+    if (!e?.badPass) codeBytes = null;
+    showNotice('code-error', e?.message || String(e));
+  }
+}
+// ---- QR-Code (3.29.0): höchstens 10 große Teile, Fehlerkorrektur M, Version ≤ 20 ----
+// Jeder Teil: "SQ1:Teil:Anzahl:Übertragung:Prüfsumme:Länge:Daten" mit Base45 des Sicherungscodes (Alphanumerik-Modus). Jeder Teil
+// nennt Übertragungs-ID, Gesamtzahl und die Prüfsumme des ganzen Codes: gleiche Teile zählen einmal, widersprüchliche werden abgelehnt,
+// übernommen wird erst, wenn alle Teile da sind und die Prüfsumme stimmt.
+const QR_MAX_PARTS = 10, QR_MAX_VER = 20, QR_MIN_PX = 3, QR_QUIET = 4, QR_SPEEDS = [500, 1000, 1500, 2000];
+const qrAlnumCap = (v, ecl = 'M') => { const bits = qrDataCodewords(v, ecl) * 8 - 4 - (v < 10 ? 9 : v < 27 ? 11 : 13); return Math.floor(bits / 11) * 2 + (bits % 11 >= 6 ? 1 : 0); };
+// Größte zulässige Version für den verfügbaren Platz (mindestens 3 CSS-Pixel je Modul plus 4 Module Rand je Seite)
+function qrFitVersion(px) { const mods = Math.floor(px / QR_MIN_PX) - 2 * QR_QUIET; return Math.min(QR_MAX_VER, Math.floor((mods - 17) / 4)); }
+function qrSpace() { const w = Math.min(560, ($('qr-export-view').clientWidth || innerWidth) - 20), h = innerHeight - 120; return Math.max(0, Math.min(w, h)); }
+function qrSplit(text, ver) {
+  const room = qrAlnumCap(ver, 'M') - 32; if (room < 40) return null;
+  const n = Math.max(1, Math.ceil(text.length / room)), id = Array.from(crypto.getRandomValues(new Uint8Array(6)), b => QR_ALNUM[b % 36]).join(''), crc = hex8(crc32(new TextEncoder().encode(text)));
+  return { n, id, crc, parts: Array.from({ length: n }, (_, i) => { const d = text.slice(i * room, (i + 1) * room); return `SQ1:${i + 1}:${n}:${id}:${crc}:${d.length}:${d}`; }) };
+}
+function parseQrPart(raw) {
+  const s = String(raw || ''), m = /^SQ1:(\d{1,2}):(\d{1,2}):([0-9A-Z]{6}):([0-9A-F]{8}):(\d{1,4}):([\s\S]*)$/.exec(s);
+  if (m) { const i = +m[1], n = +m[2], len = +m[5]; if (!(n >= 1 && n <= QR_MAX_PARTS && i >= 1 && i <= n) || m[6].length > len) return null; return { v: 2, i, n, id: m[3], crc: m[4], data: m[6].padEnd(len, ' ') }; }
+  const o = parseSyncPart(s); return o ? { v: 1, ...o } : null; // Codes bis 3.28 (verschlüsselt, mit Passwort)
+}
+async function qrPrepare() {
+  const pass = $('qr-pass').value; showNotice('qr-error', null); $('qr-big').hidden = true;
+  if (pass && pass.length < 6) return showNotice('qr-error', 'Passwort mit mindestens 6 Zeichen wählen – oder leer lassen.');
+  $('qr-make').disabled = true; put('qr-calc', pass ? 'Verschlüssele und berechne …' : 'Berechne …');
+  try {
+    const bytes = await packBackup(backupPayload(), pass), text = base45Encode(bytes), fit = qrFitVersion(qrSpace());
+    if (fit < 1) { put('qr-calc', ''); return showNotice('qr-error', 'Zu wenig Platz für einen lesbaren QR-Code – Gerät hochkant drehen oder das Fenster vergrößern. Alternativ Textcode oder Datei verwenden.'); }
+    const sp = qrSplit(text, fit), info = `${kb(bytes.length)} gepackt${pass ? ', verschlüsselt' : ''} · ${sp ? `${sp.n} ${sp.n === 1 ? 'Teil' : 'Teile'}` : '–'} (QR-Version bis ${fit}, Fehlerkorrektur M)`;
+    put('qr-calc', info);
+    if (!sp || sp.n > QR_MAX_PARTS) { $('qr-big').hidden = false; put('qr-big-text', `Sicherung zu groß für QR: ${sp ? `${sp.n} Teile nötig, höchstens ${QR_MAX_PARTS}` : 'Platz reicht nicht'} – Textcode oder Datei verwenden. Es wird nichts weggelassen.`); return; }
+    qr.codes = sp.parts.map(t => qrEncode(t, { ecl: 'M', maxVer: fit })); qr.paused = false; qr.sp = sp;
+    $('qr-parts').replaceChildren(...qr.codes.map(() => el('i', 'ok'))); $('qr-parts').hidden = qr.codes.length < 2;
+    put('qr-size', info);
+    for (const id of ['qr-pause', 'qr-prev', 'qr-next', 'qr-speed-wrap']) $(id).hidden = qr.codes.length < 2;
+    $('qr-form').hidden = true; $('qr-out').hidden = false; showPart(0); startCycle();
+  } catch (e) { showNotice('qr-error', 'QR-Code konnte nicht erzeugt werden: ' + (e?.message || e)); put('qr-calc', ''); }
+  finally { $('qr-make').disabled = false; }
+}
+// Größe und Teilezahl schon vor dem Start zeigen (ohne Passwort gerechnet)
+async function qrEstimate() {
+  try { const bytes = await packBackup(backupPayload(), ''), fit = qrFitVersion(qrSpace()), sp = fit >= 1 ? qrSplit(base45Encode(bytes), fit) : null;
+    put('qr-calc', `Vollständige Sicherung: ${payloadSummary(backupPayload())} · ${kb(bytes.length)} gepackt · ${sp ? `${sp.n} ${sp.n === 1 ? 'Teil' : 'Teile'}` : 'zu wenig Platz'}${sp && sp.n > QR_MAX_PARTS ? ` – mehr als ${QR_MAX_PARTS}, bitte Textcode oder Datei` : ''}.`);
+  } catch (e) { put('qr-calc', ''); }
+}
+// ---------- QR-Übertragung zwischen Geräten (3.29.0) ----------
+// Sender: immer die vollständige Sicherung, höchstens 10 große Teile einzeln nacheinander („Teil X von N“), automatisch in
+// Endlosschleife (0,5 / 1 / 1,5 / 2 Sekunden je Teil), Pause, Vor und Zurück. Ohne Rückkanal weiß der Sender nicht, was das andere
+// Gerät schon gelesen hat – er wechselt weiter, bis du schließt. Empfänger: sammelt je Übertragung, zeigt „7 von 10 Teilen gelesen“
+// und die fehlenden Nummern; verpasste Teile kommen in der nächsten Runde. Erst vollständig und mit stimmender Prüfsumme geht es weiter.
+const qr = { codes: [], idx: 0, timer: null, speed: 1000, paused: false, stream: null, raf: 0, detector: null, sets: new Map(), cur: null, legacy: null, bytes: null, legacyBytes: null, session: 0, sp: null };
 function openQr(mode) {
   stopCycle(); stopScan();
   $('qr-export-view').hidden = mode !== 'export'; $('qr-scan-view').hidden = mode !== 'scan';
-  put('qr-title', mode === 'export' ? 'Daten als QR-Code anzeigen' : 'QR-Code scannen');
+  put('qr-title', mode === 'export' ? 'QR-Code erzeugen' : 'QR-Code scannen');
   showNotice('qr-error', null); showNotice('qr-scan-error', null);
-  $('qr-form').hidden = false; $('qr-out').hidden = true;
+  $('qr-form').hidden = false; $('qr-out').hidden = true; $('qr-big').hidden = true;
   if (!$('qr-dialog').open) $('qr-dialog').showModal();
+  if (mode === 'export') { put('qr-calc', 'Berechne Größe …'); void qrEstimate(); }
   if (mode === 'scan') void startScan();
 }
 function stopCycle() { clearInterval(qr.timer); qr.timer = null; }
+// Ganze CSS-Pixel je Modul (mindestens 3), 4 Module heller Rand, schwarz auf weiß – unabhängig vom Farbschema
 function drawQr(canvas, q) {
-  const quiet = 4, n = q.size + quiet * 2, scale = Math.max(2, Math.floor(620 / n)), dim = n * scale, ctx = canvas.getContext('2d');
+  const n = q.size + QR_QUIET * 2, room = qrSpace(), k = Math.max(QR_MIN_PX, Math.floor(Math.min(room || 0, 560) / n)), s = Math.max(1, Math.round(devicePixelRatio || 1)), dim = n * k * s, ctx = canvas.getContext('2d');
   if (canvas.width !== dim) { canvas.width = dim; canvas.height = dim; }
+  canvas.style.width = canvas.style.height = `${n * k}px`; canvas.dataset.version = q.version; canvas.dataset.ecl = q.ecl || ''; canvas.dataset.px = k;
   ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, dim, dim); ctx.fillStyle = '#000';
-  for (let y = 0; y < q.size; y++) for (let x = 0; x < q.size; x++) if (q.modules[y * q.size + x]) ctx.fillRect((x + quiet) * scale, (y + quiet) * scale, scale, scale);
+  const m = k * s;
+  for (let y = 0; y < q.size; y++) for (let x = 0; x < q.size; x++) if (q.modules[y * q.size + x]) ctx.fillRect((x + QR_QUIET) * m, (y + QR_QUIET) * m, m, m);
+  $('qr-tight').hidden = n * QR_MIN_PX <= Math.max(room, 1) + 1;
 }
 function showPart(i) {
-  qr.idx = i; drawQr($('qr-canvas'), qr.codes[i]);
-  put('qr-part', qr.codes.length > 1 ? `Teil ${i + 1} von ${qr.codes.length} · wechselt automatisch` : 'Ein Code – alles enthalten');
-  [...$('qr-parts').children].forEach((c, k) => c.classList.toggle('now', k === i));
+  const n = qr.codes.length; qr.idx = (i + n) % n; drawQr($('qr-canvas'), qr.codes[qr.idx]);
+  put('qr-part', n > 1 ? `Teil ${qr.idx + 1} von ${n}${qr.paused ? ' · angehalten' : ` · wechselt alle ${plain(qr.speed / 1000)} s`}` : 'Ein Code – alles enthalten');
+  [...$('qr-parts').children].forEach((c, k) => c.classList.toggle('now', k === qr.idx));
 }
-function startCycle() { stopCycle(); if (qr.codes.length > 1 && !qr.paused) qr.timer = setInterval(() => showPart((qr.idx + 1) % qr.codes.length), qr.speed); put('qr-pause', qr.paused ? 'Weiter' : 'Anhalten'); }
-async function makeQr() {
-  const pass = $('qr-pass').value;
-  if (pass.length < 6) return showNotice('qr-error', 'Bitte ein Passwort mit mindestens 6 Zeichen wählen – es wird auf dem anderen Gerät gebraucht.');
-  if (!globalThis.crypto?.subtle) return showNotice('qr-error', 'Verschlüsseln geht nur, wenn die Seite über https geöffnet ist.');
-  const payload = backupPayload(), all = document.querySelector('input[name="qr-scope"]:checked')?.value === 'all';
-  if (!all) { payload.history = []; payload.movements = []; payload.demoHistory = []; payload.scope = 'open'; }
-  payload.patterns = await zzpDelta(); // 3.24.0: nur das eigene Lernen, der Startbestand kommt aus dem GitHub-Projekt
-  $('qr-make').disabled = true; showNotice('qr-error', null); $('qr-out').hidden = true;
-  try {
-    const bytes = await packSync(payload, pass), parts = syncParts(base45Encode(bytes), QR_CHUNK);
-    qr.codes = parts.map(qrEncode); qr.paused = false;
-    $('qr-parts').replaceChildren(...qr.codes.map(() => el('i', 'ok'))); $('qr-parts').hidden = qr.codes.length < 2;
-    put('qr-size', `${number(bytes.length / 1024, 1)} KB verschlüsselt · ${qr.codes.length} ${qr.codes.length === 1 ? 'Code' : 'Codes'}`);
-    ['qr-pause', 'qr-slower', 'qr-faster'].forEach(id => { $(id).hidden = qr.codes.length < 2; });
-    $('qr-form').hidden = true; $('qr-out').hidden = false; showPart(0); startCycle();
-  } catch (e) { showNotice('qr-error', 'QR-Code konnte nicht erzeugt werden: ' + (e?.message || e)); }
-  finally { $('qr-make').disabled = false; }
-}
+function startCycle() { stopCycle(); if (qr.codes.length > 1 && !qr.paused) qr.timer = setInterval(() => showPart(qr.idx + 1), qr.speed); put('qr-pause', qr.paused ? 'Weiter' : 'Pause'); $('qr-pause').setAttribute('aria-pressed', String(qr.paused)); if (qr.codes.length) showPart(qr.idx); }
 function loadScript(src) { return new Promise((resolve, reject) => { const s = document.createElement('script'); s.src = src; s.onload = resolve; s.onerror = () => reject(new Error(`Datei ${src} nicht gefunden.`)); document.head.append(s); }); }
 // Erkennung: eingebauter BarcodeDetector (Chrome, Android) oder jsQR (Safari/iPad) als mitgelieferte Datei
 async function qrDetector() {
@@ -4883,33 +5585,51 @@ async function qrDetector() {
   const cv = document.createElement('canvas'), ctx = cv.getContext('2d', { willReadFrequently: true });
   return (qr.detector = async src => {
     const w = src.videoWidth || src.width, h = src.videoHeight || src.height; if (!w || !h) return [];
-    const s = Math.min(1, 960 / Math.max(w, h)); cv.width = Math.round(w * s); cv.height = Math.round(h * s);
+    const s = Math.min(1, 1280 / Math.max(w, h)); cv.width = Math.round(w * s); cv.height = Math.round(h * s);
     ctx.drawImage(src, 0, 0, cv.width, cv.height);
     const img = ctx.getImageData(0, 0, cv.width, cv.height), r = window.jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' });
     return r ? [r.data] : [];
   });
 }
 function renderScan() {
-  const n = qr.total, k = qr.got.size;
+  const t = qr.cur && qr.sets.get(qr.cur), lg = qr.legacy, n = t ? t.n : lg ? lg.n : 0, got = t ? t.parts : lg ? lg.got : new Map(), k = got.size;
   $('qr-scan-bar').style.width = n ? `${k / n * 100}%` : '0%';
-  $('qr-scan-parts').replaceChildren(...Array.from({ length: n }, (_, i) => el('i', qr.got.has(i + 1) ? 'ok' : '')));
-  if (n && k < n) put('qr-scan-status', `${k} von ${n} Teilen erfasst – Kamera draufhalten …`);
+  $('qr-scan-parts').replaceChildren(...Array.from({ length: n }, (_, i) => { const x = el('i', got.has(i + 1) ? 'ok' : ''); x.textContent = String(i + 1); return x; }));
+  if (n && k < n) { const miss = Array.from({ length: n }, (_, i) => i + 1).filter(i => !got.has(i)); put('qr-scan-status', `${k} von ${n} Teilen gelesen – fehlt noch: ${miss.join(', ')}. Kamera draufhalten, verpasste Teile kommen in der nächsten Runde.`); }
 }
+function scanWarn(msg) { put('qr-scan-warn', msg); clearTimeout(qr.warnT); qr.warnT = setTimeout(() => put('qr-scan-warn', ''), 6000); }
 function onScanText(text) {
-  const p = parseSyncPart(text);
-  if (!p) { put('qr-scan-status', 'Anderer QR-Code erkannt – bitte den Abgleich-Code vom anderen Gerät scannen.'); return; }
-  if (qr.id !== p.id) { qr.id = p.id; qr.total = p.n; qr.got = new Map(); }
-  if (!qr.got.has(p.i)) { qr.got.set(p.i, p.data); navigator.vibrate?.(25); renderScan(); }
-  if (qr.got.size === qr.total && !qr.bytes) {
-    try { qr.bytes = base45Decode(Array.from({ length: qr.total }, (_, i) => qr.got.get(i + 1)).join('')); }
-    catch (e) { qr.got = new Map(); qr.id = null; showNotice('qr-scan-error', 'Code beschädigt, bitte erneut scannen: ' + e.message); return; }
-    stopScan(); put('qr-scan-status', qr.total > 1 ? `Alle ${qr.total} Teile erfasst.` : 'Code erfasst.');
-    $('qr-unlock').hidden = false; $('qr-scan-pass').value = ''; $('qr-scan-pass').focus();
+  if (qr.bytes || qr.legacyBytes) return; // schon vollständig – erst prüfen/übernehmen
+  const p = parseQrPart(text);
+  if (!p) { scanWarn('Anderer QR-Code erkannt – bitte den Code der Scalp-Desk-Sicherung scannen.'); return; }
+  if (p.v === 1) { // Code einer App bis 3.28
+    if (!qr.legacy || qr.legacy.id !== p.id) qr.legacy = { id: p.id, n: p.n, got: new Map() };
+    if (!qr.legacy.got.has(p.i)) { qr.legacy.got.set(p.i, p.data); navigator.vibrate?.(25); }
+    qr.cur = null; renderScan();
+    if (qr.legacy.got.size === qr.legacy.n) {
+      try { qr.legacyBytes = base45Decode(Array.from({ length: qr.legacy.n }, (_, i) => qr.legacy.got.get(i + 1)).join('')); }
+      catch (e) { qr.legacy = null; showNotice('qr-scan-error', 'Code beschädigt, bitte erneut scannen: ' + e.message); return; }
+      stopScan(); put('qr-scan-status', 'Alle Teile erfasst (Code einer älteren App-Version, verschlüsselt).'); unlockShow();
+    }
+    return;
   }
+  let t = qr.sets.get(p.id);
+  if (!t) { t = { id: p.id, n: p.n, crc: p.crc, parts: new Map() }; qr.sets.set(p.id, t); if (qr.cur && qr.cur !== p.id) scanWarn('Neue Übertragung erkannt – die Teile der vorigen bleiben gemerkt.'); }
+  if (t.n !== p.n || t.crc !== p.crc) { scanWarn(`Teil ${p.i} passt nicht zur laufenden Übertragung (Anzahl oder Prüfsumme abweichend) – ignoriert.`); return; }
+  const had = t.parts.get(p.i);
+  if (had !== undefined) { if (had !== p.data) scanWarn(`Teil ${p.i} widerspricht einem schon gelesenen Teil – abgelehnt.`); return; }
+  t.parts.set(p.i, p.data); qr.cur = t.id; navigator.vibrate?.(25); renderScan();
+  if (t.parts.size < t.n) return;
+  const all = Array.from({ length: t.n }, (_, i) => t.parts.get(i + 1)).join('');
+  if (hex8(crc32(new TextEncoder().encode(all))) !== t.crc) { qr.sets.delete(t.id); qr.cur = null; renderScan(); showNotice('qr-scan-error', 'Prüfsumme der Teile stimmt nicht – Übertragung verworfen, bitte erneut scannen.'); return; }
+  try { qr.bytes = base45Decode(all); } catch (e) { qr.sets.delete(t.id); qr.cur = null; showNotice('qr-scan-error', 'Code beschädigt, bitte erneut scannen: ' + e.message); return; }
+  stopScan(); put('qr-scan-status', t.n > 1 ? `Alle ${t.n} Teile gelesen, Prüfsumme stimmt.` : 'Code gelesen, Prüfsumme stimmt.');
+  void applyQr();
 }
+function unlockShow() { $('qr-unlock').hidden = false; $('qr-pass-row').hidden = false; put('qr-apply', 'Entschlüsseln & prüfen'); $('qr-scan-pass').value = ''; focusSoft($('qr-scan-pass')); }
 async function startScan() {
   const session = ++qr.session;
-  qr.got = new Map(); qr.total = 0; qr.id = null; qr.bytes = null; $('qr-unlock').hidden = true; put('qr-apply', 'Entschlüsseln & prüfen'); $('qr-preview').hidden = true; $('qr-preview').replaceChildren(); renderScan();
+  qr.sets = new Map(); qr.cur = null; qr.legacy = null; qr.bytes = null; qr.legacyBytes = null; $('qr-unlock').hidden = true; $('qr-preview').hidden = true; $('qr-preview').replaceChildren(); put('qr-scan-warn', ''); renderScan();
   put('qr-scan-status', 'Kamera wird gestartet …');
   try { await qrDetector(); } catch (e) { put('qr-scan-status', ''); return showNotice('qr-scan-error', e.message); }
   if (session !== qr.session) return;
@@ -4932,35 +5652,71 @@ async function startScan() {
 function stopScan() { qr.session++; cancelAnimationFrame(qr.raf); qr.stream?.getTracks().forEach(t => t.stop()); qr.stream = null; const v = $('qr-video'); if (v) v.srcObject = null; }
 async function scanPhoto(file) {
   if (!file) return;
-  try { const det = await qrDetector(), bmp = await createImageBitmap(file), codes = await det(bmp); bmp.close?.(); if (!codes.length) put('qr-scan-status', 'Auf dem Foto wurde kein QR-Code erkannt.'); codes.forEach(onScanText); }
+  try { const det = await qrDetector(), bmp = await createImageBitmap(file), codes = await det(bmp); bmp.close?.(); if (!codes.length) scanWarn('Auf dem Foto wurde kein QR-Code erkannt.'); codes.forEach(onScanText); }
   catch (e) { showNotice('qr-scan-error', 'Foto konnte nicht gelesen werden: ' + (e?.message || e)); }
 }
 async function applyQr() {
-  if (!qr.bytes) { $('qr-dialog').close(); return; }
-  $('qr-apply').disabled = true; showNotice('qr-scan-error', null); put('qr-scan-status', 'Entschlüssele …');
+  if (!qr.bytes && !qr.legacyBytes) { $('qr-dialog').close(); return; }
+  $('qr-apply').disabled = true; showNotice('qr-scan-error', null);
+  const finish = msg => { put('qr-scan-status', msg); backupStatus(msg); $('qr-unlock').hidden = false; $('qr-pass-row').hidden = true; put('qr-apply', 'Schließen'); qr.bytes = null; qr.legacyBytes = null; };
   try {
-    const p = planBackup(await unpackSync(qr.bytes, $('qr-scan-pass').value)); qr.bytes = null; put('qr-apply', 'Schließen');
-    // 3.27.0: erst die Vorschau (neu, geändert, gelöscht), dann übernehmen – wie beim Einspielen einer Datei
-    const finish = msg => { put('qr-scan-status', msg); backupStatus(msg); $('qr-unlock').hidden = false; };
-    if (!planChanges(p) && !p.blocked.length) finish(commitPlan(p));
-    else { $('qr-unlock').hidden = true; put('qr-scan-status', 'Vorschau prüfen, dann „Übernehmen“.'); showPlan('qr-preview', p, msg => finish(msg ?? 'Abgleich abgebrochen – nichts geändert.')); }
+    let payload;
+    if (qr.legacyBytes) { put('qr-scan-status', 'Entschlüssele …'); payload = await unpackSync(qr.legacyBytes, $('qr-scan-pass').value); }
+    else { const pass = $('qr-unlock').hidden ? '' : $('qr-scan-pass').value; if (pass) put('qr-scan-status', 'Entschlüssele …'); payload = (await unpackBackup(qr.bytes, pass)).payload; }
+    $('qr-unlock').hidden = true;
+    await reviewBackup(payload, 'QR-Code', 'qr-preview', msg => { if (/^Vorschau/.test(msg)) put('qr-scan-status', msg); else finish(msg); });
   }
-  catch (e) { put('qr-scan-status', ''); showNotice('qr-scan-error', e?.message || String(e)); }
+  catch (e) {
+    if (e?.needPass) { put('qr-scan-status', 'Alle Teile gelesen. Der Code ist verschlüsselt – Passwort vom anderen Gerät eingeben.'); unlockShow(); return; }
+    put('qr-scan-status', ''); showNotice('qr-scan-error', e?.message || String(e)); if (!qr.legacyBytes && !e?.badPass) { qr.bytes = null; }
+  }
   finally { $('qr-apply').disabled = false; }
 }
 $('qr-export').addEventListener('click', () => openQr('export'));
 $('qr-scan').addEventListener('click', () => openQr('scan'));
-$('qr-make').addEventListener('click', () => void makeQr());
+$('qr-make').addEventListener('click', () => void qrPrepare());
 $('qr-close').addEventListener('click', () => { stopCycle(); stopScan(); $('qr-dialog').close(); });
 $('qr-dialog').addEventListener('close', () => { stopCycle(); stopScan(); });
 $('qr-pause').addEventListener('click', () => { qr.paused = !qr.paused; startCycle(); });
-$('qr-again').addEventListener('click', () => { stopCycle(); $('qr-out').hidden = true; $('qr-form').hidden = false; $('qr-pass').focus(); });
-$('qr-slower').addEventListener('click', () => { qr.speed = Math.min(2500, qr.speed + 250); startCycle(); });
-$('qr-faster').addEventListener('click', () => { qr.speed = Math.max(250, qr.speed - 150); startCycle(); });
+$('qr-prev').addEventListener('click', () => { qr.paused = true; startCycle(); showPart(qr.idx - 1); });
+$('qr-next').addEventListener('click', () => { qr.paused = true; startCycle(); showPart(qr.idx + 1); });
+$('qr-speed').addEventListener('change', e => { const v = Number(e.target.value); if (QR_SPEEDS.includes(v)) { qr.speed = v; startCycle(); } });
+$('qr-again').addEventListener('click', () => { stopCycle(); $('qr-out').hidden = true; $('qr-form').hidden = false; void qrEstimate(); });
+$('qr-big-code').addEventListener('click', () => { $('qr-dialog').close(); void openCode('export'); });
+$('qr-big-file').addEventListener('click', () => { $('qr-dialog').close(); void saveBackup(); });
 $('qr-photo-btn').addEventListener('click', () => $('qr-photo').click());
-$('qr-photo').addEventListener('change', () => { const f = $('qr-photo').files[0]; $('qr-photo').value = ''; void scanPhoto(f); });
+$('qr-photo').addEventListener('change', () => { const files = [...$('qr-photo').files]; $('qr-photo').value = ''; void (async () => { for (const f of files) await scanPhoto(f); })(); });
 $('qr-apply').addEventListener('click', () => void applyQr());
 $('qr-scan-pass').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); void applyQr(); } });
+addEventListener('resize', () => { if ($('qr-dialog').open && !$('qr-out').hidden && qr.codes.length) showPart(qr.idx); });
+// Textcode
+$('code-export').addEventListener('click', () => void openCode('export'));
+$('code-import').addEventListener('click', () => void openCode('import'));
+$('code-make').addEventListener('click', () => void makeCode());
+$('code-copy').addEventListener('click', () => void copyCode());
+$('code-save').addEventListener('click', () => { const t = $('code-text').value; if (!t) return; download(`sicherungscode-${new Date().toISOString().slice(0, 10)}.txt`, t + '\n', 'text/plain'); markBackedUp('code', !!$('code-text').dataset.enc); put('code-status', `Gespeichert: sicherungscode-${new Date().toISOString().slice(0, 10)}.txt – auf dem anderen Gerät mit „Backup einspielen“ oder „Textcode einfügen“.`); });
+$('code-check').addEventListener('click', () => void checkCode());
+$('code-in').addEventListener('input', () => { codeBytes = null; $('code-unlock').hidden = true; });
+$('code-in-pass').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); void checkCode(); } });
+$('code-close').addEventListener('click', () => $('code-dialog').close());
+// Konflikte und Prüfliste
+$('conf-keep').addEventListener('click', () => decideConflict('keep'));
+$('conf-take').addEventListener('click', () => decideConflict('take'));
+$('conf-later').addEventListener('click', () => decideConflict('later'));
+$('conf-close').addEventListener('click', () => { $('conf-dialog').close(); renderIntegrity(); });
+$('integrity-conf').addEventListener('click', () => openConflicts());
+$('integrity-quar').addEventListener('click', () => { toggleDataPanel(true); $('integrity').scrollIntoView({ block: 'center' }); });
+$('quar-export').addEventListener('click', quarExport);
+$('quar-list').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.quarEdit) quarOpen(b.dataset.quarEdit);
+  else if (b.dataset.quarDel) { if (confirm('Diesen Eintrag endgültig aus der Prüfliste löschen? Er ist danach nur noch in älteren Sicherungen enthalten.')) quarRemove(b.dataset.quarDel); }
+  else if (b.dataset.quarSoft) { const [kind, id, k] = b.dataset.quarSoft.split('|'), r = planList(kind).find(x => x.id === id); if (r && isObj(r.invalid)) { delete r.invalid[k]; if (!Object.keys(r.invalid).length) delete r.invalid; persist(); renderIntegrity(); } }
+});
+$('quar-take').addEventListener('click', quarTake);
+$('quar-copy').addEventListener('click', async () => { try { await navigator.clipboard.writeText($('quar-json').value); showNotice('quar-dlg-error', null); } catch { $('quar-json').select(); } });
+$('quar-close').addEventListener('click', () => $('quar-dialog').close());
+$('undo-import').addEventListener('click', () => void undoImport());
 // ---------- App (PWA), Bildschirm wach halten, Speicherstatus ----------
 const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 let installEvt = null;
@@ -6058,7 +6814,7 @@ async function sendTgBackup(force = false, leaving = false) {
   if (!leaving && !claimed) return;   // ein anderer Tab sendet gerade
   tgb.busy = true; tgb.cfg = loadTgb(); renderTgbInfo();
   try {
-    const text = JSON.stringify(payload, null, 1), blob = new Blob([text], { type: 'application/json' });
+    const text = JSON.stringify(withIntegrity(payload), null, 1), blob = new Blob([text], { type: 'application/json' });
     const caption = `💾 Scalp-Desk-Sicherung · ${new Date().toLocaleString('de-DE')}\n${state.positions.length} offene Positionen · ${state.trades.length} Trades${state.demoPositions.length + state.demoTrades.length ? ` · Demo: ${state.demoPositions.length} offen, ${state.demoTrades.length} geschlossen` : ''}${state.movements.length ? ` · ${state.movements.length} Geldbewegungen` : ''}\nWiederherstellen: Datei speichern, im Dashboard „Backup einspielen“.`;
     const keep = leaving && text.length < 60000; // keepalive erlaubt höchstens 64 KB
     const pinOk = tgbPinOk(T), own = tgbNormKey(tgb.cfg.chat) === where ? tgb.cfg.msg : 0;
@@ -6459,8 +7215,7 @@ function zzpVerdict(up, pct = zzPct(), c = state.candles) {
   }
   return v;
 }
-// Sicherung: still mitführen; beim Einspielen je Muster die Fassung mit mehr Fällen, je Reihe den späteren Stand behalten
-function zzpExport() { return zzpData(); }
+// Sicherung (zzpBackup): beim Einspielen je Muster die Fassung mit mehr Fällen, je Reihe den späteren Stand behalten
 // base: Version eines eingespielten Startbestands (Ablaufplan Schritt 2); Rückgabe: Zahl der übernommenen Einträge
 function zzpImport(x, base = '') {
   if (x?.v !== 1 || !x.s || typeof x.s !== 'object' || !x.r || typeof x.r !== 'object') return 0;
@@ -6483,18 +7238,15 @@ function zzpSave(P) {
 // Für den Fingerabdruck der Telegram-Sicherung: ändert sich höchstens alle 6 Stunden (die Muster ändern sich mit jeder Kerze)
 function zzpStamp() { const at = Number(zzpData().at) || 0; return at ? Math.floor(at / 216e5) : 0; }
 function zzpInfo() { const P = zzpData(), s = Object.values(P.s); return { patterns: s.length, cases: s.reduce((a, v) => a + (v[0] || 0), 0), base: P.base || '', at: Number(P.at) || 0, rev: Number(P.rev) || 0 }; }
-// QR-Abgleich (3.24.0): nur Einträge, die vom eingespielten Startbestand abweichen (das eigene Lernen) und die Merker je Reihe –
-// den Startbestand holt sich das andere Gerät selbst aus dem GitHub-Projekt. Hält den QR-Code klein (ohne: +3 Codes).
-// Beim Einspielen zählt je Muster die Fassung mit mehr Fällen, also geht nichts verloren. Datei- und Telegram-Sicherung
-// enthalten weiter den ganzen Bestand. Ohne Startbestand oder ohne Netz: der ganze Bestand.
-async function zzpDelta() {
-  const P = zzpData(); if (!P.base) return P;
-  try {
-    const r = await fetch('data/muster-start.json'), x = r.ok ? await r.json() : null;
-    if (String(x?.version) !== P.base || !x.s || typeof x.s !== 'object') return P;
-    const s = {}; for (const [k, v] of Object.entries(P.s)) { const b = x.s[k]; if (!Array.isArray(b) || b[0] !== v[0] || b[1] !== v[1]) s[k] = v; }
-    return { v: 1, s, r: P.r, base: P.base };
-  } catch { return P; }
+// Sicherung (3.29.0, G01): nur Einträge, die vom eingespielten Startbestand abweichen (das eigene, noch nicht veröffentlichte Lernen),
+// dazu die Merker je Reihe, Revision und der Verweis auf den Startbestand (base) – den Startbestand selbst holt sich jedes Gerät aus dem
+// GitHub-Projekt. Beim Einspielen zählt je Muster die Fassung mit mehr Fällen. Ohne geladenen Startbestand: der ganze Bestand.
+let zzpStartSet = null;
+function zzpBackup() {
+  const P = zzpData(), x = zzpStartSet;
+  if (!P.base || !x || String(x.version) !== P.base || !x.s || typeof x.s !== 'object') return P;
+  const s = {}; for (const [k, v] of Object.entries(P.s)) { const b = x.s[k]; if (!Array.isArray(b) || b[0] !== v[0] || b[1] !== v[1]) s[k] = v; }
+  return { v: 1, s, r: P.r, base: P.base, rev: P.rev, at: P.at, delta: true };
 }
 // Nur die Muster (ohne Positionen, Trades, Zugänge): Datei für einen neuen Startbestand
 function zzpExportFile() {
@@ -6508,6 +7260,7 @@ async function zzpStart() {
   try {
     const r = await fetch('data/muster-start.json', { cache: 'no-cache' }); if (!r.ok) return;
     const x = await r.json(); if (x?.kind !== 'scalpdesk-patterns' || x.v !== 1 || !x.version) return;
+    zzpStartSet = x; // 3.29.0: für die Sicherung nur das eigene Lernen
     if (zzpData().base !== String(x.version)) zzpImport(x, String(x.version));
   } catch { /* ohne Netz: beim nächsten Start */ }
 }
@@ -6580,9 +7333,10 @@ function openReset() { if (!$('reset-dialog').open) $('reset-dialog').showModal(
 function resetTradingData() {
   // 1. Sicherung davor als Datei (unverschlüsselt): am iPad in der Dateien-App unter „Downloads“
   const d = new Date().toISOString().slice(0, 10), name = `backup-vor-zuruecksetzen-${d}.json`;
-  download(name, JSON.stringify(backupPayload(), null, 1), 'application/json'); markBackedUp('download');
-  // 2. Handelsdaten leeren; Muster, Einstellungen, Vorauswahl und Zugänge bleiben
+  download(name, JSON.stringify(withIntegrity(backupPayload()), null, 1), 'application/json'); markBackedUp('download');
+  // 2. Handelsdaten leeren (3.29.0: auch Prüfliste und offene Konflikte – sie stehen in der Sicherung davor); Muster, Einstellungen, Vorauswahl und Zugänge bleiben
   state.positions = []; state.trades = []; state.movements = []; state.alarms = []; state.demoPositions = []; state.demoTrades = []; pnlResetAll();
+  store.set(QUAR_KEY, []); store.set(CONF_KEY, []); broadcastData([QUAR_KEY, CONF_KEY]); renderIntegrity();
   // 3. Telegram: die nächste Sicherung kommt als neue Nachricht, die bisherige bleibt als Stand vor dem Zurücksetzen im Chat
   if (tgb) { tgb.cfg = { ...tgb.cfg, msg: 0, sig: '' }; saveTgb(); }
   posStructure = null; demoStructure = null; histStructure = ''; alarmKey = '';
@@ -7864,7 +8618,7 @@ function pnlGet() {
   const d = store.get('scalpdesk.pnlalarm.v1', null), one = a => ({ on: !!a?.on, value: Number(a?.value) > 0 ? Number(a.value) : null, state: ['armed', 'wait', 'fired'].includes(a?.state) ? a.state : 'armed', at: Number(a?.at) || 0, firedAt: Number(a?.firedAt) || 0, firedVal: Number.isFinite(a?.firedVal) ? a.firedVal : null, svc: !!a?.svc });
   return { profit: one(d?.profit), loss: one(d?.loss), u: Number(d?.u) || 0 };
 }
-function pnlSet(d) { d.u = Date.now(); store.set('scalpdesk.pnlalarm.v1', d); broadcastData(['scalpdesk.pnlalarm.v1']); renderPnl(); pnlToSvc(); }
+function pnlSet(d) { d.u = Date.now(); store.set('scalpdesk.pnlalarm.v1', d); broadcastData(['scalpdesk.pnlalarm.v1']); renderPnl(); pnlToSvc(); stampSetting('pnl'); }
 // geänderte Grenzen oder Zustände an den 24/7-Dienst (übergeben wird nur, was sich für ihn geändert hat)
 function pnlToSvc() { if (typeof scheduleS247 === 'function') scheduleS247(); }
 // Aktueller Vergleichswert: das angezeigte Live-Ergebnis in Cent genau; null ohne offene Positionen oder mit fehlendem Kurs
@@ -7945,9 +8699,7 @@ function pnlSvcText(d) {
   return 'Bei geschlossener App: nur wenn der 24/7-Dienst läuft – er meldet sich gerade nicht (Status unter 🔔 Hinweise → „Telegram / Discord einrichten“).';
 }
 // Normaler Reset (Handelsdaten zurücksetzen): Gewinn- und Verlust-Alarme gehören zu den Handelsdaten
-function pnlResetAll() { store.del('scalpdesk.pnlalarm.v1'); broadcastData(['scalpdesk.pnlalarm.v1']); renderPnl(); pnlToSvc(); }
-// Sicherung einspielen: die neuere Fassung gewinnt
-function pnlAdopt(x) { if (!x || typeof x !== 'object' || !(Number(x.u) > pnlGet().u)) return false; store.set('scalpdesk.pnlalarm.v1', x); broadcastData(['scalpdesk.pnlalarm.v1']); renderPnl(); pnlToSvc(); return true; }
+function pnlResetAll() { store.del('scalpdesk.pnlalarm.v1'); broadcastData(['scalpdesk.pnlalarm.v1']); renderPnl(); pnlToSvc(); stampSetting('pnl'); }
 // ---- Anzeige ----
 // Merker am Live-Ergebnis: Punkt, solange ein Alarm aktiv ist, gelb nach dem Auslösen
 function pnlBadge(d = pnlGet()) {
@@ -8974,6 +9726,7 @@ async function recCopy() {
   $('rec-badge').addEventListener('click', () => void recCopy());
   if (store.get(REC_KEY)?.on) recStart(); else recRender();
 })();
+for(const f of SET_FIELDS)stampSetting(f);renderIntegrity(); // 3.29.0: Abstammung der Einstellungen anlegen, Prüfliste zeigen
 render();startLive();void showCachedChart();void refresh();void initAutoBackup();void requestWake();void zzpStart();
 </script>
 </head>
@@ -9173,10 +9926,17 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
             <div class="pos-totals"><div><span>Offen, nicht realisiert</span><strong id="open-total">—</strong><small id="open-total-eur"></small></div><div><span id="realized-label">Realisiert gesamt</span><strong id="realized-total">—</strong><small id="realized-total-eur"></small></div></div>
             <div class="pos-head-actions"><button type="button" class="button primary-lite" id="pos-add-toggle" aria-expanded="false" aria-controls="pos-form">+ Position erfassen</button></div>
           </div>
+          <div class="notice warning integrity-banner" id="integrity-banner" role="status" hidden><span id="integrity-text"></span><span class="ib-act"><button type="button" class="button ghost" id="integrity-conf" hidden>Änderungen vergleichen</button><button type="button" class="button ghost" id="integrity-quar" hidden>Prüfliste öffnen</button></span></div>
           <div class="day-strip" id="day-strip"><span>Heute realisiert</span><strong class="day-pnl" id="day-pnl">—</strong><span id="day-info"></span><div class="day-bar" id="day-bar" title="Verbrauchtes Tages-Verlustlimit"><span></span></div><label>Tages-Verlustlimit<span class="input-wrap"><input id="day-limit" type="text" inputmode="decimal" autocomplete="off" placeholder="z. B. 30"><span>USDT</span></span></label></div>
           <button type="button" class="data-head backup-badge" id="data-toggle" aria-expanded="false" aria-controls="data-panel"><span class="data-chev" aria-hidden="true">▸</span><span class="data-title">💾 Datensicherung</span><span class="due" id="backup-due" hidden>FÄLLIG</span><small class="data-last" id="data-last"></small></button>
           <div class="data-panel" id="data-panel" hidden>
-            <div class="head-line"><h3>Sichern, einspielen, abgleichen</h3><details class="tip left"><summary aria-label="Wo liegen meine Daten?"><span>i</span></summary><div class="tip-body"><p>Daten liegen nur in diesem Browser auf diesem Gerät, nicht bei GitHub: in der IndexedDB, dazu eine Spiegelkopie im localStorage.</p><p>Safari kann Website-Daten löschen, wenn eine Seite länger nicht geöffnet wurde. Als App auf dem Home-Bildschirm gilt diese Frist nicht; ein Backup ist trotzdem der sicherste Schutz.</p><p>Mit Passwort wird ein Backup verschlüsselt (AES-256). Ein vergessenes Passwort lässt sich nicht wiederherstellen.</p><p><b>Einspielen und QR-Abgleich:</b> Vorher zeigt die App eine Vorschau – was neu ist, was sich geändert hat und was gelöscht wird. Je Eintrag zählt die neuere Fassung. Gelöschte Einträge merkt sich die App mit Zeitpunkt (400 Tage) und gibt sie im Backup mit, damit der Abgleich sie auch auf dem anderen Gerät löscht. Fehlt ein Eintrag nur in der Datei, bleibt er hier. Risiko-Rechner, Tages-Verlustlimit, Rücklage-Satz, Vorauswahl und Setups kommen mit, wenn sie auf dem anderen Gerät später geändert wurden. Gründe stehen in den Positionen und Trades; Demo-Positionen und Demo-Historie kommen getrennt von den echten Daten mit.</p><p>Automatisch sichern: Am Computer (Chrome/Edge) schreibt das Dashboard nach jeder Änderung in eine Datei deiner Wahl. Auf iPhone und iPad erlaubt Safari das nicht – dort kann die Sicherung stattdessen nach jeder Änderung an deinen Telegram-Chat gehen; die neue Datei ersetzt jeweils die vorige. Diese Datei ist unverschlüsselt und liegt auf den Servern von Telegram; Zugangsdaten für Telegram und Discord sind nie enthalten.</p></div></details></div>
+            <div class="head-line"><h3>Sichern, einspielen, abgleichen</h3><details class="tip left"><summary aria-label="Wo liegen meine Daten?"><span>i</span></summary><div class="tip-body"><p>Daten liegen nur in diesem Browser auf diesem Gerät, nicht bei GitHub: in der IndexedDB, dazu eine Spiegelkopie im localStorage. Safari kann Website-Daten löschen, wenn eine Seite länger nicht geöffnet wurde. Als App auf dem Home-Bildschirm gilt diese Frist nicht; eine Sicherung ist trotzdem der sicherste Schutz.</p><p><b>Immer vollständig:</b> QR-Code, Textcode, Datei und Telegram-Sicherung enthalten dasselbe – offene Positionen, alle Trades aller Jahre, Demo-Positionen und Demo-Historie, Geldbewegungen, Kurs- und Gewinn-/Verlust-Alarme, Einstellungen, Vorauswahl und Gründe, die Prüfliste, offene Konflikte und dein eigenes Musterlernen. Nie enthalten sind Zugangsdaten (Telegram-Token, Discord-Webhook), die Übergabe an den 24/7-Dienst und andere gerätegebundene Zustände – ein Import schaltet deshalb keinen Versand ein.</p><p><b>Passwort:</b> optional. Mit Passwort wird die Sicherung verschlüsselt (AES-256); ein vergessenes Passwort lässt sich nicht wiederherstellen. Ohne Passwort kann jeder, der Code oder Datei erhält, die Handelsdaten lesen. Die Prüfsumme erkennt Übertragungsfehler, schützt aber nicht vor Mitlesen.</p><p><b>Einspielen und Abgleich:</b> Vorher zeigt die App eine vollständige Vorschau. Je Eintrag zählt seine Abstammung, nicht die Uhrzeit: Baut eine Fassung auf der anderen auf, gilt die weiterentwickelte. Haben beide Geräte denselben Eintrag verschieden geändert, entscheidest du („Änderungen vergleichen“); bis dahin gilt der Stand dieses Geräts, beide Fassungen bleiben erhalten. Gelöscht wird nur, was das andere Gerät genau so kannte. Ein zweites Einspielen derselben Sicherung ändert nichts. Vor jedem Import sichert die App den bisherigen Stand („Letzten Import rückgängig machen“).</p><p><b>Prüfliste:</b> Ein Eintrag, der beim Laden oder Einspielen ungültig ist, verschwindet nicht mehr still. Er steht mit Grund und Originaldaten in der Prüfliste, fehlt in Anzeigen und Summen (das steht dann dabei) und lässt sich korrigieren, exportieren oder bewusst löschen.</p><p>Automatisch sichern: Am Computer (Chrome/Edge) schreibt das Dashboard nach jeder Änderung in eine Datei deiner Wahl. Auf iPhone und iPad erlaubt Safari das nicht – dort kann die Sicherung stattdessen nach jeder Änderung an deinen Telegram-Chat gehen; die neue Datei ersetzt jeweils die vorige. Diese Datei ist unverschlüsselt und liegt auf den Servern von Telegram.</p></div></details></div>
+            <div class="integrity" id="integrity" hidden>
+              <h3>⚠ Prüfliste · <span id="quar-head"></span></h3>
+              <p>Diese Einträge konnten nicht geladen werden oder enthalten ungültige Werte. Sie verschwinden nicht still: Die Originaldaten bleiben erhalten, auch in jeder Sicherung. Nicht geladene Einträge fehlen in Anzeigen und Summen – die Summen sagen das dazu.</p>
+              <ul class="quar-list" id="quar-list"></ul>
+              <div class="data-row"><button type="button" class="button ghost" id="quar-export">Prüfliste als Datei speichern</button></div>
+            </div>
             <p id="storage-info">Speicher wird geprüft …</p>
             <div class="data-row" id="autobackup-row" hidden>
               <button type="button" class="button primary-lite" id="autobackup-setup">Automatisches Backup einrichten …</button>
@@ -9190,21 +9950,28 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
               <button type="button" class="button ghost" id="tgb-setup">📨 Telegram einrichten …</button>
               <span id="tgb-info" class="tgb-info"></span>
             </div>
-            <div class="data-row data-sep">
-              <label>Passwort <small>(optional)</small><span class="input-wrap"><input id="backup-pass" type="password" autocomplete="new-password" placeholder="leer lassen = unverschlüsselt"></span></label>
+            <div class="data-row data-sep data-main">
+              <span class="data-lead"><b>Sicherung übertragen</b> – immer vollständig, ohne Server: QR-Code am anderen Gerät scannen oder Textcode kopieren und dort einfügen (z. B. iPhone → PC).</span>
+              <button type="button" class="button primary-lite" id="qr-export">▦ QR-Code erzeugen</button>
+              <button type="button" class="button ghost" id="qr-scan">📷 QR-Code scannen</button>
+              <button type="button" class="button ghost" id="code-export">Textcode anzeigen / kopieren</button>
+              <button type="button" class="button ghost" id="code-import">Textcode einfügen / importieren</button>
+            </div>
+            <div class="data-row">
+              <label>Passwort für die Datei <small>(optional)</small><span class="input-wrap"><input id="backup-pass" type="password" autocomplete="new-password" placeholder="leer lassen = unverschlüsselt"></span></label>
               <button type="button" class="button primary-lite" id="backup-save">Backup herunterladen</button>
               <button type="button" class="button primary-lite" id="backup-share" hidden>Teilen / in Dateien sichern</button>
               <button type="button" class="button ghost" id="backup-load">Backup einspielen</button>
               <button type="button" class="button ghost" id="export-csv">CSV für Excel</button>
-              <input type="file" id="backup-file" accept=".json,application/json" hidden>
+              <input type="file" id="backup-file" accept=".json,.txt,application/json,text/plain" hidden>
             </div>
             <small id="history-status" role="status"></small>
             <div class="data-row" id="decrypt-row" hidden><span id="decrypt-note">Diese Datei ist verschlüsselt. Passwort oben eingeben, dann:</span><button type="button" class="button primary-lite" id="backup-decrypt">Entschlüsseln &amp; prüfen</button><button type="button" class="button ghost" id="decrypt-cancel">Abbrechen</button></div>
             <div class="sync-preview" id="sync-preview" role="region" aria-label="Vorschau des Abgleichs" hidden></div>
-            <div class="data-row data-sep"><button type="button" class="button ghost" id="qr-export">▦ QR-Code anzeigen</button><button type="button" class="button ghost" id="qr-scan">📷 QR-Code scannen</button><span style="color:var(--muted)">Abgleich zwischen Geräten: am Computer anzeigen, mit dem iPad scannen – verschlüsselt, ohne Server.</span></div>
+            <div class="data-row" id="undo-row" hidden><span id="undo-info"></span><button type="button" class="button ghost" id="undo-import">Letzten Import rückgängig machen</button></div>
             <div class="data-row"><label class="check"><input type="checkbox" id="warn-close"> Beim Schließen warnen, solange Änderungen nicht gesichert sind</label></div>
             <div class="data-row data-sep zzp-row"><span><b>🧠 Gelernte Chartmuster:</b> <span id="zzp-info">…</span></span><details class="tip left"><summary aria-label="Wie bleiben die Muster erhalten?"><span>i</span></summary><div class="tip-body"><p>Die ZigZag-Prognose lernt still mit, wie oft sich ein Muster bestätigt hat. Der Bestand wird nach jeder Änderung sofort auf diesem Gerät gespeichert und reist in jeder Sicherung mit (Datei, Teilen, Telegram).</p><p><b>Startbestand:</b> Aus dem GitHub-Projekt (<code>data/muster-start.json</code>) lädt die App beim Start einen Musterbestand mit Versionsnummer. Neue Nutzer, ein neues Gerät oder ein geleerter Browser-Speicher haben ihn sofort; eigenes Lernen zählt danach weiter, nichts wird doppelt gezählt.</p><p><b>Musterbestand exportieren</b> speichert nur die Muster, ohne Positionen, Trades oder Zugänge – so lässt sich dein Wissen als neuer Startbestand ins GitHub-Projekt übernehmen.</p></div></details><button type="button" class="button ghost" id="zzp-export">Musterbestand exportieren</button></div>
-            <div class="data-row data-sep"><button type="button" class="button ghost danger-btn" id="reset-open">Handelsdaten zurücksetzen …</button><span class="reset-note">Löscht Positionen, Trades (auch Demo), Geldbewegungen und Alarme – vorher wird gesichert. Gelernte Muster, Einstellungen und Zugänge bleiben.</span></div>
+            <div class="data-row data-sep"><button type="button" class="button ghost danger-btn" id="reset-open">Handelsdaten zurücksetzen …</button><span class="reset-note">Löscht Positionen, Trades (auch Demo), Geldbewegungen, Alarme, Prüfliste und offene Konflikte – vorher wird gesichert. Gelernte Muster, Einstellungen und Zugänge bleiben.</span></div>
             <small id="backup-info"></small>
           </div>
           <form id="pos-form" class="pos-form" hidden novalidate>
@@ -9281,7 +10048,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
               <label>Art<select id="mv-type"><option value="payout">Auszahlung an mich</option><option value="tax">Steuer-Rücklage (auf anderes Konto)</option><option value="keep">Gewinn im Tradingguthaben gelassen</option><option value="deposit">Einzahlung aufs Tradingkonto</option></select></label>
               <label>Betrag<span class="input-wrap"><input id="mv-amount" type="text" inputmode="decimal" autocomplete="off" placeholder="z. B. 150"></span></label>
               <div class="side-toggle" role="group" aria-label="Währung"><button type="button" data-mv-cur="EUR" class="active" aria-pressed="true">EUR</button><button type="button" data-mv-cur="USDT" aria-pressed="false">USDT</button></div>
-              <label>Datum<input id="mv-date" type="date"></label>
+              <label>Datum<input id="mv-date" type="date" min="2009-01-01" max="2099-12-31"></label>
               <label class="wide">Notiz (optional)<span class="input-wrap"><input id="mv-note" maxlength="300" autocomplete="off" placeholder="z. B. auf Tagesgeldkonto überwiesen"></span></label>
               <button type="submit" class="button primary-lite">Eintragen</button>
               <div id="mv-error" class="notice error" role="alert" hidden></div>
@@ -9374,10 +10141,48 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
       <div class="sheet-actions"><button type="button" class="button ghost" id="chan-clear">Zugangsdaten löschen</button><button type="button" class="button primary" id="chan-done">Fertig</button></div>
     </div>
   </dialog>
+  <dialog class="sheet" id="code-dialog" aria-labelledby="code-title">
+    <div class="sheet-head"><h2 id="code-title">Textcode</h2><button type="button" class="button ghost icon" id="code-close" aria-label="Schließen">×</button></div>
+    <div class="sheet-body" id="code-export-view" hidden>
+      <p>Der Textcode enthält die <b>vollständige Sicherung</b> als Text – zum Kopieren in eine Notiz, Mail oder Nachricht an dich selbst und zum Einfügen auf dem anderen Gerät (z. B. iPhone → PC). Ohne Passwort kann jeder, der den Text erhält, die Handelsdaten lesen; Zugangsdaten (Telegram, Discord) sind nie enthalten.</p>
+      <p class="qr-calc" id="code-info"></p>
+      <label>Passwort <small>(optional, mindestens 6 Zeichen)</small><span class="input-wrap"><input id="code-pass" type="password" autocomplete="new-password"></span></label>
+      <div class="sheet-actions"><button type="button" class="button primary" id="code-make">Textcode erzeugen</button></div>
+      <div id="code-out" class="code-out" hidden><textarea id="code-text" class="code-box" readonly rows="6" aria-label="Textcode der Sicherung" spellcheck="false"></textarea><div class="sheet-actions"><button type="button" class="button primary-lite" id="code-copy">Kopieren</button><button type="button" class="button ghost" id="code-save">Als Textdatei speichern</button></div></div>
+    </div>
+    <div class="sheet-body" id="code-import-view" hidden>
+      <p>Textcode vom anderen Gerät hier einfügen – er beginnt mit „SDB1:“ und endet mit einem Punkt. Text davor oder danach und Zeilenumbrüche stören nicht. Vor dem Übernehmen zeigt eine Vorschau, was neu ist, was sich geändert hat und was gelöscht wird.</p>
+      <textarea id="code-in" class="code-box" rows="6" placeholder="SDB1:…" aria-label="Textcode einfügen" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
+      <div id="code-unlock" hidden><label>Passwort vom anderen Gerät<span class="input-wrap"><input id="code-in-pass" type="password" autocomplete="off"></span></label></div>
+      <div class="sheet-actions"><button type="button" class="button primary" id="code-check">Prüfen &amp; Vorschau</button></div>
+      <div class="sync-preview" id="code-preview" role="region" aria-label="Vorschau des Abgleichs" hidden></div>
+    </div>
+    <div class="code-foot"><small id="code-status" role="status"></small><div id="code-error" class="notice error" role="alert" hidden></div></div>
+  </dialog>
+  <dialog class="sheet" id="conf-dialog" aria-labelledby="conf-title">
+    <div class="sheet-head"><h2 id="conf-title" tabindex="-1">Änderungen vergleichen</h2><button type="button" class="button ghost icon" id="conf-close" aria-label="Schließen (später entscheiden)">×</button></div>
+    <div class="sheet-body">
+      <p class="conf-count" id="conf-count"></p>
+      <p id="conf-what"></p>
+      <div class="conf-table-wrap"><table class="conf-table" id="conf-table"><thead><tr><th>Feld</th><th>Bestätigter Stand<small>dieses Gerät</small></th><th>Entwurf<small>aus der Sicherung</small></th></tr></thead><tbody></tbody></table></div>
+      <p class="conf-note" id="conf-note"></p>
+      <div class="sheet-actions conf-act"><button type="button" class="button ghost" id="conf-keep">Bestätigten Stand behalten</button><button type="button" class="button ghost" id="conf-take">Entwurf übernehmen</button><button type="button" class="button ghost" id="conf-later">Später entscheiden</button></div>
+    </div>
+  </dialog>
+  <dialog class="sheet" id="quar-dialog" aria-labelledby="quar-dlg-title">
+    <div class="sheet-head"><h2 id="quar-dlg-title">Eintrag der Prüfliste</h2><button type="button" class="button ghost icon" id="quar-close" aria-label="Schließen">×</button></div>
+    <div class="sheet-body">
+      <p id="quar-dlg-why"></p>
+      <p>Originaldaten (JSON). Korrigieren und „Prüfen &amp; übernehmen“ – dann kommt der Eintrag wieder in die normale Liste. Ohne Korrektur bleibt er in der Prüfliste.</p>
+      <textarea id="quar-json" class="code-box" rows="12" spellcheck="false" autocapitalize="off" aria-label="Originaldaten"></textarea>
+      <div id="quar-dlg-error" class="notice error" role="alert" hidden></div>
+      <div class="sheet-actions"><button type="button" class="button primary-lite" id="quar-take">Prüfen &amp; übernehmen</button><button type="button" class="button ghost" id="quar-copy">Kopieren</button></div>
+    </div>
+  </dialog>
   <dialog class="sheet" id="reset-dialog" aria-labelledby="reset-title">
     <div class="sheet-head"><h2 id="reset-title">Handelsdaten zurücksetzen</h2><button type="button" class="button ghost icon" id="reset-close" aria-label="Schließen">×</button></div>
     <div class="sheet-body reset-body">
-      <p><b>Gelöscht werden:</b> offene Positionen, Trades, Demo-Positionen und Demo-Historie, Geldbewegungen, Kurs-Alarme sowie Gewinn- und Verlust-Alarme.</p>
+      <p><b>Gelöscht werden:</b> offene Positionen, Trades, Demo-Positionen und Demo-Historie, Geldbewegungen, Kurs-Alarme, Gewinn- und Verlust-Alarme sowie die Prüfliste und offene Konflikte.</p>
       <p><b>Erhalten bleiben:</b> die gelernten Chartmuster, alle Einstellungen (Risiko, Tages-Verlustlimit, Steuersatz, Setups, Vorauswahl, Darstellung) und die Telegram- und Discord-Zugänge.</p>
       <p><b>Nur auf diesem Gerät:</b> Gleichst du danach mit einem anderen Gerät ab, kommen dessen Positionen und Trades wieder dazu – dort ebenfalls zurücksetzen.</p>
       <p>Vorher speichert die App eine Sicherungsdatei (am iPad in der Dateien-App unter „Downloads“). Mit eingeschalteter Telegram-Sicherung bleibt die bisherige Sicherung im Chat stehen; die nächste kommt als neue Nachricht.</p>
@@ -9387,35 +10192,35 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
   <dialog class="sheet" id="qr-dialog" aria-labelledby="qr-title">
     <div class="sheet-head"><h2 id="qr-title">Geräte abgleichen</h2><button type="button" class="button ghost icon" id="qr-close" aria-label="Schließen">×</button></div>
     <div class="sheet-body" id="qr-export-view" hidden>
-      <p>Zeigt deine Daten verschlüsselt als QR-Code. Auf dem anderen Gerät unter <b>Backup → QR-Code scannen</b> die Kamera darauf halten. Dort zeigt eine Vorschau, was neu ist, was sich geändert hat und was gelöscht wird; übernommen wird erst danach.</p>
+      <p>Zeigt die <b>vollständige Sicherung</b> als QR-Code – bei viel Inhalt bis zu 10 große Teile nacheinander, die von selbst wechseln. Auf dem anderen Gerät unter <b>Datensicherung → QR-Code scannen</b> die Kamera darauf halten, bis alle Teile gelesen sind; verpasste Teile kommen in der nächsten Runde. Dort zeigt eine Vorschau, was neu ist, was sich geändert hat und was gelöscht wird – übernommen wird erst danach.</p>
       <div id="qr-form" class="sheet-form">
-      <div class="choice" role="radiogroup" aria-label="Inhalt">
-        <label><input type="radio" name="qr-scope" value="open" checked><span><b>Offene Positionen, Alarme &amp; Einstellungen</b><small>schnell, meist ein bis zwei Codes</small></span></label>
-        <label><input type="radio" name="qr-scope" value="all"><span><b>Komplettes Backup</b><small>inklusive abgeschlossener Trades und Geldbewegungen, entsprechend mehr Codes</small></span></label>
-      </div>
-      <label>Passwort <small>(Pflicht, mindestens 6 Zeichen – auf dem anderen Gerät eingeben)</small><span class="input-wrap"><input id="qr-pass" type="password" autocomplete="new-password"></span></label>
+      <p class="qr-calc" id="qr-calc"></p>
+      <label>Passwort <small>(optional, mindestens 6 Zeichen – ohne Passwort kann jeder, der den Code abfotografiert, die Handelsdaten lesen)</small><span class="input-wrap"><input id="qr-pass" type="password" autocomplete="new-password"></span></label>
       <div class="sheet-actions"><button type="button" class="button primary" id="qr-make">QR-Code erzeugen</button></div>
       </div>
       <div id="qr-error" class="notice error" role="alert" hidden></div>
+      <div id="qr-big" class="notice warning" hidden><span id="qr-big-text"></span><div class="sheet-actions" style="margin-top:8px"><button type="button" class="button ghost" id="qr-big-code">Textcode anzeigen</button><button type="button" class="button ghost" id="qr-big-file">Backup herunterladen</button></div></div>
       <div id="qr-out" hidden>
-        <div class="qr-stage"><canvas id="qr-canvas" width="10" height="10" aria-label="QR-Code mit verschlüsselten Daten"></canvas></div>
+        <div class="qr-stage"><canvas id="qr-canvas" width="10" height="10" aria-label="QR-Code der Sicherung"></canvas></div>
         <div class="qr-meta"><span id="qr-part">Teil 1 von 1</span><span id="qr-size"></span></div>
+        <p class="qr-tight" id="qr-tight" hidden>Wenig Platz – für einen sicher lesbaren Code das Gerät hochkant drehen oder das Fenster vergrößern.</p>
         <div class="qr-parts" id="qr-parts" aria-hidden="true"></div>
-        <div class="sheet-actions"><button type="button" class="button ghost" id="qr-pause">Anhalten</button><button type="button" class="button ghost" id="qr-slower">Langsamer</button><button type="button" class="button ghost" id="qr-faster">Schneller</button><button type="button" class="button ghost" id="qr-again">Andere Auswahl</button></div>
+        <div class="sheet-actions qr-ctl"><button type="button" class="button ghost" id="qr-prev" aria-label="Vorheriger Teil">◀ Zurück</button><button type="button" class="button ghost" id="qr-pause" aria-pressed="false">Pause</button><button type="button" class="button ghost" id="qr-next" aria-label="Nächster Teil">Vor ▶</button><label class="qr-speed" id="qr-speed-wrap">Wechsel <select id="qr-speed"><option value="500">0,5 s</option><option value="1000" selected>1 s</option><option value="1500">1,5 s</option><option value="2000">2 s</option></select></label><button type="button" class="button ghost" id="qr-again">Neu erzeugen</button></div>
       </div>
     </div>
     <div class="sheet-body" id="qr-scan-view" hidden>
-      <p id="qr-scan-note">Halte die Kamera auf den QR-Code am anderen Gerät. Bei mehreren Teilen einfach draufhalten, bis alle erfasst sind.</p>
+      <p id="qr-scan-note">Halte die Kamera auf den QR-Code am anderen Gerät. Bei mehreren Teilen einfach draufhalten, bis alle gelesen sind – die Reihenfolge ist egal, verpasste Teile kommen in der nächsten Runde.</p>
       <div class="scan-stage"><video id="qr-video" playsinline muted autoplay></video><div class="scan-frame"></div></div>
       <div class="qr-progress"><span id="qr-scan-bar"></span></div>
       <div class="qr-meta"><span id="qr-scan-status">Kamera wird gestartet …</span></div>
-      <div class="qr-parts" id="qr-scan-parts" aria-hidden="true"></div>
+      <div class="qr-parts qr-scan-parts" id="qr-scan-parts" aria-hidden="true"></div>
+      <p class="qr-scan-warn" id="qr-scan-warn" role="status"></p>
       <div id="qr-unlock" hidden>
-        <label>Passwort vom anderen Gerät<span class="input-wrap"><input id="qr-scan-pass" type="password" autocomplete="off"></span></label>
+        <label id="qr-pass-row">Passwort vom anderen Gerät<span class="input-wrap"><input id="qr-scan-pass" type="password" autocomplete="off"></span></label>
         <div class="sheet-actions" style="margin-top:10px"><button type="button" class="button primary" id="qr-apply">Entschlüsseln &amp; prüfen</button></div>
       </div>
       <div class="sync-preview" id="qr-preview" role="region" aria-label="Vorschau des Abgleichs" hidden></div>
-      <div class="sheet-actions"><button type="button" class="button ghost" id="qr-photo-btn">Stattdessen Foto aufnehmen</button><input id="qr-photo" type="file" accept="image/*" capture="environment" hidden></div>
+      <div class="sheet-actions"><button type="button" class="button ghost" id="qr-photo-btn">Stattdessen Foto aufnehmen</button><input id="qr-photo" type="file" accept="image/*" multiple hidden></div>
       <div id="qr-scan-error" class="notice error" role="alert" hidden></div>
     </div>
   </dialog>
