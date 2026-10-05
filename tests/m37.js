@@ -49,7 +49,8 @@ const download = async (page, fn) => { const [dl] = await Promise.all([page.wait
     const before = await pat(page), posBefore = await page.evaluate(() => JSON.parse(localStorage.getItem('scalpdesk.positions.v1') || '[]').length);
     await page.click('#reset-open'); await page.waitForTimeout(300);
     const dlg = await page.evaluate(() => ({ open: document.getElementById('reset-dialog').open, text: document.getElementById('reset-dialog').textContent.replace(/\s+/g, ' ') }));
-    check('Reset-Dialog nennt, was gelöscht wird und was bleibt', dlg.open && /Gelöscht werden: offene Positionen, Trades, Demo-Positionen und Demo-Historie, Geldbewegungen, Kurs-Alarme/.test(dlg.text) && /Erhalten bleiben: die gelernten Chartmuster/.test(dlg.text), dlg.text.slice(0, 120));
+    // 3.31.0 (G03): der Kontostand (Startwert und Kontrollstände) wird mit zurückgesetzt
+    check('Reset-Dialog nennt, was gelöscht wird und was bleibt', dlg.open && /Gelöscht werden: offene Positionen, Trades, Demo-Positionen und Demo-Historie, Geldbewegungen, der Kontostand \(Startwert und Kontrollstände\), Kurs-Alarme/.test(dlg.text) && /Erhalten bleiben: die gelernten Chartmuster/.test(dlg.text), dlg.text.slice(0, 120));
     const pre = await download(page, () => page.click('#reset-go')); await page.waitForTimeout(800);
     const afterReset = await pat(page), posAfter = await page.evaluate(() => JSON.parse(localStorage.getItem('scalpdesk.positions.v1') || '[]').length), msg = await page.textContent('#history-status');
     const preFile = JSON.parse(pre.text);
