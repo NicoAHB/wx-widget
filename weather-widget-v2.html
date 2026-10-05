@@ -502,6 +502,12 @@ svg .crosshair{stroke:var(--cross);stroke-width:1;stroke-dasharray:3 4;pointer-e
 .pos-sub label{font-size:.75rem;color:var(--label)}
 .pos-sub p{grid-column:1/-1;font-size:.8125rem}
 .pos-sub .pos-actions{grid-column:1/-1}
+.lot-pcts{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.lot-pcts .chip{min-height:36px;padding:0 12px}
+.lot-sub input[type=datetime-local],.lot-sub select{width:100%;min-height:44px;font:inherit;color:var(--text);background:var(--surface-2,var(--bg));border:1px solid var(--border);border-radius:10px;padding:0 10px}
+.lot-hint,.pos-lot-hint{grid-column:1/-1;font-size:.8125rem;color:var(--muted)}
+.lot-hist{font-size:.8125rem;border-top:1px solid var(--border);padding-top:8px}.lot-hist summary{cursor:pointer;color:var(--label);min-height:32px;display:flex;align-items:center}
+.lot-list{list-style:none;margin:6px 0;padding:0;display:grid;gap:4px}.lot-list li{padding-left:12px;border-left:2px solid var(--border)}.lot-list .lot-s{border-left-color:var(--accent)}.lot-list .lot-del{opacity:.6;text-decoration:line-through}
+.lot-liq{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.lot-liq .button{min-height:40px}
 .pos-note{font-size:.8125rem;color:var(--text-2);font-style:italic;white-space:pre-wrap;overflow-wrap:anywhere}
 .pos-stops{display:grid;gap:6px;font-size:.8125rem}
 .pos-stops .st{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
@@ -1820,6 +1826,150 @@ function parseNum(v) {
   else if (lc >= 0) s = s.replace(',', '.');
   return /^[+-]?(\d+\.?\d*|\.\d+)$/.test(s) ? Number(s) : NaN;
 }
+// ==== G02-Kern Anfang: Lose, Nachkauf, Teilabschluss – rein, ohne DOM (auch für die Tests) ====
+// 3.30.0 (G02): Eine Position ist ein Protokoll ihrer Handelsereignisse („ev“): Kauf bzw. Short-Verkauf (Los, t: 'b') und
+// Abschluss, ganz oder teilweise (t: 's'). Menge, Ø-Einstieg und Ergebnis ergeben sich daraus – genau, ohne Fließkomma:
+//  · Mengen in ganzen Einheiten zu 10⁻⁸ (BigInt, gespeichert als Ziffernfolge) – unabhängig von der Schrittweite der Börse;
+//    Preise als Dezimaltext (bis 12 Nachkommastellen), Geldbeträge in USDT mit 8 Nachkommastellen.
+//  · Kostenpool C = Σ Menge × Preis als exakter Bruch, Ø-Einstieg E = C / Q. Ein Abschluss von K nimmt C·K/Q heraus – E bleibt
+//    exakt gleich, ganz gleich, wie die Lose dabei gerundet werden.
+//  · Brutto-G/V eines Abschlusses = d · (K · Ausstieg − C·K/Q), d = +1 Long, −1 Short – ohne Hebel (der steckt nur in der Margin).
+//  · Gebucht wird in USDT, half-even auf 8 Stellen; der Rundungsrest läuft über die Summe (gebucht = Rundung(Summe danach) −
+//    Rundung(Summe davor)) – so entsteht nie zusätzlicher Gewinn.
+//  · Gebühren genau einmal: die eines Loses mit dem nächsten Abschluss, dazu die des Abschlusses selbst; Funding getrennt.
+//  · Lose werden anteilig verkleinert: k_i = ⌊K·q_i/Q⌋, die übrigen Einheiten einzeln an Lose mit Divisionsrest – neuestes Los
+//    zuerst, bei gleicher Zeit Los-ID aufsteigend, höchstens eine je Los. So ist Σk_i = K und 0 ≤ k_i ≤ q_i; ein Vollabschluss
+//    nimmt alle offenen Einheiten.
+// Ohne „ev“ (Einträge bis 3.29, Positionen ohne Nachkauf und Teilabschluss) gilt die Position als ein übernommener Bestand aus
+// Menge und Einstieg – erfunden wird keine Losfolge.
+const LOT_QDP = 8, LOT_PDP = 12, LOT_MDP = 8, LOT_BASE = 10n ** 12n; // Menge 10⁻⁸ × Preis 10⁻¹² = 10⁻²⁰ USDT → ÷10¹² = 10⁻⁸ USDT
+// Eingabe (deutsch oder englisch, wie parseNum) → kanonischer Dezimaltext; null bei ungültig
+function decStr(v, signed = false) {
+  let s = String(v ?? '').trim().replace(/\s|usdt|€|×/gi, '').replace(/[−–]/g, '-');
+  if (!s) return null;
+  const lc = s.lastIndexOf(','), ld = s.lastIndexOf('.');
+  if (lc >= 0 && ld >= 0) s = lc > ld ? s.split('.').join('').replace(',', '.') : s.split(',').join('');
+  else if (lc >= 0) s = s.replace(',', '.');
+  const m = /^([+-]?)(\d*)(?:\.(\d*))?$/.exec(s);
+  if (!m || (!m[2] && !m[3]) || (m[1] === '-' && !signed)) return null;
+  const w = (m[2] || '0').replace(/^0+(?=\d)/, ''), f = (m[3] || '').replace(/0+$/, ''), out = w + (f ? '.' + f : '');
+  return m[1] === '-' && out !== '0' ? '-' + out : out;
+}
+// Dezimaltext → ganze Einheiten zu 10^-dp; null bei ungültig oder mehr als dp Nachkommastellen
+function decUnits(s, dp, signed = false) {
+  if (typeof s !== 'string') return null;
+  const m = /^(-?)(\d{1,30})(?:\.(\d+))?$/.exec(s);
+  if (!m || (m[1] && !signed)) return null;
+  const fr = m[3] || ''; if (fr.length > dp) return null;
+  const v = BigInt(m[2]) * 10n ** BigInt(dp) + BigInt(fr.padEnd(dp, '0') || '0');
+  return m[1] ? -v : v;
+}
+// wie decUnits, aber mit beliebig vielen Nachkommastellen, half-even gerundet (nur für Werte älterer Einträge)
+function decRound(s, dp) {
+  const m = /^(-?)(\d{1,40})(?:\.(\d+))?$/.exec(String(s)); if (!m) return null;
+  const fr = m[3] || '', L = Math.max(dp, fr.length), all = BigInt(m[2] + fr.padEnd(L, '0')), q = rRound(rq(all, 10n ** BigInt(L - dp)));
+  return m[1] ? -q : q;
+}
+const unitsDec = (v, dp) => { const neg = v < 0n, a = neg ? -v : v, D = 10n ** BigInt(dp), f = (a % D).toString().padStart(dp, '0').replace(/0+$/, ''); return `${neg ? '-' : ''}${a / D}${f ? '.' + f : ''}`; };
+// Zahl → Dezimaltext mit 15 gültigen Stellen (ohne Binär-Rauschen wie 0,30000000000000004)
+function numDec(x) {
+  if (!Number.isFinite(x)) return null;
+  let s = x.toPrecision(15);
+  if (/e/i.test(s)) {
+    const [mant, ex] = s.split(/e/i), neg = mant.startsWith('-'), m = mant.replace('-', ''), dot = m.indexOf('.'), digits = m.replace('.', '');
+    const at = (dot < 0 ? m.length : dot) + Number(ex);
+    s = (neg ? '-' : '') + (at <= 0 ? '0.' + '0'.repeat(-at) + digits : at >= digits.length ? digits + '0'.repeat(at - digits.length) : digits.slice(0, at) + '.' + digits.slice(at));
+  }
+  return s.includes('.') ? s.replace(/0+$/, '').replace(/\.$/, '') : s;
+}
+// ---- Brüche aus BigInt ----
+const bgcd = (a, b) => { if (a < 0n) a = -a; if (b < 0n) b = -b; while (b) [a, b] = [b, a % b]; return a; };
+function rq(n, d = 1n) { if (d === 0n) throw new Error('Division durch null'); if (d < 0n) { n = -n; d = -d; } const g = bgcd(n, d); return g > 1n ? { n: n / g, d: d / g } : { n, d }; }
+const rAdd = (a, b) => rq(a.n * b.d + b.n * a.d, a.d * b.d), rSub = (a, b) => rq(a.n * b.d - b.n * a.d, a.d * b.d), rMul = (a, b) => rq(a.n * b.n, a.d * b.d);
+function rRound(a) { let q = a.n / a.d, r = a.n % a.d; if (r < 0n) { q -= 1n; r += a.d; } const t = 2n * r; if (t > a.d || (t === a.d && q % 2n !== 0n)) q += 1n; return q; } // half-even
+const rNum = a => { const s = 10n ** 18n; return Number(a.n * s / a.d) / 1e18; }; // nur für Anzeige und Vergleiche
+const qNum = u => Number(u) / 1e8, mNum = u => Number(u) / 1e8, pNum = r => r === null ? null : rNum(r) / 1e12;
+// ---- Ereignisse ----
+const evOrder = (a, b) => a.at - b.at || (a.t === b.t ? 0 : a.t === 'b' ? -1 : 1) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+// Ereignisse einer Position: gespeichert („ev“ ohne die zurückgenommenen in „evDel“) oder – ohne „ev“ – ein übernommener Bestand
+function lotEvents(pos) {
+  if (!Array.isArray(pos.ev)) {
+    const q = decRound(numDec(pos.qty) ?? '0', LOT_QDP), p = decRound(numDec(pos.entry) ?? '0', LOT_PDP);
+    return [{ id: 'm0', t: 'b', at: pos.openedAt, q: String(q), p: unitsDec(p, LOT_PDP), f: '0', mig: true }];
+  }
+  const del = new Set(Array.isArray(pos.evDel) ? pos.evDel : []);
+  return pos.ev.filter(e => !del.has(e.id)).slice().sort(evOrder);
+}
+// Abschluss von K Einheiten auf die offenen Lose verteilen (Regel oben). lots: [{ id, at, q }], 0 < K ≤ Σq
+function lotShares(lots, K) {
+  const Q = lots.reduce((s, l) => s + l.q, 0n);
+  if (K >= Q) return lots.map(l => l.q);
+  const k = lots.map(l => K * l.q / Q), rem = lots.map(l => K * l.q % Q);
+  let R = K - k.reduce((s, x) => s + x, 0n);
+  const order = lots.map((l, i) => i).filter(i => rem[i] > 0n).sort((a, b) => lots[b].at - lots[a].at || (lots[a].id < lots[b].id ? -1 : lots[a].id > lots[b].id ? 1 : 0));
+  for (const i of order) { if (R <= 0n) break; k[i] += 1n; R -= 1n; }
+  return k;
+}
+// Alles nachrechnen. extra: zusätzliches Ereignis für eine Vorschau. Ergebnis: Menge Q, Kostenpool C, Ø-Einstieg E (Bruch in
+// Preis-Einheiten), Lose (q0 ursprünglich, q offen), Abschlüsse mit gebuchtem Brutto, Gebühren, Funding und Netto (USDT-Einheiten).
+function lotReplay(pos, extra = null) {
+  const d = pos.side === 'short' ? -1n : 1n, evs = lotEvents(pos); if (extra) { evs.push(extra); evs.sort(evOrder); }
+  const lots = [], sells = []; let Q = 0n, C = rq(0n), G = rq(0n), booked = 0n, feesOpen = 0n, realized = 0n, err = null;
+  for (const e of evs) {
+    if (e.t === 'b') {
+      const q = BigInt(e.q), p = decUnits(e.p, LOT_PDP), f = decUnits(e.f || '0', LOT_MDP) ?? 0n;
+      lots.push({ id: e.id, at: e.at, q0: q, q, p, f, mig: !!e.mig, late: !!e.late }); Q += q; C = rAdd(C, rq(q * p)); feesOpen += f;
+      continue;
+    }
+    let K = BigInt(e.k);
+    if (K > Q) { err = err || { id: e.id, at: e.at, k: K, q: Q }; K = Q; }
+    if (K <= 0n) continue;
+    const open = lots.filter(l => l.q > 0n), ks = lotShares(open, K), parts = [];
+    open.forEach((l, i) => { if (ks[i] > 0n) { l.q -= ks[i]; parts.push({ id: l.id, k: ks[i] }); } });
+    const Eat = rMul(C, rq(1n, Q)), Cc = K === Q ? C : rMul(C, rq(K, Q));
+    C = K === Q ? rq(0n) : rSub(C, Cc); Q -= K;
+    const x = e.x != null && e.x !== '' ? decUnits(e.x, LOT_PDP) : null, f = decUnits(e.f || '0', LOT_MDP) ?? 0n, fu = e.fu ? decUnits(e.fu, LOT_MDP, true) ?? 0n : 0n;
+    let gross = null;
+    if (x !== null) { G = rAdd(G, rMul(rq(d), rSub(rq(K * x), Cc))); const tot = rRound(rMul(G, rq(1n, LOT_BASE))); gross = tot - booked; booked = tot; }
+    const fees = f + feesOpen; feesOpen = 0n;
+    let net, src = 'calc';
+    if (e.net != null && e.net !== '') { src = 'exchange'; const v = decUnits(e.net, LOT_MDP, true) ?? 0n; net = e.scope === 'pos' ? v - realized : v; }
+    else net = gross === null ? 0n : gross - fees + fu;
+    realized += net;
+    sells.push({ id: e.id, at: e.at, K, x, gross, fees, fu, net, src, scope: e.scope === 'pos' ? 'pos' : 'part', E: Eat, rest: Q, final: Q === 0n, late: !!e.late, fx: Number(e.fx) > 0 ? Number(e.fx) : null, note: typeof e.note === 'string' ? e.note : '', parts,
+      rs: Array.isArray(e.rs) ? e.rs.filter(x => typeof x === 'string') : null, lev: Number(e.lev) >= 1 ? Number(e.lev) : null, md: e.md === 'cross' || e.md === 'isolated' ? e.md : null });
+  }
+  return { side: d, Q, C, E: Q > 0n ? rMul(C, rq(1n, Q)) : null, lots, sells, feesOpen, realized, err };
+}
+// Gespeichertes Protokoll prüfen (Laden, Abgleich, Einspielen). open: offene Position (Menge > 0) oder Trade (Menge 0)
+function lotCheck(p, open = true) {
+  const bad = why => ({ ok: false, why });
+  if (!Array.isArray(p.ev) || !p.ev.length || p.ev.length > 5000) return bad('Verlauf leer oder zu lang');
+  if (p.evDel !== undefined && (!Array.isArray(p.evDel) || p.evDel.length > 5000 || p.evDel.some(x => typeof x !== 'string'))) return bad('Liste der zurückgenommenen Schritte ungültig');
+  const ids = new Set(), dec = (s, dp, signed = false) => s === undefined || s === null || s === '' || decUnits(s, dp, signed) !== null;
+  for (const e of p.ev) {
+    if (!e || typeof e !== 'object' || typeof e.id !== 'string' || !e.id || e.id.length > 80 || ids.has(e.id)) return bad('Kennung eines Schritts fehlt oder ist doppelt');
+    ids.add(e.id);
+    if (!(Number.isFinite(e.at) && e.at >= Date.UTC(2009, 0, 1) && e.at < Date.UTC(2100, 0, 1))) return bad('Zeitpunkt eines Schritts unplausibel');
+    if (e.t === 'b') {
+      if (typeof e.q !== 'string' || !/^\d{1,30}$/.test(e.q) || BigInt(e.q) <= 0n || !(decUnits(e.p, LOT_PDP) > 0n) || !dec(e.f, LOT_MDP)) return bad('Los ungültig (Menge, Preis oder Gebühr)');
+    } else if (e.t === 's') {
+      if (typeof e.k !== 'string' || !/^\d{1,30}$/.test(e.k) || BigInt(e.k) <= 0n) return bad('Abschluss: Menge ungültig');
+      const hasX = !(e.x === undefined || e.x === null || e.x === ''), hasNet = !(e.net === undefined || e.net === null || e.net === '');
+      if ((hasX && !(decUnits(e.x, LOT_PDP) > 0n)) || (!hasX && !hasNet) || !dec(e.f, LOT_MDP) || !dec(e.fu, LOT_MDP, true) || !dec(e.net, LOT_MDP, true)) return bad('Abschluss: Preis, Gebühr oder Ergebnis ungültig');
+      if (e.scope !== undefined && e.scope !== 'part' && e.scope !== 'pos') return bad('Abschluss: Geltungsbereich ungültig');
+      if (e.note !== undefined && (typeof e.note !== 'string' || e.note.length > 1000)) return bad('Abschluss: Notiz ungültig');
+      if (e.rs !== undefined && (!Array.isArray(e.rs) || e.rs.length > 200 || e.rs.some(x => typeof x !== 'string' || x.length > 200))) return bad('Abschluss: Gründe ungültig');
+      if ((e.lev !== undefined && !(Number.isFinite(e.lev) && e.lev >= 1 && e.lev <= 125)) || (e.md !== undefined && e.md !== 'cross' && e.md !== 'isolated') || (e.fx !== undefined && e.fx !== null && !(Number.isFinite(e.fx) && e.fx > 0))) return bad('Abschluss: Hebel, Modus oder EUR-Kurs ungültig');
+    } else return bad('Art eines Schritts unbekannt');
+  }
+  const r = lotReplay(p);
+  if (!r.lots.length) return bad('kein Los im Verlauf');
+  if (r.err) return bad('Ein Abschluss ist größer als die damals offene Menge');
+  if (open ? r.Q <= 0n : r.Q !== 0n) return bad(open ? 'Verlauf ergibt keine offene Menge' : 'Verlauf endet nicht bei Menge null');
+  return { ok: true, r, qty: qNum(r.Q), entry: open ? pNum(r.E) : null };
+}
+// ==== G02-Kern Ende ====
 function normalizePosition(p) {
   if (!p || typeof p !== 'object' || Array.isArray(p)) return null;
   const q = { ...p }, bad = { ...(isObj(p.invalid) ? p.invalid : {}) };
@@ -1849,7 +1999,28 @@ function normalizePosition(p) {
     else { q.reasons = rs; Object.defineProperty(q, ALT, { value: { ...q, reasons: applied, setup: applied[0] ?? null, setupSeen: applied[0] ?? null }, enumerable: false }); }
   }
   q.setup = q.reasons[0] ?? null; q.setupSeen = q.setup;
+  // 3.30.0 (G02): Verlauf aus Losen und Abschlüssen – bei offenen Positionen ergeben sich Menge und Ø-Einstieg daraus. Ist er ungültig
+  // oder passt er nicht mehr zu Menge/Einstieg (eine ältere App-Version hat die Position an ihm vorbei geändert), gilt der gespeicherte
+  // Stand als übernommener Bestand; der Verlauf bleibt in „invalid“ erhalten (Prüfliste).
+  if ('ev' in q) {
+    const trade = 'exit' in q || 'closedAt' in q, v = Array.isArray(q.ev) ? lotCheck(q, !trade) : { ok: false };
+    const drift = v.ok && !trade && (Math.abs(v.qty - q.qty) > 1e-9 * Math.max(1, Math.abs(q.qty)) || Math.abs(v.entry - q.entry) > 1e-9 * Math.max(1, Math.abs(q.entry)));
+    if (v.ok && !drift) { if (!trade) { q.qty = v.qty; q.entry = v.entry; q.margin = q.qty * q.entry / q.leverage; } }
+    else { bad.ev = q.ev; if ('evDel' in q) bad.evDel = q.evDel; delete q.ev; delete q.evDel; }
+  } else delete q.evDel;
+  // Zusatzangaben aus Teilabschlüssen: ungültig → ohne diesen Wert geladen, Original in „invalid“ (Prüfliste)
+  for (const k of ['funding', 'posPnl']) if (k in q && !(typeof q[k] === 'number' && Number.isFinite(q[k]))) { bad[k] = q[k]; delete q[k]; }
+  if ('part' in q && !partOk(q.part)) { bad.part = q.part; delete q.part; }
+  if ('liqCheck' in q && q.liqCheck !== true) { bad.liqCheck = q.liqCheck; delete q.liqCheck; }
   return withInvalid(q, bad);
+}
+// Angabe „part“ eines Trades: nur „nachgetragen“, Teilabschluss (Position, Schritt, Nummer, Rest) oder Schluss (Position, Schritt, Anzahl)
+function partOk(p) {
+  if (!isObj(p) || !(p.late === undefined || p.late === true)) return false;
+  if (p.pos === undefined) return p.late === true && Object.keys(p).every(k => k === 'late');
+  return typeof p.pos === 'string' && !!p.pos && typeof p.sell === 'string' && !!p.sell && Number.isInteger(p.n) && p.n >= 1 && p.n <= 5000
+    && (p.final === true ? !('rest' in p) : !('final' in p) && typeof p.rest === 'number' && Number.isFinite(p.rest) && p.rest >= 0)
+    && Object.keys(p).every(k => ['pos', 'sell', 'n', 'rest', 'final', 'late'].includes(k));
 }
 // Gründe beim Laden: Leerraum vereinheitlichen, doppelte zusammenfassen – nichts kürzen. Nur völlig unplausible Mengen (über 200 Gründe
 // oder 200 Zeichen) werden eingeschränkt geladen; die ursprüngliche Liste bleibt in „invalid“ erhalten.
@@ -1980,7 +2151,6 @@ function monthlyCsv(sum) {
   for (const r of [...sum.rows, { label: 'Summe', ...sum.total }]) rows.push([r.label, r.n, r.wins, d(r.net.toFixed(2)), d(r.costs.toFixed(2)), d(r.tax.toFixed(2)), d(r.payout.toFixed(2))]);
   return '\ufeff' + rows.map(r => r.map(csvCell).join(';')).join('\r\n') + '\r\n';
 }
-function realizedPnl(pos, exit, fees = 0) { return pos.qty * (exit - pos.entry) * (pos.side === 'long' ? 1 : -1) + (pos.preRealized || 0) - fees; }
 function historySummary(trades, fxNow) {
   const eurOf = t => t.fx > 0 ? t.pnl / t.fx : fxNow > 0 ? t.pnl / fxNow : null;
   const sum = (list, f) => list.reduce((s, t) => s === null || f(t) === null ? null : s + f(t), 0);
@@ -2036,10 +2206,10 @@ function movementsCsv(list) {
 }
 function tradesCsv(trades, demo = false) {
   const d = x => String(x).replace('.', ','), dt = ms => new Date(ms).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-  const rows = [['Geöffnet','Geschlossen','Symbol','Richtung','Modus','Hebel','Größe','Einstieg','Ausstieg','Margin USDT','Gebühren beim Schließen USDT','Vorher realisiert USDT','G/V USDT','Quelle G/V','EUR/USDT','G/V EUR','G/V % auf Margin','Gründe','Notiz', ...(demo ? ['Handelsmodus'] : [])]];
+  const rows = [['Geöffnet','Geschlossen','Symbol','Richtung','Modus','Hebel','Größe','Einstieg','Ausstieg','Margin USDT','Gebühren USDT','Vorher realisiert USDT','G/V USDT','Quelle G/V','EUR/USDT','G/V EUR','G/V % auf Margin','Gründe','Notiz','Funding USDT','Abschluss', ...(demo ? ['Handelsmodus'] : [])]];
   for (const t of trades) rows.push([dt(t.openedAt), dt(t.closedAt), t.symbol, t.side === 'long' ? 'Long' : 'Short', t.mode === 'cross' ? 'Cross' : 'Isoliert', d(t.leverage), d(+t.qty.toPrecision(12)),
     d(t.entry), d(t.exit), d(t.margin.toFixed(4)), d(t.fees), d(t.preRealized), d(t.pnl.toFixed(4)), t.pnlSource === 'exchange' ? 'Börse' : 'berechnet',
-    t.fx > 0 ? d(t.fx) : '', t.fx > 0 ? d((t.pnl / t.fx).toFixed(4)) : '', d((t.pnl / t.margin * 100).toFixed(2)), reasonsOf(t).join(', '), t.note || '', ...(demo ? ['DEMO (simuliert)'] : [])]);
+    t.fx > 0 ? d(t.fx) : '', t.fx > 0 ? d((t.pnl / t.fx).toFixed(4)) : '', d((t.pnl / t.margin * 100).toFixed(2)), reasonsOf(t).join(', '), t.note || '', t.funding ? d(t.funding) : '', t.part?.final ? `Schluss (${t.part.n} Abschlüsse)` : t.part?.pos ? `Teilabschluss ${t.part.n}` : 'ganz', ...(demo ? ['DEMO (simuliert)'] : [])]);
   return '\ufeff' + rows.map(r => r.map(csvCell).join(';')).join('\r\n') + '\r\n';
 }
 
@@ -2287,7 +2457,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Alle Werte liegen zusätzlich im Arbeitsspeicher und sind dadurch synchron lesbar. Schreiben geht sofort in den
 // localStorage und gebündelt in die IndexedDB; beim Start gewinnt die zuletzt vollständig geschriebene Kopie.
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
-const APP_VERSION = '3.29.0', docEl = document.documentElement;
+const APP_VERSION = '3.30.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -3086,6 +3256,285 @@ function textInput(key, value, placeholder, unit, decimal = true) {
   Object.assign(i, { type: 'text', value: value ?? '', placeholder: placeholder || '', autocomplete: 'off' }); if (decimal) i.inputMode = 'decimal';
   i.dataset.input = key; w.append(i, el('span', '', unit)); return w;
 }
+// ---------- 3.30.0 (G02): Nachkauf, Teilabschluss, Lose & Verlauf ----------
+// Erfasst werden schon ausgeführte Trades – die App löst keine Order aus. Long: „Nachkaufen“; Short: „Short aufstocken“ (ein weiterer
+// Verkauf), ein Rückkauf verkleinert den Short. Jeder Schritt ist ein Ereignis mit eigener Kennung: Doppeltipp, Neuladen oder ein
+// erneutes Einspielen erzeugen keinen zweiten. Ein Teilabschluss wird sofort als eigener Trade gebucht (Kennung Position~Schritt,
+// abgeleitet aus dem Verlauf); der Schlussabschluss bucht nur noch seinen Teil – nichts zählt doppelt.
+const pxNum = u => u === null ? null : Number(u) / 1e12;
+const lotCoin = pos => coin(pos.symbol);
+const unitsInput = (u, dp) => unitsDec(u, dp).replace('.', ',');
+// Texte je Richtung: Long kauft und verkauft, Short verkauft und kauft zurück
+const lotWords = pos => pos.side === 'short'
+  ? { open: 'Short eröffnet', add: 'Short aufgestockt', addBtn: 'Short aufstocken', addSave: 'Aufstockung speichern', addQty: 'Menge zusätzlich verkaufen (Short)', part: 'Rückkauf (Teilabschluss)', last: 'Rückkauf (Schluss)' }
+  : { open: 'Kauf', add: 'Nachkauf', addBtn: 'Nachkaufen', addSave: 'Nachkauf speichern', addQty: 'Menge nachkaufen', part: 'Verkauf (Teilabschluss)', last: 'Verkauf (Schluss)' };
+// Knopf nach dem ungerundeten offenen G/V: Gewinn/Verlust realisieren, bei genau 0 oder ohne verlässlichen Kurs „Position schließen“
+function closeLabel(pnl, stale) {
+  if (pnl === null) return 'Position schließen · kein Kurs';
+  if (stale) return 'Position schließen · Kurs veraltet';
+  return pnl > 0 ? 'Gewinn realisieren' : pnl < 0 ? 'Verlust realisieren' : 'Position schließen';
+}
+// Abgeleitete Felder (Menge, Ø-Einstieg, rechnerische Margin) aus dem Verlauf setzen
+function lotApply(pos) {
+  const r = lotReplay(pos);
+  pos.qty = qNum(r.Q); pos.entry = pNum(r.E); pos.margin = pos.qty * pos.entry / pos.leverage;
+  return r;
+}
+// Verlauf anlegen, falls die Position noch keinen hat (übernommener Bestand aus Menge und Einstieg)
+function lotMaterialize(pos) { if (!Array.isArray(pos.ev)) pos.ev = lotEvents(pos).map(e => ({ ...e })); return pos.ev; }
+const lotWhen = s => { if (!s) return { at: Date.now(), late: false }; const t = new Date(s).getTime(); return Number.isFinite(t) ? { at: t, late: Date.now() - t > 15 * 60e3 } : { at: NaN, late: false }; };
+function lotTimeError(pos, at) {
+  if (!Number.isFinite(at)) return 'Zeitpunkt prüfen.';
+  if (at > Date.now() + 60e3) return 'Der Zeitpunkt liegt in der Zukunft.';
+  const first = lotEvents(pos)[0]?.at ?? pos.openedAt;
+  if (at < first) return `Der Zeitpunkt liegt vor der Eröffnung (${localTime(first)}).`;
+  return null;
+}
+// ---- Nachkauf / Short aufstocken ----
+function addPlan(pos, ui) {
+  const qs = decStr(ui.aqty ?? ''), q = qs === null ? null : decUnits(qs, LOT_QDP);
+  if (qs === null) return { error: 'Menge eingeben.' };
+  if (q === null) return { error: 'Menge mit höchstens 8 Nachkommastellen eingeben.' };
+  if (q <= 0n) return { error: 'Menge größer als 0 eingeben.' };
+  const ps = decStr(ui.aprice ?? ''), p = ps === null ? null : decUnits(ps, LOT_PDP);
+  if (!(p > 0n)) return { error: ps !== null && p === null ? 'Preis mit höchstens 12 Nachkommastellen eingeben.' : 'Ausführungspreis eingeben.' };
+  const fs = String(ui.afees ?? '').trim() ? decStr(ui.afees) : '0';
+  if (fs === null || decUnits(fs, LOT_MDP) === null) return { error: 'Gebühren als Zahl ab 0 eingeben (höchstens 8 Nachkommastellen).' };
+  const w = lotWhen(ui.awhen), te = lotTimeError(pos, w.at); if (te) return { error: te };
+  const e = { id: 'pending', t: 'b', at: w.at, q: String(q), p: ps, f: fs, ...(w.late ? { late: true } : {}) };
+  const before = lotReplay(pos), r = lotReplay(pos, e);
+  return { e, before, r, rewrites: before.sells.filter(s => s.at > w.at).length };
+}
+// ---- Schließen: ganz oder teilweise ----
+function closePlan(pos, ui) {
+  const r0 = lotReplay(pos), Q = r0.Q, unit = lotCoin(pos);
+  const qs = decStr(ui.qty ?? ''), K = qs === null ? null : decUnits(qs, LOT_QDP);
+  if (qs === null) return { error: 'Menge eingeben.' };
+  if (K === null) return { error: 'Menge mit höchstens 8 Nachkommastellen eingeben.' };
+  if (K <= 0n) return { error: 'Menge größer als 0 eingeben.' };
+  if (K > Q) return { error: `Höchstens die offene Menge schließen (${qtyText(qNum(Q))} ${unit}).` };
+  const ov = String(ui.override ?? '').trim(), net = ov ? decStr(ov, true) : null;
+  if (ov && (net === null || decUnits(net, LOT_MDP, true) === null)) return { error: 'Ergebnis laut Börse ist keine gültige Zahl (höchstens 8 Nachkommastellen).' };
+  const xr = String(ui.exit ?? '').trim(), xs = xr ? decStr(xr) : null, x = xs === null ? null : decUnits(xs, LOT_PDP);
+  if (xr && !(x > 0n)) return { error: 'Ausstiegskurs ist keine gültige Zahl.' };
+  if (!net && !(x > 0n)) return { error: 'Ausstiegskurs eingeben.' };
+  const fs = String(ui.fees ?? '').trim() ? decStr(ui.fees) : '0';
+  if (fs === null || decUnits(fs, LOT_MDP) === null) return { error: 'Gebühren als Zahl ab 0 eingeben (höchstens 8 Nachkommastellen).' };
+  const fr = String(ui.fund ?? '').trim(), fu = fr ? decStr(fr, true) : null;
+  if (fr && (fu === null || decUnits(fu, LOT_MDP, true) === null)) return { error: 'Funding ist keine gültige Zahl.' };
+  const scope = net && ui.scope === 'pos' ? 'pos' : 'part';
+  if (scope === 'pos' && K !== Q) return { error: 'Ein Gesamtergebnis der Position gilt nur beim Schließen der ganzen Restmenge.' };
+  const w = lotWhen(ui.when), te = lotTimeError(pos, w.at); if (te) return { error: te };
+  const e = { id: 'pending', t: 's', at: w.at, k: String(K), ...(xs ? { x: xs } : {}), f: fs, ...(fu && fu !== '0' ? { fu } : {}), ...(net ? { net, scope } : {}),
+    ...(w.late ? { late: true } : {}), fx: w.late ? null : fxNow(), note: String(ui.note ?? '').trim().slice(0, 1000),
+    rs: [...reasonsOf(pos)], lev: pos.leverage, md: pos.mode }; // Stand zum Abschluss: derselbe Trade auf jedem Gerät
+  const r = lotReplay(pos, e), s = r.sells.find(z => z.id === 'pending');
+  if (r.err) return { error: `Zu diesem Zeitpunkt war weniger offen (${qtyText(qNum(r.err.q))} ${unit}).` };
+  return { e, r0, r, s, K, Q, final: s.final, earlier: r0.sells.length, scope };
+}
+function closePreview(pos, ui, m) {
+  const c = closePlan(pos, ui); if (c.error) return { text: c.error, save: 'Trade speichern' };
+  const unit = lotCoin(pos), s = c.s, pre = c.final && !(s.src === 'exchange' && s.scope === 'pos') ? pos.preRealized || 0 : 0;
+  const px = s.x !== null ? ` zu ${priceText(pxNum(s.x))}` : '';
+  const what = c.final ? `schließt ${c.earlier ? 'den Rest' : 'alles'} (${qtyText(qNum(c.K))} ${unit})${px}` : `schließt ${qtyText(qNum(c.K))} von ${qtyText(qNum(c.Q))} ${unit}${px} · bleibt ${qtyText(qNum(s.rest))} ${unit} zu Ø ${priceText(pNum(c.r.E))}`;
+  const head = `${pos.side === 'long' ? 'Long' : 'Short'} · ${what}.`;
+  let res;
+  if (s.src === 'exchange') res = s.scope === 'pos' ? `Position gesamt laut Börse ${signed(mNum(c.r.realized))} USDT; gebucht wird ${signed(mNum(s.net))} USDT (bisher gebucht ${signed(mNum(c.r.realized - s.net))}).`
+    : `Gespeichert wird ${signed(mNum(s.net) + pre, 4)} USDT laut Börse${pre ? ` (+ bisher realisiert ${signed(pre, 4)})` : ''}.`;
+  else res = `Ergebnis ${c.final ? 'dieses Abschlusses' : 'des Teilabschlusses'}: ${signed(mNum(s.net) + pre)} USDT = Kursdifferenz ${signed(mNum(s.gross))}${s.fees ? ` − Gebühren ${number(mNum(s.fees), 4)}` : ''}${s.fu ? ` ${s.fu > 0n ? '+' : '−'} Funding ${number(Math.abs(mNum(s.fu)), 4)}` : ''}${pre ? ` + bisher realisiert ${signed(pre, 4)}` : ''}.`;
+  const liq = pos.mode === 'isolated' && s.src === 'calc' && m && mNum(s.net) < -(qNum(c.K) * pNum(s.E) / pos.leverage) ? ' Verlust größer als die anteilige Margin – isoliert wäre vorher liquidiert worden.' : '';
+  const late = c.e.late ? ' Nachträglich erfasst – wird nicht als neuer Abschluss gemeldet.' : '';
+  return { text: `${head} ${res}${c.final && c.earlier ? ` Position gesamt: ${signed(mNum(c.r.realized) + pre)} USDT aus ${c.r.sells.length} Abschlüssen.` : ''}${liq}${late}`, save: c.final ? 'Trade speichern' : 'Teilabschluss speichern' };
+}
+// ---- Teilabschluss-Trades: abgeleitet aus dem Verlauf (gleiche Kennung auf allen Geräten) ----
+const partId = (posId, sellId) => `${posId}~${sellId}`;
+const PART_DERIVED = ['qty', 'entry', 'exit', 'fees', 'funding', 'pnl', 'pnlSource', 'closedAt', 'fx', 'part'];
+function partTrade(pos, s, n) {
+  const qty = qNum(s.K), entry = pNum(s.E), rs = s.rs ?? reasonsOf(pos), lev = s.lev ?? pos.leverage;
+  const t = { id: partId(pos.id, s.id), symbol: pos.symbol, side: pos.side, mode: s.md ?? pos.mode, leverage: lev, source: pos.source, openedAt: pos.openedAt,
+    qty, entry, margin: qty * entry / lev, liqExchange: null, preRealized: 0, sl: null, tp: null, ack: { sl: false, tp: false },
+    note: s.note || '', reasons: [...rs], setup: rs[0] ?? null, setupSeen: rs[0] ?? null,
+    exit: s.x !== null ? pxNum(s.x) : entry, fees: mNum(s.fees), pnl: mNum(s.net), pnlSource: s.src, closedAt: s.at, fx: s.fx,
+    part: { pos: pos.id, sell: s.id, n, rest: qNum(s.rest), ...(s.late ? { late: true } : {}) } };
+  if (s.fu) t.funding = mNum(s.fu);
+  return t;
+}
+// Für jede Position mit Verlauf: zu jedem Teilabschluss genau ein Trade; zurückgenommene Teilabschlüsse entfernen. Notiz und
+// Gründe eines Teilabschluss-Trades bleiben, wie du sie in der Trade-Liste geändert hast. Ein ausdrücklich gelöschter Trade
+// (Löschvermerk, z. B. aus einer älteren App-Version) kommt nicht wieder.
+function posTradesSync(pos, kind = isDemoPos(pos) ? 'dpos' : 'pos') {
+  if (!Array.isArray(pos.ev)) return 0;
+  const key = kind === 'dpos' ? 'demoTrades' : 'trades', r = lotReplay(pos), list = state[key].slice(); let ch = 0, gone = null;
+  r.sells.forEach((s, i) => {
+    if (s.final) return;
+    const want = partTrade(pos, s, i + 1), at = list.findIndex(t => t.id === want.id);
+    if (at < 0) { gone = gone || tombs(); if (!(`pt:${want.id}` in gone)) { list.push(want); ch++; } return; }
+    const cur = list[at], next = { ...cur }; for (const k of PART_DERIVED) { if (k in want) next[k] = want[k]; else delete next[k]; }
+    next.margin = next.qty * next.entry / next.leverage;
+    if (canon(next) !== canon(cur)) { list[at] = next; ch++; }
+  });
+  for (const id of Array.isArray(pos.evDel) ? pos.evDel : []) {
+    const tid = partId(pos.id, id), at = list.findIndex(t => t.id === tid);
+    if (at >= 0) { list.splice(at, 1); tomb('pt', tid); ch++; }
+  }
+  if (ch) { state[key] = list; histStructure = ''; }
+  return ch;
+}
+function posTradesSyncAll() { let n = 0; for (const p of state.positions) n += posTradesSync(p, 'pos'); for (const p of state.demoPositions) n += posTradesSync(p, 'dpos'); return n; }
+// ---- Speichern (je Aktion ein Ereignis; der Knopf ist bis zum Abschluss gesperrt) ----
+function saveAdd(pos, ui) {
+  const a = addPlan(pos, ui); if (a.error) return a.error;
+  lotMaterialize(pos).push({ ...a.e, id: newId() });
+  lotApply(pos); if (pos.liqExchange > 0) pos.liqCheck = true; pos.updatedAt = Date.now();
+  posTradesSync(pos); posStructure = null; demoStructure = null;
+  return null;
+}
+function saveClose(pos, ui) {
+  const c = closePlan(pos, ui); if (c.error) return c.error;
+  const demo = isDemoPos(pos), e = { ...c.e, id: newId() }; lotMaterialize(pos).push(e);
+  const r = lotReplay(pos), s = r.sells.find(z => z.id === e.id);
+  if (!s.final) { lotApply(pos); if (pos.liqExchange > 0) pos.liqCheck = true; pos.updatedAt = Date.now(); posTradesSync(pos, demo ? 'dpos' : 'pos'); posStructure = null; demoStructure = null; return null; }
+  // Schluss: Trade mit der Kennung der Position – gebucht nur dieser Teil (bei „gesamte Position laut Börse“ die Differenz)
+  const pre = s.src === 'exchange' && s.scope === 'pos' ? 0 : pos.preRealized || 0, qty = qNum(s.K), entry = pNum(s.E), simple = r.lots.length === 1 && r.sells.length === 1 && r.lots[0].mig;
+  const base = { ...pos }, ev = base.ev, evDel = base.evDel; delete base.ev; delete base.evDel; delete base.liqCheck;
+  const t = { ...base, qty, entry, margin: qty * entry / pos.leverage, exit: s.x !== null ? pxNum(s.x) : state.prices[pos.symbol]?.price ?? entry, fees: mNum(s.fees), pnl: mNum(s.net) + pre,
+    pnlSource: s.src, closedAt: s.at, fx: s.fx, note: e.note };
+  if (s.fu) t.funding = mNum(s.fu);
+  if (!simple) Object.assign(t, { ev, ...(evDel?.length ? { evDel } : {}), part: { pos: pos.id, sell: s.id, n: r.sells.length, final: true, ...(s.late ? { late: true } : {}) }, posPnl: mNum(r.realized) + pre });
+  if (simple && s.late) t.part = { late: true };
+  posTradesSync(pos, demo ? 'dpos' : 'pos');
+  (demo ? state.demoTrades : state.trades).push(t); dropPos(pos.id);
+  return null;
+}
+// Letzten Schritt zurücknehmen (der zuletzt erfasste; der erste Kauf nicht – dafür „Löschen“). Bleibt als zurückgenommen vermerkt.
+function lotLast(pos) { if (!Array.isArray(pos.ev)) return null; const del = new Set(pos.evDel || []), live = pos.ev.filter(e => !del.has(e.id)); return live.length > 1 ? live[live.length - 1] : null; }
+function undoLast(pos) {
+  const last = lotLast(pos); if (!last) return 'Nichts zurückzunehmen.';
+  const trial = { ...pos, evDel: [...(pos.evDel || []), last.id] }, v = lotCheck(trial);
+  if (!v.ok) return `Nicht möglich: ${v.why}.`;
+  pos.evDel = trial.evDel; lotApply(pos); pos.updatedAt = Date.now(); posTradesSync(pos); posStructure = null; demoStructure = null;
+  return null;
+}
+function lotStepText(pos, e, r) {
+  const w = lotWords(pos), unit = lotCoin(pos);
+  if (e.t === 'b') { const l = r?.lots.find(x => x.id === e.id); return `${e.mig ? 'Eröffnung' : r && r.lots[0]?.id === e.id ? w.open : w.add} ${localTime(e.at)} · ${qtyText(qNum(BigInt(e.q)))} ${unit} zu ${priceText(Number(e.p))}${Number(e.f) ? ` · Gebühr ${number(Number(e.f), 4)}` : ''}${l && l.q !== l.q0 ? ` · offen ${qtyText(qNum(l.q))}` : ''}`; }
+  const s = r?.sells.find(x => x.id === e.id);
+  return `${s?.final ? w.last : w.part} ${localTime(e.at)} · ${qtyText(qNum(BigInt(e.k)))} ${unit}${e.x ? ` zu ${priceText(Number(e.x))}` : ''}${s ? ` · ${signed(mNum(s.net))} USDT${s.src === 'exchange' ? ' laut Börse' : ''}` : ''}`;
+}
+// „Lose & Verlauf“ auf der Karte
+function lotHistoryDom(pos) {
+  const r = lotReplay(pos), del = new Set(pos.evDel || []), all = lotEvents(pos), d = el('details', 'lot-hist');
+  const nl = r.lots.length, ns = r.sells.length;
+  d.append(el('summary', '', `Lose & Verlauf · ${nl} ${nl === 1 ? 'Los' : 'Lose'}${ns ? `, ${ns} ${ns === 1 ? 'Teilabschluss' : 'Teilabschlüsse'} (${signed(mNum(r.realized))} USDT gebucht)` : ''}`));
+  const ul = el('ul', 'lot-list'); for (const e of all) ul.append(el('li', e.t === 'b' ? 'lot-b' : 'lot-s', lotStepText(pos, e, r)));
+  for (const e of (pos.ev || []).filter(x => del.has(x.id))) ul.append(el('li', 'lot-del', `zurückgenommen: ${lotStepText(pos, e, null)}`));
+  d.append(ul);
+  if (lotLast(pos)) d.append(btn('button ghost', 'Letzten Schritt rückgängig machen', 'undo'));
+  return d;
+}
+// ---- Abgleich zweier Geräte: Schritte vereinigen statt eine Fassung zu wählen ----
+// Gleiche Kennung mit anderem Inhalt → null (echter Konflikt). Ohne Verlauf zählt der übernommene Bestand („m0“).
+function lotUnion(a, b) {
+  const ea = lotEvAll(a), eb = lotEvAll(b), byId = new Map(ea.map(e => [e.id, e]));
+  for (const e of eb) { const x = byId.get(e.id); if (x && canon(x) !== canon(e)) return null; if (!x) byId.set(e.id, e); }
+  const ev = [...ea, ...eb.filter(e => !ea.some(x => x.id === e.id))], evDel = [...new Set([...(a.evDel || []), ...(b.evDel || [])])];
+  return { ev, evDel };
+}
+const lotEvAll = p => Array.isArray(p.ev) ? p.ev : lotEvents(p);
+// Neue Schritte hier, die eine Sicherung mit dem Schluss-Trade derselben Position nicht kennt
+function lotExtra(open, trade) {
+  if (!Array.isArray(open.ev)) return 0;
+  const known = new Set([...(Array.isArray(trade.ev) ? trade.ev.map(e => e.id) : ['m0']), ...(trade.evDel || [])]), del = new Set(open.evDel || []);
+  return open.ev.filter(e => !del.has(e.id) && !known.has(e.id)).length;
+}
+// ---- Felder auf der Karte ----
+function whenInput(key, value) { const i = el('input'); i.type = 'datetime-local'; i.dataset.input = key; i.value = value || ''; i.max = new Date(Date.now() - new Date().getTimezoneOffset() * 60e3).toISOString().slice(0, 16); return i; }
+function closePanelDom(pos, ui) {
+  const f = el('div', 'pos-sub lot-sub'), r0 = lotReplay(pos), unit = lotCoin(pos);
+  const lq = el('label', '', `Menge schließen – offen ${qtyText(qNum(r0.Q))} ${unit}`); lq.style.gridColumn = '1/-1'; lq.append(textInput('qty', ui.qty, '', unit));
+  const chips = el('div', 'lot-pcts'); for (const pct of [25, 50, 75, 100]) { const b = btn('chip', pct === 100 ? 'Alles' : `${pct} %`, 'close-pct'); b.dataset.pct = String(pct); chips.append(b); } lq.append(chips);
+  const l1 = el('label', '', 'Ausstiegskurs'); l1.append(textInput('exit', ui.exit, '', 'USDT'));
+  const l2 = el('label', '', 'Gebühren dieses Abschlusses'); l2.append(textInput('fees', ui.fees, 'optional', 'USDT'));
+  const l2b = el('label', '', 'Funding (+ erhalten / − bezahlt)'); l2b.append(textInput('fund', ui.fund, 'optional', 'USDT', false));
+  const lw = el('label', '', 'Zeitpunkt (leer = jetzt)'); lw.append(whenInput('when', ui.when));
+  const l3 = el('label', '', 'Oder: Ergebnis laut Börse (ersetzt die Rechnung samt Gebühren)'); l3.style.gridColumn = '1/-1'; l3.append(textInput('override', ui.override, 'optional, z. B. 1,99', 'USDT', false));
+  const parts = [lq, l1, l2, l2b, lw, l3];
+  if (r0.sells.length) {
+    const ls = el('label', '', 'Das Ergebnis laut Börse gilt für'); ls.style.gridColumn = '1/-1'; const s = el('select'); s.dataset.input = 'scope';
+    for (const [v, t] of [['part', 'nur diesen Abschluss'], ['pos', `die gesamte Position (mit ${r0.sells.length} ${r0.sells.length === 1 ? 'bisherigem Teilabschluss' : 'bisherigen Teilabschlüssen'})`]]) { const o = el('option', '', t); o.value = v; s.append(o); }
+    s.value = ui.scope === 'pos' ? 'pos' : 'part'; ls.append(s); parts.push(ls);
+  }
+  const l4 = el('label', '', 'Notiz zum Abschluss (optional)'); l4.style.gridColumn = '1/-1'; const ta = el('textarea', 'note-box'); ta.dataset.input = 'note'; ta.maxLength = 1000; ta.placeholder = 'z. B. Grund für den Ausstieg, was lief gut, was nicht'; ta.value = ui.note ?? ''; l4.append(ta);
+  const pv = el('p'); pv.dataset.f = 'realize-preview';
+  const act = el('div', 'pos-actions'); act.append(btn('button primary-lite', 'Trade speichern', 'save-realize'), btn('button ghost', 'Abbrechen', 'cancel'));
+  f.append(...parts, l4, pv, act); return f;
+}
+function addPanelDom(pos, ui) {
+  const f = el('div', 'pos-sub lot-sub'), w = lotWords(pos), unit = lotCoin(pos);
+  f.append(el('p', 'lot-hint', `${w.addBtn}: erfasst einen schon ausgeführten ${pos.side === 'short' ? 'Verkauf' : 'Kauf'} – die App löst keine Order aus. Stop und Ziel bleiben, wie sie sind.`));
+  const l1 = el('label', '', w.addQty); l1.append(textInput('aqty', ui.aqty, '', unit));
+  const l2 = el('label', '', 'Ausführungspreis'); l2.append(textInput('aprice', ui.aprice, '', 'USDT'));
+  const l3 = el('label', '', 'Gebühren'); l3.append(textInput('afees', ui.afees, 'optional', 'USDT'));
+  const lw = el('label', '', 'Zeitpunkt (leer = jetzt)'); lw.append(whenInput('awhen', ui.awhen));
+  const pv = el('p'); pv.dataset.f = 'add-preview';
+  const act = el('div', 'pos-actions'); act.append(btn('button primary-lite', w.addSave, 'save-add'), btn('button ghost', 'Abbrechen', 'cancel'));
+  f.append(l1, l2, l3, lw, pv, act); return f;
+}
+function addPreview(pos, ui, price) {
+  const a = addPlan(pos, ui); if (a.error) return a.error;
+  const unit = lotCoin(pos), q1 = qNum(a.r.Q), e1 = pNum(a.r.E), d = pos.side === 'long' ? 1 : -1, open = price > 0 ? q1 * (price - e1) * d : null;
+  return `Neu: ${qtyText(q1)} ${unit} zu Ø ${priceText(e1)} (vorher ${qtyText(qNum(a.before.Q))} zu Ø ${priceText(pNum(a.before.E))}) · Margin ${number(q1 * e1 / pos.leverage)} USDT${open !== null ? ` · offen ${signed(open)} USDT` : ''}.`
+    + (a.rewrites ? ` Der Zeitpunkt liegt vor ${a.rewrites === 1 ? 'einem Teilabschluss' : `${a.rewrites} Teilabschlüssen`} – ${a.rewrites === 1 ? 'dessen' : 'deren'} Ergebnis wird neu berechnet.` : '')
+    + (a.e.late ? ' Nachträglich erfasst.' : '') + (pos.liqExchange > 0 ? ' Den Liq.-Preis laut Börse danach bitte prüfen.' : '');
+}
+function undoPanelDom(pos) {
+  const f = el('div', 'pos-sub'), last = lotLast(pos);
+  f.append(el('p', '', last ? `Letzten Schritt zurücknehmen? ${lotStepText(pos, last, lotReplay(pos))}. Er bleibt im Verlauf als „zurückgenommen“ vermerkt${last.t === 's' ? '; sein Trade wird entfernt' : ''}.` : 'Nichts zurückzunehmen.'));
+  const act = el('div', 'pos-actions'); act.append(btn('button danger-btn', 'Ja, zurücknehmen', 'undo-confirm'), btn('button ghost', 'Abbrechen', 'cancel')); f.append(act); return f;
+}
+function liqCheckDom() {
+  const d = el('div', 'pos-warn lot-liq'); d.append(el('span', '', '⚠ Liq.-Preis laut Börse nach Nachkauf oder Teilabschluss prüfen – er kann sich geändert haben.'), btn('button ghost', 'Stimmt noch', 'liq-ok')); return d;
+}
+// Anzeige auf der Karte bei jedem Kurs: Nachrechnen nur, wenn sich der Verlauf geändert hat
+const lotMemo = new WeakMap();
+function lotReplayMemo(pos) { const k = `${pos.ev?.length || 0}:${pos.evDel?.length || 0}:${pos.side}:${pos.qty}:${pos.entry}`, c = lotMemo.get(pos); if (c && c.k === k) return c.r; const r = lotReplay(pos); lotMemo.set(pos, { k, r }); return r; }
+// Bearbeiten: Verlauf mitnehmen. Hat die Position nur einen Kauf, korrigiert das Formular dessen Menge und Preis; sonst bleibt er.
+function lotCarry(old, r) {
+  if (!Array.isArray(old.ev)) return {};
+  const evs = lotEvents(old), keepDel = old.evDel?.length ? { evDel: old.evDel } : {};
+  if (evs.length !== 1 || evs[0].t !== 'b') return { ev: old.ev, ...keepDel };
+  const qIn = state.posForm.sizeBy === 'qty' ? decStr($('pos-qty').value) : null, pIn = decStr($('pos-entry').value);
+  const q = (qIn !== null && decUnits(qIn, LOT_QDP)) || decRound(numDec(r.qty), LOT_QDP), p = (pIn !== null && decUnits(pIn, LOT_PDP)) || decRound(numDec(r.entry), LOT_PDP);
+  return { ev: old.ev.map(e => e.id === evs[0].id ? { ...e, q: String(q), p: unitsDec(p, LOT_PDP) } : e), ...keepDel };
+}
+// Konflikt (beide Geräte haben dieselbe Position geändert): bei jeder Wahl bleiben die Schritte beider Fassungen erhalten
+function lotJoin(into, other) {
+  const u = lotUnion(into, other); if (!u) return false;
+  const t = { ...into, ev: u.ev, evDel: u.evDel }, v = lotCheck(t); if (!v.ok) return false;
+  into.ev = u.ev; if (u.evDel.length) into.evDel = u.evDel; else delete into.evDel;
+  into.qty = v.qty; into.entry = v.entry; into.margin = into.qty * into.entry / into.leverage;
+  return true;
+}
+// Zusammenführen ohne Rückfrage: sonst gleiche Position, nur neue Schritte auf einem oder beiden Geräten
+function lotMerge(kind, inc, loc) {
+  const base = r => { const o = { ...r }; for (const k of ['ev', 'evDel', 'qty', 'entry', 'liqCheck', 'invalid', ...META_KEYS]) delete o[k]; return canon(o); };
+  if (base(inc) !== base(loc)) return null;
+  const m = { ...loc }; if (!lotJoin(m, inc)) return null;
+  m.ack = { sl: !!(inc.ack?.sl || loc.ack?.sl), tp: !!(inc.ack?.tp || loc.ack?.tp) };
+  if (inc.liqCheck || loc.liqCheck) m.liqCheck = true;
+  m.updatedAt = Math.max(Number(inc.updatedAt) || 0, Number(loc.updatedAt) || 0) || undefined;
+  m.hist = histAdd([...histOf(inc), ...histOf(loc)], inc.h, loc.h); m.h = recHash(m, kind);
+  return m.h === loc.h ? null : m;
+}
+// Zeile in der Trade-Liste: Teilabschluss oder Schluss einer Position
+function partText(t) {
+  const p = t.part; if (!p) return t.funding ? ` · Funding ${signed(t.funding, 4)}` : '';
+  const f = t.funding ? ` · Funding ${signed(t.funding, 4)}` : '', late = p.late ? ' · nachgetragen' : '';
+  if (p.final) { const nb = Array.isArray(t.ev) ? t.ev.filter(e => e.t === 'b' && !(t.evDel || []).includes(e.id)).length : 1;
+    return `${nb > 1 ? ` · aus ${nb} ${t.side === 'short' ? 'Verkäufen' : 'Käufen'}` : ''}${p.n > 1 ? ` · Schluss nach ${p.n - 1} ${p.n - 1 === 1 ? 'Teilabschluss' : 'Teilabschlüssen'} · Position gesamt ${signed(t.posPnl)} USDT` : ''}${f}${late}`; }
+  if (p.pos) return ` · Teilabschluss ${p.n}${findPos(p.pos) ? ` · Rest ${qtyText(p.rest)} offen` : ''}${f}${late}`;
+  return `${f}${late}`;
+}
 let posStructure = '';
 function buildCard(pos, demo = false) {
   const ui = state.posUi[pos.id] || {}, card = el('article', 'pos-card' + (demo ? ' demo' : '')); card.dataset.id = pos.id;
@@ -3095,7 +3544,7 @@ function buildCard(pos, demo = false) {
   if (pos.source === 'futures') head.append(el('span', 'badge', 'FUTURES-KURS'));
   head.append(el('time', '', 'seit ' + localTime(pos.openedAt)));
   const live = el('div', 'pos-live'), pnl = el('div', 'pos-pnl'), big = el('strong'), sub = el('span'); big.dataset.f = 'pnl'; sub.dataset.f = 'pnl-sub'; pnl.append(big, sub); if (demo) pnl.append(el('span', 'pos-sim', 'simuliert · ohne Alarme')); live.append(pnl);
-  const grid = el('div', 'pos-grid'); grid.append(field('Eintrittspreis', 'entry'), field('Aktueller Kurs', 'price', 'price-at'), field('Größe', 'qty'), field('Margin · Positionswert', 'size'));
+  const grid = el('div', 'pos-grid'); grid.append(field(lotEvents(pos).filter(e => e.t === 'b').length > 1 ? 'Ø Einstieg' : 'Eintrittspreis', 'entry'), field('Aktueller Kurs', 'price', 'price-at'), field('Größe', 'qty'), field(pos.mode === 'cross' ? 'Margin (rechnerisch) · Positionswert' : 'Margin · Positionswert', 'size'));
   const meter = el('div', 'liq-meter'), ml = el('span'), bar = el('div', 'liq-bar'); ml.dataset.f = 'liq'; bar.dataset.f = 'liq-bar'; bar.append(el('span')); meter.append(ml, bar);
   const warn = el('p', 'pos-warn'); warn.dataset.f = 'warn'; warn.hidden = true;
   const alert = el('div', 'pos-alert'); alert.dataset.f = 'alert'; alert.hidden = true;
@@ -3103,38 +3552,27 @@ function buildCard(pos, demo = false) {
   card.append(head, alert, live, grid, stops, meter, warn);
   if (pos.note) card.append(el('p', 'pos-note', pos.note));
   if (reasonsOf(pos).length) card.append(el('p', 'pos-reasons', `Gründe: ${reasonsOf(pos).join(' · ')}`));
-  if (ui.mode === 'realize') {
-    const f = el('div', 'pos-sub');
-    const l1 = el('label', '', 'Ausstiegskurs'); l1.append(textInput('exit', ui.exit, '', 'USDT'));
-    const l2 = el('label', '', 'Gebühren beim Schließen'); l2.append(textInput('fees', ui.fees, 'optional', 'USDT'));
-    const l3 = el('label', '', 'Oder: Realisierter G/V laut Börse (ersetzt die Rechnung)'); l3.style.gridColumn = '1/-1'; l3.append(textInput('override', ui.override, 'optional, z. B. 1,99', 'USDT', false));
-    const l4 = el('label', '', 'Notiz zum Abschluss (optional)'); l4.style.gridColumn = '1/-1'; const ta = el('textarea', 'note-box'); ta.dataset.input = 'note'; ta.maxLength = 1000; ta.placeholder = 'z. B. Grund für den Ausstieg, was lief gut, was nicht'; ta.value = ui.note ?? ''; l4.append(ta);
-    const pv = el('p'); pv.dataset.f = 'realize-preview';
-    const act = el('div', 'pos-actions'); act.append(btn('button primary-lite', 'Trade speichern', 'save-realize'), btn('button ghost', 'Abbrechen', 'cancel'));
-    f.append(l1, l2, l3, l4, pv, act); card.append(f);
-  } else if (ui.mode === 'delete') {
-    const f = el('div', 'pos-sub'); f.append(el('p', '', 'Position ohne Speichern entfernen? Sie erscheint dann nicht in den abgeschlossenen Trades.'));
+  if (Array.isArray(pos.ev)) card.append(lotHistoryDom(pos)); // 3.30.0: Lose & Verlauf
+  if (pos.liqCheck && pos.liqExchange > 0) card.append(liqCheckDom());
+  if (ui.mode === 'realize') card.append(closePanelDom(pos, ui));
+  else if (ui.mode === 'add') card.append(addPanelDom(pos, ui));
+  else if (ui.mode === 'undo') card.append(undoPanelDom(pos));
+  else if (ui.mode === 'delete') {
+    const f = el('div', 'pos-sub'); f.append(el('p', '', `Position ohne Speichern entfernen? Sie erscheint dann nicht in den abgeschlossenen Trades.${lotReplay(pos).sells.length ? ' Schon gebuchte Teilabschlüsse bleiben in der Trade-Liste.' : ''}`));
     const act = el('div', 'pos-actions'); act.append(btn('button danger-btn', 'Ja, löschen', 'confirm-delete'), btn('button ghost', 'Abbrechen', 'cancel')); f.append(act); card.append(f);
   } else {
-    const act = el('div', 'pos-actions'); act.append(btn('button primary-lite', demo ? 'Demo schließen' : 'Gewinn/Verlust realisiert', 'realize'), btn('button ghost', 'Bearbeiten', 'edit'), btn('button ghost', 'Löschen', 'delete')); card.append(act);
+    const act = el('div', 'pos-actions'); act.append(btn('button primary-lite', closeLabel(null, false), 'realize'), btn('button ghost', lotWords(pos).addBtn, 'add'), btn('button ghost', 'Bearbeiten', 'edit'), btn('button ghost', 'Löschen', 'delete')); card.append(act);
   }
   return card;
 }
 function setF(card, key, text) { const n = card.querySelector(`[data-f="${key}"]`); if (n) n.textContent = text; return n; }
-function realizeResult(pos, ui) {
-  const override = String(ui.override ?? '').trim() === '' ? null : parseNum(ui.override);
-  const exit = parseNum(ui.exit), fees = String(ui.fees ?? '').trim() === '' ? 0 : parseNum(ui.fees);
-  if (override !== null) return Number.isFinite(override) ? { pnl: override, exit: exit > 0 ? exit : null, fees: fees >= 0 ? fees : 0, source: 'exchange' } : { error: 'Realisierter G/V laut Börse ist keine gültige Zahl.' };
-  if (!(exit > 0)) return { error: 'Ausstiegskurs eingeben.' };
-  if (!(fees >= 0)) return { error: 'Gebühren als Zahl ab 0 eingeben.' };
-  return { pnl: realizedPnl(pos, exit, fees), exit, fees, source: 'calc' };
-}
 function updateCard(card, pos) {
   const pr = state.prices[pos.symbol], price = pr?.price ?? null, m = positionMetrics(pos, price, mmrNow());
   card.classList.toggle('stale', !!price && (!!pr?.error || state.paused)); card.classList.toggle('liquidated', m.liquidated);
   const big = setF(card, 'pnl', m.pnl === null ? 'Kurs ausstehend' : signed(m.pnl) + ' USDT'); big.classList.toggle('positive', m.pnl > 0); big.classList.toggle('negative', m.pnl < 0);
   setF(card, 'pnl-sub', m.pnl === null ? (pr?.error || 'Wartet auf den nächsten Abruf.')
-    : [eurPart(m.pnl, 2, true), `ROE ${signed(m.roe)} % · Kurs ${signed(m.move)} %`, ...(pos.preRealized ? [`bisher realisiert ${signed(pos.preRealized, 4)}`, `netto ${signed(m.net)} USDT`] : [])].filter(Boolean).join('\n'));
+    : (() => { const done = (pos.preRealized || 0) + (Array.isArray(pos.ev) ? mNum(lotReplayMemo(pos).realized) : 0); // 3.30.0: dazu gebuchte Teilabschlüsse
+      return [eurPart(m.pnl, 2, true), `ROE ${signed(m.roe)} % · Kurs ${signed(m.move)} %`, ...(done ? [`schon realisiert ${signed(done, 2)}`, `Position gesamt ${signed(m.pnl + done)} USDT`] : [])].filter(Boolean).join('\n'); })());
   setF(card, 'entry', euroLine(priceUE(pos.entry)));
   setF(card, 'price', price ? euroLine(priceUE(price)) : '—');
   setF(card, 'price-at', !pr ? '' : pr.error && pr.at ? `Stand ${new Date(pr.at).toLocaleTimeString('de-DE')} · veraltet` : pr.at ? `${pr.live && !state.paused && Date.now() - pr.at < 15000 ? 'Live' : 'Stand'} ${new Date(pr.at).toLocaleTimeString('de-DE')}${state.paused ? ' · pausiert' : ''}` : '');
@@ -3166,17 +3604,15 @@ function updateCard(card, pos) {
   al.hidden = !hitType;
   if (hitType) { const info = alertInfo.get(pos.id + ':' + hitType) || {}, text = `${hitType === 'tp' ? 'Take-Profit' : 'Stop-Loss'} ${priceText(hitType === 'tp' ? pos.tp : pos.sl)} ${howReached(info)}\nKurs ${price ? priceText(price) : '—'}`;
     if (al.dataset.text !== text) { al.dataset.text = text; al.className = 'pos-alert ' + hitType; const ok = btn('button ghost', 'Gesehen', 'ack'); ok.dataset.type = hitType; al.replaceChildren(el('span', '', text), ok); } } else al.dataset.text = '';
-  const pv = card.querySelector('[data-f="realize-preview"]');
-  if (pv) {
-    const r = realizeResult(pos, state.posUi[pos.id] || {});
-    pv.textContent = r.error ? r.error : r.source === 'exchange' ? `Gespeichert wird: ${usdt(r.pnl, 4, true)} laut Börse.`
-      : `Ergebnis: ${usdt(r.pnl, 2, true)} = Kursdifferenz ${signed(r.pnl - (pos.preRealized || 0) + r.fees)}${pos.preRealized ? ` + bisher realisiert ${signed(pos.preRealized, 4)}` : ''}${r.fees ? ` − Gebühren ${number(r.fees, 4)}` : ''}${pos.mode === 'isolated' && r.pnl < -m.margin ? ' – Verlust größer als die Margin; isoliert wäre vorher liquidiert worden.' : ''}`;
-  }
+  const ui = state.posUi[pos.id] || {}, pv = card.querySelector('[data-f="realize-preview"]');
+  if (pv) { const c = closePreview(pos, ui, m); pv.textContent = c.text; const sb = card.querySelector('[data-action="save-realize"]'); if (sb && sb.textContent !== c.save) sb.textContent = c.save; }
+  const av = card.querySelector('[data-f="add-preview"]'); if (av) av.textContent = addPreview(pos, ui, price);
+  const cb = card.querySelector('[data-action="realize"]'); if (cb) { const t = closeLabel(m.pnl, !!price && (!!pr?.error || state.paused)); if (cb.textContent !== t) cb.textContent = t; }
   return m;
 }
 function renderPositions() { renderOpenPositions(); renderHistory(); renderBackupInfo(); }
 function renderOpenPositions() {
-  const list = $('pos-list'), key = state.positions.map(p => `${p.id}:${state.posUi[p.id]?.mode || ''}:${p.qty}:${p.entry}:${p.leverage}:${p.mode}:${p.side}:${p.symbol}:${p.note || ''}:${p.sl}:${p.tp}:${reasonsOf(p).join('|')}`).join('|');
+  const list = $('pos-list'), key = state.positions.map(p => `${p.id}:${state.posUi[p.id]?.mode || ''}:${p.ev?.length || 0}:${p.evDel?.length || 0}:${p.liqCheck ? 1 : 0}:${p.qty}:${p.entry}:${p.leverage}:${p.mode}:${p.side}:${p.symbol}:${p.note || ''}:${p.sl}:${p.tp}:${reasonsOf(p).join('|')}`).join('|');
   if (key !== posStructure) { posStructure = key; list.replaceChildren(...state.positions.map(p => buildCard(p))); }
   $('pos-empty').hidden = state.positions.length + state.demoPositions.length > 0 || !$('pos-form').hidden;
   let total = 0, missing = 0;
@@ -3200,9 +3636,10 @@ const HIST_PAGE = 200;
 // 3.27.0: eine Zeile des Verlaufs (vorher direkt in renderHistory) – unveränderte Zeilen werden wiederverwendet
 function tradeRow(t, demo = false) {
   const r = el('div', 'trade-row' + (demo ? ' demo' : '')), ui = state.histUi[t.id]; r.dataset.trade = t.id;
-  r.append(el('time', '', localTime(t.closedAt)), el('span', '', `${coin(t.symbol)} ${t.side === 'long' ? 'Long' : 'Short'} ${levText(t.leverage)}× ${t.mode === 'cross' ? 'Cross' : 'Isoliert'} · ${qtyText(t.qty)} ${coin(t.symbol)} · ${priceText(t.entry)} → ${priceText(t.exit)}${t.pnlSource === 'exchange' ? ' · G/V laut Börse' : ''}${reasonsOf(t).length ? ` · Gründe: ${reasonsOf(t).join(', ')}` : ''}`));
+  r.append(el('time', '', localTime(t.closedAt)), el('span', '', `${coin(t.symbol)} ${t.side === 'long' ? 'Long' : 'Short'} ${levText(t.leverage)}× ${t.mode === 'cross' ? 'Cross' : 'Isoliert'} · ${qtyText(t.qty)} ${coin(t.symbol)} · ${priceText(t.entry)} → ${priceText(t.exit)}${t.pnlSource === 'exchange' ? ' · G/V laut Börse' : ''}${partText(t)}${reasonsOf(t).length ? ` · Gründe: ${reasonsOf(t).join(', ')}` : ''}`));
   const v = el('strong', t.pnl > 0 ? 'positive' : t.pnl < 0 ? 'negative' : '', `${signed(t.pnl)} USDT`); v.append(el('small', '', `${t.fx > 0 ? `(${signed(t.pnl / t.fx)} €)` : '(€ n. v.)'} · ${signed(t.pnl / t.margin * 100)} %`)); r.append(v);
   const tools = el('span', 'tools'), nb = btn('x', '✎', 'trade-note'), x = btn('x', '×', 'trade-delete');
+  if (t.part?.pos && !t.part.final && findPos(t.part.pos)) { x.hidden = true; x.disabled = true; } // 3.30.0: Teilabschluss einer offenen Position – über „Letzten Schritt rückgängig machen“
   nb.setAttribute('aria-label', `Notiz zum Trade ${coin(t.symbol)} vom ${localTime(t.closedAt)} bearbeiten`); x.setAttribute('aria-label', `Trade ${coin(t.symbol)} vom ${localTime(t.closedAt)} löschen`); tools.append(nb, x); r.append(tools);
   if (t.note && ui?.mode !== 'note') r.append(el('p', 'trade-note', t.note));
   if (ui === 'delete') { const c = el('div', 'confirm'); c.append(el('span', '', 'Trade endgültig löschen?'), btn('button danger-btn', 'Ja', 'trade-confirm'), btn('button ghost', 'Nein', 'trade-cancel')); r.append(c); }
@@ -3230,7 +3667,7 @@ function renderHistory() {
   // 3.27.0: Nur die neuesten Trades zeichnen (je 200, „Weitere … anzeigen“) und unveränderte Zeilen wiederverwenden. Vorher baute
   // jede Änderung (z. B. eine Notiz) alle Zeilen neu – gemessen bei 5.000 Trades rund 2 Sekunden, bei 10.000 rund 4.
   const limit = Math.max(HIST_PAGE, state.histLimit || HIST_PAGE), shown = sorted.length > limit ? sorted.slice(0, limit) : sorted;
-  const keys = shown.map(t => JSON.stringify([t.id, t.closedAt, t.symbol, t.side, t.leverage, t.mode, t.qty, t.entry, t.exit, t.pnlSource, reasonsOf(t), t.pnl, t.fx, t.margin, t.note || '', uiMode(state.histUi[t.id])]));
+  const keys = shown.map(t => JSON.stringify([t.id, t.closedAt, t.symbol, t.side, t.leverage, t.mode, t.qty, t.entry, t.exit, t.pnlSource, reasonsOf(t), t.pnl, t.fx, t.margin, t.note || '', uiMode(state.histUi[t.id]), t.part ? [t.part.n, t.part.final ? 1 : 0, !!findPos(t.part.pos), t.part.rest ?? null] : 0, t.posPnl ?? null, t.funding ?? null]));
   const key = state.year + '|' + limit + '|' + keys.join('|');
   if (key !== histStructure) {
     histStructure = key;
@@ -3354,13 +3791,14 @@ function renderSetupChips() {
 }
 function readForm() {
   const f = state.posForm, sym = formSymbol();
-  const lev = parseNum($('pos-lev').value), entry = parseNum($('pos-entry').value), qtyIn = parseNum($('pos-qty').value), marginIn = parseNum($('pos-margin').value);
+  const lock = f.lotLock ? findPos(f.editingId) : null; // 3.30.0: Menge und Einstieg aus den Losen
+  const lev = parseNum($('pos-lev').value), entry = lock ? lock.entry : parseNum($('pos-entry').value), qtyIn = lock ? lock.qty : parseNum($('pos-qty').value), marginIn = parseNum($('pos-margin').value);
   const liqRaw = $('pos-liq').value.trim(), preRaw = $('pos-pre').value.trim(), liq = liqRaw ? parseNum(liqRaw) : null, pre = preRaw ? parseNum(preRaw) : 0;
   let error = null;
   if (!sym) error = 'Bitte ein gültiges Kürzel eingeben, z. B. XRP.';
   else if (!(lev >= 1 && lev <= 125)) error = 'Hebel zwischen 1 und 125 eingeben.';
   else if (!(entry > 0)) error = 'Eintrittspreis eingeben.';
-  const qty = f.sizeBy === 'qty' ? qtyIn : marginIn > 0 && entry > 0 && lev > 0 ? marginIn * lev / entry : NaN;
+  const qty = lock ? lock.qty : f.sizeBy === 'qty' ? qtyIn : marginIn > 0 && entry > 0 && lev > 0 ? marginIn * lev / entry : NaN;
   if (!error && !(qty > 0)) error = 'Größe oder Margin eingeben.';
   if (!error && liq !== null && !(liq > 0)) error = 'Liq.-Preis ist keine gültige Zahl.';
   if (!error && liq !== null && (f.side === 'long' ? liq >= entry : liq <= entry)) error = `Liq.-Preis liegt bei ${f.side === 'long' ? 'Long über' : 'Short unter'} dem Eintrittspreis – bitte prüfen.`;
@@ -3368,7 +3806,8 @@ function readForm() {
   const slRaw = $('pos-sl').value.trim(), tpRaw = $('pos-tp').value.trim(), sl = slRaw ? parseNum(slRaw) : null, tp = tpRaw ? parseNum(tpRaw) : null, long = f.side === 'long';
   if (!error && sl !== null && !(sl > 0)) error = 'Stop-Loss ist keine gültige Zahl.';
   if (!error && tp !== null && !(tp > 0)) error = 'Take-Profit ist keine gültige Zahl.';
-  if (!error && sl !== null && (long ? sl >= entry : sl <= entry)) error = `Stop-Loss liegt bei ${long ? 'Long über' : 'Short unter'} dem Eintrittspreis – bitte prüfen.`;
+  // 3.30.0 (G02): gewinnsichernder Stop (Long über, Short unter dem Einstieg) ist erlaubt – nur nicht schon jenseits des aktuellen Kurses
+  if (!error && sl !== null && (long ? sl >= entry : sl <= entry)) { const px = knownPrice(sym, 120e3); if (!(px > 0)) error = `Stop-Loss liegt bei ${long ? 'Long über' : 'Short unter'} dem Eintrittspreis – ohne aktuellen Kurs lässt sich ein gewinnsichernder Stop nicht prüfen.`; else if (long ? sl >= px : sl <= px) error = `Stop-Loss liegt ${long ? 'über' : 'unter'} dem aktuellen Kurs (${priceText(px)}) – er würde sofort auslösen.`; }
   if (!error && tp !== null && (long ? tp <= entry : tp >= entry)) error = `Take-Profit liegt bei ${long ? 'Long unter' : 'Short über'} dem Eintrittspreis – bitte prüfen.`;
   return { error, sym, lev, entry, qty, liq, pre, sl, tp, side: f.side, mode: f.mode, reasons: [...f.reasons], setup: f.reasons[0] || null, demo: !!f.demo, note: $('pos-note').value.trim().slice(0, 1000) };
 }
@@ -3390,8 +3829,13 @@ function openPosForm(open, pos = null) {
   f.editingId = pos ? pos.id : null; f.side = pos ? pos.side : d.side; f.mode = pos ? pos.mode : d.mode; f.sizeBy = 'qty';
   $('pos-symbol').value = pos ? coin(pos.symbol) : coin(state.symbol);
   $('pos-lev').value = plain(pos ? pos.leverage : d.leverage);
-  $('pos-qty').value = pos ? plain(+pos.qty.toPrecision(10)) : ''; $('pos-margin').value = '';
-  $('pos-entry').value = pos ? plain(pos.entry) : '';
+  $('pos-qty').value = pos ? Array.isArray(pos.ev) ? unitsInput(lotReplay(pos).Q, LOT_QDP) : plain(+pos.qty.toPrecision(10)) : ''; $('pos-margin').value = '';
+  { const evs = pos && Array.isArray(pos.ev) ? lotEvents(pos) : null; $('pos-entry').value = !pos ? '' : evs?.length === 1 ? evs[0].p.replace('.', ',') : plain(pos.entry); }
+  // 3.30.0 (G02): Mit Nachkauf oder Teilabschluss ergeben sich Menge und Einstieg aus den Losen; Kürzel und Richtung bleiben
+  f.lotLock = !!pos && Array.isArray(pos.ev) && lotEvents(pos).length > 1;
+  for (const id of ['pos-qty', 'pos-margin', 'pos-entry', 'pos-symbol']) $(id).disabled = f.lotLock;
+  document.querySelectorAll('[data-pos-side]').forEach(b => { b.disabled = f.lotLock; });
+  $('pos-lot-hint').hidden = !f.lotLock; put('pos-lot-hint', f.lotLock ? 'Menge und Einstieg ergeben sich aus den Losen – ändern über „Nachkaufen“, Schließen oder „Letzten Schritt rückgängig machen“. Kürzel und Richtung bleiben.' : '');
   $('pos-liq').value = pos?.liqExchange ? plain(pos.liqExchange) : ''; $('pos-pre').value = pos?.preRealized ? plain(pos.preRealized) : '';
   $('pos-note').value = pos?.note || ''; $('pos-sl').value = pos?.sl ? plain(pos.sl) : ''; $('pos-tp').value = pos?.tp ? plain(pos.tp) : '';
   f.reasons = pos ? [...reasonsOf(pos)] : []; f.demo = !!pos && isDemoPos(pos); state.setupEdit = false; $('setup-add').hidden = true; $('reasons-box').open = false; renderSetupChips();
@@ -3404,6 +3848,7 @@ async function addPosition(e) {
   e.preventDefault();
   const r = readForm(), f = state.posForm; if (r.error) { formError(r.error); return; }
   const old = f.editingId ? findPos(f.editingId) : null, oldDemo = !!old && isDemoPos(old);
+  if (old && Array.isArray(old.ev) && oldDemo !== r.demo && lotReplay(old).sells.length) { formError('Diese Position hat schon gebuchte Teilabschlüsse – ECHT/DEMO lässt sich nicht mehr wechseln.'); return; }
   $('pos-save').disabled = true; formError(null);
   let source = old && old.symbol === r.sym ? old.source : 'spot', price = null, note = '';
   if (!old || old.symbol !== r.sym) {
@@ -3416,7 +3861,8 @@ async function addPosition(e) {
       } else note = err.message;
     }
   }
-  const pos = normalizePosition({ id: old ? old.id : newId(), openedAt: old ? old.openedAt : Date.now(), symbol: r.sym, side: r.side, mode: r.mode, entry: r.entry, leverage: r.lev, qty: r.qty, liqExchange: r.liq, preRealized: r.pre, source, note: r.note, setup: r.setup, reasons: r.reasons, sl: r.sl, tp: r.tp, ack: old && old.sl === r.sl && old.tp === r.tp ? old.ack : { sl: false, tp: false }, updatedAt: Date.now(), slTpAt: old && old.sl === r.sl && old.tp === r.tp ? old.slTpAt || old.openedAt : Date.now() });
+  const carry = old ? lotCarry(old, r) : {}, lc = carry.ev ? lotCheck({ ...old, ...carry }) : null; // 3.30.0: Verlauf mitnehmen
+  const pos = normalizePosition({ ...carry, id: old ? old.id : newId(), openedAt: old ? old.openedAt : Date.now(), symbol: r.sym, side: r.side, mode: r.mode, entry: lc?.ok ? lc.entry : r.entry, leverage: r.lev, qty: lc?.ok ? lc.qty : r.qty, liqExchange: r.liq, preRealized: r.pre, source, note: r.note, setup: r.setup, reasons: r.reasons, sl: r.sl, tp: r.tp, ack: old && old.sl === r.sl && old.tp === r.tp ? old.ack : { sl: false, tp: false }, updatedAt: Date.now(), slTpAt: old && old.sl === r.sl && old.tp === r.tp ? old.slTpAt || old.openedAt : Date.now() });
   if (old && (old.sl !== r.sl || old.tp !== r.tp)) for (const t of ['sl', 'tp']) { alerted.delete(old.id + ':' + t); alertInfo.delete(old.id + ':' + t); $('toasts').querySelector(`.toast[data-id="${old.id}"][data-type="${t}"]`)?.remove(); }
   // 3.28.0: ECHT oder DEMO – beim Bearbeiten darf der Modus wechseln, dann wandert die Position in die andere Liste
   const into = r.demo ? 'demoPositions' : 'positions';
@@ -3565,7 +4011,9 @@ const PLAN_OTHER = { pos: 'dpos', dpos: 'pos', trade: 'dtrade', dtrade: 'trade' 
 function hereOf(kind, id) { for (const k of [kind, PLAN_OTHER[kind]].filter(Boolean)) { const r = planList(k).find(x => x.id === id); if (r) return { kind: k, rec: r }; } return null; }
 const ackMore = (inc, loc) => !!inc.ack && ((inc.ack.sl && !loc.ack?.sl) || (inc.ack.tp && !loc.ack?.tp));
 // Fachliches Zusammenführen ohne Rückfrage: ein Kurs-Alarm, der auf beiden Geräten ausgelöst hat (sonst gleich) → frühere Auslösung
-function domainMerge(kind, inc, loc) {
+function domainMerge(kind, inc, loc, hereKind = kind) {
+  // 3.30.0 (G02): Positionen mit Verlauf – neue Schritte beider Geräte vereinigen (sonst gleiche Position)
+  if ((kind === 'pos' || kind === 'dpos') && kind === hereKind && (Array.isArray(inc.ev) || Array.isArray(loc.ev))) return lotMerge(kind, inc, loc);
   if (kind !== 'alarm' || !inc.triggeredAt || !loc.triggeredAt) return null;
   const strip = a => { const o = { ...a }; for (const k of ['triggeredAt', 'triggerPrice', 'touch', 'missed', 'svcAt']) delete o[k]; return recHash(o, kind); }; // Einzelheiten der Auslösung
   if (strip(inc) !== strip(loc)) return null;
@@ -3604,10 +4052,14 @@ function planBackup(data, src = 'Sicherung') {
       const cur = here.rec, from = here.kind !== kind ? here.kind : undefined, rel = relation(r, cur);
       if (rel === 'same' || rel === 'older') { if (ackMore(r, cur)) p.acks.push({ kind: here.kind, id: r.id, ack: { sl: !!(r.ack?.sl || cur.ack?.sl), tp: !!(r.ack?.tp || cur.ack?.tp) } }); if (rel === 'same') p.same++; else p.older++; continue; }
       if (rel === 'newer') { p.upd.push({ kind, ns, rec: r, cur, from }); continue; }
-      const m = domainMerge(kind, r, cur); if (m) { p.merged.push({ kind, ns, rec: m, cur, from }); continue; }
+      const m = domainMerge(kind, r, cur, here.kind); if (m) { p.merged.push({ kind, ns, rec: m, cur, from }); continue; }
       p.conflicts.push({ kind, id: r.id, localKind: here.kind, local: cur, draft: r, why: 'both' }); continue;
     }
-    if (g === 'T') { const open = state.positions.find(x => x.id === r.id) || state.demoPositions.find(x => x.id === r.id); if (open) { p.closed.push({ kind, ns, rec: r, cur: open }); continue; } }
+    if (g === 'T') { const open = state.positions.find(x => x.id === r.id) || state.demoPositions.find(x => x.id === r.id); if (open) {
+      // 3.30.0: hier nach dem Stand der Sicherung noch nachgekauft oder teilweise geschlossen → du entscheidest (oder schon entschieden: bleibt offen)
+      if (histOf(open).includes('c:' + r.h)) { p.same++; continue; }
+      if (lotExtra(open, r)) { p.conflicts.push({ kind, id: r.id, localKind: isDemoPos(open) ? 'dpos' : 'pos', local: open, draft: r, why: 'closedThere' }); continue; }
+      p.closed.push({ kind, ns, rec: r, cur: open }); continue; } }
     const L = myH[key];
     if (L) { if (L.includes(r.h)) p.blocked.push({ kind, ns, rec: r }); else p.conflicts.push({ kind, id: r.id, localKind: kind, local: null, draft: r, why: 'deletedHere' }); continue; }
     if (myT[key]) { p.blocked.push({ kind, ns, rec: r }); continue; } // ältere Löschung ohne Fingerabdruck: bleibt gelöscht, außer du stellst sie wieder her
@@ -3717,6 +4169,7 @@ async function commitPlan(p0, opt = {}) {
     for (const [k, l] of Object.entries(p.inH)) if (!alive.has(k.slice(k.indexOf(':') + 1))) H[k] = [...new Set([...(H[k] || []), ...l])].slice(-62);
     // ab hier wird gesetzt
     state.positions = L.pos; state.demoPositions = L.dpos; state.trades = L.trade; state.demoTrades = L.dtrade; state.movements = L.mv; state.alarms = L.alarm;
+    posTradesSyncAll(); // 3.30.0: zu jedem Teilabschluss genau ein Trade (auch nach dem Vereinigen der Schritte)
     const T2 = cleanTombs(T), H2 = {}; for (const k of Object.keys(H)) if (T2[k]) H2[k] = H[k];
     store.set(DELETED_KEY, T2); store.set(DELETEDH_KEY, H2);
     const myS = stampsOf(SETTINGS_AT_KEY), myL = stampsOf(LISTS_AT_KEY), lin = setLin();
@@ -3799,7 +4252,7 @@ function recText(kind, r) {
   if (kind === 'alarm') return `Kurs-Alarm ${sym} ${r.dir === 'below' ? 'auf/unter' : 'auf/über'} ${isNum(r.price) ? priceText(r.price) : '?'}${r.triggeredAt ? ' (ausgelöst)' : ''}`;
   return 'Eintrag';
 }
-const DIFF_F = [['note', 'Notiz'], ['reasons', 'Gründe'], ['entry', 'Einstieg'], ['qty', 'Menge'], ['leverage', 'Hebel'], ['mode', 'Modus'], ['side', 'Richtung'], ['symbol', 'Kürzel'], ['sl', 'Stop-Loss'], ['tp', 'Take-Profit'], ['liqExchange', 'Liq.-Preis (Börse)'], ['preRealized', 'Vorher realisiert'], ['exit', 'Ausstieg'], ['fees', 'Gebühren'], ['pnl', 'Ergebnis'], ['pnlSource', 'Quelle Ergebnis'], ['fx', 'EUR/USDT'], ['openedAt', 'Eröffnet'], ['closedAt', 'Geschlossen'], ['price', 'Preis'], ['dir', 'Richtung'], ['source', 'Kursquelle'], ['triggeredAt', 'ausgelöst'], ['triggerPrice', 'Auslösekurs'], ['touch', 'Docht bis'], ['missed', 'nachträglich erkannt'], ['svcAt', '24/7-Dienst zuständig'], ['armedAt', 'wieder scharf'], ['type', 'Art'], ['amount', 'Betrag'], ['currency', 'Währung'], ['date', 'Datum'], ['invalid', 'Ungültige Originalwerte'], ['@', 'Handelsmodus']];
+const DIFF_F = [['note', 'Notiz'], ['reasons', 'Gründe'], ['entry', 'Einstieg'], ['qty', 'Menge'], ['leverage', 'Hebel'], ['mode', 'Modus'], ['side', 'Richtung'], ['symbol', 'Kürzel'], ['sl', 'Stop-Loss'], ['tp', 'Take-Profit'], ['liqExchange', 'Liq.-Preis (Börse)'], ['preRealized', 'Vorher realisiert'], ['exit', 'Ausstieg'], ['fees', 'Gebühren'], ['pnl', 'Ergebnis'], ['pnlSource', 'Quelle Ergebnis'], ['fx', 'EUR/USDT'], ['openedAt', 'Eröffnet'], ['closedAt', 'Geschlossen'], ['price', 'Preis'], ['dir', 'Richtung'], ['source', 'Kursquelle'], ['triggeredAt', 'ausgelöst'], ['triggerPrice', 'Auslösekurs'], ['touch', 'Docht bis'], ['missed', 'nachträglich erkannt'], ['svcAt', '24/7-Dienst zuständig'], ['armedAt', 'wieder scharf'], ['type', 'Art'], ['amount', 'Betrag'], ['currency', 'Währung'], ['date', 'Datum'], ['ev', 'Verlauf (Nachkäufe/Abschlüsse)'], ['evDel', 'Zurückgenommene Schritte'], ['liqCheck', 'Liq.-Preis prüfen'], ['funding', 'Funding'], ['part', 'Teilabschluss'], ['posPnl', 'Position gesamt'], ['invalid', 'Ungültige Originalwerte'], ['@', 'Handelsmodus']];
 const DIFF_LABEL = new Map(DIFF_F);
 function diffFields(a, b, kindA, kindB) {
   const ca = {}, cb = {}; for (const [o, r, k] of [[ca, a, kindA], [cb, b, kindB]]) if (isObj(r)) { for (const x of Object.keys(r)) if (!META_KEYS.has(x)) o[x] = r[x]; if (LIST_TAG[k]) o['@'] = LIST_TAG[k] === 'dpos' || LIST_TAG[k] === 'dtrade' ? 'DEMO' : 'ECHT'; }
@@ -3811,6 +4264,7 @@ function fieldVal(k, v) {
   if (v === null) return '–';
   if (/At$|^date$/.test(k) && isNum(v)) return new Date(v).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   if (isNum(v)) return k === 'entry' || k === 'exit' || k === 'price' || k === 'sl' || k === 'tp' || k === 'triggerPrice' || k === 'liqExchange' ? priceText(v) : plain(v);
+  if (k === 'ev' && Array.isArray(v)) return `${v.length} ${v.length === 1 ? 'Schritt' : 'Schritte'}`;
   if (Array.isArray(v)) return v.length ? v.map(x => typeof x === 'string' ? x : JSON.stringify(x)).join(', ') : '(keine)';
   if (k === 'side') return v === 'short' ? 'Short' : v === 'long' ? 'Long' : String(v);
   if (k === 'dir') return v === 'below' ? 'auf/unter' : v === 'above' ? 'auf/über' : String(v);
@@ -3820,11 +4274,11 @@ function planLines(p) {
   const out = [], ex = (items, f) => items.map(f);
   if (p.add.length) out.push(['Neu', kindsText(p.add), ex(p.add, x => recText(x.kind, x.rec))]);
   if (p.upd.length) out.push(['Geändert', kindsText(p.upd), ex(p.upd, x => `${recText(x.from || x.kind, x.cur)}: ${x.from ? (x.kind === 'dpos' ? 'jetzt DEMO' : 'jetzt ECHT') : diffText(x.cur, x.rec, x.kind)}`)]);
-  if (p.merged.length) out.push(['Zusammengeführt', `${kindsText(p.merged)} – auf beiden Geräten ausgelöst, die frühere Auslösung gilt`, ex(p.merged, x => recText(x.kind, x.rec))]);
+  if (p.merged.length) out.push(['Zusammengeführt', `${kindsText(p.merged)} – ${p.merged.every(x => x.kind === 'alarm') ? 'auf beiden Geräten ausgelöst, die frühere Auslösung gilt' : p.merged.some(x => x.kind === 'alarm') ? 'Auslösungen und Schritte beider Geräte vereint' : 'Nachkäufe und Abschlüsse beider Geräte vereint'}`, ex(p.merged, x => recText(x.kind, x.rec))]);
   if (p.closed.length) out.push(['Auf dem anderen Gerät geschlossen', p.closed.length === 1 ? '1 Position – wird hier zum Trade' : `${p.closed.length} Positionen – werden hier zu Trades`, ex(p.closed, x => recText(isDemoPos(x.cur) ? 'dpos' : 'pos', x.cur))]);
   if (p.del.length) out.push(['Auf dem anderen Gerät gelöscht', `${kindsText(p.del)} – ${p.del.length === 1 ? 'wird' : 'werden'} hier gelöscht`, ex(p.del, x => recText(x.kind, x.cur))]);
   if (p.blocked.length) out.push(['Hier gelöscht', `${kindsText(p.blocked)} – noch in der Sicherung, ${p.blocked.length === 1 ? 'bleibt' : 'bleiben'} hier gelöscht`, ex(p.blocked, x => recText(x.kind, x.rec))]);
-  if (p.conflicts.length) out.push(['⚖ Konflikte', `${p.conflicts.length} – beide Geräte haben dasselbe verschieden geändert. Nach „Übernehmen“ entscheidest du einzeln; bis dahin gilt der Stand dieses Geräts.`, ex(p.conflicts, c => c.kind === 'set' ? SET_NAME[c.f] : `${recText(c.localKind || c.kind, c.local || c.draft)}${c.why === 'deletedHere' ? ' – hier gelöscht, dort geändert' : c.why === 'deletedThere' ? ' – dort gelöscht, hier vorhanden' : c.why === 'setup' ? ' – Gründe: Herkunft unklar' : ''}`)]);
+  if (p.conflicts.length) out.push(['⚖ Konflikte', `${p.conflicts.length} – beide Geräte haben dasselbe verschieden geändert. Nach „Übernehmen“ entscheidest du einzeln; bis dahin gilt der Stand dieses Geräts.`, ex(p.conflicts, c => c.kind === 'set' ? SET_NAME[c.f] : `${recText(c.localKind || c.kind, c.local || c.draft)}${c.why === 'deletedHere' ? ' – hier gelöscht, dort geändert' : c.why === 'deletedThere' ? ' – dort gelöscht, hier vorhanden' : c.why === 'setup' ? ' – Gründe: Herkunft unklar' : c.why === 'closedThere' ? ' – dort geschlossen, hier weiter geändert' : ''}`)]);
   if (p.pending) out.push(['⚖ Schon offen', `${p.pending} ${p.pending === 1 ? 'Konflikt' : 'Konflikte'} aus einem früheren Abgleich – ${p.pending === 1 ? 'wartet' : 'warten'} weiter auf deine Entscheidung`]);
   if (p.bad.length) out.push(['⚠ Fehlerhaft in der Sicherung', `${p.bad.length} – ${p.bad.length === 1 ? 'kommt' : 'kommen'} in die Prüfliste (nichts geht verloren)`, ex(p.bad, b => `${recText(b.kind, b.raw)}: ${b.why}`)]);
   if (p.quar.length) out.push(['Prüfliste des anderen Geräts', `${p.quar.length} ${p.quar.length === 1 ? 'Eintrag' : 'Einträge'} – ${p.quar.length === 1 ? 'kommt' : 'kommen'} in die Prüfliste`]);
@@ -3904,6 +4358,7 @@ function showConflict() {
     : c.why === 'deletedThere' ? `${recText(here?.kind || c.kind, cur)} – auf dem anderen Gerät gelöscht, hier noch vorhanden.`
     : c.why === 'deletedHere' ? `${recText(c.kind, c.draft)} – hier gelöscht, auf dem anderen Gerät geändert.`
     : c.why === 'setup' ? `${recText(c.kind, cur || c.draft)} – die Gründe passen nicht zum Setup einer älteren App-Version; die Herkunft ist nicht nachweisbar.`
+    : c.why === 'closedThere' ? `${recText(here?.kind || 'pos', cur)} – auf dem anderen Gerät geschlossen, hier danach weiter geändert (Nachkauf oder Teilabschluss). „Entwurf übernehmen“ schließt sie wie dort.`
     : `${recText(here?.kind || c.kind, cur || c.draft)} – auf beiden Geräten seit dem letzten gemeinsamen Stand verschieden geändert.`;
   put('conf-what', what);
   const tb = $('conf-table').querySelector('tbody'), rows = [];
@@ -3914,7 +4369,8 @@ function showConflict() {
   else { const ks = diffFields(cur, c.draft, here?.kind || c.kind, c.kind); for (const k of ks) row(DIFF_LABEL.get(k) || k, fieldVal(k, k === '@' ? (LIST_TAG[here?.kind] === 'dpos' || LIST_TAG[here?.kind] === 'dtrade' ? 'DEMO' : 'ECHT') : cur[k]), fieldVal(k, k === '@' ? (c.kind === 'dpos' || c.kind === 'dtrade' ? 'DEMO' : 'ECHT') : c.draft[k])); if (!ks.length) row('Inhalt', 'gleich', 'gleich'); }
   tb.replaceChildren(...rows);
   const changed = c.kind !== 'set' && c.local && cur && isObj(c.local) && recHash(c.local, c.localKind || c.kind) !== recHash(cur, here?.kind || c.kind);
-  put('conf-note', `Bis zu deiner Entscheidung gilt der bestätigte Stand dieses Geräts; beide Fassungen bleiben gespeichert.${changed ? ' Der bestätigte Stand wurde seit dem Abgleich hier geändert – verglichen wird mit dem aktuellen.' : ''}`);
+  const lotsBoth = c.why === 'both' && (here?.kind === 'pos' || here?.kind === 'dpos') && (Array.isArray(cur?.ev) || Array.isArray(c.draft?.ev));
+  put('conf-note', `Bis zu deiner Entscheidung gilt der bestätigte Stand dieses Geräts; beide Fassungen bleiben gespeichert.${changed ? ' Der bestätigte Stand wurde seit dem Abgleich hier geändert – verglichen wird mit dem aktuellen.' : ''}${lotsBoth ? ' Nachkäufe und Abschlüsse beider Fassungen bleiben bei jeder Wahl erhalten.' : ''}`);
   put('conf-take', !c.draft ? 'Löschung übernehmen' : !cur && c.kind !== 'set' ? 'Wiederherstellen (Entwurf)' : 'Entwurf übernehmen');
   $('conf-title').focus({ preventScroll: true }); // keine Auswahl vorausgewählt
 }
@@ -3934,12 +4390,14 @@ function decideConflict(choice) {
     const setKind = (k, arr) => { if (k === 'pos') state.positions = arr; else if (k === 'dpos') state.demoPositions = arr; else if (k === 'trade') state.trades = arr; else if (k === 'dtrade') state.demoTrades = arr; else if (k === 'mv') state.movements = arr; else state.alarms = arr; };
     const remove = (keep = null) => { if (cur) for (const k of [here.kind, PLAN_OTHER[here.kind]].filter(k => k && k !== keep)) setKind(k, planList(k).filter(x => x.id !== c.id)); }; // ganze Gruppe (ECHT und DEMO)
     if (choice === 'keep') {
-      if (cur) cur.hist = histAdd(cur.hist, c.draft ? c.draft.h || recHash(c.draft, c.kind) : c.mark);
-      else if (c.draft) { const H = tombHs(); H[key] = [...new Set([...(H[key] || []), c.draft.h || recHash(c.draft, c.kind)])].slice(-62); store.set(DELETEDH_KEY, H); broadcastData([DELETEDH_KEY]); }
+      if (cur) cur.hist = histAdd(cur.hist, c.why === 'closedThere' ? 'c:' + (c.draft.h || recHash(c.draft, c.kind)) : c.draft ? c.draft.h || recHash(c.draft, c.kind) : c.mark);
+      if (cur && c.draft && c.why === 'both' && (here.kind === 'pos' || here.kind === 'dpos')) lotJoin(cur, c.draft); // 3.30.0: Schritte beider Fassungen
+      else if (!cur && c.draft) { const H = tombHs(); H[key] = [...new Set([...(H[key] || []), c.draft.h || recHash(c.draft, c.kind)])].slice(-62); store.set(DELETEDH_KEY, H); broadcastData([DELETEDH_KEY]); }
     } else if (!c.draft) { // Löschung übernehmen
       if (cur) { remove(); tomb(ns, c.id); }
     } else { // Entwurf übernehmen: die hiesige Fassung wird zur Vorgeschichte; der Eintrag behält seine Stelle in der Liste
       const rec = { ...c.draft, hist: histAdd(histOf(c.draft), ...(cur ? [...histOf(cur).filter(h => !h.startsWith('x:')), cur.h] : [])) };
+      if (cur && c.why === 'both' && (c.kind === 'pos' || c.kind === 'dpos')) lotJoin(rec, cur); // 3.30.0: Schritte beider Fassungen
       const at = cur && here.kind === c.kind ? planList(c.kind).indexOf(cur) : -1;
       if (at >= 0) { setKind(c.kind, planList(c.kind).map((x, i) => i === at ? rec : x)); remove(c.kind); }
       else { remove(); setKind(c.kind, [...planList(c.kind), rec]); }
@@ -3947,7 +4405,7 @@ function decideConflict(choice) {
       const T = tombs(), H = tombHs(); if (key in T || key in H) { delete T[key]; delete H[key]; store.set(DELETED_KEY, T); store.set(DELETEDH_KEY, H); broadcastData([DELETED_KEY, DELETEDH_KEY]); }
     }
     posStructure = null; demoStructure = null; histStructure = ''; alarmKey = '';
-    persist();
+    posTradesSyncAll(); persist();
   }
   confDrop(c.cid); confState.list.splice(confState.i, 1);
   render(); showConflict();
@@ -3955,7 +4413,7 @@ function decideConflict(choice) {
 // ---- Prüfliste: fehlerhafte Einträge (nicht geladen) und eingeschränkt geladene Werte ----
 const QK_NAME = { pos: 'Position', dpos: 'Demo-Position', trade: 'Trade', dtrade: 'Demo-Trade', mv: 'Geldbewegung', alarm: 'Kurs-Alarm', list: 'Liste' };
 function fieldIssues() {
-  const out = [], NAMES = { sl: 'Stop-Loss', tp: 'Take-Profit', liqExchange: 'Liq.-Preis (Börse)', fx: 'EUR/USDT', note: 'Notiz', reasons: 'Gründe', triggerPrice: 'Auslösekurs' };
+  const out = [], NAMES = { sl: 'Stop-Loss', tp: 'Take-Profit', liqExchange: 'Liq.-Preis (Börse)', fx: 'EUR/USDT', note: 'Notiz', reasons: 'Gründe', triggerPrice: 'Auslösekurs', ev: 'Verlauf (Lose/Abschlüsse)', evDel: 'Zurückgenommene Schritte', funding: 'Funding', posPnl: 'Position gesamt', part: 'Teilabschluss', liqCheck: 'Liq.-Preis prüfen' };
   for (const [kind] of PLAN_KINDS) for (const r of planList(kind)) if (isObj(r.invalid)) for (const [k, v] of Object.entries(r.invalid)) out.push({ kind, r, k, v, name: NAMES[k] || k });
   return out;
 }
@@ -4595,16 +5053,20 @@ const posClick=e=>{
   const act=b.dataset.action,demo=isDemoPos(pos);
   if(act==='edit'){openPosForm(true,pos);return;}
   if(act==='ack'){if(demo)return;pos.ack={...pos.ack,[b.dataset.type]:true};persist();document.querySelector(`.toast[data-id="${id}"][data-type="${b.dataset.type}"]`)?.remove();renderPositions();return;}
-  if(act==='realize'){const pr=state.prices[pos.symbol]?.price;state.posUi[id]={mode:'realize',exit:pr?plain(pr):'',fees:'',override:'',note:pos.note||''};}
+  if(act==='realize'){const pr=state.prices[pos.symbol]?.price;state.posUi[id]={mode:'realize',qty:unitsInput(lotReplay(pos).Q,LOT_QDP),exit:pr?plain(pr):'',fees:'',fund:'',override:'',scope:'part',when:'',note:pos.note||''};}
+  else if(act==='add'){const pr=state.prices[pos.symbol]?.price;state.posUi[id]={mode:'add',aqty:'',aprice:pr?plain(pr):'',afees:'',awhen:''};}
+  else if(act==='close-pct'){const ui=state.posUi[id];if(!ui)return;const Q=lotReplay(pos).Q,p=BigInt(b.dataset.pct||'100'),K=p>=100n?Q:Q*p/100n;ui.qty=unitsInput(K,LOT_QDP);const i=card.querySelector('[data-input="qty"]');if(i)i.value=ui.qty;updateCard(card,pos);return;}
+  else if(act==='save-add'){const err=saveAdd(pos,state.posUi[id]||{});if(err){const pv=card.querySelector('[data-f="add-preview"]');if(pv)pv.textContent=err;return;}delete state.posUi[id];persist();renderMarket();}
+  else if(act==='undo')state.posUi[id]={mode:'undo'};
+  else if(act==='undo-confirm'){const err=undoLast(pos);if(err){const p0=card.querySelector('.pos-sub p');if(p0)p0.textContent=err;return;}delete state.posUi[id];persist();renderMarket();}
+  else if(act==='liq-ok'){delete pos.liqCheck;pos.updatedAt=Date.now();posStructure=null;demoStructure=null;persist();}
   else if(act==='delete')state.posUi[id]={mode:'delete'};
   else if(act==='cancel')delete state.posUi[id];
   else if(act==='confirm-delete'){dropPos(id);delete state.posUi[id];tomb('pt',id);persist();renderMarket();}
   else if(act==='save-realize'){
-    const r=realizeResult(pos,state.posUi[id]||{});
-    if(r.error){const pv=card.querySelector('[data-f="realize-preview"]');if(pv)pv.textContent=r.error;return;}
-    const note=String((state.posUi[id]||{}).note||'').trim().slice(0,1000);
-    (demo?state.demoTrades:state.trades).push({...pos,exit:r.exit ?? state.prices[pos.symbol]?.price ?? pos.entry,fees:r.fees,pnl:r.pnl,pnlSource:r.source,closedAt:Date.now(),fx:fxNow(),note});
-    dropPos(id);delete state.posUi[id];persist();renderMarket();
+    const err=saveClose(pos,state.posUi[id]||{}); // 3.30.0: ganz oder teilweise, genau gerechnet, ein Ereignis je Tipp
+    if(err){const pv=card.querySelector('[data-f="realize-preview"]');if(pv)pv.textContent=err;return;}
+    delete state.posUi[id];persist();renderMarket();
   }
   renderPositions();
 };
@@ -4622,7 +5084,7 @@ const histClick=e=>{
   else if(act==='trade-note'){const t=find();state.histUi[id]={mode:'note',text:t?.note||'',reasons:[...reasonsOf(t)]};renderPositions();box.querySelector(`[data-note="${id}"]`)?.focus();return;}
   else if(act==='note-save'){const t=find();if(t){const was=JSON.stringify([t.note||'',reasonsOf(t)]);t.note=String(ui?.text||'').trim().slice(0,1000);if(ui&&Array.isArray(ui.reasons)){t.reasons=cleanReasons(ui.reasons,new Set(reasonsOf(t)));t.setup=t.reasons[0]||null;t.setupSeen=t.setup;}if(JSON.stringify([t.note||'',reasonsOf(t)])!==was)t.updatedAt=Date.now();persist();}delete state.histUi[id];}
   else if(act==='trade-cancel')delete state.histUi[id];
-  else if(act==='trade-confirm'){if(demo)state.demoTrades=state.demoTrades.filter(t=>t.id!==id);else state.trades=state.trades.filter(t=>t.id!==id);delete state.histUi[id];tomb('pt',id);persist();}
+  else if(act==='trade-confirm'){{const t=find();if(t?.part?.pos&&!t.part.final&&findPos(t.part.pos)){delete state.histUi[id];renderPositions();return;}}if(demo)state.demoTrades=state.demoTrades.filter(t=>t.id!==id);else state.trades=state.trades.filter(t=>t.id!==id);delete state.histUi[id];tomb('pt',id);persist();}
   renderPositions();
 };
 $('history-list').addEventListener('click',histClick);$('demo-history-list').addEventListener('click',histClick);
@@ -8834,7 +9296,7 @@ var demoStructure = ''; // var: kann vor diesem Abschnitt gebraucht werden (erst
 function renderDemoPositions() {
   const list = $('demo-list'), box = $('demo-pos'), demo = state.demoPositions;
   box.hidden = !demo.length;
-  const key = demo.map(p => `${p.id}:${state.posUi[p.id]?.mode || ''}:${p.qty}:${p.entry}:${p.leverage}:${p.mode}:${p.side}:${p.symbol}:${p.note || ''}:${p.sl}:${p.tp}:${reasonsOf(p).join('|')}`).join('|');
+  const key = demo.map(p => `${p.id}:${state.posUi[p.id]?.mode || ''}:${p.ev?.length || 0}:${p.evDel?.length || 0}:${p.liqCheck ? 1 : 0}:${p.qty}:${p.entry}:${p.leverage}:${p.mode}:${p.side}:${p.symbol}:${p.note || ''}:${p.sl}:${p.tp}:${reasonsOf(p).join('|')}`).join('|');
   if (key !== demoStructure) { demoStructure = key; list.replaceChildren(...demo.map(p => buildCard(p, true))); }
   let total = 0, missing = 0;
   for (const card of list.children) { const pos = demo.find(p => p.id === card.dataset.id); if (!pos) continue; const m = updateCard(card, pos); if (m.pnl === null) missing++; else total += m.pnl; }
@@ -8855,7 +9317,7 @@ function renderDemoHistory() {
     box('Netto simuliert', s.n ? `${signed(s.net)} USDT` : '—', s.net > 0 ? 'positive' : s.net < 0 ? 'negative' : ''));
   const sorted = trades.slice().sort((a, b) => b.closedAt - a.closedAt), limit = Math.max(HIST_PAGE, state.demoLimit || HIST_PAGE);
   const shown = sorted.length > limit ? sorted.slice(0, limit) : sorted, uiMode = u => (typeof u === 'object' && u ? u.mode : u) || '';
-  const keys = shown.map(t => JSON.stringify([t.id, t.closedAt, t.symbol, t.side, t.leverage, t.mode, t.qty, t.entry, t.exit, t.pnlSource, reasonsOf(t), t.pnl, t.fx, t.margin, t.note || '', uiMode(state.histUi[t.id])]));
+  const keys = shown.map(t => JSON.stringify([t.id, t.closedAt, t.symbol, t.side, t.leverage, t.mode, t.qty, t.entry, t.exit, t.pnlSource, reasonsOf(t), t.pnl, t.fx, t.margin, t.note || '', uiMode(state.histUi[t.id]), t.part ? [t.part.n, t.part.final ? 1 : 0, !!findPos(t.part.pos), t.part.rest ?? null] : 0, t.posPnl ?? null, t.funding ?? null]));
   const key = limit + '|' + keys.join('|');
   if (key !== demoRows.structure) {
     demoRows.structure = key;
@@ -9727,6 +10189,7 @@ async function recCopy() {
   if (store.get(REC_KEY)?.on) recStart(); else recRender();
 })();
 for(const f of SET_FIELDS)stampSetting(f);renderIntegrity(); // 3.29.0: Abstammung der Einstellungen anlegen, Prüfliste zeigen
+if(posTradesSyncAll())persist(); // 3.30.0: zu jedem Teilabschluss genau ein Trade – fehlt einer, kommt er aus dem Verlauf der Position
 render();startLive();void showCachedChart();void refresh();void initAutoBackup();void requestWake();void zzpStart();
 </script>
 </head>
@@ -9975,6 +10438,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
             <small id="backup-info"></small>
           </div>
           <form id="pos-form" class="pos-form" hidden novalidate>
+            <p id="pos-lot-hint" class="pos-lot-hint" hidden></p>
             <div class="pos-hint"><span>Werte aus der Positionsansicht deiner Börse übernehmen. Nötig sind nur <b>Größe</b> (oder Margin), <b>Eintrittspreis</b> und <b>Hebel</b>.</span><details class="tip"><summary aria-label="Hinweise zur Eingabe"><span>i</span></summary><div class="tip-body">Komma oder Punkt – beides geht. Stop-Loss und Take-Profit sind optional; erreicht der Kurs eine Marke, meldet sich das Dashboard, auch bei kurzen Dochten.</div></details></div>
             <div class="pos-row">
               <label class="pos-sym">Kryptowährung<span class="input-wrap"><input id="pos-symbol" maxlength="24" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="next"><span>/ USDT</span></span></label>
