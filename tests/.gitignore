@@ -4,3 +4,7 @@ cert.pem
 *.log
 m37-backup.json
 m37-muster.json
+sync-test.json
+zzp-backup-test.json
+ff-test.json
+*.png
