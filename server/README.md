@@ -8,6 +8,7 @@ Kleines Programm für einen eigenen Server, der rund um die Uhr läuft (z. B. ko
 - den Gewinn-/Verlust-Alarm am Live-Ergebnis der offenen Positionen (ab Version 1.2).
 
 Ab Version 1.3 prüft er, ob Telegram jede Meldung angenommen hat. Wenn nicht, versucht er es erneut und meldet eine Störung.
+Ab Version 1.4 bestätigt er jede neue Übergabe lautlos im Chat, sagt selbst, wenn er keine Datei der App findet (meist ein anderer Bot oder eine andere Chat-ID am Server), und zeigt mit `sudo scalpdesk-247 status` den ganzen Weg auf einen Blick.
 
 **Schritt-für-Schritt-Anleitung für Oracle Cloud (Neueinrichtung, Aktualisieren, Fehlerhilfe): [ANLEITUNG-ORACLE.md](ANLEITUNG-ORACLE.md)**
 
@@ -17,9 +18,13 @@ Ab Version 1.3 prüft er, ob Telegram jede Meldung angenommen hat. Wenn nicht, v
   - Einstiege und Mengen offener Positionen stehen nur darin, solange ein Gewinn- oder Verlust-Alarm aktiv ist (ab 1.2): Der Dienst braucht sie für das Live-Ergebnis.
   - Trades und Notizen bleiben in der App.
 - **Bestätigung:**
-  - Der Dienst liest die Datei mit demselben Bot jede Minute.
+  - Der Dienst liest die Datei mit demselben Bot alle 20 Sekunden (bis 1.3 jede Minute).
   - Er prüft alle 15 Sekunden die 1m-Kerzen bei Binance; auch kurze Dochte zählen.
-  - Er bestätigt in der angehefteten Nachricht („Dienst: aktiv …“).
+  - Er bestätigt in der angehefteten Nachricht („Dienst: aktiv · … · v1.4.0 · #… übernommen“). Die App zeigt dann „Übergeben ✓ vom Dienst bestätigt“, meist 20–30 Sekunden nach dem Einschalten.
+  - Ab 1.4 schickt er außerdem lautlos „✅ 24/7-Dienst hat übernommen (17:09 Uhr)“ mit den neu beobachteten Alarmen und Marken in den Chat – bei jeder Übergabe, die etwas Neues bringt, höchstens einmal je Minute (nicht beim bloßen Entfernen und nicht nach einem Neustart). Wird die Übergabe in der App ausgeschaltet, kommt „⏸ … ausgeschaltet“.
+- **Derselbe Bot, dieselbe Chat-ID (wichtig):**
+  - Der Dienst sieht die Datei nur, wenn am Server derselbe Bot und dieselbe Chat-ID eingetragen sind wie in der App unter „Kursalarm“. Ein anderer Bot (z. B. der Sicherungs-Bot) hat einen eigenen Chat und sieht die angeheftete Datei nicht. Dann wartete der Dienst bis 1.3 still, und die App zeigte dauerhaft „wartet auf den 24/7-Dienst“.
+  - Ab 1.4: Protokollzeile „Warte auf die Übergabe der App: Im Chat … ist für @… keine Datei … angeheftet …“ alle 10 Minuten; nach 3 Minuten ein Hinweis per Telegram („⏳ … wartet auf die Übergabe der App“, höchstens einmal am Tag) – er landet im Chat des Bots, der am Server eingetragen ist, daran sieht man die Verwechslung sofort. Die App nennt nach 90 Sekunden ohne Bestätigung ihren Bot und ihre Chat-ID zum Vergleich.
 - **Keine doppelten Nachrichten:** Solange die Bestätigung frisch ist, sendet die App Kurs-Alarme, Stop/Ziel, Termin-Warnungen und den BTC-Puls nicht zusätzlich.
 - **Zustellung (ab 1.3):**
   - Jede Meldung kommt erst in einen Ausgang. Als zugestellt gilt sie, wenn Telegram sie angenommen hat. Sonst folgt ein neuer Versuch nach 15 und 30 Sekunden, nach 1 und 2 Minuten, dann alle 5 Minuten; bei „Too Many Requests“ nach Telegrams Vorgabe.
@@ -62,18 +67,35 @@ Bot-Token und Chat-ID sind dieselben wie in der App unter „Kursalarm“, nicht
 **Wichtig:** Serverregion in der EU wählen (z. B. Frankfurt). Von US-Servern aus sperrt Binance den Zugriff.
 
 ## Betrieb
-- Status: `systemctl status scalpdesk-247`
-- Protokoll: `journalctl -u scalpdesk-247 -f`
+- Alles prüfen (ab 1.4): `sudo scalpdesk-247 status` – Bot, Chat, angeheftete Datei, Bestätigung, beobachtete Marken, letzte Zustellung, Binance; ohne eine Nachricht zu senden
+- Protokoll: `sudo scalpdesk-247 protokoll` (die letzten 60 Zeilen), live: `sudo scalpdesk-247 live` (beenden mit Strg+C) – oder wie bisher `journalctl -u scalpdesk-247 -f`
+- Neu starten: `sudo scalpdesk-247 neustart`; Status von systemd: `systemctl status scalpdesk-247`
 - Aktualisieren: den Installationsbefehl erneut ausführen (Einstellungen bleiben)
 - Einstellungen neu eingeben: `curl -fsSL …/install.sh | sudo bash -s -- --neu`
 - Entfernen: `sudo bash /opt/scalpdesk-247/install.sh --remove`
 
+## Protokoll lesen (ab 1.4)
+Typische Zeilen, in dieser Reihenfolge:
+```
+Scalp Desk 24/7-Dienst 1.4.0 gestartet · Bot @dein_bot (ID 123456789) · Chat 987654321 · Node 22.… · prüft die Übergabe alle 20 s, die Kurse alle 15 s
+Übergabe erhalten: Nachricht #501 · App 01.10. 17:08 · Safari, iPhone · #ab12
+Alarme geladen: 1 Alarm, 0 Positionen – Kurs-Alarm BTC auf/über 65.000,00 USDT
+Bestätigung an Telegram gesendet: 1 Marke beobachtet, neu: Kurs-Alarm BTC auf/über 65.000,00 USDT (Nachricht #612)
+Kursprüfung: Kurs-Alarm BTC auf/über 65.000,00 – Kurs 64.950,00, noch 0,08 % entfernt
+Bestätigung eingetragen: angeheftete Nachricht zeigt „aktiv · #ab12 übernommen“ – die App zeigt „Übergeben ✓ vom Dienst bestätigt“
+Alarm ausgelöst: Kurs-Alarm BTC auf/über 65.000,00 (Kurs 65.020,00)
+Telegram gesendet: Kurs-Alarm BTC (Nachricht #613)
+Lebenszeichen: aktiv · 1 Marke beobachtet · 40 Kursprüfungen seit der letzten Übersicht · BTC 65.020,00
+```
+Die Zeitstempel davor setzt journalctl in der Zeitzone des Servers (bei Oracle meist UTC, im Sommer 2 Stunden hinter der deutschen Zeit). Auf die Alarme hat das keinen Einfluss: Der Dienst rechnet mit Zeitpunkten unabhängig von Zeitzonen und schreibt die Uhrzeiten in den Meldungen in der Zeitzone der App. Deutsche Zeit im Protokoll: `sudo timedatectl set-timezone Europe/Berlin`.
+
 ## Selbsttest
-`node selbsttest.mjs` im Ordner `server` prüft den Dienst ohne Netz und ohne Konten: Telegram und Binance sind darin nachgebaut. Geprüft werden vor allem die Zustellung (Ablehnung, Wiederholen mit wachsender Pause, Neustart, Nachstellen mit Vermerk, Störung nach einer Minute ohne Telegram, Verwerfen nach 24 Stunden) und die gleichzeitigen Kursabfragen. Am Ende steht „… von … bestanden“.
+`node selbsttest.mjs` im Ordner `server` prüft den Dienst ohne Netz und ohne Konten: Telegram und Binance sind darin nachgebaut. Geprüft werden vor allem die Zustellung (Ablehnung, Wiederholen mit wachsender Pause, Neustart, Nachstellen mit Vermerk, Störung nach einer Minute ohne Telegram, Verwerfen nach 24 Stunden), die gleichzeitigen Kursabfragen und ab 1.4 Bestätigung, Hinweis bei fehlender Datei und `--status`. Am Ende steht „… von … bestanden“.
 
 ## Dateien und Sicherheit
 - `/opt/scalpdesk-247/scalpdesk-247.mjs` ist das Programm: ohne Abhängigkeiten, Node.js ab 18.
 - `/etc/scalpdesk-247.json` enthält Bot-Token, Chat-ID und den optionalen Discord-Webhook. Sie ist nur für root und den Dienst-Benutzer `scalpdesk` lesbar.
-- `/var/lib/scalpdesk-247/state.json` enthält die zuletzt übernommene Datei, die schon gesendeten Meldungen und den Ausgang (noch nicht zugestellte Meldungen).
+- `/var/lib/scalpdesk-247/state.json` enthält die zuletzt übernommene Datei, die schon gesendeten Meldungen, den Ausgang (noch nicht zugestellte Meldungen) und ab 1.4 den zuletzt bestätigten Stand und den Zeitpunkt des letzten Hinweises. Die App liest diese Datei nie; sie ist nur das Gedächtnis des Dienstes über Neustarts hinweg.
+- `/usr/local/bin/scalpdesk-247` (ab 1.4) ist der Kurzbefehl für `status`, `protokoll`, `live` und `neustart`.
 - Der Dienst läuft als eigener Benutzer ohne Anmeldung, mit schreibgeschütztem System (`ProtectSystem=strict`). Er startet mit dem Server und nach Fehlern von selbst neu.
 - Den Token schreibt er nie ins Protokoll.

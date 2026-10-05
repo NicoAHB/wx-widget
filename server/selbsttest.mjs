@@ -1,6 +1,8 @@
 // Selbsttest des 24/7-Dienstes ohne Netz und ohne Konten: Telegram und Binance sind hier nachgebaut (fetch). Geprüft wird vor
 // allem die Zustellung ab Version 1.3: Eine abgelehnte oder nicht zugestellte Meldung geht nicht verloren, wird wiederholt,
 // übersteht einen Neustart, und der Dienst meldet „Störung“ in der angehefteten Nachricht, die die App liest.
+// Ab 1.4 außerdem: Bestätigung „hat übernommen“ per Telegram, Hinweis, wenn keine Datei der App angeheftet ist (anderer Bot
+// oder andere Chat-ID am Server), und die Fehlersuche „--status“.
 // Aufruf (Node.js ab 18), im Ordner server:  node selbsttest.mjs      → „… von … bestanden“, Rückgabewert 0 bei Erfolg
 import fs from 'node:fs';
 import os from 'node:os';
@@ -25,6 +27,7 @@ globalThis.fetch = async (url, o = {}) => {
       return reply({ ok: false, error_code: tgFail.status, description: tgFail.desc }, tgFail.status);
     }
     tg.push({ method: m[1], ...b });
+    if (m[1] === 'getMe') return reply({ ok: true, result: { id: 123456789, is_bot: true, username: 'selbsttest_bot' } });
     if (m[1] === 'getChat') return reply({ ok: true, result: { id: +CHAT, type: 'private', ...(pinned ? { pinned_message: pinned } : {}) } });
     if (m[1] === 'getFile') return reply({ ok: true, result: { file_id: b.file_id, file_path: `documents/${b.file_id}` } });
     if (m[1] === 'editMessageCaption') {
@@ -37,7 +40,9 @@ globalThis.fetch = async (url, o = {}) => {
   if (/calendar/.test(String(url))) return reply({ events: [] });
   return reply({}, 404);
 };
-const sent = () => tg.filter(x => x.method === 'sendMessage' && !x.failed).map(x => x.text);
+const INFO = /^(✅ 24\/7-Dienst hat übernommen|⏸ 24\/7-Dienst|⏳ Scalp Desk 24\/7-Dienst)/; // 1.4: Bestätigung und Hinweis sind keine Meldungen
+const sent = () => tg.filter(x => x.method === 'sendMessage' && !x.failed && !INFO.test(x.text || '')).map(x => x.text);
+const infos = () => tg.filter(x => x.method === 'sendMessage' && !x.failed && INFO.test(x.text || '')).map(x => x.text);
 const svcLine = () => (pinned?.caption || '').split('\n').find(l => l.startsWith('Dienst:')) || '';
 const candle = (t, c, hi = c) => [t - 30e3, String(c), String(hi), String(c), String(c), '1', t + 30e3 - 1];
 let pins = 0;
@@ -56,6 +61,8 @@ pin({ kind: 'scalpdesk-247', v: 1, tag: 'st01', at: now, on: true, tz: 'Europe/B
   alarms: [{ id: 'z1', symbol: 'BTCUSDT', source: 'spot', dir: 'above', price: 105, note: '', armedAt: now - M }], positions: [] });
 try {
   await w.tick();
+  check('1.4: Übernahme per Telegram bestätigt (lautlos, mit dem Alarm), im Protokoll „Übergabe erhalten“ und „Alarme geladen“', infos().length === 1 && infos()[0].includes('✅ 24/7-Dienst hat übernommen') && infos()[0].includes('Kurs-Alarm BTC auf/über 105,00 USDT')
+    && tg.find(x => x.method === 'sendMessage' && INFO.test(x.text || ''))?.disable_notification === true && logs.some(l => l.startsWith('Übergabe erhalten: Nachricht #701')) && logs.some(l => l.startsWith('Alarme geladen: 1 Alarm')), infos()[0]);
   check('Datei der App gelesen, „Dienst: aktiv“, darunter „Zustellung: geprüft, noch keine Meldung“', /^Dienst: aktiv · .* · #st01 übernommen$/.test(svcLine()) && /\nZustellung: geprüft, noch keine Meldung$/.test(pinned.caption), pinned.caption);
 
   // 1. Telegram lehnt ab (HTTP 400)
@@ -96,7 +103,15 @@ try {
   delay = { BTCUSDT: 400, ETHUSDT: 400, SOLUSDT: 400, XRPUSDT: 400 }; rows = Object.fromEntries(Object.keys(delay).map(s => [s, [candle(now, 100)]]));
   const t0 = performance.now(); await wp.checkPrices(); const ms = performance.now() - t0; delay = {};
   check('4 Kürzel zu je 0,4 s: gleichzeitig abgefragt (unter 1 s statt 1,6 s)', ms < 1000 && wp.lastCheck.size === 4, `${Math.round(ms)} ms`);
-  check('Kein Token im Protokoll', !logs.some(l => l.includes(TOKEN.split(':')[1])));
+
+  // 6. (ab 1.4) Keine Datei der App im Chat – z. B. am Server ein anderer Bot als in der App: Protokoll, Hinweis, --status
+  pinned = null; const hl = [], wh = new W.Watcher({ token: TOKEN, chat: CHAT, now: () => now, log: (...a) => hl.push(a.join(' ')) }); wh.me = { id: 123456789, username: 'selbsttest_bot' };
+  const tH = tg.length; await wh.tick(); now += 3 * M + 5e3; wh.next.config = 0; await wh.tick();
+  const hints = tg.slice(tH).filter(x => x.method === 'sendMessage' && /^⏳ Scalp Desk 24\/7-Dienst/.test(x.text || ''));
+  check('1.4: ohne Datei der App – Protokollzeile mit Bot und Chat-ID, nach 3 Minuten ein Hinweis per Telegram', hl.some(l => l.includes('keine Datei „scalpdesk-247.json“ angeheftet') && l.includes('Bot @selbsttest_bot und Chat-ID 987654321')) && hints.length === 1, hl[0]);
+  hl.length = 0; const okS = await wh.status();
+  check('1.4: „--status“ zeigt die fehlende Datei mit ✗ und dem Befehl zum Neu-Eingeben', okS === false && hl.some(l => l.startsWith('✗ Keine Datei der App angeheftet')) && hl.some(l => l.includes('--neu')), hl.join(' | ').slice(0, 200));
+  check('Kein Token im Protokoll', !logs.some(l => l.includes(TOKEN.split(':')[1])) && !hl.some(l => l.includes(TOKEN.split(':')[1])));
 } catch (e) { check('Abbruch', false, e.stack || e.message); }
 finally { try { fs.unlinkSync(statePath); } catch { /* schon weg */ } }
 console.log(`\n${pass} von ${pass + fail} bestanden`);

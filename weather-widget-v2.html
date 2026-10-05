@@ -1599,6 +1599,31 @@ html[data-layout=tablet] .wl-detail{scroll-margin-bottom:calc(84px + env(safe-ar
 .sync-preview .sp-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.sync-preview .sp-actions .button{min-height:40px}
 .hist-more{display:block;margin:10px auto 0;min-height:40px}.hist-more[hidden]{display:none}
 @media (pointer:coarse){.sync-preview .sp-actions .button,.sync-preview .sp-restore,.hist-more{min-height:44px}}
+/* 3.28.0: Gründe für die Trade-Entscheidung (aufklappbar, in Gruppen) */
+.reasons{flex:1 1 100%;border:1px solid var(--border);border-radius:8px;padding:0 10px;background:var(--surface-2);min-width:0}
+.reasons>summary{cursor:pointer;display:flex;flex-wrap:wrap;gap:2px 10px;align-items:baseline;min-height:44px;padding:11px 0 9px;list-style:none}
+.reasons>summary::-webkit-details-marker{display:none}.reasons>summary::before{content:'▸';color:var(--muted);transition:transform .15s}.reasons[open]>summary::before{transform:rotate(90deg)}
+.reasons-sel{color:var(--muted);font-size:.78rem;overflow-wrap:anywhere;min-width:0}
+.reasons-note{margin:0 0 8px;font-size:.78rem;line-height:1.45;color:var(--muted)}
+.reason-groups{display:grid;gap:10px;padding-bottom:10px}.reason-group{display:grid;gap:4px;min-width:0}
+.reason-legend{font-size:.75rem;font-weight:600;color:var(--label)}
+.trade-reasons{margin:6px 0;padding:0 8px}.trade-reasons .reason-groups,.trade-reasons .reason-group{gap:4px}
+.pos-reasons{margin:0;font-size:.8rem;color:var(--text-2);overflow-wrap:anywhere}
+/* 3.28.0: Modus ECHT / DEMO */
+.mode-real button{letter-spacing:.04em;font-weight:600}
+.demo-hint{margin:0;flex:1 1 100%;font-size:.78rem;line-height:1.45;color:var(--warn-text);background:var(--warn-bg);border:1px solid var(--warn-border);border-radius:8px;padding:8px 10px}.demo-hint[hidden]{display:none}
+.pos-form.demo{border-top-color:var(--warn-border)}
+.pos-card.demo{border-style:dashed;border-color:var(--warn-border)}
+.pos-tag.demo{background:var(--warn-bg);color:var(--warn-text);border:1px solid var(--warn-border);letter-spacing:.04em}
+.pos-sim{display:block;font-size:.72rem;color:var(--warn-text)}
+.demo-pos{margin-top:16px;display:grid;gap:10px}.demo-pos[hidden]{display:none}
+.demo-head{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline;justify-content:space-between}.demo-head h3{margin:0;font-size:.95rem}
+.demo-badge{display:inline-block;font-size:.68rem;font-weight:600;letter-spacing:.04em;padding:2px 6px;border-radius:5px;background:var(--warn-bg);color:var(--warn-text);border:1px solid var(--warn-border);vertical-align:middle}
+.demo-total{font-variant-numeric:tabular-nums;font-size:.9rem}.demo-total.positive{color:var(--up-text)}.demo-total.negative{color:var(--down-text)}
+.demo-history[hidden]{display:none}.demo-note{margin:8px 0;font-size:.78rem;line-height:1.45;color:var(--muted)}
+.history-summary.demo-sum{grid-template-columns:repeat(3,minmax(0,1fr))}
+.trade-row.demo{border-left:3px solid var(--warn-border);padding-left:8px}
+.bd-note{margin:2px 0 0;font-size:.78rem;line-height:1.45;color:var(--muted);grid-column:1/-1}
 .chart-panel>.notice{margin:12px 20px 0}
 html{scroll-padding-top:calc(var(--lb-h,56px) + 16px)}
 /* nur als eigene Spalten (ab 1400 px) begrenzt; darunter stehen beide untereinander in der gemeinsamen Seitenspalte und
@@ -1773,6 +1798,10 @@ function normalizePosition(p) {
   q.preRealized = Number.isFinite(q.preRealized) ? q.preRealized : 0;
   q.sl = q.sl > 0 ? Number(q.sl) : null; q.tp = q.tp > 0 ? Number(q.tp) : null;
   q.ack = { sl: !!q.ack?.sl, tp: !!q.ack?.tp };
+  // 3.28.0: Gründe. Ältere Einträge mit „setup“ werden zu einem Grund. Weicht „setup“ vom ersten Grund ab, hat eine ältere
+  // App-Version (kennt nur ein Setup) es geändert oder entfernt – diese Änderung gilt, die übrigen Gründe bleiben.
+  const rs = Array.isArray(q.reasons) ? cleanReasons(q.reasons) : null, su = cleanSetup(q.setup) || null;
+  q.reasons = !rs ? (su ? [su] : []) : (rs[0] || null) === su ? rs : cleanReasons(su ? [su, ...rs.slice(1)] : rs.slice(1)); q.setup = q.reasons[0] || null;
   return q;
 }
 function positionMetrics(pos, price, mmr) {
@@ -1831,6 +1860,21 @@ function groupStats(trades, keyFn, labels = null) {
 // Setups
 const DEFAULT_SETUPS = ['Ausbruch', 'Rücklauf zum POC', 'Unterstützung hält', 'Widerstand hält', 'RSI überverkauft', 'RSI überkauft', 'Bollinger außen', 'EMA 200', 'Trendfolge'];
 const cleanSetup = s => typeof s === 'string' ? s.replace(/\s+/g, ' ').trim().slice(0, 40) : '';
+// 3.28.0: Gründe für die Trade-Entscheidung – Mehrfachauswahl statt eines Setups. Feste Gruppen für die Anzeigen der App, dazu die
+// eigene, bearbeitbare Liste („Setups & eigene Gründe“ = state.setups). Die Auswahl dokumentiert die eigene Entscheidung; die App
+// wertet sie nicht als Handelssignal. Einträge bis 3.27.0 mit einem einzelnen „setup“ werden zur Auswahl mit diesem einen Grund;
+// „setup“ bleibt als erster Grund erhalten, damit ältere App-Versionen weiter etwas anzeigen.
+const REASON_GROUPS = [
+  { key: 'setup', label: 'Setups & eigene Gründe', list: null },
+  { key: 'trend', label: 'Trend', list: ['EMA-20/50-Trend', 'Kurs zu EMA 20'] },
+  { key: 'momentum', label: 'Momentum', list: ['RSI', 'MACD', 'RSI-Divergenz'] },
+  { key: 'struktur', label: 'Chartstruktur', list: ['ZigZag', 'Elliott-Wellen', 'Fibonacci'] },
+  { key: 'volumen', label: 'Volumen', list: ['POC/Value Area', 'Volumenprofil'] },
+  { key: 'markt', label: 'Markt & Orderflow', list: ['Liquidations-Heatmap', 'Whale-Trades', 'Orderbuch', 'Open Interest', 'Funding'] },
+  { key: 'umfeld', label: 'Umfeld', list: ['Volatilität', 'News', 'Wirtschaftstermine'] }];
+const REASON_OF = new Map(REASON_GROUPS.flatMap(g => (g.list || []).map(r => [r, g]))), MAX_REASONS = 20;
+function cleanReasons(list) { const out = []; for (const r of Array.isArray(list) ? list : []) { const s = cleanSetup(r); if (s && !out.includes(s) && out.length < MAX_REASONS) out.push(s); } return out; }
+function reasonsOf(x) { return Array.isArray(x?.reasons) ? x.reasons : x?.setup ? [x.setup] : []; }
 // Kurs-Alarme
 function alarmDirection(target, current) { return Number.isFinite(current) && current > 0 && target !== current ? (target > current ? 'above' : 'below') : null; }
 function alarmHit(a, price) { return Number.isFinite(price) && price > 0 && (a.dir === 'above' ? price >= a.price : price <= a.price); }
@@ -1950,12 +1994,12 @@ function movementsCsv(list) {
   for (const m of list) { const u = mvUsdt(m, null), e = mvEur(m, null); rows.push([dt(m.date), MV_TYPES[m.type], d(m.amount), m.currency, m.fx > 0 ? d(m.fx) : '', u === null ? '' : d(u.toFixed(4)), e === null ? '' : d(e.toFixed(4)), m.note]); }
   return '\ufeff' + rows.map(r => r.map(csvCell).join(';')).join('\r\n') + '\r\n';
 }
-function tradesCsv(trades) {
+function tradesCsv(trades, demo = false) {
   const d = x => String(x).replace('.', ','), dt = ms => new Date(ms).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-  const rows = [['Geöffnet','Geschlossen','Symbol','Richtung','Modus','Hebel','Größe','Einstieg','Ausstieg','Margin USDT','Gebühren beim Schließen USDT','Vorher realisiert USDT','G/V USDT','Quelle G/V','EUR/USDT','G/V EUR','G/V % auf Margin','Setup','Notiz']];
+  const rows = [['Geöffnet','Geschlossen','Symbol','Richtung','Modus','Hebel','Größe','Einstieg','Ausstieg','Margin USDT','Gebühren beim Schließen USDT','Vorher realisiert USDT','G/V USDT','Quelle G/V','EUR/USDT','G/V EUR','G/V % auf Margin','Gründe','Notiz', ...(demo ? ['Handelsmodus'] : [])]];
   for (const t of trades) rows.push([dt(t.openedAt), dt(t.closedAt), t.symbol, t.side === 'long' ? 'Long' : 'Short', t.mode === 'cross' ? 'Cross' : 'Isoliert', d(t.leverage), d(+t.qty.toPrecision(12)),
     d(t.entry), d(t.exit), d(t.margin.toFixed(4)), d(t.fees), d(t.preRealized), d(t.pnl.toFixed(4)), t.pnlSource === 'exchange' ? 'Börse' : 'berechnet',
-    t.fx > 0 ? d(t.fx) : '', t.fx > 0 ? d((t.pnl / t.fx).toFixed(4)) : '', d((t.pnl / t.margin * 100).toFixed(2)), t.setup || '', t.note || '']);
+    t.fx > 0 ? d(t.fx) : '', t.fx > 0 ? d((t.pnl / t.fx).toFixed(4)) : '', d((t.pnl / t.margin * 100).toFixed(2)), reasonsOf(t).join(', '), t.note || '', ...(demo ? ['DEMO (simuliert)'] : [])]);
   return '\ufeff' + rows.map(r => r.map(csvCell).join(';')).join('\r\n') + '\r\n';
 }
 
@@ -2212,7 +2256,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Alle Werte liegen zusätzlich im Arbeitsspeicher und sind dadurch synchron lesbar. Schreiben geht sofort in den
 // localStorage und gebündelt in die IndexedDB; beim Start gewinnt die zuletzt vollständig geschriebene Kopie.
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
-const APP_VERSION = '3.27.0', docEl = document.documentElement;
+const APP_VERSION = '3.28.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -2305,6 +2349,8 @@ const store = (() => {
 const flag = (k, dflt) => { const v = store.get(k); return v === undefined || v === null ? dflt : v === true || v === 1 || v === '1'; };
 const WATCH_KEY = 'scalpdesk.watchlist.v1';
 const POS_KEY = 'scalpdesk.positions.v1', HIST_KEY = 'scalpdesk.history.v1', MONEY_KEY = 'scalpdesk.money.v1', TAX_KEY = 'scalpdesk.taxrate.v1', SETUP_KEY = 'scalpdesk.setups.v1', ALARM_KEY = 'scalpdesk.alarms.v1';
+// 3.28.0: Demo-Positionen und Demo-Historie – eigene Schlüssel, damit Alarme, Summen und ältere App-Versionen sie nie als echte Daten lesen
+const DEMO_POS_KEY = 'scalpdesk.demopositions.v1', DEMO_HIST_KEY = 'scalpdesk.demohistory.v1';
 const ZZP_KEY = 'scalpdesk.zzpatterns.v1'; // gelernte Muster der ZigZag-Prognose (still in der Sicherung)
 const RISK_KEY = 'scalpdesk.risk.v1', DAYLIMIT_KEY = 'scalpdesk.daylimit.v1', DAYNOTE_KEY = 'scalpdesk.daylimitnote.v1';
 function loadRiskSettings() { const d = { riskPct: 1, feePct: 0.06 }, v = store.get(RISK_KEY); if (v?.riskPct > 0 && v.riskPct <= 100) d.riskPct = v.riskPct; if (v?.feePct >= 0 && v.feePct < 5) d.feePct = v.feePct; return d; }
@@ -2361,7 +2407,7 @@ async function spotGet(path, params, signal) {
     catch (second) { throw second?.network ? error : second; }
   }
 }
-const state = {symbol:'BTCUSDT', interval:'1m', side:'long', paused:false, busy:false, seq:0, controller:null, candles:[], marketError:null, marketAt:0, funding:null, fundingError:null, oi:null, oiError:null, history:null, historyError:null, fx:null, fxError:null, fxAt:0, fxMode:'auto', next:Date.now(), count:80, selected:null, source:'spot', sourceFor:null, loadedSymbol:null, mtf:{}, watch:loadWatch(), watchEdit:false, overlays:loadOverlays(), pan:0, anchorTime:null, positions:loadRecords(POS_KEY, loadPosition), trades:loadRecords(HIST_KEY, loadTrade), prices:{}, posUi:{}, histUi:{}, posDefaults:loadPosDefaults(), posForm:{side:'long',mode:'cross',sizeBy:'qty',editingId:null}, movements:loadRecords(MONEY_KEY, loadMovement), mvUi:{}, setups:loadSetups(), setupEdit:false, risk:loadRiskSettings(), dayLimit:loadDayLimit(), alarms:loadRecords(ALARM_KEY, loadAlarm), alDir:'above', alDirManual:false, mvCur:'EUR', year:new Date().getFullYear(), taxRate:loadTaxRate(), restNote:null, openTotal:null, selectedTime:null, fromCache:false};
+const state = {symbol:'BTCUSDT', interval:'1m', side:'long', paused:false, busy:false, seq:0, controller:null, candles:[], marketError:null, marketAt:0, funding:null, fundingError:null, oi:null, oiError:null, history:null, historyError:null, fx:null, fxError:null, fxAt:0, fxMode:'auto', next:Date.now(), count:80, selected:null, source:'spot', sourceFor:null, loadedSymbol:null, mtf:{}, watch:loadWatch(), watchEdit:false, overlays:loadOverlays(), pan:0, anchorTime:null, positions:loadRecords(POS_KEY, loadPosition), trades:loadRecords(HIST_KEY, loadTrade), demoPositions:loadRecords(DEMO_POS_KEY, loadPosition), demoTrades:loadRecords(DEMO_HIST_KEY, loadTrade), demoLimit:0, prices:{}, posUi:{}, histUi:{}, posDefaults:loadPosDefaults(), posForm:{side:'long',mode:'cross',sizeBy:'qty',editingId:null,demo:false,reasons:[]}, movements:loadRecords(MONEY_KEY, loadMovement), mvUi:{}, setups:loadSetups(), setupEdit:false, risk:loadRiskSettings(), dayLimit:loadDayLimit(), alarms:loadRecords(ALARM_KEY, loadAlarm), alDir:'above', alDirManual:false, mvCur:'EUR', year:new Date().getFullYear(), taxRate:loadTaxRate(), restNote:null, openTotal:null, selectedTime:null, fromCache:false};
 
 function currentFx() { return state.fxMode === 'manual' ? value('fx') : state.fx; }
 function currentPrice() { return state.candles.at(-1)?.close ?? null; }
@@ -2397,7 +2443,7 @@ async function refresh() {
   state.busy = true; const seq = ++state.seq; const controller = new AbortController(); state.controller = controller; status();
   const symbol = state.symbol, interval = state.interval, fxMode = state.fxMode;
   // Kurse, die gerade live aus dem Stream kommen, nicht zusätzlich per REST abfragen (älterer Stand würde den Live-Kurs überschreiben)
-  const restItems = watchItems().filter(p => !livePriceFresh(p.symbol));
+  const restItems = priceItems().filter(p => !livePriceFresh(p.symbol)); // 3.28.0: auch Demo-Positionen (nur Kurs)
   const jobs = [
     cachedKlines(symbol, interval, 500, controller.signal),
     api.get(FUTURES, '/fapi/v1/premiumIndex', {symbol}, controller.signal).then(d => verifyObject(d,'lastFundingRate',symbol)),
@@ -2872,14 +2918,14 @@ function textInput(key, value, placeholder, unit, decimal = true) {
   i.dataset.input = key; w.append(i, el('span', '', unit)); return w;
 }
 let posStructure = '';
-function buildCard(pos) {
-  const ui = state.posUi[pos.id] || {}, card = el('article', 'pos-card'); card.dataset.id = pos.id;
+function buildCard(pos, demo = false) {
+  const ui = state.posUi[pos.id] || {}, card = el('article', 'pos-card' + (demo ? ' demo' : '')); card.dataset.id = pos.id;
   const head = el('div', 'pos-head');
   head.append(el('strong', '', coin(pos.symbol)), el('span', 'pos-tag' + (pos.side === 'short' ? ' short' : ''), `${pos.side === 'long' ? 'LONG' : 'SHORT'} ${levText(pos.leverage)}×`), el('span', 'pos-tag mode', pos.mode === 'cross' ? 'CROSS' : 'ISOLIERT'));
-  if (pos.setup) head.append(el('span', 'pos-tag setup', pos.setup));
+  if (demo) head.append(el('span', 'pos-tag demo', 'DEMO'));
   if (pos.source === 'futures') head.append(el('span', 'badge', 'FUTURES-KURS'));
   head.append(el('time', '', 'seit ' + localTime(pos.openedAt)));
-  const live = el('div', 'pos-live'), pnl = el('div', 'pos-pnl'), big = el('strong'), sub = el('span'); big.dataset.f = 'pnl'; sub.dataset.f = 'pnl-sub'; pnl.append(big, sub); live.append(pnl);
+  const live = el('div', 'pos-live'), pnl = el('div', 'pos-pnl'), big = el('strong'), sub = el('span'); big.dataset.f = 'pnl'; sub.dataset.f = 'pnl-sub'; pnl.append(big, sub); if (demo) pnl.append(el('span', 'pos-sim', 'simuliert · ohne Alarme')); live.append(pnl);
   const grid = el('div', 'pos-grid'); grid.append(field('Eintrittspreis', 'entry'), field('Aktueller Kurs', 'price', 'price-at'), field('Größe', 'qty'), field('Margin · Positionswert', 'size'));
   const meter = el('div', 'liq-meter'), ml = el('span'), bar = el('div', 'liq-bar'); ml.dataset.f = 'liq'; bar.dataset.f = 'liq-bar'; bar.append(el('span')); meter.append(ml, bar);
   const warn = el('p', 'pos-warn'); warn.dataset.f = 'warn'; warn.hidden = true;
@@ -2887,6 +2933,7 @@ function buildCard(pos) {
   const stops = el('div', 'pos-stops'); stops.dataset.f = 'stops'; stops.hidden = !(pos.sl || pos.tp);
   card.append(head, alert, live, grid, stops, meter, warn);
   if (pos.note) card.append(el('p', 'pos-note', pos.note));
+  if (reasonsOf(pos).length) card.append(el('p', 'pos-reasons', `Gründe: ${reasonsOf(pos).join(' · ')}`));
   if (ui.mode === 'realize') {
     const f = el('div', 'pos-sub');
     const l1 = el('label', '', 'Ausstiegskurs'); l1.append(textInput('exit', ui.exit, '', 'USDT'));
@@ -2900,7 +2947,7 @@ function buildCard(pos) {
     const f = el('div', 'pos-sub'); f.append(el('p', '', 'Position ohne Speichern entfernen? Sie erscheint dann nicht in den abgeschlossenen Trades.'));
     const act = el('div', 'pos-actions'); act.append(btn('button danger-btn', 'Ja, löschen', 'confirm-delete'), btn('button ghost', 'Abbrechen', 'cancel')); f.append(act); card.append(f);
   } else {
-    const act = el('div', 'pos-actions'); act.append(btn('button primary-lite', 'Gewinn/Verlust realisiert', 'realize'), btn('button ghost', 'Bearbeiten', 'edit'), btn('button ghost', 'Löschen', 'delete')); card.append(act);
+    const act = el('div', 'pos-actions'); act.append(btn('button primary-lite', demo ? 'Demo schließen' : 'Gewinn/Verlust realisiert', 'realize'), btn('button ghost', 'Bearbeiten', 'edit'), btn('button ghost', 'Löschen', 'delete')); card.append(act);
   }
   return card;
 }
@@ -2930,6 +2977,7 @@ function updateCard(card, pos) {
   bar.firstChild.style.width = `${m.remaining ?? 100}%`; bar.classList.toggle('warn', m.remaining !== null && m.remaining < 50); bar.classList.toggle('danger', m.remaining !== null && m.remaining < 25);
   const warn = card.querySelector('[data-f="warn"]');
   warn.textContent = m.liquidated ? 'Der Kurs hat den Liquidationspreis erreicht. Die Position wurde wahrscheinlich geschlossen – bitte an der Börse prüfen.' : liqNearHold(pos.id, m.remaining) ? 'Kurs nahe am Liquidationspreis.' : '';
+  if (card.classList.contains('demo')) warn.textContent = ''; // 3.28.0: Demo ohne Warnhinweis
   warn.hidden = !warn.textContent;
   const s = stopTarget(pos, price), stops = card.querySelector('[data-f="stops"]');
   if (s.sl || s.tp) {
@@ -2945,7 +2993,7 @@ function updateCard(card, pos) {
   }
   // Hinweis bleibt, bis er bestätigt ist – auch wenn der Kurs nach einem Docht schon wieder zurück ist
   const shown = t => !pos.ack[t] && (alerted.has(pos.id + ':' + t) || !!s[t]?.hit);
-  const al = card.querySelector('[data-f="alert"]'), hitType = shown('tp') ? 'tp' : shown('sl') ? 'sl' : null;
+  const al = card.querySelector('[data-f="alert"]'), hitType = card.classList.contains('demo') ? null : shown('tp') ? 'tp' : shown('sl') ? 'sl' : null; // 3.28.0: Demo ohne Hinweis
   al.hidden = !hitType;
   if (hitType) { const info = alertInfo.get(pos.id + ':' + hitType) || {}, text = `${hitType === 'tp' ? 'Take-Profit' : 'Stop-Loss'} ${priceText(hitType === 'tp' ? pos.tp : pos.sl)} ${howReached(info)}\nKurs ${price ? priceText(price) : '—'}`;
     if (al.dataset.text !== text) { al.dataset.text = text; al.className = 'pos-alert ' + hitType; const ok = btn('button ghost', 'Gesehen', 'ack'); ok.dataset.type = hitType; al.replaceChildren(el('span', '', text), ok); } } else al.dataset.text = '';
@@ -2959,9 +3007,9 @@ function updateCard(card, pos) {
 }
 function renderPositions() { renderOpenPositions(); renderHistory(); renderBackupInfo(); }
 function renderOpenPositions() {
-  const list = $('pos-list'), key = state.positions.map(p => `${p.id}:${state.posUi[p.id]?.mode || ''}:${p.qty}:${p.entry}:${p.leverage}:${p.mode}:${p.side}:${p.symbol}:${p.note || ''}:${p.sl}:${p.tp}:${p.setup || ''}`).join('|');
-  if (key !== posStructure) { posStructure = key; list.replaceChildren(...state.positions.map(buildCard)); }
-  $('pos-empty').hidden = state.positions.length > 0 || !$('pos-form').hidden;
+  const list = $('pos-list'), key = state.positions.map(p => `${p.id}:${state.posUi[p.id]?.mode || ''}:${p.qty}:${p.entry}:${p.leverage}:${p.mode}:${p.side}:${p.symbol}:${p.note || ''}:${p.sl}:${p.tp}:${reasonsOf(p).join('|')}`).join('|');
+  if (key !== posStructure) { posStructure = key; list.replaceChildren(...state.positions.map(p => buildCard(p))); }
+  $('pos-empty').hidden = state.positions.length + state.demoPositions.length > 0 || !$('pos-form').hidden;
   let total = 0, missing = 0;
   for (const card of list.children) { const pos = state.positions.find(p => p.id === card.dataset.id); if (!pos) continue; const m = updateCard(card, pos); if (m.pnl === null) missing++; else total += m.pnl; }
   $('open-total').textContent = state.positions.length ? `${signed(total)} USDT` : '—'; color('open-total', state.positions.length ? total : 0);
@@ -2970,6 +3018,7 @@ function renderOpenPositions() {
   if (!$('pos-form').hidden) updateEntryNow();
   state.openTotal = { total, missing, n: state.positions.length };
   pnlCheck(); // 3.24.0 Schritt 7: Gewinn-/Verlust-Alarm am Live-Ergebnis
+  renderDemoPositions(); // 3.28.0: Demo getrennt – nicht in den Summen oben, nicht im Gewinn-/Verlust-Alarm
 }
 function yearOptions() {
   const now = new Date().getFullYear(), years = new Set([now, ...state.trades.map(t => yearOf(t.closedAt)), ...state.movements.map(m => yearOf(m.date))]);
@@ -2980,15 +3029,17 @@ function yearOptions() {
 let histStructure = '', histRows = new Map();
 const HIST_PAGE = 200;
 // 3.27.0: eine Zeile des Verlaufs (vorher direkt in renderHistory) – unveränderte Zeilen werden wiederverwendet
-function tradeRow(t) {
-  const r = el('div', 'trade-row'), ui = state.histUi[t.id]; r.dataset.trade = t.id;
-  r.append(el('time', '', localTime(t.closedAt)), el('span', '', `${coin(t.symbol)} ${t.side === 'long' ? 'Long' : 'Short'} ${levText(t.leverage)}× ${t.mode === 'cross' ? 'Cross' : 'Isoliert'} · ${qtyText(t.qty)} ${coin(t.symbol)} · ${priceText(t.entry)} → ${priceText(t.exit)}${t.pnlSource === 'exchange' ? ' · G/V laut Börse' : ''}${t.setup ? ` · Setup: ${t.setup}` : ''}`));
+function tradeRow(t, demo = false) {
+  const r = el('div', 'trade-row' + (demo ? ' demo' : '')), ui = state.histUi[t.id]; r.dataset.trade = t.id;
+  r.append(el('time', '', localTime(t.closedAt)), el('span', '', `${coin(t.symbol)} ${t.side === 'long' ? 'Long' : 'Short'} ${levText(t.leverage)}× ${t.mode === 'cross' ? 'Cross' : 'Isoliert'} · ${qtyText(t.qty)} ${coin(t.symbol)} · ${priceText(t.entry)} → ${priceText(t.exit)}${t.pnlSource === 'exchange' ? ' · G/V laut Börse' : ''}${reasonsOf(t).length ? ` · Gründe: ${reasonsOf(t).join(', ')}` : ''}`));
   const v = el('strong', t.pnl > 0 ? 'positive' : t.pnl < 0 ? 'negative' : '', `${signed(t.pnl)} USDT`); v.append(el('small', '', `${t.fx > 0 ? `(${signed(t.pnl / t.fx)} €)` : '(€ n. v.)'} · ${signed(t.pnl / t.margin * 100)} %`)); r.append(v);
   const tools = el('span', 'tools'), nb = btn('x', '✎', 'trade-note'), x = btn('x', '×', 'trade-delete');
   nb.setAttribute('aria-label', `Notiz zum Trade ${coin(t.symbol)} vom ${localTime(t.closedAt)} bearbeiten`); x.setAttribute('aria-label', `Trade ${coin(t.symbol)} vom ${localTime(t.closedAt)} löschen`); tools.append(nb, x); r.append(tools);
   if (t.note && ui?.mode !== 'note') r.append(el('p', 'trade-note', t.note));
   if (ui === 'delete') { const c = el('div', 'confirm'); c.append(el('span', '', 'Trade endgültig löschen?'), btn('button danger-btn', 'Ja', 'trade-confirm'), btn('button ghost', 'Nein', 'trade-cancel')); r.append(c); }
-  if (ui?.mode === 'note') { const c = el('div', 'confirm'), ta = el('textarea', 'note-box'); ta.dataset.note = t.id; ta.maxLength = 1000; ta.value = ui.text ?? t.note ?? ''; ta.placeholder = 'Notiz zum Trade'; const sel = el('select'); sel.dataset.setupFor = t.id; sel.setAttribute('aria-label', 'Setup'); [['', 'ohne Setup'], ...[...new Set([...state.setups, ...(t.setup ? [t.setup] : [])])].map(s => [s, s])].forEach(([v, l]) => { const o = el('option', '', l); o.value = v; sel.append(o); }); sel.value = ui.setup ?? t.setup ?? ''; c.append(sel, ta, btn('button primary-lite', 'Notiz speichern', 'note-save'), btn('button ghost', 'Abbrechen', 'trade-cancel')); r.append(c); }
+  if (ui?.mode === 'note') { const c = el('div', 'confirm note-edit'), ta = el('textarea', 'note-box'); ta.dataset.note = t.id; ta.maxLength = 1000; ta.value = ui.text ?? t.note ?? ''; ta.placeholder = 'Notiz zum Trade';
+    const pick = el('details', 'reasons trade-reasons'); pick.append(el('summary', '', 'Gründe für meine Trade-Entscheidung'), ...reasonGroupsDom(new Set(ui.reasons ?? reasonsOf(t))));
+    c.append(ta, pick, btn('button primary-lite', 'Notiz speichern', 'note-save'), btn('button ghost', 'Abbrechen', 'trade-cancel')); r.append(c); }
   return r;
 }
 function renderHistory() {
@@ -3010,7 +3061,7 @@ function renderHistory() {
   // 3.27.0: Nur die neuesten Trades zeichnen (je 200, „Weitere … anzeigen“) und unveränderte Zeilen wiederverwenden. Vorher baute
   // jede Änderung (z. B. eine Notiz) alle Zeilen neu – gemessen bei 5.000 Trades rund 2 Sekunden, bei 10.000 rund 4.
   const limit = Math.max(HIST_PAGE, state.histLimit || HIST_PAGE), shown = sorted.length > limit ? sorted.slice(0, limit) : sorted;
-  const keys = shown.map(t => JSON.stringify([t.id, t.closedAt, t.symbol, t.side, t.leverage, t.mode, t.qty, t.entry, t.exit, t.pnlSource, t.setup || '', t.pnl, t.fx, t.margin, t.note || '', uiMode(state.histUi[t.id])]));
+  const keys = shown.map(t => JSON.stringify([t.id, t.closedAt, t.symbol, t.side, t.leverage, t.mode, t.qty, t.entry, t.exit, t.pnlSource, reasonsOf(t), t.pnl, t.fx, t.margin, t.note || '', uiMode(state.histUi[t.id])]));
   const key = state.year + '|' + limit + '|' + keys.join('|');
   if (key !== histStructure) {
     histStructure = key;
@@ -3029,6 +3080,7 @@ function renderHistory() {
   if (more > 0) put('history-more', `Weitere ${number(Math.min(HIST_PAGE, more), 0)} anzeigen (noch ${number(more, 0)} ältere)`);
   renderAnalysis();
   renderMoney();
+  renderDemoHistory(); // 3.28.0: Demo-Historie getrennt von echten Trades
 }
 function renderMoney() {
   const s = moneySummary(state.trades, state.movements, fxNow(), state.year, state.taxRate), yr = state.year === 'all' ? 'gesamt' : state.year;
@@ -3073,9 +3125,9 @@ function addMovement(e) {
 }
 // Wichtige Änderungen (Positionen, Trades, Geldbewegungen – ohne bloßes Bestätigen von Hinweisen) zählen fürs Backup
 let importantSig = null;
-const dataSig = () => JSON.stringify([state.positions.map(({ ack, ...p }) => p), state.trades, state.movements]);
+const dataSig = () => JSON.stringify([state.positions.map(({ ack, ...p }) => p), state.trades, state.movements, state.demoPositions.map(({ ack, ...p }) => p), state.demoTrades]);
 function persist() {
-  const lists = [[POS_KEY, state.positions], [HIST_KEY, state.trades], [MONEY_KEY, state.movements], [ALARM_KEY, state.alarms], [SETUP_KEY, state.setups]];
+  const lists = [[POS_KEY, state.positions], [HIST_KEY, state.trades], [MONEY_KEY, state.movements], [ALARM_KEY, state.alarms], [SETUP_KEY, state.setups], [DEMO_POS_KEY, state.demoPositions], [DEMO_HIST_KEY, state.demoTrades]];
   const changed = lists.filter(([k, v]) => store.set(k, v)).map(([k]) => k), sig = dataSig();
   if (importantSig !== null && sig !== importantSig) { store.set(CHANGES_KEY, changeCount() + 1); changed.push(CHANGES_KEY); scheduleAutoBackup(); scheduleTgBackup(); void store.persist(); }
   importantSig = sig;
@@ -3106,7 +3158,7 @@ async function freshPrice(sym, source) {
     state.prices[sym] = { price: v, at: Date.now(), error: null }; return v;
   } catch { return null; }
 }
-function setToggle(attr, val) { document.querySelectorAll(`[data-${attr}]`).forEach(b => { const a = b.dataset[attr === 'pos-side' ? 'posSide' : 'posMode'] === val; b.classList.toggle('active', a); b.setAttribute('aria-pressed', String(a)); }); }
+function setToggle(attr, val) { document.querySelectorAll(`[data-${attr}]`).forEach(b => { const a = b.dataset[attr.replace(/-(\w)/g, (m, c) => c.toUpperCase())] === val; b.classList.toggle('active', a); b.setAttribute('aria-pressed', String(a)); }); }
 function syncSize() {
   const f = state.posForm, entry = parseNum($('pos-entry').value), lev = parseNum($('pos-lev').value), ok = entry > 0 && lev >= 1;
   const from = f.sizeBy === 'qty' ? $('pos-qty') : $('pos-margin'), to = f.sizeBy === 'qty' ? $('pos-margin') : $('pos-qty'), v = parseNum(from.value);
@@ -3122,12 +3174,13 @@ function renderPosChips() {
   $('pos-chips').replaceChildren(...state.watch.map(s => { const b = btn('chip', s); b.dataset.poschip = s; b.setAttribute('aria-pressed', String(s === base)); return b; }));
   put('pos-qty-unit', base || 'Coins');
 }
+// 3.28.0: Gründe in Gruppen, mehrere wählbar; eigene Gründe kommen zu „Setups & eigene Gründe“ (bearbeitbar)
 function renderSetupChips() {
-  const f = state.posForm, chips = state.setups.map(s => { const g = el('span', 'chip-group'), b = btn('chip setup', s); b.dataset.setup = s; b.setAttribute('aria-pressed', String(f.setup === s)); g.append(b);
-    if (state.setupEdit) { const x = btn('chip-x', '×'); x.dataset.setupDel = s; x.setAttribute('aria-label', `Setup ${s} entfernen`); g.append(x); } return g; });
-  const add = btn('chip add', '＋ Eigenes'); add.dataset.setupNew = '1';
+  const f = state.posForm, sel = new Set(f.reasons);
+  const add = btn('chip add', '＋ Eigener Grund'); add.dataset.setupNew = '1';
   const edit = btn('chip-tool', state.setupEdit ? 'Fertig' : 'Bearbeiten'); edit.dataset.setupEditToggle = '1';
-  $('setup-chips').replaceChildren(...chips, add, edit);
+  $('setup-chips').replaceChildren(...reasonGroupsDom(sel, { edit: state.setupEdit, tools: [add, edit] }));
+  put('reasons-sel', f.reasons.length ? `${f.reasons.length} gewählt: ${reasonsText(f.reasons)}` : 'keine gewählt');
 }
 function readForm() {
   const f = state.posForm, sym = formSymbol();
@@ -3147,18 +3200,18 @@ function readForm() {
   if (!error && tp !== null && !(tp > 0)) error = 'Take-Profit ist keine gültige Zahl.';
   if (!error && sl !== null && (long ? sl >= entry : sl <= entry)) error = `Stop-Loss liegt bei ${long ? 'Long über' : 'Short unter'} dem Eintrittspreis – bitte prüfen.`;
   if (!error && tp !== null && (long ? tp <= entry : tp >= entry)) error = `Take-Profit liegt bei ${long ? 'Long unter' : 'Short über'} dem Eintrittspreis – bitte prüfen.`;
-  return { error, sym, lev, entry, qty, liq, pre, sl, tp, side: f.side, mode: f.mode, setup: f.setup || null, note: $('pos-note').value.trim().slice(0, 1000) };
+  return { error, sym, lev, entry, qty, liq, pre, sl, tp, side: f.side, mode: f.mode, reasons: [...f.reasons], setup: f.reasons[0] || null, demo: !!f.demo, note: $('pos-note').value.trim().slice(0, 1000) };
 }
 function posFormPreview() {
   const r = readForm();
   if (r.error) { put('pos-preview', /^(Liq\.|Realisierter|Stop-Loss|Take-Profit)/.test(r.error) ? r.error : 'Noch offen: ' + r.error); return; }
   const m = positionMetrics({ side: r.side, mode: r.mode, entry: r.entry, leverage: r.lev, qty: r.qty, liqExchange: r.liq, preRealized: r.pre }, NaN, mmrNow());
-  put('pos-preview', `${r.side === 'long' ? 'Long' : 'Short'} ${levText(r.lev)}× ${r.mode === 'cross' ? 'Cross' : 'Isoliert'} · ${qtyText(r.qty)} ${coin(r.sym)} · Positionswert ${usdt(m.notional)} · Margin ${number(m.margin)} USDT`
+  put('pos-preview', `${r.demo ? 'DEMO, simuliert · ' : ''}${r.side === 'long' ? 'Long' : 'Short'} ${levText(r.lev)}× ${r.mode === 'cross' ? 'Cross' : 'Isoliert'} · ${qtyText(r.qty)} ${coin(r.sym)} · Positionswert ${usdt(m.notional)} · Margin ${number(m.margin)} USDT`
     + (m.liqPrice ? ` · ${m.liqSource === 'exchange' ? 'Liq. laut Börse' : 'Liq. (Modell)'} ${priceText(m.liqPrice)}` : r.mode === 'cross' ? ' · Liq.-Preis optional von der Börse' : '')
     + (() => { const s = stopTarget({ side: r.side, entry: r.entry, qty: r.qty, sl: r.sl, tp: r.tp }, NaN); return (s.sl ? ` · Stop ${priceText(s.sl.price)} (${signed(s.sl.pnl)} USDT)` : '') + (s.tp ? ` · Ziel ${priceText(s.tp.price)} (${signed(s.tp.pnl)} USDT)` : '') + (s.crv ? ` · CRV ${number(s.crv, 1)}` : '')
-      + (s.sl && m.liqPrice && (r.side === 'long' ? r.sl <= m.liqPrice : r.sl >= m.liqPrice) ? ' · Achtung: Stop liegt hinter der Liquidation' : '') + (r.setup ? ` · Setup: ${r.setup}` : '')
+      + (s.sl && m.liqPrice && (r.side === 'long' ? r.sl <= m.liqPrice : r.sl >= m.liqPrice) ? ' · Achtung: Stop liegt hinter der Liquidation' : '') + (r.reasons.length ? ` · Gründe: ${r.reasons.join(', ')}` : '')
       + (s.sl && value('balance') > 0 ? (() => { const loss = -s.sl.pnl, pct = loss / value('balance') * 100; return ` · Risiko bis Stop ${number(loss)} USDT = ${number(pct, 1)} % des Guthabens${pct > state.risk.riskPct ? ` – über deinem Limit von ${pctText(state.risk.riskPct)} %` : ''}`; })() : '')
-      + (limitStatus(dayStats(state.trades).pnl, 0, state.dayLimit).state === 'reached' ? ' · Hinweis: Tages-Verlustlimit ist heute erreicht' : ''); })());
+      + (!r.demo && limitStatus(dayStats(state.trades).pnl, 0, state.dayLimit).state === 'reached' ? ' · Hinweis: Tages-Verlustlimit ist heute erreicht' : ''); })());
 }
 function openPosForm(open, pos = null) {
   const f = state.posForm, d = state.posDefaults;
@@ -3171,16 +3224,16 @@ function openPosForm(open, pos = null) {
   $('pos-entry').value = pos ? plain(pos.entry) : '';
   $('pos-liq').value = pos?.liqExchange ? plain(pos.liqExchange) : ''; $('pos-pre').value = pos?.preRealized ? plain(pos.preRealized) : '';
   $('pos-note').value = pos?.note || ''; $('pos-sl').value = pos?.sl ? plain(pos.sl) : ''; $('pos-tp').value = pos?.tp ? plain(pos.tp) : '';
-  f.setup = pos?.setup || null; state.setupEdit = false; $('setup-add').hidden = true; renderSetupChips();
+  f.reasons = pos ? [...reasonsOf(pos)] : []; f.demo = !!pos && isDemoPos(pos); state.setupEdit = false; $('setup-add').hidden = true; $('reasons-box').open = false; renderSetupChips();
   $('pos-more').open = !!(pos && (pos.liqExchange || pos.preRealized || pos.note));
-  put('pos-save', pos ? 'Änderungen speichern' : 'Position speichern');
+  setPosReal(f.demo); // 3.28.0: ECHT/DEMO und Text des Speichern-Knopfs
   setToggle('pos-side', f.side); setToggle('pos-mode', f.mode); renderPosChips(); syncSize(); updateEntryNow(); posFormPreview(); renderPositions(); syncLevUi('pos-lev');
   goTo('pos-form'); focusSoft($('pos-qty')); // 3.16.1: am Handy/iPad keine Tastatur von selbst
 }
 async function addPosition(e) {
   e.preventDefault();
   const r = readForm(), f = state.posForm; if (r.error) { formError(r.error); return; }
-  const old = f.editingId ? state.positions.find(p => p.id === f.editingId) : null;
+  const old = f.editingId ? findPos(f.editingId) : null, oldDemo = !!old && isDemoPos(old);
   $('pos-save').disabled = true; formError(null);
   let source = old && old.symbol === r.sym ? old.source : 'spot', price = null, note = '';
   if (!old || old.symbol !== r.sym) {
@@ -3193,9 +3246,12 @@ async function addPosition(e) {
       } else note = err.message;
     }
   }
-  const pos = normalizePosition({ id: old ? old.id : newId(), openedAt: old ? old.openedAt : Date.now(), symbol: r.sym, side: r.side, mode: r.mode, entry: r.entry, leverage: r.lev, qty: r.qty, liqExchange: r.liq, preRealized: r.pre, source, note: r.note, setup: r.setup, sl: r.sl, tp: r.tp, ack: old && old.sl === r.sl && old.tp === r.tp ? old.ack : { sl: false, tp: false }, updatedAt: Date.now(), slTpAt: old && old.sl === r.sl && old.tp === r.tp ? old.slTpAt || old.openedAt : Date.now() });
+  const pos = normalizePosition({ id: old ? old.id : newId(), openedAt: old ? old.openedAt : Date.now(), symbol: r.sym, side: r.side, mode: r.mode, entry: r.entry, leverage: r.lev, qty: r.qty, liqExchange: r.liq, preRealized: r.pre, source, note: r.note, setup: r.setup, reasons: r.reasons, sl: r.sl, tp: r.tp, ack: old && old.sl === r.sl && old.tp === r.tp ? old.ack : { sl: false, tp: false }, updatedAt: Date.now(), slTpAt: old && old.sl === r.sl && old.tp === r.tp ? old.slTpAt || old.openedAt : Date.now() });
   if (old && (old.sl !== r.sl || old.tp !== r.tp)) for (const t of ['sl', 'tp']) { alerted.delete(old.id + ':' + t); alertInfo.delete(old.id + ':' + t); $('toasts').querySelector(`.toast[data-id="${old.id}"][data-type="${t}"]`)?.remove(); }
-  if (old) state.positions = state.positions.map(p => p.id === old.id ? pos : p); else state.positions.push(pos);
+  // 3.28.0: ECHT oder DEMO – beim Bearbeiten darf der Modus wechseln, dann wandert die Position in die andere Liste
+  const into = r.demo ? 'demoPositions' : 'positions';
+  if (old && oldDemo === r.demo) state[into] = state[into].map(p => p.id === old.id ? pos : p); else { if (old) dropPos(old.id); state[into].push(pos); }
+  if (old && !oldDemo && r.demo) for (const t of ['sl', 'tp']) { alerted.delete(old.id + ':' + t); alertInfo.delete(old.id + ':' + t); $('toasts').querySelector(`.toast[data-id="${old.id}"][data-type="${t}"]`)?.remove(); }
   state.posDefaults = { side: r.side, mode: r.mode, leverage: r.lev }; store.set(POS_DEFAULTS_KEY, state.posDefaults);
   persist();
   if (!old || old.symbol !== r.sym) state.prices[r.sym] = price > 0 ? { price, at: Date.now(), error: null } : { price: null, at: 0, error: note ? `Kurs noch nicht geladen: ${note}` : 'Kurs folgt beim nächsten Abruf.' };
@@ -3209,7 +3265,7 @@ const changeCount = () => Number(store.get(CHANGES_KEY)) || 0;
 // Automatisches Backup in eine Datei (File System Access API: Chrome/Edge am Computer)
 const autoBackup = { supported: typeof window.showSaveFilePicker === 'function' && window.isSecureContext !== false && !EMBEDDED, handle: null, state: 'off', at: 0, timer: null, error: '', writing: null };
 function renderBackupInfo() {
-  const m = backupMeta(), has = state.positions.length + state.trades.length + state.movements.length > 0, n = changeCount(), ab = autoBackup.state;
+  const m = backupMeta(), has = state.positions.length + state.trades.length + state.movements.length + state.demoPositions.length + state.demoTrades.length > 0, n = changeCount(), ab = autoBackup.state;
   const due = has && (!m || Date.now() - m.at > 7 * 86400000);
   const label = ab === 'active' ? (autoBackup.error ? 'FEHLER' : 'AUTO ✓') : ab === 'paused' ? 'PAUSE' : n ? `${n} NEU` : due ? 'FÄLLIG' : m ? '✓' : '';
   const warn = ab === 'active' ? !!autoBackup.error : ab === 'paused' || n > 0 || due;
@@ -3229,7 +3285,7 @@ function renderBackupInfo() {
 }
 function backupStatus(msg) { put('history-status', msg); }
 // 3.27.0 (Version 7): mit Änderungszeitpunkten der Einstellungen und Listen sowie den Löschungen der letzten 400 Tage
-function backupPayload() { return { app: 'scalp-desk', version: 7, settings: { dayLimit: state.dayLimit, risk: state.risk, taxRate: state.taxRate, at: stampsOf(SETTINGS_AT_KEY) }, exportedAt: Date.now(), positions: state.positions, history: state.trades, movements: state.movements, alarms: state.alarms, setups: state.setups, watchlist: state.watch, listsAt: stampsOf(LISTS_AT_KEY), deleted: tombs(), taxRate: state.taxRate, patterns: zzpExport(), pnlAlarms: store.get('scalpdesk.pnlalarm.v1', null) }; }
+function backupPayload() { return { app: 'scalp-desk', version: 7, settings: { dayLimit: state.dayLimit, risk: state.risk, taxRate: state.taxRate, at: stampsOf(SETTINGS_AT_KEY) }, exportedAt: Date.now(), positions: state.positions, history: state.trades, demoPositions: state.demoPositions, demoHistory: state.demoTrades, movements: state.movements, alarms: state.alarms, setups: state.setups, watchlist: state.watch, listsAt: stampsOf(LISTS_AT_KEY), deleted: tombs(), taxRate: state.taxRate, patterns: zzpExport(), pnlAlarms: store.get('scalpdesk.pnlalarm.v1', null) }; }
 function markBackedUp(kind, encrypted = false) {
   store.set(CHANGES_KEY, 0);
   store.set(BACKUP_META_KEY, { at: Date.now(), kind, encrypted, positions: state.positions.length, trades: state.trades.length, movements: state.movements.length });
@@ -3285,9 +3341,12 @@ const tombs = () => cleanTombs(store.get(DELETED_KEY));
 function tomb(ns, id) { const d = tombs(); d[`${ns}:${id}`] = Date.now(); if (store.set(DELETED_KEY, d)) broadcastData([DELETED_KEY]); }
 function stampsOf(k) { const v = store.get(k); return v && typeof v === 'object' && !Array.isArray(v) ? v : {}; }
 function touchStamp(k, f) { if (store.set(k, { ...stampsOf(k), [f]: Date.now() })) broadcastData([k]); }
-const PLAN_KINDS = [['trade', 'pt', 'history'], ['pos', 'pt', 'positions'], ['mv', 'm', 'movements'], ['alarm', 'a', 'alarms']];
-const planList = kind => kind === 'trade' ? state.trades : kind === 'pos' ? state.positions : kind === 'mv' ? state.movements : state.alarms;
-const planLoad = kind => kind === 'trade' ? loadTrade : kind === 'pos' ? loadPosition : kind === 'mv' ? loadMovement : loadAlarm;
+// 3.28.0: Demo-Positionen und Demo-Trades als eigene Arten. Eine Position kann beim Bearbeiten zwischen ECHT und DEMO wechseln:
+// dieselbe Kennung in der anderen Liste – die neuere Fassung bestimmt die Liste.
+const PLAN_KINDS = [['trade', 'pt', 'history'], ['dtrade', 'pt', 'demoHistory'], ['pos', 'pt', 'positions'], ['dpos', 'pt', 'demoPositions'], ['mv', 'm', 'movements'], ['alarm', 'a', 'alarms']];
+const planList = kind => kind === 'trade' ? state.trades : kind === 'dtrade' ? state.demoTrades : kind === 'pos' ? state.positions : kind === 'dpos' ? state.demoPositions : kind === 'mv' ? state.movements : state.alarms;
+const planLoad = kind => kind === 'trade' || kind === 'dtrade' ? loadTrade : kind === 'pos' || kind === 'dpos' ? loadPosition : kind === 'mv' ? loadMovement : loadAlarm;
+const PLAN_OTHER = { pos: 'dpos', dpos: 'pos' };
 // Was ein Abgleich mit dieser Datei ändern würde – ohne etwas zu ändern (Vorschau)
 function planBackup(data) {
   if (data?.app !== 'scalp-desk' || !Array.isArray(data.positions)) throw new Error('Datei ist kein gültiges Backup dieses Dashboards.');
@@ -3297,10 +3356,12 @@ function planBackup(data) {
     const incoming = (Array.isArray(data[field]) ? data[field] : []).map(planLoad(kind)).filter(x => x && !seen.has(x.id) && seen.add(x.id));
     for (const r of incoming) {
       const s = recStamp(r), cur = byId.get(r.id);
-      if (kind === 'pos' && state.trades.some(t => t.id === r.id)) { p.same++; continue; } // hier schon geschlossen
+      if ((kind === 'pos' || kind === 'dpos') && (state.trades.some(t => t.id === r.id) || state.demoTrades.some(t => t.id === r.id))) { p.same++; continue; } // hier schon geschlossen
       if (cur) { if (s > recStamp(cur)) p.upd.push({ kind, ns, rec: r, cur }); else p.same++; continue; }
+      const moved = PLAN_OTHER[kind] && planList(PLAN_OTHER[kind]).find(x => x.id === r.id); // ECHT ↔ DEMO gewechselt
+      if (moved) { if (s > recStamp(moved)) p.upd.push({ kind, ns, rec: r, cur: moved, from: PLAN_OTHER[kind] }); else p.same++; continue; }
       if (mine[`${ns}:${r.id}`] >= s) { p.blocked.push({ kind, ns, rec: r }); continue; } // hier gelöscht – bleibt gelöscht
-      const open = kind === 'trade' && state.positions.find(x => x.id === r.id);
+      const open = (kind === 'trade' || kind === 'dtrade') && (state.positions.find(x => x.id === r.id) || state.demoPositions.find(x => x.id === r.id));
       if (open) p.closed.push({ kind, ns, rec: r, cur: open }); else p.add.push({ kind, ns, rec: r });
     }
     // auf dem anderen Gerät gelöscht (und dort nicht wieder neuer angelegt)
@@ -3333,12 +3394,12 @@ function planBackup(data) {
 const planChanges = p => p.add.length + p.upd.length + p.del.length + p.closed.length + p.settings.length + p.lists.length;
 // Abgleich ausführen. Neu geplant, weil sich seit der Vorschau hier etwas geändert haben kann (z. B. ein ausgelöster Alarm).
 function commitPlan(p0, restore = false) {
-  const p = planBackup(p0.data), T = tombs(), key = x => `${x.ns}:${(x.rec || x.cur).id}`, n = { pos: 0, posUpd: 0, trades: 0, tradesUpd: 0, mv: 0, alarms: 0 };
-  const drop = (kind, id) => { if (kind === 'trade') state.trades = state.trades.filter(x => x.id !== id); else if (kind === 'pos') state.positions = state.positions.filter(x => x.id !== id); else if (kind === 'mv') state.movements = state.movements.filter(x => x.id !== id); else state.alarms = state.alarms.filter(x => x.id !== id); };
-  const count = (x, upd) => { if (x.kind === 'pos') n[upd ? 'posUpd' : 'pos']++; else if (x.kind === 'trade') n[upd ? 'tradesUpd' : 'trades']++; else if (x.kind === 'mv') n.mv++; else n.alarms++; };
+  const p = planBackup(p0.data), T = tombs(), key = x => `${x.ns}:${(x.rec || x.cur).id}`, n = { pos: 0, posUpd: 0, trades: 0, tradesUpd: 0, mv: 0, alarms: 0, dpos: 0, dtrade: 0 };
+  const drop = (kind, id) => { if (kind === 'trade') state.trades = state.trades.filter(x => x.id !== id); else if (kind === 'dtrade') state.demoTrades = state.demoTrades.filter(x => x.id !== id); else if (kind === 'pos') state.positions = state.positions.filter(x => x.id !== id); else if (kind === 'dpos') state.demoPositions = state.demoPositions.filter(x => x.id !== id); else if (kind === 'mv') state.movements = state.movements.filter(x => x.id !== id); else state.alarms = state.alarms.filter(x => x.id !== id); };
+  const count = (x, upd) => { if (x.kind === 'pos') n[upd ? 'posUpd' : 'pos']++; else if (x.kind === 'trade') n[upd ? 'tradesUpd' : 'trades']++; else if (x.kind === 'dpos' || x.kind === 'dtrade') n[x.kind]++; else if (x.kind === 'mv') n.mv++; else n.alarms++; };
   for (const x of p.add) { planList(x.kind).push(x.rec); delete T[key(x)]; count(x, false); }
-  for (const x of p.upd) { const a = planList(x.kind), i = a.findIndex(q => q.id === x.rec.id); if (i >= 0) { a[i] = x.rec; count(x, true); } }
-  for (const x of p.closed) { drop('pos', x.cur.id); state.trades.push(x.rec); }
+  for (const x of p.upd) { if (x.from) { drop(x.from, x.rec.id); planList(x.kind).push(x.rec); count(x, true); continue; } const a = planList(x.kind), i = a.findIndex(q => q.id === x.rec.id); if (i >= 0) { a[i] = x.rec; count(x, true); } }
+  for (const x of p.closed) { drop('pos', x.cur.id); drop('dpos', x.cur.id); planList(x.kind).push(x.rec); }
   for (const x of p.del) drop(x.kind, x.cur.id);
   if (restore) for (const x of p.blocked) { planList(x.kind).push(x.rec); delete T[key(x)]; }
   for (const [k, t] of Object.entries(p.theirs)) if (!(T[k] >= t)) T[k] = t;
@@ -3355,7 +3416,7 @@ function commitPlan(p0, restore = false) {
   if (p.lists.length && store.set(LISTS_AT_KEY, myL)) broadcastData([LISTS_AT_KEY]);
   zzpImport(p.data.patterns); // gelernte Muster: still übernehmen, ohne Meldung
   const pnlNew = pnlAdopt(p.data.pnlAlarms); // Gewinn-/Verlust-Alarm (3.24.0): die neuere Fassung gewinnt
-  posStructure = ''; histStructure = '';
+  posStructure = null; demoStructure = null; histStructure = '';
   persist(); saveWatch();
   render(); if ((n.pos || n.posUpd) && !state.busy && !state.paused) void refresh();
   const pl = (k, a, b) => `${k} ${k === 1 ? a : b}`, parts = [];
@@ -3366,6 +3427,8 @@ function commitPlan(p0, restore = false) {
   if (n.tradesUpd) parts.push(`${pl(n.tradesUpd, 'Trade', 'Trades')} geändert`);
   if (n.mv) parts.push(`${n.mv} Geldbewegungen`);
   if (n.alarms) parts.push(`${n.alarms} Kurs-Alarme`);
+  if (n.dpos) parts.push(pl(n.dpos, 'Demo-Position', 'Demo-Positionen'));
+  if (n.dtrade) parts.push(pl(n.dtrade, 'Demo-Trade', 'Demo-Trades'));
   if (p.del.length) parts.push(`${p.del.length} gelöscht wie auf dem anderen Gerät`);
   if (restore && p.blocked.length) parts.push(`${p.blocked.length} wiederhergestellt`);
   if (pnlNew) parts.push('Gewinn-/Verlust-Alarm');
@@ -3375,22 +3438,22 @@ function commitPlan(p0, restore = false) {
   return parts.length ? `Übernommen: ${parts.join(', ')}${p.same ? ` · ${p.same} Einträge waren schon aktuell` : ''}${kept}.` : `Nichts Neues – alle ${p.same} Einträge waren schon aktuell${kept}.`;
 }
 // ---- Vorschau ----
-const KIND_N = { pos: ['Position', 'Positionen'], trade: ['Trade', 'Trades'], mv: ['Geldbewegung', 'Geldbewegungen'], alarm: ['Kurs-Alarm', 'Kurs-Alarme'] };
+const KIND_N = { pos: ['Position', 'Positionen'], trade: ['Trade', 'Trades'], dpos: ['Demo-Position', 'Demo-Positionen'], dtrade: ['Demo-Trade', 'Demo-Trades'], mv: ['Geldbewegung', 'Geldbewegungen'], alarm: ['Kurs-Alarm', 'Kurs-Alarme'] };
 function kindsText(items) { const c = {}; for (const x of items) c[x.kind] = (c[x.kind] || 0) + 1; return Object.keys(KIND_N).filter(k => c[k]).map(k => `${c[k]} ${KIND_N[k][c[k] === 1 ? 0 : 1]}`).join(', '); }
 function recText(kind, r) {
   const d = ms => new Date(ms).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }), side = r.side === 'short' ? 'Short' : 'Long';
-  if (kind === 'trade') return `Trade ${coin(r.symbol)} ${side} vom ${d(r.closedAt)} (${signed(r.pnl)} USDT)`;
-  if (kind === 'pos') return `Position ${coin(r.symbol)} ${side}, Einstieg ${priceText(r.entry)}`;
+  if (kind === 'trade' || kind === 'dtrade') return `${kind === 'dtrade' ? 'Demo-Trade' : 'Trade'} ${coin(r.symbol)} ${side} vom ${d(r.closedAt)} (${signed(r.pnl)} USDT)`;
+  if (kind === 'pos' || kind === 'dpos') return `${kind === 'dpos' ? 'Demo-Position' : 'Position'} ${coin(r.symbol)} ${side}, Einstieg ${priceText(r.entry)}`;
   if (kind === 'mv') return `${MV_TYPES[r.type] || 'Geldbewegung'} ${number(r.amount)} ${r.currency || ''} vom ${new Date(r.date).toLocaleDateString('de-DE')}`.replace(/ {2}/g, ' ');
   return `Kurs-Alarm ${coin(r.symbol)} ${r.dir === 'below' ? 'auf/unter' : 'auf/über'} ${priceText(r.price)}${r.triggeredAt ? ' (ausgelöst)' : ''}`;
 }
-const DIFF_F = [['note', 'Notiz'], ['setup', 'Setup'], ['entry', 'Einstieg'], ['qty', 'Menge'], ['leverage', 'Hebel'], ['margin', 'Margin'], ['mode', 'Modus'], ['sl', 'Stop-Loss'], ['tp', 'Take-Profit'], ['exit', 'Ausstieg'], ['fees', 'Gebühren'], ['pnl', 'Ergebnis'], ['price', 'Preis'], ['dir', 'Richtung'], ['triggeredAt', 'ausgelöst'], ['armedAt', 'wieder scharf']];
+const DIFF_F = [['note', 'Notiz'], ['reasons', 'Gründe'], ['entry', 'Einstieg'], ['qty', 'Menge'], ['leverage', 'Hebel'], ['margin', 'Margin'], ['mode', 'Modus'], ['sl', 'Stop-Loss'], ['tp', 'Take-Profit'], ['exit', 'Ausstieg'], ['fees', 'Gebühren'], ['pnl', 'Ergebnis'], ['price', 'Preis'], ['dir', 'Richtung'], ['triggeredAt', 'ausgelöst'], ['armedAt', 'wieder scharf']];
 function diffText(a, b) { const f = DIFF_F.filter(([k]) => JSON.stringify(a[k] ?? null) !== JSON.stringify(b[k] ?? null)).map(x => x[1]); return f.length ? f.join(', ') : 'neuere Fassung'; }
 function planLines(p) {
   const ex = (items, f) => items.slice(0, 3).map(f).concat(items.length > 3 ? [`… und ${items.length - 3} weitere`] : []), out = [];
   if (p.add.length) out.push(['Neu', kindsText(p.add)]);
-  if (p.upd.length) out.push(['Geändert', kindsText(p.upd), ex(p.upd, x => `${recText(x.kind, x.cur)}: ${diffText(x.cur, x.rec)}`)]);
-  if (p.closed.length) out.push(['Auf dem anderen Gerät geschlossen', p.closed.length === 1 ? '1 Position – wird hier zum Trade' : `${p.closed.length} Positionen – werden hier zu Trades`, ex(p.closed, x => recText('pos', x.cur))]);
+  if (p.upd.length) out.push(['Geändert', kindsText(p.upd), ex(p.upd, x => `${recText(x.from || x.kind, x.cur)}: ${x.from ? (x.kind === 'dpos' ? 'jetzt DEMO' : 'jetzt ECHT') : diffText(x.cur, x.rec)}`)]);
+  if (p.closed.length) out.push(['Auf dem anderen Gerät geschlossen', p.closed.length === 1 ? '1 Position – wird hier zum Trade' : `${p.closed.length} Positionen – werden hier zu Trades`, ex(p.closed, x => recText(isDemoPos(x.cur) ? 'dpos' : 'pos', x.cur))]);
   if (p.del.length) out.push(['Auf dem anderen Gerät gelöscht', `${kindsText(p.del)} – ${p.del.length === 1 ? 'wird' : 'werden'} hier gelöscht`, ex(p.del, x => recText(x.kind, x.cur))]);
   if (p.blocked.length) out.push(['Hier gelöscht', `${kindsText(p.blocked)} – noch in der Datei, ${p.blocked.length === 1 ? 'bleibt' : 'bleiben'} hier gelöscht`, ex(p.blocked, x => recText(x.kind, x.rec))]);
   for (const s of p.settings) out.push([s.name, `${s.from} → ${s.to}`]);
@@ -3650,7 +3713,7 @@ function renderAnalysis() {
     return d;
   };
   $('breakdowns').replaceChildren(
-    table('Nach Setup', groupStats(trades, t => t.setup || 'ohne Setup')),
+    table('Nach Grund', multiStats(trades, reasonKeys)), table('Nach Bereich der Gründe', multiStats(trades, areaKeys)), el('p', 'bd-note', reasonNote(trades)),
     table('Nach Coin', groupStats(trades, t => coin(t.symbol))),
     table('Long / Short', groupStats(trades, t => t.side === 'long' ? 'Long' : 'Short')),
     table('Einstiegszeit', groupStats(trades, t => hourBucket(t.openedAt), HOUR_BUCKETS)),
@@ -3885,18 +3948,20 @@ function renderChart(levels={}, ov={}, start=null, end=null) {
   if (bbU) { over.append(node('path',{d:pathOf(bbU),fill:'none',stroke:PAL.bb,'stroke-width':1,opacity:.75}),node('path',{d:pathOf(bbL),fill:'none',stroke:PAL.bb,'stroke-width':1,opacity:.75}),node('path',{d:pathOf(bbM),fill:'none',stroke:PAL.bb,'stroke-width':1,'stroke-dasharray':'4 4',opacity:.45})); }
   if (e200) over.append(node('path',{d:pathOf(e200),fill:'none',stroke:PAL.ema,'stroke-width':1.7,opacity:.95}));
   if (prof) { const yp=y(prof.poc); over.append(node('line',{x1:left,y1:yp,x2:left+pw,y2:yp,stroke:PAL.vp,'stroke-width':1.5,opacity:.95}),node('text',{x:left+6,y:yp-5,class:'axis-label',style:'fill:'+PAL.vp+';font-weight:600'},'POC')); }
-  for (const pos of state.positions.filter(p => p.symbol === state.symbol)) {
+  // 3.28.0: Demo-Positionen auch im Chart – blasser und mit „DEMO“ beschriftet (nur Anzeige)
+  const chartPos = [...state.positions, ...state.demoPositions].filter(p => p.symbol === state.symbol), demoTag = p => isDemoPos(p) ? 'DEMO ' : '';
+  for (const pos of chartPos) {
     if (pos.entry < min || pos.entry > max) continue;
-    const ye = y(pos.entry), col = pos.side === 'long' ? PAL.up : PAL.short;
-    over.append(node('line',{x1:left,y1:ye,x2:left+pw,y2:ye,stroke:col,'stroke-width':1.2,'stroke-dasharray':'8 3 2 3',opacity:.9}),
-      node('text',{x:rx,y:ye-5,class:'axis-label','text-anchor':'end',style:`fill:${col};font-weight:600`},`Einstieg ${pos.side === 'long' ? 'Long' : 'Short'} ${number(pos.leverage, pos.leverage % 1 ? 1 : 0)}×`));
+    const ye = y(pos.entry), col = pos.side === 'long' ? PAL.up : PAL.short, op = isDemoPos(pos) ? .5 : .9;
+    over.append(node('line',{x1:left,y1:ye,x2:left+pw,y2:ye,stroke:col,'stroke-width':1.2,'stroke-dasharray':'8 3 2 3',opacity:op}),
+      node('text',{x:rx,y:ye-5,class:'axis-label','text-anchor':'end',style:`fill:${col};font-weight:600`},`${demoTag(pos)}Einstieg ${pos.side === 'long' ? 'Long' : 'Short'} ${number(pos.leverage, pos.leverage % 1 ? 1 : 0)}×`));
   }
   const alarmLevels = state.alarms.filter(a => !a.triggeredAt && a.symbol === state.symbol).map(a => [a.price, '🔔', PAL.vp]);
-  for (const pos of [...state.positions.filter(p => p.symbol === state.symbol), { sl: null, tp: null, extra: alarmLevels }]) for (const [lvl, lab, c2] of pos.extra || [[pos.sl, 'SL', PAL.down], [pos.tp, 'TP', PAL.up]]) {
+  for (const pos of [...chartPos, { sl: null, tp: null, extra: alarmLevels }]) for (const [lvl, lab, c2] of pos.extra || [[pos.sl, demoTag(pos) + 'SL', PAL.down], [pos.tp, demoTag(pos) + 'TP', PAL.up]]) {
     if (!(lvl > 0)) continue;
     if (lvl < min || lvl > max) { svg.append(node('text',{x:rx,y:lvl>max?top+13:bottom-7,class:'axis-label','text-anchor':'end',style:`fill:${c2};font-weight:700`},`${lab} ${lvl>max?'↑':'↓'} ${priceText(lvl)} (außerhalb)`)); continue; }
     const yl = y(lvl);
-    over.append(node('line',{x1:left,y1:yl,x2:left+pw,y2:yl,stroke:c2,'stroke-width':1.3,'stroke-dasharray':'3 3',opacity:.95}), node('text',{x:rx,y:yl-5,class:'axis-label','text-anchor':'end',style:`fill:${c2};font-weight:700`},`${lab} ${priceText(lvl)}`));
+    over.append(node('line',{x1:left,y1:yl,x2:left+pw,y2:yl,stroke:c2,'stroke-width':1.3,'stroke-dasharray':'3 3',opacity:isDemoPos(pos)?.5:.95}), node('text',{x:rx,y:yl-5,class:'axis-label','text-anchor':'end',style:`fill:${c2};font-weight:700`},`${lab} ${priceText(lvl)}`));
   }
   drawLiqLines(svg, over, {left, pw, top, bottom, min, max, y});
   drawLiqClusters(svg, over, {left, pw, top, bottom, min, max, y});
@@ -3979,37 +4044,48 @@ $('pos-chips').addEventListener('click',e=>{const b=e.target.closest('[data-posc
 $('pos-entry-now').addEventListener('click',()=>{const p=knownPrice(formSymbol(),60e3);if(p){$('pos-entry').value=plain(p);syncSize();posFormPreview();}else updateEntryNow();});
 document.querySelectorAll('[data-pos-side]').forEach(b=>b.addEventListener('click',()=>{state.posForm.side=b.dataset.posSide;setToggle('pos-side',state.posForm.side);posFormPreview();}));
 document.querySelectorAll('[data-pos-mode]').forEach(b=>b.addEventListener('click',()=>{state.posForm.mode=b.dataset.posMode;setToggle('pos-mode',state.posForm.mode);posFormPreview();}));
-$('pos-list').addEventListener('input',e=>{const card=e.target.closest('.pos-card'),k=e.target.dataset.input;if(!card||!k)return;state.posUi[card.dataset.id]={...state.posUi[card.dataset.id],[k]:e.target.value};const pos=state.positions.find(p=>p.id===card.dataset.id);if(pos)updateCard(card,pos);});
-$('pos-list').addEventListener('click',e=>{
+// 3.28.0: echte und Demo-Positionen – zwei Listen, dieselben Knöpfe. Demo schließt in die Demo-Historie.
+const posInput=e=>{const card=e.target.closest('.pos-card'),k=e.target.dataset.input;if(!card||!k)return;state.posUi[card.dataset.id]={...state.posUi[card.dataset.id],[k]:e.target.value};const pos=findPos(card.dataset.id);if(pos)updateCard(card,pos);};
+$('pos-list').addEventListener('input',posInput);$('demo-list').addEventListener('input',posInput);
+const posClick=e=>{
   const b=e.target.closest('button[data-action]'),card=e.target.closest('.pos-card');if(!b||!card)return;
-  const id=card.dataset.id,pos=state.positions.find(p=>p.id===id);if(!pos)return;
-  const act=b.dataset.action;
+  const id=card.dataset.id,pos=findPos(id);if(!pos)return;
+  const act=b.dataset.action,demo=isDemoPos(pos);
   if(act==='edit'){openPosForm(true,pos);return;}
-  if(act==='ack'){pos.ack={...pos.ack,[b.dataset.type]:true};persist();document.querySelector(`.toast[data-id="${id}"][data-type="${b.dataset.type}"]`)?.remove();renderPositions();return;}
+  if(act==='ack'){if(demo)return;pos.ack={...pos.ack,[b.dataset.type]:true};persist();document.querySelector(`.toast[data-id="${id}"][data-type="${b.dataset.type}"]`)?.remove();renderPositions();return;}
   if(act==='realize'){const pr=state.prices[pos.symbol]?.price;state.posUi[id]={mode:'realize',exit:pr?plain(pr):'',fees:'',override:'',note:pos.note||''};}
   else if(act==='delete')state.posUi[id]={mode:'delete'};
   else if(act==='cancel')delete state.posUi[id];
-  else if(act==='confirm-delete'){state.positions=state.positions.filter(p=>p.id!==id);delete state.posUi[id];tomb('pt',id);persist();renderMarket();}
+  else if(act==='confirm-delete'){dropPos(id);delete state.posUi[id];tomb('pt',id);persist();renderMarket();}
   else if(act==='save-realize'){
     const r=realizeResult(pos,state.posUi[id]||{});
     if(r.error){const pv=card.querySelector('[data-f="realize-preview"]');if(pv)pv.textContent=r.error;return;}
     const note=String((state.posUi[id]||{}).note||'').trim().slice(0,1000);
-    state.trades.push({...pos,exit:r.exit ?? state.prices[pos.symbol]?.price ?? pos.entry,fees:r.fees,pnl:r.pnl,pnlSource:r.source,closedAt:Date.now(),fx:fxNow(),note});
-    state.positions=state.positions.filter(p=>p.id!==id);delete state.posUi[id];persist();renderMarket();
+    (demo?state.demoTrades:state.trades).push({...pos,exit:r.exit ?? state.prices[pos.symbol]?.price ?? pos.entry,fees:r.fees,pnl:r.pnl,pnlSource:r.source,closedAt:Date.now(),fx:fxNow(),note});
+    dropPos(id);delete state.posUi[id];persist();renderMarket();
   }
   renderPositions();
-});
-$('history-list').addEventListener('click',e=>{
-  const b=e.target.closest('button[data-action]'),row=e.target.closest('[data-trade]');if(!b||!row)return;
-  const id=row.dataset.trade,act=b.dataset.action;
+};
+$('pos-list').addEventListener('click',posClick);$('demo-list').addEventListener('click',posClick);
+// 3.28.0: echte Trades und Demo-Historie – zwei Listen, dieselben Knöpfe; in der Notiz eines Trades sind die Gründe wählbar
+const histClick=e=>{
+  const row=e.target.closest('[data-trade]');if(!row)return;
+  const id=row.dataset.trade,demo=!!row.closest('#demo-history-list'),box=demo?$('demo-history-list'):$('history-list'),ui=state.histUi[id];
+  const find=()=>(demo?state.demoTrades:state.trades).find(x=>x.id===id);
+  const rb=e.target.closest('button[data-reason]');
+  if(rb){if(ui?.mode!=='note')return;const r=rb.dataset.reason,s=new Set(ui.reasons||[]);if(s.has(r))s.delete(r);else if(s.size<MAX_REASONS)s.add(r);ui.reasons=[...s];rb.setAttribute('aria-pressed',String(s.has(r)));return;}
+  const b=e.target.closest('button[data-action]');if(!b)return;
+  const act=b.dataset.action;
   if(act==='trade-delete')state.histUi[id]='delete';
-  else if(act==='trade-note'){const t=state.trades.find(x=>x.id===id);state.histUi[id]={mode:'note',text:t?.note||'',setup:t?.setup||''};renderPositions();$('history-list').querySelector(`[data-note="${id}"]`)?.focus();return;}
-  else if(act==='note-save'){const t=state.trades.find(x=>x.id===id);if(t){const was=JSON.stringify([t.note||'',t.setup||null]);t.note=String(state.histUi[id]?.text||'').trim().slice(0,1000);if(state.histUi[id]&&'setup' in state.histUi[id])t.setup=state.histUi[id].setup||null;if(JSON.stringify([t.note||'',t.setup||null])!==was)t.updatedAt=Date.now();persist();}delete state.histUi[id];}
+  else if(act==='trade-note'){const t=find();state.histUi[id]={mode:'note',text:t?.note||'',reasons:[...reasonsOf(t)]};renderPositions();box.querySelector(`[data-note="${id}"]`)?.focus();return;}
+  else if(act==='note-save'){const t=find();if(t){const was=JSON.stringify([t.note||'',reasonsOf(t)]);t.note=String(ui?.text||'').trim().slice(0,1000);if(ui&&Array.isArray(ui.reasons)){t.reasons=cleanReasons(ui.reasons);t.setup=t.reasons[0]||null;}if(JSON.stringify([t.note||'',reasonsOf(t)])!==was)t.updatedAt=Date.now();persist();}delete state.histUi[id];}
   else if(act==='trade-cancel')delete state.histUi[id];
-  else if(act==='trade-confirm'){state.trades=state.trades.filter(t=>t.id!==id);delete state.histUi[id];tomb('pt',id);persist();}
+  else if(act==='trade-confirm'){if(demo)state.demoTrades=state.demoTrades.filter(t=>t.id!==id);else state.trades=state.trades.filter(t=>t.id!==id);delete state.histUi[id];tomb('pt',id);persist();}
   renderPositions();
-});
-$('history-list').addEventListener('input',e=>{const id=e.target.dataset.note;if(id&&state.histUi[id]?.mode==='note')state.histUi[id].text=e.target.value;});
+};
+$('history-list').addEventListener('click',histClick);$('demo-history-list').addEventListener('click',histClick);
+const histInput=e=>{const id=e.target.dataset.note;if(id&&state.histUi[id]?.mode==='note')state.histUi[id].text=e.target.value;};
+$('history-list').addEventListener('input',histInput);$('demo-history-list').addEventListener('input',histInput);
 $('year-filter').addEventListener('change',e=>{state.year=e.target.value==='all'?'all':Number(e.target.value);state.histLimit=HIST_PAGE;renderHistory();});
 $('history-more').addEventListener('click',()=>{state.histLimit=(state.histLimit||HIST_PAGE)+HIST_PAGE;renderHistory();});
 $('money-form').addEventListener('submit',addMovement);
@@ -4028,16 +4104,16 @@ $('money-list').addEventListener('click',e=>{
 $('money-csv').addEventListener('click',()=>{const list=state.movements.slice().sort((a,b)=>a.date-b.date);if(!list.length)return;download(`geldbewegungen-${new Date().toISOString().slice(0,10)}.csv`,movementsCsv(list),'text/csv;charset=utf-8');});
 $('setup-chips').addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b)return;const f=state.posForm;
-  if(b.dataset.setup){f.setup=f.setup===b.dataset.setup?null:b.dataset.setup;renderSetupChips();posFormPreview();return;}
-  if(b.dataset.setupDel){state.setups=state.setups.filter(s=>s!==b.dataset.setupDel);if(f.setup===b.dataset.setupDel)f.setup=null;touchStamp(LISTS_AT_KEY,'setups');persist();renderSetupChips();return;}
+  if(b.dataset.reason){const r=b.dataset.reason;f.reasons=f.reasons.includes(r)?f.reasons.filter(x=>x!==r):[...f.reasons,r].slice(0,MAX_REASONS);renderSetupChips();posFormPreview();return;}
+  if(b.dataset.setupDel){state.setups=state.setups.filter(s=>s!==b.dataset.setupDel);f.reasons=f.reasons.filter(x=>x!==b.dataset.setupDel);touchStamp(LISTS_AT_KEY,'setups');persist();renderSetupChips();return;}
   if(b.dataset.setupNew){$('setup-add').hidden=false;$('setup-new').value='';$('setup-new').focus();return;}
   if(b.dataset.setupEditToggle){state.setupEdit=!state.setupEdit;renderSetupChips();}
 });
-const addSetup=()=>{const s=cleanSetup($('setup-new').value);if(!s)return;if(!state.setups.includes(s)){state.setups.push(s);touchStamp(LISTS_AT_KEY,'setups');}state.posForm.setup=s;persist();$('setup-add').hidden=true;renderSetupChips();posFormPreview();};
+const addSetup=()=>{const s=cleanSetup($('setup-new').value);if(!s)return;if(!state.setups.includes(s)&&!REASON_OF.has(s)){state.setups.push(s);touchStamp(LISTS_AT_KEY,'setups');}if(!state.posForm.reasons.includes(s))state.posForm.reasons=[...state.posForm.reasons,s].slice(0,MAX_REASONS);persist();$('setup-add').hidden=true;renderSetupChips();posFormPreview();};
 $('setup-add-ok').addEventListener('click',addSetup);
 $('setup-new').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addSetup();}});
 $('setup-add-cancel').addEventListener('click',()=>{$('setup-add').hidden=true;});
-$('history-list').addEventListener('change',e=>{const id=e.target.dataset.setupFor;if(id&&state.histUi[id]?.mode==='note')state.histUi[id].setup=e.target.value;});
+// 3.28.0: Gründe statt Setup-Auswahl in der Notiz eines Trades (siehe histClick)
 $('alarm-toggle').addEventListener('click',()=>openAlarmForm($('alarm-form').hidden));
 $('alarm-here').addEventListener('click',()=>openAlarmForm(true,state.symbol,currentPrice()));
 $('al-cancel').addEventListener('click',()=>openAlarmForm(false));
@@ -4312,7 +4388,7 @@ function syncStreams() {
   if (!state.paused) {
     const cm = chartMarket();
     if (cm) { const s = state.symbol.toLowerCase(); want[cm].add(`${s}@kline_${state.interval}`); want[cm].add(`${s}@kline_1m`); if (whOn()) want[cm].add(`${s}@aggTrade`); } // Whale-Alert: jeder Trade des Chart-Kürzels
-    for (const it of watchItems()) {
+    for (const it of priceItems()) { // 3.28.0: auch Demo-Positionen (Kurs); nearLevel prüft nur echte Marken
       const m = it.source === 'futures' ? 'futures' : 'spot', s = it.symbol.toLowerCase();
       want[m].add(`${s}@kline_1m`);
       if (nearLevel(it.symbol)) want[m].add(`${s}@aggTrade`); // nahe einer Marke: jeden Trade prüfen
@@ -4392,7 +4468,7 @@ function onTrades(m) {
   const r = liveRanges.get(m.s), from = now - 250;
   liveRanges.set(m.s, r ? { lo: Math.min(r.lo, m.lo), hi: Math.max(r.hi, m.hi), from: Math.min(r.from, from) } : { lo: m.lo, hi: m.hi, from });
   state.prices[m.s] = { price: m.last, at: now, error: null, live: true }; noteSeen(m.s, now);
-  scheduleAlertCheck(); if (watchSymbols().has(m.s)) scheduleLiveRender(false);
+  scheduleAlertCheck(); if (priceSymbols().has(m.s)) scheduleLiveRender(false);
   whaleFlow(m);
 }
 // BTC-Referenzkurs für den Tab-Titel anderer Coins: aus dem BTC-Spot-Stream (var: der Titel kann schon vorher gebaut werden);
@@ -4424,7 +4500,7 @@ function onKline(m) {
   if (m.i === '1m') { trackLivePrice(m.s, m.k, now); volaKline(m); pulseKline(m, now); } // 4.3: Volatilität der letzten 60 Minuten
   wlKline(m, now); // 4.2/3.25.0: Mini-Watchlist – Kerzen im Intervall des gewählten Zeitraums (wlKline prüft Intervall, Coin und Markt)
   if (m.s === state.symbol && m.m === chartMarket() && m.i === state.interval && applyLiveCandle(m.k)) { live.chartAt = now; updateTitle(); scheduleLiveRender(true); }
-  else if (m.i === '1m' && watchSymbols().has(m.s)) scheduleLiveRender(false);
+  else if (m.i === '1m' && priceSymbols().has(m.s)) scheduleLiveRender(false);
 }
 // Höchstens zweimal pro Sekunde zeichnen; in einem verdeckten Tab gar nicht (die Alarmprüfung läuft trotzdem).
 // Vollständig (mit Chart) höchstens einmal pro Sekunde, sonst höchstens zweimal. Während gewischt oder gescrollt wird,
@@ -4728,7 +4804,7 @@ addEventListener('beforeunload', e => {
 });
 // ---------- Abgleich zwischen offenen Tabs ----------
 const bc = (() => { try { return new BroadcastChannel('scalpdesk'); } catch { return null; } })();
-const SYNC_KEYS = [POS_KEY, HIST_KEY, MONEY_KEY, ALARM_KEY, SETUP_KEY, WATCH_KEY, CHANGES_KEY, 'scalpdesk.channels.v1', ZZP_KEY, 'scalpdesk.s247.v1', 'scalpdesk.pnlalarm.v1', 'scalpdesk.deleted.v1', 'scalpdesk.settingsat.v1', 'scalpdesk.listsat.v1'];
+const SYNC_KEYS = [POS_KEY, HIST_KEY, MONEY_KEY, ALARM_KEY, SETUP_KEY, WATCH_KEY, CHANGES_KEY, 'scalpdesk.channels.v1', ZZP_KEY, 'scalpdesk.s247.v1', 'scalpdesk.pnlalarm.v1', 'scalpdesk.deleted.v1', 'scalpdesk.settingsat.v1', 'scalpdesk.listsat.v1', 'scalpdesk.demopositions.v1', 'scalpdesk.demohistory.v1'];
 function broadcastData(keys) { if (!bc || !keys.length) return; try { bc.postMessage({ t: 'data', from: TAB_ID, items: keys.map(k => [k, store.get(k)]) }); } catch {} }
 function adoptData(items) {
   const pat = items.find(([k]) => k === ZZP_KEY); if (pat) { store.adopt(ZZP_KEY, pat[1]); zzpMem = null; items = items.filter(([k]) => k !== ZZP_KEY); if (!items.length) return; }
@@ -4737,6 +4813,8 @@ function adoptData(items) {
     store.adopt(k, v);
     if (k === POS_KEY) state.positions = loadRecords(POS_KEY, loadPosition);
     else if (k === HIST_KEY) state.trades = loadRecords(HIST_KEY, loadTrade);
+    else if (k === DEMO_POS_KEY) state.demoPositions = loadRecords(DEMO_POS_KEY, loadPosition); // 3.28.0
+    else if (k === DEMO_HIST_KEY) state.demoTrades = loadRecords(DEMO_HIST_KEY, loadTrade);
     else if (k === MONEY_KEY) state.movements = loadRecords(MONEY_KEY, loadMovement);
     else if (k === ALARM_KEY) state.alarms = loadRecords(ALARM_KEY, loadAlarm);
     else if (k === SETUP_KEY) state.setups = loadSetups();
@@ -4744,7 +4822,7 @@ function adoptData(items) {
     else if (k === CHAN_KEY) { chan = loadChannels(); renderChanSummary(); if ($('chan-dialog').open) fillChanForm(); }
     else if (k === 'scalpdesk.s247.v1') { s247.cfg = loadS247(); renderS247(); } // 5.1: Übergabe an den 24/7-Dienst aus einem anderen Tab
   }
-  importantSig = dataSig(); posStructure = ''; histStructure = ''; alarmKey = ''; withAnchor(render);   // Änderung aus einem zweiten Tab: Ansicht bleibt stehen
+  importantSig = dataSig(); posStructure = null; histStructure = ''; demoStructure = null; alarmKey = ''; withAnchor(render);   // Änderung aus einem zweiten Tab: Ansicht bleibt stehen
 }
 bc?.addEventListener('message', e => { const m = e.data; if (!m || m.from === TAB_ID) return; if (m.t === 'data') adoptData(m.items); else if (m.t === 'theme') applyTheme(m.theme, false); });
 addEventListener('storage', e => { if (bc || !SYNC_KEYS.includes(e.key) || e.newValue === null) return; try { adoptData([[e.key, JSON.parse(e.newValue)]]); } catch {} });
@@ -4780,7 +4858,7 @@ async function makeQr() {
   if (pass.length < 6) return showNotice('qr-error', 'Bitte ein Passwort mit mindestens 6 Zeichen wählen – es wird auf dem anderen Gerät gebraucht.');
   if (!globalThis.crypto?.subtle) return showNotice('qr-error', 'Verschlüsseln geht nur, wenn die Seite über https geöffnet ist.');
   const payload = backupPayload(), all = document.querySelector('input[name="qr-scope"]:checked')?.value === 'all';
-  if (!all) { payload.history = []; payload.movements = []; payload.scope = 'open'; }
+  if (!all) { payload.history = []; payload.movements = []; payload.demoHistory = []; payload.scope = 'open'; }
   payload.patterns = await zzpDelta(); // 3.24.0: nur das eigene Lernen, der Startbestand kommt aus dem GitHub-Projekt
   $('qr-make').disabled = true; showNotice('qr-error', null); $('qr-out').hidden = true;
   try {
@@ -5981,7 +6059,7 @@ async function sendTgBackup(force = false, leaving = false) {
   tgb.busy = true; tgb.cfg = loadTgb(); renderTgbInfo();
   try {
     const text = JSON.stringify(payload, null, 1), blob = new Blob([text], { type: 'application/json' });
-    const caption = `💾 Scalp-Desk-Sicherung · ${new Date().toLocaleString('de-DE')}\n${state.positions.length} offene Positionen · ${state.trades.length} Trades${state.movements.length ? ` · ${state.movements.length} Geldbewegungen` : ''}\nWiederherstellen: Datei speichern, im Dashboard „Backup einspielen“.`;
+    const caption = `💾 Scalp-Desk-Sicherung · ${new Date().toLocaleString('de-DE')}\n${state.positions.length} offene Positionen · ${state.trades.length} Trades${state.demoPositions.length + state.demoTrades.length ? ` · Demo: ${state.demoPositions.length} offen, ${state.demoTrades.length} geschlossen` : ''}${state.movements.length ? ` · ${state.movements.length} Geldbewegungen` : ''}\nWiederherstellen: Datei speichern, im Dashboard „Backup einspielen“.`;
     const keep = leaving && text.length < 60000; // keepalive erlaubt höchstens 64 KB
     const pinOk = tgbPinOk(T), own = tgbNormKey(tgb.cfg.chat) === where ? tgb.cfg.msg : 0;
     // Welche Nachricht ersetzen? Zuerst die angeheftete (gilt für alle Geräte), sonst die zuletzt von diesem Gerät gesendete
@@ -6054,7 +6132,7 @@ scheduleTgBackup(3000);
 // niemand mehr braucht, und Alarm-Merker gelöschter Positionen.
 const SWEEP_STALE = 10 * 60e3;
 function sweepMemory(now = Date.now()) {
-  const need = new Set([state.symbol, ...state.positions.map(p => p.symbol), ...state.alarms.filter(a => !a.triggeredAt).map(a => a.symbol), ...state.watch.map(w => String(w).toUpperCase() + 'USDT')]);
+  const need = new Set([state.symbol, ...state.positions.map(p => p.symbol), ...state.demoPositions.map(p => p.symbol), ...state.alarms.filter(a => !a.triggeredAt).map(a => a.symbol), ...state.watch.map(w => String(w).toUpperCase() + 'USDT')]);
   let n = 0;
   for (const sym of Object.keys(state.prices)) if (!need.has(sym) && now - (state.prices[sym]?.at || 0) > SWEEP_STALE) { delete state.prices[sym]; n++; }
   for (const [sym, t] of liveTrack) if (!need.has(sym) && now - (t.at || 0) > SWEEP_STALE) { liveTrack.delete(sym); n++; }
@@ -6504,10 +6582,10 @@ function resetTradingData() {
   const d = new Date().toISOString().slice(0, 10), name = `backup-vor-zuruecksetzen-${d}.json`;
   download(name, JSON.stringify(backupPayload(), null, 1), 'application/json'); markBackedUp('download');
   // 2. Handelsdaten leeren; Muster, Einstellungen, Vorauswahl und Zugänge bleiben
-  state.positions = []; state.trades = []; state.movements = []; state.alarms = []; pnlResetAll();
+  state.positions = []; state.trades = []; state.movements = []; state.alarms = []; state.demoPositions = []; state.demoTrades = []; pnlResetAll();
   // 3. Telegram: die nächste Sicherung kommt als neue Nachricht, die bisherige bleibt als Stand vor dem Zurücksetzen im Chat
   if (tgb) { tgb.cfg = { ...tgb.cfg, msg: 0, sig: '' }; saveTgb(); }
-  posStructure = ''; histStructure = ''; alarmKey = '';
+  posStructure = null; demoStructure = null; histStructure = ''; alarmKey = '';
   persist(); render();
   backupStatus(`Handelsdaten zurückgesetzt. Die Sicherung davor: „${name}“${isAppleMobile ? ' in der Dateien-App unter „Downloads“' : ' bei den Downloads'}. Gelernte Muster, Einstellungen und Zugänge sind erhalten.`);
 }
@@ -7959,6 +8037,102 @@ $('pnl-goto').addEventListener('click', () => pnlOpen(false));
 document.addEventListener('click', e => { if (!$('pnl-panel').hidden && !e.target.closest('#pnl-panel, #lb-pos')) pnlOpen(false); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('pnl-panel').hidden) { pnlOpen(false); $('lb-pos').focus({ preventScroll: true }); } });
 renderPnl();
+// ---------- 3.28.0: Gründe für die Trade-Entscheidung, Modus ECHT/DEMO ----------
+// Gründe: Mehrfachauswahl statt eines einzelnen Setups (Kern in REASON_GROUPS/cleanReasons/reasonsOf). Sie dokumentieren die
+// eigene Entscheidung – die App wertet sie nicht als Handelssignal und bestätigt sie nicht.
+// DEMO: Demo-Positionen liegen in eigenen Listen (state.demoPositions, state.demoTrades; eigene Speicher-Schlüssel). Alles, was
+// alarmiert, rechnet oder übergibt, liest nur state.positions und state.trades – Demo bleibt davon getrennt: kein Hinweis, Ton,
+// Browser-Hinweis, Telegram/Discord, keine Übergabe an den 24/7-Dienst, nicht im Gewinn-/Verlust-Alarm, Tages-Verlustlimit,
+// in Summen, Auswertung, Steuer- und Geldübersicht. Angezeigt werden Live-Kurs und simulierter Gewinn/Verlust.
+
+// ---- Gründe: Auswahl als Chips in Gruppen (Formular und Notiz eines Trades) ----
+// sel: Set der gewählten Gründe. edit: eigene Setups mit „×“ zum Entfernen. Gewählte Gründe, die in keiner Liste (mehr) stehen,
+// erscheinen bei „Setups & eigene Gründe“, damit sie sichtbar und abwählbar bleiben.
+function reasonGroupsDom(sel, { edit = false, tools = [] } = {}) {
+  return REASON_GROUPS.map(g => {
+    const own = g.key === 'setup', list = own ? [...state.setups, ...[...sel].filter(r => !REASON_OF.has(r) && !state.setups.includes(r))] : g.list;
+    const box = el('div', 'reason-group'), chips = el('div', 'pos-chips');
+    box.setAttribute('role', 'group'); box.setAttribute('aria-label', g.label); box.append(el('span', 'reason-legend', g.label));
+    for (const r of list) {
+      const wrap = el('span', 'chip-group'), b = btn('chip setup', r); b.dataset.reason = r; b.setAttribute('aria-pressed', String(sel.has(r))); wrap.append(b);
+      if (edit && own && state.setups.includes(r)) { const x = btn('chip-x', '×'); x.dataset.setupDel = r; x.setAttribute('aria-label', `${r} aus der Liste entfernen`); wrap.append(x); }
+      chips.append(wrap);
+    }
+    if (own) chips.append(...tools);
+    box.append(chips); return box;
+  });
+}
+function reasonsText(list) { return list.length ? list.join(', ') : ''; }
+// ---- Handelsmodus im Formular ----
+function setPosReal(demo) {
+  const f = state.posForm; f.demo = !!demo;
+  setToggle('pos-real', f.demo ? 'demo' : 'real');
+  $('pos-form').classList.toggle('demo', f.demo); $('pos-demo-hint').hidden = !f.demo;
+  put('pos-save', f.editingId ? (f.demo ? 'Demo-Position speichern' : 'Änderungen speichern') : f.demo ? 'Demo-Position speichern' : 'Position speichern');
+}
+// ---- Positionen in beiden Listen ----
+function isDemoPos(p) { return state.demoPositions.includes(p); }
+function findPos(id) { return state.positions.find(p => p.id === id) || state.demoPositions.find(p => p.id === id) || null; }
+function dropPos(id) { state.positions = state.positions.filter(p => p.id !== id); state.demoPositions = state.demoPositions.filter(p => p.id !== id); }
+// Kurse holen und streamen auch für Demo-Positionen – Alarme und Nachprüfung (watchItems) bleiben bei den echten
+function priceItems() { return [...watchItems(), ...state.demoPositions]; }
+function priceSymbols() { return new Set(priceItems().map(p => p.symbol)); }
+// Demo-Positionen: eigene Liste unter den echten, ohne Hinweise; Summe nur zur Anzeige („simuliert“)
+var demoStructure = ''; // var: kann vor diesem Abschnitt gebraucht werden (erstes Zeichnen)
+function renderDemoPositions() {
+  const list = $('demo-list'), box = $('demo-pos'), demo = state.demoPositions;
+  box.hidden = !demo.length;
+  const key = demo.map(p => `${p.id}:${state.posUi[p.id]?.mode || ''}:${p.qty}:${p.entry}:${p.leverage}:${p.mode}:${p.side}:${p.symbol}:${p.note || ''}:${p.sl}:${p.tp}:${reasonsOf(p).join('|')}`).join('|');
+  if (key !== demoStructure) { demoStructure = key; list.replaceChildren(...demo.map(p => buildCard(p, true))); }
+  let total = 0, missing = 0;
+  for (const card of list.children) { const pos = demo.find(p => p.id === card.dataset.id); if (!pos) continue; const m = updateCard(card, pos); if (m.pnl === null) missing++; else total += m.pnl; }
+  const t = $('demo-open-total');
+  t.textContent = demo.length ? `${signed(total)} USDT simuliert${missing ? ` · ${missing} ohne Kurs` : ''} · ${demo.length} offen` : '';
+  t.classList.toggle('positive', total > 0); t.classList.toggle('negative', total < 0);
+}
+// ---- Demo-Historie (getrennt von echten Trades, Summen, Auswertung, Steuer und Geld) ----
+var demoRows = { structure: '', rows: new Map() };
+function renderDemoHistory() {
+  const trades = state.demoTrades, s = historySummary(trades, fxNow());
+  put('demo-history-count', `(${trades.length})`);
+  $('demo-history').hidden = !trades.length && !state.demoPositions.length;
+  const box = (label, main, cls) => { const d = el('div'); d.append(el('span', '', label), el('strong', cls || '', main)); return d; };
+  $('demo-summary').replaceChildren(
+    box('Demo-Trades', String(s.n)),
+    box('Treffer', s.n ? `${s.wins} / ${s.losses}` : '—'),
+    box('Netto simuliert', s.n ? `${signed(s.net)} USDT` : '—', s.net > 0 ? 'positive' : s.net < 0 ? 'negative' : ''));
+  const sorted = trades.slice().sort((a, b) => b.closedAt - a.closedAt), limit = Math.max(HIST_PAGE, state.demoLimit || HIST_PAGE);
+  const shown = sorted.length > limit ? sorted.slice(0, limit) : sorted, uiMode = u => (typeof u === 'object' && u ? u.mode : u) || '';
+  const keys = shown.map(t => JSON.stringify([t.id, t.closedAt, t.symbol, t.side, t.leverage, t.mode, t.qty, t.entry, t.exit, t.pnlSource, reasonsOf(t), t.pnl, t.fx, t.margin, t.note || '', uiMode(state.histUi[t.id])]));
+  const key = limit + '|' + keys.join('|');
+  if (key !== demoRows.structure) {
+    demoRows.structure = key;
+    const list = $('demo-history-list'), rows = new Map(), nodes = shown.map((t, i) => { let c = demoRows.rows.get(t.id); if (!c || c.key !== keys[i]) c = { key: keys[i], node: tradeRow(t, true) }; rows.set(t.id, c); return c.node; });
+    demoRows.rows = rows;
+    let ref = list.firstChild;
+    for (const n of nodes) { if (n === ref) ref = ref.nextSibling; else list.insertBefore(n, ref); }
+    while (ref) { const nx = ref.nextSibling; ref.remove(); ref = nx; }
+  }
+  const rest = sorted.length - shown.length; $('demo-history-more').hidden = rest <= 0;
+  if (rest > 0) put('demo-history-more', `Weitere ${number(Math.min(HIST_PAGE, rest), 0)} anzeigen (noch ${number(rest, 0)} ältere)`);
+}
+// ---- Auswertung nach Gründen: Ein Trade zählt bei jedem seiner Gründe einmal; die Zeilen überlappen ----
+function multiStats(trades, keysFn) {
+  const map = new Map();
+  for (const t of trades) for (const k of new Set(keysFn(t))) { const g = map.get(k) || { key: k, n: 0, wins: 0, net: 0 }; g.n++; if (t.pnl > 0) g.wins++; g.net += t.pnl; map.set(k, g); }
+  return [...map.values()].map(g => ({ ...g, label: String(g.key), hit: g.wins / g.n * 100, avg: g.net / g.n })).sort((a, b) => b.net - a.net);
+}
+function reasonKeys(t) { const r = reasonsOf(t); return r.length ? r : ['ohne Grund']; }
+function areaKeys(t) { const r = reasonsOf(t); return r.length ? r.map(x => (REASON_OF.get(x) || REASON_GROUPS[0]).label) : ['ohne Grund']; }
+// Gesamt: jeder Trade genau einmal – die Summe der Zeilen wäre bei mehreren Gründen je Trade zu hoch
+function reasonNote(trades) {
+  const withR = trades.filter(t => reasonsOf(t).length), multi = withR.filter(t => reasonsOf(t).length > 1).length, net = trades.reduce((s, t) => s + t.pnl, 0);
+  return `Ein Trade zählt bei jedem seiner Gründe einmal${multi ? ` – ${multi} ${multi === 1 ? 'Trade hat' : 'Trades haben'} mehrere Gründe, die Zeilen überlappen und ergeben zusammen nicht den Gesamtgewinn` : ''}. Gesamt, jeder Trade einmal: ${trades.length} ${trades.length === 1 ? 'Trade' : 'Trades'}, ${signed(net)} USDT. Die Gründe sind deine eigene Begründung, kein Signal der App.`;
+}
+// ---- Bedienung ----
+document.querySelectorAll('[data-pos-real]').forEach(b => b.addEventListener('click', () => { setPosReal(b.dataset.posReal === 'demo'); posFormPreview(); }));
+$('demo-history-more').addEventListener('click', () => { state.demoLimit = (state.demoLimit || HIST_PAGE) + HIST_PAGE; renderDemoHistory(); });
+$('demo-csv').addEventListener('click', () => { if (!state.demoTrades.length) return; download(`demo-trades-${new Date().toISOString().slice(0, 10)}.csv`, tradesCsv(state.demoTrades, true), 'text/csv;charset=utf-8'); });
 // ---------- Schritt 4.3: Volatilität und Richtung nach Uhrzeit (3.22.0) ----------
 // Aus den letzten 2.000 Stundenkerzen des geöffneten Coins (rund 83 Tage, Markt wie im Chart): je Uhrzeit (Ortszeit) und
 // Tagesart (Mo–Fr, Sa–So), wie weit der Kurs innerhalb einer Stunde schwankt – Spanne Hoch bis Tief in % der Eröffnung.
@@ -8389,7 +8563,7 @@ function renderPulseInfo() {
 // Der Bot-Token verlässt die App dafür nicht: Am Server gibt man ihn selbst ein.
 // var statt const/let: persist() und notifyChannels() können schon laufen, bevor dieser Abschnitt ausgewertet ist
 var S247_KEY = 'scalpdesk.s247.v1', S247_FILE = 'scalpdesk-247.json', S247_MARK = '📌 Scalp Desk · 24/7-Dienst', S247_STALE = 20 * 60e3, S247_POLL = 2 * 60e3, S247_GRACE = 3 * 60e3;
-var s247 = { cfg: null, timer: null, busy: false, error: '', st: null, checking: false, checkAt: 0, checkErr: '', recheck: null };
+var s247 = { cfg: null, timer: null, busy: false, error: '', st: null, checking: false, checkAt: 0, checkErr: '', recheck: null, watchUntil: 0, me: null, meTok: '' }; // 3.28.0: watchUntil – bis dann alle 10 s nachfragen; me – Bot dieser App (getMe), zum Vergleich mit dem Server
 s247.cfg = loadS247();
 function loadS247() {
   const v = store.get(S247_KEY), s = x => (typeof x === 'string' ? x : '');
@@ -8465,7 +8639,8 @@ async function sendS247(force = false, leaving = false) {
     // Was jetzt angeheftet ist, wissen wir; die Rückmeldung des Dienstes (falls er schon lief) bleibt bis zur nächsten Abfrage
     s247.st = s247.st?.found && s247.st.msg === msg ? { ...s247.st, tag } : { found: true, msg, tag, dev: body.dev, svc: null, beat: 0, fresh: false };
     // Bestätigung des Dienstes abwarten: er liest jede Minute
-    clearTimeout(s247.recheck); if (!leaving) s247.recheck = setTimeout(() => void checkS247(), 70e3);
+    // 3.28.0: Der Dienst (ab 1.4) liest alle 20 s – die Bestätigung bald und dann alle 10 s abfragen, bis sie da ist (höchstens 3 min)
+    clearTimeout(s247.recheck); s247.watchUntil = Date.now() + 180e3; if (!leaving) s247.recheck = setTimeout(() => void checkS247(), 8e3);
   } catch (e) { s247.error = e?.message || String(e); }
   finally { s247.busy = false; if (claimed) void store.release('s247'); renderS247(); if (s247.again && !leaving) { s247.again = false; scheduleS247(300); } }
 }
@@ -8484,7 +8659,7 @@ function s247Parse(pm, now = Date.now()) {
   const m = /^Dienst: (aktiv|Störung) · .*? · #([a-z0-9]{2,12}) übernommen(?: · (.*))?$/.exec(svc), beat = (pm.edit_date || pm.date || 0) * 1000, flags = svc.split(' · ');
   const gv = lines.map(l => /^GV: .* · @([pl]):(\d{10,15}):(\d{10,15}):(-?\d+(?:\.\d+)?)$/.exec(l)).filter(Boolean).map(x => ({ k: x[1] === 'p' ? 'profit' : 'loss', at: +x[2], t: +x[3], val: +x[4] }));
   return { found: true, msg: pm.message_id, tag: /#([a-z0-9]{2,12})$/.exec(app)?.[1] || '', dev: parts.length >= 4 ? parts.at(-2) : '',
-    svc: m ? { ok: m[1] === 'aktiv', tag: m[2], problem: m[3] || '', pulse: flags.includes('Puls'), gv: flags.includes('GV'), zv: !!zl } : null, gv, last: s247Last(zl, now), beat, fresh: !!m && now - beat < S247_STALE };
+    svc: m ? { ok: m[1] === 'aktiv', tag: m[2], problem: m[3] || '', pulse: flags.includes('Puls'), gv: flags.includes('GV'), zv: !!zl, ver: (flags.find(f => /^v\d+\.\d+\.\d+$/.test(f)) || '').slice(1) } : null, gv, last: s247Last(zl, now), beat, fresh: !!m && now - beat < S247_STALE };
 }
 async function checkS247() {
   if (!s247?.cfg || typeof tgConfigured !== 'function' || !tgConfigured() || s247.checking) return;
@@ -8492,11 +8667,17 @@ async function checkS247() {
   try {
     const pm = (await tgApi(chan.tg.token, 'getChat', { chat_id: chan.tg.chat }))?.pinned_message;
     s247.st = s247Parse(pm); s247.checkErr = '';
+    // 3.28.0: Bot dieser App (einmal je Token) – zum Vergleich mit dem Bot am Server, falls der Dienst nicht bestätigt
+    if (s247.meTok !== chan.tg.token) { try { s247.me = await tgApi(chan.tg.token, 'getMe'); s247.meTok = chan.tg.token; } catch { /* nur Anzeige */ } }
     if (s247.cfg.on && s247.st.gv?.length && typeof pnlFromSvc === 'function') pnlFromSvc(s247.st.gv); // vom Dienst gesendeter Gewinn-/Verlust-Alarm
     // Angeheftete Datei fehlt oder ist eine andere (gelöscht, vom Nutzer ersetzt): neu übergeben
     if (s247.cfg.on && (!s247.st.found || (s247.cfg.msg && s247.st.msg !== s247.cfg.msg && s247.st.tag !== s247.cfg.tag))) { s247.cfg = { ...s247.cfg, sig: '' }; scheduleS247(1000); }
   } catch (e) { s247.checkErr = e?.message || String(e); }
-  finally { s247.checking = false; s247.checkAt = Date.now(); renderS247(); if (typeof pnlCheck === 'function') pnlCheck(); }
+  finally {
+    s247.checking = false; s247.checkAt = Date.now(); renderS247(); if (typeof pnlCheck === 'function') pnlCheck();
+    // 3.28.0: nach einer Übergabe weiter nachfragen, bis der Dienst bestätigt (oder 3 Minuten um sind)
+    if (s247.cfg.on && !s247Active() && Date.now() < (s247.watchUntil || 0)) { clearTimeout(s247.recheck); s247.recheck = setTimeout(() => void checkS247(), 10e3); }
+  }
 }
 // Kennt der Dienst diese Meldung und meldet er sich? Dann sendet die App sie nicht selbst (siehe notifyChannels).
 function s247Covers(type, key) {
@@ -8550,17 +8731,26 @@ function renderS247() {
   else if (!c.msg || !st) text = s247.checking ? 'Frage Telegram …' : 'Wird gleich übergeben …';
   else if (s247.checkErr && now - s247.checkAt < 60e3) { text = `Status nicht lesbar: ${s247.checkErr}`; cls = false; }
   else if (!st.found) text = 'Die angeheftete Datei fehlt im Chat – wird neu übergeben …';
-  else if (s247Active()) { text = `✓ Aktiv – der Dienst hat den aktuellen Stand (${counts}) und meldete sich um ${hm(st.beat)}.${s247LastText(st)} Kurs-Alarme, Stop/Ziel und Termin-Warnungen kommen jetzt vom Dienst; diese App sendet sie nicht zusätzlich.${s247PulseText(c, st)}${s247GvText(c, st)}${other}`; cls = true; }
+  else if (s247Active()) { text = `Übergeben ✓ vom Dienst bestätigt um ${hm(st.beat)} (${counts}${st.svc.ver ? ` · Dienst ${st.svc.ver}` : ''}).${s247LastText(st)} Kurs-Alarme, Stop/Ziel und Termin-Warnungen meldet jetzt der Dienst – auch bei geschlossener App; diese App sendet sie nicht zusätzlich.${s247PulseText(c, st)}${s247GvText(c, st)}${other}`; cls = true; }
   else if (st.svc && st.fresh && !st.svc.ok) { text = `⚠ Der Dienst meldet eine Störung: ${st.svc.problem || 'Kurse nicht abrufbar'}. Die App sendet deshalb selbst.${st.svc.zv ? s247LastText(st) : ''}${other}`; cls = false; }
   else if (st.svc && st.fresh) text = `Übergeben um ${hm(c.at)} (${counts}) – der Dienst übernimmt den neuen Stand in spätestens einer Minute.${other}`;
   else if (st.svc) { text = `⚠ Der Dienst hat sich seit ${hm(st.beat)} nicht gemeldet – die App sendet wieder selbst. Läuft der Server? Am Server: systemctl status scalpdesk-247${other}`; cls = false; }
-  else { text = `Übergeben um ${hm(c.at)} (${counts}) – wartet auf den 24/7-Dienst.${now - c.at > 3 * 60e3 ? ' Er hat sich noch nicht gemeldet: Ist er eingerichtet (Anleitung oben)?' : ''}${other}`; cls = now - c.at > 3 * 60e3 ? false : null; }
+  else {
+    // 3.28.0: nach 90 s ohne Bestätigung die häufigste Ursache nennen – mit Bot und Chat-ID dieser App zum Vergleich mit dem Server
+    const late = now - c.at > 90e3, bot = s247.me?.username ? `@${s247.me.username}` : `mit der Bot-ID ${String(chan.tg.token).split(':')[0]}`;
+    text = late ? `⚠ Übergeben um ${hm(c.at)} (${counts}), aber der 24/7-Dienst hat nicht bestätigt. Häufigste Ursache: Am Server ist ein anderer Bot oder eine andere Chat-ID eingetragen als hier unter „Kursalarm“ (hier: Bot ${bot}, Chat-ID ${chan.tg.chat}) – zum Beispiel der Sicherungs-Bot. Am Server prüfen: sudo scalpdesk-247 status (ab Dienst 1.4, sonst journalctl -u scalpdesk-247 -n 30). Steht dort ein anderer Bot oder eine andere Chat-ID, am Server Token und Chat-ID von hier neu eingeben (Anleitung oben). Bis dahin sendet diese App selbst, solange sie geöffnet ist.${other}`
+      : `Übergeben um ${hm(c.at)} (${counts}) – wartet auf die Bestätigung des 24/7-Dienstes (meist nach 20–30 Sekunden).${other}`;
+    cls = late ? false : null;
+  }
   const p = $('s247-status'); if (p.textContent !== text) p.textContent = text; p.className = 'chan-status' + (cls === true ? ' ok' : cls === false ? ' err' : '');
   if (typeof renderPnl === 'function') renderPnl();
   if (typeof renderChanSummary === 'function') renderChanSummary();
 }
 // Sekundentakt: solange eingeschaltet alle 2 Minuten nachsehen, ob der Dienst sich meldet
-function s247Tick(now) { if (s247?.cfg?.on && !s247.checking && now - s247.checkAt > S247_POLL && typeof tgConfigured === 'function' && tgConfigured() && !document.hidden) void checkS247(); }
+function s247Tick(now) {
+  if (s247?.cfg?.on && !s247.checking && now - s247.checkAt > S247_POLL && typeof tgConfigured === 'function' && tgConfigured() && !document.hidden) void checkS247();
+  if (s247?.cfg?.on && s247.cfg.msg && !s247.busy && !s247Active() && now - (s247.renderAt || 0) > 5e3 && $('chan-dialog')?.open) { s247.renderAt = now; renderS247(); } // 3.28.0
+}
 (function s247Ui() {
   if (!$('s247-on')) return;
   if (!store.get(S247_KEY)) saveS247();
@@ -8986,7 +9176,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
           <div class="day-strip" id="day-strip"><span>Heute realisiert</span><strong class="day-pnl" id="day-pnl">—</strong><span id="day-info"></span><div class="day-bar" id="day-bar" title="Verbrauchtes Tages-Verlustlimit"><span></span></div><label>Tages-Verlustlimit<span class="input-wrap"><input id="day-limit" type="text" inputmode="decimal" autocomplete="off" placeholder="z. B. 30"><span>USDT</span></span></label></div>
           <button type="button" class="data-head backup-badge" id="data-toggle" aria-expanded="false" aria-controls="data-panel"><span class="data-chev" aria-hidden="true">▸</span><span class="data-title">💾 Datensicherung</span><span class="due" id="backup-due" hidden>FÄLLIG</span><small class="data-last" id="data-last"></small></button>
           <div class="data-panel" id="data-panel" hidden>
-            <div class="head-line"><h3>Sichern, einspielen, abgleichen</h3><details class="tip left"><summary aria-label="Wo liegen meine Daten?"><span>i</span></summary><div class="tip-body"><p>Daten liegen nur in diesem Browser auf diesem Gerät, nicht bei GitHub: in der IndexedDB, dazu eine Spiegelkopie im localStorage.</p><p>Safari kann Website-Daten löschen, wenn eine Seite länger nicht geöffnet wurde. Als App auf dem Home-Bildschirm gilt diese Frist nicht; ein Backup ist trotzdem der sicherste Schutz.</p><p>Mit Passwort wird ein Backup verschlüsselt (AES-256). Ein vergessenes Passwort lässt sich nicht wiederherstellen.</p><p><b>Einspielen und QR-Abgleich:</b> Vorher zeigt die App eine Vorschau – was neu ist, was sich geändert hat und was gelöscht wird. Je Eintrag zählt die neuere Fassung. Gelöschte Einträge merkt sich die App mit Zeitpunkt (400 Tage) und gibt sie im Backup mit, damit der Abgleich sie auch auf dem anderen Gerät löscht. Fehlt ein Eintrag nur in der Datei, bleibt er hier. Risiko-Rechner, Tages-Verlustlimit, Rücklage-Satz, Vorauswahl und Setups kommen mit, wenn sie auf dem anderen Gerät später geändert wurden.</p><p>Automatisch sichern: Am Computer (Chrome/Edge) schreibt das Dashboard nach jeder Änderung in eine Datei deiner Wahl. Auf iPhone und iPad erlaubt Safari das nicht – dort kann die Sicherung stattdessen nach jeder Änderung an deinen Telegram-Chat gehen; die neue Datei ersetzt jeweils die vorige. Diese Datei ist unverschlüsselt und liegt auf den Servern von Telegram; Zugangsdaten für Telegram und Discord sind nie enthalten.</p></div></details></div>
+            <div class="head-line"><h3>Sichern, einspielen, abgleichen</h3><details class="tip left"><summary aria-label="Wo liegen meine Daten?"><span>i</span></summary><div class="tip-body"><p>Daten liegen nur in diesem Browser auf diesem Gerät, nicht bei GitHub: in der IndexedDB, dazu eine Spiegelkopie im localStorage.</p><p>Safari kann Website-Daten löschen, wenn eine Seite länger nicht geöffnet wurde. Als App auf dem Home-Bildschirm gilt diese Frist nicht; ein Backup ist trotzdem der sicherste Schutz.</p><p>Mit Passwort wird ein Backup verschlüsselt (AES-256). Ein vergessenes Passwort lässt sich nicht wiederherstellen.</p><p><b>Einspielen und QR-Abgleich:</b> Vorher zeigt die App eine Vorschau – was neu ist, was sich geändert hat und was gelöscht wird. Je Eintrag zählt die neuere Fassung. Gelöschte Einträge merkt sich die App mit Zeitpunkt (400 Tage) und gibt sie im Backup mit, damit der Abgleich sie auch auf dem anderen Gerät löscht. Fehlt ein Eintrag nur in der Datei, bleibt er hier. Risiko-Rechner, Tages-Verlustlimit, Rücklage-Satz, Vorauswahl und Setups kommen mit, wenn sie auf dem anderen Gerät später geändert wurden. Gründe stehen in den Positionen und Trades; Demo-Positionen und Demo-Historie kommen getrennt von den echten Daten mit.</p><p>Automatisch sichern: Am Computer (Chrome/Edge) schreibt das Dashboard nach jeder Änderung in eine Datei deiner Wahl. Auf iPhone und iPad erlaubt Safari das nicht – dort kann die Sicherung stattdessen nach jeder Änderung an deinen Telegram-Chat gehen; die neue Datei ersetzt jeweils die vorige. Diese Datei ist unverschlüsselt und liegt auf den Servern von Telegram; Zugangsdaten für Telegram und Discord sind nie enthalten.</p></div></details></div>
             <p id="storage-info">Speicher wird geprüft …</p>
             <div class="data-row" id="autobackup-row" hidden>
               <button type="button" class="button primary-lite" id="autobackup-setup">Automatisches Backup einrichten …</button>
@@ -9014,7 +9204,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
             <div class="data-row data-sep"><button type="button" class="button ghost" id="qr-export">▦ QR-Code anzeigen</button><button type="button" class="button ghost" id="qr-scan">📷 QR-Code scannen</button><span style="color:var(--muted)">Abgleich zwischen Geräten: am Computer anzeigen, mit dem iPad scannen – verschlüsselt, ohne Server.</span></div>
             <div class="data-row"><label class="check"><input type="checkbox" id="warn-close"> Beim Schließen warnen, solange Änderungen nicht gesichert sind</label></div>
             <div class="data-row data-sep zzp-row"><span><b>🧠 Gelernte Chartmuster:</b> <span id="zzp-info">…</span></span><details class="tip left"><summary aria-label="Wie bleiben die Muster erhalten?"><span>i</span></summary><div class="tip-body"><p>Die ZigZag-Prognose lernt still mit, wie oft sich ein Muster bestätigt hat. Der Bestand wird nach jeder Änderung sofort auf diesem Gerät gespeichert und reist in jeder Sicherung mit (Datei, Teilen, Telegram).</p><p><b>Startbestand:</b> Aus dem GitHub-Projekt (<code>data/muster-start.json</code>) lädt die App beim Start einen Musterbestand mit Versionsnummer. Neue Nutzer, ein neues Gerät oder ein geleerter Browser-Speicher haben ihn sofort; eigenes Lernen zählt danach weiter, nichts wird doppelt gezählt.</p><p><b>Musterbestand exportieren</b> speichert nur die Muster, ohne Positionen, Trades oder Zugänge – so lässt sich dein Wissen als neuer Startbestand ins GitHub-Projekt übernehmen.</p></div></details><button type="button" class="button ghost" id="zzp-export">Musterbestand exportieren</button></div>
-            <div class="data-row data-sep"><button type="button" class="button ghost danger-btn" id="reset-open">Handelsdaten zurücksetzen …</button><span class="reset-note">Löscht Positionen, Trades, Geldbewegungen und Alarme – vorher wird gesichert. Gelernte Muster, Einstellungen und Zugänge bleiben.</span></div>
+            <div class="data-row data-sep"><button type="button" class="button ghost danger-btn" id="reset-open">Handelsdaten zurücksetzen …</button><span class="reset-note">Löscht Positionen, Trades (auch Demo), Geldbewegungen und Alarme – vorher wird gesichert. Gelernte Muster, Einstellungen und Zugänge bleiben.</span></div>
             <small id="backup-info"></small>
           </div>
           <form id="pos-form" class="pos-form" hidden novalidate>
@@ -9026,6 +9216,8 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
             <div class="pos-row pos-toggles">
               <div class="side-toggle" role="group" aria-label="Richtung"><button type="button" data-pos-side="long" aria-pressed="true" class="active">Long</button><button type="button" data-pos-side="short" aria-pressed="false">Short</button></div>
               <div class="side-toggle" role="group" aria-label="Margin-Modus"><button type="button" data-pos-mode="cross" aria-pressed="true" class="active">Cross</button><button type="button" data-pos-mode="isolated" aria-pressed="false">Isoliert</button></div>
+              <div class="side-toggle mode-real" role="group" aria-label="Handelsmodus"><button type="button" data-pos-real="real" aria-pressed="true" class="active">ECHT</button><button type="button" data-pos-real="demo" aria-pressed="false">DEMO</button></div>
+              <p class="demo-hint" id="pos-demo-hint" hidden><b>DEMO:</b> Live-Kurs und simulierter Gewinn/Verlust, aber keine Alarme – kein Hinweis, Ton oder Browser-Hinweis, kein Telegram/Discord, keine Übergabe an den 24/7-Dienst. Zählt nicht in den Summen, im Gewinn-/Verlust-Alarm und im Tages-Verlustlimit. Geschlossen kommt sie in die Demo-Historie.</p>
             </div>
             <div class="pos-row"><div class="pos-lev"><label>Hebel<span class="input-wrap"><input id="pos-lev" type="text" inputmode="decimal" autocomplete="off" enterkeyhint="next"><span>×</span></span></label>
               <input type="range" class="range" id="pos-lev-range" min="0" max="1000" step="1" data-lev-range="pos-lev" aria-label="Hebel per Schieberegler (1× bis 125×)">
@@ -9043,14 +9235,14 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
               <label>Stop-Loss <small>(optional)</small><span class="input-wrap"><input id="pos-sl" type="text" inputmode="decimal" autocomplete="off" placeholder="z. B. 1,42"><span>USDT</span></span></label>
               <label>Take-Profit <small>(optional)</small><span class="input-wrap"><input id="pos-tp" type="text" inputmode="decimal" autocomplete="off" placeholder="z. B. 1,55"><span>USDT</span></span></label>
             </div>
-            <div class="pos-row"><div class="setup-wrap"><span class="setup-label">Setup <small>(optional – warum steigst du ein?)</small></span><div class="pos-chips" id="setup-chips" role="group" aria-label="Setup wählen"></div>
-              <div class="setup-add" id="setup-add" hidden><input id="setup-new" maxlength="40" autocomplete="off" placeholder="Eigenes Setup, z. B. Doppelboden"><button type="button" class="button primary-lite" id="setup-add-ok">Hinzufügen</button><button type="button" class="button ghost" id="setup-add-cancel">Abbrechen</button></div></div></div>
+            <div class="pos-row"><details class="reasons" id="reasons-box"><summary><span class="setup-label">Gründe für meine Trade-Entscheidung <small>(optional, mehrere möglich)</small></span><small class="reasons-sel" id="reasons-sel">keine gewählt</small></summary><p class="reasons-note">Dokumentiert deine Entscheidung – die App wertet die Auswahl nicht als Handelssignal und bestätigt sie nicht.</p><div class="reason-groups" id="setup-chips"></div>
+              <div class="setup-add" id="setup-add" hidden><input id="setup-new" maxlength="40" autocomplete="off" placeholder="Eigener Grund, z. B. Doppelboden"><button type="button" class="button primary-lite" id="setup-add-ok">Hinzufügen</button><button type="button" class="button ghost" id="setup-add-cancel">Abbrechen</button></div></details></div>
             <details class="pos-more" id="pos-more"><summary>Optional: Liq.-Preis, bisher realisierter G/V, Notiz</summary>
               <div class="pos-row">
                 <label>Geschätzter Liq.-Preis<span class="input-wrap"><input id="pos-liq" type="text" inputmode="decimal" autocomplete="off" placeholder="z. B. 0,4550"><span>USDT</span></span></label>
                 <label>Realisierter G/V bisher<span class="input-wrap"><input id="pos-pre" type="text" autocomplete="off" placeholder="z. B. -0,2231"><span>USDT</span></span></label>
               </div>
-              <label class="pos-note-label">Notiz zur Position<textarea id="pos-note" class="note-box" maxlength="1000" placeholder="z. B. Setup, Grund für den Einstieg, Stop-Plan"></textarea></label>
+              <label class="pos-note-label">Notiz zur Position<textarea id="pos-note" class="note-box" maxlength="1000" placeholder="z. B. Plan für Stop und Ziel, was du beobachten willst"></textarea></label>
               <small>Bei Cross hängt die Liquidation vom ganzen Konto ab – der Wert deiner Börse ist dann genauer als jedes Modell. „Realisiert bisher“ sind z. B. Eröffnungsgebühr und Funding (meist negativ).</small>
             </details>
             <p class="pos-preview" id="pos-preview"></p>
@@ -9059,12 +9251,19 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
           </form>
           <p class="pos-empty" id="pos-empty">Keine offene Position. Mit „+ Position erfassen“ überträgst du Größe, Eintrittspreis und Hebel aus deiner Börse.</p>
           <div class="pos-list" id="pos-list"></div>
+          <div class="demo-pos" id="demo-pos" hidden><div class="demo-head"><h3>Demo-Positionen <span class="demo-badge">DEMO · simuliert · ohne Alarme</span></h3><strong class="demo-total" id="demo-open-total"></strong></div><div class="pos-list" id="demo-list"></div></div>
         </section>
         <section class="panel journal cq" id="journal" data-tabs="pos" aria-label="Journal: Trades, Auswertung, Geldbewegungen">
           <div class="eval-row"><label for="year-filter">Auswertung für</label><select id="year-filter"></select><span>gilt für Trades, Auswertung und Geldbewegungen</span></div>
           <details class="history" id="history"><summary>Abgeschlossene Trades <span id="history-count">(0)</span></summary>
             <div class="history-summary" id="history-summary"></div>
             <div class="history-list" id="history-list"></div><button type="button" class="button ghost hist-more" id="history-more" hidden></button>
+          </details>
+          <details class="history demo-history" id="demo-history" hidden><summary>Demo-Historie <span class="demo-badge">DEMO · simuliert</span> <span id="demo-history-count">(0)</span></summary>
+            <p class="demo-note">Geschlossene Demo-Positionen, getrennt von deinen echten Trades: Sie zählen nicht in „Realisiert“, Tages-Verlustlimit, Auswertung, Steuer-Rücklage oder Geldübersicht. Im Backup und beim Abgleich sind sie dabei.</p>
+            <div class="history-summary demo-sum" id="demo-summary"></div>
+            <div class="history-list" id="demo-history-list"></div><button type="button" class="button ghost hist-more" id="demo-history-more" hidden></button>
+            <div class="data-row"><button type="button" class="button ghost" id="demo-csv">Demo-Trades als CSV</button></div>
           </details>
           <details class="history" id="analysis"><summary>Auswertung &amp; Kapitalkurve <span id="analysis-count"></span></summary>
             <div class="history-summary kpis" id="analysis-kpis"></div>
@@ -9170,7 +9369,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
         <label class="switch"><input type="checkbox" id="chan-ev-pulse" checked> BTC-Puls: ungewöhnlich starke Bitcoin-Bewegung</label>
         <small class="pulse-info">Meldet, wenn BTC sich in 5 oder 15 Minuten stärker bewegt als 99 % der üblichen Bewegungen zu dieser Uhrzeit (mindestens 0,5 % bzw. 0,8 %), mit der Vorauswahl im selben Zeitraum; je Richtung höchstens alle 30 Minuten, nachts lautlos. <span id="pulse-info"></span></small>
       </fieldset>
-      <section class="chan" aria-labelledby="s247-title" id="s247"><div class="head-line"><h3 id="s247-title">🌙 24/7-Dienst</h3><details class="tip left"><summary aria-label="Wie funktioniert der 24/7-Dienst?"><span>i</span></summary><div class="tip-body"><p>Ein kleines Programm auf einem eigenen Server, der rund um die Uhr läuft (z. B. kostenlos bei Oracle Cloud), prüft die Kurse und meldet Kurs-Alarme, Stop-Loss/Take-Profit, die Warnung vor wichtigen Terminen, ab Version 1.1 den BTC-Puls und ab Version 1.2 den Gewinn-/Verlust-Alarm per Telegram – auch wenn die App überall geschlossen ist.</p><p><b>Übergabe:</b> Die App legt die aktiven Alarme und die Stop-/Ziel-Marken deiner Positionen als Datei in deinen Telegram-Chat, heftet sie oben an und ersetzt sie nach jeder Änderung. Einstiege und Mengen der offenen Positionen stehen nur darin, solange ein Gewinn- oder Verlust-Alarm aktiv ist – der Dienst braucht sie, um das Live-Ergebnis zu rechnen. Trades und Notizen bleiben in der App. Der Dienst liest die Datei mit demselben Bot und bestätigt in der angehefteten Nachricht („Dienst: aktiv“).</p><p><b>Nicht doppelt:</b> Solange der Dienst aktiv ist und den aktuellen Stand hat, sendet diese App Kurs-Alarme, Stop/Ziel und Termin-Warnungen nicht zusätzlich. Meldet er sich 20 Minuten nicht oder meldet er eine Störung, sendet die App wieder selbst. Das Tages-Verlustlimit meldet immer die App.</p><p><b>Zustellung (ab Version 1.3):</b> Der Dienst prüft, ob Telegram jede Meldung angenommen hat. Wenn nicht, versucht er es erneut – nach 15 und 30 Sekunden, dann in wachsenden Abständen bis alle 5 Minuten, höchstens einen Tag lang. Eine verspätete Meldung trägt die ursprüngliche Uhrzeit und den Vermerk „verspätet“. Lehnt Telegram ab oder ist es länger als eine Minute nicht erreichbar, meldet der Dienst „Störung“ – dann sendet die App wieder selbst. Unter „Status prüfen“ steht, wann er zuletzt etwas zugestellt hat.</p><p><b>Gewinn-/Verlust-Alarm:</b> Bestätigt der Dienst mit „· GV“ (ab Version 1.2), prüft er das Live-Ergebnis alle 15 Sekunden mit. Erreicht es eine Grenze, wartet er einige Sekunden: Ist die App geöffnet, meldet sie selbst – sofort und auch bei kurzen Spitzen –, und der Dienst schweigt. Sonst meldet er, einmal je Grenze; die App übernimmt das beim Öffnen als „ausgelöst“. Ein älterer Dienst kann es nicht – dann prüft nur die geöffnete App.</p><p><b>BTC-Puls:</b> Die App gibt dem Dienst die Schwellen je Uhrzeit mit. Bestätigt er mit „· Puls“ (ab Version 1.1), meldet er den Puls und die App nicht zusätzlich; ein älterer Dienst kennt ihn nicht – dann sendet ihn weiter die geöffnete App.</p><p><b>Token:</b> Den Bot-Token gibst du am Server selbst ein – die App schickt ihn weiterhin nur an Telegram.</p><p>Nur auf einem Gerät einschalten – dem, auf dem du Alarme und Positionen pflegst.</p></div></details></div><p class="chan-sub">Meldungen auch bei geschlossener App – über ein kleines Programm auf einem eigenen Server, der rund um die Uhr läuft.</p><details class="chan-guide" id="s247-guide"><summary>Anleitung: kostenlos bei Oracle Cloud einrichten (ca. 20 Minuten)</summary><ol><li><b>Konto:</b> Auf <a href="https://www.oracle.com/cloud/free/" target="_blank" rel="noopener noreferrer">oracle.com/cloud/free</a> „Start for free“. Als Heimatregion <b>Germany Central (Frankfurt)</b> wählen – sie lässt sich später nicht ändern, und von US-Servern aus sperrt Binance den Zugriff. Die Kreditkarte dient nur der Prüfung; „Always Free“ kostet nichts.</li><li><b>Server anlegen:</b> In der Konsole „Create a VM instance“. Bei <i>Image</i> auf <b>Ubuntu</b> wechseln, bei <i>Shape</i> eine mit „Always Free-eligible“ lassen (z. B. VM.Standard.E2.1.Micro). Bei <i>Add SSH keys</i> „Generate a key pair for me“ und <b>Save private key</b> – diese Datei ist der Schlüssel zum Server, gut aufbewahren. Dann <b>Create</b>. Nach 1–2 Minuten steht der Server auf „Running“; die <b>Public IP address</b> notieren.</li><li><b>Verbinden:</b> Oben rechts in der Konsole die <b>Cloud Shell</b> öffnen (Symbol &gt;_). Im Menü des Cloud-Shell-Fensters <b>Upload</b> wählen und den privaten Schlüssel hochladen. Dann eingeben (IP ersetzen) und die Frage „Are you sure …“ mit <b>yes</b> beantworten:<span class="s247-cmd"><code>chmod 600 ssh-key-*.key &amp;&amp; ssh -i ssh-key-*.key ubuntu@IP</code><button type="button" class="button ghost" data-copy="chmod 600 ssh-key-*.key &amp;&amp; ssh -i ssh-key-*.key ubuntu@IP">Kopieren</button></span></li><li><b>Dienst installieren:</b> Im Server-Fenster eingeben:<span class="s247-cmd"><code>curl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/install.sh | sudo bash</code><button type="button" class="button ghost" data-copy="curl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/install.sh | sudo bash">Kopieren</button></span>Es fragt nach <b>Bot-Token</b> und <b>Chat-ID</b> – dieselben wie oben unter „Kursalarm“ (nicht der Sicherungs-Bot; den Token zeigt auch @BotFather mit /mybots → API Token). Am Ende kommt eine Testnachricht in Telegram.</li><li><b>Übergeben:</b> Unten „An den 24/7-Dienst übergeben“ einschalten. Nach spätestens einer Minute steht hier „✓ Aktiv“, und im Telegram-Chat ist oben „📌 Scalp Desk · 24/7-Dienst“ angeheftet – diese Nachricht nicht löschen.</li></ol><ul class="s247-tips"><li><b>Ausführlich</b> – mit Aktualisieren, Ausprobieren und Hilfe bei Fehlermeldungen: <a href="https://github.com/NicoAHB/wx-widget/blob/main/server/ANLEITUNG-ORACLE.md" target="_blank" rel="noopener noreferrer">Anleitung auf GitHub</a></li><li><b>Aktualisieren:</b> den Befehl aus Schritt 4 erneut ausführen; die Einstellungen bleiben. Für den Gewinn-/Verlust-Alarm braucht es Version 1.2, für die geprüfte Zustellung 1.3 – ein vorhandener Dienst einmal so aktualisieren.</li><li><b>Server-Größe:</b> „VM.Standard.E2.1.Micro“ reicht und ist fast immer verfügbar; „Ampere A1“ meldet oft „Out of capacity“.</li><li><b>Andere Rechner:</b> läuft auf jedem Linux-Rechner mit Internet, z. B. einem Raspberry Pi – derselbe Befehl.</li><li><b>Oracle:</b> Always-Free-Server, die 7 Tage kaum ausgelastet sind, kann Oracle anhalten – und der Dienst braucht sehr wenig. Abhilfe laut Oracle: das Konto auf „Pay As You Go“ umstellen; es bleibt kostenlos, solange nur Always-Free-Angebote genutzt werden. Sonst nach einer E-Mail von Oracle den Server in der Konsole wieder starten.</li><li><b>Am Server:</b> Status <code>systemctl status scalpdesk-247</code>, Protokoll <code>journalctl -u scalpdesk-247 -f</code>, entfernen <code>sudo bash /opt/scalpdesk-247/install.sh --remove</code></li></ul></details><label class="switch"><input type="checkbox" id="s247-on"> An den 24/7-Dienst übergeben (Alarme, Stop/Ziel, Termin-Warnungen, Gewinn-/Verlust-Alarm)</label><div class="row"><button type="button" class="button ghost" id="s247-check">Status prüfen</button></div><p class="chan-status" id="s247-status" role="status"></p></section>
+      <section class="chan" aria-labelledby="s247-title" id="s247"><div class="head-line"><h3 id="s247-title">🌙 24/7-Dienst</h3><details class="tip left"><summary aria-label="Wie funktioniert der 24/7-Dienst?"><span>i</span></summary><div class="tip-body"><p>Ein kleines Programm auf einem eigenen Server, der rund um die Uhr läuft (z. B. kostenlos bei Oracle Cloud), prüft die Kurse und meldet Kurs-Alarme, Stop-Loss/Take-Profit, die Warnung vor wichtigen Terminen, ab Version 1.1 den BTC-Puls und ab Version 1.2 den Gewinn-/Verlust-Alarm per Telegram – auch wenn die App überall geschlossen ist.</p><p><b>Übergabe:</b> Die App legt die aktiven Alarme und die Stop-/Ziel-Marken deiner Positionen als Datei in deinen Telegram-Chat, heftet sie oben an und ersetzt sie nach jeder Änderung. Einstiege und Mengen der offenen Positionen stehen nur darin, solange ein Gewinn- oder Verlust-Alarm aktiv ist – der Dienst braucht sie, um das Live-Ergebnis zu rechnen. Trades und Notizen bleiben in der App. Der Dienst liest die Datei mit demselben Bot und bestätigt in der angehefteten Nachricht („Dienst: aktiv“), ab Version 1.4 zusätzlich lautlos im Chat („✅ 24/7-Dienst hat übernommen …“). Hier steht dann „Übergeben ✓ vom Dienst bestätigt“.</p><p><b>Derselbe Bot (wichtig):</b> Am Server müssen derselbe Bot und dieselbe Chat-ID eingetragen sein wie oben unter „Kursalarm“ – ein anderer Bot (z. B. der Sicherungs-Bot) sieht die angeheftete Datei nicht, dann bleibt es bei „wartet“. Ab Version 1.4 meldet der Dienst das nach 3 Minuten selbst in seinem Chat und zeigt es mit <code>sudo scalpdesk-247 status</code>.</p><p><b>Nicht doppelt:</b> Solange der Dienst aktiv ist und den aktuellen Stand hat, sendet diese App Kurs-Alarme, Stop/Ziel und Termin-Warnungen nicht zusätzlich. Meldet er sich 20 Minuten nicht oder meldet er eine Störung, sendet die App wieder selbst. Das Tages-Verlustlimit meldet immer die App.</p><p><b>Zustellung (ab Version 1.3):</b> Der Dienst prüft, ob Telegram jede Meldung angenommen hat. Wenn nicht, versucht er es erneut – nach 15 und 30 Sekunden, dann in wachsenden Abständen bis alle 5 Minuten, höchstens einen Tag lang. Eine verspätete Meldung trägt die ursprüngliche Uhrzeit und den Vermerk „verspätet“. Lehnt Telegram ab oder ist es länger als eine Minute nicht erreichbar, meldet der Dienst „Störung“ – dann sendet die App wieder selbst. Unter „Status prüfen“ steht, wann er zuletzt etwas zugestellt hat.</p><p><b>Gewinn-/Verlust-Alarm:</b> Bestätigt der Dienst mit „· GV“ (ab Version 1.2), prüft er das Live-Ergebnis alle 15 Sekunden mit. Erreicht es eine Grenze, wartet er einige Sekunden: Ist die App geöffnet, meldet sie selbst – sofort und auch bei kurzen Spitzen –, und der Dienst schweigt. Sonst meldet er, einmal je Grenze; die App übernimmt das beim Öffnen als „ausgelöst“. Ein älterer Dienst kann es nicht – dann prüft nur die geöffnete App.</p><p><b>BTC-Puls:</b> Die App gibt dem Dienst die Schwellen je Uhrzeit mit. Bestätigt er mit „· Puls“ (ab Version 1.1), meldet er den Puls und die App nicht zusätzlich; ein älterer Dienst kennt ihn nicht – dann sendet ihn weiter die geöffnete App.</p><p><b>Token:</b> Den Bot-Token gibst du am Server selbst ein – die App schickt ihn weiterhin nur an Telegram.</p><p>Nur auf einem Gerät einschalten – dem, auf dem du Alarme und Positionen pflegst.</p></div></details></div><p class="chan-sub">Meldungen auch bei geschlossener App – über ein kleines Programm auf einem eigenen Server, der rund um die Uhr läuft.</p><details class="chan-guide" id="s247-guide"><summary>Anleitung: kostenlos bei Oracle Cloud einrichten (ca. 20 Minuten)</summary><ol><li><b>Konto:</b> Auf <a href="https://www.oracle.com/cloud/free/" target="_blank" rel="noopener noreferrer">oracle.com/cloud/free</a> „Start for free“. Als Heimatregion <b>Germany Central (Frankfurt)</b> wählen – sie lässt sich später nicht ändern, und von US-Servern aus sperrt Binance den Zugriff. Die Kreditkarte dient nur der Prüfung; „Always Free“ kostet nichts.</li><li><b>Server anlegen:</b> In der Konsole „Create a VM instance“. Bei <i>Image</i> auf <b>Ubuntu</b> wechseln, bei <i>Shape</i> eine mit „Always Free-eligible“ lassen (z. B. VM.Standard.E2.1.Micro). Bei <i>Add SSH keys</i> „Generate a key pair for me“ und <b>Save private key</b> – diese Datei ist der Schlüssel zum Server, gut aufbewahren. Dann <b>Create</b>. Nach 1–2 Minuten steht der Server auf „Running“; die <b>Public IP address</b> notieren.</li><li><b>Verbinden:</b> Oben rechts in der Konsole die <b>Cloud Shell</b> öffnen (Symbol &gt;_). Im Menü des Cloud-Shell-Fensters <b>Upload</b> wählen und den privaten Schlüssel hochladen. Dann eingeben (IP ersetzen) und die Frage „Are you sure …“ mit <b>yes</b> beantworten:<span class="s247-cmd"><code>chmod 600 ssh-key-*.key &amp;&amp; ssh -i ssh-key-*.key ubuntu@IP</code><button type="button" class="button ghost" data-copy="chmod 600 ssh-key-*.key &amp;&amp; ssh -i ssh-key-*.key ubuntu@IP">Kopieren</button></span></li><li><b>Dienst installieren:</b> Im Server-Fenster eingeben:<span class="s247-cmd"><code>curl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/install.sh | sudo bash</code><button type="button" class="button ghost" data-copy="curl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/install.sh | sudo bash">Kopieren</button></span>Es fragt nach <b>Bot-Token</b> und <b>Chat-ID</b> – dieselben wie oben unter „Kursalarm“ (nicht der Sicherungs-Bot; den Token zeigt auch @BotFather mit /mybots → API Token). Am Ende kommt eine Testnachricht in Telegram.</li><li><b>Übergeben:</b> Unten „An den 24/7-Dienst übergeben“ einschalten. Nach höchstens einer Minute steht hier „Übergeben ✓ vom Dienst bestätigt“, in Telegram kommt „✅ 24/7-Dienst hat übernommen“, und oben im Chat ist „📌 Scalp Desk · 24/7-Dienst“ angeheftet – diese Nachricht nicht löschen.</li></ol><ul class="s247-tips"><li><b>Ausführlich</b> – mit Aktualisieren, Ausprobieren und Hilfe bei Fehlermeldungen: <a href="https://github.com/NicoAHB/wx-widget/blob/main/server/ANLEITUNG-ORACLE.md" target="_blank" rel="noopener noreferrer">Anleitung auf GitHub</a></li><li><b>Aktualisieren:</b> den Befehl aus Schritt 4 erneut ausführen; die Einstellungen bleiben. Für den Gewinn-/Verlust-Alarm braucht es Version 1.2, für die geprüfte Zustellung 1.3, für Bestätigung und Selbstprüfung 1.4 – ein vorhandener Dienst einmal so aktualisieren.</li><li><b>Server-Größe:</b> „VM.Standard.E2.1.Micro“ reicht und ist fast immer verfügbar; „Ampere A1“ meldet oft „Out of capacity“.</li><li><b>Andere Rechner:</b> läuft auf jedem Linux-Rechner mit Internet, z. B. einem Raspberry Pi – derselbe Befehl.</li><li><b>Oracle:</b> Always-Free-Server, die 7 Tage kaum ausgelastet sind, kann Oracle anhalten – und der Dienst braucht sehr wenig. Abhilfe laut Oracle: das Konto auf „Pay As You Go“ umstellen; es bleibt kostenlos, solange nur Always-Free-Angebote genutzt werden. Sonst nach einer E-Mail von Oracle den Server in der Konsole wieder starten.</li><li><b>Am Server (ab 1.4):</b> alles prüfen <code>sudo scalpdesk-247 status</code>, Protokoll <code>sudo scalpdesk-247 protokoll</code>, live <code>sudo scalpdesk-247 live</code>. Token und Chat-ID neu eingeben: Befehl aus Schritt 4 mit <code>| sudo bash -s -- --neu</code> am Ende. Entfernen <code>sudo bash /opt/scalpdesk-247/install.sh --remove</code></li></ul></details><label class="switch"><input type="checkbox" id="s247-on"> An den 24/7-Dienst übergeben (Alarme, Stop/Ziel, Termin-Warnungen, Gewinn-/Verlust-Alarm)</label><div class="row"><button type="button" class="button ghost" id="s247-check">Status prüfen</button></div><p class="chan-status" id="s247-status" role="status"></p></section>
       <p class="chan-note">🔒 Token und Webhook-URL bleiben nur in diesem Browser. Sie stehen in keinem Backup und keinem QR-Code und werden nur an Telegram bzw. Discord geschickt. Auf jedem Gerät, das senden soll, einzeln einrichten.</p>
       <div class="sheet-actions"><button type="button" class="button ghost" id="chan-clear">Zugangsdaten löschen</button><button type="button" class="button primary" id="chan-done">Fertig</button></div>
     </div>
@@ -9178,7 +9377,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
   <dialog class="sheet" id="reset-dialog" aria-labelledby="reset-title">
     <div class="sheet-head"><h2 id="reset-title">Handelsdaten zurücksetzen</h2><button type="button" class="button ghost icon" id="reset-close" aria-label="Schließen">×</button></div>
     <div class="sheet-body reset-body">
-      <p><b>Gelöscht werden:</b> offene Positionen, Trades, Geldbewegungen, Kurs-Alarme sowie Gewinn- und Verlust-Alarme.</p>
+      <p><b>Gelöscht werden:</b> offene Positionen, Trades, Demo-Positionen und Demo-Historie, Geldbewegungen, Kurs-Alarme sowie Gewinn- und Verlust-Alarme.</p>
       <p><b>Erhalten bleiben:</b> die gelernten Chartmuster, alle Einstellungen (Risiko, Tages-Verlustlimit, Steuersatz, Setups, Vorauswahl, Darstellung) und die Telegram- und Discord-Zugänge.</p>
       <p><b>Nur auf diesem Gerät:</b> Gleichst du danach mit einem anderen Gerät ab, kommen dessen Positionen und Trades wieder dazu – dort ebenfalls zurücksetzen.</p>
       <p>Vorher speichert die App eine Sicherungsdatei (am iPad in der Dateien-App unter „Downloads“). Mit eingeschalteter Telegram-Sicherung bleibt die bisherige Sicherung im Chat stehen; die nächste kommt als neue Nachricht.</p>
