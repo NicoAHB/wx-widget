@@ -21,9 +21,14 @@ Der Dienst ist ein kleines Programm auf einem eigenen Server, der rund um die Uh
 
 ---
 
-## Du hast den Dienst schon? Auf Version 1.3 aktualisieren (5 Minuten)
+## Du hast den Dienst schon? Auf Version 1.4 aktualisieren (5 Minuten)
 
-Den Gewinn-/Verlust-Alarm bei geschlossener App kann der Dienst ab Version 1.2. Ab Version 1.3 prüft er außerdem, ob Telegram jede Meldung angenommen hat. Ein vorhandener Dienst wird so aktualisiert. Token, Chat und Einstellungen bleiben dabei erhalten.
+Den Gewinn-/Verlust-Alarm bei geschlossener App kann der Dienst ab Version 1.2. Ab Version 1.3 prüft er außerdem, ob Telegram jede Meldung angenommen hat. Ab Version 1.4:
+- **Bestätigung:** Er bestätigt jede neue Übergabe lautlos im Chat („✅ 24/7-Dienst hat übernommen …“). Die App zeigt „Übergeben ✓ vom Dienst bestätigt“, meist nach 20–30 Sekunden.
+- **Selbstprüfung:** Findet er keine Datei der App, sagt er das im Protokoll und per Telegram. Meist ist am Server ein anderer Bot oder eine andere Chat-ID eingetragen als in der App unter „Kursalarm“.
+- **Kurzbefehl:** `sudo scalpdesk-247 status` prüft den ganzen Weg auf einen Blick.
+
+Ein vorhandener Dienst wird so aktualisiert. Token, Chat und Einstellungen bleiben dabei erhalten.
 
 1. Auf [cloud.oracle.com](https://cloud.oracle.com) anmelden und die **Cloud Shell** öffnen. Sie liegt oben rechts unter „Developer tools“ (Symbol `</>`), in älteren Ansichten direkt hinter dem Symbol `>_`.
 2. Mit dem Server verbinden. Die Schlüsseldatei liegt noch von der Einrichtung in der Cloud Shell. Ersetze `IP` durch die öffentliche IP deines Servers (Konsole → Compute → Instances → dein Server → „Public IP address“):
@@ -35,10 +40,11 @@ Den Gewinn-/Verlust-Alarm bei geschlossener App kann der Dienst ab Version 1.2. 
    ```
    curl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/install.sh | sudo bash
    ```
-   Der Installer zeigt `2/5 Programm 1.3.0 …` und am Ende `5/5 Dienst läuft ✓`. In Telegram kommt eine Testnachricht.
+   Der Installer zeigt `2/5 Programm 1.4.0 …` und am Ende `5/5 Dienst läuft ✓`. In Telegram kommt eine Testnachricht. In der Prüfung steht der Bot des Dienstes, zum Beispiel `✓ Bot @dein_bot (ID 123456789) erreichbar`. Er muss derselbe sein wie in der App unter „Kursalarm“.
 4. Kontrolle nach höchstens einer Minute:
    - Im Telegram-Chat steht in der angehefteten Nachricht `Dienst: aktiv · …` und darunter `Zustellung: geprüft, noch keine Meldung` (nach der ersten Meldung `Zustellung: zuletzt …`). Bei aktivem Gewinn-/Verlust-Alarm steht in der Dienst-Zeile auch `· GV`.
-   - In der App unter **🔔 Hinweise → „Telegram / Discord einrichten“ → „Status prüfen“**: „✓ Aktiv … Zugestellt hat er noch keine Meldung.“ bzw. „Zuletzt zugestellt: …“.
+   - In der App unter **🔔 Hinweise → „Telegram / Discord einrichten“**: „Übergeben ✓ vom Dienst bestätigt um … (… · Dienst 1.4.0) … Zugestellt hat er noch keine Meldung.“ bzw. „Zuletzt zugestellt: …“. Nach einer Änderung an den Alarmen kommt außerdem lautlos „✅ 24/7-Dienst hat übernommen …“ in Telegram.
+   - Am Server: `sudo scalpdesk-247 status` endet mit „Ergebnis: alles in Ordnung.“
    - In der App: Tippe oben rechts auf das Live-Ergebnis „Offen“. Im Feld „Gewinn- und Verlust-Alarm“ steht bei aktiver Grenze: **„✓ Auch bei geschlossener App: Der 24/7-Dienst prüft mit und meldet die Grenze.“**
 
 Mehr ist nicht zu tun.
@@ -108,7 +114,7 @@ curl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/insta
 Der Installer arbeitet fünf Schritte ab:
 
 1. **Node.js** installieren (bei einem neuen Server 1–3 Minuten)
-2. **Programm** laden: zeigt `Programm 1.3.0`
+2. **Programm** laden: zeigt `Programm 1.4.0`
 3. **Einstellungen** abfragen:
    - **Bot-Token:** einfügen und Enter. Die Eingabe bleibt aus Sicherheitsgründen unsichtbar.
    - **Chat-ID:** zum Beispiel `987654321`, bei Gruppen mit Minus davor
@@ -121,7 +127,10 @@ Der Dienst startet ab jetzt mit dem Server und nach Fehlern von selbst neu. Du k
 ### Schritt 6 – In der App übergeben
 
 1. In der App: **🔔 Hinweise → „Telegram / Discord einrichten“ → 🌙 24/7-Dienst** → **„An den 24/7-Dienst übergeben“** einschalten.
-2. Nach höchstens einer Minute steht dort **„✓ Aktiv“**. Im Telegram-Chat ist oben **„📌 Scalp Desk · 24/7-Dienst“** angeheftet. **Diese Nachricht nicht löschen** – über sie tauschen App und Dienst den aktuellen Stand aus.
+2. Nach höchstens einer Minute (meist 20–30 Sekunden) steht dort **„Übergeben ✓ vom Dienst bestätigt“**.
+   - In Telegram kommt lautlos **„✅ 24/7-Dienst hat übernommen“** mit deinen Alarmen.
+   - Oben im Chat ist **„📌 Scalp Desk · 24/7-Dienst“** angeheftet. **Diese Nachricht nicht löschen** – über sie tauschen App und Dienst den aktuellen Stand aus.
+   - Bleibt es bei „wartet auf die Bestätigung“, siehe [Wenn etwas nicht klappt](#wenn-etwas-nicht-klappt).
 3. Nur auf **einem** Gerät einschalten: dem, auf dem du Alarme und Positionen pflegst.
 
 ### Schritt 7 – Ausprobieren (empfohlen)
@@ -201,14 +210,24 @@ Zuerst wie in [Schritt 4](#schritt-4--mit-dem-server-verbinden) verbinden.
 
 | Was | Befehl |
 |---|---|
+| Alles prüfen (ab 1.4): Bot, Chat, angeheftete Datei, Bestätigung, Alarme, Binance | `sudo scalpdesk-247 status` |
 | Läuft der Dienst? | `systemctl status scalpdesk-247` |
-| Protokoll live ansehen (beenden mit Strg+C) | `journalctl -u scalpdesk-247 -f` |
+| Protokoll: die letzten 60 Zeilen | `sudo scalpdesk-247 protokoll` |
+| Protokoll live ansehen (beenden mit Strg+C) | `sudo scalpdesk-247 live` oder `journalctl -u scalpdesk-247 -f` |
+| Deutsche Uhrzeit im Protokoll (einmalig) | `sudo timedatectl set-timezone Europe/Berlin` |
 | Aktualisieren | den Installationsbefehl aus Schritt 5 erneut ausführen |
 | Token/Chat neu eingeben | `curl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/install.sh \| sudo bash -s -- --neu` |
 | Server neu starten | `sudo reboot` (der Dienst startet von selbst wieder) |
 | Dienst entfernen | `sudo bash /opt/scalpdesk-247/install.sh --remove` |
 
-Im Protokoll steht beim Start zum Beispiel `Scalp Desk 24/7-Dienst 1.3.0 gestartet · Bot @…`. Nach jeder Übergabe folgt eine Zeile wie `Datei der App übernommen (#ab12): 3 Alarme, 2 Positionen, Gewinn-/Verlust-Alarm (≥ +100 USDT, 2 offene Positionen)`.
+Im Protokoll steht beim Start zum Beispiel `Scalp Desk 24/7-Dienst 1.4.0 gestartet · Bot @dein_bot (ID 123456789) · Chat 987654321 · …`. Danach folgt bei jeder Übergabe:
+
+- `Übergabe erhalten: Nachricht #501 · App 01.10. 17:08 · Safari, iPhone · #ab12`
+- `Alarme geladen: 1 Alarm, 0 Positionen – Kurs-Alarm BTC auf/über 65.000,00 USDT`
+- `Kursprüfung: … noch 0,08 % entfernt`
+- `Bestätigung eingetragen: …`
+
+Löst etwas aus, kommen `Alarm ausgelöst: …` und `Telegram gesendet: …`. Alle 10 Minuten steht eine Übersicht („Lebenszeichen: aktiv · …“) im Protokoll. Ohne Datei der App steht dort alle 10 Minuten `Warte auf die Übergabe der App: …`, mit Bot und Chat-ID zum Vergleich.
 
 ---
 
@@ -224,7 +243,8 @@ Im Protokoll steht beim Start zum Beispiel `Scalp Desk 24/7-Dienst 1.3.0 gestart
 | „chat not found“ | Dem Bot in Telegram einmal `/start` schreiben. In einer Gruppe muss der Bot Mitglied sein. |
 | Binance nicht erreichbar | Läuft der Server in einer US-Region? Dann sperrt Binance. Ein neues Konto mit Heimatregion Frankfurt ist nötig. |
 | App: „Anheften nicht erlaubt“ | In einer Gruppe braucht der Bot das Admin-Recht „Nachrichten anheften“. |
-| App: „⚠ Der Dienst hat sich seit … nicht gemeldet“ oder „… wartet auf den 24/7-Dienst“ | Am Server `systemctl status scalpdesk-247` prüfen. Steht er nicht auf „active (running)“, den Installationsbefehl erneut ausführen. Hat Oracle den Server angehalten: in der Konsole starten. |
+| App bleibt bei „… wartet auf den 24/7-Dienst“ / „wartet auf die Bestätigung“ oder zeigt „⚠ … hat nicht bestätigt“, obwohl der Dienst läuft | **Häufigste Ursache: Am Server steht ein anderer Bot oder eine andere Chat-ID als in der App unter „Kursalarm“**, zum Beispiel der Sicherungs-Bot. Jeder Bot hat seinen eigenen Chat und sieht die angeheftete Datei der App nicht. So prüfst du: `sudo scalpdesk-247 status`. Bei „✗ Keine Datei der App angeheftet“ nennt die Ausgabe den Bot des Servers; die App nennt ihren unter „wartet …“. Sind sie verschieden: Token und Chat-ID aus der App (Kursalarm) am Server neu eingeben mit `curl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/install.sh \| sudo bash -s -- --neu`. Der Dienst 1.4 schickt in diesem Fall nach 3 Minuten auch selbst „⏳ … wartet auf die Übergabe der App“ – in den Chat des am Server eingetragenen Bots. |
+| App: „⚠ Der Dienst hat sich seit … nicht gemeldet“ | Am Server `systemctl status scalpdesk-247` prüfen. Steht er nicht auf „active (running)“, den Installationsbefehl erneut ausführen. Hat Oracle den Server angehalten: in der Konsole starten. |
 | App: „⚠ Der Dienst meldet eine Störung: Kurse nicht abrufbar …“ | Der Server erreicht Binance nicht. Das Protokoll zeigt den Grund: `journalctl -u scalpdesk-247 -n 50`. |
 | App: „⚠ Der Dienst meldet eine Störung: Telegram-Nachricht nicht zustellbar seit …“ | Telegram nimmt die Meldungen des Dienstes nicht an; der Grund steht in Klammern. „chat not found“: dem Bot `/start` schreiben bzw. ihn wieder in die Gruppe aufnehmen. „Unauthorized“: Token geändert – mit `--neu` neu eingeben (siehe Tabelle oben). War Telegram nur kurz nicht erreichbar, verschwindet die Störung mit der nächsten Zustellung von selbst; bis dahin sendet die geöffnete App. |
 | App: „Der Dienst kann ihn erst ab Version 1.2“ oder „… prüft der Dienst erst ab Version 1.3“ | Dienst aktualisieren (siehe oben). |

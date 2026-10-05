@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-// Scalp Desk – 24/7-Dienst (Schritt 5.1; BTC-Puls ab 1.1, Gewinn-/Verlust-Alarm ab 1.2, gesicherte Zustellung ab 1.3)
+// Scalp Desk – 24/7-Dienst (Schritt 5.1; BTC-Puls ab 1.1, Gewinn-/Verlust-Alarm ab 1.2, gesicherte Zustellung ab 1.3,
+// Bestätigung und Selbstdiagnose ab 1.4)
 // Meldet Kurs-Alarme, Stop-Loss/Take-Profit offener Positionen, wichtige Wirtschaftstermine, den BTC-Puls (ungewöhnlich
 // starke Bitcoin-Bewegung) und den Gewinn-/Verlust-Alarm (Live-Ergebnis aller offenen Positionen erreicht eine Grenze) per
 // Telegram (auf Wunsch zusätzlich Discord) – rund um die Uhr, auch wenn die App überall geschlossen ist.
@@ -11,21 +12,29 @@
 // werden mit wachsender Pause wiederholt, auch nach einem Neustart. Lehnt Telegram ab oder ist es länger nicht erreichbar,
 // steht „Störung“ in der angehefteten Nachricht; dann meldet die geöffnete App wieder selbst. Die letzte erfolgreiche
 // Zustellung steht dort als eigene Zeile („Zustellung: zuletzt …“).
+// Bestätigung und Selbstdiagnose (ab 1.4): Übernimmt der Dienst eine neue Übergabe, schreibt er das ins Protokoll und schickt
+// eine lautlose Bestätigung („✅ 24/7-Dienst hat übernommen …“) in den Chat. Findet er in seinem Chat keine Datei der App –
+// meist ist am Server ein anderer Bot oder eine andere Chat-ID eingetragen als in der App unter „Kursalarm“ –, sagt er das
+// im Protokoll (alle 10 Minuten) und einmal am Tag per Telegram, mit Bot und Chat-ID zum Vergleich. „--status“ zeigt den
+// ganzen Weg auf einen Blick, ohne etwas zu senden.
 //
 // Woher er die Daten hat: Die App legt die aktiven Alarme und Positionen als Datei „scalpdesk-247.json“ in deinen
 // Telegram-Chat und heftet sie oben an. Dieser Dienst liest sie mit demselben Bot (getChat → angepinnte Nachricht →
-// getFile), prüft jede Viertelminute die 1m-Kerzen bei Binance (auch kurze Dochte zählen) und bestätigt in der angepinnten
-// Nachricht („Dienst: aktiv …“). Solange diese Bestätigung frisch ist, sendet die App selbst nichts doppelt.
+// getFile, alle 20 Sekunden), prüft jede Viertelminute die 1m-Kerzen bei Binance (auch kurze Dochte zählen) und bestätigt in
+// der angepinnten Nachricht („Dienst: aktiv …“). Solange diese Bestätigung frisch ist, sendet die App selbst nichts doppelt.
+// Dafür müssen App (Kursalarm) und Dienst denselben Bot und dieselbe Chat-ID nutzen: Ein anderer Bot sieht die Datei nicht.
 // Der Server braucht nur ausgehende Verbindungen (Telegram, Binance, GitHub) – keine offenen Ports, keine Domain.
 //
 // Ohne Abhängigkeiten, Node.js ab Version 18. Einrichtung: server/install.sh (fragt Bot-Token und Chat-ID ab).
-// Aufruf: node scalpdesk-247.mjs --config /etc/scalpdesk-247.json [--state /var/lib/scalpdesk-247/state.json] [--check]
+// Aufruf: node scalpdesk-247.mjs --config /etc/scalpdesk-247.json [--state /var/lib/scalpdesk-247/state.json] [--check | --status]
+//   --check   nach der Einrichtung: Bot, Testnachricht, Binance, angeheftete Datei
+//   --status  Fehlersuche ohne Nachricht: Bot, Chat, angeheftete Datei, Bestätigung, Zustand, Binance (am Server: sudo scalpdesk-247 status)
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-export const VERSION = '1.3.0';
+export const VERSION = '1.4.0';
 const E = process.env;
 // Adressen (für Tests über Umgebungsvariablen änderbar)
 export const API = {
@@ -34,10 +43,12 @@ export const API = {
   fut: E.SCALPDESK_FUT_API || 'https://fapi.binance.com',
   cal: E.SCALPDESK_CAL_URL || 'https://raw.githubusercontent.com/NicoAHB/wx-widget/kalender/calendar.json'
 };
-// Takt: Kurse alle 15 s, angepinnte Datei jede Minute, Lebenszeichen alle 10 min, Kalender alle 30 min
+// Takt: Kurse alle 15 s, angepinnte Datei alle 20 s (bis 1.3 jede Minute), Lebenszeichen alle 10 min, Kalender alle 30 min.
+// 1.4: hint – so lange ohne Datei der App, dann ein Hinweis per Telegram (höchstens einmal am Tag); waitLog – Protokollzeile
+// „Warte auf die Übergabe“ wiederholen; ack – Abstand zwischen zwei Bestätigungen „hat übernommen“
 export const EVERY = E.SCALPDESK_FAST
-  ? { tick: 300, price: 1500, config: 2000, beat: 15e3, cal: 60e3, econ: 1500, feedStale: 12e3, pnlHold: 1200 }
-  : { tick: 5e3, price: 15e3, config: 60e3, beat: 10 * 60e3, cal: 30 * 60e3, econ: 20e3, feedStale: 3 * 60e3, pnlHold: 8e3 }; // pnlHold: Gewinn/Verlust erreicht → so lange auf die App warten
+  ? { tick: 300, price: 1500, config: 2000, beat: 15e3, cal: 60e3, econ: 1500, feedStale: 12e3, pnlHold: 1200, hint: 5e3, hintAgain: 60e3, waitLog: 10e3, ack: 3e3 }
+  : { tick: 5e3, price: 15e3, config: 20e3, beat: 10 * 60e3, cal: 30 * 60e3, econ: 20e3, feedStale: 3 * 60e3, pnlHold: 8e3, hint: 3 * 60e3, hintAgain: 24 * 3600e3, waitLog: 10 * 60e3, ack: 60e3 }; // pnlHold: Gewinn/Verlust erreicht → so lange auf die App warten
 export const MARK = '📌 Scalp Desk · 24/7-Dienst', FILE = 'scalpdesk-247.json', LINE = 'Dienst:';
 const TOKEN_RE = /^\d{5,15}:[A-Za-z0-9_-]{30,80}$/, CHAT_RE = /^(-?\d{1,20}|@[A-Za-z][A-Za-z0-9_]{4,31})$/;
 const DC_RE = /^https:\/\/(?:(?:ptb|canary)\.)?discord(?:app)?\.com\/api(?:\/v\d{1,2})?\/webhooks\/\d{5,25}\/[A-Za-z0-9_-]{20,120}(?:\?thread_id=\d{5,25})?$/;
@@ -211,8 +222,40 @@ export function appLine(c) {
 // „· GV“ (ab 1.2): der Dienst prüft den Gewinn-/Verlust-Alarm; steht vor „· Puls“, damit ältere Apps „· Puls · #“ weiter erkennen
 export const pulseOn = c => !!(c?.on && c.ev.pulse && c.pulse);
 export const pnlOn = c => !!(c?.on && c.ev.pnl && c.pnl);
+// „· v1.4.0“ (ab 1.4): Version des Dienstes – die App zeigt sie an; ältere Apps übergehen das Feld
 export function statusLine({ ok, now, c, problem }) {
-  return `${LINE} ${ok ? 'aktiv' : 'Störung'} · ${stamp(now, c.tz)}${pnlOn(c) ? ' · GV' : ''}${pulseOn(c) ? ' · Puls' : ''} · #${c.tag} übernommen${ok ? '' : ` · ${problem}`}`;
+  return `${LINE} ${ok ? 'aktiv' : 'Störung'} · ${stamp(now, c.tz)} · v${VERSION}${pnlOn(c) ? ' · GV' : ''}${pulseOn(c) ? ' · Puls' : ''} · #${c.tag} übernommen${ok ? '' : ` · ${problem}`}`;
+}
+// ---------- 1.4: Bestätigung „hat übernommen“, Hinweis bei fehlender Datei ----------
+// Beobachtete Marken mit Inhalt (ändert sich der Preis eines Alarms, gilt er als neu); Quittierungen zählen nicht
+export function watchItems(c) {
+  if (!c?.on) return [];
+  return [...(c.ev.alarm ? c.alarms.map(a => ({ key: `${alarmKey(a)}:${a.dir}:${a.price}`, text: `Kurs-Alarm ${coin(a.symbol)} ${a.dir === 'above' ? 'auf/über' : 'auf/unter'} ${priceText(a.price)} USDT${a.source === 'futures' ? ' (Futures)' : ''}` })) : []),
+    ...(c.ev.pos ? c.positions.map(p => ({ key: `pos:${p.id}:${p.since}:${p.sl}:${p.tp}`, text: `${coin(p.symbol)} ${p.side === 'long' ? 'Long' : 'Short'}: ${[p.sl ? `Stop-Loss ${priceText(p.sl)}` : '', p.tp ? `Take-Profit ${priceText(p.tp)}` : ''].filter(Boolean).join(' · ')}` })) : []),
+    ...(pnlOn(c) ? c.pnl.lim.map(l => ({ key: `${pnlKey(l)}:${l.v}`, text: `${pnlName(l.k)} ${pnlCond(l)}` })) : [])];
+}
+// Bestätigung: was neu beobachtet wird (höchstens 8 Zeilen) und was insgesamt; ausgeschaltet → ein Satz
+export function ackText(c, fresh, now) {
+  if (!c.on) return `⏸ 24/7-Dienst: Übergabe in der App ausgeschaltet (${timeText(now, c.tz)} Uhr) – der Dienst meldet nichts, bis du sie wieder einschaltest.`;
+  const al = c.ev.alarm ? c.alarms.length : 0, ps = c.ev.pos ? c.positions.filter(p => p.sl || p.tp).length : 0, extra = [];
+  if (c.ev.news && c.econ.warn) extra.push(`Termin-Warnung ${c.econ.warn} min vorher`);
+  if (pulseOn(c)) extra.push('BTC-Puls');
+  const lines = fresh.slice(0, 8).map(x => `• ${x.text}`).concat(fresh.length > 8 ? [`• … und ${fresh.length - 8} weitere`] : []);
+  return `✅ 24/7-Dienst hat übernommen (${timeText(now, c.tz)} Uhr)${lines.length ? `\n${lines.join('\n')}` : ''}\nBeobachtet jetzt: ${plural(al, 'Kurs-Alarm', 'Kurs-Alarme')}, ${plural(ps, 'Position', 'Positionen')} mit Stop/Ziel${extra.length ? ` · ${extra.join(' · ')}` : ''} – auch bei geschlossener App.`;
+}
+// Was ist in diesem Chat angeheftet, wenn es nicht die Datei der App ist?
+export function pinnedWhat(pm) {
+  if (!pm) return 'nichts';
+  if (pm.document) return `eine andere Datei („${String(pm.document.file_name || 'ohne Namen').slice(0, 60)}“)`;
+  const t = String(pm.text || pm.caption || '').split('\n')[0].slice(0, 60);
+  return t ? `eine andere Nachricht („${t}${t.length >= 60 ? '…' : ''}“)` : 'eine andere Nachricht';
+}
+export const chatText = (chat, id) => `${id}${chat ? ` (${chat.type === 'private' ? 'privat' : chat.type === 'channel' ? 'Kanal' : 'Gruppe'}${chat.title || chat.first_name ? ` „${chat.title || chat.first_name}“` : ''})` : ''}`;
+export function hintText({ bot, chat, what, host }) {
+  return `⏳ Scalp Desk 24/7-Dienst (Server ${host}) wartet auf die Übergabe der App.\n`
+    + `In diesem Chat ist keine Datei „${FILE}“ angeheftet (angeheftet: ${what}) – der Dienst kennt deshalb keine Alarme und meldet nichts.\n\n`
+    + `So passt es zusammen: In der App unter 🔔 Hinweise → „Telegram / Discord einrichten“ → Kursalarm müssen dieser Bot (${bot}) und die Chat-ID ${chat} eingetragen sein. Dann dort „An den 24/7-Dienst übergeben“ einschalten.\n`
+    + `Steht in der App ein anderer Bot (zum Beispiel der Sicherungs-Bot) oder eine andere Chat-ID, am Server Bot-Token und Chat-ID aus der App neu eingeben:\ncurl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/install.sh | sudo bash -s -- --neu`;
 }
 // darunter je vom Dienst gesendetem Gewinn-/Verlust-Alarm eine Zeile (pnlLine) – so übernimmt die App „ausgelöst“
 export const caption = (c, status, extra = []) => [MARK, appLine(c), status, ...extra].join('\n').slice(0, 1024);
@@ -245,6 +288,11 @@ export class Watcher {
     this.pnlSt = {}; this.pnlPend = {}; this.pnlFired = {};
     // 1.3: Ausgang (noch nicht zugestellte Meldungen), letzte Zustellung, laufender Sendefehler { since, msg, code }
     this.out = []; this.last = null; this.sendErr = null; this.beatFailAt = 0;
+    // 1.4: eigener Bot (getMe), Warten auf die Datei der App (seit, letzte Protokollzeile, letzter Hinweis per Telegram),
+    // Bestätigung „hat übernommen“ (zuletzt bestätigte Marken, offen?), erste Kursprüfung neuer Marken fürs Protokoll,
+    // zuletzt in der angepinnten Nachricht bestätigter Stand, Kursprüfungen seit dem letzten Lebenszeichen
+    this.me = null; this.waitSince = 0; this.waitLogAt = 0; this.hintAt = 0; this.ackKeys = null; this.ackAt = 0; this.ackOn = null; this.ackPend = false; this.waitWhat = '';
+    this.firstLook = new Set(); this.beatTag = ''; this.checks = 0; this.prices = new Map(); this.chatInfo = null;
     this.loadState();
   }
   // ---- Zustand (ausgelöste Meldungen, zuletzt gelesene Datei, Kalender) über Neustarts hinweg ----
@@ -254,10 +302,11 @@ export class Watcher {
       const s = JSON.parse(fs.readFileSync(this.statePath, 'utf8'));
       if (s && s.v === 1) { this.fired = s.fired && typeof s.fired === 'object' ? s.fired : {}; if (s.pulse && typeof s.pulse === 'object') this.pulseLast = { up: s.pulse.up || null, down: s.pulse.down || null };
         if (s.pnl && typeof s.pnl === 'object') { this.pnlSt = s.pnl.st && typeof s.pnl.st === 'object' ? s.pnl.st : {}; this.pnlFired = s.pnl.fired && typeof s.pnl.fired === 'object' ? s.pnl.fired : {}; this.pnlPend = s.pnl.pend && typeof s.pnl.pend === 'object' ? s.pnl.pend : {}; }
-        if (Array.isArray(s.out)) this.out = s.out.filter(m => m && typeof m.text === 'string' && Number.isFinite(m.at)); if (s.last?.t) this.last = s.last; if (s.sendErr?.since) this.sendErr = s.sendErr; if (s.conf?.data) this.conf = { ...s.conf, data: parseConfig({ kind: 'scalpdesk-247', v: 1, ...s.conf.data }) }; if (Array.isArray(s.cal?.events)) { this.cal = s.cal.events; this.calAt = s.cal.at || 0; } }
+        if (Array.isArray(s.out)) this.out = s.out.filter(m => m && typeof m.text === 'string' && Number.isFinite(m.at)); if (s.last?.t) this.last = s.last; if (s.sendErr?.since) this.sendErr = s.sendErr; if (s.conf?.data) this.conf = { ...s.conf, data: parseConfig({ kind: 'scalpdesk-247', v: 1, ...s.conf.data }) }; if (Array.isArray(s.cal?.events)) { this.cal = s.cal.events; this.calAt = s.cal.at || 0; }
+        if (Number.isFinite(s.hintAt)) this.hintAt = s.hintAt; if (Array.isArray(s.ack?.keys)) { this.ackKeys = s.ack.keys.filter(k => typeof k === 'string'); this.ackAt = Number(s.ack.t) || 0; this.ackOn = typeof s.ack.on === 'boolean' ? s.ack.on : null; } }
     } catch { /* erster Start oder beschädigt: neu anfangen */ }
   }
-  stateJson() { const c = this.conf; return JSON.stringify({ v: 1, fired: this.fired, pulse: this.pulseLast, pnl: { st: this.pnlSt, pend: this.pnlPend, fired: this.pnlFired }, out: this.out, last: this.last, sendErr: this.sendErr, conf: c && { msgId: c.msgId, fileUid: c.fileUid, data: c.data }, cal: this.cal && { at: this.calAt, events: this.cal } }); }
+  stateJson() { const c = this.conf; return JSON.stringify({ v: 1, fired: this.fired, pulse: this.pulseLast, pnl: { st: this.pnlSt, pend: this.pnlPend, fired: this.pnlFired }, out: this.out, last: this.last, sendErr: this.sendErr, conf: c && { msgId: c.msgId, fileUid: c.fileUid, data: c.data }, cal: this.cal && { at: this.calAt, events: this.cal }, hintAt: this.hintAt, ack: this.ackKeys && { keys: this.ackKeys, t: this.ackAt, on: this.ackOn } }); }
   saveStateNow() {
     if (!this.statePath) return;
     try { fs.mkdirSync(path.dirname(this.statePath), { recursive: true }); const tmp = this.statePath + '.tmp'; fs.writeFileSync(tmp, this.stateJson()); fs.renameSync(tmp, this.statePath); }
@@ -302,7 +351,8 @@ export class Watcher {
       const late = t - m.at > 120e3, full = `${m.text}\n${timeText(m.at, m.tz, true)} Uhr · 24/7-Dienst${late ? `\n(verspätet zugestellt um ${timeText(t, m.tz)} Uhr – ${why})` : ''}`;
       if (this.discord && !m.dc) { m.dc = true; await this.discordPost(full); }
       try {
-        await this.tg('sendMessage', { chat_id: this.chat, text: full.slice(0, 4000), link_preview_options: { is_disabled: true }, ...(m.silent ? { disable_notification: true } : {}) });
+        const sent = await this.tg('sendMessage', { chat_id: this.chat, text: full.slice(0, 4000), link_preview_options: { is_disabled: true }, ...(m.silent ? { disable_notification: true } : {}) });
+        this.log(`Telegram gesendet: ${m.label || m.text.split('\n')[0]}${sent?.message_id ? ` (Nachricht #${sent.message_id})` : ''}${m.tries ? ` – nach ${plural(m.tries, 'Fehlversuch', 'Fehlversuchen')}` : ''}`);
         this.out = this.out.filter(x => x !== m); this.last = { t, label: m.label };
         if (this.sendErr && !this.out.some(x => x.tries)) { this.log('Telegram: Zustellung wieder in Ordnung'); this.sendErr = null; }
         this.next.beat = 0; this.saveState(); // Zeile „Zustellung: zuletzt …“ gleich aktualisieren
@@ -319,25 +369,39 @@ export class Watcher {
     catch (e) { this.log('Discord nicht erreichbar:', e.cause?.code || e.message); }
   }
   // ---- angepinnte Datei der App lesen ----
-  async syncConfig() {
-    const chat = await this.tg('getChat', { chat_id: this.chat }), pm = chat?.pinned_message;
-    if (!isConfigMessage(pm)) {
-      if (this.conf) { this.log('Keine angepinnte Datei der App mehr – der Dienst meldet nichts, bis die App wieder übergibt.'); this.conf = null; this.saveState(); }
-      else if (!this.waiting) this.log('Warte auf die angepinnte Datei der App („An den 24/7-Dienst übergeben“ einschalten) …');
-      this.waiting = true;
-      return;
-    }
-    this.waiting = false;
-    const doc = pm.document;
-    if (this.conf && this.conf.msgId === pm.message_id && this.conf.fileUid === doc.file_unique_id) return;
+  async readFile(doc) {
     const f = await this.tg('getFile', { file_id: doc.file_id });
     let r; try { r = await fetch(`${API.tg}/file/bot${this.token}/${f.file_path}`, { signal: AbortSignal.timeout(20000) }); } catch (e) { throw new Error(`Datei nicht ladbar (${this.secret(e.cause?.code || e.message)})`); }
     if (!r.ok) throw new Error(`Datei nicht ladbar (Fehler ${r.status})`);
-    const data = parseConfig(await r.json()), old = this.conf?.data, t = this.now();
+    return parseConfig(await r.json());
+  }
+  botText() { return this.me?.username ? `@${this.me.username}` : 'dieser Bot'; }
+  // 1.4: Protokollzeile, solange die Datei der App fehlt – mit allem, was man zum Vergleich mit der App braucht
+  waitLine(pm) {
+    return `Warte auf die Übergabe der App: Im Chat ${chatText(this.chatInfo, this.chat)} ist für ${this.botText()} keine Datei „${FILE}“ angeheftet (angeheftet: ${pinnedWhat(pm)}). `
+      + `In der App unter Kursalarm müssen Bot ${this.botText()} und Chat-ID ${this.chat} eingetragen und „An den 24/7-Dienst übergeben“ eingeschaltet sein. Ein anderer Bot (z. B. der Sicherungs-Bot) sieht die Datei nicht.`;
+  }
+  async syncConfig() {
+    const chat = await this.tg('getChat', { chat_id: this.chat }), pm = chat?.pinned_message, t0 = this.now();
+    this.chatInfo = { type: chat?.type || '', title: chat?.title || '', first_name: chat?.first_name || '' };
+    if (!isConfigMessage(pm)) {
+      if (this.conf) { this.log('Keine angepinnte Datei der App mehr – der Dienst meldet nichts, bis die App wieder übergibt.'); this.conf = null; this.saveState(); }
+      // 1.4: nicht nur einmal beim Start, sondern alle 10 Minuten – und nach 3 Minuten ein Hinweis per Telegram (siehe tick)
+      if (!this.waitSince) this.waitSince = t0;
+      if (!this.waitLogAt || t0 - this.waitLogAt >= EVERY.waitLog) { this.waitLogAt = t0; this.log(this.waitLine(pm)); }
+      this.waiting = true; this.waitWhat = pinnedWhat(pm);
+      return;
+    }
+    this.waiting = false; this.waitSince = 0; this.waitLogAt = 0;
+    const doc = pm.document;
+    // 1.4: Datei von einem anderen Bot (geht nur in Gruppen): lesbar, aber die Übernahme lässt sich nicht bestätigen
+    if (this.me?.id && pm.from?.id && pm.from.id !== this.me.id) this.note('Angeheftete Datei', `stammt von ${pm.from.username ? '@' + pm.from.username : 'Bot ' + pm.from.id}, dieser Dienst nutzt ${this.botText()} – er liest sie, kann die Übernahme aber nicht bestätigen. Am Server denselben Bot wie in der App (Kursalarm) eintragen.`);
+    if (this.conf && this.conf.msgId === pm.message_id && this.conf.fileUid === doc.file_unique_id) return;
+    const data = await this.readFile(doc), old = this.conf?.data, t = this.now();
     this.conf = { msgId: pm.message_id, fileUid: doc.file_unique_id, data };
     // neue oder wieder scharf geschaltete Marken ab jetzt beobachten; Meldungen zu entfernten Alarmen vergessen
     const keys = new Set([...data.alarms.map(alarmKey), ...data.positions.flatMap(p => ['tp', 'sl'].map(ty => posKey(p, ty)))]);
-    for (const k of keys) if (!this.seen.has(k)) this.seen.set(k, t);
+    for (const k of keys) if (!this.seen.has(k)) { this.seen.set(k, t); this.firstLook.add(k); } // erste Kursprüfung ins Protokoll
     for (const k of Object.keys(this.fired)) if ((k.startsWith('al:') || k.startsWith('pos:')) && !keys.has(k)) delete this.fired[k];
     for (const k of [...this.seen.keys()]) if (!keys.has(k)) this.seen.delete(k);
     // Gewinn-/Verlust-Grenzen: neu scharf geschaltete übernehmen (beim Scharfschalten schon erreicht → erst wieder darunter),
@@ -348,9 +412,36 @@ export class Watcher {
     for (const k of Object.keys(this.pnlSt)) if (!pk.has(k)) delete this.pnlSt[k];
     for (const k of Object.keys(this.pnlFired)) if (!pk.has(k)) delete this.pnlFired[k];
     for (const k of Object.keys(this.pnlPend)) if (!pk.has(k) || this.pnlFired[k]) { if (this.pnlFired[k]?.by === 'app') this.log(`${pnlName(k.split(':')[1])}: die App hat selbst gemeldet`); delete this.pnlPend[k]; }
-    this.log(`Datei der App übernommen (#${data.tag}): ${data.on ? `${plural(data.alarms.length, 'Alarm', 'Alarme')}, ${plural(data.positions.length, 'Position', 'Positionen')}${data.econ.warn && data.ev.news ? `, Termin-Warnung ${data.econ.warn} min vorher` : ''}${pulseOn(data) ? ', BTC-Puls' : ''}${pnlOn(data) ? `, Gewinn-/Verlust-Alarm (${lims.map(l => `${l.k === 'profit' ? '≥ +' : '≤ −'}${l.v} USDT`).join(', ')}, ${plural(data.pnl.n, 'offene Position', 'offene Positionen')})` : ''}` : 'Übergabe in der App ausgeschaltet'}`);
-    if (!old || old.tag !== data.tag) this.next.beat = 0; // gleich bestätigen
+    for (const k of [...this.firstLook]) if (!keys.has(k)) this.firstLook.delete(k);
+    // 1.4: Protokoll – Übergabe erhalten, Alarme geladen (mit den Marken)
+    this.log(`Übergabe erhalten: Nachricht #${pm.message_id} · App ${stamp(data.at || t, data.tz)}${data.dev ? ` · ${data.dev}` : ''} · #${data.tag}`);
+    const items = watchItems(data);
+    this.log(data.on ? `Alarme geladen: ${plural(data.alarms.length, 'Alarm', 'Alarme')}, ${plural(data.positions.length, 'Position', 'Positionen')}${data.econ.warn && data.ev.news ? `, Termin-Warnung ${data.econ.warn} min vorher` : ''}${pulseOn(data) ? ', BTC-Puls' : ''}${pnlOn(data) ? `, Gewinn-/Verlust-Alarm (${lims.map(l => `${l.k === 'profit' ? '≥ +' : '≤ −'}${l.v} USDT`).join(', ')}, ${plural(data.pnl.n, 'offene Position', 'offene Positionen')})` : ''}${items.length ? ` – ${items.slice(0, 6).map(x => x.text).join(' · ')}${items.length > 6 ? ` · … und ${items.length - 6} weitere` : ''}` : ''}`
+      : 'Alarme geladen: keine – Übergabe in der App ausgeschaltet, der Dienst meldet nichts');
+    // Bestätigung per Telegram, wenn etwas Neues beobachtet wird oder die Übergabe ein-/ausgeschaltet wurde (nicht bei bloßem
+    // Entfernen, z. B. nach einem ausgelösten Alarm); sonst den bestätigten Stand still nachführen
+    const was = new Set(this.ackKeys || []), fresh = items.filter(x => !was.has(x.key));
+    if (!this.ackKeys || fresh.length || this.ackOn !== data.on) this.ackPend = true;
+    else { this.ackKeys = items.map(x => x.key); }
+    if (!old || old.tag !== data.tag) this.next.beat = 0; // gleich in der angehefteten Nachricht bestätigen
     this.saveState();
+  }
+  // 1.4: „✅ 24/7-Dienst hat übernommen …“ – lautlos, höchstens einmal je EVERY.ack (mehrere Übergaben kurz nacheinander: eine
+  // Bestätigung mit dem neuesten Stand). Keine Meldung im Sinne von „Zustellung: zuletzt …“.
+  async sendAck() {
+    const c = this.conf?.data; if (!c) { this.ackPend = false; return; }
+    const items = watchItems(c), was = new Set(this.ackKeys || []), fresh = this.ackKeys ? items.filter(x => !was.has(x.key)) : items, t = this.now();
+    const r = await this.tg('sendMessage', { chat_id: this.chat, text: ackText(c, fresh, t).slice(0, 4000), disable_notification: true, link_preview_options: { is_disabled: true } });
+    this.ackPend = false; this.ackKeys = items.map(x => x.key); this.ackAt = t; this.ackOn = c.on; this.saveState();
+    this.log(`Bestätigung an Telegram gesendet: ${c.on ? `${plural(items.length, 'Marke', 'Marken')} beobachtet${fresh.length ? `, neu: ${fresh.slice(0, 4).map(x => x.text).join(' · ')}${fresh.length > 4 ? ' …' : ''}` : ''}` : 'Übergabe ausgeschaltet'}${r?.message_id ? ` (Nachricht #${r.message_id})` : ''}`);
+  }
+  // 1.4: Datei der App fehlt seit EVERY.hint – einmal (dann höchstens alle EVERY.hintAgain) per Telegram sagen, was zusammenpassen
+  // muss. Landet die Nachricht in einem anderen Chat als die Datei der App, sieht man daran sofort den falschen Bot/Chat.
+  async sendHint() {
+    const t = this.now();
+    await this.tg('sendMessage', { chat_id: this.chat, text: hintText({ bot: this.botText(), chat: chatText(this.chatInfo, this.chat), what: this.waitWhat || 'nichts', host: os.hostname() }), link_preview_options: { is_disabled: true } });
+    this.hintAt = t; this.saveState();
+    this.log(`Hinweis an Telegram gesendet: Dienst wartet auf die Übergabe der App (Bot ${this.botText()}, Chat ${this.chat}) – erneut frühestens in ${Math.round(EVERY.hintAgain / 3600e3)} Stunden`);
   }
   // ---- Kurse prüfen ----
   async checkPrices() {
@@ -360,29 +451,33 @@ export class Watcher {
     if (c.ev.pos) for (const p of c.positions) add(p, 'positions');
     if (pnlOn(c)) for (const p of c.pnl.pos) add(p, 'pnl');
     if (!groups.size) { this.feed = { okAt: this.now(), error: '', since: 0 }; return; }
-    let bad = ''; const prices = new Map();
+    let bad = ''; const prices = new Map(); this.checks++; this.prices = new Map();
+    // 1.4: erste Prüfung einer neu übernommenen Marke ins Protokoll (Kurs und Abstand), danach nur Auslösungen und alle 10 min eine Übersicht
+    const look = (key, what, level, price, hit) => { if (this.firstLook.delete(key)) this.log(`Kursprüfung: ${what} – Kurs ${priceText(price)}, ${hit ? 'Marke erreicht' : `noch ${number(Math.abs(level / price - 1) * 100)} % entfernt`}`); };
     // 1.3: Kerzen gleichzeitig holen (höchstens 4 Abrufe parallel) – ein langsames Kürzel hält die übrigen nicht mehr auf
     const list = [...groups.entries()], got = await mapLimit(list, 4, ([, g]) => klines(g.source, g.symbol));
     for (const [i, [k, g]] of list.entries()) {
       if (!got[i].ok) { bad = `${coin(g.symbol)}: ${got[i].error.message}`; continue; }
       const rows = got[i].value;
       const t = this.now(), from = this.lastCheck.get(k) ?? t, prev = this.prevCandle.get(k) || null, last = candles(rows).at(-1);
-      if (last) prices.set(k, last.c);
+      if (last) { prices.set(k, last.c); this.prices.set(k, { symbol: g.symbol, price: last.c }); }
       this.lastCheck.set(k, t); if (last) this.prevCandle.set(k, { t: last.t, h: last.h, l: last.l, at: t });
       // beobachtet ab dem ersten Blick des Dienstes auf diese Marke (nach einem Neustart: ab dann), nach einem Treffer ab dem Wegbewegen
       const armed = key => { if (!this.seen.has(key)) this.seen.set(key, t); return Math.max(this.seen.get(key), this.rearm.get(key) || 0); };
       for (const a of g.alarms) {
         const key = alarmKey(a); if (this.fired[key]) continue;
         const v = rangeView(rows, from, Math.max(a.armedAt, armed(key)), prev); if (!v) continue;
-        const hit = touched(a.price, a.dir === 'below', v);
-        if (hit) { this.fired[key] = t; this.saveState(); this.log(`Alarm ${coin(a.symbol)} ${a.dir === 'above' ? '≥' : '≤'} ${a.price} (Kurs ${v.price})`); await this.queue(alarmText(a, v.price, hit), c.tz, { label: `Kurs-Alarm ${coin(a.symbol)}` }); }
+        const hit = touched(a.price, a.dir === 'below', v), what = `Kurs-Alarm ${coin(a.symbol)} ${a.dir === 'above' ? 'auf/über' : 'auf/unter'} ${priceText(a.price)}`;
+        look(key, what, a.price, v.price, hit);
+        if (hit) { this.fired[key] = t; this.saveState(); this.log(`Alarm ausgelöst: ${what} (Kurs ${priceText(v.price)}${hit.wick ? `, per Docht bis ${priceText(hit.extreme)}` : ''})`); await this.queue(alarmText(a, v.price, hit), c.tz, { label: `Kurs-Alarm ${coin(a.symbol)}` }); }
       }
       for (const p of g.positions) for (const type of ['sl', 'tp']) {
         if (!(p[type] > 0)) continue;
         const key = posKey(p, type), v = rangeView(rows, from, Math.max(p.since, armed(key)), prev); if (!v) continue;
-        const hit = touched(p[type], (type === 'sl') === (p.side === 'long'), v);
+        const hit = touched(p[type], (type === 'sl') === (p.side === 'long'), v), what = `${type === 'tp' ? 'Take-Profit' : 'Stop-Loss'} ${coin(p.symbol)} ${p.side === 'long' ? 'Long' : 'Short'} ${priceText(p[type])}`;
+        look(key, what, p[type], v.price, hit);
         if (hit) {
-          if (!this.fired[key] && !p.ack[type]) { this.fired[key] = t; this.saveState(); this.log(`${type.toUpperCase()} ${coin(p.symbol)} ${p.side} ${p[type]} (Kurs ${v.price})`); await this.queue(posText(p, type, v.price, hit), c.tz, { label: `${type === 'tp' ? 'Take-Profit' : 'Stop-Loss'} ${coin(p.symbol)}` }); }
+          if (!this.fired[key] && !p.ack[type]) { this.fired[key] = t; this.saveState(); this.log(`Alarm ausgelöst: ${what} (Kurs ${priceText(v.price)}${hit.wick ? `, per Docht bis ${priceText(hit.extreme)}` : ''})`); await this.queue(posText(p, type, v.price, hit), c.tz, { label: `${type === 'tp' ? 'Take-Profit' : 'Stop-Loss'} ${coin(p.symbol)}` }); }
         } else if (this.fired[key]) { delete this.fired[key]; this.rearm.set(key, t); this.saveState(); } // Kurs wieder weg: nächste Berührung meldet erneut
       }
     }
@@ -467,17 +562,33 @@ export class Watcher {
     if (!this.conf) return;
     const c = this.conf.data, h = this.health(), gv = pnlOn(c) ? c.pnl.lim.map(l => [l, this.pnlFired[pnlKey(l)]]).filter(([, f]) => f && f.by !== 'app').map(([l, f]) => pnlLine(l, f, c.tz)) : [];
     const text = caption(c, statusLine({ ok: h.ok, now: this.now(), c, problem: h.problem }), [lastLine(this.last, c.tz), ...gv].filter(Boolean));
-    try { await this.tg('editMessageCaption', { chat_id: this.chat, message_id: this.conf.msgId, caption: text }); this.beatOk = h.ok; }
+    try {
+      await this.tg('editMessageCaption', { chat_id: this.chat, message_id: this.conf.msgId, caption: text }); this.beatOk = h.ok;
+      // 1.4: Protokoll – wann die App die Bestätigung lesen kann; danach alle 10 Minuten eine kurze Übersicht
+      if (this.beatTag !== c.tag) { this.beatTag = c.tag; this.log(`Bestätigung eingetragen: angeheftete Nachricht zeigt „${h.ok ? 'aktiv' : 'Störung'} · #${c.tag} übernommen“ – die App zeigt „Übergeben ✓ vom Dienst bestätigt“`); }
+      else this.log(this.summary(h));
+    }
     catch (e) {
       if (/not modified/i.test(e.message)) return;
-      if (/not found|can't be edited|MESSAGE_ID_INVALID/i.test(e.message)) { this.log('Angepinnte Nachricht nicht mehr da – warte auf eine neue Datei der App.'); this.conf = null; this.saveState(); return; }
+      // 1.4: „can't be edited“ heißt: Die Nachricht stammt von einem anderen Bot (Gruppe mit zwei Bots) – weiter beobachten, aber sagen
+      if (/can't be edited/i.test(e.message)) { this.note('Bestätigung', `nicht möglich – die angeheftete Datei hat ein anderer Bot gesendet als ${this.botText()}. Der Dienst prüft die Alarme trotzdem; damit die App die Übernahme sieht, am Server denselben Bot wie in der App (Kursalarm) eintragen.`); return; }
+      if (/not found|MESSAGE_ID_INVALID/i.test(e.message)) { this.log('Angepinnte Nachricht nicht mehr da – warte auf eine neue Datei der App.'); this.conf = null; this.saveState(); return; }
       throw e;
     }
+  }
+  // 1.4: Übersicht fürs Protokoll (alle 10 Minuten): Zustand, Kursprüfungen seit der letzten Übersicht, aktuelle Kurse
+  summary(h = this.health()) {
+    const c = this.conf?.data, n = this.checks, px = [...this.prices.values()].slice(0, 6).map(p => `${coin(p.symbol)} ${priceText(p.price)}`); this.checks = 0;
+    if (!c?.on) return 'Lebenszeichen: Übergabe in der App ausgeschaltet – keine Kursprüfung';
+    return `Lebenszeichen: ${h.ok ? 'aktiv' : `Störung (${h.problem})`} · ${plural(watchItems(c).length, 'Marke', 'Marken')} beobachtet · ${plural(n, 'Kursprüfung', 'Kursprüfungen')} seit der letzten Übersicht${px.length ? ` · ${px.join(', ')}` : ''}${this.out.length ? ` · ${plural(this.out.length, 'Meldung', 'Meldungen')} im Ausgang` : ''}`;
   }
   // ---- Takt ----
   async tick() {
     const t = this.now(), c = () => this.conf?.data, run = async (name, fn) => { try { await fn(); this.clear(name); } catch (e) { this.note(name, e.message); } };
     if (t >= this.next.config) { this.next.config = t + EVERY.config; await run('Datei der App', () => this.syncConfig()); }
+    // 1.4: Bestätigung „hat übernommen“ (lautlos) und Hinweis, wenn die Datei der App fehlt – Fehler: im nächsten Takt erneut
+    if (this.ackPend && this.conf && t - this.ackAt >= EVERY.ack) await run('Bestätigung an Telegram', () => this.sendAck());
+    if (this.waiting && this.waitSince && t - this.waitSince >= EVERY.hint && (!this.hintAt || t - this.hintAt >= EVERY.hintAgain)) await run('Hinweis an Telegram', () => this.sendHint());
     if (c()?.on && t >= this.next.price) { this.next.price = t + EVERY.price; await run('Kursprüfung', () => this.checkPrices()); if (pulseOn(c())) await run('BTC-Puls', () => this.checkPulse()); } // Abruffehler je Kürzel meldet checkPrices selbst („Kurse“)
     if (c()?.on && Object.keys(this.pnlPend).length) await run('Gewinn/Verlust', () => this.flushPnl()); // erreichte Grenzen nach der Wartezeit
     if (this.out.length) await run('Zustellung', () => this.deliver()); // noch nicht zugestellte Meldungen
@@ -494,8 +605,11 @@ export class Watcher {
     }
   }
   async start() {
-    const me = await this.tg('getMe').catch(e => { this.log('Bot nicht erreichbar:', e.message); return null; });
-    this.log(`Scalp Desk 24/7-Dienst ${VERSION} gestartet${me ? ` · Bot @${me.username}` : ''} · Node ${process.versions.node}`);
+    const me = await this.tg('getMe').catch(e => { this.log('Bot nicht erreichbar:', e.message); return null; }); this.me = me;
+    this.log(`Scalp Desk 24/7-Dienst ${VERSION} gestartet${me ? ` · Bot @${me.username} (ID ${me.id})` : ''} · Chat ${this.chat} · Node ${process.versions.node} · prüft die Übergabe alle ${EVERY.config / 1000} s, die Kurse alle ${EVERY.price / 1000} s`);
+    // 1.4: Stand aus der Zustandsdatei (nach einem Neustart) nennen – die erste Kursprüfung je Marke kommt ins Protokoll
+    if (this.conf?.data) { const c = this.conf.data, items = watchItems(c); this.log(`Übergabe aus dem gespeicherten Zustand (#${c.tag}): ${c.on ? `${plural(items.length, 'Marke', 'Marken')}${items.length ? ` – ${items.slice(0, 6).map(x => x.text).join(' · ')}` : ''}` : 'Übergabe ausgeschaltet'}`);
+      for (const a of c.alarms) this.firstLook.add(alarmKey(a)); for (const p of c.positions) for (const ty of ['tp', 'sl']) this.firstLook.add(posKey(p, ty)); }
     const stop = () => { this.stopped = true; clearTimeout(this.saveTimer); this.saveStateNow(); process.exit(0); };
     process.on('SIGTERM', stop); process.on('SIGINT', stop);
     while (!this.stopped) { await this.tick(); await sleep(EVERY.tick); }
@@ -503,7 +617,7 @@ export class Watcher {
   // ---- Prüfung nach der Einrichtung (install.sh): Bot, Chat, Binance, angepinnte Datei ----
   async check() {
     let ok = true; const say = (good, text) => { this.log(`${good ? '✓' : '✗'} ${text}`); if (!good) ok = false; };
-    try { const me = await this.tg('getMe'); say(true, `Bot @${me.username} erreichbar`); }
+    try { const me = await this.tg('getMe'); this.me = me; say(true, `Bot @${me.username} (ID ${me.id}) erreichbar`); }
     catch (e) { say(false, e.code === 401 || e.code === 404 ? 'Bot-Token ungültig – in @BotFather mit /mybots → API Token nachsehen.' : e.message); return false; }
     try {
       await this.tg('sendMessage', { chat_id: this.chat, text: `✅ Scalp Desk 24/7-Dienst ist eingerichtet (Server ${os.hostname()}).\nEr meldet Kurs-Alarme, Stop-Loss/Take-Profit, wichtige Termine, den BTC-Puls und den Gewinn-/Verlust-Alarm – auch wenn die App geschlossen ist. In der App unter 🔔 Hinweise → „Telegram / Discord einrichten“ jetzt „An den 24/7-Dienst übergeben“ einschalten.` });
@@ -518,6 +632,46 @@ export class Watcher {
       if (!isConfigMessage(pm)) this.log('• Noch keine angepinnte Datei der App – in der App „An den 24/7-Dienst übergeben“ einschalten.');
       else { await this.syncConfig(); const c = this.conf.data; this.log(`✓ Angepinnte Datei der App gefunden: ${plural(c.alarms.length, 'Alarm', 'Alarme')}, ${plural(c.positions.length, 'Position', 'Positionen')}`); }
     } catch (e) { say(false, `Angepinnte Datei: ${e.message}`); }
+    // 1.4: die häufigste Ursache für „wartet auf den 24/7-Dienst“ gleich hier nennen
+    this.log(`• Wichtig: In der App unter Kursalarm müssen derselbe Bot (${this.botText()}) und dieselbe Chat-ID (${this.chat}) stehen – mit einem anderen Bot (z. B. dem Sicherungs-Bot) sieht der Dienst die Übergabe nicht.`);
+    return ok;
+  }
+  // ---- 1.4: Fehlersuche ohne Nachricht (sudo scalpdesk-247 status): der ganze Weg App → Telegram → Dienst ----
+  async status() {
+    let ok = true; const say = (good, text) => { this.log(`${good === null ? '•' : good ? '✓' : '✗'} ${text}`); if (good === false) ok = false; };
+    const how = `In der App unter 🔔 Hinweise → „Telegram / Discord einrichten“ → Kursalarm müssen derselbe Bot und dieselbe Chat-ID stehen wie hier am Server; dort „An den 24/7-Dienst übergeben“ einschalten. Anderer Bot (z. B. Sicherungs-Bot) oder andere Chat-ID: am Server neu eingeben mit\n    curl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/install.sh | sudo bash -s -- --neu`;
+    this.log(`Scalp Desk 24/7-Dienst ${VERSION} – Status`);
+    try { this.me = await this.tg('getMe'); say(true, `Bot ${this.botText()} (ID ${this.me.id}) – Token gültig`); }
+    catch (e) { say(false, e.code === 401 || e.code === 404 ? 'Bot-Token ungültig – Token aus der App (Kursalarm) mit --neu neu eingeben.' : e.message); return false; }
+    let chat; try { chat = await this.tg('getChat', { chat_id: this.chat }); say(true, `Chat ${chatText(chat, this.chat)} erreichbar`); }
+    catch (e) { say(false, `Chat ${this.chat}: ${e.message} – Chat-ID prüfen und dem Bot in Telegram einmal „Start“ schreiben.`); return false; }
+    const pm = chat?.pinned_message;
+    if (!isConfigMessage(pm)) { say(false, `Keine Datei der App angeheftet (angeheftet: ${pinnedWhat(pm)}) – der Dienst kennt keine Alarme.`); this.log(`  → ${how}`); }
+    else {
+      const lines = String(pm.caption || '').replace(/\r/g, '').split('\n'), app = lines.find(l => l.startsWith('App:')) || '', svc = lines.find(l => l.startsWith(LINE)) || '', zl = lines.find(l => l.startsWith('Zustellung:'));
+      say(true, `Datei der App angeheftet (Nachricht #${pm.message_id}) – ${app || 'ohne App-Zeile'}`);
+      if (pm.from?.id && pm.from.id !== this.me.id) say(false, `Die Datei hat ${pm.from.username ? '@' + pm.from.username : 'ein anderer Bot'} gesendet, der Dienst nutzt ${this.botText()} – Bestätigen geht so nicht. ${how}`);
+      const m = / · #([a-z0-9]{2,12}) übernommen/.exec(svc), appTag = /#([a-z0-9]{2,12})$/.exec(app)?.[1] || '', age = Math.round((this.now() - (pm.edit_date || pm.date || 0) * 1000) / 60e3);
+      if (!m) say(false, `Noch keine Bestätigung des Dienstes in der Nachricht („${svc || 'keine Zeile „Dienst:“'}“). Läuft der Dienst? → sudo systemctl status scalpdesk-247`);
+      else if (m[1] !== appTag) say(null, `Bestätigt ist ein älterer Stand (#${m[1]}); den neuen (#${appTag}) übernimmt der Dienst in spätestens ${EVERY.config / 1000} Sekunden.`);
+      else say(/aktiv/.test(svc) && age <= 20 ? true : false, `Vom Dienst bestätigt: „${svc}“ (vor ${plural(age, 'Minute', 'Minuten')})${age > 20 ? ' – älter als 20 Minuten: Läuft der Dienst? → sudo systemctl status scalpdesk-247' : ''}`);
+      if (zl) say(null, zl);
+      try { const data = await this.readFile(pm.document), items = watchItems(data); say(true, data.on ? `Beobachtet: ${items.length ? items.map(x => x.text).join(' · ') : 'nichts (keine Kurs-Alarme, keine Positionen mit Stop/Ziel)'}` : 'Übergabe in der App ausgeschaltet – der Dienst meldet nichts'); }
+      catch (e) { say(false, `Datei nicht lesbar: ${e.message}`); }
+    }
+    if (this.statePath) {
+      if (!fs.existsSync(this.statePath)) say(null, `Noch keine Zustandsdatei (${this.statePath}) – der Dienst lief noch nicht oder hat noch nichts gespeichert.`);
+      else {
+        const tz = this.conf?.data?.tz || 'UTC';
+        say(null, `Zustand: ${this.last?.t ? `zuletzt zugestellt ${stamp(this.last.t, tz)}${this.last.label ? ` (${this.last.label})` : ''}` : 'noch keine Meldung zugestellt'}${this.out.length ? ` · ${plural(this.out.length, 'Meldung', 'Meldungen')} warten im Ausgang` : ' · Ausgang leer'}${this.hintAt ? ` · Hinweis „wartet auf die Übergabe“ zuletzt ${stamp(this.hintAt, tz)}` : ''}`);
+        if (this.sendErr) say(false, `Telegram nimmt Meldungen nicht an seit ${stamp(this.sendErr.since, tz)}: ${this.sendErr.msg}`);
+      }
+    }
+    for (const [src, sym] of [['spot', 'BTCUSDT'], ['futures', 'BTCUSDT']]) {
+      try { const r = await klines(src, sym); say(true, `Binance ${src === 'spot' ? 'Spot' : 'Futures'} erreichbar (BTC ${priceText(+r.at(-1)[4])})`); }
+      catch (e) { say(src === 'spot' ? false : null, `Binance ${src === 'spot' ? 'Spot' : 'Futures'}: ${e.message}`); }
+    }
+    this.log(ok ? 'Ergebnis: alles in Ordnung.' : 'Ergebnis: siehe ✗ oben.');
     return ok;
   }
 }
@@ -547,9 +701,10 @@ export async function klines(source, symbol, limit = 3) {
 
 // ---------- Aufruf ----------
 function args(argv) {
-  const o = { config: '/etc/scalpdesk-247.json', state: '', check: false };
+  const o = { config: '/etc/scalpdesk-247.json', state: '', check: false, status: false };
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--config') o.config = argv[++i]; else if (argv[i] === '--state') o.state = argv[++i]; else if (argv[i] === '--check') o.check = true;
+    else if (argv[i] === '--status') o.status = true;
     else if (argv[i] === '--version') { console.log(VERSION); process.exit(0); }
   }
   return o;
@@ -557,7 +712,10 @@ function args(argv) {
 async function main(argv) {
   const [maj] = process.versions.node.split('.').map(Number);
   if (maj < 18) throw new Error(`Node.js ${process.versions.node} ist zu alt – bitte Version 18 oder neuer installieren.`);
-  const o = args(argv), conf = readServerConfig(o.config), w = new Watcher({ ...conf, statePath: o.state });
+  const o = args(argv), conf = readServerConfig(o.config);
+  // --status liest nur (Zustand ohne Speichern): kein Schreiben in die Zustandsdatei des laufenden Dienstes
+  if (o.status) { const w = new Watcher({ ...conf, statePath: o.state || '/var/lib/scalpdesk-247/state.json' }); w.saveState = () => {}; w.saveStateNow = () => {}; process.exit((await w.status()) ? 0 : 1); }
+  const w = new Watcher({ ...conf, statePath: o.state });
   if (o.check) process.exit((await w.check()) ? 0 : 1);
   await w.start();
 }

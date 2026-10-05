@@ -10,10 +10,12 @@
 #  3. Einstellungen /etc/scalpdesk-247.json: Bot-Token, Chat-ID, optional Discord-Webhook (nur für den Dienst lesbar)
 #  4. Prüfung: Bot, Testnachricht an deinen Chat, Binance erreichbar
 #  5. Dienst „scalpdesk-247“ (systemd): startet mit dem Server und nach Fehlern von selbst neu
+#  6. Kurzbefehl „sudo scalpdesk-247 status | protokoll | live | neustart“ (ab 1.4)
 set -euo pipefail
 SRC="${SCALPDESK_SRC:-https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server}"
 DIR="${SCALPDESK_DIR:-/opt/scalpdesk-247}" CONF="${SCALPDESK_CONF:-/etc/scalpdesk-247.json}" UNIT="${SCALPDESK_UNIT:-/etc/systemd/system/scalpdesk-247.service}"
 STATE="${SCALPDESK_STATE:-/var/lib/scalpdesk-247}" TTY="${SCALPDESK_TTY:-/dev/tty}" USR=scalpdesk   # Pfade und Eingabe nur für Tests änderbar
+BIN="${SCALPDESK_BIN:-/usr/local/bin/scalpdesk-247}"
 say() { printf '\n\033[1m%s\033[0m\n' "$*"; }
 die() { printf '\n\033[31mFehler: %s\033[0m\n' "$*" >&2; exit 1; }
 [ "$(id -u)" -eq 0 ] || die "Bitte mit sudo ausführen: curl -fsSL $SRC/install.sh | sudo bash"
@@ -22,7 +24,7 @@ command -v systemctl >/dev/null || die "Dieser Rechner hat kein systemd – bitt
 if [ "${1:-}" = "--remove" ]; then
   say "Entferne den Scalp Desk 24/7-Dienst …"
   systemctl disable --now scalpdesk-247 2>/dev/null || true
-  rm -rf "$DIR" "$CONF" "$UNIT" "$STATE"
+  rm -rf "$DIR" "$CONF" "$UNIT" "$STATE" "$BIN"
   systemctl daemon-reload
   id "$USR" >/dev/null 2>&1 && userdel "$USR" 2>/dev/null || true
   say "Entfernt. In der App „An den 24/7-Dienst übergeben“ ausschalten."
@@ -106,14 +108,29 @@ systemctl restart scalpdesk-247
 sleep 3
 systemctl is-active --quiet scalpdesk-247 || { journalctl -u scalpdesk-247 -n 20 --no-pager; die "Der Dienst läuft nicht – Protokoll oben."; }
 say "5/5 Dienst läuft ✓"
+
+# ---- 6. Kurzbefehl für die Fehlersuche (ab 1.4) ----
+cat > "$BIN" <<EOF
+#!/usr/bin/env bash
+# Scalp Desk 24/7-Dienst – Kurzbefehle: sudo scalpdesk-247 status | protokoll | live | neustart
+case "\${1:-status}" in
+  status)    runuser -u $USR -- $(command -v node) $DIR/scalpdesk-247.mjs --config $CONF --state $STATE/state.json --status; echo; systemctl status scalpdesk-247 --no-pager -n 0 2>/dev/null | sed -n '1,3p' ;;
+  protokoll) journalctl -u scalpdesk-247 -n "\${2:-60}" --no-pager ;;
+  live)      echo 'Protokoll live – beenden mit Strg+C'; journalctl -u scalpdesk-247 -f -n 20 ;;
+  neustart)  systemctl restart scalpdesk-247 && echo 'Dienst neu gestartet.' ;;
+  *)        echo 'Befehle: sudo scalpdesk-247 status | protokoll | live | neustart' ;;
+esac
+EOF
+chmod 755 "$BIN"
 cat <<'EOF'
 
 Fertig. Jetzt in der App: 🔔 Hinweise → „Telegram / Discord einrichten“ → „An den 24/7-Dienst übergeben“ einschalten.
-Nach spätestens einer Minute steht dort „aktiv“, und im Telegram-Chat ist oben „📌 Scalp Desk · 24/7-Dienst“ angeheftet.
+Nach spätestens einer Minute steht dort „Übergeben ✓ vom Dienst bestätigt“, und in Telegram kommt „✅ 24/7-Dienst hat übernommen“.
+Wichtig: In der App unter „Kursalarm“ müssen derselbe Bot und dieselbe Chat-ID stehen wie hier am Server.
 
 Nützlich:
-  Status:        systemctl status scalpdesk-247
-  Protokoll:     journalctl -u scalpdesk-247 -f
+  Alles prüfen:  sudo scalpdesk-247 status
+  Protokoll:     sudo scalpdesk-247 protokoll     (live: sudo scalpdesk-247 live)
   Aktualisieren: denselben Befehl wie bei der Einrichtung erneut ausführen
   Entfernen:     sudo bash /opt/scalpdesk-247/install.sh --remove
 EOF
