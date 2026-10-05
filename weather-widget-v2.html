@@ -2008,7 +2008,19 @@ function normalizePosition(p) {
     if (v.ok && !drift) { if (!trade) { q.qty = v.qty; q.entry = v.entry; q.margin = q.qty * q.entry / q.leverage; } }
     else { bad.ev = q.ev; if ('evDel' in q) bad.evDel = q.evDel; delete q.ev; delete q.evDel; }
   } else delete q.evDel;
+  // Zusatzangaben aus Teilabschlüssen: ungültig → ohne diesen Wert geladen, Original in „invalid“ (Prüfliste)
+  for (const k of ['funding', 'posPnl']) if (k in q && !(typeof q[k] === 'number' && Number.isFinite(q[k]))) { bad[k] = q[k]; delete q[k]; }
+  if ('part' in q && !partOk(q.part)) { bad.part = q.part; delete q.part; }
+  if ('liqCheck' in q && q.liqCheck !== true) { bad.liqCheck = q.liqCheck; delete q.liqCheck; }
   return withInvalid(q, bad);
+}
+// Angabe „part“ eines Trades: nur „nachgetragen“, Teilabschluss (Position, Schritt, Nummer, Rest) oder Schluss (Position, Schritt, Anzahl)
+function partOk(p) {
+  if (!isObj(p) || !(p.late === undefined || p.late === true)) return false;
+  if (p.pos === undefined) return p.late === true && Object.keys(p).every(k => k === 'late');
+  return typeof p.pos === 'string' && !!p.pos && typeof p.sell === 'string' && !!p.sell && Number.isInteger(p.n) && p.n >= 1 && p.n <= 5000
+    && (p.final === true ? !('rest' in p) : !('final' in p) && typeof p.rest === 'number' && Number.isFinite(p.rest) && p.rest >= 0)
+    && Object.keys(p).every(k => ['pos', 'sell', 'n', 'rest', 'final', 'late'].includes(k));
 }
 // Gründe beim Laden: Leerraum vereinheitlichen, doppelte zusammenfassen – nichts kürzen. Nur völlig unplausible Mengen (über 200 Gründe
 // oder 200 Zeichen) werden eingeschränkt geladen; die ursprüngliche Liste bleibt in „invalid“ erhalten.
@@ -3348,14 +3360,15 @@ function partTrade(pos, s, n) {
   return t;
 }
 // Für jede Position mit Verlauf: zu jedem Teilabschluss genau ein Trade; zurückgenommene Teilabschlüsse entfernen. Notiz und
-// Gründe eines Teilabschluss-Trades bleiben, wie du sie in der Trade-Liste geändert hast.
+// Gründe eines Teilabschluss-Trades bleiben, wie du sie in der Trade-Liste geändert hast. Ein ausdrücklich gelöschter Trade
+// (Löschvermerk, z. B. aus einer älteren App-Version) kommt nicht wieder.
 function posTradesSync(pos, kind = isDemoPos(pos) ? 'dpos' : 'pos') {
   if (!Array.isArray(pos.ev)) return 0;
-  const key = kind === 'dpos' ? 'demoTrades' : 'trades', r = lotReplay(pos), list = state[key].slice(); let ch = 0;
+  const key = kind === 'dpos' ? 'demoTrades' : 'trades', r = lotReplay(pos), list = state[key].slice(); let ch = 0, gone = null;
   r.sells.forEach((s, i) => {
     if (s.final) return;
     const want = partTrade(pos, s, i + 1), at = list.findIndex(t => t.id === want.id);
-    if (at < 0) { list.push(want); ch++; return; }
+    if (at < 0) { gone = gone || tombs(); if (!(`pt:${want.id}` in gone)) { list.push(want); ch++; } return; }
     const cur = list[at], next = { ...cur }; for (const k of PART_DERIVED) { if (k in want) next[k] = want[k]; else delete next[k]; }
     next.margin = next.qty * next.entry / next.leverage;
     if (canon(next) !== canon(cur)) { list[at] = next; ch++; }
@@ -3404,7 +3417,7 @@ function undoLast(pos) {
 }
 function lotStepText(pos, e, r) {
   const w = lotWords(pos), unit = lotCoin(pos);
-  if (e.t === 'b') { const l = r?.lots.find(x => x.id === e.id); return `${e.mig ? 'Übernommener Bestand' : r && r.lots[0]?.id === e.id ? w.open : w.add} ${localTime(e.at)} · ${qtyText(qNum(BigInt(e.q)))} ${unit} zu ${priceText(Number(e.p))}${Number(e.f) ? ` · Gebühr ${number(Number(e.f), 4)}` : ''}${l && l.q !== l.q0 ? ` · offen ${qtyText(qNum(l.q))}` : ''}`; }
+  if (e.t === 'b') { const l = r?.lots.find(x => x.id === e.id); return `${e.mig ? 'Eröffnung' : r && r.lots[0]?.id === e.id ? w.open : w.add} ${localTime(e.at)} · ${qtyText(qNum(BigInt(e.q)))} ${unit} zu ${priceText(Number(e.p))}${Number(e.f) ? ` · Gebühr ${number(Number(e.f), 4)}` : ''}${l && l.q !== l.q0 ? ` · offen ${qtyText(qNum(l.q))}` : ''}`; }
   const s = r?.sells.find(x => x.id === e.id);
   return `${s?.final ? w.last : w.part} ${localTime(e.at)} · ${qtyText(qNum(BigInt(e.k)))} ${unit}${e.x ? ` zu ${priceText(Number(e.x))}` : ''}${s ? ` · ${signed(mNum(s.net))} USDT${s.src === 'exchange' ? ' laut Börse' : ''}` : ''}`;
 }
@@ -4400,7 +4413,7 @@ function decideConflict(choice) {
 // ---- Prüfliste: fehlerhafte Einträge (nicht geladen) und eingeschränkt geladene Werte ----
 const QK_NAME = { pos: 'Position', dpos: 'Demo-Position', trade: 'Trade', dtrade: 'Demo-Trade', mv: 'Geldbewegung', alarm: 'Kurs-Alarm', list: 'Liste' };
 function fieldIssues() {
-  const out = [], NAMES = { sl: 'Stop-Loss', tp: 'Take-Profit', liqExchange: 'Liq.-Preis (Börse)', fx: 'EUR/USDT', note: 'Notiz', reasons: 'Gründe', triggerPrice: 'Auslösekurs', ev: 'Verlauf (Lose/Abschlüsse)', evDel: 'Zurückgenommene Schritte' };
+  const out = [], NAMES = { sl: 'Stop-Loss', tp: 'Take-Profit', liqExchange: 'Liq.-Preis (Börse)', fx: 'EUR/USDT', note: 'Notiz', reasons: 'Gründe', triggerPrice: 'Auslösekurs', ev: 'Verlauf (Lose/Abschlüsse)', evDel: 'Zurückgenommene Schritte', funding: 'Funding', posPnl: 'Position gesamt', part: 'Teilabschluss', liqCheck: 'Liq.-Preis prüfen' };
   for (const [kind] of PLAN_KINDS) for (const r of planList(kind)) if (isObj(r.invalid)) for (const [k, v] of Object.entries(r.invalid)) out.push({ kind, r, k, v, name: NAMES[k] || k });
   return out;
 }
@@ -10176,6 +10189,7 @@ async function recCopy() {
   if (store.get(REC_KEY)?.on) recStart(); else recRender();
 })();
 for(const f of SET_FIELDS)stampSetting(f);renderIntegrity(); // 3.29.0: Abstammung der Einstellungen anlegen, Prüfliste zeigen
+if(posTradesSyncAll())persist(); // 3.30.0: zu jedem Teilabschluss genau ein Trade – fehlt einer, kommt er aus dem Verlauf der Position
 render();startLive();void showCachedChart();void refresh();void initAutoBackup();void requestWake();void zzpStart();
 </script>
 </head>
