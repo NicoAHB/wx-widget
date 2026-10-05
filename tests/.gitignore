@@ -3,3 +3,4 @@ key.pem
 cert.pem
 *.log
 qr-part-*.png
+shots/
