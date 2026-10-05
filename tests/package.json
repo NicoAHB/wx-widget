@@ -1,0 +1,12 @@
+{
+  "name": "scalpdesk-tests",
+  "private": true,
+  "description": "Tests für Scalp Desk (App und 24/7-Dienst) gegen einen lokalen Test-Server",
+  "scripts": {
+    "test": "bash run-all.sh"
+  },
+  "dependencies": {
+    "ws": "^8.21.3",
+    "globals": "^15.15.0"
+  }
+}
