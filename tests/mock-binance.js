@@ -10,7 +10,10 @@ const IV = { '1s': 1e3, '1m': 6e4, '3m': 18e4, '5m': 3e5, '15m': 9e5, '1h': 36e5
 const SPOT = { BTCUSDT: 64000, ETHUSDT: 2500, XRPUSDT: 1.47, ETCUSDT: 18, BCHUSDT: 330, LTCUSDT: 70, NEARUSDT: 2.4, EURUSDT: 1.164, SOLUSDT: 150, PAXGUSDT: 2650 };
 const FUT = { ...SPOT, BSVUSDT: 32 };
 delete FUT.EURUSDT; delete FUT.PAXGUSDT; // PAXG: nur Spot (keine Futures, kein Open Interest)
-const cfg = { wsPeriod: 1000, futPeriod: 500, walk: true, silent: false, blockWs: false, restFail: false, restDelay: 0, chanNoCors: false, tg429: 0, tgUpdates: true, log: [] }, sent = [];
+const cfg = { wsPeriod: 1000, futPeriod: 500, walk: true, silent: false, blockWs: false, restFail: false, restDelay: 0, chanNoCors: false, tg429: 0, tgUpdates: true, eurHist: 'on', log: [] }, sent = [];
+// 3.31.0 (G03): historische EUR/USDT-Minutenkerzen für den Euro-Kurs nachgetragener Abschlüsse – fest berechenbar: Schlusskurs der
+// Kerze mit Minute k = 1,1 + (k mod 1000) / 100000. Vor dem 03.01.2020 gibt es das Paar nicht (leere Antwort). /eurhist?mode=on|empty|fail
+const eurClose = k => +(1.1 + (k % 1000) / 100000).toFixed(5);
 const price = {}; for (const [s, p] of Object.entries(FUT)) price[s] = p; price.EURUSDT = 1.164;
 let seed = 7; const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
 const candles = {}; // key sym|iv -> current candle
@@ -255,6 +258,12 @@ function rest(req, res) {
   }
   const fut = host === 'fapi.binance.com', book = fut ? FUT : SPOT, sym = q.symbol;
   const need = () => { if (!sym || !(sym in book)) { json(res, 400, { code: -1121, msg: 'Invalid symbol.' }); return false; } return true; };
+  if (u.pathname === '/api/v3/klines' && sym === 'EURUSDT' && q.interval === '1m' && q.endTime) {
+    if (cfg.eurHist === 'fail') return json(res, 503, { code: -1, msg: 'down' });
+    const end = Number(q.endTime), k1 = Math.floor(end / 6e4), n = Math.min(Number(q.limit) || 500, 1000), out = [];
+    if (cfg.eurHist === 'on' && end >= Date.UTC(2020, 0, 3)) for (let k = k1 - n + 1; k <= k1; k++) { const c = eurClose(k), o = eurClose(k - 1); out.push([k * 6e4, String(o), String(Math.max(o, c)), String(Math.min(o, c)), String(c), '1000', k * 6e4 + 59999, '0', 10, '0', '0', '0']); }
+    return json(res, 200, out);
+  }
   switch (u.pathname) {
     case '/api/v3/ping': return json(res, 200, {});
     case '/api/v3/klines': case '/fapi/v1/klines': if (!need()) return; if (!IV[q.interval]) return json(res, 400, { code: -1120, msg: 'bad interval' }); return json(res, 200, hist(sym, q.interval, Number(q.limit) || 500, Number(q.startTime) || 0, Number(q.endTime) || 0));
@@ -409,8 +418,9 @@ http.createServer((req, res) => {
       return ok({ ...volaCfg });
     }
     case '/reset': if (volaCfg.mode !== 'normal' || volaCfg.drift !== null) { Object.assign(volaCfg, { mode: 'normal', drift: null }); for (const k of Object.keys(H)) if (k.endsWith('|1h')) delete H[k]; }
-      Object.assign(calCfg, { mode: 'normal', min: 10, hits: 0 }); Object.assign(newsCfg, { mode: 'normal', hits: 0 }); clearInterval(cfg.flood); cfg.flood = null; cfg.log.length = 0; Object.assign(oiCfg, { mode: 'wave', ago: 10, amount: 0.06 }); cfg.walk = true; cfg.silent = false; cfg.blockWs = false; cfg.restFail = false; cfg.restDelay = 0; cfg.chanNoCors = false; cfg.tg429 = 0; cfg.tgDocFail = false; cfg.tgUpdates = true; cfg.tgMulti = false; cfg.tg502 = 0; cfg.tgFail = null; cfg.tickFail = {}; cfg.tickDelay = {}; sent.length = 0; Object.assign(bookCfg, { walls: [], step: 0.0002, levels: 1000 }); return ok();
+      Object.assign(calCfg, { mode: 'normal', min: 10, hits: 0 }); Object.assign(newsCfg, { mode: 'normal', hits: 0 }); clearInterval(cfg.flood); cfg.flood = null; cfg.log.length = 0; Object.assign(oiCfg, { mode: 'wave', ago: 10, amount: 0.06 }); cfg.walk = true; cfg.silent = false; cfg.blockWs = false; cfg.restFail = false; cfg.restDelay = 0; cfg.chanNoCors = false; cfg.tg429 = 0; cfg.tgDocFail = false; cfg.tgUpdates = true; cfg.tgMulti = false; cfg.tg502 = 0; cfg.tgFail = null; cfg.tickFail = {}; cfg.tickDelay = {}; cfg.eurHist = 'on'; sent.length = 0; Object.assign(bookCfg, { walls: [], step: 0.0002, levels: 1000 }); return ok();
     case '/restdelay': cfg.restDelay = Number(q.ms) || 0; return ok();
+    case '/eurhist': cfg.eurHist = q.mode || 'on'; return ok({ mode: cfg.eurHist });
     case '/chan': if ('tg502' in q) cfg.tg502 = Number(q.tg502) || 0; if ('tgfail' in q) cfg.tgFail = q.tgfail ? { code: Number(q.tgfail), match: q.match || '' } : null; if ('nocors' in q) cfg.chanNoCors = q.nocors === '1'; if ('tg429' in q) cfg.tg429 = Number(q.tg429) || 0; if ('docfail' in q) cfg.tgDocFail = q.docfail === '1'; if ('updates' in q) cfg.tgUpdates = q.updates === '1'; return ok();
     case '/sent': return ok(sent);
     case '/tgmsgs': return ok([...tgMsgs.values()].filter(m => !q.chat || String(m.chat.id) === q.chat).map(m => ({ ...m, content: m.document ? tgFiles.get(m.document.file_id) : undefined })));

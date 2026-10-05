@@ -249,7 +249,8 @@ const tests = {
     await openData(page);
     const [dl] = await Promise.all([page.waitForEvent('download'), page.evaluate(() => document.getElementById('export-csv').click())]);
     const csv = fs.readFileSync(await dl.path(), 'utf8').replace(/^﻿/, '').trim().split('\r\n');
-    check('CSV: Spalten „Gebühren USDT“, „Funding USDT“, „Abschluss“ (ganz)', /Gebühren USDT/.test(csv[0]) && /Funding USDT;Abschluss$/.test(csv[0]) && /;ganz$/.test(csv[1]), csv[0].slice(-80) + ' | ' + csv[1].slice(-40));
+    // 3.31.0 (G03): dahinter die Euro-Spalten „EUR-Status“, „EUR-Kurs Quelle“, „EUR-Kurszeit“
+    check('CSV: Spalten „Gebühren USDT“, „Funding USDT“, „Abschluss“ (ganz)', /Gebühren USDT/.test(csv[0]) && /Funding USDT;Abschluss;EUR-Status;EUR-Kurs Quelle;EUR-Kurszeit$/.test(csv[0]) && /;ganz;[^;]*;[^;]*;[^;]*$/.test(csv[1]), csv[0].slice(-80) + ' | ' + csv[1].slice(-40));
     check('keine Fehler (Alt)', !real(errors).length, real(errors).join(' | ')); await ctx.close();
     // Ungültige Zusatzangaben aus Teilabschlüssen (z. B. von Hand verändert): ohne diesen Wert geladen, Original in „invalid“
     const tr = (id, extra) => ({ ...position(id, 'ETHUSDT', 2000, 1), exit: 2100, fees: 0, pnl: 100, pnlSource: 'calc', closedAt: Date.now() - 3600e3, fx: null, ...extra });
@@ -285,7 +286,7 @@ const tests = {
     const d = new Date(Date.now() - 2 * 864e5), when = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}T10:00`;
     const r = await close(page, 'H1', { qty: '1', exit: '2050', when });
     const t = (await tradesOf(page, 'H1'))[0];
-    check('Abschluss vor zwei Tagen nachgetragen: Vorschau „Nachträglich erfasst – wird nicht als neuer Abschluss gemeldet“, Trade mit dieser Zeit und „nachgetragen“', /Nachträglich erfasst – wird nicht als neuer Abschluss gemeldet/.test(r.pv) && t?.part?.late === true && t.closedAt === await page.evaluate(w => new Date(w).getTime(), when) && t.fx === null, `${r.pv} · ${JSON.stringify([t?.part, t?.closedAt, t?.fx])}`); // Zeit in der Zeitzone des Browsers
+    check('Abschluss vor zwei Tagen nachgetragen: Vorschau „Nachträglich erfasst – wird nicht als neuer Abschluss gemeldet“, Trade mit dieser Zeit und „nachgetragen“', /Nachträglich erfasst – wird nicht als neuer Abschluss gemeldet/.test(r.pv) && t?.part?.late === true && t.closedAt === await page.evaluate(w => new Date(w).getTime(), when) && (t.fx === null || t.fxSrc === 'm1'), `${r.pv} · ${JSON.stringify([t?.part, t?.closedAt, t?.fx, t?.fxSrc])}`); // Zeit in der Zeitzone des Browsers; 3.31.0 (G03): Euro-Kurs aus der Binance-Minute davor statt „unbekannt“ (nie der heutige Kurs)
     const r2 = await close(page, 'H1', { qty: '1', exit: '2050', when: '2020-01-01T10:00' }, { save: false });
     check('Zeitpunkt vor der Eröffnung: abgelehnt', /vor der Eröffnung/.test(r2.pv), r2.pv);
     await jsClick(page, `${C('H1')} [data-action="cancel"]`);
