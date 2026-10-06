@@ -110,7 +110,7 @@ const TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', CHAT = '987654321'
   // Neustart mit derselben Datei: keine erneute Bestätigung, Protokoll nennt den gespeicherten Stand
   const tE = now; logs = []; w = make(); w.stopped = true; const realExit = process.exit; process.exit = () => {}; try { await w.start(); } finally { process.exit = realExit; }
   await w.tick(); for (let i = 0; i < 4; i++) await step(w, 16e3);
-  check('Neustart mit derselben Datei: Protokoll „gestartet · Bot … · Chat …“ und „Übergabe aus dem gespeicherten Zustand“, keine neue Bestätigung', logs.some(l => /^Scalp Desk 24\/7-Dienst 1\.4\.0 gestartet · Bot @kursalarm_bot \(ID 123456789\) · Chat 987654321 · Node .* · prüft die Übergabe alle 20 s, die Kurse alle 15 s$/.test(l))
+  check('Neustart mit derselben Datei: Protokoll „gestartet · Bot … · Chat …“ und „Übergabe aus dem gespeicherten Zustand“, keine neue Bestätigung', logs.some(l => /^Scalp Desk 24\/7-Dienst \d+\.\d+\.\d+ gestartet · Bot @kursalarm_bot \(ID 123456789\) · Chat 987654321 · Node .* · prüft die Übergabe alle 20 s, die Kurse alle 15 s$/.test(l))
     && logs.some(l => l.startsWith('Übergabe aus dem gespeicherten Zustand (#gh78): 2 Marken – Kurs-Alarm ETH')) && !sentMsgs(tE).some(x => x.text.startsWith('✅')), logs.slice(0, 3).join(' | '));
   // Übersicht alle 10 Minuten
   logs = []; for (let i = 0; i < 40; i++) await step(w, 16e3);

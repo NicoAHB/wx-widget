@@ -166,6 +166,8 @@ async function channel(req, res, host, u) {
     }
     if (method === 'sendMessage') {
       const f = F; sent.push({ at: Date.now(), svc: 'tg', bot: B.id, mode: req.headers['sec-fetch-mode'] || '', ...f, link_preview_options: typeof f.link_preview_options === 'object' ? JSON.stringify(f.link_preview_options) : f.link_preview_options });
+      // 3.33.0 (G05): Nachricht kommt an, die Antwort geht verloren (Verbindung abgerissen) – /chan?tgdrop=n
+      if (cfg.tgDrop > 0) { cfg.tgDrop--; sent.at(-1).dropped = true; res.socket?.destroy(); return; }
       if (cfg.tg429 > 0) { cfg.tg429--; return json(res, 429, { ok: false, error_code: 429, description: 'Too Many Requests: retry after 1', parameters: { retry_after: 1 } }, cors); }
       // 3.27.0: die nächsten n Versuche mit 502 ablehnen (/chan?tg502=n) oder alle passenden dauerhaft (/chan?tgfail=400&match=…)
       if (cfg.tg502 > 0) { cfg.tg502--; sent.at(-1).failed = 502; return json(res, 502, { ok: false, error_code: 502, description: 'Bad Gateway' }, cors); }
@@ -427,11 +429,11 @@ http.createServer((req, res) => {
       return ok({ ...volaCfg });
     }
     case '/reset': if (volaCfg.mode !== 'normal' || volaCfg.drift !== null) { Object.assign(volaCfg, { mode: 'normal', drift: null }); for (const k of Object.keys(H)) if (k.endsWith('|1h')) delete H[k]; }
-      Object.assign(calCfg, { mode: 'normal', min: 10, hits: 0 }); Object.assign(newsCfg, { mode: 'normal', hits: 0 }); clearInterval(cfg.flood); cfg.flood = null; cfg.log.length = 0; Object.assign(oiCfg, { mode: 'wave', ago: 10, amount: 0.06 }); cfg.walk = true; cfg.silent = false; cfg.blockWs = false; cfg.restFail = false; cfg.restDelay = 0; cfg.chanNoCors = false; cfg.tg429 = 0; cfg.tgDocFail = false; cfg.tgUpdates = true; cfg.tgMulti = false; cfg.tg502 = 0; cfg.tgFail = null; cfg.tickFail = {}; cfg.tickDelay = {}; cfg.eurHist = 'on'; sent.length = 0; Object.assign(bookCfg, { walls: [], step: 0.0002, levels: 1000 }); return ok();
+      Object.assign(calCfg, { mode: 'normal', min: 10, hits: 0 }); Object.assign(newsCfg, { mode: 'normal', hits: 0 }); clearInterval(cfg.flood); cfg.flood = null; cfg.log.length = 0; Object.assign(oiCfg, { mode: 'wave', ago: 10, amount: 0.06 }); cfg.walk = true; cfg.silent = false; cfg.blockWs = false; cfg.restFail = false; cfg.restDelay = 0; cfg.chanNoCors = false; cfg.tg429 = 0; cfg.tgDocFail = false; cfg.tgUpdates = true; cfg.tgMulti = false; cfg.tg502 = 0; cfg.tgFail = null; cfg.tickFail = {}; cfg.tickDelay = {}; cfg.tickOld = {}; cfg.eurHist = 'on'; cfg.t24 = 'ok'; cfg.tgDrop = 0; sent.length = 0; Object.assign(bookCfg, { walls: [], step: 0.0002, levels: 1000 }); return ok();
     case '/restdelay': cfg.restDelay = Number(q.ms) || 0; return ok();
     case '/eurhist': cfg.eurHist = q.mode || 'on'; return ok({ mode: cfg.eurHist });
     case '/t24': cfg.t24 = q.mode || 'ok'; return ok({ mode: cfg.t24 });
-    case '/chan': if ('tg502' in q) cfg.tg502 = Number(q.tg502) || 0; if ('tgfail' in q) cfg.tgFail = q.tgfail ? { code: Number(q.tgfail), match: q.match || '' } : null; if ('nocors' in q) cfg.chanNoCors = q.nocors === '1'; if ('tg429' in q) cfg.tg429 = Number(q.tg429) || 0; if ('docfail' in q) cfg.tgDocFail = q.docfail === '1'; if ('updates' in q) cfg.tgUpdates = q.updates === '1'; return ok();
+    case '/chan': if ('tg502' in q) cfg.tg502 = Number(q.tg502) || 0; if ('tgfail' in q) cfg.tgFail = q.tgfail ? { code: Number(q.tgfail), match: q.match || '' } : null; if ('nocors' in q) cfg.chanNoCors = q.nocors === '1'; if ('tg429' in q) cfg.tg429 = Number(q.tg429) || 0; if ('tgdrop' in q) cfg.tgDrop = Number(q.tgdrop) || 0; if ('docfail' in q) cfg.tgDocFail = q.docfail === '1'; if ('updates' in q) cfg.tgUpdates = q.updates === '1'; return ok();
     case '/sent': return ok(sent);
     case '/tgmsgs': return ok([...tgMsgs.values()].filter(m => !q.chat || String(m.chat.id) === q.chat).map(m => ({ ...m, content: m.document ? tgFiles.get(m.document.file_id) : undefined })));
     case '/tgmulti': cfg.tgMulti = q.on === '1'; return ok();

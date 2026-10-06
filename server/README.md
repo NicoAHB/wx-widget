@@ -9,6 +9,7 @@ Kleines Programm für einen eigenen Server, der rund um die Uhr läuft (z. B. ko
 
 Ab Version 1.3 prüft er, ob Telegram jede Meldung angenommen hat. Wenn nicht, versucht er es erneut und meldet eine Störung.
 Ab Version 1.4 bestätigt er jede neue Übergabe lautlos im Chat, sagt selbst, wenn er keine Datei der App findet (meist ein anderer Bot oder eine andere Chat-ID am Server), und zeigt mit `sudo scalpdesk-247 status` den ganzen Weg auf einen Blick.
+Ab Version 2.0 steuert die App ihn über eine gesicherte HTTPS-Adresse: Chat-Schalter mit Bestätigung und eine Sendefreigabe, damit jeder Alarm genau einmal kommt (siehe „HTTPS-Steuerung“).
 
 **Schritt-für-Schritt-Anleitung für Oracle Cloud (Neueinrichtung, Aktualisieren, Fehlerhilfe): [ANLEITUNG-ORACLE.md](ANLEITUNG-ORACLE.md)**
 
@@ -45,7 +46,24 @@ Ab Version 1.4 bestätigt er jede neue Übergabe lautlos im Chat, sagt selbst, w
   - Erreicht es eine Grenze, wartet er etwa 10 Sekunden und liest die Datei der App neu. Die geöffnete App meldet die Grenze selbst (sofort, auch kurze Spitzen) und vermerkt das in ihrer Datei; dann schweigt der Dienst. Sonst meldet er, einmal je Grenze.
   - Er bestätigt mit „· GV“ und vermerkt eigene Meldungen in der angehefteten Nachricht („GV: Gewinn-Alarm ausgelöst …“). Die App übernimmt die Grenze beim Öffnen als „ausgelöst“. Erst nach „Wieder aktivieren“ in der App meldet sie sich erneut.
   - Ein älterer Dienst (bis 1.1) kann es nicht. Dann prüft weiter nur die geöffnete App. Das Tages-Verlustlimit meldet immer die App.
-- **Netz:** Der Server braucht nur ausgehende Verbindungen (Telegram, Binance, GitHub): keine offenen Ports, keine Domain.
+- **Netz:** Ohne HTTPS-Steuerung braucht der Server nur ausgehende Verbindungen (Telegram, Binance, GitHub). Mit HTTPS-Steuerung (ab 2.0) zusätzlich die Ports 80 und 443 (siehe unten); eine eigene Domain ist nicht nötig.
+
+## HTTPS-Steuerung (ab 2.0)
+- **Aufbau:** Der Dienst lauscht nur lokal auf `127.0.0.1:8247`. Davor steht **Caddy**, der für eine Adresse wie `130-61-1-2.sslip.io` (die IP des Servers mit Bindestrichen) ein kostenloses Let's-Encrypt-Zertifikat holt und erneuert. Der Installer richtet beides ein und öffnet die Ports 80 und 443 in der Firewall des Servers; in der Oracle-Konsole gibst du sie einmal selbst frei ([Anleitung](ANLEITUNG-ORACLE.md#du-hast-den-dienst-schon-auf-version-20-aktualisieren-10-minuten)).
+- **Zugang:** Ein zufälliger Zugangsschlüssel (43 Zeichen) steht in `/etc/scalpdesk-247.json` und gilt für jede Anfrage („Authorization: Bearer …“). `sudo scalpdesk-247 zugang` zeigt ihn mit der Adresse; in der App unter 🌙 24/7-Dienst eintragen. Falsche Schlüssel: höchstens 20 Versuche je Minute. Anfragen anderer Webseiten lehnt der Dienst ab (CORS nur für `https://nicoahb.github.io`).
+- **Was darüber läuft – und was nicht:** Schalterstände (Kursalarm, Sicherung, Trades) und Ereignis-Freigaben. Sicherungen, Trade-Bilder und Telegram-Token der App gehen nie an den Dienst.
+- **Schalter:**
+  - **Gespeichert am Dienst:** je Ziel an/aus, Einschaltzeit und Epoche, dazu eine gemeinsame Revision.
+  - **Aufträge:** Die App sendet einen Auftrag mit Auftrags-ID und erwarteter Revision. Passt die Revision nicht (ein anderes Gerät war schneller), lehnt der Dienst ab und nennt den aktuellen Stand. Alle Ziele eines Auftrags (auch „Alle an/aus“) gelten gemeinsam oder gar nicht. Bestätigt wird erst nach dem dauerhaften Speichern.
+  - **Verlorene Antwort:** Das Ergebnis eines Auftrags lässt sich abfragen (`GET /v1/commands/<ID>`).
+  - **AUS und AN:** AUS verwirft auch wartende Meldungen. AN meldet nur, was ab jetzt passiert. Vor jedem Senden prüft der Dienst Schalter und Epoche erneut.
+- **Ereignis-Freigaben (keine doppelten Alarme):**
+  - **Feste Ereignis-ID:** Jeder Kurs-Alarm, jede Stop-/Ziel-Berührung und jede Gewinn-/Verlust-Grenze hat eine ID aus Alarm, Aktivierung und Art, z. B. `al42:mux1a2b3:price-cross`. Eine Sicherung oder ein Abgleich ändert sie nicht; erst „Erneut aktivieren“ ergibt eine neue.
+  - **Genau ein Sender:** Wer das Ereignis zuerst reserviert (die geöffnete App oder der Dienst), sendet es. Zwei Geräte bekommen nie beide die Freigabe. Eine ausgegebene Freigabe wandert nie an einen anderen Sender; meldet ein Gerät nach 5 Minuten kein Ergebnis, steht „unbestätigt“.
+  - **Zustände** (dauerhaft): reserviert, wird gesendet, zugestellt, unbestätigt, fehlgeschlagen, verworfen.
+  - **Stop/Ziel wiederkehrend:** Eine neue Episode beginnt erst, wenn der Kurs die Marke um mindestens 0,1 % verlassen hat und die letzte Meldung mindestens 5 Minuten zurückliegt.
+- **Zustellung:** Bekommt der Dienst von Telegram keine Antwort (Zeitüberschreitung, Verbindung abgerissen), gilt die Meldung als „Zustellung unbestätigt“ – ohne zweiten Versuch, der sie doppelt zustellen könnte. Kam die Anfrage nachweislich nie an (keine Verbindung), versucht er es wie bisher erneut. Garantierte Zustellung und „genau einmal“ zugleich kann niemand versprechen.
+- **Protokoll:** je Ereignis eine Zeile mit Ereignis-ID, Ziel, Sender und Zustand, z. B. `Ereignis al42:mux1a2b3:price-cross · Ziel course-alert · Sender oracle · zugestellt`.
 
 ## Einrichten
 Auf dem Server (Ubuntu/Debian, Raspberry Pi OS oder Oracle Linux):
@@ -67,7 +85,8 @@ Bot-Token und Chat-ID sind dieselben wie in der App unter „Kursalarm“, nicht
 **Wichtig:** Serverregion in der EU wählen (z. B. Frankfurt). Von US-Servern aus sperrt Binance den Zugriff.
 
 ## Betrieb
-- Alles prüfen (ab 1.4): `sudo scalpdesk-247 status` – Bot, Chat, angeheftete Datei, Bestätigung, beobachtete Marken, letzte Zustellung, Binance; ohne eine Nachricht zu senden
+- Alles prüfen (ab 1.4): `sudo scalpdesk-247 status` – Bot, Chat, angeheftete Datei, Bestätigung, beobachtete Marken, letzte Zustellung, Binance, ab 2.0 auch HTTPS-Steuerung, Schalter und letzte Ereignisse; ohne eine Nachricht zu senden
+- Zugang für die App (ab 2.0): `sudo scalpdesk-247 zugang`; HTTPS erneut prüfen: `sudo scalpdesk-247 https`
 - Protokoll: `sudo scalpdesk-247 protokoll` (die letzten 60 Zeilen), live: `sudo scalpdesk-247 live` (beenden mit Strg+C) – oder wie bisher `journalctl -u scalpdesk-247 -f`
 - Neu starten: `sudo scalpdesk-247 neustart`; Status von systemd: `systemctl status scalpdesk-247`
 - Aktualisieren: den Installationsbefehl erneut ausführen (Einstellungen bleiben)

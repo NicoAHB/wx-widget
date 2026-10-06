@@ -25,16 +25,30 @@
 // Dafür müssen App (Kursalarm) und Dienst denselben Bot und dieselbe Chat-ID nutzen: Ein anderer Bot sieht die Datei nicht.
 // Der Server braucht nur ausgehende Verbindungen (Telegram, Binance, GitHub) – keine offenen Ports, keine Domain.
 //
+// Steuerung über HTTPS (ab 2.0, G05): Ist ein Zugangsschlüssel eingerichtet, lauscht der Dienst zusätzlich auf 127.0.0.1:8247;
+// davor steht Caddy mit einem kostenlosen Zertifikat (Adresse wie 130-61-1-2.sslip.io). Darüber laufen nur Schalterstände und
+// Ereignis-Freigaben – keine Sicherungen, keine Trades, keine Telegram-Geheimnisse:
+// - Ziel-Schalter (Kursalarm, Sicherung, Trades) mit Revision, Einschaltzeit und Epoche; Änderungen als Auftrag mit Auftrags-ID
+//   und erwarteter Revision, alle Ziele eines Auftrags gemeinsam oder gar nicht. Das Ergebnis eines Auftrags lässt sich später
+//   abfragen (verlorene Antwort). AUS verwirft auch wartende Meldungen, AN meldet nur ab jetzt Neues.
+// - Ereignis-Freigaben: Jedes Ereignis (Kurs-Alarm, Stop/Ziel, Gewinn/Verlust) hat eine feste ID aus Alarm, Aktivierung und Art.
+//   Wer es zuerst reserviert (geöffnete App oder dieser Dienst), sendet es – genau einer. Eine ausgegebene Freigabe wandert nie
+//   an einen anderen Sender; Zustände: reserviert, wird gesendet, zugestellt, unbestätigt, fehlgeschlagen, verworfen.
+// - Ist eine Telegram-Antwort verloren gegangen (Zeitüberschreitung, Verbindung abgerissen), gilt die Meldung als „unbestätigt“
+//   – kein zweiter Versuch, der sie doppelt zustellen könnte.
 // Ohne Abhängigkeiten, Node.js ab Version 18. Einrichtung: server/install.sh (fragt Bot-Token und Chat-ID ab).
-// Aufruf: node scalpdesk-247.mjs --config /etc/scalpdesk-247.json [--state /var/lib/scalpdesk-247/state.json] [--check | --status]
+// Aufruf: node scalpdesk-247.mjs --config /etc/scalpdesk-247.json [--state /var/lib/scalpdesk-247/state.json] [--check | --status | --zugang]
 //   --check   nach der Einrichtung: Bot, Testnachricht, Binance, angeheftete Datei
 //   --status  Fehlersuche ohne Nachricht: Bot, Chat, angeheftete Datei, Bestätigung, Zustand, Binance (am Server: sudo scalpdesk-247 status)
+//   --zugang  Adresse und Zugangsschlüssel der HTTPS-Steuerung für die App (am Server: sudo scalpdesk-247 zugang)
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import http from 'node:http';
+import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
-export const VERSION = '1.4.0';
+export const VERSION = '2.0.0';
 const E = process.env;
 // Adressen (für Tests über Umgebungsvariablen änderbar)
 export const API = {
@@ -223,8 +237,9 @@ export function appLine(c) {
 export const pulseOn = c => !!(c?.on && c.ev.pulse && c.pulse);
 export const pnlOn = c => !!(c?.on && c.ev.pnl && c.pnl);
 // „· v1.4.0“ (ab 1.4): Version des Dienstes – die App zeigt sie an; ältere Apps übergehen das Feld
-export function statusLine({ ok, now, c, problem }) {
-  return `${LINE} ${ok ? 'aktiv' : 'Störung'} · ${stamp(now, c.tz)} · v${VERSION}${pnlOn(c) ? ' · GV' : ''}${pulseOn(c) ? ' · Puls' : ''} · #${c.tag} übernommen${ok ? '' : ` · ${problem}`}`;
+// „· HTTPS“ (ab 2.0): Steuerung mit Schaltern und Ereignis-Freigaben eingerichtet
+export function statusLine({ ok, now, c, problem, ctl = false }) {
+  return `${LINE} ${ok ? 'aktiv' : 'Störung'} · ${stamp(now, c.tz)} · v${VERSION}${ctl ? ' · HTTPS' : ''}${pnlOn(c) ? ' · GV' : ''}${pulseOn(c) ? ' · Puls' : ''} · #${c.tag} übernommen${ok ? '' : ` · ${problem}`}`;
 }
 // ---------- 1.4: Bestätigung „hat übernommen“, Hinweis bei fehlender Datei ----------
 // Beobachtete Marken mit Inhalt (ändert sich der Preis eines Alarms, gilt er als neu); Quittierungen zählen nicht
@@ -267,19 +282,115 @@ export const outDelay = n => [15e3, 30e3, 60e3, 120e3, 300e3][Math.min(Math.max(
 export const OUT_MAX_AGE = 24 * 3600e3;
 
 // ---------- Einstellungen des Servers ----------
+// 2.0: key – Zugangsschlüssel der HTTPS-Steuerung (ohne: keine Steuerung, wie 1.4); origin – Herkunft der App (CORS, mehrere mit
+// Komma); listen – Adresse für Caddy (nur lokal); host – öffentliche Adresse (nur zur Anzeige)
+export const KEY_RE = /^[A-Za-z0-9_-]{32,64}$/, ORIGIN_RE = /^(https:\/\/[a-z0-9.-]+|http:\/\/(127\.0\.0\.1|localhost))(:\d{1,5})?$/, LISTEN_RE = /^(127\.0\.0\.1|::1|localhost):(\d{1,5})$/;
+export const APP_ORIGIN = 'https://nicoahb.github.io', LISTEN = '127.0.0.1:8247';
 export function readServerConfig(file) {
   let j; try { j = JSON.parse(fs.readFileSync(file, 'utf8')); } catch (e) { throw new Error(`Einstellungen ${file} nicht lesbar: ${e.message}`); }
   const token = String(j.token || '').trim(), chat = String(j.chat || '').trim(), discord = String(j.discord || '').trim();
   if (!TOKEN_RE.test(token)) throw new Error(`Bot-Token in ${file} fehlt oder hat das falsche Format (123456789:AA…).`);
   if (!CHAT_RE.test(chat)) throw new Error(`Chat-ID in ${file} fehlt oder hat das falsche Format.`);
   if (discord && !DC_RE.test(discord)) throw new Error(`Discord-Webhook in ${file} hat das falsche Format.`);
-  return { token, chat, discord };
+  const key = String(j.key || '').trim(), origins = String(j.origin || APP_ORIGIN).split(',').map(x => x.trim().replace(/\/+$/, '')).filter(Boolean), listen = String(j.listen || LISTEN).trim(), host = String(j.host || '').trim();
+  if (key && !KEY_RE.test(key)) throw new Error(`Zugangsschlüssel in ${file} hat das falsche Format.`);
+  if (!origins.length || origins.some(o => !ORIGIN_RE.test(o))) throw new Error(`Herkunft der App (origin) in ${file} hat das falsche Format (z. B. ${APP_ORIGIN}).`);
+  if (!LISTEN_RE.test(listen)) throw new Error(`Adresse „listen“ in ${file} muss lokal sein (z. B. ${LISTEN}).`);
+  if (host && !/^[a-z0-9.-]{3,253}$/.test(host)) throw new Error(`Öffentliche Adresse (host) in ${file} hat das falsche Format.`);
+  return { token, chat, discord, key, origins, listen, host };
 }
+
+// ---------- 2.0 (G05): Ziel-Schalter und Ereignis-Freigaben (rein, ohne Netz – testbar) ----------
+// Ziele: Kursalarm (Preis-, Stop-/Ziel-, Gewinn-/Verlust-Alarme, Termine, BTC-Puls – sendet dieser Dienst bzw. die App mit
+// Freigabe), Sicherung und Trades (sendet nur die App direkt an Telegram; hier steht nur der Schalter, ohne Inhalte).
+export const TARGETS = ['course-alert', 'backup', 'trades'];
+export const TARGET_NAME = { 'course-alert': 'Kursalarm', backup: 'Sicherung', trades: 'Trades' };
+const CMD_RE = /^[A-Za-z0-9_-]{8,64}$/, EV_RE = /^[A-Za-z0-9_.:-]{6,140}$/, SENDER_RE = /^(oracle|app:[a-z0-9]{4,24})$/;
+export const EV_FINAL = ['confirmed', 'unconfirmed', 'failed', 'discarded'], EV_ORDER = { reserved: 0, sending: 1, confirmed: 2, unconfirmed: 2, failed: 2, discarded: 2 };
+export const GRANT_WAIT = 5 * 60e3, EV_KEEP = 14 * 864e5, CMD_KEEP = 7 * 864e5, CMD_MAX = 300;
+// Episoden wiederkehrender Marken (Stop/Ziel): eine neue Episode erst, wenn der Kurs die Marke um mindestens EP_HYST (0,1 %)
+// wieder verlassen hat (Hysterese) und die letzte Meldung mindestens EP_COOL (5 min) zurückliegt (Abklingzeit)
+export const EP_HYST = 0.001, EP_COOL = 5 * 60e3;
+// Aktivierung als kurze, feste Kennung aus dem Zeitpunkt des Scharfschaltens (Alarm: armedAt, Position: Stop/Ziel gesetzt,
+// Gewinn/Verlust: Scharfschalten) – App und Dienst rechnen sie gleich; eine Sicherung ändert sie nicht
+export const act = t => Math.max(0, Math.round(Number(t) || 0)).toString(36);
+export const alarmEvent = a => `${a.id}:${act(a.armedAt)}:price-cross`;
+export const posBase = (p, type) => `${p.id}:${act(p.since)}:${type}`;
+export const pnlEvent = l => `pnl:${l.k}:${act(l.at)}:threshold`;
+export function policyNew(now) { return { rev: 0, targets: Object.fromEntries(TARGETS.map(id => [id, { on: true, since: now, epoch: 1 }])) }; }
+export function policyLoad(p, now) {
+  const d = policyNew(now); if (!p || typeof p !== 'object') return d;
+  d.rev = Number.isInteger(p.rev) && p.rev >= 0 ? p.rev : 0;
+  for (const id of TARGETS) { const t = p.targets?.[id]; if (t && typeof t.on === 'boolean') d.targets[id] = { on: t.on, since: Number(t.since) || now, epoch: Number.isInteger(t.epoch) && t.epoch > 0 ? t.epoch : 1, ...(Number(t.offSince) ? { offSince: Number(t.offSince) } : {}) }; }
+  return d;
+}
+export const policyView = pol => ({ rev: pol.rev, targets: JSON.parse(JSON.stringify(pol.targets)) });
+// Auftrag ausführen: { commandId, expectedRevision, set: { Ziel: true|false } } – alle Ziele gemeinsam oder keins. Ein schon
+// bekannter Auftrag (gleiche ID) bekommt dieselbe Antwort wie beim ersten Mal und ändert nichts mehr.
+export function policyApply(pol, cmds, cmd, now) {
+  if (!cmd || !CMD_RE.test(cmd.commandId)) return { status: 400, body: { ok: false, error: 'Auftrags-ID fehlt oder hat das falsche Format.' } };
+  const seen = cmds.find(c => c.id === cmd.commandId); if (seen) return { status: seen.status, body: { ...seen.body, repeat: true }, repeat: true };
+  const set = cmd.set && typeof cmd.set === 'object' && !Array.isArray(cmd.set) ? cmd.set : null, ids = set ? Object.keys(set) : [];
+  let r;
+  if (!ids.length || ids.some(id => !TARGETS.includes(id) || typeof set[id] !== 'boolean')) r = { status: 400, body: { ok: false, error: 'Unbekanntes Ziel oder ungültiger Schalterwert.' } };
+  else if (!Number.isInteger(cmd.expectedRevision) || cmd.expectedRevision !== pol.rev) r = { status: 409, body: { ok: false, conflict: true, error: `Der Stand hat sich geändert (Revision ${pol.rev}, erwartet ${cmd.expectedRevision}).`, ...policyView(pol) } };
+  else {
+    const changed = [];
+    for (const id of ids) { const t = pol.targets[id]; if (t.on === set[id]) continue; t.on = set[id]; t.epoch++; if (t.on) { t.since = now; delete t.offSince; } else t.offSince = now; changed.push(id); }
+    if (changed.length) pol.rev++;
+    r = { status: 200, body: { ok: true, changed, ...policyView(pol) } };
+  }
+  cmds.push({ id: cmd.commandId, at: now, status: r.status, body: { ...r.body, commandId: cmd.commandId } });
+  while (cmds.length > CMD_MAX || (cmds.length && now - cmds[0].at > CMD_KEEP)) cmds.shift();
+  return { ...r, body: { ...r.body, commandId: cmd.commandId } };
+}
+// Ereignis reservieren: frei → reserviert für diesen Sender; schon vorhanden → keine Freigabe (mit Inhaber und Zustand);
+// Ziel aus → keine Freigabe, und das Ereignis bleibt als „verworfen“ stehen (AN meldet nur ab jetzt Neues, nichts von davor)
+export function evReserve(L, pol, req, now) {
+  if (!req || !EV_RE.test(req.eventId) || !TARGETS.includes(req.targetId) || !SENDER_RE.test(req.sender)) return { status: 400, body: { ok: false, error: 'Ereignis, Ziel oder Sender fehlt oder hat das falsche Format.' } };
+  const e = L[req.eventId];
+  if (e) return { status: 200, body: { ok: true, grant: false, holder: e.by, st: e.st, at: e.at } };
+  const t = pol.targets[req.targetId], label = typeof req.label === 'string' ? req.label.slice(0, 80) : '';
+  if (!t.on) { L[req.eventId] = { st: 'discarded', by: req.sender, target: req.targetId, epoch: t.epoch, at: now, upd: now, label, why: 'Ziel ausgeschaltet' }; return { status: 200, body: { ok: true, grant: false, reason: 'off', st: 'discarded' }, created: true }; }
+  L[req.eventId] = { st: 'reserved', by: req.sender, target: req.targetId, epoch: t.epoch, at: now, upd: now, label };
+  return { status: 200, body: { ok: true, grant: true, epoch: t.epoch, rev: pol.rev }, created: true };
+}
+// Ergebnis melden: nur der Inhaber, nur vorwärts (reserviert → wird gesendet → zugestellt | unbestätigt | fehlgeschlagen | verworfen)
+export function evReport(L, req, now) {
+  const e = L[req?.eventId]; if (!e) return { status: 404, body: { ok: false, error: 'Ereignis unbekannt.' } };
+  if (e.by !== req.sender) return { status: 409, body: { ok: false, error: `Ereignis gehört ${e.by}.`, st: e.st } };
+  if (!(req.st in EV_ORDER) || req.st === 'reserved') return { status: 400, body: { ok: false, error: 'Unbekannter Zustand.' } };
+  if (EV_FINAL.includes(e.st) || EV_ORDER[req.st] < EV_ORDER[e.st]) return { status: 200, body: { ok: true, st: e.st, unchanged: true } };
+  e.st = req.st; e.upd = now; if (typeof req.why === 'string') e.why = req.why.slice(0, 120);
+  return { status: 200, body: { ok: true, st: e.st }, changed: true };
+}
+// Neue Episode einer wiederkehrenden Marke: nur von der aktuellen aus (from), nur wenn in ihr gemeldet wurde und die Abklingzeit
+// vorbei ist – melden zwei Sender dasselbe Verlassen, zählt es einmal
+export function epNext(E, L, base, from, now) {
+  const cur = E[base]?.n || 0, ev = L[`${base}:${cur}`];
+  if (from === cur && ev && now - ev.at >= EP_COOL) E[base] = { n: cur + 1, at: now };
+  return E[base]?.n || 0;
+}
+// Freigaben ohne Rückmeldung des Geräts: nach GRANT_WAIT „unbestätigt“ – nie an einen anderen Sender weitergeben (das erste
+// Gerät könnte noch spät senden); alte Einträge nach EV_KEEP vergessen
+export function evSweep(L, E, now) {
+  const done = [];
+  for (const [id, e] of Object.entries(L)) {
+    if (!EV_FINAL.includes(e.st) && e.by !== 'oracle' && now - e.upd > GRANT_WAIT) { e.st = 'unconfirmed'; e.upd = now; e.why = 'keine Rückmeldung des Geräts'; done.push(id); }
+    if (now - e.at > EV_KEEP) delete L[id];
+  }
+  for (const [b, x] of Object.entries(E)) if (now - x.at > EV_KEEP * 2) delete E[b];
+  return done;
+}
+export const ST_NAME = { reserved: 'reserviert', sending: 'wird gesendet', confirmed: 'zugestellt', unconfirmed: 'Zustellung unbestätigt', failed: 'fehlgeschlagen', discarded: 'verworfen' };
+export const senderName = s => (s === 'oracle' ? '24/7-Dienst' : `App (${String(s).slice(4)})`);
 
 // ---------- Der Dienst ----------
 export class Watcher {
-  constructor({ token, chat, discord = '', statePath = '', now = () => Date.now(), log = (...a) => console.log(...a) }) {
-    Object.assign(this, { token, chat, discord, statePath, now, log });
+  constructor({ token, chat, discord = '', key = '', origins = [APP_ORIGIN], listen = LISTEN, host = '', statePath = '', now = () => Date.now(), log = (...a) => console.log(...a) }) {
+    Object.assign(this, { token, chat, discord, key, origins, listen, host, statePath, now, log });
+    // 2.0 (G05): Ziel-Schalter (Revision, Epoche, Einschaltzeit), ausgeführte Aufträge, Ereignis-Freigaben, Episoden
+    this.pol = policyNew(now()); this.cmds = []; this.evs = {}; this.eps = {}; this.server = null; this.authFail = { n: 0, t: 0 };
     this.conf = null; this.fired = {}; this.seen = new Map(); this.rearm = new Map(); this.lastCheck = new Map(); this.prevCandle = new Map();
     this.cal = null; this.calAt = 0; this.feed = { okAt: 0, error: '', since: 0 }; this.next = { config: 0, price: 0, beat: 0, cal: 0, econ: 0 };
     this.beatOk = null; this.stopped = false; this.saveTimer = null; this.errors = new Map(); this.waiting = false; this.pulseLast = { up: null, down: null };
@@ -300,20 +411,23 @@ export class Watcher {
     if (!this.statePath) return;
     try {
       const s = JSON.parse(fs.readFileSync(this.statePath, 'utf8'));
-      if (s && s.v === 1) { this.fired = s.fired && typeof s.fired === 'object' ? s.fired : {}; if (s.pulse && typeof s.pulse === 'object') this.pulseLast = { up: s.pulse.up || null, down: s.pulse.down || null };
+      if (s && (s.v === 1 || s.v === 2)) { this.fired = s.fired && typeof s.fired === 'object' ? s.fired : {}; if (s.pulse && typeof s.pulse === 'object') this.pulseLast = { up: s.pulse.up || null, down: s.pulse.down || null };
         if (s.pnl && typeof s.pnl === 'object') { this.pnlSt = s.pnl.st && typeof s.pnl.st === 'object' ? s.pnl.st : {}; this.pnlFired = s.pnl.fired && typeof s.pnl.fired === 'object' ? s.pnl.fired : {}; this.pnlPend = s.pnl.pend && typeof s.pnl.pend === 'object' ? s.pnl.pend : {}; }
         if (Array.isArray(s.out)) this.out = s.out.filter(m => m && typeof m.text === 'string' && Number.isFinite(m.at)); if (s.last?.t) this.last = s.last; if (s.sendErr?.since) this.sendErr = s.sendErr; if (s.conf?.data) this.conf = { ...s.conf, data: parseConfig({ kind: 'scalpdesk-247', v: 1, ...s.conf.data }) }; if (Array.isArray(s.cal?.events)) { this.cal = s.cal.events; this.calAt = s.cal.at || 0; }
-        if (Number.isFinite(s.hintAt)) this.hintAt = s.hintAt; if (Array.isArray(s.ack?.keys)) { this.ackKeys = s.ack.keys.filter(k => typeof k === 'string'); this.ackAt = Number(s.ack.t) || 0; this.ackOn = typeof s.ack.on === 'boolean' ? s.ack.on : null; } }
+        if (Number.isFinite(s.hintAt)) this.hintAt = s.hintAt; if (Array.isArray(s.ack?.keys)) { this.ackKeys = s.ack.keys.filter(k => typeof k === 'string'); this.ackAt = Number(s.ack.t) || 0; this.ackOn = typeof s.ack.on === 'boolean' ? s.ack.on : null; }
+        // 2.0: Schalter, Aufträge, Freigaben und Episoden überstehen einen Neustart (1.4-Zustand: alle Ziele an, Revision 0)
+        this.pol = policyLoad(s.pol, this.now()); if (Array.isArray(s.cmds)) this.cmds = s.cmds.filter(c => c && typeof c.id === 'string' && Number.isFinite(c.at));
+        if (s.evs && typeof s.evs === 'object') this.evs = s.evs; if (s.eps && typeof s.eps === 'object') this.eps = s.eps; }
     } catch { /* erster Start oder beschädigt: neu anfangen */ }
   }
-  stateJson() { const c = this.conf; return JSON.stringify({ v: 1, fired: this.fired, pulse: this.pulseLast, pnl: { st: this.pnlSt, pend: this.pnlPend, fired: this.pnlFired }, out: this.out, last: this.last, sendErr: this.sendErr, conf: c && { msgId: c.msgId, fileUid: c.fileUid, data: c.data }, cal: this.cal && { at: this.calAt, events: this.cal }, hintAt: this.hintAt, ack: this.ackKeys && { keys: this.ackKeys, t: this.ackAt, on: this.ackOn } }); }
+  stateJson() { const c = this.conf; return JSON.stringify({ v: 2, pol: this.pol, cmds: this.cmds, evs: this.evs, eps: this.eps, fired: this.fired, pulse: this.pulseLast, pnl: { st: this.pnlSt, pend: this.pnlPend, fired: this.pnlFired }, out: this.out, last: this.last, sendErr: this.sendErr, conf: c && { msgId: c.msgId, fileUid: c.fileUid, data: c.data }, cal: this.cal && { at: this.calAt, events: this.cal }, hintAt: this.hintAt, ack: this.ackKeys && { keys: this.ackKeys, t: this.ackAt, on: this.ackOn } }); }
   saveStateNow() {
     if (!this.statePath) return;
     try { fs.mkdirSync(path.dirname(this.statePath), { recursive: true }); const tmp = this.statePath + '.tmp'; fs.writeFileSync(tmp, this.stateJson()); fs.renameSync(tmp, this.statePath); }
     catch (e) { this.log('Zustand nicht gespeichert:', e.message); }
   }
   saveState() { if (!this.statePath) return; clearTimeout(this.saveTimer); this.saveTimer = setTimeout(() => this.saveStateNow(), 1000); }
-  secret(msg) { return String(msg).split(this.token).join('<Token>'); }
+  secret(msg) { let m = String(msg).split(this.token).join('<Token>'); if (this.key) m = m.split(this.key).join('<Schlüssel>'); return m; }
   // Fehler ins Protokoll – dieselbe Meldung höchstens alle 10 Minuten (sonst schreibt ein Binance-Ausfall alle 15 s eine Zeile)
   note(name, msg) {
     const t = this.now(), m = this.secret(msg), prev = this.errors.get(name);
@@ -324,7 +438,10 @@ export class Watcher {
   async tg(method, body, timeout = 20000) {
     let r;
     try { r = await fetch(`${API.tg}/bot${this.token}/${method}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body || {}), signal: AbortSignal.timeout(timeout) }); }
-    catch (e) { throw Object.assign(new Error(`Telegram nicht erreichbar (${this.secret(e.cause?.code || e.message)})`), { code: 0 }); }
+    // 2.0: lost – die Anfrage kann Telegram erreicht haben, nur die Antwort fehlt (Zeitüberschreitung, Verbindung abgerissen):
+    // dann nicht noch einmal senden (sonst womöglich doppelt); sonst (keine Verbindung, Name unbekannt) kam sie nie an
+    catch (e) { const why = e.cause?.code || e.name || '', lost = /^(TimeoutError|AbortError|ECONNRESET|EPIPE|UND_ERR_SOCKET|UND_ERR_HEADERS_TIMEOUT|UND_ERR_BODY_TIMEOUT)$/.test(why);
+      throw Object.assign(new Error(`Telegram ${lost ? 'antwortet nicht' : 'nicht erreichbar'} (${this.secret(why || e.message)})`), { code: 0, lost }); }
     let d = null; try { d = await r.json(); } catch { /* keine JSON-Antwort */ }
     if (!r.ok || !d?.ok) throw Object.assign(new Error(`Telegram ${method}: ${d?.description || 'Fehler ' + r.status}`), { code: d?.error_code || r.status, retry: d?.parameters?.retry_after || 0 });
     return d.result;
@@ -332,11 +449,27 @@ export class Watcher {
   // ---- Zustellung (ab 1.3) ----
   // Meldung in den Ausgang; sie bleibt dort (auch über Neustarts), bis Telegram sie angenommen hat. label: Art für die Zeile
   // „Zustellung: zuletzt …“, silent: ohne Ton (BTC-Puls nachts)
-  async queue(text, tz, { label = '', silent = false } = {}) {
-    const t = this.now();
-    this.out.push({ id: `${t}-${Math.random().toString(36).slice(2, 7)}`, text, tz, label, silent, at: t, tries: 0, next: 0, err: '', dc: false });
+  // 2.0: target/epoch – Ziel und seine Epoche beim Erzeugen (vor dem Senden erneut geprüft); ev – Ereignis-ID der Freigabe
+  async queue(text, tz, { label = '', silent = false, ev = '' } = {}) {
+    const t = this.now(), tg = this.pol.targets['course-alert'];
+    if (this.key && !tg.on) { this.log(`Nicht gesendet (Ziel Kursalarm ausgeschaltet): ${label || text.split('\n')[0]}`); return; }
+    this.out.push({ id: `${t}-${Math.random().toString(36).slice(2, 7)}`, text, tz, label, silent, at: t, tries: 0, next: 0, err: '', dc: false, target: 'course-alert', epoch: tg.epoch, ...(ev ? { ev } : {}) });
     this.saveStateNow();
     await this.deliver();
+  }
+  // 2.0: Zustand einer eigenen Freigabe fortschreiben (mit Protokollzeile: Ereignis, Ziel, Sender, Zustand)
+  evSet(id, st, why = '') {
+    const r = evReport(this.evs, { eventId: id, sender: 'oracle', st, why }, this.now());
+    if (r.changed) { this.evLog(id); this.saveState(); }
+  }
+  evLog(id) { const e = this.evs[id]; if (e) this.log(`Ereignis ${id} · Ziel ${e.target} · Sender ${e.by} · ${ST_NAME[e.st] || e.st}${e.why ? ` (${e.why})` : ''}`); }
+  // Eigene Reservierung (der Dienst hat das Ereignis erkannt): nur mit HTTPS-Steuerung – ohne sendet er wie bis 1.4
+  reserveOwn(eventId, label) {
+    if (!this.key) return { grant: true };
+    const r = evReserve(this.evs, this.pol, { eventId, targetId: 'course-alert', sender: 'oracle', label }, this.now());
+    if (r.created) { this.evLog(eventId); this.saveStateNow(); }
+    if (!r.body.grant) this.log(`Ereignis ${eventId}: ${r.body.reason === 'off' ? 'Ziel Kursalarm ausgeschaltet – nicht gesendet' : `schon von ${senderName(r.body.holder)} übernommen (${ST_NAME[r.body.st] || r.body.st}) – der Dienst sendet es nicht`}`);
+    return r.body;
   }
   // Fällige Meldungen senden: angenommen → aus dem Ausgang, als letzte Zustellung merken; abgelehnt oder nicht erreichbar →
   // später erneut (15 s, 30 s, 1, 2, dann alle 5 Minuten; bei „Too Many Requests“ nach Telegrams Vorgabe). Zeit der Meldung ist
@@ -347,16 +480,23 @@ export class Watcher {
     if (old.length) { for (const m of old) this.log(`Meldung verworfen (über 24 Stunden nicht zustellbar): ${m.label || m.text.split('\n')[0]}`); this.out = this.out.filter(m => !old.includes(m)); this.saveState(); }
     for (const m of [...this.out]) {
       const t = this.now(); if (m.next > t) continue;
+      // 2.0: unmittelbar vor dem Senden: Ziel noch an und dieselbe Epoche? Sonst verwerfen (AUS verwirft auch Wartendes; ein
+      // späteres AN belebt alte Meldungen nicht wieder)
+      if (this.key && m.target) { const tg = this.pol.targets[m.target]; if (!tg?.on || tg.epoch !== m.epoch) { this.out = this.out.filter(x => x !== m); this.log(`Meldung verworfen (Ziel ${TARGET_NAME[m.target] || m.target} ${tg?.on ? 'zwischendurch aus- und wieder eingeschaltet' : 'ausgeschaltet'}): ${m.label || m.text.split('\n')[0]}`); if (m.ev) this.evSet(m.ev, 'discarded', 'Ziel ausgeschaltet'); this.saveState(); continue; } }
+      if (m.ev) this.evSet(m.ev, 'sending');
       const why = !m.code ? 'Telegram war nicht erreichbar' : m.code === 429 ? 'Telegram hatte gebremst' : 'Telegram hatte sie zuerst abgelehnt';
       const late = t - m.at > 120e3, full = `${m.text}\n${timeText(m.at, m.tz, true)} Uhr · 24/7-Dienst${late ? `\n(verspätet zugestellt um ${timeText(t, m.tz)} Uhr – ${why})` : ''}`;
       if (this.discord && !m.dc) { m.dc = true; await this.discordPost(full); }
       try {
         const sent = await this.tg('sendMessage', { chat_id: this.chat, text: full.slice(0, 4000), link_preview_options: { is_disabled: true }, ...(m.silent ? { disable_notification: true } : {}) });
         this.log(`Telegram gesendet: ${m.label || m.text.split('\n')[0]}${sent?.message_id ? ` (Nachricht #${sent.message_id})` : ''}${m.tries ? ` – nach ${plural(m.tries, 'Fehlversuch', 'Fehlversuchen')}` : ''}`);
-        this.out = this.out.filter(x => x !== m); this.last = { t, label: m.label };
+        this.out = this.out.filter(x => x !== m); this.last = { t, label: m.label }; if (m.ev) this.evSet(m.ev, 'confirmed');
         if (this.sendErr && !this.out.some(x => x.tries)) { this.log('Telegram: Zustellung wieder in Ordnung'); this.sendErr = null; }
         this.next.beat = 0; this.saveState(); // Zeile „Zustellung: zuletzt …“ gleich aktualisieren
       } catch (e) {
+        // 2.0: Antwort verloren – „Zustellung unbestätigt“, kein blinder zweiter Versuch
+        if (e.lost) { this.out = this.out.filter(x => x !== m); this.log(`Zustellung unbestätigt: ${m.label || m.text.split('\n')[0]} – ${this.secret(e.message)}; kein zweiter Versuch (die Meldung könnte schon angekommen sein)`); if (m.ev) this.evSet(m.ev, 'unconfirmed', 'Telegram-Antwort verloren'); this.saveState(); continue; }
+        // endgültig abgelehnt (4xx außer „Too Many Requests“) bleibt wie bisher im Ausgang und wird wiederholt; die Freigabe bleibt „wird gesendet“
         m.tries++; m.code = e.code || 0; m.err = this.secret(e.message).slice(0, 160); m.next = t + (e.code === 429 && e.retry ? e.retry * 1000 : outDelay(m.tries));
         this.sendErr = { since: this.sendErr?.since || t, msg: m.err, code: e.code || 0 };
         this.note('Telegram', `${m.err} – noch nicht zugestellt: ${m.label || m.text.split('\n')[0]}; neuer Versuch in ${Math.round((m.next - t) / 1000)} s`);
@@ -469,7 +609,7 @@ export class Watcher {
         const v = rangeView(rows, from, Math.max(a.armedAt, armed(key)), prev); if (!v) continue;
         const hit = touched(a.price, a.dir === 'below', v), what = `Kurs-Alarm ${coin(a.symbol)} ${a.dir === 'above' ? 'auf/über' : 'auf/unter'} ${priceText(a.price)}`;
         look(key, what, a.price, v.price, hit);
-        if (hit) { this.fired[key] = t; this.saveState(); this.log(`Alarm ausgelöst: ${what} (Kurs ${priceText(v.price)}${hit.wick ? `, per Docht bis ${priceText(hit.extreme)}` : ''})`); await this.queue(alarmText(a, v.price, hit), c.tz, { label: `Kurs-Alarm ${coin(a.symbol)}` }); }
+        if (hit) { this.fired[key] = t; this.saveState(); this.log(`Alarm ausgelöst: ${what} (Kurs ${priceText(v.price)}${hit.wick ? `, per Docht bis ${priceText(hit.extreme)}` : ''})`); const ev = alarmEvent(a), label = `Kurs-Alarm ${coin(a.symbol)}`; if (this.reserveOwn(ev, label).grant) await this.queue(alarmText(a, v.price, hit), c.tz, { label, ev: this.key ? ev : '' }); } // 2.0: nur mit Freigabe
       }
       for (const p of g.positions) for (const type of ['sl', 'tp']) {
         if (!(p[type] > 0)) continue;
@@ -477,8 +617,13 @@ export class Watcher {
         const hit = touched(p[type], (type === 'sl') === (p.side === 'long'), v), what = `${type === 'tp' ? 'Take-Profit' : 'Stop-Loss'} ${coin(p.symbol)} ${p.side === 'long' ? 'Long' : 'Short'} ${priceText(p[type])}`;
         look(key, what, p[type], v.price, hit);
         if (hit) {
-          if (!this.fired[key] && !p.ack[type]) { this.fired[key] = t; this.saveState(); this.log(`Alarm ausgelöst: ${what} (Kurs ${priceText(v.price)}${hit.wick ? `, per Docht bis ${priceText(hit.extreme)}` : ''})`); await this.queue(posText(p, type, v.price, hit), c.tz, { label: `${type === 'tp' ? 'Take-Profit' : 'Stop-Loss'} ${coin(p.symbol)}` }); }
-        } else if (this.fired[key]) { delete this.fired[key]; this.rearm.set(key, t); this.saveState(); } // Kurs wieder weg: nächste Berührung meldet erneut
+          if (!this.fired[key] && !p.ack[type]) { this.fired[key] = t; this.saveState(); this.log(`Alarm ausgelöst: ${what} (Kurs ${priceText(v.price)}${hit.wick ? `, per Docht bis ${priceText(hit.extreme)}` : ''})`); const base = posBase(p, type), ev = `${base}:${this.eps[base]?.n || 0}`, label = `${type === 'tp' ? 'Take-Profit' : 'Stop-Loss'} ${coin(p.symbol)}`; if (this.reserveOwn(ev, label).grant) await this.queue(posText(p, type, v.price, hit), c.tz, { label, ev: this.key ? ev : '' }); }
+        } else if (this.fired[key]) {
+          // 2.0: Episodenwechsel erst, wenn der Kurs die Marke um mindestens 0,1 % verlassen hat (Hysterese); mit Steuerung zählt
+          // die neue Episode zusätzlich erst nach der Abklingzeit – App und Dienst melden dasselbe Verlassen nur einmal
+          const lvl = p[type], below = (type === 'sl') === (p.side === 'long'), away = below ? v.price >= lvl * (1 + EP_HYST) : v.price <= lvl * (1 - EP_HYST);
+          if (away) { delete this.fired[key]; this.rearm.set(key, t); if (this.key) { const base = posBase(p, type), from = this.eps[base]?.n || 0, n = epNext(this.eps, this.evs, base, from, t); if (n !== from) this.log(`Episode ${base}: neue Episode ${n} (Kurs ${priceText(v.price)} hat die Marke verlassen)`); } this.saveState(); } // Kurs wieder weg: nächste Berührung meldet erneut
+        }
       }
     }
     if (pnlOn(c)) await this.checkPnl(c, prices);
@@ -497,6 +642,8 @@ export class Watcher {
       const met = pnlMet(l.k, l.v, cur), st = this.pnlSt[k] || (l.w ? 'wait' : 'armed');
       if (st === 'wait') { if (!met) { this.pnlSt[k] = 'armed'; this.saveState(); } continue; }
       if (!met) continue;
+      // 2.0: mit Steuerung sofort reservieren – wer zuerst reserviert (geöffnete App oder Dienst), meldet; kein Warten auf die Datei
+      if (this.key) { const ev = pnlEvent(l), g = this.reserveOwn(ev, pnlName(l.k)); this.pnlFired[k] = g.grant ? { t, val: cur } : { t, val: cur, by: 'app' }; this.saveState(); if (g.grant) { this.next.beat = 0; await this.queue(pnlText(l, cur, c.pnl.pos.length), c.tz, { label: pnlName(l.k), ev }); } continue; }
       this.pnlPend[k] = { t, val: cur }; this.next.config = 0; this.saveState();
       this.log(`${pnlName(l.k)}: Live-Ergebnis ${cur} USDT (Grenze ${l.k === 'profit' ? '≥ +' : '≤ −'}${l.v}) – meldet in ${EVERY.pnlHold / 1000} s, falls die App es nicht schon tut`);
     }
@@ -546,6 +693,86 @@ export class Watcher {
     }
     for (const [k, at] of Object.entries(this.fired)) if (k.startsWith('econ-chan:') && t - at > 2 * 864e5) delete this.fired[k];
   }
+  // ---- 2.0 (G05): HTTPS-Steuerung (Caddy davor, hier nur 127.0.0.1) ----
+  // Nur mit Zugangsschlüssel („Authorization: Bearer …“). CORS nur für die Herkunft der App; Anfragen anderer Seiten lehnt der
+  // Dienst ab. Änderungen werden vor der Antwort dauerhaft gespeichert – bestätigt ist nur, was den Neustart übersteht.
+  //   GET  /v1/health                ohne Schlüssel: läuft der Dienst? (Version)
+  //   GET  /v1/state                 Schalter (Revision, Epoche, Einschaltzeit), Episoden, Ereignisse der letzten 3 Tage
+  //   POST /v1/policy                Auftrag { commandId, expectedRevision, set: { Ziel: an/aus } } – gemeinsam oder gar nicht
+  //   GET  /v1/commands/<id>         Ergebnis eines Auftrags (Antwort verloren gegangen)
+  //   POST /v1/events/reserve        { eventId, targetId, sender, label } → Freigabe oder Inhaber
+  //   POST /v1/events/report         { eventId, sender, st, why } → Zustand fortschreiben (nur der Inhaber)
+  //   POST /v1/episodes/next         { base, from } → neue Episode einer wiederkehrenden Marke (einmal je Verlassen)
+  stateView(days = 3) {
+    const t = this.now(), events = Object.entries(this.evs).filter(([, e]) => t - e.at < days * 864e5).sort((a, b) => b[1].at - a[1].at).slice(0, 300).map(([id, e]) => ({ id, ...e }));
+    return { ok: true, v: VERSION, now: t, ...policyView(this.pol), eps: Object.fromEntries(Object.entries(this.eps).map(([b, x]) => [b, x.n])), events };
+  }
+  keyOk(h) {
+    const a = /^Bearer\s+(\S+)$/.exec(String(h || ''))?.[1] || '', x = crypto.createHash('sha256').update(a).digest(), y = crypto.createHash('sha256').update(this.key).digest();
+    return !!a && crypto.timingSafeEqual(x, y);
+  }
+  async handle(req, res) {
+    const origin = String(req.headers.origin || ''), allowed = !!origin && this.origins.includes(origin), t = this.now();
+    const head = { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', ...(allowed ? { 'access-control-allow-origin': origin, vary: 'Origin' } : {}) };
+    const send = (status, body) => { res.writeHead(status, head); res.end(JSON.stringify(body)); };
+    if (req.method === 'OPTIONS') {
+      if (!allowed) return send(403, { ok: false, error: 'Herkunft nicht erlaubt.' });
+      res.writeHead(204, { ...head, 'access-control-allow-methods': 'GET, POST, OPTIONS', 'access-control-allow-headers': 'authorization, content-type', 'access-control-max-age': '600' }); return res.end();
+    }
+    if (origin && !allowed) return send(403, { ok: false, error: 'Herkunft nicht erlaubt.' });
+    const u = new URL(req.url || '/', 'http://x'), route = `${req.method} ${u.pathname}`;
+    if (route === 'GET /v1/health') return send(200, { ok: true, v: VERSION });
+    // falscher Schlüssel: höchstens 20 Versuche je Minute, danach bremsen
+    if (t - this.authFail.t > 60e3) this.authFail = { n: 0, t };
+    if (this.authFail.n >= 20) return send(429, { ok: false, error: 'Zu viele falsche Zugangsschlüssel – bitte eine Minute warten.' });
+    if (!this.keyOk(req.headers.authorization)) { this.authFail.n++; if (this.authFail.n === 1 || this.authFail.n === 20) this.log(`Steuerung: falscher Zugangsschlüssel (${route}${origin ? `, Herkunft ${origin}` : ''})`); return send(401, { ok: false, error: 'Zugangsschlüssel fehlt oder ist falsch.' }); }
+    let body = null;
+    if (req.method === 'POST') {
+      let raw = ''; for await (const c of req) { raw += c; if (raw.length > 65536) return send(413, { ok: false, error: 'Anfrage zu groß.' }); }
+      try { body = JSON.parse(raw || '{}'); } catch { return send(400, { ok: false, error: 'Kein gültiges JSON.' }); }
+    }
+    if (route === 'GET /v1/state') return send(200, this.stateView());
+    if (route === 'POST /v1/policy') {
+      const before = policyView(this.pol), r = policyApply(this.pol, this.cmds, body, t);
+      if (!r.repeat) {
+        if (r.status === 200 && r.body.changed.length) {
+          this.log(`Schalter geändert (Auftrag ${body.commandId}, Revision ${before.rev} → ${this.pol.rev}): ${r.body.changed.map(id => `${TARGET_NAME[id]} ${this.pol.targets[id].on ? 'AN' : 'AUS'}`).join(', ')}`);
+          // AUS verwirft wartende Meldungen dieses Ziels sofort (geprüft wird ohnehin unmittelbar vor dem Senden)
+          if (!this.pol.targets['course-alert'].on && this.out.length) { for (const m of this.out) { this.log(`Meldung verworfen (Ziel Kursalarm ausgeschaltet): ${m.label || m.text.split('\n')[0]}`); if (m.ev) this.evSet(m.ev, 'discarded', 'Ziel ausgeschaltet'); } this.out = []; }
+        } else if (r.status === 409) this.log(`Schalter-Auftrag ${body?.commandId} abgelehnt: Revision ${this.pol.rev}, erwartet ${body?.expectedRevision}`);
+        this.saveStateNow(); this.next.beat = 0;
+      }
+      return send(r.status, r.body);
+    }
+    const cm = /^\/v1\/commands\/([A-Za-z0-9_-]{8,64})$/.exec(u.pathname);
+    if (req.method === 'GET' && cm) { const c = this.cmds.find(x => x.id === cm[1]); return send(c ? 200 : 404, c ? { ok: true, found: true, status: c.status, result: c.body } : { ok: true, found: false }); }
+    if (route === 'POST /v1/events/reserve') {
+      const r = evReserve(this.evs, this.pol, body, t);
+      if (r.created) { this.evLog(body.eventId); this.saveStateNow(); }
+      return send(r.status, r.body);
+    }
+    if (route === 'POST /v1/events/report') {
+      if (body?.sender === 'oracle') return send(400, { ok: false, error: 'Sender „oracle“ ist dem Dienst vorbehalten.' });
+      const r = evReport(this.evs, body, t);
+      if (r.changed) { this.evLog(body.eventId); this.saveStateNow(); }
+      return send(r.status, r.body);
+    }
+    if (route === 'POST /v1/episodes/next') {
+      if (typeof body?.base !== 'string' || !/^[A-Za-z0-9_.:-]{4,120}$/.test(body.base) || !Number.isInteger(body.from)) return send(400, { ok: false, error: 'Marke oder Episode fehlt.' });
+      const n = epNext(this.eps, this.evs, body.base, body.from, t); if (n !== body.from) { this.log(`Episode ${body.base}: neue Episode ${n} (von der App gemeldet)`); this.saveStateNow(); }
+      return send(200, { ok: true, ep: n });
+    }
+    return send(404, { ok: false, error: 'Unbekannter Aufruf.' });
+  }
+  listenNow() {
+    if (!this.key || this.server) return Promise.resolve(null);
+    const [, hostPart, portPart] = /^(.*):(\d+)$/.exec(this.listen) || [, '127.0.0.1', '8247'];
+    this.server = http.createServer((req, res) => { this.handle(req, res).catch(e => { this.note('Steuerung', e.message); try { res.writeHead(500, { 'content-type': 'application/json' }); res.end('{"ok":false,"error":"Interner Fehler"}'); } catch { /* schon beantwortet */ } }); });
+    return new Promise(resolve => {
+      this.server.once('error', e => { this.log(`Steuerung: Adresse ${this.listen} nicht nutzbar (${e.code || e.message}) – der Dienst läuft ohne HTTPS-Steuerung weiter.`); this.server = null; resolve(null); });
+      this.server.listen(Number(portPart), hostPart, () => { const a = this.server.address(); this.log(`Steuerung bereit: lauscht auf ${hostPart}:${a.port}${this.host ? ` · öffentlich https://${this.host}` : ''} · Herkunft der App ${this.origins.join(', ')}`); resolve(a.port); });
+    });
+  }
   // ---- Lebenszeichen in der angepinnten Nachricht ----
   health() {
     const c = this.conf?.data, t = this.now();
@@ -561,7 +788,7 @@ export class Watcher {
   async heartbeat() {
     if (!this.conf) return;
     const c = this.conf.data, h = this.health(), gv = pnlOn(c) ? c.pnl.lim.map(l => [l, this.pnlFired[pnlKey(l)]]).filter(([, f]) => f && f.by !== 'app').map(([l, f]) => pnlLine(l, f, c.tz)) : [];
-    const text = caption(c, statusLine({ ok: h.ok, now: this.now(), c, problem: h.problem }), [lastLine(this.last, c.tz), ...gv].filter(Boolean));
+    const text = caption(c, statusLine({ ok: h.ok, now: this.now(), c, problem: h.problem, ctl: !!this.server }), [lastLine(this.last, c.tz), ...gv].filter(Boolean));
     try {
       await this.tg('editMessageCaption', { chat_id: this.chat, message_id: this.conf.msgId, caption: text }); this.beatOk = h.ok;
       // 1.4: Protokoll – wann die App die Bestätigung lesen kann; danach alle 10 Minuten eine kurze Übersicht
@@ -585,6 +812,8 @@ export class Watcher {
   // ---- Takt ----
   async tick() {
     const t = this.now(), c = () => this.conf?.data, run = async (name, fn) => { try { await fn(); this.clear(name); } catch (e) { this.note(name, e.message); } };
+    // 2.0: Freigaben ohne Rückmeldung des Geräts → „unbestätigt“ (nie an einen anderen Sender); alte Einträge vergessen
+    if (t >= (this.next.sweep || 0)) { this.next.sweep = t + Math.min(60e3, EVERY.config); const done = evSweep(this.evs, this.eps, t); for (const id of done) this.evLog(id); if (done.length) this.saveState(); }
     if (t >= this.next.config) { this.next.config = t + EVERY.config; await run('Datei der App', () => this.syncConfig()); }
     // 1.4: Bestätigung „hat übernommen“ (lautlos) und Hinweis, wenn die Datei der App fehlt – Fehler: im nächsten Takt erneut
     if (this.ackPend && this.conf && t - this.ackAt >= EVERY.ack) await run('Bestätigung an Telegram', () => this.sendAck());
@@ -610,7 +839,8 @@ export class Watcher {
     // 1.4: Stand aus der Zustandsdatei (nach einem Neustart) nennen – die erste Kursprüfung je Marke kommt ins Protokoll
     if (this.conf?.data) { const c = this.conf.data, items = watchItems(c); this.log(`Übergabe aus dem gespeicherten Zustand (#${c.tag}): ${c.on ? `${plural(items.length, 'Marke', 'Marken')}${items.length ? ` – ${items.slice(0, 6).map(x => x.text).join(' · ')}` : ''}` : 'Übergabe ausgeschaltet'}`);
       for (const a of c.alarms) this.firstLook.add(alarmKey(a)); for (const p of c.positions) for (const ty of ['tp', 'sl']) this.firstLook.add(posKey(p, ty)); }
-    const stop = () => { this.stopped = true; clearTimeout(this.saveTimer); this.saveStateNow(); process.exit(0); };
+    await this.listenNow(); // 2.0: HTTPS-Steuerung (nur mit Zugangsschlüssel)
+    const stop = () => { this.stopped = true; clearTimeout(this.saveTimer); this.saveStateNow(); this.server?.close(); process.exit(0); };
     process.on('SIGTERM', stop); process.on('SIGINT', stop);
     while (!this.stopped) { await this.tick(); await sleep(EVERY.tick); }
   }
@@ -667,6 +897,21 @@ export class Watcher {
         if (this.sendErr) say(false, `Telegram nimmt Meldungen nicht an seit ${stamp(this.sendErr.since, tz)}: ${this.sendErr.msg}`);
       }
     }
+    // 2.0 (G05): HTTPS-Steuerung – lauscht der Dienst, ist er von außen erreichbar, wie stehen die Schalter, was geschah zuletzt
+    if (!this.key) say(null, 'HTTPS-Steuerung nicht eingerichtet – Chat-Schalter und Sendefreigaben der App brauchen sie: den Installationsbefehl erneut ausführen.');
+    else {
+      const port = /:(\d+)$/.exec(this.listen)?.[1] || '8247', tz = this.conf?.data?.tz || 'UTC';
+      try { const d = await (await fetch(`http://127.0.0.1:${port}/v1/health`, { signal: AbortSignal.timeout(3000) })).json(); say(!!d?.ok, `Steuerung lauscht auf ${this.listen} (Dienst ${d?.v || '?'})`); }
+      catch (e) { say(false, `Steuerung auf ${this.listen} nicht erreichbar (${e.cause?.code || e.name}) – läuft der Dienst? → sudo systemctl status scalpdesk-247`); }
+      if (!this.host) say(null, 'Keine öffentliche Adresse eingetragen – den Installationsbefehl erneut ausführen.');
+      else {
+        try { const r = await fetch(`https://${this.host}/v1/health`, { signal: AbortSignal.timeout(8000) }), d = await r.json().catch(() => null); say(!!d?.ok, d?.ok ? `Von außen erreichbar: https://${this.host}` : `https://${this.host} antwortet mit Fehler ${r.status} – Caddy prüfen: sudo systemctl status caddy`); }
+        catch (e) { say(false, `https://${this.host} nicht erreichbar (${e.cause?.code || e.name}) – in der Oracle-Konsole die Ports 80 und 443 freigeben (siehe Anleitung) und Caddy prüfen: sudo systemctl status caddy`); }
+      }
+      say(null, `Ziele (Revision ${this.pol.rev}): ${TARGETS.map(id => { const x = this.pol.targets[id]; return `${TARGET_NAME[id]} ${x.on ? `an seit ${stamp(x.since, tz)}` : `aus${x.offSince ? ` seit ${stamp(x.offSince, tz)}` : ''}`}`; }).join(' · ')}`);
+      const evs = Object.entries(this.evs).sort((a, b) => b[1].at - a[1].at).slice(0, 5);
+      say(null, evs.length ? `Letzte Ereignisse: ${evs.map(([id, e]) => `${stamp(e.at, tz)} ${id} → ${TARGET_NAME[e.target] || e.target}, ${senderName(e.by)}, ${ST_NAME[e.st] || e.st}${e.why ? ` (${e.why})` : ''}`).join(' | ')}` : 'Noch keine Ereignisse über die Steuerung.');
+    }
     for (const [src, sym] of [['spot', 'BTCUSDT'], ['futures', 'BTCUSDT']]) {
       try { const r = await klines(src, sym); say(true, `Binance ${src === 'spot' ? 'Spot' : 'Futures'} erreichbar (BTC ${priceText(+r.at(-1)[4])})`); }
       catch (e) { say(src === 'spot' ? false : null, `Binance ${src === 'spot' ? 'Spot' : 'Futures'}: ${e.message}`); }
@@ -701,10 +946,10 @@ export async function klines(source, symbol, limit = 3) {
 
 // ---------- Aufruf ----------
 function args(argv) {
-  const o = { config: '/etc/scalpdesk-247.json', state: '', check: false, status: false };
+  const o = { config: '/etc/scalpdesk-247.json', state: '', check: false, status: false, zugang: false };
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--config') o.config = argv[++i]; else if (argv[i] === '--state') o.state = argv[++i]; else if (argv[i] === '--check') o.check = true;
-    else if (argv[i] === '--status') o.status = true;
+    else if (argv[i] === '--status') o.status = true; else if (argv[i] === '--zugang') o.zugang = true;
     else if (argv[i] === '--version') { console.log(VERSION); process.exit(0); }
   }
   return o;
@@ -713,6 +958,12 @@ async function main(argv) {
   const [maj] = process.versions.node.split('.').map(Number);
   if (maj < 18) throw new Error(`Node.js ${process.versions.node} ist zu alt – bitte Version 18 oder neuer installieren.`);
   const o = args(argv), conf = readServerConfig(o.config);
+  // 2.0: Adresse und Zugangsschlüssel für die App (nur auf ausdrücklichen Aufruf am Server, nie im Protokoll)
+  if (o.zugang) {
+    if (!conf.key) { console.log('HTTPS-Steuerung ist nicht eingerichtet – den Installationsbefehl erneut ausführen.'); process.exit(1); }
+    console.log(`Adresse:          ${conf.host ? `https://${conf.host}` : '(noch keine öffentliche Adresse – den Installationsbefehl erneut ausführen)'}\nZugangsschlüssel: ${conf.key}\n\nIn der App: 🔔 Hinweise → „Telegram / Discord einrichten“ → 24/7-Dienst → Adresse und Zugangsschlüssel eintragen, dann „Verbindung prüfen“.\nDen Schlüssel nicht weitergeben – wer ihn kennt, kann die Chat-Schalter umstellen.`);
+    process.exit(0);
+  }
   // --status liest nur (Zustand ohne Speichern): kein Schreiben in die Zustandsdatei des laufenden Dienstes
   if (o.status) { const w = new Watcher({ ...conf, statePath: o.state || '/var/lib/scalpdesk-247/state.json' }); w.saveState = () => {}; w.saveStateNow = () => {}; process.exit((await w.status()) ? 0 : 1); }
   const w = new Watcher({ ...conf, statePath: o.state });
