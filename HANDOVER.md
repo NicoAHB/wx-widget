@@ -47,7 +47,7 @@ Code: `patEngine()` (reine Engine, läuft als Blob-Worker), `PAT_LIB` (41 Eintr�
 - [x] B4. Chart-Labels (Kerzen) und Linien/Zonen (Formationen), Auswahl hebt hervor
 - [x] B5a. Test `tests/m58.js` (trend 8, catalog 9 inkl. aller 41 Katalogfälle und 8 Intervalle, ui 11), Version 3.37.0
 - [x] B5b. Gesamtlauf 79 Tests 2691/2691, Doku Teil AP, PR #60, Merge `255b4bd`
-- [ ] B6. Vorauswahl „Chartmuster erkannt“ (Übergabe G09 Punkt 11)
+- [x] B6. Vorauswahl „Chartmuster erkannt“ (Übergabe G09 Punkt 11) – umgesetzt auf dem Branch (noch nicht veröffentlicht): `wlPat`, Knopf `.wl-d-pat`, `patFromWl`/`patWant`; Test m58 Abschnitt „wl“ (4/4)
   - Ziel: Kachel/Detailfeld der Vorauswahl zeigt „Chartmuster erkannt: <Name> (<Intervall>, <Status>)“; Tipp lädt den Coin per `setMarket(sym, iv)` (hier ausdrücklich mit Wechsel zum Chart), danach `pat.on = true`, Analyse und `pat.sel` auf genau diese Formation.
   - Dateien: `weather-widget-v2.html` (Vorauswahl: `wlLoad`/`wlPaint`/Detailfeld `wl-d-*`; Engine `patEngine().detect` auf `e.closed` der Kachel).
   - Fertig, wenn: Test zeigt Hinweis in der Kachel, Tipp öffnet Chart mit markierter Formation (Status + Intervall), kein Treffer → kein Hinweis.

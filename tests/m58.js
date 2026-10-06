@@ -1,6 +1,6 @@
 // G09 der Übergabe (3.37.0): regelbasierte Mustererkennung („KI“) – Engine, 41 Katalogfälle, Vortrend (Revision 2), 8 Intervalle,
 // Panel, Info-Sheet, Chart-Markierung, Kontextwechsel, keine externen Abrufe.
-// Aufruf: node m58.js [abschnitt ...]   Abschnitte: trend, catalog, ui
+// Aufruf: node m58.js [abschnitt ...]   Abschnitte: trend, catalog, ui, wl
 const h = require('./harness');
 const results = [];
 const check = (name, cond, detail = '') => { results.push({ name, ok: !!cond }); console.log(`${cond ? '  ✓' : '  ✗'} ${name}${detail !== '' ? ' — ' + String(detail).slice(0, 700) : ''}`); };
@@ -133,6 +133,22 @@ const tests = {
     await page.click('#chart-full'); await page.waitForTimeout(400);
     check('„KI“ auch im Vollbild in der Chart-Leiste', await page.evaluate(() => { const b = document.getElementById('pat-btn'), r = b.getBoundingClientRect(); return document.documentElement.hasAttribute('data-chartfull') && !!b.closest('.chart-toolbar') && (r.width > 0 || document.documentElement.dataset.chartbar !== 'open'); }));
     check('keine Fehler (ui)', !real(errors).length, real(errors).join(' | ')); await ctx.close();
+  },
+  async wl(browser) {
+    const { ctx, page, errors } = await openPage(browser);
+    // Erkennung auf den Kerzen einer Vorauswahl-Kachel (Doppel-Boden mit Ausbruch in den letzten 30 Kerzen)
+    const u = await page.evaluate(`(() => { const B = (${BUILD.toString()})(), k = B.path([[0, 110], [30, 112], [45, 100], [55, 110], [65, 100], [75, 116]]);
+      const e = { iv: '1h', closed: k.map(c => ({ time: c.t, open: c.o, high: c.h, low: c.l, close: c.c, volume: c.v })) }; return __g09.wlPat(e); })()`);
+    check('Vorauswahl erkennt die jüngste Formation auf den Kachel-Kerzen (Doppel-Boden, Regelgüte ≥ 60 %)', u && u.id === 'double_bottom' && u.q >= 60, JSON.stringify(u));
+    await page.click('.wl-tile[data-watch="ETC"]'); await page.waitForTimeout(2500);
+    const prep = await page.evaluate(() => { const e = __g09.wl.c.get('ETCUSDT'), c = e.closed; e.pat = { id: 'double_bottom', q: 75, status: 'in Bildung (Ausbruch fehlt)', dir: 'bull', t0: c.at(-40).time, t1: c.at(-20).time }; __g09.wldPaint(); const b = document.querySelector('.wl-d-pat'); return { iv: e.iv, t0: e.pat.t0, t1: e.pat.t1, vis: !!b && !b.hidden, txt: b?.textContent }; });
+    check('Detailfeld zeigt „Chartmuster erkannt“ mit Name, Intervall, Status und Regelgüte', prep.vis && prep.txt === `📐 Chartmuster erkannt: Doppel-Boden · ${prep.iv} · in Bildung (Ausbruch fehlt) · Regelgüte 75 % – im Chart zeigen`, prep.txt);
+    await page.click('.wl-d-pat');
+    await page.waitForFunction(iv => __g05.state.symbol === 'ETCUSDT' && __g05.state.interval === iv && __g05.state.loadedSymbol === 'ETCUSDT' && !__g09.pat.want && !!__g09.pat.res, prep.iv, { timeout: 15000 }).catch(() => {});
+    const toast = await page.evaluate(() => [...document.querySelectorAll('#toasts .toast')].map(t => t.textContent).find(t => /Doppel-Boden/.test(t)) || '');
+    const v = await page.evaluate(([t0, t1]) => { const c = __g05.state.candles, len = c.length, end = len - __g05.state.pan, start = end - Math.min(__g05.state.count, len), a = c.findIndex(x => x.time === t0), b = c.findIndex(x => x.time === t1); return { tab: document.documentElement.dataset.activeTab, inView: a >= start && b < end, on: __g09.pat.on, key: __g09.pat.res?.key }; }, [prep.t0, prep.t1]);
+    check('Antippen öffnet ausdrücklich den Chart: Coin und Intervall geladen, Ausschnitt um die Formation, „KI“ an; Meldung sagt ehrlich, ob die Formation dort markiert ist', v.tab === 'chart' && v.inView && v.on && /ETCUSDT\|spot\|/.test(v.key || '') && /Doppel-Boden (· .+ – im Chart markiert|ist im Chart-Ausschnitt nicht mehr eindeutig erkennbar)/.test(toast), JSON.stringify({ v, toast }));
+    check('keine Fehler (wl)', !real(errors).length, real(errors).join(' | ')); await ctx.close();
   },
 };
 (async () => {
