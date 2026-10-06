@@ -1440,7 +1440,8 @@ html[data-layout=tablet] .wl-tile{height:64px}
 @container wlt (max-width:132px){.wl-chg,.wl-chg30{font-size:.625rem}}
 @media (pointer:coarse){.wl-item .chip-x{width:40px;height:40px;min-width:40px;min-height:40px;top:-14px;right:-12px}}
 /* 3.34.0 (G06): Trade-Bild – Vorschau und Zustand je Trade */
-.timg-img{display:block;width:100%;max-width:540px;height:auto;margin:0 auto 10px;border-radius:12px;border:1px solid var(--border);background:#0b0f13}
+.timg-img{display:block;width:auto;height:auto;max-width:100%;max-height:min(60vh,720px);margin:0 auto 10px;border-radius:12px;border:1px solid var(--border);background:#0b0f13}
+.trade-row .tools .timg-tool svg{width:18px;height:18px;vertical-align:-3px}
 .timg-wait{margin:8px 0 12px;color:var(--muted);font-size:.875rem}
 .trade-row .timg-st{display:inline-flex;align-items:center;min-height:28px;margin:4px 0 0;padding:2px 10px;border:1px solid var(--border);border-radius:999px;background:transparent;color:var(--text-2);font-size:.75rem;cursor:pointer;grid-column:1/-1;justify-self:start}
 .trade-row .timg-st.st-ok{color:var(--mint)}
@@ -2739,7 +2740,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Alle Werte liegen zusätzlich im Arbeitsspeicher und sind dadurch synchron lesbar. Schreiben geht sofort in den
 // localStorage und gebündelt in die IndexedDB; beim Start gewinnt die zuletzt vollständig geschriebene Kopie.
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
-const APP_VERSION = '3.33.0', docEl = document.documentElement;
+const APP_VERSION = '3.34.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -4188,7 +4189,7 @@ function tradeRow(t, demo = false) {
   if (eur === null) es.title = 'EUR zum Abschlusszeitpunkt nicht verfügbar'; v.append(es); r.append(v); // 3.31.0: eingefrorener Euro-Wert
   const tools = el('span', 'tools'), fb = btn('x' + (eur === null ? ' fx-miss' : ''), '€', 'trade-fx'), nb = btn('x', '✎', 'trade-note'), x = btn('x', '×', 'trade-delete');
   fb.setAttribute('aria-label', `Euro-Kurs zum Trade ${coin(t.symbol)} vom ${localTime(t.closedAt)} ${eur === null ? 'nachtragen' : 'ansehen'}`); tools.append(fb);
-  if (!demo && timgCanShow(t)) { const ib = btn('x', '📷', 'trade-img'); ib.setAttribute('aria-label', `Trade-Bild zu ${coin(t.symbol)} vom ${localTime(t.closedAt)} ansehen und senden`); ib.title = 'Trade-Bild: Vorschau und an Telegram senden'; tools.append(ib); } // 3.34.0 (G06)
+  if (!demo && timgCanShow(t)) { const ib = btn('x timg-tool', '', 'trade-img'); ib.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3.2l1.8-2.6h6l1.8 2.6H20v11H4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="13.2" r="3.4" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>'; ib.setAttribute('aria-label', `Trade-Bild zu ${coin(t.symbol)} vom ${localTime(t.closedAt)} ansehen und senden`); ib.title = 'Trade-Bild: Vorschau und an Telegram senden'; tools.append(ib); } // 3.34.0 (G06)
   if (t.part?.pos && !t.part.final && findPos(t.part.pos)) { x.hidden = true; x.disabled = true; } // 3.30.0: Teilabschluss einer offenen Position – über „Letzten Schritt rückgängig machen“
   nb.setAttribute('aria-label', `Notiz zum Trade ${coin(t.symbol)} vom ${localTime(t.closedAt)} bearbeiten`); x.setAttribute('aria-label', `Trade ${coin(t.symbol)} vom ${localTime(t.closedAt)} löschen`); tools.append(nb, x); r.append(tools);
   { const c = !demo && timgChip(t.id); if (c) r.append(c); } // 3.34.0: Zustand des Trade-Bilds
@@ -11087,7 +11088,7 @@ function s247Tick(now) {
 var TGT = [
   { id: 'backup', name: 'Sicherung', icon: '💾', purpose: 'Datensicherung – nur aus der App, nie über den Dienst' },
   { id: 'course-alert', name: 'Kursalarm', icon: '🔔', purpose: 'Kurs-Alarme, Stop/Ziel, Gewinn/Verlust, Tages-Limit, Termine, BTC-Puls' },
-  { id: 'trades', name: 'Trades', icon: '📊', purpose: 'Trade-Überblick geschlossener Positionen – nur aus der App (Bild ab G06)' }];
+  { id: 'trades', name: 'Trades', icon: '📊', purpose: 'Ein Bild je vollständig geschlossener Position – nur aus der App, nie über den Dienst' }];
 var SVC_KEY = 'scalpdesk.svc.v1', POL_KEY = 'scalpdesk.policy.v1', SVC_URL_RE = /^(https:\/\/[a-z0-9.-]+|http:\/\/(127\.0\.0\.1|localhost))(:\d{1,5})?$/, SVC_KEY_RE = /^[A-Za-z0-9_-]{32,64}$/, SVC_POLL = 60e3;
 var svc = { cfg: null, pol: null, reach: null, at: 0, err: '', pending: null, notice: '', busy: false, ptimer: 0, events: [], eps: {}, ver: '', first: null };
 svc.cfg = loadSvc(); svc.pol = loadPol();
@@ -12278,7 +12279,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
           <div class="tg-target backup"><p><b>💾 Sicherungschat</b> <small>nur die Datensicherung · ohne Eintrag keine Sicherung per Telegram (kein Ausweichen auf Kursalarm)</small></p>
             <div class="tg-ids"><label>Chat-ID<span class="input-wrap"><input id="tg-bchat" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="Chat-ID der Sicherung"></span></label><label>Thema <small>(optional)</small><span class="input-wrap"><input id="tg-bthread" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="–"></span></label></div>
             <label>Eigener Bot-Token <small>(nur bei einem eigenen Sicherungs-Bot)</small><span class="input-wrap"><input id="tg-btoken" type="password" autocomplete="off" spellcheck="false" placeholder="leer = derselbe Bot wie Kursalarm"></span></label></div>
-          <div class="tg-target trades"><p><b>📊 Trades</b> <small>Trade-Überblick geschlossener Positionen (Bild ab G06) · nur aus der App, nie über den 24/7-Dienst</small></p>
+          <div class="tg-target trades"><p><b>📊 Trades</b> <small>ein Bild je vollständig geschlossener Position (ohne Text) · nur aus der App, nie über den 24/7-Dienst</small></p>
             <div class="tg-ids"><label>Chat-ID<span class="input-wrap"><input id="tg-tchat" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="Chat-ID für Trades"></span></label><label>Thema <small>(optional)</small><span class="input-wrap"><input id="tg-tthread" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="—"></span></label></div>
             <label>Eigener Bot-Token <small>(optional)</small><span class="input-wrap"><input id="tg-ttoken" type="password" autocomplete="off" spellcheck="false" placeholder="leer = derselbe Bot wie die Sicherung"></span></label></div>
         </fieldset>
