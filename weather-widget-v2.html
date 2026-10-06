@@ -1439,6 +1439,37 @@ html[data-layout=tablet] .wl-tile{height:64px}
 /* sehr schmale Kachel (Handy 320 px): Werte so groß wie die Regelzeile, damit auch „30 Min. −10,98 %“ neben den Verlauf passt */
 @container wlt (max-width:132px){.wl-chg,.wl-chg30{font-size:.625rem}}
 @media (pointer:coarse){.wl-item .chip-x{width:40px;height:40px;min-width:40px;min-height:40px;top:-14px;right:-12px}}
+/* 3.33.0 (G05): Telegram-Chats – große Schalter je Ziel, Sammelschalter als Kästchen (gemischt: indeterminate) */
+.tgc-mode{margin:0 0 10px;font-size:.8125rem;color:var(--muted)}
+.tgc-mode.warn{color:var(--amber)}
+.tgc-master{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:8px 0;border-bottom:1px solid var(--border)}
+.tgc-all{display:inline-flex;align-items:center;gap:8px;min-height:44px;cursor:pointer}
+.tgc-all input{width:22px;height:22px;min-height:0;accent-color:var(--mint)}
+.tgc-count{font-size:.8125rem;color:var(--text-2);font-variant-numeric:tabular-nums}
+.tgc-list{list-style:none;margin:0;padding:0}
+.tgc-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.tgc-txt{flex:1 1 auto;min-width:0;display:grid;gap:2px}
+.tgc-txt small{font-size:.75rem;color:var(--muted);overflow-wrap:anywhere}
+.tgc-txt .tgc-st{color:var(--text-2)}
+.tgc-row[data-state=na] .tgc-st,.tgc-row[data-state=unconf] .tgc-st,.tgc-row[data-state=draft] .tgc-st{color:var(--amber)}
+.tgc-row[data-state=na] b{color:var(--muted)}
+.tgc-sw{position:relative;flex:0 0 auto;display:inline-flex;align-items:center;min-height:44px;cursor:pointer}
+.tgc-sw input{appearance:none;-webkit-appearance:none;width:58px;height:34px;min-height:0;margin:0;border-radius:17px;background:var(--field);border:1px solid var(--field-border);position:relative;cursor:pointer;transition:background .15s}
+.tgc-sw input::after{content:"";position:absolute;top:3px;left:3px;width:26px;height:26px;border-radius:50%;background:var(--muted);transition:transform .15s,background .15s}
+.tgc-sw input:checked{background:var(--up-bg);border-color:var(--up-border)}
+.tgc-sw input:checked::after{transform:translateX(24px);background:var(--mint)}
+.tgc-sw input:disabled{opacity:.45;cursor:not-allowed}
+.tgc-sw input[aria-busy=true]{opacity:.6;cursor:progress}
+.tgc-sw input:focus-visible{outline:2px solid var(--mint);outline-offset:2px}
+.tgc-events{margin:10px 0;font-size:.75rem;color:var(--text-2)}.tgc-events ul{margin:6px 0;padding-left:18px}.tgc-events li{margin:2px 0;overflow-wrap:anywhere}.tgc-events small{color:var(--muted)}
+.tgc-draft{margin:10px 0;padding:10px 12px;border:1px dashed var(--amber);border-radius:10px;font-size:.8125rem}
+.tgc-draft p{margin:0 0 6px}
+.tgc-draft .row{display:flex;gap:8px;flex-wrap:wrap}
+.svc-box{margin-top:12px;padding-top:10px;border-top:1px dashed var(--border)}
+.svc-box h4{margin:0 0 4px;font-size:.875rem}
+.svc-box h4 small{font-weight:400;color:var(--muted)}
+.svc-intro{margin:0 0 8px;font-size:.8125rem;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){.tgc-sw input,.tgc-sw input::after{transition:none}}
 /* 3.32.0 (G04.8–10): Umsortieren – langes Drücken ohne Textauswahl/Callout; angehobene Kachel schwebt, ihr Platz gestrichelt */
 .wl-tile{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 #market-form button[aria-busy=true]{opacity:.7;cursor:progress}
@@ -5401,8 +5432,16 @@ function raisePosAlert(pos, type, price, info = {}) {
   alerted.add(key); alertInfo.set(key, info); toast(pos, type, price, info); beep();
   const title = `${coin(pos.symbol)} ${pos.side === 'long' ? 'Long' : 'Short'}: ${type === 'tp' ? 'Take-Profit' : 'Stop-Loss'} erreicht`;
   desktopNotify(`🔔 ${title}`, alertText(pos, type, price, info), key);
-  void notifyChannels('pos', posChanKey(pos, type), `${type === 'tp' ? '🎯' : '🛑'} ${title}\n${alertText(pos, type, price, info)}`, 6 * 3600e3);
+  const base = posEventBase(pos, type); // 3.33.0: Ereignis-ID mit Episode (Stop/Ziel kann wiederkehren, siehe svcEpisode)
+  void notifyChannels('pos', posChanKey(pos, type), `${type === 'tp' ? '🎯' : '🛑'} ${title}\n${alertText(pos, type, price, info)}`, 6 * 3600e3, { ev: `${base}:${svc?.eps?.[base] || 0}` });
 }
+// 3.33.0 (G05): feste Ereignis-IDs wie beim 24/7-Dienst – Alarm/Position + Aktivierung (Zeit des Scharfschaltens, Basis 36) + Art.
+// Kein Preis, keine Empfangszeit, keine Gerätekennung: +20,16 und +20,51 USDT sind derselbe Durchbruch. Eine Sicherung ändert die
+// Aktivierung nicht; erst „Erneut aktivieren“ (neues armedAt) oder neue Stop/Ziel-Marken ergeben eine neue.
+const evAct = t => Math.max(0, Math.round(Number(t) || 0)).toString(36);
+const alarmEventId = a => `${a.id}:${evAct(a.armedAt || a.createdAt)}:price-cross`;
+const posEventBase = (pos, type) => `${pos.id}:${evAct(pos.slTpAt || pos.openedAt)}:${type}`;
+const pnlEventId = (k, at) => `pnl:${k}:${evAct(at)}:threshold`;
 // Je Position und Marke eine Meldung pro Berührung; entfernt sich der Kurs wieder, darf die nächste Berührung erneut melden
 const posChanKey = (pos, type) => `pos:${pos.id}:${type}:${pos.slTpAt || pos.openedAt}`;
 function triggerAlarm(a, price, info = {}) {
@@ -5412,7 +5451,7 @@ function triggerAlarm(a, price, info = {}) {
   // 3.26.0: meldet der 24/7-Dienst diesen Alarm, bleibt er noch 3 Minuten in der Übergabe (sonst könnte er ihn verpassen)
   const key = `al:${a.id}:${a.armedAt || a.createdAt}`; a.svcAt = s247Covers('alarm', key) ? Date.now() : 0;
   if (a.svcAt) setTimeout(() => scheduleS247(0), S247_GRACE + 1500);
-  void notifyChannels('alarm', key, `🔔 Kurs-Alarm ${coin(a.symbol)}\n${what} USDT ${howReached(info)} · Kurs ${priceText(price)}${a.note ? '\nNotiz: ' + a.note : ''}`, 864e5);
+  void notifyChannels('alarm', key, `🔔 Kurs-Alarm ${coin(a.symbol)}\n${what} USDT ${howReached(info)} · Kurs ${priceText(price)}${a.note ? '\nNotiz: ' + a.note : ''}`, 864e5, { ev: alarmEventId(a) });
   simpleToast('al:' + a.id, 'alarm ' + (a.dir === 'above' ? 'up' : 'down'), `🔔 ${what} ${howReached(info)} · Kurs ${priceText(price)}${a.note ? ' – ' + a.note : ''}`, null, a.dir === 'above' ? 'green' : 'orange');
 }
 // Stop, Ziel und Kurs-Alarme prüfen – bei jeder Kursmeldung aus dem Stream und nach jedem REST-Abruf.
@@ -5435,6 +5474,7 @@ function checkAlerts() {
     const hitNow = below ? v.price <= lvl : v.price >= lvl, touched = hitNow || (below ? v.lo <= lvl : v.hi >= lvl);
     if (touched) { if (!pos.ack[type]) raisePosAlert(pos, type, v.price, { wick: !hitNow, extreme: below ? v.lo : v.hi }); }
     else {
+      if (alerted.has(key) || pos.ack[type]) svcEpisode(pos, type, v.price); // 3.33.0: neue Episode beim Dienst (Hysterese, Abklingzeit)
       if (pos.ack[type] || alerted.has(key)) rearmedAt.set(key, Date.now());
       if (pos.ack[type]) { pos.ack = { ...pos.ack, [type]: false }; changed = true; } // Kurs zurück: Marke wieder scharf
       if (!$('toasts').querySelector(`.toast[data-id="${pos.id}"][data-type="${type}"]`)) { alerted.delete(key); alertInfo.delete(key); }
@@ -5454,7 +5494,7 @@ function checkAlerts() {
 let alarmKey = '';
 function alarmSub(a) {
   const pr = state.prices[a.symbol]?.price, dist = pr ? (a.price / pr - 1) * 100 : null;
-  return a.triggeredAt ? `ausgelöst ${localTime(a.triggeredAt)} bei ${priceText(a.triggerPrice)}${a.touch ? ` · Docht bis ${priceText(a.touch)}` : ''}${a.missed ? ' · nachträglich erkannt' : ''}${a.note ? ' · ' + a.note : ''}`
+  return a.triggeredAt ? `ausgelöst ${localTime(a.triggeredAt)} ${a.triggerPrice ? `bei ${priceText(a.triggerPrice)}` : 'und gemeldet vom 24/7-Dienst'}${a.touch ? ` · Docht bis ${priceText(a.touch)}` : ''}${a.missed ? ' · nachträglich erkannt' : ''}${a.note ? ' · ' + a.note : ''}`
     : `${pr ? `aktuell ${priceText(pr)} · noch ${number(Math.abs(dist))} %` : 'Kurs folgt beim nächsten Abruf'}${a.note ? ' · ' + a.note : ''}`;
 }
 function renderAlarms() {
@@ -6227,11 +6267,14 @@ function liveFeed(port) {
     for (let attempt = 1; ; attempt++) {
       let res = null, err = 'Keine Verbindung';
       try {
-        if (noCors[m.kind]) { await req(m, 'no-cors'); return { ok: true, unconfirmed: true }; }
+        if (noCors[m.kind] && !m.coord) { await req(m, 'no-cors'); return { ok: true, unconfirmed: true }; }
         res = await req(m, 'cors');
       } catch {
+        // 3.33.0 (G05): Alarm-Ereignisse (coord) – Antwort verloren heißt „Zustellung unbestätigt“: kein zweiter POST und kein
+        // Senden ohne Antwort (no-cors), sonst käme die Meldung womöglich doppelt. Nur ohne Netz (sicher nicht gesendet) später erneut.
+        if (m.coord) { if (!(self.navigator && self.navigator.onLine === false)) return { ok: false, lost: true, code: 0, msg: 'Keine Antwort von Telegram – Zustellung unbestätigt' }; }
         // Antwort nicht lesbar: Netzfehler oder fehlende CORS-Freigabe. Einmal ohne Antwort senden (Zustellung dann unbestätigt).
-        if (!noCors[m.kind]) { try { await req(m, 'no-cors'); noCors[m.kind] = true; return { ok: true, unconfirmed: true }; } catch {} }
+        else if (!noCors[m.kind]) { try { await req(m, 'no-cors'); noCors[m.kind] = true; return { ok: true, unconfirmed: true }; } catch {} }
       }
       let wait = [2000, 5000, 15000, 30000, 60000, 120000, 120000][attempt - 1] || 120000; // 3.27.0: gut 6 Minuten statt knapp einer
       if (res) {
@@ -6351,6 +6394,7 @@ function onTick(now) {
   volaTick(now); // 4.3: Volatilität nach Uhrzeit, Warnung bei erhöhter Volatilität
   pulseTick(now); // 3.24.0: BTC-Puls – Schwellen je Uhrzeit, 1m-Kerzen von BTC
   s247Tick(now); // 5.1: meldet sich der 24/7-Dienst?
+  if (typeof svcTick === 'function') svcTick(now); // 3.33.0 (G05): Schalterstand am Dienst
   if (now - lastStreamSync > 5000) { lastStreamSync = now; syncStreams(); }
   if (Date.now() - lastSeenSaved > 30000) saveLastSeen();
   // 3.32.0 (G04.7): Kurse offener Positionen nachladen, bevor sie die Frischegrenze erreichen (ruhiger Coin ohne Stream-Meldung,
@@ -6752,7 +6796,7 @@ addEventListener('beforeunload', e => {
 });
 // ---------- Abgleich zwischen offenen Tabs ----------
 const bc = (() => { try { return new BroadcastChannel('scalpdesk'); } catch { return null; } })();
-const SYNC_KEYS = [POS_KEY, HIST_KEY, MONEY_KEY, BAL_KEY, ALARM_KEY, SETUP_KEY, WATCH_KEY, CHANGES_KEY, 'scalpdesk.channels.v1', ZZP_KEY, 'scalpdesk.s247.v1', 'scalpdesk.pnlalarm.v1', 'scalpdesk.deleted.v1', 'scalpdesk.settingsat.v1', 'scalpdesk.listsat.v1', 'scalpdesk.demopositions.v1', 'scalpdesk.demohistory.v1', 'scalpdesk.quarantine.v1', 'scalpdesk.conflicts.v1', 'scalpdesk.settingsh.v1', 'scalpdesk.deletedh.v1'];
+const SYNC_KEYS = [POS_KEY, HIST_KEY, MONEY_KEY, BAL_KEY, ALARM_KEY, SETUP_KEY, WATCH_KEY, CHANGES_KEY, 'scalpdesk.channels.v1', ZZP_KEY, 'scalpdesk.s247.v1', 'scalpdesk.pnlalarm.v1', 'scalpdesk.deleted.v1', 'scalpdesk.settingsat.v1', 'scalpdesk.listsat.v1', 'scalpdesk.demopositions.v1', 'scalpdesk.demohistory.v1', 'scalpdesk.quarantine.v1', 'scalpdesk.conflicts.v1', 'scalpdesk.settingsh.v1', 'scalpdesk.deletedh.v1', 'scalpdesk.svc.v1', 'scalpdesk.policy.v1'];
 function broadcastData(keys) { if (!bc || !keys.length) return; try { bc.postMessage({ t: 'data', from: TAB_ID, items: keys.map(k => [k, store.get(k)]) }); } catch {} }
 function adoptData(items) {
   const pat = items.find(([k]) => k === ZZP_KEY); if (pat) { store.adopt(ZZP_KEY, pat[1]); zzpMem = null; items = items.filter(([k]) => k !== ZZP_KEY); if (!items.length) return; }
@@ -6769,7 +6813,9 @@ function adoptData(items) {
     else if (k === SETUP_KEY) state.setups = loadSetups();
     else if (k === WATCH_KEY) state.watch = loadWatch();
     else if (k === CHAN_KEY) { chan = loadChannels(); renderChanSummary(); if ($('chan-dialog').open) fillChanForm(); }
-    else if (k === 'scalpdesk.s247.v1') { s247.cfg = loadS247(); renderS247(); } // 5.1: Übergabe an den 24/7-Dienst aus einem anderen Tab
+    else if (k === 'scalpdesk.s247.v1') { s247.cfg = loadS247(); renderS247(); }
+    else if (k === 'scalpdesk.svc.v1') { svc.cfg = loadSvc(); renderSvcStatus(); renderTgc(); } // 3.33.0: Zugang zum Dienst aus einem anderen Tab
+    else if (k === 'scalpdesk.policy.v1') { svc.pol = loadPol(); renderTgc(); renderChanSummary(); } // 3.33.0: bestätigter Schalterstand, Entwurf // 5.1: Übergabe an den 24/7-Dienst aus einem anderen Tab
   }
   acctVer++; importantSig = dataSig(); posStructure = null; histStructure = ''; demoStructure = null; alarmKey = ''; withAnchor(render); renderIntegrity();   // Änderung aus einem zweiten Tab: Ansicht bleibt stehen
 }
@@ -7254,8 +7300,20 @@ const TG_TOKEN_RE = /^\d{5,15}:[A-Za-z0-9_-]{30,80}$/, TG_CHAT_RE = /^(-?\d{1,20
 const DC_URL_RE = /^https:\/\/(?:(?:ptb|canary)\.)?discord(?:app)?\.com\/api(?:\/v\d{1,2})?\/webhooks\/\d{5,25}\/[A-Za-z0-9_-]{20,120}(?:\?thread_id=\d{5,25})?$/;
 function loadChannels() {
   const v = store.get(CHAN_KEY), o = v && typeof v === 'object' ? v : {}, str = (x, n) => typeof x === 'string' ? x.trim().slice(0, n) : '';
-  return { tg: { token: str(o.tg?.token, 120), chat: str(o.tg?.chat, 40), thread: str(o.tg?.thread, 10), bchat: str(o.tg?.bchat, 40), bthread: str(o.tg?.bthread, 10), btoken: str(o.tg?.btoken, 120), on: o.tg?.on !== false }, dc: { url: str(o.dc?.url, 300), on: o.dc?.on !== false },
-    ev: { alarm: o.ev?.alarm !== false, pos: o.ev?.pos !== false, day: o.ev?.day !== false, news: o.ev?.news !== false, pnl: o.ev?.pnl !== false, pulse: o.ev?.pulse !== false } };
+  const c = { tg: { token: str(o.tg?.token, 120), chat: str(o.tg?.chat, 40), thread: str(o.tg?.thread, 10), bchat: str(o.tg?.bchat, 40), bthread: str(o.tg?.bthread, 10), btoken: str(o.tg?.btoken, 120),
+      tchat: str(o.tg?.tchat, 40), tthread: str(o.tg?.tthread, 10), ttoken: str(o.tg?.ttoken, 120) }, dc: { url: str(o.dc?.url, 300), on: o.dc?.on !== false },
+    ev: { alarm: o.ev?.alarm !== false, pos: o.ev?.pos !== false, day: o.ev?.day !== false, news: o.ev?.news !== false, pnl: o.ev?.pnl !== false, pulse: o.ev?.pulse !== false },
+    // 3.33.0 (G05): Schalter je Ziel (ohne 24/7-Dienst mit HTTPS gelten sie hier im Browser)
+    tgt: { 'course-alert': o.tgt?.['course-alert'] !== false, backup: o.tgt?.backup !== false, trades: o.tgt?.trades !== false }, mig33: !!o.mig33 };
+  // 3.33.0 (G05): einmalig umstellen – kein stilles Ausweichen mehr. Bis 3.32 ging die Sicherung ohne eigenen Sicherungschat in den
+  // Kursalarm-Chat; dieser Ort wird jetzt ausdrücklich als Sicherungschat eingetragen (sichtbar, änderbar). Der frühere
+  // Telegram-Schalter „Aktiv“ (aus) wird zu „alle Ziele aus“.
+  if (!c.mig33) {
+    const t = c.tg; if (!t.bchat && t.chat) { t.bchat = t.chat; t.bthread = t.bthread || t.thread; }
+    if (o.tg && o.tg.on === false) c.tgt = { 'course-alert': false, backup: false, trades: false };
+    c.mig33 = true;
+  }
+  return c;
 }
 let chan = loadChannels();
 const chanState = { tg: null, dc: null }, chanClaimed = new Set(), sendWait = new Map(), CHAN_NAME = { tg: 'Telegram', dc: 'Discord' };
@@ -7268,33 +7326,41 @@ function chanLastText(k) {
   return `zuletzt ${L.u ? 'gesendet' : 'zugestellt'} ${new Date(L.at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}${L.label ? ` (${L.label})` : ''}`;
 }
 let sendSeq = 0;
-const tgOk = t => TG_TOKEN_RE.test(t.token) && TG_CHAT_RE.test(t.chat) && (!t.thread || TG_THREAD_RE.test(t.thread)) && (!t.bchat || TG_CHAT_RE.test(t.bchat)) && (!t.bthread || TG_THREAD_RE.test(t.bthread)) && (!t.btoken || TG_TOKEN_RE.test(t.btoken));
+const tgOk = t => TG_TOKEN_RE.test(t.token) && TG_CHAT_RE.test(t.chat) && (!t.thread || TG_THREAD_RE.test(t.thread)) && (!t.bchat || TG_CHAT_RE.test(t.bchat)) && (!t.bthread || TG_THREAD_RE.test(t.bthread)) && (!t.btoken || TG_TOKEN_RE.test(t.btoken))
+  && (!t.tchat || TG_CHAT_RE.test(t.tchat)) && (!t.tthread || TG_THREAD_RE.test(t.tthread)) && (!t.ttoken || TG_TOKEN_RE.test(t.ttoken));
 const chanValid = k => k === 'tg' ? tgOk(chan.tg) : DC_URL_RE.test(chan.dc.url);
-const chanReady = k => chan[k].on && chanValid(k);
+// 3.33.0: Telegram hat keinen eigenen Schalter „Aktiv“ mehr – es gelten die Schalter je Ziel (Telegram-Chats, tgtOn)
+const chanReady = k => k === 'tg' ? chanValid('tg') : chan.dc.on && chanValid('dc');
+const chanOnK = k => k === 'tg' ? tgtOn('course-alert') : chan.dc.on;
 // Ablaufplan Schritt 3 (3.24.0): Ziel jeder Nachrichtenart zentral an einer Stelle. „Kursalarm“ ist der Chat (optional mit
 // Thema) für alle Alarme und Hinweise, der „Sicherungschat“ bekommt nur die Datensicherung. Unbekannte Arten gehen immer zu
 // „Kursalarm“, nie in den Sicherungschat. Vorher gab es nur eine Chat-ID für alles – News landeten so im Sicherungschat.
-const TG_ROUTE = { alarm: 'alert', pos: 'alert', day: 'alert', news: 'alert', pnl: 'alert', pulse: 'alert', s247: 'alert', test: 'alert', backup: 'backup' };
-// 3.25.0: Der Sicherungschat darf auch über einen eigenen Bot laufen (eigener Token, z. B. ein Bot „Sicherung“ neben „Kursalarm“)
-function tgTarget(kind) {
-  const t = chan.tg;
-  if (TG_ROUTE[kind] !== 'backup') return { token: t.token, chat: t.chat, thread: t.thread };
-  const token = t.btoken || t.token;
-  return t.bchat ? { token, chat: t.bchat, thread: t.bthread } : { token, chat: t.chat, thread: t.bthread || t.thread }; // ohne eigenen Chat: wie Kursalarm (ggf. eigenes Thema)
+// 3.33.0 (G05): Ziel-Liste statt fest verdrahteter Empfänger. Jede Art hat genau ein Ziel; ein nicht eingerichtetes Ziel bekommt
+// nichts – kein Ausweichen auf einen anderen Bot oder Chat (Alarme nie in den Sicherungschat, Sicherungen nie in den Kursalarm).
+const TG_ROUTE = { alarm: 'course-alert', pos: 'course-alert', day: 'course-alert', news: 'course-alert', pnl: 'course-alert', pulse: 'course-alert', s247: 'course-alert', test: 'course-alert', backup: 'backup', trade: 'trades' };
+// Zugangsdaten je Ziel (Geheimnisse bleiben in diesem Browser): Kursalarm – Bot und Chat; Sicherung – eigener Chat (Bot: eigener
+// Token oder, ausdrücklich so beschriftet, derselbe wie Kursalarm); Trades – eigener Chat (Bot: eigener oder derselbe wie die Sicherung)
+function tgDest(id) {
+  const t = chan.tg, ok = (token, chat, thread) => TG_TOKEN_RE.test(token) && TG_CHAT_RE.test(chat) && (!thread || TG_THREAD_RE.test(thread)) ? { token, chat, thread } : null;
+  return id === 'course-alert' ? ok(t.token, t.chat, t.thread) : id === 'backup' ? ok(t.btoken || t.token, t.bchat, t.bthread) : id === 'trades' ? ok(t.ttoken || t.btoken || t.token, t.tchat, t.tthread) : null;
 }
+function tgTarget(kind) { const id = TG_ROUTE[kind]; return id ? tgDest(id) : null; }
 function tgBot(token) { return /^(\d+):/.exec(token || '')?.[1] || ''; } // die Zahl vor dem Doppelpunkt kennzeichnet den Bot
 const tgFields = T => ({ chat_id: T.chat, ...(T.thread ? { message_thread_id: T.thread } : {}) });
 const tgKey = T => `${tgBot(T.token)}|${T.chat}|${T.thread || ''}`;
-const tgSeparate = () => tgKey(tgTarget('backup')) !== tgKey(tgTarget('alarm'));
+const tgSeparate = () => { const b = tgDest('backup'), a = tgDest('course-alert'); return !!b && (!a || tgKey(b) !== tgKey(a)); };
 function saveChannels() { if (store.set(CHAN_KEY, chan)) broadcastData([CHAN_KEY]); renderChanSummary(); scheduleS247(); }
 // Nachricht über den Worker senden; das Ergebnis kommt als {t:'sent'} zurück (onSent)
 function chanSend(k, text, test = false, kind = 'test', opts = {}) {
+  if (k === 'tg' && !tgTarget(kind)) return Promise.resolve({ ok: false, code: -1, msg: 'Ziel nicht eingerichtet' }); // 3.33.0: kein Ausweichen
   const id = ++sendSeq, m = k === 'tg'
     ? { t: 'send', id, kind: 'telegram', test, url: `https://api.telegram.org/bot${tgTarget(kind).token}/sendMessage`, fields: { ...tgFields(tgTarget(kind)), text: text.slice(0, 4000), link_preview_options: JSON.stringify({ is_disabled: true }), ...(opts.silent ? { disable_notification: 'true' } : {}) } }
     : { t: 'send', id, kind: 'discord', test, url: chan.dc.url, fields: { content: text.slice(0, 1900), allowed_mentions: { parse: [] } } };
+  if (opts.coord) m.coord = true; // 3.33.0: Alarm-Ereignis – kein blinder zweiter Versuch
   return new Promise(resolve => { sendWait.set(id, { k, resolve, test, label: test ? '' : chanLabel(text) }); live.post(m); });
 }
 function chanError(k, m) {
+  if (m.code === -1) return 'Ziel nicht eingerichtet – in „Telegram / Discord einrichten“ eine Chat-ID dafür eintragen.';
   if (!m.code) return `Keine Verbindung zu ${CHAN_NAME[k]} – Internet, Werbeblocker oder Firmen-Firewall prüfen.`;
   if (m.code === 429) return 'Zu viele Nachrichten in kurzer Zeit – bitte etwas später erneut.';
   if (k === 'tg') {
@@ -7308,7 +7374,7 @@ function chanError(k, m) {
 }
 function onSent(m) {
   const w = sendWait.get(m.id); if (!w) return; sendWait.delete(m.id);
-  chanState[w.k] = { ok: m.ok, at: Date.now(), text: m.ok ? (m.unconfirmed ? 'gesendet – der Browser kann die Zustellung hier nicht bestätigen' : 'zugestellt') : chanError(w.k, m) };
+  chanState[w.k] = { ok: m.ok, at: Date.now(), text: m.ok ? (m.unconfirmed ? 'gesendet – der Browser kann die Zustellung hier nicht bestätigen' : 'zugestellt') : m.lost ? 'Zustellung unbestätigt – keine Antwort von Telegram; kein zweiter Versuch, damit die Meldung nicht doppelt kommt' : chanError(w.k, m) };
   if (m.ok && !w.test) store.set(CHANLAST_KEY, { ...(store.get(CHANLAST_KEY) || {}), [w.k]: { at: Date.now(), label: w.label, ...(m.unconfirmed ? { u: true } : {}) } });
   renderChanStatus(); renderChanSummary(); w.resolve(m);
 }
@@ -7316,12 +7382,17 @@ function onSent(m) {
 async function notifyChannels(type, key, text, ttl, opts = {}) {
   if (!chan.ev[type]) return;
   if (typeof s247Settled === 'function') await s247Settled(); // 3.26.0: nach dem Öffnen erst den Stand des Dienstes kennen
-  if (s247Covers(type, key)) return; // 5.1: kommt vom 24/7-Dienst – nicht doppelt senden
-  const ks = ['tg', 'dc'].filter(chanReady); if (!ks.length) return;
+  // 3.33.0 (G05): Kurs-Alarm, Stop/Ziel, Gewinn/Verlust mit HTTPS-Steuerung: erst den Stand des Dienstes abgleichen (Start),
+  // dann je Ereignis eine Freigabe holen – genau einer sendet (svcSendCoordinated). Ohne Steuerung wie bisher (Übergabe).
+  const strict = ['alarm', 'pos', 'pnl'].includes(type), coord = strict && !!opts.ev && typeof svcOn === 'function' && svcOn();
+  if (coord) await svcSettled();
+  else if (s247Covers(type, key)) return; // 5.1: kommt vom 24/7-Dienst – nicht doppelt senden
+  const ks = ['tg', 'dc'].filter(k => chanReady(k) && (k !== 'tg' || tgtReady(TG_ROUTE[type]))); if (!ks.length) return; // 3.33.0: Ziel AN und eingerichtet
+  if (coord) { if (!(await store.claim(`ev:${opts.ev}`, ttl))) return; void svcSendCoordinated(type, opts, text, ks); return; } // ein Tab
   if (!(await store.claim(key, ttl))) return;
   chanClaimed.add(key);
   const msg = `${text}\n${new Date().toLocaleTimeString('de-DE')} Uhr`;
-  for (const k of ks) void chanSend(k, msg, false, type, opts); // opts.silent: lautlos (BTC-Puls nachts)
+  for (const k of ks) void chanSend(k, msg, false, type, { ...opts, coord: strict }); // opts.silent: lautlos (BTC-Puls nachts); strict: kein blinder zweiter Versuch
 }
 // Kurs wieder weg von der Marke: nächste Berührung darf erneut melden (nur für selbst gesendete Meldungen)
 function chanRelease(key) { if (chanClaimed.delete(key)) void store.release(key); }
@@ -7331,11 +7402,11 @@ function chanLine(k) {
   if (!chan[k][k === 'tg' ? 'token' : 'url']) return 'nicht eingerichtet';
   if (!chanValid(k)) return k === 'tg' ? 'unvollständig (Token oder Chat-ID fehlt)' : 'Webhook-URL unvollständig';
   const s = chanState[k], last = chanLastText(k);
-  return `${chan[k].on ? 'aktiv' : 'pausiert'}${s && !s.ok ? ` · ${hhmmss(s.at)} Fehler` : last ? ` · ${last}` : s ? ` · ${hhmmss(s.at)} ${s.text}` : ''}`;
+  return `${chanOnK(k) ? 'aktiv' : k === 'tg' ? 'Kursalarm aus' : 'pausiert'}${s && !s.ok ? ` · ${hhmmss(s.at)} Fehler` : last ? ` · ${last}` : s ? ` · ${hhmmss(s.at)} ${s.text}` : ''}`;
 }
 function renderChanSummary() {
   const any = chan.tg.token || chan.dc.url;
-  put('chan-summary', any ? `Telegram: ${chanLine('tg')}${chanValid('tg') ? ` · Sicherung: ${tgSeparate() ? (chan.tg.btoken && chan.tg.btoken !== chan.tg.token ? 'eigener Bot' : 'eigener Chat') : 'wie Kursalarm'}` : ''} · Discord: ${chanLine('dc')}${s247SumText()}` : 'Noch kein Kanal eingerichtet – Anleitung im Fenster.');
+  put('chan-summary', any ? `Telegram: ${chanLine('tg')}${chanValid('tg') ? ` · Sicherung: ${!tgDest('backup') ? 'kein Sicherungschat' : tgSeparate() ? (chan.tg.btoken && chan.tg.btoken !== chan.tg.token ? 'eigener Bot' : 'eigener Chat') : 'wie Kursalarm (eingetragen)'}` : ''} · Discord: ${chanLine('dc')}${s247SumText()}` : 'Noch kein Kanal eingerichtet – Anleitung im Fenster.');
 }
 function chanMsg(k, ok, text) { const p = $(k + '-status'); p.textContent = text; p.className = 'chan-status' + (ok === true ? ' ok' : ok === false ? ' err' : ''); }
 function renderChanStatus() {
@@ -7343,26 +7414,23 @@ function renderChanStatus() {
     const s = chanState[k], has = chan[k][k === 'tg' ? 'token' : 'url'], L = chanLastText(k), last = L && has ? ` Letzte Meldung ${L.replace(/^zuletzt /, '')}.` : '';
     if (s) chanMsg(k, s.ok, `${hhmmss(s.at)}: ${s.ok ? 'Nachricht ' + s.text + '.' : s.text}${s.ok ? '' : last}`);
     else if (!has) chanMsg(k, null, k === 'tg' ? 'Noch nicht eingerichtet.' : 'Noch nicht eingerichtet.');
-    else chanMsg(k, chanValid(k) ? null : false, chanValid(k) ? (chan[k].on ? 'Eingerichtet und aktiv. Mit „Test senden“ prüfen.' + last : 'Eingerichtet, aber pausiert.' + last) : k === 'tg' ? (TG_TOKEN_RE.test(chan.tg.token) ? 'Chat-ID fehlt: dem Bot schreiben, dann „Chat-ID ermitteln“.' : 'Das sieht nicht wie ein Bot-Token aus (Format 123456789:AA…).') : 'Das sieht nicht wie eine Discord-Webhook-URL aus (https://discord.com/api/webhooks/…).');
+    else chanMsg(k, chanValid(k) ? null : false, chanValid(k) ? (chanOnK(k) ? 'Eingerichtet und aktiv. Mit „Test senden“ prüfen.' + last : 'Eingerichtet, aber pausiert.' + last) : k === 'tg' ? (TG_TOKEN_RE.test(chan.tg.token) ? 'Chat-ID fehlt: dem Bot schreiben, dann „Chat-ID ermitteln“.' : 'Das sieht nicht wie ein Bot-Token aus (Format 123456789:AA…).') : 'Das sieht nicht wie eine Discord-Webhook-URL aus (https://discord.com/api/webhooks/…).');
   }
 }
 function fillChanForm() {
-  $('tg-token').value = chan.tg.token; $('tg-chat').value = chan.tg.chat; $('tg-thread').value = chan.tg.thread; $('tg-bchat').value = chan.tg.bchat; $('tg-bthread').value = chan.tg.bthread; $('tg-btoken').value = chan.tg.btoken; $('tg-on').checked = chan.tg.on;
+  $('tg-token').value = chan.tg.token; $('tg-chat').value = chan.tg.chat; $('tg-thread').value = chan.tg.thread; $('tg-bchat').value = chan.tg.bchat; $('tg-bthread').value = chan.tg.bthread; $('tg-btoken').value = chan.tg.btoken;
+  $('tg-tchat').value = chan.tg.tchat; $('tg-tthread').value = chan.tg.tthread; $('tg-ttoken').value = chan.tg.ttoken; if (typeof svcFill === 'function') svcFill();
   $('dc-url').value = chan.dc.url; $('dc-on').checked = chan.dc.on;
   $('chan-ev-alarm').checked = chan.ev.alarm; $('chan-ev-pos').checked = chan.ev.pos; $('chan-ev-day').checked = chan.ev.day; $('chan-ev-news').checked = chan.ev.news; $('chan-ev-pnl').checked = chan.ev.pnl; $('chan-ev-pulse').checked = chan.ev.pulse;
   renderChanStatus(); renderPulseInfo();
 }
 function readChanForm() {
-  const was = tgTarget('backup'), implicit = !chan.tg.bchat && !chan.tg.btoken;
-  chan = { tg: { token: $('tg-token').value.trim(), chat: $('tg-chat').value.trim(), thread: $('tg-thread').value.trim(), bchat: $('tg-bchat').value.trim(), bthread: $('tg-bthread').value.trim(), btoken: $('tg-btoken').value.trim(), on: $('tg-on').checked }, dc: { url: $('dc-url').value.trim(), on: $('dc-on').checked },
-    ev: { alarm: $('chan-ev-alarm').checked, pos: $('chan-ev-pos').checked, day: $('chan-ev-day').checked, news: $('chan-ev-news').checked, pnl: $('chan-ev-pnl').checked, pulse: $('chan-ev-pulse').checked } };
-  // 3.25.0: Ohne eigenen Sicherungschat folgte die Sicherung jeder Änderung am Kursalarm-Ziel – so landete sie plötzlich im
-  // Kursalarm-Chat. Jetzt bleibt sie, wo ihre Datei liegt: Der bisherige Ort (Chat, Thema, Bot) wird als Sicherungschat eingetragen.
-  const t = chan.tg, kept = implicit && !t.bchat && !t.btoken && tgbHasMsg(tgKey(was)) && tgKey(tgTarget('backup')) !== tgKey(was);
-  if (kept) { t.bchat = was.chat; t.bthread = was.thread || ''; if (was.token !== t.token) t.btoken = was.token; $('tg-bchat').value = t.bchat; $('tg-bthread').value = t.bthread; $('tg-btoken').value = t.btoken; }
-  saveChannels(); renderChanStatus();
-  if (kept) chanMsg('tg', true, 'Kursalarm geändert – die Datensicherung bleibt im bisherigen Chat und ist dort jetzt als Sicherungschat eingetragen.');
-  return kept;
+  chan = { tg: { token: $('tg-token').value.trim(), chat: $('tg-chat').value.trim(), thread: $('tg-thread').value.trim(), bchat: $('tg-bchat').value.trim(), bthread: $('tg-bthread').value.trim(), btoken: $('tg-btoken').value.trim(),
+      tchat: $('tg-tchat').value.trim(), tthread: $('tg-tthread').value.trim(), ttoken: $('tg-ttoken').value.trim() }, dc: { url: $('dc-url').value.trim(), on: $('dc-on').checked },
+    ev: { alarm: $('chan-ev-alarm').checked, pos: $('chan-ev-pos').checked, day: $('chan-ev-day').checked, news: $('chan-ev-news').checked, pnl: $('chan-ev-pnl').checked, pulse: $('chan-ev-pulse').checked }, tgt: { ...chan.tgt }, mig33: true };
+  // 3.33.0 (G05): Die Sicherung hat immer einen ausdrücklich eingetragenen Chat – sie folgt einer Änderung am Kursalarm nicht mehr
+  saveChannels(); renderChanStatus(); if (typeof renderTgc === 'function') renderTgc();
+  return false;
 }
 function openChan() {
   closeMenus(); fillChanForm();
@@ -7418,11 +7486,12 @@ function tgSeen(ups) {
 function renderTgFound(list) {
   const box = $('tg-found'); box.hidden = !list.length;
   box.replaceChildren(...list.map(x => {
-    const row = el('div', 'tg-found-row'), a = btn('button ghost', '→ Kursalarm'), b = btn('button ghost', '→ Sicherungschat'), name = `${x.name}${x.topic ? ` › ${x.topic}` : ''}`;
-    a.addEventListener('click', () => { $('tg-chat').value = x.chat; $('tg-thread').value = x.thread; const kept = readChanForm(); chanMsg('tg', true, `Kursalarm: ${name}.${kept ? ' Die Datensicherung bleibt im bisherigen Chat (als Sicherungschat eingetragen).' : ''}`); });
+    const row = el('div', 'tg-found-row'), a = btn('button ghost', '→ Kursalarm'), b = btn('button ghost', '→ Sicherungschat'), c = btn('button ghost', '→ Trades'), name = `${x.name}${x.topic ? ` › ${x.topic}` : ''}`;
+    a.addEventListener('click', () => { $('tg-chat').value = x.chat; $('tg-thread').value = x.thread; readChanForm(); chanMsg('tg', true, `Kursalarm: ${name}.${tgDest('backup') ? ' Die Datensicherung bleibt in ihrem eingetragenen Sicherungschat.' : ''}`); });
+    c.addEventListener('click', () => { $('tg-tchat').value = x.chat; $('tg-tthread').value = x.thread; if (!x.only) $('tg-ttoken').value = ''; readChanForm(); chanMsg('tg', true, `Trades: ${name}${x.via ? ` (über @${x.via})` : ''}.`); });
     // Ziel ist genau der gelistete Chat samt Bot: über den Haupt-Bot gefunden → ohne eigenen Sicherungs-Token
     b.addEventListener('click', () => { $('tg-bchat').value = x.chat; $('tg-bthread').value = x.thread; if (!x.only) $('tg-btoken').value = ''; readChanForm(); chanMsg('tg', true, `Sicherungschat: ${name}${x.via ? ` (über @${x.via})` : ''}.`); });
-    row.append(el('span', 'tg-found-name', `${name} · ID ${x.chat}${x.thread ? ` · Thema ${x.thread}` : ''}${x.via ? ` · über @${x.via}` : ''}`), ...(x.only ? [b] : [a, b])); return row;
+    row.append(el('span', 'tg-found-name', `${name} · ID ${x.chat}${x.thread ? ` · Thema ${x.thread}` : ''}${x.via ? ` · über @${x.via}` : ''}`), ...(x.only ? [b, c] : [a, b, c])); return row;
   }));
 }
 // Ablaufplan Schritt 3: je Nachrichtenart eine Testnachricht an ihr Ziel – so lässt sich die Zuordnung in Telegram prüfen
@@ -7431,12 +7500,12 @@ async function chanTestAll() {
   readChanForm(); if (!chanValid('tg')) { renderChanStatus(); return; }
   const b = $('tg-testall'); b.disabled = true; let ok = 0;
   for (const [kind, name] of TG_TESTS) {
-    const r = await chanSend('tg', `🧪 Test „${name}“ – gehört in: ${TG_ROUTE[kind] === 'backup' ? 'Sicherungschat' : 'Kursalarm'}\n${hhmmss(Date.now())} Uhr`, true, kind);
+    const r = await chanSend('tg', `🧪 Test „${name}“ – gehört in: ${TG_ROUTE[kind] === 'backup' ? 'Sicherungschat' : TG_ROUTE[kind] === 'trades' ? 'Trades' : 'Kursalarm'}\n${hhmmss(Date.now())} Uhr`, true, kind);
     if (r.ok) ok++;
     await new Promise(res => setTimeout(res, 1100)); // Telegram: etwa eine Nachricht pro Sekunde je Chat
   }
   b.disabled = false;
-  chanMsg('tg', ok === TG_TESTS.length, `${ok} von ${TG_TESTS.length} Testnachrichten zugestellt: ${TG_TESTS.length - 1} an Kursalarm, 1 an ${tgSeparate() ? 'den Sicherungschat' : 'Kursalarm (kein eigener Sicherungschat eingetragen)'}.`);
+  chanMsg('tg', ok === TG_TESTS.length, `${ok} von ${TG_TESTS.length} Testnachrichten zugestellt: ${TG_TESTS.length - 1} an Kursalarm, 1 an ${!tgDest('backup') ? 'die Sicherung – kein Sicherungschat eingetragen, nicht gesendet' : tgSeparate() ? 'den Sicherungschat' : 'den Sicherungschat (derselbe Chat wie Kursalarm)'}.`);
 }
 async function chanTest(k) {
   readChanForm();
@@ -7444,7 +7513,7 @@ async function chanTest(k) {
   const b = $(k + '-test'); b.disabled = true; chanMsg(k, null, 'Sende Testnachricht …');
   const r = await chanSend(k, `✅ Test von Scalp Desk: Alarme kommen hier an.\n${hhmmss(Date.now())} Uhr`, true);
   b.disabled = false;
-  if (r.ok && !chan[k].on) { chan[k].on = true; $(k + '-on').checked = true; saveChannels(); renderChanStatus(); }
+  if (r.ok && k === 'dc' && !chan.dc.on) { chan.dc.on = true; $('dc-on').checked = true; saveChannels(); renderChanStatus(); }
 }
 $('chan-open').addEventListener('click', openChan);
 $('chan-close').addEventListener('click', () => $('chan-dialog').close());
@@ -8196,7 +8265,8 @@ function tgbIsOurs(pm, bot) { return pm?.document?.file_name === TGB_FILE && (!p
 // Anheften nur, wo es nichts verdrängt: nicht im Kursalarm-Chat, solange dort die angeheftete Datei des 24/7-Dienstes gilt
 function tgbPinOk(T) { return !(tgBot(T.token) === tgBot(chan.tg.token) && String(T.chat) === String(chan.tg.chat) && !!s247?.cfg?.on); }
 function tgConfigured() { return chanValid('tg'); }
-function tgbReady() { return !!tgb && tgb.cfg.on && tgConfigured(); }
+// 3.33.0 (G05): nur mit eingetragenem Sicherungschat und eingeschaltetem Ziel „Sicherung“ – das gilt auch für „Jetzt senden“
+function tgbReady() { return !!tgb && tgb.cfg.on && typeof tgtReady === 'function' && tgtReady('backup'); }
 // Fingerabdruck der gesicherten Daten – ohne Zeitstempel. Die still gelernten Muster ändern sich mit jeder Kerze; sie reisen
 // immer in der Datei mit und lösen allein höchstens alle 6 Stunden ein neues Senden aus (3.24.0, zzpStamp)
 function tgbSig(p) { const j = JSON.stringify({ ...p, exportedAt: 0, patterns: zzpStamp() }); let h = 0; for (let i = 0; i < j.length; i++) h = (h * 31 + j.charCodeAt(i)) | 0; return `${j.length}:${h >>> 0}`; }
@@ -8213,7 +8283,8 @@ const tgbForm = (o, file) => { const fd = new FormData(); for (const [k, v] of O
 // ohne Rückfrage bei Telegram; doppelt ist besser als gar nicht) und bei kleinen Dateien mit keepalive, damit er das Einfrieren
 // der Seite überlebt
 async function sendTgBackup(force = false, leaving = false) {
-  if (!(force ? tgConfigured() : tgbReady()) || tgb.busy) return; // „Jetzt senden“ geht auch ohne die Automatik (3.19.1)
+  if (force && tgDest('backup') && !tgtOn('backup')) { tgb.error = 'Ziel „Sicherung“ ist ausgeschaltet (🔔 Hinweise → „Telegram-Chats“) – nichts gesendet.'; renderTgbInfo(); return; }
+  if (!(force ? !!tgDest('backup') : tgbReady()) || tgb.busy) return; // „Jetzt senden“ geht auch ohne die Automatik (3.19.1)
   const payload = backupPayload(), sig = tgbSig(payload);
   const T = tgTarget('backup'), where = tgKey(T), bot = tgBot(T.token);
   if (!force && sig === tgb.cfg.sig && tgbNormKey(tgb.cfg.chat) === where) return; // Telegram hat schon diesen Stand
@@ -8255,16 +8326,17 @@ async function sendTgBackup(force = false, leaving = false) {
 }
 // Wohin geht die Sicherung? Eigener Sicherungschat oder (ohne Eintrag) der Kursalarm-Chat – das steht jetzt immer dabei
 function tgbWhere() {
-  const c = tgb.cfg, sep = tgSeparate(), named = tgbHasMsg(tgKey(tgTarget('backup'))) && c.name ? ` „${c.name}“` : '';
-  return sep ? `Ziel: Sicherungschat${named}` : `Ziel: Kursalarm-Chat${named} – kein eigener Sicherungschat eingetragen`;
+  const T = tgDest('backup'); if (!T) return 'kein Sicherungschat eingetragen';
+  const c = tgb.cfg, sep = tgSeparate(), named = tgbHasMsg(tgKey(T)) && c.name ? ` „${c.name}“` : '';
+  return `${sep ? `Ziel: Sicherungschat${named}` : `Ziel: Kursalarm-Chat${named} – kein eigener Sicherungschat eingetragen`}${tgtOn('backup') ? '' : ' · Ziel „Sicherung“ ausgeschaltet'}`;
 }
 function renderTgbInfo() {
   if (!tgb) return;
-  const ok = tgConfigured(), c = tgb.cfg, sep = ok && tgSeparate();
+  const ok = !!tgDest('backup'), c = tgb.cfg, sep = ok && tgSeparate();
   $('tgb-on').checked = c.on && ok; $('tgb-on').disabled = !ok; $('tgb-now').hidden = !ok;
   // ohne eigenen Sicherungschat: derselbe Knopf führt direkt zur Einrichtung des Sicherungschats
-  $('tgb-setup').hidden = sep; put('tgb-setup', ok ? '💾 Sicherungschat festlegen …' : '📨 Telegram einrichten …');
-  put('tgb-info', !ok ? 'Für iPhone/iPad: Safari erlaubt kein automatisches Speichern in Dateien. Stattdessen kann die Sicherung nach jeder Änderung an deinen Telegram-Sicherungschat gehen – dafür zuerst Telegram einrichten.'
+  $('tgb-setup').hidden = sep; put('tgb-setup', tgConfigured() ? '💾 Sicherungschat festlegen …' : '📨 Telegram einrichten …');
+  put('tgb-info', !ok ? (tgConfigured() ? 'Kein Sicherungschat eingetragen – die Sicherung geht nicht mehr von selbst in den Kursalarm-Chat (3.33.0). Mit „💾 Sicherungschat festlegen …“ einen Chat dafür eintragen (auch derselbe wie Kursalarm ist möglich).' : 'Für iPhone/iPad: Safari erlaubt kein automatisches Speichern in Dateien. Stattdessen kann die Sicherung nach jeder Änderung an deinen Telegram-Sicherungschat gehen – dafür zuerst Telegram einrichten.')
     : tgb.busy ? 'Sende Sicherung …'
     : tgb.error ? `Fehler: ${tgb.error}`
     : (!c.on ? `„Jetzt an Telegram senden“ schickt die Datei einmal direkt in den Sicherungschat (unverschlüsselt, ohne Telegram- oder Discord-Zugangsdaten); mit dem Häkchen nach jeder Änderung. Jede neue Sicherung ersetzt die vorige.${c.at ? ` Zuletzt gesendet ${new Date(c.at).toLocaleString('de-DE')}.` : ''}`
@@ -10095,14 +10167,14 @@ function pnlFire(k, a, cur) {
 // das übernehmen statt noch einmal senden. Sonst senden und „gemeldet“ sofort übergeben: Der Dienst liest die Datei vor seiner
 // eigenen Meldung neu und schweigt dann.
 async function pnlSend(k, at, msg) {
-  if (s247?.cfg?.on && chan.ev.pnl && typeof s247Parse === 'function' && tgConfigured()) {
+  if (s247?.cfg?.on && chan.ev.pnl && typeof s247Parse === 'function' && tgConfigured() && !svcOn()) { // 3.33.0: mit Steuerung entscheidet die Freigabe
     try {
       const pm = (await tgApi(chan.tg.token, 'getChat', { chat_id: chan.tg.chat }))?.pinned_message, f = s247Parse(pm).gv?.find(x => x.k === k && x.at === at);
       if (f) { pnlTakeSvc(k, at, f); return; }
     } catch { /* Telegram gerade nicht lesbar: lieber selbst senden */ }
     scheduleS247(0);
   }
-  void notifyChannels('pnl', `pnl:${k}:${at}`, msg, 30 * 864e5);
+  void notifyChannels('pnl', `pnl:${k}:${at}`, msg, 30 * 864e5, { ev: pnlEventId(k, at) });
 }
 // Der Dienst hat diese Grenze schon gemeldet: dessen Zeit und Wert übernehmen, nichts senden
 function pnlTakeSvc(k, at, f) { const d = pnlGet(), a = d[k]; if (a.at !== at) return; a.state = 'fired'; a.firedAt = f.t; a.firedVal = f.val; a.svc = true; pnlSet(d); }
@@ -10777,7 +10849,9 @@ function s247Device() {
 const s247Plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 // Was der Dienst braucht – und nur das
 function s247Payload() {
-  const on = s247.cfg.on && chan.tg.on;
+  // 3.33.0: ohne HTTPS-Steuerung wirkt der Schalter „Kursalarm“ über die Übergabe (aus = der Dienst meldet nichts); mit
+  // Steuerung entscheidet der Schalter am Dienst selbst – er beobachtet weiter, sendet aber nicht
+  const on = s247.cfg.on && (svcOn() || tgtOn('course-alert'));
   const alarms = on ? state.alarms.filter(a => !a.triggeredAt || (a.svcAt > 0 && Date.now() - a.svcAt < S247_GRACE)).map(a => ({ id: a.id, symbol: a.symbol, source: a.source, dir: a.dir, price: a.price, note: a.note || '', armedAt: a.armedAt || a.createdAt })) : [];
   const positions = on ? state.positions.filter(p => p.sl > 0 || p.tp > 0).map(p => ({ id: p.id, symbol: p.symbol, source: p.source, side: p.side, tp: p.tp > 0 ? p.tp : null, sl: p.sl > 0 ? p.sl : null,
     since: p.slTpAt || p.openedAt, ack: { tp: !!p.ack?.tp, sl: !!p.ack?.sl } })) : [];
@@ -10933,6 +11007,8 @@ function renderS247() {
       : `Übergeben um ${hm(c.at)} (${counts}) – wartet auf die Bestätigung des 24/7-Dienstes (meist nach 20–30 Sekunden).${other}`;
     cls = late ? false : null;
   }
+  // 3.33.0 (G05): mit HTTPS-Steuerung entscheidet je Ereignis die Freigabe – nicht mehr nur die Bestätigung der Übergabe
+  if (typeof svcOn === 'function' && svcOn() && c.on) text += svc.reach === true ? ' Sendefreigabe über HTTPS aktiv: Je Kurs-Alarm, Stop/Ziel und Gewinn/Verlust sendet genau einer – diese App, wenn sie es zuerst erkennt, sonst der Dienst.' : svc.reach === false ? ' ⚠ HTTPS-Steuerung nicht erreichbar – ohne Freigabe sendet die App nach 60 s selbst (mit Vermerk).' : '';
   const p = $('s247-status'); if (p.textContent !== text) p.textContent = text; p.className = 'chan-status' + (cls === true ? ' ok' : cls === false ? ' err' : '');
   if (typeof renderPnl === 'function') renderPnl();
   if (typeof renderChanSummary === 'function') renderChanSummary();
@@ -10967,6 +11043,269 @@ function s247Tick(now) {
   renderS247();
   if (s247.cfg.on) { scheduleS247(3000); s247.first = checkS247(); }
 })();
+// ---------- 3.33.0 (G05): Telegram-Chats – Ziele, Schalter, Steuerung über den 24/7-Dienst ----------
+// Ziele: Sicherung, Kursalarm, Trades (Muster und Signale kommen erst mit diesen Meldungen dazu). Jedes Ziel hat einen eigenen
+// Schalter. Effektiv gesendet wird nur, wenn das Ziel eingerichtet UND an ist UND die Häkchen unter „Was soll gesendet werden?“
+// (und für Demo die Demo-Freigaben) es erlauben. „Alle an/aus“ ist eine Sammelaktion: Sind alle eingerichteten Ziele an, gehen
+// alle aus, sonst alle an – keine zusätzliche versteckte Sperre; gemischt zeigt das Kästchen „indeterminate“.
+// Ohne 24/7-Dienst mit HTTPS gelten die Schalter in diesem Browser (und seinen Tabs). Mit Dienst (Adresse und Zugangsschlüssel)
+// steht der bestätigte Stand am Dienst und gilt auf allen Geräten:
+// - Umschalten = Auftrag mit Auftrags-ID und erwarteter Revision; bis zur Bestätigung „wird geschaltet …“, angezeigt wird nur
+//   Bestätigtes. Lehnt der Dienst ab (anderes Gerät war schneller), steht der neue bestätigte Stand da – bitte erneut wählen.
+// - Antwort verloren: weiter der zuletzt bestätigte Stand mit „Status unbestätigt“; die App fragt nach, ob der Auftrag ankam
+//   (GET /v1/commands/ID) – angekommen → bestätigt, nicht angekommen → Entwurf. Kein erfundenes Zurücksetzen.
+// - Dienst nicht erreichbar: Änderungen nur als Entwurf („nicht wirksam“), nach dem Wiederverbinden nicht von selbst
+//   ausgeführt – erst den aktuellen Stand lesen, Unterschiede zeigen, bewusst bestätigen oder verwerfen. So kann ein altes
+//   Offline-„AN“ nie ein inzwischen bestätigtes „AUS“ überschreiben.
+// Zugang (Adresse, Schlüssel, Gerätekennung) bleibt in diesem Browser – nicht in Sicherungen. Kein Bot startet durch einen Abgleich.
+var TGT = [
+  { id: 'backup', name: 'Sicherung', icon: '💾', purpose: 'Datensicherung – nur aus der App, nie über den Dienst' },
+  { id: 'course-alert', name: 'Kursalarm', icon: '🔔', purpose: 'Kurs-Alarme, Stop/Ziel, Gewinn/Verlust, Tages-Limit, Termine, BTC-Puls' },
+  { id: 'trades', name: 'Trades', icon: '📊', purpose: 'Trade-Überblick geschlossener Positionen – nur aus der App (Bild ab G06)' }];
+var SVC_KEY = 'scalpdesk.svc.v1', POL_KEY = 'scalpdesk.policy.v1', SVC_URL_RE = /^(https:\/\/[a-z0-9.-]+|http:\/\/(127\.0\.0\.1|localhost))(:\d{1,5})?$/, SVC_KEY_RE = /^[A-Za-z0-9_-]{32,64}$/, SVC_POLL = 60e3;
+var svc = { cfg: null, pol: null, reach: null, at: 0, err: '', pending: null, notice: '', busy: false, ptimer: 0, events: [], eps: {}, ver: '', first: null };
+svc.cfg = loadSvc(); svc.pol = loadPol();
+function loadSvc() {
+  const v = store.get(SVC_KEY) || {}, inst = /^[a-z0-9]{8}$/.test(v.inst) ? v.inst : Math.random().toString(36).slice(2, 10).padEnd(8, '0');
+  const c = { url: typeof v.url === 'string' ? v.url : '', key: typeof v.key === 'string' ? v.key : '', inst };
+  if (v.inst !== inst) store.set(SVC_KEY, c);
+  return c;
+}
+function loadPol() {
+  const v = store.get(POL_KEY), ok = x => x && Number.isInteger(x.rev) && x.targets && typeof x.targets === 'object';
+  return { conf: ok(v?.conf) ? v.conf : null, draft: v?.draft && v.draft.set && typeof v.draft.set === 'object' ? v.draft : null };
+}
+function savePol() { if (store.set(POL_KEY, { conf: svc.pol.conf, draft: svc.pol.draft })) broadcastData([POL_KEY]); }
+function svcOn() { return !!svc?.cfg && SVC_URL_RE.test(svc.cfg.url) && SVC_KEY_RE.test(svc.cfg.key); }
+function svcSender() { return `app:${svc.cfg.inst}`; }
+// Schalter je Ziel: mit Dienst der zuletzt bestätigte Stand (bis zur ersten Antwort die Schalter dieses Browsers), sonst lokal
+function tgtOn(id) { const c = svcOn() ? svc?.pol?.conf?.targets?.[id] : null; return c ? !!c.on : chan?.tgt?.[id] !== false; }
+function tgtReady(id) { return !!tgDest(id) && tgtOn(id); }
+async function svcFetch(path, { method = 'GET', body = null, timeout = 8000 } = {}) {
+  let r;
+  try { r = await fetch(svc.cfg.url + path, { method, headers: { authorization: `Bearer ${svc.cfg.key}`, ...(body ? { 'content-type': 'application/json' } : {}) }, ...(body ? { body: JSON.stringify(body) } : {}), credentials: 'omit', cache: 'no-store', referrerPolicy: 'no-referrer', signal: AbortSignal.timeout(timeout) }); }
+  catch { throw Object.assign(new Error('Dienst nicht erreichbar'), { net: true }); }
+  let j = null; try { j = await r.json(); } catch { /* keine JSON-Antwort */ }
+  if (r.status === 401) throw Object.assign(new Error('Zugangsschlüssel falsch – am Server zeigt „sudo scalpdesk-247 zugang“ den richtigen.'), { auth: true });
+  if (r.status === 429) throw Object.assign(new Error('Zu viele falsche Zugangsschlüssel – bitte eine Minute warten.'), { auth: true });
+  return { status: r.status, j };
+}
+const svcConf = j => ({ rev: j.rev, targets: j.targets, at: Date.now(), v: j.v || svc.ver });
+// Stand am Dienst lesen: Schalter, Episoden, Ereignisse (Abgleich beim Start, siehe svcReconcile); offenen Auftrag klären
+async function svcRefresh(force = false) {
+  if (!svcOn() || (svc.busy && !force)) return null;
+  svc.busy = true;
+  try {
+    const { status, j } = await svcFetch('/v1/state');
+    if (status !== 200 || !j?.ok) throw new Error(j?.error || `Fehler ${status}`);
+    svc.ver = j.v || ''; svc.pol.conf = svcConf(j); svc.events = Array.isArray(j.events) ? j.events : []; svc.eps = j.eps && typeof j.eps === 'object' ? j.eps : {};
+    svc.reach = true; svc.err = ''; svc.at = Date.now(); savePol();
+    if (typeof svcReconcile === 'function') svcReconcile();
+    if (svc.pending?.lost) await svcCheckPending();
+    return j;
+  } catch (e) { svc.reach = false; svc.err = e.message; svc.at = Date.now(); if (svc.pending?.lost) svcPendingLater(); return null; }
+  finally { svc.busy = false; renderTgc(); renderSvcStatus(); renderChanSummary(); }
+}
+// Auftrag: alle Ziele gemeinsam (Sammelaktion atomar); ohne Verbindung nur als Entwurf
+async function svcCommand(set) {
+  if (svc.pending) return;
+  if (!svc.pol.conf || svc.reach === false || navigator.onLine === false) { svcDraft(set); return; }
+  const cmd = { commandId: `c${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`, expectedRevision: svc.pol.conf.rev, set };
+  svc.pending = { ...cmd, at: Date.now() }; svc.notice = ''; renderTgc();
+  try { const { status, j } = await svcFetch('/v1/policy', { method: 'POST', body: cmd }); svcResult(status, j); }
+  catch (e) {
+    if (e.auth) { svc.pending = null; svc.notice = e.message; }
+    else { svc.pending.lost = true; svc.reach = false; svc.notice = 'Antwort des Dienstes verloren – Status unbestätigt. Angezeigt ist der zuletzt bestätigte Stand; die App fragt nach, ob der Auftrag angekommen ist.'; svcPendingLater(); }
+  }
+  renderTgc(); renderChanSummary();
+}
+function svcResult(status, j) {
+  svc.pending = null;
+  if (status === 200 && j?.ok) { svc.pol.conf = svcConf(j); svc.notice = ''; savePol(); }
+  else if (status === 409 && j?.conflict) { svc.pol.conf = svcConf(j); savePol(); svc.notice = 'Nicht übernommen: Ein anderes Gerät hat inzwischen geschaltet. Oben steht der aktuelle, bestätigte Stand – bitte noch einmal wählen.'; }
+  else svc.notice = `Nicht übernommen: ${j?.error || `Fehler ${status}`}`;
+}
+async function svcCheckPending() {
+  const p = svc.pending; if (!p?.lost) return;
+  try {
+    const { status, j } = await svcFetch(`/v1/commands/${p.commandId}`);
+    if (status === 200 && j?.found) { svcResult(j.status, j.result); if (j.status === 200) svc.notice = 'Der Auftrag war angekommen – jetzt bestätigt.'; }
+    else if (status === 404) { svc.pending = null; svcDraft(p.set, 'Der Auftrag ist nicht beim Dienst angekommen – er bleibt als Entwurf (nicht wirksam), bis du ihn bestätigst.'); }
+  } catch { svcPendingLater(); }
+}
+function svcPendingLater() { clearTimeout(svc.ptimer); svc.ptimer = setTimeout(() => void svcRefresh(true), 10e3); }
+function svcDraft(set, note = '') {
+  const d = svc.pol.draft || { set: {}, at: 0, baseRev: svc.pol.conf?.rev ?? null };
+  svc.pol.draft = { set: { ...d.set, ...set }, at: Date.now(), baseRev: d.baseRev };
+  svc.notice = note || 'Dienst nicht erreichbar – als Entwurf gespeichert (nicht wirksam). Er wird nicht von selbst ausgeführt: nach dem Wiederverbinden hier prüfen und bestätigen.';
+  savePol(); renderTgc(); renderChanSummary();
+}
+async function svcDraftApply() {
+  const d = svc.pol.draft; if (!d) return;
+  const j = await svcRefresh(true); if (!j) { svc.notice = 'Dienst weiter nicht erreichbar – der Entwurf bleibt.'; renderTgc(); return; }
+  svc.pol.draft = null; savePol(); await svcCommand(d.set);
+}
+function svcDraftDrop() { svc.pol.draft = null; svc.notice = 'Entwurf verworfen.'; savePol(); renderTgc(); renderChanSummary(); }
+// Umschalten: mit Dienst als Auftrag, sonst sofort in diesem Browser
+function tgcSet(set) {
+  if (svcOn()) { void svcCommand(set); return; }
+  chan.tgt = { ...chan.tgt, ...set }; saveChannels(); renderTgc(); if (typeof renderTgbInfo === 'function') renderTgbInfo();
+  if (set['course-alert'] !== undefined) scheduleS247(500); // ohne Steuerung wirkt der Schalter über die Übergabe
+}
+function tgcMaster() {
+  const conf = TGT.filter(t => tgDest(t.id)); if (!conf.length) return;
+  const all = conf.every(t => tgtOn(t.id)); tgcSet(Object.fromEntries(conf.map(t => [t.id, !all])));
+}
+const tgcTime = t => new Date(t).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+function tgcCount() {
+  const conf = TGT.filter(t => tgDest(t.id)), on = conf.filter(t => tgtOn(t.id)).length;
+  return { conf: conf.length, on, na: TGT.length - conf.length, text: `${on} von ${TGT.length} aktiv${TGT.length - conf.length ? ` · ${TGT.length - conf.length} nicht eingerichtet` : ''}` };
+}
+function renderTgc() {
+  const cnt = tgcCount(); put('tgc-summary', chanValid('tg') ? `${cnt.text}${svcOn() ? (svc.pol.draft ? ' · Entwurf offen' : svc.pending ? ' · wird geschaltet …' : '') : ''}` : '');
+  const box = $('tgc-list'); if (!box || !$('tgc-dialog')?.open) return;
+  const conf = svc.pol.conf, d = svc.pol.draft, mode = $('tgc-mode');
+  const m = !svcOn() ? 'Nur dieses Gerät: Ohne 24/7-Dienst mit HTTPS gelten die Schalter in diesem Browser (und seinen Tabs). Mit Dienst gelten sie bestätigt auf allen Geräten – Adresse und Zugangsschlüssel unter „Chats einrichten“ → 24/7-Dienst.'
+    : svc.reach === false ? `⚠ 24/7-Dienst nicht erreichbar (${svc.err || 'keine Antwort'}). Angezeigt ist der zuletzt bestätigte Stand${conf ? ` von ${tgcTime(conf.at)}` : ''}; Änderungen werden nur als Entwurf gespeichert.`
+    : !conf ? 'Verbinde mit dem 24/7-Dienst …' : `Gesteuert über den 24/7-Dienst${svc.ver ? ` ${svc.ver}` : ''} · bestätigter Stand ${tgcTime(conf.at)} · Revision ${conf.rev} · gilt auf allen Geräten.`;
+  if (mode.textContent !== m) mode.textContent = m; mode.classList.toggle('warn', svcOn() && svc.reach === false);
+  // Zeilen einmal anlegen (Fokus bleibt beim Aktualisieren erhalten), danach nur Zustand und Texte
+  if (box.children.length !== TGT.length) box.replaceChildren(...TGT.map(t => {
+    const li = el('li', 'tgc-row'), tx = el('div', 'tgc-txt'), lab = el('label', 'tgc-sw'), inp = document.createElement('input'), id = `tgc-sw-${t.id}`;
+    li.dataset.tgt = t.id; inp.type = 'checkbox'; inp.id = id; inp.setAttribute('role', 'switch'); inp.dataset.tgt = t.id;
+    const nm = el('b', '', `${t.icon} ${t.name}`); nm.id = `${id}-l`; inp.setAttribute('aria-labelledby', nm.id); inp.setAttribute('aria-describedby', `${id}-st`);
+    const st = el('small', 'tgc-st', ''); st.id = `${id}-st`;
+    tx.append(nm, el('small', '', t.purpose), el('small', 'tgc-dest', ''), st); lab.append(inp); li.append(tx, lab); return li;
+  }));
+  for (const li of box.children) {
+    const id = li.dataset.tgt, T = tgDest(id), inp = li.querySelector('input'), c = conf?.targets?.[id], on = tgtOn(id), busy = !!svc.pending && id in (svc.pending.set || {}), dv = d?.set?.[id];
+    const state = !T ? 'na' : busy && svc.pending.lost ? 'unconf' : busy ? 'busy' : dv !== undefined && dv !== on ? 'draft' : on ? 'on' : 'off';
+    li.dataset.state = state; inp.checked = !!T && on; inp.disabled = !T || !!svc.pending; if (busy) inp.setAttribute('aria-busy', 'true'); else inp.removeAttribute('aria-busy');
+    const dest = !T ? '' : `Bot ${tgBot(T.token)} · Chat ${T.chat}${T.thread ? ` · Thema ${T.thread}` : ''}`;
+    const since = c ? (c.on ? `an seit ${tgcTime(c.since)}` : `aus${c.offSince ? ` seit ${tgcTime(c.offSince)}` : ''}`) : on ? 'an' : 'aus';
+    const txt = !T ? 'nicht eingerichtet – unter „Chats einrichten“ eine Chat-ID eintragen (zählt nicht als aktiv)'
+      : state === 'busy' ? `wird geschaltet … (bestätigt: ${since})` : state === 'unconf' ? `Status unbestätigt – zuletzt bestätigt: ${since}`
+      : state === 'draft' ? `Entwurf: ${dv ? 'AN' : 'AUS'} – nicht wirksam (bestätigt: ${since})` : svcOn() && c ? `${since} · bestätigt vom 24/7-Dienst` : `${on ? 'an' : 'aus'} · nur dieses Gerät`;
+    const ds = li.querySelector('.tgc-dest'), ss = li.querySelector('.tgc-st'); if (ds.textContent !== dest) ds.textContent = dest; ds.hidden = !dest; if (ss.textContent !== txt) ss.textContent = txt;
+  }
+  const all = $('tgc-all'), confT = TGT.filter(t => tgDest(t.id)), n = confT.filter(t => tgtOn(t.id)).length;
+  all.checked = !!confT.length && n === confT.length; all.indeterminate = n > 0 && n < confT.length; all.disabled = !confT.length || !!svc.pending;
+  all.setAttribute('aria-describedby', 'tgc-count'); put('tgc-count', cnt.text);
+  const db = $('tgc-draft'); db.hidden = !d;
+  if (d) {
+    const list = Object.entries(d.set).map(([id, v]) => `${TGT.find(t => t.id === id)?.name || id} ${v ? 'AN' : 'AUS'}`).join(', ');
+    const cur = conf ? TGT.map(t => `${t.name} ${conf.targets?.[t.id]?.on ? 'an' : 'aus'}`).join(', ') : 'unbekannt';
+    const changed = conf && d.baseRev !== null && conf.rev !== d.baseRev;
+    const key = JSON.stringify([d, conf?.rev, svc.reach]);
+    if (db.dataset.key !== key) {
+      db.dataset.key = key;
+      const row = el('div', 'row'), ap = btn('button primary-lite', 'Entwurf jetzt anwenden'), dr = btn('button ghost', 'Verwerfen');
+      ap.id = 'tgc-draft-apply'; dr.id = 'tgc-draft-drop'; ap.disabled = svc.reach === false; ap.addEventListener('click', () => void svcDraftApply()); dr.addEventListener('click', svcDraftDrop);
+      row.append(ap, dr);
+      db.replaceChildren(el('p', '', `📝 Entwurf von ${tgcTime(d.at)} (nicht wirksam): ${list}.`), el('p', '', `Aktuell bestätigt am Dienst${conf ? ` (Revision ${conf.rev})` : ''}: ${cur}.${changed ? ` Seit dem Entwurf hat sich der Stand am Dienst geändert (Revision ${d.baseRev} → ${conf.rev}) – bitte prüfen.` : ''}${svc.reach === false ? ' Anwenden geht erst, wenn der Dienst wieder erreichbar ist.' : ''}`), row);
+    }
+  } else db.dataset.key = '';
+  const sm = $('tgc-status'); if (sm.textContent !== svc.notice) sm.textContent = svc.notice;
+  renderTgcEvents();
+}
+function svcFill() { if (!$('svc-url')) return; $('svc-url').value = svc.cfg.url; $('svc-key').value = svc.cfg.key; renderSvcStatus(); }
+function renderSvcStatus() {
+  const p = $('svc-status'); if (!p) return;
+  const t = !svc.cfg.url && !svc.cfg.key ? 'Nicht eingetragen – die Schalter gelten nur in diesem Browser, doppelte Alarme vermeidet weiter die bisherige Übergabe.'
+    : !svcOn() ? 'Adresse (https://…) oder Zugangsschlüssel (32–64 Zeichen) unvollständig.'
+    : svc.busy ? 'Prüfe die Verbindung …' : svc.reach === true ? `✓ Verbunden · Dienst ${svc.ver || '?'} · bestätigter Stand ${tgcTime(svc.at)} · Gerät ${svc.cfg.inst}`
+    : svc.reach === false ? `✗ ${svc.err || 'Dienst nicht erreichbar'}` : 'Eingetragen – noch nicht geprüft.';
+  if (p.textContent !== t) p.textContent = t; p.className = 'chan-status' + (svc.reach === true && svcOn() ? ' ok' : svc.reach === false && svcOn() ? ' err' : '');
+}
+(function tgcUi() {
+  if (!$('tgc-dialog')) return;
+  const open = () => { closeMenus(); svc.notice = ''; if (!$('tgc-dialog').open) $('tgc-dialog').showModal(); renderTgc(); if (svcOn()) void svcRefresh(); };
+  $('tgc-open').addEventListener('click', open); $('tg-tgc').addEventListener('click', () => { readChanForm(); $('chan-dialog').close(); open(); });
+  $('tgc-close').addEventListener('click', () => $('tgc-dialog').close()); $('tgc-done').addEventListener('click', () => $('tgc-dialog').close());
+  $('tgc-setup').addEventListener('click', () => { $('tgc-dialog').close(); openChan(); });
+  $('tgc-list').addEventListener('change', e => { const i = e.target.closest('input[data-tgt]'); if (!i) return; const id = i.dataset.tgt; i.checked = tgtOn(id); tgcSet({ [id]: !tgtOn(id) }); });
+  $('tgc-all').addEventListener('click', e => { e.preventDefault(); tgcMaster(); });
+  $('tgc-all').addEventListener('keydown', e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); tgcMaster(); } });
+  const saveSvc = () => { const url = $('svc-url').value.trim().replace(/\/+$/, '').toLowerCase(), key = $('svc-key').value.trim(); if (url === svc.cfg.url && key === svc.cfg.key) return false;
+    svc.cfg = { ...svc.cfg, url, key }; store.set(SVC_KEY, svc.cfg); broadcastData([SVC_KEY]); svc.reach = null; svc.err = ''; svc.pol.conf = null; savePol(); return true; };
+  $('svc-check').addEventListener('click', async () => { saveSvc(); $('svc-url').value = svc.cfg.url; if (!svcOn()) { renderSvcStatus(); return; } svc.busy = false; renderSvcStatus(); await svcRefresh(true); renderTgc(); });
+  for (const id of ['svc-url', 'svc-key']) $(id).addEventListener('change', () => { if (saveSvc()) renderSvcStatus(); });
+  $('svc-clear').addEventListener('click', () => { svc.cfg = { ...svc.cfg, url: '', key: '' }; store.set(SVC_KEY, svc.cfg); broadcastData([SVC_KEY]); svc.reach = null; svc.pol = { conf: null, draft: null }; savePol(); svcFill(); renderTgc(); renderChanSummary(); });
+  addEventListener('online', () => { if (svcOn()) void svcRefresh(true); });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && svcOn() && Date.now() - svc.at > 15e3) void svcRefresh(); });
+  renderTgc(); renderSvcStatus();
+  if (svcOn()) svc.first = svcRefresh(true);
+})();
+// ---- 3.33.0 (G05): Sendefreigabe je Ereignis ----
+// Erst nach dem ersten Abgleich mit dem Dienst senden (höchstens 8 s warten): ausgelöste Aktivierungen sind dann bekannt
+function svcSettled() { return svc.first ? Promise.race([svc.first, new Promise(r => setTimeout(r, 8000))]) : Promise.resolve(); }
+// Freigabe holen: bis zu 60 s lang alle 10 s versuchen. Keine Antwort → unreachable (die App sendet dann selbst, mit Vermerk –
+// deine Entscheidung: lieber möglicherweise doppelt als verloren)
+async function svcReserve(ev, label) {
+  const t0 = Date.now();
+  for (;;) {
+    try {
+      const { status, j } = await svcFetch('/v1/events/reserve', { method: 'POST', body: { eventId: ev, targetId: 'course-alert', sender: svcSender(), label } });
+      if (status === 200 && j?.ok) { svc.reach = true; return j.grant ? { grant: true, epoch: j.epoch } : { grant: false, holder: j.holder, st: j.st, reason: j.reason }; }
+      if (status >= 400 && status < 500) return { grant: false, err: j?.error || `Fehler ${status}` };
+    } catch (e) { if (e.auth) return { unreachable: true, why: e.message }; }
+    if (Date.now() - t0 >= 60e3) { svc.reach = false; return { unreachable: true, why: 'Dienst nicht erreichbar' }; }
+    await new Promise(r => setTimeout(r, Math.min(10e3, 60e3 - (Date.now() - t0) + 50)));
+  }
+}
+function svcReport(ev, st, why = '') { return svcFetch('/v1/events/report', { method: 'POST', body: { eventId: ev, sender: svcSender(), st, ...(why ? { why } : {}) } }).catch(() => null); }
+var svcLog = []; // letzte eigene Ereignisse dieser Sitzung (Anzeige in „Telegram-Chats“)
+function svcNote(ev, what) { svcLog.unshift({ ev, what, at: Date.now() }); svcLog.length = Math.min(svcLog.length, 20); if ($('tgc-dialog')?.open) renderTgcEvents(); }
+async function svcSendCoordinated(type, opts, text, ks) {
+  const label = chanLabel(text), r = await svcReserve(opts.ev, label);
+  if (r.grant === false) { svcNote(opts.ev, r.reason === 'off' ? 'nicht gesendet – Ziel Kursalarm am Dienst aus' : r.holder ? `nicht gesendet – ${r.holder === 'oracle' ? 'der 24/7-Dienst' : r.holder === svcSender() ? 'diese App' : `ein anderes Gerät (${r.holder.slice(4)})`} hat es schon (${({ reserved: 'reserviert', sending: 'wird gesendet', confirmed: 'zugestellt', unconfirmed: 'Zustellung unbestätigt', failed: 'fehlgeschlagen', discarded: 'verworfen' })[r.st] || r.st})` : `nicht gesendet – ${r.err}`); return; }
+  const fallback = !!r.unreachable;
+  // unmittelbar vor dem Senden erneut: Ziel noch an?
+  if (!tgtReady('course-alert')) { if (!fallback) void svcReport(opts.ev, 'discarded', 'Ziel unmittelbar vor dem Senden aus'); svcNote(opts.ev, 'verworfen – Ziel Kursalarm aus'); return; }
+  if (!fallback) await svcReport(opts.ev, 'sending');
+  const msg = `${text}\n${new Date().toLocaleTimeString('de-DE')} Uhr${fallback ? '\n(von der App gesendet – 24/7-Dienst nicht erreichbar)' : ''}`;
+  const res = await Promise.all(ks.map(k => chanSend(k, msg, false, type, { ...opts, coord: true })));
+  const m = res[Math.max(0, ks.indexOf('tg'))], st = m?.ok ? (m.unconfirmed ? 'unconfirmed' : 'confirmed') : m?.lost ? 'unconfirmed' : 'failed';
+  if (!fallback) void svcReport(opts.ev, st, m?.ok ? '' : m?.lost ? 'Telegram-Antwort verloren' : String(m?.msg || '').slice(0, 100));
+  svcNote(opts.ev, `${fallback ? 'von der App ohne Freigabe gesendet (Dienst nicht erreichbar) · ' : 'Freigabe erhalten · '}${st === 'confirmed' ? 'zugestellt' : st === 'unconfirmed' ? 'Zustellung unbestätigt' : 'fehlgeschlagen'}`);
+}
+// Stop/Ziel wieder verlassen: neue Episode beim Dienst anstoßen – erst ab 0,1 % Abstand (Hysterese); der Dienst zählt sie nur
+// nach der Abklingzeit (5 min) und nur einmal, auch wenn mehrere Geräte und er selbst dasselbe Verlassen melden
+var epAsk = new Map();
+function svcEpisode(pos, type, price) {
+  if (!svcOn() || !(price > 0)) return;
+  const base = posEventBase(pos, type), lvl = pos[type], below = (type === 'sl') === (pos.side === 'long');
+  if (!(below ? price >= lvl * 1.001 : price <= lvl * 0.999)) return;
+  const from = svc.eps[base] || 0, k = `${base}:${from}`; if (Date.now() - (epAsk.get(k) || 0) < 60e3) return; epAsk.set(k, Date.now());
+  void svcFetch('/v1/episodes/next', { method: 'POST', body: { base, from } }).then(({ j }) => { if (Number.isInteger(j?.ep)) svc.eps[base] = j.ep; }).catch(() => {});
+}
+// Abgleich nach dem Start und bei jeder Abfrage: Ereignisse anderer Sender (Dienst, andere Geräte) übernehmen – ausgelöste
+// Kurs-Alarme gelten hier als ausgelöst, Gewinn-/Verlust-Grenzen als gemeldet. So sendet die App sie nicht noch einmal und
+// zeigt sie nicht als neu. Eine eingespielte Sicherung erzeugt keine neue Aktivierung (gleiche ID).
+function svcReconcile() {
+  const mine = svcSender(), ids = new Map(svc.events.filter(e => e.by !== mine && e.st !== 'discarded').map(e => [e.id, e]));
+  let changed = false;
+  for (const a of state.alarms) {
+    if (a.triggeredAt) continue; const e = ids.get(alarmEventId(a)); if (!e) continue;
+    a.triggeredAt = e.at; a.triggerPrice = null; a.svcAt = e.at; changed = true;
+    simpleToast('al:' + a.id, 'alarm ' + (a.dir === 'above' ? 'up' : 'down'), `🔔 ${coin(a.symbol)} ${a.dir === 'above' ? 'auf/über' : 'auf/unter'} ${priceText(a.price)} – ${e.by === 'oracle' ? 'vom 24/7-Dienst' : 'von einem anderen Gerät'} gemeldet um ${new Date(e.at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr`, null, a.dir === 'above' ? 'green' : 'orange');
+  }
+  if (changed) { persist(); renderAlarms(); renderLivebar(); }
+  const d = pnlGet();
+  for (const k of PNL_KINDS) { const a = d[k]; if (!a.on || !a.value || a.state === 'fired') continue; const e = ids.get(pnlEventId(k, a.at)); if (e) pnlTakeSvc(k, a.at, { t: e.at, val: null }); }
+  if ($('tgc-dialog')?.open) renderTgcEvents();
+}
+const EV_ST = { reserved: 'reserviert', sending: 'wird gesendet', confirmed: 'zugestellt', unconfirmed: 'Zustellung unbestätigt', failed: 'fehlgeschlagen', discarded: 'verworfen' };
+function renderTgcEvents() {
+  const box = $('tgc-events'); if (!box) return;
+  const who = b => b === 'oracle' ? '24/7-Dienst' : b === svcSender() ? 'diese App' : `Gerät ${String(b).slice(4)}`;
+  const rows = svcOn() ? svc.events.slice(0, 10).map(e => `${tgcTime(e.at)} · ${e.label || e.id} · ${TGT.find(t => t.id === e.target)?.name || e.target} · ${who(e.by)} · ${EV_ST[e.st] || e.st}${e.why ? ` (${e.why})` : ''}`) : [];
+  const own = svcLog.slice(0, 5).map(x => `${tgcTime(x.at)} · ${x.ev} · ${x.what}`);
+  box.hidden = !rows.length && !own.length;
+  box.querySelector('ul').replaceChildren(...[...rows, ...(rows.length ? [] : own)].map(t => el('li', '', t)));
+}
+// Sekundentakt: mit Dienst jede Minute den bestätigten Stand lesen (andere Geräte, Neustart des Dienstes)
+function svcTick(now) { if (svcOn() && !svc.busy && !document.hidden && now - svc.at > SVC_POLL) void svcRefresh(); }
 // ---------- Beschriftungen im Chart entzerren ----------
 // Läuft nach dem Zeichnen, wenn das SVG im Dokument hängt. Gemessen wird in SVG-Einheiten (getBBox), das passt auch im
 // gedrehten Vollbild. Beschriftungen rücken nur senkrecht, jede an die nächste freie Stelle, in dieser Reihenfolge:
@@ -11186,6 +11525,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
           <button type="button" class="button ghost" id="sound-toggle" aria-pressed="false" title="Ton, wenn Stop-Loss, Take-Profit oder ein Kurs-Alarm erreicht wird">🔕 Alarm-Ton</button>
           <button type="button" class="button ghost" id="wake-toggle" aria-pressed="false" hidden>🔆 Bildschirm wach halten: aus</button><small id="wake-note" hidden></small>
           <button type="button" class="button ghost" id="notify-test">Test-Hinweis senden</button>
+          <button type="button" class="button ghost" id="tgc-open" aria-haspopup="dialog">💬 Telegram-Chats …</button><small id="tgc-summary"></small>
           <div class="head-line"><button type="button" class="button ghost" id="chan-open" aria-haspopup="dialog">📨 Telegram / Discord einrichten …</button><details class="tip left"><summary aria-label="Wozu Telegram oder Discord?"><span>i</span></summary><div class="tip-body"><p>Schickt Kurs-Alarme, Stop-Loss/Take-Profit und das Tages-Verlustlimit zusätzlich über deinen eigenen Telegram-Bot oder einen Discord-Webhook – die Meldung kommt dann als Push aufs Smartphone, auch wenn Safari dort schläft.</p><p>Gesendet wird von dem Gerät, auf dem das Dashboard gerade geöffnet ist (z. B. dein Computer). Ist Telegram oder Discord kurz nicht erreichbar, wiederholt die App die Meldung gut 6 Minuten lang, solange sie geöffnet ist. Wann zuletzt etwas zugestellt wurde, steht unter dem Knopf. Eine Schritt-für-Schritt-Anleitung steht im Fenster.</p></div></details></div>
           <small id="chan-summary"></small>
           <small id="feed-note">Live-Kurse kommen per WebSocket direkt von Binance. Jede Kursmeldung wird sofort gegen Stop, Ziel und Alarme geprüft, auch kurze Dochte. Der Datenstrom läuft in einem eigenen Hintergrund-Thread und wird dadurch in Hintergrund-Tabs nicht gedrosselt. Ein Wächter prüft alle 3 s, ob die Verbindung noch lebt; eine tote Verbindung (etwa nach Standby oder WLAN-Wechsel) wird sofort geschlossen und neu aufgebaut. Der Punkt oben rechts zeigt den Zustand: grün live, gelb verzögert oder verbindet neu, rot offline oder Datenfehler, grau pausiert. iPad und iPhone pausieren Webseiten im Hintergrund; beim Zurückkehren prüft das Dashboard die verpasste Zeit anhand der 1-Minuten-Kerzen nach. Bei geschlossener Seite gibt es keine Hinweise – auch nicht per Telegram oder Discord.</small>
@@ -11591,12 +11931,15 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
         <fieldset class="tg-targets"><legend>Wohin gehen die Nachrichten?</legend>
           <div class="tg-target"><p><b>🔔 Kursalarm</b> <small>Kurs-Alarme, Stop/Ziel, Tages-Verlustlimit, News-Termine, Gewinn/Verlust, BTC-Puls</small></p>
             <div class="tg-ids"><label>Chat-ID<span class="input-wrap"><input id="tg-chat" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="wird ermittelt"></span></label><label>Thema <small>(optional)</small><span class="input-wrap"><input id="tg-thread" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="–"></span></label></div></div>
-          <div class="tg-target backup"><p><b>💾 Sicherungschat</b> <small>nur die Datensicherung · leer = wie Kursalarm</small></p>
-            <div class="tg-ids"><label>Chat-ID<span class="input-wrap"><input id="tg-bchat" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="wie Kursalarm"></span></label><label>Thema <small>(optional)</small><span class="input-wrap"><input id="tg-bthread" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="–"></span></label></div>
-            <label>Eigener Bot-Token <small>(nur bei einem eigenen Sicherungs-Bot)</small><span class="input-wrap"><input id="tg-btoken" type="password" autocomplete="off" spellcheck="false" placeholder="leer = derselbe Bot"></span></label></div>
+          <div class="tg-target backup"><p><b>💾 Sicherungschat</b> <small>nur die Datensicherung · ohne Eintrag keine Sicherung per Telegram (kein Ausweichen auf Kursalarm)</small></p>
+            <div class="tg-ids"><label>Chat-ID<span class="input-wrap"><input id="tg-bchat" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="Chat-ID der Sicherung"></span></label><label>Thema <small>(optional)</small><span class="input-wrap"><input id="tg-bthread" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="–"></span></label></div>
+            <label>Eigener Bot-Token <small>(nur bei einem eigenen Sicherungs-Bot)</small><span class="input-wrap"><input id="tg-btoken" type="password" autocomplete="off" spellcheck="false" placeholder="leer = derselbe Bot wie Kursalarm"></span></label></div>
+          <div class="tg-target trades"><p><b>📊 Trades</b> <small>Trade-Überblick geschlossener Positionen (Bild ab G06) · nur aus der App, nie über den 24/7-Dienst</small></p>
+            <div class="tg-ids"><label>Chat-ID<span class="input-wrap"><input id="tg-tchat" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="Chat-ID für Trades"></span></label><label>Thema <small>(optional)</small><span class="input-wrap"><input id="tg-tthread" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="—"></span></label></div>
+            <label>Eigener Bot-Token <small>(optional)</small><span class="input-wrap"><input id="tg-ttoken" type="password" autocomplete="off" spellcheck="false" placeholder="leer = derselbe Bot wie die Sicherung"></span></label></div>
         </fieldset>
         <div class="tg-found" id="tg-found" hidden></div>
-        <div class="row"><button type="button" class="button ghost" id="tg-detect">Chat-ID ermitteln</button><button type="button" class="button primary-lite" id="tg-test">Test senden</button><button type="button" class="button ghost" id="tg-testall">Test je Nachrichtenart</button><label class="switch"><input type="checkbox" id="tg-on"> Aktiv</label></div>
+        <div class="row"><button type="button" class="button ghost" id="tg-detect">Chat-ID ermitteln</button><button type="button" class="button primary-lite" id="tg-test">Test senden</button><button type="button" class="button ghost" id="tg-testall">Test je Nachrichtenart</button><button type="button" class="button ghost" id="tg-tgc">Chats ein/aus …</button></div>
         <p class="chan-status" id="tg-status" role="status"></p>
       </section>
       <section class="chan" aria-labelledby="dc-title">
@@ -11623,8 +11966,27 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
         <small class="pulse-info">Meldet, wenn BTC sich in 5 oder 15 Minuten stärker bewegt als 99 % der üblichen Bewegungen zu dieser Uhrzeit (mindestens 0,5 % bzw. 0,8 %), mit der Vorauswahl im selben Zeitraum; je Richtung höchstens alle 30 Minuten, nachts lautlos. <span id="pulse-info"></span></small>
       </fieldset>
       <section class="chan" aria-labelledby="s247-title" id="s247"><div class="head-line"><h3 id="s247-title">🌙 24/7-Dienst</h3><details class="tip left"><summary aria-label="Wie funktioniert der 24/7-Dienst?"><span>i</span></summary><div class="tip-body"><p>Ein kleines Programm auf einem eigenen Server, der rund um die Uhr läuft (z. B. kostenlos bei Oracle Cloud), prüft die Kurse und meldet Kurs-Alarme, Stop-Loss/Take-Profit, die Warnung vor wichtigen Terminen, ab Version 1.1 den BTC-Puls und ab Version 1.2 den Gewinn-/Verlust-Alarm per Telegram – auch wenn die App überall geschlossen ist.</p><p><b>Übergabe:</b> Die App legt die aktiven Alarme und die Stop-/Ziel-Marken deiner Positionen als Datei in deinen Telegram-Chat, heftet sie oben an und ersetzt sie nach jeder Änderung. Einstiege und Mengen der offenen Positionen stehen nur darin, solange ein Gewinn- oder Verlust-Alarm aktiv ist – der Dienst braucht sie, um das Live-Ergebnis zu rechnen. Trades und Notizen bleiben in der App. Der Dienst liest die Datei mit demselben Bot und bestätigt in der angehefteten Nachricht („Dienst: aktiv“), ab Version 1.4 zusätzlich lautlos im Chat („✅ 24/7-Dienst hat übernommen …“). Hier steht dann „Übergeben ✓ vom Dienst bestätigt“.</p><p><b>Derselbe Bot (wichtig):</b> Am Server müssen derselbe Bot und dieselbe Chat-ID eingetragen sein wie oben unter „Kursalarm“ – ein anderer Bot (z. B. der Sicherungs-Bot) sieht die angeheftete Datei nicht, dann bleibt es bei „wartet“. Ab Version 1.4 meldet der Dienst das nach 3 Minuten selbst in seinem Chat und zeigt es mit <code>sudo scalpdesk-247 status</code>.</p><p><b>Nicht doppelt:</b> Solange der Dienst aktiv ist und den aktuellen Stand hat, sendet diese App Kurs-Alarme, Stop/Ziel und Termin-Warnungen nicht zusätzlich. Meldet er sich 20 Minuten nicht oder meldet er eine Störung, sendet die App wieder selbst. Das Tages-Verlustlimit meldet immer die App.</p><p><b>Zustellung (ab Version 1.3):</b> Der Dienst prüft, ob Telegram jede Meldung angenommen hat. Wenn nicht, versucht er es erneut – nach 15 und 30 Sekunden, dann in wachsenden Abständen bis alle 5 Minuten, höchstens einen Tag lang. Eine verspätete Meldung trägt die ursprüngliche Uhrzeit und den Vermerk „verspätet“. Lehnt Telegram ab oder ist es länger als eine Minute nicht erreichbar, meldet der Dienst „Störung“ – dann sendet die App wieder selbst. Unter „Status prüfen“ steht, wann er zuletzt etwas zugestellt hat.</p><p><b>Gewinn-/Verlust-Alarm:</b> Bestätigt der Dienst mit „· GV“ (ab Version 1.2), prüft er das Live-Ergebnis alle 15 Sekunden mit. Erreicht es eine Grenze, wartet er einige Sekunden: Ist die App geöffnet, meldet sie selbst – sofort und auch bei kurzen Spitzen –, und der Dienst schweigt. Sonst meldet er, einmal je Grenze; die App übernimmt das beim Öffnen als „ausgelöst“. Ein älterer Dienst kann es nicht – dann prüft nur die geöffnete App.</p><p><b>BTC-Puls:</b> Die App gibt dem Dienst die Schwellen je Uhrzeit mit. Bestätigt er mit „· Puls“ (ab Version 1.1), meldet er den Puls und die App nicht zusätzlich; ein älterer Dienst kennt ihn nicht – dann sendet ihn weiter die geöffnete App.</p><p><b>Token:</b> Den Bot-Token gibst du am Server selbst ein – die App schickt ihn weiterhin nur an Telegram.</p><p>Nur auf einem Gerät einschalten – dem, auf dem du Alarme und Positionen pflegst.</p></div></details></div><p class="chan-sub">Meldungen auch bei geschlossener App – über ein kleines Programm auf einem eigenen Server, der rund um die Uhr läuft.</p><details class="chan-guide" id="s247-guide"><summary>Anleitung: kostenlos bei Oracle Cloud einrichten (ca. 20 Minuten)</summary><ol><li><b>Konto:</b> Auf <a href="https://www.oracle.com/cloud/free/" target="_blank" rel="noopener noreferrer">oracle.com/cloud/free</a> „Start for free“. Als Heimatregion <b>Germany Central (Frankfurt)</b> wählen – sie lässt sich später nicht ändern, und von US-Servern aus sperrt Binance den Zugriff. Die Kreditkarte dient nur der Prüfung; „Always Free“ kostet nichts.</li><li><b>Server anlegen:</b> In der Konsole „Create a VM instance“. Bei <i>Image</i> auf <b>Ubuntu</b> wechseln, bei <i>Shape</i> eine mit „Always Free-eligible“ lassen (z. B. VM.Standard.E2.1.Micro). Bei <i>Add SSH keys</i> „Generate a key pair for me“ und <b>Save private key</b> – diese Datei ist der Schlüssel zum Server, gut aufbewahren. Dann <b>Create</b>. Nach 1–2 Minuten steht der Server auf „Running“; die <b>Public IP address</b> notieren.</li><li><b>Verbinden:</b> Oben rechts in der Konsole die <b>Cloud Shell</b> öffnen (Symbol &gt;_). Im Menü des Cloud-Shell-Fensters <b>Upload</b> wählen und den privaten Schlüssel hochladen. Dann eingeben (IP ersetzen) und die Frage „Are you sure …“ mit <b>yes</b> beantworten:<span class="s247-cmd"><code>chmod 600 ssh-key-*.key &amp;&amp; ssh -i ssh-key-*.key ubuntu@IP</code><button type="button" class="button ghost" data-copy="chmod 600 ssh-key-*.key &amp;&amp; ssh -i ssh-key-*.key ubuntu@IP">Kopieren</button></span></li><li><b>Dienst installieren:</b> Im Server-Fenster eingeben:<span class="s247-cmd"><code>curl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/install.sh | sudo bash</code><button type="button" class="button ghost" data-copy="curl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/install.sh | sudo bash">Kopieren</button></span>Es fragt nach <b>Bot-Token</b> und <b>Chat-ID</b> – dieselben wie oben unter „Kursalarm“ (nicht der Sicherungs-Bot; den Token zeigt auch @BotFather mit /mybots → API Token). Am Ende kommt eine Testnachricht in Telegram.</li><li><b>Übergeben:</b> Unten „An den 24/7-Dienst übergeben“ einschalten. Nach höchstens einer Minute steht hier „Übergeben ✓ vom Dienst bestätigt“, in Telegram kommt „✅ 24/7-Dienst hat übernommen“, und oben im Chat ist „📌 Scalp Desk · 24/7-Dienst“ angeheftet – diese Nachricht nicht löschen.</li></ol><ul class="s247-tips"><li><b>Ausführlich</b> – mit Aktualisieren, Ausprobieren und Hilfe bei Fehlermeldungen: <a href="https://github.com/NicoAHB/wx-widget/blob/main/server/ANLEITUNG-ORACLE.md" target="_blank" rel="noopener noreferrer">Anleitung auf GitHub</a></li><li><b>Aktualisieren:</b> den Befehl aus Schritt 4 erneut ausführen; die Einstellungen bleiben. Für den Gewinn-/Verlust-Alarm braucht es Version 1.2, für die geprüfte Zustellung 1.3, für Bestätigung und Selbstprüfung 1.4 – ein vorhandener Dienst einmal so aktualisieren.</li><li><b>Server-Größe:</b> „VM.Standard.E2.1.Micro“ reicht und ist fast immer verfügbar; „Ampere A1“ meldet oft „Out of capacity“.</li><li><b>Andere Rechner:</b> läuft auf jedem Linux-Rechner mit Internet, z. B. einem Raspberry Pi – derselbe Befehl.</li><li><b>Oracle:</b> Always-Free-Server, die 7 Tage kaum ausgelastet sind, kann Oracle anhalten – und der Dienst braucht sehr wenig. Abhilfe laut Oracle: das Konto auf „Pay As You Go“ umstellen; es bleibt kostenlos, solange nur Always-Free-Angebote genutzt werden. Sonst nach einer E-Mail von Oracle den Server in der Konsole wieder starten.</li><li><b>Am Server (ab 1.4):</b> alles prüfen <code>sudo scalpdesk-247 status</code>, Protokoll <code>sudo scalpdesk-247 protokoll</code>, live <code>sudo scalpdesk-247 live</code>. Token und Chat-ID neu eingeben: Befehl aus Schritt 4 mit <code>| sudo bash -s -- --neu</code> am Ende. Entfernen <code>sudo bash /opt/scalpdesk-247/install.sh --remove</code></li></ul></details><label class="switch"><input type="checkbox" id="s247-on"> An den 24/7-Dienst übergeben (Alarme, Stop/Ziel, Termin-Warnungen, Gewinn-/Verlust-Alarm)</label><div class="row"><button type="button" class="button ghost" id="s247-check">Status prüfen</button></div><p class="chan-status" id="s247-status" role="status"></p></section>
+      <div class="svc-box" id="svc-box" role="group" aria-labelledby="svc-title"><h4 id="svc-title">🔐 Steuerung über HTTPS <small>(24/7-Dienst ab 2.0)</small></h4>
+        <p class="svc-intro">Für die Chat-Schalter mit Bestätigung (gelten auf allen Geräten) und die Sendefreigabe, damit jeder Alarm genau einmal kommt. Am Server zeigt <code>sudo scalpdesk-247 zugang</code> Adresse und Zugangsschlüssel. Auf jedem Gerät einmal eintragen.</p>
+        <label>Adresse<span class="input-wrap"><input id="svc-url" type="url" inputmode="url" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="https://130-61-1-2.sslip.io"></span></label>
+        <label>Zugangsschlüssel<span class="input-wrap"><input id="svc-key" type="password" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="43 Zeichen"></span></label>
+        <div class="row"><button type="button" class="button primary-lite" id="svc-check">Verbindung prüfen</button><button type="button" class="button ghost" id="svc-clear">Entfernen</button></div>
+        <p class="chan-status" id="svc-status" role="status"></p></div>
       <p class="chan-note">🔒 Token und Webhook-URL bleiben nur in diesem Browser. Sie stehen in keinem Backup und keinem QR-Code und werden nur an Telegram bzw. Discord geschickt. Auf jedem Gerät, das senden soll, einzeln einrichten.</p>
       <div class="sheet-actions"><button type="button" class="button ghost" id="chan-clear">Zugangsdaten löschen</button><button type="button" class="button primary" id="chan-done">Fertig</button></div>
+    </div>
+  </dialog>
+  <dialog class="sheet" id="tgc-dialog" aria-labelledby="tgc-title">
+    <div class="sheet-head"><h2 id="tgc-title">Telegram-Chats</h2><button type="button" class="button ghost icon" id="tgc-close" aria-label="Schließen">×</button></div>
+    <div class="sheet-body">
+      <p class="tgc-mode" id="tgc-mode"></p>
+      <div class="tgc-master"><label class="tgc-all"><input type="checkbox" id="tgc-all"> <b>Alle an/aus</b></label><span class="tgc-count" id="tgc-count" aria-live="polite"></span></div>
+      <ul class="tgc-list" id="tgc-list"></ul>
+      <div class="tgc-draft" id="tgc-draft" role="region" aria-label="Offline-Entwurf" hidden></div>
+      <details class="tgc-events" id="tgc-events" hidden><summary>Letzte Meldungen – wer hat gesendet?</summary><ul></ul><small>Je Ereignis (Alarm + Aktivierung + Art) sendet genau einer: diese App, ein anderes Gerät oder der 24/7-Dienst – wer es zuerst erkennt. Ohne Antwort von Telegram steht „Zustellung unbestätigt“; einen zweiten Versuch gibt es dann bewusst nicht.</small></details>
+      <p class="chan-status" id="tgc-status" role="status"></p>
+      <p class="chan-note">Ein Ziel AUS: keine Nachricht dorthin – auch nicht „Jetzt senden“. Was überhaupt gemeldet wird, legen zusätzlich die Häkchen unter „Was soll gesendet werden?“ fest; Demo-Freigaben bleiben, wie sie sind. AUS verwirft auch Meldungen, die gerade noch warten; AN meldet nur, was ab jetzt passiert.</p>
+      <div class="sheet-actions"><button type="button" class="button ghost" id="tgc-setup">Chats einrichten …</button><button type="button" class="button primary" id="tgc-done">Fertig</button></div>
     </div>
   </dialog>
   <dialog class="sheet" id="code-dialog" aria-labelledby="code-title">
