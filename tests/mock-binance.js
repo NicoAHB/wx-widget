@@ -113,7 +113,22 @@ const TG_OK_TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw';
 // Gruppen (negative IDs) teilen sich alle Bots. Bearbeiten und Löschen nur eigener Nachrichten.
 const TG_BOTS = { [TG_OK_TOKEN]: { id: 123456789, first_name: 'Kurs-Alarm', username: 'test_kursalarm_bot' }, '555666777:BBQkbXyzSicherungTestToken0123456789': { id: 555666777, first_name: 'Sicherung', username: 'test_sicherung_bot' } };
 const tgCk = (bot, chat) => Number(chat) > 0 ? `${bot}:${chat}` : String(chat);
-function readBody(req) { return new Promise(r => { const b = []; req.on('data', d => b.push(d)); req.on('end', () => r(Buffer.concat(b).toString('utf8'))); }); }
+function readBody(req) { return new Promise(r => { const b = []; req.on('data', d => b.push(d)); req.on('end', () => r(Buffer.concat(b))); }); }
+// 3.34.0 (G06): multipart binärsicher (Fotos) – Felder als Text, Dateien als Buffer
+function mpBin(buf, type) {
+  const m = /boundary=(?:"([^"]+)"|([^;]+))/.exec(type || ''), out = { fields: {}, files: {} }; if (!m) return out;
+  const sep = Buffer.from('--' + (m[1] || m[2])); let i = buf.indexOf(sep);
+  while (i >= 0) {
+    const start = i + sep.length; if (buf.slice(start, start + 2).toString() === '--') break;
+    const next = buf.indexOf(sep, start); if (next < 0) break;
+    const part = buf.slice(start + 2, next - 2), he = part.indexOf('\r\n\r\n');
+    if (he >= 0) { const head = part.slice(0, he).toString('utf8'), data = part.slice(he + 4), name = /name="([^"]+)"/.exec(head)?.[1], fn = /filename="([^"]*)"/.exec(head), ct = /content-type:\s*([^\r\n]+)/i.exec(head)?.[1] || '';
+      if (name) { if (fn) out.files[name] = { name: fn[1], type: ct, buf: data }; else out.fields[name] = data.toString('utf8'); } }
+    i = next;
+  }
+  return out;
+}
+const PHOTO_DIR = fs.mkdtempSync(path.join(require('os').tmpdir(), 'mock-photos-')); let tgPhotoNo = 0;
 function multipart(body, type) {
   const m = /boundary=(?:"([^"]+)"|([^;]+))/.exec(type || ''); if (!m) return {};
   const out = {}; for (const part of body.split('--' + (m[1] || m[2]))) { const i = part.indexOf('\r\n\r\n'); if (i < 0) continue; const head = part.slice(0, i), name = /name="([^"]+)"/.exec(head), fn = /filename="([^"]*)"/.exec(head); if (name) { out[name[1]] = part.slice(i + 4).replace(/\r\n$/, ''); if (fn) (out.__files || (out.__files = {}))[name[1]] = fn[1]; } }
@@ -122,7 +137,7 @@ function multipart(body, type) {
 async function channel(req, res, host, u) {
   const cors = !cfg.chanNoCors;
   if (req.method === 'OPTIONS') { res.writeHead(204, { 'access-control-allow-origin': '*', 'access-control-allow-methods': 'GET, POST, OPTIONS', 'access-control-allow-headers': 'content-type' }); return res.end(); }
-  const body = req.method === 'POST' ? await readBody(req) : '';
+  const raw = req.method === 'POST' ? await readBody(req) : Buffer.alloc(0), body = raw.toString('utf8');
   if (host === 'api.telegram.org') {
     const fm = /^\/file\/bot([^/]+)\/documents\/([\w]+)\.json$/.exec(u.pathname);
     if (fm) { if (!TG_BOTS[fm[1]] || !tgFiles.has(fm[2])) return json(res, 404, { ok: false, error_code: 404, description: 'Not Found' }, cors); res.writeHead(200, { 'content-type': 'application/octet-stream', ...(cors ? { 'access-control-allow-origin': '*' } : {}) }); return res.end(tgFiles.get(fm[2])); }
@@ -134,6 +149,18 @@ async function channel(req, res, host, u) {
     if (method === 'getUpdates') return json(res, 200, { ok: true, result: !cfg.tgUpdates ? [] : [{ update_id: 5, message: { message_id: 1, from: { id: 987654321 }, chat: { id: 987654321, type: 'private', first_name: 'Nico' }, date: 1, text: '/start' } },
       // 3.24.0: Gruppe mit Themen (Ablaufplan Schritt 3), nur mit /tgupdates?multi=1
       ...(cfg.tgMulti ? [{ update_id: 6, message: { message_id: 7, message_thread_id: 12, is_topic_message: true, from: { id: 987654321 }, chat: { id: -1001234567890, type: 'supergroup', title: 'Scalp Desk', is_forum: true }, date: 2, text: 'Sicherung hier', reply_to_message: { message_id: 12, forum_topic_created: { name: 'Sicherung' } } } }] : [])] }, cors);
+    // 3.34.0 (G06): Trade-Bild – Foto prüfen (PNG, Größe, Bildunterschrift) und zum Ansehen ablegen
+    if (method === 'sendPhoto') {
+      const f = mpBin(raw, req.headers['content-type']), ph = f.files.photo, png = !!ph && ph.buf.length > 24 && ph.buf.slice(1, 4).toString() === 'PNG';
+      const e = { at: Date.now(), svc: 'tg', bot: B.id, method, chat_id: f.fields.chat_id, thread: f.fields.message_thread_id || '', caption: f.fields.caption ?? null, fields: Object.keys(f.fields).sort(), photoName: ph?.name || '', photoType: ph?.type || '', bytes: ph?.buf.length || 0, png, w: png ? ph.buf.readUInt32BE(16) : 0, h: png ? ph.buf.readUInt32BE(20) : 0, mode: req.headers['sec-fetch-mode'] || '' };
+      if (ph) { e.path = path.join(PHOTO_DIR, `photo-${++tgPhotoNo}.${png ? 'png' : 'bin'}`); fs.writeFileSync(e.path, ph.buf); }
+      sent.push(e);
+      if (cfg.photoDelay) await new Promise(r => setTimeout(r, cfg.photoDelay));
+      if (cfg.photoDrop > 0) { cfg.photoDrop--; e.dropped = true; res.socket?.destroy(); return; }
+      if (cfg.photoFail) { e.failed = cfg.photoFail; return json(res, cfg.photoFail, { ok: false, error_code: cfg.photoFail, description: cfg.photoFail === 400 ? 'Bad Request: chat not found' : 'Bad Gateway' }, cors); }
+      if (f.fields.chat_id === '111') return json(res, 400, { ok: false, error_code: 400, description: 'Bad Request: chat not found' }, cors);
+      return json(res, 200, { ok: true, result: { message_id: ++tgMsgId, chat: { id: Number(f.fields.chat_id) || f.fields.chat_id }, photo: [{ file_id: `P${tgPhotoNo}`, width: e.w, height: e.h }] } }, cors);
+    }
     if (method === 'sendDocument' || method === 'editMessageMedia') {
       const f = multipart(body, req.headers['content-type']), chat = f.chat_id, file = f.document ?? f.file ?? '', ck = tgCk(B.id, chat), docs = tgDocs[ck] || (tgDocs[ck] = new Set());
       if (f.chat_id === '111') return json(res, 400, { ok: false, error_code: 400, description: 'Bad Request: chat not found' }, cors);
@@ -429,11 +456,11 @@ http.createServer((req, res) => {
       return ok({ ...volaCfg });
     }
     case '/reset': if (volaCfg.mode !== 'normal' || volaCfg.drift !== null) { Object.assign(volaCfg, { mode: 'normal', drift: null }); for (const k of Object.keys(H)) if (k.endsWith('|1h')) delete H[k]; }
-      Object.assign(calCfg, { mode: 'normal', min: 10, hits: 0 }); Object.assign(newsCfg, { mode: 'normal', hits: 0 }); clearInterval(cfg.flood); cfg.flood = null; cfg.log.length = 0; Object.assign(oiCfg, { mode: 'wave', ago: 10, amount: 0.06 }); cfg.walk = true; cfg.silent = false; cfg.blockWs = false; cfg.restFail = false; cfg.restDelay = 0; cfg.chanNoCors = false; cfg.tg429 = 0; cfg.tgDocFail = false; cfg.tgUpdates = true; cfg.tgMulti = false; cfg.tg502 = 0; cfg.tgFail = null; cfg.tickFail = {}; cfg.tickDelay = {}; cfg.tickOld = {}; cfg.eurHist = 'on'; cfg.t24 = 'ok'; cfg.tgDrop = 0; sent.length = 0; Object.assign(bookCfg, { walls: [], step: 0.0002, levels: 1000 }); return ok();
+      Object.assign(calCfg, { mode: 'normal', min: 10, hits: 0 }); Object.assign(newsCfg, { mode: 'normal', hits: 0 }); clearInterval(cfg.flood); cfg.flood = null; cfg.log.length = 0; Object.assign(oiCfg, { mode: 'wave', ago: 10, amount: 0.06 }); cfg.walk = true; cfg.silent = false; cfg.blockWs = false; cfg.restFail = false; cfg.restDelay = 0; cfg.chanNoCors = false; cfg.tg429 = 0; cfg.tgDocFail = false; cfg.tgUpdates = true; cfg.tgMulti = false; cfg.tg502 = 0; cfg.tgFail = null; cfg.tickFail = {}; cfg.tickDelay = {}; cfg.tickOld = {}; cfg.eurHist = 'on'; cfg.t24 = 'ok'; cfg.tgDrop = 0; cfg.photoDrop = 0; cfg.photoFail = 0; cfg.photoDelay = 0; sent.length = 0; Object.assign(bookCfg, { walls: [], step: 0.0002, levels: 1000 }); return ok();
     case '/restdelay': cfg.restDelay = Number(q.ms) || 0; return ok();
     case '/eurhist': cfg.eurHist = q.mode || 'on'; return ok({ mode: cfg.eurHist });
     case '/t24': cfg.t24 = q.mode || 'ok'; return ok({ mode: cfg.t24 });
-    case '/chan': if ('tg502' in q) cfg.tg502 = Number(q.tg502) || 0; if ('tgfail' in q) cfg.tgFail = q.tgfail ? { code: Number(q.tgfail), match: q.match || '' } : null; if ('nocors' in q) cfg.chanNoCors = q.nocors === '1'; if ('tg429' in q) cfg.tg429 = Number(q.tg429) || 0; if ('tgdrop' in q) cfg.tgDrop = Number(q.tgdrop) || 0; if ('docfail' in q) cfg.tgDocFail = q.docfail === '1'; if ('updates' in q) cfg.tgUpdates = q.updates === '1'; return ok();
+    case '/chan': if ('tg502' in q) cfg.tg502 = Number(q.tg502) || 0; if ('tgfail' in q) cfg.tgFail = q.tgfail ? { code: Number(q.tgfail), match: q.match || '' } : null; if ('nocors' in q) cfg.chanNoCors = q.nocors === '1'; if ('tg429' in q) cfg.tg429 = Number(q.tg429) || 0; if ('tgdrop' in q) cfg.tgDrop = Number(q.tgdrop) || 0; if ('photodrop' in q) cfg.photoDrop = Number(q.photodrop) || 0; if ('photofail' in q) cfg.photoFail = Number(q.photofail) || 0; if ('photodelay' in q) cfg.photoDelay = Number(q.photodelay) || 0; if ('docfail' in q) cfg.tgDocFail = q.docfail === '1'; if ('updates' in q) cfg.tgUpdates = q.updates === '1'; return ok();
     case '/sent': return ok(sent);
     case '/tgmsgs': return ok([...tgMsgs.values()].filter(m => !q.chat || String(m.chat.id) === q.chat).map(m => ({ ...m, content: m.document ? tgFiles.get(m.document.file_id) : undefined })));
     case '/tgmulti': cfg.tgMulti = q.on === '1'; return ok();
