@@ -27,7 +27,7 @@ const tests = {
     check('POC-Linie im Chart gefunden', !!poc, JSON.stringify(poc));
     await page.mouse.move(poc.x, poc.y + 4); await page.waitForTimeout(150);
     const hov = await page.evaluate(() => ({ label: document.querySelector('#chart .magnet-label')?.textContent, price: document.querySelector('#chart .magnet-price')?.textContent }));
-    const pocVal = num(await text(page, '#poc-value'));
+    const pocVal = await page.evaluate(() => window.__g07.chartPoc());
     check('Fadenkreuz rastet am POC ein (4 px daneben)', hov.label === 'POC' && Math.abs(num(hov.price) - pocVal) < 0.006, JSON.stringify(hov) + ' / ' + pocVal);
     await page.click('#magnet');
     check('Magnet-Modus an', await page.getAttribute('#magnet', 'aria-pressed') === 'true' && await page.evaluate(() => document.getElementById('chart').classList.contains('magnet')));
@@ -53,7 +53,7 @@ const tests = {
   async magnettouch(browser) {
     const ctx = await browser.newContext(phone());
     const { page, errors } = await open(browser, { ctx }); await h.ctl('/walk?on=0'); await page.waitForTimeout(1200);
-    const pocVal = num(await text(page, '#poc-value'));
+    const pocVal = await page.evaluate(() => window.__g07.chartPoc());
     await page.tap('#magnet');
     check('Chart im Magnet-Modus: kein Seiten-Scrollen beim Ziehen', await page.evaluate(() => getComputedStyle(document.getElementById('chart')).touchAction) === 'none');
     await page.$eval('#chart', e => e.scrollIntoView({ block: 'center' })); await page.waitForTimeout(600);  // Chart ins Bild (Handy: liegt unter dem Knopf)

@@ -30,6 +30,8 @@ const tests = {
     check('Bereich als „lädt“ markiert', st.busy === 'true');
     await page.waitForFunction(() => document.getElementById('price').textContent.trim() !== '—', null, { timeout: 15000 });
     await page.waitForFunction(() => !document.getElementById('overall-verdict').classList.contains('skel'), null, { timeout: 15000 }).catch(() => {});
+    // 3.35.0 (G07): Zonen und Indikatoren kommen aus der eigenen Analyse-Reihe (4h) – sie lädt nach den Marktdaten, also einen Abruf später
+    await page.waitForFunction(() => !document.querySelector('.skel'), null, { timeout: 15000 }).catch(() => {});
     const after = await page.evaluate(() => ({ skel: [...document.querySelectorAll('.skel')].map(e => e.id || e.className).slice(0, 8), n: document.querySelectorAll('.skel').length, svg: !!document.querySelector('#chart svg'), busy: document.getElementById('dash').getAttribute('aria-busy') }));
     check('Nach dem Laden keine Platzhalter mehr', after.n === 0 && after.svg && after.busy === 'false', JSON.stringify(after));
     await h.ctl('/restdelay?ms=0');

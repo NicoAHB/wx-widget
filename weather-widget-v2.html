@@ -38,7 +38,7 @@
   --rsi-low:#65576c;--rsi-mid:#35443f;--rsi-high:#6a6046;--band-out:#3a2c33;--band-in:#23313d;
   --grid:#252c35;--axis:#99a5b4;--cross:#81918d;--stripe:#1b222b;--noscript:#492932;
   --shadow:0 12px 32px rgba(0,0,0,.5);--backdrop:rgba(11,15,19,.94);--statusbar:#0b0f13;
-  --c-liq:#ff5a73;--c-magnet:#ffcf6e;--c-up:#90e4bf;--c-down:#ed8b9a;--c-bb:#7fb0e0;--c-ema:#b69cf2;--c-vp:#e2bb76;--c-vpbar:#8f9bab;--c-short:#f0a0ad;--c-last:#96b8a8;--c-zero:#8f9bab;--c-bd-pos:#2f6b52;--c-bd-neg:#7a3a47;
+  --c-liq:#ff5a73;--c-magnet:#ffcf6e;--c-hz:#f5a35c;--c-up:#90e4bf;--c-down:#ed8b9a;--c-bb:#7fb0e0;--c-ema:#b69cf2;--c-vp:#e2bb76;--c-vpbar:#8f9bab;--c-short:#f0a0ad;--c-last:#96b8a8;--c-zero:#8f9bab;--c-bd-pos:#2f6b52;--c-bd-neg:#7a3a47;
   --buy:#2fbf71;--buy-ink:#04140b;--sell:#e4798b;--sell-ink:#1c070c;--hold:#2a323c;--hold-ink:#d7dee6;
   --t-p3:rgba(47,191,113,.30);--t-p2:rgba(47,191,113,.19);--t-p1:rgba(47,191,113,.09);--t-m1:rgba(228,121,139,.08);--t-m2:rgba(228,121,139,.16);--t-m3:rgba(228,121,139,.25);
   --toast-up-bg:#16301f;--toast-up-text:#7ee2a0;--toast-up-border:#2f6b45;--toast-down-bg:#3a2615;--toast-down-text:#ffb561;--toast-down-border:#7a4a1c}
@@ -57,7 +57,7 @@
   --rsi-low:#d9c6e2;--rsi-mid:#cfe6d9;--rsi-high:#ecdcb2;--band-out:#f3d7de;--band-in:#dbe7f2;
   --grid:#e6ebf0;--axis:#5c6977;--cross:#7b8794;--stripe:#e9edf2;--noscript:#fbe0e5;
   --shadow:0 12px 32px rgba(20,30,45,.18);--backdrop:rgba(238,241,245,.94);--statusbar:#0b0f13;
-  --c-liq:#d1183b;--c-magnet:#b8741a;--c-up:#0e9f6e;--c-down:#e0485f;--c-bb:#3b7fc4;--c-ema:#7c5cd6;--c-vp:#c28a1a;--c-vpbar:#7b8794;--c-short:#d33c58;--c-last:#4f7f69;--c-zero:#7b8794;--c-bd-pos:#7fcfa8;--c-bd-neg:#eea6b3;
+  --c-liq:#d1183b;--c-magnet:#b8741a;--c-hz:#c2650f;--c-up:#0e9f6e;--c-down:#e0485f;--c-bb:#3b7fc4;--c-ema:#7c5cd6;--c-vp:#c28a1a;--c-vpbar:#7b8794;--c-short:#d33c58;--c-last:#4f7f69;--c-zero:#7b8794;--c-bd-pos:#7fcfa8;--c-bd-neg:#eea6b3;
   --buy:#15a35a;--buy-ink:#ffffff;--sell:#f2b6c0;--sell-ink:#5a0f1e;--hold:#e3e8ee;--hold-ink:#2f3a46;
   --t-p3:rgba(21,163,90,.26);--t-p2:rgba(21,163,90,.16);--t-p1:rgba(21,163,90,.07);--t-m1:rgba(214,64,92,.06);--t-m2:rgba(214,64,92,.12);--t-m3:rgba(214,64,92,.2);
   --toast-up-bg:#dcf5e6;--toast-up-text:#0b5c33;--toast-up-border:#86cfa3;--toast-down-bg:#fdebd8;--toast-down-text:#8a4300;--toast-down-border:#f0b77a}
@@ -294,7 +294,7 @@ html[data-layout=tablet] .livebar{padding:6px 12px;gap:4px 12px}
 .legend-line.support{background:var(--c-up)}
 .legend-line.resistance{background:var(--c-down)}
 .sw{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:7px}
-.sw.vp{background:var(--c-vp)}.sw.ema{background:var(--c-ema)}.sw.bb{background:var(--c-bb)}.sw.liq{background:repeating-linear-gradient(90deg,var(--c-liq) 0 5px,transparent 5px 8px)}
+.sw.hz{background:repeating-linear-gradient(90deg,var(--c-hz) 0 6px,transparent 6px 9px)}.sw.vp{background:var(--c-vp)}.sw.ema{background:var(--c-ema)}.sw.bb{background:var(--c-bb)}.sw.liq{background:repeating-linear-gradient(90deg,var(--c-liq) 0 5px,transparent 5px 8px)}
 .overlay-toggles{display:flex;flex-wrap:wrap;gap:6px}
 .overlay-toggles button{min-height:34px;padding:0 10px;border-radius:17px;font-size:.75rem;background:transparent;color:var(--muted);border:1px solid var(--border)}
 .overlay-toggles button[aria-pressed=true]{color:var(--text);background:var(--surface-3);border-color:var(--field-border)}
@@ -746,7 +746,7 @@ dialog.sheet::backdrop{background:rgba(0,0,0,.6)}
 }
 /* ---------- Touch: größere Ziele, mehr Abstand ---------- */
 @media (pointer:coarse){
-  .chip,.chip-x,.chip-tool,.presets button,.intervals button,.zoom-controls button,.side-toggle button,.overlay-toggles button,.x,.al-row .re,.pos-entry-now,.alarm-btn,.trade-row .confirm button,.mv-row .confirm button,.risk-actions button,.money-actions button,.monthly-actions button{min-height:44px}
+  .chip,.chip-x,.chip-tool,.presets button,.intervals button,.metric-btn,.zoom-controls button,.side-toggle button,.overlay-toggles button,.x,.al-row .re,.pos-entry-now,.alarm-btn,.trade-row .confirm button,.mv-row .confirm button,.risk-actions button,.money-actions button,.monthly-actions button{min-height:44px}
   .zoom-controls button,.x,.chip-x{min-width:44px}
   .presets{gap:8px}.presets button{min-width:56px}
   .pos-actions{gap:10px}.pos-actions button{min-height:48px;padding:0 16px}
@@ -920,6 +920,10 @@ body{font-variant-numeric:tabular-nums}
    ein langer Wert wie „63.789,89 – 64.170,02“ ragte sonst über den Rand der Karte */
 .zone{container:zonecard/inline-size}
 @container zonecard (max-width:300px){.zone-rows>div{flex-direction:column;align-items:stretch;gap:1px}.zone-rows strong{margin-left:0;text-align:left}}
+/* 3.35.0 (G07): Trendkontext – die Erklärwerte sind lang („63.974,40 < 64.899,38 − 0,25·ATR (46,28)“) und ragten auf dem iPad
+   über den Rand: Bezeichnung immer über dem Wert, der Wert bricht an Leerzeichen um */
+.trend-card .zone-rows>div{flex-direction:column;align-items:stretch;gap:1px}
+.trend-card .zone-rows strong{margin-left:0;text-align:left;white-space:normal;flex-shrink:1;min-width:0}
 /* Indikatoren ruhig: Hinweistexte reservieren zwei Zeilen – auch schon während des Ladens (Platzhalter), sonst schrumpften
    sie nach dem Laden auf eine Zeile und wüchsen später wieder; große Werte brechen nicht mitten in der Zahl um */
 .zone-note,.indicator p{min-height:3em}
@@ -1439,6 +1443,29 @@ html[data-layout=tablet] .wl-tile{height:64px}
 /* sehr schmale Kachel (Handy 320 px): Werte so groß wie die Regelzeile, damit auch „30 Min. −10,98 %“ neben den Verlauf passt */
 @container wlt (max-width:132px){.wl-chg,.wl-chg30{font-size:.625rem}}
 @media (pointer:coarse){.wl-item .chip-x{width:40px;height:40px;min-width:40px;min-height:40px;top:-14px;right:-12px}}
+/* 3.35.0 (G07): Market-Cap-Ansicht – Preisebenen und Leisten aus */
+/* Kompakter Umschalter in der Chart-Menüleiste: ein Knopf „MCap“ neben den Intervallen. Die Gruppe (Intervalle + MCap) zählt beim
+   Umbruch der Leiste nur mit ihrer Mindestbreite, damit die Zoom-Knöpfe nicht wegen des neuen Knopfs in eine zweite Zeile rutschen
+   (iPad mini hochkant hatte nur 20 px Luft); bei knappem Platz werden die Intervall-Knöpfe etwas schmaler statt umzubrechen */
+.chart-toolbar{container:ctb/inline-size}
+.tb-main{display:flex;flex-wrap:wrap;align-items:center;gap:6px;flex:1 1 0;min-width:min(100%,22rem)}
+.metric-btn{flex:0 0 auto;min-height:38px;padding:0 8px;font-size:.8125rem;border:1px solid var(--border);border-radius:6px;background:none;color:var(--muted)}
+.metric-btn[aria-pressed=true]{background:var(--up-bg-2);border-color:var(--up-border);color:var(--up-text);font-weight:600}
+@container ctb (min-width:640px) and (max-width:720px){.tb-main{gap:4px}.tb-main .intervals{gap:1px}.tb-main .intervals button{min-width:36px;padding:0 6px}.metric-btn{padding:0 6px}}
+@container ctb (max-width:400px){.tb-main{gap:4px}.tb-main .intervals{gap:1px}.tb-main .intervals button{min-width:32px;padding:0 6px}.metric-btn{padding:0 6px}}
+@container ctb (max-width:330px){.tb-main .intervals button{min-width:30px;padding:0 5px}.metric-btn{padding:0 5px}}
+html[data-chartfull] .tb-main{flex:1 1 auto;min-width:0;flex-wrap:nowrap}
+.cap-mode .fib-strip,.cap-mode .lmap-strip,.cap-mode .wh-strip,.cap-mode #div-tip,.cap-mode #div-halo{display:none!important}
+.cap-mode #magnet{opacity:.4;pointer-events:none}
+.chart-empty .cap-why{max-width:46ch;text-align:center;font-size:.8125rem;color:var(--muted)}
+/* 3.35.0 (G07): Analyse-Intervall und Trendkontext */
+.ana-bar{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:0 0 12px}
+.ana-bar .ana-l{font-size:.75rem;font-weight:600;color:var(--muted);margin-right:2px}
+.ana-bar button{min-height:32px;padding:4px 10px;border:1px solid var(--border);border-radius:8px;background:transparent;color:var(--text-2);font:inherit;font-size:.8125rem;cursor:pointer}
+.ana-bar button.active{background:var(--surface-3);border-color:var(--mint);color:var(--text);font-weight:600}
+.ana-bar .ana-note{flex:1 1 100%;font-size:.75rem;color:var(--muted)}
+.sw.trend{background:linear-gradient(90deg,var(--c-down),var(--c-zero),var(--c-up))}
+#trend-value.long{color:var(--c-up)}#trend-value.short{color:var(--c-down)}#trend-value.neutral{color:var(--text-2)}
 /* 3.34.0 (G06): Trade-Bild – Vorschau und Zustand je Trade */
 .timg-img{display:block;width:auto;height:auto;max-width:100%;max-height:min(60vh,720px);margin:0 auto 10px;border-radius:12px;border:1px solid var(--border);background:#0b0f13}
 .trade-row .tools .timg-tool svg{width:18px;height:18px;vertical-align:-3px}
@@ -2740,7 +2767,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Alle Werte liegen zusätzlich im Arbeitsspeicher und sind dadurch synchron lesbar. Schreiben geht sofort in den
 // localStorage und gebündelt in die IndexedDB; beim Start gewinnt die zuletzt vollständig geschriebene Kopie.
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
-const APP_VERSION = '3.34.0', docEl = document.documentElement;
+const APP_VERSION = '3.35.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -3120,7 +3147,7 @@ async function refresh() {
     state.source = market.value.source; state.sourceFor = symbol;
     // The last returned candle must contain the current moment; old/delisted pairs are not live prices.
     if (last.closeTime < Date.now() - 30000 || last.time > Date.now() + 30000) state.marketError = 'Die zuletzt gelieferte Kerze ist veraltet. Kein aktueller Kurs verfügbar.';
-    else { state.candles=mergeLive(market.value.candles); state.marketAt=Date.now(); state.marketError=null; state.loadedSymbol=symbol; marketOk?.add(symbol); state.fromCache=false; }
+    else { state.candles=mergeLive(market.value.candles); state.marketAt=Date.now(); state.marketError=null; state.loadedSymbol=symbol; marketOk?.add(symbol); state.fromCache=false; void anaLoad(); } // 3.35.0: Analyse-Reihe (Markt jetzt bekannt)
     state.restNote = null;
   } else if (chartFeedFresh()) state.restNote = market.reason.message; // Stream liefert weiter, nur der Abgleich per REST fehlt
   else state.marketError=market.reason.message;
@@ -3193,23 +3220,13 @@ function renderMarket() {
   put('price-eur',p && currentFx()>0 ? `≈ ${euro(p/currentFx())} / ${base}` : 'EUR/USDT-Kurs ausstehend');
   const closed = c.filter(x=>x.closeTime < Date.now());
   const levels = p ? pivotLevels(closed,p) : {};
-  const rs = c.length ? rsi(c.map(x=>x.close)).at(-1) : null, av = c.length ? atr(c).at(-1) : null;
   const live = last && last.closeTime >= Date.now();
-  put('indicator-context',`${state.interval} · ${state.marketError ? 'letzter Datenstand' : live ? 'laufende Kerze vorläufig' : 'abgeschlossene Kerze'}`);
-  put('rsi-value',number(rs));
-  put('rsi-note',rs == null ? 'Mindestens 15 Kerzen erforderlich.' : rs < 30 ? 'Gilt klassisch als überverkauft.' : rs > 70 ? 'Gilt klassisch als überkauft.' : 'Liegt zwischen den klassischen Grenzen 30 und 70.');
-  $('rsi-marker').hidden=rs==null; $('rsi-marker').style.left=`${rs ?? 50}%`;
-  put('atr-value',av == null ? '—' : priceText(av)+' USDT');
-  put('atr-note',av == null ? 'Mindestens 14 Kerzen erforderlich.' : `${number(av/p*100)} % des Kurses. Mittlere Schwankungsbreite, ohne Richtungsangabe.`);
-  const vol = volumeComparison(c);
-  put('volume-value',vol?.ratio == null ? '—' : `${number(vol.ratio)}×`);
-  put('volume-note',!vol ? 'Mindestens 21 Kerzen erforderlich.' : vol.ratio == null ? 'Vergleich nicht berechenbar: Durchschnittsvolumen ist null.' : `${vol.ratio > 1 ? 'Über' : vol.ratio < 1 ? 'Unter' : 'Auf'} dem Durchschnitt der 20 vorherigen Kerzen.${live ? ' Die aktuelle Kerze ist noch offen.' : ''}`);
-  put('volume-detail',vol ? `${number(vol.current)} / Ø ${number(vol.average)} ${base}` : 'Aktuelle Kerze / 20 vorherige Kerzen');
+  renderAnaInd(); // 3.35.0 (G07): RSI, ATR und Volumen aus der Analyse-Reihe (abgeschlossene Kerzen im Analyse-Intervall)
   for (const level of ['support','resistance']) {
     put(level,levels[level] == null ? 'Kein Level' : priceText(levels[level]));
     put(level+'-dist',levels[level+'Distance']==null ? '—' : `${number(levels[level+'Distance'])} % entfernt`);
   }
-  put('level-note',`USDT · Pivots aus ${Math.min(50,closed.length)} abgeschlossenen Kerzen. Abstand zum aktuellen Kurs.`);
+  put('level-note',`USDT · Pivots aus ${Math.min(50,closed.length)} abgeschlossenen Kerzen des Charts (${state.interval}). Abstand zum aktuellen Kurs.`);
   const closesAll = c.map(x => x.close), bbAll = c.length >= 20 ? bollinger(closesAll) : null, ema200All = c.length >= 200 ? ema(closesAll, 200) : null;
   for (const [k, sign] of [['support', '−'], ['resistance', '+']]) put('lg-' + k, levels[k] == null ? 'kein Level' : `${priceText(levels[k])} · ${sign}${number(levels[k + 'Distance'])} %`);
   lastChart = { levels, bb: bbAll, ema200: ema200All, live: !!live };
@@ -3225,26 +3242,30 @@ function viewWindow() {
   const end = len - state.pan; return { start: Math.max(0, end - count), end };
 }
 function drawChart() {
+  if (CAP.on) { capRender(); renderZones(); ovButtons(); return; } // 3.35.0 (G07): Market-Cap-Ansicht statt Kerzen
   if (!lastChart) return;
   const { start, end } = viewWindow(), vis = state.candles.slice(start, end), profile = vis.length ? volumeProfile(vis) : null;
   renderFibStrip(); renderWhaleStrip(); renderDivTip(); ovButtons(); // 3.32.0 (G04.1): Sperren auch bei verdecktem Chart
   if (chartOnScreen) renderChart(lastChart.levels, { bb: lastChart.bb, ema200: lastChart.ema200, profile }, start, end); else chartStale = true;
-  renderZones({ bb: lastChart.bb, ema200: lastChart.ema200, profile, live: lastChart.live });
+  renderZones(); // 3.35.0 (G07): aus der Analyse-Reihe, unabhängig vom Ausschnitt
   updateNav();
 }
 function scheduleDraw() { if (drawQueued) return; drawQueued = true; requestAnimationFrame(() => { drawQueued = false; drawChart(); }); }
 function setPan(p) {
+  if (CAP.on) return; // 3.35.0: in der Cap-Ansicht bleibt der Kurs-Ausschnitt unverändert
   const len = state.candles.length; state.pan = clamp(Math.round(p), 0, Math.max(0, len - Math.min(state.count, len)));
   state.anchorTime = state.pan > 0 ? state.candles[len - 1 - state.pan]?.time ?? null : null; scheduleDraw();
 }
 // Neuer Kerzenzahl-Wert, der Punkt unter „frac“ (0 = links, 1 = rechts) bleibt an seiner Stelle.
 function setView(newCount, frac = 1, count0 = state.count, pan0 = state.pan) {
+  if (CAP.on) return; // 3.35.0
   const len = state.candles.length; if (!len) return;
   const c0 = Math.min(count0, len), n = clamp(Math.round(newCount), Math.min(15, len), Math.max(15, len));
   const idx = len - pan0 - c0 + frac * c0, end = idx - frac * n + n;
   state.count = n; setPan(len - end);
 }
 function updateNav() {
+  if (CAP.on) { const n = CAP.data?.pts.length || 0, v = capView(); $('zoom-in').disabled = !n || CAP.count <= Math.min(12, n); $('zoom-out').disabled = !n || CAP.count >= n; $('pan-back').disabled = !n || v.a <= 0; $('pan-fwd').disabled = !n || CAP.pan === 0; $('pan-now').hidden = CAP.pan === 0; $('zoom-reset').hidden = true; return; }
   const len = state.candles.length, count = Math.min(state.count, len);
   $('zoom-in').disabled = !len || count <= Math.min(15, len); $('zoom-out').disabled = !len || count >= len;
   $('pan-back').disabled = !len || state.pan >= len - count; $('pan-fwd').disabled = !len || state.pan === 0; $('pan-now').hidden = state.pan === 0;
@@ -3256,56 +3277,433 @@ function ema200Closed(closed) {
   return { value: ema(closed.map(x => x.close), 200).at(-1), closeTime: closed.at(-1).closeTime, count: closed.length };
 }
 function loadOverlays() {
-  const d = { vp: true, ema200: true, bb: true, liq: true, lmap: true, zz: true, div: true, ew: true, ewfc: false, fib: true, whale: true, hilo: true };
+  const d = { vp: true, ema200: true, bb: true, liq: true, lmap: true, zz: true, div: true, ew: true, ewfc: false, fib: true, whale: true, hilo: true, hz: false };
   const v = store.get(OVERLAY_KEY); if (v && typeof v === 'object') for (const k of Object.keys(d)) if (typeof v[k] === 'boolean') d[k] = v[k];
   return d;
 }
+// ---------- 3.35.0 (G07): Umschalter Kurs / Marktkapitalisierung ----------
+// Market Cap ist eine eigene Datenreihe (USD) aus historischen Marktkapitalisierungsdaten – nie Kurs × heutige Umlaufmenge, nie aus
+// Preis-OHLC. Schlüssellos direkt aus der App (deine Entscheidung): CoinGecko (täglich 1 Jahr, stündlich 90 Tage); ist CoinGecko
+// gebremst, gesperrt oder nicht erreichbar, CoinPaprika (täglich 1 Jahr; stündlich gibt es dort schlüssellos nur den letzten Tag).
+// Die Quelle steht immer dabei. Ein vorhandener CoinLore-Adapter existiert in dieser App nicht; CoinLores dokumentierter
+// OHLCV-Verlauf enthält ohnehin keine historische Market Cap und wird nie als Cap gelesen.
+// Zuordnung Coin → Anbieter-ID über eindeutige Metadaten: gepflegte Liste der großen Coins; sonst Suche beim Anbieter UND Nachweis,
+// dass genau diese ID bei Binance als <Kürzel>/USDT gehandelt wird – ein gleichlautendes Symbol allein genügt nie.
+// Abrufe: zentral je Anbieter, eine Anfrage gleichzeitig (auch über Tabs, Web Locks), eigenes Budget 5/Minute und je Monat, jeder
+// Versuch zählt (auch Fehler); 429 → Retry-After, sonst exponentiell mit Zufallsanteil; Zugriffsfehler nicht endlos. Neuladen oder
+// Umschalten umgeht keine Sperre (Zähler im Browser-Speicher). Nur für die sichtbare Cap-Ansicht – kein Vorladen.
+// Cache in IndexedDB (nur rekonstruierbare Cap-Daten, höchstens 10 MiB, älteste ungenutzte zuerst): abgeschlossene Tage 24 h,
+// abgeschlossene Stunden 1 h, laufender Wert 5 min; abgelaufene Werte bleiben mit Datum sichtbar.
+var CAP_PROV = { cg: { name: 'CoinGecko', base: 'https://api.coingecko.com/api/v3', perMin: 5, perMonth: 3000 }, cp: { name: 'CoinPaprika', base: 'https://api.coinpaprika.com/v1', perMin: 5, perMonth: 10000 } };
+var CAP_IDS = { BTC: ['bitcoin', 'btc-bitcoin'], ETH: ['ethereum', 'eth-ethereum'], SOL: ['solana', 'sol-solana'], XRP: ['ripple', 'xrp-xrp'], BNB: ['binancecoin', 'bnb-binance-coin'], DOGE: ['dogecoin', 'doge-dogecoin'],
+  ADA: ['cardano', 'ada-cardano'], TRX: ['tron', 'trx-tron'], LTC: ['litecoin', 'ltc-litecoin'], BCH: ['bitcoin-cash', 'bch-bitcoin-cash'], ETC: ['ethereum-classic', 'etc-ethereum-classic'], LINK: ['chainlink', 'link-chainlink'],
+  DOT: ['polkadot', 'dot-polkadot'], AVAX: ['avalanche-2', 'avax-avalanche'], NEAR: ['near', 'near-near-protocol'], XLM: ['stellar', 'xlm-stellar'], ATOM: ['cosmos', 'atom-cosmos'], UNI: ['uniswap', 'uni-uniswap'],
+  SHIB: ['shiba-inu', 'shib-shiba-inu'], TON: ['the-open-network', 'ton-toncoin'], PAXG: ['pax-gold', 'paxg-pax-gold'], BSV: ['bitcoin-cash-sv', 'bsv-bitcoin-sv'] };
+var CAP_IDKEY = 'scalpdesk.capids.v1', CAP_BUDKEY = 'scalpdesk.capbudget.v1', CAP_MAX_BYTES = 10 * 1024 * 1024, CAP_SCHEMA = 1;
+var CAP_TTL = { '1d': 24 * 3600e3, '1h': 3600e3, now: 5 * 60e3 };
+var CAP = { on: false, gen: 0, data: null, err: null, loading: false, count: 0, pan: 0, res: null, inflight: new Map(), db: null, nowTimer: 0 };
+// Werte prüfen: [Zeit ms, Cap USD] endlich und > 0, aufsteigend, je Zeit einmal
+function validateMarketCap(rows) {
+  const out = []; for (const r of Array.isArray(rows) ? rows : []) { const t = Number(r?.[0]), v = Number(r?.[1]); if (Number.isFinite(t) && t > 1.2e12 && Number.isFinite(v) && v > 0) out.push([t, v]); }
+  out.sort((a, b) => a[0] - b[0]); return out.filter((p, i) => !i || p[0] !== out[i - 1][0]);
+}
+// CoinGecko liefert prices, market_caps, total_volumes – gelesen wird nur market_caps
+const coinGeckoMarketCapPoints = j => validateMarketCap(j?.market_caps);
+const coinPaprikaMarketCapPoints = j => validateMarketCap((Array.isArray(j) ? j : []).map(r => [Date.parse(r?.timestamp), r?.market_cap]));
+function compactCap(v) {
+  if (!(v > 0)) return '—';
+  const [d, u] = v >= 1e12 ? [1e12, 'Bio.'] : v >= 1e9 ? [1e9, 'Mrd.'] : v >= 1e6 ? [1e6, 'Mio.'] : [1e3, 'Tsd.'];
+  return `${number(v / d, v / d >= 100 ? 0 : v / d >= 10 ? 1 : 2)} ${u} USD`;
+}
+// Achse: so viele Nachkommastellen, dass benachbarte Rasterlinien verschieden beschriftet sind
+function capAxis(v, step) {
+  const [d, u] = v >= 1e12 ? [1e12, 'Bio.'] : v >= 1e9 ? [1e9, 'Mrd.'] : v >= 1e6 ? [1e6, 'Mio.'] : [1e3, 'Tsd.'];
+  return `${number(v / d, Math.max(0, Math.min(4, Math.ceil(-Math.log10(step / d)))))} ${u} USD`;
+}
+// ---- Budget und Sperren je Anbieter (gemeinsam für alle Tabs dieses Browsers) ----
+function capBud() { try { return JSON.parse(localStorage.getItem(CAP_BUDKEY) || '{}') || {}; } catch { return {}; } }
+function capBudSave(b) { try { localStorage.setItem(CAP_BUDKEY, JSON.stringify(b)); } catch { /* ohne Speicher gilt nur die Sitzung */ } }
+const capMonth = (t = Date.now()) => new Date(t).toISOString().slice(0, 7);
+function capBlock(prov) { // null = frei; sonst { until, why }
+  const b = capBud()[prov] || {}, now = Date.now(), P = CAP_PROV[prov];
+  if (b.denied && now < b.denied.until) return { until: b.denied.until, why: b.denied.why };
+  if (b.until && now < b.until) return { until: b.until, why: b.why || 'gebremst' };
+  if (b.mon === capMonth() && b.n >= P.perMonth) return { until: Date.parse(capMonth(now) + '-01T00:00:00Z') + 32 * 864e5, why: `Monatsbudget der App erreicht (${P.perMonth} Abrufe)` };
+  const m = (b.m || []).filter(t => now - t < 60e3); if (m.length >= P.perMin) return { until: m[0] + 60e3, why: `Budget ${P.perMin} Abrufe je Minute`, soft: true };
+  return null;
+}
+function capCount(prov) { const all = capBud(), b = all[prov] || {}, now = Date.now(); b.m = [...(b.m || []).filter(t => now - t < 60e3), now]; if (b.mon !== capMonth()) { b.mon = capMonth(); b.n = 0; } b.n = (b.n || 0) + 1; all[prov] = b; capBudSave(all); }
+function capResult(prov, ok, info = {}) {
+  const all = capBud(), b = all[prov] || {}, now = Date.now();
+  if (ok) { b.fails = 0; delete b.until; delete b.why; }
+  else if (info.denied) b.denied = { until: now + 24 * 3600e3, why: info.why };
+  else { b.fails = (b.fails || 0) + 1; const back = info.retryAfter ? info.retryAfter : Math.min(30 * 60e3, 30e3 * 2 ** (b.fails - 1)) * (1 + Math.random() * 0.2); b.until = now + back; b.why = info.why; }
+  all[prov] = b; capBudSave(all);
+}
+const capLock = (prov, fn) => (navigator.locks?.request ? navigator.locks.request(`scalpdesk-cap-${prov}`, fn) : (CAP[`q${prov}`] = (CAP[`q${prov}`] || Promise.resolve()).then(fn, fn)));
+// Ein Abruf: zentral, einer zur Zeit, Budget vorher geprüft und gezählt; gleiche laufende Anfragen werden zusammengefasst
+function capFetch(prov, path, recheck = null) {
+  const url = CAP_PROV[prov].base + path; if (CAP.inflight.has(url)) return CAP.inflight.get(url);
+  const p = capLock(prov, async () => {
+    if (recheck) { const hit = await recheck(); if (hit) return { cached: hit }; } // ein anderer Tab war schneller
+    let blk = capBlock(prov);
+    if (blk?.soft && blk.until - Date.now() <= 15e3) { await new Promise(r => setTimeout(r, blk.until - Date.now() + 50)); blk = capBlock(prov); }
+    if (blk) throw Object.assign(new Error(blk.why), { kind: 'blocked', until: blk.until });
+    capCount(prov);
+    let r; try { r = await fetch(url, { credentials: 'omit', referrerPolicy: 'no-referrer', cache: 'no-store' }); }
+    catch { capResult(prov, false, { why: `${CAP_PROV[prov].name} nicht erreichbar` }); throw Object.assign(new Error(`${CAP_PROV[prov].name} nicht erreichbar`), { kind: 'net' }); }
+    if (r.status === 429) {
+      const ra = r.headers.get('retry-after'), sec = Number(ra), at = Number.isFinite(sec) ? sec * 1000 : Date.parse(ra || '') - Date.now();
+      capResult(prov, false, { retryAfter: Math.max(30e3, Number.isFinite(at) ? at : 60e3), why: `${CAP_PROV[prov].name} bremst (429)` });
+      throw Object.assign(new Error(`${CAP_PROV[prov].name} bremst (429)`), { kind: 'blocked', until: capBlock(prov)?.until });
+    }
+    if (r.status === 401 || r.status === 403) { capResult(prov, false, { denied: true, why: `${CAP_PROV[prov].name}: Zugriff ohne Schlüssel verweigert (${r.status}) – bis morgen keine weiteren Versuche` }); throw Object.assign(new Error(`${CAP_PROV[prov].name}: Zugriff verweigert (${r.status})`), { kind: 'denied' }); }
+    if (r.status === 404) { capResult(prov, true); throw Object.assign(new Error('nicht gefunden'), { kind: 'notfound' }); }
+    if (!r.ok) { capResult(prov, false, { why: `${CAP_PROV[prov].name} antwortet mit Fehler ${r.status}` }); throw Object.assign(new Error(`${CAP_PROV[prov].name} antwortet mit Fehler ${r.status}`), { kind: r.status === 400 ? 'bad' : 'net' }); }
+    let j; try { j = await r.json(); } catch { capResult(prov, false, { why: 'Antwort nicht lesbar' }); throw Object.assign(new Error('Antwort nicht lesbar'), { kind: 'net' }); }
+    capResult(prov, true); return { json: j };
+  });
+  CAP.inflight.set(url, p); p.finally(() => CAP.inflight.delete(url)).catch(() => {}); return p;
+}
+// ---- Cache (IndexedDB, eigene Datenbank – nur Cap-Daten) ----
+function capDb() {
+  if (CAP.db) return CAP.db;
+  CAP.db = new Promise((resolve, reject) => { if (!globalThis.indexedDB) return reject(new Error('kein IndexedDB')); const r = indexedDB.open('scalpdesk-cap', 1);
+    r.onupgradeneeded = () => { if (!r.result.objectStoreNames.contains('e')) r.result.createObjectStore('e', { keyPath: 'key' }); };
+    r.onsuccess = () => resolve(r.result); r.onerror = () => reject(r.error || new Error('IndexedDB nicht verfügbar')); r.onblocked = () => reject(new Error('IndexedDB blockiert')); });
+  CAP.db.catch(() => { CAP.db = null; }); return CAP.db;
+}
+const capTx = (mode, fn) => capDb().then(db => new Promise((resolve, reject) => { const tx = db.transaction('e', mode), st = tx.objectStore('e'); let out; Promise.resolve(fn(st, v => { out = v; })).catch(reject); tx.oncomplete = () => resolve(out); tx.onerror = tx.onabort = () => reject(tx.error); }));
+const capKey = (prov, id, res, range) => `${prov}|${id}|usd|${res}|${range}|v${CAP_SCHEMA}`;
+async function capGet(key) { try { return await capTx('readonly', (st, set) => { const q = st.get(key); q.onsuccess = () => set(q.result || null); }); } catch { return CAP.mem?.get(key) || null; } }
+async function capPut(e) {
+  e.size = JSON.stringify(e.pts).length + 200; e.used = Date.now(); (CAP.mem ||= new Map()).set(e.key, e);
+  try {
+    await capTx('readwrite', st => { st.put(e); });
+    // Grenze 10 MiB: älteste ungenutzte Einträge zuerst verdrängen (nur Cap-Daten in dieser Datenbank)
+    const all = await capTx('readonly', (st, set) => { const q = st.getAll(); q.onsuccess = () => set(q.result || []); });
+    let total = all.reduce((s, x) => s + (x.size || 0), 0); const drop = [];
+    for (const x of all.sort((a, b) => (a.used || 0) - (b.used || 0))) { if (total <= CAP_MAX_BYTES) break; if (x.key === e.key) continue; drop.push(x.key); total -= x.size || 0; }
+    if (drop.length) await capTx('readwrite', st => { for (const k of drop) st.delete(k); });
+  } catch { /* ohne IndexedDB nur im Speicher dieser Sitzung */ }
+}
+function capTouch(e) { if (!e) return; e.used = Date.now(); void capTx('readwrite', st => { st.put(e); }).catch(() => {}); }
+// ---- Zuordnung Kürzel → Anbieter-ID ----
+function capIds() { try { return JSON.parse(localStorage.getItem(CAP_IDKEY) || '{}') || {}; } catch { return {}; } }
+function capIdSave(sym, prov, v) { const all = capIds(); all[sym] = { ...(all[sym] || {}), [prov]: { ...v, at: Date.now() } }; try { localStorage.setItem(CAP_IDKEY, JSON.stringify(all)); } catch { /* nur Sitzung */ } }
+async function capId(prov, sym) {
+  const list = CAP_IDS[sym]; if (list) return { id: list[prov === 'cg' ? 0 : 1], how: 'Liste' };
+  const c = capIds()[sym]?.[prov]; if (c?.id) return c; if (c?.none && Date.now() - c.at < 7 * 864e5) return null;
+  // Suche beim Anbieter, dann Nachweis über die Binance-Notierung <Kürzel>/USDT
+  const s = await capFetch(prov, prov === 'cg' ? `/search?query=${encodeURIComponent(sym)}` : `/search?q=${encodeURIComponent(sym)}&c=currencies&limit=10`);
+  const cand = (prov === 'cg' ? s.json?.coins : s.json?.currencies) || [];
+  const same = cand.filter(x => String(x?.symbol || '').toUpperCase() === sym).sort((a, b) => (a.market_cap_rank ?? a.rank ?? 1e9) - (b.market_cap_rank ?? b.rank ?? 1e9)).slice(0, 3);
+  for (const x of same) {
+    try {
+      if (prov === 'cg') { const t = await capFetch('cg', `/coins/${encodeURIComponent(x.id)}/tickers?exchange_ids=binance`); if ((t.json?.tickers || []).some(k => String(k.base).toUpperCase() === sym && k.target === 'USDT')) { const v = { id: x.id, how: 'Binance-Notierung' }; capIdSave(sym, prov, v); return v; } }
+      else { const m = await capFetch('cp', `/coins/${encodeURIComponent(x.id)}/markets`); if ((Array.isArray(m.json) ? m.json : []).some(k => k.exchange_id === 'binance' && k.pair === `${sym}/USDT`)) { const v = { id: x.id, how: 'Binance-Notierung' }; capIdSave(sym, prov, v); return v; } }
+    } catch (e) { if (e.kind !== 'notfound') throw e; }
+  }
+  capIdSave(sym, prov, { none: true }); return null;
+}
+// ---- Reihen laden: abgeschlossene Punkte (24 h bzw. 1 h) und laufender Wert (5 min) getrennt ----
+const capCut = res => (res === '1d' ? Math.floor(Date.now() / 864e5) * 864e5 : Math.floor(Date.now() / 36e5) * 36e5); // Beginn des laufenden Tags/der laufenden Stunde (UTC)
+async function capSeries(prov, id, res) {
+  const range = res === '1d' ? '365d' : '90d', key = capKey(prov, id, res, range), nkey = capKey(prov, id, 'now', 'now');
+  let e = await capGet(key), n = await capGet(nkey); const fresh = x => x && Date.now() - x.fetchedAt < CAP_TTL[x.res];
+  if (!fresh(e)) {
+    const path = prov === 'cg' ? `/coins/${encodeURIComponent(id)}/market_chart?vs_currency=usd&days=${res === '1d' ? '365&interval=daily' : '90'}`
+      : `/tickers/${encodeURIComponent(id)}/historical?start=${new Date(Date.now() - 364 * 864e5).toISOString().slice(0, 10)}&interval=1d&quote=usd&limit=366`;
+    try {
+      const r = await capFetch(prov, path, async () => { const x = await capGet(key); return fresh(x) ? x : null; });
+      if (r.cached) e = r.cached;
+      else {
+        const pts = prov === 'cg' ? coinGeckoMarketCapPoints(r.json) : coinPaprikaMarketCapPoints(r.json), cut = capCut(res);
+        if (!pts.length) throw Object.assign(new Error(`${CAP_PROV[prov].name} lieferte keine Market-Cap-Werte`), { kind: 'empty' });
+        e = { key, prov, id, cur: 'usd', res, range, schema: CAP_SCHEMA, pts: pts.filter(p => p[0] < cut), fetchedAt: Date.now() }; await capPut(e);
+        const last = pts.at(-1); if (last[0] >= cut || !n) { n = { key: nkey, prov, id, cur: 'usd', res: 'now', range: 'now', schema: CAP_SCHEMA, pts: [last], fetchedAt: Date.now() }; await capPut(n); }
+      }
+    } catch (err) { if (!e) throw err; e = { ...e, stale: err.message }; } // abgelaufene Werte mit Datum weiter zeigen
+  } else capTouch(e);
+  if (!fresh(n)) { // laufender Wert höchstens alle 5 Minuten
+    const path = prov === 'cg' ? `/simple/price?ids=${encodeURIComponent(id)}&vs_currencies=usd&include_market_cap=true&include_last_updated_at=true` : `/tickers/${encodeURIComponent(id)}?quotes=USD`;
+    try {
+      const r = await capFetch(prov, path, async () => { const x = await capGet(nkey); return fresh(x) ? x : null; });
+      if (r.cached) n = r.cached;
+      else {
+        const j = r.json, v = prov === 'cg' ? Number(j?.[id]?.usd_market_cap) : Number(j?.quotes?.USD?.market_cap), t = prov === 'cg' ? Number(j?.[id]?.last_updated_at) * 1000 : Date.parse(j?.last_updated || '');
+        if (v > 0 && Number.isFinite(t)) { n = { key: nkey, prov, id, cur: 'usd', res: 'now', range: 'now', schema: CAP_SCHEMA, pts: [[t, v]], fetchedAt: Date.now() }; await capPut(n); }
+      }
+    } catch (err) { if (n) n = { ...n, stale: err.message }; }
+  }
+  const pts = [...e.pts]; if (n?.pts?.[0] && (!pts.length || n.pts[0][0] > pts.at(-1)[0])) pts.push(n.pts[0]);
+  return { prov, id, res, pts, fetchedAt: e.fetchedAt, now: n?.pts?.[0] || null, nowAt: n?.fetchedAt || 0, stale: e.stale || n?.stale || null };
+}
+// Auflösung zum Chart-Intervall: bis 4h stündlich (90 Tage), ab 1d täglich (365 Tage); CoinPaprika schlüssellos nur täglich
+const capWantRes = () => (['1d', '1w', '1M'].includes(state.interval) ? '1d' : '1h');
+const CAP_SPAN = { '1m': 48, '5m': 48, '15m': 72, '1h': 168, '4h': 720, '1d': 120, '1w': 365, '1M': 365 };
+async function capLoad() {
+  const gen = ++CAP.gen, sym = coin(state.symbol), want = capWantRes();
+  CAP.loading = true; CAP.err = null; if (CAP.data?.sym !== sym) { CAP.data = null; CAP.count = 0; CAP.pan = 0; } capRender();
+  let out = null, why = [];
+  for (const prov of ['cg', 'cp']) {
+    try {
+      const idv = await capId(prov, sym); if (gen !== CAP.gen) return;
+      if (!idv) { why.push(`${CAP_PROV[prov].name}: kein eindeutig zugeordneter Eintrag für ${sym}`); continue; }
+      const res = prov === 'cp' ? '1d' : want, s = await capSeries(prov, idv.id, res); if (gen !== CAP.gen) return;
+      out = { ...s, sym, how: idv.how, want, note: prov === 'cp' && want === '1h' ? 'CoinPaprika liefert schlüssellos nur Tageswerte – Auflösung täglich' : '' }; break;
+    } catch (e) { if (gen !== CAP.gen) return; why.push(`${CAP_PROV[prov].name}: ${e.message}${e.until ? ` – nächster Versuch ab ${hhmm(e.until)}` : ''}`); }
+  }
+  if (gen !== CAP.gen) return;
+  CAP.loading = false; CAP.data = out; CAP.err = out ? null : why.join(' · ') || 'nicht verfügbar';
+  if (out && (!CAP.res || CAP.res !== out.res)) { CAP.count = 0; CAP.pan = 0; CAP.res = out.res; }
+  capRender();
+}
+function capSet(on) {
+  if (CAP.on === on) return;
+  CAP.on = on; for (const b of document.querySelectorAll('[data-metric]')) { b.classList.toggle('active', on); b.setAttribute('aria-pressed', String(on)); b.setAttribute('aria-label', on ? 'Zurück zur Kursansicht' : 'Market Cap in USD statt Kurs anzeigen'); }
+  $('chart-sec')?.classList.toggle('cap-mode', on); clearInterval(CAP.nowTimer);
+  if (on) { void capLoad(); CAP.nowTimer = setInterval(() => { if (CAP.on && !document.hidden && !CAP.loading) void capLoad(); }, CAP_TTL.now + 5e3); }
+  ovButtons(); renderMarket();
+}
+// Zoom und Blättern in der Cap-Ansicht – getrennt vom Kurs-Chart (dessen Ausschnitt bleibt beim Zurückwechseln erhalten)
+function capView() {
+  const d = CAP.data, n = d ? d.pts.length : 0; if (!n) return { a: 0, b: 0 };
+  if (!CAP.count) CAP.count = Math.min(n, CAP_SPAN[state.interval] || 168);
+  CAP.count = Math.max(Math.min(12, n), Math.min(n, CAP.count)); CAP.pan = Math.max(0, Math.min(n - CAP.count, CAP.pan));
+  return { a: n - CAP.pan - CAP.count, b: n - CAP.pan };
+}
+function capZoom(f) { if (!CAP.data) return; CAP.count = Math.round((CAP.count || 1) * f); capRender(); }
+function capPan(dir) { if (!CAP.data) return; CAP.pan += dir * Math.max(1, Math.round(CAP.count * 0.4)); if (dir === 0) CAP.pan = 0; capRender(); }
+function capRender() {
+  if (!CAP.on) return;
+  const box = $('chart'), d = CAP.data, resTxt = r => (r === '1d' ? 'täglich' : 'stündlich');
+  const head = d ? `Market Cap (USD) · ${CAP_PROV[d.prov].name} · ${resTxt(d.res)}${d.res !== d.want ? '' : ` (Chart ${state.interval})`} · Datenstand ${d.now ? `${utcDate(d.now[0])} UTC` : `${utcDate(d.pts.at(-1)[0])} UTC`}` : '';
+  put('ohlc', d ? `MCap ${compactCap(d.pts.at(-1)[1])} · ${CAP_PROV[d.prov].name}${d.stale ? ` · Stand von ${utcDate(d.fetchedAt)} UTC (${d.stale})` : ''}` : CAP.loading ? 'Market Cap wird geladen …' : `Market Cap nicht verfügbar`);
+  if (!d) {
+    const empty = el('div', 'chart-empty'), mark = el('span', 'empty-mark', '₵'); mark.setAttribute('aria-hidden', 'true');
+    empty.append(mark, el('strong', '', CAP.loading ? 'Market Cap wird geladen …' : 'Market Cap nicht verfügbar'), el('span', 'cap-why', CAP.loading ? 'Historische Marktkapitalisierung (USD), schlüssellos von CoinGecko oder CoinPaprika' : CAP.err || ''));
+    box.replaceChildren(empty); updateNav(); return;
+  }
+  if (!box.clientHeight) return;
+  const { a, b } = capView(), pts = d.pts.slice(a, b), w = Math.max(280, box.clientWidth), h = box.clientHeight, axisIn = w < 520, left = 15, right = axisIn ? 4 : 104;
+  // Kopf und Unterzeile brechen zwischen den „·“-Abschnitten um (am Handy ragte der Kopf sonst über den Rand)
+  const mc = capRender.mc || (capRender.mc = document.createElement('canvas').getContext('2d')), fam = getComputedStyle(box).fontFamily;
+  const wrap = (txt, font) => { mc.font = font; const out = []; let line = ''; for (const part of txt.split(' · ')) { const t = line ? `${line} · ${part}` : part; if (line && mc.measureText(t).width > w - left - 12) { out.push(line); line = part; } else line = t; } if (line) out.push(line); return out; };
+  const sub = `Daten: ${CAP_PROV[d.prov].name}${d.note ? ` · ${d.note}` : ''}${d.stale ? ` · abgelaufen, Stand ${utcDate(d.fetchedAt)} UTC – ${d.stale}` : ''} · Preisebenen in dieser Ansicht aus`;
+  const headL = wrap(head, `600 12px ${fam}`), subL = wrap(sub, `12px ${fam}`), top = 18 + 14 * (headL.length + subL.length), bottom = h - 40, pw = w - left - right;
+  let min = Math.min(...pts.map(p => p[1])), max = Math.max(...pts.map(p => p[1])); const pad = (max - min) * 0.1 || max * 0.01; min -= pad; max += pad;
+  const t0 = pts[0][0], t1 = pts.at(-1)[0] === t0 ? t0 + 1 : pts.at(-1)[0], x = t => left + (t - t0) / (t1 - t0) * pw, y = v => top + (max - v) / (max - min) * (bottom - top);
+  const svg = node('svg', { viewBox: `0 0 ${w} ${h}`, role: 'presentation', 'aria-hidden': 'true' });
+  const gs = (max - min) / 4;
+  for (let i = 0; i <= 4; i++) { const v = min + gs * i, yy = y(v); svg.append(node('line', { x1: left, y1: yy, x2: w - right + 4, y2: yy, class: 'grid-line' })); if (!axisIn) svg.append(node('text', { x: w - right + 10, y: yy + 4, class: 'axis-label' }, capAxis(v, gs))); else if (i > 0 && i < 4) svg.append(node('text', { x: w - 6, y: yy - 4, class: 'axis-label', 'text-anchor': 'end' }, capAxis(v, gs))); }
+  // Zeitachse in UTC wie der Kurs-Chart; nur so viele Beschriftungen, wie nebeneinander passen
+  const span = t1 - t0, fmt = span > 3 * 864e5 ? { day: '2-digit', month: '2-digit', timeZone: 'UTC' } : { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'UTC' };
+  mc.font = `12px ${fam}`; const lw = mc.measureText(new Date(t1).toLocaleString('de-DE', fmt)).width, nx = Math.max(2, Math.min(5, Math.floor((pw + 16) / (lw + 24))));
+  for (let i = 0; i < nx; i++) { const t = t0 + span * i / (nx - 1); svg.append(node('text', { x: x(t), y: h - 14, class: 'axis-label', 'text-anchor': i === 0 ? 'start' : i === nx - 1 ? 'end' : 'middle' }, new Date(t).toLocaleString('de-DE', fmt))); }
+  // eigene Linie mit Punkten – Lücken (mehr als das Doppelte der Auflösung) bleiben offen, keine erfundenen OHLC
+  const gapMs = (d.res === '1d' ? 864e5 : 36e5) * 2; let dd = '';
+  pts.forEach((p, i) => { dd += `${i && p[0] - pts[i - 1][0] <= gapMs ? 'L' : 'M'}${x(p[0]).toFixed(1)} ${y(p[1]).toFixed(1)}`; });
+  svg.append(node('path', { d: dd, fill: 'none', stroke: PAL.vp, 'stroke-width': 2 }));
+  if (pts.length <= 120) for (const p of pts) svg.append(node('circle', { cx: x(p[0]), cy: y(p[1]), r: 2, fill: PAL.vp }));
+  const last = pts.at(-1); svg.append(node('circle', { cx: x(last[0]), cy: y(last[1]), r: 4, fill: PAL.vp }));
+  headL.forEach((t, i) => svg.append(node('text', { x: left + 4, y: 16 + 14 * i, class: 'axis-label cap-head', style: 'font-weight:600' }, t)));
+  subL.forEach((t, i) => svg.append(node('text', { x: left + 4, y: 16 + 14 * (headL.length + i), class: 'axis-label cap-sub' }, t)));
+  box.replaceChildren(svg); updateNav();
+}
+(function capUi() {
+  document.addEventListener('click', e => { if (e.target.closest('[data-metric]')) capSet(!CAP.on); });
+})();
+document.addEventListener('click', e => { const b = e.target.closest('[data-ana]'); if (b) anaSet(b.dataset.ana); }); // 3.35.0 (G07): Analyse-Intervall
+// ---- 3.35.0 (G07): bestätigte höhere Zonen im kleineren Chart (zuschaltbar, „Zonen 4h“) ----
+// Je Chart-Kerze gilt der Stand der letzten Analyse-Kerze, die zu Beginn dieser Chart-Kerze schon abgeschlossen war – so steht
+// kein späterer Wert rückwärts in der Vergangenheit. POC und Value Area gelten ab dem Schluss der letzten Analyse-Kerze.
+function hzSeries(data) {
+  const A = ana.calc, c = ana.closed; if (!A || !c.length || !data.length) return null;
+  const idx = data.map(d => { let lo = 0, hi = c.length - 1, r = -1; while (lo <= hi) { const m = (lo + hi) >> 1; if (c[m].closeTime < d.time) { r = m; lo = m + 1; } else hi = m - 1; } return r; });
+  const pick = arr => (arr ? idx.map(j => (j >= 0 && Number.isFinite(arr[j]) ? arr[j] : null)) : null), after = data.map(d => d.time > A.last.closeTime);
+  return { e200: pick(A.e200s), bbU: pick(A.bb?.all.upper), bbL: pick(A.bb?.all.lower), bbM: pick(A.bb?.all.mid), prof: A.prof, after, stand: A.last.closeTime + 1 };
+}
+function hzDraw(svg, over, g) {
+  const s = hzSeries(g.data); if (!s) return;
+  const { x, y, left, pw, top, bottom, min, max, rx, step } = g, lab = anaLabel(ana.iv), col = PAL.hz || PAL.ema, inR = v => Number.isFinite(v) && v >= min && v <= max;
+  // Stufenlinie: je Chart-Kerze waagerecht über die Kerzenbreite, beim Wechsel senkrecht
+  const stepPath = arr => { let d = '', pen = false; arr.forEach((v, i) => { if (Number.isFinite(v)) { d += `${pen ? 'L' : 'M'}${(x(i) - step / 2).toFixed(1)} ${y(v).toFixed(1)}H${(x(i) + step / 2).toFixed(1)}`; pen = true; } else pen = false; }); return d; };
+  if (s.bbU) for (const a of [s.bbU, s.bbL]) over.append(node('path', { d: stepPath(a), fill: 'none', stroke: col, 'stroke-width': 1, 'stroke-dasharray': '2 3', opacity: .8 }));
+  if (s.bbM) over.append(node('path', { d: stepPath(s.bbM), fill: 'none', stroke: col, 'stroke-width': 1, opacity: .45 }));
+  if (s.e200) over.append(node('path', { d: stepPath(s.e200), fill: 'none', stroke: col, 'stroke-width': 2, 'stroke-dasharray': '9 4', opacity: .95 }));
+  const i0 = s.after.indexOf(true);
+  if (s.prof && i0 >= 0) {
+    const x0 = x(i0) - step / 2, x1 = left + pw, yh = y(s.prof.vaHigh), yl = y(s.prof.vaLow), yp = y(s.prof.poc);
+    over.append(node('rect', { x: x0, y: Math.min(yh, yl), width: Math.max(1, x1 - x0), height: Math.abs(yl - yh), fill: col, opacity: .07 }));
+    if (inR(s.prof.poc)) over.append(node('line', { x1: x0, y1: yp, x2: x1, y2: yp, stroke: col, 'stroke-width': 1.5, 'stroke-dasharray': '4 3', opacity: .95 }));
+  }
+  // Beschriftung rechts mit Intervall; außerhalb des Ausschnitts als Hinweis am Rand
+  const lastOf = a => (a ? [...a].reverse().find(Number.isFinite) : null), tag = (v, t) => {
+    if (!Number.isFinite(v)) return;
+    if (!inR(v)) { svg.append(node('text', { x: rx, y: v > max ? top + 27 : bottom - 21, class: 'axis-label', 'text-anchor': 'end', style: `fill:${col};font-weight:700` }, `${t} ${v > max ? '↑' : '↓'} ${priceText(v)} (außerhalb)`)); return; }
+    over.append(node('text', { x: rx, y: y(v) - 5, class: 'axis-label', 'text-anchor': 'end', style: `fill:${col};font-weight:700` }, t));
+  };
+  tag(lastOf(s.e200), `EMA 200 · ${lab}`);
+  if (s.prof && i0 >= 0) tag(s.prof.poc, `POC ${lab}`);
+  svg.append(node('text', { x: left + 6, y: top + 13, class: 'axis-label hz-cap', style: `fill:${col};font-weight:600` }, `Zonen ${lab} · Stand ${anaTime(s.stand)}`));
+}
 const pct = x => `${signed(x)} %`;
-function side(p, ref, above, below, near = 0.05) { const d = (p - ref) / p * 100; return Math.abs(d) < near ? 'am' : d > 0 ? above : below; }
-function renderZones(z) {
-  const p = currentPrice(), base = state.symbol.slice(0, -4), live = z.live, iv = state.interval;
-  $('zones').classList.toggle('stale', !!state.marketError);
-  put('zones-context', `Chart-Intervall ${iv}${state.marketError ? ' · letzter Datenstand' : ''}`);
-  // POC
-  const pr = z.profile;
+// ---------- 3.35.0 (G07): eigenes Analyse-Intervall für „Mittelwert-Zonen“ und „Marktindikatoren“ ----------
+// Beide Bereiche rechnen aus einer eigenen Kerzenreihe im Analyse-Intervall (wählbar 1m, 30m, 1h, 4h, 12h, 1d, 30 T; Start 4h),
+// unabhängig vom Chart-Intervall und vom sichtbaren Chart-Ausschnitt: nur abgeschlossene Kerzen, die laufende zählt nicht.
+// 4h als Anfangswert: weniger kurzfristiges Rauschen als 1m, dafür spätere Reaktion – ein nachweislich bester Zeitraum ist das nicht.
+// 30 T („30d_fixed“): feste, nicht überlappende UTC-Blöcke aus je 30 vollständigen Tageskerzen, verankert am 01.01.1970 UTC –
+// kein Binance-Intervall (nicht „1M“). Unvollständige erste und laufende Blöcke zählen nicht. Historie nur aus diesem Markt
+// (Futures nie mit Spot verlängert); reicht sie nicht (EMA 200 braucht 200 Blöcke = 6.000 Tage), bleibt der Wert gesperrt –
+// keine Periode wird heimlich gekürzt. Funding und Open Interest behalten ihre eigene Zeitbasis.
+var ANA_KEY = 'scalpdesk.anaiv.v1', ANA_IVS = ['1m', '30m', '1h', '4h', '12h', '1d', '30d_fixed'], ANA_POC_N = 100, ANA_POC_MIN = 30, ANA_BLOCK = 30 * 864e5;
+var ANA_MS = { '1m': 6e4, '30m': 18e5, '1h': 36e5, '4h': 144e5, '12h': 432e5, '1d': 864e5, '30d_fixed': 30 * 864e5 };
+const anaLabel = iv => (iv === '30d_fixed' ? '30 T' : iv);
+function loadAnaIv() { const v = store.get(ANA_KEY); return ANA_IVS.includes(v) ? v : '4h'; } // eine gültige Wahl bleibt, sonst 4h
+var ana = { iv: loadAnaIv(), key: '', closed: [], at: 0, error: null, loading: false, nextAt: 0, gen: 0, calc: null, days: new Map() };
+// 30-Tage-Blöcke aus Tageskerzen: Block k umfasst [k·30 Tage, (k+1)·30 Tage) ab 01.01.1970 UTC; nur mit allen 30 Tagen und abgeschlossen
+function blocks30(days, now = Date.now()) {
+  const by = new Map(), out = [];
+  for (const d of days) { if (d.closeTime >= now) continue; const k = Math.floor(d.time / ANA_BLOCK); if (!by.has(k)) by.set(k, []); by.get(k).push(d); }
+  for (const [k, a] of [...by].sort((x, y) => x[0] - y[0])) {
+    if (a.length !== 30 || (k + 1) * ANA_BLOCK > now) continue;
+    a.sort((x, y) => x.time - y.time); if (a.some((d, i) => d.time !== k * ANA_BLOCK + i * 864e5)) continue;
+    out.push({ time: k * ANA_BLOCK, open: a[0].open, high: Math.max(...a.map(d => d.high)), low: Math.min(...a.map(d => d.low)), close: a[29].close, volume: a.reduce((s, d) => s + d.volume, 0), closeTime: (k + 1) * ANA_BLOCK - 1 });
+  }
+  return out;
+}
+// Alle Tageskerzen dieses Markts (ab Handelsbeginn, je 1.000 je Abruf); 6 Stunden im Speicher
+async function anaDays(sym, src) {
+  const k = `${src}|${sym}`, c = ana.days.get(k); if (c && Date.now() - c.at < 6 * 3600e3) return c.days;
+  const all = []; let start = 0;
+  for (let page = 0; page < 12; page++) {
+    const p = { symbol: sym, interval: '1d', startTime: start, limit: 1000 };
+    const rows = src === 'futures' ? await api.get(FUTURES, '/fapi/v1/klines', p) : await spotGet('/api/v3/klines', p);
+    if (!Array.isArray(rows) || !rows.length) break;
+    const d = normalizeKlines(rows); for (const x of d) if (!all.length || x.time > all.at(-1).time) all.push(x);
+    if (d.length < 1000) break; start = d.at(-1).time + 864e5;
+  }
+  ana.days.set(k, { days: all, at: Date.now() }); return all;
+}
+function anaTrend({ C, e200, e50, A }) {
+  if (!(C > 0) || !(e200 > 0) || !e50 || e50.length < 4 || !Number.isFinite(e50.at(-1)) || !Number.isFinite(e50.at(-4))) return { st: 'na', why: 'zu wenige Kerzen – EMA 200 und EMA 50 (mit 3 Kerzen Steigung) sind nötig' };
+  if (!(A > 0)) return { st: 'na', why: 'ATR ist 0 (keine Schwankung) – nicht bewertbar' };
+  const E50 = e50.at(-1), S = (E50 - e50.at(-4)) / A;
+  const long = C > e200 + 0.25 * A && E50 > e200 && S > 0.05, short = C < e200 - 0.25 * A && E50 < e200 && S < -0.05;
+  return { st: long ? 'long' : short ? 'short' : 'neutral', C, e200, E50, A, S };
+}
+function anaCalc(c, iv) {
+  const n = c.length, closes = c.map(x => x.close), last = c.at(-1) || null;
+  const e200s = n >= 200 ? ema(closes, 200) : null, e50 = n >= 53 ? ema(closes, 50) : null, bb = n >= 20 ? bollinger(closes) : null;
+  const pocSet = c.slice(-ANA_POC_N), prof = pocSet.length >= ANA_POC_MIN ? volumeProfile(pocSet) : null, A = n >= 14 ? atr(c).at(-1) : null;
+  return { n, iv, last, ema200: e200s ? e200s.at(-1) : null, e200s, bb: bb ? { mid: bb.mid.at(-1), upper: bb.upper.at(-1), lower: bb.lower.at(-1), all: bb } : null,
+    rsi: n >= 15 ? rsi(closes).at(-1) : null, atr: A, vol: volumeComparison(c), prof, pocN: pocSet.length, contain: bb ? bandContainment(closes, bb, 100, 0) : null,
+    trend: anaTrend({ C: last?.close, e200: e200s ? e200s.at(-1) : null, e50, A }) };
+}
+async function anaLoad(force = false) {
+  const sym = state.symbol, iv = ana.iv; if (state.sourceFor !== sym || state.paused) return; // Markt (Spot/Futures) erst nach dem Chart bekannt
+  const src = state.source, key = `${sym}|${src}|${iv}`;
+  if (!force && ana.key === key && (ana.loading || Date.now() < ana.nextAt)) return;
+  const gen = ++ana.gen; if (ana.key !== key) { ana.closed = []; ana.calc = null; ana.error = null; ana.at = 0; } ana.key = key; ana.loading = true; renderAna();
+  try {
+    const closed = iv === '30d_fixed' ? blocks30(await anaDays(sym, src)) : (await cachedKlines(sym, iv, 500)).candles.filter(x => x.closeTime < Date.now());
+    if (gen !== ana.gen) return;
+    ana.closed = closed; ana.calc = closed.length ? anaCalc(closed, iv) : null; ana.error = closed.length ? null : (iv === '30d_fixed' ? 'noch kein vollständiger 30-Tage-Block' : 'keine abgeschlossenen Kerzen'); ana.at = Date.now();
+    const lastClose = closed.at(-1)?.closeTime ?? Date.now();
+    ana.nextAt = iv === '30d_fixed' ? Math.min(Date.now() + 6 * 3600e3, lastClose + 1 + ANA_BLOCK + 5000) : lastClose + 1 + ANA_MS[iv] + 2500; // nach dem nächsten Kerzenschluss
+  } catch (e) { if (gen === ana.gen) { ana.error = e?.message || String(e); ana.nextAt = Date.now() + 30e3; } }
+  finally { if (gen === ana.gen) { ana.loading = false; renderAna(); } }
+}
+function anaTick(now) { if (!state.paused && ana.nextAt && now >= ana.nextAt && !ana.loading) void anaLoad(true); }
+function anaSet(iv) {
+  if (!ANA_IVS.includes(iv) || iv === ana.iv) return;
+  ana.iv = iv; store.set(ANA_KEY, iv); ana.nextAt = 0; renderAna(); void anaLoad(true);
+}
+const anaTime = ms => (ms ? `${utcDate(ms)} UTC` : '—'); // Datum und Uhrzeit (UTC)
+// Höhere Ebene? Nur dann heißt der Trendkontext „übergeordnet“ und die Zonen lassen sich im Chart zuschalten
+const anaHigher = () => ANA_MS[ana.iv] > (IV_MS[state.interval] || 0);
+function renderAna() {
+  renderZones(); renderAnaInd(); renderSkeletons();
+  for (const b of document.querySelectorAll('[data-ana]')) { const on = b.dataset.ana === ana.iv; b.classList.toggle('active', on); if (b.getAttribute('aria-pressed') !== String(on)) b.setAttribute('aria-pressed', String(on)); }
+  if (state.overlays.hz || document.querySelector('[data-overlay="hz"]')) { ovButtons(); if (state.overlays.hz) scheduleDraw(); }
+}
+function anaContext() {
+  const lab = anaLabel(ana.iv), A = ana.calc;
+  if (!A) return ana.loading ? `Analyse ${lab} · lädt …` : ana.error ? `Analyse ${lab} · ${ana.error}` : `Analyse ${lab}`;
+  return `Analyse ${lab} · abgeschlossene Kerzen bis ${anaTime(A.last.closeTime + 1)}${ana.error ? ' · letzter Datenstand' : ''}`;
+}
+function renderAnaInd() {
+  const A = ana.calc, p = currentPrice(), lab = anaLabel(ana.iv), base = state.symbol.slice(0, -4), wait = ana.loading ? `Lädt ${lab}-Kerzen …` : ana.error || 'Wartet auf Analyse-Kerzen.';
+  put('indicator-context', anaContext());
+  const rs = A?.rsi ?? null, av = A?.atr ?? null, vol = A?.vol ?? null;
+  put('rsi-value', number(rs));
+  put('rsi-note', !A ? wait : rs == null ? `Mindestens 15 abgeschlossene ${lab}-Kerzen erforderlich (vorhanden ${A.n}).` : rs < 30 ? 'Gilt klassisch als überverkauft.' : rs > 70 ? 'Gilt klassisch als überkauft.' : 'Liegt zwischen den klassischen Grenzen 30 und 70.');
+  $('rsi-marker').hidden = rs == null; $('rsi-marker').style.left = `${rs ?? 50}%`;
+  put('atr-value', av == null ? '—' : priceText(av) + ' USDT');
+  put('atr-note', !A ? wait : av == null ? `Mindestens 14 abgeschlossene ${lab}-Kerzen erforderlich.` : av === 0 ? 'ATR ist 0 – in diesen Kerzen keine Schwankung.' : `${p ? number(av / p * 100) : '—'} % des Kurses. Mittlere Schwankungsbreite je ${lab}-Kerze, ohne Richtungsangabe.`);
+  put('atr-foot', `Wilder-Glättung · USDT pro ${lab}-Kerze`);
+  put('volume-value', vol?.ratio == null ? '—' : `${number(vol.ratio)}×`);
+  put('volume-note', !A ? wait : !vol ? `Mindestens 21 abgeschlossene ${lab}-Kerzen erforderlich.` : vol.ratio == null ? 'Vergleich nicht berechenbar: Durchschnittsvolumen ist null.' : `${vol.ratio > 1 ? 'Über' : vol.ratio < 1 ? 'Unter' : 'Auf'} dem Durchschnitt der 20 vorherigen ${lab}-Kerzen.`);
+  put('volume-detail', vol ? `${number(vol.current)} / Ø ${number(vol.average)} ${base} · letzte abgeschlossene Kerze` : `Letzte abgeschlossene Kerze / 20 vorherige`);
+}
+function renderZones() {
+  // 3.35.0 (G07): alles aus der Analyse-Reihe (abgeschlossene Kerzen im Analyse-Intervall) – der Chart-Ausschnitt verschiebt nichts
+  const p = currentPrice(), A = ana.calc, lab = anaLabel(ana.iv), wait = ana.loading ? `Lädt ${lab}-Kerzen …` : ana.error || 'Wartet auf Analyse-Kerzen.';
+  $('zones').classList.toggle('stale', !!ana.error && !!A);
+  put('zones-context', anaContext());
+  // POC und Value Area: 100 abgeschlossene Analyse-Kerzen, 40 Stufen; kürzer nur ab 30 Kerzen (sichtbar N/100)
+  const pr = A?.prof;
   if (pr && p) {
     const d = (p - pr.poc) / p * 100;
     put('poc-value', priceText(pr.poc) + ' USDT');
     put('poc-dist', pct(d));
     put('poc-va', `${priceText(pr.vaLow)} – ${priceText(pr.vaHigh)}`);
     put('poc-note', Math.abs(d) < 0.05 ? 'Kurs liegt praktisch am POC.' : p > pr.vaHigh ? 'Kurs oberhalb der Value Area, also über der Zone mit dem meisten Umsatz.' : p < pr.vaLow ? 'Kurs unterhalb der Value Area, also unter der Zone mit dem meisten Umsatz.' : `Kurs innerhalb der Value Area, ${d > 0 ? 'über' : 'unter'} dem POC.`);
-    put('poc-foot', `${pr.count} sichtbare Kerzen (${iv})${live ? ', inkl. laufender Kerze' : ''} · 40 Stufen à ${priceText(pr.step)} · Glockenkurve je Kerze`);
-  } else { put('poc-value', '—'); put('poc-dist', '—'); put('poc-va', '—'); put('poc-note', state.candles.length ? 'Mindestens 10 Kerzen mit Volumen nötig.' : 'Wartet auf Kerzendaten.'); put('poc-foot', 'Näherung aus Kerzendaten'); }
-  // EMA 200 (1D)
-  const daily = iv === '1d' ? ema200Closed(state.candles.filter(x => x.closeTime < Date.now())) : state.mtf['1d']?.ema200 ?? null;
-  const dailyStale = iv === '1d' ? !!state.marketError : !!state.mtf['1d']?.error;
-  if (daily && p) {
-    const d = (p - daily.value) / p * 100;
-    put('ema-value', priceText(daily.value) + ' USDT');
-    put('ema-dist', `${pct(d)}${dailyStale ? ' · veraltet' : ''}`);
-    put('ema-note', side(p, daily.value, 'o', 'u') === 'am' ? 'Kurs praktisch an der EMA 200 (1D).' : d > 0 ? 'Kurs über der EMA 200 (1D) – gilt klassisch als langfristiger Aufwärtstrend.' : 'Kurs unter der EMA 200 (1D) – gilt klassisch als langfristiger Abwärtstrend.');
-    put('ema-foot', `1D aus ${Math.min(daily.count, 500)} abgeschlossenen Tageskerzen, Stand ${utcDate(daily.closeTime + 1)} UTC${live ? ` · ${iv}-Wert mit laufender Kerze vorläufig` : ''}`);
+    put('poc-foot', `${A.pocN}/${ANA_POC_N} abgeschlossene ${lab}-Kerzen${A.pocN < ANA_POC_N ? ' (kürzere Reihe)' : ''} · 40 Stufen à ${priceText(pr.step)} · Näherung: Volumen je Kerze als Glockenkurve verteilt`);
+  } else { put('poc-value', '—'); put('poc-dist', '—'); put('poc-va', '—'); put('poc-note', !A ? wait : `Mindestens ${ANA_POC_MIN} abgeschlossene ${lab}-Kerzen mit Volumen nötig (vorhanden ${A.n}).`); put('poc-foot', `${A ? A.pocN : 0}/${ANA_POC_N} Kerzen · Näherung aus Kerzenvolumen`); }
+  // EMA 200 im Analyse-Intervall (nicht umbenannte Tages-EMA); die EMA 200 (1D) steht ausdrücklich extra darunter
+  put('ema-title', `EMA 200 (${lab})`);
+  if (A?.ema200 && p) {
+    const d = (p - A.ema200) / p * 100;
+    put('ema-value', priceText(A.ema200) + ' USDT');
+    put('ema-dist', pct(d));
+    put('ema-note', Math.abs(d) < 0.05 ? `Kurs praktisch an der EMA 200 (${lab}).` : d > 0 ? `Kurs über der EMA 200 (${lab}) – gilt klassisch als Aufwärtstrend dieser Ebene.` : `Kurs unter der EMA 200 (${lab}) – gilt klassisch als Abwärtstrend dieser Ebene.`);
+    put('ema-foot', `${lab} aus ${A.n} abgeschlossenen Kerzen, Stand ${anaTime(A.last.closeTime + 1)}`);
   } else {
     put('ema-value', '—'); put('ema-dist', '—');
-    const m = state.mtf['1d'];
-    put('ema-note', iv !== '1d' && !m ? 'Wartet auf Tageskerzen.' : iv !== '1d' && m?.error && !m?.ema200 ? m.error : 'Zu wenige Tageskerzen (mind. 200).');
-    put('ema-foot', '1D aus abgeschlossenen Tageskerzen');
+    put('ema-note', !A ? wait : ana.iv === '30d_fixed' ? `Gesperrt: EMA 200 (30 T) braucht 200 vollständige 30-Tage-Blöcke, also mindestens 6.000 Tage Historie dieses Markts – vorhanden sind ${A.n} Blöcke (${number(A.n * 30, 0)} Tage). Die Periode wird nicht verkürzt.` : `Gesperrt: EMA 200 (${lab}) braucht 200 abgeschlossene Kerzen – vorhanden ${A.n}. Die Periode wird nicht verkürzt.`);
+    put('ema-foot', `EMA 200 im Analyse-Intervall ${lab}`);
   }
-  put('ema-chart-label', `EMA 200 (${iv})`);
-  const ec = z.ema200 ? z.ema200.at(-1) : null;
-  put('ema-chart', Number.isFinite(ec) && p ? `${priceText(ec)} (${pct((p - ec) / p * 100)})` : 'zu wenige Kerzen');
-  // Bollinger
-  const bb = z.bb, n = state.candles.length, up = bb?.upper[n - 1], lo = bb?.lower[n - 1], mid = bb?.mid[n - 1];
-  if (Number.isFinite(up) && p) {
-    const pb = up > lo ? (p - lo) / (up - lo) * 100 : 50;
+  const daily = ana.iv === '1d' && A?.ema200 ? { value: A.ema200 } : state.interval === '1d' ? ema200Closed(state.candles.filter(x => x.closeTime < Date.now())) : state.mtf['1d']?.ema200 ?? null;
+  put('ema-chart-label', 'EMA 200 (1D)');
+  put('ema-chart', daily?.value && p ? `${priceText(daily.value)} (${pct((p - daily.value) / p * 100)})` : state.mtf['1d']?.error ? 'nicht verfügbar' : 'lädt …');
+  // Bollinger: SMA 20 ± 2 Standardabweichungen (Grundgesamtheit) der Analyse-Schlusskurse
+  const bb = A?.bb;
+  if (bb && Number.isFinite(bb.upper) && p) {
+    const { upper: up, lower: lo, mid } = bb, pb = up > lo ? (p - lo) / (up - lo) * 100 : 50;
     put('bb-value', priceText(mid) + ' USDT');
-    put('bb-note', p > up ? 'Kurs über dem oberen Band – statistisch weit über dem 20er-Mittel.' : p < lo ? 'Kurs unter dem unteren Band – statistisch weit unter dem 20er-Mittel.' : `Kurs innerhalb der Bänder, ${pb >= 50 ? 'obere' : 'untere'} Hälfte (${number(pb, 0)} % der Bandbreite).`);
+    put('bb-note', !(up > lo) ? 'Bandbreite 0 – die letzten 20 Schlusskurse sind gleich.' : p > up ? 'Kurs über dem oberen Band – statistisch weit über dem 20er-Mittel.' : p < lo ? 'Kurs unter dem unteren Band – statistisch weit unter dem 20er-Mittel.' : `Kurs innerhalb der Bänder, ${pb >= 50 ? 'obere' : 'untere'} Hälfte (${number(pb, 0)} % der Bandbreite).`);
     const mk = $('bb-marker'); mk.hidden = false; mk.style.left = `${Math.max(0, Math.min(100, 6 + pb * 0.88))}%`;
     put('bb-bands', `${priceText(lo)} – ${priceText(up)}`);
-    const st = bandContainment(state.candles.map(x => x.close), bb, 100, live ? 1 : 0);
-    put('bb-stat', st ? `${number(st.share, 0)} % (${st.inside}/${st.total})` : '—');
-    put('bb-foot', `Mittellinie SMA 20 · Bandbreite ${number((up - lo) / mid * 100)} % des Mittels${live ? ' · laufende Kerze vorläufig' : ''}`);
-  } else { put('bb-value', '—'); put('bb-note', state.candles.length ? 'Mindestens 20 Kerzen nötig.' : 'Wartet auf Kerzendaten.'); $('bb-marker').hidden = true; put('bb-bands', '—'); put('bb-stat', '—'); put('bb-foot', 'Chart-Intervall'); }
+    put('bb-stat', A.contain ? `${number(A.contain.share, 0)} % (${A.contain.inside}/${A.contain.total})` : '—');
+    put('bb-foot', `SMA 20 der ${lab}-Schlusskurse · Bandbreite ${number((up - lo) / mid * 100)} % des Mittels`);
+  } else { put('bb-value', '—'); put('bb-note', !A ? wait : `Mindestens 20 abgeschlossene ${lab}-Kerzen nötig (vorhanden ${A.n}).`); $('bb-marker').hidden = true; put('bb-bands', '—'); put('bb-stat', '—'); put('bb-foot', `Analyse-Intervall ${lab}`); }
+  // Trendkontext (Startparameter, nicht optimiert); „übergeordnet“ nur bei einer wirklich höheren Ebene als dem Chart
+  const T = A?.trend, rel = !A ? '' : ANA_MS[ana.iv] > (IV_MS[state.interval] || 0) ? 'higher' : ANA_MS[ana.iv] === IV_MS[state.interval] ? 'same' : 'lower';
+  put('trend-title', rel === 'higher' ? `Übergeordneter Trendkontext ${lab}` : `Trendkontext ${lab}`);
+  put('trend-sub', rel === 'higher' ? `über dem Chart-Intervall ${state.interval}` : rel === 'same' ? 'gleiche Ebene wie der Chart' : rel === 'lower' ? `kleinere Ebene als der Chart (${state.interval})` : 'abgeschlossene Kerzen');
+  const tv = $('trend-value'); tv.classList.remove('long', 'short', 'neutral');
+  if (!A || !T) { put('trend-value', '—'); put('trend-note', wait); for (const id of ['trend-c', 'trend-e', 'trend-s']) put(id, '—'); }
+  else if (T.st === 'na') { put('trend-value', 'nicht bewertbar'); put('trend-note', `Nicht bewertbar: ${T.why}.`); for (const id of ['trend-c', 'trend-e', 'trend-s']) put(id, '—'); }
+  else {
+    tv.classList.add(T.st); put('trend-value', T.st === 'long' ? 'Long-Kontext' : T.st === 'short' ? 'Short-Kontext' : 'neutral');
+    put('trend-note', T.st === 'long' ? 'Schluss deutlich über der EMA 200, EMA 50 darüber und steigend.' : T.st === 'short' ? 'Schluss deutlich unter der EMA 200, EMA 50 darunter und fallend.' : 'Die drei Bedingungen für Long oder Short sind nicht alle erfüllt.');
+    put('trend-c', `${priceText(T.C)} ${T.C > T.e200 ? '>' : '<'} ${priceText(T.e200)} ${T.C > T.e200 ? '+' : '−'} 0,25·ATR (${priceText(0.25 * T.A)})`);
+    put('trend-e', `${priceText(T.E50)} ${T.E50 > T.e200 ? 'über' : T.E50 < T.e200 ? 'unter' : 'gleich'} EMA 200`);
+    put('trend-s', `${signed(T.S, 3)} (Schwelle ±0,05)`);
+  }
+  put('trend-foot', 'Startparameter, nicht optimiert · kein Renditeversprechen · verhindert keine Buchungen oder Alarme');
 }
 const VERDICT = { buy: 'Kaufsignal', sell: 'Verkaufssignal', hold: 'Halten' };
 function verdictNode(rating, stale) {
@@ -4754,7 +5152,7 @@ function backupStatus(msg) { put('history-status', msg); }
 // Löschungen, Prüfliste, offene Konflikte, Anzeige-Einstellungen und das eigene Musterlernen (der öffentliche Startbestand nur als
 // Verweis mit Version). Nie enthalten: Zugangsdaten (Telegram-Token, Discord-Webhook), die Übergabe an den 24/7-Dienst, Sendesperren
 // und andere gerätegebundene Zustände. Alle Felder von Schema 7 bleiben gleich – ältere App-Versionen lesen die Datei weiter.
-const PREF_KEYS = ['scalpdesk.theme.v1', 'scalpdesk.overlays.v1', 'scalpdesk.zigzag.v1', 'scalpdesk.whale.v1', 'scalpdesk.orderbook.v1', 'scalpdesk.ladder.v1', 'scalpdesk.vola.v1', 'scalpdesk.econ.v1', 'scalpdesk.cnews.v1', 'scalpdesk.wlspan.v1', 'scalpdesk.titleprice.v1', 'scalpdesk.details.v1', 'scalpdesk.posdefaults.v1', 'scalpdesk.daylimitnote.v1', 'scalpdesk.warnclose.v1', 'scalpdesk.evalyear.v1', 'scalpdesk.acctrange.v1'];
+const PREF_KEYS = ['scalpdesk.theme.v1', 'scalpdesk.overlays.v1', 'scalpdesk.zigzag.v1', 'scalpdesk.whale.v1', 'scalpdesk.orderbook.v1', 'scalpdesk.ladder.v1', 'scalpdesk.vola.v1', 'scalpdesk.econ.v1', 'scalpdesk.cnews.v1', 'scalpdesk.wlspan.v1', 'scalpdesk.titleprice.v1', 'scalpdesk.details.v1', 'scalpdesk.posdefaults.v1', 'scalpdesk.daylimitnote.v1', 'scalpdesk.warnclose.v1', 'scalpdesk.evalyear.v1', 'scalpdesk.acctrange.v1', 'scalpdesk.anaiv.v1'];
 function backupPayload() {
   stampLists(); for (const f of SET_FIELDS) stampSetting(f);
   const prefs = {}; for (const k of PREF_KEYS) { const v = store.get(k); if (v !== undefined) prefs[k] = v; }
@@ -5835,6 +6233,7 @@ function renderChart(levels={}, ov={}, start=null, end=null) {
   for(const [key,col] of [['support',PAL.up],['resistance',PAL.down]]) if(levels[key]!=null && levels[key]>=min && levels[key]<=max) svg.append(node('line',{x1:left,y1:y(levels[key]),x2:w-right,y2:y(levels[key]),stroke:col,'stroke-dasharray':'5 5',opacity:.65}));
   if (bbU) { over.append(node('path',{d:pathOf(bbU),fill:'none',stroke:PAL.bb,'stroke-width':1,opacity:.75}),node('path',{d:pathOf(bbL),fill:'none',stroke:PAL.bb,'stroke-width':1,opacity:.75}),node('path',{d:pathOf(bbM),fill:'none',stroke:PAL.bb,'stroke-width':1,'stroke-dasharray':'4 4',opacity:.45})); }
   if (e200) over.append(node('path',{d:pathOf(e200),fill:'none',stroke:PAL.ema,'stroke-width':1.7,opacity:.95}));
+  if (show.hz && !ovLock('hz')) hzDraw(svg, over, { data, x, y, left, pw, top, bottom, min, max, rx, step }); // 3.35.0 (G07): höhere Zonen
   if (prof) { const yp=y(prof.poc); over.append(node('line',{x1:left,y1:yp,x2:left+pw,y2:yp,stroke:PAL.vp,'stroke-width':1.5,opacity:.95}),node('text',{x:left+6,y:yp-5,class:'axis-label',style:'fill:'+PAL.vp+';font-weight:600'},'POC')); }
   // 3.28.0: Demo-Positionen auch im Chart – blasser und mit „DEMO“ beschriftet (nur Anzeige)
   const chartPos = [...state.positions, ...state.demoPositions].filter(p => p.symbol === state.symbol), demoTag = p => isDemoPos(p) ? 'DEMO ' : '';
@@ -5895,7 +6294,8 @@ function setMarket(symbol,interval=state.interval) {
   state.symbol=normalized;state.interval=interval;$('symbol').value=normalized.slice(0,-4);state.pickError=null;
   if(changed){state.pan=0;state.anchorTime=null;state.candles=[];state.marketAt=0;state.marketError=null;state.funding=null;state.oi=null;state.history=null;state.fundingError=null;state.oiError=null;state.historyError=null;state.selected=null;state.selectedTime=null;state.fromCache=false;live.chartAt=0;}
   document.querySelectorAll('[data-interval]').forEach(b=>{const active=b.dataset.interval===interval;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});
-  render();void showCachedChart();return refresh();
+  render();void showCachedChart();if(CAP.on)void capLoad(); // 3.35.0: Cap des neuen Coins bzw. passende Auflösung
+  return refresh();
 }
 function pause() {state.paused=!state.paused;live.post({t:'pause',on:state.paused});if(state.paused)cancel();else{live.post({t:'wake'});void refresh();}status();renderMarket();renderCalculator();renderSignals();renderPositions();renderLivebar();updateTitle();syncStreams();renderSkeletons();}
 // ---- 3.32.0 (G04.3): Kryptowährungsfeld ----
@@ -5969,7 +6369,15 @@ $('watchlist').addEventListener('click',e=>{
 // Kerzen, kein Fehler), bleibt der bisherige Zustand stehen – kein Aufblinken beim Coinwechsel.
 var OV_NEED = { vp: ['Volumenprofil', 10], bb: ['Bollinger', 20], ema200: ['EMA 200', 200], zz: ['ZigZag', 2], div: ['RSI-Divergenz', 31] };
 function ovLock(k) {
+  if (CAP.on) return { why: 'In der Market-Cap-Ansicht aus: Preisebenen gehören nicht auf die Cap-Achse. Die Einstellung bleibt gespeichert und gilt wieder in der Kursansicht.' }; // 3.35.0
   const n = state.candles.length;
+  if (k === 'hz') { // 3.35.0 (G07): nur eine wirklich höhere Ebene, nur mit Analyse-Werten
+    const lab = anaLabel(ana.iv);
+    if (!anaHigher()) return { why: `Zonen ${lab} sind keine höhere Ebene als der Chart (${state.interval}). Zuschaltbar, wenn das Analyse-Intervall größer ist als das Chart-Intervall.` };
+    if (!ana.calc) return { why: ana.loading ? `Die ${lab}-Kerzen werden noch geladen.` : `Keine ${lab}-Analyse-Kerzen${ana.error ? ` (${ana.error})` : ''}.` };
+    if (!ana.calc.e200s && !ana.calc.bb && !ana.calc.prof) return { why: `Zu wenige abgeschlossene ${lab}-Kerzen für Zonen (vorhanden ${ana.calc.n}).` };
+    return null;
+  }
   if (k === 'ew') { const d = elliottWaves(); return d.short ? { req: EW.minBars, have: d.have, why: ewText(d) } : null; }
   if (k === 'ewfc') { const why = ewFcWhy(), d = why ? elliottWaves() : null; return why ? { ...(d.short ? { req: EW.minBars, have: d.have } : {}), why } : null; }
   const N = OV_NEED[k]; if (!N || n >= N[1]) return null;
@@ -5992,6 +6400,7 @@ function ovButtons() {
     if (s && s.textContent !== t) { s.textContent = t; s.hidden = !t; }
     if (b.title !== tip) b.title = tip;
   }
+  { const l = document.querySelector('[data-overlay="hz"] .hz-l'), t = `Zonen ${anaLabel(ana.iv)}`; if (l && l.textContent !== t) l.textContent = t; } // 3.35.0
   // ZigZag-Prognose: hängt am ZigZag – Antippen schaltet ihn mit ein (siehe zz-fc)
   const z = $('zz-fc'); if (z && ZZ_KEY) { const on = String(!!zzCfg().fc && !!state.overlays.zz); if (z.getAttribute('aria-pressed') !== on) z.setAttribute('aria-pressed', on); }
 }
@@ -6125,11 +6534,11 @@ $('backup-decrypt').addEventListener('click',()=>void decryptPending());
 $('decrypt-cancel').addEventListener('click',()=>{pendingEncrypted=null;$('decrypt-row').hidden=true;backupStatus('');});
 $('export-csv').addEventListener('click',()=>{if(!state.trades.length){backupStatus('Noch keine abgeschlossenen Trades.');return;}download(`trades-${new Date().toISOString().slice(0,10)}.csv`,tradesCsv(state.trades.slice().sort((a,b)=>a.closedAt-b.closedAt)),'text/csv;charset=utf-8');backupStatus('CSV erstellt (Semikolon, Dezimalkomma).');});
 $('pause').addEventListener('click',pause);$('refresh').addEventListener('click',()=>{live.post({t:'wake'});void refresh();});
-$('zoom-in').addEventListener('click',()=>zoom(.7));$('zoom-out').addEventListener('click',()=>zoom(1.4));
+$('zoom-in').addEventListener('click',()=>CAP.on?capZoom(.7):zoom(.7));$('zoom-out').addEventListener('click',()=>CAP.on?capZoom(1.4):zoom(1.4));
 let resizeTimer;new ResizeObserver(()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(renderMarket,100);}).observe($('chart'));
-$('pan-back').addEventListener('click',()=>setPan(state.pan+Math.max(1,Math.round(Math.min(state.count,state.candles.length)*.4))));
-$('pan-fwd').addEventListener('click',()=>setPan(state.pan-Math.max(1,Math.round(Math.min(state.count,state.candles.length)*.4))));
-$('pan-now').addEventListener('click',()=>setPan(0));
+$('pan-back').addEventListener('click',()=>CAP.on?capPan(1):setPan(state.pan+Math.max(1,Math.round(Math.min(state.count,state.candles.length)*.4))));
+$('pan-fwd').addEventListener('click',()=>CAP.on?capPan(-1):setPan(state.pan-Math.max(1,Math.round(Math.min(state.count,state.candles.length)*.4))));
+$('pan-now').addEventListener('click',()=>CAP.on?capPan(0):setPan(0));
 $('zoom-reset').addEventListener('click',chartViewReset);
 // Gesten: ein Finger wischen = blättern, zwei Finger = zoomen, Tippen = Kerze wählen, doppelt tippen = zurück zu jetzt
 (()=>{
@@ -6138,7 +6547,7 @@ $('zoom-reset').addEventListener('click',chartViewReset);
   const idxAt=clientX=>{const G=chartGeom;return G?Math.floor(frac(clientX)*G.count):0;};
   const hideHint=()=>{};
   box.addEventListener('pointerdown',e=>{
-    if(!chartGeom)return; pts.set(e.pointerId,{x:e.clientX,y:e.clientY}); try{box.setPointerCapture(e.pointerId);}catch{}
+    if(!chartGeom||CAP.on)return; pts.set(e.pointerId,{x:e.clientX,y:e.clientY}); try{box.setPointerCapture(e.pointerId);}catch{}
     if(pts.size===1)g={type:'tap',x0:e.clientX,y0:e.clientY,pan0:state.pan,count0:state.count};
     else if(pts.size===2){const [a,b]=[...pts.values()];g={type:'pinch',d0:Math.max(20,Math.abs(a.x-b.x)),f:frac((a.x+b.x)/2),count0:state.count,pan0:state.pan};hideHint();}
   });
@@ -6163,7 +6572,7 @@ $('zoom-reset').addEventListener('click',chartViewReset);
   box.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse'&&!pts.size)chartGeom?.clear();});
   box.addEventListener('gesturestart',e=>e.preventDefault());
   box.addEventListener('wheel',e=>{
-    if(!chartGeom)return;
+    if(!chartGeom||CAP.on)return;
     if(e.ctrlKey){e.preventDefault();setView(state.count*Math.exp(e.deltaY*.01),frac(e.clientX));hideHint();}
     else if(Math.abs(e.deltaX)>Math.abs(e.deltaY)){e.preventDefault();setPan(state.pan+e.deltaX/8);hideHint();}
   },{passive:false});
@@ -6408,6 +6817,7 @@ function onTick(now) {
   pulseTick(now); // 3.24.0: BTC-Puls – Schwellen je Uhrzeit, 1m-Kerzen von BTC
   s247Tick(now); // 5.1: meldet sich der 24/7-Dienst?
   if (typeof svcTick === 'function') svcTick(now); // 3.33.0 (G05): Schalterstand am Dienst
+  anaTick(now); // 3.35.0 (G07): Analyse-Reihe nach dem nächsten Kerzenschluss
   if (now - lastStreamSync > 5000) { lastStreamSync = now; syncStreams(); }
   if (Date.now() - lastSeenSaved > 30000) saveLastSeen();
   // 3.32.0 (G04.7): Kurse offener Positionen nachladen, bevor sie die Frischegrenze erreichen (ruhiger Coin ohne Stream-Meldung,
@@ -6600,7 +7010,7 @@ if (window.ResizeObserver) {
 const THEME_KEY = 'scalpdesk.theme.v1', LAYOUT_KEY = 'scalpdesk.layout.v1', TAB_KEY = 'scalpdesk.tab.v1';
 const desktopMq = matchMedia('(min-width:1100px) and (hover:hover) and (pointer:fine)');
 let PAL = {};
-function readPalette() { const cs = getComputedStyle(docEl), g = n => cs.getPropertyValue(n).trim(); PAL = { up: g('--c-up'), down: g('--c-down'), bb: g('--c-bb'), ema: g('--c-ema'), vp: g('--c-vp'), vpBar: g('--c-vpbar'), short: g('--c-short'), last: g('--c-last'), zero: g('--c-zero'), liq: g('--c-liq'), lm: [1, 2, 3, 4, 5].map(i => g('--c-lm' + i)), magnet: g('--c-magnet') }; }
+function readPalette() { const cs = getComputedStyle(docEl), g = n => cs.getPropertyValue(n).trim(); PAL = { up: g('--c-up'), down: g('--c-down'), bb: g('--c-bb'), ema: g('--c-ema'), vp: g('--c-vp'), vpBar: g('--c-vpbar'), short: g('--c-short'), last: g('--c-last'), zero: g('--c-zero'), liq: g('--c-liq'), hz: g('--c-hz'), lm: [1, 2, 3, 4, 5].map(i => g('--c-lm' + i)), magnet: g('--c-magnet') }; }
 function applyTheme(t, save = true) {
   t = t === 'light' ? 'light' : 'dark'; docEl.dataset.theme = t;
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', t === 'light' ? '#eef1f5' : '#000000');
@@ -6726,12 +7136,13 @@ function chartSkeleton() {
   for (const h of SKEL_BARS) { const i = el('i', 'skel'); i.style.height = h + '%'; box.append(i); }
   const f = document.createDocumentFragment(); f.append(box, el('span', 'sr-only', 'Marktdaten werden geladen')); return f;
 }
-const SKEL_MARKET = ['price', 'candle-change', 'ohlc', 'lb-price', 'lg-support', 'lg-resistance', 'poc-value', 'poc-note', 'poc-dist', 'poc-va', 'bb-value', 'bb-note', 'bb-bands', 'bb-stat', 'ema-chart',
-  'rsi-value', 'rsi-note', 'atr-value', 'atr-note', 'volume-value', 'volume-note', 'support', 'support-dist', 'resistance', 'resistance-dist', 'quantity', 'entry', 'target'];
+const SKEL_MARKET = ['price', 'candle-change', 'ohlc', 'lb-price', 'lg-support', 'lg-resistance', 'support', 'support-dist', 'resistance', 'resistance-dist', 'quantity', 'entry', 'target'];
+// 3.35.0 (G07): Zonen und Indikatoren hängen an der Analyse-Reihe
+const SKEL_ANA = ['poc-value', 'poc-note', 'poc-dist', 'poc-va', 'bb-value', 'bb-note', 'bb-bands', 'bb-stat', 'ema-chart', 'ema-value', 'ema-note', 'ema-dist', 'rsi-value', 'rsi-note', 'atr-value', 'atr-note', 'volume-value', 'volume-note', 'trend-value', 'trend-note'];
 function renderSkeletons() {
   const mkt = !state.candles.length && !state.marketError && !state.paused, set = (ids, on) => ids.forEach(id => $(id).classList.toggle('skel', on));
   set(SKEL_MARKET, mkt);
-  set(['ema-value', 'ema-note', 'ema-dist'], mkt || (!state.paused && state.interval !== '1d' && !state.mtf['1d']));
+  set(SKEL_ANA, !state.paused && !ana.calc && !ana.error);
   set(['funding-value', 'funding-note'], !state.paused && !state.funding && !state.fundingError);
   set(['oi-value', 'oi-note'], !state.paused && !state.oi && !state.oiError);
   $('dash').setAttribute('aria-busy', String(mkt));
@@ -7604,6 +8015,7 @@ function magnetAt(clientX, clientY, touch) {
   return { price: roundPrice(Math.round(raw / st) * st), name: '', k: null, i };
 }
 function magnetDraw() {
+  if (CAP.on) { magnetHide(); return; } // 3.35.0: keine Preisebenen auf der Cap-Achse
   const G = chartGeom, svg = $('chart').querySelector('svg'); if (!svg) return;
   svg.querySelector('.magnet-g')?.remove();
   const m = magnet.at && magnetAt(magnet.at.x, magnet.at.y, magnet.at.touch);
@@ -7635,6 +8047,7 @@ function eatGhostClick() {
 }
 // Alarm mit dem Preis unter dem Zeiger vorbereiten: am iPad/Handy im Schnell-Alarm, am Computer im Formular „Kurs-Alarme“
 function magnetCommit(e) {
+  if (CAP.on) return false;
   const m = magnetAt(e.clientX, e.clientY, e.pointerType === 'touch' || e.pointerType === 'pen'); if (!m) return false;
   const note = m.name ? `${m.name} (${state.interval})` : '';
   setMagnet(false); if (e.pointerType !== 'mouse') { magnetHide(); eatGhostClick(); }
@@ -7700,7 +8113,7 @@ function drawLiqLines(svg, over, G) {
 // (nicht im Backup). Beim nächsten Abruf lädt das Dashboard nur die Kerzen ab der zuletzt gespeicherten nach. Diese letzte
 // Kerze wird dabei mitgeladen und verglichen; weicht sie ab, wird die Reihe verworfen und vollständig neu geladen.
 const KC_DB = 'scalpdesk-candles', KC_MAX = 40, KC_KEEP = 500, KC_INDEX = '__index';
-const IV_MS = { '1m': 6e4, '3m': 18e4, '5m': 3e5, '15m': 9e5, '1h': 36e5, '2h': 72e5, '4h': 144e5, '1d': 864e5, '1w': 6048e5, '1M': 2678e6 }; // 3m und 2h: Zeiträume der Vorauswahl (3.25.0)
+const IV_MS = { '1m': 6e4, '3m': 18e4, '5m': 3e5, '15m': 9e5, '30m': 18e5, '1h': 36e5, '2h': 72e5, '4h': 144e5, '12h': 432e5, '1d': 864e5, '1w': 6048e5, '1M': 2678e6 }; // 3m und 2h: Zeiträume der Vorauswahl (3.25.0)
 const kc = { mem: new Map(), db: undefined, dirty: new Set(), drop: new Set(), timer: null, stats: { full: 0, delta: 0, shown: 0 } };
 const kcKey = (source, symbol, interval) => `${source}|${symbol}|${interval}`;
 const kcRow = c => [c.time, c.open, c.high, c.low, c.close, c.volume, c.closeTime];
@@ -11336,6 +11749,9 @@ function renderTgcEvents() {
   box.querySelector('ul').replaceChildren(...[...rows, ...(rows.length ? [] : own)].map(t => el('li', '', t)));
 }
 // Prüfzugang für die Tests (wie window.__sdMem): Zustand und einzelne Abläufe der Telegram-Ziele und der Sendefreigabe
+window.__g07 = { get ana() { return ana; }, get cap() { return CAP; }, blocks30: (d, n) => blocks30(d, n), anaCalc: (c, iv) => anaCalc(c, iv), anaTrend: o => anaTrend(o), validateMarketCap: r => validateMarketCap(r), coinGeckoMarketCapPoints: j => coinGeckoMarketCapPoints(j),
+  capKey: (...a) => capKey(...a), capPut: e => capPut(e), capGet: k => capGet(k), setCapMax: n => { CAP_MAX_BYTES = n; }, capBlock: p => capBlock(p), capSeries: (p, id, r) => capSeries(p, id, r), compactCap: v => compactCap(v), hzSeries: d => hzSeries(d),
+  chartPoc: () => { const { start, end } = viewWindow(); return volumeProfile(state.candles.slice(start, end))?.poc ?? null; } };
 window.__g06 = { timgData: id => timgData(id), timgRange: d => timgRange(d), tgtEpoch: id => tgtEpoch(id), get jobs() { return loadTimg(); }, timgPreview: id => timgPreview(id) };
 window.__g05 = { get state() { return state; }, get chan() { return chan; }, get svc() { return svc; }, get svcLog() { return svcLog; }, get chanState() { return chanState; },
   readChanForm, saveChannels, sendTgBackup, notifyChannels, svcRefresh, alarmSub, persist, renderAlarms, syncStreams, tgTarget, backupPayload, alarmEventId };
@@ -11935,13 +12351,13 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
         </form>
         <div id="market-error" class="notice error" role="alert" hidden></div>
         <div class="chart-heading"><div><div class="pair-title"><span class="coin-icon" id="coin-icon">B</span><h2 id="pair-label">BTC <span>/ USDT</span></h2><span class="badge" id="market-badge">SPOT</span></div><div class="price-row"><strong id="price" class="skel">—</strong><span class="unit">USDT</span><span class="change skel" id="candle-change">—</span></div><div class="signal-line" id="signal-line" hidden></div><button type="button" class="button ghost alarm-btn" id="alarm-here">🔔 Alarm für diesen Kurs</button></div><div class="chart-meta"><span id="price-eur">Eurokurs ausstehend</span><span id="updated">Noch keine Marktdaten</span></div></div>
-        <div class="chart-toolbar"><div class="intervals" role="group" aria-label="Kerzenintervall"><button type="button" data-interval="1m" class="active" aria-pressed="true">1m</button><button type="button" data-interval="5m" aria-pressed="false">5m</button><button type="button" data-interval="15m" aria-pressed="false">15m</button><button type="button" data-interval="1h" aria-pressed="false">1h</button><button type="button" data-interval="4h" aria-pressed="false">4h</button><button type="button" data-interval="1d" aria-pressed="false">1d</button><button type="button" data-interval="1w" aria-pressed="false">1w</button><button type="button" data-interval="1M" aria-pressed="false" title="1 Monat">1M</button></div><div class="zoom-controls" role="group" aria-label="Chart zoomen und blättern"><button id="pan-back" type="button" aria-label="Weiter zurück in der Zeit">◀</button><button id="zoom-out" type="button" aria-label="Herauszoomen, mehr Kerzen">−</button><button id="zoom-in" type="button" aria-label="Hineinzoomen, weniger Kerzen">+</button><button id="pan-fwd" type="button" aria-label="Weiter Richtung jetzt">▶</button><button id="pan-now" type="button" hidden>Jetzt</button><button id="zoom-reset" type="button" hidden aria-label="Standardansicht: 80 Kerzen bis zur aktuellen Kerze" title="Standardansicht: 80 Kerzen bis zur aktuellen Kerze">⟲</button><button id="magnet" type="button" aria-pressed="false" title="Magnet: auf ein Chart-Level tippen oder klicken, um dort einen Kurs-Alarm zu setzen" aria-label="Magnet: Kurs-Alarm per Klick auf ein Chart-Level">🧲</button><button id="chart-full" type="button" aria-pressed="false" aria-label="Chart im Vollbild" title="Vollbild – schließen mit Enter, Esc oder diesem Symbol"><svg class="ico-max" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><svg class="ico-min" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><details class="tip"><summary aria-label="Bedienung des Charts"><span>i</span></summary><div class="tip-body"><p>Zoomen: zwei Finger auseinander/zusammen, Strg + Mausrad oder − / +.</p><p>Zurückblättern: mit einem Finger wischen, waagrecht scrollen oder ◀ ▶. Doppelt tippen: zurück zu jetzt.</p><p>🧲 Magnet: einschalten, dann auf eine Linie oder Kerze tippen bzw. klicken – der Kurs-Alarm wird mit genau diesem Preis vorausgefüllt. Der Preis rastet an POC, Value Area, Pivots, EMA 200, Bollinger, Kerzen-Hochs und -Tiefs, Liquidationslinien sowie den Liq-Clustern der Heatmap ein. Am Computer geht es jederzeit auch per Rechtsklick.</p><p>Rote gestrichelte Linie: Liquidationspreis deiner Position (Wert der Börse oder Modell bei isolierter Margin), rot getönt der Bereich dahinter. Dünner: das Szenario aus dem Positionsrechner.</p><p>Tastatur: Pfeiltasten wählen Kerzen, + und − zoomen.</p></div></details></div></div>
+        <div class="chart-toolbar"><div class="tb-main"><div class="intervals" role="group" aria-label="Kerzenintervall"><button type="button" data-interval="1m" class="active" aria-pressed="true">1m</button><button type="button" data-interval="5m" aria-pressed="false">5m</button><button type="button" data-interval="15m" aria-pressed="false">15m</button><button type="button" data-interval="1h" aria-pressed="false">1h</button><button type="button" data-interval="4h" aria-pressed="false">4h</button><button type="button" data-interval="1d" aria-pressed="false">1d</button><button type="button" data-interval="1w" aria-pressed="false">1w</button><button type="button" data-interval="1M" aria-pressed="false" title="1 Monat">1M</button></div><button type="button" class="metric-btn" data-metric="cap" aria-pressed="false" aria-label="Market Cap in USD statt Kurs anzeigen" title="Market Cap (USD) statt Kurs – noch einmal tippen: zurück zum Kurs. Historische Werte schlüssellos von CoinGecko, sonst CoinPaprika">MCap</button></div><div class="zoom-controls" role="group" aria-label="Chart zoomen und blättern"><button id="pan-back" type="button" aria-label="Weiter zurück in der Zeit">◀</button><button id="zoom-out" type="button" aria-label="Herauszoomen, mehr Kerzen">−</button><button id="zoom-in" type="button" aria-label="Hineinzoomen, weniger Kerzen">+</button><button id="pan-fwd" type="button" aria-label="Weiter Richtung jetzt">▶</button><button id="pan-now" type="button" hidden>Jetzt</button><button id="zoom-reset" type="button" hidden aria-label="Standardansicht: 80 Kerzen bis zur aktuellen Kerze" title="Standardansicht: 80 Kerzen bis zur aktuellen Kerze">⟲</button><button id="magnet" type="button" aria-pressed="false" title="Magnet: auf ein Chart-Level tippen oder klicken, um dort einen Kurs-Alarm zu setzen" aria-label="Magnet: Kurs-Alarm per Klick auf ein Chart-Level">🧲</button><button id="chart-full" type="button" aria-pressed="false" aria-label="Chart im Vollbild" title="Vollbild – schließen mit Enter, Esc oder diesem Symbol"><svg class="ico-max" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><svg class="ico-min" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><details class="tip"><summary aria-label="Bedienung des Charts"><span>i</span></summary><div class="tip-body"><p>Zoomen: zwei Finger auseinander/zusammen, Strg + Mausrad oder − / +.</p><p>Zurückblättern: mit einem Finger wischen, waagrecht scrollen oder ◀ ▶. Doppelt tippen: zurück zu jetzt.</p><p>🧲 Magnet: einschalten, dann auf eine Linie oder Kerze tippen bzw. klicken – der Kurs-Alarm wird mit genau diesem Preis vorausgefüllt. Der Preis rastet an POC, Value Area, Pivots, EMA 200, Bollinger, Kerzen-Hochs und -Tiefs, Liquidationslinien sowie den Liq-Clustern der Heatmap ein. Am Computer geht es jederzeit auch per Rechtsklick.</p><p>Rote gestrichelte Linie: Liquidationspreis deiner Position (Wert der Börse oder Modell bei isolierter Margin), rot getönt der Bereich dahinter. Dünner: das Szenario aus dem Positionsrechner.</p><p>Tastatur: Pfeiltasten wählen Kerzen, + und − zoomen.</p></div></details></div></div>
         <div class="ohlc-row"><div class="ohlc skel" id="ohlc">O — &nbsp; H — &nbsp; L — &nbsp; C —</div><details class="tip div-tip" id="div-tip" hidden><summary aria-label="RSI-Divergenz: Erklärung und Handlungsleitfaden"><i class="div-dot" aria-hidden="true"></i><b class="div-l" id="div-chip-l">RSI-Divergenz</b><b class="div-s" id="div-chip-s">Div.</b><span>i</span></summary><div class="tip-body div-body"><p class="div-title" id="div-title"></p><p id="div-case"></p><p class="div-tent" id="div-tent" hidden></p><p class="div-other" id="div-other" hidden></p><p class="div-h">Handlungsleitfaden</p><ol class="div-steps"><li><b>Kein Einstiegssignal.</b> Die Divergenz zeigt nachlassenden Schwung, keine Umkehr. Auch Warten auf eine Bestätigung half im Backtest nicht (unten).</li><li id="div-step-ext"></li><li id="div-step-pos"></li><li id="div-step-risk"></li></ol><p class="div-alarm-row"><button type="button" class="button ghost" id="div-alarm">🔔 Alarm</button></p><p class="div-honest"><b>Ehrlich – Backtest mit genau diesem Scanner</b> (echte BTC-Stundenkerzen 2017–2019, Coinbase und Bitfinex): Nach einer Divergenz lief der Kurs nur in 48–51 % der Fälle zuerst um die Mindestbewegung in die erwartete Richtung – als Trade nach Gebühren (0,06 % je Seite) durchweg ein Verlust (−25 % bis −47 %). Warten machte es nicht besser: ab der Bestätigung des Umkehrpunkts 44–48 %, nach einem Schlusskurs über dem Zwischenhoch bzw. unter dem Zwischentief nur 21–39 %. Deshalb zeigt die App dazu keine Trefferquote und kein Kauf- oder Verkaufssignal.</p><p class="div-note">Grün = bullisch, rot = bärisch. Eine neue Divergenz pulsiert, bis du diese Erklärung geöffnet hast, danach leuchtet sie ruhig. Ist „Bewegung reduzieren“ im System eingestellt, leuchtet sie ohne Pulsieren.</p></div></details></div>
         <div id="chart" class="chart" tabindex="0" role="img" aria-label="Kerzenchart. Mit Pfeiltasten Kerzen auswählen, mit Plus und Minus zoomen."><div class="chart-skel" aria-hidden="true"><i class="skel" style="height:38%"></i><i class="skel" style="height:52%"></i><i class="skel" style="height:46%"></i><i class="skel" style="height:61%"></i><i class="skel" style="height:57%"></i><i class="skel" style="height:70%"></i><i class="skel" style="height:64%"></i><i class="skel" style="height:49%"></i><i class="skel" style="height:55%"></i><i class="skel" style="height:68%"></i><i class="skel" style="height:74%"></i><i class="skel" style="height:66%"></i><i class="skel" style="height:58%"></i><i class="skel" style="height:63%"></i><i class="skel" style="height:77%"></i><i class="skel" style="height:71%"></i><i class="skel" style="height:80%"></i><i class="skel" style="height:69%"></i><i class="skel" style="height:62%"></i><i class="skel" style="height:72%"></i><i class="skel" style="height:84%"></i><i class="skel" style="height:78%"></i><i class="skel" style="height:73%"></i><i class="skel" style="height:88%"></i></div><span class="sr-only">Marktdaten werden geladen</span></div><i class="div-halo" id="div-halo" hidden aria-hidden="true"><b></b></i>
         <div class="fib-strip" id="fib-strip" role="group" aria-label="Fibonacci-Marken 38,2 / 50 / 61,8 % mit Abstand zum aktuellen Kurs – antippen legt einen Alarm an" hidden><div class="fs-head"><b id="fs-head">Fib</b><details class="tip left" id="fs-tip"><summary aria-label="Fibonacci-Marken erklärt"><span>i</span></summary><div class="tip-body"><p><b>Fibonacci-Retracement:</b> Wie weit läuft der Kurs nach einer Bewegung zurück? Gemessen in Prozent der letzten Schwungbewegung.</p><p id="fs-tip-swing">Grundlage ist der letzte abgeschlossene ZigZag-Schwung.</p><ul class="fs-tip-list"><li><b>23,6 %</b><span data-fl="23,6"></span> – flacher Rücklauf, gilt als Zeichen eines starken Trends</li><li><b>38,2 %</b><span data-fl="38,2"></span> – erste häufig beachtete Marke</li><li><b>50 %</b><span data-fl="50"></span> – halber Rücklauf; keine Fibonacci-Zahl, aber traditionell beachtet</li><li><b>61,8 %</b><span data-fl="61,8"></span> – der „goldene Schnitt“; 50–61,8&nbsp;% ist die „goldene Zone“ (im Chart hinterlegt)</li><li><b>78,6 %</b><span data-fl="78,6"></span> – tiefer Rücklauf, der Schwung ist dann fast ganz zurückgenommen</li></ul><p><b>So nutzen:</b> als Orientierung, wo Rücksetzer oder Erholungen oft vermutet werden. Eine Marke antippen legt dort einen Alarm an – dann die Reaktion des Kurses abwarten. Viele Trader achten besonders auf Marken, die mit anderen Levels zusammenfallen (POC, EMA 200, Unterstützung); geprüft ist das hier nicht.</p><p><b>Ehrlich:</b> Im Backtest mit echten BTC-Stundenkerzen (2017–2019) endeten Gegenbewegungen nicht häufiger an diesen Marken als an um 6 Punkte verschobenen (27–31&nbsp;% gegenüber 23–35&nbsp;%); knapp die Hälfte lief sogar über 100&nbsp;% hinaus. Deshalb keine Trefferquote – Orientierung, kein Handelssignal.</p><p>Die ZigZag-Mindestbewegung bestimmt den Schwung: kleiner heißt kürzere Schwünge und Marken näher am Kurs.</p></div></details></div><button type="button" class="fs-chip" data-fib="38,2" disabled><span class="fs-r">38,2<span class="fs-pc"> %</span></span><span class="fs-val skel">—</span><span class="fs-dist"></span></button><button type="button" class="fs-chip" data-fib="50" disabled><span class="fs-r">50<span class="fs-pc"> %</span></span><span class="fs-val skel">—</span><span class="fs-dist"></span></button><button type="button" class="fs-chip" data-fib="61,8" disabled><span class="fs-r">61,8<span class="fs-pc"> %</span></span><span class="fs-val skel">—</span><span class="fs-dist"></span></button><span class="fs-note" id="fs-note" hidden></span></div>
         <div class="lmap-strip" id="lmap-strip" hidden><span class="lm-head"><b>Liq-Heatmap</b><span class="lm-src" id="lm-src">Schätzung aus Open Interest</span><span class="lm-scale" role="img" aria-label="Farbskala: je kräftiger, desto mehr geschätzte Liquidationen"><small>wenig</small><i></i><small>viel</small></span><details class="tip left"><summary aria-label="So entsteht die Liquidations-Heatmap"><span>i</span></summary><div class="tip-body"><p><b>Wo würden viele gehebelte Positionen liquidiert?</b> Binance veröffentlicht das nicht – die Heatmap schätzt es aus öffentlichen Futures-Daten.</p><p>Steigt das Open Interest (offene Kontrakte) in einem Zeitraum, wurden neue Positionen eröffnet – zum Durchschnittspreis dieses Zeitraums. Den Long-/Short-Anteil liefern die Taker-Käufe. Für die Hebel gilt eine typische Verteilung (5× 10 %, 10× 25 %, 20× 30 %, 50× 20 %, 100× 15 %); die Liquidationspreise rechnet das Dashboard wie im Rechner, mit der dort eingestellten Maintenance Margin.</p><p>Sinkt das Open Interest, werden alle Zonen anteilig schwächer. Läuft der Kurs durch eine Zone, gilt sie als aufgelöst und endet im Chart. Je kräftiger die Farbe, desto mehr geschätzte Positionen.</p><p>Oberhalb des Kurses liegen Short-, unterhalb Long-Liquidationen. Die Knöpfe zeigen das stärkste Cluster je Seite im Bereich ±10 % – antippen legt einen Alarm an. Viele Trader sehen große Cluster als mögliche Kursziele; eine Garantie ist das nicht.</p></div></details></span><button type="button" class="lm-chip" id="lm-short" data-lm="short" disabled><span class="lm-side">Shorts ▲</span><span class="lm-val skel" id="lm-short-v">—</span></button><button type="button" class="lm-chip" id="lm-long" data-lm="long" disabled><span class="lm-side">Longs ▼</span><span class="lm-val skel" id="lm-long-v">—</span></button><span class="lm-note" id="lm-note" hidden></span></div>
         <div class="wh-strip" id="wh-strip" hidden><div class="wh-head"><b>Whales</b><select id="wh-min" class="wh-min" aria-label="Whale-Schwelle: Orders ab"><option value="100000">ab 100 Tsd.</option><option value="250000">ab 250 Tsd.</option><option value="500000">ab 500 Tsd.</option><option value="1000000">ab 1 Mio.</option></select><span class="wh-src" id="wh-src">letzte 60 s</span><span class="wh-last" id="wh-last"><span class="wl-l" id="wh-last-l"></span><span class="wl-s" id="wh-last-s"></span></span><details class="tip left"><summary aria-label="So funktioniert der Whale-Alert"><span>i</span></summary><div class="tip-body"><p><b>Große Marktorders („Whales“)</b> im Chart-Kürzel ab der gewählten Schwelle (Standard 100.000 USDT), live aus dem Einzel-Trade-Stream von Binance.</p><p>Räumt eine große Marktorder mehrere Preisstufen ab, meldet Binance mehrere Teil-Trades mit derselben Handelszeit, deren Preis in Order-Richtung weiterläuft (Kauf steigend, Verkauf fallend). Die App fasst genau diese zu einer Order zusammen; angezeigt wird der Durchschnittspreis.</p><p><b>Kauf</b> heißt: Jemand hat aktiv zum Marktpreis gekauft (Taker-Kauf), <b>Verkauf</b> entsprechend. Die Zeile „Alle Trades“ zeigt den Anteil der Taker-Käufe am gesamten Umsatz der letzten 60 s – aller Trades, nicht nur der großen.</p><p><b>Ehrlich:</b> Das beschreibt den laufenden Handel und ist keine Vorhersage. Ob große Orders den Kurs weiter in ihre Richtung treiben, ist hier nicht geprüft – dafür bräuchte es Einzel-Trade-Daten über lange Zeit.</p><p><b>Reiter „Orderbuch“:</b> wartende große Limit-Orders („Wände“) – die größte Kauf-Wand unter und die größte Verkaufs-Wand über dem Kurs im Bereich ±2 %. Als Wand gilt eine Preiszone (0,1 % des Kurses) mit mindestens doppelt so viel wie im Schnitt. Geladen wird nur bei offenem Reiter, alle 10 s (1000 Stufen je Seite; reicht das nicht bis ±2 %, steht der erfasste Bereich dabei). Limit-Orders können jederzeit zurückgezogen werden, auch absichtlich („Spoofing“), versteckte Orders sind nicht sichtbar – „seit …“ zeigt, wie lange eine Wand schon steht. Momentaufnahme, kein Versprechen.</p></div></details></div><div class="wh-chip buy" id="wh-buy" title="Große Kauforders der letzten 60 s: Anzahl · Summe in USDT"><span class="wh-k">▲<span class="wk-w"> Käufe</span></span><span class="wh-v skel" id="wh-buy-v">—</span></div><div class="wh-chip sell" id="wh-sell" title="Große Verkaufsorders der letzten 60 s: Anzahl · Summe in USDT"><span class="wh-k">▼<span class="wk-w"> Verkäufe</span></span><span class="wh-v skel" id="wh-sell-v">—</span></div><div class="wh-flow" id="wh-flow"><span class="wh-k">Alle Trades</span><span class="wh-bar" id="wh-bar"><i id="wh-bar-b"></i></span><span class="wh-v" id="wh-flow-v">—</span></div><details class="ob" id="ob"><summary class="ob-sum">Orderbuch <small id="ob-note">größte Wände ±2 %</small></summary><div class="ob-row"><button type="button" class="ob-chip bid" id="ob-bid" data-ob="bid" disabled><span class="ob-k"><span class="wl-l">Kauf-Wand</span><span class="wl-s">Kauf</span></span><span class="ob-p" id="ob-bid-p">—</span><span class="ob-d" id="ob-bid-d"></span><span class="ob-u" id="ob-bid-u"></span><span class="ob-a" id="ob-bid-a" hidden><span class="wl-l" id="ob-bid-al"></span><span class="wl-s" id="ob-bid-as"></span></span></button><button type="button" class="ob-chip ask" id="ob-ask" data-ob="ask" disabled><span class="ob-k"><span class="wl-l">Verkaufs-Wand</span><span class="wl-s">Verkauf</span></span><span class="ob-p" id="ob-ask-p">—</span><span class="ob-d" id="ob-ask-d"></span><span class="ob-u" id="ob-ask-u"></span><span class="ob-a" id="ob-ask-a" hidden><span class="wl-l" id="ob-ask-al"></span><span class="wl-s" id="ob-ask-as"></span></span></button></div></details></div>
-        <div class="chart-footer"><div class="chart-legend"><span class="lg"><i class="legend-line support"></i><span>Unterstützung<small id="lg-support" class="skel">—</small></span></span><span class="lg"><i class="legend-line resistance"></i><span>Widerstand<small id="lg-resistance" class="skel">—</small></span></span><span class="overlay-toggles" role="group" aria-label="Chart-Ebenen ein- und ausblenden"><button type="button" data-overlay="vp" aria-pressed="true"><i class="sw vp"></i>Volumenprofil · POC</button><button type="button" data-overlay="ema200" aria-pressed="true"><i class="sw ema"></i>EMA 200</button><button type="button" data-overlay="bb" aria-pressed="true"><i class="sw bb"></i>Bollinger</button><button type="button" data-overlay="hilo" aria-pressed="true" title="Hoch und Tief: höchster und tiefster Kurs der sichtbaren Kerzen, fett in Grün bzw. Rot an der Dochtspitze"><i class="sw hilo"></i>Hoch/Tief</button><button type="button" data-overlay="liq" aria-pressed="true" title="Liquidationspreise: offene Positionen (Wert der Börse oder Modell bei isolierter Margin) und Rechner-Szenario"><i class="sw liq"></i>Liquidation</button><button type="button" data-overlay="lmap" aria-pressed="true" title="Liquidations-Heatmap: geschätzte Zonen aus Open Interest und typischen Hebeln"><i class="sw lmap"></i>Liq-Heatmap</button><button type="button" data-overlay="zz" aria-pressed="true" title="ZigZag: Umkehrpunkte (Pivots) ab der eingestellten Mindestbewegung – Grundlage für Divergenzen, Elliott-Wellen und Fibonacci"><i class="sw zz"></i>ZigZag</button><select id="zz-pct" class="zz-pct" aria-label="ZigZag: Mindestbewegung für einen Umkehrpunkt" title="Mindestbewegung für einen Umkehrpunkt"><option value="0.25">0,25 %</option><option value="0.5">0,5 %</option><option value="1">1 %</option><option value="2">2 %</option><option value="3">3 %</option><option value="5">5 %</option><option value="8">8 %</option></select><button type="button" id="zz-fc" class="zz-fc-btn" aria-pressed="false" title="Prognose: statistische Projektion des nächsten ZigZag-Schwungs (Median bisheriger Schwünge dieses Charts) – keine Vorhersage"><i class="sw zzfc"></i>Prognose</button><button type="button" data-overlay="div" aria-pressed="true" title="RSI-Divergenzen: Kurs und RSI 14 laufen an den ZigZag-Umkehrpunkten auseinander (letzte 40 abgeschlossene Kerzen) – Hinweis, kein Handelssignal"><i class="sw div"></i>RSI-Div.</button><button type="button" data-overlay="ew" aria-pressed="true" title="Elliott-Wellen: schematische Zuordnung 1–5 und A–C auf den ZigZag-Umkehrpunkten nach den drei Grundregeln (ab 50 Kerzen) – andere Zählungen sind möglich, keine Prognose"><i class="sw ew"></i><span>Elliott</span></button><button type="button" data-overlay="ewfc" aria-pressed="false" title="Wellen-Prognose: schematischer Weg der nächsten Elliott-Wellen nach den üblichen Fibonacci-Faustregeln (nur bei einer aktuellen Zählung) – keine Prozentzahl, kein Handelssignal"><i class="sw ewfc"></i><span>Wellen-Prognose</span></button><button type="button" data-overlay="fib" aria-pressed="true" title="Fibonacci-Retracement: 23,6 bis 78,6 % des letzten abgeschlossenen ZigZag-Schwungs – Orientierung für Rücksetzer, kein Handelssignal"><i class="sw fib"></i>Fibonacci</button><button type="button" data-overlay="whale" aria-pressed="true" title="Whale-Alert: große Marktorders ab 100.000 USDT und Verhältnis der Käufe zu Verkäufen der letzten 60 s – Beschreibung, keine Vorhersage"><i class="sw whale"></i>Whales</button></span></div><span id="chart-caption">Zeitachse UTC · 1m</span></div>
+        <div class="chart-footer"><div class="chart-legend"><span class="lg"><i class="legend-line support"></i><span>Unterstützung<small id="lg-support" class="skel">—</small></span></span><span class="lg"><i class="legend-line resistance"></i><span>Widerstand<small id="lg-resistance" class="skel">—</small></span></span><span class="overlay-toggles" role="group" aria-label="Chart-Ebenen ein- und ausblenden"><button type="button" data-overlay="vp" aria-pressed="true"><i class="sw vp"></i>Volumenprofil · POC</button><button type="button" data-overlay="ema200" aria-pressed="true"><i class="sw ema"></i>EMA 200</button><button type="button" data-overlay="hz" aria-pressed="false" title="Höhere Zonen: EMA 200, Bollinger und POC/Value Area des Analyse-Intervalls – je Kerze der damals schon bestätigte Stand"><i class="sw hz"></i><span class="hz-l">Zonen 4h</span></button><button type="button" data-overlay="bb" aria-pressed="true"><i class="sw bb"></i>Bollinger</button><button type="button" data-overlay="hilo" aria-pressed="true" title="Hoch und Tief: höchster und tiefster Kurs der sichtbaren Kerzen, fett in Grün bzw. Rot an der Dochtspitze"><i class="sw hilo"></i>Hoch/Tief</button><button type="button" data-overlay="liq" aria-pressed="true" title="Liquidationspreise: offene Positionen (Wert der Börse oder Modell bei isolierter Margin) und Rechner-Szenario"><i class="sw liq"></i>Liquidation</button><button type="button" data-overlay="lmap" aria-pressed="true" title="Liquidations-Heatmap: geschätzte Zonen aus Open Interest und typischen Hebeln"><i class="sw lmap"></i>Liq-Heatmap</button><button type="button" data-overlay="zz" aria-pressed="true" title="ZigZag: Umkehrpunkte (Pivots) ab der eingestellten Mindestbewegung – Grundlage für Divergenzen, Elliott-Wellen und Fibonacci"><i class="sw zz"></i>ZigZag</button><select id="zz-pct" class="zz-pct" aria-label="ZigZag: Mindestbewegung für einen Umkehrpunkt" title="Mindestbewegung für einen Umkehrpunkt"><option value="0.25">0,25 %</option><option value="0.5">0,5 %</option><option value="1">1 %</option><option value="2">2 %</option><option value="3">3 %</option><option value="5">5 %</option><option value="8">8 %</option></select><button type="button" id="zz-fc" class="zz-fc-btn" aria-pressed="false" title="Prognose: statistische Projektion des nächsten ZigZag-Schwungs (Median bisheriger Schwünge dieses Charts) – keine Vorhersage"><i class="sw zzfc"></i>Prognose</button><button type="button" data-overlay="div" aria-pressed="true" title="RSI-Divergenzen: Kurs und RSI 14 laufen an den ZigZag-Umkehrpunkten auseinander (letzte 40 abgeschlossene Kerzen) – Hinweis, kein Handelssignal"><i class="sw div"></i>RSI-Div.</button><button type="button" data-overlay="ew" aria-pressed="true" title="Elliott-Wellen: schematische Zuordnung 1–5 und A–C auf den ZigZag-Umkehrpunkten nach den drei Grundregeln (ab 50 Kerzen) – andere Zählungen sind möglich, keine Prognose"><i class="sw ew"></i><span>Elliott</span></button><button type="button" data-overlay="ewfc" aria-pressed="false" title="Wellen-Prognose: schematischer Weg der nächsten Elliott-Wellen nach den üblichen Fibonacci-Faustregeln (nur bei einer aktuellen Zählung) – keine Prozentzahl, kein Handelssignal"><i class="sw ewfc"></i><span>Wellen-Prognose</span></button><button type="button" data-overlay="fib" aria-pressed="true" title="Fibonacci-Retracement: 23,6 bis 78,6 % des letzten abgeschlossenen ZigZag-Schwungs – Orientierung für Rücksetzer, kein Handelssignal"><i class="sw fib"></i>Fibonacci</button><button type="button" data-overlay="whale" aria-pressed="true" title="Whale-Alert: große Marktorders ab 100.000 USDT und Verhältnis der Käufe zu Verkäufen der letzten 60 s – Beschreibung, keine Vorhersage"><i class="sw whale"></i>Whales</button></span></div><span id="chart-caption">Zeitachse UTC · 1m</span></div>
       </section>
       <section class="panel econ cq" id="econ" data-tabs="chart" aria-labelledby="econ-title"><div class="econ-head"><div class="head-line"><h2 id="econ-title">Wirtschaftskalender</h2><details class="tip left"><summary aria-label="Woher die Termine kommen und wann gewarnt wird"><span>i</span></summary><div class="tip-body"><p>Wichtige Wirtschaftstermine wie Zinsentscheide der US-Notenbank (Fed), Inflations- und Arbeitsmarktdaten. Um solche Termine schwankt der Kurs oft stark, auch bei Kryptowährungen.</p><p>Quelle: Wochenkalender von Forex Factory. Ein GitHub-Job im Repository holt ihn alle 3 Stunden ab, die App lädt ihn alle 30 Minuten. Titel im Original (englisch), Zeiten in deiner Ortszeit. Angaben ohne Gewähr.</p><p>Warnung: ab der eingestellten Zeit vor einem Termin mit hoher Bedeutung bis 15 Minuten danach, oben in der Live-Leiste und hier. Vorab einmal als Hinweis mit Ton und, falls eingerichtet, an Telegram/Discord – nur solange die App offen ist.</p><p>Punkte: rot hohe, orange mittlere Bedeutung. Feiertage bedeuten oft wenig Handel.</p></div></details></div><span class="econ-src" id="econ-src"></span></div><div class="econ-warn" id="econ-warn" role="status" hidden></div><div class="econ-list" id="econ-list"></div><div class="econ-foot"><label>Währung <select id="econ-cur"><option value="usd">USD</option><option value="all">alle</option></select></label><label>Bedeutung <select id="econ-imp"><option value="high">hoch</option><option value="medium">hoch + mittel</option></select></label><label>Warnen <select id="econ-warn-min"><option value="0">aus</option><option value="5">5 min vorher</option><option value="15">15 min vorher</option><option value="30">30 min vorher</option><option value="60">60 min vorher</option></select></label><button type="button" class="button ghost econ-more" id="econ-more" hidden>Ganze Woche</button></div></section>
       <section class="panel cnews cq" id="cnews" data-tabs="chart" aria-labelledby="cnews-title"><div class="econ-head"><div class="head-line"><h2 id="cnews-title">News &amp; Termine · <span id="cnews-coin">BTC</span></h2><details class="tip left"><summary aria-label="Woher die Meldungen kommen und was als wichtig gilt"><span>i</span></summary><div class="tip-body"><p>Nur ganz wichtige Meldungen und Termine zum geöffneten Coin.</p><p><b>Binance:</b> Listings, Delistings, entfernte USDT-Handelspaare, Netzwerk-Upgrades und Hard Forks (Ein- und Auszahlungen ruhen dann), Token-Tausch und die Beobachtungsliste (Monitoring-Tag: erhöhtes Risiko, ein Delisting ist möglich).</p><p><b>Schlagzeilen</b> deutschsprachiger Medien über Google News, für 36 bekannte Coins. Sehr wichtig: Hacks und gestohlene Gelder, ETF-Entscheidungen, Behörden und Gerichte (z. B. SEC, Klagen), Upgrades, Forks und Netzwerk-Ausfälle, Delistings und Listings großer Börsen, Insolvenzen. Mit „auch wichtig“ dazu ETF-Zuflüsse, Escrow und Token-Freigaben, Regulierung und Übernahmen. Kursprognosen und Marktberichte fallen weg; dieselbe Geschichte aus mehreren Medien steht nur einmal da.</p><p>Ausgewählt wird über Stichwörter – Wichtiges kann fehlen, Unwichtiges durchrutschen. Ein GitHub-Job sammelt stündlich, die App lädt alle 15 Minuten. Kein Kauf- oder Verkaufssignal.</p></div></details></div><span class="econ-src" id="cnews-src"></span></div><div class="cn-list" id="cnews-list"></div><div class="econ-foot"><label>Bedeutung <select id="cnews-imp"><option value="high">sehr wichtig</option><option value="medium">auch wichtig</option></select></label><button type="button" class="button ghost econ-more" id="cnews-more" hidden>Alle anzeigen</button></div></section>
@@ -11952,27 +12368,33 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
       </section>
       <details class="fold cq" id="zones-sec" data-tabs="ind" open>
         <summary><h2>Mittelwert-Zonen</h2><span id="zones-context">Bezugspunkte für den „mittleren“ Preis</span></summary>
+        <div class="ana-bar" role="group" aria-label="Analyse-Intervall für Mittelwert-Zonen und Marktindikatoren"><span class="ana-l">Analyse</span><button type="button" data-ana="1m" aria-pressed="false">1m</button><button type="button" data-ana="30m" aria-pressed="false">30m</button><button type="button" data-ana="1h" aria-pressed="false">1h</button><button type="button" data-ana="4h" aria-pressed="false" title="Anfangswert: weniger kurzfristiges Rauschen als 1m, dafür spätere Reaktion – kein Zeitraum ist nachweislich der beste">4h</button><button type="button" data-ana="12h" aria-pressed="false">12h</button><button type="button" data-ana="1d" aria-pressed="false">1d</button><button type="button" data-ana="30d_fixed" aria-pressed="false" title="30 Tage: feste, nicht überlappende UTC-Blöcke aus je 30 vollständigen Tageskerzen (ab 01.01.1970) – nicht der Kalendermonat">30 T</button><span class="ana-note">gilt für Mittelwert-Zonen und Marktindikatoren · unabhängig vom Chart</span></div>
         <div class="zones" id="zones">
-          <article class="panel indicator zone"><div class="indicator-title"><div class="head-line"><h3><i class="sw vp"></i>Volumen-Zentrum</h3><details class="tip left"><summary aria-label="Was ist der POC?"><span>i</span></summary><div class="tip-body"><p>Der Preis, zu dem im sichtbaren Chartbereich am meisten gehandelt wurde. Viele Trader sehen darin den „fairen“ Preis dieses Zeitraums; Rückkehrbewegungen dorthin kommen oft vor, sind aber keine Regel.</p><p>Geschätzt: Binance liefert kein Volumen je Preis. Das Volumen jeder Kerze wird deshalb als Glockenkurve um den Kerzenkörper verteilt – Dochte zählen weniger als der Bereich, in dem die Kerze eröffnet und geschlossen hat.</p></div></details></div><span>POC · VOLUMENPROFIL</span></div>
+          <article class="panel indicator zone"><div class="indicator-title"><div class="head-line"><h3><i class="sw vp"></i>Volumen-Zentrum</h3><details class="tip left"><summary aria-label="Was ist der POC?"><span>i</span></summary><div class="tip-body"><p>Der Preis, zu dem in den letzten 100 abgeschlossenen Kerzen des Analyse-Intervalls am meisten gehandelt wurde (40 Preisstufen; Value Area = 70 % des Volumens). Blättern im Chart verschiebt ihn nicht. Viele Trader sehen darin den „fairen“ Preis dieses Zeitraums; Rückkehrbewegungen dorthin kommen oft vor, sind aber keine Regel.</p><p>Geschätzt: Binance liefert kein Volumen je Preis. Das Volumen jeder Kerze wird deshalb als Glockenkurve um den Kerzenkörper verteilt – Dochte zählen weniger als der Bereich, in dem die Kerze eröffnet und geschlossen hat.</p></div></details></div><span>POC · VOLUMENPROFIL</span></div>
             <div class="metric skel" id="poc-value">—</div><p class="zone-note skel" id="poc-note">Wartet auf Kerzendaten.</p>
             <div class="zone-rows"><div><span>Kurs zum POC</span><strong id="poc-dist" class="skel">—</strong></div><div><span>Value Area 70 %</span><strong id="poc-va" class="skel">—</strong></div></div>
             <div class="metric-foot" id="poc-foot">Näherung aus Kerzendaten</div></article>
-          <article class="panel indicator zone"><div class="indicator-title"><div class="head-line"><h3><i class="sw ema"></i>Gleitender Durchschnitt</h3><details class="tip left"><summary aria-label="Was ist die EMA 200?"><span>i</span></summary><div class="tip-body">Durchschnitt der letzten 200 Kerzen, jüngere Kurse zählen stärker. Im Tageschart ein verbreiteter Trendfilter: Rücksetzer bis zur Linie kommen vor, Durchbrüche ebenso.</div></details></div><span>EMA · 200</span></div>
+          <article class="panel indicator zone"><div class="indicator-title"><div class="head-line"><h3><i class="sw ema"></i><span id="ema-title">EMA 200 (4h)</span></h3><details class="tip left"><summary aria-label="Was ist die EMA 200?"><span>i</span></summary><div class="tip-body">Durchschnitt der letzten 200 abgeschlossenen Kerzen im Analyse-Intervall, jüngere Kurse zählen stärker. Ein verbreiteter Trendfilter: Rücksetzer bis zur Linie kommen vor, Durchbrüche ebenso. Darunter steht ausdrücklich die EMA 200 der Tageskerzen (1D).</div></details></div><span>EMA · 200</span></div>
             <div class="metric skel" id="ema-value">—</div><p class="zone-note skel" id="ema-note">Wartet auf Tageskerzen.</p>
-            <div class="zone-rows"><div><span>Kurs zur EMA (1D)</span><strong id="ema-dist" class="skel">—</strong></div><div><span id="ema-chart-label">Chart-Intervall</span><strong id="ema-chart" class="skel">—</strong></div></div>
+            <div class="zone-rows"><div><span>Kurs zur EMA</span><strong id="ema-dist" class="skel">—</strong></div><div><span id="ema-chart-label">EMA 200 (1D)</span><strong id="ema-chart" class="skel">—</strong></div></div>
             <div class="metric-foot" id="ema-foot">1D aus abgeschlossenen Tageskerzen</div></article>
           <article class="panel indicator zone"><div class="indicator-title"><div class="head-line"><h3><i class="sw bb"></i>Statistischer Korridor</h3><details class="tip left"><summary aria-label="Was sind Bollinger-Bänder?"><span>i</span></summary><div class="tip-body">Mittellinie = Durchschnitt der letzten 20 Schlusskurse, Bänder = ± 2 Standardabweichungen. Außerhalb gilt der Kurs als weit vom Mittel entfernt; in starken Trends kann er länger am Band entlanglaufen.</div></details></div><span>BOLLINGER · 20/2</span></div>
             <div class="metric skel" id="bb-value">—</div><p class="zone-note skel" id="bb-note">Wartet auf Kerzendaten.</p>
             <div class="band-scale" aria-hidden="true"><span id="bb-marker" hidden></span></div><div class="scale-labels"><span>unten</span><span>Mitte</span><span>oben</span></div>
             <div class="zone-rows"><div><span>Bänder</span><strong id="bb-bands" class="skel">—</strong></div><div><span>Innerhalb (100 Kerzen)</span><strong id="bb-stat" class="skel">—</strong></div></div>
-            <div class="metric-foot" id="bb-foot">Chart-Intervall</div></article>
+            <div class="metric-foot" id="bb-foot">Analyse-Intervall</div></article>
+          <article class="panel indicator zone trend-card" id="trend-card"><div class="indicator-title"><div class="head-line"><h3><i class="sw trend"></i><span id="trend-title">Trendkontext</span></h3><details class="tip left"><summary aria-label="Wie der Trendkontext entsteht"><span>i</span></summary><div class="tip-body"><p>Aus den abgeschlossenen Kerzen des Analyse-Intervalls: A = ATR 14, S = (EMA 50 jetzt − EMA 50 vor 3 Kerzen) ÷ A.</p><p><b>Long-Kontext:</b> Schluss über EMA 200 + 0,25·A, EMA 50 über EMA 200 und S über 0,05. <b>Short-Kontext:</b> Schluss unter EMA 200 − 0,25·A, EMA 50 unter EMA 200 und S unter −0,05. Sonst neutral; fehlen Daten oder ist A = 0: nicht bewertbar.</p><p>Startwerte, nicht optimiert – kein Renditeversprechen. „Übergeordnet“ heißt es nur, wenn das Analyse-Intervall größer ist als das Chart-Intervall. Buchungen sowie Schutz- und Kurs-Alarme verhindert der Kontext nicht.</p></div></details></div><span id="trend-sub">abgeschlossene Kerzen</span></div>
+            <div class="metric skel" id="trend-value">—</div><p class="zone-note skel" id="trend-note">Wartet auf Analyse-Kerzen.</p>
+            <div class="zone-rows"><div><span>Schluss zur EMA 200</span><strong id="trend-c">—</strong></div><div><span>EMA 50</span><strong id="trend-e">—</strong></div><div><span>Steigung S</span><strong id="trend-s">—</strong></div></div>
+            <div class="metric-foot" id="trend-foot">Startparameter, nicht optimiert</div></article>
         </div>
       </details>
       <details class="fold cq" id="ind-sec" data-tabs="ind" open>
         <summary><h2>Marktindikatoren</h2><span id="indicator-context">1m · laufende Kerze vorläufig</span></summary>
+        <div class="ana-bar" role="group" aria-label="Analyse-Intervall für Mittelwert-Zonen und Marktindikatoren"><span class="ana-l">Analyse</span><button type="button" data-ana="1m" aria-pressed="false">1m</button><button type="button" data-ana="30m" aria-pressed="false">30m</button><button type="button" data-ana="1h" aria-pressed="false">1h</button><button type="button" data-ana="4h" aria-pressed="false" title="Anfangswert: weniger kurzfristiges Rauschen als 1m, dafür spätere Reaktion – kein Zeitraum ist nachweislich der beste">4h</button><button type="button" data-ana="12h" aria-pressed="false">12h</button><button type="button" data-ana="1d" aria-pressed="false">1d</button><button type="button" data-ana="30d_fixed" aria-pressed="false" title="30 Tage: feste, nicht überlappende UTC-Blöcke aus je 30 vollständigen Tageskerzen (ab 01.01.1970) – nicht der Kalendermonat">30 T</button><span class="ana-note">gilt für Mittelwert-Zonen und Marktindikatoren · unabhängig vom Chart</span></div>
         <div class="indicators">
           <article class="panel indicator"><div class="indicator-title"><h3>Relative Stärke</h3><span>RSI · 14</span></div><div class="metric skel" id="rsi-value">—</div><p id="rsi-note" class="skel">Wartet auf Kerzendaten.</p><div class="rsi-scale"><span id="rsi-marker" hidden></span></div><div class="scale-labels"><span>0</span><span>30</span><span>70</span><span>100</span></div></article>
-          <article class="panel indicator"><div class="indicator-title"><h3>Volatilität</h3><span>ATR · 14</span></div><div class="metric skel" id="atr-value">—</div><p id="atr-note" class="skel">Wartet auf Kerzendaten.</p><div class="metric-foot">Wilder-Glättung · USDT pro Kerze</div></article>
+          <article class="panel indicator"><div class="indicator-title"><h3>Volatilität</h3><span>ATR · 14</span></div><div class="metric skel" id="atr-value">—</div><p id="atr-note" class="skel">Wartet auf Kerzendaten.</p><div class="metric-foot" id="atr-foot">Wilder-Glättung · USDT pro Kerze</div></article>
           <article class="panel indicator"><div class="indicator-title"><h3>Volumen</h3><span>RELATIV · 20</span></div><div class="metric skel" id="volume-value">—</div><p id="volume-note" class="skel">Wartet auf Kerzendaten.</p><div class="metric-foot" id="volume-detail">Aktuelle Kerze / 20 vorherige Kerzen</div></article>
           <article class="panel indicator levels"><div class="indicator-title"><h3>Lokale Kurslevel</h3><span>PIVOTS · 50</span></div><div class="level-row"><span><i class="legend-line support"></i>Unterstützung</span><strong id="support" class="skel">—</strong><span id="support-dist" class="skel">—</span></div><div class="level-row"><span><i class="legend-line resistance"></i>Widerstand</span><strong id="resistance" class="skel">—</strong><span id="resistance-dist" class="skel">—</span></div><p id="level-note">Je zwei abgeschlossene Nachbarkerzen bestätigen ein lokales Hoch oder Tief.</p></article>
           <article class="panel indicator"><div class="indicator-title"><h3>Funding Rate</h3><span>FUTURES</span></div><div class="metric skel" id="funding-value">—</div><p id="funding-note" class="skel">Wartet auf Futures-Daten.</p><div class="metric-foot" id="funding-detail">Aktuelle Rate · unabhängig vom Chartintervall</div></article>

@@ -27,7 +27,7 @@ function startMock() {
 const ctl = async (p) => { const r = await fetch('http://127.0.0.1:8790' + p); return r.json(); };
 async function launch(opts = {}) {
   for (const k of ['HTTPS_PROXY', 'https_proxy', 'HTTP_PROXY', 'http_proxy', 'ALL_PROXY', 'all_proxy']) delete process.env[k];
-  return chromium.launch({ headless: true, args: ['--no-proxy-server', '--host-resolver-rules=MAP *.binance.com 127.0.0.1, MAP *.binance.vision 127.0.0.1, MAP data-api.binance.vision 127.0.0.1, MAP api.telegram.org 127.0.0.1, MAP discord.com 127.0.0.1, MAP raw.githubusercontent.com 127.0.0.1', '--ignore-certificate-errors', ...(opts.args || [])] });
+  return chromium.launch({ headless: true, args: ['--no-proxy-server', '--host-resolver-rules=MAP *.binance.com 127.0.0.1, MAP *.binance.vision 127.0.0.1, MAP data-api.binance.vision 127.0.0.1, MAP api.telegram.org 127.0.0.1, MAP discord.com 127.0.0.1, MAP raw.githubusercontent.com 127.0.0.1, MAP api.coingecko.com 127.0.0.1, MAP api.coinpaprika.com 127.0.0.1, MAP api.coinlore.net 127.0.0.1', '--ignore-certificate-errors', ...(opts.args || [])] });
 }
 async function setup() { await startStatic(); await startMock(); }
 async function teardown() { staticServer?.close(); mock?.kill(); }

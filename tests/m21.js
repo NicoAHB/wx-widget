@@ -27,7 +27,7 @@ const pick = async (page, sel, iv, how = 'click') => { const t0 = Date.now(); aw
     const h0 = await page.evaluate(() => [document.querySelector('.livebar').getBoundingClientRect().height, document.querySelector('#lb-heat .hc').getBoundingClientRect().height].map(Math.round));
     // Live-Leiste oben: 15m
     let t0 = await pick(page, '#lb-heat', '15m'); m = await marks(page); let k = await klines(t0);
-    check('Live-Leiste: Klick auf 15m wechselt den Chart (Kerzen neu geladen), alle drei Leisten markieren 15m', same(m, '15m') && k.includes('15m') && /· 15m$/.test(m.caption) && m.ctx.startsWith('15m'), JSON.stringify({ ...m, kerzen: k }));
+    check('Live-Leiste: Klick auf 15m wechselt den Chart (Kerzen neu geladen), alle drei Leisten markieren 15m; Indikatoren bleiben im Analyse-Intervall 4h (G07)', same(m, '15m') && k.includes('15m') && /· 15m$/.test(m.caption) && m.ctx.startsWith('Analyse 4h'), JSON.stringify({ ...m, kerzen: k }));
     // Signalzeile unter dem Kurs: 1h
     t0 = await pick(page, '#signal-line', '1h'); m = await marks(page); k = await klines(t0);
     check('Signalzeile unter dem Kurs: Klick auf 1h wechselt den Chart, alle drei markieren 1h', same(m, '1h') && k.includes('1h') && /· 1h$/.test(m.caption), JSON.stringify({ ...m, kerzen: k }));
