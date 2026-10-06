@@ -1456,7 +1456,7 @@ html[data-layout=tablet] .wl-tile{height:64px}
 .dec-seg button{min-height:34px;min-width:44px;padding:0 10px;border:0;background:none;color:var(--muted);border-radius:6px;font-size:.8125rem}
 .dec-seg button[aria-pressed=true]{background:var(--up-bg-2);color:var(--up-text);font-weight:600}
 .dec-thr label{display:flex;align-items:center;gap:6px;font-size:.8125rem;color:var(--muted)}
-.dec-thr input[type=number]{width:5.5em;min-height:34px}
+.dec-thr input{width:4.5em;min-height:34px}
 .dec-status{margin:0;font-size:.8125rem;color:var(--muted)}.dec-status.err{color:var(--down-text)}.dec-status.stale{color:var(--warn-text)}
 .dec-list{display:grid;gap:2px}.dec-list.stale{opacity:.6}
 .dec-row{display:grid;grid-template-columns:minmax(0,1.7fr) repeat(4,minmax(0,1fr)) minmax(0,.8fr);gap:8px;align-items:center;text-align:right;padding:8px 10px;border:0;border-radius:8px;background:none;color:var(--text);font:inherit;font-variant-numeric:tabular-nums;font-size:.8125rem;width:100%}
@@ -2789,7 +2789,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Alle Werte liegen zusätzlich im Arbeitsspeicher und sind dadurch synchron lesbar. Schreiben geht sofort in den
 // localStorage und gebündelt in die IndexedDB; beim Start gewinnt die zuletzt vollständig geschriebene Kopie.
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
-const APP_VERSION = '3.35.0', docEl = document.documentElement;
+const APP_VERSION = '3.36.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -11987,8 +11987,8 @@ function decRender() {
   const c = dec.cfg, R = dec.res, list = $('dec-list'), W = c.win;
   for (const b of sec.querySelectorAll('[data-dwin]')) b.setAttribute('aria-pressed', String(b.dataset.dwin === W));
   for (const b of sec.querySelectorAll('[data-dfil]')) b.setAttribute('aria-pressed', String(b.dataset.dfil === c.filter));
-  if (document.activeElement !== $('dec-coin')) $('dec-coin').value = c.coin;
-  if (document.activeElement !== $('dec-btc')) $('dec-btc').value = c.btc;
+  if (document.activeElement !== $('dec-coin')) $('dec-coin').value = String(c.coin).replace('.', ',');
+  if (document.activeElement !== $('dec-btc')) $('dec-btc').value = String(c.btc).replace('.', ',');
   $('dec-corr').checked = c.corr;
   const hits = R ? R.hits.filter(r => c.filter === 'all' || r.st === c.filter) : [];
   put('dec-context', !dec.open ? 'Top 100 · lädt beim Öffnen' : R ? `${W} · ${R.btc.B != null ? `${hits.length} Treffer` : 'BTC fehlt'}` : dec.running ? 'lädt …' : 'Top 100');
@@ -12710,7 +12710,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
         <summary><h2>BTC-Entkopplung</h2><span id="dec-context">Top 100 · lädt beim Öffnen</span></summary>
         <div class="panel dec">
           <div class="dec-bar"><div class="dec-seg" role="group" aria-label="Zeitraum"><button type="button" data-dwin="1h" aria-pressed="false">1h</button><button type="button" data-dwin="4h" aria-pressed="true">4h</button><button type="button" data-dwin="24h" aria-pressed="false">24h</button></div><div class="dec-seg" role="group" aria-label="Treffer filtern"><button type="button" data-dfil="all" aria-pressed="true">Alle</button><button type="button" data-dfil="bull" aria-pressed="false">Bullish</button><button type="button" data-dfil="bear" aria-pressed="false">Bearish</button></div><details class="tip left"><summary aria-label="Wie die BTC-Entkopplung rechnet"><span>i</span></summary><div class="tip-body"><p>Rangliste: allgemeine Top 100 nach Marktkapitalisierung laut CoinLore. Stablecoins werden über eine gepflegte Liste (Kürzel und Anbieter-ID) entfernt – nicht über einen Preis nahe 1 USD – und nicht aufgefüllt. BTC ist nur Referenz.</p><p>C = Veränderung des Coins, B = Veränderung von BTC im selben rollierenden Fenster (Binance Spot, USDT), D = C − B in Prozentpunkten. <b>Bullish:</b> C mindestens +Schwelle, während BTC fällt oder seitwärts läuft. <b>Bearish:</b> C höchstens −Schwelle, während BTC steigt oder seitwärts läuft. BTC seitwärts heißt |B| unter der BTC-Schwelle; genau auf der Schwelle zählt als steigend bzw. fallend. Sortiert nach |D|.</p><p>Ausgewertet werden nur Coins mit eindeutigem, aktivem Binance-Spotpaar; alle anderen stehen mit Grund unter „Nicht auswertbar“. Aktualisierung etwa jede Minute, solange dieser Bereich offen und sichtbar ist – bei geschlossener App läuft nichts. Antippen lädt den Coin in den Chart, ohne den Reiter zu wechseln.</p><p>Nur Signale, keine Kaufempfehlung. Die Korrelation (optional) ist keine Erfolgswahrscheinlichkeit.</p></div></details></div>
-          <div class="dec-thr"><label>Coin ab ±<input id="dec-coin" type="number" inputmode="decimal" step="0.1" min="0.1" max="100" aria-label="Schwelle Coin in Prozent"> %</label><label>BTC seitwärts unter ±<input id="dec-btc" type="number" inputmode="decimal" step="0.1" min="0" max="50" aria-label="Schwelle BTC seitwärts in Prozent"> %</label><label class="dec-corr"><input type="checkbox" id="dec-corr"> Korrelation zu BTC</label></div>
+          <div class="dec-thr"><label>Coin ab ±<input id="dec-coin" type="text" inputmode="decimal" autocomplete="off" aria-label="Schwelle Coin in Prozent"> %</label><label>BTC seitwärts unter ±<input id="dec-btc" type="text" inputmode="decimal" autocomplete="off" aria-label="Schwelle BTC seitwärts in Prozent"> %</label><label class="dec-corr"><input type="checkbox" id="dec-corr"> Korrelation zu BTC</label></div>
           <p class="dec-status" id="dec-status" role="status" hidden></p>
           <div class="dec-list" id="dec-list"></div>
           <p class="dec-cov" id="dec-cov"></p>

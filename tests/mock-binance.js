@@ -271,7 +271,7 @@ function newsFile(req, res, u) {
   return json(res, 200, newsJson());
 }
 
-// ---------- 3.35.0 (G07): CoinGecko und CoinPaprika (Market Cap, schlüssellos) und CoinLore (darf nie gefragt werden) ----------
+// ---------- 3.35.0 (G07): CoinGecko und CoinPaprika (Market Cap, schlüssellos) und CoinLore (für die Market Cap nie gefragt werden) ----------
 // Market Cap = Kurs × eine über die Zeit wachsende Menge – also nie „Kurs × heutige Menge“. /cap?cg=ok|429|fail|down|denied&cp=…&ra=s&delay=ms
 const capCfg = { cg: 'ok', cp: 'ok', ra: 120, delay: 0, log: [] };
 const CG_IDS = { bitcoin: 'BTC', ethereum: 'ETH', solana: 'SOL', ripple: 'XRP', 'ethereum-classic': 'ETC', 'bitcoin-cash': 'BCH', litecoin: 'LTC', near: 'NEAR', 'pax-gold': 'PAXG', kaspa: 'KAS', 'kaspa-fork-token': 'KAS' };

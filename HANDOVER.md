@@ -31,7 +31,8 @@ Code: Block „3.36.0 (G08)“ in `weather-widget-v2.html` (vor `window.__g08`),
 - [x] 3. Liste mit Filtern, Zuständen, Abdeckung, Quelle
 - [x] 4. Klick lädt Coin in den vorhandenen Chart (kein Scrollen, „Im Chart geladen“)
 - [x] 5. Scheduler (60 s, sichtbar, ein Timer, Abort, Backoff/429), Fehlerarten
-- [ ] 6. Test m57 + Attrappen (CoinLore, Binance-Statistik), Version 3.36.0, Doku, PR, Merge
+- [x] 6a. Test `tests/m57.js` (40 Prüfungen: unit, list, faults, corr, click, sched, errors) + Attrappen im Test-Server (`/dec`), Version 3.36.0 – m57 40/40
+- [ ] 6b. Gesamtlauf `bash tests/run-all.sh`, Doku Teil AO, PR, Merge, Pages
 
 ## Bekannte Stolpersteine
 - **m43 beim Stundenwechsel:** Die Prüfung erwartet eine Puls-Meldung „für 23 Uhr“ in einer Zeitzone, in der es gerade 23 Uhr ist. Trifft der Lauf den Wechsel auf 0 Uhr, schlägt sie fehl. Das ist kein App-Fehler; einzeln wiederholen.
