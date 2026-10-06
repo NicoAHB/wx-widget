@@ -45,7 +45,8 @@ Code: `patEngine()` (reine Engine, läuft als Blob-Worker), `PAT_LIB` (41 Eintr�
 - [x] B2. Bottom-Sheet mit Treffern, Filter, Mindestregelgüte 60, Leerzustand, Hinweis
 - [x] B3. Info-Sheet (SVG, gemessene Werte, Regeln erfüllt/nicht/unbekannt, „Warum X %?“, „Im Chart zeigen“)
 - [x] B4. Chart-Labels (Kerzen) und Linien/Zonen (Formationen), Auswahl hebt hervor
-- [ ] B5. Test m58, Version 3.37.0, Doku, PR, Merge
+- [x] B5a. Test `tests/m58.js` (trend 8, catalog 9 inkl. aller 41 Katalogfälle und 8 Intervalle, ui 11), Version 3.37.0
+- [ ] B5b. Gesamtlauf, Doku Teil AP, PR, Merge
 - [ ] B6. Vorauswahl „Chartmuster erkannt“ (Punkt 11) – ggf. eigener Schritt
 - [ ] C. Dauerhaftes Musterwissen (Punkte 13–25): getrennter Wissensspeicher, Fälle mit ID/Prognose/Ergebnis, Kursrichtungsstatistik H=12/ε=0,10 %, „Vergangene Verläufe ansehen“, Server-Archiv + Sicherung, Veröffentlichung, Muster-Telegram-Chat
 

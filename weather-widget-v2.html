@@ -2812,7 +2812,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Alle Werte liegen zusätzlich im Arbeitsspeicher und sind dadurch synchron lesbar. Schreiben geht sofort in den
 // localStorage und gebündelt in die IndexedDB; beim Start gewinnt die zuletzt vollständig geschriebene Kopie.
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
-const APP_VERSION = '3.36.0', docEl = document.documentElement;
+const APP_VERSION = '3.37.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -6318,6 +6318,7 @@ function renderChart(levels={}, ov={}, start=null, end=null) {
   const clear=()=>{cross.setAttribute('visibility','hidden');state.selected=null;state.selectedTime=null;put('ohlc',`O ${priceText(last.open)}  H ${priceText(last.high)}\nL ${priceText(last.low)}  C ${priceText(last.close)}`);};
   chartGeom={w,h,left,pw:step*data.length,step,top,bottom,min,max,y,count:data.length,data,levels,prof,bbU,bbL,bbM,e200,select,clear,axisIn};
   container.onkeydown=event=>{if(['ArrowLeft','ArrowRight'].includes(event.key)){event.preventDefault();select((state.selected??data.length-1)+(event.key==='ArrowLeft'?-1:1));}if(event.key==='+' || event.key==='-'){event.preventDefault();zoom(event.key==='+'?.7:1.4);}};
+  for (const t of svg.querySelectorAll('.pat-label')) svg.append(t); // 3.37.0 (G09): Muster-Labels zuoberst, damit sie antippbar sind
   container.replaceChildren(svg);
   declutterChart(svg, {top, bottom, left, right: left+pw});
   const keep=state.selectedTime!=null?data.findIndex(c=>c.time===state.selectedTime):-1;
@@ -12542,7 +12543,11 @@ function patDraw(svg, over, g) {
   });
   $('pat-minq').addEventListener('change', () => { pat.minQ = Number($('pat-minq').value) || 0; patSheet(); scheduleDraw(); });
   $('pat-gap').addEventListener('change', () => { pat.gap = $('pat-gap').checked; patRun('Gap-Modus'); });
-  $('chart').addEventListener('click', e => { const t = e.target.closest?.('[data-pat]'); if (t) { e.stopPropagation(); e.preventDefault(); patOpenInfo(+t.getAttribute('data-pat')); } }, true);
+  // Label antippen: Der Chart zeichnet beim Bewegen neu, das Element kann zwischen Drücken und Loslassen ersetzt werden – deshalb
+  // über Ort und Zeit statt über „click“; ein Ziehen (Blättern) öffnet nichts
+  let tap = null;
+  $('chart').addEventListener('pointerdown', e => { const t = e.target.closest?.('[data-pat]'); tap = t ? { i: +t.getAttribute('data-pat'), x: e.clientX, y: e.clientY, at: Date.now() } : null; if (t) e.stopPropagation(); }, true);
+  document.addEventListener('pointerup', e => { const p = tap; tap = null; if (p && Math.hypot(e.clientX - p.x, e.clientY - p.y) < 12 && Date.now() - p.at < 800) patOpenInfo(p.i); }, true);
 })();
 window.__g09 = { get pat() { return pat; }, engine: () => (PAT_E = PAT_E || patEngine()), lib: PAT_LIB, run: r => patRun(r), info: i => patOpenInfo(i), zoom: i => patZoom(i), svg: id => patSvg(id).outerHTML };
 window.__g08 = { get dec() { return dec; }, decSignal: (c, b, cfg) => decSignal(c, b, cfg), decTick: (t, w, at) => decTick(t, DEC_WIN[w], at), decEvaluate: (r, sp, t, cfg, w, at) => decEvaluate(r, new Set(sp), new Map(Object.entries(t)), cfg, w, at),
