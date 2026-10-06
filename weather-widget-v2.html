@@ -1439,6 +1439,11 @@ html[data-layout=tablet] .wl-tile{height:64px}
 /* sehr schmale Kachel (Handy 320 px): Werte so groß wie die Regelzeile, damit auch „30 Min. −10,98 %“ neben den Verlauf passt */
 @container wlt (max-width:132px){.wl-chg,.wl-chg30{font-size:.625rem}}
 @media (pointer:coarse){.wl-item .chip-x{width:40px;height:40px;min-width:40px;min-height:40px;top:-14px;right:-12px}}
+/* 3.35.0 (G07): Market-Cap-Ansicht – Preisebenen und Leisten aus */
+.metric-toggle{margin-left:6px}
+.cap-mode .fib-strip,.cap-mode .lmap-strip,.cap-mode .wh-strip,.cap-mode #div-tip,.cap-mode #div-halo{display:none!important}
+.cap-mode #magnet{opacity:.4;pointer-events:none}
+.chart-empty .cap-why{max-width:46ch;text-align:center;font-size:.8125rem;color:var(--muted)}
 /* 3.35.0 (G07): Analyse-Intervall und Trendkontext */
 .ana-bar{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:0 0 12px}
 .ana-bar .ana-l{font-size:.75rem;font-weight:600;color:var(--muted);margin-right:2px}
@@ -3223,6 +3228,7 @@ function viewWindow() {
   const end = len - state.pan; return { start: Math.max(0, end - count), end };
 }
 function drawChart() {
+  if (CAP.on) { capRender(); renderZones(); ovButtons(); return; } // 3.35.0 (G07): Market-Cap-Ansicht statt Kerzen
   if (!lastChart) return;
   const { start, end } = viewWindow(), vis = state.candles.slice(start, end), profile = vis.length ? volumeProfile(vis) : null;
   renderFibStrip(); renderWhaleStrip(); renderDivTip(); ovButtons(); // 3.32.0 (G04.1): Sperren auch bei verdecktem Chart
@@ -3232,17 +3238,20 @@ function drawChart() {
 }
 function scheduleDraw() { if (drawQueued) return; drawQueued = true; requestAnimationFrame(() => { drawQueued = false; drawChart(); }); }
 function setPan(p) {
+  if (CAP.on) return; // 3.35.0: in der Cap-Ansicht bleibt der Kurs-Ausschnitt unverändert
   const len = state.candles.length; state.pan = clamp(Math.round(p), 0, Math.max(0, len - Math.min(state.count, len)));
   state.anchorTime = state.pan > 0 ? state.candles[len - 1 - state.pan]?.time ?? null : null; scheduleDraw();
 }
 // Neuer Kerzenzahl-Wert, der Punkt unter „frac“ (0 = links, 1 = rechts) bleibt an seiner Stelle.
 function setView(newCount, frac = 1, count0 = state.count, pan0 = state.pan) {
+  if (CAP.on) return; // 3.35.0
   const len = state.candles.length; if (!len) return;
   const c0 = Math.min(count0, len), n = clamp(Math.round(newCount), Math.min(15, len), Math.max(15, len));
   const idx = len - pan0 - c0 + frac * c0, end = idx - frac * n + n;
   state.count = n; setPan(len - end);
 }
 function updateNav() {
+  if (CAP.on) { const n = CAP.data?.pts.length || 0, v = capView(); $('zoom-in').disabled = !n || CAP.count <= Math.min(12, n); $('zoom-out').disabled = !n || CAP.count >= n; $('pan-back').disabled = !n || v.a <= 0; $('pan-fwd').disabled = !n || CAP.pan === 0; $('pan-now').hidden = CAP.pan === 0; $('zoom-reset').hidden = true; return; }
   const len = state.candles.length, count = Math.min(state.count, len);
   $('zoom-in').disabled = !len || count <= Math.min(15, len); $('zoom-out').disabled = !len || count >= len;
   $('pan-back').disabled = !len || state.pan >= len - count; $('pan-fwd').disabled = !len || state.pan === 0; $('pan-now').hidden = state.pan === 0;
@@ -3258,6 +3267,232 @@ function loadOverlays() {
   const v = store.get(OVERLAY_KEY); if (v && typeof v === 'object') for (const k of Object.keys(d)) if (typeof v[k] === 'boolean') d[k] = v[k];
   return d;
 }
+// ---------- 3.35.0 (G07): Umschalter Kurs / Marktkapitalisierung ----------
+// Market Cap ist eine eigene Datenreihe (USD) aus historischen Marktkapitalisierungsdaten – nie Kurs × heutige Umlaufmenge, nie aus
+// Preis-OHLC. Schlüssellos direkt aus der App (deine Entscheidung): CoinGecko (täglich 1 Jahr, stündlich 90 Tage); ist CoinGecko
+// gebremst, gesperrt oder nicht erreichbar, CoinPaprika (täglich 1 Jahr; stündlich gibt es dort schlüssellos nur den letzten Tag).
+// Die Quelle steht immer dabei. Ein vorhandener CoinLore-Adapter existiert in dieser App nicht; CoinLores dokumentierter
+// OHLCV-Verlauf enthält ohnehin keine historische Market Cap und wird nie als Cap gelesen.
+// Zuordnung Coin → Anbieter-ID über eindeutige Metadaten: gepflegte Liste der großen Coins; sonst Suche beim Anbieter UND Nachweis,
+// dass genau diese ID bei Binance als <Kürzel>/USDT gehandelt wird – ein gleichlautendes Symbol allein genügt nie.
+// Abrufe: zentral je Anbieter, eine Anfrage gleichzeitig (auch über Tabs, Web Locks), eigenes Budget 5/Minute und je Monat, jeder
+// Versuch zählt (auch Fehler); 429 → Retry-After, sonst exponentiell mit Zufallsanteil; Zugriffsfehler nicht endlos. Neuladen oder
+// Umschalten umgeht keine Sperre (Zähler im Browser-Speicher). Nur für die sichtbare Cap-Ansicht – kein Vorladen.
+// Cache in IndexedDB (nur rekonstruierbare Cap-Daten, höchstens 10 MiB, älteste ungenutzte zuerst): abgeschlossene Tage 24 h,
+// abgeschlossene Stunden 1 h, laufender Wert 5 min; abgelaufene Werte bleiben mit Datum sichtbar.
+var CAP_PROV = { cg: { name: 'CoinGecko', base: 'https://api.coingecko.com/api/v3', perMin: 5, perMonth: 3000 }, cp: { name: 'CoinPaprika', base: 'https://api.coinpaprika.com/v1', perMin: 5, perMonth: 10000 } };
+var CAP_IDS = { BTC: ['bitcoin', 'btc-bitcoin'], ETH: ['ethereum', 'eth-ethereum'], SOL: ['solana', 'sol-solana'], XRP: ['ripple', 'xrp-xrp'], BNB: ['binancecoin', 'bnb-binance-coin'], DOGE: ['dogecoin', 'doge-dogecoin'],
+  ADA: ['cardano', 'ada-cardano'], TRX: ['tron', 'trx-tron'], LTC: ['litecoin', 'ltc-litecoin'], BCH: ['bitcoin-cash', 'bch-bitcoin-cash'], ETC: ['ethereum-classic', 'etc-ethereum-classic'], LINK: ['chainlink', 'link-chainlink'],
+  DOT: ['polkadot', 'dot-polkadot'], AVAX: ['avalanche-2', 'avax-avalanche'], NEAR: ['near', 'near-near-protocol'], XLM: ['stellar', 'xlm-stellar'], ATOM: ['cosmos', 'atom-cosmos'], UNI: ['uniswap', 'uni-uniswap'],
+  SHIB: ['shiba-inu', 'shib-shiba-inu'], TON: ['the-open-network', 'ton-toncoin'], PAXG: ['pax-gold', 'paxg-pax-gold'], BSV: ['bitcoin-cash-sv', 'bsv-bitcoin-sv'] };
+var CAP_IDKEY = 'scalpdesk.capids.v1', CAP_BUDKEY = 'scalpdesk.capbudget.v1', CAP_MAX_BYTES = 10 * 1024 * 1024, CAP_SCHEMA = 1;
+var CAP_TTL = { '1d': 24 * 3600e3, '1h': 3600e3, now: 5 * 60e3 };
+var CAP = { on: false, gen: 0, data: null, err: null, loading: false, count: 0, pan: 0, res: null, inflight: new Map(), db: null, nowTimer: 0 };
+// Werte prüfen: [Zeit ms, Cap USD] endlich und > 0, aufsteigend, je Zeit einmal
+function validateMarketCap(rows) {
+  const out = []; for (const r of Array.isArray(rows) ? rows : []) { const t = Number(r?.[0]), v = Number(r?.[1]); if (Number.isFinite(t) && t > 1.2e12 && Number.isFinite(v) && v > 0) out.push([t, v]); }
+  out.sort((a, b) => a[0] - b[0]); return out.filter((p, i) => !i || p[0] !== out[i - 1][0]);
+}
+// CoinGecko liefert prices, market_caps, total_volumes – gelesen wird nur market_caps
+const coinGeckoMarketCapPoints = j => validateMarketCap(j?.market_caps);
+const coinPaprikaMarketCapPoints = j => validateMarketCap((Array.isArray(j) ? j : []).map(r => [Date.parse(r?.timestamp), r?.market_cap]));
+function compactCap(v) {
+  if (!(v > 0)) return '—';
+  const [d, u] = v >= 1e12 ? [1e12, 'Bio.'] : v >= 1e9 ? [1e9, 'Mrd.'] : v >= 1e6 ? [1e6, 'Mio.'] : [1e3, 'Tsd.'];
+  return `${number(v / d, v / d >= 100 ? 0 : v / d >= 10 ? 1 : 2)} ${u} USD`;
+}
+// Achse: so viele Nachkommastellen, dass benachbarte Rasterlinien verschieden beschriftet sind
+function capAxis(v, step) {
+  const [d, u] = v >= 1e12 ? [1e12, 'Bio.'] : v >= 1e9 ? [1e9, 'Mrd.'] : v >= 1e6 ? [1e6, 'Mio.'] : [1e3, 'Tsd.'];
+  return `${number(v / d, Math.max(0, Math.min(4, Math.ceil(-Math.log10(step / d)))))} ${u} USD`;
+}
+// ---- Budget und Sperren je Anbieter (gemeinsam für alle Tabs dieses Browsers) ----
+function capBud() { try { return JSON.parse(localStorage.getItem(CAP_BUDKEY) || '{}') || {}; } catch { return {}; } }
+function capBudSave(b) { try { localStorage.setItem(CAP_BUDKEY, JSON.stringify(b)); } catch { /* ohne Speicher gilt nur die Sitzung */ } }
+const capMonth = (t = Date.now()) => new Date(t).toISOString().slice(0, 7);
+function capBlock(prov) { // null = frei; sonst { until, why }
+  const b = capBud()[prov] || {}, now = Date.now(), P = CAP_PROV[prov];
+  if (b.denied && now < b.denied.until) return { until: b.denied.until, why: b.denied.why };
+  if (b.until && now < b.until) return { until: b.until, why: b.why || 'gebremst' };
+  if (b.mon === capMonth() && b.n >= P.perMonth) return { until: Date.parse(capMonth(now) + '-01T00:00:00Z') + 32 * 864e5, why: `Monatsbudget der App erreicht (${P.perMonth} Abrufe)` };
+  const m = (b.m || []).filter(t => now - t < 60e3); if (m.length >= P.perMin) return { until: m[0] + 60e3, why: `Budget ${P.perMin} Abrufe je Minute`, soft: true };
+  return null;
+}
+function capCount(prov) { const all = capBud(), b = all[prov] || {}, now = Date.now(); b.m = [...(b.m || []).filter(t => now - t < 60e3), now]; if (b.mon !== capMonth()) { b.mon = capMonth(); b.n = 0; } b.n = (b.n || 0) + 1; all[prov] = b; capBudSave(all); }
+function capResult(prov, ok, info = {}) {
+  const all = capBud(), b = all[prov] || {}, now = Date.now();
+  if (ok) { b.fails = 0; delete b.until; delete b.why; }
+  else if (info.denied) b.denied = { until: now + 24 * 3600e3, why: info.why };
+  else { b.fails = (b.fails || 0) + 1; const back = info.retryAfter ? info.retryAfter : Math.min(30 * 60e3, 30e3 * 2 ** (b.fails - 1)) * (1 + Math.random() * 0.2); b.until = now + back; b.why = info.why; }
+  all[prov] = b; capBudSave(all);
+}
+const capLock = (prov, fn) => (navigator.locks?.request ? navigator.locks.request(`scalpdesk-cap-${prov}`, fn) : (CAP[`q${prov}`] = (CAP[`q${prov}`] || Promise.resolve()).then(fn, fn)));
+// Ein Abruf: zentral, einer zur Zeit, Budget vorher geprüft und gezählt; gleiche laufende Anfragen werden zusammengefasst
+function capFetch(prov, path, recheck = null) {
+  const url = CAP_PROV[prov].base + path; if (CAP.inflight.has(url)) return CAP.inflight.get(url);
+  const p = capLock(prov, async () => {
+    if (recheck) { const hit = await recheck(); if (hit) return { cached: hit }; } // ein anderer Tab war schneller
+    let blk = capBlock(prov);
+    if (blk?.soft && blk.until - Date.now() <= 15e3) { await new Promise(r => setTimeout(r, blk.until - Date.now() + 50)); blk = capBlock(prov); }
+    if (blk) throw Object.assign(new Error(blk.why), { kind: 'blocked', until: blk.until });
+    capCount(prov);
+    let r; try { r = await fetch(url, { credentials: 'omit', referrerPolicy: 'no-referrer', cache: 'no-store' }); }
+    catch { capResult(prov, false, { why: `${CAP_PROV[prov].name} nicht erreichbar` }); throw Object.assign(new Error(`${CAP_PROV[prov].name} nicht erreichbar`), { kind: 'net' }); }
+    if (r.status === 429) {
+      const ra = r.headers.get('retry-after'), sec = Number(ra), at = Number.isFinite(sec) ? sec * 1000 : Date.parse(ra || '') - Date.now();
+      capResult(prov, false, { retryAfter: Math.max(30e3, Number.isFinite(at) ? at : 60e3), why: `${CAP_PROV[prov].name} bremst (429)` });
+      throw Object.assign(new Error(`${CAP_PROV[prov].name} bremst (429)`), { kind: 'blocked', until: capBlock(prov)?.until });
+    }
+    if (r.status === 401 || r.status === 403) { capResult(prov, false, { denied: true, why: `${CAP_PROV[prov].name}: Zugriff ohne Schlüssel verweigert (${r.status}) – bis morgen keine weiteren Versuche` }); throw Object.assign(new Error(`${CAP_PROV[prov].name}: Zugriff verweigert (${r.status})`), { kind: 'denied' }); }
+    if (r.status === 404) { capResult(prov, true); throw Object.assign(new Error('nicht gefunden'), { kind: 'notfound' }); }
+    if (!r.ok) { capResult(prov, false, { why: `${CAP_PROV[prov].name} antwortet mit Fehler ${r.status}` }); throw Object.assign(new Error(`${CAP_PROV[prov].name} antwortet mit Fehler ${r.status}`), { kind: r.status === 400 ? 'bad' : 'net' }); }
+    let j; try { j = await r.json(); } catch { capResult(prov, false, { why: 'Antwort nicht lesbar' }); throw Object.assign(new Error('Antwort nicht lesbar'), { kind: 'net' }); }
+    capResult(prov, true); return { json: j };
+  });
+  CAP.inflight.set(url, p); p.finally(() => CAP.inflight.delete(url)).catch(() => {}); return p;
+}
+// ---- Cache (IndexedDB, eigene Datenbank – nur Cap-Daten) ----
+function capDb() {
+  if (CAP.db) return CAP.db;
+  CAP.db = new Promise((resolve, reject) => { if (!globalThis.indexedDB) return reject(new Error('kein IndexedDB')); const r = indexedDB.open('scalpdesk-cap', 1);
+    r.onupgradeneeded = () => { if (!r.result.objectStoreNames.contains('e')) r.result.createObjectStore('e', { keyPath: 'key' }); };
+    r.onsuccess = () => resolve(r.result); r.onerror = () => reject(r.error || new Error('IndexedDB nicht verfügbar')); r.onblocked = () => reject(new Error('IndexedDB blockiert')); });
+  CAP.db.catch(() => { CAP.db = null; }); return CAP.db;
+}
+const capTx = (mode, fn) => capDb().then(db => new Promise((resolve, reject) => { const tx = db.transaction('e', mode), st = tx.objectStore('e'); let out; Promise.resolve(fn(st, v => { out = v; })).catch(reject); tx.oncomplete = () => resolve(out); tx.onerror = tx.onabort = () => reject(tx.error); }));
+const capKey = (prov, id, res, range) => `${prov}|${id}|usd|${res}|${range}|v${CAP_SCHEMA}`;
+async function capGet(key) { try { return await capTx('readonly', (st, set) => { const q = st.get(key); q.onsuccess = () => set(q.result || null); }); } catch { return CAP.mem?.get(key) || null; } }
+async function capPut(e) {
+  e.size = JSON.stringify(e.pts).length + 200; e.used = Date.now(); (CAP.mem ||= new Map()).set(e.key, e);
+  try {
+    await capTx('readwrite', st => { st.put(e); });
+    // Grenze 10 MiB: älteste ungenutzte Einträge zuerst verdrängen (nur Cap-Daten in dieser Datenbank)
+    const all = await capTx('readonly', (st, set) => { const q = st.getAll(); q.onsuccess = () => set(q.result || []); });
+    let total = all.reduce((s, x) => s + (x.size || 0), 0); const drop = [];
+    for (const x of all.sort((a, b) => (a.used || 0) - (b.used || 0))) { if (total <= CAP_MAX_BYTES) break; if (x.key === e.key) continue; drop.push(x.key); total -= x.size || 0; }
+    if (drop.length) await capTx('readwrite', st => { for (const k of drop) st.delete(k); });
+  } catch { /* ohne IndexedDB nur im Speicher dieser Sitzung */ }
+}
+function capTouch(e) { if (!e) return; e.used = Date.now(); void capTx('readwrite', st => { st.put(e); }).catch(() => {}); }
+// ---- Zuordnung Kürzel → Anbieter-ID ----
+function capIds() { try { return JSON.parse(localStorage.getItem(CAP_IDKEY) || '{}') || {}; } catch { return {}; } }
+function capIdSave(sym, prov, v) { const all = capIds(); all[sym] = { ...(all[sym] || {}), [prov]: { ...v, at: Date.now() } }; try { localStorage.setItem(CAP_IDKEY, JSON.stringify(all)); } catch { /* nur Sitzung */ } }
+async function capId(prov, sym) {
+  const list = CAP_IDS[sym]; if (list) return { id: list[prov === 'cg' ? 0 : 1], how: 'Liste' };
+  const c = capIds()[sym]?.[prov]; if (c?.id) return c; if (c?.none && Date.now() - c.at < 7 * 864e5) return null;
+  // Suche beim Anbieter, dann Nachweis über die Binance-Notierung <Kürzel>/USDT
+  const s = await capFetch(prov, prov === 'cg' ? `/search?query=${encodeURIComponent(sym)}` : `/search?q=${encodeURIComponent(sym)}&c=currencies&limit=10`);
+  const cand = (prov === 'cg' ? s.json?.coins : s.json?.currencies) || [];
+  const same = cand.filter(x => String(x?.symbol || '').toUpperCase() === sym).sort((a, b) => (a.market_cap_rank ?? a.rank ?? 1e9) - (b.market_cap_rank ?? b.rank ?? 1e9)).slice(0, 3);
+  for (const x of same) {
+    try {
+      if (prov === 'cg') { const t = await capFetch('cg', `/coins/${encodeURIComponent(x.id)}/tickers?exchange_ids=binance`); if ((t.json?.tickers || []).some(k => String(k.base).toUpperCase() === sym && k.target === 'USDT')) { const v = { id: x.id, how: 'Binance-Notierung' }; capIdSave(sym, prov, v); return v; } }
+      else { const m = await capFetch('cp', `/coins/${encodeURIComponent(x.id)}/markets`); if ((Array.isArray(m.json) ? m.json : []).some(k => k.exchange_id === 'binance' && k.pair === `${sym}/USDT`)) { const v = { id: x.id, how: 'Binance-Notierung' }; capIdSave(sym, prov, v); return v; } }
+    } catch (e) { if (e.kind !== 'notfound') throw e; }
+  }
+  capIdSave(sym, prov, { none: true }); return null;
+}
+// ---- Reihen laden: abgeschlossene Punkte (24 h bzw. 1 h) und laufender Wert (5 min) getrennt ----
+const capCut = res => (res === '1d' ? Math.floor(Date.now() / 864e5) * 864e5 : Math.floor(Date.now() / 36e5) * 36e5); // Beginn des laufenden Tags/der laufenden Stunde (UTC)
+async function capSeries(prov, id, res) {
+  const range = res === '1d' ? '365d' : '90d', key = capKey(prov, id, res, range), nkey = capKey(prov, id, 'now', 'now');
+  let e = await capGet(key), n = await capGet(nkey); const fresh = x => x && Date.now() - x.fetchedAt < CAP_TTL[x.res];
+  if (!fresh(e)) {
+    const path = prov === 'cg' ? `/coins/${encodeURIComponent(id)}/market_chart?vs_currency=usd&days=${res === '1d' ? '365&interval=daily' : '90'}`
+      : `/tickers/${encodeURIComponent(id)}/historical?start=${new Date(Date.now() - 364 * 864e5).toISOString().slice(0, 10)}&interval=1d&quote=usd&limit=366`;
+    try {
+      const r = await capFetch(prov, path, async () => { const x = await capGet(key); return fresh(x) ? x : null; });
+      if (r.cached) e = r.cached;
+      else {
+        const pts = prov === 'cg' ? coinGeckoMarketCapPoints(r.json) : coinPaprikaMarketCapPoints(r.json), cut = capCut(res);
+        if (!pts.length) throw Object.assign(new Error(`${CAP_PROV[prov].name} lieferte keine Market-Cap-Werte`), { kind: 'empty' });
+        e = { key, prov, id, cur: 'usd', res, range, schema: CAP_SCHEMA, pts: pts.filter(p => p[0] < cut), fetchedAt: Date.now() }; await capPut(e);
+        const last = pts.at(-1); if (last[0] >= cut || !n) { n = { key: nkey, prov, id, cur: 'usd', res: 'now', range: 'now', schema: CAP_SCHEMA, pts: [last], fetchedAt: Date.now() }; await capPut(n); }
+      }
+    } catch (err) { if (!e) throw err; e = { ...e, stale: err.message }; } // abgelaufene Werte mit Datum weiter zeigen
+  } else capTouch(e);
+  if (!fresh(n)) { // laufender Wert höchstens alle 5 Minuten
+    const path = prov === 'cg' ? `/simple/price?ids=${encodeURIComponent(id)}&vs_currencies=usd&include_market_cap=true&include_last_updated_at=true` : `/tickers/${encodeURIComponent(id)}?quotes=USD`;
+    try {
+      const r = await capFetch(prov, path, async () => { const x = await capGet(nkey); return fresh(x) ? x : null; });
+      if (r.cached) n = r.cached;
+      else {
+        const j = r.json, v = prov === 'cg' ? Number(j?.[id]?.usd_market_cap) : Number(j?.quotes?.USD?.market_cap), t = prov === 'cg' ? Number(j?.[id]?.last_updated_at) * 1000 : Date.parse(j?.last_updated || '');
+        if (v > 0 && Number.isFinite(t)) { n = { key: nkey, prov, id, cur: 'usd', res: 'now', range: 'now', schema: CAP_SCHEMA, pts: [[t, v]], fetchedAt: Date.now() }; await capPut(n); }
+      }
+    } catch (err) { if (n) n = { ...n, stale: err.message }; }
+  }
+  const pts = [...e.pts]; if (n?.pts?.[0] && (!pts.length || n.pts[0][0] > pts.at(-1)[0])) pts.push(n.pts[0]);
+  return { prov, id, res, pts, fetchedAt: e.fetchedAt, now: n?.pts?.[0] || null, nowAt: n?.fetchedAt || 0, stale: e.stale || n?.stale || null };
+}
+// Auflösung zum Chart-Intervall: bis 4h stündlich (90 Tage), ab 1d täglich (365 Tage); CoinPaprika schlüssellos nur täglich
+const capWantRes = () => (['1d', '1w', '1M'].includes(state.interval) ? '1d' : '1h');
+const CAP_SPAN = { '1m': 48, '5m': 48, '15m': 72, '1h': 168, '4h': 720, '1d': 120, '1w': 365, '1M': 365 };
+async function capLoad() {
+  const gen = ++CAP.gen, sym = coin(state.symbol), want = capWantRes();
+  CAP.loading = true; CAP.err = null; if (CAP.data?.sym !== sym) { CAP.data = null; CAP.count = 0; CAP.pan = 0; } capRender();
+  let out = null, why = [];
+  for (const prov of ['cg', 'cp']) {
+    try {
+      const idv = await capId(prov, sym); if (gen !== CAP.gen) return;
+      if (!idv) { why.push(`${CAP_PROV[prov].name}: kein eindeutig zugeordneter Eintrag für ${sym}`); continue; }
+      const res = prov === 'cp' ? '1d' : want, s = await capSeries(prov, idv.id, res); if (gen !== CAP.gen) return;
+      out = { ...s, sym, how: idv.how, want, note: prov === 'cp' && want === '1h' ? 'CoinPaprika liefert schlüssellos nur Tageswerte – Auflösung täglich' : '' }; break;
+    } catch (e) { if (gen !== CAP.gen) return; why.push(`${CAP_PROV[prov].name}: ${e.message}${e.until ? ` – nächster Versuch ab ${hhmm(e.until)}` : ''}`); }
+  }
+  if (gen !== CAP.gen) return;
+  CAP.loading = false; CAP.data = out; CAP.err = out ? null : why.join(' · ') || 'nicht verfügbar';
+  if (out && (!CAP.res || CAP.res !== out.res)) { CAP.count = 0; CAP.pan = 0; CAP.res = out.res; }
+  capRender();
+}
+function capSet(on) {
+  if (CAP.on === on) return;
+  CAP.on = on; for (const b of document.querySelectorAll('[data-metric]')) { const a = (b.dataset.metric === 'cap') === on; b.classList.toggle('active', a); b.setAttribute('aria-pressed', String(a)); }
+  $('chart-sec')?.classList.toggle('cap-mode', on); clearInterval(CAP.nowTimer);
+  if (on) { void capLoad(); CAP.nowTimer = setInterval(() => { if (CAP.on && !document.hidden && !CAP.loading) void capLoad(); }, CAP_TTL.now + 5e3); }
+  ovButtons(); renderMarket();
+}
+// Zoom und Blättern in der Cap-Ansicht – getrennt vom Kurs-Chart (dessen Ausschnitt bleibt beim Zurückwechseln erhalten)
+function capView() {
+  const d = CAP.data, n = d ? d.pts.length : 0; if (!n) return { a: 0, b: 0 };
+  if (!CAP.count) CAP.count = Math.min(n, CAP_SPAN[state.interval] || 168);
+  CAP.count = Math.max(Math.min(12, n), Math.min(n, CAP.count)); CAP.pan = Math.max(0, Math.min(n - CAP.count, CAP.pan));
+  return { a: n - CAP.pan - CAP.count, b: n - CAP.pan };
+}
+function capZoom(f) { if (!CAP.data) return; CAP.count = Math.round((CAP.count || 1) * f); capRender(); }
+function capPan(dir) { if (!CAP.data) return; CAP.pan += dir * Math.max(1, Math.round(CAP.count * 0.4)); if (dir === 0) CAP.pan = 0; capRender(); }
+function capRender() {
+  if (!CAP.on) return;
+  const box = $('chart'), d = CAP.data, resTxt = r => (r === '1d' ? 'täglich' : 'stündlich');
+  const head = d ? `Market Cap (USD) · ${CAP_PROV[d.prov].name} · ${resTxt(d.res)}${d.res !== d.want ? '' : ` (Chart ${state.interval})`} · Datenstand ${d.now ? `${utcDate(d.now[0])} UTC` : `${utcDate(d.pts.at(-1)[0])} UTC`}` : '';
+  put('ohlc', d ? `MCap ${compactCap(d.pts.at(-1)[1])} · ${CAP_PROV[d.prov].name}${d.stale ? ` · Stand von ${utcDate(d.fetchedAt)} UTC (${d.stale})` : ''}` : CAP.loading ? 'Market Cap wird geladen …' : `Market Cap nicht verfügbar`);
+  if (!d) {
+    const empty = el('div', 'chart-empty'), mark = el('span', 'empty-mark', '₵'); mark.setAttribute('aria-hidden', 'true');
+    empty.append(mark, el('strong', '', CAP.loading ? 'Market Cap wird geladen …' : 'Market Cap nicht verfügbar'), el('span', 'cap-why', CAP.loading ? 'Historische Marktkapitalisierung (USD), schlüssellos von CoinGecko oder CoinPaprika' : CAP.err || ''));
+    box.replaceChildren(empty); updateNav(); return;
+  }
+  if (!box.clientHeight) return;
+  const { a, b } = capView(), pts = d.pts.slice(a, b), w = Math.max(280, box.clientWidth), h = box.clientHeight, axisIn = w < 520, left = 15, right = axisIn ? 4 : 104, top = 34, bottom = h - 40, pw = w - left - right;
+  let min = Math.min(...pts.map(p => p[1])), max = Math.max(...pts.map(p => p[1])); const pad = (max - min) * 0.1 || max * 0.01; min -= pad; max += pad;
+  const t0 = pts[0][0], t1 = pts.at(-1)[0] === t0 ? t0 + 1 : pts.at(-1)[0], x = t => left + (t - t0) / (t1 - t0) * pw, y = v => top + (max - v) / (max - min) * (bottom - top);
+  const svg = node('svg', { viewBox: `0 0 ${w} ${h}`, role: 'presentation', 'aria-hidden': 'true' });
+  const gs = (max - min) / 4;
+  for (let i = 0; i <= 4; i++) { const v = min + gs * i, yy = y(v); svg.append(node('line', { x1: left, y1: yy, x2: w - right + 4, y2: yy, class: 'grid-line' })); if (!axisIn) svg.append(node('text', { x: w - right + 10, y: yy + 4, class: 'axis-label' }, capAxis(v, gs))); else if (i > 0 && i < 4) svg.append(node('text', { x: w - 6, y: yy - 4, class: 'axis-label', 'text-anchor': 'end' }, capAxis(v, gs))); }
+  const span = t1 - t0, fmt = span > 3 * 864e5 ? { day: '2-digit', month: '2-digit' } : { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' };
+  for (let i = 0; i <= 4; i++) { const t = t0 + span * i / 4; svg.append(node('text', { x: x(t), y: h - 14, class: 'axis-label', 'text-anchor': i === 0 ? 'start' : i === 4 ? 'end' : 'middle' }, new Date(t).toLocaleString('de-DE', fmt))); }
+  // eigene Linie mit Punkten – Lücken (mehr als das Doppelte der Auflösung) bleiben offen, keine erfundenen OHLC
+  const gapMs = (d.res === '1d' ? 864e5 : 36e5) * 2; let dd = '';
+  pts.forEach((p, i) => { dd += `${i && p[0] - pts[i - 1][0] <= gapMs ? 'L' : 'M'}${x(p[0]).toFixed(1)} ${y(p[1]).toFixed(1)}`; });
+  svg.append(node('path', { d: dd, fill: 'none', stroke: PAL.vp, 'stroke-width': 2 }));
+  if (pts.length <= 120) for (const p of pts) svg.append(node('circle', { cx: x(p[0]), cy: y(p[1]), r: 2, fill: PAL.vp }));
+  const last = pts.at(-1); svg.append(node('circle', { cx: x(last[0]), cy: y(last[1]), r: 4, fill: PAL.vp }));
+  svg.append(node('text', { x: left + 4, y: 16, class: 'axis-label cap-head', style: 'font-weight:600' }, head));
+  svg.append(node('text', { x: left + 4, y: 30, class: 'axis-label cap-sub' }, `Daten: ${CAP_PROV[d.prov].name}${d.note ? ` · ${d.note}` : ''}${d.stale ? ` · abgelaufen, Stand ${utcDate(d.fetchedAt)} UTC – ${d.stale}` : ''} · Preisebenen in dieser Ansicht aus`));
+  box.replaceChildren(svg); updateNav();
+}
+(function capUi() {
+  document.addEventListener('click', e => { const b = e.target.closest('[data-metric]'); if (b) capSet(b.dataset.metric === 'cap'); });
+})();
 document.addEventListener('click', e => { const b = e.target.closest('[data-ana]'); if (b) anaSet(b.dataset.ana); }); // 3.35.0 (G07): Analyse-Intervall
 // ---- 3.35.0 (G07): bestätigte höhere Zonen im kleineren Chart (zuschaltbar, „Zonen 4h“) ----
 // Je Chart-Kerze gilt der Stand der letzten Analyse-Kerze, die zu Beginn dieser Chart-Kerze schon abgeschlossen war – so steht
@@ -6038,7 +6273,8 @@ function setMarket(symbol,interval=state.interval) {
   state.symbol=normalized;state.interval=interval;$('symbol').value=normalized.slice(0,-4);state.pickError=null;
   if(changed){state.pan=0;state.anchorTime=null;state.candles=[];state.marketAt=0;state.marketError=null;state.funding=null;state.oi=null;state.history=null;state.fundingError=null;state.oiError=null;state.historyError=null;state.selected=null;state.selectedTime=null;state.fromCache=false;live.chartAt=0;}
   document.querySelectorAll('[data-interval]').forEach(b=>{const active=b.dataset.interval===interval;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});
-  render();void showCachedChart();return refresh();
+  render();void showCachedChart();if(CAP.on)void capLoad(); // 3.35.0: Cap des neuen Coins bzw. passende Auflösung
+  return refresh();
 }
 function pause() {state.paused=!state.paused;live.post({t:'pause',on:state.paused});if(state.paused)cancel();else{live.post({t:'wake'});void refresh();}status();renderMarket();renderCalculator();renderSignals();renderPositions();renderLivebar();updateTitle();syncStreams();renderSkeletons();}
 // ---- 3.32.0 (G04.3): Kryptowährungsfeld ----
@@ -6112,6 +6348,7 @@ $('watchlist').addEventListener('click',e=>{
 // Kerzen, kein Fehler), bleibt der bisherige Zustand stehen – kein Aufblinken beim Coinwechsel.
 var OV_NEED = { vp: ['Volumenprofil', 10], bb: ['Bollinger', 20], ema200: ['EMA 200', 200], zz: ['ZigZag', 2], div: ['RSI-Divergenz', 31] };
 function ovLock(k) {
+  if (CAP.on) return { why: 'In der Market-Cap-Ansicht aus: Preisebenen gehören nicht auf die Cap-Achse. Die Einstellung bleibt gespeichert und gilt wieder in der Kursansicht.' }; // 3.35.0
   const n = state.candles.length;
   if (k === 'hz') { // 3.35.0 (G07): nur eine wirklich höhere Ebene, nur mit Analyse-Werten
     const lab = anaLabel(ana.iv);
@@ -6276,11 +6513,11 @@ $('backup-decrypt').addEventListener('click',()=>void decryptPending());
 $('decrypt-cancel').addEventListener('click',()=>{pendingEncrypted=null;$('decrypt-row').hidden=true;backupStatus('');});
 $('export-csv').addEventListener('click',()=>{if(!state.trades.length){backupStatus('Noch keine abgeschlossenen Trades.');return;}download(`trades-${new Date().toISOString().slice(0,10)}.csv`,tradesCsv(state.trades.slice().sort((a,b)=>a.closedAt-b.closedAt)),'text/csv;charset=utf-8');backupStatus('CSV erstellt (Semikolon, Dezimalkomma).');});
 $('pause').addEventListener('click',pause);$('refresh').addEventListener('click',()=>{live.post({t:'wake'});void refresh();});
-$('zoom-in').addEventListener('click',()=>zoom(.7));$('zoom-out').addEventListener('click',()=>zoom(1.4));
+$('zoom-in').addEventListener('click',()=>CAP.on?capZoom(.7):zoom(.7));$('zoom-out').addEventListener('click',()=>CAP.on?capZoom(1.4):zoom(1.4));
 let resizeTimer;new ResizeObserver(()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(renderMarket,100);}).observe($('chart'));
-$('pan-back').addEventListener('click',()=>setPan(state.pan+Math.max(1,Math.round(Math.min(state.count,state.candles.length)*.4))));
-$('pan-fwd').addEventListener('click',()=>setPan(state.pan-Math.max(1,Math.round(Math.min(state.count,state.candles.length)*.4))));
-$('pan-now').addEventListener('click',()=>setPan(0));
+$('pan-back').addEventListener('click',()=>CAP.on?capPan(1):setPan(state.pan+Math.max(1,Math.round(Math.min(state.count,state.candles.length)*.4))));
+$('pan-fwd').addEventListener('click',()=>CAP.on?capPan(-1):setPan(state.pan-Math.max(1,Math.round(Math.min(state.count,state.candles.length)*.4))));
+$('pan-now').addEventListener('click',()=>CAP.on?capPan(0):setPan(0));
 $('zoom-reset').addEventListener('click',chartViewReset);
 // Gesten: ein Finger wischen = blättern, zwei Finger = zoomen, Tippen = Kerze wählen, doppelt tippen = zurück zu jetzt
 (()=>{
@@ -6289,7 +6526,7 @@ $('zoom-reset').addEventListener('click',chartViewReset);
   const idxAt=clientX=>{const G=chartGeom;return G?Math.floor(frac(clientX)*G.count):0;};
   const hideHint=()=>{};
   box.addEventListener('pointerdown',e=>{
-    if(!chartGeom)return; pts.set(e.pointerId,{x:e.clientX,y:e.clientY}); try{box.setPointerCapture(e.pointerId);}catch{}
+    if(!chartGeom||CAP.on)return; pts.set(e.pointerId,{x:e.clientX,y:e.clientY}); try{box.setPointerCapture(e.pointerId);}catch{}
     if(pts.size===1)g={type:'tap',x0:e.clientX,y0:e.clientY,pan0:state.pan,count0:state.count};
     else if(pts.size===2){const [a,b]=[...pts.values()];g={type:'pinch',d0:Math.max(20,Math.abs(a.x-b.x)),f:frac((a.x+b.x)/2),count0:state.count,pan0:state.pan};hideHint();}
   });
@@ -6314,7 +6551,7 @@ $('zoom-reset').addEventListener('click',chartViewReset);
   box.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse'&&!pts.size)chartGeom?.clear();});
   box.addEventListener('gesturestart',e=>e.preventDefault());
   box.addEventListener('wheel',e=>{
-    if(!chartGeom)return;
+    if(!chartGeom||CAP.on)return;
     if(e.ctrlKey){e.preventDefault();setView(state.count*Math.exp(e.deltaY*.01),frac(e.clientX));hideHint();}
     else if(Math.abs(e.deltaX)>Math.abs(e.deltaY)){e.preventDefault();setPan(state.pan+e.deltaX/8);hideHint();}
   },{passive:false});
@@ -7757,6 +7994,7 @@ function magnetAt(clientX, clientY, touch) {
   return { price: roundPrice(Math.round(raw / st) * st), name: '', k: null, i };
 }
 function magnetDraw() {
+  if (CAP.on) { magnetHide(); return; } // 3.35.0: keine Preisebenen auf der Cap-Achse
   const G = chartGeom, svg = $('chart').querySelector('svg'); if (!svg) return;
   svg.querySelector('.magnet-g')?.remove();
   const m = magnet.at && magnetAt(magnet.at.x, magnet.at.y, magnet.at.touch);
@@ -7788,6 +8026,7 @@ function eatGhostClick() {
 }
 // Alarm mit dem Preis unter dem Zeiger vorbereiten: am iPad/Handy im Schnell-Alarm, am Computer im Formular „Kurs-Alarme“
 function magnetCommit(e) {
+  if (CAP.on) return false;
   const m = magnetAt(e.clientX, e.clientY, e.pointerType === 'touch' || e.pointerType === 'pen'); if (!m) return false;
   const note = m.name ? `${m.name} (${state.interval})` : '';
   setMagnet(false); if (e.pointerType !== 'mouse') { magnetHide(); eatGhostClick(); }
@@ -12088,7 +12327,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
         </form>
         <div id="market-error" class="notice error" role="alert" hidden></div>
         <div class="chart-heading"><div><div class="pair-title"><span class="coin-icon" id="coin-icon">B</span><h2 id="pair-label">BTC <span>/ USDT</span></h2><span class="badge" id="market-badge">SPOT</span></div><div class="price-row"><strong id="price" class="skel">—</strong><span class="unit">USDT</span><span class="change skel" id="candle-change">—</span></div><div class="signal-line" id="signal-line" hidden></div><button type="button" class="button ghost alarm-btn" id="alarm-here">🔔 Alarm für diesen Kurs</button></div><div class="chart-meta"><span id="price-eur">Eurokurs ausstehend</span><span id="updated">Noch keine Marktdaten</span></div></div>
-        <div class="chart-toolbar"><div class="intervals" role="group" aria-label="Kerzenintervall"><button type="button" data-interval="1m" class="active" aria-pressed="true">1m</button><button type="button" data-interval="5m" aria-pressed="false">5m</button><button type="button" data-interval="15m" aria-pressed="false">15m</button><button type="button" data-interval="1h" aria-pressed="false">1h</button><button type="button" data-interval="4h" aria-pressed="false">4h</button><button type="button" data-interval="1d" aria-pressed="false">1d</button><button type="button" data-interval="1w" aria-pressed="false">1w</button><button type="button" data-interval="1M" aria-pressed="false" title="1 Monat">1M</button></div><div class="zoom-controls" role="group" aria-label="Chart zoomen und blättern"><button id="pan-back" type="button" aria-label="Weiter zurück in der Zeit">◀</button><button id="zoom-out" type="button" aria-label="Herauszoomen, mehr Kerzen">−</button><button id="zoom-in" type="button" aria-label="Hineinzoomen, weniger Kerzen">+</button><button id="pan-fwd" type="button" aria-label="Weiter Richtung jetzt">▶</button><button id="pan-now" type="button" hidden>Jetzt</button><button id="zoom-reset" type="button" hidden aria-label="Standardansicht: 80 Kerzen bis zur aktuellen Kerze" title="Standardansicht: 80 Kerzen bis zur aktuellen Kerze">⟲</button><button id="magnet" type="button" aria-pressed="false" title="Magnet: auf ein Chart-Level tippen oder klicken, um dort einen Kurs-Alarm zu setzen" aria-label="Magnet: Kurs-Alarm per Klick auf ein Chart-Level">🧲</button><button id="chart-full" type="button" aria-pressed="false" aria-label="Chart im Vollbild" title="Vollbild – schließen mit Enter, Esc oder diesem Symbol"><svg class="ico-max" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><svg class="ico-min" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><details class="tip"><summary aria-label="Bedienung des Charts"><span>i</span></summary><div class="tip-body"><p>Zoomen: zwei Finger auseinander/zusammen, Strg + Mausrad oder − / +.</p><p>Zurückblättern: mit einem Finger wischen, waagrecht scrollen oder ◀ ▶. Doppelt tippen: zurück zu jetzt.</p><p>🧲 Magnet: einschalten, dann auf eine Linie oder Kerze tippen bzw. klicken – der Kurs-Alarm wird mit genau diesem Preis vorausgefüllt. Der Preis rastet an POC, Value Area, Pivots, EMA 200, Bollinger, Kerzen-Hochs und -Tiefs, Liquidationslinien sowie den Liq-Clustern der Heatmap ein. Am Computer geht es jederzeit auch per Rechtsklick.</p><p>Rote gestrichelte Linie: Liquidationspreis deiner Position (Wert der Börse oder Modell bei isolierter Margin), rot getönt der Bereich dahinter. Dünner: das Szenario aus dem Positionsrechner.</p><p>Tastatur: Pfeiltasten wählen Kerzen, + und − zoomen.</p></div></details></div></div>
+        <div class="chart-toolbar"><div class="intervals" role="group" aria-label="Kerzenintervall"><button type="button" data-interval="1m" class="active" aria-pressed="true">1m</button><button type="button" data-interval="5m" aria-pressed="false">5m</button><button type="button" data-interval="15m" aria-pressed="false">15m</button><button type="button" data-interval="1h" aria-pressed="false">1h</button><button type="button" data-interval="4h" aria-pressed="false">4h</button><button type="button" data-interval="1d" aria-pressed="false">1d</button><button type="button" data-interval="1w" aria-pressed="false">1w</button><button type="button" data-interval="1M" aria-pressed="false" title="1 Monat">1M</button></div><div class="intervals metric-toggle" role="group" aria-label="Kurs oder Marktkapitalisierung"><button type="button" data-metric="price" class="active" aria-pressed="true">Kurs</button><button type="button" data-metric="cap" aria-pressed="false" title="Marktkapitalisierung in USD – historische Werte schlüssellos von CoinGecko, sonst CoinPaprika">MCap</button></div><div class="zoom-controls" role="group" aria-label="Chart zoomen und blättern"><button id="pan-back" type="button" aria-label="Weiter zurück in der Zeit">◀</button><button id="zoom-out" type="button" aria-label="Herauszoomen, mehr Kerzen">−</button><button id="zoom-in" type="button" aria-label="Hineinzoomen, weniger Kerzen">+</button><button id="pan-fwd" type="button" aria-label="Weiter Richtung jetzt">▶</button><button id="pan-now" type="button" hidden>Jetzt</button><button id="zoom-reset" type="button" hidden aria-label="Standardansicht: 80 Kerzen bis zur aktuellen Kerze" title="Standardansicht: 80 Kerzen bis zur aktuellen Kerze">⟲</button><button id="magnet" type="button" aria-pressed="false" title="Magnet: auf ein Chart-Level tippen oder klicken, um dort einen Kurs-Alarm zu setzen" aria-label="Magnet: Kurs-Alarm per Klick auf ein Chart-Level">🧲</button><button id="chart-full" type="button" aria-pressed="false" aria-label="Chart im Vollbild" title="Vollbild – schließen mit Enter, Esc oder diesem Symbol"><svg class="ico-max" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><svg class="ico-min" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><details class="tip"><summary aria-label="Bedienung des Charts"><span>i</span></summary><div class="tip-body"><p>Zoomen: zwei Finger auseinander/zusammen, Strg + Mausrad oder − / +.</p><p>Zurückblättern: mit einem Finger wischen, waagrecht scrollen oder ◀ ▶. Doppelt tippen: zurück zu jetzt.</p><p>🧲 Magnet: einschalten, dann auf eine Linie oder Kerze tippen bzw. klicken – der Kurs-Alarm wird mit genau diesem Preis vorausgefüllt. Der Preis rastet an POC, Value Area, Pivots, EMA 200, Bollinger, Kerzen-Hochs und -Tiefs, Liquidationslinien sowie den Liq-Clustern der Heatmap ein. Am Computer geht es jederzeit auch per Rechtsklick.</p><p>Rote gestrichelte Linie: Liquidationspreis deiner Position (Wert der Börse oder Modell bei isolierter Margin), rot getönt der Bereich dahinter. Dünner: das Szenario aus dem Positionsrechner.</p><p>Tastatur: Pfeiltasten wählen Kerzen, + und − zoomen.</p></div></details></div></div>
         <div class="ohlc-row"><div class="ohlc skel" id="ohlc">O — &nbsp; H — &nbsp; L — &nbsp; C —</div><details class="tip div-tip" id="div-tip" hidden><summary aria-label="RSI-Divergenz: Erklärung und Handlungsleitfaden"><i class="div-dot" aria-hidden="true"></i><b class="div-l" id="div-chip-l">RSI-Divergenz</b><b class="div-s" id="div-chip-s">Div.</b><span>i</span></summary><div class="tip-body div-body"><p class="div-title" id="div-title"></p><p id="div-case"></p><p class="div-tent" id="div-tent" hidden></p><p class="div-other" id="div-other" hidden></p><p class="div-h">Handlungsleitfaden</p><ol class="div-steps"><li><b>Kein Einstiegssignal.</b> Die Divergenz zeigt nachlassenden Schwung, keine Umkehr. Auch Warten auf eine Bestätigung half im Backtest nicht (unten).</li><li id="div-step-ext"></li><li id="div-step-pos"></li><li id="div-step-risk"></li></ol><p class="div-alarm-row"><button type="button" class="button ghost" id="div-alarm">🔔 Alarm</button></p><p class="div-honest"><b>Ehrlich – Backtest mit genau diesem Scanner</b> (echte BTC-Stundenkerzen 2017–2019, Coinbase und Bitfinex): Nach einer Divergenz lief der Kurs nur in 48–51 % der Fälle zuerst um die Mindestbewegung in die erwartete Richtung – als Trade nach Gebühren (0,06 % je Seite) durchweg ein Verlust (−25 % bis −47 %). Warten machte es nicht besser: ab der Bestätigung des Umkehrpunkts 44–48 %, nach einem Schlusskurs über dem Zwischenhoch bzw. unter dem Zwischentief nur 21–39 %. Deshalb zeigt die App dazu keine Trefferquote und kein Kauf- oder Verkaufssignal.</p><p class="div-note">Grün = bullisch, rot = bärisch. Eine neue Divergenz pulsiert, bis du diese Erklärung geöffnet hast, danach leuchtet sie ruhig. Ist „Bewegung reduzieren“ im System eingestellt, leuchtet sie ohne Pulsieren.</p></div></details></div>
         <div id="chart" class="chart" tabindex="0" role="img" aria-label="Kerzenchart. Mit Pfeiltasten Kerzen auswählen, mit Plus und Minus zoomen."><div class="chart-skel" aria-hidden="true"><i class="skel" style="height:38%"></i><i class="skel" style="height:52%"></i><i class="skel" style="height:46%"></i><i class="skel" style="height:61%"></i><i class="skel" style="height:57%"></i><i class="skel" style="height:70%"></i><i class="skel" style="height:64%"></i><i class="skel" style="height:49%"></i><i class="skel" style="height:55%"></i><i class="skel" style="height:68%"></i><i class="skel" style="height:74%"></i><i class="skel" style="height:66%"></i><i class="skel" style="height:58%"></i><i class="skel" style="height:63%"></i><i class="skel" style="height:77%"></i><i class="skel" style="height:71%"></i><i class="skel" style="height:80%"></i><i class="skel" style="height:69%"></i><i class="skel" style="height:62%"></i><i class="skel" style="height:72%"></i><i class="skel" style="height:84%"></i><i class="skel" style="height:78%"></i><i class="skel" style="height:73%"></i><i class="skel" style="height:88%"></i></div><span class="sr-only">Marktdaten werden geladen</span></div><i class="div-halo" id="div-halo" hidden aria-hidden="true"><b></b></i>
         <div class="fib-strip" id="fib-strip" role="group" aria-label="Fibonacci-Marken 38,2 / 50 / 61,8 % mit Abstand zum aktuellen Kurs – antippen legt einen Alarm an" hidden><div class="fs-head"><b id="fs-head">Fib</b><details class="tip left" id="fs-tip"><summary aria-label="Fibonacci-Marken erklärt"><span>i</span></summary><div class="tip-body"><p><b>Fibonacci-Retracement:</b> Wie weit läuft der Kurs nach einer Bewegung zurück? Gemessen in Prozent der letzten Schwungbewegung.</p><p id="fs-tip-swing">Grundlage ist der letzte abgeschlossene ZigZag-Schwung.</p><ul class="fs-tip-list"><li><b>23,6 %</b><span data-fl="23,6"></span> – flacher Rücklauf, gilt als Zeichen eines starken Trends</li><li><b>38,2 %</b><span data-fl="38,2"></span> – erste häufig beachtete Marke</li><li><b>50 %</b><span data-fl="50"></span> – halber Rücklauf; keine Fibonacci-Zahl, aber traditionell beachtet</li><li><b>61,8 %</b><span data-fl="61,8"></span> – der „goldene Schnitt“; 50–61,8&nbsp;% ist die „goldene Zone“ (im Chart hinterlegt)</li><li><b>78,6 %</b><span data-fl="78,6"></span> – tiefer Rücklauf, der Schwung ist dann fast ganz zurückgenommen</li></ul><p><b>So nutzen:</b> als Orientierung, wo Rücksetzer oder Erholungen oft vermutet werden. Eine Marke antippen legt dort einen Alarm an – dann die Reaktion des Kurses abwarten. Viele Trader achten besonders auf Marken, die mit anderen Levels zusammenfallen (POC, EMA 200, Unterstützung); geprüft ist das hier nicht.</p><p><b>Ehrlich:</b> Im Backtest mit echten BTC-Stundenkerzen (2017–2019) endeten Gegenbewegungen nicht häufiger an diesen Marken als an um 6 Punkte verschobenen (27–31&nbsp;% gegenüber 23–35&nbsp;%); knapp die Hälfte lief sogar über 100&nbsp;% hinaus. Deshalb keine Trefferquote – Orientierung, kein Handelssignal.</p><p>Die ZigZag-Mindestbewegung bestimmt den Schwung: kleiner heißt kürzere Schwünge und Marken näher am Kurs.</p></div></details></div><button type="button" class="fs-chip" data-fib="38,2" disabled><span class="fs-r">38,2<span class="fs-pc"> %</span></span><span class="fs-val skel">—</span><span class="fs-dist"></span></button><button type="button" class="fs-chip" data-fib="50" disabled><span class="fs-r">50<span class="fs-pc"> %</span></span><span class="fs-val skel">—</span><span class="fs-dist"></span></button><button type="button" class="fs-chip" data-fib="61,8" disabled><span class="fs-r">61,8<span class="fs-pc"> %</span></span><span class="fs-val skel">—</span><span class="fs-dist"></span></button><span class="fs-note" id="fs-note" hidden></span></div>

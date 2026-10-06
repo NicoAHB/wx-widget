@@ -7,7 +7,7 @@ if (!fs.existsSync(path.join(dir, 'key.pem')) || !fs.existsSync(path.join(dir, '
   require('child_process').execFileSync('openssl', ['req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '3650', '-subj', '/CN=localhost', '-keyout', path.join(dir, 'key.pem'), '-out', path.join(dir, 'cert.pem')], { stdio: 'ignore' });
 const tls = { key: fs.readFileSync(path.join(dir, 'key.pem')), cert: fs.readFileSync(path.join(dir, 'cert.pem')) };
 const IV = { '1s': 1e3, '1m': 6e4, '3m': 18e4, '5m': 3e5, '15m': 9e5, '30m': 18e5, '1h': 36e5, '2h': 72e5, '4h': 144e5, '12h': 432e5, '1d': 864e5, '1w': 6048e5, '1M': 2592e6 };
-const SPOT = { BTCUSDT: 64000, ETHUSDT: 2500, XRPUSDT: 1.47, ETCUSDT: 18, BCHUSDT: 330, LTCUSDT: 70, NEARUSDT: 2.4, EURUSDT: 1.164, SOLUSDT: 150, PAXGUSDT: 2650 };
+const SPOT = { BTCUSDT: 64000, ETHUSDT: 2500, XRPUSDT: 1.47, ETCUSDT: 18, BCHUSDT: 330, LTCUSDT: 70, NEARUSDT: 2.4, EURUSDT: 1.164, SOLUSDT: 150, PAXGUSDT: 2650, KASUSDT: 0.12 };
 const FUT = { ...SPOT, BSVUSDT: 32 };
 delete FUT.EURUSDT; delete FUT.PAXGUSDT; // PAXG: nur Spot (keine Futures, kein Open Interest)
 const cfg = { wsPeriod: 1000, futPeriod: 500, walk: true, silent: false, blockWs: false, restFail: false, restDelay: 0, chanNoCors: false, tg429: 0, tgUpdates: true, eurHist: 'on', t24: 'ok', log: [] }, sent = [];
@@ -270,11 +270,57 @@ function newsFile(req, res, u) {
   if (newsCfg.mode === 'real') return json(res, 200, JSON.parse(fs.readFileSync(path.join(__dirname, 'real-news.json'), 'utf8'))); // echte Datei vom Zweig „news“
   return json(res, 200, newsJson());
 }
+
+// ---------- 3.35.0 (G07): CoinGecko und CoinPaprika (Market Cap, schlüssellos) und CoinLore (darf nie gefragt werden) ----------
+// Market Cap = Kurs × eine über die Zeit wachsende Menge – also nie „Kurs × heutige Menge“. /cap?cg=ok|429|fail|down|denied&cp=…&ra=s&delay=ms
+const capCfg = { cg: 'ok', cp: 'ok', ra: 120, delay: 0, log: [] };
+const CG_IDS = { bitcoin: 'BTC', ethereum: 'ETH', solana: 'SOL', ripple: 'XRP', 'ethereum-classic': 'ETC', 'bitcoin-cash': 'BCH', litecoin: 'LTC', near: 'NEAR', 'pax-gold': 'PAXG', kaspa: 'KAS', 'kaspa-fork-token': 'KAS' };
+const CP_IDS = { 'btc-bitcoin': 'BTC', 'eth-ethereum': 'ETH', 'sol-solana': 'SOL', 'xrp-xrp': 'XRP', 'etc-ethereum-classic': 'ETC', 'bch-bitcoin-cash': 'BCH', 'ltc-litecoin': 'LTC', 'near-near-protocol': 'NEAR', 'paxg-pax-gold': 'PAXG', 'kas-kaspa': 'KAS', 'kas-kas-fork': 'KAS' };
+const ON_BINANCE = new Set(['bitcoin', 'ethereum', 'solana', 'ripple', 'ethereum-classic', 'bitcoin-cash', 'litecoin', 'near', 'pax-gold', 'kaspa', 'btc-bitcoin', 'eth-ethereum', 'sol-solana', 'xrp-xrp', 'etc-ethereum-classic', 'bch-bitcoin-cash', 'ltc-litecoin', 'near-near-protocol', 'paxg-pax-gold', 'kas-kaspa']);
+const SUPPLY = { BTC: 19.6e6, ETH: 120e6, SOL: 440e6, XRP: 55e9, ETC: 145e6, BCH: 19.6e6, LTC: 74e6, NEAR: 1.1e9, PAXG: 4e5, KAS: 24e9 };
+const supplyAt = (sym, t) => SUPPLY[sym] * (1 + (t - Date.now()) / (365 * 864e5) * 0.05);
+const capOf = (sym, t, px) => px * supplyAt(sym, t);
+function capRows(sym, iv, keep) { const { rows } = series(sym + 'USDT', iv); return rows.slice(-keep).map(r => [r[0], Number(r[4])]); }
+function capMock(req, res, host, u) {
+  const q = Object.fromEntries(u.searchParams), prov = host === 'api.coingecko.com' ? 'cg' : host === 'api.coinpaprika.com' ? 'cp' : 'lore';
+  capCfg.log.push({ at: Date.now(), prov, path: u.pathname, q });
+  const H = { 'content-type': 'application/json', 'access-control-allow-origin': '*', 'access-control-expose-headers': 'Retry-After', 'cache-control': 'no-store' };
+  const send = (code, body, extra = {}) => { res.writeHead(code, { ...H, ...extra }); res.end(JSON.stringify(body)); };
+  if (prov === 'lore') return send(404, { error: 'CoinLore darf für die Market Cap nicht gefragt werden' });
+  const go = () => {
+    const mode = capCfg[prov];
+    if (mode === '429') return send(429, { status: { error_code: 429, error_message: 'rate limit' } }, { 'retry-after': String(capCfg.ra) });
+    if (mode === 'fail') return send(500, { error: 'server' });
+    if (mode === 'denied') return send(401, { error: 'unauthorized' });
+    if (mode === 'down') { res.socket?.destroy(); return; }
+    const now = Date.now(), p = u.pathname;
+    if (prov === 'cg') {
+      let m;
+      if (p === '/api/v3/search') { const S = String(q.query || '').toUpperCase(); return send(200, { coins: Object.entries(CG_IDS).filter(([, s]) => s === S).map(([id, s], i) => ({ id, name: id, symbol: s.toLowerCase(), market_cap_rank: id === 'kaspa-fork-token' ? 40 : 60 + i })) }); }
+      if ((m = /^\/api\/v3\/coins\/([\w-]+)\/tickers$/.exec(p))) { const s = CG_IDS[m[1]]; if (!s) return send(404, { error: 'coin not found' }); return send(200, { name: m[1], tickers: ON_BINANCE.has(m[1]) ? [{ base: s, target: 'USDT', market: { identifier: 'binance' } }] : [] }); }
+      if ((m = /^\/api\/v3\/coins\/([\w-]+)\/market_chart$/.exec(p))) {
+        const s = CG_IDS[m[1]]; if (!s) return send(404, { error: 'coin not found' });
+        const rows = Number(q.days) > 90 ? capRows(s, '1d', 365) : capRows(s, '1h', 90 * 24), pts = [...rows, [now, price[s + 'USDT']]];
+        return send(200, { prices: pts.map(([t, v]) => [t, v]), market_caps: pts.map(([t, v]) => [t, capOf(s, t, v)]), total_volumes: pts.map(([t, v]) => [t, v * 1e6]) });
+      }
+      if (p === '/api/v3/simple/price') { const id = String(q.ids || ''), s = CG_IDS[id]; if (!s) return send(200, {}); return send(200, { [id]: { usd: price[s + 'USDT'], usd_market_cap: capOf(s, now, price[s + 'USDT']), last_updated_at: Math.floor(now / 1000) } }); }
+      return send(404, { error: 'not found' });
+    }
+    let m;
+    if (p === '/v1/search') { const S = String(q.q || '').toUpperCase(); return send(200, { currencies: Object.entries(CP_IDS).filter(([, s]) => s === S).map(([id, s], i) => ({ id, name: id, symbol: s, rank: id === 'kas-kas-fork' ? 40 : 60 + i })) }); }
+    if ((m = /^\/v1\/coins\/([\w-]+)\/markets$/.exec(p))) { const s = CP_IDS[m[1]]; if (!s) return send(404, { error: 'id not found' }); return send(200, ON_BINANCE.has(m[1]) ? [{ exchange_id: 'binance', pair: `${s}/USDT` }, { exchange_id: 'kraken', pair: `${s}/USD` }] : [{ exchange_id: 'gate', pair: `${s}/USDT` }]); }
+    if ((m = /^\/v1\/tickers\/([\w-]+)\/historical$/.exec(p))) { const s = CP_IDS[m[1]]; if (!s) return send(404, { error: 'id not found' }); return send(200, capRows(s, '1d', 365).map(([t, v]) => ({ timestamp: new Date(t).toISOString(), price: v, volume_24h: v * 1e6, market_cap: Math.round(capOf(s, t, v)) }))); }
+    if ((m = /^\/v1\/tickers\/([\w-]+)$/.exec(p))) { const s = CP_IDS[m[1]]; if (!s) return send(404, { error: 'id not found' }); return send(200, { id: m[1], symbol: s, last_updated: new Date(now).toISOString(), quotes: { USD: { price: price[s + 'USDT'], market_cap: Math.round(capOf(s, now, price[s + 'USDT'])) } } }); }
+    return send(404, { error: 'not found' });
+  };
+  if (capCfg.delay) setTimeout(go, capCfg.delay); else go();
+}
 function rest(req, res) {
   const hm = /^\/_h\/([a-z0-9.-]+)(\/[^?]*)?(\?.*)?$/.exec(req.url);
   if (hm) { req.headers.host = hm[1]; req.url = (hm[2] || '/') + (hm[3] || ''); }
   const u = new URL(req.url, 'https://x'), q = Object.fromEntries(u.searchParams), host = (req.headers.host || '').split(':')[0];
   if (host === 'api.telegram.org' || host === 'discord.com') return void channel(req, res, host, u);
+  if (host === 'api.coingecko.com' || host === 'api.coinpaprika.com' || host === 'api.coinlore.net') { if (req.method === 'OPTIONS') { res.writeHead(204, { 'access-control-allow-origin': '*', 'access-control-allow-methods': 'GET', 'access-control-allow-headers': '*' }); return void res.end(); } return void capMock(req, res, host, u); }
   if (host === 'raw.githubusercontent.com') return void (u.pathname.startsWith('/NicoAHB/wx-widget/news/') ? newsFile(req, res, u) : calendar(req, res, u));
   if (cfg.restDelay && !req.delayed) { req.delayed = true; return void setTimeout(() => rest(req, res), cfg.restDelay); }
   cfg.log.push({ at: Date.now(), host, path: u.pathname, q });
@@ -443,6 +489,7 @@ http.createServer((req, res) => {
     case '/silent': cfg.silent = q.on === '1'; return ok();
     case '/blockws': cfg.blockWs = q.on === '1'; if (cfg.blockWs) for (const c of conns) c.ws.terminate(); return ok();
     case '/restfail': cfg.restFail = q.on === '1'; return ok();
+    case '/cap': for (const k of ['cg', 'cp']) if (k in q) capCfg[k] = q[k]; if ('ra' in q) capCfg.ra = Number(q.ra) || 0; if ('delay' in q) capCfg.delay = Number(q.delay) || 0; if (q.clear === '1') capCfg.log.length = 0; return ok({ cg: capCfg.cg, cp: capCfg.cp, log: capCfg.log });
     case '/tick': cfg.tickFail = Object.fromEntries((q.fail || '').split(',').filter(Boolean).map(x => [x, 1])); cfg.tickDelay = Object.fromEntries((q.delay || '').split(',').filter(Boolean).map(x => x.split(':')).map(([k, ms]) => [k, Number(ms) || 0])); cfg.tickOld = Object.fromEntries((q.old || '').split(',').filter(Boolean).map(x => x.split(':')).map(([k, ms]) => [k, Number(ms) || 0])); return ok({ fail: cfg.tickFail, delay: cfg.tickDelay, old: cfg.tickOld });
     case '/drop': for (const c of conns) c.ws.terminate(); return ok({ dropped: true });
     case '/flood': { clearInterval(cfg.flood); cfg.flood = null; if (q.on === '1') { const sym = q.symbol || 'BTCUSDT', per = Math.max(1, Math.round((Number(q.rate) || 1000) / 50)); cfg.flood = setInterval(() => { for (let i = 0; i < per; i++) trade(sym, +(price[sym] * (1 + (rnd() - 0.5) * 0.001)).toPrecision(8)); }, 20); } return ok({ flood: !!cfg.flood }); }
@@ -456,7 +503,7 @@ http.createServer((req, res) => {
       return ok({ ...volaCfg });
     }
     case '/reset': if (volaCfg.mode !== 'normal' || volaCfg.drift !== null) { Object.assign(volaCfg, { mode: 'normal', drift: null }); for (const k of Object.keys(H)) if (k.endsWith('|1h')) delete H[k]; }
-      Object.assign(calCfg, { mode: 'normal', min: 10, hits: 0 }); Object.assign(newsCfg, { mode: 'normal', hits: 0 }); clearInterval(cfg.flood); cfg.flood = null; cfg.log.length = 0; Object.assign(oiCfg, { mode: 'wave', ago: 10, amount: 0.06 }); cfg.walk = true; cfg.silent = false; cfg.blockWs = false; cfg.restFail = false; cfg.restDelay = 0; cfg.chanNoCors = false; cfg.tg429 = 0; cfg.tgDocFail = false; cfg.tgUpdates = true; cfg.tgMulti = false; cfg.tg502 = 0; cfg.tgFail = null; cfg.tickFail = {}; cfg.tickDelay = {}; cfg.tickOld = {}; cfg.eurHist = 'on'; cfg.t24 = 'ok'; cfg.tgDrop = 0; cfg.photoDrop = 0; cfg.photoFail = 0; cfg.photoDelay = 0; sent.length = 0; Object.assign(bookCfg, { walls: [], step: 0.0002, levels: 1000 }); return ok();
+      Object.assign(calCfg, { mode: 'normal', min: 10, hits: 0 }); Object.assign(newsCfg, { mode: 'normal', hits: 0 }); clearInterval(cfg.flood); cfg.flood = null; cfg.log.length = 0; Object.assign(oiCfg, { mode: 'wave', ago: 10, amount: 0.06 }); cfg.walk = true; cfg.silent = false; cfg.blockWs = false; cfg.restFail = false; cfg.restDelay = 0; cfg.chanNoCors = false; cfg.tg429 = 0; cfg.tgDocFail = false; cfg.tgUpdates = true; cfg.tgMulti = false; cfg.tg502 = 0; cfg.tgFail = null; cfg.tickFail = {}; cfg.tickDelay = {}; cfg.tickOld = {}; cfg.eurHist = 'on'; cfg.t24 = 'ok'; cfg.tgDrop = 0; cfg.photoDrop = 0; cfg.photoFail = 0; cfg.photoDelay = 0; Object.assign(capCfg, { cg: 'ok', cp: 'ok', ra: 120, delay: 0 }); capCfg.log.length = 0; sent.length = 0; Object.assign(bookCfg, { walls: [], step: 0.0002, levels: 1000 }); return ok();
     case '/restdelay': cfg.restDelay = Number(q.ms) || 0; return ok();
     case '/eurhist': cfg.eurHist = q.mode || 'on'; return ok({ mode: cfg.eurHist });
     case '/t24': cfg.t24 = q.mode || 'ok'; return ok({ mode: cfg.t24 });
