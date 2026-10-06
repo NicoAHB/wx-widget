@@ -35,7 +35,9 @@ const tests = {
     await h.ctl('/restdelay?ms=0');
     // Fehler statt Laden: kein Skeleton, sondern Fehlermeldung
     await h.ctl('/restfail?on=1');
-    await page.fill('#symbol', 'SOL'); await page.click('#market-form button[type=submit]');
+    // 3.32.0 (G04.3): ein unbekanntes Kürzel prüft die App vorher – bei gestörtem Abruf bliebe der geladene Coin. Deshalb ein Coin der
+    // Vorauswahl (XRP), der ohne Prüfung wechselt und dann keine Daten bekommt.
+    await page.fill('#symbol', 'XRP'); await page.click('#market-form button[type=submit]');
     await page.waitForTimeout(1500);
     const err = await page.evaluate(() => ({ skel: !!document.querySelector('#chart .chart-skel'), msg: document.querySelector('#chart .chart-empty strong')?.textContent, price: document.getElementById('price').classList.contains('skel') }));
     check('Bei Datenfehler: Meldung statt Platzhalter', !err.skel && /Keine Marktdaten/.test(err.msg || '') && !err.price, JSON.stringify(err));
