@@ -3,9 +3,9 @@
 Laufende Übergabe. Sie wird nach jedem Arbeitsschritt aktualisiert, damit ein Abbruch jederzeit ungefährlich ist.
 
 ## Kurzstand
-- **Version live:** 3.37.0 (G09 Teil A+B), Pull Request #60, Merge-Commit `255b4bd` auf `main` (davor 3.36.0/G08: PR #59, 3.35.0/G07: PR #58).
+- **Version live:** 3.38.0 (G09 Punkt 11 + C1–C3), Pull Request #61, Merge-Commit `612a90d` auf `main` (davor 3.37.0/G09 A+B: PR #60, 3.36.0/G08: PR #59, 3.35.0/G07: PR #58).
 - **Arbeits-Branch:** `claude/scalp-desk-g03-j81c8k` (nach jedem Merge neu von `main` gestartet).
-- **Gerade in Arbeit:** G09 – Teil A+B fertig (3.37.0). Offen: B6 und C1–C6 (siehe unten), danach G10.
+- **Gerade in Arbeit:** G09 C4 (Archiv am 24/7-Dienst). Offen danach: C5, C6, dann G10.
 - **Danach:** G10 bis Ende schreibt ChatGPT, sofern der Nutzer nichts anderes sagt.
 
 ## Projekt in einem Satz
@@ -47,7 +47,7 @@ Code: `patEngine()` (reine Engine, läuft als Blob-Worker), `PAT_LIB` (41 Eintr�
 - [x] B4. Chart-Labels (Kerzen) und Linien/Zonen (Formationen), Auswahl hebt hervor
 - [x] B5a. Test `tests/m58.js` (trend 8, catalog 9 inkl. aller 41 Katalogfälle und 8 Intervalle, ui 11), Version 3.37.0
 - [x] B5b. Gesamtlauf 79 Tests 2691/2691, Doku Teil AP, PR #60, Merge `255b4bd`
-- [x] B6. Vorauswahl „Chartmuster erkannt“ (Übergabe G09 Punkt 11) – umgesetzt auf dem Branch (noch nicht veröffentlicht): `wlPat`, Knopf `.wl-d-pat`, `patFromWl`/`patWant`; Test m58 Abschnitt „wl“ (4/4)
+- [x] B6. Vorauswahl „Chartmuster erkannt“ (Übergabe G09 Punkt 11) – veröffentlicht in 3.38.0: `wlPat`, Knopf `.wl-d-pat`, `patFromWl`/`patWant`; Test m58 Abschnitt „wl“ (4/4)
   - Ziel: Kachel/Detailfeld der Vorauswahl zeigt „Chartmuster erkannt: <Name> (<Intervall>, <Status>)“; Tipp lädt den Coin per `setMarket(sym, iv)` (hier ausdrücklich mit Wechsel zum Chart), danach `pat.on = true`, Analyse und `pat.sel` auf genau diese Formation.
   - Dateien: `weather-widget-v2.html` (Vorauswahl: `wlLoad`/`wlPaint`/Detailfeld `wl-d-*`; Engine `patEngine().detect` auf `e.closed` der Kachel).
   - Fertig, wenn: Test zeigt Hinweis in der Kachel, Tipp öffnet Chart mit markierter Formation (Status + Intervall), kein Treffer → kein Hinweis.
