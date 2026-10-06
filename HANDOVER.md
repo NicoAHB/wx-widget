@@ -5,7 +5,7 @@ Laufende Übergabe. Sie wird nach jedem Arbeitsschritt aktualisiert, damit ein A
 ## Kurzstand
 - **Version live:** 3.35.0 (G07), Pull Request #58, Merge-Commit `9977a8c` auf `main`, GitHub Pages veröffentlicht.
 - **Arbeits-Branch:** `claude/scalp-desk-g03-j81c8k` (nach jedem Merge neu von `main` gestartet).
-- **Gerade in Arbeit:** G08 – Bitcoin-Entkopplung aus den allgemeinen Top 100 (Ziel-Version 3.36.0).
+- **Gerade in Arbeit:** G08 – Bitcoin-Entkopplung aus den allgemeinen Top 100 (Version 3.36.0, auf dem Branch fertig umgesetzt und mit m57 getestet; Gesamtlauf läuft, danach PR/Merge).
 - **Nicht anfangen:** G09 bis zum Ende schreibt später ChatGPT (Anweisung des Nutzers).
 
 ## Projekt in einem Satz
