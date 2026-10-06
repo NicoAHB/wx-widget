@@ -1118,6 +1118,9 @@ html[data-chartfull]:not([data-chartbar=open]) .chart-toolbar,html[data-chartful
 .sw.ew{width:11px;height:11px;border-radius:50%;border:1.6px solid var(--c-ew);background:transparent}
 .overlay-toggles button.na{border-style:dashed;cursor:help}
 .overlay-toggles button.na .sw{opacity:.3}
+/* 3.32.0 (G04.1): gesperrt grau – auch wenn der Einschaltwunsch gespeichert ist; „vorhanden/benötigt“ klein dahinter */
+.overlay-toggles button.na,.overlay-toggles button.na[aria-pressed=true]{color:var(--faint);background:transparent;border-color:var(--border)}
+.overlay-toggles .ov-need{font-size:.68rem;font-variant-numeric:tabular-nums}
 #chart .ew-line{fill:none;stroke:var(--c-ew);stroke-width:1.3;opacity:.6;stroke-linejoin:round;stroke-linecap:round}
 #chart .ew-line.cor{stroke-dasharray:5 4}
 #chart .ew-lbl circle{fill:var(--surface);stroke:var(--c-ew);stroke-width:1.5}
@@ -1314,7 +1317,13 @@ html[data-chartfull] details.div-tip .tip-body{max-height:min(60vh,60vw,420px)}
 
 /* ---------- 3.16.1 ---------- */
 /* Bildschirmtastatur offen (Handy/iPad): untere Leiste ausblenden, statt sie über dem Formular schweben zu lassen */
-html[data-kbd] .tabbar{display:none}
+html[data-kbd] .tabbar{visibility:hidden;pointer-events:none}
+/* 3.32.0 (G04.6): Die untere Leiste bleibt dauerhaft im DOM und auf eigener Ebene – bei offener Tastatur nur unsichtbar statt
+   display:none (das Wiedereinblenden musste sonst samt Unschärfe-Hintergrund neu aufgebaut werden und blitzte kurz auf) */
+html[data-layout=tablet] .tabbar{transform:translateZ(0);-webkit-backface-visibility:hidden;backface-visibility:hidden}
+/* 3.32.0 (G04.4): Safari am iPhone vergrößert die Seite beim Antippen eines Felds mit weniger als 16 px Schrift. Auf Touch-Geräten
+   haben deshalb alle Eingabefelder, Auswahllisten und Textfelder mindestens 16 px (keins ist größer); Fingerzoom bleibt erlaubt. */
+@media (pointer:coarse){input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file]),select,textarea{font-size:16px !important}}
 /* Live-Leiste: Tagesergebnis zusätzlich in Euro, direkt hinter dem USDT-Wert */
 .livebar .lb-pos>.lb-eur{margin-left:4px;font-weight:500}
 .lb-eur:empty{display:none}
@@ -1426,6 +1435,20 @@ html[data-layout=tablet] .wl-tile{height:64px}
 /* sehr schmale Kachel (Handy 320 px): Werte so groß wie die Regelzeile, damit auch „30 Min. −10,98 %“ neben den Verlauf passt */
 @container wlt (max-width:132px){.wl-chg,.wl-chg30{font-size:.625rem}}
 @media (pointer:coarse){.wl-item .chip-x{width:40px;height:40px;min-width:40px;min-height:40px;top:-14px;right:-12px}}
+/* 3.32.0 (G04.8–10): Umsortieren – langes Drücken ohne Textauswahl/Callout; angehobene Kachel schwebt, ihr Platz gestrichelt */
+.wl-tile{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+#market-form button[aria-busy=true]{opacity:.7;cursor:progress}
+.wl-sort{display:flex;gap:4px;margin-top:4px}
+.wl-sort button{flex:1 1 0;min-width:0;min-height:32px;padding:0;border:1px solid var(--field-border);border-radius:8px;background:var(--surface);color:var(--text-2);font-size:.875rem;line-height:1}
+.wl-sort .wl-grip{cursor:grab;touch-action:none;font-size:1rem}
+.wl-sort button:disabled{opacity:.35;cursor:default}
+@media (pointer:coarse){.wl-sort button{min-height:44px}}
+.wl-item.wl-ph>*{visibility:hidden}
+.wl-item.wl-ph{outline:2px dashed var(--mint);outline-offset:-1px;border-radius:10px}
+.wl-ghost{z-index:300;margin:0;pointer-events:none;border-radius:10px;box-shadow:0 12px 28px rgba(0,0,0,.35);opacity:.96;transform-origin:center}
+.wl-ghost .wl-tile{box-shadow:0 0 0 2px var(--mint)}
+html[data-wldrag],html[data-wldrag] *{cursor:grabbing !important;-webkit-user-select:none;user-select:none}
+@media (prefers-reduced-motion:reduce){.wl-ghost{box-shadow:none}}
 /* 3.20: News & Termine zum Coin – unter dem Wirtschaftskalender */
 html[data-layout=tablet] #cnews{order:1}
 .cn-list{margin-top:4px}
@@ -1586,6 +1609,11 @@ html[data-layout=tablet] .wl-detail{scroll-margin-bottom:calc(84px + env(safe-ar
 .wl-d-tip .tip-body{font-weight:400;color:var(--text-2)}
 .wl-d-none{margin:8px 0 4px;font-size:.875rem;color:var(--muted)}
 .wl-d-foot{margin:6px 0 0;font-size:.75rem;color:var(--muted)}
+/* 3.32.0 (G04.2): 24h-Tief / 24h-Hoch – eine schmale Zeile mit fester Höhe (kein Springen beim Laden) */
+.wl-d-24h{display:flex;align-items:baseline;gap:8px;min-height:22px;margin:2px 0 0;font-size:.8125rem;line-height:1.4;color:var(--text-2);font-variant-numeric:tabular-nums}
+.wl-d-24k{flex:0 0 auto;font-size:.6875rem;font-weight:700;letter-spacing:.06em;color:var(--muted)}
+.wl-d-24v{min-width:0}
+.wl-d-24h.skel-txt .wl-d-24v{color:var(--faint)}
 @media (prefers-reduced-motion:reduce){.wl-detail,.wl-d-clip{transition:none}}
 /* 3.24.0 Ablaufplan Schritt 7: Gewinn- und Verlust-Alarm – Feld unter dem Live-Ergebnis oben rechts */
 .livebar .lb-pos{cursor:pointer}
@@ -2668,7 +2696,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Alle Werte liegen zusätzlich im Arbeitsspeicher und sind dadurch synchron lesbar. Schreiben geht sofort in den
 // localStorage und gebündelt in die IndexedDB; beim Start gewinnt die zuletzt vollständig geschriebene Kopie.
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
-const APP_VERSION = '3.31.0', docEl = document.documentElement;
+const APP_VERSION = '3.32.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -2952,15 +2980,16 @@ async function mapLimit(items, n, fn) {
   return out;
 }
 async function positionPrices(positions, signal) {
-  const out = {}, errors = {}, spot = [...new Set(positions.filter(p => p.source !== 'futures').map(p => p.symbol))], fut = [...new Set(positions.filter(p => p.source === 'futures').map(p => p.symbol))];
+  const out = {}, errors = {}, times = {}, spot = [...new Set(positions.filter(p => p.source !== 'futures').map(p => p.symbol))], fut = [...new Set(positions.filter(p => p.source === 'futures').map(p => p.symbol))];
   const spotJob = !spot.length ? null : spotGet('/api/v3/ticker/price', spot.length === 1 ? { symbol: spot[0] } : { symbols: JSON.stringify(spot) }, signal)
-    .then(d => { for (const r of Array.isArray(d) ? d : [d]) { const v = Number(r?.price); if (r && spot.includes(r.symbol) && v > 0) out[r.symbol] = v; } }, e => { for (const s of spot) errors[s] = e; });
+    .then(d => { const at = Date.now(); for (const r of Array.isArray(d) ? d : [d]) { const v = Number(r?.price); if (r && spot.includes(r.symbol) && v > 0) { out[r.symbol] = v; times[r.symbol] = at; } } }, e => { for (const s of spot) errors[s] = e; });
   const got = await mapLimit(fut, 4, s => api.get(FUTURES, '/fapi/v1/ticker/price', { symbol: s }, signal));
   await spotJob;
-  got.forEach((r, i) => { const s = fut[i], v = Number(r.value?.price); if (!r.ok) errors[s] = r.error; else if (r.value?.symbol === s && v > 0) out[s] = v; });
+  got.forEach((r, i) => { const s = fut[i], v = Number(r.value?.price); if (!r.ok) errors[s] = r.error; else if (r.value?.symbol === s && v > 0) { out[s] = v; times[s] = srcTime(r.value.time, r.at); } });
   if (signal?.aborted) throw new DOMException('Abgebrochen', 'AbortError');
   const failed = Object.values(errors);
   if (failed.length && !Object.keys(out).length) throw failed[0];
+  Object.defineProperty(out, 'times', { value: times }); // 3.32.0 (G04.7): Quellzeit je Kurs
   return Object.defineProperty(out, 'errors', { value: Object.fromEntries(Object.entries(errors).map(([s, e]) => [s, e?.message || String(e)])) });
 }
 async function spotGet(path, params, signal) {
@@ -2972,7 +3001,15 @@ async function spotGet(path, params, signal) {
     catch (second) { throw second?.network ? error : second; }
   }
 }
-const state = {symbol:'BTCUSDT', interval:'1m', side:'long', paused:false, busy:false, seq:0, controller:null, candles:[], marketError:null, marketAt:0, funding:null, fundingError:null, oi:null, oiError:null, history:null, historyError:null, fx:null, fxError:null, fxAt:0, fxLast:null, fxMode:'auto', next:Date.now(), count:80, selected:null, source:'spot', sourceFor:null, loadedSymbol:null, mtf:{}, watch:loadWatch(), watchEdit:false, overlays:loadOverlays(), pan:0, anchorTime:null, positions:loadRecords(POS_KEY, 'pos'), trades:loadRecords(HIST_KEY, 'trade'), demoPositions:loadRecords(DEMO_POS_KEY, 'dpos'), demoTrades:loadRecords(DEMO_HIST_KEY, 'dtrade'), demoLimit:0, prices:{}, posUi:{}, histUi:{}, posDefaults:loadPosDefaults(), posForm:{side:'long',mode:'cross',sizeBy:'qty',editingId:null,demo:false,reasons:[]}, movements:loadRecords(MONEY_KEY, 'mv'), mvUi:{}, setups:loadSetups(), setupEdit:false, risk:loadRiskSettings(), dayLimit:loadDayLimit(), alarms:loadRecords(ALARM_KEY, 'alarm'), anchors:loadRecords(BAL_KEY, 'bal'), acctUi:{}, alDir:'above', alDirManual:false, mvCur:'EUR', year:loadEvalYear(), taxRate:loadTaxRate(), restNote:null, openTotal:null, selectedTime:null, fromCache:false};
+var CHART_COUNT0 = 80; // 3.32.0 (G04.5): Kerzen der Standardansicht
+// 3.32.0 (G04.7): Frischegrenze der Kurse. Ein Kurs gilt als aktuell, solange seine Quellzeit (Ereigniszeit des Binance-Streams,
+// Zeitstempel der Antwort bzw. Eingang der Antwort) höchstens 60 s zurückliegt und kein Fehler vorliegt. Älter: „veraltet“ mit
+// Uhrzeit, nicht in einer vollständigen Summe, keine Alarme darauf. Eine spätere Antwort ohne neuen Kurs erneuert die Zeit nicht.
+var PRICE_FRESH = 60e3;
+function priceFresh(pr, now = Date.now()) { return pr?.price > 0 && !pr.error && pr.at > 0 && now - pr.at <= PRICE_FRESH; }
+// Binance-Zeit (ms) in Gerätezeit, nie später als jetzt; ohne brauchbare Zeit: jetzt (Eingang)
+function srcTime(server, now = Date.now()) { const t = Number(server) - (typeof clk === 'object' && clk ? clk.off || 0 : 0); return Number(server) > 0 && Number.isFinite(t) ? Math.min(now, t) : now; }
+const state = {symbol:'BTCUSDT', interval:'1m', side:'long', paused:false, busy:false, seq:0, controller:null, candles:[], marketError:null, marketAt:0, funding:null, fundingError:null, oi:null, oiError:null, history:null, historyError:null, fx:null, fxError:null, fxAt:0, fxLast:null, fxMode:'auto', next:Date.now(), count:CHART_COUNT0, selected:null, source:'spot', sourceFor:null, loadedSymbol:null, mtf:{}, watch:loadWatch(), watchEdit:false, overlays:loadOverlays(), pan:0, anchorTime:null, positions:loadRecords(POS_KEY, 'pos'), trades:loadRecords(HIST_KEY, 'trade'), demoPositions:loadRecords(DEMO_POS_KEY, 'dpos'), demoTrades:loadRecords(DEMO_HIST_KEY, 'dtrade'), demoLimit:0, prices:{}, posUi:{}, histUi:{}, posDefaults:loadPosDefaults(), posForm:{side:'long',mode:'cross',sizeBy:'qty',editingId:null,demo:false,reasons:[]}, movements:loadRecords(MONEY_KEY, 'mv'), mvUi:{}, setups:loadSetups(), setupEdit:false, risk:loadRiskSettings(), dayLimit:loadDayLimit(), alarms:loadRecords(ALARM_KEY, 'alarm'), anchors:loadRecords(BAL_KEY, 'bal'), acctUi:{}, alDir:'above', alDirManual:false, mvCur:'EUR', year:loadEvalYear(), taxRate:loadTaxRate(), restNote:null, openTotal:null, selectedTime:null, fromCache:false};
 loadingData = false; // 3.29.0: ab jetzt Prüfliste und Konflikte auch an andere Tabs
 
 function currentFx() { return state.fxMode === 'manual' ? value('fx') : state.fx; }
@@ -3029,7 +3066,7 @@ async function refresh() {
     for (const p of restItems) {
       if (livePriceFresh(p.symbol)) continue;
       const v = posPrices.value[p.symbol];
-      state.prices[p.symbol] = v ? { price: v, at: now, error: null } : { ...(state.prices[p.symbol] || { price: null, at: 0 }), error: posPrices.value.errors?.[p.symbol] || 'Kein Kurs erhalten.' };
+      state.prices[p.symbol] = v ? { price: v, at: posPrices.value.times?.[p.symbol] || now, error: null } : { ...(state.prices[p.symbol] || { price: null, at: 0 }), error: posPrices.value.errors?.[p.symbol] || 'Kein Kurs erhalten.' };
       if (v) noteSeen(p.symbol, now);
     }
   } else if (posPrices.status === 'rejected') for (const p of restItems) if (!livePriceFresh(p.symbol)) state.prices[p.symbol] = { ...(state.prices[p.symbol] || { price: null, at: 0 }), error: posPrices.reason.message };
@@ -3039,7 +3076,7 @@ async function refresh() {
     state.source = market.value.source; state.sourceFor = symbol;
     // The last returned candle must contain the current moment; old/delisted pairs are not live prices.
     if (last.closeTime < Date.now() - 30000 || last.time > Date.now() + 30000) state.marketError = 'Die zuletzt gelieferte Kerze ist veraltet. Kein aktueller Kurs verfügbar.';
-    else { state.candles=mergeLive(market.value.candles); state.marketAt=Date.now(); state.marketError=null; state.loadedSymbol=symbol; state.fromCache=false; }
+    else { state.candles=mergeLive(market.value.candles); state.marketAt=Date.now(); state.marketError=null; state.loadedSymbol=symbol; marketOk?.add(symbol); state.fromCache=false; }
     state.restNote = null;
   } else if (chartFeedFresh()) state.restNote = market.reason.message; // Stream liefert weiter, nur der Abgleich per REST fehlt
   else state.marketError=market.reason.message;
@@ -3097,7 +3134,7 @@ function refreshDueMtf(now = Date.now()) {
 }
 function renderMarket() {
   const c = state.candles, last = c.at(-1), p = currentPrice();
-  showNotice('market-error', state.marketError ? `${state.marketError}${c.length ? ' Angezeigte Kerzen sind der letzte verfügbare Stand.' : ''}` : null);
+  showNotice('market-error', state.marketError ? `${state.marketError}${c.length ? ' Angezeigte Kerzen sind der letzte verfügbare Stand.' : ''}` : state.pickError || null); // 3.32.0: abgelehnte Eingabe im Kryptowährungsfeld
   $('chart').classList.toggle('stale', !!state.marketError);
   const base = state.symbol.slice(0,-4);
   $('pair-label').replaceChildren(document.createTextNode(base+' '), Object.assign(document.createElement('span'), {textContent:'/ USDT'}));
@@ -3146,7 +3183,7 @@ function viewWindow() {
 function drawChart() {
   if (!lastChart) return;
   const { start, end } = viewWindow(), vis = state.candles.slice(start, end), profile = vis.length ? volumeProfile(vis) : null;
-  renderFibStrip(); renderWhaleStrip(); renderDivTip();
+  renderFibStrip(); renderWhaleStrip(); renderDivTip(); ovButtons(); // 3.32.0 (G04.1): Sperren auch bei verdecktem Chart
   if (chartOnScreen) renderChart(lastChart.levels, { bb: lastChart.bb, ema200: lastChart.ema200, profile }, start, end); else chartStale = true;
   renderZones({ bb: lastChart.bb, ema200: lastChart.ema200, profile, live: lastChart.live });
   updateNav();
@@ -3167,6 +3204,7 @@ function updateNav() {
   const len = state.candles.length, count = Math.min(state.count, len);
   $('zoom-in').disabled = !len || count <= Math.min(15, len); $('zoom-out').disabled = !len || count >= len;
   $('pan-back').disabled = !len || state.pan >= len - count; $('pan-fwd').disabled = !len || state.pan === 0; $('pan-now').hidden = state.pan === 0;
+  $('zoom-reset').hidden = !len || Math.min(state.count, len) === Math.min(CHART_COUNT0, len);
 }
 
 function ema200Closed(closed) {
@@ -3370,13 +3408,23 @@ function renderWatchlist() {
     if (curKey !== watchCurKey) { watchCurKey = curKey; wlMarkCurrent(base, showAdd); }
     return;
   }
+  // 3.32.0 (G04.10): Während eine Kachel gezogen wird, nichts umbauen oder umsortieren (danach holt wlDragEnd es nach). Hat sich
+  // nur die Reihenfolge geändert (Umsortieren, anderer Tab, Sicherung), werden die vorhandenen Kacheln verschoben statt neu gebaut.
+  if (wlDrag) { wlDrag.dirty = true; return; }
+  const grid0 = box.querySelector('.wl-grid'), k0 = (() => { try { return JSON.parse(watchKey || 'null'); } catch { return null; } })();
+  if (grid0 && k0 && k0[1] === state.watchEdit && k0[2] === S.label && k0[0].length === state.watch.length && [...k0[0]].sort().join() === [...state.watch].sort().join()) {
+    const items = new Map([...grid0.children].map(i => [i.querySelector('.wl-tile')?.dataset.watch, i]));
+    state.watch.forEach((c, i) => { const it = items.get(c); if (it && grid0.children[i] !== it) grid0.insertBefore(it, grid0.children[i] || null); });
+    watchKey = key; watchCurKey = curKey; wlSortState(); wlMarkCurrent(base, showAdd); return;
+  }
   watchKey = key; watchCurKey = curKey;
   const head = el('div', 'wl-head'), tip = el('details', 'tip left wl-tip'), sum = el('summary');
   sum.setAttribute('aria-label', 'Was die Kacheln der Vorauswahl zeigen'); sum.append(el('span', '', 'i'));
   const body = el('div', 'tip-body');
   body.append(el('p', '', `Je Coin: Live-Kurs, der Verlauf ${S.of} und rechts die Tendenz. Darunter die Veränderung über ${S.name} („${S.label} …“) und die Zeile Trend · Kurs · RSI (mit Wert) · MACD: ▲ grün = bullish, ▼ rot = bearish, – = neutral.`),
     el('p', '', `Tendenz: die Summe dieser vier Regeln – dieselben wie in der Signal-Übersicht – auf abgeschlossenen ${S.ivName}-Kerzen, von −4 bis +4, neu bei jedem Kerzenschluss. Kräftig grün bzw. rot erst, wenn mindestens 3 der 4 Regeln in dieselbe Richtung zeigen (Long- bzw. Short-Tendenz). Den Zeitraum (1 Minute bis 1 Tag) wählst du im Detailfeld; die Zeitraum-Knöpfe des Charts ändern ihn nicht. Eine Beschreibung ${S.of}, kein Handelssignal mit nachgewiesenem Vorteil.`),
-    el('p', '', 'Antippen zeigt darunter die Signale des Coins mit Erklärungen und lädt ihn im Chart weiter unten – die Seite springt nicht dorthin. „Bearbeiten“ entfernt Coins, „+ Coin“ nimmt den geöffneten Coin auf. Fehlen Daten (Coin lädt noch, keine Verbindung), steht neutral „–“.'));
+    el('p', '', 'Antippen zeigt darunter die Signale des Coins mit Erklärungen und lädt ihn im Chart weiter unten – die Seite springt nicht dorthin. „Bearbeiten“ entfernt Coins, „+ Coin“ nimmt den geöffneten Coin auf. Fehlen Daten (Coin lädt noch, keine Verbindung), steht neutral „–“.'),
+    el('p', '', 'Reihenfolge ändern: eine Kachel etwa eine halbe Sekunde gedrückt halten und an den neuen Platz ziehen. In „Bearbeiten“ auch mit ◀ ▶ oder am Griff ⠿, mit der Tastatur Alt + Pfeiltaste auf einer Kachel. Die Reihenfolge wird gespeichert und ist Teil der Sicherung.'));
   tip.append(sum, body);
   head.append(el('span', 'wl-label', 'Vorauswahl'), tip);
   const tools = el('span', 'wl-tools');
@@ -3394,13 +3442,20 @@ function renderWatchlist() {
     for (const x of wlRules(null)) { const s = el('span', `wl-rule ${x.dir}`); s.append(el('span', '', x.label), el('i', '', x.arrow)); rules.append(s); }
     tile.append(el('b', 'wl-sym', coin), svg, el('span', 'wl-price', '…'), el('span', 'wl-sig', '·'), r2, rules);
     item.append(tile);
-    if (state.watchEdit) { const x = btn('chip-x', '×'); x.dataset.unwatch = coin; x.setAttribute('aria-label', `${coin} aus der Vorauswahl entfernen`); item.append(x); }
+    if (state.watchEdit) {
+      const x = btn('chip-x', '×'); x.dataset.unwatch = coin; x.setAttribute('aria-label', `${coin} aus der Vorauswahl entfernen`); item.append(x);
+      // 3.32.0 (G04.9): Sortieren im Bearbeiten-Modus – ◀ ▶ eine Stelle, am Griff ⠿ sofort ziehen (ohne langes Drücken)
+      const bar = el('span', 'wl-sort'), prev = btn('wl-mv', '◀'), grip = btn('wl-grip', '⠿'), next = btn('wl-mv', '▶');
+      prev.dataset.wlmove = '-1'; next.dataset.wlmove = '1'; for (const b of [prev, grip, next]) b.dataset.coin = coin;
+      prev.setAttribute('aria-label', `${coin} eine Stelle nach vorn verschieben`); next.setAttribute('aria-label', `${coin} eine Stelle nach hinten verschieben`);
+      grip.title = 'Ziehen zum Verschieben – oder Pfeiltasten'; bar.append(prev, grip, next); item.append(bar);
+    }
     grid.append(item);
   }
   // das Detailfeld bleibt eingehängt (3.25.0): sonst verlöre die Zeitraum-Auswahl darin beim Wechsel den Fokus
   const d = wldBox();
   if (d.parentNode === box) { for (const n of [...box.childNodes]) if (n !== d) n.remove(); d.before(head, grid); } else box.replaceChildren(head, grid, d);
-  wlMarkCurrent(base, showAdd);
+  wlSortState(); wlMarkCurrent(base, showAdd);
   if (typeof wlPaint === 'function') wlPaint(Date.now(), true);
 }
 // Kachel des Coins im Chart markieren (Rahmen, Vorlesetext) und „+ Coin“ zeigen, ohne etwas neu aufzubauen
@@ -3416,6 +3471,117 @@ function wlMarkCurrent(base, showAdd) {
   old?.remove();
   if (showAdd) { const add = btn('chip add', '+ ' + base); add.dataset.addwatch = base; add.setAttribute('aria-label', `${base} zur Vorauswahl hinzufügen`); tools.prepend(add); }
 }
+
+// ---- 3.32.0 (G04.8–10): Vorauswahl umsortieren ----
+// Langes Drücken (450 ms) auf einer Kachel hebt sie an; danach folgt sie dem Finger bzw. der Maus in beide Richtungen durch das
+// Raster, ihr Platz bleibt gestrichelt frei und wandert mit, Loslassen setzt sie dort ab. Bewegt sich der Finger vor Ablauf der
+// Zeit um mehr als 8 px, ist es Scrollen (die Seite scrollt normal). Ein kurzer Tipp öffnet wie bisher das Detailfeld; nach
+// einem Anheben folgt kein zusätzlicher Tipp. Während des Ziehens verhindert ein touchmove-Listener nur auf der Vorauswahl das
+// Scrollen (Safari übernimmt ein nachträglich gesetztes touch-action nicht); der Griff ⠿ im Bearbeiten-Modus hat touch-action:
+// none von Anfang an und zieht sofort. Abbruch (Esc, Zeiger verloren, Drehen, Fenster gewechselt) stellt die alte Reihenfolge
+// her – keine Kachel geht verloren. Gespeichert wird die Reihenfolge der Kürzel (state.watch, Sicherung „watchlist“).
+var WL_HOLD = 450, WL_SLOP = 8, wlDrag = null, wlPress = null, wlNoClickUntil = 0;
+function wlSortState() {
+  const items = [...document.querySelectorAll('#watchlist .wl-grid > .wl-item')], n = items.length;
+  items.forEach((it, i) => {
+    const prev = it.querySelector('[data-wlmove="-1"]'), next = it.querySelector('[data-wlmove="1"]'), grip = it.querySelector('.wl-grip'), c = grip?.dataset.coin;
+    if (prev) prev.disabled = i === 0; if (next) next.disabled = i === n - 1;
+    if (grip) grip.setAttribute('aria-label', `${c} verschieben, Platz ${i + 1} von ${n} – ziehen oder Pfeiltasten`);
+  });
+}
+function wlSay(t) { let r = $('wl-live'); if (!r) { r = el('span', 'sr-only'); r.id = 'wl-live'; r.setAttribute('aria-live', 'polite'); document.body.append(r); } r.textContent = t; }
+// Coin an Stelle idx (0-basiert) der aktuellen Liste setzen; true, wenn sich etwas geändert hat
+function wlMoveTo(coin, idx) {
+  if (!state.watch.includes(coin)) return false;
+  const w = state.watch.filter(c => c !== coin); idx = Math.max(0, Math.min(w.length, idx)); w.splice(idx, 0, coin);
+  if (w.join() === state.watch.join()) return false;
+  const act = document.activeElement;
+  state.watch = w; touchStamp(LISTS_AT_KEY, 'watch'); saveWatch(); renderWatchlist();
+  // Fokus bleibt auf dem bedienten Element (beim Verschieben im DOM kann er verloren gehen); ganz vorn/hinten auf den Griff
+  if (act?.isConnected && act.closest('#watchlist') && document.activeElement !== act) (act.disabled ? act.parentElement?.querySelector('.wl-grip') || act : act).focus({ preventScroll: true });
+  else if (act?.disabled) act.parentElement?.querySelector('.wl-grip')?.focus({ preventScroll: true });
+  wlSay(`${coin}: Platz ${idx + 1} von ${w.length}`); return true;
+}
+function wlDragStart(item, pt, viaGrip) {
+  const r = item.getBoundingClientRect(), ghost = item.cloneNode(true);
+  ghost.classList.add('wl-ghost'); ghost.setAttribute('aria-hidden', 'true'); ghost.inert = true;
+  for (const n of ghost.querySelectorAll('[id]')) n.removeAttribute('id');
+  Object.assign(ghost.style, { position: 'fixed', left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px' });
+  document.body.append(ghost); item.classList.add('wl-ph');
+  const coin = item.querySelector('.wl-tile')?.dataset.watch;
+  // Zeiger am Raster festhalten, nicht an der Kachel – die wandert beim Ziehen im DOM
+  const grid = item.parentElement;
+  wlDrag = { item, coin, grid, ghost, id: pt.pointerId, x0: pt.clientX, y0: pt.clientY, x: pt.clientX, y: pt.clientY, w: innerWidth, dirty: false, raf: 0 };
+  try { grid.setPointerCapture?.(pt.pointerId); } catch { /* Zeiger schon weg */ }
+  try { navigator.vibrate?.(12); } catch { /* nicht überall erlaubt */ }
+  docEl.dataset.wldrag = viaGrip ? 'grip' : 'hold';
+  wlSay(`${coin} angehoben – ziehen und loslassen, Esc bricht ab`);
+  const tick = () => { if (!wlDrag) return; wlAutoScroll(); wlDrag.raf = requestAnimationFrame(tick); }; wlDrag.raf = requestAnimationFrame(tick);
+}
+// Ziel: die Kachel unter dem Zeiger; der freie Platz rückt davor bzw. dahinter
+function wlDragMove(x, y) {
+  const d = wlDrag; if (!d) return; d.x = x; d.y = y;
+  d.ghost.style.transform = `translate(${x - d.x0}px, ${y - d.y0}px) scale(1.04)`;
+  for (const it of d.grid.children) {
+    if (it === d.item) continue; const r = it.getBoundingClientRect();
+    if (x < r.left || x > r.right || y < r.top || y > r.bottom) continue;
+    const kids = [...d.grid.children], a = kids.indexOf(d.item), b = kids.indexOf(it);
+    d.grid.insertBefore(d.item, a < b ? it.nextSibling : it); break;
+  }
+}
+// am oberen bzw. unteren Rand (über der unteren Leiste) mitscrollen
+function wlAutoScroll() {
+  const d = wlDrag, tb = $('tabbar'), bottom = tb && getComputedStyle(tb).display !== 'none' ? tb.getBoundingClientRect().top : innerHeight, edge = 56;
+  const v = d.y < edge ? -Math.ceil((edge - d.y) / 4) : d.y > bottom - edge ? Math.ceil((d.y - bottom + edge) / 4) : 0;
+  if (v) { const y0 = scrollY; window.scrollBy(0, v); if (scrollY !== y0) wlDragMove(d.x, d.y); }
+}
+function wlDragEnd(commit) {
+  const d = wlDrag; if (!d) return; wlDrag = null; delete docEl.dataset.wldrag;
+  cancelAnimationFrame(d.raf); d.ghost.remove(); d.item.classList.remove('wl-ph'); wlNoClickUntil = performance.now() + 450;
+  try { if (d.grid.hasPointerCapture?.(d.id)) d.grid.releasePointerCapture(d.id); } catch { /* schon frei */ }
+  const idx = [...d.grid.children].indexOf(d.item);
+  if (commit && d.item.isConnected && idx >= 0 && wlMoveTo(d.coin, idx)) return;
+  // nichts geändert oder abgebrochen: Kacheln wieder in die gespeicherte Reihenfolge (auch nach Änderungen aus einem anderen Tab)
+  watchKey = d.dirty ? '' : watchKey; renderWatchlist();
+  if (!d.dirty) { const items = new Map([...d.grid.children].map(i => [i.querySelector('.wl-tile')?.dataset.watch, i])); state.watch.forEach((c, i) => { const it = items.get(c); if (it && d.grid.children[i] !== it) d.grid.insertBefore(it, d.grid.children[i] || null); }); wlSortState(); }
+  if (!commit) wlSay(`Verschieben abgebrochen – ${d.coin} bleibt an Platz ${state.watch.indexOf(d.coin) + 1}`);
+}
+function wlPressClear() { if (wlPress) { clearTimeout(wlPress.t); wlPress = null; } }
+$('watchlist').addEventListener('pointerdown', e => {
+  if (wlDrag || !e.isPrimary || (e.pointerType === 'mouse' && e.button !== 0)) return;
+  const grip = e.target.closest('.wl-grip'), tile = e.target.closest('.wl-tile'), item = (grip || tile)?.closest('.wl-grid > .wl-item'); if (!item) return;
+  if (grip) { e.preventDefault(); wlDragStart(item, e, true); return; }
+  wlPressClear();
+  const p = { id: e.pointerId, x: e.clientX, y: e.clientY, lx: e.clientX, ly: e.clientY, target: tile };
+  p.t = setTimeout(() => { if (wlPress !== p) return; wlPress = null; wlDragStart(item, { pointerId: p.id, clientX: p.lx, clientY: p.ly, target: p.target }, false); }, WL_HOLD);
+  wlPress = p;
+});
+document.addEventListener('pointermove', e => {
+  if (wlDrag) { if (e.pointerId === wlDrag.id) wlDragMove(e.clientX, e.clientY); return; }
+  const p = wlPress; if (!p || e.pointerId !== p.id) return; p.lx = e.clientX; p.ly = e.clientY;
+  if (Math.hypot(e.clientX - p.x, e.clientY - p.y) > WL_SLOP) wlPressClear(); // vor dem Anheben bewegt: Scrollen
+});
+document.addEventListener('pointerup', e => { if (wlPress?.id === e.pointerId) wlPressClear(); if (wlDrag?.id === e.pointerId) wlDragEnd(true); });
+document.addEventListener('pointercancel', e => { if (wlPress?.id === e.pointerId) wlPressClear(); if (wlDrag?.id === e.pointerId) wlDragEnd(false); });
+$('watchlist').addEventListener('lostpointercapture', e => { if (wlDrag?.id === e.pointerId) wlDragEnd(false); });
+// Während des Ziehens nicht scrollen (nur hier, damit die übrige Seite nicht auf das Skript warten muss)
+$('watchlist').addEventListener('touchmove', e => { if (wlDrag) e.preventDefault(); }, { passive: false });
+// Langes Drücken öffnet kein Kontextmenü (Android) bzw. keine Textauswahl; nach dem Ziehen kein zusätzlicher Tipp
+$('watchlist').addEventListener('contextmenu', e => { if (wlPress || wlDrag || performance.now() < wlNoClickUntil) e.preventDefault(); });
+// nur der eine Klick, den das Loslassen erzeugt (Zeiger-Klick, detail > 0) – Tastatur und spätere Klicks bleiben unberührt
+$('watchlist').addEventListener('click', e => { if (performance.now() < wlNoClickUntil && e.detail > 0) { wlNoClickUntil = 0; e.preventDefault(); e.stopImmediatePropagation(); } }, true);
+document.addEventListener('keydown', e => { if (wlDrag && e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); wlDragEnd(false); } }, true);
+// Drehen und Fensterwechsel brechen ab; eine Größenänderung nur bei anderer Breite (Safari ändert die Höhe schon, wenn sich seine
+// Leisten ein- und ausblenden)
+for (const ev of ['orientationchange', 'blur']) addEventListener(ev, () => { wlPressClear(); wlDragEnd(false); });
+addEventListener('resize', () => { if (wlDrag && innerWidth !== wlDrag.w) { wlPressClear(); wlDragEnd(false); } });
+document.addEventListener('visibilitychange', () => { if (document.hidden) { wlPressClear(); wlDragEnd(false); } });
+// Tastatur: Alt + Pfeiltaste auf einer Kachel, Pfeiltasten auf dem Griff; ◀ ▶ im Bearbeiten-Modus
+$('watchlist').addEventListener('keydown', e => {
+  const k = { ArrowLeft: -1, ArrowUp: -1, ArrowRight: 1, ArrowDown: 1 }[e.key]; if (!k) return;
+  const grip = e.target.closest('.wl-grip'), tile = e.target.closest('.wl-grid .wl-tile'); if (!(grip || (tile && e.altKey))) return;
+  const c = grip ? grip.dataset.coin : tile.dataset.watch; e.preventDefault(); wlMoveTo(c, state.watch.indexOf(c) + k);
+});
 
 function renderFutures() {
   const funding = state.funding ? Number(state.funding.lastFundingRate)*100 : null;
@@ -3872,15 +4038,16 @@ function buildCard(pos, demo = false) {
 }
 function setF(card, key, text) { const n = card.querySelector(`[data-f="${key}"]`); if (n) n.textContent = text; return n; }
 function updateCard(card, pos) {
-  const pr = state.prices[pos.symbol], price = pr?.price ?? null, m = positionMetrics(pos, price, mmrNow());
-  card.classList.toggle('stale', !!price && (!!pr?.error || state.paused)); card.classList.toggle('liquidated', m.liquidated);
+  const pr = state.prices[pos.symbol], price = pr?.price ?? null, m = positionMetrics(pos, price, mmrNow()), fresh = priceFresh(pr);
+  m.fresh = fresh; // 3.32.0 (G04.7): nur ein aktueller Kurs zählt in einer vollständigen Summe (pausiert: bis zur Frischegrenze)
+  card.classList.toggle('stale', !!price && (!fresh || state.paused)); card.classList.toggle('liquidated', m.liquidated);
   const big = setF(card, 'pnl', m.pnl === null ? 'Kurs ausstehend' : signed(m.pnl) + ' USDT'); big.classList.toggle('positive', m.pnl > 0); big.classList.toggle('negative', m.pnl < 0);
   setF(card, 'pnl-sub', m.pnl === null ? (pr?.error || 'Wartet auf den nächsten Abruf.')
     : (() => { const done = (pos.preRealized || 0) + (Array.isArray(pos.ev) ? mNum(lotReplayMemo(pos).realized) : 0); // 3.30.0: dazu gebuchte Teilabschlüsse
       return [eurOpen(m.pnl), `ROE ${signed(m.roe)} % · Kurs ${signed(m.move)} %`, ...(done ? [`schon realisiert ${signed(done, 2)}`, `Position gesamt ${signed(m.pnl + done)} USDT`] : [])].filter(Boolean).join('\n'); })());
   setF(card, 'entry', euroLine(priceUE(pos.entry)));
   setF(card, 'price', price ? euroLine(priceUE(price)) : '—');
-  setF(card, 'price-at', !pr ? '' : pr.error && pr.at ? `Stand ${new Date(pr.at).toLocaleTimeString('de-DE')} · veraltet` : pr.at ? `${pr.live && !state.paused && Date.now() - pr.at < 15000 ? 'Live' : 'Stand'} ${new Date(pr.at).toLocaleTimeString('de-DE')}${state.paused ? ' · pausiert' : ''}` : '');
+  setF(card, 'price-at', !pr ? '' : !pr.at ? (pr.error ? 'kein Kurs' : '') : `${fresh && pr.live && !state.paused && Date.now() - pr.at < 15000 ? 'Live' : 'Kurszeit'} ${new Date(pr.at).toLocaleTimeString('de-DE')}${!fresh ? ' · veraltet' : state.paused ? ' · pausiert' : ''}`);
   setF(card, 'qty', `${qtyText(m.qty)} ${coin(pos.symbol)}`);
   setF(card, 'size', euroLine(`${number(m.margin)}\n${usdt(m.notional)}`));
   setF(card, 'liq', m.liqPrice === null ? (pos.mode === 'cross' ? 'Cross: Liquidation hängt vom ganzen Konto ab – Liq.-Preis der Börse über „Bearbeiten“ eintragen.' : 'Liquidation: Maintenance Margin im Rechner prüfen.')
@@ -3920,17 +4087,21 @@ function renderOpenPositions() {
   const list = $('pos-list'), key = state.positions.map(p => `${p.id}:${state.posUi[p.id]?.mode || ''}:${p.ev?.length || 0}:${p.evDel?.length || 0}:${p.liqCheck ? 1 : 0}:${p.qty}:${p.entry}:${p.leverage}:${p.mode}:${p.side}:${p.symbol}:${p.note || ''}:${p.sl}:${p.tp}:${reasonsOf(p).join('|')}`).join('|');
   if (key !== posStructure) { posStructure = key; list.replaceChildren(...state.positions.map(p => buildCard(p))); }
   $('pos-empty').hidden = state.positions.length + state.demoPositions.length > 0 || !$('pos-form').hidden;
-  let total = 0, missing = 0;
-  for (const card of list.children) { const pos = state.positions.find(p => p.id === card.dataset.id); if (!pos) continue; const m = updateCard(card, pos); if (m.pnl === null) missing++; else total += m.pnl; }
-  $('open-total').textContent = state.positions.length ? `${signed(total)} USDT` : '—'; color('open-total', state.positions.length ? total : 0);
+  // 3.32.0 (G04.7): Fehlt zu einer Position ein aktueller Kurs (keiner oder älter als 60 s), ist die Summe nur eine Teilsumme der
+  // übrigen – so beschriftet, mit den fehlenden Coins; ohne einen einzigen aktuellen Kurs gibt es keine Summe
+  let total = 0, missing = 0; const gone = [];
+  for (const card of list.children) { const pos = state.positions.find(p => p.id === card.dataset.id); if (!pos) continue; const m = updateCard(card, pos); if (m.pnl === null || !m.fresh) { missing++; gone.push(`${coin(pos.symbol)} (${m.pnl === null ? 'kein Kurs' : 'Kurs veraltet'})`); } else total += m.pnl; }
+  const n = state.positions.length, part = missing > 0 && missing < n, none = n > 0 && missing === n;
+  $('open-total').textContent = !n || none ? '—' : `${signed(total)} USDT`; color('open-total', n && !none ? total : 0);
+  put('open-total-label', part ? 'Offen – Teilsumme' : 'Offen, nicht realisiert'); $('open-total').classList.toggle('partial', part);
   renderDay(total);
-  put('open-total-eur', (state.positions.length ? `${eurOpen(total)}${missing ? ` · ${missing} ohne Kurs` : ''} · ${state.positions.length} offen` : 'keine offene Position') + quarMark('pos'));
+  put('open-total-eur', (n ? `${none ? 'kein aktueller Kurs' : eurOpen(total)}${missing ? ` · ohne ${gone.join(', ')}` : ''} · ${n} offen` : 'keine offene Position') + quarMark('pos'));
   if (!$('pos-form').hidden) updateEntryNow();
-  state.openTotal = { total, missing, n: state.positions.length };
+  state.openTotal = { total, missing, n, gone };
   // 3.31.0 (G03.11): zugeklappt zeigt die Überschrift das Wichtigste in einer Zeile
   if ($('pos-over').open) put('pos-over-sub', 'Von dir erfasst · Live-Kurs von Binance · USDT (Euro)');
   else { const d = dayStats(state.trades), ib = !$('integrity-banner').hidden, due = !$('backup-due').hidden && !$('data-toggle').classList.contains('ok');
-    put('pos-over-sub', `${state.positions.length ? `${state.positions.length} offen · ${signed(total)} USDT ${eurOpen(total)}${missing ? ` · ${missing} ohne Kurs` : ''}` : 'keine offene Position'} · heute ${signed(d.pnl)} USDT${ib ? ' · ⚠ Hinweise' : ''}${due ? ' · 💾 Sicherung fällig' : ''}`); }
+    put('pos-over-sub', `${state.positions.length ? `${state.positions.length} offen · ${none ? 'kein aktueller Kurs' : `${part ? 'Teilsumme ' : ''}${signed(total)} USDT ${eurOpen(total)}`}${missing && !none ? ` · ${missing} ohne aktuellen Kurs` : ''}` : 'keine offene Position'} · heute ${signed(d.pnl)} USDT${ib ? ' · ⚠ Hinweise' : ''}${due ? ' · 💾 Sicherung fällig' : ''}`); }
   pnlCheck(); // 3.24.0 Schritt 7: Gewinn-/Verlust-Alarm am Live-Ergebnis
   renderAccount(); // 3.31.0 (G03): Live-Kontostand
   renderDemoPositions(); // 3.28.0: Demo getrennt – nicht in den Summen oben, nicht im Gewinn-/Verlust-Alarm
@@ -4095,15 +4266,15 @@ function tzLabel(ms = Date.now()) {
 }
 // Offene Positionen (nur echte): Brutto-G/V, noch ungebuchte Kosten, ohne Kurs, älteste Kurszeit
 function acctLiveParts() {
-  let open = 0, cost = 0, stale = null; const missing = [];
+  let open = 0, cost = 0; const missing = [];
   for (const p of state.positions) {
     const pr = state.prices[p.symbol], price = pr?.price ?? null, m = positionMetrics(p, price, mmrNow());
     cost += (p.preRealized || 0) - (Array.isArray(p.ev) ? mNum(lotReplayMemo(p).feesOpen) : 0);
-    if (m.pnl === null) { missing.push(coin(p.symbol)); continue; }
+    if (m.pnl === null) { missing.push(`${coin(p.symbol)} (kein Kurs)`); continue; }
+    if (!priceFresh(pr)) { missing.push(`${coin(p.symbol)} (Kurs veraltet${pr?.at ? ', Stand ' + new Date(pr.at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : ''})`); continue; } // 3.32.0 (G04.7)
     open += m.pnl;
-    if (pr && (pr.error || state.paused || !pr.at || Date.now() - pr.at > 120e3)) stale = Math.min(stale ?? Infinity, pr.at || 0);
   }
-  return { open, cost, missing, stale };
+  return { open, cost, missing };
 }
 function acctRange() {
   const v = store.get(ACCT_RANGE_KEY), r = isObj(v) && ['today', '7d', '30d', 'custom'].includes(v.r) ? v.r : 'today', now = Date.now();
@@ -4129,7 +4300,7 @@ function renderAccount() {
   setTxt('acct-booked-sub', `${eurOpen(booked, false)}\nohne offene Positionen · nach allen Buchungen bis jetzt`);
   setTxt('acct-live', `${number(live)} USDT`); color('acct-live', 0);
   setTxt('acct-live-sub', [eurOpen(live, false), `offen ${signed(lp.open)} · noch ungebuchte Kosten ${signed(lp.cost)}`,
-    lp.missing.length ? `⚠ unvollständig: ohne ${lp.missing.join(', ')} (kein Kurs)` : '', lp.stale !== null ? `Kurse Stand ${lp.stale ? new Date(lp.stale).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : '–'} · veraltet` : '',
+    lp.missing.length ? `⚠ unvollständig: ohne ${lp.missing.join(', ')}` : '',
     state.positions.length ? 'Schließgebühr und Funding sind erst beim Schließen bekannt.' : 'keine offene Position'].filter(Boolean).join('\n'));
   // Rechnung seit dem letzten Anker ohne bekannten Vorstand (Start oder neuer Anker)
   const base = [...P.anchors].reverse().find(a => a.st === 'start' || a.st === 'unknown');
@@ -4391,7 +4562,7 @@ async function freshPrice(sym, source) {
   try {
     const r = source === 'futures' ? await api.get(FUTURES, '/fapi/v1/ticker/price', { symbol: sym }) : await spotGet('/api/v3/ticker/price', { symbol: sym });
     const v = Number(r?.price); if (!(v > 0)) return null;
-    state.prices[sym] = { price: v, at: Date.now(), error: null }; return v;
+    state.prices[sym] = { price: v, at: source === 'futures' ? srcTime(r.time) : Date.now(), error: null }; return v;
   } catch { return null; }
 }
 function setToggle(attr, val) { document.querySelectorAll(`[data-${attr}]`).forEach(b => { const a = b.dataset[attr.replace(/-(\w)/g, (m, c) => c.toUpperCase())] === val; b.classList.toggle('active', a); b.setAttribute('aria-pressed', String(a)); }); }
@@ -5249,7 +5420,7 @@ const rearmedAt = new Map();
 function checkAlerts() {
   let changed = false; const ranges = liveRanges; liveRanges = new Map();
   const view = (sym, armedAt) => {
-    const pr = state.prices[sym]; if (!pr?.price || pr.error) return null;
+    const pr = state.prices[sym]; if (!priceFresh(pr)) return null; // 3.32.0 (G04.7): kein Alarm aus einem veralteten Kurs
     const r = ranges.get(sym), use = r && r.from >= armedAt;
     return { price: pr.price, lo: use ? Math.min(pr.price, r.lo) : pr.price, hi: use ? Math.max(pr.price, r.hi) : pr.price };
   };
@@ -5658,18 +5829,58 @@ function renderChart(levels={}, ov={}, start=null, end=null) {
 
 function render() {renderFx();renderMarket();renderFutures();renderCalculator();renderSignals();renderWatchlist();renderPositions();renderAlarms();renderRisk();renderLivebar();updateTitle();syncStreams();renderSkeletons();}
 function zoom(factor) {setView(state.count*factor, state.pan>0 ? .5 : 1);}
+// 3.32.0 (G04.5): Standardansicht des Charts – 80 Kerzen bis zur aktuellen Kerze (Knopf ⟲ und beim Coinwechsel). Betrifft nur
+// den Chart-Zoom der App; den Fingerzoom der ganzen Seite (Safari) kann eine Web-App nicht zurücksetzen (CHART_COUNT0 vor state).
+function chartViewReset() { state.count = CHART_COUNT0; state.anchorTime = null; setPan(0); }
 function setMarket(symbol,interval=state.interval) {
   const normalized=normalizeSymbol(symbol); if(!INTERVALS.includes(interval)) throw new Error('Unbekanntes Intervall.');
   cancel(); const symbolChanged=state.symbol!==normalized, changed=symbolChanged || state.interval!==interval;
   // Beim Kürzelwechsel gehören Signal-Zeiträume und Datenquelle zum alten Paar
-  if(symbolChanged){state.mtf={};state.source='spot';state.sourceFor=null;state.loadedSymbol=null;}
-  state.symbol=normalized;state.interval=interval;$('symbol').value=normalized.slice(0,-4);
+  if(symbolChanged){state.mtf={};state.source='spot';state.sourceFor=null;state.loadedSymbol=null;state.count=CHART_COUNT0;} // 3.32.0 (G04.5): neuer Coin in der Standardansicht
+  state.symbol=normalized;state.interval=interval;$('symbol').value=normalized.slice(0,-4);state.pickError=null;
   if(changed){state.pan=0;state.anchorTime=null;state.candles=[];state.marketAt=0;state.marketError=null;state.funding=null;state.oi=null;state.history=null;state.fundingError=null;state.oiError=null;state.historyError=null;state.selected=null;state.selectedTime=null;state.fromCache=false;live.chartAt=0;}
   document.querySelectorAll('[data-interval]').forEach(b=>{const active=b.dataset.interval===interval;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});
   render();void showCachedChart();return refresh();
 }
 function pause() {state.paused=!state.paused;live.post({t:'pause',on:state.paused});if(state.paused)cancel();else{live.post({t:'wake'});void refresh();}status();renderMarket();renderCalculator();renderSignals();renderPositions();renderLivebar();updateTitle();syncStreams();renderSkeletons();}
-$('market-form').addEventListener('submit',e=>{e.preventDefault();try{void setMarket($('symbol').value);}catch(error){showNotice('market-error',error.message);}});
+// ---- 3.32.0 (G04.3): Kryptowährungsfeld ----
+// Antippen markiert den ganzen Inhalt – Tippen ersetzt ihn; das Feld darf auch leer sein. Der geladene Coin bleibt, bis eine
+// Eingabe bestätigt ist UND Binance das Paar kennt (Spot, sonst USDT-Perpetual-Futures). Bekannte Coins (Vorauswahl, eigene
+// Positionen und Alarme, in dieser Sitzung schon geladen) wechseln sofort; unbekannte prüft ein kurzer Kursabruf. Leer bestätigt,
+// Esc oder Verlassen des leeren Felds stellen den geladenen Coin wieder her – kein Marktwechsel durch Abbrechen oder Tastatur.
+var marketOk = new Set(), marketGen = 0;
+function marketKnown(sym) { return marketOk.has(sym) || state.watch.some(c => wlSym(c) === sym) || state.positions.some(p => p.symbol === sym) || state.alarms.some(a => a.symbol === sym); }
+function symbolRestore() { $('symbol').value = state.symbol.slice(0, -4); }
+function pickError(t) { state.pickError = t || null; renderMarket(); }
+async function marketPick(raw) {
+  const gen = ++marketGen, txt = String(raw).trim(); pickError(null); $('market-form').querySelector('button[type=submit]').removeAttribute('aria-busy');
+  if (!txt) { symbolRestore(); return; }
+  let sym; try { sym = normalizeSymbol(txt); } catch (error) { pickError(`${error.message} ${coin(state.symbol)} bleibt geladen.`); return; }
+  if (sym === state.symbol) { symbolRestore(); $('symbol').blur(); return; }
+  if (!marketKnown(sym)) {
+    // Knopf bleibt bedienbar (gesperrt verschluckte der Browser ein Enter für die nächste Eingabe); nur als „prüft“ markiert
+    const btnL = $('market-form').querySelector('button[type=submit]'); btnL.setAttribute('aria-busy', 'true');
+    let ok = false, why = '';
+    try { const r = await spotGet('/api/v3/ticker/price', { symbol: sym }); ok = r?.symbol === sym && Number(r.price) > 0; }
+    catch (err) {
+      if (err?.code === -1121) { try { const r = await api.get(FUTURES, '/fapi/v1/ticker/price', { symbol: sym }); ok = r?.symbol === sym && Number(r.price) > 0; } catch (err2) { why = err2?.code === -1121 ? 'none' : (err2?.message || String(err2)); } }
+      else why = err?.message || String(err);
+    } finally { if (gen === marketGen) btnL.removeAttribute('aria-busy'); }
+    if (gen !== marketGen) return; // inzwischen eine neuere Eingabe
+    if (!ok) { pickError(why === 'none' || !why ? `${coin(sym)} gibt es bei Binance weder als Spot- noch als Futures-Paar gegen USDT – ${coin(state.symbol)} bleibt geladen.` : `${coin(sym)} ließ sich nicht prüfen (${why}) – ${coin(state.symbol)} bleibt geladen.`); return; }
+    marketOk.add(sym);
+  }
+  $('market-form').querySelector('button[type=submit]').removeAttribute('aria-busy'); $('symbol').blur(); void setMarket(sym);
+}
+$('market-form').addEventListener('submit',e=>{e.preventDefault();void marketPick($('symbol').value);});
+// Markieren gleich beim Fokus (Safari am iPhone kennt select() nicht, wohl aber setSelectionRange) und noch einmal danach, falls
+// das Antippen den Cursor erst danach setzt; das Loslassen der Maus nach dem Fokus hebt die Markierung nicht wieder auf
+var symbolFresh = false;
+function symbolSelect() { const f = $('symbol'); if (document.activeElement === f) try { f.setSelectionRange(0, f.value.length); } catch { /* ältere Browser */ } }
+$('symbol').addEventListener('focus',()=>{symbolFresh=true;symbolSelect();setTimeout(symbolSelect,0);setTimeout(()=>{symbolFresh=false;},500);});
+$('symbol').addEventListener('mouseup',e=>{if(symbolFresh){symbolFresh=false;e.preventDefault();symbolSelect();}});
+$('symbol').addEventListener('keydown',e=>{if(e.key==='Escape'&&!e.isComposing){e.preventDefault();e.stopPropagation();symbolRestore();if(state.pickError)pickError(null);$('symbol').blur();}});
+$('symbol').addEventListener('blur',()=>setTimeout(()=>{const f=$('symbol');if(document.activeElement!==f&&!f.value.trim())symbolRestore();},200));
 document.querySelectorAll('[data-interval]').forEach(b=>b.addEventListener('click',()=>void setMarket(state.symbol,b.dataset.interval)));
 document.querySelectorAll('[data-side]').forEach(b=>b.addEventListener('click',()=>{state.side=b.dataset.side;document.querySelectorAll('[data-side]').forEach(el=>{const active=el.dataset.side===state.side;el.classList.toggle('active',active);el.setAttribute('aria-pressed',String(active));});renderCalculator();}));
 for(const id of ['balance','stake','leverage','move','mmr']) $(id).addEventListener('input',renderCalculator);
@@ -5687,12 +5898,49 @@ $('signal-rows').addEventListener('click',e=>{const row=e.target.closest('[data-
 $('watchlist').addEventListener('click',e=>{
   const t=e.target.closest('button'); if(!t) return;
   if(t.classList.contains('wl-tile')){const c=t.dataset.watch;wldToggle(c);if(wldSel===c&&state.symbol!==c+'USDT'){try{void setMarket(c);}catch(error){showNotice('market-error',error.message);}}return;}
+  if(t.dataset.wlmove){const c=t.dataset.coin;wlMoveTo(c,state.watch.indexOf(c)+Number(t.dataset.wlmove));return;}
+  if(t.classList.contains('wl-grip'))return;
   if(t.dataset.addwatch){if(!state.watch.includes(t.dataset.addwatch)){state.watch.push(t.dataset.addwatch);touchStamp(LISTS_AT_KEY,'watch');}saveWatch();renderWatchlist();return;}
   if(t.dataset.unwatch){state.watch=state.watch.filter(s=>s!==t.dataset.unwatch);touchStamp(LISTS_AT_KEY,'watch');saveWatch();renderWatchlist();return;}
   if(t.dataset.watchedit){state.watchEdit=!state.watchEdit;renderWatchlist();return;}
   if(t.dataset.watchreset){state.watch=[...DEFAULT_WATCH];touchStamp(LISTS_AT_KEY,'watch');saveWatch();renderWatchlist();}
 });
-document.querySelectorAll('[data-overlay]').forEach(b=>{b.setAttribute('aria-pressed',String(state.overlays[b.dataset.overlay]));b.addEventListener('click',()=>{if(b.getAttribute('aria-disabled')==='true')return;const k=b.dataset.overlay;state.overlays[k]=!state.overlays[k];b.setAttribute('aria-pressed',String(state.overlays[k]));store.set(OVERLAY_KEY,{...state.overlays});renderMarket();});});
+// ---- 3.32.0 (G04.1): Chart-Ebenen, die sich nicht berechnen lassen, sichtbar sperren ----
+// Je Ebene der tatsächliche Kerzenbedarf; gerechnet aus den geladenen Kerzen in drawChart – auch wenn der Chart gerade nicht
+// gezeichnet wird (anderer Bereich am iPad/Handy). Gesperrt: gestrichelt und grau, „vorhanden/benötigt“ im Knopf, Grund beim
+// Antippen. Der Einschaltwunsch bleibt gespeichert und wirkt, sobald genug Kerzen da sind. Während ein Coin lädt (noch keine
+// Kerzen, kein Fehler), bleibt der bisherige Zustand stehen – kein Aufblinken beim Coinwechsel.
+var OV_NEED = { vp: ['Volumenprofil', 10], bb: ['Bollinger', 20], ema200: ['EMA 200', 200], zz: ['ZigZag', 2], div: ['RSI-Divergenz', 31] };
+function ovLock(k) {
+  const n = state.candles.length;
+  if (k === 'ew') { const d = elliottWaves(); return d.short ? { req: EW.minBars, have: d.have, why: ewText(d) } : null; }
+  if (k === 'ewfc') { const why = ewFcWhy(), d = why ? elliottWaves() : null; return why ? { ...(d.short ? { req: EW.minBars, have: d.have } : {}), why } : null; }
+  const N = OV_NEED[k]; if (!N || n >= N[1]) return null;
+  return { req: N[1], have: n, why: `${N[0]} braucht ${N[1]} Kerzen – ${n ? `dieser Chart hat erst ${n}` : 'es sind noch keine geladen'}. ${state.interval === '1m' ? 'Die Ebene erscheint von selbst, sobald genug Kerzen vorliegen.' : 'Ein kürzeres Intervall hat mehr Kerzen; die Ebene erscheint von selbst, sobald genug vorliegen.'}` };
+}
+// Abhängige Ebenen bleiben einschaltbar: „Wellen-Prognose“ schaltet „Elliott“ mit ein; der Knopf zeigt, ob sie wirklich wirkt
+function ovToggle(k) {
+  const o = state.overlays;
+  if (k === 'ewfc' && !ewFcOn()) { o.ew = true; o.ewfc = true; } else o[k] = !o[k];
+  store.set(OVERLAY_KEY, { ...o }); ovButtons(); renderMarket();
+}
+function ovButtons() {
+  const loading = !state.candles.length && !state.marketError && !state.paused;
+  for (const b of document.querySelectorAll('[data-overlay]')) {
+    const k = b.dataset.overlay, on = String(k === 'ewfc' ? !!state.overlays.ew && !!state.overlays.ewfc : !!state.overlays[k]);
+    if (b.getAttribute('aria-pressed') !== on) b.setAttribute('aria-pressed', on);
+    if (loading) continue;
+    const L = ovLock(k), s = b.querySelector('.ov-need'), t = L?.req ? ` ${L.have}/${L.req}` : '', tip = L ? L.why : b.dataset.tip || '';
+    b.classList.toggle('na', !!L); if (b.getAttribute('aria-disabled') !== String(!!L)) b.setAttribute('aria-disabled', String(!!L));
+    if (s && s.textContent !== t) { s.textContent = t; s.hidden = !t; }
+    if (b.title !== tip) b.title = tip;
+  }
+  // ZigZag-Prognose: hängt am ZigZag – Antippen schaltet ihn mit ein (siehe zz-fc)
+  const z = $('zz-fc'); if (z && ZZ_KEY) { const on = String(!!zzCfg().fc && !!state.overlays.zz); if (z.getAttribute('aria-pressed') !== on) z.setAttribute('aria-pressed', on); }
+}
+// 3.32.0 (G04.1): gesperrte Ebene (zu wenige Kerzen) – Klick und Tastatur bewirken nichts außer dem Grund; der gespeicherte
+// Wunsch bleibt. Läuft vor den Handlern einzelner Ebenen (Elliott, Liq-Heatmap) und hält sie bei einer Sperre an.
+document.querySelectorAll('[data-overlay]').forEach(b=>{const s=el('small','ov-need');s.hidden=true;b.append(s);if(b.title)b.dataset.tip=b.title;b.addEventListener('click',e=>{const L=ovLock(b.dataset.overlay);if(L){e.stopImmediatePropagation();infoToast(L.why,5000);ovButtons();return;}ovToggle(b.dataset.overlay);});});
 $('pos-add-toggle').addEventListener('click',()=>openPosForm($('pos-form').hidden));
 $('pos-cancel').addEventListener('click',()=>openPosForm(false));
 $('pos-form').addEventListener('submit',e=>void addPosition(e));
@@ -5823,6 +6071,7 @@ let resizeTimer;new ResizeObserver(()=>{clearTimeout(resizeTimer);resizeTimer=se
 $('pan-back').addEventListener('click',()=>setPan(state.pan+Math.max(1,Math.round(Math.min(state.count,state.candles.length)*.4))));
 $('pan-fwd').addEventListener('click',()=>setPan(state.pan-Math.max(1,Math.round(Math.min(state.count,state.candles.length)*.4))));
 $('pan-now').addEventListener('click',()=>setPan(0));
+$('zoom-reset').addEventListener('click',chartViewReset);
 // Gesten: ein Finger wischen = blättern, zwei Finger = zoomen, Tippen = Kerze wählen, doppelt tippen = zurück zu jetzt
 (()=>{
   const box=$('chart'), pts=new Map(); let g=null, lastTap=0;
@@ -6085,7 +6334,7 @@ function nearLevel(sym) {
   if (on) nearSyms.add(sym); else nearSyms.delete(sym);
   return on;
 }
-let lastStreamSync = 0;
+let lastStreamSync = 0, priceKickAt = 0, freshSig = '';
 function onTick(now) {
   status(); updateTitle(); // Tab-Titel spätestens jede Sekunde aktuell, auch im Hintergrund-Tab
   if (titleNeedsPoll(now)) void pollTitlePrices(now);
@@ -6098,6 +6347,12 @@ function onTick(now) {
   s247Tick(now); // 5.1: meldet sich der 24/7-Dienst?
   if (now - lastStreamSync > 5000) { lastStreamSync = now; syncStreams(); }
   if (Date.now() - lastSeenSaved > 30000) saveLastSeen();
+  // 3.32.0 (G04.7): Kurse offener Positionen nachladen, bevor sie die Frischegrenze erreichen (ruhiger Coin ohne Stream-Meldung,
+  // Stream gestört) – höchstens alle 15 s
+  if (!state.paused && !state.busy && now - priceKickAt > 15000 && priceItems().some(p => !livePriceFresh(p.symbol) && now - (state.prices[p.symbol]?.at || 0) > PRICE_FRESH / 2)) { priceKickAt = now; state.next = Math.min(state.next, now); }
+  // Überschreitet ein Kurs die Frischegrenze ohne neue Daten (pausiert, Verbindung weg), sofort als „veraltet“ zeigen
+  const fsig = priceItems().map(p => priceFresh(state.prices[p.symbol], now) ? 1 : 0).join('');
+  if (fsig !== freshSig) { freshSig = fsig; renderOpenPositions(); renderDemoPositions(); renderLivebar(); }
   if (state.paused || state.busy) return;
   if (now >= state.next) void refresh(); else refreshDueMtf(now);
 }
@@ -6119,7 +6374,7 @@ function applyLiveCandle(k) {
 const liveTrack = new Map();
 let alertQueued = false;
 function scheduleAlertCheck() { if (alertQueued) return; alertQueued = true; queueMicrotask(() => { alertQueued = false; checkAlerts(); }); }
-function trackLivePrice(sym, k, now) {
+function trackLivePrice(sym, k, now, at = now) {
   const prev = liveTrack.get(sym);
   if (prev && k.t < prev.t) return;
   let lo = k.c, hi = k.c, from = now;
@@ -6131,7 +6386,7 @@ function trackLivePrice(sym, k, now) {
   }
   liveTrack.set(sym, { t: k.t, h: k.h, l: k.l, c: k.c, at: now });
   const r = liveRanges.get(sym); liveRanges.set(sym, r ? { lo: Math.min(r.lo, lo), hi: Math.max(r.hi, hi), from: r.from } : { lo, hi, from });
-  state.prices[sym] = { price: k.c, at: now, error: null, live: true }; noteSeen(sym, now);
+  state.prices[sym] = { price: k.c, at, error: null, live: true }; noteSeen(sym, now);
   scheduleAlertCheck();
 }
 // Gebündelte Einzel-Trades (alle 200 ms): exakte Spanne, zählt ab etwa 250 ms vor Empfang
@@ -6170,7 +6425,7 @@ function onKline(m) {
   const now = Date.now(); live.lastMsg[m.m] = now; clockSample(m.E); // 3.3: Binance-Zeit für den Countdown
   if (state.paused) return;
   if (m.i === '1m' && m.s === 'BTCUSDT' && m.m === 'spot' && m.k.c > 0) { btcRef = { price: m.k.c, at: now }; if (state.symbol !== 'BTCUSDT') updateTitle(); }
-  if (m.i === '1m') { trackLivePrice(m.s, m.k, now); volaKline(m); pulseKline(m, now); } // 4.3: Volatilität der letzten 60 Minuten
+  if (m.i === '1m') { trackLivePrice(m.s, m.k, now, srcTime(m.E, now)); volaKline(m); pulseKline(m, now); } // 4.3: Volatilität der letzten 60 Minuten
   wlKline(m, now); // 4.2/3.25.0: Mini-Watchlist – Kerzen im Intervall des gewählten Zeitraums (wlKline prüft Intervall, Coin und Markt)
   if (m.s === state.symbol && m.m === chartMarket() && m.i === state.interval && applyLiveCandle(m.k)) { live.chartAt = now; updateTitle(); scheduleLiveRender(true); }
   else if (m.i === '1m' && priceSymbols().has(m.s)) scheduleLiveRender(false);
@@ -6244,9 +6499,12 @@ function renderLivebar() {
   put('lb-sym', state.symbol.slice(0, -4)); put('lb-price', last ? priceText(last.close) : '—');
   const ch = last ? (last.close / last.open - 1) * 100 : null; put('lb-change', ch === null ? '' : `${signed(ch)} %`); color('lb-change', ch ?? 0);
   $('lb-change').title = 'Veränderung der laufenden Kerze';
-  const o = state.openTotal; put('lb-open', !o?.n ? '—' : `${signed(o.total)} USDT${o.n > 1 ? ` · ${o.n}` : ''}`); color('lb-open', o?.n ? o.total : 0);
+  // 3.32.0 (G04.7): unvollständig („Teilsumme“, ⚠) bzw. ganz ohne aktuellen Kurs „—“
+  const o = state.openTotal, oPart = !!o?.n && o.missing > 0 && o.missing < o.n, oNone = !!o?.n && o.missing >= o.n;
+  put('lb-open', !o?.n || oNone ? '—' : `${oPart ? '⚠ ' : ''}${signed(o.total)} USDT${o.n > 1 ? ` · ${o.n}` : ''}`); color('lb-open', o?.n && !oNone ? o.total : 0);
+  put('lb-open-label', oPart ? 'Teilsumme' : 'Offen'); $('lb-pos').title = oPart || oNone ? `${oPart ? 'Teilsumme – ' : ''}ohne aktuellen Kurs: ${o.gone.join(', ')}` : '';
   // 3.31.0 (G03.9): offener G/V auch in Euro – derselbe Live-Kurs wie in der Positionsübersicht, veraltet mit Kurszeit
-  const oe = !o?.n ? '' : (() => { const f = fxLive(); return !f ? '(€ n. v.)' : `(${signed(o.total / f.v)} €${f.stale ? ' · Kurs veraltet' : ''})`; })();
+  const oe = !o?.n || oNone ? '' : (() => { const f = fxLive(); return !f ? '(€ n. v.)' : `(${signed(o.total / f.v)} €${f.stale ? ' · Kurs veraltet' : ''})`; })();
   put('lb-open-eur', oe); color('lb-open-eur', o?.n ? o.total : 0); $('lb-open-eur').title = o?.n ? fxLiveNote() : '';
   // Heute realisiert: Summe der eingefrorenen Euro-Werte der heutigen Buchungen (nicht zum aktuellen Kurs)
   const d = dayStats(state.trades); put('lb-day', `${signed(d.pnl)} USDT`); color('lb-day', d.pnl);
@@ -6335,12 +6593,16 @@ function focusSoft(field) { if (field && !kbdTouch.matches) field.focus({ preven
 (function keyboardBar() {
   const vv = window.visualViewport, typing = e => !!e && (e.isContentEditable || e.tagName === 'TEXTAREA' || e.tagName === 'SELECT'
     || (e.tagName === 'INPUT' && !/^(checkbox|radio|range|button|submit|reset|color|file|image|hidden)$/i.test(e.type)));
-  let t = null;
-  const set = on => { if (on) docEl.dataset.kbd = '1'; else delete docEl.dataset.kbd; };
-  const check = () => set(kbdTouch.matches && typing(document.activeElement) && (!vv || vv.height < innerHeight * 0.85));
-  document.addEventListener('focusin', e => { if (!kbdTouch.matches || !typing(e.target)) return; set(true); clearTimeout(t); t = setTimeout(check, 700); }); // sofort weg, nach der Tastatur-Animation prüfen
-  document.addEventListener('focusout', () => { clearTimeout(t); t = setTimeout(check, 150); }); // Feldwechsel (∧ ∨) ohne Flackern
-  vv?.addEventListener('resize', () => { clearTimeout(t); t = setTimeout(check, 60); });
+  // 3.32.0 (G04.6): Vorab ausgeblendet wird nur, wo wirklich eine Bildschirmtastatur kommt: nicht bei Auswahllisten (am iPad ein
+  // Popover, am iPhone meldet das Drehrad sich über die Größenänderung) und nicht mehr, sobald sich eine Hardware-Tastatur gezeigt
+  // hat (Feld fokussiert, sichtbarer Bereich bleibt groß). Vorher verschwand die Leiste dort bei jedem Antippen für 0,7 s.
+  let t = null, soft = null; // soft: null = unbekannt, true = Bildschirmtastatur gesehen, false = keine (Hardware-Tastatur)
+  const set = on => { if (on) { if (docEl.dataset.kbd !== '1') docEl.dataset.kbd = '1'; } else if (docEl.dataset.kbd) delete docEl.dataset.kbd; };
+  const small = () => !vv || vv.height < innerHeight * 0.85;
+  const check = learn => { const f = kbdTouch.matches && typing(document.activeElement); if (f && learn) soft = small(); set(f && small()); };
+  document.addEventListener('focusin', e => { if (!kbdTouch.matches || !typing(e.target)) return; if (e.target.tagName !== 'SELECT' && soft !== false) set(true); clearTimeout(t); t = setTimeout(() => check(true), 700); }); // nach der Tastatur-Animation prüfen
+  document.addEventListener('focusout', () => { clearTimeout(t); t = setTimeout(() => check(false), 150); }); // Feldwechsel (∧ ∨) ohne Flackern
+  vv?.addEventListener('resize', () => { clearTimeout(t); t = setTimeout(() => { if (kbdTouch.matches && typing(document.activeElement) && small()) soft = true; check(false); }, 60); });
 })();
 // ---------- Schnell-Alarm aus der unteren Leiste ----------
 // Zwei Fingertipps: Abstand oder Chart-Marke wählen, „Alarm setzen“. Für andere Kürzel oder eine Notiz: das volle Formular.
@@ -8414,7 +8676,6 @@ function chartFutureSlots(len, narrow = false) {
   return need ? Math.max(2, Math.min(need, Math.floor(len * (narrow ? .55 : .35)))) : 0;
 }
 function drawZigzagForecast(g, { offset, x, y, top, bottom, left, laneX = Infinity }) {
-  $('zz-fc').disabled = !state.overlays?.zz;
   zzpLearn();
   if (!zzFcOn() || state.pan > 0) return;
   const f = zzForecast();
@@ -8452,8 +8713,9 @@ function drawZigzagForecast(g, { offset, x, y, top, bottom, left, laneX = Infini
   grp.append(label);
   g.append(grp);
 }
-$('zz-fc').setAttribute('aria-pressed', String(!!zzCfg().fc));
-$('zz-fc').addEventListener('click', () => { const on = !zzCfg().fc; store.set(ZZ_KEY, { ...zzCfg(), fc: on }); $('zz-fc').setAttribute('aria-pressed', String(on)); renderMarket(); });
+$('zz-fc').setAttribute('aria-pressed', String(zzFcOn()));
+// 3.32.0 (G04.1): Bei ausgeschaltetem ZigZag bleibt die Prognose einschaltbar und schaltet ihn mit ein; gedrückt heißt „wirkt“
+$('zz-fc').addEventListener('click', () => { const on = !zzFcOn(); store.set(ZZ_KEY, { ...zzCfg(), fc: on }); if (on && !state.overlays.zz) { state.overlays.zz = true; store.set(OVERLAY_KEY, { ...state.overlays }); } ovButtons(); renderMarket(); });
 // ---------- Ablaufplan Schritt 2 (3.24.0): gelernte Chartmuster dauerhaft, Startbestand, normaler Reset ----------
 // Gelernt werden nur die Treffer der ZigZag-Prognose je Muster (zigzag.js, Schlüssel scalpdesk.zzpatterns.v1); die Muster-
 // Merkmale selbst stehen fest im Programm. Der Bestand liegt im Browser-Speicher des Geräts (IndexedDB mit Kopie im
@@ -8585,20 +8847,12 @@ function ewText(d = elliottWaves()) {
   if (!d.count) return `Elliott-Wellen: In diesem Chart erfüllt gerade kein Verlauf die drei Grundregeln (ZigZag ${pS} %). Eine kleinere Mindestbewegung oder ein anderes Intervall zeigt oft eines.`;
   return '';
 }
-// Schalter: unter 50 Kerzen gesperrt und mit der aktuellen Anzahl beschriftet; Antippen erklärt dann warum
-function ewButton() {
-  const b = document.querySelector('[data-overlay="ew"]'); if (!b) return;
-  const d = elliottWaves(), t = d.short ? `Elliott ${d.have}/${EW.minBars}` : 'Elliott';
-  if (b.lastChild.textContent !== t) b.lastChild.textContent = t;
-  b.classList.toggle('na', d.short); b.setAttribute('aria-disabled', String(d.short));
-}
-// Der allgemeine Ebenen-Umschalter übergeht gesperrte Knöpfe (aria-disabled); dieser Handler läuft danach und erklärt:
-// zu wenige Kerzen, oder gerade eingeschaltet, aber kein Verlauf erfüllt die Regeln
-document.querySelector('[data-overlay="ew"]')?.addEventListener('click', () => { const d = elliottWaves(); if (d.short || state.overlays.ew) { const t = ewText(d); if (t) infoToast(t, 5000); } });
+// Gesperrt (unter 50 Kerzen) erklärt der allgemeine Ebenen-Umschalter (ovLock) und hält diesen Handler an. Hier: gerade
+// eingeschaltet, aber kein Verlauf erfüllt die Regeln
+document.querySelector('[data-overlay="ew"]')?.addEventListener('click', () => { const d = elliottWaves(); if (state.overlays.ew) { const t = ewText(d); if (t) infoToast(t, 5000); } });
 // Im Chart: Ziffern 1–5 und Buchstaben A–C an den Umkehrpunkten (über Hochs, unter Tiefs), dazu „Elliott (schematisch)“
 // am Beginn. Die Verbindungslinie zeichnet nur, wenn der ZigZag ausgeblendet ist – sonst zeigt er den Verlauf schon.
 function drawElliott(g, { offset, stop, x, y, top, bottom, left, right, laneX = Infinity }) {
-  ewButton(); ewFcButton();
   if (!state.overlays?.ew) return;
   const d = elliottWaves(), cnt = d.count; if (!cnt) return;
   const pts = [cnt.start, ...cnt.waves], vis = p => p.i >= offset && p.i < stop;
@@ -8669,18 +8923,13 @@ function elliottForecast(cnt, piv, n) {
 }
 function ewFcOn() { return !!state.overlays?.ew && !!state.overlays?.ewfc; }
 function ewForecastNow() { const d = elliottWaves(); return d.count ? elliottForecast(d.count, pivotsFor(), state.candles.length) : null; }
-// Schalter „Wellen-Prognose“: nur frei, wenn Elliott an ist und eine aktuelle Zählung vorliegt; sonst gesperrt mit Grund
+// Schalter „Wellen-Prognose“: frei, wenn eine aktuelle Zählung vorliegt (3.32.0: auch bei ausgeschaltetem Elliott – Antippen
+// schaltet Elliott mit ein, siehe ovToggle); sonst gesperrt mit Grund (ovLock)
 function ewFcWhy() {
-  if (!state.overlays?.ew) return 'Wellen-Prognose: zuerst die Ebene „Elliott“ einschalten.';
   const d = elliottWaves(); if (d.short || !d.count) return ewText(d).replace(/^Elliott-Wellen:/, 'Wellen-Prognose:');
   if (!ewForecastNow()) return `Wellen-Prognose: Die erkannte Elliott-Zählung ist abgeschlossen – der Kurs lief danach schon weiter. Eine kleinere Mindestbewegung (ZigZag, jetzt ${ewPct()} %) zeigt oft eine aktuelle.`;
   return '';
 }
-function ewFcButton() {
-  const b = document.querySelector('[data-overlay="ewfc"]'); if (!b) return;
-  const why = ewFcWhy(); b.classList.toggle('na', !!why); b.setAttribute('aria-disabled', String(!!why));
-}
-document.querySelector('[data-overlay="ewfc"]')?.addEventListener('click', () => { const why = ewFcWhy(); if (why) infoToast(why, 5000); });
 // Im Chart rechts vom letzten Kurs: gestrichelter Weg vom laufenden Extrempunkt über die Zielpunkte, gestrichelte Kreise,
 // am Ende Ziel mit Kurs und Abstand. Reicht der Platz rechts nicht, wird die Zeit im Zukunftsbereich gestaucht.
 function drawElliottForecast(g, { offset, stop, x, y, top, bottom, left, right, laneX = Infinity }) {
@@ -9635,7 +9884,9 @@ function wldBox() {
   // Gesamtbewertung und Bewegungs-Hinweis im Rumpf: dessen Mindesthöhe gilt auch für sie, das Feld schrumpft nicht, wenn sie
   // kurz wegfallen (Zeitraum gewechselt, Reihe lädt neu)
   body.append(verdict, move);
-  sec.append(head, body, foot);
+  // 3.32.0 (G04.2): schmale Zeile mit Tief und Hoch der letzten 24 Stunden (rollierend, Markt wie die Kachel)
+  const r24 = el('p', 'wl-d-24h'); r24.append(el('span', 'wl-d-24k', '24h'), el('span', 'wl-d-24v', ''));
+  sec.append(head, r24, body, foot);
   clip.append(sec); box.append(clip);
   close.addEventListener('click', () => wldClose(true));
   // Erklärung auch beim Überfahren mit der Maus (am iPad mit Trackpad ebenso); Klick auf ein so geöffnetes Info-Symbol heftet
@@ -9643,7 +9894,7 @@ function wldBox() {
   box.addEventListener('pointerover', e => { if (e.pointerType !== 'mouse') return; const t = e.target.closest('details.wl-d-tip'); if (t && !t.open) { t.dataset.hover = '1'; t.open = true; } });
   box.addEventListener('pointerout', e => { if (e.pointerType !== 'mouse') return; const t = e.target.closest('details.wl-d-tip'); if (t?.dataset.hover && !t.contains(e.relatedTarget)) { delete t.dataset.hover; t.open = false; } });
   box.addEventListener('click', e => { const t = e.target.closest('details.wl-d-tip'); if (t?.dataset.hover && e.target.closest('summary')) { e.preventDefault(); delete t.dataset.hover; } }, true);
-  wld = { box, clip, body, title, meta, pick, pickv, stand, up, down, none, items, verdict, move, mtip, foot, key: '', minH: 0, timer: 0 };
+  wld = { box, clip, body, title, meta, pick, pickv, stand, up, down, none, items, verdict, move, mtip, foot, r24, key: '', minH: 0, timer: 0 };
   return box;
 }
 function wldTiles(fn) { for (const t of document.querySelectorAll('#watchlist .wl-tile')) fn(t); }
@@ -9689,6 +9940,7 @@ const WLD_T = new Intl.DateTimeFormat('de-DE', { hour: '2-digit', minute: '2-dig
 // Bewertung oder Ladezustand ändern
 function wldPaint(now = Date.now(), force = false) {
   if (!wld || !wldSel) return;
+  w24Paint(now);
   const coin = wldSel, e = wl?.c.get(wlSym(coin)), r = e?.rating || null;
   const S = wlSpan(), mv = r ? wlMove(e) : null, key = [coin, wl?.span, r ? r.closeTime + ':' + r.rules.map(x => x.score).join() : '-', mv ? mv.movePct.toFixed(3) : '', e?.error || '', e ? 1 : 0].join('|');
   if (key === wld.key && !force) return;
@@ -9735,6 +9987,48 @@ function wldPaint(now = Date.now(), force = false) {
 // Tastatur: Esc schließt das Feld (ist darin ein Info-Fenster offen, schließt Esc zuerst nur dieses – das erledigt der
 // allgemeine Esc-Handler, der nach diesem läuft)
 $('watchlist').addEventListener('keydown', e => { if (e.key !== 'Escape' || !wldSel || wld.box.querySelector('details.tip[open]')) return; const inPanel = wld.box.contains(document.activeElement); wldClose(inPanel || document.activeElement?.dataset.watch === wldSel); });
+// ---- 3.32.0 (G04.2): 24h-Tief / 24h-Hoch im Detailfeld ----
+// Rollierende letzte 24 Stunden laut Binance-24h-Statistik – unabhängig vom Chart und seinem Intervall. Derselbe Markt wie die
+// Kachel (wlLoad: Spot, ohne Spot-Paar USDT-Perpetual-Futures): Spot über /api/v3/ticker/24hr, Futures nur über
+// /fapi/v1/ticker/24hr – nie ein Spot-Wert unter der Beschriftung „Futures“. Geprüft wird: richtiges Paar, Hoch und Tief endlich
+// und über 0, Tief ≤ Hoch, Fenster etwa 24 Stunden und nicht älter als 5 Minuten. Zwischengespeichert je Markt und Paar für
+// 60 s; jede Anfrage hat eine Nummer (Generation) – eine überholte Antwort (Coin oder Markt inzwischen gewechselt, neuere Anfrage
+// unterwegs) wird verworfen. Fehler: neuer Versuch nach 30 s, die Zeile nennt den Grund.
+var W24_TTL = 60e3, W24_RETRY = 30e3, w24 = new Map(), w24Gen = 0;
+function w24Valid(d, sym, now = Date.now()) {
+  const hi = Number(d?.highPrice), lo = Number(d?.lowPrice), o = Number(d?.openTime), c = Number(d?.closeTime);
+  if (!d || d.symbol !== sym) throw new Error('Binance lieferte die 24h-Statistik eines anderen Paars.');
+  if (!(hi > 0) || !(lo > 0) || !Number.isFinite(hi) || !Number.isFinite(lo) || lo > hi) throw new Error('Unplausible 24h-Werte erhalten.');
+  if (!Number.isFinite(c) || !Number.isFinite(o) || Math.abs(c - o - 864e5) > 36e5) throw new Error('Kein 24-Stunden-Fenster erhalten.');
+  if (now - c > 5 * 60e3 || c - now > 60e3) throw new Error(`Die 24h-Statistik ist veraltet (Stand ${new Date(c).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}).`);
+  return { hi, lo, at: c };
+}
+async function w24Load(key, sym, market) {
+  const gen = ++w24Gen, prev = w24.get(key) || {}; w24.set(key, { ...prev, gen, busy: true });
+  try {
+    const d = market === 'futures' ? await api.get(FUTURES, '/fapi/v1/ticker/24hr', { symbol: sym }) : await spotGet('/api/v3/ticker/24hr', { symbol: sym });
+    const v = w24Valid(d, sym); if (w24.get(key)?.gen !== gen) return; // überholt
+    w24.set(key, { ...v, market, got: Date.now(), gen, busy: false, error: '', retryAt: 0 });
+  } catch (err) {
+    if (w24.get(key)?.gen !== gen) return;
+    w24.set(key, { ...prev, gen, busy: false, error: err?.message || String(err), retryAt: Date.now() + W24_RETRY });
+  }
+  if (wldSel && wlSym(wldSel) === sym) w24Paint();
+}
+function w24Paint(now = Date.now()) {
+  if (!wld?.r24 || !wldSel) return;
+  const coin = wldSel, sym = wlSym(coin), e = wl?.c.get(sym), ready = !!e && (e.at > 0 || !!e.error), market = e?.market === 'futures' ? 'futures' : 'spot';
+  const key = `${market}:${sym}`, d = ready && !e.error ? w24.get(key) : null;
+  if (ready && !e.error && !state.paused && !d?.busy && (!d?.got || now - d.got > W24_TTL) && now >= (d?.retryAt || 0)) void w24Load(key, sym, market);
+  const has = d?.got > 0 && now - d.got < 10 * 60e3, lab = market === 'futures' ? ' · Futures' : ' · Spot';
+  const t = !ready ? 'Tief — · Hoch — (wird geladen …)' : e.error ? 'nicht verfügbar – keine Kursdaten für diesen Coin'
+    : has ? `Tief ${priceText(d.lo)} · Hoch ${priceText(d.hi)}${lab}${d.error ? ' · Stand ' + new Date(d.at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : ''}`
+    : d?.error ? `nicht verfügbar – ${d.error}` : `Tief — · Hoch — (wird geladen …)`;
+  const v = wld.r24.lastChild; if (v.textContent !== t) v.textContent = t;
+  wld.r24.classList.toggle('skel-txt', !has && !d?.error && !e?.error);
+  const tip = has ? `Tiefster und höchster Kurs der letzten 24 Stunden (rollierend, ${market === 'futures' ? 'USDT-Perpetual-Futures' : 'Spot'}) laut Binance, Stand ${new Date(d.at).toLocaleTimeString('de-DE')} – unabhängig vom Chart.` : '';
+  if (wld.r24.title !== tip) wld.r24.title = tip;
+}
 // ---------- Ablaufplan Schritt 7 (3.24.0): Gewinn- und Verlust-Alarm am Live-Ergebnis ----------
 // Antippen des Live-Ergebnisses „Offen …“ oben rechts öffnet ein Feld mit „Benachrichtigung bei Gewinn“ und „Benachrichtigung
 // bei Verlust“. Bezug ist der dort angezeigte Gesamtwert aller offenen Positionen (unrealisiert, in USDT, state.openTotal),
@@ -9976,9 +10270,9 @@ function renderDemoPositions() {
   const key = demo.map(p => `${p.id}:${state.posUi[p.id]?.mode || ''}:${p.ev?.length || 0}:${p.evDel?.length || 0}:${p.liqCheck ? 1 : 0}:${p.qty}:${p.entry}:${p.leverage}:${p.mode}:${p.side}:${p.symbol}:${p.note || ''}:${p.sl}:${p.tp}:${reasonsOf(p).join('|')}`).join('|');
   if (key !== demoStructure) { demoStructure = key; list.replaceChildren(...demo.map(p => buildCard(p, true))); }
   let total = 0, missing = 0;
-  for (const card of list.children) { const pos = demo.find(p => p.id === card.dataset.id); if (!pos) continue; const m = updateCard(card, pos); if (m.pnl === null) missing++; else total += m.pnl; }
+  for (const card of list.children) { const pos = demo.find(p => p.id === card.dataset.id); if (!pos) continue; const m = updateCard(card, pos); if (m.pnl === null || !m.fresh) missing++; else total += m.pnl; }
   const t = $('demo-open-total');
-  t.textContent = demo.length ? `${signed(total)} USDT simuliert${missing ? ` · ${missing} ohne Kurs` : ''} · ${demo.length} offen` : '';
+  t.textContent = demo.length ? `${missing >= demo.length ? 'kein aktueller Kurs' : `${missing ? 'Teilsumme ' : ''}${signed(total)} USDT simuliert`}${missing ? ` · ${missing} ohne aktuellen Kurs` : ''} · ${demo.length} offen` : '';
   t.classList.toggle('positive', total > 0); t.classList.toggle('negative', total < 0);
 }
 // ---- Demo-Historie (getrennt von echten Trades, Summen, Auswertung, Steuer und Geld) ----
@@ -10920,7 +11214,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
     <span class="lb-spacer"></span>
     <span class="lb-alarm" id="lb-alarm" hidden></span>
     <div class="lb-warns"><button type="button" class="lb-news" id="lb-news" data-goto="econ" hidden></button><button type="button" class="lb-vola" id="lb-vola" data-goto="vola" hidden><span class="lv-full"></span><span class="lv-short"></span></button></div>
-    <button type="button" class="lb-pos" id="lb-pos" aria-haspopup="dialog" aria-expanded="false" aria-controls="pnl-panel" aria-label="Live-Ergebnis der offenen Positionen – Gewinn- und Verlust-Alarm einstellen"><span class="lb-label">Offen</span><span class="lb-num" id="lb-open">—</span><span class="lb-num lb-eur lb-open-eur" id="lb-open-eur"></span><span class="lb-label opt">Heute</span><span class="lb-num opt" id="lb-day">—</span><span class="lb-num opt lb-eur" id="lb-day-eur"></span></button>
+    <button type="button" class="lb-pos" id="lb-pos" aria-haspopup="dialog" aria-expanded="false" aria-controls="pnl-panel" aria-label="Live-Ergebnis der offenen Positionen – Gewinn- und Verlust-Alarm einstellen"><span class="lb-label" id="lb-open-label">Offen</span><span class="lb-num" id="lb-open">—</span><span class="lb-num lb-eur lb-open-eur" id="lb-open-eur"></span><span class="lb-label opt">Heute</span><span class="lb-num opt" id="lb-day">—</span><span class="lb-num opt lb-eur" id="lb-day-eur"></span></button>
     <span class="lb-conn" id="lb-conn" role="img" aria-label="Verbindung" data-feed="off"></span>
     <div class="pnl-panel" id="pnl-panel" role="dialog" aria-labelledby="pnl-title" hidden>
       <form id="pnl-form" novalidate>
@@ -10944,13 +11238,13 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
       <section class="panel chart-panel cq" id="chart-sec" data-tabs="chart" aria-label="Kurschart">
         <div class="full-bar" id="full-bar"><button type="button" id="fb-tools" aria-expanded="false" title="Werkzeuge ein- und ausblenden (Taste T)"><span class="fb-chev" aria-hidden="true">▾</span><span id="fb-title">Chart</span></button><span class="fb-space"></span><button type="button" id="fb-rot" aria-pressed="true" aria-label="Chart selbst ins Querformat drehen" title="Querformat: App dreht den Chart (für Rotationssperre) – aus: iPhone dreht selbst"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button type="button" id="fb-swap" hidden title="Chart wechseln (Taste B)"><span id="fb-sym"></span><strong id="fb-price">…</strong></button><button type="button" id="fb-exit" aria-label="Vollbild beenden" title="Vollbild beenden (Esc)"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
         <form id="market-form" class="market-form">
-          <label>Kryptowährung <span class="input-wrap"><input id="symbol" value="BTC" maxlength="24" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Kürzel oder USDT-Paar" required><span>/ USDT</span></span></label>
+          <label>Kryptowährung <span class="input-wrap"><input id="symbol" value="BTC" maxlength="24" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="go" aria-label="Kürzel oder USDT-Paar"><span>/ USDT</span></span></label>
           <button class="button primary" type="submit">Markt laden <span aria-hidden="true">→</span></button>
           <div class="watchlist" id="watchlist" role="group" aria-label="Vorauswahl"></div>
         </form>
         <div id="market-error" class="notice error" role="alert" hidden></div>
         <div class="chart-heading"><div><div class="pair-title"><span class="coin-icon" id="coin-icon">B</span><h2 id="pair-label">BTC <span>/ USDT</span></h2><span class="badge" id="market-badge">SPOT</span></div><div class="price-row"><strong id="price" class="skel">—</strong><span class="unit">USDT</span><span class="change skel" id="candle-change">—</span></div><div class="signal-line" id="signal-line" hidden></div><button type="button" class="button ghost alarm-btn" id="alarm-here">🔔 Alarm für diesen Kurs</button></div><div class="chart-meta"><span id="price-eur">Eurokurs ausstehend</span><span id="updated">Noch keine Marktdaten</span></div></div>
-        <div class="chart-toolbar"><div class="intervals" role="group" aria-label="Kerzenintervall"><button type="button" data-interval="1m" class="active" aria-pressed="true">1m</button><button type="button" data-interval="5m" aria-pressed="false">5m</button><button type="button" data-interval="15m" aria-pressed="false">15m</button><button type="button" data-interval="1h" aria-pressed="false">1h</button><button type="button" data-interval="4h" aria-pressed="false">4h</button><button type="button" data-interval="1d" aria-pressed="false">1d</button><button type="button" data-interval="1w" aria-pressed="false">1w</button><button type="button" data-interval="1M" aria-pressed="false" title="1 Monat">1M</button></div><div class="zoom-controls" role="group" aria-label="Chart zoomen und blättern"><button id="pan-back" type="button" aria-label="Weiter zurück in der Zeit">◀</button><button id="zoom-out" type="button" aria-label="Herauszoomen, mehr Kerzen">−</button><button id="zoom-in" type="button" aria-label="Hineinzoomen, weniger Kerzen">+</button><button id="pan-fwd" type="button" aria-label="Weiter Richtung jetzt">▶</button><button id="pan-now" type="button" hidden>Jetzt</button><button id="magnet" type="button" aria-pressed="false" title="Magnet: auf ein Chart-Level tippen oder klicken, um dort einen Kurs-Alarm zu setzen" aria-label="Magnet: Kurs-Alarm per Klick auf ein Chart-Level">🧲</button><button id="chart-full" type="button" aria-pressed="false" aria-label="Chart im Vollbild" title="Vollbild – schließen mit Enter, Esc oder diesem Symbol"><svg class="ico-max" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><svg class="ico-min" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><details class="tip"><summary aria-label="Bedienung des Charts"><span>i</span></summary><div class="tip-body"><p>Zoomen: zwei Finger auseinander/zusammen, Strg + Mausrad oder − / +.</p><p>Zurückblättern: mit einem Finger wischen, waagrecht scrollen oder ◀ ▶. Doppelt tippen: zurück zu jetzt.</p><p>🧲 Magnet: einschalten, dann auf eine Linie oder Kerze tippen bzw. klicken – der Kurs-Alarm wird mit genau diesem Preis vorausgefüllt. Der Preis rastet an POC, Value Area, Pivots, EMA 200, Bollinger, Kerzen-Hochs und -Tiefs, Liquidationslinien sowie den Liq-Clustern der Heatmap ein. Am Computer geht es jederzeit auch per Rechtsklick.</p><p>Rote gestrichelte Linie: Liquidationspreis deiner Position (Wert der Börse oder Modell bei isolierter Margin), rot getönt der Bereich dahinter. Dünner: das Szenario aus dem Positionsrechner.</p><p>Tastatur: Pfeiltasten wählen Kerzen, + und − zoomen.</p></div></details></div></div>
+        <div class="chart-toolbar"><div class="intervals" role="group" aria-label="Kerzenintervall"><button type="button" data-interval="1m" class="active" aria-pressed="true">1m</button><button type="button" data-interval="5m" aria-pressed="false">5m</button><button type="button" data-interval="15m" aria-pressed="false">15m</button><button type="button" data-interval="1h" aria-pressed="false">1h</button><button type="button" data-interval="4h" aria-pressed="false">4h</button><button type="button" data-interval="1d" aria-pressed="false">1d</button><button type="button" data-interval="1w" aria-pressed="false">1w</button><button type="button" data-interval="1M" aria-pressed="false" title="1 Monat">1M</button></div><div class="zoom-controls" role="group" aria-label="Chart zoomen und blättern"><button id="pan-back" type="button" aria-label="Weiter zurück in der Zeit">◀</button><button id="zoom-out" type="button" aria-label="Herauszoomen, mehr Kerzen">−</button><button id="zoom-in" type="button" aria-label="Hineinzoomen, weniger Kerzen">+</button><button id="pan-fwd" type="button" aria-label="Weiter Richtung jetzt">▶</button><button id="pan-now" type="button" hidden>Jetzt</button><button id="zoom-reset" type="button" hidden aria-label="Standardansicht: 80 Kerzen bis zur aktuellen Kerze" title="Standardansicht: 80 Kerzen bis zur aktuellen Kerze">⟲</button><button id="magnet" type="button" aria-pressed="false" title="Magnet: auf ein Chart-Level tippen oder klicken, um dort einen Kurs-Alarm zu setzen" aria-label="Magnet: Kurs-Alarm per Klick auf ein Chart-Level">🧲</button><button id="chart-full" type="button" aria-pressed="false" aria-label="Chart im Vollbild" title="Vollbild – schließen mit Enter, Esc oder diesem Symbol"><svg class="ico-max" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><svg class="ico-min" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><details class="tip"><summary aria-label="Bedienung des Charts"><span>i</span></summary><div class="tip-body"><p>Zoomen: zwei Finger auseinander/zusammen, Strg + Mausrad oder − / +.</p><p>Zurückblättern: mit einem Finger wischen, waagrecht scrollen oder ◀ ▶. Doppelt tippen: zurück zu jetzt.</p><p>🧲 Magnet: einschalten, dann auf eine Linie oder Kerze tippen bzw. klicken – der Kurs-Alarm wird mit genau diesem Preis vorausgefüllt. Der Preis rastet an POC, Value Area, Pivots, EMA 200, Bollinger, Kerzen-Hochs und -Tiefs, Liquidationslinien sowie den Liq-Clustern der Heatmap ein. Am Computer geht es jederzeit auch per Rechtsklick.</p><p>Rote gestrichelte Linie: Liquidationspreis deiner Position (Wert der Börse oder Modell bei isolierter Margin), rot getönt der Bereich dahinter. Dünner: das Szenario aus dem Positionsrechner.</p><p>Tastatur: Pfeiltasten wählen Kerzen, + und − zoomen.</p></div></details></div></div>
         <div class="ohlc-row"><div class="ohlc skel" id="ohlc">O — &nbsp; H — &nbsp; L — &nbsp; C —</div><details class="tip div-tip" id="div-tip" hidden><summary aria-label="RSI-Divergenz: Erklärung und Handlungsleitfaden"><i class="div-dot" aria-hidden="true"></i><b class="div-l" id="div-chip-l">RSI-Divergenz</b><b class="div-s" id="div-chip-s">Div.</b><span>i</span></summary><div class="tip-body div-body"><p class="div-title" id="div-title"></p><p id="div-case"></p><p class="div-tent" id="div-tent" hidden></p><p class="div-other" id="div-other" hidden></p><p class="div-h">Handlungsleitfaden</p><ol class="div-steps"><li><b>Kein Einstiegssignal.</b> Die Divergenz zeigt nachlassenden Schwung, keine Umkehr. Auch Warten auf eine Bestätigung half im Backtest nicht (unten).</li><li id="div-step-ext"></li><li id="div-step-pos"></li><li id="div-step-risk"></li></ol><p class="div-alarm-row"><button type="button" class="button ghost" id="div-alarm">🔔 Alarm</button></p><p class="div-honest"><b>Ehrlich – Backtest mit genau diesem Scanner</b> (echte BTC-Stundenkerzen 2017–2019, Coinbase und Bitfinex): Nach einer Divergenz lief der Kurs nur in 48–51 % der Fälle zuerst um die Mindestbewegung in die erwartete Richtung – als Trade nach Gebühren (0,06 % je Seite) durchweg ein Verlust (−25 % bis −47 %). Warten machte es nicht besser: ab der Bestätigung des Umkehrpunkts 44–48 %, nach einem Schlusskurs über dem Zwischenhoch bzw. unter dem Zwischentief nur 21–39 %. Deshalb zeigt die App dazu keine Trefferquote und kein Kauf- oder Verkaufssignal.</p><p class="div-note">Grün = bullisch, rot = bärisch. Eine neue Divergenz pulsiert, bis du diese Erklärung geöffnet hast, danach leuchtet sie ruhig. Ist „Bewegung reduzieren“ im System eingestellt, leuchtet sie ohne Pulsieren.</p></div></details></div>
         <div id="chart" class="chart" tabindex="0" role="img" aria-label="Kerzenchart. Mit Pfeiltasten Kerzen auswählen, mit Plus und Minus zoomen."><div class="chart-skel" aria-hidden="true"><i class="skel" style="height:38%"></i><i class="skel" style="height:52%"></i><i class="skel" style="height:46%"></i><i class="skel" style="height:61%"></i><i class="skel" style="height:57%"></i><i class="skel" style="height:70%"></i><i class="skel" style="height:64%"></i><i class="skel" style="height:49%"></i><i class="skel" style="height:55%"></i><i class="skel" style="height:68%"></i><i class="skel" style="height:74%"></i><i class="skel" style="height:66%"></i><i class="skel" style="height:58%"></i><i class="skel" style="height:63%"></i><i class="skel" style="height:77%"></i><i class="skel" style="height:71%"></i><i class="skel" style="height:80%"></i><i class="skel" style="height:69%"></i><i class="skel" style="height:62%"></i><i class="skel" style="height:72%"></i><i class="skel" style="height:84%"></i><i class="skel" style="height:78%"></i><i class="skel" style="height:73%"></i><i class="skel" style="height:88%"></i></div><span class="sr-only">Marktdaten werden geladen</span></div><i class="div-halo" id="div-halo" hidden aria-hidden="true"><b></b></i>
         <div class="fib-strip" id="fib-strip" role="group" aria-label="Fibonacci-Marken 38,2 / 50 / 61,8 % mit Abstand zum aktuellen Kurs – antippen legt einen Alarm an" hidden><div class="fs-head"><b id="fs-head">Fib</b><details class="tip left" id="fs-tip"><summary aria-label="Fibonacci-Marken erklärt"><span>i</span></summary><div class="tip-body"><p><b>Fibonacci-Retracement:</b> Wie weit läuft der Kurs nach einer Bewegung zurück? Gemessen in Prozent der letzten Schwungbewegung.</p><p id="fs-tip-swing">Grundlage ist der letzte abgeschlossene ZigZag-Schwung.</p><ul class="fs-tip-list"><li><b>23,6 %</b><span data-fl="23,6"></span> – flacher Rücklauf, gilt als Zeichen eines starken Trends</li><li><b>38,2 %</b><span data-fl="38,2"></span> – erste häufig beachtete Marke</li><li><b>50 %</b><span data-fl="50"></span> – halber Rücklauf; keine Fibonacci-Zahl, aber traditionell beachtet</li><li><b>61,8 %</b><span data-fl="61,8"></span> – der „goldene Schnitt“; 50–61,8&nbsp;% ist die „goldene Zone“ (im Chart hinterlegt)</li><li><b>78,6 %</b><span data-fl="78,6"></span> – tiefer Rücklauf, der Schwung ist dann fast ganz zurückgenommen</li></ul><p><b>So nutzen:</b> als Orientierung, wo Rücksetzer oder Erholungen oft vermutet werden. Eine Marke antippen legt dort einen Alarm an – dann die Reaktion des Kurses abwarten. Viele Trader achten besonders auf Marken, die mit anderen Levels zusammenfallen (POC, EMA 200, Unterstützung); geprüft ist das hier nicht.</p><p><b>Ehrlich:</b> Im Backtest mit echten BTC-Stundenkerzen (2017–2019) endeten Gegenbewegungen nicht häufiger an diesen Marken als an um 6 Punkte verschobenen (27–31&nbsp;% gegenüber 23–35&nbsp;%); knapp die Hälfte lief sogar über 100&nbsp;% hinaus. Deshalb keine Trefferquote – Orientierung, kein Handelssignal.</p><p>Die ZigZag-Mindestbewegung bestimmt den Schwung: kleiner heißt kürzere Schwünge und Marken näher am Kurs.</p></div></details></div><button type="button" class="fs-chip" data-fib="38,2" disabled><span class="fs-r">38,2<span class="fs-pc"> %</span></span><span class="fs-val skel">—</span><span class="fs-dist"></span></button><button type="button" class="fs-chip" data-fib="50" disabled><span class="fs-r">50<span class="fs-pc"> %</span></span><span class="fs-val skel">—</span><span class="fs-dist"></span></button><button type="button" class="fs-chip" data-fib="61,8" disabled><span class="fs-r">61,8<span class="fs-pc"> %</span></span><span class="fs-val skel">—</span><span class="fs-dist"></span></button><span class="fs-note" id="fs-note" hidden></span></div>
@@ -11108,7 +11402,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
           <div class="pos-quick"><button type="button" class="button primary-lite" id="pos-add-toggle" aria-expanded="false" aria-controls="pos-form">+ Position<span class="pq-long"> erfassen</span></button></div>
           <details class="fold pos-over" id="pos-over" open>
             <summary class="positions-head"><h2 id="positions-title">Meine Positionen</h2><span id="pos-over-sub">Von dir erfasst · Live-Kurs von Binance · USDT (Euro)</span></summary>
-            <div class="pos-totals"><div><span>Offen, nicht realisiert</span><strong id="open-total">—</strong><small id="open-total-eur"></small></div><div><span id="realized-label">Realisiert gesamt</span><strong id="realized-total">—</strong><small id="realized-total-eur"></small></div></div>
+            <div class="pos-totals"><div><span id="open-total-label">Offen, nicht realisiert</span><strong id="open-total">—</strong><small id="open-total-eur"></small></div><div><span id="realized-label">Realisiert gesamt</span><strong id="realized-total">—</strong><small id="realized-total-eur"></small></div></div>
             <div class="notice warning integrity-banner" id="integrity-banner" role="status" hidden><span id="integrity-text"></span><span class="ib-act"><button type="button" class="button ghost" id="integrity-conf" hidden>Änderungen vergleichen</button><button type="button" class="button ghost" id="integrity-quar" hidden>Prüfliste öffnen</button></span></div>
             <div class="day-strip" id="day-strip"><span>Heute realisiert</span><strong class="day-pnl" id="day-pnl">—</strong><span id="day-info"></span><div class="day-bar" id="day-bar" title="Verbrauchtes Tages-Verlustlimit"><span></span></div><label>Tages-Verlustlimit<span class="input-wrap"><input id="day-limit" type="text" inputmode="decimal" autocomplete="off" placeholder="z. B. 30"><span>USDT</span></span></label></div>
             <button type="button" class="data-head backup-badge" id="data-toggle" aria-expanded="false" aria-controls="data-panel"><span class="data-chev" aria-hidden="true">▸</span><span class="data-title">💾 Datensicherung</span><span class="due" id="backup-due" hidden>FÄLLIG</span><small class="data-last" id="data-last"></small></button>

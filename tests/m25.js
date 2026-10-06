@@ -10,7 +10,7 @@ const live = page => page.waitForFunction(() => document.getElementById('status'
 const seedTrade = now => { if (localStorage.getItem('scalpdesk.savedat.v1')) return;
   localStorage.setItem('scalpdesk.history.v1', JSON.stringify([{ id: 't1', symbol: 'BTCUSDT', side: 'long', mode: 'isolated', entry: 64000, leverage: 10, qty: 0.01, margin: 64, openedAt: now - 7200e3, source: 'spot', liqExchange: null, preRealized: 0, sl: null, tp: null, exit: 65250, fees: 0, pnl: 12.5, pnlSource: 'manual', closedAt: now - 600e3, fx: 1.164, note: '' }])); };
 const st = page => page.evaluate(() => { const t = document.getElementById('tabbar'), a = document.activeElement;
-  return { shown: getComputedStyle(t).display !== 'none', kbd: document.documentElement.dataset.kbd || '', focus: a ? (a.id || a.tagName) : '', typing: !!a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) }; });
+  return { shown: getComputedStyle(t).display !== 'none' && getComputedStyle(t).visibility !== 'hidden', kbd: document.documentElement.dataset.kbd || '', focus: a ? (a.id || a.tagName) : '', typing: !!a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) }; });
 // Bildschirmtastatur nachstellen: sichtbarer Bereich halb so hoch (wie am iPhone) bzw. wieder normal
 const kbd = (page, on) => page.evaluate(on => { const vv = visualViewport; if (on) Object.defineProperty(vv, 'height', { configurable: true, get: () => Math.round(innerHeight * 0.5) }); else delete vv.height; vv.dispatchEvent(new Event('resize')); }, on);
 (async () => {

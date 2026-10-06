@@ -10,7 +10,7 @@ const IV = { '1s': 1e3, '1m': 6e4, '3m': 18e4, '5m': 3e5, '15m': 9e5, '1h': 36e5
 const SPOT = { BTCUSDT: 64000, ETHUSDT: 2500, XRPUSDT: 1.47, ETCUSDT: 18, BCHUSDT: 330, LTCUSDT: 70, NEARUSDT: 2.4, EURUSDT: 1.164, SOLUSDT: 150, PAXGUSDT: 2650 };
 const FUT = { ...SPOT, BSVUSDT: 32 };
 delete FUT.EURUSDT; delete FUT.PAXGUSDT; // PAXG: nur Spot (keine Futures, kein Open Interest)
-const cfg = { wsPeriod: 1000, futPeriod: 500, walk: true, silent: false, blockWs: false, restFail: false, restDelay: 0, chanNoCors: false, tg429: 0, tgUpdates: true, eurHist: 'on', log: [] }, sent = [];
+const cfg = { wsPeriod: 1000, futPeriod: 500, walk: true, silent: false, blockWs: false, restFail: false, restDelay: 0, chanNoCors: false, tg429: 0, tgUpdates: true, eurHist: 'on', t24: 'ok', log: [] }, sent = [];
 // 3.31.0 (G03): historische EUR/USDT-Minutenkerzen für den Euro-Kurs nachgetragener Abschlüsse – fest berechenbar: Schlusskurs der
 // Kerze mit Minute k = 1,1 + (k mod 1000) / 100000. Vor dem 03.01.2020 gibt es das Paar nicht (leere Antwort). /eurhist?mode=on|empty|fail
 const eurClose = k => +(1.1 + (k % 1000) / 100000).toFixed(5);
@@ -269,7 +269,16 @@ function rest(req, res) {
     case '/api/v3/klines': case '/fapi/v1/klines': if (!need()) return; if (!IV[q.interval]) return json(res, 400, { code: -1120, msg: 'bad interval' }); return json(res, 200, hist(sym, q.interval, Number(q.limit) || 500, Number(q.startTime) || 0, Number(q.endTime) || 0));
     case '/api/v3/ticker/price': case '/fapi/v1/ticker/price': {
       if (q.symbols) { const list = JSON.parse(q.symbols); if (list.some(s => !(s in book))) return json(res, 400, { code: -1121, msg: 'Invalid symbol.' }); return json(res, 200, list.map(s => ({ symbol: s, price: String(price[s]) }))); }
-      if (!need()) return; return json(res, 200, { symbol: sym, price: String(price[sym]), time: Date.now() });
+      if (!need()) return; return json(res, 200, { symbol: sym, price: String(price[sym]), time: Date.now() - (cfg.tickOld?.[sym] || 0) }); // 3.32.0: /tick?old=SYM:ms – alter Zeitstempel
+    }
+    // 3.32.0 (G04.2): 24h-Statistik – Hoch/Tief aus den 1h-Kerzen der letzten 24 Stunden; Futures leicht anders als Spot (so ist
+    // erkennbar, welcher Markt geantwortet hat). /t24?mode=ok|fail|stale|bad|wrong
+    case '/api/v3/ticker/24hr': case '/fapi/v1/ticker/24hr': {
+      if (!need()) return; if (cfg.t24 === 'fail') return json(res, 503, { code: -1, msg: 'Service unavailable' });
+      const now = Date.now(), rows = hist(sym, '1h', 26).filter(r => r[6] >= now - 864e5);
+      let hi = Math.max(...rows.map(r => +r[2])), lo = Math.min(...rows.map(r => +r[3])); if (fut) { hi *= 1.002; lo *= 0.998; }
+      const close = cfg.t24 === 'stale' ? now - 10 * 6e4 : now, f = v => String(+v.toPrecision(8));
+      return json(res, 200, { symbol: cfg.t24 === 'wrong' ? 'ETHUSDT' : sym, lastPrice: f(price[sym]), highPrice: cfg.t24 === 'bad' ? f(lo * 0.9) : f(hi), lowPrice: f(lo), openTime: close - 864e5, closeTime: close, count: 1000 });
     }
     case '/api/v3/ticker/bookTicker': if (sym !== 'EURUSDT') return json(res, 400, { code: -1121, msg: 'Invalid symbol.' }); return json(res, 200, { symbol: 'EURUSDT', bidPrice: String(price.EURUSDT - 0.0001), askPrice: String(price.EURUSDT + 0.0001), bidQty: '100', askQty: '100' });
     case '/api/v3/depth': case '/fapi/v1/depth': if (!need()) return; return json(res, 200, depth(sym, Number(q.limit) || 100));
@@ -405,7 +414,7 @@ http.createServer((req, res) => {
     case '/silent': cfg.silent = q.on === '1'; return ok();
     case '/blockws': cfg.blockWs = q.on === '1'; if (cfg.blockWs) for (const c of conns) c.ws.terminate(); return ok();
     case '/restfail': cfg.restFail = q.on === '1'; return ok();
-    case '/tick': cfg.tickFail = Object.fromEntries((q.fail || '').split(',').filter(Boolean).map(x => [x, 1])); cfg.tickDelay = Object.fromEntries((q.delay || '').split(',').filter(Boolean).map(x => x.split(':')).map(([k, ms]) => [k, Number(ms) || 0])); return ok({ fail: cfg.tickFail, delay: cfg.tickDelay });
+    case '/tick': cfg.tickFail = Object.fromEntries((q.fail || '').split(',').filter(Boolean).map(x => [x, 1])); cfg.tickDelay = Object.fromEntries((q.delay || '').split(',').filter(Boolean).map(x => x.split(':')).map(([k, ms]) => [k, Number(ms) || 0])); cfg.tickOld = Object.fromEntries((q.old || '').split(',').filter(Boolean).map(x => x.split(':')).map(([k, ms]) => [k, Number(ms) || 0])); return ok({ fail: cfg.tickFail, delay: cfg.tickDelay, old: cfg.tickOld });
     case '/drop': for (const c of conns) c.ws.terminate(); return ok({ dropped: true });
     case '/flood': { clearInterval(cfg.flood); cfg.flood = null; if (q.on === '1') { const sym = q.symbol || 'BTCUSDT', per = Math.max(1, Math.round((Number(q.rate) || 1000) / 50)); cfg.flood = setInterval(() => { for (let i = 0; i < per; i++) trade(sym, +(price[sym] * (1 + (rnd() - 0.5) * 0.001)).toPrecision(8)); }, 20); } return ok({ flood: !!cfg.flood }); }
     case '/zombie': { let n = 0; for (const c of conns) if (!q.host || c.host === q.host) { c.zombie = true; n++; } return ok({ zombies: n }); }
@@ -421,6 +430,7 @@ http.createServer((req, res) => {
       Object.assign(calCfg, { mode: 'normal', min: 10, hits: 0 }); Object.assign(newsCfg, { mode: 'normal', hits: 0 }); clearInterval(cfg.flood); cfg.flood = null; cfg.log.length = 0; Object.assign(oiCfg, { mode: 'wave', ago: 10, amount: 0.06 }); cfg.walk = true; cfg.silent = false; cfg.blockWs = false; cfg.restFail = false; cfg.restDelay = 0; cfg.chanNoCors = false; cfg.tg429 = 0; cfg.tgDocFail = false; cfg.tgUpdates = true; cfg.tgMulti = false; cfg.tg502 = 0; cfg.tgFail = null; cfg.tickFail = {}; cfg.tickDelay = {}; cfg.eurHist = 'on'; sent.length = 0; Object.assign(bookCfg, { walls: [], step: 0.0002, levels: 1000 }); return ok();
     case '/restdelay': cfg.restDelay = Number(q.ms) || 0; return ok();
     case '/eurhist': cfg.eurHist = q.mode || 'on'; return ok({ mode: cfg.eurHist });
+    case '/t24': cfg.t24 = q.mode || 'ok'; return ok({ mode: cfg.t24 });
     case '/chan': if ('tg502' in q) cfg.tg502 = Number(q.tg502) || 0; if ('tgfail' in q) cfg.tgFail = q.tgfail ? { code: Number(q.tgfail), match: q.match || '' } : null; if ('nocors' in q) cfg.chanNoCors = q.nocors === '1'; if ('tg429' in q) cfg.tg429 = Number(q.tg429) || 0; if ('docfail' in q) cfg.tgDocFail = q.docfail === '1'; if ('updates' in q) cfg.tgUpdates = q.updates === '1'; return ok();
     case '/sent': return ok(sent);
     case '/tgmsgs': return ok([...tgMsgs.values()].filter(m => !q.chat || String(m.chat.id) === q.chat).map(m => ({ ...m, content: m.document ? tgFiles.get(m.document.file_id) : undefined })));

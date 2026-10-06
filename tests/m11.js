@@ -75,8 +75,11 @@ const settle = page => page.waitForTimeout(900);
       check('Muster werden still gelernt und gespeichert – kein Backup-Hinweis dafür', learned.v === 1 && learned.keys >= 2 && learned.n >= 20 && learned.series && !/NEU/.test(learned.badge) && !(+learned.changes > 0), JSON.stringify(learned));
       await page.click('#pan-back'); await settle(page); const back = await F(); await page.click('#pan-now'); await settle(page); const now = await F();
       check('Zurückgeblättert: keine Prognose; zurück am aktuellen Rand: wieder da', !back.line && now.line, JSON.stringify({ zurück: back.line, jetzt: now.line }));
+      // 3.32.0 (G04.1): abhängige Ebene bleibt einschaltbar – bei ausgeschaltetem ZigZag nicht gedrückt (wirkt nicht), Antippen schaltet ZigZag mit ein
       await page.click('[data-overlay="zz"]'); await settle(page); const zoff = await F(); await page.click('[data-overlay="zz"]'); await settle(page); const zon = await F();
-      check('ZigZag aus: Prognose-Knopf gesperrt, keine Projektion; ZigZag an: wieder da', zoff.disabled && !zoff.line && !zon.disabled && zon.line, JSON.stringify({ aus: [zoff.disabled, zoff.line], an: [zon.disabled, zon.line] }));
+      check('ZigZag aus: keine Projektion, Prognose-Knopf frei und nicht gedrückt; ZigZag an: wieder da und gedrückt', !zoff.disabled && zoff.pressed === 'false' && !zoff.line && zon.pressed === 'true' && zon.line, JSON.stringify({ aus: [zoff.disabled, zoff.pressed, zoff.line], an: [zon.pressed, zon.line] }));
+      await page.click('[data-overlay="zz"]'); await settle(page); await page.click('#zz-fc'); await settle(page); const zboth = await F(), zzOn = await page.evaluate(() => document.querySelector('[data-overlay="zz"]').getAttribute('aria-pressed'));
+      check('ZigZag aus, „Prognose“ antippen: schaltet ZigZag mit ein, Projektion da', zzOn === 'true' && zboth.pressed === 'true' && zboth.line, JSON.stringify({ zz: zzOn, fc: zboth.pressed, line: zboth.line }));
       await page.selectOption('#zz-pct', '8'); await settle(page); const few = await F(); await page.selectOption('#zz-pct', '0.25'); await settle(page);
       check('Zu wenige Schwünge: Hinweis statt Projektion', !few.line && /zu wenige Schwünge/.test(few.note), few.note);
       await page.reload(); await page.waitForFunction(() => document.getElementById('status').dataset.feed === 'live', null, { timeout: 20000 }).catch(() => {}); await settle(page);
