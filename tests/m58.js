@@ -1,6 +1,6 @@
 // G09 der Übergabe (3.37.0): regelbasierte Mustererkennung („KI“) – Engine, 41 Katalogfälle, Vortrend (Revision 2), 8 Intervalle,
 // Panel, Info-Sheet, Chart-Markierung, Kontextwechsel, keine externen Abrufe.
-// Aufruf: node m58.js [abschnitt ...]   Abschnitte: trend, catalog, ui, wl
+// Aufruf: node m58.js [abschnitt ...]   Abschnitte: trend, catalog, ui, wl, know
 const h = require('./harness');
 const results = [];
 const check = (name, cond, detail = '') => { results.push({ name, ok: !!cond }); console.log(`${cond ? '  ✓' : '  ✗'} ${name}${detail !== '' ? ' — ' + String(detail).slice(0, 700) : ''}`); };
@@ -149,6 +149,50 @@ const tests = {
     const v = await page.evaluate(([t0, t1]) => { const c = __g05.state.candles, len = c.length, end = len - __g05.state.pan, start = end - Math.min(__g05.state.count, len), a = c.findIndex(x => x.time === t0), b = c.findIndex(x => x.time === t1); return { tab: document.documentElement.dataset.activeTab, inView: a >= start && b < end, on: __g09.pat.on, key: __g09.pat.res?.key }; }, [prep.t0, prep.t1]);
     check('Antippen öffnet ausdrücklich den Chart: Coin und Intervall geladen, Ausschnitt um die Formation, „KI“ an; Meldung sagt ehrlich, ob die Formation dort markiert ist', v.tab === 'chart' && v.inView && v.on && /ETCUSDT\|spot\|/.test(v.key || '') && /Doppel-Boden (· .+ – im Chart markiert|ist im Chart-Ausschnitt nicht mehr eindeutig erkennbar)/.test(toast), JSON.stringify({ v, toast }));
     check('keine Fehler (wl)', !real(errors).length, real(errors).join(' | ')); await ctx.close();
+  },
+  async know(browser) {
+    // Beschädigter Bestand → Quarantäne statt Löschen
+    const ctx0 = await browser.newContext(); await ctx0.addInitScript(() => { if (!sessionStorage.getItem('s58')) { sessionStorage.setItem('s58', '1'); localStorage.setItem('scalpdesk.patknow.v1', '{kaputt'); } });
+    const p0 = await ctx0.newPage(); await p0.goto(`${h.URL_BASE}/weather-widget-v2.html`); await p0.waitForTimeout(1500);
+    const q = await p0.evaluate(() => ({ q: localStorage.getItem('scalpdesk.patknow.quarantine.v1'), flag: __g09.pk.quarantined, n: Object.keys(__g09.pk.cases).length }));
+    check('Fehlerhafter Wissensbestand wird in Quarantäne gelegt (Rohdaten erhalten), die App läuft mit leerem Bestand weiter', q.q === '{kaputt' && q.flag === true && q.n === 0, JSON.stringify(q)); await ctx0.close();
+    const { ctx, page, errors } = await openPage(browser);
+    await page.evaluate(() => document.getElementById('chart').scrollIntoView()); await page.click('#pat-btn');
+    await page.waitForFunction(() => __g09.pat.res && !__g09.pat.busy, null, { timeout: 10000 });
+    const rec = await page.evaluate(() => { const cs = Object.values(__g09.pk.cases); return { n: cs.length, sep: !!localStorage.getItem('scalpdesk.patknow.v1'), ok: cs.every(c => c.id === __g09.pkId(c) && c.model === 'pat-1' && c.profile === 'H12-e0.10' && ['live', 'rekonstruiert'].includes(c.src) && c.dir !== 'neutral' && Number.isFinite(c.p0) && Array.isArray(c.rules)), srcs: [...new Set(cs.map(c => c.src))], res: cs.filter(c => c.res).length }; });
+    check('Bestätigte Muster werden als Fälle gespeichert (stabile ID, Modell, Profil, Regeln, Prognose, Quelle live/rekonstruiert), eigener Schlüssel; Ergebnisse nach 12 Kerzen angehängt', rec.n >= 1 && rec.sep && rec.ok && rec.res >= 1, JSON.stringify(rec));
+    // Zurücksetzen (Handelsdaten) und Neuladen: Wissen bleibt; nicht in der persönlichen Sicherung
+    const n0 = rec.n;
+    await page.evaluate(() => { document.querySelector('#reset-go').click(); }).catch(() => {});
+    await page.reload(); await page.waitForTimeout(1500);
+    const after = await page.evaluate(() => ({ n: Object.keys(__g09.pk.cases).length }));
+    check('„Zurücksetzen“ und Neuladen löschen das Musterwissen nicht', after.n === n0, `${n0} → ${after.n}`);
+    // Import zweimal: zählt einmal; Ergebnis nur angehängt, Prognose unverändert; Konflikt gezählt; negative Fälle bleiben
+    const imp = await page.evaluate(() => {
+      const mk = (i, out, r, src = 'live') => { const c = { mkt: 'spot', sym: 'TESTUSDT', iv: '1h', pat: 'double_bottom', kind: 'form', dir: 'bull', t0: 1e12 + i * 1e7, t1: 1e12 + i * 1e7 + 5e6, tc: 1e12 + i * 1e7 + 6e6, p0: 100, model: 'pat-1', profile: 'H12-e0.10', q: 80, at: 1, src, rules: [], res: out ? { at: 1, tH: 2, ph: 100 + r, r, out, path: Array.from({ length: 13 }, (_, j) => +(r * j / 12).toFixed(4)) } : null }; c.id = __g09.pkId(c); return c; };
+      const list = [mk(1, 'auf', 2), mk(2, 'auf', 1), mk(3, 'ab', -1.5), mk(4, 'seitwärts', 0.05), mk(5, 'auf', 3, 'rekonstruiert'), mk(6, null)];
+      const a = __g09.pkMerge(list), b = __g09.pkMerge(list);
+      const open6 = mk(6, 'ab', -2), c1 = __g09.pkMerge([open6]), conf = __g09.pkMerge([{ ...mk(1, 'ab', -3), dir: 'bear' }]);
+      const st = __g09.pkStats({ mkt: 'spot', sym: 'TESTUSDT', iv: '1h', pat: 'double_bottom' }), band = __g09.pkBand(st.live.paths);
+      return { a, b, c1, conf, dir1: __g09.pk.cases[mk(1).id].dir, out1: __g09.pk.cases[mk(1).id].res.out, st: { live: { n: st.live.n, auf: st.live.auf, ab: st.live.ab, sw: st.live.seitwärts, offen: st.live.offen, k: st.live.konflikt }, rek: { n: st.rek.n } }, med12: band.med[12], p25: band.p25[12], p75: band.p75[12], rep: band.rep.res.r, neg: band.neg.res.out };
+    });
+    check('Doppelter Import zählt nicht doppelt; fehlendes Ergebnis wird angehängt; abweichendes Ergebnis ändert nichts (Konflikt gezählt), Prognose bleibt', imp.a.added === 6 && imp.b.added === 0 && imp.c1.results === 1 && imp.conf.conflicts === 1 && imp.dir1 === 'bull' && imp.out1 === 'auf', JSON.stringify(imp));
+    check('Kursrichtungsstatistik nur vergleichbarer Fälle, live und rekonstruiert getrennt; negative Fälle zählen mit', imp.st.live.n === 5 && imp.st.live.auf === 2 && imp.st.live.ab === 2 && imp.st.live.sw === 1 && imp.st.live.offen === 0 && imp.st.live.k === 1 && imp.st.rek.n === 1, JSON.stringify(imp.st));
+    check('Median und 25–75-%-Band nach 12 Kerzen; repräsentativer Fall = geringste Abweichung vom Median; Gegenbeispiel nicht aufwärts', Math.abs(imp.med12 - 0.05) < 1e-9 && imp.p25 < imp.med12 && imp.p75 > imp.med12 && imp.rep === 0.05 && imp.neg !== 'auf', JSON.stringify({ med: imp.med12, p25: imp.p25, p75: imp.p75, rep: imp.rep, neg: imp.neg }));
+    // Info-Sheet: „Vergangene Verläufe ansehen“ für die aktuelle Auswahl
+    await page.evaluate(() => document.getElementById('chart').scrollIntoView()); await page.click('#pat-btn');
+    await page.waitForFunction(() => __g09.pat.res && !__g09.pat.busy, null, { timeout: 10000 });
+    await page.evaluate(() => { __g09.pat.minQ = 0; document.getElementById('pat-minq').value = '0'; document.querySelector('[data-pfil="all"]').click(); });
+    const sel = await page.evaluate(() => { const i = __g09.pat.res.hits.indexOf(__g09.pat.res.hits.find(x => x.kind === 'form') || __g09.pat.res.hits[0]), h = __g09.pat.res.hits[i];
+      const mk = (j, out, r) => { const c = { mkt: 'spot', sym: __g05.state.symbol, iv: __g05.state.interval, pat: h.id, kind: h.kind, dir: 'bull', t0: 2e12 + j, t1: 2e12 + j + 1, tc: 2e12 + j + 2, p0: 100, model: 'pat-1', profile: 'H12-e0.10', q: 70, at: 1, src: 'live', rules: [], res: { at: 1, tH: 1, ph: 100 + r, r, out, path: Array.from({ length: 13 }, (_, k) => +(r * k / 12).toFixed(4)) } }; c.id = __g09.pkId(c); return c; };
+      __g09.pkMerge([mk(1, 'auf', 1), mk(2, 'ab', -1), mk(3, 'auf', 2)]); __g09.info(i); return i; });
+    await page.click('.pk-btn'); await page.waitForTimeout(200);
+    const pkTxt = await page.evaluate(() => ({ t: document.querySelector('.pk-out').textContent, svg: !!document.querySelector('.pk-out svg.pk-svg') }));
+    check('„Vergangene Verläufe ansehen“: „X von N aufwärts, Y abwärts, Z seitwärts“, Median/Band (kein Prognoseintervall), echter Einzelfall mit Datum, Abdeckung „Chart: X von N“, Speicherzustand „nur lokal“', /Live protokolliert: \d+ von \d+ aufwärts, \d+ abwärts, \d+ seitwärts/.test(pkTxt.t) && pkTxt.svg && /kein Prognoseintervall/.test(pkTxt.t) && /Chart: \d+ von \d+ Fällen/.test(pkTxt.t) && /Repräsentativer Fall .+ UTC, Binance Spot/.test(pkTxt.t) && /nur lokal/.test(pkTxt.t) && /Kursrichtung ≠ Zieltreffer/.test(pkTxt.t), pkTxt.t.slice(0, 400));
+    // volle Warteschlange: neues Lernen stoppt mit Hinweis, nichts wird gelöscht
+    const full = await page.evaluate(() => { const n = Object.keys(__g09.pk.cases).length; __g09.pk.full = true; __g09.run('Test'); return new Promise(r => setTimeout(() => r({ n, m: Object.keys(__g09.pk.cases).length }), 800)); });
+    check('Volle Lern-Warteschlange: keine neuen Fälle, keine gelöschten', full.m === full.n, JSON.stringify(full));
+    check('keine Fehler (know)', !real(errors).length, real(errors).join(' | ')); await ctx.close();
   },
 };
 (async () => {

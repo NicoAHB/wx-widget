@@ -1450,6 +1450,8 @@ html[data-layout=tablet] .wl-tile{height:64px}
 .chart-toolbar{container:ctb/inline-size}
 .tb-main{display:flex;flex-wrap:wrap;align-items:center;gap:6px;flex:1 1 0;min-width:min(100%,22rem)}
 /* 3.37.0 (G09): Chartmuster */
+.pk{display:grid;gap:6px}.pk-btn{justify-self:start}.pk-out{display:grid;gap:6px;font-size:.8125rem}.pk-out p{margin:0}.pk-h{font-weight:600}.pk-note,.pk-ex{color:var(--muted);font-size:.75rem}
+.pk-svg{width:100%;max-width:420px;height:auto;background:var(--field);border-radius:8px}.pk-zero{stroke:var(--muted);stroke-dasharray:3 3}.pk-band{fill:var(--up-bg-2);opacity:.8}.pk-med{stroke:var(--up-text);stroke-width:2}.pk-rep{stroke:var(--text-2);stroke-width:1;stroke-dasharray:4 2}
 .wl-d-pat{display:block;width:100%;margin:6px 0 2px;padding:8px 10px;border:1px solid var(--up-border);border-radius:8px;background:var(--up-bg);color:var(--text);font:inherit;font-size:.8125rem;text-align:left;cursor:pointer}
 #pat-btn{font-weight:700;font-size:.8125rem}#pat-btn[aria-pressed=true]{background:var(--up-bg-2);color:var(--up-text);border-color:var(--up-border)}
 @container ctb (min-width:640px) and (max-width:780px){.chart-toolbar .zoom-controls{gap:2px}.chart-toolbar .zoom-controls button{min-width:40px}}
@@ -10382,6 +10384,7 @@ async function wlLoad(e) {
     e.closed = r.candles.filter(c => c.closeTime < now).slice(-WL_LIMIT);
     const last = r.candles.at(-1); e.run = last && last.closeTime >= now ? last : null;
     e.market = r.source === 'futures' ? 'futures' : 'spot'; e.rating = signalRating(e.closed.slice(-WL_WINDOW)); e.pat = wlPat(e); // 3.37.0 (G09): Chartmuster
+    try { pkResolve(e.market, e.sym, e.iv, e.closed.map(c => ({ t: c.time, c: c.close })), e.closed.length - 1); } catch {} // 3.38.0 (G09 C)
     e.error = ''; e.gap = false; e.at = now;
   } catch (err) {
     e.error = err?.message || String(err); e.retryAt = Date.now() + WL_RETRY;
@@ -12440,6 +12443,7 @@ function patDone(id, r) {
   pat.cache.set(m.ck, r); if (pat.cache.size > 16) pat.cache.delete(pat.cache.keys().next().value);
   const T = i => m.k[Math.max(0, Math.min(m.k.length - 1, i))].t;
   pat.res = { ...m, ver: r.ver, hits: r.hits.map(h => ({ ...h, lines: (h.lines || []).map(([a, p, b, q, kd]) => [T(a), p, T(b), q, kd]) })).sort((a, b) => b.q - a.q || b.t1 - a.t1) };
+  try { const mkt = state.source === 'futures' ? 'futures' : 'spot', [sym, , iv] = m.key.split('|'); pkRecord(m, r.hits, mkt); pkResolve(mkt, sym, iv, m.k, m.running ? m.k.length - 2 : m.k.length - 1); } catch {} // 3.38.0 (G09 C)
   pat.sel = null;
   const w = pat.want;
   if (w?.ran && m.reason === 'Vorauswahl') {   // aus der Vorauswahl: genau diese Formation markieren (oder ehrlich sagen, dass sie fehlt)
@@ -12535,7 +12539,7 @@ function patOpenInfo(i) {
   why.append(sum, el('p', '', 'Regelgüte = erfüllte Regelgewichte ÷ mögliche Gewichte; unbekannte Regeln zählen im Nenner mit. Das ist keine statistische Trefferquote.'), ul);
   body.replaceChildren(
     (() => { const top = el('div', 'pat-info-top'); top.append(patSvg(h.id)); const t = el('div'); t.append(el('p', `pat-dir ${h.dir}`, `${PAT_DIR[h.dir]} · ${L.f} · Regelgüte ${h.q} %`), el('p', '', `${state.symbol.slice(0, -4)}/USDT · ${state.interval} · ${patTime(h.t0)}${h.t1 !== h.t0 ? ` – ${patTime(h.t1)}` : ''} UTC`), el('p', '', `Status: ${h.status}`)); top.append(t); return top; })(),
-    el('p', '', L.e), kv('Bestätigung', L.c), vals, why,
+    el('p', '', L.e), kv('Bestätigung', L.c), vals, why, pkSection(h),
     el('p', 'pat-note', `Automatische Mustererkennung nach festen Regeln (${R.ver}${h.id.match(/star|piercing|dark_cloud/) ? pat.gap ? ', strenger Gap-Modus' : ', Krypto-Variante ohne Gap' : ''}), keine Anlageberatung.`));
   if (!d.open) d.showModal();
 }
@@ -12590,7 +12594,114 @@ function patDraw(svg, over, g) {
   $('chart').addEventListener('pointerdown', e => { const t = e.target.closest?.('[data-pat]'); tap = t ? { i: +t.getAttribute('data-pat'), x: e.clientX, y: e.clientY, at: Date.now() } : null; if (t) e.stopPropagation(); }, true);
   document.addEventListener('pointerup', e => { const p = tap; tap = null; if (p && Math.hypot(e.clientX - p.x, e.clientY - p.y) < 12 && Date.now() - p.at < 800) patOpenInfo(p.i); }, true);
 })();
-window.__g09 = { wlPat: e => wlPat(e), get wl() { return wl; }, wldPaint: () => wldPaint(Date.now(), true), get pat() { return pat; }, engine: () => (PAT_E = PAT_E || patEngine()), lib: PAT_LIB, run: r => patRun(r), info: i => patOpenInfo(i), zoom: i => patZoom(i), svg: id => patSvg(id).outerHTML };
+// ---- 3.38.0 (G09 C1–C3): dauerhaftes Musterwissen (lokal), Kursrichtungsstatistik, vergangene Verläufe ----
+// Eigener Speicher, getrennt von Trades, Konten, Notizen und Zugängen; nicht in der persönlichen Sicherung; „Zurücksetzen“ und
+// Updates berühren ihn nicht (kein localStorage.clear()). Ein Fall = ein bestätigtes Muster mit stabiler ID, damaligen Regeln und
+// Werten, Prognose (Richtung) und später angehängtem Ergebnis; die Prognose wird nie nachträglich geändert.
+// Kursrichtung: Profil H = 12 Kerzen nach der Bestätigung, neutraler Bereich ε = 0,10 %, R = 100·(PH/P0 − 1).
+const PK_KEY = 'scalpdesk.patknow.v1', PK_Q = 'scalpdesk.patknow.quarantine.v1', PK_H = 12, PK_EPS = 0.10, PK_PROFILE = 'H12-e0.10', PK_MAX = 2 * 1048576;
+function pkLoad() {
+  let raw = null; try { raw = localStorage.getItem(PK_KEY); } catch { return { v: 1, cases: {} }; }
+  if (!raw) return { v: 1, cases: {} };
+  try { const j = JSON.parse(raw); if (j && j.v === 1 && j.cases && typeof j.cases === 'object') return j; throw new Error('Format'); }
+  catch { try { if (!localStorage.getItem(PK_Q)) localStorage.setItem(PK_Q, raw); } catch {} return { v: 1, cases: {}, quarantined: true }; }   // fehlerhaft → erst quarantänisieren, nichts löschen
+}
+var pk = pkLoad();
+function pkSave() { try { const s = JSON.stringify({ v: 1, cases: pk.cases }); localStorage.setItem(PK_KEY, s); pk.size = s.length; return true; } catch { pk.full = true; return false; } }
+pk.size = (() => { try { return (localStorage.getItem(PK_KEY) || '').length; } catch { return 0; } })();
+const pkId = c => [c.mkt, c.sym, c.iv, c.pat, c.t0, c.t1, c.model].join('|');
+// Fälle zusammenführen (Reimport, Geräteabgleich): gleiche ID zählt nur einmal; Prognose bleibt, ein fehlendes Ergebnis wird
+// angehängt; widerspricht ein Ergebnis dem gespeicherten, bleibt das alte und der Konflikt wird gezählt
+function pkMerge(list) {
+  let added = 0, results = 0, conflicts = 0;
+  for (const c of list || []) {
+    if (!c || typeof c.id !== 'string' || c.id !== pkId(c)) continue;
+    const old = pk.cases[c.id];
+    if (!old) { pk.cases[c.id] = c; added++; continue; }
+    if (c.res && !old.res) { old.res = c.res; results++; }
+    else if (c.res && old.res && c.res.out !== old.res.out) { old.conflict = (old.conflict || 0) + 1; conflicts++; }
+  }
+  if (added || results || conflicts) pkSave();
+  return { added, results, conflicts };
+}
+// aus einer Analyse: bestätigte Muster mit Richtung als Fälle aufnehmen (live, wenn der Horizont noch nicht vorbei war)
+function pkRecord(m, hits, mkt) {
+  if (pk.full) return 0;
+  const sym = m.key.split('|')[0], iv = m.key.split('|')[2], step = iv === '1M' ? 30 * 864e5 : IV_MS[iv] || 0, now = Date.now(), list = [];
+  for (const h of hits) {
+    if (h.prelim || h.dir === 'neutral') continue;
+    const ci = h.kind === 'candle' ? (h.status === 'bestätigt' ? h.i1 + 1 : -1) : /^Ausbruch/.test(h.status) ? h.i1 : -1;
+    if (ci < 0 || !m.k[ci]) continue;
+    const c = { mkt, sym, iv, pat: h.id, kind: h.kind, dir: h.dir, t0: h.t0, t1: h.t1, tc: m.k[ci].t, p0: m.k[ci].c, model: 'pat-1', profile: PK_PROFILE, q: h.q, at: now,
+      src: m.k[ci].t + (PK_H + 1) * step <= now ? 'rekonstruiert' : 'live', rules: h.rules.map(r => [r.k, r.w, r.ok]), res: null };
+    c.id = pkId(c); list.push(c);
+  }
+  const r = pkMerge(list);
+  if (pk.size > PK_MAX) pk.full = true;   // volle Warteschlange: neues Lernen stoppt mit Hinweis, nichts wird gelöscht
+  return r.added;
+}
+// Ergebnisse anhängen, sobald 12 weitere abgeschlossene Kerzen da sind (Pfad normiert in % für die Verlaufsansicht)
+function pkResolve(mkt, sym, iv, k, closedEnd) {
+  let n = 0; const idx = new Map(k.map((c, i) => [c.t, i]));
+  for (const c of Object.values(pk.cases)) {
+    if (c.res || c.mkt !== mkt || c.sym !== sym || c.iv !== iv) continue;
+    const i = idx.get(c.tc); if (i === undefined || i + PK_H > closedEnd) continue;
+    const path = []; for (let j = 0; j <= PK_H; j++) path.push(+((k[i + j].c / c.p0 - 1) * 100).toFixed(4));
+    const R = path[PK_H], out = R > PK_EPS ? 'auf' : R < -PK_EPS ? 'ab' : 'seitwärts';
+    c.res = { at: Date.now(), tH: k[i + PK_H].t, ph: k[i + PK_H].c, r: R, out, path }; n++;
+  }
+  if (n) pkSave(); return n;
+}
+// Statistik nur vergleichbarer Fälle: gleicher Markt, Coin, Intervall, Muster, Modell und Profil; live und rekonstruiert getrennt
+function pkStats(sel) {
+  const cs = Object.values(pk.cases).filter(c => c.mkt === sel.mkt && c.sym === sel.sym && c.iv === sel.iv && c.pat === sel.pat && c.model === 'pat-1' && c.profile === PK_PROFILE);
+  const part = src => { const a = cs.filter(c => c.src === src), done = a.filter(c => c.res), st = { n: done.length, auf: 0, ab: 0, seitwärts: 0, offen: a.length - done.length, konflikt: a.filter(c => c.conflict).length, from: null, to: null, paths: done.filter(c => c.res.path?.length === PK_H + 1) };
+    for (const c of done) { st[c.res.out]++; st.from = Math.min(st.from ?? c.tc, c.tc); st.to = Math.max(st.to ?? c.tc, c.tc); } return st; };
+  return { live: part('live'), rek: part('rekonstruiert'), all: cs.length };
+}
+// Median und 25–75-%-Band eines festen, vollständigen Kollektivs; repräsentativer Fall = geringste Abweichung vom Median
+function pkBand(paths) {
+  if (!paths.length) return null;
+  const q = (arr, p) => { const s = [...arr].sort((a, b) => a - b), x = (s.length - 1) * p, lo = Math.floor(x), hi = Math.ceil(x); return s[lo] + (s[hi] - s[lo]) * (x - lo); };
+  const med = [], p25 = [], p75 = [];
+  for (let j = 0; j <= PK_H; j++) { const col = paths.map(c => c.res.path[j]); med.push(q(col, 0.5)); p25.push(q(col, 0.25)); p75.push(q(col, 0.75)); }
+  const dev = c => c.res.path.reduce((s, v, j) => s + (v - med[j]) ** 2, 0);
+  const rep = arr => (arr.length ? arr.reduce((b, c) => (dev(c) < dev(b) || (dev(c) === dev(b) && c.tc < b.tc) ? c : b)) : null);
+  return { med, p25, p75, rep: rep(paths), neg: rep(paths.filter(c => c.res.out !== 'auf')) };
+}
+function pkBandSvg(b) {
+  const W = 300, H = 120, all = [...b.p25, ...b.p75, ...b.med, ...(b.rep?.res.path || [])], lo = Math.min(0, ...all), hi = Math.max(0, ...all), pad = (hi - lo) * 0.1 || 0.5;
+  const X = j => 8 + j * (W - 16) / PK_H, Y = v => 8 + (hi + pad - v) / (hi - lo + 2 * pad) * (H - 16);
+  const s = node('svg', { viewBox: `0 0 ${W} ${H}`, class: 'pk-svg', role: 'img', 'aria-label': 'Median und 25–75-%-Band der vergangenen Verläufe' });
+  s.append(node('line', { x1: 8, y1: Y(0), x2: W - 8, y2: Y(0), class: 'pk-zero' }));
+  s.append(node('path', { d: `M${b.p75.map((v, j) => `${X(j).toFixed(1)} ${Y(v).toFixed(1)}`).join('L')}L${[...b.p25].reverse().map((v, j) => `${X(PK_H - j).toFixed(1)} ${Y(v).toFixed(1)}`).join('L')}Z`, class: 'pk-band' }));
+  s.append(node('polyline', { points: b.med.map((v, j) => `${X(j).toFixed(1)},${Y(v).toFixed(1)}`).join(' '), class: 'pk-med', fill: 'none' }));
+  if (b.rep) s.append(node('polyline', { points: b.rep.res.path.map((v, j) => `${X(j).toFixed(1)},${Y(v).toFixed(1)}`).join(' '), class: 'pk-rep', fill: 'none' }));
+  return s;
+}
+// Abschnitt „Vergangene Verläufe ansehen“ im Info-Sheet
+function pkSection(h) {
+  const box = el('div', 'pk'), sel = { mkt: state.source === 'futures' ? 'futures' : 'spot', sym: state.symbol, iv: state.interval, pat: h.id }, S = pkStats(sel), L = PAT_LIB[h.id];
+  const btn = el('button', 'button ghost pk-btn', 'Vergangene Verläufe ansehen'); btn.type = 'button';
+  const out = el('div', 'pk-out'); out.hidden = true;
+  btn.addEventListener('click', () => {
+    out.hidden = !out.hidden; if (out.hidden) return;
+    const line = (name, st) => `${name}: ${st.n ? `${st.auf} von ${st.n} aufwärts, ${st.ab} abwärts, ${st.seitwärts} seitwärts` : 'noch keine abgeschlossenen Fälle'}${st.offen ? ` · ${st.offen} offen (Horizont nicht erreicht)` : ''}${st.konflikt ? ` · ${st.konflikt} mit Konflikt` : ''}${st.from ? ` · ${utcDate(st.from).slice(0, 10)} – ${utcDate(st.to).slice(0, 10)}` : ''}`;
+    const kids = [el('p', 'pk-h', `${L.n} · ${state.symbol.slice(0, -4)}/USDT ${sel.mkt === 'spot' ? 'Spot' : 'Futures'} · ${state.interval} · Modell pat-1 · Kursrichtung ${PK_H} Kerzen nach der Bestätigung (±${number(PK_EPS, 2)} % = seitwärts)`),
+      el('p', '', line('Live protokolliert', S.live)), el('p', '', line('Historisch rekonstruiert', S.rek))];
+    const col = S.live.paths.length >= S.rek.paths.length ? { name: 'live', p: S.live.paths } : { name: 'rekonstruiert', p: S.rek.paths }, b = pkBand(col.p);
+    if (b) {
+      kids.push(pkBandSvg(b), el('p', 'pk-note', `Median (Linie) und 25–75-%-Band normierter Kurse (Start = Bestätigung) aus ${col.p.length} vollständigen ${col.name === 'live' ? 'live protokollierten' : 'rekonstruierten'} Fällen – kein Prognoseintervall. Chart: ${col.p.length} von ${(col.name === 'live' ? S.live : S.rek).n} Fällen.`));
+      const ex = (c, t) => el('p', 'pk-ex', `${t}: ${utcDate(c.tc)} UTC, Binance ${sel.mkt === 'spot' ? 'Spot' : 'Futures'}, nach ${PK_H} Kerzen ${signed(c.res.r)} % (${c.res.out})`);
+      kids.push(ex(b.rep, 'Repräsentativer Fall (geringste Abweichung vom Median, dünne Linie)'));
+      if (b.neg && b.neg !== b.rep) kids.push(ex(b.neg, 'Gegenbeispiel (abwärts oder seitwärts)'));
+    }
+    kids.push(el('p', 'pk-note', `${S.all ? `${S.all} gespeicherte Fälle für diese Auswahl.` : 'Für diese Auswahl gibt es noch keine Fälle – ein Fall entsteht, sobald ein bestätigtes Muster erkannt wird; das Ergebnis folgt nach 12 Kerzen.'} Die übernommene ZigZag-Statistik (älterer Bestand) enthält nur Summen ohne Einzelverläufe und betrifft andere Muster. Speicher: nur lokal auf diesem Gerät (externes Archiv noch nicht eingerichtet)${pk.full ? ' · Lernspeicher voll – neues Lernen pausiert, nichts gelöscht' : ''}${pk.quarantined ? ' · ein beschädigter Bestand wurde in Quarantäne gelegt' : ''}. Kursrichtung ≠ Zieltreffer; keine Erfolgswahrscheinlichkeit.`));
+    out.replaceChildren(...kids);
+  });
+  box.append(btn, out); return box;
+}
+window.__g09 = { get pk() { return pk; }, pkMerge: l => pkMerge(l), pkStats: s => pkStats(s), pkBand: p => pkBand(p), pkId: c => pkId(c), wlPat: e => wlPat(e), get wl() { return wl; }, wldPaint: () => wldPaint(Date.now(), true), get pat() { return pat; }, engine: () => (PAT_E = PAT_E || patEngine()), lib: PAT_LIB, run: r => patRun(r), info: i => patOpenInfo(i), zoom: i => patZoom(i), svg: id => patSvg(id).outerHTML };
 window.__g08 = { get dec() { return dec; }, decSignal: (c, b, cfg) => decSignal(c, b, cfg), decTick: (t, w, at) => decTick(t, DEC_WIN[w], at), decEvaluate: (r, sp, t, cfg, w, at) => decEvaluate(r, new Set(sp), new Map(Object.entries(t)), cfg, w, at),
   decPearson: (a, b, st) => decPearson(a, b, st), decClassify: a => decClassify(a), decLoreParse: j => decLoreParse(j), setEvery: ms => { DEC_EVERY = ms; }, kick: () => decKick(true) };
 window.__g07 = { get ana() { return ana; }, get cap() { return CAP; }, blocks30: (d, n) => blocks30(d, n), anaCalc: (c, iv) => anaCalc(c, iv), anaTrend: o => anaTrend(o), validateMarketCap: r => validateMarketCap(r), coinGeckoMarketCapPoints: j => coinGeckoMarketCapPoints(j),
