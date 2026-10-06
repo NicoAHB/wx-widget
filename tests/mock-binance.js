@@ -271,7 +271,7 @@ function newsFile(req, res, u) {
   return json(res, 200, newsJson());
 }
 
-// ---------- 3.35.0 (G07): CoinGecko und CoinPaprika (Market Cap, schlüssellos) und CoinLore (darf nie gefragt werden) ----------
+// ---------- 3.35.0 (G07): CoinGecko und CoinPaprika (Market Cap, schlüssellos) und CoinLore (für die Market Cap nie gefragt werden) ----------
 // Market Cap = Kurs × eine über die Zeit wachsende Menge – also nie „Kurs × heutige Menge“. /cap?cg=ok|429|fail|down|denied&cp=…&ra=s&delay=ms
 const capCfg = { cg: 'ok', cp: 'ok', ra: 120, delay: 0, log: [] };
 const CG_IDS = { bitcoin: 'BTC', ethereum: 'ETH', solana: 'SOL', ripple: 'XRP', 'ethereum-classic': 'ETC', 'bitcoin-cash': 'BCH', litecoin: 'LTC', near: 'NEAR', 'pax-gold': 'PAXG', kaspa: 'KAS', 'kaspa-fork-token': 'KAS' };
@@ -281,12 +281,60 @@ const SUPPLY = { BTC: 19.6e6, ETH: 120e6, SOL: 440e6, XRP: 55e9, ETC: 145e6, BCH
 const CAP_T0 = Date.now(), supplyAt = (sym, t) => SUPPLY[sym] * (1 + (t - CAP_T0) / (365 * 864e5) * 0.05); // fester Bezug: jeder Abruf liefert dieselben Werte
 const capOf = (sym, t, px) => px * supplyAt(sym, t);
 function capRows(sym, iv, keep) { const { rows } = series(sym + 'USDT', iv); return rows.slice(-keep).map(r => [r[0], Number(r[4])]); }
+// 3.36.0 (G08) – BTC-Entkopplung: CoinLore-Rangliste (Top N) und Binance-Spot-Statistik im rollierenden Fenster.
+// Veränderung je Paar und Fenster fest einstellbar (/dec?chg=SOLUSDT:4h:3,…); Störungen: lore|bin = ok|429|fail|invalid|down,
+// zero/stale/inactive = Paare mit Ausgangspreis 0, altem Fensterende bzw. ohne Trades, nobtc = BTC fehlt in der Antwort.
+const DEC_LORE = [[90, 'BTC', 'Bitcoin', 'bitcoin', 64000], [80, 'ETH', 'Ethereum', 'ethereum', 2500], [518, 'USDT', 'Tether', 'tether', 1.0002], [58, 'XRP', 'XRP', 'ripple', 1.47],
+  [48543, 'SOL', 'Solana', 'solana', 150], [33285, 'USDC', 'USD Coin', 'usd-coin', 0.9999], [2, 'DOGE', 'Dogecoin', 'dogecoin', 0.12], [6, 'LEO', 'UNUS SED LEO', 'unus-sed-leo', 9.1],
+  [1, 'LTC', 'Litecoin', 'litecoin', 70], [2321, 'BCH', 'Bitcoin Cash', 'bitcoin-cash', 330], [118, 'ETC', 'Ethereum Classic', 'ethereum-classic', 18], [48563, 'NEAR', 'NEAR Protocol', 'near-protocol', 2.4],
+  [9, 'KAS', 'Kaspa', 'kaspa', 0.30], [33536, 'PAXG', 'PAX Gold', 'pax-gold', 2650], [99001, 'XNEW', 'New Token', 'new-token', 0.5], [47305, 'UNI', 'Uniswap', 'uniswap', 7.1], [99002, 'UNI', 'Unicorn Dust', 'unicorn-dust', 0.001]];
+const DEC_CHG0 = { BTCUSDT: { '1h': -0.2, '4h': -1, '1d': 0.6 }, SOLUSDT: { '1h': 2.5, '4h': 3, '1d': 5 }, XRPUSDT: { '1h': 0.3, '4h': 2.5, '1d': -3 }, ETHUSDT: { '1h': 0.1, '4h': -0.5, '1d': 0.2 },
+  LTCUSDT: { '1h': 0.2, '4h': 3, '1d': 0.4 }, BCHUSDT: { '1h': -2.5, '4h': -2.2, '1d': 0.1 }, ETCUSDT: { '1h': 0.1, '4h': 1.9, '1d': 0.3 }, NEARUSDT: { '1h': 0.1, '4h': 0.4, '1d': 0.2 } };
+const decCfg0 = () => ({ lore: 'ok', bin: 'ok', ra: 30, delay: 0, chg: JSON.parse(JSON.stringify(DEC_CHG0)), zero: [], stale: [], inactive: [], nobtc: false, log: [] });
+const decCfg = decCfg0();
+function loreMock(req, res, u, send) {
+  decCfg.log.push({ at: Date.now(), src: 'lore', path: u.pathname });
+  const go = () => {
+    const m = decCfg.lore;
+    if (m === 'down') return void res.socket.destroy();
+    if (m === '429') return send(429, { error: 'rate' }, { 'retry-after': String(decCfg.ra) });
+    if (m === 'fail') return send(500, { error: 'down' });
+    if (m === 'invalid') return send(200, { data: 'kaputt' });
+    if (u.pathname !== '/api/tickers/') return send(404, { error: 'not mocked' });
+    const start = Number(u.searchParams.get('start')) || 0, limit = Math.min(100, Number(u.searchParams.get('limit')) || 100);
+    send(200, { data: DEC_LORE.slice(start, start + limit).map(([id, symbol, name, nameid, p], i) => ({ id: String(id), symbol, name, nameid, rank: start + i + 1, price_usd: String(p), percent_change_24h: '0.5', market_cap_usd: '1' })), info: { coins_num: 9999, time: Math.floor(Date.now() / 1000) } });
+  };
+  if (decCfg.delay) setTimeout(go, decCfg.delay); else go();
+}
+function decTicker(req, res, q) {
+  const H = { 'access-control-allow-origin': '*', 'access-control-expose-headers': 'Retry-After' };
+  decCfg.log.push({ at: Date.now(), src: 'bin', ws: q.windowSize, n: q.symbols ? JSON.parse(q.symbols).length : 0 });
+  const go = () => {
+    const m = decCfg.bin;
+    if (m === 'down') return void res.socket.destroy();
+    if (m === '429') { res.writeHead(429, { 'content-type': 'application/json', 'retry-after': String(decCfg.ra), ...H }); return void res.end(JSON.stringify({ code: -1003, msg: 'Too many requests' })); }
+    if (m === 'fail') return json(res, 503, { code: -1, msg: 'down' });
+    if (m === 'invalid') return json(res, 200, { kaputt: true });
+    const ms = { '1h': 36e5, '4h': 144e5, '1d': 864e5 }[q.windowSize]; if (!ms) return json(res, 400, { code: -1100, msg: 'bad windowSize' });
+    const list = JSON.parse(q.symbols || '[]'); if (list.some(s => !(s in SPOT))) return json(res, 400, { code: -1121, msg: 'Invalid symbol.' });
+    const now = Date.now(), out = [];
+    for (const s of list) {
+      if (s === 'BTCUSDT' && decCfg.nobtc) continue;
+      const c = decCfg.chg[s]?.[q.windowSize] ?? 0.05, last = price[s] || SPOT[s], close = decCfg.stale.includes(s) ? now - 10 * 6e4 : now, open = Math.floor((close - ms) / 6e4) * 6e4;
+      out.push({ symbol: s, openPrice: decCfg.zero.includes(s) ? '0.00000000' : String(last / (1 + c / 100)), highPrice: String(last * 1.01), lowPrice: String(last * 0.99), lastPrice: String(last), volume: '1000', quoteVolume: String(1000 * last), openTime: open, closeTime: close, firstId: 1, lastId: 1000, count: decCfg.inactive.includes(s) ? 0 : 1000 });
+    }
+    json(res, 200, out);
+  };
+  if (decCfg.delay) setTimeout(go, decCfg.delay); else go();
+}
+const decExchangeInfo = () => ({ timezone: 'UTC', serverTime: Date.now(), symbols: [...Object.keys(SPOT).map(s => ({ symbol: s, status: 'TRADING', baseAsset: s.slice(0, -4), quoteAsset: 'USDT', isSpotTradingAllowed: true, permissions: ['SPOT'] })),
+  { symbol: 'DOGEUSDT', status: 'BREAK', baseAsset: 'DOGE', quoteAsset: 'USDT', isSpotTradingAllowed: true, permissions: ['SPOT'] }] });
 function capMock(req, res, host, u) {
   const q = Object.fromEntries(u.searchParams), prov = host === 'api.coingecko.com' ? 'cg' : host === 'api.coinpaprika.com' ? 'cp' : 'lore';
   capCfg.log.push({ at: Date.now(), prov, path: u.pathname, q });
   const H = { 'content-type': 'application/json', 'access-control-allow-origin': '*', 'access-control-expose-headers': 'Retry-After', 'cache-control': 'no-store' };
   const send = (code, body, extra = {}) => { res.writeHead(code, { ...H, ...extra }); res.end(JSON.stringify(body)); };
-  if (prov === 'lore') return send(404, { error: 'CoinLore darf für die Market Cap nicht gefragt werden' });
+  if (prov === 'lore') return loreMock(req, res, u, send);   // 3.36.0 (G08): Rangliste für die BTC-Entkopplung (für die Market Cap nie gefragt)
   const go = () => {
     const mode = capCfg[prov];
     if (mode === '429') return send(429, { status: { error_code: 429, error_message: 'rate limit' } }, { 'retry-after': String(capCfg.ra) });
@@ -339,6 +387,8 @@ function rest(req, res) {
     if (cfg.eurHist === 'on' && end >= Date.UTC(2020, 0, 3)) for (let k = k1 - n + 1; k <= k1; k++) { const c = eurClose(k), o = eurClose(k - 1); out.push([k * 6e4, String(o), String(Math.max(o, c)), String(Math.min(o, c)), String(c), '1000', k * 6e4 + 59999, '0', 10, '0', '0', '0']); }
     return json(res, 200, out);
   }
+  if (u.pathname === '/api/v3/ticker' && !fut) return decTicker(req, res, q);   // 3.36.0 (G08)
+  if (u.pathname === '/api/v3/exchangeInfo' && !fut) return json(res, 200, decExchangeInfo());
   switch (u.pathname) {
     case '/api/v3/ping': return json(res, 200, {});
     case '/api/v3/klines': case '/fapi/v1/klines': if (!need()) return; if (!IV[q.interval]) return json(res, 400, { code: -1120, msg: 'bad interval' }); return json(res, 200, hist(sym, q.interval, Number(q.limit) || 500, Number(q.startTime) || 0, Number(q.endTime) || 0));
@@ -489,6 +539,9 @@ http.createServer((req, res) => {
     case '/silent': cfg.silent = q.on === '1'; return ok();
     case '/blockws': cfg.blockWs = q.on === '1'; if (cfg.blockWs) for (const c of conns) c.ws.terminate(); return ok();
     case '/restfail': cfg.restFail = q.on === '1'; return ok();
+    case '/dec': { if (q.reset === '1') Object.assign(decCfg, decCfg0()); for (const k of ['lore', 'bin']) if (k in q) decCfg[k] = q[k]; if ('ra' in q) decCfg.ra = Number(q.ra) || 0; if ('delay' in q) decCfg.delay = Number(q.delay) || 0;
+      for (const k of ['zero', 'stale', 'inactive']) if (k in q) decCfg[k] = q[k] ? q[k].split(',') : []; if ('nobtc' in q) decCfg.nobtc = q.nobtc === '1';
+      if (q.chg) for (const e of q.chg.split(',')) { const [sy, w, v] = e.split(':'); (decCfg.chg[sy] ||= {})[w] = Number(v); } if (q.clear === '1') decCfg.log.length = 0; return ok({ log: decCfg.log }); }
     case '/cap': for (const k of ['cg', 'cp']) if (k in q) capCfg[k] = q[k]; if ('ra' in q) capCfg.ra = Number(q.ra) || 0; if ('delay' in q) capCfg.delay = Number(q.delay) || 0; if (q.clear === '1') capCfg.log.length = 0; return ok({ cg: capCfg.cg, cp: capCfg.cp, log: capCfg.log });
     case '/tick': cfg.tickFail = Object.fromEntries((q.fail || '').split(',').filter(Boolean).map(x => [x, 1])); cfg.tickDelay = Object.fromEntries((q.delay || '').split(',').filter(Boolean).map(x => x.split(':')).map(([k, ms]) => [k, Number(ms) || 0])); cfg.tickOld = Object.fromEntries((q.old || '').split(',').filter(Boolean).map(x => x.split(':')).map(([k, ms]) => [k, Number(ms) || 0])); return ok({ fail: cfg.tickFail, delay: cfg.tickDelay, old: cfg.tickOld });
     case '/drop': for (const c of conns) c.ws.terminate(); return ok({ dropped: true });
@@ -503,7 +556,7 @@ http.createServer((req, res) => {
       return ok({ ...volaCfg });
     }
     case '/reset': if (volaCfg.mode !== 'normal' || volaCfg.drift !== null) { Object.assign(volaCfg, { mode: 'normal', drift: null }); for (const k of Object.keys(H)) if (k.endsWith('|1h')) delete H[k]; }
-      Object.assign(calCfg, { mode: 'normal', min: 10, hits: 0 }); Object.assign(newsCfg, { mode: 'normal', hits: 0 }); clearInterval(cfg.flood); cfg.flood = null; cfg.log.length = 0; Object.assign(oiCfg, { mode: 'wave', ago: 10, amount: 0.06 }); cfg.walk = true; cfg.silent = false; cfg.blockWs = false; cfg.restFail = false; cfg.restDelay = 0; cfg.chanNoCors = false; cfg.tg429 = 0; cfg.tgDocFail = false; cfg.tgUpdates = true; cfg.tgMulti = false; cfg.tg502 = 0; cfg.tgFail = null; cfg.tickFail = {}; cfg.tickDelay = {}; cfg.tickOld = {}; cfg.eurHist = 'on'; cfg.t24 = 'ok'; cfg.tgDrop = 0; cfg.photoDrop = 0; cfg.photoFail = 0; cfg.photoDelay = 0; Object.assign(capCfg, { cg: 'ok', cp: 'ok', ra: 120, delay: 0 }); capCfg.log.length = 0; sent.length = 0; Object.assign(bookCfg, { walls: [], step: 0.0002, levels: 1000 }); return ok();
+      Object.assign(decCfg, decCfg0()); Object.assign(calCfg, { mode: 'normal', min: 10, hits: 0 }); Object.assign(newsCfg, { mode: 'normal', hits: 0 }); clearInterval(cfg.flood); cfg.flood = null; cfg.log.length = 0; Object.assign(oiCfg, { mode: 'wave', ago: 10, amount: 0.06 }); cfg.walk = true; cfg.silent = false; cfg.blockWs = false; cfg.restFail = false; cfg.restDelay = 0; cfg.chanNoCors = false; cfg.tg429 = 0; cfg.tgDocFail = false; cfg.tgUpdates = true; cfg.tgMulti = false; cfg.tg502 = 0; cfg.tgFail = null; cfg.tickFail = {}; cfg.tickDelay = {}; cfg.tickOld = {}; cfg.eurHist = 'on'; cfg.t24 = 'ok'; cfg.tgDrop = 0; cfg.photoDrop = 0; cfg.photoFail = 0; cfg.photoDelay = 0; Object.assign(capCfg, { cg: 'ok', cp: 'ok', ra: 120, delay: 0 }); capCfg.log.length = 0; sent.length = 0; Object.assign(bookCfg, { walls: [], step: 0.0002, levels: 1000 }); return ok();
     case '/restdelay': cfg.restDelay = Number(q.ms) || 0; return ok();
     case '/eurhist': cfg.eurHist = q.mode || 'on'; return ok({ mode: cfg.eurHist });
     case '/t24': cfg.t24 = q.mode || 'ok'; return ok({ mode: cfg.t24 });
