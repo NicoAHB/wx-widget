@@ -21,33 +21,44 @@ Der Dienst ist ein kleines Programm auf einem eigenen Server, der rund um die Uh
 
 ---
 
-## Du hast den Dienst schon? Auf Version 1.4 aktualisieren (5 Minuten)
+## Du hast den Dienst schon? Auf Version 2.0 aktualisieren (10 Minuten)
 
-Den Gewinn-/Verlust-Alarm bei geschlossener App kann der Dienst ab Version 1.2. Ab Version 1.3 prüft er außerdem, ob Telegram jede Meldung angenommen hat. Ab Version 1.4:
-- **Bestätigung:** Er bestätigt jede neue Übergabe lautlos im Chat („✅ 24/7-Dienst hat übernommen …“). Die App zeigt „Übergeben ✓ vom Dienst bestätigt“, meist nach 20–30 Sekunden.
-- **Selbstprüfung:** Findet er keine Datei der App, sagt er das im Protokoll und per Telegram. Meist ist am Server ein anderer Bot oder eine andere Chat-ID eingetragen als in der App unter „Kursalarm“.
-- **Kurzbefehl:** `sudo scalpdesk-247 status` prüft den ganzen Weg auf einen Blick.
+**Neu in Version 2.0 (zur App ab 3.33.0):** Die App steuert den Dienst direkt über eine gesicherte HTTPS-Adresse:
+- **Chat-Schalter:** Kursalarm, Sicherung und Trades lassen sich in der App unter **🔔 Hinweise → „Telegram-Chats“** ein- und ausschalten. Ein Schalter gilt erst, wenn der Dienst ihn bestätigt hat, und auf allen Geräten gleich. AUS verwirft auch Meldungen, die noch warten.
+- **Keine doppelten Alarme:** Jeder Alarm wird genau einmal gesendet – von der geöffneten App oder vom Dienst, je nachdem, wer ihn zuerst erkannt hat. Zwei offene Geräte bekommen nie beide die Freigabe.
+- **Ehrliche Zustellung:** Geht die Antwort von Telegram verloren, steht „Zustellung unbestätigt“ da. Ein blinder zweiter Versuch, der doppelt zustellen könnte, unterbleibt.
 
-Ein vorhandener Dienst wird so aktualisiert. Token, Chat und Einstellungen bleiben dabei erhalten.
+Dafür braucht der Server zwei offene Ports (80 für das Zertifikat, 443 für die Steuerung). Den Rest erledigt der Installer: Er richtet **Caddy** ein, holt ein kostenloses Zertifikat für eine Adresse wie `130-61-1-2.sslip.io` (eigene Domain oder Konto nicht nötig) und öffnet die Firewall des Servers. Die Freigabe in der Oracle-Konsole machst du einmal selbst (Schritt 2).
 
-1. Auf [cloud.oracle.com](https://cloud.oracle.com) anmelden und die **Cloud Shell** öffnen. Sie liegt oben rechts unter „Developer tools“ (Symbol `</>`), in älteren Ansichten direkt hinter dem Symbol `>_`.
-2. Mit dem Server verbinden. Die Schlüsseldatei liegt noch von der Einrichtung in der Cloud Shell. Ersetze `IP` durch die öffentliche IP deines Servers (Konsole → Compute → Instances → dein Server → „Public IP address“):
+Token, Chat und Einstellungen bleiben erhalten.
+
+1. **Aktualisieren:** Auf [cloud.oracle.com](https://cloud.oracle.com) anmelden, die **Cloud Shell** öffnen (oben rechts unter „Developer tools“, Symbol `</>` bzw. `>_`) und mit dem Server verbinden. Ersetze `IP` durch die öffentliche IP deines Servers (Konsole → Compute → Instances → dein Server → „Public IP address“):
    ```
    ssh -i ssh-key-*.key ubuntu@IP
-   ```
-   Fehlt die Schlüsseldatei, lade sie wie in [Schritt 4](#schritt-4--mit-dem-server-verbinden) beschrieben erneut hoch.
-3. Den Installationsbefehl erneut ausführen:
-   ```
    curl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/install.sh | sudo bash
    ```
-   Der Installer zeigt `2/5 Programm 1.4.0 …` und am Ende `5/5 Dienst läuft ✓`. In Telegram kommt eine Testnachricht. In der Prüfung steht der Bot des Dienstes, zum Beispiel `✓ Bot @dein_bot (ID 123456789) erreichbar`. Er muss derselbe sein wie in der App unter „Kursalarm“.
-4. Kontrolle nach höchstens einer Minute:
-   - Im Telegram-Chat steht in der angehefteten Nachricht `Dienst: aktiv · …` und darunter `Zustellung: geprüft, noch keine Meldung` (nach der ersten Meldung `Zustellung: zuletzt …`). Bei aktivem Gewinn-/Verlust-Alarm steht in der Dienst-Zeile auch `· GV`.
-   - In der App unter **🔔 Hinweise → „Telegram / Discord einrichten“**: „Übergeben ✓ vom Dienst bestätigt um … (… · Dienst 1.4.0) … Zugestellt hat er noch keine Meldung.“ bzw. „Zuletzt zugestellt: …“. Nach einer Änderung an den Alarmen kommt außerdem lautlos „✅ 24/7-Dienst hat übernommen …“ in Telegram.
-   - Am Server: `sudo scalpdesk-247 status` endet mit „Ergebnis: alles in Ordnung.“
-   - In der App: Tippe oben rechts auf das Live-Ergebnis „Offen“. Im Feld „Gewinn- und Verlust-Alarm“ steht bei aktiver Grenze: **„✓ Auch bei geschlossener App: Der 24/7-Dienst prüft mit und meldet die Grenze.“**
+   Der Installer zeigt `2/7 Programm 2.0.0 …`, `5/7 Dienst läuft ✓` und dann `6/7 HTTPS-Steuerung für https://…sslip.io …`. Beim ersten Mal steht dort meist „Von außen noch nicht erreichbar“ – das ist Schritt 2.
+2. **Ports in der Oracle-Konsole freigeben (einmalig):**
+   1. Konsole → Menü ☰ → **Networking → Virtual cloud networks** → dein Netz (`vcn-…`).
+   2. Reiter **„Security“** (in älteren Ansichten links „Security Lists“) → **„Default Security List for vcn-…“** → **„Add Ingress Rules“**.
+   3. **Source CIDR** `0.0.0.0/0` · **IP Protocol** `TCP` · **Destination Port Range** `80,443` → **„Add Ingress Rules“**.
+3. **Prüfen:** am Server
+   ```
+   sudo scalpdesk-247 https
+   ```
+   Nach höchstens einer halben Minute: `✓ https://…sslip.io erreichbar`, darunter **Adresse** und **Zugangsschlüssel**. Den Zugang zeigt jederzeit wieder: `sudo scalpdesk-247 zugang`.
+4. **In der App eintragen:** **🔔 Hinweise → „Telegram / Discord einrichten“ → 🌙 24/7-Dienst** → „Adresse“ und „Zugangsschlüssel“ einfügen → **„Verbindung prüfen“**. Dort steht dann „✓ Verbunden · Dienst 2.0.0“. Auf jedem Gerät, auf dem du die App nutzt, einmal eintragen.
+5. **Kontrolle:** `sudo scalpdesk-247 status` endet mit „Ergebnis: alles in Ordnung.“ und zeigt unter anderem `✓ Von außen erreichbar: https://…`, die Schalter (`Ziele (Revision …): Kursalarm an seit …`) und die letzten Ereignisse mit Ziel, Sender und Zustand.
 
-Mehr ist nicht zu tun.
+**Den Schlüssel nicht weitergeben:** Wer ihn kennt, kann deine Chat-Schalter umstellen. Sicherungen, Trades und Telegram-Token gehen nie an den Dienst. Ohne HTTPS-Steuerung (wie bis 1.4) läuft alles weiter wie bisher: `… | sudo bash -s -- --ohne-https`.
+
+<details><summary>Was die Versionen 1.2 bis 1.4 brachten</summary>
+
+- **1.2:** Gewinn-/Verlust-Alarm bei geschlossener App.
+- **1.3:** Prüft, ob Telegram jede Meldung angenommen hat; sonst neuer Versuch und „Störung“.
+- **1.4:** Bestätigt jede neue Übergabe lautlos im Chat („✅ 24/7-Dienst hat übernommen …“). Findet er keine Datei der App, sagt er das im Protokoll und per Telegram – meist ist am Server ein anderer Bot oder eine andere Chat-ID eingetragen als in der App unter „Kursalarm“. `sudo scalpdesk-247 status` prüft den ganzen Weg.
+
+</details>
 
 ---
 
@@ -111,16 +122,18 @@ Auf dem Server eingeben:
 curl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/install.sh | sudo bash
 ```
 
-Der Installer arbeitet fünf Schritte ab:
+Der Installer arbeitet sieben Schritte ab:
 
 1. **Node.js** installieren (bei einem neuen Server 1–3 Minuten)
-2. **Programm** laden: zeigt `Programm 1.4.0`
+2. **Programm** laden: zeigt `Programm 2.0.0`
 3. **Einstellungen** abfragen:
    - **Bot-Token:** einfügen und Enter. Die Eingabe bleibt aus Sicherheitsgründen unsichtbar.
    - **Chat-ID:** zum Beispiel `987654321`, bei Gruppen mit Minus davor
    - **Discord-Webhook:** optional, sonst einfach Enter
 4. **Prüfung:** Bot, Chat und Binance. Dabei kommt in Telegram die Nachricht **„✅ Scalp Desk 24/7-Dienst ist eingerichtet …“**.
-5. **Dienst starten:** `5/5 Dienst läuft ✓`
+5. **Dienst starten:** `5/7 Dienst läuft ✓`
+6. **HTTPS-Steuerung:** Caddy, Zertifikat für `…sslip.io`, Firewall des Servers. Beim ersten Mal steht dort meist „Von außen noch nicht erreichbar“: Dann die Ports wie in **[Auf Version 2.0 aktualisieren](#du-hast-den-dienst-schon-auf-version-20-aktualisieren-10-minuten)**, Schritt 2, in der Oracle-Konsole freigeben und `sudo scalpdesk-247 https` ausführen.
+7. **Kurzbefehl** `sudo scalpdesk-247` anlegen.
 
 Der Dienst startet ab jetzt mit dem Server und nach Fehlern von selbst neu. Du kannst das Cloud-Shell-Fenster schließen.
 
@@ -132,6 +145,7 @@ Der Dienst startet ab jetzt mit dem Server und nach Fehlern von selbst neu. Du k
    - Oben im Chat ist **„📌 Scalp Desk · 24/7-Dienst“** angeheftet. **Diese Nachricht nicht löschen** – über sie tauschen App und Dienst den aktuellen Stand aus.
    - Bleibt es bei „wartet auf die Bestätigung“, siehe [Wenn etwas nicht klappt](#wenn-etwas-nicht-klappt).
 3. Nur auf **einem** Gerät einschalten: dem, auf dem du Alarme und Positionen pflegst.
+4. **Ab App 3.33.0:** Darunter „Adresse“ und „Zugangsschlüssel“ eintragen (`sudo scalpdesk-247 zugang`) und „Verbindung prüfen“ – auf jedem Gerät. Erst damit gibt es die Chat-Schalter mit Bestätigung und die Sendefreigabe gegen doppelte Alarme.
 
 ### Schritt 7 – Ausprobieren (empfohlen)
 
@@ -210,7 +224,9 @@ Zuerst wie in [Schritt 4](#schritt-4--mit-dem-server-verbinden) verbinden.
 
 | Was | Befehl |
 |---|---|
-| Alles prüfen (ab 1.4): Bot, Chat, angeheftete Datei, Bestätigung, Alarme, Binance | `sudo scalpdesk-247 status` |
+| Alles prüfen (ab 1.4): Bot, Chat, angeheftete Datei, Bestätigung, Alarme, Binance; ab 2.0 auch HTTPS-Steuerung, Schalter und letzte Ereignisse | `sudo scalpdesk-247 status` |
+| Adresse und Zugangsschlüssel für die App (ab 2.0) | `sudo scalpdesk-247 zugang` |
+| HTTPS-Steuerung erneut prüfen, z. B. nach dem Freigeben der Ports (ab 2.0) | `sudo scalpdesk-247 https` |
 | Läuft der Dienst? | `systemctl status scalpdesk-247` |
 | Protokoll: die letzten 60 Zeilen | `sudo scalpdesk-247 protokoll` |
 | Protokoll live ansehen (beenden mit Strg+C) | `sudo scalpdesk-247 live` oder `journalctl -u scalpdesk-247 -f` |
@@ -220,7 +236,7 @@ Zuerst wie in [Schritt 4](#schritt-4--mit-dem-server-verbinden) verbinden.
 | Server neu starten | `sudo reboot` (der Dienst startet von selbst wieder) |
 | Dienst entfernen | `sudo bash /opt/scalpdesk-247/install.sh --remove` |
 
-Im Protokoll steht beim Start zum Beispiel `Scalp Desk 24/7-Dienst 1.4.0 gestartet · Bot @dein_bot (ID 123456789) · Chat 987654321 · …`. Danach folgt bei jeder Übergabe:
+Im Protokoll steht beim Start zum Beispiel `Scalp Desk 24/7-Dienst 2.0.0 gestartet · Bot @dein_bot (ID 123456789) · Chat 987654321 · …`. Danach folgt bei jeder Übergabe:
 
 - `Übergabe erhalten: Nachricht #501 · App 01.10. 17:08 · Safari, iPhone · #ab12`
 - `Alarme geladen: 1 Alarm, 0 Positionen – Kurs-Alarm BTC auf/über 65.000,00 USDT`
@@ -248,6 +264,10 @@ Löst etwas aus, kommen `Alarm ausgelöst: …` und `Telegram gesendet: …`. Al
 | App: „⚠ Der Dienst meldet eine Störung: Kurse nicht abrufbar …“ | Der Server erreicht Binance nicht. Das Protokoll zeigt den Grund: `journalctl -u scalpdesk-247 -n 50`. |
 | App: „⚠ Der Dienst meldet eine Störung: Telegram-Nachricht nicht zustellbar seit …“ | Telegram nimmt die Meldungen des Dienstes nicht an; der Grund steht in Klammern. „chat not found“: dem Bot `/start` schreiben bzw. ihn wieder in die Gruppe aufnehmen. „Unauthorized“: Token geändert – mit `--neu` neu eingeben (siehe Tabelle oben). War Telegram nur kurz nicht erreichbar, verschwindet die Störung mit der nächsten Zustellung von selbst; bis dahin sendet die geöffnete App. |
 | App: „Der Dienst kann ihn erst ab Version 1.2“ oder „… prüft der Dienst erst ab Version 1.3“ | Dienst aktualisieren (siehe oben). |
+| Installer bzw. `sudo scalpdesk-247 https`: „Von außen noch nicht erreichbar“ (ab 2.0) | Ports 80 und 443 in der Oracle-Konsole freigeben (siehe [Auf Version 2.0 aktualisieren](#du-hast-den-dienst-schon-auf-version-20-aktualisieren-10-minuten), Schritt 2). Danach `sudo scalpdesk-247 https`. Läuft Caddy? `sudo systemctl status caddy`. |
+| App: „Zugangsschlüssel falsch“ (ab 2.0) | Mit `sudo scalpdesk-247 zugang` anzeigen und in der App neu einfügen (ohne Leerzeichen). |
+| App: „Dienst nicht erreichbar“ bei „Verbindung prüfen“ (ab 2.0) | Adresse prüfen (`https://…sslip.io`, ohne Pfad). Am Server `sudo scalpdesk-247 status` – die Zeilen „Steuerung lauscht“ und „Von außen erreichbar“ nennen den Grund. |
+| Protokoll: „Ereignis … · Ziel course-alert · Sender … · Zustellung unbestätigt“ (ab 2.0) | Telegram hat auf eine Meldung nicht geantwortet. Ob sie angekommen ist, siehst du im Chat. Der Dienst sendet sie bewusst nicht ein zweites Mal, damit sie nicht doppelt ankommt. |
 | Angeheftete Nachricht gelöscht | In der App „An den 24/7-Dienst übergeben“ aus- und wieder einschalten; die App legt die Datei neu an. Sonst passiert das bei der nächsten Änderung von selbst. |
 
 ---
