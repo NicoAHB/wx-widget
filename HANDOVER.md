@@ -3,9 +3,9 @@
 Laufende Übergabe. Sie wird nach jedem Arbeitsschritt aktualisiert, damit ein Abbruch jederzeit ungefährlich ist.
 
 ## Kurzstand
-- **Version live:** 3.36.0 (G08), Pull Request #59, Merge-Commit `c1b1c44` auf `main` (davor 3.35.0/G07: PR #58).
+- **Version live:** 3.37.0 (G09 Teil A+B), Pull Request #60, Merge-Commit `255b4bd` auf `main` (davor 3.36.0/G08: PR #59, 3.35.0/G07: PR #58).
 - **Arbeits-Branch:** `claude/scalp-desk-g03-j81c8k` (nach jedem Merge neu von `main` gestartet).
-- **Gerade in Arbeit:** G09 (Nutzer hat nach G08 ausdrücklich „mit G09 weiter“ freigegeben). Teil A+B → 3.37.0, Teil C danach.
+- **Gerade in Arbeit:** G09 – Teil A+B fertig (3.37.0). Offen: B6 und C1–C6 (siehe unten), danach G10.
 - **Danach:** G10 bis Ende schreibt ChatGPT, sofern der Nutzer nichts anderes sagt.
 
 ## Projekt in einem Satz
@@ -46,7 +46,7 @@ Code: `patEngine()` (reine Engine, läuft als Blob-Worker), `PAT_LIB` (41 Eintr�
 - [x] B3. Info-Sheet (SVG, gemessene Werte, Regeln erfüllt/nicht/unbekannt, „Warum X %?“, „Im Chart zeigen“)
 - [x] B4. Chart-Labels (Kerzen) und Linien/Zonen (Formationen), Auswahl hebt hervor
 - [x] B5a. Test `tests/m58.js` (trend 8, catalog 9 inkl. aller 41 Katalogfälle und 8 Intervalle, ui 11), Version 3.37.0
-- [ ] B5b. Gesamtlauf (läuft), Doku Teil AP, PR, Merge
+- [x] B5b. Gesamtlauf 79 Tests 2691/2691, Doku Teil AP, PR #60, Merge `255b4bd`
 - [ ] B6. Vorauswahl „Chartmuster erkannt“ (Übergabe G09 Punkt 11)
   - Ziel: Kachel/Detailfeld der Vorauswahl zeigt „Chartmuster erkannt: <Name> (<Intervall>, <Status>)“; Tipp lädt den Coin per `setMarket(sym, iv)` (hier ausdrücklich mit Wechsel zum Chart), danach `pat.on = true`, Analyse und `pat.sel` auf genau diese Formation.
   - Dateien: `weather-widget-v2.html` (Vorauswahl: `wlLoad`/`wlPaint`/Detailfeld `wl-d-*`; Engine `patEngine().detect` auf `e.closed` der Kachel).
