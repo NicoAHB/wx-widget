@@ -6,7 +6,7 @@ Laufende Übergabe. Sie wird nach jedem Arbeitsschritt aktualisiert, damit ein A
 - **Version live:** 3.38.0 (G09 Punkt 11 + C1–C3), Pull Request #61, Merge-Commit `612a90d` auf `main` (davor 3.37.0/G09 A+B: PR #60, 3.36.0/G08: PR #59, 3.35.0/G07: PR #58).
 - **Arbeits-Branch:** `claude/scalp-desk-g03-j81c8k` (nach jedem Merge neu von `main` gestartet).
 - **Auf dem Branch, noch nicht veröffentlicht:** G09 C4 (Archiv am 24/7-Dienst, Dienst 2.1.0) und C5 (Veröffentlichung `data/muster/`). App-Version steht noch auf 3.38.0; Release 3.39.0 (Version, Gesamtlauf, Doku Teil AR, PR) steht aus.
-- **Gerade in Arbeit:** G09 C6 (Muster-Telegram-Chat). Danach Release 3.39.0, dann G10.
+- **Gerade in Arbeit:** Release 3.39.0 (Gesamtlauf läuft; Doku Teil AR vorbereitet). Danach G09 C6 (Plan unten: C6a App-Ziel, C6b Dienst), dann G10.
 - **Danach:** G10 bis Ende schreibt ChatGPT, sofern der Nutzer nichts anderes sagt.
 
 ## Projekt in einem Satz
@@ -59,6 +59,15 @@ Code: `patEngine()` (reine Engine, läuft als Blob-Worker), `PAT_LIB` (41 Eintr�
 - [x] C4. (umgesetzt auf dem Branch: `PatternArchive` + `/v1/patterns/*` im Dienst 2.1.0, App `pkSync`/`pkState`, Export-Datei; Tests `unit-247d.js` 15/15, m58 „sync“ 6/6) Server-Archiv (Punkte 16–17): Originaljournal am 24/7-Dienst (`server/scalpdesk-247.mjs`, HTTPS-Weg aus G05 mit Revision) getrennt von Alarmkonfiguration, zusätzliche unabhängige Sicherung + getestete Wiederherstellung; Zustände „nur lokal / extern gespeichert / zusätzlich gesichert / veröffentlicht“. Nicht über den Sicherungsbot/Telegram.
 - [x] C5. (umgesetzt auf dem Branch: `server/muster-export.mjs`, App `pkPubLoad`/`pkPubGroup`, Anzeige `.pk-pub`, Zustand „veröffentlicht“; Tests `unit-pub.js` 7/7, m58 „pub“ 5/5; Ablauf in `server/README.md`) Veröffentlichung (Punkte 18–19): bereinigter Bestand auf GitHub/Pages als Release/Serverexport (Manifest ≤ 64 KiB, Dateien ≤ 256 KiB, lokaler Cache ≤ 10 MiB, Warteschlange 2 MiB – voll → neues Lernen stoppt mit Hinweis, nichts löschen); keine Schreibschlüssel im Browser; ohne Schreibweg letzte Revision + Datum zeigen.
 - [ ] C6. Muster-Telegram-Chat (Punkt 25): neues Ziel in „Telegram-Chats“ (G05-Mechanik: Schalter, Epoche, Sendefreigabe) für wichtige bestätigte Muster, auch bei geschlossener App über den 24/7-Dienst; Qualitätsgrenzen kenntlich (regelbasiert vs. erlernt).
+  - **C6a – Ziel „Chartmuster“ in der App** (zuerst; klein genug für einen Schritt):
+    - Dateien: `weather-widget-v2.html` – `TGT` (neuer Eintrag `{ id: 'patterns', name: 'Chartmuster', icon: '📐', … }`), `loadChannels` (`tgt.patterns`, `tep.patterns`, Felder `pchat`/`pthread`/`ptoken` mit Validierung wie `tchat`), `tgOk`, `tgDest('patterns')` (Bot: eigener oder derselbe wie Kursalarm, ausdrücklich beschriftet), `TG_ROUTE.pattern = 'patterns'`, Einrichtungsformular (Abschnitt „📊 Trades“ als Vorlage), `readChanForm`; `server/scalpdesk-247.mjs` – `TARGETS`/`TARGET_NAME` um `patterns` erweitern (`policyNorm` ergänzt fehlende Ziele mit `on: true, epoch: 1` – prüfen!).
+    - Auslöser: in `patDone`/`pkRecord` ein **neuer** Fall mit `src === 'live'`, `kind === 'form'` und Regelgüte ≥ 80 % → eine Meldung über `notifyChannels('pattern', <Fall-ID>, text)` mit Ereignis-ID aus der Fall-ID (doppelt erkannt → einmal gesendet; Sendefreigabe am Dienst wie bei Kursalarmen).
+    - Text: Coin, Intervall, Muster, Status, Ziel; Kennzeichnung „regelbasiert (Modell pat-1, Regelgüte X %)“ und – nur wenn ≥ 10 vergleichbare abgeschlossene Fälle – „erlernt: X von N aufwärts …“; Hinweis „keine Erfolgswahrscheinlichkeit“.
+    - Fertig, wenn: Test (neuer Abschnitt in m58 oder `m59.js`): Ziel erscheint in „Telegram-Chats“ mit Schalter, aus → keine Meldung, Epoche verwirft alte Aufträge, gleicher Fall nur einmal, Text mit Kennzeichnung; m54/unit-247c (Zielanzahl 3 → 4) angepasst.
+  - **C6b – Meldung bei geschlossener App über den 24/7-Dienst** (größerer Schritt, vorher mit dem Nutzer abstimmen):
+    - Die Engine `patEngine()` ist rein; sie als `server/pattern-engine.mjs` bereitstellen (aus der HTML erzeugt, ein Test vergleicht den Quelltext beider Fassungen, damit sie nie auseinanderlaufen).
+    - Der Dienst prüft je Kerzenschluss die Coins der Vorauswahl (Liste kommt wie die Kursalarme per HTTPS von der App) mit `klines()` und sendet an das Ziel `patterns` – mit derselben Ereignis-ID wie die App (Fall-ID), damit App und Dienst nie doppelt senden.
+    - Fertig, wenn: `unit-247e.js` (Engine-Gleichheit, Erkennung auf festen Kerzen, Ziel aus → nichts, Ereignis-ID einmal) und Installer/README aktualisiert.
 
 ## Optimierungen nach G08
 (noch keine)
