@@ -278,7 +278,7 @@ const CG_IDS = { bitcoin: 'BTC', ethereum: 'ETH', solana: 'SOL', ripple: 'XRP', 
 const CP_IDS = { 'btc-bitcoin': 'BTC', 'eth-ethereum': 'ETH', 'sol-solana': 'SOL', 'xrp-xrp': 'XRP', 'etc-ethereum-classic': 'ETC', 'bch-bitcoin-cash': 'BCH', 'ltc-litecoin': 'LTC', 'near-near-protocol': 'NEAR', 'paxg-pax-gold': 'PAXG', 'kas-kaspa': 'KAS', 'kas-kas-fork': 'KAS' };
 const ON_BINANCE = new Set(['bitcoin', 'ethereum', 'solana', 'ripple', 'ethereum-classic', 'bitcoin-cash', 'litecoin', 'near', 'pax-gold', 'kaspa', 'btc-bitcoin', 'eth-ethereum', 'sol-solana', 'xrp-xrp', 'etc-ethereum-classic', 'bch-bitcoin-cash', 'ltc-litecoin', 'near-near-protocol', 'paxg-pax-gold', 'kas-kaspa']);
 const SUPPLY = { BTC: 19.6e6, ETH: 120e6, SOL: 440e6, XRP: 55e9, ETC: 145e6, BCH: 19.6e6, LTC: 74e6, NEAR: 1.1e9, PAXG: 4e5, KAS: 24e9 };
-const supplyAt = (sym, t) => SUPPLY[sym] * (1 + (t - Date.now()) / (365 * 864e5) * 0.05);
+const CAP_T0 = Date.now(), supplyAt = (sym, t) => SUPPLY[sym] * (1 + (t - CAP_T0) / (365 * 864e5) * 0.05); // fester Bezug: jeder Abruf liefert dieselben Werte
 const capOf = (sym, t, px) => px * supplyAt(sym, t);
 function capRows(sym, iv, keep) { const { rows } = series(sym + 'USDT', iv); return rows.slice(-keep).map(r => [r[0], Number(r[4])]); }
 function capMock(req, res, host, u) {

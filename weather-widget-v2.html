@@ -2753,7 +2753,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Alle Werte liegen zusätzlich im Arbeitsspeicher und sind dadurch synchron lesbar. Schreiben geht sofort in den
 // localStorage und gebündelt in die IndexedDB; beim Start gewinnt die zuletzt vollständig geschriebene Kopie.
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
-const APP_VERSION = '3.34.0', docEl = document.documentElement;
+const APP_VERSION = '3.35.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -11728,6 +11728,8 @@ function renderTgcEvents() {
   box.querySelector('ul').replaceChildren(...[...rows, ...(rows.length ? [] : own)].map(t => el('li', '', t)));
 }
 // Prüfzugang für die Tests (wie window.__sdMem): Zustand und einzelne Abläufe der Telegram-Ziele und der Sendefreigabe
+window.__g07 = { get ana() { return ana; }, get cap() { return CAP; }, blocks30: (d, n) => blocks30(d, n), anaCalc: (c, iv) => anaCalc(c, iv), anaTrend: o => anaTrend(o), validateMarketCap: r => validateMarketCap(r), coinGeckoMarketCapPoints: j => coinGeckoMarketCapPoints(j),
+  capKey: (...a) => capKey(...a), capPut: e => capPut(e), capGet: k => capGet(k), setCapMax: n => { CAP_MAX_BYTES = n; }, capBlock: p => capBlock(p), capSeries: (p, id, r) => capSeries(p, id, r), compactCap: v => compactCap(v), hzSeries: d => hzSeries(d) };
 window.__g06 = { timgData: id => timgData(id), timgRange: d => timgRange(d), tgtEpoch: id => tgtEpoch(id), get jobs() { return loadTimg(); }, timgPreview: id => timgPreview(id) };
 window.__g05 = { get state() { return state; }, get chan() { return chan; }, get svc() { return svc; }, get svcLog() { return svcLog; }, get chanState() { return chanState; },
   readChanForm, saveChannels, sendTgBackup, notifyChannels, svcRefresh, alarmSub, persist, renderAlarms, syncStreams, tgTarget, backupPayload, alarmEventId };
