@@ -28,6 +28,9 @@ const anaReady = page => until(() => page.evaluate(() => !!__g07.ana.calc && !__
 const capLog = async () => (await h.ctl('/cap')).log;
 const capReady = page => until(() => page.evaluate(() => !__g07.cap.loading && (!!__g07.cap.data || !!__g07.cap.err)), 25000);
 const setSym = async (page, c) => { await page.fill('#symbol', c); await page.press('#symbol', 'Enter'); };
+// Ein Knopf „MCap“ schaltet zwischen Kurs- und Cap-Ansicht um
+const toCap = async page => { if (await page.getAttribute('[data-metric="cap"]', 'aria-pressed') !== 'true') await page.click('[data-metric="cap"]'); };
+const toPrice = async page => { if (await page.getAttribute('[data-metric="cap"]', 'aria-pressed') === 'true') await page.click('[data-metric="cap"]'); };
 const B = 30 * 864e5;
 
 const tests = {
@@ -117,7 +120,7 @@ const tests = {
     await page.click('#zoom-in'); await page.click('#pan-back'); await page.waitForTimeout(300);
     const view0 = await page.evaluate(() => [window.__g05.state.count, window.__g05.state.pan]);
     await h.ctl('/cap?clear=1&delay=1200');
-    for (const m of ['cap', 'price', 'cap', 'price', 'cap']) { await page.click(`[data-metric="${m}"]`); await page.waitForTimeout(60); }
+    for (let i = 0; i < 5; i++) { await page.click('[data-metric="cap"]'); await page.waitForTimeout(60); }
     await capReady(page); await h.ctl('/cap?delay=0');
     const lg = await capLog();
     check('Mehrfach umgeschaltet (5×): genau eine Anfrage an CoinGecko (stündlich, 90 Tage)', lg.length === 1 && lg[0].prov === 'cg' && lg[0].path === '/api/v3/coins/bitcoin/market_chart' && lg[0].q.days === '90', JSON.stringify(lg.map(x => x.path + JSON.stringify(x.q))));
@@ -127,11 +130,11 @@ const tests = {
     check('Werte aus market_caps (nicht aus prices); nie CoinLore', v.data.first[1] === j.market_caps[0][1] && v.data.first[1] !== j.prices[0][1] && Math.abs(v.data.first[1] / j.prices[0][1] - v.data.last[1] / j.prices.at(-1)[1]) > 1 && !(await capLog()).some(x => x.prov === 'lore'), JSON.stringify({ cap0: v.data.first, price0: j.prices[0] }));
     const o = await page.evaluate(() => ({ dis: [...document.querySelectorAll('[data-overlay]')].every(b => b.getAttribute('aria-disabled') === 'true'), why: document.querySelector('[data-overlay="ema200"]').title, alarm: [...document.querySelectorAll('#chart svg text')].some(t => /🔔|Einstieg|SL |TP /.test(t.textContent)), fib: getComputedStyle(document.getElementById('fib-strip')).display, mag: getComputedStyle(document.getElementById('magnet')).pointerEvents }));
     check('Preisebenen aus (gesperrt mit Erklärung), keine Alarm-/SL-/TP-Linien auf der Cap-Achse, Fib-Leiste und Magnet aus', o.dis && /^In der Market-Cap-Ansicht aus/.test(o.why) && !o.alarm && o.fib === 'none' && o.mag === 'none', JSON.stringify(o));
-    await page.click('[data-metric="price"]'); await page.waitForTimeout(600);
+    await toPrice(page); await page.waitForTimeout(600);
     const back = await page.evaluate(() => ({ view: [window.__g05.state.count, window.__g05.state.pan], rects: document.querySelectorAll('#chart svg rect').length, ohlc: document.getElementById('ohlc').textContent, ov: document.querySelector('[data-overlay="ema200"]').getAttribute('aria-disabled') }));
     check('Zurück zur Kursansicht: Zoom und Ausschnitt wie vorher, Kerzen und Ebenen wieder da', JSON.stringify(back.view) === JSON.stringify(view0) && back.rects > 20 && /^O /.test(back.ohlc) && back.ov === 'false', JSON.stringify({ back, view0 }));
     // schneller Coin-Wechsel in der Cap-Ansicht
-    await page.click('[data-metric="cap"]'); await capReady(page);
+    await toCap(page); await capReady(page);
     for (const c of ['ETH', 'XRP', 'SOL']) { await setSym(page, c); await page.waitForTimeout(150); }
     await until(() => page.evaluate(() => __g07.cap.data?.sym === 'SOL' && !__g07.cap.loading), 25000);
     const sol = await page.evaluate(() => ({ sym: __g07.cap.data.sym, id: __g07.cap.data.id, ohlc: document.getElementById('ohlc').textContent }));
@@ -144,28 +147,52 @@ const tests = {
     check('keine Fehler (cap)', !real(errors).length, real(errors).join(' | ')); await ctx.close();
   },
 
+  async bar(browser) {
+    // Kompakter Toggle in der Chart-Menüleiste: ein Knopf „MCap“ in der Zeile der Intervalle – die Leiste bekommt keine zusätzliche Zeile
+    // (iPad mini hochkant hatte nur 20 px Luft; dort rutschten die Zoom-Knöpfe nach unten und schoben den Chart aus dem Bild)
+    for (const [name, w, hh, oneRow] of [['iPad mini hoch', 744, 1133, true], ['iPad quer', 820, 700, true], ['Handy', 390, 844, false], ['Handy schmal', 360, 780, false]]) {
+      const ctx = await browser.newContext({ viewport: { width: w, height: hh }, hasTouch: true, isMobile: true, timezoneId: 'Europe/Berlin' });
+      const { page, errors } = await openPage(browser, {}, { ctx });
+      const m = await page.evaluate(() => { const t = s => Math.round(document.querySelector(s).getBoundingClientRect().top), r = document.querySelector('[data-metric="cap"]').getBoundingClientRect(), tb = document.querySelector('.chart-toolbar').getBoundingClientRect();
+        return { iv: t('.chart-toolbar .intervals'), mt: Math.round(r.top), zc: t('.chart-toolbar .zoom-controls'), inside: r.right <= tb.right + 0.5, n: document.querySelectorAll('[data-metric]').length, label: document.querySelector('[data-metric="cap"]').textContent }; });
+      const ok = m.n === 1 && m.label === 'MCap' && m.inside && Math.abs(m.mt - m.iv) <= 6 && (oneRow ? Math.abs(m.zc - m.iv) <= 6 : m.zc > m.iv + 20);
+      check(`${name} (${w} px): „MCap“ in der Zeile der Intervalle, ${oneRow ? 'Zoom-Knöpfe in derselben Zeile' : 'Zoom-Knöpfe in der zweiten Zeile wie bisher'}`, ok, JSON.stringify(m));
+      if (name === 'Handy') {
+        await page.click('[data-metric="cap"]'); const on = await page.getAttribute('[data-metric="cap"]', 'aria-pressed'); await capReady(page);
+        // Cap-Ansicht am Handy: Kopf und Unterzeile umgebrochen statt abgeschnitten, Zeitachse ohne überlappende Beschriftungen
+        const fit = await page.evaluate(() => { const svg = document.querySelector('#chart svg'); if (!svg) return null; const W = svg.getBoundingClientRect(), ts = [...svg.querySelectorAll('text')].map(t => ({ s: t.textContent, r: t.getBoundingClientRect() }));
+          const out = ts.filter(t => t.r.right > W.right + 1 || t.r.left < W.left - 1).map(t => t.s), ax = ts.filter(t => Math.abs(t.r.bottom - W.bottom) < 22).sort((a, b) => a.r.left - b.r.left);
+          return { out, head: ts.filter(t => /Market Cap|Datenstand|Daten:/.test(t.s)).map(t => t.s), axis: ax.map(t => t.s), overlap: ax.some((t, i) => i && t.r.left < ax[i - 1].r.right + 2) }; });
+        check('Cap-Ansicht am Handy: kein Text über den Rand, Kopf umgebrochen, Zeitachse ohne Überlappung (UTC)', fit && !fit.out.length && fit.head.length >= 2 && fit.axis.length >= 2 && !fit.overlap, JSON.stringify(fit));
+        await page.click('[data-metric="cap"]'); const off = await page.getAttribute('[data-metric="cap"]', 'aria-pressed');
+        check('Ein Tippen: Cap-Ansicht (gedrückt), noch einmal: zurück zum Kurs', on === 'true' && off === 'false', `${on} → ${off}`);
+      }
+      check(`keine Fehler (bar, ${name})`, !real(errors).length, real(errors).join(' | ')); await ctx.close();
+    }
+  },
+
   async cache(browser) {
     let { ctx, page, errors } = await openPage(browser);
     await page.click('[data-interval="1d"]'); await page.waitForTimeout(2500);
-    await h.ctl('/cap?clear=1'); await page.click('[data-metric="cap"]'); await capReady(page);
+    await h.ctl('/cap?clear=1'); await toCap(page); await capReady(page);
     const l1 = await capLog();
     check('Täglich (Chart 1d): eine Anfrage (365 Tage, interval=daily)', l1.length === 1 && l1[0].q.days === '365' && l1[0].q.interval === 'daily', JSON.stringify(l1.map(x => x.q)));
-    await page.reload(); await page.waitForTimeout(1500); await page.click('[data-interval="1d"]'); await page.waitForTimeout(1500); await h.ctl('/cap?clear=1'); await page.click('[data-metric="cap"]'); await capReady(page);
+    await page.reload(); await page.waitForTimeout(1500); await page.click('[data-interval="1d"]'); await page.waitForTimeout(1500); await h.ctl('/cap?clear=1'); await toCap(page); await capReady(page);
     check('Neu geladen: Tageshistorie und laufender Wert aus dem Cache (IndexedDB) – keine Anfrage', (await capLog()).length === 0 && await page.evaluate(() => __g07.cap.data?.prov === 'cg'));
     // laufender Wert älter als 5 Minuten: nur er wird neu geholt
     await page.evaluate(async () => { const k = __g07.capKey('cg', 'bitcoin', 'now', 'now'), e = await __g07.capGet(k); e.fetchedAt = Date.now() - 6 * 60e3; await __g07.capPut(e); });
-    await h.ctl('/cap?clear=1'); await page.click('[data-metric="price"]'); await page.click('[data-metric="cap"]'); await capReady(page);
+    await h.ctl('/cap?clear=1'); await toPrice(page); await toCap(page); await capReady(page);
     const l2 = await capLog();
     check('Laufender Wert nach 5 min: nur simple/price, die abgeschlossene Tageshistorie bleibt (24 h)', l2.length === 1 && l2[0].path === '/api/v3/simple/price' && l2[0].q.include_market_cap === 'true', JSON.stringify(l2.map(x => x.path)));
     // Tageshistorie älter als 24 h: neu geholt
     await page.evaluate(async () => { const k = __g07.capKey('cg', 'bitcoin', '1d', '365d'), e = await __g07.capGet(k); e.fetchedAt = Date.now() - 25 * 3600e3; await __g07.capPut(e); });
-    await h.ctl('/cap?clear=1'); await page.click('[data-metric="price"]'); await page.click('[data-metric="cap"]'); await capReady(page);
+    await h.ctl('/cap?clear=1'); await toPrice(page); await toCap(page); await capReady(page);
     check('Tageshistorie nach 24 h: neu geholt', (await capLog()).some(x => x.path === '/api/v3/coins/bitcoin/market_chart'));
     const ent = await page.evaluate(async () => { const e = await __g07.capGet(__g07.capKey('cg', 'bitcoin', '1d', '365d')); const cut = Math.floor(Date.now() / 864e5) * 864e5; return { allDone: e.pts.every(p => p[0] < cut), n: e.pts.length, key: e.key }; });
     check('Cache-Schlüssel aus Anbieter, ID, Währung, Auflösung, Zeitraum und Schema; gespeichert nur abgeschlossene Tage', ent.key === 'cg|bitcoin|usd|1d|365d|v1' && ent.allDone && ent.n >= 360, JSON.stringify(ent));
     // abgelaufen und beide Anbieter gestört: Werte mit Datum weiter zeigen
     await page.evaluate(async () => { for (const r of [['1d', '365d'], ['now', 'now']]) { const k = __g07.capKey('cg', 'bitcoin', ...r), e = await __g07.capGet(k); e.fetchedAt = Date.now() - 26 * 3600e3; await __g07.capPut(e); } localStorage.removeItem('scalpdesk.capbudget.v1'); });
-    await h.ctl('/cap?cg=fail&cp=fail'); await page.click('[data-metric="price"]'); await page.click('[data-metric="cap"]'); await capReady(page);
+    await h.ctl('/cap?cg=fail&cp=fail'); await toPrice(page); await toCap(page); await capReady(page);
     const st = await page.evaluate(() => [...document.querySelectorAll('#chart svg text')].map(t => t.textContent).find(t => /^Daten:/.test(t)) || '');
     check('Abgelaufen und Anbieter gestört: Kurve bleibt, mit „abgelaufen, Stand … UTC“ und Grund', /abgelaufen, Stand \d\d\.\d\d\.\d{4}, \d\d:\d\d UTC – CoinGecko antwortet mit Fehler 500/.test(st), st);
     await h.ctl('/cap?cg=ok&cp=ok');
@@ -182,13 +209,13 @@ const tests = {
   async limits(browser) {
     let { ctx, page, errors } = await openPage(browser);
     await h.ctl('/cap?clear=1&cg=429&ra=120'); await setSym(page, 'ETH'); await page.waitForTimeout(1500);
-    await page.click('[data-metric="cap"]'); await capReady(page);
+    await toCap(page); await capReady(page);
     const a = await page.evaluate(() => ({ prov: __g07.cap.data?.prov, blk: __g07.capBlock('cg'), now: Date.now() })), l = await capLog();
     check('429 mit Retry-After 120 s: CoinGecko gesperrt bis +120 s, Ausweichen auf CoinPaprika (täglich, Vermerk)', a.prov === 'cp' && a.blk && Math.abs(a.blk.until - a.now - 120e3) < 10e3 && l.filter(x => x.prov === 'cg').length === 1, JSON.stringify({ a, l: l.map(x => x.prov + x.path) }));
     const note = await page.evaluate(() => [...document.querySelectorAll('#chart svg text')].map(t => t.textContent).find(t => /^Daten:/.test(t)) || '');
     check('… Hinweis „CoinPaprika liefert schlüssellos nur Tageswerte – Auflösung täglich“', /^Daten: CoinPaprika · CoinPaprika liefert schlüssellos nur Tageswerte – Auflösung täglich/.test(note), note);
     await h.ctl('/cap?clear=1&cg=ok'); await page.reload(); await page.waitForTimeout(1500); await setSym(page, 'XRP'); await page.waitForTimeout(1500);
-    await page.click('[data-metric="cap"]'); await capReady(page);
+    await toCap(page); await capReady(page);
     check('Neu laden umgeht die Sperre nicht: keine CoinGecko-Anfrage, CoinPaprika liefert', !(await capLog()).some(x => x.prov === 'cg') && await page.evaluate(() => __g07.cap.data?.prov === 'cp'));
     // Monatsbudget beider Anbieter erreicht
     await page.evaluate(() => { const m = new Date().toISOString().slice(0, 7); localStorage.setItem('scalpdesk.capbudget.v1', JSON.stringify({ cg: { mon: m, n: 3000 }, cp: { mon: m, n: 10000 } })); });
@@ -199,7 +226,7 @@ const tests = {
     await page.evaluate(() => localStorage.removeItem('scalpdesk.capbudget.v1')); await h.ctl('/cap?clear=1&cg=denied');
     await setSym(page, 'BCH'); await capReady(page);
     const d1 = await page.evaluate(() => __g07.capBlock('cg'));
-    await h.ctl('/cap?clear=1&cg=ok'); await page.reload(); await page.waitForTimeout(1500); await setSym(page, 'ETC'); await page.waitForTimeout(1500); await page.click('[data-metric="cap"]'); await capReady(page);
+    await h.ctl('/cap?clear=1&cg=ok'); await page.reload(); await page.waitForTimeout(1500); await setSym(page, 'ETC'); await page.waitForTimeout(1500); await toCap(page); await capReady(page);
     check('Zugriff verweigert (401): 24 h keine weiteren CoinGecko-Versuche, auch nach Neuladen', d1 && d1.until - Date.now() > 23 * 3600e3 && /Zugriff ohne Schlüssel verweigert/.test(d1.why) && !(await capLog()).some(x => x.prov === 'cg'), JSON.stringify(d1));
     // Minutenbudget: jeder Versuch zählt, höchstens 5 je Minute
     const mbud = await page.evaluate(() => { const b = JSON.parse(localStorage.getItem('scalpdesk.capbudget.v1') || '{}'); return { cp: (b.cp?.m || []).length, cgN: b.cg?.n }; });
