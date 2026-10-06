@@ -64,6 +64,8 @@ Code: `patEngine()` (reine Engine, läuft als Blob-Worker), `PAT_LIB` (41 Eintr�
 ## Bekannte Stolpersteine
 - **m43 beim Stundenwechsel:** Die Prüfung erwartet eine Puls-Meldung „für 23 Uhr“ in einer Zeitzone, in der es gerade 23 Uhr ist. Trifft der Lauf den Wechsel auf 0 Uhr, schlägt sie fehl. Das ist kein App-Fehler; einzeln wiederholen.
 - **m47 Zeitmessung:** „10000 Trades … unter 400 ms“ ist lastabhängig; vereinzelt 410–430 ms, wiederholt bestanden.
+- **m28 nach Mitternacht (Berlin):** „Ganze Woche“ erwartet „Heute“ in der Tagesliste; zwischen ca. 0 und 2 Uhr Berliner Zeit schlägt die Prüfung auch auf `main` fehl – Uhrzeit-Thema des Tests, kein App-Fehler.
+- **m47 „App sendet den Kurs-Alarm selbst“:** zeitkritisch (20 s Wartezeit bei statischem Kurs); schlug vereinzelt fehl, einzeln/wiederholt bestanden.
 - **Browser-Tests nie parallel** (fester Port 8765/8790).
 - **Temporäre Testkopien** `weather-widget-v2.debug*.html` entstehen während m39/m45/m47; nicht committen.
 - **Klassifikationsliste G08 (v1)** ist aus Wissen gebaut, nicht gegen echte CoinLore-Daten geprüft: Coins unter „ungeprüft“ in `DEC_OK`/`DEC_STABLE` aufnehmen und `DEC_CLASS_VER` erhöhen.

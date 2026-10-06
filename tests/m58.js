@@ -141,7 +141,7 @@ const tests = {
       const e = { iv: '1h', closed: k.map(c => ({ time: c.t, open: c.o, high: c.h, low: c.l, close: c.c, volume: c.v })) }; return __g09.wlPat(e); })()`);
     check('Vorauswahl erkennt die jüngste Formation auf den Kachel-Kerzen (Doppel-Boden, Regelgüte ≥ 60 %)', u && u.id === 'double_bottom' && u.q >= 60, JSON.stringify(u));
     await page.click('.wl-tile[data-watch="ETC"]'); await page.waitForTimeout(2500);
-    const prep = await page.evaluate(() => { const e = __g09.wl.c.get('ETCUSDT'), c = e.closed; e.pat = { id: 'double_bottom', q: 75, status: 'in Bildung (Ausbruch fehlt)', dir: 'bull', t0: c.at(-40).time, t1: c.at(-20).time }; __g09.wldPaint(); const b = document.querySelector('.wl-d-pat'); return { iv: e.iv, t0: e.pat.t0, t1: e.pat.t1, vis: !!b && !b.hidden, txt: b?.textContent }; });
+    const prep = await page.evaluate(() => { const e = __g09.wl.c.get('ETCUSDT'), c = e.closed; e.pat = { id: 'double_bottom', q: 75, status: 'in Bildung (Ausbruch fehlt)', dir: 'bull', t0: c.at(-40).time, t1: c.at(-20).time }; __g09.wldPaint(); const b = document.querySelector('.wl-d-pat'); return { iv: e.iv, t0: e.pat.t0, t1: e.pat.t1, vis: !!b && !b.hidden && !b.disabled, txt: b?.textContent }; });
     check('Detailfeld zeigt „Chartmuster erkannt“ mit Name, Intervall, Status und Regelgüte', prep.vis && prep.txt === `📐 Chartmuster erkannt: Doppel-Boden · ${prep.iv} · in Bildung (Ausbruch fehlt) · Regelgüte 75 % – im Chart zeigen`, prep.txt);
     await page.click('.wl-d-pat');
     await page.waitForFunction(iv => __g05.state.symbol === 'ETCUSDT' && __g05.state.interval === iv && __g05.state.loadedSymbol === 'ETCUSDT' && !__g09.pat.want && !!__g09.pat.res, prep.iv, { timeout: 15000 }).catch(() => {});

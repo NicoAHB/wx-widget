@@ -1452,7 +1452,8 @@ html[data-layout=tablet] .wl-tile{height:64px}
 /* 3.37.0 (G09): Chartmuster */
 .pk{display:grid;gap:6px}.pk-btn{justify-self:start}.pk-out{display:grid;gap:6px;font-size:.8125rem}.pk-out p{margin:0}.pk-h{font-weight:600}.pk-note,.pk-ex{color:var(--muted);font-size:.75rem}
 .pk-svg{width:100%;max-width:420px;height:auto;background:var(--field);border-radius:8px}.pk-zero{stroke:var(--muted);stroke-dasharray:3 3}.pk-band{fill:var(--up-bg-2);opacity:.8}.pk-med{stroke:var(--up-text);stroke-width:2}.pk-rep{stroke:var(--text-2);stroke-width:1;stroke-dasharray:4 2}
-.wl-d-pat{display:block;width:100%;margin:6px 0 2px;padding:8px 10px;border:1px solid var(--up-border);border-radius:8px;background:var(--up-bg);color:var(--text);font:inherit;font-size:.8125rem;text-align:left;cursor:pointer}
+.wl-d-pat{display:block;width:100%;margin:6px 0 2px;padding:7px 10px;border:1px solid var(--up-border);border-radius:8px;background:var(--up-bg);color:var(--text);font:inherit;font-size:.8125rem;text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wl-d-pat.none{border-color:var(--border);background:none;color:var(--muted);cursor:default}
 #pat-btn{font-weight:700;font-size:.8125rem}#pat-btn[aria-pressed=true]{background:var(--up-bg-2);color:var(--up-text);border-color:var(--up-border)}
 @container ctb (min-width:640px) and (max-width:780px){.chart-toolbar .zoom-controls{gap:2px}.chart-toolbar .zoom-controls button{min-width:40px}}
 @container ctb (min-width:331px) and (max-width:400px){.chart-toolbar .zoom-controls{gap:2px}.chart-toolbar .zoom-controls button{min-width:40px}}
@@ -10383,8 +10384,8 @@ async function wlLoad(e) {
     const r = await cachedKlines(e.sym, e.iv, WL_LIMIT), now = Date.now();
     e.closed = r.candles.filter(c => c.closeTime < now).slice(-WL_LIMIT);
     const last = r.candles.at(-1); e.run = last && last.closeTime >= now ? last : null;
-    e.market = r.source === 'futures' ? 'futures' : 'spot'; e.rating = signalRating(e.closed.slice(-WL_WINDOW)); e.pat = wlPat(e); // 3.37.0 (G09): Chartmuster
-    try { pkResolve(e.market, e.sym, e.iv, e.closed.map(c => ({ t: c.time, c: c.close })), e.closed.length - 1); } catch {} // 3.38.0 (G09 C)
+    e.market = r.source === 'futures' ? 'futures' : 'spot'; e.rating = signalRating(e.closed.slice(-WL_WINDOW)); e.patAt = 0; // 3.37.0 (G09): Chartmuster – gerechnet kurz nach dem Zeichnen, damit Laden und Neuzeichnen nicht warten
+    setTimeout(() => { e.pat = wlPat(e); e.patAt = Date.now(); try { pkResolve(e.market, e.sym, e.iv, e.closed.map(c => ({ t: c.time, c: c.close })), e.closed.length - 1); } catch {} if (wldSel && wlSym(wldSel) === e.sym) wldPaint(Date.now(), true); }, 30); // 3.38.0 (G09 C)
     e.error = ''; e.gap = false; e.at = now;
   } catch (err) {
     e.error = err?.message || String(err); e.retryAt = Date.now() + WL_RETRY;
@@ -10454,7 +10455,7 @@ function wldBox() {
   move.append(el('span', 'wl-d-movetxt', ''), mtip);
   // Gesamtbewertung und Bewegungs-Hinweis im Rumpf: dessen Mindesthöhe gilt auch für sie, das Feld schrumpft nicht, wenn sie
   // kurz wegfallen (Zeitraum gewechselt, Reihe lädt neu)
-  const patb = el('button', 'wl-d-pat'); patb.type = 'button'; patb.hidden = true; patb.addEventListener('click', () => patFromWl(wldSel)); // 3.37.0 (G09)
+  const patb = el('button', 'wl-d-pat'); patb.type = 'button'; patb.addEventListener('click', () => patFromWl(wldSel)); // 3.37.0 (G09)
   body.append(verdict, move, patb);
   // 3.32.0 (G04.2): schmale Zeile mit Tief und Hoch der letzten 24 Stunden (rollierend, Markt wie die Kachel)
   const r24 = el('p', 'wl-d-24h'); r24.append(el('span', 'wl-d-24k', '24h'), el('span', 'wl-d-24v', ''));
@@ -10481,7 +10482,14 @@ function wldOpen(coin) {
   if (was) return;
   wld.clip.inert = false; wld.box.dataset.open = '1'; clearTimeout(wld.timer);
   // nach dem Aufklappen: Info-Fenster dürfen über den Rand ragen; liegt das Feld unter dem Bildrand, so weit scrollen, bis es ganz zu sehen ist
-  wld.timer = setTimeout(() => { if (!wldSel) return; wld.box.classList.add('shown'); wld.box.scrollIntoView({ block: 'nearest', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); }, 280);
+  // 3.38.0: nach dem Ende des Aufklappens noch einmal prüfen – vorher stand die endgültige Höhe noch nicht fest, und das Feld
+  // konnte danach unter die Tab-Leiste wachsen
+  const into = () => {
+    if (!wldSel) return;
+    const r = wld.box.getBoundingClientRect(), tb = $('tabbar'), lim = (tb && getComputedStyle(tb).display !== 'none' ? tb.getBoundingClientRect().top : innerHeight) - 12, beh = matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+    if (r.bottom > lim) scrollBy({ top: Math.min(r.bottom - lim, Math.max(0, r.top - 12)), behavior: beh }); else if (r.top < 0) wld.box.scrollIntoView({ block: 'nearest', behavior: beh });
+  };
+  wld.timer = setTimeout(() => { if (!wldSel) return; wld.box.classList.add('shown'); into(); setTimeout(into, 450); }, 280);
 }
 function wldClose(focusTile) {
   if (!wld || !wldSel) { wldSel = ''; return; }
@@ -10514,7 +10522,7 @@ function wldPaint(now = Date.now(), force = false) {
   if (!wld || !wldSel) return;
   w24Paint(now);
   const coin = wldSel, e = wl?.c.get(wlSym(coin)), r = e?.rating || null;
-  const S = wlSpan(), mv = r ? wlMove(e) : null, key = [coin, wl?.span, r ? r.closeTime + ':' + r.rules.map(x => x.score).join() : '-', mv ? mv.movePct.toFixed(3) : '', e?.error || '', e ? 1 : 0, e?.pat ? e.pat.id + e.pat.t1 + e.pat.status : ''].join('|');
+  const S = wlSpan(), mv = r ? wlMove(e) : null, key = [coin, wl?.span, r ? r.closeTime + ':' + r.rules.map(x => x.score).join() : '-', mv ? mv.movePct.toFixed(3) : '', e?.error || '', e ? 1 : 0, e?.pat ? e.pat.id + e.pat.t1 + e.pat.status : e?.patAt ? 'k' : ''].join('|');
   if (key === wld.key && !force) return;
   wld.key = key;
   wld.title.textContent = coin;
@@ -10537,8 +10545,8 @@ function wldPaint(now = Date.now(), force = false) {
   wld.none.hidden = !!(lists.up.length || lists.down.length);
   wld.none.textContent = r ? 'Aktuell keine Signale' : e?.error ? `Keine Daten für ${coin}: ${e.error}` : `Noch keine Daten – die Signale erscheinen, sobald 60 abgeschlossene ${S.ivName}-Kerzen vorliegen.`;
   // 3.37.0 (G09): erkannte Formation mit Bezug (Name, Intervall, Status, Regelgüte); Antippen öffnet ausdrücklich den Chart
-  const ph = e?.pat; wld.patb.hidden = !ph;
-  if (ph) wld.patb.textContent = `📐 Chartmuster erkannt: ${PAT_LIB[ph.id].n} · ${e.iv} · ${ph.status} · Regelgüte ${ph.q} % – im Chart zeigen`;
+  const ph = e?.pat, ptxt = ph ? `📐 Chartmuster erkannt: ${PAT_LIB[ph.id].n} · ${e.iv} · ${ph.status} · Regelgüte ${ph.q} % – im Chart zeigen` : e?.patAt ? '📐 Keine Chartformation erkannt (Regelgüte ≥ 60 %)' : '📐 Chartmuster werden geprüft …';
+  wld.patb.hidden = false; wld.patb.disabled = !ph; wld.patb.textContent = ptxt; wld.patb.title = ptxt; wld.patb.classList.toggle('none', !ph);
   // Gesamtbewertung: Long-/Short-Tendenz nur bei mindestens 3 von 4 Signalen in derselben Richtung, sonst Abwarten
   const vd = wlVerdict(r); wld.verdict.hidden = !vd;
   if (vd) {
@@ -12339,7 +12347,7 @@ function patEngine() {
   }
   function detect(k, opt) {
     const A = atrSeries(k), o = { from: Math.max(0, opt.from | 0), step: opt.step || 0, gap: !!opt.gap, running: !!opt.running };
-    const hits = [...candles(k, A, o), ...formations(k, A, o)];
+    const hits = [...(opt.formOnly ? [] : candles(k, A, o)), ...formations(k, A, o)];
     return { ver: VER, hits: hits.filter(h => h.i1 >= o.from) };
   }
   return { detect, preTrend, atrSeries, zigzag, VER };
@@ -12469,7 +12477,7 @@ function wlPat(e) {
     if (!e?.closed || e.closed.length < 60) return null;
     PAT_E = PAT_E || patEngine();
     const k = e.closed.map(c => ({ t: c.time, o: c.open, h: c.high, l: c.low, c: c.close, v: c.volume }));
-    const hits = PAT_E.detect(k, { from: Math.max(0, k.length - 120), step: e.iv === '1M' ? 0 : IV_MS[e.iv] || 0 }).hits.filter(h => h.kind === 'form' && h.q >= 60 && h.i1 >= k.length - 30).sort((a, b) => b.t1 - a.t1 || b.q - a.q);
+    const hits = PAT_E.detect(k, { from: Math.max(0, k.length - 120), step: e.iv === '1M' ? 0 : IV_MS[e.iv] || 0, formOnly: true }).hits.filter(h => h.kind === 'form' && h.q >= 60 && h.i1 >= k.length - 30).sort((a, b) => b.t1 - a.t1 || b.q - a.q);
     const h = hits[0]; return h ? { id: h.id, q: h.q, status: h.status, dir: h.dir, t0: h.t0, t1: h.t1 } : null;
   } catch { return null; }
 }
