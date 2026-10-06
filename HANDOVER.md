@@ -5,7 +5,8 @@ Laufende Übergabe. Sie wird nach jedem Arbeitsschritt aktualisiert, damit ein A
 ## Kurzstand
 - **Version live:** 3.38.0 (G09 Punkt 11 + C1–C3), Pull Request #61, Merge-Commit `612a90d` auf `main` (davor 3.37.0/G09 A+B: PR #60, 3.36.0/G08: PR #59, 3.35.0/G07: PR #58).
 - **Arbeits-Branch:** `claude/scalp-desk-g03-j81c8k` (nach jedem Merge neu von `main` gestartet).
-- **Gerade in Arbeit:** G09 C4 (Archiv am 24/7-Dienst). Offen danach: C5, C6, dann G10.
+- **Auf dem Branch, noch nicht veröffentlicht:** G09 C4 (Archiv am 24/7-Dienst, Dienst 2.1.0) und C5 (Veröffentlichung `data/muster/`). App-Version steht noch auf 3.38.0; Release 3.39.0 (Version, Gesamtlauf, Doku Teil AR, PR) steht aus.
+- **Gerade in Arbeit:** G09 C6 (Muster-Telegram-Chat). Danach Release 3.39.0, dann G10.
 - **Danach:** G10 bis Ende schreibt ChatGPT, sofern der Nutzer nichts anderes sagt.
 
 ## Projekt in einem Satz
@@ -17,7 +18,8 @@ Single-File-PWA für Krypto-Scalping (`weather-widget-v2.html`, auf GitHub Pages
 | `weather-widget-v2.html` | die ganze App (HTML, CSS, ein `<script type="module">`); `APP_VERSION` oben im Skript |
 | `sw.js` | Service Worker; `VERSION` muss zur App-Version passen |
 | `index.html` | Weiterleitung auf die App |
-| `server/scalpdesk-247.mjs`, `server/install.sh` | 24/7-Dienst (Version 2.0.0) und Installer |
+| `server/scalpdesk-247.mjs`, `server/install.sh` | 24/7-Dienst (Version 2.1.0 auf dem Branch, live 2.0.0) und Installer |
+| `server/muster-export.mjs` | erzeugt aus dem Archiv-Export die Veröffentlichung `data/muster/manifest.json` + `stats-<n>.json` (G09 C5) |
 | `tests/` | Test-Server (`mock-binance.js`), `harness.js`, Tests `m*.js`/`unit-*.js`, `run-all.sh`, `lint.sh`, `README.md` |
 | `.github/workflows/` | Kalender- und News-Daten (eigene Workflows) |
 
@@ -55,7 +57,7 @@ Code: `patEngine()` (reine Engine, läuft als Blob-Worker), `PAT_LIB` (41 Eintr�
 - [x] C2. (umgesetzt: `pkResolve`, `pkStats`) Kursrichtungsstatistik (Punkte 21–22): nach Bestätigung H = 12 Kerzen, ε = 0,10 %, R = 100·(PH/P0 − 1); auf/ab/seitwärts; offene Horizonte, fehlende Daten, Konflikte getrennt; nur gleicher Markt/Coin/Intervall/Modell; rekonstruierte und live protokollierte Fälle getrennt. Fertig, wenn: Unit-Test mit festen Kursreihen.
 - [x] C3. (umgesetzt: `pkBand`, `pkSection` im Info-Sheet) „Vergangene Verläufe ansehen“ (Punkte 23–24) im Info-Sheet: „X von N aufwärts, Y abwärts, Z seitwärts“, Zeitraum, Abdeckung; Median + 25–75-%-Band normierter Kurse (kein Prognoseintervall); repräsentativer Einzelfall = geringste Abweichung vom Median, auch negative Beispiele; „Chart: X von N Fällen“; Aggregat ohne Pfade benennen; keine Archive beim Start laden.
 - [x] C4. (umgesetzt auf dem Branch: `PatternArchive` + `/v1/patterns/*` im Dienst 2.1.0, App `pkSync`/`pkState`, Export-Datei; Tests `unit-247d.js` 15/15, m58 „sync“ 6/6) Server-Archiv (Punkte 16–17): Originaljournal am 24/7-Dienst (`server/scalpdesk-247.mjs`, HTTPS-Weg aus G05 mit Revision) getrennt von Alarmkonfiguration, zusätzliche unabhängige Sicherung + getestete Wiederherstellung; Zustände „nur lokal / extern gespeichert / zusätzlich gesichert / veröffentlicht“. Nicht über den Sicherungsbot/Telegram.
-- [ ] C5. Veröffentlichung (Punkte 18–19): bereinigter Bestand auf GitHub/Pages als Release/Serverexport (Manifest ≤ 64 KiB, Dateien ≤ 256 KiB, lokaler Cache ≤ 10 MiB, Warteschlange 2 MiB – voll → neues Lernen stoppt mit Hinweis, nichts löschen); keine Schreibschlüssel im Browser; ohne Schreibweg letzte Revision + Datum zeigen.
+- [x] C5. (umgesetzt auf dem Branch: `server/muster-export.mjs`, App `pkPubLoad`/`pkPubGroup`, Anzeige `.pk-pub`, Zustand „veröffentlicht“; Tests `unit-pub.js` 7/7, m58 „pub“ 5/5; Ablauf in `server/README.md`) Veröffentlichung (Punkte 18–19): bereinigter Bestand auf GitHub/Pages als Release/Serverexport (Manifest ≤ 64 KiB, Dateien ≤ 256 KiB, lokaler Cache ≤ 10 MiB, Warteschlange 2 MiB – voll → neues Lernen stoppt mit Hinweis, nichts löschen); keine Schreibschlüssel im Browser; ohne Schreibweg letzte Revision + Datum zeigen.
 - [ ] C6. Muster-Telegram-Chat (Punkt 25): neues Ziel in „Telegram-Chats“ (G05-Mechanik: Schalter, Epoche, Sendefreigabe) für wichtige bestätigte Muster, auch bei geschlossener App über den 24/7-Dienst; Qualitätsgrenzen kenntlich (regelbasiert vs. erlernt).
 
 ## Optimierungen nach G08
