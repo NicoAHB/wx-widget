@@ -50,10 +50,14 @@ const clearToasts = page => page.evaluate(() => document.querySelectorAll('#toas
     await clearToasts(page); await load(page, 'NEAR'); d = await fc(page); await page.click('[data-overlay="ewfc"]', { force: true }); await page.waitForTimeout(400); tt = await toastText(page);
     check('Unter 50 Kerzen: gesperrt, Hinweis mit Anzahl', d.dis === 'true' && /ab 50 Kerzen – dieser Chart hat erst \d+/.test(tt), tt.slice(0, 90));
     await clearToasts(page); await load(page, 'SOL');
-    await page.click('[data-overlay="ew"]'); await settle(page); d = await fc(page); await page.click('[data-overlay="ewfc"]', { force: true }); await page.waitForTimeout(400); tt = await toastText(page);
-    check('Elliott aus: Prognose gesperrt und verschwunden, Hinweis „zuerst Elliott einschalten“', d.dis === 'true' && !d.g && /zuerst die Ebene „Elliott“ einschalten/.test(tt), tt.slice(0, 80));
+    // 3.32.0 (G04.1): abhängige Ebene bleibt einschaltbar – bei ausgeschaltetem Elliott frei und nicht gedrückt, der Wunsch bleibt gespeichert
+    await page.click('[data-overlay="ew"]'); await settle(page); d = await fc(page);
+    check('Elliott aus: Prognose verschwunden, Schalter frei und nicht gedrückt (wirkt erst mit Elliott)', d.dis === 'false' && !d.na && d.pressed === 'false' && !d.g, JSON.stringify({ dis: d.dis, pressed: d.pressed, g: d.g }));
     await page.click('[data-overlay="ew"]'); await settle(page); d = await fc(page);
     check('Elliott wieder an: Prognose wieder da (Schalter blieb an)', d.pressed === 'true' && d.g && d.lbl === 'A B C', d.lbl);
+    await page.click('[data-overlay="ew"]'); await settle(page); await page.click('[data-overlay="ewfc"]'); await settle(page); d = await fc(page);
+    const ewOn = await page.evaluate(() => document.querySelector('[data-overlay="ew"]').getAttribute('aria-pressed'));
+    check('Elliott aus, „Wellen-Prognose“ antippen: schaltet Elliott mit ein, Prognose da', ewOn === 'true' && d.pressed === 'true' && d.g && d.lbl === 'A B C', JSON.stringify({ ew: ewOn, fc: d.pressed, lbl: d.lbl }));
     await page.reload(); await page.waitForFunction(() => document.getElementById('status').dataset.feed === 'live', null, { timeout: 20000 }).catch(() => {}); await page.waitForTimeout(1500);
     const sym0 = await page.evaluate(() => document.getElementById('lb-sym').textContent); if (sym0 !== 'SOL') await load(page, 'SOL');
     d = await fc(page); check('Nach dem Neuladen bleibt die Prognose an', d.pressed === 'true' && d.g && d.lbl === 'A B C', JSON.stringify({ pressed: d.pressed, g: d.g, symbolNachNeuladen: sym0 }));
