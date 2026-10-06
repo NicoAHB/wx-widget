@@ -1449,6 +1449,28 @@ html[data-layout=tablet] .wl-tile{height:64px}
    (iPad mini hochkant hatte nur 20 px Luft); bei knappem Platz werden die Intervall-Knöpfe etwas schmaler statt umzubrechen */
 .chart-toolbar{container:ctb/inline-size}
 .tb-main{display:flex;flex-wrap:wrap;align-items:center;gap:6px;flex:1 1 0;min-width:min(100%,22rem)}
+/* 3.37.0 (G09): Chartmuster */
+#pat-btn{font-weight:700;font-size:.8125rem}#pat-btn[aria-pressed=true]{background:var(--up-bg-2);color:var(--up-text);border-color:var(--up-border)}
+@container ctb (min-width:640px) and (max-width:780px){.chart-toolbar .zoom-controls{gap:2px}.chart-toolbar .zoom-controls button{min-width:40px}}
+@container ctb (min-width:331px) and (max-width:400px){.chart-toolbar .zoom-controls{gap:2px}.chart-toolbar .zoom-controls button{min-width:40px}}
+.pat-scope{margin:0;font-size:.8125rem;color:var(--muted)}
+.pat-bar{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}.pat-bar label{display:flex;align-items:center;gap:6px;font-size:.8125rem;color:var(--muted)}
+.pat-bar select{min-height:34px;border:1px solid var(--field-border);border-radius:6px;background:var(--field);color:var(--text);padding:0 6px}
+.pat-list{display:grid;gap:6px}
+.pat-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:start;border:1px solid var(--border);border-left:4px solid var(--muted);border-radius:10px;padding:8px 8px 8px 10px}
+.pat-row.bull{border-left-color:var(--up-text)}.pat-row.bear{border-left-color:var(--down-text)}.pat-row.sel{background:var(--hover)}
+.pat-main{display:grid;gap:3px;text-align:left;border:0;background:none;color:var(--text);font:inherit;padding:0;cursor:pointer;min-width:0}
+.pat-h{display:flex;justify-content:space-between;gap:8px}.pat-q{font-variant-numeric:tabular-nums;color:var(--text-2);font-size:.8125rem;white-space:nowrap}
+.pat-m,.pat-e,.pat-lv{font-size:.75rem;color:var(--muted)}.pat-e{color:var(--text-2)}
+.pat-i{width:32px;height:32px;border-radius:50%;border:1px solid var(--border);background:var(--field);color:var(--text);font-weight:700}
+.pat-empty,.pat-note{font-size:.8125rem;color:var(--muted);margin:0}
+.pat-info{display:grid;gap:10px}.pat-info-top{display:flex;gap:14px;align-items:center}.pat-info-top p{margin:2px 0}
+.pat-dir.bull{color:var(--up-text)}.pat-dir.bear{color:var(--down-text)}
+.pat-svg{flex:0 0 auto}.pat-svg-bg{fill:var(--field)}.pat-up{stroke:var(--up-text)}.pat-dn{stroke:var(--down-text)}.pat-up.fill{fill:var(--up-text)}.pat-dn.fill{fill:var(--down-text)}
+.pat-ln{stroke:var(--muted)}.pat-path{stroke:var(--text-2)}.pat-path.bull{stroke:var(--up-text)}.pat-path.bear{stroke:var(--down-text)}
+.pat-vals h3{font-size:.875rem;margin:4px 0}.pat-kv{margin:2px 0;font-size:.8125rem}
+.pat-why summary{cursor:pointer;font-weight:600}.pat-why ul{margin:6px 0 0;padding-left:0;list-style:none;display:grid;gap:3px;font-size:.8125rem}.pat-why li{display:flex;gap:6px}
+.pat-why .ok .pat-mark{color:var(--up-text)}.pat-why .no .pat-mark{color:var(--down-text)}.pat-why .unk .pat-mark{color:var(--warn-text)}
 /* 3.36.0 (G08): BTC-Entkopplung */
 .dec{padding:14px 16px;display:grid;gap:10px;container:dec/inline-size}
 .dec-bar,.dec-thr{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px}
@@ -2790,7 +2812,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Alle Werte liegen zusätzlich im Arbeitsspeicher und sind dadurch synchron lesbar. Schreiben geht sofort in den
 // localStorage und gebündelt in die IndexedDB; beim Start gewinnt die zuletzt vollständig geschriebene Kopie.
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
-const APP_VERSION = '3.36.0', docEl = document.documentElement;
+const APP_VERSION = '3.37.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -6257,6 +6279,7 @@ function renderChart(levels={}, ov={}, start=null, end=null) {
   if (bbU) { over.append(node('path',{d:pathOf(bbU),fill:'none',stroke:PAL.bb,'stroke-width':1,opacity:.75}),node('path',{d:pathOf(bbL),fill:'none',stroke:PAL.bb,'stroke-width':1,opacity:.75}),node('path',{d:pathOf(bbM),fill:'none',stroke:PAL.bb,'stroke-width':1,'stroke-dasharray':'4 4',opacity:.45})); }
   if (e200) over.append(node('path',{d:pathOf(e200),fill:'none',stroke:PAL.ema,'stroke-width':1.7,opacity:.95}));
   if (show.hz && !ovLock('hz')) hzDraw(svg, over, { data, x, y, left, pw, top, bottom, min, max, rx, step }); // 3.35.0 (G07): höhere Zonen
+  if (pat.on) patDraw(svg, over, { data, x, y, left, pw, top, bottom, min, max, rx, step }); // 3.37.0 (G09): erkannte Chartmuster
   if (prof) { const yp=y(prof.poc); over.append(node('line',{x1:left,y1:yp,x2:left+pw,y2:yp,stroke:PAL.vp,'stroke-width':1.5,opacity:.95}),node('text',{x:left+6,y:yp-5,class:'axis-label',style:'fill:'+PAL.vp+';font-weight:600'},'POC')); }
   // 3.28.0: Demo-Positionen auch im Chart – blasser und mit „DEMO“ beschriftet (nur Anzeige)
   const chartPos = [...state.positions, ...state.demoPositions].filter(p => p.symbol === state.symbol), demoTag = p => isDemoPos(p) ? 'DEMO ' : '';
@@ -6295,6 +6318,7 @@ function renderChart(levels={}, ov={}, start=null, end=null) {
   const clear=()=>{cross.setAttribute('visibility','hidden');state.selected=null;state.selectedTime=null;put('ohlc',`O ${priceText(last.open)}  H ${priceText(last.high)}\nL ${priceText(last.low)}  C ${priceText(last.close)}`);};
   chartGeom={w,h,left,pw:step*data.length,step,top,bottom,min,max,y,count:data.length,data,levels,prof,bbU,bbL,bbM,e200,select,clear,axisIn};
   container.onkeydown=event=>{if(['ArrowLeft','ArrowRight'].includes(event.key)){event.preventDefault();select((state.selected??data.length-1)+(event.key==='ArrowLeft'?-1:1));}if(event.key==='+' || event.key==='-'){event.preventDefault();zoom(event.key==='+'?.7:1.4);}};
+  for (const t of svg.querySelectorAll('.pat-label')) svg.append(t); // 3.37.0 (G09): Muster-Labels zuoberst, damit sie antippbar sind
   container.replaceChildren(svg);
   declutterChart(svg, {top, bottom, left, right: left+pw});
   const keep=state.selectedTime!=null?data.findIndex(c=>c.time===state.selectedTime):-1;
@@ -6317,6 +6341,7 @@ function setMarket(symbol,interval=state.interval) {
   state.symbol=normalized;state.interval=interval;$('symbol').value=normalized.slice(0,-4);state.pickError=null;
   if(changed){state.pan=0;state.anchorTime=null;state.candles=[];state.marketAt=0;state.marketError=null;state.funding=null;state.oi=null;state.history=null;state.fundingError=null;state.oiError=null;state.historyError=null;state.selected=null;state.selectedTime=null;state.fromCache=false;live.chartAt=0;}
   document.querySelectorAll('[data-interval]').forEach(b=>{const active=b.dataset.interval===interval;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});
+  if(changed)patClear(); // 3.37.0 (G09): alte Treffer gehören zum alten Coin/Intervall
   render();void showCachedChart();if(CAP.on)void capLoad(); // 3.35.0: Cap des neuen Coins bzw. passende Auflösung
   return refresh();
 }
@@ -6841,6 +6866,7 @@ function onTick(now) {
   s247Tick(now); // 5.1: meldet sich der 24/7-Dienst?
   if (typeof svcTick === 'function') svcTick(now); // 3.33.0 (G05): Schalterstand am Dienst
   anaTick(now); // 3.35.0 (G07): Analyse-Reihe nach dem nächsten Kerzenschluss
+  patTick(); // 3.37.0 (G09): Muster neu bei Kerzenschluss oder Kontextwechsel
   if (now - lastStreamSync > 5000) { lastStreamSync = now; syncStreams(); }
   if (Date.now() - lastSeenSaved > 30000) saveLastSeen();
   // 3.32.0 (G04.7): Kurse offener Positionen nachladen, bevor sie die Frischegrenze erreichen (ruhiger Coin ohne Stream-Meldung,
@@ -12053,6 +12079,480 @@ async function decPick(pair) {
   $('dec-corr').addEventListener('change', () => decSet({ corr: $('dec-corr').checked }));
   decEval(); decRender();
 })();
+// ---- 3.37.0 (G09): Mustererkennung – reine Engine (läuft im Worker; keine DOM-, Netz- oder App-Zugriffe) ----
+// Eingabe: abgeschlossene Kerzen k = [{ t, o, h, l, c, v }] (älteste zuerst), optional am Ende die laufende Kerze (opt.running),
+// erster auszuwertender Index opt.from (davor nur Vorlauf für Vortrend/ATR), Intervall opt.step (ms, 0 = Monat), opt.gap (strenger
+// Gap-Modus). Ausgabe: Treffer mit Regeln (erfüllt/nicht erfüllt/unbekannt), Regelgüte = erfüllte ÷ mögliche Gewichte, Status,
+// Ebenen und gemessenen Werten. Heuristik nach festen, versionierten Regeln – kein Profitabilitätsnachweis.
+function patEngine() {
+  const VER = 'pat-1', N_PRE = 8, ZZ_MULT = 1.5;
+  const R = (k, w, ok, v = '') => ({ k, w, ok, v });
+  const quality = rules => { const all = rules.reduce((s, r) => s + r.w, 0), got = rules.reduce((s, r) => s + (r.ok === true ? r.w : 0), 0); return all ? Math.round(got / all * 100) : 0; };
+  function atrSeries(k) {
+    const out = new Array(k.length).fill(null); let a = null, sum = 0;
+    for (let i = 0; i < k.length; i++) {
+      const c = k[i], pc = i ? k[i - 1].c : null, tr = pc === null ? c.h - c.l : Math.max(c.h - c.l, Math.abs(c.h - pc), Math.abs(c.l - pc));
+      if (i < 14) { sum += tr; if (i === 13) out[i] = a = sum / 14; } else out[i] = a = (a * 13 + tr) / 14;
+    }
+    return out;
+  }
+  // aufeinanderfolgend ohne Lücke (Monat: 27–32 Tage)
+  const cont = (k, i, step) => { const d = k[i].t - k[i - 1].t; return step ? d === step : d >= 27 * 864e5 && d <= 32 * 864e5; };
+  // Vortrend: N = 8 abgeschlossene Schlusskurse direkt vor der ersten Musterkerze, lineare Regression gegen den Index,
+  // A = ATR 14 der letzten Vorgängerkerze; Trend nur bei R² ≥ 0,35 und |b·(N−1)| ≥ 0,75·A. Keine Muster- oder Zukunftskerzen.
+  function preTrend(k, i0, A, step) {
+    if (i0 - N_PRE < 0) return { dir: null, why: 'weniger als 8 Vorgängerkerzen' };
+    for (let i = i0 - N_PRE + 1; i < i0; i++) if (!cont(k, i, step)) return { dir: null, why: 'Lücke vor dem Muster' };
+    const a = A[i0 - 1]; if (!(a > 0)) return { dir: null, why: 'ATR 14 fehlt oder ist 0' };
+    let sx = 0, sy = 0; for (let j = 0; j < N_PRE; j++) { sx += j; sy += k[i0 - N_PRE + j].c; }
+    const mx = sx / N_PRE, my = sy / N_PRE; let sxy = 0, sxx = 0, syy = 0;
+    for (let j = 0; j < N_PRE; j++) { const dx = j - mx, dy = k[i0 - N_PRE + j].c - my; sxy += dx * dy; sxx += dx * dx; syy += dy * dy; }
+    const b = sxy / sxx, r2 = syy > 0 ? (sxy * sxy) / (sxx * syy) : 0, mv = Math.abs(b * (N_PRE - 1));
+    return { dir: r2 >= 0.35 && mv >= 0.75 * a ? (b > 0 ? 'up' : 'down') : 'neutral', b, r2, A: a, mv };
+  }
+  const P = c => { const body = Math.abs(c.c - c.o), range = c.h - c.l; return { body, range, up: c.h - Math.max(c.o, c.c), lo: Math.min(c.o, c.c) - c.l, bull: c.c > c.o, bear: c.c < c.o, mid: (c.o + c.c) / 2, top: Math.max(c.o, c.c), bot: Math.min(c.o, c.c) }; };
+  const pct = (a, b) => (b > 0 ? a / b : 0);
+
+  // ---------- Kerzenmuster ----------
+  function candles(k, A, opt) {
+    const out = [], last = k.length - 1, closedEnd = opt.running ? last - 1 : last;
+    const volAvg = i => { let s = 0, n = 0; for (let j = Math.max(0, i - 20); j < i; j++) if (k[j].v > 0) { s += k[j].v; n++; } return n >= 10 ? s / n : null; };
+    for (let i = Math.max(opt.from, 1); i <= last; i++) {
+      for (const d of DEF) {
+        if (i - d.n + 1 < opt.from) continue;
+        const i0 = i - d.n + 1, cs = k.slice(i0, i + 1), a = A[i0 - 1] || A[i0];
+        if (!(a > 0)) continue;
+        const shape = d.f(cs.map(P), cs, a, opt); if (!shape) continue;
+        const rules = shape.rules.slice(), tr = preTrend(k, i0, A, opt.step);
+        if (d.fam === 'bullRev' || d.fam === 'bearRev') {
+          const need = d.fam === 'bullRev' ? 'down' : 'up', ok = tr.dir === null ? null : tr.dir === need;
+          if (ok !== true) continue;   // Umkehrmuster brauchen den passenden Vortrend (fehlende Daten → kein Treffer)
+          rules.unshift(R(`Vortrend ${need === 'down' ? 'abwärts' : 'aufwärts'} (8 Kerzen, R² ≥ 0,35, Bewegung ≥ 0,75 ATR)`, 2, true, `R² ${tr.r2.toFixed(2)}, Bewegung ${(tr.mv / tr.A).toFixed(2)} ATR`));
+        }
+        if (d.fam === 'neutral') rules.push(R('nach einem Trend (8 Kerzen) – sonst wenig aussagekräftig', 2, tr.dir === null ? null : tr.dir !== 'neutral', tr.dir === null ? tr.why : tr.dir === 'neutral' ? 'kein Trend' : tr.dir === 'up' ? 'aufwärts' : 'abwärts'));
+        const va = volAvg(i0), vl = k[i].v;
+        rules.push(R('Volumen der letzten Musterkerze über dem 20er-Schnitt', 1, va === null || !(vl >= 0) ? null : vl > va, va ? `${(vl / va).toFixed(2)}×` : 'kein Volumen'));
+        let conf = null;
+        if (d.fam !== 'neutral' && d.fam !== 'cont') {
+          const nx = i + 1 <= closedEnd ? k[i + 1] : null, up = d.dir === 'bull';
+          conf = nx ? (up ? nx.c > k[i].c : nx.c < k[i].c) : null;
+          rules.push(R(`Bestätigung: Folgekerze schließt ${up ? 'höher' : 'tiefer'}`, 2, conf, nx ? (conf ? 'ja' : 'nein') : 'noch offen'));
+        }
+        const prelim = i > closedEnd;
+        out.push({ id: d.id, kind: 'candle', dir: d.dir, i0, i1: i, t0: k[i0].t, t1: k[i].t, rules, q: quality(rules), prelim,
+          status: prelim ? 'vorläufig (laufende Kerze)' : conf === true ? 'bestätigt' : conf === false ? 'nicht bestätigt' : d.fam === 'neutral' || d.fam === 'cont' ? 'abgeschlossen' : 'Bestätigung offen',
+          trend: tr.dir === undefined ? null : { dir: tr.dir, r2: tr.r2, b: tr.b, A: tr.A, why: tr.why }, vals: Object.assign({ ATR: a }, shape.vals || {}), price: k[i].h, low: k[i].l });
+      }
+    }
+    return out;
+  }
+  // Formen (f bekommt die Proportionen p, die Kerzen c, ATR a, Optionen) → null oder { rules, vals }; Pflichtregeln entscheiden
+  // über den Treffer (stehen als erfüllt in den Regeln), weitere Regeln nur über die Regelgüte.
+  const req = (...rs) => ({ rules: rs.map(([k, w, v]) => R(k, w, true, v)) });
+  const add = (s, ...rs) => { if (s) for (const r of rs) s.rules.push(r); return s; };
+  const isDoji = p => p.range > 0 && p.body <= 0.1 * p.range;
+  const DEF = [
+    { id: 'doji_dragonfly', n: 1, dir: 'bull', fam: 'bullRev', f: ([p]) => isDoji(p) && p.up <= 0.1 * p.range && p.lo >= 0.6 * p.range ? req(['Körper ≤ 10 % der Spanne', 2, `${(pct(p.body, p.range) * 100).toFixed(0)} %`], ['langer unterer Docht (≥ 60 %), kein oberer', 2, `${(pct(p.lo, p.range) * 100).toFixed(0)} %`]) : null },
+    { id: 'doji_gravestone', n: 1, dir: 'bear', fam: 'bearRev', f: ([p]) => isDoji(p) && p.lo <= 0.1 * p.range && p.up >= 0.6 * p.range ? req(['Körper ≤ 10 % der Spanne', 2, `${(pct(p.body, p.range) * 100).toFixed(0)} %`], ['langer oberer Docht (≥ 60 %), kein unterer', 2, `${(pct(p.up, p.range) * 100).toFixed(0)} %`]) : null },
+    { id: 'doji', n: 1, dir: 'neutral', fam: 'neutral', f: ([p], c, a) => isDoji(p) && !(p.up <= 0.1 * p.range && p.lo >= 0.6 * p.range) && !(p.lo <= 0.1 * p.range && p.up >= 0.6 * p.range) ? add(req(['Körper ≤ 10 % der Spanne', 2, `${(pct(p.body, p.range) * 100).toFixed(0)} %`]), R('Spanne mindestens 0,5 ATR (keine Ruhekerze)', 1, p.range >= 0.5 * a, `${(p.range / a).toFixed(2)} ATR`)) : null },
+    { id: 'hammer', n: 1, dir: 'bull', fam: 'bullRev', f: ([p]) => !isDoji(p) && p.lo >= 2 * p.body && p.up <= 0.15 * p.range ? req(['unterer Docht ≥ 2× Körper', 2, `${(p.lo / p.body).toFixed(1)}×`], ['oberer Docht klein (≤ 15 %)', 1, `${(pct(p.up, p.range) * 100).toFixed(0)} %`]) : null },
+    { id: 'hanging_man', n: 1, dir: 'bear', fam: 'bearRev', f: ([p]) => !isDoji(p) && p.lo >= 2 * p.body && p.up <= 0.15 * p.range ? req(['unterer Docht ≥ 2× Körper', 2, `${(p.lo / p.body).toFixed(1)}×`], ['oberer Docht klein (≤ 15 %)', 1, `${(pct(p.up, p.range) * 100).toFixed(0)} %`]) : null },
+    { id: 'inverted_hammer', n: 1, dir: 'bull', fam: 'bullRev', f: ([p]) => !isDoji(p) && p.up >= 2 * p.body && p.lo <= 0.15 * p.range ? req(['oberer Docht ≥ 2× Körper', 2, `${(p.up / p.body).toFixed(1)}×`], ['unterer Docht klein (≤ 15 %)', 1, `${(pct(p.lo, p.range) * 100).toFixed(0)} %`]) : null },
+    { id: 'shooting_star', n: 1, dir: 'bear', fam: 'bearRev', f: ([p]) => !isDoji(p) && p.up >= 2 * p.body && p.lo <= 0.15 * p.range ? req(['oberer Docht ≥ 2× Körper', 2, `${(p.up / p.body).toFixed(1)}×`], ['unterer Docht klein (≤ 15 %)', 1, `${(pct(p.lo, p.range) * 100).toFixed(0)} %`]) : null },
+    { id: 'spinning_top', n: 1, dir: 'neutral', fam: 'neutral', f: ([p], c, a) => p.body > 0.1 * p.range && p.body <= 0.35 * p.range && p.up >= 0.25 * p.range && p.lo >= 0.25 * p.range ? add(req(['kleiner Körper (10–35 % der Spanne)', 2, `${(pct(p.body, p.range) * 100).toFixed(0)} %`], ['Dochte oben und unten je ≥ 25 %', 2, `${(pct(p.up, p.range) * 100).toFixed(0)} / ${(pct(p.lo, p.range) * 100).toFixed(0)} %`]), R('Spanne mindestens 0,5 ATR', 1, p.range >= 0.5 * a, `${(p.range / a).toFixed(2)} ATR`)) : null },
+    { id: 'marubozu_bull', n: 1, dir: 'bull', fam: 'cont', f: ([p], c, a) => p.bull && p.body >= 0.9 * p.range ? add(req(['Körper ≥ 90 % der Spanne, grün', 2, `${(pct(p.body, p.range) * 100).toFixed(0)} %`]), R('Körper mindestens 1 ATR', 1, p.body >= a, `${(p.body / a).toFixed(2)} ATR`)) : null },
+    { id: 'marubozu_bear', n: 1, dir: 'bear', fam: 'cont', f: ([p], c, a) => p.bear && p.body >= 0.9 * p.range ? add(req(['Körper ≥ 90 % der Spanne, rot', 2, `${(pct(p.body, p.range) * 100).toFixed(0)} %`]), R('Körper mindestens 1 ATR', 1, p.body >= a, `${(p.body / a).toFixed(2)} ATR`)) : null },
+    { id: 'engulfing_bull', n: 2, dir: 'bull', fam: 'bullRev', f: ([p, q], [x, y]) => p.bear && q.bull && y.o <= x.c && y.c >= x.o && q.body > p.body ? req(['rote Kerze, dann grüne', 1, ''], ['grüner Körper umschließt den roten', 2, `${(q.body / p.body).toFixed(1)}× so groß`]) : null },
+    { id: 'engulfing_bear', n: 2, dir: 'bear', fam: 'bearRev', f: ([p, q], [x, y]) => p.bull && q.bear && y.o >= x.c && y.c <= x.o && q.body > p.body ? req(['grüne Kerze, dann rote', 1, ''], ['roter Körper umschließt den grünen', 2, `${(q.body / p.body).toFixed(1)}× so groß`]) : null },
+    { id: 'harami_bull', n: 2, dir: 'bull', fam: 'bullRev', f: ([p, q], c, a) => p.bear && q.top <= p.top && q.bot >= p.bot && q.body <= 0.5 * p.body && q.body > 0 ? add(req(['große rote Kerze, dann kleiner Körper darin', 2, `${(q.body / p.body * 100).toFixed(0)} % des Körpers`]), R('erste Kerze groß (≥ 0,6 ATR)', 1, p.body >= 0.6 * a, `${(p.body / a).toFixed(2)} ATR`), R('zweite Kerze grün', 1, q.bull, q.bull ? 'ja' : 'nein')) : null },
+    { id: 'harami_bear', n: 2, dir: 'bear', fam: 'bearRev', f: ([p, q], c, a) => p.bull && q.top <= p.top && q.bot >= p.bot && q.body <= 0.5 * p.body && q.body > 0 ? add(req(['große grüne Kerze, dann kleiner Körper darin', 2, `${(q.body / p.body * 100).toFixed(0)} % des Körpers`]), R('erste Kerze groß (≥ 0,6 ATR)', 1, p.body >= 0.6 * a, `${(p.body / a).toFixed(2)} ATR`), R('zweite Kerze rot', 1, q.bear, q.bear ? 'ja' : 'nein')) : null },
+    { id: 'piercing', n: 2, dir: 'bull', fam: 'bullRev', f: ([p, q], [x, y], a, o) => p.bear && q.bull && (o.gap ? y.o < x.l : y.o <= x.c) && y.c > p.mid && y.c < x.o ? add(req(['rote Kerze, grüne eröffnet tiefer' + (o.gap ? ' (mit Gap unter dem Tief)' : ' (Krypto: ohne Gap)'), 1, ''], ['schließt über der Mitte des roten Körpers', 2, `${((y.c - x.c) / p.body * 100).toFixed(0)} % zurückgewonnen`]), R('erste Kerze groß (≥ 0,5 ATR)', 1, p.body >= 0.5 * a, `${(p.body / a).toFixed(2)} ATR`)) : null },
+    { id: 'dark_cloud', n: 2, dir: 'bear', fam: 'bearRev', f: ([p, q], [x, y], a, o) => p.bull && q.bear && (o.gap ? y.o > x.h : y.o >= x.c) && y.c < p.mid && y.c > x.o ? add(req(['grüne Kerze, rote eröffnet höher' + (o.gap ? ' (mit Gap über dem Hoch)' : ' (Krypto: ohne Gap)'), 1, ''], ['schließt unter der Mitte des grünen Körpers', 2, `${((x.c - y.c) / p.body * 100).toFixed(0)} % abgegeben`]), R('erste Kerze groß (≥ 0,5 ATR)', 1, p.body >= 0.5 * a, `${(p.body / a).toFixed(2)} ATR`)) : null },
+    { id: 'tweezer_bottom', n: 2, dir: 'bull', fam: 'bullRev', f: ([p, q], [x, y], a) => p.bear && q.bull && Math.abs(x.l - y.l) <= 0.1 * a ? req(['rote, dann grüne Kerze', 1, ''], ['gleiches Tief (± 0,1 ATR)', 2, `Abstand ${(Math.abs(x.l - y.l) / a).toFixed(2)} ATR`]) : null },
+    { id: 'tweezer_top', n: 2, dir: 'bear', fam: 'bearRev', f: ([p, q], [x, y], a) => p.bull && q.bear && Math.abs(x.h - y.h) <= 0.1 * a ? req(['grüne, dann rote Kerze', 1, ''], ['gleiches Hoch (± 0,1 ATR)', 2, `Abstand ${(Math.abs(x.h - y.h) / a).toFixed(2)} ATR`]) : null },
+    { id: 'morning_star', n: 3, dir: 'bull', fam: 'bullRev', f: ([p, q, r], [x, y, z], a, o) => p.bear && p.body >= 0.6 * a && q.body <= 0.3 * p.body && r.bull && z.c > p.mid && (!o.gap || (q.top < x.c && z.o > q.top)) ? req(['große rote Kerze (≥ 0,6 ATR)', 1, `${(p.body / a).toFixed(2)} ATR`], ['kleiner Körper in der Mitte (≤ 30 %)', 1, `${(q.body / p.body * 100).toFixed(0)} %`], ['grüne Kerze schließt über der Mitte der roten', 2, ''], [o.gap ? 'Gaps vor und nach dem Stern' : 'Krypto-Variante: Gap nicht verlangt', 0, '']) : null },
+    { id: 'evening_star', n: 3, dir: 'bear', fam: 'bearRev', f: ([p, q, r], [x, y, z], a, o) => p.bull && p.body >= 0.6 * a && q.body <= 0.3 * p.body && r.bear && z.c < p.mid && (!o.gap || (q.bot > x.c && z.o < q.bot)) ? req(['große grüne Kerze (≥ 0,6 ATR)', 1, `${(p.body / a).toFixed(2)} ATR`], ['kleiner Körper in der Mitte (≤ 30 %)', 1, `${(q.body / p.body * 100).toFixed(0)} %`], ['rote Kerze schließt unter der Mitte der grünen', 2, ''], [o.gap ? 'Gaps vor und nach dem Stern' : 'Krypto-Variante: Gap nicht verlangt', 0, '']) : null },
+    { id: 'three_white_soldiers', n: 3, dir: 'bull', fam: 'bullRev', f: (ps, cs, a) => ps.every(p => p.bull) && cs[1].c > cs[0].c && cs[2].c > cs[1].c && cs[1].o >= cs[0].o && cs[1].o <= cs[0].c && cs[2].o >= cs[1].o && cs[2].o <= cs[1].c ? add(req(['drei grüne Kerzen, jeder Schluss höher', 2, ''], ['jede eröffnet im vorigen Körper', 1, '']), R('Körper je ≥ 0,5 ATR', 1, ps.every(p => p.body >= 0.5 * a), ps.map(p => (p.body / a).toFixed(1)).join(' / ') + ' ATR'), R('kleine obere Dochte (≤ 30 % des Körpers)', 1, ps.every(p => p.up <= 0.3 * p.body), '')) : null },
+    { id: 'three_black_crows', n: 3, dir: 'bear', fam: 'bearRev', f: (ps, cs, a) => ps.every(p => p.bear) && cs[1].c < cs[0].c && cs[2].c < cs[1].c && cs[1].o <= cs[0].o && cs[1].o >= cs[0].c && cs[2].o <= cs[1].o && cs[2].o >= cs[1].c ? add(req(['drei rote Kerzen, jeder Schluss tiefer', 2, ''], ['jede eröffnet im vorigen Körper', 1, '']), R('Körper je ≥ 0,5 ATR', 1, ps.every(p => p.body >= 0.5 * a), ps.map(p => (p.body / a).toFixed(1)).join(' / ') + ' ATR'), R('kleine untere Dochte (≤ 30 % des Körpers)', 1, ps.every(p => p.lo <= 0.3 * p.body), '')) : null },
+  ];
+
+  // ---------- Formationen ----------
+  // ATR-ZigZag: Pivot erst bestätigt, wenn der Kurs um ZZ_MULT·ATR zurückgelaufen ist; der wandernde Endpunkt zählt nie.
+  function zigzag(k, A, s, end) {
+    const piv = []; let dir = 0, hi = s, lo = s;
+    for (let i = s + 1; i <= end; i++) {
+      const thr = ZZ_MULT * A[i]; if (!(thr > 0)) continue;
+      if (dir !== -1 && k[i].h >= k[hi].h) hi = i;
+      if (dir !== 1 && k[i].l <= k[lo].l) lo = i;
+      if (dir !== -1 && hi < i && k[hi].h - k[i].l >= thr) { piv.push({ i: hi, p: k[hi].h, t: 'H', conf: i }); dir = -1; lo = i; }
+      else if (dir !== 1 && lo < i && k[i].h - k[lo].l >= thr) { piv.push({ i: lo, p: k[lo].l, t: 'L', conf: i }); dir = 1; hi = i; }
+    }
+    return piv;
+  }
+  const tolAt = (p, a) => Math.min(0.02 * p, 0.6 * a);
+  const fitLine = pts => { const n = pts.length, mx = pts.reduce((s, q) => s + q.i, 0) / n, my = pts.reduce((s, q) => s + q.p, 0) / n; let sxy = 0, sxx = 0; for (const q of pts) { sxy += (q.i - mx) * (q.p - my); sxx += (q.i - mx) ** 2; } const m = sxx ? sxy / sxx : 0; return { m, y: i => my + m * (i - mx) }; };
+  // erster Schlusskurs nach Index from (nur abgeschlossene Kerzen) jenseits einer Linie; dir +1 = darüber, −1 = darunter
+  const breakAfter = (k, from, end, line, dir) => { for (let i = from + 1; i <= end; i++) { const v = typeof line === 'function' ? line(i) : line; if (dir > 0 ? k[i].c > v : k[i].c < v) return i; } return -1; };
+  function formations(k, A, opt) {
+    const end = opt.running ? k.length - 2 : k.length - 1, out = [], s = Math.max(14, opt.from - 40);
+    if (end - s < 20) return out;
+    const piv = zigzag(k, A, s, end), seen = new Set(), covered = [];
+    const push = h => { const key = h.id + '|' + h.i0; if (seen.has(key) || h.i1 < opt.from) return; seen.add(key); h.q = quality(h.rules); out.push(h); };
+    const volOk = (i1, i2) => { const v1 = k[i1].v, v2 = k[i2].v; return v1 > 0 && v2 > 0 ? v2 < v1 : null; };
+    const vol = (i1, i2) => (k[i1].v > 0 && k[i2].v > 0 ? `${(k[i2].v / k[i1].v).toFixed(2)}×` : 'kein Volumen');
+    // Doppel-/Dreifach-Top und -Boden, Kopf-Schulter (auch invers) – Pivots von hinten
+    for (let j = piv.length - 1; j >= 2 && j >= piv.length - 8; j--) {
+      const top = piv[j].t === 'H', sg = top ? 1 : -1, a = A[piv[j].i], tol = tolAt(piv[j].p, a);
+      const [P1, M, P2] = [piv[j - 2], piv[j - 1], piv[j]];
+      const mk = (id, dir, i0, rules, neck, height, inv, lines, vals, lastI) => {
+        const brk = breakAfter(k, lastI, end, neck, -sg), invI = breakAfter(k, lastI, end, inv, sg);
+        const broken = brk >= 0 && (invI < 0 || brk < invI); if (invI >= 0 && !broken) return;   // invalidiert → nicht zeigen
+        rules.push(R(`Ausbruch per Schlusskurs ${top ? 'unter' : 'über'} der Nackenlinie`, 2, broken, broken ? `am ${brk}. Index` : 'noch nicht'));
+        const nv = typeof neck === 'function' ? neck(broken ? brk : end) : neck;
+        covered.push([i0, lastI]);
+        push({ id, kind: 'form', dir, i0, i1: broken ? brk : lastI, t0: k[i0].t, t1: k[broken ? brk : lastI].t, rules, status: broken ? 'Ausbruch bestätigt' : 'in Bildung (Ausbruch fehlt)',
+          levels: { brk: nv, tgt: nv - sg * height, inv }, lines, vals: Object.assign({ ATR: a, Toleranz: tol }, vals), prelim: false });
+      };
+      // Dreifach
+      if (j >= 4) {
+        const [Q1, N1, Q2, N2, Q3] = piv.slice(j - 4, j + 1), hs = [Q1.p, Q2.p, Q3.p], mean = (hs[0] + hs[1] + hs[2]) / 3;
+        if (hs.every(h => Math.abs(h - mean) <= tol)) {
+          const neck = top ? Math.min(N1.p, N2.p) : Math.max(N1.p, N2.p), height = Math.abs(mean - neck);
+          if (height >= 1.5 * a) { mk(top ? 'triple_top' : 'triple_bottom', top ? 'bear' : 'bull', Q1.i, [R(`drei ${top ? 'Hochs' : 'Tiefs'} gleich hoch (Toleranz min(2 %, 0,6 ATR))`, 2, true, `Spanne ${(Math.max(...hs) - Math.min(...hs)).toFixed(6)}`), R('Höhe mindestens 1,5 ATR', 1, true, `${(height / a).toFixed(2)} ATR`), R(`Volumen am dritten ${top ? 'Hoch' : 'Tief'} niedriger`, 1, volOk(Q1.i, Q3.i), vol(Q1.i, Q3.i))], neck, height, top ? Math.max(...hs) : Math.min(...hs), [[Q1.i, mean, Q3.i, mean, 'res'], [Q1.i, neck, end, neck, 'neck']], { [top ? 'Hochs' : 'Tiefs']: hs, Nackenlinie: neck }, Q3.i); continue; }
+        }
+        // Kopf-Schulter
+        const head = top ? Q2.p - Math.max(Q1.p, Q3.p) : Math.min(Q1.p, Q3.p) - Q2.p;
+        if (head > tol && Math.abs(Q1.p - Q3.p) <= 2 * tol) {
+          const nl = (i => N1.p + (N2.p - N1.p) * (i - N1.i) / (N2.i - N1.i)), height = Math.abs(Q2.p - nl(Q2.i));
+          if (height >= 1.5 * a) { mk(top ? 'head_shoulders' : 'inv_head_shoulders', top ? 'bear' : 'bull', Q1.i, [R('Kopf deutlich über beiden Schultern', 2, true, `${(head / a).toFixed(2)} ATR`), R('Schultern etwa gleich hoch (≤ 2× Toleranz)', 2, true, `Abstand ${(Math.abs(Q1.p - Q3.p) / a).toFixed(2)} ATR`), R('Höhe mindestens 1,5 ATR', 1, true, `${(height / a).toFixed(2)} ATR`), R('Volumen an der rechten Schulter niedriger', 1, volOk(Q1.i, Q3.i), vol(Q1.i, Q3.i))], nl, height, Q3.p, [[Q1.i, Q1.p, Q2.i, Q2.p, 'shape'], [Q2.i, Q2.p, Q3.i, Q3.p, 'shape'], [N1.i, N1.p, end, nl(end), 'neck']], { 'Schulter links': Q1.p, Kopf: Q2.p, 'Schulter rechts': Q3.p }, Q3.i); continue; }
+        }
+      }
+      // Doppel
+      if (Math.abs(P1.p - P2.p) <= tol) {
+        const mean = (P1.p + P2.p) / 2, height = Math.abs(mean - M.p);
+        if (height >= 1.5 * a && !covered.some(([c0, c1]) => P1.i >= c0 && P2.i <= c1)) {
+          const L0 = piv[j - 3], prior = L0 ? (top ? P1.p - L0.p : L0.p - P1.p) : null;
+          mk(top ? 'double_top' : 'double_bottom', top ? 'bear' : 'bull', P1.i, [R(`zwei ${top ? 'Hochs' : 'Tiefs'} gleich hoch (Toleranz min(2 %, 0,6 ATR))`, 2, true, `Abstand ${(Math.abs(P1.p - P2.p) / a).toFixed(2)} ATR`), R('Tal dazwischen mindestens 1,5 ATR', 1, true, `${(height / a).toFixed(2)} ATR`), R('Abstand mindestens 5 Kerzen', 1, P2.i - P1.i >= 5, `${P2.i - P1.i} Kerzen`), R(`Vortrend ${top ? 'aufwärts' : 'abwärts'} in das erste ${top ? 'Hoch' : 'Tief'}`, 1, prior === null ? null : prior >= height, prior === null ? 'unbekannt' : `${(prior / a).toFixed(2)} ATR`), R(`Volumen am zweiten ${top ? 'Hoch' : 'Tief'} niedriger`, 1, volOk(P1.i, P2.i), vol(P1.i, P2.i))],
+            M.p, height, top ? Math.max(P1.p, P2.p) : Math.min(P1.p, P2.p), [[P1.i, mean, P2.i, mean, 'res'], [P1.i, M.p, end, M.p, 'neck']], { [top ? 'Hochs' : 'Tiefs']: [P1.p, P2.p], Nackenlinie: M.p }, P2.i);
+        }
+      }
+    }
+    // Linienformationen: Dreiecke, Keile, Kanäle, Rechteck – letzte 4–6 bestätigte Pivots
+    for (let j = piv.length - 1; j >= 3 && j >= piv.length - 3; j--) {
+      for (const m of [6, 5, 4]) {
+        if (j - m + 1 < 0) continue;
+        const ps = piv.slice(j - m + 1, j + 1), hs = ps.filter(q => q.t === 'H'), ls = ps.filter(q => q.t === 'L');
+        if (hs.length < 2 || ls.length < 2) continue;
+        const i0 = ps[0].i, i1 = ps.at(-1).i, span = i1 - i0, a = A[i1], tol = tolAt(ps.at(-1).p, a), U = fitLine(hs), L = fitLine(ls);
+        if (span < 8 || !ps.every(q => Math.abs((q.t === 'H' ? U : L).y(q.i) - q.p) <= tol)) continue;
+        const w0 = U.y(i0) - L.y(i0), w1 = U.y(i1) - L.y(i1); if (!(w0 > 0 && w1 > 0)) continue;
+        const flat = ln => Math.abs(ln.m * span) <= tol, rise = ln => ln.m * span > tol, fall = ln => ln.m * span < -tol;
+        const conv = w1 < 0.7 * w0, par = Math.abs(w1 - w0) <= 0.25 * w0;
+        let id = null, sh = '';
+        if (conv && flat(U) && rise(L)) { id = 'asc_triangle'; sh = 'obere Linie flach, untere steigt'; }
+        else if (conv && flat(L) && fall(U)) { id = 'desc_triangle'; sh = 'untere Linie flach, obere fällt'; }
+        else if (conv && fall(U) && rise(L)) { id = 'sym_triangle'; sh = 'obere fällt, untere steigt'; }
+        else if (conv && rise(U) && rise(L)) { id = 'rising_wedge'; sh = 'beide steigen und laufen zusammen'; }
+        else if (conv && fall(U) && fall(L)) { id = 'falling_wedge'; sh = 'beide fallen und laufen zusammen'; }
+        else if (par && rise(U) && rise(L)) { id = 'asc_channel'; sh = 'beide steigen parallel'; }
+        else if (par && fall(U) && fall(L)) { id = 'desc_channel'; sh = 'beide fallen parallel'; }
+        else if (par && flat(U) && flat(L)) { id = 'rectangle'; sh = 'beide waagerecht'; }
+        if (!id) continue;
+        const exp = { asc_triangle: 1, desc_triangle: -1, sym_triangle: 0, rising_wedge: -1, falling_wedge: 1, asc_channel: 1, desc_channel: -1, rectangle: 0 }[id];
+        const up = breakAfter(k, i1, end, U.y, 1), dn = breakAfter(k, i1, end, L.y, -1);
+        const first = up >= 0 && (dn < 0 || up < dn) ? 1 : dn >= 0 ? -1 : 0, bi = first > 0 ? up : first < 0 ? dn : -1;
+        if (first && exp && first !== exp) break;   // Ausbruch gegen die erwartete Richtung → invalidiert
+        const channel = id === 'asc_channel' || id === 'desc_channel', dirOut = exp || first;
+        const rules = [R('mindestens 2 bestätigte Hochs und 2 Tiefs auf den Linien (Toleranz)', 2, true, `${hs.length} Hochs, ${ls.length} Tiefs`), R(`Form: ${sh}`, 2, true, `Breite ${(w0 / a).toFixed(1)} → ${(w1 / a).toFixed(1)} ATR`), R('mindestens 5 Pivots', 1, ps.length >= 5, `${ps.length}`), R('Volumen nimmt ab', 1, volOk(i0, i1), vol(i0, i1))];
+        if (!channel) rules.push(R(exp ? `Ausbruch per Schlusskurs ${exp > 0 ? 'nach oben' : 'nach unten'}` : 'Ausbruch per Schlusskurs (eine Richtung)', 2, first !== 0, first ? (first > 0 ? 'nach oben' : 'nach unten') : 'noch nicht'));
+        const at = bi >= 0 ? bi : end, brk = dirOut >= 0 ? U.y(at) : L.y(at);
+        push({ id, kind: 'form', dir: dirOut > 0 ? 'bull' : dirOut < 0 ? 'bear' : 'neutral', i0, i1: bi >= 0 ? bi : i1, t0: k[i0].t, t1: k[bi >= 0 ? bi : i1].t, rules,
+          status: channel ? (first ? (first > 0 ? 'über dem Kanal' : 'unter dem Kanal') : 'im Kanal') : first ? `Ausbruch ${first > 0 ? 'nach oben' : 'nach unten'} bestätigt` : 'in Bildung (Ausbruch fehlt)',
+          levels: dirOut === 0 && !first ? { brk: U.y(at), brk2: L.y(at), tgt: null, inv: null } : { brk, tgt: brk + (dirOut >= 0 ? 1 : -1) * w0, inv: dirOut >= 0 ? L.y(at) : U.y(at) },
+          lines: [[i0, U.y(i0), end, U.y(end), 'res'], [i0, L.y(i0), end, L.y(end), 'sup']], vals: { ATR: a, Toleranz: tol, 'Breite Anfang': w0, 'Breite Ende': w1, Pivots: ps.length }, prelim: false });
+        break;
+      }
+    }
+    // Flagge/Wimpel: Mast (≥ 3 ATR in ≤ 15 Kerzen), danach 4–25 Kerzen Konsolidierung mit höchstens 50 % Rücklauf
+    for (const sg of [1, -1]) {
+      const lo = Math.max(opt.from, end - 40); let x = -1;
+      for (let i = lo; i <= end; i++) if (x < 0 || (sg > 0 ? k[i].h > k[x].h : k[i].l < k[x].l)) x = i;
+      if (x < 0 || end - x < 4 || end - x > 25) continue;
+      let s0 = -1; for (let i = Math.max(0, x - 15); i < x; i++) if (s0 < 0 || (sg > 0 ? k[i].l < k[s0].l : k[i].h > k[s0].h)) s0 = i;
+      const a = A[x], mast = sg > 0 ? k[x].h - k[s0].l : k[s0].h - k[x].l; if (!(a > 0) || mast < 3 * a) continue;
+      const cs = []; for (let i = x + 1; i <= end; i++) cs.push(i);
+      const ext = sg > 0 ? Math.min(...cs.map(i => k[i].l)) : Math.max(...cs.map(i => k[i].h)), retr = sg > 0 ? (k[x].h - ext) / mast : (ext - k[x].l) / mast;
+      if (retr > 0.5) continue;
+      const U = fitLine([{ i: x, p: k[x].h }, ...cs.map(i => ({ i, p: k[i].h }))]), L = fitLine(cs.map(i => ({ i, p: k[i].l }))), span = end - x;
+      const w0 = U.y(x + 1) - L.y(x + 1), w1 = U.y(end) - L.y(end); if (!(w0 > 0)) continue;
+      const pen = w1 < 0.6 * w0 && U.m < 0 && L.m > 0, flagOk = Math.abs(w1 - w0) <= 0.35 * w0 && sg * U.m * span <= 0.25 * mast;
+      if (!pen && !flagOk) continue;
+      const id = (pen ? 'pennant' : 'flag') + (sg > 0 ? '_bull' : '_bear'), line = sg > 0 ? U.y : L.y;
+      const bi = breakAfter(k, x + 3, end, line, sg), broke = bi >= 0;
+      const rules = [R(`Mast ≥ 3 ATR in höchstens 15 Kerzen`, 2, true, `${(mast / a).toFixed(1)} ATR in ${x - s0} Kerzen`), R(`Konsolidierung 4–25 Kerzen, Rücklauf ≤ 50 %`, 2, true, `${span} Kerzen, ${(retr * 100).toFixed(0)} %`), R(pen ? 'Linien laufen zusammen (Wimpel)' : 'Kanal parallel oder gegen den Mast (Flagge)', 1, true, `Breite ${(w0 / a).toFixed(1)} → ${(w1 / a).toFixed(1)} ATR`), R('Rücklauf höchstens 38 %', 1, retr <= 0.382, `${(retr * 100).toFixed(0)} %`), R(`Ausbruch per Schlusskurs ${sg > 0 ? 'nach oben' : 'nach unten'}`, 2, broke, broke ? 'ja' : 'noch nicht')];
+      const at = broke ? bi : end, b = line(at);
+      push({ id, kind: 'form', dir: sg > 0 ? 'bull' : 'bear', i0: s0, i1: at, t0: k[s0].t, t1: k[at].t, rules, status: broke ? 'Ausbruch bestätigt' : 'in Bildung (Ausbruch fehlt)',
+        levels: { brk: b, tgt: b + sg * mast, inv: sg > 0 ? Math.min(...cs.map(i => k[i].l)) : Math.max(...cs.map(i => k[i].h)) },
+        lines: [[s0, sg > 0 ? k[s0].l : k[s0].h, x, sg > 0 ? k[x].h : k[x].l, 'shape'], [x, U.y(x), end, U.y(end), 'res'], [x + 1, L.y(x + 1), end, L.y(end), 'sup']], vals: { ATR: a, Mast: mast, Rücklauf: retr }, prelim: false });
+    }
+    // Cup & Handle: zwei Ränder (bestätigte Hochs) fast gleich hoch, dazwischen gerundeter Boden, danach kleiner Henkel
+    const Hs = piv.filter(q => q.t === 'H');
+    for (let b = Hs.length - 1; b >= 1; b--) {
+      let done = false;
+      for (let a0 = b - 1; a0 >= 0; a0--) {
+        const A1 = Hs[a0], B1 = Hs[b], len = B1.i - A1.i, a = A[B1.i], rim = Math.min(A1.p, B1.p);
+        if (len < 20 || len > 200) continue;
+        if (Hs.slice(a0 + 1, b).some(q => q.p > rim)) continue;
+        if (Math.abs(A1.p - B1.p) > Math.max(2 * tolAt(B1.p, a), 0.03 * B1.p)) continue;
+        let bi = A1.i; for (let i = A1.i; i <= B1.i; i++) if (k[i].l < k[bi].l) bi = i;
+        const depth = rim - k[bi].l; if (depth < 3 * a) continue;
+        // Rundung: Parabel durch die Schlusskurse, nach oben offen und R² ≥ 0,5; Boden im mittleren Teil
+        let n = 0, S = [0, 0, 0, 0, 0], T = [0, 0, 0], sy = 0, syy = 0;
+        for (let i = A1.i; i <= B1.i; i++) { const xx = (i - A1.i) / len * 2 - 1, y = k[i].c; n++; S[0] += 1; S[1] += xx; S[2] += xx * xx; S[3] += xx ** 3; S[4] += xx ** 4; T[0] += y; T[1] += xx * y; T[2] += xx * xx * y; sy += y; syy += y * y; }
+        const M = [[S[0], S[1], S[2]], [S[1], S[2], S[3]], [S[2], S[3], S[4]]], det = m => m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0]) + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
+        const D = det(M); if (!D) continue;
+        const col = (c) => M.map((r, ri) => r.map((v, ci) => (ci === c ? T[ri] : v))), c0 = det(col(0)) / D, c1 = det(col(1)) / D, c2 = det(col(2)) / D;
+        let sse = 0; for (let i = A1.i; i <= B1.i; i++) { const xx = (i - A1.i) / len * 2 - 1; sse += (k[i].c - (c0 + c1 * xx + c2 * xx * xx)) ** 2; }
+        const sst = syy - sy * sy / n, r2 = sst > 0 ? 1 - sse / sst : 0, mid = (bi - A1.i) / len;
+        if (!(c2 > 0) || r2 < 0.5 || mid < 0.2 || mid > 0.8) continue;
+        const hs = []; for (let i = B1.i + 1; i <= end; i++) hs.push(i);
+        if (hs.length < 3 || hs.length > 40) continue;
+        const hl = Math.min(...hs.map(i => k[i].l)), pull = (B1.p - hl) / depth; if (pull > 0.5 || pull <= 0) continue;
+        const lvl = Math.max(A1.p, B1.p), bk = breakAfter(k, B1.i + 2, end, lvl, 1), broke = bk >= 0;
+        push({ id: 'cup_handle', kind: 'form', dir: 'bull', i0: A1.i, i1: broke ? bk : end, t0: k[A1.i].t, t1: k[broke ? bk : end].t,
+          rules: [R('zwei Ränder fast gleich hoch', 2, true, `${(Math.abs(A1.p - B1.p) / a).toFixed(2)} ATR Abstand`), R('gerundeter Boden (Parabel, R² ≥ 0,5)', 2, true, `R² ${r2.toFixed(2)}`), R('Tiefe mindestens 3 ATR', 1, true, `${(depth / a).toFixed(1)} ATR`), R('Henkel-Rücklauf höchstens ⅓ der Tiefe', 1, pull <= 1 / 3, `${(pull * 100).toFixed(0)} %`), R('Ausbruch per Schlusskurs über den Rand', 2, broke, broke ? 'ja' : 'noch nicht')],
+          status: broke ? 'Ausbruch bestätigt' : 'in Bildung (Ausbruch fehlt)', levels: { brk: lvl, tgt: lvl + depth, inv: hl },
+          lines: [[A1.i, lvl, end, lvl, 'res'], [B1.i, B1.p, end, hl, 'shape']], vals: { ATR: a, 'Rand links': A1.p, 'Rand rechts': B1.p, Boden: k[bi].l, Tiefe: depth, Rundung: r2 }, prelim: false, cup: [A1.i, bi, B1.i] });
+        done = true; break;
+      }
+      if (done) break;
+    }
+    return out;
+  }
+  function detect(k, opt) {
+    const A = atrSeries(k), o = { from: Math.max(0, opt.from | 0), step: opt.step || 0, gap: !!opt.gap, running: !!opt.running };
+    const hits = [...candles(k, A, o), ...formations(k, A, o)];
+    return { ver: VER, hits: hits.filter(h => h.i1 >= o.from) };
+  }
+  return { detect, preTrend, atrSeries, zigzag, VER };
+}
+// ---- 3.37.0 (G09): zentrale Musterbibliothek, Panel „KI“, Info-Sheet und Chart-Markierung ----
+// Bibliothek: ID → deutscher Name, Richtung, Familie, Ein-Satz-Erklärung, Bestätigungsregel und eigenes Inline-SVG (Kerzen
+// [o,h,l,c] bzw. Linienzug in 0–100). Keine fremden Bilder, keine externe KI, keine API-Schlüssel.
+const PAT_LIB = (() => {
+  const K = (n, d, e, c, k) => ({ n, d, f: 'Kerze', e, c, k }), F = (n, d, e, c, p, ln = []) => ({ n, d, f: 'Formation', e, c, p, ln });
+  return {
+    doji: K('Doji', 'neutral', 'Eröffnung und Schluss fast gleich – Käufer und Verkäufer halten sich die Waage.', 'Keine eigene Richtung; Bedeutung erst im Zusammenhang mit den Nachbarkerzen.', [[50, 80, 20, 51]]),
+    doji_dragonfly: K('Libellen-Doji (Dragonfly)', 'bull', 'Kurs fiel stark, wurde aber bis zur Eröffnung zurückgekauft – nach einem Abwärtstrend ein mögliches Umkehrzeichen.', 'Folgekerze schließt höher.', [[78, 80, 15, 79]]),
+    doji_gravestone: K('Grabstein-Doji (Gravestone)', 'bear', 'Kurs stieg stark, fiel aber bis zur Eröffnung zurück – nach einem Aufwärtstrend ein mögliches Umkehrzeichen.', 'Folgekerze schließt tiefer.', [[22, 85, 20, 21]]),
+    hammer: K('Hammer', 'bull', 'Langer unterer Docht nach einem Abwärtstrend: Verkäufer drückten den Kurs, Käufer holten ihn zurück.', 'Folgekerze schließt höher.', [[62, 70, 15, 70]]),
+    hanging_man: K('Hängender Mann (Hanging Man)', 'bear', 'Hammer-Form nach einem Aufwärtstrend: Warnzeichen, dass Verkäufer stärker werden.', 'Folgekerze schließt tiefer.', [[70, 72, 20, 62]]),
+    inverted_hammer: K('Umgekehrter Hammer', 'bull', 'Langer oberer Docht nach einem Abwärtstrend: erster Kaufversuch, der noch abprallte.', 'Folgekerze schließt höher.', [[30, 85, 28, 38]]),
+    shooting_star: K('Sternschnuppe (Shooting Star)', 'bear', 'Langer oberer Docht nach einem Aufwärtstrend: der Anstieg wurde verkauft.', 'Folgekerze schließt tiefer.', [[38, 85, 28, 30]]),
+    spinning_top: K('Kreisel (Spinning Top)', 'neutral', 'Kleiner Körper mit Dochten auf beiden Seiten – Unentschlossenheit.', 'Keine eigene Richtung.', [[45, 85, 15, 55]]),
+    marubozu_bull: K('Marubozu grün', 'bull', 'Fast nur Körper ohne Dochte: Käufer bestimmten die ganze Kerze.', 'Kein Umkehrmuster; zeigt starken Schwung.', [[15, 86, 14, 85]]),
+    marubozu_bear: K('Marubozu rot', 'bear', 'Fast nur Körper ohne Dochte: Verkäufer bestimmten die ganze Kerze.', 'Kein Umkehrmuster; zeigt starken Schwung.', [[85, 86, 14, 15]]),
+    engulfing_bull: K('Bullisches Engulfing', 'bull', 'Eine grüne Kerze umschließt den roten Körper davor – nach einem Abwärtstrend ein Umkehrsignal.', 'Folgekerze schließt höher.', [[60, 64, 38, 42], [36, 72, 34, 70]]),
+    engulfing_bear: K('Bärisches Engulfing', 'bear', 'Eine rote Kerze umschließt den grünen Körper davor – nach einem Aufwärtstrend ein Umkehrsignal.', 'Folgekerze schließt tiefer.', [[42, 64, 38, 60], [66, 70, 30, 34]]),
+    harami_bull: K('Bullisches Harami', 'bull', 'Kleiner Körper innerhalb einer großen roten Kerze – der Abwärtsschwung stockt.', 'Folgekerze schließt höher.', [[80, 82, 20, 25], [42, 58, 38, 55]]),
+    harami_bear: K('Bärisches Harami', 'bear', 'Kleiner Körper innerhalb einer großen grünen Kerze – der Aufwärtsschwung stockt.', 'Folgekerze schließt tiefer.', [[20, 82, 18, 75], [58, 62, 42, 45]]),
+    piercing: K('Durchdringungslinie (Piercing Line)', 'bull', 'Nach einer roten Kerze schließt eine grüne über der Mitte ihres Körpers.', 'Folgekerze schließt höher.', [[78, 80, 40, 42], [38, 66, 34, 64]]),
+    dark_cloud: K('Dunkle Wolke (Dark Cloud Cover)', 'bear', 'Nach einer grünen Kerze schließt eine rote unter der Mitte ihres Körpers.', 'Folgekerze schließt tiefer.', [[22, 60, 20, 58], [62, 66, 34, 36]]),
+    tweezer_top: K('Pinzetten-Top', 'bear', 'Zwei Kerzen mit gleichem Hoch – der Widerstand hielt zweimal.', 'Folgekerze schließt tiefer.', [[40, 80, 38, 70], [70, 80, 40, 45]]),
+    tweezer_bottom: K('Pinzetten-Boden', 'bull', 'Zwei Kerzen mit gleichem Tief – die Unterstützung hielt zweimal.', 'Folgekerze schließt höher.', [[60, 62, 20, 30], [30, 60, 20, 55]]),
+    morning_star: K('Morgenstern', 'bull', 'Große rote Kerze, kleiner Stern, dann eine grüne über der Mitte der roten – mögliche Bodenbildung.', 'Folgekerze schließt höher.', [[85, 87, 45, 48], [38, 44, 30, 40], [45, 80, 43, 78]]),
+    evening_star: K('Abendstern', 'bear', 'Große grüne Kerze, kleiner Stern, dann eine rote unter der Mitte der grünen – mögliche Topbildung.', 'Folgekerze schließt tiefer.', [[15, 55, 13, 52], [62, 70, 56, 60], [55, 57, 20, 22]]),
+    three_white_soldiers: K('Drei weiße Soldaten', 'bull', 'Drei kräftige grüne Kerzen mit jeweils höherem Schluss nach einem Abwärtstrend.', 'Folgekerze schließt höher.', [[15, 38, 13, 35], [30, 58, 28, 55], [50, 80, 48, 77]]),
+    three_black_crows: K('Drei schwarze Krähen', 'bear', 'Drei kräftige rote Kerzen mit jeweils tieferem Schluss nach einem Aufwärtstrend.', 'Folgekerze schließt tiefer.', [[85, 87, 62, 65], [70, 72, 42, 45], [50, 52, 20, 23]]),
+    double_top: F('Doppel-Top', 'bear', 'Zwei etwa gleich hohe Hochs mit einem Tal dazwischen – der Widerstand hielt zweimal.', 'Schlusskurs unter der Nackenlinie (Tal).', [[5, 30], [30, 80], [50, 50], [70, 80], [95, 25]], [[5, 50, 95, 50]]),
+    double_bottom: F('Doppel-Boden', 'bull', 'Zwei etwa gleich tiefe Tiefs mit einem Hoch dazwischen – die Unterstützung hielt zweimal.', 'Schlusskurs über der Nackenlinie (Hoch).', [[5, 70], [30, 20], [50, 50], [70, 20], [95, 75]], [[5, 50, 95, 50]]),
+    triple_top: F('Dreifach-Top', 'bear', 'Drei etwa gleich hohe Hochs – der Widerstand hielt dreimal.', 'Schlusskurs unter der Nackenlinie.', [[3, 30], [18, 80], [33, 52], [50, 80], [66, 52], [82, 80], [97, 25]], [[3, 52, 97, 52]]),
+    triple_bottom: F('Dreifach-Boden', 'bull', 'Drei etwa gleich tiefe Tiefs – die Unterstützung hielt dreimal.', 'Schlusskurs über der Nackenlinie.', [[3, 70], [18, 20], [33, 48], [50, 20], [66, 48], [82, 20], [97, 75]], [[3, 48, 97, 48]]),
+    head_shoulders: F('Schulter-Kopf-Schulter', 'bear', 'Mittleres Hoch (Kopf) über zwei niedrigeren Schultern – klassische Topbildung.', 'Schlusskurs unter der Nackenlinie.', [[3, 35], [20, 65], [33, 48], [50, 88], [67, 48], [80, 65], [97, 25]], [[3, 48, 97, 48]]),
+    inv_head_shoulders: F('Inverse Schulter-Kopf-Schulter', 'bull', 'Mittleres Tief (Kopf) unter zwei höheren Schultern – klassische Bodenbildung.', 'Schlusskurs über der Nackenlinie.', [[3, 65], [20, 35], [33, 52], [50, 12], [67, 52], [80, 35], [97, 75]], [[3, 52, 97, 52]]),
+    asc_triangle: F('Aufsteigendes Dreieck', 'bull', 'Flacher Widerstand oben, steigende Tiefs unten – Käufer werden geduldiger.', 'Schlusskurs über dem Widerstand.', [[5, 20], [22, 75], [38, 38], [55, 75], [70, 55], [84, 75], [97, 88]], [[5, 75, 90, 75], [5, 20, 90, 70]]),
+    desc_triangle: F('Absteigendes Dreieck', 'bear', 'Flache Unterstützung unten, fallende Hochs oben – Verkäufer werden drängender.', 'Schlusskurs unter der Unterstützung.', [[5, 80], [22, 25], [38, 62], [55, 25], [70, 45], [84, 25], [97, 12]], [[5, 25, 90, 25], [5, 80, 90, 30]]),
+    sym_triangle: F('Symmetrisches Dreieck', 'neutral', 'Fallende Hochs und steigende Tiefs laufen zusammen – der Kurs wird enger, die Richtung ist offen.', 'Schlusskurs außerhalb einer der beiden Linien.', [[5, 85], [22, 20], [40, 72], [58, 32], [74, 60], [88, 45]], [[5, 85, 92, 52], [5, 15, 92, 47]]),
+    rising_wedge: F('Steigender Keil', 'bear', 'Beide Linien steigen, laufen aber zusammen – der Anstieg verliert an Kraft.', 'Schlusskurs unter der unteren Linie.', [[5, 15], [25, 50], [40, 35], [58, 65], [72, 55], [86, 75], [97, 45]], [[5, 40, 90, 78], [5, 12, 90, 66]]),
+    falling_wedge: F('Fallender Keil', 'bull', 'Beide Linien fallen, laufen aber zusammen – der Abverkauf verliert an Kraft.', 'Schlusskurs über der oberen Linie.', [[5, 85], [25, 50], [40, 65], [58, 35], [72, 45], [86, 25], [97, 55]], [[5, 88, 90, 34], [5, 60, 90, 22]]),
+    flag_bull: F('Bullische Flagge', 'bull', 'Nach einem steilen Anstieg (Mast) ein kleiner, leicht fallender Kanal – oft eine Verschnaufpause.', 'Schlusskurs über der oberen Flaggenlinie.', [[5, 10], [35, 75], [45, 62], [52, 70], [62, 57], [70, 65], [80, 52], [95, 85]], [[35, 78, 82, 66], [40, 60, 82, 48]]),
+    flag_bear: F('Bärische Flagge', 'bear', 'Nach einem steilen Abverkauf (Mast) ein kleiner, leicht steigender Kanal.', 'Schlusskurs unter der unteren Flaggenlinie.', [[5, 90], [35, 25], [45, 38], [52, 30], [62, 43], [70, 35], [80, 48], [95, 15]], [[35, 22, 82, 34], [40, 40, 82, 52]]),
+    pennant_bull: F('Bullischer Wimpel', 'bull', 'Nach einem steilen Anstieg läuft die Pause in einem kleinen Dreieck zusammen.', 'Schlusskurs über der oberen Wimpellinie.', [[5, 10], [35, 75], [45, 60], [53, 70], [61, 63], [68, 67], [78, 88]], [[35, 77, 72, 66], [40, 57, 72, 64]]),
+    pennant_bear: F('Bärischer Wimpel', 'bear', 'Nach einem steilen Abverkauf läuft die Pause in einem kleinen Dreieck zusammen.', 'Schlusskurs unter der unteren Wimpellinie.', [[5, 90], [35, 25], [45, 40], [53, 30], [61, 37], [68, 33], [78, 12]], [[35, 23, 72, 34], [40, 43, 72, 36]]),
+    rectangle: F('Rechteck (Range)', 'neutral', 'Der Kurs pendelt zwischen waagerechtem Widerstand und waagerechter Unterstützung.', 'Schlusskurs außerhalb des Rechtecks.', [[5, 30], [20, 72], [35, 30], [50, 72], [65, 30], [80, 72], [95, 30]], [[5, 72, 95, 72], [5, 30, 95, 30]]),
+    asc_channel: F('Aufwärtskanal', 'bull', 'Hochs und Tiefs steigen parallel – geordneter Aufwärtstrend.', 'Trend gilt, solange Schlusskurse im Kanal bleiben; unter der unteren Linie endet er.', [[5, 15], [22, 45], [35, 32], [52, 62], [65, 49], [82, 80], [95, 67]], [[5, 32, 95, 85], [5, 12, 95, 65]]),
+    desc_channel: F('Abwärtskanal', 'bear', 'Hochs und Tiefs fallen parallel – geordneter Abwärtstrend.', 'Trend gilt, solange Schlusskurse im Kanal bleiben; über der oberen Linie endet er.', [[5, 85], [22, 55], [35, 68], [52, 38], [65, 51], [82, 20], [95, 33]], [[5, 88, 95, 35], [5, 68, 95, 15]]),
+    cup_handle: F('Tasse mit Henkel (Cup & Handle)', 'bull', 'Gerundeter Boden zwischen zwei gleich hohen Rändern, danach ein kleiner Rücksetzer (Henkel).', 'Schlusskurs über dem Rand.', [[3, 80], [15, 55], [28, 30], [42, 22], [56, 30], [69, 55], [78, 80], [84, 70], [90, 73], [97, 92]], [[3, 80, 97, 80]]),
+  };
+})();
+function patSvg(id) {
+  const L = PAT_LIB[id], s = node('svg', { viewBox: '0 0 120 80', width: 120, height: 80, class: 'pat-svg', role: 'img', 'aria-label': `Schema: ${L.n}` }), Y = v => 76 - v * 0.72;
+  s.append(node('rect', { x: 0, y: 0, width: 120, height: 80, rx: 8, class: 'pat-svg-bg' }));
+  if (L.k) {
+    const w = 100 / (L.k.length * 2 + 1);
+    L.k.forEach(([o, h, l, c], i) => { const x = 10 + (i * 2 + 1) * w * 1.0 + w / 2, up = c >= o, cl = up ? 'pat-up' : 'pat-dn';
+      s.append(node('line', { x1: x, y1: Y(h), x2: x, y2: Y(l), class: cl, 'stroke-width': 2 }), node('rect', { x: x - w / 2, y: Y(Math.max(o, c)), width: w, height: Math.max(1.5, Math.abs(Y(o) - Y(c))), class: cl + ' fill' })); });
+  } else {
+    for (const [x1, y1, x2, y2] of L.ln) s.append(node('line', { x1: 6 + x1 * 1.08, y1: Y(y1), x2: 6 + x2 * 1.08, y2: Y(y2), class: 'pat-ln', 'stroke-dasharray': '4 3' }));
+    s.append(node('polyline', { points: L.p.map(([x, y]) => `${(6 + x * 1.08).toFixed(1)},${Y(y).toFixed(1)}`).join(' '), class: `pat-path ${L.d}`, fill: 'none', 'stroke-width': 2.5, 'stroke-linejoin': 'round' }));
+  }
+  return s;
+}
+
+// --- Zustand, Worker, Analyse ---
+const PAT_MAX = 500, PAT_CTX = 40;
+var pat = { on: false, res: null, sel: null, filter: 'all', minQ: 60, gap: false, worker: null, req: 0, busy: false, cache: new Map(), runs: 0, viaWorker: 0 };
+const patKey = () => `${state.symbol}|${state.source}|${state.interval}`;
+function patWorker() {
+  if (pat.worker !== null) return pat.worker;
+  try {
+    const url = URL.createObjectURL(new Blob([`const E = (${patEngine.toString()})(); onmessage = e => postMessage({ id: e.data.id, r: E.detect(e.data.k, e.data.opt) });`], { type: 'text/javascript' }));
+    pat.worker = new Worker(url); URL.revokeObjectURL(url);
+    pat.worker.onmessage = e => patDone(e.data.id, e.data.r);
+    pat.worker.onerror = () => { pat.worker.terminate(); pat.worker = false; };   // ohne Worker: im Hauptthread
+  } catch { pat.worker = false; }
+  return pat.worker;
+}
+var PAT_E = null;
+function patRun(reason) {
+  if (CAP.on || !state.candles.length || state.loadedSymbol !== state.symbol) return false;
+  const { start, end } = viewWindow(), nVis = end - start, from = Math.max(start, end - PAT_MAX), c0 = Math.max(0, from - PAT_CTX), now = Date.now();
+  const src = state.candles.slice(c0, end), k = src.map(c => ({ t: c.time, o: c.open, h: c.high, l: c.low, c: c.close, v: c.volume }));
+  const running = src.length > 0 && src.at(-1).closeTime >= now, opt = { from: from - c0, step: state.interval === '1M' ? 0 : IV_MS[state.interval], gap: pat.gap, running };
+  const key = patKey(), ck = `${key}|${k[0]?.t}|${k.at(-1)?.t}|${k.at(-1)?.c}|${opt.from}|${pat.gap}`, meta = { key, ck, n: end - from, nVis, t0: state.candles[from]?.time, t1: state.candles[end - 1]?.time, running, reason, k, at: now };
+  const id = ++pat.req; pat.meta = meta; pat.runs++;
+  if (pat.cache.has(ck)) { patDone(id, pat.cache.get(ck)); return true; }
+  pat.busy = true; patSheet();
+  const w = patWorker();
+  if (w) { pat.viaWorker++; w.postMessage({ id, k, opt }); }
+  else { PAT_E = PAT_E || patEngine(); const r = PAT_E.detect(k, opt); setTimeout(() => patDone(id, r)); }
+  return true;
+}
+function patDone(id, r) {
+  if (id !== pat.req) return;                       // überholte Analyse (Coin-/Intervallwechsel, neuer Tipp) verwerfen
+  const m = pat.meta; pat.busy = false;
+  if (m.key !== patKey()) { pat.res = null; patSheet(); scheduleDraw(); return; }
+  pat.cache.set(m.ck, r); if (pat.cache.size > 16) pat.cache.delete(pat.cache.keys().next().value);
+  const T = i => m.k[Math.max(0, Math.min(m.k.length - 1, i))].t;
+  pat.res = { ...m, ver: r.ver, hits: r.hits.map(h => ({ ...h, lines: (h.lines || []).map(([a, p, b, q, kd]) => [T(a), p, T(b), q, kd]) })).sort((a, b) => b.q - a.q || b.t1 - a.t1) };
+  pat.sel = null; patSheet(); scheduleDraw();
+}
+// je Muster nur das jüngste Vorkommen im Ausschnitt (weitere werden gezählt) – sonst überdecken Dutzende Doji die Liste
+function patShown() {
+  if (pat.res?.key !== patKey()) return [];
+  const by = new Map();
+  for (const h of pat.res.hits) if (h.q >= pat.minQ && (pat.filter === 'all' || h.dir === pat.filter)) { const g = by.get(h.id); if (!g) by.set(h.id, { h, more: 0 }); else { g.more++; if (h.t1 > g.h.t1) g.h = h; } }
+  return [...by.values()].map(g => (g.h.more = g.more, g.h)).sort((a, b) => b.q - a.q || b.t1 - a.t1);
+}
+function patClear() { pat.res = null; pat.sel = null; pat.req++; pat.busy = false; patSheet(); }
+// Neuberechnung nur bei Kerzenschluss, nach einem Kontextwechsel oder auf Tipp – nicht bei jedem Tick
+function patTick() {
+  if (!pat.on || pat.busy || CAP.on || state.loadedSymbol !== state.symbol || !state.candles.length) return;
+  if (!pat.res || pat.res.key !== patKey()) { patRun('Kontext'); return; }
+  const lc = state.candles.findLast(c => c.closeTime < Date.now())?.time;
+  if (pat.res.lastClosed === undefined) pat.res.lastClosed = lc; else if (lc !== pat.res.lastClosed) patRun('Kerzenschluss');
+}
+// --- Anzeige: Bottom-Sheet ---
+const PAT_DIR = { bull: 'bullish', bear: 'bearish', neutral: 'neutral' };
+const patTime = t => (t ? (IV_MS[state.interval] >= 864e5 ? utcDate(t).slice(0, 10) : utcDate(t)) : '—');
+function patSheet() {
+  const d = $('pat-sheet'); if (!d) return;
+  const R = pat.res && pat.res.key === patKey() ? pat.res : null, list = $('pat-list'), hits = patShown();
+  for (const b of d.querySelectorAll('[data-pfil]')) b.setAttribute('aria-pressed', String(b.dataset.pfil === pat.filter));
+  $('pat-minq').value = String(pat.minQ); $('pat-gap').checked = pat.gap;
+  put('pat-scope', R ? `${state.symbol.slice(0, -4)}/USDT · ${state.interval} · ${R.n === R.nVis ? `${R.n} sichtbare Kerzen` : `die letzten ${R.n} von ${R.nVis} sichtbaren Kerzen`} (${patTime(R.t0)} – ${patTime(R.t1)} UTC)${R.running ? ' · laufende Kerze vorläufig' : ''}` : pat.busy ? 'Analysiert die sichtbaren Kerzen …' : 'Noch nicht analysiert.');
+  const rows = hits.map(h => {
+    const L = PAT_LIB[h.id], i = R.hits.indexOf(h), row = el('div', `pat-row ${h.dir}${pat.sel === i ? ' sel' : ''}`), main = el('button', 'pat-main'), info = el('button', 'pat-i', 'i');
+    main.type = info.type = 'button'; main.dataset.patSel = info.dataset.patInfo = String(i); info.setAttribute('aria-label', `Info zu ${L.n}`);
+    const head = el('span', 'pat-h'); head.append(el('b', '', L.n), el('span', 'pat-q', `Regelgüte ${h.q} %`));
+    const span = h.i1 - h.i0 + 1, meta = el('span', 'pat-m', `${PAT_DIR[h.dir]} · ${L.f} · ${span} ${span === 1 ? 'Kerze' : 'Kerzen'} · ${patTime(h.t0)}${h.t1 !== h.t0 ? ` – ${patTime(h.t1)}` : ''} · ${h.status}`);
+    main.append(head, meta, el('span', 'pat-e', L.e));
+    if (h.more) main.append(el('span', 'pat-m', `+${h.more} weitere im Ausschnitt`));
+    if (h.levels) main.append(el('span', 'pat-lv', [h.levels.brk != null ? `Ausbruch ${priceText(h.levels.brk)}` : '', h.levels.brk2 != null ? `/ ${priceText(h.levels.brk2)}` : '', h.levels.tgt != null ? `Ziel ${priceText(h.levels.tgt)} (rechnerisch)` : '', h.levels.inv != null ? `Invalidierung ${priceText(h.levels.inv)}` : ''].filter(Boolean).join(' · ')));
+    row.append(main, info); return row;
+  });
+  if (R && !rows.length) rows.push(el('p', 'pat-empty', R.hits.length ? `Aktuell keine eindeutige Formation erkannt – ${R.hits.length} schwächere ${R.hits.length === 1 ? 'Erkennung liegt' : 'Erkennungen liegen'} unter der Mindestregelgüte ${pat.minQ} % bzw. außerhalb des Filters.` : 'Aktuell keine eindeutige Formation erkannt.'));
+  list.replaceChildren(...rows);
+  $('pat-btn').setAttribute('aria-pressed', String(pat.on));
+}
+// --- Info-Sheet ---
+function patFmt(k, v) {
+  if (Array.isArray(v)) return v.map(x => priceText(x)).join(' / ');
+  if (k === 'Rücklauf') return `${number(v * 100, 0)} %`;
+  if (k === 'Rundung') return `R² ${number(v, 2)}`;
+  if (k === 'Pivots') return String(v);
+  return priceText(v);
+}
+function patOpenInfo(i) {
+  const R = pat.res, h = R?.hits[i]; if (!h) return;
+  const L = PAT_LIB[h.id], d = $('pat-info'); pat.info = i;
+  put('pat-info-title', L.n);
+  const body = $('pat-info-body'), kv = (k, v) => { const p = el('p', 'pat-kv'); p.append(el('b', '', k + ': '), String(v)); return p; };
+  const vals = el('div', 'pat-vals'); vals.append(el('h3', '', 'Gemessen'));
+  for (const [k, v] of Object.entries(h.vals || {})) vals.append(kv(k, patFmt(k, v)));
+  if (h.trend && h.trend.dir) vals.append(kv('Vortrend (8 Kerzen)', `${h.trend.dir === 'up' ? 'aufwärts' : h.trend.dir === 'down' ? 'abwärts' : 'neutral'} · R² ${number(h.trend.r2, 2)} · Steigung ${number(h.trend.b, 4)} je Kerze`));
+  if (h.levels) { if (h.levels.brk != null) vals.append(kv('Ausbruchslevel', priceText(h.levels.brk) + (h.levels.brk2 != null ? ` / ${priceText(h.levels.brk2)}` : ''))); if (h.levels.tgt != null) vals.append(kv('Ziel (rechnerische Projektion)', priceText(h.levels.tgt))); if (h.levels.inv != null) vals.append(kv('Invalidierung', priceText(h.levels.inv))); }
+  const why = el('details', 'pat-why'), sum = el('summary', '', `Warum ${h.q} %?`), ul = el('ul');
+  for (const r of h.rules) { const li = el('li', r.ok === true ? 'ok' : r.ok === false ? 'no' : 'unk'); li.append(el('span', 'pat-mark', r.ok === true ? '✓' : r.ok === false ? '✗' : '?'), `${r.k} (Gewicht ${r.w})${r.v ? ' – ' + r.v : ''}`); ul.append(li); }
+  why.append(sum, el('p', '', 'Regelgüte = erfüllte Regelgewichte ÷ mögliche Gewichte; unbekannte Regeln zählen im Nenner mit. Das ist keine statistische Trefferquote.'), ul);
+  body.replaceChildren(
+    (() => { const top = el('div', 'pat-info-top'); top.append(patSvg(h.id)); const t = el('div'); t.append(el('p', `pat-dir ${h.dir}`, `${PAT_DIR[h.dir]} · ${L.f} · Regelgüte ${h.q} %`), el('p', '', `${state.symbol.slice(0, -4)}/USDT · ${state.interval} · ${patTime(h.t0)}${h.t1 !== h.t0 ? ` – ${patTime(h.t1)}` : ''} UTC`), el('p', '', `Status: ${h.status}`)); top.append(t); return top; })(),
+    el('p', '', L.e), kv('Bestätigung', L.c), vals, why,
+    el('p', 'pat-note', `Automatische Mustererkennung nach festen Regeln (${R.ver}${h.id.match(/star|piercing|dark_cloud/) ? pat.gap ? ', strenger Gap-Modus' : ', Krypto-Variante ohne Gap' : ''}), keine Anlageberatung.`));
+  if (!d.open) d.showModal();
+}
+// „Im Chart zeigen“: Ausschnitt bewusst um das Muster legen; danach ist der Chart frei bedienbar
+function patZoom(i) {
+  const h = pat.res?.hits[i]; if (!h) return;
+  const len = state.candles.length, a = state.candles.findIndex(c => c.time === h.t0), b = state.candles.findIndex(c => c.time === h.t1); if (a < 0 || b < 0) return;
+  const span = b - a + 1, n = Math.max(30, Math.round(span * 2.5)), endI = Math.min(len, b + 1 + Math.round((n - span) / 2));
+  pat.sel = i; state.count = Math.min(len, n); setPan(len - endI); patSheet(); scheduleDraw();
+}
+// --- Chart: kleine Labels für Kerzen, Linien/Zonen für Formationen ---
+function patDraw(svg, over, g) {
+  const hits = patShown(); if (!hits.length) return;
+  const idx = new Map(g.data.map((c, i) => [c.time, i])), { x, y, min, max, step, top } = g, R = pat.res;
+  const col = d => (d === 'bull' ? PAL.up : d === 'bear' ? PAL.down : PAL.vp), inR = v => Number.isFinite(v) && v >= min && v <= max;
+  const formTop = new Set(hits.filter(h => h.kind === 'form').slice(0, 2));   // ohne Auswahl nur die zwei stärksten Formationen als Linien
+  for (const h of hits) {
+    const i = R.hits.indexOf(h), a = idx.get(h.t0), b = idx.get(h.t1); if (a === undefined && b === undefined) continue;
+    const L = PAT_LIB[h.id], c = col(h.dir), sel = pat.sel === i, xa = x(a ?? 0) - step / 2, xb = x(b ?? g.data.length - 1) + step / 2;
+    if (sel) over.append(node('rect', { x: xa, y: top, width: Math.max(2, xb - xa), height: g.bottom - top, fill: c, opacity: .1, class: 'pat-hl' }));
+    if (h.kind === 'form' && (sel || formTop.has(h))) for (const [t0, p0, t1, p1, kd] of h.lines) {
+      const ia = idx.get(t0), ib = idx.get(t1); if (ia === undefined || ib === undefined) continue;
+      over.append(node('line', { x1: x(ia), y1: y(p0), x2: x(ib), y2: y(p1), stroke: c, 'stroke-width': sel ? 2.2 : 1.2, 'stroke-dasharray': kd === 'shape' ? '' : '5 3', opacity: sel ? .95 : .55, class: 'pat-line' }));
+    }
+    if (h.kind === 'form' && sel && h.levels?.tgt != null && inR(h.levels.tgt)) over.append(node('line', { x1: x(b ?? 0), y1: y(h.levels.tgt), x2: g.left + g.pw, y2: y(h.levels.tgt), stroke: c, 'stroke-dasharray': '2 3', opacity: .8 }));
+    // ohne Auswahl ein kleines Zeichen (▲ ▼ ◆), ausgewählt der Name mit ⓘ – beides antippbar
+    const up = h.dir !== 'bear', lv = h.kind === 'candle' ? (up ? h.low : h.price) : (up ? Math.min(...h.lines.map(l => Math.min(l[1], l[3]))) : Math.max(...h.lines.map(l => Math.max(l[1], l[3]))));
+    const xm = h.kind === 'candle' ? x(b ?? 0) : x(b ?? g.data.length - 1), ym = inR(lv) ? y(lv) + (up ? 12 : -5) : up ? g.bottom - 4 : top + 10;
+    const t = sel ? node('text', { x: Math.min(xm, g.left + g.pw - 4), y: Math.max(top + 10, Math.min(g.bottom - 4, ym + (up ? 2 : -2))), 'text-anchor': xm > g.left + g.pw * 0.7 ? 'end' : 'middle', class: 'axis-label pat-label sel', style: `fill:${c};font-weight:800;cursor:pointer`, 'data-pat': i }, `${L.n.replace(/ \(.*\)$/, '')} ⓘ`)
+      : node('text', { x: xm, y: ym, 'text-anchor': 'middle', class: 'pat-label pat-mk', style: `fill:${c};font-size:11px;cursor:pointer`, 'data-pat': i }, h.dir === 'bull' ? '▲' : h.dir === 'bear' ? '▼' : '◆');
+    t.append(node('title', {}, `${L.n} · Regelgüte ${h.q} %`)); svg.append(t);
+  }
+}
+(function patUi() {
+  const btn = $('pat-btn'); if (!btn) return;
+  btn.addEventListener('click', () => { pat.on = true; if (!patRun('Tipp')) patSheet(); patSheet(); const d = $('pat-sheet'); if (!d.open) d.showModal(); });
+  $('pat-close').addEventListener('click', () => $('pat-sheet').close());
+  $('pat-off').addEventListener('click', () => { pat.on = false; pat.sel = null; patSheet(); scheduleDraw(); $('pat-sheet').close(); });
+  for (const id of ['pat-info-close', 'pat-info-x']) $(id).addEventListener('click', () => $('pat-info').close());
+  $('pat-info-zoom').addEventListener('click', () => { const i = pat.info; $('pat-info').close(); $('pat-sheet').close(); pat.on = true; patZoom(i); });
+  $('pat-sheet').addEventListener('click', e => {
+    const f = e.target.closest('[data-pfil]'), s = e.target.closest('[data-pat-sel]'), inf = e.target.closest('[data-pat-info]');
+    if (f) { pat.filter = f.dataset.pfil; patSheet(); scheduleDraw(); }
+    else if (inf) patOpenInfo(+inf.dataset.patInfo);
+    else if (s) { pat.sel = +s.dataset.patSel; patSheet(); scheduleDraw(); }
+  });
+  $('pat-minq').addEventListener('change', () => { pat.minQ = Number($('pat-minq').value) || 0; patSheet(); scheduleDraw(); });
+  $('pat-gap').addEventListener('change', () => { pat.gap = $('pat-gap').checked; patRun('Gap-Modus'); });
+  // Label antippen: Der Chart zeichnet beim Bewegen neu, das Element kann zwischen Drücken und Loslassen ersetzt werden – deshalb
+  // über Ort und Zeit statt über „click“; ein Ziehen (Blättern) öffnet nichts
+  let tap = null;
+  $('chart').addEventListener('pointerdown', e => { const t = e.target.closest?.('[data-pat]'); tap = t ? { i: +t.getAttribute('data-pat'), x: e.clientX, y: e.clientY, at: Date.now() } : null; if (t) e.stopPropagation(); }, true);
+  document.addEventListener('pointerup', e => { const p = tap; tap = null; if (p && Math.hypot(e.clientX - p.x, e.clientY - p.y) < 12 && Date.now() - p.at < 800) patOpenInfo(p.i); }, true);
+})();
+window.__g09 = { get pat() { return pat; }, engine: () => (PAT_E = PAT_E || patEngine()), lib: PAT_LIB, run: r => patRun(r), info: i => patOpenInfo(i), zoom: i => patZoom(i), svg: id => patSvg(id).outerHTML };
 window.__g08 = { get dec() { return dec; }, decSignal: (c, b, cfg) => decSignal(c, b, cfg), decTick: (t, w, at) => decTick(t, DEC_WIN[w], at), decEvaluate: (r, sp, t, cfg, w, at) => decEvaluate(r, new Set(sp), new Map(Object.entries(t)), cfg, w, at),
   decPearson: (a, b, st) => decPearson(a, b, st), decClassify: a => decClassify(a), decLoreParse: j => decLoreParse(j), setEvery: ms => { DEC_EVERY = ms; }, kick: () => decKick(true) };
 window.__g07 = { get ana() { return ana; }, get cap() { return CAP; }, blocks30: (d, n) => blocks30(d, n), anaCalc: (c, iv) => anaCalc(c, iv), anaTrend: o => anaTrend(o), validateMarketCap: r => validateMarketCap(r), coinGeckoMarketCapPoints: j => coinGeckoMarketCapPoints(j),
@@ -12657,7 +13157,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
         </form>
         <div id="market-error" class="notice error" role="alert" hidden></div>
         <div class="chart-heading"><div><div class="pair-title"><span class="coin-icon" id="coin-icon">B</span><h2 id="pair-label">BTC <span>/ USDT</span></h2><span class="badge" id="market-badge">SPOT</span></div><div class="price-row"><strong id="price" class="skel">—</strong><span class="unit">USDT</span><span class="change skel" id="candle-change">—</span></div><div class="signal-line" id="signal-line" hidden></div><button type="button" class="button ghost alarm-btn" id="alarm-here">🔔 Alarm für diesen Kurs</button></div><div class="chart-meta"><span id="price-eur">Eurokurs ausstehend</span><span id="updated">Noch keine Marktdaten</span></div></div>
-        <div class="chart-toolbar"><div class="tb-main"><div class="intervals" role="group" aria-label="Kerzenintervall"><button type="button" data-interval="1m" class="active" aria-pressed="true">1m</button><button type="button" data-interval="5m" aria-pressed="false">5m</button><button type="button" data-interval="15m" aria-pressed="false">15m</button><button type="button" data-interval="1h" aria-pressed="false">1h</button><button type="button" data-interval="4h" aria-pressed="false">4h</button><button type="button" data-interval="1d" aria-pressed="false">1d</button><button type="button" data-interval="1w" aria-pressed="false">1w</button><button type="button" data-interval="1M" aria-pressed="false" title="1 Monat">1M</button></div><button type="button" class="metric-btn" data-metric="cap" aria-pressed="false" aria-label="Market Cap in USD statt Kurs anzeigen" title="Market Cap (USD) statt Kurs – noch einmal tippen: zurück zum Kurs. Historische Werte schlüssellos von CoinGecko, sonst CoinPaprika">MCap</button></div><div class="zoom-controls" role="group" aria-label="Chart zoomen und blättern"><button id="pan-back" type="button" aria-label="Weiter zurück in der Zeit">◀</button><button id="zoom-out" type="button" aria-label="Herauszoomen, mehr Kerzen">−</button><button id="zoom-in" type="button" aria-label="Hineinzoomen, weniger Kerzen">+</button><button id="pan-fwd" type="button" aria-label="Weiter Richtung jetzt">▶</button><button id="pan-now" type="button" hidden>Jetzt</button><button id="zoom-reset" type="button" hidden aria-label="Standardansicht: 80 Kerzen bis zur aktuellen Kerze" title="Standardansicht: 80 Kerzen bis zur aktuellen Kerze">⟲</button><button id="magnet" type="button" aria-pressed="false" title="Magnet: auf ein Chart-Level tippen oder klicken, um dort einen Kurs-Alarm zu setzen" aria-label="Magnet: Kurs-Alarm per Klick auf ein Chart-Level">🧲</button><button id="chart-full" type="button" aria-pressed="false" aria-label="Chart im Vollbild" title="Vollbild – schließen mit Enter, Esc oder diesem Symbol"><svg class="ico-max" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><svg class="ico-min" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><details class="tip"><summary aria-label="Bedienung des Charts"><span>i</span></summary><div class="tip-body"><p>Zoomen: zwei Finger auseinander/zusammen, Strg + Mausrad oder − / +.</p><p>Zurückblättern: mit einem Finger wischen, waagrecht scrollen oder ◀ ▶. Doppelt tippen: zurück zu jetzt.</p><p>🧲 Magnet: einschalten, dann auf eine Linie oder Kerze tippen bzw. klicken – der Kurs-Alarm wird mit genau diesem Preis vorausgefüllt. Der Preis rastet an POC, Value Area, Pivots, EMA 200, Bollinger, Kerzen-Hochs und -Tiefs, Liquidationslinien sowie den Liq-Clustern der Heatmap ein. Am Computer geht es jederzeit auch per Rechtsklick.</p><p>Rote gestrichelte Linie: Liquidationspreis deiner Position (Wert der Börse oder Modell bei isolierter Margin), rot getönt der Bereich dahinter. Dünner: das Szenario aus dem Positionsrechner.</p><p>Tastatur: Pfeiltasten wählen Kerzen, + und − zoomen.</p></div></details></div></div>
+        <div class="chart-toolbar"><div class="tb-main"><div class="intervals" role="group" aria-label="Kerzenintervall"><button type="button" data-interval="1m" class="active" aria-pressed="true">1m</button><button type="button" data-interval="5m" aria-pressed="false">5m</button><button type="button" data-interval="15m" aria-pressed="false">15m</button><button type="button" data-interval="1h" aria-pressed="false">1h</button><button type="button" data-interval="4h" aria-pressed="false">4h</button><button type="button" data-interval="1d" aria-pressed="false">1d</button><button type="button" data-interval="1w" aria-pressed="false">1w</button><button type="button" data-interval="1M" aria-pressed="false" title="1 Monat">1M</button></div><button type="button" class="metric-btn" data-metric="cap" aria-pressed="false" aria-label="Market Cap in USD statt Kurs anzeigen" title="Market Cap (USD) statt Kurs – noch einmal tippen: zurück zum Kurs. Historische Werte schlüssellos von CoinGecko, sonst CoinPaprika">MCap</button></div><div class="zoom-controls" role="group" aria-label="Chart zoomen und blättern"><button id="pan-back" type="button" aria-label="Weiter zurück in der Zeit">◀</button><button id="zoom-out" type="button" aria-label="Herauszoomen, mehr Kerzen">−</button><button id="zoom-in" type="button" aria-label="Hineinzoomen, weniger Kerzen">+</button><button id="pan-fwd" type="button" aria-label="Weiter Richtung jetzt">▶</button><button id="pan-now" type="button" hidden>Jetzt</button><button id="zoom-reset" type="button" hidden aria-label="Standardansicht: 80 Kerzen bis zur aktuellen Kerze" title="Standardansicht: 80 Kerzen bis zur aktuellen Kerze">⟲</button><button id="pat-btn" type="button" aria-pressed="false" aria-label="KI: Chartmuster im sichtbaren Ausschnitt erkennen (regelbasiert, lokal)" title="Chartmuster erkennen – regelbasiert im Browser, keine externe KI">KI</button><button id="magnet" type="button" aria-pressed="false" title="Magnet: auf ein Chart-Level tippen oder klicken, um dort einen Kurs-Alarm zu setzen" aria-label="Magnet: Kurs-Alarm per Klick auf ein Chart-Level">🧲</button><button id="chart-full" type="button" aria-pressed="false" aria-label="Chart im Vollbild" title="Vollbild – schließen mit Enter, Esc oder diesem Symbol"><svg class="ico-max" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><svg class="ico-min" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><details class="tip"><summary aria-label="Bedienung des Charts"><span>i</span></summary><div class="tip-body"><p>Zoomen: zwei Finger auseinander/zusammen, Strg + Mausrad oder − / +.</p><p>Zurückblättern: mit einem Finger wischen, waagrecht scrollen oder ◀ ▶. Doppelt tippen: zurück zu jetzt.</p><p>🧲 Magnet: einschalten, dann auf eine Linie oder Kerze tippen bzw. klicken – der Kurs-Alarm wird mit genau diesem Preis vorausgefüllt. Der Preis rastet an POC, Value Area, Pivots, EMA 200, Bollinger, Kerzen-Hochs und -Tiefs, Liquidationslinien sowie den Liq-Clustern der Heatmap ein. Am Computer geht es jederzeit auch per Rechtsklick.</p><p>Rote gestrichelte Linie: Liquidationspreis deiner Position (Wert der Börse oder Modell bei isolierter Margin), rot getönt der Bereich dahinter. Dünner: das Szenario aus dem Positionsrechner.</p><p>Tastatur: Pfeiltasten wählen Kerzen, + und − zoomen.</p></div></details></div></div>
         <div class="ohlc-row"><div class="ohlc skel" id="ohlc">O — &nbsp; H — &nbsp; L — &nbsp; C —</div><details class="tip div-tip" id="div-tip" hidden><summary aria-label="RSI-Divergenz: Erklärung und Handlungsleitfaden"><i class="div-dot" aria-hidden="true"></i><b class="div-l" id="div-chip-l">RSI-Divergenz</b><b class="div-s" id="div-chip-s">Div.</b><span>i</span></summary><div class="tip-body div-body"><p class="div-title" id="div-title"></p><p id="div-case"></p><p class="div-tent" id="div-tent" hidden></p><p class="div-other" id="div-other" hidden></p><p class="div-h">Handlungsleitfaden</p><ol class="div-steps"><li><b>Kein Einstiegssignal.</b> Die Divergenz zeigt nachlassenden Schwung, keine Umkehr. Auch Warten auf eine Bestätigung half im Backtest nicht (unten).</li><li id="div-step-ext"></li><li id="div-step-pos"></li><li id="div-step-risk"></li></ol><p class="div-alarm-row"><button type="button" class="button ghost" id="div-alarm">🔔 Alarm</button></p><p class="div-honest"><b>Ehrlich – Backtest mit genau diesem Scanner</b> (echte BTC-Stundenkerzen 2017–2019, Coinbase und Bitfinex): Nach einer Divergenz lief der Kurs nur in 48–51 % der Fälle zuerst um die Mindestbewegung in die erwartete Richtung – als Trade nach Gebühren (0,06 % je Seite) durchweg ein Verlust (−25 % bis −47 %). Warten machte es nicht besser: ab der Bestätigung des Umkehrpunkts 44–48 %, nach einem Schlusskurs über dem Zwischenhoch bzw. unter dem Zwischentief nur 21–39 %. Deshalb zeigt die App dazu keine Trefferquote und kein Kauf- oder Verkaufssignal.</p><p class="div-note">Grün = bullisch, rot = bärisch. Eine neue Divergenz pulsiert, bis du diese Erklärung geöffnet hast, danach leuchtet sie ruhig. Ist „Bewegung reduzieren“ im System eingestellt, leuchtet sie ohne Pulsieren.</p></div></details></div>
         <div id="chart" class="chart" tabindex="0" role="img" aria-label="Kerzenchart. Mit Pfeiltasten Kerzen auswählen, mit Plus und Minus zoomen."><div class="chart-skel" aria-hidden="true"><i class="skel" style="height:38%"></i><i class="skel" style="height:52%"></i><i class="skel" style="height:46%"></i><i class="skel" style="height:61%"></i><i class="skel" style="height:57%"></i><i class="skel" style="height:70%"></i><i class="skel" style="height:64%"></i><i class="skel" style="height:49%"></i><i class="skel" style="height:55%"></i><i class="skel" style="height:68%"></i><i class="skel" style="height:74%"></i><i class="skel" style="height:66%"></i><i class="skel" style="height:58%"></i><i class="skel" style="height:63%"></i><i class="skel" style="height:77%"></i><i class="skel" style="height:71%"></i><i class="skel" style="height:80%"></i><i class="skel" style="height:69%"></i><i class="skel" style="height:62%"></i><i class="skel" style="height:72%"></i><i class="skel" style="height:84%"></i><i class="skel" style="height:78%"></i><i class="skel" style="height:73%"></i><i class="skel" style="height:88%"></i></div><span class="sr-only">Marktdaten werden geladen</span></div><i class="div-halo" id="div-halo" hidden aria-hidden="true"><b></b></i>
         <div class="fib-strip" id="fib-strip" role="group" aria-label="Fibonacci-Marken 38,2 / 50 / 61,8 % mit Abstand zum aktuellen Kurs – antippen legt einen Alarm an" hidden><div class="fs-head"><b id="fs-head">Fib</b><details class="tip left" id="fs-tip"><summary aria-label="Fibonacci-Marken erklärt"><span>i</span></summary><div class="tip-body"><p><b>Fibonacci-Retracement:</b> Wie weit läuft der Kurs nach einer Bewegung zurück? Gemessen in Prozent der letzten Schwungbewegung.</p><p id="fs-tip-swing">Grundlage ist der letzte abgeschlossene ZigZag-Schwung.</p><ul class="fs-tip-list"><li><b>23,6 %</b><span data-fl="23,6"></span> – flacher Rücklauf, gilt als Zeichen eines starken Trends</li><li><b>38,2 %</b><span data-fl="38,2"></span> – erste häufig beachtete Marke</li><li><b>50 %</b><span data-fl="50"></span> – halber Rücklauf; keine Fibonacci-Zahl, aber traditionell beachtet</li><li><b>61,8 %</b><span data-fl="61,8"></span> – der „goldene Schnitt“; 50–61,8&nbsp;% ist die „goldene Zone“ (im Chart hinterlegt)</li><li><b>78,6 %</b><span data-fl="78,6"></span> – tiefer Rücklauf, der Schwung ist dann fast ganz zurückgenommen</li></ul><p><b>So nutzen:</b> als Orientierung, wo Rücksetzer oder Erholungen oft vermutet werden. Eine Marke antippen legt dort einen Alarm an – dann die Reaktion des Kurses abwarten. Viele Trader achten besonders auf Marken, die mit anderen Levels zusammenfallen (POC, EMA 200, Unterstützung); geprüft ist das hier nicht.</p><p><b>Ehrlich:</b> Im Backtest mit echten BTC-Stundenkerzen (2017–2019) endeten Gegenbewegungen nicht häufiger an diesen Marken als an um 6 Punkte verschobenen (27–31&nbsp;% gegenüber 23–35&nbsp;%); knapp die Hälfte lief sogar über 100&nbsp;% hinaus. Deshalb keine Trefferquote – Orientierung, kein Handelssignal.</p><p>Die ZigZag-Mindestbewegung bestimmt den Schwung: kleiner heißt kürzere Schwünge und Marken näher am Kurs.</p></div></details></div><button type="button" class="fs-chip" data-fib="38,2" disabled><span class="fs-r">38,2<span class="fs-pc"> %</span></span><span class="fs-val skel">—</span><span class="fs-dist"></span></button><button type="button" class="fs-chip" data-fib="50" disabled><span class="fs-r">50<span class="fs-pc"> %</span></span><span class="fs-val skel">—</span><span class="fs-dist"></span></button><button type="button" class="fs-chip" data-fib="61,8" disabled><span class="fs-r">61,8<span class="fs-pc"> %</span></span><span class="fs-val skel">—</span><span class="fs-dist"></span></button><span class="fs-note" id="fs-note" hidden></span></div>
@@ -12983,6 +13483,18 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
     <button type="button" data-tab="pos"><b aria-hidden="true">▤</b><span class="tl">Positionen</span><span class="tab-badge" id="tab-pos-badge" hidden></span></button>
     <button type="button" data-tab="ind"><b aria-hidden="true">∿</b><span class="tl">Indikatoren</span></button>
   </nav>
+  <dialog class="sheet bottom" id="pat-sheet" aria-labelledby="pat-title">
+    <div class="sheet-head"><h2 id="pat-title">Chartmuster (KI)</h2><button type="button" class="button ghost icon" id="pat-close" aria-label="Schließen">×</button></div>
+    <div class="sheet-body"><p class="pat-scope" id="pat-scope"></p>
+      <div class="pat-bar"><div class="dec-seg" role="group" aria-label="Richtung"><button type="button" data-pfil="all" aria-pressed="true">Alle</button><button type="button" data-pfil="bull" aria-pressed="false">Bullish</button><button type="button" data-pfil="bear" aria-pressed="false">Bearish</button></div><label>Mindestregelgüte <select id="pat-minq"><option value="0">0 %</option><option value="40">40 %</option><option value="60" selected>60 %</option><option value="80">80 %</option></select></label><label class="dec-corr"><input type="checkbox" id="pat-gap"> Strenger Gap-Modus</label></div>
+      <div class="pat-list" id="pat-list"></div>
+      <p class="pat-note">Regelgüte = erfüllte Regelgewichte ÷ mögliche Gewichte (unbekannte Regeln zählen mit) – keine Trefferquote. Automatische Mustererkennung, keine Anlageberatung.</p>
+      <div class="sheet-actions"><button type="button" class="button ghost" id="pat-off">Markierungen ausblenden</button></div></div>
+  </dialog>
+  <dialog class="sheet" id="pat-info" aria-labelledby="pat-info-title">
+    <div class="sheet-head"><h2 id="pat-info-title">Muster</h2><button type="button" class="button ghost icon" id="pat-info-x" aria-label="Schließen">×</button></div>
+    <div class="sheet-body"><div id="pat-info-body" class="pat-info"></div><div class="sheet-actions"><button type="button" class="button" id="pat-info-zoom">Im Chart zeigen</button><button type="button" class="button ghost" id="pat-info-close">Schließen</button></div></div>
+  </dialog>
   <dialog class="sheet bottom" id="qa-dialog" aria-labelledby="qa-title">
     <div class="sheet-head"><h2 id="qa-title">Schnell-Alarm</h2><button type="button" class="button ghost icon" id="qa-close" aria-label="Schließen">×</button></div>
     <form class="sheet-body" id="qa-form" novalidate>
