@@ -1049,6 +1049,10 @@ html[data-chartfull] #ohlc{order:3}
 html[data-chartfull] #chart{order:4}
 /* Schmale Handys: sieben Werkzeuge (mit Vollbild) passen in eine Zeile */
 @media (max-width:380px){.chart-toolbar .zoom-controls button{min-width:38px;padding:0 4px}}
+/* 3.32.0 (G04.5): mit ⟲ passt die Reihe auch bei 320 px – etwas schmalere Knöpfe; ist zusätzlich „Jetzt“ zu sehen (zurückgeblättert),
+   weicht ⟲ bis dahin (Jetzt zuerst, danach ⟲); notfalls lässt sich die Reihe seitlich wischen statt abzuschneiden */
+@media (max-width:360px){.chart-toolbar .zoom-controls{min-width:0;max-width:100%;overflow-x:auto;scrollbar-width:none;gap:2px}.chart-toolbar .zoom-controls::-webkit-scrollbar{display:none}
+  .chart-toolbar .zoom-controls button{flex:0 0 auto;min-width:33px;padding:0 3px}.chart-toolbar #pan-now:not([hidden])~#zoom-reset{display:none}}
 /* Vollbild am iPhone hochkant: Chart ins Querformat gedreht (siehe chartfull); Ränder für Notch und Home-Leiste mitgedreht */
 html[data-chartfull] #chart{touch-action:none}
 @media (orientation:portrait) and (max-width:600px) and (pointer:coarse){
@@ -5861,13 +5865,15 @@ async function marketPick(raw) {
     // Knopf bleibt bedienbar (gesperrt verschluckte der Browser ein Enter für die nächste Eingabe); nur als „prüft“ markiert
     const btnL = $('market-form').querySelector('button[type=submit]'); btnL.setAttribute('aria-busy', 'true');
     let ok = false, why = '';
-    try { const r = await spotGet('/api/v3/ticker/price', { symbol: sym }); ok = r?.symbol === sym && Number(r.price) > 0; }
+    // eine Antwort ohne gültigen Kurs heißt „nicht prüfbar“, nicht „gibt es nicht“
+    const valid = r => r?.symbol === sym && Number(r.price) > 0 ? true : (why = 'Binance lieferte keinen gültigen Kurs', false);
+    try { ok = valid(await spotGet('/api/v3/ticker/price', { symbol: sym })); }
     catch (err) {
-      if (err?.code === -1121) { try { const r = await api.get(FUTURES, '/fapi/v1/ticker/price', { symbol: sym }); ok = r?.symbol === sym && Number(r.price) > 0; } catch (err2) { why = err2?.code === -1121 ? 'none' : (err2?.message || String(err2)); } }
+      if (err?.code === -1121) { try { ok = valid(await api.get(FUTURES, '/fapi/v1/ticker/price', { symbol: sym })); } catch (err2) { why = err2?.code === -1121 ? 'none' : (err2?.message || String(err2)); } }
       else why = err?.message || String(err);
     } finally { if (gen === marketGen) btnL.removeAttribute('aria-busy'); }
     if (gen !== marketGen) return; // inzwischen eine neuere Eingabe
-    if (!ok) { pickError(why === 'none' || !why ? `${coin(sym)} gibt es bei Binance weder als Spot- noch als Futures-Paar gegen USDT – ${coin(state.symbol)} bleibt geladen.` : `${coin(sym)} ließ sich nicht prüfen (${why}) – ${coin(state.symbol)} bleibt geladen.`); return; }
+    if (!ok) { pickError(why === 'none' ? `${coin(sym)} gibt es bei Binance weder als Spot- noch als Futures-Paar gegen USDT – ${coin(state.symbol)} bleibt geladen.` : `${coin(sym)} ließ sich nicht prüfen (${why}) – ${coin(state.symbol)} bleibt geladen.`); return; }
     marketOk.add(sym);
   }
   $('market-form').querySelector('button[type=submit]').removeAttribute('aria-busy'); $('symbol').blur(); void setMarket(sym);

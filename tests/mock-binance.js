@@ -14,7 +14,7 @@ const cfg = { wsPeriod: 1000, futPeriod: 500, walk: true, silent: false, blockWs
 // 3.31.0 (G03): historische EUR/USDT-Minutenkerzen für den Euro-Kurs nachgetragener Abschlüsse – fest berechenbar: Schlusskurs der
 // Kerze mit Minute k = 1,1 + (k mod 1000) / 100000. Vor dem 03.01.2020 gibt es das Paar nicht (leere Antwort). /eurhist?mode=on|empty|fail
 const eurClose = k => +(1.1 + (k % 1000) / 100000).toFixed(5);
-const price = {}; for (const [s, p] of Object.entries(FUT)) price[s] = p; price.EURUSDT = 1.164;
+const price = {}; for (const [s, p] of Object.entries(FUT)) price[s] = p; price.EURUSDT = 1.164; price.PAXGUSDT = SPOT.PAXGUSDT; // 3.32.0: PAXG (nur Spot) mit Kurs – der Tickerpreis lieferte sonst „undefined“
 let seed = 7; const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
 const candles = {}; // key sym|iv -> current candle
 const bucket = (t, iv) => iv === '1M' ? Date.UTC(new Date(t).getUTCFullYear(), new Date(t).getUTCMonth(), 1) : iv === '1w' ? Math.floor((t - 3 * 864e5) / IV['1w']) * IV['1w'] + 3 * 864e5 : Math.floor(t / IV[iv]) * IV[iv];
