@@ -2,5 +2,10 @@ node_modules/
 key.pem
 cert.pem
 *.log
-qr-part-*.png
+m37-backup.json
+m37-muster.json
+sync-test.json
+zzp-backup-test.json
+ff-test.json
+*.png
 shots/
