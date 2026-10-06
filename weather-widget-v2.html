@@ -11733,7 +11733,8 @@ function renderTgcEvents() {
 }
 // Prüfzugang für die Tests (wie window.__sdMem): Zustand und einzelne Abläufe der Telegram-Ziele und der Sendefreigabe
 window.__g07 = { get ana() { return ana; }, get cap() { return CAP; }, blocks30: (d, n) => blocks30(d, n), anaCalc: (c, iv) => anaCalc(c, iv), anaTrend: o => anaTrend(o), validateMarketCap: r => validateMarketCap(r), coinGeckoMarketCapPoints: j => coinGeckoMarketCapPoints(j),
-  capKey: (...a) => capKey(...a), capPut: e => capPut(e), capGet: k => capGet(k), setCapMax: n => { CAP_MAX_BYTES = n; }, capBlock: p => capBlock(p), capSeries: (p, id, r) => capSeries(p, id, r), compactCap: v => compactCap(v), hzSeries: d => hzSeries(d) };
+  capKey: (...a) => capKey(...a), capPut: e => capPut(e), capGet: k => capGet(k), setCapMax: n => { CAP_MAX_BYTES = n; }, capBlock: p => capBlock(p), capSeries: (p, id, r) => capSeries(p, id, r), compactCap: v => compactCap(v), hzSeries: d => hzSeries(d),
+  chartPoc: () => { const { start, end } = viewWindow(); return volumeProfile(state.candles.slice(start, end))?.poc ?? null; } };
 window.__g06 = { timgData: id => timgData(id), timgRange: d => timgRange(d), tgtEpoch: id => tgtEpoch(id), get jobs() { return loadTimg(); }, timgPreview: id => timgPreview(id) };
 window.__g05 = { get state() { return state; }, get chan() { return chan; }, get svc() { return svc; }, get svcLog() { return svcLog; }, get chanState() { return chanState; },
   readChanForm, saveChannels, sendTgBackup, notifyChannels, svcRefresh, alarmSub, persist, renderAlarms, syncStreams, tgTarget, backupPayload, alarmEventId };
