@@ -109,7 +109,7 @@ const TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', CHAT = '987654321'
     if (u.pathname.startsWith(`/file/bot${TOKEN}/`)) return reply(JSON.parse(files.get(u.pathname.split('/').pop())));
     if (/discord/.test(u.hostname)) { dcLog.push(b.content); return { ok: true, status: 204, json: async () => ({}) }; }
     const m = /^\/bot[^/]+\/(\w+)$/.exec(u.pathname);
-    if (m && m[1] === 'sendMessage' && tgFail) { tgLog.push({ method: m[1], ...b, failed: true }); if (tgFail === 'net') throw new TypeError('fetch failed', { cause: { code: 'ECONNRESET' } }); return reply({ ok: false, error_code: tgFail.status, description: tgFail.desc }, tgFail.status); }
+    if (m && m[1] === 'sendMessage' && tgFail) { tgLog.push({ method: m[1], ...b, failed: true }); if (tgFail === 'net') throw new TypeError('fetch failed', { cause: { code: 'ECONNREFUSED' } }); /* 2.0: keine Verbindung – kam nie an (abgerissene Verbindung: unit-247c) */ return reply({ ok: false, error_code: tgFail.status, description: tgFail.desc }, tgFail.status); }
     if (m) {
       tgLog.push({ method: m[1], ...b });
       if (m[1] === 'getChat') return reply({ ok: true, result: { id: +CHAT, type: 'private', ...(pinned ? { pinned_message: pinned } : {}) } });
