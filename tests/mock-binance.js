@@ -6,7 +6,7 @@ const dir = __dirname;
 if (!fs.existsSync(path.join(dir, 'key.pem')) || !fs.existsSync(path.join(dir, 'cert.pem')))
   require('child_process').execFileSync('openssl', ['req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '3650', '-subj', '/CN=localhost', '-keyout', path.join(dir, 'key.pem'), '-out', path.join(dir, 'cert.pem')], { stdio: 'ignore' });
 const tls = { key: fs.readFileSync(path.join(dir, 'key.pem')), cert: fs.readFileSync(path.join(dir, 'cert.pem')) };
-const IV = { '1s': 1e3, '1m': 6e4, '3m': 18e4, '5m': 3e5, '15m': 9e5, '1h': 36e5, '2h': 72e5, '4h': 144e5, '1d': 864e5, '1w': 6048e5, '1M': 2592e6 };
+const IV = { '1s': 1e3, '1m': 6e4, '3m': 18e4, '5m': 3e5, '15m': 9e5, '30m': 18e5, '1h': 36e5, '2h': 72e5, '4h': 144e5, '12h': 432e5, '1d': 864e5, '1w': 6048e5, '1M': 2592e6 };
 const SPOT = { BTCUSDT: 64000, ETHUSDT: 2500, XRPUSDT: 1.47, ETCUSDT: 18, BCHUSDT: 330, LTCUSDT: 70, NEARUSDT: 2.4, EURUSDT: 1.164, SOLUSDT: 150, PAXGUSDT: 2650 };
 const FUT = { ...SPOT, BSVUSDT: 32 };
 delete FUT.EURUSDT; delete FUT.PAXGUSDT; // PAXG: nur Spot (keine Futures, kein Open Interest)
