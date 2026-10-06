@@ -12513,19 +12513,22 @@ function patDraw(svg, over, g) {
   const hits = patShown(); if (!hits.length) return;
   const idx = new Map(g.data.map((c, i) => [c.time, i])), { x, y, min, max, step, top } = g, R = pat.res;
   const col = d => (d === 'bull' ? PAL.up : d === 'bear' ? PAL.down : PAL.vp), inR = v => Number.isFinite(v) && v >= min && v <= max;
-  let n = 0;
+  const formTop = new Set(hits.filter(h => h.kind === 'form').slice(0, 2));   // ohne Auswahl nur die zwei stärksten Formationen als Linien
   for (const h of hits) {
     const i = R.hits.indexOf(h), a = idx.get(h.t0), b = idx.get(h.t1); if (a === undefined && b === undefined) continue;
     const L = PAT_LIB[h.id], c = col(h.dir), sel = pat.sel === i, xa = x(a ?? 0) - step / 2, xb = x(b ?? g.data.length - 1) + step / 2;
     if (sel) over.append(node('rect', { x: xa, y: top, width: Math.max(2, xb - xa), height: g.bottom - top, fill: c, opacity: .1, class: 'pat-hl' }));
-    if (h.kind === 'form') for (const [t0, p0, t1, p1, kd] of h.lines) {
+    if (h.kind === 'form' && (sel || formTop.has(h))) for (const [t0, p0, t1, p1, kd] of h.lines) {
       const ia = idx.get(t0), ib = idx.get(t1); if (ia === undefined || ib === undefined) continue;
-      over.append(node('line', { x1: x(ia), y1: y(p0), x2: x(ib), y2: y(p1), stroke: c, 'stroke-width': sel ? 2.2 : 1.4, 'stroke-dasharray': kd === 'shape' ? '' : '5 3', opacity: .9, class: 'pat-line' }));
+      over.append(node('line', { x1: x(ia), y1: y(p0), x2: x(ib), y2: y(p1), stroke: c, 'stroke-width': sel ? 2.2 : 1.2, 'stroke-dasharray': kd === 'shape' ? '' : '5 3', opacity: sel ? .95 : .55, class: 'pat-line' }));
     }
     if (h.kind === 'form' && sel && h.levels?.tgt != null && inR(h.levels.tgt)) over.append(node('line', { x1: x(b ?? 0), y1: y(h.levels.tgt), x2: g.left + g.pw, y2: y(h.levels.tgt), stroke: c, 'stroke-dasharray': '2 3', opacity: .8 }));
-    const lv = h.kind === 'candle' ? h.price : Math.max(...h.lines.map(l => Math.max(l[1], l[3]))), ly = inR(lv) ? Math.max(top + 10, y(lv) - 6 - (n % 2) * 12) : top + 10 + (n % 3) * 12;
-    const t = node('text', { x: h.kind === 'candle' ? x(b ?? 0) : (xa + xb) / 2, y: ly, 'text-anchor': 'middle', class: `axis-label pat-label${sel ? ' sel' : ''}`, style: `fill:${c};font-weight:${sel ? 800 : 700};cursor:pointer`, 'data-pat': i }, `${L.n.replace(/ \(.*\)$/, '')} ⓘ`);
-    svg.append(t); n++;
+    // ohne Auswahl ein kleines Zeichen (▲ ▼ ◆), ausgewählt der Name mit ⓘ – beides antippbar
+    const up = h.dir !== 'bear', lv = h.kind === 'candle' ? (up ? h.low : h.price) : (up ? Math.min(...h.lines.map(l => Math.min(l[1], l[3]))) : Math.max(...h.lines.map(l => Math.max(l[1], l[3]))));
+    const xm = h.kind === 'candle' ? x(b ?? 0) : x(b ?? g.data.length - 1), ym = inR(lv) ? y(lv) + (up ? 12 : -5) : up ? g.bottom - 4 : top + 10;
+    const t = sel ? node('text', { x: Math.min(xm, g.left + g.pw - 4), y: Math.max(top + 10, Math.min(g.bottom - 4, ym + (up ? 2 : -2))), 'text-anchor': xm > g.left + g.pw * 0.7 ? 'end' : 'middle', class: 'axis-label pat-label sel', style: `fill:${c};font-weight:800;cursor:pointer`, 'data-pat': i }, `${L.n.replace(/ \(.*\)$/, '')} ⓘ`)
+      : node('text', { x: xm, y: ym, 'text-anchor': 'middle', class: 'pat-label pat-mk', style: `fill:${c};font-size:11px;cursor:pointer`, 'data-pat': i }, h.dir === 'bull' ? '▲' : h.dir === 'bear' ? '▼' : '◆');
+    t.append(node('title', {}, `${L.n} · Regelgüte ${h.q} %`)); svg.append(t);
   }
 }
 (function patUi() {

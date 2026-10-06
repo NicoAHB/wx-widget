@@ -119,9 +119,10 @@ const tests = {
     check('„Im Chart zeigen“: Dialoge zu, Ausschnitt bewusst um das Muster, Muster hervorgehoben', z.sel !== null && z.inView && z.hl && !z.dialogs, JSON.stringify({ z, v0 }));
     const c1 = await page.evaluate(() => __g05.state.count); await page.click('#zoom-out'); await page.waitForTimeout(300);
     check('Chart danach frei bedienbar (Herauszoomen wirkt)', (await page.evaluate(() => __g05.state.count)) > c1, `${c1} → ${await page.evaluate(() => __g05.state.count)}`);
-    const lab = await page.$('#chart [data-pat]');
+    const selTxt = await page.evaluate(() => document.querySelector('#chart .pat-label.sel')?.firstChild?.textContent || ''), nMk = await page.evaluate(() => document.querySelectorAll('#chart .pat-mk').length);
+    const lab = await page.$('#chart .pat-mk');
     if (lab) { await lab.click({ force: true }); await page.waitForTimeout(300); }
-    check('Chart-Label (mit ⓘ) öffnet das Info-Sheet', !!lab && await page.evaluate(() => document.getElementById('pat-info').open) && /ⓘ$/.test(await lab.textContent()), lab ? await lab.textContent() : 'kein Label');
+    check('Chart: ausgewähltes Muster mit Namen und ⓘ, übrige als kleine Zeichen (▲ ▼ ◆); Antippen eines Zeichens öffnet das Info-Sheet', /ⓘ$/.test(selTxt) && nMk >= 1 && !!lab && await page.evaluate(() => document.getElementById('pat-info').open), JSON.stringify({ selTxt, nMk }));
     await page.evaluate(() => document.getElementById('pat-info').close());
     await page.click('.chart-toolbar [data-interval="5m"]'); await page.waitForTimeout(80);
     const cleared = await page.evaluate(() => !__g09.pat.res || __g09.pat.res.key.endsWith('|5m'));
