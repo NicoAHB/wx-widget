@@ -920,6 +920,10 @@ body{font-variant-numeric:tabular-nums}
    ein langer Wert wie „63.789,89 – 64.170,02“ ragte sonst über den Rand der Karte */
 .zone{container:zonecard/inline-size}
 @container zonecard (max-width:300px){.zone-rows>div{flex-direction:column;align-items:stretch;gap:1px}.zone-rows strong{margin-left:0;text-align:left}}
+/* 3.35.0 (G07): Trendkontext – die Erklärwerte sind lang („63.974,40 < 64.899,38 − 0,25·ATR (46,28)“) und ragten auf dem iPad
+   über den Rand: Bezeichnung immer über dem Wert, der Wert bricht an Leerzeichen um */
+.trend-card .zone-rows>div{flex-direction:column;align-items:stretch;gap:1px}
+.trend-card .zone-rows strong{margin-left:0;text-align:left;white-space:normal;flex-shrink:1;min-width:0}
 /* Indikatoren ruhig: Hinweistexte reservieren zwei Zeilen – auch schon während des Ladens (Platzhalter), sonst schrumpften
    sie nach dem Laden auf eine Zeile und wüchsen später wieder; große Werte brechen nicht mitten in der Zahl um */
 .zone-note,.indicator p{min-height:3em}
