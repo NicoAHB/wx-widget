@@ -90,6 +90,15 @@ const tests = {
     await page.evaluate(() => { __g05.chan.tgt.backup = true; __g05.saveChannels(); }); t0 = Date.now(); await page.evaluate(() => __g05.sendTgBackup(true));
     const d = await until(async () => (await docs(t0)).length ? await docs(t0) : null, 10000);
     check('Ziel wieder an: Sicherung geht in den eingetragenen Sicherungschat', d && String(d[0].chat_id) === BACKUP, JSON.stringify(d?.map(x => x.chat_id)));
+    // Testnachrichten beachten AUS
+    await page.evaluate(() => { __g05.chan.tgt.backup = false; __g05.saveChannels(); document.getElementById('chan-open').click(); }); await page.waitForTimeout(300);
+    t0 = Date.now(); await page.click('#tg-testall');
+    const tst = await until(() => page.evaluate(() => { const t = document.getElementById('tg-status').textContent; return /Testnachrichten zugestellt/.test(t) ? t : null; }), 20000);
+    const tsent = await tgSent(t0, /^🧪 Test/);
+    check('Sicherung aus: „Test je Nachrichtenart“ sendet nur die 6 an Kursalarm, die Meldung nennt das ausgeschaltete Ziel', tsent.length === 6 && tsent.every(m => String(m.chat_id) === ALERT) && /^6 von 7 Testnachrichten zugestellt: 6 an Kursalarm, keine an den Sicherungschat\. Ausgeschaltet \(💬 Telegram-Chats\), daher kein Test: Sicherung\.$/.test(tst || ''), tst);
+    await page.evaluate(() => { __g05.chan.tgt.backup = true; __g05.chan.tgt['course-alert'] = false; __g05.saveChannels(); }); t0 = Date.now(); await page.click('#tg-test'); await page.waitForTimeout(800);
+    check('Kursalarm aus: „Test senden“ sendet nicht, Grund steht da', !(await tgSent(t0)).length && /Ziel „Kursalarm“ ist ausgeschaltet/.test(await txt(page, '#tg-status')), await txt(page, '#tg-status'));
+    await page.evaluate(() => { __g05.chan.tgt['course-alert'] = true; __g05.saveChannels(); document.getElementById('chan-dialog').close(); });
     // Trades
     await page.evaluate(() => { document.getElementById('chan-open').click(); document.getElementById('tg-tchat').value = '-100777'; __g05.readChanForm(); document.getElementById('chan-dialog').close(); });
     await openTgc(page); r = await rows(page);

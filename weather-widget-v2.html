@@ -2731,7 +2731,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Alle Werte liegen zusätzlich im Arbeitsspeicher und sind dadurch synchron lesbar. Schreiben geht sofort in den
 // localStorage und gebündelt in die IndexedDB; beim Start gewinnt die zuletzt vollständig geschriebene Kopie.
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
-const APP_VERSION = '3.32.0', docEl = document.documentElement;
+const APP_VERSION = '3.33.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -7499,17 +7499,21 @@ const TG_TESTS = [['alarm', 'Kurs-Alarm'], ['pos', 'Stop-Loss/Take-Profit'], ['d
 async function chanTestAll() {
   readChanForm(); if (!chanValid('tg')) { renderChanStatus(); return; }
   const b = $('tg-testall'); b.disabled = true; let ok = 0;
+  const off = [...new Set(TG_TESTS.map(([kind]) => TG_ROUTE[kind]).filter(id => tgDest(id) && !tgtOn(id)))]; // 3.33.0: Ziel AUS – auch kein Test dorthin
   for (const [kind, name] of TG_TESTS) {
+    if (off.includes(TG_ROUTE[kind])) continue;
     const r = await chanSend('tg', `🧪 Test „${name}“ – gehört in: ${TG_ROUTE[kind] === 'backup' ? 'Sicherungschat' : TG_ROUTE[kind] === 'trades' ? 'Trades' : 'Kursalarm'}\n${hhmmss(Date.now())} Uhr`, true, kind);
     if (r.ok) ok++;
     await new Promise(res => setTimeout(res, 1100)); // Telegram: etwa eine Nachricht pro Sekunde je Chat
   }
   b.disabled = false;
-  chanMsg('tg', ok === TG_TESTS.length, `${ok} von ${TG_TESTS.length} Testnachrichten zugestellt: ${TG_TESTS.length - 1} an Kursalarm, 1 an ${!tgDest('backup') ? 'die Sicherung – kein Sicherungschat eingetragen, nicht gesendet' : tgSeparate() ? 'den Sicherungschat' : 'den Sicherungschat (derselbe Chat wie Kursalarm)'}.`);
+  const offTxt = off.length ? ` Ausgeschaltet (💬 Telegram-Chats), daher kein Test: ${off.map(id => TGT.find(t => t.id === id)?.name || id).join(', ')}.` : '';
+  chanMsg('tg', ok === TG_TESTS.length, `${ok} von ${TG_TESTS.length} Testnachrichten zugestellt: ${off.includes('course-alert') ? 'keine' : TG_TESTS.length - 1} an Kursalarm, ${off.includes('backup') ? 'keine' : 1} an ${!tgDest('backup') ? 'die Sicherung – kein Sicherungschat eingetragen, nicht gesendet' : tgSeparate() ? 'den Sicherungschat' : 'den Sicherungschat (derselbe Chat wie Kursalarm)'}.${offTxt}`);
 }
 async function chanTest(k) {
   readChanForm();
   if (!chanValid(k)) { renderChanStatus(); return; }
+  if (k === 'tg' && !tgtOn('course-alert')) { chanMsg('tg', false, 'Ziel „Kursalarm“ ist ausgeschaltet (💬 Telegram-Chats) – Test nicht gesendet.'); return; } // 3.33.0: Ziel AUS – auch kein Test
   const b = $(k + '-test'); b.disabled = true; chanMsg(k, null, 'Sende Testnachricht …');
   const r = await chanSend(k, `✅ Test von Scalp Desk: Alarme kommen hier an.\n${hhmmss(Date.now())} Uhr`, true);
   b.disabled = false;
