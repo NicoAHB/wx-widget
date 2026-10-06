@@ -1,12 +1,12 @@
 // G09 der Übergabe (3.37.0): regelbasierte Mustererkennung („KI“) – Engine, 41 Katalogfälle, Vortrend (Revision 2), 8 Intervalle,
 // Panel, Info-Sheet, Chart-Markierung, Kontextwechsel, keine externen Abrufe.
-// Aufruf: node m58.js [abschnitt ...]   Abschnitte: trend, catalog, ui, wl, know, sync
+// Aufruf: node m58.js [abschnitt ...]   Abschnitte: trend, catalog, ui, wl, know, sync, pub
 const h = require('./harness');
 const results = [];
 const check = (name, cond, detail = '') => { results.push({ name, ok: !!cond }); console.log(`${cond ? '  ✓' : '  ✗'} ${name}${detail !== '' ? ' — ' + String(detail).slice(0, 700) : ''}`); };
 const real = errs => errs.filter(e => !/Service Worker registration blocked|Failed to load resource|net::ERR/.test(e));
-async function openPage(browser, viewport = { width: 1440, height: 1000 }) {
-  const ctx = await browser.newContext({ viewport, timezoneId: 'Europe/Berlin' }), page = await ctx.newPage(), errors = []; h.collect(page, errors);
+async function openPage(browser, viewport = { width: 1440, height: 1000 }, opts = {}) {
+  const ctx = await browser.newContext({ viewport, timezoneId: 'Europe/Berlin', ...opts }), page = await ctx.newPage(), errors = []; h.collect(page, errors);
   await page.goto(`${h.URL_BASE}/weather-widget-v2.html`);
   await page.waitForFunction(() => document.getElementById('price').textContent.trim() !== '—', null, { timeout: 15000 }).catch(() => {});
   await page.waitForTimeout(800);
@@ -225,6 +225,36 @@ const tests = {
     await page.evaluate(() => { __g05.svc.cfg = { ...__g05.svc.cfg, url: '', key: '' }; });
     check('„Archiv vom Dienst als Datei sichern“: bereinigter Bestand als Datei auf dem Gerät (unabhängige Kopie)', !!fileOk, dl ? dl.suggestedFilename() : 'kein Download');
     check('keine Fehler (sync)', !real(errors).length, real(errors).join(' | ')); await ctx.close();
+  },  async pub(browser) {
+    // G09 C5: veröffentlichter Stand (data/muster/ auf GitHub Pages) – nur lesen, kein Schreibschlüssel; ohne Veröffentlichung ehrlich „noch keine“
+    const X = await import(require('path').join(__dirname, '..', 'server/muster-export.mjs'));
+    const { ctx, page, errors } = await openPage(browser, undefined, { serviceWorkers: 'block' });   // sonst holt der Service Worker selbst (am Abfangen vorbei)
+    const reqs = []; let pubBody = null, stats = {};
+    await page.route('**/data/muster/*', route => { const r = route.request(), n = r.url().split('/').pop(); reqs.push({ m: r.method(), n, auth: r.headers().authorization || '' });
+      if (n === 'manifest.json' && pubBody) return route.fulfill({ status: 200, contentType: 'application/json', body: pubBody });
+      if (stats[n]) return route.fulfill({ status: 200, contentType: 'application/json', body: stats[n] });
+      return route.fulfill({ status: 404, contentType: 'text/html', body: 'Not Found' }); });
+    await page.evaluate(() => document.getElementById('chart').scrollIntoView()); await page.click('#pat-btn');
+    await page.waitForFunction(() => __g09.pat.res && !__g09.pat.busy, null, { timeout: 10000 });
+    await page.evaluate(() => { __g09.pat.minQ = 0; document.getElementById('pat-minq').value = '0'; document.querySelector('[data-pfil="all"]').click(); });
+    const sel = await page.evaluate(() => { const i = __g09.pat.res.hits.indexOf(__g09.pat.res.hits.find(x => x.kind === 'form') || __g09.pat.res.hits[0]), h = __g09.pat.res.hits[i]; __g09.info(i); return { i, mkt: 'spot', sym: __g05.state.symbol, iv: __g05.state.interval, pat: h.id, kind: h.kind }; });
+    await page.click('.pk-btn');
+    await page.waitForFunction(() => /noch keine Veröffentlichung/.test(document.querySelector('.pk-out')?.textContent || ''), null, { timeout: 5000 }).catch(() => {});
+    const t0 = await page.evaluate(() => document.querySelector('.pk-out').textContent);
+    check('Ohne Veröffentlichung: „Gemeinsames Musterwissen: noch keine Veröffentlichung“', /Gemeinsames Musterwissen: noch keine Veröffentlichung/.test(t0), t0.slice(-300));
+    // Veröffentlichung mit dem echten Export-Skript erzeugen (Revision 3), dann neu laden
+    const mk = (j, out, src = 'live') => ({ id: `p${j}`, ...sel, dir: 'bull', t0: 2e12 + j, t1: 2e12 + j + 1, tc: 2e12 + j * 1e6, p0: 100, model: 'pat-1', profile: 'H12-e0.10', q: 70, at: 1, src, res: out ? { at: 1, tH: 1, ph: 101, r: 1, out, path: [0, 1] } : null });
+    const pubd = X.buildPublication({ cases: [mk(1, 'auf'), mk(2, 'auf'), mk(3, 'ab'), mk(4, 'seitwärts', 'rekonstruiert'), mk(5, null)] }, { rev: 2 }, Date.UTC(2033, 4, 6));
+    pubBody = pubd.mBody; for (const f of pubd.files) stats[f.name] = f.body;
+    await page.evaluate(() => __g09.pubLoad(true));
+    await page.click('.pk-btn'); await page.click('.pk-btn');
+    await page.waitForFunction(() => /Revision 3.*(live:|nichts)/.test(document.querySelector('.pk-pub')?.textContent || ''), null, { timeout: 5000 }).catch(() => {});
+    const t1 = await page.evaluate(() => document.querySelector('.pk-pub')?.textContent || '');
+    check('Veröffentlichter Stand mit Revision und Datum, Zählung der Auswahl live und rekonstruiert getrennt', /Veröffentlicht: Revision 3 vom 06\.05\.2033/.test(t1) && /live: 2 von 3 aufwärts, 1 abwärts, 0 seitwärts/.test(t1) && /rekonstruiert: 0 von 1 aufwärts, 0 abwärts, 1 seitwärts/.test(t1), t1);
+    const st = await page.evaluate(m => { const c = { mkt: 'spot', sym: 'PUBUSDT', iv: '1h', pat: 'double_top', tc: 2e12, at: 1, ext: 1 }; return { pub: __g09.pkState(c), later: __g09.pkState({ ...c, tc: m.until + 1 }), local: __g09.pkState({ ...c, ext: 0 }) }; }, pubd.manifest);
+    check('Speicherzustand „veröffentlicht“ für übertragene Fälle bis zum Stand der Revision; jüngere bleiben „extern gespeichert“, lokale „nur lokal“', st.pub === 'veröffentlicht' && st.later === 'extern gespeichert' && st.local === 'nur lokal', JSON.stringify(st));
+    check('Nur lesend: ausschließlich GET auf data/muster/ (Manifest, eine Statistikdatei), ohne Schlüssel', reqs.length >= 2 && reqs.every(r => r.m === 'GET' && !r.auth) && reqs.some(r => r.n === 'stats-1.json'), JSON.stringify(reqs));
+    check('keine Fehler (pub)', !real(errors).length, real(errors).join(' | ')); await ctx.close();
   },
 };
 (async () => {

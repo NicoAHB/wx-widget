@@ -128,3 +128,11 @@ Die Zeitstempel davor setzt journalctl in der Zeitzone des Servers (bei Oracle m
   - **Wiederherstellung:** Fehlt das Journal beim Start, stellt der Dienst es aus der Sicherung wieder her.
   - **Kopie aufs Gerät:** In der App zusätzlich „Archiv vom Dienst als Datei sichern“ (Info-Sheet eines Musters → „Vergangene Verläufe ansehen“).
 - **Aufrufe** (mit Zugangsschlüssel): `POST /v1/patterns/cases`, `GET /v1/patterns/status`, `GET /v1/patterns/export`.
+
+## Veröffentlichung des Musterwissens (App 3.39.0)
+- **Was:** Ein kleiner, bereinigter Stand für alle Nutzer auf GitHub Pages: nur Zählungen je Markt|Coin|Intervall|Muster (live und rekonstruiert getrennt), keine Einzelkurse, keine persönlichen Daten.
+- **So geht's:**
+  1. In der App „Archiv vom Dienst als Datei sichern“ (oder `GET /v1/patterns/export` mit Zugangsschlüssel) → `muster-archiv-JJJJ-MM-TT.json`.
+  2. Im Repository: `node server/muster-export.mjs muster-archiv-JJJJ-MM-TT.json data/muster` → schreibt `data/muster/manifest.json` (höchstens 64 KiB) und `stats-<n>.json` (je höchstens 256 KiB); die Revision zählt hoch.
+  3. Committen und pushen (Pull Request). Nach dem Pages-Build zeigt die App unter „Vergangene Verläufe ansehen“ „Veröffentlicht: Revision R vom …“ mit der Zählung der Auswahl.
+- **Sicherheit:** Die App liest nur (GET); sie braucht und kennt keinen Schreibschlüssel. Ohne Veröffentlichung steht dort „noch keine Veröffentlichung“.
