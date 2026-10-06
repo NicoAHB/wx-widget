@@ -1439,6 +1439,14 @@ html[data-layout=tablet] .wl-tile{height:64px}
 /* sehr schmale Kachel (Handy 320 px): Werte so groß wie die Regelzeile, damit auch „30 Min. −10,98 %“ neben den Verlauf passt */
 @container wlt (max-width:132px){.wl-chg,.wl-chg30{font-size:.625rem}}
 @media (pointer:coarse){.wl-item .chip-x{width:40px;height:40px;min-width:40px;min-height:40px;top:-14px;right:-12px}}
+/* 3.34.0 (G06): Trade-Bild – Vorschau und Zustand je Trade */
+.timg-img{display:block;width:100%;max-width:540px;height:auto;margin:0 auto 10px;border-radius:12px;border:1px solid var(--border);background:#0b0f13}
+.timg-wait{margin:8px 0 12px;color:var(--muted);font-size:.875rem}
+.trade-row .timg-st{display:inline-flex;align-items:center;min-height:28px;margin:4px 0 0;padding:2px 10px;border:1px solid var(--border);border-radius:999px;background:transparent;color:var(--text-2);font-size:.75rem;cursor:pointer;grid-column:1/-1;justify-self:start}
+.trade-row .timg-st.st-ok{color:var(--mint)}
+.trade-row .timg-st.st-fail,.trade-row .timg-st.st-unconf{color:var(--amber);border-color:var(--amber)}
+.trade-row .timg-st.st-drop{color:var(--muted)}
+#timg-save{text-decoration:none}
 /* 3.33.0 (G05): Telegram-Chats – große Schalter je Ziel, Sammelschalter als Kästchen (gemischt: indeterminate) */
 .tgc-mode{margin:0 0 10px;font-size:.8125rem;color:var(--muted)}
 .tgc-mode.warn{color:var(--amber)}
@@ -3839,7 +3847,7 @@ function saveClose(pos, ui) {
   const pre = s.src === 'exchange' && s.scope === 'pos' ? 0 : pos.preRealized || 0, qty = qNum(s.K), entry = pNum(s.E), simple = r.lots.length === 1 && r.sells.length === 1 && r.lots[0].mig;
   const base = { ...pos }, ev = base.ev, evDel = base.evDel; delete base.ev; delete base.evDel; delete base.liqCheck;
   const t = { ...base, qty, entry, margin: qty * entry / pos.leverage, exit: s.x !== null ? pxNum(s.x) : state.prices[pos.symbol]?.price ?? entry, fees: mNum(s.fees), pnl: mNum(s.net) + pre,
-    pnlSource: s.src, closedAt: s.at, note: e.note };
+    pnlSource: s.src, closedAt: s.at, note: e.note, ...(s.x === null ? { exitNA: true } : {}) }; // 3.34.0: ohne Ausstiegskurs ist „exit“ nur ein Platzhalter
   Object.assign(t, fxFields(s.fx, s.fxSrc, s.fxAt, t.pnl, s.fxNote, s.fxLog)); // 3.31.0: eingefrorener Euro-Wert des Schlusses
   if (s.fu) t.funding = mNum(s.fu);
   if (!simple) Object.assign(t, { ev, ...(evDel?.length ? { evDel } : {}), part: { pos: pos.id, sell: s.id, n: r.sells.length, final: true, ...(s.late ? { late: true } : {}) }, posPnl: mNum(r.realized) + pre });
@@ -4180,8 +4188,10 @@ function tradeRow(t, demo = false) {
   if (eur === null) es.title = 'EUR zum Abschlusszeitpunkt nicht verfügbar'; v.append(es); r.append(v); // 3.31.0: eingefrorener Euro-Wert
   const tools = el('span', 'tools'), fb = btn('x' + (eur === null ? ' fx-miss' : ''), '€', 'trade-fx'), nb = btn('x', '✎', 'trade-note'), x = btn('x', '×', 'trade-delete');
   fb.setAttribute('aria-label', `Euro-Kurs zum Trade ${coin(t.symbol)} vom ${localTime(t.closedAt)} ${eur === null ? 'nachtragen' : 'ansehen'}`); tools.append(fb);
+  if (!demo && timgCanShow(t)) { const ib = btn('x', '📷', 'trade-img'); ib.setAttribute('aria-label', `Trade-Bild zu ${coin(t.symbol)} vom ${localTime(t.closedAt)} ansehen und senden`); ib.title = 'Trade-Bild: Vorschau und an Telegram senden'; tools.append(ib); } // 3.34.0 (G06)
   if (t.part?.pos && !t.part.final && findPos(t.part.pos)) { x.hidden = true; x.disabled = true; } // 3.30.0: Teilabschluss einer offenen Position – über „Letzten Schritt rückgängig machen“
   nb.setAttribute('aria-label', `Notiz zum Trade ${coin(t.symbol)} vom ${localTime(t.closedAt)} bearbeiten`); x.setAttribute('aria-label', `Trade ${coin(t.symbol)} vom ${localTime(t.closedAt)} löschen`); tools.append(nb, x); r.append(tools);
+  { const c = !demo && timgChip(t.id); if (c) r.append(c); } // 3.34.0: Zustand des Trade-Bilds
   if (t.note && ui?.mode !== 'note') r.append(el('p', 'trade-note', t.note));
   if (ui === 'delete') { const c = el('div', 'confirm'); c.append(el('span', '', 'Trade endgültig löschen?'), btn('button danger-btn', 'Ja', 'trade-confirm'), btn('button ghost', 'Nein', 'trade-cancel')); r.append(c); }
   if (ui?.mode === 'fx') r.append(fxPanelDom(t, ui));
@@ -4211,7 +4221,7 @@ function renderHistory() {
   // 3.27.0: Nur die neuesten Trades zeichnen (je 200, „Weitere … anzeigen“) und unveränderte Zeilen wiederverwenden. Vorher baute
   // jede Änderung (z. B. eine Notiz) alle Zeilen neu – gemessen bei 5.000 Trades rund 2 Sekunden, bei 10.000 rund 4.
   const limit = Math.max(HIST_PAGE, state.histLimit || HIST_PAGE), shown = sorted.length > limit ? sorted.slice(0, limit) : sorted;
-  const keys = shown.map(t => JSON.stringify([t.id, t.closedAt, t.symbol, t.side, t.leverage, t.mode, t.qty, t.entry, t.exit, t.pnlSource, reasonsOf(t), t.pnl, t.fx, t.fxSrc ?? null, t.eur ?? null, t.fxLog?.length || 0, t.margin, t.note || '', uiMode(state.histUi[t.id]), JSON.stringify(state.histUi[t.id]?.mode === 'fx' ? state.histUi[t.id] : 0), t.part ? [t.part.n, t.part.final ? 1 : 0, !!findPos(t.part.pos), t.part.rest ?? null] : 0, t.posPnl ?? null, t.funding ?? null]));
+  const keys = shown.map(t => JSON.stringify([t.id, t.closedAt, t.symbol, t.side, t.leverage, t.mode, t.qty, t.entry, t.exit, t.pnlSource, reasonsOf(t), t.pnl, t.fx, t.fxSrc ?? null, t.eur ?? null, t.fxLog?.length || 0, t.margin, t.note || '', uiMode(state.histUi[t.id]), JSON.stringify(state.histUi[t.id]?.mode === 'fx' ? state.histUi[t.id] : 0), timgSig(t.id), t.part ? [t.part.n, t.part.final ? 1 : 0, !!findPos(t.part.pos), t.part.rest ?? null] : 0, t.posPnl ?? null, t.funding ?? null]));
   const key = state.year + '|' + limit + '|' + keys.join('|');
   if (key !== histStructure) {
     histStructure = key;
@@ -6023,6 +6033,7 @@ const posClick=e=>{
     const err=saveClose(pos,state.posUi[id]||{}); // 3.30.0: ganz oder teilweise, genau gerechnet, ein Ereignis je Tipp
     if(err){const pv=card.querySelector('[data-f="realize-preview"]');if(pv)pv.textContent=err;return;}
     delete state.posUi[id];persist();renderMarket();
+    timgAfterClose(id); // 3.34.0 (G06): erst gebucht und gespeichert, dann das Trade-Bild
   }
   renderPositions();
 };
@@ -6041,6 +6052,7 @@ const histClick=e=>{
   else if(act==='note-save'){const t=find();if(t){const was=JSON.stringify([t.note||'',reasonsOf(t)]);t.note=String(ui?.text||'').trim().slice(0,1000);if(ui&&Array.isArray(ui.reasons)){t.reasons=cleanReasons(ui.reasons,new Set(reasonsOf(t)));t.setup=t.reasons[0]||null;t.setupSeen=t.setup;}if(JSON.stringify([t.note||'',reasonsOf(t)])!==was)t.updatedAt=Date.now();persist();}delete state.histUi[id];}
   else if(act==='trade-cancel')delete state.histUi[id];
   else if(act==='trade-fx'){state.histUi[id]={mode:'fx'};}
+  else if(act==='trade-img'){if(!demo)void timgPreview(id);return;} // 3.34.0 (G06): Vorschau, von dort bewusst senden
   else if(act==='fx-form'){const t=find();state.histUi[id]={mode:'fx',form:true,rate:t?.fx>0?String(t.fx).replace('.',','):'',kind:t?.fxSrc==='day'?'day':'man',note:''};renderPositions();box.querySelector(`[data-trade="${CSS.escape(id)}"] [data-fxin="rate"]`)?.focus();return;}
   else if(act==='fx-fetch'){const t=find();if(!t)return;state.histUi[id]={mode:'fx',st:'Lädt den Binance-Kurs zum Abschlusszeitpunkt …'};renderPositions();void fxMinuteFetch(t.closedAt).then(c=>{const ok=c.st==='ok'&&setBookingFx(id,{fx:c.fx,src:'m1',at:c.at},'fetch');if(ok)persist();state.histUi[id]={mode:'fx',st:ok?`Nachgetragen: ${number(c.fx,5)} USDT je EUR (Binance, Minute bis ${fxTime(c.at)}).`:c.st==='err'?`Binance nicht erreichbar (${c.err}) – später erneut versuchen oder selbst eintragen.`:'Für diesen Zeitpunkt hat Binance keinen EUR/USDT-Kurs (z. B. vor 2020). Du kannst ihn mit Beleg selbst eintragen.'};renderPositions();});return;}
   else if(act==='fx-save'){const row=b.closest('[data-trade]'),get=k=>row.querySelector(`[data-fxin="${k}"]`)?.value??'';const rs=decStr(get('rate')),rate=rs===null?NaN:Number(rs),kind=get('kind')==='day'?'day':'man',note=get('note').trim();const keep={mode:'fx',form:true,rate:get('rate'),kind,note};
@@ -6796,7 +6808,7 @@ addEventListener('beforeunload', e => {
 });
 // ---------- Abgleich zwischen offenen Tabs ----------
 const bc = (() => { try { return new BroadcastChannel('scalpdesk'); } catch { return null; } })();
-const SYNC_KEYS = [POS_KEY, HIST_KEY, MONEY_KEY, BAL_KEY, ALARM_KEY, SETUP_KEY, WATCH_KEY, CHANGES_KEY, 'scalpdesk.channels.v1', ZZP_KEY, 'scalpdesk.s247.v1', 'scalpdesk.pnlalarm.v1', 'scalpdesk.deleted.v1', 'scalpdesk.settingsat.v1', 'scalpdesk.listsat.v1', 'scalpdesk.demopositions.v1', 'scalpdesk.demohistory.v1', 'scalpdesk.quarantine.v1', 'scalpdesk.conflicts.v1', 'scalpdesk.settingsh.v1', 'scalpdesk.deletedh.v1', 'scalpdesk.svc.v1', 'scalpdesk.policy.v1'];
+const SYNC_KEYS = [POS_KEY, HIST_KEY, MONEY_KEY, BAL_KEY, ALARM_KEY, SETUP_KEY, WATCH_KEY, CHANGES_KEY, 'scalpdesk.channels.v1', ZZP_KEY, 'scalpdesk.s247.v1', 'scalpdesk.pnlalarm.v1', 'scalpdesk.deleted.v1', 'scalpdesk.settingsat.v1', 'scalpdesk.listsat.v1', 'scalpdesk.demopositions.v1', 'scalpdesk.demohistory.v1', 'scalpdesk.quarantine.v1', 'scalpdesk.conflicts.v1', 'scalpdesk.settingsh.v1', 'scalpdesk.deletedh.v1', 'scalpdesk.svc.v1', 'scalpdesk.policy.v1', 'scalpdesk.tradeimg.v1'];
 function broadcastData(keys) { if (!bc || !keys.length) return; try { bc.postMessage({ t: 'data', from: TAB_ID, items: keys.map(k => [k, store.get(k)]) }); } catch {} }
 function adoptData(items) {
   const pat = items.find(([k]) => k === ZZP_KEY); if (pat) { store.adopt(ZZP_KEY, pat[1]); zzpMem = null; items = items.filter(([k]) => k !== ZZP_KEY); if (!items.length) return; }
@@ -6815,7 +6827,8 @@ function adoptData(items) {
     else if (k === CHAN_KEY) { chan = loadChannels(); renderChanSummary(); if ($('chan-dialog').open) fillChanForm(); }
     else if (k === 'scalpdesk.s247.v1') { s247.cfg = loadS247(); renderS247(); }
     else if (k === 'scalpdesk.svc.v1') { svc.cfg = loadSvc(); renderSvcStatus(); renderTgc(); } // 3.33.0: Zugang zum Dienst aus einem anderen Tab
-    else if (k === 'scalpdesk.policy.v1') { svc.pol = loadPol(); renderTgc(); renderChanSummary(); } // 3.33.0: bestätigter Schalterstand, Entwurf // 5.1: Übergabe an den 24/7-Dienst aus einem anderen Tab
+    else if (k === 'scalpdesk.policy.v1') { svc.pol = loadPol(); renderTgc(); renderChanSummary(); }
+    else if (k === 'scalpdesk.tradeimg.v1') { const sig = () => JSON.stringify(timg.jobs.map(j => [j.id, j.st, j.upd])), was = sig(); timg.jobs = loadTimg(); if (sig() !== was) timgRefresh(); } // 3.34.0: Trade-Bilder aus einem anderen Tab (Lebenszeichen allein zeichnet nicht neu) // 3.33.0: bestätigter Schalterstand, Entwurf // 5.1: Übergabe an den 24/7-Dienst aus einem anderen Tab
   }
   acctVer++; importantSig = dataSig(); posStructure = null; histStructure = ''; demoStructure = null; alarmKey = ''; withAnchor(render); renderIntegrity();   // Änderung aus einem zweiten Tab: Ansicht bleibt stehen
 }
@@ -7302,9 +7315,11 @@ function loadChannels() {
   const v = store.get(CHAN_KEY), o = v && typeof v === 'object' ? v : {}, str = (x, n) => typeof x === 'string' ? x.trim().slice(0, n) : '';
   const c = { tg: { token: str(o.tg?.token, 120), chat: str(o.tg?.chat, 40), thread: str(o.tg?.thread, 10), bchat: str(o.tg?.bchat, 40), bthread: str(o.tg?.bthread, 10), btoken: str(o.tg?.btoken, 120),
       tchat: str(o.tg?.tchat, 40), tthread: str(o.tg?.tthread, 10), ttoken: str(o.tg?.ttoken, 120) }, dc: { url: str(o.dc?.url, 300), on: o.dc?.on !== false },
-    ev: { alarm: o.ev?.alarm !== false, pos: o.ev?.pos !== false, day: o.ev?.day !== false, news: o.ev?.news !== false, pnl: o.ev?.pnl !== false, pulse: o.ev?.pulse !== false },
+    ev: { alarm: o.ev?.alarm !== false, pos: o.ev?.pos !== false, day: o.ev?.day !== false, news: o.ev?.news !== false, pnl: o.ev?.pnl !== false, pulse: o.ev?.pulse !== false, trade: o.ev?.trade !== false },
     // 3.33.0 (G05): Schalter je Ziel (ohne 24/7-Dienst mit HTTPS gelten sie hier im Browser)
-    tgt: { 'course-alert': o.tgt?.['course-alert'] !== false, backup: o.tgt?.backup !== false, trades: o.tgt?.trades !== false }, mig33: !!o.mig33 };
+    tgt: { 'course-alert': o.tgt?.['course-alert'] !== false, backup: o.tgt?.backup !== false, trades: o.tgt?.trades !== false }, mig33: !!o.mig33,
+    // 3.34.0 (G06): lokale Epoche je Ziel – jede Änderung des Schalters zählt hoch (ein Auftrag von vor dem Ausschalten wird verworfen)
+    tep: Object.fromEntries(['course-alert', 'backup', 'trades'].map(k => [k, Number.isInteger(o.tep?.[k]) && o.tep[k] >= 0 ? o.tep[k] : 0])) };
   // 3.33.0 (G05): einmalig umstellen – kein stilles Ausweichen mehr. Bis 3.32 ging die Sicherung ohne eigenen Sicherungschat in den
   // Kursalarm-Chat; dieser Ort wird jetzt ausdrücklich als Sicherungschat eingetragen (sichtbar, änderbar). Der frühere
   // Telegram-Schalter „Aktiv“ (aus) wird zu „alle Ziele aus“.
@@ -7421,14 +7436,14 @@ function fillChanForm() {
   $('tg-token').value = chan.tg.token; $('tg-chat').value = chan.tg.chat; $('tg-thread').value = chan.tg.thread; $('tg-bchat').value = chan.tg.bchat; $('tg-bthread').value = chan.tg.bthread; $('tg-btoken').value = chan.tg.btoken;
   $('tg-tchat').value = chan.tg.tchat; $('tg-tthread').value = chan.tg.tthread; $('tg-ttoken').value = chan.tg.ttoken; if (typeof svcFill === 'function') svcFill();
   $('dc-url').value = chan.dc.url; $('dc-on').checked = chan.dc.on;
-  $('chan-ev-alarm').checked = chan.ev.alarm; $('chan-ev-pos').checked = chan.ev.pos; $('chan-ev-day').checked = chan.ev.day; $('chan-ev-news').checked = chan.ev.news; $('chan-ev-pnl').checked = chan.ev.pnl; $('chan-ev-pulse').checked = chan.ev.pulse;
+  $('chan-ev-alarm').checked = chan.ev.alarm; $('chan-ev-pos').checked = chan.ev.pos; $('chan-ev-day').checked = chan.ev.day; $('chan-ev-news').checked = chan.ev.news; $('chan-ev-pnl').checked = chan.ev.pnl; $('chan-ev-pulse').checked = chan.ev.pulse; $('chan-ev-trade').checked = chan.ev.trade;
   renderChanStatus(); renderPulseInfo();
 }
 function readChanForm() {
   const was = tgDest('backup'), sameBot = !chan.tg.btoken;
   chan = { tg: { token: $('tg-token').value.trim(), chat: $('tg-chat').value.trim(), thread: $('tg-thread').value.trim(), bchat: $('tg-bchat').value.trim(), bthread: $('tg-bthread').value.trim(), btoken: $('tg-btoken').value.trim(),
       tchat: $('tg-tchat').value.trim(), tthread: $('tg-tthread').value.trim(), ttoken: $('tg-ttoken').value.trim() }, dc: { url: $('dc-url').value.trim(), on: $('dc-on').checked },
-    ev: { alarm: $('chan-ev-alarm').checked, pos: $('chan-ev-pos').checked, day: $('chan-ev-day').checked, news: $('chan-ev-news').checked, pnl: $('chan-ev-pnl').checked, pulse: $('chan-ev-pulse').checked }, tgt: { ...chan.tgt }, mig33: true };
+    ev: { alarm: $('chan-ev-alarm').checked, pos: $('chan-ev-pos').checked, day: $('chan-ev-day').checked, news: $('chan-ev-news').checked, pnl: $('chan-ev-pnl').checked, pulse: $('chan-ev-pulse').checked, trade: $('chan-ev-trade').checked }, tgt: { ...chan.tgt }, tep: { ...chan.tep }, mig33: true };
   // 3.33.0 (G05): Die Sicherung hat immer einen ausdrücklich eingetragenen Chat – sie folgt einer Änderung am Kursalarm nicht mehr.
   // Lief sie über denselben Bot wie Kursalarm und wechselt dieser Bot, bleibt sie beim bisherigen Bot (wie seit 3.25.0): Nur er
   // kann ihre Datei ersetzen. Der bisherige Bot wird dafür ausdrücklich als eigener Sicherungs-Bot eingetragen.
@@ -10377,7 +10392,7 @@ function renderDemoHistory() {
     box('Netto simuliert', s.nBook ? `${signed(s.net)} USDT` : '—', s.net > 0 ? 'positive' : s.net < 0 ? 'negative' : ''));
   const sorted = trades.slice().sort((a, b) => b.closedAt - a.closedAt), limit = Math.max(HIST_PAGE, state.demoLimit || HIST_PAGE);
   const shown = sorted.length > limit ? sorted.slice(0, limit) : sorted, uiMode = u => (typeof u === 'object' && u ? u.mode : u) || '';
-  const keys = shown.map(t => JSON.stringify([t.id, t.closedAt, t.symbol, t.side, t.leverage, t.mode, t.qty, t.entry, t.exit, t.pnlSource, reasonsOf(t), t.pnl, t.fx, t.fxSrc ?? null, t.eur ?? null, t.fxLog?.length || 0, t.margin, t.note || '', uiMode(state.histUi[t.id]), JSON.stringify(state.histUi[t.id]?.mode === 'fx' ? state.histUi[t.id] : 0), t.part ? [t.part.n, t.part.final ? 1 : 0, !!findPos(t.part.pos), t.part.rest ?? null] : 0, t.posPnl ?? null, t.funding ?? null]));
+  const keys = shown.map(t => JSON.stringify([t.id, t.closedAt, t.symbol, t.side, t.leverage, t.mode, t.qty, t.entry, t.exit, t.pnlSource, reasonsOf(t), t.pnl, t.fx, t.fxSrc ?? null, t.eur ?? null, t.fxLog?.length || 0, t.margin, t.note || '', uiMode(state.histUi[t.id]), JSON.stringify(state.histUi[t.id]?.mode === 'fx' ? state.histUi[t.id] : 0), timgSig(t.id), t.part ? [t.part.n, t.part.final ? 1 : 0, !!findPos(t.part.pos), t.part.rest ?? null] : 0, t.posPnl ?? null, t.funding ?? null]));
   const key = limit + '|' + keys.join('|');
   if (key !== demoRows.structure) {
     demoRows.structure = key;
@@ -11161,7 +11176,8 @@ function svcDraftDrop() { svc.pol.draft = null; svc.notice = 'Entwurf verworfen.
 // Umschalten: mit Dienst als Auftrag, sonst sofort in diesem Browser
 function tgcSet(set) {
   if (svcOn()) { void svcCommand(set); return; }
-  chan.tgt = { ...chan.tgt, ...set }; saveChannels(); renderTgc(); if (typeof renderTgbInfo === 'function') renderTgbInfo();
+  const tep = { ...chan.tep }; for (const [k, v] of Object.entries(set)) if (tgtOn(k) !== v) tep[k] = (tep[k] || 0) + 1; // 3.34.0: lokale Epoche
+  chan.tgt = { ...chan.tgt, ...set }; chan.tep = tep; saveChannels(); renderTgc(); if (typeof renderTgbInfo === 'function') renderTgbInfo();
   if (set['course-alert'] !== undefined) scheduleS247(500); // ohne Steuerung wirkt der Schalter über die Übergabe
 }
 function tgcMaster() {
@@ -11219,6 +11235,7 @@ function renderTgc() {
   } else db.dataset.key = '';
   const sm = $('tgc-status'); if (sm.textContent !== svc.notice) sm.textContent = svc.notice;
   renderTgcEvents();
+  if (typeof timgOffCheck === 'function') timgOffCheck(); // 3.34.0: AUS verwirft wartende Trade-Bilder
 }
 function svcFill() { if (!$('svc-url')) return; $('svc-url').value = svc.cfg.url; $('svc-key').value = svc.cfg.key; renderSvcStatus(); }
 function renderSvcStatus() {
@@ -11318,10 +11335,321 @@ function renderTgcEvents() {
   box.querySelector('ul').replaceChildren(...[...rows, ...(rows.length ? [] : own)].map(t => el('li', '', t)));
 }
 // Prüfzugang für die Tests (wie window.__sdMem): Zustand und einzelne Abläufe der Telegram-Ziele und der Sendefreigabe
+window.__g06 = { timgData: id => timgData(id), timgRange: d => timgRange(d), tgtEpoch: id => tgtEpoch(id), get jobs() { return loadTimg(); }, timgPreview: id => timgPreview(id) };
 window.__g05 = { get state() { return state; }, get chan() { return chan; }, get svc() { return svc; }, get svcLog() { return svcLog; }, get chanState() { return chanState; },
   readChanForm, saveChannels, sendTgBackup, notifyChannels, svcRefresh, alarmSub, persist, renderAlarms, syncStreams, tgTarget, backupPayload, alarmEventId };
 // Sekundentakt: mit Dienst jede Minute den bestätigten Stand lesen (andere Geräte, Neustart des Dienstes)
 function svcTick(now) { if (svcOn() && !svc.busy && !document.hidden && now - svc.at > SVC_POLL) void svcRefresh(); }
+// ---------- 3.34.0 (G06): Trade-Bild – eine geschlossene Position als genau ein Telegram-Foto ----------
+// Erst bucht die App den vollständigen Abschluss dauerhaft (saveClose, persist), dann entsteht daraus EIN Bild (Canvas 1080×1440)
+// an das Ziel „Trades“ – ohne Bildunterschrift, ohne Begleittext, nur aus der App, nie über den 24/7-Dienst.
+// Alle Zahlen kommen aus dem Journal: Netto = Summe der Buchungen der Position (posResults, wie in der Auswertung), Euro = Summe
+// der eingefrorenen Werte je Buchung (G03.9, nie ein heutiger Kurs). Kerzen nur für den belegten Haltezeitraum (mit etwas Rand);
+// Lücken bleiben Lücken, ein fehlender Ausstiegskurs heißt „nicht erfasst“.
+// Automatisch nur bei einem neuen, vollständigen, echten Abschluss – nicht bei nachgetragenen Abschlüssen, Importen oder Demo
+// (deine Entscheidung: Demo nie). Von Hand: „📷“ in der Historie zeigt die Vorschau, von dort bewusst senden.
+// Auftrag je Gerät (scalpdesk.tradeimg.v1): wartet → wird erstellt → wird gesendet → gesendet | Zustellung unbestätigt |
+// fehlgeschlagen | verworfen. Ziel und Epoche prüft die App vor dem Kerzenabruf, nach dem Rendern und direkt vor dem Senden; AUS
+// verwirft. Bricht die App beim Senden ab oder fehlt die Antwort von Telegram, gilt „unbestätigt“ – kein automatischer zweiter Versuch.
+var TIMG_KEY = 'scalpdesk.tradeimg.v1', TIMG_W = 1080, TIMG_H = 1440, TIMG_KEEP = 200, TIMG_TTL = 24 * 3600e3, TIMG_HB = 5e3, TIMG_DEAD = 20e3;
+var TIMG_ST = { queued: 'wartet', render: 'wird erstellt …', send: 'wird gesendet …', ok: 'gesendet', unconf: 'Zustellung unbestätigt', fail: 'fehlgeschlagen', drop: 'verworfen' };
+var TIMG_IV = [['1m', 60e3], ['3m', 18e4], ['5m', 3e5], ['15m', 9e5], ['30m', 18e5], ['1h', 36e5], ['2h', 72e5], ['4h', 144e5], ['6h', 216e5], ['12h', 432e5], ['1d', 864e5], ['3d', 2592e5], ['1w', 6048e5]];
+var TIMG_C = { bg: '#0b0f13', card: '#12171d', card2: '#181e25', line: '#242b33', grid: '#1b222a', text: '#f1f4f7', text2: '#c9d2dc', muted: '#a1abb8', faint: '#6b7988', up: '#90e4bf', down: '#ed8b9a', amber: '#e2bb76', blue: '#8ab8ff', band: 'rgba(138,184,255,0.08)' };
+var TIMG_FONT = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+function loadTimg() { const v = store.get(TIMG_KEY); return Array.isArray(v?.jobs) ? v.jobs.filter(j => j && typeof j.id === 'string' && TIMG_ST[j.st]).slice(-TIMG_KEEP) : []; }
+var timg = { jobs: loadTimg(), run: new Set(), view: null, recheck: 0 };
+const timgJob = id => { timg.jobs = loadTimg(); return timg.jobs.find(j => j.id === id) || null; };
+function timgSet(id, patch) {
+  timg.jobs = loadTimg(); const at = timg.jobs.findIndex(j => j.id === id); if (at < 0) return;
+  timg.jobs[at] = { ...timg.jobs[at], ...patch, upd: Date.now() };
+  if (store.set(TIMG_KEY, { jobs: timg.jobs.slice(-TIMG_KEEP) })) broadcastData([TIMG_KEY]);
+  timgRefresh();
+}
+// Lebenszeichen des arbeitenden Tabs (alle 5 s) – ohne Lebenszeichen seit 20 s gilt ein Auftrag als unterbrochen
+function timgBeat(id) { timg.jobs = loadTimg(); const j = timg.jobs.find(x => x.id === id); if (!j || !['render', 'send'].includes(j.st)) return; j.hb = Date.now(); if (store.set(TIMG_KEY, { jobs: timg.jobs })) broadcastData([TIMG_KEY]); }
+const timgDead = j => !!j && ['render', 'send'].includes(j.st) && Date.now() - (j.hb || j.upd || 0) > TIMG_DEAD;
+function timgRefresh() { if (typeof renderHistory === 'function') renderHistory(); timgViewStatus(); }
+// Epoche des Ziels „Trades“: mit 24/7-Dienst die bestätigte Epoche am Dienst, sonst die lokale (jede Änderung des Schalters zählt hoch)
+function tgtEpoch(id) { if (svcOn()) { const c = svc?.pol?.conf?.targets?.[id]; return c ? `s${c.epoch}` : 's?'; } return `l${chan?.tep?.[id] || 0}`; }
+// ---- Daten aus dem Journal ----
+function timgData(id) {
+  const list = state.trades.filter(t => (t.part?.pos || t.id) === id);
+  if (!list.length) return { err: 'Trade nicht gefunden.' };
+  if (findPos(id)) return { err: 'Die Position ist noch offen – das Bild gibt es nach dem vollständigen Abschluss.' };
+  const g = posResults(list).done[0]; if (!g) return { err: 'Die Position ist noch nicht vollständig geschlossen.' };
+  const fin = list.find(t => t.id === id) || g.trades.at(-1);
+  let buys, sells;
+  if (Array.isArray(fin.ev) && fin.ev.length) {
+    const r = lotReplay(fin);
+    buys = r.lots.map(l => ({ at: l.at, q: qNum(l.q0), p: pxNum(l.p) }));
+    sells = r.sells.map(s => ({ at: s.at, q: qNum(s.K), x: pxNum(s.x), E: pNum(s.E) }));
+  } else {
+    buys = [{ at: fin.openedAt, q: fin.qty, p: fin.entry }];
+    sells = [{ at: fin.closedAt, q: fin.qty, x: fin.exitNA ? null : fin.exit, E: fin.entry }];
+  }
+  const sumQ = a => a.reduce((s, x) => s + x.q, 0), wavg = (a, k) => { const v = a.filter(x => x[k] > 0), q = sumQ(v); return q > 0 ? v.reduce((s, x) => s + x.q * x[k], 0) / q : null; };
+  // Ø-Einstieg im Zeitverlauf und höchster gleichzeitiger Einsatz (Durchschnittskosten, wie die Buchung): Menge × Ø-Einstieg ÷ Hebel
+  const evs = [...buys.map(b => ({ ...b, t: 'b' })), ...sells.map(s => ({ ...s, t: 's' }))].sort((a, b) => a.at - b.at || (a.t === 'b' ? -1 : 1));
+  let Q = 0, C = 0, peak = 0; const steps = [];
+  for (const e of evs) { if (e.t === 'b') { Q += e.q; C += e.q * e.p; } else if (Q > 0) { const k = Math.min(e.q, Q); C -= C * k / Q; Q -= k; } peak = Math.max(peak, C); steps.push({ at: e.at, avg: Q > 1e-12 ? C / Q : null }); }
+  const lev = fin.leverage > 0 ? fin.leverage : 1, margin = peak / lev, eurs = g.trades.map(t => tradeEur(t)), miss = eurs.filter(v => v === null).length;
+  return { id, sym: fin.symbol, side: fin.side, lev, mode: fin.mode, source: fin.source === 'futures' ? 'futures' : 'spot',
+    openedAt: Math.min(fin.openedAt, ...buys.map(b => b.at)), closedAt: g.closedAt, buys, sells, steps,
+    entry: wavg(buys, 'p'), exit: wavg(sells, 'x'), exitMiss: sells.filter(s => !(s.x > 0)).length, qty: sumQ(buys), margin,
+    net: g.pnl, pct: margin > 0 ? g.pnl / margin * 100 : null, eur: miss ? null : eurs.reduce((s, v) => s + v, 0), eurMiss: miss, eurN: g.trades.length,
+    eurApprox: g.trades.some(t => t.fxSrc === 'day'), fees: g.trades.reduce((s, t) => s + (Number(t.fees) || 0), 0), funding: g.trades.reduce((s, t) => s + (Number(t.funding) || 0), 0),
+    exchange: g.trades.some(t => t.pnlSource === 'exchange'), late: !!fin.part?.late, reasons: reasonsOf(fin) };
+}
+// Euro-Kurs, den die App nach dem Abschluss gerade nachträgt (fxAutoFill) – höchstens 15 s abwarten, danach ohne Euro
+async function timgFxWait(id) {
+  const d0 = timgData(id); if (d0.err || !d0.eurMiss || state.fxMode === 'manual' || Date.now() - d0.closedAt > 5 * 60e3) return;
+  for (let i = 0; i < 30; i++) { await new Promise(r => setTimeout(r, 500)); const d = timgData(id); if (d.err || !d.eurMiss) return; }
+}
+// ---- Kerzen für den Haltezeitraum: Intervall so, dass etwa 60–150 Kerzen entstehen ----
+function timgRange(d) {
+  const D = Math.max(d.closedAt - d.openedAt, 60e3), padOf = ms => Math.max(D * 0.12, 3 * ms);
+  const iv = TIMG_IV.find(([, ms]) => (D + 2 * padOf(ms)) / ms <= 150) || TIMG_IV.at(-1), pad = padOf(iv[1]);
+  const from = Math.floor((d.openedAt - pad) / iv[1]) * iv[1], to = Math.min(Date.now(), d.closedAt + pad);
+  return { iv: iv[0], ms: iv[1], from, to, n: Math.min(1000, Math.ceil((to - from) / iv[1]) + 1) };
+}
+async function timgCandles(d) {
+  const R = timgRange(d), p = { symbol: d.sym, interval: R.iv, startTime: R.from, endTime: R.to, limit: R.n };
+  try {
+    const rows = d.source === 'futures' ? await api.get(FUTURES, '/fapi/v1/klines', p) : await spotGet('/api/v3/klines', p);
+    const c = normalizeKlines(rows).filter(k => k.closeTime >= R.from && k.time <= R.to);
+    return { ...R, candles: c, err: c.length ? null : 'keine Kerzen für diesen Zeitraum' };
+  } catch (e) { return { ...R, candles: [], err: String(e?.message || e || 'Abruf fehlgeschlagen').slice(0, 140) }; }
+}
+// ---- Zeichnen ----
+const timgDur = ms => { const m = Math.round(ms / 60e3); if (ms < 60e3) return `${Math.max(1, Math.round(ms / 1000))} s`; if (m < 60) return `${m} Min.`; const h = Math.floor(m / 60), r = m % 60; if (h < 48) return `${h} Std.${r ? ` ${r} Min.` : ''}`; const dd = Math.floor(h / 24), rh = h % 24; return `${dd} Tage${rh ? ` ${rh} Std.` : ''}`; };
+const timgWhen = ms => new Date(ms).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+function timgDraw(cv, d, ch) {
+  cv.width = TIMG_W; cv.height = TIMG_H;
+  const g = cv.getContext('2d'); if (!g) throw new Error('Canvas nicht verfügbar');
+  const C = TIMG_C, F = (w, s) => `${w} ${s}px ${TIMG_FONT}`, L = 56, R = TIMG_W - 56, long = d.side !== 'short', res = d.net > 0 ? C.up : d.net < 0 ? C.down : C.text2;
+  const fit = (s, max) => { s = String(s); if (!max || g.measureText(s).width <= max) return s; while (s.length > 1 && g.measureText(s + '…').width > max) s = s.slice(0, -1); return s + '…'; };
+  const txt = (s, x, y, font, color, align = 'left', max = 0) => { g.font = font; g.fillStyle = color; g.textAlign = align; g.textBaseline = 'alphabetic'; g.fillText(fit(s, max), x, y); return g.measureText(fit(s, max)).width; };
+  const box = (x, y, w, h, r, fill) => { g.beginPath(); if (g.roundRect) g.roundRect(x, y, w, h, r); else g.rect(x, y, w, h); g.fillStyle = fill; g.fill(); };
+  const chip = (s, x, y, fill, color) => { g.font = F(700, 26); const w = g.measureText(s).width + 32; box(x, y, w, 44, 10, fill); txt(s, x + 16, y + 31, F(700, 26), color); return x + w + 12; };
+  g.fillStyle = C.bg; g.fillRect(0, 0, TIMG_W, TIMG_H);
+  // Kopf: Paar, Richtung, Hebel, Modus, Markt
+  txt(`${coin(d.sym)}/USDT`, L, 112, F(800, 64), C.text, 'left', 640);
+  txt('Trade abgeschlossen', R, 80, F(600, 26), C.muted, 'right');
+  txt(timgWhen(d.closedAt), R, 114, F(600, 28), C.text2, 'right');
+  let x = chip(long ? 'LONG' : 'SHORT', L, 140, long ? 'rgba(144,228,191,0.16)' : 'rgba(237,139,154,0.16)', long ? C.up : C.down);
+  x = chip(`${levText(d.lev)}×`, x, 140, C.card2, C.text); x = chip(d.mode === 'cross' ? 'Cross' : 'Isoliert', x, 140, C.card2, C.text);
+  chip(d.source === 'futures' ? 'Futures' : 'Spot', x, 140, C.card2, C.text);
+  // Ergebnis (aus dem Journal)
+  box(L, 212, R - L, 200, 22, C.card);
+  txt(d.exchange ? 'Netto-Ergebnis (laut Börse, aus dem Journal)' : 'Netto-Ergebnis (aus dem Journal)', L + 32, 258, F(600, 26), C.muted, 'left', 640);
+  txt(`${signed(d.net)} USDT`, L + 32, 346, F(800, 80), res, 'left', 660);
+  if (d.pct !== null) { txt(`${signed(d.pct)} %`, R - 32, 314, F(800, 46), res, 'right'); txt('auf den Einsatz', R - 32, 346, F(600, 24), C.muted, 'right'); }
+  txt(d.eur !== null ? `${d.eurApprox ? '≈ ' : '≙ '}${signed(d.eur)} € · Euro-Kurse eingefroren je Buchung` : `Euro: Kurs zum Abschluss fehlt${d.eurN > 1 ? ` (${d.eurMiss} von ${d.eurN} Buchungen)` : ''}`, L + 32, 392, F(600, 26), d.eur !== null ? C.text2 : C.amber, 'left', R - L - 64);
+  // Eckdaten
+  const cell = (i, label, value, color = C.text, sub = '') => { const cx = i % 2 ? (L + R) / 2 + 12 : L, cy = 434 + Math.floor(i / 2) * 102, w = (R - L) / 2 - 12;
+    txt(label, cx, cy + 24, F(600, 24), C.muted, 'left', w); txt(value, cx, cy + 64, F(700, 36), color, 'left', w); if (sub) txt(sub, cx, cy + 88, F(500, 20), C.faint, 'left', w); };
+  cell(0, 'Eintritt', timgWhen(d.openedAt)); cell(1, 'Austritt', timgWhen(d.closedAt));
+  cell(2, long ? 'Einstieg (Kauf) Ø' : 'Einstieg (Verkauf) Ø', d.entry !== null ? `${priceText(d.entry)} USDT` : 'nicht erfasst', d.entry !== null ? C.text : C.amber);
+  cell(3, long ? 'Ausstieg (Verkauf) Ø' : 'Ausstieg (Rückkauf) Ø', d.exit !== null ? `${priceText(d.exit)} USDT` : 'nicht erfasst', d.exit !== null ? C.text : C.amber, d.exit !== null && d.exitMiss ? `${d.exitMiss} von ${d.sells.length} Ausstiegen ohne Kurs` : '');
+  cell(4, 'Haltedauer', timgDur(d.closedAt - d.openedAt)); cell(5, 'Einsatz (Margin-Modell)', `${number(d.margin)} USDT`, C.text, `höchster Stand: Menge × Ø-Einstieg ÷ ${levText(d.lev)}×`);
+  cell(6, 'Menge', `${qtyText(d.qty)} ${coin(d.sym)}`, C.text, d.buys.length > 1 ? `aus ${d.buys.length} ${long ? 'Käufen' : 'Verkäufen'}` : '');
+  const small = v => (v && Math.abs(v) < 0.1 ? 4 : 2);
+  cell(7, d.funding ? 'Gebühren · Funding' : 'Gebühren', d.funding ? `${number(d.fees, small(d.fees))} · ${signed(d.funding, small(d.funding))} USDT` : `${number(d.fees, small(d.fees))} USDT`);
+  // Chart des Haltezeitraums
+  const X0 = L, X1 = R - 104, Y0 = 914, Y1 = 1222;
+  txt(`Kursverlauf${ch?.candles?.length ? ` · ${ch.iv}-Kerzen` : ''} · Binance ${d.source === 'futures' ? 'Futures' : 'Spot'}`, L, 878, F(700, 28), C.text, 'left', 600);
+  const span = ch ? `${tgcTime(ch.from)} – ${tgcTime(ch.to)}` : `${tgcTime(d.openedAt)} – ${tgcTime(d.closedAt)}`;
+  txt(span, R, 878, F(600, 22), C.muted, 'right');
+  box(X0 - 8, Y0 - 12, R - X0 + 8, Y1 - Y0 + 24, 14, C.card);
+  if (!ch || !ch.candles.length) {
+    g.setLineDash([10, 8]); g.strokeStyle = C.line; g.lineWidth = 2; g.strokeRect(X0 + 8, Y0 + 8, R - X0 - 24, Y1 - Y0 - 16); g.setLineDash([]);
+    txt('Chartdaten nicht verfügbar', (X0 + R) / 2, (Y0 + Y1) / 2 - 12, F(700, 36), C.amber, 'center');
+    txt(`Haltezeitraum ${tgcTime(d.openedAt)} – ${tgcTime(d.closedAt)}`, (X0 + R) / 2, (Y0 + Y1) / 2 + 32, F(600, 24), C.text2, 'center', R - X0 - 80);
+    if (ch?.err) txt(ch.err, (X0 + R) / 2, (Y0 + Y1) / 2 + 66, F(500, 20), C.muted, 'center', R - X0 - 80);
+  } else {
+    const cs = ch.candles, t0 = ch.from, t1 = Math.max(ch.to, cs.at(-1).closeTime + 1), xs = t => X0 + (t - t0) / (t1 - t0) * (X1 - X0);
+    const ps = [...cs.flatMap(c => [c.low, c.high]), ...d.buys.map(b => b.p), ...d.sells.map(s => s.x), ...d.steps.map(s => s.avg)].filter(v => v > 0);
+    let lo = Math.min(...ps), hi = Math.max(...ps); const pad = (hi - lo) * 0.14 || hi * 0.002; lo -= pad; hi += pad; // Platz für Marken und Beschriftung
+    const ys = p => Y1 - (p - lo) / (hi - lo) * (Y1 - Y0);
+    // Haltezeit
+    g.fillStyle = C.band; g.fillRect(xs(d.openedAt), Y0, Math.max(2, xs(d.closedAt) - xs(d.openedAt)), Y1 - Y0);
+    // Raster und Preise
+    const stepOf = r => { const e = Math.pow(10, Math.floor(Math.log10(r / 4))), m = r / 4 / e; return (m >= 5 ? 5 : m >= 2 ? 2 : 1) * e; }, st = stepOf(hi - lo);
+    g.lineWidth = 1;
+    for (let p = Math.ceil(lo / st) * st; p <= hi; p += st) { const y = Math.round(ys(p)) + 0.5; g.strokeStyle = C.grid; g.beginPath(); g.moveTo(X0, y); g.lineTo(X1, y); g.stroke(); txt(priceText(p), R - 8, y + 8, F(500, 20), C.faint, 'right'); }
+    // Zeitachse
+    const multiDay = t1 - t0 > 36 * 3600e3;
+    for (let i = 0; i <= 4; i++) { const t = t0 + (t1 - t0) * i / 4, x2 = xs(t); txt(new Date(t).toLocaleString('de-DE', multiDay ? { day: '2-digit', month: '2-digit' } : { hour: '2-digit', minute: '2-digit' }), x2, Y1 + 42, F(500, 20), C.faint, i === 0 ? 'left' : i === 4 ? 'right' : 'center'); }
+    // Kerzen (Lücken bleiben frei – keine verbindende Linie)
+    const w = Math.max(1, (X1 - X0) * ch.ms / (t1 - t0) * 0.68);
+    for (const c of cs) {
+      const cx = xs(c.time + ch.ms / 2), up = c.close >= c.open, col = up ? C.up : C.down;
+      g.strokeStyle = col; g.lineWidth = Math.max(1, Math.min(2, w / 4)); g.beginPath(); g.moveTo(cx, ys(c.high)); g.lineTo(cx, ys(c.low)); g.stroke();
+      const yt = ys(Math.max(c.open, c.close)), yb = ys(Math.min(c.open, c.close)); g.fillStyle = col; g.fillRect(cx - w / 2, yt, w, Math.max(1, yb - yt));
+    }
+    // Ø-Einstieg als Stufenlinie über die Haltezeit
+    g.setLineDash([12, 8]); g.strokeStyle = C.blue; g.lineWidth = 2.5; g.beginPath(); let prev = null;
+    for (let i = 0; i < d.steps.length; i++) { const s = d.steps[i], nx = i + 1 < d.steps.length ? d.steps[i + 1].at : d.closedAt; if (s.avg === null) continue; const y = ys(s.avg); if (prev === null || Math.abs(prev - s.avg) > s.avg * 1e-9) g.moveTo(xs(s.at), y); g.lineTo(xs(Math.max(s.at, nx)), y); prev = s.avg; }
+    g.stroke(); g.setLineDash([]);
+    // Marken: E = Einstieg, A = Ausstieg (Teilabschluss/Schluss); ohne Kurs eine gestrichelte Linie mit „?“
+    const used = [], mark = (t, p, label, col, down) => {
+      const mx = xs(t); let my = p > 0 ? ys(p) : null;
+      if (my === null) { g.setLineDash([6, 6]); g.strokeStyle = col; g.lineWidth = 2; g.beginPath(); g.moveTo(mx, Y0); g.lineTo(mx, Y1); g.stroke(); g.setLineDash([]); my = Y0 + 30; label += ' ?'; }
+      else { g.fillStyle = col; g.beginPath(); if (down) { g.moveTo(mx, my + 2); g.lineTo(mx - 11, my - 18); g.lineTo(mx + 11, my - 18); } else { g.moveTo(mx, my - 2); g.lineTo(mx - 11, my + 18); g.lineTo(mx + 11, my + 18); } g.closePath(); g.fill(); g.strokeStyle = C.bg; g.lineWidth = 2; g.stroke(); }
+      // Beschriftung auf der freien Seite der Marke; am Rand auf die andere Seite, nie über die Marke
+      let up = down; if (up && my - 28 < Y0 + 22) up = false; else if (!up && my + 42 > Y1 - 4) up = true;
+      let ly = up ? my - 28 : my + 42; const dir = up ? -26 : 26;
+      for (let k = 0; k < 6 && used.some(u => Math.abs(u.x - mx) < 44 && Math.abs(u.y - ly) < 26); k++) ly += dir;
+      used.push({ x: mx, y: ly }); const edge = mx > X1 - 30 ? 'right' : mx < X0 + 30 ? 'left' : 'center';
+      txt(label, edge === 'right' ? mx - 8 : edge === 'left' ? mx + 8 : mx, ly, F(800, 22), col, edge);
+    };
+    d.buys.forEach((b, i) => mark(b.at, b.p, `E${d.buys.length > 1 ? i + 1 : ''}`, C.blue, !long));
+    d.sells.forEach((s, i) => mark(s.at, s.x, `A${d.sells.length > 1 ? i + 1 : ''}`, C.amber, long));
+    // Hinweis auf Lücken
+    let gap = cs[0].time > d.openedAt + ch.ms || cs.at(-1).closeTime < Math.min(d.closedAt, Date.now() - ch.ms) - ch.ms;
+    for (let i = 1; i < cs.length && !gap; i++) if (cs[i].time - cs[i - 1].time > ch.ms * 1.5) gap = true;
+    if (gap) txt('Kursdaten mit Lücken – nichts aufgefüllt', X1, Y0 + 26, F(600, 20), C.amber, 'right');
+  }
+  // Legende und Fuß
+  if (ch?.candles?.length) { let lx = L; const item = (sym, col, label) => { lx += txt(sym, lx, 1310, F(800, 22), col) + 8; lx += txt(label, lx, 1310, F(600, 22), C.muted) + 30; };
+    item(long ? '▲ E' : '▼ E', C.blue, 'Einstieg'); item(long ? '▼ A' : '▲ A', C.amber, 'Ausstieg'); item('– –', C.blue, 'Ø Einstieg');
+    g.fillStyle = 'rgba(138,184,255,0.35)'; g.fillRect(lx, 1292, 22, 22); lx += 30; txt('Haltezeit', lx, 1310, F(600, 22), C.muted); }
+  const parts = d.sells.length - 1, bits = [`${d.buys.length} ${long ? (d.buys.length === 1 ? 'Kauf' : 'Käufe') : (d.buys.length === 1 ? 'Verkauf' : 'Verkäufe')}`, parts ? `${parts} ${parts === 1 ? 'Teilabschluss' : 'Teilabschlüsse'} + Schluss` : 'ein Schluss'];
+  if (d.late) bits.push('nachgetragen'); if (d.reasons.length) bits.push(`Gründe: ${d.reasons.join(', ')}`);
+  txt(bits.join(' · '), L, 1356, F(600, 24), C.text2, 'left', R - L);
+  txt(`Scalp Desk · Bild erstellt ${timgWhen(Date.now())} · alle Werte aus dem Journal`, L, 1402, F(500, 20), C.faint, 'left', R - L);
+}
+function timgBlob(d, ch) {
+  return new Promise((resolve, reject) => {
+    try {
+      const cv = document.createElement('canvas'); timgDraw(cv, d, ch);
+      cv.toBlob(b => { if (!b || !b.size) return reject(new Error('Canvas lieferte kein Bild')); if (b.size <= 9.5e6) return resolve(b);
+        cv.toBlob(j => j && j.size && j.size <= 9.5e6 ? resolve(j) : reject(new Error('Bild zu groß für Telegram')), 'image/jpeg', 0.9); }, 'image/png');
+    } catch (e) { reject(e); }
+  });
+}
+// ---- Senden: genau ein Foto, ohne Bildunterschrift; keine blob:-Adresse, sondern die Datei selbst (multipart) ----
+async function timgPost(blob) {
+  const T = tgDest('trades'); if (!T) throw Object.assign(new Error('Ziel „Trades“ nicht eingerichtet'), { kind: 'fail' });
+  if (navigator.onLine === false) throw Object.assign(new Error('offline'), { kind: 'offline' });
+  const fd = new FormData(); fd.append('chat_id', T.chat); if (T.thread) fd.append('message_thread_id', T.thread); fd.append('photo', blob, blob.type === 'image/jpeg' ? 'trade.jpg' : 'trade.png');
+  let r; try { r = await fetch(`https://api.telegram.org/bot${T.token}/sendPhoto`, { method: 'POST', body: fd, credentials: 'omit', referrerPolicy: 'no-referrer', cache: 'no-store' }); }
+  catch { throw Object.assign(new Error('keine Antwort von Telegram'), { kind: 'lost' }); } // Anfrage kann angekommen sein
+  let j = null; try { j = await r.json(); } catch {}
+  if (r.ok && j?.ok) return j.result?.message_id || 0;
+  if (r.ok) throw Object.assign(new Error('Antwort von Telegram nicht lesbar'), { kind: 'lost' });
+  throw Object.assign(new Error(r.status === 401 || r.status === 404 ? 'Token ungültig' : `Telegram lehnt ab: ${String(j?.description || `Fehler ${r.status}`).slice(0, 120)}`), { kind: 'fail' });
+}
+// ---- Auftrag ----
+function timgQueue(id, by = 'auto') {
+  timg.jobs = loadTimg(); const old = timg.jobs.find(j => j.id === id);
+  if (by === 'auto' && old) return false; // ein Abschluss – ein Auftrag (Doppeltipp, Neuladen, anderer Tab)
+  const j = { id, at: Date.now(), st: 'queued', by, epoch: tgtEpoch('trades'), why: '', upd: Date.now() };
+  timg.jobs = [...timg.jobs.filter(x => x.id !== id), j].slice(-TIMG_KEEP);
+  if (store.set(TIMG_KEY, { jobs: timg.jobs })) broadcastData([TIMG_KEY]);
+  timgRefresh(); void timgRun(id); return true;
+}
+// Nach dem Speichern eines Abschlusses: nur ein neuer, vollständiger, echter (nicht Demo, nicht nachgetragener) Abschluss, der
+// dauerhaft gespeichert ist; Häkchen „Trade-Bild“ an und Ziel „Trades“ eingerichtet und an
+function timgAfterClose(id) {
+  const t = state.trades.find(x => x.id === id); if (!t || findPos(id) || !store.ok) return;
+  if (t.part?.late || chan.ev.trade === false || !tgtReady('trades')) return;
+  timgQueue(id, 'auto');
+}
+async function timgRun(id) {
+  if (timg.run.has(id)) return;
+  if (!(await store.claim(`timg:${id}`, 30e3))) return; // Start nur in einem Tab; danach zeigt das Lebenszeichen, wer arbeitet
+  let j = timgJob(id);
+  if (!j || !(j.st === 'queued' || (j.st === 'render' && timgDead(j)))) { void store.release(`timg:${id}`); return; }
+  timg.run.add(id); const beat = setInterval(() => timgBeat(id), TIMG_HB);
+  try {
+    if (Date.now() - j.at > TIMG_TTL) return timgSet(id, { st: 'drop', why: 'Auftrag älter als 24 Stunden – nicht mehr gesendet' });
+    if (j.epoch === 's?' && svcOn() && svc?.pol?.conf) { timgSet(id, { epoch: tgtEpoch('trades') }); j = timgJob(id); }
+    const gate = () => { j = timgJob(id); if (!j || j.st === 'drop') return j?.why || 'verworfen'; if (!tgDest('trades')) return 'Ziel „Trades“ nicht eingerichtet'; if (!tgtOn('trades')) return 'Ziel „Trades“ ausgeschaltet';
+      const e = tgtEpoch('trades'); return j.epoch && !j.epoch.endsWith('?') && !e.endsWith('?') && e !== j.epoch ? 'Ziel „Trades“ wurde zwischendurch aus- und wieder eingeschaltet' : null; };
+    let why = gate(); if (why) return timgSet(id, { st: 'drop', why });
+    if (timgData(id).err) return timgSet(id, { st: 'fail', why: timgData(id).err });
+    timgSet(id, { st: 'render', why: '', hb: Date.now() });
+    await timgFxWait(id);
+    why = gate(); if (why) return timgSet(id, { st: 'drop', why }); // AUS: nicht einmal Kerzen laden
+    const d = timgData(id); if (d.err) return timgSet(id, { st: 'fail', why: d.err });
+    const ch = await timgCandles(d);
+    timgSet(id, { chart: ch.candles.length ? `${ch.iv} · ${ch.candles.length} Kerzen` : `nicht verfügbar (${ch.err})` }); // zur Nachvollziehbarkeit
+    why = gate(); if (why) return timgSet(id, { st: 'drop', why });
+    let blob; try { blob = await timgBlob(d, ch); } catch (e) { return timgSet(id, { st: 'fail', why: `Bild konnte nicht erstellt werden (${String(e?.message || e).slice(0, 100)})` }); }
+    why = gate(); if (why) return timgSet(id, { st: 'drop', why }); // direkt vor dem Senden
+    if (navigator.onLine === false) return timgSet(id, { st: 'queued', why: 'offline – wird gesendet, sobald wieder Verbindung besteht' });
+    timgSet(id, { st: 'send', why: '', hb: Date.now() });
+    try { const msg = await timgPost(blob); timgSet(id, { st: 'ok', why: '', msg, sentAt: Date.now() }); }
+    catch (e) {
+      timgSet(id, e.kind === 'lost' ? { st: 'unconf', why: 'keine Antwort von Telegram – kein automatischer zweiter Versuch' }
+        : e.kind === 'offline' ? { st: 'queued', why: 'offline – wird gesendet, sobald wieder Verbindung besteht' } : { st: 'fail', why: e.message });
+    }
+  } finally { clearInterval(beat); timg.run.delete(id); void store.release(`timg:${id}`); }
+}
+// Beim Öffnen: ein beim Senden unterbrochener Auftrag gilt als unbestätigt (kein zweiter Versuch); wartende laufen weiter
+async function timgResume() {
+  if (svcOn() && typeof svcSettled === 'function') await svcSettled();
+  let again = false;
+  for (const j of loadTimg()) {
+    if (timg.run.has(j.id)) continue;
+    if (j.st === 'send') { if (timgDead(j)) timgSet(j.id, { st: 'unconf', why: 'die App wurde beim Senden unterbrochen – kein automatischer zweiter Versuch' }); else again = true; }
+    else if (j.st === 'render') { if (timgDead(j)) void timgRun(j.id); else again = true; }
+    else if (j.st === 'queued') void timgRun(j.id);
+  }
+  clearTimeout(timg.recheck); if (again) timg.recheck = setTimeout(() => void timgResume(), TIMG_DEAD + 1000); // ein anderer Tab arbeitet – später nachsehen
+}
+// AUS verwirft wartende Aufträge sofort
+function timgOffCheck() {
+  if (typeof timg === 'undefined') return;
+  const why = !tgDest('trades') ? 'Ziel „Trades“ nicht eingerichtet' : !tgtOn('trades') ? 'Ziel „Trades“ ausgeschaltet' : null; if (!why) return;
+  for (const j of loadTimg()) if (j.st === 'queued' || j.st === 'render') timgSet(j.id, { st: 'drop', why });
+}
+// ---- Historie: Zustand je Trade, Vorschau mit „An Telegram senden“ ----
+const timgSig = id => { const j = timg.jobs.find(x => x.id === id); return j ? `${j.st}|${j.upd}` : ''; };
+function timgCanShow(t) { return !!t && (!t.part?.pos || t.part.final) && !findPos(t.part?.pos || t.id) && state.trades.includes(t); }
+function timgChip(id) {
+  const j = timg.jobs.find(x => x.id === id); if (!j) return null;
+  const b = btn('timg-st st-' + j.st, `📷 ${TIMG_ST[j.st]}${j.st === 'ok' && j.sentAt ? ` ${hhmm(j.sentAt)}` : ''}`, 'trade-img');
+  b.title = j.why || (j.st === 'ok' ? 'Trade-Bild an Telegram gesendet' : TIMG_ST[j.st]); return b;
+}
+async function timgPreview(id) {
+  const dlg = $('timg-dialog'); if (timg.view?.url) URL.revokeObjectURL(timg.view.url);
+  timg.view = { id, url: null, again: false }; $('timg-img').hidden = true; $('timg-img').removeAttribute('src'); $('timg-save').hidden = true;
+  put('timg-wait', 'Bild wird erstellt …'); $('timg-wait').hidden = false; $('timg-retry').hidden = true;
+  if (!dlg.open) dlg.showModal();
+  timgViewStatus();
+  const d = timgData(id); if (d.err) { put('timg-wait', d.err); return; }
+  const ch = await timgCandles(d); if (timg.view?.id !== id) return;
+  try {
+    const blob = await timgBlob(d, ch); if (timg.view?.id !== id) return;
+    const url = URL.createObjectURL(blob); timg.view.url = url; // nur zur Anzeige hier – an Telegram geht die Datei selbst
+    $('timg-img').src = url; $('timg-img').alt = `Trade-Bild ${coin(d.sym)} ${d.side === 'short' ? 'Short' : 'Long'} vom ${timgWhen(d.closedAt)}`; $('timg-img').hidden = false;
+    $('timg-save').href = url; $('timg-save').download = `trade-${coin(d.sym)}-${new Date(d.closedAt).toISOString().slice(0, 10)}.png`; $('timg-save').hidden = false; $('timg-wait').hidden = true;
+  } catch (e) { put('timg-wait', `Bild konnte nicht erstellt werden (${String(e?.message || e).slice(0, 100)}). Mit „Erneut erstellen“ noch einmal versuchen.`); $('timg-retry').hidden = false; }
+}
+function timgViewStatus() {
+  const v = timg.view; if (!v || !$('timg-dialog').open) return;
+  const j = timg.jobs.find(x => x.id === v.id), ready = tgtReady('trades'), busy = j && ['queued', 'render', 'send'].includes(j.st);
+  const st = !ready ? (tgDest('trades') ? 'Ziel „Trades“ ist ausgeschaltet (🔔 Hinweise → „Telegram-Chats“) – senden geht erst, wenn es an ist.' : 'Kein Trades-Chat eingetragen – unter „Telegram / Discord einrichten“ → „📊 Trades“ eine Chat-ID eintragen.')
+    : !j ? 'Noch nicht an Telegram gesendet.' : j.st === 'ok' ? `An Telegram gesendet um ${hhmm(j.sentAt || j.upd)}.` : `${TIMG_ST[j.st][0].toUpperCase()}${TIMG_ST[j.st].slice(1)}${j.why ? ` – ${j.why}` : ''}.`;
+  put('timg-status', v.again ? `${st} Noch einmal senden? Es kommt dann ein zweites Bild in den Chat${j?.st === 'unconf' ? ' (das erste ist möglicherweise schon angekommen)' : ''}.` : st);
+  const sb = $('timg-send'); sb.disabled = !ready || !!busy; sb.textContent = v.again ? 'Ja, noch einmal senden' : j && ['ok', 'unconf', 'fail'].includes(j.st) ? 'Erneut senden …' : 'An Telegram senden';
+}
+(function timgUi() {
+  const dlg = $('timg-dialog');
+  const close = () => { dlg.close(); };
+  $('timg-close').addEventListener('click', close);
+  dlg.addEventListener('close', () => { if (timg.view?.url) URL.revokeObjectURL(timg.view.url); timg.view = null; });
+  $('timg-retry').addEventListener('click', () => { $('timg-retry').hidden = true; if (timg.view) void timgPreview(timg.view.id); });
+  $('timg-send').addEventListener('click', () => {
+    const v = timg.view; if (!v) return; const j = timg.jobs.find(x => x.id === v.id);
+    if (j && ['ok', 'unconf'].includes(j.st) && !v.again) { v.again = true; timgViewStatus(); return; } // bewusst: ein zweites Bild
+    v.again = false; timgQueue(v.id, 'manual'); timgViewStatus();
+  });
+  addEventListener('online', () => void timgResume());
+  setTimeout(() => void timgResume(), 2500);
+})();
 // ---------- Beschriftungen im Chart entzerren ----------
 // Läuft nach dem Zeichnen, wenn das SVG im Dokument hängt. Gemessen wird in SVG-Einheiten (getBBox), das passt auch im
 // gedrehten Vollbild. Beschriftungen rücken nur senkrecht, jede an die nächste freie Stelle, in dieser Reihenfolge:
@@ -11979,6 +12307,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
         <label class="switch"><input type="checkbox" id="chan-ev-news" checked> Warnung vor wichtigen Wirtschaftsterminen</label>
         <label class="switch"><input type="checkbox" id="chan-ev-pnl" checked> Gewinn- und Verlust-Alarm (Live-Ergebnis oben rechts)</label>
         <label class="switch"><input type="checkbox" id="chan-ev-pulse" checked> BTC-Puls: ungewöhnlich starke Bitcoin-Bewegung</label>
+        <label class="switch"><input type="checkbox" id="chan-ev-trade" checked> 📊 Trade-Bild, wenn eine Position vollständig geschlossen ist (an „Trades“, nicht bei Demo)</label>
         <small class="pulse-info">Meldet, wenn BTC sich in 5 oder 15 Minuten stärker bewegt als 99 % der üblichen Bewegungen zu dieser Uhrzeit (mindestens 0,5 % bzw. 0,8 %), mit der Vorauswahl im selben Zeitraum; je Richtung höchstens alle 30 Minuten, nachts lautlos. <span id="pulse-info"></span></small>
       </fieldset>
       <section class="chan" aria-labelledby="s247-title" id="s247"><div class="head-line"><h3 id="s247-title">🌙 24/7-Dienst</h3><details class="tip left"><summary aria-label="Wie funktioniert der 24/7-Dienst?"><span>i</span></summary><div class="tip-body"><p>Ein kleines Programm auf einem eigenen Server, der rund um die Uhr läuft (z. B. kostenlos bei Oracle Cloud), prüft die Kurse und meldet Kurs-Alarme, Stop-Loss/Take-Profit, die Warnung vor wichtigen Terminen, ab Version 1.1 den BTC-Puls und ab Version 1.2 den Gewinn-/Verlust-Alarm per Telegram – auch wenn die App überall geschlossen ist.</p><p><b>Übergabe:</b> Die App legt die aktiven Alarme und die Stop-/Ziel-Marken deiner Positionen als Datei in deinen Telegram-Chat, heftet sie oben an und ersetzt sie nach jeder Änderung. Einstiege und Mengen der offenen Positionen stehen nur darin, solange ein Gewinn- oder Verlust-Alarm aktiv ist – der Dienst braucht sie, um das Live-Ergebnis zu rechnen. Trades und Notizen bleiben in der App. Der Dienst liest die Datei mit demselben Bot und bestätigt in der angehefteten Nachricht („Dienst: aktiv“), ab Version 1.4 zusätzlich lautlos im Chat („✅ 24/7-Dienst hat übernommen …“). Hier steht dann „Übergeben ✓ vom Dienst bestätigt“.</p><p><b>Derselbe Bot (wichtig):</b> Am Server müssen derselbe Bot und dieselbe Chat-ID eingetragen sein wie oben unter „Kursalarm“ – ein anderer Bot (z. B. der Sicherungs-Bot) sieht die angeheftete Datei nicht, dann bleibt es bei „wartet“. Ab Version 1.4 meldet der Dienst das nach 3 Minuten selbst in seinem Chat und zeigt es mit <code>sudo scalpdesk-247 status</code>.</p><p><b>Nicht doppelt:</b> Solange der Dienst aktiv ist und den aktuellen Stand hat, sendet diese App Kurs-Alarme, Stop/Ziel und Termin-Warnungen nicht zusätzlich. Meldet er sich 20 Minuten nicht oder meldet er eine Störung, sendet die App wieder selbst. Das Tages-Verlustlimit meldet immer die App.</p><p><b>Zustellung (ab Version 1.3):</b> Der Dienst prüft, ob Telegram jede Meldung angenommen hat. Wenn nicht, versucht er es erneut – nach 15 und 30 Sekunden, dann in wachsenden Abständen bis alle 5 Minuten, höchstens einen Tag lang. Eine verspätete Meldung trägt die ursprüngliche Uhrzeit und den Vermerk „verspätet“. Lehnt Telegram ab oder ist es länger als eine Minute nicht erreichbar, meldet der Dienst „Störung“ – dann sendet die App wieder selbst. Unter „Status prüfen“ steht, wann er zuletzt etwas zugestellt hat.</p><p><b>Gewinn-/Verlust-Alarm:</b> Bestätigt der Dienst mit „· GV“ (ab Version 1.2), prüft er das Live-Ergebnis alle 15 Sekunden mit. Erreicht es eine Grenze, wartet er einige Sekunden: Ist die App geöffnet, meldet sie selbst – sofort und auch bei kurzen Spitzen –, und der Dienst schweigt. Sonst meldet er, einmal je Grenze; die App übernimmt das beim Öffnen als „ausgelöst“. Ein älterer Dienst kann es nicht – dann prüft nur die geöffnete App.</p><p><b>BTC-Puls:</b> Die App gibt dem Dienst die Schwellen je Uhrzeit mit. Bestätigt er mit „· Puls“ (ab Version 1.1), meldet er den Puls und die App nicht zusätzlich; ein älterer Dienst kennt ihn nicht – dann sendet ihn weiter die geöffnete App.</p><p><b>Token:</b> Den Bot-Token gibst du am Server selbst ein – die App schickt ihn weiterhin nur an Telegram.</p><p>Nur auf einem Gerät einschalten – dem, auf dem du Alarme und Positionen pflegst.</p></div></details></div><p class="chan-sub">Meldungen auch bei geschlossener App – über ein kleines Programm auf einem eigenen Server, der rund um die Uhr läuft.</p><details class="chan-guide" id="s247-guide"><summary>Anleitung: kostenlos bei Oracle Cloud einrichten (ca. 20 Minuten)</summary><ol><li><b>Konto:</b> Auf <a href="https://www.oracle.com/cloud/free/" target="_blank" rel="noopener noreferrer">oracle.com/cloud/free</a> „Start for free“. Als Heimatregion <b>Germany Central (Frankfurt)</b> wählen – sie lässt sich später nicht ändern, und von US-Servern aus sperrt Binance den Zugriff. Die Kreditkarte dient nur der Prüfung; „Always Free“ kostet nichts.</li><li><b>Server anlegen:</b> In der Konsole „Create a VM instance“. Bei <i>Image</i> auf <b>Ubuntu</b> wechseln, bei <i>Shape</i> eine mit „Always Free-eligible“ lassen (z. B. VM.Standard.E2.1.Micro). Bei <i>Add SSH keys</i> „Generate a key pair for me“ und <b>Save private key</b> – diese Datei ist der Schlüssel zum Server, gut aufbewahren. Dann <b>Create</b>. Nach 1–2 Minuten steht der Server auf „Running“; die <b>Public IP address</b> notieren.</li><li><b>Verbinden:</b> Oben rechts in der Konsole die <b>Cloud Shell</b> öffnen (Symbol &gt;_). Im Menü des Cloud-Shell-Fensters <b>Upload</b> wählen und den privaten Schlüssel hochladen. Dann eingeben (IP ersetzen) und die Frage „Are you sure …“ mit <b>yes</b> beantworten:<span class="s247-cmd"><code>chmod 600 ssh-key-*.key &amp;&amp; ssh -i ssh-key-*.key ubuntu@IP</code><button type="button" class="button ghost" data-copy="chmod 600 ssh-key-*.key &amp;&amp; ssh -i ssh-key-*.key ubuntu@IP">Kopieren</button></span></li><li><b>Dienst installieren:</b> Im Server-Fenster eingeben:<span class="s247-cmd"><code>curl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/install.sh | sudo bash</code><button type="button" class="button ghost" data-copy="curl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/install.sh | sudo bash">Kopieren</button></span>Es fragt nach <b>Bot-Token</b> und <b>Chat-ID</b> – dieselben wie oben unter „Kursalarm“ (nicht der Sicherungs-Bot; den Token zeigt auch @BotFather mit /mybots → API Token). Am Ende kommt eine Testnachricht in Telegram.</li><li><b>Übergeben:</b> Unten „An den 24/7-Dienst übergeben“ einschalten. Nach höchstens einer Minute steht hier „Übergeben ✓ vom Dienst bestätigt“, in Telegram kommt „✅ 24/7-Dienst hat übernommen“, und oben im Chat ist „📌 Scalp Desk · 24/7-Dienst“ angeheftet – diese Nachricht nicht löschen.</li></ol><ul class="s247-tips"><li><b>Ausführlich</b> – mit Aktualisieren, Ausprobieren und Hilfe bei Fehlermeldungen: <a href="https://github.com/NicoAHB/wx-widget/blob/main/server/ANLEITUNG-ORACLE.md" target="_blank" rel="noopener noreferrer">Anleitung auf GitHub</a></li><li><b>Aktualisieren:</b> den Befehl aus Schritt 4 erneut ausführen; die Einstellungen bleiben. Für den Gewinn-/Verlust-Alarm braucht es Version 1.2, für die geprüfte Zustellung 1.3, für Bestätigung und Selbstprüfung 1.4 – ein vorhandener Dienst einmal so aktualisieren.</li><li><b>Server-Größe:</b> „VM.Standard.E2.1.Micro“ reicht und ist fast immer verfügbar; „Ampere A1“ meldet oft „Out of capacity“.</li><li><b>Andere Rechner:</b> läuft auf jedem Linux-Rechner mit Internet, z. B. einem Raspberry Pi – derselbe Befehl.</li><li><b>Oracle:</b> Always-Free-Server, die 7 Tage kaum ausgelastet sind, kann Oracle anhalten – und der Dienst braucht sehr wenig. Abhilfe laut Oracle: das Konto auf „Pay As You Go“ umstellen; es bleibt kostenlos, solange nur Always-Free-Angebote genutzt werden. Sonst nach einer E-Mail von Oracle den Server in der Konsole wieder starten.</li><li><b>Am Server (ab 1.4):</b> alles prüfen <code>sudo scalpdesk-247 status</code>, Protokoll <code>sudo scalpdesk-247 protokoll</code>, live <code>sudo scalpdesk-247 live</code>. Token und Chat-ID neu eingeben: Befehl aus Schritt 4 mit <code>| sudo bash -s -- --neu</code> am Ende. Entfernen <code>sudo bash /opt/scalpdesk-247/install.sh --remove</code></li></ul></details><label class="switch"><input type="checkbox" id="s247-on"> An den 24/7-Dienst übergeben (Alarme, Stop/Ziel, Termin-Warnungen, Gewinn-/Verlust-Alarm)</label><div class="row"><button type="button" class="button ghost" id="s247-check">Status prüfen</button></div><p class="chan-status" id="s247-status" role="status"></p></section>
@@ -11990,6 +12319,16 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
         <p class="chan-status" id="svc-status" role="status"></p></div>
       <p class="chan-note">🔒 Token und Webhook-URL bleiben nur in diesem Browser. Sie stehen in keinem Backup und keinem QR-Code und werden nur an Telegram bzw. Discord geschickt. Auf jedem Gerät, das senden soll, einzeln einrichten.</p>
       <div class="sheet-actions"><button type="button" class="button ghost" id="chan-clear">Zugangsdaten löschen</button><button type="button" class="button primary" id="chan-done">Fertig</button></div>
+    </div>
+  </dialog>
+  <dialog class="sheet" id="timg-dialog" aria-labelledby="timg-title">
+    <div class="sheet-head"><h2 id="timg-title">Trade-Bild</h2><button type="button" class="button ghost icon" id="timg-close" aria-label="Schließen">×</button></div>
+    <div class="sheet-body">
+      <p class="timg-wait" id="timg-wait">Bild wird erstellt …</p>
+      <img class="timg-img" id="timg-img" alt="" hidden>
+      <p class="chan-status" id="timg-status" role="status"></p>
+      <p class="chan-note">Genau ein Bild ohne Text an den Chat „📊 Trades“ – nur aus der App, nie über den 24/7-Dienst. Alle Werte stammen aus dem Journal; Euro aus den beim Abschluss eingefrorenen Kursen.</p>
+      <div class="sheet-actions"><button type="button" class="button ghost" id="timg-retry" hidden>Erneut erstellen</button><a class="button ghost" id="timg-save" download="trade.png" hidden>Bild speichern</a><button type="button" class="button primary" id="timg-send">An Telegram senden</button></div>
     </div>
   </dialog>
   <dialog class="sheet" id="tgc-dialog" aria-labelledby="tgc-title">
