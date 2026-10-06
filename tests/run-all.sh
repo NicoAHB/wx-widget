@@ -16,6 +16,7 @@ echo "== unit-fmt"; timeout 120 node unit-fmt.js 2>&1 | grep -E "✗|bestanden|A
 echo "== unit-vola"; timeout 120 node unit-vola.js 2>&1 | grep -E "✗|bestanden|Abbruch"
 echo "== unit-247"; timeout 120 node unit-247.js 2>&1 | grep -E "✗|bestanden|Abbruch"
 echo "== unit-247b"; timeout 180 node unit-247b.js 2>&1 | grep -E "✗|bestanden|Abbruch"
+echo "== unit-247d"; timeout 120 node unit-247d.js 2>&1 | grep -E "✗|bestanden"
 echo "== unit-247c"; timeout 180 node unit-247c.js 2>&1 | grep -E "✗|bestanden|Abbruch"
 echo "== unit-pulse"; timeout 120 node unit-pulse.js 2>&1 | grep -E "✗|bestanden|Abbruch"
 echo "== unit-lots"; timeout 180 node unit-lots.js 2>&1 | grep -E "✗|bestanden|Abbruch"

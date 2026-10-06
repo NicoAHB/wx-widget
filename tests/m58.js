@@ -1,6 +1,6 @@
 // G09 der Übergabe (3.37.0): regelbasierte Mustererkennung („KI“) – Engine, 41 Katalogfälle, Vortrend (Revision 2), 8 Intervalle,
 // Panel, Info-Sheet, Chart-Markierung, Kontextwechsel, keine externen Abrufe.
-// Aufruf: node m58.js [abschnitt ...]   Abschnitte: trend, catalog, ui, wl, know
+// Aufruf: node m58.js [abschnitt ...]   Abschnitte: trend, catalog, ui, wl, know, sync
 const h = require('./harness');
 const results = [];
 const check = (name, cond, detail = '') => { results.push({ name, ok: !!cond }); console.log(`${cond ? '  ✓' : '  ✗'} ${name}${detail !== '' ? ' — ' + String(detail).slice(0, 700) : ''}`); };
@@ -193,6 +193,38 @@ const tests = {
     const full = await page.evaluate(() => { const n = Object.keys(__g09.pk.cases).length; __g09.pk.full = true; __g09.run('Test'); return new Promise(r => setTimeout(() => r({ n, m: Object.keys(__g09.pk.cases).length }), 800)); });
     check('Volle Lern-Warteschlange: keine neuen Fälle, keine gelöschten', full.m === full.n, JSON.stringify(full));
     check('keine Fehler (know)', !real(errors).length, real(errors).join(' | ')); await ctx.close();
+  },
+  async sync(browser) {
+    // G09 C4: Fälle zusätzlich im Muster-Archiv des 24/7-Dienstes (eigener HTTPS-Weg, kein Sicherungsbot); Dienst hier abgefangen
+    const { ctx, page, errors } = await openPage(browser);
+    let bodies = [], mode = 'ok';
+    await page.route('https://svc.test/v1/patterns/cases', async route => {
+      const b = JSON.parse(route.request().postData() || '{}'); bodies.push({ auth: route.request().headers().authorization, b });
+      if (mode === 'ok') return route.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ ok: true, count: b.cases.length, stored: b.cases.length, results: 0, dup: 0, conflicts: 0, rejected: 0, backup: { ok: true, at: Date.now() + 5000, why: '' } }) });
+      return route.fulfill({ status: 503, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ ok: false, error: 'Muster-Archiv nicht eingerichtet (kein Zustandsordner).' }) });
+    });
+    const run = async () => page.evaluate(async () => { const keep = { ...__g05.svc.cfg }; __g05.svc.cfg = { ...keep, url: 'https://svc.test', key: 'k'.repeat(40) }; await __g09.pkSync(); await new Promise(r => setTimeout(r, 1800)); await __g09.pkSync(); __g05.svc.cfg = keep; });
+    await page.evaluate(() => { const mk = (i, out) => { const c = { mkt: 'spot', sym: 'SYNCUSDT', iv: '1h', pat: 'double_top', kind: 'form', dir: 'bear', t0: 3e12 + i * 1e7, t1: 3e12 + i * 1e7 + 5e6, tc: 3e12 + i * 1e7 + 6e6, p0: 50, model: 'pat-1', profile: 'H12-e0.10', q: 70, at: Date.now(), src: 'live', rules: [['Regel', 2, true]], res: out ? { at: 1, tH: 2, ph: 49, r: -2, out, path: [0, -2] } : null }; c.id = __g09.pkId(c); return c; };
+      __g09.pkMerge(Array.from({ length: 30 }, (_, i) => mk(i, i % 3 ? null : 'ab'))); });
+    mode = 'fail'; await run();
+    const f = await page.evaluate(() => ({ err: __g09.pk.extErr, open: Object.values(__g09.pk.cases).filter(c => c.sym === 'SYNCUSDT' && !c.ext).length, st: __g09.pkState(Object.values(__g09.pk.cases).find(c => c.sym === 'SYNCUSDT')) }));
+    check('Dienst ohne Archiv (503): Fälle bleiben „nur lokal“, Grund wird gemerkt, nichts geht verloren', /nicht eingerichtet/.test(f.err) && f.open === 30 && f.st === 'nur lokal', JSON.stringify(f));
+    mode = 'ok'; bodies = []; await run();
+    const s = await page.evaluate(() => { const cs = Object.values(__g09.pk.cases).filter(c => c.sym === 'SYNCUSDT'); return { ext: cs.filter(c => c.ext).length, extRes: cs.filter(c => c.res && c.extRes).length, withRes: cs.filter(c => c.res).length, st: __g09.pkState(cs[0]), err: __g09.pk.extErr }; });
+    const keys = new Set(bodies.flatMap(x => x.b.cases.flatMap(c => Object.keys(c))));
+    check('Mit Archiv: in Paketen zu höchstens 25 Fällen mit Schlüssel übertragen, Fälle und Ergebnisse als übertragen markiert', bodies.length >= 2 && bodies.every(x => x.b.cases.length <= 25 && x.auth === `Bearer ${'k'.repeat(40)}`) && s.ext >= 30 && s.extRes === s.withRes && !s.err, JSON.stringify({ n: bodies.map(x => x.b.cases.length), s }));
+    check('Nur Marktdaten des Falls werden gesendet (keine Trades, Positionen, Notizen oder Zugänge)', [...keys].every(k => ['id', 'mkt', 'sym', 'iv', 'pat', 'kind', 'dir', 't0', 't1', 'tc', 'p0', 'model', 'profile', 'q', 'at', 'src', 'rules', 'res', 'ext', 'extRes'].includes(k)), [...keys].join(','));
+    check('Speicherzustand nach geprüfter Sicherung am Dienst: „zusätzlich gesichert“', s.st === 'zusätzlich gesichert', s.st);
+    // unabhängige Kopie auf dem Gerät: bereinigter Bestand als Datei
+    await page.route('https://svc.test/v1/patterns/export', route => route.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ ok: true, v: '2.1.0', at: Date.now(), cases: [{ id: 'x' }, { id: 'y' }] }) }));
+    await page.evaluate(() => { __g05.svc.cfg = { ...__g05.svc.cfg, url: 'https://svc.test', key: 'k'.repeat(40) }; document.getElementById('chart').scrollIntoView(); });
+    await page.click('#pat-btn'); await page.waitForFunction(() => __g09.pat.res && !__g09.pat.busy, null, { timeout: 10000 });
+    await page.evaluate(() => __g09.info(0));
+    const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 8000 }).catch(() => null), page.click('text=Archiv vom Dienst als Datei sichern')]);
+    const fileOk = dl && /^muster-archiv-\d{4}-\d\d-\d\d\.json$/.test(dl.suggestedFilename()) && JSON.parse(require('fs').readFileSync(await dl.path(), 'utf8')).cases.length === 2;
+    await page.evaluate(() => { __g05.svc.cfg = { ...__g05.svc.cfg, url: '', key: '' }; });
+    check('„Archiv vom Dienst als Datei sichern“: bereinigter Bestand als Datei auf dem Gerät (unabhängige Kopie)', !!fileOk, dl ? dl.suggestedFilename() : 'kein Download');
+    check('keine Fehler (sync)', !real(errors).length, real(errors).join(' | ')); await ctx.close();
   },
 };
 (async () => {

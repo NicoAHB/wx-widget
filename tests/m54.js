@@ -113,7 +113,7 @@ const tests = {
     const seed = id => ({ 'scalpdesk.channels.v1': chanCfg(), 'scalpdesk.svc.v1': { url, key: KEY, inst: id } });
     const A = await openPage(browser, seed('ipad0001')); await openTgc(A.page); await until(() => A.page.evaluate(() => /Revision 0/.test(document.getElementById('tgc-mode').textContent)), 8000);
     let r = await rows(A.page);
-    check('Mit Dienst: „Gesteuert über den 24/7-Dienst 2.0.0 · bestätigter Stand … · Revision 0 · gilt auf allen Geräten“', /^Gesteuert über den 24\/7-Dienst 2\.0\.0 · bestätigter Stand .* · Revision 0 · gilt auf allen Geräten\.$/.test(await txt(A.page, '#tgc-mode')), await txt(A.page, '#tgc-mode'));
+    check('Mit Dienst: „Gesteuert über den 24/7-Dienst 2.0.0 · bestätigter Stand … · Revision 0 · gilt auf allen Geräten“', /^Gesteuert über den 24\/7-Dienst 2\.\d+\.\d+ · bestätigter Stand .* · Revision 0 · gilt auf allen Geräten\.$/.test(await txt(A.page, '#tgc-mode')), await txt(A.page, '#tgc-mode'));
     check('Zeilen mit „an seit … · bestätigt vom 24/7-Dienst“', /^an seit .* · bestätigt vom 24\/7-Dienst$/.test(r['course-alert'].text) && r.trades.st === 'na', r['course-alert'].text);
     // Laden bis zur Bestätigung
     svc.delay = 1500; await A.page.click('#tgc-sw-course-alert'); await A.page.waitForTimeout(400); const mid = await rows(A.page), mm = await master(A.page);
@@ -166,7 +166,7 @@ const tests = {
     check('Neustart des Dienstes: bestätigter Stand und Revision erhalten', svc.w.pol.rev === revBefore && new RegExp(`Revision ${revBefore}`).test(await txt(A.page, '#tgc-mode')));
     // Status im Einrichtungsdialog
     await A.page.evaluate(() => { document.getElementById('tgc-dialog').close(); document.getElementById('chan-open').click(); }); await A.page.waitForTimeout(300); await jsClick(A.page, '#svc-check'); await A.page.waitForTimeout(800);
-    check('Einrichtung: „✓ Verbunden · Dienst 2.0.0 · … · Gerät ipad0001“', /^✓ Verbunden · Dienst 2\.0\.0 · bestätigter Stand .* · Gerät ipad0001$/.test(await txt(A.page, '#svc-status')), await txt(A.page, '#svc-status'));
+    check('Einrichtung: „✓ Verbunden · Dienst 2.0.0 · … · Gerät ipad0001“', /^✓ Verbunden · Dienst 2\.\d+\.\d+ · bestätigter Stand .* · Gerät ipad0001$/.test(await txt(A.page, '#svc-status')), await txt(A.page, '#svc-status'));
     await A.page.evaluate(() => { document.getElementById('svc-key').value = 'falsch_falsch_falsch_falsch_falsch_x'; }); await jsClick(A.page, '#svc-check'); await A.page.waitForTimeout(800);
     check('Falscher Schlüssel: „✗ Zugangsschlüssel falsch …“', /^✗ Zugangsschlüssel falsch/.test(await txt(A.page, '#svc-status')), await txt(A.page, '#svc-status'));
     const sv = await ls(A.page, 'scalpdesk.svc.v1'), bk = await A.page.evaluate(() => JSON.stringify(__g05.backupPayload()));

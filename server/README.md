@@ -118,3 +118,12 @@ Die Zeitstempel davor setzt journalctl in der Zeitzone des Servers (bei Oracle m
 - `/usr/local/bin/scalpdesk-247` (ab 1.4) ist der Kurzbefehl für `status`, `protokoll`, `live` und `neustart`.
 - Der Dienst läuft als eigener Benutzer ohne Anmeldung, mit schreibgeschütztem System (`ProtectSystem=strict`). Er startet mit dem Server und nach Fehlern von selbst neu.
 - Den Token schreibt er nie ins Protokoll.
+
+## Muster-Archiv (ab Dienst 2.1.0, App 3.39.0)
+- **Was:** Die App überträgt bestätigte Chartmuster-Fälle (nur Marktdaten: Coin, Intervall, Muster, Zeitpunkte, Kurs, Prognose, Ergebnis) über den bestehenden HTTPS-Weg mit dem Zugangsschlüssel. Telegram und der Sicherungsbot sind daran nicht beteiligt.
+- **Wo:** `patterns-journal.jsonl` neben der Zustandsdatei, nur anhängend. Getrennt von Alarmkonfiguration und Zustand. Fehlerhafte Zeilen werden zusätzlich nach `patterns-journal.jsonl.quarantine` kopiert; gelöscht wird nichts.
+- **Sicherung:** wenige Sekunden nach jeder Änderung eine geprüfte Kopie (Prüfsumme nach dem Zurücklesen) in `muster-sicherung/` neben der Zustandsdatei.
+  - **Anderes Volume:** Für eine wirklich unabhängige Sicherung `SCALPDESK_PATTERN_BACKUP=/pfad/auf/anderem/volume` in der Umgebung des Dienstes setzen.
+  - **Wiederherstellung:** Fehlt das Journal beim Start, stellt der Dienst es aus der Sicherung wieder her.
+  - **Kopie aufs Gerät:** In der App zusätzlich „Archiv vom Dienst als Datei sichern“ (Info-Sheet eines Musters → „Vergangene Verläufe ansehen“).
+- **Aufrufe** (mit Zugangsschlüssel): `POST /v1/patterns/cases`, `GET /v1/patterns/status`, `GET /v1/patterns/export`.
