@@ -25,11 +25,12 @@ Single-File-PWA für Krypto-Scalping (`weather-widget-v2.html`, auf GitHub Pages
 Siehe Abschnitt „G08-Plan“ unten; erledigte Schritte werden abgehakt.
 
 ### G08-Plan
-- [ ] 1. Reine Berechnung (Klassifikation C/B/D, Schwellen, Abdeckung, Pearson) + Einheitentest
-- [ ] 2. Datenquellen: CoinLore-Rangliste (Cache), Stablecoin-Liste (versioniert), Binance-Spotpaare (exchangeInfo), rollierende Statistik (`ticker`, Fenster 1h/4h/1d)
-- [ ] 3. Liste mit Filtern, Zuständen, Abdeckung, Quelle
-- [ ] 4. Klick lädt Coin in den vorhandenen Chart (kein Scrollen, „Im Chart geladen“)
-- [ ] 5. Scheduler (60 s, sichtbar, ein Timer, Abort, Backoff/429), Fehlerarten
+Code: Block „3.36.0 (G08)“ in `weather-widget-v2.html` (vor `window.__g08`), Bereich `#dec-sec` im Reiter Indikatoren (anfangs zu → ohne Öffnen keine Abrufe). Test-Zugang `window.__g08`.
+- [x] 1. Reine Berechnung (Klassifikation C/B/D, Schwellen, Abdeckung, Pearson) + Einheitentest
+- [x] 2. Datenquellen: CoinLore-Rangliste (Cache), Stablecoin-Liste (versioniert), Binance-Spotpaare (exchangeInfo), rollierende Statistik (`ticker`, Fenster 1h/4h/1d)
+- [x] 3. Liste mit Filtern, Zuständen, Abdeckung, Quelle
+- [x] 4. Klick lädt Coin in den vorhandenen Chart (kein Scrollen, „Im Chart geladen“)
+- [x] 5. Scheduler (60 s, sichtbar, ein Timer, Abort, Backoff/429), Fehlerarten
 - [ ] 6. Test m57 + Attrappen (CoinLore, Binance-Statistik), Version 3.36.0, Doku, PR, Merge
 
 ## Bekannte Stolpersteine

@@ -1449,6 +1449,28 @@ html[data-layout=tablet] .wl-tile{height:64px}
    (iPad mini hochkant hatte nur 20 px Luft); bei knappem Platz werden die Intervall-Knöpfe etwas schmaler statt umzubrechen */
 .chart-toolbar{container:ctb/inline-size}
 .tb-main{display:flex;flex-wrap:wrap;align-items:center;gap:6px;flex:1 1 0;min-width:min(100%,22rem)}
+/* 3.36.0 (G08): BTC-Entkopplung */
+.dec{padding:14px 16px;display:grid;gap:10px;container:dec/inline-size}
+.dec-bar,.dec-thr{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px}
+.dec-seg{display:flex;gap:2px;background:var(--field);border:1px solid var(--border);border-radius:8px;padding:2px}
+.dec-seg button{min-height:34px;min-width:44px;padding:0 10px;border:0;background:none;color:var(--muted);border-radius:6px;font-size:.8125rem}
+.dec-seg button[aria-pressed=true]{background:var(--up-bg-2);color:var(--up-text);font-weight:600}
+.dec-thr label{display:flex;align-items:center;gap:6px;font-size:.8125rem;color:var(--muted)}
+.dec-thr input[type=number]{width:5.5em;min-height:34px}
+.dec-status{margin:0;font-size:.8125rem;color:var(--muted)}.dec-status.err{color:var(--down-text)}.dec-status.stale{color:var(--warn-text)}
+.dec-list{display:grid;gap:2px}.dec-list.stale{opacity:.6}
+.dec-row{display:grid;grid-template-columns:minmax(0,1.7fr) repeat(4,minmax(0,1fr)) minmax(0,.8fr);gap:8px;align-items:center;text-align:right;padding:8px 10px;border:0;border-radius:8px;background:none;color:var(--text);font:inherit;font-variant-numeric:tabular-nums;font-size:.8125rem;width:100%}
+.dec-list.corr .dec-row{grid-template-columns:minmax(0,1.7fr) repeat(4,minmax(0,1fr)) minmax(0,.8fr) minmax(0,.7fr)}
+button.dec-row{cursor:pointer}button.dec-row:hover{background:var(--hover)}
+.dec-n{text-align:left;display:flex;gap:6px;align-items:baseline;min-width:0;overflow:hidden;white-space:nowrap}
+.dec-n small,.dec-nm{color:var(--muted)}.dec-nm{overflow:hidden;text-overflow:ellipsis}
+.dec-head{color:var(--muted);font-size:.6875rem;padding-top:0;padding-bottom:2px}.dec-head span:first-child{text-align:left}
+.dec-row.bull .dec-d{color:var(--up-text);font-weight:600}.dec-row.bear .dec-d{color:var(--down-text);font-weight:600}
+.dec-cov,.dec-foot{margin:0;font-size:.75rem;color:var(--muted)}
+.dec-gaps{font-size:.75rem;color:var(--muted)}.dec-gaps ul{margin:6px 0 0;padding-left:18px}.dec-gaps summary{cursor:pointer}
+@container dec (max-width:520px){.dec-row,.dec-list.corr .dec-row{grid-template-columns:minmax(0,1fr) auto auto auto;grid-template-areas:"n n r d" "p c b t";row-gap:2px}.dec-head{display:none}
+  .dec-n{grid-area:n}.dec-d{grid-area:d}.dec-r{grid-area:r;color:var(--muted)}.dec-p{grid-area:p;text-align:left;color:var(--muted)}.dec-c{grid-area:c}.dec-b{grid-area:b}.dec-t{grid-area:t;color:var(--muted)}
+  .dec-c::before{content:"Coin ";color:var(--muted)}.dec-b::before{content:"BTC ";color:var(--muted)}}
 .metric-btn{flex:0 0 auto;min-height:38px;padding:0 8px;font-size:.8125rem;border:1px solid var(--border);border-radius:6px;background:none;color:var(--muted)}
 .metric-btn[aria-pressed=true]{background:var(--up-bg-2);border-color:var(--up-border);color:var(--up-text);font-weight:600}
 @container ctb (min-width:640px) and (max-width:720px){.tb-main{gap:4px}.tb-main .intervals{gap:1px}.tb-main .intervals button{min-width:36px;padding:0 6px}.metric-btn{padding:0 6px}}
@@ -2700,7 +2722,7 @@ class BinanceClient {
     this.fetcher = (url, init) => fetcher(url, init); this.now = now; this.timeout = timeout; this.describe = describe; this.cooldowns = new Map(); }
   async get(base, path, params = {}, signal) {
     const until = this.cooldowns.get(base) || 0;
-    if (until > this.now()) throw new Error(`Binance-Rate-Limit: erneuter Versuch in ${Math.ceil((until - this.now()) / 1000)} Sekunden.`);
+    if (until > this.now()) throw Object.assign(new Error(`Binance-Rate-Limit: erneuter Versuch in ${Math.ceil((until - this.now()) / 1000)} Sekunden.`), { rate: true, retryMs: until - this.now() });
     const controller = new AbortController();
     const abort = () => controller.abort();
     if (signal?.aborted) throw new DOMException('Abgebrochen', 'AbortError');
@@ -2716,7 +2738,7 @@ class BinanceClient {
         const delay = retry && Number.isFinite(Number(retry)) ? Number(retry) * 1000 : retry && Number.isFinite(Date.parse(retry)) ? Date.parse(retry) - this.now() : response.status === 418 ? 900000 : 60000;
         const wait = Math.max(15000, delay);
         this.cooldowns.set(base, this.now() + wait);
-        throw new Error(`Binance-Rate-Limit: Anfragen für mindestens ${Math.ceil(wait / 1000)} Sekunden ausgesetzt.`);
+        throw Object.assign(new Error(`Binance-Rate-Limit: Anfragen für mindestens ${Math.ceil(wait / 1000)} Sekunden ausgesetzt.`), { rate: true, retryMs: wait });
       }
       if (body?.code === -1121) { const invalid = new Error(`Symbol ${params.symbol || ''} ist auf diesem Binance-Markt nicht verfügbar.`); invalid.code = -1121; throw invalid; }
       if (response.status === 451 || response.status === 403) throw new Error('Binance-Zugriff verweigert. Der Dienst ist an diesem Standort oder in diesem Netzwerk möglicherweise nicht verfügbar.');
@@ -5152,7 +5174,7 @@ function backupStatus(msg) { put('history-status', msg); }
 // Löschungen, Prüfliste, offene Konflikte, Anzeige-Einstellungen und das eigene Musterlernen (der öffentliche Startbestand nur als
 // Verweis mit Version). Nie enthalten: Zugangsdaten (Telegram-Token, Discord-Webhook), die Übergabe an den 24/7-Dienst, Sendesperren
 // und andere gerätegebundene Zustände. Alle Felder von Schema 7 bleiben gleich – ältere App-Versionen lesen die Datei weiter.
-const PREF_KEYS = ['scalpdesk.theme.v1', 'scalpdesk.overlays.v1', 'scalpdesk.zigzag.v1', 'scalpdesk.whale.v1', 'scalpdesk.orderbook.v1', 'scalpdesk.ladder.v1', 'scalpdesk.vola.v1', 'scalpdesk.econ.v1', 'scalpdesk.cnews.v1', 'scalpdesk.wlspan.v1', 'scalpdesk.titleprice.v1', 'scalpdesk.details.v1', 'scalpdesk.posdefaults.v1', 'scalpdesk.daylimitnote.v1', 'scalpdesk.warnclose.v1', 'scalpdesk.evalyear.v1', 'scalpdesk.acctrange.v1', 'scalpdesk.anaiv.v1'];
+const PREF_KEYS = ['scalpdesk.theme.v1', 'scalpdesk.overlays.v1', 'scalpdesk.zigzag.v1', 'scalpdesk.whale.v1', 'scalpdesk.orderbook.v1', 'scalpdesk.ladder.v1', 'scalpdesk.vola.v1', 'scalpdesk.econ.v1', 'scalpdesk.cnews.v1', 'scalpdesk.wlspan.v1', 'scalpdesk.titleprice.v1', 'scalpdesk.details.v1', 'scalpdesk.posdefaults.v1', 'scalpdesk.daylimitnote.v1', 'scalpdesk.warnclose.v1', 'scalpdesk.evalyear.v1', 'scalpdesk.acctrange.v1', 'scalpdesk.anaiv.v1', 'scalpdesk.decouple.v1'];
 function backupPayload() {
   stampLists(); for (const f of SET_FIELDS) stampSetting(f);
   const prefs = {}; for (const k of PREF_KEYS) { const v = store.get(k); if (v !== undefined) prefs[k] = v; }
@@ -6121,7 +6143,7 @@ const PROFILE_FOLDS = [['acct', lay => lay === 'desktop'], ['pos-over', () => tr
 var foldApplying = false;
 function applyProfileFolds() { const lay = docEl.dataset.layout; foldApplying = true; for (const [id, dflt] of PROFILE_FOLDS) { const k = lay + ':' + id; $(id).open = k in detailsState ? !!detailsState[k] : id in detailsState ? !!detailsState[id] : dflt(lay); } setTimeout(() => { foldApplying = false; }); }
 for (const [id] of PROFILE_FOLDS) $(id).addEventListener('toggle', () => { if (foldApplying) return; detailsState[docEl.dataset.layout + ':' + id] = $(id).open; saveDetails(); if (id === 'pos-over') renderOpenPositions(); });
-const FOLDS = [['zones-sec', true], ['ind-sec', true], ['method-sec', false]];
+const FOLDS = [['zones-sec', true], ['ind-sec', true], ['dec-sec', false], ['method-sec', false]];
 function applyFoldDefaults() { applyProfileFolds(); const lay = docEl.dataset.layout; for (const [id, desk] of FOLDS) { const k = lay + ':' + id; $(id).open = k in detailsState ? !!detailsState[k] : lay === 'desktop' && desk; } }
 for (const [id] of FOLDS) $(id).querySelector(':scope > summary').addEventListener('click', () => setTimeout(() => { detailsState[docEl.dataset.layout + ':' + id] = $(id).open; saveDetails(); }));
 // ---------- Risiko-Rechner ----------
@@ -11749,6 +11771,289 @@ function renderTgcEvents() {
   box.querySelector('ul').replaceChildren(...[...rows, ...(rows.length ? [] : own)].map(t => el('li', '', t)));
 }
 // Prüfzugang für die Tests (wie window.__sdMem): Zustand und einzelne Abläufe der Telegram-Ziele und der Sendefreigabe
+// ---- 3.36.0 (G08): Bitcoin-Entkopplung aus den allgemeinen Top 100 ----
+// Rangliste: CoinLore (Top 100 nach Marktkapitalisierung, gebündelt, zwischengespeichert), danach Stablecoins entfernen – nicht
+// auf 100 auffüllen. BTC ist nur Referenz. Kurse: Binance Spot (USDT), rollierende Statistik 1h/4h/1d in gebündelten Abfragen.
+// C = Coin-Veränderung in %, B = BTC-Veränderung in %, D = C − B in Prozentpunkten; Stärke = |D| nur unter Treffern.
+// Nur Signale, keine Kaufempfehlung. Bei geschlossener App läuft der Scanner nicht (kein 24/7-Timer).
+const DEC_KEY = 'scalpdesk.decouple.v1', DEC_RANK_KEY = 'scalpdesk.decrank.v1', DEC_SPOT_KEY = 'scalpdesk.decspot.v1';
+const DEC_WIN = { '1h': { ms: 36e5, ws: '1h', kiv: '1m', kms: 6e4, kn: 61 }, '4h': { ms: 144e5, ws: '4h', kiv: '5m', kms: 3e5, kn: 49 }, '24h': { ms: 864e5, ws: '1d', kiv: '15m', kms: 9e5, kn: 97 } };
+let DEC_EVERY = 60000;                     // Kurse etwa alle 60 s, solange die Ansicht offen und sichtbar ist
+const DEC_RANK_TTL = 30 * 60000, DEC_SPOT_TTL = 6 * 36e5, DEC_STALE = 180000, DEC_TOL = 120000, DEC_MAP_TOL = 0.15;
+// Klassifikation (versioniert): Einträge „KÜRZEL:schlüssel,…“ – Schlüssel = Anbieter-ID (nameid) bzw. Name, klein und ohne
+// Sonderzeichen. Ein Asset gilt nur dann als Stablecoin bzw. geprüft, wenn Kürzel UND Schlüssel passen. Nie über Preisnähe zu
+// 1 USD oder „USD“ im Kürzel. Alles andere ist „ungeprüft“ und wird nicht ausgewertet, sondern getrennt gezeigt.
+const DEC_CLASS_VER = 1;
+const DEC_STABLE = 'USDT:tether|USDC:usdcoin,usdc|DAI:dai,multicollateraldai|FDUSD:firstdigitalusd|USDE:ethenausde,usde|SUSDE:ethenastakedusde|TUSD:trueusd|PYUSD:paypalusd|USDD:usdd|FRAX:frax|USDP:paxdollar,paxosstandard|GUSD:geminidollar|BUSD:binanceusd|USDS:usds,skydollar|RLUSD:rippleusd|USD1:usd1,worldlibertyfinancialusd|LUSD:liquityusd|CRVUSD:crvusd|GHO:gho|USDX:usdx|USTC:terraclassicusd,terrausd|SUSD:susd|USDB:usdb|USDTB:usdtb|USD0:usualusd,usd0|EURC:eurocoin,eurc|EURS:stasiseuro|EURT:tethereurt|PAXG:paxgold|XAUT:tethergold';
+const DEC_OK = 'BTC:bitcoin|ETH:ethereum|XRP:xrp,ripple|BNB:binancecoin,bnb|SOL:solana|DOGE:dogecoin|ADA:cardano|TRX:tron|LINK:chainlink|AVAX:avalanche|XLM:stellar|SUI:sui|HBAR:hedera,hederahashgraph|BCH:bitcoincash|SHIB:shibainu|TON:toncoin,theopennetwork|DOT:polkadot|LTC:litecoin|XMR:monero|UNI:uniswap|LEO:unussedleo,leo|PEPE:pepe|NEAR:nearprotocol,near|APT:aptos|ICP:internetcomputer|AAVE:aave|ETC:ethereumclassic|POL:polygonecosystemtoken,pol,polygon|MATIC:polygon,maticnetwork|CRO:cronos,cryptocomcoin|VET:vechain|KAS:kaspa|RENDER:render,rendertoken|RNDR:render,rendertoken|FIL:filecoin|ARB:arbitrum|ATOM:cosmos,cosmoshub|ALGO:algorand|OP:optimism|TAO:bittensor|FET:fetchai,artificialsuperalliance|ENA:ethena|MNT:mantle|INJ:injective,injectiveprotocol|STX:stacks|IMX:immutable,immutablex|WLD:worldcoin|BONK:bonk|THETA:thetanetwork,theta|GRT:thegraph|OKB:okb|SEI:sei|TIA:celestia|JUP:jupiter|LDO:lidodao|RUNE:thorchain|QNT:quant|XTZ:tezos|FLR:flare|KCS:kucointoken,kucoin|GT:gatetoken,gt|FLOKI:floki,flokiinu|WIF:dogwifhat,dogwifcoin|PYTH:pythnetwork|EOS:eos|SAND:thesandbox|MANA:decentraland|AXS:axieinfinity|NEO:neo|FLOW:flow|XDC:xdcnetwork,xinfin|IOTA:iota|MIOTA:iota|CHZ:chiliz|EGLD:multiversx,elrond|BSV:bitcoinsv,bitcoincashsv|CRV:curvedaotoken,curve|HNT:helium|ZEC:zcash|DASH:dash|MKR:maker|SKY:sky|KAIA:kaia|JASMY:jasmycoin|ONDO:ondo,ondofinance|PENDLE:pendle|ENS:ethereumnameservice|BGB:bitgettoken|TRUMP:officialtrump,trump|HYPE:hyperliquid|VIRTUAL:virtualsprotocol|S:sonic|FTM:fantom|CAKE:pancakeswap|GALA:gala|NEXO:nexo|ZRO:layerzero|W:wormhole|STRK:starknet|AR:arweave|RAY:raydium|COMP:compound|SNX:synthetix,synthetixnetworktoken|1INCH:1inch|BAT:basicattentiontoken|ZIL:zilliqa|KSM:kusama|MINA:mina,minaprotocol|ROSE:oasisnetwork,oasis|CFX:conflux|ORDI:ordi|BTT:bittorrent,bittorrentnew|WBTC:wrappedbitcoin|STETH:lidostakedether,steth|WSTETH:wrappedsteth|WETH:weth,wrappedether|CBBTC:coinbasewrappedbtc|WEETH:wrappedeeth|BTCB:bitcoinbep2,binancebitcoin|XEC:ecash|IP:story|KAITO:kaito|PI:pinetwork,pi|FARTCOIN:fartcoin|PENGU:pudgypenguins|SPX:spx6900|BERA:berachain|MOVE:movement|AERO:aerodrome,aerodromefinance|XCN:onyxcoin|GRASS:grass|DEXE:dexe|NFT:apenft|JTO:jito|CORE:core,coredao|QTUM:qtum|ZK:zksync|BRETT:brett,brettbased|POPCAT:popcat|NOT:notcoin|DOGS:dogs|ETHFI:etherfi|EIGEN:eigenlayer|WAL:walrus';
+// Abweichende Kürzel Rangliste → Binance (nur nachweislich gleiche Assets)
+const DEC_BASE = { MIOTA: 'IOTA' };
+const decTable = s => new Map(s.split('|').map(e => { const [sym, keys] = e.split(':'); return [sym, new Set(keys.split(','))]; }));
+const DEC_STABLE_T = decTable(DEC_STABLE), DEC_OK_T = decTable(DEC_OK), decNorm = s => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+function decClassify(a) {
+  const hit = t => { const k = t.get(a.sym); return !!k && (k.has(decNorm(a.nameid)) || k.has(decNorm(a.name))); };
+  return hit(DEC_STABLE_T) ? 'stable' : hit(DEC_OK_T) ? 'ok' : 'unreviewed';
+}
+// BTC-Richtung: seitwärts bei |B| < Schwelle oder B = 0; genau +Schwelle zählt als steigend, genau −Schwelle als fallend.
+// Bullish: C ≥ +Coin-Schwelle und BTC fällt/seitwärts; Bearish: C ≤ −Coin-Schwelle und BTC steigt/seitwärts. Ungerundet verglichen.
+function decSignal(C, B, cfg) {
+  if (!Number.isFinite(B)) return { st: 'na', why: 'BTC fehlt' };
+  if (!Number.isFinite(C)) return { st: 'na', why: 'Coin-Veränderung fehlt' };
+  const dir = B === 0 ? 'side' : B >= cfg.btc ? 'up' : B <= -cfg.btc ? 'down' : 'side', D = C - B;
+  if (C >= cfg.coin && dir !== 'up') return { st: 'bull', D, dir };
+  if (C <= -cfg.coin && dir !== 'down') return { st: 'bear', D, dir };
+  return { st: 'none', D, dir };
+}
+// Rollierende Statistik prüfen: Ausgangs-/Endpreis > 0, tatsächliches Fenster (Binance rundet auf Minuten, darf etwas länger
+// sein), Datenalter und Trades im Zeitraum. Ergebnis C in % oder ein Grund – Fehler zählen nie als normaler Nicht-Treffer.
+function decTick(t, W, at) {
+  if (!t) return { ok: false, why: 'keine Kursdaten' };
+  const o = Number(t.openPrice), c = Number(t.lastPrice), ot = Number(t.openTime), ct = Number(t.closeTime);
+  if (![o, c, ot, ct].every(Number.isFinite)) return { ok: false, why: 'ungültige Kursdaten' };
+  if (o <= 0 || c <= 0) return { ok: false, why: 'Ausgangs- oder Endpreis 0 bzw. negativ' };
+  const len = ct - ot + 1;
+  if (len < W.ms - 6e4 || len > W.ms + 18e4) return { ok: false, why: 'Zeitfenster passt nicht' };
+  if (at - ct > DEC_STALE) return { ok: false, why: 'Daten veraltet' };
+  if (Number(t.count) === 0) return { ok: false, why: 'keine Trades im Zeitraum (Markt inaktiv)' };
+  return { ok: true, chg: (c / o - 1) * 100, o, c, ot, ct };
+}
+function decPair(a, spot, dup) {
+  if ((dup.get(a.sym) || 0) > 1) return { gap: 'Kürzel mehrdeutig in der Rangliste' };
+  const pair = (DEC_BASE[a.sym] || a.sym) + 'USDT';
+  return spot.has(pair) ? { pair } : { gap: 'nicht bei Binance Spot (USDT)' };
+}
+function decEvaluate(rank, spot, tick, cfg, win, at) {
+  const W = DEC_WIN[win], dup = new Map(), rows = [], gaps = [], stable = [];
+  for (const a of rank) dup.set(a.sym, (dup.get(a.sym) || 0) + 1);
+  const bt = tick.get('BTCUSDT'), bk = decTick(bt, W, at), B = bk.ok ? bk.chg : null;
+  let eligible = 0, unreviewed = 0;
+  for (const a of rank) {
+    const cls = decClassify(a);
+    if (cls === 'stable') { stable.push(a); continue; }
+    if (a.sym === 'BTC' && cls === 'ok') continue;   // Referenz
+    eligible++;
+    const gap = why => gaps.push({ a, why });
+    if (cls === 'unreviewed') { unreviewed++; gap('ungeprüft (nicht in der Klassifikationsliste)'); continue; }
+    const m = decPair(a, spot, dup); if (m.gap) { gap(m.gap); continue; }
+    if (!bk.ok) continue;                             // ohne BTC kein Vergleich (oben gesperrt)
+    const t = tick.get(m.pair), k = decTick(t, W, at); if (!k.ok) { gap(k.why); continue; }
+    if (Math.abs(k.ot - bk.ot) > DEC_TOL || Math.abs(k.ct - bk.ct) > DEC_TOL) { gap('Zeitfenster weicht von BTC ab'); continue; }
+    if (a.price && Math.abs(k.c / a.price - 1) > DEC_MAP_TOL) { gap('Preis passt nicht zur Rangliste (Zuordnung zweifelhaft)'); continue; }
+    const s = decSignal(k.chg, B, cfg);
+    rows.push({ a, pair: m.pair, price: k.c, C: k.chg, B, D: s.D, st: s.st, at: k.ct });
+  }
+  const hits = rows.filter(r => r.st === 'bull' || r.st === 'bear')
+    .sort((x, y) => Math.abs(y.D) - Math.abs(x.D) || x.a.rank - y.a.rank || (x.a.id < y.a.id ? -1 : x.a.id > y.a.id ? 1 : 0));
+  return { hits, evaluated: bk.ok ? rows.length : 0, eligible, unreviewed, stable, gaps, btc: bk.ok ? { B, at: bk.ct, ot: bk.ot } : { why: bk.why }, win, at };
+}
+// Pearson aus deckungsgleichen logarithmischen Kerzenrenditen: Renditen nur zwischen direkt aufeinanderfolgenden Kerzen
+// (fehlende Kerzen nicht mit 0 gefüllt), mindestens 30 Paare und positive Varianzen – sonst null.
+function decPearson(ka, kb, step) {
+  const ret = k => { const m = new Map(); for (let i = 1; i < k.length; i++) if (k[i][0] - k[i - 1][0] === step && k[i][1] > 0 && k[i - 1][1] > 0) m.set(k[i][0], Math.log(k[i][1] / k[i - 1][1])); return m; };
+  const ra = ret(ka), rb = ret(kb), xs = [], ys = [];
+  for (const [t, v] of ra) if (rb.has(t)) { xs.push(v); ys.push(rb.get(t)); }
+  const n = xs.length; if (n < 30) return { rho: null, n, why: `zu wenige gemeinsame Kerzen (${n}/30)` };
+  const mx = xs.reduce((s, v) => s + v, 0) / n, my = ys.reduce((s, v) => s + v, 0) / n;
+  let sxy = 0, sxx = 0, syy = 0; for (let i = 0; i < n; i++) { const dx = xs[i] - mx, dy = ys[i] - my; sxy += dx * dy; sxx += dx * dx; syy += dy * dy; }
+  if (!(sxx > 0) || !(syy > 0)) return { rho: null, n, why: 'keine Kursbewegung (Varianz 0)' };
+  return { rho: sxy / Math.sqrt(sxx * syy), n };
+}
+function decLoreParse(j) {
+  if (!j || !Array.isArray(j.data) || !j.data.length) return null;
+  const out = [];
+  for (const d of j.data) {
+    const rank = Number(d?.rank), price = Number(d?.price_usd);
+    if (d?.id == null || typeof d.symbol !== 'string' || !d.symbol || typeof d.name !== 'string' || !(rank >= 1)) return null;
+    out.push({ id: String(d.id), sym: d.symbol.toUpperCase(), name: d.name, nameid: String(d.nameid || ''), rank, price: Number.isFinite(price) && price > 0 ? price : null });
+  }
+  return out.sort((a, b) => a.rank - b.rank).slice(0, 100);
+}
+
+// --- Abrufe ---
+const decErr = (kind, src, text, retryMs = 0) => Object.assign(new Error(`${src}: ${text}`), { kind, src, retryMs });
+function decBinErr(e) {
+  if (e?.name === 'AbortError') return e;
+  if (e?.rate) return decErr('rate', 'Binance', 'Rate-Limit (429)', e.retryMs || 60000);
+  if (e?.network) return decErr('net', 'Binance', 'Netz- oder CORS-Fehler – keine Verbindung oder vom Browser blockiert');
+  return decErr('http', 'Binance', e?.message || String(e));
+}
+async function decLore(signal) {
+  const ctl = new AbortController(), stop = () => ctl.abort(), timer = setTimeout(stop, 10000); signal.addEventListener('abort', stop, { once: true });
+  try {
+    let r; try { r = await fetch('https://api.coinlore.net/api/tickers/?start=0&limit=100', { signal: ctl.signal, cache: 'no-store', credentials: 'omit' }); }
+    catch { if (signal.aborted) throw new DOMException('Abgebrochen', 'AbortError'); throw decErr('net', 'CoinLore', ctl.signal.aborted ? 'keine Antwort innerhalb von 10 Sekunden' : 'Netz- oder CORS-Fehler – keine Verbindung oder vom Browser blockiert'); }
+    if (r.status === 429) { const ra = Number(r.headers.get('Retry-After')); throw decErr('rate', 'CoinLore', 'bremst (429)', ra > 0 ? ra * 1000 : 60000); }
+    if (!r.ok) throw decErr('http', 'CoinLore', `Fehler ${r.status}`);
+    let j; try { j = await r.json(); } catch { throw decErr('invalid', 'CoinLore', 'keine lesbaren Daten'); }
+    const list = decLoreParse(j); if (!list) throw decErr('invalid', 'CoinLore', 'Rangliste in unerwartetem Format');
+    return { at: Date.now(), list, ver: DEC_CLASS_VER };
+  } finally { clearTimeout(timer); signal.removeEventListener('abort', stop); }
+}
+async function decSpot(signal) {
+  let j; try { j = await spotGet('/api/v3/exchangeInfo', { permissions: 'SPOT' }, signal); } catch (e) { throw decBinErr(e); }
+  if (!Array.isArray(j?.symbols)) throw decErr('invalid', 'Binance', 'Marktliste in unerwartetem Format');
+  // nur aktive Spot-Paare mit USDT-Quote – kein stiller Futures-Ersatz
+  const pairs = j.symbols.filter(s => s?.status === 'TRADING' && s.quoteAsset === 'USDT' && s.isSpotTradingAllowed !== false && typeof s.symbol === 'string').map(s => s.symbol);
+  return { at: Date.now(), pairs };
+}
+async function decTickers(pairs, win, signal) {
+  const map = new Map();
+  for (let i = 0; i < pairs.length; i += 100) {           // höchstens 100 Paare je Abfrage, gebündelt statt je Zeile
+    let j; try { j = await spotGet('/api/v3/ticker', { symbols: JSON.stringify(pairs.slice(i, i + 100)), windowSize: DEC_WIN[win].ws, type: 'MINI' }, signal); } catch (e) { throw decBinErr(e); }
+    if (!Array.isArray(j)) throw decErr('invalid', 'Binance', 'Statistik in unerwartetem Format');
+    for (const t of j) if (t && typeof t.symbol === 'string') map.set(t.symbol, t);
+  }
+  return map;
+}
+async function decKlines(pair, win, signal) {
+  const W = DEC_WIN[win], key = `${pair}|${win}`, c = dec.kc.get(key);
+  if (c && Date.now() - c.at < DEC_EVERY) return c.k;
+  let j; try { j = await spotGet('/api/v3/klines', { symbol: pair, interval: W.kiv, limit: W.kn }, signal); } catch (e) { throw decBinErr(e); }
+  const k = Array.isArray(j) ? j.filter(r => Number(r[6]) < Date.now()).map(r => [Number(r[0]), Number(r[4])]) : [];
+  dec.kc.set(key, { at: Date.now(), k }); return k;
+}
+
+// --- Zustand, Einstellungen, Scheduler ---
+function decCfgLoad() {
+  const s = store.get(DEC_KEY) || {}, num = (v, d, lo, hi) => (Number.isFinite(+v) && +v >= lo && +v <= hi ? +v : d);
+  return { win: DEC_WIN[s.win] ? s.win : '4h', filter: ['all', 'bull', 'bear'].includes(s.filter) ? s.filter : 'all', coin: num(s.coin, 2, 0.1, 100), btc: num(s.btc, 0.5, 0, 50), corr: s.corr === true };
+}
+const decLs = (k, v) => { try { if (v === undefined) return JSON.parse(localStorage.getItem(k) || 'null'); localStorage.setItem(k, JSON.stringify(v)); } catch { return null; } };
+var dec = { cfg: decCfgLoad(), open: false, vis: false, timer: 0, ctrl: null, running: false, force: false, lastRun: 0, fails: 0, blockUntil: 0, rankRetryAt: 0,
+  rank: (r => (r?.ver === DEC_CLASS_VER && Array.isArray(r.list) ? r : null))(decLs(DEC_RANK_KEY)), spot: (s => (Array.isArray(s?.pairs) ? s : null))(decLs(DEC_SPOT_KEY)),
+  tick: {}, res: null, err: null, rankErr: null, kc: new Map(), rho: new Map(), runs: 0 };
+const decActive = () => dec.open && dec.vis && document.visibilityState === 'visible' && !state.paused;
+// Ein Scheduler: genau ein Timer, nie überlappend; nicht sichtbar → Abbruch und kein Timer. Rückkehr → höchstens ein fälliger Lauf.
+function decKick(force, restart) {
+  if (force) dec.force = true;
+  clearTimeout(dec.timer); dec.timer = 0;
+  if (!decActive()) { dec.ctrl?.abort(); return; }
+  if (dec.running) { if (restart) dec.ctrl?.abort(); return; }   // der laufende Durchgang plant danach neu
+  const now = Date.now(), due = Math.max(dec.blockUntil, dec.force ? now : dec.lastRun + DEC_EVERY);
+  dec.timer = setTimeout(decRun, Math.max(0, due - now));
+}
+async function decRun() {
+  dec.timer = 0; if (dec.running || !decActive()) return;
+  dec.running = true; dec.force = false; dec.runs++;
+  const ctrl = dec.ctrl = new AbortController(), sig = ctrl.signal, win = dec.cfg.win; let aborted = false;
+  decRender();
+  try {
+    const now = Date.now();
+    // Rangliste seltener als die Kurse (30 min); bei Fehler bleibt die alte als „veraltet“
+    if ((!dec.rank || now - dec.rank.at > DEC_RANK_TTL) && now >= dec.rankRetryAt) {
+      try { dec.rank = await decLore(sig); decLs(DEC_RANK_KEY, dec.rank); dec.rankErr = null; }
+      catch (e) { if (sig.aborted) throw e; dec.rankErr = e; dec.rankRetryAt = Date.now() + (e.kind === 'rate' ? Math.max(e.retryMs, 60000) : 5 * 60000); if (!dec.rank) throw e; }
+    }
+    if (!dec.rank) throw dec.rankErr || decErr('net', 'CoinLore', 'Rangliste noch nicht geladen');
+    if (!dec.spot || now - dec.spot.at > DEC_SPOT_TTL) { dec.spot = await decSpot(sig); decLs(DEC_SPOT_KEY, dec.spot); }
+    const spot = new Set(dec.spot.pairs), want = new Set(['BTCUSDT']);
+    for (const a of dec.rank.list) { const p = (DEC_BASE[a.sym] || a.sym) + 'USDT'; if (spot.has(p) && decClassify(a) === 'ok') want.add(p); }
+    const map = await decTickers([...want].filter(p => spot.has(p) || p === 'BTCUSDT'), win, sig);
+    dec.tick[win] = { at: Date.now(), map };
+    decEval();
+    if (dec.cfg.corr && dec.res?.btc.B != null) await decCorr(win, sig);
+    dec.err = null; dec.fails = 0;
+  } catch (e) {
+    if (sig.aborted || e?.name === 'AbortError') aborted = true;
+    else {
+      dec.err = e?.kind ? e : decErr('invalid', 'Scanner', e?.message || String(e)); dec.fails++;
+      const wait = dec.err.kind === 'rate' ? Math.max(dec.err.retryMs || 60000, 15000) : Math.min(6e5, DEC_EVERY * 2 ** (dec.fails - 1)) * (1 + Math.random() * 0.2);
+      dec.blockUntil = Date.now() + wait;
+    }
+  } finally {
+    dec.running = false; if (dec.ctrl === ctrl) dec.ctrl = null; if (!aborted) dec.lastRun = Date.now();
+    decRender(); decKick();
+  }
+}
+// Korrelation (optional, anfangs aus): nur für angezeigte Treffer, BTC-Reihe geteilt, Kerzen nur bei Bedarf nachgeladen
+async function decCorr(win, sig) {
+  const W = DEC_WIN[win], btc = await decKlines('BTCUSDT', win, sig);
+  for (const r of dec.res.hits.slice(0, 15)) { const k = await decKlines(r.pair, win, sig); dec.rho.set(`${r.pair}|${win}`, decPearson(k, btc, W.kms)); }
+}
+function decEval() {
+  const t = dec.tick[dec.cfg.win];
+  dec.res = dec.rank && dec.spot && t ? decEvaluate(dec.rank.list, new Set(dec.spot.pairs), t.map, dec.cfg, dec.cfg.win, t.at) : null;
+}
+function decSet(patch, refetch) {
+  dec.cfg = { ...dec.cfg, ...patch }; store.set(DEC_KEY, { ...dec.cfg });
+  decEval(); decRender();
+  if (refetch || (dec.cfg.corr && !dec.tick[dec.cfg.win])) decKick(true, true); else if (patch.corr) decKick(true);
+}
+
+// --- Anzeige ---
+const decPct = v => (Number.isFinite(v) ? `${signed(v)} %` : '—');
+function decRender() {
+  const sec = $('dec-sec'); if (!sec) return;
+  const c = dec.cfg, R = dec.res, list = $('dec-list'), W = c.win;
+  for (const b of sec.querySelectorAll('[data-dwin]')) b.setAttribute('aria-pressed', String(b.dataset.dwin === W));
+  for (const b of sec.querySelectorAll('[data-dfil]')) b.setAttribute('aria-pressed', String(b.dataset.dfil === c.filter));
+  if (document.activeElement !== $('dec-coin')) $('dec-coin').value = c.coin;
+  if (document.activeElement !== $('dec-btc')) $('dec-btc').value = c.btc;
+  $('dec-corr').checked = c.corr;
+  const hits = R ? R.hits.filter(r => c.filter === 'all' || r.st === c.filter) : [];
+  put('dec-context', !dec.open ? 'Top 100 · lädt beim Öffnen' : R ? `${W} · ${R.btc.B != null ? `${hits.length} Treffer` : 'BTC fehlt'}` : dec.running ? 'lädt …' : 'Top 100');
+  // Zustand: lädt / Fehler ohne Bestand / veraltet / BTC fehlt / keine Treffer
+  const err = dec.err, stale = R && (err || Date.now() - R.at > 2 * DEC_EVERY + 30000), next = dec.blockUntil > Date.now() ? ` · nächster Versuch ab ${utcTime(dec.blockUntil)} UTC` : '';
+  let st = '', cls = '';
+  if (!R && dec.running) { st = `Lädt Rangliste (CoinLore) und ${W}-Statistik (Binance Spot) …`; cls = 'load'; }
+  else if (!R && err) { st = `Nicht verfügbar – ${err.message}${next}`; cls = 'err'; }
+  else if (!R) st = 'Noch keine Daten.';
+  else if (R.btc.B == null) { st = `BTC fehlt – Vergleich gesperrt (${R.btc.why}).`; cls = 'err'; }
+  else if (!hits.length) st = `Keine Treffer bei diesen Schwellen (${W}: Coin ab ±${number(c.coin, 1)} %, BTC seitwärts unter ±${number(c.btc, 1)} %).`;
+  if (stale) { st = `Veraltet – Stand ${utcTime(R.at)} UTC${err ? ` · ${err.message}` : ''}${next}${st ? ' · ' + st : ''}`; cls = 'stale'; }
+  const sEl = $('dec-status'); sEl.textContent = st; sEl.hidden = !st; sEl.className = `dec-status ${cls}`;
+  list.classList.toggle('stale', !!stale);
+  const rows = hits.map(r => {
+    const b = el('button', `dec-row ${r.st}`); b.type = 'button'; b.dataset.pair = r.pair;
+    b.title = `${r.a.name} (${r.pair.slice(0, -4)}/USDT, Binance Spot) im Chart laden – der Reiter bleibt`;
+    const n = el('span', 'dec-n'); n.append(el('b', '', r.a.sym), el('span', 'dec-nm', r.a.name), el('small', '', `#${r.a.rank}`));
+    const rho = dec.rho.get(`${r.pair}|${W}`);
+    b.append(n, el('span', 'dec-p', priceText(r.price)), el('span', 'dec-c', decPct(r.C)), el('span', 'dec-b', decPct(r.B)), el('span', 'dec-d', `${signed(r.D)} Pp.`), el('span', 'dec-t', utcTime(r.at).slice(0, 5)));
+    if (c.corr) b.append(el('span', 'dec-r', rho ? (rho.rho == null ? 'ρ —' : `ρ ${number(rho.rho, 2)}`) : 'ρ …'));
+    if (rho && rho.rho == null) b.lastChild.title = rho.why;
+    return b;
+  });
+  if (rows.length) { const h = el('div', 'dec-row dec-head'); h.setAttribute('aria-hidden', 'true'); for (const t of ['Coin', 'Preis (USDT)', 'Coin %', 'BTC %', 'Abweichung', 'Daten (UTC)', ...(c.corr ? ['Korr.'] : [])]) h.append(el('span', '', t)); rows.unshift(h); }
+  list.replaceChildren(...rows); list.classList.toggle('corr', c.corr);
+  // Abdeckung und Lücken aus echten Daten
+  if (R) {
+    put('dec-cov', `${R.evaluated} von ${R.eligible} grundsätzlich geeigneten Coins auswertbar · ${R.stable.length} Stablecoins entfernt (Liste v${DEC_CLASS_VER}, nicht aufgefüllt) · BTC ist Referenz`);
+    const by = new Map(); for (const g of R.gaps) { if (!by.has(g.why)) by.set(g.why, []); by.get(g.why).push(g.a.sym); }
+    const ul = el('ul'); for (const [why, syms] of by) { const li = el('li'); li.append(el('b', '', `${why} (${syms.length}): `), syms.join(', ')); ul.append(li); }
+    const gs = $('dec-gaps'); gs.hidden = !R.gaps.length; gs.querySelector('summary').textContent = `Nicht auswertbar: ${R.gaps.length}${R.unreviewed ? ` (davon ${R.unreviewed} ungeprüft)` : ''}`; gs.querySelector('ul')?.remove(); gs.append(ul);
+  } else { put('dec-cov', ''); $('dec-gaps').hidden = true; }
+  put('dec-foot', `Rangliste: CoinLore${dec.rank ? `, Stand ${utcDate(dec.rank.at)} UTC${dec.rankErr ? ` (veraltet – ${dec.rankErr.message})` : ''}` : ''} · Kurse: Binance Spot, rollierendes ${W}-Fenster${R?.btc.at ? ` bis ${utcTime(R.btc.at)} UTC` : ''} · nur Signale, keine Kaufempfehlung${c.corr ? ' · niedrige Korrelation ist keine Erfolgswahrscheinlichkeit' : ''}`);
+}
+// Klick: Coin in den vorhandenen Chart laden – kein Scrollen, kein Reiterwechsel, keine zweite Chart-Instanz
+async function decPick(pair) {
+  const spot = state.symbol === pair && state.source === 'futures';
+  try {
+    if (spot) { state.source = 'spot'; state.sourceFor = null; }   // gleichnamiger Futures-Chart: bewusst auf Spot umstellen
+    const p = state.symbol === pair && !spot ? null : setMarket(pair);
+    infoToast(`Im Chart geladen: ${pair.slice(0, -4)}/USDT (Binance Spot)`);
+    if (spot) await refresh(); else await p;
+    if (state.symbol === pair && state.sourceFor === pair && state.source === 'futures') infoToast(`${pair.slice(0, -4)}: Spot-Kurse nicht ladbar – der Chart zeigt Futures`, 5000);
+  } catch (e) { showNotice('market-error', e.message); }
+}
+(function decUi() {
+  const sec = $('dec-sec'); if (!sec) return;
+  dec.open = sec.open;
+  sec.addEventListener('toggle', () => { dec.open = sec.open; decRender(); decKick(); });
+  if ('IntersectionObserver' in window) new IntersectionObserver(es => { for (const e of es) dec.vis = e.isIntersecting; decKick(); }).observe(sec); else dec.vis = true;
+  document.addEventListener('visibilitychange', () => decKick());
+  sec.addEventListener('click', e => {
+    const w = e.target.closest('[data-dwin]'), f = e.target.closest('[data-dfil]'), r = e.target.closest('.dec-row[data-pair]');
+    if (w && w.dataset.dwin !== dec.cfg.win) decSet({ win: w.dataset.dwin }, !dec.tick[w.dataset.dwin] || Date.now() - dec.tick[w.dataset.dwin].at > DEC_EVERY);
+    else if (f) decSet({ filter: f.dataset.dfil });
+    else if (r) void decPick(r.dataset.pair);
+  });
+  const thr = (id, k, lo, hi) => $(id).addEventListener('change', () => { const v = Number(String($(id).value).replace(',', '.')); if (Number.isFinite(v) && v >= lo && v <= hi) decSet({ [k]: v }); else decRender(); });
+  thr('dec-coin', 'coin', 0.1, 100); thr('dec-btc', 'btc', 0, 50);
+  $('dec-corr').addEventListener('change', () => decSet({ corr: $('dec-corr').checked }));
+  decEval(); decRender();
+})();
+window.__g08 = { get dec() { return dec; }, decSignal: (c, b, cfg) => decSignal(c, b, cfg), decTick: (t, w, at) => decTick(t, DEC_WIN[w], at), decEvaluate: (r, sp, t, cfg, w, at) => decEvaluate(r, new Set(sp), new Map(Object.entries(t)), cfg, w, at),
+  decPearson: (a, b, st) => decPearson(a, b, st), decClassify: a => decClassify(a), decLoreParse: j => decLoreParse(j), setEvery: ms => { DEC_EVERY = ms; }, kick: () => decKick(true) };
 window.__g07 = { get ana() { return ana; }, get cap() { return CAP; }, blocks30: (d, n) => blocks30(d, n), anaCalc: (c, iv) => anaCalc(c, iv), anaTrend: o => anaTrend(o), validateMarketCap: r => validateMarketCap(r), coinGeckoMarketCapPoints: j => coinGeckoMarketCapPoints(j),
   capKey: (...a) => capKey(...a), capPut: e => capPut(e), capGet: k => capGet(k), setCapMax: n => { CAP_MAX_BYTES = n; }, capBlock: p => capBlock(p), capSeries: (p, id, r) => capSeries(p, id, r), compactCap: v => compactCap(v), hzSeries: d => hzSeries(d),
   chartPoc: () => { const { start, end } = viewWindow(); return volumeProfile(state.candles.slice(start, end))?.poc ?? null; } };
@@ -12399,6 +12704,18 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
           <article class="panel indicator levels"><div class="indicator-title"><h3>Lokale Kurslevel</h3><span>PIVOTS · 50</span></div><div class="level-row"><span><i class="legend-line support"></i>Unterstützung</span><strong id="support" class="skel">—</strong><span id="support-dist" class="skel">—</span></div><div class="level-row"><span><i class="legend-line resistance"></i>Widerstand</span><strong id="resistance" class="skel">—</strong><span id="resistance-dist" class="skel">—</span></div><p id="level-note">Je zwei abgeschlossene Nachbarkerzen bestätigen ein lokales Hoch oder Tief.</p></article>
           <article class="panel indicator"><div class="indicator-title"><h3>Funding Rate</h3><span>FUTURES</span></div><div class="metric skel" id="funding-value">—</div><p id="funding-note" class="skel">Wartet auf Futures-Daten.</p><div class="metric-foot" id="funding-detail">Aktuelle Rate · unabhängig vom Chartintervall</div></article>
           <article class="panel indicator"><div class="indicator-title"><h3>Open Interest</h3><span>Δ CA. 1H</span></div><div class="metric skel" id="oi-value">—</div><p id="oi-note" class="skel">Wartet auf Futures-Daten.</p><div class="metric-foot" id="oi-detail">Offene Positionen · keine Kursrichtung</div></article>
+        </div>
+      </details>
+      <details class="fold cq" id="dec-sec" data-tabs="ind">
+        <summary><h2>BTC-Entkopplung</h2><span id="dec-context">Top 100 · lädt beim Öffnen</span></summary>
+        <div class="panel dec">
+          <div class="dec-bar"><div class="dec-seg" role="group" aria-label="Zeitraum"><button type="button" data-dwin="1h" aria-pressed="false">1h</button><button type="button" data-dwin="4h" aria-pressed="true">4h</button><button type="button" data-dwin="24h" aria-pressed="false">24h</button></div><div class="dec-seg" role="group" aria-label="Treffer filtern"><button type="button" data-dfil="all" aria-pressed="true">Alle</button><button type="button" data-dfil="bull" aria-pressed="false">Bullish</button><button type="button" data-dfil="bear" aria-pressed="false">Bearish</button></div><details class="tip left"><summary aria-label="Wie die BTC-Entkopplung rechnet"><span>i</span></summary><div class="tip-body"><p>Rangliste: allgemeine Top 100 nach Marktkapitalisierung laut CoinLore. Stablecoins werden über eine gepflegte Liste (Kürzel und Anbieter-ID) entfernt – nicht über einen Preis nahe 1 USD – und nicht aufgefüllt. BTC ist nur Referenz.</p><p>C = Veränderung des Coins, B = Veränderung von BTC im selben rollierenden Fenster (Binance Spot, USDT), D = C − B in Prozentpunkten. <b>Bullish:</b> C mindestens +Schwelle, während BTC fällt oder seitwärts läuft. <b>Bearish:</b> C höchstens −Schwelle, während BTC steigt oder seitwärts läuft. BTC seitwärts heißt |B| unter der BTC-Schwelle; genau auf der Schwelle zählt als steigend bzw. fallend. Sortiert nach |D|.</p><p>Ausgewertet werden nur Coins mit eindeutigem, aktivem Binance-Spotpaar; alle anderen stehen mit Grund unter „Nicht auswertbar“. Aktualisierung etwa jede Minute, solange dieser Bereich offen und sichtbar ist – bei geschlossener App läuft nichts. Antippen lädt den Coin in den Chart, ohne den Reiter zu wechseln.</p><p>Nur Signale, keine Kaufempfehlung. Die Korrelation (optional) ist keine Erfolgswahrscheinlichkeit.</p></div></details></div>
+          <div class="dec-thr"><label>Coin ab ±<input id="dec-coin" type="number" inputmode="decimal" step="0.1" min="0.1" max="100" aria-label="Schwelle Coin in Prozent"> %</label><label>BTC seitwärts unter ±<input id="dec-btc" type="number" inputmode="decimal" step="0.1" min="0" max="50" aria-label="Schwelle BTC seitwärts in Prozent"> %</label><label class="dec-corr"><input type="checkbox" id="dec-corr"> Korrelation zu BTC</label></div>
+          <p class="dec-status" id="dec-status" role="status" hidden></p>
+          <div class="dec-list" id="dec-list"></div>
+          <p class="dec-cov" id="dec-cov"></p>
+          <details class="dec-gaps" id="dec-gaps" hidden><summary>Nicht auswertbar</summary></details>
+          <p class="dec-foot" id="dec-foot"></p>
         </div>
       </details>
     </div>
