@@ -48,7 +48,7 @@ const sendNow = async page => { const t0 = Date.now(); await page.evaluate(() =>
     await page.evaluate(() => [...document.querySelectorAll('#tg-found .tg-found-row')].find(r => /Sicherung · ID/.test(r.textContent)).querySelector('button').click());
     await page.waitForTimeout(400);
     const st = await page.evaluate(() => ({ msg: document.getElementById('tg-status').textContent, tg: JSON.parse(localStorage.getItem('scalpdesk.channels.v1')).tg }));
-    check('„→ Kursalarm“ auf ein Gruppen-Thema: die Sicherung bleibt im bisherigen Chat, dort als Sicherungschat eingetragen (mit Hinweis)', st.tg.chat === GROUP && st.tg.thread === '12' && st.tg.bchat === CHAT && st.tg.bthread === '' && !st.tg.btoken && /Datensicherung bleibt im bisherigen Chat/.test(st.msg),
+    check('„→ Kursalarm“ auf ein Gruppen-Thema: die Sicherung bleibt im bisherigen Chat, ihrem eingetragenen Sicherungschat (mit Hinweis; seit 3.33.0 beim ersten Start ausdrücklich eingetragen)', st.tg.chat === GROUP && st.tg.thread === '12' && st.tg.bchat === CHAT && st.tg.bthread === '' && !st.tg.btoken && /Datensicherung bleibt in ihrem eingetragenen Sicherungschat/.test(st.msg),
       JSON.stringify({ chat: st.tg.chat, thread: st.tg.thread, bchat: st.tg.bchat, msg: st.msg }));
     await page.click('#chan-done'); await h.ctl('/tgmulti?on=0');
     b = await sendNow(page); d = await docs(CHAT, B1);
@@ -69,8 +69,14 @@ const sendNow = async page => { const t0 = Date.now(); await page.evaluate(() =>
     const test = await until(async () => (await sent(t0)).find(m => !m.method && m.text), 8000);
     check('… „Test senden“ (Kursalarm) geht weiter über Bot 1', test?.bot === B1 && test.chat_id === CHAT, `${test?.bot}`);
     await page.click('#tg-detect'); await page.waitForTimeout(1500);
-    const rows = await page.evaluate(() => [...document.querySelectorAll('#tg-found .tg-found-row')].map(r => ({ t: r.querySelector('.tg-found-name').textContent, n: r.querySelectorAll('button').length })));
-    check('„Chat-ID ermitteln“ listet auch den Chat des Sicherungs-Bots – nur mit „→ Sicherungschat“', rows.some(r => /über @test_sicherung_bot/.test(r.t) && r.n === 1) && rows.some(r => !/über @/.test(r.t) && r.n === 2), JSON.stringify(rows));
+    const rows = await page.evaluate(() => [...document.querySelectorAll('#tg-found .tg-found-row')].map(r => ({ t: r.querySelector('.tg-found-name').textContent, n: r.querySelectorAll('button').length, b: [...r.querySelectorAll('button')].map(x => x.textContent.trim()).join('|') })));
+    check('„Chat-ID ermitteln“ listet auch den Chat des Sicherungs-Bots – nur mit „→ Sicherungschat“ und (3.33.0) „→ Trades“, ohne „→ Kursalarm“', rows.some(r => /über @test_sicherung_bot/.test(r.t) && r.n === 2 && r.b === '→ Sicherungschat|→ Trades') && rows.some(r => !/über @/.test(r.t) && r.n === 3), JSON.stringify(rows));
+    // 3.33.0: „→ Trades“ nimmt genau den Bot, der den Chat gefunden hat (leer = wie die Sicherung)
+    const pickT = async via => { await page.evaluate(v => [...document.querySelectorAll('#tg-found .tg-found-row')].find(r => /über @/.test(r.querySelector('.tg-found-name').textContent) === v && !r.dataset.used)?.querySelectorAll('button')[v ? 1 : 2].click(), via); await page.waitForTimeout(300); return page.evaluate(() => JSON.parse(localStorage.getItem('scalpdesk.channels.v1')).tg); };
+    let tt = await pickT(false);
+    check('„→ Trades“ beim Haupt-Bot mit eigenem Sicherungs-Bot: Haupt-Bot ausdrücklich als Trades-Bot eingetragen', tt.tchat && tt.ttoken.startsWith('123456789:'), JSON.stringify({ tchat: tt.tchat, ttoken: tt.ttoken.slice(0, 9) }));
+    await page.click('#tg-detect'); await page.waitForTimeout(1500); tt = await pickT(true);
+    check('„→ Trades“ beim Chat des Sicherungs-Bots: Trades-Bot leer (= Sicherungs-Bot)', tt.tchat && tt.ttoken === '' && tt.btoken.startsWith('555666777:'), JSON.stringify({ tchat: tt.tchat, ttoken: tt.ttoken.slice(0, 9) }));
     const sum = await page.evaluate(() => document.getElementById('chan-summary').textContent);
     check('Übersicht: „Sicherung: eigener Bot“', /Sicherung: eigener Bot/.test(sum), sum);
     check('Keine Fehler (3)', !errors.length, errors.join(' | ')); await ctx.close();

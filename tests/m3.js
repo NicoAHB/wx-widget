@@ -211,7 +211,7 @@ const tests = {
     let sent = await sentWait(s => s.length >= 2, 8000);
     check('Stop-Loss an Telegram und Discord', sent.filter(x => /🛑 ETH Long: Stop-Loss erreicht/.test(x.text || x.content || '')).length === 2, JSON.stringify(sent.map(x => (x.text || x.content || '').split('\n')[0])));
     await h.sleep(2000); sent = await h.ctl('/sent');
-    check('Solange der Kurs unter dem Stop bleibt: keine Wiederholung', sent.length === 2, String(sent.length));
+    check('Solange der Kurs unter dem Stop bleibt: keine Wiederholung', sent.length === 2, String(sent.length) + ' ' + JSON.stringify(sent.map(x => ({ svc: x.svc, m: x.method, t: (x.text || x.content || x.caption || '').slice(0, 50), chat: x.chat_id }))));
     await page.click('.toast.sl button'); await h.ctl('/set?symbol=ETHUSDT&price=2495'); await h.sleep(2500);
     await h.ctl('/set?symbol=ETHUSDT&price=2470');
     sent = await sentWait(s => s.length >= 4, 8000);

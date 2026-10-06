@@ -7425,12 +7425,18 @@ function fillChanForm() {
   renderChanStatus(); renderPulseInfo();
 }
 function readChanForm() {
+  const was = tgDest('backup'), sameBot = !chan.tg.btoken;
   chan = { tg: { token: $('tg-token').value.trim(), chat: $('tg-chat').value.trim(), thread: $('tg-thread').value.trim(), bchat: $('tg-bchat').value.trim(), bthread: $('tg-bthread').value.trim(), btoken: $('tg-btoken').value.trim(),
       tchat: $('tg-tchat').value.trim(), tthread: $('tg-tthread').value.trim(), ttoken: $('tg-ttoken').value.trim() }, dc: { url: $('dc-url').value.trim(), on: $('dc-on').checked },
     ev: { alarm: $('chan-ev-alarm').checked, pos: $('chan-ev-pos').checked, day: $('chan-ev-day').checked, news: $('chan-ev-news').checked, pnl: $('chan-ev-pnl').checked, pulse: $('chan-ev-pulse').checked }, tgt: { ...chan.tgt }, mig33: true };
-  // 3.33.0 (G05): Die Sicherung hat immer einen ausdrücklich eingetragenen Chat – sie folgt einer Änderung am Kursalarm nicht mehr
+  // 3.33.0 (G05): Die Sicherung hat immer einen ausdrücklich eingetragenen Chat – sie folgt einer Änderung am Kursalarm nicht mehr.
+  // Lief sie über denselben Bot wie Kursalarm und wechselt dieser Bot, bleibt sie beim bisherigen Bot (wie seit 3.25.0): Nur er
+  // kann ihre Datei ersetzen. Der bisherige Bot wird dafür ausdrücklich als eigener Sicherungs-Bot eingetragen.
+  const t = chan.tg, kept = !!was && sameBot && !t.btoken && t.bchat === was.chat && (t.bthread || '') === (was.thread || '') && was.token !== t.token && tgbHasMsg(tgKey(was));
+  if (kept) { t.btoken = was.token; $('tg-btoken').value = t.btoken; }
   saveChannels(); renderChanStatus(); if (typeof renderTgc === 'function') renderTgc();
-  return false;
+  if (kept) chanMsg('tg', true, 'Bot für Kursalarm geändert – die Datensicherung bleibt beim bisherigen Bot (jetzt als eigener Sicherungs-Bot eingetragen), damit sie ihre Datei weiter ersetzt.');
+  return kept;
 }
 function openChan() {
   closeMenus(); fillChanForm();
@@ -7488,7 +7494,8 @@ function renderTgFound(list) {
   box.replaceChildren(...list.map(x => {
     const row = el('div', 'tg-found-row'), a = btn('button ghost', '→ Kursalarm'), b = btn('button ghost', '→ Sicherungschat'), c = btn('button ghost', '→ Trades'), name = `${x.name}${x.topic ? ` › ${x.topic}` : ''}`;
     a.addEventListener('click', () => { $('tg-chat').value = x.chat; $('tg-thread').value = x.thread; readChanForm(); chanMsg('tg', true, `Kursalarm: ${name}.${tgDest('backup') ? ' Die Datensicherung bleibt in ihrem eingetragenen Sicherungschat.' : ''}`); });
-    c.addEventListener('click', () => { $('tg-tchat').value = x.chat; $('tg-tthread').value = x.thread; if (!x.only) $('tg-ttoken').value = ''; readChanForm(); chanMsg('tg', true, `Trades: ${name}${x.via ? ` (über @${x.via})` : ''}.`); });
+    // Trades: genau der Bot, der den Chat gefunden hat – leer heißt „wie die Sicherung“, also beim Haupt-Bot mit eigenem Sicherungs-Bot ausdrücklich eintragen
+    c.addEventListener('click', () => { $('tg-tchat').value = x.chat; $('tg-tthread').value = x.thread; $('tg-ttoken').value = x.only || !$('tg-btoken').value.trim() ? '' : $('tg-token').value.trim(); readChanForm(); chanMsg('tg', true, `Trades: ${name}${x.via ? ` (über @${x.via})` : ''}.`); });
     // Ziel ist genau der gelistete Chat samt Bot: über den Haupt-Bot gefunden → ohne eigenen Sicherungs-Token
     b.addEventListener('click', () => { $('tg-bchat').value = x.chat; $('tg-bthread').value = x.thread; if (!x.only) $('tg-btoken').value = ''; readChanForm(); chanMsg('tg', true, `Sicherungschat: ${name}${x.via ? ` (über @${x.via})` : ''}.`); });
     row.append(el('span', 'tg-found-name', `${name} · ID ${x.chat}${x.thread ? ` · Thema ${x.thread}` : ''}${x.via ? ` · über @${x.via}` : ''}`), ...(x.only ? [b, c] : [a, b, c])); return row;

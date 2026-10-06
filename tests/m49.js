@@ -44,13 +44,13 @@ const tests = {
       svc = startService(dir, KURS); await h.sleep(1000);
       const t0 = Date.now(), { ctx, page, errors } = await openApp(browser, P0);
       const st = await until(async () => { const t = await page.textContent('#s247-status'); return /^Übergeben ✓ vom Dienst bestätigt/.test(t) ? t : null; }, 40000, 500);
-      check('App zeigt ohne Tippen „Übergeben ✓ vom Dienst bestätigt um … (1 Alarm, 0 Positionen · Dienst 1.4.0)“', !!st && /^Übergeben ✓ vom Dienst bestätigt um \d\d:\d\d \(1 Alarm, 0 Positionen · Dienst 1\.4\.0\)\./.test(st) && /auch bei geschlossener App/.test(st), (st || await page.textContent('#s247-status')).slice(0, 140));
+      check('App zeigt ohne Tippen „Übergeben ✓ vom Dienst bestätigt um … (1 Alarm, 0 Positionen · Dienst x.y.z)“', !!st && /^Übergeben ✓ vom Dienst bestätigt um \d\d:\d\d \(1 Alarm, 0 Positionen · Dienst \d+\.\d+\.\d+\)\./.test(st) && /auch bei geschlossener App/.test(st), (st || await page.textContent('#s247-status')).slice(0, 140));
       check('… innerhalb von 30 Sekunden nach dem Einschalten', !!st && Date.now() - t0 < 30000, `${Math.round((Date.now() - t0) / 1000)} s`);
       const ack = (await sentTg(t0)).filter(m => /^✅ 24\/7-Dienst hat übernommen/.test(m.text || ''));
       check('Telegram: Bestätigung „✅ 24/7-Dienst hat übernommen“ mit dem Alarm, lautlos, vom Bot der App', ack.length === 1 && ack[0].disable_notification === true && ack[0].bot === 123456789 && ack[0].text.includes(`• Kurs-Alarm BTC auf/über ${(P0 + 50).toLocaleString('de-DE', { minimumFractionDigits: 2 })} USDT`) && /auch bei geschlossener App\.$/.test(ack[0].text), ack[0]?.text.replace(/\n/g, ' ⏎ '));
       const L = () => svc.log.join('\n');
       check('Protokoll: gestartet · Bot · Chat, Übergabe erhalten, Alarme geladen, Kursprüfung, Bestätigung eingetragen und gesendet',
-        /1\.4\.0 gestartet · Bot @test_kursalarm_bot \(ID 123456789\) · Chat 987654321/.test(L()) && /\nÜbergabe erhalten: Nachricht #\d+ · App /.test(L()) && /\nAlarme geladen: 1 Alarm, 0 Positionen – Kurs-Alarm BTC auf\/über /.test(L())
+        / \d+\.\d+\.\d+ gestartet · Bot @test_kursalarm_bot \(ID 123456789\) · Chat 987654321/.test(L()) && /\nÜbergabe erhalten: Nachricht #\d+ · App /.test(L()) && /\nAlarme geladen: 1 Alarm, 0 Positionen – Kurs-Alarm BTC auf\/über /.test(L())
         && /\nKursprüfung: Kurs-Alarm BTC auf\/über .* – Kurs .*, noch 0,0\d % entfernt/.test(L()) && /\nBestätigung eingetragen: /.test(L()) && /\nBestätigung an Telegram gesendet: 1 Marke beobachtet/.test(L()), svc.log.slice(0, 8).join(' | ').slice(0, 400));
       check('keine Fehler (App)', !real(errors).length, real(errors).join(' | ').slice(0, 200));
       // App schließen, dann erreicht der Kurs den Alarm
@@ -64,7 +64,7 @@ const tests = {
       check('Protokoll: „Alarm ausgelöst“ und „Telegram gesendet“', /\nAlarm ausgelöst: Kurs-Alarm BTC auf\/über .* \(Kurs .*\)/.test(L()) && /\nTelegram gesendet: Kurs-Alarm BTC \(Nachricht #\d+\)/.test(L()), svc.log.filter(l => /^(Alarm|Telegram)/.test(l)).join(' | '));
       const sr = statusRun(dir);
       check('--status (sudo scalpdesk-247 status): Bot, Chat, Datei, Bestätigung, beobachtete Marken, „alles in Ordnung“', sr.code === 0 && /✓ Bot @test_kursalarm_bot \(ID 123456789\)/.test(sr.out) && /✓ Datei der App angeheftet/.test(sr.out)
-        && /✓ Vom Dienst bestätigt: „Dienst: aktiv · .* · v1\.4\.0 · #\w+ übernommen“/.test(sr.out) && /• Zustand: zuletzt zugestellt .* \(Kurs-Alarm BTC\)/.test(sr.out) && /Ergebnis: alles in Ordnung\./.test(sr.out), sr.out.split('\n').slice(0, 9).join(' | ').slice(0, 500));
+        && /✓ Vom Dienst bestätigt: „Dienst: aktiv · .* · v\d+\.\d+\.\d+ · #\w+ übernommen“/.test(sr.out) && /• Zustand: zuletzt zugestellt .* \(Kurs-Alarm BTC\)/.test(sr.out) && /Ergebnis: alles in Ordnung\./.test(sr.out), sr.out.split('\n').slice(0, 9).join(' | ').slice(0, 500));
       check('Kein Token im Protokoll und in der Ausgabe von --status', !L().includes(KURS.split(':')[1]) && !sr.out.includes(KURS.split(':')[1]));
     } finally { svc?.kill(); }
   },
