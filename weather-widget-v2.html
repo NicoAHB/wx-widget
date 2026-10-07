@@ -2849,7 +2849,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Alle Werte liegen zusätzlich im Arbeitsspeicher und sind dadurch synchron lesbar. Schreiben geht sofort in den
 // localStorage und gebündelt in die IndexedDB; beim Start gewinnt die zuletzt vollständig geschriebene Kopie.
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
-const APP_VERSION = '3.41.0', docEl = document.documentElement;
+const APP_VERSION = '3.42.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -11723,7 +11723,7 @@ var TGT = [
   { id: 'backup', name: 'Sicherung', icon: '💾', purpose: 'Datensicherung – nur aus der App, nie über den Dienst' },
   { id: 'course-alert', name: 'Kursalarm', icon: '🔔', purpose: 'Kurs-Alarme, Stop/Ziel, Gewinn/Verlust, Tages-Limit, Termine, BTC-Puls' },
   { id: 'trades', name: 'Trades', icon: '📊', purpose: 'Ein Bild je vollständig geschlossener Position – nur aus der App, nie über den Dienst' },
-  { id: 'patterns', name: 'Chartmuster', icon: '📐', purpose: 'Wichtige bestätigte Formationen aus „KI“ (live, Regelgüte ≥ 80 %) – aus der App, solange sie offen ist' }];
+  { id: 'patterns', name: 'Chartmuster', icon: '📐', purpose: 'Wichtige bestätigte Formationen (Regelgüte ≥ 80 %) – mit übernommener Vorauswahl auch bei geschlossener App' }];
 var SVC_KEY = 'scalpdesk.svc.v1', POL_KEY = 'scalpdesk.policy.v1', SVC_URL_RE = /^(https:\/\/[a-z0-9.-]+|http:\/\/(127\.0\.0\.1|localhost))(:\d{1,5})?$/, SVC_KEY_RE = /^[A-Za-z0-9_-]{32,64}$/, SVC_POLL = 60e3;
 var svc = { cfg: null, pol: null, reach: null, at: 0, err: '', pending: null, notice: '', busy: false, ptimer: 0, events: [], eps: {}, ver: '', first: null };
 svc.cfg = loadSvc(); svc.pol = loadPol();
@@ -11752,7 +11752,7 @@ async function svcFetch(path, { method = 'GET', body = null, timeout = 8000 } = 
   if (r.status === 429) throw Object.assign(new Error('Zu viele falsche Zugangsschlüssel – bitte eine Minute warten.'), { auth: true });
   return { status: r.status, j };
 }
-const svcConf = j => ({ rev: j.rev, targets: j.targets, at: Date.now(), v: j.v || svc.ver });
+const svcConf = j => ({ rev: j.rev, targets: j.targets, patternWatch: j.patternWatch || null, at: Date.now(), v: j.v || svc.ver });
 // Stand am Dienst lesen: Schalter, Episoden, Ereignisse (Abgleich beim Start, siehe svcReconcile); offenen Auftrag klären
 async function svcRefresh(force = false) {
   if (!svcOn() || (svc.busy && !force)) return null;
@@ -12829,6 +12829,18 @@ function patTgText(c, h) {
 }
 async function patNotify(c, h) {
   if (!tgtReady('patterns')) return;
+  // 3.42.0 (G09 C6b): nach bestätigter Dienstübergabe ist ausschließlich Oracle Mustersender.
+  // Bei Netzfehler kein lokaler Ersatzversand: der Dienst könnte dieselbe Formation bereits senden.
+  const watch = svcOn() ? svc.pol.conf?.patternWatch : null;
+  if (watch?.config) {
+    const dest = tgDest('patterns'), cfg = watch.config;
+    if (!dest || dest.chat !== cfg.chat || dest.thread !== cfg.thread || tgBot(dest.token) !== cfg.bot) { patSvcMessage('Musterziel geändert – erst am Dienst übernehmen.'); return; }
+    try { const { status, j } = await svcFetch('/v1/patterns/notify', { method: 'POST', body: { expectedRevision: watch.rev, c, levels: h.levels || {} } });
+      if (status !== 200 || !j?.ok) throw new Error(j?.error || `Fehler ${status}`);
+      pat.tgLog = [{ ev: `pat:${c.id}`, st: j.st || j.reason, at: Date.now() }, ...(pat.tgLog || [])].slice(0, 20);
+    } catch (e) { patSvcMessage(`Musterzustellung unbestätigt: ${e.message}. Kein Ersatzversand aus der App.`); }
+    return;
+  }
   const ev = `pat:${c.id}`; if (!(await store.claim(`ev:${ev}`, 14 * 864e5))) return;
   const text = patTgText(c, h), coord = svcOn() && !!svc.pol.conf?.targets?.patterns;   // Dienst ab 2.2.0 kennt das Ziel
   let fallback = !coord;
@@ -12977,7 +12989,49 @@ window.__g06 = { timgData: id => timgData(id), timgRange: d => timgRange(d), tgt
 window.__g05 = { get state() { return state; }, get chan() { return chan; }, get svc() { return svc; }, get svcLog() { return svcLog; }, get chanState() { return chanState; },
   readChanForm, saveChannels, sendTgBackup, notifyChannels, svcRefresh, alarmSub, persist, renderAlarms, syncStreams, tgTarget, backupPayload, alarmEventId };
 // Sekundentakt: mit Dienst jede Minute den bestätigten Stand lesen (andere Geräte, Neustart des Dienstes)
-function svcTick(now) { if (svcOn() && !svc.busy && !document.hidden && now - svc.at > SVC_POLL) void svcRefresh(); }
+function svcTick(now) { if (svcOn() && !svc.busy && !document.hidden && now - svc.at > SVC_POLL) void svcRefresh(); if (typeof patSvcRender === 'function') patSvcRender(); }
+// ---- 3.42.0 (G09 C6b): Vorauswahl bewusst per HTTPS übernehmen; nur Metadaten, keine Bot-Token ----
+var patSvcBusy = false, patSvcNote = '';
+function patSvcMessage(text) { patSvcNote = text; patSvcRender(); }
+function patSvcConfig() {
+  const dest = tgDest('patterns');
+  if (!dest) throw new Error('Chartmuster-Chat zuerst einrichten.');
+  const iv = wlSpan().iv, items = state.watch.map(wlSym).map(sym => {
+    const e = wl.c.get(sym);
+    if (!e?.at || e.loading || e.error || e.iv !== iv) throw new Error('Vorauswahl noch nicht vollständig geladen – später erneut übernehmen.');
+    return { sym, mkt: e.market, iv };
+  }).sort((a, b) => `${a.mkt}|${a.sym}|${a.iv}`.localeCompare(`${b.mkt}|${b.sym}|${b.iv}`));
+  return { model: 'pat-1', gap: false, chat: dest.chat, thread: dest.thread, bot: tgBot(dest.token), items };
+}
+function patSvcRender() {
+  const status = $('pat-svc-status'), button = $('pat-svc-apply'); if (!status || !button) return;
+  const watch = svcOn() ? svc.pol.conf?.patternWatch : null; let same = false, reason = '';
+  try { same = !!watch?.config && JSON.stringify(watch.config) === JSON.stringify(patSvcConfig()); } catch (e) { reason = e.message; }
+  const text = patSvcBusy ? 'Wird am Dienst übernommen …' : patSvcNote || (!svcOn() ? 'Ohne HTTPS-Dienst: Meldungen nur aus der offenen App.' : !watch ? 'Dienst prüfen/auf 2.4.0 aktualisieren.' : same ? `Übernommen · Revision ${watch.rev} · ${watch.config.items.length} Märkte · ${tgtOn('patterns') ? 'Chartmuster an' : 'Chartmuster aus'}` : `Noch nicht synchronisiert. ${reason || 'Vorauswahl, Zeitraum oder Chat bewusst übernehmen.'}`);
+  if (status.textContent !== text) status.textContent = text;
+  button.disabled = patSvcBusy || !svcOn();
+}
+async function patSvcApply() {
+  if (patSvcBusy || !svcOn()) return;
+  patSvcBusy = true; patSvcNote = ''; patSvcRender();
+  try {
+    readChanForm(); if (!tgOk(chan.tg)) throw new Error('Telegram-Einstellungen prüfen.');
+    if (!svc.pol.conf?.patternWatch) await svcRefresh(true);
+    const watch = svc.pol.conf?.patternWatch; if (!watch) throw new Error('Dienst auf 2.4.0 aktualisieren und erneut prüfen.');
+    const config = patSvcConfig(), key = 'scalpdesk.patwatch.pending.v1', previous = store.get(key), content = JSON.stringify(config);
+    let cmd = previous?.url === svc.cfg.url && previous.content === content ? previous.cmd : null;
+    if (!cmd) cmd = { commandId: `pat-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`, expectedRevision: watch.rev, config };
+    store.set(key, { url: svc.cfg.url, content, cmd });
+    const { status, j } = await svcFetch('/v1/patterns/watch', { method: 'POST', body: cmd });
+    if (j?.patternWatch) { svc.pol.conf.patternWatch = j.patternWatch; savePol(); }
+    if (status === 409) { store.del(key); throw new Error(j.error); }
+    if (status !== 200 || !j?.ok) { if (status < 500) store.del(key); throw new Error(j?.error || `Fehler ${status}`); }
+    store.del(key); patSvcNote = ''; await svcRefresh(true);
+  } catch (e) { patSvcNote = e.message; }
+  finally { patSvcBusy = false; patSvcRender(); }
+}
+$('pat-svc-apply').addEventListener('click', () => void patSvcApply());
+Object.assign(window.__g09, { patSvcConfig: () => patSvcConfig(), patSvcApply: () => patSvcApply(), patNotify: (c, h) => patNotify(c, h) });
 // ---------- 3.34.0 (G06): Trade-Bild – eine geschlossene Position als genau ein Telegram-Foto ----------
 // Erst bucht die App den vollständigen Abschluss dauerhaft (saveClose, persist), dann entsteht daraus EIN Bild (Canvas 1080×1440)
 // an das Ziel „Trades“ – ohne Bildunterschrift, ohne Begleittext, nur aus der App, nie über den 24/7-Dienst.
@@ -13951,9 +14005,11 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
           <div class="tg-target trades"><p><b>📊 Trades</b> <small>ein Bild je vollständig geschlossener Position (ohne Text) · nur aus der App, nie über den 24/7-Dienst</small></p>
             <div class="tg-ids"><label>Chat-ID<span class="input-wrap"><input id="tg-tchat" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="Chat-ID für Trades"></span></label><label>Thema <small>(optional)</small><span class="input-wrap"><input id="tg-tthread" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="—"></span></label></div>
             <label>Eigener Bot-Token <small>(optional)</small><span class="input-wrap"><input id="tg-ttoken" type="password" autocomplete="off" spellcheck="false" placeholder="leer = derselbe Bot wie die Sicherung"></span></label></div>
-          <div class="tg-target patterns"><p><b>📐 Chartmuster</b> <small>wichtige bestätigte Formationen aus „KI“ (live, Regelgüte ≥ 80 %, gerade bestätigt) · nur aus der App, solange sie offen ist</small></p>
+          <div class="tg-target patterns"><p><b>📐 Chartmuster</b> <small>wichtige bestätigte Formationen aus „KI“ (live, Regelgüte ≥ 80 %, gerade bestätigt) · mit Dienstübergabe auch bei geschlossener App</small></p>
             <div class="tg-ids"><label>Chat-ID<span class="input-wrap"><input id="tg-pchat" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="Chat-ID für Chartmuster"></span></label><label>Thema <small>(optional)</small><span class="input-wrap"><input id="tg-pthread" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="—"></span></label></div>
-            <label>Eigener Bot-Token <small>(optional)</small><span class="input-wrap"><input id="tg-ptoken" type="password" autocomplete="off" spellcheck="false" placeholder="leer = derselbe Bot wie Kursalarm"></span></label></div>
+            <label>Eigener Bot-Token <small>(optional)</small><span class="input-wrap"><input id="tg-ptoken" type="password" autocomplete="off" spellcheck="false" placeholder="leer = derselbe Bot wie Kursalarm"></span></label>
+            <p class="muted">Der Dienst prüft die Coins der Vorauswahl im Kerzenintervall ihres gewählten Zeitraums, im Krypto-Modus ohne strenge Gaps. Änderungen erst bewusst übernehmen. Ein eigener Bot muss zusätzlich am Server eingerichtet sein; Token werden nicht übertragen.</p>
+            <button type="button" class="button ghost" id="pat-svc-apply">Vorauswahl am Dienst übernehmen</button><p class="muted" id="pat-svc-status" role="status" aria-live="polite"></p></div>
         </fieldset>
         <div class="tg-found" id="tg-found" hidden></div>
         <div class="row"><button type="button" class="button ghost" id="tg-detect">Chat-ID ermitteln</button><button type="button" class="button primary-lite" id="tg-test">Test senden</button><button type="button" class="button ghost" id="tg-testall">Test je Nachrichtenart</button><button type="button" class="button ghost" id="tg-tgc">Chats ein/aus …</button></div>

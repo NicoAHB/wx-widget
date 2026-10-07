@@ -374,7 +374,10 @@ const tests = {
     const g = await center(page, '#watchlist .wl-grip[data-coin="ETC"]'), f = await center(page, T('BCH'));
     await page.mouse.move(g.x, g.y); await page.mouse.down(); for (let i = 1; i <= 10; i++) { await page.mouse.move(g.x + (f.x - g.x) * i / 10, g.y + (f.y - g.y) * i / 10); await page.waitForTimeout(25); } await page.mouse.up(); await page.waitForTimeout(400);
     check('Griff ⠿ ziehen (ohne Halten): ETC ganz nach vorn', await order(page) === 'ETC,BCH,BTC,XRP,NEAR,LTC', await order(page));
-    await page.click('#watchlist [data-unwatch="BTC"]'); await page.waitForTimeout(300); // echter Klick gleich nach dem Ziehen
+    // Erst nach der bestehenden 450-ms-Sperre klicken; Chromium erzeugt beim Griffziehen nicht immer einen Loslass-Klick,
+    // der die Sperre vorzeitig aufhebt. Sonst wird dieser echte Klick verschluckt und vier Folgeprüfungen scheitern.
+    await page.waitForFunction(() => performance.now() >= wlNoClickUntil);
+    await page.click('#watchlist [data-unwatch="BTC"]'); await page.waitForTimeout(300);
     check('Entfernen: Rest behält seine Reihenfolge', await order(page) === 'ETC,BCH,XRP,NEAR,LTC', await order(page));
     await jsClick(page, '#watchlist [data-watchedit]'); await page.waitForTimeout(200);
     await load(page, 'SOL'); await jsClick(page, '#watchlist [data-addwatch="SOL"]'); await page.waitForTimeout(300);

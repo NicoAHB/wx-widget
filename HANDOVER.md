@@ -32,6 +32,7 @@ die App übergibt Alarme zusätzlich als angeheftete Telegram-Datei. Testzugäng
   Veröffentlichungen: 3.35.0 G07 (PR #58) · 3.36.0 G08 (PR #59) · 3.37.0–3.40.0 G09 (PR #60–#63) · 3.41.0 Optimierungen 1–9 + Übergabe (PR #64, Merge-Commit `aa23c42`, live auf GitHub Pages).
 - **Branch-Ablauf bisher:** Arbeit auf `claude/scalp-desk-g03-j81c8k`, je Release ein Pull Request nach `main`, Merge-Commit, danach den Branch neu von `main` starten.
   ChatGPT darf einen eigenen Branch nutzen (z. B. `chatgpt/g10`), Ablauf gleich.
+- **Aktuelle C6b-Arbeit:** `codex/g09-c6b`, kleine getrennte Commits für Engine/Marktvertrag, Dienst/Installer und App/Übergabe. `APP_VERSION` und `sw.js` gemeinsam auf 3.42.0; keine Veröffentlichung vor Gruppenfreigabe.
 - **Dienst auf der VM:** läuft beim Nutzer evtl. noch mit einer älteren Version. Für Archiv, Chartmuster-Ziel und Alarm bei Kerzenschluss braucht er 2.3.0 (`server/README.md`).
 
 ## 3. Offene Schritte (empfohlene Reihenfolge)

@@ -10,10 +10,10 @@ Automatische Tests für die App (`weather-widget-v2.html`) und den 24/7-Dienst (
 ## Aufruf
 | Befehl | Was er tut | Dauer |
 |---|---|---|
-| `bash run-all.sh` | alle Tests nacheinander (Einheitentests, Installer, m3–m51, ui, functional, Statusseite, Rauchtest, Sichtprüfung) | etwa 2,5 Stunden |
+| `bash run-all.sh` | alle Tests nacheinander (Einheitentests, Installer, m3–m60, ui, functional, Statusseite, Rauchtest, Sichtprüfung) | etwa 2,5 Stunden |
 | `node m51.js` | ein einzelner Test, hier G02 (Lose, Nachkauf, Teilabschluss) | wenige Minuten |
 | `node m51.js svc` | nur ein Abschnitt eines Tests | |
-| `bash lint.sh` | ESLint über das App-Modul (Erwartung: 0 Fehler, 4 bekannte Warnungen) | Sekunden |
+| `bash lint.sh` | ESLint über das App-Modul (Erwartung: 0 Fehler, 3 bekannte Warnungen) | Sekunden |
 
 Ausgabe je Test: `✓`/`✗` je Prüfung und am Ende `n/m bestanden`.
 
@@ -28,5 +28,11 @@ Ausgabe je Test: `✓`/`✗` je Prüfung und am Ende `n/m bestanden`.
 - **Programmteile in `js/`:** Einige Einheitentests prüfen Teile, die als Kopie hier liegen (`js/*.js`: 24/7-Übergabe, Countdown, Coin-News, Kalender, Hoch/Tief, Volatilität, Vorauswahl, BTC-Puls). Ändert eine Gruppe einen dieser Programmteile in der App, auch die Kopie anpassen.
   - **Direkt aus der App:** Die übrigen Einheitentests lesen ihren Teil direkt aus `weather-widget-v2.html` bzw. `server/`.
 - **Installer:** `inst-247.sh` testet `server/install.sh` mit nachgebautem systemd.
+- **G09 C6b:** `unit-247e.js` prüft Engine-Gleichheit, alle 19 Formationen, Dienstversand ohne App, Fall-ID, Revision, Epoche, Prozessabbruch und Neustart. `m60.js` prüft bewusste HTTPS-Übernahme, Konflikt/Retry, geheimnisfreie Metadaten und keinen Ersatzversand. Beide stehen vorn in `run-all.sh`.
 - **Oberfläche:** `m*.js`, `ui.js`, `functional.js`, `smoke.js`, `visual.js`, `statuscheck.js` laufen im Browser.
 - **Erzeugte Dateien:** Zwischenstände (`*.json`) und Bilder (`*.png`) entstehen beim Lauf und sind von git ausgenommen (`.gitignore`).
+
+### Angepasste ältere Tests (3.42.0)
+- `unit-247d.js`: erwartete Dienstversion von 2.3.0 auf 2.4.0 erhöht; fachliche Schlussalarm-Prüfungen unverändert.
+- `inst-247.sh`: Installation und Importierbarkeit der beiden neuen Muster-Module zusätzlich geprüft. Benutzer-ID wie die vorhandenen Systemaufrufe nachgebaut, damit der isolierte Test auch als Nicht-root läuft; echte Ablehnung ohne Rootrecht zusätzlich geprüft.
+- `m53.js`: Nach dem Griffziehen wartet der Entfernen-Klick auf das Ende der vorhandenen 450-ms-Klicksperre statt nur 400 ms. Die Watchlist-Funktion bleibt unverändert.
