@@ -4,13 +4,30 @@ import { evaluateLive } from './confluence-live.mjs';
 import { captureObservation } from './confluence-replay.mjs';
 import { saveObservation } from './confluence-replay-store.mjs';
 import { runHistoricalBacktest } from './confluence-history.mjs';
+import { loadPo3Phase } from './po3-feed.mjs';
+import { readPo3State, changePo3State, importPo3Csv, exportPo3Csv, mergePo3Journal } from './po3-store.mjs';
 const client = createBitgetPublicClient();
 let running = null;
 globalThis.onmessage = async ({ data: job }) => {
   if (job?.type === 'cancel') { running?.controller.abort(); return; }
-  if (!['load', 'backtest'].includes(job?.type) || !Number.isSafeInteger(job.id) || running) return;
+  if (!['load', 'backtest', 'po3', 'po3-journal'].includes(job?.type) || !Number.isSafeInteger(job.id) || running) return;
   const controller = new AbortController(); running = { id: job.id, controller };
   try {
+    if (job.type.startsWith('po3')) {
+      let root = await readPo3State(), result = null, csv = null;
+      if (job.request.action === 'pending') { globalThis.postMessage({ id: job.id, po3: { pending: root.journal.filter(x => x.modelVersion === 'po3-1' && ['Aktiv', 'Offen'].includes(x.status)).map(x => x.instrument) } }); return; }
+      if (job.type === 'po3') {
+        result = await loadPo3Phase({ client, ...job.request, saved: root.streams[job.request.instrument] ?? null, journal: root.journal, signal: controller.signal });
+        controller.signal.throwIfAborted(); root = await changePo3State(root.revision, state => ({ ...state, journal: result.journal, streams: { ...state.streams, [job.request.instrument]: result.stream } }));
+      } else if (job.request.action === 'export') csv = exportPo3Csv(root.journal);
+      else if (job.request.action === 'import') root = await changePo3State(root.revision, state => ({ ...state, journal: importPo3Csv(job.request.csv, state.journal) }));
+      else if (job.request.action === 'append') root = await changePo3State(root.revision, state => ({ ...state, journal: mergePo3Journal(state.journal, job.request.journal.map(x => { const old = state.journal.find(s => s.id === x.id); return old ? { ...x, tradedByMe: old.tradedByMe } : x; }), { update: true }) }));
+      else if (job.request.action === 'clear') root = await changePo3State(root.revision, state => ({ ...state, journal: [] }));
+      else if (job.request.action === 'clear-cache') root = await changePo3State(root.revision, state => ({ ...state, streams: {} }));
+      else if (job.request.action === 'flag') root = await changePo3State(root.revision, state => ({ ...state, journal: state.journal.map(x => x.id === job.request.id ? { ...x, tradedByMe: job.request.value === true } : x) }));
+      controller.signal.throwIfAborted(); globalThis.postMessage({ id: job.id, po3: { revision: root.revision, journal: root.journal, stream: result?.stream ?? root.streams[job.request.instrument] ?? null,
+        pending: root.journal.filter(x => x.modelVersion === 'po3-1' && ['Aktiv', 'Offen'].includes(x.status)).map(x => x.instrument), complete: result?.complete, progress: result?.progress, warnings: result?.warnings ?? [], fundingReason: result?.fundingReason, csv } }); return;
+    }
     if (job.type === 'backtest') {
       const history = await runHistoricalBacktest({ client, card: job.request.card, signal: controller.signal,
         progress: progress => globalThis.postMessage({ id: job.id, progress }) });
