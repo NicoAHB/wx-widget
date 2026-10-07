@@ -20,7 +20,7 @@ Automatische Tests für die App (`weather-widget-v2.html`) und den 24/7-Dienst (
 | `node m62.js` | G10(b): Adapter-Parität, echtes Browser-fetch mit lokalen Antworten, Offline/Netzausfall | Sekunden |
 | `node unit-bitget-patterns.js` | G10(c): unveränderte G09-Engine auf Bitget, Quellenbindung, Kenntnis-/Bestätigungszeit (20 Fälle) | Sekunden |
 | `node unit-confluence-live.js` | G10(c): Long/Short einschließlich Konflikt, Referenzkurs, Anker, Kostenannahmen, Größe, Divergenz, Ablauf und ehrliche Grenzwertanzeige (46 Fälle) | Sekunden |
-| `node m63.js` | G10(c): echter App-Worker, Reiter, Badge, Infobutton, Bitget-Chart, Tabs, IndexedDB und Offline-Cache | Sekunden |
+| `node m63.js` | G10(c): echter App-Worker, Reiter, Badge, Infobutton, Bitget-Chart, Modellgrenzen, Tabs, IndexedDB und Offline-Cache (36 Fälle) | Sekunden |
 
 Ausgabe je Test: `✓`/`✗` je Prüfung und am Ende `n/m bestanden`.
 
