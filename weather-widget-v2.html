@@ -1889,7 +1889,7 @@ html{scroll-padding-top:calc(var(--lb-h,56px) + 16px)}
 </style>
   <script type="module">
 // 3.45.0 (G10c): der vorhandene Binance-/G07-Kern bleibt eigenständig.
-import { cardState as kiCardState } from './shared/confluence-live.mjs';
+import { cardState as kiCardState, scoreLabel as kiScoreLabel } from './shared/confluence-live.mjs';
 import { divergenceInfo as kiDivergenceInfo, parametersKey as kiParametersKey } from './shared/confluence-core.mjs';
 // Pure, unrounded calculations. Prices are USDT per unit; FX is USDT per EUR.
 function rsi(closes, period = 14) {
@@ -13755,7 +13755,7 @@ function kiLatest(instrument) { return ki.cards.find(c => c.scope.instrument ===
 function kiRenderCard(card, current = false) {
   const s = kiCardState(card, Date.now()), box = el('article', 'ki-card' + (s.expired ? ' expired' : '')); box.dataset.kiId = card.id;
   const head = el('div', 'ki-card-head'); head.append(el('h3', '', `${card.scope.instrument.slice(0, -4)} · ${card.scope.direction === 1 ? 'Long' : 'Short'} · ${card.scope.horizon === 'short' ? 'kurz' : 'lang'}`),
-    el('span', 'ki-tone ki-' + s.tone, `${s.label} · ${card.score.score == null ? 'nicht bewertbar' : number(card.score.score, 2) + ' / 100'}`));
+    el('span', 'ki-tone ki-' + s.tone, `${s.label} · ${kiScoreLabel(card.score.score, card.config.minimumScore)} / 100`));
   box.append(head, el('p', 'ki-note', `${card.scope.timeframe} / ${card.scope.contextTimeframe} · Bitget USDT-Futures · ${kiDate(card.decisionAt)} · Nachricht bis ${kiDate(card.expiresAt)}`),
     el('p', 'ki-tone ki-' + s.tone, s.action));
   if (!card.eligible) box.append(el('p', 'ki-note', card.reason));

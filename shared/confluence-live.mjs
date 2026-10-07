@@ -7,6 +7,13 @@ import { attachBitgetPatterns, PATTERN_ADAPTER_VERSION } from './bitget-patterns
 export const LIVE_VERSION = 'cf-live-1';
 const positive = x => Number.isFinite(x) && x > 0;
 const time = x => Number.isSafeInteger(x) && x >= 0;
+export function scoreLabel(value, minimum = 70) {
+  if (!Number.isFinite(value) || value < 0 || value > 100 || !Number.isFinite(minimum) || minimum < 70 || minimum > 100) return 'nicht bewertbar';
+  const format = x => new Intl.NumberFormat('de-DE', { maximumFractionDigits: 2 }).format(x), rounded = Number(value.toFixed(2));
+  // Anzeige darf 69,999 nicht wie einen erreichten Grenzwert aussehen lassen; Fachscore bleibt ungerundet.
+  for (const threshold of [50, minimum]) if (value < threshold && rounded >= threshold) return '< ' + format(threshold);
+  return format(value);
+}
 export function setupAnchor(base, direction, asOf, policy) {
   if (!base || ![1, -1].includes(direction) || !positive(base.price) || !positive(base.atr) || !time(asOf)) return null;
   const pivots = (base.pivots || []).filter(p => p.type === (direction === 1 ? 'low' : 'high') && p.knownAt <= asOf);

@@ -41,6 +41,11 @@ const check = (name, ok, info = '') => { ok ? pass++ : fail++; console.log(`${ok
     check('Öffnen löscht Badge und markiert dieselbe gespeicherte Karte als gelesen', await page.evaluate(() => document.getElementById('ki-unread').hidden && __g10.state.cards[0].read));
     const text = await page.textContent('#ki-list');
     check('Karte enthält Richtung, Preislevel, Einzelpunkte, Quotenstatus und ehrlichen Cross-Nullstatus', /BTC.*Long.*kurz/.test(text) && /Entry.*Stop-Loss.*Take-Profit/.test(text) && /Trend.*Setup-Zone.*RSI.*MACD.*Volumen.*Funding/.test(text) && /Cross-Liquidationspreis: nicht verfügbar/.test(text) && /90 Tage.*noch nicht ausgewertet.*2 Jahre.*noch nicht ausgewertet/.test(text));
+    const below = await page.evaluate(() => { const key = 'BTCUSDT|short', old = __g10.state.current.get(key), c = structuredClone(old[0]);
+      c.id += '|Grenzwert-Abnahme'; c.score.score = 69.999; c.score.candidate = false; c.eligible = false; c.status = 'beobachten';
+      __g10.state.current.set(key, [c]); __g10.render(); const ok = document.querySelector('#ki-current .ki-card-head .ki-tone').textContent.includes('beobachten · < 70 / 100') && __g10.state.cards.length === 1;
+      __g10.state.current.set(key, old); __g10.render(); return ok; });
+    check('Kartenanzeige rundet 69,999 nicht scheinbar auf einen Kandidaten mit 70 Punkten', below);
     await page.locator('#ki-list .ki-info > summary').first().click();
     check('Sichtbarer Infobutton erklärt Bestätigung, drei Kerzen, Restzeit und Handlung ohne Erfolgswahrscheinlichkeit', /keine Erfolgswahrscheinlichkeit/i.test(text) && /Pivot-Kerze schließt 12:00.*14:00.*17:00/.test(text) && await page.locator('#ki-list .ki-info').first().evaluate(d => d.open));
     check('Telegram-Schalter in Reiter und Einstellungen bleibt ehrlich deaktiviert bis G10(e)', await page.evaluate(() => document.getElementById('ki-telegram').disabled && document.getElementById('ki-settings-telegram').disabled));

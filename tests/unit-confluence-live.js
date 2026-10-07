@@ -8,6 +8,10 @@ const clone = x => structuredClone(x), near = (a, b) => Number.isFinite(a) && Ma
   const B = await import(pathToFileURL(path.join(__dirname, '../shared/bitget-public.mjs')));
   const { liveFixture } = await import(pathToFileURL(path.join(__dirname, 'fixtures/confluence-live.mjs')));
   const f = liveFixture(), original = JSON.stringify(f), result = L.evaluateLive(f), card = result.cards[0], HOUR = 3600e3;
+  check('Anzeige 69,999 bleibt ausdrücklich unter 70; keine scheinbar bestandene Grenzprüfung', L.scoreLabel(69.999) === '< 70' && L.scoreLabel(70) === '70');
+  check('Anzeige 49,999 bleibt ausdrücklich unter Beobachten-Grenze 50', L.scoreLabel(49.999) === '< 50' && L.scoreLabel(50) === '50');
+  check('Eigener Grenzwert wird ebenfalls nicht durch Rundung erreicht', L.scoreLabel(79.999, 80) === '< 80');
+  check('Unbekannte oder ungültige Scores werden nicht zu null Punkten', [null, undefined, NaN, -1, 101].every(v => L.scoreLabel(v) === 'nicht bewertbar'));
   check('Zwei Richtungen getrennt geprüft, ausschließlich Long mit 95 Punkten freigegeben', result.cards.length === 2 && result.eligible.length === 1 && card.score.score === 95 && result.cards[1].score.blocked);
   check('Referenzeinstieg Brief + Tickrundung nach Entscheidung, Stop 1 ATR unter EMA-Anker und mindestens 2R', card.entryAt > card.decisionAt && card.levels.entry === 100.5 && card.anchor.label === 'EMA 50' && card.levels.sl === 95 && card.levels.tp === 111.5 && card.levels.rewardRisk === 2);
   const short = clone(f); short.data.base.ema50 = 101; short.data.base.ema200 = 110; short.data.context.ema50 = 101; short.data.context.ema200 = 110;
