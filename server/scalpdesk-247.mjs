@@ -49,9 +49,9 @@ import crypto from 'node:crypto';
 import { Buffer } from 'node:buffer';
 import { fileURLToPath } from 'node:url';
 import { patternConfig, patternCandles, patternCases, patternFresh, patternText, patternEnd } from './pattern-monitor.mjs';
-import { ConfluenceService, kiMessage } from './ki-monitor.mjs';
+import { ConfluenceService, kiMessage, Po3Service, po3Message } from './ki-monitor.mjs';
 
-export const VERSION = '2.5.0';
+export const VERSION = '2.6.0';
 const E = process.env;
 // Adressen (für Tests über Umgebungsvariablen änderbar)
 export const API = {
@@ -499,6 +499,13 @@ export class Watcher {
         persist: state => this.saveKi(state), persistHistory: state => this.saveKi(state, true), notify: (card, stats, revision) => this.notifyKi(card, stats, revision) });
     } catch (e) { kiError = this.secret(e.message); this.ki = new ConfluenceService({ now, client: kiClient }); this.ki.stop(); this.ki.state.error = 'KI-Speicher prüfen: ' + kiError + '. Preisalarme laufen weiter; Originaldateien bleiben erhalten.'; }
 
+    this.po3File = statePath ? path.join(path.dirname(statePath), 'po3-public.json') : '';
+    let po3Saved = null;
+    try {
+      if (this.po3File && fs.existsSync(this.po3File)) { if (fs.statSync(this.po3File).size > 28 * 1024 * 1024) throw new Error('PO3-Speicher überschreitet 28 MiB'); po3Saved = JSON.parse(fs.readFileSync(this.po3File, 'utf8')); }
+      this.po3 = new Po3Service({ client: this.ki.client, now, saved: po3Saved, persist: state => this.savePo3(state), policy: () => this.pol.targets.ki, notify: alarm => this.notifyPo3(alarm) });
+    } catch (e) { this.po3 = new Po3Service({ client: this.ki.client, now }); this.po3.stop(); this.po3.state.error = 'PO3-Datei prüfen; Original bleibt erhalten. ' + this.secret(e.message); }
+
     // 2.1.0 (G09 C4): Muster-Archiv als eigene Datei neben dem Zustand (nicht in der Alarmkonfiguration)
     this.arch = statePath ? new PatternArchive({ file: path.join(path.dirname(statePath), 'patterns-journal.jsonl'), backupDir: process.env.SCALPDESK_PATTERN_BACKUP || path.join(path.dirname(statePath), 'muster-sicherung'), now, log: m => this.log(m) }) : null;
   }
@@ -550,10 +557,10 @@ export class Watcher {
   // Meldung in den Ausgang; sie bleibt dort (auch über Neustarts), bis Telegram sie angenommen hat. label: Art für die Zeile
   // „Zustellung: zuletzt …“, silent: ohne Ton (BTC-Puls nachts)
   // 2.0: target/epoch – Ziel und seine Epoche beim Erzeugen (vor dem Senden erneut geprüft); ev – Ereignis-ID der Freigabe
-  async queue(text, tz, { label = '', silent = false, ev = '', target = 'course-alert', destination = null } = {}) {
+  async queue(text, tz, { label = '', silent = false, ev = '', target = 'course-alert', destination = null, po3Rev = null } = {}) {
     const t = this.now(), tg = this.pol.targets[target];
     if (this.key && !tg.on) { this.log(`Nicht gesendet (Ziel Kursalarm ausgeschaltet): ${label || text.split('\n')[0]}`); return; }
-    this.out.push({ id: `${t}-${Math.random().toString(36).slice(2, 7)}`, text, tz, label, silent, at: t, tries: 0, next: 0, err: '', dc: false, target, epoch: tg.epoch, ...(destination ? { destination, watchRev: this.patternWatch.rev } : {}), ...(target === 'ki' ? { kiRev: this.ki.state.rev } : {}), ...(ev ? { ev } : {}) });
+    this.out.push({ id: `${t}-${Math.random().toString(36).slice(2, 7)}`, text, tz, label, silent, at: t, tries: 0, next: 0, err: '', dc: false, target, epoch: tg.epoch, ...(destination ? { destination, watchRev: this.patternWatch.rev } : {}), ...(target === 'ki' ? (po3Rev !== null ? { po3Rev } : { kiRev: this.ki.state.rev }) : {}), ...(ev ? { ev } : {}) });
     if (!this.saveStateNow() && ['patterns', 'ki'].includes(target)) { this.out.pop(); if (ev) this.evSet(ev, 'failed', 'Ausgang nicht dauerhaft gespeichert'); return; }
     await this.deliver();
   }
@@ -592,7 +599,7 @@ export class Watcher {
       const why = !m.code ? 'Telegram war nicht erreichbar' : m.code === 429 ? 'Telegram hatte gebremst' : 'Telegram hatte sie zuerst abgelehnt';
       const late = t - m.at > 120e3, full = `${m.text}\n${timeText(m.at, m.tz, true)} Uhr · 24/7-Dienst${late ? `\n(verspätet zugestellt um ${timeText(t, m.tz)} Uhr – ${why})` : ''}`;
       if (m.target === 'patterns' && (m.watchRev !== this.patternWatch.rev || !this.patternDestination(m.destination))) { this.out = this.out.filter(x => x !== m); if (m.ev) this.evSet(m.ev, 'discarded', 'Musterziel geändert'); this.saveState(); continue; }
-      if (m.target === 'ki' && (m.kiRev !== this.ki.state.rev || !this.ki.state.cards.some(c => 'ki:' + crypto.createHash('sha256').update(c.id).digest('hex') === m.ev && c.expiresAt > t))) { this.out = this.out.filter(x => x !== m); if (m.ev) this.evSet(m.ev, 'discarded', 'KI-Modell geändert oder Nachricht abgelaufen'); this.saveStateNow(); continue; }
+      if (m.target === 'ki' && (m.po3Rev !== undefined ? (m.po3Rev !== this.po3.state.revision || !Object.values(this.po3.state.alerts).some(a => 'po3:' + crypto.createHash('sha256').update(a.id).digest('hex') === m.ev && a.expiresAt > t)) : (m.kiRev !== this.ki.state.rev || !this.ki.state.cards.some(c => 'ki:' + crypto.createHash('sha256').update(c.id).digest('hex') === m.ev && c.expiresAt > t)))) { this.out = this.out.filter(x => x !== m); if (m.ev) this.evSet(m.ev, 'discarded', 'KI-Modell geändert oder Nachricht abgelaufen'); this.saveStateNow(); continue; }
       if (!['patterns', 'ki'].includes(m.target) && this.discord && !m.dc) { m.dc = true; await this.discordPost(full); }
       try {
         const dest = m.target === 'patterns' ? m.destination : { chat: this.chat }, token = m.target === 'patterns' ? this.patternDestination(dest) : this.token;
@@ -830,6 +837,26 @@ export class Watcher {
       fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file + '.tmp', json, { mode: 0o600 }); fs.renameSync(file + '.tmp', file); return true;
     } catch (e) { this.note('KI-Speicher', e.message); return false; }
   }
+  savePo3(state) {
+    if (!this.po3File) return false;
+    try { const json = JSON.stringify(state); if (Buffer.byteLength(json) > 28 * 1024 * 1024) throw new Error('PO3-Speicher voll; Bestand bleibt'); fs.mkdirSync(path.dirname(this.po3File), { recursive: true }); fs.writeFileSync(this.po3File + '.tmp', json, { mode: 0o600 }); fs.renameSync(this.po3File + '.tmp', this.po3File); return true; }
+    catch (e) { this.note('PO3-Speicher', e.message); return false; }
+  }
+  applyPo3Config(cmd) {
+    if (this.po3.stopped) return { status: 503, body: { ok: false, error: this.po3.state.error } };
+    if (!CMD_RE.test(cmd?.commandId)) return { status: 400, body: { ok: false, error: 'PO3-Auftrags-ID fehlt' } };
+    const previous = this.cmds.find(c => c.id === cmd.commandId); if (previous) return { status: previous.status, body: { ...previous.body, repeat: true } };
+    if (cmd.expectedRevision !== this.po3.state.revision) return { status: 409, body: { ok: false, error: 'PO3-Revision geändert; Stand neu lesen', po3: this.po3.view() } };
+    try { const po3 = this.po3.configure(cmd.config), body = { ok: true, commandId: cmd.commandId, po3 }, prior = [...this.cmds]; this.cmds.push({ id: cmd.commandId, at: this.now(), status: 200, body }); this.cmds = this.cmds.slice(-CMD_MAX);
+      if (!this.saveStateNow()) { this.cmds = prior; return { status: 503, body: { ok: false, error: 'PO3-Auswahl gespeichert; Auftragsantwort nicht gesichert. Stand neu lesen.', po3 } }; } return { status: 200, body }; }
+    catch (e) { return { status: 400, body: { ok: false, error: this.secret(e.message), po3: this.po3.view() } }; }
+  }
+  async notifyPo3(alarm) {
+    if (!this.key || !this.pol.targets.ki.on || alarm.revision !== this.po3.state.revision || alarm.epoch !== this.pol.targets.ki.epoch || alarm.expiresAt <= this.now()) return;
+    const ev = 'po3:' + crypto.createHash('sha256').update(alarm.id).digest('hex'), label = `PO3 Stufe ${alarm.stage} ${alarm.instrument}`;
+    if (!this.reserveOwn(ev, label, 'ki').grant || !this.saveStateNow()) return;
+    await this.queue(po3Message(alarm), this.conf?.data?.tz || 'Europe/Berlin', { target: 'ki', ev, label, po3Rev: alarm.revision });
+  }
   applyKiConfig(cmd) {
     if (this.ki.stopped) return { status: 503, body: { ok: false, error: this.ki.state.error || 'KI-Dienst gestoppt' } };
     if (!CMD_RE.test(cmd?.commandId)) return { status: 400, body: { ok: false, error: 'Auftrags-ID fehlt.' } };
@@ -858,7 +885,7 @@ export class Watcher {
       const r = policyApply(this.pol, this.cmds, { commandId: 'ki-tg-' + update.update_id, expectedRevision: this.pol.rev, set: { ki: command[1] === 'ki_an' } }, this.now());
       if (r.status !== 200 || !this.saveStateNow()) { this.pol = before; this.cmds = cmds; throw new Error('KI-Schalter nicht dauerhaft bestätigt; bisheriger Stand bleibt'); }
     }
-    await this.tg('sendMessage', { chat_id: this.chat, text: `KI-Signale: ${this.pol.targets.ki.on ? 'AN' : 'AUS'} · bestätigt · Revision ${this.pol.rev}. ${this.ki.state.config ? 'Auswahl eingerichtet.' : 'Auswahl zuerst in der App an den Dienst übergeben.'} Keine Bot-Orderfreigabe.` }); return true;
+    await this.tg('sendMessage', { chat_id: this.chat, text: `KI-Signale: ${this.pol.targets.ki.on ? 'AN' : 'AUS'} · bestätigt · Revision ${this.pol.rev}. ${this.ki.state.config || this.po3.state.config ? 'Konfluenz/PO3-Auswahl eingerichtet.' : 'Auswahl zuerst in der App an den Dienst übergeben.'} Keine Bot-Orderfreigabe.` }); return true;
   }
   async pollKiCommands() {
     if (this.kiCommandsBusy || !this.kiUsers.length || !/^-?\d+$/.test(this.chat)) return;
@@ -929,7 +956,7 @@ export class Watcher {
   }
   stateView(days = 3) {
     const t = this.now(), events = Object.entries(this.evs).filter(([, e]) => t - e.at < days * 864e5).sort((a, b) => b[1].at - a[1].at).slice(0, 300).map(([id, e]) => ({ id, ...e }));
-    return { ok: true, v: VERSION, now: t, ki: { ...this.ki.view(), destination: { chat: this.chat, bot: this.token.split(':')[0] }, commandsReady: this.kiUsers.length > 0 }, patternWatch: this.patternWatch, ...policyView(this.pol), eps: Object.fromEntries(Object.entries(this.eps).map(([b, x]) => [b, x.n])), events };
+    return { ok: true, v: VERSION, now: t, po3: this.po3.view(), ki: { ...this.ki.view(), destination: { chat: this.chat, bot: this.token.split(':')[0] }, commandsReady: this.kiUsers.length > 0 }, patternWatch: this.patternWatch, ...policyView(this.pol), eps: Object.fromEntries(Object.entries(this.eps).map(([b, x]) => [b, x.n])), events };
   }
   keyOk(h) {
     const a = /^Bearer\s+(\S+)$/.exec(String(h || ''))?.[1] || '', x = crypto.createHash('sha256').update(a).digest(), y = crypto.createHash('sha256').update(this.key).digest();
@@ -986,6 +1013,8 @@ export class Watcher {
       const n = epNext(this.eps, this.evs, body.base, body.from, t); if (n !== body.from) { this.log(`Episode ${body.base}: neue Episode ${n} (von der App gemeldet)`); this.saveStateNow(); }
       return send(200, { ok: true, ep: n });
     }
+    if (route === 'POST /v1/po3/config') { const r = this.applyPo3Config(body); return send(r.status, r.body); }
+    if (route === 'GET /v1/po3/journal') { const offset = Number(u.searchParams.get('offset') || 0); if (!Number.isInteger(offset) || offset < 0 || offset > 2000) return send(400, { ok: false, error: 'PO3-Seite ungültig' }); return send(200, { ok: true, revision: this.po3.state.revision, total: this.po3.state.journal.length, journal: this.po3.state.journal.slice(offset, offset + 20) }); }
     if (route === 'POST /v1/ki/config') { const r = this.applyKiConfig(body); return send(r.status, r.body); }
     if (route === 'GET /v1/ki/signals') { const offset = Number(u.searchParams.get('offset') || 0); if (!Number.isInteger(offset) || offset < 0 || offset > 200) return send(400, { ok: false, error: 'Kartenseite ungültig' }); return send(200, { ok: true, cards: this.ki.state.cards.slice(offset, offset + 20).map(c => ({ ...c, serviceStatistics: this.ki.state.statistics[c.id] || null })) }); }
     if (route === 'POST /v1/patterns/watch') { const r = this.applyPatternWatch(body); return send(r.status, r.body); }
@@ -1060,7 +1089,7 @@ export class Watcher {
     if (c()?.on && Object.keys(this.pnlPend).length) await run('Gewinn/Verlust', () => this.flushPnl()); // erreichte Grenzen nach der Wartezeit
     if (this.out.length) await run('Zustellung', () => this.deliver()); // noch nicht zugestellte Meldungen
     // Musterhistorien laufen getrennt: ein langsamer Markt darf die bestehenden Kurs-/Stop-Alarme nicht aufhalten.
-    if (this.key && this.ki.state.config) void run('KI-Signale', async () => { await this.ki.scan(); await this.ki.resolveHistory(); });
+    if (this.key && (this.ki.state.config || this.po3.state.config?.on)) void run('KI-Signale', async () => { if (this.ki.busy || this.po3.busy) return; await this.ki.scan(); await this.ki.resolveHistory(); await this.po3.scan(); });
     if (this.key && this.kiUsers.length && t >= (this.next.kiCommands || 0)) { this.next.kiCommands = t + 5000; void run('KI-Befehle', () => this.pollKiCommands()); }
     if (this.key && this.patternWatch.config && this.pol.targets.patterns.on) void run('Chartmuster', () => this.checkPatterns());
     const needCal = c()?.on && c().ev.news && c().econ.warn;
@@ -1082,7 +1111,7 @@ export class Watcher {
     if (this.conf?.data) { const c = this.conf.data, items = watchItems(c); this.log(`Übergabe aus dem gespeicherten Zustand (#${c.tag}): ${c.on ? `${plural(items.length, 'Marke', 'Marken')}${items.length ? ` – ${items.slice(0, 6).map(x => x.text).join(' · ')}` : ''}` : 'Übergabe ausgeschaltet'}`);
       for (const a of c.alarms) this.firstLook.add(alarmKey(a)); for (const p of c.positions) for (const ty of ['tp', 'sl']) this.firstLook.add(posKey(p, ty)); }
     await this.listenNow(); // 2.0: HTTPS-Steuerung (nur mit Zugangsschlüssel)
-    const stop = () => { this.stopped = true; this.ki.stop(); clearTimeout(this.saveTimer); this.saveStateNow(); this.server?.close(); process.exit(0); };
+    const stop = () => { this.stopped = true; this.ki.stop(); this.po3.stop(); clearTimeout(this.saveTimer); this.saveStateNow(); this.server?.close(); process.exit(0); };
     process.on('SIGTERM', stop); process.on('SIGINT', stop);
     while (!this.stopped) { await this.tick(); await sleep(EVERY.tick); }
   }
