@@ -16,7 +16,7 @@ Automatische Tests für die App (`weather-widget-v2.html`) und den 24/7-Dienst (
 | `bash lint.sh` | ESLint über App und G10-Fachmodule (0 Fehler, 3 bekannte App-Warnungen) | Sekunden |
 | `node unit-confluence.js` | G10(a): 135 feste Fachprüfungen ohne Browser | Sekunden |
 | `node m61.js` | G10(a): Node/Browser/Worker, Versionsgleichheit, echter Offline-Import | Sekunden |
-| `node unit-bitget.js` | G10(b): 52 öffentliche Quellen-/Zeit-/Zustands-/Fehlerprüfungen | Sekunden |
+| `node unit-bitget.js` | G10(b): 54 öffentliche Quellen-/Zeit-/Zustands-/Fehlerprüfungen | Sekunden |
 | `node m62.js` | G10(b): Adapter-Parität, echtes Browser-fetch mit lokalen Antworten, Offline/Netzausfall | Sekunden |
 
 Ausgabe je Test: `✓`/`✗` je Prüfung und am Ende `n/m bestanden`.
@@ -52,4 +52,4 @@ Ausgabe je Test: `✓`/`✗` je Prüfung und am Ende `n/m bestanden`.
 
 ### Ergänzungen (3.44.0, G10b)
 - `unit-bitget.js` und `m62.js` vorn im Gesamtlauf (jetzt 91 Zielbefehle). Bitget-Antworten vollständig lokal; bestehende Binance-Attrappe unverändert.
-- Server-/Modul-Lint kennt zusätzlich die Standardglobals `URLSearchParams` und `AbortController`. Kein Polyfill oder neue Produktionsabhängigkeit.
+- Server-/Modul-Lint kennt zusätzlich die Standardglobals `URLSearchParams`, `AbortController` und `TextDecoder`. Kein Polyfill oder neue Produktionsabhängigkeit.

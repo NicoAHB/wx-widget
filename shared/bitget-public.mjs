@@ -16,6 +16,19 @@ function instrument(x) { if (typeof x !== 'string' || !/^[A-Z0-9]+USDT$/.test(x)
 function frame(x) { if (!Object.hasOwn(BITGET_FRAMES, x)) throw new Error('Bitget-Zeitebene nicht unterstützt'); return BITGET_FRAMES[x]; }
 const sameBar = (a, b) => ['time', 'end', 'open', 'high', 'low', 'close', 'volume'].every(k => a[k] === b[k]);
 const errorMessage = e => e.name === 'SyntaxError' ? 'Bitget-Antwort ist kein gültiges JSON' : e.name === 'TypeError' ? 'Bitget-Netzwerkzugriff oder Antwortformat nicht verfügbar' : e.name === 'AbortError' ? 'Bitget-Abfrage abgebrochen' : e.message;
+async function readBody(res) {
+  if (!res.body) throw new Error('Bitget-Antwort ist leer');
+  const reader = res.body.getReader(), decoder = new TextDecoder(); let size = 0, text = '';
+  try {
+    for (;;) {
+      const { done, value } = await reader.read(); if (done) break;
+      size += value.byteLength;
+      if (size > MAX_BODY) { await reader.cancel(); throw new Error('Bitget-Antwort überschreitet die Größenbegrenzung'); }
+      text += decoder.decode(value, { stream: true });
+    }
+    return text + decoder.decode();
+  } finally { reader.releaseLock(); }
+}
 
 export function normalizeBitgetCandles(data, { timeframe, from, to, knownAt }) {
   const { periodMs } = frame(timeframe);
@@ -107,7 +120,7 @@ export function createBitgetPublicClient({ fetch: fetcher = globalThis.fetch, no
           throw Object.assign(new Error('Bitget-Abfrage gedrosselt; später erneut laden'), { retryAt: cooldown });
         }
         if (!res.ok || res.redirected || (res.url && new URL(res.url).origin !== BITGET_ORIGIN)) throw new Error('Bitget-HTTP-Antwort nicht verfügbar');
-        const text = await res.text(); if (text.length > MAX_BODY) throw new Error('Bitget-Antwort überschreitet die Größenbegrenzung');
+        const text = await readBody(res);
         const body = JSON.parse(text), receivedAt = now();
         if (body?.code !== '00000' || !time(body.requestTime) || body.requestTime > receivedAt || receivedAt - body.requestTime > 30000) throw new Error('Bitget-Antwortcode oder Providerzeit ungültig/veraltet');
         return { data: body.data, providerAt: body.requestTime, observedAt: receivedAt };

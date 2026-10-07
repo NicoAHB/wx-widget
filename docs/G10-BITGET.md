@@ -32,7 +32,7 @@ Direkte Herstellerseiten/Live-API in dieser Cloud bisher durch Domainfreigabe bl
 
 `createBitgetPublicClient({fetch?, now?, wait?, timeoutMs?, spacingMs?})` erzeugt einen Client mit gemeinsamer serieller Warteschlange.
 Standard: mindestens 150 ms zwischen Anfrageanfängen, 8 s Timeout. Nur öffentliche GETs, Cookies weggelassen, kein Body/Auth-Header,
-Weiterleitungen abgelehnt. Antwort maximal 1 MiB; Erfolgscode `00000` und Providerzeit prüfen (nicht zukünftig, höchstens 30 s alt).
+Weiterleitungen abgelehnt. Antwort während des Empfangs auf maximal 1 MiB begrenzt; Erfolgscode `00000` und Providerzeit prüfen (nicht zukünftig, höchstens 30 s alt).
 429: `Retry-After` als Sekunden/HTTP-Datum beachten, Folgeaufrufe vor `retryAt` führen keinen neuen Abruf aus. Kein endloser Retry.
 Abbruch über `AbortSignal`; Fehler geben deutsche Gründe. Ein Client je App/Worker/Dienst, keine unabhängigen Clients je Coin/Tick anlegen.
 
@@ -70,5 +70,5 @@ Folgejob setzt ab `nextFrom` fort. Identische Dubletten einmal, widersprüchlich
 Fehlender Listing-Warm-up ist kein kürzerer EMA. Rückgabe ist Preisabdeckung des angefragten Ausschnitts, kein Nachweis von 90 Tagen/2 Jahren
 Signal-/Kostenhistorie. Historische Kenntniszeit-/Latenzmodelle und belegte Fundinghistorie gehören zu G10(d); heutige Empfangszeiten nicht zurückdatieren.
 
-Tests: `unit-bitget.js` 52 Fachprüfungen, `m62.js` 8 Prüfungen für Node/Browser/Worker, echtes Browser-fetch mit lokalen Antworten,
+Tests: `unit-bitget.js` 54 Fachprüfungen, `m62.js` 8 Prüfungen für Node/Browser/Worker, echtes Browser-fetch mit lokalen Antworten,
 Netzausfall und frischen Offline-Import. Alle externen Antworten sind feste lokale Testdaten, keine echten Kurse oder Nachrichten.
