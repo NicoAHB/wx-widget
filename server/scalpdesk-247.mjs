@@ -48,7 +48,7 @@ import http from 'node:http';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
-export const VERSION = '2.1.0';
+export const VERSION = '2.2.0';
 const E = process.env;
 // Adressen (für Tests über Umgebungsvariablen änderbar)
 export const API = {
@@ -303,8 +303,8 @@ export function readServerConfig(file) {
 // ---------- 2.0 (G05): Ziel-Schalter und Ereignis-Freigaben (rein, ohne Netz – testbar) ----------
 // Ziele: Kursalarm (Preis-, Stop-/Ziel-, Gewinn-/Verlust-Alarme, Termine, BTC-Puls – sendet dieser Dienst bzw. die App mit
 // Freigabe), Sicherung und Trades (sendet nur die App direkt an Telegram; hier steht nur der Schalter, ohne Inhalte).
-export const TARGETS = ['course-alert', 'backup', 'trades'];
-export const TARGET_NAME = { 'course-alert': 'Kursalarm', backup: 'Sicherung', trades: 'Trades' };
+export const TARGETS = ['course-alert', 'backup', 'trades', 'patterns'];   // 2.2.0 (G09 C6a): Chartmuster
+export const TARGET_NAME = { 'course-alert': 'Kursalarm', backup: 'Sicherung', trades: 'Trades', patterns: 'Chartmuster' };
 const CMD_RE = /^[A-Za-z0-9_-]{8,64}$/, EV_RE = /^[A-Za-z0-9_.:-]{6,140}$/, SENDER_RE = /^(oracle|app:[a-z0-9]{4,24})$/;
 export const EV_FINAL = ['confirmed', 'unconfirmed', 'failed', 'discarded'], EV_ORDER = { reserved: 0, sending: 1, confirmed: 2, unconfirmed: 2, failed: 2, discarded: 2 };
 export const GRANT_WAIT = 5 * 60e3, EV_KEEP = 14 * 864e5, CMD_KEEP = 7 * 864e5, CMD_MAX = 300;

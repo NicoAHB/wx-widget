@@ -70,13 +70,19 @@ const sendNow = async page => { const t0 = Date.now(); await page.evaluate(() =>
     check('… „Test senden“ (Kursalarm) geht weiter über Bot 1', test?.bot === B1 && test.chat_id === CHAT, `${test?.bot}`);
     await page.click('#tg-detect'); await page.waitForTimeout(1500);
     const rows = await page.evaluate(() => [...document.querySelectorAll('#tg-found .tg-found-row')].map(r => ({ t: r.querySelector('.tg-found-name').textContent, n: r.querySelectorAll('button').length, b: [...r.querySelectorAll('button')].map(x => x.textContent.trim()).join('|') })));
-    check('„Chat-ID ermitteln“ listet auch den Chat des Sicherungs-Bots – nur mit „→ Sicherungschat“ und (3.33.0) „→ Trades“, ohne „→ Kursalarm“', rows.some(r => /über @test_sicherung_bot/.test(r.t) && r.n === 2 && r.b === '→ Sicherungschat|→ Trades') && rows.some(r => !/über @/.test(r.t) && r.n === 3), JSON.stringify(rows));
+    check('„Chat-ID ermitteln“ listet auch den Chat des Sicherungs-Bots – nur mit „→ Sicherungschat“, (3.33.0) „→ Trades“ und (3.40.0) „→ Chartmuster“, ohne „→ Kursalarm“', rows.some(r => /über @test_sicherung_bot/.test(r.t) && r.n === 3 && r.b === '→ Sicherungschat|→ Trades|→ Chartmuster') && rows.some(r => !/über @/.test(r.t) && r.n === 4), JSON.stringify(rows));
     // 3.33.0: „→ Trades“ nimmt genau den Bot, der den Chat gefunden hat (leer = wie die Sicherung)
     const pickT = async via => { await page.evaluate(v => [...document.querySelectorAll('#tg-found .tg-found-row')].find(r => /über @/.test(r.querySelector('.tg-found-name').textContent) === v && !r.dataset.used)?.querySelectorAll('button')[v ? 1 : 2].click(), via); await page.waitForTimeout(300); return page.evaluate(() => JSON.parse(localStorage.getItem('scalpdesk.channels.v1')).tg); };
     let tt = await pickT(false);
     check('„→ Trades“ beim Haupt-Bot mit eigenem Sicherungs-Bot: Haupt-Bot ausdrücklich als Trades-Bot eingetragen', tt.tchat && tt.ttoken.startsWith('123456789:'), JSON.stringify({ tchat: tt.tchat, ttoken: tt.ttoken.slice(0, 9) }));
     await page.click('#tg-detect'); await page.waitForTimeout(1500); tt = await pickT(true);
     check('„→ Trades“ beim Chat des Sicherungs-Bots: Trades-Bot leer (= Sicherungs-Bot)', tt.tchat && tt.ttoken === '' && tt.btoken.startsWith('555666777:'), JSON.stringify({ tchat: tt.tchat, ttoken: tt.ttoken.slice(0, 9) }));
+    // 3.40.0 (G09 C6a): „→ Chartmuster“ – leer = derselbe Bot wie Kursalarm; über den Sicherungs-Bot gefunden → dessen Token ausdrücklich
+    const pickP = async via => { await page.click('#tg-detect'); await page.waitForTimeout(1500); await page.evaluate(v => [...document.querySelectorAll('#tg-found .tg-found-row')].find(r => /über @/.test(r.querySelector('.tg-found-name').textContent) === v)?.querySelectorAll('button')[v ? 2 : 3].click(), via); await page.waitForTimeout(300); return page.evaluate(() => JSON.parse(localStorage.getItem('scalpdesk.channels.v1')).tg); };
+    let pp = await pickP(false);
+    check('„→ Chartmuster“ beim Haupt-Bot: Chat eingetragen, Bot leer (= Kursalarm)', pp.pchat && pp.ptoken === '', JSON.stringify({ pchat: pp.pchat, ptoken: pp.ptoken.slice(0, 9) }));
+    pp = await pickP(true);
+    check('„→ Chartmuster“ beim Chat des Sicherungs-Bots: Sicherungs-Bot ausdrücklich als Chartmuster-Bot', pp.pchat && pp.ptoken.startsWith('555666777:'), JSON.stringify({ pchat: pp.pchat, ptoken: pp.ptoken.slice(0, 9) }));
     const sum = await page.evaluate(() => document.getElementById('chan-summary').textContent);
     check('Übersicht: „Sicherung: eigener Bot“', /Sicherung: eigener Bot/.test(sum), sum);
     check('Keine Fehler (3)', !errors.length, errors.join(' | ')); await ctx.close();

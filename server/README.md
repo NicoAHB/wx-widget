@@ -136,3 +136,10 @@ Die Zeitstempel davor setzt journalctl in der Zeitzone des Servers (bei Oracle m
   2. Im Repository: `node server/muster-export.mjs muster-archiv-JJJJ-MM-TT.json data/muster` → schreibt `data/muster/manifest.json` (höchstens 64 KiB) und `stats-<n>.json` (je höchstens 256 KiB); die Revision zählt hoch.
   3. Committen und pushen (Pull Request). Nach dem Pages-Build zeigt die App unter „Vergangene Verläufe ansehen“ „Veröffentlicht: Revision R vom …“ mit der Zählung der Auswahl.
 - **Sicherheit:** Die App liest nur (GET); sie braucht und kennt keinen Schreibschlüssel. Ohne Veröffentlichung steht dort „noch keine Veröffentlichung“.
+
+## Ziel „Chartmuster“ (ab Dienst 2.2.0, App 3.40.0)
+- **Was:** ein viertes Ziel in „Telegram-Chats“ für wichtige bestätigte Formationen aus „KI“ (live, Regelgüte ≥ 80 %, auf der letzten oder vorletzten abgeschlossenen Kerze bestätigt).
+- **Wer sendet:** nur die App, solange sie offen ist. Der Dienst führt Schalter und Epoche und vergibt je Fall eine Sendefreigabe (Ereignis `pat:<Fall-ID>`), damit von mehreren Geräten genau eins meldet.
+- **Älterer Dienst (vor 2.2.0):** Er kennt das Ziel nicht; der Schalter gilt dann nur im Browser, und die App meldet ohne Freigabe (je Fall einmal pro Browser).
+- **Bei geschlossener App:** noch nicht – dafür bräuchte der Dienst die Mustererkennung selbst (offener Schritt G09 C6b).
+
