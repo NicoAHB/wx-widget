@@ -13754,7 +13754,14 @@ async function kiNext() {
     if (epoch === ki.epoch) { ki.message = e.message; ki.due.set(kiDatasetId(job.instrument, job.horizon), Date.now() + 60000); if (/Speicher|gespeichert|speicher/.test(e.message)) ki.storageFailed = true; }
   } finally { clearTimeout(watchdog); await store.release('ki-scan'); ki.busy = false; kiRender(); kiKick(250); }
 }
-function kiLatest(instrument) { return ki.cards.find(c => c.scope.instrument === instrument && c.eligible && c.expiresAt > Date.now()) || null; }
+function kiModelMatches(card) {
+  const h = card?.scope?.horizon; if (!['short', 'long'].includes(h)) return false;
+  return card.score?.parametersKey === kiParametersKey(kiCoreConfig()) && card.options?.fundingMode === ki.cfg.fundingMode && card.options?.anchorPolicy === ki.cfg.anchorPolicy
+    && card.scope.timeframe + '/' + card.scope.contextTimeframe === ki.cfg[h + 'Pair'] && card.scope.slippageBps === ki.cfg.slippageBps
+    && card.scope.maxHoldMs === (h === 'short' ? ki.cfg.shortHours * 3600e3 : ki.cfg.longDays * 86400e3);
+}
+function kiLatest(instrument) { return ki.cards.find(c => c?.scope?.instrument === instrument && c.eligible && c.decisionAt <= Date.now() && c.expiresAt > Date.now() && kiModelMatches(c)
+  && !(ki.current.get(instrument + '|' + c.scope.horizon) || []).some(now => now.status === 'konflikt' && now.decisionAt >= c.decisionAt)) || null; }
 function kiRenderCard(card, current = false) {
   const s = kiCardState(card, Date.now()), box = el('article', 'ki-card' + (s.expired ? ' expired' : '')); box.dataset.kiId = card.id;
   const head = el('div', 'ki-card-head'); head.append(el('h3', '', `${card.scope.instrument.slice(0, -4)} · ${card.scope.direction === 1 ? 'Long' : 'Short'} · ${card.scope.horizon === 'short' ? 'kurz' : 'lang'}`),
@@ -13815,29 +13822,31 @@ function kiRender() {
 }
 function kiFollowChart() {
   if (!ki.chartFollow || !ki.chartOn || !ki.chartCard) return;
-  const scope = ki.chartCard.scope, latest = ki.cards.find(c => c.eligible && ['instrument', 'timeframe', 'contextTimeframe', 'horizon'].every(k => c.scope[k] === scope[k]));
+  const scope = ki.chartCard.scope, latest = ki.cards.find(c => c.eligible && kiModelMatches(c) && ['instrument', 'timeframe', 'contextTimeframe', 'horizon'].every(k => c.scope[k] === scope[k]));
   if (latest) ki.chartCard = latest;
 }
 function kiShowChart(card, follow = false) {
   if (!card || card.levels.status !== 'bereit') return;
   ki.chartCard = card; ki.chartOn = true; ki.chartFollow = follow; $('ki-chart-lines').checked = true; $('ki-chart-toggle').checked = true;
+  if (state.symbol !== card.scope.instrument || state.interval !== card.scope.timeframe) void setMarket(card.scope.instrument, card.scope.timeframe);
   if (docEl.dataset.chartfull === '1') setChartFull(false); $('chart-sec').hidden = true; $('ki-chart-sec').hidden = false; kiDrawChart(); goTo('ki-chart-sec');
 }
 function kiHideChart() { $('ki-chart-sec').hidden = true; $('chart-sec').hidden = false; ki.chartOn = false; ki.chartFollow = false; $('ki-chart-lines').checked = false; $('ki-chart-toggle').checked = false; }
 function kiDrawChart() {
   const card = ki.chartCard; if (!card) return;
   put('ki-chart-title', `${card.scope.instrument.slice(0, -4)} / USDT · Bitget Futures · ${card.scope.timeframe}`);
-  const s = kiCardState(card, Date.now()); put('ki-chart-note', `${s.label} · Analyse ${kiDate(card.decisionAt)} · geschlossene Bitget-Kerzen. ${s.expired ? s.action : 'Referenzplan; kein ausgeführter Trade.'} Obere Live-Leiste: Binance; diese Ansicht: Bitget.`);
+  const matches = !ki.chartFollow || kiModelMatches(card), showLines = ki.chartOn && matches;
+  const s = kiCardState(card, Date.now()); put('ki-chart-note', `${matches ? s.label : 'Kein passendes Signal unter aktuellen Einstellungen'} · Analyse ${kiDate(card.decisionAt)} · geschlossene Bitget-Kerzen. ${s.expired ? s.action : 'Referenzplan; kein ausgeführter Trade.'} Obere Live-Leiste: Binance; diese Ansicht: Bitget.`);
   const dataId = JSON.stringify([kiParametersKey(card.config), card.scope.instrument, card.scope.timeframe + '/' + card.scope.contextTimeframe, card.scope.maxHoldMs, card.scope.slippageBps]);
   const item = ki.data[dataId], rows = (card.chartRows || (item && store.get(item.key)?.series.base.rows) || []).slice(-80);
   if (!rows.length) { $('ki-chart').replaceChildren(el('p', 'ki-note', 'Gespeicherte Bitget-Kerzen nicht verfügbar.')); return; }
   const width = Math.max(280, Math.min(1000, $('ki-chart-sec').clientWidth - 32)), height = 300, left = 8, right = width - 102, bottom = 276, top = 14;
-  const levels = ki.chartOn ? [card.levels.entry, card.levels.sl, card.levels.tp] : [], low = Math.min(...rows.map(c => c.low), ...levels), high = Math.max(...rows.map(c => c.high), ...levels), pad = Math.max((high - low) * .07, high * .0001);
+  const levels = showLines ? [card.levels.entry, card.levels.sl, card.levels.tp] : [], low = Math.min(...rows.map(c => c.low), ...levels), high = Math.max(...rows.map(c => c.high), ...levels), pad = Math.max((high - low) * .07, high * .0001);
   const x = i => left + (right - left) * (i + .5) / rows.length, y = p => bottom - (p - low + pad) / (high - low + 2 * pad) * (bottom - top), step = (right - left) / rows.length;
-  const svg = node('svg', { viewBox: `0 0 ${width} ${height}`, role: 'img', 'aria-label': `${card.scope.instrument} Bitget ${card.scope.timeframe}, geschlossene Kerzen${ki.chartOn ? ', Referenzeinstieg, Stop und Ziel' : ''}` });
+  const svg = node('svg', { viewBox: `0 0 ${width} ${height}`, role: 'img', 'aria-label': `${card.scope.instrument} Bitget ${card.scope.timeframe}, geschlossene Kerzen${showLines ? ', Referenzeinstieg, Stop und Ziel' : ''}` });
   for (let i = 0; i < rows.length; i++) { const c = rows[i], color = c.close >= c.open ? 'var(--up-text)' : 'var(--down-text)'; svg.append(node('line', { x1: x(i), x2: x(i), y1: y(c.high), y2: y(c.low), stroke: color }),
     node('rect', { x: x(i) - step * .3, y: Math.min(y(c.open), y(c.close)), width: Math.max(.8, step * .6), height: Math.max(1, Math.abs(y(c.open) - y(c.close))), fill: color })); }
-  if (ki.chartOn) for (const [kind, label, price] of [['entry', 'Entry', card.levels.entry], ['sl', 'SL', card.levels.sl], ['tp', 'TP', card.levels.tp]]) {
+  if (showLines) for (const [kind, label, price] of [['entry', 'Entry', card.levels.entry], ['sl', 'SL', card.levels.sl], ['tp', 'TP', card.levels.tp]]) {
     svg.append(node('line', { class: 'ki-level ki-' + kind, x1: left, x2: right, y1: y(price), y2: y(price) }), node('text', { x: right + 5, y: y(price) + 4 }, label + ' ' + priceText(price))); }
   svg.append(node('text', { x: left, y: 294 }, kiDate(rows[0].time)), node('text', { x: right, y: 294, 'text-anchor': 'end' }, kiDate(rows.at(-1).end))); $('ki-chart').replaceChildren(svg);
 }

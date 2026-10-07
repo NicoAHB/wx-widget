@@ -57,7 +57,7 @@ const check = (name, ok, info = '') => { ok ? pass++ : fail++; console.log(`${ok
       await page.evaluate(() => document.getElementById('pat-info').close());
     } else check('Musterchip verwendet dasselbe G09-Info-Sheet mit Bitget-Quelle und ohne Binance-Quoten', false, 'Fester Testfall muss mindestens ein neutrales Muster enthalten.');
     await page.locator('#ki-list button').filter({ hasText: 'Im Chart zeigen' }).first().click();
-    check('Im Chart zeigen: eigener Coin/Markt Bitget, genau drei Randlinien; bestehende Binance-Quelle erhalten', await page.evaluate(() => !document.getElementById('ki-chart-sec').hidden && document.getElementById('chart-sec').hidden && /BTC.*Bitget Futures.*1h/.test(document.getElementById('ki-chart-title').textContent) && document.querySelectorAll('#ki-chart .ki-level').length === 3 && __g05.state.source === 'spot'));
+    check('Im Chart zeigen: passender Coin/Intervall, Bitget und genau drei Randlinien; Binance-Quelle bleibt eigenständig', await page.evaluate(() => !document.getElementById('ki-chart-sec').hidden && document.getElementById('chart-sec').hidden && /BTC.*Bitget Futures.*1h/.test(document.getElementById('ki-chart-title').textContent) && document.querySelectorAll('#ki-chart .ki-level').length === 3 && __g05.state.source === 'spot' && __g05.state.symbol === 'BTCUSDT' && __g05.state.interval === '1h'));
     await page.uncheck('#ki-chart-lines'); check('KI-Signal AUS entfernt alle drei zusätzlichen Linien', await page.locator('#ki-chart .ki-level').count() === 0);
     await page.check('#ki-chart-lines'); check('KI-Signal AN zeigt Entry/rote SL/grüne TP ohne Textboxen', await page.locator('#ki-chart .ki-level').count() === 3 && await page.locator('#ki-chart .ki-sl').count() === 1 && await page.locator('#ki-chart .ki-tp').count() === 1 && await page.locator('#ki-chart rect.ki-textbox').count() === 0);
     const followed = await page.evaluate(() => { const cards = __g10.state.cards, next = structuredClone(cards[0]); next.id += '|Render-Abnahme'; next.levels.entry += 1; next.levels.sl += 1; next.levels.tp += 1; next.decisionAt += 1000;
@@ -89,6 +89,12 @@ const check = (name, ok, info = '') => { ok ? pass++ : fail++; console.log(`${ok
     await page.click('#ki-stop');
     const cutoff = calls.length; await page.waitForTimeout(350);
     check('Pause stoppt neue Abrufe und Worker; sichtbarer Ablauf/Preisalarme bleiben nutzbar', calls.length === cutoff && await page.evaluate(() => !__g10.state.cfg.on && !__g10.state.worker && !!document.getElementById('alarm-form')));
+    const changedModel = await page.evaluate(() => { const old = __g10.state.cfg, card = __g10.state.cards[0]; __g10.showChart(card); document.getElementById('ki-chart-lines').dispatchEvent(new Event('change'));
+      __g10.state.cfg = { ...old, revision: old.revision + 1, patternWeight: 15 }; __g10.render();
+      const ok = document.getElementById('ki-hold-chip').textContent === 'KI: Halten' && document.querySelectorAll('#ki-chart .ki-level').length === 0 && __g10.state.cards[0].config.patternWeight === 0;
+      __g10.state.cfg = old; __g10.render(); return ok; });
+    check('Neue Modellrevision mischt keine alten Kandidaten in Chip/automatische Chartlinien; alte Karte bleibt dokumentiert', changedModel);
+    await page.click('#ki-chart-back');
     await page.evaluate(() => { const c = __g10.state.cards[0]; c.decisionAt = Date.now() - 3600e3 - 1; c.expiresAt = Date.now() - 1; __g10.render(); });
     check('Abgelaufene Karte grau; KI-Chip Halten und keine automatische Positionsschließung', await page.evaluate(() => !!document.querySelector('#ki-list .ki-card.expired .ki-muted') && document.getElementById('ki-hold-chip').textContent === 'KI: Halten' && !__g05.state.positions.length));
     for (const width of [390, 320]) { await page.setViewportSize({ width, height: 844 }); await page.evaluate(() => document.getElementById('ki-settings').open = true); await page.waitForTimeout(100);

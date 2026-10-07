@@ -20,6 +20,16 @@ const clone = x => structuredClone(x), near = (a, b) => Number.isFinite(a) && Ma
   check('Short spiegelbildlich: nur Short-Kandidatur mit 95 Punkten, Long hart gesperrt', shortResult.eligible.length === 1 && shortCard.eligible && shortCard.score.score === 95 && shortResult.cards[0].score.blocked);
   check('Short nimmt Geldkurs; Stop über EMA-Anker und TP mindestens 2R darunter', shortCard.levels.entry === 100 && shortCard.levels.sl === 105 && shortCard.levels.tp === 90 && shortCard.levels.rewardRisk === 2);
   check('Short-Kostenszenario prüft positive TP-/negative SL-Nettoergebnisse separat', shortCard.costs.tp.net > 0 && shortCard.costs.sl.net < 0 && shortCard.costs.netRR >= 1.5);
+  const both = clone(f), atBoth = both.data.scope.asOf;
+  both.data.context.ema50 = 100; both.data.context.ema200 = 100;
+  both.data.base.rsiValues = [60, 61, 20, 70, 64, 65, 65, 25, 61, 60]; both.data.base.histogram = [-1, 0, 2, 3, 2];
+  both.data.base.pivots = [{ type: 'low', index: 2, confirmedIndex: 4, price: 99.5, time: atBoth - 8 * HOUR, knownAt: atBoth - 5 * HOUR },
+    { type: 'high', index: 3, confirmedIndex: 5, price: 100.5, time: atBoth - 7 * HOUR, knownAt: atBoth - 4 * HOUR },
+    { type: 'high', index: 6, confirmedIndex: 8, price: 101, time: atBoth - 4 * HOUR, knownAt: atBoth - HOUR },
+    { type: 'low', index: 7, confirmedIndex: 9, price: 99, time: atBoth - 3 * HOUR, knownAt: atBoth }];
+  both.data.base.zones = [{ price: 101, direction: -1, confirmed: true, knownAt: atBoth - HOUR }];
+  const conflict = L.evaluateLive(both);
+  check('Tatsächliche gemeinsame Bewertung von Long 70 / Short 75 ergibt Konflikt statt zweier Kartenfreigaben', conflict.cards[0].score.score === 70 && conflict.cards[1].score.score === 75 && conflict.status === 'konflikt' && conflict.eligible.length === 0);
   check('Kostenfilter tatsächlich bestanden, ohne erfundene Eurogröße', card.costs.passed && card.costs.netRR > 1.5 && card.size.status === 'nicht verfügbar' && card.size.quantity === null);
   check('Cross erhält keine Liquidations-/Abstandsfreigabe', card.cross.liquidationPrice === null && card.cross.distance === null && !card.cross.approved);
   check('Beide historischen Fenster sind noch nicht ausgewertet, keine erfundene Quote/Fallzahl', card.statistics.short.status === 'noch nicht ausgewertet' && card.statistics.long.status === 'noch nicht ausgewertet' && !('tpPercent' in card.statistics.short));
