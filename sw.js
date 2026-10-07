@@ -3,9 +3,9 @@
 // Dateien wie Icons und Scanner: aus dem Speicher, im Hintergrund aufgefrischt. Daten aus data/ (Startbestand der Chartmuster,
 // 3.24.0): zuerst Netz wie die Seiten – eine neue Version soll gleich beim nächsten Start ankommen.
 // Anfragen an andere Adressen (Binance-Kurse, Streams) laufen nie über den Speicher.
-const VERSION = '3.48.0';
+const VERSION = '3.49.0';
 const CACHE = 'scalpdesk-' + VERSION;
-const CORE = ['./weather-widget-v2.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png', './icons/apple-touch-icon.png', './vendor/jsQR.js', './status-check.html', './data/muster-start.json', './shared/confluence-core.mjs', './shared/indicators.mjs', './shared/pattern-score.mjs', './shared/bitget-public.mjs', './shared/bitget-patterns.mjs', './shared/confluence-live.mjs', './shared/confluence-worker.mjs', './shared/confluence-replay.mjs', './shared/confluence-replay-store.mjs', './shared/confluence-history.mjs', './server/pattern-engine.mjs', './shared/po3-core.mjs', './shared/po3-simulator.mjs', './shared/po3-stream.mjs', './shared/po3-feed.mjs', './shared/po3-store.mjs', './shared/po3-view.mjs'];
+const CORE = ['./weather-widget-v2.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png', './icons/apple-touch-icon.png', './vendor/jsQR.js', './status-check.html', './data/muster-start.json', './shared/confluence-core.mjs', './shared/indicators.mjs', './shared/pattern-score.mjs', './shared/bitget-public.mjs', './shared/bitget-patterns.mjs', './shared/confluence-live.mjs', './shared/confluence-worker.mjs', './shared/confluence-replay.mjs', './shared/confluence-replay-store.mjs', './shared/confluence-history.mjs', './server/pattern-engine.mjs', './shared/po3-core.mjs', './shared/po3-simulator.mjs', './shared/po3-stream.mjs', './shared/po3-feed.mjs', './shared/po3-store.mjs', './shared/po3-view.mjs', './shared/bot-limits.mjs', './shared/bot-simulation.mjs', './shared/bot-simulation-store.mjs', './shared/bot-view.mjs'];
 
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
