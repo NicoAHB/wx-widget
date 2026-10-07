@@ -3,10 +3,9 @@
 Laufende Übergabe. Sie wird nach jedem Arbeitsschritt aktualisiert, damit ein Abbruch jederzeit ungefährlich ist.
 
 ## Kurzstand
-- **Version live:** 3.38.0 (G09 Punkt 11 + C1–C3), Pull Request #61, Merge-Commit `612a90d` auf `main` (davor 3.37.0/G09 A+B: PR #60, 3.36.0/G08: PR #59, 3.35.0/G07: PR #58).
+- **Version live:** 3.39.0 (G09 C4 + C5, Dienst 2.1.0), Pull Request #62, Merge-Commit `0f12e0d` auf `main` (davor 3.38.0/G09 Punkt 11 + C1–C3: PR #61, 3.37.0/G09 A+B: PR #60, 3.36.0/G08: PR #59, 3.35.0/G07: PR #58).
 - **Arbeits-Branch:** `claude/scalp-desk-g03-j81c8k` (nach jedem Merge neu von `main` gestartet).
-- **Auf dem Branch, noch nicht veröffentlicht:** G09 C4 (Archiv am 24/7-Dienst, Dienst 2.1.0) und C5 (Veröffentlichung `data/muster/`). App-Version steht noch auf 3.38.0; Release 3.39.0 (Version, Gesamtlauf, Doku Teil AR, PR) steht aus.
-- **Gerade in Arbeit:** Release 3.39.0 (Gesamtlauf läuft; Doku Teil AR vorbereitet). Danach G09 C6 (Plan unten: C6a App-Ziel, C6b Dienst), dann G10.
+- **Offen in G09:** nur noch C6 (Muster-Telegram-Chat; Plan unten: C6a App-Ziel, C6b Dienst). Danach G10.
 - **Danach:** G10 bis Ende schreibt ChatGPT, sofern der Nutzer nichts anderes sagt.
 
 ## Projekt in einem Satz
@@ -18,7 +17,7 @@ Single-File-PWA für Krypto-Scalping (`weather-widget-v2.html`, auf GitHub Pages
 | `weather-widget-v2.html` | die ganze App (HTML, CSS, ein `<script type="module">`); `APP_VERSION` oben im Skript |
 | `sw.js` | Service Worker; `VERSION` muss zur App-Version passen |
 | `index.html` | Weiterleitung auf die App |
-| `server/scalpdesk-247.mjs`, `server/install.sh` | 24/7-Dienst (Version 2.1.0 auf dem Branch, live 2.0.0) und Installer |
+| `server/scalpdesk-247.mjs`, `server/install.sh` | 24/7-Dienst (Version 2.1.0) und Installer |
 | `server/muster-export.mjs` | erzeugt aus dem Archiv-Export die Veröffentlichung `data/muster/manifest.json` + `stats-<n>.json` (G09 C5) |
 | `tests/` | Test-Server (`mock-binance.js`), `harness.js`, Tests `m*.js`/`unit-*.js`, `run-all.sh`, `lint.sh`, `README.md` |
 | `.github/workflows/` | Kalender- und News-Daten (eigene Workflows) |
@@ -56,8 +55,8 @@ Code: `patEngine()` (reine Engine, läuft als Blob-Worker), `PAT_LIB` (41 Eintr�
 - [x] C1. (umgesetzt: `pk*`-Funktionen, Schlüssel `scalpdesk.patknow.v1`, Quarantäne `scalpdesk.patknow.quarantine.v1`; m58 „know“) Getrennter Wissensspeicher (Punkte 13–15, 20): eigener Schlüssel/IndexedDB-Store `scalpdesk.patknow.v1` getrennt von Trades/Konten/Notizen; App-Reset (`reset-dialog`) und Profilwechsel löschen ihn nicht (kein `localStorage.clear()`); Altbestand `scalpdesk.zzpatterns.v1` + `data/muster-start.json` als „übernommene Statistik (Aggregat)“ erhalten, nicht mit neuen Fällen addieren. Fall = { id (stabil, z. B. Hash aus Markt|Symbol|Intervall|Muster|t0|t1|Modell), Markt, Symbol, Intervall, erkannt, bestätigt, Modell `pat-1`, Regeln/Werte damals, Prognose (Richtung), Ergebnis später angehängt }. Reimport/Geräteabgleich per ID ohne Doppelzählung. Fertig, wenn: Test „Reset ohne Wissensverlust“, „doppelter Import zählt einmal“, „negative Fälle bleiben“.
 - [x] C2. (umgesetzt: `pkResolve`, `pkStats`) Kursrichtungsstatistik (Punkte 21–22): nach Bestätigung H = 12 Kerzen, ε = 0,10 %, R = 100·(PH/P0 − 1); auf/ab/seitwärts; offene Horizonte, fehlende Daten, Konflikte getrennt; nur gleicher Markt/Coin/Intervall/Modell; rekonstruierte und live protokollierte Fälle getrennt. Fertig, wenn: Unit-Test mit festen Kursreihen.
 - [x] C3. (umgesetzt: `pkBand`, `pkSection` im Info-Sheet) „Vergangene Verläufe ansehen“ (Punkte 23–24) im Info-Sheet: „X von N aufwärts, Y abwärts, Z seitwärts“, Zeitraum, Abdeckung; Median + 25–75-%-Band normierter Kurse (kein Prognoseintervall); repräsentativer Einzelfall = geringste Abweichung vom Median, auch negative Beispiele; „Chart: X von N Fällen“; Aggregat ohne Pfade benennen; keine Archive beim Start laden.
-- [x] C4. (umgesetzt auf dem Branch: `PatternArchive` + `/v1/patterns/*` im Dienst 2.1.0, App `pkSync`/`pkState`, Export-Datei; Tests `unit-247d.js` 15/15, m58 „sync“ 6/6) Server-Archiv (Punkte 16–17): Originaljournal am 24/7-Dienst (`server/scalpdesk-247.mjs`, HTTPS-Weg aus G05 mit Revision) getrennt von Alarmkonfiguration, zusätzliche unabhängige Sicherung + getestete Wiederherstellung; Zustände „nur lokal / extern gespeichert / zusätzlich gesichert / veröffentlicht“. Nicht über den Sicherungsbot/Telegram.
-- [x] C5. (umgesetzt auf dem Branch: `server/muster-export.mjs`, App `pkPubLoad`/`pkPubGroup`, Anzeige `.pk-pub`, Zustand „veröffentlicht“; Tests `unit-pub.js` 7/7, m58 „pub“ 5/5; Ablauf in `server/README.md`) Veröffentlichung (Punkte 18–19): bereinigter Bestand auf GitHub/Pages als Release/Serverexport (Manifest ≤ 64 KiB, Dateien ≤ 256 KiB, lokaler Cache ≤ 10 MiB, Warteschlange 2 MiB – voll → neues Lernen stoppt mit Hinweis, nichts löschen); keine Schreibschlüssel im Browser; ohne Schreibweg letzte Revision + Datum zeigen.
+- [x] C4. (veröffentlicht in 3.39.0: `PatternArchive` + `/v1/patterns/*` im Dienst 2.1.0, App `pkSync`/`pkState`, Export-Datei; Tests `unit-247d.js` 15/15, m58 „sync“ 6/6) Server-Archiv (Punkte 16–17): Originaljournal am 24/7-Dienst (`server/scalpdesk-247.mjs`, HTTPS-Weg aus G05 mit Revision) getrennt von Alarmkonfiguration, zusätzliche unabhängige Sicherung + getestete Wiederherstellung; Zustände „nur lokal / extern gespeichert / zusätzlich gesichert / veröffentlicht“. Nicht über den Sicherungsbot/Telegram.
+- [x] C5. (veröffentlicht in 3.39.0: `server/muster-export.mjs`, App `pkPubLoad`/`pkPubGroup`, Anzeige `.pk-pub`, Zustand „veröffentlicht“; Tests `unit-pub.js` 7/7, m58 „pub“ 5/5; Ablauf in `server/README.md`) Veröffentlichung (Punkte 18–19): bereinigter Bestand auf GitHub/Pages als Release/Serverexport (Manifest ≤ 64 KiB, Dateien ≤ 256 KiB, lokaler Cache ≤ 10 MiB, Warteschlange 2 MiB – voll → neues Lernen stoppt mit Hinweis, nichts löschen); keine Schreibschlüssel im Browser; ohne Schreibweg letzte Revision + Datum zeigen.
 - [ ] C6. Muster-Telegram-Chat (Punkt 25): neues Ziel in „Telegram-Chats“ (G05-Mechanik: Schalter, Epoche, Sendefreigabe) für wichtige bestätigte Muster, auch bei geschlossener App über den 24/7-Dienst; Qualitätsgrenzen kenntlich (regelbasiert vs. erlernt).
   - **C6a – Ziel „Chartmuster“ in der App** (zuerst; klein genug für einen Schritt):
     - Dateien: `weather-widget-v2.html` – `TGT` (neuer Eintrag `{ id: 'patterns', name: 'Chartmuster', icon: '📐', … }`), `loadChannels` (`tgt.patterns`, `tep.patterns`, Felder `pchat`/`pthread`/`ptoken` mit Validierung wie `tchat`), `tgOk`, `tgDest('patterns')` (Bot: eigener oder derselbe wie Kursalarm, ausdrücklich beschriftet), `TG_ROUTE.pattern = 'patterns'`, Einrichtungsformular (Abschnitt „📊 Trades“ als Vorlage), `readChanForm`; `server/scalpdesk-247.mjs` – `TARGETS`/`TARGET_NAME` um `patterns` erweitern (`policyNorm` ergänzt fehlende Ziele mit `on: true, epoch: 1` – prüfen!).
@@ -75,7 +74,8 @@ Code: `patEngine()` (reine Engine, läuft als Blob-Worker), `PAT_LIB` (41 Eintr�
 ## Bekannte Stolpersteine
 - **m43 beim Stundenwechsel:** Die Prüfung erwartet eine Puls-Meldung „für 23 Uhr“ in einer Zeitzone, in der es gerade 23 Uhr ist. Trifft der Lauf den Wechsel auf 0 Uhr, schlägt sie fehl. Das ist kein App-Fehler; einzeln wiederholen.
 - **m47 Zeitmessung:** „10000 Trades … unter 400 ms“ ist lastabhängig; vereinzelt 410–430 ms, wiederholt bestanden.
-- **m28 nach Mitternacht (Berlin):** „Ganze Woche“ erwartet „Heute“ in der Tagesliste; zwischen ca. 0 und 2 Uhr Berliner Zeit schlägt die Prüfung auch auf `main` fehl – Uhrzeit-Thema des Tests, kein App-Fehler.
+- **m28 nach Mitternacht (Berlin):** „Ganze Woche“ erwartet „Heute“ in der Tagesliste, „Stand der Daten“ erwartet keinen Zusatz „gestern“. Zwischen ca. 0 und 3 Uhr Berliner Zeit schlagen diese Prüfungen auch auf `main` fehl – Uhrzeit-Thema des Tests, kein App-Fehler; später wiederholen.
+- **Gesamtlauf unterbrochen** (Neustart der Arbeitsumgebung): Die Ausgabe zeigt, bis wohin alles bestanden hat; den Rest mit derselben Schleife wie in `run-all.sh` ab dem nächsten Test fortsetzen (so bei 3.39.0 ab m32).
 - **m47 „App sendet den Kurs-Alarm selbst“:** zeitkritisch (20 s Wartezeit bei statischem Kurs); schlug vereinzelt fehl, einzeln/wiederholt bestanden.
 - **Browser-Tests nie parallel** (fester Port 8765/8790).
 - **Temporäre Testkopien** `weather-widget-v2.debug*.html` entstehen während m39/m45/m47; nicht committen.
