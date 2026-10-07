@@ -3,9 +3,9 @@
 // Dateien wie Icons und Scanner: aus dem Speicher, im Hintergrund aufgefrischt. Daten aus data/ (Startbestand der Chartmuster,
 // 3.24.0): zuerst Netz wie die Seiten – eine neue Version soll gleich beim nächsten Start ankommen.
 // Anfragen an andere Adressen (Binance-Kurse, Streams) laufen nie über den Speicher.
-const VERSION = '3.43.1';
+const VERSION = '3.44.0';
 const CACHE = 'scalpdesk-' + VERSION;
-const CORE = ['./weather-widget-v2.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png', './icons/apple-touch-icon.png', './vendor/jsQR.js', './status-check.html', './data/muster-start.json', './shared/confluence-core.mjs', './shared/indicators.mjs', './shared/pattern-score.mjs'];
+const CORE = ['./weather-widget-v2.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png', './icons/apple-touch-icon.png', './vendor/jsQR.js', './status-check.html', './data/muster-start.json', './shared/confluence-core.mjs', './shared/indicators.mjs', './shared/pattern-score.mjs', './shared/bitget-public.mjs'];
 
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
