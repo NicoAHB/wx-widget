@@ -20,7 +20,7 @@ async function openPage(browser, { seed = {}, viewport = { width: 1500, height: 
 const decLog = async () => (await h.ctl('/dec')).log;
 const openDec = async page => { await page.evaluate(() => { const d = document.getElementById('dec-sec'); d.scrollIntoView({ block: 'start' }); if (!d.open) d.querySelector('summary').click(); }); };
 const decReady = page => until(() => page.evaluate(() => !__g08.dec.running && (!!__g08.dec.res || !!__g08.dec.err)), 20000);
-const rows = page => page.evaluate(() => [...document.querySelectorAll('#dec-list button.dec-row')].map(b => ({ pair: b.dataset.pair, st: b.classList.contains('bull') ? 'bull' : 'bear', cells: [...b.children].map(c => c.textContent) })));
+const rows = page => page.evaluate(() => [...document.querySelectorAll('#dec-list button.dec-row')].map(b => ({ pair: b.dataset.pair, st: b.classList.contains('bull') ? 'bull' : 'bear', cells: [...b.children].map(c => c.textContent), d: b.querySelector('.dec-d')?.textContent, title: b.title, cur: b.classList.contains('cur') })));
 const txt = (page, sel) => page.evaluate(sel => document.querySelector(sel)?.textContent ?? null, sel);
 
 const tests = {
@@ -54,9 +54,9 @@ const tests = {
     await openDec(page); await decReady(page);
     const lg = await decLog(), rs = await rows(page);
     check('Geöffnet: eine Rangliste (CoinLore) und eine gebündelte 4h-Abfrage für BTC + 8 Paare', lg.filter(x => x.src === 'lore').length === 1 && lg.filter(x => x.src === 'bin').length === 1 && lg.find(x => x.src === 'bin')?.n === 9 && lg.find(x => x.src === 'bin')?.ws === '4h', JSON.stringify(lg));
-    check('4h (BTC −1 %): SOL +4 Pp., LTC +4 Pp. (Gleichstand → Rang), XRP +3,5 Pp.; BCH −2,2 bei fallendem BTC kein Treffer', rs.map(r => r.pair).join() === 'SOLUSDT,LTCUSDT,XRPUSDT' && rs.every(r => r.st === 'bull'), JSON.stringify(rs.map(r => [r.pair, r.cells[4]])));
-    const c = rs[0]?.cells || [];
-    check('Zeile: Name/Kürzel/Rang, Preis, Coin-%, BTC-%, Abweichung in Prozentpunkten, Datenzeit', /^SOLSolana#5$/.test(c[0]) && /^1[45]\d,\d+$/.test(c[1]) && c[2] === '+3,00 %' && c[3] === '−1,00 %' && c[4] === '+4,00 Pp.' && /^\d\d:\d\d$/.test(c[5]), JSON.stringify(c));
+    check('4h (BTC −1 %): SOL +4 Pp., LTC +4 Pp. (Gleichstand → Rang), XRP +3,5 Pp.; BCH −2,2 bei fallendem BTC kein Treffer', rs.map(r => r.pair).join() === 'SOLUSDT,LTCUSDT,XRPUSDT' && rs.every(r => r.st === 'bull'), JSON.stringify(rs.map(r => [r.pair, r.d])));
+    const c = rs[0]?.cells || [], cap = await txt(page, '#dec-list .dec-cap');
+    check('Zeile (Optimierung 3): nur Kürzel, Rang und Abweichung zu BTC; Name, Preis, Coin-/BTC-% und Datenzeit im Tooltip; BTC-Wert einmal oben', JSON.stringify(c) === JSON.stringify(['SOL#5', '+4,00 %']) && /^Solana \(SOL\/USDT, Binance Spot\): Coin \+3,00 %, BTC −1,00 % → \+4,00 Prozentpunkte Abweichung · Preis 1[45]\d,\d+ USDT · Daten \d\d:\d\d UTC/.test(rs[0].title) && /^BTC 4h: −1,00 % · rechts: Abweichung des Coins zu BTC in Prozentpunkten/.test(cap), JSON.stringify({ c, t: rs[0]?.title, cap }));
     const cov = await txt(page, '#dec-cov'), gaps = await page.evaluate(() => document.querySelector('#dec-gaps ul')?.textContent || '');
     check('Abdeckung aus echten Daten: „7 von 13 … auswertbar“, 3 Stablecoins (USDT, USDC, PAXG) entfernt und nicht aufgefüllt, BTC Referenz', /^7 von 13 grundsätzlich geeigneten Coins auswertbar · 3 Stablecoins entfernt/.test(cov) && /BTC ist Referenz/.test(cov), cov);
     check('Lücken mit Grund statt Nicht-Treffer: DOGE (Paar BREAK) und LEO nicht bei Binance, KAS Preis passt nicht, UNI mehrdeutig, XNEW und Unicorn ungeprüft', /nicht bei Binance Spot \(USDT\) \(2\): DOGE, LEO/.test(gaps) && /Zuordnung zweifelhaft\) \(1\): KAS/.test(gaps) && /Kürzel mehrdeutig in der Rangliste \(1\): UNI/.test(gaps) && /ungeprüft \(nicht in der Klassifikationsliste\) \(2\): XNEW, UNI/.test(gaps), gaps);
@@ -65,13 +65,13 @@ const tests = {
     check('Filter Bearish: leerer Trefferbestand als eigener Zustand (nicht als Fehler)', !(await rows(page)).length && /^Keine Treffer bei diesen Schwellen \(4h: Coin ab ±2,0 %, BTC seitwärts unter ±0,5 %\)\.$/.test(await txt(page, '#dec-status')), await txt(page, '#dec-status'));
     await page.click('[data-dfil="all"]'); await page.click('[data-dwin="1h"]'); await decReady(page); await until(async () => (await rows(page)).length && (await page.evaluate(() => __g08.dec.res?.win)) === '1h', 8000);
     const r1 = await rows(page);
-    check('1h (BTC −0,2 % seitwärts): SOL bullish +2,7 Pp., BCH bearish −2,3 Pp.', r1.map(r => `${r.pair}:${r.st}:${r.cells[4]}`).join() === 'SOLUSDT:bull:+2,70 Pp.,BCHUSDT:bear:−2,30 Pp.', JSON.stringify(r1.map(r => [r.pair, r.st, r.cells[4]])));
+    check('1h (BTC −0,2 % seitwärts): SOL bullish +2,7 Pp., BCH bearish −2,3 Pp.', r1.map(r => `${r.pair}:${r.st}:${r.d}`).join() === 'SOLUSDT:bull:+2,70 %,BCHUSDT:bear:−2,30 %', JSON.stringify(r1.map(r => [r.pair, r.st, r.d])));
     await page.click('[data-dwin="24h"]'); await decReady(page); await until(async () => (await page.evaluate(() => __g08.dec.res?.win)) === '24h', 8000);
     const r24 = await rows(page), lg24 = (await decLog()).filter(x => x.src === 'bin').at(-1);
-    check('24h (Parameter 1d, BTC +0,6 % steigt): nur XRP bearish −3,6 Pp.; SOL +5 % bei steigendem BTC kein Treffer', lg24?.ws === '1d' && r24.map(r => `${r.pair}:${r.st}:${r.cells[4]}`).join() === 'XRPUSDT:bear:−3,60 Pp.', JSON.stringify({ ws: lg24?.ws, r: r24.map(r => [r.pair, r.cells[4]]) }));
+    check('24h (Parameter 1d, BTC +0,6 % steigt): nur XRP bearish −3,6 Pp.; SOL +5 % bei steigendem BTC kein Treffer', lg24?.ws === '1d' && r24.map(r => `${r.pair}:${r.st}:${r.d}`).join() === 'XRPUSDT:bear:−3,60 %', JSON.stringify({ ws: lg24?.ws, r: r24.map(r => [r.pair, r.cells[4]]) }));
     await page.click('[data-dwin="4h"]'); await page.fill('#dec-coin', '2,1'); await page.press('#dec-coin', 'Enter'); await page.fill('#dec-btc', '1,5'); await page.press('#dec-btc', 'Enter'); await page.waitForTimeout(400);
     const rt = await rows(page);
-    check('Schwellen einstellbar (mit Komma): Coin ab ±2,1 % und BTC seitwärts unter ±1,5 % → SOL, LTC, XRP und jetzt BCH bearish −1,2 Pp. (BTC −1 % gilt als seitwärts)', rt.map(r => r.pair).join() === 'SOLUSDT,LTCUSDT,XRPUSDT,BCHUSDT' && rt[3].st === 'bear' && rt[3].cells[4] === '−1,20 Pp.' && (await page.inputValue('#dec-coin')) === '2,1', JSON.stringify(rt.map(r => [r.pair, r.st, r.cells[4]])));
+    check('Schwellen einstellbar (mit Komma): Coin ab ±2,1 % und BTC seitwärts unter ±1,5 % → SOL, LTC, XRP und jetzt BCH bearish −1,2 Pp. (BTC −1 % gilt als seitwärts)', rt.map(r => r.pair).join() === 'SOLUSDT,LTCUSDT,XRPUSDT,BCHUSDT' && rt[3].st === 'bear' && rt[3].d === '−1,20 %' && (await page.inputValue('#dec-coin')) === '2,1', JSON.stringify(rt.map(r => [r.pair, r.st, r.d])));
     await page.reload(); await page.waitForTimeout(1500);
     const kept = await page.evaluate(() => ({ cfg: __g08.dec.cfg, open: document.getElementById('dec-sec').open }));
     check('Einstellungen bleiben nach Neuladen (und stehen in der Sicherung), der Bereich bleibt offen', kept.cfg.coin === 2.1 && kept.cfg.btc === 1.5 && kept.cfg.win === '4h' && kept.open, JSON.stringify(kept));
@@ -95,9 +95,9 @@ const tests = {
     const t0 = Date.now(); await openDec(page); await decReady(page);
     const HITS = ['SOLUSDT', 'LTCUSDT', 'XRPUSDT'], kl = async () => (await h.ctl(`/log?since=${t0}`)).filter(e => e.path === '/api/v3/klines' && e.q.interval === '5m' && HITS.includes(e.q.symbol));   // BTC-5m lädt die App auch für ihre Signale
     check('Korrelation anfangs aus: keine Kerzen für die Korrelation geladen, keine Spalte', !(await page.evaluate(() => __g08.dec.cfg.corr)) && !(await kl()).length && !(await page.evaluate(() => document.querySelector('#dec-list .dec-r'))));
-    await page.check('#dec-corr'); await until(() => page.evaluate(() => [...document.querySelectorAll('#dec-list button .dec-r')].length && [...document.querySelectorAll('#dec-list button .dec-r')].every(e => e.textContent !== 'ρ …')), 15000);
+    await page.check('#dec-corr'); await until(() => page.evaluate(() => [...document.querySelectorAll('#dec-list button .dec-r')].length && [...document.querySelectorAll('#dec-list button .dec-r')].every(e => e.textContent !== 'Korr. …')), 15000);
     const r = await page.evaluate(() => [...document.querySelectorAll('#dec-list button.dec-row')].map(b => [b.dataset.pair, b.querySelector('.dec-r')?.textContent, b.querySelector('.dec-r')?.title || ''])), k = await kl();
-    check('Eingeschaltet: ρ je Treffer aus 5m-Renditen (oder „ρ —“ mit Grund), Kerzen je Treffer genau einmal (BTC geteilt), Hinweis „keine Erfolgswahrscheinlichkeit“', r.length === 3 && r.every(x => /^ρ (−?\d,\d\d|—)$/.test(x[1]) && (x[1] !== 'ρ —' || x[2])) && k.length === 3 && new Set(k.map(e => e.q.symbol)).size === 3 && /keine Erfolgswahrscheinlichkeit/.test(await txt(page, '#dec-foot')), JSON.stringify({ r, k: k.map(e => e.q.symbol) }));
+    check('Eingeschaltet: „Korr. x,xx“ je Treffer aus 5m-Renditen (oder „Korr. —“ mit Grund), Kerzen je Treffer genau einmal (BTC geteilt), Hinweis „keine Erfolgswahrscheinlichkeit“', r.length === 3 && r.every(x => /^Korr\. (−?\d,\d\d|—)$/.test(x[1]) && x[2]) && k.length === 3 && new Set(k.map(e => e.q.symbol)).size === 3 && /keine Erfolgswahrscheinlichkeit/.test(await txt(page, '#dec-foot')), JSON.stringify({ r, k: k.map(e => e.q.symbol) }));
     check('keine Fehler (corr)', !real(errors).length, real(errors).join(' | ')); await ctx.close();
   },
 
@@ -109,6 +109,8 @@ const tests = {
     await page.click('#dec-list button.dec-row[data-pair="SOLUSDT"]');
     const toast = await until(() => page.evaluate(() => [...document.querySelectorAll('#toasts .toast')].map(t => t.textContent).find(t => /Im Chart geladen/.test(t)) || null), 3000);
     await until(() => page.evaluate(() => __g05.state.loadedSymbol === 'SOLUSDT'), 10000);
+    const curs = (await rows(page)).filter(r => r.cur).map(r => r.pair);
+    check('Angetippter Coin (gerade im Chart) behält den farbigen Rahmen, nur er', JSON.stringify(curs) === '["SOLUSDT"]', JSON.stringify(curs));
     const after = await page.evaluate(() => ({ y: Math.round(scrollY), tab: document.documentElement.dataset.activeTab, sym: __g05.state.symbol, src: __g05.state.source, charts: document.querySelectorAll('#chart svg').length }));
     check('Klick lädt SOL in den vorhandenen Chart (Binance Spot): Reiter bleibt, kein Scrollsprung, „Im Chart geladen“, keine zweite Chart-Instanz', after.sym === 'SOLUSDT' && after.src === 'spot' && after.tab === before.tab && Math.abs(after.y - before.y) <= 2 && toast === 'Im Chart geladen: SOL/USDT (Binance Spot)' && after.charts <= 1, JSON.stringify({ before, after, toast }));
     await page.click('#dec-list button.dec-row[data-pair="XRPUSDT"]'); await page.click('#dec-list button.dec-row[data-pair="LTCUSDT"]');
@@ -117,8 +119,8 @@ const tests = {
     check('Schnell XRP → LTC: nur LTC wird zuletzt sichtbar', ab.sym === 'LTCUSDT' && ab.loaded === 'LTCUSDT' && ab.field === 'LTC', JSON.stringify(ab));
     // Handy: Zeilen passen in die Breite, Werte mit Beschriftung
     await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(500);
-    const fit = await page.evaluate(() => { const l = document.getElementById('dec-list').getBoundingClientRect(); return [...document.querySelectorAll('#dec-list button.dec-row')].every(b => b.getBoundingClientRect().right <= l.right + 1 && b.scrollWidth <= b.clientWidth + 1) && getComputedStyle(document.querySelector('#dec-list .dec-c'), '::before').content === '"Coin "'; });
-    check('Handy (390 px): Zeilen zweizeilig ohne Überlauf, Werte mit „Coin“/„BTC“ beschriftet', fit);
+    const fit = await page.evaluate(() => { const l = document.getElementById('dec-list').getBoundingClientRect(); return [...document.querySelectorAll('#dec-list button.dec-row')].every(b => b.getBoundingClientRect().right <= l.right + 1 && b.scrollWidth <= b.clientWidth + 1 && b.getBoundingClientRect().height < 60 && getComputedStyle(b).borderTopStyle === 'solid'); });
+    check('Handy (390 px): jede Zeile eine umrahmte Karte, einzeilig, ohne Überlauf', fit);
     check('keine Fehler (click)', !real(errors).length, real(errors).join(' | ')); await ctx.close();
   },
 

@@ -1487,19 +1487,16 @@ html[data-layout=tablet] .wl-tile{height:64px}
 .dec-thr input:not([type=checkbox]){width:4.5em;min-height:34px;padding:0 8px;border:1px solid var(--field-border);border-radius:6px;background:var(--field);text-align:right}
 .dec-corr input{width:20px;min-height:20px;height:20px;accent-color:var(--mint)}
 .dec-status{margin:0;font-size:.8125rem;color:var(--muted)}.dec-status.err{color:var(--down-text)}.dec-status.stale{color:var(--warn-text)}
-.dec-list{display:grid;gap:2px}.dec-list.stale{opacity:.6}
-.dec-row{display:grid;grid-template-columns:minmax(0,1.7fr) repeat(4,minmax(0,1fr)) minmax(0,.8fr);gap:8px;align-items:center;text-align:right;padding:8px 10px;border:0;border-radius:8px;background:none;color:var(--text);font:inherit;font-variant-numeric:tabular-nums;font-size:.8125rem;width:100%}
-.dec-list.corr .dec-row{grid-template-columns:minmax(0,1.7fr) repeat(4,minmax(0,1fr)) minmax(0,.8fr) minmax(0,.7fr)}
+.dec-list{display:grid;gap:6px}.dec-list.stale{opacity:.6}
+.dec-cap{margin:0;font-size:.8125rem;color:var(--muted)}.dec-cap b{color:var(--text);font-variant-numeric:tabular-nums}
+.dec-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:center;text-align:right;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2);color:var(--text);font:inherit;font-variant-numeric:tabular-nums;font-size:.9375rem;width:100%}
 button.dec-row{cursor:pointer}button.dec-row:hover{background:var(--hover)}
+.dec-d{font-size:1rem}.dec-r{color:var(--muted);font-size:.75rem}.dec-row.cur{border-color:var(--mint)}
 .dec-n{text-align:left;display:flex;gap:6px;align-items:baseline;min-width:0;overflow:hidden;white-space:nowrap}
 .dec-n small,.dec-nm{color:var(--muted)}.dec-nm{overflow:hidden;text-overflow:ellipsis}
-.dec-head{color:var(--muted);font-size:.6875rem;padding-top:0;padding-bottom:2px}.dec-head span:first-child{text-align:left}
 .dec-row.bull .dec-d{color:var(--up-text);font-weight:600}.dec-row.bear .dec-d{color:var(--down-text);font-weight:600}
 .dec-cov,.dec-foot{margin:0;font-size:.75rem;color:var(--muted)}
 .dec-gaps{font-size:.75rem;color:var(--muted)}.dec-gaps ul{margin:6px 0 0;padding-left:18px}.dec-gaps summary{cursor:pointer}
-@container dec (max-width:520px){.dec-row,.dec-list.corr .dec-row{grid-template-columns:minmax(0,1fr) auto auto auto;grid-template-areas:"n n r d" "p c b t";row-gap:2px}.dec-head{display:none}
-  .dec-n{grid-area:n}.dec-d{grid-area:d}.dec-r{grid-area:r;color:var(--muted)}.dec-p{grid-area:p;text-align:left;color:var(--muted)}.dec-c{grid-area:c}.dec-b{grid-area:b}.dec-t{grid-area:t;color:var(--muted)}
-  .dec-c::before{content:"Coin ";color:var(--muted)}.dec-b::before{content:"BTC ";color:var(--muted)}}
 .metric-btn{flex:0 0 auto;min-height:38px;padding:0 8px;font-size:.8125rem;border:1px solid var(--border);border-radius:6px;background:none;color:var(--muted)}
 .metric-btn[aria-pressed=true]{background:var(--up-bg-2);border-color:var(--up-border);color:var(--up-text);font-weight:600}
 @container ctb (min-width:640px) and (max-width:720px){.tb-main{gap:4px}.tb-main .intervals{gap:1px}.tb-main .intervals button{min-width:36px;padding:0 6px}.metric-btn{padding:0 6px}}
@@ -12075,16 +12072,17 @@ function decRender() {
   const sEl = $('dec-status'); sEl.textContent = st; sEl.hidden = !st; sEl.className = `dec-status ${cls}`;
   list.classList.toggle('stale', !!stale);
   const rows = hits.map(r => {
-    const b = el('button', `dec-row ${r.st}`); b.type = 'button'; b.dataset.pair = r.pair;
-    b.title = `${r.a.name} (${r.pair.slice(0, -4)}/USDT, Binance Spot) im Chart laden – der Reiter bleibt`;
-    const n = el('span', 'dec-n'); n.append(el('b', '', r.a.sym), el('span', 'dec-nm', r.a.name), el('small', '', `#${r.a.rank}`));
+    const b = el('button', `dec-row ${r.st}${r.pair === state.symbol ? ' cur' : ''}`); b.type = 'button'; b.dataset.pair = r.pair;   // cur: gerade im Chart
+    // Optimierung 3: nur das Wichtige – Kürzel, Rang und die Abweichung zu BTC; Name, Preis, Coin-/BTC-% und Datenzeit im Tooltip
     const rho = dec.rho.get(`${r.pair}|${W}`);
-    b.append(n, el('span', 'dec-p', priceText(r.price)), el('span', 'dec-c', decPct(r.C)), el('span', 'dec-b', decPct(r.B)), el('span', 'dec-d', `${signed(r.D)} Pp.`), el('span', 'dec-t', utcTime(r.at).slice(0, 5)));
-    if (c.corr) b.append(el('span', 'dec-r', rho ? (rho.rho == null ? 'ρ —' : `ρ ${number(rho.rho, 2)}`) : 'ρ …'));
-    if (rho && rho.rho == null) b.lastChild.title = rho.why;
+    b.title = `${r.a.name} (${r.pair.slice(0, -4)}/USDT, Binance Spot): Coin ${decPct(r.C)}, BTC ${decPct(r.B)} → ${signed(r.D)} Prozentpunkte Abweichung · Preis ${priceText(r.price)} USDT · Daten ${utcTime(r.at).slice(0, 5)} UTC${c.corr && rho?.rho != null ? ` · Korrelation zu BTC ${number(rho.rho, 2)}` : ''} – antippen lädt den Chart, der Reiter bleibt`;
+    const n = el('span', 'dec-n'); n.append(el('b', '', r.a.sym), el('small', '', `#${r.a.rank}`));
+    b.append(n);
+    if (c.corr) { const k = el('span', 'dec-r', rho ? (rho.rho == null ? 'Korr. —' : `Korr. ${number(rho.rho, 2)}`) : 'Korr. …'); k.title = rho?.rho == null ? (rho?.why || 'wird berechnet') : 'Korrelation zu BTC (Pearson, 5m-Renditen im Zeitraum): 1 = läuft wie BTC, 0 = unabhängig, negativ = gegenläufig'; b.append(k); }
+    b.append(el('span', 'dec-d', `${signed(r.D)} %`));
     return b;
   });
-  if (rows.length) { const h = el('div', 'dec-row dec-head'); h.setAttribute('aria-hidden', 'true'); for (const t of ['Coin', 'Preis (USDT)', 'Coin %', 'BTC %', 'Abweichung', 'Daten (UTC)', ...(c.corr ? ['Korr.'] : [])]) h.append(el('span', '', t)); rows.unshift(h); }
+  if (rows.length) { const h = el('p', 'dec-cap'); h.append(`BTC ${W}: `, el('b', '', decPct(R.btc.B)), ' · rechts: Abweichung des Coins zu BTC in Prozentpunkten · antippen: Coin im Chart'); rows.unshift(h); }
   list.replaceChildren(...rows); list.classList.toggle('corr', c.corr);
   // Abdeckung und Lücken aus echten Daten
   if (R) {
@@ -12102,6 +12100,7 @@ async function decPick(pair) {
     if (spot) { state.source = 'spot'; state.sourceFor = null; }   // gleichnamiger Futures-Chart: bewusst auf Spot umstellen
     const p = state.symbol === pair && !spot ? null : setMarket(pair);
     infoToast(`Im Chart geladen: ${pair.slice(0, -4)}/USDT (Binance Spot)`);
+    decRender();   // Rahmen „gerade im Chart“ sofort umsetzen
     if (spot) await refresh(); else await p;
     if (state.symbol === pair && state.sourceFor === pair && state.source === 'futures') infoToast(`${pair.slice(0, -4)}: Spot-Kurse nicht ladbar – der Chart zeigt Futures`, 5000);
   } catch (e) { showNotice('market-error', e.message); }
