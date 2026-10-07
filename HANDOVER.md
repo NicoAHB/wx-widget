@@ -70,6 +70,7 @@ Code: `patEngine()` (reine Engine, läuft als Blob-Worker), `PAT_LIB` (41 Eintr�
 
 ## Optimierungen nach G08
 - [x] **1. Chartmuster-Zeile der Vorauswahl in Richtungsfarbe** (auf dem Branch, noch nicht veröffentlicht): im Detailfeld eines Coins bullisch grün (`--up-*`), bärisch rot (`--down-*`), neutral/keine ohne Farbe. Dateien: `weather-widget-v2.html` (`.wl-d-pat.bull/.bear`, `wldPaint`), Test m58 „wl“ (5/5).
+- [x] **2. Knopf „👁 Alle ausblenden / Alle einblenden“** (auf dem Branch, noch nicht veröffentlicht): vorn in der Ebenen-Leiste unter dem Chart; blendet alle Chart-Ebenen auf einmal aus und genau dieselben wieder ein. Die Auswahl davor steht in `scalpdesk.ovhide.v1` (übersteht Neuladen); eine einzeln eingeschaltete Ebene beendet das Ausblenden. „KI“-Muster sind keine Ebene und bleiben unberührt. Dateien: `weather-widget-v2.html` (`ovAll`, `ovAllBtn`, `#ov-all`), Test m27 (22/22), m10 37/37.
 
 ## Bekannte Stolpersteine
 - **m43 beim Stundenwechsel:** Die Prüfung erwartet eine Puls-Meldung „für 23 Uhr“ in einer Zeitzone, in der es gerade 23 Uhr ist. Trifft der Lauf den Wechsel auf 0 Uhr, schlägt sie fehl. Das ist kein App-Fehler; einzeln wiederholen.

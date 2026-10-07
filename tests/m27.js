@@ -65,6 +65,18 @@ const brief = d => d && JSON.stringify({ hi: d.hi && { t: d.hi.text, y: d.hi.y, 
     check('Nach dem Neuladen weiter aus (gespeichert)', o.marks === 0 && o.pressed === 'false', JSON.stringify(o));
     await page.click(btn); await page.waitForTimeout(800); o = await offState();
     check('Wieder an: beide Beschriftungen da', o.marks === 2 && o.pressed === 'true', JSON.stringify(o));
+    // Optimierung 2: „👁 Alle ausblenden“ – alle Ebenen auf einmal aus, gespeichert, genau dieselben wieder an
+    const ovs = () => page.evaluate(() => ({ o: JSON.parse(localStorage.getItem('scalpdesk.overlays.v1') || '{}'), b: document.getElementById('ov-all').textContent, p: document.getElementById('ov-all').getAttribute('aria-pressed'), marks: document.querySelectorAll('#chart .hl-mark').length, on: [...document.querySelectorAll('[data-overlay][aria-pressed="true"]')].length }));
+    const before = (await ovs()).o, onKeys = Object.keys(before).filter(k => before[k]).sort();
+    await page.click('#ov-all'); await page.waitForTimeout(800); let a = await ovs();
+    check('„👁 Alle ausblenden“: alle Ebenen aus (gespeichert), Hoch/Tief weg, Knopf wird „Alle einblenden“', Object.values(a.o).every(v => v === false) && a.on === 0 && a.marks === 0 && a.b === '👁 Alle einblenden' && a.p === 'true', JSON.stringify(a));
+    await page.reload(); await live(page); await page.waitForTimeout(1500); a = await ovs();
+    check('Nach dem Neuladen weiter ausgeblendet, Knopf „Alle einblenden“', a.on === 0 && a.b === '👁 Alle einblenden', JSON.stringify(a));
+    await page.click('#ov-all'); await page.waitForTimeout(800); a = await ovs();
+    check('„👁 Alle einblenden“: genau die vorher eingeschalteten Ebenen wieder an, Hoch/Tief wieder da', JSON.stringify(Object.keys(a.o).filter(k => a.o[k]).sort()) === JSON.stringify(onKeys) && a.marks === 2 && a.b === '👁 Alle ausblenden' && a.p === 'false', JSON.stringify({ onKeys, now: Object.keys(a.o).filter(k => a.o[k]) }));
+    await page.click('#ov-all'); await page.waitForTimeout(500); await page.click(btn); await page.waitForTimeout(600); a = await ovs();
+    check('Ausgeblendet und dann eine Ebene einzeln eingeschaltet: Ausblenden beendet, Knopf wieder „Alle ausblenden“', a.on === 1 && a.o.hilo === true && a.b === '👁 Alle ausblenden', JSON.stringify(a));
+    await page.click('#ov-all'); await page.waitForTimeout(400); await page.click('#ov-all'); await page.waitForTimeout(400);
     check('Computer: keine Fehler', !errors.length, errors.join(' | ')); await ctx.close();
     // Handy hochkant: nur der Kurs, vor den Kurs-Schildchen – die laufende Kerze hält Hoch und Tief und liegt unter ihnen
     for (const w of [390, 320]) {
