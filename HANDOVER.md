@@ -20,6 +20,7 @@ Vorgabe aller Gruppen G01–G14 steht in `docs/VORGABE-G01-G14.md` (Original-Üb
 | `data/` | Kalender-, News- und (später) Musterdaten für Pages; `.github/workflows/` aktualisiert Kalender und News |
 | `tests/` | Test-Server `mock-binance.js` (Binance, Telegram, CoinLore … nachgebaut), `harness.js`, Browser-Tests `m*.js`, Einheitentests `unit-*.js`, `run-all.sh`, `lint.sh`, `README.md` |
 | `docs/VORGABE-G01-G14.md` | fachliche Vorgabe aller Gruppen |
+| `docs/ORACLE-EINRICHTUNG.md` (+ PDF) | Nutzer-Anleitung: 24/7-Dienst bei Oracle neu einrichten, aktualisieren, HTTPS-Steuerung, Fehlerhilfe, Einrichtung mit ChatGPT-Begleitung |
 
 **Zusammenspiel:** Die App holt öffentliche Marktdaten direkt bei Binance (Spot `data-api.binance.vision`, Futures `fapi.binance.com`),
 speichert alles lokal (`localStorage`/IndexedDB über `store`), gleicht mehrere Tabs ab und sichert per Datei oder Telegram. Mit eingerichtetem
