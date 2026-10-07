@@ -16,6 +16,7 @@ export function responseBody(url, at = NOW) {
   let data;
   if (u.pathname.endsWith('/contracts')) data = [structuredClone(contract)];
   else if (u.pathname.endsWith('/current-fund-rate')) data = [{ symbol: 'BTCUSDT', fundingRate: '-0.0001', fundingRateInterval: '2', nextUpdate: String(at + HOUR) }];
+  else if (u.pathname.endsWith('/ticker')) data = [{ symbol: u.searchParams.get('symbol'), bidPr: '100', askPr: '100.1', markPrice: '100', ts: String(at) }];
   else {
     const step = BITGET_FRAMES[tf].periodMs, end = Math.floor(Number(u.searchParams.get('endTime')) / step) * step;
     // Live am 07.10.2026 geprüft: auf UTC-Grenze abgerundetes endTime ist exklusiv.

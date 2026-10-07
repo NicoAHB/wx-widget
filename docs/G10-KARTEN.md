@@ -1,0 +1,39 @@
+# G10(c) – lokale Bitget-Signalkarten (Arbeitsstand)
+
+`confluence-live.mjs` bereitet ausschließlich lokale Szenarien vor. `confluence-worker.mjs` verwendet den öffentlichen Adapter aus G10(b) und den unveränderten Fachkern aus G10(a). Keine Kontoabfrage, Order oder Telegram-Nachricht. Historische Quoten folgen in G10(d), Dienst/Telegram in G10(e).
+
+## Quelle und Muster
+
+Basis und höherer Trend stammen vom selben Bitget-USDT-Perpetual. Je Ebene gilt ein gespeicherter Anker; die EMA beginnt weder beim Öffnen des Reiters noch beim Chart-Zoom neu. Start: 260 geschlossene Kerzen je Ebene. Fortsetzung mit dem Zustand des Adapters, maximal 512 Kerzen je Ebene. Der Worker analysiert beide Ebenen unabhängig vom sichtbaren Binance-Chart.
+
+`bitget-patterns.mjs` importiert die erzeugte G09-Engine `server/pattern-engine.mjs` unverändert. Ausschließlich bereits bekannte geschlossene Kerzen; `prelim` zählt nie. Kerzenmuster gelten auf der letzten geschlossenen Kerze oder bei gerade durch deren Schluss bestätigtem Vorgänger. Nicht bestätigte Treffer werden verworfen. Bestätigte Formationsausbrüche gelten auf den letzten zwei Kerzen wie in C6b; noch gültige Formationen in Bildung stammen aus der aktuellen vollständigen Erkennung. Je ID das jüngste Vorkommen. Bei Formationen ist `closedAt` das Ende der analysierten geschlossenen Reihe, keine rückdatierte erste Pivotbestätigung; `knownAt` umfasst die tatsächliche Kenntnis aller verwendeten Kerzen. Historische Erkennung muss später auf jedem damaligen Präfix laufen.
+
+Überlappende äquivalente Varianten teilen eine Familie: langer unterer/oberer Docht, Mehrfach-Extrem, Dreieck, Mast-Konsolidierung; weitere Familien stehen ausdrücklich im Adapter. Richtung/Ebene/Strecke trennt der vorhandene Score. Neutrale Muster bleiben Chips ohne Punkte. Bestätigung offen/in Bildung: Faktor 0,5; bestätigt: Faktor 1. Fehlende Analyse ist `null`, erfolgreiche Analyse ohne Treffer `[]`. Auch leere Analysen verlangen die passende Quelle/Parameterrevision.
+
+## Referenzpreis und Kosten
+
+Öffentlicher `/api/v2/mix/market/ticker` über dieselbe serielle GET-Warteschlange; Kurs-/Providerzeit nach Score-Entscheidung, höchstens 30 Sekunden alt. Long nimmt Brief, Short Geld, jeweils ungünstige ausdrücklich gewählte Slippage, danach konservative Tickrundung. Keine tatsächliche Ausführung. Ein Sprung mit ungültigem Risiko verhindert das Signal.
+
+Stop-Regel und Funding-Modus sind ausdrückliche Eingaben. Varianten: nächste passende bestätigte Zone einschließlich EMA50/Fib oder ausschließlich jüngster bestätigter Support/Widerstand innerhalb 0,5 ATR. Letzterer greift bei unpassendem jüngstem Pivot nicht auf ältere Punkte zurück. Der gewählte Anker steht in der Karte.
+
+Funding-Szenario: derzeit bekannte Rate und tatsächlichen Abrechnungstakt konstant bis zur maximalen Haltedauer fortschreiben, Markpreis als Referenzeinstieg modellieren. Nur Termine in `[entryAt, exitAt)`; bereits abgelaufene aktuelle Rate verhindert die Modellierung. TP und SL werden mit derselben maximalen Haltedauer geprüft. Das ist ausdrücklich eine Annahme, keine belegte künftige Abrechnung. Modus „Kosten unbekannt“ zeigt Score/Preisplan, erzeugt aber keine vollständig geprüften neuen Signale. Gebühren standardmäßig 0,05 % je Seite, veränderbar; Nettofilter mindestens 1,5. Fehlender Einsatz/FX verhindert keine Preisplanung, aber Menge/Eurokosten bleiben unbekannt. Cross-Liquidationspreis/Abstand bleiben `null`.
+
+## Bedienung und Speicherung
+
+Lokale Analyse wird nach bewusster Einrichtung gestartet, verwendet nur die Vorauswahl (höchstens 40 Coins) und die aktivierten Horizonte. Standardpaare kurz 1h/4h, lang 4h/1d; maximale Haltedauer kurz 1h/24h, lang 2/7/21 Tage. Ein Worker, ein Scheduler, neue Prüfung kurz nach Basiskerzenschluss. Pause/unsichtbare App bricht ab. Keine Historie oder Musterberechnung auf dem Hauptthread.
+
+Fehlendes aktuelles Funding oder ein ausgefallener Referenzkurs erhält keine neue Freigabe und wird nach mindestens 60 Sekunden erneut geprüft; ein späterer Provider-Drosseltermin geht vor. Auch beim Appstart wird der atomare Kartenschlüssel nicht aus einem älteren Start-Snapshot zurückgeschrieben.
+
+Nur vollständig geprüfte Kandidaten werden immutable Signalkarten; aktuelle Long-/Short-Bewertungen einschließlich Beobachten/Sperre bleiben daneben sichtbar. Stabile ID bindet Quelle, Anker, Regelrevision, Horizonte, Haltedauer, Slippage, Richtung und Basiskerzenschluss; neue Referenzkurse allein erzeugen kein neues Ereignis. Einzelpunkte/Score sind der dokumentierte Entscheidungsstand. Divergenz-Restzeit und Nachrichtenablauf werden separat aktualisiert: Alter ab zweiter Nachbarkerze, drei Basiskerzen; Nachrichten kurz 1h/lang 24h. Ablauf schließt keine Position.
+
+Die gerundete Anzeige erteilt keine scheinbare Grenzfreigabe: 69,999 erscheint als „< 70“, 49,999 als „< 50“; entsprechend bei eigener Mindestgrenze. Die fachliche Entscheidung und gespeicherte Scorezahl bleiben ungerundet.
+
+Reiter „KI-Signale“ neben „Preisalarme“, ungelesene Karten am Glockenknopf; Öffnen markiert gelesen. Karten werden in einer IndexedDB-Transaktion zusammengeführt; ein zweiter Tab erzeugt keine neue Ereignis-ID und kann neue Karten nicht mit einer veralteten Liste überschreiben. G09-Info-Sheet für Muster mit Bitget-Quelle und ohne Binance-Statistik. Die neue Chartansicht ist eindeutig Bitget, zeigt eigene geschlossene Kerzen und nur Entry/SL/TP als zusätzliche Linien mit Randlabels. Schalter anfänglich AUS; ausdrückliches „Im Chart zeigen“ wählt diese Karte und den passenden Coin/das Intervall. Der eingeschaltete Indikatorschalter folgt dagegen der neuesten passenden Karte unter den aktuellen Modell-, Kosten- und Horizontregeln. Nach Parameteränderungen bleiben alte Karten dokumentiert, geben aber kein aktuelles Chip-Signal und keine automatischen Chartlinien. Ein neuerer aktueller Long-/Short-Konflikt unterdrückt ebenfalls die alte Chip-Freigabe. Die obere Live-Leiste bleibt ausdrücklich Binance. Vorhandener G07-Chip bleibt; eigener „KI: Long/Short/Halten“-Chip öffnet die Karten.
+
+Eigene IndexedDB-Schlüssel, getrennt von Trades/Positionen: `scalpdesk.idb.ki.*`. Grenzen 200 Karten/5 MiB und 20 MiB öffentliche Kerzenzustände. Fehlender/ voller/ nicht beschreibbarer Speicher pausiert neue Karten. Bewusstes Löschen abgelaufener Karten oder öffentlicher Kerzenzustände im Reiter. Kein KI-Export/Backup in diesem Schritt. Neue Regelparameter erhalten getrennte Revisionen; Wiederaufnahme ohne Regeländerung behält den Zustand. Datenkennung bindet Parameterinhalt, nicht nur Revisionsnummer. Pro Job wird nur der passende gespeicherte Kerzenzustand gelesen/übertragen. Offline-Cache enthält Module, Worker und G09-Engine; frischer Offline-Appstart ist geprüft, fehlender Live-Feed gibt keine neue Freigabe.
+
+## Prüfung und offene Schritte
+
+Abschließend: Musteradapter 20/20, Livekern 46/46, m63 36/36 einschließlich tatsächlichem App-Worker, zweitem Tab, atomarem Start-Abgleich, Fehlerwiederholung, aktuellen Modellgrenzen und frischem Offline-Appstart. G09-Info-Sheet unverändert 11/11, Bitget-Adapter 55/55. Alle 94 Zielbefehle des Gesamtlaufs seriell durchlaufen; einzig m4 zuerst 40/41 (fehlende Rechner-Szenariolinie), vollständig unverändert wiederholt 41/41. m3 anschließend 68/68; Lint App/Module/Server jeweils 0 Fehler, bekannte Warnungen unverändert. Erstabweichung und Grenzen in `HANDOVER.md`.
+
+Entwurf [PR #70](https://github.com/NicoAHB/wx-widget/pull/70) auf G10(b), App/SW gemeinsam 3.45.0; keine Veröffentlichung. Nutzerentscheidung zu drei Anfangswerten/Regeln weiterhin offen: im Formular zunächst ungewählt, Analyse AUS bis zur bewussten Eingabe. Echte Bitget-CORS-/Geräteabnahme bleibt offen. Historische Quoten/Backtest folgen nach Freigabe in G10(d), bestätigte Dienst-/Telegram-Anbindung in G10(e).
