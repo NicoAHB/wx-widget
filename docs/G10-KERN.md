@@ -13,7 +13,7 @@ bleibt erhalten. Bitget-Feed, Karten, Backtest-Worker und Telegram folgen in G10
 
 Keine Netzwerk-, DOM-, Speicher-, Timer- oder Sendeseiteneffekte. Dieselben ES-Module werden in Node, Browser und Browser-Worker getestet;
 Adapter müssen sie später tatsächlich importieren. Der Service Worker speichert alle drei Dateien für den Offline-Import.
-Tests: `unit-confluence.js` (130 feste Fachprüfungen), `m61.js` (8 Laufzeit-/Offlineprüfungen). `tests/fixtures/` enthält ausschließlich Testdaten.
+Tests: `unit-confluence.js` (131 feste Fachprüfungen), `m61.js` (8 Laufzeit-/Offlineprüfungen). `tests/fixtures/` enthält ausschließlich Testdaten.
 
 ## Eingangsvertrag und Zustand
 

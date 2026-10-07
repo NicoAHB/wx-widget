@@ -131,6 +131,7 @@ const throws = fn => { try { fn(); return false; } catch { return true; } };
   check('1D/1d sind dieselbe Ebene für Deduplizierung', near(pp([{ ...f.pattern, timeframe: '1D' }, { ...f.pattern, timeframe: '1d' }]).matching, 13.5));
   for (const [tf, factor] of [['1m', .35], ['5m', .45], ['15m', .60], ['1h', .80], ['4h', 1], ['1D', 1], ['1W', 1], ['1M', 1]]) check(`Musterzeitgewicht ${tf}`, near(pp([{ ...f.pattern, timeframe: tf }]).matching, 15 * .9 * factor));
   check('Ungültige Musterqualität ergibt unbekannt', pp([{ ...f.pattern, quality: 101 }]).score === null);
+  check('Fehlender Geometrie-Bestätigungsstatus bleibt unbekannt', pp([{ ...f.pattern, provisional: undefined }]).score === null);
   const snapshot = C.frameSnapshot({ source: f.input.base.source, state: initial, candles: rows, asOf });
   check('Snapshot: nur geschlossene eigene Indikatoren, Volumen ohne aktuelle Kerze im Mittel', snapshot.frame.price === rows.at(-1).close && snapshot.frame.ema200 === full.values.at(-1).ema200 && snapshot.frame.previousVolumes.length === 20 && snapshot.frame.previousVolumes.at(-1) === rows.at(-2).volume);
   const appended = fixedCandles([...closes, 99999]);

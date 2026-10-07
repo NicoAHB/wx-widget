@@ -12,7 +12,7 @@ export function patternScore({ baseScore, weight = 15, direction, patterns, asOf
   for (const p of patterns) {
     if (!p || !time(p.knownAt) || !time(p.closedAt)) return { status: 'nicht bewertbar', score: null, reason: 'Muster-Kenntniszeit fehlt' };
     if (p.knownAt > asOf || p.closedAt > asOf || p.provisional === true) continue;
-    if (typeof p.family !== 'string' || !p.family.trim() || ![1, -1, 0].includes(p.direction) || !finite(p.quality) || p.quality < 0 || p.quality > 100 || !finite(WEIGHTS[p.timeframe]) || typeof p.confirmed !== 'boolean' || !time(p.from) || !time(p.to) || p.to < p.from || p.to > p.closedAt || p.knownAt < p.closedAt) return { status: 'nicht bewertbar', score: null, reason: 'Ungültige Muster-Metadaten' };
+    if (typeof p.family !== 'string' || !p.family.trim() || ![1, -1, 0].includes(p.direction) || !finite(p.quality) || p.quality < 0 || p.quality > 100 || !finite(WEIGHTS[p.timeframe]) || typeof p.confirmed !== 'boolean' || typeof p.provisional !== 'boolean' || !time(p.from) || !time(p.to) || p.to < p.from || p.to > p.closedAt || p.knownAt < p.closedAt) return { status: 'nicht bewertbar', score: null, reason: 'Ungültige Muster-Metadaten' };
     if (p.direction === 0) continue;
     eligible.push({ ...p, timeframe: p.timeframe === '1D' ? '1d' : p.timeframe === '1W' ? '1w' : p.timeframe, contribution: weight * p.quality / 100 * WEIGHTS[p.timeframe] * (p.confirmed ? 1 : .5) });
   }
