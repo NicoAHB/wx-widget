@@ -5,7 +5,8 @@ Laufende Übergabe. Sie wird nach jedem Arbeitsschritt aktualisiert, damit ein A
 ## Kurzstand
 - **Version live:** 3.39.0 (G09 C4 + C5, Dienst 2.1.0), Pull Request #62, Merge-Commit `0f12e0d` auf `main` (davor 3.38.0/G09 Punkt 11 + C1–C3: PR #61, 3.37.0/G09 A+B: PR #60, 3.36.0/G08: PR #59, 3.35.0/G07: PR #58).
 - **Arbeits-Branch:** `claude/scalp-desk-g03-j81c8k` (nach jedem Merge neu von `main` gestartet).
-- **Offen in G09:** nur noch C6 (Muster-Telegram-Chat; Plan unten: C6a App-Ziel, C6b Dienst). Danach G10.
+- **Auf dem Branch, noch nicht veröffentlicht:** G09 C6a (Ziel „Chartmuster“, Dienst 2.2.0). Release 3.40.0 (Version, Gesamtlauf, Doku Teil AS, PR) in Arbeit.
+- **Offen in G09:** C6b (Meldung bei geschlossener App über den Dienst – größerer Umbau, vorher mit dem Nutzer abstimmen). Danach G10.
 - **Danach:** G10 bis Ende schreibt ChatGPT, sofern der Nutzer nichts anderes sagt.
 
 ## Projekt in einem Satz
@@ -17,7 +18,7 @@ Single-File-PWA für Krypto-Scalping (`weather-widget-v2.html`, auf GitHub Pages
 | `weather-widget-v2.html` | die ganze App (HTML, CSS, ein `<script type="module">`); `APP_VERSION` oben im Skript |
 | `sw.js` | Service Worker; `VERSION` muss zur App-Version passen |
 | `index.html` | Weiterleitung auf die App |
-| `server/scalpdesk-247.mjs`, `server/install.sh` | 24/7-Dienst (Version 2.1.0) und Installer |
+| `server/scalpdesk-247.mjs`, `server/install.sh` | 24/7-Dienst (Version 2.2.0 auf dem Branch, live 2.1.0) und Installer |
 | `server/muster-export.mjs` | erzeugt aus dem Archiv-Export die Veröffentlichung `data/muster/manifest.json` + `stats-<n>.json` (G09 C5) |
 | `tests/` | Test-Server (`mock-binance.js`), `harness.js`, Tests `m*.js`/`unit-*.js`, `run-all.sh`, `lint.sh`, `README.md` |
 | `.github/workflows/` | Kalender- und News-Daten (eigene Workflows) |
@@ -58,12 +59,12 @@ Code: `patEngine()` (reine Engine, läuft als Blob-Worker), `PAT_LIB` (41 Eintr�
 - [x] C4. (veröffentlicht in 3.39.0: `PatternArchive` + `/v1/patterns/*` im Dienst 2.1.0, App `pkSync`/`pkState`, Export-Datei; Tests `unit-247d.js` 15/15, m58 „sync“ 6/6) Server-Archiv (Punkte 16–17): Originaljournal am 24/7-Dienst (`server/scalpdesk-247.mjs`, HTTPS-Weg aus G05 mit Revision) getrennt von Alarmkonfiguration, zusätzliche unabhängige Sicherung + getestete Wiederherstellung; Zustände „nur lokal / extern gespeichert / zusätzlich gesichert / veröffentlicht“. Nicht über den Sicherungsbot/Telegram.
 - [x] C5. (veröffentlicht in 3.39.0: `server/muster-export.mjs`, App `pkPubLoad`/`pkPubGroup`, Anzeige `.pk-pub`, Zustand „veröffentlicht“; Tests `unit-pub.js` 7/7, m58 „pub“ 5/5; Ablauf in `server/README.md`) Veröffentlichung (Punkte 18–19): bereinigter Bestand auf GitHub/Pages als Release/Serverexport (Manifest ≤ 64 KiB, Dateien ≤ 256 KiB, lokaler Cache ≤ 10 MiB, Warteschlange 2 MiB – voll → neues Lernen stoppt mit Hinweis, nichts löschen); keine Schreibschlüssel im Browser; ohne Schreibweg letzte Revision + Datum zeigen.
 - [ ] C6. Muster-Telegram-Chat (Punkt 25): neues Ziel in „Telegram-Chats“ (G05-Mechanik: Schalter, Epoche, Sendefreigabe) für wichtige bestätigte Muster, auch bei geschlossener App über den 24/7-Dienst; Qualitätsgrenzen kenntlich (regelbasiert vs. erlernt).
-  - **C6a – Ziel „Chartmuster“ in der App** (zuerst; klein genug für einen Schritt):
+  - [x] **C6a – Ziel „Chartmuster“ in der App** (umgesetzt auf dem Branch: `TGT` `patterns`, Felder `pchat`/`pthread`/`ptoken`, `patNotify`/`patTgText` nach `pkRecord`, `tgcSet` schaltet Ziele, die ein älterer Dienst nicht kennt, lokal; Dienst 2.2.0 `TARGETS` + `patterns`; Tests m58 „tg“ 7/7, unit-247c 55/55, m54 52/52, m55 49/49, m38 19/19):
     - Dateien: `weather-widget-v2.html` – `TGT` (neuer Eintrag `{ id: 'patterns', name: 'Chartmuster', icon: '📐', … }`), `loadChannels` (`tgt.patterns`, `tep.patterns`, Felder `pchat`/`pthread`/`ptoken` mit Validierung wie `tchat`), `tgOk`, `tgDest('patterns')` (Bot: eigener oder derselbe wie Kursalarm, ausdrücklich beschriftet), `TG_ROUTE.pattern = 'patterns'`, Einrichtungsformular (Abschnitt „📊 Trades“ als Vorlage), `readChanForm`; `server/scalpdesk-247.mjs` – `TARGETS`/`TARGET_NAME` um `patterns` erweitern (`policyNorm` ergänzt fehlende Ziele mit `on: true, epoch: 1` – prüfen!).
     - Auslöser: in `patDone`/`pkRecord` ein **neuer** Fall mit `src === 'live'`, `kind === 'form'` und Regelgüte ≥ 80 % → eine Meldung über `notifyChannels('pattern', <Fall-ID>, text)` mit Ereignis-ID aus der Fall-ID (doppelt erkannt → einmal gesendet; Sendefreigabe am Dienst wie bei Kursalarmen).
     - Text: Coin, Intervall, Muster, Status, Ziel; Kennzeichnung „regelbasiert (Modell pat-1, Regelgüte X %)“ und – nur wenn ≥ 10 vergleichbare abgeschlossene Fälle – „erlernt: X von N aufwärts …“; Hinweis „keine Erfolgswahrscheinlichkeit“.
     - Fertig, wenn: Test (neuer Abschnitt in m58 oder `m59.js`): Ziel erscheint in „Telegram-Chats“ mit Schalter, aus → keine Meldung, Epoche verwirft alte Aufträge, gleicher Fall nur einmal, Text mit Kennzeichnung; m54/unit-247c (Zielanzahl 3 → 4) angepasst.
-  - **C6b – Meldung bei geschlossener App über den 24/7-Dienst** (größerer Schritt, vorher mit dem Nutzer abstimmen):
+  - [ ] **C6b – Meldung bei geschlossener App über den 24/7-Dienst** (größerer Schritt, vorher mit dem Nutzer abstimmen):
     - Die Engine `patEngine()` ist rein; sie als `server/pattern-engine.mjs` bereitstellen (aus der HTML erzeugt, ein Test vergleicht den Quelltext beider Fassungen, damit sie nie auseinanderlaufen).
     - Der Dienst prüft je Kerzenschluss die Coins der Vorauswahl (Liste kommt wie die Kursalarme per HTTPS von der App) mit `klines()` und sendet an das Ziel `patterns` – mit derselben Ereignis-ID wie die App (Fall-ID), damit App und Dienst nie doppelt senden.
     - Fertig, wenn: `unit-247e.js` (Engine-Gleichheit, Erkennung auf festen Kerzen, Ziel aus → nichts, Ereignis-ID einmal) und Installer/README aktualisiert.
