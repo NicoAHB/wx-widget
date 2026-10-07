@@ -3039,7 +3039,9 @@ const ALARM_CHECKS = [
   [a => isNum(a.price) && a.price > 0, 'Alarmkurs fehlt oder ist nicht positiv'],
   [a => a.source === 'spot' || a.source === 'futures', 'Kursquelle (Spot/Futures) fehlt'],
   [a => okTime(a.createdAt), 'Erstellzeit fehlt oder ist unplausibel'],
-  [a => a.triggeredAt === null || okTime(a.triggeredAt), 'Auslösezeit ungültig']];
+  [a => a.triggeredAt === null || okTime(a.triggeredAt), 'Auslösezeit ungültig'],
+  [a => a.cl === undefined || a.cl === null || AL_CL.includes(a.cl), 'Auslöser (Kerzenschluss-Intervall) ungültig']];
+const AL_CL = ['5m', '15m', '1h', '4h'];   // Optimierung 8: Alarm erst beim Schlusskurs dieses Intervalls
 const MV_CHECKS = [
   [m => typeof m.id === 'string' && m.id.length >= 1 && m.id.length <= 80, 'Kennung fehlt oder ist ungültig'],
   [m => m.type in MV_TYPES, m => `Art unbekannt („${String(m.type).slice(0, 20)}“)`],
@@ -5904,7 +5906,7 @@ function simpleToast(key, cls, text, onOk, color = 'yellow') {
 }
 const hhmm = ms => new Date(ms).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
 // Wie wurde die Marke erreicht? Direkt, nur per Docht (Kurs schon wieder zurück) oder während die Seite nicht aktiv war.
-const howReached = info => info.missedAt ? `um ${hhmm(info.missedAt)} erreicht, während die Seite nicht aktiv war` : info.wick ? `kurz per Docht erreicht (bis ${priceText(info.extreme)})` : 'erreicht';
+const howReached = info => info.cl ? `beim ${info.cl}-Schlusskurs erreicht (Kerze bis ${hhmm(info.at)})` : info.missedAt ? `um ${hhmm(info.missedAt)} erreicht, während die Seite nicht aktiv war` : info.wick ? `kurz per Docht erreicht (bis ${priceText(info.extreme)})` : 'erreicht';
 const alertText = (pos, type, price, info = {}) => `${coin(pos.symbol)} ${pos.side === 'long' ? 'Long' : 'Short'}: ${type === 'tp' ? 'Take-Profit' : 'Stop-Loss'} ${priceText(type === 'tp' ? pos.tp : pos.sl)} ${howReached(info)} · Kurs ${priceText(price)}`;
 function toast(pos, type, price, info = {}) {
   if ($('toasts').querySelector(`.toast[data-id="${pos.id}"][data-type="${type}"]`)) return;
@@ -5969,7 +5971,7 @@ function checkAlerts() {
     }
   }
   for (const a of state.alarms) {
-    if (a.triggeredAt) continue;
+    if (a.triggeredAt || a.cl) continue;   // Optimierung 8: Schluss-Alarme prüft alClTick
     const v = view(a.symbol, a.armedAt || a.createdAt); if (!v) continue;
     const hitNow = alarmHit(a, v.price), touched = hitNow || (a.dir === 'above' ? v.hi >= a.price : v.lo <= a.price);
     if (touched) { triggerAlarm(a, v.price, { wick: !hitNow, extreme: a.dir === 'above' ? v.hi : v.lo }); changed = true; }
@@ -5982,7 +5984,7 @@ let alarmKey = '';
 function alarmSub(a) {
   const pr = state.prices[a.symbol]?.price, dist = pr ? (a.price / pr - 1) * 100 : null;
   return a.triggeredAt ? `ausgelöst ${localTime(a.triggeredAt)} ${a.triggerPrice ? `bei ${priceText(a.triggerPrice)}` : 'und gemeldet vom 24/7-Dienst'}${a.touch ? ` · Docht bis ${priceText(a.touch)}` : ''}${a.missed ? ' · nachträglich erkannt' : ''}${a.note ? ' · ' + a.note : ''}`
-    : `${pr ? `aktuell ${priceText(pr)} · noch ${number(Math.abs(dist))} %` : 'Kurs folgt beim nächsten Abruf'}${a.note ? ' · ' + a.note : ''}`;
+    : `${a.cl ? `löst beim ${a.cl}-Schlusskurs aus · ` : ''}${pr ? `aktuell ${priceText(pr)} · noch ${number(Math.abs(dist))} %` : 'Kurs folgt beim nächsten Abruf'}${a.note ? ' · ' + a.note : ''}`;
 }
 function renderAlarms() {
   const active = state.alarms.filter(a => !a.triggeredAt).length;
@@ -6035,7 +6037,7 @@ async function saveAlarm(e) {
   const cur = knownPrice(sym, ALARM_FRESH) || (price > 0 ? price : null) || await freshPrice(sym, source);
   if (!cur && !state.alDirManual) { $('al-save').disabled = false; showNotice('al-error', `Kein aktueller Kurs für ${coin(sym)} – die Richtung lässt sich nicht sicher bestimmen. Bitte oben „steigt auf/über“ oder „fällt auf/unter“ antippen und erneut speichern.`); return; }
   const dir = !state.alDirManual && cur ? alarmDirection(target, cur) || state.alDir : state.alDir;
-  const a = { id: newId(), symbol: sym, dir, price: target, note: $('al-note').value.trim().slice(0, 200), source, createdAt: Date.now(), triggeredAt: null, triggerPrice: null };
+  const a = { id: newId(), symbol: sym, dir, price: target, note: $('al-note').value.trim().slice(0, 200), source, createdAt: Date.now(), triggeredAt: null, triggerPrice: null, ...(AL_CL.includes($('al-cl').value) ? { cl: $('al-cl').value } : {}) };
   $('al-save').disabled = false;
   if (cur && alarmHit(a, cur)) { showNotice('al-error', `Der Kurs liegt schon ${a.dir === 'above' ? 'auf oder über' : 'auf oder unter'} ${priceText(target)} (aktuell ${priceText(cur)}). Preis oder Richtung anpassen.`); return; }
   state.alarms.push(a); persist(); openAlarmForm(false); renderAlarms(); renderMarket();
@@ -6961,6 +6963,24 @@ function mtfTick(now) {
   if (document.hidden || !$('mtf') || !$('mtf').offsetParent) return;
   void mtfLoad(); if (now - (mtf.pt || 0) > 2000) { mtf.pt = now; mtfPaint(); }
 }
+// Optimierung 8: Kurs-Alarm erst beim Schlusskurs (5m/15m/1h/4h) – Fehlausbrüche per Docht lösen nicht aus. Kurz nach jedem
+// Kerzenschluss des Intervalls holt die App die letzte abgeschlossene Kerze (gleiche Börse wie der Alarm); zählt nur eine Kerze, die
+// nach dem Scharfschalten geschlossen hat. Gleiche Ereignis-ID wie bei Berührung – App und 24/7-Dienst (ab 2.3.0) melden einmal.
+const alCl = new Map();
+function alClTick(now) {
+  for (const a of state.alarms) {
+    if (a.triggeredAt || !a.cl || !IV_MS[a.cl]) continue;
+    const ms = IV_MS[a.cl], b = Math.floor(now / ms) * ms, k = `${a.id}|${a.cl}`; if (now - b < 3000 || alCl.get(k) === b) continue;
+    alCl.set(k, b);
+    void (async () => {
+      try {
+        const q = { symbol: a.symbol, interval: a.cl, limit: 3 }, rows = a.source === 'futures' ? await api.get(FUTURES, '/fapi/v1/klines', q) : await spotGet('/api/v3/klines', q);
+        const c = normalizeKlines(rows).filter(x => x.closeTime < Date.now()).at(-1); if (!c || a.triggeredAt) return;
+        if (c.closeTime > (a.armedAt || a.createdAt) && alarmHit(a, c.close)) { triggerAlarm(a, c.close, { cl: a.cl, at: c.closeTime + 1 }); persist(); withAnchor(() => { renderAlarms(); renderLivebar(); }); }
+      } catch { alCl.delete(k); }   // Abruf fehlgeschlagen: beim nächsten Takt erneut
+    })();
+  }
+}
 function onTick(now) {
   status(); updateTitle(); // Tab-Titel spätestens jede Sekunde aktuell, auch im Hintergrund-Tab
   if (titleNeedsPoll(now)) void pollTitlePrices(now);
@@ -6975,6 +6995,7 @@ function onTick(now) {
   anaTick(now); // 3.35.0 (G07): Analyse-Reihe nach dem nächsten Kerzenschluss
   patTick(); // 3.37.0 (G09): Muster neu bei Kerzenschluss oder Kontextwechsel
   mtfTick(now); // Optimierung 7: Trend-Ampel je Zeitebene
+  alClTick(now); // Optimierung 8: Kurs-Alarme beim Kerzenschluss
   if (now - lastStreamSync > 5000) { lastStreamSync = now; syncStreams(); }
   if (Date.now() - lastSeenSaved > 30000) saveLastSeen();
   // 3.32.0 (G04.7): Kurse offener Positionen nachladen, bevor sie die Frischegrenze erreichen (ruhiger Coin ohne Stream-Meldung,
@@ -7110,7 +7131,7 @@ function missedCheck(sym, candles, from) {
   const cur = state.prices[sym]?.price;
   let changed = false;
   for (const a of state.alarms) {
-    if (a.triggeredAt || a.symbol !== sym) continue;
+    if (a.triggeredAt || a.symbol !== sym || a.cl) continue;
     const h = first(a.armedAt || a.createdAt, c => a.dir === 'above' ? (c.high >= a.price ? c.high : null) : (c.low <= a.price ? c.low : null));
     if (h) { triggerAlarm(a, cur || h.c.close, { missedAt: h.c.time, extreme: h.x }); changed = true; }
   }
@@ -11465,7 +11486,7 @@ function s247Payload() {
   // 3.33.0: ohne HTTPS-Steuerung wirkt der Schalter „Kursalarm“ über die Übergabe (aus = der Dienst meldet nichts); mit
   // Steuerung entscheidet der Schalter am Dienst selbst – er beobachtet weiter, sendet aber nicht
   const on = s247.cfg.on && (svcOn() || tgtOn('course-alert'));
-  const alarms = on ? state.alarms.filter(a => !a.triggeredAt || (a.svcAt > 0 && Date.now() - a.svcAt < S247_GRACE)).map(a => ({ id: a.id, symbol: a.symbol, source: a.source, dir: a.dir, price: a.price, note: a.note || '', armedAt: a.armedAt || a.createdAt })) : [];
+  const alarms = on ? state.alarms.filter(a => !a.triggeredAt || (a.svcAt > 0 && Date.now() - a.svcAt < S247_GRACE)).map(a => ({ id: a.id, symbol: a.symbol, source: a.source, dir: a.dir, price: a.price, note: a.note || '', armedAt: a.armedAt || a.createdAt, ...(a.cl ? { cl: a.cl } : {}) })) : [];
   const positions = on ? state.positions.filter(p => p.sl > 0 || p.tp > 0).map(p => ({ id: p.id, symbol: p.symbol, source: p.source, side: p.side, tp: p.tp > 0 ? p.tp : null, sl: p.sl > 0 ? p.sl : null,
     since: p.slTpAt || p.openedAt, ack: { tp: !!p.ack?.tp, sl: !!p.ack?.sl } })) : [];
   let tz = 'UTC'; try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch { /* alter Browser */ }
@@ -12915,6 +12936,7 @@ function pkSection(h) {
   } else box.append(btn, out);
   return box;
 }
+window.__opt8 = { tick: t => alClTick(t), get cl() { return alCl; } };
 window.__opt7 = { get mtf() { return mtf; }, calc: (c, p) => mtfCalc(c, p), paint: () => mtfPaint(true) };
 window.__opt4 = { tradeR: t => tradeR(t), tradeRisk: t => tradeRisk(t), groupStats: (t, f) => groupStats(t, f) };
 window.__g09 = { patTgText: (c, h) => patTgText(c, h), pkRecord: (m, h, mk) => pkRecord(m, h, mk), pkSync: () => pkSync(), pkState: c => pkState(c), get pub() { return pkPub; }, pubLoad: f => pkPubLoad(f), get pk() { return pk; }, pkMerge: l => pkMerge(l), pkStats: s => pkStats(s), pkBand: p => pkBand(p), pkId: c => pkId(c), wlPat: e => wlPat(e), get wl() { return wl; }, wldPaint: () => wldPaint(Date.now(), true), get pat() { return pat; }, engine: () => (PAT_E = PAT_E || patEngine()), lib: PAT_LIB, run: r => patRun(r), info: i => patOpenInfo(i), zoom: i => patZoom(i), svg: id => patSvg(id).outerHTML };
@@ -13594,6 +13616,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
             <label>Kryptowährung<span class="input-wrap"><input id="al-symbol" maxlength="24" autocomplete="off" autocapitalize="characters" spellcheck="false"><span>/ USDT</span></span></label>
             <label>Preis<span class="input-wrap"><input id="al-price" type="text" inputmode="decimal" autocomplete="off" placeholder="z. B. 1,55"><span>USDT</span></span></label>
             <div class="side-toggle" role="group" aria-label="Richtung"><button type="button" data-al-dir="above" class="active" aria-pressed="true">steigt auf/über</button><button type="button" data-al-dir="below" aria-pressed="false">fällt auf/unter</button></div>
+            <label>Auslösen<span class="input-wrap"><select id="al-cl" aria-label="Wann der Alarm auslöst"><option value="">bei Berührung</option><option value="5m">bei Schluss 5m</option><option value="15m">bei Schluss 15m</option><option value="1h">bei Schluss 1h</option><option value="4h">bei Schluss 4h</option></select></span></label>
             <label class="wide">Notiz (optional)<span class="input-wrap"><input id="al-note" maxlength="200" autocomplete="off" placeholder="z. B. Ausbruch über Widerstand"></span></label>
             <p id="al-preview"></p>
             <button type="submit" class="button primary-lite" id="al-save">Alarm speichern</button><button type="button" class="button ghost" id="al-cancel">Abbrechen</button>

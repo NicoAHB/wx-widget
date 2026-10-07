@@ -48,7 +48,7 @@ import http from 'node:http';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
-export const VERSION = '2.2.0';
+export const VERSION = '2.3.0';
 const E = process.env;
 // Adressen (für Tests über Umgebungsvariablen änderbar)
 export const API = {
@@ -89,7 +89,7 @@ export function parseConfig(j) {
   if (!j || j.kind !== 'scalpdesk-247' || j.v !== 1) throw new Error('Das ist keine Scalp-Desk-Datei für den 24/7-Dienst.');
   const pos = x => typeof x === 'number' && Number.isFinite(x) && x > 0, str = (x, n) => (typeof x === 'string' ? x.slice(0, n) : '');
   const alarms = (Array.isArray(j.alarms) ? j.alarms : []).filter(a => a && typeof a.id === 'string' && SYM_RE.test(a.symbol) && (a.dir === 'above' || a.dir === 'below') && pos(a.price) && Number.isFinite(a.armedAt))
-    .slice(0, 300).map(a => ({ id: str(a.id, 40), symbol: a.symbol, source: a.source === 'futures' ? 'futures' : 'spot', dir: a.dir, price: a.price, note: str(a.note, 200), armedAt: a.armedAt }));
+    .slice(0, 300).map(a => ({ id: str(a.id, 40), symbol: a.symbol, source: a.source === 'futures' ? 'futures' : 'spot', dir: a.dir, price: a.price, note: str(a.note, 200), armedAt: a.armedAt, ...(['5m', '15m', '1h', '4h'].includes(a.cl) ? { cl: a.cl } : {}) }));   // 2.3.0: cl = bei Kerzenschluss
   const positions = (Array.isArray(j.positions) ? j.positions : []).filter(p => p && typeof p.id === 'string' && SYM_RE.test(p.symbol) && (p.side === 'long' || p.side === 'short') && Number.isFinite(p.since) && (pos(p.tp) || pos(p.sl)))
     .slice(0, 300).map(p => ({ id: str(p.id, 40), symbol: p.symbol, source: p.source === 'futures' ? 'futures' : 'spot', side: p.side, tp: pos(p.tp) ? p.tp : null, sl: pos(p.sl) ? p.sl : null,
       since: p.since, ack: { tp: !!p.ack?.tp, sl: !!p.ack?.sl } }));
@@ -152,7 +152,7 @@ export function touched(level, below, v) {
   const now = below ? v.price <= level : v.price >= level;
   return now || (below ? v.lo <= level : v.hi >= level) ? { wick: !now, extreme: below ? v.lo : v.hi } : null;
 }
-const howReached = info => (info.wick ? `kurz per Docht erreicht (bis ${priceText(info.extreme)})` : 'erreicht');
+const howReached = info => (info.close ? `beim ${info.close}-Schlusskurs erreicht` : info.wick ? `kurz per Docht erreicht (bis ${priceText(info.extreme)})` : 'erreicht');   // 2.3.0: Schluss-Alarm
 export const alarmText = (a, price, info) => `🔔 Kurs-Alarm ${coin(a.symbol)}\n${coin(a.symbol)} ${a.dir === 'above' ? 'auf/über' : 'auf/unter'} ${priceText(a.price)} USDT ${howReached(info)} · Kurs ${priceText(price)}${a.note ? '\nNotiz: ' + a.note : ''}`;
 export function posText(p, type, price, info) {
   const what = `${coin(p.symbol)} ${p.side === 'long' ? 'Long' : 'Short'}: ${type === 'tp' ? 'Take-Profit' : 'Stop-Loss'}`;
@@ -303,7 +303,10 @@ export function readServerConfig(file) {
 // ---------- 2.0 (G05): Ziel-Schalter und Ereignis-Freigaben (rein, ohne Netz – testbar) ----------
 // Ziele: Kursalarm (Preis-, Stop-/Ziel-, Gewinn-/Verlust-Alarme, Termine, BTC-Puls – sendet dieser Dienst bzw. die App mit
 // Freigabe), Sicherung und Trades (sendet nur die App direkt an Telegram; hier steht nur der Schalter, ohne Inhalte).
-export const TARGETS = ['course-alert', 'backup', 'trades', 'patterns'];   // 2.2.0 (G09 C6a): Chartmuster
+export const TARGETS = ['course-alert', 'backup', 'trades', 'patterns'];
+export const CL_MS = { '5m': 3e5, '15m': 9e5, '1h': 36e5, '4h': 144e5 };   // 2.3.0: Alarm bei Kerzenschluss
+// letzte abgeschlossene Kerze (Schlusszeit vor jetzt); Treffer nur, wenn sie nach dem Scharfschalten schloss und ihr Schlusskurs die Marke erreicht
+export function closeHit(a, rows, armedAt, now) { const c = candles(rows).filter(x => x.T < now).at(-1); return c ? { price: c.c, hit: c.T > armedAt && (a.dir === 'below' ? c.c <= a.price : c.c >= a.price) } : null; }   // 2.2.0 (G09 C6a): Chartmuster
 export const TARGET_NAME = { 'course-alert': 'Kursalarm', backup: 'Sicherung', trades: 'Trades', patterns: 'Chartmuster' };
 const CMD_RE = /^[A-Za-z0-9_-]{8,64}$/, EV_RE = /^[A-Za-z0-9_.:-]{6,140}$/, SENDER_RE = /^(oracle|app:[a-z0-9]{4,24})$/;
 export const EV_FINAL = ['confirmed', 'unconfirmed', 'failed', 'discarded'], EV_ORDER = { reserved: 0, sending: 1, confirmed: 2, unconfirmed: 2, failed: 2, discarded: 2 };
@@ -668,6 +671,7 @@ export class Watcher {
     const look = (key, what, level, price, hit) => { if (this.firstLook.delete(key)) this.log(`Kursprüfung: ${what} – Kurs ${priceText(price)}, ${hit ? 'Marke erreicht' : `noch ${number(Math.abs(level / price - 1) * 100)} % entfernt`}`); };
     // 1.3: Kerzen gleichzeitig holen (höchstens 4 Abrufe parallel) – ein langsames Kürzel hält die übrigen nicht mehr auf
     const list = [...groups.entries()], got = await mapLimit(list, 4, ([, g]) => klines(g.source, g.symbol));
+    const clRows = new Map();   // 2.3.0: Kerzen je Kürzel und Schluss-Intervall, einmal je Prüfung
     for (const [i, [k, g]] of list.entries()) {
       if (!got[i].ok) { bad = `${coin(g.symbol)}: ${got[i].error.message}`; continue; }
       const rows = got[i].value;
@@ -678,8 +682,14 @@ export class Watcher {
       const armed = key => { if (!this.seen.has(key)) this.seen.set(key, t); return Math.max(this.seen.get(key), this.rearm.get(key) || 0); };
       for (const a of g.alarms) {
         const key = alarmKey(a); if (this.fired[key]) continue;
-        const v = rangeView(rows, from, Math.max(a.armedAt, armed(key)), prev); if (!v) continue;
-        const hit = touched(a.price, a.dir === 'below', v), what = `Kurs-Alarm ${coin(a.symbol)} ${a.dir === 'above' ? 'auf/über' : 'auf/unter'} ${priceText(a.price)}`;
+        // 2.3.0: Alarm „bei Schluss“ (5m/15m/1h/4h) – nur der Schlusskurs der letzten abgeschlossenen Kerze nach dem Scharfschalten zählt, kein Docht
+        let v, hit;
+        if (CL_MS[a.cl]) {
+          const ck = `${k}|${a.cl}`; if (!clRows.has(ck)) clRows.set(ck, await klines(g.source, g.symbol, 3, a.cl).catch(() => null));
+          const ch = clRows.get(ck) && closeHit(a, clRows.get(ck), Math.max(a.armedAt, armed(key)), t); if (!ch) continue;
+          v = { price: ch.price }; hit = ch.hit ? { wick: false, close: a.cl } : null;
+        } else { v = rangeView(rows, from, Math.max(a.armedAt, armed(key)), prev); if (!v) continue; hit = touched(a.price, a.dir === 'below', v); }
+        const what = `Kurs-Alarm ${coin(a.symbol)} ${a.dir === 'above' ? 'auf/über' : 'auf/unter'} ${priceText(a.price)}`;
         look(key, what, a.price, v.price, hit);
         if (hit) { this.fired[key] = t; this.saveState(); this.log(`Alarm ausgelöst: ${what} (Kurs ${priceText(v.price)}${hit.wick ? `, per Docht bis ${priceText(hit.extreme)}` : ''})`); const ev = alarmEvent(a), label = `Kurs-Alarm ${coin(a.symbol)}`; if (this.reserveOwn(ev, label).grant) await this.queue(alarmText(a, v.price, hit), c.tz, { label, ev: this.key ? ev : '' }); } // 2.0: nur mit Freigabe
       }
@@ -1009,12 +1019,12 @@ export async function mapLimit(items, n, fn) {
   await Promise.all(Array.from({ length: Math.min(n, items.length) }, worker));
   return out;
 }
-export async function klines(source, symbol, limit = 3) {
+export async function klines(source, symbol, limit = 3, interval = '1m') {
   const bases = source === 'futures' ? [API.fut] : API.spot, p = source === 'futures' ? '/fapi/v1/klines' : '/api/v3/klines';
   let last = new Error('keine Adresse');
   for (const b of bases) {
     try {
-      let r; try { r = await fetch(`${b}${p}?symbol=${symbol}&interval=1m&limit=${limit}`, { signal: AbortSignal.timeout(10000) }); } catch (e) { throw new Error(`Binance nicht erreichbar (${e.cause?.code || e.name})`); }
+      let r; try { r = await fetch(`${b}${p}?symbol=${symbol}&interval=${interval}&limit=${limit}`, { signal: AbortSignal.timeout(10000) }); } catch (e) { throw new Error(`Binance nicht erreichbar (${e.cause?.code || e.name})`); }
       if (r.status === 451 || r.status === 403) throw Object.assign(new Error(`Binance sperrt diese Server-Region (Fehler ${r.status}) – Server in der EU wählen`), { hard: true });
       const d = await r.json().catch(() => null);
       if (!r.ok) throw Object.assign(new Error(`Binance meldet Fehler ${d?.code ?? r.status}${d?.msg ? ': ' + d.msg : ''}`), { code: d?.code });

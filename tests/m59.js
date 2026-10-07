@@ -1,4 +1,4 @@
-// Optimierungen nach G09 – 4: Auswertung in R; 7: Trend-Ampel je Zeitebene.
+// Optimierungen nach G09 – 4: Auswertung in R; 7: Trend-Ampel je Zeitebene; 8: Kurs-Alarm bei Kerzenschluss.
 // Optimierung 4: Auswertung in R – Erwartungswert je Trade in Vielfachen des Anfangsrisikos, je Grund/Coin/Uhrzeit,
 // Anfangsrisiko (erster Stop) beim Anlegen festgehalten, Stop-Verschiebungen ändern es nicht. Aufruf: node m59.js
 const h = require('./harness');
@@ -20,6 +20,24 @@ const trade = (id, sym, pnl, closedAt, extra = {}) => ({ id, symbol: sym, side: 
     const page = await ctx.newPage(); h.collect(page, errors); await page.goto(`${h.URL_BASE}/weather-widget-v2.html`); await page.waitForTimeout(1500);
     const u = await page.evaluate(() => { const t = JSON.parse(localStorage.getItem('scalpdesk.history.v1')); const R = id => __opt4.tradeR(t.find(x => x.id === id)); return { a1: R('A1'), a2: R('A2'), a3: R('A3'), a4: R('A4'), part: __opt4.tradeR({ side: 'long', entry: 100, sl: 98, qty: 1, pnl: 4, part: { pos: 'P' } }) }; });
     check('R je Trade: Stop beim Schluss (+2), Anfangsrisiko r0 vor nachgezogenem Stop (−0,5), Short (+1,5); Stop auf Einstand oder Teilschluss ohne r0 → ohne R', u.a1 === 2 && u.a2 === -0.5 && u.a3 === 1.5 && u.a4 === null && u.part === null, JSON.stringify(u));
+    // Optimierung 8: Kurs-Alarm erst beim 15m-Schlusskurs – Berührung löst nicht aus, Schluss über der Marke schon
+    const p0 = await page.evaluate(() => __g05.state.prices.BTCUSDT?.price), lvl = Math.round(p0 * 1.01 * 100) / 100;
+    await page.evaluate(() => document.getElementById('alarm-toggle').scrollIntoView()); await page.click('#alarm-toggle'); await page.fill('#al-symbol', 'BTC'); await page.fill('#al-price', String(lvl).replace('.', ',')); await page.selectOption('#al-cl', '15m'); await page.click('#al-save'); await page.waitForTimeout(600);
+    const al = await page.evaluate(() => { const a = __g05.state.alarms.at(-1); return { cl: a?.cl, dir: a?.dir, sub: __g05.alarmSub(a), id: a?.id }; });
+    check('Alarm „bei Schluss 15m“ gespeichert (cl), Liste zeigt „löst beim 15m-Schlusskurs aus“', al.cl === '15m' && al.dir === 'above' && /^löst beim 15m-Schlusskurs aus · /.test(al.sub), JSON.stringify(al));
+    await h.ctl(`/set?symbol=BTCUSDT&price=${(lvl * 1.002).toFixed(2)}`); await page.waitForTimeout(2500);
+    const t1 = await page.evaluate(() => !!__g05.state.alarms.at(-1).triggeredAt);
+    check('Kurs berührt und überschreitet die Marke: Schluss-Alarm löst noch nicht aus', !t1);
+    const B = 9e5, b = Math.floor(Date.now() / B) * B; await page.evaluate(t => { const a = __g05.state.alarms.at(-1); a.createdAt = t; a.armedAt = t; }, b - 2000);   // scharf kurz vor dem letzten 15m-Schluss
+    let closeVal = lvl * 0.999; // erst eine Kerze, die unter der Marke schloss
+    await page.route(/\/api\/v3\/klines\?.*interval=15m/, route => { const k = (t, c) => [t, String(lvl), String(lvl * 1.01), String(lvl * 0.99), String(c), '1', t + B - 1, '0', 1, '0', '0', '0'];
+      route.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify([k(b - 2 * B, lvl * 0.995), k(b - B, closeVal), k(b, lvl)]) }); });
+    await page.evaluate(([t]) => __opt8.tick(t), [b + 4000]); await page.waitForTimeout(800);
+    const t2 = await page.evaluate(() => !!__g05.state.alarms.at(-1).triggeredAt);
+    closeVal = lvl * 1.001; await page.evaluate(([t]) => { __opt8.cl.clear(); __opt8.tick(t); }, [b + 5000]); await page.waitForTimeout(800);
+    const t3 = await page.evaluate(() => { const a = __g05.state.alarms.at(-1); return { at: a.triggeredAt, p: a.triggerPrice }; });
+    check('Schluss unter der Marke (Docht darüber): nein; Schluss über der Marke nach dem Scharfschalten: ausgelöst mit dem Schlusskurs', !t2 && !!t3.at && Math.abs(t3.p - lvl * 1.001) < 1e-6, JSON.stringify({ t2, t3 }));
+    await page.unroute(/\/api\/v3\/klines\?.*interval=15m/); await h.ctl(`/set?symbol=BTCUSDT&price=${p0}`);
     // Optimierung 7: Trend-Ampel 5m · 15m · 1h · 4h · 1d über dem Chart
     const mc = await page.evaluate(() => { const up = Array.from({ length: 260 }, (_, i) => 100 + i), dn = up.slice().reverse(); return { up: __opt7.calc(up, 400)?.t, down: __opt7.calc(dn, 50)?.t, mix: __opt7.calc(up, 300)?.t, few: __opt7.calc(up.slice(0, 150), 300) }; });
     check('Trend-Regel: Kurs > EMA 50 > EMA 200 → ▲, Kurs < EMA 50 < EMA 200 → ▼, sonst ◆; unter 200 Kerzen keine Aussage', mc.up === 'up' && mc.down === 'down' && mc.mix === 'mix' && mc.few === null, JSON.stringify(mc));
