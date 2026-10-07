@@ -22,7 +22,7 @@ Tests: `unit-confluence.js` (135 feste Fachprüfungen), `m61.js` (8 Laufzeit-/Of
   Laufende/zukünftig bekannte Kerzen zählen nicht; Lücken, Dubletten und falsche OHLCV sind Fehler.
 - `scope`: Bitget, `USDT-FUTURES`, Instrument, `USDT`, Basis-/Kontextintervall, Horizont `short/long`, Modell `cf-1`,
   `settingsRevision`, `asOf`, explizite `maxHoldMs`, `slippageBps`, `indicatorAnchors:{base,context}`. Kein erfundener Einsatz/Haltezeit.
-  Signalintervalle 1h/4h/1d; Kontext höher als Basis, Standardpaare laut Vorgabe 1h/4h und 4h/1d.
+  Kerzenintervalle 1h/4h/1d; Kontext höher als Basis, Standardpaare laut Vorgabe 1h/4h und 4h/1d.
 - Basis-/Kontext-/Funding- und Musterquelle tragen diesen Kontext, eigenes Intervall und `parametersKey(settings)`. Abweichende Börse, Coin,
   Einstellungen, Revision, Horizont, Haltedauer, Slippage oder Startanker verhindern Bewertung. Bestätigte Revision später mit Oracle
   synchronisieren; der lokale Kernaufruf ersetzt keine Serverbestätigung.
