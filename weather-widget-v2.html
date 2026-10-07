@@ -626,9 +626,9 @@ svg .crosshair{stroke:var(--cross);stroke-width:1;stroke-dasharray:3 4;pointer-e
 .breakdowns{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-top:8px}
 .bd{border:1px solid var(--border);border-radius:8px;background:var(--surface-2);padding:12px;min-width:0}
 .bd h4{margin:0 0 6px;font-size:.8125rem;font-weight:600}
-.bd-row{display:grid;grid-template-columns:minmax(0,1.1fr) 40px 50px minmax(0,1.4fr);gap:8px;align-items:center;font-size:.78rem;padding:5px 0;border-top:1px solid var(--line);font-variant-numeric:tabular-nums}
+.bd-row{display:grid;grid-template-columns:minmax(0,1.1fr) 40px 44px 58px minmax(0,1.4fr);gap:8px;align-items:center;font-size:.78rem;padding:5px 0;border-top:1px solid var(--line);font-variant-numeric:tabular-nums}
 .bd-row.head{color:var(--muted);border-top:0;font-size:.75rem}
-.bd-row>span:nth-child(2),.bd-row>span:nth-child(3){text-align:right}
+.bd-row>span:nth-child(2),.bd-row>span:nth-child(3),.bd-row>span:nth-child(4){text-align:right}.bd-r.pos{color:var(--up-text)}.bd-r.neg{color:var(--down-text)}.bd-row.thin>span:not(.bd-bar){opacity:.6}
 .bd-bar{position:relative;height:20px}
 .bd-bar i{position:absolute;top:4px;height:12px;border-radius:2px;background:var(--c-bd-pos)}.bd-bar i.neg{background:var(--c-bd-neg)}
 .bd-bar u{position:absolute;left:50%;top:0;width:1px;height:20px;background:var(--tick)}
@@ -2428,10 +2428,21 @@ const HOLD_BUCKETS = ['unter 15 Min.', '15–60 Min.', '1–4 Std.', '4–24 Std
 const holdBucket = ms => { const m = ms / 60000; return m < 15 ? 0 : m < 60 ? 1 : m < 240 ? 2 : m < 1440 ? 3 : 4; };
 const HOUR_BUCKETS = ['0–6 Uhr', '6–12 Uhr', '12–18 Uhr', '18–24 Uhr'];
 const hourBucket = ms => Math.floor(new Date(ms).getHours() / 6);
+// Optimierung 4: Ergebnis in R (Vielfaches des Anfangsrisikos). Risiko = Abstand Einstieg–erster Stop × Menge (r0, festgehalten beim
+// Anlegen bzw. beim ersten Stop). Ältere Trades ohne r0: nur ein einzelner Schluss mit Stop auf der Verlustseite (Stop beim Schließen –
+// war er nachgezogen, wirkt R größer). Ohne Risiko (kein Stop, Stop auf Einstand oder im Gewinn) zählt der Trade nicht in R.
+function tradeRisk(t) {
+  const r0 = t.r0, d = t.side === 'long' ? 1 : -1;
+  if (r0 && r0.entry > 0 && r0.qty > 0 && d * (r0.entry - r0.sl) > 0) return { risk: d * (r0.entry - r0.sl) * r0.qty, src: 'r0' };
+  if ((t.n || 1) === 1 && !t.part?.pos && t.sl > 0 && t.entry > 0 && t.qty > 0 && d * (t.entry - t.sl) > 0) return { risk: d * (t.entry - t.sl) * t.qty, src: 'sl' };
+  return null;
+}
+const tradeR = t => { const k = tradeRisk(t); return k && Number.isFinite(t.pnl) ? t.pnl / k.risk : null; };
+const rmAdd = (g, t) => { const r = tradeR(t); if (r !== null) { g.rN = (g.rN || 0) + 1; g.rSum = (g.rSum || 0) + r; } };
 function groupStats(trades, keyFn, labels = null) {
   const map = new Map();
-  for (const t of trades) { const k = keyFn(t); if (k === null || k === undefined) continue; const g = map.get(k) || { key: k, n: 0, wins: 0, net: 0 }; g.n++; if (t.pnl > 0) g.wins++; g.net += t.pnl; map.set(k, g); }
-  const rows = [...map.values()].map(g => ({ ...g, label: labels ? labels[g.key] : String(g.key), hit: g.wins / g.n * 100, avg: g.net / g.n }));
+  for (const t of trades) { const k = keyFn(t); if (k === null || k === undefined) continue; const g = map.get(k) || { key: k, n: 0, wins: 0, net: 0 }; g.n++; if (t.pnl > 0) g.wins++; g.net += t.pnl; rmAdd(g, t); map.set(k, g); }
+  const rows = [...map.values()].map(g => ({ ...g, label: labels ? labels[g.key] : String(g.key), hit: g.wins / g.n * 100, avg: g.net / g.n, rAvg: g.rN ? g.rSum / g.rN : null }));
   return rows.sort(labels ? (a, b) => a.key - b.key : (a, b) => b.net - a.net);
 }
 // Setups
@@ -5156,6 +5167,7 @@ async function addPosition(e) {
   }
   const carry = old ? lotCarry(old, r) : {}, lc = carry.ev ? lotCheck({ ...old, ...carry }) : null; // 3.30.0: Verlauf mitnehmen
   const pos = normalizePosition({ ...carry, id: old ? old.id : newId(), openedAt: old ? old.openedAt : Date.now(), symbol: r.sym, side: r.side, mode: r.mode, entry: lc?.ok ? lc.entry : r.entry, leverage: r.lev, qty: lc?.ok ? lc.qty : r.qty, liqExchange: r.liq, preRealized: r.pre, source, note: r.note, setup: r.setup, reasons: r.reasons, sl: r.sl, tp: r.tp, ack: old && old.sl === r.sl && old.tp === r.tp ? old.ack : { sl: false, tp: false }, updatedAt: Date.now(), slTpAt: old && old.sl === r.sl && old.tp === r.tp ? old.slTpAt || old.openedAt : Date.now() });
+  if (old?.r0) pos.r0 = old.r0; else if (pos.sl > 0 && pos.entry > 0 && pos.qty > 0 && (pos.side === 'long' ? pos.sl < pos.entry : pos.sl > pos.entry)) pos.r0 = { sl: pos.sl, entry: pos.entry, qty: pos.qty, at: Date.now() };   // Optimierung 4: Anfangsrisiko für R
   if (old && (old.sl !== r.sl || old.tp !== r.tp)) for (const t of ['sl', 'tp']) { alerted.delete(old.id + ':' + t); alertInfo.delete(old.id + ':' + t); $('toasts').querySelector(`.toast[data-id="${old.id}"][data-type="${t}"]`)?.remove(); }
   // 3.28.0: ECHT oder DEMO – beim Bearbeiten darf der Modus wechseln, dann wandert die Position in die andere Liste
   const into = r.demo ? 'demoPositions' : 'positions';
@@ -6025,23 +6037,28 @@ function renderAnalysis() {
     box('Profitfaktor', st.profitFactor === null ? (st.avgWin ? 'nur Gewinne' : '—') : number(st.profitFactor), 'Gewinne ÷ Verluste', st.profitFactor === null ? '' : st.profitFactor >= 1 ? 'positive' : 'negative'),
     box('Ø Gewinn / Ø Verlust', `${st.avgWin === null ? '—' : signed(st.avgWin)} / ${st.avgLoss === null ? '—' : signed(st.avgLoss)}`, 'USDT je Trade'),
     box('Größter Rückgang', dd.dd ? `−${number(dd.dd)} USDT` : '0,00 USDT', dd.dd ? `${dd.pct !== null && dep ? `${number(dd.pct, 1)} % bezogen auf Einzahlungen · ` : ''}${new Date(dd.from ?? pts[0].t).toLocaleDateString('de-DE')} → ${new Date(dd.to).toLocaleDateString('de-DE')}` : 'kein Rückgang', dd.dd ? 'negative' : ''),
+    (() => { const rs = trades.map(tradeR).filter(r => r !== null), w = rs.filter(r => r > 0), l = rs.filter(r => r < 0), avg = trades.reduce((a, t) => a + t.pnl, 0) / trades.length, er = rs.length ? rs.reduce((a, b) => a + b, 0) / rs.length : null;
+      return box('Erwartungswert je Trade', `${signed(avg)} USDT${er === null ? '' : ` · ${signed(er)} R`}`, `${er === null ? 'R: kein Trade mit Anfangsrisiko (Stop beim Anlegen eintragen)' : `R aus ${rs.length} von ${trades.length} Trades · Ø Gewinn ${w.length ? signed(w.reduce((a, b) => a + b, 0) / w.length) : '—'} R / Ø Verlust ${l.length ? signed(l.reduce((a, b) => a + b, 0) / l.length) : '—'} R`}${trades.length < 30 ? ' · vorläufig (unter 30 Trades)' : ''}`, er === null ? (avg >= 0 ? 'positive' : 'negative') : er >= 0 ? 'positive' : 'negative'); })(),
     box('Längste Verlustserie', `${st.maxLossStreak} ${st.maxLossStreak === 1 ? 'Trade' : 'Trades'}`, 'hintereinander'),
     box('Ø Haltedauer', holdText(st.avgHold), 'Eröffnung bis Schließen'));
   if ($('analysis').open) drawEquity(pts, dd);
   put('analysis-note', `${trades.length < 20 ? `Erst ${trades.length} ${trades.length === 1 ? 'Trade' : 'Trades'} – bei so wenigen Trades sind Muster noch wenig aussagekräftig. ` : ''}Gezählt je Position: Teilabschlüsse und Schluss sind ein Trade mit ihrem Gesamtergebnis, gezählt beim vollständigen Schließen.${openN ? ` ${openN} ${openN === 1 ? 'Position ist' : 'Positionen sind'} noch offen – ihre Teilabschlüsse stecken in Kapitalkurve und Netto, zählen hier aber erst beim Schließen.` : ''} Kapitalkurve und größter Rückgang je Buchung. Einstiegszeit in deiner Ortszeit. Beträge in USDT, realisiert nach Gebühren.`);
   const table = (title, rows) => {
     const d = el('div', 'bd'); d.append(el('h4', '', title));
-    const head = el('div', 'bd-row head'); head.append(el('span', '', ''), el('span', '', 'Trades'), el('span', '', 'Treffer'), el('span', '', 'Netto (Ø je Trade)')); d.append(head);
+    const head = el('div', 'bd-row head'); head.append(el('span', '', ''), el('span', '', 'Trades'), el('span', '', 'Treffer'), el('span', '', 'Ø R'), el('span', '', 'Netto (Ø je Trade)')); d.append(head);
     const maxAbs = Math.max(...rows.map(r => Math.abs(r.net)), 1e-9);
     for (const r of rows) {
       const row = el('div', 'bd-row'), bar = el('span', 'bd-bar'), fill = el('i', r.net < 0 ? 'neg' : ''), w = Math.abs(r.net) / maxAbs * 50;
       fill.style.width = w + '%'; fill.style.left = r.net < 0 ? (50 - w) + '%' : '50%'; bar.append(el('u'), fill, el('b', '', `${signed(r.net)} (${signed(r.avg)})`));
-      row.append(el('span', '', r.label), el('span', '', String(r.n)), el('span', '', `${number(r.hit, 0)} %`), bar); d.append(row);
+      const rc = el('span', r.rAvg === null ? 'bd-r' : `bd-r ${r.rAvg >= 0 ? 'pos' : 'neg'}`, r.rAvg === null ? '—' : `${signed(r.rAvg)}${r.rN < r.n ? `·${r.rN}` : ''}`); rc.title = r.rAvg === null ? 'Kein Trade dieser Gruppe mit Anfangsrisiko' : `Erwartungswert in R aus ${r.rN} von ${r.n} Trades${r.n < 30 ? ' – vorläufig, unter 30 Trades' : ''}`;
+      if (r.n < 30) row.classList.add('thin');
+      row.append(el('span', '', r.label), el('span', '', String(r.n)), el('span', '', `${number(r.hit, 0)} %`), rc, bar); d.append(row);
     }
     return d;
   };
   $('breakdowns').replaceChildren(
     table('Nach Grund', multiStats(trades, reasonKeys)), table('Nach Bereich der Gründe', multiStats(trades, areaKeys)), el('p', 'bd-note', reasonNote(trades)),
+    el('p', 'bd-note', 'Ø R = Erwartungswert je Trade in Vielfachen des Anfangsrisikos (Einstieg bis erster Stop). „·n“: nur n Trades mit bekanntem Risiko. Gedämpft: unter 30 Trades – vorläufig, noch nicht belastbar.'),
     table('Nach Coin', groupStats(trades, t => coin(t.symbol))),
     table('Long / Short', groupStats(trades, t => t.side === 'long' ? 'Long' : 'Short')),
     table('Einstiegszeit', groupStats(trades, t => hourBucket(t.openedAt), HOUR_BUCKETS)),
@@ -10907,8 +10924,8 @@ function renderDemoHistory() {
 // ---- Auswertung nach Gründen: Ein Trade zählt bei jedem seiner Gründe einmal; die Zeilen überlappen ----
 function multiStats(trades, keysFn) {
   const map = new Map();
-  for (const t of trades) for (const k of new Set(keysFn(t))) { const g = map.get(k) || { key: k, n: 0, wins: 0, net: 0 }; g.n++; if (t.pnl > 0) g.wins++; g.net += t.pnl; map.set(k, g); }
-  return [...map.values()].map(g => ({ ...g, label: String(g.key), hit: g.wins / g.n * 100, avg: g.net / g.n })).sort((a, b) => b.net - a.net);
+  for (const t of trades) for (const k of new Set(keysFn(t))) { const g = map.get(k) || { key: k, n: 0, wins: 0, net: 0 }; g.n++; if (t.pnl > 0) g.wins++; g.net += t.pnl; rmAdd(g, t); map.set(k, g); }
+  return [...map.values()].map(g => ({ ...g, label: String(g.key), hit: g.wins / g.n * 100, avg: g.net / g.n, rAvg: g.rN ? g.rSum / g.rN : null })).sort((a, b) => b.net - a.net);
 }
 function reasonKeys(t) { const r = reasonsOf(t); return r.length ? r : ['ohne Grund']; }
 function areaKeys(t) { const r = reasonsOf(t); return r.length ? r.map(x => (REASON_OF.get(x) || REASON_GROUPS[0]).label) : ['ohne Grund']; }
@@ -12827,6 +12844,7 @@ function pkSection(h) {
   } else box.append(btn, out);
   return box;
 }
+window.__opt4 = { tradeR: t => tradeR(t), tradeRisk: t => tradeRisk(t), groupStats: (t, f) => groupStats(t, f) };
 window.__g09 = { patTgText: (c, h) => patTgText(c, h), pkRecord: (m, h, mk) => pkRecord(m, h, mk), pkSync: () => pkSync(), pkState: c => pkState(c), get pub() { return pkPub; }, pubLoad: f => pkPubLoad(f), get pk() { return pk; }, pkMerge: l => pkMerge(l), pkStats: s => pkStats(s), pkBand: p => pkBand(p), pkId: c => pkId(c), wlPat: e => wlPat(e), get wl() { return wl; }, wldPaint: () => wldPaint(Date.now(), true), get pat() { return pat; }, engine: () => (PAT_E = PAT_E || patEngine()), lib: PAT_LIB, run: r => patRun(r), info: i => patOpenInfo(i), zoom: i => patZoom(i), svg: id => patSvg(id).outerHTML };
 window.__g08 = { get dec() { return dec; }, decSignal: (c, b, cfg) => decSignal(c, b, cfg), decTick: (t, w, at) => decTick(t, DEC_WIN[w], at), decEvaluate: (r, sp, t, cfg, w, at) => decEvaluate(r, new Set(sp), new Map(Object.entries(t)), cfg, w, at),
   decPearson: (a, b, st) => decPearson(a, b, st), decClassify: a => decClassify(a), decLoreParse: j => decLoreParse(j), setEvery: ms => { DEC_EVERY = ms; }, kick: () => decKick(true) };
