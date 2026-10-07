@@ -9,11 +9,12 @@ const check = (name, ok, info = '') => { ok ? pass++ : fail++; console.log(`${ok
     const L = await import(pathToFileURL(path.join(__dirname, '../shared/confluence-live.mjs'))), expected = L.evaluateLive(f.liveFixture());
     await h.setup(); browser = await h.launch(); const ctx = await browser.newContext({ viewport: { width: 1440, height: 1000 }, timezoneId: 'Europe/Berlin' });
     const page = await ctx.newPage(), errors = [], calls = []; page.on('pageerror', e => errors.push(e.message));
-    const start = Date.now(); let apiFail = false;
+    const start = Date.now(); let apiFail = false, tickerFail = false, fundingFail = false;
     await ctx.route('https://api.bitget.com/**', async route => {
       const req = route.request(); calls.push({ url: req.url(), method: req.method(), headers: req.headers(), body: req.postData(), at: Date.now() });
-      if (apiFail) return route.abort();
-      await route.fulfill({ status: 200, headers: { 'access-control-allow-origin': '*' }, contentType: 'application/json', body: JSON.stringify(f.liveBitgetResponse(req.url(), Date.now(), start)) });
+      const u = new URL(req.url()); if (apiFail || tickerFail && u.pathname.endsWith('/ticker')) return route.abort();
+      const body = f.liveBitgetResponse(req.url(), Date.now(), start); if (fundingFail && u.pathname.endsWith('/current-fund-rate')) body.code = '40000';
+      await route.fulfill({ status: 200, headers: { 'access-control-allow-origin': '*' }, contentType: 'application/json', body: JSON.stringify(body) });
     });
     await page.goto(h.URL_BASE + '/weather-widget-v2.html'); await page.waitForFunction(() => !!window.__g10 && __g05.state.candles.length);
     const actual = await page.evaluate(async () => { const f = await import('/tests/fixtures/confluence-live.mjs'); return (await import('/shared/confluence-live.mjs')).evaluateLive(f.liveFixture()); });
@@ -69,11 +70,22 @@ const check = (name, ok, info = '') => { ok ? pass++ : fail++; console.log(`${ok
     await page.waitForFunction(n => !__g10.state.busy && __g10.state.serial > n, await page.evaluate(() => __g10.state.serial - 1), { timeout: 25000 });
     check('Wiederholte Prüfung derselben Basiskerze: dieselbe Karte, kein neuer Badge', await page.evaluate(id => __g10.state.cards.length === 1 && __g10.state.cards[0].id === id && document.getElementById('ki-unread').hidden, oldID));
     const second = await ctx.newPage(); second.on('pageerror', e => errors.push(e.message));
+    await second.addInitScript(() => { localStorage.setItem('scalpdesk.savedat.v1', JSON.stringify(Date.now() + 1000000)); window.__kiCardPuts = 0;
+      const put = IDBObjectStore.prototype.put; IDBObjectStore.prototype.put = function(v, key) { if (key === 'scalpdesk.idb.ki.cards.v1') window.__kiCardPuts++; return put.call(this, v, key); }; });
     await second.goto(h.URL_BASE + '/weather-widget-v2.html'); await second.waitForFunction(() => !!window.__g10 && __g05.state.candles.length);
     await second.evaluate(() => { __g05.state.watch = ['BTC']; __g10.state.due.clear(); __g10.kick(); });
     await second.waitForFunction(() => __g10.state.current.size > 0 && !__g10.state.busy, null, { timeout: 25000 });
     check('Zweiter Tab übernimmt denselben festen Anker und erzeugt kein zweites Ereignis', await second.evaluate(id => __g10.state.cards.length === 1 && __g10.state.cards[0].id === id && __g10.state.cards[0].read, oldID));
+    check('Start-Abgleich aus neuerem localStorage überschreibt keine atomar verwalteten KI-Karten', await second.evaluate(() => window.__kiCardPuts === 0));
     await second.evaluate(() => __g10.stop()); await second.close();
+    tickerFail = true; const tickerSerial = await page.evaluate(() => __g10.state.serial); await page.click('#ki-refresh');
+    await page.waitForFunction(n => __g10.state.serial > n && !__g10.state.busy, tickerSerial, { timeout: 25000 });
+    check('Fehlender Referenzkurs: keine neue Freigabe, kurze Wiederholung statt Warten bis Kerzenschluss', await page.evaluate(() => __g10.state.cards.length === 1 && !__g10.state.current.get('BTCUSDT|short')[0].eligible && Math.min(...__g10.state.due.values()) <= Date.now() + 60000));
+    tickerFail = false; fundingFail = true; const fundingSerial = await page.evaluate(() => __g10.state.serial); await page.click('#ki-refresh');
+    await page.waitForFunction(n => __g10.state.serial > n && !__g10.state.busy, fundingSerial, { timeout: 25000 });
+    check('Fehlendes aktuelles Funding: Score nicht bewertbar, keine Karte und kurze Wiederholung', await page.evaluate(() => __g10.state.cards.length === 1 && __g10.state.current.get('BTCUSDT|short')[0].score.score === null && Math.min(...__g10.state.due.values()) <= Date.now() + 60000));
+    fundingFail = false; const healthySerial = await page.evaluate(() => __g10.state.serial); await page.click('#ki-refresh');
+    await page.waitForFunction(n => __g10.state.serial > n && !__g10.state.busy, healthySerial, { timeout: 25000 });
     await page.click('#ki-stop');
     const cutoff = calls.length; await page.waitForTimeout(350);
     check('Pause stoppt neue Abrufe und Worker; sichtbarer Ablauf/Preisalarme bleiben nutzbar', calls.length === cutoff && await page.evaluate(() => !__g10.state.cfg.on && !__g10.state.worker && !!document.getElementById('alarm-form')));

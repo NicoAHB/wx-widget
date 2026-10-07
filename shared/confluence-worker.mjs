@@ -14,7 +14,7 @@ globalThis.onmessage = async ({ data: job }) => {
       try {
         const quote = await client.quote({ symbol: loaded.data.scope.instrument, decisionAt: loaded.data.scope.asOf, signal: controller.signal });
         result = evaluateLive({ ...loaded, quote, planningAt: Date.now(), config: job.request.config, options: job.options });
-      } catch (e) { controller.signal.throwIfAborted(); result.quoteReason = e.message; }
+      } catch (e) { controller.signal.throwIfAborted(); result.quoteReason = e.message; result.quoteRetryAt = e.retryAt ?? null; }
     }
     controller.signal.throwIfAborted(); globalThis.postMessage({ id: job.id, loaded, result });
   } catch (e) { globalThis.postMessage({ id: job.id, error: controller.signal.aborted ? 'abgebrochen' : e.message }); }

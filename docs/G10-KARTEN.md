@@ -22,6 +22,8 @@ Funding-Szenario: derzeit bekannte Rate und tatsächlichen Abrechnungstakt konst
 
 Lokale Analyse wird nach bewusster Einrichtung gestartet, verwendet nur die Vorauswahl (höchstens 40 Coins) und die aktivierten Horizonte. Standardpaare kurz 1h/4h, lang 4h/1d; maximale Haltedauer kurz 1h/24h, lang 2/7/21 Tage. Ein Worker, ein Scheduler, neue Prüfung kurz nach Basiskerzenschluss. Pause/unsichtbare App bricht ab. Keine Historie oder Musterberechnung auf dem Hauptthread.
 
+Fehlendes aktuelles Funding oder ein ausgefallener Referenzkurs erhält keine neue Freigabe und wird nach mindestens 60 Sekunden erneut geprüft; ein späterer Provider-Drosseltermin geht vor. Auch beim Appstart wird der atomare Kartenschlüssel nicht aus einem älteren Start-Snapshot zurückgeschrieben.
+
 Nur vollständig geprüfte Kandidaten werden immutable Signalkarten; aktuelle Long-/Short-Bewertungen einschließlich Beobachten/Sperre bleiben daneben sichtbar. Stabile ID bindet Quelle, Anker, Regelrevision, Horizonte, Haltedauer, Slippage, Richtung und Basiskerzenschluss; neue Referenzkurse allein erzeugen kein neues Ereignis. Einzelpunkte/Score sind der dokumentierte Entscheidungsstand. Divergenz-Restzeit und Nachrichtenablauf werden separat aktualisiert: Alter ab zweiter Nachbarkerze, drei Basiskerzen; Nachrichten kurz 1h/lang 24h. Ablauf schließt keine Position.
 
 Die gerundete Anzeige erteilt keine scheinbare Grenzfreigabe: 69,999 erscheint als „< 70“, 49,999 als „< 50“; entsprechend bei eigener Mindestgrenze. Die fachliche Entscheidung und gespeicherte Scorezahl bleiben ungerundet.

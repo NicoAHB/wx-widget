@@ -2926,7 +2926,8 @@ const store = (() => {
       if (other) for (const [k, v] of other) if (!cache.has(k)) cache.set(k, v);
       // Beide Kopien angleichen: was in einer fehlt oder veraltet ist, wird aus dem Arbeitsspeicher geschrieben
       for (const [k, v] of cache) if (!k.startsWith(IDB_ONLY) && (primary !== ls || !ls.has(k))) lsSet(k, v);
-      if (db) { for (const k of cache.keys()) if (!idb.has(k) || primary !== idb) pending.add(k); await flush(); }
+      // 3.45.0: KI-Karten werden atomar verwaltet; ein Start-Snapshot darf keine neueren Karten überschreiben.
+      if (db) { for (const k of cache.keys()) if (k !== 'scalpdesk.idb.ki.cards.v1' && (!idb.has(k) || primary !== idb)) pending.add(k); await flush(); }
       for (const [k, v] of cache) { const j = json(v); if (j !== null) lastJson.set(k, j); }
       try { if (navigator.storage?.persisted) info.persisted = await withTimeout(navigator.storage.persisted(), 1000); } catch {}
     },
@@ -13736,7 +13737,9 @@ async function kiNext() {
       if (total > 20 * 1024 * 1024) throw new Error('Kerzenspeicher voll (20 MiB); Zustände im Reiter bewusst löschen.');
       ki.data[id] = { key, bytes, anchors: indicatorAnchors }; store.set(key, loaded.saved); store.set(KI_DATA_KEY, ki.data); savedKey = key;
     }
-    const nextAt = loaded.status === 'nachladen' ? now + 2000 : Math.max(loaded.retryAt || 0, loaded.data ? Math.floor(now / periods[timeframe]) * periods[timeframe] + periods[timeframe] + 4000 : now + 60000);
+    const ready = loaded.status === 'bereit' && !result?.quoteReason;
+    const nextAt = loaded.status === 'nachladen' ? now + 2000 : Math.max(loaded.retryAt || 0, result?.quoteRetryAt || 0,
+      ready ? Math.floor(now / periods[timeframe]) * periods[timeframe] + periods[timeframe] + 4000 : now + 60000);
     ki.due.set(id, nextAt);
     if (result) {
       ki.current.set(job.instrument + '|' + job.horizon, result.cards);
@@ -13746,7 +13749,7 @@ async function kiNext() {
     } else ki.current.delete(job.instrument + '|' + job.horizon);
     if (!(await store.flush())) throw new Error('KI-Daten konnten nicht dauerhaft gespeichert werden; neue Karten pausieren.');
     broadcastData([KI_DATA_KEY, ...(savedKey ? [savedKey] : []), KI_CARDS_KEY]);
-    ki.message = loaded.reason || `${job.instrument.slice(0, -4)} · ${job.horizon === 'short' ? 'kurz' : 'lang'}: Daten geprüft ${kiDate(Date.now())}. ${jobs.length} Coin-/Horizontpaare in der Vorauswahl.`;
+    ki.message = loaded.reason || result?.quoteReason || `${job.instrument.slice(0, -4)} · ${job.horizon === 'short' ? 'kurz' : 'lang'}: Daten geprüft ${kiDate(Date.now())}. ${jobs.length} Coin-/Horizontpaare in der Vorauswahl.`;
   } catch (e) {
     if (epoch === ki.epoch) { ki.message = e.message; ki.due.set(kiDatasetId(job.instrument, job.horizon), Date.now() + 60000); if (/Speicher|gespeichert|speicher/.test(e.message)) ki.storageFailed = true; }
   } finally { clearTimeout(watchdog); await store.release('ki-scan'); ki.busy = false; kiRender(); kiKick(250); }
