@@ -6,11 +6,16 @@ const results = [], check = (name, ok, info = '') => { results.push(!!ok); conso
   try {
     const ctx = await browser.newContext({ viewport: { width: 1440, height: 1000 } }), page = await ctx.newPage(), errors = []; h.collect(page, errors);
     const TOKEN = '123456789:TEST_ONLY_not_a_real_token_000000000', KEY = 'k'.repeat(43), calls = [];
-    let watch = { rev: 0, since: 0, config: null }, conflict = false, lost = false, notifyFail = false;
+    let watch = { rev: 0, since: 0, config: null }, conflict = false, lost = false, notifyFail = false, policyRev = 0;
+    const targets = Object.fromEntries(['course-alert', 'backup', 'trades', 'patterns'].map(id => [id, { on: true, epoch: 1, since: 1 }]));
     await page.route('https://svc.test/v1/**', async route => {
       const req = route.request(), p = new URL(req.url()).pathname, body = req.postDataJSON();
       const send = (j, status = 200) => route.fulfill({ status, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify(j) });
-      if (p === '/v1/state') return send({ ok: true, v: '2.4.0', rev: 0, targets: Object.fromEntries(['course-alert', 'backup', 'trades', 'patterns'].map(id => [id, { on: true, epoch: 1, since: 1 }])), eps: {}, events: [], patternWatch: watch });
+      if (p === '/v1/state') return send({ ok: true, v: '2.4.0', rev: policyRev, targets, eps: {}, events: [], patternWatch: watch });
+      if (p === '/v1/policy') {
+        for (const [id, on] of Object.entries(body.set)) targets[id] = { ...targets[id], on, epoch: targets[id].epoch + 1, since: Date.now() };
+        return send({ ok: true, rev: ++policyRev, targets }); // wie der Dienst: kein patternWatch in der Schalterantwort
+      }
       if (p === '/v1/patterns/watch') {
         calls.push({ p, body });
         if (conflict) { conflict = false; watch = { ...watch, rev: watch.rev + 1 }; return send({ ok: false, error: 'Musterliste am Dienst geändert – erneut bewusst übernehmen.', patternWatch: watch }, 409); }
@@ -33,6 +38,12 @@ const results = [], check = (name, ok, info = '') => { results.push(!!ok); conso
     check('Übergabe enthält wirkliche Vorauswahlmärkte und das Kerzenintervall (Standard 1h-Zeitraum = 5m)', first?.config.items.length > 0 && first.config.items.every(x => ['spot', 'futures'].includes(x.mkt) && x.iv === '5m') && first.config.chat === '-100888' && first.config.thread === '77');
     check('HTTPS-Vertrag enthält Bot-ID, keinerlei Telegram-Token oder Dienstschlüssel', first?.config.bot === '123456789' && !JSON.stringify(calls).includes(TOKEN) && !JSON.stringify(calls).includes(KEY));
     check('Bestätigte Revision und Marktanzahl erscheinen im Status', /Revision 1/.test(await page.locator('#pat-svc-status').textContent()));
+    await page.click('#tg-tgc'); await page.click('#tgc-sw-patterns');
+    await page.waitForFunction(() => __g05.svc.pol.conf.targets.patterns.on === false);
+    check('Chartmuster AUS erhält die unabhängig bestätigte Musterliste', await page.evaluate(() => __g05.svc.pol.conf.patternWatch?.rev === 1 && !!__g05.svc.pol.conf.patternWatch.config));
+    await page.click('#tgc-sw-patterns'); await page.waitForFunction(() => __g05.svc.pol.conf.targets.patterns.on === true);
+    check('Erneutes AN erhält Musterrevision und Dienst als alleinigen Sender', await page.evaluate(() => __g05.svc.pol.conf.patternWatch?.rev === 1 && !!__g05.svc.pol.conf.patternWatch.config));
+    await page.click('#tgc-close'); await page.evaluate(() => document.getElementById('chan-open').click());
     conflict = true; await page.click('#pat-svc-apply'); await page.waitForFunction(() => /erneut bewusst/.test(document.getElementById('pat-svc-status').textContent));
     const atConflict = calls.length; await page.waitForTimeout(1200);
     check('Revisionskonflikt bleibt sichtbar, kein automatisches Wiederholen', calls.length === atConflict);

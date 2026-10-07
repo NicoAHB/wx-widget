@@ -11752,7 +11752,9 @@ async function svcFetch(path, { method = 'GET', body = null, timeout = 8000 } = 
   if (r.status === 429) throw Object.assign(new Error('Zu viele falsche Zugangsschlüssel – bitte eine Minute warten.'), { auth: true });
   return { status: r.status, j };
 }
-const svcConf = j => ({ rev: j.rev, targets: j.targets, patternWatch: j.patternWatch || null, at: Date.now(), v: j.v || svc.ver });
+// Schalterantworten enthalten nur die Policy; die unabhängig bestätigte Musterliste dabei erhalten.
+// Ein vollständiger /v1/state-Abgleich darf sie dagegen entfernen (z. B. bei einem älteren Dienst).
+const svcConf = (j, partial = false) => ({ rev: j.rev, targets: j.targets, patternWatch: j.patternWatch || (partial ? svc.pol.conf?.patternWatch : null) || null, at: Date.now(), v: j.v || svc.ver });
 // Stand am Dienst lesen: Schalter, Episoden, Ereignisse (Abgleich beim Start, siehe svcReconcile); offenen Auftrag klären
 async function svcRefresh(force = false) {
   if (!svcOn() || (svc.busy && !force)) return null;
@@ -11783,8 +11785,8 @@ async function svcCommand(set) {
 }
 function svcResult(status, j) {
   svc.pending = null;
-  if (status === 200 && j?.ok) { svc.pol.conf = svcConf(j); svc.notice = ''; savePol(); }
-  else if (status === 409 && j?.conflict) { svc.pol.conf = svcConf(j); savePol(); svc.notice = 'Nicht übernommen: Ein anderes Gerät hat inzwischen geschaltet. Oben steht der aktuelle, bestätigte Stand – bitte noch einmal wählen.'; }
+  if (status === 200 && j?.ok) { svc.pol.conf = svcConf(j, true); svc.notice = ''; savePol(); }
+  else if (status === 409 && j?.conflict) { svc.pol.conf = svcConf(j, true); savePol(); svc.notice = 'Nicht übernommen: Ein anderes Gerät hat inzwischen geschaltet. Oben steht der aktuelle, bestätigte Stand – bitte noch einmal wählen.'; }
   else svc.notice = `Nicht übernommen: ${j?.error || `Fehler ${status}`}`;
 }
 async function svcCheckPending() {
