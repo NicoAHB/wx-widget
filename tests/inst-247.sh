@@ -56,6 +56,7 @@ bash "$T/bin-scalpdesk-247" zugang > "$T/zugang.log" 2>&1
 ok "2.0: „scalpdesk-247 zugang“ zeigt Adresse und Zugangsschlüssel für die App" "grep -q '^Adresse: *https://130-61-1-2.sslip.io$' '$T/zugang.log' && grep -q \"^Zugangsschlüssel: *$KEY0\$\" '$T/zugang.log'" "$(cat "$T/zugang.log")"
 echo "== Aktualisieren (Einstellungen bleiben, keine Fragen)"
 ok "2.4: Muster-Engine und Marktvertrag installiert und importierbar" "[ -s '$T/opt/pattern-engine.mjs' ] && [ -s '$T/opt/pattern-monitor.mjs' ] && node --input-type=module -e \"const e=await import('file://$T/opt/pattern-engine.mjs');process.exit(e.patEngine().VER==='pat-1'?0:1)\""
+ok "2.5: gemeinsame KI-Module samt relativem Engine-Import installiert" "[ -s '$T/opt/shared/confluence-service.mjs' ] && [ -s '$T/opt/ki-monitor.mjs' ] && node --input-type=module -e \"const k=await import('file://$T/opt/ki-monitor.mjs');process.exit(typeof k.ConfluenceService==='function'?0:1)\""
 : > "$SHIM_LOG"; SCALPDESK_TTY=/nonexistent bash "$REPO/server/install.sh" > "$T/out2.log" 2>&1; rc=$?
 ok "Läuft ohne Eingaben durch" "[ $rc -eq 0 ] && grep -q 'Einstellungen aus .* übernommen' '$T/out2.log'" "$(tail -3 "$T/out2.log")"
 ok "2.0: Aktualisieren behält den Zugangsschlüssel; eigene Caddyfile-Zeilen bleiben" "[ \"\$(node -p \"require('$T/etc/scalpdesk-247.json').key\")\" = '$KEY0' ] && grep -c 'import scalpdesk-247.caddy' '$T/caddy/Caddyfile' | grep -q '^1$'"

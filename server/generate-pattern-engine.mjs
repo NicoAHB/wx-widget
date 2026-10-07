@@ -10,5 +10,7 @@ const engine = html.slice(begin, end).trim();
 const lib = html.slice(end, html.indexOf('\nconst PAT_MAX', end));
 const names = Object.fromEntries([...lib.matchAll(/^\s+([a-z_]+): F\('([^']+)'/gm)].map(m => [m[1], m[2]]));
 if (Object.keys(names).length !== 19) throw new Error('Formationenkatalog unvollständig.');
-const output = '// Automatisch aus weather-widget-v2.html erzeugt; nicht von Hand ändern.\n// Neu erzeugen: node server/generate-pattern-engine.mjs\nexport ' + engine + '\n\nexport const PAT_NAMES = ' + JSON.stringify(names, null, 2) + ';\n';
+const allNames = Object.fromEntries([...lib.matchAll(/^\s+([a-z_]+): [KF]\('([^']+)'/gm)].map(m => [m[1], m[2]]));
+if (Object.keys(allNames).length !== 41) throw new Error('Vollständiger Musterkatalog unvollständig.');
+const output = '// Automatisch aus weather-widget-v2.html erzeugt; nicht von Hand ändern.\n// Neu erzeugen: node server/generate-pattern-engine.mjs\nexport ' + engine + '\n\nexport const PAT_NAMES = ' + JSON.stringify(names, null, 2) + ';\n\nexport const PAT_ALL_NAMES = ' + JSON.stringify(allNames, null, 2) + ';\n';
 fs.writeFileSync(fileURLToPath(new URL('pattern-engine.mjs', import.meta.url)), output);

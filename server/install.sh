@@ -57,11 +57,19 @@ mkdir -p "$DIR"
 curl -fsSL "$SRC/scalpdesk-247.mjs" -o "$DIR/scalpdesk-247.new.mjs" || die "Programm konnte nicht geladen werden ($SRC)."
 node --check "$DIR/scalpdesk-247.new.mjs" || die "Geladenes Programm ist beschädigt."   # Endung .mjs: als ES-Modul prüfen
 # 2.4.0 (G09 C6b): Engine und Marktvertrag vor dem Programmwechsel laden/prüfen.
-for part in pattern-engine pattern-monitor; do
+for part in pattern-engine pattern-monitor ki-monitor; do
   curl -fsSL "$SRC/$part.mjs" -o "$DIR/$part.new.mjs" || die "Muster-Modul $part konnte nicht geladen werden."
   node --check "$DIR/$part.new.mjs" || die "Muster-Modul $part ist beschädigt."
 done
-for part in pattern-engine pattern-monitor; do mv "$DIR/$part.new.mjs" "$DIR/$part.mjs"; done
+for part in pattern-engine pattern-monitor ki-monitor; do mv "$DIR/$part.new.mjs" "$DIR/$part.mjs"; done
+# G10(e): unveränderte gemeinsame Module mit ihren relativen Imports installieren.
+mkdir -p "$DIR/shared" "$DIR/server"
+for part in confluence-core indicators pattern-score bitget-public bitget-patterns confluence-live confluence-replay confluence-replay-store confluence-history confluence-service; do
+  curl -fsSL "${SRC%/server}/shared/$part.mjs" -o "$DIR/shared/$part.new.mjs" || die "Gemeinsames KI-Modul $part konnte nicht geladen werden."
+  node --check "$DIR/shared/$part.new.mjs" || die "KI-Modul $part ist beschädigt."
+done
+for part in confluence-core indicators pattern-score bitget-public bitget-patterns confluence-live confluence-replay confluence-replay-store confluence-history confluence-service; do mv "$DIR/shared/$part.new.mjs" "$DIR/shared/$part.mjs"; done
+cp "$DIR/pattern-engine.mjs" "$DIR/server/pattern-engine.mjs"
 mv "$DIR/scalpdesk-247.new.mjs" "$DIR/scalpdesk-247.mjs"
 curl -fsSL "$SRC/install.sh" -o "$DIR/install.sh" 2>/dev/null || true
 say "2/7 Programm $(node "$DIR/scalpdesk-247.mjs" --version) nach $DIR ✓"
