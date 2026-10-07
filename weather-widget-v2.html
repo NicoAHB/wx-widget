@@ -300,6 +300,8 @@ html[data-layout=tablet] .livebar{padding:6px 12px;gap:4px 12px}
 .overlay-toggles button[aria-pressed=true]{color:var(--text);background:var(--surface-3);border-color:var(--field-border)}
 .overlay-toggles button[aria-pressed=false] .sw{opacity:.3}
 .overlay-toggles .ov-all{color:var(--text);font-weight:600}
+.mtf{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:6px 0 2px;font-size:.75rem;font-variant-numeric:tabular-nums}.mtf-l{color:var(--muted)}
+.mtf-c{padding:2px 8px;border-radius:10px;border:1px solid var(--border);color:var(--muted);white-space:nowrap}.mtf-c.up{color:var(--up-text);border-color:var(--up-border);background:var(--up-bg)}.mtf-c.down{color:var(--down-text);border-color:var(--down-border);background:var(--down-bg)}.mtf-c.mix{color:var(--text)}
 svg text{font-family:var(--font);font-variant-numeric:tabular-nums}
 svg .grid-line{stroke:var(--grid);stroke-width:1}
 svg .axis-label{fill:var(--axis);font-size:12px}
@@ -1322,6 +1324,7 @@ details.div-tip.bull .div-title{color:var(--mint)}details.div-tip.bear .div-titl
 @container (max-width:340px){details.div-tip .div-l{display:none}details.div-tip .div-s{display:inline}details.div-tip{margin-right:10px}}
 html[data-chartfull] .ohlc-row{order:3}
 html[data-chartfull]:not([data-chartbar=open]) .div-tip{display:none}
+html[data-chartfull]:not([data-chartbar=open]) .mtf{display:none}html[data-chartfull] .mtf{order:3}   /* Optimierung 7: Vollbild ohne Werkzeuge: Chart nutzt die volle Höhe */
 html[data-chartfull] details.div-tip .tip-body{max-height:min(60vh,60vw,420px)}
 
 /* ---------- 3.16.1 ---------- */
@@ -6918,6 +6921,46 @@ function nearLevel(sym) {
   return on;
 }
 let lastStreamSync = 0, priceKickAt = 0, freshSig = '';
+// Optimierung 7: Trend-Ampel je Zeitebene über dem Chart – ▲ Kurs > EMA 50 > EMA 200, ▼ Kurs < EMA 50 < EMA 200, ◆ gemischt, „…“ lädt,
+// „–“ zu wenige Kerzen. Je Zeitebene 261 Kerzen derselben Börse wie der Chart (EMA nur aus abgeschlossenen Kerzen, verglichen mit dem
+// aktuellen Kurs); neu geladen beim Coin- oder Börsenwechsel und nach jedem Kerzenschluss der Zeitebene. Nur sichtbar geladen.
+const MTF_IV = ['5m', '15m', '1h', '4h', '1d'], mtf = { key: '', d: {}, busy: false, painted: '' };
+function mtfCalc(closes, price) {
+  if (!Array.isArray(closes) || closes.length < 200) return null;
+  const e50 = ema(closes, 50).at(-1), e200 = ema(closes, 200).at(-1), p = Number.isFinite(price) ? price : closes.at(-1);
+  return { t: p > e50 && e50 > e200 ? 'up' : p < e50 && e50 < e200 ? 'down' : 'mix', e50, e200, p };
+}
+async function mtfLoad() {
+  const sym = state.symbol, src = chartMarket() === 'futures' ? 'futures' : 'spot', key = `${sym}|${src}`, now = Date.now();
+  if (mtf.busy) return; if (mtf.key !== key) { mtf.key = key; mtf.d = {}; }
+  const due = MTF_IV.filter(iv => { const x = mtf.d[iv]; return !x || (x.next && now >= x.next) || (x.err && now - x.at > 60e3); });
+  if (!due.length) return; mtf.busy = true;
+  try {
+    await Promise.all(due.map(async iv => {
+      try {
+        const q = { symbol: sym, interval: iv, limit: 261 }, rows = src === 'futures' ? await api.get(FUTURES, '/fapi/v1/klines', q) : await spotGet('/api/v3/klines', q);
+        const k = normalizeKlines(rows).filter(c => c.closeTime < Date.now()); if (mtf.key !== key) return;
+        mtf.d[iv] = { closes: k.map(c => c.close), next: (k.at(-1)?.closeTime ?? now) + IV_MS[iv] + 2000, at: Date.now() };
+      } catch (e) { if (mtf.key === key) mtf.d[iv] = { err: e.message || String(e), at: Date.now() }; }
+    }));
+  } finally { mtf.busy = false; }
+  mtfPaint(true);
+}
+function mtfPaint(force) {
+  const box = $('mtf'); if (!box) return;
+  const price = state.prices?.[state.symbol]?.price, cells = MTF_IV.map(iv => { const x = mtf.d[iv], r = x?.closes ? mtfCalc(x.closes, price) : null; return { iv, x, r }; });
+  const sig = JSON.stringify(cells.map(c => [c.iv, c.r?.t, !!c.x?.err, !!c.x])); if (!force && sig === mtf.painted) return; mtf.painted = sig;
+  const lab = { up: '▲', down: '▼', mix: '◆' }, word = { up: 'Aufwärtstrend: Kurs über EMA 50 über EMA 200', down: 'Abwärtstrend: Kurs unter EMA 50 unter EMA 200', mix: 'gemischt: Kurs und EMAs nicht in einer Reihe' };
+  box.replaceChildren(el('span', 'mtf-l', 'Trend'), ...cells.map(({ iv, x, r }) => {
+    const c = el('span', `mtf-c ${r ? r.t : 'na'}`, `${iv} ${r ? lab[r.t] : x?.err ? '!' : x ? '–' : '…'}`);
+    c.title = r ? `${iv}: ${word[r.t]} (EMA 50 ${priceText(r.e50)}, EMA 200 ${priceText(r.e200)})` : x?.err ? `${iv}: nicht geladen – ${x.err}` : x ? `${iv}: zu wenige Kerzen für EMA 200` : `${iv}: lädt …`;
+    c.setAttribute('aria-label', c.title); return c;
+  }));
+}
+function mtfTick(now) {
+  if (document.hidden || !$('mtf') || !$('mtf').offsetParent) return;
+  void mtfLoad(); if (now - (mtf.pt || 0) > 2000) { mtf.pt = now; mtfPaint(); }
+}
 function onTick(now) {
   status(); updateTitle(); // Tab-Titel spätestens jede Sekunde aktuell, auch im Hintergrund-Tab
   if (titleNeedsPoll(now)) void pollTitlePrices(now);
@@ -6931,6 +6974,7 @@ function onTick(now) {
   if (typeof svcTick === 'function') svcTick(now); // 3.33.0 (G05): Schalterstand am Dienst
   anaTick(now); // 3.35.0 (G07): Analyse-Reihe nach dem nächsten Kerzenschluss
   patTick(); // 3.37.0 (G09): Muster neu bei Kerzenschluss oder Kontextwechsel
+  mtfTick(now); // Optimierung 7: Trend-Ampel je Zeitebene
   if (now - lastStreamSync > 5000) { lastStreamSync = now; syncStreams(); }
   if (Date.now() - lastSeenSaved > 30000) saveLastSeen();
   // 3.32.0 (G04.7): Kurse offener Positionen nachladen, bevor sie die Frischegrenze erreichen (ruhiger Coin ohne Stream-Meldung,
@@ -12871,6 +12915,7 @@ function pkSection(h) {
   } else box.append(btn, out);
   return box;
 }
+window.__opt7 = { get mtf() { return mtf; }, calc: (c, p) => mtfCalc(c, p), paint: () => mtfPaint(true) };
 window.__opt4 = { tradeR: t => tradeR(t), tradeRisk: t => tradeRisk(t), groupStats: (t, f) => groupStats(t, f) };
 window.__g09 = { patTgText: (c, h) => patTgText(c, h), pkRecord: (m, h, mk) => pkRecord(m, h, mk), pkSync: () => pkSync(), pkState: c => pkState(c), get pub() { return pkPub; }, pubLoad: f => pkPubLoad(f), get pk() { return pk; }, pkMerge: l => pkMerge(l), pkStats: s => pkStats(s), pkBand: p => pkBand(p), pkId: c => pkId(c), wlPat: e => wlPat(e), get wl() { return wl; }, wldPaint: () => wldPaint(Date.now(), true), get pat() { return pat; }, engine: () => (PAT_E = PAT_E || patEngine()), lib: PAT_LIB, run: r => patRun(r), info: i => patOpenInfo(i), zoom: i => patZoom(i), svg: id => patSvg(id).outerHTML };
 window.__g08 = { get dec() { return dec; }, decSignal: (c, b, cfg) => decSignal(c, b, cfg), decTick: (t, w, at) => decTick(t, DEC_WIN[w], at), decEvaluate: (r, sp, t, cfg, w, at) => decEvaluate(r, new Set(sp), new Map(Object.entries(t)), cfg, w, at),
@@ -13478,6 +13523,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
         <div id="market-error" class="notice error" role="alert" hidden></div>
         <div class="chart-heading"><div><div class="pair-title"><span class="coin-icon" id="coin-icon">B</span><h2 id="pair-label">BTC <span>/ USDT</span></h2><span class="badge" id="market-badge">SPOT</span></div><div class="price-row"><strong id="price" class="skel">—</strong><span class="unit">USDT</span><span class="change skel" id="candle-change">—</span></div><div class="signal-line" id="signal-line" hidden></div><button type="button" class="button ghost alarm-btn" id="alarm-here">🔔 Alarm für diesen Kurs</button></div><div class="chart-meta"><span id="price-eur">Eurokurs ausstehend</span><span id="updated">Noch keine Marktdaten</span></div></div>
         <div class="chart-toolbar"><div class="tb-main"><div class="intervals" role="group" aria-label="Kerzenintervall"><button type="button" data-interval="1m" class="active" aria-pressed="true">1m</button><button type="button" data-interval="5m" aria-pressed="false">5m</button><button type="button" data-interval="15m" aria-pressed="false">15m</button><button type="button" data-interval="1h" aria-pressed="false">1h</button><button type="button" data-interval="4h" aria-pressed="false">4h</button><button type="button" data-interval="1d" aria-pressed="false">1d</button><button type="button" data-interval="1w" aria-pressed="false">1w</button><button type="button" data-interval="1M" aria-pressed="false" title="1 Monat">1M</button></div><button type="button" class="metric-btn" data-metric="cap" aria-pressed="false" aria-label="Market Cap in USD statt Kurs anzeigen" title="Market Cap (USD) statt Kurs – noch einmal tippen: zurück zum Kurs. Historische Werte schlüssellos von CoinGecko, sonst CoinPaprika">MCap</button></div><div class="zoom-controls" role="group" aria-label="Chart zoomen und blättern"><button id="pan-back" type="button" aria-label="Weiter zurück in der Zeit">◀</button><button id="zoom-out" type="button" aria-label="Herauszoomen, mehr Kerzen">−</button><button id="zoom-in" type="button" aria-label="Hineinzoomen, weniger Kerzen">+</button><button id="pan-fwd" type="button" aria-label="Weiter Richtung jetzt">▶</button><button id="pan-now" type="button" hidden>Jetzt</button><button id="zoom-reset" type="button" hidden aria-label="Standardansicht: 80 Kerzen bis zur aktuellen Kerze" title="Standardansicht: 80 Kerzen bis zur aktuellen Kerze">⟲</button><button id="pat-btn" type="button" aria-pressed="false" aria-label="KI: Chartmuster im sichtbaren Ausschnitt erkennen (regelbasiert, lokal)" title="Chartmuster erkennen – regelbasiert im Browser, keine externe KI">KI</button><button id="magnet" type="button" aria-pressed="false" title="Magnet: auf ein Chart-Level tippen oder klicken, um dort einen Kurs-Alarm zu setzen" aria-label="Magnet: Kurs-Alarm per Klick auf ein Chart-Level">🧲</button><button id="chart-full" type="button" aria-pressed="false" aria-label="Chart im Vollbild" title="Vollbild – schließen mit Enter, Esc oder diesem Symbol"><svg class="ico-max" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><svg class="ico-min" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><details class="tip"><summary aria-label="Bedienung des Charts"><span>i</span></summary><div class="tip-body"><p>Zoomen: zwei Finger auseinander/zusammen, Strg + Mausrad oder − / +.</p><p>Zurückblättern: mit einem Finger wischen, waagrecht scrollen oder ◀ ▶. Doppelt tippen: zurück zu jetzt.</p><p>🧲 Magnet: einschalten, dann auf eine Linie oder Kerze tippen bzw. klicken – der Kurs-Alarm wird mit genau diesem Preis vorausgefüllt. Der Preis rastet an POC, Value Area, Pivots, EMA 200, Bollinger, Kerzen-Hochs und -Tiefs, Liquidationslinien sowie den Liq-Clustern der Heatmap ein. Am Computer geht es jederzeit auch per Rechtsklick.</p><p>Rote gestrichelte Linie: Liquidationspreis deiner Position (Wert der Börse oder Modell bei isolierter Margin), rot getönt der Bereich dahinter. Dünner: das Szenario aus dem Positionsrechner.</p><p>Tastatur: Pfeiltasten wählen Kerzen, + und − zoomen.</p></div></details></div></div>
+        <div class="mtf" id="mtf" role="group" aria-label="Trend je Zeitebene: Kurs, EMA 50 und EMA 200"></div>
         <div class="ohlc-row"><div class="ohlc skel" id="ohlc">O — &nbsp; H — &nbsp; L — &nbsp; C —</div><details class="tip div-tip" id="div-tip" hidden><summary aria-label="RSI-Divergenz: Erklärung und Handlungsleitfaden"><i class="div-dot" aria-hidden="true"></i><b class="div-l" id="div-chip-l">RSI-Divergenz</b><b class="div-s" id="div-chip-s">Div.</b><span>i</span></summary><div class="tip-body div-body"><p class="div-title" id="div-title"></p><p id="div-case"></p><p class="div-tent" id="div-tent" hidden></p><p class="div-other" id="div-other" hidden></p><p class="div-h">Handlungsleitfaden</p><ol class="div-steps"><li><b>Kein Einstiegssignal.</b> Die Divergenz zeigt nachlassenden Schwung, keine Umkehr. Auch Warten auf eine Bestätigung half im Backtest nicht (unten).</li><li id="div-step-ext"></li><li id="div-step-pos"></li><li id="div-step-risk"></li></ol><p class="div-alarm-row"><button type="button" class="button ghost" id="div-alarm">🔔 Alarm</button></p><p class="div-honest"><b>Ehrlich – Backtest mit genau diesem Scanner</b> (echte BTC-Stundenkerzen 2017–2019, Coinbase und Bitfinex): Nach einer Divergenz lief der Kurs nur in 48–51 % der Fälle zuerst um die Mindestbewegung in die erwartete Richtung – als Trade nach Gebühren (0,06 % je Seite) durchweg ein Verlust (−25 % bis −47 %). Warten machte es nicht besser: ab der Bestätigung des Umkehrpunkts 44–48 %, nach einem Schlusskurs über dem Zwischenhoch bzw. unter dem Zwischentief nur 21–39 %. Deshalb zeigt die App dazu keine Trefferquote und kein Kauf- oder Verkaufssignal.</p><p class="div-note">Grün = bullisch, rot = bärisch. Eine neue Divergenz pulsiert, bis du diese Erklärung geöffnet hast, danach leuchtet sie ruhig. Ist „Bewegung reduzieren“ im System eingestellt, leuchtet sie ohne Pulsieren.</p></div></details></div>
         <div id="chart" class="chart" tabindex="0" role="img" aria-label="Kerzenchart. Mit Pfeiltasten Kerzen auswählen, mit Plus und Minus zoomen."><div class="chart-skel" aria-hidden="true"><i class="skel" style="height:38%"></i><i class="skel" style="height:52%"></i><i class="skel" style="height:46%"></i><i class="skel" style="height:61%"></i><i class="skel" style="height:57%"></i><i class="skel" style="height:70%"></i><i class="skel" style="height:64%"></i><i class="skel" style="height:49%"></i><i class="skel" style="height:55%"></i><i class="skel" style="height:68%"></i><i class="skel" style="height:74%"></i><i class="skel" style="height:66%"></i><i class="skel" style="height:58%"></i><i class="skel" style="height:63%"></i><i class="skel" style="height:77%"></i><i class="skel" style="height:71%"></i><i class="skel" style="height:80%"></i><i class="skel" style="height:69%"></i><i class="skel" style="height:62%"></i><i class="skel" style="height:72%"></i><i class="skel" style="height:84%"></i><i class="skel" style="height:78%"></i><i class="skel" style="height:73%"></i><i class="skel" style="height:88%"></i></div><span class="sr-only">Marktdaten werden geladen</span></div><i class="div-halo" id="div-halo" hidden aria-hidden="true"><b></b></i>
         <div class="fib-strip" id="fib-strip" role="group" aria-label="Fibonacci-Marken 38,2 / 50 / 61,8 % mit Abstand zum aktuellen Kurs – antippen legt einen Alarm an" hidden><div class="fs-head"><b id="fs-head">Fib</b><details class="tip left" id="fs-tip"><summary aria-label="Fibonacci-Marken erklärt"><span>i</span></summary><div class="tip-body"><p><b>Fibonacci-Retracement:</b> Wie weit läuft der Kurs nach einer Bewegung zurück? Gemessen in Prozent der letzten Schwungbewegung.</p><p id="fs-tip-swing">Grundlage ist der letzte abgeschlossene ZigZag-Schwung.</p><ul class="fs-tip-list"><li><b>23,6 %</b><span data-fl="23,6"></span> – flacher Rücklauf, gilt als Zeichen eines starken Trends</li><li><b>38,2 %</b><span data-fl="38,2"></span> – erste häufig beachtete Marke</li><li><b>50 %</b><span data-fl="50"></span> – halber Rücklauf; keine Fibonacci-Zahl, aber traditionell beachtet</li><li><b>61,8 %</b><span data-fl="61,8"></span> – der „goldene Schnitt“; 50–61,8&nbsp;% ist die „goldene Zone“ (im Chart hinterlegt)</li><li><b>78,6 %</b><span data-fl="78,6"></span> – tiefer Rücklauf, der Schwung ist dann fast ganz zurückgenommen</li></ul><p><b>So nutzen:</b> als Orientierung, wo Rücksetzer oder Erholungen oft vermutet werden. Eine Marke antippen legt dort einen Alarm an – dann die Reaktion des Kurses abwarten. Viele Trader achten besonders auf Marken, die mit anderen Levels zusammenfallen (POC, EMA 200, Unterstützung); geprüft ist das hier nicht.</p><p><b>Ehrlich:</b> Im Backtest mit echten BTC-Stundenkerzen (2017–2019) endeten Gegenbewegungen nicht häufiger an diesen Marken als an um 6 Punkte verschobenen (27–31&nbsp;% gegenüber 23–35&nbsp;%); knapp die Hälfte lief sogar über 100&nbsp;% hinaus. Deshalb keine Trefferquote – Orientierung, kein Handelssignal.</p><p>Die ZigZag-Mindestbewegung bestimmt den Schwung: kleiner heißt kürzere Schwünge und Marken näher am Kurs.</p></div></details></div><button type="button" class="fs-chip" data-fib="38,2" disabled><span class="fs-r">38,2<span class="fs-pc"> %</span></span><span class="fs-val skel">—</span><span class="fs-dist"></span></button><button type="button" class="fs-chip" data-fib="50" disabled><span class="fs-r">50<span class="fs-pc"> %</span></span><span class="fs-val skel">—</span><span class="fs-dist"></span></button><button type="button" class="fs-chip" data-fib="61,8" disabled><span class="fs-r">61,8<span class="fs-pc"> %</span></span><span class="fs-val skel">—</span><span class="fs-dist"></span></button><span class="fs-note" id="fs-note" hidden></span></div>

@@ -1,4 +1,5 @@
-// Optimierung 4 (nach G09): Auswertung in R – Erwartungswert je Trade in Vielfachen des Anfangsrisikos, je Grund/Coin/Uhrzeit,
+// Optimierungen nach G09 – 4: Auswertung in R; 7: Trend-Ampel je Zeitebene.
+// Optimierung 4: Auswertung in R – Erwartungswert je Trade in Vielfachen des Anfangsrisikos, je Grund/Coin/Uhrzeit,
 // Anfangsrisiko (erster Stop) beim Anlegen festgehalten, Stop-Verschiebungen ändern es nicht. Aufruf: node m59.js
 const h = require('./harness');
 const results = [];
@@ -19,6 +20,13 @@ const trade = (id, sym, pnl, closedAt, extra = {}) => ({ id, symbol: sym, side: 
     const page = await ctx.newPage(); h.collect(page, errors); await page.goto(`${h.URL_BASE}/weather-widget-v2.html`); await page.waitForTimeout(1500);
     const u = await page.evaluate(() => { const t = JSON.parse(localStorage.getItem('scalpdesk.history.v1')); const R = id => __opt4.tradeR(t.find(x => x.id === id)); return { a1: R('A1'), a2: R('A2'), a3: R('A3'), a4: R('A4'), part: __opt4.tradeR({ side: 'long', entry: 100, sl: 98, qty: 1, pnl: 4, part: { pos: 'P' } }) }; });
     check('R je Trade: Stop beim Schluss (+2), Anfangsrisiko r0 vor nachgezogenem Stop (−0,5), Short (+1,5); Stop auf Einstand oder Teilschluss ohne r0 → ohne R', u.a1 === 2 && u.a2 === -0.5 && u.a3 === 1.5 && u.a4 === null && u.part === null, JSON.stringify(u));
+    // Optimierung 7: Trend-Ampel 5m · 15m · 1h · 4h · 1d über dem Chart
+    const mc = await page.evaluate(() => { const up = Array.from({ length: 260 }, (_, i) => 100 + i), dn = up.slice().reverse(); return { up: __opt7.calc(up, 400)?.t, down: __opt7.calc(dn, 50)?.t, mix: __opt7.calc(up, 300)?.t, few: __opt7.calc(up.slice(0, 150), 300) }; });
+    check('Trend-Regel: Kurs > EMA 50 > EMA 200 → ▲, Kurs < EMA 50 < EMA 200 → ▼, sonst ◆; unter 200 Kerzen keine Aussage', mc.up === 'up' && mc.down === 'down' && mc.mix === 'mix' && mc.few === null, JSON.stringify(mc));
+    await page.waitForFunction(() => document.querySelectorAll('#mtf .mtf-c').length === 5 && ![...document.querySelectorAll('#mtf .mtf-c')].some(c => /…$/.test(c.textContent)), null, { timeout: 15000 }).catch(() => {});
+    const mt = await page.evaluate(() => ({ chips: [...document.querySelectorAll('#mtf .mtf-c')].map(c => [c.textContent, c.className.split(' ')[1], c.title]), y: [document.querySelector('.chart-toolbar').getBoundingClientRect().bottom, document.getElementById('mtf').getBoundingClientRect().top, document.getElementById('chart').getBoundingClientRect().top] }));
+    const lg = (await h.ctl('/log')).filter(e => /klines$/.test(e.path || '') && e.q.symbol === 'BTCUSDT' && e.q.limit === '261').map(e => e.q.interval);
+    check('Ampel über dem Chart: 5 Zeitebenen mit ▲/▼/◆, Erklärung je Zeitebene; je Zeitebene einmal 261 Kerzen geladen', mt.chips.map(c => c[0].split(' ')[0]).join() === '5m,15m,1h,4h,1d' && mt.chips.every(c => /^\S+ [▲▼◆]$/.test(c[0]) && /EMA 50/.test(c[2])) && mt.y[0] <= mt.y[1] && mt.y[1] < mt.y[2] && ['5m', '15m', '1h', '4h', '1d'].every(iv => lg.filter(x => x === iv).length === 1), JSON.stringify({ chips: mt.chips.map(c => c[0]), lg }));
     await page.evaluate(() => { document.querySelector('[data-tab="pos"]')?.click(); const d = document.getElementById('analysis'); d.open = true; d.dispatchEvent(new Event('toggle')); }); await page.waitForTimeout(800);
     const v = await page.evaluate(() => { const k = [...document.querySelectorAll('#analysis-kpis > div')].filter(d => /Erwartungswert/.test(d.textContent)).map(d => `${d.querySelector('strong').textContent} | ${d.querySelector('small').textContent}`)[0] || '';
       const tab = {}; for (const bd of document.querySelectorAll('#breakdowns .bd')) tab[bd.querySelector('h4').textContent] = [...bd.querySelectorAll('.bd-row')].map(r => [...r.querySelectorAll(':scope > span')].slice(0, 4).map(s => s.textContent).join('|'));
