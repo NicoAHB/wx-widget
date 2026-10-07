@@ -7,10 +7,10 @@ export function fixedCandles(closes, periodMs = HOUR) {
 }
 export function fixture(config = {}) {
   const p = C.settings(config), asOf = START + 300 * HOUR;
-  const scope = { venue: 'bitget', product: 'USDT-FUTURES', instrument: 'BTCUSDT', quote: 'USDT', timeframe: '1h', contextTimeframe: '4h', horizon: 'short', modelVersion: C.MODEL_VERSION, settingsRevision: p.revision, asOf, maxHoldMs: 24 * HOUR, slippageBps: 0, indicatorAnchors: { base: START, context: START } };
+  const scope = { venue: 'bitget', product: 'USDT-FUTURES', instrument: 'BTCUSDT', quote: 'USDT', timeframe: '1h', contextTimeframe: '4h', horizon: 'short', modelVersion: C.MODEL_VERSION, settingsRevision: p.revision, asOf, maxHoldMs: 24 * HOUR, slippageBps: 0, indicatorAnchors: { base: START, context: START - 500 * HOUR } };
   const source = timeframe => ({ ...scope, timeframe, parametersKey: C.parametersKey(p) });
   const base = { source: source('1h'), anchor: START, closedAt: asOf, knownAt: asOf, price: 100, ema50: 99, ema200: 90, atr: 4, rsiValues: [40, 39, 38, 37, 36, 35, 36, 37, 39, 40], lastIndex: 9, histogram: [0, 0, 0, 0, 0], volume: 151, previousVolumes: Array(20).fill(100), pivots: [], zones: [] };
-  const context = { source: source('4h'), anchor: START, closedAt: asOf, knownAt: asOf, price: 100, ema50: 99, ema200: 90 };
+  const context = { source: source('4h'), anchor: scope.indicatorAnchors.context, closedAt: asOf, knownAt: asOf, price: 100, ema50: 99, ema200: 90 };
   const funding = { source: source('1h'), rate: 0, intervalHours: 8, at: asOf - HOUR, knownAt: asOf, positiveMeans: 'long-pays' };
   const pattern = { source: source('1h'), family: 'test-umkehr', direction: 1, quality: 90, timeframe: '1h', confirmed: true, provisional: false, from: asOf - 3 * HOUR, to: asOf - HOUR, closedAt: asOf, knownAt: asOf };
   return { p, input: { scope, base, context, funding, direction: 1, patterns: [pattern] }, pattern };

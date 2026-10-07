@@ -14,7 +14,7 @@ Automatische Tests für die App (`weather-widget-v2.html`) und den 24/7-Dienst (
 | `node m51.js` | ein einzelner Test, hier G02 (Lose, Nachkauf, Teilabschluss) | wenige Minuten |
 | `node m51.js svc` | nur ein Abschnitt eines Tests | |
 | `bash lint.sh` | ESLint über App und G10-Fachmodule (0 Fehler, 3 bekannte App-Warnungen) | Sekunden |
-| `node unit-confluence.js` | G10(a): 131 feste Fachprüfungen ohne Browser | Sekunden |
+| `node unit-confluence.js` | G10(a): 135 feste Fachprüfungen ohne Browser | Sekunden |
 | `node m61.js` | G10(a): Node/Browser/Worker, Versionsgleichheit, echter Offline-Import | Sekunden |
 
 Ausgabe je Test: `✓`/`✗` je Prüfung und am Ende `n/m bestanden`.

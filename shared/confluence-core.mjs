@@ -30,7 +30,7 @@ function sameSource(source, scope, timeframe, key) {
 }
 
 function knownFrame(frame, scope, timeframe, key) {
-  return frame && sameSource(frame.source, scope, timeframe, key) && time(frame.anchor) && frame.anchor === scope.indicatorAnchors[timeframe === scope.timeframe ? 'base' : 'context'] && time(frame.closedAt) && time(frame.knownAt) && frame.anchor < frame.closedAt && frame.knownAt >= frame.closedAt && frame.knownAt <= scope.asOf && scope.asOf - frame.closedAt < TF[timeframe] && [frame.price, frame.ema50, frame.ema200].every(positive);
+  return frame && sameSource(frame.source, scope, timeframe, key) && time(frame.anchor) && frame.anchor === scope.indicatorAnchors[timeframe === scope.timeframe ? 'base' : 'context'] && time(frame.closedAt) && time(frame.knownAt) && frame.closedAt - frame.anchor >= 200 * TF[timeframe] && frame.knownAt >= frame.closedAt && frame.knownAt <= scope.asOf && scope.asOf - frame.closedAt < TF[timeframe] && [frame.price, frame.ema50, frame.ema200].every(positive);
 }
 
 function trend(frame) { return frame.price > frame.ema50 && frame.ema50 > frame.ema200 ? 1 : frame.price < frame.ema50 && frame.ema50 < frame.ema200 ? -1 : 0; }
@@ -47,7 +47,7 @@ export function frameSnapshot({ source, state, candles, asOf }) {
       if (fib) { zones.push({ ...fib, direction, confirmed: true }); break; }
     }
   }
-  return { state: result.state, frame: { source: { ...source }, anchor: state.anchor, closedAt: last.end, knownAt: Math.max(...rows.map(c => c.knownAt)), price: last.close, ema50: v.ema50, ema200: v.ema200, atr: v.atr,
+  return { state: result.state, frame: { source: { ...source, indicatorAnchors: { ...source.indicatorAnchors } }, anchor: state.anchor, closedAt: last.end, knownAt: Math.max(...rows.map(c => c.knownAt)), price: last.close, ema50: v.ema50, ema200: v.ema200, atr: v.atr,
     rsiValues: result.values.map(x => x.rsi), lastIndex: rows.length - 1, histogram: result.values.map(x => x.histogram).slice(-5), volume: last.volume, previousVolumes: rows.slice(-21, -1).map(c => c.volume), pivots, zones } };
 }
 
@@ -69,7 +69,7 @@ export function normalizeFunding({ rate, intervalHours, at, knownAt, positiveMea
 export function scoreConfluence(input, config = {}) {
   const p = settings(config), key = parametersKey(p), { scope, base, context, funding, direction, patterns } = input || {};
   if (![1, -1].includes(direction) || !validScope(scope, p)) return { ...unavailable('Signalquelle, Richtung oder Parameterrevision fehlen'), score: null };
-  if (!knownFrame(base, scope, scope.timeframe, key) || !knownFrame(context, scope, scope.contextTimeframe, key)) return { ...unavailable('Trenddaten fehlen, sind zukünftig oder gehören zu einer anderen Quelle/Revision'), score: null };
+  if (!knownFrame(base, scope, scope.timeframe, key) || !knownFrame(context, scope, scope.contextTimeframe, key)) return { ...unavailable('Trenddaten fehlen, haben weniger als 200 Kerzen, sind zukünftig oder gehören zu einer anderen Quelle/Revision'), score: null };
   const baseTrend = trend(base), contextTrend = trend(context), blocked = baseTrend === -direction && contextTrend === -direction;
   const zone = setupInDirection({ ...base, direction, asOf: scope.asOf }), macdOK = macdInDirection(base.histogram, direction);
   const divergence = divergenceInDirection(base.pivots, base.rsiValues, direction, base.lastIndex, scope.asOf, p.divergenceMaxAge);
@@ -82,7 +82,7 @@ export function scoreConfluence(input, config = {}) {
   const baseScore = Object.values(points).reduce((a, b) => a + b, 0), combined = patternScore({ baseScore, weight: p.patternWeight, direction, patterns, asOf: scope.asOf });
   if (combined.score === null) return { ...combined, blocked, points, baseScore };
   const score = combined.score;
-  return { status: blocked ? 'gesperrt' : score >= p.minimumScore ? 'kandidat' : score >= 50 ? 'beobachten' : 'kein Signal', score, baseScore, points, pattern: combined, blocked, direction, funding8h: rate, scope: { ...scope }, parametersKey: key, anchors: { base: base.anchor, context: context.anchor }, candidate: !blocked && score >= p.minimumScore, reason: blocked ? 'Beide Trends gegen die Signalrichtung' : null };
+  return { status: blocked ? 'gesperrt' : score >= p.minimumScore ? 'kandidat' : score >= 50 ? 'beobachten' : 'kein Signal', score, baseScore, points, pattern: combined, blocked, direction, funding8h: rate, scope: { ...scope, indicatorAnchors: { ...scope.indicatorAnchors } }, parametersKey: key, anchors: { base: base.anchor, context: context.anchor }, candidate: !blocked && score >= p.minimumScore, reason: blocked ? 'Beide Trends gegen die Signalrichtung' : null };
 }
 
 export function combineDirections(long, short) {

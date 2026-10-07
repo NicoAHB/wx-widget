@@ -13,7 +13,7 @@ bleibt erhalten. Bitget-Feed, Karten, Backtest-Worker und Telegram folgen in G10
 
 Keine Netzwerk-, DOM-, Speicher-, Timer- oder Sendeseiteneffekte. Dieselben ES-Module werden in Node, Browser und Browser-Worker getestet;
 Adapter müssen sie später tatsächlich importieren. Der Service Worker speichert alle drei Dateien für den Offline-Import.
-Tests: `unit-confluence.js` (131 feste Fachprüfungen), `m61.js` (8 Laufzeit-/Offlineprüfungen). `tests/fixtures/` enthält ausschließlich Testdaten.
+Tests: `unit-confluence.js` (135 feste Fachprüfungen), `m61.js` (8 Laufzeit-/Offlineprüfungen). `tests/fixtures/` enthält ausschließlich Testdaten.
 
 ## Eingangsvertrag und Zustand
 
@@ -30,8 +30,9 @@ Tests: `unit-confluence.js` (131 feste Fachprüfungen), `m61.js` (8 Laufzeit-/Of
   lückenlose Fortsetzung ab `nextTime`. Zustand und Markt-/Parameterkontext zusammen speichern; Chart-Zoom setzt keinen neuen Anker.
 - `frameSnapshot({source,state,candles,asOf})` liefert eigene Indikatoren, RSI-Reihe, Pivots/Zonen, letzte fünf Histogrammwerte,
   letzte Kerze und deren vorherige 20 Volumina. Für Ausschnitte gespeicherten Zustand **vor** dem Ausschnitt verwenden und genug
-  Kerzen für Volumen/Pivots mitgeben. EMA200-Warm-up nicht verkürzen. Basis/Kontext müssen jeweils die jüngste geschlossene Kerze
-  enthalten: nach Ablauf einer weiteren ganzen Kerze sind alte Werte nicht bewertbar.
+  Kerzen für Volumen/Pivots mitgeben. EMA200-Warm-up nicht verkürzen: je Zeitebene mindestens 200 Kerzen seit ihrem eigenen Startanker.
+  Basis/Kontext müssen jeweils die jüngste geschlossene Kerze enthalten: nach Ablauf einer weiteren ganzen Kerze sind alte Werte nicht
+  bewertbar. Snapshot und Signal kopieren die Ankerdaten; spätere Eingabeänderungen verändern gespeicherte Ergebnisse nicht.
 
 ## Berechnung und Sperren
 
@@ -52,6 +53,9 @@ W=15 skaliert Basis B auf 85: B=80 und bestätigtes 1h-Muster mit 90 % Regelgüt
 ist etwas anderes als nicht verfügbare Analyse (unbekannt, außer W=0). Äquivalente überlappende Familien je Richtung/Ebene zählen
 stärksten Beitrag einmal; 1D/1d und 1W/1w jeweils identisch. Vorläufige ZigZag-Endpunkte geben nichts, Bildung auf geschlossenen Kerzen halb.
 Musteradapter liefern nur aktuelle Fälle; der Kern prüft ihre Kenntniszeiten erneut.
+
+Nutzerentscheidung 07.10.2026: höherer Trend aus dem letzten geschlossenen Kurs seiner eigenen 4h-/1d-Zeitebene, nicht dem Basis-Kurs.
+Die bestehende Trend-Ampel verwendet weiterhin aktuellen Kurs; der Infobutton benennt diese unterschiedliche Kursbasis.
 
 Ab 70 Kandidat ohne vorheriges Runden, 50 bis unter Mindestgrenze nur beobachten. Beide Trends dagegen sperren hart. Score ist keine
 Wahrscheinlichkeit. `combineDirections` sperrt gleichzeitige Long-/Short-Kandidaten. `signalDecision` verlangt außerdem dieselbe
@@ -94,5 +98,9 @@ Modellgröße skalieren; keine doppelte Gebühr. Anfragezeitraum und tatsächlic
 
 Zugänglicher Knopf an den Signalkarten, kurze deutsche Erklärung, Restzeit und konkreter Prüfschritt; Text zusätzlich zur Farbe.
 `divergenceInfo`: frisch `positive`, letzte Basiskerze `warning`, abgelaufen/unbekannt `muted`, Ablaufzeit und kurze Handlungsempfehlung.
+Für `confirmedAt` die Schlusszeit der zweiten Nachbarkerze verwenden (`Pivot.time+3*periodMs` bei lückenlosen Kerzen),
+`knownAt` bleibt die zusätzlich geprüfte tatsächliche Kenntniszeit. Spätes Laden alter Daten setzt das Alterslimit nicht zurück.
 Frisch: „Trend, Setup und Kosten prüfen“; abgelaufen: „Keine Divergenz-Zusatzpunkte mehr. Neue Bestätigung abwarten.“
 Bestätigung bedeutet fester Pivot, keine Gewissheit über nächsten Kurs. Sichtbarer Knopf mit G10(c), vorhandene G07-Anzeige bleibt erhalten.
+Das Alterslimit betrifft nur die Divergenz-Zusatzpunkte. Kartenalter (kurz 1h/lang 24h laut G10), maximale Modell-Haltedauer und
+Laufzeit echter Positionen getrennt erklären; eine alte Karte schließt keine Position automatisch.
