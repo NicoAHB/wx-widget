@@ -48,7 +48,7 @@ import http from 'node:http';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
-export const VERSION = '2.0.0';
+export const VERSION = '2.1.0';
 const E = process.env;
 // Adressen (für Tests über Umgebungsvariablen änderbar)
 export const API = {
@@ -386,6 +386,76 @@ export const ST_NAME = { reserved: 'reserviert', sending: 'wird gesendet', confi
 export const senderName = s => (s === 'oracle' ? '24/7-Dienst' : `App (${String(s).slice(4)})`);
 
 // ---------- Der Dienst ----------
+// ---- 2.1.0 (G09 C4): Muster-Archiv – Originaljournal der Musterfälle, getrennt von Alarmkonfiguration und Zustand ----
+// Nur anhängend (JSON-Zeilen): Fall, später angehängtes Ergebnis, Konflikt. Gleiche Fall-ID zählt einmal; fehlerhafte Zeilen
+// werden zusätzlich in „.quarantine“ kopiert und bleiben im Journal (nichts wird gelöscht). Unabhängige Sicherung: Kopie in einen
+// eigenen Ordner (SCALPDESK_PATTERN_BACKUP, z. B. ein anderes Volume) mit Prüfsummenvergleich nach dem Zurücklesen; fehlt das
+// Journal beim Start, wird es aus der Sicherung wiederhergestellt. Kein Weg über den Telegram-Sicherungsbot.
+export const caseId = c => [c.mkt, c.sym, c.iv, c.pat, c.t0, c.t1, c.model].join('|');
+export function caseValid(c) {
+  return !!c && typeof c.id === 'string' && c.id.length <= 200 && c.id === caseId(c) && (c.mkt === 'spot' || c.mkt === 'futures') && /^[A-Z0-9]{2,24}$/.test(String(c.sym))
+    && /^[0-9a-zA-Z_]{1,12}$/.test(String(c.iv)) && /^[a-z_]{2,40}$/.test(String(c.pat)) && [c.t0, c.t1, c.tc].every(Number.isFinite) && c.p0 > 0 && (c.dir === 'bull' || c.dir === 'bear')
+    && (c.res == null || (typeof c.res === 'object' && ['auf', 'ab', 'seitwärts'].includes(c.res.out)));
+}
+export class PatternArchive {
+  constructor({ file, backupDir = '', now = () => Date.now(), log = () => {} }) {
+    Object.assign(this, { file, backupDir, now, log }); this.idx = new Map(); this.bad = 0; this.bytes = 0; this.restored = false; this.timer = null;
+    this.backup = { at: 0, ok: null, why: 'noch keine Sicherung' };
+    this.load();
+  }
+  get backupFile() { return this.backupDir ? path.join(this.backupDir, 'patterns-journal.jsonl') : ''; }
+  load() {
+    if (!fs.existsSync(this.file) && this.backupFile && fs.existsSync(this.backupFile)) {
+      fs.mkdirSync(path.dirname(this.file), { recursive: true }); fs.copyFileSync(this.backupFile, this.file); this.restored = true; this.log('Muster-Archiv aus der Sicherung wiederhergestellt');
+    }
+    if (!fs.existsSync(this.file)) return;
+    const raw = fs.readFileSync(this.file, 'utf8'), badLines = []; this.bytes = Buffer.byteLength(raw);
+    for (const line of raw.split('\n')) {
+      if (!line.trim()) continue;
+      let e; try { e = JSON.parse(line); } catch { badLines.push(line); continue; }
+      if (e?.t === 'case' && caseValid(e.c)) { if (!this.idx.has(e.c.id)) this.idx.set(e.c.id, { res: e.c.res ? e.c.res.out : null }); }
+      else if (e?.t === 'res' && this.idx.has(e.id)) { const x = this.idx.get(e.id); if (!x.res) x.res = e.res?.out || null; }
+      else if (e?.t !== 'conflict') badLines.push(line);
+    }
+    this.bad = badLines.length;
+    if (badLines.length) { try { fs.appendFileSync(this.file + '.quarantine', badLines.join('\n') + '\n'); } catch { /* Quarantäne nicht schreibbar: Journal bleibt unverändert */ } this.log(`Muster-Archiv: ${badLines.length} fehlerhafte Zeilen in Quarantäne kopiert`); }
+  }
+  add(list) {
+    const r = { stored: 0, results: 0, dup: 0, conflicts: 0, rejected: 0 }, lines = [], t = this.now();
+    for (const c of Array.isArray(list) ? list.slice(0, 200) : []) {
+      if (!caseValid(c)) { r.rejected++; continue; }
+      const x = this.idx.get(c.id), out = c.res?.out || null;
+      if (!x) { this.idx.set(c.id, { res: out }); lines.push(JSON.stringify({ t: 'case', at: t, c })); r.stored++; }
+      else if (out && !x.res) { x.res = out; lines.push(JSON.stringify({ t: 'res', at: t, id: c.id, res: c.res })); r.results++; }
+      else if (out && x.res && out !== x.res) { lines.push(JSON.stringify({ t: 'conflict', at: t, id: c.id, res: c.res })); r.conflicts++; }
+      else r.dup++;
+    }
+    if (lines.length) { fs.mkdirSync(path.dirname(this.file), { recursive: true }); const s = lines.join('\n') + '\n'; fs.appendFileSync(this.file, s); this.bytes += Buffer.byteLength(s); this.backupSoon(); }
+    return r;
+  }
+  backupSoon(ms = 3000) { clearTimeout(this.timer); this.timer = setTimeout(() => this.backupNow(), ms); this.timer.unref?.(); }
+  backupNow() {
+    if (!this.backupFile) { this.backup = { at: 0, ok: false, why: 'kein Sicherungsordner eingerichtet' }; return this.backup; }
+    try {
+      const src = fs.existsSync(this.file) ? fs.readFileSync(this.file) : Buffer.alloc(0), h = b => crypto.createHash('sha256').update(b).digest('hex');
+      fs.mkdirSync(this.backupDir, { recursive: true }); const tmp = this.backupFile + '.tmp'; fs.writeFileSync(tmp, src); fs.renameSync(tmp, this.backupFile);
+      this.backup = h(fs.readFileSync(this.backupFile)) === h(src) ? { at: this.now(), ok: true, why: '' } : { at: this.now(), ok: false, why: 'Prüfsumme der Sicherung weicht ab' };
+    } catch (e) { this.backup = { at: this.now(), ok: false, why: e.message }; }
+    if (!this.backup.ok) this.log('Muster-Archiv: Sicherung fehlgeschlagen – ' + this.backup.why);
+    return this.backup;
+  }
+  status() { let res = 0; for (const x of this.idx.values()) if (x.res) res++; return { ok: true, count: this.idx.size, results: res, bytes: this.bytes, bad: this.bad, restored: this.restored, backup: this.backup }; }
+  // bereinigter Bestand (nur Marktdaten, je Fall der erste Ergebnisstand) für Export und Veröffentlichung
+  export() {
+    const m = new Map(); if (!fs.existsSync(this.file)) return [];
+    for (const line of fs.readFileSync(this.file, 'utf8').split('\n')) {
+      let e; try { e = JSON.parse(line); } catch { continue; }
+      if (e?.t === 'case' && caseValid(e.c) && !m.has(e.c.id)) { const c = e.c; m.set(c.id, { id: c.id, mkt: c.mkt, sym: c.sym, iv: c.iv, pat: c.pat, kind: c.kind, dir: c.dir, t0: c.t0, t1: c.t1, tc: c.tc, p0: c.p0, model: c.model, profile: c.profile, q: c.q, src: c.src, res: c.res || null }); }
+      else if (e?.t === 'res' && m.has(e.id) && !m.get(e.id).res) m.get(e.id).res = e.res;
+    }
+    return [...m.values()];
+  }
+}
 export class Watcher {
   constructor({ token, chat, discord = '', key = '', origins = [APP_ORIGIN], listen = LISTEN, host = '', statePath = '', now = () => Date.now(), log = (...a) => console.log(...a) }) {
     Object.assign(this, { token, chat, discord, key, origins, listen, host, statePath, now, log });
@@ -405,6 +475,8 @@ export class Watcher {
     this.me = null; this.waitSince = 0; this.waitLogAt = 0; this.hintAt = 0; this.ackKeys = null; this.ackAt = 0; this.ackOn = null; this.ackPend = false; this.waitWhat = '';
     this.firstLook = new Set(); this.beatTag = ''; this.checks = 0; this.prices = new Map(); this.chatInfo = null;
     this.loadState();
+    // 2.1.0 (G09 C4): Muster-Archiv als eigene Datei neben dem Zustand (nicht in der Alarmkonfiguration)
+    this.arch = statePath ? new PatternArchive({ file: path.join(path.dirname(statePath), 'patterns-journal.jsonl'), backupDir: process.env.SCALPDESK_PATTERN_BACKUP || path.join(path.dirname(statePath), 'muster-sicherung'), now, log: m => this.log(m) }) : null;
   }
   // ---- Zustand (ausgelöste Meldungen, zuletzt gelesene Datei, Kalender) über Neustarts hinweg ----
   loadState() {
@@ -703,6 +775,9 @@ export class Watcher {
   //   POST /v1/events/reserve        { eventId, targetId, sender, label } → Freigabe oder Inhaber
   //   POST /v1/events/report         { eventId, sender, st, why } → Zustand fortschreiben (nur der Inhaber)
   //   POST /v1/episodes/next         { base, from } → neue Episode einer wiederkehrenden Marke (einmal je Verlassen)
+  //   POST /v1/patterns/cases        { cases } → Musterfälle ins Archiv (gleiche ID einmal, Ergebnis angehängt) – 2.1.0 (G09)
+  //   GET  /v1/patterns/status       Anzahl, Ergebnisse, Sicherung (geprüft)
+  //   GET  /v1/patterns/export       bereinigter Bestand (nur Marktdaten) für Export und Veröffentlichung
   stateView(days = 3) {
     const t = this.now(), events = Object.entries(this.evs).filter(([, e]) => t - e.at < days * 864e5).sort((a, b) => b[1].at - a[1].at).slice(0, 300).map(([id, e]) => ({ id, ...e }));
     return { ok: true, v: VERSION, now: t, ...policyView(this.pol), eps: Object.fromEntries(Object.entries(this.eps).map(([b, x]) => [b, x.n])), events };
@@ -761,6 +836,12 @@ export class Watcher {
       if (typeof body?.base !== 'string' || !/^[A-Za-z0-9_.:-]{4,120}$/.test(body.base) || !Number.isInteger(body.from)) return send(400, { ok: false, error: 'Marke oder Episode fehlt.' });
       const n = epNext(this.eps, this.evs, body.base, body.from, t); if (n !== body.from) { this.log(`Episode ${body.base}: neue Episode ${n} (von der App gemeldet)`); this.saveStateNow(); }
       return send(200, { ok: true, ep: n });
+    }
+    if (u.pathname.startsWith('/v1/patterns/')) {
+      if (!this.arch) return send(503, { ok: false, error: 'Muster-Archiv nicht eingerichtet (kein Zustandsordner).' });
+      if (route === 'POST /v1/patterns/cases') { const r = this.arch.add(body?.cases); if (r.stored || r.results || r.conflicts) this.log(`Muster-Archiv: ${r.stored} neu, ${r.results} Ergebnisse, ${r.conflicts} Konflikte, ${r.dup} doppelt, ${r.rejected} abgelehnt`); return send(200, { ...this.arch.status(), ...r }); }
+      if (route === 'GET /v1/patterns/status') return send(200, this.arch.status());
+      if (route === 'GET /v1/patterns/export') return send(200, { ok: true, v: VERSION, at: this.now(), cases: this.arch.export() });
     }
     return send(404, { ok: false, error: 'Unbekannter Aufruf.' });
   }

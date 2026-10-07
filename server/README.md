@@ -118,3 +118,21 @@ Die Zeitstempel davor setzt journalctl in der Zeitzone des Servers (bei Oracle m
 - `/usr/local/bin/scalpdesk-247` (ab 1.4) ist der Kurzbefehl für `status`, `protokoll`, `live` und `neustart`.
 - Der Dienst läuft als eigener Benutzer ohne Anmeldung, mit schreibgeschütztem System (`ProtectSystem=strict`). Er startet mit dem Server und nach Fehlern von selbst neu.
 - Den Token schreibt er nie ins Protokoll.
+
+## Muster-Archiv (ab Dienst 2.1.0, App 3.39.0)
+- **Was:** Die App überträgt bestätigte Chartmuster-Fälle (nur Marktdaten: Coin, Intervall, Muster, Zeitpunkte, Kurs, Prognose, Ergebnis) über den bestehenden HTTPS-Weg mit dem Zugangsschlüssel. Telegram und der Sicherungsbot sind daran nicht beteiligt.
+- **Wo:** `patterns-journal.jsonl` neben der Zustandsdatei, nur anhängend. Getrennt von Alarmkonfiguration und Zustand. Fehlerhafte Zeilen werden zusätzlich nach `patterns-journal.jsonl.quarantine` kopiert; gelöscht wird nichts.
+- **Sicherung:** wenige Sekunden nach jeder Änderung eine geprüfte Kopie (Prüfsumme nach dem Zurücklesen) in `muster-sicherung/` neben der Zustandsdatei.
+  - **Anderes Volume:** Für eine wirklich unabhängige Sicherung `SCALPDESK_PATTERN_BACKUP=/pfad/auf/anderem/volume` in der Umgebung des Dienstes setzen.
+    Der Dienst läuft mit schreibgeschütztem System (`ProtectSystem=strict`), deshalb den Pfad in der Unit zusätzlich unter `ReadWritePaths=` eintragen (`sudo systemctl edit scalpdesk-247`).
+  - **Wiederherstellung:** Fehlt das Journal beim Start, stellt der Dienst es aus der Sicherung wieder her.
+  - **Kopie aufs Gerät:** In der App zusätzlich „Archiv vom Dienst als Datei sichern“ (Info-Sheet eines Musters → „Vergangene Verläufe ansehen“).
+- **Aufrufe** (mit Zugangsschlüssel): `POST /v1/patterns/cases`, `GET /v1/patterns/status`, `GET /v1/patterns/export`.
+
+## Veröffentlichung des Musterwissens (App 3.39.0)
+- **Was:** Ein kleiner, bereinigter Stand für alle Nutzer auf GitHub Pages: nur Zählungen je Markt|Coin|Intervall|Muster (live und rekonstruiert getrennt), keine Einzelkurse, keine persönlichen Daten.
+- **So geht's:**
+  1. In der App „Archiv vom Dienst als Datei sichern“ (oder `GET /v1/patterns/export` mit Zugangsschlüssel) → `muster-archiv-JJJJ-MM-TT.json`.
+  2. Im Repository: `node server/muster-export.mjs muster-archiv-JJJJ-MM-TT.json data/muster` → schreibt `data/muster/manifest.json` (höchstens 64 KiB) und `stats-<n>.json` (je höchstens 256 KiB); die Revision zählt hoch.
+  3. Committen und pushen (Pull Request). Nach dem Pages-Build zeigt die App unter „Vergangene Verläufe ansehen“ „Veröffentlicht: Revision R vom …“ mit der Zählung der Auswahl.
+- **Sicherheit:** Die App liest nur (GET); sie braucht und kennt keinen Schreibschlüssel. Ohne Veröffentlichung steht dort „noch keine Veröffentlichung“.

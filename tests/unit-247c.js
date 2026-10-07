@@ -98,7 +98,7 @@ const TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', CHAT = '987654321'
   const U = p => `http://127.0.0.1:${port}${p}`, H = (extra = {}) => ({ authorization: `Bearer ${KEY}`, 'content-type': 'application/json', ...extra });
   const call = async (p, { method = 'GET', body, headers = H() } = {}) => { const res = await realFetch(U(p), { method, headers, ...(body ? { body: JSON.stringify(body) } : {}) }); let j = null; try { j = await res.json(); } catch { /* 204 */ } return { status: res.status, j, h: res.headers }; };
   let x = await call('/v1/health', { headers: {} });
-  check('GET /v1/health ohne Schlüssel: läuft, Version 2.0.0', x.status === 200 && x.j.ok && x.j.v === '2.0.0');
+  check('GET /v1/health ohne Schlüssel: läuft, Version 2.0.0', x.status === 200 && x.j.ok && /^2\.\d+\.\d+$/.test(x.j.v));
   check('GET /v1/state ohne bzw. mit falschem Schlüssel: 401', (await call('/v1/state', { headers: {} })).status === 401 && (await call('/v1/state', { headers: { authorization: 'Bearer falsch' } })).status === 401);
   x = await call('/v1/state'); check('GET /v1/state mit Schlüssel: Revision 0, drei Ziele an', x.status === 200 && x.j.rev === 0 && x.j.targets['course-alert'].on && x.j.targets.trades.on, JSON.stringify(x.j).slice(0, 200));
   x = await call('/v1/state', { method: 'OPTIONS', headers: { origin: ORIGIN, 'access-control-request-method': 'POST', 'access-control-request-headers': 'authorization,content-type' } });
@@ -193,11 +193,11 @@ const TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', CHAT = '987654321'
   rev = (await call2('/v1/state')).j.rev; await call2('/v1/policy', { commandId: 'on-pulse-01', expectedRevision: rev, set: { 'course-alert': true } });
   // ---- Zeile des Dienstes, Geheimnisse, Status ----
   w.next.beat = 0; await w.tick(); const svc = pinned.caption.split('\n').find(l => l.startsWith('Dienst:')) || '';
-  check('Zeile des Dienstes: „· v2.0.0 · HTTPS“; die Erkennung der App (3.32) liest sie weiter', /^Dienst: aktiv · .* · v2\.0\.0 · HTTPS( · GV)? · #ef56 übernommen$/.test(svc) && /^Dienst: (aktiv|Störung) · .*? · #([a-z0-9]{2,12}) übernommen(?: · (.*))?$/.test(svc), svc);
+  check('Zeile des Dienstes: „· v2.0.0 · HTTPS“; die Erkennung der App (3.32) liest sie weiter', /^Dienst: aktiv · .* · v2\.\d+\.\d+ · HTTPS( · GV)? · #ef56 übernommen$/.test(svc) && /^Dienst: (aktiv|Störung) · .*? · #([a-z0-9]{2,12}) übernommen(?: · (.*))?$/.test(svc), svc);
   check('Kein Schlüssel und kein Token im Protokoll', !logs.join('\n').includes(KEY) && !logs.join('\n').includes(TOKEN));
   const sl = []; const ws = new W.Watcher({ token: TOKEN, chat: CHAT, key: KEY, listen: `127.0.0.1:${port2}`, host: '', statePath, now: () => now, log: l => sl.push(l) }); ws.saveState = () => {}; ws.saveStateNow = () => {};
   await ws.status();
-  check('„--status“: Steuerung lauscht, Ziele mit Revision, letzte Ereignisse mit Ziel, Sender und Zustand', sl.some(l => /^✓ Steuerung lauscht auf 127\.0\.0\.1:\d+ \(Dienst 2\.0\.0\)$/.test(l)) && sl.some(l => /^• Ziele \(Revision \d+\): Kursalarm an seit .* · Sicherung an seit .* · Trades an seit /.test(l)) && sl.some(l => /^• Letzte Ereignisse: .*→ Kursalarm, (24\/7-Dienst|App \(\w+\)), (zugestellt|Zustellung unbestätigt|verworfen)/.test(l)), sl.filter(l => /Steuerung|Ziele|Ereignisse/.test(l)).join(' | ').slice(0, 400));
+  check('„--status“: Steuerung lauscht, Ziele mit Revision, letzte Ereignisse mit Ziel, Sender und Zustand', sl.some(l => /^✓ Steuerung lauscht auf 127\.0\.0\.1:\d+ \(Dienst 2\.\d+\.\d+\)$/.test(l)) && sl.some(l => /^• Ziele \(Revision \d+\): Kursalarm an seit .* · Sicherung an seit .* · Trades an seit /.test(l)) && sl.some(l => /^• Letzte Ereignisse: .*→ Kursalarm, (24\/7-Dienst|App \(\w+\)), (zugestellt|Zustellung unbestätigt|verworfen)/.test(l)), sl.filter(l => /Steuerung|Ziele|Ereignisse/.test(l)).join(' | ').slice(0, 400));
   // ---- Zustand 1.4 übernehmen ----
   const old = path.join(dir, 'old.json'); fs.writeFileSync(old, JSON.stringify({ v: 1, fired: { 'al:x:1': 1 }, out: [], last: { t: 5, label: 'Kurs-Alarm X' } }));
   const wo = new W.Watcher({ token: TOKEN, chat: CHAT, key: KEY, statePath: old, now: () => now, log: () => {} });

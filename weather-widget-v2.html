@@ -1450,7 +1450,7 @@ html[data-layout=tablet] .wl-tile{height:64px}
 .chart-toolbar{container:ctb/inline-size}
 .tb-main{display:flex;flex-wrap:wrap;align-items:center;gap:6px;flex:1 1 0;min-width:min(100%,22rem)}
 /* 3.37.0 (G09): Chartmuster */
-.pk{display:grid;gap:6px}.pk-btn{justify-self:start}.pk-out{display:grid;gap:6px;font-size:.8125rem}.pk-out p{margin:0}.pk-h{font-weight:600}.pk-note,.pk-ex{color:var(--muted);font-size:.75rem}
+.pk{display:grid;gap:6px}.pk-btn{justify-self:start}.pk-out{display:grid;gap:6px;font-size:.8125rem}.pk-out p{margin:0}.pk-h{font-weight:600}.pk-note,.pk-ex{color:var(--muted);font-size:.75rem}.pk-pub{padding:6px 8px;border:1px solid var(--border);border-radius:8px;font-size:.75rem}
 .pk-svg{width:100%;max-width:420px;height:auto;background:var(--field);border-radius:8px}.pk-zero{stroke:var(--muted);stroke-dasharray:3 3}.pk-band{fill:var(--up-bg-2);opacity:.8}.pk-med{stroke:var(--up-text);stroke-width:2}.pk-rep{stroke:var(--text-2);stroke-width:1;stroke-dasharray:4 2}
 .wl-d-pat{display:block;width:100%;margin:6px 0 2px;padding:7px 10px;border:1px solid var(--up-border);border-radius:8px;background:var(--up-bg);color:var(--text);font:inherit;font-size:.8125rem;text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .wl-d-pat.none{border-color:var(--border);background:none;color:var(--muted);cursor:default}
@@ -2816,7 +2816,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Alle Werte liegen zusätzlich im Arbeitsspeicher und sind dadurch synchron lesbar. Schreiben geht sofort in den
 // localStorage und gebündelt in die IndexedDB; beim Start gewinnt die zuletzt vollständig geschriebene Kopie.
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
-const APP_VERSION = '3.38.0', docEl = document.documentElement;
+const APP_VERSION = '3.39.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -12451,7 +12451,7 @@ function patDone(id, r) {
   pat.cache.set(m.ck, r); if (pat.cache.size > 16) pat.cache.delete(pat.cache.keys().next().value);
   const T = i => m.k[Math.max(0, Math.min(m.k.length - 1, i))].t;
   pat.res = { ...m, ver: r.ver, hits: r.hits.map(h => ({ ...h, lines: (h.lines || []).map(([a, p, b, q, kd]) => [T(a), p, T(b), q, kd]) })).sort((a, b) => b.q - a.q || b.t1 - a.t1) };
-  try { const mkt = state.source === 'futures' ? 'futures' : 'spot', [sym, , iv] = m.key.split('|'); pkRecord(m, r.hits, mkt); pkResolve(mkt, sym, iv, m.k, m.running ? m.k.length - 2 : m.k.length - 1); } catch {} // 3.38.0 (G09 C)
+  try { const mkt = state.source === 'futures' ? 'futures' : 'spot', [sym, , iv] = m.key.split('|'); pkRecord(m, r.hits, mkt); pkResolve(mkt, sym, iv, m.k, m.running ? m.k.length - 2 : m.k.length - 1); void pkSync(); } catch {} // 3.38.0 (G09 C)
   pat.sel = null;
   const w = pat.want;
   if (w?.ran && m.reason === 'Vorauswahl') {   // aus der Vorauswahl: genau diese Formation markieren (oder ehrlich sagen, dass sie fehlt)
@@ -12645,7 +12645,7 @@ function pkRecord(m, hits, mkt) {
     c.id = pkId(c); list.push(c);
   }
   const r = pkMerge(list);
-  if (pk.size > PK_MAX) pk.full = true;   // volle Warteschlange: neues Lernen stoppt mit Hinweis, nichts wird gelöscht
+  if (JSON.stringify(Object.values(pk.cases).filter(c => !c.ext)).length > PK_MAX) pk.full = true;   // Warteschlange = noch nicht extern gespeicherte Fälle   // volle Warteschlange: neues Lernen stoppt mit Hinweis, nichts wird gelöscht
   return r.added;
 }
 // Ergebnisse anhängen, sobald 12 weitere abgeschlossene Kerzen da sind (Pfad normiert in % für die Verlaufsansicht)
@@ -12687,13 +12687,59 @@ function pkBandSvg(b) {
   if (b.rep) s.append(node('polyline', { points: b.rep.res.path.map((v, j) => `${X(j).toFixed(1)},${Y(v).toFixed(1)}`).join(' '), class: 'pk-rep', fill: 'none' }));
   return s;
 }
+// 3.39.0 (G09 C4): Fälle zusätzlich im Muster-Archiv des 24/7-Dienstes (eigener HTTPS-Datenweg aus G05, nicht der Sicherungsbot);
+// gemeldet werden noch nicht übertragene Fälle und neu angehängte Ergebnisse, höchstens 25 je Aufruf
+async function pkSync() {
+  if (pk.syncing || !svcOn()) return;
+  const todo = Object.values(pk.cases).filter(c => !c.ext || (c.res && !c.extRes)).slice(0, 25); if (!todo.length) return;
+  pk.syncing = true;
+  try {
+    const { status, j } = await svcFetch('/v1/patterns/cases', { method: 'POST', body: { cases: todo }, timeout: 10000 });
+    if (status === 200 && j?.ok) {
+      for (const c of todo) { c.ext = 1; if (c.res) c.extRes = 1; }
+      pk.ext = { at: Date.now(), count: j.count, backup: j.backup || null }; pk.extErr = ''; pkSave();
+      if (Object.values(pk.cases).some(c => !c.ext || (c.res && !c.extRes))) setTimeout(() => void pkSync(), 1500);
+    } else pk.extErr = j?.error || `Fehler ${status}`;
+  } catch (e) { pk.extErr = e.message; } finally { pk.syncing = false; }
+}
+// Speicherzustand je Fall: nur lokal → extern gespeichert → zusätzlich gesichert (geprüfte Sicherung am Dienst nach der Übertragung) → veröffentlicht
+// 3.39.0 (G09 C5): veröffentlichter Stand des gemeinsamen Musterwissens (GitHub Pages, data/muster/ – erzeugt mit server/muster-export.mjs).
+// Nur lesen: Manifest (≤ 64 KiB) beim Öffnen von „Vergangene Verläufe“, dazu die eine Statistikdatei (≤ 256 KiB) der Auswahl; kein Schreibschlüssel im Browser.
+// Offline liefert der Service Worker die zuletzt geladene Fassung (data/ = Netz zuerst); im Speicher höchstens 10 MiB.
+const PK_PUB = 'data/muster/', pkPub = { m: null, at: 0, err: '', files: {}, bytes: 0 };
+async function pkPubJson(name, max) {
+  const r = await fetch(PK_PUB + name, { cache: 'no-cache' });
+  if (r.status === 404) return null;
+  if (!r.ok) throw new Error(`Fehler ${r.status}`);
+  const t = await r.text(); if (t.length > max) throw new Error('Datei zu groß');
+  return JSON.parse(t);
+}
+async function pkPubLoad(force) {
+  if (!force && pkPub.at && Date.now() - pkPub.at < 3600000) return pkPub.m;
+  try {
+    const m = await pkPubJson('manifest.json', 65536);
+    pkPub.m = m && m.v === 1 && Number.isInteger(m.rev) && m.rev > 0 && Number.isFinite(m.date) && Number.isFinite(m.until) && Array.isArray(m.files) ? m : null;
+    if (pkPub.m?.rev !== pkPub.rev) { pkPub.files = {}; pkPub.group = {}; pkPub.bytes = 0; pkPub.rev = pkPub.m?.rev; }   // neue Revision: Statistik neu laden
+    pkPub.err = m && !pkPub.m ? 'Manifest ungültig' : ''; pkPub.at = Date.now();
+  } catch (e) { pkPub.err = e.name === 'SyntaxError' ? 'Manifest ungültig' : e.message; pkPub.at = Date.now() - 3300000; }   // Fehler: in 5 Minuten neu versuchen
+  return pkPub.m;
+}
+async function pkPubGroup(key) {
+  const f = pkPub.m?.files.find(x => x.keys ? x.keys.includes(key) : key >= x.first && key <= x.last); if (!f || !/^stats-\d+\.json$/.test(f.name)) return null;
+  if (!pkPub.files[f.name]) {
+    const j = await pkPubJson(f.name, 262144); if (!j?.groups) return null;
+    if (pkPub.bytes + (f.bytes || 0) > 10 * 1048576) { pkPub.files = {}; pkPub.bytes = 0; }
+    pkPub.files[f.name] = j.groups; pkPub.bytes += f.bytes || 0;
+  }
+  return pkPub.files[f.name][key] || null;
+}
+const pkState = c => (!c.ext ? 'nur lokal' : pkPub.m && (c.at || 0) <= pkPub.m.date && c.tc <= pkPub.m.until ? 'veröffentlicht' : pk.ext?.backup?.ok && pk.ext.backup.at >= (c.at || 0) ? 'zusätzlich gesichert' : 'extern gespeichert');
 // Abschnitt „Vergangene Verläufe ansehen“ im Info-Sheet
 function pkSection(h) {
   const box = el('div', 'pk'), sel = { mkt: state.source === 'futures' ? 'futures' : 'spot', sym: state.symbol, iv: state.interval, pat: h.id }, S = pkStats(sel), L = PAT_LIB[h.id];
   const btn = el('button', 'button ghost pk-btn', 'Vergangene Verläufe ansehen'); btn.type = 'button';
   const out = el('div', 'pk-out'); out.hidden = true;
-  btn.addEventListener('click', () => {
-    out.hidden = !out.hidden; if (out.hidden) return;
+  const paint = () => {
     const line = (name, st) => `${name}: ${st.n ? `${st.auf} von ${st.n} aufwärts, ${st.ab} abwärts, ${st.seitwärts} seitwärts` : 'noch keine abgeschlossenen Fälle'}${st.offen ? ` · ${st.offen} offen (Horizont nicht erreicht)` : ''}${st.konflikt ? ` · ${st.konflikt} mit Konflikt` : ''}${st.from ? ` · ${utcDate(st.from).slice(0, 10)} – ${utcDate(st.to).slice(0, 10)}` : ''}`;
     const kids = [el('p', 'pk-h', `${L.n} · ${state.symbol.slice(0, -4)}/USDT ${sel.mkt === 'spot' ? 'Spot' : 'Futures'} · ${state.interval} · Modell pat-1 · Kursrichtung ${PK_H} Kerzen nach der Bestätigung (±${number(PK_EPS, 2)} % = seitwärts)`),
       el('p', '', line('Live protokolliert', S.live)), el('p', '', line('Historisch rekonstruiert', S.rek))];
@@ -12704,12 +12750,24 @@ function pkSection(h) {
       kids.push(ex(b.rep, 'Repräsentativer Fall (geringste Abweichung vom Median, dünne Linie)'));
       if (b.neg && b.neg !== b.rep) kids.push(ex(b.neg, 'Gegenbeispiel (abwärts oder seitwärts)'));
     }
-    kids.push(el('p', 'pk-note', `${S.all ? `${S.all} gespeicherte Fälle für diese Auswahl.` : 'Für diese Auswahl gibt es noch keine Fälle – ein Fall entsteht, sobald ein bestätigtes Muster erkannt wird; das Ergebnis folgt nach 12 Kerzen.'} Die übernommene ZigZag-Statistik (älterer Bestand) enthält nur Summen ohne Einzelverläufe und betrifft andere Muster. Speicher: nur lokal auf diesem Gerät (externes Archiv noch nicht eingerichtet)${pk.full ? ' · Lernspeicher voll – neues Lernen pausiert, nichts gelöscht' : ''}${pk.quarantined ? ' · ein beschädigter Bestand wurde in Quarantäne gelegt' : ''}. Kursrichtung ≠ Zieltreffer; keine Erfolgswahrscheinlichkeit.`));
+    kids.push(el('p', 'pk-note', `${S.all ? `${S.all} gespeicherte Fälle für diese Auswahl.` : 'Für diese Auswahl gibt es noch keine Fälle – ein Fall entsteht, sobald ein bestätigtes Muster erkannt wird; das Ergebnis folgt nach 12 Kerzen.'} Die übernommene ZigZag-Statistik (älterer Bestand) enthält nur Summen ohne Einzelverläufe und betrifft andere Muster. Speicher: ${(() => { const cs = Object.values(pk.cases).filter(c => c.mkt === sel.mkt && c.sym === sel.sym && c.iv === sel.iv && c.pat === sel.pat), n = {}; for (const c of cs) n[pkState(c)] = (n[pkState(c)] || 0) + 1; return cs.length ? Object.entries(n).map(([k, v]) => `${v} ${k}`).join(' · ') : (svcOn() ? 'Archiv am 24/7-Dienst eingerichtet' : 'nur lokal auf diesem Gerät (kein 24/7-Dienst eingerichtet)'); })()}${pk.extErr ? ` · Archiv: ${pk.extErr}` : ''}${pk.full ? ' · Lernspeicher voll – neues Lernen pausiert, nichts gelöscht' : ''}${pk.quarantined ? ' · ein beschädigter Bestand wurde in Quarantäne gelegt' : ''}. Kursrichtung ≠ Zieltreffer; keine Erfolgswahrscheinlichkeit.`));
+    const pubKey = [sel.mkt, sel.sym, sel.iv, sel.pat].join('|'), g = pkPub.m && pkPub.group?.[pubKey], pl = (name, st) => `${name}: ${st.n ? `${st.auf} von ${st.n} aufwärts, ${st.ab} abwärts, ${st.sw} seitwärts` : 'keine abgeschlossenen Fälle'}`;
+    kids.push(el('p', 'pk-pub', !pkPub.at ? 'Veröffentlichter Stand wird geladen …' : pkPub.m ? `Veröffentlicht: Revision ${pkPub.m.rev} vom ${utcDate(pkPub.m.date).slice(0, 10)} (Fälle bis ${utcDate(pkPub.m.until).slice(0, 10)})${g ? ` · ${pl('live', g.live)} · ${pl('rekonstruiert', g.rek)}` : g === undefined ? ' · Zählung wird geladen …' : ' · für diese Auswahl nichts veröffentlicht'}` : `Gemeinsames Musterwissen: noch keine Veröffentlichung${pkPub.err ? ` (${pkPub.err})` : ''}`));
     out.replaceChildren(...kids);
+  };
+  btn.addEventListener('click', () => {
+    out.hidden = !out.hidden; if (out.hidden) return;
+    paint();
+    void pkPubLoad().then(async m => { if (m) { pkPub.group ||= {}; const key = [sel.mkt, sel.sym, sel.iv, sel.pat].join('|'); try { pkPub.group[key] = await pkPubGroup(key); } catch (e) { pkPub.group[key] = null; pkPub.err = e.message; } } if (!out.hidden && box.isConnected) paint(); });
   });
-  box.append(btn, out); return box;
+  if (svcOn()) {   // unabhängige Kopie auf diesem Gerät: bereinigter Bestand des Archivs als Datei
+    const dl = el('button', 'button ghost pk-btn', 'Archiv vom Dienst als Datei sichern'); dl.type = 'button';
+    dl.addEventListener('click', async () => { try { const { status, j } = await svcFetch('/v1/patterns/export', { timeout: 15000 }); if (status !== 200 || !j?.ok) throw new Error(j?.error || `Fehler ${status}`); download(`muster-archiv-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(j, null, 1), 'application/json'); infoToast(`Muster-Archiv gesichert: ${j.cases.length} Fälle`); } catch (e) { infoToast(`Archiv nicht gesichert: ${e.message}`, 5000); } });
+    box.append(btn, dl, out);
+  } else box.append(btn, out);
+  return box;
 }
-window.__g09 = { get pk() { return pk; }, pkMerge: l => pkMerge(l), pkStats: s => pkStats(s), pkBand: p => pkBand(p), pkId: c => pkId(c), wlPat: e => wlPat(e), get wl() { return wl; }, wldPaint: () => wldPaint(Date.now(), true), get pat() { return pat; }, engine: () => (PAT_E = PAT_E || patEngine()), lib: PAT_LIB, run: r => patRun(r), info: i => patOpenInfo(i), zoom: i => patZoom(i), svg: id => patSvg(id).outerHTML };
+window.__g09 = { pkSync: () => pkSync(), pkState: c => pkState(c), get pub() { return pkPub; }, pubLoad: f => pkPubLoad(f), get pk() { return pk; }, pkMerge: l => pkMerge(l), pkStats: s => pkStats(s), pkBand: p => pkBand(p), pkId: c => pkId(c), wlPat: e => wlPat(e), get wl() { return wl; }, wldPaint: () => wldPaint(Date.now(), true), get pat() { return pat; }, engine: () => (PAT_E = PAT_E || patEngine()), lib: PAT_LIB, run: r => patRun(r), info: i => patOpenInfo(i), zoom: i => patZoom(i), svg: id => patSvg(id).outerHTML };
 window.__g08 = { get dec() { return dec; }, decSignal: (c, b, cfg) => decSignal(c, b, cfg), decTick: (t, w, at) => decTick(t, DEC_WIN[w], at), decEvaluate: (r, sp, t, cfg, w, at) => decEvaluate(r, new Set(sp), new Map(Object.entries(t)), cfg, w, at),
   decPearson: (a, b, st) => decPearson(a, b, st), decClassify: a => decClassify(a), decLoreParse: j => decLoreParse(j), setEvery: ms => { DEC_EVERY = ms; }, kick: () => decKick(true) };
 window.__g07 = { get ana() { return ana; }, get cap() { return CAP; }, blocks30: (d, n) => blocks30(d, n), anaCalc: (c, iv) => anaCalc(c, iv), anaTrend: o => anaTrend(o), validateMarketCap: r => validateMarketCap(r), coinGeckoMarketCapPoints: j => coinGeckoMarketCapPoints(j),
