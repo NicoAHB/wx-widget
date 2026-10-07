@@ -69,7 +69,7 @@ Code: `patEngine()` (reine Engine, läuft als Blob-Worker), `PAT_LIB` (41 Eintr�
     - Fertig, wenn: `unit-247e.js` (Engine-Gleichheit, Erkennung auf festen Kerzen, Ziel aus → nichts, Ereignis-ID einmal) und Installer/README aktualisiert.
 
 ## Optimierungen nach G08
-(noch keine)
+- [x] **1. Chartmuster-Zeile der Vorauswahl in Richtungsfarbe** (auf dem Branch, noch nicht veröffentlicht): im Detailfeld eines Coins bullisch grün (`--up-*`), bärisch rot (`--down-*`), neutral/keine ohne Farbe. Dateien: `weather-widget-v2.html` (`.wl-d-pat.bull/.bear`, `wldPaint`), Test m58 „wl“ (5/5).
 
 ## Bekannte Stolpersteine
 - **m43 beim Stundenwechsel:** Die Prüfung erwartet eine Puls-Meldung „für 23 Uhr“ in einer Zeitzone, in der es gerade 23 Uhr ist. Trifft der Lauf den Wechsel auf 0 Uhr, schlägt sie fehl. Das ist kein App-Fehler; einzeln wiederholen.

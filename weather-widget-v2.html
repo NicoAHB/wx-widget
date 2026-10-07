@@ -1452,8 +1452,9 @@ html[data-layout=tablet] .wl-tile{height:64px}
 /* 3.37.0 (G09): Chartmuster */
 .pk{display:grid;gap:6px}.pk-btn{justify-self:start}.pk-out{display:grid;gap:6px;font-size:.8125rem}.pk-out p{margin:0}.pk-h{font-weight:600}.pk-note,.pk-ex{color:var(--muted);font-size:.75rem}.pk-pub{padding:6px 8px;border:1px solid var(--border);border-radius:8px;font-size:.75rem}
 .pk-svg{width:100%;max-width:420px;height:auto;background:var(--field);border-radius:8px}.pk-zero{stroke:var(--muted);stroke-dasharray:3 3}.pk-band{fill:var(--up-bg-2);opacity:.8}.pk-med{stroke:var(--up-text);stroke-width:2}.pk-rep{stroke:var(--text-2);stroke-width:1;stroke-dasharray:4 2}
-.wl-d-pat{display:block;width:100%;margin:6px 0 2px;padding:7px 10px;border:1px solid var(--up-border);border-radius:8px;background:var(--up-bg);color:var(--text);font:inherit;font-size:.8125rem;text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wl-d-pat{display:block;width:100%;margin:6px 0 2px;padding:7px 10px;border:1px solid var(--border);border-radius:8px;background:none;color:var(--text);font:inherit;font-size:.8125rem;text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .wl-d-pat.none{border-color:var(--border);background:none;color:var(--muted);cursor:default}
+.wl-d-pat.bull{border-color:var(--up-border);background:var(--up-bg);color:var(--up-text)}.wl-d-pat.bear{border-color:var(--down-border);background:var(--down-bg);color:var(--down-text)}
 #pat-btn{font-weight:700;font-size:.8125rem}#pat-btn[aria-pressed=true]{background:var(--up-bg-2);color:var(--up-text);border-color:var(--up-border)}
 @container ctb (min-width:640px) and (max-width:780px){.chart-toolbar .zoom-controls{gap:2px}.chart-toolbar .zoom-controls button{min-width:40px}}
 @container ctb (min-width:331px) and (max-width:400px){.chart-toolbar .zoom-controls{gap:2px}.chart-toolbar .zoom-controls button{min-width:40px}}
@@ -10550,7 +10551,7 @@ function wldPaint(now = Date.now(), force = false) {
   wld.none.textContent = r ? 'Aktuell keine Signale' : e?.error ? `Keine Daten für ${coin}: ${e.error}` : `Noch keine Daten – die Signale erscheinen, sobald 60 abgeschlossene ${S.ivName}-Kerzen vorliegen.`;
   // 3.37.0 (G09): erkannte Formation mit Bezug (Name, Intervall, Status, Regelgüte); Antippen öffnet ausdrücklich den Chart
   const ph = e?.pat, ptxt = ph ? `📐 Chartmuster erkannt: ${PAT_LIB[ph.id].n} · ${e.iv} · ${ph.status} · Regelgüte ${ph.q} % – im Chart zeigen` : e?.patAt ? '📐 Keine Chartformation erkannt (Regelgüte ≥ 60 %)' : '📐 Chartmuster werden geprüft …';
-  wld.patb.hidden = false; wld.patb.disabled = !ph; wld.patb.textContent = ptxt; wld.patb.title = ptxt; wld.patb.classList.toggle('none', !ph);
+  wld.patb.hidden = false; wld.patb.disabled = !ph; wld.patb.textContent = ptxt; wld.patb.title = ptxt; wld.patb.classList.toggle('none', !ph); wld.patb.classList.toggle('bull', ph?.dir === 'bull'); wld.patb.classList.toggle('bear', ph?.dir === 'bear');   // Optimierung 1: Richtung als Farbe
   // Gesamtbewertung: Long-/Short-Tendenz nur bei mindestens 3 von 4 Signalen in derselben Richtung, sonst Abwarten
   const vd = wlVerdict(r); wld.verdict.hidden = !vd;
   if (vd) {
