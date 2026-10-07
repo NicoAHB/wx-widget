@@ -43,3 +43,6 @@ Ausgabe je Test: `✓`/`✗` je Prüfung und am Ende `n/m bestanden`.
 ### Ergänzungen (3.43.0, G10a)
 - Bestehende Fachtests unverändert; neue Tests im Gesamtlauf.
 - `lint.sh` prüft zusätzlich die gemeinsamen Module. Die Server-Konfiguration kennt die tatsächlich verwendeten Node-Globals `Buffer`/`performance`. Vollständiger Server-Lint: 0 Fehler, zwei bestehende Warnungen in der erzeugten Muster-Engine. Neue G10-Module: 0 Fehler/0 Warnungen.
+
+### Ergänzung (3.43.1, Positionsbutton)
+- `m51.js lots`: zusätzlich tatsächliche Farben für Gewinn/Verlust im hellen und dunklen Farbschema, Farb-/Textwechsel bei Live-Kursen und neutraler Button bei genau null (19/19).
