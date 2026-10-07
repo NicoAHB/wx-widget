@@ -1467,6 +1467,12 @@ html[data-layout=tablet] .wl-tile{height:64px}
 .pat-bar{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}.pat-bar label{display:flex;align-items:center;gap:6px;font-size:.8125rem;color:var(--muted)}
 .pat-bar select{min-height:34px;border:1px solid var(--field-border);border-radius:6px;background:var(--field);color:var(--text);padding:0 6px}
 .pat-list{display:grid;gap:6px}
+/* 3.45.1: Aktualität ist zusätzlich als Text sichtbar, Altmuster standardmäßig eingeklappt. */
+#pat-sheet .sheet-head h2{min-width:0}.pat-live-price{margin-left:auto;font-size:.875rem;font-weight:600;font-variant-numeric:tabular-nums;color:var(--text);white-space:nowrap}.pat-live-price.stale{color:var(--muted)}
+.pat-age-line{font-size:.75rem;color:var(--muted)}.pat-age-badge{display:inline-block;padding:2px 5px;border:1px solid var(--border);border-radius:5px;color:var(--text-2)}
+.pat-row.expired{opacity:.55;border-left:1px solid var(--border)}.pat-target.bull{color:var(--up-text)}.pat-target.bear{color:var(--down-text)}
+#pat-expired{margin-top:12px}#pat-expired>summary{cursor:pointer;color:var(--muted);font-size:.8125rem;padding:8px 0}#pat-current-empty{margin:12px 0}
+@media(max-width:390px){#pat-sheet .sheet-head h2{font-size:1rem}.pat-live-price{font-size:.75rem}#pat-sheet .sheet-head{gap:8px}}
 .pat-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:start;border:1px solid var(--border);border-left:4px solid var(--muted);border-radius:10px;padding:8px 8px 8px 10px}
 .pat-row.bull{border-left-color:var(--up-text)}.pat-row.bear{border-left-color:var(--down-text)}.pat-row.sel{background:var(--hover)}
 .pat-main{display:grid;gap:3px;text-align:left;border:0;background:none;color:var(--text);font:inherit;padding:0;cursor:pointer;min-width:0}
@@ -2861,7 +2867,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
 // 3.43.0 (G10a): reiner Fachkern in shared/; Datenquelle und Karten folgen getrennt.
 // 3.44.0 (G10b): öffentlicher Adapter in shared/bitget-public.mjs; sichtbare Anbindung folgt mit G10(c).
-const APP_VERSION = '3.45.0', docEl = document.documentElement;
+const APP_VERSION = '3.45.1', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -12603,6 +12609,23 @@ function patSvg(id) {
 
 // --- Zustand, Worker, Analyse ---
 const PAT_MAX = 500, PAT_CTX = 40;
+// 3.45.1: Nur die Panelanzeige altert; Erkennung, Güte, Score und Meldungen bleiben unverändert.
+const PAT_FRESH_MAX = 3, PAT_ACTIVE_MAX = 10;
+function patAge(hit, now = Date.now()) {
+  const rows = state.candles, index = rows.findLastIndex(c => c.time === hit.t1);
+  const age = index >= 0 ? rows.length - 1 - index : new Set([...(pat.res?.k || []).map(c => c.t), ...rows.map(c => c.time)].filter(t => t > hit.t1)).size;
+  const ms = Math.max(0, now - hit.t1), minutes = Math.floor(ms / 60000);
+  return { bars: age, status: age <= PAT_FRESH_MAX ? 'Frisch' : age <= PAT_ACTIVE_MAX ? 'Aktiv' : 'Abgelaufen',
+    elapsed: minutes < 1 ? 'gerade eben' : minutes < 60 ? `vor ${minutes} Min` : minutes < 1440 ? `vor ${Math.floor(minutes / 60)} Std` : `vor ${Math.floor(minutes / 1440)} Tagen` };
+}
+function patPrice() {
+  const target = $('pat-live-price'); if (!target || !$('pat-sheet').open) return;
+  const price = state.loadedSymbol === state.symbol && !state.marketError ? currentPrice() : null;
+  put('pat-live-price', price > 0 ? priceText(price) : '—');
+  const stale = state.paused || !price || !feedFresh(chartMarket());
+  target.classList.toggle('stale', stale); target.title = `${state.symbol.slice(0, -4)}/USDT · ${chartMarket() === 'futures' ? 'Binance Futures' : 'Binance Spot'}${state.paused ? ' · pausierter Kurs' : stale ? ' · Kurs veraltet/nicht verfügbar' : ' · Live-Kurs'}`;
+  target.setAttribute('aria-label', target.title + (price > 0 ? `: ${priceText(price)} USDT` : ''));
+}
 var pat = { on: false, res: null, sel: null, filter: 'all', minQ: 60, gap: false, worker: null, req: 0, busy: false, cache: new Map(), runs: 0, viaWorker: 0 };
 const patKey = () => `${state.symbol}|${state.source}|${state.interval}`;
 function patWorker() {
@@ -12653,9 +12676,9 @@ function patShown() {
   if (pat.res?.key !== patKey()) return [];
   const by = new Map();
   for (const h of pat.res.hits) if (h.q >= pat.minQ && (pat.filter === 'all' || h.dir === pat.filter)) { const g = by.get(h.id); if (!g) by.set(h.id, { h, more: 0 }); else { g.more++; if (h.t1 > g.h.t1) g.h = h; } }
-  return [...by.values()].map(g => (g.h.more = g.more, g.h)).sort((a, b) => b.q - a.q || b.t1 - a.t1);
+  return [...by.values()].map(g => (g.h.more = g.more, g.h)).sort((a, b) => patAge(a).bars - patAge(b).bars || b.q - a.q);
 }
-function patClear() { pat.res = null; pat.sel = null; pat.req++; pat.busy = false; patSheet(); }
+function patClear() { $('pat-expired').open = false; pat.res = null; pat.sel = null; pat.req++; pat.busy = false; patSheet(); }
 // Neuberechnung nur bei Kerzenschluss, nach einem Kontextwechsel oder auf Tipp – nicht bei jedem Tick
 // 3.37.0 (G09, Punkt 11): Vorauswahl – jüngste Formation (Regelgüte ≥ 60 %) auf den abgeschlossenen Kerzen der Kachel
 function wlPat(e) {
@@ -12682,6 +12705,8 @@ function patWant() {
   w.ran = true; patRun('Vorauswahl'); return true;
 }
 function patTick() {
+  patPrice();
+  if ($('pat-sheet').open && pat.res?.key === patKey() && (pat.panelBar !== state.candles.at(-1)?.time || pat.panelMinute !== Math.floor(Date.now() / 60000))) patSheet();
   if (!pat.on || pat.busy || CAP.on || state.loadedSymbol !== state.symbol || !state.candles.length) return;
   if (pat.want && !pat.want.ran) { patWant(); return; }
   if (!pat.res || pat.res.key !== patKey()) { patRun('Kontext'); return; }
@@ -12694,22 +12719,47 @@ const patTime = t => (t ? (IV_MS[state.interval] >= 864e5 ? utcDate(t).slice(0, 
 function patSheet() {
   const d = $('pat-sheet'); if (!d) return;
   const R = pat.res && pat.res.key === patKey() ? pat.res : null, list = $('pat-list'), hits = patShown();
+  if (pat.panelKey !== patKey()) { $('pat-expired').open = false; pat.panelKey = patKey(); }
+  pat.panelBar = state.candles.at(-1)?.time;
+  pat.panelMinute = Math.floor(Date.now() / 60000);
   for (const b of d.querySelectorAll('[data-pfil]')) b.setAttribute('aria-pressed', String(b.dataset.pfil === pat.filter));
   $('pat-minq').value = String(pat.minQ); $('pat-gap').checked = pat.gap;
   put('pat-scope', R ? `${state.symbol.slice(0, -4)}/USDT · ${state.interval} · ${R.n === R.nVis ? `${R.n} sichtbare Kerzen` : `die letzten ${R.n} von ${R.nVis} sichtbaren Kerzen`} (${patTime(R.t0)} – ${patTime(R.t1)} UTC)${R.running ? ' · laufende Kerze vorläufig' : ''}` : pat.busy ? 'Analysiert die sichtbaren Kerzen …' : 'Noch nicht analysiert.');
-  const rows = hits.map(h => {
-    const L = PAT_LIB[h.id], i = R.hits.indexOf(h), row = el('div', `pat-row ${h.dir}${pat.sel === i ? ' sel' : ''}`), main = el('button', 'pat-main'), info = el('button', 'pat-i', 'i');
-    main.type = info.type = 'button'; main.dataset.patSel = info.dataset.patInfo = String(i); info.setAttribute('aria-label', `Info zu ${L.n}`);
-    const head = el('span', 'pat-h'); head.append(el('b', '', L.n), el('span', 'pat-q', `Regelgüte ${h.q} %`));
-    const span = h.i1 - h.i0 + 1, meta = el('span', 'pat-m', `${PAT_DIR[h.dir]} · ${L.f} · ${span} ${span === 1 ? 'Kerze' : 'Kerzen'} · ${patTime(h.t0)}${h.t1 !== h.t0 ? ` – ${patTime(h.t1)}` : ''} · ${h.status}`);
-    main.append(head, meta, el('span', 'pat-e', L.e));
-    if (h.more) main.append(el('span', 'pat-m', `+${h.more} weitere im Ausschnitt`));
-    if (h.levels) main.append(el('span', 'pat-lv', [h.levels.brk != null ? `Ausbruch ${priceText(h.levels.brk)}` : '', h.levels.brk2 != null ? `/ ${priceText(h.levels.brk2)}` : '', h.levels.tgt != null ? `Ziel ${priceText(h.levels.tgt)} (rechnerisch)` : '', h.levels.inv != null ? `Invalidierung ${priceText(h.levels.inv)}` : ''].filter(Boolean).join(' · ')));
-    row.append(main, info); return row;
-  });
-  if (R && !rows.length) rows.push(el('p', 'pat-empty', R.hits.length ? `Aktuell keine eindeutige Formation erkannt – ${R.hits.length} schwächere ${R.hits.length === 1 ? 'Erkennung liegt' : 'Erkennungen liegen'} unter der Mindestregelgüte ${pat.minQ} % bzw. außerhalb des Filters.` : 'Aktuell keine eindeutige Formation erkannt.'));
-  list.replaceChildren(...rows);
-  $('pat-btn').setAttribute('aria-pressed', String(pat.on));
+  const existing = new Map([...list.querySelectorAll('.pat-row')].map(row => [row.dataset.patKey, row])), current = [], expired = [];
+  for (const h of hits) {
+    const L = PAT_LIB[h.id], i = R.hits.indexOf(h), age = patAge(h), key = `${h.id}|${h.t0}|${h.t1}`;
+    const row = existing.get(key) || el('div'); row.dataset.patKey = key;
+    row.className = `pat-row ${h.dir}${pat.sel === i ? ' sel' : ''}${age.status === 'Abgelaufen' ? ' expired' : ''}`;
+    const signature = JSON.stringify([h.q, h.status, h.more, h.levels]);
+    if (row.dataset.content !== signature) {
+      row.dataset.content = signature;
+      const main = el('button', 'pat-main'), info = el('button', 'pat-i', 'i'); main.type = info.type = 'button'; info.setAttribute('aria-label', `Info zu ${L.n}`);
+      const head = el('span', 'pat-h'); head.append(el('b', '', L.n), el('span', 'pat-q', `Regelgüte ${h.q} %`));
+      const span = h.i1 - h.i0 + 1, meta = el('span', 'pat-m', `${PAT_DIR[h.dir]} · ${L.f} · ${span} ${span === 1 ? 'Kerze' : 'Kerzen'} · ${patTime(h.t0)}${h.t1 !== h.t0 ? ` – ${patTime(h.t1)}` : ''} · ${h.status}`);
+      main.append(head, el('span', 'pat-age-line'), meta, el('span', 'pat-e', L.e));
+      if (h.more) main.append(el('span', 'pat-m', `+${h.more} weitere im Ausschnitt`));
+      if (h.levels) {
+        const lv = el('span', 'pat-lv'), add = (label, value, cls = '') => { if (value == null) return; if (lv.childNodes.length) lv.append(' · '); lv.append(el('span', cls, `${label} ${priceText(value)}`)); };
+        add('Ausbruch', h.levels.brk); add('/', h.levels.brk2); add('Ziel', h.levels.tgt, 'pat-target ' + h.dir);
+        if (h.levels.tgt != null) lv.append(' (rechnerisch)'); add('Invalidierung', h.levels.inv); main.append(lv);
+      }
+      row.replaceChildren(main, info);
+    }
+    row.querySelector('.pat-main').dataset.patSel = row.querySelector('.pat-i').dataset.patInfo = String(i);
+    const line = row.querySelector('.pat-age-line'), ageText = `vor ${age.bars} ${age.bars === 1 ? 'Kerze' : 'Kerzen'} · ${new Date(h.t1).toISOString().slice(11, 16)} UTC · ${age.elapsed}`;
+    if (line.dataset.age !== ageText) { line.dataset.age = ageText; line.replaceChildren(el('span', 'pat-age-badge', age.status), ' ' + ageText); }
+    (age.status === 'Abgelaufen' ? expired : current).push(row);
+  }
+  // Vorhandene Karten nur umordnen/aktualisieren, keinen ganzen Listenbaum ersetzen.
+  const patch = (target, rows) => {
+    rows.forEach((row, i) => { if (target.children[i] !== row) target.insertBefore(row, target.children[i] || null); });
+    while (target.children.length > rows.length) target.lastElementChild.remove();
+  };
+  patch($('pat-current-list'), current); patch($('pat-expired-list'), expired);
+  $('pat-current-empty').hidden = !R || !!current.length;
+  put('pat-current-empty', `Keine aktuellen Muster in den letzten ${PAT_ACTIVE_MAX} Kerzen.`);
+  $('pat-expired').hidden = !expired.length; put('pat-expired-label', `Abgelaufen (${expired.length})`);
+  $('pat-btn').setAttribute('aria-pressed', String(pat.on)); patPrice();
 }
 // --- Info-Sheet ---
 function patFmt(k, v) {
@@ -12728,7 +12778,7 @@ function patOpenInfo(i, external = null) {
   const vals = el('div', 'pat-vals'); vals.append(el('h3', '', 'Gemessen'));
   for (const [k, v] of Object.entries(h.vals || {})) vals.append(kv(k, patFmt(k, v)));
   if (h.trend && h.trend.dir) vals.append(kv('Vortrend (8 Kerzen)', `${h.trend.dir === 'up' ? 'aufwärts' : h.trend.dir === 'down' ? 'abwärts' : 'neutral'} · R² ${number(h.trend.r2, 2)} · Steigung ${number(h.trend.b, 4)} je Kerze`));
-  if (h.levels) { if (h.levels.brk != null) vals.append(kv('Ausbruchslevel', priceText(h.levels.brk) + (h.levels.brk2 != null ? ` / ${priceText(h.levels.brk2)}` : ''))); if (h.levels.tgt != null) vals.append(kv('Ziel (rechnerische Projektion)', priceText(h.levels.tgt))); if (h.levels.inv != null) vals.append(kv('Invalidierung', priceText(h.levels.inv))); }
+  if (h.levels) { if (h.levels.brk != null) vals.append(kv('Ausbruchslevel', priceText(h.levels.brk) + (h.levels.brk2 != null ? ` / ${priceText(h.levels.brk2)}` : ''))); if (h.levels.tgt != null) { const target = kv('Ziel (rechnerische Projektion)', priceText(h.levels.tgt)); target.classList.add('pat-target', h.dir); vals.append(target); } if (h.levels.inv != null) vals.append(kv('Invalidierung', priceText(h.levels.inv))); }
   const why = el('details', 'pat-why'), sum = el('summary', '', `Warum ${h.q} %?`), ul = el('ul');
   for (const r of h.rules) { const li = el('li', r.ok === true ? 'ok' : r.ok === false ? 'no' : 'unk'); li.append(el('span', 'pat-mark', r.ok === true ? '✓' : r.ok === false ? '✗' : '?'), `${r.k} (Gewicht ${r.w})${r.v ? ' – ' + r.v : ''}`); ul.append(li); }
   why.append(sum, el('p', '', 'Regelgüte = erfüllte Regelgewichte ÷ mögliche Gewichte; unbekannte Regeln zählen im Nenner mit. Das ist keine statistische Trefferquote.'), ul);
@@ -13003,7 +13053,7 @@ window.__opt9 = { atr: () => chartAtr(), band: n => atrBand(n) };
 window.__opt8 = { tick: t => alClTick(t), get cl() { return alCl; } };
 window.__opt7 = { get mtf() { return mtf; }, calc: (c, p) => mtfCalc(c, p), paint: () => mtfPaint(true) };
 window.__opt4 = { tradeR: t => tradeR(t), tradeRisk: t => tradeRisk(t), groupStats: (t, f) => groupStats(t, f) };
-window.__g09 = { patTgText: (c, h) => patTgText(c, h), pkRecord: (m, h, mk) => pkRecord(m, h, mk), pkSync: () => pkSync(), pkState: c => pkState(c), get pub() { return pkPub; }, pubLoad: f => pkPubLoad(f), get pk() { return pk; }, pkMerge: l => pkMerge(l), pkStats: s => pkStats(s), pkBand: p => pkBand(p), pkId: c => pkId(c), wlPat: e => wlPat(e), get wl() { return wl; }, wldPaint: () => wldPaint(Date.now(), true), get pat() { return pat; }, engine: () => (PAT_E = PAT_E || patEngine()), lib: PAT_LIB, run: r => patRun(r), info: i => patOpenInfo(i), zoom: i => patZoom(i), svg: id => patSvg(id).outerHTML };
+window.__g09 = { patTgText: (c, h) => patTgText(c, h), pkRecord: (m, h, mk) => pkRecord(m, h, mk), pkSync: () => pkSync(), pkState: c => pkState(c), get pub() { return pkPub; }, pubLoad: f => pkPubLoad(f), get pk() { return pk; }, pkMerge: l => pkMerge(l), pkStats: s => pkStats(s), pkBand: p => pkBand(p), pkId: c => pkId(c), wlPat: e => wlPat(e), get wl() { return wl; }, wldPaint: () => wldPaint(Date.now(), true), get pat() { return pat; }, engine: () => (PAT_E = PAT_E || patEngine()), lib: PAT_LIB, run: r => patRun(r), age: (hit, now) => patAge(hit, now), panel: () => patSheet(), info: i => patOpenInfo(i), zoom: i => patZoom(i), svg: id => patSvg(id).outerHTML };
 window.__g08 = { get dec() { return dec; }, decSignal: (c, b, cfg) => decSignal(c, b, cfg), decTick: (t, w, at) => decTick(t, DEC_WIN[w], at), decEvaluate: (r, sp, t, cfg, w, at) => decEvaluate(r, new Set(sp), new Map(Object.entries(t)), cfg, w, at),
   decPearson: (a, b, st) => decPearson(a, b, st), decClassify: a => decClassify(a), decLoreParse: j => decLoreParse(j), setEvery: ms => { DEC_EVERY = ms; }, kick: () => decKick(true) };
 window.__g07 = { get ana() { return ana; }, get cap() { return CAP; }, blocks30: (d, n) => blocks30(d, n), anaCalc: (c, iv) => anaCalc(c, iv), anaTrend: o => anaTrend(o), validateMarketCap: r => validateMarketCap(r), coinGeckoMarketCapPoints: j => coinGeckoMarketCapPoints(j),
@@ -14284,10 +14334,10 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
     <button type="button" data-tab="ind"><b aria-hidden="true">∿</b><span class="tl">Indikatoren</span></button>
   </nav>
   <dialog class="sheet bottom" id="pat-sheet" aria-labelledby="pat-title">
-    <div class="sheet-head"><h2 id="pat-title">Chartmuster (KI)</h2><button type="button" class="button ghost icon" id="pat-close" aria-label="Schließen">×</button></div>
+    <div class="sheet-head"><h2 id="pat-title">Chartmuster (KI)</h2><span id="pat-live-price" class="pat-live-price" role="status">—</span><button type="button" class="button ghost icon" id="pat-close" aria-label="Schließen">×</button></div>
     <div class="sheet-body"><p class="pat-scope" id="pat-scope"></p>
       <div class="pat-bar"><div class="dec-seg" role="group" aria-label="Richtung"><button type="button" data-pfil="all" aria-pressed="true">Alle</button><button type="button" data-pfil="bull" aria-pressed="false">Bullish</button><button type="button" data-pfil="bear" aria-pressed="false">Bearish</button></div><label>Mindestregelgüte <select id="pat-minq"><option value="0">0 %</option><option value="40">40 %</option><option value="60" selected>60 %</option><option value="80">80 %</option></select></label><label class="dec-corr"><input type="checkbox" id="pat-gap"> Strenger Gap-Modus</label></div>
-      <div class="pat-list" id="pat-list"></div>
+      <div id="pat-list"><div class="pat-list" id="pat-current-list"></div><p class="pat-empty" id="pat-current-empty" hidden></p><details id="pat-expired" hidden><summary id="pat-expired-label">Abgelaufen (0)</summary><div class="pat-list" id="pat-expired-list"></div></details></div>
       <p class="pat-note">Regelgüte = erfüllte Regelgewichte ÷ mögliche Gewichte (unbekannte Regeln zählen mit) – keine Trefferquote. Automatische Mustererkennung, keine Anlageberatung.</p>
       <div class="sheet-actions"><button type="button" class="button ghost" id="pat-off">Markierungen ausblenden</button></div></div>
   </dialog>

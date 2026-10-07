@@ -10,7 +10,7 @@ Automatische Tests für die App (`weather-widget-v2.html`) und den 24/7-Dienst (
 ## Aufruf
 | Befehl | Was er tut | Dauer |
 |---|---|---|
-| `bash run-all.sh` | alle Tests nacheinander (Einheitentests, Installer, m3–m62, ui, functional, Statusseite, Rauchtest, Sichtprüfung) | etwa 2,5 Stunden |
+| `bash run-all.sh` | alle Tests nacheinander (Einheitentests, Installer, m3–m64, ui, functional, Statusseite, Rauchtest, Sichtprüfung) | etwa 2,5 Stunden |
 | `node m51.js` | ein einzelner Test, hier G02 (Lose, Nachkauf, Teilabschluss) | wenige Minuten |
 | `node m51.js svc` | nur ein Abschnitt eines Tests | |
 | `bash lint.sh` | ESLint über App und G10-Fachmodule (0 Fehler, 3 bekannte App-Warnungen) | Sekunden |
@@ -21,6 +21,7 @@ Automatische Tests für die App (`weather-widget-v2.html`) und den 24/7-Dienst (
 | `node unit-bitget-patterns.js` | G10(c): unveränderte G09-Engine auf Bitget, Quellenbindung, Kenntnis-/Bestätigungszeit (20 Fälle) | Sekunden |
 | `node unit-confluence-live.js` | G10(c): Long/Short einschließlich Konflikt, Referenzkurs, Anker, Kostenannahmen, Größe, Divergenz, Ablauf und ehrliche Grenzwertanzeige (46 Fälle) | Sekunden |
 | `node m63.js` | G10(c): echter App-Worker, Reiter, Badge, Infobutton, Bitget-Chart, Modellgrenzen, Tabs, IndexedDB und Offline-Cache (36 Fälle) | Sekunden |
+| `node m64.js` | Chartmuster-Anzeige: Alter 0/3/4/10/11, Altbereich, Filter, DOM-Erhalt, Live-Kurs und Zielfarbe | Sekunden |
 
 Ausgabe je Test: `✓`/`✗` je Prüfung und am Ende `n/m bestanden`.
 
@@ -57,3 +58,6 @@ Ausgabe je Test: `✓`/`✗` je Prüfung und am Ende `n/m bestanden`.
 ### Ergänzungen (3.44.0, G10b)
 - `unit-bitget.js` und `m62.js` vorn im Gesamtlauf (jetzt 91 Zielbefehle). Bitget-Antworten vollständig lokal; bestehende Binance-Attrappe unverändert.
 - Server-/Modul-Lint kennt zusätzlich die Standardglobals `URLSearchParams`, `AbortController` und `TextDecoder`. Kein Polyfill oder neue Produktionsabhängigkeit.
+
+### Ergänzungen (3.45.1, Chartmuster-Panel)
+- `m64.js` prüft die neue reine Anzeige. Engine/Regelgüte bleiben unverändert (unit-247e 38/38). `m58.js ui` erwartet den ausdrücklich gewünschten neuen Leertext; übrige Prüfungen unverändert. Altmuster bleiben im DOM im geschlossenen Bereich und für Filter/Info verfügbar.
