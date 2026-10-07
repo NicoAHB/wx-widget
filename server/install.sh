@@ -56,6 +56,12 @@ say "1/7 Node.js $(node -v) ✓"
 mkdir -p "$DIR"
 curl -fsSL "$SRC/scalpdesk-247.mjs" -o "$DIR/scalpdesk-247.new.mjs" || die "Programm konnte nicht geladen werden ($SRC)."
 node --check "$DIR/scalpdesk-247.new.mjs" || die "Geladenes Programm ist beschädigt."   # Endung .mjs: als ES-Modul prüfen
+# 2.4.0 (G09 C6b): Engine und Marktvertrag vor dem Programmwechsel laden/prüfen.
+for part in pattern-engine pattern-monitor; do
+  curl -fsSL "$SRC/$part.mjs" -o "$DIR/$part.new.mjs" || die "Muster-Modul $part konnte nicht geladen werden."
+  node --check "$DIR/$part.new.mjs" || die "Muster-Modul $part ist beschädigt."
+done
+for part in pattern-engine pattern-monitor; do mv "$DIR/$part.new.mjs" "$DIR/$part.mjs"; done
 mv "$DIR/scalpdesk-247.new.mjs" "$DIR/scalpdesk-247.mjs"
 curl -fsSL "$SRC/install.sh" -o "$DIR/install.sh" 2>/dev/null || true
 say "2/7 Programm $(node "$DIR/scalpdesk-247.mjs" --version) nach $DIR ✓"
