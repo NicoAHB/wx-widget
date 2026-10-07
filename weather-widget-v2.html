@@ -2437,7 +2437,21 @@ function tradeRisk(t) {
   if ((t.n || 1) === 1 && !t.part?.pos && t.sl > 0 && t.entry > 0 && t.qty > 0 && d * (t.entry - t.sl) > 0) return { risk: d * (t.entry - t.sl) * t.qty, src: 'sl' };
   return null;
 }
-const tradeR = t => { const k = tradeRisk(t); return k && Number.isFinite(t.pnl) ? t.pnl / k.risk : null; };
+const tradeR = t => { if ('rk' in t) return t.rk > 0 && Number.isFinite(t.pnl) ? t.pnl / t.rk : null; const k = tradeRisk(t); return k && Number.isFinite(t.pnl) ? t.pnl / k.risk : null; };
+// Optimierung 6: Gelerntes aus den eigenen Trades bleibt – eigener Speicher, den „Zurücksetzen“ nicht löscht; in der Sicherung enthalten
+// (beim Einspielen zusammengeführt, nichts überschrieben). Je vollständig geschlossener echter Position: Schluss, Eröffnung, Coin, Richtung,
+// Gründe, Netto und Anfangsrisiko. Ein einzeln gelöschter Trade verschwindet auch hier (falsch erfasst); höchstens 5000 Positionen.
+const RL_KEY = 'scalpdesk.rlearn.v1', RL_MAX = 5000;
+function rlGet() { const v = store.get(RL_KEY); return v && v.v === 1 && v.t && typeof v.t === 'object' ? v : { v: 1, t: {} }; }
+function rlSave(L) { const ids = Object.keys(L.t); if (ids.length > RL_MAX) ids.sort((a, b) => L.t[a].at - L.t[b].at).slice(0, ids.length - RL_MAX).forEach(id => delete L.t[id]); store.set(RL_KEY, L); }
+function rlUpdate(done) {
+  const L = rlGet(); let ch = 0;
+  for (const x of done) { const k = tradeRisk(x), rec = { at: x.closedAt, o: x.openedAt, s: x.symbol, d: x.side, g: reasonsOf(x), p: x.pnl, k: k ? +k.risk.toPrecision(12) : null }; if (JSON.stringify(L.t[x.id]) !== JSON.stringify(rec)) { L.t[x.id] = rec; ch++; } }
+  if (ch) rlSave(L); return L;
+}
+function rlForget(id) { const L = rlGet(); if (L.t[id]) { delete L.t[id]; rlSave(L); } }
+function rlMerge(v) { if (!v || v.v !== 1 || !v.t || typeof v.t !== 'object') return; const L = rlGet(); let ch = 0; for (const [id, x] of Object.entries(v.t)) if (!L.t[id] && x && Number.isFinite(x.at) && Number.isFinite(x.p)) { L.t[id] = x; ch++; } if (ch) rlSave(L); }
+const rlTrades = L => Object.entries(L.t).map(([id, x]) => ({ id, closedAt: x.at, openedAt: x.o, symbol: x.s, side: x.d, reasons: Array.isArray(x.g) ? x.g : [], pnl: x.p, rk: x.k }));
 const rmAdd = (g, t) => { const r = tradeR(t); if (r !== null) { g.rN = (g.rN || 0) + 1; g.rSum = (g.rSum || 0) + r; } };
 function groupStats(trades, keyFn, labels = null) {
   const map = new Map();
@@ -5216,7 +5230,7 @@ const PREF_KEYS = ['scalpdesk.theme.v1', 'scalpdesk.overlays.v1', 'scalpdesk.zig
 function backupPayload() {
   stampLists(); for (const f of SET_FIELDS) stampSetting(f);
   const prefs = {}; for (const k of PREF_KEYS) { const v = store.get(k); if (v !== undefined) prefs[k] = v; }
-  return { app: 'scalp-desk', version: BK_SCHEMA, kind: 'full', appVersion: APP_VERSION, settings: { dayLimit: state.dayLimit, risk: state.risk, taxRate: state.taxRate, at: stampsOf(SETTINGS_AT_KEY) }, settingsH: setLin(), exportedAt: Date.now(), positions: state.positions, history: state.trades, demoPositions: state.demoPositions, demoHistory: state.demoTrades, movements: state.movements, balance: state.anchors, alarms: state.alarms, setups: state.setups, watchlist: state.watch, listsAt: stampsOf(LISTS_AT_KEY), deleted: tombs(), deletedH: tombHs(), taxRate: state.taxRate, patterns: zzpBackup(), pnlAlarms: store.get('scalpdesk.pnlalarm.v1', null), prefs, quarantine: quarList(), conflicts: confList() };
+  return { app: 'scalp-desk', version: BK_SCHEMA, kind: 'full', appVersion: APP_VERSION, settings: { dayLimit: state.dayLimit, risk: state.risk, taxRate: state.taxRate, at: stampsOf(SETTINGS_AT_KEY) }, settingsH: setLin(), exportedAt: Date.now(), positions: state.positions, history: state.trades, demoPositions: state.demoPositions, demoHistory: state.demoTrades, movements: state.movements, balance: state.anchors, alarms: state.alarms, setups: state.setups, watchlist: state.watch, listsAt: stampsOf(LISTS_AT_KEY), deleted: tombs(), deletedH: tombHs(), taxRate: state.taxRate, patterns: zzpBackup(), rlearn: rlGet(), pnlAlarms: store.get('scalpdesk.pnlalarm.v1', null), prefs, quarantine: quarList(), conflicts: confList() };
 }
 function markBackedUp(kind, encrypted = false) {
   store.set(CHANGES_KEY, 0);
@@ -5498,6 +5512,7 @@ async function commitPlan(p0, opt = {}) {
     const nq = quarAdd([...p.bad.map(b => ({ ...b, from: 'import', src: p.src })), ...p.quar]);
     const nc = confAdd(p.conflicts.map(c => ({ ...c, src: p.src })));
     zzpImport(p.data.patterns); // gelernte Muster: still übernehmen, je Muster die Fassung mit mehr Fällen
+    rlMerge(p.data.rlearn); // Optimierung 6: Gelerntes aus Trades zusammenführen (fehlende Positionen ergänzen, nichts überschreiben)
     if (opt.prefs && p.prefs) for (const k of p.prefs.keys) store.set(k, p.prefs.values[k]);
     posStructure = null; demoStructure = null; histStructure = '';
     persist(); saveWatch();
@@ -6028,10 +6043,10 @@ const holdText = ms => ms === null ? '—' : ms < 3600000 ? `${number(ms / 60000
 // vollständigen Schließen); Kapitalkurve und größter Rückgang je Buchung zum Buchungszeitpunkt – das ist der Geldfluss.
 function renderAnalysis() {
   const book = state.trades.filter(t => inYear(t.closedAt, state.year)), yr = state.year === 'all' ? 'gesamt' : state.year;
-  const R = posResultsOf(state.trades), trades = R.done.filter(p => inYear(p.closedAt, state.year)), openN = new Set(book.filter(t => t.part?.pos && !t.part.final && posOpen(t.part.pos)).map(t => t.part.pos)).size;
+  const R = posResultsOf(state.trades), LT = rlTrades(rlUpdate(R.done)), trades = R.done.filter(p => inYear(p.closedAt, state.year)), openN = new Set(book.filter(t => t.part?.pos && !t.part.final && posOpen(t.part.pos)).map(t => t.part.pos)).size;
   put('analysis-count', trades.length ? `(${trades.length} ${trades.length === 1 ? 'Trade' : 'Trades'}${state.year === 'all' ? '' : ` in ${state.year}`})` : '');
   const box = (label, main, sub, cls) => { const d = el('div'); d.append(el('span', '', label), el('strong', cls || '', main)); if (sub) d.append(el('small', '', sub)); return d; };
-  if (!trades.length) { $('analysis-kpis').replaceChildren(); $('equity').replaceChildren(el('p', '', book.length ? `Noch keine vollständig geschlossene Position (${yr}) – ${openN} offen mit Teilabschluss.` : `Noch keine abgeschlossenen Trades (${yr}).`)); $('breakdowns').replaceChildren(); put('analysis-note', ''); renderMonthly(); return; }
+  if (!trades.length) { { const lr = LT.map(tradeR).filter(r => r !== null); $('analysis-kpis').replaceChildren(...(LT.length ? [box('Gelernt (bleibt nach „Zurücksetzen“)', `${LT.length} ${LT.length === 1 ? 'Trade' : 'Trades'}${lr.length ? ` · ${signed(lr.reduce((a, b) => a + b, 0) / lr.length)} R` : ''}`, `Erwartungswert je Trade aus früheren Trades dieses Geräts${lr.length < LT.length ? ` (R aus ${lr.length})` : ''}`)] : [])); } $('equity').replaceChildren(el('p', '', book.length ? `Noch keine vollständig geschlossene Position (${yr}) – ${openN} offen mit Teilabschluss.` : `Noch keine abgeschlossenen Trades (${yr}).`)); $('breakdowns').replaceChildren(); put('analysis-note', ''); renderMonthly(); return; }
   const st = tradeStats(trades), pts = equityCurve(book), dep = state.year === 'all' ? moneySummary(state.trades, state.movements, fxNow(), 'all').deposit || 0 : 0, dd = maxDrawdown(pts, dep);
   $('analysis-kpis').replaceChildren(
     box('Profitfaktor', st.profitFactor === null ? (st.avgWin ? 'nur Gewinne' : '—') : number(st.profitFactor), 'Gewinne ÷ Verluste', st.profitFactor === null ? '' : st.profitFactor >= 1 ? 'positive' : 'negative'),
@@ -6040,13 +6055,14 @@ function renderAnalysis() {
     (() => { const rs = trades.map(tradeR).filter(r => r !== null), w = rs.filter(r => r > 0), l = rs.filter(r => r < 0), avg = trades.reduce((a, t) => a + t.pnl, 0) / trades.length, er = rs.length ? rs.reduce((a, b) => a + b, 0) / rs.length : null;
       const kb = box('Erwartungswert je Trade', `${signed(avg)} USDT${er === null ? '' : ` · ${signed(er)} R`}`, `${er === null ? 'R: kein Trade mit Anfangsrisiko (Stop beim Anlegen eintragen)' : `R aus ${rs.length} von ${trades.length} Trades · Ø Gewinn ${w.length ? signed(w.reduce((a, b) => a + b, 0) / w.length) : '—'} R / Ø Verlust ${l.length ? signed(l.reduce((a, b) => a + b, 0) / l.length) : '—'} R`}${trades.length < 30 ? ' · vorläufig (unter 30 Trades)' : ''}`, er === null ? (avg >= 0 ? 'positive' : 'negative') : er >= 0 ? 'positive' : 'negative');
       // Optimierung 5: „i“ mit Erklärung und Beurteilung der aktuellen Zahlen (auch auf dem iPhone, ohne Tooltip)
-      const g = multiStats(trades, reasonKeys).filter(x => x.rN >= 5 && x.key !== 'ohne Grund').sort((a, b) => b.rAvg - a.rAvg), tip = el('details', 'tip ev-tip'), sm = el('summary'), body = el('div', 'tip-body');
+      const g = multiStats(LT, reasonKeys).filter(x => x.rN >= 5 && x.key !== 'ohne Grund').sort((a, b) => b.rAvg - a.rAvg), lr = LT.map(tradeR).filter(r => r !== null), tip = el('details', 'tip ev-tip'), sm = el('summary'), body = el('div', 'tip-body');
       sm.setAttribute('aria-label', 'Erwartungswert und R erklärt – mit Beurteilung deiner Zahlen'); sm.append(el('span', '', 'i'));
       const verdict = er === null ? 'Noch kein Trade mit Anfangsrisiko – trage beim Anlegen einer Position einen Stop ein, dann rechnet die App in R.'
         : `Aktuell: ${signed(er)} R je Trade aus ${rs.length} ${rs.length === 1 ? 'Trade' : 'Trades'} – ${Math.abs(er) < 0.1 ? 'etwa ausgeglichen: deine Trades verdienen im Mittel kaum mehr, als sie kosten.' : er > 0 ? `positiv: im Mittel gewinnst du je Trade das ${number(er, 2)}-Fache deines Risikos.` : `negativ: im Mittel verlierst du je Trade das ${number(-er, 2)}-Fache deines Risikos.`}${rs.length < 30 ? ` Vorläufig – erst ${rs.length} von 30 Trades, das Ergebnis kann noch Zufall sein.` : ''}`;
       body.append(el('p', '', 'R = Ergebnis eines Trades ÷ sein Anfangsrisiko (Abstand Einstieg bis erster Stop × Menge). +1 R: so viel gewonnen, wie du riskiert hast; −1 R: der volle Stop. Gebühren und Funding sind im Ergebnis enthalten.'),
         el('p', '', 'Erwartungswert = Durchschnitt aller Trades in R. Er zählt mehr als die Trefferquote: 40 % Treffer mit +2 R und −1 R ergeben +0,2 R je Trade.'),
         el('p', '', verdict),
+        el('p', '', LT.length ? `Gelernt insgesamt (bleibt auch nach „Zurücksetzen“): ${LT.length} ${LT.length === 1 ? 'Trade' : 'Trades'} seit ${new Date(Math.min(...LT.map(x => x.closedAt))).toLocaleDateString('de-DE')}${lr.length ? ` · ${signed(lr.reduce((a, b) => a + b, 0) / lr.length)} R je Trade aus ${lr.length} mit Risiko` : ''}.` : ''),
         el('p', '', g.length >= 2 ? `Stärkster Grund: ${g[0].label} ${signed(g[0].rAvg)} R (${g[0].rN} Trades) · schwächster: ${g.at(-1).label} ${signed(g.at(-1).rAvg)} R (${g.at(-1).rN} Trades).${g.at(-1).rAvg < 0 ? ` „${g.at(-1).label}“ kostet dich bisher Geld – prüfen, ob du ihn weiter handelst.` : ''}` : 'Vergleich der Gründe: Dafür braucht es mindestens zwei Gründe mit je 5 Trades mit Risiko.'),
         el('p', '', 'Historische Auswertung deiner eigenen Trades – keine Garantie und keine Erfolgswahrscheinlichkeit für den nächsten Trade.'));
       tip.append(sm, body); kb.firstChild.append(' ', tip); return kb; })(),
@@ -6565,7 +6581,7 @@ const histClick=e=>{
     const err=rs===null||decUnits(rs,12)===null?'Kurs als Zahl eingeben (USDT je 1 EUR, höchstens 12 Nachkommastellen).':!(rate>=0.5&&rate<=2)?'Kurs unplausibel – erwartet wird USDT je 1 EUR (etwa 0,9 bis 1,3).':!note?'Bitte einen Beleg oder die Quelle angeben – ohne Beleg keine Änderung des Euro-Werts.':'';
     if(err){state.histUi[id]={...keep,st:err};renderPositions();return;}
     if(setBookingFx(id,{fx:rate,src:kind},'manual',note))persist();state.histUi[id]={mode:'fx',st:'Gespeichert – die Änderung steht als Revision beim Trade.'};}
-  else if(act==='trade-confirm'){{const t=find();if(t?.part?.pos&&!t.part.final&&findPos(t.part.pos)){delete state.histUi[id];renderPositions();return;}}if(demo)state.demoTrades=state.demoTrades.filter(t=>t.id!==id);else state.trades=state.trades.filter(t=>t.id!==id);delete state.histUi[id];tomb('pt',id);persist();}
+  else if(act==='trade-confirm'){{const t=find();if(t?.part?.pos&&!t.part.final&&findPos(t.part.pos)){delete state.histUi[id];renderPositions();return;}}if(demo)state.demoTrades=state.demoTrades.filter(t=>t.id!==id);else{const t=find();rlForget(t?.part?.pos||id);state.trades=state.trades.filter(t=>t.id!==id);}delete state.histUi[id];tomb('pt',id);persist();}
   renderPositions();
 };
 $('history-list').addEventListener('click',histClick);$('demo-history-list').addEventListener('click',histClick);
@@ -13946,7 +13962,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
     <div class="sheet-head"><h2 id="reset-title">Handelsdaten zurücksetzen</h2><button type="button" class="button ghost icon" id="reset-close" aria-label="Schließen">×</button></div>
     <div class="sheet-body reset-body">
       <p><b>Gelöscht werden:</b> offene Positionen, Trades, Demo-Positionen und Demo-Historie, Geldbewegungen, der Kontostand (Startwert und Kontrollstände), Kurs-Alarme, Gewinn- und Verlust-Alarme sowie die Prüfliste und offene Konflikte.</p>
-      <p><b>Erhalten bleiben:</b> die gelernten Chartmuster, alle Einstellungen (Risiko, Tages-Verlustlimit, Steuersatz, Setups, Vorauswahl, Darstellung) und die Telegram- und Discord-Zugänge.</p>
+      <p><b>Erhalten bleiben:</b> die gelernten Chartmuster, das Gelernte aus deinen Trades (Auswertung in R), alle Einstellungen (Risiko, Tages-Verlustlimit, Steuersatz, Setups, Vorauswahl, Darstellung) und die Telegram- und Discord-Zugänge.</p>
       <p><b>Nur auf diesem Gerät:</b> Gleichst du danach mit einem anderen Gerät ab, kommen dessen Positionen und Trades wieder dazu – dort ebenfalls zurücksetzen.</p>
       <p>Vorher speichert die App eine Sicherungsdatei (am iPad in der Dateien-App unter „Downloads“). Mit eingeschalteter Telegram-Sicherung bleibt die bisherige Sicherung im Chat stehen; die nächste kommt als neue Nachricht.</p>
       <div class="sheet-actions"><button type="button" class="button ghost" id="reset-cancel">Abbrechen</button><button type="button" class="button danger-btn" id="reset-go">Sichern und zurücksetzen</button></div>

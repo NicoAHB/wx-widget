@@ -40,6 +40,14 @@ const trade = (id, sym, pnl, closedAt, extra = {}) => ({ id, symbol: sym, side: 
     await page.fill('#pos-sl', '1,48'); await page.click('#pos-save'); await page.waitForTimeout(800);
     const p2 = await page.evaluate(() => JSON.parse(localStorage.getItem('scalpdesk.positions.v1')).find(p => p.symbol === 'XRPUSDT'));
     check('Stop nachgezogen (1,45 → 1,48): Stop geändert, Anfangsrisiko r0 unverändert', p2?.sl === 1.48 && JSON.stringify(p2.r0) === JSON.stringify(p1.r0), JSON.stringify({ sl: p2?.sl, r0: p2?.r0 }));
+    // Optimierung 6: Gelerntes bleibt – eigener Speicher, übersteht „Zurücksetzen“ und Neuladen, steckt in der Sicherung
+    const l0 = await page.evaluate(() => ({ n: Object.keys(JSON.parse(localStorage.getItem('scalpdesk.rlearn.v1') || '{}').t || {}).length, bk: Object.keys(__g05.backupPayload().rlearn?.t || {}).length }));
+    check('Lernspeicher: 4 geschlossene Positionen festgehalten, auch in der Sicherung', l0.n === 4 && l0.bk === 4, JSON.stringify(l0));
+    await page.evaluate(() => document.getElementById('reset-go').click()); await page.waitForTimeout(800);
+    await page.reload(); await page.waitForTimeout(1500);
+    await page.evaluate(() => { document.querySelector('[data-tab="pos"]')?.click(); const d = document.getElementById('analysis'); d.open = true; d.dispatchEvent(new Event('toggle')); }); await page.waitForTimeout(600);
+    const l1 = await page.evaluate(() => ({ trades: JSON.parse(localStorage.getItem('scalpdesk.history.v1') || '[]').length, n: Object.keys(JSON.parse(localStorage.getItem('scalpdesk.rlearn.v1') || '{}').t || {}).length, kp: document.getElementById('analysis-kpis').textContent, reset: document.querySelector('#reset-dialog').textContent }));
+    check('Nach „Zurücksetzen“ und Neuladen: Journal leer, Gelerntes bleibt (4 Trades · +1,00 R sichtbar), Dialog nennt es unter „Erhalten bleiben“', l1.trades === 0 && l1.n === 4 && /Gelernt \(bleibt nach „Zurücksetzen“\)4 Trades · \+1,00 R/.test(l1.kp) && /Erhalten bleiben:.*das Gelernte aus deinen Trades/.test(l1.reset), JSON.stringify({ trades: l1.trades, n: l1.n, kp: l1.kp.slice(0, 120) }));
     check('keine Fehler', !real(errors).length, real(errors).join(' | ')); await ctx.close();
   } catch (e) { check('Abbruch', false, e.message.split('\n')[0]); }
   finally { await browser.close(); await h.teardown(); }
