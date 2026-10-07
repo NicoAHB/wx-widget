@@ -23,6 +23,10 @@ const throws = fn => { try { fn(); return false; } catch { return true; } };
 
   const t = transport(), loaded = await t.client.load({ selection: selected, config: p });
   check('Öffentliche Daten vollständig: Basis und Kontext mit eigenem EMA200', loaded.status === 'bereit' && loaded.data.base.ema200 !== null && loaded.data.context.ema200 !== null);
+  check('Exklusive Bitget-Seitengrenze enthält genau den Startanker bis zur jüngsten geschlossenen Kerze', ['base', 'context'].every(k => {
+    const tf = k === 'base' ? selected.timeframe : selected.contextTimeframe, periodMs = B.BITGET_FRAMES[tf].periodMs, rows = loaded.saved.series[k].rows;
+    return rows.length === 260 && rows[0].time === selected.indicatorAnchors[k] && rows.at(-1).end === Math.floor(NOW / periodMs) * periodMs;
+  }));
   check('Ausschließlich Bitget-USDT-Futures, nur GET, keine privaten Pfade/Headers/Body/Cookies', t.calls.every(x => new URL(x.url).origin === B.BITGET_ORIGIN && new URL(x.url).pathname.startsWith('/api/v2/mix/market/') && new URL(x.url).searchParams.get('productType') === 'USDT-FUTURES' && x.init.method === 'GET' && x.init.credentials === 'omit' && x.init.redirect === 'error' && !x.init.body && Object.keys(x.init.headers).join() === 'Accept'));
   check('Begrenzte Seiten statt unbegrenzter Gesamtabruf', t.calls.filter(x => x.url.includes('history-candles')).length === 4 && t.calls.every(x => !x.url.includes('limit=') || Number(new URL(x.url).searchParams.get('limit')) <= 200));
   check('Ältere Rohdaten erhalten keine erfundene historische Fundingabrechnung', loaded.data.funding.kind === 'current' && !loaded.data.funding.costsComplete && loaded.data.funding.intervalHours === 2 && C.normalizeFunding(loaded.data.funding, loaded.data.scope.asOf) === -.0004);

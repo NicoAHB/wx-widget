@@ -25,8 +25,14 @@ abgeglichen; aktuelle Antwortfelder/UTC-Zeitebenen/History-Grenzen zusätzlich m
 Herstellerseiten: [Kerzenhistorie](https://www.bitget.com/api-doc/contract/market/Get-History-Candle-Data),
 [Kontrakte](https://www.bitget.com/api-doc/contract/market/Get-All-Symbols-Contracts),
 [Fundingrate](https://www.bitget.com/api-doc/contract/market/Get-Current-Funding-Rate).
-Direkte Herstellerseiten/Live-API in dieser Cloud bisher durch Domainfreigabe blockiert (403 am Proxy), **keine echte Bitget-/CORS-Abnahme behauptet**.
-`www.bitget.com` und `api.bitget.com` im Cloud-Entwurf ergänzt; Aktivierung verlangt Prüfen/Speichern und Veröffentlichen der Umgebung.
+Öffentliche Live-API am 07.10.2026 über den konfigurierten Cloud-Proxy erreichbar; Herstellerseiten antworten weiterhin mit HTTP 403.
+Live-Prüfung der UTC-Seitengrenzen für 1H/4H/1Dutc: `endTime` wird abgerundet und ist exklusiv; ohne 1-ms-Abzug anfragen.
+Adapter mit echten BTCUSDT-Antworten für 1h/4h und 4h/1d geprüft: je Ebene 260 geschlossene Kerzen, eigener EMA200,
+Kontraktraster und tatsächliches 8h-Funding, Status `bereit`. Node-Prüfung mit injiziertem Proxy-Transport; Standard-Node-fetch
+scheitert in dieser Cloud an DNS (`EAI_AGAIN`). API antwortet mit `Access-Control-Allow-Origin: *`,
+**keine echte Browser-/CORS-Abnahme behauptet**.
+JSON-Fortsetzung mit echter letzter Kontrollkerze ebenfalls `bereit`; Preis/EMA50/EMA200/ATR auf beiden Ebenen unverändert.
+`www.bitget.com` und `api.bitget.com` im Cloud-Entwurf ergänzt; Entwurf nicht automatisch veröffentlicht.
 
 ## API und gespeicherte Fortsetzung
 
@@ -64,11 +70,12 @@ Der feste 512-Kerzen-Ausschnitt definiert den lokalen Struktur-/Musterkontext di
 
 ## Begrenzte Historienjobs
 
-`range({symbol,timeframe,from,to,maxPages?,signal?})` lädt vorwärts in geschlossenen UTC-Zeitfenstern: höchstens 200 Kerzen/Seite,
+`range({symbol,timeframe,from,to,maxPages?,signal?})` lädt vorwärts in geschlossenen UTC-Zeitfenstern; `endTime` ist exakt die exklusive Schlussgrenze:
+höchstens 200 Kerzen/Seite,
 zusätzlich höchstens 90 Tage/Seite (Tageskerzen daher höchstens 90). Maximal acht Seiten je Job. Cursor und Preisabdeckung explizit;
 Folgejob setzt ab `nextFrom` fort. Identische Dubletten einmal, widersprüchliche Dubletten/OHLCV/UTC-Grenzen/Datenlücken abgelehnt.
 Fehlender Listing-Warm-up ist kein kürzerer EMA. Rückgabe ist Preisabdeckung des angefragten Ausschnitts, kein Nachweis von 90 Tagen/2 Jahren
 Signal-/Kostenhistorie. Historische Kenntniszeit-/Latenzmodelle und belegte Fundinghistorie gehören zu G10(d); heutige Empfangszeiten nicht zurückdatieren.
 
-Tests: `unit-bitget.js` 54 Fachprüfungen, `m62.js` 8 Prüfungen für Node/Browser/Worker, echtes Browser-fetch mit lokalen Antworten,
+Tests: `unit-bitget.js` 55 Fachprüfungen, `m62.js` 8 Prüfungen für Node/Browser/Worker, echtes Browser-fetch mit lokalen Antworten,
 Netzausfall und frischen Offline-Import. Alle externen Antworten sind feste lokale Testdaten, keine echten Kurse oder Nachrichten.

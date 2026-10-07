@@ -135,7 +135,8 @@ export function createBitgetPublicClient({ fetch: fetcher = globalThis.fetch, no
     const rows = [], pageSize = Math.min(200, Math.floor(90 * 86400e3 / periodMs)); let cursor = from, pages = 0;
     while (cursor < to && pages < maxPages) {
       const end = Math.min(to, cursor + pageSize * periodMs), limit = (end - cursor) / periodMs;
-      const r = await request('/api/v2/mix/market/history-candles', { symbol, productType: 'USDT-FUTURES', granularity, endTime: end - 1, limit }, signal);
+      // Bitget rundet endTime ab und liefert davor: exklusive UTC-Schlussgrenze ohne 1-ms-Abzug.
+      const r = await request('/api/v2/mix/market/history-candles', { symbol, productType: 'USDT-FUTURES', granularity, endTime: end, limit }, signal);
       const page = normalizeBitgetCandles(r.data, { timeframe, from: cursor, to: end, knownAt: r.observedAt }); pages++;
       if (page.length !== limit || page[0]?.time !== cursor || page.at(-1)?.end !== end) throw new Error('Bitget-Historie hat eine Datenlücke oder zu wenig Warm-up');
       rows.push(...page); cursor = end;

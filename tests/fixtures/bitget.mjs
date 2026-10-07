@@ -18,7 +18,8 @@ export function responseBody(url, at = NOW) {
   else if (u.pathname.endsWith('/current-fund-rate')) data = [{ symbol: 'BTCUSDT', fundingRate: '-0.0001', fundingRateInterval: '2', nextUpdate: String(at + HOUR) }];
   else {
     const step = BITGET_FRAMES[tf].periodMs, end = Math.floor(Number(u.searchParams.get('endTime')) / step) * step;
-    data = Array.from({ length: Number(u.searchParams.get('limit')) }, (_, i) => row(end - i * step, step));
+    // Live am 07.10.2026 geprüft: auf UTC-Grenze abgerundetes endTime ist exklusiv.
+    data = Array.from({ length: Number(u.searchParams.get('limit')) }, (_, i) => row(end - (i + 1) * step, step));
   }
   return { code: '00000', requestTime: at, data };
 }
