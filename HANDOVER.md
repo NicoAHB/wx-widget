@@ -1,27 +1,78 @@
-# HANDOVER – Scalp Desk
+# HANDOVER – Scalp Desk (Übergabe an ChatGPT)
 
-Laufende Übergabe. Sie wird nach jedem Arbeitsschritt aktualisiert, damit ein Abbruch jederzeit ungefährlich ist.
+Diese Datei ist der Einstieg für jede weitere Arbeit am Projekt. Wer sie liest, braucht kein Vorwissen. Die vollständige fachliche
+Vorgabe aller Gruppen G01–G14 steht in `docs/VORGABE-G01-G14.md` (Original-Übergabe; dort sind G10–G14 ausführlich beschrieben).
 
-## Kurzstand
-- **Version live:** 3.39.0 (G09 C4 + C5, Dienst 2.1.0), Pull Request #62, Merge-Commit `0f12e0d` auf `main` (davor 3.38.0/G09 Punkt 11 + C1–C3: PR #61, 3.37.0/G09 A+B: PR #60, 3.36.0/G08: PR #59, 3.35.0/G07: PR #58).
-- **Arbeits-Branch:** `claude/scalp-desk-g03-j81c8k` (nach jedem Merge neu von `main` gestartet).
-- **Auf dem Branch, noch nicht veröffentlicht:** G09 C6a (Ziel „Chartmuster“, Dienst 2.2.0). Release 3.40.0 (Version, Gesamtlauf, Doku Teil AS, PR) in Arbeit.
-- **Offen in G09:** C6b (Meldung bei geschlossener App über den Dienst – größerer Umbau, vorher mit dem Nutzer abstimmen). Danach G10.
-- **Danach:** G10 bis Ende schreibt ChatGPT, sofern der Nutzer nichts anderes sagt.
+## 1. Ziel und Architektur
+- **Ziel:** Scalp Desk ist eine Web-App (PWA) für Krypto-Scalping auf dem iPhone/iPad und am Rechner: Binance-Kurse, Chart mit Indikatoren,
+  Positionsrechner, Positionen/Journal mit Auswertung, Kurs-Alarme, Telegram-Meldungen und -Sicherung, regelbasierte Mustererkennung („KI“).
+  Optional überwacht ein 24/7-Dienst auf einer Oracle-Cloud-VM Alarme auch bei geschlossener App.
+- **Live:** GitHub Pages aus `main` – `https://nicoahb.github.io/wx-widget/` (`index.html` leitet auf `weather-widget-v2.html`).
 
-## Projekt in einem Satz
-Single-File-PWA für Krypto-Scalping (`weather-widget-v2.html`, auf GitHub Pages) mit Binance-Kursen, Chart, Indikatoren, Positionen/Journal, Alarmen und Telegram. Optional gibt es einen 24/7-Dienst (`server/scalpdesk-247.mjs`) auf einer Oracle-Cloud-VM.
-
-## Wichtige Dateien
 | Datei | Zweck |
 |---|---|
-| `weather-widget-v2.html` | die ganze App (HTML, CSS, ein `<script type="module">`); `APP_VERSION` oben im Skript |
-| `sw.js` | Service Worker; `VERSION` muss zur App-Version passen |
+| `weather-widget-v2.html` | die ganze App in einer Datei (HTML, CSS, ein `<script type="module">`); `APP_VERSION` oben im Skript |
+| `sw.js` | Service Worker (Offline, `data/` = Netz zuerst); `VERSION` muss zu `APP_VERSION` passen |
 | `index.html` | Weiterleitung auf die App |
-| `server/scalpdesk-247.mjs`, `server/install.sh` | 24/7-Dienst (Version 2.2.0 auf dem Branch, live 2.1.0) und Installer |
-| `server/muster-export.mjs` | erzeugt aus dem Archiv-Export die Veröffentlichung `data/muster/manifest.json` + `stats-<n>.json` (G09 C5) |
-| `tests/` | Test-Server (`mock-binance.js`), `harness.js`, Tests `m*.js`/`unit-*.js`, `run-all.sh`, `lint.sh`, `README.md` |
-| `.github/workflows/` | Kalender- und News-Daten (eigene Workflows) |
+| `server/scalpdesk-247.mjs` | 24/7-Dienst (Node, ohne Abhängigkeiten): Alarme, Stop/Ziel, BTC-Puls, Gewinn/Verlust, Ziel-Schalter mit Epoche, Sendefreigabe je Ereignis, Muster-Archiv (`/v1/patterns/*`), Alarm bei Kerzenschluss. `VERSION` oben |
+| `server/install.sh`, `server/README.md` | Installer (Caddy + sslip.io, Zugangsschlüssel, Firewall) und Anleitung inkl. Archiv, Veröffentlichung, Chartmuster-Ziel |
+| `server/muster-export.mjs` | erzeugt aus dem Archiv-Export die Veröffentlichung `data/muster/manifest.json` + `stats-<n>.json` |
+| `data/` | Kalender-, News- und (später) Musterdaten für Pages; `.github/workflows/` aktualisiert Kalender und News |
+| `tests/` | Test-Server `mock-binance.js` (Binance, Telegram, CoinLore … nachgebaut), `harness.js`, Browser-Tests `m*.js`, Einheitentests `unit-*.js`, `run-all.sh`, `lint.sh`, `README.md` |
+| `docs/VORGABE-G01-G14.md` | fachliche Vorgabe aller Gruppen |
+
+**Zusammenspiel:** Die App holt öffentliche Marktdaten direkt bei Binance (Spot `data-api.binance.vision`, Futures `fapi.binance.com`),
+speichert alles lokal (`localStorage`/IndexedDB über `store`), gleicht mehrere Tabs ab und sichert per Datei oder Telegram. Mit eingerichtetem
+24/7-Dienst (HTTPS + Zugangsschlüssel) übernimmt der Dienst Ziel-Schalter, Sendefreigaben (genau ein Sender je Ereignis) und das Muster-Archiv;
+die App übergibt Alarme zusätzlich als angeheftete Telegram-Datei. Testzugänge im Browser: `window.__g05` … `__g09`, `__opt4`, `__opt7`–`__opt9`.
+
+## 2. Stand
+- **Version:** 3.41.0 (App) / Dienst 2.3.0 – Gruppen G01–G08 fertig, G09 fertig bis auf C6b, dazu Optimierungen 1–9 (Abschnitt „Optimierungen“).
+  Veröffentlichungen: 3.35.0 G07 (PR #58) · 3.36.0 G08 (PR #59) · 3.37.0–3.40.0 G09 (PR #60–#63) · 3.41.0 Optimierungen 1–9 (PR siehe Git-Verlauf von `main`).
+- **Branch-Ablauf bisher:** Arbeit auf `claude/scalp-desk-g03-j81c8k`, je Release ein Pull Request nach `main`, Merge-Commit, danach den Branch neu von `main` starten.
+  ChatGPT darf einen eigenen Branch nutzen (z. B. `chatgpt/g10`), Ablauf gleich.
+- **Dienst auf der VM:** läuft beim Nutzer evtl. noch mit einer älteren Version. Für Archiv, Chartmuster-Ziel und Alarm bei Kerzenschluss braucht er 2.3.0 (`server/README.md`).
+
+## 3. Offene Schritte (empfohlene Reihenfolge)
+Jeder Schritt: eigener Branch-Stand, Tests, Version erhöhen, Gesamtlauf, Pull Request, Merge, Pages prüfen, HANDOVER aktualisieren.
+Die Details stehen in `docs/VORGABE-G01-G14.md` im jeweiligen Abschnitt.
+
+1. **G09 C6b – Chartmuster-Meldung bei geschlossener App** (vorher mit dem Nutzer abstimmen; Plan unten im G09-Abschnitt).
+   - Ziel: Der Dienst erkennt wichtige Formationen selbst und meldet sie an das Ziel `patterns`.
+   - Dateien: `server/pattern-engine.mjs` (aus `patEngine()` der HTML erzeugt), `server/scalpdesk-247.mjs`, `weather-widget-v2.html` (Coin-Liste und Chat-ID an den Dienst).
+   - Fertig, wenn: Einheitentest beweist gleiche Engine in App und Dienst, gleiche Ereignis-ID `pat:<Fall-ID>` (nie doppelt), Ziel aus → nichts; Installer/README aktualisiert.
+2. **G10 – Konfluenz-Score, KI-Signale, historische Quoten, Backtest** (Vorgabe Abschnitt G10, Punkte 1–29).
+   - Ziel: Signalkarten (Score aus Trend/Setup-Zone/RSI/MACD/Volumen/Funding, Mustergewicht W), Entry/SL/TP, Kosten, Quoten (90 Tage/2 Jahre, ab 30 Fällen), Reiter „KI-Signale“, Telegram über den Dienst mit `/ki_aus` `/ki_an` `/ki_status`.
+   - Dateien: neuer Block in `weather-widget-v2.html` (Reiter im Alarm-Bereich), Backtest in einem Worker, Dienst-Teil in `server/scalpdesk-247.mjs`; die in der Vorgabe genannten Beilagen `code/confluence/*` liegen **nicht** im Repo – beim Nutzer anfragen oder neu schreiben.
+   - Fertig, wenn: Prüfungen aus der Vorgabe (Grenzwert 69,999, Gegen-Trend-Sperre, fehlendes Funding, positive Timeouts, 29/30 Fälle, keine Zukunftskerzen, Nettofilter, Cross-Nullstatus, Badge/Chartlinien, Telegram AUS bei geschlossener App, MACD-Abnahmefälle) als Tests grün.
+   - Teilen in Schritte: (a) reiner Kern + Einheitentests, (b) Datenquelle Bitget öffentlich, (c) Karten/Reiter, (d) Quoten/Backtest im Worker, (e) Dienst/Telegram.
+3. **G11 – Power of Three, FVG-Alarm, Ablauf und Journal** (Abschnitt G11).
+   - Ziel: eigenes Modell im KI-Reiter (Kontext/Bias/Setup/Entry, Akkumulation, Sweep, FVG, Entry, SL/TP, Punkteschema mit 70er-Grenze), FVG-Alarm, Simulator, Journal.
+   - Fertig, wenn: Algorithmus-Fälle aus der Vorgabe als Tests grün, keine Zukunftsdaten, Ergebnis getrennt von G10.
+4. **G12 – Optionaler Trading-Bot** (Abschnitt G12) – standardmäßig AUS; nur Oracle führt Orders aus, Schlüssel nur auf dem Server.
+   - Fertig, wenn: Simulation mit Gewinn-/Verluststopp, verriegelter Stoppsperre, RECONCILING-Zustand und Orderabgleich getestet; vor privater API die offenen Fragen (Kontotyp, Positionsmodus, Limits) mit dem Nutzer klären. Keine Zugangsdaten im Chat.
+5. **G13 – Zusammenführung, Migration, Gesamtprüfung** (Abschnitt G13): Cacheliste, Leistung, echte Geräte, Integrationsprüfungen, Lieferpaket.
+6. **G14 – Standardlayout und Alternative zur Entscheidung vorlegen** (Abschnitt G14) – kein automatischer Schritt: beide Layouts vorlegen, der Nutzer entscheidet.
+
+**Weitere Ideen des Nutzers (aus den Optimierungen, noch offen):**
+- Kurse der tatsächlich genutzten Börse (Bitget) für Positionen und deren Alarme, Anzeige der Abweichung Binance ↔ Bitget.
+- Kaufdruck je Kerze (Volumen-Delta aus dem Taker-Kaufvolumen der Binance-Kerzen, Feld 9) mit „i“ und regelbasierter Einschätzung.
+- Einstieg mit einem Tipp vom Chart-Level (Stop am Umkehrpunkt, Ziel 2R, Menge aus Risiko) – mit G10 abstimmen.
+
+## 4. Arbeitsregeln
+- **Nichts Fertiges umbauen.** Neue Funktionen als eigener Block mit Versionskommentar (z. B. `// 3.42.0 (G10): …`), vorhandene Funktionen nur gezielt erweitern.
+- **Sprache:** Oberfläche, Kommentare, Commits und Doku auf Deutsch. Nutzer-Texte kurz, ehrlich, ohne Erfolgswahrscheinlichkeit; Unbekanntes als „nicht verfügbar/nicht bewertbar“ zeigen, nie erfinden.
+- **Sicherheit:** keine Zugangsdaten (Telegram-Token, Dienst-Schlüssel, Börsen-API) in Code, Sicherungen, Logs oder Commits; keine Schreibschlüssel im Browser.
+- **Tests:** zu jeder Änderung Tests im Stil der vorhandenen (`tests/m*.js` mit `check(...)`, Einheitentests `unit-*.js`). Vor jedem Release:
+  `bash tests/lint.sh` (0 Fehler, 3 bekannte Warnungen) und `bash tests/run-all.sh` (rund 2,5 h; Browser-Tests nie parallel). Abweichungen erklären (Stolpersteine unten).
+  Lokal nötig: Node 22, Playwright mit Chromium (`PLAYWRIGHT_BROWSERS_PATH`), ESLint über `tests/lint.sh`.
+- **Release:** `APP_VERSION` in `weather-widget-v2.html` und `VERSION` in `sw.js` gleich erhöhen; Dienständerung → `VERSION` in `server/scalpdesk-247.mjs`.
+  Pull Request mit Inhalt, Tests, Offenem; Merge per Merge-Commit; danach GitHub Pages prüfen („pages build and deployment“ erfolgreich).
+- **Commits:** klein und beschreibend, nach jedem Schritt `HANDOVER.md` aktualisieren, damit ein Abbruch ungefährlich ist.
+- **Arbeitsweise des Nutzers:** Gruppe für Gruppe; nach jeder Gruppe Rückmeldung und Freigabe abwarten; bei Unklarheit mit Optionen nachfragen statt raten.
+
+## Erledigt im Detail (G08, G09, Optimierungen)
+- Die folgenden Abschnitte dokumentieren, was gebaut wurde und wo es im Code steht.
 
 ## G08 – Fortschritt
 Siehe Abschnitt „G08-Plan“ unten; erledigte Schritte werden abgehakt.
@@ -59,7 +110,7 @@ Code: `patEngine()` (reine Engine, läuft als Blob-Worker), `PAT_LIB` (41 Eintr�
 - [x] C4. (veröffentlicht in 3.39.0: `PatternArchive` + `/v1/patterns/*` im Dienst 2.1.0, App `pkSync`/`pkState`, Export-Datei; Tests `unit-247d.js` 15/15, m58 „sync“ 6/6) Server-Archiv (Punkte 16–17): Originaljournal am 24/7-Dienst (`server/scalpdesk-247.mjs`, HTTPS-Weg aus G05 mit Revision) getrennt von Alarmkonfiguration, zusätzliche unabhängige Sicherung + getestete Wiederherstellung; Zustände „nur lokal / extern gespeichert / zusätzlich gesichert / veröffentlicht“. Nicht über den Sicherungsbot/Telegram.
 - [x] C5. (veröffentlicht in 3.39.0: `server/muster-export.mjs`, App `pkPubLoad`/`pkPubGroup`, Anzeige `.pk-pub`, Zustand „veröffentlicht“; Tests `unit-pub.js` 7/7, m58 „pub“ 5/5; Ablauf in `server/README.md`) Veröffentlichung (Punkte 18–19): bereinigter Bestand auf GitHub/Pages als Release/Serverexport (Manifest ≤ 64 KiB, Dateien ≤ 256 KiB, lokaler Cache ≤ 10 MiB, Warteschlange 2 MiB – voll → neues Lernen stoppt mit Hinweis, nichts löschen); keine Schreibschlüssel im Browser; ohne Schreibweg letzte Revision + Datum zeigen.
 - [ ] C6. Muster-Telegram-Chat (Punkt 25): neues Ziel in „Telegram-Chats“ (G05-Mechanik: Schalter, Epoche, Sendefreigabe) für wichtige bestätigte Muster, auch bei geschlossener App über den 24/7-Dienst; Qualitätsgrenzen kenntlich (regelbasiert vs. erlernt).
-  - [x] **C6a – Ziel „Chartmuster“ in der App** (umgesetzt auf dem Branch: `TGT` `patterns`, Felder `pchat`/`pthread`/`ptoken`, `patNotify`/`patTgText` nach `pkRecord`, `tgcSet` schaltet Ziele, die ein älterer Dienst nicht kennt, lokal; Dienst 2.2.0 `TARGETS` + `patterns`; Tests m58 „tg“ 7/7, unit-247c 55/55, m54 52/52, m55 49/49, m38 19/19):
+  - [x] **C6a – Ziel „Chartmuster“ in der App** (veröffentlicht in 3.40.0: `TGT` `patterns`, Felder `pchat`/`pthread`/`ptoken`, `patNotify`/`patTgText` nach `pkRecord`, `tgcSet` schaltet Ziele, die ein älterer Dienst nicht kennt, lokal; Dienst 2.2.0 `TARGETS` + `patterns`; Tests m58 „tg“ 7/7, unit-247c 55/55, m54 52/52, m55 49/49, m38 19/19):
     - Dateien: `weather-widget-v2.html` – `TGT` (neuer Eintrag `{ id: 'patterns', name: 'Chartmuster', icon: '📐', … }`), `loadChannels` (`tgt.patterns`, `tep.patterns`, Felder `pchat`/`pthread`/`ptoken` mit Validierung wie `tchat`), `tgOk`, `tgDest('patterns')` (Bot: eigener oder derselbe wie Kursalarm, ausdrücklich beschriftet), `TG_ROUTE.pattern = 'patterns'`, Einrichtungsformular (Abschnitt „📊 Trades“ als Vorlage), `readChanForm`; `server/scalpdesk-247.mjs` – `TARGETS`/`TARGET_NAME` um `patterns` erweitern (`policyNorm` ergänzt fehlende Ziele mit `on: true, epoch: 1` – prüfen!).
     - Auslöser: in `patDone`/`pkRecord` ein **neuer** Fall mit `src === 'live'`, `kind === 'form'` und Regelgüte ≥ 80 % → eine Meldung über `notifyChannels('pattern', <Fall-ID>, text)` mit Ereignis-ID aus der Fall-ID (doppelt erkannt → einmal gesendet; Sendefreigabe am Dienst wie bei Kursalarmen).
     - Text: Coin, Intervall, Muster, Status, Ziel; Kennzeichnung „regelbasiert (Modell pat-1, Regelgüte X %)“ und – nur wenn ≥ 10 vergleichbare abgeschlossene Fälle – „erlernt: X von N aufwärts …“; Hinweis „keine Erfolgswahrscheinlichkeit“.
@@ -70,15 +121,35 @@ Code: `patEngine()` (reine Engine, läuft als Blob-Worker), `PAT_LIB` (41 Eintr�
     - Fertig, wenn: `unit-247e.js` (Engine-Gleichheit, Erkennung auf festen Kerzen, Ziel aus → nichts, Ereignis-ID einmal) und Installer/README aktualisiert.
 
 ## Optimierungen nach G08
-(noch keine)
+- [x] **1. Chartmuster-Zeile der Vorauswahl in Richtungsfarbe** (auf dem Branch, noch nicht veröffentlicht): im Detailfeld eines Coins bullisch grün (`--up-*`), bärisch rot (`--down-*`), neutral/keine ohne Farbe. Dateien: `weather-widget-v2.html` (`.wl-d-pat.bull/.bear`, `wldPaint`), Test m58 „wl“ (5/5).
+- [x] **2. Knopf „👁 Alle ausblenden / Alle einblenden“** (auf dem Branch, noch nicht veröffentlicht): vorn in der Ebenen-Leiste unter dem Chart; blendet alle Chart-Ebenen auf einmal aus und genau dieselben wieder ein. Die Auswahl davor steht in `scalpdesk.ovhide.v1` (übersteht Neuladen); eine einzeln eingeschaltete Ebene beendet das Ausblenden. „KI“-Muster sind keine Ebene und bleiben unberührt. Dateien: `weather-widget-v2.html` (`ovAll`, `ovAllBtn`, `#ov-all`), Test m27 (22/22), m10 37/37.
+- [x] **3. BTC-Entkopplung übersichtlich** (auf dem Branch, noch nicht veröffentlicht): jede Zeile eine umrahmte Karte, einzeilig: Kürzel, Rang, (bei „Korrelation“ „Korr. x,xx“), Abweichung zu BTC groß in Richtungsfarbe; BTC-Wert des Zeitraums einmal oben; Name, Preis, Coin-/BTC-% und Datenzeit im Tooltip; der gerade im Chart geladene Coin hat einen Mint-Rahmen (`.dec-row.cur`). Dateien: `weather-widget-v2.html` (`decRender`, `decPick`, CSS `.dec-*`), Test m57 (41/41).
+- [x] **4. Auswertung in R** (auf dem Branch, noch nicht veröffentlicht): Kennzahl „Erwartungswert je Trade“ (USDT und R, Ø Gewinn/Verlust in R, „vorläufig“ unter 30 Trades); Spalte „Ø R“ in allen Tabellen der Auswertung (Grund, Bereich, Coin, Long/Short, Einstiegszeit, Haltedauer), Gruppen unter 30 Trades gedämpft. R = Netto ÷ Anfangsrisiko; Anfangsrisiko `r0` = { sl, entry, qty, at } wird beim Anlegen bzw. beim ersten Stop in `addPosition` festgehalten und bei Stop-Verschiebungen nicht geändert. Ältere Trades ohne `r0`: nur ein einzelner Schluss mit Stop auf der Verlustseite zählt (Stop beim Schließen); sonst ohne R. Dateien: `weather-widget-v2.html` (`tradeRisk`, `tradeR`, `rmAdd`, `groupStats`, `multiStats`, `renderAnalysis`, `addPosition`), Test `m59.js` (7/7, in `run-all.sh`), m48 79/79, m51 69/69, m52 101/101.
+- [x] **5. „i“ zur Auswertung in R** (auf dem Branch, noch nicht veröffentlicht): an der Kennzahl „Erwartungswert je Trade“ (`.ev-tip`, funktioniert ohne Tooltip auch auf dem iPhone): Erklärung von R und Erwartungswert, Beurteilung der aktuellen Zahlen (positiv/negativ/ausgeglichen, „vorläufig“ unter 30), stärkster und schwächster Grund ab je 5 Trades mit Risiko, Hinweis „keine Garantie“. Test `m59.js` 8/8.
+- [x] **6. Gelerntes aus Trades bleibt** (auf dem Branch, noch nicht veröffentlicht): eigener Lernspeicher `scalpdesk.rlearn.v1` je geschlossener echter Position (Schluss, Eröffnung, Coin, Richtung, Gründe, Netto, Anfangsrisiko; höchstens 5000). „Zurücksetzen“ löscht ihn nicht (Dialogtext ergänzt); ein einzeln gelöschter Trade wird auch dort entfernt. In der Sicherung als `rlearn`, beim Einspielen zusammengeführt (fehlende ergänzt, nichts überschrieben). Anzeige: im „i“ „Gelernt insgesamt …“, Gründe-Vergleich aus allem Gelernten; bei leerem Journal Kennzahl „Gelernt (bleibt nach „Zurücksetzen“)“. Je Gerät (kein Geräteabgleich außer über die Sicherung). Dateien: `weather-widget-v2.html` (`rlGet`, `rlUpdate`, `rlForget`, `rlMerge`, `rlTrades`, `renderAnalysis`, `backupPayload`, Import, `trade-confirm`), Test `m59.js` 10/10, m37 22/22, m14 18/18, m40 40/40, m48 79/79.
+- [x] **7. Trend-Ampel je Zeitebene** (auf dem Branch, noch nicht veröffentlicht): Zeile `#mtf` zwischen Chart-Leiste und OHLC-Zeile: 5m · 15m · 1h · 4h · 1d mit ▲ (Kurs > EMA 50 > EMA 200), ▼ (umgekehrt), ◆ (gemischt), Erklärung je Feld. Je Zeitebene 261 Kerzen derselben Börse wie der Chart (EMA aus abgeschlossenen Kerzen, Vergleich mit aktuellem Kurs), neu nach jedem Kerzenschluss der Zeitebene, nur bei sichtbarer Zeile; im Vollbild ohne Werkzeuge ausgeblendet. Dateien: `weather-widget-v2.html` (`mtfCalc`, `mtfLoad`, `mtfPaint`, `mtfTick`, CSS `.mtf*`), Test `m59.js` 12/12; m21, m45, m56, m10, m4, m3, m27, m39 ohne Abweichung.
+- [x] **8. Kurs-Alarm bei Kerzenschluss** (auf dem Branch, noch nicht veröffentlicht; Dienst 2.3.0): im Alarm-Formular „Auslösen: bei Berührung / bei Schluss 5m · 15m · 1h · 4h“ (Feld `cl`). App: `alClTick` holt kurz nach jedem Kerzenschluss die letzte abgeschlossene Kerze (Börse des Alarms) und löst nur aus, wenn sie nach dem Scharfschalten schloss und ihr Schlusskurs die Marke erreicht; Berührungs- und Nachhol-Prüfung überspringen solche Alarme; Liste zeigt „löst beim 15m-Schlusskurs aus“. Dienst 2.3.0: `closeHit`, `klines(…, interval)`, `cl` aus der Datei übernommen; gleiche Ereignis-ID wie bei Berührung. Älterer Dienst meldet solche Alarme schon bei Berührung (README). Tests: `m59.js` 15/15, `unit-247d.js` 16/16, unit-247 96/96, unit-247b 25/25, unit-247c 55/55, inst-247 26/26, m3 68/68, m18 31/31, m47 49/49, m54 52/52.
+- [x] **9. Abstände in ATR mit „i“** (auf dem Branch, noch nicht veröffentlicht): Karte „Lokale Kurslevel“ zeigt den Abstand zu Unterstützung/Widerstand zusätzlich in ATR (ATR 14 der abgeschlossenen Chart-Kerzen), farbig: rot < 0,5 (sehr nah), orange 0,5–1, grün 1–3, blau > 3. „i“ an der Karte: Farbskala und „Empfehlung jetzt“ (regelbasiert): 1 ATR in USDT/%, Stop-Faustregel 1–1,5 ATR, Warnung bei Widerstand/Unterstützung < 0,5 ATR, Chance/Risiko für Long (Stop 0,5 ATR unter Unterstützung, Ziel Widerstand; unter 2 : 1 eher nicht). Positionsformular: Stop und Ziel mit ATR-Abstand und Hinweis, wenn der Stop enger als 1 ATR ist (nur für den Coin im Chart). Dateien: `weather-widget-v2.html` (`chartAtr`, `atrBand`, `atrAdvice`, `.atr-*`), Test `m59.js` 18/18; m6, m49, m51, m48, functional ohne Abweichung.
 
-## Bekannte Stolpersteine
+## 5. Bekannte Stolpersteine
+- **Zeitzonen-Test m43** beim Stundenwechsel (siehe unten) und **m28** kurz nach Mitternacht Berlin: Test-Thema, kein App-Fehler – später wiederholen.
+- **Kerzen-Abrufe in Tests:** Die Trend-Ampel lädt je Zeitebene 261 Kerzen (`limit=261`); Tests, die Abrufe zählen, unterscheiden über `interval`/`limit`.
+- **Kerzendaten in Tests** müssen gültig sein (Hoch ≥ Eröffnung/Schluss ≥ Tief), sonst verwirft `normalizeKlines` sie.
 - **m43 beim Stundenwechsel:** Die Prüfung erwartet eine Puls-Meldung „für 23 Uhr“ in einer Zeitzone, in der es gerade 23 Uhr ist. Trifft der Lauf den Wechsel auf 0 Uhr, schlägt sie fehl. Das ist kein App-Fehler; einzeln wiederholen.
 - **m47 Zeitmessung:** „10000 Trades … unter 400 ms“ ist lastabhängig; vereinzelt 410–430 ms, wiederholt bestanden.
 - **m28 nach Mitternacht (Berlin):** „Ganze Woche“ erwartet „Heute“ in der Tagesliste, „Stand der Daten“ erwartet keinen Zusatz „gestern“. Zwischen ca. 0 und 3 Uhr Berliner Zeit schlagen diese Prüfungen auch auf `main` fehl – Uhrzeit-Thema des Tests, kein App-Fehler; später wiederholen.
+- **Neues Ziel/neuer Knopf in den Telegram-Einstellungen:** m44 (Knöpfe bei „Chat-ID ermitteln“), m54 (Zählung „x von N aktiv“) und unit-247c (Zielanzahl) prüfen genaue Listen – mit anpassen.
 - **Gesamtlauf unterbrochen** (Neustart der Arbeitsumgebung): Die Ausgabe zeigt, bis wohin alles bestanden hat; den Rest mit derselben Schleife wie in `run-all.sh` ab dem nächsten Test fortsetzen (so bei 3.39.0 ab m32).
 - **m47 „App sendet den Kurs-Alarm selbst“:** zeitkritisch (20 s Wartezeit bei statischem Kurs); schlug vereinzelt fehl, einzeln/wiederholt bestanden.
 - **Browser-Tests nie parallel** (fester Port 8765/8790).
 - **Temporäre Testkopien** `weather-widget-v2.debug*.html` entstehen während m39/m45/m47; nicht committen.
 - **Klassifikationsliste G08 (v1)** ist aus Wissen gebaut, nicht gegen echte CoinLore-Daten geprüft: Coins unter „ungeprüft“ in `DEC_OK`/`DEC_STABLE` aufnehmen und `DEC_CLASS_VER` erhöhen.
 - **Codebeilage fehlt:** `code/entkopplung/scanner-refresh-policy.mjs` aus der ChatGPT-Übergabe liegt nicht vor; die Refresh-Regeln sind nach Schritt 4 der Übergabe selbst gebaut.
+
+## 6. Empfohlene Reihenfolge
+1. Repository lesen: diese Datei, `docs/VORGABE-G01-G14.md` (G09-Rest, G10–G14), `tests/README.md`.
+2. Lokal `bash tests/lint.sh` und einen kurzen Test (`node tests/m59.js`) laufen lassen, um die Umgebung zu prüfen.
+3. Mit dem Nutzer klären, ob zuerst G09 C6b oder direkt G10 – dann G10 in den Schritten (a)–(e), danach G11, G12, G13, G14.
+
+## 7. Startprompt für ChatGPT
+Siehe `ANLEITUNG-CHATGPT-GITHUB.md` (Abschnitt „Startprompt“).

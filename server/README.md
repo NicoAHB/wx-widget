@@ -143,3 +143,8 @@ Die Zeitstempel davor setzt journalctl in der Zeitzone des Servers (bei Oracle m
 - **Älterer Dienst (vor 2.2.0):** Er kennt das Ziel nicht; der Schalter gilt dann nur im Browser, und die App meldet ohne Freigabe (je Fall einmal pro Browser).
 - **Bei geschlossener App:** noch nicht – dafür bräuchte der Dienst die Mustererkennung selbst (offener Schritt G09 C6b).
 
+## Kurs-Alarm bei Kerzenschluss (ab Dienst 2.3.0, App mit Optimierung 8)
+- **Was:** Ein Kurs-Alarm kann „bei Schluss 5m/15m/1h/4h“ auslösen statt bei der ersten Berührung. Dann zählt nur der Schlusskurs der letzten abgeschlossenen Kerze dieses Intervalls, die nach dem Scharfschalten geschlossen hat – ein Docht über die Marke löst nicht aus.
+- **Dienst:** Ab 2.3.0 beachtet er das Feld `cl` aus der Datei der App. Ein älterer Dienst kennt es nicht und meldet solche Alarme schon bei Berührung – deshalb den Dienst aktualisieren.
+- **Doppelt:** App und Dienst nutzen dieselbe Ereignis-ID; mit Sendefreigabe meldet genau einer.
+

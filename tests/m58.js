@@ -143,6 +143,11 @@ const tests = {
     await page.click('.wl-tile[data-watch="ETC"]'); await page.waitForTimeout(2500);
     const prep = await page.evaluate(() => { const e = __g09.wl.c.get('ETCUSDT'), c = e.closed; e.pat = { id: 'double_bottom', q: 75, status: 'in Bildung (Ausbruch fehlt)', dir: 'bull', t0: c.at(-40).time, t1: c.at(-20).time }; __g09.wldPaint(); const b = document.querySelector('.wl-d-pat'); return { iv: e.iv, t0: e.pat.t0, t1: e.pat.t1, vis: !!b && !b.hidden && !b.disabled, txt: b?.textContent }; });
     check('Detailfeld zeigt „Chartmuster erkannt“ mit Name, Intervall, Status und Regelgüte', prep.vis && prep.txt === `📐 Chartmuster erkannt: Doppel-Boden · ${prep.iv} · in Bildung (Ausbruch fehlt) · Regelgüte 75 % – im Chart zeigen`, prep.txt);
+    // Optimierung 1: bullisch grün, bärisch rot
+    const col = await page.evaluate(() => { const e = __g09.wl.c.get('ETCUSDT'), b = document.querySelector('.wl-d-pat'), css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim(), bg = () => getComputedStyle(b).backgroundColor, rgb = c => { const d = document.createElement('i'); d.style.color = c; document.body.append(d); const r = getComputedStyle(d).color; d.remove(); return r; };
+      const bull = { cls: b.classList.contains('bull'), bg: bg(), want: rgb(css('--up-bg')) }; const keep = e.pat; e.pat = { ...keep, id: 'double_top', dir: 'bear' }; __g09.wldPaint();
+      const bear = { cls: b.classList.contains('bear') && !b.classList.contains('bull'), bg: bg(), want: rgb(css('--down-bg')) }; e.pat = keep; __g09.wldPaint(); return { bull, bear, back: b.classList.contains('bull') }; });
+    check('Chartmuster-Zeile: bullisch grün (Farben „aufwärts“), bärisch rot (Farben „abwärts“)', col.bull.cls && col.bull.bg === col.bull.want && col.bear.cls && col.bear.bg === col.bear.want && col.back, JSON.stringify(col));
     await page.click('.wl-d-pat');
     await page.waitForFunction(iv => __g05.state.symbol === 'ETCUSDT' && __g05.state.interval === iv && __g05.state.loadedSymbol === 'ETCUSDT' && !__g09.pat.want && !!__g09.pat.res, prep.iv, { timeout: 15000 }).catch(() => {});
     const toast = await page.evaluate(() => [...document.querySelectorAll('#toasts .toast')].map(t => t.textContent).find(t => /Doppel-Boden/.test(t)) || '');
