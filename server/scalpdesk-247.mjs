@@ -49,9 +49,9 @@ import crypto from 'node:crypto';
 import { Buffer } from 'node:buffer';
 import { fileURLToPath } from 'node:url';
 import { patternConfig, patternCandles, patternCases, patternFresh, patternText, patternEnd } from './pattern-monitor.mjs';
-import { ConfluenceService, kiMessage, Po3Service, po3Message } from './ki-monitor.mjs';
+import { ConfluenceService, kiMessage, Po3Service, po3Message, BotSimulationRuntime } from './ki-monitor.mjs';
 
-export const VERSION = '2.6.0';
+export const VERSION = '2.7.0';
 const E = process.env;
 // Adressen (für Tests über Umgebungsvariablen änderbar)
 export const API = {
@@ -506,6 +506,11 @@ export class Watcher {
       this.po3 = new Po3Service({ client: this.ki.client, now, saved: po3Saved, persist: state => this.savePo3(state), policy: () => this.pol.targets.ki, notify: alarm => this.notifyPo3(alarm) });
     } catch (e) { this.po3 = new Po3Service({ client: this.ki.client, now }); this.po3.stop(); this.po3.state.error = 'PO3-Datei prüfen; Original bleibt erhalten. ' + this.secret(e.message); }
 
+    this.botSimulationFile = statePath ? path.join(path.dirname(statePath), 'bot-simulation.json') : '';
+    try { let saved = null; if (this.botSimulationFile && fs.existsSync(this.botSimulationFile)) { if (fs.statSync(this.botSimulationFile).size > 5 * 1024 * 1024) throw new Error('Bot-Simulationsdatei überschreitet 5 MiB'); saved = JSON.parse(fs.readFileSync(this.botSimulationFile, 'utf8')); }
+      this.botSimulation = new BotSimulationRuntime({ saved, now, persist: state => this.saveBotSimulation(state) });
+    } catch (e) { this.botSimulation = new BotSimulationRuntime({ now }); this.botSimulation.stop(); this.botSimulation.state.error = 'Bot-Simulationsdatei prüfen; Original erhalten. ' + this.secret(e.message); }
+
     // 2.1.0 (G09 C4): Muster-Archiv als eigene Datei neben dem Zustand (nicht in der Alarmkonfiguration)
     this.arch = statePath ? new PatternArchive({ file: path.join(path.dirname(statePath), 'patterns-journal.jsonl'), backupDir: process.env.SCALPDESK_PATTERN_BACKUP || path.join(path.dirname(statePath), 'muster-sicherung'), now, log: m => this.log(m) }) : null;
   }
@@ -837,6 +842,11 @@ export class Watcher {
       fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file + '.tmp', json, { mode: 0o600 }); fs.renameSync(file + '.tmp', file); return true;
     } catch (e) { this.note('KI-Speicher', e.message); return false; }
   }
+  saveBotSimulation(state) {
+    if (!this.botSimulationFile) return false;
+    try { const json = JSON.stringify(state); if (Buffer.byteLength(json) > 5 * 1024 * 1024) throw new Error('Bot-Simulationsspeicher voll; Original bleibt erhalten'); fs.mkdirSync(path.dirname(this.botSimulationFile), { recursive: true }); fs.writeFileSync(this.botSimulationFile + '.tmp', json, { mode: 0o600 }); fs.renameSync(this.botSimulationFile + '.tmp', this.botSimulationFile); return true; }
+    catch (e) { this.note('Bot-Simulation', e.message); return false; }
+  }
   savePo3(state) {
     if (!this.po3File) return false;
     try { const json = JSON.stringify(state); if (Buffer.byteLength(json) > 28 * 1024 * 1024) throw new Error('PO3-Speicher voll; Bestand bleibt'); fs.mkdirSync(path.dirname(this.po3File), { recursive: true }); fs.writeFileSync(this.po3File + '.tmp', json, { mode: 0o600 }); fs.renameSync(this.po3File + '.tmp', this.po3File); return true; }
@@ -956,7 +966,7 @@ export class Watcher {
   }
   stateView(days = 3) {
     const t = this.now(), events = Object.entries(this.evs).filter(([, e]) => t - e.at < days * 864e5).sort((a, b) => b[1].at - a[1].at).slice(0, 300).map(([id, e]) => ({ id, ...e }));
-    return { ok: true, v: VERSION, now: t, po3: this.po3.view(), ki: { ...this.ki.view(), destination: { chat: this.chat, bot: this.token.split(':')[0] }, commandsReady: this.kiUsers.length > 0 }, patternWatch: this.patternWatch, ...policyView(this.pol), eps: Object.fromEntries(Object.entries(this.eps).map(([b, x]) => [b, x.n])), events };
+    return { ok: true, v: VERSION, now: t, botSimulation: { revision: this.botSimulation.state.revision, enabled: this.botSimulation.state.enabled, state: this.botSimulation.view().run?.state ?? null, simulationOnly: true, privateAdapterReady: false }, po3: this.po3.view(), ki: { ...this.ki.view(), destination: { chat: this.chat, bot: this.token.split(':')[0] }, commandsReady: this.kiUsers.length > 0 }, patternWatch: this.patternWatch, ...policyView(this.pol), eps: Object.fromEntries(Object.entries(this.eps).map(([b, x]) => [b, x.n])), events };
   }
   keyOk(h) {
     const a = /^Bearer\s+(\S+)$/.exec(String(h || ''))?.[1] || '', x = crypto.createHash('sha256').update(a).digest(), y = crypto.createHash('sha256').update(this.key).digest();
@@ -1013,6 +1023,10 @@ export class Watcher {
       const n = epNext(this.eps, this.evs, body.base, body.from, t); if (n !== body.from) { this.log(`Episode ${body.base}: neue Episode ${n} (von der App gemeldet)`); this.saveStateNow(); }
       return send(200, { ok: true, ep: n });
     }
+    if (route === 'GET /v1/bot/simulation') return send(200, { ok: true, bot: this.botSimulation.view() });
+    if (route === 'POST /v1/bot/simulation') { try { return send(200, { ok: true, bot: await this.botSimulation.command(body) }); } catch (e) { return send(this.botSimulation.stopped ? 503 : e.status || 400, { ok: false, error: this.secret(e.message), bot: this.botSimulation.view() }); } }
+    const botCommand = /^\/v1\/bot\/simulation\/commands\/([A-Za-z0-9_-]{8,64})$/.exec(u.pathname);
+    if (req.method === 'GET' && botCommand) { const found = this.botSimulation.state.commands.some(c => c.id === botCommand[1]); return send(200, { ok: true, found, ...(found ? { bot: this.botSimulation.view() } : {}) }); }
     if (route === 'POST /v1/po3/config') { const r = this.applyPo3Config(body); return send(r.status, r.body); }
     if (route === 'GET /v1/po3/journal') { const offset = Number(u.searchParams.get('offset') || 0); if (!Number.isInteger(offset) || offset < 0 || offset > 2000) return send(400, { ok: false, error: 'PO3-Seite ungültig' }); return send(200, { ok: true, revision: this.po3.state.revision, total: this.po3.state.journal.length, journal: this.po3.state.journal.slice(offset, offset + 20) }); }
     if (route === 'POST /v1/ki/config') { const r = this.applyKiConfig(body); return send(r.status, r.body); }
@@ -1111,7 +1125,7 @@ export class Watcher {
     if (this.conf?.data) { const c = this.conf.data, items = watchItems(c); this.log(`Übergabe aus dem gespeicherten Zustand (#${c.tag}): ${c.on ? `${plural(items.length, 'Marke', 'Marken')}${items.length ? ` – ${items.slice(0, 6).map(x => x.text).join(' · ')}` : ''}` : 'Übergabe ausgeschaltet'}`);
       for (const a of c.alarms) this.firstLook.add(alarmKey(a)); for (const p of c.positions) for (const ty of ['tp', 'sl']) this.firstLook.add(posKey(p, ty)); }
     await this.listenNow(); // 2.0: HTTPS-Steuerung (nur mit Zugangsschlüssel)
-    const stop = () => { this.stopped = true; this.ki.stop(); this.po3.stop(); clearTimeout(this.saveTimer); this.saveStateNow(); this.server?.close(); process.exit(0); };
+    const stop = () => { this.stopped = true; this.ki.stop(); this.po3.stop(); this.botSimulation.stop(); clearTimeout(this.saveTimer); this.saveStateNow(); this.server?.close(); process.exit(0); };
     process.on('SIGTERM', stop); process.on('SIGINT', stop);
     while (!this.stopped) { await this.tick(); await sleep(EVERY.tick); }
   }
