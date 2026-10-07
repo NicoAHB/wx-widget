@@ -80,15 +80,15 @@ const throws = fn => { try { fn(); return false; } catch { return true; } };
   const zero = fixture({ patternWeight: 0 });
   check('W=0 erhält alte Basis, braucht keine Musteranalyse', C.scoreConfluence({ ...zero.input, patterns: null }, zero.p).score === 80);
   for (const [value, expected] of [[69.999, false], [70, true]]) {
-    const p = { ...f.pattern, timeframe: '4h', quality: (value - 68) / 15 * 100 };
+    const p = { ...f.pattern, source: { ...f.pattern.source, timeframe: '4h' }, timeframe: '4h', quality: (value - 68) / 15 * 100 };
     const r = C.scoreConfluence({ ...f.input, patterns: [p] });
     check(`Grenzwert ${value}: keine Rundung vor der Kandidatenprüfung`, near(r.score, value) && r.candidate === expected);
   }
   f.input.base.histogram = [-2, -1, 0, 1, 2]; f.input.base.pivots = dp.map(p => ({ ...p, knownAt: f.input.scope.asOf })); f.input.base.rsiValues[2] = 20; f.input.base.rsiValues[7] = 25;
-  result = C.scoreConfluence({ ...f.input, patterns: [{ ...f.pattern, timeframe: '4h', quality: 100 }] });
+  result = C.scoreConfluence({ ...f.input, patterns: [{ ...f.pattern, source: { ...f.pattern.source, timeframe: '4h' }, timeframe: '4h', quality: 100 }] });
   check('Alle Maxima: 100 Punkte, niemals 115', result.baseScore === 100 && result.score === 100);
   f.input.base.ema50 = 101; f.input.base.ema200 = 110; f.input.context.ema50 = 101; f.input.context.ema200 = 110; f.input.base.zones = [{ price: 99, direction: 1, confirmed: true, knownAt: f.input.scope.asOf }];
-  const blocked = C.scoreConfluence({ ...f.input, patterns: [{ ...f.pattern, timeframe: '4h', quality: 100 }] });
+  const blocked = C.scoreConfluence({ ...f.input, patterns: [{ ...f.pattern, source: { ...f.pattern.source, timeframe: '4h' }, timeframe: '4h', quality: 100 }] });
   check('Harte Gegen-Trend-Sperre trotz Score über 70', blocked.score > 70 && blocked.blocked && !blocked.candidate && blocked.status === 'gesperrt');
   f = fixture(); const short = structuredClone(f.input); short.direction = -1; short.base.ema50 = 101; short.base.ema200 = 110; short.context.ema50 = 101; short.context.ema200 = 110; short.base.rsiValues[8] = 61; short.base.rsiValues[9] = 60; short.patterns[0].direction = -1;
   check('Long/Short spiegelbildliche Basis und Muster', near(C.scoreConfluence(short).score, 78.8));
@@ -102,6 +102,8 @@ const throws = fn => { try { fn(); return false; } catch { return true; } };
   check('Fehlende neueste geschlossene Basiskerze bleibt nicht bewertbar', C.scoreConfluence(stale).score === null);
   const wrongSource = structuredClone(f.input); wrongSource.context.source.venue = 'binance';
   check('Bitget und Binance werden nicht gemischt', C.scoreConfluence(wrongSource).score === null);
+  const wrongPattern = structuredClone(f.input); wrongPattern.patterns[0].source.venue = 'binance';
+  check('Auch Musterquelle muss zum Bitget-Signal gehören', C.scoreConfluence(wrongPattern).score === null);
   const wrongRevision = structuredClone(f.input); wrongRevision.funding.source.settingsRevision++;
   check('Abweichende Parameterrevision gesperrt', C.scoreConfluence(wrongRevision).score === null);
   const wrongParams = structuredClone(f.input); wrongParams.context.source.parametersKey = C.parametersKey({ feeEntry: .001 });

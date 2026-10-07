@@ -78,6 +78,7 @@ export function scoreConfluence(input, config = {}) {
   const [rsiPrevious, rsiNow] = base.rsiValues.slice(-2), averageVolume = base.previousVolumes.reduce((a, b) => a + b, 0) / 20;
   const rsiInRange = direction === 1 ? rsiNow >= 30 && rsiNow <= 45 && rsiNow > rsiPrevious : rsiNow >= 55 && rsiNow <= 70 && rsiNow < rsiPrevious;
   const points = { trend: baseTrend === direction ? (contextTrend === direction ? 25 : 10) : 0, setup: zone ? 20 : 0, rsi: (rsiInRange ? 15 : 0) + (divergence ? 5 : 0), macd: macdOK ? 15 : 0, volume: base.volume > 1.5 * averageVolume ? 10 : 0, funding: direction * rate < .0005 ? 10 : 0 };
+  if (p.patternWeight > 0 && Array.isArray(patterns) && patterns.some(x => x && x.knownAt <= scope.asOf && x.closedAt <= scope.asOf && x.provisional !== true && !sameSource(x.source, scope, x.timeframe === '1D' ? '1d' : x.timeframe === '1W' ? '1w' : x.timeframe, key))) return { ...unavailable('Muster stammen aus einer anderen Quelle oder Parameterrevision'), score: null, blocked, points };
   const baseScore = Object.values(points).reduce((a, b) => a + b, 0), combined = patternScore({ baseScore, weight: p.patternWeight, direction, patterns, asOf: scope.asOf });
   if (combined.score === null) return { ...combined, blocked, points, baseScore };
   const score = combined.score;

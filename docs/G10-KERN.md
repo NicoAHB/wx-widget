@@ -13,7 +13,7 @@ bleibt erhalten. Bitget-Feed, Karten, Backtest-Worker und Telegram folgen in G10
 
 Keine Netzwerk-, DOM-, Speicher-, Timer- oder Sendeseiteneffekte. Dieselben ES-Module werden in Node, Browser und Browser-Worker getestet;
 Adapter müssen sie später tatsächlich importieren. Der Service Worker speichert alle drei Dateien für den Offline-Import.
-Tests: `unit-confluence.js` (129 feste Fachprüfungen), `m61.js` (8 Laufzeit-/Offlineprüfungen). `tests/fixtures/` enthält ausschließlich Testdaten.
+Tests: `unit-confluence.js` (130 feste Fachprüfungen), `m61.js` (8 Laufzeit-/Offlineprüfungen). `tests/fixtures/` enthält ausschließlich Testdaten.
 
 ## Eingangsvertrag und Zustand
 
@@ -23,7 +23,7 @@ Tests: `unit-confluence.js` (129 feste Fachprüfungen), `m61.js` (8 Laufzeit-/Of
 - `scope`: Bitget, `USDT-FUTURES`, Instrument, `USDT`, Basis-/Kontextintervall, Horizont `short/long`, Modell `cf-1`,
   `settingsRevision`, `asOf`, explizite `maxHoldMs`, `slippageBps`, `indicatorAnchors:{base,context}`. Kein erfundener Einsatz/Haltezeit.
   Signalintervalle 1h/4h/1d; Kontext höher als Basis, Standardpaare laut Vorgabe 1h/4h und 4h/1d.
-- Basis-/Kontext-/Fundingquelle tragen diesen Kontext, eigenes Intervall und `parametersKey(settings)`. Abweichende Börse, Coin,
+- Basis-/Kontext-/Funding- und Musterquelle tragen diesen Kontext, eigenes Intervall und `parametersKey(settings)`. Abweichende Börse, Coin,
   Einstellungen, Revision, Horizont, Haltedauer, Slippage oder Startanker verhindern Bewertung. Bestätigte Revision später mit Oracle
   synchronisieren; der lokale Kernaufruf ersetzt keine Serverbestätigung.
 - `createIndicatorState({time,periodMs})`, dann `advanceIndicators(state,candles,asOf)`: neuer Zustand/Werte, unveränderte Eingänge,
