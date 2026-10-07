@@ -18,6 +18,9 @@ Automatische Tests für die App (`weather-widget-v2.html`) und den 24/7-Dienst (
 | `node m61.js` | G10(a): Node/Browser/Worker, Versionsgleichheit, echter Offline-Import | Sekunden |
 | `node unit-bitget.js` | G10(b): 55 öffentliche Quellen-/Zeit-/Zustands-/Fehlerprüfungen | Sekunden |
 | `node m62.js` | G10(b): Adapter-Parität, echtes Browser-fetch mit lokalen Antworten, Offline/Netzausfall | Sekunden |
+| `node unit-bitget-patterns.js` | G10(c): unveränderte G09-Engine auf Bitget, Quellenbindung, Kenntnis-/Bestätigungszeit (20 Fälle) | Sekunden |
+| `node unit-confluence-live.js` | G10(c): Long/Short, Referenzkurs, Anker, Kostenannahmen, Größe, Divergenz und Ablauf (41 Fälle) | Sekunden |
+| `node m63.js` | G10(c): echter App-Worker, Reiter, Badge, Infobutton, Bitget-Chart, Tabs, IndexedDB und Offline-Cache | Sekunden |
 
 Ausgabe je Test: `✓`/`✗` je Prüfung und am Ende `n/m bestanden`.
 
@@ -35,6 +38,7 @@ Ausgabe je Test: `✓`/`✗` je Prüfung und am Ende `n/m bestanden`.
 - **G09 C6b:** `unit-247e.js` prüft Engine-Gleichheit, alle 19 Formationen, Dienstversand ohne App, Fall-ID, Revision, Epoche, Prozessabbruch und Neustart. `m60.js` prüft bewusste HTTPS-Übernahme, Konflikt/Retry, geheimnisfreie Metadaten und keinen Ersatzversand. Beide stehen vorn in `run-all.sh`.
 - **G10(a):** `unit-confluence.js` importiert direkt die drei Module in `shared/` (keine Rechenkopie): MACD/Fortsetzung, Pivot-Kenntniszeit, Divergenz-Alter ab Bestätigung, 69,999/70, Sperren, Mustergewicht, Risiko/Kosten/Cross, 29/30 Fälle und Timeouts. `m61.js` vergleicht denselben Kern in Node, Browser und Browser-Worker und prüft frischen Offline-Import. `fixtures/confluence*.mjs` sind ausschließlich Testdaten. Beide Tests stehen vorn im Gesamtlauf.
 - **G10(b):** `unit-bitget.js` importiert den tatsächlichen öffentlichen Adapter; feste UTC-/Funding-/Kontraktantworten, exklusive Seitengrenzen wie live geprüft, begrenzte Jobs, JSON-Fortsetzung, Quellen-/Revisionswechsel, Lücken/Konflikte, 429/Timeout/Abbruch. `m62.js` prüft tatsächliche Modulimporte in Node/Browser/Worker und Browser-fetch mit lokal abgefangenen Bitget-URLs; keine echte Browser-/CORS-Abnahme. Separate öffentliche Live-Prüfung und Grenzen in `docs/G10-BITGET.md`.
+- **G10(c):** `unit-bitget-patterns.js` nutzt die unveränderte echte G09-Engine; `unit-confluence-live.js` prüft Long/Short, öffentliche Tickerzeiten und explizite Szenarien. `m63.js` startet den tatsächlichen App-Worker mit lokalen Bitget-Antworten und echten EMA-/MACD-Werten; Node/Browser/Worker-Parität, Reiter/Badge/Info/Chart, gleiche Karte bei Wiederholung und zweitem Tab, IndexedDB, 320/390px, Netzausfall und frischer Offline-Appstart. Keine echten Nachrichten/Orders/privaten Daten. 94 Zielbefehle im seriellen Gesamtlauf; Vertrag in `docs/G10-KARTEN.md`.
 - **Oberfläche:** `m*.js`, `ui.js`, `functional.js`, `smoke.js`, `visual.js`, `statuscheck.js` laufen im Browser.
 - **Erzeugte Dateien:** Zwischenstände (`*.json`) und Bilder (`*.png`) entstehen beim Lauf und sind von git ausgenommen (`.gitignore`).
 

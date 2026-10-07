@@ -1,0 +1,98 @@
+// G10(c): Node/Browser/Worker, echter öffentlicher Transport mit lokalen Antworten, Karten/Badge/Info/Chart.
+const path = require('path'), { pathToFileURL } = require('url'), h = require('./harness');
+let pass = 0, fail = 0;
+const check = (name, ok, info = '') => { ok ? pass++ : fail++; console.log(`${ok ? '✓' : '✗'} ${name}${info ? ' — ' + String(info).slice(0, 600) : ''}`); };
+(async () => {
+  let browser;
+  try {
+    const f = await import(pathToFileURL(path.join(__dirname, 'fixtures/confluence-live.mjs')));
+    const L = await import(pathToFileURL(path.join(__dirname, '../shared/confluence-live.mjs'))), expected = L.evaluateLive(f.liveFixture());
+    await h.setup(); browser = await h.launch(); const ctx = await browser.newContext({ viewport: { width: 1440, height: 1000 }, timezoneId: 'Europe/Berlin' });
+    const page = await ctx.newPage(), errors = [], calls = []; page.on('pageerror', e => errors.push(e.message));
+    const start = Date.now(); let apiFail = false;
+    await ctx.route('https://api.bitget.com/**', async route => {
+      const req = route.request(); calls.push({ url: req.url(), method: req.method(), headers: req.headers(), body: req.postData(), at: Date.now() });
+      if (apiFail) return route.abort();
+      await route.fulfill({ status: 200, headers: { 'access-control-allow-origin': '*' }, contentType: 'application/json', body: JSON.stringify(f.liveBitgetResponse(req.url(), Date.now(), start)) });
+    });
+    await page.goto(h.URL_BASE + '/weather-widget-v2.html'); await page.waitForFunction(() => !!window.__g10 && __g05.state.candles.length);
+    const actual = await page.evaluate(async () => { const f = await import('/tests/fixtures/confluence-live.mjs'); return (await import('/shared/confluence-live.mjs')).evaluateLive(f.liveFixture()); });
+    check('Node/Browser: derselbe tatsächliche Karten-/Muster-/Kostenkern mit identischen Snapshots', JSON.stringify(actual) === JSON.stringify(expected));
+    const worker = await page.evaluate(() => new Promise((resolve, reject) => { const w = new Worker('/tests/fixtures/confluence-live-worker.mjs', { type: 'module' });
+      w.onmessage = e => { w.terminate(); resolve(e.data); }; w.onerror = e => { w.terminate(); reject(new Error(e.message)); }; }));
+    check('Node/Browser-Worker: reine Kartenlogik exakt gleich', JSON.stringify(worker) === JSON.stringify(expected));
+    check('Start ohne automatische Bitget-Abrufe; Preisalarme und Linien AUS', !calls.length && await page.evaluate(() => document.getElementById('ki-price-tab').getAttribute('aria-selected') === 'true' && !document.getElementById('ki-chart-toggle').checked));
+    await page.click('#ki-signal-tab');
+    check('Reiter KI-Signale, freier Einsatz und Slippage zunächst leer; Regelentscheidungen sichtbar', await page.evaluate(() => !document.getElementById('ki-signal-panel').hidden && !document.getElementById('ki-marginEUR').value && !document.getElementById('ki-slippageBps').value && !document.getElementById('ki-fundingMode').value && !document.getElementById('ki-anchorPolicy').value));
+    await page.click('#ki-save');
+    check('Leere Eingaben geben kein optimistisches Signal und starten keinen Abruf', !calls.length && /bewusst eingeben/.test(await page.textContent('#ki-status')));
+    await page.evaluate(() => { __g05.state.watch = ['BTC']; });
+    await page.fill('#ki-slippageBps', '0'); await page.selectOption('#ki-fundingMode', 'current-rate'); await page.selectOption('#ki-anchorPolicy', 'nearest'); await page.fill('#ki-patternWeight', '0'); await page.uncheck('#ki-longOn');
+    await page.click('#ki-save'); await page.click('#ki-price-tab');
+    await page.waitForFunction(() => __g10.state.cards.length === 1 && !__g10.state.busy, null, { timeout: 25000 });
+    const first = await page.evaluate(() => ({ card: __g10.state.cards[0], source: __g05.state.source, positions: __g05.state.positions.length, demo: __g05.state.demoPositions.length,
+      badge: document.getElementById('ki-unread').textContent, badgeHidden: document.getElementById('ki-unread').hidden, worker: !!__g10.state.worker,
+      privateStorage: Object.keys(localStorage).filter(k => k.startsWith('scalpdesk.idb.ki.')) }));
+    check('Echter App-Worker lädt Bitget-Kerzen, berechnet EMA/MACD und erzeugt einen geprüften 80-Punkte-Kandidaten', first.worker && first.card.score.score === 80 && first.card.eligible && first.card.scope.venue === 'bitget', first.card.score.score);
+    check('Neue Karte am Glockenbutton ungelesen; keine echte/demo Position erzeugt', first.badge === '1' && !first.badgeHidden && !first.card.read && !first.positions && !first.demo);
+    check('Karten und öffentliche Kerzenzustände nur IndexedDB, kein großer localStorage-Spiegel', !first.privateStorage.length && await page.evaluate(() => new Promise((resolve, reject) => { const open = indexedDB.open('scalpdesk'); open.onsuccess = () => { const db = open.result, tx = db.transaction('kv', 'readonly'), r = tx.objectStore('kv').get('scalpdesk.idb.ki.cards.v1'); r.onsuccess = () => resolve(r.result?.length === 1); tx.oncomplete = () => db.close(); }; open.onerror = () => reject(open.error); })));
+    check('Alle Abrufe öffentliche GETs ohne Konto/Orders/Zugangsdaten', calls.length >= 6 && calls.every(c => c.method === 'GET' && !c.body && !c.headers.authorization && !c.headers.cookie && new URL(c.url).pathname.startsWith('/api/v2/mix/market/')));
+    await page.click('#ki-signal-tab');
+    check('Öffnen löscht Badge und markiert dieselbe gespeicherte Karte als gelesen', await page.evaluate(() => document.getElementById('ki-unread').hidden && __g10.state.cards[0].read));
+    const text = await page.textContent('#ki-list');
+    check('Karte enthält Richtung, Preislevel, Einzelpunkte, Quotenstatus und ehrlichen Cross-Nullstatus', /BTC.*Long.*kurz/.test(text) && /Entry.*Stop-Loss.*Take-Profit/.test(text) && /Trend.*Setup-Zone.*RSI.*MACD.*Volumen.*Funding/.test(text) && /Cross-Liquidationspreis: nicht verfügbar/.test(text) && /90 Tage.*noch nicht ausgewertet.*2 Jahre.*noch nicht ausgewertet/.test(text));
+    await page.locator('#ki-list .ki-info > summary').first().click();
+    check('Sichtbarer Infobutton erklärt Bestätigung, drei Kerzen, Restzeit und Handlung ohne Erfolgswahrscheinlichkeit', /keine Erfolgswahrscheinlichkeit/i.test(text) && /Pivot-Kerze schließt 12:00.*14:00.*17:00/.test(text) && await page.locator('#ki-list .ki-info').first().evaluate(d => d.open));
+    check('Telegram-Schalter in Reiter und Einstellungen bleibt ehrlich deaktiviert bis G10(e)', await page.evaluate(() => document.getElementById('ki-telegram').disabled && document.getElementById('ki-settings-telegram').disabled));
+    const pattern = page.locator('#ki-list .ki-patterns button').first();
+    if (await pattern.count()) {
+      await pattern.click();
+      check('Musterchip verwendet dasselbe G09-Info-Sheet mit Bitget-Quelle und ohne Binance-Quoten', await page.evaluate(() => document.getElementById('pat-info').open && /Bitget USDT-Futures/.test(document.getElementById('pat-info-body').textContent) && !!document.querySelector('#pat-info-body svg.pat-svg') && !document.querySelector('#pat-info-body .pk')));
+      await page.evaluate(() => document.getElementById('pat-info').close());
+    } else check('Musterchip verwendet dasselbe G09-Info-Sheet mit Bitget-Quelle und ohne Binance-Quoten', false, 'Fester Testfall muss mindestens ein neutrales Muster enthalten.');
+    await page.locator('#ki-list button').filter({ hasText: 'Im Chart zeigen' }).first().click();
+    check('Im Chart zeigen: eigener Coin/Markt Bitget, genau drei Randlinien; bestehende Binance-Quelle erhalten', await page.evaluate(() => !document.getElementById('ki-chart-sec').hidden && document.getElementById('chart-sec').hidden && /BTC.*Bitget Futures.*1h/.test(document.getElementById('ki-chart-title').textContent) && document.querySelectorAll('#ki-chart .ki-level').length === 3 && __g05.state.source === 'spot'));
+    await page.uncheck('#ki-chart-lines'); check('KI-Signal AUS entfernt alle drei zusätzlichen Linien', await page.locator('#ki-chart .ki-level').count() === 0);
+    await page.check('#ki-chart-lines'); check('KI-Signal AN zeigt Entry/rote SL/grüne TP ohne Textboxen', await page.locator('#ki-chart .ki-level').count() === 3 && await page.locator('#ki-chart .ki-sl').count() === 1 && await page.locator('#ki-chart .ki-tp').count() === 1 && await page.locator('#ki-chart rect.ki-textbox').count() === 0);
+    const followed = await page.evaluate(() => { const cards = __g10.state.cards, next = structuredClone(cards[0]); next.id += '|Render-Abnahme'; next.levels.entry += 1; next.levels.sl += 1; next.levels.tp += 1; next.decisionAt += 1000;
+      __g10.state.cards = [next, ...cards]; __g10.render(); const ok = __g10.state.chartCard.id === next.id && document.querySelector('#ki-chart text').textContent.includes('125');
+      __g10.state.cards = cards; __g10.render(); return ok; });
+    check('Eingeschalteter KI-Schalter folgt der neuesten passenden Karte; explizite Kartenauswahl bleibt getrennt', followed);
+    await page.click('#ki-chart-back');
+    check('Zurück zum vorhandenen Chart setzt den KI-Schalter AUS', await page.evaluate(() => document.getElementById('ki-chart-sec').hidden && !document.getElementById('chart-sec').hidden && !document.getElementById('ki-chart-toggle').checked));
+    const oldID = first.card.id; await page.click('#ki-refresh');
+    await page.waitForFunction(n => !__g10.state.busy && __g10.state.serial > n, await page.evaluate(() => __g10.state.serial - 1), { timeout: 25000 });
+    check('Wiederholte Prüfung derselben Basiskerze: dieselbe Karte, kein neuer Badge', await page.evaluate(id => __g10.state.cards.length === 1 && __g10.state.cards[0].id === id && document.getElementById('ki-unread').hidden, oldID));
+    const second = await ctx.newPage(); second.on('pageerror', e => errors.push(e.message));
+    await second.goto(h.URL_BASE + '/weather-widget-v2.html'); await second.waitForFunction(() => !!window.__g10 && __g05.state.candles.length);
+    await second.evaluate(() => { __g05.state.watch = ['BTC']; __g10.state.due.clear(); __g10.kick(); });
+    await second.waitForFunction(() => __g10.state.current.size > 0 && !__g10.state.busy, null, { timeout: 25000 });
+    check('Zweiter Tab übernimmt denselben festen Anker und erzeugt kein zweites Ereignis', await second.evaluate(id => __g10.state.cards.length === 1 && __g10.state.cards[0].id === id && __g10.state.cards[0].read, oldID));
+    await second.evaluate(() => __g10.stop()); await second.close();
+    await page.click('#ki-stop');
+    const cutoff = calls.length; await page.waitForTimeout(350);
+    check('Pause stoppt neue Abrufe und Worker; sichtbarer Ablauf/Preisalarme bleiben nutzbar', calls.length === cutoff && await page.evaluate(() => !__g10.state.cfg.on && !__g10.state.worker && !!document.getElementById('alarm-form')));
+    await page.evaluate(() => { const c = __g10.state.cards[0]; c.decisionAt = Date.now() - 3600e3 - 1; c.expiresAt = Date.now() - 1; __g10.render(); });
+    check('Abgelaufene Karte grau; KI-Chip Halten und keine automatische Positionsschließung', await page.evaluate(() => !!document.querySelector('#ki-list .ki-card.expired .ki-muted') && document.getElementById('ki-hold-chip').textContent === 'KI: Halten' && !__g05.state.positions.length));
+    for (const width of [390, 320]) { await page.setViewportSize({ width, height: 844 }); await page.evaluate(() => document.getElementById('ki-settings').open = true); await page.waitForTimeout(100);
+      check(`Reiter, Karten und Einstellungsfelder bei ${width}px ohne Seitenüberlauf`, await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)); }
+    await page.evaluate(() => { document.documentElement.dataset.theme = 'light'; });
+    check('Helles Farbschema behält unterscheidbare Hinweis-/Richtungsfarben', await page.evaluate(() => getComputedStyle(document.querySelector('.ki-muted')).color !== getComputedStyle(document.querySelector('.ki-positive')).color));
+    const frameKey = await page.evaluate(() => Object.keys(__g10.state.data)[0]);
+    await page.reload(); await page.waitForFunction(() => !!window.__g10 && __g05.state.candles.length);
+    check('Neuladen erhält immutable gelesene Karte und feste Indikatoranker', await page.evaluate(key => __g10.state.cards.length === 1 && __g10.state.cards[0].read && !!__g10.state.data[key]?.anchors, frameKey));
+    apiFail = true; await page.click('#ki-signal-tab'); await page.evaluate(() => document.getElementById('ki-settings').open = true); await page.click('#ki-save');
+    await page.waitForFunction(() => /nicht verfügbar|fehlgeschlagen|Netzwerk/.test(document.getElementById('ki-status').textContent), null, { timeout: 15000 });
+    check('Bitget-Netzausfall gibt keine neue Karte frei und ersetzt nichts durch Binance', await page.evaluate(() => __g10.state.cards.length === 1 && __g05.state.source === 'spot'));
+    await page.click('#ki-stop');
+    await page.evaluate(async () => { await navigator.serviceWorker.ready; });
+    check('Offline-Cache enthält tatsächlichen Worker, Livekern und unveränderte Musterengine', await page.evaluate(async () => { const cache = await caches.open((await caches.keys()).find(k => k.startsWith('scalpdesk-'))); return (await Promise.all(['/shared/confluence-worker.mjs', '/shared/confluence-live.mjs', '/shared/bitget-patterns.mjs', '/server/pattern-engine.mjs'].map(p => cache.match(p)))).every(Boolean); }));
+    await ctx.setOffline(true); const offline = await ctx.newPage(); offline.on('pageerror', e => errors.push(e.message));
+    await offline.goto(h.URL_BASE + '/weather-widget-v2.html'); await offline.waitForFunction(() => !!window.__g10, null, { timeout: 15000 });
+    await offline.evaluate(() => __g10.tab(true));
+    check('Frischer Offline-Appstart importiert alle Module und zeigt gespeicherte Karten ohne neue Live-Freigabe', await offline.evaluate(() => __g10.state.cards.length === 1 && !__g10.state.cfg.on && document.querySelectorAll('#ki-list .ki-card').length === 1));
+    await offline.close(); await ctx.setOffline(false);
+    check('Keine JavaScript-Fehler in der App', !errors.length, errors.join(' | ')); await ctx.close();
+  } finally { await browser?.close(); await h.teardown(); }
+  console.log(`\n${pass}/${pass + fail} bestanden`); process.exitCode = fail ? 1 : 0;
+})().catch(e => { console.error(e); process.exitCode = 1; });
