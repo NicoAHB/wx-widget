@@ -46,9 +46,11 @@ import os from 'node:os';
 import path from 'node:path';
 import http from 'node:http';
 import crypto from 'node:crypto';
+import { Buffer } from 'node:buffer';
 import { fileURLToPath } from 'node:url';
+import { patternConfig, patternCandles, patternCases, patternFresh, patternText, patternEnd } from './pattern-monitor.mjs';
 
-export const VERSION = '2.3.0';
+export const VERSION = '2.4.0';
 const E = process.env;
 // Adressen (für Tests über Umgebungsvariablen änderbar)
 export const API = {
@@ -297,7 +299,9 @@ export function readServerConfig(file) {
   if (!origins.length || origins.some(o => !ORIGIN_RE.test(o))) throw new Error(`Herkunft der App (origin) in ${file} hat das falsche Format (z. B. ${APP_ORIGIN}).`);
   if (!LISTEN_RE.test(listen)) throw new Error(`Adresse „listen“ in ${file} muss lokal sein (z. B. ${LISTEN}).`);
   if (host && !/^[a-z0-9.-]{3,253}$/.test(host)) throw new Error(`Öffentliche Adresse (host) in ${file} hat das falsche Format.`);
-  return { token, chat, discord, key, origins, listen, host };
+  const patternToken = String(j.patternToken || '').trim();
+  if (patternToken && !TOKEN_RE.test(patternToken)) throw new Error(`Chartmuster-Bot in ${file} hat das falsche Format.`);
+  return { token, chat, discord, key, origins, listen, host, patternToken };
 }
 
 // ---------- 2.0 (G05): Ziel-Schalter und Ereignis-Freigaben (rein, ohne Netz – testbar) ----------
@@ -308,7 +312,7 @@ export const CL_MS = { '5m': 3e5, '15m': 9e5, '1h': 36e5, '4h': 144e5 };   // 2.
 // letzte abgeschlossene Kerze (Schlusszeit vor jetzt); Treffer nur, wenn sie nach dem Scharfschalten schloss und ihr Schlusskurs die Marke erreicht
 export function closeHit(a, rows, armedAt, now) { const c = candles(rows).filter(x => x.T < now).at(-1); return c ? { price: c.c, hit: c.T > armedAt && (a.dir === 'below' ? c.c <= a.price : c.c >= a.price) } : null; }   // 2.2.0 (G09 C6a): Chartmuster
 export const TARGET_NAME = { 'course-alert': 'Kursalarm', backup: 'Sicherung', trades: 'Trades', patterns: 'Chartmuster' };
-const CMD_RE = /^[A-Za-z0-9_-]{8,64}$/, EV_RE = /^[A-Za-z0-9_.:-]{6,140}$/, SENDER_RE = /^(oracle|app:[a-z0-9]{4,24})$/;
+const CMD_RE = /^[A-Za-z0-9_-]{8,64}$/, EV_RE = /^[A-Za-z0-9_.:|\-]{6,204}$/, SENDER_RE = /^(oracle|app:[a-z0-9]{4,24})$/;
 export const EV_FINAL = ['confirmed', 'unconfirmed', 'failed', 'discarded'], EV_ORDER = { reserved: 0, sending: 1, confirmed: 2, unconfirmed: 2, failed: 2, discarded: 2 };
 export const GRANT_WAIT = 5 * 60e3, EV_KEEP = 14 * 864e5, CMD_KEEP = 7 * 864e5, CMD_MAX = 300;
 // Episoden wiederkehrender Marken (Stop/Ziel): eine neue Episode erst, wenn der Kurs die Marke um mindestens EP_HYST (0,1 %)
@@ -460,8 +464,9 @@ export class PatternArchive {
   }
 }
 export class Watcher {
-  constructor({ token, chat, discord = '', key = '', origins = [APP_ORIGIN], listen = LISTEN, host = '', statePath = '', now = () => Date.now(), log = (...a) => console.log(...a) }) {
-    Object.assign(this, { token, chat, discord, key, origins, listen, host, statePath, now, log });
+  constructor({ token, chat, discord = '', patternToken = '', key = '', origins = [APP_ORIGIN], listen = LISTEN, host = '', statePath = '', now = () => Date.now(), log = (...a) => console.log(...a), patternFetch = klines }) {
+    Object.assign(this, { token, chat, discord, patternToken, key, origins, listen, host, statePath, now, log, patternFetch });
+    this.patternWatch = { rev: 0, since: 0, config: null }; this.patternProgress = new Map(); this.patternBusy = false;
     // 2.0 (G05): Ziel-Schalter (Revision, Epoche, Einschaltzeit), ausgeführte Aufträge, Ereignis-Freigaben, Episoden
     this.pol = policyNew(now()); this.cmds = []; this.evs = {}; this.eps = {}; this.server = null; this.authFail = { n: 0, t: 0 };
     this.conf = null; this.fired = {}; this.seen = new Map(); this.rearm = new Map(); this.lastCheck = new Map(); this.prevCandle = new Map();
@@ -493,16 +498,19 @@ export class Watcher {
         // 2.0: Schalter, Aufträge, Freigaben und Episoden überstehen einen Neustart (1.4-Zustand: alle Ziele an, Revision 0)
         this.pol = policyLoad(s.pol, this.now()); if (Array.isArray(s.cmds)) this.cmds = s.cmds.filter(c => c && typeof c.id === 'string' && Number.isFinite(c.at));
         if (s.evs && typeof s.evs === 'object') this.evs = s.evs; if (s.eps && typeof s.eps === 'object') this.eps = s.eps; }
+      if (s?.patternWatch?.config) this.patternWatch = { rev: Number(s.patternWatch.rev) || 0, since: Number(s.patternWatch.since) || 0, config: patternConfig(s.patternWatch.config) };
+      // 2.4.0: Prozessabbruch während eines Muster-POSTs ist unklare Zustellung, niemals erneut senden.
+      this.out = this.out.filter(m => { if (m.target !== 'patterns' || !m.inFlight) return true; if (m.ev) evReport(this.evs, { eventId: m.ev, sender: 'oracle', st: 'unconfirmed', why: 'Neustart während Telegram-Versand' }, this.now()); return false; });
     } catch { /* erster Start oder beschädigt: neu anfangen */ }
   }
-  stateJson() { const c = this.conf; return JSON.stringify({ v: 2, pol: this.pol, cmds: this.cmds, evs: this.evs, eps: this.eps, fired: this.fired, pulse: this.pulseLast, pnl: { st: this.pnlSt, pend: this.pnlPend, fired: this.pnlFired }, out: this.out, last: this.last, sendErr: this.sendErr, conf: c && { msgId: c.msgId, fileUid: c.fileUid, data: c.data }, cal: this.cal && { at: this.calAt, events: this.cal }, hintAt: this.hintAt, ack: this.ackKeys && { keys: this.ackKeys, t: this.ackAt, on: this.ackOn } }); }
+  stateJson() { const c = this.conf; return JSON.stringify({ v: 2, patternWatch: this.patternWatch, pol: this.pol, cmds: this.cmds, evs: this.evs, eps: this.eps, fired: this.fired, pulse: this.pulseLast, pnl: { st: this.pnlSt, pend: this.pnlPend, fired: this.pnlFired }, out: this.out, last: this.last, sendErr: this.sendErr, conf: c && { msgId: c.msgId, fileUid: c.fileUid, data: c.data }, cal: this.cal && { at: this.calAt, events: this.cal }, hintAt: this.hintAt, ack: this.ackKeys && { keys: this.ackKeys, t: this.ackAt, on: this.ackOn } }); }
   saveStateNow() {
-    if (!this.statePath) return;
-    try { fs.mkdirSync(path.dirname(this.statePath), { recursive: true }); const tmp = this.statePath + '.tmp'; fs.writeFileSync(tmp, this.stateJson()); fs.renameSync(tmp, this.statePath); }
-    catch (e) { this.log('Zustand nicht gespeichert:', e.message); }
+    if (!this.statePath) return false;
+    try { fs.mkdirSync(path.dirname(this.statePath), { recursive: true }); const tmp = this.statePath + '.tmp'; fs.writeFileSync(tmp, this.stateJson()); fs.renameSync(tmp, this.statePath); return true; }
+    catch (e) { this.log('Zustand nicht gespeichert:', this.secret(e.message)); return false; }
   }
   saveState() { if (!this.statePath) return; clearTimeout(this.saveTimer); this.saveTimer = setTimeout(() => this.saveStateNow(), 1000); }
-  secret(msg) { let m = String(msg).split(this.token).join('<Token>'); if (this.key) m = m.split(this.key).join('<Schlüssel>'); return m; }
+  secret(msg) { let m = String(msg).split(this.token).join('<Token>'); if (this.patternToken) m = m.split(this.patternToken).join('<Muster-Token>'); if (this.key) m = m.split(this.key).join('<Schlüssel>'); return m; }
   // Fehler ins Protokoll – dieselbe Meldung höchstens alle 10 Minuten (sonst schreibt ein Binance-Ausfall alle 15 s eine Zeile)
   note(name, msg) {
     const t = this.now(), m = this.secret(msg), prev = this.errors.get(name);
@@ -510,9 +518,9 @@ export class Watcher {
   }
   clear(name) { if (this.errors.delete(name)) this.log(`${name}: wieder in Ordnung`); }
   // ---- Telegram ----
-  async tg(method, body, timeout = 20000) {
+  async tg(method, body, timeout = 20000, token = this.token) {
     let r;
-    try { r = await fetch(`${API.tg}/bot${this.token}/${method}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body || {}), signal: AbortSignal.timeout(timeout) }); }
+    try { r = await fetch(`${API.tg}/bot${token}/${method}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body || {}), signal: AbortSignal.timeout(timeout) }); }
     // 2.0: lost – die Anfrage kann Telegram erreicht haben, nur die Antwort fehlt (Zeitüberschreitung, Verbindung abgerissen):
     // dann nicht noch einmal senden (sonst womöglich doppelt); sonst (keine Verbindung, Name unbekannt) kam sie nie an
     catch (e) { const why = e.cause?.code || e.name || '', lost = /^(TimeoutError|AbortError|ECONNRESET|EPIPE|UND_ERR_SOCKET|UND_ERR_HEADERS_TIMEOUT|UND_ERR_BODY_TIMEOUT)$/.test(why);
@@ -525,11 +533,11 @@ export class Watcher {
   // Meldung in den Ausgang; sie bleibt dort (auch über Neustarts), bis Telegram sie angenommen hat. label: Art für die Zeile
   // „Zustellung: zuletzt …“, silent: ohne Ton (BTC-Puls nachts)
   // 2.0: target/epoch – Ziel und seine Epoche beim Erzeugen (vor dem Senden erneut geprüft); ev – Ereignis-ID der Freigabe
-  async queue(text, tz, { label = '', silent = false, ev = '' } = {}) {
-    const t = this.now(), tg = this.pol.targets['course-alert'];
+  async queue(text, tz, { label = '', silent = false, ev = '', target = 'course-alert', destination = null } = {}) {
+    const t = this.now(), tg = this.pol.targets[target];
     if (this.key && !tg.on) { this.log(`Nicht gesendet (Ziel Kursalarm ausgeschaltet): ${label || text.split('\n')[0]}`); return; }
-    this.out.push({ id: `${t}-${Math.random().toString(36).slice(2, 7)}`, text, tz, label, silent, at: t, tries: 0, next: 0, err: '', dc: false, target: 'course-alert', epoch: tg.epoch, ...(ev ? { ev } : {}) });
-    this.saveStateNow();
+    this.out.push({ id: `${t}-${Math.random().toString(36).slice(2, 7)}`, text, tz, label, silent, at: t, tries: 0, next: 0, err: '', dc: false, target, epoch: tg.epoch, ...(destination ? { destination, watchRev: this.patternWatch.rev } : {}), ...(ev ? { ev } : {}) });
+    if (!this.saveStateNow() && target === 'patterns') { this.out.pop(); if (ev) this.evSet(ev, 'failed', 'Ausgang nicht dauerhaft gespeichert'); return; }
     await this.deliver();
   }
   // 2.0: Zustand einer eigenen Freigabe fortschreiben (mit Protokollzeile: Ereignis, Ziel, Sender, Zustand)
@@ -539,9 +547,9 @@ export class Watcher {
   }
   evLog(id) { const e = this.evs[id]; if (e) this.log(`Ereignis ${id} · Ziel ${e.target} · Sender ${e.by} · ${ST_NAME[e.st] || e.st}${e.why ? ` (${e.why})` : ''}`); }
   // Eigene Reservierung (der Dienst hat das Ereignis erkannt): nur mit HTTPS-Steuerung – ohne sendet er wie bis 1.4
-  reserveOwn(eventId, label) {
+  reserveOwn(eventId, label, targetId = 'course-alert') {
     if (!this.key) return { grant: true };
-    const r = evReserve(this.evs, this.pol, { eventId, targetId: 'course-alert', sender: 'oracle', label }, this.now());
+    const r = evReserve(this.evs, this.pol, { eventId, targetId, sender: 'oracle', label }, this.now());
     if (r.created) { this.evLog(eventId); this.saveStateNow(); }
     if (!r.body.grant) this.log(`Ereignis ${eventId}: ${r.body.reason === 'off' ? 'Ziel Kursalarm ausgeschaltet – nicht gesendet' : `schon von ${senderName(r.body.holder)} übernommen (${ST_NAME[r.body.st] || r.body.st}) – der Dienst sendet es nicht`}`);
     return r.body;
@@ -551,6 +559,11 @@ export class Watcher {
   // die des Auslösens; kommt sie über 2 Minuten später an, steht das dabei (mit dem Grund: nicht erreichbar, gebremst, abgelehnt).
   // Discord (falls eingerichtet) einmal, gleich beim ersten Versuch.
   async deliver() {
+    if (this.delivering) return this.delivering;
+    this.delivering = this.deliverPending();
+    try { await this.delivering; } finally { this.delivering = null; }
+  }
+  async deliverPending() {
     const t0 = this.now(), old = this.out.filter(m => t0 - m.at > OUT_MAX_AGE);
     if (old.length) { for (const m of old) this.log(`Meldung verworfen (über 24 Stunden nicht zustellbar): ${m.label || m.text.split('\n')[0]}`); this.out = this.out.filter(m => !old.includes(m)); this.saveState(); }
     for (const m of [...this.out]) {
@@ -561,21 +574,24 @@ export class Watcher {
       if (m.ev) this.evSet(m.ev, 'sending');
       const why = !m.code ? 'Telegram war nicht erreichbar' : m.code === 429 ? 'Telegram hatte gebremst' : 'Telegram hatte sie zuerst abgelehnt';
       const late = t - m.at > 120e3, full = `${m.text}\n${timeText(m.at, m.tz, true)} Uhr · 24/7-Dienst${late ? `\n(verspätet zugestellt um ${timeText(t, m.tz)} Uhr – ${why})` : ''}`;
-      if (this.discord && !m.dc) { m.dc = true; await this.discordPost(full); }
+      if (m.target === 'patterns' && (m.watchRev !== this.patternWatch.rev || !this.patternDestination(m.destination))) { this.out = this.out.filter(x => x !== m); if (m.ev) this.evSet(m.ev, 'discarded', 'Musterziel geändert'); this.saveState(); continue; }
+      if (m.target !== 'patterns' && this.discord && !m.dc) { m.dc = true; await this.discordPost(full); }
       try {
-        const sent = await this.tg('sendMessage', { chat_id: this.chat, text: full.slice(0, 4000), link_preview_options: { is_disabled: true }, ...(m.silent ? { disable_notification: true } : {}) });
+        const dest = m.target === 'patterns' ? m.destination : { chat: this.chat }, token = m.target === 'patterns' ? this.patternDestination(dest) : this.token;
+        if (m.target === 'patterns') { m.inFlight = true; if (!this.saveStateNow()) { m.inFlight = false; throw Object.assign(new Error('Muster-Versandstatus nicht dauerhaft gespeichert'), { code: 0 }); } }
+        const sent = await this.tg('sendMessage', { chat_id: dest.chat, ...(dest.thread ? { message_thread_id: dest.thread } : {}), text: full.slice(0, 4000), link_preview_options: { is_disabled: true }, ...(m.silent ? { disable_notification: true } : {}) }, 20000, token);
         this.log(`Telegram gesendet: ${m.label || m.text.split('\n')[0]}${sent?.message_id ? ` (Nachricht #${sent.message_id})` : ''}${m.tries ? ` – nach ${plural(m.tries, 'Fehlversuch', 'Fehlversuchen')}` : ''}`);
         this.out = this.out.filter(x => x !== m); this.last = { t, label: m.label }; if (m.ev) this.evSet(m.ev, 'confirmed');
         if (this.sendErr && !this.out.some(x => x.tries)) { this.log('Telegram: Zustellung wieder in Ordnung'); this.sendErr = null; }
-        this.next.beat = 0; this.saveState(); // Zeile „Zustellung: zuletzt …“ gleich aktualisieren
+        this.next.beat = 0; if (m.target === 'patterns') this.saveStateNow(); else this.saveState(); // Zeile „Zustellung: zuletzt …“ gleich aktualisieren
       } catch (e) {
         // 2.0: Antwort verloren – „Zustellung unbestätigt“, kein blinder zweiter Versuch
-        if (e.lost) { this.out = this.out.filter(x => x !== m); this.log(`Zustellung unbestätigt: ${m.label || m.text.split('\n')[0]} – ${this.secret(e.message)}; kein zweiter Versuch (die Meldung könnte schon angekommen sein)`); if (m.ev) this.evSet(m.ev, 'unconfirmed', 'Telegram-Antwort verloren'); this.saveState(); continue; }
+        if (e.lost) { this.out = this.out.filter(x => x !== m); this.log(`Zustellung unbestätigt: ${m.label || m.text.split('\n')[0]} – ${this.secret(e.message)}; kein zweiter Versuch (die Meldung könnte schon angekommen sein)`); if (m.ev) this.evSet(m.ev, 'unconfirmed', 'Telegram-Antwort verloren'); if (m.target === 'patterns') this.saveStateNow(); else this.saveState(); continue; }
         // endgültig abgelehnt (4xx außer „Too Many Requests“) bleibt wie bisher im Ausgang und wird wiederholt; die Freigabe bleibt „wird gesendet“
         m.tries++; m.code = e.code || 0; m.err = this.secret(e.message).slice(0, 160); m.next = t + (e.code === 429 && e.retry ? e.retry * 1000 : outDelay(m.tries));
         this.sendErr = { since: this.sendErr?.since || t, msg: m.err, code: e.code || 0 };
         this.note('Telegram', `${m.err} – noch nicht zugestellt: ${m.label || m.text.split('\n')[0]}; neuer Versuch in ${Math.round((m.next - t) / 1000)} s`);
-        this.saveState();
+        if (m.target === 'patterns') { m.inFlight = false; this.saveStateNow(); } else this.saveState();
       }
     }
   }
@@ -788,9 +804,61 @@ export class Watcher {
   //   POST /v1/patterns/cases        { cases } → Musterfälle ins Archiv (gleiche ID einmal, Ergebnis angehängt) – 2.1.0 (G09)
   //   GET  /v1/patterns/status       Anzahl, Ergebnisse, Sicherung (geprüft)
   //   GET  /v1/patterns/export       bereinigter Bestand (nur Marktdaten) für Export und Veröffentlichung
+  // ---- 2.4.0 (G09 C6b): bestätigte Vorauswahl, Prüfung je Kerzenschluss, Dienst als Mustersender ----
+  patternDestination(c) {
+    if (!c) return '';
+    return [this.patternToken, this.token].find(token => token && token.split(':')[0] === c.bot) || '';
+  }
+  applyPatternWatch(cmd) {
+    if (!CMD_RE.test(cmd?.commandId)) return { status: 400, body: { ok: false, error: 'Auftrags-ID fehlt.' } };
+    const prior = this.cmds.find(x => x.id === cmd.commandId);
+    if (prior) return { status: prior.status, body: { ...prior.body, repeat: true } };
+    if (cmd.expectedRevision !== this.patternWatch.rev) return { status: 409, body: { ok: false, conflict: true, error: 'Musterliste am Dienst geändert – aktuellen Stand prüfen und erneut bewusst übernehmen.', patternWatch: this.patternWatch } };
+    let config; try { config = patternConfig(cmd.config); } catch (e) { return { status: 400, body: { ok: false, error: e.message } }; }
+    if (!this.patternDestination(config)) return { status: 400, body: { ok: false, error: 'Dieser Muster-Bot ist am Server nicht eingerichtet. Eigenen Token nur dort als patternToken hinterlegen, niemals über die App übertragen.' } };
+    const old = this.patternWatch, changed = JSON.stringify(config) !== JSON.stringify(old.config);
+    this.patternWatch = changed ? { rev: old.rev + 1, since: this.now(), config } : old;
+    const body = { ok: true, commandId: cmd.commandId, patternWatch: this.patternWatch };
+    const commands = [...this.cmds]; this.cmds.push({ id: cmd.commandId, at: this.now(), status: 200, body });
+    while (this.cmds.length > CMD_MAX) this.cmds.shift();
+    if (!this.saveStateNow()) { this.patternWatch = old; this.cmds = commands; return { status: 503, body: { ok: false, error: 'Musterliste nicht dauerhaft gespeichert – bisheriger Stand bleibt.' } }; }
+    if (changed) { this.patternProgress.clear(); this.log(`Chartmuster: Revision ${this.patternWatch.rev}, ${config.items.length} Märkte übernommen (Modell pat-1).`); }
+    return { status: 200, body };
+  }
+  async notifyPattern(c, h) {
+    const cfg = this.patternWatch.config, since = Math.max(this.patternWatch.since, this.pol.targets.patterns.since);
+    if (!this.key || !cfg || !this.patternDestination(cfg)) return { sent: false, reason: 'not-configured' };
+    if (!this.pol.targets.patterns.on || !patternFresh(c, this.now(), since)) return { sent: false, reason: 'off-or-old' };
+    const ev = `pat:${c.id}`, label = `Chartmuster ${coin(c.sym)}`, r = this.reserveOwn(ev, label, 'patterns');
+    if (!r.grant) return { sent: false, reason: 'already-reserved', eventId: ev };
+    if (!this.saveStateNow()) { this.evSet(ev, 'failed', 'Freigabe nicht dauerhaft gespeichert'); return { sent: false, reason: 'storage-error', eventId: ev }; }
+    this.arch?.add([c]);
+    await this.queue(patternText(c, h, this.arch?.export() || []), this.conf?.data?.tz || 'Europe/Berlin', { target: 'patterns', ev, label, destination: { chat: cfg.chat, thread: cfg.thread, bot: cfg.bot } });
+    return { sent: this.evs[ev]?.st === 'confirmed', st: this.evs[ev]?.st, eventId: ev };
+  }
+  async checkPatterns() {
+    if (this.patternBusy || !this.patternWatch.config || !this.pol.targets.patterns.on) return;
+    this.patternBusy = true;
+    const rev = this.patternWatch.rev, epoch = this.pol.targets.patterns.epoch, cfg = this.patternWatch.config;
+    try {
+      // Ein Abruf gleichzeitig; je Markt erst wieder nach dessen nächstem Kerzenschluss, Fehler mit 30 s Pause.
+      for (const item of cfg.items) {
+        const name = `${item.mkt}|${item.sym}|${item.iv}`, progress = this.patternProgress.get(name);
+        if (progress && this.now() < progress.next) continue;
+        try {
+          const rows = await this.patternFetch(item.mkt, item.sym, 541, item.iv), now = this.now();
+          if (rev !== this.patternWatch.rev || epoch !== this.pol.targets.patterns.epoch || !this.pol.targets.patterns.on) break;
+          const k = patternCandles(rows, item.iv, now);
+          if (k.length < 40) throw new Error('Weniger als 40 abgeschlossene Kerzen.');
+          for (const { c, h } of patternCases(k, item, now)) await this.notifyPattern(c, h);
+          this.patternProgress.set(name, { next: patternEnd(patternEnd(k.at(-1).t, item.iv), item.iv) + 2000, at: now }); this.clear(`Chartmuster ${name}`);
+        } catch (e) { this.patternProgress.set(name, { next: this.now() + 30e3 }); this.note(`Chartmuster ${name}`, e.message); }
+      }
+    } finally { this.patternBusy = false; }
+  }
   stateView(days = 3) {
     const t = this.now(), events = Object.entries(this.evs).filter(([, e]) => t - e.at < days * 864e5).sort((a, b) => b[1].at - a[1].at).slice(0, 300).map(([id, e]) => ({ id, ...e }));
-    return { ok: true, v: VERSION, now: t, ...policyView(this.pol), eps: Object.fromEntries(Object.entries(this.eps).map(([b, x]) => [b, x.n])), events };
+    return { ok: true, v: VERSION, now: t, patternWatch: this.patternWatch, ...policyView(this.pol), eps: Object.fromEntries(Object.entries(this.eps).map(([b, x]) => [b, x.n])), events };
   }
   keyOk(h) {
     const a = /^Bearer\s+(\S+)$/.exec(String(h || ''))?.[1] || '', x = crypto.createHash('sha256').update(a).digest(), y = crypto.createHash('sha256').update(this.key).digest();
@@ -823,7 +891,7 @@ export class Watcher {
         if (r.status === 200 && r.body.changed.length) {
           this.log(`Schalter geändert (Auftrag ${body.commandId}, Revision ${before.rev} → ${this.pol.rev}): ${r.body.changed.map(id => `${TARGET_NAME[id]} ${this.pol.targets[id].on ? 'AN' : 'AUS'}`).join(', ')}`);
           // AUS verwirft wartende Meldungen dieses Ziels sofort (geprüft wird ohnehin unmittelbar vor dem Senden)
-          if (!this.pol.targets['course-alert'].on && this.out.length) { for (const m of this.out) { this.log(`Meldung verworfen (Ziel Kursalarm ausgeschaltet): ${m.label || m.text.split('\n')[0]}`); if (m.ev) this.evSet(m.ev, 'discarded', 'Ziel ausgeschaltet'); } this.out = []; }
+          this.out = this.out.filter(m => { if (this.pol.targets[m.target || 'course-alert'].on) return true; this.log(`Meldung verworfen (Ziel ${TARGET_NAME[m.target || 'course-alert']} ausgeschaltet): ${m.label || m.text.split('\n')[0]}`); if (m.ev) this.evSet(m.ev, 'discarded', 'Ziel ausgeschaltet'); return false; });
         } else if (r.status === 409) this.log(`Schalter-Auftrag ${body?.commandId} abgelehnt: Revision ${this.pol.rev}, erwartet ${body?.expectedRevision}`);
         this.saveStateNow(); this.next.beat = 0;
       }
@@ -846,6 +914,12 @@ export class Watcher {
       if (typeof body?.base !== 'string' || !/^[A-Za-z0-9_.:-]{4,120}$/.test(body.base) || !Number.isInteger(body.from)) return send(400, { ok: false, error: 'Marke oder Episode fehlt.' });
       const n = epNext(this.eps, this.evs, body.base, body.from, t); if (n !== body.from) { this.log(`Episode ${body.base}: neue Episode ${n} (von der App gemeldet)`); this.saveStateNow(); }
       return send(200, { ok: true, ep: n });
+    }
+    if (route === 'POST /v1/patterns/watch') { const r = this.applyPatternWatch(body); return send(r.status, r.body); }
+    if (route === 'POST /v1/patterns/notify') {
+      if (body?.expectedRevision !== this.patternWatch.rev) return send(409, { ok: false, error: 'Musterziel am Dienst geändert – aktuellen Stand prüfen.' });
+      if (!patternFresh(body?.c, t, 0)) return send(400, { ok: false, error: 'Kein frischer bestätigter Musterfall.' });
+      return send(200, { ok: true, ...(await this.notifyPattern(body.c, { levels: body.levels || {} })) });
     }
     if (u.pathname.startsWith('/v1/patterns/')) {
       if (!this.arch) return send(503, { ok: false, error: 'Muster-Archiv nicht eingerichtet (kein Zustandsordner).' });
@@ -912,6 +986,8 @@ export class Watcher {
     if (c()?.on && t >= this.next.price) { this.next.price = t + EVERY.price; await run('Kursprüfung', () => this.checkPrices()); if (pulseOn(c())) await run('BTC-Puls', () => this.checkPulse()); } // Abruffehler je Kürzel meldet checkPrices selbst („Kurse“)
     if (c()?.on && Object.keys(this.pnlPend).length) await run('Gewinn/Verlust', () => this.flushPnl()); // erreichte Grenzen nach der Wartezeit
     if (this.out.length) await run('Zustellung', () => this.deliver()); // noch nicht zugestellte Meldungen
+    // Musterhistorien laufen getrennt: ein langsamer Markt darf die bestehenden Kurs-/Stop-Alarme nicht aufhalten.
+    if (this.key && this.patternWatch.config && this.pol.targets.patterns.on) void run('Chartmuster', () => this.checkPatterns());
     const needCal = c()?.on && c().ev.news && c().econ.warn;
     if (needCal && t >= this.next.cal) { this.next.cal = t + 5 * 60e3; await run('Kalender', async () => { await this.loadCalendar(); this.next.cal = t + EVERY.cal; }); } // Fehler: in 5 min erneut
     if (needCal && t >= this.next.econ) { this.next.econ = t + EVERY.econ; await run('Termine', () => this.checkEcon()); }

@@ -9,6 +9,8 @@ cd "$(dirname "$0")"; REPO="$(cd .. && pwd)"
 pass=0; fail=0; ok() { if eval "$2"; then echo "  ✓ $1"; pass=$((pass+1)); else echo "  ✗ $1${3:+ — $3}"; fail=$((fail+1)); fi; }
 T=$(mktemp -d); SHIM=$T/bin; mkdir -p "$SHIM"; export SHIM_LOG=$T/calls.log; : > "$SHIM_LOG"
 for c in systemctl useradd userdel chown journalctl caddy netfilter-persistent; do printf '#!/bin/bash\necho "%s $*" >> "$SHIM_LOG"\nexit 0\n' "$c" > "$SHIM/$c"; done
+# Root-Prüfung ebenso nachbauen: dieser Installer-Test verändert keine echten Benutzer/Dienste und läuft auch als Nicht-root.
+printf '#!/bin/bash\nif [ "$*" = "-u" ]; then echo "${TEST_INSTALLER_UID:-0}"; else exec /usr/bin/id "$@"; fi\n' > "$SHIM/id"
 # 2.0: iptables wie auf Oracle-Ubuntu – die Kette INPUT endet mit REJECT; -C (gibt es die Regel schon?) findet nichts
 printf '#!/bin/bash\necho "iptables $*" >> "$SHIM_LOG"\ncase "$*" in *-S*) echo "-A INPUT -j REJECT --reject-with icmp-host-prohibited";; *-C*) exit 1;; esac\nexit 0\n' > "$SHIM/iptables"
 printf '#!/bin/bash\necho "runuser $*" >> "$SHIM_LOG"\nwhile [ "$1" != "--" ]; do shift; done; shift\nexec "$@"\n' > "$SHIM/runuser"
@@ -23,6 +25,8 @@ mkdir -p "$T/etc" "$T/caddy"; printf ':80 {\n\troot * /usr/share/caddy\n\tfile_s
 export SCALPDESK_CADDYFILE="$T/caddy/Caddyfile" SCALPDESK_HOST=130-61-1-2.sslip.io SCALPDESK_HTTPS_WAIT=1
 TOKEN=123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw
 echo "== Ersteinrichtung"
+TEST_INSTALLER_UID=1000 SCALPDESK_TTY=/nonexistent bash "$REPO/server/install.sh" > "$T/no-root.log" 2>&1; rc=$?
+ok "Ohne nachgebautes Rootrecht wird die echte Root-Prüfung abgelehnt" "[ $rc -ne 0 ] && grep -q 'Bitte mit sudo ausführen' '$T/no-root.log' && [ ! -e '$T/opt/scalpdesk-247.mjs' ]"
 printf 'kein-token\n%s\n987654321\n\n' "$TOKEN" > "$T/answers"
 SCALPDESK_TTY="$T/answers" bash "$REPO/server/install.sh" > "$T/out1.log" 2>&1; rc=$?
 ok "Läuft durch (Exit 0)" "[ $rc -eq 0 ]" "$(tail -5 "$T/out1.log")"
@@ -51,6 +55,7 @@ ok "2.0: Von außen nicht erreichbar → Hinweis auf die Freigabe der Ports in d
 bash "$T/bin-scalpdesk-247" zugang > "$T/zugang.log" 2>&1
 ok "2.0: „scalpdesk-247 zugang“ zeigt Adresse und Zugangsschlüssel für die App" "grep -q '^Adresse: *https://130-61-1-2.sslip.io$' '$T/zugang.log' && grep -q \"^Zugangsschlüssel: *$KEY0\$\" '$T/zugang.log'" "$(cat "$T/zugang.log")"
 echo "== Aktualisieren (Einstellungen bleiben, keine Fragen)"
+ok "2.4: Muster-Engine und Marktvertrag installiert und importierbar" "[ -s '$T/opt/pattern-engine.mjs' ] && [ -s '$T/opt/pattern-monitor.mjs' ] && node --input-type=module -e \"const e=await import('file://$T/opt/pattern-engine.mjs');process.exit(e.patEngine().VER==='pat-1'?0:1)\""
 : > "$SHIM_LOG"; SCALPDESK_TTY=/nonexistent bash "$REPO/server/install.sh" > "$T/out2.log" 2>&1; rc=$?
 ok "Läuft ohne Eingaben durch" "[ $rc -eq 0 ] && grep -q 'Einstellungen aus .* übernommen' '$T/out2.log'" "$(tail -3 "$T/out2.log")"
 ok "2.0: Aktualisieren behält den Zugangsschlüssel; eigene Caddyfile-Zeilen bleiben" "[ \"\$(node -p \"require('$T/etc/scalpdesk-247.json').key\")\" = '$KEY0' ] && grep -c 'import scalpdesk-247.caddy' '$T/caddy/Caddyfile' | grep -q '^1$'"
