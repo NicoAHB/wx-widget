@@ -18,7 +18,7 @@ export function createPo3Stream({ instrument, config, window, anchors, source })
 function addPivot(pool, pivot) { pool.push(pivot); for (const type of ['low', 'high']) { const own = pool.filter(x => x.type === type); for (const old of own.slice(0, -2)) pool.splice(pool.indexOf(old), 1); } }
 function snapshot(stream, tf, context = false) { const s = stream.series[tf], last = s.rows.at(-1), value = s.values.at(-1); return po3Bias({ pivots: context ? s.pivots : s.periodPivots, price: last?.close, ema50: value?.ema50, asOf: last?.end }); }
 function structure(stream, direction) { const pivots = stream.series[stream.config.entry].periodPivots; return { swing: pivots.filter(p => p.type === (direction === 1 ? 'low' : 'high')).at(-1), counter: pivots.filter(p => p.type === (direction === 1 ? 'high' : 'low')).at(-1) }; }
-export function advancePo3Stream(saved, frames, { asOf, window = saved.window, contract, funding = null, sizing = {}, fx = null, journal = [] } = {}) {
+export function advancePo3Stream(saved, frames, { asOf, window = saved.window, contract, funding = null, sizing = {}, fx = null, journal = [], detect = true } = {}) {
   if (saved?.version !== PO3_VERSION || saved.parametersKey !== po3Key(saved.config) || !Number.isSafeInteger(asOf) || !window || window.from >= window.to || window.to > asOf || window.from < saved.window.from) throw new Error('Fremder/beschädigter PO3-Zustand/Zeitfenster');
   const s = clone(saved), p = s.config, records = new Map(journal.map(x => [x.id, clone(x)])), created = [], warnings = [];
   if (window.from !== s.window.from) { if (s.mechanical.box?.from < window.from) s.mechanical = {}; for (const f of Object.values(s.series)) f.periodPivots = f.periodPivots.filter(x => x.time >= window.from); }
@@ -40,7 +40,7 @@ export function advancePo3Stream(saved, frames, { asOf, window = saved.window, c
     const z = po3Fvg(f.rows.slice(-3), { timeframe: tf, atr: value.atr, instrument: s.instrument });
     if (z && !s.zones.some(old => old.id === z.id)) { if (s.zones.length >= PO3_LIMITS.zones) throw new Error('PO3-Zonenspeicher voll; Analyse pausiert, keine Originalfälle gelöscht'); s.zones.push(z); }
     s.lastAt = Math.max(s.lastAt, c.end);
-    if (c.time < window.from || c.end > window.to) continue;
+    if (!detect || c.time < window.from || c.end > window.to) continue;
     const m = s.mechanical;
     if (tf === p.setup) {
       if (!m.setupSweep) { const box = accumulation(before.filter(x => x.time >= window.from), previous?.atr, p), sweep = manipulation(box, c);
@@ -48,12 +48,12 @@ export function advancePo3Stream(saved, frames, { asOf, window = saved.window, c
         if (sweep?.direction) { m.box = { ...box }; m.setupSweep = sweep; m.setupATR = value.atr; } else if (sweep?.ambiguous) warnings.push('Beide Boxseiten gesweept: kein Setup.');
       } else if (!m.zone) { const candidate = po3Fvg(f.rows.slice(-3), { timeframe: tf, atr: value.atr, instrument: s.instrument, after: m.setupSweep.at });
         if (candidate?.direction === m.setupSweep.direction) m.zone = candidate;
-      } else if (!m.retestAt && po3Retest(m.zone, c)) { m.retestAt = c.end; const own = structure(s, m.setupSweep.direction); if (own.swing && own.counter) m.entryStructure = clone(own); }
+      } else if (!m.retestAt && po3Retest(m.zone, c)) { m.retestAt = c.end; const own = structure(s, m.setupSweep.direction); if (own.swing && own.counter) m.entryStructure = { ...clone(own), knownAt: Math.max(own.swing.knownAt, own.counter.knownAt, c.end) }; }
     }
     if (tf !== p.entry || !m.retestAt || c.time < m.retestAt) continue;
     const d = m.setupSweep.direction;
-    if (!m.entryStructure) { const own = structure(s, d); if (own.swing && own.counter) m.entryStructure = clone(own); }
-    if (!m.entryStructure) continue;
+    if (!m.entryStructure) { const own = structure(s, d); if (own.swing && own.counter) m.entryStructure = { ...clone(own), knownAt: Math.max(own.swing.knownAt, own.counter.knownAt, c.end) }; }
+    if (!m.entryStructure || c.time < m.entryStructure.knownAt) continue;
     if (!m.entrySweep) { const pivot = m.entryStructure.swing.price, swept = d === 1 ? c.low < pivot && c.close > pivot : c.high > pivot && c.close < pivot;
       const crossedBoth = c.low < Math.min(pivot, m.entryStructure.counter.price) && c.high > Math.max(pivot, m.entryStructure.counter.price);
       if (swept && !crossedBoth) m.entrySweep = { extreme: d === 1 ? c.low : c.high, time: c.time, at: c.end }; continue;
@@ -75,8 +75,10 @@ export function advancePo3Stream(saved, frames, { asOf, window = saved.window, c
       action: !p.closure ? 'Schließmodell wählen; noch keine Journalsignale.' : !score.eligible ? 'Score unter 70: abwarten.' : levels.status !== 'bereit' ? levels.reason : 'Hypothetischer Preisplan; Ausführung und Cross-Abstand nicht bestätigt.' };
     if (p.closure && score.eligible && levels.status === 'bereit') {
       const own = po3Signal({ instrument: s.instrument, levels, confirmedAt: c.end, sweep: m.entrySweep, setupSweep: m.setupSweep, zone: m.zone, score, box: m.box,
-        source: { ...s.source, origin: fresh ? 'beobachtet' : 'rekonstruiert', observedAt: asOf, priceKnowledge: 'modelliert am Kerzenschluss', dataRevision: s.source.dataRevision, anchors: { ...s.anchors } },
+        source: { ...s.source, origin: (s.source.originPrefix ?? '') + (fresh ? 'beobachtet' : 'rekonstruiert'), observedAt: asOf, priceKnowledge: 'modelliert am Kerzenschluss', dataRevision: s.source.dataRevision, window: { ...s.window }, anchors: { ...s.anchors } },
         sizing: po3Size({ ...sizing, levels, quantityStep: contract?.quantityStep }, p), fx }, p);
+      const selected = [...new Set(s.source.fvgSelected ?? [p.setup, p.bias])], activeZone = s.zones.find(z => z.id === m.zone.id && z.alarmEligible && z.filledAt === null);
+      own.fvgComparison = { definition: 'po3-fvg-1', selected, single: !!activeZone, overlap: selected.length >= 2 ? fvgOverlaps(s.zones, selected).some(z => z.direction === d && m.zone.low < z.high && m.zone.high > z.low) : null };
       if (!records.has(own.id)) { records.set(own.id, own); created.push(own.id); }
     }
     if (contextZones.some(x => x.direction === -d && c.close >= x.low - value.atr && c.close <= x.high + value.atr)) warnings.push('Große Kontext-Gegenzone nahe Entry: Einstieg prüfen.');

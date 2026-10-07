@@ -1,14 +1,23 @@
 // G11: ideale Preisreferenzen; Ergebnisse nach modellierten Gebühren, ausdrücklich vor Funding.
 import { PO3_VERSION, PO3_FRAMES, po3Settings, po3Key } from './po3-core.mjs';
 const clone = x => JSON.parse(JSON.stringify(x));
+export function po3Identity({ instrument, direction, sweep, zone, confirmedAt, source }, config = {}) {
+  const parametersKey = po3Key(config), sourceKey = JSON.stringify([source.venue, source.product, source.dataRevision, source.windowMode ?? null, source.customWindow ?? null, source.fvgSelected ?? null, source.originPrefix ?? '', source.anchors ?? null]);
+  return { parametersKey, sourceKey, id: JSON.stringify([PO3_VERSION, parametersKey, sourceKey, instrument, direction, sweep.time, zone.id, confirmedAt]) };
+}
+export function po3AvailableAt(confirmedAt, source, config) {
+  const p = po3Settings(config), observed = source?.origin?.endsWith('beobachtet') && Number.isSafeInteger(source.observedAt) && source.observedAt >= confirmedAt ? source.observedAt : confirmedAt;
+  // Limit erst nach tatsächlicher Kenntnis; angefangene Minuten beweisen keinen Pfad nach dem Auftrag.
+  return p.entryMode === 'limit' ? Math.ceil(observed / PO3_FRAMES[p.entry]) * PO3_FRAMES[p.entry] : confirmedAt;
+}
 export function po3Signal({ instrument, levels, confirmedAt, sweep, setupSweep, zone, score, box, source, sizing = null, fx = null }, config = {}) {
   const p = po3Settings(config);
   if (levels?.status !== 'bereit' || !p.closure || !score?.eligible || !Number.isSafeInteger(confirmedAt) || confirmedAt < 0 || !/^[A-Z0-9]{2,20}USDT$/.test(instrument || '') || !sweep || !setupSweep || !zone || !source) throw new Error('Vollständiger PO3-Preisplan/Modellwahl fehlt');
-  const parametersKey = po3Key(p), sourceKey = JSON.stringify([source.venue, source.product, source.dataRevision, source.anchors ?? null]);
-  const id = JSON.stringify([PO3_VERSION, parametersKey, sourceKey, instrument, levels.direction, sweep.time, zone.id, confirmedAt]);
+  const availableAt = po3AvailableAt(confirmedAt, source, p);
+  const { parametersKey, sourceKey, id } = po3Identity({ instrument, direction: levels.direction, sweep, zone, confirmedAt, source }, p);
   return { id, strategy: 'po3', modelVersion: PO3_VERSION, instrument, direction: levels.direction, parametersKey, sourceKey, config: { ...p }, source: clone(source),
     score: clone(score), box: clone(box), zone: clone(zone), sweep: clone(sweep), setupSweep: clone(setupSweep), sizing: clone(sizing), fx,
-    plan: { levels: clone(levels), confirmedAt, availableAt: confirmedAt, entryExpiryAt: confirmedAt + p.entryExpiryBars * PO3_FRAMES[p.entry],
+    plan: { levels: clone(levels), confirmedAt, availableAt, entryExpiryAt: availableAt + p.entryExpiryBars * PO3_FRAMES[p.entry],
       maxHoldMs: p.maxHoldMs, entryMode: p.entryMode, closure: p.closure, feeEntry: p.feeEntry, feeExit: p.feeExit, periodMs: PO3_FRAMES[p.entry] },
     tradedByMe: false, status: p.entryMode === 'close' ? 'Offen' : 'Aktiv', costsLabel: 'Nach modellierten Gebühren, vor Funding', fundingComplete: false, completeNet: false };
 }
@@ -64,10 +73,10 @@ function processPo3(signal, rows, asOf, resume) {
   if (s.status === 'Offen' && asOf >= s.entryAt + p.maxHoldMs && cursor < s.entryAt + p.maxHoldMs) { s.dataGap = true; s.needsFrom = cursor; }
   return s;
 }
-export function po3JournalStats(records, { key, sourceKey, from, to, origin, instrument, direction, minimumScore = 0, context } = {}) {
+export function po3JournalStats(records, { key, sourceKey, from, to, origin, instrument, direction, minimumScore = 0, context, fvgMode } = {}) {
   const unique = new Map(), conflicts = new Set();
   for (const s of records) { if (!s?.id) continue; const old = unique.get(s.id); if (old && JSON.stringify(old) !== JSON.stringify(s)) conflicts.add(s.id); else unique.set(s.id, s); }
-  const own = [...unique.values()].filter(s => !conflicts.has(s.id) && s.parametersKey === key && (!sourceKey || s.sourceKey === sourceKey) && s.score.score >= minimumScore && (context === undefined || s.config.contextOn === context) && s.plan.confirmedAt >= from && s.plan.confirmedAt < to && (!origin || s.source.origin === origin)
+  const own = [...unique.values()].filter(s => !conflicts.has(s.id) && s.parametersKey === key && (!sourceKey || s.sourceKey === sourceKey) && (!fvgMode || fvgMode === 'all' || s.fvgComparison?.[fvgMode] === true) && s.score.score >= minimumScore && (context === undefined || s.config.contextOn === context) && s.plan.confirmedAt >= from && s.plan.confirmedAt < to && (!origin || s.source.origin === origin)
     && (!instrument || s.instrument === instrument) && (!direction || s.direction === direction));
   const completed = own.filter(s => s.status === 'Abgeschlossen' && !s.dataGap);
   const n = completed.length, tp1 = completed.filter(s => s.tpsHit.includes(1)).length;

@@ -1,5 +1,6 @@
 // G11: unabhängiges versioniertes Journal, harte Grenzen, atomare Revision, kein stilles Abschneiden.
-import { PO3_VERSION, po3Key } from './po3-core.mjs';
+import { PO3_VERSION, PO3_FRAMES, po3Key } from './po3-core.mjs';
+import { po3Identity, po3AvailableAt } from './po3-simulator.mjs';
 import { PO3_LIMITS } from './po3-stream.mjs';
 export const PO3_DATABASE = 'scalpdesk-po3';
 const bytes = x => new TextEncoder().encode(JSON.stringify(x)).length;
@@ -9,6 +10,11 @@ export function validatePo3Record(x) {
     || !['Aktiv', 'Offen', 'Verfallen', 'Ungültig', 'Abgeschlossen'].includes(x.status) || !Number.isSafeInteger(x.plan?.confirmedAt) || !Array.isArray(x.plan?.levels?.tps) || x.plan.levels.tps.length !== 3
     || ![x.plan.levels.entry, x.plan.levels.sl, ...x.plan.levels.tps].every(v => Number.isFinite(v) && v > 0) || x.completeNet !== false || x.fundingComplete !== false) throw new Error('Ungültiger PO3-Journaldatensatz');
   if (x.modelVersion === PO3_VERSION && x.parametersKey !== po3Key(x.config)) throw new Error('PO3-Parameter widersprechen dem eingefrorenen Modell');
+  if (x.modelVersion === PO3_VERSION) { const identity = po3Identity({ ...x, confirmedAt: x.plan.confirmedAt }, x.config);
+    if (identity.id !== x.id || identity.sourceKey !== x.sourceKey || x.plan.availableAt !== po3AvailableAt(x.plan.confirmedAt, x.source, x.config) || x.plan.closure !== x.config.closure || x.direction !== x.plan.levels.direction
+      || x.plan.entryMode !== x.config.entryMode || x.plan.feeEntry !== x.config.feeEntry || x.plan.feeExit !== x.config.feeExit || x.plan.periodMs !== PO3_FRAMES[x.config.entry]
+      || x.plan.entryExpiryAt !== x.plan.availableAt + x.config.entryExpiryBars * x.plan.periodMs || !(x.plan.levels.risk > 0) || x.score?.eligible !== true || x.score.score < 70 || x.score.score > 100) throw new Error('PO3-ID/Originalplan widersprüchlich');
+  }
   return copy(x);
 }
 export function mergePo3Journal(old, incoming, { update = false } = {}) {

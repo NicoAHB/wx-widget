@@ -36,6 +36,8 @@ const throws = fn => { try { fn(); return false; } catch { return true; } };
   check('Close-Modell prüft Exit erst in Folgekerze und schließt vollständig TP1', S.simulatePo3(full, [c(-1, 100, 110, 90, 100), ...future], at + M).outcome === 'tp1');
   const limit = make({ entryMode: 'limit' }), intrabar = S.simulatePo3(limit, [c(0, 101, 103, 99.5, 102)], at + M);
   check('Intrabar Limit+TP: eröffnet, kein TP derselben Minute', intrabar.status === 'Offen' && intrabar.entryAt === at + M && !intrabar.tpsHit.length);
+  const observed = S.po3Signal({ ...limit, levels: limit.plan.levels, confirmedAt: at, source: { ...limit.source, origin: 'beobachtet', observedAt: at + 30000 } }, limit.config);
+  check('Live-Limit nach tatsächlicher Kenntnis: angefangene Minute kein rückwirkender Fill', observed.plan.availableAt === at + M && S.simulatePo3(observed, [c(0, 100, 103, 98, 102)], at + M).status === 'Aktiv');
   check('Am Open ausführbares Limit erlaubt TP derselben Minute', S.simulatePo3(limit, [c(0, 100, 102.1, 99.5, 102)], at + M).outcome === 'tp1');
   check('Intrabar Limit+SL+TP konservativ SL, kein Vorab-Verwerfen eines möglichen Fills', S.simulatePo3(limit, [c(0, 101, 103, 98, 98.5)], at + M).outcome === 'sl');
   check('Stop-Gap zum schlechteren Open', S.simulatePo3(full, [c(0, 98, 99, 97, 98)], at + M).netR < -2);
