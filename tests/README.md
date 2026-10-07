@@ -66,3 +66,5 @@ Ausgabe je Test: `✓`/`✗` je Prüfung und am Ende `n/m bestanden`.
 
 ### Ergänzungen (3.45.1, Chartmuster-Panel)
 - `m64.js` prüft die neue reine Anzeige. Engine/Regelgüte bleiben unverändert (unit-247e 38/38). `m58.js ui` erwartet den ausdrücklich gewünschten neuen Leertext; übrige Prüfungen unverändert. Altmuster bleiben im DOM im geschlossenen Bereich und für Filter/Info verfügbar.
+
+- **G11 Kern:** `unit-po3.js` (34 Fälle) und `unit-po3-stream.js` (16 Fälle) importieren echte gemeinsame Module: Preisanker/Score, Limitreihenfolge, Restmenge/Gebühren über Abschnitte, Journal-Dublettensperre, vollständige OHLC-Regelkette Long/Short, Prefixgleichheit und CSV-Originale. Öffentliche Testantworten sind keine Börsenausführung. App-/Dienstanbindung folgt separat.

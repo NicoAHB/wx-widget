@@ -1,5 +1,7 @@
 #!/bin/bash
 cd "$(dirname "$0")"
+echo "== unit-po3"; timeout 120 node unit-po3.js 2>&1 | grep -E "✗|bestanden"
+echo "== unit-po3-stream"; timeout 120 node unit-po3-stream.js 2>&1 | grep -E "✗|bestanden"
 echo "== unit-confluence-service"; timeout 120 node unit-confluence-service.js 2>&1 | grep -E "✗|bestanden"
 echo "== unit-confluence-replay"; timeout 120 node unit-confluence-replay.js 2>&1 | grep -E "✗|bestanden"
 echo "== unit-bitget-history"; timeout 120 node unit-bitget-history.js 2>&1 | grep -E "✗|bestanden"
