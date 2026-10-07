@@ -68,6 +68,16 @@ export function normalizeBitgetFunding(data, { symbol, source, providerAt, obser
   return { source: clone(source), rate, intervalHours, at: providerAt, knownAt: observedAt, nextAt, positiveMeans: 'long-pays', kind: 'current', costsComplete: false };
 }
 
+// G10(c): öffentlicher Referenzkurs erst nach der Score-Entscheidung, keine rückwirkende Ausführung.
+export function normalizeBitgetQuote(data, { symbol, decisionAt, providerAt, observedAt }) {
+  if (![decisionAt, providerAt, observedAt].every(time) || decisionAt > observedAt || providerAt < decisionAt || providerAt > observedAt || observedAt - providerAt > 30000 || !Array.isArray(data)) throw new Error('Bitget-Referenzkurs nach Entscheidung fehlt');
+  const matches = data.filter(x => x?.symbol === instrument(symbol));
+  if (matches.length !== 1) throw new Error('Bitget-Referenzkurs fehlt oder ist mehrdeutig');
+  const r = matches[0], at = numeric(r.ts), bid = numeric(r.bidPr), ask = numeric(r.askPr), markPrice = numeric(r.markPrice);
+  if (!time(at) || at < decisionAt || at > observedAt || observedAt - at > 30000 || ![bid, ask, markPrice].every(positive) || bid > ask) throw new Error('Bitget-Referenzkurs veraltet/ungültig');
+  return { venue: 'bitget', product: 'USDT-FUTURES', instrument: symbol, quote: 'USDT', bid, ask, markPrice, at, providerAt, knownAt: observedAt };
+}
+
 function sourceContext(selection, config) {
   const p = settings(config), keys = ['instrument', 'timeframe', 'contextTimeframe', 'horizon', 'maxHoldMs', 'slippageBps', 'indicatorAnchors'];
   if (!selection || Object.keys(selection).some(k => !keys.includes(k))) throw new Error('Unbekannter Bitget-Signalkontext');
@@ -181,5 +191,10 @@ export function createBitgetPublicClient({ fetch: fetcher = globalThis.fetch, no
       return { status: signal?.aborted ? 'abgebrochen' : 'nicht bewertbar', reason: errorMessage(e), retryAt: e.retryAt ?? null, data: null, saved: null };
     }
   }
-  return Object.freeze({ range, load });
+  async function quote({ symbol, decisionAt, signal }) {
+    if (!time(decisionAt) || decisionAt > now()) throw new Error('Bitget-Entscheidungszeit ungültig');
+    const r = await request('/api/v2/mix/market/ticker', { symbol: instrument(symbol), productType: 'USDT-FUTURES' }, signal);
+    return normalizeBitgetQuote(r.data, { symbol, decisionAt, providerAt: r.providerAt, observedAt: r.observedAt });
+  }
+  return Object.freeze({ range, load, quote });
 }
