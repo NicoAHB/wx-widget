@@ -1897,7 +1897,8 @@ html{scroll-padding-top:calc(var(--lb-h,56px) + 16px)}
 // 3.45.0 (G10c): der vorhandene Binance-/G07-Kern bleibt eigenständig.
 import { cardState as kiCardState, scoreLabel as kiScoreLabel } from './shared/confluence-live.mjs';
 import { divergenceInfo as kiDivergenceInfo, parametersKey as kiParametersKey } from './shared/confluence-core.mjs';
-import { readReplay as kiReadHistory, clearReplayJobs as kiClearHistoryJobs } from './shared/confluence-replay-store.mjs';
+import { observationKey as kiObservationKey } from './shared/confluence-replay.mjs';
+import { readReplay as kiReadHistory, saveReplay as kiSaveHistory, clearReplayJobs as kiClearHistoryJobs } from './shared/confluence-replay-store.mjs';
 // Pure, unrounded calculations. Prices are USDT per unit; FX is USDT per EUR.
 function rsi(closes, period = 14) {
   const out = Array(closes.length).fill(null);
@@ -2868,7 +2869,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
 // 3.43.0 (G10a): reiner Fachkern in shared/; Datenquelle und Karten folgen getrennt.
 // 3.44.0 (G10b): öffentlicher Adapter in shared/bitget-public.mjs; sichtbare Anbindung folgt mit G10(c).
-const APP_VERSION = '3.46.0', docEl = document.documentElement;
+const APP_VERSION = '3.47.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -7962,15 +7963,15 @@ function loadChannels() {
       tchat: str(o.tg?.tchat, 40), tthread: str(o.tg?.tthread, 10), ttoken: str(o.tg?.ttoken, 120), pchat: str(o.tg?.pchat, 40), pthread: str(o.tg?.pthread, 10), ptoken: str(o.tg?.ptoken, 120) }, dc: { url: str(o.dc?.url, 300), on: o.dc?.on !== false },
     ev: { alarm: o.ev?.alarm !== false, pos: o.ev?.pos !== false, day: o.ev?.day !== false, news: o.ev?.news !== false, pnl: o.ev?.pnl !== false, pulse: o.ev?.pulse !== false, trade: o.ev?.trade !== false },
     // 3.33.0 (G05): Schalter je Ziel (ohne 24/7-Dienst mit HTTPS gelten sie hier im Browser)
-    tgt: { 'course-alert': o.tgt?.['course-alert'] !== false, backup: o.tgt?.backup !== false, trades: o.tgt?.trades !== false, patterns: o.tgt?.patterns !== false }, mig33: !!o.mig33,
+    tgt: { 'course-alert': o.tgt?.['course-alert'] !== false, backup: o.tgt?.backup !== false, trades: o.tgt?.trades !== false, patterns: o.tgt?.patterns !== false, ki: false }, mig33: !!o.mig33,
     // 3.34.0 (G06): lokale Epoche je Ziel – jede Änderung des Schalters zählt hoch (ein Auftrag von vor dem Ausschalten wird verworfen)
-    tep: Object.fromEntries(['course-alert', 'backup', 'trades', 'patterns'].map(k => [k, Number.isInteger(o.tep?.[k]) && o.tep[k] >= 0 ? o.tep[k] : 0])) };
+    tep: Object.fromEntries(['course-alert', 'backup', 'trades', 'patterns', 'ki'].map(k => [k, Number.isInteger(o.tep?.[k]) && o.tep[k] >= 0 ? o.tep[k] : 0])) };
   // 3.33.0 (G05): einmalig umstellen – kein stilles Ausweichen mehr. Bis 3.32 ging die Sicherung ohne eigenen Sicherungschat in den
   // Kursalarm-Chat; dieser Ort wird jetzt ausdrücklich als Sicherungschat eingetragen (sichtbar, änderbar). Der frühere
   // Telegram-Schalter „Aktiv“ (aus) wird zu „alle Ziele aus“.
   if (!c.mig33) {
     const t = c.tg; if (!t.bchat && t.chat) { t.bchat = t.chat; t.bthread = t.bthread || t.thread; }
-    if (o.tg && o.tg.on === false) c.tgt = { 'course-alert': false, backup: false, trades: false, patterns: false };
+    if (o.tg && o.tg.on === false) c.tgt = { 'course-alert': false, backup: false, trades: false, patterns: false, ki: false };
     c.mig33 = true;
   }
   return c;
@@ -8004,6 +8005,7 @@ const TG_ROUTE = { alarm: 'course-alert', pos: 'course-alert', day: 'course-aler
 // Chartmuster – eigener Chat (Bot: eigener oder derselbe wie Kursalarm)
 function tgDest(id) {
   const t = chan.tg, ok = (token, chat, thread) => TG_TOKEN_RE.test(token) && TG_CHAT_RE.test(chat) && (!thread || TG_THREAD_RE.test(thread)) ? { token, chat, thread } : null;
+  if (id === 'ki') { const d = typeof svc === 'object' && svcOn() ? svc.pol.conf?.ki?.destination : null; return d && svc.pol.conf?.ki?.config && svc.pol.conf?.targets?.ki ? { chat: d.chat, bot: d.bot } : null; }
   return id === 'course-alert' ? ok(t.token, t.chat, t.thread) : id === 'backup' ? ok(t.btoken || t.token, t.bchat, t.bthread) : id === 'trades' ? ok(t.ttoken || t.btoken || t.token, t.tchat, t.tthread) : id === 'patterns' ? ok(t.ptoken || t.token, t.pchat, t.pthread) : null;
 }
 function tgTarget(kind) { const id = TG_ROUTE[kind]; return id ? tgDest(id) : null; }
@@ -11751,7 +11753,8 @@ var TGT = [
   { id: 'backup', name: 'Sicherung', icon: '💾', purpose: 'Datensicherung – nur aus der App, nie über den Dienst' },
   { id: 'course-alert', name: 'Kursalarm', icon: '🔔', purpose: 'Kurs-Alarme, Stop/Ziel, Gewinn/Verlust, Tages-Limit, Termine, BTC-Puls' },
   { id: 'trades', name: 'Trades', icon: '📊', purpose: 'Ein Bild je vollständig geschlossener Position – nur aus der App, nie über den Dienst' },
-  { id: 'patterns', name: 'Chartmuster', icon: '📐', purpose: 'Wichtige bestätigte Formationen (Regelgüte ≥ 80 %) – mit übernommener Vorauswahl auch bei geschlossener App' }];
+  { id: 'patterns', name: 'Chartmuster', icon: '📐', purpose: 'Wichtige bestätigte Formationen (Regelgüte ≥ 80 %) – mit übernommener Vorauswahl auch bei geschlossener App' },
+  { id: 'ki', name: 'KI-Signale', icon: '🧠', purpose: 'Geprüfte Bitget-Konfluenzsignale – nur über bestätigten 24/7-Dienst; standardmäßig AUS' }];
 var SVC_KEY = 'scalpdesk.svc.v1', POL_KEY = 'scalpdesk.policy.v1', SVC_URL_RE = /^(https:\/\/[a-z0-9.-]+|http:\/\/(127\.0\.0\.1|localhost))(:\d{1,5})?$/, SVC_KEY_RE = /^[A-Za-z0-9_-]{32,64}$/, SVC_POLL = 60e3;
 var svc = { cfg: null, pol: null, reach: null, at: 0, err: '', pending: null, notice: '', busy: false, ptimer: 0, events: [], eps: {}, ver: '', first: null };
 svc.cfg = loadSvc(); svc.pol = loadPol();
@@ -11769,7 +11772,7 @@ function savePol() { if (store.set(POL_KEY, { conf: svc.pol.conf, draft: svc.pol
 function svcOn() { return !!svc?.cfg && SVC_URL_RE.test(svc.cfg.url) && SVC_KEY_RE.test(svc.cfg.key); }
 function svcSender() { return `app:${svc.cfg.inst}`; }
 // Schalter je Ziel: mit Dienst der zuletzt bestätigte Stand (bis zur ersten Antwort die Schalter dieses Browsers), sonst lokal
-function tgtOn(id) { const c = svcOn() ? svc?.pol?.conf?.targets?.[id] : null; return c ? !!c.on : chan?.tgt?.[id] !== false; }
+function tgtOn(id) { const c = svcOn() ? svc?.pol?.conf?.targets?.[id] : null; return c ? !!c.on : id === 'ki' ? false : chan?.tgt?.[id] !== false; }
 function tgtReady(id) { return !!tgDest(id) && tgtOn(id); }
 async function svcFetch(path, { method = 'GET', body = null, timeout = 8000 } = {}) {
   let r;
@@ -11782,7 +11785,7 @@ async function svcFetch(path, { method = 'GET', body = null, timeout = 8000 } = 
 }
 // Schalterantworten enthalten nur die Policy; die unabhängig bestätigte Musterliste dabei erhalten.
 // Ein vollständiger /v1/state-Abgleich darf sie dagegen entfernen (z. B. bei einem älteren Dienst).
-const svcConf = (j, partial = false) => ({ rev: j.rev, targets: j.targets, patternWatch: j.patternWatch || (partial ? svc.pol.conf?.patternWatch : null) || null, at: Date.now(), v: j.v || svc.ver });
+const svcConf = (j, partial = false) => ({ rev: j.rev, targets: j.targets, ki: j.ki || (partial ? svc.pol.conf?.ki : null) || null, patternWatch: j.patternWatch || (partial ? svc.pol.conf?.patternWatch : null) || null, at: Date.now(), v: j.v || svc.ver });
 // Stand am Dienst lesen: Schalter, Episoden, Ereignisse (Abgleich beim Start, siehe svcReconcile); offenen Auftrag klären
 async function svcRefresh(force = false) {
   if (!svcOn() || (svc.busy && !force)) return null;
@@ -11861,6 +11864,7 @@ function tgcCount() {
 }
 function renderTgc() {
   const cnt = tgcCount(); put('tgc-summary', chanValid('tg') ? `${cnt.text}${svcOn() ? (svc.pol.draft ? ' · Entwurf offen' : svc.pending ? ' · wird geschaltet …' : '') : ''}` : '');
+  if (typeof kiTelegramRender === 'function') kiTelegramRender();
   const box = $('tgc-list'); if (!box || !$('tgc-dialog')?.open) return;
   const conf = svc.pol.conf, d = svc.pol.draft, mode = $('tgc-mode');
   const m = !svcOn() ? 'Nur dieses Gerät: Ohne 24/7-Dienst mit HTTPS gelten die Schalter in diesem Browser (und seinen Tabs). Mit Dienst gelten sie bestätigt auf allen Geräten – Adresse und Zugangsschlüssel unter „Chats einrichten“ → 24/7-Dienst.'
@@ -11879,7 +11883,7 @@ function renderTgc() {
     const id = li.dataset.tgt, T = tgDest(id), inp = li.querySelector('input'), c = conf?.targets?.[id], on = tgtOn(id), busy = !!svc.pending && id in (svc.pending.set || {}), dv = d?.set?.[id];
     const state = !T ? 'na' : busy && svc.pending.lost ? 'unconf' : busy ? 'busy' : dv !== undefined && dv !== on ? 'draft' : on ? 'on' : 'off';
     li.dataset.state = state; inp.checked = !!T && on; inp.disabled = !T || !!svc.pending; if (busy) inp.setAttribute('aria-busy', 'true'); else inp.removeAttribute('aria-busy');
-    const dest = !T ? '' : `Bot ${tgBot(T.token)} · Chat ${T.chat}${T.thread ? ` · Thema ${T.thread}` : ''}`;
+    const dest = !T ? '' : `Bot ${T.bot || tgBot(T.token)} · Chat ${T.chat}${T.thread ? ` · Thema ${T.thread}` : ''}`;
     const since = c ? (c.on ? `an seit ${tgcTime(c.since)}` : `aus${c.offSince ? ` seit ${tgcTime(c.offSince)}` : ''}`) : on ? 'an' : 'aus';
     const txt = !T ? 'nicht eingerichtet – unter „Chats einrichten“ eine Chat-ID eintragen (zählt nicht als aktiv)'
       : state === 'busy' ? `wird geschaltet … (bestätigt: ${since})` : state === 'unconf' ? `Status unbestätigt – zuletzt bestätigt: ${since}`
@@ -13616,6 +13620,7 @@ async function recCopy() {
   if (store.get(REC_KEY)?.on) recStart(); else recRender();
 })();
 // ---------- 3.45.0 (G10c): öffentliche lokale KI-Signale, eigener Worker/Datenspeicher ----------
+var kiReady = false;
 const KI_CFG_KEY = 'scalpdesk.ki.settings.v1', KI_CARDS_KEY = 'scalpdesk.idb.ki.cards.v1', KI_DATA_KEY = 'scalpdesk.idb.ki.data.v1';
 const KI_DEFAULTS = { revision: 1, on: false, shortOn: true, longOn: true, shortPair: '1h/4h', longPair: '4h/1d', shortHours: 24, longDays: 21,
   shortLeverage: 20, longLeverage: 3, marginEUR: null, slippageBps: null, fundingMode: '', anchorPolicy: '',
@@ -13639,8 +13644,66 @@ function kiField(parent, key, label, choices = null, opts = {}) {
   input.value = ki.cfg[key] == null ? '' : String(ki.cfg[key]); l.append(input); parent.append(l); return input;
 }
 function kiTelegramControl(id) {
-  const box = el('div', 'ki-toolbar'), b = kiButton(id, 'KI-Signale an Telegram senden: nicht verfügbar'); b.disabled = true;
-  b.setAttribute('aria-describedby', id + '-note'); const note = el('small', 'ki-note', 'Dienstanbindung und bestätigter Schalter folgen in G10(e).'); note.id = id + '-note'; box.append(b, note); return box;
+  const box = el('div', 'ki-toolbar'), b = kiButton(id, 'KI-Signale an Telegram senden: nicht verfügbar', () => tgcSet({ ki: !tgtOn('ki') })); b.disabled = true;
+  b.setAttribute('aria-describedby', id + '-note'); const note = el('small', 'ki-note', '24/7-Dienst 2.5.0 mit HTTPS einrichten und Auswahl übernehmen.'); note.id = id + '-note'; box.append(b, note);
+  if (id === 'ki-telegram') {
+    box.append(kiButton('ki-service-config', 'KI-Auswahl an Dienst übernehmen', () => { void kiServiceConfig(); }), kiButton('ki-service-cards', 'Dienstkarten laden', () => { void kiServiceCards(); }));
+    for (const [h, label] of [['short', 'Kurz an Telegram'], ['long', 'Lang an Telegram']]) { const l = el('label'), i = el('input'); i.type = 'checkbox'; i.id = 'ki-forward-' + h; i.checked = true; i.addEventListener('change', () => { ki.forwardDirty = true; }); l.append(i, ' ' + label); box.append(l); }
+  }
+  return box;
+}
+function kiTelegramRender() {
+  if (!kiReady) return;
+  const confirmed = svcOn() && svc.pol.conf?.targets?.ki && svc.pol.conf?.ki;
+  if (!ki.forwardDirty && confirmed?.config) for (const h of ['short', 'long']) if ($('ki-forward-' + h)) $('ki-forward-' + h).checked = confirmed.config.forward?.[h] !== false;
+  for (const id of ['ki-telegram', 'ki-settings-telegram']) { const button = $(id); if (!button) continue;
+    button.disabled = !confirmed?.config || !!svc.pending || svc.reach !== true; button.textContent = `KI-Signale an Telegram senden: ${confirmed ? tgtOn('ki') ? 'AN · bestätigt' : 'AUS · bestätigt' : 'nicht verfügbar'}`;
+    put(id + '-note', confirmed ? `Dienst ${svc.ver} · Bot ${confirmed.destination?.bot || 'am Server'} · Chat ${confirmed.destination?.chat || 'am Server'}. ${confirmed.config ? 'Auswahl Revision ' + confirmed.rev : 'Auswahl noch nicht übernommen'}. ${svc.reach === false ? 'Verbindungsfehler; letzter bestätigter Stand bleibt.' : 'Betrifft nur KI-Versand; Karten und Preisalarme bleiben.'}` : '24/7-Dienst 2.5.0 mit HTTPS einrichten; KI startet AUS.'); }
+}
+async function kiServiceConfig() {
+  try {
+    if (!svcOn()) throw new Error('24/7-Dienst mit HTTPS zuerst einrichten.');
+    if (!svc.pol.conf?.ki) await svcRefresh(true);
+    if (!svc.pol.conf?.ki) throw new Error('Dienst auf 2.5.0 aktualisieren und Stand prüfen.');
+    kiCoreConfig();
+    if (ki.cfg.slippageBps == null || !ki.cfg.fundingMode || !ki.cfg.anchorPolicy) throw new Error('KI-Einstellungen zuerst bewusst wählen und speichern.');
+    const items = state.watch.slice(0, 40).flatMap(w => ['short', 'long'].filter(h => ki.cfg[h + 'On']).map(h => {
+      const instrument = wlSym(w), [timeframe, contextTimeframe] = ki.cfg[h + 'Pair'].split('/'), periods = { '1h': 3600e3, '4h': 14400e3, '1d': 86400e3 }, anchor = tf => Math.floor(Date.now() / periods[tf]) * periods[tf] - 260 * periods[tf];
+      return { instrument, horizon: h, timeframe, contextTimeframe, maxHoldMs: h === 'short' ? ki.cfg.shortHours * 3600e3 : ki.cfg.longDays * 86400e3, slippageBps: ki.cfg.slippageBps,
+        indicatorAnchors: ki.data[kiDatasetId(instrument, h)]?.anchors || { base: anchor(timeframe), context: anchor(contextTimeframe) } }; }));
+    if (!items.length) throw new Error('Vorauswahl und mindestens einen KI-Horizont wählen.');
+    const key = 'scalpdesk.ki.service-command.v1', old = store.get(key), cmd = old || { commandId: 'ki-c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8), expectedRevision: svc.pol.conf.ki.rev,
+      config: { config: kiCoreConfig(), options: { fundingMode: ki.cfg.fundingMode, anchorPolicy: ki.cfg.anchorPolicy }, forward: { short: $('ki-forward-short').checked, long: $('ki-forward-long').checked }, items } };
+    store.set(key, cmd); await store.flush(); let reply;
+    if (old) { const found = await svcFetch('/v1/commands/' + cmd.commandId); if (found.j?.found) reply = { status: found.j.status, j: found.j.result }; }
+    reply ||= await svcFetch('/v1/ki/config', { method: 'POST', body: cmd });
+    if (reply.status !== 200 || !reply.j?.ok) { if (reply.status === 409 || reply.status === 400) store.del(key); throw new Error(reply.j?.error || 'Dienst übernimmt KI-Auswahl nicht.'); }
+    store.del(key); ki.forwardDirty = false; await svcRefresh(true); ki.message = 'KI-Auswahl vom Dienst bestätigt. KI-Versand separat einschalten; normale Signale benötigen keine Kontoverbindung.';
+  } catch (e) { ki.message = e.message; } kiTelegramRender(); kiRender();
+}
+function kiValidServiceCard(c) {
+  try { return c?.version === 'cf-live-1' && c.scope?.venue === 'bitget' && c.scope.product === 'USDT-FUTURES' && /^[A-Z0-9]{2,20}USDT$/.test(c.scope.instrument) && [1, -1].includes(c.scope.direction)
+    && typeof c.id === 'string' && c.id.length < 4000 && c.options && c.context?.base && c.context?.higher && c.divergence && c.cross && c.size && c.costs && c.levels && Array.isArray(c.patterns) && c.patterns.length <= 82
+    && c.score?.parametersKey === kiParametersKey(c.config) && Number.isFinite(c.decisionAt) && Number.isFinite(c.expiresAt) && c.expiresAt > c.decisionAt; } catch { return false; }
+}
+async function kiServiceCards() {
+  try {
+    if (!svcOn()) throw new Error('24/7-Dienst mit HTTPS zuerst einrichten.');
+    const received = [];
+    for (let offset = 0; offset < 200; offset += 20) {
+      const { status, j } = await svcFetch('/v1/ki/signals?offset=' + offset); if (status !== 200 || !j?.ok || !Array.isArray(j.cards) || j.cards.length > 20) throw new Error(j?.error || 'Dienstkarten nicht verfügbar.');
+      if (j.cards.some(c => !kiValidServiceCard(c))) throw new Error('Dienstkarte unvollständig oder falsches Modell; bisherige Karten bleiben.');
+      received.push(...j.cards); if (j.cards.length < 20) break;
+    }
+    if (!(await kiUpdateCards(cards => { const known = new Set(cards.map(c => c.id)); return [...cards, ...received.filter(c => !known.has(c.id)).map(c => ({ ...c, read: ki.open, origin: 'dienst' }))].sort((a, b) => b.decisionAt - a.decisionAt); }))) return;
+    for (const card of received) if (card.serviceStatistics) {
+      const stats = card.serviceStatistics;
+      if (!Number.isSafeInteger(stats.asOf) || stats.asOf > Date.now() + 5000 || !['short', 'long'].every(h => Number.isSafeInteger(stats.statistics?.[h]?.n) && stats.statistics[h].n >= 0 && (stats.statistics[h].tpPercent == null || stats.statistics[h].n >= 30 && stats.statistics[h].tpPercent >= 0 && stats.statistics[h].tpPercent <= 100))) throw new Error('Dienstquote ungültig; bisherige Auswertung bleibt.');
+      const result = { id: card.id, key: kiObservationKey(card.scope, card.config, card.options), asOf: stats.asOf, statistics: stats.statistics, backtests: [], origin: 'dienst' };
+      await kiSaveHistory('results', result); ki.history.set(card.id, result); ki.historyRevision++;
+    }
+    ki.message = `${received.length} Dienstkarten gelesen; gleiche Signal-IDs zählen einmal.`;
+  } catch (e) { ki.message = e.message; } kiRender();
 }
 function kiBuild() {
   const box = $('ki-signal-panel');
@@ -13828,10 +13891,11 @@ function kiHistoryView(card) {
   const box = el('div', 'ki-history'), result = ki.history.get(card.id);
   if (!result) box.append(el('p', 'ki-note', 'Historische Quote · kurz (90 Tage): noch nicht ausgewertet. Lang (2 Jahre): noch nicht ausgewertet. Keine Quote oder Euro-Erwartung ohne mindestens 30 auswertbare Fälle.'));
   else {
+    box.append(el('p', 'ki-note', result.origin === 'dienst' ? 'Originaldatensatz des 24/7-Dienstes; lokale Originalarchive werden nicht addiert.' : 'Originaldatensatz dieses Browsers.'));
     for (const [name, label] of [['short', 'Kurz · 90 Tage'], ['long', 'Lang · 2 Jahre']]) {
       const stats = result.statistics[name], weak = stats.tpPercent != null && stats.tpPercent < 40 && card.config.rewardRisk === 2;
       box.append(el('p', 'ki-tone ki-' + (weak ? 'warning' : 'muted'), `${label}: ${stats.tpPercent == null ? stats.status + ' (N=' + stats.n + ')' : number(stats.tpPercent, 1) + ' % TP vor SL · N=' + stats.n}${weak ? ' · Historisch schwach' : ''}`),
-        el('p', 'ki-note', `Auswertung ${kiDate(stats.period?.from ?? result.asOf - stats.requestedDays * 86400e3)} – ${kiDate(result.asOf)} · protokolliert ${stats.originalObservationPeriod ? kiDate(stats.originalObservationPeriod.from) + ' – ' + kiDate(stats.originalObservationPeriod.to) : 'kein Originalzeitraum'}. Unreif ${stats.immature || 0} · Datenlücken ${stats.gaps || 0} · Kostenlücken ${stats.incompleteCosts || 0}.`),
+        el('p', 'ki-note', `Auswertung ${kiDate(stats.requestedPeriod?.from ?? result.asOf - stats.requestedDays * 86400e3)} – ${kiDate(result.asOf)} · protokolliert ${stats.originalObservationPeriod ? kiDate(stats.originalObservationPeriod.from) + ' – ' + kiDate(stats.originalObservationPeriod.to) : 'kein Originalzeitraum'}. Fallzeitraum ${stats.samplePeriod ? kiDate(stats.samplePeriod.from) + ' – ' + kiDate(stats.samplePeriod.to) : 'keine abgeschlossenen Fälle'}. Unreif ${stats.immature || 0} · Datenlücken ${stats.gaps || 0} · Kostenlücken ${stats.incompleteCosts || 0}.`),
         el('p', 'ki-note', `Euro-Erwartungswert: ${Number.isFinite(stats.expectedEUR) ? signed(stats.expectedEUR, 2) + ' EUR je Modelltrade' : 'nicht verfügbar'}.`));
     }
     const table = el('table', 'ki-points'); table.setAttribute('aria-label', 'Backtest getrennt nach Score-Schwelle');
@@ -13940,7 +14004,7 @@ function kiDrawChart() {
     svg.append(node('line', { class: 'ki-level ki-' + kind, x1: left, x2: right, y1: y(price), y2: y(price) }), node('text', { x: right + 5, y: y(price) + 4 }, label + ' ' + priceText(price))); }
   svg.append(node('text', { x: left, y: 294 }, kiDate(rows[0].time)), node('text', { x: right, y: 294, 'text-anchor': 'end' }, kiDate(rows.at(-1).end))); $('ki-chart').replaceChildren(svg);
 }
-kiBuild(); kiRender(); kiKick();
+kiBuild(); kiReady = true; kiTelegramRender(); kiRender(); kiKick();
 void kiReadHistory('results').then(rows => { for (const row of rows) ki.history.set(row.id, row); ki.historyRevision++; kiRender(); }).catch(e => { ki.archiveError = e.message; kiRender(); });
 document.addEventListener('visibilitychange', () => { if (document.hidden) kiCancel(); else { kiRender(); kiKick(); } });
 $('pause').addEventListener('click', () => { if (state.paused) kiCancel(); else kiKick(); });
@@ -13956,7 +14020,7 @@ bc?.addEventListener('message', ({ data: msg }) => {
   }
   kiRender(); kiKick();
 });
-window.__g10 = { backtest: kiBacktest, historyView: kiHistoryView, get state() { return ki; }, cardState: kiCardState, render: kiRender, tab: kiTab, showChart: kiShowChart, stop: kiCancel, kick: kiKick, save: kiSaveConfig };
+window.__g10 = { backtest: kiBacktest, historyView: kiHistoryView, serviceConfig: kiServiceConfig, serviceCards: kiServiceCards, get state() { return ki; }, cardState: kiCardState, render: kiRender, tab: kiTab, showChart: kiShowChart, stop: kiCancel, kick: kiKick, save: kiSaveConfig };
 for(const f of SET_FIELDS)stampSetting(f);renderIntegrity(); // 3.29.0: Abstammung der Einstellungen anlegen, Prüfliste zeigen
 if(posTradesSyncAll())persist(); // 3.30.0: zu jedem Teilabschluss genau ein Trade – fehlt einer, kommt er aus dem Verlauf der Position
 render();startLive();void showCachedChart();void refresh();void initAutoBackup();void requestWake();void zzpStart();
