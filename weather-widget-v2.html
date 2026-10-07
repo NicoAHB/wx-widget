@@ -300,6 +300,7 @@ html[data-layout=tablet] .livebar{padding:6px 12px;gap:4px 12px}
 .overlay-toggles button[aria-pressed=true]{color:var(--text);background:var(--surface-3);border-color:var(--field-border)}
 .overlay-toggles button[aria-pressed=false] .sw{opacity:.3}
 .overlay-toggles .ov-all{color:var(--text);font-weight:600}
+.atr-red{color:var(--down-text)}.atr-amber{color:var(--warn-text)}.atr-green{color:var(--up-text)}.atr-blue{color:var(--violet-text,#8fb4ff)}#atr-advice p{margin:0 0 6px}
 .mtf{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:6px 0 2px;font-size:.75rem;font-variant-numeric:tabular-nums}.mtf-l{color:var(--muted)}
 .mtf-c{padding:2px 8px;border-radius:10px;border:1px solid var(--border);color:var(--muted);white-space:nowrap}.mtf-c.up{color:var(--up-text);border-color:var(--up-border);background:var(--up-bg)}.mtf-c.down{color:var(--down-text);border-color:var(--down-border);background:var(--down-bg)}.mtf-c.mix{color:var(--text)}
 svg text{font-family:var(--font);font-variant-numeric:tabular-nums}
@@ -1905,6 +1906,11 @@ function trueRanges(candles) {
   return candles.map((c, i) => i === 0 ? c.high - c.low : Math.max(c.high - c.low, Math.abs(c.high - candles[i - 1].close), Math.abs(c.low - candles[i - 1].close)));
 }
 
+// Optimierung 9: Abstände in ATR (ATR 14 der abgeschlossenen Chart-Kerzen) – ob ein Level oder Stop „nah“ ist, hängt von der Schwankung ab.
+// Farben: rot unter 0,5 ATR (sehr nah, im Rauschen einer Kerze), orange 0,5–1 (nah), grün 1–3 (normal), blau über 3 (weit).
+let atrMemo = { k: '', v: null };
+function chartAtr() { const c = state.candles.filter(x => x.closeTime < Date.now()), k = `${state.symbol}|${state.interval}|${c.at(-1)?.closeTime}`; if (atrMemo.k !== k) atrMemo = { k, v: c.length >= 15 ? atr(c, 14).at(-1) : null }; return atrMemo.v; }
+const atrBand = n => n < 0.5 ? ['red', 'sehr nah'] : n < 1 ? ['amber', 'nah'] : n <= 3 ? ['green', 'normal'] : ['blue', 'weit'];
 function atr(candles, period = 14) {
   const out = Array(candles.length).fill(null), tr = trueRanges(candles);
   if (tr.length < period) return out;
@@ -3302,8 +3308,11 @@ function renderMarket() {
   renderAnaInd(); // 3.35.0 (G07): RSI, ATR und Volumen aus der Analyse-Reihe (abgeschlossene Kerzen im Analyse-Intervall)
   for (const level of ['support','resistance']) {
     put(level,levels[level] == null ? 'Kein Level' : priceText(levels[level]));
-    put(level+'-dist',levels[level+'Distance']==null ? '—' : `${number(levels[level+'Distance'])} % entfernt`);
+    const A = chartAtr(), n = A > 0 && levels[level] != null ? Math.abs(p - levels[level]) / A : null, b = n == null ? null : atrBand(n);
+    put(level+'-dist',levels[level+'Distance']==null ? '—' : `${number(levels[level+'Distance'])} %${n == null ? ' entfernt' : ` · ${number(n, 1)} ATR`}`);
+    const de = $(level + '-dist'); if (de) { de.className = b ? `atr-${b[0]}` : ''; de.title = b ? `${number(n, 1)} ATR – ${b[1]}` : ''; }
   }
+  atrAdvice(p, levels);
   put('level-note',`USDT · Pivots aus ${Math.min(50,closed.length)} abgeschlossenen Kerzen des Charts (${state.interval}). Abstand zum aktuellen Kurs.`);
   const closesAll = c.map(x => x.close), bbAll = c.length >= 20 ? bollinger(closesAll) : null, ema200All = c.length >= 200 ? ema(closesAll, 200) : null;
   for (const [k, sign] of [['support', '−'], ['resistance', '+']]) put('lg-' + k, levels[k] == null ? 'kein Level' : `${priceText(levels[k])} · ${sign}${number(levels[k + 'Distance'])} %`);
@@ -3710,6 +3719,24 @@ function anaContext() {
   const lab = anaLabel(ana.iv), A = ana.calc;
   if (!A) return ana.loading ? `Analyse ${lab} · lädt …` : ana.error ? `Analyse ${lab} · ${ana.error}` : `Analyse ${lab}`;
   return `Analyse ${lab} · abgeschlossene Kerzen bis ${anaTime(A.last.closeTime + 1)}${ana.error ? ' · letzter Datenstand' : ''}`;
+}
+// „i“ der Kurslevel: Farbskala und regelbasierte Empfehlung („KI“) aus Kurs, Unterstützung, Widerstand und ATR
+function atrAdvice(p, L) {
+  const box = $('atr-advice'), A = chartAtr(); if (!box) return;
+  const out = [];
+  if (!(A > 0) || !p) out.push('Noch keine ATR – es braucht mindestens 15 abgeschlossene Kerzen im Chart.');
+  else {
+    const ns = L.support != null ? (p - L.support) / A : null, nr = L.resistance != null ? (L.resistance - p) / A : null;
+    out.push(`1 ATR (${state.interval}) = ${priceText(A)} USDT = ${number(A / p * 100, 2)} % des Kurses. Faustregel: Stop mindestens 1–1,5 ATR vom Einstieg, sonst stoppt dich normales Rauschen aus.`);
+    if (nr != null && nr < 0.5) out.push(`Long jetzt ungünstig: Widerstand nur ${number(nr, 1)} ATR über dem Kurs – das Ziel ist zu nah. Besser abwarten, bis er per Schlusskurs überwunden ist (Alarm „bei Schluss“).`);
+    if (ns != null && ns < 0.5) out.push(`Short jetzt ungünstig: Unterstützung nur ${number(ns, 1)} ATR unter dem Kurs. Ein Long-Stop direkt darunter wäre zu eng – mit 0,5 ATR Puffer läge er bei ${priceText(L.support - A / 2)}.`);
+    if (ns != null && nr != null) {
+      const risk = ns + 0.5, crv = nr / risk;
+      out.push(`Long am aktuellen Kurs: Stop 0,5 ATR unter der Unterstützung, Ziel am Widerstand → Chance/Risiko ${number(crv, 1)} : 1${crv < 2 ? ' – unter 2 : 1, eher nicht einsteigen.' : ' – ausreichend (ab 2 : 1).'}`);
+    }
+  }
+  out.push('Regelbasierte Einschätzung aus Kurs, Pivots und ATR – keine Anlageberatung, kein Handelssignal.');
+  const key = out.join('|'); if (box.dataset.k === key) return; box.dataset.k = key; box.replaceChildren(...out.map(t => el('p', '', t)));
 }
 function renderAnaInd() {
   const A = ana.calc, p = currentPrice(), lab = anaLabel(ana.iv), base = state.symbol.slice(0, -4), wait = ana.loading ? `Lädt ${lab}-Kerzen …` : ana.error || 'Wartet auf Analyse-Kerzen.';
@@ -5139,7 +5166,7 @@ function posFormPreview() {
   const m = positionMetrics({ side: r.side, mode: r.mode, entry: r.entry, leverage: r.lev, qty: r.qty, liqExchange: r.liq, preRealized: r.pre }, NaN, mmrNow());
   put('pos-preview', `${r.demo ? 'DEMO, simuliert · ' : ''}${r.side === 'long' ? 'Long' : 'Short'} ${levText(r.lev)}× ${r.mode === 'cross' ? 'Cross' : 'Isoliert'} · ${qtyText(r.qty)} ${coin(r.sym)} · Positionswert ${usdt(m.notional)} · Margin ${number(m.margin)} USDT`
     + (m.liqPrice ? ` · ${m.liqSource === 'exchange' ? 'Liq. laut Börse' : 'Liq. (Modell)'} ${priceText(m.liqPrice)}` : r.mode === 'cross' ? ' · Liq.-Preis optional von der Börse' : '')
-    + (() => { const s = stopTarget({ side: r.side, entry: r.entry, qty: r.qty, sl: r.sl, tp: r.tp }, NaN); return (s.sl ? ` · Stop ${priceText(s.sl.price)} (${signed(s.sl.pnl)} USDT)` : '') + (s.tp ? ` · Ziel ${priceText(s.tp.price)} (${signed(s.tp.pnl)} USDT)` : '') + (s.crv ? ` · CRV ${number(s.crv, 1)}` : '')
+    + (() => { const s = stopTarget({ side: r.side, entry: r.entry, qty: r.qty, sl: r.sl, tp: r.tp }, NaN); const A = r.sym === state.symbol ? chartAtr() : null, an = v => A > 0 ? (() => { const n = Math.abs(v - r.entry) / A, b = atrBand(n); return `, ${number(n, 1)} ATR – ${b[1]}`; })() : ''; return (s.sl ? ` · Stop ${priceText(s.sl.price)} (${signed(s.sl.pnl)} USDT${an(s.sl.price)}${A > 0 && Math.abs(s.sl.price - r.entry) / A < 1 ? ', enger als 1 ATR: Rauschen kann dich ausstoppen' : ''})` : '') + (s.tp ? ` · Ziel ${priceText(s.tp.price)} (${signed(s.tp.pnl)} USDT${an(s.tp.price)})` : '') + (s.crv ? ` · CRV ${number(s.crv, 1)}` : '')
       + (s.sl && m.liqPrice && (r.side === 'long' ? r.sl <= m.liqPrice : r.sl >= m.liqPrice) ? ' · Achtung: Stop liegt hinter der Liquidation' : '') + (r.reasons.length ? ` · Gründe: ${r.reasons.join(', ')}` : '')
       + (s.sl && value('balance') > 0 ? (() => { const loss = -s.sl.pnl, pct = loss / value('balance') * 100; return ` · Risiko bis Stop ${number(loss)} USDT = ${number(pct, 1)} % des Guthabens${pct > state.risk.riskPct ? ` – über deinem Limit von ${pctText(state.risk.riskPct)} %` : ''}`; })() : '')
       + (!r.demo && limitStatus(dayStats(state.trades).pnl, 0, state.dayLimit).state === 'reached' ? ' · Hinweis: Tages-Verlustlimit ist heute erreicht' : ''); })());
@@ -12936,6 +12963,7 @@ function pkSection(h) {
   } else box.append(btn, out);
   return box;
 }
+window.__opt9 = { atr: () => chartAtr(), band: n => atrBand(n) };
 window.__opt8 = { tick: t => alClTick(t), get cl() { return alCl; } };
 window.__opt7 = { get mtf() { return mtf; }, calc: (c, p) => mtfCalc(c, p), paint: () => mtfPaint(true) };
 window.__opt4 = { tradeR: t => tradeR(t), tradeRisk: t => tradeRisk(t), groupStats: (t, f) => groupStats(t, f) };
@@ -13590,7 +13618,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
           <article class="panel indicator"><div class="indicator-title"><h3>Relative Stärke</h3><span>RSI · 14</span></div><div class="metric skel" id="rsi-value">—</div><p id="rsi-note" class="skel">Wartet auf Kerzendaten.</p><div class="rsi-scale"><span id="rsi-marker" hidden></span></div><div class="scale-labels"><span>0</span><span>30</span><span>70</span><span>100</span></div></article>
           <article class="panel indicator"><div class="indicator-title"><h3>Volatilität</h3><span>ATR · 14</span></div><div class="metric skel" id="atr-value">—</div><p id="atr-note" class="skel">Wartet auf Kerzendaten.</p><div class="metric-foot" id="atr-foot">Wilder-Glättung · USDT pro Kerze</div></article>
           <article class="panel indicator"><div class="indicator-title"><h3>Volumen</h3><span>RELATIV · 20</span></div><div class="metric skel" id="volume-value">—</div><p id="volume-note" class="skel">Wartet auf Kerzendaten.</p><div class="metric-foot" id="volume-detail">Aktuelle Kerze / 20 vorherige Kerzen</div></article>
-          <article class="panel indicator levels"><div class="indicator-title"><h3>Lokale Kurslevel</h3><span>PIVOTS · 50</span></div><div class="level-row"><span><i class="legend-line support"></i>Unterstützung</span><strong id="support" class="skel">—</strong><span id="support-dist" class="skel">—</span></div><div class="level-row"><span><i class="legend-line resistance"></i>Widerstand</span><strong id="resistance" class="skel">—</strong><span id="resistance-dist" class="skel">—</span></div><p id="level-note">Je zwei abgeschlossene Nachbarkerzen bestätigen ein lokales Hoch oder Tief.</p></article>
+          <article class="panel indicator levels"><div class="indicator-title"><h3>Lokale Kurslevel <details class="tip left atr-tip"><summary aria-label="Abstände in ATR erklärt – mit Empfehlung"><span>i</span></summary><div class="tip-body"><p><b>ATR</b> = durchschnittliche Schwankung einer Kerze. Der Abstand in ATR zeigt, wie schnell der Kurs ein Level erreichen kann:</p><p><span class="atr-red">● unter 0,5 ATR – sehr nah</span>: schon im Rauschen einer Kerze erreicht.<br><span class="atr-amber">● 0,5–1 ATR – nah</span>: eine normale Kerze reicht.<br><span class="atr-green">● 1–3 ATR – normal</span>: braucht eine echte Bewegung.<br><span class="atr-blue">● über 3 ATR – weit</span>: braucht einen größeren Schwung.</p><p><b>Empfehlung jetzt:</b></p><div id="atr-advice"></div></div></details></h3><span>PIVOTS · 50</span></div><div class="level-row"><span><i class="legend-line support"></i>Unterstützung</span><strong id="support" class="skel">—</strong><span id="support-dist" class="skel">—</span></div><div class="level-row"><span><i class="legend-line resistance"></i>Widerstand</span><strong id="resistance" class="skel">—</strong><span id="resistance-dist" class="skel">—</span></div><p id="level-note">Je zwei abgeschlossene Nachbarkerzen bestätigen ein lokales Hoch oder Tief.</p></article>
           <article class="panel indicator"><div class="indicator-title"><h3>Funding Rate</h3><span>FUTURES</span></div><div class="metric skel" id="funding-value">—</div><p id="funding-note" class="skel">Wartet auf Futures-Daten.</p><div class="metric-foot" id="funding-detail">Aktuelle Rate · unabhängig vom Chartintervall</div></article>
           <article class="panel indicator"><div class="indicator-title"><h3>Open Interest</h3><span>Δ CA. 1H</span></div><div class="metric skel" id="oi-value">—</div><p id="oi-note" class="skel">Wartet auf Futures-Daten.</p><div class="metric-foot" id="oi-detail">Offene Positionen · keine Kursrichtung</div></article>
         </div>

@@ -1,4 +1,4 @@
-// Optimierungen nach G09 – 4: Auswertung in R; 7: Trend-Ampel je Zeitebene; 8: Kurs-Alarm bei Kerzenschluss.
+// Optimierungen nach G09 – 4: Auswertung in R; 7: Trend-Ampel je Zeitebene; 8: Kurs-Alarm bei Kerzenschluss; 9: Abstände in ATR.
 // Optimierung 4: Auswertung in R – Erwartungswert je Trade in Vielfachen des Anfangsrisikos, je Grund/Coin/Uhrzeit,
 // Anfangsrisiko (erster Stop) beim Anlegen festgehalten, Stop-Verschiebungen ändern es nicht. Aufruf: node m59.js
 const h = require('./harness');
@@ -38,6 +38,16 @@ const trade = (id, sym, pnl, closedAt, extra = {}) => ({ id, symbol: sym, side: 
     const t3 = await page.evaluate(() => { const a = __g05.state.alarms.at(-1); return { at: a.triggeredAt, p: a.triggerPrice }; });
     check('Schluss unter der Marke (Docht darüber): nein; Schluss über der Marke nach dem Scharfschalten: ausgelöst mit dem Schlusskurs', !t2 && !!t3.at && Math.abs(t3.p - lvl * 1.001) < 1e-6, JSON.stringify({ t2, t3 }));
     await page.unroute(/\/api\/v3\/klines\?.*interval=15m/); await h.ctl(`/set?symbol=BTCUSDT&price=${p0}`);
+    // Optimierung 9: Abstände in ATR mit Farbe, „i“ mit Farbskala und regelbasierter Empfehlung
+    const bands = await page.evaluate(() => [0.3, 0.7, 2, 4].map(n => __opt9.band(n)[0]).join());
+    check('ATR-Farben: unter 0,5 rot, 0,5–1 orange, 1–3 grün, über 3 blau', bands === 'red,amber,green,blue', bands);
+    await page.evaluate(() => document.querySelector('[data-tab="ind"]')?.click()); await page.waitForTimeout(800);
+    const lv = await page.evaluate(() => ({ s: document.getElementById('support-dist').textContent, sc: document.getElementById('support-dist').className, r: document.getElementById('resistance-dist').textContent, atr: __opt9.atr() }));
+    check('Kurslevel: Abstand in % und ATR, farbig nach Nähe', /% · \d+,\d ATR$/.test(lv.s) && /^atr-(red|amber|green|blue)$/.test(lv.sc) && /ATR$/.test(lv.r) && lv.atr > 0, JSON.stringify(lv));
+    await page.click('.atr-tip summary'); await page.waitForTimeout(300);
+    const adv = await page.evaluate(() => document.querySelector('.atr-tip .tip-body').textContent);
+    check('„i“ an „Lokale Kurslevel“: Farbskala, „Empfehlung jetzt“ mit 1 ATR in USDT/%, Stop-Faustregel, Chance/Risiko und Hinweis „regelbasiert, keine Anlageberatung“', /unter 0,5 ATR – sehr nah/.test(adv) && /über 3 ATR – weit/.test(adv) && /Empfehlung jetzt:1 ATR \(1m\) = [\d.,]+ USDT = [\d,]+ % des Kurses/.test(adv) && /Stop mindestens 1–1,5 ATR/.test(adv) && /Chance\/Risiko [\d,]+ : 1/.test(adv) && /keine Anlageberatung/.test(adv), adv.slice(0, 400));
+    await page.click('.atr-tip summary'); await page.evaluate(() => document.querySelector('[data-tab="chart"]')?.click()); await page.waitForTimeout(400);
     // Optimierung 7: Trend-Ampel 5m · 15m · 1h · 4h · 1d über dem Chart
     const mc = await page.evaluate(() => { const up = Array.from({ length: 260 }, (_, i) => 100 + i), dn = up.slice().reverse(); return { up: __opt7.calc(up, 400)?.t, down: __opt7.calc(dn, 50)?.t, mix: __opt7.calc(up, 300)?.t, few: __opt7.calc(up.slice(0, 150), 300) }; });
     check('Trend-Regel: Kurs > EMA 50 > EMA 200 → ▲, Kurs < EMA 50 < EMA 200 → ▼, sonst ◆; unter 200 Kerzen keine Aussage', mc.up === 'up' && mc.down === 'down' && mc.mix === 'mix' && mc.few === null, JSON.stringify(mc));
