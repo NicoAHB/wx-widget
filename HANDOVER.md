@@ -144,7 +144,7 @@ Code: `patEngine()` (reine Engine, läuft als Blob-Worker), `PAT_LIB` (41 Eintr�
 - **Neues Ziel/neuer Knopf in den Telegram-Einstellungen:** m44 (Knöpfe bei „Chat-ID ermitteln“), m54 (Zählung „x von N aktiv“) und unit-247c (Zielanzahl) prüfen genaue Listen – mit anpassen.
 - **Gesamtlauf unterbrochen** (Neustart der Arbeitsumgebung): Die Ausgabe zeigt, bis wohin alles bestanden hat; den Rest mit derselben Schleife wie in `run-all.sh` ab dem nächsten Test fortsetzen (so bei 3.39.0 ab m32).
 - **m47 „App sendet den Kurs-Alarm selbst“:** zeitkritisch (20 s Wartezeit bei statischem Kurs); schlug vereinzelt fehl, einzeln/wiederholt bestanden.
-- **m53 Griffziehen:** Der Folgeklick muss nach der vorhandenen 450-ms-Klicksperre stattfinden. Chromium erzeugt beim Loslassen nicht immer den Klick, der die Sperre vorzeitig aufhebt; eine feste Wartezeit von 400 ms verursacht vier Folgefehler. Der Test wartet jetzt auf das tatsächliche Ende der Sperre; App unverändert.
+- **m53 Griffziehen:** Der Folgeklick muss nach der vorhandenen 450-ms-Klicksperre stattfinden. Chromium erzeugt beim Loslassen nicht immer den Klick, der die Sperre vorzeitig aufhebt; eine feste Wartezeit von 400 ms verursacht vier Folgefehler. Der Test wartet jetzt 550 ms; App unverändert.
 - **Browser-Tests nie parallel** (fester Port 8765/8790).
 - **Temporäre Testkopien** `weather-widget-v2.debug*.html` entstehen während m39/m45/m47; nicht committen.
 - **Klassifikationsliste G08 (v1)** ist aus Wissen gebaut, nicht gegen echte CoinLore-Daten geprüft: Coins unter „ungeprüft“ in `DEC_OK`/`DEC_STABLE` aufnehmen und `DEC_CLASS_VER` erhöhen.

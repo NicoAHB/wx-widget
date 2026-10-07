@@ -35,4 +35,4 @@ Ausgabe je Test: `✓`/`✗` je Prüfung und am Ende `n/m bestanden`.
 ### Angepasste ältere Tests (3.42.0)
 - `unit-247d.js`: erwartete Dienstversion von 2.3.0 auf 2.4.0 erhöht; fachliche Schlussalarm-Prüfungen unverändert.
 - `inst-247.sh`: Installation und Importierbarkeit der beiden neuen Muster-Module zusätzlich geprüft. Benutzer-ID wie die vorhandenen Systemaufrufe nachgebaut, damit der isolierte Test auch als Nicht-root läuft; echte Ablehnung ohne Rootrecht zusätzlich geprüft.
-- `m53.js`: Nach dem Griffziehen wartet der Entfernen-Klick auf das Ende der vorhandenen 450-ms-Klicksperre statt nur 400 ms. Die Watchlist-Funktion bleibt unverändert.
+- `m53.js`: Nach dem Griffziehen wartet der Entfernen-Klick 550 ms auf das Ende der vorhandenen 450-ms-Klicksperre statt nur 400 ms. Die Watchlist-Funktion bleibt unverändert.
