@@ -1,6 +1,6 @@
 // G09 der Übergabe (3.37.0): regelbasierte Mustererkennung („KI“) – Engine, 41 Katalogfälle, Vortrend (Revision 2), 8 Intervalle,
 // Panel, Info-Sheet, Chart-Markierung, Kontextwechsel, keine externen Abrufe.
-// Aufruf: node m58.js [abschnitt ...]   Abschnitte: trend, catalog, ui, wl, know, sync, pub
+// Aufruf: node m58.js [abschnitt ...]   Abschnitte: trend, catalog, ui, wl, know, sync, pub, tg
 const h = require('./harness');
 const results = [];
 const check = (name, cond, detail = '') => { results.push({ name, ok: !!cond }); console.log(`${cond ? '  ✓' : '  ✗'} ${name}${detail !== '' ? ' — ' + String(detail).slice(0, 700) : ''}`); };
@@ -255,6 +255,39 @@ const tests = {
     check('Speicherzustand „veröffentlicht“ für übertragene Fälle bis zum Stand der Revision; jüngere bleiben „extern gespeichert“, lokale „nur lokal“', st.pub === 'veröffentlicht' && st.later === 'extern gespeichert' && st.local === 'nur lokal', JSON.stringify(st));
     check('Nur lesend: ausschließlich GET auf data/muster/ (Manifest, eine Statistikdatei), ohne Schlüssel', reqs.length >= 2 && reqs.every(r => r.m === 'GET' && !r.auth) && reqs.some(r => r.n === 'stats-1.json'), JSON.stringify(reqs));
     check('keine Fehler (pub)', !real(errors).length, real(errors).join(' | ')); await ctx.close();
+  },  async tg(browser) {
+    // G09 C6a: Ziel „Chartmuster“ in „Telegram-Chats“ (Schalter, Epoche) – wichtige, frisch bestätigte Formationen als Meldung, je Fall einmal
+    const TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', PCHAT = '-100888';
+    const ctx = await browser.newContext({ viewport: { width: 1440, height: 1000 }, timezoneId: 'Europe/Berlin' }), errors = [];
+    await ctx.addInitScript(cfg => { if (!sessionStorage.getItem('s58tg')) { sessionStorage.setItem('s58tg', '1'); localStorage.setItem('scalpdesk.channels.v1', JSON.stringify(cfg)); } },
+      { tg: { token: TOKEN, chat: '987654321', thread: '', bchat: '-100555', bthread: '', btoken: '', pchat: PCHAT, pthread: '', ptoken: '' }, dc: { url: '', on: true }, ev: {}, mig33: true });
+    const page = await ctx.newPage(); h.collect(page, errors); await page.goto(`${h.URL_BASE}/weather-widget-v2.html`); await page.waitForTimeout(1500);
+    await page.evaluate(() => { if (!document.getElementById('tgc-dialog').open) document.getElementById('tgc-open').click(); }); await page.waitForTimeout(400);
+    const row = await page.evaluate(() => { const r = document.querySelector('.tgc-row[data-tgt="patterns"]'); return r && { st: r.dataset.state, sw: r.querySelector('input').getAttribute('role'), name: r.querySelector('b').textContent, dest: r.querySelector('.tgc-dest').textContent, count: document.getElementById('tgc-count').textContent }; });
+    check('„Telegram-Chats“: Ziel „📐 Chartmuster“ mit eigenem Schalter, eingerichtet über eigenen Chat (Bot wie Kursalarm), „3 von 4 aktiv · 1 nicht eingerichtet“ (Trades ohne Chat)', row && row.st === 'on' && row.sw === 'switch' && /Chartmuster/.test(row.name) && /Bot 123456789 · Chat -100888/.test(row.dest) && row.count === '3 von 4 aktiv · 1 nicht eingerichtet', JSON.stringify(row));
+    // Synthetische Analyse: letzte abgeschlossene Kerze bestätigt einen Doppel-Boden (Regelgüte 85 %)
+    const fire = (o = {}) => page.evaluate(o => { const step = 36e5, t0 = Math.floor(Date.now() / step) * step - 40 * step, k = Array.from({ length: 40 }, (_, i) => ({ t: t0 + i * step, o: 100, h: 101, l: 99, c: 100 + i * 0.01 }));
+      const i1 = k.length - 1 - (o.back || 0), hit = { id: o.id || 'double_bottom', kind: o.kind || 'form', dir: 'bull', status: o.kind === 'candle' ? 'bestätigt' : 'Ausbruch bestätigt', i1: o.kind === 'candle' ? i1 - 1 : i1, t0: k[i1 - 20].t + (o.shift || 0), t1: k[i1].t, q: o.q || 85, prelim: false, rules: [{ k: 'Regel', w: 2, ok: true }], levels: { brk: 100.2, tgt: 101.5, inv: 99.1 } };
+      __g09.pkRecord({ key: `${o.sym || 'TGUSDT'}|spot|1h`, k, running: false }, [hit], 'spot'); }, o);
+    const sentP = async since => (await h.ctl('/sent')).filter(m => m.svc === 'tg' && !m.method && m.at >= since && String(m.chat_id) === PCHAT);
+    let t = Date.now(); await fire(); await page.waitForTimeout(1500); let s = await sentP(t);
+    const txt = s[0]?.text || '';
+    check('Frisch bestätigte Formation (live, ≥ 80 %): genau eine Meldung in den Chartmuster-Chat, nicht in Kursalarm', s.length === 1 && (await h.ctl('/sent')).filter(m => m.svc === 'tg' && !m.method && m.at >= t).length === 1, JSON.stringify(s.map(x => x.text?.split('\n')[0])));
+    check('Meldung: Muster, Coin, Intervall, Status, Ziel und Invalidierung; Kennzeichnung „regelbasiert“ vs. „erlernt“; keine Erfolgswahrscheinlichkeit', /^📐 Chartmuster: Doppel-Boden · TG\/USDT Spot · 1h\n/.test(txt) && /Ausbruch bestätigt · Richtung aufwärts/.test(txt) && /rechnerisches Ziel/.test(txt) && /ungültig bei/.test(txt) && /Regelbasiert \(Modell pat-1\), Regelgüte 85 %/.test(txt) && /Erlernt: noch zu wenige vergleichbare Fälle \(\d+ von mindestens 10\)/.test(txt) && /keine Erfolgswahrscheinlichkeit/.test(txt), txt);
+    t = Date.now(); await fire(); await fire({ q: 70, shift: 1 }); await fire({ kind: 'candle', id: 'hammer', shift: 2 }); await fire({ back: 5, shift: 3 }); await page.waitForTimeout(1500); s = await sentP(t);
+    check('Gleicher Fall nicht noch einmal; Regelgüte < 80 %, Einzelkerze und älter bestätigte Formation: keine Meldung', s.length === 0, JSON.stringify(s.map(x => x.text?.split('\n')[0])));
+    // Ziel aus: keine Meldung, Epoche zählt hoch
+    const ep0 = await page.evaluate(() => __g05.chan.tep.patterns);
+    await page.click('#tgc-sw-patterns'); await page.waitForTimeout(300);
+    t = Date.now(); await fire({ sym: 'TG2USDT' }); await page.waitForTimeout(1200); s = await sentP(t);
+    const ch = await page.evaluate(() => JSON.parse(localStorage.getItem('scalpdesk.channels.v1')));
+    check('Schalter „Chartmuster“ aus: keine Meldung, lokale Epoche +1, andere Ziele unverändert', s.length === 0 && ch.tgt.patterns === false && ch.tep.patterns === ep0 + 1 && ch.tgt['course-alert'] === true && ch.tgt.trades === true, JSON.stringify({ n: s.length, tgt: ch.tgt, tep: ch.tep }));
+    // „Erlernt“ erst ab 10 vergleichbaren abgeschlossenen Fällen
+    const learned = await page.evaluate(() => { const mk = (i, out) => { const c = { mkt: 'spot', sym: 'LRNUSDT', iv: '1h', pat: 'double_bottom', kind: 'form', dir: 'bull', t0: 4e12 + i * 1e7, t1: 4e12 + i * 1e7 + 5e6, tc: 4e12 + i * 1e7 + 6e6, p0: 100, model: 'pat-1', profile: 'H12-e0.10', q: 80, at: 1, src: 'live', rules: [], res: { at: 1, tH: 2, ph: 101, r: 1, out, path: [0, 1] } }; c.id = __g09.pkId(c); return c; };
+      __g09.pkMerge(Array.from({ length: 10 }, (_, i) => mk(i, i < 7 ? 'auf' : i < 9 ? 'ab' : 'seitwärts')));
+      return __g09.patTgText({ ...mk(99, 'auf'), res: null, q: 90 }, { status: 'Ausbruch bestätigt', levels: {} }); });
+    check('Ab 10 vergleichbaren Fällen: „Erlernt (live protokolliert): nach 12 Kerzen 7 von 10 aufwärts, 2 abwärts, 1 seitwärts“', /Erlernt \(live protokolliert\): nach 12 Kerzen 7 von 10 aufwärts, 2 abwärts, 1 seitwärts/.test(learned), learned);
+    check('keine Fehler (tg)', !real(errors).length, real(errors).join(' | ')); await ctx.close();
   },
 };
 (async () => {

@@ -44,15 +44,15 @@ const tests = {
     const { ctx, page, errors } = await openPage(browser, { 'scalpdesk.channels.v1': chanCfg() });
     await openTgc(page); let r = await rows(page), m = await master(page);
     check('Telegram-Chats: Sicherung, Kursalarm, Trades; Trades „nicht eingerichtet“ (zählt nicht als aktiv)', r.backup.st === 'on' && r['course-alert'].st === 'on' && r.trades.st === 'na' && r.trades.dis && /nicht eingerichtet/.test(r.trades.text), JSON.stringify(r));
-    check('„2 von 3 aktiv · 1 nicht eingerichtet“, Sammelschalter an', m.count === '2 von 3 aktiv · 1 nicht eingerichtet' && m.checked && !m.ind, JSON.stringify(m));
+    check('„2 von 4 aktiv · 2 nicht eingerichtet“, Sammelschalter an', m.count === '2 von 4 aktiv · 2 nicht eingerichtet' && m.checked && !m.ind, JSON.stringify(m));
     check('Ohne Dienst: „Nur dieses Gerät“, Zeilen „an · nur dieses Gerät“', /^Nur dieses Gerät/.test(await txt(page, '#tgc-mode')) && /nur dieses Gerät/.test(r.backup.text));
     check('Große Schalter sind echte Schalter (role=switch, beschriftet), der Sammelschalter ein Kästchen', await page.evaluate(() => { const i = document.getElementById('tgc-sw-course-alert'); return i.getAttribute('role') === 'switch' && document.getElementById(i.getAttribute('aria-labelledby')).textContent.includes('Kursalarm') && !document.getElementById('tgc-all').hasAttribute('role'); }));
     await page.click('#tgc-sw-course-alert'); await page.waitForTimeout(250); m = await master(page); r = await rows(page);
-    check('Kursalarm aus: gemischt → Sammelschalter „indeterminate“, „1 von 3 aktiv“', !r['course-alert'].on && m.ind && !m.checked && m.count.startsWith('1 von 3 aktiv'), JSON.stringify(m));
+    check('Kursalarm aus: gemischt → Sammelschalter „indeterminate“, „1 von 4 aktiv“', !r['course-alert'].on && m.ind && !m.checked && m.count.startsWith('1 von 4 aktiv'), JSON.stringify(m));
     await page.click('#tgc-all'); await page.waitForTimeout(250); m = await master(page); r = await rows(page);
     check('Sammelschalter bei gemischt: alle eingerichteten an', r.backup.on && r['course-alert'].on && m.checked && !m.ind);
     await page.click('#tgc-all'); await page.waitForTimeout(250); m = await master(page); const st = (await ls(page, 'scalpdesk.channels.v1')).tgt;
-    check('Sammelschalter bei alle an: alle aus (gespeichert), Trades unverändert', !m.checked && !m.ind && m.count.startsWith('0 von 3') && st['course-alert'] === false && st.backup === false && st.trades === true, JSON.stringify(st));
+    check('Sammelschalter bei alle an: alle aus (gespeichert), Trades unverändert', !m.checked && !m.ind && m.count.startsWith('0 von 4') && st['course-alert'] === false && st.backup === false && st.trades === true, JSON.stringify(st));
     // Ziel aus: Alarm geht nicht raus
     await page.evaluate(() => document.getElementById('tgc-dialog').close());
     const t0 = Date.now(); const P = (await h.ctl('/state')).price.ETHUSDT;
@@ -63,7 +63,7 @@ const tests = {
     // alter Schalter „Aktiv“ aus → alle Ziele aus
     const o = await openPage(browser, { 'scalpdesk.channels.v1': { tg: { token: TOKEN, chat: ALERT, on: false }, dc: { url: '', on: true }, ev: EV } });
     await openTgc(o.page); const m2 = await master(o.page);
-    check('Frühere Einrichtung mit Telegram „Aktiv“ aus: alle Ziele aus (0 von 3)', m2.count.startsWith('0 von 3') && !m2.checked, JSON.stringify(m2));
+    check('Frühere Einrichtung mit Telegram „Aktiv“ aus: alle Ziele aus (0 von 4)', m2.count.startsWith('0 von 4') && !m2.checked, JSON.stringify(m2));
     check('keine Fehler (lokal)', !real(errors).length && !real(o.errors).length, [...real(errors), ...real(o.errors)].join(' | ')); await ctx.close(); await o.ctx.close();
   },
 
@@ -102,7 +102,7 @@ const tests = {
     // Trades
     await page.evaluate(() => { document.getElementById('chan-open').click(); document.getElementById('tg-tchat').value = '-100777'; __g05.readChanForm(); document.getElementById('chan-dialog').close(); });
     await openTgc(page); r = await rows(page);
-    check('Trades-Chat eingetragen: Ziel eingerichtet (Bot der Sicherung), „3 von 3 aktiv“', r.trades.st === 'on' && /Chat -100777/.test(await page.evaluate(() => document.querySelector('.tgc-row[data-tgt="trades"] .tgc-dest').textContent)) && (await master(page)).count === '3 von 3 aktiv');
+    check('Trades-Chat eingetragen: Ziel eingerichtet (Bot der Sicherung), „3 von 4 aktiv“ (Chartmuster nicht eingerichtet)', r.trades.st === 'on' && /Chat -100777/.test(await page.evaluate(() => document.querySelector('.tgc-row[data-tgt="trades"] .tgc-dest').textContent)) && (await master(page)).count === '3 von 4 aktiv · 1 nicht eingerichtet');
     check('Routen: Trades → nur Trades-Chat, Sicherung → nur Sicherungschat, Alarme → nur Kursalarm', await page.evaluate(() => __g05.tgTarget('trade').chat === '-100777' && __g05.tgTarget('backup').chat === '-100555' && __g05.tgTarget('alarm').chat === '987654321' && __g05.tgTarget('unbekannt') === null));
     check('keine Fehler (Routen)', !real(errors).length, real(errors).join(' | ')); await ctx.close();
   },

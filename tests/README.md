@@ -19,7 +19,7 @@ Ausgabe je Test: `✓`/`✗` je Prüfung und am Ende `n/m bestanden`.
 
 ## Regeln
 - **Nicht parallel:** Browser-Tests nicht gleichzeitig starten. Sie teilen sich den Test-Server (Ports 8765 und 8790).
-- **Neuer Test je Gruppe:** Jede Gruppe der Übergabe bekommt einen eigenen Test (G01: `m50.js`, G02: `m51.js` und `unit-lots.js`, G03: `m52.js` und `unit-acct.js`, G04: `m53.js`, G05: `m54.js` und `unit-247c.js`, G06: `m55.js`, G07: `m56.js`, G08: `m57.js`, G09: `m58.js`, `unit-247d.js` und `unit-pub.js`). Ihn in `run-all.sh` vorne in die Liste aufnehmen.
+- **Neuer Test je Gruppe:** Jede Gruppe der Übergabe bekommt einen eigenen Test (G01: `m50.js`, G02: `m51.js` und `unit-lots.js`, G03: `m52.js` und `unit-acct.js`, G04: `m53.js`, G05: `m54.js` und `unit-247c.js`, G06: `m55.js`, G07: `m56.js`, G08: `m57.js`, G09: `m58.js`, `unit-247d.js`, `unit-pub.js`). Ihn in `run-all.sh` vorne in die Liste aufnehmen.
 - **Ältere Tests anpassen:** Ändert eine Gruppe bewusst einen Text oder eine Regel, den alten Test anpassen und das in der Doku unter „Angepasste ältere Tests“ festhalten.
 
 ## Dateien

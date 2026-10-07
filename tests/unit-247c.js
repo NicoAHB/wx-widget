@@ -20,9 +20,9 @@ const TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', CHAT = '987654321'
   // ================= rein =================
   const T0 = Date.UTC(2026, 9, 6, 10, 0);
   let pol = W.policyNew(T0), cmds = [];
-  check('Neuer Stand: drei Ziele (Kursalarm, Sicherung, Trades) an, Revision 0, Epoche 1', pol.rev === 0 && W.TARGETS.every(id => pol.targets[id].on && pol.targets[id].epoch === 1), JSON.stringify(pol));
-  let r = W.policyApply(pol, cmds, { commandId: 'cmd-0001', expectedRevision: 0, set: { 'course-alert': false, backup: false, trades: false } }, T0 + 1000);
-  check('Master AUS: alle drei gemeinsam, Revision 1, Epoche je Ziel +1, „aus seit“', r.status === 200 && pol.rev === 1 && W.TARGETS.every(id => !pol.targets[id].on && pol.targets[id].epoch === 2 && pol.targets[id].offSince === T0 + 1000) && r.body.changed.length === 3, JSON.stringify(r.body));
+  check('Neuer Stand: vier Ziele (Kursalarm, Sicherung, Trades, Chartmuster) an, Revision 0, Epoche 1', pol.rev === 0 && W.TARGETS.every(id => pol.targets[id].on && pol.targets[id].epoch === 1), JSON.stringify(pol));
+  let r = W.policyApply(pol, cmds, { commandId: 'cmd-0001', expectedRevision: 0, set: Object.fromEntries(W.TARGETS.map(id => [id, false])) }, T0 + 1000);
+  check('Master AUS: alle vier gemeinsam, Revision 1, Epoche je Ziel +1, „aus seit“', r.status === 200 && pol.rev === 1 && W.TARGETS.every(id => !pol.targets[id].on && pol.targets[id].epoch === 2 && pol.targets[id].offSince === T0 + 1000) && r.body.changed.length === W.TARGETS.length && W.TARGETS.includes('patterns'), JSON.stringify(r.body));
   const r2 = W.policyApply(pol, cmds, { commandId: 'cmd-0001', expectedRevision: 0, set: { 'course-alert': true } }, T0 + 2000);
   check('Gleiche Auftrags-ID erneut: dieselbe Antwort („repeat“), nichts geändert', r2.status === 200 && r2.body.repeat && pol.rev === 1 && !pol.targets['course-alert'].on);
   r = W.policyApply(pol, cmds, { commandId: 'cmd-0002', expectedRevision: 0, set: { 'course-alert': true } }, T0 + 3000);
@@ -38,6 +38,13 @@ const TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', CHAT = '987654321'
   let g1 = W.evReserve(L, pol, { eventId: 'al1:abc:price-cross', targetId: 'course-alert', sender: 'app:ipad01', label: 'Kurs-Alarm BTC' }, T0);
   let g2 = W.evReserve(L, pol, { eventId: 'al1:abc:price-cross', targetId: 'course-alert', sender: 'app:iphone1' }, T0 + 10);
   check('Reservieren: erstes Gerät bekommt die Freigabe, das zweite nicht (Inhaber genannt)', g1.body.grant && !g2.body.grant && g2.body.holder === 'app:ipad01' && g2.body.st === 'reserved');
+  { // 2.2.0 (G09 C6a): Ziel „Chartmuster“ – Freigabe je Fall (Ereignis pat:<Fall-ID>), gesendet wird aus der App
+    const pp = W.policyNew(T0), LL = {}, cc = [], ev = 'pat:spot.BTCUSDT.1h.double_bottom.1a2b3c';
+    const a = W.evReserve(LL, pp, { eventId: ev, targetId: 'patterns', sender: 'app:ipad01', label: 'Chartmuster' }, T0), b = W.evReserve(LL, pp, { eventId: ev, targetId: 'patterns', sender: 'app:iphone1' }, T0 + 5);
+    W.policyApply(pp, cc, { commandId: 'cmd-p001', expectedRevision: 0, set: { patterns: false } }, T0 + 10);
+    const c = W.evReserve(LL, pp, { eventId: ev + 'x', targetId: 'patterns', sender: 'app:ipad01' }, T0 + 20);
+    check('Ziel „Chartmuster“: ein Gerät bekommt die Freigabe je Fall, das zweite nicht; Ziel aus → keine Freigabe (verworfen)', a.body.grant && !b.body.grant && b.body.holder === 'app:ipad01' && !c.body.grant && c.body.reason === 'off' && W.TARGET_NAME.patterns === 'Chartmuster', JSON.stringify({ a: a.body, b: b.body, c: c.body }));
+  }
   check('Melden nur durch den Inhaber', W.evReport(L, { eventId: 'al1:abc:price-cross', sender: 'app:iphone1', st: 'confirmed' }, T0).status === 409);
   W.evReport(L, { eventId: 'al1:abc:price-cross', sender: 'app:ipad01', st: 'sending' }, T0 + 20); W.evReport(L, { eventId: 'al1:abc:price-cross', sender: 'app:ipad01', st: 'unconfirmed', why: 'Antwort verloren' }, T0 + 30);
   const back = W.evReport(L, { eventId: 'al1:abc:price-cross', sender: 'app:ipad01', st: 'confirmed' }, T0 + 40);
