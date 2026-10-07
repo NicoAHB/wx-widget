@@ -2850,7 +2850,8 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // localStorage und gebündelt in die IndexedDB; beim Start gewinnt die zuletzt vollständig geschriebene Kopie.
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
 // 3.43.0 (G10a): reiner Fachkern in shared/; Datenquelle und Karten folgen getrennt.
-const APP_VERSION = '3.43.0', docEl = document.documentElement;
+// 3.44.0 (G10b): öffentlicher Adapter in shared/bitget-public.mjs; sichtbare Anbindung folgt mit G10(c).
+const APP_VERSION = '3.44.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -4627,7 +4628,14 @@ function updateCard(card, pos) {
   const ui = state.posUi[pos.id] || {}, pv = card.querySelector('[data-f="realize-preview"]');
   if (pv) { const c = closePreview(pos, ui, m); pv.textContent = c.text; const sb = card.querySelector('[data-action="save-realize"]'); if (sb && sb.textContent !== c.save) sb.textContent = c.save; }
   const av = card.querySelector('[data-f="add-preview"]'); if (av) av.textContent = addPreview(pos, ui, price);
-  const cb = card.querySelector('[data-action="realize"]'); if (cb) { const t = closeLabel(m.pnl, !!price && (!!pr?.error || state.paused)); if (cb.textContent !== t) cb.textContent = t; }
+  // 3.43.1: Text und Farbe aus demselben offenen G/V; kein Kurs, Pause oder genau null bleiben neutral.
+  const cb = card.querySelector('[data-action="realize"]'); if (cb) {
+    const stale = !!price && (!!pr?.error || state.paused), t = closeLabel(m.pnl, stale);
+    if (cb.textContent !== t) cb.textContent = t;
+    cb.classList.toggle('primary-lite', !stale && m.pnl > 0);
+    cb.classList.toggle('danger-btn', !stale && m.pnl < 0);
+    cb.classList.toggle('ghost', stale || m.pnl === null || m.pnl === 0);
+  }
   return m;
 }
 function renderPositions() { renderOpenPositions(); renderHistory(); renderBackupInfo(); }

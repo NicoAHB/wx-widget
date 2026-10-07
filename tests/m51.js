@@ -73,6 +73,21 @@ const tests = {
     const lab = async id => ({ close: await txt(page, `${C(id)} [data-action="realize"]`), add: await txt(page, `${C(id)} [data-action="add"]`) });
     let l = await lab('L1'), s = await lab('S1');
     check('Knöpfe: Long im Gewinn „Gewinn realisieren“ + „Nachkaufen“, Short im Verlust „Verlust realisieren“ + „Short aufstocken“', l.close === 'Gewinn realisieren' && l.add === 'Nachkaufen' && s.close === 'Verlust realisieren' && s.add === 'Short aufstocken', JSON.stringify([l, s]));
+    const buttonColors = () => page.evaluate(() => ['L1', 'S1'].map(id => {
+      const b = document.querySelector(`.pos-card[data-id="${id}"] [data-action="realize"]`), css = getComputedStyle(b);
+      return { text: b.textContent, green: b.classList.contains('primary-lite'), red: b.classList.contains('danger-btn'), bg: css.backgroundColor, color: css.color };
+    }));
+    let colors = await buttonColors();
+    check('Schließen-Button: Gewinn grün, Verlust rot, unterschiedliche Hintergründe und Texte', colors[0].green && !colors[0].red && colors[1].red && !colors[1].green && colors[0].bg !== colors[1].bg && colors[0].color !== colors[1].color, JSON.stringify(colors));
+    await page.evaluate(() => { document.querySelector('[data-theme-set="light"]').click(); });
+    colors = await buttonColors();
+    check('Grün/Rot auch im hellen Farbschema', colors[0].bg !== colors[1].bg && colors[0].color !== colors[1].color, JSON.stringify(colors));
+    await h.ctl('/set?symbol=SOLUSDT&price=99');
+    await until(async () => (await lab('L1')).close === 'Verlust realisieren', 10000);
+    colors = await buttonColors();
+    check('Live-Kurswechsel tauscht Text und Farbe ohne Neubau der Position', colors[0].red && !colors[0].green && colors[1].green && !colors[1].red && colors[1].text === 'Gewinn realisieren', JSON.stringify(colors));
+    await h.ctl('/set?symbol=SOLUSDT&price=150');
+    await until(async () => (await lab('L1')).close === 'Gewinn realisieren', 10000);
     const pv = await add(page, 'L1', '1', '130');
     let p = await posOf(page, 'L1');
     check('Rechenprobe: 2 zu 100 + 1 zu 130 = 3 zu Ø 110 (Vorschau nennt es vorher)', p.qty === 3 && p.entry === 110 && /^Neu: 3 SOL zu Ø 110,00 \(vorher 2 zu Ø 100,00\)/.test(pv), `${p.qty} zu ${p.entry} · ${pv}`);
@@ -95,6 +110,8 @@ const tests = {
     await h.ctl('/set?symbol=SOLUSDT&price=100'); await until(async () => (await txt(page, `${C('L1')} [data-f="pnl"]`)) === '0,00 USDT', 10000);
     l = await lab('L1');
     check('Kurs genau beim Ø-Einstieg (G/V exakt 0): „Position schließen“', l.close === 'Position schließen', l.close);
+    colors = await buttonColors();
+    check('Genau null ist neutral: kein roter oder grüner Gewinn-/Verlust-Button', !colors[0].green && !colors[0].red, JSON.stringify(colors[0]));
     // Rückgängig: der Nachkauf zu 80
     await page.evaluate(id => { document.querySelector(`.pos-card[data-id="${id}"] .lot-hist`).open = true; }, 'L1');
     await jsClick(page, `${C('L1')} [data-action="undo"]`); await page.waitForTimeout(120);

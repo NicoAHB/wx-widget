@@ -10,12 +10,14 @@ Automatische Tests für die App (`weather-widget-v2.html`) und den 24/7-Dienst (
 ## Aufruf
 | Befehl | Was er tut | Dauer |
 |---|---|---|
-| `bash run-all.sh` | alle Tests nacheinander (Einheitentests, Installer, m3–m61, ui, functional, Statusseite, Rauchtest, Sichtprüfung) | etwa 2,5 Stunden |
+| `bash run-all.sh` | alle Tests nacheinander (Einheitentests, Installer, m3–m62, ui, functional, Statusseite, Rauchtest, Sichtprüfung) | etwa 2,5 Stunden |
 | `node m51.js` | ein einzelner Test, hier G02 (Lose, Nachkauf, Teilabschluss) | wenige Minuten |
 | `node m51.js svc` | nur ein Abschnitt eines Tests | |
 | `bash lint.sh` | ESLint über App und G10-Fachmodule (0 Fehler, 3 bekannte App-Warnungen) | Sekunden |
 | `node unit-confluence.js` | G10(a): 135 feste Fachprüfungen ohne Browser | Sekunden |
 | `node m61.js` | G10(a): Node/Browser/Worker, Versionsgleichheit, echter Offline-Import | Sekunden |
+| `node unit-bitget.js` | G10(b): 55 öffentliche Quellen-/Zeit-/Zustands-/Fehlerprüfungen | Sekunden |
+| `node m62.js` | G10(b): Adapter-Parität, echtes Browser-fetch mit lokalen Antworten, Offline/Netzausfall | Sekunden |
 
 Ausgabe je Test: `✓`/`✗` je Prüfung und am Ende `n/m bestanden`.
 
@@ -32,6 +34,7 @@ Ausgabe je Test: `✓`/`✗` je Prüfung und am Ende `n/m bestanden`.
 - **Installer:** `inst-247.sh` testet `server/install.sh` mit nachgebautem systemd.
 - **G09 C6b:** `unit-247e.js` prüft Engine-Gleichheit, alle 19 Formationen, Dienstversand ohne App, Fall-ID, Revision, Epoche, Prozessabbruch und Neustart. `m60.js` prüft bewusste HTTPS-Übernahme, Konflikt/Retry, geheimnisfreie Metadaten und keinen Ersatzversand. Beide stehen vorn in `run-all.sh`.
 - **G10(a):** `unit-confluence.js` importiert direkt die drei Module in `shared/` (keine Rechenkopie): MACD/Fortsetzung, Pivot-Kenntniszeit, Divergenz-Alter ab Bestätigung, 69,999/70, Sperren, Mustergewicht, Risiko/Kosten/Cross, 29/30 Fälle und Timeouts. `m61.js` vergleicht denselben Kern in Node, Browser und Browser-Worker und prüft frischen Offline-Import. `fixtures/confluence*.mjs` sind ausschließlich Testdaten. Beide Tests stehen vorn im Gesamtlauf.
+- **G10(b):** `unit-bitget.js` importiert den tatsächlichen öffentlichen Adapter; feste UTC-/Funding-/Kontraktantworten, exklusive Seitengrenzen wie live geprüft, begrenzte Jobs, JSON-Fortsetzung, Quellen-/Revisionswechsel, Lücken/Konflikte, 429/Timeout/Abbruch. `m62.js` prüft tatsächliche Modulimporte in Node/Browser/Worker und Browser-fetch mit lokal abgefangenen Bitget-URLs; keine echte Browser-/CORS-Abnahme. Separate öffentliche Live-Prüfung und Grenzen in `docs/G10-BITGET.md`.
 - **Oberfläche:** `m*.js`, `ui.js`, `functional.js`, `smoke.js`, `visual.js`, `statuscheck.js` laufen im Browser.
 - **Erzeugte Dateien:** Zwischenstände (`*.json`) und Bilder (`*.png`) entstehen beim Lauf und sind von git ausgenommen (`.gitignore`).
 
@@ -43,3 +46,10 @@ Ausgabe je Test: `✓`/`✗` je Prüfung und am Ende `n/m bestanden`.
 ### Ergänzungen (3.43.0, G10a)
 - Bestehende Fachtests unverändert; neue Tests im Gesamtlauf.
 - `lint.sh` prüft zusätzlich die gemeinsamen Module. Die Server-Konfiguration kennt die tatsächlich verwendeten Node-Globals `Buffer`/`performance`. Vollständiger Server-Lint: 0 Fehler, zwei bestehende Warnungen in der erzeugten Muster-Engine. Neue G10-Module: 0 Fehler/0 Warnungen.
+
+### Ergänzung (3.43.1, Positionsbutton)
+- `m51.js lots`: zusätzlich tatsächliche Farben für Gewinn/Verlust im hellen und dunklen Farbschema, Farb-/Textwechsel bei Live-Kursen und neutraler Button bei genau null (19/19).
+
+### Ergänzungen (3.44.0, G10b)
+- `unit-bitget.js` und `m62.js` vorn im Gesamtlauf (jetzt 91 Zielbefehle). Bitget-Antworten vollständig lokal; bestehende Binance-Attrappe unverändert.
+- Server-/Modul-Lint kennt zusätzlich die Standardglobals `URLSearchParams`, `AbortController` und `TextDecoder`. Kein Polyfill oder neue Produktionsabhängigkeit.
