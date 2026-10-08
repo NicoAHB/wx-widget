@@ -1895,6 +1895,7 @@ html{scroll-padding-top:calc(var(--lb-h,56px) + 16px)}
 </style>
   <script type="module">
 // 3.45.0 (G10c): der vorhandene Binance-/G07-Kern bleibt eigenständig.
+import { createPo3View } from './shared/po3-view.mjs';
 import { cardState as kiCardState, scoreLabel as kiScoreLabel } from './shared/confluence-live.mjs';
 import { divergenceInfo as kiDivergenceInfo, parametersKey as kiParametersKey } from './shared/confluence-core.mjs';
 import { observationKey as kiObservationKey } from './shared/confluence-replay.mjs';
@@ -2869,7 +2870,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
 // 3.43.0 (G10a): reiner Fachkern in shared/; Datenquelle und Karten folgen getrennt.
 // 3.44.0 (G10b): öffentlicher Adapter in shared/bitget-public.mjs; sichtbare Anbindung folgt mit G10(c).
-const APP_VERSION = '3.47.0', docEl = document.documentElement;
+const APP_VERSION = '3.48.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -8005,7 +8006,7 @@ const TG_ROUTE = { alarm: 'course-alert', pos: 'course-alert', day: 'course-aler
 // Chartmuster – eigener Chat (Bot: eigener oder derselbe wie Kursalarm)
 function tgDest(id) {
   const t = chan.tg, ok = (token, chat, thread) => TG_TOKEN_RE.test(token) && TG_CHAT_RE.test(chat) && (!thread || TG_THREAD_RE.test(thread)) ? { token, chat, thread } : null;
-  if (id === 'ki') { const d = typeof svc === 'object' && svcOn() ? svc.pol.conf?.ki?.destination : null; return d && svc.pol.conf?.ki?.config && svc.pol.conf?.targets?.ki ? { chat: d.chat, bot: d.bot } : null; }
+  if (id === 'ki') { const d = typeof svc === 'object' && svcOn() ? svc.pol.conf?.ki?.destination : null; return d && (svc.pol.conf?.ki?.config || svc.pol.conf?.po3?.config) && svc.pol.conf?.targets?.ki ? { chat: d.chat, bot: d.bot } : null; }
   return id === 'course-alert' ? ok(t.token, t.chat, t.thread) : id === 'backup' ? ok(t.btoken || t.token, t.bchat, t.bthread) : id === 'trades' ? ok(t.ttoken || t.btoken || t.token, t.tchat, t.tthread) : id === 'patterns' ? ok(t.ptoken || t.token, t.pchat, t.pthread) : null;
 }
 function tgTarget(kind) { const id = TG_ROUTE[kind]; return id ? tgDest(id) : null; }
@@ -11754,7 +11755,7 @@ var TGT = [
   { id: 'course-alert', name: 'Kursalarm', icon: '🔔', purpose: 'Kurs-Alarme, Stop/Ziel, Gewinn/Verlust, Tages-Limit, Termine, BTC-Puls' },
   { id: 'trades', name: 'Trades', icon: '📊', purpose: 'Ein Bild je vollständig geschlossener Position – nur aus der App, nie über den Dienst' },
   { id: 'patterns', name: 'Chartmuster', icon: '📐', purpose: 'Wichtige bestätigte Formationen (Regelgüte ≥ 80 %) – mit übernommener Vorauswahl auch bei geschlossener App' },
-  { id: 'ki', name: 'KI-Signale', icon: '🧠', purpose: 'Geprüfte Bitget-Konfluenzsignale – nur über bestätigten 24/7-Dienst; standardmäßig AUS' }];
+  { id: 'ki', name: 'KI-Signale', icon: '🧠', purpose: 'Bitget-Konfluenz-/PO3-Signale – nur über bestätigten 24/7-Dienst; standardmäßig AUS' }];
 var SVC_KEY = 'scalpdesk.svc.v1', POL_KEY = 'scalpdesk.policy.v1', SVC_URL_RE = /^(https:\/\/[a-z0-9.-]+|http:\/\/(127\.0\.0\.1|localhost))(:\d{1,5})?$/, SVC_KEY_RE = /^[A-Za-z0-9_-]{32,64}$/, SVC_POLL = 60e3;
 var svc = { cfg: null, pol: null, reach: null, at: 0, err: '', pending: null, notice: '', busy: false, ptimer: 0, events: [], eps: {}, ver: '', first: null };
 svc.cfg = loadSvc(); svc.pol = loadPol();
@@ -11785,7 +11786,7 @@ async function svcFetch(path, { method = 'GET', body = null, timeout = 8000 } = 
 }
 // Schalterantworten enthalten nur die Policy; die unabhängig bestätigte Musterliste dabei erhalten.
 // Ein vollständiger /v1/state-Abgleich darf sie dagegen entfernen (z. B. bei einem älteren Dienst).
-const svcConf = (j, partial = false) => ({ rev: j.rev, targets: j.targets, ki: j.ki || (partial ? svc.pol.conf?.ki : null) || null, patternWatch: j.patternWatch || (partial ? svc.pol.conf?.patternWatch : null) || null, at: Date.now(), v: j.v || svc.ver });
+const svcConf = (j, partial = false) => ({ rev: j.rev, targets: j.targets, po3: j.po3 || (partial ? svc.pol.conf?.po3 : null) || null, ki: j.ki || (partial ? svc.pol.conf?.ki : null) || null, patternWatch: j.patternWatch || (partial ? svc.pol.conf?.patternWatch : null) || null, at: Date.now(), v: j.v || svc.ver });
 // Stand am Dienst lesen: Schalter, Episoden, Ereignisse (Abgleich beim Start, siehe svcReconcile); offenen Auftrag klären
 async function svcRefresh(force = false) {
   if (!svcOn() || (svc.busy && !force)) return null;
@@ -13621,6 +13622,9 @@ async function recCopy() {
 })();
 // ---------- 3.45.0 (G10c): öffentliche lokale KI-Signale, eigener Worker/Datenspeicher ----------
 var kiReady = false;
+var po3View = null;
+let po3Pending = new Set();
+const PO3_CFG_KEY = 'scalpdesk.po3.settings.v1';
 const KI_CFG_KEY = 'scalpdesk.ki.settings.v1', KI_CARDS_KEY = 'scalpdesk.idb.ki.cards.v1', KI_DATA_KEY = 'scalpdesk.idb.ki.data.v1';
 const KI_DEFAULTS = { revision: 1, on: false, shortOn: true, longOn: true, shortPair: '1h/4h', longPair: '4h/1d', shortHours: 24, longDays: 21,
   shortLeverage: 20, longLeverage: 3, marginEUR: null, slippageBps: null, fundingMode: '', anchorPolicy: '',
@@ -13654,11 +13658,32 @@ function kiTelegramControl(id) {
 }
 function kiTelegramRender() {
   if (!kiReady) return;
+  po3View?.render();
   const confirmed = svcOn() && svc.pol.conf?.targets?.ki && svc.pol.conf?.ki;
   if (!ki.forwardDirty && confirmed?.config) for (const h of ['short', 'long']) if ($('ki-forward-' + h)) $('ki-forward-' + h).checked = confirmed.config.forward?.[h] !== false;
   for (const id of ['ki-telegram', 'ki-settings-telegram']) { const button = $(id); if (!button) continue;
-    button.disabled = !confirmed?.config || !!svc.pending || svc.reach !== true; button.textContent = `KI-Signale an Telegram senden: ${confirmed ? tgtOn('ki') ? 'AN · bestätigt' : 'AUS · bestätigt' : 'nicht verfügbar'}`;
-    put(id + '-note', confirmed ? `Dienst ${svc.ver} · Bot ${confirmed.destination?.bot || 'am Server'} · Chat ${confirmed.destination?.chat || 'am Server'}. ${confirmed.config ? 'Auswahl Revision ' + confirmed.rev : 'Auswahl noch nicht übernommen'}. ${svc.reach === false ? 'Verbindungsfehler; letzter bestätigter Stand bleibt.' : 'Betrifft nur KI-Versand; Karten und Preisalarme bleiben.'}` : '24/7-Dienst 2.5.0 mit HTTPS einrichten; KI startet AUS.'); }
+    button.disabled = !(confirmed?.config || svc.pol.conf?.po3?.config) || !!svc.pending || svc.reach !== true; button.textContent = `KI-Signale an Telegram senden: ${confirmed ? tgtOn('ki') ? 'AN · bestätigt' : 'AUS · bestätigt' : 'nicht verfügbar'}`;
+    put(id + '-note', confirmed ? `Dienst ${svc.ver} · Bot ${confirmed.destination?.bot || 'am Server'} · Chat ${confirmed.destination?.chat || 'am Server'}. ${confirmed.config ? 'Konfluenz Revision ' + confirmed.rev : svc.pol.conf?.po3?.config ? 'PO3 Revision ' + svc.pol.conf.po3.revision : 'Auswahl noch nicht übernommen'}. ${svc.reach === false ? 'Verbindungsfehler; letzter bestätigter Stand bleibt.' : 'Betrifft nur KI-Versand; Karten und Preisalarme bleiben.'}` : '24/7-Dienst 2.5.0 mit HTTPS einrichten; KI startet AUS.'); }
+}
+async function po3ServiceConfigure({ selected, singleFvg, stop = false }) {
+  if (!svcOn()) throw new Error('24/7-Dienst mit HTTPS zuerst einrichten.'); await svcRefresh(true);
+  const confirmed = svc.pol.conf?.po3; if (!confirmed) throw new Error('Dienst auf 2.6.0 aktualisieren und Stand prüfen.');
+  const request = po3View.requestFor(ki.coin), config = stop ? { ...confirmed.config, on: false } : { ...request, on: true, instruments: [...new Set([ki.coin, ...state.watch.slice(0, 39).map(wlSym)])], selected, singleFvg };
+  delete config.instrument;
+  if (stop && !confirmed.config) throw new Error('Noch keine PO3-Auswahl am Dienst.');
+  const key = 'scalpdesk.po3.service-command.v1', old = store.get(key), cmd = old || { commandId: 'po3-c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8), expectedRevision: confirmed.revision, config };
+  store.set(key, cmd); if (!(await store.flush())) throw new Error('PO3-Auftrag nicht gesichert; erneut versuchen.'); let reply;
+  if (old) { const found = await svcFetch('/v1/commands/' + cmd.commandId); if (found.j?.found) reply = { status: found.j.status, j: found.j.result }; }
+  reply ||= await svcFetch('/v1/po3/config', { method: 'POST', body: cmd });
+  if (reply.status !== 200 || !reply.j?.ok) { if ([400, 409].includes(reply.status)) store.del(key); throw new Error(reply.j?.error || 'PO3-Auswahl nicht übernommen.'); }
+  store.del(key); await svcRefresh(true); kiTelegramRender(); return 'PO3-Auswahl vom Dienst bestätigt; KI-/Telegram-Versand separat wählen.';
+}
+async function po3ServiceJournal() {
+  if (!svcOn() || ki.busy || ki.pending) throw new Error('Dienst einrichten oder laufenden KI-Abschnitt abwarten.');
+  const offset = po3View.serviceOffset || 0, reply = await svcFetch('/v1/po3/journal?offset=' + offset);
+  if (reply.status !== 200 || !reply.j?.ok || !Array.isArray(reply.j.journal)) throw new Error(reply.j?.error || 'PO3-Journal nicht verfügbar.');
+  const answer = await po3View.action('append', { journal: reply.j.journal }); if (!answer) throw new Error(po3View.state.message);
+  po3View.serviceOffset = offset + reply.j.journal.length >= reply.j.total ? 0 : offset + reply.j.journal.length; return answer;
 }
 async function kiServiceConfig() {
   try {
@@ -13782,7 +13807,7 @@ function kiSaveConfig() {
   ki.message = 'Öffentliche Bitget-Daten werden im Worker geladen …'; $('ki-settings').open = false; kiRender(); kiKick();
 }
 function kiCancel() { ki.epoch++; clearTimeout(ki.timer); ki.timer = null; ki.worker?.terminate(); ki.worker = null; ki.pending?.reject(new Error('abgebrochen')); ki.pending = null; }
-function kiActive() { return ki.cfg.on && !ki.historyBusy && !document.hidden && !state.paused && ki.cfg.slippageBps !== null && !ki.storageFailed; }
+function kiActive() { return ((ki.cfg.on && ki.cfg.slippageBps !== null && !ki.storageFailed) || po3View?.active() || po3Pending.size > 0) && !ki.historyBusy && !document.hidden && !state.paused; }
 function kiKick(delay = 0) {
   clearTimeout(ki.timer); ki.timer = null; if (document.hidden) return;
   if (kiActive()) { ki.timer = setTimeout(() => { ki.timer = null; void kiNext(); }, delay); return; }
@@ -13825,14 +13850,21 @@ async function kiReadDatasets(id) {
 async function kiNext() {
   if (!kiActive() || ki.busy) return;
   if (store.info.idb !== 'aktiv') { ki.message = 'IndexedDB nicht verfügbar: lokale Signale pausieren. Preisalarme bleiben aktiv.'; ki.storageFailed = true; kiRender(); return; }
-  const symbols = state.watch.slice(0, 40).map(wlSym), jobs = symbols.flatMap(instrument => ['short', 'long'].filter(h => ki.cfg[h + 'On']).map(horizon => ({ instrument, horizon })));
-  const job = jobs.find(j => (ki.due.get(kiDatasetId(j.instrument, j.horizon)) || 0) <= Date.now());
-  if (!job) { kiRender(); kiKick(30000); return; }
+  const symbols = [...new Set([ki.coin, ...state.watch.slice(0, 39).map(wlSym)])], jobs = [...(ki.cfg.on && ki.cfg.slippageBps !== null && !ki.storageFailed ? symbols.flatMap(instrument => ['short', 'long'].filter(h => ki.cfg[h + 'On']).map(horizon => ({ instrument, horizon }))) : []), ...[...new Set([...(po3View?.active() ? symbols : []), ...po3Pending])].map(instrument => ({ instrument, strategy: 'po3' }))];
+  const jobKey = j => j.strategy === 'po3' ? 'po3:' + j.instrument : kiDatasetId(j.instrument, j.horizon);
+  const job = jobs.find(j => (ki.due.get(jobKey(j)) || 0) <= Date.now());
+  if (!job) { kiRender(); const due = Math.min(...jobs.map(j => ki.due.get(jobKey(j)) || Date.now() + 30000)); kiKick(Math.max(250, Math.min(30000, due - Date.now()))); return; }
   ki.busy = true; const epoch = ki.epoch;
   if (!(await store.claim('ki-scan', 240000))) { ki.busy = false; kiKick(10000); return; }
   let watchdog, savedKey = null;
   try {
     if (epoch !== ki.epoch || !kiActive()) return;
+    if (job.strategy === 'po3') {
+      watchdog = setTimeout(() => kiCancel(), 180000);
+      const reply = await kiJob({ ...po3View.requestFor(job.instrument), trackingOnly: !po3View.active() }, {}, 'po3');
+      if (epoch !== ki.epoch || !kiActive()) return;
+      po3Pending = new Set(reply.po3.pending); po3View.accept(reply.po3); ki.due.set(jobKey(job), reply.po3.complete ? Math.floor(Date.now() / 60000) * 60000 + 64000 : Date.now() + 2000); return;
+    }
     await kiReadDatasets(kiDatasetId(job.instrument, job.horizon)); if (epoch !== ki.epoch || !kiActive()) return;
     const id = kiDatasetId(job.instrument, job.horizon), item = ki.data[id], now = Date.now(), [timeframe, contextTimeframe] = ki.cfg[job.horizon + 'Pair'].split('/');
     const periods = { '1h': 3600e3, '4h': 14400e3, '1d': 86400e3 }, anchor = tf => Math.floor(now / periods[tf]) * periods[tf] - 260 * periods[tf];
@@ -13867,7 +13899,7 @@ async function kiNext() {
     broadcastData([KI_DATA_KEY, ...(savedKey ? [savedKey] : []), KI_CARDS_KEY]);
     ki.message = loaded.reason || result?.quoteReason || `${job.instrument.slice(0, -4)} · ${job.horizon === 'short' ? 'kurz' : 'lang'}: Daten geprüft ${kiDate(Date.now())}. ${jobs.length} Coin-/Horizontpaare in der Vorauswahl.`;
   } catch (e) {
-    if (epoch === ki.epoch) { ki.message = e.message; ki.due.set(kiDatasetId(job.instrument, job.horizon), Date.now() + 60000); if (/Speicher|gespeichert|speicher/.test(e.message)) ki.storageFailed = true; }
+    if (epoch === ki.epoch) { ki.message = e.message; ki.due.set(jobKey(job), Date.now() + 60000); if (job.strategy === 'po3') { po3View.state.message = e.message; po3View.render(); } if (job.strategy !== 'po3' && /Speicher|gespeichert|speicher/.test(e.message)) ki.storageFailed = true; }
   } finally { clearTimeout(watchdog); await store.release('ki-scan'); ki.busy = false; kiRender(); kiKick(250); }
 }
 // G10(d): explizite Historienjobs; Originalkarte und ihr damaliger Score bleiben unverändert.
@@ -13954,6 +13986,7 @@ function kiRenderCard(card, current = false) {
   return box;
 }
 function kiRender() {
+  po3View?.render();
   if (!$('ki-status')) return;
   put('ki-status', ki.message + (ki.archiveError ? ' · Originalarchiv: ' + ki.archiveError : '')); $('ki-stop').disabled = !ki.cfg.on; $('ki-refresh').disabled = !ki.cfg.on || ki.busy || ki.historyBusy;
   const coins = $('ki-coin'), symbols = [...new Set([state.symbol, ...state.watch.slice(0, 40).map(wlSym)])];
@@ -14004,7 +14037,15 @@ function kiDrawChart() {
     svg.append(node('line', { class: 'ki-level ki-' + kind, x1: left, x2: right, y1: y(price), y2: y(price) }), node('text', { x: right + 5, y: y(price) + 4 }, label + ' ' + priceText(price))); }
   svg.append(node('text', { x: left, y: 294 }, kiDate(rows[0].time)), node('text', { x: right, y: 294, 'text-anchor': 'end' }, kiDate(rows.at(-1).end))); $('ki-chart').replaceChildren(svg);
 }
-kiBuild(); kiReady = true; kiTelegramRender(); kiRender(); kiKick();
+kiBuild(); kiReady = true;
+po3View = createPo3View({ host: $('ki-signal-panel'), options: store.get(PO3_CFG_KEY, {}), symbol: () => ki.coin, navigate: element => goTo(element.id),
+  serviceConfigure: po3ServiceConfigure, serviceJournal: po3ServiceJournal, serviceState: () => svc.pol.conf?.po3,
+  save: options => { store.set(PO3_CFG_KEY, options); broadcastData([PO3_CFG_KEY]); }, changed: () => { kiCancel(); ki.due.clear(); kiKick(); },
+  request: async request => { if (ki.busy || ki.pending) throw new Error('KI-Worker arbeitet; nach dem aktuellen Abschnitt erneut versuchen.'); ki.busy = true;
+    try { const reply = await kiJob(request, {}, 'po3-journal'); po3Pending = new Set(reply.po3.pending); return reply.po3; } finally { ki.busy = false; kiKick(); } } });
+kiTelegramRender(); kiRender();
+// Offene eingefrorene PO3-Fälle nach Start nachbewerten, auch bei ausgeschalteter Neudetektion.
+ki.busy = true; void kiJob({ action: 'pending' }, {}, 'po3-journal').then(reply => { po3Pending = new Set(reply.po3.pending); }).catch(e => { if (e.message !== 'abgebrochen') { po3View.state.message = e.message; po3View.render(); } }).finally(() => { ki.busy = false; kiKick(); });
 void kiReadHistory('results').then(rows => { for (const row of rows) ki.history.set(row.id, row); ki.historyRevision++; kiRender(); }).catch(e => { ki.archiveError = e.message; kiRender(); });
 document.addEventListener('visibilitychange', () => { if (document.hidden) kiCancel(); else { kiRender(); kiKick(); } });
 $('pause').addEventListener('click', () => { if (state.paused) kiCancel(); else kiKick(); });
@@ -14012,6 +14053,7 @@ window.addEventListener('resize', () => { if (!$('ki-chart-sec').hidden) kiDrawC
 bc?.addEventListener('message', ({ data: msg }) => {
   if (msg?.t !== 'data' || msg.from === TAB_ID || !Array.isArray(msg.items)) return;
   for (const [key, value] of msg.items) {
+    if (key === PO3_CFG_KEY && value) { kiCancel(); po3View.state.options = value; ki.due.clear(); po3View.render(); kiKick(); continue; }
     if (![KI_CFG_KEY, KI_CARDS_KEY, KI_DATA_KEY].includes(key) && !key.startsWith('scalpdesk.idb.ki.series.')) continue;
     store.adopt(key, value);
     if (key === KI_CFG_KEY) { kiCancel(); ki.cfg = { ...KI_DEFAULTS, ...value }; ki.current.clear(); ki.due.clear(); kiKick(); }
@@ -14020,6 +14062,7 @@ bc?.addEventListener('message', ({ data: msg }) => {
   }
   kiRender(); kiKick();
 });
+window.__g11 = { view: po3View, next: kiNext };
 window.__g10 = { backtest: kiBacktest, historyView: kiHistoryView, serviceConfig: kiServiceConfig, serviceCards: kiServiceCards, get state() { return ki; }, cardState: kiCardState, render: kiRender, tab: kiTab, showChart: kiShowChart, stop: kiCancel, kick: kiKick, save: kiSaveConfig };
 for(const f of SET_FIELDS)stampSetting(f);renderIntegrity(); // 3.29.0: Abstammung der Einstellungen anlegen, Prüfliste zeigen
 if(posTradesSyncAll())persist(); // 3.30.0: zu jedem Teilabschluss genau ein Trade – fehlt einer, kommt er aus dem Verlauf der Position

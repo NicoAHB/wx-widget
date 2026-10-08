@@ -1,0 +1,55 @@
+// G11: vollständige Kerzenverarbeitung, Prefixgleichheit, Segmentfortsetzung und Journalvertrag.
+let pass = 0, fail = 0;
+const check = (name, ok) => { ok ? pass++ : fail++; console.log(`${ok ? '✓' : '✗'} ${name}`); };
+const throws = fn => { try { fn(); return false; } catch { return true; } };
+(async () => {
+  const P = await import('../shared/po3-core.mjs'), E = await import('../shared/po3-stream.mjs'), S = await import('../shared/po3-store.mjs'), F = await import('../shared/po3-feed.mjs');
+  const M = 60000, at = Date.UTC(2026, 9, 7), config = P.po3Settings({ bias: '1m', setup: '1m', entry: '1m', closure: 'tp1' });
+  const c = (i, open = 110, high = 120, low = 100, close = 110) => ({ time: at + i * M, end: at + (i + 1) * M, knownAt: at + (i + 1) * M, open, high, low, close, volume: 100 });
+  const source = { venue: 'bitget', product: 'USDT-FUTURES', dataRevision: 'bitget-v1' }, window = { from: at + 260 * M, to: at + 300 * M }, anchors = { '1m': at };
+  const init = () => E.createPo3Stream({ instrument: 'BTCUSDT', config, window, anchors, source });
+  const warmup = Array.from({ length: 260 }, (_, i) => c(i, 110, 125, 95, 110));
+  const series = [...warmup, ...Array.from({ length: 6 }, (_, i) => c(260 + i)), c(266, 110, 119, 99, 110), c(267, 101, 103, 100, 102), c(268, 102, 106, 101, 105), c(269, 106, 110, 104, 108), c(270, 108, 109, 103.5, 105)];
+  const opts = { asOf: at + 300 * M, contract: { tickSize: .1, quantityStep: .001 } };
+  const one = E.advancePo3Stream(init(), { '1m': series }, opts);
+  const first = E.advancePo3Stream(init(), { '1m': series.slice(0, 269) }, opts), second = E.advancePo3Stream(first.stream, { '1m': series.slice(269) }, { ...opts, journal: first.journal });
+  check('Echte Reihenfolge: Box → Setup-Sweep → drei neue FVG-Kerzen → späterer Retest', one.stream.mechanical.box.to === at + 266 * M && one.stream.mechanical.setupSweep.time === at + 266 * M && one.stream.mechanical.zone.confirmedAt === at + 270 * M && one.stream.mechanical.retestAt === at + 271 * M);
+  check('Segmentierte Verarbeitung exakt gleich, keine offenen Fälle vergessen', JSON.stringify(one) === JSON.stringify(second));
+  check('Warm-up zählt keine historischen Bias-Strukturen und keine Box vor Start', first.stream.series['1m'].periodPivots.every(x => x.time >= window.from) && one.stream.mechanical.box.from >= window.from);
+  check('Referenzcache begrenzt, EMA-Zustand behält festen Anker', one.stream.series['1m'].rows.length === 128 && one.stream.series['1m'].indicator.anchor === at && one.stream.series['1m'].indicator.count === series.length);
+  const late = { ...c(271), knownAt: opts.asOf + M }, future = c(301);
+  const nofuture = E.advancePo3Stream(one.stream, { '1m': [late, future] }, opts);
+  check('Unbekannte und zukünftige Kerzen verändern weder Zustand noch Signal', JSON.stringify(one.stream) === JSON.stringify(nofuture.stream));
+  check('Lücke und geändert gespeicherte Kerze sperren mit Erhalt des Originals', throws(() => E.advancePo3Stream(one.stream, { '1m': [c(272)] }, opts)) && throws(() => E.advancePo3Stream(one.stream, { '1m': [{ ...series.at(-1), high: 111 }] }, opts)) && init().series['1m'].indicator.count === 0);
+  const pending = E.advancePo3Stream(init(), { '1m': series.slice(0, -1) }, opts);
+  check('Kein Retest auf FVG-Bestätigung und keine voreilige Karte', !pending.stream.mechanical.retestAt && pending.journal.length === 0);
+  const mirrored = series.map(x => ({ ...x, open: 220 - x.open, close: 220 - x.close, high: 220 - x.low, low: 220 - x.high }));
+  const short = E.advancePo3Stream(init(), { '1m': mirrored }, opts);
+  check('Short-Regelkette spiegelbildlich mit späterem FVG-Retest', short.stream.mechanical.setupSweep.direction === -1 && short.stream.mechanical.zone.direction === -1 && short.stream.mechanical.retestAt === one.stream.mechanical.retestAt);
+  const signalConfig = P.po3Settings({ ...config, criteria: 'g10' });
+  const signalStream = () => E.createPo3Stream({ instrument: 'BTCUSDT', config: signalConfig, window, anchors, source });
+  const entrySeries = [...Array.from({ length: 260 }, (_, i) => c(i, 150, 400, 10, 150)), ...Array.from({ length: 6 }, (_, i) => c(260 + i, 150, 300, 100, 150)), c(266, 150, 290, 99, 150), c(267, 101, 110, 100, 105), c(268, 110, 125, 105, 120), c(269, 125, 135, 120, 130), c(270, 130, 134, 115, 120), c(271, 103, 130, 98, 101), c(272, 103, 130, 97, 101), { ...c(273, 101, 140, 100, 136), volume: 400 }];
+  const actual = E.advancePo3Stream(signalStream(), { '1m': entrySeries }, opts);
+  check('Vollständige echte OHLC-Kette erzeugt erst nach Entry-Sweep und späterem Impuls Signal', actual.journal.length === 1 && actual.journal[0].plan.confirmedAt === at + 274 * M && actual.journal[0].sweep.time === at + 272 * M && actual.journal[0].score.eligible);
+  const justFrozen = E.advancePo3Stream(signalStream(), { '1m': entrySeries.slice(0, 272) }, opts);
+  check('Strukturkenntnis am Kerzenschluss: deren früherer Docht kein neuer Sweep', justFrozen.stream.mechanical.entryStructure.knownAt === at + 272 * M && !justFrozen.stream.mechanical.entrySweep);
+  check('Setup-FVG unter Alarmgröße liefert keine erfundene Einzel-/Überlappungsquote', actual.journal[0].fvgComparison.single === false && actual.journal[0].fvgComparison.overlap === null);
+  const prefix = E.advancePo3Stream(signalStream(), { '1m': entrySeries.slice(0, -1) }, opts);
+  check('Prefix vor Impuls signalisiert nichts; Abschnittsfortsetzung erzeugt dieselbe stabile ID', prefix.journal.length === 0 && E.advancePo3Stream(prefix.stream, { '1m': entrySeries.slice(-1) }, { ...opts, journal: prefix.journal }).journal[0]?.id === actual.journal[0]?.id);
+  // Journalsignal aus dem gemeinsamen Preisplan; CSV muss vollständige Version und Quelltextzeichen erhalten.
+  const sim = await import('../shared/po3-simulator.mjs'), score = P.po3Score({ direction: 1, sweep: true, retest: true, bias: 1, impulse: true }, config);
+  const record = sim.po3Signal({ instrument: 'BTCUSDT', confirmedAt: window.from, levels: { status: 'bereit', direction: 1, entry: 100, sl: 99, tps: [102, 103, 104], risk: 1, rewardRisk: 2 }, score,
+    box: { high: 103, low: 99, height: 4 }, sweep: { time: at, extreme: 99 }, setupSweep: { time: at, extreme: 99 }, zone: { id: 'zone,"quoted"', low: 99, high: 100 }, source: { ...source, origin: 'rekonstruiert', note: 'Zeile\nmit "Zitat", Komma' } }, config);
+  const csv = S.exportPo3Csv([record]); check('CSV vollständiger versionierter Datensatz, Unicode/Komma/Zitat/Zeilenumbruch', JSON.stringify(S.importPo3Csv(csv)) === JSON.stringify([record]));
+  check('CSV-Dublette idempotent, Konflikt und falsches Format abgelehnt', S.importPo3Csv(csv, [record]).length === 1 && throws(() => S.importPo3Csv(S.exportPo3Csv([{ ...record, source: { ...record.source, note: 'falsch' } }]), [record])) && throws(() => S.importPo3Csv('a,b,c\n1,2,3')));
+  const old = { ...record, id: 'old-version', modelVersion: 'po3-old' }; check('Alte Modellversion bleibt exportierbar, aktuelle Regel widersprüchlich abgelehnt', S.importPo3Csv(S.exportPo3Csv([old]))[0].modelVersion === 'po3-old' && throws(() => S.validatePo3Record({ ...record, config: { ...record.config, rewardRisk: 3 } })));
+  check('Geänderte ID/Preisplan im aktuellen Modell abgelehnt', throws(() => S.validatePo3Record({ ...record, id: 'falsche-ID' })) && throws(() => S.validatePo3Record({ ...record, plan: { ...record.plan, feeExit: 0 } })));
+  check('Journalgrenze erhält Bestand ohne stilles Abschneiden', throws(() => S.mergePo3Journal([], Array.from({ length: 2001 }, (_, i) => sim.po3Signal({ ...record, instrument: 'LIMIT' + i + 'USDT', levels: record.plan.levels, confirmedAt: record.plan.confirmedAt }, config)))));
+  const other = sim.po3Signal({ ...record, instrument: 'ETHUSDT', levels: record.plan.levels, confirmedAt: record.plan.confirmedAt }, config), withOther = E.advancePo3Stream(init(), { '1m': series }, { ...opts, journal: [other] });
+  check('BTC-Kerzen lösen keine ETH-Position auf', JSON.stringify(withOther.journal[0]) === JSON.stringify(other));
+  let calls = [], clock = at + 300 * M;
+  const client = { contract: async () => ({ tickSize: .1, quantityStep: .001, knownAt: clock }), range: async job => { calls.push(job); const rows = Array.from({ length: Math.min(400, (job.to - job.from) / M) }, (_, i) => ({ ...c((job.from - at) / M + i), knownAt: clock })); return { rows }; } };
+  const load = await F.loadPo3Phase({ client, instrument: 'BTCUSDT', config, windowMode: 'custom', custom: window, now: () => clock });
+  check('Öffentlicher Feed dedupliziert gleiche Ebenen, Warm-up als eigene begrenzte Phase', calls.length === 1 && load.progress.warmup && !load.complete && load.stream.anchors['1m'] === at);
+  console.log(`${pass}/${pass + fail} bestanden`); process.exitCode = fail ? 1 : 0;
+})().catch(e => { console.error(e); process.exitCode = 1; });

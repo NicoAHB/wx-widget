@@ -3,7 +3,7 @@ import { MODEL_VERSION, settings, parametersKey, createIndicatorState, advanceIn
 
 export const FEED_VERSION = 'bg-public-1';
 export const BITGET_ORIGIN = 'https://api.bitget.com';
-export const BITGET_FRAMES = Object.freeze({ '1h': { granularity: '1H', periodMs: 3600e3 }, '4h': { granularity: '4H', periodMs: 14400e3 }, '1d': { granularity: '1Dutc', periodMs: 86400e3 } });
+export const BITGET_FRAMES = Object.freeze({ '1m': { granularity: '1m', periodMs: 60e3 }, '5m': { granularity: '5m', periodMs: 300e3 }, '15m': { granularity: '15m', periodMs: 900e3 }, '1h': { granularity: '1H', periodMs: 3600e3 }, '4h': { granularity: '4H', periodMs: 14400e3 }, '1d': { granularity: '1Dutc', periodMs: 86400e3 } });
 const TAIL = 512, MAX_PAGES = 8, MAX_BODY = 1024 * 1024;
 const time = x => Number.isSafeInteger(x) && x >= 0;
 const positive = x => Number.isFinite(x) && x > 0;
@@ -95,7 +95,9 @@ export function normalizeBitgetSettlements(data, { symbol, observedAt }) {
 function sourceContext(selection, config) {
   const p = settings(config), keys = ['instrument', 'timeframe', 'contextTimeframe', 'horizon', 'maxHoldMs', 'slippageBps', 'indicatorAnchors'];
   if (!selection || Object.keys(selection).some(k => !keys.includes(k))) throw new Error('Unbekannter Bitget-Signalkontext');
-  const s = clone(selection), base = frame(s.timeframe), context = frame(s.contextTimeframe);
+  const s = clone(selection);
+  if (![s.timeframe, s.contextTimeframe].every(x => ['1h', '4h', '1d'].includes(x))) throw new Error('Konfluenz-Zeitebene nicht unterstützt');
+  const base = frame(s.timeframe), context = frame(s.contextTimeframe);
   instrument(s.instrument);
   if (context.periodMs <= base.periodMs || !['short', 'long'].includes(s.horizon) || !Number.isSafeInteger(s.maxHoldMs) || s.maxHoldMs <= 0 || !Number.isFinite(s.slippageBps) || s.slippageBps < 0 || s.slippageBps >= 1e4 || !time(s.indicatorAnchors?.base) || !time(s.indicatorAnchors?.context) || s.indicatorAnchors.base % base.periodMs || s.indicatorAnchors.context % context.periodMs) throw new Error('Bitget-Signalkontext/Startanker fehlt');
   return { ...s, venue: 'bitget', product: 'USDT-FUTURES', quote: 'USDT', modelVersion: MODEL_VERSION, settingsRevision: p.revision, parametersKey: parametersKey(p), feedVersion: FEED_VERSION };
@@ -219,5 +221,13 @@ export function createBitgetPublicClient({ fetch: fetcher = globalThis.fetch, no
     const r = await request('/api/v2/mix/market/ticker', { symbol: instrument(symbol), productType: 'USDT-FUTURES' }, signal);
     return normalizeBitgetQuote(r.data, { symbol, decisionAt, providerAt: r.providerAt, observedAt: r.observedAt });
   }
-  return Object.freeze({ range, load, quote, markRange, fundingPage });
+  async function contract({ symbol, signal }) {
+    const r = await request('/api/v2/mix/market/contracts', { symbol: instrument(symbol), productType: 'USDT-FUTURES' }, signal);
+    return { ...normalizeBitgetContract(r.data, symbol), providerAt: r.providerAt, knownAt: r.observedAt };
+  }
+  async function currentFunding({ symbol, source, signal }) {
+    const r = await request('/api/v2/mix/market/current-fund-rate', { symbol: instrument(symbol), productType: 'USDT-FUTURES' }, signal);
+    return normalizeBitgetFunding(r.data, { symbol, source, providerAt: r.providerAt, observedAt: r.observedAt });
+  }
+  return Object.freeze({ range, load, quote, markRange, fundingPage, contract, currentFunding });
 }
