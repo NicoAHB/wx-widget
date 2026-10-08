@@ -1,11 +1,11 @@
 {
-  "version": "2.8.0",
-  "appVersion": "3.51.0",
+  "version": "2.9.0",
+  "appVersion": "3.52.0",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
-      "sha256": "c9ebf3861ad729e567ab7c13900c0fd17317f227eb16e43b990863a7aeb75d58",
-      "bytes": 125677
+      "sha256": "14633b740e97a684b0d177ba90a497592394eb5ee47bb954721b4bb9feefe770",
+      "bytes": 125792
     },
     {
       "path": "pattern-engine.mjs",
@@ -34,8 +34,8 @@
     },
     {
       "path": "shared/bitget-public.mjs",
-      "sha256": "0db8a1e0f851c368695d3a665db2944e1dae484f52e00357137c08f13f31831e",
-      "bytes": 19905
+      "sha256": "aad0fbd0be3c8846b9d56c26b324c78d11b5d3a4cce0e718c540778f8466bd42",
+      "bytes": 19930
     },
     {
       "path": "shared/bot-limits.mjs",
@@ -59,18 +59,48 @@
     },
     {
       "path": "shared/confluence-core.mjs",
-      "sha256": "6eaf7648a168c20d757ee29f006719e36d7f90f66d653c57f85d811800f39ac4",
-      "bytes": 21323
+      "sha256": "43cee18caca000b04651e197c10fd06d2866d53120e0a8758ac76e434a02fce9",
+      "bytes": 22614
     },
     {
       "path": "shared/confluence-history.mjs",
-      "sha256": "8ebdf239e4e1f0c4801c9b9df1dae3caada12e9e9522c2100962adc717ca89ba",
-      "bytes": 5816
+      "sha256": "d8ddb902aafb89b2b25222f48e1490927e53a66c215475af571ba6036b786e7f",
+      "bytes": 5932
+    },
+    {
+      "path": "shared/confluence-legacy-core.mjs",
+      "sha256": "70e132c6628fae3fe59f1d9a820e09f556cfd98416a909845b901dce2985c6ad",
+      "bytes": 21395
+    },
+    {
+      "path": "shared/confluence-legacy-indicators.mjs",
+      "sha256": "9105a8ac09d5557e90ec05fd3035c915b36b8e345b31b96a158d0001da505540",
+      "bytes": 9568
+    },
+    {
+      "path": "shared/confluence-legacy-live.mjs",
+      "sha256": "bd9b1d10b9b696d11bbd25e1bb516a3f68f7d40099cdd9f2000105a7e39dde1b",
+      "bytes": 9842
+    },
+    {
+      "path": "shared/confluence-legacy-pattern-score.mjs",
+      "sha256": "585334abda80fd8802128e181d8efc04264770f3ee2a7f866d24481a6f7eabad",
+      "bytes": 2683
+    },
+    {
+      "path": "shared/confluence-legacy-replay.mjs",
+      "sha256": "f3f55b27498a8e13c5bd470d6cbe2d6665a233d9d5baa6bbe1cda2f577ffd96c",
+      "bytes": 13503
     },
     {
       "path": "shared/confluence-live.mjs",
-      "sha256": "9173a36f2b09afb652c9774fe85de10fb4c1bc8c45765b77b4104a343f3b9d9e",
-      "bytes": 9835
+      "sha256": "6dfc251c8f673c252754d0be13a02c9e9bb1fa97aefd3fccd244e415875bb3be",
+      "bytes": 9910
+    },
+    {
+      "path": "shared/confluence-presentation.mjs",
+      "sha256": "d23018d6f9bdfe1f1e90369bcbd89210b613c4be975becb7f35081e656a32822",
+      "bytes": 4133
     },
     {
       "path": "shared/confluence-replay-store.mjs",
@@ -79,18 +109,18 @@
     },
     {
       "path": "shared/confluence-replay.mjs",
-      "sha256": "780afb88aa29bc5cd61be2185d714b6423e3ecc429e64ce489e17b3c935d5e00",
-      "bytes": 13489
+      "sha256": "af2653ebd972a88fc5ed1e4a314828b772050bf095eed70a3b4877f3e5570b00",
+      "bytes": 14183
     },
     {
       "path": "shared/confluence-service.mjs",
-      "sha256": "5f27f13687a4e4c139698f5df2001da11a2554e5632ee8ad9cdb583c37f68437",
-      "bytes": 10556
+      "sha256": "d11727870b7eaa03baa727d3ea81eefea318fd03c026963e6fb761893df987e5",
+      "bytes": 11783
     },
     {
       "path": "shared/confluence-worker.mjs",
-      "sha256": "7582c95000113aafa84b3821b0c6deb6e68b46ba27d27070439aec60fd8b5838",
-      "bytes": 4774
+      "sha256": "1fcda2fd28322bb8c3065fa240823e0aafca106706c88933dea72f954cb328f6",
+      "bytes": 4818
     },
     {
       "path": "shared/indicators.mjs",

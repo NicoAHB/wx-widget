@@ -20,6 +20,9 @@ Automatische Tests für die App (`weather-widget-v2.html`) und den 24/7-Dienst (
 | `node m62.js` | G10(b): Adapter-Parität, echtes Browser-fetch mit lokalen Antworten, Offline/Netzausfall | Sekunden |
 | `node unit-bitget-patterns.js` | G10(c): unveränderte G09-Engine auf Bitget, Quellenbindung, Kenntnis-/Bestätigungszeit (20 Fälle) | Sekunden |
 | `node unit-confluence-live.js` | G10(c): Long/Short einschließlich Konflikt, Referenzkurs, Anker, Kostenannahmen, Größe, Divergenz, Ablauf und ehrliche Grenzwertanzeige (46 Fälle) | Sekunden |
+| `node unit-confluence-costs.js` | KI-Korrektur: gemeinsame Ausstiegskosten, Audit-Gegenbeleg, cf-1/cf-2-Originalschutz, Archiv/Jobfortsetzung und Dienstupgrade | Sekunden |
+| `node unit-confluence-presentation.js` | Aktuelle Kurs-/Modellbestätigung getrennt vom Originalsignal, Alter/Fehler/Pause/Freigabe | Sekunden |
+| `node m71.js` | Tatsächlicher App-Worker: Fehler/Kursalter/Modellwechsel, Originalschutz, native Altfälle und Mobile | Sekunden |
 | `node m63.js` | G10(c): echter App-Worker, Reiter, Badge, Infobutton, Bitget-Chart, Modellgrenzen, Tabs, IndexedDB und Offline-Cache (36 Fälle) | Sekunden |
 | `node unit-confluence-replay.js` | G10(d): Originalscore, 60/70/80, TP/SL/Timeout, tatsächliche Kosten, 29/30, definierte R-Folge (33 Fälle) | Sekunden |
 | `node unit-bitget-history.js` | G10(d): öffentliche Preis-/Mark-/Fundingseiten, Abbruch/429 und fortgesetzte Jobs (15 Fälle) | Sekunden |

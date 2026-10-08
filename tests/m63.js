@@ -100,7 +100,9 @@ const check = (name, ok, info = '') => { ok ? pass++ : fail++; console.log(`${ok
     for (const width of [390, 320]) { await page.setViewportSize({ width, height: 844 }); await page.evaluate(() => document.getElementById('ki-settings').open = true); await page.waitForTimeout(100);
       check(`Reiter, Karten und Einstellungsfelder bei ${width}px ohne Seitenüberlauf`, await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)); }
     await page.evaluate(() => { document.documentElement.dataset.theme = 'light'; });
-    check('Helles Farbschema behält unterscheidbare Hinweis-/Richtungsfarben', await page.evaluate(() => getComputedStyle(document.querySelector('.ki-muted')).color !== getComputedStyle(document.querySelector('.ki-positive')).color));
+    check('Helles Farbschema behält unterscheidbare Hinweis-/Richtungsfarben', await page.evaluate(() => { const probe = document.createElement('span'); probe.className = 'ki-tone ki-positive'; document.body.append(probe);
+      // Nach Pause/Ablauf gibt es bewusst keine positive Signalüberschrift; tatsächliche CSS-Farbe separat prüfen.
+      const different = getComputedStyle(document.querySelector('.ki-muted')).color !== getComputedStyle(probe).color; probe.remove(); return different; }));
     const frameKey = await page.evaluate(() => Object.keys(__g10.state.data)[0]);
     await page.reload(); await page.waitForFunction(() => !!window.__g10 && __g05.state.candles.length);
     check('Neuladen erhält immutable gelesene Karte und feste Indikatoranker', await page.evaluate(key => __g10.state.cards.length === 1 && __g10.state.cards[0].read && !!__g10.state.data[key]?.anchors, frameKey));

@@ -51,7 +51,7 @@ import { fileURLToPath } from 'node:url';
 import { patternConfig, patternCandles, patternCases, patternFresh, patternText, patternEnd } from './pattern-monitor.mjs';
 import { ConfluenceService, kiMessage, Po3Service, po3Message, BotSimulationRuntime } from './ki-monitor.mjs';
 
-export const VERSION = '2.8.0';
+export const VERSION = '2.9.0';
 const E = process.env;
 // Adressen (für Tests über Umgebungsvariablen änderbar)
 export const API = {
@@ -604,7 +604,7 @@ export class Watcher {
       const why = !m.code ? 'Telegram war nicht erreichbar' : m.code === 429 ? 'Telegram hatte gebremst' : 'Telegram hatte sie zuerst abgelehnt';
       const late = t - m.at > 120e3, full = `${m.text}\n${timeText(m.at, m.tz, true)} Uhr · 24/7-Dienst${late ? `\n(verspätet zugestellt um ${timeText(t, m.tz)} Uhr – ${why})` : ''}`;
       if (m.target === 'patterns' && (m.watchRev !== this.patternWatch.rev || !this.patternDestination(m.destination))) { this.out = this.out.filter(x => x !== m); if (m.ev) this.evSet(m.ev, 'discarded', 'Musterziel geändert'); this.saveState(); continue; }
-      if (m.target === 'ki' && (m.po3Rev !== undefined ? (m.po3Rev !== this.po3.state.revision || !Object.values(this.po3.state.alerts).some(a => 'po3:' + crypto.createHash('sha256').update(a.id).digest('hex') === m.ev && a.expiresAt > t)) : (m.kiRev !== this.ki.state.rev || !this.ki.state.cards.some(c => 'ki:' + crypto.createHash('sha256').update(c.id).digest('hex') === m.ev && c.expiresAt > t)))) { this.out = this.out.filter(x => x !== m); if (m.ev) this.evSet(m.ev, 'discarded', 'KI-Modell geändert oder Nachricht abgelaufen'); this.saveStateNow(); continue; }
+      if (m.target === 'ki' && (m.po3Rev !== undefined ? (m.po3Rev !== this.po3.state.revision || !Object.values(this.po3.state.alerts).some(a => 'po3:' + crypto.createHash('sha256').update(a.id).digest('hex') === m.ev && a.expiresAt > t)) : (m.kiRev !== this.ki.state.rev || !this.ki.state.cards.some(c => c.scope?.modelVersion === this.ki.state.modelVersion && 'ki:' + crypto.createHash('sha256').update(c.id).digest('hex') === m.ev && c.expiresAt > t)))) { this.out = this.out.filter(x => x !== m); if (m.ev) this.evSet(m.ev, 'discarded', 'KI-Modell geändert oder Nachricht abgelaufen'); this.saveStateNow(); continue; }
       if (!['patterns', 'ki'].includes(m.target) && this.discord && !m.dc) { m.dc = true; await this.discordPost(full); }
       try {
         const dest = m.target === 'patterns' ? m.destination : { chat: this.chat }, token = m.target === 'patterns' ? this.patternDestination(dest) : this.token;
@@ -881,7 +881,7 @@ export class Watcher {
     } catch (e) { return { status: 400, body: { ok: false, error: this.secret(e.message), ki: this.ki.view() } }; }
   }
   async notifyKi(card, stats, revision) {
-    if (!this.key || !this.pol.targets.ki.on || revision !== this.ki.state.rev || card.expiresAt <= this.now()) return;
+    if (!this.key || !this.pol.targets.ki.on || card.scope?.modelVersion !== this.ki.state.modelVersion || revision !== this.ki.state.rev || card.expiresAt <= this.now()) return;
     const ev = 'ki:' + crypto.createHash('sha256').update(card.id).digest('hex'), label = `KI-Signal ${card.scope.instrument}`;
     if (!this.reserveOwn(ev, label, 'ki').grant || !this.saveStateNow()) return;
     await this.queue(kiMessage(card, stats), this.conf?.data?.tz || 'Europe/Berlin', { target: 'ki', ev, label });

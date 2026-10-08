@@ -1984,15 +1984,17 @@ html[data-presentation=dashboard][data-layout=tablet] #acct{order:0}
 </style>
   <script type="module">
 // 3.45.0 (G10c): der vorhandene Binance-/G07-Kern bleibt eigenständig.
-import { exportModelArchive, importModelArchive, validateModelArchive } from './bundles/3.51.0/shared/model-archive.mjs';
-import { BotSimulationRuntime } from './bundles/3.51.0/shared/bot-simulation.mjs';
-import { readBotSimulation, saveBotSimulation } from './bundles/3.51.0/shared/bot-simulation-store.mjs';
-import { createBotView } from './bundles/3.51.0/shared/bot-view.mjs';
-import { createPo3View } from './bundles/3.51.0/shared/po3-view.mjs';
-import { cardState as kiCardState, scoreLabel as kiScoreLabel } from './bundles/3.51.0/shared/confluence-live.mjs';
-import { divergenceInfo as kiDivergenceInfo, parametersKey as kiParametersKey } from './bundles/3.51.0/shared/confluence-core.mjs';
-import { observationKey as kiObservationKey } from './bundles/3.51.0/shared/confluence-replay.mjs';
-import { readReplay as kiReadHistory, saveReplay as kiSaveHistory, clearReplayJobs as kiClearHistoryJobs } from './bundles/3.51.0/shared/confluence-replay-store.mjs';
+import { exportModelArchive, importModelArchive, validateModelArchive } from './bundles/3.52.0/shared/model-archive.mjs';
+import { BotSimulationRuntime } from './bundles/3.52.0/shared/bot-simulation.mjs';
+import { readBotSimulation, saveBotSimulation } from './bundles/3.52.0/shared/bot-simulation-store.mjs';
+import { createBotView } from './bundles/3.52.0/shared/bot-view.mjs';
+import { createPo3View } from './bundles/3.52.0/shared/po3-view.mjs';
+import { cardState as kiCardState, scoreLabel as kiScoreLabel } from './bundles/3.52.0/shared/confluence-live.mjs';
+import { divergenceInfo as kiDivergenceInfo, parametersKey as kiParametersKey } from './bundles/3.52.0/shared/confluence-core.mjs';
+import { parametersKey as kiLegacyParametersKey } from './bundles/3.52.0/shared/confluence-legacy-core.mjs';
+import { presentCard as kiPresentCard, currentSignal as kiCurrentSignal } from './bundles/3.52.0/shared/confluence-presentation.mjs';
+import { observationKey as kiObservationKey } from './bundles/3.52.0/shared/confluence-replay.mjs';
+import { readReplay as kiReadHistory, saveReplay as kiSaveHistory, clearReplayJobs as kiClearHistoryJobs } from './bundles/3.52.0/shared/confluence-replay-store.mjs';
 // Pure, unrounded calculations. Prices are USDT per unit; FX is USDT per EUR.
 function rsi(closes, period = 14) {
   const out = Array(closes.length).fill(null);
@@ -2963,7 +2965,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
 // 3.43.0 (G10a): reiner Fachkern in shared/; Datenquelle und Karten folgen getrennt.
 // 3.44.0 (G10b): öffentlicher Adapter in shared/bitget-public.mjs; sichtbare Anbindung folgt mit G10(c).
-const APP_VERSION = '3.51.0', docEl = document.documentElement;
+const APP_VERSION = '3.52.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -13785,7 +13787,7 @@ const KI_DEFAULTS = { revision: 1, on: false, shortOn: true, longOn: true, short
   shortLeverage: 20, longLeverage: 3, marginEUR: null, slippageBps: null, fundingMode: '', anchorPolicy: '',
   minimumScore: 70, patternWeight: 15, slAtrFactor: 1, rewardRisk: 2, feeEntry: .05, feeExit: .05 };
 const ki = { cfg: { ...KI_DEFAULTS, ...store.get(KI_CFG_KEY, {}) }, cards: store.get(KI_CARDS_KEY, []), data: store.get(KI_DATA_KEY, {}),
-  current: new Map(), due: new Map(), timer: null, worker: null, pending: null, serial: 0, epoch: 0, busy: false, open: false,
+  current: new Map(), checks: new Map(), due: new Map(), timer: null, worker: null, pending: null, serial: 0, epoch: 0, busy: false, open: false,
   history: new Map(), historyRevision: 0, historyBusy: false, archiveError: '', coin: state.symbol, limit: 20, message: 'Lokale Analyse aus. Einstellungen prüfen und starten.', chartCard: null, chartOn: false, chartFollow: false };
 let kiPatternContext = null;
 if (!Array.isArray(ki.cards)) ki.cards = [];
@@ -13804,7 +13806,7 @@ function kiField(parent, key, label, choices = null, opts = {}) {
 }
 function kiTelegramControl(id) {
   const box = el('div', 'ki-toolbar'), b = kiButton(id, 'KI-Signale an Telegram senden: nicht verfügbar', () => tgcSet({ ki: !tgtOn('ki') })); b.disabled = true;
-  b.setAttribute('aria-describedby', id + '-note'); const note = el('small', 'ki-note', '24/7-Dienst 2.5.0 mit HTTPS einrichten und Auswahl übernehmen.'); note.id = id + '-note'; box.append(b, note);
+  b.setAttribute('aria-describedby', id + '-note'); const note = el('small', 'ki-note', '24/7-Dienst 2.9.0 mit HTTPS einrichten und Auswahl übernehmen.'); note.id = id + '-note'; box.append(b, note);
   if (id === 'ki-telegram') {
     box.append(kiButton('ki-service-config', 'KI-Auswahl an Dienst übernehmen', () => { void kiServiceConfig(); }), kiButton('ki-service-cards', 'Dienstkarten laden', () => { void kiServiceCards(); }));
     for (const [h, label] of [['short', 'Kurz an Telegram'], ['long', 'Lang an Telegram']]) { const l = el('label'), i = el('input'); i.type = 'checkbox'; i.id = 'ki-forward-' + h; i.checked = true; i.addEventListener('change', () => { ki.forwardDirty = true; }); l.append(i, ' ' + label); box.append(l); }
@@ -13818,7 +13820,7 @@ function kiTelegramRender() {
   if (!ki.forwardDirty && confirmed?.config) for (const h of ['short', 'long']) if ($('ki-forward-' + h)) $('ki-forward-' + h).checked = confirmed.config.forward?.[h] !== false;
   for (const id of ['ki-telegram', 'ki-settings-telegram']) { const button = $(id); if (!button) continue;
     button.disabled = !(confirmed?.config || svc.pol.conf?.po3?.config) || !!svc.pending || svc.reach !== true; button.textContent = `KI-Signale an Telegram senden: ${confirmed ? tgtOn('ki') ? 'AN · bestätigt' : 'AUS · bestätigt' : 'nicht verfügbar'}`;
-    put(id + '-note', confirmed ? `Dienst ${svc.ver} · Bot ${confirmed.destination?.bot || 'am Server'} · Chat ${confirmed.destination?.chat || 'am Server'}. ${confirmed.config ? 'Konfluenz Revision ' + confirmed.rev : svc.pol.conf?.po3?.config ? 'PO3 Revision ' + svc.pol.conf.po3.revision : 'Auswahl noch nicht übernommen'}. ${svc.reach === false ? 'Verbindungsfehler; letzter bestätigter Stand bleibt.' : 'Betrifft nur KI-Versand; Karten und Preisalarme bleiben.'}` : '24/7-Dienst 2.5.0 mit HTTPS einrichten; KI startet AUS.'); }
+    put(id + '-note', confirmed ? `Dienst ${svc.ver} · Bot ${confirmed.destination?.bot || 'am Server'} · Chat ${confirmed.destination?.chat || 'am Server'}. ${confirmed.config ? 'Konfluenz Revision ' + confirmed.rev : svc.pol.conf?.po3?.config ? 'PO3 Revision ' + svc.pol.conf.po3.revision : 'Auswahl noch nicht übernommen'}. ${confirmed.config && confirmed.modelVersion !== 'cf-2' ? 'Konfluenz verwendet das alte Kostenmodell; Dienst für korrigierte Kosten auf 2.9.0 aktualisieren. ' : ''}${svc.reach === false ? 'Verbindungsfehler; letzter bestätigter Stand bleibt.' : 'Betrifft nur KI-Versand; Karten und Preisalarme bleiben.'}` : '24/7-Dienst 2.9.0 mit HTTPS einrichten; KI startet AUS.'); }
 }
 async function po3ServiceConfigure({ selected, singleFvg, stop = false }) {
   if (!svcOn()) throw new Error('24/7-Dienst mit HTTPS zuerst einrichten.'); await svcRefresh(true);
@@ -13844,7 +13846,7 @@ async function kiServiceConfig() {
   try {
     if (!svcOn()) throw new Error('24/7-Dienst mit HTTPS zuerst einrichten.');
     if (!svc.pol.conf?.ki) await svcRefresh(true);
-    if (!svc.pol.conf?.ki) throw new Error('Dienst auf 2.5.0 aktualisieren und Stand prüfen.');
+    if (svc.pol.conf?.ki?.modelVersion !== 'cf-2') throw new Error('Dienst für das korrigierte Kostenmodell auf 2.9.0 aktualisieren und Stand prüfen. Alte Originalkarten bleiben lesbar.');
     kiCoreConfig();
     if (ki.cfg.slippageBps == null || !ki.cfg.fundingMode || !ki.cfg.anchorPolicy) throw new Error('KI-Einstellungen zuerst bewusst wählen und speichern.');
     const items = state.watch.slice(0, 40).flatMap(w => ['short', 'long'].filter(h => ki.cfg[h + 'On']).map(h => {
@@ -13862,9 +13864,10 @@ async function kiServiceConfig() {
   } catch (e) { ki.message = e.message; } kiTelegramRender(); kiRender();
 }
 function kiValidServiceCard(c) {
-  try { return c?.version === 'cf-live-1' && c.scope?.venue === 'bitget' && c.scope.product === 'USDT-FUTURES' && /^[A-Z0-9]{2,20}USDT$/.test(c.scope.instrument) && [1, -1].includes(c.scope.direction)
+  try { const legacy = c?.version === 'cf-live-1' && c.scope?.modelVersion === 'cf-1', current = c?.version === 'cf-live-2' && c.scope?.modelVersion === 'cf-2';
+    return (legacy || current) && c.scope?.venue === 'bitget' && c.scope.product === 'USDT-FUTURES' && /^[A-Z0-9]{2,20}USDT$/.test(c.scope.instrument) && [1, -1].includes(c.scope.direction)
     && typeof c.id === 'string' && c.id.length < 4000 && c.options && c.context?.base && c.context?.higher && c.divergence && c.cross && c.size && c.costs && c.levels && Array.isArray(c.patterns) && c.patterns.length <= 82
-    && c.score?.parametersKey === kiParametersKey(c.config) && Number.isFinite(c.decisionAt) && Number.isFinite(c.expiresAt) && c.expiresAt > c.decisionAt; } catch { return false; }
+    && c.score?.parametersKey === (legacy ? kiLegacyParametersKey(c.config) : kiParametersKey(c.config)) && Number.isFinite(c.decisionAt) && Number.isFinite(c.expiresAt) && c.expiresAt > c.decisionAt; } catch { return false; }
 }
 async function kiServiceCards() {
   try {
@@ -13909,15 +13912,16 @@ function kiBuild() {
   kiField(fields, 'slAtrFactor', 'Stop-Abstand · ATR-Faktor', null, { min: .01 }); kiField(fields, 'rewardRisk', 'Bruttoziel · R (mind. 2)', null, { min: 2 });
   kiField(fields, 'feeEntry', 'Einstiegsgebühr · %', null, { min: 0, max: 99 }); kiField(fields, 'feeExit', 'Ausstiegsgebühr · %', null, { min: 0, max: 99 });
   const save = kiButton('ki-save', 'Speichern und lokale Analyse starten'); save.type = 'submit';
-  form.append(horizons, fields, el('p', 'ki-note', 'Gebühr 0,05 % je Seite ist eine veränderbare Modellannahme. Kostenfilter: Nettoziel / Betrag Nettoverlust ≥ 1,5. Referenzeinstieg: Geld/Brief nach der Entscheidung, ungünstige Slippage und Tickrundung. Konstantes Funding verwendet den Referenzeinstieg als modellierten Markpreis.'), save);
+  form.append(horizons, fields, el('p', 'ki-note', 'Gebühr 0,05 % je Seite ist eine veränderbare Modellannahme. Kostenfilter: Nettoziel / Betrag Nettoverlust ≥ 1,5. Slippage und ungünstige Tickrundung gelten für Ein- und Ausstieg. Einstieg zum Geld/Brief nach der Entscheidung. Konstantes Funding verwendet den Referenzeinstieg als modellierten Markpreis.'), save);
   form.addEventListener('submit', e => { e.preventDefault(); kiSaveConfig(); }); cfg.append(form); box.append(cfg);
   const toolbar = el('div', 'ki-toolbar'), coins = el('select'); coins.id = 'ki-coin'; coins.setAttribute('aria-label', 'Aktuelle KI-Bewertung für Coin');
   coins.addEventListener('change', () => { ki.coin = coins.value; kiRender(); });
   toolbar.append(coins, kiButton('ki-refresh', 'Jetzt prüfen', () => { ki.due.clear(); kiKick(); }), kiButton('ki-stop', 'Analyse pausieren', () => { ki.cfg.on = false; kiSaveSettings(); kiCancel(); ki.message = 'Lokale Analyse pausiert.'; kiRender(); kiKick(); }));
   const status = el('p', 'ki-note'); status.id = 'ki-status'; status.setAttribute('role', 'status');
+  const freshness = el('p', 'ki-note'); freshness.id = 'ki-data-quality';
   const current = el('div'); current.id = 'ki-current'; const list = el('div'); list.id = 'ki-list';
   toolbar.append(kiButton('ki-stop-history', 'Historie pausieren', () => { kiCancel(); ki.message = 'Historie pausiert; öffentlicher Zwischenstand bleibt für Fortsetzung erhalten.'; kiRender(); }));
-  box.append(toolbar, status, el('h3', '', 'Aktueller Stand'), current, el('h3', '', 'Neue und gespeicherte Signale'), list,
+  box.append(toolbar, status, freshness, el('h3', '', 'Aktueller Stand'), current, el('h3', '', 'Neue und gespeicherte Signale'), list,
     kiButton('ki-more', 'Weitere Karten zeigen', () => { ki.limit += 20; kiRender(); }));
   const storage = kiInfo('Lokaler Speicher', el('p', '', 'Öffentliche Kerzen und Signalkarten liegen getrennt von Positionen und Trades in IndexedDB. Grenzen: 40 Coins, 200 Karten / 5 MiB und 20 MiB Kerzenzustände. Bei vollem oder fehlendem Speicher pausieren neue Karten. Keine Sicherung oder Übertragung an Telegram in diesem Schritt.'),
     kiButton('ki-clear-data', 'Nur öffentliche Kerzenzustände löschen', () => { kiCancel(); for (const item of Object.values(ki.data)) store.del(item.key); ki.data = {}; store.set(KI_DATA_KEY, ki.data); ki.due.clear(); ki.storageFailed = false; kiKick(); }),
@@ -13959,7 +13963,7 @@ function kiSaveConfig() {
   if (!valid) { ki.message = 'Einstellungen prüfen: Slippage bewusst eingeben, Funding-/Ankerregel wählen; Mindestscore ≥ 70, Ziel ≥ 2R.'; kiRender(); return; }
   const modelKeys = ['shortPair', 'longPair', 'shortHours', 'longDays', 'slippageBps', 'fundingMode', 'anchorPolicy', 'minimumScore', 'patternWeight', 'slAtrFactor', 'rewardRisk', 'feeEntry', 'feeExit'];
   const changed = modelKeys.some(k => next[k] !== ki.cfg[k]);
-  kiCancel(); next.revision = ki.cfg.revision + (changed ? 1 : 0); next.on = true; ki.cfg = next; ki.due.clear(); ki.current.clear(); kiSaveSettings();
+  kiCancel(); next.revision = ki.cfg.revision + (changed ? 1 : 0); next.on = true; ki.cfg = next; ki.due.clear(); ki.current.clear(); ki.checks.clear(); kiSaveSettings();
   ki.message = 'Öffentliche Bitget-Daten werden im Worker geladen …'; $('ki-settings').open = false; kiRender(); kiKick();
 }
 function kiCancel() { ki.epoch++; clearTimeout(ki.timer); ki.timer = null; ki.worker?.terminate(); ki.worker = null; ki.pending?.reject(new Error('abgebrochen')); ki.pending = null; }
@@ -13972,7 +13976,7 @@ function kiKick(delay = 0) {
   if (deadlines.length) ki.timer = setTimeout(() => { ki.timer = null; kiRender(); kiKick(); }, Math.max(1, Math.min(ki.open ? 60000 : Infinity, Math.min(...deadlines) - Date.now() + 1)));
 }
 function kiJob(request, options, type = 'load') {
-  if (!ki.worker) { ki.worker = new Worker(new URL('./bundles/3.51.0/shared/confluence-worker.mjs', location.href), { type: 'module' });
+  if (!ki.worker) { ki.worker = new Worker(new URL('./bundles/3.52.0/shared/confluence-worker.mjs', location.href), { type: 'module' });
     ki.worker.onmessage = ({ data }) => { if (!ki.pending || data.id !== ki.pending.id) return; if (data.progress) { ki.message = 'Historie: ' + data.progress.stage + (data.progress.total ? ` · ${data.progress.completed}/${data.progress.total}` : ` · ${data.progress.priceCandles || 0} Kurskerzen`); kiRender(); return; } const p = ki.pending; ki.pending = null; data.error ? p.reject(new Error(data.error)) : p.resolve(data); };
     ki.worker.onerror = () => { ki.pending?.reject(new Error('KI-Worker nicht verfügbar')); ki.pending = null; ki.worker?.terminate(); ki.worker = null; }; }
   return new Promise((resolve, reject) => { const id = ++ki.serial; ki.pending = { id, resolve, reject }; ki.worker.postMessage({ id, type, request, options }); });
@@ -14030,6 +14034,7 @@ async function kiNext() {
     const fx = currentFx(), fxOK = fx > 0 && (state.fxMode === 'manual' || Date.now() - state.fxAt <= 15 * 60e3);
     const options = { fundingMode: ki.cfg.fundingMode, anchorPolicy: ki.cfg.anchorPolicy, leverage: ki.cfg[job.horizon + 'Leverage'], marginEUR: ki.cfg.marginEUR,
       fx: fxOK ? { value: fx, at: state.fxMode === 'manual' ? null : state.fxAt, source: state.fxMode === 'manual' ? 'eigene Angabe' : 'Binance EUR/USDT' } : null };
+    ki.checks.set(job.instrument + '|' + job.horizon, { at: now, pending: true, error: null });
     ki.message = `${job.instrument.slice(0, -4)} · ${job.horizon === 'short' ? 'kurz' : 'lang'}: öffentliche Bitget-Daten laden …`; kiRender();
     watchdog = setTimeout(() => kiCancel(), 180000);
     const reply = await kiJob({ selection, config: kiCoreConfig(), saved: item ? store.get(item.key) : null }, options);
@@ -14052,10 +14057,11 @@ async function kiNext() {
       if (fresh.length && !(await kiUpdateCards(cards => { const ids = new Set(cards.map(c => c.id)); return [...fresh.filter(c => !ids.has(c.id)), ...cards].sort((a, b) => b.decisionAt - a.decisionAt); }))) throw new Error(ki.message);
     } else ki.current.delete(job.instrument + '|' + job.horizon);
     if (!(await store.flush())) throw new Error('KI-Daten konnten nicht dauerhaft gespeichert werden; neue Karten pausieren.');
+    ki.checks.set(job.instrument + '|' + job.horizon, { at: Date.now(), pending: false, error: ready && result ? null : loaded.reason || result?.quoteReason || 'Bitget-Analyse noch nicht vollständig verfügbar.' });
     broadcastData([KI_DATA_KEY, ...(savedKey ? [savedKey] : []), KI_CARDS_KEY]);
     ki.message = loaded.reason || result?.quoteReason || `${job.instrument.slice(0, -4)} · ${job.horizon === 'short' ? 'kurz' : 'lang'}: Daten geprüft ${kiDate(Date.now())}. ${jobs.length} Coin-/Horizontpaare in der Vorauswahl.`;
   } catch (e) {
-    if (epoch === ki.epoch) { ki.message = e.message; ki.due.set(jobKey(job), Date.now() + 60000); if (job.strategy === 'po3') { po3View.state.message = e.message; po3View.render(); } if (job.strategy !== 'po3' && /Speicher|gespeichert|speicher/.test(e.message)) ki.storageFailed = true; }
+    if (epoch === ki.epoch) { ki.message = e.message; ki.due.set(jobKey(job), Date.now() + 60000); if (job.strategy === 'po3') { po3View.state.message = e.message; po3View.render(); } else { ki.checks.set(job.instrument + '|' + job.horizon, { at: Date.now(), pending: false, error: e.message }); if (/Speicher|gespeichert|speicher/.test(e.message)) ki.storageFailed = true; } }
   } finally { clearTimeout(watchdog); await store.release('ki-scan'); ki.busy = false; kiRender(); kiKick(250); }
 }
 // G10(d): explizite Historienjobs; Originalkarte und ihr damaliger Score bleiben unverändert.
@@ -14097,18 +14103,26 @@ function kiHistoryView(card) {
 }
 function kiModelMatches(card) {
   const h = card?.scope?.horizon; if (!['short', 'long'].includes(h)) return false;
-  return card.score?.parametersKey === kiParametersKey(kiCoreConfig()) && card.options?.fundingMode === ki.cfg.fundingMode && card.options?.anchorPolicy === ki.cfg.anchorPolicy
+  return card.version === 'cf-live-2' && card.scope.modelVersion === 'cf-2' && card.score?.parametersKey === kiParametersKey(kiCoreConfig()) && card.options?.fundingMode === ki.cfg.fundingMode && card.options?.anchorPolicy === ki.cfg.anchorPolicy
     && card.scope.timeframe + '/' + card.scope.contextTimeframe === ki.cfg[h + 'Pair'] && card.scope.slippageBps === ki.cfg.slippageBps
     && card.scope.maxHoldMs === (h === 'short' ? ki.cfg.shortHours * 3600e3 : ki.cfg.longDays * 86400e3);
 }
-function kiLatest(instrument) { return ki.cards.find(c => c?.scope?.instrument === instrument && c.eligible && c.decisionAt <= Date.now() && c.expiresAt > Date.now() && kiModelMatches(c)
-  && !(ki.current.get(instrument + '|' + c.scope.horizon) || []).some(now => now.status === 'konflikt' && now.decisionAt >= c.decisionAt)) || null; }
+// 3.52.0: aktuelle Prüfung und gespeichertes Original sind getrennte Zustände.
+function kiAnalysisEnabled() { return ki.cfg.on && !ki.storageFailed && !state.paused && !document.hidden; }
+function kiLatest(instrument) {
+  const cards = ['short', 'long'].filter(h => ki.cfg[h + 'On']).flatMap(h => ki.current.get(instrument + '|' + h) || []);
+  return kiCurrentSignal(cards, { asOf: Date.now(), enabled: kiAnalysisEnabled(), isCurrentModel: kiModelMatches, checks: ki.checks });
+}
+function kiDisplayState(card, current = false) {
+  return kiPresentCard(card, { asOf: Date.now(), currentModel: kiModelMatches(card), enabled: kiAnalysisEnabled() && ki.cfg[card.scope.horizon + 'On'],
+    check: ki.checks.get(card.scope.instrument + '|' + card.scope.horizon), current: current ? [card] : ki.current.get(card.scope.instrument + '|' + card.scope.horizon) || [] });
+}
 function kiRenderCard(card, current = false) {
-  const s = kiCardState(card, Date.now()), box = el('article', 'ki-card' + (s.expired ? ' expired' : '')); box.dataset.kiId = card.id;
+  const s = kiDisplayState(card, current), box = el('article', 'ki-card' + (s.expired ? ' expired' : '')); box.dataset.kiId = card.id;
   const head = el('div', 'ki-card-head'); head.append(el('h3', '', `${card.scope.instrument.slice(0, -4)} · ${card.scope.direction === 1 ? 'Long' : 'Short'} · ${card.scope.horizon === 'short' ? 'kurz' : 'lang'}`),
     el('span', 'ki-tone ki-' + s.tone, `${s.label} · ${kiScoreLabel(card.score.score, card.config.minimumScore)} / 100`));
   box.append(head, el('p', 'ki-note', `${card.scope.timeframe} / ${card.scope.contextTimeframe} · Bitget USDT-Futures · ${kiDate(card.decisionAt)} · Nachricht bis ${kiDate(card.expiresAt)}`),
-    el('p', 'ki-tone ki-' + s.tone, s.action));
+    el('p', 'ki-tone ki-' + s.tone, s.action), el('p', 'ki-note', `Modell ${card.scope.modelVersion} · Revision ${card.config.revision} · Referenzkurs ${kiDate(card.quote?.at)}. Originalscore und Originalplan bleiben unverändert.`));
   if (!card.eligible) box.append(el('p', 'ki-note', card.reason));
   const grid = el('div', 'ki-grid');
   for (const [label, text] of [['Entry · Referenz', kiPrice(card.levels.entry)], ['Stop-Loss', kiPrice(card.levels.sl)], ['Take-Profit', kiPrice(card.levels.tp)],
@@ -14128,7 +14142,7 @@ function kiRenderCard(card, current = false) {
   box.append(info);
   const size = card.size.status === 'bereit', euro = v => size && Number.isFinite(v) ? `${signed(v * card.size.quantity / card.size.fx, 2)} EUR` : 'nicht verfügbar';
   box.append(kiInfo('Risiko, Kosten und Cross', el('p', '', `Stop-Anker: ${card.anchor ? card.anchor.label + ' · ' + kiPrice(card.anchor.price) : 'nicht verfügbar'}. SL-Abstand ${card.config.slAtrFactor} ATR · Ziel mindestens ${card.config.rewardRisk}R.`),
-    el('p', '', `Gebühren ${card.config.feeEntry * 100} % / ${card.config.feeExit * 100} % · Slippage ${card.scope.slippageBps} bp. ${card.funding?.assumption || 'Künftige Fundingkosten nicht bewertbar.'}`),
+    el('p', '', `Gebühren ${card.config.feeEntry * 100} % / ${card.config.feeExit * 100} %. ${card.scope.modelVersion === 'cf-1' ? `Altes Modell cf-1: ${card.scope.slippageBps} bp Einstiegsslippage; Ausstiegsslippage im damaligen Kostenfilter nicht enthalten. Originalwerte bleiben dokumentiert.` : `Slippage ${card.scope.slippageBps} bp je Ein-/Ausstieg. Modellierte Ausführung am Ziel ${kiPrice(card.costs.execution?.tp)} · am Stop ${kiPrice(card.costs.execution?.sl)} (ungünstiges Tickraster).`} ${card.funding?.assumption || 'Künftige Fundingkosten nicht bewertbar.'}`),
     el('p', '', `Modell-Netto am Ziel: ${euro(card.costs.tp?.net)} · am Stop: ${euro(card.costs.sl?.net)}. Gebühren am Ziel: ${euro(card.costs.tp?.fees)} · Funding: ${euro(card.costs.tp?.funding)}.`),
     el('p', '', size ? `Margin ${number(card.size.marginEUR, 2)} EUR · Hebel ${card.options.leverage} · modellierte Menge ${number(card.size.quantity, 8)}. FX ${number(card.size.fx, 5)} USDT je EUR (${card.options.fx.source}).` : 'Ohne selbst gewählten Einsatz und gültigen FX-Kurs bleiben Eurokosten und Menge nicht verfügbar.'),
     el('p', 'ki-tone ki-muted', 'Cross-Liquidationspreis: nicht verfügbar. ' + card.cross.reason), el('p', '', 'Preisplan und Kosten sind ein Szenario, keine Ausführung oder Orderfreigabe.')));
@@ -14149,10 +14163,13 @@ function kiRender() {
   if (!symbols.includes(ki.coin)) ki.coin = symbols[0]; if (coins.dataset.list !== symbols.join()) { coins.replaceChildren(...symbols.map(s => { const o = el('option', '', s.slice(0, -4)); o.value = s; return o; })); coins.dataset.list = symbols.join(); } coins.value = ki.coin;
   const unread = ki.cards.filter(c => !c.read).length; $('ki-unread').hidden = !unread; put('ki-unread', unread); $('ki-unread').setAttribute('aria-label', `${unread} ungelesene KI-Signale`);
   const latest = kiLatest(state.symbol), chip = $('ki-hold-chip'); chip.textContent = `KI: ${latest ? latest.scope.direction === 1 ? 'Long' : 'Short' : 'Halten'}`; chip.className = 'button ghost ki-chip' + (latest ? latest.scope.direction === 1 ? ' ki-positive' : ' ki-negative' : '');
+  chip.title = latest ? `Bitget-Konfluenz · Referenzkurs ${kiDate(latest.quote.at)}. Kurs und Risiko vor einem Einstieg erneut prüfen.` : 'Keine aktuelle vollständige Bestätigung mit frischem Bitget-Referenzkurs. Gespeicherte Pläne bleiben dokumentiert.';
+  const checks = ['short', 'long'].map(h => ki.checks.get(ki.coin + '|' + h)).filter(Boolean).sort((a, b) => b.at - a.at), lastCheck = checks[0];
+  put('ki-data-quality', `${ki.coin.slice(0, -4)} · Bitget: ${lastCheck ? (lastCheck.pending ? 'Prüfung läuft' : 'letzte Prüfung ' + kiDate(lastCheck.at)) + (lastCheck.error ? ' · ' + lastCheck.error : '') : 'noch keine aktuelle lokale Prüfung'}. Richtungs-Chip nur mit vollständig geprüftem Kurs bis 30 Sekunden Alter; Nachrichtenablauf und Trade-Haltedauer bleiben getrennt.`);
   if (ki.open) {
     const current = ['short', 'long'].flatMap(h => ki.current.get(ki.coin + '|' + h) || []);
     for (const [id, cards, live] of [['ki-current', current, true], ['ki-list', ki.cards.slice(0, ki.limit), false]]) {
-      const target = $(id), key = JSON.stringify([ki.coin, Math.floor(Date.now() / 60000), ki.historyRevision, ki.historyBusy, cards.map(c => [c.id, c.decisionAt, c.entryAt, c.status, c.levels.entry, c.costs.netRR, c.expiresAt, kiCardState(c, Date.now()).expired])]);
+      const target = $(id), key = JSON.stringify([ki.coin, Math.floor(Date.now() / 60000), ki.historyRevision, ki.historyBusy, cards.map(c => [c.id, c.decisionAt, c.entryAt, c.status, c.levels.entry, c.costs.netRR, c.expiresAt, kiDisplayState(c, live)])]);
       if (target.dataset.renderKey === key) continue;
       const open = new Set(); target.querySelectorAll('.ki-card').forEach(card => [...card.querySelectorAll('.ki-info')].forEach((d, i) => { if (d.open) open.add(card.dataset.kiId + '|' + i); }));
       target.replaceChildren(...(cards.length ? cards.map(c => kiRenderCard(c, live)) : [el('p', 'ki-note', live ? 'Für diesen Coin noch keine aktuelle Analyse. Öffentliche Daten laden; fehlende Daten bleiben nicht bewertbar.' : 'Noch keine vollständig geprüften lokalen Signale.')]));
@@ -14179,8 +14196,8 @@ function kiDrawChart() {
   const card = ki.chartCard; if (!card) return;
   put('ki-chart-title', `${card.scope.instrument.slice(0, -4)} / USDT · Bitget Futures · ${card.scope.timeframe}`);
   const matches = !ki.chartFollow || kiModelMatches(card), showLines = ki.chartOn && matches;
-  const s = kiCardState(card, Date.now()); put('ki-chart-note', `${matches ? s.label : 'Kein passendes Signal unter aktuellen Einstellungen'} · Analyse ${kiDate(card.decisionAt)} · geschlossene Bitget-Kerzen. ${s.expired ? s.action : 'Referenzplan; kein ausgeführter Trade.'} Obere Live-Leiste: Binance; diese Ansicht: Bitget.`);
-  const dataId = JSON.stringify([kiParametersKey(card.config), card.scope.instrument, card.scope.timeframe + '/' + card.scope.contextTimeframe, card.scope.maxHoldMs, card.scope.slippageBps]);
+  const s = kiDisplayState(card); put('ki-chart-note', `${matches ? s.label : 'Kein passendes Signal unter aktuellen Einstellungen'} · Analyse ${kiDate(card.decisionAt)} · geschlossene Bitget-Kerzen. ${s.action} Referenzplan; kein ausgeführter Trade. Obere Live-Leiste: Binance; diese Ansicht: Bitget.`);
+  const dataId = JSON.stringify([card.scope.modelVersion === 'cf-1' ? kiLegacyParametersKey(card.config) : kiParametersKey(card.config), card.scope.instrument, card.scope.timeframe + '/' + card.scope.contextTimeframe, card.scope.maxHoldMs, card.scope.slippageBps]);
   const item = ki.data[dataId], rows = (card.chartRows || (item && store.get(item.key)?.series.base.rows) || []).slice(-80);
   if (!rows.length) { $('ki-chart').replaceChildren(el('p', 'ki-note', 'Gespeicherte Bitget-Kerzen nicht verfügbar.')); return; }
   const width = Math.max(280, Math.min(1000, $('ki-chart-sec').clientWidth - 32)), height = 300, left = 8, right = width - 102, bottom = 276, top = 14;
@@ -14212,7 +14229,7 @@ bc?.addEventListener('message', ({ data: msg }) => {
     if (key === PO3_CFG_KEY && value) { kiCancel(); po3View.state.options = value; ki.due.clear(); po3View.render(); kiKick(); continue; }
     if (![KI_CFG_KEY, KI_CARDS_KEY, KI_DATA_KEY].includes(key) && !key.startsWith('scalpdesk.idb.ki.series.')) continue;
     store.adopt(key, value);
-    if (key === KI_CFG_KEY) { kiCancel(); ki.cfg = { ...KI_DEFAULTS, ...value }; ki.current.clear(); ki.due.clear(); kiKick(); }
+    if (key === KI_CFG_KEY) { kiCancel(); ki.cfg = { ...KI_DEFAULTS, ...value }; ki.current.clear(); ki.checks.clear(); ki.due.clear(); kiKick(); }
     if (key === KI_CARDS_KEY && Array.isArray(value)) { ki.cards = value; if (ki.open && value.some(c => !c.read)) void kiUpdateCards(cards => cards.map(c => ({ ...c, read: true }))); }
     if (key === KI_DATA_KEY && value && typeof value === 'object') ki.data = value;
   }
