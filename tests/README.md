@@ -80,3 +80,10 @@ Ausgabe je Test: `✓`/`✗` je Prüfung und am Ende `n/m bestanden`.
 - **G13 Befundkorrekturen:** m57 prüft den angezeigten Pearson-Wert exakt in deutscher Präzision auch bei negativen zeitabhängigen Testdaten, statt fälschlich ausschließlich Unicode-Minus vorauszusetzen. m56 trennt Historienseiten mit startTime von der unabhängigen Trend-Ampel; Start 0, Seitenlimit 1000, Spotquelle und vollständig geschlossene Blöcke bleiben verpflichtend. Produktfunktionen unverändert; Erstabweichungen und vollständige Nachprüfung im Liefernachweis dokumentiert.
 
 - **Gemeinsame Abnahme 3.50.0 / Dienstquelle 2.8.0:** sämtliche 110 Zielbefehle vollständig seriell mit Rohlogs/Rückgabewerten ausgeführt; nach vollständigen Nachläufen m57 41/41 und m56 55/55 alle 3471 zählbaren Einzelprüfungen sowie Status/Rauch/Sicht grün. App-/Modul-/Dienst-/Generator-Lint 0 Fehler (3/2 bekannte Warnungen). Produktcode `0206f24` unverändert, Korrekturen nur in Tests/Doku. [Vollständiger Testnachweis](../docs/G13-TESTNACHWEIS.md) mit maschinenlesbaren Erstläufen/Nachläufen; echte Geräte/VM bleiben offen.
+
+### G14 (3.51.0)
+- `unit-appearance.js`: 23 direkte Farbprüfungen am HTML-Kopf (WCAG/sRGB, Kurzform, acht sichere Vorschläge, Text/Status/Rahmen/Buttons und ähnliche lesbare Variante).
+- `m70.js`: 55 tatsächliche Browserprüfungen, beide Layouts mit allen drei Modi, gespeicherte unabhängige Präferenzen, Zweittab/Backup, DOM-/Fokus-/Entwurfs-/Datenerhalt, keine neuen Intervalle/Worker/Kurs-Abos, 48px/ARIA/Tastatur und 320/390/768/1440 sowie alle Handyreiter. Beide Tests vorn im seriellen Gesamtlauf (112 Zielbefehle).
+- `lint.sh` prüft zusätzlich das Vorab-Skript im HTML-Kopf. Bestehende drei App-Warnungen unverändert, 0 Fehler.
+- Angepasster älterer Test: `m69.js` liest die aktuelle Version direkt aus `APP_VERSION` und simuliert die folgende Patchversion statt fest 3.50.0/3.50.1. Alle 19 Original-/Hash-/Cache-/Offlineprüfungen bleiben erhalten; alter 3.45-Service-Worker und Archivherkunft 3.50.0 bleiben ausdrücklich Fixtures.
+- Bedienung und Prüfschritte: [G14-Ansicht](../docs/G14-ANSICHT.md). Gesamtlauf noch offen.
