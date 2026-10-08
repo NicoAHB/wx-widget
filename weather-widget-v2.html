@@ -293,6 +293,21 @@ html[data-layout=tablet] .livebar{padding:6px 12px;gap:4px 12px}
 /* ---------- Panels & aufklappbare Bereiche ---------- */
 .panel{border:1px solid var(--border);background:var(--surface);border-radius:10px;min-width:0}
 .cq{container-type:inline-size}
+/* 3.53.0 (PDF Etappe 1): Taker-Kerzen im bestehenden Chartpanel. */
+#chart-sec{container-name:orderflow-chart}
+.of-chart-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;align-items:start}
+.of-panel{min-width:0;border:1px solid var(--border);border-radius:12px;padding:12px;background:var(--surface);font-variant-numeric:tabular-nums}
+.of-head{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.of-head h3{font-size:16px;margin:0;flex:1}
+.of-info{display:contents}.of-info>summary{display:grid;place-items:center;min-width:44px;min-height:44px;border:1px solid var(--border);border-radius:50%;cursor:pointer;list-style:none}.of-info>summary::-webkit-details-marker{display:none}
+.of-explanation{flex:1 0 100%;font-size:13px;line-height:1.5}.of-explanation p{margin:8px 0}.of-source,.of-notice{font-size:12px;line-height:1.5;overflow-wrap:anywhere;margin:8px 0;color:var(--muted)}
+.of-settings{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}.of-settings label{display:flex;align-items:center;gap:6px}.of-settings select{font-size:16px;min-height:44px}.of-settings button{min-height:44px;font-size:13px}
+.of-block h4{font-size:14px;margin:14px 0 4px}.of-quality{display:block;color:var(--warn-text);font-size:12px;min-height:20px}.of-block[data-quality=live] .of-quality{color:var(--up-text)}
+.of-row{display:grid;grid-template-columns:42px minmax(0,1fr) 76px;align-items:center;gap:6px;min-height:40px;font-size:12px;border:1px solid transparent;border-radius:6px;padding:3px 4px;margin:3px 0}
+.of-legend{font-size:11px;min-height:24px;color:var(--muted)}.of-legend>span:last-child,.of-delta{text-align:right}
+.of-running{border-style:dashed;border-color:var(--border);font-weight:700}.of-time{white-space:nowrap}.of-volumes{position:relative;isolation:isolate;display:flex;align-items:center;justify-content:space-between;gap:4px;border-radius:4px;overflow:hidden;background:var(--down-bg);min-height:28px;padding:4px 5px;white-space:nowrap;color:var(--text)}
+.of-buy-fill{position:absolute;inset:0 auto 0 0;background:var(--up-bg);z-index:-1}.of-neutral{background:var(--bg)}.of-delta[data-tone=up]{color:var(--up-text)}.of-delta[data-tone=down]{color:var(--down-text)}.of-missing .of-time{color:var(--muted)}.of-notice[data-kind=warning]{color:var(--warn-text)}
+@media (orientation:landscape){@container orderflow-chart (min-width:900px){.of-chart-grid{grid-template-columns:minmax(0,1fr) 380px}}}
+html[data-chartfull] .of-chart-grid{display:contents}html[data-chartfull] .of-panel{display:none}
 .head-line{display:flex;align-items:center;gap:6px;min-width:0}
 .alarms-head .head-line{flex:1 1 auto}
 .panel-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
@@ -1995,19 +2010,20 @@ html[data-presentation=dashboard][data-layout=tablet] #acct{order:0}
 </style>
   <script type="module">
 // 3.45.0 (G10c): der vorhandene Binance-/G07-Kern bleibt eigenständig.
-import { exportModelArchive, importModelArchive, validateModelArchive } from './bundles/3.52.0/shared/model-archive.mjs';
-import { BotSimulationRuntime } from './bundles/3.52.0/shared/bot-simulation.mjs';
-import { readBotSimulation, saveBotSimulation } from './bundles/3.52.0/shared/bot-simulation-store.mjs';
-import { createBotView } from './bundles/3.52.0/shared/bot-view.mjs';
-import { originalRisk as kiOriginalRisk } from './bundles/3.52.0/shared/confluence-risk-view.mjs';
-import { confluenceOverview, po3Overview, filterOverview, reconcileOverview } from './bundles/3.52.0/shared/signal-overview.mjs';
-import { createPo3View } from './bundles/3.52.0/shared/po3-view.mjs';
-import { cardState as kiCardState, scoreLabel as kiScoreLabel } from './bundles/3.52.0/shared/confluence-live.mjs';
-import { divergenceInfo as kiDivergenceInfo, parametersKey as kiParametersKey } from './bundles/3.52.0/shared/confluence-core.mjs';
-import { parametersKey as kiLegacyParametersKey } from './bundles/3.52.0/shared/confluence-legacy-core.mjs';
-import { presentCard as kiPresentCard, currentSignal as kiCurrentSignal } from './bundles/3.52.0/shared/confluence-presentation.mjs';
-import { observationKey as kiObservationKey } from './bundles/3.52.0/shared/confluence-replay.mjs';
-import { readReplay as kiReadHistory, saveReplay as kiSaveHistory, clearReplayJobs as kiClearHistoryJobs } from './bundles/3.52.0/shared/confluence-replay-store.mjs';
+import { exportModelArchive, importModelArchive, validateModelArchive } from './bundles/3.53.0/shared/model-archive.mjs';
+import { BotSimulationRuntime } from './bundles/3.53.0/shared/bot-simulation.mjs';
+import { readBotSimulation, saveBotSimulation } from './bundles/3.53.0/shared/bot-simulation-store.mjs';
+import { createBotView } from './bundles/3.53.0/shared/bot-view.mjs';
+import { createOrderflowView } from './bundles/3.53.0/shared/orderflow-view.mjs';
+import { originalRisk as kiOriginalRisk } from './bundles/3.53.0/shared/confluence-risk-view.mjs';
+import { confluenceOverview, po3Overview, filterOverview, reconcileOverview } from './bundles/3.53.0/shared/signal-overview.mjs';
+import { createPo3View } from './bundles/3.53.0/shared/po3-view.mjs';
+import { cardState as kiCardState, scoreLabel as kiScoreLabel } from './bundles/3.53.0/shared/confluence-live.mjs';
+import { divergenceInfo as kiDivergenceInfo, parametersKey as kiParametersKey } from './bundles/3.53.0/shared/confluence-core.mjs';
+import { parametersKey as kiLegacyParametersKey } from './bundles/3.53.0/shared/confluence-legacy-core.mjs';
+import { presentCard as kiPresentCard, currentSignal as kiCurrentSignal } from './bundles/3.53.0/shared/confluence-presentation.mjs';
+import { observationKey as kiObservationKey } from './bundles/3.53.0/shared/confluence-replay.mjs';
+import { readReplay as kiReadHistory, saveReplay as kiSaveHistory, clearReplayJobs as kiClearHistoryJobs } from './bundles/3.53.0/shared/confluence-replay-store.mjs';
 // Pure, unrounded calculations. Prices are USDT per unit; FX is USDT per EUR.
 function rsi(closes, period = 14) {
   const out = Array(closes.length).fill(null);
@@ -2908,6 +2924,7 @@ class BinanceClient {
     // und im Browser sofort mit TypeError ("Illegal invocation") scheitern, bevor eine Anfrage das Gerät verlässt.
     this.fetcher = (url, init) => fetcher(url, init); this.now = now; this.timeout = timeout; this.describe = describe; this.cooldowns = new Map(); }
   async get(base, path, params = {}, signal) {
+    const startedAt = this.now();
     const until = this.cooldowns.get(base) || 0;
     if (until > this.now()) throw Object.assign(new Error(`Binance-Rate-Limit: erneuter Versuch in ${Math.ceil((until - this.now()) / 1000)} Sekunden.`), { rate: true, retryMs: until - this.now() });
     const controller = new AbortController();
@@ -2931,6 +2948,7 @@ class BinanceClient {
       if (response.status === 451 || response.status === 403) throw new Error('Binance-Zugriff verweigert. Der Dienst ist an diesem Standort oder in diesem Netzwerk möglicherweise nicht verfügbar.');
       if (!response.ok || (typeof body?.code === 'number' && body.code < 0)) throw new Error(`Binance antwortet mit Fehler ${body?.code ?? response.status}. Bitte später erneut versuchen.`);
       if (body === null) throw new Error('Binance hat keine lesbaren Daten geliefert.');
+      if (base === FUTURES && path === '/fapi/v1/klines' && !params.startTime && !params.endTime && this.onKlines) queueMicrotask(() => this.onKlines({ symbol: params.symbol, interval: params.interval, rows: body, startedAt }));
       return body;
     } catch (error) {
       if (signal?.aborted) throw new DOMException('Abgebrochen', 'AbortError');
@@ -2978,7 +2996,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
 // 3.43.0 (G10a): reiner Fachkern in shared/; Datenquelle und Karten folgen getrennt.
 // 3.44.0 (G10b): öffentlicher Adapter in shared/bitget-public.mjs; sichtbare Anbindung folgt mit G10(c).
-const APP_VERSION = '3.52.0', docEl = document.documentElement;
+const APP_VERSION = '3.53.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -5395,7 +5413,7 @@ function backupStatus(msg) { put('history-status', msg); }
 // Löschungen, Prüfliste, offene Konflikte, Anzeige-Einstellungen und das eigene Musterlernen (der öffentliche Startbestand nur als
 // Verweis mit Version). Nie enthalten: Zugangsdaten (Telegram-Token, Discord-Webhook), die Übergabe an den 24/7-Dienst, Sendesperren
 // und andere gerätegebundene Zustände. Alle Felder von Schema 7 bleiben gleich – ältere App-Versionen lesen die Datei weiter.
-const PREF_KEYS = ['scalpdesk.ki.risk-view.v1', 'scalpdesk.theme.v1', 'scalpdesk.presentation.v1', 'scalpdesk.background.v1', 'scalpdesk.overlays.v1', 'scalpdesk.zigzag.v1', 'scalpdesk.whale.v1', 'scalpdesk.orderbook.v1', 'scalpdesk.ladder.v1', 'scalpdesk.vola.v1', 'scalpdesk.econ.v1', 'scalpdesk.cnews.v1', 'scalpdesk.wlspan.v1', 'scalpdesk.titleprice.v1', 'scalpdesk.details.v1', 'scalpdesk.posdefaults.v1', 'scalpdesk.daylimitnote.v1', 'scalpdesk.warnclose.v1', 'scalpdesk.evalyear.v1', 'scalpdesk.acctrange.v1', 'scalpdesk.anaiv.v1', 'scalpdesk.decouple.v1'];
+const PREF_KEYS = ['scalpdesk.orderflow.v1', 'scalpdesk.ki.risk-view.v1', 'scalpdesk.theme.v1', 'scalpdesk.presentation.v1', 'scalpdesk.background.v1', 'scalpdesk.overlays.v1', 'scalpdesk.zigzag.v1', 'scalpdesk.whale.v1', 'scalpdesk.orderbook.v1', 'scalpdesk.ladder.v1', 'scalpdesk.vola.v1', 'scalpdesk.econ.v1', 'scalpdesk.cnews.v1', 'scalpdesk.wlspan.v1', 'scalpdesk.titleprice.v1', 'scalpdesk.details.v1', 'scalpdesk.posdefaults.v1', 'scalpdesk.daylimitnote.v1', 'scalpdesk.warnclose.v1', 'scalpdesk.evalyear.v1', 'scalpdesk.acctrange.v1', 'scalpdesk.anaiv.v1', 'scalpdesk.decouple.v1'];
 function backupPayload() {
   stampLists(); for (const f of SET_FIELDS) stampSetting(f);
   const prefs = {}; for (const k of PREF_KEYS) { const v = store.get(k); if (v !== undefined) prefs[k] = v; }
@@ -6954,7 +6972,7 @@ function liveFeed(port) {
     if (d.error) return port.post({ t: 'err', m: c.market, msg: String(d.error.msg || 'Stream-Fehler') });
     const p = d.data; if (!p || typeof p !== 'object') return;
     c.data = now;
-    if (p.e === 'kline' && p.k) { const k = p.k; port.post({ t: 'k', m: c.market, s: p.s, i: k.i, E: p.E, k: { t: k.t, T: k.T, o: +k.o, h: +k.h, l: +k.l, c: +k.c, v: +k.v, x: !!k.x } }); }
+    if (p.e === 'kline' && p.k) { const k = p.k; port.post({ t: 'k', m: c.market, s: p.s, i: k.i, E: p.E, k: { t: k.t, T: k.T, o: +k.o, h: +k.h, l: +k.l, c: +k.c, v: +k.v, x: !!k.x, ofX: k.x, ofV: k.v, q: k.q, V: k.V, Q: k.Q } }); }
     else if (p.e === 'aggTrade') {
       const px = +p.p, qty = +p.q, k = c.market + '|' + p.s; if (!(px > 0)) return;
       let a = agg[k]; if (a) { if (px < a.lo) a.lo = px; if (px > a.hi) a.hi = px; a.last = px; } else a = agg[k] = { t: 'a', m: c.market, s: p.s, lo: px, hi: px, last: px, buy: 0, sell: 0 };
@@ -7017,6 +7035,8 @@ function liveFeed(port) {
   });
 }
 const live = { post: () => {}, via: 'aus', markets: {}, lastMsg: { spot: 0, futures: 0 }, wantKey: {}, need: new Set(), downSince: {}, everUp: {}, chartAt: 0 };
+var orderflow; // Vor dem Start am Modulende initialisiert; bestehende frühe Stream-Aufrufe bleiben sicher.
+let baseStreams = { spot: new Set(), futures: new Set() };
 function startLive() {
   const fallback = () => {
     let handler = null;
@@ -7042,7 +7062,7 @@ function onLive(m) {
   if (m.t === 'sent') return onSent(m);
   if (m.t === 'st') {
     const prev = live.markets[m.m]?.st; live.markets[m.m] = m;
-    if (m.st === 'live') { live.lastMsg[m.m] = Date.now(); if (prev !== 'live') onFeedUp(m.m); }
+    if (m.st === 'live') { live.lastMsg[m.m] = Date.now(); if (prev !== 'live' && live.need.has(m.m)) onFeedUp(m.m); }
     else if (prev === 'live') live.downSince[m.m] = Date.now();
     status(); return;
   }
@@ -7086,7 +7106,12 @@ function syncStreams() {
     // Tab-Titel mit BTC-Referenzkurs (anderer Coin im Chart): BTC-Spot-1m – auch wenn der Chart aus den Futures kommt
     if (titlePriceOn && state.symbol !== 'BTCUSDT') want.spot.add('btcusdt@kline_1m');
   }
+  const previouslyNeeded = live.need;
   live.need = new Set(Object.keys(want).filter(m => want[m].size));
+  // Ein schon für das Panel offener Markt kann später auch Hauptchart/Positionen bedienen.
+  for (const m of live.need) if (!previouslyNeeded.has(m) && live.markets[m]?.st === 'live') onFeedUp(m);
+  baseStreams = { spot: new Set(want.spot), futures: new Set(want.futures) };
+  if (orderflow?.sync()) { const s = state.symbol.toLowerCase(); want.futures.add(`${s}@kline_1m`); want.futures.add(`${s}@kline_1h`); }
   for (const m of ['spot', 'futures']) { const key = [...want[m]].sort().join('/'); if (live.wantKey[m] !== key) { live.wantKey[m] = key; live.post({ t: 'want', m, streams: [...want[m]] }); } }
 }
 // Liegt der Kurs nahe (unter 1,5 %) an einer aktiven Marke? Dann zusätzlich jeden einzelnen Trade auswerten.
@@ -7159,6 +7184,7 @@ function alClTick(now) {
   }
 }
 function onTick(now) {
+  orderflow?.tick();
   status(); updateTitle(); // Tab-Titel spätestens jede Sekunde aktuell, auch im Hintergrund-Tab
   if (titleNeedsPoll(now)) void pollTitlePrices(now);
   whaleTick(); lastTagTick(); // 3.3: Countdown am Kurs-Schild, auch ohne Neuzeichnen
@@ -7250,8 +7276,12 @@ function titleNeedsPoll(now) {
   return titlePriceOn && !state.paused && state.loadedSymbol === state.symbol && (!chartFeedFresh() || (state.symbol !== 'BTCUSDT' && !(btcRef && now - btcRef.at < 10000)));
 }
 function onKline(m) {
-  const now = Date.now(); live.lastMsg[m.m] = now; clockSample(m.E); // 3.3: Binance-Zeit für den Countdown
+  const now = Date.now(); live.lastMsg[m.m] = now;
   if (state.paused) return;
+  orderflow?.kline(m);
+  // Zusätzliche Futures-Kerzen des Panels dürfen Spot-Kurse, Positionen und Alarme nicht verändern.
+  if (!baseStreams[m.m]?.has(`${m.s.toLowerCase()}@kline_${m.i}`)) return;
+  clockSample(m.E); // Binance-Zeit weiter ausschließlich aus den bisherigen App-Streams.
   if (m.i === '1m' && m.s === 'BTCUSDT' && m.m === 'spot' && m.k.c > 0) { btcRef = { price: m.k.c, at: now }; if (state.symbol !== 'BTCUSDT') updateTitle(); }
   if (m.i === '1m') { trackLivePrice(m.s, m.k, now, srcTime(m.E, now)); volaKline(m); pulseKline(m, now); } // 4.3: Volatilität der letzten 60 Minuten
   wlKline(m, now); // 4.2/3.25.0: Mini-Watchlist – Kerzen im Intervall des gewählten Zeitraums (wlKline prüft Intervall, Coin und Markt)
@@ -14074,7 +14104,7 @@ function kiKick(delay = 0) {
   if (deadlines.length) ki.timer = setTimeout(() => { ki.timer = null; kiRender(); kiKick(); }, Math.max(1, Math.min(ki.open ? 60000 : Infinity, Math.min(...deadlines) - Date.now() + 1)));
 }
 function kiJob(request, options, type = 'load') {
-  if (!ki.worker) { ki.worker = new Worker(new URL('./bundles/3.52.0/shared/confluence-worker.mjs', location.href), { type: 'module' });
+  if (!ki.worker) { ki.worker = new Worker(new URL('./bundles/3.53.0/shared/confluence-worker.mjs', location.href), { type: 'module' });
     ki.worker.onmessage = ({ data }) => { if (!ki.pending || data.id !== ki.pending.id) return; if (data.progress) { ki.message = 'Historie: ' + data.progress.stage + (data.progress.total ? ` · ${data.progress.completed}/${data.progress.total}` : ` · ${data.progress.priceCandles || 0} Kurskerzen`); kiRender(); return; } const p = ki.pending; ki.pending = null; data.error ? p.reject(new Error(data.error)) : p.resolve(data); };
     ki.worker.onerror = () => { ki.pending?.reject(new Error('KI-Worker nicht verfügbar')); ki.pending = null; ki.worker?.terminate(); ki.worker = null; }; }
   return new Promise((resolve, reject) => { const id = ++ki.serial; ki.pending = { id, resolve, reject }; ki.worker.postMessage({ id, type, request, options }); });
@@ -14366,6 +14396,11 @@ window.__g11 = { view: po3View, next: kiNext };
 window.__g10 = { backtest: kiBacktest, historyView: kiHistoryView, serviceConfig: kiServiceConfig, serviceCards: kiServiceCards, get state() { return ki; }, cardState: kiCardState, render: kiRender, tab: kiTab, showChart: kiShowChart, stop: kiCancel, kick: kiKick, save: kiSaveConfig };
 for(const f of SET_FIELDS)stampSetting(f);renderIntegrity(); // 3.29.0: Abstammung der Einstellungen anlegen, Prüfliste zeigen
 if(posTradesSyncAll())persist(); // 3.30.0: zu jedem Teilabschluss genau ein Trade – fehlt einer, kommt er aus dem Verlauf der Position
+// 3.53.0 (PDF Etappe 1): eigenständiger Verbraucher, keine Handelsentscheidung.
+orderflow = createOrderflowView({ root: $('orderflow-panel'), context: () => ({ symbol: state.symbol, paused: state.paused, connected: live.markets.futures?.st === 'live' }), now: serverNow,
+  fetchRows: (symbol, interval, limit, signal) => api.get(FUTURES, '/fapi/v1/klines', { symbol, interval, limit }, signal), readPrefs: () => store.get('scalpdesk.orderflow.v1'), savePrefs: prefs => store.set('scalpdesk.orderflow.v1', prefs), streamsChanged: () => syncStreams() });
+api.onKlines = request => orderflow.acceptRest(request);
+window.__pdf1 = { view: orderflow, live, onLive }; // Testzugang wie __g05 … __g13; keine Order-/Sendefunktion.
 render();startLive();void showCachedChart();void refresh();void initAutoBackup();void requestWake();void zzpStart();
 </script>
 </head>
@@ -14464,7 +14499,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
         <div class="chart-toolbar"><div class="tb-main"><div class="intervals" role="group" aria-label="Kerzenintervall"><button type="button" data-interval="1m" class="active" aria-pressed="true">1m</button><button type="button" data-interval="5m" aria-pressed="false">5m</button><button type="button" data-interval="15m" aria-pressed="false">15m</button><button type="button" data-interval="1h" aria-pressed="false">1h</button><button type="button" data-interval="4h" aria-pressed="false">4h</button><button type="button" data-interval="1d" aria-pressed="false">1d</button><button type="button" data-interval="1w" aria-pressed="false">1w</button><button type="button" data-interval="1M" aria-pressed="false" title="1 Monat">1M</button></div><button type="button" class="metric-btn" data-metric="cap" aria-pressed="false" aria-label="Market Cap in USD statt Kurs anzeigen" title="Market Cap (USD) statt Kurs – noch einmal tippen: zurück zum Kurs. Historische Werte schlüssellos von CoinGecko, sonst CoinPaprika">MCap</button></div><div class="zoom-controls" role="group" aria-label="Chart zoomen und blättern"><button id="pan-back" type="button" aria-label="Weiter zurück in der Zeit">◀</button><button id="zoom-out" type="button" aria-label="Herauszoomen, mehr Kerzen">−</button><button id="zoom-in" type="button" aria-label="Hineinzoomen, weniger Kerzen">+</button><button id="pan-fwd" type="button" aria-label="Weiter Richtung jetzt">▶</button><button id="pan-now" type="button" hidden>Jetzt</button><button id="zoom-reset" type="button" hidden aria-label="Standardansicht: 80 Kerzen bis zur aktuellen Kerze" title="Standardansicht: 80 Kerzen bis zur aktuellen Kerze">⟲</button><button id="pat-btn" type="button" aria-pressed="false" aria-label="KI: Chartmuster im sichtbaren Ausschnitt erkennen (regelbasiert, lokal)" title="Chartmuster erkennen – regelbasiert im Browser, keine externe KI">KI</button><button id="magnet" type="button" aria-pressed="false" title="Magnet: auf ein Chart-Level tippen oder klicken, um dort einen Kurs-Alarm zu setzen" aria-label="Magnet: Kurs-Alarm per Klick auf ein Chart-Level">🧲</button><button id="chart-full" type="button" aria-pressed="false" aria-label="Chart im Vollbild" title="Vollbild – schließen mit Enter, Esc oder diesem Symbol"><svg class="ico-max" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><svg class="ico-min" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><details class="tip"><summary aria-label="Bedienung des Charts"><span>i</span></summary><div class="tip-body"><p>Zoomen: zwei Finger auseinander/zusammen, Strg + Mausrad oder − / +.</p><p>Zurückblättern: mit einem Finger wischen, waagrecht scrollen oder ◀ ▶. Doppelt tippen: zurück zu jetzt.</p><p>🧲 Magnet: einschalten, dann auf eine Linie oder Kerze tippen bzw. klicken – der Kurs-Alarm wird mit genau diesem Preis vorausgefüllt. Der Preis rastet an POC, Value Area, Pivots, EMA 200, Bollinger, Kerzen-Hochs und -Tiefs, Liquidationslinien sowie den Liq-Clustern der Heatmap ein. Am Computer geht es jederzeit auch per Rechtsklick.</p><p>Rote gestrichelte Linie: Liquidationspreis deiner Position (Wert der Börse oder Modell bei isolierter Margin), rot getönt der Bereich dahinter. Dünner: das Szenario aus dem Positionsrechner.</p><p>Tastatur: Pfeiltasten wählen Kerzen, + und − zoomen.</p></div></details></div></div>
         <div class="mtf" id="mtf" role="group" aria-label="Trend je Zeitebene: Kurs, EMA 50 und EMA 200"></div>
         <div class="ohlc-row"><div class="ohlc skel" id="ohlc">O — &nbsp; H — &nbsp; L — &nbsp; C —</div><details class="tip div-tip" id="div-tip" hidden><summary aria-label="RSI-Divergenz: Erklärung und Handlungsleitfaden"><i class="div-dot" aria-hidden="true"></i><b class="div-l" id="div-chip-l">RSI-Divergenz</b><b class="div-s" id="div-chip-s">Div.</b><span>i</span></summary><div class="tip-body div-body"><p class="div-title" id="div-title"></p><p id="div-case"></p><p class="div-tent" id="div-tent" hidden></p><p class="div-other" id="div-other" hidden></p><p class="div-h">Handlungsleitfaden</p><ol class="div-steps"><li><b>Kein Einstiegssignal.</b> Die Divergenz zeigt nachlassenden Schwung, keine Umkehr. Auch Warten auf eine Bestätigung half im Backtest nicht (unten).</li><li id="div-step-ext"></li><li id="div-step-pos"></li><li id="div-step-risk"></li></ol><p class="div-alarm-row"><button type="button" class="button ghost" id="div-alarm">🔔 Alarm</button></p><p class="div-honest"><b>Ehrlich – Backtest mit genau diesem Scanner</b> (echte BTC-Stundenkerzen 2017–2019, Coinbase und Bitfinex): Nach einer Divergenz lief der Kurs nur in 48–51 % der Fälle zuerst um die Mindestbewegung in die erwartete Richtung – als Trade nach Gebühren (0,06 % je Seite) durchweg ein Verlust (−25 % bis −47 %). Warten machte es nicht besser: ab der Bestätigung des Umkehrpunkts 44–48 %, nach einem Schlusskurs über dem Zwischenhoch bzw. unter dem Zwischentief nur 21–39 %. Deshalb zeigt die App dazu keine Trefferquote und kein Kauf- oder Verkaufssignal.</p><p class="div-note">Grün = bullisch, rot = bärisch. Eine neue Divergenz pulsiert, bis du diese Erklärung geöffnet hast, danach leuchtet sie ruhig. Ist „Bewegung reduzieren“ im System eingestellt, leuchtet sie ohne Pulsieren.</p></div></details></div>
-        <div id="chart" class="chart" tabindex="0" role="img" aria-label="Kerzenchart. Mit Pfeiltasten Kerzen auswählen, mit Plus und Minus zoomen."><div class="chart-skel" aria-hidden="true"><i class="skel" style="height:38%"></i><i class="skel" style="height:52%"></i><i class="skel" style="height:46%"></i><i class="skel" style="height:61%"></i><i class="skel" style="height:57%"></i><i class="skel" style="height:70%"></i><i class="skel" style="height:64%"></i><i class="skel" style="height:49%"></i><i class="skel" style="height:55%"></i><i class="skel" style="height:68%"></i><i class="skel" style="height:74%"></i><i class="skel" style="height:66%"></i><i class="skel" style="height:58%"></i><i class="skel" style="height:63%"></i><i class="skel" style="height:77%"></i><i class="skel" style="height:71%"></i><i class="skel" style="height:80%"></i><i class="skel" style="height:69%"></i><i class="skel" style="height:62%"></i><i class="skel" style="height:72%"></i><i class="skel" style="height:84%"></i><i class="skel" style="height:78%"></i><i class="skel" style="height:73%"></i><i class="skel" style="height:88%"></i></div><span class="sr-only">Marktdaten werden geladen</span></div><i class="div-halo" id="div-halo" hidden aria-hidden="true"><b></b></i>
+        <div class="of-chart-grid"><div id="chart" class="chart" tabindex="0" role="img" aria-label="Kerzenchart. Mit Pfeiltasten Kerzen auswählen, mit Plus und Minus zoomen."><div class="chart-skel" aria-hidden="true"><i class="skel" style="height:38%"></i><i class="skel" style="height:52%"></i><i class="skel" style="height:46%"></i><i class="skel" style="height:61%"></i><i class="skel" style="height:57%"></i><i class="skel" style="height:70%"></i><i class="skel" style="height:64%"></i><i class="skel" style="height:49%"></i><i class="skel" style="height:55%"></i><i class="skel" style="height:68%"></i><i class="skel" style="height:74%"></i><i class="skel" style="height:66%"></i><i class="skel" style="height:58%"></i><i class="skel" style="height:63%"></i><i class="skel" style="height:77%"></i><i class="skel" style="height:71%"></i><i class="skel" style="height:80%"></i><i class="skel" style="height:69%"></i><i class="skel" style="height:62%"></i><i class="skel" style="height:72%"></i><i class="skel" style="height:84%"></i><i class="skel" style="height:78%"></i><i class="skel" style="height:73%"></i><i class="skel" style="height:88%"></i></div><span class="sr-only">Marktdaten werden geladen</span></div><aside class="of-panel" id="orderflow-panel" aria-label="Kauf- und Verkaufsvolumen der Binance-Futures-Kerzen"></aside></div><i class="div-halo" id="div-halo" hidden aria-hidden="true"><b></b></i>
         <div class="fib-strip" id="fib-strip" role="group" aria-label="Fibonacci-Marken 38,2 / 50 / 61,8 % mit Abstand zum aktuellen Kurs – antippen legt einen Alarm an" hidden><div class="fs-head"><b id="fs-head">Fib</b><details class="tip left" id="fs-tip"><summary aria-label="Fibonacci-Marken erklärt"><span>i</span></summary><div class="tip-body"><p><b>Fibonacci-Retracement:</b> Wie weit läuft der Kurs nach einer Bewegung zurück? Gemessen in Prozent der letzten Schwungbewegung.</p><p id="fs-tip-swing">Grundlage ist der letzte abgeschlossene ZigZag-Schwung.</p><ul class="fs-tip-list"><li><b>23,6 %</b><span data-fl="23,6"></span> – flacher Rücklauf, gilt als Zeichen eines starken Trends</li><li><b>38,2 %</b><span data-fl="38,2"></span> – erste häufig beachtete Marke</li><li><b>50 %</b><span data-fl="50"></span> – halber Rücklauf; keine Fibonacci-Zahl, aber traditionell beachtet</li><li><b>61,8 %</b><span data-fl="61,8"></span> – der „goldene Schnitt“; 50–61,8&nbsp;% ist die „goldene Zone“ (im Chart hinterlegt)</li><li><b>78,6 %</b><span data-fl="78,6"></span> – tiefer Rücklauf, der Schwung ist dann fast ganz zurückgenommen</li></ul><p><b>So nutzen:</b> als Orientierung, wo Rücksetzer oder Erholungen oft vermutet werden. Eine Marke antippen legt dort einen Alarm an – dann die Reaktion des Kurses abwarten. Viele Trader achten besonders auf Marken, die mit anderen Levels zusammenfallen (POC, EMA 200, Unterstützung); geprüft ist das hier nicht.</p><p><b>Ehrlich:</b> Im Backtest mit echten BTC-Stundenkerzen (2017–2019) endeten Gegenbewegungen nicht häufiger an diesen Marken als an um 6 Punkte verschobenen (27–31&nbsp;% gegenüber 23–35&nbsp;%); knapp die Hälfte lief sogar über 100&nbsp;% hinaus. Deshalb keine Trefferquote – Orientierung, kein Handelssignal.</p><p>Die ZigZag-Mindestbewegung bestimmt den Schwung: kleiner heißt kürzere Schwünge und Marken näher am Kurs.</p></div></details></div><button type="button" class="fs-chip" data-fib="38,2" disabled><span class="fs-r">38,2<span class="fs-pc"> %</span></span><span class="fs-val skel">—</span><span class="fs-dist"></span></button><button type="button" class="fs-chip" data-fib="50" disabled><span class="fs-r">50<span class="fs-pc"> %</span></span><span class="fs-val skel">—</span><span class="fs-dist"></span></button><button type="button" class="fs-chip" data-fib="61,8" disabled><span class="fs-r">61,8<span class="fs-pc"> %</span></span><span class="fs-val skel">—</span><span class="fs-dist"></span></button><span class="fs-note" id="fs-note" hidden></span></div>
         <div class="lmap-strip" id="lmap-strip" hidden><span class="lm-head"><b>Liq-Heatmap</b><span class="lm-src" id="lm-src">Schätzung aus Open Interest</span><span class="lm-scale" role="img" aria-label="Farbskala: je kräftiger, desto mehr geschätzte Liquidationen"><small>wenig</small><i></i><small>viel</small></span><details class="tip left"><summary aria-label="So entsteht die Liquidations-Heatmap"><span>i</span></summary><div class="tip-body"><p><b>Wo würden viele gehebelte Positionen liquidiert?</b> Binance veröffentlicht das nicht – die Heatmap schätzt es aus öffentlichen Futures-Daten.</p><p>Steigt das Open Interest (offene Kontrakte) in einem Zeitraum, wurden neue Positionen eröffnet – zum Durchschnittspreis dieses Zeitraums. Den Long-/Short-Anteil liefern die Taker-Käufe. Für die Hebel gilt eine typische Verteilung (5× 10 %, 10× 25 %, 20× 30 %, 50× 20 %, 100× 15 %); die Liquidationspreise rechnet das Dashboard wie im Rechner, mit der dort eingestellten Maintenance Margin.</p><p>Sinkt das Open Interest, werden alle Zonen anteilig schwächer. Läuft der Kurs durch eine Zone, gilt sie als aufgelöst und endet im Chart. Je kräftiger die Farbe, desto mehr geschätzte Positionen.</p><p>Oberhalb des Kurses liegen Short-, unterhalb Long-Liquidationen. Die Knöpfe zeigen das stärkste Cluster je Seite im Bereich ±10 % – antippen legt einen Alarm an. Viele Trader sehen große Cluster als mögliche Kursziele; eine Garantie ist das nicht.</p></div></details></span><button type="button" class="lm-chip" id="lm-short" data-lm="short" disabled><span class="lm-side">Shorts ▲</span><span class="lm-val skel" id="lm-short-v">—</span></button><button type="button" class="lm-chip" id="lm-long" data-lm="long" disabled><span class="lm-side">Longs ▼</span><span class="lm-val skel" id="lm-long-v">—</span></button><span class="lm-note" id="lm-note" hidden></span></div>
         <div class="wh-strip" id="wh-strip" hidden><div class="wh-head"><b>Whales</b><select id="wh-min" class="wh-min" aria-label="Whale-Schwelle: Orders ab"><option value="100000">ab 100 Tsd.</option><option value="250000">ab 250 Tsd.</option><option value="500000">ab 500 Tsd.</option><option value="1000000">ab 1 Mio.</option></select><span class="wh-src" id="wh-src">letzte 60 s</span><span class="wh-last" id="wh-last"><span class="wl-l" id="wh-last-l"></span><span class="wl-s" id="wh-last-s"></span></span><details class="tip left"><summary aria-label="So funktioniert der Whale-Alert"><span>i</span></summary><div class="tip-body"><p><b>Große Marktorders („Whales“)</b> im Chart-Kürzel ab der gewählten Schwelle (Standard 100.000 USDT), live aus dem Einzel-Trade-Stream von Binance.</p><p>Räumt eine große Marktorder mehrere Preisstufen ab, meldet Binance mehrere Teil-Trades mit derselben Handelszeit, deren Preis in Order-Richtung weiterläuft (Kauf steigend, Verkauf fallend). Die App fasst genau diese zu einer Order zusammen; angezeigt wird der Durchschnittspreis.</p><p><b>Kauf</b> heißt: Jemand hat aktiv zum Marktpreis gekauft (Taker-Kauf), <b>Verkauf</b> entsprechend. Die Zeile „Alle Trades“ zeigt den Anteil der Taker-Käufe am gesamten Umsatz der letzten 60 s – aller Trades, nicht nur der großen.</p><p><b>Ehrlich:</b> Das beschreibt den laufenden Handel und ist keine Vorhersage. Ob große Orders den Kurs weiter in ihre Richtung treiben, ist hier nicht geprüft – dafür bräuchte es Einzel-Trade-Daten über lange Zeit.</p><p><b>Reiter „Orderbuch“:</b> wartende große Limit-Orders („Wände“) – die größte Kauf-Wand unter und die größte Verkaufs-Wand über dem Kurs im Bereich ±2 %. Als Wand gilt eine Preiszone (0,1 % des Kurses) mit mindestens doppelt so viel wie im Schnitt. Geladen wird nur bei offenem Reiter, alle 10 s (1000 Stufen je Seite; reicht das nicht bis ±2 %, steht der erfasste Bereich dabei). Limit-Orders können jederzeit zurückgezogen werden, auch absichtlich („Spoofing“), versteckte Orders sind nicht sichtbar – „seit …“ zeigt, wie lange eine Wand schon steht. Momentaufnahme, kein Versprechen.</p></div></details></div><div class="wh-chip buy" id="wh-buy" title="Große Kauforders der letzten 60 s: Anzahl · Summe in USDT"><span class="wh-k">▲<span class="wk-w"> Käufe</span></span><span class="wh-v skel" id="wh-buy-v">—</span></div><div class="wh-chip sell" id="wh-sell" title="Große Verkaufsorders der letzten 60 s: Anzahl · Summe in USDT"><span class="wh-k">▼<span class="wk-w"> Verkäufe</span></span><span class="wh-v skel" id="wh-sell-v">—</span></div><div class="wh-flow" id="wh-flow"><span class="wh-k">Alle Trades</span><span class="wh-bar" id="wh-bar"><i id="wh-bar-b"></i></span><span class="wh-v" id="wh-flow-v">—</span></div><details class="ob" id="ob"><summary class="ob-sum">Orderbuch <small id="ob-note">größte Wände ±2 %</small></summary><div class="ob-row"><button type="button" class="ob-chip bid" id="ob-bid" data-ob="bid" disabled><span class="ob-k"><span class="wl-l">Kauf-Wand</span><span class="wl-s">Kauf</span></span><span class="ob-p" id="ob-bid-p">—</span><span class="ob-d" id="ob-bid-d"></span><span class="ob-u" id="ob-bid-u"></span><span class="ob-a" id="ob-bid-a" hidden><span class="wl-l" id="ob-bid-al"></span><span class="wl-s" id="ob-bid-as"></span></span></button><button type="button" class="ob-chip ask" id="ob-ask" data-ob="ask" disabled><span class="ob-k"><span class="wl-l">Verkaufs-Wand</span><span class="wl-s">Verkauf</span></span><span class="ob-p" id="ob-ask-p">—</span><span class="ob-d" id="ob-ask-d"></span><span class="ob-u" id="ob-ask-u"></span><span class="ob-a" id="ob-ask-a" hidden><span class="wl-l" id="ob-ask-al"></span><span class="wl-s" id="ob-ask-as"></span></span></button></div></details></div>

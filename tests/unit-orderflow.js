@@ -16,6 +16,7 @@ let pass = 0, fail = 0; const check = (name, ok) => { ok ? pass++ : fail++; cons
   check('Fehlende Takerquote ungültig', ws({ Q: undefined }).usdt === null);
   check('Echte Null bleibt neutral, Anteil nicht berechenbar', ws({ v: '0', V: '0' }).coins.delta === 0 && ws({ v: '0', V: '0' }).coins.share === null);
   check('Nur tatsächlicher boolescher Abschluss', ws({ x: 'false' }) === null && ws({ x: undefined }) === null);
+  check('Vorzeitiger Abschluss abgewiesen', ws({ x: true }) === null);
   check('Ungültige OHLC abgewiesen', ws({ h: '90' }) === null && ws({ c: '' }) === null);
   check('UTC-Start und Ende müssen zusammenpassen', ws({ t: t + 1 }) === null && ws({ T: t + 60000 }) === null);
   check('Zukünftiges Event abgewiesen', O.liveCandle(k, '1m', { now, eventAt: now + 5001 }) === null);
@@ -26,6 +27,8 @@ let pass = 0, fail = 0; const check = (name, ok) => { ok ? pass++ : fail++; cons
   const closed = ws({ x: true }, t + 59999);
   check('Abgeschlossene Live-Kerze bleibt endgültig', O.mergeCandles([closed], [ws({}, t + 60000), rest(row, { now: t + 60001, startedAt: t + 60000 })], '1m')[0] === closed);
   check('Später gestartetes REST schließt fehlenden WS-Abschluss', O.mergeCandles([c], [rest(row, { now: t + 60001, startedAt: now + 1 })], '1m')[0].closed);
+  const repaired = O.mergeCandles([{ ...closed, usdt: null }], [rest(row, { now: t + 60001, startedAt: t + 60000 })], '1m')[0];
+  check('Endgültiges REST ergänzt fehlende Einheit, erhält vorhandene Live-Werte', repaired.usdt.buy === 650 && repaired.coins === closed.coins && repaired.c === closed.c && repaired.source === 'ws');
   const slots = O.visibleCandles([closed], '1m', t + 59999);
   check('Abschluss rückt nach oben, jetzt beginnt leer', slots[3].candle === closed && slots[4].t === t + 60000 && slots[4].running && slots[4].candle === null);
   check('Lücke ist eigener Zeitplatz, kein Verschieben älterer Werte', O.visibleCandles([c], '1m', now)[2].candle === null);
@@ -36,6 +39,8 @@ let pass = 0, fail = 0; const check = (name, ok) => { ok ? pass++ : fail++; cons
   const q = (s = full, opts = {}) => O.dataQuality(s, '1m', { now, connected: true, ...opts });
   check('Nur passende vollständige Live-Kerzen sind frisch', q().kind === 'live');
   check('Exakt 5 s frisch, danach veraltet', q(full, { now: now + 5000 }).kind === 'live' && q(full, { now: now + 5001 }).kind === 'stale');
+  check('Altes Event mit neuer Empfangszeit bleibt veraltet', q(full.map(c => ({ ...c, eventAt: now - 6000 }))).kind === 'stale');
+  check('Serverzeit-Ausgleich erfindet keine Empfangsfrische', q(full.map(c => ({ ...c, seenAt: now - 6001 })), { receivedNow: now }).kind === 'stale');
   check('Getrennt trotz frischem Event veraltet', q(full, { connected: false }).kind === 'stale');
   check('Pause ausdrücklich markiert', q(full, { paused: true }).kind === 'paused');
   check('REST hat keine Live-Bestätigung', q([{ ...r, closed: false }]).kind === 'rest');

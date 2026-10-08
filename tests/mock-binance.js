@@ -9,6 +9,7 @@ const tls = { key: fs.readFileSync(path.join(dir, 'key.pem')), cert: fs.readFile
 const IV = { '1s': 1e3, '1m': 6e4, '3m': 18e4, '5m': 3e5, '15m': 9e5, '30m': 18e5, '1h': 36e5, '2h': 72e5, '4h': 144e5, '12h': 432e5, '1d': 864e5, '1w': 6048e5, '1M': 2592e6 };
 const SPOT = { BTCUSDT: 64000, ETHUSDT: 2500, XRPUSDT: 1.47, ETCUSDT: 18, BCHUSDT: 330, LTCUSDT: 70, NEARUSDT: 2.4, EURUSDT: 1.164, SOLUSDT: 150, PAXGUSDT: 2650, KASUSDT: 0.12 };
 const FUT = { ...SPOT, BSVUSDT: 32 };
+const orderflowMock = { multiplier: 1, hold: false, missing: false, staleMs: 0 };
 delete FUT.EURUSDT; delete FUT.PAXGUSDT; // PAXG: nur Spot (keine Futures, kein Open Interest)
 const cfg = { wsPeriod: 1000, futPeriod: 500, walk: true, silent: false, blockWs: false, restFail: false, restDelay: 0, chanNoCors: false, tg429: 0, tgUpdates: true, eurHist: 'on', t24: 'ok', log: [] }, sent = [];
 // 3.31.0 (G03): historische EUR/USDT-Minutenkerzen für den Euro-Kurs nachgetragener Abschlüsse – fest berechenbar: Schlusskurs der
@@ -28,7 +29,7 @@ setInterval(() => { if (!cfg.walk) return; for (const s of Object.keys(price)) t
 // Anteil der Taker-Käufe: bei steigender Kerze höher, bei fallender niedriger (deterministisch je Zeitpunkt)
 const frac = x => x - Math.floor(x), noise = t => frac(Math.sin(t * 0.000123 + 1.7) * 43758.5453);
 const takerShare = (t, o, c) => Math.min(.9, Math.max(.1, .5 + (c >= o ? .12 : -.12) + (noise(t) - .5) * .2));
-const krow = (t, o, h, l, c, v, T, n) => [t, String(o), String(h), String(l), String(c), String(v.toFixed(3)), T, String((v * (o + h + l + c) / 4).toFixed(4)), n, String((v * takerShare(t, o, c)).toFixed(3)), '0', '0'];
+const krow = (t, o, h, l, c, v, T, n) => [t, String(o), String(h), String(l), String(c), String(v.toFixed(3)), T, String((v * (o + h + l + c) / 4).toFixed(4)), n, String((v * takerShare(t, o, c)).toFixed(3)), String((v * (o + h + l + c) / 4 * takerShare(t, o, c)).toFixed(4)), '0'];
 // Historie je Kürzel/Intervall einmal erzeugen und danach nur noch verlängern: abgeschlossene Kerzen bleiben stabil wie bei Binance
 const H = {};
 // 4.3: Stundenkerzen für die Volatilität nach Uhrzeit – 2100 statt 1000 (rund 87 Tage), Dochte so breit wie 60 Schritte des
@@ -459,7 +460,9 @@ function pushAll(fut) {
       const m = /^([a-z0-9]+)@kline_(\w+)$/.exec(st), mp = /^([a-z0-9]+)@markPrice(@1s)?$/.exec(st);
       if (m) {
         const sym = m[1].toUpperCase(), iv = m[2]; if (!(sym in (fut ? FUT : SPOT))) continue;
-        const k = cur(sym, iv, now), send = (x, closed) => c.ws.send(JSON.stringify({ stream: st, data: { e: 'kline', E: now, s: sym, k: { t: x.t, T: x.T, s: sym, i: iv, f: 1, L: 2, o: String(x.o), c: String(x.c), h: String(x.h), l: String(x.l), v: String(x.v.toFixed(3)), n: 5, x: closed, q: '0', V: '0', Q: '0', B: '0' } } }));
+        if (fut && orderflowMock.hold && ['1m', '1h'].includes(iv)) continue;
+        const mult = fut ? orderflowMock.multiplier : 1;
+        const k = cur(sym, iv, now), send = (x, closed) => c.ws.send(JSON.stringify({ stream: st, data: { e: 'kline', E: now - (fut ? orderflowMock.staleMs : 0), s: sym, k: { t: x.t, T: x.T, s: sym, i: iv, f: 1, L: 2, o: String(x.o * mult), c: String(x.c * mult), h: String(x.h * mult), l: String(x.l * mult), v: String(x.v.toFixed(3)), n: 5, x: closed, q: fut && orderflowMock.missing ? undefined : String((x.v * (x.o + x.h + x.l + x.c) / 4 * mult).toFixed(4)), V: String((x.v * takerShare(x.t, x.o, x.c)).toFixed(3)), Q: String((x.v * (x.o + x.h + x.l + x.c) / 4 * mult * takerShare(x.t, x.o, x.c)).toFixed(4)), B: '0' } } }));
         const seenKey = '_seen_' + st;
         if (c[seenKey] && c[seenKey] !== k.t && k.prev && k.prev.t === c[seenKey]) send(k.prev, true); // Abschluss der alten Kerze
         c[seenKey] = k.t; send(k, false); c.sent++;
@@ -478,6 +481,7 @@ http.createServer((req, res) => {
   const ok = b => json(res, 200, b ?? { ok: true });
   switch (u.pathname) {
     case '/state': return ok({ conns: [...conns].map(c => ({ host: c.host, port: c.port, path: c.path, streams: [...c.streams].sort(), received: c.received, sent: c.sent })), price, cfg: { ...cfg, log: undefined } });
+    case '/orderflow': Object.assign(orderflowMock, { multiplier: Number(q.mult) || 1, hold: q.hold === '1', missing: q.missing === '1', staleMs: Number(q.stale) || 0 }); return ok(orderflowMock);
     case '/log': return ok(cfg.log.filter(e => !q.since || e.at >= Number(q.since)));
     case '/set': touch(q.symbol, Number(q.price)); return ok({ price: price[q.symbol] });
     case '/wick': { const back = price[q.symbol]; touch(q.symbol, Number(q.to)); trade(q.symbol, back); price[q.symbol] = back; for (const k of Object.keys(candles)) if (k.startsWith(q.symbol + '|')) candles[k].c = back; return ok({ back }); }
