@@ -1,6 +1,6 @@
 # KI-Korrekturen – Kosten, Übersicht und Risiko
 
-Arbeitsstand **App/SW 3.52.0**, Dienstquelle **2.9.0**. Öffentlich bleibt **3.51.0**, die private VM wurde nicht aktualisiert. Grundlage: freigegebene [KI-Prüfung](KI-AUDIT-2026-10-08.md). Die neue kompakte KI-Übersicht und die ergänzende Risiko-/Ausführungsansicht sind getrennte Folgegruppen.
+Arbeitsstand **App/SW 3.52.0**, Dienstquelle **2.9.0**. Öffentlich bleibt bis zum geprüften Release **3.51.0**, die private VM wurde nicht aktualisiert. Grundlage: freigegebene [KI-Prüfung](KI-AUDIT-2026-10-08.md). Alle drei Gruppen sind umgesetzt: gemeinsame Kosten und aktuelle Bestätigung, kompakte KI-Übersicht sowie Risiko-/Ausführungsansicht. Veröffentlichung folgt nach dem vollständigen seriellen Gesamtlauf.
 
 ## Kostenmodell cf-2
 
@@ -35,7 +35,7 @@ Das tatsächliche VM-Update ist ein eigener, noch offener Schritt. Zuerst persö
 - Gespeicherte Karten zeigen „aktuelle Daten fehlen“, „Referenzkurs erneut prüfen“, „aktuell nicht bestätigt“, „älterer Referenzplan“ oder grau „früheres Modell“. Zeit/Modell/Revision, deutscher Fehlergrund und nächster Prüfschritt bleiben sichtbar. Originalpreise und Score bleiben erhalten.
 - Ein neuer Kurs derselben Basiskerze erzeugt weiterhin keine zweite Signal-ID. Eine neue Referenzbewertung überschreibt keinen Originalplan.
 
-Die bestehende Listenanordnung bleibt in dieser Gruppe erhalten. Deduplizierung der sichtbaren Listen, Kandidaten/Beobachten/Archiv, gemeinsame Filter, kompakte Karten und ein breiterer KI-Bereich folgen als getrennte Schritte innerhalb der inzwischen ausdrücklich erteilten Gesamtfreigabe. Auch Verlustbudget, aktuelle Ausführbarkeitsprüfung und belastbare Vorwärtsauswertung sind noch offen. Ein technischer Fix belegt keinen profitablen Marktvorteil.
+Die folgenden beiden Gruppen ergänzen innerhalb der ausdrücklich erteilten Gesamtfreigabe die gemeinsame Liste, Statusansichten und Filter sowie Größenhilfe, aktuelle Preisprüfung und eine beschreibende Vorwärtsauswertung. Ein technischer Fix belegt keinen profitablen Marktvorteil.
 
 ## Kurzer Test in der App
 
@@ -47,7 +47,7 @@ Die bestehende Listenanordnung bleibt in dieser Gruppe erhalten. Deduplizierung 
 
 ## Prüfung und Freigabe
 
-Gezielte Kern-, tatsächliche Worker-/Browser-, Archiv-, Dienst- und Installerprüfungen sowie Lint sind im gesonderten Testnachweis festgehalten. Vor einer Veröffentlichung folgen der vollständige serielle Gesamtlauf und die Releaseprüfung des finalen Programmstands. Keine Veröffentlichung, privaten Orders, echten Telegram-Nachrichten oder Änderung der privaten VM in dieser Gruppe.
+Gezielte Kern-, tatsächliche Worker-/Browser-, Archiv-, Dienst- und Installerprüfungen sowie Lint sind im gesonderten Testnachweis festgehalten. Vor der autorisierten Veröffentlichung folgen der vollständige serielle Gesamtlauf und die Releaseprüfung des finalen Programmstands. Die private VM bleibt ein eigener offener Schritt.
 
 Gezielter Abschluss Gruppe 1: Kosten 46/46, Darstellung 23/23, m71 23/23, m63 36/36, Dienst 26/26, Installer 35/35, Release 6/6, m69 19/19. Im m69-Erstbefund wurde das asynchrone Aktivierungsergebnis im Test zu früh geprüft: Playwright bewertet ein zurückgegebenes Promise als wahr. Der Test wartet nun ausdrücklich auf dessen Ergebnis und prüft bis zur bestätigten Aktivierung erneut. Der tatsächliche Cache-/Marker-/Offlinevertrag bleibt vollständig geprüft; kein SW-Produktfehler aus diesem Befund. Vollständige Erst-/Nachlauflogs liegen im Arbeitsbereich, der endgültige Release-Testnachweis folgt nach den weiteren beiden Gruppen.
 

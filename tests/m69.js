@@ -30,11 +30,11 @@ const digest = x => crypto.createHash('sha256').update(x).digest('hex');
     const savedPersonal = await page.evaluate(() => { __g05.persist(); return JSON.stringify(__g05.backupPayload().positions); });
     serving = 'current'; await page.evaluate(async () => { const r = await navigator.serviceWorker.getRegistration(); await r.update(); });
     // Playwright prüft ein Promise selbst als wahr; deshalb asynchrones Ergebnis hier ausdrücklich abwarten und erneut prüfen.
-    await page.evaluate(async () => { const end = Date.now() + 20000;
+    await page.evaluate(async () => { const end = Date.now() + 20000; let lastReply = null;
       while (Date.now() < end) {
-        const ready = await new Promise(resolve => { const ch = new MessageChannel(); const timer = setTimeout(() => { ch.port1.close(); resolve(false); }, 200); ch.port1.onmessage = async e => { clearTimeout(timer); ch.port1.close(); const r = await navigator.serviceWorker.getRegistration(); resolve(e.data.version === g13CurrentVersion && navigator.serviceWorker.controller?.state === 'activated' && r.active?.state === 'activated'); }; navigator.serviceWorker.controller?.postMessage({ type: 'bundle-status' }, [ch.port2]); });
+        const ready = await new Promise(resolve => { const ch = new MessageChannel(); const timer = setTimeout(() => { ch.port1.close(); resolve(false); }, 200); ch.port1.onmessage = async e => { lastReply = e.data; clearTimeout(timer); ch.port1.close(); const r = await navigator.serviceWorker.getRegistration(); resolve(e.data.version === g13CurrentVersion && navigator.serviceWorker.controller?.state === 'activated' && r.active?.state === 'activated'); }; navigator.serviceWorker.controller?.postMessage({ type: 'bundle-status' }, [ch.port2]); });
         if (ready) return; await new Promise(resolve => setTimeout(resolve, 50));
-      } throw new Error('Bestätigtes, aktiviertes Bündel fehlt.');
+      } const r = await navigator.serviceWorker.getRegistration(); throw new Error('Bestätigtes, aktiviertes Bündel fehlt: ' + JSON.stringify({ lastReply, active: r.active?.state, installing: r.installing?.state, waiting: r.waiting?.state, controller: navigator.serviceWorker.controller?.state, keys: await caches.keys() }));
     });
     const firstCache = await page.evaluate(async () => { const keys = await caches.keys(), name = keys.find(x => x.startsWith('scalpdesk-' + g13CurrentVersion + '-')), cache = await caches.open(name); return { keys, complete: !!await cache.match('/__bundle_complete__'), marker: (await cache.keys()).map(r => r.url).filter(x => x.includes('bundle_complete')), state: (await navigator.serviceWorker.getRegistration()).active.state, origin: location.origin }; });
     check(`3.45 -> ${version}: vollständiges bestätigtes Bündel und alter Rückfallcache erhalten`, firstCache.keys.includes('scalpdesk-3.45.0') && firstCache.complete, JSON.stringify(firstCache));
