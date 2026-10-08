@@ -60,7 +60,7 @@ curl -fsSL "$SRC/release-manifest.json" -o "$STAGE/release-manifest.json" || die
 PARTS=$(node - "$STAGE/release-manifest.json" <<'NODE'
 const fs=require('fs'),j=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
 if(!/^2\.\d+\.\d+$/.test(j.version)||!Array.isArray(j.files)||j.files.length>100)throw Error('Lieferliste ungültig');
-for(const f of j.files){if(!/^(?:scalpdesk-247\.mjs|pattern-engine\.mjs|pattern-monitor\.mjs|ki-monitor\.mjs|install\.sh|shared\/[a-z0-9-]+\.mjs)$/.test(f.path)||!/^[a-f0-9]{64}$/.test(f.sha256))throw Error('Lieferpfad ungültig'); console.log(f.path);}
+for(const f of j.files){if(!/^(?:scalpdesk-247\.mjs|pattern-engine\.mjs|pattern-monitor\.mjs|ki-monitor\.mjs|orderflow-explainer\.mjs|install\.sh|shared\/[a-z0-9-]+\.mjs)$/.test(f.path)||!/^[a-f0-9]{64}$/.test(f.sha256))throw Error('Lieferpfad ungültig'); console.log(f.path);}
 NODE
 ) || die "Lieferliste ungültig; bisheriges Programm bleibt."
 while IFS= read -r part; do

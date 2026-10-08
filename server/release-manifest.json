@@ -29,8 +29,8 @@
     },
     {
       "path": "install.sh",
-      "sha256": "17e6e443e5f36167d551e121b2f5deedfd7e9e3a801e2eab3fbe5c0a54916d4a",
-      "bytes": 19268
+      "sha256": "abcb8fcf6708ed597cc4ae323bc21b5c7902b8344da09c33c5d364ba5e3d4448",
+      "bytes": 19293
     },
     {
       "path": "shared/bitget-patterns.mjs",
