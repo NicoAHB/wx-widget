@@ -8,6 +8,7 @@ const clone = x => JSON.parse(JSON.stringify(x));
 const size = x => new TextEncoder().encode(JSON.stringify(x)).length;
 export const MODEL_ARCHIVE_VERSION = 1;
 export function validateModelArchive(input) {
+  if (input?.kind === 'scalpdesk-bot-simulation' && input.version === 1 && input.simulationOnly === true) input = { app: 'scalpdesk-model-archive', version: 1, exportedAt: Date.now(), observations: [], po3Journal: [], bot: input.state };
   if (!input || input.app !== 'scalpdesk-model-archive' || input.version !== MODEL_ARCHIVE_VERSION || !Number.isSafeInteger(input.exportedAt) || size(input) > 32 * 1024 * 1024) throw new Error('KI-/Bot-Archivformat oder Größe ungültig');
   if (/"(?:apiKey|secret|passphrase|token|webhook|authorization)"\s*:/i.test(JSON.stringify(input))) throw new Error('Archiv darf keine Zugangsdaten enthalten');
   const observations = mergeObservations([], input.observations), journal = mergePo3Journal([], input.po3Journal);

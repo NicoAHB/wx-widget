@@ -6,6 +6,7 @@ let pass = 0, fail = 0; const check = (name, ok) => { ok ? pass++ : fail++; cons
   const restored = A.validateModelArchive(original);
   check('Vollständige lokale Originale mit unveränderten IDs/Quellen/Ankern', JSON.stringify(restored.observations) === JSON.stringify(original.observations) && restored.journal[0].id === original.po3Journal[0].id && restored.journal[0].source.anchors['1m'] === original.po3Journal[0].source.anchors['1m']);
   check('Importiertes Bot-Modell deaktiviert, Gewinnsperre/Basis/Ledger bleiben', !restored.bot.enabled && restored.bot.run.stops.gain && restored.bot.run.referenceUSDT === '1000' && restored.bot.commands.length === 3 && !restored.bot.run.automaticTrading);
+  check('Separate Bot-JSON-Sicherung ebenfalls prüfbar, nur deaktivierte Wiederherstellung', !A.validateModelArchive({ kind: 'scalpdesk-bot-simulation', version: 1, simulationOnly: true, state: original.bot }).bot.enabled);
   check('Validierung verändert Originaldatei nicht', original.bot.enabled && JSON.stringify(original.po3Journal) === JSON.stringify(restored.journal));
   const old = copy(); old.po3Journal[0].modelVersion = 'po3-altes-modell'; check('Alte PO3-Modelle exportierbar, als alte Version erhalten', A.validateModelArchive(old).journal[0].modelVersion === 'po3-altes-modell');
   const model = copy(); model.bot.version = 'unbekannt'; check('Unbekannter Bot-Kern nicht still migriert', rejects(model));
