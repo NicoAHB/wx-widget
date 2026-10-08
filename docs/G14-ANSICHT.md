@@ -1,6 +1,6 @@
 # G14 – Darstellung und Hintergrund
 
-Technisch abgeschlossener Stand App/Service Worker **3.51.0**, Dienst unverändert **2.8.0**. Öffentlich weiterhin 3.50.0, bis zur Gruppenfreigabe. G13 ist technisch abgeschlossen und vom Nutzer als Voraussetzung für diesen getrennten Schritt akzeptiert. Echte Geräte-/CORS-/VM-Abnahmen aus G13 bleiben offen.
+Seit 08.10.2026 auf [GitHub Pages](https://nicoahb.github.io/wx-widget/) veröffentlicht: App/Service Worker **3.51.0**, Dienstquelle unverändert **2.8.0**. Gruppenfreigabe erteilt und PR #78 übernommen; [Online-Nachweis](G14-ONLINE-NACHWEIS.json) bestätigt alle 34 PWA-Dateien samt Manifest, Service Worker und Weiterleitung. Vor dem Test vorhandene PWA sichern, bewusst aktualisieren/neu öffnen und 3.51.0 prüfen. G13 ist technisch abgeschlossen und vom Nutzer als Voraussetzung für diesen getrennten Schritt akzeptiert. Echte Geräte-/CORS-/VM-Abnahmen aus G13 bleiben offen.
 
 ## Änderungen
 
@@ -38,4 +38,4 @@ Das veröffentlichte Bündel 3.50.0 bleibt unverändert; 3.51.0 erhält ein eige
 
 ## Lieferung und nächster Schritt
 
-[PR #78](https://github.com/NicoAHB/wx-widget/pull/78) ist zur Prüfung vorbereitet. App/SW 3.51.0 wurde noch nicht nach main übernommen; online bleibt 3.50.0. Vor Veröffentlichung wie vom Nutzer verlangt auf die Gruppenfreigabe warten. Programm-ZIP wird getrennt aus den getrackten Lieferdateien erstellt. Reale Geräte-/CORS-/VM-Abnahme bleibt gesondert offen.
+[PR #78](https://github.com/NicoAHB/wx-widget/pull/78) nach ausdrücklicher Nutzerfreigabe per Merge-Commit nach `main` übernommen; App/SW 3.51.0 ist online. Programmcommit `dd1069980245728e94eccf86e88d00eadd28fc04`, [Pages-Lauf](https://github.com/NicoAHB/wx-widget/actions/runs/37754844402) erfolgreich; sämtliche öffentlichen Programmdateien ohne Cache-Umgehung byte-/hashgleich geprüft. Programm-ZIP aus den getrackten Lieferdateien erstellt. Reale Geräte-/CORS-/VM-Abnahme bleibt gesondert offen; die private VM wurde nicht aktualisiert.
