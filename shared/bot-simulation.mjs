@@ -1,5 +1,5 @@
 // G12: serialisierte, haltbare Simulation. Kein Bitget-Orderadapter, kein Wechsel nach Demo/Echtgeld.
-import { BOT_LIMITS_VERSION, createBotLimits, startBotRun, evaluateBotSnapshot, reconcileBotInventory, simulateBotClose, advanceBotClock, botActionState, decimal } from './bot-limits.mjs';
+import { BOT_LIMITS_VERSION, createBotLimits, startBotRun, evaluateBotSnapshot, reconcileBotInventory, simulateBotClose, advanceBotClock, botActionState, decimal, botLimit, runNet } from './bot-limits.mjs';
 const clone = x => JSON.parse(JSON.stringify(x));
 export function botSettings(input) {
   if (!input || !['confluence', 'po3'].includes(input.strategy) || !Array.isArray(input.coins) || !input.coins.length || input.coins.length > 40 || new Set(input.coins).size !== input.coins.length
@@ -15,7 +15,16 @@ export class BotSimulationRuntime {
     this.state = saved ? clone(saved) : { ...createBotLimits(), commands: [], settings: null };
     if (this.state.version !== BOT_LIMITS_VERSION || !Number.isSafeInteger(this.state.revision) || !Array.isArray(this.state.commands) || !Array.isArray(this.state.logs) || !Array.isArray(this.state.history)) throw new Error('Unbekannter Bot-Simulationszustand; Original erhalten');
     if (typeof this.state.enabled !== 'boolean' || this.state.mode !== 'simulation') throw new Error('Nur bestätigte Simulationszustände wiederherstellen');
-    if (this.state.run) { const r = this.state.run; if (!['RUNNING', 'STOPPED_LIMIT', 'RECONCILING', 'PAUSED_RECONCILIATION_REQUIRED'].includes(r.state) || !r.latest || !r.stops || r.latest.runId !== r.id || decimal(r.referenceUSDT).n <= 0n) throw new Error('Bot-Lauf beschädigt; Original prüfen'); }
+    if (this.state.commands.length > 500 || this.state.logs.length > 500 || this.state.history.length > 100 || new TextEncoder().encode(JSON.stringify(this.state)).length > 5 * 1024 * 1024) throw new Error('Bot-Simulationszustand überschreitet Speichergrenze');
+    for (const r of [...this.state.history, ...(this.state.run ? [this.state.run] : [])]) {
+      if (!['RUNNING', 'STOPPED_LIMIT', 'RECONCILING', 'PAUSED_RECONCILIATION_REQUIRED'].includes(r.state) || !r.latest || !r.stops || r.latest.runId !== r.id || decimal(r.referenceUSDT).n <= 0n || r.automaticTrading !== false
+        || r.latest.completeNet !== true || r.latest.currency !== 'USDT' || !Number.isSafeInteger(r.latest.sequence) || !Number.isSafeInteger(r.startedAt)) throw new Error('Bot-Lauf beschädigt; Original prüfen');
+      botLimit(r.gain, 'gain'); botLimit(r.loss, 'loss'); runNet(r.baselineValues); runNet(r.latest.values); decimal(r.netUSDT);
+      if ([r.gain, r.loss].some(x => x.enabled && x.unit === 'EUR') && (!r.fx || decimal(r.fx.value).n <= 0n)) throw new Error('Gesicherter Start-FX fehlt');
+      if (['RECONCILING', 'PAUSED_RECONCILIATION_REQUIRED'].includes(r.state) && !Number.isSafeInteger(r.reconciliation?.deadline)) throw new Error('Bestandsstörungszeit fehlt');
+      if (Object.keys(r.stops).some(k => !['gain', 'loss'].includes(k))) throw new Error('Gesicherte Grenzsperre unbekannt');
+      for (const stop of Object.values(r.stops)) { botLimit(stop.limit); decimal(stop.netUSDT); if (!Number.isSafeInteger(stop.at)) throw new Error('Gesicherte Grenzsperre beschädigt'); }
+    }
     if (this.state.run?.state === 'RECONCILING') this.state.run.reconciliation.restartPending = true;
     this.schedule();
   }
