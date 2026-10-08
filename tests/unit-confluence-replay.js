@@ -1,0 +1,76 @@
+// G10(d): tatsächlicher Kern/Originalarchiv, Simulation und Quoten ohne nachträgliche Scoreeingaben.
+const path = require('path'), { pathToFileURL } = require('url');
+let pass = 0, fail = 0;
+const check = (name, ok) => { ok ? pass++ : fail++; console.log(`${ok ? '✓' : '✗'} ${name}`); };
+(async () => {
+  const R = await import(pathToFileURL(path.join(__dirname, '../shared/confluence-replay.mjs')));
+  const C = await import(pathToFileURL(path.join(__dirname, '../shared/confluence-core.mjs')));
+  const B = await import(pathToFileURL(path.join(__dirname, '../shared/bitget-public.mjs')));
+  const { replayFixture, HOUR } = await import(pathToFileURL(path.join(__dirname, 'fixtures/confluence-replay.mjs')));
+  const f = replayFixture(), clone = x => structuredClone(x), at = f.observation.decisionAt;
+  const replay = R.replayObservation(f.observation, { ...f, threshold: 70 }), c = replay.cases[0];
+  check('Originalscore nach kompakter Speicherung identisch zum gemeinsamen Livekern', C.scoreConfluence({ ...f.observation.data, direction: 1 }, f.observation.config).score === f.card.score.score);
+  check('Echter Kern erzeugt historischen TP-Fall mit Entry nach Entscheidung und mindestens 2R', c?.outcome === 'tp' && c.entryAt >= at && c.levels.rewardRisk >= 2 && c.score === 80);
+  check('Funding am Einstieg enthalten, Abrechnung exakt am Ausstieg ausgeschlossen', c.costsComplete && c.funding.events.length === 1 && c.funding.events[0].at === at);
+  check('Netto aus tatsächlichen Gebühren/Funding, kein pauschaler Vollverlust für Nicht-TP', c.costs.net < c.levels.tp - c.levels.entry && c.netReturn > 0 && c.netR > 0);
+  const changed = clone(f); changed.history.events.forEach(e => { e.rate = 1; });
+  const futureRates = R.replayObservation(changed.observation, { ...changed, threshold: 70 }).cases[0];
+  check('Spätere historische Fundingraten ändern Auswahl/Score nicht; tatsächliches Netto ändert sich', futureRates.score === c.score && futureRates.levels.entry === c.levels.entry && futureRates.netReturn < c.netReturn);
+  const missing = clone(f); missing.observation.data.funding = null;
+  check('Fehlende damalige Fundingeingaben sind nicht bewertbar und werden nicht durch Abrechnungen ersetzt', R.replayObservation(missing.observation, { ...missing, threshold: 70 }).cases.length === 0);
+  check('Schwellen 60/70/80 getrennt, 80 erreicht und >80 abgelehnt', [60, 70, 80].every(threshold => R.replayObservation(f.observation, { ...f, threshold }).cases.length === 1) && R.replayObservation(f.observation, { ...f, threshold: 81 }).cases.length === 0);
+  const immature = R.replayObservation(f.observation, { ...f, asOf: at + 3 * HOUR, rows: f.rows.map(x => ({ ...x, knownAt: at + 3 * HOUR })), threshold: 70 }).cases[0];
+  check('Schneller TP vor Ende der gesamten Haltedauer bleibt unreif', immature.outcome === 'unreif');
+  const levels = C.tradeLevels({ entry: 100, anchor: 99, atr: 4, direction: 1, tickSize: .5 }, f.observation.config);
+  const sim = rows => R.simulateTrade({ rows, levels, direction: 1, entryAt: at, maxHoldMs: 24 * HOUR, asOf: f.asOf });
+  const both = clone(f.rows); both[0].high = 120; both[0].low = 90;
+  check('SL und TP in derselben Kerze: konservativ SL', sim(both).outcome === 'sl' && sim(both).ambiguity);
+  const gap = clone(f.rows); gap[0].open = 90; gap[0].low = 89;
+  check('Sprung über Stop: Ausstieg zum schlechteren Open statt zum alten SL', sim(gap).exit === 90 && sim(gap).gapFill);
+  const hole = clone(f.rows); hole.splice(0, 1);
+  check('Fehlende Einstiegskerze ist Datenlücke, kein Timeout', sim(hole).outcome === 'gap');
+  const flat = clone(f.rows); flat.forEach(x => { x.high = 101; x.low = 99; x.close = 100; });
+  check('Timeout korrekt am Horizont statt Nachrichtenablauf', sim(flat).outcome === 'timeout' && sim(flat).resolvedAt === at + 24 * HOUR);
+  const adverse = R.simulateTrade({ rows: gap, levels, direction: 1, entryAt: at, maxHoldMs: 24 * HOUR, asOf: f.asOf, slippageBps: 10 });
+  check('Ausstiegsslippage ungünstig und Tick konservativ gerundet', adverse.exit < 90 && adverse.exit % .5 === 0);
+  const shortLevels = C.tradeLevels({ entry: 100, anchor: 101, atr: 4, direction: -1, tickSize: .5 }, f.observation.config);
+  check('Short-Barrieren spiegelbildlich', R.simulateTrade({ rows: both, levels: shortLevels, direction: -1, entryAt: at, maxHoldMs: 24 * HOUR, asOf: f.asOf }).outcome === 'sl');
+  check('Fehlender Markpreis verhindert vollständiges Netto', !R.replayObservation(f.observation, { ...f, marks: [], threshold: 70 }).cases[0].costsComplete);
+  check('Unvollständige Abrechnungshistorie verhindert vollständiges Netto', !R.replayObservation(f.observation, { ...f, history: { ...f.history, complete: false }, threshold: 70 }).cases[0].costsComplete);
+  const imported = R.mergeObservations([], [f.observation]), merged = R.mergeObservations(imported, [clone(f.observation)]);
+  check('Wiederholungen/mehrere Tabs zählen dieselbe Basiskerze einmal', merged.length === 1);
+  const later = clone(f.observation); later.decisionAt++; later.data.scope.asOf++;
+  check('Späterer Abruf ersetzt frühere Originalbeobachtung nicht', R.mergeObservations(merged, [later])[0].decisionAt === at);
+  const forged = clone(f.observation); forged.data.scope.indicatorAnchors.base++;
+  try { R.mergeObservations([], [forged]); check('Fremde Anker zurückweisen', false); } catch { check('Fremde Anker zurückweisen', true); }
+  const conflict = clone(f.observation); conflict.data.base.price++;
+  try { R.mergeObservations(merged, [conflict]); check('Widerspruch bei gleicher Kenntniszeit nicht überschreiben', false); } catch { check('Widerspruch bei gleicher Kenntniszeit nicht überschreiben', true); }
+  const job = R.replayJob({ ...f, observations: [f.observation], cursor: 0, limit: 1 });
+  check('Begrenzter Job: Cursor/Fertigstatus und separate Schwellen', job.complete && job.nextCursor === 1 && job.cases.length === 3);
+  const cases = Array.from({ length: 30 }, (_, i) => ({ ...clone(c), id: 'Fall' + i }));
+  const query = n => R.cardHistoricalStats(f.card, { observations: [f.observation], cases: cases.slice(0, n), asOf: f.asOf });
+  check('29 Fälle: keine Prozentquote und kein Euro-Erwartungswert', query(29).short.n === 29 && query(29).short.tpPercent === null && query(29).short.expectedEUR === null);
+  check('30 Fälle: beide Zeitfenster, gleiche Strategie und offene Größenangabe', query(30).short.n === 30 && query(30).long.n === 30 && query(30).short.tpPercent === 100 && query(30).short.expectedEUR === null);
+  const sizing = { marginEUR: 100, fx: 1.1, leverage: 20, entry: c.levels.entry };
+  const eur = R.cardHistoricalStats(f.card, { observations: [f.observation], cases, asOf: f.asOf, sizing }).short;
+  check('Euro-Erwartung aus Mittelwert der vollständigen Nettoreserven, keine zweite Gebühr', Math.abs(eur.expectedEUR - c.netReturn * 2000) < 1e-8);
+  const noCosts = clone(cases); noCosts[0].costsComplete = false; noCosts[0].netReturn = null;
+  const nc = R.cardHistoricalStats(f.card, { observations: [f.observation], cases: noCosts, asOf: f.asOf }).short;
+  check('Kostenlücke verkleinert Preisnenner nicht; Nettoerwartung unbekannt', nc.n === 30 && nc.tpPercent === 100 && nc.meanNetReturn === null && nc.incompleteCosts === 1);
+  const timeout = clone(cases); timeout[0].outcome = 'timeout'; timeout[0].resolvedAt = timeout[0].entryAt + timeout[0].maxHoldMs;
+  const ts = R.cardHistoricalStats(f.card, { observations: [f.observation], cases: timeout, asOf: f.asOf }).short;
+  check('Positives Timeout im Nenner, kein TP-Erfolg', ts.n === 30 && ts.tp === 29 && ts.timeout.positive === 1);
+  const different = clone(f.card); different.options.anchorPolicy = 'latest-pivot';
+  check('Andere Anker-/Kostenregel mischt keine alten Quoten', R.cardHistoricalStats(different, { observations: [f.observation], cases, asOf: f.asOf }).short.n === 0);
+  check('Ohne historische Originaleingaben ausdrücklich nicht bewertbar', R.cardHistoricalStats(f.card, { cases: [], observations: [], asOf: f.asOf }).long.status === 'nicht bewertbar');
+  const sequence = clone(cases); sequence[0].netR = -1; sequence[1].netR = -2; sequence.forEach((x, i) => { x.entryAt += i; });
+  const bt = R.backtestSummary(sequence, 70, f.asOf + HOUR);
+  check('Drawdown in definierter R-Signalfolge, ohne erfundenes Portfolio', bt.maxDrawdownR === 3 && !('drawdownEUR' in bt) && !('drawdownPercent' in bt));
+  const settlements = B.normalizeBitgetSettlements([{ symbol: 'BTCUSDT', fundingTime: String(at), fundingRate: '0.001' }], { symbol: 'BTCUSDT', observedAt: f.asOf });
+  check('Abgerechnete Rate niemals als angekündigte Rate/Intervall umdeuten', settlements[0].kind === 'settled' && settlements[0].announcedRate === null && settlements[0].intervalHours === null);
+  try { B.normalizeBitgetSettlements([{ symbol: 'BTCUSDT', fundingTime: String(f.asOf + 1), fundingRate: '0' }], { symbol: 'BTCUSDT', observedAt: f.asOf }); check('Zukünftige Abrechnung verwerfen', false); } catch { check('Zukünftige Abrechnung verwerfen', true); }
+  const delayed = { ...f, rows: f.rows.map(c => ({ ...c, knownAt: f.asOf + HOUR })), observedAt: f.asOf + HOUR };
+  check('Später abgerufene Vergangenheit: Abrufzeit getrennt von Auswertungsgrenze, keine Zukunftskerzen', R.replayJob({ observations: [f.observation], ...delayed }).cases.length === 3 && R.replayObservation(f.observation, { ...delayed, threshold: 70 }).cases[0].outcome === 'tp');
+  try { R.replayJob({ observations: [f.observation], ...f, observedAt: f.asOf - 1 }); check('Abrufzeit vor Auswertungsgrenze wird abgelehnt', false); } catch { check('Abrufzeit vor Auswertungsgrenze wird abgelehnt', true); }
+  console.log(`\n${pass}/${pass + fail} bestanden`); process.exitCode = fail ? 1 : 0;
+})().catch(e => { console.error(e); process.exitCode = 1; });

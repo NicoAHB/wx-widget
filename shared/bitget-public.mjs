@@ -78,6 +78,20 @@ export function normalizeBitgetQuote(data, { symbol, decisionAt, providerAt, obs
   return { venue: 'bitget', product: 'USDT-FUTURES', instrument: symbol, quote: 'USDT', bid, ask, markPrice, at, providerAt, knownAt: observedAt };
 }
 
+// G10(d): abgerechnete Raten sind ausschließlich historische Kosten, keine damaligen Scoreeingaben.
+export function normalizeBitgetSettlements(data, { symbol, observedAt }) {
+  instrument(symbol);
+  if (!Array.isArray(data) || data.length > 100 || !time(observedAt)) throw new Error('Bitget-Abrechnungshistorie ungültig');
+  const by = new Map();
+  for (const row of data) {
+    const at = numeric(row.fundingTime), rate = numeric(row.fundingRate);
+    if (row.symbol !== symbol || !time(at) || at > observedAt) throw new Error('Fremde/zukünftige Bitget-Abrechnung');
+    if (by.has(at) && by.get(at).rate !== rate) throw new Error('Widersprüchliche Bitget-Abrechnung');
+    by.set(at, { instrument: symbol, at, rate, kind: 'settled', observedAt, intervalHours: null, announcedRate: null });
+  }
+  return [...by.values()].sort((a, b) => b.at - a.at);
+}
+
 function sourceContext(selection, config) {
   const p = settings(config), keys = ['instrument', 'timeframe', 'contextTimeframe', 'horizon', 'maxHoldMs', 'slippageBps', 'indicatorAnchors'];
   if (!selection || Object.keys(selection).some(k => !keys.includes(k))) throw new Error('Unbekannter Bitget-Signalkontext');
@@ -139,19 +153,27 @@ export function createBitgetPublicClient({ fetch: fetcher = globalThis.fetch, no
     queue = task.catch(() => {}); return task;
   }
 
-  async function range({ symbol, timeframe, from, to, maxPages = MAX_PAGES, signal }) {
+  async function candlesRange({ symbol, timeframe, from, to, maxPages = MAX_PAGES, signal }, mark = false) {
     instrument(symbol); const { periodMs, granularity } = frame(timeframe);
     if (![from, to].every(time) || from > to || from % periodMs || to % periodMs || to > now() || !Number.isInteger(maxPages) || maxPages < 1 || maxPages > MAX_PAGES) throw new Error('Bitget-Historienjob ungültig');
     const rows = [], pageSize = Math.min(200, Math.floor(90 * 86400e3 / periodMs)); let cursor = from, pages = 0;
     while (cursor < to && pages < maxPages) {
       const end = Math.min(to, cursor + pageSize * periodMs), limit = (end - cursor) / periodMs;
       // Bitget rundet endTime ab und liefert davor: exklusive UTC-Schlussgrenze ohne 1-ms-Abzug.
-      const r = await request('/api/v2/mix/market/history-candles', { symbol, productType: 'USDT-FUTURES', granularity, endTime: end, limit }, signal);
+      const r = await request(mark ? '/api/v2/mix/market/history-mark-candles' : '/api/v2/mix/market/history-candles', { symbol, productType: 'USDT-FUTURES', granularity, endTime: end, limit }, signal);
       const page = normalizeBitgetCandles(r.data, { timeframe, from: cursor, to: end, knownAt: r.observedAt }); pages++;
       if (page.length !== limit || page[0]?.time !== cursor || page.at(-1)?.end !== end) throw new Error('Bitget-Historie hat eine Datenlücke oder zu wenig Warm-up');
       rows.push(...page); cursor = end;
     }
     return { rows, complete: cursor === to, nextFrom: cursor, coverage: { from, to, loadedTo: cursor, candles: rows.length, pages }, feedVersion: FEED_VERSION };
+  }
+
+  const range = request => candlesRange(request);
+  const markRange = request => candlesRange(request, true);
+  async function fundingPage({ symbol, pageNo = 1, pageSize = 100, signal }) {
+    if (!Number.isInteger(pageNo) || pageNo < 1 || pageNo > 10000 || !Number.isInteger(pageSize) || pageSize < 1 || pageSize > 100) throw new Error('Bitget-Fundingseite ungültig');
+    const r = await request('/api/v2/mix/market/history-fund-rate', { symbol: instrument(symbol), productType: 'USDT-FUTURES', pageNo, pageSize }, signal);
+    return { events: normalizeBitgetSettlements(r.data, { symbol, observedAt: r.observedAt }), observedAt: r.observedAt, rawCount: r.data.length };
   }
 
   async function load({ selection, config = {}, saved = null, signal } = {}) {
@@ -196,5 +218,5 @@ export function createBitgetPublicClient({ fetch: fetcher = globalThis.fetch, no
     const r = await request('/api/v2/mix/market/ticker', { symbol: instrument(symbol), productType: 'USDT-FUTURES' }, signal);
     return normalizeBitgetQuote(r.data, { symbol, decisionAt, providerAt: r.providerAt, observedAt: r.observedAt });
   }
-  return Object.freeze({ range, load, quote });
+  return Object.freeze({ range, load, quote, markRange, fundingPage });
 }

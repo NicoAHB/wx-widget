@@ -108,7 +108,7 @@ const tests = {
     check('Filter Bullish zeigt nur bullishe Treffer; Alle zeigt alle (je Muster das jüngste Vorkommen)', bull.length > 0 && bull.every(c => / bull/.test(c)) && all.n > bull.length, JSON.stringify({ bull: bull.length, all }));
     await page.selectOption('#pat-minq', '80'); await page.waitForTimeout(100);
     await page.evaluate(() => { __g09.pat.minQ = 101; }); await page.click('[data-pfil="all"]'); await page.waitForTimeout(100);
-    check('Leerzustand: „Aktuell keine eindeutige Formation erkannt“', /^Aktuell keine eindeutige Formation erkannt/.test(await page.textContent('#pat-list')), await page.textContent('#pat-list'));
+    check('Leerzustand: keine aktuellen Muster im Altersfenster', /^Keine aktuellen Muster in den letzten 10 Kerzen\./.test(await page.textContent('#pat-list')), await page.textContent('#pat-list'));
     await page.evaluate(() => { __g09.pat.minQ = 0; document.getElementById('pat-minq').value = '0'; }); await page.click('[data-pfil="all"]'); await page.waitForTimeout(100);
     await page.click('#pat-list .pat-row .pat-i');
     const info = await page.evaluate(() => { const b = document.getElementById('pat-info-body'), i = __g09.pat.info, hit = __g09.pat.res.hits[i]; return { open: document.getElementById('pat-info').open, title: document.getElementById('pat-info-title').textContent, svg: !!b.querySelector('svg.pat-svg'), li: b.querySelectorAll('.pat-why li').length, rules: hit.rules.length, why: b.querySelector('.pat-why summary').textContent, q: hit.q, conf: /Bestätigung:/.test(b.textContent), vals: b.querySelectorAll('.pat-vals .pat-kv').length, html: /<script|onerror/i.test(b.innerHTML) }; });
