@@ -25,9 +25,10 @@ const colors = page => page.evaluate(() => {
 const tests = {
   async zombie(browser) {
     const { ctx, page, errors } = await open(browser, desk);
+    const market = await page.evaluate(() => __g05.state.source), watchedHost = (await h.ctl('/state')).conns.find(c => /fstream/.test(c.host) === (market === 'futures'))?.host;
     await page.evaluate(() => { window.__feed = []; const s = document.getElementById('status'), add = () => { if (window.__feed.at(-1) !== s.dataset.feed) window.__feed.push(s.dataset.feed); }; add(); new MutationObserver(add).observe(s, { attributes: true, attributeFilter: ['data-feed'] }); });
     const t0 = Date.now(), z = await h.ctl('/zombie');
-    const opened = await waitLog(t0, e => e.ws === 'open', 12000), L = await log(t0 - 1);
+    const opened = await waitLog(t0, e => e.ws === 'open' && e.host === watchedHost, 12000), L = (await log(t0 - 1)).filter(e => e.host === watchedHost);
     const probe = L.find(e => e.ws === 'msg' && e.zombie && e.d?.method === 'LIST_SUBSCRIPTIONS'), closed = L.find(e => e.ws === 'close' && e.zombie);
     check('Verbindung verstummt (halboffen, wie nach Standby oder WLAN-Wechsel)', z.zombies >= 1, `${z.zombies} Verbindung(en)`);
     check('Wächter schickt eine Kontrollanfrage an Binance', !!probe && probe.at - t0 <= 4700, probe ? `${probe.at - t0} ms nach dem Verstummen` : 'keine');
@@ -43,9 +44,10 @@ const tests = {
     const { ctx, page, errors } = await open(browser, desk);
     const t0 = Date.now(); await h.ctl('/silent?on=1'); await h.sleep(12000);
     const L = await log(t0), opens = L.filter(e => e.ws === 'open'), probes = L.filter(e => e.ws === 'msg' && e.d?.method === 'LIST_SUBSCRIPTIONS');
-    const gaps = probes.map((p, i) => i ? p.at - probes[i - 1].at : null).slice(1);
+    const groups = [...new Set(probes.map(p => p.host))].map(host => probes.filter(p => p.host === host));
+    const gaps = groups.flatMap(ps => ps.map((p, i) => i ? p.at - ps[i - 1].at : null).slice(1));
     check('Leitung lebt, Binance schweigt: keine unnötige Neuverbindung in 12 s', !opens.length, `${opens.length} neue Verbindungen`);
-    check('Kontrollanfragen im 3-s-Takt, nicht öfter', probes.length >= 3 && probes.length <= 5 && gaps.every(g => g >= 2800), `${probes.length} Anfragen, Abstände ${gaps.join('/')} ms`);
+    check('Kontrollanfragen je Verbindung im 3-s-Takt, nicht öfter', groups.length === 2 && groups.every(ps => ps.length >= 3 && ps.length <= 5) && gaps.every(g => g >= 2800), `${groups.map(ps => ps[0].host + ': ' + ps.length).join(', ')}, Abstände ${gaps.join('/')} ms`);
     check('Anzeige bleibt grün (Verbindung antwortet)', await feed(page) === 'live');
     await h.ctl('/silent?on=0');
     check('keine Fehler', !errors.length, errors.join(' | ')); await ctx.close();

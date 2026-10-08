@@ -266,6 +266,7 @@ const tests = {
     let svc = null;
     try {
       let { page, errors } = await openPage(browser, { 'scalpdesk.channels.v1': CHAN, 'scalpdesk.alarms.v1': alarms }, { ctx }); await live(page); await page.waitForTimeout(1200);
+      console.log('Diagnose Dienststart:', JSON.stringify(await page.evaluate(() => ({ alarms: __g05.state.alarms.map(a => ({ id: a.id, price: a.price, triggeredAt: a.triggeredAt, triggerPrice: a.triggerPrice })), price: __g05.state.prices.BTCUSDT?.price }))));
       await page.click('#notify-menu'); await page.waitForTimeout(250); await page.click('#chan-open'); await page.waitForTimeout(400);
       await page.check('#s247-on'); await page.keyboard.press('Escape'); await page.waitForTimeout(300);
       svc = startService(dir);
@@ -282,6 +283,7 @@ const tests = {
       check('Telegram lehnt ab: Dienst meldet „Störung“ (Befund: galt als gesendet, Status „aktiv“), Meldung bleibt im Ausgang', !!bad && tries.length >= 1 && tries.every(m => m.failed === 400), (await pinnedMsg())?.caption.split('\n').find(l => l.startsWith('Dienst:')) || '');
       // App wieder offen: zeigt die Störung und sendet selbst
       ({ page, errors } = await openPage(browser, {}, { ctx })); await live(page); await page.waitForTimeout(1500);
+      console.log('Diagnose Wiederöffnung:', JSON.stringify(await page.evaluate(() => ({ alarms: __g05.state.alarms.map(a => ({ id: a.id, price: a.price, triggeredAt: a.triggeredAt, triggerPrice: a.triggerPrice, svcAt: a.svcAt })), price: __g05.state.prices.BTCUSDT?.price }))));
       st = await s247Status(page); const sum = await page.textContent('#chan-summary');
       check('App: „⚠ Der Dienst meldet eine Störung: Telegram-Nachricht nicht zustellbar …“, Übersicht „24/7-Dienst: Störung“', /^⚠ Der Dienst meldet eine Störung: Telegram-Nachricht nicht zustellbar seit \d\d:\d\d .*Die App sendet deshalb selbst\./.test(st) && /24\/7-Dienst: Störung/.test(sum), `${st} · ${sum}`);
       const own = await until(async () => { const x = (await h.ctl('/sent')).filter(m => m.svc === 'tg' && /^🔔 Kurs-Alarm BTC/.test(m.text || '') && !/24\/7-Dienst/.test(m.text) && !m.failed && m.at >= t0); return x.length ? x : null; }, 20000);
@@ -311,6 +313,9 @@ async function s247Status(page) {
   for (const b of await page.$$('#toasts .toast button')) await b.click().catch(() => {});
   await page.click('#notify-menu'); await page.waitForTimeout(250); await page.click('#chan-open'); await page.waitForTimeout(400);
   await page.click('#s247-check'); await page.waitForFunction(() => !document.getElementById('s247-check').disabled, null, { timeout: 10000 }).catch(() => {}); await page.waitForTimeout(400);
+  // Eine durch den ausgelösten Alarm parallel angestoßene Übergabe kann noch laufen.
+  // Erst deren tatsächlichen Abschluss lesen, statt zufällig „Übergebe …“ zu prüfen.
+  await page.waitForFunction(() => !/^Übergebe an den 24\/7-Dienst/.test(document.getElementById('s247-status').textContent), null, { timeout: 10000 }).catch(() => {});
   const t = await page.evaluate(() => document.getElementById('s247-status').textContent);
   await page.keyboard.press('Escape'); await page.waitForTimeout(300); return t;
 }
