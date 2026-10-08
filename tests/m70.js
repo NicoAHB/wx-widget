@@ -90,6 +90,26 @@ const check = (name, ok, info = '') => { ok ? pass++ : fail++; console.log(`${ok
     await context.close(); const invalid = await browser.newContext(); await invalid.addInitScript(() => { localStorage.setItem('scalpdesk.presentation.v1', '"unbekannt"'); localStorage.setItem('scalpdesk.background.v1', JSON.stringify({ mode: 'custom', color: '#777777' })); });
     const bad = await invalid.newPage(); await bad.goto(h.URL_BASE + '/weather-widget-v2.html'); await bad.waitForFunction(() => !!window.__g05);
     check('Ungültige gespeicherte Präferenzen fallen sicher auf Standard/Dunkel zurück', await bad.evaluate(() => document.documentElement.dataset.presentation === 'standard' && !document.documentElement.dataset.background && document.documentElement.dataset.theme === 'dark'));
+    // Tatsächlicher alter Schema-8-Dateiimport: ausdrückliche Anzeigeübernahme bleibt gültig.
+    for (const [theme, take] of [['light', true], ['dark', true], ['light', false]]) {
+      const legacyContext = await browser.newContext({ viewport: { width: 1440, height: 1000 } }), legacy = await legacyContext.newPage();
+      legacy.on('pageerror', e => errors.push(e.message)); await legacy.goto(h.URL_BASE + '/weather-widget-v2.html'); await legacy.waitForFunction(() => !!window.__g05);
+      await legacy.click('#view-menu'); await legacy.click('[data-theme-set=custom]'); await legacy.click('[data-background-color="#f5eddf"]'); await legacy.click('#view-menu');
+      const payload = await legacy.evaluate(theme => {
+        const p = __g05.backupPayload(); p.appVersion = '3.50.0'; p.prefs = { 'scalpdesk.theme.v1': theme };
+        p.positions = [{ id: 'G14_ALTE_SICHERUNG_TEST', symbol: 'BTCUSDT', side: 'long', mode: 'cross', source: 'spot', entry: 60000, qty: .01, leverage: 20, openedAt: Date.now(), updatedAt: Date.now(), ack: { sl: false, tp: false } }]; return p;
+      }, theme);
+      await legacy.evaluate(() => { if (document.getElementById('data-panel').hidden) document.getElementById('data-toggle').click(); });
+      await legacy.locator('#backup-file').setInputFiles({ name: 'g14-alte-sicherung.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(payload)) });
+      await legacy.waitForFunction(() => !document.getElementById('sync-preview').hidden);
+      check('Alte ' + theme + '-Sicherung: Anzeigeübernahme sichtbar und nicht vorausgewählt', await legacy.locator('#sync-preview .sp-restore input').count() === 1 && !await legacy.locator('#sync-preview .sp-restore input').isChecked());
+      if (take) await legacy.check('#sync-preview .sp-restore input');
+      await legacy.click('#sync-preview .sp-actions .button.primary-lite');
+      if (take) await legacy.waitForFunction(theme => document.documentElement.dataset.theme === theme && !document.documentElement.dataset.background, theme);
+      else await legacy.waitForFunction(() => document.getElementById('sync-preview').hidden);
+      check('Alte ' + theme + '-Wahl ' + (take ? 'ausdrücklich übernommen' : 'nicht übernommen') + ': Farbe/Position wie gewählt, eigene Farbe gemerkt', await legacy.evaluate(([theme, take]) => __g05.state.positions.length === 1 && (take ? !document.documentElement.dataset.background && document.documentElement.dataset.theme === theme : document.documentElement.dataset.background === 'custom') && __g05.backupPayload().prefs['scalpdesk.background.v1'].color === '#f5eddf', [theme, take]));
+      await legacyContext.close();
+    }
     check('Keine JavaScript-Fehler im bestehenden Programm', !errors.length, errors.join('; '));
   } finally { await browser?.close(); await h.teardown(); }
   console.log(`${pass}/${pass + fail} bestanden`); process.exitCode = fail ? 1 : 0;

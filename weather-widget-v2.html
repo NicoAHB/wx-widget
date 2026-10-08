@@ -5579,7 +5579,12 @@ function planBackup(data, src = 'Sicherung') {
   // Prüfliste und Anzeige-Einstellungen des anderen Geräts
   const myQ = new Set(quarList().map(x => x.hq));
   for (const q of Array.isArray(data.quarantine) ? data.quarantine.slice(0, 2000) : []) if (isObj(q) && q.raw !== undefined && !myQ.has(q.hq || fp((q.kind || '') + '|' + canon(q.raw)))) p.quar.push(q);
-  if (isObj(data.prefs)) { const keys = Object.keys(data.prefs).filter(k => PREF_KEYS.includes(k) && canon(data.prefs[k]) !== canon(store.get(k) ?? null)); if (keys.length) p.prefs = { keys, values: data.prefs }; }
+  if (isObj(data.prefs)) {
+    // 3.51.0 (G14): alte Hell-/Dunkelwahl bei ausdrücklicher Übernahme auch nach eigener Farbe anwenden.
+    const values = { ...data.prefs }, backgroundKey = 'scalpdesk.background.v1', themeKey = 'scalpdesk.theme.v1', background = store.get(backgroundKey, null);
+    if (Object.hasOwn(values, themeKey) && !Object.hasOwn(values, backgroundKey) && background?.mode === 'custom') values[backgroundKey] = { ...background, mode: values[themeKey] === 'light' ? 'light' : 'dark' };
+    const keys = Object.keys(values).filter(k => PREF_KEYS.includes(k) && canon(values[k]) !== canon(store.get(k) ?? null)); if (keys.length) p.prefs = { keys, values };
+  }
   return p;
 }
 // Einstellungen, Listen und Gewinn-/Verlust-Alarm: wie Einträge nach Abstammung. Sicherungen bis 3.28 tragen keine Abstammung:
@@ -7366,7 +7371,7 @@ function acceptOwnColor(value) {
   $('own-color-hex').setAttribute('aria-invalid', 'true');
   const suggestion = appearance.suggest(value), button = $('own-color-suggest'); button.hidden = !suggestion;
   if (suggestion) { button.dataset.color = suggestion; button.textContent = `Lesbare Variante ${suggestion} übernehmen`; }
-  $('own-color-note').textContent = suggestion ? `Nicht übernommen: Kontrast ${checked.ratio.toFixed(2).replace('.', ',')}:1, nötig sind 4,5:1. Ähnliche lesbare Farbe vorgeschlagen.` : 'Nicht übernommen: Bitte eine Farbe als #RRGGBB eingeben.';
+  $('own-color-note').textContent = suggestion ? 'Nicht übernommen: Kontrast < 4,5:1. Ähnliche lesbare Farbe vorgeschlagen.' : 'Nicht übernommen: Bitte eine Farbe als #RRGGBB eingeben.';
   return false;
 }
 const desktopMq = matchMedia('(min-width:1100px) and (hover:hover) and (pointer:fine)');

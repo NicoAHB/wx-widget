@@ -202,6 +202,9 @@ const tests = {
     check('keine Fehler', !errors.filter(e => !/40[04]|Failed to load resource|CORS|Access-Control/.test(e)).length, errors.join(' | ')); await ctx.close();
   },
   async possl(browser) {
+    // G14-Testbefund: unabhängige BTC-Puls-Meldungen sind keine ETH-Stop-Wiederholung.
+    const stopNotices = messages => messages.filter(x => /^🛑 ETH Long: Stop-Loss erreicht/.test(x.text || x.content || ''));
+    const exactly = (messages, count) => messages.length === count && messages.filter(x => x.svc === 'tg').length === count / 2 && messages.filter(x => x.svc === 'dc').length === count / 2;
     const now = Date.now();
     const seed = ({ token, url, now }) => { if (localStorage.getItem('scalpdesk.savedat.v1')) return;
       localStorage.setItem('scalpdesk.channels.v1', JSON.stringify({ tg: { token, chat: '987654321', on: true }, dc: { url, on: true }, ev: { alarm: true, pos: true, day: true } }));
@@ -210,16 +213,17 @@ const tests = {
     const { ctx, page, errors } = await open(browser, { init: [{ fn: seed, arg: { token: TG_TOKEN, url: DC_URL, now } }] });
     await h.sleep(1500); await h.ctl('/sentreset');
     await h.ctl('/set?symbol=ETHUSDT&price=2475');
-    let sent = await sentWait(s => s.length >= 2, 8000);
-    check('Stop-Loss an Telegram und Discord', sent.filter(x => /🛑 ETH Long: Stop-Loss erreicht/.test(x.text || x.content || '')).length === 2, JSON.stringify(sent.map(x => (x.text || x.content || '').split('\n')[0])));
-    await h.sleep(2000); sent = await h.ctl('/sent');
-    check('Solange der Kurs unter dem Stop bleibt: keine Wiederholung', sent.length === 2, String(sent.length) + ' ' + JSON.stringify(sent.map(x => ({ svc: x.svc, m: x.method, t: (x.text || x.content || x.caption || '').slice(0, 50), chat: x.chat_id }))));
+    let sent = stopNotices(await sentWait(s => stopNotices(s).length >= 2, 8000));
+    check('Stop-Loss an Telegram und Discord', exactly(sent, 2), JSON.stringify(sent.map(x => (x.text || x.content || '').split('\n')[0])));
+    await h.sleep(2000); sent = stopNotices(await h.ctl('/sent'));
+    check('Solange der Kurs unter dem Stop bleibt: keine Wiederholung', exactly(sent, 2), String(sent.length));
     await page.click('.toast.sl button'); await h.ctl('/set?symbol=ETHUSDT&price=2495'); await h.sleep(2500);
     await h.ctl('/set?symbol=ETHUSDT&price=2470');
-    sent = await sentWait(s => s.length >= 4, 8000);
-    check('Kurs zurück und erneut unter dem Stop: neue Meldung', sent.length === 4, String(sent.length));
+    sent = stopNotices(await sentWait(s => stopNotices(s).length >= 4, 8000));
+    check('Kurs zurück und erneut unter dem Stop: neue Meldung', exactly(sent, 4), String(sent.length));
     await page.reload(); await page.waitForFunction(() => document.getElementById('price').textContent.trim() !== '—'); await h.sleep(2500);
-    check('Neu laden mit Kurs unter dem Stop: keine Doppel-Meldung', (await h.ctl('/sent')).length === 4, String((await h.ctl('/sent')).length));
+    sent = stopNotices(await h.ctl('/sent'));
+    check('Neu laden mit Kurs unter dem Stop: keine Doppel-Meldung', exactly(sent, 4), String(sent.length));
     await h.ctl('/walk?on=1');
     check('keine Fehler', !errors.length, errors.join(' | ')); await ctx.close();
   },

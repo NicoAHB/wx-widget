@@ -11,6 +11,8 @@ Arbeitsstand App/Service Worker **3.51.0**, Dienst unverändert **2.8.0**. Öffe
 - Bei zu geringem Kontrast bleiben Darstellung und Speicherung unverändert. Ein kurzer Hinweis nennt den Kontrast; die nächstliegende lesbare hellere/dunklere Variante auf derselben RGB-Farbstrecke wird **vorgeschlagen**. Übernahme erst mit eigenem Klick.
 - Layout und Hintergrund haben getrennte Präferenzen (`scalpdesk.presentation.v1`, `scalpdesk.background.v1`). Gespeicherte Auswahl wird beim Öffnen vor dem ersten Zeichnen und nach der IndexedDB-Ladung angewandt, zwischen Tabs abgeglichen und im bestehenden Anzeige-Backup mitgeführt. Fehlende/ungültige Layoutwahl fällt auf Standard zurück; ungültige eigene Farbe auf das klassische Farbschema.
 
+Alte Hell-/Dunkelsicherungen lassen sich auch nach eigener Farbe ausdrücklich übernehmen. Ohne diese Auswahl bleibt die eigene Farbe aktiv; sie bleibt für später gemerkt. Originaldatei und Handelsdaten werden hierfür nicht verändert.
+
 ## Technische Grenze
 
 Die fehlende Beilage `code/frontend/DashboardView.js` samt fremder Chartbibliothek wurde für diesen aktuellen Auftrag nicht benötigt. Die Alternative wurde mit CSS im vorhandenen Dateistil neu ergänzt. Beide Ansichten verwenden dieselben Elemente, denselben SVG-Chart, denselben Store und bestehende Ereignisbehandler. Kein Kopieren/Neumounten, kein eigener Kursfeed, Worker, Timer, Alarm oder Berechnungspfad. Darstellung verändert keine Handels-/Modell-/Kontodaten. Bildschirmformat „Automatisch/Desktop/iPad“ bleibt eine eigene vorhandene Einstellung.
@@ -28,7 +30,7 @@ Das veröffentlichte Bündel 3.50.0 bleibt unverändert; 3.51.0 erhält ein eige
 ## Automatisierte Prüfung
 
 - `node tests/unit-appearance.js`: 23 feste Prüfungen direkt am tatsächlichen Farbcode (sRGB/WCAG, CSS-Kurzform, acht Farben, Status-/Rahmen-/Buttonkontraste, Vorschlag und Formatfehler).
-- `node tests/m70.js`: 55 Browserprüfungen der tatsächlichen App (DOM/Daten/Fokus/Entwurf, keine zusätzlichen Intervalle/Worker/Kurs-Abos, Auswahl/ARIA/48px, alle Farben in beiden Ansichten, Ablehnung/Bestätigung, Speicherung/Backup/Zweittab, 320/390/768/1440 und alle Handyreiter).
+- `node tests/m70.js`: 61 Browserprüfungen der tatsächlichen App (DOM/Daten/Fokus/Entwurf, keine zusätzlichen Intervalle/Worker/Kurs-Abos, Auswahl/ARIA/48px, alle Farben in beiden Ansichten, Ablehnung/Bestätigung, Speicherung/Backup/Zweittab, alte Dateiimporte mit/ohne ausdrückliche Anzeigeübernahme, 320/390/768/1440 und alle Handyreiter).
 - Beide stehen im seriellen Gesamtlauf. `tests/lint.sh` prüft zusätzlich den Vorab-Code im HTML-Kopf. Lint bisher 0 Fehler; drei bestehende App-Warnungen.
 - `node tests/m69.js`: 19/19 mit aktuellem Release, einschließlich vollständigem Update/Hashabbruch/Retry, Archive und frischem Offline-Appstart.
 - Vollständige Regression/Liefernachweis noch in Arbeit. Browserprüfungen mit lokalen öffentlichen Testantworten sind keine reale Safari-/CORS-/VM-Abnahme.
