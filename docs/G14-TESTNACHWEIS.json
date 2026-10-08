@@ -1,0 +1,2369 @@
+{
+  "appVersion": "3.51.0",
+  "serviceSourceVersion": "2.8.0",
+  "sourceCommit": "fb7ad3a83e123c49e862f21f98eda05d6285437a",
+  "fullRunSourceCommit": "42dd6e253d60401e1b9e5d4448f3120bb7fb3305",
+  "targetCount": 112,
+  "passedChecks": 3555,
+  "openFailedChecks": 0,
+  "manifestSHA256": "2a9e45f20526d55bebaea87dbd077aa99df9150d3c46d831f9b94b90839af791",
+  "lint": {
+    "errors": 0,
+    "appWarnings": 3,
+    "generatedEngineWarnings": 2
+  },
+  "scope": "Alle Zielbefehle aus tests/run-all.sh vollständig seriell mit lokalen Rohlogs und Exitcodes. Betroffene Ziele vollständig nachgeprüft; m39/m6 unveränderte Tests, m3 präzise Ereignisbindung; keine reale Geräte-/CORS-/VM-Abnahme.",
+  "initialResults": [
+    {
+      "target": "unit-appearance",
+      "exit": 0,
+      "seconds": 0.5,
+      "counts": [
+        "23",
+        "23"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-release",
+      "exit": 0,
+      "seconds": 0.7,
+      "counts": [
+        "6",
+        "6"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-model-archive",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "13",
+        "13"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-bot-limits",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "37",
+        "37"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-bot-simulation",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "16",
+        "16"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-po3",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "35",
+        "35"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-po3-service",
+      "exit": 0,
+      "seconds": 0.4,
+      "counts": [
+        "20",
+        "20"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-po3-stream",
+      "exit": 0,
+      "seconds": 0.5,
+      "counts": [
+        "19",
+        "19"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-confluence-service",
+      "exit": 0,
+      "seconds": 0.5,
+      "counts": [
+        "26",
+        "26"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-confluence-replay",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "33",
+        "33"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-bitget-history",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "15",
+        "15"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-confluence-live",
+      "exit": 0,
+      "seconds": 0.4,
+      "counts": [
+        "46",
+        "46"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-bitget-patterns",
+      "exit": 0,
+      "seconds": 0.4,
+      "counts": [
+        "20",
+        "20"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-bitget",
+      "exit": 0,
+      "seconds": 0.4,
+      "counts": [
+        "55",
+        "55"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-confluence",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "135",
+        "135"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-247e",
+      "exit": 0,
+      "seconds": 0.5,
+      "counts": [
+        "38",
+        "38"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-m8",
+      "exit": 0,
+      "seconds": 0.4,
+      "counts": [
+        "24",
+        "24"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-zz",
+      "exit": 0,
+      "seconds": 0.4,
+      "counts": [
+        "28",
+        "28"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-zzp",
+      "exit": 0,
+      "seconds": 0.4,
+      "counts": [
+        "17",
+        "17"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-div",
+      "exit": 0,
+      "seconds": 0.4,
+      "counts": [
+        "10",
+        "10"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-ew",
+      "exit": 0,
+      "seconds": 0.9,
+      "counts": [
+        "27",
+        "27"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-fib",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "6",
+        "6"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-ob",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "9",
+        "9"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-cd",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "16",
+        "16"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-hl",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "13",
+        "13"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-ec",
+      "exit": 0,
+      "seconds": 0.4,
+      "counts": [
+        "22",
+        "22"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-cn",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "40",
+        "40"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-wl",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "64",
+        "64"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-fmt",
+      "exit": 0,
+      "seconds": 5.7,
+      "counts": [
+        "4",
+        "4"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-vola",
+      "exit": 0,
+      "seconds": 2.8,
+      "counts": [
+        "44",
+        "44"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-247",
+      "exit": 0,
+      "seconds": 0.8,
+      "counts": [
+        "96",
+        "96"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-247b",
+      "exit": 0,
+      "seconds": 0.4,
+      "counts": [
+        "25",
+        "25"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-pub",
+      "exit": 0,
+      "seconds": 9.0,
+      "counts": [
+        "7",
+        "7"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-247d",
+      "exit": 0,
+      "seconds": 3.7,
+      "counts": [
+        "16",
+        "16"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-247c",
+      "exit": 0,
+      "seconds": 0.5,
+      "counts": [
+        "55",
+        "55"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-pulse",
+      "exit": 0,
+      "seconds": 2.9,
+      "counts": [
+        "44",
+        "44"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-lots",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "31",
+        "31"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-acct",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "39",
+        "39"
+      ],
+      "failed": []
+    },
+    {
+      "target": "inst-247",
+      "exit": 0,
+      "seconds": 114.4,
+      "counts": [
+        "35",
+        "35"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m70",
+      "exit": 0,
+      "seconds": 10.0,
+      "counts": [
+        "55",
+        "55"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m69",
+      "exit": 0,
+      "seconds": 6.6,
+      "counts": [
+        "19",
+        "19"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m68",
+      "exit": 0,
+      "seconds": 15.2,
+      "counts": [
+        "23",
+        "23"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m67",
+      "exit": 0,
+      "seconds": 7.6,
+      "counts": [
+        "22",
+        "22"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m66",
+      "exit": 0,
+      "seconds": 3.1,
+      "counts": [
+        "11",
+        "11"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m65",
+      "exit": 0,
+      "seconds": 3.0,
+      "counts": [
+        "12",
+        "12"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m64",
+      "exit": 0,
+      "seconds": 2.8,
+      "counts": [
+        "19",
+        "19"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m63",
+      "exit": 0,
+      "seconds": 10.7,
+      "counts": [
+        "36",
+        "36"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m62",
+      "exit": 0,
+      "seconds": 2.1,
+      "counts": [
+        "8",
+        "8"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m61",
+      "exit": 0,
+      "seconds": 2.0,
+      "counts": [
+        "8",
+        "8"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m60",
+      "exit": 0,
+      "seconds": 10.0,
+      "counts": [
+        "14",
+        "14"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m59",
+      "exit": 0,
+      "seconds": 17.1,
+      "counts": [
+        "18",
+        "18"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m58",
+      "exit": 0,
+      "seconds": 36.9,
+      "counts": [
+        "60",
+        "60"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m57",
+      "exit": 0,
+      "seconds": 47.2,
+      "counts": [
+        "41",
+        "41"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m56",
+      "exit": 0,
+      "seconds": 88.1,
+      "counts": [
+        "55",
+        "55"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m55",
+      "exit": 0,
+      "seconds": 113.5,
+      "counts": [
+        "49",
+        "49"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m54",
+      "exit": 0,
+      "seconds": 176.3,
+      "counts": [
+        "52",
+        "52"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m53",
+      "exit": 0,
+      "seconds": 204.8,
+      "counts": [
+        "102",
+        "102"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m52",
+      "exit": 0,
+      "seconds": 86.6,
+      "counts": [
+        "101",
+        "101"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m51",
+      "exit": 0,
+      "seconds": 59.2,
+      "counts": [
+        "73",
+        "73"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m50",
+      "exit": 0,
+      "seconds": 105.5,
+      "counts": [
+        "116",
+        "116"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m49",
+      "exit": 0,
+      "seconds": 123.2,
+      "counts": [
+        "18",
+        "18"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m48",
+      "exit": 0,
+      "seconds": 49.2,
+      "counts": [
+        "79",
+        "79"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m47",
+      "exit": 0,
+      "seconds": 181.3,
+      "counts": [
+        "49",
+        "49"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m46",
+      "exit": 0,
+      "seconds": 103.8,
+      "counts": [
+        "40",
+        "40"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m45",
+      "exit": 0,
+      "seconds": 121.0,
+      "counts": [
+        "75",
+        "75"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m44",
+      "exit": 0,
+      "seconds": 37.9,
+      "counts": [
+        "27",
+        "27"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m43",
+      "exit": 0,
+      "seconds": 19.9,
+      "counts": [
+        "7",
+        "7"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m42",
+      "exit": 0,
+      "seconds": 47.4,
+      "counts": [
+        "18",
+        "18"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m41",
+      "exit": 0,
+      "seconds": 25.9,
+      "counts": [
+        "20",
+        "20"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m40",
+      "exit": 0,
+      "seconds": 64.2,
+      "counts": [
+        "40",
+        "40"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m39",
+      "exit": 1,
+      "seconds": 59.2,
+      "counts": [
+        "49",
+        "50"
+      ],
+      "failed": [
+        "  ✗ Weiches Aufklappen: nach 90 ms erst teilweise offen — 331 → 331 px"
+      ]
+    },
+    {
+      "target": "m38",
+      "exit": 0,
+      "seconds": 35.1,
+      "counts": [
+        "19",
+        "19"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m37",
+      "exit": 0,
+      "seconds": 34.6,
+      "counts": [
+        "22",
+        "22"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m36",
+      "exit": 0,
+      "seconds": 206.2,
+      "counts": [
+        "20",
+        "20"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m35",
+      "exit": 0,
+      "seconds": 167.0,
+      "counts": [
+        "40",
+        "40"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m34",
+      "exit": 0,
+      "seconds": 48.5,
+      "counts": [
+        "9",
+        "9"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m33",
+      "exit": 0,
+      "seconds": 41.5,
+      "counts": [
+        "16",
+        "16"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m32",
+      "exit": 0,
+      "seconds": 140.5,
+      "counts": [
+        "5",
+        "5"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m31",
+      "exit": 0,
+      "seconds": 53.9,
+      "counts": [
+        "21",
+        "21"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m30",
+      "exit": 0,
+      "seconds": 50.1,
+      "counts": [
+        "32",
+        "32"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m29",
+      "exit": 0,
+      "seconds": 12.8,
+      "counts": [
+        "12",
+        "12"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m28",
+      "exit": 0,
+      "seconds": 44.7,
+      "counts": [
+        "39",
+        "39"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m27",
+      "exit": 0,
+      "seconds": 29.8,
+      "counts": [
+        "22",
+        "22"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m26",
+      "exit": 0,
+      "seconds": 54.2,
+      "counts": [
+        "18",
+        "18"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m25",
+      "exit": 0,
+      "seconds": 27.5,
+      "counts": [
+        "20",
+        "20"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m24",
+      "exit": 0,
+      "seconds": 39.7,
+      "counts": [
+        "28",
+        "28"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m23",
+      "exit": 0,
+      "seconds": 195.9,
+      "counts": [
+        "25",
+        "25"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m22",
+      "exit": 0,
+      "seconds": 138.1,
+      "counts": [
+        "26",
+        "26"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m21",
+      "exit": 0,
+      "seconds": 29.7,
+      "counts": [
+        "14",
+        "14"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m20",
+      "exit": 0,
+      "seconds": 41.3,
+      "counts": [
+        "12",
+        "12"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m19",
+      "exit": 0,
+      "seconds": 27.0,
+      "counts": [
+        "24",
+        "24"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m18",
+      "exit": 0,
+      "seconds": 41.8,
+      "counts": [
+        "31",
+        "31"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m17",
+      "exit": 0,
+      "seconds": 24.5,
+      "counts": [
+        "16",
+        "16"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m16",
+      "exit": 0,
+      "seconds": 36.7,
+      "counts": [
+        "23",
+        "23"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m15",
+      "exit": 0,
+      "seconds": 33.9,
+      "counts": [
+        "23",
+        "23"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m14",
+      "exit": 0,
+      "seconds": 96.8,
+      "counts": [
+        "18",
+        "18"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m13",
+      "exit": 0,
+      "seconds": 23.8,
+      "counts": [
+        "13",
+        "13"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m12",
+      "exit": 0,
+      "seconds": 11.4,
+      "counts": [
+        "17",
+        "17"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m11",
+      "exit": 0,
+      "seconds": 47.9,
+      "counts": [
+        "36",
+        "36"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m10",
+      "exit": 0,
+      "seconds": 30.0,
+      "counts": [
+        "37",
+        "37"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m9",
+      "exit": 0,
+      "seconds": 128.7,
+      "counts": [
+        "9",
+        "9"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m8",
+      "exit": 0,
+      "seconds": 58.5,
+      "counts": [
+        "41",
+        "41"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m7",
+      "exit": 0,
+      "seconds": 249.1,
+      "counts": [
+        "46",
+        "46"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m6",
+      "exit": 1,
+      "seconds": 225.8,
+      "counts": [
+        "57",
+        "58"
+      ],
+      "failed": [
+        "  ✗ Keine langen Aufgaben über 50 ms, auch beim Kerzenschluss und Abgleich (mit und ohne Heatmap) — {\"an\":{\"urls\":2,\"long\":[],\"sec\":54,\"scriptMsPerS\":14},\"aus\":{\"urls\":0,\"long\":[55],\"sec\":54,\"scriptMsPerS\":15}}"
+      ]
+    },
+    {
+      "target": "m5",
+      "exit": 0,
+      "seconds": 82.5,
+      "counts": [
+        "24",
+        "24"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m4",
+      "exit": 0,
+      "seconds": 137.4,
+      "counts": [
+        "41",
+        "41"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m3",
+      "exit": 1,
+      "seconds": 48.3,
+      "counts": [
+        "66",
+        "68"
+      ],
+      "failed": [
+        "  ✗ Solange der Kurs unter dem Stop bleibt: keine Wiederholung — 4 [{\"svc\":\"tg\",\"t\":\"🛑 ETH Long: Stop-Loss erreicht\\nETH Long: Stop-Los\",\"chat\":\"987654321\"},{\"svc\":\"dc\",\"t\":\"🛑 ETH Long: Stop-Loss erreicht\\nETH Long: Stop-Los\"},{\"svc\":\"tg\",\"t\":\"⚡ BTC-Puls: BTC +0,61 % in 5 Min. (64.420,84 USDT)\",\"chat\":\"987654321\"},{\"svc\":\"dc\",\"t\":\"⚡ BTC-Puls: BTC +0,61 % in 5 Min. (64.420,84 USDT)\"}]",
+        "  ✗ Neu laden mit Kurs unter dem Stop: keine Doppel-Meldung — 6"
+      ]
+    },
+    {
+      "target": "ui",
+      "exit": 0,
+      "seconds": 42.1,
+      "counts": [
+        "63",
+        "63"
+      ],
+      "failed": []
+    },
+    {
+      "target": "functional",
+      "exit": 0,
+      "seconds": 76.1,
+      "counts": [
+        "35",
+        "35"
+      ],
+      "failed": []
+    },
+    {
+      "target": "statuscheck",
+      "exit": 0,
+      "seconds": 3.6,
+      "counts": null,
+      "failed": []
+    },
+    {
+      "target": "smoke",
+      "exit": 0,
+      "seconds": 14.6,
+      "counts": null,
+      "failed": []
+    },
+    {
+      "target": "visual",
+      "exit": 0,
+      "seconds": 14.1,
+      "counts": null,
+      "failed": []
+    }
+  ],
+  "fullReruns": [
+    {
+      "target": "m39",
+      "exit": 0,
+      "seconds": 57.3,
+      "counts": [
+        "50",
+        "50"
+      ],
+      "failed": [],
+      "unchangedTest": true
+    },
+    {
+      "target": "m6",
+      "exit": 0,
+      "seconds": 216.5,
+      "counts": [
+        "58",
+        "58"
+      ],
+      "failed": [],
+      "unchangedTest": true
+    },
+    {
+      "target": "m3",
+      "exit": 0,
+      "seconds": 43.5,
+      "counts": [
+        "68",
+        "68"
+      ],
+      "failed": [],
+      "unchangedTest": false
+    }
+  ],
+  "finalValidationFirst": [
+    {
+      "target": "m70",
+      "exit": 1,
+      "seconds": 14.6,
+      "counts": null,
+      "failed": [],
+      "sourceCommit": "fb7ad3a83e123c49e862f21f98eda05d6285437a"
+    },
+    {
+      "target": "m50",
+      "exit": 0,
+      "seconds": 103.1,
+      "counts": [
+        "116",
+        "116"
+      ],
+      "failed": [],
+      "sourceCommit": "fb7ad3a83e123c49e862f21f98eda05d6285437a"
+    },
+    {
+      "target": "m69",
+      "exit": 0,
+      "seconds": 6.8,
+      "counts": [
+        "19",
+        "19"
+      ],
+      "failed": [],
+      "sourceCommit": "fb7ad3a83e123c49e862f21f98eda05d6285437a"
+    },
+    {
+      "target": "unit-appearance",
+      "exit": 0,
+      "seconds": 0.5,
+      "counts": [
+        "23",
+        "23"
+      ],
+      "failed": [],
+      "sourceCommit": "fb7ad3a83e123c49e862f21f98eda05d6285437a"
+    },
+    {
+      "target": "unit-release",
+      "exit": 0,
+      "seconds": 0.7,
+      "counts": [
+        "6",
+        "6"
+      ],
+      "failed": [],
+      "sourceCommit": "fb7ad3a83e123c49e862f21f98eda05d6285437a"
+    },
+    {
+      "target": "lint",
+      "exit": 0,
+      "seconds": 4.6,
+      "counts": null,
+      "failed": [],
+      "sourceCommit": "fb7ad3a83e123c49e862f21f98eda05d6285437a"
+    }
+  ],
+  "finalValidationReruns": [
+    {
+      "target": "m70",
+      "exit": 0,
+      "seconds": 20.5,
+      "counts": [
+        "61",
+        "61"
+      ],
+      "failed": [],
+      "sourceCommit": "fb7ad3a83e123c49e862f21f98eda05d6285437a",
+      "testCommit": "b7a464aff5f812ab6406c1f10d3767ed5fe98e37"
+    }
+  ],
+  "resolvedResults": [
+    {
+      "target": "unit-appearance",
+      "exit": 0,
+      "seconds": 0.5,
+      "counts": [
+        "23",
+        "23"
+      ],
+      "failed": [],
+      "sourceCommit": "fb7ad3a83e123c49e862f21f98eda05d6285437a"
+    },
+    {
+      "target": "unit-release",
+      "exit": 0,
+      "seconds": 0.7,
+      "counts": [
+        "6",
+        "6"
+      ],
+      "failed": [],
+      "sourceCommit": "fb7ad3a83e123c49e862f21f98eda05d6285437a"
+    },
+    {
+      "target": "unit-model-archive",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "13",
+        "13"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-bot-limits",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "37",
+        "37"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-bot-simulation",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "16",
+        "16"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-po3",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "35",
+        "35"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-po3-service",
+      "exit": 0,
+      "seconds": 0.4,
+      "counts": [
+        "20",
+        "20"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-po3-stream",
+      "exit": 0,
+      "seconds": 0.5,
+      "counts": [
+        "19",
+        "19"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-confluence-service",
+      "exit": 0,
+      "seconds": 0.5,
+      "counts": [
+        "26",
+        "26"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-confluence-replay",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "33",
+        "33"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-bitget-history",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "15",
+        "15"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-confluence-live",
+      "exit": 0,
+      "seconds": 0.4,
+      "counts": [
+        "46",
+        "46"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-bitget-patterns",
+      "exit": 0,
+      "seconds": 0.4,
+      "counts": [
+        "20",
+        "20"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-bitget",
+      "exit": 0,
+      "seconds": 0.4,
+      "counts": [
+        "55",
+        "55"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-confluence",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "135",
+        "135"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-247e",
+      "exit": 0,
+      "seconds": 0.5,
+      "counts": [
+        "38",
+        "38"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-m8",
+      "exit": 0,
+      "seconds": 0.4,
+      "counts": [
+        "24",
+        "24"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-zz",
+      "exit": 0,
+      "seconds": 0.4,
+      "counts": [
+        "28",
+        "28"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-zzp",
+      "exit": 0,
+      "seconds": 0.4,
+      "counts": [
+        "17",
+        "17"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-div",
+      "exit": 0,
+      "seconds": 0.4,
+      "counts": [
+        "10",
+        "10"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-ew",
+      "exit": 0,
+      "seconds": 0.9,
+      "counts": [
+        "27",
+        "27"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-fib",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "6",
+        "6"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-ob",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "9",
+        "9"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-cd",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "16",
+        "16"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-hl",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "13",
+        "13"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-ec",
+      "exit": 0,
+      "seconds": 0.4,
+      "counts": [
+        "22",
+        "22"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-cn",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "40",
+        "40"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-wl",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "64",
+        "64"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-fmt",
+      "exit": 0,
+      "seconds": 5.7,
+      "counts": [
+        "4",
+        "4"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-vola",
+      "exit": 0,
+      "seconds": 2.8,
+      "counts": [
+        "44",
+        "44"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-247",
+      "exit": 0,
+      "seconds": 0.8,
+      "counts": [
+        "96",
+        "96"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-247b",
+      "exit": 0,
+      "seconds": 0.4,
+      "counts": [
+        "25",
+        "25"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-pub",
+      "exit": 0,
+      "seconds": 9.0,
+      "counts": [
+        "7",
+        "7"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-247d",
+      "exit": 0,
+      "seconds": 3.7,
+      "counts": [
+        "16",
+        "16"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-247c",
+      "exit": 0,
+      "seconds": 0.5,
+      "counts": [
+        "55",
+        "55"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-pulse",
+      "exit": 0,
+      "seconds": 2.9,
+      "counts": [
+        "44",
+        "44"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-lots",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "31",
+        "31"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-acct",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "39",
+        "39"
+      ],
+      "failed": []
+    },
+    {
+      "target": "inst-247",
+      "exit": 0,
+      "seconds": 114.4,
+      "counts": [
+        "35",
+        "35"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m70",
+      "exit": 0,
+      "seconds": 20.5,
+      "counts": [
+        "61",
+        "61"
+      ],
+      "failed": [],
+      "sourceCommit": "fb7ad3a83e123c49e862f21f98eda05d6285437a",
+      "testCommit": "b7a464aff5f812ab6406c1f10d3767ed5fe98e37"
+    },
+    {
+      "target": "m69",
+      "exit": 0,
+      "seconds": 6.8,
+      "counts": [
+        "19",
+        "19"
+      ],
+      "failed": [],
+      "sourceCommit": "fb7ad3a83e123c49e862f21f98eda05d6285437a"
+    },
+    {
+      "target": "m68",
+      "exit": 0,
+      "seconds": 15.2,
+      "counts": [
+        "23",
+        "23"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m67",
+      "exit": 0,
+      "seconds": 7.6,
+      "counts": [
+        "22",
+        "22"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m66",
+      "exit": 0,
+      "seconds": 3.1,
+      "counts": [
+        "11",
+        "11"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m65",
+      "exit": 0,
+      "seconds": 3.0,
+      "counts": [
+        "12",
+        "12"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m64",
+      "exit": 0,
+      "seconds": 2.8,
+      "counts": [
+        "19",
+        "19"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m63",
+      "exit": 0,
+      "seconds": 10.7,
+      "counts": [
+        "36",
+        "36"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m62",
+      "exit": 0,
+      "seconds": 2.1,
+      "counts": [
+        "8",
+        "8"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m61",
+      "exit": 0,
+      "seconds": 2.0,
+      "counts": [
+        "8",
+        "8"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m60",
+      "exit": 0,
+      "seconds": 10.0,
+      "counts": [
+        "14",
+        "14"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m59",
+      "exit": 0,
+      "seconds": 17.1,
+      "counts": [
+        "18",
+        "18"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m58",
+      "exit": 0,
+      "seconds": 36.9,
+      "counts": [
+        "60",
+        "60"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m57",
+      "exit": 0,
+      "seconds": 47.2,
+      "counts": [
+        "41",
+        "41"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m56",
+      "exit": 0,
+      "seconds": 88.1,
+      "counts": [
+        "55",
+        "55"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m55",
+      "exit": 0,
+      "seconds": 113.5,
+      "counts": [
+        "49",
+        "49"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m54",
+      "exit": 0,
+      "seconds": 176.3,
+      "counts": [
+        "52",
+        "52"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m53",
+      "exit": 0,
+      "seconds": 204.8,
+      "counts": [
+        "102",
+        "102"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m52",
+      "exit": 0,
+      "seconds": 86.6,
+      "counts": [
+        "101",
+        "101"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m51",
+      "exit": 0,
+      "seconds": 59.2,
+      "counts": [
+        "73",
+        "73"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m50",
+      "exit": 0,
+      "seconds": 103.1,
+      "counts": [
+        "116",
+        "116"
+      ],
+      "failed": [],
+      "sourceCommit": "fb7ad3a83e123c49e862f21f98eda05d6285437a"
+    },
+    {
+      "target": "m49",
+      "exit": 0,
+      "seconds": 123.2,
+      "counts": [
+        "18",
+        "18"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m48",
+      "exit": 0,
+      "seconds": 49.2,
+      "counts": [
+        "79",
+        "79"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m47",
+      "exit": 0,
+      "seconds": 181.3,
+      "counts": [
+        "49",
+        "49"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m46",
+      "exit": 0,
+      "seconds": 103.8,
+      "counts": [
+        "40",
+        "40"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m45",
+      "exit": 0,
+      "seconds": 121.0,
+      "counts": [
+        "75",
+        "75"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m44",
+      "exit": 0,
+      "seconds": 37.9,
+      "counts": [
+        "27",
+        "27"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m43",
+      "exit": 0,
+      "seconds": 19.9,
+      "counts": [
+        "7",
+        "7"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m42",
+      "exit": 0,
+      "seconds": 47.4,
+      "counts": [
+        "18",
+        "18"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m41",
+      "exit": 0,
+      "seconds": 25.9,
+      "counts": [
+        "20",
+        "20"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m40",
+      "exit": 0,
+      "seconds": 64.2,
+      "counts": [
+        "40",
+        "40"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m39",
+      "exit": 0,
+      "seconds": 57.3,
+      "counts": [
+        "50",
+        "50"
+      ],
+      "failed": [],
+      "unchangedTest": true
+    },
+    {
+      "target": "m38",
+      "exit": 0,
+      "seconds": 35.1,
+      "counts": [
+        "19",
+        "19"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m37",
+      "exit": 0,
+      "seconds": 34.6,
+      "counts": [
+        "22",
+        "22"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m36",
+      "exit": 0,
+      "seconds": 206.2,
+      "counts": [
+        "20",
+        "20"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m35",
+      "exit": 0,
+      "seconds": 167.0,
+      "counts": [
+        "40",
+        "40"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m34",
+      "exit": 0,
+      "seconds": 48.5,
+      "counts": [
+        "9",
+        "9"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m33",
+      "exit": 0,
+      "seconds": 41.5,
+      "counts": [
+        "16",
+        "16"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m32",
+      "exit": 0,
+      "seconds": 140.5,
+      "counts": [
+        "5",
+        "5"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m31",
+      "exit": 0,
+      "seconds": 53.9,
+      "counts": [
+        "21",
+        "21"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m30",
+      "exit": 0,
+      "seconds": 50.1,
+      "counts": [
+        "32",
+        "32"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m29",
+      "exit": 0,
+      "seconds": 12.8,
+      "counts": [
+        "12",
+        "12"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m28",
+      "exit": 0,
+      "seconds": 44.7,
+      "counts": [
+        "39",
+        "39"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m27",
+      "exit": 0,
+      "seconds": 29.8,
+      "counts": [
+        "22",
+        "22"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m26",
+      "exit": 0,
+      "seconds": 54.2,
+      "counts": [
+        "18",
+        "18"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m25",
+      "exit": 0,
+      "seconds": 27.5,
+      "counts": [
+        "20",
+        "20"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m24",
+      "exit": 0,
+      "seconds": 39.7,
+      "counts": [
+        "28",
+        "28"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m23",
+      "exit": 0,
+      "seconds": 195.9,
+      "counts": [
+        "25",
+        "25"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m22",
+      "exit": 0,
+      "seconds": 138.1,
+      "counts": [
+        "26",
+        "26"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m21",
+      "exit": 0,
+      "seconds": 29.7,
+      "counts": [
+        "14",
+        "14"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m20",
+      "exit": 0,
+      "seconds": 41.3,
+      "counts": [
+        "12",
+        "12"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m19",
+      "exit": 0,
+      "seconds": 27.0,
+      "counts": [
+        "24",
+        "24"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m18",
+      "exit": 0,
+      "seconds": 41.8,
+      "counts": [
+        "31",
+        "31"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m17",
+      "exit": 0,
+      "seconds": 24.5,
+      "counts": [
+        "16",
+        "16"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m16",
+      "exit": 0,
+      "seconds": 36.7,
+      "counts": [
+        "23",
+        "23"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m15",
+      "exit": 0,
+      "seconds": 33.9,
+      "counts": [
+        "23",
+        "23"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m14",
+      "exit": 0,
+      "seconds": 96.8,
+      "counts": [
+        "18",
+        "18"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m13",
+      "exit": 0,
+      "seconds": 23.8,
+      "counts": [
+        "13",
+        "13"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m12",
+      "exit": 0,
+      "seconds": 11.4,
+      "counts": [
+        "17",
+        "17"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m11",
+      "exit": 0,
+      "seconds": 47.9,
+      "counts": [
+        "36",
+        "36"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m10",
+      "exit": 0,
+      "seconds": 30.0,
+      "counts": [
+        "37",
+        "37"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m9",
+      "exit": 0,
+      "seconds": 128.7,
+      "counts": [
+        "9",
+        "9"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m8",
+      "exit": 0,
+      "seconds": 58.5,
+      "counts": [
+        "41",
+        "41"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m7",
+      "exit": 0,
+      "seconds": 249.1,
+      "counts": [
+        "46",
+        "46"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m6",
+      "exit": 0,
+      "seconds": 216.5,
+      "counts": [
+        "58",
+        "58"
+      ],
+      "failed": [],
+      "unchangedTest": true
+    },
+    {
+      "target": "m5",
+      "exit": 0,
+      "seconds": 82.5,
+      "counts": [
+        "24",
+        "24"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m4",
+      "exit": 0,
+      "seconds": 137.4,
+      "counts": [
+        "41",
+        "41"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m3",
+      "exit": 0,
+      "seconds": 43.5,
+      "counts": [
+        "68",
+        "68"
+      ],
+      "failed": [],
+      "unchangedTest": false
+    },
+    {
+      "target": "ui",
+      "exit": 0,
+      "seconds": 42.1,
+      "counts": [
+        "63",
+        "63"
+      ],
+      "failed": []
+    },
+    {
+      "target": "functional",
+      "exit": 0,
+      "seconds": 76.1,
+      "counts": [
+        "35",
+        "35"
+      ],
+      "failed": []
+    },
+    {
+      "target": "statuscheck",
+      "exit": 0,
+      "seconds": 3.6,
+      "counts": null,
+      "failed": []
+    },
+    {
+      "target": "smoke",
+      "exit": 0,
+      "seconds": 14.6,
+      "counts": null,
+      "failed": []
+    },
+    {
+      "target": "visual",
+      "exit": 0,
+      "seconds": 14.1,
+      "counts": null,
+      "failed": []
+    }
+  ]
+}

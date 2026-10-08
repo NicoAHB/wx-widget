@@ -1,6 +1,6 @@
 # G14 – Darstellung und Hintergrund
 
-Arbeitsstand App/Service Worker **3.51.0**, Dienst unverändert **2.8.0**. Öffentlich weiterhin 3.50.0, bis zur Gruppenfreigabe. G13 ist technisch abgeschlossen und vom Nutzer als Voraussetzung für diesen getrennten Schritt akzeptiert. Echte Geräte-/CORS-/VM-Abnahmen aus G13 bleiben offen.
+Technisch abgeschlossener Stand App/Service Worker **3.51.0**, Dienst unverändert **2.8.0**. Öffentlich weiterhin 3.50.0, bis zur Gruppenfreigabe. G13 ist technisch abgeschlossen und vom Nutzer als Voraussetzung für diesen getrennten Schritt akzeptiert. Echte Geräte-/CORS-/VM-Abnahmen aus G13 bleiben offen.
 
 ## Änderungen
 
@@ -31,7 +31,11 @@ Das veröffentlichte Bündel 3.50.0 bleibt unverändert; 3.51.0 erhält ein eige
 
 - `node tests/unit-appearance.js`: 23 feste Prüfungen direkt am tatsächlichen Farbcode (sRGB/WCAG, CSS-Kurzform, acht Farben, Status-/Rahmen-/Buttonkontraste, Vorschlag und Formatfehler).
 - `node tests/m70.js`: 61 Browserprüfungen der tatsächlichen App (DOM/Daten/Fokus/Entwurf, keine zusätzlichen Intervalle/Worker/Kurs-Abos, Auswahl/ARIA/48px, alle Farben in beiden Ansichten, Ablehnung/Bestätigung, Speicherung/Backup/Zweittab, alte Dateiimporte mit/ohne ausdrückliche Anzeigeübernahme, 320/390/768/1440 und alle Handyreiter).
-- Beide stehen im seriellen Gesamtlauf. `tests/lint.sh` prüft zusätzlich den Vorab-Code im HTML-Kopf. Lint bisher 0 Fehler; drei bestehende App-Warnungen.
+- Beide stehen im seriellen Gesamtlauf. `tests/lint.sh` prüft zusätzlich den Vorab-Code im HTML-Kopf. Lint abschließend 0 Fehler; drei bestehende App-Warnungen.
 - `node tests/m69.js`: 19/19 mit aktuellem Release, einschließlich vollständigem Update/Hashabbruch/Retry, Archive und frischem Offline-Appstart.
-- Vollständige Regression/Liefernachweis noch in Arbeit. Browserprüfungen mit lokalen öffentlichen Testantworten sind keine reale Safari-/CORS-/VM-Abnahme.
-- Erstbefund im laufenden Gesamtlauf: m39 49/50, das Detailfeld war beim 90-ms-Zwischenabruf schon vollständig offen (331 → 331 px). Die bestehende Aufklapplogik wurde nicht geändert. Vollständiger unveränderter Nachlauf nach Abschluss des seriellen Gesamtlaufs noch offen; keine Ursache behauptet und keine Prüfgrenze gelockert.
+- Alle 112 Gesamtlaufziele vollständig seriell ausgeführt. Mit vollständigen Befundnachläufen und gezielter Abschlussprüfung der Anzeigeimport-Ergänzung 3555/3555 zählbare Prüfungen; komplette Sicherungsregression m50 116/116. [Vollständiger Nachweis](G14-TESTNACHWEIS.md) mit Erstläufen/Nachläufen/Abschlussprüfung und geprüften Produktständen. Browserprüfungen mit lokalen öffentlichen Testantworten sind keine reale Safari-/CORS-/VM-Abnahme.
+- Erstbefunde offen dokumentiert: m39 49/50 → unverändert 50/50, m6 57/58 → unverändert 58/58 (55-ms-Aufgabe bei 50-ms-Grenze); konkrete Ursachen nicht gesichert. m3 66/68 → vollständig 68/68 nach genauer Ereignisbindung statt Mitzählen unabhängiger BTC-Puls-Meldungen. m70-Abschlusswartebedingung nach Import um tatsächlich geladenen App-Kern ergänzt → vollständig 61/61. Keine Prüfgrenze gelockert.
+
+## Lieferung und nächster Schritt
+
+[PR #78](https://github.com/NicoAHB/wx-widget/pull/78) ist zur Prüfung vorbereitet. App/SW 3.51.0 wurde noch nicht nach main übernommen; online bleibt 3.50.0. Vor Veröffentlichung wie vom Nutzer verlangt auf die Gruppenfreigabe warten. Programm-ZIP wird getrennt aus den getrackten Lieferdateien erstellt. Reale Geräte-/CORS-/VM-Abnahme bleibt gesondert offen.
