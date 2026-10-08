@@ -1,0 +1,296 @@
+{
+  "version": "3.51.0",
+  "sourceCommit": "cf18cf72f58b05016fbcb975b2d60547c2c90a3a",
+  "checkedAtUTC": "2026-10-08T09:39:50.589457+00:00",
+  "productChanged": false,
+  "published": false,
+  "existingTests": [
+    {
+      "target": "unit-confluence",
+      "exit": 0,
+      "counts": [
+        "135",
+        "135"
+      ],
+      "seconds": 0.4
+    },
+    {
+      "target": "unit-confluence-live",
+      "exit": 0,
+      "counts": [
+        "46",
+        "46"
+      ],
+      "seconds": 0.4
+    },
+    {
+      "target": "unit-confluence-replay",
+      "exit": 0,
+      "counts": [
+        "33",
+        "33"
+      ],
+      "seconds": 0.4
+    },
+    {
+      "target": "unit-po3",
+      "exit": 0,
+      "counts": [
+        "35",
+        "35"
+      ],
+      "seconds": 0.3
+    },
+    {
+      "target": "unit-bot-limits",
+      "exit": 0,
+      "counts": [
+        "37",
+        "37"
+      ],
+      "seconds": 0.3
+    },
+    {
+      "target": "m63",
+      "exit": 0,
+      "counts": [
+        "36",
+        "36"
+      ],
+      "seconds": 21.4
+    },
+    {
+      "target": "m67",
+      "exit": 0,
+      "counts": [
+        "22",
+        "22"
+      ],
+      "seconds": 10.1
+    }
+  ],
+  "browserFindings": {
+    "appVersion": "3.51.0",
+    "fixtures": "Lokale öffentliche Testantworten, keine echten Trades",
+    "results": [
+      {
+        "name": "Neue Einrichtung Desktop",
+        "viewport": 1440,
+        "panel": {
+          "top": 299,
+          "height": 3460,
+          "width": 275
+        },
+        "current": {
+          "top": 2627,
+          "height": 58,
+          "width": 275
+        },
+        "list": {
+          "top": 2705,
+          "height": 38,
+          "width": 275
+        },
+        "po3": {
+          "top": 2782,
+          "height": 978,
+          "width": 275
+        },
+        "beforeCurrent": 2328,
+        "beforePo3": 2483,
+        "formFields": 18,
+        "currentCards": 0,
+        "savedCards": 0,
+        "duplicatedIDs": 0
+      },
+      {
+        "name": "Ein tatsächliches Signal Desktop",
+        "viewport": 1440,
+        "panel": {
+          "top": -1532,
+          "height": 4407,
+          "width": 275
+        },
+        "current": {
+          "top": -779,
+          "height": 1771,
+          "width": 275
+        },
+        "list": {
+          "top": 1037,
+          "height": 818,
+          "width": 275
+        },
+        "po3": {
+          "top": 1897,
+          "height": 978,
+          "width": 275
+        },
+        "beforeCurrent": 753,
+        "beforePo3": 3429,
+        "formFields": 18,
+        "currentCards": 2,
+        "savedCards": 1,
+        "duplicatedIDs": 1
+      },
+      {
+        "name": "Ein tatsächliches Signal Handy",
+        "viewport": 390,
+        "panel": {
+          "top": 4013,
+          "height": 3662,
+          "width": 328
+        },
+        "current": {
+          "top": 4643,
+          "height": 1420,
+          "width": 328
+        },
+        "list": {
+          "top": 6107,
+          "height": 653,
+          "width": 328
+        },
+        "po3": {
+          "top": 6803,
+          "height": 871,
+          "width": 328
+        },
+        "beforeCurrent": 630,
+        "beforePo3": 2790,
+        "formFields": 18,
+        "currentCards": 2,
+        "savedCards": 1,
+        "duplicatedIDs": 1
+      },
+      {
+        "name": "Referenzkurs fällt nach gültigem Signal aus",
+        "currentEligible": [
+          false,
+          false
+        ],
+        "status": "Failed to fetch",
+        "chip": "KI: Long",
+        "chipClass": "button ghost ki-chip ki-positive",
+        "savedHead": "BTC · Long · kurzgeprüftes Szenario · 80 / 100"
+      },
+      {
+        "name": "Modellwechsel W0 auf W15",
+        "currentRevision": 3,
+        "oldCardRevision": 2,
+        "chip": "KI: Halten",
+        "savedHead": "BTC · Long · kurzgeprüftes Szenario · 80 / 100",
+        "savedClass": "ki-tone ki-positive",
+        "oldModelLabel": false
+      },
+      {
+        "name": "Nur Coin-Auswahl der aktuellen Bewertung",
+        "selected": "ETHUSDT",
+        "current": "Für diesen Coin noch keine aktuelle Analyse. Öffentliche Daten laden; fehlende Daten bleiben nicht bewertbar.",
+        "savedHead": "BTC · Long · kurzgeprüftes Szenario · 80 / 100"
+      },
+      {
+        "name": "Speichergrenze bei tatsächlicher Kartengröße",
+        "oneCardBytes": 29554,
+        "twentyCardsBytes": 591071,
+        "bytesLimit": 5242880,
+        "estimatedMaxCards": 177
+      },
+      {
+        "name": "Archiv in der Hauptliste",
+        "visibleExpiredCards": 1,
+        "expiredHeight": 639,
+        "collapsedAncestor": false
+      },
+      {
+        "name": "Laufzeit",
+        "errors": []
+      }
+    ]
+  },
+  "costFinding": {
+    "fixture": "Synthetischer Long-Fall am tatsächlichen evaluateLive-Kern",
+    "liveEligible": true,
+    "score": 95,
+    "levels": {
+      "status": "bereit",
+      "entry": 100,
+      "sl": 99.4,
+      "tp": 101.2,
+      "risk": 0.5999999999999943,
+      "rewardRisk": 2.0000000000000235,
+      "tickSize": 0.01,
+      "direction": 1,
+      "parametersKey": "{\"model\":\"cf-1\",\"revision\":1,\"patternWeight\":0,\"minimumScore\":70,\"divergenceMaxAge\":3,\"slAtrFactor\":1,\"rewardRisk\":2,\"minimumNetRR\":1.5,\"feeEntry\":0.0005,\"feeExit\":0.0005}"
+    },
+    "liveNetRR": 1.5712448192082489,
+    "livePassed": true,
+    "configuredSlippageBps": 10,
+    "tp": {
+      "outcome": "tp",
+      "exit": 101.09,
+      "net": 0.9894550000000034
+    },
+    "sl": {
+      "outcome": "sl",
+      "exit": 99.3,
+      "net": -0.7996500000000029
+    },
+    "simulatorNetRR": 1.2373600950415806
+  },
+  "prototypeChecks": [
+    {
+      "name": "Start zeigt genau einen Kandidaten",
+      "ok": true
+    },
+    {
+      "name": "Beobachten enthält zwei getrennte Gründe",
+      "ok": true
+    },
+    {
+      "name": "PO3-Filter wirkt auf dieselbe Liste",
+      "ok": true
+    },
+    {
+      "name": "Coinfilter wird vollständig angewandt",
+      "ok": true
+    },
+    {
+      "name": "Früheres Modell im eigenen Archiv",
+      "ok": true
+    },
+    {
+      "name": "Datenausfall ersetzt positive Aktualitätsanzeige",
+      "ok": true
+    },
+    {
+      "name": "Details aufklappbar",
+      "ok": true
+    },
+    {
+      "name": "Einrichtung im Dialog",
+      "ok": true
+    },
+    {
+      "name": "Tastatur schließt Dialog",
+      "ok": true
+    },
+    {
+      "name": "1100px ohne horizontalen Überlauf",
+      "ok": true
+    },
+    {
+      "name": "390px ohne horizontalen Überlauf",
+      "ok": true
+    },
+    {
+      "name": "320px ohne horizontalen Überlauf",
+      "ok": true
+    },
+    {
+      "name": "Keine JavaScript-Fehler",
+      "ok": true
+    }
+  ],
+  "scope": "Gezielter Review mit lokalen synthetischen Antworten; keine echten Konten, Trades, Nachrichten oder Profitabilitätsstudie."
+}
