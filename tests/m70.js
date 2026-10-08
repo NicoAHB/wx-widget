@@ -105,7 +105,7 @@ const check = (name, ok, info = '') => { ok ? pass++ : fail++; console.log(`${ok
       check('Alte ' + theme + '-Sicherung: Anzeigeübernahme sichtbar und nicht vorausgewählt', await legacy.locator('#sync-preview .sp-restore input').count() === 1 && !await legacy.locator('#sync-preview .sp-restore input').isChecked());
       if (take) await legacy.check('#sync-preview .sp-restore input');
       await legacy.click('#sync-preview .sp-actions .button.primary-lite');
-      if (take) await legacy.waitForFunction(theme => document.documentElement.dataset.theme === theme && !document.documentElement.dataset.background, theme);
+      if (take) await legacy.waitForFunction(theme => !!window.__g05 && document.documentElement.dataset.theme === theme && !document.documentElement.dataset.background, theme);
       else await legacy.waitForFunction(() => document.getElementById('sync-preview').hidden);
       check('Alte ' + theme + '-Wahl ' + (take ? 'ausdrücklich übernommen' : 'nicht übernommen') + ': Farbe/Position wie gewählt, eigene Farbe gemerkt', await legacy.evaluate(([theme, take]) => __g05.state.positions.length === 1 && (take ? !document.documentElement.dataset.background && document.documentElement.dataset.theme === theme : document.documentElement.dataset.background === 'custom') && __g05.backupPayload().prefs['scalpdesk.background.v1'].color === '#f5eddf', [theme, take]));
       await legacyContext.close();

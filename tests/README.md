@@ -89,3 +89,5 @@ Ausgabe je Test: `✓`/`✗` je Prüfung und am Ende `n/m bestanden`.
 - Bedienung und Prüfschritte: [G14-Ansicht](../docs/G14-ANSICHT.md). Gesamtlauf noch offen.
 
 - **G14 Nachprüfung:** m70 zusätzlich sechs tatsächliche alte Schema-8-Dateiimportprüfungen (Hell/Dunkel auch bei zuvor eigener Farbe, ohne Vorauswahl und ohne stille Übernahme). Nur Anzeigepräferenzen ergänzt, ursprüngliche Datei unverändert. m3-Stopprüfung zählt/wartet jetzt nur auf die geprüften ETH-Stop-Meldungen und zusätzlich exakt je Kanal, statt unabhängige BTC-Puls-Meldungen als Stop-Wiederholung zu zählen; strengere Ereignisbindung, keine veränderte Produktregel. Vollständige Nachläufe der drei Erstbefunde m39/m6/m3 folgen.
+
+- m70 wartet nach der importbedingten Neuladung zusätzlich auf den tatsächlichen App-Kern, bevor Daten geprüft werden: das Farbschema steht bereits vorher im HTML-Kopf. Alle 61 Prüfungen bleiben erhalten, keine Produktänderung.
