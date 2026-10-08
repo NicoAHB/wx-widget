@@ -61,6 +61,8 @@ PO3 „Offen“ bezeichnet einen simulierten Modell-Entry, „Aktiv“ das warte
 
 Gezielt geprüft: unit-signal-overview 27/27, m72 25/25, m63 36/36, m71 23/23, m67 22/22, m65 12/12, m66 14/14. Zum Testen zwischen beiden Modellen und Statusansichten wechseln, gemeinsame Coin-/Richtungsfilter prüfen, Details öffnen und „Jetzt prüfen“ wählen: Original bleibt einmal erhalten. Einrichtung öffnen für Modell-/Kostenannahmen und die bisherigen PO3-Kohortenfilter.
 
+Die visuelle Abschlussprüfung fand eine verdeckende mitlaufende Seitenspalte im Standard-Desktop. Nur bei aktiver breiter KI-Übersicht läuft diese Spalte nun ebenfalls nicht mit; Preisalarm/Bot behalten die bestehende Anordnung. Tatsächlicher Trefferpunkttest in beiden Layouts und Rückwechsel: m72 abschließend **28/28**.
+
 ## Gruppe 3 – Risiko, aktuelle Preise und ehrliche Verteilung
 
 Der modellierte Stopverlust steht bei selbst gewähltem Einsatz direkt auf Konfluenzkarten: EUR/USDT, Margin und Positionswert. Die vorhandene PO3-Größe zeigt ihren Stopverlust ausdrücklich nach Gebühren, vor Funding. Unbekannte Größen/Kosten bleiben nicht verfügbar. Kurslücken und tatsächliche Ausführung können das Szenario überschreiten; Cross bleibt ohne vollständiges Konto nicht bewertbar.
@@ -72,3 +74,5 @@ Aus der bestehenden Originalhistorie kommen zusätzlich beschreibende Netto-Vert
 Speicher zeigt Karten- und Originalarchivfüllstand; keine automatische Löschung. Sicherung/importierte Originale bleiben unverändert.
 
 Test in der App: eigene Margin setzen und sichtbaren Stopverlust prüfen. Optionales Budget wählen, dann aktuelle Bitget-Prüfung auslösen: Menge/Raster/Mindestwert, Spread und Verlustbetrag prüfen. Netz unterbrechen bzw. mehr als 30 Sekunden alte Prüfung ansehen: Fehlermeldung/veraltet. Für Verteilung erst Historie/Backtest laden, unter Einrichtung UTC-Prüfzeitpunkt wählen und in Kartendetails Vorwärtsfenster auswerten. Ohne genügend vollständige Originalfälle bleibt die Verteilung nicht bewertbar.
+
+Alle 120 Gesamtlaufziele und vollständigen Nachprüfungen abgeschlossen: **3778/3778**, Lint **0 Fehler**, 43 PWA-/37 Dienstdateien. Abschließender UI-/PWA-/Release-Nachlauf nach dem eng begrenzten CSS-Fix vollständig grün; Fach-/Dienstmodule unverändert. [Vollständiger Nachweis mit Erstbefunden](KI-TESTNACHWEIS-2026-10-08.md).
