@@ -1,6 +1,15 @@
 # G13 – Zusammenführung, Sicherung und Update
 
-Arbeitsstand **App/Service Worker 3.50.0, Dienstquelle 2.8.0**. Die Freigabe reicht bis G13; Standardlayout bleibt erhalten, G14 noch nicht begonnen. Öffentliche Konfluenz-/PO3-Signale und Bot-Laufsimulation teilen Fachmodule; bestehende Binance-Feeds, Kontobuchungen und Alarmwege bleiben bestehen. Oracle ist der einzige Telegram-Signalsender nach bestätigter Übernahme. Kein privater Börsenexecutor und keine automatischen Strategie-Fills.
+Lieferstand **App/Service Worker 3.50.0, Dienstquelle 2.8.0**. Die Freigabe reicht bis G13; Standardlayout bleibt erhalten, G14 noch nicht begonnen. Öffentliche Konfluenz-/PO3-Signale und Bot-Laufsimulation teilen Fachmodule; bestehende Binance-Feeds, Kontobuchungen und Alarmwege bleiben bestehen. Oracle ist der einzige Telegram-Signalsender nach bestätigter Übernahme. Kein privater Börsenexecutor und keine automatischen Strategie-Fills.
+
+## Änderungen seit 3.45.0
+
+- Chartmuster: Live-Kurs im Kopf, Ziele in Richtungsfarbe, Alter/Status in Kerzen, jüngste zuerst und ältere standardmäßig eingeklappt. Bestehende Erkennung und Filter bleiben wirksam.
+- G10(d): Originalbeobachtungen mit getrennten 90-/730-Tage-Kohorten, begrenzte wiederaufnehmbare Nachbewertung, Quoten erst ab 30 Fällen. Fehlende historische Fundingankündigungen bleiben nicht bewertbar.
+- G10(e): öffentliche Konfluenzanalyse am Oracle-Dienst, bestätigte Auswahl und KI-Schalter, einmalige Telegram-Meldung je Ereignis; standardmäßig AUS.
+- G11: eigenes PO3-Modell, Checkliste/Infobutton, Bitget-Chart, FVG-Alarmstufen und getrenntes Journal/CSV. Unbekannte Kriterien kenntlich, Kosten nach Gebühren vor Funding.
+- G12: eigener Bot-Reiter mit lokaler/Oracle-Laufsimulation, exakten Gewinn-/Verlustgrenzen, dauerhaften Stopps und Bestandsveto. Keine automatischen Strategie-Fills und keine privaten Börsenorders; Demo/Echtgeld gesperrt.
+- G13: zusätzliche native Originalsicherung, vollständig geprüfte versionierte PWA-/Dienstbündel, bewusster Reload und Rückfall ohne pauschales Löschen persönlicher Daten.
 
 ## Sicherung vor Update
 
@@ -38,7 +47,7 @@ Vorher prüfen, dass `previous` auf den gewünschten vollständigen Stand zeigt.
 
 ## Prüfung und praktische Grenzen
 
-Gezielte tatsächliche Browser-/IDB-/HTTP-/Workerprüfung umfasst Update 3.45 → 3.50, fehlerhaften Folgeteil, erfolgreiche Wiederholung, Cachegrenze, bewussten Reload, frischen Offline-Appstart, Originalimporte und gleiche Bot-Sperren am Server. Installerprüfung enthält fehlenden Teil/falschen Hash, vollständigen Folgegraph und Rückfall mit erhaltener Konfiguration/Zustand. Gesamtprüfbericht folgt vor Veröffentlichung.
+Gezielte tatsächliche Browser-/IDB-/HTTP-/Workerprüfung umfasst Update 3.45 → 3.50, fehlerhaften Folgeteil, erfolgreiche Wiederholung, Cachegrenze, bewussten Reload, frischen Offline-Appstart, Originalimporte und gleiche Bot-Sperren am Server. Installerprüfung enthält fehlenden Teil/falschen Hash, vollständigen Folgegraph und Rückfall mit erhaltener Konfiguration/Zustand. Alle 110 Zielbefehle des seriellen Gesamtlaufs nach dokumentierten Nachläufen bestanden: 3471 zählbare Einzelprüfungen sowie Status/Rauch/Sicht ohne Fehler, Lint 0 Fehler. [Testnachweis mit Erstbefunden und Grenzen](G13-TESTNACHWEIS.md), [maschinenlesbarer Nachweis](G13-TESTNACHWEIS.json).
 
 34 PWA-Lieferdateien, zusammen 1.934.325 unkomprimierte Bytes (einschließlich HTML, Icons, Bibliothek/Lizenz und Module; keine Aussage über komprimierte Netzbytes). Schwere öffentliche Auswertung weiter im gemeinsamen Worker/Server; Listen und Archive begrenzt, Originale bei Grenze erhalten. Chromium unter 320/390/768/1440 Pixel ist geprüft; **echte iPhone-/iPad-/iOS-Safari-/Pinch-/Rotation-/Safe-Area-/Leistungsabnahme, echte Bitget-Browser-CORS sowie private Oracle-VM/mehrere echte Geräte bleiben offen**. Lokale HTTP-/Neustart-/429-/Offline-Prüfungen ersetzen diese Abnahme nicht.
 

@@ -1,0 +1,1141 @@
+{
+  "appVersion": "3.50.0",
+  "serverVersion": "2.8.0",
+  "verifiedAtUTC": "2026-10-08T05:48:29+00:00",
+  "productSourceCommit": "0206f248643ce4b59ed2c91d2dc25e28a5d93b1b",
+  "testCorrectionCommit": "a27ea18",
+  "runner": "alle 110 Zielbefehle aus tests/run-all.sh seriell, vollständige Ausgabe/Rückgabewerte",
+  "firstRun": [
+    {
+      "target": "unit-release",
+      "exit": 0,
+      "seconds": 0.7,
+      "counts": [
+        "6",
+        "6"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-model-archive",
+      "exit": 0,
+      "seconds": 0.4,
+      "counts": [
+        "13",
+        "13"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-bot-limits",
+      "exit": 0,
+      "seconds": 0.4,
+      "counts": [
+        "37",
+        "37"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-bot-simulation",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "16",
+        "16"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-po3",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "35",
+        "35"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-po3-service",
+      "exit": 0,
+      "seconds": 0.4,
+      "counts": [
+        "20",
+        "20"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-po3-stream",
+      "exit": 0,
+      "seconds": 0.5,
+      "counts": [
+        "19",
+        "19"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-confluence-service",
+      "exit": 0,
+      "seconds": 0.5,
+      "counts": [
+        "26",
+        "26"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-confluence-replay",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "33",
+        "33"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-bitget-history",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "15",
+        "15"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-confluence-live",
+      "exit": 0,
+      "seconds": 0.4,
+      "counts": [
+        "46",
+        "46"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-bitget-patterns",
+      "exit": 0,
+      "seconds": 0.4,
+      "counts": [
+        "20",
+        "20"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-bitget",
+      "exit": 0,
+      "seconds": 0.4,
+      "counts": [
+        "55",
+        "55"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-confluence",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "135",
+        "135"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-247e",
+      "exit": 0,
+      "seconds": 0.6,
+      "counts": [
+        "38",
+        "38"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-m8",
+      "exit": 0,
+      "seconds": 0.4,
+      "counts": [
+        "24",
+        "24"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-zz",
+      "exit": 0,
+      "seconds": 0.4,
+      "counts": [
+        "28",
+        "28"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-zzp",
+      "exit": 0,
+      "seconds": 0.4,
+      "counts": [
+        "17",
+        "17"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-div",
+      "exit": 0,
+      "seconds": 0.4,
+      "counts": [
+        "10",
+        "10"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-ew",
+      "exit": 0,
+      "seconds": 0.9,
+      "counts": [
+        "27",
+        "27"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-fib",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "6",
+        "6"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-ob",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "9",
+        "9"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-cd",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "16",
+        "16"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-hl",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "13",
+        "13"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-ec",
+      "exit": 0,
+      "seconds": 0.4,
+      "counts": [
+        "22",
+        "22"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-cn",
+      "exit": 0,
+      "seconds": 0.4,
+      "counts": [
+        "40",
+        "40"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-wl",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "64",
+        "64"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-fmt",
+      "exit": 0,
+      "seconds": 5.7,
+      "counts": [
+        "4",
+        "4"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-vola",
+      "exit": 0,
+      "seconds": 2.8,
+      "counts": [
+        "44",
+        "44"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-247",
+      "exit": 0,
+      "seconds": 0.8,
+      "counts": [
+        "96",
+        "96"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-247b",
+      "exit": 0,
+      "seconds": 0.4,
+      "counts": [
+        "25",
+        "25"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-pub",
+      "exit": 0,
+      "seconds": 9.1,
+      "counts": [
+        "7",
+        "7"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-247d",
+      "exit": 0,
+      "seconds": 3.7,
+      "counts": [
+        "16",
+        "16"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-247c",
+      "exit": 0,
+      "seconds": 0.5,
+      "counts": [
+        "55",
+        "55"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-pulse",
+      "exit": 0,
+      "seconds": 2.9,
+      "counts": [
+        "44",
+        "44"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-lots",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "31",
+        "31"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-acct",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "39",
+        "39"
+      ],
+      "failed": []
+    },
+    {
+      "target": "inst-247",
+      "exit": 0,
+      "seconds": 120.1,
+      "counts": [
+        "35",
+        "35"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m69",
+      "exit": 0,
+      "seconds": 6.6,
+      "counts": [
+        "19",
+        "19"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m68",
+      "exit": 0,
+      "seconds": 15.3,
+      "counts": [
+        "23",
+        "23"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m67",
+      "exit": 0,
+      "seconds": 7.4,
+      "counts": [
+        "22",
+        "22"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m66",
+      "exit": 0,
+      "seconds": 3.1,
+      "counts": [
+        "11",
+        "11"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m65",
+      "exit": 0,
+      "seconds": 3.1,
+      "counts": [
+        "12",
+        "12"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m64",
+      "exit": 0,
+      "seconds": 2.8,
+      "counts": [
+        "19",
+        "19"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m63",
+      "exit": 0,
+      "seconds": 10.5,
+      "counts": [
+        "36",
+        "36"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m62",
+      "exit": 0,
+      "seconds": 2.2,
+      "counts": [
+        "8",
+        "8"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m61",
+      "exit": 0,
+      "seconds": 1.8,
+      "counts": [
+        "8",
+        "8"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m60",
+      "exit": 0,
+      "seconds": 10.1,
+      "counts": [
+        "14",
+        "14"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m59",
+      "exit": 0,
+      "seconds": 16.8,
+      "counts": [
+        "18",
+        "18"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m58",
+      "exit": 0,
+      "seconds": 36.0,
+      "counts": [
+        "60",
+        "60"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m57",
+      "exit": 1,
+      "seconds": 46.6,
+      "counts": [
+        "40",
+        "41"
+      ],
+      "failed": [
+        "  ✗ Eingeschaltet: „Korr. x,xx“ je Treffer aus 5m-Renditen (oder „Korr. —“ mit Grund), Kerzen je Treffer genau einmal (BTC geteilt), Hinweis „keine Erfolgswahrscheinlichkeit“ — {\"r\":[[\"SOLUSDT\",\"Korr. -0,09\",\"Korrelation zu BTC (Pearson, 5m-Renditen im Zeitraum): 1 = läuft wie BTC, 0 = unabhängig, negativ = gegenläufig\"],[\"LTCUSDT\",\"Korr. -0,09\",\"Korrelation zu BTC (Pearson, 5m-Renditen im Zeitraum): 1 = läuft wie BTC, 0 = unabhängig, negativ = gegenläufig\"],[\"XRPUSDT\",\"Korr. -0,09\",\"Korrelation zu BTC (Pearson, 5m-Renditen im Zeitraum): 1 = läuft wie BTC, 0 = unabhängig, negativ = gegenläufig\"]],\"k\":[\"SOLUSDT\",\"LTCUSDT\",\"XRPUSDT\"]}"
+      ]
+    },
+    {
+      "target": "m56",
+      "exit": 1,
+      "seconds": 87.2,
+      "counts": [
+        "54",
+        "55"
+      ],
+      "failed": [
+        "  ✗ 30 T: Tageskerzen ab Handelsbeginn (startTime 0, je 1.000), Blöcke abgeschlossen — {\"log\":[{\"symbol\":\"BTCUSDT\",\"interval\":\"1d\",\"limit\":\"261\"},{\"symbol\":\"BTCUSDT\",\"interval\":\"1d\",\"startTime\":\"0\",\"limit\":\"1000\"},{\"symbol\":\"BTCUSDT\",\"interval\":\"1d\",\"startTime\":\"1791504000000\",\"limit\":\"1000\"}],\"n\":33}"
+      ]
+    },
+    {
+      "target": "m55",
+      "exit": 0,
+      "seconds": 110.0,
+      "counts": [
+        "49",
+        "49"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m54",
+      "exit": 0,
+      "seconds": 176.4,
+      "counts": [
+        "52",
+        "52"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m53",
+      "exit": 0,
+      "seconds": 201.3,
+      "counts": [
+        "102",
+        "102"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m52",
+      "exit": 0,
+      "seconds": 85.4,
+      "counts": [
+        "101",
+        "101"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m51",
+      "exit": 0,
+      "seconds": 58.8,
+      "counts": [
+        "73",
+        "73"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m50",
+      "exit": 0,
+      "seconds": 99.5,
+      "counts": [
+        "116",
+        "116"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m49",
+      "exit": 0,
+      "seconds": 123.2,
+      "counts": [
+        "18",
+        "18"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m48",
+      "exit": 0,
+      "seconds": 49.3,
+      "counts": [
+        "79",
+        "79"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m47",
+      "exit": 0,
+      "seconds": 183.4,
+      "counts": [
+        "49",
+        "49"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m46",
+      "exit": 0,
+      "seconds": 100.7,
+      "counts": [
+        "40",
+        "40"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m45",
+      "exit": 0,
+      "seconds": 121.3,
+      "counts": [
+        "75",
+        "75"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m44",
+      "exit": 0,
+      "seconds": 37.9,
+      "counts": [
+        "27",
+        "27"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m43",
+      "exit": 0,
+      "seconds": 19.9,
+      "counts": [
+        "7",
+        "7"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m42",
+      "exit": 0,
+      "seconds": 47.5,
+      "counts": [
+        "18",
+        "18"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m41",
+      "exit": 0,
+      "seconds": 26.7,
+      "counts": [
+        "20",
+        "20"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m40",
+      "exit": 0,
+      "seconds": 61.7,
+      "counts": [
+        "40",
+        "40"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m39",
+      "exit": 0,
+      "seconds": 56.3,
+      "counts": [
+        "50",
+        "50"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m38",
+      "exit": 0,
+      "seconds": 32.2,
+      "counts": [
+        "19",
+        "19"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m37",
+      "exit": 0,
+      "seconds": 34.4,
+      "counts": [
+        "22",
+        "22"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m36",
+      "exit": 0,
+      "seconds": 206.0,
+      "counts": [
+        "20",
+        "20"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m35",
+      "exit": 0,
+      "seconds": 163.7,
+      "counts": [
+        "40",
+        "40"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m34",
+      "exit": 0,
+      "seconds": 48.5,
+      "counts": [
+        "9",
+        "9"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m33",
+      "exit": 0,
+      "seconds": 41.4,
+      "counts": [
+        "16",
+        "16"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m32",
+      "exit": 0,
+      "seconds": 140.6,
+      "counts": [
+        "5",
+        "5"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m31",
+      "exit": 0,
+      "seconds": 53.8,
+      "counts": [
+        "21",
+        "21"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m30",
+      "exit": 0,
+      "seconds": 46.2,
+      "counts": [
+        "32",
+        "32"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m29",
+      "exit": 0,
+      "seconds": 12.7,
+      "counts": [
+        "12",
+        "12"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m28",
+      "exit": 0,
+      "seconds": 44.6,
+      "counts": [
+        "39",
+        "39"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m27",
+      "exit": 0,
+      "seconds": 29.6,
+      "counts": [
+        "22",
+        "22"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m26",
+      "exit": 0,
+      "seconds": 58.0,
+      "counts": [
+        "18",
+        "18"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m25",
+      "exit": 0,
+      "seconds": 27.1,
+      "counts": [
+        "20",
+        "20"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m24",
+      "exit": 0,
+      "seconds": 39.7,
+      "counts": [
+        "28",
+        "28"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m23",
+      "exit": 0,
+      "seconds": 196.3,
+      "counts": [
+        "25",
+        "25"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m22",
+      "exit": 0,
+      "seconds": 138.2,
+      "counts": [
+        "26",
+        "26"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m21",
+      "exit": 0,
+      "seconds": 29.5,
+      "counts": [
+        "14",
+        "14"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m20",
+      "exit": 0,
+      "seconds": 41.2,
+      "counts": [
+        "12",
+        "12"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m19",
+      "exit": 0,
+      "seconds": 27.0,
+      "counts": [
+        "24",
+        "24"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m18",
+      "exit": 0,
+      "seconds": 41.7,
+      "counts": [
+        "31",
+        "31"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m17",
+      "exit": 0,
+      "seconds": 23.5,
+      "counts": [
+        "16",
+        "16"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m16",
+      "exit": 0,
+      "seconds": 35.1,
+      "counts": [
+        "23",
+        "23"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m15",
+      "exit": 0,
+      "seconds": 33.0,
+      "counts": [
+        "23",
+        "23"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m14",
+      "exit": 0,
+      "seconds": 95.9,
+      "counts": [
+        "18",
+        "18"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m13",
+      "exit": 0,
+      "seconds": 23.5,
+      "counts": [
+        "13",
+        "13"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m12",
+      "exit": 0,
+      "seconds": 11.3,
+      "counts": [
+        "17",
+        "17"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m11",
+      "exit": 0,
+      "seconds": 47.0,
+      "counts": [
+        "36",
+        "36"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m10",
+      "exit": 0,
+      "seconds": 29.7,
+      "counts": [
+        "37",
+        "37"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m9",
+      "exit": 0,
+      "seconds": 128.5,
+      "counts": [
+        "9",
+        "9"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m8",
+      "exit": 0,
+      "seconds": 57.5,
+      "counts": [
+        "41",
+        "41"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m7",
+      "exit": 0,
+      "seconds": 247.4,
+      "counts": [
+        "46",
+        "46"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m6",
+      "exit": 0,
+      "seconds": 234.9,
+      "counts": [
+        "58",
+        "58"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m5",
+      "exit": 0,
+      "seconds": 81.5,
+      "counts": [
+        "24",
+        "24"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m4",
+      "exit": 0,
+      "seconds": 138.4,
+      "counts": [
+        "41",
+        "41"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m3",
+      "exit": 0,
+      "seconds": 42.8,
+      "counts": [
+        "68",
+        "68"
+      ],
+      "failed": []
+    },
+    {
+      "target": "ui",
+      "exit": 0,
+      "seconds": 35.7,
+      "counts": [
+        "63",
+        "63"
+      ],
+      "failed": []
+    },
+    {
+      "target": "functional",
+      "exit": 0,
+      "seconds": 77.8,
+      "counts": [
+        "35",
+        "35"
+      ],
+      "failed": []
+    },
+    {
+      "target": "statuscheck",
+      "exit": 0,
+      "seconds": 2.1,
+      "counts": null,
+      "failed": []
+    },
+    {
+      "target": "smoke",
+      "exit": 0,
+      "seconds": 14.3,
+      "counts": null,
+      "failed": []
+    },
+    {
+      "target": "visual",
+      "exit": 0,
+      "seconds": 14.0,
+      "counts": null,
+      "failed": []
+    }
+  ],
+  "retests": [
+    {
+      "target": "m57",
+      "exit": 0,
+      "seconds": 46.3,
+      "counts": [
+        "41",
+        "41"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m56",
+      "exit": 0,
+      "seconds": 86.6,
+      "counts": [
+        "55",
+        "55"
+      ],
+      "failed": []
+    }
+  ],
+  "resolvedTargets": 110,
+  "countedChecks": 3471,
+  "lint": {
+    "errors": 0,
+    "appWarnings": 3,
+    "generatedEngineWarnings": 2
+  },
+  "limitations": [
+    "Echte iOS-Geräte/Safari/Leistung nicht geprüft",
+    "Echte Bitget-Browser-CORS nicht geprüft",
+    "Private Oracle-VM nicht aktualisiert/geprüft",
+    "Kein privater Bitget-Orderadapter; Demo/Echtgeld gesperrt",
+    "G14 nicht begonnen"
+  ]
+}
