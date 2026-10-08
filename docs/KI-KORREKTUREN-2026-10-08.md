@@ -1,6 +1,6 @@
 # KI-Korrekturen – Kosten, Übersicht und Risiko
 
-Arbeitsstand **App/SW 3.52.0**, Dienstquelle **2.9.0**. Öffentlich bleibt bis zum geprüften Release **3.51.0**, die private VM wurde nicht aktualisiert. Grundlage: freigegebene [KI-Prüfung](KI-AUDIT-2026-10-08.md). Alle drei Gruppen sind umgesetzt: gemeinsame Kosten und aktuelle Bestätigung, kompakte KI-Übersicht sowie Risiko-/Ausführungsansicht. Veröffentlichung folgt nach dem vollständigen seriellen Gesamtlauf.
+Veröffentlicht: **App/SW 3.52.0**, Dienstquelle **2.9.0**. Die private VM wurde nicht aktualisiert. Grundlage: freigegebene [KI-Prüfung](KI-AUDIT-2026-10-08.md). Alle drei Gruppen sind umgesetzt: gemeinsame Kosten und aktuelle Bestätigung, kompakte KI-Übersicht sowie Risiko-/Ausführungsansicht. Vollständiger serieller Gesamtlauf und Veröffentlichung abgeschlossen; [Liefernachweis](KI-LIEFERUNG-2026-10-08.md).
 
 ## Kostenmodell cf-2
 
