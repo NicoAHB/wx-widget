@@ -147,7 +147,7 @@
     },
     {
       "path": "./bundles/3.53.0/shared/orderflow-view.mjs",
-      "sha256": "3c6eccc16d61c6cf8b3a8a8c782ed1006673e7f65e7cca246c9662e98a17036c",
+      "sha256": "1d9d9b8ee79c9f0b249c1e29b5a91e6909dda25ba0e1a6e26f05048876169abb",
       "bytes": 10574,
       "alias": "./shared/orderflow-view.mjs"
     },
@@ -231,8 +231,8 @@
     },
     {
       "path": "./weather-widget-v2.html",
-      "sha256": "1ae0e6fc4aef653346dd96db6aa07921b7ceab4a270faeb83db5ec84c63f8ada",
-      "bytes": 1528650
+      "sha256": "16a7d7165aef3d49022637b42292c6b1555104e8add74abf21e46da27ac8e2c2",
+      "bytes": 1528799
     },
     {
       "path": "./manifest.webmanifest",

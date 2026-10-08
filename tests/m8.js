@@ -43,9 +43,10 @@ const tests = {
     const { ctx, page, errors } = await open(browser, desk);
     const t0 = Date.now(); await h.ctl('/silent?on=1'); await h.sleep(12000);
     const L = await log(t0), opens = L.filter(e => e.ws === 'open'), probes = L.filter(e => e.ws === 'msg' && e.d?.method === 'LIST_SUBSCRIPTIONS');
-    const gaps = probes.map((p, i) => i ? p.at - probes[i - 1].at : null).slice(1);
+    const groups = [...new Set(probes.map(p => p.host))].map(host => probes.filter(p => p.host === host));
+    const gaps = groups.flatMap(ps => ps.map((p, i) => i ? p.at - ps[i - 1].at : null).slice(1));
     check('Leitung lebt, Binance schweigt: keine unnötige Neuverbindung in 12 s', !opens.length, `${opens.length} neue Verbindungen`);
-    check('Kontrollanfragen im 3-s-Takt, nicht öfter', probes.length >= 3 && probes.length <= 5 && gaps.every(g => g >= 2800), `${probes.length} Anfragen, Abstände ${gaps.join('/')} ms`);
+    check('Kontrollanfragen je Verbindung im 3-s-Takt, nicht öfter', groups.length === 2 && groups.every(ps => ps.length >= 3 && ps.length <= 5) && gaps.every(g => g >= 2800), `${groups.map(ps => ps[0].host + ': ' + ps.length).join(', ')}, Abstände ${gaps.join('/')} ms`);
     check('Anzeige bleibt grün (Verbindung antwortet)', await feed(page) === 'live');
     await h.ctl('/silent?on=0');
     check('keine Fehler', !errors.length, errors.join(' | ')); await ctx.close();

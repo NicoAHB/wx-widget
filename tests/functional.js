@@ -119,8 +119,9 @@ const tests = {
     check('Nach Abbruch wieder live', await page.waitForFunction(() => document.getElementById('status').dataset.feed === 'live', null, { timeout: 10000 }).then(() => true, () => false));
     // Der Wächter verbindet ohne Wartezeit neu – der Zwischenzustand im Tooltip ist dann nur Millisekunden sichtbar.
     // Deshalb die Neuverbindung im Protokoll der Attrappe nachweisen: Kontrollanfragen werden beantwortet, also erst nach 20 s ohne Daten.
+    const market = await page.evaluate(() => __g05.state.source), watchedHost = (await h.ctl('/state')).conns.find(c => /fstream/.test(c.host) === (market === 'futures'))?.host;
     const tS = Date.now(); await h.ctl('/silent?on=1');
-    let re = null; for (const end = Date.now() + 30000; !re && Date.now() < end; await h.sleep(250)) re = (await h.ctl('/log?since=' + tS)).find(x => x.ws === 'open');
+    let re = null; for (const end = Date.now() + 30000; !re && Date.now() < end; await h.sleep(250)) re = (await h.ctl('/log?since=' + tS)).find(x => x.ws === 'open' && x.host === watchedHost);
     check('Wächter erkennt stumme Verbindung (keine Kursdaten, aber Antworten): nach 20 s neu verbunden', !!re && re.at - tS >= 19000, re ? `neu verbunden nach ${re.at - tS} ms` : await page.evaluate(() => document.getElementById('status').title));
     await h.ctl('/silent?on=0');
     check('danach wieder live', await page.waitForFunction(() => document.getElementById('status').dataset.feed === 'live', null, { timeout: 20000 }).then(() => true, () => false));

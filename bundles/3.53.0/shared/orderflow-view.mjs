@@ -14,7 +14,7 @@ export function createOrderflowView({ root, context, now, fetchRows, readPrefs, 
     'Kauf = aggressiver Käufer (Taker), Verkauf = aggressiver Verkäufer. Jeder Trade hat beide Seiten; hier zählt, wer die Market-Order ausgelöst hat.',
     'Grüner Balkenanteil = Kauf ÷ Gesamtvolumen. Delta = Kauf − Verkauf: + Käuferüberhang, − Verkäuferüberhang. Vier geschlossene Kerzen und die laufende Kerze „jetzt“, Zeiten UTC.',
     'Handlung: Delta allein ist kein Einstieg. Trend, Stop-Loss und Gebühren prüfen. Bei getrenntem Stream, mehr als 5 s alten oder unvollständigen Daten auf neue vollständige Daten warten.',
-    'Quelle: Binance USDT-Futures, auch wenn der Hauptchart Spot zeigt. Coins und USDT stammen jeweils aus den gelieferten Taker-Feldern; fehlende Werte werden nicht geschätzt. Noch keine neue Signalentscheidung (PDF-Etappe 1).'
+    'Quelle: Binance USDT-Futures, auch wenn der Hauptchart Spot zeigt. Coins und USDT stammen jeweils aus den gelieferten Taker-Feldern; fehlende Werte werden nicht geschätzt. Diese Volumenwerte sind keine Einstiegsempfehlung.'
   ]) explanation.append(el('p', '', p));
   info.append(explanation); head.append(title, info);
   const source = el('p', 'of-source'), settings = el('div', 'of-settings'), label = el('label', '', 'Einheit '), select = el('select'); select.id = 'of-unit';
