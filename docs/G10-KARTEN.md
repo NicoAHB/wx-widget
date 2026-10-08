@@ -1,5 +1,7 @@
 # G10(c) – lokale Bitget-Signalkarten (Arbeitsstand)
 
+**Fortschreibung 08.10.2026, Arbeitsstand 3.52.0:** `cf-live-2` berücksichtigt Ausstiegsslippage auch im Kostenfilter. Aktuelle Kurs-/Modellbestätigung und gespeicherter Originalplan sind getrennt; Kursfehler, Pause und frühere Modelle geben keine grüne Altfreigabe. [KI-Korrekturen, Gruppe 1](KI-KORREKTUREN-2026-10-08.md) beschreibt Anzeige, 30-Sekunden-Referenzalter und Originalschutz; die folgenden Abschnitte dokumentieren den ursprünglichen G10(c)-Stand.
+
 `confluence-live.mjs` bereitet ausschließlich lokale Szenarien vor. `confluence-worker.mjs` verwendet den öffentlichen Adapter aus G10(b) und den unveränderten Fachkern aus G10(a). Keine Kontoabfrage, Order oder Telegram-Nachricht. Historische Quoten folgen in G10(d), Dienst/Telegram in G10(e).
 
 ## Quelle und Muster

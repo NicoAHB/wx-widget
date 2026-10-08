@@ -1,5 +1,7 @@
 # G10(a) – gemeinsamer Konfluenz-Kern
 
+**Fortschreibung 08.10.2026:** Der ursprüngliche Vertrag unten dokumentiert `cf-1`. Arbeitsstand 3.52.0 verwendet `cf-2`: Kostenfilter und Simulator teilen auch Ausstiegsslippage/Tickraster; Score und Preislevelregeln bleiben erhalten. Alte Originale und ihre Rechenkerne werden getrennt bewahrt. Details und Prüfung: [KI-Korrekturen, Gruppe 1](KI-KORREKTUREN-2026-10-08.md).
+
 Arbeitsstand 3.43.0, Modell `cf-1`. Die fehlenden Codebeilagen wurden anhand von G10 neu geschrieben. Vorhandene Chart-/Positionsrechnung
 bleibt erhalten. Bitget-Feed, Karten, Backtest-Worker und Telegram folgen in G10(b)–(e). Noch keine produktiven KI-Signale oder Erfolgszahlen.
 

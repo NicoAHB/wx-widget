@@ -33,7 +33,7 @@ const clone = x => structuredClone(x), near = (a, b) => Number.isFinite(a) && Ma
   check('Kostenfilter tatsächlich bestanden, ohne erfundene Eurogröße', card.costs.passed && card.costs.netRR > 1.5 && card.size.status === 'nicht verfügbar' && card.size.quantity === null);
   check('Cross erhält keine Liquidations-/Abstandsfreigabe', card.cross.liquidationPrice === null && card.cross.distance === null && !card.cross.approved);
   check('Beide historischen Fenster sind noch nicht ausgewertet, keine erfundene Quote/Fallzahl', card.statistics.short.status === 'noch nicht ausgewertet' && card.statistics.long.status === 'noch nicht ausgewertet' && !('tpPercent' in card.statistics.short));
-  check('Karte bindet Kern, Musteradapter, Kosten-/Ankerpolitik und Revision', card.liveKey.includes('cf-live-1') && card.liveKey.includes('bg-patterns-1') && card.liveKey.includes('current-rate') && card.config.revision === f.config.revision);
+  check('Karte bindet Kern, Musteradapter, Kosten-/Ankerpolitik und Revision', card.liveKey.includes(L.LIVE_VERSION) && card.liveKey.includes('bg-patterns-1') && card.liveKey.includes('current-rate') && card.config.revision === f.config.revision);
   check('Eingabedaten und Einstellungen bleiben unverändert', JSON.stringify(f) === original);
   for (const [name, mutate] of [
     ['vor Entscheidungszeit', q => { q.at = f.data.scope.asOf - 1; }],

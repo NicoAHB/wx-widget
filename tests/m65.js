@@ -20,7 +20,7 @@ const check = (name, ok, info = '') => { ok ? pass++ : fail++; console.log(`${ok
       await route.fulfill({ status: 200, headers: { 'access-control-allow-origin': '*' }, contentType: 'application/json', body: JSON.stringify({ code: '00000', requestTime: Date.now(), data }) });
     });
     await page.goto(h.URL_BASE + '/weather-widget-v2.html'); await page.waitForFunction(() => !!window.__g10 && __g05.state.candles.length);
-    await page.click('#ki-signal-tab');
+    await page.click('#ki-signal-tab'); await page.click('#ki-view-archive');
     const parity = await page.evaluate(async f => { const R = await import('/shared/confluence-replay.mjs'); return R.replayJob({ observations: [f.observation], ...f }); }, f);
     check('Browser und Node: identische Originalreplays mit 60/70/80', JSON.stringify(parity) === JSON.stringify(R.replayJob({ observations: [f.observation], ...f })));
     await page.evaluate(card => { __g10.state.cards = [card]; __g10.render(); }, f.card);
@@ -31,8 +31,8 @@ const check = (name, ok, info = '') => { ok ? pass++ : fail++; console.log(`${ok
       const later = structuredClone(observation); later.decisionAt++; later.data.scope.asOf++; await S.saveObservation(later);
       return { n: old.length, at: (await S.readReplay('observations'))[0].decisionAt, usage: await S.readReplay('meta', 'usage') }; }, f.observation);
     check('Atomarer Originalspeicher: gleichzeitige Schreibversuche zählen einmal, spätere Daten ersetzen nichts', stored.n === 1 && stored.usage.n === 1 && stored.at === f.observation.decisionAt);
-    const old = await page.evaluate(async ({ card, asOf, observation }) => { const S = await import('/shared/confluence-replay-store.mjs');
-      await S.saveReplay('jobs', { id: observation.key, version: 'cf-replay-1', instrument: 'BTCUSDT', asOf, from: observation.decisionAt, to: asOf, stage: 'prices', cursor: observation.decisionAt, rows: [], marks: [], events: [], pageNo: 1, fundingTo: null, cases: [], replayCursor: 0, conflicts: 0 });
+    const old = await page.evaluate(async ({ card, asOf, observation }) => { const S = await import('/shared/confluence-replay-store.mjs'), R = await import('/shared/confluence-replay.mjs');
+      await S.saveReplay('jobs', { id: observation.key, version: R.REPLAY_VERSION, instrument: 'BTCUSDT', asOf, from: observation.decisionAt, to: asOf, stage: 'prices', cursor: observation.decisionAt, rows: [], marks: [], events: [], pageNo: 1, fundingTo: null, cases: [], replayCursor: 0, conflicts: 0 });
       await __g10.backtest(card); return __g10.state.history.get(card.id); }, f);
     check('App-Worker setzt historische Grenze fort und löst echte TP-Fälle mit Originalmodell auf', old.asOf === f.asOf && old.backtests.every(r => r.n === 1 && r.netR > 0 && r.maxDrawdownR === 0), JSON.stringify(old.backtests));
     check('Unter 30 keine Prozentquote oder Euro-Erwartung; beide Fenster mit N und Datenlücken', old.statistics.short.tpPercent === null && old.statistics.long.tpPercent === null && old.statistics.short.expectedEUR === null && /N=1/.test(await page.textContent('#ki-list')));

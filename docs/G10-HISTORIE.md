@@ -1,5 +1,7 @@
 # G10(d) – Originaleingaben und historische Auflösung
 
+**Fortschreibung 08.10.2026, Arbeitsstand 3.52.0:** Originale mit cf-replay-1/cf-1 werden weiterhin mit dem eingefrorenen ursprünglichen Kern ausgewertet; neue cf-replay-2/cf-2-Fälle verwenden den korrigierten Auswahlfilter einschließlich Ausstiegsslippage. Alte Jobgrenzen, Anker und Kohorten bleiben getrennt erhalten. Siehe [KI-Korrekturen, Gruppe 1](KI-KORREKTUREN-2026-10-08.md).
+
 Arbeitsstand 3.46.0. Der Nutzer hat das Originalmodell ausdrücklich beibehalten.
 
 Bitgets öffentliche `history-fund-rate` liefert nur abgerechnete Rate und Termin. Die damals angekündigte Rate samt damaligem Intervall fehlt. Sie wird weder durch die nächste Abrechnung noch durch den heutigen Takt ersetzt. Frühere vollständige Konfluenzentscheidungen sind deshalb nicht rekonstruierbar; die App zeigt „nicht bewertbar“.
