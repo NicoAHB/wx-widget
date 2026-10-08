@@ -58,6 +58,26 @@ export function dataQuality(series, iv, { now, receivedNow = now, connected, uni
   return { kind: 'live', label: 'Live', age };
 }
 const formatters = new Map();
+// 3.54.0: identischer Preismaßstab je sichtbarem Kerzenblock; Doji bleibt sichtbar.
+export function candleGlyph(c, low, high) {
+  if (!c || ![c.o, c.h, c.l, c.c, low, high].every(Number.isFinite) || low > c.l || high < c.h) return null;
+  const range = high - low, y = price => range > 0 ? 3 + (high - price) / range * 36 : 21;
+  const open = y(c.o), close = y(c.c);
+  return { high: y(c.h), low: y(c.l), top: Math.min(open, close), height: Math.max(1, Math.abs(open - close)), tone: c.c > c.o ? 'up' : c.c < c.o ? 'down' : 'neutral' };
+}
+export function candleCountdown(iv, now) {
+  const step = ORDERFLOW_PERIODS[iv]; if (!step || !Number.isFinite(now)) return '—';
+  const seconds = Math.ceil((step - ((now % step) + step) % step) / 1000);
+  return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
+}
+export const CANDLE_NEUTRAL_BODY_SHARE = .1;
+export function candleAssessment(c) {
+  if (!c || ![c.o, c.h, c.l, c.c].every(Number.isFinite)) return { tone: 'neutral', text: 'Kerzenbild: —' };
+  const range = c.h - c.l, share = range > 0 ? Math.abs(c.c - c.o) / range : 0, at = range > 0 ? (c.c - c.l) / range : .5;
+  if (share <= CANDLE_NEUTRAL_BODY_SHARE) return { tone: 'neutral', text: 'Neutral · kleiner Körper' };
+  return c.c > c.o ? { tone: 'up', text: at >= .75 ? 'Bullisch · Schluss nahe Hoch' : 'Bullisch · positiver Körper' }
+    : { tone: 'down', text: at <= .25 ? 'Bärisch · Schluss nahe Tief' : 'Bärisch · negativer Körper' };
+}
 export function compactVolume(value, signed = false) {
   if (!Number.isFinite(value)) return '—';
   const abs = Math.abs(value), scale = abs >= 1e9 ? 1e9 : abs >= 1e6 ? 1e6 : abs >= 1e3 ? 1e3 : 1, suffix = scale === 1e9 ? ' Mrd.' : scale === 1e6 ? ' Mio.' : scale === 1e3 ? ' Tsd.' : '';

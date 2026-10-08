@@ -51,5 +51,16 @@ let pass = 0, fail = 0; const check = (name, ok) => { ok ? pass++ : fail++; cons
   check('Kleine echte Werte niemals als Null', !/^[+−]?0$/.test(O.compactVolume(1e-8, true)) && O.compactVolume(0.00002, true) === '+0,00002');
   check('Fehlendes Volumen als Strich', O.compactVolume(null) === '—');
   check('Quellobjekte bytegleich erhalten', JSON.stringify([k, row]) === raw);
+  const glyph = O.candleGlyph(c, 99, 102);
+  check('Kerzenmaßstab: Hoch oben, Tief unten, Körper dazwischen', glyph.high === 3 && glyph.low === 39 && glyph.top === 15 && glyph.height === 12 && glyph.tone === 'up');
+  check('Rote Kerze und Doji eindeutig, Doji mindestens 1 px', O.candleGlyph({ ...c, o: 101, c: 100 }, 99, 102).tone === 'down' && O.candleGlyph({ ...c, c: c.o }, 99, 102).height === 1);
+  check('Flat-Kerze mittig, fehlende Kerze ohne erfundene Optik', O.candleGlyph({ ...c, o: 100, h: 100, l: 100, c: 100 }, 100, 100).top === 21 && O.candleGlyph(null, 99, 102) === null);
+  check('Ungültiger Maßstab wird nicht gezeichnet', O.candleGlyph(c, 100, 102) === null);
+  check('Minutentimer: Start, letzte Sekunde, neuer Start', O.candleCountdown('1m', t) === '01:00' && O.candleCountdown('1m', t + 59999) === '00:01' && O.candleCountdown('1m', t + 60000) === '01:00');
+  const hour = Math.floor(t / 3600000) * 3600000;
+  check('Stundentimer: 60 Minuten und gemeinsamer Sekundenrest', O.candleCountdown('1h', hour) === '60:00' && O.candleCountdown('1h', hour + 3599500) === '00:01');
+  check('Timer ohne gültige Zeit/Ebene nicht verfügbar', O.candleCountdown('1d', t) === '—' && O.candleCountdown('1m', NaN) === '—');
+  check('Kurzer Kerzentext bullisch und bärisch', O.candleAssessment({ o: 100, h: 102, l: 99, c: 102 }).tone === 'up' && /nahe Hoch/.test(O.candleAssessment({ o: 100, h: 102, l: 99, c: 102 }).text) && O.candleAssessment({ o: 101, h: 102, l: 99, c: 99 }).tone === 'down');
+  check('Kleiner Körper, Doji und fehlende Kerze nicht bullisch erfunden', O.candleAssessment({ o: 100, h: 110, l: 90, c: 101 }).tone === 'neutral' && O.candleAssessment({ o: 100, h: 100, l: 100, c: 100 }).tone === 'neutral' && O.candleAssessment(null).text === 'Kerzenbild: —');
   console.log(`${pass}/${pass + fail} bestanden`); process.exitCode = fail ? 1 : 0;
 })().catch(e => { console.error(e); process.exitCode = 1; });

@@ -1,0 +1,26 @@
+let pass = 0, fail = 0; const check = (name, ok) => { ok ? pass++ : fail++; console.log(`${ok ? '✓' : '✗'} ${name}`); };
+(async () => {
+  const D = await import('../shared/orderflow-demo.mjs'), input = { id: 'test-long', symbol: 'BTCUSDT', side: 'long', price: 100, at: 1760000040000, margin: 100, leverage: 5 };
+  const book = D.demoOpen(null, input), p = book.active[0], before = JSON.stringify(book), throws = fn => { try { fn(); return false; } catch { return true; } };
+  check('Einsatz ist Margin: 100 USDT bei 5× ergeben 5 Coins', p.qty === 5 && p.margin === 100 && p.entry === 100);
+  check('Long: +2 % Kurs ergibt +10 % und +10 USDT', Math.abs(D.demoResult(p, 102).pct - 10) < 1e-10 && Math.abs(D.demoResult(p, 102).pnl - 10) < 1e-10);
+  check('Long-Verlust vollständig, keine Gebühren', Math.abs(D.demoResult(p, 98).pct + 10) < 1e-10 && Math.abs(D.demoResult(p, 98).pnl + 10) < 1e-10);
+  const short = D.demoOpen(null, { ...input, id: 'short', side: 'short' }).active[0];
+  check('Short gespiegelt', Math.abs(D.demoResult(short, 98).pnl - 10) < 1e-10 && D.demoResult(short, 102).pnl < 0);
+  check('Unveränderter Kurs = exakt Null', D.demoResult(p, 100).pnl === 0 && D.demoResult(p, 100).pct === 0);
+  const closed = D.demoClose(book, 'BTCUSDT', 102, input.at + 60000);
+  check('Abschluss verwendet tatsächlichen Klickkurs und Zeitpunkt', closed.active.length === 0 && closed.closed[0].exit === 102 && closed.closed[0].closedAt === input.at + 60000);
+  check('Originalbestand bleibt unverändert', JSON.stringify(book) === before);
+  check('Neustart/JSON behält offene/geschlossene Trades', D.demoBook(JSON.parse(JSON.stringify(book))).active[0].id === p.id && D.demoBook(JSON.parse(JSON.stringify(closed))).closed[0].exit === 102);
+  check('Keine doppelte Position pro Coin und kein Doppelabschluss', throws(() => D.demoOpen(book, { ...input, id: 'zweite' })) && throws(() => D.demoClose(closed, 'BTCUSDT', 100, input.at + 60000)));
+  check('Mehrere Coins getrennt', D.demoOpen(book, { ...input, id: 'eth', symbol: 'ETHUSDT' }).active.length === 2);
+  for (const margin of [0, -1, NaN, Infinity]) check('Ungültiger Einsatz ' + margin, throws(() => D.demoOpen(null, { ...input, margin })));
+  for (const leverage of [0, -1, 126, NaN, Infinity]) check('Ungültiger Hebel ' + leverage, throws(() => D.demoOpen(null, { ...input, leverage })));
+  for (const price of [0, -1, NaN, Infinity]) check('Ungültiger Kurs ' + price, throws(() => D.demoOpen(null, { ...input, price })));
+  check('Unbekannte Richtung und leere ID abgewiesen', throws(() => D.demoOpen(null, { ...input, side: 'x' })) && throws(() => D.demoOpen(null, { ...input, id: '' })));
+  check('Abschluss vor Einstieg abgewiesen', throws(() => D.demoClose(book, 'BTCUSDT', 100, input.at - 1)));
+  check('Ungültiger gespeicherter Bestand bleibt erhalten statt geleert', throws(() => D.demoBook({ v: 2, active: [], closed: [] })) && throws(() => D.demoBook({ ...book, active: [{ ...p, entry: 0 }] })));
+  check('Überlauf oder ungültiger Endkurs kein erfundener Gewinn', D.demoResult(p, Infinity) === null && throws(() => D.demoOpen(null, { ...input, margin: 1e308 })));
+  check('Speichergrenze stoppt neue Übungen ohne alte zu löschen', throws(() => D.demoOpen({ v: 1, active: [], closed: Array.from({ length: D.DEMO_LIMIT }, (_, i) => ({ ...closed.closed[0], id: 'closed-' + i })) }, input)));
+  console.log(`${pass}/${pass + fail} bestanden`); process.exitCode = fail ? 1 : 0;
+})().catch(e => { console.error(e); process.exitCode = 1; });
