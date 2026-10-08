@@ -57,6 +57,36 @@ ok "2.0: „scalpdesk-247 zugang“ zeigt Adresse und Zugangsschlüssel für die
 echo "== Aktualisieren (Einstellungen bleiben, keine Fragen)"
 ok "2.4: Muster-Engine und Marktvertrag installiert und importierbar" "[ -s '$T/opt/pattern-engine.mjs' ] && [ -s '$T/opt/pattern-monitor.mjs' ] && node --input-type=module -e \"const e=await import('file://$T/opt/pattern-engine.mjs');process.exit(e.patEngine().VER==='pat-1'?0:1)\""
 ok "2.5: gemeinsame KI-Module samt relativem Engine-Import installiert" "[ -s '$T/opt/shared/confluence-service.mjs' ] && [ -s '$T/opt/ki-monitor.mjs' ] && node --input-type=module -e \"const k=await import('file://$T/opt/ki-monitor.mjs');process.exit(typeof k.ConfluenceService==='function'?0:1)\""
+ok "2.8: gesamter Dienstgraph, PO3 und Bot-Kern aus einem realen Releasepfad" "[ -L '$T/opt/current' ] && node --input-type=module -e \"const k=await import('file://$T/opt/ki-monitor.mjs');process.exit(typeof k.Po3Service==='function'&&typeof k.BotSimulationRuntime==='function'?0:1)\""
+mkdir -p "$T/badsrc/server" "$T/badsrc/shared" "$T/state"
+cp "$REPO"/server/*.mjs "$REPO/server/install.sh" "$REPO/server/release-manifest.json" "$T/badsrc/server/"
+cp "$REPO"/shared/*.mjs "$T/badsrc/shared/"
+printf '{"marker":"Nutzerdaten bleiben"}' > "$T/state/user-keep.json"
+OLD_RELEASE=$(readlink "$T/opt/current"); CONF_HASH=$(sha256sum "$T/etc/scalpdesk-247.json")
+printf '\n// gültige Syntax, falscher Hash\n' >> "$T/badsrc/shared/bot-limits.mjs"
+: > "$SHIM_LOG"; SCALPDESK_SRC="file://$T/badsrc/server" SCALPDESK_TTY=/nonexistent bash "$REPO/server/install.sh" > "$T/bad-hash.log" 2>&1; rc=$?
+ok "2.8: falscher Modulhash verhindert Wechsel/Neustart, vorhandene Konfiguration/Zustand bleiben" "[ $rc -ne 0 ] && [ \"\$(readlink '$T/opt/current')\" = '$OLD_RELEASE' ] && [ \"\$(sha256sum '$T/etc/scalpdesk-247.json')\" = '$CONF_HASH' ] && grep -q 'Nutzerdaten bleiben' '$T/state/user-keep.json' && ! grep -q 'systemctl restart' '$SHIM_LOG'"
+rm "$T/badsrc/shared/bot-limits.mjs"
+SCALPDESK_SRC="file://$T/badsrc/server" SCALPDESK_TTY=/nonexistent bash "$REPO/server/install.sh" > "$T/bad-missing.log" 2>&1; rc=$?
+ok "2.8: fehlendes Modul lässt CLI/alte Modulversion weiterhin lauffähig" "[ $rc -ne 0 ] && [ \"\$(readlink '$T/opt/current')\" = '$OLD_RELEASE' ] && node '$T/opt/scalpdesk-247.mjs' --version | grep -q '^2.8.0$'"
+cp "$REPO/shared/bot-limits.mjs" "$T/badsrc/shared/bot-limits.mjs"
+node - "$T/badsrc/server" <<'NODE'
+const fs=require('fs'),p=require('path'),c=require('crypto'),dir=process.argv[2],main=p.join(dir,'scalpdesk-247.mjs');
+fs.writeFileSync(main,fs.readFileSync(main,'utf8').replace("VERSION = '2.8.0'","VERSION = '2.8.1'"));
+const manifest=p.join(dir,'release-manifest.json'),j=JSON.parse(fs.readFileSync(manifest,'utf8'));j.version='2.8.1'; const f=j.files.find(x=>x.path==='scalpdesk-247.mjs'),b=fs.readFileSync(main); f.bytes=b.length; f.sha256=c.createHash('sha256').update(b).digest('hex');fs.writeFileSync(manifest,JSON.stringify(j));
+NODE
+SCALPDESK_SRC="file://$T/badsrc/server" SCALPDESK_TTY=/nonexistent bash "$REPO/server/install.sh" --ohne-https > "$T/bundle-update.log" 2>&1; rc=$?
+ok "2.8: vollständiger Folgestand umgeschaltet, vorheriger Stand als Rückfall erhalten" "[ $rc -eq 0 ] && [ \"\$(readlink '$T/opt/previous')\" = '$OLD_RELEASE' ] && node '$T/opt/scalpdesk-247.mjs' --version | grep -q '^2.8.1$'"
+ln -s "$OLD_RELEASE" "$T/opt/current.rollback"; mv -Tf "$T/opt/current.rollback" "$T/opt/current"
+ok "2.8: Rückfall wechselt nur Programm, CLI/Modulgraph/Zustand bleiben" "node '$T/opt/scalpdesk-247.mjs' --version | grep -q '^2.8.0$' && grep -q 'Nutzerdaten bleiben' '$T/state/user-keep.json' && [ \"\$(sha256sum '$T/etc/scalpdesk-247.json')\" = '$CONF_HASH' ]"
+# Frühere reale CLI-Pfadregel bei Erstumstellung mitprüfen, nicht nur neue Releases gegeneinander.
+mkdir -p "$T/legacy-opt"; cp -aL "$T/opt/current/". "$T/legacy-opt/"
+node - "$T/legacy-opt/scalpdesk-247.mjs" <<'NODE'
+const fs=require('fs'),file=process.argv[2],s=fs.readFileSync(file,'utf8'); fs.writeFileSync(file,s.replace('fs.realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)','path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)'));
+NODE
+SCALPDESK_DIR="$T/legacy-opt" SCALPDESK_TTY=/nonexistent bash "$REPO/server/install.sh" --ohne-https > "$T/legacy-upgrade.log" 2>&1; rc=$?
+LEGACY_OLD=$(readlink "$T/legacy-opt/previous"); ln -s "$LEGACY_OLD" "$T/legacy-opt/current.rollback"; mv -Tf "$T/legacy-opt/current.rollback" "$T/legacy-opt/current"
+ok "2.8: Erstumstellung erhält alten Graph; dessen CLI läuft nach Symlink-Rückfall" "[ $rc -eq 0 ] && [ -n '$LEGACY_OLD' ] && node '$T/legacy-opt/scalpdesk-247.mjs' --version | grep -q '^2.8.0$'"
 : > "$SHIM_LOG"; SCALPDESK_TTY=/nonexistent bash "$REPO/server/install.sh" > "$T/out2.log" 2>&1; rc=$?
 ok "Läuft ohne Eingaben durch" "[ $rc -eq 0 ] && grep -q 'Einstellungen aus .* übernommen' '$T/out2.log'" "$(tail -3 "$T/out2.log")"
 ok "2.0: Aktualisieren behält den Zugangsschlüssel; eigene Caddyfile-Zeilen bleiben" "[ \"\$(node -p \"require('$T/etc/scalpdesk-247.json').key\")\" = '$KEY0' ] && grep -c 'import scalpdesk-247.caddy' '$T/caddy/Caddyfile' | grep -q '^1$'"

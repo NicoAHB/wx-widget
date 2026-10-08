@@ -54,7 +54,7 @@ const KEY = 'k'.repeat(20) + 'Zz09_-abcdefghijklmnopq', ORIGIN = 'https://nicoah
   { const K = (t, h, c) => [t, '100', String(h), '99', String(c), '1', t + 9e5 - 1], a = { dir: 'above', price: 101, cl: '15m' }, T0 = 1.8e12;
     const wick = W.closeHit(a, [K(T0, 101.5, 100.5), K(T0 + 9e5, 100.8, 100.6)], T0 - 1, T0 + 9e5 + 5000), close = W.closeHit(a, [K(T0, 101.5, 101.2), K(T0 + 9e5, 101.4, 101.3)], T0 - 1, T0 + 9e5 + 5000);
     const before = W.closeHit(a, [K(T0, 101.5, 101.2), K(T0 + 9e5, 101.4, 101.3)], T0 + 9e5, T0 + 9e5 + 5000), below = W.closeHit({ dir: 'below', price: 99.5, cl: '1h' }, [K(T0, 100, 99.4), K(T0 + 9e5, 100, 99.6)], T0 - 1, T0 + 9e5 + 5000);
-    check('Schluss-Alarm: Docht über der Marke, Schluss darunter → nein; Schluss über der Marke → ja; Kerze schloss vor dem Scharfschalten → nein; „fällt unter“ spiegelbildlich; laufende Kerze zählt nicht', wick.hit === false && close.hit === true && close.price === 101.2 && before.hit === false && below.hit === true && below.price === 99.4 && W.CL_MS['15m'] === 9e5 && W.VERSION === '2.4.0', JSON.stringify({ wick, close, before, below })); }
+    check('Schluss-Alarm: Docht über der Marke, Schluss darunter → nein; Schluss über der Marke → ja; Kerze schloss vor dem Scharfschalten → nein; „fällt unter“ spiegelbildlich; laufende Kerze zählt nicht', wick.hit === false && close.hit === true && close.price === 101.2 && before.hit === false && below.hit === true && below.price === 99.4 && W.CL_MS['15m'] === 9e5 && W.VERSION === '2.8.0', JSON.stringify({ wick, close, before, below })); }
   w.server.close(); w.stopped = true;
   console.log(`\n${pass}/${pass + fail} bestanden`); process.exit(fail ? 1 : 0);
 })();

@@ -1895,14 +1895,15 @@ html{scroll-padding-top:calc(var(--lb-h,56px) + 16px)}
 </style>
   <script type="module">
 // 3.45.0 (G10c): der vorhandene Binance-/G07-Kern bleibt eigenständig.
-import { BotSimulationRuntime } from './shared/bot-simulation.mjs';
-import { readBotSimulation, saveBotSimulation } from './shared/bot-simulation-store.mjs';
-import { createBotView } from './shared/bot-view.mjs';
-import { createPo3View } from './shared/po3-view.mjs';
-import { cardState as kiCardState, scoreLabel as kiScoreLabel } from './shared/confluence-live.mjs';
-import { divergenceInfo as kiDivergenceInfo, parametersKey as kiParametersKey } from './shared/confluence-core.mjs';
-import { observationKey as kiObservationKey } from './shared/confluence-replay.mjs';
-import { readReplay as kiReadHistory, saveReplay as kiSaveHistory, clearReplayJobs as kiClearHistoryJobs } from './shared/confluence-replay-store.mjs';
+import { exportModelArchive, importModelArchive, validateModelArchive } from './bundles/3.50.0/shared/model-archive.mjs';
+import { BotSimulationRuntime } from './bundles/3.50.0/shared/bot-simulation.mjs';
+import { readBotSimulation, saveBotSimulation } from './bundles/3.50.0/shared/bot-simulation-store.mjs';
+import { createBotView } from './bundles/3.50.0/shared/bot-view.mjs';
+import { createPo3View } from './bundles/3.50.0/shared/po3-view.mjs';
+import { cardState as kiCardState, scoreLabel as kiScoreLabel } from './bundles/3.50.0/shared/confluence-live.mjs';
+import { divergenceInfo as kiDivergenceInfo, parametersKey as kiParametersKey } from './bundles/3.50.0/shared/confluence-core.mjs';
+import { observationKey as kiObservationKey } from './bundles/3.50.0/shared/confluence-replay.mjs';
+import { readReplay as kiReadHistory, saveReplay as kiSaveHistory, clearReplayJobs as kiClearHistoryJobs } from './bundles/3.50.0/shared/confluence-replay-store.mjs';
 // Pure, unrounded calculations. Prices are USDT per unit; FX is USDT per EUR.
 function rsi(closes, period = 14) {
   const out = Array(closes.length).fill(null);
@@ -2873,7 +2874,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
 // 3.43.0 (G10a): reiner Fachkern in shared/; Datenquelle und Karten folgen getrennt.
 // 3.44.0 (G10b): öffentlicher Adapter in shared/bitget-public.mjs; sichtbare Anbindung folgt mit G10(c).
-const APP_VERSION = '3.49.0', docEl = document.documentElement;
+const APP_VERSION = '3.50.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -6704,6 +6705,13 @@ document.addEventListener('pointerdown',()=>{if(soundOn)unlockAudio();},{once:tr
 renderSound();
 $('analysis').addEventListener('toggle',()=>{if($('analysis').open)renderAnalysis();});
 $('data-toggle').addEventListener('click',()=>toggleDataPanel());
+// G13: große Originalarchive separat, persönliche Schema-8-Sicherung unverändert.
+$('model-archive-save').addEventListener('click', async () => { const b = $('model-archive-save'); b.disabled = true; try { const archive = await exportModelArchive(APP_VERSION); download('scalpdesk-model-archive-' + new Date().toISOString().slice(0, 10) + '.json', JSON.stringify(archive), 'application/json'); put('model-archive-status', 'Lokale KI-/Bot-Originale gesichert. Persönliches Backup und Oracle-Dateien zusätzlich sichern.'); } catch (e) { put('model-archive-status', 'Sicherung fehlgeschlagen: ' + e.message); } finally { b.disabled = false; } });
+$('model-archive-file').addEventListener('change', async e => { const file = e.target.files[0]; e.target.value = ''; if (!file) return;
+  try { if (file.size > 32 * 1024 * 1024) throw new Error('Archiv überschreitet 32 MiB'); const data = JSON.parse(await file.text()), checked = validateModelArchive(data);
+    const includeBot = $('model-archive-bot').checked; if (!confirm(`KI-/Bot-Originale zusammenführen: ${checked.observations.length} Konfluenzbeobachtungen, ${checked.journal.length} PO3-Fälle${includeBot && checked.bot ? ', Bot-Simulation nur in leerem Profil, deaktiviert' : ', Bot-Lauf unverändert'}. Keine persönlichen Positionen oder Börsenorders. Fortfahren?`)) return;
+    kiCancel(); const restored = await importModelArchive(data, { includeBot }); put('model-archive-status', 'Bestätigt: ' + restored.done.join(', ') + '. Keine Reaktivierung.'); if (po3View) await po3View.action('read'); if (botView) await botView.refresh();
+  } catch (error) { put('model-archive-status', 'Import: ' + error.message); } finally { kiKick(); } });
 $('backup-save').addEventListener('click',()=>void saveBackup());
 $('backup-load').addEventListener('click',()=>$('backup-file').click());
 $('backup-file').addEventListener('change',()=>{const f=$('backup-file').files[0];$('backup-file').value='';void loadBackupFile(f);});
@@ -7696,7 +7704,7 @@ async function qrDetector() {
   if ('BarcodeDetector' in window) {
     try { const f = await BarcodeDetector.getSupportedFormats?.(); if (!f || f.includes('qr_code')) { const d = new BarcodeDetector({ formats: ['qr_code'] }); return (qr.detector = async src => (await d.detect(src)).map(x => x.rawValue)); } } catch {}
   }
-  if (!window.jsQR) await loadScript('vendor/jsQR.js');
+  if (!window.jsQR) await loadScript('bundles/3.50.0/vendor/jsQR.js');
   if (typeof window.jsQR !== 'function') throw new Error('QR-Scanner nicht verfügbar (vendor/jsQR.js fehlt).');
   const cv = document.createElement('canvas'), ctx = cv.getContext('2d', { willReadFrequently: true });
   return (qr.detector = async src => {
@@ -7868,7 +7876,13 @@ function renderWake() {
 $('wake-toggle').addEventListener('click', async () => { wakeWanted = !wakeWanted; store.set(WAKE_KEY, wakeWanted); if (wakeWanted) await requestWake(); else { try { await wakeLock?.release(); } catch {} wakeLock = null; renderWake(); } });
 // Service Worker (App-Installation, Start ohne Netz). Das Modul wartet beim Start auf den Speicher, "load" kann also schon vorbei sein.
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || ['localhost', '127.0.0.1'].includes(location.hostname)) && !EMBEDDED) {
-  const registerSw = () => navigator.serviceWorker.register('sw.js').catch(() => {});
+  const checkBundle = () => { const controller = navigator.serviceWorker.controller; if (!controller) return; const channel = new MessageChannel(); const timer = setTimeout(() => channel.port1.close(), 3000);
+    channel.port1.onmessage = e => { clearTimeout(timer); channel.port1.close(); if (!e.data?.version || e.data.version === APP_VERSION || $('app-update-note')) return;
+      const note = el('div', 'ki-tone ki-warning'); note.id = 'app-update-note'; note.setAttribute('role', 'status'); note.append(document.createTextNode(`Version ${e.data.version} ist vollständig geladen. Persönliche Daten und KI-/Bot-Originale sichern, dann neu laden. `));
+      const reload = btn('button ghost', 'Gesichert · neu laden'); reload.addEventListener('click', () => location.reload()); note.append(reload); $('app-version').parentElement.before(note); };
+    controller.postMessage({ type: 'bundle-status' }, [channel.port2]); };
+  navigator.serviceWorker.addEventListener('controllerchange', checkBundle);
+  const registerSw = () => navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(checkBundle).catch(() => {});
   if (document.readyState === 'complete') registerSw(); else addEventListener('load', registerSw, { once: true });
 }
 // ---------- Sichtbarkeit: Daten sichern beim Verlassen, nachprüfen beim Zurückkehren ----------
@@ -13822,7 +13836,7 @@ function kiKick(delay = 0) {
   if (deadlines.length) ki.timer = setTimeout(() => { ki.timer = null; kiRender(); kiKick(); }, Math.max(1, Math.min(ki.open ? 60000 : Infinity, Math.min(...deadlines) - Date.now() + 1)));
 }
 function kiJob(request, options, type = 'load') {
-  if (!ki.worker) { ki.worker = new Worker(new URL('./shared/confluence-worker.mjs', location.href), { type: 'module' });
+  if (!ki.worker) { ki.worker = new Worker(new URL('./bundles/3.50.0/shared/confluence-worker.mjs', location.href), { type: 'module' });
     ki.worker.onmessage = ({ data }) => { if (!ki.pending || data.id !== ki.pending.id) return; if (data.progress) { ki.message = 'Historie: ' + data.progress.stage + (data.progress.total ? ` · ${data.progress.completed}/${data.progress.total}` : ` · ${data.progress.priceCandles || 0} Kurskerzen`); kiRender(); return; } const p = ki.pending; ki.pending = null; data.error ? p.reject(new Error(data.error)) : p.resolve(data); };
     ki.worker.onerror = () => { ki.pending?.reject(new Error('KI-Worker nicht verfügbar')); ki.pending = null; ki.worker?.terminate(); ki.worker = null; }; }
   return new Promise((resolve, reject) => { const id = ++ki.serial; ki.pending = { id, resolve, reject }; ki.worker.postMessage({ id, type, request, options }); });
@@ -14098,6 +14112,7 @@ botView = createBotView({ host: botPanel, globalHost: botGlobal, load: botLoad, 
 void botView.refresh();
 document.addEventListener('visibilitychange', () => { clearTimeout(botRefreshTimer); botRefreshTimer = null; if (!document.hidden) void botView.refresh(); });
 window.__g12 = { view: botView, tab: botTab, load: botLoad, command: botCommand };
+window.__g13 = { exportModelArchive: () => exportModelArchive(APP_VERSION), importModelArchive, validateModelArchive };
 window.__g11 = { view: po3View, next: kiNext };
 window.__g10 = { backtest: kiBacktest, historyView: kiHistoryView, serviceConfig: kiServiceConfig, serviceCards: kiServiceCards, get state() { return ki; }, cardState: kiCardState, render: kiRender, tab: kiTab, showChart: kiShowChart, stop: kiCancel, kick: kiKick, save: kiSaveConfig };
 for(const f of SET_FIELDS)stampSetting(f);renderIntegrity(); // 3.29.0: Abstammung der Einstellungen anlegen, Prüfliste zeigen
@@ -14399,7 +14414,8 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
                 <button type="button" class="button ghost" id="code-export">Textcode anzeigen / kopieren</button>
                 <button type="button" class="button ghost" id="code-import">Textcode einfügen / importieren</button>
               </div>
-              <div class="data-row">
+              <details class="ki-info"><summary>KI-/Bot-Originale zusätzlich sichern</summary><p>Die persönliche Sicherung enthält Positionen, Einstellungen und G09-Lernen. Konfluenz-Originale, PO3-Journal und lokale Bot-Simulation werden separat gesichert. Oracle-Dateien am Server sichern. Preis-/Referenzcaches und abgeleitete Karten/Quoten sind neu ladbar.</p><button type="button" class="button ghost" id="model-archive-save">Lokale KI-/Bot-Originale herunterladen</button><label class="check"><input type="checkbox" id="model-archive-bot"> Bot-Simulation nur in leerem Browserprofil wiederherstellen · deaktiviert</label><label>KI-/Bot-Archiv zusammenführen <input type="file" accept=".json,application/json" id="model-archive-file"></label><p id="model-archive-status" class="ki-note" role="status"></p></details>
+<div class="data-row">
                 <label>Passwort für die Datei <small>(optional)</small><span class="input-wrap"><input id="backup-pass" type="password" autocomplete="new-password" placeholder="leer lassen = unverschlüsselt"></span></label>
                 <button type="button" class="button primary-lite" id="backup-save">Backup herunterladen</button>
                 <button type="button" class="button primary-lite" id="backup-share" hidden>Teilen / in Dateien sichern</button>

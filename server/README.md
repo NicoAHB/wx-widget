@@ -175,3 +175,7 @@ Die App übernimmt PO3 ausdrücklich per `POST /v1/po3/config` (Auftrags-ID und 
 ### 2.7.0 – Bot-Laufsimulation
 
 Optional und standardmäßig AUS. `GET/POST /v1/bot/simulation` sowie `GET /v1/bot/simulation/commands/:id` benötigen den vorhandenen HTTPS-Zugang. Derselbe exakte Grenzkern wie lokal; ID/Revision und atomare Speicherung vor Bestätigung in `bot-simulation.json` (5 MiB/0600). Datei beim Update mitsichern. Beschädigter Zustand bleibt erhalten und stoppt nur Simulation. Kein privater Bitget-Orderexecutor, keine automatischen Strategie-Fills, Demo/Echtgeld gesperrt. Telegram-KI-Schalter verändert keinen Bot-Lauf. Details: [G12-SIMULATION.md](../docs/G12-SIMULATION.md) und [BITGET_EINRICHTUNG.md](../docs/BITGET_EINRICHTUNG.md).
+
+### 2.8.0 – vollständige Lieferbündel
+
+Installer lädt anhand `release-manifest.json` zuerst alle unveränderten Module, prüft Syntax/Hashes und tatsächliche Imports, dann Umschaltung auf eigenes `releases/`-Verzeichnis via `current`. Node-CLI berücksichtigt reale Symlinkpfade. Fehlerhafter/fehlender Teil lässt den bisherigen Stand lauffähig, `previous` ermöglicht den Rückfall; zwei Programmstände bleiben. Einstellungen und Zustandsdateien bleiben außerhalb des Programms erhalten. Sicherung/Update/Rückfall und praktische Abnahmegrenzen in [G13-LIEFERUNG.md](../docs/G13-LIEFERUNG.md).

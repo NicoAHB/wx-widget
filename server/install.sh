@@ -52,27 +52,63 @@ if ! node_ok; then
 fi
 say "1/7 Node.js $(node -v) ✓"
 
-# ---- 2. Programm ----
-mkdir -p "$DIR"
-curl -fsSL "$SRC/scalpdesk-247.mjs" -o "$DIR/scalpdesk-247.new.mjs" || die "Programm konnte nicht geladen werden ($SRC)."
-node --check "$DIR/scalpdesk-247.new.mjs" || die "Geladenes Programm ist beschädigt."   # Endung .mjs: als ES-Modul prüfen
-# 2.4.0 (G09 C6b): Engine und Marktvertrag vor dem Programmwechsel laden/prüfen.
-for part in pattern-engine pattern-monitor ki-monitor; do
-  curl -fsSL "$SRC/$part.mjs" -o "$DIR/$part.new.mjs" || die "Muster-Modul $part konnte nicht geladen werden."
-  node --check "$DIR/$part.new.mjs" || die "Muster-Modul $part ist beschädigt."
+# ---- 2. Programm: vollständiges geprüftes Bündel, dann eine Zeigerumschaltung ----
+mkdir -p "$DIR/releases"
+STAGE=$(mktemp -d "$DIR/releases/.stage.XXXXXX")
+trap 'rm -rf "$STAGE"' EXIT
+curl -fsSL "$SRC/release-manifest.json" -o "$STAGE/release-manifest.json" || die "Lieferliste konnte nicht geladen werden; bisheriges Programm bleibt."
+PARTS=$(node - "$STAGE/release-manifest.json" <<'NODE'
+const fs=require('fs'),j=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
+if(!/^2\.\d+\.\d+$/.test(j.version)||!Array.isArray(j.files)||j.files.length>100)throw Error('Lieferliste ungültig');
+for(const f of j.files){if(!/^(?:scalpdesk-247\.mjs|pattern-engine\.mjs|pattern-monitor\.mjs|ki-monitor\.mjs|install\.sh|shared\/[a-z0-9-]+\.mjs)$/.test(f.path)||!/^[a-f0-9]{64}$/.test(f.sha256))throw Error('Lieferpfad ungültig'); console.log(f.path);}
+NODE
+) || die "Lieferliste ungültig; bisheriges Programm bleibt."
+while IFS= read -r part; do
+  mkdir -p "$(dirname "$STAGE/$part")"
+  case "$part" in shared/*) URL="${SRC%/server}/$part";; *) URL="$SRC/$part";; esac
+  curl -fsSL "$URL" -o "$STAGE/$part" || die "Lieferdatei $part fehlt; bisheriges Programm bleibt."
+  case "$part" in *.mjs) node --check "$STAGE/$part" || die "Lieferdatei $part ist beschädigt.";; *.sh) bash -n "$STAGE/$part" || die "Installer ist beschädigt.";; esac
+done <<< "$PARTS"
+verify_bundle() {
+node - "$1" <<'NODE'
+const fs=require('fs'),p=require('path'),c=require('crypto'),dir=process.argv[2],j=JSON.parse(fs.readFileSync(p.join(dir,'release-manifest.json'),'utf8'));
+for(const f of j.files){const b=fs.readFileSync(p.join(dir,f.path));if(b.length!==f.bytes||c.createHash('sha256').update(b).digest('hex')!==f.sha256)throw Error('Lieferdatei widerspricht Liste: '+f.path);}
+NODE
+}
+verify_bundle "$STAGE" || die "Unvollständiger/vermischter Lieferstand; bisheriges Programm bleibt."
+mkdir -p "$STAGE/server"; cp "$STAGE/pattern-engine.mjs" "$STAGE/server/pattern-engine.mjs"
+node --input-type=module - "$STAGE" <<'NODE' || die "Modulgraph nicht importierbar; bisheriges Programm bleibt."
+import { pathToFileURL } from 'node:url';
+const base=pathToFileURL(process.argv[2]+'/'); await import(new URL('ki-monitor.mjs',base)); const app=await import(new URL('scalpdesk-247.mjs',base));
+if(typeof app.Watcher!=='function')throw Error('Dienstexport fehlt');
+NODE
+RELEASE=$(node - "$STAGE/release-manifest.json" <<'NODE'
+const fs=require('fs'),c=require('crypto'),b=fs.readFileSync(process.argv[2]),j=JSON.parse(b);console.log(j.version+'-'+c.createHash('sha256').update(b).digest('hex').slice(0,16));
+NODE
+)
+if [ -e "$DIR/releases/$RELEASE" ]; then verify_bundle "$DIR/releases/$RELEASE" || die "Vorhandenes Lieferbündel beschädigt; nicht überschrieben."; rm -rf "$STAGE"; else mv "$STAGE" "$DIR/releases/$RELEASE"; fi
+OLD=$(readlink "$DIR/current" 2>/dev/null || true)
+# Erstes Update eines älteren Installers: vollständige bisherige Programmdateien als Rückfallstand erhalten.
+if [ -z "$OLD" ] && [ -f "$DIR/scalpdesk-247.mjs" ]; then
+  OLD="releases/legacy-$(date +%s)"; mkdir -p "$DIR/$OLD"
+  for part in scalpdesk-247.mjs pattern-engine.mjs pattern-monitor.mjs ki-monitor.mjs install.sh shared server; do [ ! -e "$DIR/$part" ] || cp -a "$DIR/$part" "$DIR/$OLD/$part"; done
+  # Nur der alte CLI-Pfadvergleich benötigt die neue Symlink-Auflösung; Fach-/Zustandslogik bleibt unverändert.
+  node - "$DIR/$OLD/scalpdesk-247.mjs" <<'NODE'
+const fs=require('fs'),file=process.argv[2],old=fs.readFileSync(file,'utf8');fs.writeFileSync(file,old.replace('path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)','fs.realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)'));
+NODE
+fi
+if [ -n "$OLD" ] && [ "$OLD" != "releases/$RELEASE" ]; then ln -s "$OLD" "$DIR/previous.new"; mv -Tf "$DIR/previous.new" "$DIR/previous"; fi
+ln -s "releases/$RELEASE" "$DIR/current.new"; mv -Tf "$DIR/current.new" "$DIR/current"
+# Node löst den Einstieg auf den realen immutable Releasepfad auf; relative Imports bleiben in demselben Bündel.
+for part in scalpdesk-247.mjs pattern-engine.mjs pattern-monitor.mjs ki-monitor.mjs install.sh shared server; do
+  if [ -d "$DIR/$part" ] && [ ! -L "$DIR/$part" ]; then mv "$DIR/$part" "$DIR/$part.legacy"; fi
+  ln -s "current/$part" "$DIR/$part.new-link"; mv -Tf "$DIR/$part.new-link" "$DIR/$part"
 done
-for part in pattern-engine pattern-monitor ki-monitor; do mv "$DIR/$part.new.mjs" "$DIR/$part.mjs"; done
-# G10(e): unveränderte gemeinsame Module mit ihren relativen Imports installieren.
-mkdir -p "$DIR/shared" "$DIR/server"
-for part in confluence-core indicators pattern-score bitget-public bitget-patterns confluence-live confluence-replay confluence-replay-store confluence-history confluence-service po3-core po3-simulator po3-stream po3-feed po3-store po3-service bot-limits bot-simulation; do
-  curl -fsSL "${SRC%/server}/shared/$part.mjs" -o "$DIR/shared/$part.new.mjs" || die "Gemeinsames KI-Modul $part konnte nicht geladen werden."
-  node --check "$DIR/shared/$part.new.mjs" || die "KI-Modul $part ist beschädigt."
-done
-for part in confluence-core indicators pattern-score bitget-public bitget-patterns confluence-live confluence-replay confluence-replay-store confluence-history confluence-service po3-core po3-simulator po3-stream po3-feed po3-store po3-service bot-limits bot-simulation; do mv "$DIR/shared/$part.new.mjs" "$DIR/shared/$part.mjs"; done
-cp "$DIR/pattern-engine.mjs" "$DIR/server/pattern-engine.mjs"
-mv "$DIR/scalpdesk-247.new.mjs" "$DIR/scalpdesk-247.mjs"
-curl -fsSL "$SRC/install.sh" -o "$DIR/install.sh" 2>/dev/null || true
-say "2/7 Programm $(node "$DIR/scalpdesk-247.mjs" --version) nach $DIR ✓"
+trap - EXIT
+# Zwei Programmstände behalten, keine Zustands-/Konfigurationsdatei liegt in diesem Programmverzeichnis.
+PREVIOUS=$(readlink "$DIR/previous" 2>/dev/null || true)
+for candidate in "$DIR"/releases/*; do [ -d "$candidate" ] || continue; rel="releases/${candidate##*/}"; if [ "$rel" != "releases/$RELEASE" ] && [ "$rel" != "$PREVIOUS" ]; then case "${candidate##*/}" in 2.*-*|legacy-*) rm -rf "$candidate";; esac; fi; done
+say "2/7 Programm $(node "$DIR/scalpdesk-247.mjs" --version) nach $DIR ✓ (vollständiges Lieferbündel)"
 
 # ---- 3. Einstellungen ----
 id "$USR" >/dev/null 2>&1 || useradd --system --no-create-home --shell /usr/sbin/nologin "$USR"
