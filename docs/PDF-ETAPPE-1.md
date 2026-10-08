@@ -1,6 +1,6 @@
 # Orderflow-Panel – PDF-Etappe 1
 
-Arbeitsversion App/Service Worker **3.53.0**, Dienstquelle unverändert **2.9.0**. Die bisherigen KI-Verbesserungen wurden zuvor getrennt mit **3.52.0** veröffentlicht. Dieser Schritt setzt ausschließlich das Kerzen-Panel aus Bild 1 der angehängten PDF um.
+Veröffentlichte Version App/Service Worker **3.53.0**, Dienstquelle unverändert **2.9.0**. Die bisherigen KI-Verbesserungen wurden zuvor getrennt mit **3.52.0** veröffentlicht. Dieser Schritt setzt ausschließlich das Kerzen-Panel aus Bild 1 der angehängten PDF um. Öffentliche Dateien und Lieferung: [Liefernachweis](PDF-ETAPPE-1-LIEFERUNG.md).
 
 ## Änderungen
 
@@ -17,7 +17,7 @@ In dieser Etappe nur die **Anzeigeeinheit USDT oder Coins**, direkt im Panel. St
 
 ## Kurzer iPad-Test
 
-1. Zuerst persönliche Daten sichern. Die App über HTTPS öffnen und Version **3.53.0** prüfen; bei einer vorhandenen PWA das angebotene Update bewusst übernehmen und neu öffnen.
+1. Zuerst persönliche Daten sichern. [Die App über HTTPS öffnen](https://nicoahb.github.io/wx-widget/weather-widget-v2.html) und Version **3.53.0** prüfen; bei einer vorhandenen PWA das angebotene Update bewusst übernehmen und neu öffnen.
 2. BTC oder ETH öffnen. Beide Kerzenblöcke sind gefüllt, die unterste Zeile heißt „jetzt“. Auf den nächsten Minutenwechsel warten: die bisherige Zeile erhält ihre UTC-Zeit, eine neue „jetzt“-Zeile beginnt unten.
 3. USDT → Coins umschalten, App schließen/neu öffnen: Auswahl bleibt erhalten. „i“ öffnen und die Erklärung lesen. „Neu laden“ gleicht die Historie ab; Wiederholung ist zeitlich begrenzt.
 4. iPad quer/hoch drehen und Standard/Dashboard wechseln. Rechts erscheint das Panel nur bei genügend Platz; sonst darunter. Hell, Dunkel und eigene Hintergrundfarbe prüfen. Zahlen bleiben lesbar; Hauptchart-Vollbild öffnen und über dessen Schließen-Button wieder verlassen.
@@ -29,4 +29,4 @@ Die automatische Prüfung ersetzt keinen Test auf einem realen iPad/Safari. Gem�
 
 `tests/unit-orderflow.js` prüft den tatsächlichen reinen Kern; `tests/m74.js` den echten bestehenden Worker/REST-Weg, absichtlich verschiedene Spot-/Futures-Kurse, Datenqualität, echten Minutenabschluss, feste Zeilen, Speicherung, mobile Anordnung und Kontraste. Alle 123 registrierten Ziele wurden vollständig seriell geprüft; nach dem vollständigen unveränderten Leistungsnachlauf m6 3909/3909 Einzelprüfungen grün. Lint 0 Fehler (3/2 bestehende Warnungen). Erstbefunde und Rohlogs stehen im [Testnachweis](PDF-ETAPPE-1-TESTNACHWEIS.md).
 
-Automatische Abnahme abgeschlossen. Offen: Veröffentlichung/Liefernachweis und echte iPad-Abnahme. Spätere PDF-Etappen 2–7 sind hier nicht umgesetzt.
+Automatische Abnahme und Veröffentlichung/Liefernachweis abgeschlossen. Offen: echte iPad-/Safari-/CORS-Abnahme und Rückmeldung vor Etappe 2. Spätere PDF-Etappen 2–7 sind hier nicht umgesetzt.
