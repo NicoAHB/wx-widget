@@ -27,6 +27,6 @@ Die automatische Prüfung ersetzt keinen Test auf einem realen iPad/Safari. Gem�
 
 ## Prüfung
 
-`tests/unit-orderflow.js` prüft den tatsächlichen reinen Kern; `tests/m74.js` den echten bestehenden Worker/REST-Weg, absichtlich verschiedene Spot-/Futures-Kurse, Datenqualität, echten Minutenabschluss, feste Zeilen, Speicherung, mobile Anordnung und Kontraste. Bestehende PWA-/KI-/Chartprüfungen folgen vor einer Veröffentlichung; Erstbefunde und vollständige Nachläufe werden im Testnachweis festgehalten.
+`tests/unit-orderflow.js` prüft den tatsächlichen reinen Kern; `tests/m74.js` den echten bestehenden Worker/REST-Weg, absichtlich verschiedene Spot-/Futures-Kurse, Datenqualität, echten Minutenabschluss, feste Zeilen, Speicherung, mobile Anordnung und Kontraste. Alle 123 registrierten Ziele wurden vollständig seriell geprüft; nach dem vollständigen unveränderten Leistungsnachlauf m6 3909/3909 Einzelprüfungen grün. Lint 0 Fehler (3/2 bestehende Warnungen). Erstbefunde und Rohlogs stehen im [Testnachweis](PDF-ETAPPE-1-TESTNACHWEIS.md).
 
-Offen: abschließende automatische Regression/Liefernachweis und echte iPad-Abnahme. Spätere PDF-Etappen 2–7 sind hier nicht umgesetzt.
+Automatische Abnahme abgeschlossen. Offen: Veröffentlichung/Liefernachweis und echte iPad-Abnahme. Spätere PDF-Etappen 2–7 sind hier nicht umgesetzt.
