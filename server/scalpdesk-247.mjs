@@ -51,7 +51,7 @@ import { fileURLToPath } from 'node:url';
 import { patternConfig, patternCandles, patternCases, patternFresh, patternText, patternEnd } from './pattern-monitor.mjs';
 import { ConfluenceService, kiMessage, Po3Service, po3Message, BotSimulationRuntime } from './ki-monitor.mjs';
 
-export const VERSION = '2.9.0';
+export const VERSION = '2.10.0';
 const E = process.env;
 // Adressen (für Tests über Umgebungsvariablen änderbar)
 export const API = {
@@ -993,6 +993,10 @@ export class Watcher {
       try { body = JSON.parse(raw || '{}'); } catch { return send(400, { ok: false, error: 'Kein gültiges JSON.' }); }
     }
     if (route === 'GET /v1/state') return send(200, this.stateView());
+    if (route === 'POST /v1/orderflow/explain') {
+      if (!this.orderflowExplainer) { const { OrderflowExplainer } = await import('./orderflow-explainer.mjs'); this.orderflowExplainer = new OrderflowExplainer({ now: this.now }); }
+      const result = await this.orderflowExplainer.explain(body); return send(result.status, result.body);
+    }
     if (route === 'POST /v1/policy') {
       const before = policyView(this.pol), r = policyApply(this.pol, this.cmds, body, t);
       if (!r.repeat) {
