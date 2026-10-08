@@ -31,7 +31,15 @@ const check = (name, ok, info = '') => { ok ? pass++ : fail++; console.log(`${ok
     check('Originale nach Darstellungsfiltern unverändert', await page.evaluate(raw => JSON.stringify(__g10.state.cards.slice(0, 1)) === raw, original));
     check('KI-Bereich nutzt am Desktop mehr als 900px Breite', await page.locator('#ki-signal-panel').evaluate(n => n.getBoundingClientRect().width > 900), JSON.stringify(await page.evaluate(() => ({ html: document.documentElement.dataset, widths: ['ki-signal-panel', 'alarms'].map(id => [id, document.getElementById(id).getBoundingClientRect().width]), control: getComputedStyle(document.querySelector('.col-control')).gridArea }))));
     for (const layout of ['standard', 'dashboard']) for (const width of [320, 390, 768, 1440]) { console.log('Prüfe Layout', layout, width); await page.setViewportSize({ width, height: 1000 }); await page.evaluate(layout => { document.documentElement.dataset.presentation = layout; document.documentElement.dataset.layout = innerWidth < 1100 ? 'tablet' : 'desktop'; }, layout);
-      check(`${layout} ${width}px: gemeinsame Filter ohne Seitenüberlauf`, await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)); }
+      check(`${layout} ${width}px: gemeinsame Filter ohne Seitenüberlauf`, await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
+      if (width === 1440) {
+        const ratio = page.locator('#ki-list [data-ki-id] .ki-grid p:last-child').first(); await ratio.scrollIntoViewIfNeeded();
+        const visible = await ratio.evaluate(n => { const r = n.getBoundingClientRect(), hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return { ok: n.contains(hit), hit: hit?.closest('[id]')?.id, rect: { x: r.left, y: r.top, width: r.width, height: r.height } }; });
+        check(`${layout}: rechtes Preis-/Risikofeld beim Scrollen ohne Überlagerung durch Seitenspalte`, visible.ok, JSON.stringify(visible));
+      }
+    }
+    await page.evaluate(() => { document.documentElement.dataset.presentation = 'standard'; }); await page.click('#ki-price-tab');
+    check('Preisalarmansicht behält die bisher mitlaufende Desktop-Seitenspalte', await page.evaluate(() => document.documentElement.dataset.kiOverview !== '1' && getComputedStyle(document.querySelector('.col-control')).position === 'sticky'));
     await page.evaluate(() => __g10.stop()); check('Keine JavaScript-Fehler', !errors.length, errors.join('; ')); check('Keine zusätzlichen Abrufe durch Modell-/Listenfilter', calls > 0 && await page.evaluate(() => !__g05.state.positions.length && !__g05.state.demoPositions.length));
     await ctx.close();
   } finally { await browser?.close(); await h.teardown(); }
