@@ -10,7 +10,7 @@ Automatische Tests für die App (`weather-widget-v2.html`) und den 24/7-Dienst (
 ## Aufruf
 | Befehl | Was er tut | Dauer |
 |---|---|---|
-| `bash run-all.sh` | alle Tests nacheinander (Einheitentests, Installer, m3–m68, ui, functional, Statusseite, Rauchtest, Sichtprüfung) | etwa 2,5 Stunden |
+| `bash run-all.sh` | alle Tests nacheinander (Einheitentests, Installer, m3–m69, ui, functional, Statusseite, Rauchtest, Sichtprüfung) | etwa 2,5 Stunden |
 | `node m51.js` | ein einzelner Test, hier G02 (Lose, Nachkauf, Teilabschluss) | wenige Minuten |
 | `node m51.js svc` | nur ein Abschnitt eines Tests | |
 | `bash lint.sh` | ESLint über App und G10-Fachmodule (0 Fehler, 3 bekannte App-Warnungen) | Sekunden |
@@ -74,3 +74,5 @@ Ausgabe je Test: `✓`/`✗` je Prüfung und am Ende `n/m bestanden`.
 - **G12 Kern:** `unit-bot-limits.js` 37/37 (tatsächliche exakte Geld-/Mengenschwellen, eigene Laufbasis, vorzeichenbehaftetes Funding, 10 Sekunden, Fremdbestand/Teilfill/Modus und Schutzwirkung); `unit-bot-simulation.js` 16/16 (serialisierte Commands, IDs/Revisionen, Save-vor-Bestätigung, Restore und Protokollgrenze). Simulation keine Börsenausführung; Demo/Echtgeld gesperrt. App-/Oracleanbindung folgt separat.
 
 - **G12 Integration:** `m68.js` 23/23: tatsächliche native IDB, Oracle-HTTP-Commands, verlorene Startantwort, Stopps/Reload, globales Bestandsveto und 320/390/768/1440 Pixel. Kein automatischer Strategieexecutor/privater Börsenadapter. Drei Reiter mit eigener Sichtbarkeit/ARIA/Tastatur. Im Gesamtlauf.
+
+- **G13:** `unit-model-archive.js` 13 Fälle (Originale/Versionen/Quellen/Kosten, separate Bot-JSON, kein Auto-Start), `unit-release.js` 6 Fälle (reproduzierbare PWA-/Dienstliste, kompletter Importgraph, Version/Lizenz). `m69.js` prüft tatsächliche native Archive, Dateiabläufe, Teilfehler, den bisherigen 3.45-Service-Worker, Hashabbruch/Retry, Cachegrenze und frischen Offline-Start; keine Safari-/VM-Abnahme. `inst-247.sh` jetzt 35 Fälle mit fehlerhaftem Download und tatsächlichem Programm-Rückfall. `unit-247d.js` nur erwartete Dienstversion auf 2.8.0 erhöht, Schlussalarm-Regeln unverändert. `run-all.sh` erhält Fehlerstatus über Pipefail/ERR bis zum Ende; serieller Vollnachweis speichert zusätzlich jedes Ziel mit vollständigem Log und Exitcode.
