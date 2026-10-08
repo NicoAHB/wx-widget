@@ -1,11 +1,11 @@
 {
-  "version": "2.9.0",
-  "appVersion": "3.53.0",
+  "version": "2.10.0",
+  "appVersion": "3.54.0",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
-      "sha256": "14633b740e97a684b0d177ba90a497592394eb5ee47bb954721b4bb9feefe770",
-      "bytes": 125792
+      "sha256": "a75cd705e1e49476388db60fe5fc1861a8c3d73f26f46d999d6cf874cc9bafc6",
+      "bytes": 126139
     },
     {
       "path": "pattern-engine.mjs",
@@ -23,9 +23,14 @@
       "bytes": 594
     },
     {
+      "path": "orderflow-explainer.mjs",
+      "sha256": "b591fc77af8ff8735841c3d182518d710bf194e4efb1120eeb685efff9ab8b0d",
+      "bytes": 3864
+    },
+    {
       "path": "install.sh",
-      "sha256": "117a5ca4cd400799df42feda6a5187272490d25ad72c86035e598638e4b8038c",
-      "bytes": 19165
+      "sha256": "17e6e443e5f36167d551e121b2f5deedfd7e9e3a801e2eab3fbe5c0a54916d4a",
+      "bytes": 19268
     },
     {
       "path": "shared/bitget-patterns.mjs",
@@ -144,13 +149,38 @@
     },
     {
       "path": "shared/orderflow-core.mjs",
-      "sha256": "57409455e2b1db8d91e958e132c394c646df9a567176758adc35e1085364b3ed",
-      "bytes": 5126
+      "sha256": "2579ff7cd28586ed206629b27d2db2cb19677cbd8e013bf0c9839774ad6337b7",
+      "bytes": 6636
+    },
+    {
+      "path": "shared/orderflow-demo.mjs",
+      "sha256": "6ca14bcddad69ec5511e605ec66ab181ee42a38ca0f6a0e0616a6620bdd6b3c7",
+      "bytes": 7497
+    },
+    {
+      "path": "shared/orderflow-journal.mjs",
+      "sha256": "46be78d92a5434e6eb21c830e1afc14332776907e4c0cecb79885df0e748a834",
+      "bytes": 9035
+    },
+    {
+      "path": "shared/orderflow-signal-core.mjs",
+      "sha256": "c4e413e4733ea0638f0574137a9321ac087e42391802e8ebaf1446103dcb965c",
+      "bytes": 20547
+    },
+    {
+      "path": "shared/orderflow-signal-feed.mjs",
+      "sha256": "ed69334f8f4e9d078d3a7bf1821bbee4153c12c9b24e6e033edc53f07df69926",
+      "bytes": 9290
+    },
+    {
+      "path": "shared/orderflow-signal-view.mjs",
+      "sha256": "39c8e3f67b7dc00902890f78cebbeed25f4854d2c7b99d4275ed761046d1ff71",
+      "bytes": 39231
     },
     {
       "path": "shared/orderflow-view.mjs",
-      "sha256": "521108fb0d70a6fc2131714bbea292b79b3f70476e7923df237111fb50239d4d",
-      "bytes": 10593
+      "sha256": "c85e3c46a23bbdf0e1b7cea0aef583fd73d5035e10129e14f5db0d7277bc9de4",
+      "bytes": 15185
     },
     {
       "path": "shared/pattern-score.mjs",
@@ -196,6 +226,11 @@
       "path": "shared/signal-overview.mjs",
       "sha256": "f5428bbba259f07eac8d7c0cebf5569624e6d1d14db43ce5be0a7c1505468bf4",
       "bytes": 3314
+    },
+    {
+      "path": "shared/widget-state.mjs",
+      "sha256": "70092b206adad502d0cc1b16c4b642cc28b2914d392a046a1cf25d4f8b77214a",
+      "bytes": 1598
     }
   ]
 }

@@ -11,7 +11,7 @@ const check = (name, ok, detail = '') => { ok ? pass++ : fail++; console.log(`${
     await page.waitForFunction(() => __g05.state.sourceFor === 'BTCUSDT' && !__g05.state.busy && __g05.state.prices.BTCUSDT?.live);
     check('Zwei Blöcke mit je vier geschlossenen Kerzen und jetzt', await page.locator('.of-block').count() === 2 && await page.locator('.of-row:not(.of-legend)').count() === 10 && await page.locator('.of-running').count() === 2);
     check('Bestehende Chartleisten bleiben gemeinsam beim Chart, Zusatzpanel daneben oder danach', await page.evaluate(() => { const pane = document.querySelector('.of-chart-pane'); return ['chart', 'fib-strip', 'lmap-strip', 'wh-strip'].every(id => pane.contains(document.getElementById(id))) && pane.contains(document.querySelector('.chart-footer')) && !pane.contains(document.getElementById('orderflow-panel')); }));
-    check('Futures-Quelle ausdrücklich genannt, Hauptchart weiterhin Spot', /BTCUSDT.*Binance USDT-Futures/.test(await page.textContent('.of-source')) && await page.evaluate(() => __g05.state.source === 'spot'));
+    check('Futures-Quelle ausdrücklich genannt, Hauptchart weiterhin Spot', /BTCUSDT.*Binance USDT-Futures/.test(await page.textContent('.of-head+.of-source')) && await page.evaluate(() => __g05.state.source === 'spot'));
     check('Worker liefert echtes Taker-/Quotevolumen in beiden Zeitebenen', await page.evaluate(() => ['1m', '1h'].every(iv => { const c = __pdf1.view.state.series[iv].at(-1); return c.source === 'ws' && c.usdt && c.coins; })));
     check('100-facher Futures-Kurs überschreibt Spot weder im Chart noch im Preisbestand', await page.evaluate(() => __pdf1.view.state.series['1m'].at(-1).c > 6000000 && __g05.state.candles.at(-1).close < 100000 && __g05.state.prices.BTCUSDT.price < 100000));
     check('Zusätzlicher Futures-Markt zählt nicht zum bestehenden globalen Feed', await page.evaluate(() => !__pdf1.live.need.has('futures') && __pdf1.live.need.has('spot')));
@@ -19,8 +19,8 @@ const check = (name, ok, detail = '') => { ok ? pass++ : fail++; console.log(`${
     check('Eine gemeinsame Futures-Verbindung, 1m/1h einmal, korrekter /market/-Pfad', conns.length === 1 && conns[0].path.startsWith('/market/') && conns[0].streams.filter(s => s === 'btcusdt@kline_1m').length === 1 && conns[0].streams.includes('btcusdt@kline_1h'));
     const log = await h.ctl('/log'), requests = log.filter(e => e.path === '/fapi/v1/klines');
     check('Start-Historie begrenzt: 30 Minuten, 5 Stunden', requests.some(e => e.q?.limit === '30' && e.q.interval === '1m') && requests.some(e => e.q?.limit === '5' && e.q.interval === '1h'), JSON.stringify(requests.map(e => e.q)));
-    await page.evaluate(() => { window.m74Rows = [...document.querySelectorAll('.of-row')]; window.m74Height = document.getElementById('orderflow-panel').offsetHeight; });
-    await page.locator('.of-info>summary').click(); check('Info erklärt Taker, Delta und konkrete nächste Handlung', /Taker.*Delta.*Trend, Stop-Loss und Gebühren prüfen/s.test(await page.textContent('.of-explanation')));
+    await page.evaluate(() => { window.m74Rows = [...document.querySelectorAll('.of-row')]; window.m74Heights = [...document.querySelectorAll('.of-block')].map(n => n.offsetHeight); });
+    await page.locator('.of-info>summary').click(); check('Info erklärt Taker, Delta und konkrete nächste Handlung', /Taker.*Delta.*Trend, Stop-Loss und Gebühren prüfen/s.test(await page.textContent('.of-info .of-explanation')));
     await page.locator('.of-info>summary').click(); await page.selectOption('#of-unit', 'coins');
     check('Einheitenwahl gespeichert und im persönlichen Backup enthalten', await page.evaluate(() => __g05.backupPayload().prefs['scalpdesk.orderflow.v1'].unit === 'coins' && __pdf1.view.state.unit === 'coins'));
     check('Coinwerte entsprechen gelieferten Mengen, nicht Quotevolumen', await page.evaluate(() => { const c = __pdf1.view.state.series['1m'].at(-1); return c.usdt.total / Math.max(c.coins.total, 1) > 100000; }));
@@ -45,7 +45,7 @@ const check = (name, ok, detail = '') => { ok ? pass++ : fail++; console.log(`${
     await page.waitForFunction(t => __pdf1.view.state.series['1m'].some(c => c.t === Number(t) && c.closed), before);
     await page.waitForFunction(t => { const rows = [...document.querySelectorAll('.of-block[data-interval="1m"] .of-row:not(.of-legend)')]; return rows[3].dataset.time === t && rows[3].dataset.closed === 'true'; }, before);
     check('Abschluss wird Zeitzeile vor jetzt, neue laufende Zeile unten', await page.evaluate(t => { const rows = [...document.querySelectorAll('.of-block[data-interval="1m"] .of-row:not(.of-legend)')]; return rows[3].dataset.time === t && rows[3].dataset.closed === 'true' && rows[4].dataset.running === 'true' && Number(rows[4].dataset.time) === Number(t) + 60000; }, before));
-    check('Live/Abschluss erhält feste DOM-Zeilen und Panelhöhe', await page.evaluate(() => m74Rows.every((n, i) => n === document.querySelectorAll('.of-row')[i]) && m74Height === document.getElementById('orderflow-panel').offsetHeight));
+    check('Live/Abschluss erhält feste DOM-Zeilen und Höhe beider Kerzenblöcke', await page.evaluate(() => m74Rows.every((n, i) => n === document.querySelectorAll('.of-row')[i]) && m74Heights.every((h, i) => h === document.querySelectorAll('.of-block')[i].offsetHeight)));
     await page.fill('#symbol', 'ETH'); await page.press('#symbol', 'Enter');
     await page.waitForFunction(() => __pdf1.view.state.symbol === 'ETHUSDT' && __pdf1.view.state.series['1m'].length >= 5);
     const original = await page.evaluate(() => JSON.stringify(__pdf1.view.state.series));

@@ -8,6 +8,19 @@ Automatische Tests für die App (`weather-widget-v2.html`) und den 24/7-Dienst (
 - Einmalig im Ordner `tests/`: `npm install`.
 
 ## Aufruf
+
+### Orderflow-/BTC-Ergänzung (3.54.0)
+
+- `unit-orderflow.js`, `unit-orderflow-demo.js`: reale OHLC-/Takerfelder, waagerechte Kerzengeometrie, neutrale Körpergrenze, UTC-Restzeit und gebührenfreier eigener Demo-Bestand mit Speichergrenzen.
+- `unit-orderflow-signal.js`: BTC-Stufen/Grenzen, Beschleunigung/Gegenbewegung, Glättung, identischer Score in beiden Positionszuständen, Rohwert-Veto, Long/Short, Schutzvorrang, Tickraster und bestätigte Futures-Indikatoren.
+- `unit-orderflow-feed.js`: tatsächlicher asynchroner Verbraucher, begrenzte Historien, keine doppelten BTC-Abos, Quellen-/Kontext-/Epochenschutz, Pause/Frische und Kontraktraster.
+- `unit-orderflow-journal.js`: Originale, tatsächliche 5/15/30-Minuten-Folgekurse, unbekannte Lücken, getrennte Warten-/Positionsauswertung, beobachtete Trade-Extrema/erste Ausstiegsempfehlung, CSV und Offline/Timeout-Unterscheidung.
+- `unit-orderflow-explainer.js`: beide Anbieter nur mit Attrappen, Modellfreigabe, echtes 8-s-Zeitlimit, globaler 30-s-Abstand sowie echter lokaler HTTP-Endpoint mit Schlüssel-/CORS-/Regelprüfung. Keine echten Schlüssel/Anbieteraufrufe.
+- `m76.js`: Kerzenbild/Kurztext/Timer, echte Klickkurse mit Hebel, rote Verlusttaste, Neustart/Sicherung, Touch und Spot-/Originalschutz.
+- `m77.js`: echte App/Worker-Signalansicht, Ring, BTC, antippbare OHLC-Einstiege, Positionsbegleitung/Score/Neustart, Journal/CSV und gemeinsamer Teil-Ausfall mit lokalem Neuversuch.
+- `m78.js`: tatsächliche KI-Anbindung mit Antwort-/Zeitlimit-/Kontextschutz und Regel-Fallback, alle acht G14-Farbpaletten mit AA-Kontrast.
+- Alle neuen Ziele gehören zum seriellen Gesamtlauf (131 Ziele). Kein Parallelstart von Browser-/Installer-Tests: Die bestehenden festen Testports werden geteilt. Reale iPad-/Oracle-/Anbieterabnahme wird separat ausgewiesen.
+
 | Befehl | Was er tut | Dauer |
 |---|---|---|
 | `bash run-all.sh` | alle Tests nacheinander (Einheitentests, Installer, m3–m69, ui, functional, Statusseite, Rauchtest, Sichtprüfung) | etwa 2,5 Stunden |

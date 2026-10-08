@@ -391,6 +391,7 @@ function rest(req, res) {
   if (u.pathname === '/api/v3/ticker' && !fut) return decTicker(req, res, q);   // 3.36.0 (G08)
   if (u.pathname === '/api/v3/exchangeInfo' && !fut) return json(res, 200, decExchangeInfo());
   switch (u.pathname) {
+    case '/fapi/v1/exchangeInfo': return json(res, 200, { symbols: Object.keys(book).filter(symbol => symbol.endsWith('USDT')).map(symbol => ({ symbol, filters: [{ filterType: 'PRICE_FILTER', tickSize: '0.0001' }] })) });
     case '/api/v3/ping': return json(res, 200, {});
     case '/api/v3/klines': case '/fapi/v1/klines': if (!need()) return; if (!IV[q.interval]) return json(res, 400, { code: -1120, msg: 'bad interval' }); return json(res, 200, hist(sym, q.interval, Number(q.limit) || 500, Number(q.startTime) || 0, Number(q.endTime) || 0));
     case '/api/v3/ticker/price': case '/fapi/v1/ticker/price': {
@@ -411,6 +412,7 @@ function rest(req, res) {
     case '/fapi/v1/premiumIndex': if (!need()) return; return json(res, 200, { symbol: sym, markPrice: String(price[sym]), indexPrice: String(price[sym]), lastFundingRate: '0.00010000', interestRate: '0.0001', nextFundingTime: Math.ceil(Date.now() / 288e5) * 288e5, time: Date.now() });
     case '/fapi/v1/openInterest': if (!need()) return; return json(res, 200, { symbol: sym, openInterest: oiAt(sym, 3e5, Math.floor((Date.now() - 5000) / 3e5), Math.floor((Date.now() - 5000) / 3e5)).toFixed(3), time: Date.now() });
     case '/futures/data/openInterestHist': if (!need()) return; if (!OIP[q.period]) return json(res, 400, { code: -1130, msg: 'Invalid period.' }); return json(res, 200, oiHist(sym, q));
+    case '/futures/data/globalLongShortAccountRatio': if (!need()) return; return json(res, 200, [{ symbol: sym, longShortRatio: '1.2', timestamp: Math.floor(Date.now() / 300000) * 300000 }]);
     default: return json(res, 404, { code: -1, msg: 'not mocked ' + u.pathname });
   }
 }
@@ -460,7 +462,7 @@ function pushAll(fut) {
       const m = /^([a-z0-9]+)@kline_(\w+)$/.exec(st), mp = /^([a-z0-9]+)@markPrice(@1s)?$/.exec(st);
       if (m) {
         const sym = m[1].toUpperCase(), iv = m[2]; if (!(sym in (fut ? FUT : SPOT))) continue;
-        if (fut && orderflowMock.hold && ['1m', '1h'].includes(iv)) continue;
+        if (fut && orderflowMock.hold) continue;
         const mult = fut ? orderflowMock.multiplier : 1;
         const k = cur(sym, iv, now), send = (x, closed) => c.ws.send(JSON.stringify({ stream: st, data: { e: 'kline', E: now - (fut ? orderflowMock.staleMs : 0), s: sym, k: { t: x.t, T: x.T, s: sym, i: iv, f: 1, L: 2, o: String(x.o * mult), c: String(x.c * mult), h: String(x.h * mult), l: String(x.l * mult), v: String(x.v.toFixed(3)), n: 5, x: closed, q: fut && orderflowMock.missing ? undefined : String((x.v * (x.o + x.h + x.l + x.c) / 4 * mult).toFixed(4)), V: String((x.v * takerShare(x.t, x.o, x.c)).toFixed(3)), Q: String((x.v * (x.o + x.h + x.l + x.c) / 4 * mult * takerShare(x.t, x.o, x.c)).toFixed(4)), B: '0' } } }));
         const seenKey = '_seen_' + st;
