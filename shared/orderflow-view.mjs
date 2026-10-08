@@ -1,6 +1,6 @@
 import { ORDERFLOW_PERIODS, ORDERFLOW_LIMITS, restCandle, liveCandle, mergeCandles, visibleCandles, dataQuality, compactVolume } from './orderflow-core.mjs';
 
-// Ein eigener Verbraucher des bestehenden Binance-Workers; kein zweiter Feed, keine Signale/Orders.
+// Verbraucher des bestehenden Binance-Workers; kein zweiter Worker/keine doppelten Futures-Abos, keine Signale/Orders.
 export function createOrderflowView({ root, context, now, fetchRows, readPrefs, savePrefs, streamsChanged }) {
   const doc = root.ownerDocument, state = { symbol: '', paused: false, unit: 'usdt', series: { '1m': [], '1h': [] }, errors: {}, unavailable: false, epoch: 0, since: 0 };
   const blocks = {}, pending = new Map(), attempted = new Set(), loadedAt = {}, repaired = {};

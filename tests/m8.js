@@ -25,9 +25,10 @@ const colors = page => page.evaluate(() => {
 const tests = {
   async zombie(browser) {
     const { ctx, page, errors } = await open(browser, desk);
+    const market = await page.evaluate(() => __g05.state.source), watchedHost = (await h.ctl('/state')).conns.find(c => /fstream/.test(c.host) === (market === 'futures'))?.host;
     await page.evaluate(() => { window.__feed = []; const s = document.getElementById('status'), add = () => { if (window.__feed.at(-1) !== s.dataset.feed) window.__feed.push(s.dataset.feed); }; add(); new MutationObserver(add).observe(s, { attributes: true, attributeFilter: ['data-feed'] }); });
     const t0 = Date.now(), z = await h.ctl('/zombie');
-    const opened = await waitLog(t0, e => e.ws === 'open', 12000), L = await log(t0 - 1);
+    const opened = await waitLog(t0, e => e.ws === 'open' && e.host === watchedHost, 12000), L = (await log(t0 - 1)).filter(e => e.host === watchedHost);
     const probe = L.find(e => e.ws === 'msg' && e.zombie && e.d?.method === 'LIST_SUBSCRIPTIONS'), closed = L.find(e => e.ws === 'close' && e.zombie);
     check('Verbindung verstummt (halboffen, wie nach Standby oder WLAN-Wechsel)', z.zombies >= 1, `${z.zombies} Verbindung(en)`);
     check('Wächter schickt eine Kontrollanfrage an Binance', !!probe && probe.at - t0 <= 4700, probe ? `${probe.at - t0} ms nach dem Verstummen` : 'keine');

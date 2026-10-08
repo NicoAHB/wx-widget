@@ -147,8 +147,8 @@
     },
     {
       "path": "./bundles/3.53.0/shared/orderflow-view.mjs",
-      "sha256": "1d9d9b8ee79c9f0b249c1e29b5a91e6909dda25ba0e1a6e26f05048876169abb",
-      "bytes": 10574,
+      "sha256": "521108fb0d70a6fc2131714bbea292b79b3f70476e7923df237111fb50239d4d",
+      "bytes": 10593,
       "alias": "./shared/orderflow-view.mjs"
     },
     {
