@@ -10,7 +10,7 @@ Automatische Tests für die App (`weather-widget-v2.html`) und den 24/7-Dienst (
 ## Aufruf
 | Befehl | Was er tut | Dauer |
 |---|---|---|
-| `bash run-all.sh` | alle Tests nacheinander (Einheitentests, Installer, m3–m66, ui, functional, Statusseite, Rauchtest, Sichtprüfung) | etwa 2,5 Stunden |
+| `bash run-all.sh` | alle Tests nacheinander (Einheitentests, Installer, m3–m68, ui, functional, Statusseite, Rauchtest, Sichtprüfung) | etwa 2,5 Stunden |
 | `node m51.js` | ein einzelner Test, hier G02 (Lose, Nachkauf, Teilabschluss) | wenige Minuten |
 | `node m51.js svc` | nur ein Abschnitt eines Tests | |
 | `bash lint.sh` | ESLint über App und G10-Fachmodule (0 Fehler, 3 bekannte App-Warnungen) | Sekunden |
@@ -70,3 +70,7 @@ Ausgabe je Test: `✓`/`✗` je Prüfung und am Ende `n/m bestanden`.
 - **G11 Kern:** `unit-po3.js` (34 Fälle) und `unit-po3-stream.js` (16 Fälle) importieren echte gemeinsame Module: Preisanker/Score, Limitreihenfolge, Restmenge/Gebühren über Abschnitte, Journal-Dublettensperre, vollständige OHLC-Regelkette Long/Short, Prefixgleichheit und CSV-Originale. Öffentliche Testantworten sind keine Börsenausführung. App-/Dienstanbindung folgt separat.
 
 - **G11 Integration:** `unit-po3.js` abschließend 35/35, `unit-po3-stream.js` 19/19 (auch neue Struktur/Sweep-Reihenfolge, Original-ID/Planprüfung und FVG-Vergleich), `unit-po3-service.js` 20/20 (tatsächlicher gemeinsamer Adapter/Watcher, separate Stufen, Zustandsdatei und Sendefreigabe), `m67.js` 22/22 (echter KI-Worker/IDB, Restore, Mobile/Tablet/Desktop, Vollbild und bestätigtes HTTP-Command). Gezielte bestehende Prüfungen m63 36/36, m66 11/11, Installer 29/29, unit-confluence-service 26/26, Bitget 55/55 und Enginegleichheit 38/38. Gesamtlauf vor Veröffentlichung noch ausstehend; echte Safari/VM-Abnahme nicht bewiesen.
+
+- **G12 Kern:** `unit-bot-limits.js` 37/37 (tatsächliche exakte Geld-/Mengenschwellen, eigene Laufbasis, vorzeichenbehaftetes Funding, 10 Sekunden, Fremdbestand/Teilfill/Modus und Schutzwirkung); `unit-bot-simulation.js` 16/16 (serialisierte Commands, IDs/Revisionen, Save-vor-Bestätigung, Restore und Protokollgrenze). Simulation keine Börsenausführung; Demo/Echtgeld gesperrt. App-/Oracleanbindung folgt separat.
+
+- **G12 Integration:** `m68.js` 23/23: tatsächliche native IDB, Oracle-HTTP-Commands, verlorene Startantwort, Stopps/Reload, globales Bestandsveto und 320/390/768/1440 Pixel. Kein automatischer Strategieexecutor/privater Börsenadapter. Drei Reiter mit eigener Sichtbarkeit/ARIA/Tastatur. Im Gesamtlauf.

@@ -1895,6 +1895,9 @@ html{scroll-padding-top:calc(var(--lb-h,56px) + 16px)}
 </style>
   <script type="module">
 // 3.45.0 (G10c): der vorhandene Binance-/G07-Kern bleibt eigenständig.
+import { BotSimulationRuntime } from './shared/bot-simulation.mjs';
+import { readBotSimulation, saveBotSimulation } from './shared/bot-simulation-store.mjs';
+import { createBotView } from './shared/bot-view.mjs';
 import { createPo3View } from './shared/po3-view.mjs';
 import { cardState as kiCardState, scoreLabel as kiScoreLabel } from './shared/confluence-live.mjs';
 import { divergenceInfo as kiDivergenceInfo, parametersKey as kiParametersKey } from './shared/confluence-core.mjs';
@@ -2870,7 +2873,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
 // 3.43.0 (G10a): reiner Fachkern in shared/; Datenquelle und Karten folgen getrennt.
 // 3.44.0 (G10b): öffentlicher Adapter in shared/bitget-public.mjs; sichtbare Anbindung folgt mit G10(c).
-const APP_VERSION = '3.48.0', docEl = document.documentElement;
+const APP_VERSION = '3.49.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -13622,6 +13625,8 @@ async function recCopy() {
 })();
 // ---------- 3.45.0 (G10c): öffentliche lokale KI-Signale, eigener Worker/Datenspeicher ----------
 var kiReady = false;
+var botView = null, botRuntimeLocal = null, botOpen = false;
+let botRefreshTimer = null;
 var po3View = null;
 let po3Pending = new Set();
 const PO3_CFG_KEY = 'scalpdesk.po3.settings.v1';
@@ -13782,10 +13787,11 @@ function kiBuild() {
   const lines = el('label'), input = el('input'); input.id = 'ki-chart-lines'; input.type = 'checkbox'; input.addEventListener('change', () => { ki.chartOn = input.checked; ki.chartFollow = input.checked; $('ki-chart-toggle').checked = input.checked; kiFollowChart(); kiDrawChart(); }); lines.append(input, ' KI-Signal');
   const note = el('p', 'ki-note'); note.id = 'ki-chart-note'; const area = el('div'); area.id = 'ki-chart'; chart.append(head, lines, note, area); $('chart-sec').after(chart);
   for (const [id, show] of [['ki-price-tab', false], ['ki-signal-tab', true]]) $(id).addEventListener('click', () => kiTab(show));
-  document.querySelector('.ki-tabs').addEventListener('keydown', e => { if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return; e.preventDefault(); const show = e.key === 'End' || (e.key !== 'Home' && !ki.open); kiTab(show); $(show ? 'ki-signal-tab' : 'ki-price-tab').focus(); });
+  document.querySelector('.ki-tabs').addEventListener('keydown', e => { if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return; e.preventDefault(); const ids = ['ki-price-tab', 'ki-signal-tab', 'ki-bot-tab'], current = botOpen ? 2 : ki.open ? 1 : 0, i = e.key === 'Home' ? 0 : e.key === 'End' ? 2 : (current + (e.key === 'ArrowRight' ? 1 : -1) + 3) % 3; if (i === 2) botTab(); else kiTab(i === 1); $(ids[i]).focus(); });
   for (const id of ['alarm-here', 'alarm-toggle']) $(id).addEventListener('click', () => kiTab(false), true);
 }
 function kiTab(open) {
+  botOpen = false; if ($('bot-simulation-panel')) { $('bot-simulation-panel').hidden = true; $('ki-bot-tab').setAttribute('aria-selected', 'false'); $('ki-bot-tab').tabIndex = -1; }
   ki.open = open; $('ki-price-panel').hidden = open; $('ki-signal-panel').hidden = !open;
   for (const [id, on] of [['ki-price-tab', !open], ['ki-signal-tab', open]]) { $(id).setAttribute('aria-selected', String(on)); $(id).tabIndex = on ? 0 : -1; }
   if (open) { const unread = ki.cards.some(c => !c.read); ki.cards.forEach(c => { c.read = true; }); if (unread) void kiUpdateCards(cards => cards.map(c => ({ ...c, read: true }))); }
@@ -14062,6 +14068,36 @@ bc?.addEventListener('message', ({ data: msg }) => {
   }
   kiRender(); kiKick();
 });
+// G12: optionaler eigener Reiter; keine Preisfeeds/Privatschlüssel oder automatischen Trades.
+function botTab() { botOpen = true; ki.open = false; $('ki-price-panel').hidden = true; $('ki-signal-panel').hidden = true; $('bot-simulation-panel').hidden = false;
+  for (const id of ['ki-price-tab', 'ki-signal-tab', 'ki-bot-tab']) { $(id).setAttribute('aria-selected', String(id === 'ki-bot-tab')); $(id).tabIndex = id === 'ki-bot-tab' ? 0 : -1; } void botView.refresh(); }
+async function botLoad(destination) {
+  if (destination === 'oracle') { if (!svcOn()) throw new Error('HTTPS-Dienst 2.7.0 zuerst einrichten; lokal kann simuliert werden.'); const r = await svcFetch('/v1/bot/simulation'); if (r.status !== 200 || !r.j?.ok) throw new Error(r.j?.error || 'Bot-Simulationsstand nicht verfügbar'); return r.j.bot; }
+  const saved = await readBotSimulation(); botRuntimeLocal?.stop(); botRuntimeLocal = new BotSimulationRuntime({ saved, persist: saveBotSimulation, notify: state => { if (botView?.state.destination === 'local') botView.accept(state); } }); return botRuntimeLocal.view();
+}
+async function botCommand(destination, action) {
+  const key = 'scalpdesk.bot.simulation-command.v1', old = store.get(key);
+  if (old && old.destination !== destination) throw new Error('Unbestätigten Auftrag zuerst in seiner ursprünglichen Simulationsquelle abgleichen.');
+  const cmd = old?.command || { ...action, commandId: 'bot-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8) };
+  store.set(key, { destination, command: cmd }); if (!(await store.flush())) throw new Error('Bot-Modellauftrag nicht gesichert; nicht gestartet.');
+  try {
+    let answer;
+    if (destination === 'oracle') { if (!svcOn()) throw new Error('HTTPS-Dienst nicht eingerichtet.'); if (old) { const found = await svcFetch('/v1/bot/simulation/commands/' + cmd.commandId); if (found.j?.found) answer = found.j.bot; }
+      if (!answer) { const reply = await svcFetch('/v1/bot/simulation', { method: 'POST', body: cmd }); if (reply.status !== 200 || !reply.j?.ok) { if ([400, 409].includes(reply.status)) store.del(key); throw new Error(reply.j?.error || 'Bot-Modellauftrag nicht bestätigt.'); } answer = reply.j.bot; }
+    } else { if (!botRuntimeLocal) await botLoad('local'); answer = await botRuntimeLocal.command(cmd); }
+    store.del(key); return answer;
+  } catch (e) { if (destination === 'local') store.del(key); throw e; }
+}
+const botPanel = el('div'); botPanel.id = 'bot-simulation-panel'; botPanel.hidden = true; botPanel.setAttribute('role', 'tabpanel'); botPanel.setAttribute('aria-labelledby', 'ki-bot-tab'); $('ki-signal-panel').after(botPanel);
+const botButton = kiButton('ki-bot-tab', 'Trading-Bot', botTab); botButton.setAttribute('role', 'tab'); botButton.setAttribute('aria-controls', botPanel.id); botButton.setAttribute('aria-selected', 'false'); botButton.tabIndex = -1; document.querySelector('.ki-tabs').append(botButton);
+const botGlobal = el('div'); botGlobal.id = 'bot-global-host'; document.querySelector('.topbar').after(botGlobal);
+botView = createBotView({ host: botPanel, globalHost: botGlobal, load: botLoad, command: botCommand, currentSymbol: () => state.symbol,
+  destination: store.get('scalpdesk.bot.simulation-destination.v1', 'local'),
+  fxReference: () => { const value = currentFx(); return value > 0 && (state.fxMode === 'manual' || Date.now() - state.fxAt <= 15 * 60e3) ? { value: String(value), source: 'vorhandener EUR/USDT-Referenzkurs' } : null; },
+  exportState: async destination => JSON.stringify({ kind: 'scalpdesk-bot-simulation', version: 1, simulationOnly: true, state: await botLoad(destination) }, null, 2), changed: (destination, confirmed) => { store.set('scalpdesk.bot.simulation-destination.v1', destination); clearTimeout(botRefreshTimer); botRefreshTimer = null; if (destination === 'oracle' && confirmed?.run?.state === 'RECONCILING' && !document.hidden) botRefreshTimer = setTimeout(() => { void botView.refresh(); }, Math.max(50, confirmed.run.reconciliation.deadline - Date.now() + 50)); } });
+void botView.refresh();
+document.addEventListener('visibilitychange', () => { clearTimeout(botRefreshTimer); botRefreshTimer = null; if (!document.hidden) void botView.refresh(); });
+window.__g12 = { view: botView, tab: botTab, load: botLoad, command: botCommand };
 window.__g11 = { view: po3View, next: kiNext };
 window.__g10 = { backtest: kiBacktest, historyView: kiHistoryView, serviceConfig: kiServiceConfig, serviceCards: kiServiceCards, get state() { return ki; }, cardState: kiCardState, render: kiRender, tab: kiTab, showChart: kiShowChart, stop: kiCancel, kick: kiKick, save: kiSaveConfig };
 for(const f of SET_FIELDS)stampSetting(f);renderIntegrity(); // 3.29.0: Abstammung der Einstellungen anlegen, Prüfliste zeigen
