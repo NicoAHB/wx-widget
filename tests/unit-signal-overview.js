@@ -1,0 +1,33 @@
+// Übersicht: Originalschutz, Deduplizierung und gemeinsame Filter ohne Modelländerung.
+let pass = 0, fail = 0; const check = (name, ok) => { ok ? pass++ : fail++; console.log(`${ok ? '✓' : '✗'} ${name}`); };
+(async () => {
+  const O = await import('../shared/signal-overview.mjs'), F = await import('./fixtures/confluence-live.mjs'), L = await import('../shared/confluence-live.mjs');
+  const card = L.evaluateLive(F.liveFixture()).eligible[0], current = structuredClone(card); current.levels.entry++;
+  const original = JSON.stringify([card, current]), present = () => ({ expired: false, tone: 'positive', label: 'kandidat' });
+  const one = O.confluenceOverview([card, card], [current], present);
+  check('Originalkarte hat Vorrang; dieselbe ID aus aktueller Bewertung erscheint einmal', one.length === 1 && one[0].card === card && !one[0].current);
+  check('Vollständig bestätigter Originalplan als Kandidat', one[0].category === 'ready');
+  check('Nur aktueller Datensatz sichtbar, wenn noch kein Original gespeichert', O.confluenceOverview([], [current], present)[0].current);
+  check('Älteres Modell im Archiv', O.confluenceOverview([card], [], () => ({ tone: 'muted', label: 'früheres Modell' }))[0].category === 'archive');
+  check('Ablauf im Archiv', O.confluenceOverview([card], [], () => ({ tone: 'muted', label: 'abgelaufen', expired: true }))[0].category === 'archive');
+  for (const label of ['aktuelle Daten fehlen', 'Referenzkurs erneut prüfen', 'wird erneut geprüft', 'Analyse pausiert', 'älterer Referenzplan']) check(label + ' unter Beobachten', O.confluenceOverview([card], [], () => ({ tone: 'warning', label }))[0].category === 'watch');
+  const A = await import('./fixtures/model-archive.mjs'), po = (await A.modelArchiveFixture()).po3Journal[0], args = { currentKey: po.parametersKey, enabled: true };
+  check('PO3 bleibt eigenes Modell', O.po3Overview([po], args)[0].model === 'po3');
+  check('Offenes PO3-Modell als hypothetischer Kandidat', O.po3Overview([po], args)[0].category === 'ready');
+  check('PO3 pausiert unter Beobachten', O.po3Overview([po], { ...args, enabled: false })[0].category === 'watch');
+  check('PO3 Datenlücke unter Beobachten', O.po3Overview([{ ...po, dataGap: true }], args)[0].category === 'watch');
+  for (const status of ['Verfallen', 'Ungültig', 'Abgeschlossen']) check('PO3 ' + status + ' im Archiv', O.po3Overview([{ ...po, status }], args)[0].category === 'archive');
+  check('PO3 andere Konfiguration im Archiv', O.po3Overview([po], { ...args, currentKey: 'anderes Modell' })[0].category === 'archive');
+  const pool = [...one, ...O.po3Overview([po], args)];
+  check('Modellfilter Konfluenz', O.filterOverview(pool, { model: 'confluence' }).length === 1);
+  check('Modellfilter PO3', O.filterOverview(pool, { model: 'po3' }).length === 1);
+  check('Coinfilter wirkt auf beide Modelle', O.filterOverview(pool, { instrument: 'ETHUSDT' }).length === 0);
+  check('Richtungsfilter wirkt auf beide Modelle', O.filterOverview(pool, { direction: '-1' }).length === 0);
+  check('Horizontfilter trennt Konfluenz und PO3', O.filterOverview(pool, { horizon: 'short' }).length === 1);
+  check('Kategorie unabhängig vom Modell', O.filterOverview(pool, { category: 'ready' }).length === 2);
+  const sorted = O.filterOverview([{ ...pool[0], time: 10, score: 100 }, { ...pool[1], time: 20, score: 70 }]);
+  check('Aktualität vor Score', sorted[0].time === 20);
+  check('Gleiches Alter nach Score', O.filterOverview([{ ...pool[0], time: 10, score: 80 }, { ...pool[1], time: 10, score: 90 }])[0].score === 90);
+  check('Eingaben bytegleich erhalten', JSON.stringify([card, current]) === original);
+  console.log(`${pass}/${pass + fail} bestanden`); process.exitCode = fail ? 1 : 0;
+})().catch(e => { console.error(e); process.exitCode = 1; });

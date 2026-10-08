@@ -169,8 +169,13 @@
     },
     {
       "path": "shared/po3-view.mjs",
-      "sha256": "24740f5f7d35294147d58b851e1a640918ccfef45d480c2e70a903b810377453",
-      "bytes": 27896
+      "sha256": "0c8e73168ac21dfba5f4975655589d3e77ae277d571d3f5e6d23c1f92f718859",
+      "bytes": 29852
+    },
+    {
+      "path": "shared/signal-overview.mjs",
+      "sha256": "f5428bbba259f07eac8d7c0cebf5569624e6d1d14db43ce5be0a7c1505468bf4",
+      "bytes": 3314
     }
   ]
 }

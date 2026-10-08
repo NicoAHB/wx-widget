@@ -1950,6 +1950,16 @@ html{scroll-padding-top:calc(var(--lb-h,56px) + 16px)}
 .ki-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,140px),1fr));gap:10px;margin:12px 0}.ki-grid p{margin:0;font-variant-numeric:tabular-nums}.ki-grid b{display:block;font-size:.77rem;color:var(--muted);font-weight:500}.ki-card small,.ki-note{color:var(--muted);font-size:.8rem}.ki-points{width:100%;border-collapse:collapse;font-size:.84rem}.ki-points td,.ki-points th{text-align:left;padding:4px 0}.ki-points td:last-child,.ki-points th:last-child{text-align:right}
 .ki-info{margin:8px 0}.ki-info>summary{cursor:pointer;display:flex;align-items:center;gap:6px;font-size:.84rem}.ki-info>summary::before{content:'i';border:1px solid currentColor;border-radius:50%;width:20px;height:20px;text-align:center;font-weight:600;line-height:18px;flex-shrink:0}.ki-info p{margin:8px 0;font-size:.84rem}.ki-patterns{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}.ki-patterns button{white-space:normal;text-align:left}.ki-badge{background:var(--down-bg);color:var(--down-text);border-radius:99px;font-size:.75rem;padding:2px 6px;margin-left:4px}
 #ki-chart-sec svg{display:block;width:100%;height:auto;background:var(--bg);border-radius:8px;margin:12px 0}#ki-chart-sec svg text{font-size:11px;fill:var(--text)}#ki-chart-sec .ki-entry{stroke:var(--text)}#ki-chart-sec .ki-sl{stroke:var(--down-text)}#ki-chart-sec .ki-tp{stroke:var(--up-text)}#ki-chart-sec .ki-level{stroke-width:1.3;stroke-dasharray:5 3}.ki-chart-head h2{flex:1;margin:0}.ki-chip{margin-left:6px;white-space:nowrap}
+/* 3.52.0: kompakte KI-Übersicht; Einrichtung und Einzelbelege aufklappbar. */
+.ki-overview-controls [aria-pressed=true]{background:var(--up-bg);color:var(--up-text);border-color:var(--up-text)}
+.ki-overview-controls button,.ki-overview-controls select,.ki-card-details>summary,#ki-setup>summary{min-height:44px}
+.ki-overview-controls .ki-fields{grid-template-columns:repeat(auto-fit,minmax(min(100%,145px),1fr));gap:8px;margin:8px 0}
+.ki-card-details{border-top:1px solid var(--border);padding-top:5px}.ki-card-details>summary{font-weight:600}
+.ki-card .ki-price-stop{color:var(--down-text)}.ki-card .ki-price-target{color:var(--up-text)}
+.ki-card h3{font-size:1rem}.ki-card.expired .ki-price-stop,.ki-card.expired .ki-price-target{color:var(--muted)}
+html[data-ki-overview="1"][data-layout=desktop] .col-side{display:contents}
+html[data-ki-overview="1"][data-layout=desktop] .col-input{grid-column:1/-1;grid-row:4;position:static;max-height:none;overflow:visible}
+html[data-ki-overview="1"][data-layout=desktop] #ki-signal-panel{max-width:1100px;margin:auto}
 /* ---------- 3.51.0 (G14): gleiche Elemente, zweite Anordnung ---------- */
 #view-panel .appearance-toggle button{min-height:48px;flex:1}
 .own-color-controls{display:grid;gap:10px;min-width:0}
@@ -1988,6 +1998,7 @@ import { exportModelArchive, importModelArchive, validateModelArchive } from './
 import { BotSimulationRuntime } from './bundles/3.52.0/shared/bot-simulation.mjs';
 import { readBotSimulation, saveBotSimulation } from './bundles/3.52.0/shared/bot-simulation-store.mjs';
 import { createBotView } from './bundles/3.52.0/shared/bot-view.mjs';
+import { confluenceOverview, po3Overview, filterOverview, reconcileOverview } from './bundles/3.52.0/shared/signal-overview.mjs';
 import { createPo3View } from './bundles/3.52.0/shared/po3-view.mjs';
 import { cardState as kiCardState, scoreLabel as kiScoreLabel } from './bundles/3.52.0/shared/confluence-live.mjs';
 import { divergenceInfo as kiDivergenceInfo, parametersKey as kiParametersKey } from './bundles/3.52.0/shared/confluence-core.mjs';
@@ -13787,7 +13798,7 @@ const KI_DEFAULTS = { revision: 1, on: false, shortOn: true, longOn: true, short
   shortLeverage: 20, longLeverage: 3, marginEUR: null, slippageBps: null, fundingMode: '', anchorPolicy: '',
   minimumScore: 70, patternWeight: 15, slAtrFactor: 1, rewardRisk: 2, feeEntry: .05, feeExit: .05 };
 const ki = { cfg: { ...KI_DEFAULTS, ...store.get(KI_CFG_KEY, {}) }, cards: store.get(KI_CARDS_KEY, []), data: store.get(KI_DATA_KEY, {}),
-  current: new Map(), checks: new Map(), due: new Map(), timer: null, worker: null, pending: null, serial: 0, epoch: 0, busy: false, open: false,
+  overview: { model: 'all', category: 'ready', instrument: '', direction: '', horizon: '' }, current: new Map(), checks: new Map(), due: new Map(), timer: null, worker: null, pending: null, serial: 0, epoch: 0, busy: false, open: false,
   history: new Map(), historyRevision: 0, historyBusy: false, archiveError: '', coin: state.symbol, limit: 20, message: 'Lokale Analyse aus. Einstellungen prüfen und starten.', chartCard: null, chartOn: false, chartFollow: false };
 let kiPatternContext = null;
 if (!Array.isArray(ki.cards)) ki.cards = [];
@@ -13888,14 +13899,47 @@ async function kiServiceCards() {
     ki.message = `${received.length} Dienstkarten gelesen; gleiche Signal-IDs zählen einmal.`;
   } catch (e) { ki.message = e.message; } kiRender();
 }
+// 3.52.0: gemeinsame Übersicht, jede Original-ID einmal; Modellfilter ändern keine Strategie.
+function kiOverviewControls() {
+  const controls = el('div', 'ki-overview-controls');
+  for (const [field, label, choices] of [['model', 'Signalmodell', [['all', 'Alle Modelle'], ['confluence', 'Konfluenz'], ['po3', 'Power of Three']]],
+    ['category', 'Signalstatus', [['ready', 'Kandidaten'], ['watch', 'Beobachten'], ['archive', 'Archiv']]]]) {
+    const group = el('div', 'ki-toolbar'); group.setAttribute('role', 'group'); group.setAttribute('aria-label', label);
+    for (const [value, title] of choices) { const b = kiButton('ki-view-' + value, title, () => { ki.overview[field] = value; ki.limit = 20; kiRender(); }); b.dataset.title = title; group.append(b); } controls.append(group);
+  }
+  const filters = el('div', 'ki-fields');
+  for (const [field, title, choices] of [['instrument', 'Coinfilter · beide Modelle', [['', 'Alle Coins']]], ['direction', 'Richtung', [['', 'Long + Short'], ['1', 'Long'], ['-1', 'Short']]],
+    ['horizon', 'Konfluenz-Horizont', [['', 'Alle Horizonte / PO3'], ['short', 'Kurz'], ['long', 'Lang']]]]) {
+    const label = el('label', '', title), input = el('select'); input.id = 'ki-filter-' + field;
+    for (const [value, text] of choices) { const option = el('option', '', text); option.value = value; input.append(option); }
+    input.addEventListener('change', () => { ki.overview[field] = input.value; ki.limit = 20; kiRender(); }); label.append(input); filters.append(label);
+  } controls.append(filters); return controls;
+}
+function kiRenderOverview() {
+  const current = [...ki.current.values()].flat(), cf = confluenceOverview(ki.cards, current, kiDisplayState), po = po3View ? po3Overview(po3View.overviewRecords(), { currentKey: po3View.key(), enabled: po3View.active() && !state.paused && !document.hidden }) : [];
+  const all = [...cf, ...po], symbols = [...new Set([state.symbol, ...state.watch.slice(0, 40).map(wlSym), ...all.map(x => x.instrument)])].sort(), coin = $('ki-filter-instrument');
+  if (coin.dataset.list !== symbols.join()) { coin.replaceChildren(...[['', 'Alle Coins'], ...symbols.map(x => [x, x.slice(0, -4)])].map(([value, text]) => { const o = el('option', '', text); o.value = value; return o; })); coin.dataset.list = symbols.join(); }
+  coin.value = ki.overview.instrument;
+  const pool = filterOverview(all, { ...ki.overview, category: null }), visible = pool.filter(x => x.category === ki.overview.category);
+  for (const [field, values] of [['model', ['all', 'confluence', 'po3']], ['category', ['ready', 'watch', 'archive']]]) for (const value of values) {
+    const b = $('ki-view-' + value); b.setAttribute('aria-pressed', String(ki.overview[field] === value)); b.textContent = b.dataset.title + (field === 'category' ? ' (' + pool.filter(x => x.category === value).length + ')' : '');
+  }
+  put('ki-overview-note', 'Kandidaten sind hypothetische Modellpläne. Score ≠ Erfolgsquote. Bei PO3 bedeutet Offen: Modell-Entry simuliert; kein neuer Einstiegsauftrag. Archiv enthält alte Modelle und abgelaufene/abgeschlossene Fälle.');
+  const records = visible.slice(0, ki.limit), target = $('ki-list');
+  reconcileOverview(target, records, x => x.model === 'confluence' ? kiRenderCard(x.card, x.current) : po3View.card(x.card), x => JSON.stringify([x.card, x.state, ki.historyRevision, ki.historyBusy, Math.floor(Date.now() / 60000), po3View?.active()]));
+  if (!records.length) { const empty = el('p', 'ki-note', ki.overview.category === 'ready' ? 'Keine aktuell bestätigten Kandidaten für diese Filter. „Beobachten“ zeigt fehlende Prüfschritte; „Archiv“ die gespeicherten Altpläne.' : 'Keine Fälle für diese Auswahl. Filter ändern oder neue Daten abwarten.'); target.append(empty); }
+  $('ki-more').hidden = visible.length <= ki.limit;
+  if ($('po3-checklist')) $('po3-checklist').hidden = ki.overview.category !== 'watch' || ki.overview.model === 'confluence' || !!ki.overview.horizon || !!ki.overview.instrument && po3View?.state.stream?.instrument !== ki.overview.instrument;
+}
 function kiBuild() {
   const box = $('ki-signal-panel');
   box.append(el('h2', '', 'KI-Signale'), el('p', 'ki-note', 'Bitget USDT-Futures · regelbasierter Konfluenz-Score · keine Orders'));
   const help = kiInfo('Score und Handlung', el('p', '', 'Grün: Score, Trend, Preislevel und Kostenszenario geprüft. Gelb: beobachten, noch nicht vollständig geprüft. Rot: Gegen-Trend-Sperre oder Konflikt. Grau: fehlende Daten oder abgelaufen.'),
     el('p', '', 'Der Score hat höchstens 100 Punkte und ist keine Erfolgswahrscheinlichkeit. Beide Trendebenen verwenden ihren eigenen letzten geschlossenen Kurs; die bestehende Trend-Ampel verwendet den aktuellen Binance-Kurs.'),
     el('p', '', 'Bestätigte RSI-Divergenz: +5 Basispunkte nur bis drei Basiskerzen nach der zweiten Nachbarkerze. Beispiel 1h: 14:00 bestätigt, 17:00 abgelaufen. Die Nachricht gilt kurz 1h, lang 24h; das schließt keine echte Position.'));
-  box.append(help, kiTelegramControl('ki-telegram'));
-  const cfg = el('details', 'ki-settings'); cfg.id = 'ki-settings'; cfg.open = !ki.cfg.on; cfg.append(el('summary', '', 'Einstellungen und Kostenannahmen'));
+  const setup = kiInfo('Einrichtung · Modelle, Kosten, Dienst und Speicher'); setup.id = 'ki-setup';
+  box.append(kiOverviewControls(), help); setup.append(kiTelegramControl('ki-telegram')); box.append(setup);
+  const cfg = el('details', 'ki-settings'); cfg.id = 'ki-settings'; cfg.open = !ki.cfg.on; setup.open = !ki.cfg.on; cfg.append(el('summary', '', 'Einstellungen und Kostenannahmen'));
   const form = el('form'); form.id = 'ki-config-form'; form.noValidate = true;
   const horizons = el('div', 'ki-toolbar');
   for (const [key, text] of [['shortOn', 'Kurzfristig'], ['longOn', 'Längerfristig']]) { const l = el('label'), input = el('input'); input.type = 'checkbox'; input.id = 'ki-' + key; input.checked = ki.cfg[key]; l.append(input, ' ' + text); horizons.append(l); }
@@ -13913,7 +13957,7 @@ function kiBuild() {
   kiField(fields, 'feeEntry', 'Einstiegsgebühr · %', null, { min: 0, max: 99 }); kiField(fields, 'feeExit', 'Ausstiegsgebühr · %', null, { min: 0, max: 99 });
   const save = kiButton('ki-save', 'Speichern und lokale Analyse starten'); save.type = 'submit';
   form.append(horizons, fields, el('p', 'ki-note', 'Gebühr 0,05 % je Seite ist eine veränderbare Modellannahme. Kostenfilter: Nettoziel / Betrag Nettoverlust ≥ 1,5. Slippage und ungünstige Tickrundung gelten für Ein- und Ausstieg. Einstieg zum Geld/Brief nach der Entscheidung. Konstantes Funding verwendet den Referenzeinstieg als modellierten Markpreis.'), save);
-  form.addEventListener('submit', e => { e.preventDefault(); kiSaveConfig(); }); cfg.append(form); box.append(cfg);
+  form.addEventListener('submit', e => { e.preventDefault(); kiSaveConfig(); }); cfg.append(form); setup.append(cfg);
   const toolbar = el('div', 'ki-toolbar'), coins = el('select'); coins.id = 'ki-coin'; coins.setAttribute('aria-label', 'Aktuelle KI-Bewertung für Coin');
   coins.addEventListener('change', () => { ki.coin = coins.value; kiRender(); });
   toolbar.append(coins, kiButton('ki-refresh', 'Jetzt prüfen', () => { ki.due.clear(); kiKick(); }), kiButton('ki-stop', 'Analyse pausieren', () => { ki.cfg.on = false; kiSaveSettings(); kiCancel(); ki.message = 'Lokale Analyse pausiert.'; kiRender(); kiKick(); }));
@@ -13921,13 +13965,15 @@ function kiBuild() {
   const freshness = el('p', 'ki-note'); freshness.id = 'ki-data-quality';
   const current = el('div'); current.id = 'ki-current'; const list = el('div'); list.id = 'ki-list';
   toolbar.append(kiButton('ki-stop-history', 'Historie pausieren', () => { kiCancel(); ki.message = 'Historie pausiert; öffentlicher Zwischenstand bleibt für Fortsetzung erhalten.'; kiRender(); }));
-  box.append(toolbar, status, freshness, el('h3', '', 'Aktueller Stand'), current, el('h3', '', 'Neue und gespeicherte Signale'), list,
-    kiButton('ki-more', 'Weitere Karten zeigen', () => { ki.limit += 20; kiRender(); }));
+  current.hidden = true;
+  const next = el('p', 'ki-note'); next.id = 'ki-overview-note';
+  box.insertBefore(toolbar, setup); box.insertBefore(status, setup); box.insertBefore(freshness, setup); box.insertBefore(next, setup); box.insertBefore(current, setup); box.insertBefore(list, setup);
+  box.insertBefore(kiButton('ki-more', 'Weitere Karten zeigen', () => { ki.limit += 20; kiRender(); }), setup);
   const storage = kiInfo('Lokaler Speicher', el('p', '', 'Öffentliche Kerzen und Signalkarten liegen getrennt von Positionen und Trades in IndexedDB. Grenzen: 40 Coins, 200 Karten / 5 MiB und 20 MiB Kerzenzustände. Bei vollem oder fehlendem Speicher pausieren neue Karten. Keine Sicherung oder Übertragung an Telegram in diesem Schritt.'),
     kiButton('ki-clear-data', 'Nur öffentliche Kerzenzustände löschen', () => { kiCancel(); for (const item of Object.values(ki.data)) store.del(item.key); ki.data = {}; store.set(KI_DATA_KEY, ki.data); ki.due.clear(); ki.storageFailed = false; kiKick(); }),
     kiButton('ki-clear-expired', 'Abgelaufene Signalkarten löschen', async () => { if (await kiUpdateCards(cards => cards.filter(c => !kiCardState(c, Date.now()).expired))) { ki.storageFailed = false; kiRender(); kiKick(); } }));
   storage.append(el('p', '', 'Originaleingaben für historische Auswertungen bleiben im getrennten Archiv (5000 / 12 MiB). Öffentliche Backtest-Zwischenstände: 4 Jobs / 20 MiB. Ergebnisse: 200 / 2 MiB. Kein stilles Abschneiden.'), kiButton('ki-clear-history', 'Nur öffentliche Backtest-Zwischenstände löschen', async () => { kiCancel(); try { await kiClearHistoryJobs(); ki.message = 'Backtest-Zwischenstände gelöscht; Originaleingaben und Ergebnisse bleiben.'; } catch (e) { ki.message = e.message; } kiRender(); kiKick(); }));
-  box.append(storage);
+  setup.append(storage);
   const badge = el('span', 'ki-badge'); badge.id = 'ki-unread'; badge.hidden = true; $('notify-menu').append(badge);
   $('notify-panel').prepend(kiButton('ki-open', 'KI-Signale ansehen', () => { $('notify-panel').hidden = true; $('notify-menu').setAttribute('aria-expanded', 'false'); kiTab(true); goTo('alarms'); }));
   $('model-settings').append(kiTelegramControl('ki-settings-telegram'));
@@ -13946,7 +13992,7 @@ function kiBuild() {
 }
 function kiTab(open) {
   botOpen = false; if ($('bot-simulation-panel')) { $('bot-simulation-panel').hidden = true; $('ki-bot-tab').setAttribute('aria-selected', 'false'); $('ki-bot-tab').tabIndex = -1; }
-  ki.open = open; $('ki-price-panel').hidden = open; $('ki-signal-panel').hidden = !open;
+  ki.open = open; docEl.dataset.kiOverview = open ? '1' : '0'; $('ki-price-panel').hidden = open; $('ki-signal-panel').hidden = !open;
   for (const [id, on] of [['ki-price-tab', !open], ['ki-signal-tab', open]]) { $(id).setAttribute('aria-selected', String(on)); $(id).tabIndex = on ? 0 : -1; }
   if (open) { const unread = ki.cards.some(c => !c.read); ki.cards.forEach(c => { c.read = true; }); if (unread) void kiUpdateCards(cards => cards.map(c => ({ ...c, read: true }))); }
   kiRender(); kiKick();
@@ -13964,7 +14010,7 @@ function kiSaveConfig() {
   const modelKeys = ['shortPair', 'longPair', 'shortHours', 'longDays', 'slippageBps', 'fundingMode', 'anchorPolicy', 'minimumScore', 'patternWeight', 'slAtrFactor', 'rewardRisk', 'feeEntry', 'feeExit'];
   const changed = modelKeys.some(k => next[k] !== ki.cfg[k]);
   kiCancel(); next.revision = ki.cfg.revision + (changed ? 1 : 0); next.on = true; ki.cfg = next; ki.due.clear(); ki.current.clear(); ki.checks.clear(); kiSaveSettings();
-  ki.message = 'Öffentliche Bitget-Daten werden im Worker geladen …'; $('ki-settings').open = false; kiRender(); kiKick();
+  ki.message = 'Öffentliche Bitget-Daten werden im Worker geladen …'; $('ki-settings').open = false; $('ki-setup').open = false; kiRender(); kiKick();
 }
 function kiCancel() { ki.epoch++; clearTimeout(ki.timer); ki.timer = null; ki.worker?.terminate(); ki.worker = null; ki.pending?.reject(new Error('abgebrochen')); ki.pending = null; }
 function kiActive() { return ((ki.cfg.on && ki.cfg.slippageBps !== null && !ki.storageFailed) || po3View?.active() || po3Pending.size > 0) && !ki.historyBusy && !document.hidden && !state.paused; }
@@ -14121,13 +14167,16 @@ function kiRenderCard(card, current = false) {
   const s = kiDisplayState(card, current), box = el('article', 'ki-card' + (s.expired ? ' expired' : '')); box.dataset.kiId = card.id;
   const head = el('div', 'ki-card-head'); head.append(el('h3', '', `${card.scope.instrument.slice(0, -4)} · ${card.scope.direction === 1 ? 'Long' : 'Short'} · ${card.scope.horizon === 'short' ? 'kurz' : 'lang'}`),
     el('span', 'ki-tone ki-' + s.tone, `${s.label} · ${kiScoreLabel(card.score.score, card.config.minimumScore)} / 100`));
-  box.append(head, el('p', 'ki-note', `${card.scope.timeframe} / ${card.scope.contextTimeframe} · Bitget USDT-Futures · ${kiDate(card.decisionAt)} · Nachricht bis ${kiDate(card.expiresAt)}`),
-    el('p', 'ki-tone ki-' + s.tone, s.action), el('p', 'ki-note', `Modell ${card.scope.modelVersion} · Revision ${card.config.revision} · Referenzkurs ${kiDate(card.quote?.at)}. Originalscore und Originalplan bleiben unverändert.`));
+  box.append(head, el('p', 'ki-note', `Konfluenz · ${card.scope.timeframe} / ${card.scope.contextTimeframe} · Bitget USDT-Futures · ${kiDate(card.decisionAt)} · Nachricht bis ${kiDate(card.expiresAt)}`),
+    el('p', 'ki-tone ki-' + s.tone, s.action));
   if (!card.eligible) box.append(el('p', 'ki-note', card.reason));
   const grid = el('div', 'ki-grid');
   for (const [label, text] of [['Entry · Referenz', kiPrice(card.levels.entry)], ['Stop-Loss', kiPrice(card.levels.sl)], ['Take-Profit', kiPrice(card.levels.tp)],
-    ['Brutto / Netto R:R', card.levels.status === 'bereit' ? `${number(card.levels.rewardRisk, 2)} / ${card.costs.netRR == null ? 'nicht bewertbar' : number(card.costs.netRR, 2)}` : 'nicht verfügbar']]) { const p = el('p'); p.append(el('b', '', label), text); grid.append(p); }
+    ['Brutto / Netto R:R', card.levels.status === 'bereit' ? `${number(card.levels.rewardRisk, 2)} / ${card.costs.netRR == null ? 'nicht bewertbar' : number(card.costs.netRR, 2)}` : 'nicht verfügbar']]) { const p = el('p', label === 'Stop-Loss' ? 'ki-price-stop' : label === 'Take-Profit' ? 'ki-price-target' : ''); p.append(el('b', '', label), text); grid.append(p); }
   box.append(grid);
+  const details = kiInfo('Details · Gründe, Muster, Risiko und Auswertung'); details.classList.add('ki-card-details');
+  details.append(el('p', 'ki-note', `Modell ${card.scope.modelVersion} · Revision ${card.config.revision} · Referenzkurs ${kiDate(card.quote?.at)}. Originalscore und Originalplan bleiben unverändert.`));
+  box.append(details);
   const points = el('table', 'ki-points'); points.setAttribute('aria-label', 'Einzelpunkte des Konfluenz-Scores');
   for (const [key, label, max] of [['trend', 'Trend', 25], ['setup', 'Setup-Zone', 20], ['rsi', 'RSI + Divergenz', 20], ['macd', 'MACD', 15], ['volume', 'Volumen', 10], ['funding', 'Funding', 10]]) {
     const row = el('tr'); row.append(el('td', '', label), el('td', '', card.score.points ? `${card.score.points[key]} / ${max} Basis · ${number(card.score.points[key] * (100 - card.config.patternWeight) / 100, 2)} gewichtet` : 'nicht bewertbar')); points.append(row);
@@ -14139,24 +14188,23 @@ function kiRenderCard(card, current = false) {
     el('p', 'ki-tone ki-' + div.tone, div.status + (div.remainingMs != null ? ` · noch ${number(div.remainingMs / 3600e3, 2)} Stunden` : '')),
     el('p', '', div.explanation), el('p', '', div.action), el('p', '', div.confirmedAt != null ? `Bestätigung ${kiDate(div.confirmedAt)} · keine +5 Punkte ab ${kiDate(div.expiresAt)}. Kenntnis der Daten ${kiDate(div.knownAt)}.` : 'Kein passendes bestätigtes Pivotpaar.'),
     el('p', '', 'Beispiel 1h: Pivot-Kerze schließt 12:00, Nachbarkerzen schließen 13:00 und 14:00; Alter startet um 14:00. Drei Kerzen später, um 17:00, sind die Zusatzpunkte abgelaufen.'));
-  box.append(info);
+  details.append(info);
   const size = card.size.status === 'bereit', euro = v => size && Number.isFinite(v) ? `${signed(v * card.size.quantity / card.size.fx, 2)} EUR` : 'nicht verfügbar';
-  box.append(kiInfo('Risiko, Kosten und Cross', el('p', '', `Stop-Anker: ${card.anchor ? card.anchor.label + ' · ' + kiPrice(card.anchor.price) : 'nicht verfügbar'}. SL-Abstand ${card.config.slAtrFactor} ATR · Ziel mindestens ${card.config.rewardRisk}R.`),
+  details.append(kiInfo('Risiko, Kosten und Cross', el('p', '', `Stop-Anker: ${card.anchor ? card.anchor.label + ' · ' + kiPrice(card.anchor.price) : 'nicht verfügbar'}. SL-Abstand ${card.config.slAtrFactor} ATR · Ziel mindestens ${card.config.rewardRisk}R.`),
     el('p', '', `Gebühren ${card.config.feeEntry * 100} % / ${card.config.feeExit * 100} %. ${card.scope.modelVersion === 'cf-1' ? `Altes Modell cf-1: ${card.scope.slippageBps} bp Einstiegsslippage; Ausstiegsslippage im damaligen Kostenfilter nicht enthalten. Originalwerte bleiben dokumentiert.` : `Slippage ${card.scope.slippageBps} bp je Ein-/Ausstieg. Modellierte Ausführung am Ziel ${kiPrice(card.costs.execution?.tp)} · am Stop ${kiPrice(card.costs.execution?.sl)} (ungünstiges Tickraster).`} ${card.funding?.assumption || 'Künftige Fundingkosten nicht bewertbar.'}`),
     el('p', '', `Modell-Netto am Ziel: ${euro(card.costs.tp?.net)} · am Stop: ${euro(card.costs.sl?.net)}. Gebühren am Ziel: ${euro(card.costs.tp?.fees)} · Funding: ${euro(card.costs.tp?.funding)}.`),
     el('p', '', size ? `Margin ${number(card.size.marginEUR, 2)} EUR · Hebel ${card.options.leverage} · modellierte Menge ${number(card.size.quantity, 8)}. FX ${number(card.size.fx, 5)} USDT je EUR (${card.options.fx.source}).` : 'Ohne selbst gewählten Einsatz und gültigen FX-Kurs bleiben Eurokosten und Menge nicht verfügbar.'),
     el('p', 'ki-tone ki-muted', 'Cross-Liquidationspreis: nicht verfügbar. ' + card.cross.reason), el('p', '', 'Preisplan und Kosten sind ein Szenario, keine Ausführung oder Orderfreigabe.')));
-  box.append(kiHistoryView(card));
+  details.append(kiHistoryView(card));
   const chips = el('div', 'ki-patterns');
   for (const pattern of card.patterns) { const L = PAT_LIB[pattern.id]; if (!L) continue; chips.append(kiButton('', `${L.n} · ${pattern.timeframe} · ${pattern.hit.status} · ${pattern.quality} %`,
     () => patOpenInfo(0, { hits: [pattern.hit], ver: pattern.modelVersion, scope: pattern.source, card }), 'button ghost')); }
-  if (!chips.children.length) chips.append(el('small', '', 'Keine aktuellen geschlossenen Muster.')); box.append(chips);
-  const show = kiButton('', 'Im Chart zeigen', () => kiShowChart(card)); show.disabled = card.levels.status !== 'bereit'; box.append(show);
+  if (!chips.children.length) chips.append(el('small', '', 'Keine aktuellen geschlossenen Muster.')); details.append(chips);
+  const show = kiButton('', 'Im Chart zeigen', () => kiShowChart(card)); show.disabled = card.levels.status !== 'bereit'; details.append(show);
   if (current) box.append(el('small', '', ' Aktuelle Bewertung; nur vollständig geprüfte Kandidaten werden als neue Signale gespeichert.'));
   return box;
 }
 function kiRender() {
-  po3View?.render();
   if (!$('ki-status')) return;
   put('ki-status', ki.message + (ki.archiveError ? ' · Originalarchiv: ' + ki.archiveError : '')); $('ki-stop').disabled = !ki.cfg.on; $('ki-refresh').disabled = !ki.cfg.on || ki.busy || ki.historyBusy;
   const coins = $('ki-coin'), symbols = [...new Set([state.symbol, ...state.watch.slice(0, 40).map(wlSym)])];
@@ -14166,19 +14214,13 @@ function kiRender() {
   chip.title = latest ? `Bitget-Konfluenz · Referenzkurs ${kiDate(latest.quote.at)}. Kurs und Risiko vor einem Einstieg erneut prüfen.` : 'Keine aktuelle vollständige Bestätigung mit frischem Bitget-Referenzkurs. Gespeicherte Pläne bleiben dokumentiert.';
   const checks = ['short', 'long'].map(h => ki.checks.get(ki.coin + '|' + h)).filter(Boolean).sort((a, b) => b.at - a.at), lastCheck = checks[0];
   put('ki-data-quality', `${ki.coin.slice(0, -4)} · Bitget: ${lastCheck ? (lastCheck.pending ? 'Prüfung läuft' : 'letzte Prüfung ' + kiDate(lastCheck.at)) + (lastCheck.error ? ' · ' + lastCheck.error : '') : 'noch keine aktuelle lokale Prüfung'}. Richtungs-Chip nur mit vollständig geprüftem Kurs bis 30 Sekunden Alter; Nachrichtenablauf und Trade-Haltedauer bleiben getrennt.`);
-  if (ki.open) {
-    const current = ['short', 'long'].flatMap(h => ki.current.get(ki.coin + '|' + h) || []);
-    for (const [id, cards, live] of [['ki-current', current, true], ['ki-list', ki.cards.slice(0, ki.limit), false]]) {
-      const target = $(id), key = JSON.stringify([ki.coin, Math.floor(Date.now() / 60000), ki.historyRevision, ki.historyBusy, cards.map(c => [c.id, c.decisionAt, c.entryAt, c.status, c.levels.entry, c.costs.netRR, c.expiresAt, kiDisplayState(c, live)])]);
-      if (target.dataset.renderKey === key) continue;
-      const open = new Set(); target.querySelectorAll('.ki-card').forEach(card => [...card.querySelectorAll('.ki-info')].forEach((d, i) => { if (d.open) open.add(card.dataset.kiId + '|' + i); }));
-      target.replaceChildren(...(cards.length ? cards.map(c => kiRenderCard(c, live)) : [el('p', 'ki-note', live ? 'Für diesen Coin noch keine aktuelle Analyse. Öffentliche Daten laden; fehlende Daten bleiben nicht bewertbar.' : 'Noch keine vollständig geprüften lokalen Signale.')]));
-      target.querySelectorAll('.ki-card').forEach(card => [...card.querySelectorAll('.ki-info')].forEach((d, i) => { d.open = open.has(card.dataset.kiId + '|' + i); })); target.dataset.renderKey = key;
-    }
-  }
+  if (ki.open) kiRenderOverview();
   $('ki-stop-history').disabled = !ki.historyBusy;
-  $('ki-more').hidden = ki.cards.length <= ki.limit;
   if (!$('ki-chart-sec').hidden) { kiFollowChart(); kiDrawChart(); }
+  clearTimeout(ki.viewTimer);
+  if (!document.hidden) { const now = Date.now(), ends = [...ki.current.values()].flatMap(cards => cards.map(c => c.quote?.at + 30001)).filter(at => at > now);
+    if (ki.open) ends.push(Math.floor(now / 60000) * 60000 + 60000); if (ends.length) ki.viewTimer = setTimeout(kiRender, Math.max(1, Math.min(...ends) - now));
+  }
 }
 function kiFollowChart() {
   if (!ki.chartFollow || !ki.chartOn || !ki.chartCard) return;
@@ -14211,12 +14253,12 @@ function kiDrawChart() {
   svg.append(node('text', { x: left, y: 294 }, kiDate(rows[0].time)), node('text', { x: right, y: 294, 'text-anchor': 'end' }, kiDate(rows.at(-1).end))); $('ki-chart').replaceChildren(svg);
 }
 kiBuild(); kiReady = true;
-po3View = createPo3View({ host: $('ki-signal-panel'), options: store.get(PO3_CFG_KEY, {}), symbol: () => ki.coin, navigate: element => goTo(element.id),
+po3View = createPo3View({ host: $('ki-setup'), compact: true, onRender: () => queueMicrotask(kiRender), options: store.get(PO3_CFG_KEY, {}), symbol: () => ki.coin, navigate: element => goTo(element.id),
   serviceConfigure: po3ServiceConfigure, serviceJournal: po3ServiceJournal, serviceState: () => svc.pol.conf?.po3,
   save: options => { store.set(PO3_CFG_KEY, options); broadcastData([PO3_CFG_KEY]); }, changed: () => { kiCancel(); ki.due.clear(); kiKick(); },
   request: async request => { if (ki.busy || ki.pending) throw new Error('KI-Worker arbeitet; nach dem aktuellen Abschnitt erneut versuchen.'); ki.busy = true;
     try { const reply = await kiJob(request, {}, 'po3-journal'); po3Pending = new Set(reply.po3.pending); return reply.po3; } finally { ki.busy = false; kiKick(); } } });
-kiTelegramRender(); kiRender();
+$('ki-list').before($('po3-checklist')); kiTelegramRender(); kiRender();
 // Offene eingefrorene PO3-Fälle nach Start nachbewerten, auch bei ausgeschalteter Neudetektion.
 ki.busy = true; void kiJob({ action: 'pending' }, {}, 'po3-journal').then(reply => { po3Pending = new Set(reply.po3.pending); }).catch(e => { if (e.message !== 'abgebrochen') { po3View.state.message = e.message; po3View.render(); } }).finally(() => { ki.busy = false; kiKick(); });
 void kiReadHistory('results').then(rows => { for (const row of rows) ki.history.set(row.id, row); ki.historyRevision++; kiRender(); }).catch(e => { ki.archiveError = e.message; kiRender(); });
@@ -14236,7 +14278,7 @@ bc?.addEventListener('message', ({ data: msg }) => {
   kiRender(); kiKick();
 });
 // G12: optionaler eigener Reiter; keine Preisfeeds/Privatschlüssel oder automatischen Trades.
-function botTab() { botOpen = true; ki.open = false; $('ki-price-panel').hidden = true; $('ki-signal-panel').hidden = true; $('bot-simulation-panel').hidden = false;
+function botTab() { botOpen = true; ki.open = false; docEl.dataset.kiOverview = '0'; $('ki-price-panel').hidden = true; $('ki-signal-panel').hidden = true; $('bot-simulation-panel').hidden = false;
   for (const id of ['ki-price-tab', 'ki-signal-tab', 'ki-bot-tab']) { $(id).setAttribute('aria-selected', String(id === 'ki-bot-tab')); $(id).tabIndex = id === 'ki-bot-tab' ? 0 : -1; } void botView.refresh(); }
 async function botLoad(destination) {
   if (destination === 'oracle') { if (!svcOn()) throw new Error('HTTPS-Dienst 2.7.0 zuerst einrichten; lokal kann simuliert werden.'); const r = await svcFetch('/v1/bot/simulation'); if (r.status !== 200 || !r.j?.ok) throw new Error(r.j?.error || 'Bot-Simulationsstand nicht verfügbar'); return r.j.bot; }

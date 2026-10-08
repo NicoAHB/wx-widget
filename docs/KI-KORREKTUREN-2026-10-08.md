@@ -1,4 +1,4 @@
-# KI-Korrekturen – Gruppe 1
+# KI-Korrekturen – Kosten, Übersicht und Risiko
 
 Arbeitsstand **App/SW 3.52.0**, Dienstquelle **2.9.0**. Öffentlich bleibt **3.51.0**, die private VM wurde nicht aktualisiert. Grundlage: freigegebene [KI-Prüfung](KI-AUDIT-2026-10-08.md). Die neue kompakte KI-Übersicht und die ergänzende Risiko-/Ausführungsansicht sind getrennte Folgegruppen.
 
@@ -50,3 +50,13 @@ Die bestehende Listenanordnung bleibt in dieser Gruppe erhalten. Deduplizierung 
 Gezielte Kern-, tatsächliche Worker-/Browser-, Archiv-, Dienst- und Installerprüfungen sowie Lint sind im gesonderten Testnachweis festgehalten. Vor einer Veröffentlichung folgen der vollständige serielle Gesamtlauf und die Releaseprüfung des finalen Programmstands. Keine Veröffentlichung, privaten Orders, echten Telegram-Nachrichten oder Änderung der privaten VM in dieser Gruppe.
 
 Gezielter Abschluss Gruppe 1: Kosten 46/46, Darstellung 23/23, m71 23/23, m63 36/36, Dienst 26/26, Installer 35/35, Release 6/6, m69 19/19. Im m69-Erstbefund wurde das asynchrone Aktivierungsergebnis im Test zu früh geprüft: Playwright bewertet ein zurückgegebenes Promise als wahr. Der Test wartet nun ausdrücklich auf dessen Ergebnis und prüft bis zur bestätigten Aktivierung erneut. Der tatsächliche Cache-/Marker-/Offlinevertrag bleibt vollständig geprüft; kein SW-Produktfehler aus diesem Befund. Vollständige Erst-/Nachlauflogs liegen im Arbeitsbereich, der endgültige Release-Testnachweis folgt nach den weiteren beiden Gruppen.
+
+## Gruppe 2 – gemeinsame kompakte Übersicht
+
+Eine Liste zeigt jede Konfluenz-Original-ID einmal und die eigenständigen PO3-Modellfälle. Gespeicherte Originale haben Vorrang vor einer späteren Referenzbewertung derselben ID; aktuelle Prüfergebnisse ändern den Anzeigezustand. Kandidaten, Beobachten und Archiv werden getrennt angezeigt, alte Modelle standardmäßig im Archiv. Modell-, Coin- und Richtungsfilter gelten gemeinsam; ein gewählter Konfluenz-Horizont blendet PO3 bewusst aus. Bestehende PO3-Journal-/Kohorten-/Herkunftsfilter bleiben unter Einrichtung erhalten und beeinflussen dessen angezeigte Fälle und getrennte Statistik.
+
+Die kompakte Karte zeigt Modell, Richtung, Regelpunkte, Preislevel und nächste Handlung. Einzelpunkte, Muster, Originalrevision/Kurszeit, Historie und Charts liegen in aufklappbaren Details. Einrichtung/Dienst/Speicher stehen unter der Liste. Unveränderte Karten behalten ihren DOM-Knoten; auch erneuerte Belege erhalten geöffnete Details und Tastaturfokus. Am Desktop verwendet der KI-Bereich die volle Breite; bei Rückkehr zu Preisalarmen/Bot gilt wieder die vorhandene Anordnung.
+
+PO3 „Offen“ bezeichnet einen simulierten Modell-Entry, „Aktiv“ das wartende Limitmodell. Das ist kein Auftrag für einen zweiten Einstieg und kein Beleg einer echten Position. „Von mir gehandelt“ bleibt eine persönliche Markierung.
+
+Gezielt geprüft: unit-signal-overview 27/27, m72 25/25, m63 36/36, m71 23/23, m67 22/22, m65 12/12, m66 14/14. Zum Testen zwischen beiden Modellen und Statusansichten wechseln, gemeinsame Coin-/Richtungsfilter prüfen, Details öffnen und „Jetzt prüfen“ wählen: Original bleibt einmal erhalten. Einrichtung öffnen für Modell-/Kostenannahmen und die bisherigen PO3-Kohortenfilter.

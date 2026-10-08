@@ -20,7 +20,7 @@ const check = (name, ok, info = '') => { ok ? pass++ : fail++; console.log(`${ok
       await route.fulfill({ status: 200, headers: { 'access-control-allow-origin': '*' }, contentType: 'application/json', body: JSON.stringify({ code: '00000', requestTime: Date.now(), data }) });
     });
     await page.goto(h.URL_BASE + '/weather-widget-v2.html'); await page.waitForFunction(() => !!window.__g10 && __g05.state.candles.length);
-    await page.click('#ki-signal-tab');
+    await page.click('#ki-signal-tab'); await page.click('#ki-view-archive');
     const parity = await page.evaluate(async f => { const R = await import('/shared/confluence-replay.mjs'); return R.replayJob({ observations: [f.observation], ...f }); }, f);
     check('Browser und Node: identische Originalreplays mit 60/70/80', JSON.stringify(parity) === JSON.stringify(R.replayJob({ observations: [f.observation], ...f })));
     await page.evaluate(card => { __g10.state.cards = [card]; __g10.render(); }, f.card);

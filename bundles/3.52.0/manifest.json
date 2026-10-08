@@ -171,9 +171,15 @@
     },
     {
       "path": "./bundles/3.52.0/shared/po3-view.mjs",
-      "sha256": "24740f5f7d35294147d58b851e1a640918ccfef45d480c2e70a903b810377453",
-      "bytes": 27896,
+      "sha256": "0c8e73168ac21dfba5f4975655589d3e77ae277d571d3f5e6d23c1f92f718859",
+      "bytes": 29852,
       "alias": "./shared/po3-view.mjs"
+    },
+    {
+      "path": "./bundles/3.52.0/shared/signal-overview.mjs",
+      "sha256": "f5428bbba259f07eac8d7c0cebf5569624e6d1d14db43ce5be0a7c1505468bf4",
+      "bytes": 3314,
+      "alias": "./shared/signal-overview.mjs"
     },
     {
       "path": "./bundles/3.52.0/server/pattern-engine.mjs",
@@ -201,8 +207,8 @@
     },
     {
       "path": "./weather-widget-v2.html",
-      "sha256": "ee15a7d23d49685afb0bd15ae776662d81b588d7c3b3691879a96da421d3c688",
-      "bytes": 1509441
+      "sha256": "b343dbe32a49627e376a18e7e63459853508c82cfc9086a328109dace16786a6",
+      "bytes": 1514724
     },
     {
       "path": "./manifest.webmanifest",

@@ -31,13 +31,13 @@ const check = (name, ok, info = '') => { ok ? pass++ : fail++; console.log(`${ok
     failPolicy = false; await page.evaluate(() => __g05.svcRefresh(true)); await page.click('#ki-telegram'); await page.waitForFunction(() => !__g05.svc.pol.conf.targets.ki.on);
     check('KI AUS unabhängig vom Preisalarm, keine Bot-Orderwirkung', !w.pol.targets.ki.on && w.pol.targets['course-alert'].on);
     const card = (await import('../shared/confluence-live.mjs')).evaluateLive(F.liveFixture()).eligible[0]; w.ki.state.cards = [card]; w.ki.state.statistics[card.id] = { asOf: Date.now(), statistics: (await import('../shared/confluence-replay.mjs')).cardHistoricalStats(card, { asOf: Date.now() }) }; w.saveKi(w.ki.state);
-    await page.evaluate(() => __g10.serviceCards()); await page.evaluate(() => __g10.serviceCards());
+    await page.evaluate(() => __g10.serviceCards()); await page.evaluate(() => __g10.serviceCards()); await page.click('#ki-view-archive');
     check('Dienstkarten wiederholt laden: stabile ID einmal, eigener Markt/Modell und ungelesenes Badge', await page.evaluate(id => __g10.state.cards.length === 1 && __g10.state.cards[0].id === id && __g10.state.cards[0].origin === 'dienst', card.id));
     check('Diensthistorie separat übernommen: kein Addieren mit lokalem Originalarchiv', await page.evaluate(() => __g10.state.history.values().next().value.origin === 'dienst') && /Originaldatensatz des 24\/7-Dienstes/.test(await page.textContent('#ki-list')));
     const LC = await import('../shared/confluence-legacy-core.mjs'), LL = await import('../shared/confluence-legacy-live.mjs'), oldInput = F.liveFixture();
     function oldSource(value) { if (!value || typeof value !== 'object') return; for (const [key, child] of Object.entries(value)) { if (key === 'modelVersion' && child === 'cf-2') value[key] = 'cf-1'; else if (key === 'parametersKey') value[key] = LC.parametersKey(oldInput.config); else oldSource(child); } }
     oldSource(oldInput); const oldCard = LL.evaluateLive(oldInput).eligible[0]; w.ki.state.cards.push(oldCard); w.saveKi(w.ki.state);
-    await page.evaluate(() => __g10.serviceCards()); await page.evaluate(() => __g10.serviceCards());
+    await page.evaluate(() => __g10.serviceCards()); await page.evaluate(() => __g10.serviceCards()); await page.click('#ki-view-archive');
     check('Gemischtes Dienstarchiv: cf-1 lesbar, genau einmal und Originalkosten unverändert', await page.evaluate(c => { const old = __g10.state.cards.find(x => x.id === c.id); return __g10.state.cards.length === 2 && old.scope.modelVersion === 'cf-1' && JSON.stringify(old.costs) === JSON.stringify(c.costs) && JSON.stringify(old.score) === JSON.stringify(c.score) && /früheres Modell/.test(document.getElementById('ki-list').textContent); }, oldCard));
     check('Eigene Serverdestination erklärt; keine Telegram-/Bitget-Schlüssel im Auswahlvertrag', /Bot 123456789.*Chat -100888/.test(await page.textContent('#ki-telegram-note')) && !JSON.stringify(w.ki.state.config).includes(w.token));
     await page.reload(); await page.waitForFunction(() => !!window.__g10 && __g05.svc.pol.conf?.ki);
