@@ -1,0 +1,19 @@
+# G10(e) – KI im 24/7-Dienst
+
+Arbeitsstand App/SW 3.47.0, Dienst 2.5.0. Veröffentlichung aktualisiert die private Oracle-VM nicht. Der Installer lädt die gemeinsamen Module unverändert einschließlich ihres relativen Engine-Imports.
+
+Die App übernimmt die Vorauswahl, aktiven Horizonte, konfigurierten Kosten-/Ankerregeln und dieselben EMA-Startanker ausdrücklich per HTTPS-Command-ID und erwarteter KI-Revision. Ein verlorener Auftrag bleibt lokal für bewusste Wiederaufnahme gespeichert. Parameterwechsel erhält Originalarchiv und alte Karten, verwirft nur öffentliche Berechnungsfortschritte. Keine Kontoverbindung oder Bitget-Zugangsdaten für Signale.
+
+Der Dienst verwendet `ConfluenceService` und den gleichen Bitget-/Konfluenz-/Muster-/Replaykern wie App und Backtest. Öffentliche Abrufe teilen sich einen seriellen Client. Die bestehenden Preisalarme warten nicht auf lange KI-Abrufe. Originaldaten/Karten liegen in `ki-public.json`, ein fortgesetzter öffentlicher Historienjob in `ki-history-public.json` neben dem Dienstzustand (je maximal 20 MiB, atomarer Dateiaustausch). Originalarchiv 5000 / 12 MiB, Karten 200 / 5 MiB; voll bedeutet sichtbar pausieren, nichts abschneiden. Ein beschädigtes KI-Archiv sperrt KI, erhält die Datei und lässt Preisalarme weiterlaufen.
+
+Historische Nachbewertung erfolgt pro Takt in begrenzten Preis-/Mark-/Fundingphasen und Replaybatches. Quoten verwenden nur protokollierte Originaleingaben. Beide Zeitfenster, N und tatsächlich auswertbarer Zeitraum stehen in der Nachricht; unter 30 keine Prozentquote. Nicht aufgelöste Originalfälle sind keine behauptete historische Erfolgsserie. Die Originalmodellgrenzen aus `G10-HISTORIE.md` gelten weiterhin.
+
+KI-Versand ist ein eigenes G05-Ziel `ki` und bei Migration AUS. Schalter im Reiter, Einstellungen und Chatmanager zeigen den bestätigten Dienststand. Ohne eingerichtete Auswahl bleibt die Aktivierung in der App gesperrt. Kurz/lang lassen sich bei der Auswahlübernahme getrennt weiterleiten. AUS betrifft den Versand, nicht die lokale/serverseitige Bewertung, gespeicherte Karten oder Preisalarme. Preisalarme allein auszuschalten ändert KI ebenfalls nicht.
+
+Nur vollständig geprüfte Kandidaten ab 70 gelangen in den Ausgang, mit unveränderter Signal-ID als gehashter Ereignis-ID. Je Coin/Horizont höchstens eine Meldung pro Stunde; diese Drossel entfernt keine Originalfälle aus der Historie. Seit Aktivierung/Parameterübernahme bereits bestätigte Kerzen werden nicht nachgeliefert. Vor jedem Senden werden Epoche, Modellrevision und Nachrichtenablauf erneut geprüft. Verlorene Antwort/Neustart während POST bedeutet dauerhaft unbestätigt und keinen blinden zweiten Versand.
+
+Ziel ist der am Dienst eingerichtete Bot und dessen Chat, sichtbar mit Bot-ID und Chat-ID. Es werden keine Token über den KI-Vertrag übertragen. Die App kann Dienstkarten ausdrücklich in 20er-Seiten laden; gleiche Signal-ID bleibt einmalig und alte Modellkarten werden nicht automatisch zu neuen Chipfreigaben.
+
+Telegram-Befehle: In der geschützten Serverkonfiguration `kiUsers` als Liste numerischer Telegram-Nutzer-IDs eintragen, danach Dienst neu starten. Keine Zugangsdaten im Chat schicken. Ohne diese Liste bleibt Command-Polling aus. Der Dienstchat muss numerisch sein. `/ki_an`, `/ki_aus`, `/ki_status` verlangen gleichzeitig diesen Chat und einen erlaubten persönlichen Absender; anonyme Gruppen-/Bot-/weitergeleitete Befehle werden ignoriert. Ältere Updates beim ersten Poll sowie Nachrichten vor dem Prozessstart werden nicht rückwirkend angewendet. Ein zweiter `getUpdates`-Abnehmer für denselben Bot darf nicht gleichzeitig laufen. Updategrenze und Command-IDs werden dauerhaft gespeichert. Diese Befehle sind keine Bot-Orderfreigabe.
+
+Abnahme: Node prüft tatsächliche öffentliche Rechenwege mit lokalen Antworten, Browser den echten HTTP-Steuerdienst. Produktive Oracle-Installation, echte Telegramzustellung und iOS-PWA bleiben gesonderte Abnahmen.

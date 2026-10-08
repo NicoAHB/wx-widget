@@ -49,8 +49,9 @@ import crypto from 'node:crypto';
 import { Buffer } from 'node:buffer';
 import { fileURLToPath } from 'node:url';
 import { patternConfig, patternCandles, patternCases, patternFresh, patternText, patternEnd } from './pattern-monitor.mjs';
+import { ConfluenceService, kiMessage } from './ki-monitor.mjs';
 
-export const VERSION = '2.4.0';
+export const VERSION = '2.5.0';
 const E = process.env;
 // Adressen (für Tests über Umgebungsvariablen änderbar)
 export const API = {
@@ -301,17 +302,19 @@ export function readServerConfig(file) {
   if (host && !/^[a-z0-9.-]{3,253}$/.test(host)) throw new Error(`Öffentliche Adresse (host) in ${file} hat das falsche Format.`);
   const patternToken = String(j.patternToken || '').trim();
   if (patternToken && !TOKEN_RE.test(patternToken)) throw new Error(`Chartmuster-Bot in ${file} hat das falsche Format.`);
-  return { token, chat, discord, key, origins, listen, host, patternToken };
+  const kiUsers = Array.isArray(j.kiUsers) ? j.kiUsers.map(String) : [];
+  if (kiUsers.length > 10 || kiUsers.some(id => !/^[1-9]\d{0,19}$/.test(id))) throw new Error('KI-Absenderliste ungültig; numerische Telegram-Nutzer-IDs am Server eintragen');
+  return { token, chat, discord, key, origins, listen, host, patternToken, kiUsers };
 }
 
 // ---------- 2.0 (G05): Ziel-Schalter und Ereignis-Freigaben (rein, ohne Netz – testbar) ----------
 // Ziele: Kursalarm (Preis-, Stop-/Ziel-, Gewinn-/Verlust-Alarme, Termine, BTC-Puls – sendet dieser Dienst bzw. die App mit
 // Freigabe), Sicherung und Trades (sendet nur die App direkt an Telegram; hier steht nur der Schalter, ohne Inhalte).
-export const TARGETS = ['course-alert', 'backup', 'trades', 'patterns'];
+export const TARGETS = ['course-alert', 'backup', 'trades', 'patterns', 'ki'];
 export const CL_MS = { '5m': 3e5, '15m': 9e5, '1h': 36e5, '4h': 144e5 };   // 2.3.0: Alarm bei Kerzenschluss
 // letzte abgeschlossene Kerze (Schlusszeit vor jetzt); Treffer nur, wenn sie nach dem Scharfschalten schloss und ihr Schlusskurs die Marke erreicht
 export function closeHit(a, rows, armedAt, now) { const c = candles(rows).filter(x => x.T < now).at(-1); return c ? { price: c.c, hit: c.T > armedAt && (a.dir === 'below' ? c.c <= a.price : c.c >= a.price) } : null; }   // 2.2.0 (G09 C6a): Chartmuster
-export const TARGET_NAME = { 'course-alert': 'Kursalarm', backup: 'Sicherung', trades: 'Trades', patterns: 'Chartmuster' };
+export const TARGET_NAME = { 'course-alert': 'Kursalarm', backup: 'Sicherung', trades: 'Trades', patterns: 'Chartmuster', ki: 'KI-Signale' };
 const CMD_RE = /^[A-Za-z0-9_-]{8,64}$/, EV_RE = /^[A-Za-z0-9_.:|\-]{6,204}$/, SENDER_RE = /^(oracle|app:[a-z0-9]{4,24})$/;
 export const EV_FINAL = ['confirmed', 'unconfirmed', 'failed', 'discarded'], EV_ORDER = { reserved: 0, sending: 1, confirmed: 2, unconfirmed: 2, failed: 2, discarded: 2 };
 export const GRANT_WAIT = 5 * 60e3, EV_KEEP = 14 * 864e5, CMD_KEEP = 7 * 864e5, CMD_MAX = 300;
@@ -324,7 +327,7 @@ export const act = t => Math.max(0, Math.round(Number(t) || 0)).toString(36);
 export const alarmEvent = a => `${a.id}:${act(a.armedAt)}:price-cross`;
 export const posBase = (p, type) => `${p.id}:${act(p.since)}:${type}`;
 export const pnlEvent = l => `pnl:${l.k}:${act(l.at)}:threshold`;
-export function policyNew(now) { return { rev: 0, targets: Object.fromEntries(TARGETS.map(id => [id, { on: true, since: now, epoch: 1 }])) }; }
+export function policyNew(now) { return { rev: 0, targets: Object.fromEntries(TARGETS.map(id => [id, { on: id !== 'ki', since: now, epoch: 1 }])) }; }
 export function policyLoad(p, now) {
   const d = policyNew(now); if (!p || typeof p !== 'object') return d;
   d.rev = Number.isInteger(p.rev) && p.rev >= 0 ? p.rev : 0;
@@ -464,8 +467,9 @@ export class PatternArchive {
   }
 }
 export class Watcher {
-  constructor({ token, chat, discord = '', patternToken = '', key = '', origins = [APP_ORIGIN], listen = LISTEN, host = '', statePath = '', now = () => Date.now(), log = (...a) => console.log(...a), patternFetch = klines }) {
-    Object.assign(this, { token, chat, discord, patternToken, key, origins, listen, host, statePath, now, log, patternFetch });
+  constructor({ token, chat, discord = '', patternToken = '', kiUsers = [], kiClient, key = '', origins = [APP_ORIGIN], listen = LISTEN, host = '', statePath = '', now = () => Date.now(), log = (...a) => console.log(...a), patternFetch = klines }) {
+    Object.assign(this, { token, chat, discord, patternToken, kiUsers, key, origins, listen, host, statePath, now, log, patternFetch });
+    this.kiStartedAt = now(); this.kiOffset = null; this.kiCommandsBusy = false;
     this.patternWatch = { rev: 0, since: 0, config: null }; this.patternProgress = new Map(); this.patternBusy = false;
     // 2.0 (G05): Ziel-Schalter (Revision, Epoche, Einschaltzeit), ausgeführte Aufträge, Ereignis-Freigaben, Episoden
     this.pol = policyNew(now()); this.cmds = []; this.evs = {}; this.eps = {}; this.server = null; this.authFail = { n: 0, t: 0 };
@@ -483,6 +487,18 @@ export class Watcher {
     this.me = null; this.waitSince = 0; this.waitLogAt = 0; this.hintAt = 0; this.ackKeys = null; this.ackAt = 0; this.ackOn = null; this.ackPend = false; this.waitWhat = '';
     this.firstLook = new Set(); this.beatTag = ''; this.checks = 0; this.prices = new Map(); this.chatInfo = null;
     this.loadState();
+    this.kiFile = statePath ? path.join(path.dirname(statePath), 'ki-public.json') : '';
+    let kiSaved = null, kiHistory = null, kiError = '';
+    this.kiHistoryFile = statePath ? path.join(path.dirname(statePath), 'ki-history-public.json') : '';
+    try {
+      for (const [file, kind] of [[this.kiFile, 'state'], [this.kiHistoryFile, 'history']]) if (file && fs.existsSync(file)) {
+        if (fs.statSync(file).size > 20 * 1024 * 1024) throw new Error('KI-Zustand überschreitet 20 MiB; Originaldatei bleibt erhalten');
+        const loaded = JSON.parse(fs.readFileSync(file, 'utf8')); if (kind === 'state') kiSaved = loaded; else kiHistory = loaded;
+      }
+      this.ki = new ConfluenceService({ now, client: kiClient, saved: kiSaved, history: kiHistory, policy: () => this.pol.targets.ki,
+        persist: state => this.saveKi(state), persistHistory: state => this.saveKi(state, true), notify: (card, stats, revision) => this.notifyKi(card, stats, revision) });
+    } catch (e) { kiError = this.secret(e.message); this.ki = new ConfluenceService({ now, client: kiClient }); this.ki.stop(); this.ki.state.error = 'KI-Speicher prüfen: ' + kiError + '. Preisalarme laufen weiter; Originaldateien bleiben erhalten.'; }
+
     // 2.1.0 (G09 C4): Muster-Archiv als eigene Datei neben dem Zustand (nicht in der Alarmkonfiguration)
     this.arch = statePath ? new PatternArchive({ file: path.join(path.dirname(statePath), 'patterns-journal.jsonl'), backupDir: process.env.SCALPDESK_PATTERN_BACKUP || path.join(path.dirname(statePath), 'muster-sicherung'), now, log: m => this.log(m) }) : null;
   }
@@ -499,11 +515,12 @@ export class Watcher {
         this.pol = policyLoad(s.pol, this.now()); if (Array.isArray(s.cmds)) this.cmds = s.cmds.filter(c => c && typeof c.id === 'string' && Number.isFinite(c.at));
         if (s.evs && typeof s.evs === 'object') this.evs = s.evs; if (s.eps && typeof s.eps === 'object') this.eps = s.eps; }
       if (s?.patternWatch?.config) this.patternWatch = { rev: Number(s.patternWatch.rev) || 0, since: Number(s.patternWatch.since) || 0, config: patternConfig(s.patternWatch.config) };
+      if (Number.isSafeInteger(s?.kiOffset) && s.kiOffset >= 0) this.kiOffset = s.kiOffset;
       // 2.4.0: Prozessabbruch während eines Muster-POSTs ist unklare Zustellung, niemals erneut senden.
-      this.out = this.out.filter(m => { if (m.target !== 'patterns' || !m.inFlight) return true; if (m.ev) evReport(this.evs, { eventId: m.ev, sender: 'oracle', st: 'unconfirmed', why: 'Neustart während Telegram-Versand' }, this.now()); return false; });
+      this.out = this.out.filter(m => { if (!['patterns', 'ki'].includes(m.target) || !m.inFlight) return true; if (m.ev) evReport(this.evs, { eventId: m.ev, sender: 'oracle', st: 'unconfirmed', why: 'Neustart während Telegram-Versand' }, this.now()); return false; });
     } catch { /* erster Start oder beschädigt: neu anfangen */ }
   }
-  stateJson() { const c = this.conf; return JSON.stringify({ v: 2, patternWatch: this.patternWatch, pol: this.pol, cmds: this.cmds, evs: this.evs, eps: this.eps, fired: this.fired, pulse: this.pulseLast, pnl: { st: this.pnlSt, pend: this.pnlPend, fired: this.pnlFired }, out: this.out, last: this.last, sendErr: this.sendErr, conf: c && { msgId: c.msgId, fileUid: c.fileUid, data: c.data }, cal: this.cal && { at: this.calAt, events: this.cal }, hintAt: this.hintAt, ack: this.ackKeys && { keys: this.ackKeys, t: this.ackAt, on: this.ackOn } }); }
+  stateJson() { const c = this.conf; return JSON.stringify({ v: 2, kiOffset: this.kiOffset, patternWatch: this.patternWatch, pol: this.pol, cmds: this.cmds, evs: this.evs, eps: this.eps, fired: this.fired, pulse: this.pulseLast, pnl: { st: this.pnlSt, pend: this.pnlPend, fired: this.pnlFired }, out: this.out, last: this.last, sendErr: this.sendErr, conf: c && { msgId: c.msgId, fileUid: c.fileUid, data: c.data }, cal: this.cal && { at: this.calAt, events: this.cal }, hintAt: this.hintAt, ack: this.ackKeys && { keys: this.ackKeys, t: this.ackAt, on: this.ackOn } }); }
   saveStateNow() {
     if (!this.statePath) return false;
     try { fs.mkdirSync(path.dirname(this.statePath), { recursive: true }); const tmp = this.statePath + '.tmp'; fs.writeFileSync(tmp, this.stateJson()); fs.renameSync(tmp, this.statePath); return true; }
@@ -536,8 +553,8 @@ export class Watcher {
   async queue(text, tz, { label = '', silent = false, ev = '', target = 'course-alert', destination = null } = {}) {
     const t = this.now(), tg = this.pol.targets[target];
     if (this.key && !tg.on) { this.log(`Nicht gesendet (Ziel Kursalarm ausgeschaltet): ${label || text.split('\n')[0]}`); return; }
-    this.out.push({ id: `${t}-${Math.random().toString(36).slice(2, 7)}`, text, tz, label, silent, at: t, tries: 0, next: 0, err: '', dc: false, target, epoch: tg.epoch, ...(destination ? { destination, watchRev: this.patternWatch.rev } : {}), ...(ev ? { ev } : {}) });
-    if (!this.saveStateNow() && target === 'patterns') { this.out.pop(); if (ev) this.evSet(ev, 'failed', 'Ausgang nicht dauerhaft gespeichert'); return; }
+    this.out.push({ id: `${t}-${Math.random().toString(36).slice(2, 7)}`, text, tz, label, silent, at: t, tries: 0, next: 0, err: '', dc: false, target, epoch: tg.epoch, ...(destination ? { destination, watchRev: this.patternWatch.rev } : {}), ...(target === 'ki' ? { kiRev: this.ki.state.rev } : {}), ...(ev ? { ev } : {}) });
+    if (!this.saveStateNow() && ['patterns', 'ki'].includes(target)) { this.out.pop(); if (ev) this.evSet(ev, 'failed', 'Ausgang nicht dauerhaft gespeichert'); return; }
     await this.deliver();
   }
   // 2.0: Zustand einer eigenen Freigabe fortschreiben (mit Protokollzeile: Ereignis, Ziel, Sender, Zustand)
@@ -575,23 +592,24 @@ export class Watcher {
       const why = !m.code ? 'Telegram war nicht erreichbar' : m.code === 429 ? 'Telegram hatte gebremst' : 'Telegram hatte sie zuerst abgelehnt';
       const late = t - m.at > 120e3, full = `${m.text}\n${timeText(m.at, m.tz, true)} Uhr · 24/7-Dienst${late ? `\n(verspätet zugestellt um ${timeText(t, m.tz)} Uhr – ${why})` : ''}`;
       if (m.target === 'patterns' && (m.watchRev !== this.patternWatch.rev || !this.patternDestination(m.destination))) { this.out = this.out.filter(x => x !== m); if (m.ev) this.evSet(m.ev, 'discarded', 'Musterziel geändert'); this.saveState(); continue; }
-      if (m.target !== 'patterns' && this.discord && !m.dc) { m.dc = true; await this.discordPost(full); }
+      if (m.target === 'ki' && (m.kiRev !== this.ki.state.rev || !this.ki.state.cards.some(c => 'ki:' + crypto.createHash('sha256').update(c.id).digest('hex') === m.ev && c.expiresAt > t))) { this.out = this.out.filter(x => x !== m); if (m.ev) this.evSet(m.ev, 'discarded', 'KI-Modell geändert oder Nachricht abgelaufen'); this.saveStateNow(); continue; }
+      if (!['patterns', 'ki'].includes(m.target) && this.discord && !m.dc) { m.dc = true; await this.discordPost(full); }
       try {
         const dest = m.target === 'patterns' ? m.destination : { chat: this.chat }, token = m.target === 'patterns' ? this.patternDestination(dest) : this.token;
-        if (m.target === 'patterns') { m.inFlight = true; if (!this.saveStateNow()) { m.inFlight = false; throw Object.assign(new Error('Muster-Versandstatus nicht dauerhaft gespeichert'), { code: 0 }); } }
+        if (['patterns', 'ki'].includes(m.target)) { m.inFlight = true; if (!this.saveStateNow()) { m.inFlight = false; throw Object.assign(new Error('Muster-Versandstatus nicht dauerhaft gespeichert'), { code: 0 }); } }
         const sent = await this.tg('sendMessage', { chat_id: dest.chat, ...(dest.thread ? { message_thread_id: dest.thread } : {}), text: full.slice(0, 4000), link_preview_options: { is_disabled: true }, ...(m.silent ? { disable_notification: true } : {}) }, 20000, token);
         this.log(`Telegram gesendet: ${m.label || m.text.split('\n')[0]}${sent?.message_id ? ` (Nachricht #${sent.message_id})` : ''}${m.tries ? ` – nach ${plural(m.tries, 'Fehlversuch', 'Fehlversuchen')}` : ''}`);
         this.out = this.out.filter(x => x !== m); this.last = { t, label: m.label }; if (m.ev) this.evSet(m.ev, 'confirmed');
         if (this.sendErr && !this.out.some(x => x.tries)) { this.log('Telegram: Zustellung wieder in Ordnung'); this.sendErr = null; }
-        this.next.beat = 0; if (m.target === 'patterns') this.saveStateNow(); else this.saveState(); // Zeile „Zustellung: zuletzt …“ gleich aktualisieren
+        this.next.beat = 0; if (['patterns', 'ki'].includes(m.target)) this.saveStateNow(); else this.saveState(); // Zeile „Zustellung: zuletzt …“ gleich aktualisieren
       } catch (e) {
         // 2.0: Antwort verloren – „Zustellung unbestätigt“, kein blinder zweiter Versuch
-        if (e.lost) { this.out = this.out.filter(x => x !== m); this.log(`Zustellung unbestätigt: ${m.label || m.text.split('\n')[0]} – ${this.secret(e.message)}; kein zweiter Versuch (die Meldung könnte schon angekommen sein)`); if (m.ev) this.evSet(m.ev, 'unconfirmed', 'Telegram-Antwort verloren'); if (m.target === 'patterns') this.saveStateNow(); else this.saveState(); continue; }
+        if (e.lost) { this.out = this.out.filter(x => x !== m); this.log(`Zustellung unbestätigt: ${m.label || m.text.split('\n')[0]} – ${this.secret(e.message)}; kein zweiter Versuch (die Meldung könnte schon angekommen sein)`); if (m.ev) this.evSet(m.ev, 'unconfirmed', 'Telegram-Antwort verloren'); if (['patterns', 'ki'].includes(m.target)) this.saveStateNow(); else this.saveState(); continue; }
         // endgültig abgelehnt (4xx außer „Too Many Requests“) bleibt wie bisher im Ausgang und wird wiederholt; die Freigabe bleibt „wird gesendet“
         m.tries++; m.code = e.code || 0; m.err = this.secret(e.message).slice(0, 160); m.next = t + (e.code === 429 && e.retry ? e.retry * 1000 : outDelay(m.tries));
         this.sendErr = { since: this.sendErr?.since || t, msg: m.err, code: e.code || 0 };
         this.note('Telegram', `${m.err} – noch nicht zugestellt: ${m.label || m.text.split('\n')[0]}; neuer Versuch in ${Math.round((m.next - t) / 1000)} s`);
-        if (m.target === 'patterns') { m.inFlight = false; this.saveStateNow(); } else this.saveState();
+        if (['patterns', 'ki'].includes(m.target)) { m.inFlight = false; this.saveStateNow(); } else this.saveState();
       }
     }
   }
@@ -805,6 +823,59 @@ export class Watcher {
   //   GET  /v1/patterns/status       Anzahl, Ergebnisse, Sicherung (geprüft)
   //   GET  /v1/patterns/export       bereinigter Bestand (nur Marktdaten) für Export und Veröffentlichung
   // ---- 2.4.0 (G09 C6b): bestätigte Vorauswahl, Prüfung je Kerzenschluss, Dienst als Mustersender ----
+  saveKi(state, history = false) {
+    const file = history ? this.kiHistoryFile : this.kiFile;
+    if (!file) return false;
+    try { const json = JSON.stringify(state); if (Buffer.byteLength(json) > 20 * 1024 * 1024) throw new Error('KI-Speicher voll (20 MiB); Originalbestand bleibt');
+      fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file + '.tmp', json, { mode: 0o600 }); fs.renameSync(file + '.tmp', file); return true;
+    } catch (e) { this.note('KI-Speicher', e.message); return false; }
+  }
+  applyKiConfig(cmd) {
+    if (this.ki.stopped) return { status: 503, body: { ok: false, error: this.ki.state.error || 'KI-Dienst gestoppt' } };
+    if (!CMD_RE.test(cmd?.commandId)) return { status: 400, body: { ok: false, error: 'Auftrags-ID fehlt.' } };
+    const previous = this.cmds.find(c => c.id === cmd.commandId);
+    if (previous) return { status: previous.status, body: { ...previous.body, repeat: true } };
+    if (cmd.expectedRevision !== this.ki.state.rev) return { status: 409, body: { ok: false, error: 'KI-Revision geändert; aktuellen Stand prüfen.', ki: this.ki.view() } };
+    try {
+      const ki = this.ki.configure(cmd.config), body = { ok: true, commandId: cmd.commandId, ki };
+      const priorCommands = [...this.cmds]; this.cmds.push({ id: cmd.commandId, at: this.now(), status: 200, body }); this.cmds = this.cmds.slice(-CMD_MAX);
+      if (!this.saveStateNow()) { this.cmds = priorCommands; return { status: 503, body: { ok: false, error: 'KI-Konfiguration gespeichert, Auftragsantwort nicht gesichert; Stand neu lesen.', ki } }; }
+      return { status: 200, body };
+    } catch (e) { return { status: 400, body: { ok: false, error: this.secret(e.message), ki: this.ki.view() } }; }
+  }
+  async notifyKi(card, stats, revision) {
+    if (!this.key || !this.pol.targets.ki.on || revision !== this.ki.state.rev || card.expiresAt <= this.now()) return;
+    const ev = 'ki:' + crypto.createHash('sha256').update(card.id).digest('hex'), label = `KI-Signal ${card.scope.instrument}`;
+    if (!this.reserveOwn(ev, label, 'ki').grant || !this.saveStateNow()) return;
+    await this.queue(kiMessage(card, stats), this.conf?.data?.tz || 'Europe/Berlin', { target: 'ki', ev, label });
+  }
+  async processKiUpdate(update) {
+    const m = update?.message, command = /^\/(ki_an|ki_aus|ki_status)(?:@([A-Za-z0-9_]+))?$/.exec(m?.text?.trim() || '');
+    if (!command || command[2] && command[2].toLowerCase() !== this.me?.username?.toLowerCase() || !m?.from || m.from.is_bot || m.sender_chat || m.forward_origin || m.forward_date || String(m.chat?.id) !== this.chat || !this.kiUsers.includes(String(m.from.id))
+      || !Number.isSafeInteger(update.update_id) || !Number.isFinite(m.date) || m.date * 1000 < this.kiStartedAt - 1000 || m.date * 1000 > this.now() + 1000) return false;
+    if (command[1] !== 'ki_status') {
+      const before = JSON.parse(JSON.stringify(this.pol)), cmds = [...this.cmds];
+      const r = policyApply(this.pol, this.cmds, { commandId: 'ki-tg-' + update.update_id, expectedRevision: this.pol.rev, set: { ki: command[1] === 'ki_an' } }, this.now());
+      if (r.status !== 200 || !this.saveStateNow()) { this.pol = before; this.cmds = cmds; throw new Error('KI-Schalter nicht dauerhaft bestätigt; bisheriger Stand bleibt'); }
+    }
+    await this.tg('sendMessage', { chat_id: this.chat, text: `KI-Signale: ${this.pol.targets.ki.on ? 'AN' : 'AUS'} · bestätigt · Revision ${this.pol.rev}. ${this.ki.state.config ? 'Auswahl eingerichtet.' : 'Auswahl zuerst in der App an den Dienst übergeben.'} Keine Bot-Orderfreigabe.` }); return true;
+  }
+  async pollKiCommands() {
+    if (this.kiCommandsBusy || !this.kiUsers.length || !/^-?\d+$/.test(this.chat)) return;
+    this.kiCommandsBusy = true;
+    try {
+      // Erste Einrichtung verwirft ältere Updates. Andere getUpdates-Abnehmer für diesen Bot nicht gleichzeitig betreiben.
+      const updates = await this.tg('getUpdates', { offset: this.kiOffset ?? -1, limit: 20, timeout: 0, allowed_updates: ['message'] });
+      if (!Array.isArray(updates)) throw new Error('Telegram-Updateantwort ungültig');
+      const firstPoll = this.kiOffset === null;
+      for (const update of updates) {
+        if (!Number.isSafeInteger(update.update_id) || update.update_id < 0) continue;
+        if (!firstPoll && update.update_id >= this.kiOffset) await this.processKiUpdate(update);
+        this.kiOffset = Math.max(this.kiOffset || 0, update.update_id + 1); if (!this.saveStateNow()) throw new Error('Telegram-Updategrenze nicht dauerhaft gespeichert');
+      }
+      if (this.kiOffset === null) { this.kiOffset = 0; if (!this.saveStateNow()) throw new Error('Telegram-Updategrenze nicht gespeichert'); }
+    } finally { this.kiCommandsBusy = false; }
+  }
   patternDestination(c) {
     if (!c) return '';
     return [this.patternToken, this.token].find(token => token && token.split(':')[0] === c.bot) || '';
@@ -858,7 +929,7 @@ export class Watcher {
   }
   stateView(days = 3) {
     const t = this.now(), events = Object.entries(this.evs).filter(([, e]) => t - e.at < days * 864e5).sort((a, b) => b[1].at - a[1].at).slice(0, 300).map(([id, e]) => ({ id, ...e }));
-    return { ok: true, v: VERSION, now: t, patternWatch: this.patternWatch, ...policyView(this.pol), eps: Object.fromEntries(Object.entries(this.eps).map(([b, x]) => [b, x.n])), events };
+    return { ok: true, v: VERSION, now: t, ki: { ...this.ki.view(), destination: { chat: this.chat, bot: this.token.split(':')[0] }, commandsReady: this.kiUsers.length > 0 }, patternWatch: this.patternWatch, ...policyView(this.pol), eps: Object.fromEntries(Object.entries(this.eps).map(([b, x]) => [b, x.n])), events };
   }
   keyOk(h) {
     const a = /^Bearer\s+(\S+)$/.exec(String(h || ''))?.[1] || '', x = crypto.createHash('sha256').update(a).digest(), y = crypto.createHash('sha256').update(this.key).digest();
@@ -915,6 +986,8 @@ export class Watcher {
       const n = epNext(this.eps, this.evs, body.base, body.from, t); if (n !== body.from) { this.log(`Episode ${body.base}: neue Episode ${n} (von der App gemeldet)`); this.saveStateNow(); }
       return send(200, { ok: true, ep: n });
     }
+    if (route === 'POST /v1/ki/config') { const r = this.applyKiConfig(body); return send(r.status, r.body); }
+    if (route === 'GET /v1/ki/signals') { const offset = Number(u.searchParams.get('offset') || 0); if (!Number.isInteger(offset) || offset < 0 || offset > 200) return send(400, { ok: false, error: 'Kartenseite ungültig' }); return send(200, { ok: true, cards: this.ki.state.cards.slice(offset, offset + 20).map(c => ({ ...c, serviceStatistics: this.ki.state.statistics[c.id] || null })) }); }
     if (route === 'POST /v1/patterns/watch') { const r = this.applyPatternWatch(body); return send(r.status, r.body); }
     if (route === 'POST /v1/patterns/notify') {
       if (body?.expectedRevision !== this.patternWatch.rev) return send(409, { ok: false, error: 'Musterziel am Dienst geändert – aktuellen Stand prüfen.' });
@@ -987,6 +1060,8 @@ export class Watcher {
     if (c()?.on && Object.keys(this.pnlPend).length) await run('Gewinn/Verlust', () => this.flushPnl()); // erreichte Grenzen nach der Wartezeit
     if (this.out.length) await run('Zustellung', () => this.deliver()); // noch nicht zugestellte Meldungen
     // Musterhistorien laufen getrennt: ein langsamer Markt darf die bestehenden Kurs-/Stop-Alarme nicht aufhalten.
+    if (this.key && this.ki.state.config) void run('KI-Signale', async () => { await this.ki.scan(); await this.ki.resolveHistory(); });
+    if (this.key && this.kiUsers.length && t >= (this.next.kiCommands || 0)) { this.next.kiCommands = t + 5000; void run('KI-Befehle', () => this.pollKiCommands()); }
     if (this.key && this.patternWatch.config && this.pol.targets.patterns.on) void run('Chartmuster', () => this.checkPatterns());
     const needCal = c()?.on && c().ev.news && c().econ.warn;
     if (needCal && t >= this.next.cal) { this.next.cal = t + 5 * 60e3; await run('Kalender', async () => { await this.loadCalendar(); this.next.cal = t + EVERY.cal; }); } // Fehler: in 5 min erneut
@@ -1007,7 +1082,7 @@ export class Watcher {
     if (this.conf?.data) { const c = this.conf.data, items = watchItems(c); this.log(`Übergabe aus dem gespeicherten Zustand (#${c.tag}): ${c.on ? `${plural(items.length, 'Marke', 'Marken')}${items.length ? ` – ${items.slice(0, 6).map(x => x.text).join(' · ')}` : ''}` : 'Übergabe ausgeschaltet'}`);
       for (const a of c.alarms) this.firstLook.add(alarmKey(a)); for (const p of c.positions) for (const ty of ['tp', 'sl']) this.firstLook.add(posKey(p, ty)); }
     await this.listenNow(); // 2.0: HTTPS-Steuerung (nur mit Zugangsschlüssel)
-    const stop = () => { this.stopped = true; clearTimeout(this.saveTimer); this.saveStateNow(); this.server?.close(); process.exit(0); };
+    const stop = () => { this.stopped = true; this.ki.stop(); clearTimeout(this.saveTimer); this.saveStateNow(); this.server?.close(); process.exit(0); };
     process.on('SIGTERM', stop); process.on('SIGINT', stop);
     while (!this.stopped) { await this.tick(); await sleep(EVERY.tick); }
   }

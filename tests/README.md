@@ -10,7 +10,7 @@ Automatische Tests für die App (`weather-widget-v2.html`) und den 24/7-Dienst (
 ## Aufruf
 | Befehl | Was er tut | Dauer |
 |---|---|---|
-| `bash run-all.sh` | alle Tests nacheinander (Einheitentests, Installer, m3–m65, ui, functional, Statusseite, Rauchtest, Sichtprüfung) | etwa 2,5 Stunden |
+| `bash run-all.sh` | alle Tests nacheinander (Einheitentests, Installer, m3–m66, ui, functional, Statusseite, Rauchtest, Sichtprüfung) | etwa 2,5 Stunden |
 | `node m51.js` | ein einzelner Test, hier G02 (Lose, Nachkauf, Teilabschluss) | wenige Minuten |
 | `node m51.js svc` | nur ein Abschnitt eines Tests | |
 | `bash lint.sh` | ESLint über App und G10-Fachmodule (0 Fehler, 3 bekannte App-Warnungen) | Sekunden |
@@ -24,6 +24,8 @@ Automatische Tests für die App (`weather-widget-v2.html`) und den 24/7-Dienst (
 | `node unit-confluence-replay.js` | G10(d): Originalscore, 60/70/80, TP/SL/Timeout, tatsächliche Kosten, 29/30, definierte R-Folge (33 Fälle) | Sekunden |
 | `node unit-bitget-history.js` | G10(d): öffentliche Preis-/Mark-/Fundingseiten, Abbruch/429 und fortgesetzte Jobs (15 Fälle) | Sekunden |
 | `node m65.js` | G10(d): tatsächlicher App-Worker, Original-IDB, Wiederaufnahme, Quotenstatus, Reload und Mobile | Sekunden |
+| `node unit-confluence-service.js` | G10(e): echter Dienst-/Bitget-Kern, Neustart, Originalhistorie, Telegram-Absender, Zustand und Zustellfehler (26 Fälle) | Sekunden |
+| `node m66.js` | G10(e): echter HTTP-Dienst, Auswahl/Schalter bestätigt, Fehler, Kartenimport, Reload und 390px | Sekunden |
 | `node m64.js` | Chartmuster-Anzeige: Alter 0/3/4/10/11, Altbereich, Filter, DOM-Erhalt, Live-Kurs und Zielfarbe | Sekunden |
 
 Ausgabe je Test: `✓`/`✗` je Prüfung und am Ende `n/m bestanden`.

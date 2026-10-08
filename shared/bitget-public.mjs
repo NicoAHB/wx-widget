@@ -100,6 +100,7 @@ function sourceContext(selection, config) {
   if (context.periodMs <= base.periodMs || !['short', 'long'].includes(s.horizon) || !Number.isSafeInteger(s.maxHoldMs) || s.maxHoldMs <= 0 || !Number.isFinite(s.slippageBps) || s.slippageBps < 0 || s.slippageBps >= 1e4 || !time(s.indicatorAnchors?.base) || !time(s.indicatorAnchors?.context) || s.indicatorAnchors.base % base.periodMs || s.indicatorAnchors.context % context.periodMs) throw new Error('Bitget-Signalkontext/Startanker fehlt');
   return { ...s, venue: 'bitget', product: 'USDT-FUTURES', quote: 'USDT', modelVersion: MODEL_VERSION, settingsRevision: p.revision, parametersKey: parametersKey(p), feedVersion: FEED_VERSION };
 }
+export function bitgetSelection(selection, config) { sourceContext(selection, config); return clone(selection); }
 function identity(s) {
   return JSON.stringify(['venue', 'product', 'quote', 'instrument', 'timeframe', 'contextTimeframe', 'horizon', 'modelVersion', 'settingsRevision', 'parametersKey', 'feedVersion', 'maxHoldMs', 'slippageBps'].map(k => s?.[k]).concat([s?.indicatorAnchors?.base, s?.indicatorAnchors?.context]));
 }

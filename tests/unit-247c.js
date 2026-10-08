@@ -20,9 +20,9 @@ const TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', CHAT = '987654321'
   // ================= rein =================
   const T0 = Date.UTC(2026, 9, 6, 10, 0);
   let pol = W.policyNew(T0), cmds = [];
-  check('Neuer Stand: vier Ziele (Kursalarm, Sicherung, Trades, Chartmuster) an, Revision 0, Epoche 1', pol.rev === 0 && W.TARGETS.every(id => pol.targets[id].on && pol.targets[id].epoch === 1), JSON.stringify(pol));
+  check('Neuer Stand: bisherige vier Ziele an, KI standardmäßig AUS, Revision 0, Epoche 1', pol.rev === 0 && W.TARGETS.every(id => pol.targets[id].on === (id !== 'ki') && pol.targets[id].epoch === 1), JSON.stringify(pol));
   let r = W.policyApply(pol, cmds, { commandId: 'cmd-0001', expectedRevision: 0, set: Object.fromEntries(W.TARGETS.map(id => [id, false])) }, T0 + 1000);
-  check('Master AUS: alle vier gemeinsam, Revision 1, Epoche je Ziel +1, „aus seit“', r.status === 200 && pol.rev === 1 && W.TARGETS.every(id => !pol.targets[id].on && pol.targets[id].epoch === 2 && pol.targets[id].offSince === T0 + 1000) && r.body.changed.length === W.TARGETS.length && W.TARGETS.includes('patterns'), JSON.stringify(r.body));
+  check('Master AUS: alle vier gemeinsam, Revision 1, Epoche je Ziel +1, „aus seit“', r.status === 200 && pol.rev === 1 && W.TARGETS.every(id => !pol.targets[id].on && pol.targets[id].epoch === (id === 'ki' ? 1 : 2) && (id === 'ki' || pol.targets[id].offSince === T0 + 1000)) && r.body.changed.length === W.TARGETS.filter(id => id !== 'ki').length && W.TARGETS.includes('patterns'), JSON.stringify(r.body));
   const r2 = W.policyApply(pol, cmds, { commandId: 'cmd-0001', expectedRevision: 0, set: { 'course-alert': true } }, T0 + 2000);
   check('Gleiche Auftrags-ID erneut: dieselbe Antwort („repeat“), nichts geändert', r2.status === 200 && r2.body.repeat && pol.rev === 1 && !pol.targets['course-alert'].on);
   r = W.policyApply(pol, cmds, { commandId: 'cmd-0002', expectedRevision: 0, set: { 'course-alert': true } }, T0 + 3000);
@@ -208,7 +208,7 @@ const TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', CHAT = '987654321'
   // ---- Zustand 1.4 übernehmen ----
   const old = path.join(dir, 'old.json'); fs.writeFileSync(old, JSON.stringify({ v: 1, fired: { 'al:x:1': 1 }, out: [], last: { t: 5, label: 'Kurs-Alarm X' } }));
   const wo = new W.Watcher({ token: TOKEN, chat: CHAT, key: KEY, statePath: old, now: () => now, log: () => {} });
-  check('Zustand aus 1.4: übernommen, alle Ziele an, Revision 0; gespeichert als Version 2', wo.fired['al:x:1'] === 1 && wo.last.label === 'Kurs-Alarm X' && wo.pol.rev === 0 && W.TARGETS.every(id => wo.pol.targets[id].on) && (wo.saveStateNow(), JSON.parse(fs.readFileSync(old, 'utf8')).v === 2));
+  check('Zustand aus 1.4: übernommen, bisherige Ziele an und KI AUS, Revision 0; gespeichert als Version 2', wo.fired['al:x:1'] === 1 && wo.last.label === 'Kurs-Alarm X' && wo.pol.rev === 0 && W.TARGETS.every(id => wo.pol.targets[id].on === (id !== 'ki')) && (wo.saveStateNow(), JSON.parse(fs.readFileSync(old, 'utf8')).v === 2));
   // falscher Schlüssel: bremsen
   let st429 = 0; for (let i = 0; i < 22; i++) { const res = await realFetch(U2('/v1/state'), { headers: { authorization: 'Bearer falsch' } }); if (res.status === 429) st429++; }
   check('Viele falsche Schlüssel: nach 20 Versuchen je Minute 429', st429 >= 1, String(st429));
