@@ -1,0 +1,213 @@
+{
+  "url": "https://nicoahb.github.io/wx-widget/",
+  "version": "3.50.0",
+  "build": "fa1eb46eeb8d0c4b",
+  "pagesCommit": "3250301a18709d4612e601919195955a5c49f67e",
+  "programFiles": [
+    {
+      "path": "./bundles/3.50.0/shared/bitget-patterns.mjs",
+      "bytes": 5726,
+      "sha256": "fa678f92b17980d832684ddb1a0e8a12ea8a09b7fc0b0377c3cbdee1b36c871b",
+      "verified": true
+    },
+    {
+      "path": "./bundles/3.50.0/shared/bitget-public.mjs",
+      "bytes": 19905,
+      "sha256": "0db8a1e0f851c368695d3a665db2944e1dae484f52e00357137c08f13f31831e",
+      "verified": true
+    },
+    {
+      "path": "./bundles/3.50.0/shared/bot-limits.mjs",
+      "bytes": 13207,
+      "sha256": "ba4c27f94c47963481cc63b315d880fdf8b52634c3758e2dd6f274c95dd1f22f",
+      "verified": true
+    },
+    {
+      "path": "./bundles/3.50.0/shared/bot-simulation-store.mjs",
+      "bytes": 1283,
+      "sha256": "94605d4ba1adb957564e044a044622ba3425ed12b2c51d6f1e8e933b454e363e",
+      "verified": true
+    },
+    {
+      "path": "./bundles/3.50.0/shared/bot-simulation.mjs",
+      "bytes": 7671,
+      "sha256": "853f81d66bc44be1bc5f906aaf6430af3efb0fc6af0e1a3b6fc1c909a7a185e9",
+      "verified": true
+    },
+    {
+      "path": "./bundles/3.50.0/shared/bot-view.mjs",
+      "bytes": 14469,
+      "sha256": "78b8dfc8ead65bb02dfc0278039b6e9383c2df4a273dc6b5dd45f513f2ab340c",
+      "verified": true
+    },
+    {
+      "path": "./bundles/3.50.0/shared/confluence-core.mjs",
+      "bytes": 21323,
+      "sha256": "6eaf7648a168c20d757ee29f006719e36d7f90f66d653c57f85d811800f39ac4",
+      "verified": true
+    },
+    {
+      "path": "./bundles/3.50.0/shared/confluence-history.mjs",
+      "bytes": 5816,
+      "sha256": "8ebdf239e4e1f0c4801c9b9df1dae3caada12e9e9522c2100962adc717ca89ba",
+      "verified": true
+    },
+    {
+      "path": "./bundles/3.50.0/shared/confluence-live.mjs",
+      "bytes": 9835,
+      "sha256": "9173a36f2b09afb652c9774fe85de10fb4c1bc8c45765b77b4104a343f3b9d9e",
+      "verified": true
+    },
+    {
+      "path": "./bundles/3.50.0/shared/confluence-replay-store.mjs",
+      "bytes": 3654,
+      "sha256": "502590bc818e0697c6b6bcb1e54a9b449dba976d1578f7d001a9475b7cd1132b",
+      "verified": true
+    },
+    {
+      "path": "./bundles/3.50.0/shared/confluence-replay.mjs",
+      "bytes": 13489,
+      "sha256": "780afb88aa29bc5cd61be2185d714b6423e3ecc429e64ce489e17b3c935d5e00",
+      "verified": true
+    },
+    {
+      "path": "./bundles/3.50.0/shared/confluence-service.mjs",
+      "bytes": 10556,
+      "sha256": "5f27f13687a4e4c139698f5df2001da11a2554e5632ee8ad9cdb583c37f68437",
+      "verified": true
+    },
+    {
+      "path": "./bundles/3.50.0/shared/confluence-worker.mjs",
+      "bytes": 4774,
+      "sha256": "7582c95000113aafa84b3821b0c6deb6e68b46ba27d27070439aec60fd8b5838",
+      "verified": true
+    },
+    {
+      "path": "./bundles/3.50.0/shared/indicators.mjs",
+      "bytes": 9568,
+      "sha256": "9105a8ac09d5557e90ec05fd3035c915b36b8e345b31b96a158d0001da505540",
+      "verified": true
+    },
+    {
+      "path": "./bundles/3.50.0/shared/model-archive.mjs",
+      "bytes": 4286,
+      "sha256": "49d3d9d037fbdf27dff2403cdf64705b05edaeeddcd18075926d661a14229be7",
+      "verified": true
+    },
+    {
+      "path": "./bundles/3.50.0/shared/pattern-score.mjs",
+      "bytes": 2683,
+      "sha256": "585334abda80fd8802128e181d8efc04264770f3ee2a7f866d24481a6f7eabad",
+      "verified": true
+    },
+    {
+      "path": "./bundles/3.50.0/shared/po3-core.mjs",
+      "bytes": 10982,
+      "sha256": "abdb41c5cba00b1d6e9c98e6ba9a92fff3f62f9ff2ce47363cc2bdf5e32aaf08",
+      "verified": true
+    },
+    {
+      "path": "./bundles/3.50.0/shared/po3-feed.mjs",
+      "bytes": 5149,
+      "sha256": "cbee9b7bb5413eba98f817b867a51e416bee6d1f5fb072675cc5242990a90879",
+      "verified": true
+    },
+    {
+      "path": "./bundles/3.50.0/shared/po3-service.mjs",
+      "bytes": 8554,
+      "sha256": "c1cec8f5abc603859ca9f558ccc79a8ad6058e8d99ba199e39a77994f0549a88",
+      "verified": true
+    },
+    {
+      "path": "./bundles/3.50.0/shared/po3-simulator.mjs",
+      "bytes": 9540,
+      "sha256": "56002b0641e37acba8141471f09037432e7a7c3f90ce09b88b8ca2b37454f829",
+      "verified": true
+    },
+    {
+      "path": "./bundles/3.50.0/shared/po3-store.mjs",
+      "bytes": 5853,
+      "sha256": "7742b74895c6beff2bbaa8f27f5a26e7129d18007c7d2b1197a669d4c3950d57",
+      "verified": true
+    },
+    {
+      "path": "./bundles/3.50.0/shared/po3-stream.mjs",
+      "bytes": 12667,
+      "sha256": "ced8cc5f5ad895c7821e46231d72883df36428a019fc8b055eaaa777d57214d5",
+      "verified": true
+    },
+    {
+      "path": "./bundles/3.50.0/shared/po3-view.mjs",
+      "bytes": 27896,
+      "sha256": "24740f5f7d35294147d58b851e1a640918ccfef45d480c2e70a903b810377453",
+      "verified": true
+    },
+    {
+      "path": "./bundles/3.50.0/server/pattern-engine.mjs",
+      "bytes": 33552,
+      "sha256": "c52ba04ee26dd8b3f03f84898f91921ae0bc9310ae1751cd8e91926267054c5e",
+      "verified": true
+    },
+    {
+      "path": "./bundles/3.50.0/vendor/jsQR.js",
+      "bytes": 130593,
+      "sha256": "f815a5e0556e7239411a29e92ca2a2c362ed8dae73aea8682ab823f82d4a856e",
+      "verified": true
+    },
+    {
+      "path": "./bundles/3.50.0/vendor/jsQR.LICENSE.txt",
+      "bytes": 11358,
+      "sha256": "c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08",
+      "verified": true
+    },
+    {
+      "path": "./bundles/3.50.0/data/muster-start.json",
+      "bytes": 6745,
+      "sha256": "9690cb5f3de127396fdc10b8cf24bbd17833a0c26291a12b6e50aa797688fd09",
+      "verified": true
+    },
+    {
+      "path": "./weather-widget-v2.html",
+      "bytes": 1490702,
+      "sha256": "22b561144f6d7e66075458aeaa2fc9cb4396b502e66ff41fc3e1f97e1d3840c5",
+      "verified": true
+    },
+    {
+      "path": "./manifest.webmanifest",
+      "bytes": 635,
+      "sha256": "75862c21b0cebc794875a7c33b852653d765452bc7dd1742b5c4be0e722b278a",
+      "verified": true
+    },
+    {
+      "path": "./status-check.html",
+      "bytes": 18166,
+      "sha256": "1f22373528418ac610abbf87a2703161c45015b860b1bc8bda04400559817da3",
+      "verified": true
+    },
+    {
+      "path": "./icons/icon-192.png",
+      "bytes": 2781,
+      "sha256": "817d9c4d3f9db3948f17788d1c9db11e535778e0b5f4f71459b4735dfd282ee8",
+      "verified": true
+    },
+    {
+      "path": "./icons/icon-512.png",
+      "bytes": 7455,
+      "sha256": "fd97c87273396e2f212fc4ddce66f15d11e3ca36b33e878ad0eddaa5ea3eb126",
+      "verified": true
+    },
+    {
+      "path": "./icons/icon-maskable-512.png",
+      "bytes": 2362,
+      "sha256": "90a02204bea1188dfa09046130bdda4db164cba0467bc0b655ab7958dedb8246",
+      "verified": true
+    },
+    {
+      "path": "./icons/apple-touch-icon.png",
+      "bytes": 1090,
+      "sha256": "be051c5ccd7f7ad30fd083f9a7688e95330326fa39ef4d4f44916a25a522d957",
+      "verified": true
+    }
+  ],
+  "privateOracleVMUpdated": false
+}

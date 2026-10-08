@@ -2,6 +2,8 @@
 
 Lieferstand **App/Service Worker 3.50.0, Dienstquelle 2.8.0**. Die Freigabe reicht bis G13; Standardlayout bleibt erhalten, G14 noch nicht begonnen. Öffentliche Konfluenz-/PO3-Signale und Bot-Laufsimulation teilen Fachmodule; bestehende Binance-Feeds, Kontobuchungen und Alarmwege bleiben bestehen. Oracle ist der einzige Telegram-Signalsender nach bestätigter Übernahme. Kein privater Börsenexecutor und keine automatischen Strategie-Fills.
 
+Seit 08.10.2026 auf [GitHub Pages](https://nicoahb.github.io/wx-widget/) veröffentlicht. Programmcommit `3250301a18709d4612e601919195955a5c49f67e`, [Pages-Lauf](https://github.com/NicoAHB/wx-widget/actions/runs/37734708893) erfolgreich. [Öffentlicher HTTPS-Dateinachweis](G13-ONLINE-NACHWEIS.json): App/SW und Manifest identisch, alle 34 PWA-Dateien nach Bytes/SHA geprüft. Für G12: nach Sicherung schließen/neu öffnen und 3.50.0 prüfen, dann **Alarme → Trading-Bot → Simulation**. Die eigene Oracle-VM wurde dadurch nicht aktualisiert.
+
 ## Änderungen seit 3.45.0
 
 - Chartmuster: Live-Kurs im Kopf, Ziele in Richtungsfarbe, Alter/Status in Kerzen, jüngste zuerst und ältere standardmäßig eingeklappt. Bestehende Erkennung und Filter bleiben wirksam.
