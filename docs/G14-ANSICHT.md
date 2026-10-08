@@ -32,3 +32,4 @@ Das veröffentlichte Bündel 3.50.0 bleibt unverändert; 3.51.0 erhält ein eige
 - Beide stehen im seriellen Gesamtlauf. `tests/lint.sh` prüft zusätzlich den Vorab-Code im HTML-Kopf. Lint bisher 0 Fehler; drei bestehende App-Warnungen.
 - `node tests/m69.js`: 19/19 mit aktuellem Release, einschließlich vollständigem Update/Hashabbruch/Retry, Archive und frischem Offline-Appstart.
 - Vollständige Regression/Liefernachweis noch in Arbeit. Browserprüfungen mit lokalen öffentlichen Testantworten sind keine reale Safari-/CORS-/VM-Abnahme.
+- Erstbefund im laufenden Gesamtlauf: m39 49/50, das Detailfeld war beim 90-ms-Zwischenabruf schon vollständig offen (331 → 331 px). Die bestehende Aufklapplogik wurde nicht geändert. Vollständiger unveränderter Nachlauf nach Abschluss des seriellen Gesamtlaufs noch offen; keine Ursache behauptet und keine Prüfgrenze gelockert.
