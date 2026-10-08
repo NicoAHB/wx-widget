@@ -1,6 +1,10 @@
 // G10(c): begrenzte öffentliche Abrufe und Muster/Score abseits des iPhone-Hauptthreads.
 import { createBitgetPublicClient, bitgetErrorMessage } from './bitget-public.mjs';
 import { evaluateLive } from './confluence-live.mjs';
+import { executionPreview } from './confluence-risk-view.mjs';
+import { resultEvidence } from './confluence-evidence.mjs';
+import { observationKey } from './confluence-replay.mjs';
+import { readReplay } from './confluence-replay-store.mjs';
 import { captureObservation } from './confluence-replay.mjs';
 import { saveObservation } from './confluence-replay-store.mjs';
 import { runHistoricalBacktest } from './confluence-history.mjs';
@@ -10,9 +14,20 @@ const client = createBitgetPublicClient();
 let running = null;
 globalThis.onmessage = async ({ data: job }) => {
   if (job?.type === 'cancel') { running?.controller.abort(); return; }
-  if (!['load', 'backtest', 'po3', 'po3-journal'].includes(job?.type) || !Number.isSafeInteger(job.id) || running) return;
+  if (!['load', 'backtest', 'po3', 'po3-journal', 'execution', 'evidence'].includes(job?.type) || !Number.isSafeInteger(job.id) || running) return;
   const controller = new AbortController(); running = { id: job.id, controller };
   try {
+    if (job.type === 'execution') {
+      const card = job.request.card, symbol = card.scope.instrument;
+      const contract = await client.contract({ symbol, signal: controller.signal });
+      const currentFunding = await client.currentFunding({ symbol, source: card.context.base.source, signal: controller.signal });
+      const quote = await client.quote({ symbol, decisionAt: Date.now(), signal: controller.signal });
+      controller.signal.throwIfAborted(); globalThis.postMessage({ id: job.id, execution: executionPreview(card, { contract, currentFunding, quote, asOf: Date.now(), sizing: job.options }) }); return;
+    }
+    if (job.type === 'evidence') {
+      const card = job.request.card, key = observationKey(card.scope, card.config, card.options), jobState = await readReplay('jobs', key);
+      controller.signal.throwIfAborted(); globalThis.postMessage({ id: job.id, evidence: resultEvidence(jobState?.cases ?? [], { key, threshold: card.config.minimumScore, asOf: jobState?.asOf ?? Date.now(), from: job.request.from }) }); return;
+    }
     if (job.type.startsWith('po3')) {
       let root = await readPo3State(), result = null, csv = null;
       if (job.request.action === 'pending') { globalThis.postMessage({ id: job.id, po3: { pending: root.journal.filter(x => x.modelVersion === 'po3-1' && ['Aktiv', 'Offen'].includes(x.status)).map(x => x.instrument) } }); return; }

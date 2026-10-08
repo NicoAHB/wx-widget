@@ -114,6 +114,8 @@ export function createPo3View({ host, options: initial = {}, save, request, chan
     const grid = el('div', '', 'ki-grid'); for (const [label, value, cls] of [['Entry · Referenz', x.plan.levels.entry, ''], ['Stop-Loss', x.plan.levels.sl, 'ki-price-stop'], ['Take-Profit · TP1', x.plan.levels.tps[0], 'ki-price-target'], ['Brutto R:R · TP1', x.plan.levels.rewardRisk, '']]) {
       const p = el('p', '', cls); p.append(el('b', label), String(num(value))); grid.append(p);
     } box.append(grid);
+    const riskUSDT = x.sizing?.status === 'bereit' && Number.isFinite(x.sizing.riskUSDT) ? x.sizing.riskUSDT : null;
+    box.append(el('p', riskUSDT === null ? 'Modellverlust am Stop: nicht verfügbar · eigenes Guthaben/Risiko wählen.' : `Modellverlust am Stop ${num(riskUSDT)} USDT${x.fx > 0 ? ' / ' + num(riskUSDT / x.fx) + ' EUR' : ''} · Margin ${num(x.sizing.margin)} USDT. Nach Gebühren, vor Funding; Kurslücken können den Verlust übersteigen.`, riskUSDT === null ? 'ki-note' : 'ki-price-stop'));
     const details = el('details', '', 'ki-info ki-card-details'); details.append(el('summary', 'Details · Modell, Ergebnis, Risiko und Chart'),
       el('p', `TP2 ${num(x.plan.levels.tps[1])} · TP3 ${num(x.plan.levels.tps[2])} · Kontext ${x.config.contextOn ? x.config.context : 'AUS'} · ${x.modelVersion}`, 'ki-note'),
       el('p', `Ergebnis ${x.outcome || 'offen'} · R ${num(x.netR)} · EUR ${num(x.netEUR)} · Dauer ${x.durationMs == null ? 'offen' : num(x.durationMs / 60000) + ' Min'}${x.dataGap ? ' · Datenlücke: ab ' + date(x.needsFrom) : ''}`, 'ki-note'), el('p', x.costsLabel + '. Netto-R:R einschließlich Funding: nicht bewertbar.', 'ki-note'));

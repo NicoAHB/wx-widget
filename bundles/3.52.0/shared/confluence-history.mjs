@@ -1,4 +1,5 @@
 // G10(d): begrenzte echte öffentliche Historienjobs, Originalmodell bleibt unverändert.
+import { resultEvidence } from './confluence-evidence.mjs';
 import { REPLAY_VERSION, observationKey, replayJob, cardHistoricalStats, backtestSummary } from './confluence-replay.mjs';
 import { readReplay, saveReplay } from './confluence-replay-store.mjs';
 const HOUR = 3600e3, DAY = 24 * HOUR;
@@ -60,7 +61,7 @@ export async function runHistoricalBacktest({ client, card, signal, now = Date.n
   }
   const cases = saved?.cases || [], sizing = { marginEUR: card.options.marginEUR, fx: card.options.fx?.value, leverage: card.options.leverage, entry: card.levels.entry };
   const value = { id: card.id, key, asOf, statistics: cardHistoricalStats(card, { cases, observations, asOf, sizing }),
-    backtests: [60, 70, 80].map(t => backtestSummary(cases, t, asOf)), observations: observations.length, conflicts: saved?.conflicts || 0,
+    backtests: [60, 70, 80].map(t => backtestSummary(cases, t, asOf)), evidence: resultEvidence(cases, { key, threshold: card.config.minimumScore, asOf }), observations: observations.length, conflicts: saved?.conflicts || 0,
     prices: saved ? { from: saved.from, to: saved.to, candles: saved.rows.length } : null };
   signal?.throwIfAborted(); await saveReplay('results', value); return value;
 }

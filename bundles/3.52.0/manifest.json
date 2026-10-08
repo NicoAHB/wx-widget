@@ -44,9 +44,15 @@
       "alias": "./shared/confluence-core.mjs"
     },
     {
+      "path": "./bundles/3.52.0/shared/confluence-evidence.mjs",
+      "sha256": "8c3fe3db1da5e5442257ea483577fd3cadac3827a838b23b1a24dac74a70b1f3",
+      "bytes": 2644,
+      "alias": "./shared/confluence-evidence.mjs"
+    },
+    {
       "path": "./bundles/3.52.0/shared/confluence-history.mjs",
-      "sha256": "d8ddb902aafb89b2b25222f48e1490927e53a66c215475af571ba6036b786e7f",
-      "bytes": 5932,
+      "sha256": "7df47def13546078d70e3fbe605a0ff29d80c611659cbda135b2267a40f44200",
+      "bytes": 6077,
       "alias": "./shared/confluence-history.mjs"
     },
     {
@@ -104,6 +110,12 @@
       "alias": "./shared/confluence-replay.mjs"
     },
     {
+      "path": "./bundles/3.52.0/shared/confluence-risk-view.mjs",
+      "sha256": "2f14726a9e46dffca290cbfc0e80a34d44be65e99df956452ef3bc2bf84efa5a",
+      "bytes": 7111,
+      "alias": "./shared/confluence-risk-view.mjs"
+    },
+    {
       "path": "./bundles/3.52.0/shared/confluence-service.mjs",
       "sha256": "d11727870b7eaa03baa727d3ea81eefea318fd03c026963e6fb761893df987e5",
       "bytes": 11783,
@@ -111,8 +123,8 @@
     },
     {
       "path": "./bundles/3.52.0/shared/confluence-worker.mjs",
-      "sha256": "1fcda2fd28322bb8c3065fa240823e0aafca106706c88933dea72f954cb328f6",
-      "bytes": 4818,
+      "sha256": "058a950d130707a939d2f8436a89d9fdeffd538f8ec52dc7ba2a2cb95da52df9",
+      "bytes": 6141,
       "alias": "./shared/confluence-worker.mjs"
     },
     {
@@ -171,8 +183,8 @@
     },
     {
       "path": "./bundles/3.52.0/shared/po3-view.mjs",
-      "sha256": "0c8e73168ac21dfba5f4975655589d3e77ae277d571d3f5e6d23c1f92f718859",
-      "bytes": 29852,
+      "sha256": "be419cb4500ef531ad8440c2547a00ae0fd6146e7504f1cc114914c8dc3c6dbc",
+      "bytes": 30361,
       "alias": "./shared/po3-view.mjs"
     },
     {
@@ -207,8 +219,8 @@
     },
     {
       "path": "./weather-widget-v2.html",
-      "sha256": "b343dbe32a49627e376a18e7e63459853508c82cfc9086a328109dace16786a6",
-      "bytes": 1514724
+      "sha256": "7afb15400cce8c0e1ea61a88a765798ac65431c4063c5877f9a0ee28648c6299",
+      "bytes": 1523747
     },
     {
       "path": "./manifest.webmanifest",
