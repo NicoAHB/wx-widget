@@ -1,6 +1,6 @@
 {
   "version": "2.11.0",
-  "appVersion": "3.57.0",
+  "appVersion": "3.58.0",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
@@ -189,8 +189,8 @@
     },
     {
       "path": "shared/orderflow-view.mjs",
-      "sha256": "c29a8b4a239da75e180878698e2cd7a36108c753626e627a6955e27332fabe3d",
-      "bytes": 15929
+      "sha256": "ddbf06d74a62ed40643cb6ddebf30b3861a2239be3b78023eb7ad556e8986aa6",
+      "bytes": 16526
     },
     {
       "path": "shared/pattern-score.mjs",
