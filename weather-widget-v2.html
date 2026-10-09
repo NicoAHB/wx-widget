@@ -730,11 +730,39 @@ svg .crosshair{stroke:var(--cross);stroke-width:1;stroke-dasharray:3 4;pointer-e
 .bd-bar i{position:absolute;top:4px;height:12px;border-radius:2px;background:var(--c-bd-pos)}.bd-bar i.neg{background:var(--c-bd-neg)}
 .bd-bar u{position:absolute;left:50%;top:0;width:1px;height:20px;background:var(--tick)}
 .bd-bar b{position:relative;display:block;text-align:center;font-weight:600;font-size:.74rem;line-height:20px;text-shadow:0 1px 2px var(--bg)}
+/* 3.58.0: beschriftete Auswertungskarten in schmalen Bereichen, volle Zahlen ohne seitlichen Überlauf. */
+#breakdowns{grid-template-columns:repeat(auto-fit,minmax(min(420px,100%),1fr))}
+#breakdowns .bd{container-type:inline-size;container-name:position-breakdown}
+#breakdowns .bd-row>span{min-width:0;overflow-wrap:anywhere}
+#breakdowns .bd-bar{height:auto;min-height:20px;padding-bottom:8px}#breakdowns .bd-bar i,#breakdowns .bd-bar u{top:auto;bottom:0;height:3px}#breakdowns .bd-bar b{white-space:normal;overflow-wrap:anywhere}
+#breakdowns .bd-row.thin>span:not(.bd-bar){opacity:1}
+#breakdowns .bd-row.thin>span:first-child::after{content:'vorläufig';display:inline-block;margin-left:6px;font-size:10px;font-weight:400;color:var(--muted)}
+@container position-breakdown (max-width:480px){
+  .bd-row.head{display:none}
+  .bd-row:not(.head){grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:10px;border:1px solid var(--border);border-radius:10px;margin-top:8px;line-height:1.4;font-size:13px}
+  .bd-row:not(.head)>span:first-child{grid-column:1/-1;font-weight:600;font-size:14px;text-align:left}
+  .bd-row:not(.head)>span:not(:first-child){text-align:left}
+  .bd-row:not(.head)>span[data-label]::before{content:attr(data-label);display:block;color:var(--muted);font-size:11px;font-weight:400;line-height:1.5;margin-bottom:2px}
+  .bd-row:not(.head)>.bd-bar{grid-column:1/-1;min-height:40px}
+  .bd-row:not(.head)>.bd-bar b{text-align:left;font-size:13px;line-height:20px}
+}
+.of-time{display:grid;align-content:center;gap:2px}.of-row-countdown{font-size:10px;line-height:1.2;font-weight:400;color:var(--muted)}.of-row-countdown[hidden]{display:none}
 .monthly{margin-top:12px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);padding:12px;overflow-x:auto}
 .monthly h4{margin:0 0 6px;font-size:.8125rem;font-weight:600}
 .mo-row{display:grid;grid-template-columns:minmax(90px,1.2fr) 52px 56px repeat(3,minmax(84px,1fr));gap:8px;font-size:.8rem;padding:6px 0;border-top:1px solid var(--line);font-variant-numeric:tabular-nums;min-width:520px}
 .mo-row.head{color:var(--muted);border-top:0;font-size:.75rem}.mo-row.total{font-weight:650;border-top:1px solid var(--tick)}
 .mo-row>span:not(:first-child){text-align:right}
+/* Gleiche Monatswerte; unter 600 px je Monat ein beschrifteter Block statt einer breiten Zeile. */
+#monthly{container-type:inline-size;container-name:position-monthly}
+#monthly .mo-row>span{min-width:0;overflow-wrap:anywhere}
+@container position-monthly (max-width:600px){
+  .mo-row.head{display:none}
+  .mo-row:not(.head){min-width:0;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:10px;border:1px solid var(--border);border-radius:10px;margin-top:8px;line-height:1.4}
+  .mo-row:not(.head)>span:first-child{grid-column:1/-1;font-weight:600}
+  .mo-row:not(.head)>span{text-align:left}
+  .mo-row:not(.head)>span[data-label]::before{content:attr(data-label);display:block;font-size:11px;font-weight:400;color:var(--muted);line-height:1.5;margin-bottom:2px}
+  .mo-row.total{background:var(--surface-3);border-width:2px}
+}
 @container (max-width:560px){
   .history-summary{grid-template-columns:1fr 1fr}
   .trade-row{grid-template-columns:minmax(0,1fr) auto minmax(76px,auto)}.trade-row time{grid-column:1/-1}
@@ -2058,22 +2086,22 @@ html[data-presentation=dashboard][data-layout=tablet] #acct{order:0}
 </style>
   <script type="module">
 // 3.45.0 (G10c): der vorhandene Binance-/G07-Kern bleibt eigenständig.
-import { exportModelArchive, importModelArchive, validateModelArchive } from './bundles/3.57.0/shared/model-archive.mjs';
-import { BotSimulationRuntime } from './bundles/3.57.0/shared/bot-simulation.mjs';
-import { readBotSimulation, saveBotSimulation } from './bundles/3.57.0/shared/bot-simulation-store.mjs';
-import { createBotView } from './bundles/3.57.0/shared/bot-view.mjs';
-import { createOrderflowView } from './bundles/3.57.0/shared/orderflow-view.mjs';
-import { createSignalView } from './bundles/3.57.0/shared/orderflow-signal-view.mjs';
-import { networkState, createWidgetBoundary } from './bundles/3.57.0/shared/widget-state.mjs';
-import { originalRisk as kiOriginalRisk } from './bundles/3.57.0/shared/confluence-risk-view.mjs';
-import { confluenceOverview, po3Overview, filterOverview, reconcileOverview } from './bundles/3.57.0/shared/signal-overview.mjs';
-import { createPo3View } from './bundles/3.57.0/shared/po3-view.mjs';
-import { cardState as kiCardState, scoreLabel as kiScoreLabel } from './bundles/3.57.0/shared/confluence-live.mjs';
-import { divergenceInfo as kiDivergenceInfo, parametersKey as kiParametersKey } from './bundles/3.57.0/shared/confluence-core.mjs';
-import { parametersKey as kiLegacyParametersKey } from './bundles/3.57.0/shared/confluence-legacy-core.mjs';
-import { presentCard as kiPresentCard, currentSignal as kiCurrentSignal } from './bundles/3.57.0/shared/confluence-presentation.mjs';
-import { observationKey as kiObservationKey } from './bundles/3.57.0/shared/confluence-replay.mjs';
-import { readReplay as kiReadHistory, saveReplay as kiSaveHistory, clearReplayJobs as kiClearHistoryJobs } from './bundles/3.57.0/shared/confluence-replay-store.mjs';
+import { exportModelArchive, importModelArchive, validateModelArchive } from './bundles/3.58.0/shared/model-archive.mjs';
+import { BotSimulationRuntime } from './bundles/3.58.0/shared/bot-simulation.mjs';
+import { readBotSimulation, saveBotSimulation } from './bundles/3.58.0/shared/bot-simulation-store.mjs';
+import { createBotView } from './bundles/3.58.0/shared/bot-view.mjs';
+import { createOrderflowView } from './bundles/3.58.0/shared/orderflow-view.mjs';
+import { createSignalView } from './bundles/3.58.0/shared/orderflow-signal-view.mjs';
+import { networkState, createWidgetBoundary } from './bundles/3.58.0/shared/widget-state.mjs';
+import { originalRisk as kiOriginalRisk } from './bundles/3.58.0/shared/confluence-risk-view.mjs';
+import { confluenceOverview, po3Overview, filterOverview, reconcileOverview } from './bundles/3.58.0/shared/signal-overview.mjs';
+import { createPo3View } from './bundles/3.58.0/shared/po3-view.mjs';
+import { cardState as kiCardState, scoreLabel as kiScoreLabel } from './bundles/3.58.0/shared/confluence-live.mjs';
+import { divergenceInfo as kiDivergenceInfo, parametersKey as kiParametersKey } from './bundles/3.58.0/shared/confluence-core.mjs';
+import { parametersKey as kiLegacyParametersKey } from './bundles/3.58.0/shared/confluence-legacy-core.mjs';
+import { presentCard as kiPresentCard, currentSignal as kiCurrentSignal } from './bundles/3.58.0/shared/confluence-presentation.mjs';
+import { observationKey as kiObservationKey } from './bundles/3.58.0/shared/confluence-replay.mjs';
+import { readReplay as kiReadHistory, saveReplay as kiSaveHistory, clearReplayJobs as kiClearHistoryJobs } from './bundles/3.58.0/shared/confluence-replay-store.mjs';
 // Pure, unrounded calculations. Prices are USDT per unit; FX is USDT per EUR.
 function rsi(closes, period = 14) {
   const out = Array(closes.length).fill(null);
@@ -3046,7 +3074,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
 // 3.43.0 (G10a): reiner Fachkern in shared/; Datenquelle und Karten folgen getrennt.
 // 3.44.0 (G10b): öffentlicher Adapter in shared/bitget-public.mjs; sichtbare Anbindung folgt mit G10(c).
-const APP_VERSION = '3.57.0', docEl = document.documentElement;
+const APP_VERSION = '3.58.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -6322,13 +6350,14 @@ function renderAnalysis() {
       fill.style.width = w + '%'; fill.style.left = r.net < 0 ? (50 - w) + '%' : '50%'; bar.append(el('u'), fill, el('b', '', `${signed(r.net)} (${signed(r.avg)})`));
       const rc = el('span', r.rAvg === null ? 'bd-r' : `bd-r ${r.rAvg >= 0 ? 'pos' : 'neg'}`, r.rAvg === null ? '—' : `${signed(r.rAvg)}${r.rN < r.n ? `·${r.rN}` : ''}`); rc.title = r.rAvg === null ? 'Kein Trade dieser Gruppe mit Anfangsrisiko' : `Erwartungswert in R aus ${r.rN} von ${r.n} Trades${r.n < 30 ? ' – vorläufig, unter 30 Trades' : ''}`;
       if (r.n < 30) row.classList.add('thin');
-      row.append(el('span', '', r.label), el('span', '', String(r.n)), el('span', '', `${number(r.hit, 0)} %`), rc, bar); d.append(row);
+      const labels = ['', 'Trades', 'Trefferquote', 'Ø R', 'Netto USDT (Ø je Trade)'];
+      [el('span', '', r.label), el('span', '', String(r.n)), el('span', '', `${number(r.hit, 0)} %`), rc, bar].forEach((cell, i) => { if (i) cell.dataset.label = labels[i]; row.append(cell); }); d.append(row);
     }
     return d;
   };
   $('breakdowns').replaceChildren(
     table('Nach Grund', multiStats(trades, reasonKeys)), table('Nach Bereich der Gründe', multiStats(trades, areaKeys)), el('p', 'bd-note', reasonNote(trades)),
-    el('p', 'bd-note', 'Ø R = Erwartungswert je Trade in Vielfachen des Anfangsrisikos (Einstieg bis erster Stop). „·n“: nur n Trades mit bekanntem Risiko. Gedämpft: unter 30 Trades – vorläufig, noch nicht belastbar.'),
+    el('p', 'bd-note', 'Ø R = Erwartungswert je Trade in Vielfachen des Anfangsrisikos (Einstieg bis erster Stop). „·n“: nur n Trades mit bekanntem Risiko. Markiert: unter 30 Trades – vorläufig, noch nicht belastbar.'),
     table('Nach Coin', groupStats(trades, t => coin(t.symbol))),
     table('Long / Short', groupStats(trades, t => t.side === 'long' ? 'Long' : 'Short')),
     table('Einstiegszeit', groupStats(trades, t => hourBucket(t.openedAt), HOUR_BUCKETS)),
@@ -6508,7 +6537,8 @@ function renderDay(unrealized = 0) {
 function renderMonthly() {
   const sum = monthlySummary(state.trades, state.movements, fxNow(), state.year, posOpen), box = $('monthly');
   if (!sum.rows.length) { box.replaceChildren(el('h4', '', 'Monatsübersicht'), el('p', 'money-info', 'Noch keine Einträge im Zeitraum.')); return sum; }
-  const line = (cls, cells) => { const r = el('div', 'mo-row' + (cls ? ' ' + cls : '')); cells.forEach(c => r.append(el('span', '', c))); return r; };
+  const labels = ['Monat', 'Trades', 'Trefferquote', 'Netto USDT', 'Erfasste Kosten USDT', 'Steuer-Rücklage USDT'];
+  const line = (cls, cells) => { const r = el('div', 'mo-row' + (cls ? ' ' + cls : '')); cells.forEach((c, i) => { const cell = el('span', '', c); if (i) cell.dataset.label = labels[i]; r.append(cell); }); return r; };
   const fmt = r => [r.label, String(r.n), r.n ? `${number(r.wins / r.n * 100, 0)} %` : '—', `${signed(r.net)}`, number(r.costs), number(r.tax)];
   box.replaceChildren(el('h4', '', 'Monatsübersicht (USDT)'), el('p', 'money-info', 'Trades und Treffer je Position (im Monat des vollständigen Schließens), Netto und Kosten je Buchung.'), line('head', ['Monat', 'Trades', 'Treffer', 'Netto', 'Erfasste Kosten', 'Steuer-Rücklage']),
     ...sum.rows.map(r => line('', fmt(r))), line('total', fmt({ label: 'Summe', ...sum.total })));
@@ -14166,7 +14196,7 @@ function kiKick(delay = 0) {
   if (deadlines.length) ki.timer = setTimeout(() => { ki.timer = null; kiRender(); kiKick(); }, Math.max(1, Math.min(ki.open ? 60000 : Infinity, Math.min(...deadlines) - Date.now() + 1)));
 }
 function kiJob(request, options, type = 'load') {
-  if (!ki.worker) { ki.worker = new Worker(new URL('./bundles/3.57.0/shared/confluence-worker.mjs', location.href), { type: 'module' });
+  if (!ki.worker) { ki.worker = new Worker(new URL('./bundles/3.58.0/shared/confluence-worker.mjs', location.href), { type: 'module' });
     ki.worker.onmessage = ({ data }) => { if (!ki.pending || data.id !== ki.pending.id) return; if (data.progress) { ki.message = 'Historie: ' + data.progress.stage + (data.progress.total ? ` · ${data.progress.completed}/${data.progress.total}` : ` · ${data.progress.priceCandles || 0} Kurskerzen`); kiRender(); return; } const p = ki.pending; ki.pending = null; data.error ? p.reject(new Error(data.error)) : p.resolve(data); };
     ki.worker.onerror = () => { ki.pending?.reject(new Error('KI-Worker nicht verfügbar')); ki.pending = null; ki.worker?.terminate(); ki.worker = null; }; }
   return new Promise((resolve, reject) => { const id = ++ki.serial; ki.pending = { id, resolve, reject }; ki.worker.postMessage({ id, type, request, options }); });
