@@ -1,6 +1,6 @@
 {
   "version": "2.10.0",
-  "appVersion": "3.55.0",
+  "appVersion": "3.56.0",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
@@ -59,8 +59,8 @@
     },
     {
       "path": "shared/bot-view.mjs",
-      "sha256": "78b8dfc8ead65bb02dfc0278039b6e9383c2df4a273dc6b5dd45f513f2ab340c",
-      "bytes": 14469
+      "sha256": "e83b772ac7a703ab147b842f9db2a7b0fd1234c454938b6a3cb5d785f53295e9",
+      "bytes": 20971
     },
     {
       "path": "shared/confluence-core.mjs",

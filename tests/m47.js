@@ -281,11 +281,17 @@ const tests = {
       const bad = await until(async () => { const m = await pinnedMsg(); return m && /\nDienst: Störung · .* · Telegram-Nachricht nicht zustellbar seit \d\d:\d\d \(Telegram sendMessage: Bad Request: message is too long/.test(m.caption) ? m : null; }, 30000);
       const tries = (await h.ctl('/sent')).filter(m => m.svc === 'tg' && /^🔔 Kurs-Alarm BTC/.test(m.text || '') && m.at >= t0);
       check('Telegram lehnt ab: Dienst meldet „Störung“ (Befund: galt als gesendet, Status „aktiv“), Meldung bleibt im Ausgang', !!bad && tries.length >= 1 && tries.every(m => m.failed === 400), (await pinnedMsg())?.caption.split('\n').find(l => l.startsWith('Dienst:')) || '');
-      // App wieder offen: zeigt die Störung und sendet selbst
+      // Dieser Test nutzt die ältere Telegram-Übergabe, keine HTTPS-Sendefreigabe.
+      // Kurs bei Wiederöffnung unter Ziel halten, bis die App die Dienststörung
+      // bestätigt hat. Sonst kann die Auslösung vor der Statusabfrage stattfinden.
+      await h.ctl(`/set?symbol=BTCUSDT&price=${P0}`);
       ({ page, errors } = await openPage(browser, {}, { ctx })); await live(page); await page.waitForTimeout(1500);
       console.log('Diagnose Wiederöffnung:', JSON.stringify(await page.evaluate(() => ({ alarms: __g05.state.alarms.map(a => ({ id: a.id, price: a.price, triggeredAt: a.triggeredAt, triggerPrice: a.triggerPrice, svcAt: a.svcAt })), price: __g05.state.prices.BTCUSDT?.price }))));
       st = await s247Status(page); const sum = await page.textContent('#chan-summary');
       check('App: „⚠ Der Dienst meldet eine Störung: Telegram-Nachricht nicht zustellbar …“, Übersicht „24/7-Dienst: Störung“', /^⚠ Der Dienst meldet eine Störung: Telegram-Nachricht nicht zustellbar seit \d\d:\d\d .*Die App sendet deshalb selbst\./.test(st) && /24\/7-Dienst: Störung/.test(sum), `${st} · ${sum}`);
+      const beforeFallback = await page.evaluate(() => { const a = __g05.state.alarms.find(a => a.id === 'sv1'); return { triggeredAt: a?.triggeredAt, price: __g05.state.prices.BTCUSDT?.price }; });
+      check('Legacy-Fallback erst nach bestätigter Störung und ohne vorherige App-Auslösung', beforeFallback.triggeredAt === null && beforeFallback.price < P0 + 200 && /Die App sendet deshalb selbst/.test(st), JSON.stringify(beforeFallback));
+      await h.ctl(`/set?symbol=BTCUSDT&price=${P0 + 250}`);
       const own = await until(async () => { const x = (await h.ctl('/sent')).filter(m => m.svc === 'tg' && /^🔔 Kurs-Alarm BTC/.test(m.text || '') && !/24\/7-Dienst/.test(m.text) && !m.failed && m.at >= t0); return x.length ? x : null; }, 20000);
       check('… und die App sendet den Kurs-Alarm selbst', own?.length === 1, own ? own[0].text.replace(/\n/g, ' ⏎ ') : 'keine Meldung der App');
       // Telegram wieder in Ordnung: der Dienst stellt nach
