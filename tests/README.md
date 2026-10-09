@@ -56,6 +56,7 @@ Automatische Tests für die App (`weather-widget-v2.html`) und den 24/7-Dienst (
 Ausgabe je Test: `✓`/`✗` je Prüfung und am Ende `n/m bestanden`.
 
 ## Regeln
+- **m47 Dienst-Nachlieferung (3.56.0):** G05-Ereignisbesitz ausdrücklich belegen (`triggeredAt`/`svcAt`), keine zweite App-Meldung für denselben Dienstalarm erwarten. Kurs bei Wiederöffnung bis zum Statusimport unter Ziel, danach erneut darüber; Dienst liefert zurückgewiesene Meldung weiterhin genau einmal. Keine Produktregel geändert; ältere Testannahme „App und danach Dienst senden denselben Alarm“ war seit G05 unzutreffend. m54 prüft neue App-Freigaben und echten unerreichbaren Dienst weiterhin separat.
 - **Nicht parallel:** Browser-Tests nicht gleichzeitig starten. Sie teilen sich den Test-Server (Ports 8765 und 8790).
 - **Neuer Test je Gruppe:** Jede Gruppe der Übergabe bekommt einen eigenen Test (G01: `m50.js`, G02: `m51.js` und `unit-lots.js`, G03: `m52.js` und `unit-acct.js`, G04: `m53.js`, G05: `m54.js` und `unit-247c.js`, G06: `m55.js`, G07: `m56.js`, G08: `m57.js`, G09: `m58.js`, `unit-247d.js`, `unit-pub.js`; Optimierung 4: `m59.js`). Ihn in `run-all.sh` vorne in die Liste aufnehmen.
 - **Ältere Tests anpassen:** Ändert eine Gruppe bewusst einen Text oder eine Regel, den alten Test anpassen und das in der Doku unter „Angepasste ältere Tests“ festhalten.
