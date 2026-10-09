@@ -25,3 +25,5 @@ Alle **132 Zielprogramme** vollständig seriell auf eingefrorenem Produktstand `
 Erstbefunde sind erhalten: manueller Begleitungsabschluss nach Reload einmal nicht bestätigt; zusätzliche gezeichnete Knopf-/Live-Bereitschaft und sichere Diagnose im Test, vollständiger Nachlauf erfolgreich. Bildnachweis wartet nach Coinwechsel auf alle 40 tatsächlichen OHLC-Werte und zehn sichtbare Kerzen. Ursache des einzelnen Abschluss-Timeouts nicht sicher belegt, keine Fachgrenze verändert. Der vorherige Gesamtlauf wurde für den zusätzlichen Minuten-Abstandswunsch nach 55 grünen Zielen bewusst gestoppt; Rohlogs getrennt erhalten. Veröffentlichung folgt nach diesem abgeschlossenen Prüfstand.
 
 Die optionale private VM und reale iPad-/Safari-/CORS-/Anbieterabnahmen bleiben separat offen. Keine echten Orders oder neuen Zugangsdaten.
+
+Öffentlich ausgeliefert: App/SW 3.55.0 über PR #87; Pages und alle 51 PWA-Dateien per HTTPS geprüft. [Liefernachweis](ORDERFLOW-KARTEN-LIEFERUNG.md).
