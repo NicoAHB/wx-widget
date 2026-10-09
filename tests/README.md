@@ -158,3 +158,4 @@ UI-Gesamtlauf 3.58.0: m4 wartete vor dem Value-Area-Vergleich nur auf Signalzeit
 - Kalender-/News-Kopien enthalten den gleichen optionalen Top-3-Anzeigezweig; ohne Arbeitsbereiche unverändert Top-5. Filter, Warnungen und Fachberechnungen bleiben gleich.
 
 - m28 prüft den Tag des ersten künftigen JOLTS-Termins aus dessen Zeitstempel statt fest „Heute“: Die +3h-Testtermine liegen spät abends bereits morgen. Alle bisherigen 39 Prüfungen bleiben erhalten.
+- m53 beginnt Koordinatengesten erst nach normalem Hover auf der sichtbaren/stabilen Kachel: sanftes Nachscrollen nach dem Detailfeld darf die Startkoordinaten nicht überholen. Kein Force, keine Änderung der 102 Erwartungen; zusätzliche Esc-Diagnose.
