@@ -11,6 +11,7 @@ Automatische Tests für die App (`weather-widget-v2.html`) und den 24/7-Dienst (
 
 ### Orderflow-Karten (3.55.0)
 
+- `m82.js`: 45 native Anzeigeprüfungen: Restzeit direkt in laufenden Minuten-/Stundenkarten, keine Timer in acht geschlossenen Karten, bestehender Sekundentakt ohne DOM-/Höhensprung, UTC-Schlusswechsel 01:00/60:00, sechs beschriftete Auswertungen und Monatskarten, Originalwerte/-bücher/Reload, große Zahlen und lange Namen bei 320/390/768/1440 px in beiden Layouts, acht AA-Farben ohne gedämpfte Zahlen. Im seriellen Gesamtlauf (138 Ziele).
 - `m80.js`: 51 native Bot-Oberflächenprüfungen: fünf Rahmen, Label/Feld/Hilfe, ausdrückliche Übungswerte ohne Überschreiben/Start, EUR-Trennung, bestätigte Laufwerte/Entwurf/Reload, Pausenstatus und Nettofarben, Bestandsveto, tatsächliche Textgrenzen/44-px-Flächen bei 320/390/768/1440 in beiden Layouts und acht AA-Farben.
 - `m79.js`: je fünf gerundete Karten, gespeicherte Klappzustände/Einheit/Backup, tatsächlicher Vorauswahlpreis trotz abweichender Futures-Quelle, echte Demo-Klicks, kein gemischter Spot-ATR, Frische ohne Ersatzquelle, stabile Signalhöhe/Scrollposition, optisch enge O/T- und H/S-Abstände bei getrennten 44-px-Tippflächen und 320/390/768/1024 Pixel. Zusätzlich alle zehn tatsächlich gezeichneten OHLC-Karten nach Coin-Rückkehr (49 Prüfungen).
 - `m76.js` verwendet für Übungen jetzt ausdrücklich die Vorauswahl-/Spot-Klickquelle; `m77.js` verlangt bei reinem Futures-Ausfall weiter aktuelle Spot-Demo und erhält alle übrigen Fachprüfungen.
