@@ -1,10 +1,10 @@
 {
-  "version": "2.10.0",
-  "appVersion": "3.56.0",
+  "version": "2.11.0",
+  "appVersion": "3.57.0",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
-      "sha256": "a75cd705e1e49476388db60fe5fc1861a8c3d73f26f46d999d6cf874cc9bafc6",
+      "sha256": "d5696622d548c117d8fa10897ab187073e79c2b107ad60450688e1fab4cf9d2f",
       "bytes": 126139
     },
     {
@@ -33,14 +33,24 @@
       "bytes": 19293
     },
     {
+      "path": "shared/adaptive-grid-feed.mjs",
+      "sha256": "376b78a470ab24f0534c1fe44bb9c57f0e31430baa450bb79bd4964986b9609d",
+      "bytes": 1417
+    },
+    {
+      "path": "shared/adaptive-grid.mjs",
+      "sha256": "87e9d3ae1f94160f2b10c6e8ec0fd5a71efea7c79c8241487c95ac183de38c9d",
+      "bytes": 21867
+    },
+    {
       "path": "shared/bitget-patterns.mjs",
       "sha256": "fa678f92b17980d832684ddb1a0e8a12ea8a09b7fc0b0377c3cbdee1b36c871b",
       "bytes": 5726
     },
     {
       "path": "shared/bitget-public.mjs",
-      "sha256": "aad0fbd0be3c8846b9d56c26b324c78d11b5d3a4cce0e718c540778f8466bd42",
-      "bytes": 19930
+      "sha256": "0711e6f19a350f2a0924880a6444b30cc631dd8955973fb5e693503f4066576c",
+      "bytes": 21385
     },
     {
       "path": "shared/bot-limits.mjs",
@@ -54,13 +64,13 @@
     },
     {
       "path": "shared/bot-simulation.mjs",
-      "sha256": "853f81d66bc44be1bc5f906aaf6430af3efb0fc6af0e1a3b6fc1c909a7a185e9",
-      "bytes": 7671
+      "sha256": "e951eecdf013a7a6cc17afb7edbcb88c9060811c80ce8f145ffa3447001c2197",
+      "bytes": 13614
     },
     {
       "path": "shared/bot-view.mjs",
-      "sha256": "e83b772ac7a703ab147b842f9db2a7b0fd1234c454938b6a3cb5d785f53295e9",
-      "bytes": 20971
+      "sha256": "26b7e00c885ba40bf2afea5631786d20c9f653f3e3748f2dab6e956b28c45373",
+      "bytes": 31015
     },
     {
       "path": "shared/confluence-core.mjs",
@@ -134,8 +144,8 @@
     },
     {
       "path": "shared/confluence-worker.mjs",
-      "sha256": "058a950d130707a939d2f8436a89d9fdeffd538f8ec52dc7ba2a2cb95da52df9",
-      "bytes": 6141
+      "sha256": "9f7b2067b36ea78086ee9ddf49c39b656cf600d6d2e93c35148d4f2599b01832",
+      "bytes": 6539
     },
     {
       "path": "shared/indicators.mjs",

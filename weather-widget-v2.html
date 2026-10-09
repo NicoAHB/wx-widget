@@ -2058,22 +2058,22 @@ html[data-presentation=dashboard][data-layout=tablet] #acct{order:0}
 </style>
   <script type="module">
 // 3.45.0 (G10c): der vorhandene Binance-/G07-Kern bleibt eigenständig.
-import { exportModelArchive, importModelArchive, validateModelArchive } from './bundles/3.56.0/shared/model-archive.mjs';
-import { BotSimulationRuntime } from './bundles/3.56.0/shared/bot-simulation.mjs';
-import { readBotSimulation, saveBotSimulation } from './bundles/3.56.0/shared/bot-simulation-store.mjs';
-import { createBotView } from './bundles/3.56.0/shared/bot-view.mjs';
-import { createOrderflowView } from './bundles/3.56.0/shared/orderflow-view.mjs';
-import { createSignalView } from './bundles/3.56.0/shared/orderflow-signal-view.mjs';
-import { networkState, createWidgetBoundary } from './bundles/3.56.0/shared/widget-state.mjs';
-import { originalRisk as kiOriginalRisk } from './bundles/3.56.0/shared/confluence-risk-view.mjs';
-import { confluenceOverview, po3Overview, filterOverview, reconcileOverview } from './bundles/3.56.0/shared/signal-overview.mjs';
-import { createPo3View } from './bundles/3.56.0/shared/po3-view.mjs';
-import { cardState as kiCardState, scoreLabel as kiScoreLabel } from './bundles/3.56.0/shared/confluence-live.mjs';
-import { divergenceInfo as kiDivergenceInfo, parametersKey as kiParametersKey } from './bundles/3.56.0/shared/confluence-core.mjs';
-import { parametersKey as kiLegacyParametersKey } from './bundles/3.56.0/shared/confluence-legacy-core.mjs';
-import { presentCard as kiPresentCard, currentSignal as kiCurrentSignal } from './bundles/3.56.0/shared/confluence-presentation.mjs';
-import { observationKey as kiObservationKey } from './bundles/3.56.0/shared/confluence-replay.mjs';
-import { readReplay as kiReadHistory, saveReplay as kiSaveHistory, clearReplayJobs as kiClearHistoryJobs } from './bundles/3.56.0/shared/confluence-replay-store.mjs';
+import { exportModelArchive, importModelArchive, validateModelArchive } from './bundles/3.57.0/shared/model-archive.mjs';
+import { BotSimulationRuntime } from './bundles/3.57.0/shared/bot-simulation.mjs';
+import { readBotSimulation, saveBotSimulation } from './bundles/3.57.0/shared/bot-simulation-store.mjs';
+import { createBotView } from './bundles/3.57.0/shared/bot-view.mjs';
+import { createOrderflowView } from './bundles/3.57.0/shared/orderflow-view.mjs';
+import { createSignalView } from './bundles/3.57.0/shared/orderflow-signal-view.mjs';
+import { networkState, createWidgetBoundary } from './bundles/3.57.0/shared/widget-state.mjs';
+import { originalRisk as kiOriginalRisk } from './bundles/3.57.0/shared/confluence-risk-view.mjs';
+import { confluenceOverview, po3Overview, filterOverview, reconcileOverview } from './bundles/3.57.0/shared/signal-overview.mjs';
+import { createPo3View } from './bundles/3.57.0/shared/po3-view.mjs';
+import { cardState as kiCardState, scoreLabel as kiScoreLabel } from './bundles/3.57.0/shared/confluence-live.mjs';
+import { divergenceInfo as kiDivergenceInfo, parametersKey as kiParametersKey } from './bundles/3.57.0/shared/confluence-core.mjs';
+import { parametersKey as kiLegacyParametersKey } from './bundles/3.57.0/shared/confluence-legacy-core.mjs';
+import { presentCard as kiPresentCard, currentSignal as kiCurrentSignal } from './bundles/3.57.0/shared/confluence-presentation.mjs';
+import { observationKey as kiObservationKey } from './bundles/3.57.0/shared/confluence-replay.mjs';
+import { readReplay as kiReadHistory, saveReplay as kiSaveHistory, clearReplayJobs as kiClearHistoryJobs } from './bundles/3.57.0/shared/confluence-replay-store.mjs';
 // Pure, unrounded calculations. Prices are USDT per unit; FX is USDT per EUR.
 function rsi(closes, period = 14) {
   const out = Array(closes.length).fill(null);
@@ -3046,7 +3046,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
 // 3.43.0 (G10a): reiner Fachkern in shared/; Datenquelle und Karten folgen getrennt.
 // 3.44.0 (G10b): öffentlicher Adapter in shared/bitget-public.mjs; sichtbare Anbindung folgt mit G10(c).
-const APP_VERSION = '3.56.0', docEl = document.documentElement;
+const APP_VERSION = '3.57.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -14166,7 +14166,7 @@ function kiKick(delay = 0) {
   if (deadlines.length) ki.timer = setTimeout(() => { ki.timer = null; kiRender(); kiKick(); }, Math.max(1, Math.min(ki.open ? 60000 : Infinity, Math.min(...deadlines) - Date.now() + 1)));
 }
 function kiJob(request, options, type = 'load') {
-  if (!ki.worker) { ki.worker = new Worker(new URL('./bundles/3.56.0/shared/confluence-worker.mjs', location.href), { type: 'module' });
+  if (!ki.worker) { ki.worker = new Worker(new URL('./bundles/3.57.0/shared/confluence-worker.mjs', location.href), { type: 'module' });
     ki.worker.onmessage = ({ data }) => { if (!ki.pending || data.id !== ki.pending.id) return; if (data.progress) { ki.message = 'Historie: ' + data.progress.stage + (data.progress.total ? ` · ${data.progress.completed}/${data.progress.total}` : ` · ${data.progress.priceCandles || 0} Kurskerzen`); kiRender(); return; } const p = ki.pending; ki.pending = null; data.error ? p.reject(new Error(data.error)) : p.resolve(data); };
     ki.worker.onerror = () => { ki.pending?.reject(new Error('KI-Worker nicht verfügbar')); ki.pending = null; ki.worker?.terminate(); ki.worker = null; }; }
   return new Promise((resolve, reject) => { const id = ++ki.serial; ki.pending = { id, resolve, reject }; ki.worker.postMessage({ id, type, request, options }); });
@@ -14447,6 +14447,12 @@ const botPanel = el('div'); botPanel.id = 'bot-simulation-panel'; botPanel.hidde
 const botButton = kiButton('ki-bot-tab', 'Trading-Bot', botTab); botButton.setAttribute('role', 'tab'); botButton.setAttribute('aria-controls', botPanel.id); botButton.setAttribute('aria-selected', 'false'); botButton.tabIndex = -1; document.querySelector('.ki-tabs').append(botButton);
 const botGlobal = el('div'); botGlobal.id = 'bot-global-host'; document.querySelector('.topbar').after(botGlobal);
 botView = createBotView({ host: botPanel, globalHost: botGlobal, load: botLoad, command: botCommand, currentSymbol: () => state.symbol,
+  gridMarket: async confirmed => { if (document.hidden || state.paused) throw new Error('App pausiert; für die Grid-Prüfung sichtbar fortsetzen.');
+    if (ki.busy || ki.pending) throw new Error('KI-Worker arbeitet noch; Grid anschließend erneut prüfen.');
+    ki.busy = true; let expired = false; const watchdog = setTimeout(() => { expired = true; kiCancel(); }, 120000);
+    try { const reply = await kiJob({ instrument: confirmed.run.grid.scope.instrument, runId: confirmed.run.id, config: confirmed.run.grid.config }, {}, 'grid-market'); return reply.gridMarket; }
+    catch (e) { throw expired ? new Error('Grid-Worker antwortet nicht; später erneut prüfen. Bestehender Schutz bleibt.') : e; }
+    finally { clearTimeout(watchdog); ki.busy = false; kiKick(); } },
   destination: store.get('scalpdesk.bot.simulation-destination.v1', 'local'),
   fxReference: () => { const value = currentFx(); return value > 0 && (state.fxMode === 'manual' || Date.now() - state.fxAt <= 15 * 60e3) ? { value: String(value), source: 'vorhandener EUR/USDT-Referenzkurs' } : null; },
   exportState: async destination => JSON.stringify({ kind: 'scalpdesk-bot-simulation', version: 1, simulationOnly: true, state: await botLoad(destination) }, null, 2), changed: (destination, confirmed) => { store.set('scalpdesk.bot.simulation-destination.v1', destination); clearTimeout(botRefreshTimer); botRefreshTimer = null; if (destination === 'oracle' && confirmed?.run?.state === 'RECONCILING' && !document.hidden) botRefreshTimer = setTimeout(() => { void botView.refresh(); }, Math.max(50, confirmed.run.reconciliation.deadline - Date.now() + 50)); } });
