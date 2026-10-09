@@ -1,0 +1,42 @@
+{
+  "checkedAt": "2026-10-09T10:24:07.482Z",
+  "transport": "curl über vorhandenen Cloud-Proxy, TLS-Prüfung aktiv",
+  "publicCalls": [
+    "/api/v2/mix/market/history-candles",
+    "/api/v2/mix/market/history-candles",
+    "/api/v2/mix/market/history-candles",
+    "/api/v2/mix/market/history-candles",
+    "/api/v2/mix/market/history-candles",
+    "/api/v2/mix/market/history-candles",
+    "/api/v2/mix/market/history-candles",
+    "/api/v2/mix/market/contracts",
+    "/api/v2/mix/market/candles",
+    "/api/v2/mix/market/ticker"
+  ],
+  "kind": "public-grid-model-input",
+  "source": {
+    "venue": "bitget",
+    "product": "USDT-FUTURES",
+    "instrument": "BTCUSDT",
+    "quote": "USDT",
+    "runId": "grid-public-check-0001"
+  },
+  "coverage": {
+    "from": 1790331300000,
+    "to": 1791540900000,
+    "loadedTo": 1791540900000,
+    "candles": 1344,
+    "pages": 7
+  },
+  "liveVolumeKind": "running-15m",
+  "contractTick": 0.1,
+  "quoteAt": 1791541447394,
+  "range": {
+    "lower": 82330.01904361743,
+    "upper": 82729.41095638262,
+    "atr": 133.13063758840138,
+    "rsi": 62.326164408491415,
+    "sideways": true
+  },
+  "privateOrders": false
+}
