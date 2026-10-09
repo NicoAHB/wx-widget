@@ -279,8 +279,8 @@
     },
     {
       "path": "./weather-widget-v2.html",
-      "sha256": "009e51198178e55421478ae50d3827e474f51c21e66088d5ad9e8825f65e30ad",
-      "bytes": 1577850
+      "sha256": "b6e3727a1d85c06179316e2cd6fddf73d282883d4400323ebe83fcead7d87486",
+      "bytes": 1578416
     },
     {
       "path": "./manifest.webmanifest",

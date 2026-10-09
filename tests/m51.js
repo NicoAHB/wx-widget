@@ -335,9 +335,14 @@ const tests = {
       'scalpdesk.pnlalarm.v1': { profit: { on: true, value: 1e6, state: 'armed', at: now - 60e3 }, loss: { on: true, value: 1e6, state: 'armed', at: now - 60e3 }, u: now - 60e3 },
       'scalpdesk.positions.v1': [position('V1', 'BTCUSDT', E1, 2, { sl: SL, tp: TP })] };
     const { ctx, page, errors } = await openPage(browser, seed, { viewport: { width: 1600, height: 1000 } });
+    const svcTrace = [];
+    page.on('request', r => { const u = new URL(r.url()); if (u.hostname === 'api.telegram.org') svcTrace.push({at:Date.now()-now,method:u.pathname.split('/').pop(),event:'request'}); });
+    page.on('requestfailed', r => { const u = new URL(r.url()); if (u.hostname === 'api.telegram.org') svcTrace.push({at:Date.now()-now,method:u.pathname.split('/').pop(),event:'failed',error:r.failure()?.errorText}); });
+    page.on('response', async r => { const u = new URL(r.url()); if (u.hostname === 'api.telegram.org') { const body=await r.json().catch(()=>null); svcTrace.push({at:Date.now()-now,method:u.pathname.split('/').pop(),event:'response',status:r.status(),ok:body?.ok,description:body?.description}); } });
     const docs = async () => (await fetch(`http://127.0.0.1:8790/tgmsgs?chat=${CHAT}`).then(r => r.json())).filter(m => m.document?.file_name === 'scalpdesk-247.json').sort((a, b) => b.message_id - a.message_id);
     const pinned = async () => { const d = (await docs()).find(m => m.pinnedAt); try { return d ? JSON.parse(d.content) : null; } catch { return null; } };
     const handed = want => until(async () => { const p = await pinned(), x = p?.pnl?.pos?.find(z => z.id === 'V1'), st = p?.positions?.find(z => z.id === 'V1'); return x && st && want(x) ? { x, st } : null; }, 20000);
+    const diagSvc = async phase => console.log('DIAG 24/7', JSON.stringify({phase,trace:svcTrace,pinned:await pinned(),page:await page.evaluate(() => { const c=JSON.parse(localStorage.getItem('scalpdesk.s247.v1')||'null');return {status:document.getElementById('s247-status')?.textContent,cfg:c&&{on:c.on,sentOn:c.sentOn,msg:c.msg,at:c.at,sig:c.sig},positions:__g05.state.positions.map(p=>({id:p.id,qty:p.qty,entry:p.entry})),pnl:JSON.parse(localStorage.getItem('scalpdesk.pnlalarm.v1')||'null')}; })}));
     // Lage der Einstiegslinie zwischen SL- und TP-Linie im Chart (linearer Preismaßstab): (E − SL) / (TP − SL)
     const chartAt = () => page.evaluate(() => { const t = [...document.querySelectorAll('#chart svg text, svg text')], y = re => { const n = t.find(x => re.test(x.textContent)); return n ? Number(n.getAttribute('y')) : null; };
       const e = y(/^Einstieg Long 10×$/), sl = y(/^SL \d/), tp = y(/^TP \d/); return e === null || sl === null || tp === null ? null : (e - sl) / (tp - sl); });
@@ -346,10 +351,12 @@ const tests = {
     check('Vorher: Übergabe 2 BTC zu Ø Einstieg, Chart-Einstiegslinie an derselben Stelle', !!a && near(at, (E1 - SL) / (TP - SL)), `${a ? JSON.stringify(a.x) : 'keine Übergabe'} · Lage ${at}`);
     await add(page, 'V1', '1', String(B0 + 60)); await page.waitForTimeout(400);
     a = await handed(x => x.qty === 3 && x.entry === E2); at = await until(async () => { const v = await chartAt(); return near(v, (E2 - SL) / (TP - SL)) ? v : null; }, 10000);
+    if (!a) await diagSvc('nachkauf');
     check('Nachkauf 1 zu Kurs + 60: Übergabe an den 24/7-Dienst mit 3 BTC zu Ø Kurs − 20 (Stop/Ziel unverändert)', !!a && a.st.sl === SL && a.st.tp === TP, a ? JSON.stringify(a) : 'keine neue Übergabe');
     check('Chart: Einstiegslinie auf dem neuen Ø-Einstieg', at !== null, String(await chartAt()));
     await close(page, 'V1', { qty: '1', exit: String(B0) }); await page.waitForTimeout(400);
     a = await handed(x => x.qty === 2 && x.entry === E2);
+    if (!a) await diagSvc('teilabschluss');
     check('Teilabschluss 1 zu Kurs: Übergabe 2 BTC, Ø unverändert, Stop/Ziel unverändert', !!a && a.st.sl === SL && a.st.tp === TP, a ? JSON.stringify(a) : 'keine neue Übergabe');
     const tot = await txt(page, '#open-total');
     check('Offenes Ergebnis (Grundlage des Gewinn-/Verlust-Alarms) +40 = 2 × 20, ohne die realisierten +20 – dieselbe Rechnung wie im Dienst aus Menge und Ø', tot === '+40,00 USDT' && (await tradesOf(page, 'V1'))[0]?.pnl === 20, `${tot} · Teil ${(await tradesOf(page, 'V1'))[0]?.pnl}`);

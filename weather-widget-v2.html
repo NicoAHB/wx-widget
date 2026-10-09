@@ -14713,7 +14713,11 @@ function workspaceSyncTab(tab, save) {
 function workspaceOpenMenu(id) { $(id).hidden = false; const d = $(id).closest('details'); if (d) d.open = true; goTo(id); }
 function workspaceMode(mode, save = true) {
   workspace.mode = mode === 'all' ? 'all' : 'focus'; docEl.dataset.workspace = workspace.mode;
+  if (workspace.mode === 'focus') for (const { node, details, marker } of workspace.unwraps) { marker.after(details); details.append(node); }
   for (const { node, marker, host } of workspace.moves) { if (workspace.mode === 'focus') host.append(node); else marker.after(node); }
+  // display:contents an <details> erhält dessen anonyme Inhaltsbox. In der
+  // Gesamtansicht deshalb die Originalelemente als direkte Kinder zurückstellen.
+  if (workspace.mode === 'all') for (const { node, details, marker } of workspace.unwraps) { marker.after(node); details.remove(); }
   for (const id of ['view-panel', 'notify-panel']) { $(id).classList.toggle('workspace-menu', workspace.mode === 'focus'); $(id).hidden = workspace.mode !== 'focus'; }
   for (const d of workspace.wrappers) d.open = d.id === 'workspace-watch' || workspace.mode === 'all' || !!workspace.folds[d.id];
   for (const d of workspace.extraFolds) d.node.open = workspace.mode === 'all' ? d.original : !!workspace.folds[d.node.id];
@@ -14724,7 +14728,7 @@ function workspaceMode(mode, save = true) {
 }
 function workspaceBuild() {
   const saved = store.get(WORKSPACE_KEY, null);
-  workspace = { mode: saved?.mode === 'all' ? 'all' : 'focus', view: saved?.view in WORKSPACE_VIEWS ? saved.view : 'chart', folds: saved?.folds && typeof saved.folds === 'object' ? { ...saved.folds } : {}, moves: [], wrappers: [], extraFolds: [] };
+  workspace = { mode: saved?.mode === 'all' ? 'all' : 'focus', view: saved?.view in WORKSPACE_VIEWS ? saved.view : 'chart', folds: saved?.folds && typeof saved.folds === 'object' ? { ...saved.folds } : {}, moves: [], wrappers: [], unwraps: [], extraFolds: [] };
   if (!('workspace-watch' in workspace.folds)) workspace.folds['workspace-watch'] = true; // Nutzer: Vorauswahl oben wichtig.
   const nav = el('nav', 'workspace-nav'); nav.id = 'workspace-nav'; nav.setAttribute('aria-label', 'Arbeitsbereiche'); const tabs = el('div', 'workspace-tabs');
   for (const [key, [text]] of Object.entries(WORKSPACE_VIEWS)) { const b = el('button', '', text); b.type = 'button'; b.dataset.workspaceTarget = key; b.addEventListener('click', () => { setTab(key); if (key === 'ind') kiTab(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }); tabs.append(b); }
@@ -14738,7 +14742,7 @@ function workspaceBuild() {
   const title = el('h2', '', 'Einstellungen & Sicherung'); title.id = 'workspace-settings-title'; const grid = el('div', 'workspace-settings-grid');
   settings.append(title, el('p', '', 'Einrichtung und Datenpflege an einem Ort. Handelsdaten bleiben beim Ansichtswechsel erhalten.'), grid); $('dash').append(settings);
   const move = (node, host) => { const marker = document.createComment('Arbeitsbereich: ' + node.id); node.before(marker); workspace.moves.push({ node, marker, host }); };
-  const fold = (node, id, text) => { const d = el('details', 'workspace-fold'); d.id = id; d.append(el('summary', '', text)); node.before(d); d.append(node); workspace.wrappers.push(d); d.addEventListener('toggle', () => { if (workspace.mode === 'focus' && !docEl.dataset.chartfull && workspace.folds[id] !== d.open) { workspace.folds[id] = d.open; workspaceSave(); } }); return d; };
+  const fold = (node, id, text) => { const d = el('details', 'workspace-fold'), marker = document.createComment('Klappfläche: ' + id); d.id = id; d.append(el('summary', '', text)); node.before(marker, d); d.append(node); workspace.wrappers.push(d); workspace.unwraps.push({ node, details: d, marker }); d.addEventListener('toggle', () => { if (workspace.mode === 'focus' && !docEl.dataset.chartfull && workspace.folds[id] !== d.open) { workspace.folds[id] = d.open; workspaceSave(); } }); return d; };
   for (const [id, text, node] of [['workspace-appearance', 'Darstellung & App', $('view-panel')], ['workspace-notifications', 'Hinweise & Telegram', $('notify-panel')]]) {
     const d = el('details', 'workspace-fold'); d.id = id; d.append(el('summary', '', text)); grid.append(d); move(node, d);
   }
