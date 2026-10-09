@@ -12,9 +12,10 @@ const seed = ({ now, limit }) => { if (localStorage.getItem('scalpdesk.savedat.v
 // Safari nachstellen: kein eingebauter Scroll-Anker
 const safari = () => { const orig = CSS.supports.bind(CSS); CSS.supports = (p, v) => (p === 'overflow-anchor' ? false : orig(p, v)); document.addEventListener('DOMContentLoaded', () => { const s = document.createElement('style'); s.textContent = 'html{overflow-anchor:none!important}'; document.head.append(s); }); };
 const phone = w => ({ viewport: { width: w, height: 800 }, hasTouch: true, isMobile: true, deviceScaleFactor: 3 });
-async function open(browser, view, { init = [], limit = null } = {}) {
+async function open(browser, view, { init = [], limit = null, quietFutures = false } = {}) {
   const ctx = await browser.newContext(view); for (const [fn, arg] of [[seed, { now, limit }], ...init]) await ctx.addInitScript(fn, arg);
   const page = await ctx.newPage(), errors = []; h.collect(page, errors);
+  if (quietFutures) await ctx.route('**/fapi/v1/klines?*', route => route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
   await page.goto(h.URL_BASE + '/weather-widget-v2.html');
   await page.waitForFunction(() => document.getElementById('status').dataset.feed === 'live', null, { timeout: 20000 }).catch(() => {});
   await page.waitForTimeout(2000);
@@ -131,17 +132,20 @@ const tests = {
     const TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', CHAT = '987654321';
     const chanSeed = ({ token, chat }) => { if (!localStorage.getItem('scalpdesk.channels.v1')) localStorage.setItem('scalpdesk.channels.v1', JSON.stringify({ tg: { token, chat, on: true }, dc: { url: '', on: false }, ev: { alarm: true, pos: true, day: true } })); };
     // ohne Telegram: Hinweis und Einrichten-Knopf
-    let { ctx, page, errors } = await open(browser, phone(390));
+    await h.ctl('/orderflow?hold=1'); await h.ctl('/walk?on=0');
+    let { ctx, page, errors } = await open(browser, phone(390), { quietFutures: true });
     await tab(page, 'pos'); await page.click('#data-toggle'); await page.waitForTimeout(300);
     const off = await page.evaluate(() => ({ dis: document.getElementById('tgb-on').disabled, setup: !document.getElementById('tgb-setup').hidden, info: document.getElementById('tgb-info').textContent }));
     check('Ohne Telegram: Schalter gesperrt, Hinweis auf Safari und „Telegram einrichten“', off.dis && off.setup && /Safari/.test(off.info), JSON.stringify(off));
     await ctx.close();
-    ({ ctx, page, errors } = await open(browser, phone(390), { init: [[chanSeed, { token: TOKEN, chat: CHAT }]] }));
+    ({ ctx, page, errors } = await open(browser, phone(390), { init: [[chanSeed, { token: TOKEN, chat: CHAT }]], quietFutures: true }));
     // 3.54.0: dieser Fall prüft einen unveränderten Vollstand. Neue Futures-Beobachtungen
     // würden Journal/Begleitung legitim ändern; nur diese zusätzliche Quelle hier stillhalten.
     // Vorhandene Bücher bleiben vollständig in der Sicherung, Spot-Positionen/Alarme weiter live.
-    await ctx.route('**/fapi/v1/klines?*', route => route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
-    await h.ctl('/orderflow?hold=1'); await page.waitForTimeout(6000);
+    // Isolation ab dem ersten Seitenaufruf: keine nachträglich weiterlebende Futures-Historie und kein Spot-Zufallswalk.
+    // Spot-Streams und echte Positions-/Alarm-/Sicherungswege bleiben bedienbar; sämtliche Bücher bleiben im Backup.
+    await page.waitForTimeout(6000);
+    check('Unveränderter Sicherungsfall startet ohne neue Futures-Beobachtungen', await page.evaluate(() => !__pdf2.feed.quote() && Object.values(__pdf2.feed.state.series).every(rows => rows.length === 0) && (__g05.backupPayload().prefs['scalpdesk.orderflow-journal.v1']?.records?.length || 0) === 0));
     await h.ctl('/sentreset');
     await tab(page, 'pos'); await page.click('#data-toggle'); await page.waitForTimeout(300);
     await page.check('#tgb-on');
@@ -192,7 +196,7 @@ const tests = {
     check('Unverändert: Neuladen sendet nicht doppelt', extra === 0, JSON.stringify({ vorher: n0, jetzt: afterReload.length, ...backupDelta }));
     // die 400-Antwort beim Ersetzen der gelöschten Nachricht meldet der Browser selbst – erwartet
     const real = errors.filter(e => !/status of (400|503)/.test(e));
-    check('keine Fehler (außer den erwarteten 400- und 503-Antworten)', !real.length, real.join(' | ')); await ctx.close();
+    check('keine Fehler (außer den erwarteten 400- und 503-Antworten)', !real.length, real.join(' | ')); await ctx.close(); await h.ctl('/orderflow'); await h.ctl('/walk?on=1');
   },
 };
 (async () => {

@@ -66,12 +66,14 @@ const setRating = (page, coin, r) => page.evaluate(([c, r]) => { const e = windo
     const chart0 = await page.evaluate(() => { const toolbar = document.querySelector('#chart-sec .chart-toolbar').getBoundingClientRect(); return { chart: Math.round(document.getElementById('chart').getBoundingClientRect().top + scrollY), toolbarTop: Math.round(toolbar.top + scrollY), toolbarHeight: Math.round(toolbar.height) }; });
     let p = await panel(page);
     check('Anfangs zu: Feld zusammengeklappt, keine Kachel aufgeklappt', p && !p.open && p.height === 0 && p.visible === 'hidden' && t.every(x => x.expanded === 'false'), JSON.stringify({ open: p?.open, h: p?.height }));
+    await page.evaluate(() => document.querySelector('#watchlist .wl-tile[data-watch="LTC"]').addEventListener('click', () => { window.__m39OpenAt = performance.now(); }, { capture: true, once: true }));
     await page.tap('#watchlist .wl-tile[data-watch="LTC"]'); await page.waitForTimeout(90);
+    const openingTime = await page.evaluate(() => ({ elapsed: performance.now() - window.__m39OpenAt, duration: getComputedStyle(document.getElementById('wl-detail')).transitionDuration, animations: document.getElementById('wl-detail').getAnimations().map(a => ({ state: a.playState, currentTime: a.currentTime })) }));
     const hMid = (await panel(page)).height; await page.waitForTimeout(600);
     p = await panel(page); t = await tiles(page);
     const ltc = t.find(x => x.coin === 'LTC'), wantUp = ltc.rules.filter(r => r.dir === 'up').length, wantDown = ltc.rules.filter(r => r.dir === 'down').length;
     check('Tippen auf LTC öffnet das Feld unter den Kacheln, nur LTC aufgeklappt', p.open && p.title === 'LTC' && t.filter(x => x.expanded === 'true').map(x => x.coin).join() === 'LTC' && p.visible === 'visible', JSON.stringify({ title: p.title, exp: t.filter(x => x.expanded === 'true').map(x => x.coin) }));
-    check('Weiches Aufklappen: nach 90 ms erst teilweise offen', hMid > 0 && hMid < p.height, `${hMid} → ${p.height} px`);
+    check('Weiches Aufklappen: nach 90 ms erst teilweise offen', hMid > 0 && hMid < p.height, `${hMid} → ${p.height} px · ${JSON.stringify(openingTime)}`);
     check('Gruppen wie die Bewertung der Kachel: bullish = ▲-Regeln, bearish = ▼-Regeln, leere Gruppe verborgen', p.up.items.length === wantUp && p.down.items.length === wantDown && p.up.hidden === !wantUp && p.down.hidden === !wantDown && (wantUp || wantDown ? !p.none : p.none === 'Aktuell keine Signale'),
       JSON.stringify({ tile: ltc.rules.map(r => r.text), up: p.up.items.map(i => i.text), down: p.down.items.map(i => i.text), none: p.none }));
     check('Kopf: Coin, „Signale der letzten Stunde · Stand HH:MM“, kein Knopf „Im Chart öffnen“ (3.26.0)', /^Signale der letzten Stunde · Stand \d\d:\d\d$/.test(p.meta) && !p.chartBtn, p.meta);
