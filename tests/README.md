@@ -11,7 +11,7 @@ Automatische Tests für die App (`weather-widget-v2.html`) und den 24/7-Dienst (
 
 ### Orderflow-Karten (3.55.0)
 
-- `m79.js`: je fünf gerundete Karten, gespeicherte Klappzustände/Einheit/Backup, tatsächlicher Vorauswahlpreis trotz abweichender Futures-Quelle, echte Demo-Klicks, kein gemischter Spot-ATR, Frische ohne Ersatzquelle, stabile Signalhöhe/Scrollposition und 320/390/768/1024 Pixel.
+- `m79.js`: je fünf gerundete Karten, gespeicherte Klappzustände/Einheit/Backup, tatsächlicher Vorauswahlpreis trotz abweichender Futures-Quelle, echte Demo-Klicks, kein gemischter Spot-ATR, Frische ohne Ersatzquelle, stabile Signalhöhe/Scrollposition, optisch enge O/T- und H/S-Abstände bei getrennten 44-px-Tippflächen und 320/390/768/1024 Pixel.
 - `m76.js` verwendet für Übungen jetzt ausdrücklich die Vorauswahl-/Spot-Klickquelle; `m77.js` verlangt bei reinem Futures-Ausfall weiter aktuelle Spot-Demo und erhält alle übrigen Fachprüfungen.
 - `unit-orderflow-demo.js` zusätzlich Marktquelle/Altbuch-Kompatibilität (30 Fälle).
 - Alle Browserprüfungen weiter ausschließlich seriell.

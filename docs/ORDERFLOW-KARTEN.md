@@ -4,6 +4,7 @@ Nutzerauftrag nach der veröffentlichten 3.54.0: übersichtliche Einzelkarten, K
 
 ## Änderungen
 
+- O/T und H/S der Minutenwerte optisch direkt untereinander wie bei den Stundenwerten, auch auf dem Handy. Getrennte 44-px-Tippflächen erhalten; Anzeige und Treffbereiche werden unabhängig geprüft.
 - Genau fünf gerundete Karten je Minuten-/Stundenblock; OHLC, waagerechte Kerze, Volumen, Delta und Kerzenbild bleiben zusammen. Der laufende Zeitplatz bleibt gestrichelt.
 - Minuten, Stunden, Orderflow-Signal und Positionsbegleitung lassen sich einklappen. Auch BTC, Demo, Gruppen, Einstellungen, Journal und Einstiegsformular merken ihren Klappzustand in `scalpdesk.orderflow.v1`. Einheitenwechsel überschreibt diese Auswahl nicht; die persönliche Sicherung enthält sie.
 - Signal direkt unter BTC, vor den anderen Live-Blöcken. Feste Flächen für Badge/Score, Begründung, Warnungen und Erklärung verhindern Höhenwechsel. Längere Texte bleiben scrollbar und per Tastatur erreichbar. Bestehender Safari-Scrollausgleich bleibt aktiv.
@@ -19,6 +20,6 @@ Nutzerauftrag nach der veröffentlichten 3.54.0: übersichtliche Einzelkarten, K
 
 ## Prüfstand
 
-Demo-Kern 30/30 und vorhandene Kerzen-/Demoansicht m76 19/19 bestanden. Neue Karten-/Geometrie-/Quellenprüfung m79 44/44 (beide Layouts/acht AA-Farben, zusätzlich Spot-/Futures-only), Signal-/Volumen-/Feed-/Journalkern unverändert grün, Releasegraph 6/6. Alle 15 gezielten Zielprogramme nach vollständigen Befundnachläufen grün: insbesondere m77 33/33, m78 16/16, m74 73/73, m75 15/15, Safari-Verankerung m32 5/5 und m34 9/9, G14 m70 61/61. Vollständiger serieller Gesamtlauf mit 132 Zielen folgt. Erste Testvorbedingungen werden erhalten: Vorauswahl muss tatsächlich geladen sein; Handelsknöpfe erst nach Zeichnung prüfen; Termintext exakt an den tatsächlichen Veto-Text binden. App-/Modul-Lint bisher 0 Fehler, 3 bestehende Warnungen. Noch nicht veröffentlicht.
+Demo-Kern 30/30 und vorhandene Kerzen-/Demoansicht m76 19/19 bestanden. Neue Karten-/Geometrie-/Quellenprüfung m79 48/48 (beide Layouts/acht AA-Farben, zusätzlich Spot-/Futures-only), Signal-/Volumen-/Feed-/Journalkern unverändert grün, Releasegraph 6/6. Alle 15 gezielten Zielprogramme nach vollständigen Befundnachläufen grün: insbesondere m77 33/33, m78 16/16, m74 73/73, m75 15/15, Safari-Verankerung m32 5/5 und m34 9/9, G14 m70 61/61. Vollständiger serieller Gesamtlauf mit 132 Zielen folgt. Erste Testvorbedingungen werden erhalten: Vorauswahl muss tatsächlich geladen sein; Handelsknöpfe erst nach Zeichnung prüfen; Termintext exakt an den tatsächlichen Veto-Text binden. App-/Modul-Lint bisher 0 Fehler, 3 bestehende Warnungen. Noch nicht veröffentlicht. Der zusätzliche Abstandswunsch führte zum absichtlichen Stopp des ersten Gesamtlaufs nach 55 grünen Zielen; Rohlogs erhalten. Neuer vollständiger Lauf auf aktualisiertem Produktstand folgt.
 
 Die optionale private VM und reale iPad-/Safari-/CORS-/Anbieterabnahmen bleiben separat offen. Keine echten Orders oder neuen Zugangsdaten.
