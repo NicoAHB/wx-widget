@@ -14420,10 +14420,11 @@ for(const f of SET_FIELDS)stampSetting(f);renderIntegrity(); // 3.29.0: Abstammu
 if(posTradesSyncAll())persist(); // 3.30.0: zu jedem Teilabschluss genau ein Trade – fehlt einer, kommt er aus dem Verlauf der Position
 // 3.53.0 (PDF Etappe 1): eigenständiger Verbraucher, keine Handelsentscheidung.
 chartBoundary = createWidgetBoundary($('chart-sec'), 'Chart / Market Cap', () => drawChart());
-orderflow = createOrderflowView({ root: $('orderflow-panel'), context: () => ({ symbol: state.symbol, paused: state.paused, connected: live.markets.futures?.st === 'live' }), now: serverNow,
+// 3.54.0: neue Panelhöhen auch im vorhandenen Safari-Scrollausgleich berücksichtigen.
+orderflow = createOrderflowView({ root: $('orderflow-panel'), updateLayout: fn => nativeAnchor ? fn() : withAnchor(fn), context: () => ({ symbol: state.symbol, paused: state.paused, connected: live.markets.futures?.st === 'live' }), now: serverNow,
   fetchRows: (symbol, interval, limit, signal) => api.get(FUTURES, '/fapi/v1/klines', { symbol, interval, limit }, signal), readPrefs: () => store.get('scalpdesk.orderflow.v1'), savePrefs: prefs => store.set('scalpdesk.orderflow.v1', prefs), streamsChanged: () => syncStreams(), formatPrice: priceText,
   readDemo: () => store.get('scalpdesk.orderflow-demo.v1'), saveDemo: book => { if (!store.set('scalpdesk.orderflow-demo.v1', book)) throw new Error('Demo konnte nicht gespeichert werden. Browser-Speicher prüfen.'); store.set(CHANGES_KEY, changeCount() + 1); scheduleAutoBackup(); scheduleTgBackup(); renderBackupInfo(); } });
-var orderflowSignal = createSignalView({ root: $('orderflow-panel'), chartHost: document.querySelector('#chart-sec .chart-toolbar'),
+var orderflowSignal = createSignalView({ root: $('orderflow-panel'), chartHost: document.querySelector('#chart-sec .chart-toolbar'), updateLayout: fn => nativeAnchor ? fn() : withAnchor(fn),
   context: () => ({ symbol: state.symbol, paused: state.paused, connected: live.markets.futures?.st === 'live', unavailable: orderflow.state.unavailable, events: (ec.data?.events || []).filter(e => e.impact === 'high' && e.cur === 'USD').map(e => ({ at: e.t, title: e.title })) }), now: serverNow,
   fetchKlines: (symbol, interval, limit, signal) => api.get(FUTURES, '/fapi/v1/klines', { symbol, interval, limit }, signal),
   fetchMarket: (kind, symbol, signal) => kind === 'contract' ? api.get(FUTURES, '/fapi/v1/exchangeInfo', {}, signal) : kind === 'oi' ? api.get(FUTURES, '/futures/data/openInterestHist', { symbol, period: '5m', limit: 5 }, signal) : kind === 'longShort' ? api.get(FUTURES, '/futures/data/globalLongShortAccountRatio', { symbol, period: '5m', limit: 1 }, signal) : api.get(FUTURES, '/fapi/v1/premiumIndex', { symbol }, signal),

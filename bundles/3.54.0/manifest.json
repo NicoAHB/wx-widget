@@ -171,14 +171,14 @@
     },
     {
       "path": "./bundles/3.54.0/shared/orderflow-signal-view.mjs",
-      "sha256": "39c8e3f67b7dc00902890f78cebbeed25f4854d2c7b99d4275ed761046d1ff71",
-      "bytes": 39231,
+      "sha256": "35dc8af481606ad75be1e1e51903b8bc4d7490d3f5e12b71147a6f0959cf69f5",
+      "bytes": 39278,
       "alias": "./shared/orderflow-signal-view.mjs"
     },
     {
       "path": "./bundles/3.54.0/shared/orderflow-view.mjs",
-      "sha256": "c85e3c46a23bbdf0e1b7cea0aef583fd73d5035e10129e14f5db0d7277bc9de4",
-      "bytes": 15185,
+      "sha256": "d170922fa114e9181d85fb9af09bf939fa412b27fb9e72f76d09f27ff976ba6c",
+      "bytes": 15232,
       "alias": "./shared/orderflow-view.mjs"
     },
     {
@@ -267,8 +267,8 @@
     },
     {
       "path": "./weather-widget-v2.html",
-      "sha256": "f87b7d3261374325ade9f314cf13058ea2ec2a065d63bcd498d9f978f2c92127",
-      "bytes": 1540412
+      "sha256": "2ca009acc4d4013d36910f981713381cc1035fc65526a0c651a965973f38a3dd",
+      "bytes": 1540617
     },
     {
       "path": "./manifest.webmanifest",

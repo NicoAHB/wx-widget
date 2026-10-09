@@ -3,7 +3,7 @@ import { createOrderflowDemo } from './orderflow-demo.mjs';
 import { createWidgetBoundary } from './widget-state.mjs';
 
 // Verbraucher des bestehenden Binance-Workers; kein zweiter Worker/keine doppelten Futures-Abos, keine Signale/Orders.
-export function createOrderflowView({ root, context, now, fetchRows, readPrefs, savePrefs, streamsChanged, formatPrice = String, readDemo = () => null, saveDemo = () => {} }) {
+export function createOrderflowView({ root, context, now, fetchRows, readPrefs, savePrefs, streamsChanged, formatPrice = String, readDemo = () => null, saveDemo = () => {}, updateLayout = fn => fn() }) {
   const doc = root.ownerDocument, state = { symbol: '', paused: false, unit: 'usdt', series: { '1m': [], '1h': [] }, errors: {}, unavailable: false, epoch: 0, since: 0 };
   const blocks = {}, pending = new Map(), attempted = new Set(), loadedAt = {}, repaired = {};
   let paintTimer = null, initialTimer = null, lastConnected = false, lastTick = 0;
@@ -51,7 +51,7 @@ export function createOrderflowView({ root, context, now, fetchRows, readPrefs, 
   const boundary = createWidgetBoundary(root, 'Kauf-/Verkaufsvolumen', () => { sync(); paint(); });
   const prefs = () => { state.unit = readPrefs()?.unit === 'coins' ? 'coins' : 'usdt'; select.value = state.unit; };
   prefs();
-  function paint() { const value = boundary.run(paintContent); if (boundary.failed) for (const id of ['of-demo-price', 'of-demo-close']) { const button = root.querySelector('#' + id); if (button) button.disabled = true; } return value; }
+  function paint() { const value = boundary.run(() => updateLayout(paintContent)); if (boundary.failed) for (const id of ['of-demo-price', 'of-demo-close']) { const button = root.querySelector('#' + id); if (button) button.disabled = true; } return value; }
   function paintContent() {
     if (doc.hidden) return;
     const ctx = context(), at = now(), units = state.unit === 'coins' ? 'Coins' : 'USDT';
