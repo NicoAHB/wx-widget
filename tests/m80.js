@@ -1,0 +1,66 @@
+// 3.56.0: native Bot-Felder, explizite Übungswerte, bestätigte Originale und iPhone-Geometrie.
+const h = require('./harness'); let pass = 0, fail = 0;
+const check = (name, ok, detail = '') => { ok ? pass++ : fail++; console.log(`${ok ? '✓' : '✗'} ${name}${detail ? ' — ' + String(detail).slice(0, 400) : ''}`); };
+(async () => { let browser;
+  try {
+    await h.setup(); browser = await h.launch(); const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }), page = await ctx.newPage(), errors = [], privateCalls = [];
+    page.on('pageerror', e => errors.push(e.message)); page.on('request', r => { if (r.url().includes('api.bitget.com')) privateCalls.push(r.url()); });
+    await page.goto(h.URL_BASE + '/weather-widget-v2.html'); await page.waitForFunction(() => window.__g12?.view.state.confirmed); await page.click('#ki-bot-tab'); await page.waitForFunction(() => !__g12.view.state.busy);
+    check('Fünf gerundete Einstellungsgruppen mit eigenen Überschriften', await page.evaluate(() => ['mode', 'risk', 'protection', 'gain', 'loss'].every(key => { const group = document.getElementById('bot-group-' + key), s = getComputedStyle(group); return group.tagName === 'FIELDSET' && group.querySelector(':scope>legend').textContent.length && parseFloat(s.borderRadius) >= 10 && parseFloat(s.borderTopWidth) === 1; })));
+    check('Jedes Feld mit eigener Titelzeile und expliziter Label-/Hilfetext-Zuordnung', await page.evaluate(() => [...document.querySelectorAll('.bot-field')].every(label => { const input = label.querySelector('input,select'), title = label.querySelector('.bot-field-title'), hint = label.querySelector('small'); return label.htmlFor === input.id && input.labels.length === 1 && input.getAttribute('aria-labelledby') === title.id && title.getBoundingClientRect().bottom <= input.getBoundingClientRect().top && (!hint || input.getAttribute('aria-describedby') === hint.id); })));
+    check('Technische Startwerte bleiben editierbar: Konfluenz, 20×, eine Position, Score 70, Pause 60s', await page.evaluate(() => ['strategy', 'leverage', 'maxPositions', 'minimumScore', 'cooldownMs'].map(k => document.getElementById('bot-' + k).value).join('|') === 'confluence|20|1|70|60'));
+    check('Geldfelder anfangs leer; keine automatische Aktivierung, keine Lauf-/Börsenorder', await page.evaluate(() => ['referenceUSDT', 'riskPercent', 'exposureUSDT'].every(k => !document.getElementById('bot-' + k).value) && !__g12.view.state.confirmed.enabled && !__g12.view.state.confirmed.run && !document.getElementById('bot-automatic').checked));
+    const revision = await page.evaluate(() => __g12.view.state.confirmed.revision); await page.click('#bot-preset');
+    check('Explizite Übungswerte in den Feldern: 1000 / 1% / 100 und Grenzen 10 / 5 USDT', await page.evaluate(() => ['referenceUSDT', 'riskPercent', 'exposureUSDT', 'gainAmount', 'lossAmount'].map(k => document.getElementById('bot-' + k).value).join('|') === '1000|1|100|10|5'));
+    check('Übungsbutton aktiviert weder Stopps noch Bot; keine Revision oder laufenden Daten geändert', await page.evaluate(revision => __g12.view.state.confirmed.revision === revision && !__g12.view.state.confirmed.enabled && !__g12.view.state.confirmed.run && !document.getElementById('bot-gain-enabled').checked && !document.getElementById('bot-loss-enabled').checked && /Übungswerte/.test(document.getElementById('bot-status').textContent), revision));
+    for (const [key, value] of [['referenceUSDT', '5000'], ['riskPercent', '2'], ['exposureUSDT', '200'], ['gainAmount', '12'], ['lossAmount', '7']]) await page.fill('#bot-' + key, value); await page.click('#bot-preset');
+    check('Erneuter Übungsbutton erhält jede eigene Eingabe', await page.evaluate(() => ['referenceUSDT', 'riskPercent', 'exposureUSDT', 'gainAmount', 'lossAmount'].map(k => document.getElementById('bot-' + k).value).join('|') === '5000|2|200|12|7'));
+    await page.selectOption('#bot-lossUnit', 'EUR'); await page.fill('#bot-lossAmount', ''); await page.click('#bot-preset');
+    check('Keine stillen USDT-Beispielbeträge in EUR-Grenzen; Referenzkursbereich öffnet sich', await page.inputValue('#bot-lossAmount') === '' && await page.evaluate(() => document.getElementById('bot-fx-details').open));
+    await page.selectOption('#bot-lossUnit', 'USDT'); await page.click('#bot-preset'); await page.locator('#bot-fx-details>summary').click();
+    await page.locator('label[for="bot-riskPercent"] .bot-field-title').click(); check('Antippen der Beschriftung fokussiert das richtige Eingabefeld', await page.evaluate(() => document.activeElement.id === 'bot-riskPercent'));
+    await page.check('#bot-gain-enabled'); await page.check('#bot-loss-enabled'); await page.click('#bot-enable'); await page.waitForFunction(() => __g12.view.state.confirmed.enabled && !__g12.view.state.busy);
+    check('Aktivierung bleibt eigener Schritt und startet keinen Lauf', await page.evaluate(() => !__g12.view.state.confirmed.run));
+    await page.click('#bot-start'); await page.waitForFunction(() => __g12.view.state.confirmed.run && !__g12.view.state.busy);
+    check('Start nutzt die tatsächlich gewählten Werte unverändert im vorhandenen Kern', await page.evaluate(() => { const s = __g12.view.state.confirmed; return s.run.referenceUSDT === '5000' && s.settings.riskPercent === '2' && s.settings.exposureUSDT === '200' && s.run.gain.amount === '12' && s.run.loss.amount === '5' && s.run.automaticTrading === false; }));
+    check('Bestätigter Lauf als getrennte Faktenkarten über den Einstellungen', await page.evaluate(() => { const box = document.getElementById('bot-run-summary'); return box.querySelectorAll('dl>div').length >= 6 && box.getBoundingClientRect().top < document.getElementById('bot-group-mode').getBoundingClientRect().top && /Simulation läuft/.test(box.textContent) && /5000 USDT/.test(box.textContent); }));
+    await page.locator('#bot-scenario>summary').click(); await page.click('#bot-zero-values');
+    for (const [value, cls, variable] of [['3', 'bot-net-positive', '--up-text'], ['-2', 'bot-net-negative', '--down-text']]) { await page.fill('#bot-value-realized', value); await page.click('#bot-step'); await page.waitForFunction(value => __g12.view.state.confirmed.run.netUSDT === value && !__g12.view.state.busy, value);
+      check('Netto ' + value + ' USDT als klare Faktenkarte in Richtungsfarbe', await page.evaluate(({ value, cls, variable }) => { const n = document.querySelector('#bot-run-summary .' + cls), probe = document.createElement('span'); probe.style.color = 'var(' + variable + ')'; document.body.append(probe); const color = getComputedStyle(probe).color; probe.remove(); return n?.textContent === value + ' USDT' && getComputedStyle(n).color === color; }, { value, cls, variable }));
+    }
+    await page.fill('#bot-value-realized', '0'); await page.click('#bot-step'); await page.waitForFunction(() => __g12.view.state.confirmed.run.netUSDT === '0' && !__g12.view.state.busy); await page.locator('#bot-scenario>summary').click();
+    await page.fill('#bot-riskPercent', '3'); await page.click('#bot-load'); await page.waitForFunction(() => !__g12.view.state.busy);
+    check('Stand neu laden erhält Entwurf 3%; bestätigte Laufregel bleibt 2%', await page.inputValue('#bot-riskPercent') === '3' && await page.evaluate(() => __g12.view.state.confirmed.settings.riskPercent === '2'));
+    await page.reload(); await page.waitForFunction(() => window.__g12?.view.state.confirmed?.run && !__g12.view.state.busy); await page.click('#ki-bot-tab'); await page.waitForFunction(() => !__g12.view.state.busy);
+    check('Neustart stellt eigene bestätigte Einstellungen und Stopps statt Beispielen dar', await page.evaluate(() => ['referenceUSDT', 'riskPercent', 'exposureUSDT', 'gainAmount', 'lossAmount'].map(k => document.getElementById('bot-' + k).value).join('|') === '5000|2|200|12|5' && document.getElementById('bot-gain-enabled').checked && document.getElementById('bot-loss-enabled').checked && __g12.view.state.confirmed.logs.filter(x => x.type === 'start').length === 1));
+    await page.click('#bot-pause'); await page.waitForFunction(() => !__g12.view.state.confirmed.enabled && !__g12.view.state.busy);
+    check('Pause zeigt „Pausiert“ und erhält ursprünglichen Lauf samt Grenzregeln', await page.evaluate(() => /Pausiert/.test(document.getElementById('bot-run-summary').textContent) && __g12.view.state.confirmed.run.referenceUSDT === '5000' && __g12.view.state.confirmed.run.gain.amount === '12'));
+    await page.evaluate(() => __g12.view.send('inventory', { snapshot: { complete: true, at: Date.now(), positionAt: Date.now(), positionRevision: 1, fillRevision: 1, context: { venue: 'simulation', account: 'paper-own', product: 'USDT-FUTURES', mode: 'one-way', marginMode: 'cross', quantityUnit: 'contracts' }, positions: [{ instrument: 'BTCUSDT', leg: 'long', totalQuantity: '0.002', availableQuantity: '0' }], fills: [] } }));
+    check('Bestehender Bestandskonflikt bleibt sichtbar und sperrt neue Schließungen', await page.isVisible('#bot-reconciliation') && await page.isVisible('#bot-global-warning') && await page.evaluate(() => !__g12.view.state.confirmed.actions.newCloses));
+    for (const selector of ['#bot-scenario', '#bot-fx-details']) await page.locator(selector + '>summary').click();
+    await page.evaluate(() => document.getElementById('bot-status').textContent = 'Sehr langer Fehlerhinweis ohne Leerzeichen: ' + 'MusterquelleNichtErreichbar'.repeat(20));
+    const geometry = async () => page.evaluate(() => {
+      const root = document.getElementById('bot-view'), box = root.getBoundingClientRect(), shown = n => n.getClientRects().length && n.getBoundingClientRect().height > 0;
+      const controls = [...root.querySelectorAll('button,select,input:not([type=checkbox]),summary')].filter(shown);
+      const escaped = controls.filter(n => { const r = n.getBoundingClientRect(); return r.left < box.left - 1 || r.right > box.right + 1 || r.right > innerWidth + 1 || n.scrollWidth > n.clientWidth + 1 && n.tagName !== 'SELECT'; }).map(n => n.id || n.tagName);
+      const textNodes = [...root.querySelectorAll('p,small,.bot-field-title,legend,dt,dd,summary')].filter(shown), textEscaped = [];
+      for (const n of textNodes) { const walk = document.createTreeWalker(n, NodeFilter.SHOW_TEXT); let t; while ((t = walk.nextNode())) { const range = document.createRange(); range.selectNodeContents(t); for (const r of range.getClientRects()) if (r.right > Math.min(box.right, innerWidth) + 1 || r.left < box.left - 1) textEscaped.push(n.id || n.className || n.tagName); } }
+      return { overflow: document.documentElement.scrollWidth > innerWidth + 1 || root.scrollWidth > root.clientWidth + 1, escaped, textEscaped, touch: controls.every(n => n.getBoundingClientRect().height >= 44) && [...root.querySelectorAll('.bot-toggle')].filter(shown).every(n => n.getBoundingClientRect().height >= 44), vertical: [...root.querySelectorAll('.bot-field')].filter(shown).every(n => n.querySelector('.bot-field-title').getBoundingClientRect().bottom <= n.querySelector('input,select').getBoundingClientRect().top) };
+    });
+    for (const width of [320, 390, 768, 1440]) { await page.setViewportSize({ width, height: 844 });
+      for (const layout of ['standard', 'dashboard']) { await page.evaluate(layout => document.querySelector(`[data-presentation-set="${layout}"]`).click(), layout); await page.waitForTimeout(200); const g = await geometry();
+        check(width + 'px / ' + layout + ': lange Texte und alle Felder innerhalb des Rahmens', !g.overflow && !g.escaped.length && !g.textEscaped.length, JSON.stringify(g));
+        check(width + 'px / ' + layout + ': Beschriftung über eigenem Feld, mindestens 44px Tippflächen', g.vertical && g.touch, JSON.stringify(g));
+      }
+    }
+    for (const layout of ['standard', 'dashboard']) { await page.evaluate(layout => document.querySelector(`[data-presentation-set="${layout}"]`).click(), layout);
+      for (const entry of await page.evaluate(() => __sdAppearance.palette)) { await page.evaluate(color => document.querySelector(`[data-background-color="${color}"]`).click(), entry.color);
+        check(layout + '/' + entry.name + ': Bot-Texte und Gewinn-/Verlustfarben mit AA-Kontrast', await page.evaluate(() => { const cs = getComputedStyle(document.documentElement), v = k => cs.getPropertyValue('--' + k).trim(); return ['surface', 'surface-2', 'field'].every(bg => ['text', 'muted', 'up-text', 'down-text'].every(fg => __sdAppearance.contrast(v(fg), v(bg)) >= 4.5)); }));
+      }
+    }
+    await page.setViewportSize({ width: 390, height: 844 }); await page.evaluate(() => document.querySelector('[data-theme-set=light]').click()); await page.locator('#bot-group-risk').screenshot({ path: '/tmp/scalpdesk-356-bot-risiko.png' });
+    await page.locator('#bot-view').screenshot({ path: '/tmp/scalpdesk-356-bot-mobile.png' });
+    check('Keine JavaScript-Fehler oder privaten Börsenanfragen', !errors.length && !privateCalls.length, errors.join('; '));
+    await ctx.close(); console.log(`${pass}/${pass + fail} bestanden`); process.exitCode = fail ? 1 : 0;
+  } catch (e) { console.error('Abbruch', e); process.exitCode = 1; } finally { await browser?.close(); await h.teardown(); }
+})();

@@ -1,0 +1,304 @@
+{
+  "version": "3.56.0",
+  "files": [
+    {
+      "path": "./bundles/3.56.0/shared/bitget-patterns.mjs",
+      "sha256": "fa678f92b17980d832684ddb1a0e8a12ea8a09b7fc0b0377c3cbdee1b36c871b",
+      "bytes": 5726,
+      "alias": "./shared/bitget-patterns.mjs"
+    },
+    {
+      "path": "./bundles/3.56.0/shared/bitget-public.mjs",
+      "sha256": "aad0fbd0be3c8846b9d56c26b324c78d11b5d3a4cce0e718c540778f8466bd42",
+      "bytes": 19930,
+      "alias": "./shared/bitget-public.mjs"
+    },
+    {
+      "path": "./bundles/3.56.0/shared/bot-limits.mjs",
+      "sha256": "ba4c27f94c47963481cc63b315d880fdf8b52634c3758e2dd6f274c95dd1f22f",
+      "bytes": 13207,
+      "alias": "./shared/bot-limits.mjs"
+    },
+    {
+      "path": "./bundles/3.56.0/shared/bot-simulation-store.mjs",
+      "sha256": "94605d4ba1adb957564e044a044622ba3425ed12b2c51d6f1e8e933b454e363e",
+      "bytes": 1283,
+      "alias": "./shared/bot-simulation-store.mjs"
+    },
+    {
+      "path": "./bundles/3.56.0/shared/bot-simulation.mjs",
+      "sha256": "853f81d66bc44be1bc5f906aaf6430af3efb0fc6af0e1a3b6fc1c909a7a185e9",
+      "bytes": 7671,
+      "alias": "./shared/bot-simulation.mjs"
+    },
+    {
+      "path": "./bundles/3.56.0/shared/bot-view.mjs",
+      "sha256": "e83b772ac7a703ab147b842f9db2a7b0fd1234c454938b6a3cb5d785f53295e9",
+      "bytes": 20971,
+      "alias": "./shared/bot-view.mjs"
+    },
+    {
+      "path": "./bundles/3.56.0/shared/confluence-core.mjs",
+      "sha256": "43cee18caca000b04651e197c10fd06d2866d53120e0a8758ac76e434a02fce9",
+      "bytes": 22614,
+      "alias": "./shared/confluence-core.mjs"
+    },
+    {
+      "path": "./bundles/3.56.0/shared/confluence-evidence.mjs",
+      "sha256": "8c3fe3db1da5e5442257ea483577fd3cadac3827a838b23b1a24dac74a70b1f3",
+      "bytes": 2644,
+      "alias": "./shared/confluence-evidence.mjs"
+    },
+    {
+      "path": "./bundles/3.56.0/shared/confluence-history.mjs",
+      "sha256": "7df47def13546078d70e3fbe605a0ff29d80c611659cbda135b2267a40f44200",
+      "bytes": 6077,
+      "alias": "./shared/confluence-history.mjs"
+    },
+    {
+      "path": "./bundles/3.56.0/shared/confluence-legacy-core.mjs",
+      "sha256": "70e132c6628fae3fe59f1d9a820e09f556cfd98416a909845b901dce2985c6ad",
+      "bytes": 21395,
+      "alias": "./shared/confluence-legacy-core.mjs"
+    },
+    {
+      "path": "./bundles/3.56.0/shared/confluence-legacy-indicators.mjs",
+      "sha256": "9105a8ac09d5557e90ec05fd3035c915b36b8e345b31b96a158d0001da505540",
+      "bytes": 9568,
+      "alias": "./shared/confluence-legacy-indicators.mjs"
+    },
+    {
+      "path": "./bundles/3.56.0/shared/confluence-legacy-live.mjs",
+      "sha256": "bd9b1d10b9b696d11bbd25e1bb516a3f68f7d40099cdd9f2000105a7e39dde1b",
+      "bytes": 9842,
+      "alias": "./shared/confluence-legacy-live.mjs"
+    },
+    {
+      "path": "./bundles/3.56.0/shared/confluence-legacy-pattern-score.mjs",
+      "sha256": "585334abda80fd8802128e181d8efc04264770f3ee2a7f866d24481a6f7eabad",
+      "bytes": 2683,
+      "alias": "./shared/confluence-legacy-pattern-score.mjs"
+    },
+    {
+      "path": "./bundles/3.56.0/shared/confluence-legacy-replay.mjs",
+      "sha256": "f3f55b27498a8e13c5bd470d6cbe2d6665a233d9d5baa6bbe1cda2f577ffd96c",
+      "bytes": 13503,
+      "alias": "./shared/confluence-legacy-replay.mjs"
+    },
+    {
+      "path": "./bundles/3.56.0/shared/confluence-live.mjs",
+      "sha256": "6dfc251c8f673c252754d0be13a02c9e9bb1fa97aefd3fccd244e415875bb3be",
+      "bytes": 9910,
+      "alias": "./shared/confluence-live.mjs"
+    },
+    {
+      "path": "./bundles/3.56.0/shared/confluence-presentation.mjs",
+      "sha256": "d23018d6f9bdfe1f1e90369bcbd89210b613c4be975becb7f35081e656a32822",
+      "bytes": 4133,
+      "alias": "./shared/confluence-presentation.mjs"
+    },
+    {
+      "path": "./bundles/3.56.0/shared/confluence-replay-store.mjs",
+      "sha256": "502590bc818e0697c6b6bcb1e54a9b449dba976d1578f7d001a9475b7cd1132b",
+      "bytes": 3654,
+      "alias": "./shared/confluence-replay-store.mjs"
+    },
+    {
+      "path": "./bundles/3.56.0/shared/confluence-replay.mjs",
+      "sha256": "af2653ebd972a88fc5ed1e4a314828b772050bf095eed70a3b4877f3e5570b00",
+      "bytes": 14183,
+      "alias": "./shared/confluence-replay.mjs"
+    },
+    {
+      "path": "./bundles/3.56.0/shared/confluence-risk-view.mjs",
+      "sha256": "2f14726a9e46dffca290cbfc0e80a34d44be65e99df956452ef3bc2bf84efa5a",
+      "bytes": 7111,
+      "alias": "./shared/confluence-risk-view.mjs"
+    },
+    {
+      "path": "./bundles/3.56.0/shared/confluence-service.mjs",
+      "sha256": "d11727870b7eaa03baa727d3ea81eefea318fd03c026963e6fb761893df987e5",
+      "bytes": 11783,
+      "alias": "./shared/confluence-service.mjs"
+    },
+    {
+      "path": "./bundles/3.56.0/shared/confluence-worker.mjs",
+      "sha256": "058a950d130707a939d2f8436a89d9fdeffd538f8ec52dc7ba2a2cb95da52df9",
+      "bytes": 6141,
+      "alias": "./shared/confluence-worker.mjs"
+    },
+    {
+      "path": "./bundles/3.56.0/shared/indicators.mjs",
+      "sha256": "9105a8ac09d5557e90ec05fd3035c915b36b8e345b31b96a158d0001da505540",
+      "bytes": 9568,
+      "alias": "./shared/indicators.mjs"
+    },
+    {
+      "path": "./bundles/3.56.0/shared/model-archive.mjs",
+      "sha256": "49d3d9d037fbdf27dff2403cdf64705b05edaeeddcd18075926d661a14229be7",
+      "bytes": 4286,
+      "alias": "./shared/model-archive.mjs"
+    },
+    {
+      "path": "./bundles/3.56.0/shared/orderflow-core.mjs",
+      "sha256": "2579ff7cd28586ed206629b27d2db2cb19677cbd8e013bf0c9839774ad6337b7",
+      "bytes": 6636,
+      "alias": "./shared/orderflow-core.mjs"
+    },
+    {
+      "path": "./bundles/3.56.0/shared/orderflow-demo.mjs",
+      "sha256": "f233bc62b906ae7d9d5c1fed0318c4e41d056113725551cb514d80b16bb56897",
+      "bytes": 7996,
+      "alias": "./shared/orderflow-demo.mjs"
+    },
+    {
+      "path": "./bundles/3.56.0/shared/orderflow-journal.mjs",
+      "sha256": "46be78d92a5434e6eb21c830e1afc14332776907e4c0cecb79885df0e748a834",
+      "bytes": 9035,
+      "alias": "./shared/orderflow-journal.mjs"
+    },
+    {
+      "path": "./bundles/3.56.0/shared/orderflow-signal-core.mjs",
+      "sha256": "c4e413e4733ea0638f0574137a9321ac087e42391802e8ebaf1446103dcb965c",
+      "bytes": 20547,
+      "alias": "./shared/orderflow-signal-core.mjs"
+    },
+    {
+      "path": "./bundles/3.56.0/shared/orderflow-signal-feed.mjs",
+      "sha256": "ed69334f8f4e9d078d3a7bf1821bbee4153c12c9b24e6e033edc53f07df69926",
+      "bytes": 9290,
+      "alias": "./shared/orderflow-signal-feed.mjs"
+    },
+    {
+      "path": "./bundles/3.56.0/shared/orderflow-signal-view.mjs",
+      "sha256": "03a0a91b2bdc6ee1c9c526cd72a9e0f96b2e3991ba85682c0b5d06c187dea46f",
+      "bytes": 39815,
+      "alias": "./shared/orderflow-signal-view.mjs"
+    },
+    {
+      "path": "./bundles/3.56.0/shared/orderflow-view.mjs",
+      "sha256": "c29a8b4a239da75e180878698e2cd7a36108c753626e627a6955e27332fabe3d",
+      "bytes": 15929,
+      "alias": "./shared/orderflow-view.mjs"
+    },
+    {
+      "path": "./bundles/3.56.0/shared/pattern-score.mjs",
+      "sha256": "585334abda80fd8802128e181d8efc04264770f3ee2a7f866d24481a6f7eabad",
+      "bytes": 2683,
+      "alias": "./shared/pattern-score.mjs"
+    },
+    {
+      "path": "./bundles/3.56.0/shared/po3-core.mjs",
+      "sha256": "abdb41c5cba00b1d6e9c98e6ba9a92fff3f62f9ff2ce47363cc2bdf5e32aaf08",
+      "bytes": 10982,
+      "alias": "./shared/po3-core.mjs"
+    },
+    {
+      "path": "./bundles/3.56.0/shared/po3-feed.mjs",
+      "sha256": "cbee9b7bb5413eba98f817b867a51e416bee6d1f5fb072675cc5242990a90879",
+      "bytes": 5149,
+      "alias": "./shared/po3-feed.mjs"
+    },
+    {
+      "path": "./bundles/3.56.0/shared/po3-service.mjs",
+      "sha256": "c1cec8f5abc603859ca9f558ccc79a8ad6058e8d99ba199e39a77994f0549a88",
+      "bytes": 8554,
+      "alias": "./shared/po3-service.mjs"
+    },
+    {
+      "path": "./bundles/3.56.0/shared/po3-simulator.mjs",
+      "sha256": "56002b0641e37acba8141471f09037432e7a7c3f90ce09b88b8ca2b37454f829",
+      "bytes": 9540,
+      "alias": "./shared/po3-simulator.mjs"
+    },
+    {
+      "path": "./bundles/3.56.0/shared/po3-store.mjs",
+      "sha256": "7742b74895c6beff2bbaa8f27f5a26e7129d18007c7d2b1197a669d4c3950d57",
+      "bytes": 5853,
+      "alias": "./shared/po3-store.mjs"
+    },
+    {
+      "path": "./bundles/3.56.0/shared/po3-stream.mjs",
+      "sha256": "ced8cc5f5ad895c7821e46231d72883df36428a019fc8b055eaaa777d57214d5",
+      "bytes": 12667,
+      "alias": "./shared/po3-stream.mjs"
+    },
+    {
+      "path": "./bundles/3.56.0/shared/po3-view.mjs",
+      "sha256": "be419cb4500ef531ad8440c2547a00ae0fd6146e7504f1cc114914c8dc3c6dbc",
+      "bytes": 30361,
+      "alias": "./shared/po3-view.mjs"
+    },
+    {
+      "path": "./bundles/3.56.0/shared/signal-overview.mjs",
+      "sha256": "f5428bbba259f07eac8d7c0cebf5569624e6d1d14db43ce5be0a7c1505468bf4",
+      "bytes": 3314,
+      "alias": "./shared/signal-overview.mjs"
+    },
+    {
+      "path": "./bundles/3.56.0/shared/widget-state.mjs",
+      "sha256": "70092b206adad502d0cc1b16c4b642cc28b2914d392a046a1cf25d4f8b77214a",
+      "bytes": 1598,
+      "alias": "./shared/widget-state.mjs"
+    },
+    {
+      "path": "./bundles/3.56.0/server/pattern-engine.mjs",
+      "sha256": "c52ba04ee26dd8b3f03f84898f91921ae0bc9310ae1751cd8e91926267054c5e",
+      "bytes": 33552,
+      "alias": "./server/pattern-engine.mjs"
+    },
+    {
+      "path": "./bundles/3.56.0/vendor/jsQR.js",
+      "sha256": "f815a5e0556e7239411a29e92ca2a2c362ed8dae73aea8682ab823f82d4a856e",
+      "bytes": 130593,
+      "alias": "./vendor/jsQR.js"
+    },
+    {
+      "path": "./bundles/3.56.0/vendor/jsQR.LICENSE.txt",
+      "sha256": "c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08",
+      "bytes": 11358,
+      "alias": "./vendor/jsQR.LICENSE.txt"
+    },
+    {
+      "path": "./bundles/3.56.0/data/muster-start.json",
+      "sha256": "9690cb5f3de127396fdc10b8cf24bbd17833a0c26291a12b6e50aa797688fd09",
+      "bytes": 6745,
+      "alias": "./data/muster-start.json"
+    },
+    {
+      "path": "./weather-widget-v2.html",
+      "sha256": "c978284e0fb99d30e1021404d66b07218416ab80758febe5b59f9b8712368743",
+      "bytes": 1547696
+    },
+    {
+      "path": "./manifest.webmanifest",
+      "sha256": "75862c21b0cebc794875a7c33b852653d765452bc7dd1742b5c4be0e722b278a",
+      "bytes": 635
+    },
+    {
+      "path": "./status-check.html",
+      "sha256": "1f22373528418ac610abbf87a2703161c45015b860b1bc8bda04400559817da3",
+      "bytes": 18166
+    },
+    {
+      "path": "./icons/icon-192.png",
+      "sha256": "817d9c4d3f9db3948f17788d1c9db11e535778e0b5f4f71459b4735dfd282ee8",
+      "bytes": 2781
+    },
+    {
+      "path": "./icons/icon-512.png",
+      "sha256": "fd97c87273396e2f212fc4ddce66f15d11e3ca36b33e878ad0eddaa5ea3eb126",
+      "bytes": 7455
+    },
+    {
+      "path": "./icons/icon-maskable-512.png",
+      "sha256": "90a02204bea1188dfa09046130bdda4db164cba0467bc0b655ab7958dedb8246",
+      "bytes": 2362
+    },
+    {
+      "path": "./icons/apple-touch-icon.png",
+      "sha256": "be051c5ccd7f7ad30fd083f9a7688e95330326fa39ef4d4f44916a25a522d957",
+      "bytes": 1090
+    }
+  ]
+}
