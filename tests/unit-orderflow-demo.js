@@ -22,5 +22,8 @@ let pass = 0, fail = 0; const check = (name, ok) => { ok ? pass++ : fail++; cons
   check('Ungültiger gespeicherter Bestand bleibt erhalten statt geleert', throws(() => D.demoBook({ v: 2, active: [], closed: [] })) && throws(() => D.demoBook({ ...book, active: [{ ...p, entry: 0 }] })));
   check('Überlauf oder ungültiger Endkurs kein erfundener Gewinn', D.demoResult(p, Infinity) === null && throws(() => D.demoOpen(null, { ...input, margin: 1e308 })));
   check('Speichergrenze stoppt neue Übungen ohne alte zu löschen', throws(() => D.demoOpen({ v: 1, active: [], closed: Array.from({ length: D.DEMO_LIMIT }, (_, i) => ({ ...closed.closed[0], id: 'closed-' + i })) }, input)));
+  const spot = D.demoOpen(null, { ...input, source: 'spot' });
+  check('Vorauswahl-Quelle bleibt bei Neustart und Abschluss erhalten', D.demoBook(spot).active[0].source === 'spot' && D.demoClose(spot, 'BTCUSDT', 102, input.at + 60000).closed[0].source === 'spot');
+  check('Unbekannte gespeicherte Kursquelle abgewiesen; frühere Bücher bleiben lesbar', throws(() => D.demoBook({ ...book, active: [{ ...p, source: 'x' }] })) && D.demoBook(book).active[0].source === undefined);
   console.log(`${pass}/${pass + fail} bestanden`); process.exitCode = fail ? 1 : 0;
 })().catch(e => { console.error(e); process.exitCode = 1; });

@@ -319,6 +319,11 @@ html[data-layout=tablet] .livebar{padding:6px 12px;gap:4px 12px}
 .of-position[data-signal=hold] .of-signal-badge{color:var(--up-text)}.of-position[data-signal=secure] .of-signal-badge{color:var(--warn-text)}.of-position[data-signal=exit] .of-signal-badge{color:var(--down-text)}.of-explanation-old{opacity:1;color:var(--muted)}.of-entry-pin>p{margin:0 0 4px}.of-pin-volume{font-size:11px;color:var(--muted)}.of-ladder{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:10px 0}.of-ladder>span{position:relative;border-bottom:2px solid var(--border);padding:0 0 7px;font-size:11px;overflow-wrap:anywhere}.of-ladder>span::after{content:'';position:absolute;left:clamp(0px,var(--of-level),calc(100% - 4px));bottom:-3px;width:4px;height:4px;border-radius:50%;background:var(--text)}.of-stats .of-source{margin:5px 0}
 .of-row{grid-template-rows:48px auto}.of-legend{grid-template-rows:auto}.of-prices>.of-candle-assessment{min-height:32px}.of-buy-fill{pointer-events:none}
 .of-pin-shape{position:relative;height:18px;margin:4px 0 8px;color:var(--muted)}.of-pin-shape>i{position:absolute;left:0;right:0;top:8px;height:2px;background:currentColor}.of-pin-shape>b{position:absolute;top:4px;height:10px;background:currentColor}.of-pin-shape[data-tone=up]{color:var(--up-text)}.of-pin-shape[data-tone=down]{color:var(--down-text)}.of-pin-shape[hidden]{display:none}
+/* 3.55.0: fünf ruhige Einzelkarten je Zeitebene; native Klappbereiche und feste Live-Textflächen. */
+.of-fold>summary{display:flex;align-items:center;gap:8px;min-height:44px;cursor:pointer;list-style:none}.of-fold>summary::-webkit-details-marker{display:none}.of-fold>summary::before{content:'▸';color:var(--muted);flex:0 0 12px}.of-fold[open]>summary::before{content:'▾'}.of-fold>summary h3,.of-fold>summary h4{flex:1;margin:0}.of-block{margin-top:12px}.of-block>summary{padding:6px 2px}.of-block[open]>summary{margin-bottom:6px}
+.of-row:not(.of-legend){border:1px solid var(--border);border-radius:12px;background:var(--surface-2);padding:8px;margin:8px 0}.of-row.of-running{border-style:dashed;background:var(--surface-3)}.of-prices>.of-candle-assessment{height:32px;overflow:auto}.of-entry-pin{margin:8px 0}
+.of-signal>summary,.of-position>summary{margin:0}.of-signal[open]>summary,.of-position[open]>summary{margin-bottom:8px}.of-signal-top>div:last-child{flex:1;min-width:0}.of-signal .of-signal-badge{display:flex;align-items:center;height:60px;font-size:16px;line-height:20px}.of-signal #of-signal-score{height:54px;margin:0;overflow:auto}.of-signal-reason,.of-signal-explanation{margin:8px 0;overflow:auto;scrollbar-width:thin}.of-signal-reason{height:39px}.of-signal-explanation{height:78px}.of-signal>.of-notice{height:54px;overflow:auto;scrollbar-width:thin}.of-signal>.of-source{display:block;height:36px;overflow:auto}.of-signal-reason:focus-visible,.of-signal-explanation:focus-visible,.of-signal>.of-notice:focus-visible{outline:2px solid var(--field-border);outline-offset:2px}
+.of-btc{border:1px solid var(--border);border-radius:10px;padding:8px;margin-bottom:12px}.of-btc>summary{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:4px 8px}.of-btc-context,.of-btc-hint{grid-column:1/-1;min-height:16px}.of-btc-context{height:32px;overflow:auto}.of-btc-hint{height:32px;overflow:auto}.of-groups,.of-signal-settings,.of-signal-journal,.of-demo{border:1px solid var(--border);border-radius:10px;padding:8px;margin-top:10px}.of-groups .of-group{padding:6px 8px;background:var(--surface-2);border-radius:8px}
 @container orderflow-panel (max-width:300px){.of-row{font-size:10px;grid-template-columns:34px minmax(0,1fr) 58px;gap:4px}.of-volumes{padding:4px 3px;gap:2px}.of-legend{font-size:9px}.of-prices{font-size:10px}}
 @media (orientation:landscape){@container orderflow-chart (min-width:900px){.of-chart-grid{grid-template-columns:minmax(0,1fr) 380px}}}
 html[data-chartfull] .of-chart-grid,html[data-chartfull] .of-chart-pane{display:contents}html[data-chartfull] .of-chart-pane>*{flex:0 0 auto}html[data-chartfull] .of-panel{display:none}
@@ -2024,22 +2029,22 @@ html[data-presentation=dashboard][data-layout=tablet] #acct{order:0}
 </style>
   <script type="module">
 // 3.45.0 (G10c): der vorhandene Binance-/G07-Kern bleibt eigenständig.
-import { exportModelArchive, importModelArchive, validateModelArchive } from './bundles/3.54.0/shared/model-archive.mjs';
-import { BotSimulationRuntime } from './bundles/3.54.0/shared/bot-simulation.mjs';
-import { readBotSimulation, saveBotSimulation } from './bundles/3.54.0/shared/bot-simulation-store.mjs';
-import { createBotView } from './bundles/3.54.0/shared/bot-view.mjs';
-import { createOrderflowView } from './bundles/3.54.0/shared/orderflow-view.mjs';
-import { createSignalView } from './bundles/3.54.0/shared/orderflow-signal-view.mjs';
-import { networkState, createWidgetBoundary } from './bundles/3.54.0/shared/widget-state.mjs';
-import { originalRisk as kiOriginalRisk } from './bundles/3.54.0/shared/confluence-risk-view.mjs';
-import { confluenceOverview, po3Overview, filterOverview, reconcileOverview } from './bundles/3.54.0/shared/signal-overview.mjs';
-import { createPo3View } from './bundles/3.54.0/shared/po3-view.mjs';
-import { cardState as kiCardState, scoreLabel as kiScoreLabel } from './bundles/3.54.0/shared/confluence-live.mjs';
-import { divergenceInfo as kiDivergenceInfo, parametersKey as kiParametersKey } from './bundles/3.54.0/shared/confluence-core.mjs';
-import { parametersKey as kiLegacyParametersKey } from './bundles/3.54.0/shared/confluence-legacy-core.mjs';
-import { presentCard as kiPresentCard, currentSignal as kiCurrentSignal } from './bundles/3.54.0/shared/confluence-presentation.mjs';
-import { observationKey as kiObservationKey } from './bundles/3.54.0/shared/confluence-replay.mjs';
-import { readReplay as kiReadHistory, saveReplay as kiSaveHistory, clearReplayJobs as kiClearHistoryJobs } from './bundles/3.54.0/shared/confluence-replay-store.mjs';
+import { exportModelArchive, importModelArchive, validateModelArchive } from './bundles/3.55.0/shared/model-archive.mjs';
+import { BotSimulationRuntime } from './bundles/3.55.0/shared/bot-simulation.mjs';
+import { readBotSimulation, saveBotSimulation } from './bundles/3.55.0/shared/bot-simulation-store.mjs';
+import { createBotView } from './bundles/3.55.0/shared/bot-view.mjs';
+import { createOrderflowView } from './bundles/3.55.0/shared/orderflow-view.mjs';
+import { createSignalView } from './bundles/3.55.0/shared/orderflow-signal-view.mjs';
+import { networkState, createWidgetBoundary } from './bundles/3.55.0/shared/widget-state.mjs';
+import { originalRisk as kiOriginalRisk } from './bundles/3.55.0/shared/confluence-risk-view.mjs';
+import { confluenceOverview, po3Overview, filterOverview, reconcileOverview } from './bundles/3.55.0/shared/signal-overview.mjs';
+import { createPo3View } from './bundles/3.55.0/shared/po3-view.mjs';
+import { cardState as kiCardState, scoreLabel as kiScoreLabel } from './bundles/3.55.0/shared/confluence-live.mjs';
+import { divergenceInfo as kiDivergenceInfo, parametersKey as kiParametersKey } from './bundles/3.55.0/shared/confluence-core.mjs';
+import { parametersKey as kiLegacyParametersKey } from './bundles/3.55.0/shared/confluence-legacy-core.mjs';
+import { presentCard as kiPresentCard, currentSignal as kiCurrentSignal } from './bundles/3.55.0/shared/confluence-presentation.mjs';
+import { observationKey as kiObservationKey } from './bundles/3.55.0/shared/confluence-replay.mjs';
+import { readReplay as kiReadHistory, saveReplay as kiSaveHistory, clearReplayJobs as kiClearHistoryJobs } from './bundles/3.55.0/shared/confluence-replay-store.mjs';
 // Pure, unrounded calculations. Prices are USDT per unit; FX is USDT per EUR.
 function rsi(closes, period = 14) {
   const out = Array(closes.length).fill(null);
@@ -3012,7 +3017,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
 // 3.43.0 (G10a): reiner Fachkern in shared/; Datenquelle und Karten folgen getrennt.
 // 3.44.0 (G10b): öffentlicher Adapter in shared/bitget-public.mjs; sichtbare Anbindung folgt mit G10(c).
-const APP_VERSION = '3.54.0', docEl = document.documentElement;
+const APP_VERSION = '3.55.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -10701,7 +10706,7 @@ function wlAdd(e, k, now) {
 function wlKline(m, now) {
   if (!wl || m.i !== wlSpan().iv) return;
   const e = wl.c.get(m.s);
-  if (e && !e.loading && e.market === m.m && e.iv === m.i) wlAdd(e, m.k, now);
+  if (e && !e.loading && e.market === m.m && e.iv === m.i) { wlAdd(e, m.k, now); e.liveAt = now; }
 }
 // Kurs zu Beginn des Zeitraums: für 1 Minute aus dem mitgeschriebenen Verlauf (kurz nach dem Laden der Schluss der Kerze, die
 // damals lief), sonst der Schluss der letzten Kerze, die vor Beginn des Zeitraums abgeschlossen war (auf ein Intervall genau)
@@ -10712,6 +10717,12 @@ function wlRef(e, now) {
   return null;
 }
 function wlPrice(e) { return e.run?.close ?? e.hist.at(-1)?.[1] ?? e.closed.at(-1)?.close ?? null; }
+// 3.55.0: Demo verwendet exakt den sichtbaren Vorauswahlkurs; keine Futures-Ersatzquote bei Spot-Ausfall.
+function orderflowSelectedQuote(sym) {
+  const e = wl?.c.get(sym);
+  if (e) return { price: wlPrice(e), source: e.market, fresh: !state.paused && !e.loading && !e.error && !e.gap && feedFresh(e.market) && Date.now() - (e.liveAt || 0) <= 5000 };
+  return { price: knownPrice(sym, 5000), source: state.sourceFor === sym ? state.source : 'spot', fresh: !state.paused && livePriceFresh(sym) && Date.now() - (state.prices[sym]?.at || 0) <= 5000 };
+}
 // Verlauf des Zeitraums (mindestens 12 Kerzen) als Linie in einem Feld w × h (oben = höchster Kurs)
 function wlSpark(e, w = 44, h = 16) {
   const vals = [...e.closed.slice(-Math.max(wlSpan().n, 12)).map(c => c.close), wlPrice(e)].filter(v => v > 0);
@@ -14126,7 +14137,7 @@ function kiKick(delay = 0) {
   if (deadlines.length) ki.timer = setTimeout(() => { ki.timer = null; kiRender(); kiKick(); }, Math.max(1, Math.min(ki.open ? 60000 : Infinity, Math.min(...deadlines) - Date.now() + 1)));
 }
 function kiJob(request, options, type = 'load') {
-  if (!ki.worker) { ki.worker = new Worker(new URL('./bundles/3.54.0/shared/confluence-worker.mjs', location.href), { type: 'module' });
+  if (!ki.worker) { ki.worker = new Worker(new URL('./bundles/3.55.0/shared/confluence-worker.mjs', location.href), { type: 'module' });
     ki.worker.onmessage = ({ data }) => { if (!ki.pending || data.id !== ki.pending.id) return; if (data.progress) { ki.message = 'Historie: ' + data.progress.stage + (data.progress.total ? ` · ${data.progress.completed}/${data.progress.total}` : ` · ${data.progress.priceCandles || 0} Kurskerzen`); kiRender(); return; } const p = ki.pending; ki.pending = null; data.error ? p.reject(new Error(data.error)) : p.resolve(data); };
     ki.worker.onerror = () => { ki.pending?.reject(new Error('KI-Worker nicht verfügbar')); ki.pending = null; ki.worker?.terminate(); ki.worker = null; }; }
   return new Promise((resolve, reject) => { const id = ++ki.serial; ki.pending = { id, resolve, reject }; ki.worker.postMessage({ id, type, request, options }); });
@@ -14421,10 +14432,10 @@ if(posTradesSyncAll())persist(); // 3.30.0: zu jedem Teilabschluss genau ein Tra
 // 3.53.0 (PDF Etappe 1): eigenständiger Verbraucher, keine Handelsentscheidung.
 chartBoundary = createWidgetBoundary($('chart-sec'), 'Chart / Market Cap', () => drawChart());
 // 3.54.0: neue Panelhöhen auch im vorhandenen Safari-Scrollausgleich berücksichtigen.
-orderflow = createOrderflowView({ root: $('orderflow-panel'), updateLayout: fn => nativeAnchor ? fn() : withAnchor(fn), context: () => ({ symbol: state.symbol, paused: state.paused, connected: live.markets.futures?.st === 'live' }), now: serverNow,
+orderflow = createOrderflowView({ root: $('orderflow-panel'), selectedQuote: orderflowSelectedQuote, updateLayout: fn => nativeAnchor ? fn() : withAnchor(fn), context: () => ({ symbol: state.symbol, paused: state.paused, connected: live.markets.futures?.st === 'live' }), now: serverNow,
   fetchRows: (symbol, interval, limit, signal) => api.get(FUTURES, '/fapi/v1/klines', { symbol, interval, limit }, signal), readPrefs: () => store.get('scalpdesk.orderflow.v1'), savePrefs: prefs => store.set('scalpdesk.orderflow.v1', prefs), streamsChanged: () => syncStreams(), formatPrice: priceText,
   readDemo: () => store.get('scalpdesk.orderflow-demo.v1'), saveDemo: book => { if (!store.set('scalpdesk.orderflow-demo.v1', book)) throw new Error('Demo konnte nicht gespeichert werden. Browser-Speicher prüfen.'); store.set(CHANGES_KEY, changeCount() + 1); scheduleAutoBackup(); scheduleTgBackup(); renderBackupInfo(); } });
-var orderflowSignal = createSignalView({ root: $('orderflow-panel'), chartHost: document.querySelector('#chart-sec .chart-toolbar'), updateLayout: fn => nativeAnchor ? fn() : withAnchor(fn),
+var orderflowSignal = createSignalView({ root: $('orderflow-panel'), fold: orderflow.fold, chartHost: document.querySelector('#chart-sec .chart-toolbar'), updateLayout: fn => nativeAnchor ? fn() : withAnchor(fn),
   context: () => ({ symbol: state.symbol, paused: state.paused, connected: live.markets.futures?.st === 'live', unavailable: orderflow.state.unavailable, events: (ec.data?.events || []).filter(e => e.impact === 'high' && e.cur === 'USD').map(e => ({ at: e.t, title: e.title })) }), now: serverNow,
   fetchKlines: (symbol, interval, limit, signal) => api.get(FUTURES, '/fapi/v1/klines', { symbol, interval, limit }, signal),
   fetchMarket: (kind, symbol, signal) => kind === 'contract' ? api.get(FUTURES, '/fapi/v1/exchangeInfo', {}, signal) : kind === 'oi' ? api.get(FUTURES, '/futures/data/openInterestHist', { symbol, period: '5m', limit: 5 }, signal) : kind === 'longShort' ? api.get(FUTURES, '/futures/data/globalLongShortAccountRatio', { symbol, period: '5m', limit: 1 }, signal) : api.get(FUTURES, '/fapi/v1/premiumIndex', { symbol }, signal),
@@ -14434,7 +14445,7 @@ var orderflowSignal = createSignalView({ root: $('orderflow-panel'), chartHost: 
   positions: () => [...state.positions.map(p => ({ ...p, id: 'native|' + p.id, stop: p.sl, target: p.tp })), ...state.demoPositions.map(p => ({ ...p, id: 'demo|' + p.id, stop: p.sl, target: p.tp, demo: true }))],
   closedPositions: () => [...state.trades.map(p => ({ ...p, id: 'native|' + p.id })), ...state.demoTrades.map(p => ({ ...p, id: 'demo|' + p.id, demo: true }))],
   extraLevels: () => state.loadedSymbol === state.symbol && state.source === 'futures' && chartFeedFresh() ? lmMagnetLevels().map(l => ({ price: l.price, kind: l.name + ' · Schätzung' })) : [],
-  nativeQuote: p => ({ price: knownPrice(p.symbol, 5000), fresh: livePriceFresh(p.symbol) && Date.now() - (state.prices[p.symbol]?.at || 0) <= 5000, source: state.sourceFor === p.symbol ? state.source : 'spot' }), positionMetrics: (p, price) => ({ liquidation: positionMetrics(p, price, mmrNow()).liqPrice }), formatPrice: priceText,
+  nativeQuote: p => p.practice ? orderflow.quote() : ({ price: knownPrice(p.symbol, 5000), fresh: livePriceFresh(p.symbol) && Date.now() - (state.prices[p.symbol]?.at || 0) <= 5000, source: state.sourceFor === p.symbol ? state.source : 'spot' }), positionMetrics: (p, price) => ({ liquidation: positionMetrics(p, price, mmrNow()).liqPrice }), formatPrice: priceText,
   explain: async (context, options) => { if (!svcOn()) throw new Error('KI-Dienst nicht eingerichtet.'); const result = await svcFetch('/v1/orderflow/explain', { method: 'POST', body: { ...options, context }, timeout: 8000 }); if (result.status !== 200 || !result.j?.ok) throw new Error('KI-Erklärung nicht verfügbar.'); return result.j; } });
 api.onKlines = request => { orderflow.acceptRest(request); orderflowSignal.feed.acceptRest(request); };
 window.__pdf2 = { view: orderflowSignal, feed: orderflowSignal.feed, chartBoundary };
