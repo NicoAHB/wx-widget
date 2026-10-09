@@ -151,6 +151,14 @@ const tests = {
     const fresh = await open(browser);
     await fresh.page.waitForFunction(() => [...document.querySelectorAll('.signal-row .verdict')].every(v => v.textContent !== '—'), null, { timeout: 10000 }).catch(() => {});
     const a = (await text(page, '#signal-rows')).replace(/Kerze bis \d\d:\d\d UTC/g, ''), b = (await text(fresh.page, '#signal-rows')).replace(/Kerze bis \d\d:\d\d UTC/g, '');
+    // 3.58.0: Die eigene G07-Analysereihe lädt unabhängig von den Signalzeiträumen.
+    // Erst beide abgeschlossenen Analysen lesen; nicht auf Gleichheit der erwarteten Werte warten.
+    for (const target of [page, fresh.page]) await target.waitForFunction(() => {
+      const a = window.__g07?.ana, p = a?.calc?.prof;
+      return a?.key?.startsWith('BTCUSDT|spot|') && !a.loading && !a.error && Number.isFinite(p?.vaLow) && Number.isFinite(p?.vaHigh) && document.getElementById('poc-va').textContent !== '—';
+    }, null, { timeout: 15000 });
+    const analyses = await Promise.all([page, fresh.page].map(target => target.evaluate(() => { const a = __g07.ana; return { key: a.key, loading: a.loading, error: a.error, closed: a.closed.length, first: a.closed[0]?.time, last: a.closed.at(-1)?.time, profile: a.calc?.prof }; })));
+    check('Beide Value-Area-Analysen vollständig geladen, ohne Fehler oder Platzhalter', analyses.every(a => !a.loading && !a.error && Number.isFinite(a.profile?.vaLow) && Number.isFinite(a.profile?.vaHigh)), JSON.stringify(analyses));
     const ra = await text(page, '#poc-va'), rb = await text(fresh.page, '#poc-va');
     check('Signal-Übersicht identisch mit frisch geladenem Chart', a === b, a.slice(0, 120) + ' | ' + b.slice(0, 120));
     check('Value Area identisch (gleiche Kerzen)', ra === rb, ra + ' | ' + rb);
