@@ -101,11 +101,13 @@ const tests = {
   },
   async offscreen(browser) {
     const { ctx, page, errors } = await open(browser, { viewport: { width: 820, height: 700 }, hasTouch: true, isMobile: true });
+    // Der zusätzliche BTC-Kopf kann den Chart unter den ersten Bildschirm verschieben.
+    await page.locator('#chart').scrollIntoViewIfNeeded();
     const count = () => page.evaluate(() => new Promise(r => { let n = 0; const mo = new MutationObserver(ms => { n += ms.filter(m => m.type === 'childList').length; }); mo.observe(document.getElementById('chart'), { childList: true }); setTimeout(() => { mo.disconnect(); r(n); }, 4000); }));
     const vis = await count();
     await page.evaluate(() => document.getElementById('alarms').scrollIntoView()); await page.waitForTimeout(400);
     const off = await count();
-    await page.evaluate(() => scrollTo(0, 0)); await page.waitForTimeout(600);
+    await page.locator('#chart').scrollIntoViewIfNeeded(); await page.waitForTimeout(600);
     const back = await page.evaluate(() => !!document.querySelector('#chart svg') && /UTC/.test(document.getElementById('updated').textContent));
     check('Chart sichtbar: wird live neu gezeichnet', vis >= 2, `${vis}× in 4 s`);
     check('Chart außerhalb des Bildes: kein Neuzeichnen', off === 0, `${off}× in 4 s`);

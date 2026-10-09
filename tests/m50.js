@@ -301,6 +301,7 @@ const tests = {
         const before = await txt(P.page, '#qr-calc'); await jsClick(P.page, '#qr-make');
         const generated = await until(() => P.page.evaluate(() => !document.getElementById('qr-big').hidden || !document.getElementById('qr-out').hidden), 20000);
         const actual = Number((/· (\d+) Teile?/.exec(await txt(P.page, '#qr-calc')) || [])[1] || 0);
+        console.log('  QR-Testpackung:', JSON.stringify({ attempt, n, target, actual, viewport: viewport.width, before, generated }));
         if (ready && generated && actual === target) {
           if (target <= 10) await P.page.evaluate(() => { if (!__g.qr.paused) document.getElementById('qr-pause').click(); });
           return { ...P, n, parts: actual, before };

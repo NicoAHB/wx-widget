@@ -137,6 +137,11 @@ const tests = {
     check('Ohne Telegram: Schalter gesperrt, Hinweis auf Safari und „Telegram einrichten“', off.dis && off.setup && /Safari/.test(off.info), JSON.stringify(off));
     await ctx.close();
     ({ ctx, page, errors } = await open(browser, phone(390), { init: [[chanSeed, { token: TOKEN, chat: CHAT }]] }));
+    // 3.54.0: dieser Fall prüft einen unveränderten Vollstand. Neue Futures-Beobachtungen
+    // würden Journal/Begleitung legitim ändern; nur diese zusätzliche Quelle hier stillhalten.
+    // Vorhandene Bücher bleiben vollständig in der Sicherung, Spot-Positionen/Alarme weiter live.
+    await ctx.route('**/fapi/v1/klines?*', route => route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+    await h.ctl('/orderflow?hold=1'); await page.waitForTimeout(6000);
     await h.ctl('/sentreset');
     await tab(page, 'pos'); await page.click('#data-toggle'); await page.waitForTimeout(300);
     await page.check('#tgb-on');
@@ -181,8 +186,10 @@ const tests = {
     await reopen(); s = await docs(n0 + 1);
     check('Senden gescheitert (Fehler angezeigt), Seite zu: beim nächsten Öffnen nachgeholt', /Fehler 503/.test(failed) && s.length === n0 + 1 && lastPos(s.at(-1)) === 8, JSON.stringify({ anzeige: failed.slice(0, 60), vorher: n0, jetzt: s.length, pos: lastPos(s.at(-1)) }));
     // (d) Nichts geändert: erneutes Öffnen sendet nicht noch einmal
-    n0 = await count(); await page.reload(); await page.waitForTimeout(6000);
-    check('Unverändert: Neuladen sendet nicht doppelt', (await count()) === n0, `${n0} → ${await count()}`);
+    n0 = await count(); const lastBeforeReload = (await docs(n0)).at(-1); await page.reload(); await page.waitForTimeout(6000);
+    const afterReload = await docs(n0), extra = afterReload.length - n0;
+    const backupDelta = (() => { try { const a = JSON.parse(lastBeforeReload.file), b = JSON.parse(afterReload.at(-1).file), keys = Object.keys({ ...a.prefs, ...b.prefs }).filter(k => JSON.stringify(a.prefs?.[k]) !== JSON.stringify(b.prefs?.[k])); return { changedPrefs: keys, journalBefore: a.prefs?.['scalpdesk.orderflow-journal.v1']?.records?.length || 0, journalAfter: b.prefs?.['scalpdesk.orderflow-journal.v1']?.records?.length || 0 }; } catch { return { diagnostic: 'Sicherung nicht lesbar' }; } })();
+    check('Unverändert: Neuladen sendet nicht doppelt', extra === 0, JSON.stringify({ vorher: n0, jetzt: afterReload.length, ...backupDelta }));
     // die 400-Antwort beim Ersetzen der gelöschten Nachricht meldet der Browser selbst – erwartet
     const real = errors.filter(e => !/status of (400|503)/.test(e));
     check('keine Fehler (außer den erwarteten 400- und 503-Antworten)', !real.length, real.join(' | ')); await ctx.close();

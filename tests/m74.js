@@ -47,10 +47,10 @@ const check = (name, ok, detail = '') => { ok ? pass++ : fail++; console.log(`${
     check('Abschluss wird Zeitzeile vor jetzt, neue laufende Zeile unten', await page.evaluate(t => { const rows = [...document.querySelectorAll('.of-block[data-interval="1m"] .of-row:not(.of-legend)')]; return rows[3].dataset.time === t && rows[3].dataset.closed === 'true' && rows[4].dataset.running === 'true' && Number(rows[4].dataset.time) === Number(t) + 60000; }, before));
     check('Live/Abschluss erhält feste DOM-Zeilen und Höhe beider Kerzenblöcke', await page.evaluate(() => m74Rows.every((n, i) => n === document.querySelectorAll('.of-row')[i]) && m74Heights.every((h, i) => h === document.querySelectorAll('.of-block')[i].offsetHeight)));
     await page.fill('#symbol', 'ETH'); await page.press('#symbol', 'Enter');
-    await page.waitForFunction(() => __pdf1.view.state.symbol === 'ETHUSDT' && __pdf1.view.state.series['1m'].length >= 5);
-    const original = await page.evaluate(() => JSON.stringify(__pdf1.view.state.series));
-    await page.evaluate(() => __pdf1.view.acceptRest({ symbol: 'BTCUSDT', interval: '1m', rows: [], startedAt: Date.now() }));
-    check('Coinwechsel berechnet neu, verspätete fremde Antwort bleibt wirkungslos', await page.evaluate(raw => JSON.stringify(__pdf1.view.state.series) === raw && document.getElementById('orderflow-panel').dataset.symbol === 'ETHUSDT', original));
+    await page.waitForFunction(() => __pdf1.view.state.symbol === 'ETHUSDT' && __pdf1.view.state.series['1m'].length >= 5 && document.getElementById('orderflow-panel').dataset.symbol === 'ETHUSDT');
+    // Vorher/nachher im selben synchronen Browseraufruf: kein legitimer WS-Tick zwischen zwei Messungen.
+    const foreign = await page.evaluate(() => { const before = JSON.stringify(__pdf1.view.state.series); __pdf1.view.acceptRest({ symbol: 'BTCUSDT', interval: '1m', rows: [], startedAt: Date.now() }); return { unchanged: before === JSON.stringify(__pdf1.view.state.series), symbol: document.getElementById('orderflow-panel').dataset.symbol }; });
+    check('Coinwechsel berechnet neu, verspätete fremde Antwort bleibt wirkungslos', foreign.unchanged && foreign.symbol === 'ETHUSDT', JSON.stringify(foreign));
     await page.selectOption('#of-unit', 'coins'); await page.reload(); await page.waitForFunction(() => window.__pdf1 && __pdf1.view.state.symbol);
     check('Neustart stellt Einheit wieder her', await page.inputValue('#of-unit') === 'coins');
     for (const layout of ['standard', 'dashboard']) for (const [width, height] of [[320, 844], [390, 844], [768, 1024], [1024, 768]]) {
