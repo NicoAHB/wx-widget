@@ -5,7 +5,7 @@ const check = (name, ok, detail = '') => { ok ? pass++ : fail++; console.log(`${
   try {
     await h.setup(); await h.ctl('/walk?on=0'); await h.ctl('/set?symbol=BTCUSDT&price=64000'); await h.ctl('/orderflow?mult=100');
     browser = await h.launch(); const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }), page = await ctx.newPage(), errors = []; page.on('pageerror', e => errors.push(e.message));
-    await ctx.addInitScript(() => { if (!localStorage.getItem('scalpdesk.watchlist.v1')) { localStorage.setItem('scalpdesk.watchlist.v1', '["BTC","ETH"]'); localStorage.setItem('scalpdesk.watchclean.v1', '1'); } });
+    await ctx.addInitScript(() => { if (!localStorage.getItem('scalpdesk.watchlist.v1')) { localStorage.setItem('scalpdesk.watchlist.v1', '["BTC","ETH","BSV","PAXG"]'); localStorage.setItem('scalpdesk.watchclean.v1', '1'); } });
     await page.goto(h.URL_BASE + '/weather-widget-v2.html'); await page.waitForFunction(() => window.__g09?.wl?.c.get('BTCUSDT')?.liveAt && window.__pdf1?.view.quote()?.fresh && __pdf2.feed.quote()?.fresh && __pdf2.view.frame.result);
     check('Exakt fünf gerundete Rahmen je Zeitebene', await page.evaluate(() => [...document.querySelectorAll('.of-block')].every(block => { const rows = [...block.querySelectorAll('.of-row:not(.of-legend)')]; return rows.length === 5 && rows.every(row => { const s = getComputedStyle(row); return parseFloat(s.borderRadius) >= 10 && parseFloat(s.borderTopWidth) === 1 && s.borderTopColor !== 'rgba(0, 0, 0, 0)'; }); })));
     check('Demo-Livekurs exakt wie Vorauswahl trotz 100-fachem Futures-Kurs', await page.evaluate(() => { const q = __pdf1.view.quote(), e = __g09.wl.c.get('BTCUSDT'); return q.price === 64000 && q.price === e.run.close && q.source === e.market && __pdf2.feed.quote().price === 6400000; }));
@@ -55,6 +55,10 @@ const check = (name, ok, detail = '') => { ok ? pass++ : fail++; console.log(`${
       }
     }
     check('Alle neuen Haupt-Klappflächen mindestens 44 px hoch', await page.evaluate(() => [...document.querySelectorAll('[data-of-fold]>summary')].every(n => n.getBoundingClientRect().height >= 44)));
+    for (const [coin, source] of [['BSV', 'futures'], ['PAXG', 'spot']]) {
+      await page.fill('#symbol', coin); await page.press('#symbol', 'Enter'); await page.waitForFunction(symbol => __pdf1.view.state.symbol === symbol && __pdf1.view.quote()?.fresh && document.getElementById('of-demo-price').textContent.includes(symbol), coin + 'USDT');
+      check(`${coin}: gleiche Vorauswahlquote bei ${source === 'spot' ? 'Spot ohne Futures-Paar' : 'Futures ohne Spot-Paar'}`, await page.evaluate(({ coin, source }) => { const e = __g09.wl.c.get(coin + 'USDT'), q = __pdf1.view.quote(); return e.market === source && q.source === source && q.price === e.run.close && !document.getElementById('of-demo-price').disabled; }, { coin, source }));
+    }
     await page.setViewportSize({ width: 390, height: 844 }); await page.locator('#of-signal').scrollIntoViewIfNeeded(); await page.locator('#of-signal').screenshot({ path: '/tmp/scalpdesk-355-signal.png' }); await page.screenshot({ path: '/tmp/scalpdesk-355-karten-mobile.png', fullPage: true });
     check('Keine JavaScript-Laufzeitfehler', errors.length === 0, errors.join(' | ')); await ctx.close(); console.log(`${pass}/${pass + fail} bestanden`); process.exitCode = fail ? 1 : 0;
   } catch (e) { console.error('Abbruch', e); process.exitCode = 1; } finally { if (browser) await browser.close(); await h.teardown(); }

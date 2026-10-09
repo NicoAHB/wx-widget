@@ -19,6 +19,6 @@ Nutzerauftrag nach der veröffentlichten 3.54.0: übersichtliche Einzelkarten, K
 
 ## Prüfstand
 
-Demo-Kern 30/30 und vorhandene Kerzen-/Demoansicht m76 19/19 bestanden. Neue Karten-/Geometrie-/Quellenprüfung m79 42/42 (beide Layouts/acht AA-Farben), Signal-/Volumen-/Feed-/Journalkern unverändert grün, Releasegraph 6/6. Übrige serielle Regression folgt. Erste Testvorbedingungen werden erhalten: Vorauswahl muss tatsächlich geladen sein; Handelsknöpfe erst nach Zeichnung prüfen; Termintext exakt an den tatsächlichen Veto-Text binden. App-/Modul-Lint bisher 0 Fehler, 3 bestehende Warnungen. Noch nicht veröffentlicht.
+Demo-Kern 30/30 und vorhandene Kerzen-/Demoansicht m76 19/19 bestanden. Neue Karten-/Geometrie-/Quellenprüfung m79 44/44 (beide Layouts/acht AA-Farben, zusätzlich Spot-/Futures-only), Signal-/Volumen-/Feed-/Journalkern unverändert grün, Releasegraph 6/6. Alle 15 gezielten Zielprogramme nach vollständigen Befundnachläufen grün: insbesondere m77 33/33, m78 16/16, m74 73/73, m75 15/15, Safari-Verankerung m32 5/5 und m34 9/9, G14 m70 61/61. Vollständiger serieller Gesamtlauf mit 132 Zielen folgt. Erste Testvorbedingungen werden erhalten: Vorauswahl muss tatsächlich geladen sein; Handelsknöpfe erst nach Zeichnung prüfen; Termintext exakt an den tatsächlichen Veto-Text binden. App-/Modul-Lint bisher 0 Fehler, 3 bestehende Warnungen. Noch nicht veröffentlicht.
 
 Die optionale private VM und reale iPad-/Safari-/CORS-/Anbieterabnahmen bleiben separat offen. Keine echten Orders oder neuen Zugangsdaten.

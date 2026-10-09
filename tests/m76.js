@@ -11,8 +11,8 @@ const h = require('./harness'); let pass = 0, fail = 0; const check = (name, ok,
     const oldTimer = await page.textContent('.of-countdown'); await page.waitForFunction(old => document.querySelector('.of-countdown').textContent !== old, oldTimer); check('Timer läuft durch bestehenden Sekundentakt', await page.textContent('.of-countdown') !== oldTimer);
     check('Demo standardmäßig zugeklappt', await page.evaluate(() => !document.getElementById('of-demo').open)); await page.click('#of-demo>summary');
     const original = await page.evaluate(() => JSON.stringify([__g05.state.positions, __g05.state.trades, __g05.state.demoPositions, __g05.state.demoTrades]));
-    await page.fill('#of-demo-margin', '100'); await page.fill('#of-demo-leverage', '5'); await page.click('#of-demo-price');
-    await page.waitForFunction(() => !document.getElementById('of-demo-close').hidden);
+    await page.fill('#of-demo-margin', '100'); await page.fill('#of-demo-leverage', '5'); await page.waitForFunction(() => __pdf1.view.quote()?.fresh && !document.getElementById('of-demo-price').disabled); await page.click('#of-demo-price');
+    await page.waitForFunction(() => !document.getElementById('of-demo-close').hidden).catch(async e => { console.log('Demo-Klickdiagnose', await page.evaluate(() => ({ quote: __pdf1.view.quote(), status: document.getElementById('of-demo-status').textContent, book: __g05.backupPayload().prefs['scalpdesk.orderflow-demo.v1'], priceText: document.getElementById('of-demo-price').textContent, failure: __pdf1.view.boundary.failed }))); throw e; });
     const opened = await page.evaluate(() => __g05.backupPayload().prefs['scalpdesk.orderflow-demo.v1'].active[0]);
     check('Live-Einstieg aus Vorauswahl, Einsatz/Hebel ergeben Menge', opened.entry === 64000 && opened.source === 'spot' && opened.margin === 100 && opened.leverage === 5 && Math.abs(opened.qty * opened.entry - 500) < 1e-6);
     check('Doppelkauf gesperrt, Felder während Trade unveränderlich', await page.evaluate(() => document.getElementById('of-demo-price').disabled && document.getElementById('of-demo-margin').disabled && document.getElementById('of-demo-leverage').disabled));
