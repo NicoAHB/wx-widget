@@ -51,7 +51,7 @@ import { fileURLToPath } from 'node:url';
 import { patternConfig, patternCandles, patternCases, patternFresh, patternText, patternEnd } from './pattern-monitor.mjs';
 import { ConfluenceService, kiMessage, Po3Service, po3Message, BotSimulationRuntime } from './ki-monitor.mjs';
 
-export const VERSION = '2.10.0';
+export const VERSION = '2.11.0';
 const E = process.env;
 // Adressen (für Tests über Umgebungsvariablen änderbar)
 export const API = {

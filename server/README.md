@@ -198,3 +198,10 @@ Arbeitsstand, noch nicht auf der privaten VM installiert. Konfluenzmodell cf-2 b
 ### 2.8.0 – vollständige Lieferbündel
 
 Installer lädt anhand `release-manifest.json` zuerst alle unveränderten Module, prüft Syntax/Hashes und tatsächliche Imports, dann Umschaltung auf eigenes `releases/`-Verzeichnis via `current`. Node-CLI berücksichtigt reale Symlinkpfade. Fehlerhafter/fehlender Teil lässt den bisherigen Stand lauffähig, `previous` ermöglicht den Rückfall; zwei Programmstände bleiben. Einstellungen und Zustandsdateien bleiben außerhalb des Programms erhalten. Sicherung/Update/Rückfall und praktische Abnahmegrenzen in [G13-LIEFERUNG.md](../docs/G13-LIEFERUNG.md).
+
+
+## Adaptive AI-Grid – Dienstquelle 2.11.0
+
+Die Bot-Laufsimulation unterstützt zusätzlich `adaptive-grid-1` als Long-USDT-Futures-Profil. Der bestehende authentifizierte `/v1/bot/simulation`-Vertrag bestätigt und sichert öffentliche Grid-Modellinputs/Limitpläne über dieselben IDs und Revisionen. Der private Oracle-Executor fehlt weiterhin: keine automatischen Börsenorders, keine Fills und kein echtes Grid-Konto. Browser prüft die öffentliche Range bewusst per Knopfdruck im vorhandenen Worker. Alte Dienstversionen bekommen keinen Grid-Start; App fordert zur Aktualisierung oder lokalen Simulation auf. Pages-Veröffentlichung aktualisiert eine private VM nicht.
+
+[Strategievertrag, Parameter, Ausbruchschutz und Prüfanleitung](../docs/ADAPTIVE-AI-GRID.md). Bestehende Gewinn-/Verlustsperren und Bestandsprüfung haben Vorrang. Dump-Standard: Nachkäufe stoppen und Grid pausieren; vorhandene Schutzwirkung bleibt.
