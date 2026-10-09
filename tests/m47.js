@@ -264,6 +264,22 @@ const tests = {
     const now = Date.now(), alarms = [{ id: 'sv1', symbol: 'BTCUSDT', source: 'spot', dir: 'above', price: P0 + 200, note: '', createdAt: now - 60e3, armedAt: now - 60e3, triggeredAt: null, triggerPrice: null }];
     const ctx = await browser.newContext({ viewport: { width: 1440, height: 1000 }, timezoneId: 'Europe/Berlin' });
     let svc = null;
+    // 3.58.0: Diagnose am tatsächlichen Beginn der Wiederöffnung; keine Feed-/Alarmregel ändern.
+    await ctx.addInitScript(() => {
+      window.__m47Initial = { at: Date.now(), alarms: JSON.parse(localStorage.getItem('scalpdesk.alarms.v1') || '[]') };
+      window.__m47Feed = [];
+      const OriginalWorker = window.Worker;
+      window.Worker = class extends OriginalWorker {
+        constructor(...args) { super(...args); this.addEventListener('message', ({ data: m }) => {
+          if (m?.s !== 'BTCUSDT' || !['k', 'a'].includes(m.t)) return;
+          const out = { at: Date.now(), t: m.t, market: m.m, E: m.E, i: m.i, c: m.k?.c, high: m.k?.h, low: m.k?.l, last: m.last, lo: m.lo, hi: m.hi };
+          if (__m47Feed.length < 30) __m47Feed.push(out);
+        }); }
+      };
+    });
+    const priceResponses = [];
+    ctx.on('response', async response => { if (!/\/(?:api\/v3|fapi\/v1)\/ticker\/price/.test(response.url())) return;
+      try { const body = await response.json(), btc = (Array.isArray(body) ? body : [body]).find(x => x.symbol === 'BTCUSDT'); if (btc) priceResponses.push({ at: Date.now(), price: btc.price, time: btc.time, path: new URL(response.url()).pathname }); } catch {} });
     try {
       let { page, errors } = await openPage(browser, { 'scalpdesk.channels.v1': CHAN, 'scalpdesk.alarms.v1': alarms }, { ctx }); await live(page); await page.waitForTimeout(1200);
       console.log('Diagnose Dienststart:', JSON.stringify(await page.evaluate(() => ({ alarms: __g05.state.alarms.map(a => ({ id: a.id, price: a.price, triggeredAt: a.triggeredAt, triggerPrice: a.triggerPrice })), price: __g05.state.prices.BTCUSDT?.price }))));
@@ -276,6 +292,7 @@ const tests = {
       check('App: „Übergeben ✓ vom Dienst bestätigt … Zugestellt hat er noch keine Meldung.“', /^Übergeben ✓ vom Dienst bestätigt .*Zugestellt hat er noch keine Meldung\./.test(st), st);
       // Telegram lehnt die Meldungen des Dienstes ab (400); App geschlossen
       await h.ctl('/chan?tgfail=400&match=' + encodeURIComponent('24/7-Dienst'));
+      console.log('Diagnose vor Schließen:', JSON.stringify(await page.evaluate(() => ({ at: Date.now(), alarms: __g05.state.alarms, price: __g05.state.prices.BTCUSDT }))));
       await page.close(); const t0 = Date.now();
       await h.ctl(`/set?symbol=BTCUSDT&price=${P0 + 250}`);
       const bad = await until(async () => { const m = await pinnedMsg(); return m && /\nDienst: Störung · .* · Telegram-Nachricht nicht zustellbar seit \d\d:\d\d \(Telegram sendMessage: Bad Request: message is too long/.test(m.caption) ? m : null; }, 30000);
@@ -285,8 +302,10 @@ const tests = {
       // Kurs bei Wiederöffnung unter Ziel halten, bis die App die Dienststörung
       // bestätigt hat. Sonst kann die Auslösung vor der Statusabfrage stattfinden.
       await h.ctl(`/set?symbol=BTCUSDT&price=${P0}`);
+      const loweredAt = Date.now(); console.log('Diagnose gesenkt:', JSON.stringify({ at: loweredAt, price: (await h.ctl('/state')).price.BTCUSDT }));
       ({ page, errors } = await openPage(browser, {}, { ctx })); await live(page); await page.waitForTimeout(1500);
       console.log('Diagnose Wiederöffnung:', JSON.stringify(await page.evaluate(() => ({ alarms: __g05.state.alarms.map(a => ({ id: a.id, price: a.price, triggeredAt: a.triggeredAt, triggerPrice: a.triggerPrice, svcAt: a.svcAt })), price: __g05.state.prices.BTCUSDT?.price }))));
+      console.log('Diagnose erste Kurse:', JSON.stringify({ loweredAt, initial: await page.evaluate(() => __m47Initial), feed: await page.evaluate(() => __m47Feed), responses: priceResponses.slice(-12), actual: await page.evaluate(() => __g05.state.alarms.map(a => ({ id: a.id, triggeredAt: a.triggeredAt, touch: a.touch, missed: a.missed }))) }));
       st = await s247Status(page); const sum = await page.textContent('#chan-summary');
       check('App: „⚠ Der Dienst meldet eine Störung: Telegram-Nachricht nicht zustellbar …“, Übersicht „24/7-Dienst: Störung“', /^⚠ Der Dienst meldet eine Störung: Telegram-Nachricht nicht zustellbar seit \d\d:\d\d .*Die App sendet deshalb selbst\./.test(st) && /24\/7-Dienst: Störung/.test(sum), `${st} · ${sum}`);
       const beforeFallback = await page.evaluate(() => { const a = __g05.state.alarms.find(a => a.id === 'sv1'); return { triggeredAt: a?.triggeredAt, price: __g05.state.prices.BTCUSDT?.price }; });
