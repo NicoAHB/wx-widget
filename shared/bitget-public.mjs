@@ -46,6 +46,18 @@ export function normalizeBitgetCandles(data, { timeframe, from, to, knownAt }) {
   return closedCandles([...byTime.values()].sort((a, b) => a.time - b.time), knownAt, periodMs);
 }
 
+// Grid: laufendes Volumen ist kein bestätigter Schlusskurs und ersetzt keine Historie.
+export function normalizeBitgetLiveVolume(data, { symbol, providerAt, observedAt }) {
+  instrument(symbol);
+  if (!Array.isArray(data) || data.length > 10 || ![providerAt, observedAt].every(time) || providerAt > observedAt || observedAt - providerAt > 30000) throw new Error('Bitget-Livevolumen/Providerzeit ungültig');
+  const start = Math.floor(providerAt / 900000) * 900000, rows = data.filter(row => Array.isArray(row) && numeric(row[0]) === start);
+  if (!rows.length) return null;
+  if (rows.length !== 1) throw new Error('Mehrdeutiges Bitget-Livevolumen');
+  const [t, open, high, low, close, volume] = rows[0].slice(0, 6).map(numeric);
+  if (t !== start || ![open, high, low, close].every(positive) || high < Math.max(open, close) || low > Math.min(open, close) || volume < 0) throw new Error('Ungültige laufende Bitget-Kerze');
+  return { venue: 'bitget', product: 'USDT-FUTURES', instrument: symbol, quote: 'USDT', kind: 'running-15m', time: start, end: start + 900000, at: providerAt, knownAt: observedAt, volume };
+}
+
 export function normalizeBitgetContract(data, symbol) {
   instrument(symbol);
   if (!Array.isArray(data)) throw new Error('Bitget-Kontraktdaten fehlen');
@@ -229,5 +241,9 @@ export function createBitgetPublicClient({ fetch: fetcher = globalThis.fetch, no
     const r = await request('/api/v2/mix/market/current-fund-rate', { symbol: instrument(symbol), productType: 'USDT-FUTURES' }, signal);
     return normalizeBitgetFunding(r.data, { symbol, source, providerAt: r.providerAt, observedAt: r.observedAt });
   }
-  return Object.freeze({ range, load, quote, markRange, fundingPage, contract, currentFunding });
+  async function liveVolume({ symbol, signal }) {
+    const r = await request('/api/v2/mix/market/candles', { symbol: instrument(symbol), productType: 'USDT-FUTURES', granularity: '15m', limit: 2 }, signal);
+    return normalizeBitgetLiveVolume(r.data, { symbol, providerAt: r.providerAt, observedAt: r.observedAt });
+  }
+  return Object.freeze({ range, load, quote, markRange, fundingPage, contract, currentFunding, liveVolume });
 }
