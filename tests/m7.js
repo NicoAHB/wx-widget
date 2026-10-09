@@ -178,7 +178,10 @@ const tests = {
     await Promise.all([page.waitForEvent('download', { timeout: 5000 }).catch(() => null), page.evaluate(() => document.getElementById('backup-save').click())]);
     s = await docs(n0 + 1);
     check('Datei-Sicherung dazwischen: Telegram bekommt die Änderung trotzdem', s.length === n0 + 1 && lastPos(s.at(-1)) === 6, JSON.stringify({ vorher: n0, jetzt: s.length, pos: lastPos(s.at(-1)) }));
-    // (b) Seite gleich nach der Änderung geschlossen (am iPhone: in eine andere App gewechselt) – beim Verlassen wird gesendet
+    // (b) Erst den vorherigen Upload vollständig abschließen: Mock-Eingang ist noch keine bestätigte Sicherung.
+    console.log('Vor Verlassen-Probe', await page.evaluate(() => ({ info: document.getElementById('tgb-info').textContent, current: document.getElementById('tab-pos-badge').hidden })));
+    await page.waitForFunction(() => /^Aktiv · zuletzt gesendet/.test(document.getElementById('tgb-info').textContent) && document.getElementById('tab-pos-badge').hidden);
+    // Seite gleich nach der neuen Änderung schließen; die bisherige 200-ms-Frist bleibt.
     n0 = await count(); await addPos('BCH', '330'); await page.waitForTimeout(200); await page.close();
     s = await docs(n0 + 1);
     check('Seite direkt nach der Änderung geschlossen: Sicherung geht beim Verlassen raus', s.length === n0 + 1 && lastPos(s.at(-1)) === 7, JSON.stringify({ vorher: n0, jetzt: s.length, pos: lastPos(s.at(-1)) }));
