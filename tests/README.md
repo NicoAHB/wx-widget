@@ -20,6 +20,7 @@ Automatische Tests für die App (`weather-widget-v2.html`) und den 24/7-Dienst (
 - `m77.js`: echte App/Worker-Signalansicht, Ring, BTC, antippbare OHLC-Einstiege, Positionsbegleitung/Score/Neustart, Journal/CSV und gemeinsamer Teil-Ausfall mit lokalem Neuversuch.
 - `m78.js`: tatsächliche KI-Anbindung mit Antwort-/Zeitlimit-/Kontextschutz und Regel-Fallback, alle acht G14-Farbpaletten mit AA-Kontrast.
 - Alle neuen Ziele gehören zum seriellen Gesamtlauf (131 Ziele). Kein Parallelstart von Browser-/Installer-Tests: Die bestehenden festen Testports werden geteilt. Reale iPad-/Oracle-/Anbieterabnahme wird separat ausgewiesen.
+- Orderflow-Regressionsvorbedingungen: m76 wartet vor dem Frischeverlust auf einen tatsächlich aktiven Demo-Knopf; m50 bemisst die reale vollständige Sicherung und behält alle QR-/10-/11-Teil-Grenzen. m39 misst den zusätzlichen BTC-Kopf getrennt vom Chart, m46 platziert die Watchlist-Kachel mit ausreichend Detailplatz, m28/m30 erlauben nach Mitternacht das bestehende „gestern“-Label. m35 nutzt im ersten Profil bekannte halbe Wochenendspannen mit Wochenstreuung; die Fachberechnung und Grenzen bleiben unverändert. m58 ergänzt sichere Zählerdiagnosen. Safari m32/m34 prüfen weiterhin dieselben Scrollgrenzen; die neuen Panels verwenden den bestehenden Ankerrahmen. Erstbefunde und vollständige Nachläufe werden getrennt dokumentiert.
 
 | Befehl | Was er tut | Dauer |
 |---|---|---|

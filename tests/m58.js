@@ -277,7 +277,8 @@ const tests = {
     const sentP = async since => (await h.ctl('/sent')).filter(m => m.svc === 'tg' && !m.method && m.at >= since && String(m.chat_id) === PCHAT);
     let t = Date.now(); await fire(); await page.waitForTimeout(1500); let s = await sentP(t);
     const txt = s[0]?.text || '';
-    check('Frisch bestätigte Formation (live, ≥ 80 %): genau eine Meldung in den Chartmuster-Chat, nicht in Kursalarm', s.length === 1 && (await h.ctl('/sent')).filter(m => m.svc === 'tg' && !m.method && m.at >= t).length === 1, JSON.stringify(s.map(x => x.text?.split('\n')[0])));
+    const allFresh = (await h.ctl('/sent')).filter(m => m.svc === 'tg' && !m.method && m.at >= t);
+    check('Frisch bestätigte Formation (live, ≥ 80 %): genau eine Meldung in den Chartmuster-Chat, nicht in Kursalarm', s.length === 1 && allFresh.length === 1, JSON.stringify({ patterns: s.map(x => x.text?.split('\n')[0]), all: allFresh.map(x => ({ chat: String(x.chat_id), at: x.at, title: x.text?.split('\n')[0] })) }));
     check('Meldung: Muster, Coin, Intervall, Status, Ziel und Invalidierung; Kennzeichnung „regelbasiert“ vs. „erlernt“; keine Erfolgswahrscheinlichkeit', /^📐 Chartmuster: Doppel-Boden · TG\/USDT Spot · 1h\n/.test(txt) && /Ausbruch bestätigt · Richtung aufwärts/.test(txt) && /rechnerisches Ziel/.test(txt) && /ungültig bei/.test(txt) && /Regelbasiert \(Modell pat-1\), Regelgüte 85 %/.test(txt) && /Erlernt: noch zu wenige vergleichbare Fälle \(\d+ von mindestens 10\)/.test(txt) && /keine Erfolgswahrscheinlichkeit/.test(txt), txt);
     t = Date.now(); await fire(); await fire({ q: 70, shift: 1 }); await fire({ kind: 'candle', id: 'hammer', shift: 2 }); await fire({ back: 5, shift: 3 }); await page.waitForTimeout(1500); s = await sentP(t);
     check('Gleicher Fall nicht noch einmal; Regelgüte < 80 %, Einzelkerze und älter bestätigte Formation: keine Meldung', s.length === 0, JSON.stringify(s.map(x => x.text?.split('\n')[0])));

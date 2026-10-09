@@ -25,8 +25,11 @@ const h = require('./harness'); let pass = 0, fail = 0; const check = (name, ok,
     check('Verlust rot und klarer Realisieren-Button', await page.evaluate(() => document.getElementById('of-demo-close').dataset.tone === 'down' && /Verlust realisieren/.test(document.getElementById('of-demo-close').textContent)));
     const active = await page.evaluate(() => JSON.stringify(__g05.backupPayload().prefs['scalpdesk.orderflow-demo.v1'].active)); await page.reload(); await page.waitForFunction(() => window.__pdf1?.view.quote()?.fresh); await page.click('#of-demo>summary');
     check('Neustart und persönliche Sicherung erhalten den offenen Trade', await page.evaluate(raw => JSON.stringify(__g05.backupPayload().prefs['scalpdesk.orderflow-demo.v1'].active) === raw, active));
+    // Erst den wiederhergestellten Live-Zustand samt Zeichnung abwarten; eine noch gesperrte Startansicht darf nicht als Kursverlust gelten.
+    await page.waitForFunction(() => __pdf1.view.quote()?.fresh && !document.getElementById('of-demo-close').disabled);
     await h.ctl('/orderflow?mult=99&hold=1'); await page.waitForFunction(() => document.getElementById('of-demo-close').disabled, null, { timeout: 10000 });
-    check('Fehlender Livekurs sperrt Ausstieg, keine Datenalter-Anzeige', await page.evaluate(() => !__pdf1.view.quote().fresh && document.getElementById('of-demo-close').disabled && !/Daten veraltet|vor \d+ s/.test(document.getElementById('orderflow-panel').innerText)));
+    const expired = await page.evaluate(() => ({ fresh: __pdf1.view.quote().fresh, disabled: document.getElementById('of-demo-close').disabled, ageText: /Daten veraltet|vor \d+ s/.test(document.getElementById('orderflow-panel').innerText) }));
+    check('Fehlender Livekurs sperrt Ausstieg, keine Datenalter-Anzeige', !expired.fresh && expired.disabled && !expired.ageText, JSON.stringify(expired));
     await h.ctl('/orderflow?mult=99'); await page.waitForFunction(() => !document.getElementById('of-demo-close').disabled); await page.click('#of-demo-close');
     check('Echte/alte Demo-Positionen und Journal vollständig unverändert', await page.evaluate(raw => JSON.stringify([__g05.state.positions, __g05.state.trades, __g05.state.demoPositions, __g05.state.demoTrades]) === raw, original));
     for (const [width, height] of [[320, 844], [390, 844], [768, 1024], [1024, 768]]) { await page.setViewportSize({ width, height });
