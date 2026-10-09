@@ -129,7 +129,8 @@ async function setLimit(page, kind, v) {
       const pg = await c2.newPage(), errs = []; h.collect(pg, errs);
       await pg.goto(h.URL_BASE + '/weather-widget-v2.html'); await live(pg);
       await pg.waitForFunction(() => [...document.querySelectorAll('#watchlist .wl-sig')].every(s => /^[+−]?\d$/.test(s.textContent)), null, { timeout: 30000 }).catch(() => {});
-      await pg.evaluate(() => { const g = document.querySelector('#watchlist .wl-grid').getBoundingClientRect(); scrollBy(0, g.top - 120); }); await pg.waitForTimeout(500);
+      // Platz für das vollständige Detail reservieren: sonst scrollt wldOpen absichtlich zum sichtbaren Feld.
+      await pg.evaluate(() => { const tile = document.querySelector('#watchlist .wl-tile[data-watch="NEAR"]').getBoundingClientRect(); scrollBy(0, tile.top - 180); }); await pg.waitForTimeout(500);
       const before = await pg.evaluate(() => ({ y: Math.round(scrollY), tile: Math.round(document.querySelector('#watchlist .wl-tile[data-watch="NEAR"]').getBoundingClientRect().top), chart: Math.round(document.getElementById('chart').getBoundingClientRect().top) }));
       await pg.tap('#watchlist .wl-tile[data-watch="NEAR"]');
       await pg.waitForFunction(() => /^NEAR/.test(document.getElementById('pair-label').textContent), null, { timeout: 15000 }).catch(() => {}); await live(pg); await pg.waitForTimeout(2500);

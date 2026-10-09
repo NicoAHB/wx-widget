@@ -62,7 +62,8 @@ const setRating = (page, coin, r) => page.evaluate(([c, r]) => { const e = windo
     check('iPad hoch: Werte und Zeile vollständig lesbar, die vier Regeln in einer Zeile', t.every(x => x.oneLine && !x.cut), JSON.stringify(t.filter(x => !x.oneLine || x.cut).map(x => x.coin)));
     check('Fehlende Daten neutral: „—“, „1 Std. –“, Regeln „–“ ohne RSI-Zahl', abc && abc.price === '—' && abc.c1 === '1 Std. –' && /flat$/.test(abc.c1cls) && abc.rules.map(r => r.text).join(' ') === 'Trend– Kurs– RSI– MACD–' && abc.rules.every(r => r.dir === 'none'), JSON.stringify(abc));
     // ---- Detailfeld per Tippen ----
-    const chart0 = await page.evaluate(() => Math.round(document.getElementById('chart').getBoundingClientRect().top + scrollY));
+    // 3.54.0: BTC besitzt zusätzlich die ausdrücklich gewünschte Pfeilzeile; deren Höhe getrennt messen.
+    const chart0 = await page.evaluate(() => { const toolbar = document.querySelector('#chart-sec .chart-toolbar').getBoundingClientRect(); return { chart: Math.round(document.getElementById('chart').getBoundingClientRect().top + scrollY), toolbarTop: Math.round(toolbar.top + scrollY), toolbarHeight: Math.round(toolbar.height) }; });
     let p = await panel(page);
     check('Anfangs zu: Feld zusammengeklappt, keine Kachel aufgeklappt', p && !p.open && p.height === 0 && p.visible === 'hidden' && t.every(x => x.expanded === 'false'), JSON.stringify({ open: p?.open, h: p?.height }));
     await page.tap('#watchlist .wl-tile[data-watch="LTC"]'); await page.waitForTimeout(90);
@@ -93,8 +94,8 @@ const setRating = (page, coin, r) => page.evaluate(([c, r]) => { const e = windo
     const hClosing = (await panel(page)).height; await page.waitForTimeout(500);
     p = await panel(page); t = await tiles(page);
     check('Dieselbe Kachel erneut: Feld schließt weich (nach 90 ms noch teilweise offen), keine Auswahl mehr', !p.open && p.height === 0 && hClosing > 0 && p.visible === 'hidden' && t.every(x => x.expanded === 'false'), `${hClosing} → ${p.height} px`);
-    const chart1 = await page.evaluate(() => Math.round(document.getElementById('chart').getBoundingClientRect().top + scrollY));
-    check('Nach dem Schließen steht der Chart wieder an seiner Stelle', chart1 === chart0, `${chart0} / ${chart1}`);
+    const chart1 = await page.evaluate(() => { const toolbar = document.querySelector('#chart-sec .chart-toolbar').getBoundingClientRect(); return { chart: Math.round(document.getElementById('chart').getBoundingClientRect().top + scrollY), toolbarTop: Math.round(toolbar.top + scrollY), toolbarHeight: Math.round(toolbar.height) }; });
+    check('Nach dem Schließen steht der Chart wieder an seiner Stelle (BTC-Pfeilzeile getrennt)', chart1.toolbarTop === chart0.toolbarTop && chart1.chart - chart1.toolbarHeight === chart0.chart - chart0.toolbarHeight, JSON.stringify({ before: chart0, after: chart1 }));
     // Schließen-Knopf
     await page.tap('#watchlist .wl-tile[data-watch="BCH"]'); await page.waitForTimeout(500);
     await page.tap('#wl-detail .wl-d-close'); await page.waitForTimeout(500);

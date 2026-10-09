@@ -291,22 +291,43 @@ const tests = {
     let lo = 5, hi = 120, n10 = null, n11 = null, seen = new Map();
     const probe = async n => { if (seen.has(n)) return seen.get(n); const P = await openPage(browser, { 'scalpdesk.history.v1': mk(n) }, { debug: true }); const r = await parts(P.page); await P.ctx.close(); seen.set(n, r.n); return r.n; };
     while (lo < hi) { const mid = (lo + hi) >> 1; if (await probe(mid) <= 10) lo = mid + 1; else hi = mid; }
-    n11 = lo + 1; n10 = lo - 2; // Abstand zur Grenze (ein Trade sind gut 100 Byte)
-    check('Testgröße gefunden: eine Sicherung mit 10 und eine mit 11 Teilen (mit Abstand zur Grenze)', await probe(n10) === 10 && await probe(n11) === 11 && await probe(lo) === 11 && await probe(lo - 1) === 10, `Grenze zwischen ${lo - 1} und ${lo} Trades; Test mit ${n10} (10 Teile) und ${n11} (11 Teile)`);
+    // 3.54.0: neue persönliche Journalbücher ändern die Packgröße. Die tatsächlich berechnete,
+    // tatsächlich erzeugte vollständige Packung behalten; keine feste Tradezahl als Teilezahl ausgeben.
+    const prepared = async (n, target, extra = {}, viewport = { width: 1600, height: 1000 }) => {
+      for (let attempt = 0; attempt < 20; attempt++) {
+        const P = await openPage(browser, { 'scalpdesk.history.v1': mk(n), ...extra }, { debug: true, viewport });
+        await openData(P.page); await jsClick(P.page, '#qr-export');
+        const ready = await until(() => P.page.evaluate(() => /Teil/.test(document.getElementById('qr-calc').textContent)), 15000);
+        const before = await txt(P.page, '#qr-calc'); await jsClick(P.page, '#qr-make');
+        const generated = await until(() => P.page.evaluate(() => !document.getElementById('qr-big').hidden || !document.getElementById('qr-out').hidden), 20000);
+        const actual = Number((/· (\d+) Teile?/.exec(await txt(P.page, '#qr-calc')) || [])[1] || 0);
+        console.log('  QR-Testpackung:', JSON.stringify({ attempt, n, target, actual, viewport: viewport.width, before, generated }));
+        if (ready && generated && actual === target) {
+          if (target <= 10) await P.page.evaluate(() => { if (!__g.qr.paused) document.getElementById('qr-pause').click(); });
+          return { ...P, n, parts: actual, before };
+        }
+        await P.ctx.close(); if (!ready || !actual) throw new Error('QR-Testpackung nicht bereit');
+        n = Math.max(5, Math.min(120, n + (actual < target ? 1 : -1)));
+      }
+      throw new Error('Keine vollständige QR-Testpackung mit genau ' + target + ' Teilen gefunden');
+    };
+    const ten = await prepared(lo - 1, 10, { 'scalpdesk.alarms.v1': [alarm('QA', 'ETHUSDT', 3000)], 'scalpdesk.theme.v1': 'dark' }, { width: 390, height: 844 });
+    const eleven = await prepared(lo, 11); n10 = ten.n; n11 = eleven.n;
+    check('Testgröße gefunden: genau 10 und 11 Teile (vollständige eingefrorene Sicherungen)', ten.parts === 10 && eleven.parts === 11, `Test mit ${n10} (10 Teile) und ${n11} (11 Teile)`);
     // 11 Teile → kein QR, Textcode/Datei angeboten
-    let S = await openPage(browser, { 'scalpdesk.history.v1': mk(n11) }, { debug: true });
-    await openData(S.page); await jsClick(S.page, '#qr-export'); await S.page.waitForTimeout(300); await jsClick(S.page, '#qr-make');
+    let S = eleven; // bereits aus der vollständigen Sicherung erzeugt
     await until(() => S.page.evaluate(() => !document.getElementById('qr-big').hidden || !document.getElementById('qr-out').hidden), 15000);
     const big = await S.page.evaluate(() => ({ big: !document.getElementById('qr-big').hidden, text: document.getElementById('qr-big-text').textContent, out: !document.getElementById('qr-out').hidden }));
     check('11 Teile: kein QR-Code, „Sicherung zu groß für QR: 11 Teile nötig, höchstens 10 – Textcode oder Datei verwenden“', big.big && !big.out && /11 Teile nötig, höchstens 10 – Textcode oder Datei verwenden\. Es wird nichts weggelassen/.test(big.text), big.text);
     check('… mit Knöpfen „Textcode anzeigen“ und „Backup herunterladen“', await vis(S.page, '#qr-big-code') && await vis(S.page, '#qr-big-file'));
     await S.ctx.close();
     // 10 Teile → einzeln, groß, Wechsel
-    S = await openPage(browser, { 'scalpdesk.history.v1': mk(n10), 'scalpdesk.alarms.v1': [alarm('QA', 'ETHUSDT', 3000)], 'scalpdesk.theme.v1': 'dark' }, { debug: true, viewport: { width: 390, height: 844 } });
-    await openData(S.page); await jsClick(S.page, '#qr-export'); await until(() => S.page.evaluate(() => /Teil/.test(document.getElementById('qr-calc').textContent)), 15000);
-    const calc = await txt(S.page, '#qr-calc');
+    S = ten; // exakt die oben erzeugte Packung, einschließlich Alarm und eigener Bücher
+    for (let i = 0; i < 10 && await S.page.evaluate(() => __g.qr.idx !== 0); i++) await jsClick(S.page, '#qr-prev');
+    await jsClick(S.page, '#qr-pause'); // bei Teil 1 weiterlaufen lassen
+    const calc = ten.before;
     check('Vor dem Start: vollständige Sicherung, gepackte Größe und Teilezahl', /Vollständige Sicherung: .*Trades.*KB gepackt · \d+ Teile/.test(calc), calc);
-    await jsClick(S.page, '#qr-make'); await until(() => S.page.evaluate(() => !document.getElementById('qr-out').hidden), 20000);
+    await until(() => S.page.evaluate(() => !document.getElementById('qr-out').hidden), 20000); // erzeugte Packung unverändert lassen
     const q = await S.page.evaluate(() => { const c = document.getElementById('qr-canvas'), ctx = c.getContext('2d'), px = (x, y) => ctx.getImageData(x, y, 1, 1).data[0]; const k = Number(c.dataset.px), s = c.width / c.getBoundingClientRect().width;
       return { n: __g.qr.codes.length, label: document.getElementById('qr-part').textContent, ver: Number(c.dataset.version), ecl: c.dataset.ecl, k, w: c.getBoundingClientRect().width, size: __g.qr.codes[0].size, corner: px(1, 1), finder: px(Math.round((4 + 3.5) * k * s), Math.round((4 + 3.5) * k * s)), vw: innerWidth }; });
     check('Mobil (390 px): 10 Teile, „Teil 1 von 10 · wechselt alle 1 s“', q.n === 10 && /^Teil 1 von 10 · wechselt alle 1 s/.test(q.label), JSON.stringify(q));

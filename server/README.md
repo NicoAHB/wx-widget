@@ -13,6 +13,21 @@ Ab Version 2.0 steuert die App ihn über eine gesicherte HTTPS-Adresse: Chat-Sch
 
 **Schritt-für-Schritt-Anleitung für Oracle Cloud (Neueinrichtung, Aktualisieren, Fehlerhilfe): [ANLEITUNG-ORACLE.md](ANLEITUNG-ORACLE.md)**
 
+### 2.10.0 – optionale Erklärung des Orderflow-Signals
+
+App 3.54.0 berechnet das zusätzliche Orderflow-/BTC-Signal im Browser. Der authentifizierte Endpoint `POST /v1/orderflow/explain` erklärt nur die fertige Entscheidung; er verändert weder Signal noch Positionen und platziert keine Orders. Ohne Einrichtung oder bei einem alten Dienst bleibt „Nur Regeln“ aktiv. Dies ist kein neuer Telegram-Sender.
+
+Optional im eigenen systemd-Drop-in mit `sudo systemctl edit scalpdesk-247` eintragen:
+
+```ini
+[Service]
+EnvironmentFile=-/etc/scalpdesk-ai.env
+```
+
+Die Datei `/etc/scalpdesk-ai.env` außerhalb des Repositorys als root anlegen, Rechte `600`. Benötigte Variablennamen: `SCALPDESK_AI_OPENAI_KEY` und/oder `SCALPDESK_AI_ANTHROPIC_KEY`; `SCALPDESK_AI_MODELS` enthält die ausdrücklich erlaubten Anbieter/Modell-Paare, durch Komma getrennt, beispielsweise `openai:<gewähltes Modell>,anthropic:<gewähltes Modell>`. In der App werden nur Anbieter und Modell gewählt. Zugangsdaten gehören weder in HTML, Chat, GitHub, Journal noch persönliche Exportdateien. Danach `sudo systemctl daemon-reload` und `sudo scalpdesk-247 neustart`.
+
+Der Dienst erlaubt höchstens einen KI-Aufruf je 30 Sekunden und begrenzt die Antwort auf 8 Sekunden und einen kurzen Text. Falscher Zugangsschlüssel, fremde Browser-Herkunft, nicht erlaubtes Modell, ungültige Regelwerte und zu große Anfragen werden vor dem Anbieteraufruf abgewiesen. Anbieterfehler lassen den Regeltext bestehen. Die automatische Prüfung nutzt ausschließlich Attrappen; ein echter Anbieteraufruf oder eine Aktualisierung der privaten VM ist damit nicht bestätigt.
+
 ## So arbeitet er mit der App zusammen
 - **Übergabe:**
   - Die App legt die aktiven Alarme und die Stop-/Ziel-Marken ihrer Positionen als Datei `scalpdesk-247.json` in deinen Telegram-Chat und heftet sie an.

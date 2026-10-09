@@ -19,10 +19,13 @@ const lineAt = (page, label, dy = 5) => page.evaluate(([label, dy]) => {
   const r = svg.getBoundingClientRect(), vb = svg.viewBox.baseVal, y = Number(t.getAttribute('y')) + dy;
   return { x: r.left + r.width * 0.45, y: r.top + y * r.height / vb.height };
 }, [label, dy]);
-const klinesLog = async (since, sym, iv) => (await h.ctl('/log?since=' + since)).filter(e => /klines$/.test(e.path || '') && (!sym || e.q.symbol === sym) && (!iv || e.q.interval === iv));
+// Der geprüfte Hauptchart ist Spot. Zusätzliche Futures-Historien und der unabhängige
+// G07-Trendzonenabruf (stets 261 Kerzen, kein Chart-Cache) gehören nicht zu seinen Reihen.
+const klinesLog = async (since, sym, iv) => (await h.ctl('/log?since=' + since)).filter(e => e.path === '/api/v3/klines' && Number(e.q?.limit) !== 261 && (!sym || e.q.symbol === sym) && (!iv || e.q.interval === iv));
 const tests = {
   async magnetdesk(browser) {
     const { ctx, page, errors } = await open(browser); await h.ctl('/walk?on=0'); await page.waitForTimeout(1200);
+    await page.locator('#chart').scrollIntoViewIfNeeded();
     const poc = await lineAt(page, 'POC');
     check('POC-Linie im Chart gefunden', !!poc, JSON.stringify(poc));
     await page.mouse.move(poc.x, poc.y + 4); await page.waitForTimeout(150);
@@ -31,7 +34,8 @@ const tests = {
     check('Fadenkreuz rastet am POC ein (4 px daneben)', hov.label === 'POC' && Math.abs(num(hov.price) - pocVal) < 0.006, JSON.stringify(hov) + ' / ' + pocVal);
     await page.click('#magnet');
     check('Magnet-Modus an', await page.getAttribute('#magnet', 'aria-pressed') === 'true' && await page.evaluate(() => document.getElementById('chart').classList.contains('magnet')));
-    await page.mouse.move(poc.x, poc.y + 3); await page.mouse.down(); await page.mouse.up(); await page.waitForTimeout(300);
+    await page.locator('#chart').scrollIntoViewIfNeeded(); const clickPoc = await lineAt(page, 'POC');
+    await page.mouse.move(clickPoc.x, clickPoc.y + 3); await page.mouse.down(); await page.mouse.up(); await page.waitForTimeout(300);
     const f = await page.evaluate(() => ({ open: !document.getElementById('alarm-form').hidden, price: document.getElementById('al-price').value, note: document.getElementById('al-note').value, prev: document.getElementById('al-preview').textContent, mag: document.getElementById('magnet').getAttribute('aria-pressed') }));
     check('Klick füllt das Alarm-Formular mit dem POC-Preis', f.open && Math.abs(num(f.price) - pocVal) < 0.006, JSON.stringify(f));
     check('Notiz nennt das Level, Richtung automatisch', f.note === 'POC (1m)' && /Meldet sich, sobald BTC auf oder (über|unter)/.test(f.prev), f.note + ' · ' + f.prev);
@@ -39,6 +43,7 @@ const tests = {
     await page.press('#al-price', 'Enter'); await page.waitForTimeout(400);
     check('Enter speichert den Alarm', await page.evaluate(() => document.querySelectorAll('.al-row').length) === 1 && /POC \(1m\)/.test(await text(page, '#alarm-list')), await text(page, '#alarm-list'));
     // Rechtsklick ohne Magnet-Modus auf eine Kerze: rastet an Hoch/Tief/Pivot ein
+    await page.locator('#chart').scrollIntoViewIfNeeded();
     const wick = await page.evaluate(() => { const svg = document.querySelector('#chart svg'), r = svg.getBoundingClientRect(), vb = svg.viewBox.baseVal, lines = [...svg.querySelectorAll('line[stroke-width="1"]')].filter(l => l.getAttribute('x1') === l.getAttribute('x2')), l = lines[Math.floor(lines.length * 0.6)];
       return { x: r.left + Number(l.getAttribute('x1')) * r.width / vb.width, y: r.top + Number(l.getAttribute('y1')) * r.height / vb.height + 2 }; });
     await page.mouse.click(wick.x, wick.y, { button: 'right' }); await page.waitForTimeout(300);
@@ -78,7 +83,7 @@ const tests = {
     check('Liq.-Linie der Position mit Preis und Abstand', st.label.includes(new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(liqIn)) && /· −\d/.test(st.label), st.label);
     check('Gestrichelt und Gefahrenzone rot getönt', st.dash && st.zone, JSON.stringify(st));
     // Magnet rastet auch an der Liquidation ein
-    const lq = await lineAt(page, '☠ Liq. Long', -14);
+    await page.locator('#chart').scrollIntoViewIfNeeded(); const lq = await lineAt(page, '☠ Liq. Long', -14);
     await page.mouse.move(lq.x, lq.y + 3); await page.waitForTimeout(150);
     check('Magnet kennt die Liquidation', await text(page, '#chart .magnet-label') === 'Liquidation', await text(page, '#chart .magnet-label'));
     await page.mouse.move(5, 5);
@@ -98,7 +103,7 @@ const tests = {
     await page.click('[data-overlay="liq"]'); await page.waitForTimeout(300);
     check('Schalter „Liquidation“ blendet alles aus', !(await page.evaluate(() => [...document.querySelectorAll('#chart svg text')].some(x => x.textContent.startsWith('☠')))));
     await page.click('[data-overlay="liq"]');
-    await page.screenshot({ path: __dirname + '/shots/m4-liq.png', clip: await page.$eval('#chart-sec', e => { const r = e.getBoundingClientRect(); return { x: r.x, y: r.y, width: r.width, height: Math.min(r.height, 900) }; }) });
+    await page.locator('#chart-sec').screenshot({ path: __dirname + '/shots/m4-liq.png' });
     check('keine Fehler', !errors.length, errors.join(' | ')); await ctx.close();
   },
   async cache(browser) {

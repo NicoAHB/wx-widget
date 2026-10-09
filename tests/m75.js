@@ -46,20 +46,22 @@ const check = (name, ok, info = '') => { ok ? pass++ : fail++; console.log(`${ok
     const missing = await page.evaluate(() => { const s = __pdf1.view.state, c = s.series['1m'].at(-3); s.series['1m'] = s.series['1m'].filter(x => x.t !== c.t); return c.t; });
     await page.waitForFunction(t => __pdf1.view.state.series['1m'].some(c => c.t === t && c.closed), missing);
     check('Lücke wird mit begrenzter bestehender REST-API repariert', (await h.ctl('/log')).some(e => e.at >= gapStart && e.path === '/fapi/v1/klines' && e.q.symbol === 'BSVUSDT' && e.q.interval === '1m' && e.q.limit === '30'));
-    await h.ctl('/blockws?on=1'); await page.waitForFunction(() => __pdf1.live.markets.futures.st !== 'live' && /getrennt/.test(document.querySelector('.of-quality').textContent));
-    check('Getrennte Verbindung sofort als solche benannt', /getrennt/.test(await page.textContent('.of-quality')), await page.textContent('.of-quality'));
+    await h.ctl('/blockws?on=1'); await page.waitForFunction(() => __pdf1.live.markets.futures.st !== 'live' && !__pdf1.view.quote()?.fresh && document.getElementById('of-demo-price').disabled);
+    check('Getrennte Verbindung sperrt Demo-Livekurs ohne störende Alterszeile', await page.evaluate(() => !__pdf1.view.quote()?.fresh && document.querySelector('.of-quality').hidden && document.getElementById('of-demo-price').disabled));
     await h.ctl('/blockws?on=0'); await page.waitForFunction(() => document.querySelector('.of-block[data-interval="1m"]').dataset.quality === 'live', null, { timeout: 25000 });
     check('Bestehender Worker verbindet erneut, neue Daten frisch', await page.evaluate(() => __pdf1.live.markets.futures.st === 'live'));
     check('Touch-iPad quer: Panel tatsächlich neben Chart, 380px', await page.evaluate(() => { const p = document.getElementById('orderflow-panel').getBoundingClientRect(), c = document.getElementById('chart').getBoundingClientRect(); return p.left >= c.right && p.width === 380; }));
     check('Keine JavaScript-Fehler im Touch-/Wiederverbindungstest', errors.length === 0, errors.join(' | ')); await ctx.close();
-    // Eigenes Profil: Rate-Limit eines Initialabrufs. Kein echter Dienst/Token.
-    const rateCtx = await browser.newContext(), ratePage = await rateCtx.newPage(); let rateCalls = 0;
+    // Eigenes Profil: Rate-Limit eines tatsächlichen Panel-Neuabrufs. Die größere Signalhistorie
+    // kann den Initialabruf inzwischen vollständig liefern; deshalb gezielt „Neu laden“ antippen.
+    const rateCtx = await browser.newContext({ serviceWorkers: 'block' }), ratePage = await rateCtx.newPage(); let rateCalls = 0;
+    await ratePage.goto(h.URL_BASE + '/weather-widget-v2.html'); await ratePage.waitForFunction(() => window.__pdf2 && __pdf1.view.state.series['1m'].length >= 5 && __pdf2.feed.state.series['1m']?.length >= 50 && !document.getElementById('of-retry').disabled, null, { timeout: 20000 });
     await rateCtx.route('https://fapi.binance.com/fapi/v1/klines?**', async route => {
       const u = new URL(route.request().url());
       if (u.searchParams.get('interval') === '1m' && u.searchParams.get('limit') === '30') { rateCalls++; await route.fulfill({ status: 429, headers: { 'Retry-After': '15', 'Access-Control-Allow-Origin': '*', 'Access-Control-Expose-Headers': 'Retry-After' }, contentType: 'application/json', body: JSON.stringify({ code: -1003 }) }); }
       else await route.continue();
     });
-    await ratePage.goto(h.URL_BASE + '/weather-widget-v2.html'); await ratePage.waitForFunction(() => /Rate-Limit/.test(document.getElementById('of-status')?.textContent || ''));
+    await ratePage.click('#of-retry'); await ratePage.waitForFunction(() => /Rate-Limit/.test(document.getElementById('of-status')?.textContent || ''));
     check('Rate-Limit mit Wartezeit offen angezeigt', /15 Sekunden/.test(await ratePage.textContent('#of-status')), await ratePage.textContent('#of-status'));
     await ratePage.waitForTimeout(6000); check('Kein enger REST-Wiederholungsfeed nach Rate-Limit', rateCalls === 1);
     check('Hauptchart lädt trotz Zusatzpanel-Rate-Limit weiter Spotdaten', await ratePage.evaluate(() => __g05.state.source === 'spot' && __g05.state.candles.length > 100));

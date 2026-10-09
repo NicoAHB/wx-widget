@@ -75,7 +75,7 @@ async function verifySpan(page, key, tag) {
   check(`${tag}: „Zu wenig Bewegung“ genau dann, wenn ATR × √${S.n} unter 1 % liegt (hier ${x?.move} %)`, x && (x.low ? p.move === moveTxt && p.moveTip.includes(`ATR (mittlere wahre Spanne) der letzten ${S.n >= 10 ? S.n : 14} ${S.ivName}-Kerzen: ${x.atr} % je Kerze.`) : p.move === null), JSON.stringify({ move: p.move, low: x?.low }));
   check(`${tag}: Fußzeile „Beschreibt ${S.the} – kein Handelssignal mit nachgewiesenem Vorteil.“`, p.foot === `Beschreibt ${S.the} – kein Handelssignal mit nachgewiesenem Vorteil.`, p.foot);
   const wl = COINS.map(c => `${c.toLowerCase()}usdt@kline_${S.iv}`);
-  const chart = await chartStream(page), orderflowStreams = await page.evaluate(() => { const v = __pdf1.view.state; return !v.paused && !v.unavailable ? [v.symbol.toLowerCase() + '@kline_1m', v.symbol.toLowerCase() + '@kline_1h'] : []; });
+  const chart = await chartStream(page), orderflowStreams = await page.evaluate(() => { const v = __pdf1.view.state; return v.paused ? [] : [...(!v.unavailable ? ['1m', '5m', '1h', '4h'].map(iv => v.symbol.toLowerCase() + '@kline_' + iv) : []), 'btcusdt@kline_1m']; });
   const connections = (await h.ctl('/state')).conns, futures = connections.filter(c => /fstream/.test(c.host)).flatMap(c => c.streams);
   const stale = connections.flatMap(c => c.streams.filter(s => /@kline_/.test(s) && !/^btcusdt@/.test(s) && s !== chart && !s.endsWith('@kline_' + S.iv) && !(/fstream/.test(c.host) && orderflowStreams.includes(s))));
   check(`${tag}: Vorauswahl nur ${S.iv}-Kerzen; separate Panel-Abos im Futures-Markt`, wl.every(s => st.has(s)) && orderflowStreams.every(s => futures.includes(s)) && !stale.length, JSON.stringify({ missing: wl.filter(s => !st.has(s)), stale, orderflowStreams }));

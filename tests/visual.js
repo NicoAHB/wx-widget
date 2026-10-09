@@ -13,17 +13,22 @@ const h = require('./harness');
     await p.waitForFunction(() => document.getElementById('status').dataset.feed === 'live', null, { timeout: 20000 });
     await h.sleep(2000);
     // Kerze mit der Maus wählen, Live-Updates abwarten
+    await p.locator('#chart').scrollIntoViewIfNeeded();
     const box = await p.$eval('#chart', e => { const r = e.getBoundingClientRect(); return { x: r.left + r.width * 0.3, y: r.top + r.height * 0.5 }; });
     await p.mouse.move(box.x, box.y); await h.sleep(300);
     const sel1 = await p.textContent('#ohlc'); await h.sleep(4500); const sel2 = await p.textContent('#ohlc');
     console.log('Auswahl bleibt:', sel1 === sel2 && /UTC · O/.test(sel2), '|', sel1.slice(0, 40));
+    if (!(sel1 === sel2 && /UTC · O/.test(sel2))) throw new Error('Kerzenauswahl bei Live-Updates nicht erhalten');
     await p.mouse.move(5, 5);
     await p.click('#backup-badge'); await h.sleep(500);
     await p.screenshot({ path: __dirname + '/shots/v-desktop-panel.png' });
     await h.ctl('/walk?on=0'); await h.ctl('/set?symbol=XRPUSDT&price=1.535'); await h.sleep(3000);
     await p.evaluate(() => document.getElementById('positions').scrollIntoView());
     await p.screenshot({ path: __dirname + '/shots/v-desktop-alert.png' });
-    await p.click('#qr-export'); await p.fill('#qr-pass', 'geheim12'); await p.click('#qr-make'); await p.waitForSelector('#qr-out:not([hidden])'); await h.sleep(300);
+    await p.click('#qr-export'); await p.fill('#qr-pass', 'geheim12'); await p.click('#qr-make');
+    // Vollständige Journale können die Sicherung über die QR-Grenze bringen; die Exportansicht zeigt dann den ehrlichen Dateihinweis.
+    await p.waitForFunction(() => !document.getElementById('qr-out').hidden || !document.getElementById('qr-big').hidden);
+    console.log('QR-Exportansicht:', await p.textContent('#qr-calc'), await p.textContent('#qr-big-text')); await h.sleep(300);
     await p.screenshot({ path: __dirname + '/shots/v-desktop-qr.png' });
     await p.click('#qr-close');
     await p.click('#signals .tip > summary'); await h.sleep(200);

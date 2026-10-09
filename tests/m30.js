@@ -34,7 +34,7 @@ const staleSaved = page => page.evaluate(() => new Promise(res => { const r = in
     check('Bereich unter dem Wirtschaftskalender, vor der Signal-Übersicht', o.cnews.t >= o.econ.b - 1 && o.signals.t >= o.cnews.b - 1 && o.econ.t >= o.chart.b - 1, JSON.stringify(o));
     check('BTC: „News & Termine · BTC“, eine sehr wichtige Meldung (Recht), ETF-Zuflüsse ausgeblendet', d.h2 === 'News & Termine · BTC' && d.rows.length === 1 && /^vor [23] h · Recht · XTB\.com$/.test(d.rows[0].meta) && /^Krypto News: SEC erlaubt/.test(d.rows[0].title) && !d.heads.length && d.more === null,
       JSON.stringify(d.rows.map(r => r.meta)));
-    check('Stand: „Binance · Google News · Stand … · stündlich“', /^Binance · Google News · Stand \d\d:\d\d · stündlich$/.test(d.src) && !d.srcErr, d.src);
+    check('Stand: „Binance · Google News · Stand … · stündlich“', /^Binance · Google News · Stand (?:gestern )?\d\d:\d\d · stündlich$/.test(d.src) && !d.srcErr, d.src);
     // ---- XRP ----
     await coin(page, 'XRP'); d = await info(page);
     const [r0, r1, r2, r3] = d.rows;

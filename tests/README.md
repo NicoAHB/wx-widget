@@ -8,6 +8,20 @@ Automatische Tests für die App (`weather-widget-v2.html`) und den 24/7-Dienst (
 - Einmalig im Ordner `tests/`: `npm install`.
 
 ## Aufruf
+
+### Orderflow-/BTC-Ergänzung (3.54.0)
+
+- `unit-orderflow.js`, `unit-orderflow-demo.js`: reale OHLC-/Takerfelder, waagerechte Kerzengeometrie, neutrale Körpergrenze, UTC-Restzeit und gebührenfreier eigener Demo-Bestand mit Speichergrenzen.
+- `unit-orderflow-signal.js`: BTC-Stufen/Grenzen, Beschleunigung/Gegenbewegung, Glättung, identischer Score in beiden Positionszuständen, Rohwert-Veto, Long/Short, Schutzvorrang, Tickraster und bestätigte Futures-Indikatoren.
+- `unit-orderflow-feed.js`: tatsächlicher asynchroner Verbraucher, begrenzte Historien, keine doppelten BTC-Abos, Quellen-/Kontext-/Epochenschutz, Pause/Frische und Kontraktraster.
+- `unit-orderflow-journal.js`: Originale, tatsächliche 5/15/30-Minuten-Folgekurse, unbekannte Lücken, getrennte Warten-/Positionsauswertung, beobachtete Trade-Extrema/erste Ausstiegsempfehlung, CSV und Offline/Timeout-Unterscheidung.
+- `unit-orderflow-explainer.js`: beide Anbieter nur mit Attrappen, Modellfreigabe, echtes 8-s-Zeitlimit, globaler 30-s-Abstand sowie echter lokaler HTTP-Endpoint mit Schlüssel-/CORS-/Regelprüfung. Keine echten Schlüssel/Anbieteraufrufe.
+- `m76.js`: Kerzenbild/Kurztext/Timer, echte Klickkurse mit Hebel, rote Verlusttaste, Neustart/Sicherung, Touch und Spot-/Originalschutz.
+- `m77.js`: echte App/Worker-Signalansicht, Ring, BTC, antippbare OHLC-Einstiege, Positionsbegleitung/Score/Neustart, Journal/CSV und gemeinsamer Teil-Ausfall mit lokalem Neuversuch.
+- `m78.js`: tatsächliche KI-Anbindung mit Antwort-/Zeitlimit-/Kontextschutz und Regel-Fallback, alle acht G14-Farbpaletten mit AA-Kontrast.
+- Alle neuen Ziele gehören zum seriellen Gesamtlauf (131 Ziele). Kein Parallelstart von Browser-/Installer-Tests: Die bestehenden festen Testports werden geteilt. Reale iPad-/Oracle-/Anbieterabnahme wird separat ausgewiesen.
+- Orderflow-Regressionsvorbedingungen: m76 wartet vor dem Frischeverlust auf einen tatsächlich aktiven Demo-Knopf; m50 bemisst die reale vollständige Sicherung und behält alle QR-/10-/11-Teil-Grenzen. m39 misst den zusätzlichen BTC-Kopf getrennt vom Chart, m46 platziert die Watchlist-Kachel mit ausreichend Detailplatz, m28/m30 erlauben nach Mitternacht das bestehende „gestern“-Label. m35 nutzt im ersten Profil bekannte halbe Wochenendspannen mit Wochenstreuung; die Fachberechnung und Grenzen bleiben unverändert. m58 ergänzt sichere Zählerdiagnosen. Safari m32/m34 prüfen weiterhin dieselben Scrollgrenzen; die neuen Panels verwenden den bestehenden Ankerrahmen. Erstbefunde und vollständige Nachläufe werden getrennt dokumentiert.
+
 | Befehl | Was er tut | Dauer |
 |---|---|---|
 | `bash run-all.sh` | alle Tests nacheinander (Einheitentests, Installer, m3–m69, ui, functional, Statusseite, Rauchtest, Sichtprüfung) | etwa 2,5 Stunden |
@@ -109,3 +123,5 @@ Visuelle KI-Abnahme: m72 zusätzlich tatsächlicher Trefferpunkt auf dem rechten
 - `m75.js`: echte gespeicherte Spot-Position, Futures-Historienbeobachter, Subscription-Deduplizierung, REST-Live-Rennen und A→B→A-Kontext, gezielte Lückenreparatur, echte WS-Unterbrechung/Wiederverbindung, Touch-iPad-Anordnung und öffentlicher HTTP-429-Abstand. Retry-After wird im Mock ausdrücklich per CORS exponiert; ohne diese Freigabe gilt der konservative bestehende API-Abstand.
 - Die Attrappe ergänzt ausschließlich die bislang fehlenden Quote-/Takerfelder bei gleichen OHLC/Kursen. `/orderflow` verändert Futures-Testmeldungen gezielt; Standardwerte sind neutral. Keine doppelte Verbindung desselben Markts, kein zusätzlicher Worker/Intervalltimer und keine Handelsentscheidung. Bei Spot plus Futures werden zwei notwendige Marktverbindungen im selben Worker verwendet. Alle drei Ziele im seriellen Gesamtlauf (jetzt 123).
 - Ältere Streamtests unterscheiden die Panel-Futures-Abos ausdrücklich und messen Wiederverbindungen des tatsächlich beobachteten Hauptmarkts (m8/functional); Kontrollabstände bleiben je Verbindung verbindlich. m47 wartet nach „Status prüfen“ auch auf das Ende einer gleichzeitig laufenden Übergabe und protokolliert ausschließlich Alarm-/Preiswerte, keine Kanalkonfiguration.
+
+Orderflow 3.54.0 abschließend: 131 Ziele seriell, nach vollständigen getrennt erhaltenen Befundnachläufen **4133/4133**, Lint 0 Fehler. [Nachweis](../docs/ORDERFLOW-TESTNACHWEIS.md). m74 vergleicht den Fremdabruf synchron nach vollständiger Zeichnungsbereitschaft. m4/m5/visual bringen den tatsächlich geprüften Chart ins Bild; m4 trennt Spot-Chart-Cache von Futures und den eigenen 261-Kerzen-Trendzonen. m7 hält nur im Sicherungs-Testprofil zusätzliche Futures-Beobachtungen still, damit der unveränderte Vollstand auch mit neuen Journal-/Begleitbüchern unverändert ist; volle Bücher bleiben gesichert, Spot-/Sender-/Zählergrenzen gleich. Die QR-Diagnose erhält die tatsächlich erzeugte komplette Packung; die Sichtprüfung berücksichtigt den korrekten Übergrößenhinweis und verlangt ausdrücklich die stabile Kerzenauswahl. Produktdateien unverändert, Erstlogs und beide Nachlaufreihen erhalten.

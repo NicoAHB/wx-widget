@@ -45,6 +45,18 @@ const waitChip = (page, re, ms = 15000) => page.waitForFunction(re => { const c 
     // ---- Computer: Muster (Tagesverlauf) ----
     await h.ctl('/vola?mode=pattern');
     let ctx = await browser.newContext({ viewport: { width: 1440, height: 1000 }, timezoneId: TZ }), page = await ctx.newPage(), errors = []; h.collect(page, errors);
+    // 3.54.0: dieses Tagesmuster hat exakt halbe Wochenendspannen. Die allgemeine Attrappe
+    // halbiert nur zufällige Dochte; deren kleine Stundenkohorten können zufällig unter 0,35 liegen.
+    await page.route('**/api/v3/klines?*', async route => {
+      const q = new URL(route.request().url()).searchParams;
+      if (q.get('interval') !== '1h' || q.get('symbol') !== 'BTCUSDT') return route.continue();
+      const step = 3600e3, last = Math.floor((Number(q.get('endTime')) || Date.now()) / step) * step, n = Math.min(1000, Number(q.get('limit')) || 500);
+      const rows = Array.from({ length: n }, (_, i) => { const t = last - (n - 1 - i) * step, d = new Date(t), hour = d.getUTCHours() + 0.5;
+        const weekScale = 0.9 + (Math.floor(t / (7 * 86400e3)) % 5) * 0.05; // feste Streuung: 90-%-Wert bleibt über Median
+        const range = 0.02 * (0.5 + 1.25 * Math.exp(-((hour - 15) ** 2) / 6)) * weekScale * ([0, 6].includes(d.getUTCDay()) ? 0.5 : 1), open = 60000;
+        return [t, String(open), String(open * (1 + range / 2)), String(open * (1 - range / 2)), String(open), '100', t + step - 1, '6000000', 10, '50', '3000000', '0']; });
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(rows) });
+    });
     await page.goto(h.URL_BASE + '/weather-widget-v2.html'); await live(page); await ready(page);
     const ord = await page.evaluate(() => { const y = id => { const r = document.getElementById(id).getBoundingClientRect(); return { t: Math.round(r.top + scrollY), b: Math.round(r.bottom + scrollY) }; }; return { cnews: y('cnews'), vola: y('vola'), signals: y('signals') }; });
     check('Computer: Übersicht unter den News zum Coin, vor der Signal-Übersicht', ord.vola.t >= ord.cnews.b - 1 && ord.signals.t >= ord.vola.b - 1, JSON.stringify(ord));

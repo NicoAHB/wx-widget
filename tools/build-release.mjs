@@ -15,7 +15,7 @@ for (const name of parts) { const bytes = read(name), target = bundle + '/' + na
 for (const name of ['weather-widget-v2.html', 'manifest.webmanifest', 'status-check.html', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png']) { const bytes = read(name); files.push({ path: './' + name, sha256: sha(bytes), bytes: bytes.length }); }
 const manifest = JSON.stringify({ version, files }, null, 2) + '\n'; write(bundle + '/manifest.json', manifest);
 const sw = read('sw.js').toString().replace(/const VERSION = '[^']+';/, "const VERSION = '" + version + "';").replace(/const BUILD_ID = '[^']+';/, "const BUILD_ID = '" + sha(manifest).slice(0, 16) + "';"); write('sw.js', sw);
-const serverFiles = ['server/scalpdesk-247.mjs', 'server/pattern-engine.mjs', 'server/pattern-monitor.mjs', 'server/ki-monitor.mjs', 'server/install.sh', ...parts.filter(x => x.startsWith('shared/'))];
+const serverFiles = ['server/scalpdesk-247.mjs', 'server/pattern-engine.mjs', 'server/pattern-monitor.mjs', 'server/ki-monitor.mjs', 'server/orderflow-explainer.mjs', 'server/install.sh', ...parts.filter(x => x.startsWith('shared/'))];
 const server = { version: /VERSION = '([^']+)'/.exec(read('server/scalpdesk-247.mjs').toString())[1], appVersion: version,
   files: serverFiles.map(name => ({ path: name.startsWith('server/') ? name.slice(7) : name, sha256: sha(read(name)), bytes: read(name).length })) };
 write('server/release-manifest.json', JSON.stringify(server, null, 2) + '\n');
