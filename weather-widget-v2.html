@@ -2000,6 +2000,11 @@ html{scroll-padding-top:calc(var(--lb-h,56px) + 16px)}
 .conf-act .button{flex:1 1 180px}
 #conf-title:focus{outline:none}
 .qr-calc{font-size:.8125rem;color:var(--text-2)}
+/* 3.59.0: vollständige kompakte Datei als Alternative zur Kameraübertragung. */
+.qr-transfer{margin:12px 0;padding:12px;border:1px solid var(--border);border-radius:12px;background:var(--surface-2);min-width:0;overflow-wrap:anywhere}
+.qr-transfer p{margin:6px 0;font-size:.8125rem}.qr-transfer .button{min-height:44px;white-space:normal}
+.qr-transfer .sheet-actions{margin:8px 0}
+.qr-transfer small{display:block;color:var(--text-2);font-size:.8125rem}.qr-transfer [hidden]{display:none}
 .qr-stage{overflow:auto}
 .qr-stage canvas{max-width:none}
 .qr-ctl{align-items:center}.qr-speed{display:flex;gap:6px;align-items:center;font-size:.8125rem;color:var(--label)}.qr-speed select{min-height:46px}
@@ -2086,22 +2091,22 @@ html[data-presentation=dashboard][data-layout=tablet] #acct{order:0}
 </style>
   <script type="module">
 // 3.45.0 (G10c): der vorhandene Binance-/G07-Kern bleibt eigenständig.
-import { exportModelArchive, importModelArchive, validateModelArchive } from './bundles/3.58.0/shared/model-archive.mjs';
-import { BotSimulationRuntime } from './bundles/3.58.0/shared/bot-simulation.mjs';
-import { readBotSimulation, saveBotSimulation } from './bundles/3.58.0/shared/bot-simulation-store.mjs';
-import { createBotView } from './bundles/3.58.0/shared/bot-view.mjs';
-import { createOrderflowView } from './bundles/3.58.0/shared/orderflow-view.mjs';
-import { createSignalView } from './bundles/3.58.0/shared/orderflow-signal-view.mjs';
-import { networkState, createWidgetBoundary } from './bundles/3.58.0/shared/widget-state.mjs';
-import { originalRisk as kiOriginalRisk } from './bundles/3.58.0/shared/confluence-risk-view.mjs';
-import { confluenceOverview, po3Overview, filterOverview, reconcileOverview } from './bundles/3.58.0/shared/signal-overview.mjs';
-import { createPo3View } from './bundles/3.58.0/shared/po3-view.mjs';
-import { cardState as kiCardState, scoreLabel as kiScoreLabel } from './bundles/3.58.0/shared/confluence-live.mjs';
-import { divergenceInfo as kiDivergenceInfo, parametersKey as kiParametersKey } from './bundles/3.58.0/shared/confluence-core.mjs';
-import { parametersKey as kiLegacyParametersKey } from './bundles/3.58.0/shared/confluence-legacy-core.mjs';
-import { presentCard as kiPresentCard, currentSignal as kiCurrentSignal } from './bundles/3.58.0/shared/confluence-presentation.mjs';
-import { observationKey as kiObservationKey } from './bundles/3.58.0/shared/confluence-replay.mjs';
-import { readReplay as kiReadHistory, saveReplay as kiSaveHistory, clearReplayJobs as kiClearHistoryJobs } from './bundles/3.58.0/shared/confluence-replay-store.mjs';
+import { exportModelArchive, importModelArchive, validateModelArchive } from './bundles/3.59.0/shared/model-archive.mjs';
+import { BotSimulationRuntime } from './bundles/3.59.0/shared/bot-simulation.mjs';
+import { readBotSimulation, saveBotSimulation } from './bundles/3.59.0/shared/bot-simulation-store.mjs';
+import { createBotView } from './bundles/3.59.0/shared/bot-view.mjs';
+import { createOrderflowView } from './bundles/3.59.0/shared/orderflow-view.mjs';
+import { createSignalView } from './bundles/3.59.0/shared/orderflow-signal-view.mjs';
+import { networkState, createWidgetBoundary } from './bundles/3.59.0/shared/widget-state.mjs';
+import { originalRisk as kiOriginalRisk } from './bundles/3.59.0/shared/confluence-risk-view.mjs';
+import { confluenceOverview, po3Overview, filterOverview, reconcileOverview } from './bundles/3.59.0/shared/signal-overview.mjs';
+import { createPo3View } from './bundles/3.59.0/shared/po3-view.mjs';
+import { cardState as kiCardState, scoreLabel as kiScoreLabel } from './bundles/3.59.0/shared/confluence-live.mjs';
+import { divergenceInfo as kiDivergenceInfo, parametersKey as kiParametersKey } from './bundles/3.59.0/shared/confluence-core.mjs';
+import { parametersKey as kiLegacyParametersKey } from './bundles/3.59.0/shared/confluence-legacy-core.mjs';
+import { presentCard as kiPresentCard, currentSignal as kiCurrentSignal } from './bundles/3.59.0/shared/confluence-presentation.mjs';
+import { observationKey as kiObservationKey } from './bundles/3.59.0/shared/confluence-replay.mjs';
+import { readReplay as kiReadHistory, saveReplay as kiSaveHistory, clearReplayJobs as kiClearHistoryJobs } from './bundles/3.59.0/shared/confluence-replay-store.mjs';
 // Pure, unrounded calculations. Prices are USDT per unit; FX is USDT per EUR.
 function rsi(closes, period = 14) {
   const out = Array(closes.length).fill(null);
@@ -3074,7 +3079,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
 // 3.43.0 (G10a): reiner Fachkern in shared/; Datenquelle und Karten folgen getrennt.
 // 3.44.0 (G10b): öffentlicher Adapter in shared/bitget-public.mjs; sichtbare Anbindung folgt mit G10(c).
-const APP_VERSION = '3.58.0', docEl = document.documentElement;
+const APP_VERSION = '3.59.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -7763,15 +7768,22 @@ addEventListener('storage', e => { if (bc || !SYNC_KEYS.includes(e.key) || e.new
 // Kopf (16 Byte): 'S','B', Format 1, Merker (1 = gepackt, 2 = verschlüsselt), Inhalt (1 = vollständige Sicherung), Schema (2 Byte),
 // Länge des JSON in Byte (4), CRC-32 des JSON (4), frei (1). Verschlüsselt folgen PBKDF2-Runden (4), Salz (16) und IV (12); dieser
 // ganze Kopf ist als Zusatzdaten mitgeprüft (AES-256-GCM). Danach der Inhalt: JSON → deflate-raw → (verschlüsselt).
+// 3.59.0: Format 2 hat denselben Kopf, nutzt jedoch zlib-Deflate statt deflate-raw für ältere Safari-Versionen.
 // Die Prüfsumme erkennt Übertragungsfehler, schützt aber nicht vor Mitlesen – dafür das optionale Passwort.
 const BK_TYPE_FULL = 1, TEXT_PREFIX = 'SDB1:';
 async function packBackup(payload, password = '') {
   const plain = new TextEncoder().encode(JSON.stringify(payload));
   if (plain.length > BK_MAX_JSON) throw new Error(`Sicherung zu groß (${number(plain.length / 1e6, 1)} MB).`);
-  let body = plain, flags = 0;
-  if (globalThis.CompressionStream) { try { const z = await streamBytes(plain, new CompressionStream('deflate-raw')); if (z.length < plain.length) { body = z; flags |= 1; } } catch {} }
+  // 3.59.0: ältere Safari-Versionen unterstützen deflate/gzip, aber noch kein deflate-raw.
+  // Format 1 bleibt unverändert; nur der kompatible Deflate-Ersatz erhält Format 2, damit alte Apps klar zum Update auffordern.
+  let body = plain, flags = 0, format = 1;
+  if (globalThis.CompressionStream) {
+    for (const method of ['deflate-raw', 'deflate']) {
+      try { const z = await streamBytes(plain, new CompressionStream(method)); if (z.length < plain.length) { body = z; flags |= 1; format = method === 'deflate' ? 2 : 1; } break; } catch {}
+    }
+  }
   let head = new Uint8Array(16); const dv = new DataView(head.buffer);
-  head.set([0x53, 0x42, 1, 0, BK_TYPE_FULL]); dv.setUint16(5, BK_SCHEMA); dv.setUint32(7, plain.length); dv.setUint32(11, crc32(plain));
+  head.set([0x53, 0x42, format, 0, BK_TYPE_FULL]); dv.setUint16(5, BK_SCHEMA); dv.setUint32(7, plain.length); dv.setUint32(11, crc32(plain));
   if (password) {
     if (!globalThis.crypto?.subtle) throw new Error('Verschlüsseln geht nur, wenn die Seite über https geöffnet ist. Ohne Passwort erzeugen oder die https-Adresse nutzen.');
     flags |= 2;
@@ -7780,14 +7792,16 @@ async function packBackup(payload, password = '') {
     body = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv, additionalData: head }, await backupKey(password, salt, BACKUP_ITER), body));
   }
   head[3] = flags;
+  if (body.length > BK_MAX_PACKED) throw new Error('Sicherungscode zu groß – die vorhandene JSON-Dateisicherung verwenden.');
   return concatBytes(head, body);
 }
 // → { payload, info } · needPass: verschlüsselt und kein Passwort angegeben
 async function unpackBackup(bytes, password = '') {
   if (!(bytes instanceof Uint8Array) || bytes.length < 16 || bytes[0] !== 0x53 || bytes[1] !== 0x42) throw new Error('Kein Sicherungscode dieses Dashboards.');
-  if (bytes[2] !== 1) throw new Error(`Sicherungscode im Format ${bytes[2]} – bitte zuerst die App aktualisieren.`);
+  if (![1, 2].includes(bytes[2])) throw new Error(`Sicherungscode im Format ${bytes[2]} – bitte zuerst die App aktualisieren.`);
   if (bytes.length > BK_MAX_PACKED + 64) throw new Error('Sicherungscode zu groß.');
   const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength), flags = bytes[3], type = bytes[4], schema = dv.getUint16(5), len = dv.getUint32(7), crc = dv.getUint32(11);
+  if ((flags & ~3) || bytes[15] || (bytes[2] === 2 && !(flags & 1))) throw new Error('Unbekanntes Format im Sicherungscode – bitte die App aktualisieren.');
   if (type !== BK_TYPE_FULL) throw new Error('Unbekannter Inhalt im Sicherungscode.');
   if (schema > BK_SCHEMA) throw new Error(`Diese Sicherung stammt aus einer neueren App-Version (Schema ${schema}). Bitte zuerst die App aktualisieren.`);
   if (len > BK_MAX_JSON) throw new Error('Entpackt wäre die Sicherung zu groß.');
@@ -7804,15 +7818,23 @@ async function unpackBackup(bytes, password = '') {
   let plain = body;
   if (flags & 1) {
     if (!globalThis.DecompressionStream) throw new Error('Dieser Browser kann den Code nicht entpacken (iPhone/iPad: iOS 16.4 oder neuer nötig).');
-    try { plain = await inflateLimited(body, len); } catch (e) { throw e?.tooBig ? e : new Error('Sicherungscode beschädigt oder unvollständig (Entpacken fehlgeschlagen).'); }
+    try { plain = await inflateLimited(body, len, bytes[2] === 2 ? 'deflate' : 'deflate-raw', crc); } catch (e) { throw e?.tooBig ? e : new Error('Sicherungscode beschädigt oder unvollständig (Entpacken fehlgeschlagen).'); }
   }
   if (plain.length !== len || crc32(plain) !== crc) throw new Error('Prüfsumme stimmt nicht – der Code ist beschädigt oder unvollständig. Bitte neu übertragen.');
   let payload; try { payload = JSON.parse(new TextDecoder().decode(plain)); } catch { throw new Error('Sicherungscode enthält kein gültiges JSON.'); }
   return { payload, info: { schema, encrypted: !!(flags & 2), packed: bytes.length, plain: len, crc: hex8(crc) } };
 }
 // Entpacken mit Grenze: höchstens die im Kopf angegebene Länge (schützt vor manipulierten „Zip-Bomben“)
-async function inflateLimited(bytes, max) {
-  const rd = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw')).getReader(), parts = []; let n = 0;
+async function inflateLimited(bytes, max, method = 'deflate-raw', crc = 0) {
+  let transform;
+  try { transform = new DecompressionStream(method); }
+  catch (e) {
+    if (method !== 'deflate-raw') throw e;
+    // Alte Format-1-Codes auch in Safari ohne deflate-raw lesen: unveränderten Deflate-Inhalt mit geprüftem Gzip-Rahmen versehen.
+    const tail = new Uint8Array(8), dv = new DataView(tail.buffer); dv.setUint32(0, crc, true); dv.setUint32(4, max, true);
+    bytes = concatBytes(new Uint8Array([31, 139, 8, 0, 0, 0, 0, 0, 0, 255]), bytes, tail); transform = new DecompressionStream('gzip');
+  }
+  const rd = new Blob([bytes]).stream().pipeThrough(transform).getReader(), parts = []; let n = 0;
   for (;;) {
     const { done, value } = await rd.read(); if (done) break;
     n += value.length; if (n > max) { try { await rd.cancel(); } catch {} const e = new Error('Entpackt größer als angegeben – Code abgelehnt.'); e.tooBig = true; throw e; }
@@ -7907,14 +7929,64 @@ function parseQrPart(raw) {
   if (m) { const i = +m[1], n = +m[2], len = +m[5]; if (!(n >= 1 && n <= QR_MAX_PARTS && i >= 1 && i <= n) || m[6].length > len) return null; return { v: 2, i, n, id: m[3], crc: m[4], data: m[6].padEnd(len, ' ') }; }
   const o = parseSyncPart(s); return o ? { v: 1, ...o } : null; // Codes bis 3.28 (verschlüsselt, mit Passwort)
 }
+// 3.59.0: derselbe vollständige Sicherungscode als kompakte Textdatei; ohne QR-Teilgrenze und ohne Zusatzserver.
+// Das Teilen erfolgt erst beim nächsten Tippen, nachdem Kompression/Verschlüsselung abgeschlossen sind (Safari-Nutzergeste).
+const qrTransfer = { ready: null, revision: 0 };
+function resetQrTransfer() {
+  qrTransfer.revision++; qrTransfer.ready = null;
+  $('qr-file-ready').hidden = true; $('qr-file-share').hidden = true; put('qr-file-status', '');
+  $('qr-file-make').disabled = false;
+}
+function readyQrTransfer(bytes, payload) {
+  const encrypted = !!(bytes[3] & 2), name = `sicherung-kompakt-${new Date(payload.exportedAt).toISOString().slice(0, 10)}${encrypted ? '-verschluesselt' : ''}.txt`;
+  const text = toTextCode(bytes) + '\n', file = new File([text], name, { type: 'text/plain' });
+  qrTransfer.ready = { file, text, encrypted, exportedAt: payload.exportedAt, signature: JSON.stringify(payload) };
+  $('qr-file-ready').hidden = false;
+  try { $('qr-file-share').hidden = !(navigator.share && navigator.canShare?.({ files: [file] })); } catch { $('qr-file-share').hidden = true; }
+  put('qr-file-status', `Datei bereit: ${kb(file.size)}${encrypted ? ' · verschlüsselt' : ' · ohne Passwort lesbar'} · ${payloadSummary(payload)}. Auf dem anderen Gerät mit „Backup einspielen“ öffnen. Für neue Änderungen erneut vorbereiten.`);
+}
+function markQrTransfer(r, kind) {
+  // Eine bereits vorbereitete Datei sichert nur ihren eigenen Stand; zwischenzeitliche Änderungen bleiben als ungesichert markiert.
+  const current = { ...backupPayload(), exportedAt: r.exportedAt };
+  if (JSON.stringify(current) !== r.signature) return ' Neuere Änderungen sind noch nicht gesichert – die Datei erneut vorbereiten.';
+  markBackedUp(kind, r.encrypted); return '';
+}
+async function prepareQrTransfer() {
+  const pass = $('qr-pass').value, revision = ++qrTransfer.revision;
+  qrTransfer.ready = null; $('qr-file-ready').hidden = true; showNotice('qr-error', null);
+  if (pass && pass.length < 6) { showNotice('qr-error', 'Passwort mit mindestens 6 Zeichen wählen – oder leer lassen.'); return false; }
+  $('qr-file-make').disabled = true; put('qr-file-status', pass ? 'Komprimiere und verschlüssele die vollständige Sicherung …' : 'Komprimiere die vollständige Sicherung …');
+  try {
+    const payload = JSON.parse(JSON.stringify(backupPayload())), bytes = await packBackup(payload, pass);
+    if (revision !== qrTransfer.revision || !$('qr-dialog').open) return false;
+    readyQrTransfer(bytes, payload); return true;
+  } catch (e) { if (revision === qrTransfer.revision) { put('qr-file-status', ''); showNotice('qr-error', 'Datei konnte nicht vorbereitet werden: ' + (e?.message || e)); } return false; }
+  finally { if (revision === qrTransfer.revision) $('qr-file-make').disabled = false; }
+}
+async function saveQrTransfer() {
+  if (!qrTransfer.ready && !(await prepareQrTransfer())) return;
+  const r = qrTransfer.ready; if (!r) return;
+  download(r.file.name, r.text, 'text/plain'); const newer = markQrTransfer(r, 'download');
+  put('qr-file-status', `Gespeichert: ${r.file.name}. Datei auf das andere Gerät übertragen und dort „Datensicherung → Backup einspielen“ wählen.${newer}`);
+}
+async function shareQrTransfer() {
+  const r = qrTransfer.ready; if (!r) return;
+  try {
+    await navigator.share({ files: [r.file] }); // Kein await vor dem Aufruf: weiterhin die unmittelbare Nutzergeste.
+    const newer = markQrTransfer(r, 'share'); put('qr-file-status', 'Datei geteilt. Auf dem anderen Gerät unter „Datensicherung → Backup einspielen“ auswählen.' + newer);
+  } catch (e) { put('qr-file-status', e?.name === 'AbortError' ? 'Teilen abgebrochen. Die vorbereitete Datei bleibt verfügbar.' : 'Teilen nicht möglich. Erneut auf „Datei teilen“ tippen oder „Datei herunterladen“ verwenden.'); }
+}
 async function qrPrepare() {
   const pass = $('qr-pass').value; showNotice('qr-error', null); $('qr-big').hidden = true;
   if (pass && pass.length < 6) return showNotice('qr-error', 'Passwort mit mindestens 6 Zeichen wählen – oder leer lassen.');
   $('qr-make').disabled = true; put('qr-calc', pass ? 'Verschlüssele und berechne …' : 'Berechne …');
   try {
-    const bytes = await packBackup(backupPayload(), pass), text = base45Encode(bytes), fit = qrFitVersion(qrSpace());
+    const revision = ++qrTransfer.revision, payload = JSON.parse(JSON.stringify(backupPayload())), bytes = await packBackup(payload, pass);
+    if (revision !== qrTransfer.revision || !$('qr-dialog').open) return;
+    readyQrTransfer(bytes, payload);
+    const text = base45Encode(bytes), fit = qrFitVersion(qrSpace());
     if (fit < 1) { put('qr-calc', ''); return showNotice('qr-error', 'Zu wenig Platz für einen lesbaren QR-Code – Gerät hochkant drehen oder das Fenster vergrößern. Alternativ Textcode oder Datei verwenden.'); }
-    const sp = qrSplit(text, fit), info = `${kb(bytes.length)} gepackt${pass ? ', verschlüsselt' : ''} · ${sp ? `${sp.n} ${sp.n === 1 ? 'Teil' : 'Teile'}` : '–'} (QR-Version bis ${fit}, Fehlerkorrektur M)`;
+    const sp = qrSplit(text, fit), info = `${kb(bytes.length)} gepackt${pass ? ', verschlüsselt' : ''} · ${sp ? `${sp.n} ${sp.n === 1 ? 'Teil' : 'Teile'}` : '–'} (QR-Version bis ${fit}, Fehlerkorrektur M)${bytes[3] & 1 ? '' : ' · Browserkompression nicht verfügbar'}`;
     put('qr-calc', info);
     if (!sp || sp.n > QR_MAX_PARTS) { $('qr-big').hidden = false; put('qr-big-text', `Sicherung zu groß für QR: ${sp ? `${sp.n} Teile nötig, höchstens ${QR_MAX_PARTS}` : 'Platz reicht nicht'} – Textcode oder Datei verwenden. Es wird nichts weggelassen.`); return; }
     qr.codes = sp.parts.map(t => qrEncode(t, { ecl: 'M', maxVer: fit })); qr.paused = false; qr.sp = sp;
@@ -7927,8 +7999,8 @@ async function qrPrepare() {
 }
 // Größe und Teilezahl schon vor dem Start zeigen (ohne Passwort gerechnet)
 async function qrEstimate() {
-  try { const bytes = await packBackup(backupPayload(), ''), fit = qrFitVersion(qrSpace()), sp = fit >= 1 ? qrSplit(base45Encode(bytes), fit) : null;
-    put('qr-calc', `Vollständige Sicherung: ${payloadSummary(backupPayload())} · ${kb(bytes.length)} gepackt · ${sp ? `${sp.n} ${sp.n === 1 ? 'Teil' : 'Teile'}` : 'zu wenig Platz'}${sp && sp.n > QR_MAX_PARTS ? ` – mehr als ${QR_MAX_PARTS}, bitte Textcode oder Datei` : ''}.`);
+  try { const payload = backupPayload(), bytes = await packBackup(payload, ''), fit = qrFitVersion(qrSpace()), sp = fit >= 1 ? qrSplit(base45Encode(bytes), fit) : null;
+    put('qr-calc', `Vollständige Sicherung: ${payloadSummary(payload)} · ${kb(bytes.length)} gepackt · ${sp ? `${sp.n} ${sp.n === 1 ? 'Teil' : 'Teile'}` : 'zu wenig Platz'}${sp && sp.n > QR_MAX_PARTS ? ` – mehr als ${QR_MAX_PARTS}, bitte die kompakte Datei unten verwenden` : ''}${bytes[3] & 1 ? '' : ' · Browserkompression nicht verfügbar; Datei oder Textcode verwenden'}.`);
   } catch (e) { put('qr-calc', ''); }
 }
 // ---------- QR-Übertragung zwischen Geräten (3.29.0) ----------
@@ -7938,7 +8010,7 @@ async function qrEstimate() {
 // und die fehlenden Nummern; verpasste Teile kommen in der nächsten Runde. Erst vollständig und mit stimmender Prüfsumme geht es weiter.
 const qr = { codes: [], idx: 0, timer: null, speed: 1000, paused: false, stream: null, raf: 0, detector: null, sets: new Map(), cur: null, legacy: null, bytes: null, legacyBytes: null, session: 0, sp: null };
 function openQr(mode) {
-  stopCycle(); stopScan();
+  stopCycle(); stopScan(); resetQrTransfer();
   $('qr-export-view').hidden = mode !== 'export'; $('qr-scan-view').hidden = mode !== 'scan';
   put('qr-title', mode === 'export' ? 'QR-Code erzeugen' : 'QR-Code scannen');
   showNotice('qr-error', null); showNotice('qr-scan-error', null);
@@ -7971,7 +8043,7 @@ async function qrDetector() {
   if ('BarcodeDetector' in window) {
     try { const f = await BarcodeDetector.getSupportedFormats?.(); if (!f || f.includes('qr_code')) { const d = new BarcodeDetector({ formats: ['qr_code'] }); return (qr.detector = async src => (await d.detect(src)).map(x => x.rawValue)); } } catch {}
   }
-  if (!window.jsQR) await loadScript('bundles/3.51.0/vendor/jsQR.js');
+  if (!window.jsQR) await loadScript('bundles/' + APP_VERSION + '/vendor/jsQR.js');
   if (typeof window.jsQR !== 'function') throw new Error('QR-Scanner nicht verfügbar (vendor/jsQR.js fehlt).');
   const cv = document.createElement('canvas'), ctx = cv.getContext('2d', { willReadFrequently: true });
   return (qr.detector = async src => {
@@ -8064,17 +8136,22 @@ async function applyQr() {
   finally { $('qr-apply').disabled = false; }
 }
 $('qr-export').addEventListener('click', () => openQr('export'));
+$('backup-compact').addEventListener('click', () => { openQr('export'); put('qr-title', 'Kompakte Sicherung übertragen'); $('qr-file-make').scrollIntoView({ block: 'nearest' }); });
 $('qr-scan').addEventListener('click', () => openQr('scan'));
 $('qr-make').addEventListener('click', () => void qrPrepare());
 $('qr-close').addEventListener('click', () => { stopCycle(); stopScan(); $('qr-dialog').close(); });
-$('qr-dialog').addEventListener('close', () => { stopCycle(); stopScan(); });
+$('qr-dialog').addEventListener('close', () => { stopCycle(); stopScan(); resetQrTransfer(); });
 $('qr-pause').addEventListener('click', () => { qr.paused = !qr.paused; startCycle(); });
 $('qr-prev').addEventListener('click', () => { qr.paused = true; startCycle(); showPart(qr.idx - 1); });
 $('qr-next').addEventListener('click', () => { qr.paused = true; startCycle(); showPart(qr.idx + 1); });
 $('qr-speed').addEventListener('change', e => { const v = Number(e.target.value); if (QR_SPEEDS.includes(v)) { qr.speed = v; startCycle(); } });
 $('qr-again').addEventListener('click', () => { stopCycle(); $('qr-out').hidden = true; $('qr-form').hidden = false; void qrEstimate(); });
-$('qr-big-code').addEventListener('click', () => { $('qr-dialog').close(); void openCode('export'); });
-$('qr-big-file').addEventListener('click', () => { $('qr-dialog').close(); void saveBackup(); });
+$('qr-big-code').addEventListener('click', () => { const pass = $('qr-pass').value; $('qr-dialog').close(); void openCode('export'); $('code-pass').value = pass; });
+$('qr-big-file').addEventListener('click', () => void saveQrTransfer());
+$('qr-file-make').addEventListener('click', () => void prepareQrTransfer());
+$('qr-file-save').addEventListener('click', () => void saveQrTransfer());
+$('qr-file-share').addEventListener('click', () => void shareQrTransfer());
+$('qr-pass').addEventListener('input', resetQrTransfer);
 $('qr-photo-btn').addEventListener('click', () => $('qr-photo').click());
 $('qr-photo').addEventListener('change', () => { const files = [...$('qr-photo').files]; $('qr-photo').value = ''; void (async () => { for (const f of files) await scanPhoto(f); })(); });
 $('qr-apply').addEventListener('click', () => void applyQr());
@@ -14196,7 +14273,7 @@ function kiKick(delay = 0) {
   if (deadlines.length) ki.timer = setTimeout(() => { ki.timer = null; kiRender(); kiKick(); }, Math.max(1, Math.min(ki.open ? 60000 : Infinity, Math.min(...deadlines) - Date.now() + 1)));
 }
 function kiJob(request, options, type = 'load') {
-  if (!ki.worker) { ki.worker = new Worker(new URL('./bundles/3.58.0/shared/confluence-worker.mjs', location.href), { type: 'module' });
+  if (!ki.worker) { ki.worker = new Worker(new URL('./bundles/3.59.0/shared/confluence-worker.mjs', location.href), { type: 'module' });
     ki.worker.onmessage = ({ data }) => { if (!ki.pending || data.id !== ki.pending.id) return; if (data.progress) { ki.message = 'Historie: ' + data.progress.stage + (data.progress.total ? ` · ${data.progress.completed}/${data.progress.total}` : ` · ${data.progress.priceCandles || 0} Kurskerzen`); kiRender(); return; } const p = ki.pending; ki.pending = null; data.error ? p.reject(new Error(data.error)) : p.resolve(data); };
     ki.worker.onerror = () => { ki.pending?.reject(new Error('KI-Worker nicht verfügbar')); ki.pending = null; ki.worker?.terminate(); ki.worker = null; }; }
   return new Promise((resolve, reject) => { const id = ++ki.serial; ki.pending = { id, resolve, reject }; ki.worker.postMessage({ id, type, request, options }); });
@@ -14817,8 +14894,9 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
                 <span id="tgb-info" class="tgb-info"></span>
               </div>
               <div class="data-row data-sep data-main">
-                <span class="data-lead"><b>Sicherung übertragen</b> – immer vollständig, ohne Server: QR-Code am anderen Gerät scannen oder Textcode kopieren und dort einfügen (z. B. iPhone → PC).</span>
+                <span class="data-lead"><b>Sicherung übertragen</b> – immer vollständig, ohne Server: QR scannen oder eine kompakte Datei teilen. Bei vielen Trades die Datei verwenden; auf dem Zielgerät „Backup einspielen“ wählen.</span>
                 <button type="button" class="button primary-lite" id="qr-export">▦ QR-Code erzeugen</button>
+                <button type="button" class="button ghost" id="backup-compact">Kompakte Datei übertragen</button>
                 <button type="button" class="button ghost" id="qr-scan">📷 QR-Code scannen</button>
                 <button type="button" class="button ghost" id="code-export">Textcode anzeigen / kopieren</button>
                 <button type="button" class="button ghost" id="code-import">Textcode einfügen / importieren</button>
@@ -15127,6 +15205,13 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
         <div class="qr-parts" id="qr-parts" aria-hidden="true"></div>
         <div class="sheet-actions qr-ctl"><button type="button" class="button ghost" id="qr-prev" aria-label="Vorheriger Teil">◀ Zurück</button><button type="button" class="button ghost" id="qr-pause" aria-pressed="false">Pause</button><button type="button" class="button ghost" id="qr-next" aria-label="Nächster Teil">Vor ▶</button><label class="qr-speed" id="qr-speed-wrap">Wechsel <select id="qr-speed"><option value="500">0,5 s</option><option value="1000" selected>1 s</option><option value="1500">1,5 s</option><option value="2000">2 s</option></select></label><button type="button" class="button ghost" id="qr-again">Neu erzeugen</button></div>
       </div>
+      <section class="qr-transfer" aria-labelledby="qr-file-title">
+        <b id="qr-file-title">Datei statt vieler QR-Codes</b>
+        <p>Die vollständige persönliche Sicherung als kompakte Datei – mit dem Passwort oben, wenn ausgefüllt. Per AirDrop, Dateien-App oder Messenger übertragen. Auf dem Zielgerät <b>Datensicherung → Backup einspielen</b> wählen; erst nach der Vorschau übernehmen. Beide Apps vorher aktualisieren.</p>
+        <div class="sheet-actions"><button type="button" class="button primary-lite" id="qr-file-make">Kompakte Datei vorbereiten</button></div>
+        <div class="sheet-actions" id="qr-file-ready" hidden><button type="button" class="button primary-lite" id="qr-file-share" hidden>Datei teilen</button><button type="button" class="button ghost" id="qr-file-save">Datei herunterladen</button></div>
+        <small id="qr-file-status" role="status"></small>
+      </section>
     </div>
     <div class="sheet-body" id="qr-scan-view" hidden>
       <p id="qr-scan-note">Halte die Kamera auf den QR-Code am anderen Gerät. Bei mehreren Teilen einfach draufhalten, bis alle gelesen sind – die Reihenfolge ist egal, verpasste Teile kommen in der nächsten Runde.</p>
