@@ -2119,7 +2119,7 @@ html[data-workspace=focus] [data-workspace-scope]{grid-area:auto;min-width:0;scr
 html[data-workspace=focus] [id]{scroll-margin-top:calc(var(--lb-h,48px) + var(--workspace-nav-h,70px) + 16px)}
 html[data-workspace=focus] #chart-sec{grid-column:1;grid-row:2}
 html[data-workspace=focus] #signals{grid-column:2;grid-row:2}
-html[data-workspace=focus] #ki-chart-sec{grid-column:1/-1;grid-row:3}
+html[data-workspace=focus] #ki-chart-sec{grid-column:1;grid-row:2}
 html[data-workspace=focus] #alarms,html[data-workspace=focus] #journal,html[data-workspace=focus] .foot{grid-column:1/-1}
 html[data-workspace=focus] .chart{height:clamp(340px,48vh,580px)}
 html[data-workspace=focus] .of-chart-grid{grid-template-columns:minmax(0,1fr)!important}
@@ -2153,13 +2153,14 @@ html[data-chartfull] #workspace-chart-tools{display:contents!important}html[data
 @media(min-width:1100px){
  html[data-workspace=focus][data-presentation=dashboard] .dash{grid-template-columns:minmax(300px,360px) minmax(0,1fr)}
  html[data-workspace=focus][data-presentation=dashboard][data-workspace-view=chart] #chart-sec{grid-column:2}
+ html[data-workspace=focus][data-presentation=dashboard][data-workspace-view=chart] #ki-chart-sec{grid-column:2}
  html[data-workspace=focus][data-presentation=dashboard][data-workspace-view=chart] #signals{grid-column:1}
  html[data-workspace=focus][data-presentation=dashboard][data-workspace-view=pos] #positions{grid-column:2}html[data-workspace=focus][data-presentation=dashboard][data-workspace-view=pos] #acct{grid-column:1}
  html[data-workspace=focus][data-presentation=dashboard][data-workspace-view=pos] #journal{grid-column:2}html[data-workspace=focus][data-presentation=dashboard][data-workspace-view=pos] #calc-sec{grid-column:1}
 }
 @media(max-width:1099px){
  html[data-workspace=focus] .dash{display:flex!important;flex-direction:column;padding:14px 14px 32px;gap:16px}
- html[data-workspace=focus] [data-workspace-scope]{width:100%;order:2}html[data-workspace=focus] #chart-sec{order:0}html[data-workspace=focus] #signals{order:1}
+ html[data-workspace=focus] [data-workspace-scope]{width:100%;order:2}html[data-workspace=focus] #chart-sec,html[data-workspace=focus] #ki-chart-sec{order:0}html[data-workspace=focus] #signals{order:1}
  html[data-workspace=focus][data-workspace-view=ind] #alarms{order:0}
  html[data-workspace=focus][data-workspace-view=pos] #positions{order:0}html[data-workspace=focus][data-workspace-view=pos] #acct{order:1}html[data-workspace=focus][data-workspace-view=pos] #journal{order:2}html[data-workspace=focus][data-workspace-view=pos] #calc-sec{order:3}
  html[data-workspace=focus] .workspace-settings-grid{grid-template-columns:minmax(0,1fr)}
@@ -14797,7 +14798,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
           </div>
           <h4>Bildschirmformat</h4>
           <div class="side-toggle" role="group" aria-label="Layout"><button type="button" data-layout-set="auto" aria-pressed="true">Automatisch</button><button type="button" data-layout-set="desktop" aria-pressed="false">Desktop</button><button type="button" data-layout-set="tablet" aria-pressed="false">iPad</button></div>
-          <small id="layout-note">Automatisch: breite Bildschirme mit Maus zeigen drei Spalten, Touch-Geräte eine Spalte mit Tabs.</small>
+          <small id="layout-note">Automatisch passt die Ansicht an Bildschirm und Eingabe an: breite Arbeitsbereiche mit zwei Spalten, Handy und iPad untereinander. Die Gesamtansicht behält ihr bisheriges Layout.</small>
           <h4>App</h4>
           <button type="button" class="button ghost" id="install-btn" hidden>📲 Als App installieren</button>
           <small id="install-note"></small>

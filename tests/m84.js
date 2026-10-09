@@ -99,6 +99,18 @@ const select = async (p, key) => { await p.click(`[data-workspace-target="${key}
   check('Alternative Desktopdarstellung: breiter Chart rechts, gleiche Signale links', await p.evaluate(() => { const c = document.getElementById('chart-sec').getBoundingClientRect(), s = document.getElementById('signals').getBoundingClientRect(); return c.left > s.left && c.width > s.width * 1.8; }));
   await p.screenshot({ path: '/tmp/scalpdesk-360-dashboard-desktop.png' });
   await select(p, 'settings'); await p.click('#view-menu'); await p.click('[data-presentation-set="standard"]'); await select(p, 'chart'); await p.screenshot({ path: '/tmp/scalpdesk-360-standard-desktop.png' });
+  const ready = await p.evaluate(async () => { const f=await import('/tests/fixtures/confluence-live.mjs'), {evaluateLive}=await import('/shared/confluence-live.mjs'), snapshot=f.liveFixture(), r=evaluateLive(snapshot), c=r.cards.find(c=>c.levels.status==='bereit'); window.ui84BitgetCard = c && {...c,chartRows:snapshot.saved.series.base.rows}; return !!c; });
+  check('Zusätzlicher KI-Chart-Fall stammt aus dem tatsächlichen gemeinsamen Kartenkern', ready);
+  for (const width of [320,390,1440]) for (const presentation of ['standard','dashboard']) {
+   await p.setViewportSize({width,height:1000});
+   await select(p,'settings'); await p.click('#view-menu'); await p.click(`[data-presentation-set="${presentation}"]`); await select(p,'chart');
+   await p.evaluate(() => __g10.showChart(ui84BitgetCard)); await p.waitForFunction(() => document.querySelector('#ki-chart svg'));
+   const geometry=await p.evaluate(() => ({chart:document.getElementById('ki-chart-sec').getBoundingClientRect().toJSON(),signals:document.getElementById('signals').getBoundingClientRect().toJSON()}));
+   const inPlace=width<1100 ? geometry.chart.bottom<geometry.signals.top && geometry.chart.width>=width-30 : geometry.chart.width>geometry.signals.width*1.8 && Math.abs(geometry.chart.top-geometry.signals.top)<1 && (presentation==='standard'?geometry.chart.left<geometry.signals.left:geometry.chart.left>geometry.signals.left);
+   check(`${width}px/${presentation}: tatsächlicher Bitget-KI-Chart direkt im Chartplatz, mobil vor Signalen`, await visible(p,'ki-chart-sec') && !await visible(p,'chart-sec') && inPlace,geometry);
+   check(`${width}px/${presentation}: echte geschlossene Testkerzen und drei Referenzlinien im Bitget-Chart`, await p.locator('#ki-chart .ki-level').count()===3 && await p.locator('#ki-chart svg rect').count()===60);
+   await p.click('#ki-chart-back'); check(`${width}px/${presentation}: Rückkehr zeigt denselben Binance-Chart ohne zweite sichtbare Chartzeile`, await visible(p,'chart-sec') && !await visible(p,'ki-chart-sec'));
+  }
   // Frischer echter Offline-Aufruf erhält den gewählten Arbeitsbereich und das komplette PWA-Bündel.
   await select(p, 'settings'); await p.waitForFunction(() => !!navigator.serviceWorker.controller); await ctx.setOffline(true);
   const off = await ctx.newPage(); off.on('pageerror', e => errors.push(e.message)); await off.goto(h.URL_BASE + '/weather-widget-v2.html'); await off.waitForFunction(() => !!window.__g05 && document.documentElement.dataset.workspaceView === 'settings');

@@ -153,6 +153,8 @@ UI-Gesamtlauf 3.58.0: m4 wartete vor dem Value-Area-Vergleich nur auf Signalzeit
 
 ### Übersichtliche Arbeitsbereiche (3.60.0)
 
-- `m84.js`: frischer Standard ohne Harness-Präferenz, vier Arbeitsbereiche, wichtige originale Vorauswahl oben in voller Breite, zwei Desktopspalten, native UI-/Entwurfs-/Originalbucherhaltung, Tastatur-Umsortierung, tatsächliche Downloads/Telegramdialog/Vollbild, gespeicherte Gesamtansicht/Details, beide Darstellungen/drei Hintergründe und fünf Breiten; echte 320/390-Touch-Wege und Offline-Appstart. Entwicklung abschließend 109/109. Gesamtlauf jetzt 140 Ziele.
+- `m84.js`: frischer Standard ohne Harness-Präferenz, vier Arbeitsbereiche, wichtige originale Vorauswahl oben in voller Breite, zwei Desktopspalten, native UI-/Entwurfs-/Originalbucherhaltung, Tastatur-Umsortierung, tatsächliche Downloads/Telegramdialog/Vollbild, gespeicherte Gesamtansicht/Details, beide Darstellungen/drei Hintergründe und fünf Breiten; echte 320/390-Touch-Wege und Offline-Appstart. Native Bitget-Chartwege in beiden Darstellungen bei 320/390/1440 px. Entwicklung abschließend 128/128. Gesamtlauf jetzt 140 Ziele.
 - Ältere Fachtests bekommen in `harness.launch` nur die weiterhin vorhandene Gesamtansicht als lokale Startpräferenz. Ihre Aktionen/Erwartungen bleiben unverändert. `h.launch({ workspace: 'fresh' })` nutzt die tatsächliche frische Startansicht. Keine Klickumleitung. Die neuen Navigationswege separat in m84 geprüft.
 - Kalender-/News-Kopien enthalten den gleichen optionalen Top-3-Anzeigezweig; ohne Arbeitsbereiche unverändert Top-5. Filter, Warnungen und Fachberechnungen bleiben gleich.
+
+- m28 prüft den Tag des ersten künftigen JOLTS-Termins aus dessen Zeitstempel statt fest „Heute“: Die +3h-Testtermine liegen spät abends bereits morgen. Alle bisherigen 39 Prüfungen bleiben erhalten.

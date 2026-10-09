@@ -54,7 +54,7 @@ const quiet = e => !/Failed to load resource: the server responded with a status
     // ganze Woche
     await page.click('#econ-more'); await page.waitForTimeout(300); d = await info(page);
     const ism = d.rows.find(r => r.title.startsWith('ISM Manufacturing PMI'));
-    check('„Ganze Woche“: auch Vergangenes, blass, mit Ist-Wert', d.rows.length > 5 && ism && /\bpast\b/.test(ism.cls) && ism.vals.startsWith('Ist 49,5 · Prog. 49,2') && d.more === 'Nur nächste Termine' && d.days.indexOf('Heute') > 0, JSON.stringify({ n: d.rows.length, ism, days: d.days })); // vergangene Tage vor „Heute“ (der Termin liegt 26 h zurück: vor 2 Uhr vorgestern)
+    check('„Ganze Woche“: auch Vergangenes, blass, mit Ist-Wert', d.rows.length > 5 && ism && /\bpast\b/.test(ism.cls) && ism.vals.startsWith('Ist 49,5 · Prog. 49,2') && d.more === 'Nur nächste Termine' && d.days.indexOf(joltsDay) > 0, JSON.stringify({ n: d.rows.length, ism, days: d.days, firstFutureDay: joltsDay })); // Vergangenes vor dem bereits unabhängig geprüften JOLTS-Tag; spät abends „Morgen“ statt „Heute“.
     await page.click('#econ-more'); await page.waitForTimeout(300); d = await info(page);
     check('„Nur nächste Termine“: wieder 5', d.rows.length === 5 && d.more === 'Ganze Woche');
     check('Telegram/Discord: Auswahl „Warnung vor wichtigen Wirtschaftsterminen“, vorgewählt', await page.evaluate(() => { const c = document.getElementById('chan-ev-news'); return !!c && c.checked && /Wirtschaftsterminen/.test(c.parentElement.textContent); }));
