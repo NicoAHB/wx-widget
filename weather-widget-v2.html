@@ -2125,7 +2125,17 @@ html[data-workspace=focus] .chart{height:clamp(340px,48vh,580px)}
 html[data-workspace=focus] .of-chart-grid{grid-template-columns:minmax(0,1fr)!important}
 html[data-workspace=focus] #workspace-orderflow{margin:12px 14px}
 html[data-workspace=focus] #workspace-watch{flex:1 1 100%;width:100%;container-type:inline-size}
-html[data-workspace=focus] #workspace-watch>summary{display:none}
+html[data-workspace=focus] #workspace-watch>summary{min-height:44px;overflow-wrap:anywhere}
+/* 3.61.0: Im Fokuslayout nur der Verbindungs-Punkt; Statusdetails bewusst öffnen. */
+html[data-workspace=focus] #status{position:static!important;display:inline-flex!important;align-items:center;justify-content:center;width:44px!important;max-width:44px!important;height:44px;flex:0 0 44px;font-size:0;line-height:0;gap:0;margin:0!important;padding:0;cursor:pointer;border-radius:12px}
+html[data-workspace=focus] #status::before{width:12px;height:12px;margin:0!important;background:var(--amber)}
+html[data-workspace=focus] #status[data-feed=live]::before{background:var(--up-text)}
+html[data-workspace=focus] #status[data-feed=error]::before,html[data-workspace=focus] #status[data-feed=offline]::before{background:var(--down-text)}
+#status:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.connection-dialog{width:min(440px,calc(100vw - 32px));box-sizing:border-box;padding:20px;border:1px solid var(--line);border-radius:16px;background:var(--surface);color:var(--text)}
+.connection-dialog p{white-space:pre-line;overflow-wrap:anywhere;font-size:.875rem;line-height:1.5}
+.connection-dialog::backdrop{background:#0008}
+
 html[data-workspace=focus] #workspace-watch .watchlist{padding:12px}
 html[data-workspace=focus] #workspace-watch .wl-label{font-size:.875rem;font-weight:650;color:var(--text)}
 html[data-workspace=focus] #workspace-chart-tools{margin:0 14px 14px}
@@ -2188,22 +2198,22 @@ html[data-chartfull] #workspace-chart-tools{display:contents!important}html[data
 </style>
   <script type="module">
 // 3.45.0 (G10c): der vorhandene Binance-/G07-Kern bleibt eigenständig.
-import { exportModelArchive, importModelArchive, validateModelArchive } from './bundles/3.60.0/shared/model-archive.mjs';
-import { BotSimulationRuntime } from './bundles/3.60.0/shared/bot-simulation.mjs';
-import { readBotSimulation, saveBotSimulation } from './bundles/3.60.0/shared/bot-simulation-store.mjs';
-import { createBotView } from './bundles/3.60.0/shared/bot-view.mjs';
-import { createOrderflowView } from './bundles/3.60.0/shared/orderflow-view.mjs';
-import { createSignalView } from './bundles/3.60.0/shared/orderflow-signal-view.mjs';
-import { networkState, createWidgetBoundary } from './bundles/3.60.0/shared/widget-state.mjs';
-import { originalRisk as kiOriginalRisk } from './bundles/3.60.0/shared/confluence-risk-view.mjs';
-import { confluenceOverview, po3Overview, filterOverview, reconcileOverview } from './bundles/3.60.0/shared/signal-overview.mjs';
-import { createPo3View } from './bundles/3.60.0/shared/po3-view.mjs';
-import { cardState as kiCardState, scoreLabel as kiScoreLabel } from './bundles/3.60.0/shared/confluence-live.mjs';
-import { divergenceInfo as kiDivergenceInfo, parametersKey as kiParametersKey } from './bundles/3.60.0/shared/confluence-core.mjs';
-import { parametersKey as kiLegacyParametersKey } from './bundles/3.60.0/shared/confluence-legacy-core.mjs';
-import { presentCard as kiPresentCard, currentSignal as kiCurrentSignal } from './bundles/3.60.0/shared/confluence-presentation.mjs';
-import { observationKey as kiObservationKey } from './bundles/3.60.0/shared/confluence-replay.mjs';
-import { readReplay as kiReadHistory, saveReplay as kiSaveHistory, clearReplayJobs as kiClearHistoryJobs } from './bundles/3.60.0/shared/confluence-replay-store.mjs';
+import { exportModelArchive, importModelArchive, validateModelArchive } from './bundles/3.61.0/shared/model-archive.mjs';
+import { BotSimulationRuntime } from './bundles/3.61.0/shared/bot-simulation.mjs';
+import { readBotSimulation, saveBotSimulation } from './bundles/3.61.0/shared/bot-simulation-store.mjs';
+import { createBotView } from './bundles/3.61.0/shared/bot-view.mjs';
+import { createOrderflowView } from './bundles/3.61.0/shared/orderflow-view.mjs';
+import { createSignalView } from './bundles/3.61.0/shared/orderflow-signal-view.mjs';
+import { networkState, createWidgetBoundary } from './bundles/3.61.0/shared/widget-state.mjs';
+import { originalRisk as kiOriginalRisk } from './bundles/3.61.0/shared/confluence-risk-view.mjs';
+import { confluenceOverview, po3Overview, filterOverview, reconcileOverview } from './bundles/3.61.0/shared/signal-overview.mjs';
+import { createPo3View } from './bundles/3.61.0/shared/po3-view.mjs';
+import { cardState as kiCardState, scoreLabel as kiScoreLabel } from './bundles/3.61.0/shared/confluence-live.mjs';
+import { divergenceInfo as kiDivergenceInfo, parametersKey as kiParametersKey } from './bundles/3.61.0/shared/confluence-core.mjs';
+import { parametersKey as kiLegacyParametersKey } from './bundles/3.61.0/shared/confluence-legacy-core.mjs';
+import { presentCard as kiPresentCard, currentSignal as kiCurrentSignal } from './bundles/3.61.0/shared/confluence-presentation.mjs';
+import { observationKey as kiObservationKey } from './bundles/3.61.0/shared/confluence-replay.mjs';
+import { readReplay as kiReadHistory, saveReplay as kiSaveHistory, clearReplayJobs as kiClearHistoryJobs } from './bundles/3.61.0/shared/confluence-replay-store.mjs';
 // Pure, unrounded calculations. Prices are USDT per unit; FX is USDT per EUR.
 function rsi(closes, period = 14) {
   const out = Array(closes.length).fill(null);
@@ -3176,7 +3186,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
 // 3.43.0 (G10a): reiner Fachkern in shared/; Datenquelle und Karten folgen getrennt.
 // 3.44.0 (G10b): öffentlicher Adapter in shared/bitget-public.mjs; sichtbare Anbindung folgt mit G10(c).
-const APP_VERSION = '3.60.0', docEl = document.documentElement;
+const APP_VERSION = '3.61.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -3508,7 +3518,8 @@ function status() {
     : state.marketError ? `Datenfehler · ${secs} s` : `${feed === 'partial' ? 'Teils live' : 'Auto'} · ${secs} s`;
   if (s.textContent !== text) s.textContent = text;
   const detail = (offline ? 'Das Gerät meldet keine Internetverbindung – sobald sie zurück ist, wird sofort neu verbunden.\n' : '') + feedDetail();
-  s.title = detail;
+  s.title = text + "\n" + detail; s.setAttribute('aria-label', 'Verbindung: ' + text + '. Details öffnen');
+  if ($('connection-info')?.open) put('connection-detail', s.title);
   const dot = $('lb-conn');
   if (dot.dataset.feed !== s.dataset.feed) dot.dataset.feed = s.dataset.feed;
   const lbl = `Verbindung: ${text}`; if (dot.getAttribute('aria-label') !== lbl) dot.setAttribute('aria-label', lbl);
@@ -3616,6 +3627,7 @@ function refreshDueMtf(now = Date.now()) {
   }
 }
 function renderMarket() {
+  if ($('workspace-watch-title')) put('workspace-watch-title', 'Vorauswahl · ' + state.symbol.replace(/USDT$/, '/USDT'));
   const c = state.candles, last = c.at(-1), p = currentPrice();
   showNotice('market-error', state.marketError ? `${state.marketError}${c.length ? ' Angezeigte Kerzen sind der letzte verfügbare Stand.' : ''}` : state.pickError || null); // 3.32.0: abgelehnte Eingabe im Kryptowährungsfeld
   $('chart').classList.toggle('stale', !!state.marketError);
@@ -6767,7 +6779,7 @@ function setMarket(symbol,interval=state.interval) {
   document.querySelectorAll('[data-interval]').forEach(b=>{const active=b.dataset.interval===interval;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});
   if(changed)patClear(); // 3.37.0 (G09): alte Treffer gehören zum alten Coin/Intervall
   render();void showCachedChart();if(CAP.on)void capLoad(); // 3.35.0: Cap des neuen Coins bzw. passende Auflösung
-  if ($('ki-hold-chip')) kiRender(); // 3.45.0: der eigene Bitget-Chip gehört zum neu gewählten Coin.
+  if ($('ki-hold-chip')) { if (workspace?.mode === 'focus') ki.coin = state.symbol; kiRender(); } // Arbeitsbereiche behalten denselben gewählten Coin.
   return refresh();
 }
 function pause() {state.paused=!state.paused;live.post({t:'pause',on:state.paused});if(state.paused)cancel();else{live.post({t:'wake'});void refresh();}status();renderMarket();renderCalculator();renderSignals();renderPositions();renderLivebar();updateTitle();syncStreams();renderSkeletons();}
@@ -14375,7 +14387,7 @@ function kiKick(delay = 0) {
   if (deadlines.length) ki.timer = setTimeout(() => { ki.timer = null; kiRender(); kiKick(); }, Math.max(1, Math.min(ki.open ? 60000 : Infinity, Math.min(...deadlines) - Date.now() + 1)));
 }
 function kiJob(request, options, type = 'load') {
-  if (!ki.worker) { ki.worker = new Worker(new URL('./bundles/3.60.0/shared/confluence-worker.mjs', location.href), { type: 'module' });
+  if (!ki.worker) { ki.worker = new Worker(new URL('./bundles/3.61.0/shared/confluence-worker.mjs', location.href), { type: 'module' });
     ki.worker.onmessage = ({ data }) => { if (!ki.pending || data.id !== ki.pending.id) return; if (data.progress) { ki.message = 'Historie: ' + data.progress.stage + (data.progress.total ? ` · ${data.progress.completed}/${data.progress.total}` : ` · ${data.progress.priceCandles || 0} Kurskerzen`); kiRender(); return; } const p = ki.pending; ki.pending = null; data.error ? p.reject(new Error(data.error)) : p.resolve(data); };
     ki.worker.onerror = () => { ki.pending?.reject(new Error('KI-Worker nicht verfügbar')); ki.pending = null; ki.worker?.terminate(); ki.worker = null; }; }
   return new Promise((resolve, reject) => { const id = ++ki.serial; ki.pending = { id, resolve, reject }; ki.worker.postMessage({ id, type, request, options }); });
@@ -14703,6 +14715,11 @@ function workspaceSave() { store.set(WORKSPACE_KEY, { v: 1, mode: workspace.mode
 function workspaceSyncTab(tab, save) {
   if (workspace.mode !== 'focus') return;
   workspace.view = tab === 'calc' ? 'pos' : tab in WORKSPACE_VIEWS ? tab : 'chart';
+  // Neue Bereichs-Voreinstellung; manuelles Klappen bleibt bis zum Bereichswechsel erhalten.
+  if (workspace.watchView !== workspace.view) {
+    $('workspace-watch').open = workspace.view === 'chart'; workspace.watchView = workspace.view;
+    if (workspace.view === 'ind') { ki.coin = state.symbol; kiRender(); }
+  }
   docEl.dataset.workspaceView = workspace.view;
   for (const node of document.querySelectorAll('[data-workspace-scope]')) node.dataset.workspaceVisible = String(node.dataset.workspaceScope.split(' ').some(s => s === workspace.view || s === 'global'));
   for (const b of document.querySelectorAll('[data-workspace-target]')) { if (b.dataset.workspaceTarget === workspace.view) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); }
@@ -14713,13 +14730,14 @@ function workspaceSyncTab(tab, save) {
 function workspaceOpenMenu(id) { $(id).hidden = false; const d = $(id).closest('details'); if (d) d.open = true; goTo(id); }
 function workspaceMode(mode, save = true) {
   workspace.mode = mode === 'all' ? 'all' : 'focus'; docEl.dataset.workspace = workspace.mode;
+  workspace.watchView = null;
   if (workspace.mode === 'focus') for (const { node, details, marker } of workspace.unwraps) { marker.after(details); details.append(node); }
   for (const { node, marker, host } of workspace.moves) { if (workspace.mode === 'focus') host.append(node); else marker.after(node); }
   // display:contents an <details> erhält dessen anonyme Inhaltsbox. In der
   // Gesamtansicht deshalb die Originalelemente als direkte Kinder zurückstellen.
   if (workspace.mode === 'all') for (const { node, details, marker } of workspace.unwraps) { marker.after(node); details.remove(); }
   for (const id of ['view-panel', 'notify-panel']) { $(id).classList.toggle('workspace-menu', workspace.mode === 'focus'); $(id).hidden = workspace.mode !== 'focus'; }
-  for (const d of workspace.wrappers) d.open = d.id === 'workspace-watch' || workspace.mode === 'all' || !!workspace.folds[d.id];
+  for (const d of workspace.wrappers) if (d.id !== 'workspace-watch') d.open = workspace.mode === 'all' || !!workspace.folds[d.id];
   for (const d of workspace.extraFolds) d.node.open = workspace.mode === 'all' ? d.original : !!workspace.folds[d.node.id];
   for (const b of document.querySelectorAll('[data-workspace-mode]')) b.setAttribute('aria-pressed', String(b.dataset.workspaceMode === workspace.mode));
   if (workspace.mode === 'focus') setTab(workspace.view, false); else { const tab = store.get(TAB_KEY, 'chart'); setTab(TABS.includes(tab) && tab !== 'settings' ? tab : 'chart', false); }
@@ -14729,7 +14747,6 @@ function workspaceMode(mode, save = true) {
 function workspaceBuild() {
   const saved = store.get(WORKSPACE_KEY, null);
   workspace = { mode: saved?.mode === 'all' ? 'all' : 'focus', view: saved?.view in WORKSPACE_VIEWS ? saved.view : 'chart', folds: saved?.folds && typeof saved.folds === 'object' ? { ...saved.folds } : {}, moves: [], wrappers: [], unwraps: [], extraFolds: [] };
-  if (!('workspace-watch' in workspace.folds)) workspace.folds['workspace-watch'] = true; // Nutzer: Vorauswahl oben wichtig.
   const nav = el('nav', 'workspace-nav'); nav.id = 'workspace-nav'; nav.setAttribute('aria-label', 'Arbeitsbereiche'); const tabs = el('div', 'workspace-tabs');
   for (const [key, [text]] of Object.entries(WORKSPACE_VIEWS)) { const b = el('button', '', text); b.type = 'button'; b.dataset.workspaceTarget = key; b.addEventListener('click', () => { setTab(key); if (key === 'ind') kiTab(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }); tabs.append(b); }
   const note = el('p', 'workspace-description'); note.id = 'workspace-description';
@@ -14748,7 +14765,7 @@ function workspaceBuild() {
   }
   const backup = el('div', 'workspace-setting-card'); backup.id = 'workspace-backup'; backup.append(el('h3', '', 'Datensicherung'), el('p', '', 'Sichern, auf ein anderes Gerät übertragen und wiederherstellen.')); grid.append(backup); move($('data-toggle'), backup); move($('data-panel'), backup);
   const models = el('div', 'workspace-setting-card'); models.id = 'workspace-models'; models.append(el('h3', '', 'Modellannahmen & Dienst'), el('p', '', 'Gebühren, Liquidationsmodell und Meldungen getrennt von den Live-Signalen.')); grid.append(models); move($('model-settings'), models);
-  const watch = fold($('watchlist'), 'workspace-watch', 'Vorauswahl · Coins wechseln'); watch.dataset.workspaceScope = 'global'; move(watch, document.querySelector('.dash-top'));
+  const watch = fold($('watchlist'), 'workspace-watch', 'Vorauswahl · ' + state.symbol.replace(/USDT$/, '/USDT')); watch.dataset.workspaceScope = 'chart ind'; watch.firstElementChild.id = 'workspace-watch-title'; move(watch, document.querySelector('.dash-top'));
   fold($('orderflow-panel'), 'workspace-orderflow', 'Orderflow · BTC-Pfeile, Kerzen & Demo');
   const tools = fold(document.querySelector('#chart-sec .chart-footer'), 'workspace-chart-tools', 'Chart-Ebenen, Whales & Werkzeuge');
   for (const node of document.querySelectorAll('#chart-sec .wh-strip, #chart-sec .lm-strip, #chart-sec .fib-strip')) move(node, tools);
@@ -14760,6 +14777,12 @@ function workspaceBuild() {
 }
 
 workspaceBuild();
+const connectionInfo = el('dialog', 'connection-dialog'); connectionInfo.id = 'connection-info'; connectionInfo.setAttribute('aria-labelledby', 'connection-title');
+const connectionTitle = el('h2', '', 'Verbindung'); connectionTitle.id = 'connection-title'; const connectionDetail = el('p'); connectionDetail.id = 'connection-detail';
+const connectionClose = el('button', 'button ghost', 'Schließen'); connectionClose.type = 'button'; connectionClose.addEventListener('click', () => connectionInfo.close()); connectionInfo.append(connectionTitle, connectionDetail, connectionClose); document.body.append(connectionInfo);
+$('status').tabIndex = 0; $('status').setAttribute('role', 'button'); $('status').setAttribute('aria-haspopup', 'dialog');
+const connectionOpen = () => { put('connection-detail', $('status').title); if (!connectionInfo.open) connectionInfo.showModal(); };
+$('status').addEventListener('click', connectionOpen); $('status').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); connectionOpen(); } });
 render();startLive();void showCachedChart();void refresh();void initAutoBackup();void requestWake();void zzpStart();
 </script>
 </head>

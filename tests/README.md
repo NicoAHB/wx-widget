@@ -163,3 +163,5 @@ UI-Gesamtlauf 3.58.0: m4 wartete vor dem Value-Area-Vergleich nur auf Signalzeit
 - m51 erfasst bei fehlender 24/7-Übergabe zusätzlich tatsächliche Telegram-Versuche, Status und gespeicherte Mengen. Alle 73 Erwartungen und Versandregeln bleiben erhalten.
 
 - m25: Der „heute geschlossene“ Testtrade liegt auch in den ersten zehn Minuten nach Mitternacht am aktuellen lokalen Tag. 20 Originalprüfungen einschließlich exaktem USDT-/EUR-Tagesergebnis erhalten, eine zusätzliche unabhängige Vorbedingung für den tatsächlich gespeicherten Tag/Betrag/FX (21 Fälle). App-Tagesberechnung unverändert.
+
+- 3.61.0: m84 prüft die aktualisierte Vorauswahl-Vorgabe (Chart offen, Analysen geschlossen, Positionen/Einstellungen verborgen), echten Klapp-/Touchweg und denselben Coin in der KI-Bewertung. Fokusheader nur Statuspunkt mit 44-px-Fläche, zugänglichem Namen und tatsächlichem Detaildialog; vollständig 152/152. Offlineprüfung erfordert wie bisher den aktuellen erzeugten Releasegraph.
