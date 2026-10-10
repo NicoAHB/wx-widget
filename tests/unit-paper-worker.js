@@ -1,0 +1,19 @@
+// 3.61.0: tatsächlicher PO3-Demoworker über öffentlichen Transport, keine ersetzten Modellfunktionen.
+const assert=require('assert');let pass=0,fail=0;
+const check=(name,fn)=>{try{fn();pass++;console.log('✓ '+name);}catch(e){fail++;console.log('✗ '+name+' — '+e.message);}};
+(async()=>{const M=60000,day=Date.UTC(2026,9,10),at=day+14*M+5000,oldNow=Date.now,oldFetch=globalThis.fetch,oldPost=globalThis.postMessage,oldMessage=globalThis.onmessage;
+ try{Date.now=()=>at;const F=await import('./fixtures/bitget.mjs'),C=await import('../shared/po3-core.mjs'),P=await import('../shared/paper-bot.mjs'),out=[],calls=[];
+ const daily=Array.from({length:6},()=>[150,300,100,150,100]).concat([[150,290,99,150,100],[101,110,100,105,100],[110,125,105,120,100],[125,135,120,130,100],[130,134,115,120,100],[103,130,98,101,100],[103,130,97,101,100],[101,140,100,136,400]]);
+ globalThis.fetch=async(url,init)=>{calls.push({url,init});const u=new URL(url),body=F.responseBody(url,at);if(u.pathname.endsWith('/contracts'))body.data[0].priceEndStep='1';else if(u.pathname.endsWith('/history-candles'))body.data=body.data.map(row=>{const i=(Number(row[0])-day)/M,v=i<0?[150,400,10,150,100]:daily[i]||[136,140,130,136,100];return[row[0],...v.map(String),'10000'];});else if(u.pathname.endsWith('/ticker'))body.data=[{symbol:'BTCUSDT',bidPr:'136',askPr:'136',markPrice:'136',ts:String(at)}];return new Response(JSON.stringify(body),{status:200});};
+ globalThis.postMessage=x=>out.push(x);await import('../shared/paper-bot-worker.mjs');const po3=C.po3Settings({bias:'1m',setup:'1m',entry:'1m',closure:'tp1',criteria:'g10'}),config={strategy:'po3',direction:'long',referenceUSDT:1000,exposureUSDT:100,riskPercent:1,leverage:1,maxPositions:1,minimumScore:70,cooldownMs:60000,feeEntry:.0005,feeExit:.0005,slippageBps:0,maxHoldMs:3600000,rewardRisk:2,po3},startedAt=day+13*M;
+ let result;for(let id=1;id<=4;id++){await globalThis.onmessage({data:{type:'scan',id,runId:'paper-po3-0001',instrument:'BTCUSDT',startedAt,config}});const response=out.at(-1);if(response.error)throw new Error(response.error);result=response.result;if(result.complete)break;}
+ check('Öffentlicher PO3-Worker verarbeitet Warm-up und echte Sweep/Retest/Impuls-Kette',()=>{assert(result.complete);assert.equal(result.signals.length,1);assert(result.signals[0].eligible);assert(result.signals[0].score>=70);});
+ const s=result.signals[0];check('PO3-TP1 aus tatsächlichem tps-Array, Preisplan vollständig und chronologisch',()=>{assert(Number.isFinite(s.tp));assert(s.sl<s.entry&&s.entry<s.tp);assert(s.knownAt>=startedAt&&s.knownAt<=at);assert.equal(s.knownAt,day+14*M);});
+ const book=P.paperStart(null,{instrument:'BTCUSDT',config,id:'paper-po3-0001'},startedAt),next=P.paperStep(book,{...result,quote:{venue:'bitget',product:'USDT-FUTURES',instrument:'BTCUSDT',bid:136,ask:136,at,knownAt:at},asOf:at});
+ check('Original-PO3-Signal eröffnet über echten Papierkern einen eigenen Trade',()=>{assert.equal(next.run.positions.length,1);assert.equal(next.run.positions[0].tp,s.tp);assert.equal(next.run.positions[0].signalId,s.id);});
+ await globalThis.onmessage({data:{type:'scan',id:8,runId:'new-paper-run',instrument:'BTCUSDT',startedAt:at,config}});await globalThis.onmessage({data:{type:'scan',id:9,runId:'new-paper-run',instrument:'BTCUSDT',startedAt:at,config}});
+ check('Neuer Lauf übernimmt kein historisches PO3-Signal vor seinem Start',()=>assert.equal(out.at(-1).result.signals.length,0));
+ check('Nur öffentliche GET-Marktpfade, keine Konto-/Order-/Archivschreibwege',()=>assert(calls.length>0&&calls.every(x=>x.init.method==='GET'&&new URL(x.url).pathname.startsWith('/api/v2/mix/market/'))));
+ }finally{Date.now=oldNow;globalThis.fetch=oldFetch;globalThis.postMessage=oldPost;globalThis.onmessage=oldMessage;}
+ console.log(`${pass}/${pass+fail} bestanden`);process.exitCode=fail?1:0;
+})().catch(e=>{console.error(e);process.exitCode=1;});

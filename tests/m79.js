@@ -20,10 +20,10 @@ const check = (name, ok, detail = '') => { ok ? pass++ : fail++; console.log(`${
     check('Klappauswahl in persönlicher Sicherung enthalten', await page.evaluate(() => ['1m', '1h', 'signal', 'position'].every(k => __g05.backupPayload().prefs['scalpdesk.orderflow.v1'].folds[k] === false)));
     for (const key of ['1m', '1h', 'signal', 'position']) await page.locator(`[data-of-fold="${key}"]>summary`).click();
     await page.click('#of-demo>summary'); await page.click('#of-demo-price'); await page.waitForFunction(() => __pdf2.view.frame.result.position?.practice);
-    check('Übungskauf speichert Vorauswahlpreis und tatsächliche Spot-Quelle', await page.evaluate(() => { const p = __g05.backupPayload().prefs['scalpdesk.orderflow-demo.v1'].active[0]; return p.entry === 64000 && p.source === 'spot'; }));
+    check('Übungskauf speichert Vorauswahlpreis und tatsächliche Spot-Quelle', await page.evaluate(() => { const p = __pdf1.readDemo().active[0]; return p.entry === 64000 && p.source === 'spot'; }));
     check('Übungsbegleitung mischt keinen Futures-ATR in Spot-Schutzlevel', await page.evaluate(() => { const p = __pdf2.view.frame.result.position; return p.source === 'spot' && !p.stop && !p.target && __pdf2.view.frame.result.warnings.some(w => w.includes('kein gemischter')); }));
     await h.ctl('/set?symbol=BTCUSDT&price=65000'); await page.waitForFunction(() => __pdf1.view.quote()?.price === 65000 && document.getElementById('of-demo-result').dataset.tone === 'up'); await page.click('#of-demo-close');
-    check('Übungsausstieg verwendet denselben neuen Vorauswahlkurs', await page.evaluate(() => __g05.backupPayload().prefs['scalpdesk.orderflow-demo.v1'].closed.at(-1).exit === 65000)); await page.click('#of-demo>summary');
+    check('Übungsausstieg verwendet denselben neuen Vorauswahlkurs', await page.evaluate(() => __pdf1.readDemo().closed.at(-1).exit === 65000)); await page.click('#of-demo>summary');
     // Nur Spot-Kerzenmeldungen zurückhalten: Futures-Analyse bleibt live. Kein Ersatzkurs darf einen Kauf ermöglichen.
     await page.evaluate(() => { const e = __g09.wl.c.get('BTCUSDT'); window.m79WlInterval = e.iv; e.iv = 'nicht-aktiv'; });
     await page.waitForFunction(() => !__pdf1.view.quote()?.fresh && document.getElementById('of-demo-price').disabled, null, { timeout: 10000 });

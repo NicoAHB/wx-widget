@@ -1,6 +1,6 @@
 {
   "version": "2.11.0",
-  "appVersion": "3.60.0",
+  "appVersion": "3.61.0",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
@@ -69,8 +69,8 @@
     },
     {
       "path": "shared/bot-view.mjs",
-      "sha256": "26b7e00c885ba40bf2afea5631786d20c9f653f3e3748f2dab6e956b28c45373",
-      "bytes": 31015
+      "sha256": "cd16b04d6dfe6d93317cac947c480713949aa20c01f8076060fababdc543030b",
+      "bytes": 34048
     },
     {
       "path": "shared/confluence-core.mjs",
@@ -164,8 +164,8 @@
     },
     {
       "path": "shared/orderflow-demo.mjs",
-      "sha256": "f233bc62b906ae7d9d5c1fed0318c4e41d056113725551cb514d80b16bb56897",
-      "bytes": 7996
+      "sha256": "41469126cb67eb7f357f809bb89d8b8e792ef0f0c474cbce508e19a8c76c90a4",
+      "bytes": 8982
     },
     {
       "path": "shared/orderflow-journal.mjs",
@@ -189,8 +189,33 @@
     },
     {
       "path": "shared/orderflow-view.mjs",
-      "sha256": "ddbf06d74a62ed40643cb6ddebf30b3861a2239be3b78023eb7ad556e8986aa6",
-      "bytes": 16526
+      "sha256": "33a774aaf2b0cad284b0cc3e06448064e31912397de5e25c14b07a6fcb8518e9",
+      "bytes": 16711
+    },
+    {
+      "path": "shared/paper-bot-controller.mjs",
+      "sha256": "45ebbcf6ade108e69e8d49332300cdffd07c2731ae2de9aedac279a5b8456ee7",
+      "bytes": 7086
+    },
+    {
+      "path": "shared/paper-bot-store.mjs",
+      "sha256": "c5184216ec7a901b4dca078028a1968dd9e972f7930c03ab93fa9e9ee946d680",
+      "bytes": 1470
+    },
+    {
+      "path": "shared/paper-bot-view.mjs",
+      "sha256": "6413cb5fdf2bbbfe092db42f4298e69c129617b2cb2d8abd3368499a67133985",
+      "bytes": 10695
+    },
+    {
+      "path": "shared/paper-bot-worker.mjs",
+      "sha256": "f5b26d50f054dfe38308dfe5c83020f29cc17a764ec460334bdb42896383a109",
+      "bytes": 4176
+    },
+    {
+      "path": "shared/paper-bot.mjs",
+      "sha256": "0603de27a26e69cea33c5863a269a0b6694bca8a801b18c7b807f91ae6187c95",
+      "bytes": 19219
     },
     {
       "path": "shared/pattern-score.mjs",

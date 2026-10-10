@@ -6,9 +6,9 @@
 //   den 24/7-Dienst, nicht im Gewinn-/Verlust-Alarm, Tages-Verlustlimit und in den Summen; eine echte Kontrollposition alarmiert
 //   über alle Wege. Schließen in die richtige Historie, Demo-Historie getrennt (Auswertung, Steuer, Geld), Demo-CSV, Chart,
 //   Wechsel ECHT ↔ DEMO beim Bearbeiten.
-// backup: Sicherung mit demoPositions/demoHistory, Wiederherstellung auf leerem Gerät, Abgleich (Änderung, Löschung, Wechsel
-//   ECHT → DEMO), Datei ohne Demo-Felder. sync: zweiter Tab übernimmt Demo-Daten sofort, ohne Alarm.
-// reset: Zurücksetzen sichert Demo-Daten mit und entfernt alle Karten.
+// backup: Neue Sicherung ohne Demo; lokale Originale bleiben. Alte Schema-7-Dateien mit Demo-Feldern weiterhin
+//   wiederherstellen/abgleichen (Änderung, Löschung, ECHT → DEMO); Datei ohne Demo-Felder. sync: zweiter Tab übernimmt Demo sofort.
+// reset: Zurücksetzen sichert persönliche Daten ohne Demo und entfernt alle Karten.
 // Aufruf: node m48.js [reasons|demo|backup|sync|reset]
 const h = require('./harness'), fs = require('fs'), path = require('path'), os = require('os');
 const results = [];
@@ -51,6 +51,14 @@ async function download(page, sel, name) {
   const f = path.join(os.tmpdir(), `m48-${name}`); await dl.saveAs(f); return fs.readFileSync(f, 'utf8');
 }
 async function backup(page, name) { const s = await download(page, '#backup-save', `${name}.json`), f = path.join(os.tmpdir(), `m48-${name}.json`); return { f, data: JSON.parse(s) }; }
+// Absichtliche Altdatei für Rückwärtskompatibilität: aktueller Export bleibt ohne Übungstrades.
+async function legacyDemoFile(page, data, name) {
+  const { integrity, ...oldFields } = data; // Schema 7 vor Dateiprüfsummen; beschädigte Schema-8-Dateien prüft m50 weiter.
+  void integrity;
+  const legacy = { ...oldFields, version: 7, appVersion: '3.28.0', demoPositions: (await ls(page, 'scalpdesk.demopositions.v1')) || [], demoHistory: (await ls(page, 'scalpdesk.demohistory.v1')) || [] };
+  const f = path.join(os.tmpdir(), `m48-alt-${name}.json`); fs.writeFileSync(f, JSON.stringify(legacy)); return f;
+}
+
 async function load(page, f) {
   await page.evaluate(() => { if (document.getElementById('data-panel').hidden) document.getElementById('data-toggle').click(); });
   await page.setInputFiles('#backup-file', f); await page.waitForTimeout(500);
@@ -287,12 +295,16 @@ const tests = {
       'scalpdesk.demohistory.v1': [trade('DTA', 'XRPUSDT', -3, T0 + 3600e3, { reasons: ['Wirtschaftstermine'], setup: 'Wirtschaftstermine' })] };
     const A = await openPage(browser, seedA); await A.page.waitForTimeout(1200);
     const a1 = await backup(A.page, 'a1'), d = a1.data, idl = l => (l || []).map(x => x.id).join();
-    check('Sicherung: echte und Demo-Daten in getrennten Feldern (positions/history, demoPositions/demoHistory)', d.version === 8 && idl(d.positions) === 'RA' && idl(d.history) === 'TA' && idl(d.demoPositions) === 'DA' && idl(d.demoHistory) === 'DTA', JSON.stringify({ v: d.version, p: idl(d.positions), h: idl(d.history), dp: idl(d.demoPositions), dh: idl(d.demoHistory) }));
-    check('Sicherung: Gründe als Liste, setup für ältere Versionen', JSON.stringify(d.history[0].reasons) === '["ZigZag","Fibonacci"]' && d.history[0].setup === 'ZigZag' && JSON.stringify(d.demoPositions[0].reasons) === '["Whale-Trades"]');
+    check('Neue Sicherung: echte Daten vollständig, Demo-Felder leer und lokale Übungsbücher erhalten', d.version === 8 && idl(d.positions) === 'RA' && idl(d.history) === 'TA' && !d.demoPositions.length && !d.demoHistory.length && (await ids(A.page, 'scalpdesk.demopositions.v1')) === 'DA' && (await ids(A.page, 'scalpdesk.demohistory.v1')) === 'DTA', JSON.stringify({ v: d.version, p: idl(d.positions), h: idl(d.history), dp: idl(d.demoPositions), dh: idl(d.demoHistory) }));
+    check('Sicherung: Gründe als Liste, setup für ältere Versionen', JSON.stringify(d.history[0].reasons) === '["ZigZag","Fibonacci"]' && d.history[0].setup === 'ZigZag' && JSON.stringify((await ls(A.page, 'scalpdesk.demopositions.v1'))[0].reasons) === '["Whale-Trades"]');
     // Gerät B (leer): Wiederherstellen
     const B = await openPage(browser, {}); await B.page.waitForTimeout(800);
     let pv = await load(B.page, a1.f);
-    check('Vorschau auf leerem Gerät: „Neu: 1 Position, 1 Trade, 1 Demo-Position, 1 Demo-Trade“ (mit Beispielen)', pv.shown && pv.items.some(t => t.split(' ⏎ ')[0] === 'Neu: 1 Position, 1 Trade, 1 Demo-Position, 1 Demo-Trade'), pv.items.join(' | '));
+    check('Neue Datei auf leerem Gerät: nur persönliche Position und Trade in Vorschau', pv.shown && pv.items.some(t => t.split(' ⏎ ')[0] === 'Neu: 1 Position, 1 Trade'), pv.items.join(' | '));
+    await take(B.page);
+    check('Neue Datei überträgt echte Daten vollständig und keine Übungen', (await ids(B.page, 'scalpdesk.positions.v1')) === 'RA' && (await ids(B.page, 'scalpdesk.history.v1')) === 'TA' && !(await ids(B.page, 'scalpdesk.demopositions.v1')) && !(await ids(B.page, 'scalpdesk.demohistory.v1')));
+    pv = await load(B.page, await legacyDemoFile(A.page, d, 'a1'));
+    check('Alte Schema-7-Datei: nur die fehlenden Demo-Positionen/Trades als neu, echte Einträge bleiben', pv.shown && pv.items.some(t => t.split(' ⏎ ')[0] === 'Neu: 1 Demo-Position, 1 Demo-Trade'), pv.items.join(' | '));
     await take(B.page);
     check('Wiederhergestellt: jede Liste an ihrem Platz', (await ids(B.page, 'scalpdesk.positions.v1')) === 'RA' && (await ids(B.page, 'scalpdesk.history.v1')) === 'TA' && (await ids(B.page, 'scalpdesk.demopositions.v1')) === 'DA' && (await ids(B.page, 'scalpdesk.demohistory.v1')) === 'DTA');
     const bv = await B.page.evaluate(() => ({ real: document.querySelector('.pos-card[data-id="RA"]')?.parentElement.id, demo: document.querySelector('.pos-card[data-id="DA"]')?.parentElement.id, dcount: document.getElementById('demo-history-count').textContent, count: document.getElementById('history-count').textContent }));
@@ -308,9 +320,9 @@ const tests = {
     const dta = (await ls(B.page, 'scalpdesk.demohistory.v1')).find(t => t.id === 'DTA');
     check('B: Demo-Trade mit Notiz und zweitem Grund, Demo-Position gelöscht, RA jetzt DEMO', dta.note === 'Notiz von B' && JSON.stringify(dta.reasons) === '["Wirtschaftstermine","Volatilität"]' && (await ids(B.page, 'scalpdesk.demopositions.v1')) === 'RA' && !(await ls(B.page, 'scalpdesk.positions.v1')).length, JSON.stringify([dta.note, dta.reasons]));
     const b1 = await backup(B.page, 'b1');
-    check('Sicherung von B: Löschung der Demo-Position vermerkt, RA unter demoPositions', !!b1.data.deleted?.['pt:DA'] && idl(b1.data.demoPositions) === 'RA' && !b1.data.positions.length);
-    // A übernimmt B
-    pv = await load(A.page, b1.f);
+    check('Neue Sicherung von B: Löschvermerk bleibt, keine Demo-Trades/Positionen übertragen', !!b1.data.deleted?.['pt:DA'] && !b1.data.demoPositions.length && !b1.data.demoHistory.length && !b1.data.positions.length && (await ids(B.page, 'scalpdesk.demopositions.v1')) === 'RA');
+    // A übernimmt bewusst eine alte Datei von B: alle bisherigen Altformat-Abgleichsgrenzen bleiben geprüft.
+    pv = await load(A.page, await legacyDemoFile(B.page, b1.data, 'b1'));
     const pvt = pv.items.join(' | ');
     check('Vorschau auf A: Demo-Trade geändert (Notiz, Gründe), RA „jetzt DEMO“', pv.items.some(t => /^Geändert: 1 Demo-Position, 1 Demo-Trade/.test(t)) && /Position ETH Long, Einstieg 2\.?500(,\d+)?: jetzt DEMO/.test(pvt) && /Demo-Trade XRP Long vom [\d., :]+ \(−3,00 USDT\): Notiz, Gründe/.test(pvt), pvt);
     check('Vorschau auf A: „Auf dem anderen Gerät gelöscht: 1 Demo-Position – wird hier gelöscht“', pv.items.some(t => /^Auf dem anderen Gerät gelöscht: 1 Demo-Position – wird hier gelöscht ⏎ Demo-Position BTC Long, Einstieg 60\.?000/.test(t)), pvt);
@@ -354,7 +366,7 @@ const tests = {
     await one.ctx.close();
   },
 
-  // ================= Zurücksetzen: Sicherung davor mit Demo-Daten, danach keine Karten mehr =================
+  // ================= Zurücksetzen: persönliche Sicherung ohne Demo, danach keine Karten mehr =================
   async reset(browser) {
     const seed = { 'scalpdesk.positions.v1': [position('RZ', 'ETHUSDT', 2500)], 'scalpdesk.demopositions.v1': [position('DZ', 'BTCUSDT', 60000)],
       'scalpdesk.demohistory.v1': [trade('DZT', 'XRPUSDT', 1, Date.now() - 864e5)] };
@@ -362,7 +374,7 @@ const tests = {
     const before = await page.evaluate(() => document.querySelectorAll('#pos-list .pos-card, #demo-list .pos-card').length);
     const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 8000 }), jsClick(page, '#reset-go')]);
     const f = path.join(os.tmpdir(), 'm48-reset.json'); await dl.saveAs(f); const bk = JSON.parse(fs.readFileSync(f, 'utf8'));
-    check('Sicherung vor dem Zurücksetzen enthält auch die Demo-Daten', bk.demoPositions?.map(x => x.id).join() === 'DZ' && bk.demoHistory?.map(x => x.id).join() === 'DZT' && bk.positions?.map(x => x.id).join() === 'RZ');
+    check('Sicherung vor dem Zurücksetzen enthält echte Daten, keine Übungstrades', bk.demoPositions?.length === 0 && bk.demoHistory?.length === 0 && bk.positions?.map(x => x.id).join() === 'RZ');
     await page.waitForTimeout(500);
     const after = await page.evaluate(() => ({ cards: document.querySelectorAll('#pos-list .pos-card, #demo-list .pos-card').length, demoPos: !document.getElementById('demo-pos').hidden, demoHist: !document.getElementById('demo-history').hidden, empty: !document.getElementById('pos-empty').hidden }));
     check('Nach dem Zurücksetzen: keine Karten mehr (echt und Demo), Demo-Bereiche ausgeblendet (vorher blieben Karten stehen)', before === 2 && !after.cards && !after.demoPos && !after.demoHist && after.empty, JSON.stringify({ before, ...after }));

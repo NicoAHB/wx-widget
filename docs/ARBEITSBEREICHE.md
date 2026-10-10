@@ -1,6 +1,6 @@
-# Übersichtliche Arbeitsbereiche – 3.60.0
+# Übersichtliche Arbeitsbereiche – 3.61.0
 
-Die Startansicht konzentriert sich auf Chart und kompakte Signalübersicht. Die **vorhandene Vorauswahl bleibt ganz oben sichtbar**, auch beim Wechsel zu Analysen, Positionen und Einstellungen. Alle Coins, Live-Kurse, Bewertungen, Detailfelder, Bearbeitung und Umsortierung bleiben erhalten. Auf dem Handy stehen die bisherigen zwei Kachelspalten; weitere Inhalte erreicht man durch vertikales Scrollen.
+Die Startansicht konzentriert sich auf Chart und kompakte Signalübersicht. Die **vorhandene Vorauswahl ist oben auf- und zuklappbar**: Chart öffnet sie zunächst, Analysen schließt sie zunächst. Positionen und Einstellungen zeigen sie nicht. Beim Bereichswechsel bleibt derselbe Coin gewählt; auch die aktuelle KI-Bewertung übernimmt ihn. Alle Coins, Live-Kurse, Bewertungen, Detailfelder, Bearbeitung und Umsortierung bleiben erhalten. Auf dem Handy stehen die bisherigen zwei Kachelspalten; weitere Inhalte erreicht man durch vertikales Scrollen.
 
 | Bereich | Inhalt |
 |---|---|
@@ -9,9 +9,9 @@ Die Startansicht konzentriert sich auf Chart und kompakte Signalübersicht. Die 
 | Positionen | Offene Trades, Kontostand, Journal, Auswertung und Positionsrechner |
 | Einstellungen | Darstellung/App, Hinweise/Telegram, Datensicherung, Modellannahmen/Dienst und ausführliche Methodik |
 
-Am Desktop zwei Spalten mit breitem Chart; keine drei konkurrierenden Bereiche in der Startansicht. Auf kleineren Bildschirmen eine Spalte. Die Bereichsnavigation bleibt beim Scrollen erreichbar. Verknüpfungen aus der Live-Leiste und die bisherigen Kopfknöpfe öffnen den passenden Bereich; die Sicherung ist also weiterhin direkt erreichbar.
+Am Desktop zwei Spalten mit breitem Chart; keine drei konkurrierenden Bereiche in der Startansicht. Auf kleineren Bildschirmen eine Spalte. Die Bereichsnavigation steht nur am Anfang und scrollt mit der Seite weg. Auf schmalen Displays passen alle vier Namen in ihre Buttons. Verknüpfungen aus der Live-Leiste und die bisherigen Kopfknöpfe öffnen den passenden Bereich; die Sicherung ist also weiterhin direkt erreichbar.
 
-Orderflow (BTC-Pfeile, Kerzen, Demo), Chart-Ebenen/Whales sowie die ausführliche KI-Einrichtung sind zunächst eingeklappt. Die Auswahl der neuen Klappflächen und der zuletzt gewählte Arbeitsbereich werden lokal gespeichert. Die Vorauswahl bleibt stets offen. Kalender und Coin-News zeigen zunächst höchstens drei Einträge, mit den bisherigen Mehr-Knöpfen den vollständigen gefilterten Bestand. Warnungs-/Filter-/Berechnungsregeln bleiben unverändert.
+Orderflow (BTC-Pfeile, Kerzen, Demo), Chart-Ebenen/Whales sowie die ausführliche KI-Einrichtung sind zunächst eingeklappt. Die Auswahl der neuen Klappflächen und der zuletzt gewählte Arbeitsbereich werden lokal gespeichert. Für die Vorauswahl gelten bei jedem Bereichswechsel die genannten Voreinstellungen; innerhalb des Bereichs kannst du sie beliebig klappen. Kalender und Coin-News zeigen zunächst höchstens drei Einträge, mit den bisherigen Mehr-Knöpfen den vollständigen gefilterten Bestand. Warnungs-/Filter-/Berechnungsregeln bleiben unverändert.
 
 **Ansicht → Übersicht → Gesamtansicht** zeigt die bisherige Anordnung. **Arbeitsbereiche** wechselt zurück. Standard und Dashboard bleiben als getrennte Darstellungen wählbar; im Desktop-Dashboard steht die kompakte Signalspalte links und der breite Chart rechts. Hell/Dunkel/Eigene Farbe und die vorhandene AA-Kontrastprüfung bleiben erhalten. Die Übersichtswahl ist eine lokale Gerätepräferenz, kein Handelsdatum.
 
@@ -28,6 +28,8 @@ Die bestehenden DOM-Knoten werden bei Bedarf an ihren neuen Platz versetzt, ansc
 
 ## Automatisierte Prüfung
 
-`m84.js` öffnet die tatsächliche **frische** App ohne Testpräferenz: Navigation, DOM-/Entwurfs-/Originalbucherhalt, tatsächlicher Datei-Download, Modelleinrichtung, Ressourcenanzahl, Vollbild, Gesamtansicht/Rückkehr, Speicherung und Offline-Start. Beide Darstellungen und drei Hintergründe, 320/390/768/1024/1440 px und echte mobile Touch-Konfigurationen; nutzbare Kachelbreiten sowie Tipp-/Umsortierwege. Sechs lokale wichtige Termine/News prüfen Top-3 und vollständiges Aufklappen. Der native Bitget-KI-Chart ersetzt Binance an derselben Stelle; 320/390/1440 px und beide Darstellungen prüfen echte Testkerzen, Referenzlinien und Rückkehr. Abschließende native Prüfung 130/130.
+`m84.js` öffnet die tatsächliche **frische** App ohne Testpräferenz: Navigation, DOM-/Entwurfs-/Originalbucherhalt, tatsächlicher Datei-Download, Modelleinrichtung, Ressourcenanzahl, Vollbild, Gesamtansicht/Rückkehr, Speicherung und Offline-Start. Beide Darstellungen und drei Hintergründe, 320/390/768/1024/1440 px und echte mobile Touch-Konfigurationen; nutzbare Kachelbreiten sowie Tipp-/Umsortierwege. Sechs lokale wichtige Termine/News prüfen Top-3 und vollständiges Aufklappen. Der native Bitget-KI-Chart ersetzt Binance an derselben Stelle; 320/390/1440 px und beide Darstellungen prüfen echte Testkerzen, Referenzlinien und Rückkehr. Der veröffentlichte Vorgänger 3.60.0 wurde mit 130/130 nativ geprüft; die neue Klapp-/Bereichsvorgabe und der kompakte Statuspunkt sind nativ mit 152/152 geprüft.
 
 Die älteren Fachtests erhalten im Harness ausdrücklich die weiterhin verfügbare **Gesamtansicht**, damit ihre bisherigen Bedienungswege und Erwartungsgrenzen bestehen bleiben. Keine automatische Klickumleitung/erzwungenen Klicks, keine gelockerten Prüfungen. `h.launch({ workspace: 'fresh' })` verzichtet auf diese Vorbelegung und prüft den echten Standard. Kalender-/News-Testkopien an den optionalen Anzeigezweig angepasst; Fachfilter unverändert. Reale iPhone-/iPad-/Safari-Abnahme bleibt separat.
+
+Im Fokusheader zeigt der Verbindungsstatus nur einen Punkt (grün live, orange lädt/pausiert, rot Offline/Fehler). Antippen oder Enter/Leertaste öffnet die Details; Escape oder Schließen beendet den Dialog. Die Verbindungsprüfung selbst bleibt unverändert.

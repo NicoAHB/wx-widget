@@ -25,6 +25,10 @@ const select = async (p, key) => { await p.click(`[data-workspace-target="${key}
   const chart = await p.locator('#chart-sec').boundingBox(), sig = await p.locator('#signals').boundingBox();
   check('Desktop: zwei Spalten, Chart breiter und neben Signalen', chart.width > sig.width * 1.8 && sig.x >= chart.x + chart.width - 1 && Math.abs(chart.y - sig.y) < 1, { chart, sig });
   check('Wichtige Vorauswahl oben sichtbar; Orderflow und Ebenen zunächst eingeklappt', await p.evaluate(() => document.getElementById('workspace-watch').open && document.getElementById('watchlist').getBoundingClientRect().top < document.getElementById('chart-sec').getBoundingClientRect().top && ['workspace-orderflow', 'workspace-chart-tools'].every(id => !document.getElementById(id).open)));
+  await p.click('#workspace-watch > summary'); check('Chart: Vorauswahl per echtem Klick zugeklappt', !await visible(p, 'watchlist'));
+  await p.click('#workspace-watch > summary'); check('Chart: dieselbe Vorauswahl erneut aufklappbar', await visible(p, 'watchlist'));
+  check('Fokusheader: Verbindungsstatus nur als Punkt, Name für Bildschirmleser erhalten', await p.evaluate(() => { const n=document.getElementById('status'), c=getComputedStyle(n); return c.fontSize==='0px' && n.offsetWidth===44 && n.getAttribute('aria-label').startsWith('Verbindung:'); }));
+  await p.click('#status'); check('Verbindungsdetails per Klick abrufbar', await p.evaluate(() => document.getElementById('connection-info').open && document.getElementById('connection-detail').textContent===document.getElementById('status').title)); await p.keyboard.press('Escape');
   check('Vier klare Navigationsnamen und genau ein aktiver Bereich', await p.evaluate(() => [...document.querySelectorAll('[data-workspace-target]')].map(n => n.textContent).join('|') === 'Chart|Analysen|Positionen|Einstellungen' && document.querySelectorAll('[data-workspace-target][aria-current]').length === 1));
   check('Tatsächlich vorhandene offene Position und geschlossener Trade für Datenerhalt', await p.evaluate(() => __g05.state.positions.length===1 && __g05.state.trades.length===1));
   await p.click('#pause');
@@ -32,6 +36,9 @@ const select = async (p, key) => { await p.click(`[data-workspace-target="${key}
   check('Bestehende Vorauswahl-Umsortierung per Tastatur im neuen oberen Bereich', await p.evaluate(before => __g05.state.watch[0]===before[1] && __g05.state.watch[1]===before[0] && __g05.state.watch.slice(2).join()===before.slice(2).join(), order));
   await p.evaluate(() => { window.ui84Nodes = ['chart', 'market-form', 'watchlist', 'pos-form', 'pos-note', 'view-panel', 'notify-panel', 'data-panel', 'model-settings', 'ki-signal-panel', 'bot-simulation-panel', 'orderflow-panel'].map(id => document.getElementById(id)); document.getElementById('pos-note').value = 'Nicht gespeicherter Entwurf – 84'; window.ui84Books = JSON.stringify([__g05.state.positions, __g05.state.trades, __g05.state.alarms]); window.ui84ResourcesBefore = JSON.stringify(ui84Resources); });
   await select(p, 'ind');
+  check('Analysen: Vorauswahl zunächst geschlossen, gleicher gewählter Coin auch in KI', await p.evaluate(() => !document.getElementById('workspace-watch').open && document.getElementById('workspace-watch-title').textContent.includes(__g05.state.symbol.replace('USDT','/USDT')) && document.getElementById('ki-coin').value === __g05.state.symbol));
+  await p.click('#workspace-watch > summary'); check('Analysen: originale Coin-Auswahl manuell aufklappbar', await visible(p,'watchlist'));
+  await p.click('#workspace-watch > summary');
   check('Analysen öffnen KI, Kurszonen und Umfeld ohne Kontospalte', await visible(p, 'alarms') && await visible(p, 'ki-signal-panel') && await visible(p, 'zones-sec') && await visible(p, 'econ') && !await visible(p, 'chart-sec') && !await visible(p, 'positions'));
   await p.waitForFunction(() => document.getElementById('econ-src').textContent && document.getElementById('cnews-src').textContent);
   check('Kalender und Coin-News: drei wichtige Einträge statt langer Listen', await p.locator('#econ .ec-row').count() === 3 && await p.locator('#cnews .cn-row').count() === 3);
@@ -79,9 +86,17 @@ const select = async (p, key) => { await p.click(`[data-workspace-target="${key}
    for (const view of ['chart', 'ind', 'pos', 'settings']) {
     await select(p, view); await p.waitForTimeout(150);
     const layout = await p.evaluate(() => ({ overflow: document.documentElement.scrollWidth - innerWidth, buttons: [...document.querySelectorAll('[data-workspace-target]')].map(n => ({ w: n.offsetWidth, h: n.offsetHeight })), nav: document.getElementById('workspace-nav').getBoundingClientRect().toJSON() }));
-    check(`${width}px/${view}: Vorauswahl nutzt volle Breite, ihre Kacheln bleiben lesbar`, await p.evaluate(() => { const w = document.getElementById('watchlist').getBoundingClientRect().width, tiles=[...document.querySelectorAll('#watchlist .wl-tile')]; return w>=innerWidth-60 && tiles.every(n=>n.getBoundingClientRect().width>=115); }));
+    if (view === 'chart' || view === 'ind') {
+     check(`${width}px/${view}: Vorauswahl mit korrekter Bereichs-Voreinstellung und ≥44px Klappfläche`, await p.evaluate(view => { const d=document.getElementById('workspace-watch'); return d.open===(view==='chart') && d.firstElementChild.getBoundingClientRect().height>=44; }, view));
+     if (view==='ind') await p.click('#workspace-watch > summary');
+     check(`${width}px/${view}: geöffnete Vorauswahl nutzt volle Breite, Kacheln bleiben lesbar`, await p.evaluate(() => { const w = document.getElementById('watchlist').getBoundingClientRect().width, tiles=[...document.querySelectorAll('#watchlist .wl-tile')]; return w>=innerWidth-60 && tiles.every(n=>n.getBoundingClientRect().width>=115); }));
+    } else check(`${width}px/${view}: keine Vorauswahl im Bereich`, !await visible(p,'workspace-watch') && !await visible(p,'watchlist'));
     check(`${width}px/${view}: ohne horizontalen Überlauf und Navigation ≥ 44px`, layout.overflow <= 1 && layout.buttons.every(n => n.w >= 44 && n.h >= 44), layout);
+    check(`${width}px/${view}: alle vier Beschriftungen vollständig im eigenen Button`, await p.evaluate(() => [...document.querySelectorAll('[data-workspace-target]')].every(n => { const r=document.createRange();r.selectNodeContents(n);const t=r.getBoundingClientRect(),b=n.getBoundingClientRect();return t.left>=b.left && t.right<=b.right && t.top>=b.top && t.bottom<=b.bottom; })));
    }
+   await select(p,'chart');await p.evaluate(() => scrollTo(0,600));
+   check(`${width}px: Bereichsauswahl scrollt weg statt den Inhalt zu überdecken`, await p.evaluate(() => getComputedStyle(document.getElementById('workspace-nav')).position==='static' && document.getElementById('workspace-nav').getBoundingClientRect().bottom<=0));
+   await p.evaluate(() => scrollTo(0,0));
   }
   await p.setViewportSize({ width: 390, height: 844 });
   for (const presentation of ['standard', 'dashboard']) {
@@ -128,7 +143,10 @@ const select = async (p, key) => { await p.click(`[data-workspace-target="${key}
    await phone.locator('#chart').scrollIntoViewIfNeeded(); await phone.waitForFunction(() => document.querySelector('#chart svg')); check(`${width}px Touch: vorhandener Chart zeichnet beim Hineinscrollen`, await phone.locator('#chart svg').count() > 0);
    const chosen = await phone.locator('#watchlist .wl-tile').nth(1).getAttribute('data-watch'); await phone.locator('#watchlist .wl-tile').nth(1).tap(); await phone.waitForFunction(symbol => __g05.state.symbol === symbol && __g05.state.loadedSymbol === symbol, chosen + 'USDT');
    check(`${width}px Touch: ursprüngliche Vorauswahl lädt denselben Coin in Chart und Analyse`, await phone.evaluate(symbol => __g05.state.symbol === symbol && document.getElementById('pair-label').textContent.includes(symbol.slice(0,-4)), chosen + 'USDT'));
-   await phone.tap('[data-workspace-target="settings"]'); check(`${width}px Touch: wichtige Vorauswahl auch in Einstellungen weiter oben erreichbar`, await visible(phone, 'watchlist')); await phone.tap('#backup-badge');
+   await phone.tap('[data-workspace-target="ind"]'); check(`${width}px Touch: Analysen geschlossen mit demselben Chart-Coin`, await phone.evaluate(symbol => !document.getElementById('workspace-watch').open && document.getElementById('ki-coin').value===symbol && __g05.state.symbol===symbol,chosen+'USDT'));
+   await phone.tap('#workspace-watch > summary'); check(`${width}px Touch: Analysen-Vorauswahl bedienbar`, await visible(phone,'watchlist'));
+   await phone.tap('[data-workspace-target="pos"]'); check(`${width}px Touch: Positionen ohne Vorauswahl`, !await visible(phone,'workspace-watch'));
+   await phone.tap('[data-workspace-target="settings"]'); check(`${width}px Touch: Einstellungen ohne Vorauswahl`, !await visible(phone, 'workspace-watch') && !await visible(phone,'watchlist')); await phone.tap('#backup-badge');
    check(`${width}px Touch: Sicherung durch echte Tippgeste erreichbar`, await visible(phone, 'data-panel'));
    await phone.tap('#backup-compact'); check(`${width}px Touch: kompakter vollständiger Übertragungsdialog erreichbar`, await phone.evaluate(() => document.getElementById('qr-dialog').open) && await visible(phone, 'qr-file-make'));
    await phone.evaluate(() => document.getElementById('qr-dialog').close());
