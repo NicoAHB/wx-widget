@@ -35,7 +35,9 @@ const h = require('./harness'); let pass = 0, fail = 0; const check = (name, ok,
     for (const [width, height] of [[320, 844], [390, 844], [768, 1024], [1024, 768]]) { await page.setViewportSize({ width, height });
       check(`${width}px: Kerzen/Kurse/Demo ohne Überlauf`, await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1 && [...document.querySelectorAll('.of-price-value,.of-buy,.of-sell,.of-delta')].every(n => n.scrollWidth <= n.clientWidth + 1)));
     }
-    check('Touchflächen für Demo mindestens 44 px', await page.evaluate(() => [...document.querySelectorAll('.of-demo input,.of-demo select,.of-demo button:not([hidden]),.of-demo>summary')].every(n => n.getBoundingClientRect().height >= 44)));
+    await page.click('#of-demo-clear');
+    check('Touchflächen für Demo samt geöffnetem Löschdialog mindestens 44 px', await page.evaluate(() => [...document.querySelectorAll('.of-demo input,.of-demo select,.of-demo button:not([hidden]),.of-demo>summary')].every(n => n.getBoundingClientRect().height >= 44)));
+    await page.locator('#of-demo-clear-confirm button').last().click();
     check('Keine JavaScript-Fehler', errors.length === 0, errors.join(' | ')); await ctx.close(); console.log(`${pass}/${pass + fail} bestanden`); process.exitCode = fail ? 1 : 0;
   } catch (e) { console.error('Abbruch', e); process.exitCode = 1; } finally { if (browser) await browser.close(); await h.teardown(); }
 })();

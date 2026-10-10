@@ -16,7 +16,7 @@ globalThis.onmessage=async({data:job})=>{
    const funding=await client.currentFunding({symbol:instrument,source:gridMarket.scope});result={gridMarket,contract:gridMarket.contract,funding,signals:[],reason:'Grid-Range und Limits geprüft.'};
   }else if(c.strategy==='po3'){
    const phase=await loadPo3Phase({client,instrument,config:c.po3,windowMode:'today',saved:cache,journal,originPrefix:'papierdemo|'});cache=phase.stream;journal=phase.journal.slice(-1000);
-   const contract=phase.stream.contract,funding=await client.currentFunding({symbol:instrument,source:phase.stream.source});
+   const contract=phase.stream.contract,funding=await client.currentFunding({symbol:instrument,source:{...phase.stream.source,instrument}});
    const signals=phase.complete?journal.filter(x=>x.plan.availableAt>=job.startedAt&&x.score.eligible).map(x=>({id:x.id,instrument,model:'po3',direction:x.direction,eligible:x.score.eligible,score:x.score.score,knownAt:x.plan.availableAt,expiresAt:x.plan.entryExpiryAt,entry:x.plan.levels.entry,sl:x.plan.levels.sl,tp:x.plan.levels.tps[0],entryMode:x.plan.entryMode,maxHoldMs:x.plan.maxHoldMs})):[];
    result={contract,funding,signals,complete:phase.complete,reason:phase.complete?(phase.stream.checklist?.action||'PO3: auf Sweep, Retest und Impuls warten.'):'PO3-Historie wird nachgeladen.'};
   }else{

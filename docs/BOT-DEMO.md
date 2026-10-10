@@ -16,6 +16,8 @@ Die früheren Knöpfe für selbst eingegebene Snapshots, Oracle-Laufschutz und M
 
 Das Ergebnis berücksichtigt modellierte Gebühren und Slippage. **Funding ist ausdrücklich ein Szenario:** beim Einstieg bekannte Rate und Takt bleiben bis zum modellierten Abschluss konstant; spätere echte Abrechnungen sind unbekannt. Stoplücken schließen zum beobachteten verfügbaren Kurs. Reihenfolge, Orderbuch-Fills, Marginverbrauch und Liquidation einer echten Börse sind dadurch nicht bewiesen. Keine belegte Profitabilität; bei fehlendem Setup darf die Demo ohne Trade laufen.
 
+Das eingestellte Stoprisiko ist in der Handelsdemo ein gemeinsames Budget aller offenen Positionen. Exposition und verfügbare Modell-Margin begrenzen die Größe zusätzlich. Funding und Kontraktraster müssen zum Coin des Laufs gehören; fremde Daten erlauben keinen Einstieg.
+
 Der Executor läuft nur bei sichtbarer, fortgesetzter App mit verfügbaren Daten. Er läuft nicht bei geschlossener App. Ein WebLock verhindert zwei Executor-Tabs desselben Geräts. Ein eigenes IDB-Buch bestätigt jeden Stand vor Anzeige; Epochennummern und Revisionsvergleich verwerfen verspätete Antworten. Speicherfehler stoppen den Lauf. Signalarchive, persönliche Positionen/Trades und der Oracle-Dienst werden nicht beschrieben.
 
 ## Demo löschen und Sicherung

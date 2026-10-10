@@ -5,7 +5,7 @@ const check=async(name,fn)=>{try{await fn();pass++;console.log('✓ '+name);}cat
  const {createPaperBotController}=await import('../shared/paper-bot-controller.mjs'),P=await import('../shared/paper-bot.mjs'),T=Date.UTC(2026,9,10,12);
  const config={strategy:'po3',direction:'both',referenceUSDT:1000,exposureUSDT:100,riskPercent:1,leverage:5,maxPositions:1,minimumScore:70,cooldownMs:60000,feeEntry:.0005,feeExit:.0005,slippageBps:5,maxHoldMs:3600000,rewardRisk:2};
  const q=(instrument='BTCUSDT',price=100)=>({venue:'bitget',product:'USDT-FUTURES',instrument,bid:price-.01,ask:price+.01,at:T,knownAt:T});
- const funding={kind:'current',rate:.0001,intervalHours:8,nextAt:T+1000000,knownAt:T,positiveMeans:'long-pays'},contract={venue:'bitget',product:'USDT-FUTURES',instrument:'BTCUSDT',tickSize:.01,quantityStep:.001,minQuantity:.001,minNotional:5,knownAt:T};
+ const funding={source:{venue:'bitget',product:'USDT-FUTURES',instrument:'BTCUSDT'},kind:'current',rate:.0001,intervalHours:8,nextAt:T+1000000,knownAt:T,positiveMeans:'long-pays'},contract={venue:'bitget',product:'USDT-FUTURES',instrument:'BTCUSDT',tickSize:.01,quantityStep:.001,minQuantity:.001,minNotional:5,knownAt:T};
  const settle=()=>new Promise(r=>setImmediate(r)),defer=()=>{let resolve;const promise=new Promise(r=>{resolve=r;});return{promise,resolve};};
  function locks(){let held=false;return{request:async(name,opts,fn)=>{if(held)return fn(null);held=true;try{return await fn({name});}finally{held=false;}}};}
  function fixture(extra={}){let book=P.paperBook(),reject=false,visible=true;const workers=[],quotes=[],l=extra.locks||locks();

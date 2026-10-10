@@ -157,9 +157,9 @@ export function createBotView({ host, globalHost, load, command, exportState, cu
   }
   function restorePaper(config) { for(const[key,value]of Object.entries(config?.form||{}))if(fields[key]&&!edited.has(key))fields[key].value=String(value);gridOptions(); }
   const manual=el('details','','ki-info bot-group');manual.id='bot-model-check';manual.append(el('summary','Erweiterte manuelle Modellprüfung · Lokal / Oracle'),el('p','Dieser ältere Prüfbereich arbeitet mit selbst eingegebenen Snapshots. Die automatische lokale Handelsdemo wird oben separat gestartet.','bot-hint'));root.append(manual);
-  const manualMode=el('fieldset','','bot-group');manualMode.append(el('legend','Ort und Modus der manuellen Prüfung'),fields.destination.parentElement,fields.mode.parentElement);manual.append(manualMode);
+  const manualMode=el('fieldset','','bot-group');manualMode.id='bot-manual-mode';manualMode.append(el('legend','Ort und Modus der manuellen Prüfung'),fields.destination.parentElement,fields.mode.parentElement);manual.append(manualMode);
   const toolbarHint=toolbar.previousElementSibling,toolbarTitle=toolbarHint.previousElementSibling;
-  for(const n of [help,status,alert,summary,gridSummary,toolbarTitle,toolbarHint,toolbar,review,scenario,logBox,auto.parentElement])manual.append(n);
+  for(const n of [help,status,alert,summary,gridSummary,manualMode,toolbarTitle,toolbarHint,toolbar,review,scenario,logBox,auto.parentElement])manual.append(n);
   manual.append(doc().getElementById('bot-export'));
   render(); return { state, accept, render, refresh, send, root, paperSettings, restorePaper };
 }

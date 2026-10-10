@@ -4,7 +4,7 @@ const check=(name,fn)=>{try{fn();pass++;console.log('✓ '+name);}catch(e){fail+
 (async()=>{
  const P=await import('../shared/paper-bot.mjs'),T=Date.UTC(2026,9,10,12),config={strategy:'po3',direction:'both',referenceUSDT:1000,exposureUSDT:100,riskPercent:1,leverage:5,maxPositions:1,minimumScore:70,cooldownMs:60000,feeEntry:.0005,feeExit:.0005,slippageBps:5,maxHoldMs:3600000,rewardRisk:2};
  const contract={venue:'bitget',product:'USDT-FUTURES',instrument:'BTCUSDT',tickSize:.01,quantityStep:.001,minQuantity:.001,minNotional:5,knownAt:T};
- const funding={kind:'current',rate:.0001,intervalHours:8,nextAt:T+1000000,knownAt:T,positiveMeans:'long-pays'};
+ const funding={source:{venue:'bitget',product:'USDT-FUTURES',instrument:'BTCUSDT'},kind:'current',rate:.0001,intervalHours:8,nextAt:T+1000000,knownAt:T,positiveMeans:'long-pays'};
  const quote=(at=T,price=100,instrument='BTCUSDT')=>({venue:'bitget',product:'USDT-FUTURES',instrument,bid:price-.01,ask:price+.01,at,knownAt:at});
  const signal=(extra={})=>({id:'s1',instrument:'BTCUSDT',model:'po3',direction:1,eligible:true,score:75,knownAt:T,expiresAt:T+600000,entry:100,sl:98,tp:105,entryMode:'close',...extra});
  const start=(extra={})=>P.paperStart(null,{instrument:'BTCUSDT',config:{...config,...extra},id:'run1'},T);
@@ -15,6 +15,7 @@ const check=(name,fn)=>{try{fn();pass++;console.log('✓ '+name);}catch(e){fail+
  check('Gültiges Long-Signal erzeugt tatsächliche eigene Modellposition samt Gebühren',()=>{assert.equal(long.run.positions.length,1);assert(long.run.positions[0].entry>100);assert(long.run.positions[0].entryFee>0);assert(long.run.positions[0].quantity*long.run.positions[0].entry<=100);});
  check('Eingabebuch wird nicht verändert',()=>{const b=start();step(b);assert.equal(b.run.positions.length,0);});
  check('LTC-Quote kann niemals BTC handeln',()=>assert.equal(step(start(),T,100,{quote:quote(T,1,'LTCUSDT')}).run.positions.length,0));
+ check('Auch Funding eines fremden Coins erzeugt keinen BTC-Trade',()=>assert.equal(step(start(),T,100,{funding:{...funding,source:{...funding.source,instrument:'LTCUSDT'}}}).run.positions.length,0));
  check('Spot-Quote und zukünftige Quote gesperrt',()=>{assert.equal(step(start(),T,100,{quote:{...quote(),product:'SPOT'}}).run.positions.length,0);assert.equal(step(start(),T,100,{quote:quote(T+1)}).run.positions.length,0);});
  check('5-Sekunden-Frische verbindlich, keine verdeckte alte Kursbuchung',()=>assert.equal(step(start(),T+5001,100,{quote:quote()}).run.positions.length,0));
  check('Alte/fremde/ungültige Signale und fehlendes Funding erzeugen keinen Trade',()=>{for(const s of [signal({knownAt:T-1}),signal({instrument:'LTCUSDT'}),signal({eligible:false}),signal({score:69.999}),signal({score:undefined}),signal({expiresAt:T})])assert.equal(step(start(),T,100,{signals:[s]}).run.positions.length,0);assert.equal(step(start(),T,100,{funding:null}).run.positions.length,0);});

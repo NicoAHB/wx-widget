@@ -168,7 +168,7 @@ UI-Gesamtlauf 3.58.0: m4 wartete vor dem Value-Area-Vergleich nur auf Signalzeit
 
 ### Lokale KI-Handelsdemo (3.61.0)
 
-- `unit-paper-bot.js`: 33 eigene Buch-/Preis-/Gebühren-/Funding-/Raster-/Stop-/Ziel-/Grid-/Trend-/Risikoprüfungen am tatsächlichen Papierkern. Kein herabgesetzter Score, keine erzwungenen Trades.
+- `unit-paper-bot.js`: 34 eigene Buch-/Preis-/Gebühren-/Funding-/Raster-/Stop-/Ziel-/Grid-/Trend-/Risikoprüfungen am tatsächlichen Papierkern, einschließlich Ablehnung eines Funding-Szenarios für einen fremden Coin. Kein herabgesetzter Score, keine erzwungenen Trades.
 - `unit-paper-controller.js`: 11 tatsächliche Executor-/Mehrtab-/Speicher-/Epochen-/Reload-/Stop-/Löschfälle.
 - `unit-paper-worker.js`: 5 tatsächliche öffentliche PO3-Worker-/Warm-up-/Sweep-/Retest-/Impuls-/TP1-/Papierfill-Prüfungen mit festen Marktantworten; Originalmodell unverändert.
 - `m85.js`: native Konfluenz-Worker-Ausführung, bestätigte eigene IDB, grün bei frischem aktiven Lauf, feste Live-Karte, PnL, zweite Tab-Sperre, tatsächlicher TP/Stop, BTC→ETH, Reload ohne Autostart, bewusstes Löschen und vier Breiten.

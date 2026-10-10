@@ -45,8 +45,8 @@
     },
     {
       "path": "./bundles/3.61.0/shared/bot-view.mjs",
-      "sha256": "d056fe4160f33742d28c8b2663dfa00b5623666d32487e0f3083f06361198743",
-      "bytes": 34005,
+      "sha256": "cd16b04d6dfe6d93317cac947c480713949aa20c01f8076060fababdc543030b",
+      "bytes": 34048,
       "alias": "./shared/bot-view.mjs"
     },
     {
@@ -207,20 +207,20 @@
     },
     {
       "path": "./bundles/3.61.0/shared/paper-bot-view.mjs",
-      "sha256": "d537e93468de088df089d2505c2d9c002d1cbc04d480c26a8bb78a3c19408aaf",
-      "bytes": 10385,
+      "sha256": "6413cb5fdf2bbbfe092db42f4298e69c129617b2cb2d8abd3368499a67133985",
+      "bytes": 10695,
       "alias": "./shared/paper-bot-view.mjs"
     },
     {
       "path": "./bundles/3.61.0/shared/paper-bot-worker.mjs",
-      "sha256": "e907323d6f5d6e2603a5beba7b55fb70f30fd09877a64f7fbcfd746269686d8f",
-      "bytes": 4160,
+      "sha256": "f5b26d50f054dfe38308dfe5c83020f29cc17a764ec460334bdb42896383a109",
+      "bytes": 4176,
       "alias": "./shared/paper-bot-worker.mjs"
     },
     {
       "path": "./bundles/3.61.0/shared/paper-bot.mjs",
-      "sha256": "1c2633c5ac08a8f77adf1dbda06b673b543c6eb021fa604f97d85ba8894bb164",
-      "bytes": 19043,
+      "sha256": "0603de27a26e69cea33c5863a269a0b6694bca8a801b18c7b807f91ae6187c95",
+      "bytes": 19219,
       "alias": "./shared/paper-bot.mjs"
     },
     {
@@ -309,8 +309,8 @@
     },
     {
       "path": "./weather-widget-v2.html",
-      "sha256": "2394fd44c9c41174e877522336e5582ea656e6277d65492493d75d550a3b6740",
-      "bytes": 1586649
+      "sha256": "a754003aa981cd14c6fb1e894977e9efd9cecc3db6075d3be71220d7f8c91ef0",
+      "bytes": 1586768
     },
     {
       "path": "./manifest.webmanifest",
