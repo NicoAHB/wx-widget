@@ -2171,6 +2171,8 @@ html[data-workspace=focus][data-workspace-view=pos] #calc-sec{grid-column:2;grid
 html[data-workspace=focus] #signals .workspace-actions{padding-top:12px;border-top:1px solid var(--border)}
 html[data-workspace=focus] #signals .workspace-actions button{flex:1 1 100px}
 html[data-chartfull] .workspace-nav{display:none}
+/* 3.62.0: Die Bereichssicht darf den Vollbild-Flexcontainer nicht auf Blockdarstellung zurücksetzen. */
+html[data-workspace=focus][data-chartfull] #chart-sec{display:flex!important}
 html[data-chartfull] #workspace-watch,html[data-chartfull] #workspace-orderflow{display:none!important}
 html[data-chartfull] #workspace-chart-tools{display:contents!important}html[data-chartfull] #workspace-chart-tools>summary{display:none}
 @media(min-width:1100px){
