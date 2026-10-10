@@ -31,6 +31,7 @@ speichert alles lokal (`localStorage`/IndexedDB über `store`), gleicht mehrere 
 die App übergibt Alarme zusätzlich als angeheftete Telegram-Datei. Testzugänge im Browser: `window.__g05` … `__g09`, `__opt4`, `__opt7`–`__opt9`.
 
 ## 2. Stand
+- **Bot-Demo 3.61.0 vollständig technisch geprüft:** Alle 145 Ziele seriell auf eingefrorenem Produktstand `7bcb54a`, abschließend **4757/4757**, Status/Rauch/Sicht grün; App-/Modul-/Dienst-/Generator-Lint 0 Fehler. Alle 121 Produktdateien unverändert. Native Live-Konfluenz m85 26/26, Grid/IDB/Orderflow m86 18/18, Navigation m84 177/177. Erstlogs und gegebenenfalls vollständige Nachprüfungen im [Vollnachweis](docs/BOT-DEMO-TESTNACHWEIS.md). PR #97 wird veröffentlicht, danach Pages/58-Dateien-HTTPS prüfen. Reale Geräte/CORS/private VM offen.
 
 - **3.61.0-Gesamtabnahme: Sicherungs-/Schließfall zusätzlich nachprüfen:** m7 vollständig 46/47; nach Positionsänderung und Schließen nach unveränderten 200 ms ging die letzte Datei im Mock nicht ein (4 statt 5 Zustellungen, alte 6 statt neuer 7 Positionen). Die weiteren Sicherungsfälle inklusive Wiederaufnahme nach 503 und Vermeidung doppelter Zustellung bestanden. Erstlog erhalten; separate Diagnosekopie beobachtet nur pagehide/visibilitychange, Keepalive und Dateigröße, ohne URLs/Zugangsdaten oder geänderte 47 Kriterien/Schließfrist. Nach allen 145 Zielen und den vollständigen m77/m39-Nachläufen m7 vollständig diagnostisch prüfen. Keine belegte Ursache oder Produktbehebung ohne Diagnose behaupten. Produkt weiterhin `7bcb54a`/121 Dateien unverändert; vor abschließender Abnahme nicht veröffentlichen.
 
@@ -171,7 +172,7 @@ die App übergibt Alarme zusätzlich als angeheftete Telegram-Datei. Testzugäng
 - **Dienst auf der VM:** läuft beim Nutzer evtl. noch mit einer älteren Version. Für Archiv, Chartmuster-Ziel und Alarm bei Kerzenschluss braucht er mindestens 2.3.0; autonome Mustererkennung bei geschlossener App benötigt 2.4.0 (`server/README.md`).
 
 ## 3. Offene Schritte (empfohlene Reihenfolge)
-**Aktueller nächster Schritt:** Arbeitsbereiche 3.60.0 online und vollständig geprüft. Separater KI-/Bot-Demo-Schritt: automatische lokale Papierdemo, grüne Laufanzeige, sichtbare Live-Trades, roter Beenden-Knopf, gezielte Demo-Löschung/Ausschluss aus Sicherungen. LTC-Befund in Trading-Bot und Orderflow-Demo prüfen. Echte Bücher/KI-Originale erhalten; keine privaten Börsenorders, private VM unverändert.
+**Aktueller nächster Schritt:** Bot-Demo 3.61.0 technisch vollständig geprüft. PR #97 veröffentlichen und Pages/HTTPS für alle 58 PWA-Dateien nachweisen. Anschließend Nutzerabnahme der übersichtlichen Demo und Navigation; reale Geräte/CORS/private VM bleiben getrennt offen.
 Jeder Schritt: eigener Branch-Stand, Tests, Version erhöhen, Gesamtlauf, Pull Request, Merge, Pages prüfen, HANDOVER aktualisieren.
 Die Details stehen in `docs/VORGABE-G01-G14.md` im jeweiligen Abschnitt.
 
