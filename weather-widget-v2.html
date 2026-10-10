@@ -2090,7 +2090,7 @@ html[data-presentation=dashboard][data-layout=tablet] #acct{order:0}
 
 
 /* 3.60.0: fokussierte Arbeitsbereiche; die Gesamtansicht behält ihr bisheriges Raster. */
-.workspace-nav{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:12px 24px;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:calc(env(safe-area-inset-top,0px) + var(--lb-h,48px));z-index:25}
+.workspace-nav{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:12px 24px;border-bottom:1px solid var(--border);background:var(--surface);position:static}
 .workspace-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;flex:1 1 440px;max-width:680px}
 .workspace-tabs button{min-width:0;min-height:44px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2);color:var(--text-2);font-size:.875rem;font-weight:650;padding:8px}
 .workspace-tabs button[aria-current=page]{background:var(--up-bg);border-color:var(--up-text);color:var(--up-text)}
@@ -2115,8 +2115,8 @@ html[data-workspace=focus] .tabbar{display:none!important}
 html[data-workspace=focus] .dash{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(300px,360px);grid-template-areas:none!important;gap:20px;padding:20px 24px 40px;align-items:start}
 html[data-workspace=focus] .col,html[data-workspace=focus] .col-side,html[data-workspace=focus] .dash-bottom{display:contents!important;position:static!important;max-height:none!important;overflow:visible!important}
 html[data-workspace=focus] .dash-top{display:flex!important;flex-direction:column;grid-area:auto;grid-column:1/-1;order:-1;width:100%;min-width:0}
-html[data-workspace=focus] [data-workspace-scope]{grid-area:auto;min-width:0;scroll-margin-top:calc(var(--lb-h,48px) + var(--workspace-nav-h,70px) + 16px)}
-html[data-workspace=focus] [id]{scroll-margin-top:calc(var(--lb-h,48px) + var(--workspace-nav-h,70px) + 16px)}
+html[data-workspace=focus] [data-workspace-scope]{grid-area:auto;min-width:0;scroll-margin-top:calc(var(--lb-h,48px) + 16px)}
+html[data-workspace=focus] [id]{scroll-margin-top:calc(var(--lb-h,48px) + 16px)}
 html[data-workspace=focus] #chart-sec{grid-column:1;grid-row:2}
 html[data-workspace=focus] #signals{grid-column:2;grid-row:2}
 html[data-workspace=focus] #ki-chart-sec{grid-column:1;grid-row:2}
@@ -2179,7 +2179,8 @@ html[data-chartfull] #workspace-chart-tools{display:contents!important}html[data
  html[data-workspace=focus] .dash-bottom .foot{order:9}
 }
 @media(max-width:600px){
- .workspace-tabs button{font-size:.78rem;padding:6px 2px}.workspace-settings{padding:12px}
+ .workspace-tabs{grid-template-columns:minmax(44px,.7fr) minmax(44px,.95fr) minmax(44px,1.1fr) minmax(44px,1.35fr)}
+ .workspace-tabs button{font-size:clamp(.6875rem,2.9vw,.875rem);padding:6px 2px;white-space:nowrap}.workspace-settings{padding:12px}
  html[data-workspace=focus] .brand .tag{display:none}html[data-workspace=focus] .topbar{padding:10px 14px;gap:8px}
  html[data-workspace=focus] .update-controls{gap:4px}.workspace-setting-card{padding:10px}
  html[data-workspace=focus] .signal-row{grid-template-columns:36px 124px 42px minmax(0,1fr)}

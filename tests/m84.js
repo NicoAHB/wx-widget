@@ -92,7 +92,11 @@ const select = async (p, key) => { await p.click(`[data-workspace-target="${key}
      check(`${width}px/${view}: geöffnete Vorauswahl nutzt volle Breite, Kacheln bleiben lesbar`, await p.evaluate(() => { const w = document.getElementById('watchlist').getBoundingClientRect().width, tiles=[...document.querySelectorAll('#watchlist .wl-tile')]; return w>=innerWidth-60 && tiles.every(n=>n.getBoundingClientRect().width>=115); }));
     } else check(`${width}px/${view}: keine Vorauswahl im Bereich`, !await visible(p,'workspace-watch') && !await visible(p,'watchlist'));
     check(`${width}px/${view}: ohne horizontalen Überlauf und Navigation ≥ 44px`, layout.overflow <= 1 && layout.buttons.every(n => n.w >= 44 && n.h >= 44), layout);
+    check(`${width}px/${view}: alle vier Beschriftungen vollständig im eigenen Button`, await p.evaluate(() => [...document.querySelectorAll('[data-workspace-target]')].every(n => { const r=document.createRange();r.selectNodeContents(n);const t=r.getBoundingClientRect(),b=n.getBoundingClientRect();return t.left>=b.left && t.right<=b.right && t.top>=b.top && t.bottom<=b.bottom; })));
    }
+   await select(p,'chart');await p.evaluate(() => scrollTo(0,600));
+   check(`${width}px: Bereichsauswahl scrollt weg statt den Inhalt zu überdecken`, await p.evaluate(() => getComputedStyle(document.getElementById('workspace-nav')).position==='static' && document.getElementById('workspace-nav').getBoundingClientRect().bottom<=0));
+   await p.evaluate(() => scrollTo(0,0));
   }
   await p.setViewportSize({ width: 390, height: 844 });
   for (const presentation of ['standard', 'dashboard']) {
