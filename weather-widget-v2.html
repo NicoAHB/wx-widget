@@ -2126,6 +2126,18 @@ html[data-workspace=focus] .of-chart-grid{grid-template-columns:minmax(0,1fr)!im
 html[data-workspace=focus] #workspace-orderflow{margin:12px 14px}
 html[data-workspace=focus] #workspace-watch{flex:1 1 100%;width:100%;container-type:inline-size}
 html[data-workspace=focus] #workspace-watch>summary{min-height:44px;overflow-wrap:anywhere}
+/* 3.61.0: lokale Handelsdemo mit gerahmten, beschrifteten Livewerten. */
+.paper-demo{padding:14px;border:1px solid var(--line);border-radius:16px;background:var(--surface);min-width:0}
+.paper-head{display:flex;align-items:center;flex-wrap:wrap;gap:12px;justify-content:space-between}.paper-head h2{margin:0;font-size:1.15rem}
+.paper-context{font-size:.875rem;font-weight:650;overflow-wrap:anywhere;margin:10px 0}
+.paper-reason{padding:12px;border:1px solid var(--line);border-radius:12px;line-height:1.5;font-size:.875rem;overflow-wrap:anywhere}
+.paper-facts,.paper-position dl{font-variant-numeric:tabular-nums}.paper-positions{display:grid;gap:12px}
+.paper-demo .paper-facts,.paper-demo .paper-position dl{grid-template-columns:repeat(2,minmax(0,1fr))}
+.paper-position h4{margin:0 0 10px}.paper-trade{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px;margin:10px 0}.paper-trade p{flex:1 1 100%;margin:0}
+.paper-stop{background:var(--down-bg)!important;color:var(--down-text)!important;border:1px solid var(--down-border)!important;min-height:44px;white-space:normal}
+.paper-confirm{padding:12px;border:1px solid var(--down-text);border-radius:12px;margin:10px 0}.paper-confirm button{margin:4px}
+.paper-demo .bot-actions{gap:8px}.paper-demo .bot-actions button{white-space:normal;overflow-wrap:anywhere;min-width:0}
+.paper-demo .bot-view{padding:0}.paper-demo dd{overflow-wrap:anywhere}.paper-demo fieldset{min-width:0}
 /* 3.61.0: Im Fokuslayout nur der Verbindungs-Punkt; Statusdetails bewusst öffnen. */
 html[data-workspace=focus] #status{position:static!important;display:inline-flex!important;align-items:center;justify-content:center;width:44px!important;max-width:44px!important;height:44px;flex:0 0 44px;font-size:0;line-height:0;gap:0;margin:0!important;padding:0;cursor:pointer;border-radius:12px}
 html[data-workspace=focus] #status::before{width:12px;height:12px;margin:0!important;background:var(--amber)}
@@ -2203,6 +2215,10 @@ import { exportModelArchive, importModelArchive, validateModelArchive } from './
 import { BotSimulationRuntime } from './bundles/3.61.0/shared/bot-simulation.mjs';
 import { readBotSimulation, saveBotSimulation } from './bundles/3.61.0/shared/bot-simulation-store.mjs';
 import { createBotView } from './bundles/3.61.0/shared/bot-view.mjs';
+import { createBitgetPublicClient as createPaperPublicClient } from './bundles/3.61.0/shared/bitget-public.mjs';
+import { readPaperBook, writePaperBook } from './bundles/3.61.0/shared/paper-bot-store.mjs';
+import { createPaperBotController } from './bundles/3.61.0/shared/paper-bot-controller.mjs';
+import { createPaperBotView } from './bundles/3.61.0/shared/paper-bot-view.mjs';
 import { createOrderflowView } from './bundles/3.61.0/shared/orderflow-view.mjs';
 import { createSignalView } from './bundles/3.61.0/shared/orderflow-signal-view.mjs';
 import { networkState, createWidgetBoundary } from './bundles/3.61.0/shared/widget-state.mjs';
@@ -5428,7 +5444,7 @@ $('fx-fill-out').addEventListener('click', e => {
 });
 // Wichtige Änderungen (Positionen, Trades, Geldbewegungen – ohne bloßes Bestätigen von Hinweisen) zählen fürs Backup
 let importantSig = null;
-const dataSig = () => JSON.stringify([state.positions.map(({ ack, ...p }) => p), state.trades, state.movements, state.demoPositions.map(({ ack, ...p }) => p), state.demoTrades, state.anchors]);
+const dataSig = () => JSON.stringify([state.positions.map(({ ack, ...p }) => p), state.trades, state.movements, state.anchors]);
 function persist() {
   acctVer++; // 3.31.0: Kontostand neu rechnen
   stampLists(); // 3.29.0: neue Fassungen bekommen Fingerabdruck und Vorgeschichte
@@ -5581,7 +5597,7 @@ const changeCount = () => Number(store.get(CHANGES_KEY)) || 0;
 // Automatisches Backup in eine Datei (File System Access API: Chrome/Edge am Computer)
 const autoBackup = { supported: typeof window.showSaveFilePicker === 'function' && window.isSecureContext !== false && !EMBEDDED, handle: null, state: 'off', at: 0, timer: null, error: '', writing: null };
 function renderBackupInfo() {
-  const m = backupMeta(), has = state.positions.length + state.trades.length + state.movements.length + state.demoPositions.length + state.demoTrades.length + state.anchors.length > 0, n = changeCount(), ab = autoBackup.state;
+  const m = backupMeta(), has = state.positions.length + state.trades.length + state.movements.length + state.anchors.length > 0, n = changeCount(), ab = autoBackup.state;
   const due = has && (!m || Date.now() - m.at > 7 * 86400000);
   const label = ab === 'active' ? (autoBackup.error ? 'FEHLER' : 'AUTO ✓') : ab === 'paused' ? 'PAUSE' : n ? `${n} NEU` : due ? 'FÄLLIG' : m ? '✓' : '';
   const warn = ab === 'active' ? !!autoBackup.error : ab === 'paused' || n > 0 || due;
@@ -5602,16 +5618,32 @@ function renderBackupInfo() {
   renderIntegrity();
 }
 function backupStatus(msg) { put('history-status', msg); }
-// 3.29.0 (Schema 8, G01): immer die vollständige persönliche Sicherung – offene Positionen, alle Trades (ohne Jahresgrenze), Demo,
+// 3.61.0: persönliche Sicherung ohne Übungstrades. Schema-8-Demofelder bleiben leer für alte Leser.
+// Alte Dateien sind weiter lesbar; bestehende lokale Demo-Bücher werden nicht gelöscht.
+// 3.29.0 (Schema 8, G01): vollständige persönliche Sicherung – offene Positionen, alle Trades (ohne Jahresgrenze),
 // Geldbewegungen, Alarme samt Kennung und Aktivierung, Einstellungen mit Abstammung, Listen und Reihenfolge, Gewinn-/Verlust-Alarm,
 // Löschungen, Prüfliste, offene Konflikte, Anzeige-Einstellungen und das eigene Musterlernen (der öffentliche Startbestand nur als
 // Verweis mit Version). Nie enthalten: Zugangsdaten (Telegram-Token, Discord-Webhook), die Übergabe an den 24/7-Dienst, Sendesperren
 // und andere gerätegebundene Zustände. Alle Felder von Schema 7 bleiben gleich – ältere App-Versionen lesen die Datei weiter.
-const PREF_KEYS = ['scalpdesk.orderflow-journal.v1', 'scalpdesk.orderflow-position.v1', 'scalpdesk.orderflow-signal.v1', 'scalpdesk.orderflow-demo.v1', 'scalpdesk.orderflow.v1', 'scalpdesk.ki.risk-view.v1', 'scalpdesk.theme.v1', 'scalpdesk.presentation.v1', 'scalpdesk.background.v1', 'scalpdesk.overlays.v1', 'scalpdesk.zigzag.v1', 'scalpdesk.whale.v1', 'scalpdesk.orderbook.v1', 'scalpdesk.ladder.v1', 'scalpdesk.vola.v1', 'scalpdesk.econ.v1', 'scalpdesk.cnews.v1', 'scalpdesk.wlspan.v1', 'scalpdesk.titleprice.v1', 'scalpdesk.details.v1', 'scalpdesk.posdefaults.v1', 'scalpdesk.daylimitnote.v1', 'scalpdesk.warnclose.v1', 'scalpdesk.evalyear.v1', 'scalpdesk.acctrange.v1', 'scalpdesk.anaiv.v1', 'scalpdesk.decouple.v1'];
+const PREF_KEYS = ['scalpdesk.orderflow-journal.v1', 'scalpdesk.orderflow-position.v1', 'scalpdesk.orderflow-signal.v1', 'scalpdesk.orderflow.v1', 'scalpdesk.ki.risk-view.v1', 'scalpdesk.theme.v1', 'scalpdesk.presentation.v1', 'scalpdesk.background.v1', 'scalpdesk.overlays.v1', 'scalpdesk.zigzag.v1', 'scalpdesk.whale.v1', 'scalpdesk.orderbook.v1', 'scalpdesk.ladder.v1', 'scalpdesk.vola.v1', 'scalpdesk.econ.v1', 'scalpdesk.cnews.v1', 'scalpdesk.wlspan.v1', 'scalpdesk.titleprice.v1', 'scalpdesk.details.v1', 'scalpdesk.posdefaults.v1', 'scalpdesk.daylimitnote.v1', 'scalpdesk.warnclose.v1', 'scalpdesk.evalyear.v1', 'scalpdesk.acctrange.v1', 'scalpdesk.anaiv.v1', 'scalpdesk.decouple.v1'];
+const personalBackupItem = x => !['dpos','dtrade'].includes(x.kind) && !['dpos','dtrade'].includes(x.localKind) && ![DEMO_POS_KEY,DEMO_HIST_KEY,'scalpdesk.orderflow-demo.v1'].includes(x.raw?.key) && !['demoPositions','demoHistory'].includes(x.raw?.field);
+// Übungsdaten können auch in Positionsbegleitung/Signaljournal stehen; nur die Exportkopie bereinigen.
+const demoContext = x => x?.demo === true || x?.practice === true || /^(demo|practice)\|/.test(x?.id || '');
+function personalBackupPref(key, original) {
+  if (key === 'scalpdesk.orderflow-journal.v1' && Array.isArray(original?.records)) return { ...original, records: original.records.filter(r => !demoContext(r.position)) };
+  if (key === 'scalpdesk.orderflow-position.v1' && isObj(original)) {
+    const copy = structuredClone(original);
+    if (isObj(copy.positions)) copy.positions = Object.fromEntries(Object.entries(copy.positions).filter(([id]) => !/^(demo|practice)\|/.test(id)));
+    if (isObj(copy.selected)) for (const symbol of Object.keys(copy.selected)) if (/^(demo|practice)\|/.test(copy.selected[symbol])) copy.selected[symbol] = 'auto';
+    if (Array.isArray(copy.closed)) copy.closed = copy.closed.filter(p => !demoContext(p));
+    delete copy.lastExit; return copy;
+  }
+  return original;
+}
 function backupPayload() {
   stampLists(); for (const f of SET_FIELDS) stampSetting(f);
-  const prefs = {}; for (const k of PREF_KEYS) { const v = store.get(k); if (v !== undefined) prefs[k] = v; }
-  return { app: 'scalp-desk', version: BK_SCHEMA, kind: 'full', appVersion: APP_VERSION, settings: { dayLimit: state.dayLimit, risk: state.risk, taxRate: state.taxRate, at: stampsOf(SETTINGS_AT_KEY) }, settingsH: setLin(), exportedAt: Date.now(), positions: state.positions, history: state.trades, demoPositions: state.demoPositions, demoHistory: state.demoTrades, movements: state.movements, balance: state.anchors, alarms: state.alarms, setups: state.setups, watchlist: state.watch, listsAt: stampsOf(LISTS_AT_KEY), deleted: tombs(), deletedH: tombHs(), taxRate: state.taxRate, patterns: zzpBackup(), rlearn: rlGet(), pnlAlarms: store.get('scalpdesk.pnlalarm.v1', null), prefs, quarantine: quarList(), conflicts: confList() };
+  const prefs = {}; for (const k of PREF_KEYS) { const v = store.get(k); if (v !== undefined) prefs[k] = personalBackupPref(k, v); }
+  return { app: 'scalp-desk', version: BK_SCHEMA, kind: 'full', appVersion: APP_VERSION, settings: { dayLimit: state.dayLimit, risk: state.risk, taxRate: state.taxRate, at: stampsOf(SETTINGS_AT_KEY) }, settingsH: setLin(), exportedAt: Date.now(), positions: state.positions, history: state.trades, demoPositions: [], demoHistory: [], movements: state.movements, balance: state.anchors, alarms: state.alarms, setups: state.setups, watchlist: state.watch, listsAt: stampsOf(LISTS_AT_KEY), deleted: tombs(), deletedH: tombHs(), taxRate: state.taxRate, patterns: zzpBackup(), rlearn: rlGet(), pnlAlarms: store.get('scalpdesk.pnlalarm.v1', null), prefs, quarantine: quarList().filter(personalBackupItem), conflicts: confList().filter(personalBackupItem) };
 }
 function markBackedUp(kind, encrypted = false) {
   store.set(CHANGES_KEY, 0);
@@ -6780,7 +6812,8 @@ function setMarket(symbol,interval=state.interval) {
   document.querySelectorAll('[data-interval]').forEach(b=>{const active=b.dataset.interval===interval;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});
   if(changed)patClear(); // 3.37.0 (G09): alte Treffer gehören zum alten Coin/Intervall
   render();void showCachedChart();if(CAP.on)void capLoad(); // 3.35.0: Cap des neuen Coins bzw. passende Auflösung
-  if ($('ki-hold-chip')) { if (workspace?.mode === 'focus') ki.coin = state.symbol; kiRender(); } // Arbeitsbereiche behalten denselben gewählten Coin.
+  if ($('ki-hold-chip')) { if (workspace?.mode === 'focus') ki.coin = state.symbol; kiRender(); }
+  paperView?.render(); orderflow?.sync(); // Arbeitsbereiche behalten denselben gewählten Coin.
   return refresh();
 }
 function pause() {state.paused=!state.paused;live.post({t:'pause',on:state.paused});if(state.paused)cancel();else{live.post({t:'wake'});void refresh();}status();renderMarket();renderCalculator();renderSignals();renderPositions();renderLivebar();updateTitle();syncStreams();renderSkeletons();}
@@ -9447,7 +9480,7 @@ async function sendTgBackup(force = false, leaving = false) {
   tgb.busy = true; tgb.cfg = loadTgb(); renderTgbInfo();
   try {
     const text = JSON.stringify(withIntegrity(payload), null, 1), blob = new Blob([text], { type: 'application/json' });
-    const caption = `💾 Scalp-Desk-Sicherung · ${new Date().toLocaleString('de-DE')}\n${state.positions.length} offene Positionen · ${state.trades.length} Trades${state.demoPositions.length + state.demoTrades.length ? ` · Demo: ${state.demoPositions.length} offen, ${state.demoTrades.length} geschlossen` : ''}${state.movements.length ? ` · ${state.movements.length} Geldbewegungen` : ''}\nWiederherstellen: Datei speichern, im Dashboard „Backup einspielen“.`;
+    const caption = `💾 Scalp-Desk-Sicherung · ${new Date().toLocaleString('de-DE')}\n${state.positions.length} offene Positionen · ${state.trades.length} Trades${state.movements.length ? ` · ${state.movements.length} Geldbewegungen` : ''}\nWiederherstellen: Datei speichern, im Dashboard „Backup einspielen“.`;
     const keep = leaving && text.length < 60000; // keepalive erlaubt höchstens 64 KB
     const pinOk = tgbPinOk(T), own = tgbNormKey(tgb.cfg.chat) === where ? tgb.cfg.msg : 0;
     // Welche Nachricht ersetzen? Zuerst die angeheftete (gilt für alle Geräte), sonst die zuletzt von diesem Gerät gesendete
@@ -14104,7 +14137,7 @@ async function recCopy() {
 })();
 // ---------- 3.45.0 (G10c): öffentliche lokale KI-Signale, eigener Worker/Datenspeicher ----------
 var kiReady = false;
-var botView = null, botRuntimeLocal = null, botOpen = false;
+var botView = null, botRuntimeLocal = null, botOpen = false, paperController = null, paperView = null;
 let botRefreshTimer = null;
 var po3View = null;
 let po3Pending = new Set();
@@ -14678,6 +14711,21 @@ botView = createBotView({ host: botPanel, globalHost: botGlobal, load: botLoad, 
   destination: store.get('scalpdesk.bot.simulation-destination.v1', 'local'),
   fxReference: () => { const value = currentFx(); return value > 0 && (state.fxMode === 'manual' || Date.now() - state.fxAt <= 15 * 60e3) ? { value: String(value), source: 'vorhandener EUR/USDT-Referenzkurs' } : null; },
   exportState: async destination => JSON.stringify({ kind: 'scalpdesk-bot-simulation', version: 1, simulationOnly: true, state: await botLoad(destination) }, null, 2), changed: (destination, confirmed) => { store.set('scalpdesk.bot.simulation-destination.v1', destination); clearTimeout(botRefreshTimer); botRefreshTimer = null; if (destination === 'oracle' && confirmed?.run?.state === 'RECONCILING' && !document.hidden) botRefreshTimer = setTimeout(() => { void botView.refresh(); }, Math.max(50, confirmed.run.reconciliation.deadline - Date.now() + 50)); } });
+// 3.61.0: eigener lokaler Papierexecutor; persönliche Bücher/Oracle/Signalarchive bleiben getrennt.
+const paperClient = createPaperPublicClient(), PAPER_PREF_KEY = 'scalpdesk.paper.settings.v1'; let paperFormRestored = false;
+paperController = createPaperBotController({ read: readPaperBook, write: writePaperBook, currentSymbol: () => state.symbol,
+  available: () => !document.hidden && !state.paused && navigator.onLine !== false,
+  quote: (symbol, signal) => paperClient.quote({ symbol, decisionAt: Date.now(), signal }),
+  workerFactory: () => new Worker(new URL('./bundles/3.61.0/shared/paper-bot-worker.mjs', import.meta.url), { type: 'module' }),
+  settings: () => { const base = botView.paperSettings(), costs = paperView.settings(), po3 = { ...po3View.config(), criteria: po3View.config().criteria === 'pending' ? 'g10' : po3View.config().criteria, closure: 'tp1', feeEntry: costs.feeEntry, feeExit: costs.feeExit };
+    const maxHoldMs = base.strategy === 'po3' ? po3.maxHoldMs : Math.min(86400000, (ki.cfg.shortHours || 24) * 3600000), [timeframe, contextTimeframe] = ki.cfg.shortPair.split('/');
+    return { ...base, ...costs, maxHoldMs, rewardRisk: ki.cfg.rewardRisk, timeframe, contextTimeframe, po3, confluence: { ...kiCoreConfig(), minimumScore: base.minimumScore, feeEntry: costs.feeEntry, feeExit: costs.feeExit } }; },
+  changed: data => { if (!paperFormRestored && data.book.run) { paperFormRestored = true; botView.restorePaper(data.book.run.config); } paperView?.render(); } });
+paperView = createPaperBotView({ host: botPanel, settingsHost: botView.root, controller: paperController, currentSymbol: () => state.symbol, formatPrice: v => priceText(v) + ' USDT', prefs: store.get(PAPER_PREF_KEY, {}), savePrefs: value => store.set(PAPER_PREF_KEY, value) });
+void paperController.refresh();
+document.addEventListener('visibilitychange', () => { if (document.hidden) paperController.suspend(); else paperView.render(); });
+$('pause').addEventListener('click', () => { if (state.paused) paperController.suspend(); else paperView.render(); });
+window.__paper = { controller: paperController, view: paperView, read: readPaperBook };
 void botView.refresh();
 document.addEventListener('visibilitychange', () => { clearTimeout(botRefreshTimer); botRefreshTimer = null; if (!document.hidden) void botView.refresh(); });
 window.__g12 = { view: botView, tab: botTab, load: botLoad, command: botCommand };
@@ -14691,7 +14739,7 @@ chartBoundary = createWidgetBoundary($('chart-sec'), 'Chart / Market Cap', () =>
 // 3.54.0: neue Panelhöhen auch im vorhandenen Safari-Scrollausgleich berücksichtigen.
 orderflow = createOrderflowView({ root: $('orderflow-panel'), selectedQuote: orderflowSelectedQuote, updateLayout: fn => nativeAnchor ? fn() : withAnchor(fn), context: () => ({ symbol: state.symbol, paused: state.paused, connected: live.markets.futures?.st === 'live' }), now: serverNow,
   fetchRows: (symbol, interval, limit, signal) => api.get(FUTURES, '/fapi/v1/klines', { symbol, interval, limit }, signal), readPrefs: () => store.get('scalpdesk.orderflow.v1'), savePrefs: prefs => store.set('scalpdesk.orderflow.v1', prefs), streamsChanged: () => syncStreams(), formatPrice: priceText,
-  readDemo: () => store.get('scalpdesk.orderflow-demo.v1'), saveDemo: book => { if (!store.set('scalpdesk.orderflow-demo.v1', book)) throw new Error('Demo konnte nicht gespeichert werden. Browser-Speicher prüfen.'); store.set(CHANGES_KEY, changeCount() + 1); scheduleAutoBackup(); scheduleTgBackup(); renderBackupInfo(); } });
+  readDemo: () => store.get('scalpdesk.orderflow-demo.v1'), saveDemo: book => { if (!store.set('scalpdesk.orderflow-demo.v1', book)) throw new Error('Demo konnte nicht gespeichert werden. Browser-Speicher prüfen.'); } });
 var orderflowSignal = createSignalView({ root: $('orderflow-panel'), fold: orderflow.fold, chartHost: document.querySelector('#chart-sec .chart-toolbar'), updateLayout: fn => nativeAnchor ? fn() : withAnchor(fn),
   context: () => ({ symbol: state.symbol, paused: state.paused, connected: live.markets.futures?.st === 'live', unavailable: orderflow.state.unavailable, events: (ec.data?.events || []).filter(e => e.impact === 'high' && e.cur === 'USD').map(e => ({ at: e.t, title: e.title })) }), now: serverNow,
   fetchKlines: (symbol, interval, limit, signal) => api.get(FUTURES, '/fapi/v1/klines', { symbol, interval, limit }, signal),
@@ -14706,7 +14754,7 @@ var orderflowSignal = createSignalView({ root: $('orderflow-panel'), fold: order
   explain: async (context, options) => { if (!svcOn()) throw new Error('KI-Dienst nicht eingerichtet.'); const result = await svcFetch('/v1/orderflow/explain', { method: 'POST', body: { ...options, context }, timeout: 8000 }); if (result.status !== 200 || !result.j?.ok) throw new Error('KI-Erklärung nicht verfügbar.'); return result.j; } });
 api.onKlines = request => { orderflow.acceptRest(request); orderflowSignal.feed.acceptRest(request); };
 window.__pdf2 = { view: orderflowSignal, feed: orderflowSignal.feed, chartBoundary };
-window.__pdf1 = { view: orderflow, live, onLive }; // Testzugang wie __g05 … __g13; keine Order-/Sendefunktion.
+window.__pdf1 = { view: orderflow, live, onLive, readDemo: () => store.get('scalpdesk.orderflow-demo.v1') }; // Testzugang wie __g05 … __g13; keine Order-/Sendefunktion.
 // 3.60.0: Arbeitsbereiche ordnen ausschließlich dieselben vorhandenen UI-Knoten.
 // Strategie, Bücher, Feeds und Berechnungen werden weder kopiert noch ersetzt.
 var workspace;
@@ -15065,7 +15113,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
             <div class="day-strip" id="day-strip"><span>Heute realisiert</span><strong class="day-pnl" id="day-pnl">—</strong><span id="day-info"></span><div class="day-bar" id="day-bar" title="Verbrauchtes Tages-Verlustlimit"><span></span></div><label>Tages-Verlustlimit<span class="input-wrap"><input id="day-limit" type="text" inputmode="decimal" autocomplete="off" placeholder="z. B. 30"><span>USDT</span></span></label></div>
             <button type="button" class="data-head backup-badge" id="data-toggle" aria-expanded="false" aria-controls="data-panel"><span class="data-chev" aria-hidden="true">▸</span><span class="data-title">💾 Datensicherung</span><span class="due" id="backup-due" hidden>FÄLLIG</span><small class="data-last" id="data-last"></small></button>
             <div class="data-panel" id="data-panel" hidden>
-              <div class="head-line"><h3>Sichern, einspielen, abgleichen</h3><details class="tip left"><summary aria-label="Wo liegen meine Daten?"><span>i</span></summary><div class="tip-body"><p>Daten liegen nur in diesem Browser auf diesem Gerät, nicht bei GitHub: in der IndexedDB, dazu eine Spiegelkopie im localStorage. Safari kann Website-Daten löschen, wenn eine Seite länger nicht geöffnet wurde. Als App auf dem Home-Bildschirm gilt diese Frist nicht; eine Sicherung ist trotzdem der sicherste Schutz.</p><p><b>Immer vollständig:</b> QR-Code, Textcode, Datei und Telegram-Sicherung enthalten dasselbe – offene Positionen, alle Trades aller Jahre, Demo-Positionen und Demo-Historie, Geldbewegungen, Kurs- und Gewinn-/Verlust-Alarme, Einstellungen, Vorauswahl und Gründe, die Prüfliste, offene Konflikte und dein eigenes Musterlernen. Nie enthalten sind Zugangsdaten (Telegram-Token, Discord-Webhook), die Übergabe an den 24/7-Dienst und andere gerätegebundene Zustände – ein Import schaltet deshalb keinen Versand ein.</p><p><b>Passwort:</b> optional. Mit Passwort wird die Sicherung verschlüsselt (AES-256); ein vergessenes Passwort lässt sich nicht wiederherstellen. Ohne Passwort kann jeder, der Code oder Datei erhält, die Handelsdaten lesen. Die Prüfsumme erkennt Übertragungsfehler, schützt aber nicht vor Mitlesen.</p><p><b>Einspielen und Abgleich:</b> Vorher zeigt die App eine vollständige Vorschau. Je Eintrag zählt seine Abstammung, nicht die Uhrzeit: Baut eine Fassung auf der anderen auf, gilt die weiterentwickelte. Haben beide Geräte denselben Eintrag verschieden geändert, entscheidest du („Änderungen vergleichen“); bis dahin gilt der Stand dieses Geräts, beide Fassungen bleiben erhalten. Gelöscht wird nur, was das andere Gerät genau so kannte. Ein zweites Einspielen derselben Sicherung ändert nichts. Vor jedem Import sichert die App den bisherigen Stand („Letzten Import rückgängig machen“).</p><p><b>Prüfliste:</b> Ein Eintrag, der beim Laden oder Einspielen ungültig ist, verschwindet nicht mehr still. Er steht mit Grund und Originaldaten in der Prüfliste, fehlt in Anzeigen und Summen (das steht dann dabei) und lässt sich korrigieren, exportieren oder bewusst löschen.</p><p>Automatisch sichern: Am Computer (Chrome/Edge) schreibt das Dashboard nach jeder Änderung in eine Datei deiner Wahl. Auf iPhone und iPad erlaubt Safari das nicht – dort kann die Sicherung stattdessen nach jeder Änderung an deinen Telegram-Chat gehen; die neue Datei ersetzt jeweils die vorige. Diese Datei ist unverschlüsselt und liegt auf den Servern von Telegram.</p></div></details></div>
+              <div class="head-line"><h3>Sichern, einspielen, abgleichen</h3><details class="tip left"><summary aria-label="Wo liegen meine Daten?"><span>i</span></summary><div class="tip-body"><p>Daten liegen nur in diesem Browser auf diesem Gerät, nicht bei GitHub: in der IndexedDB, dazu eine Spiegelkopie im localStorage. Safari kann Website-Daten löschen, wenn eine Seite länger nicht geöffnet wurde. Als App auf dem Home-Bildschirm gilt diese Frist nicht; eine Sicherung ist trotzdem der sicherste Schutz.</p><p><b>Immer vollständig:</b> QR-Code, Textcode, Datei und Telegram-Sicherung enthalten dasselbe – offene Positionen, alle persönlichen Trades aller Jahre, Geldbewegungen, Kurs- und Gewinn-/Verlust-Alarme, Einstellungen, Vorauswahl und Gründe, die Prüfliste, offene Konflikte und dein eigenes Musterlernen. Übungstrades (Bot-Demo, Orderflow-Demo und persönliche DEMO-Bücher) bleiben lokal und werden nicht übertragen. Alte Sicherungen bleiben lesbar. Nie enthalten sind Zugangsdaten (Telegram-Token, Discord-Webhook), die Übergabe an den 24/7-Dienst und andere gerätegebundene Zustände – ein Import schaltet deshalb keinen Versand ein.</p><p><b>Passwort:</b> optional. Mit Passwort wird die Sicherung verschlüsselt (AES-256); ein vergessenes Passwort lässt sich nicht wiederherstellen. Ohne Passwort kann jeder, der Code oder Datei erhält, die Handelsdaten lesen. Die Prüfsumme erkennt Übertragungsfehler, schützt aber nicht vor Mitlesen.</p><p><b>Einspielen und Abgleich:</b> Vorher zeigt die App eine vollständige Vorschau. Je Eintrag zählt seine Abstammung, nicht die Uhrzeit: Baut eine Fassung auf der anderen auf, gilt die weiterentwickelte. Haben beide Geräte denselben Eintrag verschieden geändert, entscheidest du („Änderungen vergleichen“); bis dahin gilt der Stand dieses Geräts, beide Fassungen bleiben erhalten. Gelöscht wird nur, was das andere Gerät genau so kannte. Ein zweites Einspielen derselben Sicherung ändert nichts. Vor jedem Import sichert die App den bisherigen Stand („Letzten Import rückgängig machen“).</p><p><b>Prüfliste:</b> Ein Eintrag, der beim Laden oder Einspielen ungültig ist, verschwindet nicht mehr still. Er steht mit Grund und Originaldaten in der Prüfliste, fehlt in Anzeigen und Summen (das steht dann dabei) und lässt sich korrigieren, exportieren oder bewusst löschen.</p><p>Automatisch sichern: Am Computer (Chrome/Edge) schreibt das Dashboard nach jeder Änderung in eine Datei deiner Wahl. Auf iPhone und iPad erlaubt Safari das nicht – dort kann die Sicherung stattdessen nach jeder Änderung an deinen Telegram-Chat gehen; die neue Datei ersetzt jeweils die vorige. Diese Datei ist unverschlüsselt und liegt auf den Servern von Telegram.</p></div></details></div>
               <div class="integrity" id="integrity" hidden>
                 <h3>⚠ Prüfliste · <span id="quar-head"></span></h3>
                 <p>Diese Einträge konnten nicht geladen werden oder enthalten ungültige Werte. Sie verschwinden nicht still: Die Originaldaten bleiben erhalten, auch in jeder Sicherung. Nicht geladene Einträge fehlen in Anzeigen und Summen – die Summen sagen das dazu.</p>

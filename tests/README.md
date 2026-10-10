@@ -165,3 +165,13 @@ UI-Gesamtlauf 3.58.0: m4 wartete vor dem Value-Area-Vergleich nur auf Signalzeit
 - m25: Der „heute geschlossene“ Testtrade liegt auch in den ersten zehn Minuten nach Mitternacht am aktuellen lokalen Tag. 20 Originalprüfungen einschließlich exaktem USDT-/EUR-Tagesergebnis erhalten, eine zusätzliche unabhängige Vorbedingung für den tatsächlich gespeicherten Tag/Betrag/FX (21 Fälle). App-Tagesberechnung unverändert.
 
 - 3.61.0: m84 prüft die aktualisierte Vorauswahl-Vorgabe (Chart offen, Analysen geschlossen, Positionen/Einstellungen verborgen), echten Klapp-/Touchweg und denselben Coin in der KI-Bewertung. Fokusheader nur Statuspunkt mit 44-px-Fläche, zugänglichem Namen und tatsächlichem Detaildialog; vollständig 152/152. Offlineprüfung erfordert wie bisher den aktuellen erzeugten Releasegraph.
+
+### Lokale KI-Handelsdemo (3.61.0)
+
+- `unit-paper-bot.js`: 33 eigene Buch-/Preis-/Gebühren-/Funding-/Raster-/Stop-/Ziel-/Grid-/Trend-/Risikoprüfungen am tatsächlichen Papierkern. Kein herabgesetzter Score, keine erzwungenen Trades.
+- `unit-paper-controller.js`: 11 tatsächliche Executor-/Mehrtab-/Speicher-/Epochen-/Reload-/Stop-/Löschfälle.
+- `unit-paper-worker.js`: 5 tatsächliche öffentliche PO3-Worker-/Warm-up-/Sweep-/Retest-/Impuls-/TP1-/Papierfill-Prüfungen mit festen Marktantworten; Originalmodell unverändert.
+- `m85.js`: native Konfluenz-Worker-Ausführung, bestätigte eigene IDB, grün bei frischem aktiven Lauf, feste Live-Karte, PnL, zweite Tab-Sperre, tatsächlicher TP/Stop, BTC→ETH, Reload ohne Autostart, bewusstes Löschen und vier Breiten.
+- `m86.js`: native Grid-14-Tage-Historie, tatsächliche Limits/Fills/Abschlüsse, Historiencache mit frischem Volumen, IDB-Konkurrenz/Widerruf; Orderflow-Übung LTC→BTC→ETH, verspätete LTC-Antwort, eigene Löschung und neue Sicherung ohne alle Demo-Trades.
+- m68/m80/m81 öffnen die weiterhin vorhandene manuelle Modellprüfung in der neuen Einrichtung; ihre bisherigen fachlichen Erwartungen bleiben erhalten. m76/m79 lesen das lokale Orderflow-Buch statt es über den Export abzugreifen. m50 behält alle alten Import-/Prüfsummen-/Idempotenz-/Rollback-Grenzen; neue Dateien enthalten fünf persönliche Einträge, die beiden Übungseinträge bleiben lokal. Alte Demo-Dateien weiterhin bewusst importierbar.
+- m84 zusätzlich mit nicht klebender Navigation, Textgrenzen und Scrollnachweis: 177/177. Serielle Release-Liste nun **145 Ziele**; reale Safari-/iPhone-/iPad-/CORS-Abnahmen getrennt.

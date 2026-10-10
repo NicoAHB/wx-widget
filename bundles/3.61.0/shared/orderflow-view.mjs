@@ -53,6 +53,7 @@ export function createOrderflowView({ root, context, now, fetchRows, readPrefs, 
     }); blocks[iv] = { section, quality, countdown, rows }; root.append(section);
   }
   function quote() {
+    if (context().symbol !== state.symbol) return null;
     if (selectedQuote) { const q = selectedQuote(state.symbol); return q ? { ...q, fresh: !!q.fresh && !boundary.failed && !state.paused } : null; }
     const c = state.series['1m'].filter(c => c.source === 'ws').at(-1), at = now();
     return c ? { price: c.c, fresh: !boundary.failed && !state.paused && !state.unavailable && context().connected && Math.max(Date.now() - c.seenAt, at - c.eventAt, 0) <= ORDERFLOW_FRESH_MS } : null;
@@ -63,6 +64,7 @@ export function createOrderflowView({ root, context, now, fetchRows, readPrefs, 
   prefs();
   function paint() { const value = boundary.run(() => updateLayout(paintContent)); if (boundary.failed) for (const id of ['of-demo-price', 'of-demo-close']) { const button = root.querySelector('#' + id); if (button) button.disabled = true; } return value; }
   function paintContent() {
+    sync(false); // Coinwechsel vor jeder Zeichnung übernehmen, auch vor dem nächsten Sekundentakt.
     if (doc.hidden) return;
     const ctx = context(), at = now(), units = state.unit === 'coins' ? 'Coins' : 'USDT';
     text(source, `${state.symbol || '—'} · Binance USDT-Futures · ${units}`);
@@ -114,7 +116,7 @@ export function createOrderflowView({ root, context, now, fetchRows, readPrefs, 
       if (e.code === -1121) { state.unavailable = true; streamsChanged(); }
     } finally { if (pending.get(iv) === controller) pending.delete(iv); schedule(); }
   }
-  function sync() {
+  function sync(repaint = true) {
     const ctx = context(), changed = ctx.symbol !== state.symbol, resumed = state.paused && !ctx.paused;
     if (changed || ctx.paused !== state.paused) {
       state.epoch++; state.since = Date.now(); for (const c of pending.values()) c.abort(); pending.clear(); clearTimeout(initialTimer);
@@ -125,7 +127,7 @@ export function createOrderflowView({ root, context, now, fetchRows, readPrefs, 
         const history = visibleCandles(state.series[iv], iv, now()).slice(0, 4);
         if (history.some(r => !r.candle?.closed || !r.candle.coins || !r.candle.usdt)) void load(iv);
       } }, 300);
-      paint();
+      if (repaint) paint();
     }
     prefs();
     return !state.paused && !state.unavailable && !!state.symbol;

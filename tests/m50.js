@@ -191,7 +191,8 @@ const tests = {
     await page.evaluate(() => { const s = document.getElementById('year-filter'); s.value = '2026'; s.dispatchEvent(new Event('change', { bubbles: true })); }); await page.waitForTimeout(200);
     const b = await backupFile(page, 'voll'), d = b.data;
     const keys = ['positions', 'history', 'demoPositions', 'demoHistory', 'movements', 'alarms', 'setups', 'watchlist', 'settings', 'settingsH', 'deleted', 'deletedH', 'patterns', 'pnlAlarms', 'prefs', 'quarantine', 'conflicts'];
-    check('Schema 8 mit allen Bereichen (Positionen, Trades, Demo, Geld, Alarme, Einstellungen mit Abstammung, Listen, Löschungen, Muster, Prüfliste, Konflikte, Anzeige)', d.version === 8 && d.kind === 'full' && keys.every(k => k in d), keys.filter(k => !(k in d)).join());
+    check('Schema 8 mit persönlichen Bereichen und leeren kompatiblen Demofeldern (Positionen, Trades, Geld, Alarme, Einstellungen mit Abstammung, Listen, Löschungen, Muster, Prüfliste, Konflikte, Anzeige)', d.version === 8 && d.kind === 'full' && keys.every(k => k in d), keys.filter(k => !(k in d)).join());
+    check('Neue Sicherung enthält keine Demo-Trades; vorhandene lokale Demo-Bücher bleiben erhalten', d.demoPositions.length === 0 && d.demoHistory.length === 0 && !d.prefs['scalpdesk.orderflow-demo.v1'] && (await ls(page,'scalpdesk.demopositions.v1')).length === 1 && (await ls(page,'scalpdesk.demohistory.v1')).length === 1);
     check('Alle Jahre enthalten, obwohl die Ansicht auf 2026 steht (Trade von 2024 dabei)', d.history.some(t => t.id === 'B24') && d.history.length === 2);
     check('Einträge tragen Abstammung (h, rev), Alarm behält Kennung und Aktivierung', d.positions[0].h && d.positions[0].rev >= 1 && d.alarms[0].id === 'BA' && d.alarms[0].armedAt > 0);
     const s = b.text = fs.readFileSync(b.f, 'utf8');
@@ -207,14 +208,14 @@ const tests = {
     check('Veränderte Datei: „Prüfsumme … stimmt nicht“, keine Vorschau, nichts übernommen', !pv.shown && /Prüfsumme der Sicherungsdatei stimmt nicht/.test(pv.status) && !(await ls(page, 'scalpdesk.history.v1')), pv.status);
     // Vollständig wiederherstellen
     pv = await loadFile(page, b.f);
-    check('Vorschau vollständig: Quelle, Schema, neu: 1 Trade 2024 und 2026, Demo, Geldbewegung, Alarm', pv.shown && /Quelle: Datei m50-voll\.json \(Schema 8 · App \d+\.\d+\.\d+/.test(pv.head) && pv.items.some(i => /^Neu: 1 Position, 2 Trades, 1 Demo-Position, 1 Demo-Trade, 1 Geldbewegung, 1 Kurs-Alarm/.test(i)), pv.head + ' ## ' + pv.items.join(' ## '));
+    check('Vorschau vollständig: Quelle, Schema, persönliche Trades 2024 und 2026, Geldbewegung, Alarm ohne Demo', pv.shown && /Quelle: Datei m50-voll\.json \(Schema 8 · App \d+\.\d+\.\d+/.test(pv.head) && pv.items.some(i => /^Neu: 1 Position, 2 Trades, 1 Geldbewegung, 1 Kurs-Alarm/.test(i)) && !pv.items.some(i=>/Demo-Position|Demo-Trade/.test(i)), pv.head + ' ## ' + pv.items.join(' ## '));
     check('Anzeige-Einstellungen nur auf Wunsch (Kästchen nicht angehakt)', await page.evaluate(() => { const c = [...document.querySelectorAll('#sync-preview input[type=checkbox]')].find(x => /Anzeige-Einstellungen/.test(x.parentElement.textContent)); return !!c && !c.checked; }));
     let msg = await take(page);
     check('Übernommen; danach „Letzten Import rückgängig machen“ sichtbar', /^Übernommen: 1 Position neu, 2 Trades/.test(msg) && await vis(page, '#undo-import'), msg);
     check('Alarm BA mit derselben Kennung und Aktivierung (kein neuer Alarm)', (await ls(page, 'scalpdesk.alarms.v1'))?.[0]?.armedAt === d.alarms[0].armedAt);
     // Doppelter Import: nichts Neues
     pv = await loadFile(page, b.f);
-    check('Zweites Einspielen derselben Datei: „Nichts Neues“, nichts doppelt', !pv.shown && /Nichts Neues – alle 7 Einträge waren schon aktuell/.test(pv.status) && (await ls(page, 'scalpdesk.history.v1')).length === 2, pv.status);
+    check('Zweites Einspielen derselben Datei: „Nichts Neues“, alle fünf persönlichen Einträge genau einmal', !pv.shown && /Nichts Neues – alle 5 Einträge waren schon aktuell/.test(pv.status) && (await ls(page, 'scalpdesk.history.v1')).length === 2, pv.status);
     // Rückgängig
     await page.evaluate(() => { const i = document.getElementById('day-limit'); i.value = '25'; i.dispatchEvent(new Event('input', { bubbles: true })); });
     await jsClick(page, '#undo-import'); await page.waitForLoadState('load'); await page.waitForTimeout(1500);
@@ -232,6 +233,8 @@ const tests = {
     // 3.29.0: Listen ohne Abstammung – hier nie geändert (Standard) → kommen aus der Sicherung; kein bloßes Zusammenführen mehr
     const ol = { setups: await ls(page, 'scalpdesk.setups.v1'), watch: await ls(page, 'scalpdesk.watchlist.v1'), lim: await ls(page, 'scalpdesk.daylimit.v1'), conf: (await ls(page, 'scalpdesk.conflicts.v1')) || [] };
     check('Hier nie geänderte Einstellungen und Listen kommen aus der alten Sicherung (Setups „Ausbruch, Mein Setup“, Vorauswahl „BTC, SOL“, Limit 30), kein Konflikt', JSON.stringify(ol.setups) === '["Ausbruch","Mein Setup"]' && JSON.stringify(ol.watch) === '["BTC","SOL"]' && ol.lim === 30 && !ol.conf.length, JSON.stringify(ol));
+    const legacyDemo=path.join(os.tmpdir(),'m50-alte-demo-v7.json');fs.writeFileSync(legacyDemo,JSON.stringify({app:'scalp-desk',version:7,exportedAt:Date.now(),demoPositions:[position('ALTE-DEMO-DATEI','ETHUSDT',2500)],positions:[],history:[]}));pv=await loadFile(page,legacyDemo);await take(page);
+    check('Alte Demo-Sicherung bleibt bewusst importierbar; neue Exporte bleiben ohne Demo', (await ls(page,'scalpdesk.demopositions.v1')).some(p=>p.id==='ALTE-DEMO-DATEI') && (await ls(page,'scalpdesk.positions.v1')).some(p=>p.id==='OLD1') && await page.evaluate(()=>__g05.backupPayload().demoPositions.length===0));
     // Neuere Schema-Version → abgelehnt
     const f9 = path.join(os.tmpdir(), 'm50-v9.json'); fs.writeFileSync(f9, JSON.stringify({ ...v3, version: 9 }));
     pv = await loadFile(page, f9);

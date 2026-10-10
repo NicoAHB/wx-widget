@@ -7,7 +7,7 @@ const decimal = input => input.value.trim().replace(',', '.');
 export function createBotView({ host, globalHost, load, command, exportState, currentSymbol, fxReference, changed, gridMarket = null, destination = 'local' }) {
   const state = { confirmed: null, destination: destination === 'oracle' ? 'oracle' : 'local', busy: false, message: 'Bot deaktiviert. Simulation einrichten; Demo/Echtgeld gesperrt.' };
   let gridFailure = null;
-  const root = el('section', '', 'bot-view'); root.id = 'bot-view'; root.append(el('h2', 'Trading-Bot'), el('p', 'Modelllauf einrichten → Simulation aktivieren → bewusst starten.', 'bot-intro'));
+  const root = el('section', '', 'bot-view'); root.id = 'bot-view'; root.append(el('h2', 'Strategie und eigene Grenzen'), el('p', 'Einrichten → oben Demo starten. Manuelle Modellprüfung separat aufklappen.', 'bot-intro'));
   const help = el('details', '', 'ki-info'); help.append(el('summary', 'Modus, Stopps und Handlung'), el('p', 'Simulation prüft deine selbst eingegebenen Modellwerte und Laufgrenzen. Sie führt keine Börsenorders aus und simuliert keine automatischen Strategie-Fills. Automatische Trades sind AUS.'),
     el('p', 'Gewinn/Verlust einschließlich Gleichheit: keine neuen Einstiege oder Bot-Bestand schließen. In dieser Simulation wird die Schließwirkung ausdrücklich modelliert; sie ist keine belegte Ausführung. Neue Einzahlung und neuer FX verändern die festgehaltene Laufbasis nicht.'),
     el('p', 'Stopps bleiben nach Kursrückkehr und Neustart verriegelt. Bei Bestandskonflikt: keine neuen Orders und keine Ausgleichsorders. Bereits liegende Schutzorders bleiben bestehen und können auslösen. Nach zehn Sekunden ohne belegten Abgleich dauerhaft pausiert.'),
@@ -15,7 +15,7 @@ export function createBotView({ host, globalHost, load, command, exportState, cu
   const fields = {}, limits = {}, edited = new Set(), restored = new Set();
   function group(id, title, note, parent = root) { const box = el('fieldset', '', 'bot-group'); box.id = 'bot-group-' + id; box.append(el('legend', title));
     if (note) box.append(el('p', note, 'bot-hint')); const grid = el('div', '', 'bot-grid'); box.append(grid); parent.append(box); return grid; }
-  let grid = group('mode', '1 · Modus und Strategie', 'Nur Simulation. Das Strategieprofil bereitet Regeln vor; automatische Strategie-Trades werden noch nicht ausgeführt.');
+  let grid = group('mode', '1 · Strategie', 'Die lokale Handelsdemo nutzt öffentliche Futures-Daten. Jeder neue Lauf hält Coin, Strategie und eigene Grenzen fest.');
   function field(key, title, value = '', choices = null, hint = '') { const label = el('label', '', 'bot-field'), input = el(choices ? 'select' : 'input'); input.id = 'bot-' + key; label.htmlFor = input.id;
     const titleNode = el('span', title, 'bot-field-title'); titleNode.id = input.id + '-title'; input.setAttribute('aria-labelledby', titleNode.id); label.append(titleNode);
     if (choices) for (const [v, text] of choices) { const o = el('option', text); o.value = v; input.append(o); } else { input.type = 'text'; input.inputMode = 'decimal'; input.maxLength = 64; }
@@ -24,7 +24,7 @@ export function createBotView({ host, globalHost, load, command, exportState, cu
     for (const event of ['input', 'change']) input.addEventListener(event, () => edited.add(key)); grid.append(label); return input; }
   field('destination', 'Speicherort', state.destination, [['local', 'Lokal auf diesem Gerät'], ['oracle', 'Oracle-Server']], 'Lokal: eigener Modelllauf. Oracle: serverbestätigt, nur mit eingerichtetem Dienst.');
   field('mode', 'Modus', 'simulation', [['simulation', 'Simulation'], ['demo', 'Bitget-Demo · gesperrt'], ['live', 'Echtgeld · gesperrt']], 'Die Simulation sendet keine Börsenorders.');
-  field('strategy', 'Strategieprofil', 'confluence', [['confluence', 'Konfluenz'], ['po3', 'Power of Three'], ['adaptive-grid', 'Adaptive AI-Grid (Rauschen-Trader)']], 'Startwert: Konfluenz. Nur Vorbereitung, kein automatischer Executor.');
+  field('strategy', 'Strategieprofil', 'confluence', [['confluence', 'Konfluenz'], ['po3', 'Power of Three'], ['adaptive-grid', 'Adaptive AI-Grid (Rauschen-Trader)']], 'Startwert: Konfluenz. Ein gültiges Signal oder eine Grid-Berührung abwarten.');
   field('direction', 'Handelsrichtung', 'both', [['both', 'Long + Short'], ['long', 'Nur Long'], ['short', 'Nur Short']], 'Startwert: beide Richtungen.');
   grid = group('risk', '2 · Größe und Risiko', 'Anpassbare Übungswerte sind kein echter Kontostand. Diese Eingaben gelten für den nächsten bewusst gestarteten Modelllauf.');
   field('referenceUSDT', 'Feste Übungsbasis · USDT', '', null, 'Beispiel: 1.000 USDT. Bleibt während des Laufs fest.');
@@ -131,7 +131,7 @@ export function createBotView({ host, globalHost, load, command, exportState, cu
     renderGrid(s); gridCheck.disabled = state.busy || !s?.enabled || !r?.grid || conflicted || !!r?.dataPaused;
     status.textContent = (state.destination === 'oracle' ? 'Oracle · ' : 'Lokal · ') + state.message + (s?.error ? ' ' + s.error : ''); activate.textContent = s?.enabled ? 'Bot-Simulation deaktivieren' : 'Bot-Simulation aktivieren';
     const tone = conflicted ? 'negative' : Object.keys(r?.stops ?? {}).length || r?.dataPaused ? 'warning' : r && s.enabled ? 'positive' : 'muted';
-    summary.className = 'bot-run-card'; const heading = el('h3', 'Bestätigter Modelllauf'), badge = el('span', r ? conflicted ? s.actions.label : Object.keys(r.stops).length ? 'Laufgrenze verriegelt' : !s.enabled ? 'Pausiert' : r.dataPaused ? 'Daten fehlen · pausiert' : r.grid?.state.mode === 'PAUSED_BREAKOUT' ? 'Grid pausiert' : r.grid?.state.mode === 'TREND' ? 'Trendbegleitung · Modellplan' : r.grid?.state.mode === 'STOPPED' ? 'Grid-Stopp verriegelt' : 'Simulation läuft' : 'Noch kein Lauf', 'ki-tone ki-' + tone);
+    summary.className = 'bot-run-card'; const heading = el('h3', 'Bestätigter Modelllauf'), badge = el('span', r ? conflicted ? s.actions.label : Object.keys(r.stops).length ? 'Laufgrenze verriegelt' : !s.enabled ? 'Pausiert' : r.dataPaused ? 'Daten fehlen · pausiert' : r.grid?.state.mode === 'PAUSED_BREAKOUT' ? 'Grid pausiert' : r.grid?.state.mode === 'TREND' ? 'Trendbegleitung · Modellplan' : r.grid?.state.mode === 'STOPPED' ? 'Grid-Stopp verriegelt' : 'Manuelle Modellprüfung bereit' : 'Noch kein Lauf', 'ki-tone ki-' + tone);
     summary.replaceChildren(heading, badge);
     if (r) { const facts = el('dl', '', 'bot-run-facts'), action = x => x === 'close' ? 'Bot-Positionen schließen · Modellwirkung' : 'Keine neuen Einstiege', limit = x => x.enabled ? x.amount + ' ' + x.unit + ' · ' + action(x.action) : 'Aus';
       for (const [title, value] of [['Gestartet', date(r.startedAt)], ['Nettoergebnis', r.netUSDT + ' USDT'], ['Feste Übungsbasis', r.referenceUSDT + ' USDT'], ['Gewinnstopp', limit(r.gain)], ['Verluststopp', limit(r.loss)], ['Bestätigte Revision', String(s.revision)]]) { const pair = el('div'), result = el('dd', value); if (title === 'Nettoergebnis') result.className = Number(r.netUSDT) > 0 ? 'bot-net-positive' : Number(r.netUSDT) < 0 ? 'bot-net-negative' : ''; pair.append(el('dt', title), result); facts.append(pair); }
@@ -148,5 +148,18 @@ export function createBotView({ host, globalHost, load, command, exportState, cu
     close.disabled = state.busy || !s?.actions?.newCloses || !r?.simulatedClosePending; for (const id of ['bot-enable', 'bot-start', 'bot-pause', 'bot-step', 'bot-load']) doc().getElementById(id).disabled = state.busy;
     if (s) { const key = JSON.stringify([s.revision, s.logs?.slice(-20)]); if (log.dataset.key !== key) { log.replaceChildren(...(s.logs ?? []).slice(-20).reverse().map(x => el('p', `${date(x.at)} · ${x.type} · ${x.state ?? 'deaktiviert'} · Revision ${x.revision}`, 'ki-note'))); log.dataset.key = key; } }
   }
-  render(); return { state, accept, render, refresh, send };
+  // 3.61.0: gleiche editierbare Felder für die getrennte lokale Handelsdemo.
+  function paperSettings() { const limit = key => { const enabled=limits[key].checked,amount=Number(decimal(fields[key+'Amount'])),unit=fields[key+'Unit'].value,fx=Number(decimal(fields.fx)); if(enabled&&unit==='EUR'&&!(fx>0))throw new Error('EUR-Grenze benötigt den selbst gewählten Referenzkurs.');return{enabled,amountUSDT:unit==='%'?amount*Number(decimal(fields.referenceUSDT))/100:unit==='EUR'?amount*fx:amount,action:fields[key+'Action'].value}; };
+    for(const key of['referenceUSDT','riskPercent','exposureUSDT','leverage','maxPositions','minimumScore',...(fields.strategy.value==='adaptive-grid'?['gridCapital']:[])])if(!decimal(fields[key])||!(Number(decimal(fields[key]))>0))throw new Error(doc().getElementById('bot-'+key+'-title').textContent+' eintragen und prüfen.');
+    if(fields.stopRule.value!=='signal')throw new Error('Für die Handelsdemo Signal-Preisplan als Stop-Regel wählen.');
+    return { strategy:fields.strategy.value,direction:fields.direction.value,referenceUSDT:Number(decimal(fields.referenceUSDT)),riskPercent:Number(decimal(fields.riskPercent)),exposureUSDT:Number(decimal(fields.exposureUSDT)),leverage:Number(decimal(fields.leverage)),maxPositions:Number(decimal(fields.maxPositions)),minimumScore:Number(decimal(fields.minimumScore)),cooldownMs:Number(decimal(fields.cooldownMs))*1000,gain:limit('gain'),loss:limit('loss'),
+      grid:{capitalUSDT:decimal(fields.gridCapital),lines:Number(decimal(fields.gridLines)),dumpAction:fields.gridDump.value,...Object.fromEntries([['makerFeePct','gridMaker'],['takerFeePct','gridTaker'],['minimumNetPct','gridNet'],['slippageReservePct','gridSlip'],['fundingReservePct','gridFunding']].map(([key,field])=>[key,Number(decimal(fields[field]))]))},form:Object.fromEntries(Object.entries(fields).map(([k,n])=>[k,n.value])) };
+  }
+  function restorePaper(config) { for(const[key,value]of Object.entries(config?.form||{}))if(fields[key]&&!edited.has(key))fields[key].value=String(value);gridOptions(); }
+  const manual=el('details','','ki-info bot-group');manual.id='bot-model-check';manual.append(el('summary','Erweiterte manuelle Modellprüfung · Lokal / Oracle'),el('p','Dieser ältere Prüfbereich arbeitet mit selbst eingegebenen Snapshots. Die automatische lokale Handelsdemo wird oben separat gestartet.','bot-hint'));root.append(manual);
+  const manualMode=el('fieldset','','bot-group');manualMode.append(el('legend','Ort und Modus der manuellen Prüfung'),fields.destination.parentElement,fields.mode.parentElement);manual.append(manualMode);
+  const toolbarHint=toolbar.previousElementSibling,toolbarTitle=toolbarHint.previousElementSibling;
+  for(const n of [help,status,alert,summary,gridSummary,toolbarTitle,toolbarHint,toolbar,review,scenario,logBox,auto.parentElement])manual.append(n);
+  manual.append(doc().getElementById('bot-export'));
+  render(); return { state, accept, render, refresh, send, root, paperSettings, restorePaper };
 }

@@ -9,7 +9,7 @@ Die Startansicht konzentriert sich auf Chart und kompakte Signalübersicht. Die 
 | Positionen | Offene Trades, Kontostand, Journal, Auswertung und Positionsrechner |
 | Einstellungen | Darstellung/App, Hinweise/Telegram, Datensicherung, Modellannahmen/Dienst und ausführliche Methodik |
 
-Am Desktop zwei Spalten mit breitem Chart; keine drei konkurrierenden Bereiche in der Startansicht. Auf kleineren Bildschirmen eine Spalte. Die Bereichsnavigation bleibt beim Scrollen erreichbar. Verknüpfungen aus der Live-Leiste und die bisherigen Kopfknöpfe öffnen den passenden Bereich; die Sicherung ist also weiterhin direkt erreichbar.
+Am Desktop zwei Spalten mit breitem Chart; keine drei konkurrierenden Bereiche in der Startansicht. Auf kleineren Bildschirmen eine Spalte. Die Bereichsnavigation steht nur am Anfang und scrollt mit der Seite weg. Auf schmalen Displays passen alle vier Namen in ihre Buttons. Verknüpfungen aus der Live-Leiste und die bisherigen Kopfknöpfe öffnen den passenden Bereich; die Sicherung ist also weiterhin direkt erreichbar.
 
 Orderflow (BTC-Pfeile, Kerzen, Demo), Chart-Ebenen/Whales sowie die ausführliche KI-Einrichtung sind zunächst eingeklappt. Die Auswahl der neuen Klappflächen und der zuletzt gewählte Arbeitsbereich werden lokal gespeichert. Für die Vorauswahl gelten bei jedem Bereichswechsel die genannten Voreinstellungen; innerhalb des Bereichs kannst du sie beliebig klappen. Kalender und Coin-News zeigen zunächst höchstens drei Einträge, mit den bisherigen Mehr-Knöpfen den vollständigen gefilterten Bestand. Warnungs-/Filter-/Berechnungsregeln bleiben unverändert.
 

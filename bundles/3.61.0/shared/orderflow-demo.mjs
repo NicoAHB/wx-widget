@@ -2,13 +2,13 @@
 export const DEMO_LIMIT = 2000;
 export function demoBook(raw) {
   if (raw == null) return { v: 1, active: [], closed: [] };
-  if (raw.v !== 1 || !Array.isArray(raw.active) || !Array.isArray(raw.closed)) throw new Error('Demo-Bestand kann nicht gelesen werden. Persönliche Sicherung prüfen.');
+  if (raw.v !== 1 || !Array.isArray(raw.active) || !Array.isArray(raw.closed)) throw new Error('Demo-Bestand kann nicht gelesen werden. Lokales Übungsbuch prüfen.');
   const ids = new Set(), symbols = new Set();
   for (const p of [...raw.active, ...raw.closed]) {
     if (!p || typeof p.id !== 'string' || !p.id || ids.has(p.id) || !/^[A-Z0-9]{2,30}USDT$/.test(p.symbol) || !['long', 'short'].includes(p.side)
       || ![p.entry, p.margin, p.leverage, p.qty, p.openedAt].every(Number.isFinite) || !(p.entry > 0 && p.margin > 0 && p.qty > 0 && p.leverage >= 1 && p.leverage <= 125 && p.openedAt > 0)
       || p.source !== undefined && !['spot', 'futures'].includes(p.source)
-      || p.closedAt !== undefined && !(Number.isFinite(p.exit) && p.exit > 0 && Number.isFinite(p.closedAt) && p.closedAt >= p.openedAt)) throw new Error('Demo-Bestand enthält ungültige Einträge. Persönliche Sicherung prüfen.');
+      || p.closedAt !== undefined && !(Number.isFinite(p.exit) && p.exit > 0 && Number.isFinite(p.closedAt) && p.closedAt >= p.openedAt)) throw new Error('Demo-Bestand enthält ungültige Einträge. Lokales Übungsbuch prüfen.');
     ids.add(p.id);
   }
   for (const p of raw.active) { if (p.closedAt !== undefined || symbols.has(p.symbol)) throw new Error('Demo-Bestand enthält widersprüchliche offene Positionen.'); symbols.add(p.symbol); }
@@ -47,6 +47,10 @@ export function createOrderflowDemo({ root, quote, symbol, now, read, save, form
   const live = el('button', 'button of-demo-price'), close = el('button', 'button of-demo-close', 'Verkaufen zum Live-Kurs'); live.id = 'of-demo-price'; close.id = 'of-demo-close'; live.type = close.type = 'button';
   const position = el('p', 'of-source'), result = el('p', 'of-demo-result'), message = el('p', 'of-notice'); result.id = 'of-demo-result'; message.id = 'of-demo-status'; message.setAttribute('role', 'status');
   details.append(explain, quoteSource, fields, live, position, close, result, message); root.append(details);
+  // 3.61.0: nur dieses lokale Übungsbuch bewusst zurücksetzen, niemals persönliche Daten.
+  const clear=el('button','button ghost','Orderflow-Demo-Daten löschen'),confirmation=el('div','of-notice'),yes=el('button','button ghost','Nur Orderflow-Demo löschen'),no=el('button','button ghost','Abbrechen');clear.id='of-demo-clear';yes.id='of-demo-clear-yes';clear.type=yes.type=no.type='button';confirmation.id='of-demo-clear-confirm';confirmation.hidden=true;
+  confirmation.append(el('p','','Alle offenen und geschlossenen Orderflow-Übungen aller Coins löschen? Persönliche Positionen und die Bot-Demo bleiben erhalten.'),yes,no);details.append(clear,confirmation);
+  clear.addEventListener('click',()=>{confirmation.hidden=false;});no.addEventListener('click',()=>{confirmation.hidden=true;});yes.addEventListener('click',()=>{try{save(demoBook(null));confirmation.hidden=true;text(message,'Nur lokale Orderflow-Demo-Daten gelöscht.');}catch(e){text(message,e.message);}render();});
   function render() {
     const sym = symbol(), q = quote(); let book;
     try { book = demoBook(read()); } catch (e) { text(message, e.message); live.disabled = close.disabled = true; text(result, '—'); return; }
