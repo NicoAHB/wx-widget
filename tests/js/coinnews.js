@@ -1,3 +1,5 @@
+// 3.60.0: isolierte Kopie mit optionalem UI-Arbeitsbereich; Fachregeln unverändert.
+var workspace;
 // ---------- 3.20.0: Ganz wichtige News und Termine zum geöffneten Coin ----------
 // Quelle: Der GitHub-Job .github/workflows/news.yml sammelt stündlich Ankündigungen von Binance (Listings, Delistings,
 // entfernte Handelspaare, Netzwerk-Upgrades, Beobachtungsliste) und Schlagzeilen deutschsprachiger Medien über Google News
@@ -104,7 +106,8 @@ function renderCnews(now = Date.now()) {
   if (base !== cn.base) { cn.base = base; cn.more = false; $('cnews-coin').textContent = base; }
   const { soon, feed } = cn.data ? cnFor(cn.data, base, cfg, now) : { soon: [], feed: [] }, all = [...soon, ...feed];
   // Standard: höchstens 5 Einträge, Termine zuerst; „Alle anzeigen“ zeigt den Rest
-  const shown = cn.more ? all : all.slice(0, CN_TOP);
+  const top = workspace?.mode === 'focus' ? 3 : CN_TOP;
+  const shown = cn.more ? all : all.slice(0, top);
   const sig = JSON.stringify([base, cn.more, shown.map(x => [x.code || x.url, x.at, x.more, x.imp]), all.length, Math.floor(now / 60e3), !cn.data && cn.error]);
   if (sig !== cn.list) {
     cn.list = sig;
@@ -114,7 +117,7 @@ function renderCnews(now = Date.now()) {
     if (!shown.length) parts.push(el('p', 'ec-empty', !cn.data ? (cn.error || 'Meldungen werden geladen …') : cnEmpty(base, cfg)));
     $('cnews-list').replaceChildren(...parts);
     const more = $('cnews-more');
-    more.hidden = all.length <= CN_TOP; more.textContent = cn.more ? 'Weniger anzeigen' : `Alle anzeigen (${all.length})`;
+    more.hidden = all.length <= top; more.textContent = cn.more ? 'Weniger anzeigen' : `Alle anzeigen (${all.length})`;
   }
   // Stand der Daten
   const src = $('cnews-src'), f = cn.data?.fetchedAt, stale = !!f && now - f > CN_STALE, fd = f ? ecDay(f, now) : '';

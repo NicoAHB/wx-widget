@@ -27,7 +27,12 @@ function startMock() {
 const ctl = async (p) => { const r = await fetch('http://127.0.0.1:8790' + p); return r.json(); };
 async function launch(opts = {}) {
   for (const k of ['HTTPS_PROXY', 'https_proxy', 'HTTP_PROXY', 'http_proxy', 'ALL_PROXY', 'all_proxy']) delete process.env[k];
-  return chromium.launch({ headless: true, args: ['--no-proxy-server', '--host-resolver-rules=MAP *.binance.com 127.0.0.1, MAP *.binance.vision 127.0.0.1, MAP data-api.binance.vision 127.0.0.1, MAP api.telegram.org 127.0.0.1, MAP discord.com 127.0.0.1, MAP raw.githubusercontent.com 127.0.0.1, MAP api.coingecko.com 127.0.0.1, MAP api.coinpaprika.com 127.0.0.1, MAP api.coinlore.net 127.0.0.1', '--ignore-certificate-errors', ...(opts.args || [])] });
+  const browser = await chromium.launch({ headless: true, args: ['--no-proxy-server', '--host-resolver-rules=MAP *.binance.com 127.0.0.1, MAP *.binance.vision 127.0.0.1, MAP data-api.binance.vision 127.0.0.1, MAP api.telegram.org 127.0.0.1, MAP discord.com 127.0.0.1, MAP raw.githubusercontent.com 127.0.0.1, MAP api.coingecko.com 127.0.0.1, MAP api.coinpaprika.com 127.0.0.1, MAP api.coinlore.net 127.0.0.1', '--ignore-certificate-errors', ...(opts.args || [])] });
+  if (opts.workspace !== 'fresh') {
+    const createContext = browser.newContext.bind(browser);
+    browser.newContext = async (...args) => { const ctx = await createContext(...args); await ctx.addInitScript(() => { try { if (!localStorage.getItem('scalpdesk.workspace.v1')) localStorage.setItem('scalpdesk.workspace.v1', JSON.stringify({ v: 1, mode: 'all', view: 'chart', folds: {} })); } catch {} }); return ctx; };
+  }
+  return browser;
 }
 async function setup() { await startStatic(); await startMock(); }
 async function teardown() { staticServer?.close(); mock?.kill(); }

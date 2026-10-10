@@ -327,10 +327,15 @@ const tests = {
     check('Live-Kurse ändern sich, ohne das Raster neu zu bauen (dieselben Kacheln)', live.same && live.changed, JSON.stringify(live));
     // Maus: lang drücken und ziehen
     const drag = async (from, to, { hold = 600, steps = 12, esc = false, resize = false } = {}) => {
+      // Nach dem Detailfeld kann noch sanftes Nachscrollen laufen. Erst die echte
+      // Kachel erreichbar/stabil anfahren, dann die Koordinaten für die Geste lesen.
+      await page.locator(T(from)).hover();
       const a = await center(page, T(from)), b = await center(page, T(to));
+      const hit = await page.evaluate(a => ({ target: document.elementFromPoint(a.x,a.y)?.outerHTML.slice(0,180), scroll: scrollY }), a);
       await page.mouse.move(a.x, a.y); await page.mouse.down(); await page.waitForTimeout(hold);
       for (let i = 1; i <= steps; i++) { await page.mouse.move(a.x + (b.x - a.x) * i / steps, a.y + (b.y - a.y) * i / steps); await page.waitForTimeout(30); }
       const mid = await page.evaluate(() => ({ ghost: !!document.querySelector('.wl-ghost'), ph: !!document.querySelector('#watchlist .wl-ph'), drag: document.documentElement.dataset.wldrag || '' }));
+      if (esc) Object.assign(mid, {from, to, a, b, hit});
       if (esc) await page.keyboard.press('Escape');
       if (resize) { await page.setViewportSize({ width: 1300, height: 1000 }); await page.waitForTimeout(300); }
       await page.mouse.up(); await page.waitForTimeout(500); return mid;
@@ -350,7 +355,8 @@ const tests = {
     await page.evaluate(() => { const t = document.querySelector('#watchlist .wl-tile[aria-expanded="true"]'); if (t) t.click(); });
     // Abbruch mit Esc und durch Größenänderung
     const s0 = await sym(page); mid = await drag('BCH', 'NEAR', { esc: true });
-    check('Esc während des Ziehens: alte Reihenfolge, nichts angehoben, kein Tipp', mid.ghost && await order(page) === 'BTC,BCH,LTC,XRP,ETC,NEAR' && !(await page.$('.wl-ghost')) && !(await page.$('#watchlist .wl-ph')) && await sym(page) === s0 && !(await page.$('#watchlist .wl-tile[aria-expanded="true"]')), `${await order(page)} · ${s0} → ${await sym(page)}`);
+    const escAfter = await page.evaluate(() => ({ ghost: !!document.querySelector('.wl-ghost'), ph: !!document.querySelector('#watchlist .wl-ph'), open: document.querySelector('#watchlist .wl-tile[aria-expanded="true"]')?.dataset.watch || null, drag: document.documentElement.dataset.wldrag || '', scroll: scrollY }));
+    check('Esc während des Ziehens: alte Reihenfolge, nichts angehoben, kein Tipp', mid.ghost && await order(page) === 'BTC,BCH,LTC,XRP,ETC,NEAR' && !(await page.$('.wl-ghost')) && !(await page.$('#watchlist .wl-ph')) && await sym(page) === s0 && !(await page.$('#watchlist .wl-tile[aria-expanded="true"]')), JSON.stringify({ mid, after: escAfter, order: await order(page), before: s0, symbol: await sym(page) }));
     mid = await drag('BCH', 'NEAR', { resize: true });
     check('Breite ändert sich während des Ziehens (Drehen): Abbruch, keine Kachel verloren', mid.ghost && await order(page) === 'BTC,BCH,LTC,XRP,ETC,NEAR' && await page.evaluate(() => document.querySelectorAll('#watchlist .wl-grid > .wl-item').length) === 6 && !(await page.$('.wl-ghost')), await order(page));
     await page.setViewportSize({ width: 1500, height: 1000 }); await page.waitForTimeout(400);

@@ -1,3 +1,5 @@
+// 3.60.0: isolierte Kopie mit optionalem UI-Arbeitsbereich; Fachregeln unverändert.
+var workspace;
 // ---------- Schritt 4.1: Wirtschaftskalender mit Warnung vor wichtigen Terminen ----------
 // Quelle: Wochenkalender von Forex Factory. Der GitHub-Job .github/workflows/kalender.yml holt ihn alle 3 Stunden und legt
 // ihn als calendar.json im Zweig „kalender“ ab. Die App liest die Datei über raw.githubusercontent.com (Abruf aus dem
@@ -87,7 +89,7 @@ function renderEcon(now = Date.now()) {
   const box = $('econ'); if (!box) return;
   const cfg = ec.cfg, all = ec.data ? ecFilter(ec.data.events, cfg) : [], groups = ecWarnGroups(all, now, cfg.warn), warnT = new Set(groups.map(g => g.t));
   // Liste: die nächsten Termine (auch die der letzten 15 Minuten) oder die ganze Woche
-  const shown = ec.more ? all : all.filter(e => e.t + EC_AFTER >= now).slice(0, EC_TOP);
+  const shown = ec.more ? all : all.filter(e => e.t + EC_AFTER >= now).slice(0, workspace?.mode === 'focus' ? 3 : EC_TOP);
   const sig = JSON.stringify([ec.more, shown.map(e => [e.t, e.title, e.actual]), [...warnT], Math.floor(now / 60e3), ec.error && !ec.data]);
   if (sig !== ec.list) {
     ec.list = sig;

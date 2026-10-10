@@ -150,3 +150,16 @@ UI-Gesamtlauf 3.58.0: m4 wartete vor dem Value-Area-Vergleich nur auf Signalzeit
 
 - `m83.js`: tatsächlicher App-Code, Raw-/Safari-Deflate-/ungepackter Vergleich mit identischem Vollinhalt; alte/neue verschlüsselte Codes, Gzip-Ersatzleser, AES-Kopfschutz, Größen-/Entpackgrenzen; native kompakte Download-/Dateiimporte, Vorschau/Passwort/Idempotenz/Lernen, unmittelbare mobile Teilgeste und Fehler/Abbruch, neuere Änderungen bleiben ungesichert, Dialog-/Passwortrennen, 320/390/768 in beiden Layouts, mehr als zehn Teile mit gleichem Passwort, aktueller Offline-Scanner und vollständige Offline-Sicherung. Im seriellen Gesamtlauf jetzt 139 Ziele. Reale Safari-/Kamera-/AirDrop-Abnahme separat.
 - Alte m50/ui-Erwartungen einschließlich sämtlicher 10-/11-Teil- und Lesbarkeitsgrenzen unverändert. JSON-Backup und separate KI-/Bot-Originalarchive bleiben erhalten. [Bedienung](../docs/QR-KOMPAKT.md).
+
+### Übersichtliche Arbeitsbereiche (3.60.0)
+
+- `m84.js`: frischer Standard ohne Harness-Präferenz, vier Arbeitsbereiche, wichtige originale Vorauswahl oben in voller Breite, zwei Desktopspalten, native UI-/Entwurfs-/Originalbucherhaltung, Tastatur-Umsortierung, tatsächliche Downloads/Telegramdialog/Vollbild, gespeicherte Gesamtansicht/Details, beide Darstellungen/drei Hintergründe und fünf Breiten; echte 320/390-Touch-Wege und Offline-Appstart. Native Bitget-Chartwege in beiden Darstellungen bei 320/390/1440 px. Entwicklung abschließend 130/130. Gesamtlauf jetzt 140 Ziele.
+- Ältere Fachtests bekommen in `harness.launch` nur die weiterhin vorhandene Gesamtansicht als lokale Startpräferenz. Ihre Aktionen/Erwartungen bleiben unverändert. `h.launch({ workspace: 'fresh' })` nutzt die tatsächliche frische Startansicht. Keine Klickumleitung. Die neuen Navigationswege separat in m84 geprüft.
+- Kalender-/News-Kopien enthalten den gleichen optionalen Top-3-Anzeigezweig; ohne Arbeitsbereiche unverändert Top-5. Filter, Warnungen und Fachberechnungen bleiben gleich.
+
+- m28 prüft den Tag des ersten künftigen JOLTS-Termins aus dessen Zeitstempel statt fest „Heute“: Die +3h-Testtermine liegen spät abends bereits morgen. Alle bisherigen 39 Prüfungen bleiben erhalten.
+- m53 beginnt Koordinatengesten erst nach normalem Hover auf der sichtbaren/stabilen Kachel: sanftes Nachscrollen nach dem Detailfeld darf die Startkoordinaten nicht überholen. Kein Force, keine Änderung der 102 Erwartungen; zusätzliche Esc-Diagnose.
+- Gesamtansicht: m84 prüft die direkten Original-Eltern von Vorauswahl, Orderflow und Chart-Footer. Neue äußere Klapphüllen werden vollständig entfernt und bei Rückkehr wieder mit denselben Elementen eingehängt. Erste native Nachprüfung 130/130; m45/m46 und Safari-Scrolltests unverändert erneut prüfen.
+- m51 erfasst bei fehlender 24/7-Übergabe zusätzlich tatsächliche Telegram-Versuche, Status und gespeicherte Mengen. Alle 73 Erwartungen und Versandregeln bleiben erhalten.
+
+- m25: Der „heute geschlossene“ Testtrade liegt auch in den ersten zehn Minuten nach Mitternacht am aktuellen lokalen Tag. 20 Originalprüfungen einschließlich exaktem USDT-/EUR-Tagesergebnis erhalten, eine zusätzliche unabhängige Vorbedingung für den tatsächlich gespeicherten Tag/Betrag/FX (21 Fälle). App-Tagesberechnung unverändert.

@@ -7,8 +7,11 @@ const results = [];
 const check = (name, cond, detail = '') => { results.push({ name, ok: !!cond, detail }); console.log(`${cond ? '  ✓' : '  ✗'} ${name}${detail ? ' — ' + detail : ''}`); };
 const live = page => page.waitForFunction(() => document.getElementById('status').dataset.feed === 'live', null, { timeout: 20000 }).catch(() => {});
 // heute geschlossener Trade mit +12,50 USDT (für den Euro-Wert in der Live-Leiste)
-const seedTrade = now => { if (localStorage.getItem('scalpdesk.savedat.v1')) return;
-  localStorage.setItem('scalpdesk.history.v1', JSON.stringify([{ id: 't1', symbol: 'BTCUSDT', side: 'long', mode: 'isolated', entry: 64000, leverage: 10, qty: 0.01, margin: 64, openedAt: now - 7200e3, source: 'spot', liqExchange: null, preRealized: 0, sl: null, tp: null, exit: 65250, fees: 0, pnl: 12.5, pnlSource: 'manual', closedAt: now - 600e3, fx: 1.164, note: '' }])); };
+const seedTrade = () => { if (localStorage.getItem('scalpdesk.savedat.v1')) return;
+  // Heute bleibt heute, auch in den ersten zehn Minuten nach Mitternacht. Nur Testdaten, keine Tagesberechnung ändern.
+  const now = Date.now(), dayStart = new Date(now); dayStart.setHours(0, 0, 0, 0);
+  const closedAt = Math.max(dayStart.getTime(), now - 600e3);
+  localStorage.setItem('scalpdesk.history.v1', JSON.stringify([{ id: 't1', symbol: 'BTCUSDT', side: 'long', mode: 'isolated', entry: 64000, leverage: 10, qty: 0.01, margin: 64, openedAt: now - 7200e3, source: 'spot', liqExchange: null, preRealized: 0, sl: null, tp: null, exit: 65250, fees: 0, pnl: 12.5, pnlSource: 'manual', closedAt, fx: 1.164, note: '' }])); };
 const st = page => page.evaluate(() => { const t = document.getElementById('tabbar'), a = document.activeElement;
   return { shown: getComputedStyle(t).display !== 'none' && getComputedStyle(t).visibility !== 'hidden', kbd: document.documentElement.dataset.kbd || '', focus: a ? (a.id || a.tagName) : '', typing: !!a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) }; });
 // Bildschirmtastatur nachstellen: sichtbarer Bereich halb so hoch (wie am iPhone) bzw. wieder normal
@@ -52,11 +55,13 @@ const kbd = (page, on) => page.evaluate(on => { const vv = visualViewport; if (o
     check('iPad: keine Fehler', !te.length, te.join(' | ')); await tc.close();
     // ---------- Computer: Fokus wie bisher; Euro-Wert in der Live-Leiste ----------
     for (const w of [1440, 1280, 1100, 1000]) {
-      const dc = await browser.newContext({ viewport: { width: w, height: 900 } }); await dc.addInitScript(seedTrade, Date.now());
+      const dc = await browser.newContext({ viewport: { width: w, height: 900 } }); await dc.addInitScript(seedTrade);
       const d = await dc.newPage(), de = []; h.collect(d, de); await d.goto(h.URL_BASE + '/weather-widget-v2.html'); await live(d); await d.waitForTimeout(2000);
       const lb = await d.evaluate(() => { const g = id => document.getElementById(id), p = document.querySelector('.livebar .lb-pos'), vis = e => !!e && e.getClientRects().length > 0;
         return { usdt: g('lb-day').textContent, eur: g('lb-day-eur').textContent, vis: vis(g('lb-day-eur')), cut: p.scrollWidth > p.clientWidth + 1, right: Math.round(p.getBoundingClientRect().right), vw: innerWidth, fx: document.getElementById('price-eur')?.textContent || '' }; });
       if (w === 1440) {
+        const fixture = await d.evaluate(() => { const t = window.__g05.state.trades.find(t => t.id === 't1'); return { present: !!t, today: new Date().toDateString(), closedDay: new Date(t?.closedAt).toDateString(), closedAt: t?.closedAt, openedAt: t?.openedAt, pnl: t?.pnl, fx: t?.fx }; });
+        check('Vorbedingung: tatsächlicher Beispieltrade heute geschlossen, Originalbetrag und festes FX erhalten', fixture.present && fixture.closedDay === fixture.today && fixture.openedAt < fixture.closedAt && fixture.pnl === 12.5 && fixture.fx === 1.164, JSON.stringify(fixture));
         // 3.31.0 (G03): „Heute“ in Euro aus dem eingefrorenen Wert des Trades (Kurs 1,164 beim Abschluss) – genau, daher ohne „≈“
         check('Computer: Live-Leiste „Heute +12,50 USDT (+10,74 €)“', lb.usdt === '+12,50 USDT' && lb.eur === '(+10,74 €)' && lb.vis, JSON.stringify(lb));
         await d.click('#pos-add-toggle'); await d.waitForTimeout(500); const f1 = await st(d);
