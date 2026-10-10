@@ -161,3 +161,5 @@ UI-Gesamtlauf 3.58.0: m4 wartete vor dem Value-Area-Vergleich nur auf Signalzeit
 - m53 beginnt Koordinatengesten erst nach normalem Hover auf der sichtbaren/stabilen Kachel: sanftes Nachscrollen nach dem Detailfeld darf die Startkoordinaten nicht überholen. Kein Force, keine Änderung der 102 Erwartungen; zusätzliche Esc-Diagnose.
 - Gesamtansicht: m84 prüft die direkten Original-Eltern von Vorauswahl, Orderflow und Chart-Footer. Neue äußere Klapphüllen werden vollständig entfernt und bei Rückkehr wieder mit denselben Elementen eingehängt. Erste native Nachprüfung 130/130; m45/m46 und Safari-Scrolltests unverändert erneut prüfen.
 - m51 erfasst bei fehlender 24/7-Übergabe zusätzlich tatsächliche Telegram-Versuche, Status und gespeicherte Mengen. Alle 73 Erwartungen und Versandregeln bleiben erhalten.
+
+- m25: Der „heute geschlossene“ Testtrade liegt auch in den ersten zehn Minuten nach Mitternacht am aktuellen lokalen Tag. 20 Originalprüfungen einschließlich exaktem USDT-/EUR-Tagesergebnis erhalten, eine zusätzliche unabhängige Vorbedingung für den tatsächlich gespeicherten Tag/Betrag/FX (21 Fälle). App-Tagesberechnung unverändert.
