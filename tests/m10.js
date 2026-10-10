@@ -11,6 +11,25 @@ const st = page => page.evaluate(() => {
     chartH: ch.offsetHeight, chartW: ch.offsetWidth, tools: o('.chart-toolbar'), toggles: o('.overlay-toggles'), chart: o('#chart'), fbar: o('#full-bar'), swap: { ...o('#fb-swap'), hidden: document.getElementById('fb-swap').hidden, sym: document.getElementById('fb-sym').textContent, price: document.getElementById('fb-price').textContent },
     title: document.getElementById('fb-title').textContent, y: Math.round(scrollY), vw: innerWidth, vh: innerHeight, sw: document.scrollingElement.scrollWidth, tabbar: getComputedStyle(document.querySelector('.tabbar') || document.body).display };
 });
+// 3.62.0: echte Bildschirmränder und verbleibende Charthöhe in der neuen Bereichssicht prüfen.
+const fullSize = async page => {
+  // Nach dem Einblenden kann eine Live-/Infobox die Höhe nochmals ändern; den echten ResizeObserver-Neuzeichner abwarten.
+  await page.waitForFunction(() => {
+    const ch = document.getElementById('chart'), svg = ch.querySelector('svg');
+    return svg && Math.abs(svg.viewBox.baseVal.width - ch.clientWidth) <= 1 && Math.abs(svg.viewBox.baseVal.height - ch.clientHeight) <= 1;
+  }, null, { timeout: 3000 });
+  return page.evaluate(() => {
+  const sec = document.getElementById('chart-sec'), ch = document.getElementById('chart'), css = getComputedStyle(sec);
+  const rect = Element.prototype.getBoundingClientRect.call(sec), svg = ch.querySelector('svg');
+  return { on: document.documentElement.dataset.chartfull === '1', display: css.display, rot: css.transform !== 'none',
+    viewport: [innerWidth, innerHeight], edges: [rect.left, rect.top, rect.right, rect.bottom],
+    chart: [ch.offsetWidth, ch.offsetHeight], remaining: sec.clientHeight - parseFloat(css.paddingBottom) - ch.offsetTop,
+    svg: svg ? [svg.viewBox.baseVal.width, svg.viewBox.baseVal.height] : [],
+    bar: document.documentElement.dataset.chartbar || '', native: document.documentElement.dataset.fsnative === '1' };
+  });
+};
+const fillsScreen = g => g.on && g.display === 'flex' && g.edges.every((v, i) => Math.abs(v - [0, 0, ...g.viewport][i]) <= 1)
+  && Math.abs(g.chart[1] - g.remaining) <= 1 && g.chart[1] >= 160 && g.svg.every((v, i) => Math.abs(v - g.chart[i]) <= 1) && g.svg.length === 2;
 (async () => {
   await h.setup(); await h.sleep(300); await h.ctl('/reset');
   const browser = await h.launch();
@@ -80,6 +99,46 @@ const st = page => page.evaluate(() => {
       check(`${name}: nächstes Öffnen – gemerkt, iOS übernimmt das Drehen`, d.on && !d.rot && d.native, JSON.stringify(d));
       await page.click('#fb-rot'); await page.waitForTimeout(500); const e = await rot();
       check(`${name}: Knopf ⟳ schaltet die App-Drehung wieder ein (für Rotationssperre)`, e.on && e.rot && !e.native && e.pressed === 'true', JSON.stringify(e));
+      check(`${name}: keine Fehler`, !errors.length, errors.join(' | ')); await ctx.close();
+    }
+    // Die alten Fälle prüfen weiter die Gesamtansicht. Hier ausdrücklich die neue Bereichssicht ohne Klickumleitung.
+    for (const presentation of ['standard', 'dashboard']) for (const [width, height] of [[320, 780], [390, 844], [768, 1024], [1440, 900]]) {
+      const phone = width <= 600, name = `Bereichssicht/${presentation}/${width}×${height}`;
+      const ctx = await browser.newContext({ viewport: { width, height }, hasTouch: true, isMobile: width < 1000 });
+      await ctx.addInitScript(presentation => {
+        localStorage.setItem('scalpdesk.workspace.v1', JSON.stringify({ v: 1, mode: 'focus', view: 'chart', folds: {} }));
+        localStorage.setItem('scalpdesk.presentation.v1', JSON.stringify(presentation));
+      }, presentation);
+      const page = await ctx.newPage(), errors = []; h.collect(page, errors);
+      await page.goto(h.URL_BASE + '/weather-widget-v2.html');
+      await page.waitForFunction(() => window.__g05?.state.candles.length > 100);
+      await page.locator('#chart-full').scrollIntoViewIfNeeded(); await page.waitForTimeout(300);
+      await page.waitForFunction(() => document.querySelector('#chart svg'));
+      const before = await st(page); await page.evaluate(() => { window.fullSizeOriginal = document.getElementById('chart'); });
+      await page.tap('#chart-full'); await page.waitForTimeout(700); let g = await fullSize(page);
+      check(`${name}: Vollbild füllt den Bildschirm samt gezeichnetem Chart`, fillsScreen(g) && g.rot === phone, JSON.stringify(g));
+      if (phone) {
+        await page.tap('#fb-rot'); await page.waitForTimeout(600); g = await fullSize(page);
+        check(`${name}: ungedrehtes Hochformat nutzt die gesamte übrige Höhe`, fillsScreen(g) && !g.rot && g.native && g.chart[1] > g.chart[0], JSON.stringify(g));
+      }
+      const closedHeight = g.chart[1]; await page.tap('#fb-tools'); await page.waitForTimeout(600); g = await fullSize(page);
+      check(`${name}: geöffnete Werkzeuge bleiben erreichbar, Chart endet am unteren Rand`, fillsScreen(g) && g.bar === 'open' && g.chart[1] < closedHeight - 30, JSON.stringify(g));
+      await page.tap('#fb-tools'); await page.waitForTimeout(600); g = await fullSize(page);
+      check(`${name}: Werkzeuge zu – volle Charthöhe wiederhergestellt`, fillsScreen(g) && !g.bar && Math.abs(g.chart[1] - closedHeight) <= 1, JSON.stringify(g));
+      if (phone) {
+        await page.setViewportSize({ width: height, height: width }); await page.waitForTimeout(600); g = await fullSize(page);
+        check(`${name}: echtes Querformat ohne Abschneiden oder zweite Drehung`, fillsScreen(g) && !g.rot, JSON.stringify(g));
+        await page.setViewportSize({ width, height }); await page.waitForTimeout(600); g = await fullSize(page);
+        check(`${name}: zurück im Hochformat weiterhin bildschirmfüllend`, fillsScreen(g) && !g.rot && g.native, JSON.stringify(g));
+      }
+      await page.tap('#fb-exit'); await page.waitForTimeout(600); const after = await st(page);
+      check(`${name}: ursprünglicher Chart und Seitenposition nach Beenden erhalten`, !after.on && !after.rot && Math.abs(after.chartH - before.chartH) <= 1 && Math.abs(after.y - before.y) <= 2 && await page.evaluate(() => document.getElementById('chart') === fullSizeOriginal), JSON.stringify({ before, after }));
+      if (phone) {
+        await page.reload(); await page.waitForFunction(() => window.__g05?.state.candles.length > 100);
+        await page.tap('#chart-full'); await page.waitForTimeout(700); g = await fullSize(page);
+        check(`${name}: gemerkte Hochformatwahl nach Neuladen weiterhin bildschirmfüllend`, fillsScreen(g) && !g.rot && g.native, JSON.stringify(g));
+        await page.tap('#fb-exit');
+      }
       check(`${name}: keine Fehler`, !errors.length, errors.join(' | ')); await ctx.close();
     }
   } catch (e) { check('Abbruch', false, e.message.split('\n')[0]); }

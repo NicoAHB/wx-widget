@@ -1,5 +1,7 @@
 # Tests für Scalp Desk
 
+3.62.0: `m10.js` prüft zusätzlich die neue Bereichssicht in beiden Darstellungen bei 320/390/768/1440 px. Der Vollbildbereich muss exakt den Bildschirm und der gezeichnete Chart die verbleibende Höhe füllen; auch ungedrehtes Hochformat, Werkzeugleiste, Drehwechsel, Beenden und gespeicherte Drehwahl nach Neuladen werden tatsächlich bedient. Die bisherigen Gesamtansichts-/Zeiger-/Kurswechselprüfungen bleiben erhalten.
+
 Automatische Tests für die App (`weather-widget-v2.html`) und den 24/7-Dienst (`server/`). Sie laufen vollständig lokal gegen einen Test-Server: Binance, Telegram, Discord und GitHub werden nachgebildet (`mock-binance.js`). Es werden keine echten Kurse abgefragt und keine echten Nachrichten gesendet.
 
 ## Voraussetzungen
