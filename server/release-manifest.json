@@ -44,8 +44,8 @@
     },
     {
       "path": "install.sh",
-      "sha256": "84cd026dcb9f6e5bfd18dcfed34f7af4c360ed58448c99e26b816c340e21d24e",
-      "bytes": 19154
+      "sha256": "07bb7777ee2e59bb159c1a490cbdd5f3db819300c52c37e174a27bc9f62d33d4",
+      "bytes": 19236
     },
     {
       "path": "shared/adaptive-grid-feed.mjs",

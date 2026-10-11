@@ -8749,7 +8749,7 @@ $('tg-detect').addEventListener('click', () => void tgDetect());
 $('tg-test').addEventListener('click', () => void chanTest('tg'));
 $('chan-clear').addEventListener('click', () => {
   if (!confirm('Bot-Token und Chat-IDs auf diesem Gerät löschen?')) return;
-  chan = { tg: { token: '', chat: '', thread: '', bchat: '', bthread: '', btoken: '', on: true }, dc: { url: '', on: true }, ev: chan.ev }; chanState.tg = chanState.dc = null; $('tg-found').hidden = true;
+  chan = loadChannels({ ev: chan.ev }); chanState.tg = null; $('tg-found').hidden = true;
   saveChannels(); fillChanForm();
 });
 renderChanSummary();

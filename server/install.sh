@@ -91,7 +91,7 @@ OLD=$(readlink "$DIR/current" 2>/dev/null || true)
 # Erstes Update eines älteren Installers: vollständige bisherige Programmdateien als Rückfallstand erhalten.
 if [ -z "$OLD" ] && [ -f "$DIR/scalpdesk-247.mjs" ]; then
   OLD="releases/legacy-$(date +%s)"; mkdir -p "$DIR/$OLD"
-  for part in scalpdesk-247.mjs pattern-engine.mjs pattern-monitor.mjs ki-monitor.mjs orderflow-explainer.mjs install.sh shared server; do [ ! -e "$DIR/$part" ] || cp -a "$DIR/$part" "$DIR/$OLD/$part"; done
+  for part in scalpdesk-247.mjs pattern-engine.mjs pattern-monitor.mjs ki-monitor.mjs orderflow-explainer.mjs telegram-format.mjs market-intervals.mjs install.sh shared server; do [ ! -e "$DIR/$part" ] || cp -a "$DIR/$part" "$DIR/$OLD/$part"; done
   # Nur der alte CLI-Pfadvergleich benötigt die neue Symlink-Auflösung; Fach-/Zustandslogik bleibt unverändert.
   node - "$DIR/$OLD/scalpdesk-247.mjs" <<'NODE'
 const fs=require('fs'),file=process.argv[2],old=fs.readFileSync(file,'utf8');fs.writeFileSync(file,old.replace('path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)','fs.realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)'));
@@ -100,7 +100,7 @@ fi
 if [ -n "$OLD" ] && [ "$OLD" != "releases/$RELEASE" ]; then ln -s "$OLD" "$DIR/previous.new"; mv -Tf "$DIR/previous.new" "$DIR/previous"; fi
 ln -s "releases/$RELEASE" "$DIR/current.new"; mv -Tf "$DIR/current.new" "$DIR/current"
 # Node löst den Einstieg auf den realen immutable Releasepfad auf; relative Imports bleiben in demselben Bündel.
-for part in scalpdesk-247.mjs pattern-engine.mjs pattern-monitor.mjs ki-monitor.mjs orderflow-explainer.mjs install.sh shared server; do
+for part in scalpdesk-247.mjs pattern-engine.mjs pattern-monitor.mjs ki-monitor.mjs orderflow-explainer.mjs telegram-format.mjs market-intervals.mjs install.sh shared server; do
   if [ -d "$DIR/$part" ] && [ ! -L "$DIR/$part" ]; then mv "$DIR/$part" "$DIR/$part.legacy"; fi
   ln -s "current/$part" "$DIR/$part.new-link"; mv -Tf "$DIR/$part.new-link" "$DIR/$part"
 done
