@@ -12041,8 +12041,8 @@ async function pulseOthers(w, now) {
 async function pulseSend(p, price, now) {
   const others = await pulseOthers(p.w, now);
   const hLocal = new Date(now).getHours(), text = pulseText(p, price, String(hLocal).padStart(2, '0'), others), silent = hLocal >= 22 || hLocal < 7;
-  simpleToast('pulse:' + p.d, 'alarm ' + p.d, text.split('\n')[0], null, p.d === 'up' ? 'green' : 'orange');
-  desktopNotify(`⚡ BTC ${signed(p.mv)} % in ${p.w} Min.`, text.replace(/\n/g, ' – '), 'pulse');
+  simpleToast('pulse:' + p.d, 'alarm ' + p.d, telegramPlain(text).split('\n')[0], null, p.d === 'up' ? 'green' : 'orange');
+  desktopNotify(`⚡ BTC ${signed(p.mv)} % in ${p.w} Min.`, telegramPlain(text).replace(/\n/g, ' – '), 'pulse');
   // je Richtung höchstens eine Nachricht in 30 Minuten (auch über Tabs hinweg), dazu höchstens eine „legt weiter zu“
   void notifyChannels('pulse', `pulse:${p.d}${p.more ? ':more' : ''}`, text, PULSE_GAP, { silent });
 }
