@@ -39,6 +39,11 @@ let pass=0,fail=0;const check=(name,ok,extra='')=>{ok?pass++:fail++;console.log(
     check('Futures-Livekurse verändern keine Spot-Detail-Kerze',await page.evaluate(p=>__chartDetail.state.candles.at(-1).close===p,oldPrice));
     const first=await page.evaluate(()=>__chartDetail.state.candles[0].time);await page.evaluate(()=>__chartDetail.pan(__chartDetail.state.candles.length-__chartDetail.state.count+50));await page.waitForFunction(t=>!__chartDetail.state.busy&&__chartDetail.state.candles[0].time<t,first);
     check('Nach links scrollen lädt ältere Kerzen und erhält Zeitanker',await page.evaluate(()=>__chartDetail.state.pan>0&&__chartDetail.state.anchorTime!==null&&__chartDetail.state.candles.length>2000));
+    const historicScale=await page.evaluate(()=>__g09.chartScale());
+    await page.click('#zz-fc');await page.evaluate(()=>{__g05.state.overlays.ewfc=true;__chartDetail.pan(__chartDetail.state.pan);});await page.locator('#chart').scrollIntoViewIfNeeded();await page.waitForTimeout(200);
+    check('Historische Detail-Kerzen zeigen keine aktuellen Zukunftsprognosen',await page.locator('#chart .zz-fc,#chart .zz-fc-note,#chart .ew-fc').count()===0);
+    check('Historische Preisachse bleibt beim Einschalten der Zukunftsprognose gleich',await page.evaluate(old=>{const next=__g09.chartScale();return old.min===next.min&&old.max===next.max;},historicScale));
+    await page.click('#zz-fc');await page.evaluate(()=>{__g05.state.overlays.ewfc=false;__chartDetail.pan(__chartDetail.state.pan);});
     for(const [width,height]of [[320,844],[390,844],[768,1024],[1440,1000]]){
       await page.setViewportSize({width,height});await page.locator('#chart-detail-control').scrollIntoViewIfNeeded();await page.waitForTimeout(200);
       const layout=await page.evaluate(()=>{const s=document.getElementById('chart-detail-resolution').getBoundingClientRect(),r=document.getElementById('chart-pattern-row').getBoundingClientRect();return{overflow:document.documentElement.scrollWidth>innerWidth+1,selectWidth:s.width,selectHeight:s.height,right:Math.max(s.right,r.right),width:innerWidth};});

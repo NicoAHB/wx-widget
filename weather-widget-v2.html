@@ -6778,7 +6778,7 @@ function renderChartContent(levels={}, ov={}, start=null, end=null) {
   const bbU=show.bb && ov.bb ? vis(ov.bb.upper) : null, bbL=bbU ? vis(ov.bb.lower) : null, bbM=bbU ? vis(ov.bb.mid) : null, e200=show.ema200 && ov.ema200 ? vis(ov.ema200) : null, prof=show.vp ? ov.profile : null;
   let min=Math.min(...data.map(c=>c.low)),max=Math.max(...data.map(c=>c.high));
   if (bbU) { const u=bbU.filter(Number.isFinite), l=bbL.filter(Number.isFinite); if (u.length) { max=Math.max(max,...u); min=Math.min(min,...l); } }
-  if (ewFcOn() && !(state.pan > 0)) { const ef=ewForecastNow(); if (ef) for (const p of ef.pts) { min=Math.min(min,p.price); max=Math.max(max,p.price); } }
+  if (ewFcOn() && !(chartViewState().pan > 0)) { const ef=ewForecastNow(); if (ef) for (const p of ef.pts) { min=Math.min(min,p.price); max=Math.max(max,p.price); } }
   const span0=max-min || max*.005, padding=Math.max(span0*.12, axisIn && bottom-top>80 ? span0*18/(bottom-top-36) : 0);min-=padding;max+=padding; // 3.3: am Handy oben und unten mindestens 18 px frei (Kurs-Schild)
   const y=v=>top+(max-v)/(max-min)*(bottom-top), x=i=>left+(i+.5)*step;
   const timeX=t=>x(timeIndex(data,t,chartInterval()) ?? 0), mainWindow=mainWindowForDisplay(data), mainOffset=mainWindow.start, mainStop=mainWindow.end;
@@ -10055,7 +10055,7 @@ function chartFutureSlots(len, narrow = false) {
 }
 function drawZigzagForecast(g, { offset, x, y, top, bottom, left, laneX = Infinity }) {
   zzpLearn();
-  if (!zzFcOn() || state.pan > 0) return;
+  if (!zzFcOn() || chartViewState().pan > 0) return;
   const f = zzForecast();
   if (!f) { g.append(node('text', { x: left + 6, y: top + 30, class: 'axis-label zz-fc-note' }, 'Prognose: zu wenige Schwünge – Mindestbewegung verkleinern')); return; }
   const L = zzLearnFor(), corr = f.up ? L.corr.up : L.corr.down, pct = zzPct(), sign = f.up ? '+' : '−';
@@ -10311,7 +10311,7 @@ function ewFcWhy() {
 // Im Chart rechts vom letzten Kurs: gestrichelter Weg vom laufenden Extrempunkt über die Zielpunkte, gestrichelte Kreise,
 // am Ende Ziel mit Kurs und Abstand. Reicht der Platz rechts nicht, wird die Zeit im Zukunftsbereich gestaucht.
 function drawElliottForecast(g, { offset, stop, x, y, top, bottom, left, right, laneX = Infinity }) {
-  if (!ewFcOn() || state.pan > 0) return;
+  if (!ewFcOn() || chartViewState().pan > 0) return;
   const f = ewForecastNow(); if (!f) return;
   // letzter nutzbarer Platz: Ende des Zukunftsbereichs, am Handy hochkant vor den Kurs-Schildchen
   const n = state.candles.length, lastI = n - 1, R = 8, st = x(1) - x(0), xMax = Math.min(right, laneX - 4) - R - 2;
