@@ -7893,6 +7893,8 @@ function adoptData(items) {
   const pat = items.find(([k]) => k === ZZP_KEY); if (pat) { store.adopt(ZZP_KEY, pat[1]); zzpMem = null; items = items.filter(([k]) => k !== ZZP_KEY); if (!items.length) return; }
   for (const [k, v] of items) {
     if (!SYNC_KEYS.includes(k)) continue;
+    // 3.63.0: Zugangsfelder einzeln abgleichen; ein alter Tab-Schalterstand darf keine neuere Eingabe löschen.
+    if (k === 'scalpdesk.channels.v1') { chan = mergeChannelFields(chan, loadChannels(v)); store.set(k, chan); chanSavedFields = { ...chan.tg }; renderChanSummary(); if ($('chan-dialog').open) fillChanForm(true); continue; }
     store.adopt(k, v);
     if (k === POS_KEY) state.positions = loadRecords(POS_KEY, 'pos', 'sync');
     else if (k === HIST_KEY) state.trades = loadRecords(HIST_KEY, 'trade', 'sync');
@@ -8468,26 +8470,34 @@ $('ladder-presets').addEventListener('click', e => { const b = e.target.closest(
 const CHAN_KEY = 'scalpdesk.channels.v1', CHANLAST_KEY = 'scalpdesk.chanlast.v1';
 const TG_TOKEN_RE = /^\d{5,15}:[A-Za-z0-9_-]{30,80}$/, TG_CHAT_RE = /^(-?\d{1,20}|@[A-Za-z][A-Za-z0-9_]{4,31})$/, TG_THREAD_RE = /^\d{1,10}$/;
 const DC_URL_RE = /^https:\/\/(?:(?:ptb|canary)\.)?discord(?:app)?\.com\/api(?:\/v\d{1,2})?\/webhooks\/\d{5,25}\/[A-Za-z0-9_-]{20,120}(?:\?thread_id=\d{5,25})?$/;
-function loadChannels() {
-  const v = store.get(CHAN_KEY), o = v && typeof v === 'object' ? v : {}, str = (x, n) => typeof x === 'string' ? x.trim().slice(0, n) : '';
+// 3.63.0: Eingaben bleiben unverändert; Bereinigung und Rückfall erfolgen ausschließlich bei der Zielauflösung.
+const CHAN_TG_FIELDS = ['token', 'chat', 'thread', 'bchat', 'bthread', 'btoken', 'tchat', 'tthread', 'ttoken', 'pchat', 'pthread', 'ptoken'];
+function loadChannels(v = store.get(CHAN_KEY)) {
+  const o = v && typeof v === 'object' ? v : {}, str = x => typeof x === 'string' ? x : '';
   const c = { tg: { token: str(o.tg?.token, 120), chat: str(o.tg?.chat, 40), thread: str(o.tg?.thread, 10), bchat: str(o.tg?.bchat, 40), bthread: str(o.tg?.bthread, 10), btoken: str(o.tg?.btoken, 120),
       tchat: str(o.tg?.tchat, 40), tthread: str(o.tg?.tthread, 10), ttoken: str(o.tg?.ttoken, 120), pchat: str(o.tg?.pchat, 40), pthread: str(o.tg?.pthread, 10), ptoken: str(o.tg?.ptoken, 120) }, dc: { url: str(o.dc?.url, 300), on: o.dc?.on !== false },
     ev: { alarm: o.ev?.alarm !== false, pos: o.ev?.pos !== false, day: o.ev?.day !== false, news: o.ev?.news !== false, pnl: o.ev?.pnl !== false, pulse: o.ev?.pulse !== false, trade: o.ev?.trade !== false },
     // 3.33.0 (G05): Schalter je Ziel (ohne 24/7-Dienst mit HTTPS gelten sie hier im Browser)
     tgt: { 'course-alert': o.tgt?.['course-alert'] !== false, backup: o.tgt?.backup !== false, trades: o.tgt?.trades !== false, patterns: o.tgt?.patterns !== false, ki: false }, mig33: !!o.mig33,
     // 3.34.0 (G06): lokale Epoche je Ziel – jede Änderung des Schalters zählt hoch (ein Auftrag von vor dem Ausschalten wird verworfen)
-    tep: Object.fromEntries(['course-alert', 'backup', 'trades', 'patterns', 'ki'].map(k => [k, Number.isInteger(o.tep?.[k]) && o.tep[k] >= 0 ? o.tep[k] : 0])) };
-  // 3.33.0 (G05): einmalig umstellen – kein stilles Ausweichen mehr. Bis 3.32 ging die Sicherung ohne eigenen Sicherungschat in den
-  // Kursalarm-Chat; dieser Ort wird jetzt ausdrücklich als Sicherungschat eingetragen (sichtbar, änderbar). Der frühere
-  // Telegram-Schalter „Aktiv“ (aus) wird zu „alle Ziele aus“.
+    tep: Object.fromEntries(['course-alert', 'backup', 'trades', 'patterns', 'ki'].map(k => [k, Number.isInteger(o.tep?.[k]) && o.tep[k] >= 0 ? o.tep[k] : 0])),
+    fields: Object.fromEntries(CHAN_TG_FIELDS.map(k => [k, { at: Number.isSafeInteger(o.fields?.[k]?.at) && o.fields[k].at > 0 ? o.fields[k].at : 0, tab: str(o.fields?.[k]?.tab).slice(0, 100) }])) };
+  // Alten Aktiv-Schalter übernehmen. Einen fehlenden Sicherungschat niemals aus dem Kursalarm ergänzen.
   if (!c.mig33) {
-    const t = c.tg; if (!t.bchat && t.chat) { t.bchat = t.chat; t.bthread = t.bthread || t.thread; }
     if (o.tg && o.tg.on === false) c.tgt = { 'course-alert': false, backup: false, trades: false, patterns: false, ki: false };
     c.mig33 = true;
   }
   return c;
 }
 let chan = loadChannels();
+let chanSavedFields = { ...chan.tg };
+function mergeChannelFields(current, incoming) {
+  for (const k of CHAN_TG_FIELDS) {
+    const a = current.fields?.[k] || { at: 0, tab: '' }, b = incoming.fields?.[k] || { at: 0, tab: '' };
+    if (a.at > b.at || (a.at === b.at && a.tab > b.tab)) { incoming.tg[k] = current.tg[k]; incoming.fields[k] = { ...a }; }
+  }
+  return incoming;
+}
 const chanState = { tg: null, dc: null }, chanClaimed = new Set(), sendWait = new Map(), CHAN_NAME = { tg: 'Telegram', dc: 'Discord' };
 // 3.27.0: letzte zugestellte Meldung je Kanal (keine Tests) – bleibt gespeichert, damit sie auch nach dem Neuladen zu sehen ist.
 // u: Der Browser konnte die Antwort nicht lesen (Zustellung unbestätigt).
@@ -8498,9 +8508,9 @@ function chanLastText(k) {
   return `zuletzt ${L.u ? 'gesendet' : 'zugestellt'} ${new Date(L.at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}${L.label ? ` (${L.label})` : ''}`;
 }
 let sendSeq = 0;
-const tgOk = t => TG_TOKEN_RE.test(t.token) && TG_CHAT_RE.test(t.chat) && (!t.thread || TG_THREAD_RE.test(t.thread)) && (!t.bchat || TG_CHAT_RE.test(t.bchat)) && (!t.bthread || TG_THREAD_RE.test(t.bthread)) && (!t.btoken || TG_TOKEN_RE.test(t.btoken))
-  && (!t.tchat || TG_CHAT_RE.test(t.tchat)) && (!t.tthread || TG_THREAD_RE.test(t.tthread)) && (!t.ttoken || TG_TOKEN_RE.test(t.ttoken))
-  && (!t.pchat || TG_CHAT_RE.test(t.pchat)) && (!t.pthread || TG_THREAD_RE.test(t.pthread)) && (!t.ptoken || TG_TOKEN_RE.test(t.ptoken));
+const tgOk = t => TG_TOKEN_RE.test((t.token || '').trim()) && TG_CHAT_RE.test((t.chat || '').trim()) && CHAN_TG_FIELDS.every(k => {
+  const v = (t[k] || '').trim(); return !v || (k.endsWith('token') ? TG_TOKEN_RE : k.endsWith('thread') ? TG_THREAD_RE : TG_CHAT_RE).test(v);
+});
 const chanValid = k => k === 'tg' ? tgOk(chan.tg) : DC_URL_RE.test(chan.dc.url);
 // 3.33.0: Telegram hat keinen eigenen Schalter „Aktiv“ mehr – es gelten die Schalter je Ziel (Telegram-Chats, tgtOn)
 const chanReady = k => k === 'tg' ? chanValid('tg') : chan.dc.on && chanValid('dc');
@@ -8515,7 +8525,7 @@ const TG_ROUTE = { alarm: 'course-alert', pos: 'course-alert', day: 'course-aler
 // Token oder, ausdrücklich so beschriftet, derselbe wie Kursalarm); Trades – eigener Chat (Bot: eigener oder derselbe wie die Sicherung);
 // Chartmuster – eigener Chat (Bot: eigener oder derselbe wie Kursalarm)
 function tgDest(id) {
-  const t = chan.tg, ok = (token, chat, thread) => TG_TOKEN_RE.test(token) && TG_CHAT_RE.test(chat) && (!thread || TG_THREAD_RE.test(thread)) ? { token, chat, thread } : null;
+  const t = Object.fromEntries(CHAN_TG_FIELDS.map(k => [k, (chan.tg[k] || '').trim()])), ok = (token, chat, thread) => TG_TOKEN_RE.test(token) && TG_CHAT_RE.test(chat) && (!thread || TG_THREAD_RE.test(thread)) ? { token, chat, thread } : null;
   if (id === 'ki') { const d = typeof svc === 'object' && svcOn() ? svc.pol.conf?.ki?.destination : null; return d && (svc.pol.conf?.ki?.config || svc.pol.conf?.po3?.config) && svc.pol.conf?.targets?.ki ? { chat: d.chat, bot: d.bot } : null; }
   return id === 'course-alert' ? ok(t.token, t.chat, t.thread) : id === 'backup' ? ok(t.btoken || t.token, t.bchat, t.bthread) : id === 'trades' ? ok(t.ttoken || t.btoken || t.token, t.tchat, t.tthread) : id === 'patterns' ? ok(t.ptoken || t.token, t.pchat, t.pthread) : null;
 }
@@ -8524,7 +8534,12 @@ function tgBot(token) { return /^(\d+):/.exec(token || '')?.[1] || ''; } // die 
 const tgFields = T => ({ chat_id: T.chat, ...(T.thread ? { message_thread_id: T.thread } : {}) });
 const tgKey = T => `${tgBot(T.token)}|${T.chat}|${T.thread || ''}`;
 const tgSeparate = () => { const b = tgDest('backup'), a = tgDest('course-alert'); return !!b && (!a || tgKey(b) !== tgKey(a)); };
-function saveChannels() { if (store.set(CHAN_KEY, chan)) broadcastData([CHAN_KEY]); renderChanSummary(); scheduleS247(); if (typeof renderTgbInfo === 'function' && typeof tgb !== 'undefined') renderTgbInfo(); if (typeof renderTgc === 'function') renderTgc(); }
+function saveChannels() {
+  chan.fields ||= {};
+  for (const k of CHAN_TG_FIELDS) if (chanSavedFields[k] !== chan.tg[k]) chan.fields[k] = { at: Math.max(Date.now(), (chan.fields[k]?.at || 0) + 1), tab: TAB_ID };
+  chanSavedFields = { ...chan.tg };
+  if (store.set(CHAN_KEY, chan)) broadcastData([CHAN_KEY]); renderChanSummary(); scheduleS247(); if (typeof renderTgbInfo === 'function' && typeof tgb !== 'undefined') renderTgbInfo(); if (typeof renderTgc === 'function') renderTgc();
+}
 // Nachricht über den Worker senden; das Ergebnis kommt als {t:'sent'} zurück (onSent)
 function chanSend(k, text, test = false, kind = 'test', opts = {}) {
   if (k === 'tg' && !tgTarget(kind)) return Promise.resolve({ ok: false, code: -1, msg: 'Ziel nicht eingerichtet' }); // 3.33.0: kein Ausweichen
@@ -8592,26 +8607,18 @@ function renderChanStatus() {
     else chanMsg(k, chanValid(k) ? null : false, chanValid(k) ? (chanOnK(k) ? 'Eingerichtet und aktiv. Mit „Test senden“ prüfen.' + last : 'Eingerichtet, aber pausiert.' + last) : k === 'tg' ? (TG_TOKEN_RE.test(chan.tg.token) ? 'Chat-ID fehlt: dem Bot schreiben, dann „Chat-ID ermitteln“.' : 'Das sieht nicht wie ein Bot-Token aus (Format 123456789:AA…).') : 'Das sieht nicht wie eine Discord-Webhook-URL aus (https://discord.com/api/webhooks/…).');
   }
 }
-function fillChanForm() {
-  $('tg-token').value = chan.tg.token; $('tg-chat').value = chan.tg.chat; $('tg-thread').value = chan.tg.thread; $('tg-bchat').value = chan.tg.bchat; $('tg-bthread').value = chan.tg.bthread; $('tg-btoken').value = chan.tg.btoken;
-  $('tg-tchat').value = chan.tg.tchat; $('tg-tthread').value = chan.tg.tthread; $('tg-ttoken').value = chan.tg.ttoken; $('tg-pchat').value = chan.tg.pchat; $('tg-pthread').value = chan.tg.pthread; $('tg-ptoken').value = chan.tg.ptoken; if (typeof svcFill === 'function') svcFill();
+function fillChanForm(preserveFocus = false) {
+  for (const k of CHAN_TG_FIELDS) { const input = $('tg-' + k); if (!preserveFocus || input !== document.activeElement) input.value = chan.tg[k] || ''; }
+  if (typeof svcFill === 'function' && !preserveFocus) svcFill();
   $('dc-url').value = chan.dc.url; $('dc-on').checked = chan.dc.on;
   $('chan-ev-alarm').checked = chan.ev.alarm; $('chan-ev-pos').checked = chan.ev.pos; $('chan-ev-day').checked = chan.ev.day; $('chan-ev-news').checked = chan.ev.news; $('chan-ev-pnl').checked = chan.ev.pnl; $('chan-ev-pulse').checked = chan.ev.pulse; $('chan-ev-trade').checked = chan.ev.trade;
   renderChanStatus(); renderPulseInfo();
 }
 function readChanForm() {
-  const was = tgDest('backup'), sameBot = !chan.tg.btoken;
-  chan = { tg: { token: $('tg-token').value.trim(), chat: $('tg-chat').value.trim(), thread: $('tg-thread').value.trim(), bchat: $('tg-bchat').value.trim(), bthread: $('tg-bthread').value.trim(), btoken: $('tg-btoken').value.trim(),
-      tchat: $('tg-tchat').value.trim(), tthread: $('tg-tthread').value.trim(), ttoken: $('tg-ttoken').value.trim(), pchat: $('tg-pchat').value.trim(), pthread: $('tg-pthread').value.trim(), ptoken: $('tg-ptoken').value.trim() }, dc: { url: $('dc-url').value.trim(), on: $('dc-on').checked },
-    ev: { alarm: $('chan-ev-alarm').checked, pos: $('chan-ev-pos').checked, day: $('chan-ev-day').checked, news: $('chan-ev-news').checked, pnl: $('chan-ev-pnl').checked, pulse: $('chan-ev-pulse').checked, trade: $('chan-ev-trade').checked }, tgt: { ...chan.tgt }, tep: { ...chan.tep }, mig33: true };
-  // 3.33.0 (G05): Die Sicherung hat immer einen ausdrücklich eingetragenen Chat – sie folgt einer Änderung am Kursalarm nicht mehr.
-  // Lief sie über denselben Bot wie Kursalarm und wechselt dieser Bot, bleibt sie beim bisherigen Bot (wie seit 3.25.0): Nur er
-  // kann ihre Datei ersetzen. Der bisherige Bot wird dafür ausdrücklich als eigener Sicherungs-Bot eingetragen.
-  const t = chan.tg, kept = !!was && sameBot && !t.btoken && t.bchat === was.chat && (t.bthread || '') === (was.thread || '') && was.token !== t.token && tgbHasMsg(tgKey(was));
-  if (kept) { t.btoken = was.token; $('tg-btoken').value = t.btoken; }
+  chan = { tg: Object.fromEntries(CHAN_TG_FIELDS.map(k => [k, $('tg-' + k).value])), dc: { url: $('dc-url').value.trim(), on: $('dc-on').checked },
+    ev: { alarm: $('chan-ev-alarm').checked, pos: $('chan-ev-pos').checked, day: $('chan-ev-day').checked, news: $('chan-ev-news').checked, pnl: $('chan-ev-pnl').checked, pulse: $('chan-ev-pulse').checked, trade: $('chan-ev-trade').checked }, tgt: { ...chan.tgt }, tep: { ...chan.tep }, fields: { ...chan.fields }, mig33: true };
   saveChannels(); renderChanStatus(); if (typeof renderTgc === 'function') renderTgc();
-  if (kept) chanMsg('tg', true, 'Bot für Kursalarm geändert – die Datensicherung bleibt beim bisherigen Bot (jetzt als eigener Sicherungs-Bot eingetragen), damit sie ihre Datei weiter ersetzt.');
-  return kept;
+  return false;
 }
 function openChan() {
   closeMenus(); fillChanForm();
@@ -8703,11 +8710,27 @@ async function chanTest(k) {
   b.disabled = false;
   if (r.ok && k === 'dc' && !chan.dc.on) { chan.dc.on = true; $('dc-on').checked = true; saveChannels(); renderChanStatus(); }
 }
+// 3.63.0: Jeden Bot/Chat unabhängig prüfen, ohne andere Zugangsfelder zu verändern.
+async function chanTestTarget(id) {
+  readChanForm();
+  const kind = { 'course-alert': 'alarm', backup: 'backup', trades: 'trade', patterns: 'pattern' }[id], name = { 'course-alert': 'Kursalarm', backup: 'Sicherung', trades: 'Trades', patterns: 'Chartmuster' }[id];
+  if (!tgDest(id)) return chanMsg('tg', false, `${name}: Chat-ID, Bot-Token und optionales Thema prüfen. Es wird kein anderer Chat verwendet.`);
+  if (!tgtOn(id)) return chanMsg('tg', false, `${name} ist ausgeschaltet – Test nicht gesendet.`);
+  const button = document.querySelector(`[data-tg-test-target="${id}"]`); button.disabled = true;
+  try { await chanSend('tg', `Test · ${name}\nDiese Nachricht gehört ausschließlich in den eingetragenen ${name}-Chat.\n${hhmmss(Date.now())} Uhr`, true, kind); }
+  finally { button.disabled = false; }
+}
+for (const id of ['course-alert', 'backup', 'trades', 'patterns']) {
+  const target = $('chan-dialog').querySelector(id === 'course-alert' ? '.tg-target:not(.backup):not(.trades):not(.patterns)' : '.tg-target.' + (id === 'backup' ? 'backup' : id));
+  const button = el('button', 'button ghost', 'Test in diesem Chat'); button.type = 'button'; button.dataset.tgTestTarget = id;
+  button.addEventListener('click', () => void chanTestTarget(id)); target.append(button);
+}
 $('chan-open').addEventListener('click', openChan);
 $('chan-close').addEventListener('click', () => $('chan-dialog').close());
 $('chan-done').addEventListener('click', () => $('chan-dialog').close());
 $('chan-dialog').addEventListener('change', readChanForm);
-for (const id of ['tg-token', 'tg-chat', 'tg-thread', 'tg-bchat', 'tg-bthread', 'tg-btoken', 'dc-url']) $(id).addEventListener('blur', readChanForm);
+for (const id of [...CHAN_TG_FIELDS.map(k => 'tg-' + k), 'dc-url']) { $(id).addEventListener('input', readChanForm); $(id).addEventListener('blur', readChanForm); }
+$('chan-dialog').addEventListener('close', readChanForm);
 $('tg-testall').addEventListener('click', () => void chanTestAll());
 $('tg-detect').addEventListener('click', () => void tgDetect());
 $('tg-test').addEventListener('click', () => void chanTest('tg'));

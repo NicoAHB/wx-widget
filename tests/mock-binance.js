@@ -112,7 +112,10 @@ function tgPinned(ck) { let best = null; for (const m of tgMsgs.values()) if (m.
 const TG_OK_TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw';
 // 3.25.0: zweiter Bot (eigener Sicherungs-Bot). Privatchats sind je Bot getrennt – gleiche Chat-ID (Nutzer-ID), aber zwei Chats;
 // Gruppen (negative IDs) teilen sich alle Bots. Bearbeiten und Löschen nur eigener Nachrichten.
-const TG_BOTS = { [TG_OK_TOKEN]: { id: 123456789, first_name: 'Kurs-Alarm', username: 'test_kursalarm_bot' }, '555666777:BBQkbXyzSicherungTestToken0123456789': { id: 555666777, first_name: 'Sicherung', username: 'test_sicherung_bot' } };
+// Ausschließlich lokale Attrappen, keine echten Bot-Zugangsdaten.
+const TG_BOTS = { [TG_OK_TOKEN]: { id: 123456789, first_name: 'Kurs-Alarm', username: 'test_kursalarm_bot' }, '555666777:BBQkbXyzSicherungTestToken0123456789': { id: 555666777, first_name: 'Sicherung', username: 'test_sicherung_bot' },
+  '777888999:CCTradesTestToken0123456789abcdefgh': { id: 777888999, first_name: 'Trades', username: 'test_trades_bot' },
+  '888999000:DDPatternTestToken0123456789abcdefg': { id: 888999000, first_name: 'Chartmuster', username: 'test_pattern_bot' } };
 const tgCk = (bot, chat) => Number(chat) > 0 ? `${bot}:${chat}` : String(chat);
 function readBody(req) { return new Promise(r => { const b = []; req.on('data', d => b.push(d)); req.on('end', () => r(Buffer.concat(b))); }); }
 // 3.34.0 (G06): multipart binärsicher (Fotos) – Felder als Text, Dateien als Buffer

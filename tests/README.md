@@ -1,5 +1,7 @@
 # Tests für Scalp Desk
 
+3.63.0 (Arbeitsstand): `m87.js` prüft die tatsächliche Telegram-Eingabe und alle vier Bots/Chats/Themen, sofortige Speicherung, Schließen/Reload/App-Neustart, identische private Chat-IDs, reine Sende-Rückfälle sowie ältere Tab-Zustände während der Bearbeitung. 22 Fälle ausschließlich gegen lokale Telegram-Attrappen. Der alte automatische Sicherungschat-/Bot-Eintrag entfällt auf ausdrücklichen Nutzerwunsch; bestehende Legacy-Erwartungen werden bei der gemeinsamen Endprüfung entsprechend angepasst.
+
 3.62.0: `m10.js` prüft zusätzlich die neue Bereichssicht in beiden Darstellungen bei 320/390/768/1440 px. Der Vollbildbereich muss exakt den Bildschirm und der gezeichnete Chart die verbleibende Höhe füllen; auch ungedrehtes Hochformat, Werkzeugleiste, Drehwechsel, Beenden und gespeicherte Drehwahl nach Neuladen werden tatsächlich bedient. Die bisherigen Gesamtansichts-/Zeiger-/Kurswechselprüfungen bleiben erhalten.
 
 `m39.js` liest die Animationshöhe direkt im Browser 90 ms nach dem tatsächlichen Klick; die frühere Folge mehrerer Browseraufrufe las teilweise erst nach Animationsende. Der Schließabstand wird bei demselben vollständig geladenen Coin gemessen: Toolbar und Chart müssen um die gesamte Detailhöhe zurückkehren (höchstens 1 px Rundung). Damit verändern BTC-Kopf und OHLC-Ladehöhe beim zuvor geprüften Coinwechsel nicht den Vergleich. Alle 50 Fälle einschließlich Zwischenhöhen, Coinwechsel und tatsächlicher Abstandsmessung bleiben erhalten; Erstbefunde und vollständige Nachläufe werden getrennt dokumentiert.
