@@ -178,6 +178,36 @@
       "bytes": 4286
     },
     {
+      "path": "shared/muster-bot-core.mjs",
+      "sha256": "c4cd9cf6501e7595372901302fc831451856f65f45915485d8f4f7a4a4fcd7a9",
+      "bytes": 11506
+    },
+    {
+      "path": "shared/muster-bot-feed.mjs",
+      "sha256": "eda38ff54d56de05099b8731319c3b54fb8289461d246028592638f8abf12283",
+      "bytes": 4990
+    },
+    {
+      "path": "shared/muster-bot-paper.mjs",
+      "sha256": "8ee4fc077c5331d0868a21e358193e58e5cb613ed7f90a406f8ca2b5318db130",
+      "bytes": 4140
+    },
+    {
+      "path": "shared/muster-bot-store.mjs",
+      "sha256": "869ea4da55dead80925c1ac1d9e2a2a5488cc7cfc9f1ecfbbfc5b65ce16fb2ac",
+      "bytes": 1540
+    },
+    {
+      "path": "shared/muster-bot-view.mjs",
+      "sha256": "7f546a714ca139373fc5fda9854767d4adb82cf448cce89d7d746da604b50853",
+      "bytes": 27971
+    },
+    {
+      "path": "shared/muster-bot-worker.mjs",
+      "sha256": "740ba7ec02a3eb6d4ca6944a7cacb9fa570292a7d29e44e586b3054e5ae1d814",
+      "bytes": 1665
+    },
+    {
       "path": "shared/orderflow-core.mjs",
       "sha256": "2579ff7cd28586ed206629b27d2db2cb19677cbd8e013bf0c9839774ad6337b7",
       "bytes": 6636
@@ -284,8 +314,8 @@
     },
     {
       "path": "shared/telegram-format.mjs",
-      "sha256": "c2ba9b0ef94582b29ec4d759829d5258e96753621c6222d12388900d47e401c7",
-      "bytes": 13548
+      "sha256": "9e0fb5694b51a04ac327ef58af342e8cc52cc39569e299fd1510b5b549cddc31",
+      "bytes": 13577
     },
     {
       "path": "shared/widget-state.mjs",

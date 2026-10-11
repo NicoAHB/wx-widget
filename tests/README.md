@@ -184,3 +184,5 @@ UI-Gesamtlauf 3.58.0: m4 wartete vor dem Value-Area-Vergleich nur auf Signalzeit
 - m84 zusätzlich mit nicht klebender Navigation, Textgrenzen und Scrollnachweis: 177/177. Serielle Release-Liste nun **145 Ziele**; reale Safari-/iPhone-/iPad-/CORS-Abnahmen getrennt.
 
 3.63.0: `unit-telegram-format.js` prüft deutsches USD-/HTML-Format, Grenzlängen und eindeutigen Klartext-Fallback. `unit-patterns-only.js` prüft den reinen Dienst auf echten festen pat-1-Reihen einschließlich Erststart, Neustart, Duplikaten, verlorener Antwort und Rate-Limit. Nur lokale Attrappen, keine echte VM oder Bot-Zugangsdaten.
+
+3.63.0: `unit-market-intervals.js`/`m88.js` prüfen 2h, Speichern, Indikatoren, Muster-Sprung und bekannte Intervalle. `unit-muster-bot.js` prüft kausale Strategie, Gebühren, Größenbegrenzung, Gaps, Einstiege und 27 Kombinationen; `unit-muster-feed.js` prüft Pagination/Rate-Limits/Abbruch; `unit-muster-paper.js` prüft eigenen Lauf, Coinbindung, Zustellmerker, Stop/Löschen und konkurrierende Änderungen. `m89.js` prüft den tatsächlichen Worker mit allen 27 Zeilen, Touch-Hilfe, Curve/Sortierung, Demo und 320–1440 px.

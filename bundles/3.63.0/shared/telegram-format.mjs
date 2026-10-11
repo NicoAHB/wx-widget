@@ -92,7 +92,7 @@ export function formatMessage(type, d = {}) {
     blocks = [[`<b>⚠️ WIRTSCHAFTSTERMIN${value(d.when) ? ' · ' + escapeTelegram(d.when) : ''}</b>`, line('Währung: ', d.currency), 'Bedeutung: hoch', 'Starke Kursausschläge möglich'],
       (d.events || []).flatMap(e => [line('Termin: ', e.title), line('Prognose: ', e.forecast), line('Vorher: ', e.previous)])];
   } else if (type === 'trade') {
-    blocks = [[`<b>${finite(d.pnl) ? d.pnl < 0 ? '🔴 VERLUST' : d.pnl > 0 ? '🟢 GEWINN' : '⚪ AUSGEGLICHEN' : direction.icon + ' TRADE'} · ${coin}${value(d.side) ? ' ' + escapeTelegram(d.side === 'long' ? 'Long' : 'Short') : ''}${finite(d.pnl) ? ' · ' + telegramSigned(d.pnl) + ' USD' : ''}</b>`,
+    blocks = [[`<b>${d.paper ? 'PAPER · ' : ''}${finite(d.pnl) ? d.pnl < 0 ? '🔴 VERLUST' : d.pnl > 0 ? '🟢 GEWINN' : '⚪ AUSGEGLICHEN' : direction.icon + ' TRADE'} · ${coin}${value(d.side) ? ' ' + escapeTelegram(d.side === 'long' ? 'Long' : 'Short') : ''}${finite(d.pnl) ? ' · ' + telegramSigned(d.pnl) + ' USD' : ''}</b>`,
       numLine('💰 Einstieg: ', d.entry, code), numLine('Kurs beim Abschluss: ', d.exit, code), numLine('Ergebnis: ', d.percent, telegramPercent), line('Dauer: ', d.duration), numLine('Menge: ', d.quantity, v => telegramNumber(v, 8)), line('Gründe: ', d.reasons), line('Hinweis: ', d.note)]];
   } else if (type === 'backup') {
     blocks = [['<b>💾 SCALP-DESK-SICHERUNG</b>', numLine('Offene Positionen: ', d.positions, v => telegramNumber(v, 0)), numLine('Trades: ', d.trades, v => telegramNumber(v, 0)), numLine('Geldbewegungen: ', d.movements, v => telegramNumber(v, 0))], ['Wiederherstellen:', 'Datei speichern', 'Im Dashboard „Backup einspielen“']];

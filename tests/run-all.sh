@@ -3,6 +3,10 @@ cd "$(dirname "$0")"
 set -o pipefail
 failed=0
 trap 'failed=1' ERR
+echo "== unit-muster-bot"; timeout 120 node unit-muster-bot.js 2>&1 | grep -E "✗|bestanden"
+echo "== unit-muster-feed"; timeout 120 node unit-muster-feed.js 2>&1 | grep -E "✗|bestanden"
+echo "== unit-muster-paper"; timeout 120 node unit-muster-paper.js 2>&1 | grep -E "✗|bestanden"
+echo "== m89"; timeout 600 node m89.js 2>&1 | grep -E "✗|bestanden|Abbruch"
 echo "== unit-market-intervals"; timeout 120 node unit-market-intervals.js 2>&1 | grep -E "✗|bestanden"
 echo "== m88"; timeout 600 node m88.js 2>&1 | grep -E "✗|bestanden|Abbruch"
 echo "== unit-patterns-only"; timeout 120 node unit-patterns-only.js 2>&1 | grep -E "✗|bestanden"

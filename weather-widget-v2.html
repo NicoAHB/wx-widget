@@ -2211,9 +2211,17 @@ html[data-chartfull] #workspace-chart-tools{display:contents!important}html[data
  html[data-workspace=focus] .chart-meta{font-size:.7rem}
 }
 
+/* 3.63.0: separates, klappbares Muster-Modul; gleiche Farbvariablen in beiden Layouts. */
+.muster-bot{min-width:0;max-width:100%;overflow-wrap:anywhere}.muster-bot>summary{font-size:1.05rem;font-weight:700;cursor:pointer;padding:10px 0}
+.muster-body{display:grid;gap:14px;min-width:0}.muster-body h2,.muster-body h3,.muster-body p{margin:0}.muster-body p{line-height:1.5}.muster-context{font-weight:700}.muster-group,.muster-live,.muster-results{min-width:0;max-width:100%;border:1px solid var(--border);border-radius:14px;padding:12px;background:var(--surface);margin:0}.muster-group legend,.muster-group summary,.muster-live summary{font-weight:650;max-width:100%;white-space:normal}.muster-group summary,.muster-live summary{cursor:pointer;padding:4px 0 10px}.muster-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:12px 16px}.muster-field{min-width:0}.muster-label{display:flex;align-items:center;gap:8px;min-width:0;margin-bottom:5px}.muster-label label{flex:1;min-width:0;font-size:.85rem;font-weight:600}.muster-field input:not([type=checkbox]),.muster-field select{box-sizing:border-box;width:100%;max-width:100%;min-width:0;min-height:44px;background:var(--field);color:var(--text);border:1px solid var(--field-border);border-radius:8px;padding:8px;font-size:1rem}.muster-info{flex:none;border:1px solid var(--border);border-radius:50%;color:var(--text);background:var(--surface-2);min-width:32px;min-height:32px;padding:0;font-weight:700}.muster-actions{display:flex;flex-wrap:wrap;gap:8px}.muster-actions .button{white-space:normal;max-width:100%;min-height:44px}.muster-stop{background:var(--down-bg);border-color:var(--down-border);color:var(--down-text)}.muster-run-status{white-space:pre-line;border:1px solid var(--border);border-radius:12px;padding:10px;margin:8px 0!important}.muster-run-status.running{background:var(--up-bg);border-color:var(--up-border);color:var(--up-text)}.muster-warning{color:var(--warn-text);padding:10px 0}.muster-table-scroll{max-width:100%;overflow:auto;border:1px solid var(--border);border-radius:10px}.muster-table-scroll table{width:100%;border-collapse:collapse;font-size:.82rem}.muster-table-scroll th,.muster-table-scroll td{padding:9px;border-bottom:1px solid var(--border);white-space:nowrap}.muster-table-scroll th>button:not(.muster-info){background:transparent;color:var(--text);border:0;padding:0;min-height:44px;font-weight:700}.muster-table-scroll th .muster-info{margin-left:5px}.muster-table-scroll tbody tr{cursor:pointer}.muster-table-scroll tbody tr:focus,.muster-table-scroll tbody tr:hover{background:var(--surface-2)}.muster-table-scroll .num{text-align:right;font-variant-numeric:tabular-nums}.muster-equity{display:block;width:100%;max-width:100%;background:var(--field);border:1px solid var(--border);border-radius:10px;margin-top:8px}.muster-paper-list{display:grid;gap:8px}.muster-paper-card{border:1px solid var(--border);border-radius:12px;padding:10px}.muster-positive{color:var(--up-text)}.muster-negative{color:var(--down-text)}.muster-help{width:min(480px,calc(100vw - 32px));max-width:calc(100vw - 32px);max-height:80dvh;overflow:auto;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:14px;padding:16px;box-sizing:border-box;line-height:1.6}.muster-help>button{float:right}.muster-help svg{width:100%;max-height:140px}.muster-help::backdrop{background:rgba(0,0,0,.6)}
+@media(max-width:420px){.muster-grid{grid-template-columns:1fr}.muster-info{min-width:40px;min-height:40px}.muster-group,.muster-live,.muster-results{padding:10px}}
 </style>
   <script type="module">
 import { MARKET_INTERVALS, CHART_INTERVALS, SIGNAL_INTERVALS, INTERVAL_MS, nearestChartInterval } from './bundles/3.63.0/shared/market-intervals.mjs';
+import { createMusterClient } from './bundles/3.63.0/shared/muster-bot-feed.mjs';
+import { createMusterPaper } from './bundles/3.63.0/shared/muster-bot-paper.mjs';
+import { readMusterPaper, writeMusterPaper } from './bundles/3.63.0/shared/muster-bot-store.mjs';
+import { createMusterView } from './bundles/3.63.0/shared/muster-bot-view.mjs';
 import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT } from './bundles/3.63.0/shared/telegram-format.mjs';
 // 3.45.0 (G10c): der vorhandene Binance-/G07-Kern bleibt eigenständig.
 import { exportModelArchive, importModelArchive, validateModelArchive } from './bundles/3.63.0/shared/model-archive.mjs';
@@ -3650,6 +3658,7 @@ function refreshDueMtf(now = Date.now()) {
 function renderMarket() {
   if ($('workspace-watch-title')) put('workspace-watch-title', 'Vorauswahl · ' + state.symbol.replace(/USDT$/, '/USDT'));
   const c = state.candles, last = c.at(-1), p = currentPrice();
+  musterView?.updateContext();
   showNotice('market-error', state.marketError ? `${state.marketError}${c.length ? ' Angezeigte Kerzen sind der letzte verfügbare Stand.' : ''}` : state.pickError || null); // 3.32.0: abgelehnte Eingabe im Kryptowährungsfeld
   $('chart').classList.toggle('stale', !!state.marketError);
   const base = state.symbol.slice(0,-4);
@@ -6792,6 +6801,7 @@ function renderChartContent(levels={}, ov={}, start=null, end=null) {
   chartGeom={w,h,left,pw:step*data.length,step,top,bottom,min,max,y,count:data.length,data,levels,prof,bbU,bbL,bbM,e200,select,clear,axisIn};
   container.onkeydown=event=>{if(['ArrowLeft','ArrowRight'].includes(event.key)){event.preventDefault();select((state.selected??data.length-1)+(event.key==='ArrowLeft'?-1:1));}if(event.key==='+' || event.key==='-'){event.preventDefault();zoom(event.key==='+'?.7:1.4);}};
   for (const t of svg.querySelectorAll('.pat-label')) svg.append(t); // 3.37.0 (G09): Muster-Labels zuoberst, damit sie antippbar sind
+  musterDraw(svg, data, x, y, bottom);
   container.replaceChildren(svg);
   declutterChart(svg, {top, bottom, left, right: left+pw});
   const keep=state.selectedTime!=null?data.findIndex(c=>c.time===state.selectedTime):-1;
@@ -6818,7 +6828,7 @@ function setMarket(symbol,interval=state.interval) {
   if(changed)patClear(); // 3.37.0 (G09): alte Treffer gehören zum alten Coin/Intervall
   render();void showCachedChart();if(CAP.on)void capLoad(); // 3.35.0: Cap des neuen Coins bzw. passende Auflösung
   if ($('ki-hold-chip')) { if (workspace?.mode === 'focus') ki.coin = state.symbol; kiRender(); }
-  paperView?.render(); orderflow?.sync(); // Arbeitsbereiche behalten denselben gewählten Coin.
+  paperView?.render(); orderflow?.sync(); musterView?.render(); // Arbeitsbereiche behalten denselben gewählten Coin.
   return refresh();
 }
 function pause() {state.paused=!state.paused;live.post({t:'pause',on:state.paused});if(state.paused)cancel();else{live.post({t:'wake'});void refresh();}status();renderMarket();renderCalculator();renderSignals();renderPositions();renderLivebar();updateTitle();syncStreams();renderSkeletons();}
@@ -7273,7 +7283,7 @@ function liveFeed(port, formatRejected) {
   });
 }
 const live = { post: () => {}, via: 'aus', markets: {}, lastMsg: { spot: 0, futures: 0 }, wantKey: {}, need: new Set(), downSince: {}, everUp: {}, chartAt: 0 };
-var orderflow; // Vor dem Start am Modulende initialisiert; bestehende frühe Stream-Aufrufe bleiben sicher.
+var orderflow, musterView; // Vor dem Start am Modulende initialisiert; bestehende frühe Stream-Aufrufe bleiben sicher.
 let baseStreams = { spot: new Set(), futures: new Set() };
 function startLive() {
   const fallback = () => {
@@ -14885,6 +14895,27 @@ function workspaceBuild() {
   workspaceMode(workspace.mode, false);
 }
 
+// 3.63.0: eigener Muster-Bot, vom bisherigen KI-/Trading-Bot und persönlichen Büchern getrennt.
+const musterHost = el('section', 'panel'); musterHost.id = 'muster-bot-panel'; musterHost.dataset.tabs = 'ind'; musterHost.dataset.workspaceScope = 'ind'; $('alarms').after(musterHost);
+const musterSelection = () => state.loadedSymbol === state.symbol && state.candles.length ? { symbol: state.symbol, market: state.source } : null;
+const musterPaper = createMusterPaper({ read: readMusterPaper, write: writeMusterPaper, client: createMusterClient(), selection: musterSelection, available: () => !document.hidden && !state.paused && navigator.onLine !== false,
+  changed: () => musterView?.render(), notify: async event => {
+    if (!tgtReady('trades') || !(await store.claim('muster-paper:' + event.id + ':' + event.kind + ':' + event.at, 14 * 864e5))) return;
+    const data = event.kind === 'entry' ? { headline: 'MUSTER-BOT · PAPER-EINSTIEG', symbol: event.symbol, direction: 'bull', entry: event.entry, stop: event.stop, target: event.target, lines: [event.pattern === 'hammer' ? 'Hammer' : 'Bullish Engulfing', 'Nur lokale Übung'], at: event.at } : { symbol: event.symbol, side: 'long', paper: true, pnl: event.pnl, entry: event.entry, exit: event.exit, reasons: event.reason, note: 'Muster-Bot · nur lokale Übung', at: event.at };
+    await chanSend('tg', formatMessage(event.kind === 'entry' ? 'signal' : 'trade', data), false, 'trade', { coord: true });
+  } });
+musterView = createMusterView({ host: musterHost, selection: musterSelection, currentPrice: (symbol, market) => state.symbol === symbol && state.source === market ? currentPrice() : null,
+  prefs: store.get('scalpdesk.muster.settings.v1', {}), savePrefs: value => store.set('scalpdesk.muster.settings.v1', value), workerFactory: () => new Worker(new URL('./bundles/3.63.0/shared/muster-bot-worker.mjs', import.meta.url), { type: 'module' }), paper: musterPaper, onMarkers: scheduleDraw });
+void musterPaper.restore().then(() => musterPaper.poll());
+function musterDraw(svg, data, x, y, bottom) {
+  for (const signal of musterView?.markers() || []) {
+    if (signal.symbol !== state.symbol || signal.market !== state.source || signal.timeframe !== state.interval) continue;
+    const i = data.findIndex(c => c.time === signal.time); if (i < 0) continue;
+    const label = node('text', { x: x(i), y: Math.min(bottom - 5, y(signal.low) + 18), fill: PAL.up, 'text-anchor': 'middle', 'font-weight': '700', class: 'muster-chart-mark', role: 'button', tabindex: '0', 'aria-label': (signal.pattern === 'hammer' ? 'Hammer' : 'Engulfing') + ' · Paper-Signal' }, signal.pattern === 'hammer' ? 'H' : 'E');
+    const open = () => { setTab('ind'); musterView.root.open = true; goTo('muster-bot-panel'); }; label.addEventListener('click', open); label.addEventListener('keydown', event => { if (event.key === 'Enter') open(); }); svg.append(label);
+  }
+}
+window.__muster = { view: musterView, paper: musterPaper, selection: musterSelection };
 workspaceBuild();
 const connectionInfo = el('dialog', 'connection-dialog'); connectionInfo.id = 'connection-info'; connectionInfo.setAttribute('aria-labelledby', 'connection-title');
 const connectionTitle = el('h2', '', 'Verbindung'); connectionTitle.id = 'connection-title'; const connectionDetail = el('p'); connectionDetail.id = 'connection-detail';
