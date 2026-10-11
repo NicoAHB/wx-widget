@@ -49,9 +49,10 @@ import crypto from 'node:crypto';
 import { Buffer } from 'node:buffer';
 import { fileURLToPath } from 'node:url';
 import { patternConfig, patternCandles, patternCases, patternFresh, patternText, patternEnd } from './pattern-monitor.mjs';
+import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT } from './telegram-format.mjs';
 import { ConfluenceService, kiMessage, Po3Service, po3Message, BotSimulationRuntime } from './ki-monitor.mjs';
 
-export const VERSION = '2.11.0';
+export const VERSION = '2.12.0';
 const E = process.env;
 // Adressen (für Tests über Umgebungsvariablen änderbar)
 export const API = {
@@ -156,10 +157,9 @@ export function touched(level, below, v) {
   return now || (below ? v.lo <= level : v.hi >= level) ? { wick: !now, extreme: below ? v.lo : v.hi } : null;
 }
 const howReached = info => (info.close ? `beim ${info.close}-Schlusskurs erreicht` : info.wick ? `kurz per Docht erreicht (bis ${priceText(info.extreme)})` : 'erreicht');   // 2.3.0: Schluss-Alarm
-export const alarmText = (a, price, info) => `🔔 Kurs-Alarm ${coin(a.symbol)}\n${coin(a.symbol)} ${a.dir === 'above' ? 'auf/über' : 'auf/unter'} ${priceText(a.price)} USDT ${howReached(info)} · Kurs ${priceText(price)}${a.note ? '\nNotiz: ' + a.note : ''}`;
+export const alarmText = (a, price, info) => formatMessage('alarm', { symbol: a.symbol, direction: a.dir, level: a.price, price, reached: howReached(info), note: a.note });
 export function posText(p, type, price, info) {
-  const what = `${coin(p.symbol)} ${p.side === 'long' ? 'Long' : 'Short'}: ${type === 'tp' ? 'Take-Profit' : 'Stop-Loss'}`;
-  return `${type === 'tp' ? '🎯' : '🛑'} ${what} erreicht\n${what} ${priceText(p[type])} ${howReached(info)} · Kurs ${priceText(price)}`;
+  return formatMessage('position', { symbol: p.symbol, side: p.side, hit: type, direction: (p.side === 'long') === (type === 'tp') ? 'up' : 'down', level: p[type], price, reached: howReached(info) });
 }
 export const alarmKey = a => `al:${a.id}:${a.armedAt}`;
 // ---- Gewinn-/Verlust-Alarm (ab 1.2): dieselbe Regel wie in der App ----
@@ -176,7 +176,7 @@ export function pnlTotal(pnl, prices) {
 const pnlCond = l => (l.k === 'profit' ? `≥ +${number(l.v)} USDT` : `≤ −${number(l.v)} USDT`);
 export const pnlName = k => (k === 'profit' ? 'Gewinn-Alarm' : 'Verlust-Alarm');
 export function pnlText(l, cur, n) {
-  return `${l.k === 'profit' ? '📈' : '📉'} ${pnlName(l.k)}\nLive-Ergebnis ${signedText(cur)} USDT (${n} ${n === 1 ? 'offene Position' : 'offene Positionen'}) · Schwelle ${pnlCond(l)} erreicht`;
+  return formatMessage('pnl', { profit: l.k === 'profit', pnl: cur, level: l.v, positions: n });
 }
 // Zeile in der angepinnten Nachricht, an der die App eine vom Dienst gesendete Meldung erkennt (Art, Scharfschalten, Zeitpunkt, Wert)
 export const pnlLine = (l, f, tz) => `GV: ${pnlName(l.k)} ausgelöst ${stamp(f.t, tz)} bei ${signedText(f.val)} USDT · @${l.k === 'profit' ? 'p' : 'l'}:${l.at}:${f.t}:${f.val}`;
@@ -205,9 +205,7 @@ export function pulseDecide(moves, pc, now, last = {}) {
 }
 function signedText(v) { return `${v > 0 ? '+' : v < 0 ? '−' : ''}${number(Math.abs(v))}`; }
 export function pulseText(p, price, hourLocal, others) {
-  const pc = v => `${signedText(v)} %`;
-  return `⚡ BTC-Puls: BTC ${pc(p.mv)} in ${p.w} Min. (${priceText(price)} USDT)${p.more ? ' – Bewegung legt weiter zu' : ''} – ungewöhnlich stark für ${hourLocal} Uhr (Schwelle ${number(p.lim)} %)`
-    + (others.length ? `\nVorauswahl im selben Zeitraum: ${others.map(([c, v]) => `${c} ${pc(v)}`).join(' · ')}` : '');
+  return formatMessage('pulse', { coin: 'BTC', change: p.mv, minutes: p.w, price, threshold: p.lim, reason: `ungewöhnlich stark für ${hourLocal} Uhr`, more: p.more, others });
 }
 
 // ---------- Wirtschaftskalender (Datei des GitHub-Jobs, wie in der App) ----------
@@ -226,8 +224,7 @@ export function econDue(events, now, econ) {
 }
 const ecNum = s => s.replace(/(\d)\.(\d)/g, '$1,$2').replace(/(\d)%/, '$1 %');
 export function econText(g, now, tz) {
-  const cur = [...new Set(g.list.map(e => e.cur))].join('/'), vals = g.list.map(e => [e.forecast && `Prognose ${ecNum(e.forecast)}`, e.previous && `vorher ${ecNum(e.previous)}`].filter(Boolean).join(', ')).filter(Boolean);
-  return `⚠ Wirtschaftstermin in ${Math.ceil((g.t - now) / 60e3)} min (${timeText(g.t, tz)} Uhr)\n${cur} ${g.list.map(e => e.title).join(', ')} – hohe Bedeutung, starke Kursausschläge möglich.${vals.length ? `\n${vals.join(' · ')}` : ''}`;
+  return formatMessage('news', { when: `in ${Math.ceil((g.t - now) / 60e3)} min (${timeText(g.t, tz)} Uhr)`, currency: [...new Set(g.list.map(e => e.cur))].join('/'), events: g.list.map(e => ({ ...e, forecast: e.forecast && ecNum(e.forecast), previous: e.previous && ecNum(e.previous) })) });
 }
 
 // ---------- Angepinnte Nachricht: Zeile der App und Zeile des Dienstes ----------
@@ -254,12 +251,10 @@ export function watchItems(c) {
 }
 // Bestätigung: was neu beobachtet wird (höchstens 8 Zeilen) und was insgesamt; ausgeschaltet → ein Satz
 export function ackText(c, fresh, now) {
-  if (!c.on) return `⏸ 24/7-Dienst: Übergabe in der App ausgeschaltet (${timeText(now, c.tz)} Uhr) – der Dienst meldet nichts, bis du sie wieder einschaltest.`;
-  const al = c.ev.alarm ? c.alarms.length : 0, ps = c.ev.pos ? c.positions.filter(p => p.sl || p.tp).length : 0, extra = [];
-  if (c.ev.news && c.econ.warn) extra.push(`Termin-Warnung ${c.econ.warn} min vorher`);
-  if (pulseOn(c)) extra.push('BTC-Puls');
-  const lines = fresh.slice(0, 8).map(x => `• ${x.text}`).concat(fresh.length > 8 ? [`• … und ${fresh.length - 8} weitere`] : []);
-  return `✅ 24/7-Dienst hat übernommen (${timeText(now, c.tz)} Uhr)${lines.length ? `\n${lines.join('\n')}` : ''}\nBeobachtet jetzt: ${plural(al, 'Kurs-Alarm', 'Kurs-Alarme')}, ${plural(ps, 'Position', 'Positionen')} mit Stop/Ziel${extra.length ? ` · ${extra.join(' · ')}` : ''} – auch bei geschlossener App.`;
+  return formatMessage('notice', { headline: c.on ? '✅ Dienst hat übernommen' : '⏸ Dienstübergabe ausgeschaltet', lines: c.on ? [
+    ...fresh.slice(0, 8).map(x => x.text), fresh.length > 8 ? `${fresh.length - 8} weitere` : '',
+    `Kurs-Alarme: ${c.ev.alarm ? c.alarms.length : 0}`, `Positionen mit Stop/Ziel: ${c.ev.pos ? c.positions.filter(p => p.sl || p.tp).length : 0}`,
+    c.ev.news && c.econ.warn ? `Termin-Warnung: ${c.econ.warn} min vorher` : '', pulseOn(c) ? 'BTC-Puls aktiv' : '', 'Auch bei geschlossener App'] : ['Keine Meldungen bis zum Einschalten in der App'], at: now, timezone: c.tz });
 }
 // Was ist in diesem Chat angeheftet, wenn es nicht die Datei der App ist?
 export function pinnedWhat(pm) {
@@ -270,13 +265,10 @@ export function pinnedWhat(pm) {
 }
 export const chatText = (chat, id) => `${id}${chat ? ` (${chat.type === 'private' ? 'privat' : chat.type === 'channel' ? 'Kanal' : 'Gruppe'}${chat.title || chat.first_name ? ` „${chat.title || chat.first_name}“` : ''})` : ''}`;
 export function hintText({ bot, chat, what, host }) {
-  return `⏳ Scalp Desk 24/7-Dienst (Server ${host}) wartet auf die Übergabe der App.\n`
-    + `In diesem Chat ist keine Datei „${FILE}“ angeheftet (angeheftet: ${what}) – der Dienst kennt deshalb keine Alarme und meldet nichts.\n\n`
-    + `So passt es zusammen: In der App unter 🔔 Hinweise → „Telegram / Discord einrichten“ → Kursalarm müssen dieser Bot (${bot}) und die Chat-ID ${chat} eingetragen sein. Dann dort „An den 24/7-Dienst übergeben“ einschalten.\n`
-    + `Steht in der App ein anderer Bot (zum Beispiel der Sicherungs-Bot) oder eine andere Chat-ID, am Server Bot-Token und Chat-ID aus der App neu eingeben:\ncurl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/install.sh | sudo bash -s -- --neu`;
+  return formatMessage('notice', { headline: '⏳ Dienst wartet auf die App', lines: ['Server: ' + host, 'Keine angeheftete Datei: ' + FILE, 'Angeheftet: ' + what, 'Keine bekannten Alarme', '', 'In der App: Hinweise → Telegram / Discord einrichten → Kursalarm', 'Bot: ' + bot, 'Chat-ID: ' + chat, '„An den Dienst übergeben“ einschalten', 'Bei anderem Bot/Chat den Server neu einrichten:', 'curl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/install.sh | sudo bash -s -- --neu'] });
 }
 // darunter je vom Dienst gesendetem Gewinn-/Verlust-Alarm eine Zeile (pnlLine) – so übernimmt die App „ausgelöst“
-export const caption = (c, status, extra = []) => [MARK, appLine(c), status, ...extra].join('\n').slice(0, 1024);
+export const caption = (c, status, extra = []) => formatMessage('notice', { headline: '📌 Scalp Desk · Dienstübergabe', lines: [appLine(c), status, ...extra], limit: TELEGRAM_CAPTION_LIMIT });
 // 1.3: letzte von Telegram angenommene Meldung (Zeitpunkt und Art) – die App zeigt sie unter „Status prüfen“. Die Zeile steht
 // immer da (auch vor der ersten Meldung): Daran erkennt die App, dass der Dienst die Zustellung prüft.
 export const lastLine = (last, tz) => `Zustellung: ${last?.t ? `zuletzt ${stamp(last.t, tz)}${last.label ? ` · ${last.label}` : ''}` : 'geprüft, noch keine Meldung'}`;
@@ -547,7 +539,11 @@ export class Watcher {
   }
   clear(name) { if (this.errors.delete(name)) this.log(`${name}: wieder in Ordnung`); }
   // ---- Telegram ----
-  async tg(method, body, timeout = 20000, token = this.token) {
+  async tg(method, body, timeout = 20000, token = this.token, plainFallback = false) {
+    if (['sendMessage', 'editMessageCaption'].includes(method) && !plainFallback) {
+      const key = method === 'sendMessage' ? 'text' : 'caption', raw = String(body?.[key] || ''), html = /<b>/.test(raw) ? raw : formatMessage('notice', { text: raw });
+      const payload = telegramFields(html, { at: this.now(), limit: key === 'caption' ? TELEGRAM_CAPTION_LIMIT : 4096 }); body = { ...body, [key]: payload.text, parse_mode: payload.parse_mode };
+    }
     let r;
     try { r = await fetch(`${API.tg}/bot${token}/${method}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body || {}), signal: AbortSignal.timeout(timeout) }); }
     // 2.0: lost – die Anfrage kann Telegram erreicht haben, nur die Antwort fehlt (Zeitüberschreitung, Verbindung abgerissen):
@@ -555,6 +551,7 @@ export class Watcher {
     catch (e) { const why = e.cause?.code || e.name || '', lost = /^(TimeoutError|AbortError|ECONNRESET|EPIPE|UND_ERR_SOCKET|UND_ERR_HEADERS_TIMEOUT|UND_ERR_BODY_TIMEOUT)$/.test(why);
       throw Object.assign(new Error(`Telegram ${lost ? 'antwortet nicht' : 'nicht erreichbar'} (${this.secret(why || e.message)})`), { code: 0, lost }); }
     let d = null; try { d = await r.json(); } catch { /* keine JSON-Antwort */ }
+    if ((!r.ok || !d?.ok) && body?.parse_mode && !plainFallback && telegramFormatRejected(d?.error_code || r.status, d?.description)) { const key = method === 'sendMessage' ? 'text' : 'caption', next = { ...body, [key]: telegramPlain(body[key]) }; delete next.parse_mode; return this.tg(method, next, timeout, token, true); }
     if (!r.ok || !d?.ok) throw Object.assign(new Error(`Telegram ${method}: ${d?.description || 'Fehler ' + r.status}`), { code: d?.error_code || r.status, retry: d?.parameters?.retry_after || 0 });
     return d.result;
   }
@@ -602,14 +599,14 @@ export class Watcher {
       if (this.key && m.target) { const tg = this.pol.targets[m.target]; if (!tg?.on || tg.epoch !== m.epoch) { this.out = this.out.filter(x => x !== m); this.log(`Meldung verworfen (Ziel ${TARGET_NAME[m.target] || m.target} ${tg?.on ? 'zwischendurch aus- und wieder eingeschaltet' : 'ausgeschaltet'}): ${m.label || m.text.split('\n')[0]}`); if (m.ev) this.evSet(m.ev, 'discarded', 'Ziel ausgeschaltet'); this.saveState(); continue; } }
       if (m.ev) this.evSet(m.ev, 'sending');
       const why = !m.code ? 'Telegram war nicht erreichbar' : m.code === 429 ? 'Telegram hatte gebremst' : 'Telegram hatte sie zuerst abgelehnt';
-      const late = t - m.at > 120e3, full = `${m.text}\n${timeText(m.at, m.tz, true)} Uhr · 24/7-Dienst${late ? `\n(verspätet zugestellt um ${timeText(t, m.tz)} Uhr – ${why})` : ''}`;
+      const late = t - m.at > 120e3, full = finishTelegram(m.text + (late ? '\n' + formatMessage('notice', { headline: 'Verspätet zugestellt', lines: [`Zustellung um ${timeText(t, m.tz)} Uhr`, why] }) : ''), m.at, m.tz);
       if (m.target === 'patterns' && (m.watchRev !== this.patternWatch.rev || !this.patternDestination(m.destination))) { this.out = this.out.filter(x => x !== m); if (m.ev) this.evSet(m.ev, 'discarded', 'Musterziel geändert'); this.saveState(); continue; }
       if (m.target === 'ki' && (m.po3Rev !== undefined ? (m.po3Rev !== this.po3.state.revision || !Object.values(this.po3.state.alerts).some(a => 'po3:' + crypto.createHash('sha256').update(a.id).digest('hex') === m.ev && a.expiresAt > t)) : (m.kiRev !== this.ki.state.rev || !this.ki.state.cards.some(c => c.scope?.modelVersion === this.ki.state.modelVersion && 'ki:' + crypto.createHash('sha256').update(c.id).digest('hex') === m.ev && c.expiresAt > t)))) { this.out = this.out.filter(x => x !== m); if (m.ev) this.evSet(m.ev, 'discarded', 'KI-Modell geändert oder Nachricht abgelaufen'); this.saveStateNow(); continue; }
-      if (!['patterns', 'ki'].includes(m.target) && this.discord && !m.dc) { m.dc = true; await this.discordPost(full); }
+      if (!['patterns', 'ki'].includes(m.target) && this.discord && !m.dc) { m.dc = true; await this.discordPost(telegramPlain(full)); }
       try {
         const dest = m.target === 'patterns' ? m.destination : { chat: this.chat }, token = m.target === 'patterns' ? this.patternDestination(dest) : this.token;
         if (['patterns', 'ki'].includes(m.target)) { m.inFlight = true; if (!this.saveStateNow()) { m.inFlight = false; throw Object.assign(new Error('Muster-Versandstatus nicht dauerhaft gespeichert'), { code: 0 }); } }
-        const sent = await this.tg('sendMessage', { chat_id: dest.chat, ...(dest.thread ? { message_thread_id: dest.thread } : {}), text: full.slice(0, 4000), link_preview_options: { is_disabled: true }, ...(m.silent ? { disable_notification: true } : {}) }, 20000, token);
+        const payload = telegramFields(full), sent = await this.tg('sendMessage', { chat_id: dest.chat, ...(dest.thread ? { message_thread_id: dest.thread } : {}), text: payload.text, parse_mode: payload.parse_mode, link_preview_options: { is_disabled: true }, ...(m.silent ? { disable_notification: true } : {}) }, 20000, token);
         this.log(`Telegram gesendet: ${m.label || m.text.split('\n')[0]}${sent?.message_id ? ` (Nachricht #${sent.message_id})` : ''}${m.tries ? ` – nach ${plural(m.tries, 'Fehlversuch', 'Fehlversuchen')}` : ''}`);
         this.out = this.out.filter(x => x !== m); this.last = { t, label: m.label }; if (m.ev) this.evSet(m.ev, 'confirmed');
         if (this.sendErr && !this.out.some(x => x.tries)) { this.log('Telegram: Zustellung wieder in Ordnung'); this.sendErr = null; }
@@ -895,7 +892,7 @@ export class Watcher {
       const r = policyApply(this.pol, this.cmds, { commandId: 'ki-tg-' + update.update_id, expectedRevision: this.pol.rev, set: { ki: command[1] === 'ki_an' } }, this.now());
       if (r.status !== 200 || !this.saveStateNow()) { this.pol = before; this.cmds = cmds; throw new Error('KI-Schalter nicht dauerhaft bestätigt; bisheriger Stand bleibt'); }
     }
-    await this.tg('sendMessage', { chat_id: this.chat, text: `KI-Signale: ${this.pol.targets.ki.on ? 'AN' : 'AUS'} · bestätigt · Revision ${this.pol.rev}. ${this.ki.state.config || this.po3.state.config ? 'Konfluenz/PO3-Auswahl eingerichtet.' : 'Auswahl zuerst in der App an den Dienst übergeben.'} Keine Bot-Orderfreigabe.` }); return true;
+    await this.tg('sendMessage', { chat_id: this.chat, text: formatMessage('notice', { headline: 'KI-Signale: ' + (this.pol.targets.ki.on ? 'AN' : 'AUS'), lines: ['Bestätigt', 'Revision: ' + this.pol.rev, this.ki.state.config || this.po3.state.config ? 'Konfluenz/PO3-Auswahl eingerichtet' : 'Auswahl zuerst in der App an den Dienst übergeben', 'Keine Bot-Orderfreigabe'] }) }); return true;
   }
   async pollKiCommands() {
     if (this.kiCommandsBusy || !this.kiUsers.length || !/^-?\d+$/.test(this.chat)) return;
@@ -1139,7 +1136,7 @@ export class Watcher {
     try { const me = await this.tg('getMe'); this.me = me; say(true, `Bot @${me.username} (ID ${me.id}) erreichbar`); }
     catch (e) { say(false, e.code === 401 || e.code === 404 ? 'Bot-Token ungültig – in @BotFather mit /mybots → API Token nachsehen.' : e.message); return false; }
     try {
-      await this.tg('sendMessage', { chat_id: this.chat, text: `✅ Scalp Desk 24/7-Dienst ist eingerichtet (Server ${os.hostname()}).\nEr meldet Kurs-Alarme, Stop-Loss/Take-Profit, wichtige Termine, den BTC-Puls und den Gewinn-/Verlust-Alarm – auch wenn die App geschlossen ist. In der App unter 🔔 Hinweise → „Telegram / Discord einrichten“ jetzt „An den 24/7-Dienst übergeben“ einschalten.` });
+      await this.tg('sendMessage', { chat_id: this.chat, text: formatMessage('notice', { headline: '✅ Dienst eingerichtet', lines: ['Server: ' + os.hostname(), 'Kurs-Alarme', 'Stop-Loss/Take-Profit', 'Wichtige Termine', 'BTC-Puls', 'Gewinn-/Verlust-Alarm', 'Auch bei geschlossener App', 'In der App: Hinweise → Telegram / Discord einrichten', '„An den Dienst übergeben“ einschalten'] }) });
       say(true, 'Testnachricht an deinen Telegram-Chat gesendet');
     } catch (e) { say(false, e.code === 400 ? 'Chat nicht gefunden – Chat-ID prüfen und dem Bot in Telegram zuerst „Start“ schreiben.' : e.code === 403 ? 'Der Bot darf dir nicht schreiben – in Telegram den Bot öffnen und „Start“ tippen.' : e.message); return false; }
     for (const [src, sym] of [['spot', 'BTCUSDT'], ['futures', 'BTCUSDT']]) {

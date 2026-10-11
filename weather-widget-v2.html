@@ -2213,27 +2213,28 @@ html[data-chartfull] #workspace-chart-tools{display:contents!important}html[data
 
 </style>
   <script type="module">
+import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT } from './bundles/3.63.0/shared/telegram-format.mjs';
 // 3.45.0 (G10c): der vorhandene Binance-/G07-Kern bleibt eigenständig.
-import { exportModelArchive, importModelArchive, validateModelArchive } from './bundles/3.62.0/shared/model-archive.mjs';
-import { BotSimulationRuntime } from './bundles/3.62.0/shared/bot-simulation.mjs';
-import { readBotSimulation, saveBotSimulation } from './bundles/3.62.0/shared/bot-simulation-store.mjs';
-import { createBotView } from './bundles/3.62.0/shared/bot-view.mjs';
-import { createBitgetPublicClient as createPaperPublicClient } from './bundles/3.62.0/shared/bitget-public.mjs';
-import { readPaperBook, writePaperBook } from './bundles/3.62.0/shared/paper-bot-store.mjs';
-import { createPaperBotController } from './bundles/3.62.0/shared/paper-bot-controller.mjs';
-import { createPaperBotView } from './bundles/3.62.0/shared/paper-bot-view.mjs';
-import { createOrderflowView } from './bundles/3.62.0/shared/orderflow-view.mjs';
-import { createSignalView } from './bundles/3.62.0/shared/orderflow-signal-view.mjs';
-import { networkState, createWidgetBoundary } from './bundles/3.62.0/shared/widget-state.mjs';
-import { originalRisk as kiOriginalRisk } from './bundles/3.62.0/shared/confluence-risk-view.mjs';
-import { confluenceOverview, po3Overview, filterOverview, reconcileOverview } from './bundles/3.62.0/shared/signal-overview.mjs';
-import { createPo3View } from './bundles/3.62.0/shared/po3-view.mjs';
-import { cardState as kiCardState, scoreLabel as kiScoreLabel } from './bundles/3.62.0/shared/confluence-live.mjs';
-import { divergenceInfo as kiDivergenceInfo, parametersKey as kiParametersKey } from './bundles/3.62.0/shared/confluence-core.mjs';
-import { parametersKey as kiLegacyParametersKey } from './bundles/3.62.0/shared/confluence-legacy-core.mjs';
-import { presentCard as kiPresentCard, currentSignal as kiCurrentSignal } from './bundles/3.62.0/shared/confluence-presentation.mjs';
-import { observationKey as kiObservationKey } from './bundles/3.62.0/shared/confluence-replay.mjs';
-import { readReplay as kiReadHistory, saveReplay as kiSaveHistory, clearReplayJobs as kiClearHistoryJobs } from './bundles/3.62.0/shared/confluence-replay-store.mjs';
+import { exportModelArchive, importModelArchive, validateModelArchive } from './bundles/3.63.0/shared/model-archive.mjs';
+import { BotSimulationRuntime } from './bundles/3.63.0/shared/bot-simulation.mjs';
+import { readBotSimulation, saveBotSimulation } from './bundles/3.63.0/shared/bot-simulation-store.mjs';
+import { createBotView } from './bundles/3.63.0/shared/bot-view.mjs';
+import { createBitgetPublicClient as createPaperPublicClient } from './bundles/3.63.0/shared/bitget-public.mjs';
+import { readPaperBook, writePaperBook } from './bundles/3.63.0/shared/paper-bot-store.mjs';
+import { createPaperBotController } from './bundles/3.63.0/shared/paper-bot-controller.mjs';
+import { createPaperBotView } from './bundles/3.63.0/shared/paper-bot-view.mjs';
+import { createOrderflowView } from './bundles/3.63.0/shared/orderflow-view.mjs';
+import { createSignalView } from './bundles/3.63.0/shared/orderflow-signal-view.mjs';
+import { networkState, createWidgetBoundary } from './bundles/3.63.0/shared/widget-state.mjs';
+import { originalRisk as kiOriginalRisk } from './bundles/3.63.0/shared/confluence-risk-view.mjs';
+import { confluenceOverview, po3Overview, filterOverview, reconcileOverview } from './bundles/3.63.0/shared/signal-overview.mjs';
+import { createPo3View } from './bundles/3.63.0/shared/po3-view.mjs';
+import { cardState as kiCardState, scoreLabel as kiScoreLabel } from './bundles/3.63.0/shared/confluence-live.mjs';
+import { divergenceInfo as kiDivergenceInfo, parametersKey as kiParametersKey } from './bundles/3.63.0/shared/confluence-core.mjs';
+import { parametersKey as kiLegacyParametersKey } from './bundles/3.63.0/shared/confluence-legacy-core.mjs';
+import { presentCard as kiPresentCard, currentSignal as kiCurrentSignal } from './bundles/3.63.0/shared/confluence-presentation.mjs';
+import { observationKey as kiObservationKey } from './bundles/3.63.0/shared/confluence-replay.mjs';
+import { readReplay as kiReadHistory, saveReplay as kiSaveHistory, clearReplayJobs as kiClearHistoryJobs } from './bundles/3.63.0/shared/confluence-replay-store.mjs';
 // Pure, unrounded calculations. Prices are USDT per unit; FX is USDT per EUR.
 function rsi(closes, period = 14) {
   const out = Array(closes.length).fill(null);
@@ -3206,7 +3207,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
 // 3.43.0 (G10a): reiner Fachkern in shared/; Datenquelle und Karten folgen getrennt.
 // 3.44.0 (G10b): öffentlicher Adapter in shared/bitget-public.mjs; sichtbare Anbindung folgt mit G10(c).
-const APP_VERSION = '3.62.0', docEl = document.documentElement;
+const APP_VERSION = '3.63.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -6338,7 +6339,7 @@ function raisePosAlert(pos, type, price, info = {}) {
   const title = `${coin(pos.symbol)} ${pos.side === 'long' ? 'Long' : 'Short'}: ${type === 'tp' ? 'Take-Profit' : 'Stop-Loss'} erreicht`;
   desktopNotify(`🔔 ${title}`, alertText(pos, type, price, info), key);
   const base = posEventBase(pos, type); // 3.33.0: Ereignis-ID mit Episode (Stop/Ziel kann wiederkehren, siehe svcEpisode)
-  void notifyChannels('pos', posChanKey(pos, type), `${type === 'tp' ? '🎯' : '🛑'} ${title}\n${alertText(pos, type, price, info)}`, 6 * 3600e3, { ev: `${base}:${svc?.eps?.[base] || 0}` });
+  void notifyChannels('pos', posChanKey(pos, type), formatMessage('position', { symbol: pos.symbol, side: pos.side, hit: type, direction: (pos.side === 'long') === (type === 'tp') ? 'up' : 'down', level: pos[type], price, reached: howReached(info) }), 6 * 3600e3, { ev: `${base}:${svc?.eps?.[base] || 0}` });
 }
 // 3.33.0 (G05): feste Ereignis-IDs wie beim 24/7-Dienst – Alarm/Position + Aktivierung (Zeit des Scharfschaltens, Basis 36) + Art.
 // Kein Preis, keine Empfangszeit, keine Gerätekennung: +20,16 und +20,51 USDT sind derselbe Durchbruch. Eine Sicherung ändert die
@@ -6356,7 +6357,7 @@ function triggerAlarm(a, price, info = {}) {
   // 3.26.0: meldet der 24/7-Dienst diesen Alarm, bleibt er noch 3 Minuten in der Übergabe (sonst könnte er ihn verpassen)
   const key = `al:${a.id}:${a.armedAt || a.createdAt}`; a.svcAt = s247Covers('alarm', key) ? Date.now() : 0;
   if (a.svcAt) setTimeout(() => scheduleS247(0), S247_GRACE + 1500);
-  void notifyChannels('alarm', key, `🔔 Kurs-Alarm ${coin(a.symbol)}\n${what} USDT ${howReached(info)} · Kurs ${priceText(price)}${a.note ? '\nNotiz: ' + a.note : ''}`, 864e5, { ev: alarmEventId(a) });
+  void notifyChannels('alarm', key, formatMessage('alarm', { symbol: a.symbol, direction: a.dir, level: a.price, price, reached: howReached(info), note: a.note }), 864e5, { ev: alarmEventId(a) });
   simpleToast('al:' + a.id, 'alarm ' + (a.dir === 'above' ? 'up' : 'down'), `🔔 ${what} ${howReached(info)} · Kurs ${priceText(price)}${a.note ? ' – ' + a.note : ''}`, null, a.dir === 'above' ? 'green' : 'orange');
 }
 // Stop, Ziel und Kurs-Alarme prüfen – bei jeder Kursmeldung aus dem Stream und nach jedem REST-Abruf.
@@ -6680,7 +6681,7 @@ function renderDay(unrealized = 0) {
     ban.replaceChildren(el('span', '', st.state === 'reached' ? `Tages-Verlustlimit erreicht: heute ${signed(d.pnl)} USDT realisiert (Limit ${number(lim)} USDT).` : `Achtung: mit den offenen Positionen läge der heutige Verlust über deinem Limit von ${number(lim)} USDT.`));
     ban.firstChild.append(el('small', '', st.state === 'reached' ? 'Laut deinem eigenen Limit ist für heute Schluss mit neuen Trades.' : `Realisiert ${signed(d.pnl)} USDT\noffen ${signed(unrealized)} USDT`));
     if (st.state === 'reached') { const noted = String(store.get(DAYNOTE_KEY, ''));
-      if (noted !== dayKey(Date.now())) { store.set(DAYNOTE_KEY, dayKey(Date.now())); void notifyChannels('day', 'day:' + dayKey(Date.now()), `⛔ Tages-Verlustlimit erreicht\nHeute ${signed(d.pnl)} USDT realisiert · Limit ${number(lim)} USDT`, 864e5); beep(); desktopNotify('⛔ Tages-Verlustlimit erreicht', `Heute ${signed(d.pnl)} USDT · Limit ${number(lim)} USDT`, 'daylimit'); simpleToast('daylimit', 'sl', `⛔ Tages-Verlustlimit erreicht: ${signed(d.pnl)} USDT`); } }
+      if (noted !== dayKey(Date.now())) { store.set(DAYNOTE_KEY, dayKey(Date.now())); void notifyChannels('day', 'day:' + dayKey(Date.now()), formatMessage('day', { pnl: d.pnl, limit: lim }), 864e5); beep(); desktopNotify('⛔ Tages-Verlustlimit erreicht', `Heute ${signed(d.pnl)} USDT · Limit ${number(lim)} USDT`, 'daylimit'); simpleToast('daylimit', 'sl', `⛔ Tages-Verlustlimit erreicht: ${signed(d.pnl)} USDT`); } }
   } else ban.hidden = true;
   return st;
 }
@@ -7131,7 +7132,7 @@ if(document.modelContext?.registerTool){const lifecycle=new AbortController();wi
 // Der Worker hält die Verbindungen und gibt jede Sekunde einen Takt. Browser drosseln Timer im Hauptthread von
 // Hintergrund-Tabs (teils auf einmal pro Minute), Worker und Netzwerk-Ereignisse nicht. Die Alarmprüfung läuft bei jeder Kursmeldung.
 // Die Funktion wird als Quelltext in den Worker gegeben und darf deshalb nichts von außerhalb verwenden.
-function liveFeed(port) {
+function liveFeed(port, formatRejected) {
   const HOSTS = { spot: ['wss://data-stream.binance.vision/stream', 'wss://stream.binance.com:9443/stream'], futures: ['wss://fstream.binance.com/market/stream'] };
   const BEAT = { spot: 'btcusdt@kline_1m', futures: 'btcusdt@markPrice@1s' }; // liquider Stream als Lebenszeichen der Verbindung (alle 1–2 s)
   // Wächter: prüft alle 3 s jede Verbindung. Kam 1,5 s lang nichts an, geht eine kleine Kontrollanfrage an Binance
@@ -7249,6 +7250,7 @@ function liveFeed(port) {
         let d = null; try { d = await res.json(); } catch {}
         if (res.ok && (!d || d.ok !== false)) return { ok: true };
         err = String((d && (d.description || d.message)) || 'HTTP ' + res.status).slice(0, 200);
+        if (m.kind === 'telegram' && m.fields.parse_mode && typeof formatRejected === 'function' && formatRejected(res.status, err)) { m.fields = { ...m.fields, text: m.fallbackText }; delete m.fields.parse_mode; continue; }
         if (res.status === 429) wait = Math.min(120, Number((d && ((d.parameters && d.parameters.retry_after) || d.retry_after)) || res.headers.get('retry-after')) || 5) * 1000 + 300;
         else if (res.status < 500) return { ok: false, code: res.status, msg: err };
       }
@@ -7274,11 +7276,11 @@ let baseStreams = { spot: new Set(), futures: new Set() };
 function startLive() {
   const fallback = () => {
     let handler = null;
-    liveFeed({ post: m => queueMicrotask(() => onLive(m)), on: f => { handler = f; } });
+    liveFeed({ post: m => queueMicrotask(() => onLive(m)), on: f => { handler = f; } }, telegramFormatRejected);
     live.post = m => handler?.(m); live.via = 'main'; live.wantKey = {}; syncStreams();
   };
   try {
-    const url = URL.createObjectURL(new Blob([`(${liveFeed.toString()})({ post: m => postMessage(m), on: f => { onmessage = e => f(e.data); } });`], { type: 'text/javascript' }));
+    const url = URL.createObjectURL(new Blob([`(${liveFeed.toString()})({ post: m => postMessage(m), on: f => { onmessage = e => f(e.data); } }, ${telegramFormatRejected.toString()});`], { type: 'text/javascript' }));
     const w = new Worker(url); let alive = false;
     w.onmessage = e => { if (!alive) { alive = true; URL.revokeObjectURL(url); } onLive(e.data); };
     w.onerror = e => { e.preventDefault?.(); if (!alive) { w.terminate(); fallback(); } };
@@ -8502,7 +8504,7 @@ const chanState = { tg: null, dc: null }, chanClaimed = new Set(), sendWait = ne
 // 3.27.0: letzte zugestellte Meldung je Kanal (keine Tests) – bleibt gespeichert, damit sie auch nach dem Neuladen zu sehen ist.
 // u: Der Browser konnte die Antwort nicht lesen (Zustellung unbestätigt).
 function chanLast(k) { const v = store.get(CHANLAST_KEY)?.[k]; return v && Number.isFinite(v.at) ? v : null; }
-const chanLabel = text => String(text).split('\n')[0].replace(/^[^\p{L}\p{N}]+/u, '').slice(0, 60);
+const chanLabel = text => telegramPlain(text).split('\n')[0].replace(/^[^\p{L}\p{N}]+/u, '').slice(0, 60);
 function chanLastText(k) {
   const L = chanLast(k); if (!L) return '';
   return `zuletzt ${L.u ? 'gesendet' : 'zugestellt'} ${new Date(L.at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}${L.label ? ` (${L.label})` : ''}`;
@@ -8543,9 +8545,9 @@ function saveChannels() {
 // Nachricht über den Worker senden; das Ergebnis kommt als {t:'sent'} zurück (onSent)
 function chanSend(k, text, test = false, kind = 'test', opts = {}) {
   if (k === 'tg' && !tgTarget(kind)) return Promise.resolve({ ok: false, code: -1, msg: 'Ziel nicht eingerichtet' }); // 3.33.0: kein Ausweichen
-  const id = ++sendSeq, m = k === 'tg'
-    ? { t: 'send', id, kind: 'telegram', test, url: `https://api.telegram.org/bot${tgTarget(kind).token}/sendMessage`, fields: { ...tgFields(tgTarget(kind)), text: text.slice(0, 4000), link_preview_options: JSON.stringify({ is_disabled: true }), ...(opts.silent ? { disable_notification: 'true' } : {}) } }
-    : { t: 'send', id, kind: 'discord', test, url: chan.dc.url, fields: { content: text.slice(0, 1900), allowed_mentions: { parse: [] } } };
+  const id = ++sendSeq, html = /<b>/.test(text) ? text : formatMessage('notice', { text }), payload = telegramFields(html), m = k === 'tg'
+    ? { t: 'send', id, kind: 'telegram', test, fallbackText: payload.plain, url: `https://api.telegram.org/bot${tgTarget(kind).token}/sendMessage`, fields: { ...tgFields(tgTarget(kind)), text: payload.text, parse_mode: payload.parse_mode, link_preview_options: JSON.stringify({ is_disabled: true }), ...(opts.silent ? { disable_notification: 'true' } : {}) } }
+    : { t: 'send', id, kind: 'discord', test, url: chan.dc.url, fields: { content: telegramPlain(text).slice(0, 1900), allowed_mentions: { parse: [] } } };
   if (opts.coord) m.coord = true; // 3.33.0: Alarm-Ereignis – kein blinder zweiter Versuch
   return new Promise(resolve => { sendWait.set(id, { k, resolve, test, label: test ? '' : chanLabel(text) }); live.post(m); });
 }
@@ -8581,7 +8583,7 @@ async function notifyChannels(type, key, text, ttl, opts = {}) {
   if (coord) { if (!(await store.claim(`ev:${opts.ev}`, ttl))) return; void svcSendCoordinated(type, opts, text, ks); return; } // ein Tab
   if (!(await store.claim(key, ttl))) return;
   chanClaimed.add(key);
-  const msg = `${text}\n${new Date().toLocaleTimeString('de-DE')} Uhr`;
+  const msg = finishTelegram(text, Date.now());
   for (const k of ks) void chanSend(k, msg, false, type, { ...opts, coord: strict }); // opts.silent: lautlos (BTC-Puls nachts); strict: kein blinder zweiter Versuch
 }
 // Kurs wieder weg von der Marke: nächste Berührung darf erneut melden (nur für selbst gesendete Meldungen)
@@ -8693,7 +8695,7 @@ async function chanTestAll() {
   const off = [...new Set(TG_TESTS.map(([kind]) => TG_ROUTE[kind]).filter(id => tgDest(id) && !tgtOn(id)))]; // 3.33.0: Ziel AUS – auch kein Test dorthin
   for (const [kind, name] of TG_TESTS) {
     if (off.includes(TG_ROUTE[kind])) continue;
-    const r = await chanSend('tg', `🧪 Test „${name}“ – gehört in: ${TG_ROUTE[kind] === 'backup' ? 'Sicherungschat' : TG_ROUTE[kind] === 'trades' ? 'Trades' : 'Kursalarm'}\n${hhmmss(Date.now())} Uhr`, true, kind);
+    const r = await chanSend('tg', formatMessage('notice', { headline: '🧪 TEST · ' + name, lines: ['Gehört in: ' + (TG_ROUTE[kind] === 'backup' ? 'Sicherungschat' : TG_ROUTE[kind] === 'trades' ? 'Trades' : 'Kursalarm')], at: Date.now() }), true, kind);
     if (r.ok) ok++;
     await new Promise(res => setTimeout(res, 1100)); // Telegram: etwa eine Nachricht pro Sekunde je Chat
   }
@@ -8706,7 +8708,7 @@ async function chanTest(k) {
   if (!chanValid(k)) { renderChanStatus(); return; }
   if (k === 'tg' && !tgtOn('course-alert')) { chanMsg('tg', false, 'Ziel „Kursalarm“ ist ausgeschaltet (💬 Telegram-Chats) – Test nicht gesendet.'); return; } // 3.33.0: Ziel AUS – auch kein Test
   const b = $(k + '-test'); b.disabled = true; chanMsg(k, null, 'Sende Testnachricht …');
-  const r = await chanSend(k, `✅ Test von Scalp Desk: Alarme kommen hier an.\n${hhmmss(Date.now())} Uhr`, true);
+  const r = await chanSend(k, formatMessage('notice', { headline: '✅ TEST · Scalp Desk', lines: ['Alarme kommen hier an'], at: Date.now() }), true);
   b.disabled = false;
   if (r.ok && k === 'dc' && !chan.dc.on) { chan.dc.on = true; $('dc-on').checked = true; saveChannels(); renderChanStatus(); }
 }
@@ -8717,7 +8719,7 @@ async function chanTestTarget(id) {
   if (!tgDest(id)) return chanMsg('tg', false, `${name}: Chat-ID, Bot-Token und optionales Thema prüfen. Es wird kein anderer Chat verwendet.`);
   if (!tgtOn(id)) return chanMsg('tg', false, `${name} ist ausgeschaltet – Test nicht gesendet.`);
   const button = document.querySelector(`[data-tg-test-target="${id}"]`); button.disabled = true;
-  try { await chanSend('tg', `Test · ${name}\nDiese Nachricht gehört ausschließlich in den eingetragenen ${name}-Chat.\n${hhmmss(Date.now())} Uhr`, true, kind); }
+  try { await chanSend('tg', formatMessage('notice', { headline: '🧪 TEST · ' + name, lines: ['Gehört ausschließlich in den eingetragenen ' + name + '-Chat'], at: Date.now() }), true, kind); }
   finally { button.disabled = false; }
 }
 for (const id of ['course-alert', 'backup', 'trades', 'patterns']) {
@@ -9484,10 +9486,20 @@ function tgbReady() { return !!tgb && tgb.cfg.on && typeof tgtReady === 'functio
 // immer in der Datei mit und lösen allein höchstens alle 6 Stunden ein neues Senden aus (3.24.0, zzpStamp)
 function tgbSig(p) { const j = JSON.stringify({ ...p, exportedAt: 0, patterns: zzpStamp() }); let h = 0; for (let i = 0; i < j.length; i++) h = (h * 31 + j.charCodeAt(i)) | 0; return `${j.length}:${h >>> 0}`; }
 function scheduleTgBackup(delay = 4000) { if (!tgbReady()) return; clearTimeout(tgb.timer); tgb.timer = setTimeout(() => { tgb.timer = null; void sendTgBackup(); }, delay); }
-async function tgPost(method, fd, keepalive = false, token = chan.tg.token) {
+async function tgPost(method, fd, keepalive = false, token = chan.tg.token, plainFallback = false) {
+  if (!plainFallback) {
+    const raw = fd.get('caption');
+    if (raw) { const payload = telegramFields(/<b>/.test(raw) ? raw : formatMessage('notice', { text: raw }), { limit: TELEGRAM_CAPTION_LIMIT }); fd.set('caption', payload.text); fd.set('parse_mode', payload.parse_mode); }
+    if (fd.has('media')) { const media = JSON.parse(fd.get('media')), payload = telegramFields(/<b>/.test(media.caption || '') ? media.caption : formatMessage('notice', { text: media.caption }), { limit: TELEGRAM_CAPTION_LIMIT }); media.caption = payload.text; media.parse_mode = payload.parse_mode; fd.set('media', JSON.stringify(media)); }
+  }
   let r; try { r = await fetch(`https://api.telegram.org/bot${token}/${method}`, { method: 'POST', body: fd, credentials: 'omit', referrerPolicy: 'no-referrer', cache: 'no-store', keepalive }); }
   catch { throw Object.assign(new Error('Telegram nicht erreichbar – Internet oder Werbeblocker prüfen.'), { code: 0 }); }
   let d = null; try { d = await r.json(); } catch {}
+  if ((!r.ok || !d?.ok) && !plainFallback && telegramFormatRejected(d?.error_code ?? r.status, d?.description)) {
+    if (fd.has('caption')) fd.set('caption', telegramPlain(fd.get('caption'))); fd.delete('parse_mode');
+    if (fd.has('media')) { const media = JSON.parse(fd.get('media')); media.caption = telegramPlain(media.caption || ''); delete media.parse_mode; fd.set('media', JSON.stringify(media)); }
+    return tgPost(method, fd, keepalive, token, true);
+  }
   if (!r.ok || !d?.ok) throw Object.assign(new Error(r.status === 401 || r.status === 404 ? 'Token ungültig – in „Telegram / Discord einrichten“ prüfen.' : r.status === 429 ? 'Zu viele Nachrichten – nächster Versuch bei der nächsten Änderung.' : `Telegram meldet Fehler ${d?.error_code ?? r.status}: ${d?.description || ''}`), { code: d?.error_code ?? r.status });
   return d.result;
 }
@@ -9506,7 +9518,7 @@ async function sendTgBackup(force = false, leaving = false) {
   tgb.busy = true; tgb.cfg = loadTgb(); renderTgbInfo();
   try {
     const text = JSON.stringify(withIntegrity(payload), null, 1), blob = new Blob([text], { type: 'application/json' });
-    const caption = `💾 Scalp-Desk-Sicherung · ${new Date().toLocaleString('de-DE')}\n${state.positions.length} offene Positionen · ${state.trades.length} Trades${state.movements.length ? ` · ${state.movements.length} Geldbewegungen` : ''}\nWiederherstellen: Datei speichern, im Dashboard „Backup einspielen“.`;
+    const caption = formatMessage('backup', { positions: state.positions.length, trades: state.trades.length, movements: state.movements.length || null, at: Date.now(), limit: TELEGRAM_CAPTION_LIMIT });
     const keep = leaving && text.length < 60000; // keepalive erlaubt höchstens 64 KB
     const pinOk = tgbPinOk(T), own = tgbNormKey(tgb.cfg.chat) === where ? tgb.cfg.msg : 0;
     // Welche Nachricht ersetzen? Zuerst die angeheftete (gilt für alle Geräte), sonst die zuletzt von diesem Gerät gesendete
@@ -10796,8 +10808,7 @@ async function ecNotify(g, now) {
     t.append(el('span', '', `${title}: ${body}`), ok); $('toasts').append(t);
   }
   beep(); desktopNotify(title, body, key);
-  const vals = g.list.map(e => [e.forecast && `Prognose ${e.forecast}`, e.previous && `vorher ${e.previous}`].filter(Boolean).join(', ')).filter(Boolean);
-  void notifyChannels('news', `econ-chan:${g.t}`, `${title}\n${body}${vals.length ? `\n${vals.join(' · ')}` : ''}`, 24 * 3600e3);
+  void notifyChannels('news', `econ-chan:${g.t}`, formatMessage('news', { when, currency: cur, events: g.list }), 24 * 3600e3);
 }
 // Sekundentakt: abrufen, wenn fällig; Anzeige alle 15 s oder bei neuen Daten und Einstellungen – wie alle Live-Anzeigen über
 // calmDo: während des Scrollens wartet sie, danach bleibt der sichtbare Inhalt stehen (3.21.1: sonst Seitensprünge am Handy)
@@ -11393,7 +11404,7 @@ function pnlFire(k, a, cur) {
   const text = `Live-Ergebnis ${signed(cur)} USDT (${n} ${n === 1 ? 'offene Position' : 'offene Positionen'}) · Schwelle ${pnlCond(k, a.value)} erreicht`;
   beep(); desktopNotify(title, text, 'pnl:' + k);
   simpleToast('pnl:' + k, 'alarm ' + (k === 'profit' ? 'up' : 'down'), `${title}: ${text}`, null, k === 'profit' ? 'green' : 'orange');
-  a.svc = false; void pnlSend(k, a.at, `${title}\n${text}`);
+  a.svc = false; void pnlSend(k, a.at, formatMessage('pnl', { profit: k === 'profit', pnl: cur, positions: n, level: a.value }));
 }
 // Telegram/Discord: je Aktivierung genau eine Nachricht (auch mit mehreren offenen Tabs). 3.26.0 mit 24/7-Dienst: vorher in
 // die angeheftete Nachricht schauen – hat der Dienst diese Grenze schon gemeldet (App kam gerade erst in den Vordergrund),
@@ -11946,9 +11957,7 @@ function pulseDecide(moves, thr, now, last = {}) {
 }
 // Nachrichtentext: nur Fakten
 function pulseText(p, price, hourLocal, others) {
-  const pc = v => `${signed(v)} %`;
-  return `⚡ BTC-Puls: BTC ${pc(p.mv)} in ${p.w} Min. (${priceText(price)} USDT)${p.more ? ' – Bewegung legt weiter zu' : ''} – ungewöhnlich stark für ${hourLocal} Uhr (Schwelle ${number(p.lim)} %)`
-    + (others.length ? `\nVorauswahl im selben Zeitraum: ${others.map(([c, v]) => `${c} ${pc(v)}`).join(' · ')}` : '');
+  return formatMessage('pulse', { coin: 'BTC', change: p.mv, minutes: p.w, price, threshold: p.lim, reason: `ungewöhnlich stark für ${hourLocal} Uhr`, more: p.more, others });
 }
 // ---- Daten ----
 async function pulseDbGet() {
@@ -12098,8 +12107,7 @@ function s247Sig(p) { const j = JSON.stringify(p); let h = 0; for (let i = 0; i 
 // Schlüssel der Meldungen, die der Dienst mit diesem Stand übernimmt – dieselben wie in notifyChannels
 function s247Keys(p) { return [...p.alarms.map(a => `al:${a.id}:${a.armedAt}`), ...p.positions.flatMap(x => ['tp', 'sl'].filter(t => x[t] > 0).map(t => `pos:${x.id}:${t}:${x.since}`)), ...(p.pnl?.lim || []).map(l => `pnl:${l.k}:${l.at}`)]; }
 function s247Caption(p) {
-  return [S247_MARK, `App: ${s247Stamp(p.at)} · ${p.on ? `${s247Plural(p.alarms.length, 'Alarm', 'Alarme')}, ${s247Plural(p.positions.length, 'Position', 'Positionen')}` : 'Übergabe ausgeschaltet'} · ${p.dev} · #${p.tag}`,
-    'Dienst: wartet auf Rückmeldung …'].join('\n');
+  return formatMessage('notice', { headline: '📌 Scalp Desk · Dienstübergabe', lines: [`App: ${s247Stamp(p.at)} · ${p.on ? `${s247Plural(p.alarms.length, 'Alarm', 'Alarme')}, ${s247Plural(p.positions.length, 'Position', 'Positionen')}` : 'Übergabe ausgeschaltet'} · ${p.dev} · #${p.tag}`, 'Dienst: wartet auf Rückmeldung …'], at: p.at, limit: TELEGRAM_CAPTION_LIMIT });
 }
 const s247Ready = () => typeof tgConfigured === 'function' && tgConfigured() && (s247.cfg.on || s247.cfg.sentOn);
 function scheduleS247(delay = 3000) { if (!s247?.cfg || !s247Ready()) return; clearTimeout(s247.timer); s247.timer = setTimeout(() => { s247.timer = null; void sendS247(); }, delay); }
@@ -12509,7 +12517,7 @@ async function svcSendCoordinated(type, opts, text, ks) {
   // unmittelbar vor dem Senden erneut: Ziel noch an?
   if (!tgtReady('course-alert')) { if (!fallback) void svcReport(opts.ev, 'discarded', 'Ziel unmittelbar vor dem Senden aus'); svcNote(opts.ev, 'verworfen – Ziel Kursalarm aus'); return; }
   if (!fallback) await svcReport(opts.ev, 'sending');
-  const msg = `${text}\n${new Date().toLocaleTimeString('de-DE')} Uhr${fallback ? '\n(von der App gesendet – 24/7-Dienst nicht erreichbar)' : ''}`;
+  const msg = finishTelegram(text + (fallback ? '\n' + formatMessage('notice', { headline: 'Von der App gesendet', lines: ['Dienst nicht erreichbar'] }) : ''), Date.now());
   const res = await Promise.all(ks.map(k => chanSend(k, msg, false, type, { ...opts, coord: true })));
   const m = res[Math.max(0, ks.indexOf('tg'))], st = m?.ok ? (m.unconfirmed ? 'unconfirmed' : 'confirmed') : m?.lost ? 'unconfirmed' : 'failed';
   if (!fallback) void svcReport(opts.ev, st, m?.ok ? '' : m?.lost ? 'Telegram-Antwort verloren' : String(m?.msg || '').slice(0, 100));
@@ -13442,11 +13450,8 @@ function pkRecord(m, hits, mkt) {
 const PAT_TG_Q = 80;
 function patTgText(c, h) {
   const L = PAT_LIB[c.pat], S = pkStats({ mkt: c.mkt, sym: c.sym, iv: c.iv, pat: c.pat }), st = S.live.n >= 10 ? S.live : S.rek.n >= 10 ? S.rek : null, lv = h.levels || {};
-  return [`📐 Chartmuster: ${L.n} · ${c.sym.slice(0, -4)}/USDT ${c.mkt === 'spot' ? 'Spot' : 'Futures'} · ${c.iv}`,
-    `${h.status} · Richtung ${c.dir === 'bull' ? 'aufwärts' : 'abwärts'} · Kurs bei Bestätigung ${priceText(c.p0)}${Number.isFinite(lv.tgt) ? ` · rechnerisches Ziel ${priceText(lv.tgt)}` : ''}${Number.isFinite(lv.inv) ? ` · ungültig bei ${priceText(lv.inv)}` : ''}`,
-    `Regelbasiert (Modell pat-1), Regelgüte ${c.q} %`,
-    st ? `Erlernt (${st === S.live ? 'live protokolliert' : 'rekonstruiert'}): nach ${PK_H} Kerzen ${st.auf} von ${st.n} aufwärts, ${st.ab} abwärts, ${st.seitwärts} seitwärts` : `Erlernt: noch zu wenige vergleichbare Fälle (${S.live.n + S.rek.n} von mindestens 10)`,
-    'Kursrichtung ≠ Zieltreffer; keine Erfolgswahrscheinlichkeit.'].join('\n');
+  return formatMessage('pattern', { pattern: L.n, symbol: c.sym, market: c.mkt === 'spot' ? 'Spot' : 'Futures', timeframe: c.iv, status: h.status, direction: c.dir, entry: c.p0, target: lv.tgt, invalid: lv.inv, quality: c.q, model: c.model || 'pat-1',
+    learned: st ? { ...st, source: st === S.live ? 'live protokolliert' : 'rekonstruiert', horizon: PK_H } : { available: S.live.n + S.rek.n, minimum: 10 } });
 }
 async function patNotify(c, h) {
   if (!tgtReady('patterns')) return;
@@ -13472,7 +13477,7 @@ async function patNotify(c, h) {
     if (!tgtReady('patterns')) { if (!fallback) void svcReport(ev, 'discarded', 'Ziel unmittelbar vor dem Senden aus'); svcNote(ev, 'verworfen – Ziel Chartmuster aus'); return; }
     if (!fallback) await svcReport(ev, 'sending');
   }
-  const m = await chanSend('tg', `${text}\n${new Date().toLocaleTimeString('de-DE')} Uhr`, false, 'pattern', { coord: true });
+  const m = await chanSend('tg', finishTelegram(text, Date.now()), false, 'pattern', { coord: true });
   const st = m?.ok ? (m.unconfirmed ? 'unconfirmed' : 'confirmed') : m?.lost ? 'unconfirmed' : 'failed';
   if (coord && !fallback) void svcReport(ev, st, m?.ok ? '' : m?.lost ? 'Telegram-Antwort verloren' : String(m?.msg || '').slice(0, 100));
   pat.tgLog = [{ ev, st, at: Date.now() }, ...(pat.tgLog || [])].slice(0, 20);
@@ -13655,7 +13660,7 @@ $('pat-svc-apply').addEventListener('click', () => void patSvcApply());
 Object.assign(window.__g09, { patSvcConfig: () => patSvcConfig(), patSvcApply: () => patSvcApply(), patNotify: (c, h) => patNotify(c, h) });
 // ---------- 3.34.0 (G06): Trade-Bild – eine geschlossene Position als genau ein Telegram-Foto ----------
 // Erst bucht die App den vollständigen Abschluss dauerhaft (saveClose, persist), dann entsteht daraus EIN Bild (Canvas 1080×1440)
-// an das Ziel „Trades“ – ohne Bildunterschrift, ohne Begleittext, nur aus der App, nie über den 24/7-Dienst.
+// an das Ziel „Trades“ – mit zentraler Ergebnisbeschriftung, nur aus der App, nie über den 24/7-Dienst.
 // Alle Zahlen kommen aus dem Journal: Netto = Summe der Buchungen der Position (posResults, wie in der Auswertung), Euro = Summe
 // der eingefrorenen Werte je Buchung (G03.9, nie ein heutiger Kurs). Kerzen nur für den belegten Haltezeitraum (mit etwas Rand);
 // Lücken bleiben Lücken, ein fehlender Ausstiegskurs heißt „nicht erfasst“.
@@ -13841,15 +13846,18 @@ function timgBlob(d, ch) {
     } catch (e) { reject(e); }
   });
 }
-// ---- Senden: genau ein Foto, ohne Bildunterschrift; keine blob:-Adresse, sondern die Datei selbst (multipart) ----
-async function timgPost(blob) {
+// ---- Senden: genau ein Foto mit zentral formatierter Kurzinfo; keine blob:-Adresse, sondern die Datei selbst (multipart) ----
+async function timgPost(blob, data, plainFallback = false) {
   const T = tgDest('trades'); if (!T) throw Object.assign(new Error('Ziel „Trades“ nicht eingerichtet'), { kind: 'fail' });
   if (navigator.onLine === false) throw Object.assign(new Error('offline'), { kind: 'offline' });
   const fd = new FormData(); fd.append('chat_id', T.chat); if (T.thread) fd.append('message_thread_id', T.thread); fd.append('photo', blob, blob.type === 'image/jpeg' ? 'trade.jpg' : 'trade.png');
+  const html = formatMessage('trade', { symbol: data.sym, side: data.side, pnl: data.net, percent: data.pct, entry: data.entry, exit: data.exit, quantity: data.qty, duration: `${Math.floor((data.closedAt - data.openedAt) / 60000)} Min`, reasons: data.reasons.join(', '), at: data.closedAt, limit: TELEGRAM_CAPTION_LIMIT });
+  fd.append('caption', plainFallback ? telegramPlain(html) : html); if (!plainFallback) fd.append('parse_mode', 'HTML');
   let r; try { r = await fetch(`https://api.telegram.org/bot${T.token}/sendPhoto`, { method: 'POST', body: fd, credentials: 'omit', referrerPolicy: 'no-referrer', cache: 'no-store' }); }
   catch { throw Object.assign(new Error('keine Antwort von Telegram'), { kind: 'lost' }); } // Anfrage kann angekommen sein
   let j = null; try { j = await r.json(); } catch {}
   if (r.ok && j?.ok) return j.result?.message_id || 0;
+  if (!plainFallback && telegramFormatRejected(j?.error_code ?? r.status, j?.description)) return timgPost(blob, data, true);
   if (r.ok) throw Object.assign(new Error('Antwort von Telegram nicht lesbar'), { kind: 'lost' });
   throw Object.assign(new Error(r.status === 401 || r.status === 404 ? 'Token ungültig' : `Telegram lehnt ab: ${String(j?.description || `Fehler ${r.status}`).slice(0, 120)}`), { kind: 'fail' });
 }
@@ -13893,7 +13901,7 @@ async function timgRun(id) {
     why = gate(); if (why) return timgSet(id, { st: 'drop', why }); // direkt vor dem Senden
     if (navigator.onLine === false) return timgSet(id, { st: 'queued', why: 'offline – wird gesendet, sobald wieder Verbindung besteht' });
     timgSet(id, { st: 'send', why: '', hb: Date.now() });
-    try { const msg = await timgPost(blob); timgSet(id, { st: 'ok', why: '', msg, sentAt: Date.now() }); }
+    try { const msg = await timgPost(blob, d); timgSet(id, { st: 'ok', why: '', msg, sentAt: Date.now() }); }
     catch (e) {
       timgSet(id, e.kind === 'lost' ? { st: 'unconf', why: 'keine Antwort von Telegram – kein automatischer zweiter Versuch' }
         : e.kind === 'offline' ? { st: 'queued', why: 'offline – wird gesendet, sobald wieder Verbindung besteht' } : { st: 'fail', why: e.message });
@@ -14447,7 +14455,7 @@ function kiKick(delay = 0) {
   if (deadlines.length) ki.timer = setTimeout(() => { ki.timer = null; kiRender(); kiKick(); }, Math.max(1, Math.min(ki.open ? 60000 : Infinity, Math.min(...deadlines) - Date.now() + 1)));
 }
 function kiJob(request, options, type = 'load') {
-  if (!ki.worker) { ki.worker = new Worker(new URL('./bundles/3.62.0/shared/confluence-worker.mjs', location.href), { type: 'module' });
+  if (!ki.worker) { ki.worker = new Worker(new URL('./bundles/3.63.0/shared/confluence-worker.mjs', location.href), { type: 'module' });
     ki.worker.onmessage = ({ data }) => { if (!ki.pending || data.id !== ki.pending.id) return; if (data.progress) { ki.message = 'Historie: ' + data.progress.stage + (data.progress.total ? ` · ${data.progress.completed}/${data.progress.total}` : ` · ${data.progress.priceCandles || 0} Kurskerzen`); kiRender(); return; } const p = ki.pending; ki.pending = null; data.error ? p.reject(new Error(data.error)) : p.resolve(data); };
     ki.worker.onerror = () => { ki.pending?.reject(new Error('KI-Worker nicht verfügbar')); ki.pending = null; ki.worker?.terminate(); ki.worker = null; }; }
   return new Promise((resolve, reject) => { const id = ++ki.serial; ki.pending = { id, resolve, reject }; ki.worker.postMessage({ id, type, request, options }); });
@@ -14742,7 +14750,7 @@ const paperClient = createPaperPublicClient(), PAPER_PREF_KEY = 'scalpdesk.paper
 paperController = createPaperBotController({ read: readPaperBook, write: writePaperBook, currentSymbol: () => state.symbol,
   available: () => !document.hidden && !state.paused && navigator.onLine !== false,
   quote: (symbol, signal) => paperClient.quote({ symbol, decisionAt: Date.now(), signal }),
-  workerFactory: () => new Worker(new URL('./bundles/3.62.0/shared/paper-bot-worker.mjs', import.meta.url), { type: 'module' }),
+  workerFactory: () => new Worker(new URL('./bundles/3.63.0/shared/paper-bot-worker.mjs', import.meta.url), { type: 'module' }),
   settings: () => { const base = botView.paperSettings(), costs = paperView.settings(), po3 = { ...po3View.config(), criteria: po3View.config().criteria === 'pending' ? 'g10' : po3View.config().criteria, closure: 'tp1', feeEntry: costs.feeEntry, feeExit: costs.feeExit };
     const maxHoldMs = base.strategy === 'po3' ? po3.maxHoldMs : Math.min(86400000, (ki.cfg.shortHours || 24) * 3600000), [timeframe, contextTimeframe] = ki.cfg.shortPair.split('/');
     return { ...base, ...costs, maxHoldMs, rewardRisk: ki.cfg.rewardRisk, timeframe, contextTimeframe, po3, confluence: { ...kiCoreConfig(), minimumScore: base.minimumScore, feeEntry: costs.feeEntry, feeExit: costs.feeExit } }; },
@@ -15334,7 +15342,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
           <div class="tg-target backup"><p><b>💾 Sicherungschat</b> <small>nur die Datensicherung · ohne Eintrag keine Sicherung per Telegram (kein Ausweichen auf Kursalarm)</small></p>
             <div class="tg-ids"><label>Chat-ID<span class="input-wrap"><input id="tg-bchat" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="Chat-ID der Sicherung"></span></label><label>Thema <small>(optional)</small><span class="input-wrap"><input id="tg-bthread" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="–"></span></label></div>
             <label>Eigener Bot-Token <small>(nur bei einem eigenen Sicherungs-Bot)</small><span class="input-wrap"><input id="tg-btoken" type="password" autocomplete="off" spellcheck="false" placeholder="leer = derselbe Bot wie Kursalarm"></span></label></div>
-          <div class="tg-target trades"><p><b>📊 Trades</b> <small>ein Bild je vollständig geschlossener Position (ohne Text) · nur aus der App, nie über den 24/7-Dienst</small></p>
+          <div class="tg-target trades"><p><b>📊 Trades</b> <small>ein Bild mit kurzer Ergebniszeile je vollständig geschlossener Position · nur aus der App, nie über den 24/7-Dienst</small></p>
             <div class="tg-ids"><label>Chat-ID<span class="input-wrap"><input id="tg-tchat" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="Chat-ID für Trades"></span></label><label>Thema <small>(optional)</small><span class="input-wrap"><input id="tg-tthread" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="—"></span></label></div>
             <label>Eigener Bot-Token <small>(optional)</small><span class="input-wrap"><input id="tg-ttoken" type="password" autocomplete="off" spellcheck="false" placeholder="leer = derselbe Bot wie die Sicherung"></span></label></div>
           <div class="tg-target patterns"><p><b>📐 Chartmuster</b> <small>wichtige bestätigte Formationen aus „KI“ (live, Regelgüte ≥ 80 %, gerade bestätigt) · mit Dienstübergabe auch bei geschlossener App</small></p>

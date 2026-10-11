@@ -138,6 +138,7 @@ function multipart(body, type) {
   const out = {}; for (const part of body.split('--' + (m[1] || m[2]))) { const i = part.indexOf('\r\n\r\n'); if (i < 0) continue; const head = part.slice(0, i), name = /name="([^"]+)"/.exec(head), fn = /filename="([^"]*)"/.exec(head); if (name) { out[name[1]] = part.slice(i + 4).replace(/\r\n$/, ''); if (fn) (out.__files || (out.__files = {}))[name[1]] = fn[1]; } }
   return out;
 }
+function tgPlain(text, mode) { return mode === 'HTML' ? String(text || '').replace(/<\/?(?:b|i|code|pre)>/g, '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&') : text; }
 async function channel(req, res, host, u) {
   const cors = !cfg.chanNoCors;
   if (req.method === 'OPTIONS') { res.writeHead(204, { 'access-control-allow-origin': '*', 'access-control-allow-methods': 'GET, POST, OPTIONS', 'access-control-allow-headers': 'content-type' }); return res.end(); }
@@ -173,13 +174,13 @@ async function channel(req, res, host, u) {
         const id = Number(f.message_id); if (!docs.has(id)) return json(res, 400, { ok: false, error_code: 400, description: 'Bad Request: message to edit not found' }, cors);
         if (tgMsgs.get(id)?.bot !== B.id) return json(res, 400, { ok: false, error_code: 400, description: "Bad Request: message can't be edited" }, cors);
         let media = {}; try { media = JSON.parse(f.media || '{}'); } catch {}
-        const att = /^attach:\/\/(\w+)$/.exec(media.media || '')?.[1] || 'file', msg = tgStoreDoc(B.id, chat, id, f[att] ?? file, f.__files?.[att], media.caption);
-        sent.push({ at: Date.now(), svc: 'tg', bot: B.id, method, chat_id: chat, message_id: id, caption: media.caption || '', file: f[att] ?? file, name: f.__files?.[att] || '' });
+        const att = /^attach:\/\/(\w+)$/.exec(media.media || '')?.[1] || 'file', msg = tgStoreDoc(B.id, chat, id, f[att] ?? file, f.__files?.[att], tgPlain(media.caption, media.parse_mode));
+        sent.push({ at: Date.now(), svc: 'tg', bot: B.id, method, chat_id: chat, message_id: id, caption: media.caption || '', parse_mode: media.parse_mode, file: f[att] ?? file, name: f.__files?.[att] || '' });
         return json(res, 200, { ok: true, result: tgPublic(msg) }, cors);
       }
       const id = ++tgMsgId; docs.add(id);
-      const msg = tgStoreDoc(B.id, chat, id, file, f.__files?.document, f.caption);
-      sent.push({ at: Date.now(), svc: 'tg', bot: B.id, method, chat_id: chat, thread: f.message_thread_id || '', message_id: id, caption: f.caption || '', silent: f.disable_notification, file, name: f.__files?.document || '' });
+      const msg = tgStoreDoc(B.id, chat, id, file, f.__files?.document, tgPlain(f.caption, f.parse_mode));
+      sent.push({ at: Date.now(), svc: 'tg', bot: B.id, method, chat_id: chat, thread: f.message_thread_id || '', message_id: id, caption: f.caption || '', parse_mode: f.parse_mode, silent: f.disable_notification, file, name: f.__files?.document || '' });
       return json(res, 200, { ok: true, result: tgPublic(msg) }, cors);
     }
     const F = tgFields(body, req, u), chatOf = () => String(F.chat_id ?? ''), ckOf = () => tgCk(B.id, chatOf()), msgOf = () => { const x = tgMsgs.get(Number(F.message_id)); return x && x.ck === ckOf() ? x : null; };
@@ -191,8 +192,8 @@ async function channel(req, res, host, u) {
     if (method === 'getFile') { if (!tgFiles.has(F.file_id)) return bad('invalid file_id'); const x = [...tgMsgs.values()].find(v => v.document?.file_id === F.file_id); return json(res, 200, { ok: true, result: { file_id: F.file_id, file_unique_id: x?.document.file_unique_id || 'U0', file_size: tgFiles.get(F.file_id).length, file_path: `documents/${F.file_id}.json` } }, cors); }
     if (method === 'editMessageCaption') {
       const x = msgOf(); if (!x) return bad('message to edit not found');
-      if ((x.caption || '') === String(F.caption || '')) return bad('message is not modified: specified new message content and reply markup are exactly the same as a current content and reply markup of the message');
-      x.caption = String(F.caption || ''); x.edit_date = Math.floor(Date.now() / 1000); sent.push({ at: Date.now(), svc: 'tg', method, chat_id: chatOf(), message_id: x.message_id, caption: x.caption });
+      if ((x.caption || '') === String(tgPlain(F.caption, F.parse_mode) || '')) return bad('message is not modified: specified new message content and reply markup are exactly the same as a current content and reply markup of the message');
+      x.caption = String(tgPlain(F.caption, F.parse_mode) || ''); x.edit_date = Math.floor(Date.now() / 1000); sent.push({ at: Date.now(), svc: 'tg', method, chat_id: chatOf(), message_id: x.message_id, caption: F.caption, parse_mode: F.parse_mode });
       return json(res, 200, { ok: true, result: tgPublic(x) }, cors);
     }
     if (method === 'sendMessage') {
@@ -204,7 +205,7 @@ async function channel(req, res, host, u) {
       if (cfg.tg502 > 0) { cfg.tg502--; sent.at(-1).failed = 502; return json(res, 502, { ok: false, error_code: 502, description: 'Bad Gateway' }, cors); }
       if (cfg.tgFail && String(f.text || '').includes(cfg.tgFail.match || '')) { sent.at(-1).failed = cfg.tgFail.code; return json(res, cfg.tgFail.code, { ok: false, error_code: cfg.tgFail.code, description: cfg.tgFail.code === 400 ? 'Bad Request: message is too long' : 'Bad Gateway' }, cors); }
       if (f.chat_id === '111') return json(res, 400, { ok: false, error_code: 400, description: 'Bad Request: chat not found' }, cors);
-      return json(res, 200, { ok: true, result: { message_id: sent.length, chat: { id: Number(f.chat_id) }, text: f.text } }, cors);
+      return json(res, 200, { ok: true, result: { message_id: sent.length, chat: { id: Number(f.chat_id) }, text: tgPlain(f.text, f.parse_mode) } }, cors);
     }
     return json(res, 404, { ok: false, error_code: 404, description: 'Not Found' }, cors);
   }

@@ -28,3 +28,11 @@ Gezielte native Prüfung `tests/m87.js`: **22/22**, alle zwölf Werte, vier unab
 ## Offen
 
 Zentrale HTML-Nachrichten und Klartext-Rückfall, Chartmuster-Dienst/Oracle-Anleitung, gemeinsame Intervalle/2h, eigener Muster-Bot, vollständige Endprüfung und gemeinsame Veröffentlichung.
+
+## Gemeinsame Darstellung (Arbeitsstand)
+
+`shared/telegram-format.mjs` erzeugt HTML für Kurs-/Positionsalarme, Tageslimit, Wirtschaftstermine, Puls, Chartmuster, Konfluenz, PO3, Sicherung und Trade-Fotos. App und Server benutzen denselben Code. Die Preise tragen **USD**; es findet keine Umrechnung statt. Paare und Marktbezeichnungen bleiben unverändert (z. B. BTC/USDT). Dynamischer Text wird escaped, Zahlen deutsch geschrieben und Nachrichten inklusive Uhrzeit auf 4096 Zeichen bzw. Bild-/Dateibeschriftungen auf 1024 Zeichen begrenzt.
+
+Nur eine eindeutige Telegram-Antwort „Format/Entities ungültig“ erlaubt einen einzelnen Klartextversuch. Timeout, verlorene Antwort, falscher Chat und Rate-Limit gelten weiter nach den vorhandenen Zustellregeln; der Format-Fallback erzeugt dabei keine zweite Nachricht. Trade-Fotos erhalten zusätzlich eine kurze Ergebnisbeschriftung; das Bild und die Auslöser bleiben erhalten.
+
+Neue Format-/Fallbacktests sind geschrieben. Sie werden auf Nutzerwunsch erst nach den übrigen Aufgaben ausgeführt. Teil 1 wurde davor separat mit 22/22 Fällen geprüft.

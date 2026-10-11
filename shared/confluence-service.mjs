@@ -5,6 +5,7 @@ import { evaluateLive } from './confluence-live.mjs';
 import { captureObservation, mergeObservations, cardHistoricalStats, observationKey, replayJob } from './confluence-replay.mjs';
 import { loadHistoryJob } from './confluence-history.mjs';
 import { PAT_ALL_NAMES } from '../server/pattern-engine.mjs';
+import { formatMessage } from './telegram-format.mjs';
 const clone = x => JSON.parse(JSON.stringify(x));
 export function serviceSelection(input) {
   const config = settings(input?.config), options = input?.options;
@@ -15,12 +16,11 @@ export function serviceSelection(input) {
   return { forward: { short: input.forward?.short !== false, long: input.forward?.long !== false }, config: { ...config }, options: { fundingMode: options.fundingMode, anchorPolicy: options.anchorPolicy }, items };
 }
 export function kiMessage(card, statistics) {
-  const quote = (name, label) => { const s = statistics[name], period = s.samplePeriod ? ` · Fälle ${new Date(s.samplePeriod.from).toISOString()} – ${new Date(s.samplePeriod.to).toISOString()}` : ' · kein abgeschlossener Fallzeitraum'; return `${label}: ${s.tpPercent == null ? s.status + ' (N=' + s.n + ')' : s.tpPercent.toFixed(1) + ' % (N=' + s.n + ')'} · nur protokollierte Originaleingaben${period}`; };
-  return `🧠 KI-Signal ${card.scope.instrument} · ${card.scope.direction === 1 ? 'Long' : 'Short'} · ${card.scope.horizon === 'short' ? 'kurz' : 'lang'}\n`
-    + `Bitget USDT-Futures · ${card.scope.timeframe}/${card.scope.contextTimeframe} · Score ${card.score.score}/100\nEntry ${card.levels.entry} · SL ${card.levels.sl} · TP ${card.levels.tp} · ${card.levels.rewardRisk}R brutto\n`
-    + `${quote('short', '90 Tage')}\n${quote('long', '2 Jahre')}\nMuster: ${card.patterns.map(p => PAT_ALL_NAMES[p.id] || p.id).join(', ') || 'keine'}\n`
-    + `Netto-R:R ${card.costs.netRR == null ? 'nicht bewertbar' : card.costs.netRR.toFixed(2)} · Gebühren ${card.config.feeEntry * 100} % / ${card.config.feeExit * 100} % · Slippage ${card.scope.slippageBps} bp je Ein-/Ausstieg mit Tickraster\n`
-    + `Kosten: ${card.funding?.assumption || 'unbekannt'}\nCross-Liquidation unbekannt. Historische Auswertung, keine Garantie. Modell ${card.modelVersion || card.scope.modelVersion} · Revision ${card.config.revision}. Keine Order.`;
+  return formatMessage('signal', { symbol: card.scope.instrument, direction: card.scope.direction, market: 'Bitget USDT-Futures', timeframe: card.scope.timeframe + '/' + card.scope.contextTimeframe, horizon: card.scope.horizon === 'short' ? 'kurz' : 'lang', score: card.score.score,
+    entry: card.levels.entry, stop: card.levels.sl, target: card.levels.tp, rr: card.levels.rewardRisk, netRR: card.costs.netRR,
+    statistics: ['short', 'long'].map((key, i) => { const s = statistics[key]; return { label: i ? '2 Jahre' : '90 Tage', percent: s.tpPercent, status: s.tpPercent == null ? s.status : null, n: s.n, period: s.samplePeriod ? new Date(s.samplePeriod.from).toISOString() + ' – ' + new Date(s.samplePeriod.to).toISOString() : 'kein abgeschlossener Fallzeitraum' }; }),
+    patterns: card.patterns.map(p => PAT_ALL_NAMES[p.id] || p.id).join(', ') || 'keine', feeEntry: card.config.feeEntry * 100, feeExit: card.config.feeExit * 100, slippageBps: card.scope.slippageBps, funding: card.funding?.assumption || 'unbekannt', model: card.modelVersion || card.scope.modelVersion, revision: card.config.revision,
+    lines: ['Cross-Liquidation unbekannt', 'Historische Auswertung, keine Garantie', 'Keine Order'] });
 }
 export class ConfluenceService {
   constructor({ now = Date.now, client = createBitgetPublicClient({ now }), saved = null, history = null, persistHistory = () => false, persist = () => false, notify = async () => {}, policy = () => null }) {

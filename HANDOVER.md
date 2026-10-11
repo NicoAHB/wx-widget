@@ -1,3 +1,4 @@
+<!-- Telegram 3.63: zentrale HTML-Darstellung einschließlich USD-Preisen, Kurs-/Puls-/Muster-/Positions-/KI-/PO3-Meldungen, Sicherungs- und Trade-Beschriftung umgesetzt; Teil 1 zuvor 22/22. Neue Format-/Fallbacktests geschrieben, noch nicht ausgeführt. Oracle, 2h, Muster-Bot und Abschlussabnahme folgen vor Veröffentlichung. -->
 # HANDOVER – Scalp Desk (Übergabe an ChatGPT)
 
 Diese Datei ist der Einstieg für jede weitere Arbeit am Projekt. Wer sie liest, braucht kein Vorwissen. Die vollständige fachliche

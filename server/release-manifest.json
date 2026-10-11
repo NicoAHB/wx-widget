@@ -1,11 +1,11 @@
 {
-  "version": "2.11.0",
-  "appVersion": "3.62.0",
+  "version": "2.12.0",
+  "appVersion": "3.63.0",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
-      "sha256": "d5696622d548c117d8fa10897ab187073e79c2b107ad60450688e1fab4cf9d2f",
-      "bytes": 126139
+      "sha256": "572e8c4a15e0fbf71000fc3480a08872ada0e450e568977577109f576bac8c26",
+      "bytes": 126183
     },
     {
       "path": "pattern-engine.mjs",
@@ -14,8 +14,13 @@
     },
     {
       "path": "pattern-monitor.mjs",
-      "sha256": "bae27f38ea88a979632ccc4b7a2aefe3538b3d9c67d59995674bd6516f0c1be8",
-      "bytes": 5417
+      "sha256": "763af68c28a1c0961c3f3bc2e0bb7618dfe55e0196563ccfa627d805065b087e",
+      "bytes": 5039
+    },
+    {
+      "path": "telegram-format.mjs",
+      "sha256": "2eefa259b1c49fa69d555a0373f43c28fa07b23e986ec9176650dd11081fbec6",
+      "bytes": 430
     },
     {
       "path": "ki-monitor.mjs",
@@ -29,8 +34,8 @@
     },
     {
       "path": "install.sh",
-      "sha256": "abcb8fcf6708ed597cc4ae323bc21b5c7902b8344da09c33c5d364ba5e3d4448",
-      "bytes": 19293
+      "sha256": "be45fa393720f7eaf082999d95346c0fa2c59a49af7bfbc1b4ba15f8829783f0",
+      "bytes": 19354
     },
     {
       "path": "shared/adaptive-grid-feed.mjs",
@@ -139,8 +144,8 @@
     },
     {
       "path": "shared/confluence-service.mjs",
-      "sha256": "d11727870b7eaa03baa727d3ea81eefea318fd03c026963e6fb761893df987e5",
-      "bytes": 11783
+      "sha256": "698b434ca864ff532ecb38f7e3a783a5ec43b9d6cec230630d021a5bbc7d4ca1",
+      "bytes": 11609
     },
     {
       "path": "shared/confluence-worker.mjs",
@@ -234,8 +239,8 @@
     },
     {
       "path": "shared/po3-service.mjs",
-      "sha256": "c1cec8f5abc603859ca9f558ccc79a8ad6058e8d99ba199e39a77994f0549a88",
-      "bytes": 8554
+      "sha256": "c31ee68aab69a0117f6cfdb49c3c1a5612fbbcc08d1bd5a4da599ff7623464cb",
+      "bytes": 8541
     },
     {
       "path": "shared/po3-simulator.mjs",
@@ -261,6 +266,11 @@
       "path": "shared/signal-overview.mjs",
       "sha256": "f5428bbba259f07eac8d7c0cebf5569624e6d1d14db43ce5be0a7c1505468bf4",
       "bytes": 3314
+    },
+    {
+      "path": "shared/telegram-format.mjs",
+      "sha256": "c2ba9b0ef94582b29ec4d759829d5258e96753621c6222d12388900d47e401c7",
+      "bytes": 13548
     },
     {
       "path": "shared/widget-state.mjs",

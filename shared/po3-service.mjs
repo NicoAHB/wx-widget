@@ -3,6 +3,7 @@ import { PO3_VERSION, PO3_FRAMES, po3Settings, po3Window, fvgOverlaps } from './
 import { loadPo3Phase } from './po3-feed.mjs';
 import { po3AlarmCandidates } from './po3-stream.mjs';
 import { mergePo3Journal } from './po3-store.mjs';
+import { formatMessage } from './telegram-format.mjs';
 const clone = x => JSON.parse(JSON.stringify(x));
 export function po3ServiceSelection(raw) {
   const allowed = ['on', 'config', 'windowMode', 'custom', 'instruments', 'selected', 'singleFvg', 'sizing', 'fx'];
@@ -15,9 +16,11 @@ export function po3ServiceSelection(raw) {
   const sizing = raw.sizing ?? {}; if (Object.keys(sizing).some(k => !['balanceUSDT', 'riskPercent', 'leverage'].includes(k)) || Object.values(sizing).some(v => v !== null && (!Number.isFinite(v) || v <= 0))) throw new Error('PO3-Modellgröße ungültig');
   return { ...clone(raw), config: { ...config }, sizing };
 }
-export function po3Message(alarm) { return `PO3 · ${alarm.stage === 1 ? 'FVG-Vorwarnung' : 'Entrybestätigung'} · ${alarm.instrument}\n${alarm.direction === 1 ? 'Long' : 'Short'} · ${alarm.timeframes.join(' + ')} · Zone ${alarm.low} bis ${alarm.high}\nKurs ${alarm.price} · Invalidierung ${alarm.invalidation}`
-  + (alarm.contextConfirmed ? '\n4h bestätigt' : '') + (alarm.levels ? `\nEntry ${alarm.levels.entry} · SL ${alarm.levels.sl} · TP1 ${alarm.levels.tps[0]} · TP2 ${alarm.levels.tps[1]} · TP3 ${alarm.levels.tps[2]}` : '')
-  + `\n${new Date(alarm.at).toISOString()} · Kerzenschluss · Modell ${PO3_VERSION}\n${alarm.stage === 1 ? 'Abwarten: noch kein bestätigter Einstieg.' : 'Preisplan prüfen; idealisierte Referenz, keine ausgeführte Order.'} Nach Gebühren, vor Funding; Cross unbekannt.`; }
+export function po3Message(alarm) {
+  return formatMessage('po3', { headline: 'PO3 · ' + (alarm.stage === 1 ? 'FVG-Vorwarnung' : 'Entrybestätigung'), symbol: alarm.instrument, direction: alarm.direction, timeframe: alarm.timeframes.join(' + '), low: alarm.low, high: alarm.high, price: alarm.price, invalid: alarm.invalidation,
+    status: alarm.contextConfirmed ? '4h bestätigt' : null, entry: alarm.levels?.entry, stop: alarm.levels?.sl, targets: alarm.levels?.tps, model: PO3_VERSION,
+    lines: ['Kerzenschluss: ' + new Date(alarm.at).toISOString(), alarm.stage === 1 ? 'Abwarten: noch kein bestätigter Einstieg' : 'Preisplan prüfen; idealisierte Referenz, keine ausgeführte Order', 'Nach Gebühren, vor Funding', 'Cross unbekannt'] });
+}
 export class Po3Service {
   constructor({ client, now = Date.now, saved = null, persist = () => false, notify = async () => {}, policy = () => null }) {
     Object.assign(this, { client, now, persist, notify, policy }); this.busy = false; this.stopped = false; this.controller = null;
