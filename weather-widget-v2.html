@@ -2171,6 +2171,8 @@ html[data-workspace=focus][data-workspace-view=pos] #calc-sec{grid-column:2;grid
 html[data-workspace=focus] #signals .workspace-actions{padding-top:12px;border-top:1px solid var(--border)}
 html[data-workspace=focus] #signals .workspace-actions button{flex:1 1 100px}
 html[data-chartfull] .workspace-nav{display:none}
+/* 3.62.0: Die Bereichssicht darf den Vollbild-Flexcontainer nicht auf Blockdarstellung zurücksetzen. */
+html[data-workspace=focus][data-chartfull] #chart-sec{display:flex!important}
 html[data-chartfull] #workspace-watch,html[data-chartfull] #workspace-orderflow{display:none!important}
 html[data-chartfull] #workspace-chart-tools{display:contents!important}html[data-chartfull] #workspace-chart-tools>summary{display:none}
 @media(min-width:1100px){
@@ -2212,26 +2214,26 @@ html[data-chartfull] #workspace-chart-tools{display:contents!important}html[data
 </style>
   <script type="module">
 // 3.45.0 (G10c): der vorhandene Binance-/G07-Kern bleibt eigenständig.
-import { exportModelArchive, importModelArchive, validateModelArchive } from './bundles/3.61.0/shared/model-archive.mjs';
-import { BotSimulationRuntime } from './bundles/3.61.0/shared/bot-simulation.mjs';
-import { readBotSimulation, saveBotSimulation } from './bundles/3.61.0/shared/bot-simulation-store.mjs';
-import { createBotView } from './bundles/3.61.0/shared/bot-view.mjs';
-import { createBitgetPublicClient as createPaperPublicClient } from './bundles/3.61.0/shared/bitget-public.mjs';
-import { readPaperBook, writePaperBook } from './bundles/3.61.0/shared/paper-bot-store.mjs';
-import { createPaperBotController } from './bundles/3.61.0/shared/paper-bot-controller.mjs';
-import { createPaperBotView } from './bundles/3.61.0/shared/paper-bot-view.mjs';
-import { createOrderflowView } from './bundles/3.61.0/shared/orderflow-view.mjs';
-import { createSignalView } from './bundles/3.61.0/shared/orderflow-signal-view.mjs';
-import { networkState, createWidgetBoundary } from './bundles/3.61.0/shared/widget-state.mjs';
-import { originalRisk as kiOriginalRisk } from './bundles/3.61.0/shared/confluence-risk-view.mjs';
-import { confluenceOverview, po3Overview, filterOverview, reconcileOverview } from './bundles/3.61.0/shared/signal-overview.mjs';
-import { createPo3View } from './bundles/3.61.0/shared/po3-view.mjs';
-import { cardState as kiCardState, scoreLabel as kiScoreLabel } from './bundles/3.61.0/shared/confluence-live.mjs';
-import { divergenceInfo as kiDivergenceInfo, parametersKey as kiParametersKey } from './bundles/3.61.0/shared/confluence-core.mjs';
-import { parametersKey as kiLegacyParametersKey } from './bundles/3.61.0/shared/confluence-legacy-core.mjs';
-import { presentCard as kiPresentCard, currentSignal as kiCurrentSignal } from './bundles/3.61.0/shared/confluence-presentation.mjs';
-import { observationKey as kiObservationKey } from './bundles/3.61.0/shared/confluence-replay.mjs';
-import { readReplay as kiReadHistory, saveReplay as kiSaveHistory, clearReplayJobs as kiClearHistoryJobs } from './bundles/3.61.0/shared/confluence-replay-store.mjs';
+import { exportModelArchive, importModelArchive, validateModelArchive } from './bundles/3.62.0/shared/model-archive.mjs';
+import { BotSimulationRuntime } from './bundles/3.62.0/shared/bot-simulation.mjs';
+import { readBotSimulation, saveBotSimulation } from './bundles/3.62.0/shared/bot-simulation-store.mjs';
+import { createBotView } from './bundles/3.62.0/shared/bot-view.mjs';
+import { createBitgetPublicClient as createPaperPublicClient } from './bundles/3.62.0/shared/bitget-public.mjs';
+import { readPaperBook, writePaperBook } from './bundles/3.62.0/shared/paper-bot-store.mjs';
+import { createPaperBotController } from './bundles/3.62.0/shared/paper-bot-controller.mjs';
+import { createPaperBotView } from './bundles/3.62.0/shared/paper-bot-view.mjs';
+import { createOrderflowView } from './bundles/3.62.0/shared/orderflow-view.mjs';
+import { createSignalView } from './bundles/3.62.0/shared/orderflow-signal-view.mjs';
+import { networkState, createWidgetBoundary } from './bundles/3.62.0/shared/widget-state.mjs';
+import { originalRisk as kiOriginalRisk } from './bundles/3.62.0/shared/confluence-risk-view.mjs';
+import { confluenceOverview, po3Overview, filterOverview, reconcileOverview } from './bundles/3.62.0/shared/signal-overview.mjs';
+import { createPo3View } from './bundles/3.62.0/shared/po3-view.mjs';
+import { cardState as kiCardState, scoreLabel as kiScoreLabel } from './bundles/3.62.0/shared/confluence-live.mjs';
+import { divergenceInfo as kiDivergenceInfo, parametersKey as kiParametersKey } from './bundles/3.62.0/shared/confluence-core.mjs';
+import { parametersKey as kiLegacyParametersKey } from './bundles/3.62.0/shared/confluence-legacy-core.mjs';
+import { presentCard as kiPresentCard, currentSignal as kiCurrentSignal } from './bundles/3.62.0/shared/confluence-presentation.mjs';
+import { observationKey as kiObservationKey } from './bundles/3.62.0/shared/confluence-replay.mjs';
+import { readReplay as kiReadHistory, saveReplay as kiSaveHistory, clearReplayJobs as kiClearHistoryJobs } from './bundles/3.62.0/shared/confluence-replay-store.mjs';
 // Pure, unrounded calculations. Prices are USDT per unit; FX is USDT per EUR.
 function rsi(closes, period = 14) {
   const out = Array(closes.length).fill(null);
@@ -3204,7 +3206,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
 // 3.43.0 (G10a): reiner Fachkern in shared/; Datenquelle und Karten folgen getrennt.
 // 3.44.0 (G10b): öffentlicher Adapter in shared/bitget-public.mjs; sichtbare Anbindung folgt mit G10(c).
-const APP_VERSION = '3.61.0', docEl = document.documentElement;
+const APP_VERSION = '3.62.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -14422,7 +14424,7 @@ function kiKick(delay = 0) {
   if (deadlines.length) ki.timer = setTimeout(() => { ki.timer = null; kiRender(); kiKick(); }, Math.max(1, Math.min(ki.open ? 60000 : Infinity, Math.min(...deadlines) - Date.now() + 1)));
 }
 function kiJob(request, options, type = 'load') {
-  if (!ki.worker) { ki.worker = new Worker(new URL('./bundles/3.61.0/shared/confluence-worker.mjs', location.href), { type: 'module' });
+  if (!ki.worker) { ki.worker = new Worker(new URL('./bundles/3.62.0/shared/confluence-worker.mjs', location.href), { type: 'module' });
     ki.worker.onmessage = ({ data }) => { if (!ki.pending || data.id !== ki.pending.id) return; if (data.progress) { ki.message = 'Historie: ' + data.progress.stage + (data.progress.total ? ` · ${data.progress.completed}/${data.progress.total}` : ` · ${data.progress.priceCandles || 0} Kurskerzen`); kiRender(); return; } const p = ki.pending; ki.pending = null; data.error ? p.reject(new Error(data.error)) : p.resolve(data); };
     ki.worker.onerror = () => { ki.pending?.reject(new Error('KI-Worker nicht verfügbar')); ki.pending = null; ki.worker?.terminate(); ki.worker = null; }; }
   return new Promise((resolve, reject) => { const id = ++ki.serial; ki.pending = { id, resolve, reject }; ki.worker.postMessage({ id, type, request, options }); });
@@ -14717,7 +14719,7 @@ const paperClient = createPaperPublicClient(), PAPER_PREF_KEY = 'scalpdesk.paper
 paperController = createPaperBotController({ read: readPaperBook, write: writePaperBook, currentSymbol: () => state.symbol,
   available: () => !document.hidden && !state.paused && navigator.onLine !== false,
   quote: (symbol, signal) => paperClient.quote({ symbol, decisionAt: Date.now(), signal }),
-  workerFactory: () => new Worker(new URL('./bundles/3.61.0/shared/paper-bot-worker.mjs', import.meta.url), { type: 'module' }),
+  workerFactory: () => new Worker(new URL('./bundles/3.62.0/shared/paper-bot-worker.mjs', import.meta.url), { type: 'module' }),
   settings: () => { const base = botView.paperSettings(), costs = paperView.settings(), po3 = { ...po3View.config(), criteria: po3View.config().criteria === 'pending' ? 'g10' : po3View.config().criteria, closure: 'tp1', feeEntry: costs.feeEntry, feeExit: costs.feeExit };
     const maxHoldMs = base.strategy === 'po3' ? po3.maxHoldMs : Math.min(86400000, (ki.cfg.shortHours || 24) * 3600000), [timeframe, contextTimeframe] = ki.cfg.shortPair.split('/');
     return { ...base, ...costs, maxHoldMs, rewardRisk: ki.cfg.rewardRisk, timeframe, contextTimeframe, po3, confluence: { ...kiCoreConfig(), minimumScore: base.minimumScore, feeEntry: costs.feeEntry, feeExit: costs.feeExit } }; },

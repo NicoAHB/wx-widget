@@ -15,6 +15,23 @@ const REPO = require('path').resolve(__dirname, '..'), DBG = 'weather-widget-v2.
 const live = page => page.waitForFunction(() => document.getElementById('status').dataset.feed === 'live', null, { timeout: 20000 }).catch(() => {});
 const ready = page => page.waitForFunction(() => [...document.querySelectorAll('#watchlist .wl-tile .wl-sig')].every(s => /^[+−]?\d$/.test(s.textContent) || s.closest('.wl-tile').querySelector('.wl-price').textContent === '—'), null, { timeout: 30000 }).catch(() => {});
 const real = errs => errs.filter(e => !/Service Worker registration blocked/.test(e));
+// Im Browser 90 ms nach dem tatsächlichen Klick messen: mehrere Playwright-Rundreisen
+// konnten die frühere Ablesung bis hinter das Ende der 240-ms-Animation verschieben.
+const sampleAfterTap = (page, selector, key) => page.evaluate(([selector, key]) => {
+  document.querySelector(selector).addEventListener('click', () => {
+    const at = performance.now();
+    setTimeout(() => {
+      const d = document.getElementById('wl-detail');
+      window[key] = { height: Math.round(d.getBoundingClientRect().height), elapsed: performance.now() - at,
+        duration: getComputedStyle(d).transitionDuration, animations: d.getAnimations().map(a => ({ state: a.playState, currentTime: a.currentTime })) };
+    }, 90);
+  }, { capture: true, once: true });
+}, [selector, key]);
+const chartPosition = page => page.evaluate(() => {
+  const top = id => Math.round(document.getElementById(id).getBoundingClientRect().top + scrollY);
+  return { chart: top('chart'), toolbarTop: Math.round(document.querySelector('#chart-sec .chart-toolbar').getBoundingClientRect().top + scrollY),
+    detailHeight: Math.round(document.getElementById('wl-detail').getBoundingClientRect().height), symbol: document.getElementById('symbol').value };
+});
 // Kachel-Zustand aus dem DOM
 const tiles = page => page.evaluate(() => [...document.querySelectorAll('#watchlist .wl-tile')].map(t => {
   const q = s => t.querySelector(s), rules = [...q('.wl-rules').children], R = e => e.getBoundingClientRect();
@@ -62,14 +79,12 @@ const setRating = (page, coin, r) => page.evaluate(([c, r]) => { const e = windo
     check('iPad hoch: Werte und Zeile vollständig lesbar, die vier Regeln in einer Zeile', t.every(x => x.oneLine && !x.cut), JSON.stringify(t.filter(x => !x.oneLine || x.cut).map(x => x.coin)));
     check('Fehlende Daten neutral: „—“, „1 Std. –“, Regeln „–“ ohne RSI-Zahl', abc && abc.price === '—' && abc.c1 === '1 Std. –' && /flat$/.test(abc.c1cls) && abc.rules.map(r => r.text).join(' ') === 'Trend– Kurs– RSI– MACD–' && abc.rules.every(r => r.dir === 'none'), JSON.stringify(abc));
     // ---- Detailfeld per Tippen ----
-    // 3.54.0: BTC besitzt zusätzlich die ausdrücklich gewünschte Pfeilzeile; deren Höhe getrennt messen.
-    const chart0 = await page.evaluate(() => { const toolbar = document.querySelector('#chart-sec .chart-toolbar').getBoundingClientRect(); return { chart: Math.round(document.getElementById('chart').getBoundingClientRect().top + scrollY), toolbarTop: Math.round(toolbar.top + scrollY), toolbarHeight: Math.round(toolbar.height) }; });
     let p = await panel(page);
     check('Anfangs zu: Feld zusammengeklappt, keine Kachel aufgeklappt', p && !p.open && p.height === 0 && p.visible === 'hidden' && t.every(x => x.expanded === 'false'), JSON.stringify({ open: p?.open, h: p?.height }));
-    await page.evaluate(() => document.querySelector('#watchlist .wl-tile[data-watch="LTC"]').addEventListener('click', () => { window.__m39OpenAt = performance.now(); }, { capture: true, once: true }));
+    await sampleAfterTap(page, '#watchlist .wl-tile[data-watch="LTC"]', '__m39Opening');
     await page.tap('#watchlist .wl-tile[data-watch="LTC"]'); await page.waitForTimeout(90);
-    const openingTime = await page.evaluate(() => ({ elapsed: performance.now() - window.__m39OpenAt, duration: getComputedStyle(document.getElementById('wl-detail')).transitionDuration, animations: document.getElementById('wl-detail').getAnimations().map(a => ({ state: a.playState, currentTime: a.currentTime })) }));
-    const hMid = (await panel(page)).height; await page.waitForTimeout(600);
+    await page.waitForFunction(() => !!window.__m39Opening);
+    const openingTime = await page.evaluate(() => window.__m39Opening), hMid = openingTime.height; await page.waitForTimeout(600);
     p = await panel(page); t = await tiles(page);
     const ltc = t.find(x => x.coin === 'LTC'), wantUp = ltc.rules.filter(r => r.dir === 'up').length, wantDown = ltc.rules.filter(r => r.dir === 'down').length;
     check('Tippen auf LTC öffnet das Feld unter den Kacheln, nur LTC aufgeklappt', p.open && p.title === 'LTC' && t.filter(x => x.expanded === 'true').map(x => x.coin).join() === 'LTC' && p.visible === 'visible', JSON.stringify({ title: p.title, exp: t.filter(x => x.expanded === 'true').map(x => x.coin) }));
@@ -91,13 +106,20 @@ const setRating = (page, coin, r) => page.evaluate(([c, r]) => { const e = windo
     await page.tap('#watchlist .wl-tile[data-watch="XRP"]'); await page.waitForTimeout(400);
     p = await panel(page); t = await tiles(page);
     check('Andere Kachel (XRP): Inhalt wechselt, weiterhin genau ein Feld und eine Auswahl', p.open && p.title === 'XRP' && t.filter(x => x.expanded === 'true').map(x => x.coin).join() === 'XRP' && await page.$$eval('.wl-detail', d => d.length) === 1, p.title);
+    // Den Schließabstand am selben Coin messen. BTC→XRP ändert gewollt den BTC-Kopf
+    // und während des Ladens die OHLC-Höhe (36 vs. 32 px); das ist kein Restabstand des Detailfelds.
+    await page.waitForFunction(() => !document.getElementById('ohlc').classList.contains('skel') && document.querySelector('#chart svg'), null, { timeout: 20000 });
+    const chart0 = await chartPosition(page);
     // Dieselbe Kachel schließt
+    await sampleAfterTap(page, '#watchlist .wl-tile[data-watch="XRP"]', '__m39Closing');
     await page.tap('#watchlist .wl-tile[data-watch="XRP"]'); await page.waitForTimeout(90);
-    const hClosing = (await panel(page)).height; await page.waitForTimeout(500);
+    await page.waitForFunction(() => !!window.__m39Closing);
+    const closingTime = await page.evaluate(() => window.__m39Closing), hClosing = closingTime.height; await page.waitForTimeout(500);
     p = await panel(page); t = await tiles(page);
-    check('Dieselbe Kachel erneut: Feld schließt weich (nach 90 ms noch teilweise offen), keine Auswahl mehr', !p.open && p.height === 0 && hClosing > 0 && p.visible === 'hidden' && t.every(x => x.expanded === 'false'), `${hClosing} → ${p.height} px`);
-    const chart1 = await page.evaluate(() => { const toolbar = document.querySelector('#chart-sec .chart-toolbar').getBoundingClientRect(); return { chart: Math.round(document.getElementById('chart').getBoundingClientRect().top + scrollY), toolbarTop: Math.round(toolbar.top + scrollY), toolbarHeight: Math.round(toolbar.height) }; });
-    check('Nach dem Schließen steht der Chart wieder an seiner Stelle (BTC-Pfeilzeile getrennt)', chart1.toolbarTop === chart0.toolbarTop && chart1.chart - chart1.toolbarHeight === chart0.chart - chart0.toolbarHeight, JSON.stringify({ before: chart0, after: chart1 }));
+    check('Dieselbe Kachel erneut: Feld schließt weich (nach 90 ms noch teilweise offen), keine Auswahl mehr', !p.open && p.height === 0 && hClosing > 0 && p.visible === 'hidden' && t.every(x => x.expanded === 'false'), `${hClosing} → ${p.height} px · ${JSON.stringify(closingTime)}`);
+    const chart1 = await chartPosition(page);
+    check('Nach dem Schließen verschwindet der gesamte Detailabstand vor Toolbar und Chart (gleicher Coin)', chart1.symbol === chart0.symbol && chart1.detailHeight === 0 &&
+      Math.abs(chart1.toolbarTop - (chart0.toolbarTop - chart0.detailHeight)) <= 1 && Math.abs(chart1.chart - (chart0.chart - chart0.detailHeight)) <= 1, JSON.stringify({ before: chart0, after: chart1 }));
     // Schließen-Knopf
     await page.tap('#watchlist .wl-tile[data-watch="BCH"]'); await page.waitForTimeout(500);
     await page.tap('#wl-detail .wl-d-close'); await page.waitForTimeout(500);
