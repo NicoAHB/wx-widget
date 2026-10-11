@@ -2219,38 +2219,44 @@ html[data-chartfull] #workspace-chart-tools{display:contents!important}html[data
 /* Verschlüsselter privater GitHub-Sync, mobil ohne Überlauf. */
 .github-sync{border:1px solid var(--border);border-radius:14px;background:var(--surface);min-width:0}.github-sync>summary,.github-sync-setup>summary{padding:12px;cursor:pointer;font-weight:650;min-height:44px}.github-sync-body{display:grid;gap:12px;padding:12px;min-width:0}.github-sync-actions{display:flex;flex-wrap:wrap;gap:8px}.github-sync-actions>button{flex:1 1 220px;min-height:48px;white-space:normal;overflow-wrap:anywhere}.github-sync-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:12px}.github-sync-fields label,.github-sync-dialog label{display:grid;gap:6px;font-size:.85rem;min-width:0}.github-sync-fields input,.github-sync-dialog input{width:100%;min-width:0;box-sizing:border-box;min-height:44px;font-size:16px}.github-sync-fields p,.github-sync-fields a{grid-column:1/-1}.github-sync-status,.github-sync-last,.github-sync-hint{overflow-wrap:anywhere}.github-sync-hint{border:1px solid var(--border);border-radius:12px;background:var(--surface-2);padding:10px;display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:8px 0}.github-sync-hint[hidden]{display:none}.github-sync-hint>span{flex:1 1 240px}.github-sync-hint button{min-height:44px}.github-sync-dialog{box-sizing:border-box;width:min(480px,calc(100vw - 24px));max-height:calc(100dvh - 24px);padding:18px;border:1px solid var(--border);border-radius:16px;color:var(--text);background:var(--surface);overflow:auto}.github-sync-dialog::backdrop{background:#0009}.github-sync-dialog form{display:grid;gap:14px}.github-sync-dialog h3,.github-sync-dialog p{margin:0;overflow-wrap:anywhere}.github-sync-dialog p{font-size:.9rem;line-height:1.5}@media(max-width:480px){.github-sync-fields{grid-template-columns:minmax(0,1fr)}.github-sync-actions>button{flex-basis:100%}}
 .pat-project-settings{padding:10px;border:1px solid var(--border);border-radius:12px}.pat-project-settings>summary{min-height:44px;cursor:pointer}.pat-project-settings label{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:8px 0}.pat-project-settings input[type=number]{width:90px;min-height:44px;font-size:16px}.pat-project-settings p{font-size:.8rem;color:var(--muted);line-height:1.5}
+/* 3.64.0: Detail-Kerzen und Formationen in der Kurszeile, ohne horizontales Seiten-Scrollen. */
+.chart-detail-control{display:flex;align-items:center;flex-wrap:wrap;gap:6px;max-width:100%;min-width:0;font-size:11px;color:var(--muted)}.chart-detail-control select{min-height:44px;max-width:100%;width:190px;font-size:16px;background:var(--field);color:var(--text);border:1px solid var(--border);border-radius:9px;padding:6px}.tb-main.detail-options{flex-wrap:wrap}.chart-detail-status{flex:1 1 100%;font-size:11px;color:var(--muted);overflow-wrap:anywhere}.chart-detail-status[data-error=true]{color:var(--warn-text)}.chart-detail-control[hidden],.chart-detail-status[hidden],.chart-pattern-empty[hidden]{display:none}
+.chart-pattern-row{display:flex;align-items:center;gap:8px;min-width:0;max-width:100%;padding:0 0 10px}.chart-pattern-row .alarm-btn{flex:0 0 auto;margin:0;min-height:44px}.chart-pattern-row .of-btc-chart{flex:0 1 165px;font-size:11px;line-height:1.35;min-width:0;overflow-wrap:anywhere}.chart-pattern-chips{display:flex;gap:6px;flex:1 1 0;min-width:0;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin;padding:2px 0}.chart-pattern-chip{flex:0 0 auto;min-height:44px;max-width:310px;white-space:nowrap;padding:8px 10px;background:var(--surface-2);border:1px solid var(--border);border-radius:11px;font-size:11px;color:var(--muted)}.chart-pattern-chip.bull{color:var(--up-text)}.chart-pattern-chip.bear{color:var(--down-text)}.chart-pattern-chip.selected{border-color:var(--pattern-color);box-shadow:inset 0 -2px var(--pattern-color)}.chart-pattern-chip.invalid{opacity:.5}.chart-pattern-chip:focus-visible{outline:2px solid var(--text);outline-offset:2px}.chart-pattern-empty{min-width:0;font-size:11px;color:var(--muted)}.chart-pattern-chips:empty{display:none}
+@media(max-width:600px){.chart-pattern-row{flex-wrap:wrap}.chart-pattern-row .alarm-btn{font-size:11px;padding:8px}.chart-pattern-chips{flex-basis:100%;order:2}.chart-pattern-empty{flex:1 1 0}.chart-detail-control{width:100%;justify-content:space-between}.chart-detail-control select{width:min(190px,65%)}.chart-pattern-row .of-btc-chart{margin-left:auto;flex-basis:140px}}
 </style>
   <script type="module">
-import { MARKET_INTERVALS, CHART_INTERVALS, SIGNAL_INTERVALS, INTERVAL_MS, nearestChartInterval } from './bundles/3.63.0/shared/market-intervals.mjs';
-import { createMusterClient } from './bundles/3.63.0/shared/muster-bot-feed.mjs';
-import { createMusterPaper } from './bundles/3.63.0/shared/muster-bot-paper.mjs';
-import { readMusterPaper, writeMusterPaper } from './bundles/3.63.0/shared/muster-bot-store.mjs';
-import { projectPatternLines, projectionSettings, projectionTime } from './bundles/3.63.0/shared/pattern-projection.mjs';
-import { createGithubSyncView } from './bundles/3.63.0/shared/github-sync-view.mjs';
-import { stripSyncSecrets } from './bundles/3.63.0/shared/github-sync.mjs';
-import { createMusterView } from './bundles/3.63.0/shared/muster-bot-view.mjs';
-import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT } from './bundles/3.63.0/shared/telegram-format.mjs';
+import { MARKET_INTERVALS, CHART_INTERVALS, SIGNAL_INTERVALS, INTERVAL_MS, nearestChartInterval } from './bundles/3.64.0/shared/market-intervals.mjs';
+import { createDetailCandles, detailOptions, detailChoice, closedSeries, timeIndex, DETAIL_VISIBLE_MAX } from './bundles/3.64.0/shared/chart-detail.mjs';
+import { patternChipRows, patternChipKey } from './bundles/3.64.0/shared/chart-pattern-chips.mjs';
+import { createMusterClient } from './bundles/3.64.0/shared/muster-bot-feed.mjs';
+import { createMusterPaper } from './bundles/3.64.0/shared/muster-bot-paper.mjs';
+import { readMusterPaper, writeMusterPaper } from './bundles/3.64.0/shared/muster-bot-store.mjs';
+import { projectPatternLines, projectionSettings, projectionTime } from './bundles/3.64.0/shared/pattern-projection.mjs';
+import { createGithubSyncView } from './bundles/3.64.0/shared/github-sync-view.mjs';
+import { stripSyncSecrets } from './bundles/3.64.0/shared/github-sync.mjs';
+import { createMusterView } from './bundles/3.64.0/shared/muster-bot-view.mjs';
+import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT } from './bundles/3.64.0/shared/telegram-format.mjs';
 // 3.45.0 (G10c): der vorhandene Binance-/G07-Kern bleibt eigenständig.
-import { exportModelArchive, importModelArchive, validateModelArchive, restoreModelOriginals } from './bundles/3.63.0/shared/model-archive.mjs';
-import { BotSimulationRuntime } from './bundles/3.63.0/shared/bot-simulation.mjs';
-import { readBotSimulation, saveBotSimulation } from './bundles/3.63.0/shared/bot-simulation-store.mjs';
-import { createBotView } from './bundles/3.63.0/shared/bot-view.mjs';
-import { createBitgetPublicClient as createPaperPublicClient } from './bundles/3.63.0/shared/bitget-public.mjs';
-import { readPaperBook, writePaperBook } from './bundles/3.63.0/shared/paper-bot-store.mjs';
-import { createPaperBotController } from './bundles/3.63.0/shared/paper-bot-controller.mjs';
-import { createPaperBotView } from './bundles/3.63.0/shared/paper-bot-view.mjs';
-import { createOrderflowView } from './bundles/3.63.0/shared/orderflow-view.mjs';
-import { createSignalView } from './bundles/3.63.0/shared/orderflow-signal-view.mjs';
-import { networkState, createWidgetBoundary } from './bundles/3.63.0/shared/widget-state.mjs';
-import { originalRisk as kiOriginalRisk } from './bundles/3.63.0/shared/confluence-risk-view.mjs';
-import { confluenceOverview, po3Overview, filterOverview, reconcileOverview } from './bundles/3.63.0/shared/signal-overview.mjs';
-import { createPo3View } from './bundles/3.63.0/shared/po3-view.mjs';
-import { cardState as kiCardState, scoreLabel as kiScoreLabel } from './bundles/3.63.0/shared/confluence-live.mjs';
-import { divergenceInfo as kiDivergenceInfo, parametersKey as kiParametersKey } from './bundles/3.63.0/shared/confluence-core.mjs';
-import { parametersKey as kiLegacyParametersKey } from './bundles/3.63.0/shared/confluence-legacy-core.mjs';
-import { presentCard as kiPresentCard, currentSignal as kiCurrentSignal } from './bundles/3.63.0/shared/confluence-presentation.mjs';
-import { observationKey as kiObservationKey } from './bundles/3.63.0/shared/confluence-replay.mjs';
-import { readReplay as kiReadHistory, saveReplay as kiSaveHistory, clearReplayJobs as kiClearHistoryJobs } from './bundles/3.63.0/shared/confluence-replay-store.mjs';
+import { exportModelArchive, importModelArchive, validateModelArchive, restoreModelOriginals } from './bundles/3.64.0/shared/model-archive.mjs';
+import { BotSimulationRuntime } from './bundles/3.64.0/shared/bot-simulation.mjs';
+import { readBotSimulation, saveBotSimulation } from './bundles/3.64.0/shared/bot-simulation-store.mjs';
+import { createBotView } from './bundles/3.64.0/shared/bot-view.mjs';
+import { createBitgetPublicClient as createPaperPublicClient } from './bundles/3.64.0/shared/bitget-public.mjs';
+import { readPaperBook, writePaperBook } from './bundles/3.64.0/shared/paper-bot-store.mjs';
+import { createPaperBotController } from './bundles/3.64.0/shared/paper-bot-controller.mjs';
+import { createPaperBotView } from './bundles/3.64.0/shared/paper-bot-view.mjs';
+import { createOrderflowView } from './bundles/3.64.0/shared/orderflow-view.mjs';
+import { createSignalView } from './bundles/3.64.0/shared/orderflow-signal-view.mjs';
+import { networkState, createWidgetBoundary } from './bundles/3.64.0/shared/widget-state.mjs';
+import { originalRisk as kiOriginalRisk } from './bundles/3.64.0/shared/confluence-risk-view.mjs';
+import { confluenceOverview, po3Overview, filterOverview, reconcileOverview } from './bundles/3.64.0/shared/signal-overview.mjs';
+import { createPo3View } from './bundles/3.64.0/shared/po3-view.mjs';
+import { cardState as kiCardState, scoreLabel as kiScoreLabel } from './bundles/3.64.0/shared/confluence-live.mjs';
+import { divergenceInfo as kiDivergenceInfo, parametersKey as kiParametersKey } from './bundles/3.64.0/shared/confluence-core.mjs';
+import { parametersKey as kiLegacyParametersKey } from './bundles/3.64.0/shared/confluence-legacy-core.mjs';
+import { presentCard as kiPresentCard, currentSignal as kiCurrentSignal } from './bundles/3.64.0/shared/confluence-presentation.mjs';
+import { observationKey as kiObservationKey } from './bundles/3.64.0/shared/confluence-replay.mjs';
+import { readReplay as kiReadHistory, saveReplay as kiSaveHistory, clearReplayJobs as kiClearHistoryJobs } from './bundles/3.64.0/shared/confluence-replay-store.mjs';
 // Pure, unrounded calculations. Prices are USDT per unit; FX is USDT per EUR.
 function rsi(closes, period = 14) {
   const out = Array(closes.length).fill(null);
@@ -3222,7 +3228,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
 // 3.43.0 (G10a): reiner Fachkern in shared/; Datenquelle und Karten folgen getrennt.
 // 3.44.0 (G10b): öffentlicher Adapter in shared/bitget-public.mjs; sichtbare Anbindung folgt mit G10(c).
-const APP_VERSION = '3.63.0', docEl = document.documentElement;
+const APP_VERSION = '3.64.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -3543,6 +3549,40 @@ loadingData = false; // 3.29.0: ab jetzt Prüfliste und Konflikte auch an andere
 
 function currentFx() { return state.fxMode === 'manual' ? value('fx') : state.fx; }
 function currentPrice() { return state.candles.at(-1)?.close ?? null; }
+// 3.64.0: Detail-Kerzen besitzen eigene Daten, Zoom und Historie; Hauptanalyse bleibt unverändert.
+var detailResolution = detailChoice(state.interval, store.get('scalpdesk.chart-detail.v1', '')), detailSignature = '';
+var detail = createDetailCandles({ request: async (ctx, iv, params, signal) => normalizeKlines(await (ctx.source === 'futures' ? api.get(FUTURES, '/fapi/v1/klines', { symbol: ctx.symbol, interval: iv, ...params }, signal) : spotGet('/api/v3/klines', { symbol: ctx.symbol, interval: iv, ...params }, signal))), changed: () => { detailUi(); scheduleDraw(); } });
+function detailReady() { return !!detailResolution && detail.state.iv === detailResolution && detail.state.context?.symbol === state.symbol && detail.state.context?.source === chartMarket() && !!detail.state.candles.length && !CAP.on; }
+const chartRows = () => detailReady() ? detail.state.candles : state.candles;
+const chartViewState = () => detailReady() ? detail.state : state;
+const chartInterval = () => detailReady() ? detailResolution : state.interval;
+function detailUi() {
+  const box = $('chart-detail-control'), select = $('chart-detail-resolution'), status = $('chart-detail-status'); if (!box || !select) return;
+  const options = detailOptions(state.interval), key = options.join('|'); box.hidden = !options.length || CAP.on;
+  box.parentElement.classList.toggle('detail-options',!box.hidden);
+  if (select.dataset.options !== key) { select.dataset.options = key; select.replaceChildren(...['', ...options].map(iv => { const o = document.createElement('option'); o.value = iv; o.textContent = iv || 'Aus · normale Kerzen'; return o; })); }
+  select.value = detailResolution; select.disabled = CAP.on;
+  const s = detail.state, text = detailResolution ? s.busy ? 'Detail-Kerzen werden geladen …' : s.error || s.note || `${detailResolution}-Kerzen · Analyse ${state.interval}` : '';
+  status.hidden = !text; status.textContent = text; status.dataset.error = String(!!s.error); select.setAttribute('aria-busy', String(s.busy));
+  $('chart-detail-retry').hidden = !s.error || s.busy;
+}
+function detailSync(force = false, bounds = null) {
+  detailUi(); if (!detailResolution || state.paused || state.loadedSymbol !== state.symbol || !state.candles.length || !chartMarket() || CAP.on) return;
+  const signature = `${state.symbol}|${chartMarket()}|${state.interval}|${detailResolution}`;
+  if (!force && signature === detailSignature) return;
+  detailSignature = signature; const v = viewWindow(), main = state.candles.slice(v.start, v.end);
+  void detail.select({ symbol: state.symbol, source: chartMarket(), main: state.interval }, detailResolution, bounds || { start: main[0].time, end: main.at(-1).closeTime });
+  syncStreams();
+}
+function detailSet(iv) { detailResolution = detailChoice(state.interval, iv); store.set('scalpdesk.chart-detail.v1', detailResolution); detailSignature = ''; detail.cancel(); if (!detailResolution) { detail.state.iv = ''; detail.state.candles = []; } detailSync(true); detailUi(); syncStreams(); scheduleDraw(); }
+function displayWindow() { return detailReady() ? detail.view() : viewWindow(); }
+function displaySeries(values) { return detailReady() ? closedSeries(state.candles, values, detail.state.candles) : values; }
+function mainWindowForDisplay(data) {
+  if (!detailReady() || !data.length) return viewWindow();
+  const a = state.candles.findIndex(c => c.closeTime >= data[0].time), b = state.candles.findLastIndex(c => c.time <= data.at(-1).closeTime);
+  return { start: Math.max(0, a), end: Math.max(0, b + 1) };
+}
+window.__chartDetail = { get resolution() { return detailResolution; }, get state() { return detail.state; }, set: detailSet, pan: p => setPan(p), view: displayWindow, options: detailOptions, refresh: () => detailSync(true), get geometry() { return chartGeom; } };
 // Verbindungsanzeige oben rechts (Kopfzeile) und als Punkt in der mitlaufenden Live-Leiste:
 // grün live · gelb verzögert (Abruf alle paar Sekunden, Neuverbindung) · rot offline oder Datenfehler · grau pausiert
 function status() {
@@ -3663,6 +3703,7 @@ function refreshDueMtf(now = Date.now()) {
   }
 }
 function renderMarket() {
+  detailSync();
   if ($('workspace-watch-title')) put('workspace-watch-title', 'Vorauswahl · ' + state.symbol.replace(/USDT$/, '/USDT'));
   const c = state.candles, last = c.at(-1), p = currentPrice();
   musterView?.updateContext();
@@ -3708,32 +3749,33 @@ function viewWindow() {
 function drawChart() {
   if (CAP.on) { capRender(); renderZones(); ovButtons(); return; } // 3.35.0 (G07): Market-Cap-Ansicht statt Kerzen
   if (!lastChart) return;
-  const { start, end } = viewWindow(), vis = state.candles.slice(start, end), profile = vis.length ? volumeProfile(vis) : null;
+  const { start, end } = displayWindow(), vis = chartRows().slice(start, end), profile = vis.length ? volumeProfile(vis) : null;
   renderFibStrip(); renderWhaleStrip(); renderDivTip(); ovButtons(); // 3.32.0 (G04.1): Sperren auch bei verdecktem Chart
-  if (chartOnScreen) renderChart(lastChart.levels, { bb: lastChart.bb, ema200: lastChart.ema200, profile }, start, end); else chartStale = true;
+  if (chartOnScreen) renderChart(lastChart.levels, { bb: lastChart.bb && { upper: displaySeries(lastChart.bb.upper), lower: displaySeries(lastChart.bb.lower), mid: displaySeries(lastChart.bb.mid) }, ema200: displaySeries(lastChart.ema200), profile }, start, end); else chartStale = true;
   renderZones(); // 3.35.0 (G07): aus der Analyse-Reihe, unabhängig vom Ausschnitt
   updateNav();
 }
 function scheduleDraw() { if (drawQueued) return; drawQueued = true; requestAnimationFrame(() => { drawQueued = false; drawChart(); }); }
 function setPan(p) {
   if (CAP.on) return; // 3.35.0: in der Cap-Ansicht bleibt der Kurs-Ausschnitt unverändert
+  if (detailReady()) { detail.pan(p); scheduleDraw(); return; }
   const len = state.candles.length; state.pan = clamp(Math.round(p), 0, Math.max(0, len - Math.min(state.count, len)));
   state.anchorTime = state.pan > 0 ? state.candles[len - 1 - state.pan]?.time ?? null : null; scheduleDraw();
 }
 // Neuer Kerzenzahl-Wert, der Punkt unter „frac“ (0 = links, 1 = rechts) bleibt an seiner Stelle.
-function setView(newCount, frac = 1, count0 = state.count, pan0 = state.pan) {
+function setView(newCount, frac = 1, count0 = chartViewState().count, pan0 = chartViewState().pan) {
   if (CAP.on) return; // 3.35.0
-  const len = state.candles.length; if (!len) return;
-  const c0 = Math.min(count0, len), n = clamp(Math.round(newCount), Math.min(15, len), Math.max(15, len));
+  const len = chartRows().length, view = chartViewState(); if (!len) return;
+  const c0 = Math.min(count0, len), n = clamp(Math.round(newCount), Math.min(15, len), Math.max(15, Math.min(detailReady() ? DETAIL_VISIBLE_MAX : len, len)));
   const idx = len - pan0 - c0 + frac * c0, end = idx - frac * n + n;
-  state.count = n; setPan(len - end);
+  view.count = n; setPan(len - end);
 }
 function updateNav() {
   if (CAP.on) { const n = CAP.data?.pts.length || 0, v = capView(); $('zoom-in').disabled = !n || CAP.count <= Math.min(12, n); $('zoom-out').disabled = !n || CAP.count >= n; $('pan-back').disabled = !n || v.a <= 0; $('pan-fwd').disabled = !n || CAP.pan === 0; $('pan-now').hidden = CAP.pan === 0; $('zoom-reset').hidden = true; return; }
-  const len = state.candles.length, count = Math.min(state.count, len);
-  $('zoom-in').disabled = !len || count <= Math.min(15, len); $('zoom-out').disabled = !len || count >= len;
-  $('pan-back').disabled = !len || state.pan >= len - count; $('pan-fwd').disabled = !len || state.pan === 0; $('pan-now').hidden = state.pan === 0;
-  $('zoom-reset').hidden = !len || Math.min(state.count, len) === Math.min(CHART_COUNT0, len);
+  const len = chartRows().length, view = chartViewState(), count = Math.min(view.count, len);
+  $('zoom-in').disabled = !len || count <= Math.min(15, len); $('zoom-out').disabled = !len || count >= Math.min(len, detailReady() ? DETAIL_VISIBLE_MAX : len);
+  $('pan-back').disabled = !len || (view.pan >= len - count && (!detailReady() || detail.state.olderEnd)); $('pan-fwd').disabled = !len || view.pan === 0; $('pan-now').hidden = view.pan === 0;
+  $('zoom-reset').hidden = !len || Math.min(view.count, len) === Math.min(CHART_COUNT0, len);
 }
 
 function ema200Closed(closed) {
@@ -6721,7 +6763,7 @@ function node(tag,attributes,text) { const el=document.createElementNS(NS,tag); 
 var chartBoundary;
 function renderChart(levels={}, ov={}, start=null, end=null) { return chartBoundary ? chartBoundary.run(() => renderChartContent(levels, ov, start, end)) : renderChartContent(levels, ov, start, end); }
 function renderChartContent(levels={}, ov={}, start=null, end=null) {
-  const container=$('chart'), offset=start ?? Math.max(0,state.candles.length-state.count), stop=end ?? state.candles.length, data=state.candles.slice(offset, stop);
+  const rows=chartRows(), view=chartViewState(), container=$('chart'), offset=start ?? Math.max(0,rows.length-view.count), stop=end ?? rows.length, data=rows.slice(offset, stop);
   if (!data.length) {
     if (!state.marketError && !state.paused) { container.replaceChildren(chartSkeleton()); return; }
     const empty=document.createElement('div'); empty.className='chart-empty';
@@ -6739,6 +6781,8 @@ function renderChartContent(levels={}, ov={}, start=null, end=null) {
   if (ewFcOn() && !(state.pan > 0)) { const ef=ewForecastNow(); if (ef) for (const p of ef.pts) { min=Math.min(min,p.price); max=Math.max(max,p.price); } }
   const span0=max-min || max*.005, padding=Math.max(span0*.12, axisIn && bottom-top>80 ? span0*18/(bottom-top-36) : 0);min-=padding;max+=padding; // 3.3: am Handy oben und unten mindestens 18 px frei (Kurs-Schild)
   const y=v=>top+(max-v)/(max-min)*(bottom-top), x=i=>left+(i+.5)*step;
+  const timeX=t=>x(timeIndex(data,t,chartInterval()) ?? 0), mainWindow=mainWindowForDisplay(data), mainOffset=mainWindow.start, mainStop=mainWindow.end;
+  const overlayX=detailReady() ? i => { const index=i+mainOffset, c=state.candles[index], last=state.candles.at(-1); return timeX(c?.time ?? (index<0 ? state.candles[0].time+index*IV_MS[state.interval] : projectionTime(last.time,state.interval,index-state.candles.length+1))); } : x;
   const svg=node('svg',{viewBox:`0 0 ${w} ${h}`,role:'presentation','aria-hidden':'true'});
   // Schmaler Chart (Handy hochkant): Kurse nicht in einer eigenen Spalte, sondern auf Schildchen im Chart am rechten Rand –
   // nur an den inneren Linien (die Randzeilen bleiben für „außerhalb“-Hinweise frei); hohe Charts bekommen mehr Linien.
@@ -6763,12 +6807,15 @@ function renderChartContent(levels={}, ov={}, start=null, end=null) {
   }
   svg.append(under);
   const maxVolume=Math.max(...data.map(c=>c.volume),1);
-  data.forEach((c,i)=>{const col=c.close>=c.open ? PAL.up : PAL.down,cx=x(i),cw=Math.max(.8,step*.63);svg.append(node('line',{x1:cx,y1:y(c.high),x2:cx,y2:y(c.low),stroke:col,'stroke-width':1}),node('rect',{x:cx-cw/2,y:Math.min(y(c.open),y(c.close)),width:cw,height:Math.max(1,Math.abs(y(c.open)-y(c.close))),fill:col,rx:.4}),node('rect',{x:cx-cw/2,y:h-31-c.volume/maxVolume*32,width:cw,height:Math.max(.5,c.volume/maxVolume*32),fill:col,opacity:.3}));});
+  if (detailReady()) svg.append(detailBodies(data, {w,h,x,y,step,maxVolume}));
+  else data.forEach((c,i)=>{const col=c.close>=c.open ? PAL.up : PAL.down,cx=x(i),cw=Math.max(.8,step*.63);svg.append(node('line',{x1:cx,y1:y(c.high),x2:cx,y2:y(c.low),stroke:col,'stroke-width':1}),node('rect',{x:cx-cw/2,y:Math.min(y(c.open),y(c.close)),width:cw,height:Math.max(1,Math.abs(y(c.open)-y(c.close))),fill:col,rx:.4}),node('rect',{x:cx-cw/2,y:h-31-c.volume/maxVolume*32,width:cw,height:Math.max(.5,c.volume/maxVolume*32),fill:col,opacity:.3}));});
   for(const [key,col] of [['support',PAL.up],['resistance',PAL.down]]) if(levels[key]!=null && levels[key]>=min && levels[key]<=max) svg.append(node('line',{x1:left,y1:y(levels[key]),x2:w-right,y2:y(levels[key]),stroke:col,'stroke-dasharray':'5 5',opacity:.65}));
   if (bbU) { over.append(node('path',{d:pathOf(bbU),fill:'none',stroke:PAL.bb,'stroke-width':1,opacity:.75}),node('path',{d:pathOf(bbL),fill:'none',stroke:PAL.bb,'stroke-width':1,opacity:.75}),node('path',{d:pathOf(bbM),fill:'none',stroke:PAL.bb,'stroke-width':1,'stroke-dasharray':'4 4',opacity:.45})); }
   if (e200) over.append(node('path',{d:pathOf(e200),fill:'none',stroke:PAL.ema,'stroke-width':1.7,opacity:.95}));
   if (show.hz && !ovLock('hz')) hzDraw(svg, over, { data, x, y, left, pw, top, bottom, min, max, rx, step }); // 3.35.0 (G07): höhere Zonen
-  if (pat.on) patDraw(svg, over, { data, x, y, left, pw, top, bottom, min, max, rx, step }); // 3.37.0 (G09): erkannte Chartmuster
+  if (pat.on) patDraw(svg, over, { data, x, y, timeX, left, pw, top, bottom, min, max, rx, step }); // 3.37.0 (G09): erkannte Chartmuster
+  patDrawProjection(svg, over, { data, x, y, timeX, left, pw, top, bottom, min, max, rx, step });
+  patDrawChips(svg, over, {data,x,y,timeX,left,pw,top,bottom,min,max,rx,step});
   if (prof) { const yp=y(prof.poc); over.append(node('line',{x1:left,y1:yp,x2:left+pw,y2:yp,stroke:PAL.vp,'stroke-width':1.5,opacity:.95}),node('text',{x:left+6,y:yp-5,class:'axis-label',style:'fill:'+PAL.vp+';font-weight:600'},'POC')); }
   // 3.28.0: Demo-Positionen auch im Chart – blasser und mit „DEMO“ beschriftet (nur Anzeige)
   const chartPos = [...state.positions, ...state.demoPositions].filter(p => p.symbol === state.symbol), demoTag = p => isDemoPos(p) ? 'DEMO ' : '';
@@ -6787,12 +6834,12 @@ function renderChartContent(levels={}, ov={}, start=null, end=null) {
   }
   drawLiqLines(svg, over, {left, pw, top, bottom, min, max, y});
   drawLiqClusters(svg, over, {left, pw, top, bottom, min, max, y});
-  drawFibonacci(over, {offset, x, y, top, bottom, left, right: left+pw, laneX, min, max});
-  drawZigzag(over, {offset, stop, x, y});
-  drawDivergences(over, {offset, stop, x, y, top, bottom, left, laneX});
-  drawElliott(over, {offset, stop, x, y, top, bottom, left, right: left+pw, laneX});
-  drawElliottForecast(over, {offset, stop, x, y, top, bottom, left, right: left+pw, laneX});
-  drawZigzagForecast(over, {offset, x, y, top, bottom, left, laneX});
+  drawFibonacci(over, {offset:mainOffset, x:overlayX, y, top, bottom, left, right: left+pw, laneX, min, max});
+  drawZigzag(over, {offset:mainOffset, stop:mainStop, x:overlayX, y});
+  drawDivergences(over, {offset:mainOffset, stop:mainStop, x:overlayX, y, top, bottom, left, laneX});
+  drawElliott(over, {offset:mainOffset, stop:mainStop, x:overlayX, y, top, bottom, left, right: left+pw, laneX});
+  drawElliottForecast(over, {offset:mainOffset, stop:mainStop, x:overlayX, y, top, bottom, left, right: left+pw, laneX});
+  drawZigzagForecast(over, {offset:mainOffset, x:overlayX, y, top, bottom, left, laneX});
   svg.append(over);
   if (e200) { const le=e200.at(-1); if (Number.isFinite(le) && (le>max || le<min)) svg.append(node('text',{x:left+6,y:le>max?top+13:bottom-7,class:'axis-label',style:'fill:'+PAL.ema},`EMA 200 ${le>max?'↑':'↓'} ${priceText(le)} (außerhalb)`)); }
   drawHiLo(svg, {data, x, y, left, step, laneX, axisIn}); // 3.4: Hoch und Tief des sichtbaren Zeitraums
@@ -6801,7 +6848,7 @@ function renderChartContent(levels={}, ov={}, start=null, end=null) {
   for(const [yy,t] of axisTags) { const tw=t.length*7+10; svg.append(node('rect',{x:w-2-tw,y:yy-9,width:tw,height:18,rx:4,class:'axis-tag'}),node('text',{x:w-7,y:yy+4,class:'axis-label axis-in','text-anchor':'end'},t)); } // über allem, damit lesbar
   drawLastTag(svg, lastTag, {w, left, pw, axisIn}); // 3.3: aktueller Kurs mit Countdown bis Kerzenschluss
   const labels=w<500 ? 3 : 5;
-  for(let j=0;j<labels;j++){const i=Math.round(j*(data.length-1)/(labels-1));const d=new Date(data[i].time);const label=['1m','5m','15m','1h','2h'].includes(state.interval) ? d.toLocaleTimeString('de-DE',{timeZone:'UTC',hour:'2-digit',minute:'2-digit'}) : d.toLocaleDateString('de-DE',{timeZone:'UTC',day:'2-digit',month:'2-digit',...(state.interval==='1M'?{year:'2-digit'}:{})});svg.append(node('text',{x:x(i),y:h-10,class:'axis-label','text-anchor':j===0?'start':j===labels-1?'end':'middle'},label));}
+  for(let j=0;j<labels;j++){const i=Math.round(j*(data.length-1)/(labels-1));const d=new Date(data[i].time), iv=chartInterval();const label=(detailReady()?IV_MS[iv]<864e5:IV_MS[state.interval]<3600e3*4) ? d.toLocaleString('de-DE',{timeZone:'UTC',...(detailReady()&&data.at(-1).time-data[0].time>=864e5?{day:'2-digit',month:'2-digit'}:{}),hour:'2-digit',minute:'2-digit'}) : d.toLocaleDateString('de-DE',{timeZone:'UTC',day:'2-digit',month:'2-digit',...(iv==='1M'?{year:'2-digit'}:{})});svg.append(node('text',{x:x(i),y:h-10,class:'axis-label','text-anchor':j===0?'start':j===labels-1?'end':'middle'},label));}
   const cross=node('line',{x1:0,y1:top,x2:0,y2:h-30,class:'crosshair',visibility:'hidden'});svg.append(cross);
   function select(i) {i=Math.max(0,Math.min(data.length-1,i));state.selected=i;const c=data[i];state.selectedTime=c.time;cross.setAttribute('x1',x(i));cross.setAttribute('x2',x(i));cross.setAttribute('visibility','visible');put('ohlc',`${utcDate(c.time)} UTC · O ${priceText(c.open)}  H ${priceText(c.high)}\nL ${priceText(c.low)}  C ${priceText(c.close)}`);}
   const clear=()=>{cross.setAttribute('visibility','hidden');state.selected=null;state.selectedTime=null;put('ohlc',`O ${priceText(last.open)}  H ${priceText(last.high)}\nL ${priceText(last.low)}  C ${priceText(last.close)}`);};
@@ -6814,15 +6861,24 @@ function renderChartContent(levels={}, ov={}, start=null, end=null) {
   const keep=state.selectedTime!=null?data.findIndex(c=>c.time===state.selectedTime):-1;
   if(keep>=0)select(keep);else{state.selected=null;put('ohlc',`O ${priceText(last.open)}  H ${priceText(last.high)}\nL ${priceText(last.low)}  C ${priceText(last.close)}`);}
   magnetRedraw();
-  put('chart-caption',state.pan>0 ? `Kerzen ${offset+1}–${stop} von ${state.candles.length} · UTC · ${state.interval}` : `${data.length} / ${state.candles.length} Kerzen · UTC · ${state.interval}`);
-  container.setAttribute('aria-label',`${state.symbol}, ${state.interval}, ${data.length} Kerzen. Letzter Kurs ${priceText(last.close)} USDT. Pfeiltasten wählen Kerzen.`);
+  put('chart-caption', detailReady() ? `${data.length} Detail-Kerzen · ${detailResolution} · Haupt-Zeitrahmen ${state.interval} · UTC` : state.pan>0 ? `Kerzen ${offset+1}–${stop} von ${state.candles.length} · UTC · ${state.interval}` : `${data.length} / ${state.candles.length} Kerzen · UTC · ${state.interval}`);
+  container.setAttribute('aria-label',`${state.symbol}, ${state.interval}${detailReady() ? ', Detail-Kerzen '+detailResolution : ''}, ${data.length} Kerzen. Letzter Kurs ${priceText(last.close)} USDT. Pfeiltasten wählen Kerzen.`);
+}
+function detailBodies(data, {w,h,x,y,step,maxVolume}) {
+  const foreign=node('foreignObject',{x:0,y:0,width:w,height:h,class:'detail-candles','pointer-events':'none'}), canvas=document.createElement('canvas'), ratio=Math.min(2,devicePixelRatio||1);
+  canvas.width=Math.round(w*ratio);canvas.height=Math.round(h*ratio);canvas.style.cssText='width:100%;height:100%;display:block';
+  const ctx=canvas.getContext('2d');if(!ctx)throw Error('Detail-Kerzen können nicht gezeichnet werden.');ctx.scale(ratio,ratio);
+  for(let i=0;i<data.length;i++){const c=data[i],col=c.close>=c.open?PAL.up:PAL.down,cx=x(i),cw=Math.max(.6,step*.63);ctx.strokeStyle=col;ctx.lineWidth=.8;ctx.beginPath();ctx.moveTo(cx,y(c.high));ctx.lineTo(cx,y(c.low));ctx.stroke();ctx.fillStyle=col;ctx.fillRect(cx-cw/2,Math.min(y(c.open),y(c.close)),cw,Math.max(1,Math.abs(y(c.open)-y(c.close))));ctx.globalAlpha=.3;const vh=c.volume/maxVolume*32;ctx.fillRect(cx-cw/2,h-31-vh,cw,Math.max(.5,vh));ctx.globalAlpha=1;}
+  foreign.append(canvas);return foreign;
 }
 
 function render() {renderFx();renderMarket();renderFutures();renderCalculator();renderSignals();renderWatchlist();renderPositions();renderAlarms();renderRisk();renderLivebar();updateTitle();syncStreams();renderSkeletons();}
-function zoom(factor) {setView(state.count*factor, state.pan>0 ? .5 : 1);}
+function zoom(factor) { const view = chartViewState(); setView(view.count*factor, view.pan>0 ? .5 : 1); }
 // 3.32.0 (G04.5): Standardansicht des Charts – 80 Kerzen bis zur aktuellen Kerze (Knopf ⟲ und beim Coinwechsel). Betrifft nur
 // den Chart-Zoom der App; den Fingerzoom der ganzen Seite (Safari) kann eine Web-App nicht zurücksetzen (CHART_COUNT0 vor state).
-function chartViewReset() { state.count = CHART_COUNT0; state.anchorTime = null; setPan(0); }
+function chartViewReset() { const view = chartViewState(); view.count = CHART_COUNT0; view.anchorTime = null; chartNow(); }
+function chartNow() { if(detailReady() && detail.state.candles.at(-1).closeTime<serverNow()) { detailSync(true,{start:currentCandleEnd()-detail.state.count*IV_MS[detailResolution],end:currentCandleEnd()-1}); return; } setPan(0); }
+function currentCandleEnd() { return Math.min(serverNow(),state.candles.at(-1).closeTime+1); }
 function setMarket(symbol,interval=state.interval) {
   const normalized=normalizeSymbol(symbol), requestedInterval=interval; interval=nearestChartInterval(interval, state.interval); 
   store.set('scalpdesk.chart-interval.v1', interval);
@@ -6830,6 +6886,7 @@ function setMarket(symbol,interval=state.interval) {
   // Beim Kürzelwechsel gehören Signal-Zeiträume und Datenquelle zum alten Paar
   if(symbolChanged){state.mtf={};state.source='spot';state.sourceFor=null;state.loadedSymbol=null;state.count=CHART_COUNT0;} // 3.32.0 (G04.5): neuer Coin in der Standardansicht
   state.symbol=normalized;state.interval=interval;$('symbol').value=normalized.slice(0,-4);state.pickError=interval!==requestedInterval ? `Intervall ${String(requestedInterval).slice(0,24)} nicht unterstützt – ${interval} geöffnet.` : null;
+  if (changed) { detail.cancel(); detailSignature = ''; detailResolution = detailChoice(interval, detailResolution); store.set('scalpdesk.chart-detail.v1', detailResolution); detail.state.candles = []; detailUi(); }
   if(changed){state.pan=0;state.anchorTime=null;state.candles=[];state.marketAt=0;state.marketError=null;state.funding=null;state.oi=null;state.history=null;state.fundingError=null;state.oiError=null;state.historyError=null;state.selected=null;state.selectedTime=null;state.fromCache=false;live.chartAt=0;}
   document.querySelectorAll('[data-interval]').forEach(b=>{const active=b.dataset.interval===interval;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});
   if(changed)patClear(); // 3.37.0 (G09): alte Treffer gehören zum alten Coin/Intervall
@@ -6838,7 +6895,7 @@ function setMarket(symbol,interval=state.interval) {
   paperView?.render(); orderflow?.sync(); musterView?.render(); // Arbeitsbereiche behalten denselben gewählten Coin.
   return refresh();
 }
-function pause() {state.paused=!state.paused;live.post({t:'pause',on:state.paused});if(state.paused)cancel();else{live.post({t:'wake'});void refresh();}status();renderMarket();renderCalculator();renderSignals();renderPositions();renderLivebar();updateTitle();syncStreams();renderSkeletons();}
+function pause() {state.paused=!state.paused;live.post({t:'pause',on:state.paused});if(state.paused){cancel();detail.cancel();detailSignature='';}else{live.post({t:'wake'});void refresh();}status();renderMarket();renderCalculator();renderSignals();renderPositions();renderLivebar();updateTitle();syncStreams();renderSkeletons();}
 // ---- 3.32.0 (G04.3): Kryptowährungsfeld ----
 // Antippen markiert den ganzen Inhalt – Tippen ersetzt ihn; das Feld darf auch leer sein. Der geladene Coin bleibt, bis eine
 // Eingabe bestätigt ist UND Binance das Paar kennt (Spot, sonst USDT-Perpetual-Futures). Bekannte Coins (Vorauswahl, eigene
@@ -6880,6 +6937,9 @@ $('symbol').addEventListener('mouseup',e=>{if(symbolFresh){symbolFresh=false;e.p
 $('symbol').addEventListener('keydown',e=>{if(e.key==='Escape'&&!e.isComposing){e.preventDefault();e.stopPropagation();symbolRestore();if(state.pickError)pickError(null);$('symbol').blur();}});
 $('symbol').addEventListener('blur',()=>setTimeout(()=>{const f=$('symbol');if(document.activeElement!==f&&!f.value.trim())symbolRestore();},200));
 const intervalBar = document.querySelector('.tb-main .intervals'); intervalBar.replaceChildren(...INTERVALS.map(iv => { const b = el('button', '', iv); b.type = 'button'; b.dataset.interval = iv; b.setAttribute('aria-pressed', String(iv === state.interval)); b.classList.toggle('active', iv === state.interval); return b; }));
+// Die kleine Auswahl bleibt bei der bestehenden Timeframe-Leiste, auch im Vollbild.
+{ const box=el('label','chart-detail-control'), name=el('span','','Kerzen-Auflösung'), select=el('select');box.id='chart-detail-control';select.id='chart-detail-resolution';select.setAttribute('aria-label','Kerzen-Auflösung');box.append(name,select);intervalBar.parentElement.append(box);
+  const status=el('span','chart-detail-status'), retry=el('button','button ghost','Erneut laden');status.id='chart-detail-status';status.setAttribute('role','status');retry.type='button';retry.id='chart-detail-retry';retry.hidden=true;retry.addEventListener('click',()=>detailSync(true));document.querySelector('#chart-sec .chart-toolbar').append(status,retry);select.addEventListener('change',()=>detailSet(select.value));detailUi(); }
 document.querySelectorAll('[data-interval]').forEach(b=>b.addEventListener('click',()=>void setMarket(state.symbol,b.dataset.interval)));
 document.querySelectorAll('[data-side]').forEach(b=>b.addEventListener('click',()=>{state.side=b.dataset.side;document.querySelectorAll('[data-side]').forEach(el=>{const active=el.dataset.side===state.side;el.classList.toggle('active',active);el.setAttribute('aria-pressed',String(active));});renderCalculator();}));
 for(const id of ['balance','stake','leverage','move','mmr']) $(id).addEventListener('input',renderCalculator);
@@ -7102,9 +7162,9 @@ $('export-csv').addEventListener('click',()=>{if(!state.trades.length){backupSta
 $('pause').addEventListener('click',pause);$('refresh').addEventListener('click',()=>{live.post({t:'wake'});void refresh();});
 $('zoom-in').addEventListener('click',()=>CAP.on?capZoom(.7):zoom(.7));$('zoom-out').addEventListener('click',()=>CAP.on?capZoom(1.4):zoom(1.4));
 let resizeTimer;new ResizeObserver(()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(renderMarket,100);}).observe($('chart'));
-$('pan-back').addEventListener('click',()=>CAP.on?capPan(1):setPan(state.pan+Math.max(1,Math.round(Math.min(state.count,state.candles.length)*.4))));
-$('pan-fwd').addEventListener('click',()=>CAP.on?capPan(-1):setPan(state.pan-Math.max(1,Math.round(Math.min(state.count,state.candles.length)*.4))));
-$('pan-now').addEventListener('click',()=>CAP.on?capPan(0):setPan(0));
+$('pan-back').addEventListener('click',()=>{const v=chartViewState();CAP.on?capPan(1):setPan(v.pan+Math.max(1,Math.round(Math.min(v.count,chartRows().length)*.4)));});
+$('pan-fwd').addEventListener('click',()=>{const v=chartViewState();CAP.on?capPan(-1):setPan(v.pan-Math.max(1,Math.round(Math.min(v.count,chartRows().length)*.4)));});
+$('pan-now').addEventListener('click',()=>CAP.on?capPan(0):chartNow());
 $('zoom-reset').addEventListener('click',chartViewReset);
 // Gesten: ein Finger wischen = blättern, zwei Finger = zoomen, Tippen = Kerze wählen, doppelt tippen = zurück zu jetzt
 (()=>{
@@ -7114,8 +7174,8 @@ $('zoom-reset').addEventListener('click',chartViewReset);
   const hideHint=()=>{};
   box.addEventListener('pointerdown',e=>{
     if(!chartGeom||CAP.on)return; pts.set(e.pointerId,{x:e.clientX,y:e.clientY}); try{box.setPointerCapture(e.pointerId);}catch{}
-    if(pts.size===1)g={type:'tap',x0:e.clientX,y0:e.clientY,pan0:state.pan,count0:state.count};
-    else if(pts.size===2){const [a,b]=[...pts.values()];g={type:'pinch',d0:Math.max(20,Math.abs(a.x-b.x)),f:frac((a.x+b.x)/2),count0:state.count,pan0:state.pan};hideHint();}
+    const v=chartViewState();if(pts.size===1)g={type:'tap',x0:e.clientX,y0:e.clientY,pan0:v.pan,count0:v.count};
+    else if(pts.size===2){const [a,b]=[...pts.values()];g={type:'pinch',d0:Math.max(20,Math.abs(a.x-b.x)),f:frac((a.x+b.x)/2),count0:v.count,pan0:v.pan};hideHint();}
   });
   box.addEventListener('pointermove',e=>{
     if(!chartGeom)return;
@@ -7139,8 +7199,8 @@ $('zoom-reset').addEventListener('click',chartViewReset);
   box.addEventListener('gesturestart',e=>e.preventDefault());
   box.addEventListener('wheel',e=>{
     if(!chartGeom||CAP.on)return;
-    if(e.ctrlKey){e.preventDefault();setView(state.count*Math.exp(e.deltaY*.01),frac(e.clientX));hideHint();}
-    else if(Math.abs(e.deltaX)>Math.abs(e.deltaY)){e.preventDefault();setPan(state.pan+e.deltaX/8);hideHint();}
+    const v=chartViewState();if(e.ctrlKey){e.preventDefault();setView(v.count*Math.exp(e.deltaY*.01),frac(e.clientX));hideHint();}
+    else if(Math.abs(e.deltaX)>Math.abs(e.deltaY)){e.preventDefault();setPan(v.pan+e.deltaX/8);hideHint();}
   },{passive:false});
 })();
 // Takt und Live-Kurse kommen aus dem Web Worker (siehe startLive)
@@ -7349,6 +7409,7 @@ function syncStreams() {
   if (!state.paused) {
     const cm = chartMarket();
     if (cm) { const s = state.symbol.toLowerCase(); want[cm].add(`${s}@kline_${state.interval}`); want[cm].add(`${s}@kline_1m`); if (whOn()) want[cm].add(`${s}@aggTrade`); } // Whale-Alert: jeder Trade des Chart-Kürzels
+    if (cm && detailResolution && !CAP.on) want[cm].add(`${state.symbol.toLowerCase()}@kline_${detailResolution}`);
     for (const it of priceItems()) { // 3.28.0: auch Demo-Positionen (Kurs); nearLevel prüft nur echte Marken
       const m = it.source === 'futures' ? 'futures' : 'spot', s = it.symbol.toLowerCase();
       want[m].add(`${s}@kline_1m`);
@@ -7536,6 +7597,7 @@ function onKline(m) {
   if (state.paused) return;
   orderflow?.kline(m);
   orderflowSignal?.feed.kline(m);
+  if (detailResolution && detail.live({symbol:m.s,source:m.m},m.i,{time:m.k.t,open:m.k.o,high:m.k.h,low:m.k.l,close:m.k.c,volume:m.k.v,closeTime:m.k.T})) scheduleLiveRender(true);
   // Zusätzliche Futures-Kerzen des Panels dürfen Spot-Kurse, Positionen und Alarme nicht verändern.
   if (!baseStreams[m.m]?.has(`${m.s.toLowerCase()}@kline_${m.i}`)) return;
   clockSample(m.E); // Binance-Zeit weiter ausschließlich aus den bisherigen App-Streams.
@@ -9983,11 +10045,11 @@ async function zzpStart() {
 // Platz rechts im Chart für die Prognose – nur am aktuellen Rand (nicht beim Zurückblättern)
 // narrow: Handy hochkant – rechts liegen die Kurs-Schildchen über dem Chart, dafür etwa ein Fünftel mehr Platz
 function chartFutureSlots(len, narrow = false) {
-  if (state.pan > 0) return 0;
+  if (chartViewState().pan > 0) return 0;
   const last = state.candles.length - 1; let need = 0;
   if (zzFcOn()) { const f = zzForecast(); if (f) need = f.to.i - last + 2; }
   if (ewFcOn()) { const e = ewForecastNow(); if (e) need = Math.max(need, e.pts.at(-1).i - last + 2); } // Elliott-Prognose (elliott.js)
-  const projectionNeed = patProjection?.on && pat?.on && patProjectionRows().length ? patProjection.bars + 4 + (narrow ? Math.ceil(len * .5) : 0) : 0;
+  const projectionNeed = patProjection?.on && (pat?.on || patChipSelections?.size) && patProjectionRows().length ? detailReady() ? Math.ceil(len * (narrow ? .4 : .25)) : patProjection.bars + 4 + (narrow ? Math.ceil(len * .5) : 0) : 0;
   if (need && narrow) need += Math.ceil(len * .2);
   return Math.max(projectionNeed, need ? Math.max(2, Math.min(need, Math.floor(len * (narrow ? .55 : .35)))) : 0);
 }
@@ -10628,7 +10690,7 @@ function cdText(ms) {
   return d ? `${d}T ${p(hh)}:${p(mm)}` : hh ? `${hh}:${p(mm)}:${p(ss)}` : `${mm}:${p(ss)}`;
 }
 // Zeit bis zum Schluss der laufenden Kerze (ms) oder null, solange keine passenden Kerzen da sind
-function candleLeft() { const c = state.candles.at(-1); return c && state.loadedSymbol === state.symbol ? c.closeTime + 1 - serverNow() : null; }
+function candleLeft() { const c = chartRows().at(-1); return c && state.loadedSymbol === state.symbol ? c.closeTime + 1 - serverNow() : null; }
 // Lage des Schilds – vor dem Raster berechnet, damit verdeckte Rasterbeschriftungen entfallen; null = Kurs außerhalb.
 // In der Kursspalte steht der Kurs auf der Linie. Am Handy (Schild im Chart) zählt je Lage (auf, über, unter der Linie),
 // wie viel Kerze es verdeckt: der Körper der jüngsten sichtbaren Kerze vor allem anderen, dann ihr Docht, dann die übrigen.
@@ -13196,6 +13258,46 @@ function patPrice() {
 const PAT_PROJECTION_KEY = 'scalpdesk.pattern-projection.v1';
 var patProjection = projectionSettings(store.get(PAT_PROJECTION_KEY));
 var pat = { on: false, res: null, sel: null, filter: 'all', minQ: 60, gap: false, worker: null, req: 0, busy: false, cache: new Map(), runs: 0, viaWorker: 0 };
+// 3.64.0: kompakte Formationsleiste; eigene Mehrfachauswahl statt Änderung der KI-Auswahl.
+var patChipSelections = new Map(), patChipNodes = new Map(), patChipColorNext = 0;
+function patChipList() { return pat.res?.key === patKey() ? patternChipRows(pat.res.hits,state.candles,{minimum:pat.minQ,filter:pat.filter,maxAge:PAT_ACTIVE_MAX}) : []; }
+function patChipColor(key) { const colors=[PAL.up,PAL.vp,PAL.ema,PAL.down,PAL.bb,PAL.short];return colors[(patChipSelections.get(key) ?? 0)%colors.length]; }
+function patChipToggle(key) {
+  const row=patChipList().find(r=>r.key===key);if(!row || row.disabled)return;
+  if(patChipSelections.has(key))patChipSelections.delete(key);
+  else { if(patChipSelections.size>=6){infoToast('Bis zu sechs Muster gleichzeitig. Erst eines ausblenden.');return;}patChipSelections.set(key,patChipColorNext++); }
+  patChipPaint();scheduleDraw();
+}
+function patChipPaint() {
+  const host=$('chart-pattern-chips'),empty=$('chart-pattern-empty');if(!host)return;
+  const rows=patChipList(), keys=new Set(rows.filter(r=>!r.disabled).map(r=>r.key));
+  let removed=false;for(const key of patChipSelections.keys())if(!keys.has(key)){patChipSelections.delete(key);removed=true;}
+  for(const [key,button] of patChipNodes)if(!rows.some(r=>r.key===key)){button.remove();patChipNodes.delete(key);}
+  rows.forEach((r,index)=>{let button=patChipNodes.get(r.key);if(!button){button=el('button','chart-pattern-chip');button.type='button';button.dataset.patternKey=r.key;button.addEventListener('click',()=>patChipToggle(r.key));patChipNodes.set(r.key,button);}
+    const selected=patChipSelections.has(r.key),title=PAT_LIB[r.hit.id]?.n.replace(/ \(.*\)$/,'')||r.hit.id,label=`${r.hit.dir==='bull'?'↑':r.hit.dir==='bear'?'↓':'→'} ${title} · ${r.status}${r.preliminary?' · vorläufig':''} · ${r.hit.q} %`;
+    if(button.textContent!==label)button.textContent=label;button.className=`chart-pattern-chip ${r.hit.dir}${selected?' selected':''}${r.disabled?' invalid':''}`;button.disabled=r.disabled;button.setAttribute('aria-pressed',String(selected));button.title=`${title} · ${state.interval} · Regelgüte ${r.hit.q} %, keine Trefferwahrscheinlichkeit. ${selected?'Antippen blendet die Zeichnung aus.':'Antippen zeichnet Grenzen, Schlüsselpunkte und Levels.'}`;button.style.setProperty('--pattern-color',selected?patChipColor(r.key):r.hit.dir==='bull'?PAL.up:r.hit.dir==='bear'?PAL.down:PAL.vp);
+    if(host.children[index]!==button)host.insertBefore(button,host.children[index]||null);
+  });
+  empty.hidden=!!rows.length;const text=CAP.on?'Muster im Kurschart verfügbar':pat.busy&&!pat.res?'Muster werden geprüft …':'Keine Muster erkannt';if(empty.textContent!==text)empty.textContent=text;
+  host.setAttribute('aria-label',`Chartmuster ${state.interval}, ${rows.length} Formationen`);if(removed)scheduleDraw();
+}
+function patChipInit() {
+  const row=el('div','chart-pattern-row'),host=el('div','chart-pattern-chips'),empty=el('span','chart-pattern-empty','Keine Muster erkannt');row.id='chart-pattern-row';host.id='chart-pattern-chips';host.setAttribute('role','group');empty.id='chart-pattern-empty';row.append(host,empty);document.querySelector('#chart-sec .chart-toolbar').append(row);
+  const heading=document.querySelector('#chart-sec .chart-heading'),alarm=$('alarm-here');heading.after(row);row.prepend(alarm);
+  queueMicrotask(()=>{const btc=$('of-btc-chart');if(btc)alarm.after(btc);});patChipPaint();
+}
+function patDrawChips(svg, over, g) {
+  if(CAP.on)return;let labelRow=0;
+  for(const r of patChipList()){
+    if(r.disabled||!patChipSelections.has(r.key))continue;const h=r.hit,color=patChipColor(r.key),group=node('g',{class:'pat-chip-drawing','data-pattern-key':r.key}),points=[];
+    const lines=(h.lines||[]).filter(l=>l.slice(0,4).every(Number.isFinite));
+    for(const [t0,p0,t1,p1,kind] of lines){const x0=g.timeX(t0),x1=g.timeX(t1);group.append(node('line',{x1:x0,y1:g.y(p0),x2:x1,y2:g.y(p1),stroke:color,'stroke-width':1.6,'stroke-dasharray':kind==='shape'?'':'5 3',opacity:.85,class:'pat-chip-line'}));points.push([x0,p0],[x1,p1]);}
+    const bounds=lines.filter(l=>['sup','res','neck'].includes(l[4]));if(bounds.length>=2){const a=bounds[0],b=bounds[1];group.prepend(node('polygon',{points:[[g.timeX(a[0]),a[1]],[g.timeX(a[2]),a[3]],[g.timeX(b[2]),b[3]],[g.timeX(b[0]),b[1]]].map(([x,p])=>`${x},${g.y(p)}`).join(' '),fill:color,opacity:.07,class:'pat-chip-zone'}));}
+    const unique=new Set();for(const [x,p]of points){const key=`${x}|${p}`;if(unique.has(key)||unique.size>=16)continue;unique.add(key);group.append(node('circle',{cx:x,cy:g.y(p),r:2.3,fill:color,class:'pat-chip-point'}));}
+    for(const [key,name,dash]of [['brk','Ausbruch','5 4'],['brk2','Ausbruch unten','5 4'],['tgt','Ziel','2 3']]){const price=h.levels?.[key];if(!(price>0))continue;const yy=g.y(price);if(price>=g.min&&price<=g.max)group.append(node('line',{x1:Math.min(g.left+g.pw,Math.max(g.left,g.timeX(h.t1))),y1:yy,x2:g.left+g.pw,y2:yy,stroke:color,'stroke-dasharray':dash,opacity:.7,class:'pat-chip-level','data-level':key}));svg.append(node('text',{x:g.rx,y:clamp(yy-4,g.top+12,g.bottom-4),'text-anchor':'end',class:'axis-label pat-chip-level-label',style:`fill:${color};font-size:10px`},`${name} ${priceText(price)}${price>g.max?' ↑':price<g.min?' ↓':''}`));}
+    over.append(group);const label=node('text',{x:g.left+6,y:g.top+13+labelRow++*14,'text-anchor':'start',class:'axis-label pat-chip-label',style:`fill:${color};font-size:10px;font-weight:650`},PAT_LIB[h.id]?.n.replace(/ \(.*\)$/,'')||h.id);label.append(node('title',{},`${r.status} · ${state.interval} · Regelgüte ${h.q} %`));svg.append(label);
+  }
+}
 const patKey = () => `${state.symbol}|${state.source}|${state.interval}`;
 function patWorker() {
   if (pat.worker !== null) return pat.worker;
@@ -13210,10 +13312,11 @@ function patWorker() {
 var PAT_E = null;
 function patRun(reason) {
   if (CAP.on || state.busy || !state.candles.length || state.loadedSymbol !== state.symbol) return false;
-  const { start, end } = viewWindow(), nVis = end - start, from = Math.max(start, end - PAT_MAX), c0 = Math.max(0, from - PAT_CTX), now = Date.now();
+  const visible=displayWindow(), main=mainWindowForDisplay(chartRows().slice(visible.start,visible.end)), { start, end } = main, nVis = end - start, from = Math.max(start, end - PAT_MAX), c0 = Math.max(0, from - PAT_CTX), now = Date.now();
+  if (end <= start) return false;
   const src = state.candles.slice(c0, end), k = src.map(c => ({ t: c.time, o: c.open, h: c.high, l: c.low, c: c.close, v: c.volume }));
   const running = src.length > 0 && src.at(-1).closeTime >= now, opt = { from: from - c0, step: state.interval === '1M' ? 0 : IV_MS[state.interval], gap: pat.gap, running };
-  const key = patKey(), ck = `${key}|${k[0]?.t}|${k.at(-1)?.t}|${k.at(-1)?.c}|${opt.from}|${pat.gap}`, meta = { key, ck, n: end - from, nVis, t0: state.candles[from]?.time, t1: state.candles[end - 1]?.time, running, reason, k, at: now };
+  const key = patKey(), ck = `${key}|${k[0]?.t}|${k.at(-1)?.t}|${k.at(-1)?.c}|${opt.from}|${pat.gap}`, meta = { key, ck, n: end - from, nVis, t0: state.candles[from]?.time, t1: state.candles[end - 1]?.time, running, reason, k, at: now, passive: !pat.on };
   const id = ++pat.req; pat.meta = meta; pat.runs++;
   if (pat.cache.has(ck)) { patDone(id, pat.cache.get(ck)); return true; }
   pat.busy = true; patSheet();
@@ -13229,7 +13332,7 @@ function patDone(id, r) {
   pat.cache.set(m.ck, r); if (pat.cache.size > 16) pat.cache.delete(pat.cache.keys().next().value);
   const T = i => m.k[Math.max(0, Math.min(m.k.length - 1, i))].t;
   pat.res = { ...m, ver: r.ver, hits: r.hits.map(h => ({ ...h, lines: (h.lines || []).map(([a, p, b, q, kd]) => [T(a), p, T(b), q, kd]) })).sort((a, b) => b.q - a.q || b.t1 - a.t1) };
-  try { const mkt = state.source === 'futures' ? 'futures' : 'spot', [sym, , iv] = m.key.split('|'); pkRecord(m, r.hits, mkt); pkResolve(mkt, sym, iv, m.k, m.running ? m.k.length - 2 : m.k.length - 1); void pkSync(); } catch {} // 3.38.0 (G09 C)
+  if(!m.passive)try { const mkt = state.source === 'futures' ? 'futures' : 'spot', [sym, , iv] = m.key.split('|'); pkRecord(m, r.hits, mkt); pkResolve(mkt, sym, iv, m.k, m.running ? m.k.length - 2 : m.k.length - 1); void pkSync(); } catch {} // 3.38.0 (G09 C)
   pat.sel = null;
   const w = pat.want;
   if (w?.ran && m.reason === 'Vorauswahl') {   // aus der Vorauswahl: genau diese Formation markieren (oder ehrlich sagen, dass sie fehlt)
@@ -13238,7 +13341,7 @@ function patDone(id, r) {
     else infoToast(`${L.n} ist im Chart-Ausschnitt nicht mehr eindeutig erkennbar – die übrigen Muster sind markiert`, 5000);
     $('chart-sec').scrollIntoView({ block: 'start' });
   }
-  patSheet(); scheduleDraw();
+  patSheet(); patChipPaint(); scheduleDraw();
 }
 // je Muster nur das jüngste Vorkommen im Ausschnitt (weitere werden gezählt) – sonst überdecken Dutzende Doji die Liste
 function patShown() {
@@ -13247,7 +13350,7 @@ function patShown() {
   for (const h of pat.res.hits) if (h.q >= pat.minQ && (pat.filter === 'all' || h.dir === pat.filter)) { const g = by.get(h.id); if (!g) by.set(h.id, { h, more: 0 }); else { g.more++; if (h.t1 > g.h.t1) g.h = h; } }
   return [...by.values()].map(g => (g.h.more = g.more, g.h)).sort((a, b) => patAge(a).bars - patAge(b).bars || b.q - a.q);
 }
-function patClear() { $('pat-expired').open = false; pat.res = null; pat.sel = null; pat.req++; pat.busy = false; patSheet(); }
+function patClear() { $('pat-expired').open = false; pat.res = null; pat.sel = null; pat.req++; pat.busy = false; patChipSelections.clear(); patSheet(); patChipPaint(); }
 // Neuberechnung nur bei Kerzenschluss, nach einem Kontextwechsel oder auf Tipp – nicht bei jedem Tick
 // 3.37.0 (G09, Punkt 11): Vorauswahl – jüngste Formation (Regelgüte ≥ 60 %) auf den abgeschlossenen Kerzen der Kachel
 function wlPat(e) {
@@ -13270,13 +13373,15 @@ async function patFromWl(coin) {
 function patWant() {
   const w = pat.want; if (!w || w.ran || state.busy || state.marketError || state.symbol !== w.sym || state.interval !== w.iv || state.loadedSymbol !== w.sym || !state.candles.length) return false;
   const len = state.candles.length, a = state.candles.findIndex(c => c.time === w.t0), b = state.candles.findIndex(c => c.time === w.t1);
-  if (a >= 0 && b >= 0) { const span = b - a + 1, n = Math.max(40, Math.round(span * 1.6)), endI = Math.min(len, b + 1 + Math.round((n - span) / 2)); state.count = Math.min(len, n); setPan(len - endI); }
+  if (a >= 0 && b >= 0) { const span = b - a + 1, n = Math.max(40, Math.round(span * 1.6)), endI = Math.min(len, b + 1 + Math.round((n - span) / 2)); state.count = Math.min(len, n); if(detailReady()){state.pan=len-endI;state.anchorTime=state.pan?state.candles[endI-1].time:null;detailSync(true,{start:state.candles[Math.max(0,endI-state.count)].time,end:state.candles[endI-1].closeTime});}else setPan(len - endI); }
   w.ran = true; patRun('Vorauswahl'); return true;
 }
 function patTick() {
   patPrice();
+  if (!state.paused && !document.hidden && detailResolution && chartOnScreen) void detail.refresh();
+  patChipPaint();
   if ($('pat-sheet').open && pat.res?.key === patKey() && (pat.panelBar !== state.candles.at(-1)?.time || pat.panelMinute !== Math.floor(Date.now() / 60000))) patSheet();
-  if (!pat.on || pat.busy || CAP.on || state.loadedSymbol !== state.symbol || !state.candles.length) return;
+  if (pat.busy || CAP.on || state.paused || document.hidden || state.loadedSymbol !== state.symbol || !state.candles.length || !chartOnScreen && !pat.on) return;
   if (pat.want && !pat.want.ran) { patWant(); return; }
   if (!pat.res || pat.res.key !== patKey()) { patRun('Kontext'); return; }
   const lc = state.candles.findLast(c => c.closeTime < Date.now())?.time;
@@ -13363,13 +13468,14 @@ function patZoom(i) {
   const h = pat.res?.hits[i]; if (!h) return;
   const len = state.candles.length, a = state.candles.findIndex(c => c.time === h.t0), b = state.candles.findIndex(c => c.time === h.t1); if (a < 0 || b < 0) return;
   const span = b - a + 1, n = Math.max(30, Math.round(span * 2.5)), endI = Math.min(len, b + 1 + Math.round((n - span) / 2));
-  pat.sel = i; state.count = Math.min(len, n); setPan(len - endI); patSheet(); scheduleDraw();
+  pat.sel = i; state.count = Math.min(len, n); if(detailReady()){state.pan=len-endI;state.anchorTime=state.pan?state.candles[endI-1].time:null;detailSync(true,{start:state.candles[Math.max(0,endI-state.count)].time,end:state.candles[endI-1].closeTime});}else setPan(len - endI); patSheet(); scheduleDraw();
 }
 // --- Chart: kleine Labels für Kerzen, Linien/Zonen für Formationen ---
 function patProjectionRows() {
-  if (!patProjection.on || !pat.on || state.pan > 0 || pat.res?.key !== patKey()) return [];
+  if (!patProjection.on || (!pat.on && !patChipSelections.size) || chartViewState().pan > 0 || pat.res?.key !== patKey()) return [];
   const forms = patShown().filter(h => h.kind === 'form'), selected = pat.res?.hits[pat.sel];
-  const hits = [...new Set([...forms.slice(0, 2), ...(selected?.kind === 'form' && forms.includes(selected) ? [selected] : [])])];
+  const chosen = patChipList().filter(r=>patChipSelections.has(r.key)&&!r.disabled).map(r=>r.hit);
+  const hits = [...new Set([...(pat.on ? forms.slice(0, 2) : []), ...(selected?.kind === 'form' && forms.includes(selected) ? [selected] : []), ...chosen])];
   return hits.flatMap(hit => projectPatternLines(hit, state.candles, { timeframe: state.interval, bars: patProjection.bars, maxAge: PAT_ACTIVE_MAX }).map(line => ({ ...line, hit })));
 }
 function patDrawProjection(svg, over, g) {
@@ -13377,9 +13483,10 @@ function patDrawProjection(svg, over, g) {
   const offset = state.candles.findIndex(c => c.time === g.data[0]?.time), limitX = Math.min(g.rx - 4, g.left + g.pw - 4);
   const used = [];
   for (const line of rows) {
-    const color = line.hit.dir === 'bull' ? PAL.up : line.hit.dir === 'bear' ? PAL.down : PAL.vp, px = g.x(line.fromIndex - offset), endX = Math.min(limitX, g.x(line.toIndex - offset));
+    const color = patChipSelections.has(patternChipKey(line.hit)) ? patChipColor(patternChipKey(line.hit)) : line.hit.dir === 'bull' ? PAL.up : line.hit.dir === 'bear' ? PAL.down : PAL.vp;
+    const at = i => state.candles[i]?.time ?? projectionTime(state.candles.at(-1).time,state.interval,i-state.candles.length+1), px = detailReady() ? g.timeX(at(line.fromIndex)) : g.x(line.fromIndex-offset), projectedX=detailReady() ? g.timeX(line.toTime) : g.x(line.toIndex-offset), endX = Math.min(limitX, projectedX);
     if (endX <= px) continue;
-    const visibleIndex = offset + (endX - g.x(0)) / g.step, price = line.fromPrice + (line.price - line.fromPrice) * (visibleIndex - line.fromIndex) / (line.toIndex - line.fromIndex), yp = g.y(price);
+    const fraction=(endX-px)/(projectedX-px),visibleIndex=line.fromIndex+(line.toIndex-line.fromIndex)*fraction,price=line.fromPrice+(line.price-line.fromPrice)*fraction,yp=g.y(price);
     over.append(node('line', { x1: px, y1: g.y(line.fromPrice), x2: endX, y2: yp, stroke: color, 'stroke-width': .9, 'stroke-dasharray': line.broken ? '2 5' : '3 4', opacity: line.broken ? .22 : .48, class: 'pat-projection' + (line.broken ? ' broken' : ''), 'data-pattern': line.hit.id }));
     if (price < g.min || price > g.max || used.some(y => Math.abs(y - yp) < 14)) continue;
     used.push(yp);
@@ -13389,12 +13496,11 @@ function patDrawProjection(svg, over, g) {
 }
 function patDraw(svg, over, g) {
   const hits = patShown(); if (!hits.length) return;
-  const idx = new Map(g.data.map((c, i) => [c.time, i])), { x, y, min, max, step, top } = g, R = pat.res;
-  patDrawProjection(svg, over, g);
+  const idx = detailReady() ? { get: t=>timeIndex(g.data,t,detailResolution) } : new Map(g.data.map((c, i) => [c.time, i])), { x, y, min, max, step, top } = g, R = pat.res;
   const col = d => (d === 'bull' ? PAL.up : d === 'bear' ? PAL.down : PAL.vp), inR = v => Number.isFinite(v) && v >= min && v <= max;
   const formTop = new Set(hits.filter(h => h.kind === 'form').slice(0, 2));   // ohne Auswahl nur die zwei stärksten Formationen als Linien
   for (const h of hits) {
-    const i = R.hits.indexOf(h), a = idx.get(h.t0), b = idx.get(h.t1); if (a === undefined && b === undefined) continue;
+    const i = R.hits.indexOf(h), a = idx.get(h.t0), b = idx.get(h.t1); if (a === undefined && b === undefined || detailReady() && (Math.max(a,b)<0 || Math.min(a,b)>=g.data.length)) continue;
     const L = PAT_LIB[h.id], c = col(h.dir), sel = pat.sel === i, xa = x(a ?? 0) - step / 2, xb = x(b ?? g.data.length - 1) + step / 2;
     if (sel) over.append(node('rect', { x: xa, y: top, width: Math.max(2, xb - xa), height: g.bottom - top, fill: c, opacity: .1, class: 'pat-hl' }));
     if (h.kind === 'form' && (sel || formTop.has(h))) for (const [t0, p0, t1, p1, kd] of h.lines) {
@@ -13412,6 +13518,7 @@ function patDraw(svg, over, g) {
 }
 (function patUi() {
   const btn = $('pat-btn'); if (!btn) return;
+  patChipInit();
   btn.addEventListener('click', () => { pat.on = true; if (!patRun('Tipp')) patSheet(); patSheet(); const d = $('pat-sheet'); if (!d.open) d.showModal(); });
   $('pat-close').addEventListener('click', () => $('pat-sheet').close());
   $('pat-off').addEventListener('click', () => { pat.on = false; pat.sel = null; patSheet(); scheduleDraw(); $('pat-sheet').close(); });
@@ -13720,7 +13827,7 @@ async function patSvcApply() {
   finally { patSvcBusy = false; patSvcRender(); }
 }
 $('pat-svc-apply').addEventListener('click', () => void patSvcApply());
-Object.assign(window.__g09, { projection: () => ({ ...patProjection }), projectionRows: () => patProjectionRows(), chartScale: () => chartGeom && ({ min: chartGeom.min, max: chartGeom.max, step: chartGeom.step }) });
+Object.assign(window.__g09, { projection: () => ({ ...patProjection }), projectionRows: () => patProjectionRows(), chartScale: () => chartGeom && ({ min: chartGeom.min, max: chartGeom.max, step: chartGeom.step }), chipRows: () => patChipList(), chipToggle: key => patChipToggle(key), chipPaint: () => patChipPaint(), chipSelection: () => [...patChipSelections.keys()] });
 window.__intervals = { config: MARKET_INTERVALS, chart: INTERVALS, signal: SIGNAL_INTERVALS, setMarket, ratingFor, openPattern: coin => patFromWl(coin) };
 Object.assign(window.__g09, { patOracleExport: () => patOracleExport(), patSvcConfig: () => patSvcConfig(), patSvcApply: () => patSvcApply(), patNotify: (c, h) => patNotify(c, h) });
 // ---------- 3.34.0 (G06): Trade-Bild – eine geschlossene Position als genau ein Telegram-Foto ----------
@@ -14520,7 +14627,7 @@ function kiKick(delay = 0) {
   if (deadlines.length) ki.timer = setTimeout(() => { ki.timer = null; kiRender(); kiKick(); }, Math.max(1, Math.min(ki.open ? 60000 : Infinity, Math.min(...deadlines) - Date.now() + 1)));
 }
 function kiJob(request, options, type = 'load') {
-  if (!ki.worker) { ki.worker = new Worker(new URL('./bundles/3.63.0/shared/confluence-worker.mjs', location.href), { type: 'module' });
+  if (!ki.worker) { ki.worker = new Worker(new URL('./bundles/3.64.0/shared/confluence-worker.mjs', location.href), { type: 'module' });
     ki.worker.onmessage = ({ data }) => { if (!ki.pending || data.id !== ki.pending.id) return; if (data.progress) { ki.message = 'Historie: ' + data.progress.stage + (data.progress.total ? ` · ${data.progress.completed}/${data.progress.total}` : ` · ${data.progress.priceCandles || 0} Kurskerzen`); kiRender(); return; } const p = ki.pending; ki.pending = null; data.error ? p.reject(new Error(data.error)) : p.resolve(data); };
     ki.worker.onerror = () => { ki.pending?.reject(new Error('KI-Worker nicht verfügbar')); ki.pending = null; ki.worker?.terminate(); ki.worker = null; }; }
   return new Promise((resolve, reject) => { const id = ++ki.serial; ki.pending = { id, resolve, reject }; ki.worker.postMessage({ id, type, request, options }); });
@@ -14815,7 +14922,7 @@ const paperClient = createPaperPublicClient(), PAPER_PREF_KEY = 'scalpdesk.paper
 paperController = createPaperBotController({ read: readPaperBook, write: writePaperBook, currentSymbol: () => state.symbol,
   available: () => !document.hidden && !state.paused && navigator.onLine !== false,
   quote: (symbol, signal) => paperClient.quote({ symbol, decisionAt: Date.now(), signal }),
-  workerFactory: () => new Worker(new URL('./bundles/3.63.0/shared/paper-bot-worker.mjs', import.meta.url), { type: 'module' }),
+  workerFactory: () => new Worker(new URL('./bundles/3.64.0/shared/paper-bot-worker.mjs', import.meta.url), { type: 'module' }),
   settings: () => { const base = botView.paperSettings(), costs = paperView.settings(), po3 = { ...po3View.config(), criteria: po3View.config().criteria === 'pending' ? 'g10' : po3View.config().criteria, closure: 'tp1', feeEntry: costs.feeEntry, feeExit: costs.feeExit };
     const maxHoldMs = base.strategy === 'po3' ? po3.maxHoldMs : Math.min(86400000, (ki.cfg.shortHours || 24) * 3600000), [timeframe, contextTimeframe] = ki.cfg.shortPair.split('/');
     return { ...base, ...costs, maxHoldMs, rewardRisk: ki.cfg.rewardRisk, timeframe, contextTimeframe, po3, confluence: { ...kiCoreConfig(), minimumScore: base.minimumScore, feeEntry: costs.feeEntry, feeExit: costs.feeExit } }; },
@@ -14934,7 +15041,7 @@ const musterPaper = createMusterPaper({ read: readMusterPaper, write: writeMuste
     await chanSend('tg', formatMessage(event.kind === 'entry' ? 'signal' : 'trade', data), false, 'trade', { coord: true });
   } });
 musterView = createMusterView({ host: musterHost, selection: musterSelection, currentPrice: (symbol, market) => state.symbol === symbol && state.source === market ? currentPrice() : null,
-  prefs: store.get('scalpdesk.muster.settings.v1', {}), savePrefs: value => store.set('scalpdesk.muster.settings.v1', value), workerFactory: () => new Worker(new URL('./bundles/3.63.0/shared/muster-bot-worker.mjs', import.meta.url), { type: 'module' }), paper: musterPaper, onMarkers: scheduleDraw });
+  prefs: store.get('scalpdesk.muster.settings.v1', {}), savePrefs: value => store.set('scalpdesk.muster.settings.v1', value), workerFactory: () => new Worker(new URL('./bundles/3.64.0/shared/muster-bot-worker.mjs', import.meta.url), { type: 'module' }), paper: musterPaper, onMarkers: scheduleDraw });
 void musterPaper.restore().then(() => musterPaper.poll());
 function musterDraw(svg, data, x, y, bottom) {
   for (const signal of musterView?.markers() || []) {
