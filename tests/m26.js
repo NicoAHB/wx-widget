@@ -38,6 +38,11 @@ const load = async (page, iv) => { await page.click(`.chart-toolbar [data-interv
     const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } }), page = await ctx.newPage(), errors = []; h.collect(page, errors);
     await page.goto(h.URL_BASE + '/weather-widget-v2.html'); await live(page); await page.waitForTimeout(2000);
     await page.evaluate(() => document.getElementById('chart-sec').scrollIntoView({ block: 'start' }));
+    // Anzeige und API-Referenz dürfen nicht zwei Minutenkerzen vergleichen.
+    // Am Wechsel konnte vorher „0:00“ vor und die neue REST-Kerze nach dem
+    // Schluss gelesen werden. Erst die laufende Kerze laden und außerhalb
+    // dieses Randes messen; die Genauigkeit bleibt unverändert bei ±2 s.
+    await page.waitForFunction(() => { const at = Date.now(), phase = at % 60000; return phase >= 2000 && phase <= 55000 && __g05.state.candles.at(-1)?.time === Math.floor(at / 60000) * 60000; }, null, { timeout: 30000 });
     let t = await tag(page), exp = (await closeAt(page, '1m') + 1 - Date.now()) / 1000;
     check('Kurs-Schild an der Kurslinie in der Kursspalte: aktueller Kurs, Farbe wie die laufende Kerze', t && t.inside && t.price === t.head && t.cls === `last-tag ${t.up ? 'up' : 'down'}` && t.rr >= 0 && t.w >= 70 && /Zeit bis zum Schluss der laufenden 1m-Kerze/.test(t.title), JSON.stringify(t));
     check('Countdown 1m („m:ss“) stimmt mit dem Kerzenschluss (±2 s)', /^\d:\d\d$/.test(t.cd) && Math.abs(secs(t.cd) - exp) <= 2, `${t.cd} / erwartet ${exp.toFixed(1)} s`);
