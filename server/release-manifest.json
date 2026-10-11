@@ -4,8 +4,8 @@
   "files": [
     {
       "path": "scalpdesk-247.mjs",
-      "sha256": "6a49785a8cd3b2cfa3fa6f8901bcd65026fe524a94321ea478d0fc967dcf8dbf",
-      "bytes": 125444
+      "sha256": "d0653527eccda0c4c706e0843745788f24c0bd7c79fcc2f3fb432308f9eb0ef5",
+      "bytes": 125451
     },
     {
       "path": "pattern-engine.mjs",
@@ -329,8 +329,8 @@
     },
     {
       "path": "shared/telegram-format.mjs",
-      "sha256": "e09834aa9416ff823f6706680d1b83c5c53f45dae6eeb74821ef3da4659b62ab",
-      "bytes": 14156
+      "sha256": "63e24932d3e1fb901225c548ff082a32eecb027b76c398b22bc78169728eb728",
+      "bytes": 14163
     },
     {
       "path": "shared/widget-state.mjs",

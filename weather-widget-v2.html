@@ -1575,7 +1575,8 @@ html[data-layout=tablet] .wl-tile{height:64px}
    Umbruch der Leiste nur mit ihrer Mindestbreite, damit die Zoom-Knöpfe nicht wegen des neuen Knopfs in eine zweite Zeile rutschen
    (iPad mini hochkant hatte nur 20 px Luft); bei knappem Platz werden die Intervall-Knöpfe etwas schmaler statt umzubrechen */
 .chart-toolbar{container:ctb/inline-size}
-.tb-main{display:flex;flex-wrap:wrap;align-items:center;gap:6px;flex:1 1 0;min-width:min(100%,22rem)}
+.tb-main{display:flex;flex-wrap:nowrap;align-items:center;gap:6px;flex:1 1 0;min-width:min(100%,22rem)}
+.tb-main .intervals{flex-wrap:nowrap;min-width:0;overflow-x:auto;scrollbar-width:thin}
 /* 3.37.0 (G09): Chartmuster */
 .pk{display:grid;gap:6px}.pk-btn{justify-self:start}.pk-out{display:grid;gap:6px;font-size:.8125rem}.pk-out p{margin:0}.pk-h{font-weight:600}.pk-note,.pk-ex{color:var(--muted);font-size:.75rem}.pk-pub{padding:6px 8px;border:1px solid var(--border);border-radius:8px;font-size:.75rem}
 .pk-svg{width:100%;max-width:420px;height:auto;background:var(--field);border-radius:8px}.pk-zero{stroke:var(--muted);stroke-dasharray:3 3}.pk-band{fill:var(--up-bg-2);opacity:.8}.pk-med{stroke:var(--up-text);stroke-width:2}.pk-rep{stroke:var(--text-2);stroke-width:1;stroke-dasharray:4 2}
@@ -9499,8 +9500,8 @@ function scheduleTgBackup(delay = 4000) { if (!tgbReady()) return; clearTimeout(
 async function tgPost(method, fd, keepalive = false, token = chan.tg.token, plainFallback = false) {
   if (!plainFallback) {
     const raw = fd.get('caption');
-    if (raw) { const payload = telegramFields(/<b>/.test(raw) ? raw : formatMessage('notice', { text: raw }), { limit: TELEGRAM_CAPTION_LIMIT }); fd.set('caption', payload.text); fd.set('parse_mode', payload.parse_mode); }
-    if (fd.has('media')) { const media = JSON.parse(fd.get('media')), payload = telegramFields(/<b>/.test(media.caption || '') ? media.caption : formatMessage('notice', { text: media.caption }), { limit: TELEGRAM_CAPTION_LIMIT }); media.caption = payload.text; media.parse_mode = payload.parse_mode; fd.set('media', JSON.stringify(media)); }
+    if (raw) { const payload = telegramFields(/<b>/.test(raw) ? raw : formatMessage('notice', { text: raw }), { messageLimit: TELEGRAM_CAPTION_LIMIT }); fd.set('caption', payload.text); fd.set('parse_mode', payload.parse_mode); }
+    if (fd.has('media')) { const media = JSON.parse(fd.get('media')), payload = telegramFields(/<b>/.test(media.caption || '') ? media.caption : formatMessage('notice', { text: media.caption }), { messageLimit: TELEGRAM_CAPTION_LIMIT }); media.caption = payload.text; media.parse_mode = payload.parse_mode; fd.set('media', JSON.stringify(media)); }
   }
   let r; try { r = await fetch(`https://api.telegram.org/bot${token}/${method}`, { method: 'POST', body: fd, credentials: 'omit', referrerPolicy: 'no-referrer', cache: 'no-store', keepalive }); }
   catch { throw Object.assign(new Error('Telegram nicht erreichbar – Internet oder Werbeblocker prüfen.'), { code: 0 }); }
@@ -9528,7 +9529,7 @@ async function sendTgBackup(force = false, leaving = false) {
   tgb.busy = true; tgb.cfg = loadTgb(); renderTgbInfo();
   try {
     const text = JSON.stringify(withIntegrity(payload), null, 1), blob = new Blob([text], { type: 'application/json' });
-    const caption = formatMessage('backup', { positions: state.positions.length, trades: state.trades.length, movements: state.movements.length || null, at: Date.now(), limit: TELEGRAM_CAPTION_LIMIT });
+    const caption = formatMessage('backup', { positions: state.positions.length, trades: state.trades.length, movements: state.movements.length || null, at: Date.now(), messageLimit: TELEGRAM_CAPTION_LIMIT });
     const keep = leaving && text.length < 60000; // keepalive erlaubt höchstens 64 KB
     const pinOk = tgbPinOk(T), own = tgbNormKey(tgb.cfg.chat) === where ? tgb.cfg.msg : 0;
     // Welche Nachricht ersetzen? Zuerst die angeheftete (gilt für alle Geräte), sonst die zuletzt von diesem Gerät gesendete
@@ -9559,18 +9560,18 @@ async function sendTgBackup(force = false, leaving = false) {
   } catch (e) { tgb.error = e?.message || String(e); }
   finally { tgb.busy = false; if (claimed) void store.release('tgbackup'); renderTgbInfo(); }
 }
-// Wohin geht die Sicherung? Eigener Sicherungschat oder (ohne Eintrag) der Kursalarm-Chat – das steht jetzt immer dabei
+// Wohin geht die Sicherung? Ausschließlich in den eingetragenen Sicherungschat.
 function tgbWhere() {
   const T = tgDest('backup'); if (!T) return 'kein Sicherungschat eingetragen';
   const c = tgb.cfg, sep = tgSeparate(), named = tgbHasMsg(tgKey(T)) && c.name ? ` „${c.name}“` : '';
-  return `${sep ? `Ziel: Sicherungschat${named}` : `Ziel: Kursalarm-Chat${named} – kein eigener Sicherungschat eingetragen`}${tgtOn('backup') ? '' : ' · Ziel „Sicherung“ ausgeschaltet'}`;
+  return `${sep ? `Ziel: Sicherungschat${named}` : `Ziel: Sicherungschat${named} (derselbe Chat wie Kursalarm)`}${tgtOn('backup') ? '' : ' · Ziel „Sicherung“ ausgeschaltet'}`;
 }
 function renderTgbInfo() {
   if (!tgb) return;
-  const ok = !!tgDest('backup'), c = tgb.cfg, sep = ok && tgSeparate();
+  const ok = !!tgDest('backup'), c = tgb.cfg;
   $('tgb-on').checked = c.on && ok; $('tgb-on').disabled = !ok; $('tgb-now').hidden = !ok;
   // ohne eigenen Sicherungschat: derselbe Knopf führt direkt zur Einrichtung des Sicherungschats
-  $('tgb-setup').hidden = sep; put('tgb-setup', tgConfigured() ? '💾 Sicherungschat festlegen …' : '📨 Telegram einrichten …');
+  $('tgb-setup').hidden = ok; put('tgb-setup', tgConfigured() ? '💾 Sicherungschat festlegen …' : '📨 Telegram einrichten …');
   put('tgb-info', !ok ? (tgConfigured() ? 'Kein Sicherungschat eingetragen – die Sicherung geht nicht mehr von selbst in den Kursalarm-Chat (3.33.0). Mit „💾 Sicherungschat festlegen …“ einen Chat dafür eintragen (auch derselbe wie Kursalarm ist möglich).' : 'Für iPhone/iPad: Safari erlaubt kein automatisches Speichern in Dateien. Stattdessen kann die Sicherung nach jeder Änderung an deinen Telegram-Sicherungschat gehen – dafür zuerst Telegram einrichten.')
     : tgb.busy ? 'Sende Sicherung …'
     : tgb.error ? `Fehler: ${tgb.error}`
@@ -12118,7 +12119,7 @@ function s247Sig(p) { const j = JSON.stringify(p); let h = 0; for (let i = 0; i 
 // Schlüssel der Meldungen, die der Dienst mit diesem Stand übernimmt – dieselben wie in notifyChannels
 function s247Keys(p) { return [...p.alarms.map(a => `al:${a.id}:${a.armedAt}`), ...p.positions.flatMap(x => ['tp', 'sl'].filter(t => x[t] > 0).map(t => `pos:${x.id}:${t}:${x.since}`)), ...(p.pnl?.lim || []).map(l => `pnl:${l.k}:${l.at}`)]; }
 function s247Caption(p) {
-  return formatMessage('notice', { headline: '📌 Scalp Desk · Dienstübergabe', lines: [`App: ${s247Stamp(p.at)} · ${p.on ? `${s247Plural(p.alarms.length, 'Alarm', 'Alarme')}, ${s247Plural(p.positions.length, 'Position', 'Positionen')}` : 'Übergabe ausgeschaltet'} · ${p.dev} · #${p.tag}`, 'Dienst: wartet auf Rückmeldung …'], at: p.at, limit: TELEGRAM_CAPTION_LIMIT });
+  return formatMessage('notice', { headline: '📌 Scalp Desk · Dienstübergabe', lines: [`App: ${s247Stamp(p.at)} · ${p.on ? `${s247Plural(p.alarms.length, 'Alarm', 'Alarme')}, ${s247Plural(p.positions.length, 'Position', 'Positionen')}` : 'Übergabe ausgeschaltet'} · ${p.dev} · #${p.tag}`, 'Dienst: wartet auf Rückmeldung …'], at: p.at, messageLimit: TELEGRAM_CAPTION_LIMIT });
 }
 const s247Ready = () => typeof tgConfigured === 'function' && tgConfigured() && (s247.cfg.on || s247.cfg.sentOn);
 function scheduleS247(delay = 3000) { if (!s247?.cfg || !s247Ready()) return; clearTimeout(s247.timer); s247.timer = setTimeout(() => { s247.timer = null; void sendS247(); }, delay); }
@@ -13915,7 +13916,7 @@ async function timgPost(blob, data, plainFallback = false) {
   const T = tgDest('trades'); if (!T) throw Object.assign(new Error('Ziel „Trades“ nicht eingerichtet'), { kind: 'fail' });
   if (navigator.onLine === false) throw Object.assign(new Error('offline'), { kind: 'offline' });
   const fd = new FormData(); fd.append('chat_id', T.chat); if (T.thread) fd.append('message_thread_id', T.thread); fd.append('photo', blob, blob.type === 'image/jpeg' ? 'trade.jpg' : 'trade.png');
-  const html = formatMessage('trade', { symbol: data.sym, side: data.side, pnl: data.net, percent: data.pct, entry: data.entry, exit: data.exit, quantity: data.qty, duration: `${Math.floor((data.closedAt - data.openedAt) / 60000)} Min`, reasons: data.reasons.join(', '), at: data.closedAt, limit: TELEGRAM_CAPTION_LIMIT });
+  const html = formatMessage('trade', { symbol: data.sym, side: data.side, pnl: data.net, percent: data.pct, entry: data.entry, exit: data.exit, quantity: data.qty, duration: `${Math.floor((data.closedAt - data.openedAt) / 60000)} Min`, reasons: data.reasons.join(', '), at: data.closedAt, messageLimit: TELEGRAM_CAPTION_LIMIT });
   fd.append('caption', plainFallback ? telegramPlain(html) : html); if (!plainFallback) fd.append('parse_mode', 'HTML');
   let r; try { r = await fetch(`https://api.telegram.org/bot${T.token}/sendPhoto`, { method: 'POST', body: fd, credentials: 'omit', referrerPolicy: 'no-referrer', cache: 'no-store' }); }
   catch { throw Object.assign(new Error('keine Antwort von Telegram'), { kind: 'lost' }); } // Anfrage kann angekommen sein

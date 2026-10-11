@@ -113,5 +113,5 @@ export function formatMessage(type, d = {}) {
     blocks = [[`<b>${escapeTelegram(d.headline || 'SCALP DESK')}</b>`, ...(d.lines || (value(d.text) ? String(d.text).split('\n') : [])).filter(value).map(escapeTelegram)]];
   }
   const html = blocks.map(b => b.filter(Boolean).join('\n')).filter(Boolean).join('\n\n');
-  return finishTelegram(html, d.at, d.timezone, d.limit || TELEGRAM_LIMIT);
+  return finishTelegram(html, d.at, d.timezone, d.messageLimit || TELEGRAM_LIMIT);
 }

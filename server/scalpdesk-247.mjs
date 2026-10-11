@@ -267,7 +267,7 @@ export function hintText({ bot, chat, what, host }) {
   return formatMessage('notice', { headline: '⏳ Dienst wartet auf die App', lines: ['Server: ' + host, 'Keine angeheftete Datei: ' + FILE, 'Angeheftet: ' + what, 'Keine bekannten Alarme', '', 'In der App: Hinweise → Telegram einrichten → Kursalarm', 'Bot: ' + bot, 'Chat-ID: ' + chat, '„An den Dienst übergeben“ einschalten', 'Bei anderem Bot/Chat den Server neu einrichten:', 'curl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/install.sh | sudo bash -s -- --neu'] });
 }
 // darunter je vom Dienst gesendetem Gewinn-/Verlust-Alarm eine Zeile (pnlLine) – so übernimmt die App „ausgelöst“
-export const caption = (c, status, extra = []) => formatMessage('notice', { headline: '📌 Scalp Desk · Dienstübergabe', lines: [appLine(c), status, ...extra], limit: TELEGRAM_CAPTION_LIMIT });
+export const caption = (c, status, extra = []) => formatMessage('notice', { headline: '📌 Scalp Desk · Dienstübergabe', lines: [appLine(c), status, ...extra], messageLimit: TELEGRAM_CAPTION_LIMIT });
 // 1.3: letzte von Telegram angenommene Meldung (Zeitpunkt und Art) – die App zeigt sie unter „Status prüfen“. Die Zeile steht
 // immer da (auch vor der ersten Meldung): Daran erkennt die App, dass der Dienst die Zustellung prüft.
 export const lastLine = (last, tz) => `Zustellung: ${last?.t ? `zuletzt ${stamp(last.t, tz)}${last.label ? ` · ${last.label}` : ''}` : 'geprüft, noch keine Meldung'}`;
