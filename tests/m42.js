@@ -46,7 +46,7 @@ const flatBtc = async () => { await h.ctl('/shape?symbol=BTCUSDT&interval=1m&kin
     check('Vorauswahl als Liste im selben Zeitraum (ohne BTC), nach Betrag sortiert, keine Prognose', /📋 Vorauswahl im selben Zeitraum:/.test(txt) && coins.length === 5 && ['ETC', 'BCH', 'LTC', 'XRP', 'NEAR'].every(c => coins.some(x => x[1] === c)) && amounts.every((a,i) => !i || amounts[i-1] >= a) && !/(wird|dürfte|Prognose|erwart)/i.test(txt), table);
     check('Nachts lautlos (disable_notification)', m?.[0]?.disable_notification === 'true', String(m?.[0]?.disable_notification));
     const toast = await page.evaluate(() => [...document.querySelectorAll('#toasts .toast')].map(t => t.textContent).find(t => /BTC-PULS/.test(t)) || '');
-    check('Hinweis in der App', /🔴⬇️ BTC-PULS · −3,00 % in 5 Min/.test(toast), toast.slice(0, 90));
+    check('Hinweis in der App', /🔴⬇️ BTC-PULS · −3,00 % in 5 Min/.test(toast) && !/<\/?b>/.test(toast), toast.slice(0, 90));
     // Sperre: weiter fallen, aber nicht deutlich (−3,5 %) → nichts; deutlich (−5 %) → eine weitere; noch mehr → nichts
     await h.ctl(`/set?symbol=BTCUSDT&price=${P0 * 0.965}`); await page.waitForTimeout(2500);
     check('−3,5 % (weniger als das 1,5-Fache): keine zweite Nachricht', (await pulses(t0)).length === 1);

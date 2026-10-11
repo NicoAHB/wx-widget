@@ -50,7 +50,7 @@ function startService(dir) {
     await h.ctl(`/set?symbol=BTCUSDT&price=${P0 * 0.97}`);
     await until(async () => (await pulses(t0)).length, 15000); await h.sleep(5000);
     let m = await pulses(t0);
-    const toast = await page.evaluate(() => [...document.querySelectorAll('#toasts .toast')].some(t => /BTC-Puls/.test(t.textContent)));
+    const toast = await page.evaluate(() => [...document.querySelectorAll('#toasts .toast')].some(t => /BTC-PULS/.test(t.textContent)));
     check('BTC −3 %: genau eine Nachricht vom Dienst; die App zeigt den Hinweis, ohne zusätzlichen Versand', m.length === 1 && m[0].transport === 'json' && /^🕐 \d\d:\d\d:\d\d$/.test(m[0].text.split('\n').at(-1)) && !/24\/7-Dienst/.test(m[0].text) && toast, m.map(x => x.text.split('\n').at(-1)).join(' | '));
     check('Dienst: Inhalt wie in der App, nachts lautlos, mit Vorauswahlliste', /^<b>🔴⬇️ BTC-PULS · −3,00 %<\/b> in 5 Min\n/.test(m[0]?.text || '') && /💰 Kurs: <code>[\d.,]+ USD<\/code>/.test(m[0].text) && /ungewöhnlich stark für 23 Uhr/.test(m[0].text) && /Schwelle \(0,50 %\)/.test(m[0].text) && /<pre>[\s\S]*ETC[\s\S]*<\/pre>/.test(m[0].text) && /BCH\s+[+−]\d+,\d\d %/.test(m[0].text) && /NEAR\s+[+−]\d+,\d\d %/.test(m[0].text) && m[0]?.disable_notification === true,
       `${m[0]?.disable_notification} · ${m[0]?.text.replace(/\n/g, ' ⏎ ')}`);
