@@ -293,7 +293,7 @@ const tests = {
       // Telegram lehnt die Meldungen des Dienstes ab (400); App geschlossen
       await h.ctl('/chan?tgfail=400&from=server&match=' + encodeURIComponent('KURS-ALARM'));
       console.log('Diagnose vor Schließen:', JSON.stringify(await page.evaluate(() => ({ at: Date.now(), alarms: __g05.state.alarms, price: __g05.state.prices.BTCUSDT }))));
-      await page.close(); const t0 = Date.now();
+      await page.close(); const closedFeed = await until(async () => (await h.ctl('/state')).conns.length === 0, 10000); check('App vor Kurssprung vollständig geschlossen: keine Live-Verbindung mehr', closedFeed && ctx.pages().length === 0); const t0 = Date.now();
       await h.ctl(`/set?symbol=BTCUSDT&price=${P0 + 250}`);
       const bad = await until(async () => { const m = await pinnedMsg(); return m && /\nDienst: Störung · .* · Telegram-Nachricht nicht zustellbar seit \d\d:\d\d \(Telegram sendMessage: Bad Request: message is too long/.test(m.caption) ? m : null; }, 30000);
       const tries = (await h.ctl('/sent')).filter(m => m.svc === 'tg' && /^<b>🟢⬆️ KURS-ALARM · BTC/.test(m.text || '') && m.at >= t0);
