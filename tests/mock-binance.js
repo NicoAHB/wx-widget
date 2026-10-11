@@ -199,14 +199,14 @@ async function channel(req, res, host, u) {
       return json(res, 200, { ok: true, result: tgPublic(x) }, cors);
     }
     if (method === 'sendMessage') {
-      const f = F; sent.push({ at: Date.now(), svc: 'tg', bot: B.id, mode: req.headers['sec-fetch-mode'] || '', ...f, link_preview_options: typeof f.link_preview_options === 'object' ? JSON.stringify(f.link_preview_options) : f.link_preview_options });
+      const f = F; sent.push({ at: Date.now(), svc: 'tg', bot: B.id, mode: req.headers['sec-fetch-mode'] || '', transport: req.headers['content-type']?.includes('application/json') ? 'json' : 'form', ...f, link_preview_options: typeof f.link_preview_options === 'object' ? JSON.stringify(f.link_preview_options) : f.link_preview_options });
       if (cfg.tgFormat > 0 && f.parse_mode === 'HTML') { cfg.tgFormat--; sent.at(-1).formatRejected = true; return json(res, 400, { ok: false, error_code: 400, description: "Bad Request: can't parse entities: unsupported start tag" }, cors); }
       // 3.33.0 (G05): Nachricht kommt an, die Antwort geht verloren (Verbindung abgerissen) – /chan?tgdrop=n
       if (cfg.tgDrop > 0) { cfg.tgDrop--; sent.at(-1).dropped = true; res.socket?.destroy(); return; }
       if (cfg.tg429 > 0) { cfg.tg429--; return json(res, 429, { ok: false, error_code: 429, description: 'Too Many Requests: retry after 1', parameters: { retry_after: 1 } }, cors); }
       // 3.27.0: die nächsten n Versuche mit 502 ablehnen (/chan?tg502=n) oder alle passenden dauerhaft (/chan?tgfail=400&match=…)
       if (cfg.tg502 > 0) { cfg.tg502--; sent.at(-1).failed = 502; return json(res, 502, { ok: false, error_code: 502, description: 'Bad Gateway' }, cors); }
-      if (cfg.tgFail && (!cfg.tgFail.serverOnly || !req.headers['sec-fetch-mode']) && String(f.text || '').includes(cfg.tgFail.match || '')) { sent.at(-1).failed = cfg.tgFail.code; return json(res, cfg.tgFail.code, { ok: false, error_code: cfg.tgFail.code, description: cfg.tgFail.code === 400 ? 'Bad Request: message is too long' : 'Bad Gateway' }, cors); }
+      if (cfg.tgFail && (!cfg.tgFail.serverOnly || req.headers['content-type']?.includes('application/json')) && String(f.text || '').includes(cfg.tgFail.match || '')) { sent.at(-1).failed = cfg.tgFail.code; return json(res, cfg.tgFail.code, { ok: false, error_code: cfg.tgFail.code, description: cfg.tgFail.code === 400 ? 'Bad Request: message is too long' : 'Bad Gateway' }, cors); }
       if (f.chat_id === '111') return json(res, 400, { ok: false, error_code: 400, description: 'Bad Request: chat not found' }, cors);
       return json(res, 200, { ok: true, result: { message_id: sent.length, chat: { id: Number(f.chat_id) }, text: tgPlain(f.text, f.parse_mode) } }, cors);
     }

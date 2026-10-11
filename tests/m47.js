@@ -311,15 +311,15 @@ const tests = {
       const beforeFallback = await page.evaluate(() => { const a = __g05.state.alarms.find(a => a.id === 'sv1'); return { triggeredAt: a?.triggeredAt, price: __g05.state.prices.BTCUSDT?.price }; });
       check('Legacy-Fallback erst nach bestätigter Störung und ohne vorherige App-Auslösung', beforeFallback.triggeredAt === null && beforeFallback.price < P0 + 200 && /Die App sendet deshalb selbst/.test(st), JSON.stringify(beforeFallback));
       await h.ctl(`/set?symbol=BTCUSDT&price=${P0 + 250}`);
-      const own = await until(async () => { const x = (await h.ctl('/sent')).filter(m => m.svc === 'tg' && /^<b>🟢⬆️ KURS-ALARM · BTC/.test(m.text || '') && m.mode === 'cors' && !m.failed && m.at >= t0); return x.length ? x : null; }, 20000);
+      const own = await until(async () => { const x = (await h.ctl('/sent')).filter(m => m.svc === 'tg' && /^<b>🟢⬆️ KURS-ALARM · BTC/.test(m.text || '') && m.transport === 'form' && !m.failed && m.at >= t0); return x.length ? x : null; }, 20000);
       check('… und die App sendet den Kurs-Alarm selbst', own?.length === 1, own ? own[0].text.replace(/\n/g, ' ⏎ ') : 'keine Meldung der App');
       // Telegram wieder in Ordnung: der Dienst stellt nach
       await h.ctl('/chan?tgfail=');
-      const done = await until(async () => { const x = (await h.ctl('/sent')).filter(m => m.svc === 'tg' && /^<b>🟢⬆️ KURS-ALARM · BTC/.test(m.text || '') && m.mode === '' && !m.failed && m.at >= t0); return x.length ? x : null; }, 150000, 1000);
+      const done = await until(async () => { const x = (await h.ctl('/sent')).filter(m => m.svc === 'tg' && /^<b>🟢⬆️ KURS-ALARM · BTC/.test(m.text || '') && m.transport === 'json' && !m.failed && m.at >= t0); return x.length ? x : null; }, 150000, 1000);
       const cap = await until(async () => { const m = await pinnedMsg(); return m && /\nDienst: aktiv · /.test(m.caption) && /\nZustellung: zuletzt \d\d\.\d\d\. \d\d:\d\d · Kurs-Alarm BTC/.test(m.caption) ? m : null; }, 30000);
       check('Telegram wieder erreichbar: Dienst stellt die Meldung einmal nach, Status wieder „aktiv“, „Zustellung: zuletzt … · Kurs-Alarm BTC“', done?.length === 1 && !!cap, `${done ? done[0].text.replace(/\n/g, ' ⏎ ') : 'nicht nachgestellt'} · ${cap ? 'Beschriftung ok' : (await pinnedMsg())?.caption.replace(/\n/g, ' ⏎ ')}`);
       st = await s247Status(page);
-      check('App: „Übergeben ✓ vom Dienst bestätigt … Zuletzt zugestellt: … (Kurs-Alarm BTC).“', /^Übergeben ✓ vom Dienst bestätigt .*Zuletzt zugestellt: \d\d\.\d\d\., \d\d:\d\d \(KURS-ALARM · BTC · [\d.,]+ USD\)\./.test(st), st);
+      check('App: „Übergeben ✓ vom Dienst bestätigt … Zuletzt zugestellt: … (Kurs-Alarm BTC).“', /^Übergeben ✓ vom Dienst bestätigt .*Zuletzt zugestellt: \d\d\.\d\d\., \d\d:\d\d \(Kurs-Alarm BTC\)\./.test(st), st);
       check('keine Fehler (24/7-Dienst)', !real(errors).length, real(errors).join(' | ').slice(0, 300));
       check('Dienst-Protokoll ohne Token', svc && !svc.log.join('\n').includes(TOKEN.split(':')[1]), '');
     } finally { svc?.kill(); await ctx.close(); await h.ctl('/chan?tgfail='); }

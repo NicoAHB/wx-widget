@@ -20,7 +20,7 @@ const info = page => page.evaluate(() => {
     order: { chartBottom: Math.round(c.bottom + scrollY), econTop: Math.round(e.top + scrollY), econBottom: Math.round(e.bottom + scrollY), signalsTop: Math.round(s.top + scrollY) }, sw: document.scrollingElement.scrollWidth - innerWidth };
 });
 const localTime = (page, title) => page.evaluate(async title => { const d = await (await fetch('https://raw.githubusercontent.com/NicoAHB/wx-widget/kalender/calendar.json')).json(); const e = d.events.find(x => x.title === title); return new Date(e.t).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }); }, title);
-const tgNews = async () => (await h.ctl('/sent')).filter(m => m.svc === 'tg' && /Wirtschaftstermin/.test(m.text || ''));
+const tgNews = async () => (await h.ctl('/sent')).filter(m => m.svc === 'tg' && /WIRTSCHAFTSTERMIN/.test(m.text || ''));
 const quiet = e => !/Failed to load resource: the server responded with a status of (404|500)/.test(e); // erwartete Antworten der Attrappe
 (async () => {
   await h.setup(); await h.sleep(300); await h.ctl('/reset');
@@ -68,7 +68,7 @@ const quiet = e => !/Failed to load resource: the server responded with a status
     check('Warnung im Kalender mit Uhrzeit, beide Termine hervorgehoben', /^⚠ in 1[01] min \(\d\d:\d\d\): USD CPI m\/m, Core CPI m\/m – hohe Bedeutung\. Starke Kursausschläge möglich/.test(d.warn) && d.rows.filter(r => /\bwarn\b/.test(r.cls)).length === 2, d.warn);
     check('Einmal ein Hinweis (mit Ton)', d.toasts.length === 1 && /^⚠ Wirtschaftstermin in 1[01] min \(\d\d:\d\d Uhr\): USD CPI m\/m, Core CPI m\/m/.test(d.toasts[0]), d.toasts.join(' | '));
     let tg = []; for (let i = 0; i < 20 && !tg.length; i++) { await page.waitForTimeout(250); tg = await tgNews(); }
-    check('Nachricht an Telegram', tg.length === 1 && /Wirtschaftstermin in 1[01] min/.test(tg[0].text) && /USD CPI m\/m, Core CPI m\/m/.test(tg[0].text) && /Prognose 0\.3%, vorher 0\.2%/.test(tg[0].text), JSON.stringify(tg.map(m => m.text)));
+    check('Nachricht an Telegram mit denselben Terminwerten in getrennten HTML-Zeilen', tg.length === 1 && /WIRTSCHAFTSTERMIN · in 1[01] min/.test(tg[0].text) && /Währung: USD/.test(tg[0].text) && /Termin: CPI m\/m/.test(tg[0].text) && /Termin: Core CPI m\/m/.test(tg[0].text) && /Prognose: 0\.3%/.test(tg[0].text) && /Vorher: 0\.2%/.test(tg[0].text), JSON.stringify(tg.map(m => m.text)));
     await page.reload(); await live(page); await page.waitForTimeout(2500); d = await info(page);
     check('Nach dem Neuladen: Warnung bleibt, kein zweiter Hinweis, keine zweite Nachricht', /^⚠ in 1?\d min: CPI m\/m \+1$/.test(d.chip) && !d.toasts.length && (await tgNews()).length === 1, JSON.stringify({ toasts: d.toasts.length, tg: (await tgNews()).length }));
     await page.selectOption('#econ-warn-min', '5'); await page.waitForTimeout(300); d = await info(page);

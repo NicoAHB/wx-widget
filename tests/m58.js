@@ -292,7 +292,7 @@ const tests = {
     const learned = await page.evaluate(() => { const mk = (i, out) => { const c = { mkt: 'spot', sym: 'LRNUSDT', iv: '1h', pat: 'double_bottom', kind: 'form', dir: 'bull', t0: 4e12 + i * 1e7, t1: 4e12 + i * 1e7 + 5e6, tc: 4e12 + i * 1e7 + 6e6, p0: 100, model: 'pat-1', profile: 'H12-e0.10', q: 80, at: 1, src: 'live', rules: [], res: { at: 1, tH: 2, ph: 101, r: 1, out, path: [0, 1] } }; c.id = __g09.pkId(c); return c; };
       __g09.pkMerge(Array.from({ length: 10 }, (_, i) => mk(i, i < 7 ? 'auf' : i < 9 ? 'ab' : 'seitwärts')));
       return __g09.patTgText({ ...mk(99, 'auf'), res: null, q: 90 }, { status: 'Ausbruch bestätigt', levels: {} }); });
-    check('Ab 10 vergleichbaren Fällen: „Erlernt (live protokolliert): nach 12 Kerzen 7 von 10 aufwärts, 2 abwärts, 1 seitwärts“', /Erlernt \(live protokolliert\): nach 12 Kerzen 7 von 10 aufwärts, 2 abwärts, 1 seitwärts/.test(learned), learned);
+    check('Ab 10 vergleichbaren Fällen: Erlernt 7/10, live nach 12 Kerzen, 7 aufwärts / 2 abwärts / 1 seitwärts', /Erlernt: 7\/10 Fälle/.test(learned) && /Datenbasis: live protokolliert/.test(learned) && /Beobachtung: nach 12 Kerzen/.test(learned) && /Aufwärts: 7 Fälle/.test(learned) && /Abwärts: 2 Fälle/.test(learned) && /Seitwärts: 1 Fälle/.test(learned) && !/zu wenig Daten/.test(learned), learned);
     check('keine Fehler (tg)', !real(errors).length, real(errors).join(' | ')); await ctx.close();
   },
 };

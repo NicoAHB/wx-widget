@@ -130,7 +130,7 @@ const tests = {
   },
   async tgbackup(browser) {
     const TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', CHAT = '987654321';
-    const chanSeed = ({ token, chat }) => { if (!localStorage.getItem('scalpdesk.channels.v1')) localStorage.setItem('scalpdesk.channels.v1', JSON.stringify({ tg: { token, chat, on: true }, dc: { url: '', on: false }, ev: { alarm: true, pos: true, day: true } })); };
+    const chanSeed = ({ token, chat }) => { if (!localStorage.getItem('scalpdesk.channels.v1')) localStorage.setItem('scalpdesk.channels.v1', JSON.stringify({ tg: { token, chat, bchat: chat, on: true }, dc: { url: '', on: false }, ev: { alarm: true, pos: true, day: true } })); };
     // ohne Telegram: Hinweis und Einrichten-Knopf
     await h.ctl('/orderflow?hold=1'); await h.ctl('/walk?on=0');
     let { ctx, page, errors } = await open(browser, phone(390), { quietFutures: true });
@@ -152,7 +152,7 @@ const tests = {
     const docs = async n => { for (let i = 0; i < 40; i++) { const s = (await h.ctl('/sent')).filter(x => x.method === 'sendDocument' || x.method === 'editMessageMedia'); if (s.length >= n) return s; await h.sleep(250); } return (await h.ctl('/sent')).filter(x => x.method === 'sendDocument' || x.method === 'editMessageMedia'); };
     let s = await docs(1);
     const f1 = (() => { try { return JSON.parse(s[0].file); } catch { return null; } })();
-    check('Einschalten: Sicherung sofort als Datei an den Telegram-Chat (lautlos)', s[0]?.method === 'sendDocument' && s[0].chat_id === CHAT && s[0].silent === 'true' && f1?.positions?.length === 3 && /Scalp-Desk-Sicherung/.test(s[0].caption), JSON.stringify({ m: s[0]?.method, pos: f1?.positions?.length }));
+    check('Einschalten: Sicherung sofort als Datei an den Telegram-Chat (lautlos)', s[0]?.method === 'sendDocument' && s[0].chat_id === CHAT && s[0].silent === 'true' && f1?.positions?.length === 3 && /SCALP-DESK-SICHERUNG/.test(s[0].caption), JSON.stringify({ m: s[0]?.method, pos: f1?.positions?.length }));
     check('Keine Zugangsdaten in der Datei', s[0] && !s[0].file.includes(TOKEN) && !/channels|token/i.test(s[0].file));
     const badge = await page.evaluate(() => ({ tab: document.getElementById('tab-pos-badge').hidden, info: document.getElementById('backup-info').textContent }));
     check('Danach gilt das Backup als aktuell (kein „!“ am Tab, „per Telegram“)', badge.tab && /per Telegram/.test(badge.info), JSON.stringify(badge));

@@ -42,11 +42,11 @@ const flatBtc = async () => { await h.ctl('/shape?symbol=BTCUSDT&interval=1m&kin
     const txt = m?.[0]?.text || '';
     check('BTC −3 %: Nachricht an „Kursalarm“ (nicht an den Sicherungschat)', m?.length === 1 && m[0].chat_id === ALERT && !m[0].message_thread_id, JSON.stringify(m?.map(x => x.chat_id)));
     check('Inhalt: Richtung, Größe, 5-Minuten-Fenster, USD-Kurs und Uhrzeitschwelle', /^<b>🔴⬇️ BTC-PULS · −3,00 %<\/b> in 5 Min$/.test(txt.split('\n')[0]) && /💰 Kurs: <code>[\d.,]+ USD<\/code>/.test(txt) && /<i>ungewöhnlich stark für 23 Uhr<\/i> · 6,0× Schwelle \(0,50 %\) 🔥/.test(txt), txt);
-    const table = /<pre>([\s\S]*?)<\/pre>/.exec(txt)?.[1] || '', coins = table.split('\n').map(x => x.match(/^[🟢🔴⚪] ([A-Z]+)\s+([+−][\d.,]+) %$/)).filter(Boolean); const amounts = coins.map(x => Math.abs(Number(x[2].replace(/\./g, '').replace(',', '.').replace('−', '-'))));
+    const table = /<pre>([\s\S]*?)<\/pre>/.exec(txt)?.[1] || '', coins = table.split('\n').map(x => x.match(/^(?:🟢|🔴|⚪) ([A-Z]+)\s+([+−][\d.,]+) %$/)).filter(Boolean); const amounts = coins.map(x => Math.abs(Number(x[2].replace(/\./g, '').replace(',', '.').replace('−', '-'))));
     check('Vorauswahl als Liste im selben Zeitraum (ohne BTC), nach Betrag sortiert, keine Prognose', /📋 Vorauswahl im selben Zeitraum:/.test(txt) && coins.length === 5 && ['ETC', 'BCH', 'LTC', 'XRP', 'NEAR'].every(c => coins.some(x => x[1] === c)) && amounts.every((a,i) => !i || amounts[i-1] >= a) && !/(wird|dürfte|Prognose|erwart)/i.test(txt), table);
     check('Nachts lautlos (disable_notification)', m?.[0]?.disable_notification === 'true', String(m?.[0]?.disable_notification));
-    const toast = await page.evaluate(() => [...document.querySelectorAll('#toasts .toast')].map(t => t.textContent).find(t => /BTC-Puls/.test(t)) || '');
-    check('Hinweis in der App', /⚡ BTC-Puls: BTC −3,00 % in 5 Min\./.test(toast), toast.slice(0, 90));
+    const toast = await page.evaluate(() => [...document.querySelectorAll('#toasts .toast')].map(t => t.textContent).find(t => /BTC-PULS/.test(t)) || '');
+    check('Hinweis in der App', /🔴⬇️ BTC-PULS · −3,00 % in 5 Min/.test(toast), toast.slice(0, 90));
     // Sperre: weiter fallen, aber nicht deutlich (−3,5 %) → nichts; deutlich (−5 %) → eine weitere; noch mehr → nichts
     await h.ctl(`/set?symbol=BTCUSDT&price=${P0 * 0.965}`); await page.waitForTimeout(2500);
     check('−3,5 % (weniger als das 1,5-Fache): keine zweite Nachricht', (await pulses(t0)).length === 1);

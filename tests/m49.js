@@ -57,7 +57,7 @@ const tests = {
       await ctx.close(); await h.sleep(500);
       const t1 = Date.now(); await h.ctl(`/set?symbol=BTCUSDT&price=${P0 + 80}`);
       const al = await until(async () => { const x = (await sentTg(t1)).filter(m => /^<b>🟢⬆️ KURS-ALARM · BTC/.test(m.text || '')); return x.length ? x : null; }, 20000);
-      check('App geschlossen, Kurs über dem Alarm: Nachricht vom Dienst mit Ton, ohne Dienst-Suffix', !!al && al[0].bot === 123456789 && al[0].mode === '' && !al[0].disable_notification && !/24\/7-Dienst/.test(al[0].text) && /\n🕐 \d\d:\d\d:\d\d$/.test(al[0].text), al ? al[0].text.replace(/\n/g, ' ⏎ ').slice(0, 160) : 'keine Nachricht');
+      check('App geschlossen, Kurs über dem Alarm: Nachricht vom Dienst mit Ton, ohne Dienst-Suffix', !!al && al[0].bot === 123456789 && al[0].transport === 'json' && !al[0].disable_notification && !/24\/7-Dienst/.test(al[0].text) && /\n🕐 \d\d:\d\d:\d\d$/.test(al[0].text), al ? al[0].text.replace(/\n/g, ' ⏎ ').slice(0, 160) : 'keine Nachricht');
       check('… in unter 10 Sekunden (Dienst prüft hier alle 1,5 s statt 15 s)', !!al && al[0].at - t1 < 10000, al ? `${((al[0].at - t1) / 1000).toFixed(1)} s` : '');
       await h.sleep(4000);
       check('… genau einmal', (await sentTg(t1)).filter(m => /^<b>🟢⬆️ KURS-ALARM · BTC/.test(m.text || '')).length === 1);

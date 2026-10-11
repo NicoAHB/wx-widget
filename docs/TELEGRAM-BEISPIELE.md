@@ -543,14 +543,18 @@ Cross unbekannt
 ## Tages-Verlustlimit
 
 ```text
-🔴 TAGES-V…
+🔴 TAGES-VERLUSTLIMIT ERREICHT · −40,00 USD
+Heute realisiert: −40,00 USD
+🎯 Limit: ⭐ 30,00 USD ⭐
 🕐 14:00:00
 ```
 
 <details><summary>Vollständiger HTML-Text</summary>
 
 ```html
-<b>🔴 TAGES-V…</b>
+<b>🔴 TAGES-VERLUSTLIMIT ERREICHT · −40,00 USD</b>
+Heute realisiert: −40,00 USD
+🎯 Limit: ⭐ <b>30,00 USD</b> ⭐
 🕐 14:00:00
 ```
 

@@ -54,7 +54,7 @@ function s247Sig(p) { const j = JSON.stringify(p); let h = 0; for (let i = 0; i 
 // Schlüssel der Meldungen, die der Dienst mit diesem Stand übernimmt – dieselben wie in notifyChannels
 function s247Keys(p) { return [...p.alarms.map(a => `al:${a.id}:${a.armedAt}`), ...p.positions.flatMap(x => ['tp', 'sl'].filter(t => x[t] > 0).map(t => `pos:${x.id}:${t}:${x.since}`)), ...(p.pnl?.lim || []).map(l => `pnl:${l.k}:${l.at}`)]; }
 function s247Caption(p) {
-  return formatMessage('notice', { headline: '📌 Scalp Desk · Dienstübergabe', lines: [`App: ${s247Stamp(p.at)} · ${p.on ? `${s247Plural(p.alarms.length, 'Alarm', 'Alarme')}, ${s247Plural(p.positions.length, 'Position', 'Positionen')}` : 'Übergabe ausgeschaltet'} · ${p.dev} · #${p.tag}`, 'Dienst: wartet auf Rückmeldung …'], at: p.at, limit: TELEGRAM_CAPTION_LIMIT });
+  return formatMessage('notice', { headline: '📌 Scalp Desk · Dienstübergabe', lines: [`App: ${s247Stamp(p.at)} · ${p.on ? `${s247Plural(p.alarms.length, 'Alarm', 'Alarme')}, ${s247Plural(p.positions.length, 'Position', 'Positionen')}` : 'Übergabe ausgeschaltet'} · ${p.dev} · #${p.tag}`, 'Dienst: wartet auf Rückmeldung …'], at: p.at, messageLimit: TELEGRAM_CAPTION_LIMIT });
 }
 const s247Ready = () => typeof tgConfigured === 'function' && tgConfigured() && (s247.cfg.on || s247.cfg.sentOn);
 function scheduleS247(delay = 3000) { if (!s247?.cfg || !s247Ready()) return; clearTimeout(s247.timer); s247.timer = setTimeout(() => { s247.timer = null; void sendS247(); }, delay); }

@@ -21,6 +21,7 @@ const check = (name, ok) => { ok ? pass++ : fail++; console.log(`${ok ? '✓' : 
   check('Schwelle null: kein Infinity', !F.formatMessage('pulse', { change: 1, threshold: 0 }).includes('Infinity'));
   const alarm = F.formatMessage('alarm', { ...fixture, direction: 'below', price: 99, level: 100 });
   check('Alarm: negativer absoluter und prozentualer Abstand', alarm.includes('−1,0000 USD (−1,00 %)') && alarm.includes('⭐ <b>100,0000 USD</b> ⭐ (unter)'));
+  for (const limit of [.01, 20, 200]) { const text = F.formatMessage('day', { pnl: -25, limit, at }); check('Geldlimit ' + limit + ' ist kein Zeichenlimit: vollständige Tagesmeldung', text.includes('TAGES-VERLUSTLIMIT ERREICHT') && text.includes('Heute realisiert: −25,00 USD') && text.includes('Limit: ⭐ <b>' + F.telegramNumber(limit) + ' USD</b> ⭐') && !text.includes('…') && /^🕐 /.test(text.split('\n').at(-1))); }
   const trade = F.formatMessage('trade', { symbol: 'ETHUSDT', side: 'long', pnl: -12.5, entry: 1000, exit: 990, percent: -1.25, reasons: 'Stop <SL>', at });
   check('Trade: Verlustvorschau, Codepreise und escaped Grund', trade.startsWith('<b>🔴 VERLUST') && trade.includes('<code>1.000,00 USD</code>') && trade.includes('−1,25 %') && trade.includes('Stop &lt;SL&gt;'));
   for (const type of ['position', 'pnl', 'day', 'news', 'trade', 'backup', 'signal', 'po3', 'notice']) {

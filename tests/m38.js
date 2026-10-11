@@ -81,7 +81,7 @@ async function open(browser, chan, extra = []) {
     await h.ctl('/tgreset');
     ({ ctx, page, errors } = await open(browser, { tg: { token: TOKEN, chat: ALERT, on: true }, dc: { url: '', on: true }, ev: { alarm: true, pos: true, day: true, news: true } }));
     await page.evaluate(() => { if (document.getElementById('data-panel').hidden) document.getElementById('data-toggle').click(); });
-    await page.click('#tgb-now');
+    check('Ohne Sicherungschat: manueller Sendeknopf ausgeblendet', !(await page.isVisible('#tgb-now'))); await page.evaluate(() => document.getElementById('tgb-now').click());
     await page.waitForTimeout(1500); const doc2 = (await tg()).find(m => m.method === 'sendDocument'), sum2 = await page.textContent('#chan-summary');
     check('Nur eine Chat-ID (alte Einrichtung): kein Sicherungsversand ohne eigenen Eintrag, Feld bleibt leer', !doc2 && /Sicherung: kein Sicherungschat/.test(sum2) && await page.evaluate(() => JSON.parse(localStorage.getItem('scalpdesk.channels.v1')).tg.bchat === ''), sum2);
     const ev = await page.evaluate(() => { const c = JSON.parse(localStorage.getItem('scalpdesk.channels.v1')); return c.ev; });

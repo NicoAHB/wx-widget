@@ -94,7 +94,7 @@ const tests = {
     await page.evaluate(() => { __g05.chan.tgt.backup = false; __g05.saveChannels(); document.getElementById('chan-open').click(); }); await page.waitForTimeout(300);
     t0 = Date.now(); await page.click('#tg-testall');
     const tst = await until(() => page.evaluate(() => { const t = document.getElementById('tg-status').textContent; return /Testnachrichten zugestellt/.test(t) ? t : null; }), 20000);
-    const tsent = await tgSent(t0, /^🧪 Test/);
+    const tsent = await tgSent(t0, /^<b>🧪 TEST ·/);
     check('Sicherung aus: „Test je Nachrichtenart“ sendet nur die 6 an Kursalarm, die Meldung nennt das ausgeschaltete Ziel', tsent.length === 6 && tsent.every(m => String(m.chat_id) === ALERT) && /^6 von 7 Testnachrichten zugestellt: 6 an Kursalarm, keine an den Sicherungschat\. Ausgeschaltet \(💬 Telegram-Chats\), daher kein Test: Sicherung\.$/.test(tst || ''), tst);
     await page.evaluate(() => { __g05.chan.tgt.backup = true; __g05.chan.tgt['course-alert'] = false; __g05.saveChannels(); }); t0 = Date.now(); await page.click('#tg-test'); await page.waitForTimeout(800);
     check('Kursalarm aus: „Test senden“ sendet nicht, Grund steht da', !(await tgSent(t0)).length && /Ziel „Kursalarm“ ist ausgeschaltet/.test(await txt(page, '#tg-status')), await txt(page, '#tg-status'));
@@ -233,7 +233,7 @@ const tests = {
     t0 = Date.now(); await C.page.waitForTimeout(1200); await raise(150);
     await C.page.waitForTimeout(20000); const early = (await tgSent(t0, /KURS-ALARM · SOL/)).length;
     const late = await until(async () => (await tgSent(t0, /KURS-ALARM · SOL/)).length ? await tgSent(t0, /KURS-ALARM · SOL/) : null, 75000, 1000);
-    check('Dienst nicht erreichbar: erst nach etwa 60 s sendet die App selbst – mit Vermerk', early === 0 && late?.length === 1 && /von der App gesendet – 24\/7-Dienst nicht erreichbar/.test(late[0].text) && late[0].at - t0 >= 55e3, JSON.stringify({ early, n: late?.length, s: late ? Math.round((late[0].at - t0) / 1000) : null }));
+    check('Dienst nicht erreichbar: erst nach etwa 60 s sendet die App selbst, Warnung separat sichtbar', early === 0 && late?.length === 1 && late[0].transport === 'form' && late[0].at - t0 >= 55e3 && /<b>Von der App gesendet<\/b>\nDienst nicht erreichbar/.test(late[0].text), JSON.stringify({ early, n: late?.length, s: late ? Math.round((late[0].at - t0) / 1000) : null }));
     await C.ctx.close();
     // 8) ohne Dienst: strikte Zustellung (verlorene Antwort → kein zweiter Versuch)
     await h.ctl('/set?symbol=SOLUSDT&price=150'); at = Date.now() - 5e3;

@@ -42,9 +42,9 @@ function startService(dir) {
     check('Fenster „Alarme aufs Smartphone“: Abschnitt 24/7-Dienst, aus', !s.on && /^Aus/.test(s.text), s.text);
     // ---- Einschalten: Datei senden und anheften ----
     await page.check('#s247-on');
-    const pin1 = await until(async () => { const m = await pinnedMsg(); return m && /^📌 Scalp Desk · 24\/7-Dienst\n/.test(m.caption) ? m : null; }, 15000);
+    const pin1 = await until(async () => { const m = await pinnedMsg(); return m && /^📌 Scalp Desk · Dienstübergabe\n/.test(m.caption) ? m : null; }, 15000);
     const body = pin1 ? JSON.parse(pin1.content) : {};
-    check('Einschalten: Datei scalpdesk-247.json gesendet und angeheftet, Beschriftung „wartet auf Rückmeldung“', pin1 && pin1.document.file_name === 'scalpdesk-247.json' && /\nDienst: wartet auf Rückmeldung …$/.test(pin1.caption), pin1?.caption.replace(/\n/g, ' ⏎ '));
+    check('Einschalten: Datei scalpdesk-247.json gesendet und angeheftet, Beschriftung „wartet auf Rückmeldung“', pin1 && pin1.document.file_name === 'scalpdesk-247.json' && /\nDienst: wartet auf Rückmeldung …\n🕐 \d\d:\d\d:\d\d$/.test(pin1.caption), pin1?.caption.replace(/\n/g, ' ⏎ '));
     check('Inhalt: 2 aktive Alarme, Zeitzone, Termin-Warnung; ohne Token und Chat-ID', body.kind === 'scalpdesk-247' && body.on === true && body.alarms?.length === 2 && body.tz === 'Europe/Berlin' && body.econ?.warn === 15
       && !pin1.content.includes(TOKEN) && !pin1.content.includes(CHAT) && /^[a-z0-9]{4}$/.test(body.tag), JSON.stringify({ n: body.alarms?.length, tz: body.tz, econ: body.econ, tag: body.tag }));
     const pinSends = (await h.ctl('/sent')).filter(m => m.method === 'pinChatMessage');
@@ -64,7 +64,7 @@ function startService(dir) {
     await until(async () => (await texts()).slice(before).some(t => /KURS-ALARM · BTC/.test(t)), 15000); await h.sleep(4000);
     const al = (await texts()).slice(before).filter(t => /KURS-ALARM · BTC/.test(t));
     const appSaw = await page.evaluate(() => [...document.querySelectorAll('.toast')].some(t => /Kurs-Alarm|auf\/über/.test(t.textContent)) || /ausgelöst|erreicht/.test(document.getElementById('alarms')?.textContent || ''));
-    check('Alarm erreicht: genau eine Telegram-Nachricht, vom 24/7-Dienst; die App zeigt ihn, sendet ihn aber nicht zusätzlich', al.length === 1 && (await h.ctl('/sent')).find(m => m.text === al[0])?.mode === '' && /\n🕐 \d\d:\d\d:\d\d$/.test(al[0]) && appSaw, `${al.length} Nachricht(en): ${al.map(t => t.split('\n').at(-1)).join(' | ')}`);
+    check('Alarm erreicht: genau eine Telegram-Nachricht, vom 24/7-Dienst; die App zeigt ihn, sendet ihn aber nicht zusätzlich', al.length === 1 && (await h.ctl('/sent')).find(m => m.text === al[0])?.transport === 'json' && /\n🕐 \d\d:\d\d:\d\d$/.test(al[0]) && appSaw, `${al.length} Nachricht(en): ${al.map(t => t.split('\n').at(-1)).join(' | ')}`);
     // 3.26.0: Der ausgelöste Alarm bleibt noch 3 Minuten in der Übergabe (der Dienst prüft die Kurse nur alle 15 s – so meldet er
     // ihn sicher, auch wenn die App ihn zuerst sieht); danach übergibt die App den neuen Stand (1 Alarm), der Dienst bestätigt ihn
     const t2 = Date.now(), still = await pinnedMsg(), stillB = still?.content ? JSON.parse(still.content) : null;

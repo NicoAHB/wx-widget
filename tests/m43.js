@@ -51,7 +51,7 @@ function startService(dir) {
     await until(async () => (await pulses(t0)).length, 15000); await h.sleep(5000);
     let m = await pulses(t0);
     const toast = await page.evaluate(() => [...document.querySelectorAll('#toasts .toast')].some(t => /BTC-Puls/.test(t.textContent)));
-    check('BTC −3 %: genau eine Nachricht vom Dienst; die App zeigt den Hinweis, ohne zusätzlichen Versand', m.length === 1 && m[0].mode === '' && /^🕐 \d\d:\d\d:\d\d$/.test(m[0].text.split('\n').at(-1)) && !/24\/7-Dienst/.test(m[0].text) && toast, m.map(x => x.text.split('\n').at(-1)).join(' | '));
+    check('BTC −3 %: genau eine Nachricht vom Dienst; die App zeigt den Hinweis, ohne zusätzlichen Versand', m.length === 1 && m[0].transport === 'json' && /^🕐 \d\d:\d\d:\d\d$/.test(m[0].text.split('\n').at(-1)) && !/24\/7-Dienst/.test(m[0].text) && toast, m.map(x => x.text.split('\n').at(-1)).join(' | '));
     check('Dienst: Inhalt wie in der App, nachts lautlos, mit Vorauswahlliste', /^<b>🔴⬇️ BTC-PULS · −3,00 %<\/b> in 5 Min\n/.test(m[0]?.text || '') && /💰 Kurs: <code>[\d.,]+ USD<\/code>/.test(m[0].text) && /ungewöhnlich stark für 23 Uhr/.test(m[0].text) && /Schwelle \(0,50 %\)/.test(m[0].text) && /<pre>[\s\S]*ETC[\s\S]*<\/pre>/.test(m[0].text) && /BCH\s+[+−]\d+,\d\d %/.test(m[0].text) && /NEAR\s+[+−]\d+,\d\d %/.test(m[0].text) && m[0]?.disable_notification === true,
       `${m[0]?.disable_notification} · ${m[0]?.text.replace(/\n/g, ' ⏎ ')}`);
     // Dienst fällt aus → App sendet den Puls wieder selbst
@@ -60,7 +60,7 @@ function startService(dir) {
     await page.click('#s247-check'); await until(async () => /nicht gemeldet/.test(await page.textContent('#s247-status')), 8000);
     t0 = Date.now(); await h.ctl(`/set?symbol=BTCUSDT&price=${P0 * 0.95}`);
     const own = await until(async () => { const x = await pulses(t0); return x.length ? x : null; }, 15000);
-    check('Dienst meldet sich nicht mehr: die App sendet den Puls selbst („legt weiter zu“, lautlos)', own?.length === 1 && !/24\/7-Dienst/.test(own[0].text) && /BTC-PULS · −5,00 %<\/b> in 5 Min/.test(own[0].text) && /Bewegung legt weiter zu/.test(own[0].text) && own[0].mode === 'cors' && own[0].disable_notification === 'true', own?.[0]?.text.split('\n')[0]);
+    check('Dienst meldet sich nicht mehr: die App sendet den Puls selbst („legt weiter zu“, lautlos)', own?.length === 1 && !/24\/7-Dienst/.test(own[0].text) && /BTC-PULS · −5,00 %<\/b> in 5 Min/.test(own[0].text) && /Bewegung legt weiter zu/.test(own[0].text) && own[0].transport === 'form' && own[0].disable_notification === 'true', own?.[0]?.text.split('\n')[0]);
     check('Keine Fehler', !errors.length, errors.join(' | '));
     await ctx.close();
   } catch (e) { check('Abbruch', false, e.message.split('\n')[0]); }
