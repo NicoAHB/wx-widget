@@ -59,8 +59,8 @@ const TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', CHAT = '987654321'
   check('… vor Ablauf von 3 Minuten kein Hinweis per Telegram und keine Wiederholung im Protokoll', !sentMsgs(0).length && logs.filter(l => l.startsWith('Warte auf die Übergabe')).length === 1);
   await step(w, 40e3); // über 3 min
   let hint = sentMsgs(0);
-  check('Nach 3 Minuten ohne Datei: ein Hinweis per Telegram (mit Ton), mit Bot, Chat-ID und Befehl zum Neu-Eingeben', hint.length === 1 && !hint[0].disable_notification && hint[0].text.startsWith('⏳ Scalp Desk 24/7-Dienst (Server ')
-    && hint[0].text.includes('dieser Bot (@kursalarm_bot) und die Chat-ID 987654321 (privat „Nico“)') && hint[0].text.includes('install.sh | sudo bash -s -- --neu') && logs.some(l => /^Hinweis an Telegram gesendet: Dienst wartet auf die Übergabe der App \(Bot @kursalarm_bot, Chat 987654321\)/.test(l)), hint[0]?.text.split('\n')[0]);
+  check('Nach 3 Minuten ohne Datei: ein Hinweis per Telegram (mit Ton), mit Bot, Chat-ID und Befehl zum Neu-Eingeben', hint.length === 1 && !hint[0].disable_notification && hint[0].text.startsWith('<b>⏳ Dienst wartet auf die App</b>') && hint[0].parse_mode === 'HTML'
+    && hint[0].text.includes('Bot: @kursalarm_bot') && hint[0].text.includes('Chat-ID: 987654321 (privat „Nico“)') && hint[0].text.includes('install.sh | sudo bash -s -- --neu') && logs.some(l => /^Hinweis an Telegram gesendet: Dienst wartet auf die Übergabe der App \(Bot @kursalarm_bot, Chat 987654321\)/.test(l)), hint[0]?.text.split('\n')[0]);
   for (let i = 0; i < 30; i++) await step(w, 25e3); // weitere 12,5 min
   check('… kein zweiter Hinweis am selben Tag; Protokollzeile alle 10 Minuten wiederholt', sentMsgs(0).length === 1 && logs.filter(l => l.startsWith('Warte auf die Übergabe')).length === 2, String(logs.filter(l => l.startsWith('Warte auf die Übergabe')).length));
   w = make(); now += 3600e3; await w.tick(); for (let i = 0; i < 9; i++) await step(w, 25e3);
@@ -79,13 +79,13 @@ const TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', CHAT = '987654321'
   pin({ ...base, tag: 'ab12', at: t0, alarms: [alarm('a1', 103.5)] });
   await w.tick(); w.saveStateNow();
   check('Protokoll: „Übergabe erhalten“ mit Nachricht, Zeit der App, Gerät und Kennung', logs.includes('Übergabe erhalten: Nachricht #501 · App 30.09. 12:26 · Safari, iPhone · #ab12'), logs.find(l => l.startsWith('Übergabe')));
-  check('Protokoll: „Alarme geladen“ mit den Marken', logs.includes('Alarme geladen: 1 Alarm, 0 Positionen – Kurs-Alarm BTC auf/über 103,50 USDT'), logs.find(l => l.startsWith('Alarme geladen')));
+  check('Protokoll: „Alarme geladen“ mit den Marken', logs.includes('Alarme geladen: 1 Alarm, 0 Positionen – Kurs-Alarm BTC auf/über 103,50 USD'), logs.find(l => l.startsWith('Alarme geladen')));
   const svc = (pinned.caption.split('\n').find(l => l.startsWith('Dienst:')) || '');
   check('Angeheftete Nachricht: „Dienst: aktiv · … · v1.4.0 · #ab12 übernommen“; Protokoll „Bestätigung eingetragen“', svc === `Dienst: aktiv · 30.09. 12:26 · v${W.VERSION} · #ab12 übernommen` && logs.some(l => l.startsWith('Bestätigung eingetragen: angeheftete Nachricht zeigt „aktiv · #ab12 übernommen“')), svc);
   let ack = sentMsgs(tA);
   check('Bestätigung per Telegram: lautlos, mit der neuen Marke und dem Hinweis „auch bei geschlossener App“', ack.length === 1 && ack[0].disable_notification === true
-    && ack[0].text === '✅ 24/7-Dienst hat übernommen (12:26 Uhr)\n• Kurs-Alarm BTC auf/über 103,50 USDT\nBeobachtet jetzt: 1 Kurs-Alarm, 0 Positionen mit Stop/Ziel – auch bei geschlossener App.'
-    && logs.some(l => l.startsWith('Bestätigung an Telegram gesendet: 1 Marke beobachtet, neu: Kurs-Alarm BTC auf/über 103,50 USDT')), ack[0]?.text.replace(/\n/g, ' ⏎ '));
+    && ack[0].text === '<b>✅ Dienst hat übernommen</b>\n\n<b>Kurs-Alarm BTC</b>\n⭐ <b>Alarm-Level: 103,5000 USD</b> ⭐ (auf/über)\n\nKurs-Alarme: 1\nPositionen mit Stop/Ziel: 0\nAuch bei geschlossener App\n🕐 12:26:05'
+    && logs.some(l => l.startsWith('Bestätigung an Telegram gesendet: 1 Marke beobachtet, neu: Kurs-Alarm BTC auf/über 103,50 USD')), ack[0]?.text.replace(/\n/g, ' ⏎ '));
   check('Protokoll: erste Kursprüfung der neuen Marke mit Kurs und Abstand', logs.some(l => l === 'Kursprüfung: Kurs-Alarm BTC auf/über 103,50 – Kurs 100,00, noch 3,50 % entfernt'), logs.find(l => l.startsWith('Kursprüfung')));
   // App liest die Zeile des Dienstes 1.4 wie bisher
   const appSrc = fs.readFileSync(require('path').join(__dirname, '..', 'weather-widget-v2.html'), 'utf8'), fn = /function s247Parse\(pm, now = Date\.now\(\)\) \{[\s\S]*?\n\}/.exec(appSrc)?.[0], lastFn = /function s247Last\(line, now\) \{[\s\S]*?\n\}/.exec(appSrc)?.[0];
@@ -96,34 +96,34 @@ const TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', CHAT = '987654321'
   logs = []; rows = [k(t0 - M, 100, 100.4, 99.8, 100), k(t0, 100, 100.2, 99.9, 100), k(t0 + M, 100, 103.7, 100, 103.6)]; const tB = now + 16e3;
   await step(w, 16e3); await step(w, 16e3);
   check('Kurs über dem Alarm: „Alarm ausgelöst“, dann „Telegram gesendet“, Meldung mit Ton', logs.some(l => l === 'Alarm ausgelöst: Kurs-Alarm BTC auf/über 103,50 (Kurs 103,60)') && logs.some(l => /^Telegram gesendet: Kurs-Alarm BTC \(Nachricht #\d+\)$/.test(l))
-    && sentMsgs(tB).filter(x => /^🔔 Kurs-Alarm BTC/.test(x.text) && !x.disable_notification).length === 1, logs.filter(l => /^(Alarm|Telegram)/.test(l)).join(' | '));
+    && sentMsgs(tB).filter(x => /^<b>🟢⬆️ KURS-ALARM · BTC/.test(x.text) && !x.disable_notification).length === 1, logs.filter(l => /^(Alarm|Telegram)/.test(l)).join(' | '));
   // zwei neue Übergaben kurz nacheinander: eine Bestätigung mit dem neuesten Stand, nur das Neue
   const tC = now; pin({ ...base, tag: 'cd34', at: now, alarms: [alarm('a1', 103.5), alarm('e1', 2600, 'ETHUSDT')] }); w.next.config = 0; await step(w, 1000);
   pin({ ...base, tag: 'ef56', at: now, alarms: [alarm('a1', 103.5), alarm('e1', 2600, 'ETHUSDT'), alarm('s1', 150, 'SOLUSDT', 'below')] }); w.next.config = 0; await step(w, 5000);
-  check('Neue Übergabe innerhalb einer Minute: noch keine zweite Bestätigung', sentMsgs(tC).filter(x => x.text.startsWith('✅')).length === 0);
+  check('Neue Übergabe innerhalb einer Minute: noch keine zweite Bestätigung', sentMsgs(tC).filter(x => x.text.startsWith('<b>✅ Dienst hat übernommen')).length === 0);
   for (let i = 0; i < 4; i++) await step(w, 16e3);
-  ack = sentMsgs(tC).filter(x => x.text.startsWith('✅'));
-  check('… danach eine Bestätigung mit beiden neuen Alarmen (ohne den schon bestätigten)', ack.length === 1 && ack[0].text.includes('• Kurs-Alarm ETH auf/über 2.600,00 USDT\n• Kurs-Alarm SOL auf/unter 150,00 USDT\nBeobachtet jetzt: 3 Kurs-Alarme') && !ack[0].text.includes('BTC'), ack[0]?.text.replace(/\n/g, ' ⏎ '));
+  ack = sentMsgs(tC).filter(x => x.text.startsWith('<b>✅ Dienst hat übernommen'));
+  check('… danach eine Bestätigung mit beiden neuen Alarmen (ohne den schon bestätigten)', ack.length === 1 && ack[0].text.includes('<b>Kurs-Alarm ETH</b>\n⭐ <b>Alarm-Level: 2.600,00 USD</b> ⭐ (auf/über)') && ack[0].text.includes('<b>Kurs-Alarm SOL</b>\n⭐ <b>Alarm-Level: 150,0000 USD</b> ⭐ (unter)') && ack[0].text.includes('Kurs-Alarme: 3') && !ack[0].text.includes('BTC'), ack[0]?.text.replace(/\n/g, ' ⏎ '));
   // nur entfernt (z. B. Alarm ausgelöst und aus der App genommen): keine Bestätigung
   const tD = now; pin({ ...base, tag: 'gh78', at: now, alarms: [alarm('e1', 2600, 'ETHUSDT'), alarm('s1', 150, 'SOLUSDT', 'below')] }); w.next.config = 0; for (let i = 0; i < 5; i++) await step(w, 16e3);
-  check('Übergabe, die nur etwas entfernt: keine Bestätigung per Telegram (aber in der angehefteten Nachricht bestätigt)', !sentMsgs(tD).some(x => x.text.startsWith('✅')) && / · #gh78 übernommen$/.test(pinned.caption.split('\n').find(l => l.startsWith('Dienst:'))));
+  check('Übergabe, die nur etwas entfernt: keine Bestätigung per Telegram (aber in der angehefteten Nachricht bestätigt)', !sentMsgs(tD).some(x => x.text.startsWith('<b>✅ Dienst hat übernommen')) && / · #gh78 übernommen$/.test(pinned.caption.split('\n').find(l => l.startsWith('Dienst:'))));
   // Neustart mit derselben Datei: keine erneute Bestätigung, Protokoll nennt den gespeicherten Stand
   const tE = now; logs = []; w = make(); w.stopped = true; const realExit = process.exit; process.exit = () => {}; try { await w.start(); } finally { process.exit = realExit; }
   await w.tick(); for (let i = 0; i < 4; i++) await step(w, 16e3);
   check('Neustart mit derselben Datei: Protokoll „gestartet · Bot … · Chat …“ und „Übergabe aus dem gespeicherten Zustand“, keine neue Bestätigung', logs.some(l => /^Scalp Desk 24\/7-Dienst \d+\.\d+\.\d+ gestartet · Bot @kursalarm_bot \(ID 123456789\) · Chat 987654321 · Node .* · prüft die Übergabe alle 20 s, die Kurse alle 15 s$/.test(l))
-    && logs.some(l => l.startsWith('Übergabe aus dem gespeicherten Zustand (#gh78): 2 Marken – Kurs-Alarm ETH')) && !sentMsgs(tE).some(x => x.text.startsWith('✅')), logs.slice(0, 3).join(' | '));
+    && logs.some(l => l.startsWith('Übergabe aus dem gespeicherten Zustand (#gh78): 2 Marken – Kurs-Alarm ETH')) && !sentMsgs(tE).some(x => x.text.startsWith('<b>✅ Dienst hat übernommen')), logs.slice(0, 3).join(' | '));
   // Übersicht alle 10 Minuten
   logs = []; for (let i = 0; i < 40; i++) await step(w, 16e3);
   const sum = logs.filter(l => l.startsWith('Lebenszeichen:'));
   check('Alle 10 Minuten eine Übersicht: aktiv, Marken, Kursprüfungen, Kurse', sum.length === 1 && /^Lebenszeichen: aktiv · 2 Marken beobachtet · \d+ Kursprüfungen seit der letzten Übersicht · (ETH|SOL) /.test(sum[0]), sum.join(' | '));
   // Übergabe ausgeschaltet
   const tF = now; pin({ ...base, tag: 'ij90', at: now, on: false, alarms: [] }); w.next.config = 0; for (let i = 0; i < 5; i++) await step(w, 16e3);
-  check('Übergabe in der App ausgeschaltet: „⏸ … ausgeschaltet“ (lautlos)', sentMsgs(tF).filter(x => x.text.startsWith('⏸ 24/7-Dienst: Übergabe in der App ausgeschaltet') && x.disable_notification).length === 1);
+  check('Übergabe in der App ausgeschaltet: „⏸ … ausgeschaltet“ (lautlos)', sentMsgs(tF).filter(x => x.text.startsWith('<b>⏸ Dienstübergabe ausgeschaltet</b>') && x.disable_notification).length === 1);
   // --status mit bestätigter Datei
   pin({ ...base, tag: 'kl12', at: now, alarms: [alarm('a1', 103.5)] }); w.next.config = 0; for (let i = 0; i < 2; i++) await step(w, 16e3);
   logs = []; ok = await w.status();
   check('--status mit Datei: ✓ Datei, ✓ vom Dienst bestätigt (mit Version), ✓ beobachtete Marken, Zustand, Binance; Ergebnis in Ordnung', ok === true && logs.some(l => l.startsWith('✓ Datei der App angeheftet (Nachricht #501) – App: '))
-    && logs.some(l => l.startsWith(`✓ Vom Dienst bestätigt: „Dienst: aktiv · 30.09. `) && l.includes(`v${W.VERSION} · #kl12 übernommen“`)) && logs.some(l => l === '✓ Beobachtet: Kurs-Alarm BTC auf/über 103,50 USDT')
+    && logs.some(l => l.startsWith(`✓ Vom Dienst bestätigt: „Dienst: aktiv · 30.09. `) && l.includes(`v${W.VERSION} · #kl12 übernommen“`)) && logs.some(l => l === '✓ Beobachtet: Kurs-Alarm BTC auf/über 103,50 USD')
     && logs.some(l => l.startsWith('• Zustand: zuletzt zugestellt')) && logs.some(l => l.startsWith('✓ Binance Spot erreichbar')) && logs.at(-1) === 'Ergebnis: alles in Ordnung.', logs.join(' | ').slice(0, 400));
 
   // ==== Datei von einem anderen Bot (Gruppe mit zwei Bots) ====
@@ -135,7 +135,7 @@ const TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', CHAT = '987654321'
     && logs.some(l => l.includes("nicht möglich – die angeheftete Datei hat ein anderer Bot gesendet")), logs.filter(l => /Bot|Bestätigung/.test(l)).join(' | ').slice(0, 300));
   rows = [k(t0 - M, 100, 100.4, 99.8, 100), k(t0, 100, 100.2, 99.9, 100), k(t0 + M, 100, 103.7, 100, 103.6)]; const tG = now;
   await step(w, 16e3); await step(w, 16e3);
-  check('… und meldet den Alarm', sentMsgs(tG).some(x => /^🔔 Kurs-Alarm BTC/.test(x.text)));
+  check('… und meldet den Alarm', sentMsgs(tG).some(x => /^<b>🟢⬆️ KURS-ALARM · BTC/.test(x.text)));
   editFails = '';
   check('Kein Token im Protokoll', !logs.some(l => l.includes(TOKEN)));
   try { fs.unlinkSync(statePath); } catch {}

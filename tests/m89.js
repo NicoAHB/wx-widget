@@ -3,7 +3,7 @@ const h = require('./harness');
 let pass = 0, fail = 0;
 const check = (name, ok) => { ok ? pass++ : fail++; console.log(`${ok ? '✓' : '✗'} ${name}`); };
 (async () => {
-  await h.setup(); const browser = await h.launch();
+  await h.setup(); const browser = await h.launch({ workspace: 'fresh' });
   try {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }), page = await ctx.newPage(), errors = [];
     page.on('pageerror', e => errors.push(e.message));
@@ -34,8 +34,9 @@ const check = (name, ok) => { ok ? pass++ : fail++; console.log(`${ok ? '✓' : 
     check('Demo grün und Start-Coin sichtbar', await page.locator('.muster-run-status.running').count() === 1 && (await page.locator('.muster-run-status').innerText()).includes('BTC/USDT'));
     await page.evaluate(() => __intervals.setMarket('LTCUSDT', '15m')); await page.waitForFunction(() => __g05.state.loadedSymbol === 'LTCUSDT' && !__g05.state.busy);
     check('Chartwechsel zu LTC verändert gestarteten BTC-Lauf nicht', await page.evaluate(() => __muster.paper.state.book.symbol === 'BTCUSDT') && (await page.locator('.muster-run-status').innerText()).includes('BTC/USDT'));
-    await page.getByRole('button', { name: 'Demo beenden', exact: true }).click(); check('Roter Beenden-Button stoppt nur diese Demo', !(await page.evaluate(() => __muster.paper.state.book.active)) && await page.locator('.muster-stop').count() === 1);
-    const personal = await page.evaluate(() => JSON.stringify({ p: __g05.state.positions, t: __g05.state.trades })); await page.getByRole('button', { name: 'Demo-Trade-Daten löschen', exact: true }).click(); check('Demo löschen erhält persönliche Positionen/Trades', await page.evaluate(() => __muster.paper.state.book === null) && await page.evaluate(() => JSON.stringify({ p: __g05.state.positions, t: __g05.state.trades })) === personal);
+    await page.getByRole('button', { name: 'Demo beenden', exact: true }).click(); await page.waitForFunction(() => __muster.paper.state.book?.active === false); check('Roter Beenden-Button stoppt nur diese Demo', !(await page.evaluate(() => __muster.paper.state.book.active)) && await page.locator('.muster-stop').count() === 1);
+    const personal = await page.evaluate(() => JSON.stringify({ p: __g05.state.positions, t: __g05.state.trades })); await page.getByRole('button', { name: 'Demo-Trade-Daten löschen', exact: true }).click(); await page.waitForFunction(() => __muster.paper.state.book === null); check('Demo löschen erhält persönliche Positionen/Trades', await page.evaluate(() => __muster.paper.state.book === null) && await page.evaluate(() => JSON.stringify({ p: __g05.state.positions, t: __g05.state.trades })) === personal);
+    await page.evaluate(() => document.querySelectorAll('#muster-bot details.muster-group').forEach(d => d.open = true));
     for (const width of [320, 390, 768, 1440]) { await page.setViewportSize({ width, height: 900 }); await page.waitForTimeout(100); check(`${width}px: Felder und Labels bleiben im Panel, Tabelle separat scrollbar`, await page.evaluate(() => { const root = document.querySelector('#muster-bot').getBoundingClientRect(); return [...document.querySelectorAll('.muster-field')].filter(n => n.offsetWidth).every(n => { const r = n.getBoundingClientRect(); return r.left >= root.left - 1 && r.right <= root.right + 1 && n.scrollWidth <= n.clientWidth + 1; }); })); }
     check('Kein JavaScript-Absturz, alte Chart-/Buchfunktionen weiter vorhanden', errors.length === 0 && await page.evaluate(() => !!__g05 && !!__g09 && !!__paper)); await ctx.close();
   } finally { await browser.close(); await h.teardown(); }

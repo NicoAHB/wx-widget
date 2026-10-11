@@ -186,3 +186,11 @@ UI-Gesamtlauf 3.58.0: m4 wartete vor dem Value-Area-Vergleich nur auf Signalzeit
 3.63.0: `unit-telegram-format.js` prüft deutsches USD-/HTML-Format, Grenzlängen und eindeutigen Klartext-Fallback. `unit-patterns-only.js` prüft den reinen Dienst auf echten festen pat-1-Reihen einschließlich Erststart, Neustart, Duplikaten, verlorener Antwort und Rate-Limit. Nur lokale Attrappen, keine echte VM oder Bot-Zugangsdaten.
 
 3.63.0: `unit-market-intervals.js`/`m88.js` prüfen 2h, Speichern, Indikatoren, Muster-Sprung und bekannte Intervalle. `unit-muster-bot.js` prüft kausale Strategie, Gebühren, Größenbegrenzung, Gaps, Einstiege und 27 Kombinationen; `unit-muster-feed.js` prüft Pagination/Rate-Limits/Abbruch; `unit-muster-paper.js` prüft eigenen Lauf, Coinbindung, Zustellmerker, Stop/Löschen und konkurrierende Änderungen. `m89.js` prüft den tatsächlichen Worker mit allen 27 Zeilen, Touch-Hilfe, Curve/Sortierung, Demo und 320–1440 px.
+
+- `unit-github-sync.js`: echte Web-Crypto-Rundläufe mit 600.000 PBKDF2-Iterationen, Metadatenintegrität, Secret-Ausschluss, UTF-8, Contents/SHA/409/422, private Repositorys und verständliche Fehler.
+- `m90.js`: zwei getrennte Geräteprofile, tatsächliche Verschlüsselungsdialoge, persönlicher Trade/neuere Einstellungen, falsche Passphrase, Notfallkopie/Rückgängig, neuerer Stand ohne Überschreiben und mobile Grenzen. Prüft auch entfernte Discord-Einrichtung.
+
+- `unit-pattern-projection.js`: horizontale/schräge Grenzen, Spitze, tatsächliche Invalidierung/Alter, abgeschlossene Kerzen, Kalenderintervalle und unveränderte Originale. Native 2h-/Projektionsabnahme zusätzlich in `m88.js`.
+- `m91.js`: tatsächliche HTML-/Klartext-Wege in Worker, Sicherungsdatei und Trade-PNG, richtige Chats sowie kein Fallback bei sonstigen 400-Fehlern.
+
+3.63.0: Release-Liste **158 serielle Ziele**. Telegram-Auszüge `tests/js/{pulse,econcal,s247}.js` entsprechen dem aktuellen App-Code und verwenden den tatsächlichen zentralen Formatter; Original-Auslöser, Mehrtab-/429-/Neustart-/Sendesperren bleiben geprüft. Discord-Regression prüft keinen Versand trotz alter Einstellungen. Neue native Fälle m87 22/22, m88 16/16, m89 18/18, m90 18/18, m91 8/8; Endlauf separat dokumentieren.

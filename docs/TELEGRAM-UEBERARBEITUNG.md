@@ -25,9 +25,9 @@ Leere Sicherungs-Chat-ID bedeutet weiterhin keine Sicherung. Nur der Bot-Token f
 
 Gezielte native Prüfung `tests/m87.js`: **22/22**, alle zwölf Werte, vier unabhängige Bots/Chats/Themen, identische private Chat-ID, alle Token-Rückfälle, kein Sicherungs-Chat-Rückfall, eigener Musterbot ohne Kursalarm-Token, Neuladen ohne Blur, älterer Tab beim Bearbeiten, Schalterabgleich, unveränderte Leerzeichen und App-Neustart. Ausschließlich lokale Attrappen; keine echten Bot-Zugänge oder Nachrichten. Erstdiagnose außerhalb des Repositories: `telegram-settings-before.log`.
 
-## Offen
+## Stand
 
-Zentrale HTML-Nachrichten und Klartext-Rückfall, Chartmuster-Dienst/Oracle-Anleitung, gemeinsame Intervalle/2h, eigener Muster-Bot, vollständige Endprüfung und gemeinsame Veröffentlichung.
+Alle beauftragten Module sind implementiert. Gezielte native Telegram-Einstellungen 22/22 und Versandwege 8/8, Format-/Dienstprüfungen bestanden. Vollständige gemeinsame Releaseprüfung und Veröffentlichung folgen; echte Bot-/Oracle-Abnahmen benötigen private Nutzereinrichtung.
 
 ## Gemeinsame Darstellung (Arbeitsstand)
 
@@ -35,4 +35,4 @@ Zentrale HTML-Nachrichten und Klartext-Rückfall, Chartmuster-Dienst/Oracle-Anle
 
 Nur eine eindeutige Telegram-Antwort „Format/Entities ungültig“ erlaubt einen einzelnen Klartextversuch. Timeout, verlorene Antwort, falscher Chat und Rate-Limit gelten weiter nach den vorhandenen Zustellregeln; der Format-Fallback erzeugt dabei keine zweite Nachricht. Trade-Fotos erhalten zusätzlich eine kurze Ergebnisbeschriftung; das Bild und die Auslöser bleiben erhalten.
 
-Neue Format-/Fallbacktests sind geschrieben. Sie werden auf Nutzerwunsch erst nach den übrigen Aufgaben ausgeführt. Teil 1 wurde davor separat mit 22/22 Fällen geprüft.
+Format-/Fallbacktests wurden nach Abschluss aller Ergänzungen ausgeführt. Native HTML-/Klartext-Wege für Text, Sicherung und Trade-Foto: 8/8. Teil 1 wurde davor separat mit 22/22 Fällen geprüft. Technische Dienstübergaben zeigen ebenfalls kopierbare USD-Preise und hervorgehobene Alarm-/Zielmarken.

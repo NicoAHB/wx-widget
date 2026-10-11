@@ -13,10 +13,15 @@ const fake = () => ({ value: '', hidden: false, textContent: '', title: '', data
 const els = new Map(), $ = id => { if (!els.has(id)) els.set(id, fake()); return els.get(id); };
 const el = (tag, cls, text) => Object.assign(fake(), { tag, className: cls, textContent: text === undefined ? '' : text });
 const btn = (cls, text) => el('button', cls, text);
-const A = new Function('store', '$', 'el', 'btn', 'beep', 'desktopNotify', 'notifyChannels', 'fetch', src + '\nreturn { ecParse, ecFilter, ecWarnGroups, ecIn, ecDay, ecNum, ecDe, renderEcon, ec };')(
-  store, $, el, btn, () => { calls.beep++; }, (t, b, k) => calls.notify.push([t, b, k]), async (type, key, text) => calls.chan.push([type, key, text]), async () => { throw new TypeError('offline'); });
+let A;
+async function createApp() {
+const { formatMessage } = await import('../shared/telegram-format.mjs');
+A = new Function('workspace', 'store', '$', 'el', 'btn', 'beep', 'desktopNotify', 'notifyChannels', 'fetch', 'formatMessage', src + '\nreturn { ecParse, ecFilter, ecWarnGroups, ecIn, ecDay, ecNum, ecDe, renderEcon, ec };')(
+  { mode: 'all' }, store, $, el, btn, () => { calls.beep++; }, (t, b, k) => calls.notify.push([t, b, k]), async (type, key, text) => calls.chan.push([type, key, text]), async () => { throw new TypeError('offline'); }, formatMessage);
+}
 const min = 60e3, h = 60 * min, NOW = Date.parse('2026-09-29T12:00:00Z');
 (async () => {
+  await createApp();
   // ---- GitHub-Job: Aufbereitung und Übergabe an die App ----
   const job = await import(JOB);
   const ff = [{ title: 'CPI m/m', country: 'USD', date: '2026-10-01T08:30:00-04:00', impact: 'High', forecast: '0.3%', previous: '0.2%' },
@@ -66,7 +71,7 @@ const min = 60e3, h = 60 * min, NOW = Date.parse('2026-09-29T12:00:00Z');
   await new Promise(r => setTimeout(r, 10));
   const chip = $('lb-news'), box = $('econ-warn');
   check('Warnung in der Live-Leiste und im Kalender', !chip.hidden && chip.textContent === '⚠ in 10 min: CPI m/m +1' && !box.hidden && /^⚠ in 10 min \(.+\): USD CPI m\/m, Core CPI m\/m – hohe Bedeutung/.test(box.textContent), `${chip.textContent} | ${box.textContent}`);
-  check('Vorab gemeldet: Ton, Systemmeldung, Telegram/Discord (Art „news“)', calls.beep === 1 && calls.notify.length === 1 && calls.chan.length === 1 && calls.chan[0][0] === 'news' && /Wirtschaftstermin in 10 min/.test(calls.chan[0][2]) && /USD CPI m\/m, Core CPI m\/m/.test(calls.chan[0][2]), JSON.stringify(calls.chan[0]));
+  check('Vorab gemeldet: Ton, Systemmeldung, Telegram (Art „news“)', calls.beep === 1 && calls.notify.length === 1 && calls.chan.length === 1 && calls.chan[0][0] === 'news' && /WIRTSCHAFTSTERMIN · in 10 min/.test(calls.chan[0][2]) && calls.chan[0][2].includes('Währung: USD') && calls.chan[0][2].includes('Termin: CPI m/m\nTermin: Core CPI m/m'), JSON.stringify(calls.chan[0]));
   A.renderEcon(NOW + 30e3); A.renderEcon(NOW + 60e3); await new Promise(r => setTimeout(r, 10));
   check('Nur einmal je Termin gemeldet', calls.beep === 1 && calls.chan.length === 1);
   A.ec.seen.clear(); A.renderEcon(NOW + 90e3); await new Promise(r => setTimeout(r, 10));

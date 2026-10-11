@@ -10,6 +10,7 @@ const fs = require('fs'), path = require('path'), os = require('os');
 let pass = 0, fail = 0; const check = (n, ok, info = '') => { ok ? pass++ : fail++; console.log(`${ok ? '✓' : '✗'} ${n}${info ? ' — ' + info : ''}`); };
 const TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', CHAT = '987654321', M = 60e3;
 (async () => {
+  const { formatMessage, telegramPlain } = await import('../shared/telegram-format.mjs');
   const W = await import(process.env.S247_FILE || path.join(require('path').join(__dirname, '..', 'server/scalpdesk-247.mjs'))); // S247_FILE: andere Fassung prüfen
   // ---- Anzeige wie in der App ----
   check('Preise wie in der App (2 Stellen ab 100, 4 unter 100, 4 signifikante unter 1)', W.priceText(64614.15) === '64.614,15' && W.priceText(1.4712) === '1,4712' && W.priceText(0.012345) === '0,01235' && W.priceText(0.5) === '0,5000',
@@ -42,27 +43,27 @@ const TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', CHAT = '987654321'
   v = W.rangeView(rows, t0 + 2 * M + 40e3, t0 + 2 * M + 30e3, { t: t0 + 2 * M, h: 102.8, l: 101.5, at: t0 + 2 * M + 20e3 });
   check('… aber nicht, wenn die letzte Prüfung vor dem Scharfschalten war', v.hi === 102.5 && v.lo === 102.5, JSON.stringify(v));
   check('Marke per Docht / direkt / nicht', JSON.stringify(W.touched(103.5, false, { price: 102, hi: 104, lo: 101 })) === '{"wick":true,"extreme":104}' && W.touched(101.5, true, { price: 101, hi: 102, lo: 101 }).wick === false && W.touched(105, false, { price: 102, hi: 104, lo: 101 }) === null);
-  check('Texte wie in der App', W.alarmText(c.alarms[0], 64990, { wick: true, extreme: 65020 }) === '🔔 Kurs-Alarm BTC\nBTC auf/über 65.000,00 USDT kurz per Docht erreicht (bis 65.020,00) · Kurs 64.990,00\nNotiz: Ausbruch'
-    && W.posText(c.positions[0], 'tp', 2601, { wick: false }) === '🎯 ETH Long: Take-Profit erreicht\nETH Long: Take-Profit 2.600,00 erreicht · Kurs 2.601,00', W.posText(c.positions[0], 'tp', 2601, { wick: false }).replace(/\n/g, ' ⏎ '));
+  check('Texte wie in der App', W.alarmText(c.alarms[0], 64990, { wick: true, extreme: 65020 }) === '<b>🟢⬆️ KURS-ALARM · BTC</b> · <code>64.990,00 USD</code>\n🎯 Level erreicht: ⭐ <b>65.000,00 USD</b> ⭐ (auf/über)\n📏 Abstand zum Level: −10,00 USD (−0,02 %)\n\nAuslösung: kurz per Docht erreicht (bis 65.020,00)\nNotiz: Ausbruch'
+    && W.posText(c.positions[0], 'tp', 2601, { wick: false }) === '<b>🟢⬆️ TAKE-PROFIT · ETH Long</b> · <code>2.601,00 USD</code>\n🎯 Level erreicht: ⭐ <b>2.600,00 USD</b> ⭐\nAuslösung: erreicht', W.posText(c.positions[0], 'tp', 2601, { wick: false }).replace(/\n/g, ' ⏎ '));
 
   // ---- Termine ----
   const now = Date.UTC(2026, 8, 30, 12, 20), ev = [{ t: now + 10 * M, cur: 'USD', impact: 'high', title: 'CPI m/m', forecast: '0.3%', previous: '0.2%' }, { t: now + 10 * M, cur: 'USD', impact: 'high', title: 'Core CPI m/m', forecast: '0.3%', previous: '' },
     { t: now + 5 * M, cur: 'EUR', impact: 'high', title: 'ECB Press Conference' }, { t: now + 8 * M, cur: 'USD', impact: 'medium', title: 'Crude Oil Inventories' }, { t: now - M, cur: 'USD', impact: 'high', title: 'Schon vorbei' }, { t: now + 40 * M, cur: 'USD', impact: 'high', title: 'Später' }];
   const due = W.econDue(ev, now, { warn: 15, cur: 'usd' }), dueAll = W.econDue(ev, now, { warn: 15, cur: 'all' });
   check('Termine: hohe Bedeutung, gewählte Währung, im Warnfenster, noch nicht vorbei; gleiche Zeit als einer', due.length === 1 && due[0].list.length === 2 && dueAll.length === 2 && W.econDue(ev, now, { warn: 0, cur: 'all' }).length === 0);
-  check('Termin-Text wie in der App', W.econText(due[0], now, 'Europe/Berlin') === '⚠ Wirtschaftstermin in 10 min (14:30 Uhr)\nUSD CPI m/m, Core CPI m/m – hohe Bedeutung, starke Kursausschläge möglich.\nPrognose 0,3 %, vorher 0,2 % · Prognose 0,3 %',
+  check('Termin-Text wie in der App', W.econText(due[0], now, 'Europe/Berlin') === '<b>⚠️ WIRTSCHAFTSTERMIN · in 10 min (14:30 Uhr)</b>\nWährung: USD\nBedeutung: hoch\nStarke Kursausschläge möglich\n\nTermin: CPI m/m\nPrognose: 0,3 %\nVorher: 0,2 %\nTermin: Core CPI m/m\nPrognose: 0,3 %',
     W.econText(due[0], now, 'Europe/Berlin').replace(/\n/g, ' ⏎ '));
 
   // ---- Beschriftung der angehefteten Nachricht, von der App gelesen ----
   const capOk = W.caption(c, W.statusLine({ ok: true, now: T, c })), capBad = W.caption(c, W.statusLine({ ok: false, now: T, c, problem: 'Kurse nicht abrufbar seit 12:10 (BTC: Binance nicht erreichbar)' }));
-  check('Beschriftung: Kennung, Zeile der App, Zeile des Dienstes', capOk === `📌 Scalp Desk · 24/7-Dienst\nApp: 30.09. 12:26 · 1 Alarm, 1 Position · Chrome, Windows · #ab12\nDienst: aktiv · 30.09. 12:26 · v${W.VERSION} · #ab12 übernommen`, capOk.replace(/\n/g, ' ⏎ '));
+  check('Beschriftung: Kennung, Zeile der App, Zeile des Dienstes', capOk === `<b>📌 Scalp Desk · Dienstübergabe</b>\nApp: 30.09. 12:26 · 1 Alarm, 1 Position · Chrome, Windows · #ab12\nDienst: aktiv · 30.09. 12:26 · v${W.VERSION} · #ab12 übernommen`, capOk.replace(/\n/g, ' ⏎ '));
   const src = fs.readFileSync(path.join(__dirname, 'js', 's247.js'), 'utf8');
-  const A = new Function('store', 'navigator', '$', 'broadcastData', 'state', 'chan', 'APP_VERSION', 'ec', 'tgApi', 'tgPost', 'tgConfigured', 'document', 'addEventListener', 'renderChanSummary',
+  const A = new Function('store', 'navigator', '$', 'broadcastData', 'state', 'chan', 'APP_VERSION', 'ec', 'tgApi', 'tgPost', 'tgConfigured', 'document', 'addEventListener', 'renderChanSummary', 'formatMessage', 'TELEGRAM_CAPTION_LIMIT', 'svcOn', 'tgtOn',
     `${src}\nreturn { s247, s247Parse, s247Covers, s247Caption, s247Payload, s247Keys, s247Stamp };`)(
     { get: () => null, set: () => true, claim: async () => true, release: async () => {} }, { userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/140.0 Safari/537.36', maxTouchPoints: 0 }, () => null, () => {},
     { alarms: [{ id: 'a1', symbol: 'BTCUSDT', source: 'spot', dir: 'above', price: 65000, note: 'Ausbruch', createdAt: T - 5 * M, triggeredAt: null }, { id: 'a2', symbol: 'ETHUSDT', source: 'spot', dir: 'below', price: 2000, note: '', createdAt: 1, armedAt: 2, triggeredAt: 5 }],
       positions: [{ id: 'p1', symbol: 'ETHUSDT', source: 'futures', side: 'long', tp: 2600, sl: 2450, openedAt: T - 60 * M, ack: { tp: false, sl: true }, qty: 3, entry: 2500 }] },
-    { tg: { on: true }, ev: { alarm: true, pos: true, news: true } }, '3.23.0', { cfg: { warn: 15, cur: 'usd' } }, null, null, () => true, { hidden: false, addEventListener() {} }, () => {}, () => {});
+    { tg: { on: true }, ev: { alarm: true, pos: true, news: true } }, '3.23.0', { cfg: { warn: 15, cur: 'usd' } }, null, null, () => true, { hidden: false, addEventListener() {} }, () => {}, () => {}, formatMessage, 1024, () => false, () => true);
   const pm = (caption, edit) => ({ message_id: 501, date: Math.floor(T / 1000) - 3600, edit_date: edit, caption, document: { file_name: 'scalpdesk-247.json' } });
   let st = A.s247Parse(pm(capOk, Math.floor(T / 1000)), T + 60e3);
   check('App liest die Zeile des Dienstes: aktiv, Stand #ab12, frisch, Gerät', st.found && st.svc.ok && st.svc.tag === 'ab12' && st.tag === 'ab12' && st.fresh && st.dev === 'Chrome, Windows' && st.beat === Math.floor(T / 1000) * 1000, JSON.stringify(st));
@@ -124,30 +125,30 @@ const TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', CHAT = '987654321'
   const pin = (conf, id = 501, uid = 'U1') => { files.set('f' + uid, JSON.stringify(conf)); pinned = { message_id: id, date: 1, caption: '📌 Scalp Desk · 24/7-Dienst\nApp: …\nDienst: wartet auf Rückmeldung …', document: { file_id: 'f' + uid, file_unique_id: uid, file_name: 'scalpdesk-247.json' } }; };
   const statePath = path.join(os.tmpdir(), `s247-state-${process.pid}.json`); try { fs.unlinkSync(statePath); } catch {}
   const logs = [], w = new W.Watcher({ token: TOKEN, chat: CHAT, statePath, now: () => now2, log: (...a) => logs.push(a.join(' ')) });
-  const INFO = /^(✅ 24\/7-Dienst hat übernommen|⏸ 24\/7-Dienst|⏳ Scalp Desk 24\/7-Dienst)/; // 1.4: Bestätigung und Hinweis sind keine Meldungen
+  const INFO = /^<b>(✅ Dienst hat übernommen|⏸ Dienstübergabe|⏳ Dienst wartet)/; // 1.4: Bestätigung und Hinweis sind keine Meldungen
   const sent = () => tgLog.filter(x => x.method === 'sendMessage' && !x.failed && !INFO.test(x.text || '')).map(x => x.text);
   const infos = () => tgLog.filter(x => x.method === 'sendMessage' && !x.failed && INFO.test(x.text || '')).map(x => x.text);
   const svcLine = () => (pinned?.caption || '').split('\n').find(l => l.startsWith('Dienst:')) || ''; // 1.3: darunter folgt „Zustellung: …“
   pin({ ...base, alarms: [{ id: 'a1', symbol: 'BTCUSDT', source: 'spot', dir: 'above', price: 103.5, note: '', armedAt: t0 }], positions: [{ id: 'p1', symbol: 'BTCUSDT', source: 'spot', side: 'long', tp: 104.5, sl: 97, since: t0, ack: { tp: false, sl: false } }] });
   await w.tick();
-  check('Dienst: Datei gelesen, Stand bestätigt („Dienst: aktiv … #ab12 übernommen“)', w.conf?.data.alarms.length === 1 && /^Dienst: aktiv · .* · #ab12 übernommen$/.test(svcLine()) && /\nZustellung: geprüft, noch keine Meldung$/.test(pinned.caption), pinned.caption.split('\n').slice(-2).join(' ⏎ '));
+  check('Dienst: Datei gelesen, Stand bestätigt („Dienst: aktiv … #ab12 übernommen“)', w.conf?.data.alarms.length === 1 && /^Dienst: aktiv · .* · #ab12 übernommen$/.test(svcLine()) && /\nZustellung: geprüft, noch keine Meldung(?:\n|$)/.test(pinned.caption), pinned.caption.split('\n').slice(-2).join(' ⏎ '));
   const st0 = A.s247Parse({ message_id: 700, date: 1, edit_date: Math.floor(Date.now() / 1000), caption: pinned.caption, document: { file_name: 'scalpdesk-247.json' } }, Date.now());
   check('… die App erkennt den Dienst ab 1.3 (Zeile „Zustellung:“), noch ohne Zustellung', st0.svc?.zv === true && st0.last === null, JSON.stringify({ zv: st0.svc?.zv, last: st0.last }));
   check('Erste Prüfung: nichts ausgelöst (laufende Kerze begann vor dem Scharfschalten)', sent().length === 0);
   // laufende Kerze steigt nach der ersten Prüfung auf 103.6 → Alarm (Docht)
   now2 += 16e3; klineRows = [rows[0], rows[1], k(t0 + 2 * M, 102, 103.6, 101, 102.5)]; w.next.price = 0; await w.tick();
-  check('Alarm per Docht der laufenden Kerze nach dem Scharfschalten: gemeldet', sent().length === 1 && /^🔔 Kurs-Alarm BTC\nBTC auf\/über 103,50 USDT kurz per Docht erreicht \(bis 103,60\) · Kurs 102,50\n\d\d:\d\d:\d\d Uhr · 24\/7-Dienst$/.test(sent()[0]), sent()[0]?.replace(/\n/g, ' ⏎ '));
+  check('Alarm per Docht der laufenden Kerze nach dem Scharfschalten: gemeldet', sent().length === 1 && sent()[0].includes('<b>🟢⬆️ KURS-ALARM · BTC</b> · <code>102,5000 USD</code>') && sent()[0].includes('<b>103,5000 USD</b>') && sent()[0].includes('Auslösung: kurz per Docht erreicht (bis 103,60)') && /🕐 \d\d:\d\d:\d\d$/.test(sent()[0]), sent()[0]?.replace(/\n/g, ' ⏎ '));
   now2 += 16e3; w.next.price = 0; await w.tick();
   check('Alarm nur einmal', sent().length === 1);
   // Ziel 104.5: neue Kerze erreicht 104.6 → gemeldet; Kurs bleibt dort → nicht erneut; weg (unter 104.5) und wieder hin → erneut
   now2 = t0 + 3 * M + 5e3; klineRows = [rows[1], k(t0 + 2 * M, 102, 103.6, 101, 102.5), k(t0 + 3 * M, 102.5, 104.6, 102.4, 104.55)]; w.next.price = 0; await w.tick();
-  check('Take-Profit erreicht: gemeldet', sent().length === 2 && /^🎯 BTC Long: Take-Profit erreicht/.test(sent()[1]), sent()[1]?.split('\n')[0]);
+  check('Take-Profit erreicht: gemeldet', sent().length === 2 && /^<b>🟢⬆️ TAKE-PROFIT · BTC Long/.test(sent()[1]), sent()[1]?.split('\n')[0]);
   now2 += 16e3; w.next.price = 0; await w.tick();
   check('Kurs bleibt am Ziel: keine zweite Meldung', sent().length === 2);
   now2 = t0 + 4 * M + 5e3; klineRows = [k(t0 + 2 * M, 102, 103.6, 101, 102.5), k(t0 + 3 * M, 102.5, 104.6, 102.4, 104.2), k(t0 + 4 * M, 104.2, 104.3, 104, 104.1)]; w.next.price = 0; await w.tick();
   check('Kurs wieder weg vom Ziel: wieder scharf', sent().length === 2 && !Object.keys(w.fired).some(x => x.includes(':tp:')));
   now2 = t0 + 5 * M + 5e3; klineRows = [k(t0 + 3 * M, 102.5, 104.6, 102.4, 104.2), k(t0 + 4 * M, 104.2, 104.3, 104, 104.1), k(t0 + 5 * M, 104.1, 104.7, 104, 104.6)]; w.next.price = 0; await w.tick();
-  check('Nächste Berührung: erneut gemeldet', sent().length === 3 && /Take-Profit/.test(sent()[2]));
+  check('Nächste Berührung: erneut gemeldet', sent().length === 3 && /TAKE-PROFIT/.test(sent()[2]));
   // Gleiche Datei: nicht neu laden; quittiert (ack) in der App: keine Meldung; Meldung aus: nichts
   const reads = tgLog.filter(x => x.method === 'getFile').length; w.next.config = 0; await w.tick();
   check('Unveränderte Datei wird nicht erneut geladen', tgLog.filter(x => x.method === 'getFile').length === reads);
@@ -164,7 +165,7 @@ const TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', CHAT = '987654321'
   // Termine: 10 min vorher gemeldet, einmal
   pin({ ...base, tag: 'ef56', alarms: [], positions: [] }, 501, 'U3'); calJson = { events: [{ t: now2 + 10 * M, cur: 'USD', impact: 'high', title: 'CPI m/m', forecast: '0.3%', previous: '0.2%' }] };
   w.next.config = 0; w.next.cal = 0; w.next.econ = 0; await w.tick(); w.next.econ = 0; await w.tick();
-  check('Wichtiger Termin in 10 min: einmal gemeldet', sent().length === 4 && /^⚠ Wirtschaftstermin in 10 min/.test(sent()[3]) && sent().filter(x => /Wirtschaftstermin/.test(x)).length === 1, sent()[3]?.split('\n')[0]);
+  check('Wichtiger Termin in 10 min: einmal gemeldet', sent().length === 4 && /^<b>⚠️ WIRTSCHAFTSTERMIN · in 10 min/.test(sent()[3]) && sent().filter(x => /WIRTSCHAFTSTERMIN/.test(x)).length === 1, sent()[3]?.split('\n')[0]);
   // Angeheftete Nachricht weg → nichts mehr melden; Zustand übersteht Neustart
   w.saveStateNow(); const w2 = new W.Watcher({ token: TOKEN, chat: CHAT, statePath, now: () => now2, log: () => {} });
   check('Zustand übersteht einen Neustart (Datei, gemeldete Termine)', w2.conf?.data.tag === 'ef56' && Object.keys(w2.fired).some(x => x.startsWith('econ-chan:')));
@@ -196,7 +197,7 @@ const TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', CHAT = '987654321'
   const wd2 = new W.Watcher({ token: TOKEN, chat: CHAT, statePath: stateD, now: () => nowD, log: () => {} });
   check('Neustart: die nicht zugestellte Meldung und der Sendefehler bleiben erhalten', wd2.out.length === 1 && wd2.out[0].label === 'Kurs-Alarm BTC' && wd2.out[0].tries === 2 && wd2.sendErr?.code === 400, JSON.stringify(wd2.out.map(m => m.label)));
   tgFail = null; nowD += 3 * 60e3; wd.next.price = 0; await wd.tick();
-  check('Telegram wieder in Ordnung: zugestellt, mit der Zeit des Auslösens und „(verspätet zugestellt um … – Telegram hatte sie zuerst abgelehnt)“', newD().length === 1 && /^🔔 Kurs-Alarm BTC\n[^\n]+\n17:00:16 Uhr · 24\/7-Dienst\n\(verspätet zugestellt um \d\d:\d\d Uhr – Telegram hatte sie zuerst abgelehnt\)$/.test(newD()[0]) && wd.out.length === 0 && wd.sendErr === null, newD()[0]?.replace(/\n/g, ' ⏎ '));
+  check('Telegram wieder in Ordnung: zugestellt, mit der Zeit des Auslösens und „(verspätet zugestellt um … – Telegram hatte sie zuerst abgelehnt)“', newD().length === 1 && newD()[0].startsWith('<b>🟢⬆️ KURS-ALARM · BTC</b>') && newD()[0].includes('Telegram hatte sie zuerst abgelehnt') && /🕐 17:00:16$/.test(newD()[0]) && wd.out.length === 0 && wd.sendErr === null, newD()[0]?.replace(/\n/g, ' ⏎ '));
   check('… Status wieder „aktiv“, darunter „Zustellung: zuletzt … · Kurs-Alarm BTC“', /^Dienst: aktiv · /.test(svcLine()) && /\nZustellung: zuletzt \d\d\.\d\d\. \d\d:\d\d · Kurs-Alarm BTC(\n|$)/.test(pinned.caption) && logsD.some(l => /Zustellung wieder in Ordnung/.test(l)), pinned.caption.replace(/\n/g, ' ⏎ '));
   stD = parseCap();
   check('… die App liest die letzte Zustellung (Zeit und Art)', stD.svc?.ok && stD.last?.label === 'Kurs-Alarm BTC' && stD.last.t > 0, JSON.stringify(stD.last));
@@ -211,13 +212,13 @@ const TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', CHAT = '987654321'
   const stateDc = path.join(os.tmpdir(), `s247-dc-${process.pid}.json`); try { fs.unlinkSync(stateDc); } catch {}
   const wdc = new W.Watcher({ token: TOKEN, chat: CHAT, discord: 'https://discord.com/api/webhooks/1/abc', statePath: stateDc, now: () => nowD, log: () => {} });
   tgFail = { status: 502, desc: 'Bad Gateway' }; await wdc.queue('⚡ Test', 'UTC', { label: 'BTC-Puls' }); nowD += 20e3; await wdc.deliver();
-  check('Discord: einmal beim ersten Versuch, Telegram wiederholt (Fehler 502)', dcLog.length === 1 && /^⚡ Test\n/.test(dcLog[0]) && wdc.out.length === 1 && wdc.out[0].tries === 2, JSON.stringify({ dc: dcLog.length, tries: wdc.out[0]?.tries }));
+  check('Alter Discord-Eintrag bleibt ohne Versand, Telegram wiederholt (Fehler 502)', dcLog.length === 0 && !('discord' in wdc) && wdc.out.length === 1 && wdc.out[0].tries === 2, JSON.stringify({ dc: dcLog.length, tries: wdc.out[0]?.tries }));
   tgFail = null; nowD += 60e3; await wdc.deliver();
-  check('… Telegram später zugestellt, Discord nicht noch einmal', wdc.out.length === 0 && dcLog.length === 1);
+  check('… Telegram später zugestellt, kein Discord-Versand', wdc.out.length === 0 && dcLog.length === 0);
   // Grund im Verspätet-Vermerk: Netz → „nicht erreichbar“
   const nNet = sent().length; tgFail = 'net'; await wdc.queue('🔔 Netz', 'UTC', { label: 'Kurs-Alarm X' }); nowD += 3 * 60e3; tgFail = null; await wdc.deliver();
   const netMsg = sent().slice(nNet).at(-1) || '';
-  check('Verspätet nach Netzausfall: Vermerk „Telegram war nicht erreichbar“', /\n\(verspätet zugestellt um \d\d:\d\d Uhr – Telegram war nicht erreichbar\)$/.test(netMsg) && wdc.out.length === 0, netMsg.replace(/\n/g, ' ⏎ '));
+  check('Verspätet nach Netzausfall: Vermerk „Telegram war nicht erreichbar“', netMsg.includes('Verspätet zugestellt') && netMsg.includes('Telegram war nicht erreichbar') && /🕐 \d\d:\d\d:\d\d$/.test(netMsg) && wdc.out.length === 0, netMsg.replace(/\n/g, ' ⏎ '));
   try { fs.unlinkSync(stateDc); fs.unlinkSync(stateD); } catch {}
   // Kerzen gleichzeitig: ein langsames Kürzel (0,4 s) hält die anderen nicht auf
   const wpar = new W.Watcher({ token: TOKEN, chat: CHAT, now: () => nowD, log: () => {} });
@@ -238,7 +239,7 @@ const TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', CHAT = '987654321'
   check('Live-Ergebnis wie in der App: Menge × (Kurs − Einstieg) × Richtung, Summe, auf Cent gerundet', W.pnlTotal(pp, prices(103.004, 50.001)) === 6 && W.pnlTotal(pp, prices(99, 50.5)) === -4 && W.pnlTotal(pp, prices(100.123, 50)) === 0.25, String(W.pnlTotal(pp, prices(103.004, 50.001))));
   check('… fehlt ein Kurs oder eine Position: keine Prüfung', W.pnlTotal(pp, new Map([['spot:BTCUSDT', 103]])) === null && W.pnlTotal({ ...pp, n: 3 }, prices(103, 50)) === null && W.pnlTotal({ ...pp, pos: [] , n: 0 }, prices(103, 50)) === null);
   check('Grenzen wie in der App: Gewinn ≥ +v, Verlust ≤ −v', W.pnlMet('profit', 5, 5) && !W.pnlMet('profit', 5, 4.99) && W.pnlMet('loss', 3, -3) && !W.pnlMet('loss', 3, -2.99) && !W.pnlMet('loss', 3, null));
-  check('Text wie in der App', W.pnlText(pp.lim[0], 6, 2) === '📈 Gewinn-Alarm\nLive-Ergebnis +6,00 USDT (2 offene Positionen) · Schwelle ≥ +5,00 USDT erreicht' && W.pnlText(pp.lim[1], -4, 1) === '📉 Verlust-Alarm\nLive-Ergebnis −4,00 USDT (1 offene Position) · Schwelle ≤ −3,00 USDT erreicht', W.pnlText(pp.lim[0], 6, 2).replace(/\n/g, ' ⏎ '));
+  check('Text wie in der App', W.pnlText(pp.lim[0], 6, 2) === '<b>🟢 GEWINN-ALARM · +6,00 USD</b>\n🎯 Schwelle erreicht: ⭐ <b>≥ +5,00 USD</b> ⭐\nPositionen offen: 2' && W.pnlText(pp.lim[1], -4, 1) === '<b>🔴 VERLUST-ALARM · −4,00 USD</b>\n🎯 Schwelle erreicht: ⭐ <b>≤ −3,00 USD</b> ⭐\nPositionen offen: 1', W.pnlText(pp.lim[0], 6, 2).replace(/\n/g, ' ⏎ '));
   const cP = W.parseConfig({ ...base, ev: { ...base.ev, pulse: true, pnl: true }, pulse: null, pnl: { n: 2, pos: POS, lim: lims() } }), lineP = W.statusLine({ ok: true, now: T, c: { ...cP, pulse: { thr: 1 } } });
   check('Zeile des Dienstes: „· GV“ vor „· Puls“ – ältere Apps erkennen „· Puls · #“ weiter', lineP === `Dienst: aktiv · 30.09. 12:26 · v${W.VERSION} · GV · Puls · #ab12 übernommen` && / · Puls · #/.test(lineP), lineP);
   check('… ohne Grenze oder Meldungsart aus: kein „GV“', !/GV/.test(W.statusLine({ ok: true, now: T, c })) && !W.pnlOn(W.parseConfig({ ...base, ev: { ...base.ev, pnl: false }, pnl: { n: 2, pos: POS, lim: lims() } })));
@@ -256,13 +257,13 @@ const TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', CHAT = '987654321'
   setP(103, 50); await step(); const tDet = nowP;
   check('Gewinn-Grenze erreicht (+6,00 ≥ +5): wartet erst auf die App (noch keine Meldung, Datei gleich neu lesen)', newSent().length === 0 && wp.pnlPend[`pnl:profit:${A1}`]?.val === 6 && wp.next.config === 0 && logsP.some(l => /Gewinn-Alarm: Live-Ergebnis 6 USDT .* meldet in 8 s, falls die App es nicht schon tut/.test(l)), JSON.stringify(wp.pnlPend));
   setP(102, 50); await step();
-  check('… nach der Wartezeit, App hat nicht gemeldet: genau eine Meldung mit dem erreichten Wert (+6,00, auch wenn es inzwischen weniger ist)', newSent().length === 1 && /^📈 Gewinn-Alarm\nLive-Ergebnis \+6,00 USDT \(2 offene Positionen\) · Schwelle ≥ \+5,00 USDT erreicht\n\d\d:\d\d:\d\d Uhr · 24\/7-Dienst$/.test(newSent()[0]) && !Object.keys(wp.pnlPend).length, newSent()[0]?.replace(/\n/g, ' ⏎ '));
+  check('… nach der Wartezeit, App hat nicht gemeldet: genau eine Meldung mit dem erreichten Wert (+6,00, auch wenn es inzwischen weniger ist)', newSent().length === 1 && newSent()[0].includes('<b>🟢 GEWINN-ALARM · +6,00 USD</b>') && newSent()[0].includes('≥ +5,00 USD') && newSent()[0].includes('Positionen offen: 2') && /🕐 \d\d:\d\d:\d\d$/.test(newSent()[0]) && !Object.keys(wp.pnlPend).length, newSent()[0]?.replace(/\n/g, ' ⏎ '));
   const gvLine = pinned.caption.split('\n').find(l => l.startsWith('GV:'));
   check('… in der angehefteten Nachricht vermerkt (Art, Scharfschalten, Zeitpunkt des Erreichens, Wert)', new RegExp(`^GV: Gewinn-Alarm ausgelöst \\d\\d\\.\\d\\d\\. \\d\\d:\\d\\d bei \\+6,00 USDT · @p:${A1}:${tDet}:6$`).test(gvLine || ''), gvLine);
   setP(104, 50); await step(); await step();
   check('… bleibt erreicht oder steigt weiter: keine zweite Meldung', newSent().length === 1);
   setP(99, 50.5); await step(); await step();
-  check('Verlust-Grenze erreicht (−4,00 ≤ −3): nach der Wartezeit eine Meldung; beide stehen in der Nachricht', newSent().length === 2 && /^📉 Verlust-Alarm\nLive-Ergebnis −4,00 USDT \(2 offene Positionen\) · Schwelle ≤ −3,00 USDT erreicht/.test(newSent()[1]) && pinned.caption.split('\n').filter(l => l.startsWith('GV:')).length === 2, newSent()[1]?.split('\n')[1]);
+  check('Verlust-Grenze erreicht (−4,00 ≤ −3): nach der Wartezeit eine Meldung; beide stehen in der Nachricht', newSent().length === 2 && newSent()[1].includes('<b>🔴 VERLUST-ALARM · −4,00 USD</b>') && newSent()[1].includes('≤ −3,00 USD') && newSent()[1].includes('Positionen offen: 2') && pinned.caption.split('\n').filter(l => l.startsWith('GV:')).length === 2, newSent()[1]?.split('\n')[1]);
   // App liest das: ausgelöst übernehmen; Merkmale „GV“ und „Puls“
   const stP = A.s247Parse({ message_id: 601, date: 1, edit_date: Math.floor(Date.now() / 1000), caption: pinned.caption, document: { file_name: 'scalpdesk-247.json' } }, Date.now());
   check('App liest „· GV“ und die gesendeten Meldungen (Art, Scharfschalten, Zeitpunkt, Wert)', stP.svc?.gv === true && stP.svc.pulse === false && stP.gv.length === 2 && stP.gv[0].k === 'profit' && stP.gv[0].at === A1 && stP.gv[0].val === 6 && stP.gv[1].k === 'loss' && stP.gv[1].val === -4, JSON.stringify(stP.gv));
@@ -276,13 +277,13 @@ const TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', CHAT = '987654321'
   const wp2 = new W.Watcher({ token: TOKEN, chat: CHAT, statePath: stateP, now: () => nowP, log: () => {} });
   check('Zustand übersteht einen Neustart (gesendete Verlust-Meldung, Zustand der neuen Gewinn-Grenze)', !!wp2.pnlFired[`pnl:loss:${A2}`] && wp2.pnlSt[`pnl:profit:${A1 + 1}`] === 'armed', JSON.stringify({ fired: Object.keys(wp2.pnlFired), st: wp2.pnlSt }));
   await step(); await step();
-  check('Neue Gewinn-Grenze (neu scharf) wird gemeldet, die Verlust-Meldung nicht noch einmal', newSent().length === 3 && /^📈 Gewinn-Alarm\nLive-Ergebnis \+20,00 USDT/.test(newSent()[2]), newSent()[2]?.split('\n')[1]);
+  check('Neue Gewinn-Grenze (neu scharf) wird gemeldet, die Verlust-Meldung nicht noch einmal', newSent().length === 3 && newSent()[2].startsWith('<b>🟢 GEWINN-ALARM · +20,00 USD</b>'), newSent()[2]?.split('\n')[1]);
   // Von der App selbst gesendet (done): nicht noch einmal; beim Scharfschalten erreicht (w): erst wieder darunter
   pin({ ...base, tag: 'gv03', ev: { ...base.ev, pnl: true }, alarms: [], positions: [], pnl: { n: 2, pos: POS, lim: lims({ profit: { at: A1 + 2, done: true }, loss: { at: A2 + 2, w: true } }) } }, 601, 'G3');
   wp.next.config = 0; setP(97, 50.5); await step();
   check('Von der App selbst gesendet (done): keine Meldung, keine Zeile; Verlust beim Scharfschalten erreicht: wartet', newSent().length === 3 && wp.pnlFired[`pnl:profit:${A1 + 2}`]?.by === 'app' && wp.pnlSt[`pnl:loss:${A2 + 2}`] === 'wait' && !pinned.caption.includes('GV: Gewinn'), JSON.stringify(wp.pnlSt));
   setP(100, 50); await step(); setP(98, 50.5); await step(); await step();
-  check('… erst darüber (0), dann wieder darunter (−6): jetzt gemeldet', newSent().length === 4 && /^📉 Verlust-Alarm\nLive-Ergebnis −6,00 USDT/.test(newSent()[3]), newSent()[3]?.split('\n')[1]);
+  check('… erst darüber (0), dann wieder darunter (−6): jetzt gemeldet', newSent().length === 4 && newSent()[3].startsWith('<b>🔴 VERLUST-ALARM · −6,00 USD</b>'), newSent()[3]?.split('\n')[1]);
   // Meldungsart aus: nichts; mehr Positionen in der App als in der Datei: nichts
   pin({ ...base, tag: 'gv04', ev: { ...base.ev, pnl: false }, alarms: [], positions: [], pnl: { n: 2, pos: POS, lim: lims({ profit: { at: A1 + 3 }, loss: { at: A2 + 3, w: false } }) } }, 601, 'G4');
   wp.next.config = 0; setP(120, 50); await step();
@@ -301,11 +302,11 @@ const TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', CHAT = '987654321'
   setP(104, 50); await step(); await step();
   check('… auch danach nicht (Grenze bleibt erreicht)', newSent().length === 4);
   // App: Schlüssel; der Gewinn-/Verlust-Alarm ist nie „abgedeckt“ – die geöffnete App meldet selbst
-  const A2app = new Function('store', 'navigator', '$', 'broadcastData', 'state', 'chan', 'APP_VERSION', 'ec', 'tgApi', 'tgPost', 'tgConfigured', 'document', 'addEventListener', 'renderChanSummary', 'pnlHandover',
+  const A2app = new Function('store', 'navigator', '$', 'broadcastData', 'state', 'chan', 'APP_VERSION', 'ec', 'tgApi', 'tgPost', 'tgConfigured', 'document', 'addEventListener', 'renderChanSummary', 'formatMessage', 'TELEGRAM_CAPTION_LIMIT', 'svcOn', 'tgtOn', 'pnlHandover',
     `${src}\nreturn { s247, s247Parse, s247Covers, s247Payload, s247Keys };`)(
     { get: () => null, set: () => true, claim: async () => true, release: async () => {} }, { userAgent: 'Chrome', maxTouchPoints: 0 }, () => null, () => {}, { alarms: [], positions: [] },
     { tg: { on: true }, ev: { alarm: true, pos: true, news: true, pnl: true } }, '3.26.0', { cfg: { warn: 0, cur: 'usd' } }, null, null, () => true, { hidden: false, addEventListener() {} }, () => {}, () => {},
-    () => ({ n: 2, pos: POS, lim: lims() }));
+    formatMessage, 1024, () => false, () => true, () => ({ n: 2, pos: POS, lim: lims() }));
   A2app.s247.cfg.on = true; const PP = A2app.s247Payload(), kk = A2app.s247Keys(PP);
   check('App übergibt Grenzen und Positionen; Schlüssel wie im Dienst', PP.ev.pnl === true && PP.pnl.lim.length === 2 && kk.includes(`pnl:profit:${A1}`) && kk.includes(`pnl:loss:${A2}`) && W.parseConfig({ ...PP, tag: 'kk01', at: T }).pnl.lim.map(W.pnlKey).every(x => kk.includes(x)), kk.join(' '));
   Object.assign(A2app.s247.cfg, { on: true, msg: 601, tag: 'gv01', keys: kk, gv: true });

@@ -1,5 +1,5 @@
 // Eigenes Demo-Buch: weder persönlicher Sicherungsexport noch Handelsdatenübertragung.
-const database = () => new Promise((resolve, reject) => { const req = indexedDB.open('scalpdesk-muster-paper', 1); req.onupgradeneeded = () => req.result.createObjectStore('runs'); req.onsuccess = () => resolve(req.result); req.onerror = () => reject(new Error('Muster-Demo-Speicher nicht erreichbar')); });
+const database = () => new Promise((resolve, reject) => { const req = globalThis.indexedDB.open('scalpdesk-muster-paper', 1); req.onupgradeneeded = () => req.result.createObjectStore('runs'); req.onsuccess = () => resolve(req.result); req.onerror = () => reject(new Error('Muster-Demo-Speicher nicht erreichbar')); });
 export async function readMusterPaper() {
   const db = await database(); try { return await new Promise((resolve, reject) => { const req = db.transaction('runs').objectStore('runs').get('current'); req.onsuccess = () => resolve(req.result || null); req.onerror = () => reject(new Error('Muster-Demo konnte nicht gelesen werden')); }); } finally { db.close(); }
 }

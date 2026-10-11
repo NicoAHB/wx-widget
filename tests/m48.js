@@ -262,9 +262,9 @@ const tests = {
     // Kontrolle: die echte Position alarmiert über alle Wege
     const t1 = Date.now(); await h.ctl(`/set?symbol=ETHUSDT&price=${E0 - 30}`);
     const toastR = await until(() => page.evaluate(() => !!document.querySelector('#toasts .toast[data-id="R1"][data-type="sl"]')), 15000);
-    const sentR = await until(async () => { const s = (await h.ctl('/sent')).filter(m => m.at >= t1 && /🛑 ETH Long: Stop-Loss erreicht/.test(m.text || m.content || '')); return s.length >= 2 ? s : null; }, 15000);
+    const sentR = await until(async () => { const s = (await h.ctl('/sent')).filter(m => m.at >= t1 && /<b>🔴⬇️ STOP-LOSS · ETH Long/.test(m.text || m.content || '')); return s.length >= 1 ? s : null; }, 15000);
     const st = await page.evaluate(() => ({ notes: window.__notes.map(n => n.title), osc: window.__osc }));
-    check('Kontrolle echte Position: Hinweis, Browser-Hinweis, Ton, Telegram und Discord', toastR && st.notes.includes('🔔 ETH Long: Stop-Loss erreicht') && st.osc >= 3 && sentR?.some(m => m.svc === 'tg') && sentR?.some(m => m.svc === 'dc'), JSON.stringify({ toast: !!toastR, ...st, sent: sentR?.map(m => m.svc) }));
+    check('Kontrolle echte Position: Hinweis, Browser-Hinweis, Ton und Telegram, kein Discord', toastR && st.notes.includes('🔔 ETH Long: Stop-Loss erreicht') && st.osc >= 3 && sentR?.some(m => m.svc === 'tg') && !sentR?.some(m => m.svc === 'dc'), JSON.stringify({ toast: !!toastR, ...st, sent: sentR?.map(m => m.svc) }));
     // Wechsel ECHT → DEMO beim Bearbeiten: Hinweis weg, nicht mehr in der Übergabe; zurück auf ECHT: wieder dabei
     let hv0 = await handovers();
     await jsClick(page, '.pos-card[data-id="R1"] [data-action="edit"]'); await page.waitForTimeout(200);

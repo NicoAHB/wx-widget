@@ -1,7 +1,7 @@
 import { INTERVAL_MS } from './market-intervals.mjs';
 import { musterSettings, musterCandles } from './muster-bot-core.mjs';
-const abort = signal => { if (signal?.aborted) throw signal.reason || new DOMException('Abgebrochen', 'AbortError'); };
-const wait = (ms, signal) => new Promise((resolve, reject) => { abort(signal); const timer = setTimeout(done, ms); function done() { signal?.removeEventListener('abort', cancelled); resolve(); } function cancelled() { clearTimeout(timer); reject(signal.reason || new DOMException('Abgebrochen', 'AbortError')); } signal?.addEventListener('abort', cancelled, { once: true }); });
+const abort = signal => { if (signal?.aborted) throw signal.reason || new globalThis.DOMException('Abgebrochen', 'AbortError'); };
+const wait = (ms, signal) => new Promise((resolve, reject) => { abort(signal); const timer = setTimeout(done, ms); function done() { signal?.removeEventListener('abort', cancelled); resolve(); } function cancelled() { clearTimeout(timer); reject(signal.reason || new globalThis.DOMException('Abgebrochen', 'AbortError')); } signal?.addEventListener('abort', cancelled, { once: true }); });
 export function createMusterClient({ fetcher = fetch, sleep = wait } = {}) {
   async function page({ symbol, market, timeframe, startTime, endTime, signal }) {
     const bases = market === 'futures' ? ['https://fapi.binance.com'] : ['https://data-api.binance.vision', 'https://api.binance.com'];

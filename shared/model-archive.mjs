@@ -16,11 +16,22 @@ export function validateModelArchive(input) {
   if (input.bot !== null) { const rt = new BotSimulationRuntime({ saved: input.bot }); try { bot = clone(rt.state); bot.enabled = false; } finally { rt.stop(); } }
   return { observations, journal, bot };
 }
-export async function exportModelArchive(appVersion) {
-  const [observations, po3, bot] = await Promise.all([readReplay('observations'), readPo3State(), readBotSimulation()]);
+export async function exportModelArchive(appVersion, { includeBot = true } = {}) {
+  const [observations, po3, bot] = await Promise.all([readReplay('observations'), readPo3State(), includeBot ? readBotSimulation() : null]);
   const archive = { app: 'scalpdesk-model-archive', version: MODEL_ARCHIVE_VERSION, appVersion, exportedAt: Date.now(), observations, po3Journal: po3.journal, bot,
     coverage: 'Lokale Konfluenz-Originalbeobachtungen, PO3-Journal und Bot-Laufsimulation. Persönliche Daten separat; Oracle-Dateien am Server. Abgeleitete Karten/Quoten/Preis-/Referenzcaches werden neu geladen.' };
   validateModelArchive(archive); return archive;
+}
+// Nur für die ausdrückliche Rückkehr zur lokalen Notfallkopie; Bot-Läufe/Referenzcaches bleiben erhalten.
+export async function restoreModelOriginals(input) {
+  const next = validateModelArchive({ ...input, bot: null }), oldPo3 = await readPo3State();
+  await changePo3State(oldPo3.revision, root => ({ ...root, journal: next.journal }));
+  await replayDatabase(db => new Promise((resolve, reject) => {
+    const tx = db.transaction(['observations', 'meta'], 'readwrite'), st = tx.objectStore('observations'); st.clear();
+    for (const row of next.observations) st.put(row);
+    tx.objectStore('meta').put({ n: next.observations.length, bytes: next.observations.reduce((n, row) => n + size(row), 0) }, 'usage');
+    tx.oncomplete = resolve; tx.onabort = tx.onerror = () => reject(tx.error || new Error('Originale konnten nicht zurückgesetzt werden'));
+  }));
 }
 // Alle Konfluenzoriginale gemeinsam prüfen/speichern; kein stilles Löschen, Idempotenz bleibt erhalten.
 async function mergeOriginals(incoming) {

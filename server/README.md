@@ -1,6 +1,6 @@
 # Scalp Desk – 24/7-Dienst
 
-Kleines Programm für einen eigenen Server, der rund um die Uhr läuft (z. B. kostenlos bei Oracle Cloud, „Always Free“). Es meldet per Telegram, auf Wunsch zusätzlich per Discord, auch wenn die App überall geschlossen ist:
+Kleines Programm für einen eigenen Server, der rund um die Uhr läuft (z. B. kostenlos bei Oracle Cloud, „Always Free“). Es meldet per Telegram auch wenn die App überall geschlossen ist:
 - Kurs-Alarme,
 - Stop-Loss/Take-Profit offener Positionen,
 - wichtige Wirtschaftstermine,
@@ -89,7 +89,7 @@ curl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/insta
 
 Der Installer:
 1. installiert bei Bedarf Node.js 22;
-2. fragt Bot-Token und Chat-ID ab (stehen in der App unter 🔔 Hinweise → „Telegram / Discord einrichten“);
+2. fragt Bot-Token und Chat-ID ab (stehen in der App unter 🔔 Hinweise → „Telegram einrichten“);
 3. prüft Bot, Chat und Binance und schickt eine Testnachricht;
 4. richtet den systemd-Dienst `scalpdesk-247` ein.
 
@@ -128,7 +128,7 @@ Die Zeitstempel davor setzt journalctl in der Zeitzone des Servers (bei Oracle m
 
 ## Dateien und Sicherheit
 - `/opt/scalpdesk-247/scalpdesk-247.mjs` ist das Programm: ohne Abhängigkeiten, Node.js ab 18.
-- `/etc/scalpdesk-247.json` enthält Bot-Token, Chat-ID und den optionalen Discord-Webhook. Sie ist nur für root und den Dienst-Benutzer `scalpdesk` lesbar.
+- `/etc/scalpdesk-247.json` enthält Bot-Token, Chat-ID. Sie ist nur für root und den Dienst-Benutzer `scalpdesk` lesbar.
 - `/var/lib/scalpdesk-247/state.json` enthält die zuletzt übernommene Datei, die schon gesendeten Meldungen, den Ausgang (noch nicht zugestellte Meldungen) und ab 1.4 den zuletzt bestätigten Stand und den Zeitpunkt des letzten Hinweises. Die App liest diese Datei nie; sie ist nur das Gedächtnis des Dienstes über Neustarts hinweg.
 - `/usr/local/bin/scalpdesk-247` (ab 1.4) ist der Kurzbefehl für `status`, `protokoll`, `live` und `neustart`.
 - Der Dienst läuft als eigener Benutzer ohne Anmeldung, mit schreibgeschütztem System (`ProtectSystem=strict`). Er startet mit dem Server und nach Fehlern von selbst neu.
@@ -166,7 +166,7 @@ Die Zeitstempel davor setzt journalctl in der Zeitzone des Servers (bei Oracle m
 ## Chartmuster bei geschlossener App (ab Dienst 2.4.0, App 3.42.0)
 
 1. Den bestehenden Dienst aktualisieren; der Installer lädt jetzt zusätzlich `pattern-engine.mjs` und `pattern-monitor.mjs`. Keine neue VM und keine erneute Einrichtung aller Chats nötig.
-2. In der App unter „Telegram / Discord einrichten“ den Chartmuster-Chat und optional sein Thema eintragen, die HTTPS-Dienstadresse prüfen und **„Vorauswahl am Dienst übernehmen“** drücken. Die Bestätigung zeigt Revision und Anzahl der Märkte. Nur Bot-ID, Chat, Thema, Coins, tatsächlicher Binance-Markt und Kerzenintervall werden übertragen, keine Bot-Token.
+2. In der App unter „Telegram einrichten“ den Chartmuster-Chat und optional sein Thema eintragen, die HTTPS-Dienstadresse prüfen und **„Vorauswahl am Dienst übernehmen“** drücken. Die Bestätigung zeigt Revision und Anzahl der Märkte. Nur Bot-ID, Chat, Thema, Coins, tatsächlicher Binance-Markt und Kerzenintervall werden übertragen, keine Bot-Token.
 3. Der Dienst prüft diese Märkte nach jedem Kerzenschluss, auch ohne offene App und unabhängig von der Telegram-Übergabedatei der Kursalarme. Er verwendet dieselbe unveränderte Engine `pat-1` wie die App, im kontinuierlichen Krypto-Modus ohne strenge Gaps. Der Standardzeitraum der Vorauswahl „1 Stunde“ verwendet **5m-Kerzen**, „30 Minuten“ 3m, „4 Stunden“ 15m, „1 Tag“ 2h; dies ist kein Bitget-/G10-Signal.
 4. Geänderte Coins, Zeitraum oder Chat erneut bewusst übernehmen. Ein Revisionskonflikt verlangt eine neue bestätigte Übernahme; ein Offline-Entwurf wird nicht automatisch ausgeführt. Die Liste ist auf 40 Märkte begrenzt. Eine leere übernommene Vorauswahl beendet die Prüfung.
 5. „Chartmuster AUS“ im bestehenden Chat-Menü sperrt neue und wartende Meldungen. Erneutes AN meldet nur Bestätigungen nach dem Einschalten, keine Nachlieferung alter Fälle. Wartende Meldungen einer alten Konfiguration oder Epoche werden verworfen.

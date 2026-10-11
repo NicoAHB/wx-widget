@@ -4,8 +4,8 @@
   "files": [
     {
       "path": "scalpdesk-247.mjs",
-      "sha256": "572e8c4a15e0fbf71000fc3480a08872ada0e450e568977577109f576bac8c26",
-      "bytes": 126183
+      "sha256": "6a49785a8cd3b2cfa3fa6f8901bcd65026fe524a94321ea478d0fc967dcf8dbf",
+      "bytes": 125444
     },
     {
       "path": "pattern-engine.mjs",
@@ -29,8 +29,8 @@
     },
     {
       "path": "patterns-247.mjs",
-      "sha256": "fd6c442d9e50837d5921a6e64efadd9658e8cb2993ee0bcdca37d396ebccc138",
-      "bytes": 9901
+      "sha256": "04f60b422abc13c68b268628eca2fc81f06b713b58b1486347048f8614bfa809",
+      "bytes": 9923
     },
     {
       "path": "ki-monitor.mjs",
@@ -44,8 +44,8 @@
     },
     {
       "path": "install.sh",
-      "sha256": "be45fa393720f7eaf082999d95346c0fa2c59a49af7bfbc1b4ba15f8829783f0",
-      "bytes": 19354
+      "sha256": "84cd026dcb9f6e5bfd18dcfed34f7af4c360ed58448c99e26b816c340e21d24e",
+      "bytes": 19154
     },
     {
       "path": "shared/adaptive-grid-feed.mjs",
@@ -163,6 +163,16 @@
       "bytes": 6539
     },
     {
+      "path": "shared/github-sync-view.mjs",
+      "sha256": "1ec538ce7eafe679fdf9b8060105bd22f920a909d2c49a658badecc1734b9e38",
+      "bytes": 10100
+    },
+    {
+      "path": "shared/github-sync.mjs",
+      "sha256": "1bb89d288e8a5b56ccb6543a845119e6f66bd068fdbace61d7a421b52dd3820f",
+      "bytes": 11241
+    },
+    {
       "path": "shared/indicators.mjs",
       "sha256": "9105a8ac09d5557e90ec05fd3035c915b36b8e345b31b96a158d0001da505540",
       "bytes": 9568
@@ -174,8 +184,8 @@
     },
     {
       "path": "shared/model-archive.mjs",
-      "sha256": "49d3d9d037fbdf27dff2403cdf64705b05edaeeddcd18075926d661a14229be7",
-      "bytes": 4286
+      "sha256": "d2b5df4622599ee10e2c4e483986f85f25c2448f8032e8460e1ea4b4cdf212ff",
+      "bytes": 5202
     },
     {
       "path": "shared/muster-bot-core.mjs",
@@ -184,8 +194,8 @@
     },
     {
       "path": "shared/muster-bot-feed.mjs",
-      "sha256": "eda38ff54d56de05099b8731319c3b54fb8289461d246028592638f8abf12283",
-      "bytes": 4990
+      "sha256": "e86a3da0eae70b8096ea185a48ca74b44259080358e95ed1305764040c17721e",
+      "bytes": 5012
     },
     {
       "path": "shared/muster-bot-paper.mjs",
@@ -194,18 +204,18 @@
     },
     {
       "path": "shared/muster-bot-store.mjs",
-      "sha256": "869ea4da55dead80925c1ac1d9e2a2a5488cc7cfc9f1ecfbbfc5b65ce16fb2ac",
-      "bytes": 1540
+      "sha256": "aa428ac803fc8cef00c7bde03f2a670faf7fab781ca650423ad267602c87a6dd",
+      "bytes": 1551
     },
     {
       "path": "shared/muster-bot-view.mjs",
-      "sha256": "7f546a714ca139373fc5fda9854767d4adb82cf448cce89d7d746da604b50853",
-      "bytes": 27971
+      "sha256": "7a45293db948e10be7465c786505637a39f512604415af9199b8a5b48d2899d6",
+      "bytes": 28053
     },
     {
       "path": "shared/muster-bot-worker.mjs",
-      "sha256": "740ba7ec02a3eb6d4ca6944a7cacb9fa570292a7d29e44e586b3054e5ae1d814",
-      "bytes": 1665
+      "sha256": "bd5f7d60af8c4fffa9423a3a6a1a92bf43dd996b3592bc8f44b8d7f5535fe7c4",
+      "bytes": 1695
     },
     {
       "path": "shared/orderflow-core.mjs",
@@ -268,6 +278,11 @@
       "bytes": 19219
     },
     {
+      "path": "shared/pattern-projection.mjs",
+      "sha256": "1e2444691e3e210eeff673b8b2ae3b91edb9581fccbacc2dea165f76ebeda5d7",
+      "bytes": 3943
+    },
+    {
       "path": "shared/pattern-score.mjs",
       "sha256": "585334abda80fd8802128e181d8efc04264770f3ee2a7f866d24481a6f7eabad",
       "bytes": 2683
@@ -314,8 +329,8 @@
     },
     {
       "path": "shared/telegram-format.mjs",
-      "sha256": "9e0fb5694b51a04ac327ef58af342e8cc52cc39569e299fd1510b5b549cddc31",
-      "bytes": 13577
+      "sha256": "e09834aa9416ff823f6706680d1b83c5c53f45dae6eeb74821ef3da4659b62ab",
+      "bytes": 14156
     },
     {
       "path": "shared/widget-state.mjs",

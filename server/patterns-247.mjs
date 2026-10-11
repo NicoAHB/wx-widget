@@ -104,8 +104,8 @@ export async function patternsMain(args = process.argv.slice(2)) {
   const service = new PatternsOnlyService({ destination, watch, stateFile: argument('--state', '/var/lib/scalpdesk-patterns/state.json') });
   if (args.includes('--test')) { await service.telegram(formatMessage('notice', { headline: '✅ CHARTMUSTER · Test erfolgreich', lines: ['Dieser Dienst sendet ausschließlich bestätigte Chartmuster', 'Regelgüte mindestens 80 %', 'Keine Sicherungen, Trades oder echten Orders'], at: Date.now(), timezone: 'Europe/Berlin' })); console.log('Testnachricht zugestellt'); return; }
   console.log('Chartmusterdienst gestartet · Modell pat-1 · ' + service.config.items.length + ' Märkte');
-  let stopping = false; const timer = setInterval(() => { if (!stopping) service.scan().catch(() => { console.error('Dienstzustand nicht schreibbar; Dienst wird neu gestartet'); process.exit(1); }); }, 5000);
-  for (const signal of ['SIGTERM', 'SIGINT']) process.once(signal, () => { stopping = true; clearInterval(timer); });
+  let stopping = false; const timer = globalThis.setInterval(() => { if (!stopping) service.scan().catch(() => { console.error('Dienstzustand nicht schreibbar; Dienst wird neu gestartet'); process.exit(1); }); }, 5000);
+  for (const signal of ['SIGTERM', 'SIGINT']) process.once(signal, () => { stopping = true; globalThis.clearInterval(timer); });
   await service.scan();
 }
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) patternsMain().catch(() => { console.error('Einrichtung oder Zustand prüfen; keine Zugangsdaten werden protokolliert'); process.exitCode = 1; });

@@ -1,4 +1,5 @@
 import { MUSTER_DEFAULTS, musterSettings } from './muster-bot-core.mjs';
+const document = globalThis.document;
 const element = (tag, text = '', cls = '') => { const e = document.createElement(tag); e.textContent = text; e.className = cls; return e; };
 const number = (v, digits = 2) => Number.isFinite(v) ? v.toLocaleString('de-DE', { minimumFractionDigits: digits, maximumFractionDigits: digits }) : '—';
 const patternNames = { hammer: 'Hammer', engulfing: 'Engulfing', both: 'Beide' }, modeNames = { instant: 'Sofort', 'buy-stop': 'Buy-Stop', close: 'Schlusskurs' };
@@ -122,7 +123,7 @@ export function createMusterView({ host, selection, currentPrice, prefs = {}, sa
       if (!result.signals.length) trades.append(element('p', 'Noch kein neues Muster mit allen Filtern. Die Demo erzeugt keine künstlichen Trades.'));
     } const nextSignature = (book?.id || '') + '|' + (result?.signals || []).map(s => s.id).join('|'); if (nextSignature !== markerSignature) { markerSignature = nextSignature; onMarkers(); }
   }
-  const timer = setInterval(() => { void paper.poll(); render(); }, 30000); document.addEventListener('visibilitychange', () => { if (document.hidden) paper.suspend(); else { void paper.poll(); render(); } });
-  const quoteTimer = setInterval(() => { if (!document.hidden && paper.state.book?.active && root.open) render(); }, 2000);
-  paintTable(); render(); return { root, render, updateContext, settings, backtest, paperChanged: render, markers: () => paper.state.book?.result?.signals.map(s => ({ ...s, symbol: paper.state.book.symbol, market: paper.state.book.market, timeframe: paper.state.book.config.timeframe })) || [], dispose() { clearInterval(timer); clearInterval(quoteTimer); finish(); popup.remove(); } };
+  const timer = globalThis.setInterval(() => { void paper.poll(); render(); }, 30000); document.addEventListener('visibilitychange', () => { if (document.hidden) paper.suspend(); else { void paper.poll(); render(); } });
+  const quoteTimer = globalThis.setInterval(() => { if (!document.hidden && paper.state.book?.active && root.open) render(); }, 2000);
+  paintTable(); render(); return { root, render, updateContext, settings, backtest, paperChanged: render, markers: () => paper.state.book?.result?.signals.map(s => ({ ...s, symbol: paper.state.book.symbol, market: paper.state.book.market, timeframe: paper.state.book.config.timeframe })) || [], dispose() { globalThis.clearInterval(timer); globalThis.clearInterval(quoteTimer); finish(); popup.remove(); } };
 }

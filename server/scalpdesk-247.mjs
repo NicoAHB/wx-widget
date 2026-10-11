@@ -3,7 +3,7 @@
 // Bestätigung und Selbstdiagnose ab 1.4)
 // Meldet Kurs-Alarme, Stop-Loss/Take-Profit offener Positionen, wichtige Wirtschaftstermine, den BTC-Puls (ungewöhnlich
 // starke Bitcoin-Bewegung) und den Gewinn-/Verlust-Alarm (Live-Ergebnis aller offenen Positionen erreicht eine Grenze) per
-// Telegram (auf Wunsch zusätzlich Discord) – rund um die Uhr, auch wenn die App überall geschlossen ist.
+// Telegram – rund um die Uhr, auch wenn die App überall geschlossen ist.
 // Für den Gewinn-/Verlust-Alarm stehen Einstieg und Menge der offenen Positionen in der Datei – nur solange dort ein
 // Gewinn- oder Verlust-Alarm aktiv ist; sonst bleiben Mengen und Einstiege in der App. Ist die App geöffnet, meldet sie ihn
 // selbst (sofort, auch kurze Spitzen) und vermerkt das in der Datei; der Dienst wartet deshalb nach dem Erreichen kurz und
@@ -69,7 +69,6 @@ export const EVERY = E.SCALPDESK_FAST
   : { tick: 5e3, price: 15e3, config: 20e3, beat: 10 * 60e3, cal: 30 * 60e3, econ: 20e3, feedStale: 3 * 60e3, pnlHold: 8e3, hint: 3 * 60e3, hintAgain: 24 * 3600e3, waitLog: 10 * 60e3, ack: 60e3 }; // pnlHold: Gewinn/Verlust erreicht → so lange auf die App warten
 export const MARK = '📌 Scalp Desk · 24/7-Dienst', FILE = 'scalpdesk-247.json', LINE = 'Dienst:';
 const TOKEN_RE = /^\d{5,15}:[A-Za-z0-9_-]{30,80}$/, CHAT_RE = /^(-?\d{1,20}|@[A-Za-z][A-Za-z0-9_]{4,31})$/;
-const DC_RE = /^https:\/\/(?:(?:ptb|canary)\.)?discord(?:app)?\.com\/api(?:\/v\d{1,2})?\/webhooks\/\d{5,25}\/[A-Za-z0-9_-]{20,120}(?:\?thread_id=\d{5,25})?$/;
 const SYM_RE = /^[A-Z0-9]{2,20}USDT$/;
 
 // ---------- Anzeige wie in der App ----------
@@ -245,14 +244,14 @@ export function statusLine({ ok, now, c, problem, ctl = false }) {
 // Beobachtete Marken mit Inhalt (ändert sich der Preis eines Alarms, gilt er als neu); Quittierungen zählen nicht
 export function watchItems(c) {
   if (!c?.on) return [];
-  return [...(c.ev.alarm ? c.alarms.map(a => ({ key: `${alarmKey(a)}:${a.dir}:${a.price}`, text: `Kurs-Alarm ${coin(a.symbol)} ${a.dir === 'above' ? 'auf/über' : 'auf/unter'} ${priceText(a.price)} USDT${a.source === 'futures' ? ' (Futures)' : ''}` })) : []),
-    ...(c.ev.pos ? c.positions.map(p => ({ key: `pos:${p.id}:${p.since}:${p.sl}:${p.tp}`, text: `${coin(p.symbol)} ${p.side === 'long' ? 'Long' : 'Short'}: ${[p.sl ? `Stop-Loss ${priceText(p.sl)}` : '', p.tp ? `Take-Profit ${priceText(p.tp)}` : ''].filter(Boolean).join(' · ')}` })) : []),
-    ...(pnlOn(c) ? c.pnl.lim.map(l => ({ key: `${pnlKey(l)}:${l.v}`, text: `${pnlName(l.k)} ${pnlCond(l)}` })) : [])];
+  return [...(c.ev.alarm ? c.alarms.map(a => ({ key: `${alarmKey(a)}:${a.dir}:${a.price}`, data: { label: `Kurs-Alarm ${coin(a.symbol)}${a.source === 'futures' ? ' (Futures)' : ''}`, direction: a.dir, level: a.price }, text: `Kurs-Alarm ${coin(a.symbol)} ${a.dir === 'above' ? 'auf/über' : 'auf/unter'} ${priceText(a.price)} USD${a.source === 'futures' ? ' (Futures)' : ''}` })) : []),
+    ...(c.ev.pos ? c.positions.map(p => ({ key: `pos:${p.id}:${p.since}:${p.sl}:${p.tp}`, data: { label: `${coin(p.symbol)} ${p.side === 'long' ? 'Long' : 'Short'}`, stop: p.sl, target: p.tp }, text: `${coin(p.symbol)} ${p.side === 'long' ? 'Long' : 'Short'}: ${[p.sl ? `Stop-Loss ${priceText(p.sl)}` : '', p.tp ? `Take-Profit ${priceText(p.tp)}` : ''].filter(Boolean).join(' · ')}` })) : []),
+    ...(pnlOn(c) ? c.pnl.lim.map(l => ({ key: `${pnlKey(l)}:${l.v}`, data: { label: `${pnlName(l.k)} ${pnlCond(l).replace('USDT', 'USD')}` }, text: `${pnlName(l.k)} ${pnlCond(l)}` })) : [])];
 }
 // Bestätigung: was neu beobachtet wird (höchstens 8 Zeilen) und was insgesamt; ausgeschaltet → ein Satz
 export function ackText(c, fresh, now) {
-  return formatMessage('notice', { headline: c.on ? '✅ Dienst hat übernommen' : '⏸ Dienstübergabe ausgeschaltet', lines: c.on ? [
-    ...fresh.slice(0, 8).map(x => x.text), fresh.length > 8 ? `${fresh.length - 8} weitere` : '',
+  return formatMessage('handover', { headline: c.on ? '✅ Dienst hat übernommen' : '⏸ Dienstübergabe ausgeschaltet', items: c.on ? fresh.slice(0, 8).map(x => x.data) : [], lines: c.on ? [
+    fresh.length > 8 ? `${fresh.length - 8} weitere` : '',
     `Kurs-Alarme: ${c.ev.alarm ? c.alarms.length : 0}`, `Positionen mit Stop/Ziel: ${c.ev.pos ? c.positions.filter(p => p.sl || p.tp).length : 0}`,
     c.ev.news && c.econ.warn ? `Termin-Warnung: ${c.econ.warn} min vorher` : '', pulseOn(c) ? 'BTC-Puls aktiv' : '', 'Auch bei geschlossener App'] : ['Keine Meldungen bis zum Einschalten in der App'], at: now, timezone: c.tz });
 }
@@ -265,7 +264,7 @@ export function pinnedWhat(pm) {
 }
 export const chatText = (chat, id) => `${id}${chat ? ` (${chat.type === 'private' ? 'privat' : chat.type === 'channel' ? 'Kanal' : 'Gruppe'}${chat.title || chat.first_name ? ` „${chat.title || chat.first_name}“` : ''})` : ''}`;
 export function hintText({ bot, chat, what, host }) {
-  return formatMessage('notice', { headline: '⏳ Dienst wartet auf die App', lines: ['Server: ' + host, 'Keine angeheftete Datei: ' + FILE, 'Angeheftet: ' + what, 'Keine bekannten Alarme', '', 'In der App: Hinweise → Telegram / Discord einrichten → Kursalarm', 'Bot: ' + bot, 'Chat-ID: ' + chat, '„An den Dienst übergeben“ einschalten', 'Bei anderem Bot/Chat den Server neu einrichten:', 'curl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/install.sh | sudo bash -s -- --neu'] });
+  return formatMessage('notice', { headline: '⏳ Dienst wartet auf die App', lines: ['Server: ' + host, 'Keine angeheftete Datei: ' + FILE, 'Angeheftet: ' + what, 'Keine bekannten Alarme', '', 'In der App: Hinweise → Telegram einrichten → Kursalarm', 'Bot: ' + bot, 'Chat-ID: ' + chat, '„An den Dienst übergeben“ einschalten', 'Bei anderem Bot/Chat den Server neu einrichten:', 'curl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/install.sh | sudo bash -s -- --neu'] });
 }
 // darunter je vom Dienst gesendetem Gewinn-/Verlust-Alarm eine Zeile (pnlLine) – so übernimmt die App „ausgelöst“
 export const caption = (c, status, extra = []) => formatMessage('notice', { headline: '📌 Scalp Desk · Dienstübergabe', lines: [appLine(c), status, ...extra], limit: TELEGRAM_CAPTION_LIMIT });
@@ -283,10 +282,9 @@ export const KEY_RE = /^[A-Za-z0-9_-]{32,64}$/, ORIGIN_RE = /^(https:\/\/[a-z0-9
 export const APP_ORIGIN = 'https://nicoahb.github.io', LISTEN = '127.0.0.1:8247';
 export function readServerConfig(file) {
   let j; try { j = JSON.parse(fs.readFileSync(file, 'utf8')); } catch (e) { throw new Error(`Einstellungen ${file} nicht lesbar: ${e.message}`); }
-  const token = String(j.token || '').trim(), chat = String(j.chat || '').trim(), discord = String(j.discord || '').trim();
+  const token = String(j.token || '').trim(), chat = String(j.chat || '').trim();
   if (!TOKEN_RE.test(token)) throw new Error(`Bot-Token in ${file} fehlt oder hat das falsche Format (123456789:AA…).`);
   if (!CHAT_RE.test(chat)) throw new Error(`Chat-ID in ${file} fehlt oder hat das falsche Format.`);
-  if (discord && !DC_RE.test(discord)) throw new Error(`Discord-Webhook in ${file} hat das falsche Format.`);
   const key = String(j.key || '').trim(), origins = String(j.origin || APP_ORIGIN).split(',').map(x => x.trim().replace(/\/+$/, '')).filter(Boolean), listen = String(j.listen || LISTEN).trim(), host = String(j.host || '').trim();
   if (key && !KEY_RE.test(key)) throw new Error(`Zugangsschlüssel in ${file} hat das falsche Format.`);
   if (!origins.length || origins.some(o => !ORIGIN_RE.test(o))) throw new Error(`Herkunft der App (origin) in ${file} hat das falsche Format (z. B. ${APP_ORIGIN}).`);
@@ -296,7 +294,7 @@ export function readServerConfig(file) {
   if (patternToken && !TOKEN_RE.test(patternToken)) throw new Error(`Chartmuster-Bot in ${file} hat das falsche Format.`);
   const kiUsers = Array.isArray(j.kiUsers) ? j.kiUsers.map(String) : [];
   if (kiUsers.length > 10 || kiUsers.some(id => !/^[1-9]\d{0,19}$/.test(id))) throw new Error('KI-Absenderliste ungültig; numerische Telegram-Nutzer-IDs am Server eintragen');
-  return { token, chat, discord, key, origins, listen, host, patternToken, kiUsers };
+  return { token, chat, key, origins, listen, host, patternToken, kiUsers };
 }
 
 // ---------- 2.0 (G05): Ziel-Schalter und Ereignis-Freigaben (rein, ohne Netz – testbar) ----------
@@ -459,8 +457,8 @@ export class PatternArchive {
   }
 }
 export class Watcher {
-  constructor({ token, chat, discord = '', patternToken = '', kiUsers = [], kiClient, key = '', origins = [APP_ORIGIN], listen = LISTEN, host = '', statePath = '', now = () => Date.now(), log = (...a) => console.log(...a), patternFetch = klines }) {
-    Object.assign(this, { token, chat, discord, patternToken, kiUsers, key, origins, listen, host, statePath, now, log, patternFetch });
+  constructor({ token, chat, patternToken = '', kiUsers = [], kiClient, key = '', origins = [APP_ORIGIN], listen = LISTEN, host = '', statePath = '', now = () => Date.now(), log = (...a) => console.log(...a), patternFetch = klines }) {
+    Object.assign(this, { token, chat, patternToken, kiUsers, key, origins, listen, host, statePath, now, log, patternFetch });
     this.kiStartedAt = now(); this.kiOffset = null; this.kiCommandsBusy = false;
     this.patternWatch = { rev: 0, since: 0, config: null }; this.patternProgress = new Map(); this.patternBusy = false;
     // 2.0 (G05): Ziel-Schalter (Revision, Epoche, Einschaltzeit), ausgeführte Aufträge, Ereignis-Freigaben, Episoden
@@ -583,7 +581,6 @@ export class Watcher {
   // Fällige Meldungen senden: angenommen → aus dem Ausgang, als letzte Zustellung merken; abgelehnt oder nicht erreichbar →
   // später erneut (15 s, 30 s, 1, 2, dann alle 5 Minuten; bei „Too Many Requests“ nach Telegrams Vorgabe). Zeit der Meldung ist
   // die des Auslösens; kommt sie über 2 Minuten später an, steht das dabei (mit dem Grund: nicht erreichbar, gebremst, abgelehnt).
-  // Discord (falls eingerichtet) einmal, gleich beim ersten Versuch.
   async deliver() {
     if (this.delivering) return this.delivering;
     this.delivering = this.deliverPending();
@@ -602,7 +599,6 @@ export class Watcher {
       const late = t - m.at > 120e3, full = finishTelegram(m.text + (late ? '\n' + formatMessage('notice', { headline: 'Verspätet zugestellt', lines: [`Zustellung um ${timeText(t, m.tz)} Uhr`, why] }) : ''), m.at, m.tz);
       if (m.target === 'patterns' && (m.watchRev !== this.patternWatch.rev || !this.patternDestination(m.destination))) { this.out = this.out.filter(x => x !== m); if (m.ev) this.evSet(m.ev, 'discarded', 'Musterziel geändert'); this.saveState(); continue; }
       if (m.target === 'ki' && (m.po3Rev !== undefined ? (m.po3Rev !== this.po3.state.revision || !Object.values(this.po3.state.alerts).some(a => 'po3:' + crypto.createHash('sha256').update(a.id).digest('hex') === m.ev && a.expiresAt > t)) : (m.kiRev !== this.ki.state.rev || !this.ki.state.cards.some(c => c.scope?.modelVersion === this.ki.state.modelVersion && 'ki:' + crypto.createHash('sha256').update(c.id).digest('hex') === m.ev && c.expiresAt > t)))) { this.out = this.out.filter(x => x !== m); if (m.ev) this.evSet(m.ev, 'discarded', 'KI-Modell geändert oder Nachricht abgelaufen'); this.saveStateNow(); continue; }
-      if (!['patterns', 'ki'].includes(m.target) && this.discord && !m.dc) { m.dc = true; await this.discordPost(telegramPlain(full)); }
       try {
         const dest = m.target === 'patterns' ? m.destination : { chat: this.chat }, token = m.target === 'patterns' ? this.patternDestination(dest) : this.token;
         if (['patterns', 'ki'].includes(m.target)) { m.inFlight = true; if (!this.saveStateNow()) { m.inFlight = false; throw Object.assign(new Error('Muster-Versandstatus nicht dauerhaft gespeichert'), { code: 0 }); } }
@@ -621,10 +617,6 @@ export class Watcher {
         if (['patterns', 'ki'].includes(m.target)) { m.inFlight = false; this.saveStateNow(); } else this.saveState();
       }
     }
-  }
-  async discordPost(text) {
-    try { const r = await fetch(this.discord, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ content: text.slice(0, 1900), allowed_mentions: { parse: [] } }), signal: AbortSignal.timeout(15000) }); if (!r.ok && r.status !== 204) this.log('Discord:', r.status); }
-    catch (e) { this.log('Discord nicht erreichbar:', e.cause?.code || e.message); }
   }
   // ---- angepinnte Datei der App lesen ----
   async readFile(doc) {
@@ -689,7 +681,7 @@ export class Watcher {
   async sendAck() {
     const c = this.conf?.data; if (!c) { this.ackPend = false; return; }
     const items = watchItems(c), was = new Set(this.ackKeys || []), fresh = this.ackKeys ? items.filter(x => !was.has(x.key)) : items, t = this.now();
-    const r = await this.tg('sendMessage', { chat_id: this.chat, text: ackText(c, fresh, t).slice(0, 4000), disable_notification: true, link_preview_options: { is_disabled: true } });
+    const r = await this.tg('sendMessage', { chat_id: this.chat, text: ackText(c, fresh, t), disable_notification: true, link_preview_options: { is_disabled: true } });
     this.ackPend = false; this.ackKeys = items.map(x => x.key); this.ackAt = t; this.ackOn = c.on; this.saveState();
     this.log(`Bestätigung an Telegram gesendet: ${c.on ? `${plural(items.length, 'Marke', 'Marken')} beobachtet${fresh.length ? `, neu: ${fresh.slice(0, 4).map(x => x.text).join(' · ')}${fresh.length > 4 ? ' …' : ''}` : ''}` : 'Übergabe ausgeschaltet'}${r?.message_id ? ` (Nachricht #${r.message_id})` : ''}`);
   }
@@ -1136,7 +1128,7 @@ export class Watcher {
     try { const me = await this.tg('getMe'); this.me = me; say(true, `Bot @${me.username} (ID ${me.id}) erreichbar`); }
     catch (e) { say(false, e.code === 401 || e.code === 404 ? 'Bot-Token ungültig – in @BotFather mit /mybots → API Token nachsehen.' : e.message); return false; }
     try {
-      await this.tg('sendMessage', { chat_id: this.chat, text: formatMessage('notice', { headline: '✅ Dienst eingerichtet', lines: ['Server: ' + os.hostname(), 'Kurs-Alarme', 'Stop-Loss/Take-Profit', 'Wichtige Termine', 'BTC-Puls', 'Gewinn-/Verlust-Alarm', 'Auch bei geschlossener App', 'In der App: Hinweise → Telegram / Discord einrichten', '„An den Dienst übergeben“ einschalten'] }) });
+      await this.tg('sendMessage', { chat_id: this.chat, text: formatMessage('notice', { headline: '✅ Dienst eingerichtet', lines: ['Server: ' + os.hostname(), 'Kurs-Alarme', 'Stop-Loss/Take-Profit', 'Wichtige Termine', 'BTC-Puls', 'Gewinn-/Verlust-Alarm', 'Auch bei geschlossener App', 'In der App: Hinweise → Telegram einrichten', '„An den Dienst übergeben“ einschalten'] }) });
       say(true, 'Testnachricht an deinen Telegram-Chat gesendet');
     } catch (e) { say(false, e.code === 400 ? 'Chat nicht gefunden – Chat-ID prüfen und dem Bot in Telegram zuerst „Start“ schreiben.' : e.code === 403 ? 'Der Bot darf dir nicht schreiben – in Telegram den Bot öffnen und „Start“ tippen.' : e.message); return false; }
     for (const [src, sym] of [['spot', 'BTCUSDT'], ['futures', 'BTCUSDT']]) {
@@ -1155,7 +1147,7 @@ export class Watcher {
   // ---- 1.4: Fehlersuche ohne Nachricht (sudo scalpdesk-247 status): der ganze Weg App → Telegram → Dienst ----
   async status() {
     let ok = true; const say = (good, text) => { this.log(`${good === null ? '•' : good ? '✓' : '✗'} ${text}`); if (good === false) ok = false; };
-    const how = `In der App unter 🔔 Hinweise → „Telegram / Discord einrichten“ → Kursalarm müssen derselbe Bot und dieselbe Chat-ID stehen wie hier am Server; dort „An den 24/7-Dienst übergeben“ einschalten. Anderer Bot (z. B. Sicherungs-Bot) oder andere Chat-ID: am Server neu eingeben mit\n    curl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/install.sh | sudo bash -s -- --neu`;
+    const how = `In der App unter 🔔 Hinweise → „Telegram einrichten“ → Kursalarm müssen derselbe Bot und dieselbe Chat-ID stehen wie hier am Server; dort „An den 24/7-Dienst übergeben“ einschalten. Anderer Bot (z. B. Sicherungs-Bot) oder andere Chat-ID: am Server neu eingeben mit\n    curl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/install.sh | sudo bash -s -- --neu`;
     this.log(`Scalp Desk 24/7-Dienst ${VERSION} – Status`);
     try { this.me = await this.tg('getMe'); say(true, `Bot ${this.botText()} (ID ${this.me.id}) – Token gültig`); }
     catch (e) { say(false, e.code === 401 || e.code === 404 ? 'Bot-Token ungültig – Token aus der App (Kursalarm) mit --neu neu eingeben.' : e.message); return false; }
@@ -1247,7 +1239,7 @@ async function main(argv) {
   // 2.0: Adresse und Zugangsschlüssel für die App (nur auf ausdrücklichen Aufruf am Server, nie im Protokoll)
   if (o.zugang) {
     if (!conf.key) { console.log('HTTPS-Steuerung ist nicht eingerichtet – den Installationsbefehl erneut ausführen.'); process.exit(1); }
-    console.log(`Adresse:          ${conf.host ? `https://${conf.host}` : '(noch keine öffentliche Adresse – den Installationsbefehl erneut ausführen)'}\nZugangsschlüssel: ${conf.key}\n\nIn der App: 🔔 Hinweise → „Telegram / Discord einrichten“ → 24/7-Dienst → Adresse und Zugangsschlüssel eintragen, dann „Verbindung prüfen“.\nDen Schlüssel nicht weitergeben – wer ihn kennt, kann die Chat-Schalter umstellen.`);
+    console.log(`Adresse:          ${conf.host ? `https://${conf.host}` : '(noch keine öffentliche Adresse – den Installationsbefehl erneut ausführen)'}\nZugangsschlüssel: ${conf.key}\n\nIn der App: 🔔 Hinweise → „Telegram einrichten“ → 24/7-Dienst → Adresse und Zugangsschlüssel eintragen, dann „Verbindung prüfen“.\nDen Schlüssel nicht weitergeben – wer ihn kennt, kann die Chat-Schalter umstellen.`);
     process.exit(0);
   }
   // --status liest nur (Zustand ohne Speichern): kein Schreiben in die Zustandsdatei des laufenden Dienstes

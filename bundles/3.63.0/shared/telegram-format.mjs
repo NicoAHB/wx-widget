@@ -74,7 +74,7 @@ export function formatMessage(type, d = {}) {
     [line('Markt: ', d.market), line('Auslösung: ', d.reached), line('Notiz: ', d.note)]];
   } else if (type === 'pulse') {
     const ratio = finite(d.threshold) && d.threshold > 0 && finite(d.change) ? Math.abs(d.change) / d.threshold : null;
-    const others = (Array.isArray(d.others) ? d.others : []).filter(x => value(x[0]) && finite(x[1])).slice().sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]) || String(a[0]).localeCompare(String(b[0]));
+    const others = (Array.isArray(d.others) ? d.others : []).filter(x => value(x[0]) && finite(x[1])).slice().sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]) || String(a[0]).localeCompare(String(b[0])));
     const width = Math.max(0, ...others.map(x => String(x[0]).length)), table = others.map(([c, p]) => `${p < 0 ? '🔴' : p > 0 ? '🟢' : '⚪'} ${escapeTelegram(String(c).padEnd(width))}  ${telegramPercent(p)}`).join('\n');
     blocks = [[`<b>${direction.icon} ${coin || 'BTC'}-PULS · ${telegramPercent(d.change)}</b>${finite(d.minutes) ? ' in ' + telegramNumber(d.minutes, 0) + ' Min' : ''}`,
       numLine('💰 Kurs: ', d.price, v => code(v)),
@@ -94,6 +94,13 @@ export function formatMessage(type, d = {}) {
   } else if (type === 'trade') {
     blocks = [[`<b>${d.paper ? 'PAPER · ' : ''}${finite(d.pnl) ? d.pnl < 0 ? '🔴 VERLUST' : d.pnl > 0 ? '🟢 GEWINN' : '⚪ AUSGEGLICHEN' : direction.icon + ' TRADE'} · ${coin}${value(d.side) ? ' ' + escapeTelegram(d.side === 'long' ? 'Long' : 'Short') : ''}${finite(d.pnl) ? ' · ' + telegramSigned(d.pnl) + ' USD' : ''}</b>`,
       numLine('💰 Einstieg: ', d.entry, code), numLine('Kurs beim Abschluss: ', d.exit, code), numLine('Ergebnis: ', d.percent, telegramPercent), line('Dauer: ', d.duration), numLine('Menge: ', d.quantity, v => telegramNumber(v, 8)), line('Gründe: ', d.reasons), line('Hinweis: ', d.note)]];
+  } else if (type === 'handover') {
+    const targets = (d.items || []).flatMap(x => {
+      const dir = telegramDirection(x.direction);
+      return [`<b>${escapeTelegram(x.label)}</b>`, numLine('⭐ <b>Alarm-Level: ', x.level, v => money(v) + '</b> ⭐' + (dir.sign ? ' (' + (dir.sign > 0 ? 'auf/über' : 'unter') + ')' : '')),
+        numLine('🛑 Stop-Loss: ', x.stop, code), numLine('⭐ <b>Take-Profit: ', x.target, v => money(v) + '</b> ⭐')];
+    });
+    blocks = [[`<b>${escapeTelegram(d.headline)}</b>`], targets, (d.lines || []).filter(value).map(escapeTelegram)];
   } else if (type === 'backup') {
     blocks = [['<b>💾 SCALP-DESK-SICHERUNG</b>', numLine('Offene Positionen: ', d.positions, v => telegramNumber(v, 0)), numLine('Trades: ', d.trades, v => telegramNumber(v, 0)), numLine('Geldbewegungen: ', d.movements, v => telegramNumber(v, 0))], ['Wiederherstellen:', 'Datei speichern', 'Im Dashboard „Backup einspielen“']];
   } else if (type === 'signal' || type === 'po3') {

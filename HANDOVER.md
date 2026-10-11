@@ -1,11 +1,21 @@
-<!-- Muster-Bot 3.63 technisch eingebaut: eigener klappbarer Analysebereich, einstellbare Hammer-/Engulfing-Regeln und getrennte Einstiege, kausaler gebührenhaltiger Long-/1-Position-Kern ohne Hebel, 27 Worker-Backtests/Einzeltest, sortierbare Ergebnisse/Equity, eigene lokale Paper-Demo mit Coinbindung, H/E-Markierungen, Trades-Textmeldungen und gezieltem Löschen. Touch-Infos/SVG an Feldern/Spalten. docs/MUSTER-BOT.md und neue Testziele ergänzt. Alle Aufgaben implementiert; als Nächstes erstmals gemeinsame Fehlerprüfung, Korrekturen, vollständiger serieller Release-Lauf und Veröffentlichung. Keine private Oracle-VM eingerichtet. -->
-<!-- 2h-Schritt 3.63 umgesetzt: gemeinsame market-intervals-Konfiguration, Button/Cache/Live-Kline/Indikatoren/Muster-Sprung, Intervall gespeichert, unbekannte Intervalle mit nächstliegendem Rückfall und Hinweis. Bestehende sechs Gesamtsignal-Stimmen erhalten. Neue Unit-/Browserfälle geschrieben; Ausführung nach Muster-Bot-Abschluss. -->
-<!-- Oracle-Schritt 3.63 umgesetzt: reiner Chartmusterdienst auf bestehender Engine, dauerhafte IDs/Versandstatus, systemd/Berlin/Logs, tokenfreier Auswahl-Export und exklusiver Sender-Schalter. docs/ORACLE_24-7.md mit aktueller Oracle-Quelle/Idle-Regeln. Tests geschrieben, gemäß Nutzer erst am Ende ausführen. Private VM/realer Telegram-Abnahmetest weiter offen. Als Nächstes 2h und Muster-Bot, danach Gesamtlauf/Release. -->
-<!-- Telegram 3.63: zentrale HTML-Darstellung einschließlich USD-Preisen, Kurs-/Puls-/Muster-/Positions-/KI-/PO3-Meldungen, Sicherungs- und Trade-Beschriftung umgesetzt; Teil 1 zuvor 22/22. Neue Format-/Fallbacktests geschrieben, noch nicht ausgeführt. Oracle, 2h, Muster-Bot und Abschlussabnahme folgen vor Veröffentlichung. -->
 # HANDOVER – Scalp Desk (Übergabe an ChatGPT)
 
 Diese Datei ist der Einstieg für jede weitere Arbeit am Projekt. Wer sie liest, braucht kein Vorwissen. Die vollständige fachliche
 Vorgabe aller Gruppen G01–G14 steht in `docs/VORGABE-G01-G14.md` (Original-Übergabe; dort sind G10–G14 ausführlich beschrieben).
+
+## Aktueller Arbeitsstand 3.63.0 – Umsetzung fertig, Releaseprüfung läuft
+
+Branch `codex/telegram-muster-bot`, öffentlich weiterhin 3.62.0. Auf ausdrücklichen Nutzerauftrag alle Ergänzungen gemeinsam fertiggestellt, anschließend Fehlerprüfung und Veröffentlichung; keine erneute Gruppenfreigabe nötig.
+
+- Telegram: zwölf Felder unabhängig gespeichert, Rückfälle nur beim Versand; zentrale HTML-/USD-Darstellung und Klartext nur nach eindeutigem Formatfehler. Teil 1 vor Oracle separat 22/22; native Versandprüfung 8/8, reine Formatprüfung 28 Fälle geschrieben. Alte Formatannahmen und manuell gepflegte App-Testauszüge aktualisiert, Auslöser/Sendesperren erhalten.
+- Oracle: eigener reiner Chartmusterdienst auf pat-1, frisch bestätigte Formationen ab 80 %, langlebige Muster-IDs/Versandzustände, exklusiver Sender, tokenfreier Konfigurationsexport, systemd/Berlin/Logrotation. Reiner Dienst 16/16; Anleitung `docs/ORACLE_24-7.md` mit offiziellen Always-Free-/Rücknahmeregeln vom 11.10.2026. Private VM und echter Chat benötigen Nutzereinrichtung.
+- Gemeinsame Intervalle einschließlich 2h; Musterwechsel wartet auf eigene frisch geladene Kerzen. Echte 2h-Formation/Originallinien und Projektion 16/16, zentrale Intervalle 7/7. Sechs bisherige Gesamtsignal-Stimmen unverändert.
+- Muster-Bot: eigener klappbarer Analysebereich, alle 24 Einstellungen/Touch-Infos, 27 kausale Worker-Backtests und Einzeltest, getrennte Einstiegsarten, konservative SL-/Gebührenbehandlung, eigener coinfester Paperlauf und Chartmarker. Kern 23/23, Feed 8/8, Paper 9/9, nativer Worker/Mobilbreiten/Demo 18/18. Ein tatsächlicher Checkbox-Überstand bei 320–1440 px behoben.
+- Verschlüsselter privater GitHub-Sync: AES-GCM256/PBKDF2 600.000, SHA-Konfliktretry, nur lokaler Token/keine gespeicherte Passphrase, stiller Neuerer-Hinweis, bestätigter Import mit Notfallkopie/Rückgängig; persönliche Präferenzen/KI-/PO3-Originale, Demos bleiben lokal. Kern 24/24, zwei native Geräteprofile 18/18. Anleitung `docs/GITHUB-SYNC.md`.
+- Discord vollständig aus App/Worker/Dienst/Installer entfernt; für Oracle nicht erforderlich. Alte Einträge werden ignoriert/aus Geräteeinstellungen entfernt.
+- Chartmuster-Projektion: aktive gültige Grenzen, 25 Kerzen voreingestellt/1–100 einstellbar, Keil/Dreieck bis zur Spitze, gebrochene Linien blasser, keine Preisachsenänderung; Kern 22/22. Vollständige neue Codeabschnitte in `docs/CHARTMUSTER-PROJEKTION.md`.
+
+**Nächster Schritt:** Produktstand einfrieren, alle 158 Release-Ziele seriell mit unverfälschten Rückgabewerten prüfen, Befunde korrigieren/nachprüfen, Lint mit 0 Fehlern, Pull Request (Inhalt/Tests/Offen), Merge-Commit und GitHub Pages/HTTPS für alle 69 PWA-Dateien nachweisen. Noch kein Release als bestanden oder online ausgeben. Reale iPhone-/iPad-/Oracle-/Telegram-Zugänge getrennt von lokalen Attrappen behandeln.
 
 ## 1. Ziel und Architektur
 - **Ziel:** Scalp Desk ist eine Web-App (PWA) für Krypto-Scalping auf dem iPhone/iPad und am Rechner: Binance-Kurse, Chart mit Indikatoren,

@@ -27,6 +27,8 @@ const check = (name, ok) => { ok ? pass++ : fail++; console.log(`${ok ? '✓' : 
     const text = F.formatMessage(type, { ...fixture, direction: 'bull', price: 101, level: 100, hit: 'tp', pnl: 10, limit: 100, headline: 'A&B', events: [{ title: '<Termin>' }], lines: ['<Daten>'], at });
     check(`${type}: HTML, fehlende Werte und Uhrzeit am Ende`, text.includes('<b>') && !/NaN|None|undefined|24\/7-Dienst/.test(text) && /^🕐 /.test(text.split('\n').at(-1)) && text.length <= 4096);
   }
+  const handover = F.formatMessage('handover', { headline: '✅ Dienst hat übernommen', items: [{ label: 'Kurs-Alarm A&B', direction: 'above', level: 100 }, { label: 'ETH Long', stop: 90, target: 110 }], lines: ['Auch bei geschlossener App'], at });
+  check('Dienstbestätigung: Alarm/Ziel fett mit Sternen, Stop kopierbar und dynamischer Text escaped', handover.includes('A&amp;B') && handover.includes('⭐ <b>Alarm-Level: 100,0000 USD</b> ⭐ (auf/über)') && handover.includes('<code>90,0000 USD</code>') && handover.includes('⭐ <b>Take-Profit: 110,0000 USD</b> ⭐') && /^🕐 /.test(handover.split('\n').at(-1)));
   const long = F.formatMessage('notice', { headline: 'Länge', lines: ['<&>😀'.repeat(2000)], at });
   check('4096-Zeichen-Grenze: Tags/Entities bleiben ganz und Uhrzeit erhalten', long.length <= 4096 && !/&[^;\s]*$/.test(long) && (long.match(/<b>/g) || []).length === (long.match(/<\/b>/g) || []).length && /^🕐 /.test(long.split('\n').at(-1)));
   check('Bildbeschriftung maximal 1024 Zeichen', F.telegramFields(long, { limit: 1024 }).text.length <= 1024);

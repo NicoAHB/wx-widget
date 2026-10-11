@@ -7,7 +7,7 @@
 # Was passiert:
 #  1. Node.js ab Version 18 (fehlt es, kommt Node 22 von NodeSource)
 #  2. Programm nach /opt/scalpdesk-247
-#  3. Einstellungen /etc/scalpdesk-247.json: Bot-Token, Chat-ID, optional Discord-Webhook (nur für den Dienst lesbar)
+#  3. Einstellungen /etc/scalpdesk-247.json: Bot-Token, Chat-ID (nur für den Dienst lesbar)
 #  4. Prüfung: Bot, Testnachricht an deinen Chat, Binance erreichbar
 #  5. Dienst „scalpdesk-247“ (systemd): startet mit dem Server und nach Fehlern von selbst neu
 #  6. HTTPS-Steuerung (ab 2.0): Zugangsschlüssel, öffentliche Adresse <IP>.sslip.io, Caddy mit kostenlosem Zertifikat,
@@ -113,9 +113,9 @@ say "2/7 Programm $(node "$DIR/scalpdesk-247.mjs" --version) nach $DIR ✓ (voll
 # ---- 3. Einstellungen ----
 id "$USR" >/dev/null 2>&1 || useradd --system --no-create-home --shell /usr/sbin/nologin "$USR"
 if [ ! -s "$CONF" ] || [ "${1:-}" = "--neu" ]; then
-  say "3/7 Einstellungen – beides steht in der App unter 🔔 Hinweise → „Telegram / Discord einrichten“:"
+  say "3/7 Einstellungen – beides steht in der App unter 🔔 Hinweise → „Telegram einrichten“:"
   exec 3<"$TTY" || die "Keine Eingabe möglich. Bitte in einem Terminal ausführen (nicht über einen Dienst oder Cron)."
-  TOKEN="" CHAT="" DC=""
+  TOKEN="" CHAT=""
   while ! [[ "$TOKEN" =~ ^[0-9]{5,15}:[A-Za-z0-9_-]{30,80}$ ]]; do
     read -r -s -u 3 -p "  Bot-Token (123456789:AA…, Eingabe bleibt unsichtbar): " TOKEN || die "Eingabe abgebrochen."; echo
     TOKEN="$(printf '%s' "$TOKEN" | tr -d '[:space:]')"
@@ -125,9 +125,8 @@ if [ ! -s "$CONF" ] || [ "${1:-}" = "--neu" ]; then
     read -r -u 3 -p "  Chat-ID (z. B. 987654321): " CHAT || die "Eingabe abgebrochen."
     CHAT="$(printf '%s' "$CHAT" | tr -d '[:space:]')"
   done
-  read -r -u 3 -p "  Discord-Webhook (optional, Enter = keiner): " DC || DC=""; DC="$(printf '%s' "$DC" | tr -d '[:space:]')"
   exec 3<&-
-  ( umask 077; TOKEN="$TOKEN" CHAT="$CHAT" DC="$DC" node -e 'const e=process.env;process.stdout.write(JSON.stringify({token:e.TOKEN,chat:e.CHAT,discord:e.DC},null,1)+"\n")' > "$CONF.new" )
+  ( umask 077; TOKEN="$TOKEN" CHAT="$CHAT" node -e 'const e=process.env;process.stdout.write(JSON.stringify({token:e.TOKEN,chat:e.CHAT},null,1)+"\n")' > "$CONF.new" )
   mv "$CONF.new" "$CONF"
 else
   say "3/7 Einstellungen aus $CONF übernommen (neu eingeben: … | sudo bash -s -- --neu)"
@@ -246,7 +245,7 @@ EOF
 chmod 755 "$BIN"
 cat <<'EOF'
 
-Fertig. Jetzt in der App: 🔔 Hinweise → „Telegram / Discord einrichten“ → „An den 24/7-Dienst übergeben“ einschalten.
+Fertig. Jetzt in der App: 🔔 Hinweise → „Telegram einrichten“ → „An den 24/7-Dienst übergeben“ einschalten.
 Für die Chat-Schalter und die Sendefreigabe (ab App 3.33.0) dort unter „24/7-Dienst“ Adresse und Zugangsschlüssel eintragen:
   sudo scalpdesk-247 zugang
 Nach spätestens einer Minute steht dort „Übergeben ✓ vom Dienst bestätigt“, und in Telegram kommt „✅ 24/7-Dienst hat übernommen“.

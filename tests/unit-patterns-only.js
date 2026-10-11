@@ -10,7 +10,7 @@ const throws = f => { try { f(); return false; } catch { return true; } };
   check('Token/Chat-ID im Auswahl-Export verboten', throws(() => M.patternWatchFile({ ...watch, token: destination.token })) && throws(() => M.patternWatchFile({ ...watch, chat: '1' })));
   check('Doppelte Coins/Intervalle und unbekannte Intervalle abgelehnt', throws(() => M.patternWatchFile({ ...watch, items: [...watch.items, ...watch.items] })) && throws(() => M.patternWatchFile({ ...watch, items: [{ ...watch.items[0], iv: '7x' }] })));
   const src = fs.readFileSync(path.join(__dirname, 'm58.js'), 'utf8'), build = vm.runInNewContext(src.slice(src.indexOf('const BUILD = () => {'), src.indexOf('\nconst tests = {')) + '\nBUILD()');
-  let k = build.path(build.F.double_bottom).map(c => ({ ...c, v: 100 }));
+  let k = build.path(build.F.double_bottom).map((c, i) => ({ ...c, v: 200 - i }));
   const hit = E.patEngine().detect(k, { from: 0, step: build.STEP }).hits.find(h => h.id === 'double_bottom' && /^Ausbruch/.test(h.status));
   if (!hit) throw new Error('Feste bestätigte Formation fehlt'); k = k.slice(0, hit.i1 + 1);
   const close = P.patternEnd(k.at(-1).t, '1h'), rows = k.map(c => [c.t, c.o, c.h, c.l, c.c, c.v, P.patternEnd(c.t, '1h') - 1]); let now = close - 1;
