@@ -1,12 +1,10 @@
 // 2.4.0 (G09 C6b): Marktvertrag, frische bestätigte Formationen und deutscher Meldungstext.
 import { patEngine, PAT_NAMES } from './pattern-engine.mjs';
 import { formatMessage } from './telegram-format.mjs';
-export const PAT_STEPS = { '1m': 60e3, '3m': 18e4, '5m': 3e5, '15m': 9e5, '30m': 18e5, '1h': 36e5, '2h': 72e5, '4h': 144e5, '1d': 864e5, '1w': 6048e5, '1M': 0 };
+import { PATTERN_STEPS, intervalEnd } from './market-intervals.mjs';
+export const PAT_STEPS = PATTERN_STEPS;
 export const patternId = c => [c.mkt, c.sym, c.iv, c.pat, c.t0, c.t1, c.model].join('|');
-export function patternEnd(t, iv) {
-  if (iv === '1M') { const d = new Date(t); return Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1); }
-  return t + PAT_STEPS[iv];
-}
+export const patternEnd = intervalEnd;
 export function patternConfig(c) {
   if (c && ((c.model && c.model !== 'pat-1') || c.gap === true)) throw new Error('Chartmuster: nur Modell pat-1 im Krypto-Modus ohne strenge Gaps unterstützt.');
   if (!c || !Array.isArray(c.items) || c.items.length > 40 || !/^(-?\d{1,20}|@[A-Za-z][A-Za-z0-9_]{4,31})$/.test(c.chat) || !/^\d{1,20}$/.test(c.bot)

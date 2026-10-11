@@ -14,13 +14,18 @@
     },
     {
       "path": "pattern-monitor.mjs",
-      "sha256": "763af68c28a1c0961c3f3bc2e0bb7618dfe55e0196563ccfa627d805065b087e",
-      "bytes": 5039
+      "sha256": "373b536539612a00c2dfe1aa11709c535adbbbbf6f848dcf162811ee63c180d1",
+      "bytes": 4852
     },
     {
       "path": "telegram-format.mjs",
       "sha256": "2eefa259b1c49fa69d555a0373f43c28fa07b23e986ec9176650dd11081fbec6",
       "bytes": 430
+    },
+    {
+      "path": "market-intervals.mjs",
+      "sha256": "7f1b63eb71189325235155d56909622def1b2f09eb69367135a69f67c44d4cc8",
+      "bytes": 412
     },
     {
       "path": "patterns-247.mjs",
@@ -161,6 +166,11 @@
       "path": "shared/indicators.mjs",
       "sha256": "9105a8ac09d5557e90ec05fd3035c915b36b8e345b31b96a158d0001da505540",
       "bytes": 9568
+    },
+    {
+      "path": "shared/market-intervals.mjs",
+      "sha256": "22b79903dd441da1806bdd23720d33f86c0e9efaa97d1a5e8f01478bc85ccece",
+      "bytes": 2263
     },
     {
       "path": "shared/model-archive.mjs",
