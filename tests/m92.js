@@ -64,6 +64,11 @@ let pass=0,fail=0;const check=(name,ok,extra='')=>{ok?pass++:fail++;console.log(
     await page.selectOption('#chart-detail-resolution','5m');await page.waitForFunction(()=>__chartDetail.state.context?.source==='futures'&&!__chartDetail.state.busy&&__chartDetail.state.candles.length>500);
     check('Futures-Coin nutzt ausschließlich Futures-Detailquelle',requests.filter(r=>r.symbol==='BSVUSDT'&&r.iv==='5m').every(r=>r.source==='futures')&&await page.evaluate(()=>__chartDetail.state.candles.every(c=>c.close<40)));
     await page.selectOption('#chart-detail-resolution','');
+    await page.evaluate(()=>__intervals.setMarket('BTCUSDT','1M'));await page.waitForFunction(()=>__g05.state.interval==='1M'&&__g05.state.loadedSymbol==='BTCUSDT'&&!__g05.state.busy);
+    await page.selectOption('#chart-detail-resolution','1w');await page.waitForFunction(()=>__chartDetail.state.iv==='1w'&&!__chartDetail.state.busy&&__chartDetail.state.candles.length>200&&document.querySelector('#chart .detail-candles'));
+    check('Monatschart mit echten Montag-UTC-Wochen als Detailauflösung',await page.evaluate(()=>__chartDetail.state.candles.every((c,i,a)=>new Date(c.time).getUTCDay()===1&&(!i||c.time-a[i-1].time===604800000))));
+    check('Mehrjährige Detail-Zeitachse nennt auch das Jahr',await page.locator('#chart .axis-label').evaluateAll(nodes=>nodes.filter(n=>/^\d{2}\.\d{2}\.\d{2}$/.test(n.textContent)).length>=3));
+    await page.selectOption('#chart-detail-resolution','');
     // Tatsächliche pat-1-Erkennung: Ascending-Triangle-Fixture erzeugt mehrere verschiedene Formationen.
     const src=fs.readFileSync(__dirname+'/m58.js','utf8'),B=vm.runInNewContext(src.slice(src.indexOf('const BUILD = () => {'),src.indexOf('\nconst tests = {'))+'\nBUILD()'),shape=B.path(B.F.asc_triangle),ms=3600000,base=Math.floor(Date.now()/ms)*ms-500*ms;
     const k=[...Array.from({length:500-shape.length},()=>({o:85,h:85.1,l:84.9,c:85,v:100})),...shape,{o:97,h:97.1,l:96.9,c:97,v:1}];fixture=k.map((c,i)=>[base+i*ms,c.o,c.h,c.l,c.c,c.v,base+(i+1)*ms-1]);
@@ -71,10 +76,15 @@ let pass=0,fail=0;const check=(name,ok,extra='')=>{ok?pass++:fail++;console.log(
     const chip=await page.evaluate(()=>__g09.chipRows().filter(r=>!r.disabled).map(r=>({key:r.key,id:r.hit.id,q:r.hit.q})));
     check('Chips stammen aus regelbasierter Engine im gewählten Haupt-Timeframe',chip.length>=2&&chip.every(r=>r.q>=60)&&await page.evaluate(()=>__g09.pat.res.key.endsWith('|1h')&&__g09.pat.viaWorker>0));
     check('Muster-Leiste steht im markierten Kursbereich beim Alarm, BTC-Anzeige bleibt erhalten',await page.evaluate(()=>document.getElementById('chart-pattern-row').contains(document.getElementById('alarm-here'))&&document.getElementById('chart-pattern-row').contains(document.getElementById('of-btc-chart'))));
+    check('Prozentzahl ausdrücklich als Regelgüte mit getrennten lesbaren Textzeilen',await page.locator('.chart-pattern-chip').evaluateAll(nodes=>nodes.every(n=>n.textContent.includes('\n')&&n.textContent.includes('Regelgüte'))));
     await page.locator(`button[data-pattern-key="${chip[0].key}"]`).click();await page.waitForFunction(()=>!!document.querySelector('#chart .pat-chip-drawing'));
     check('Tippen zeichnet Grenzen, Schlüsselpunkte und Label',await page.locator('#chart .pat-chip-line').count()>0&&await page.locator('#chart .pat-chip-point').count()>0&&await page.locator('#chart .pat-chip-label').count()>0);
     await page.locator(`button[data-pattern-key="${chip[1].key}"]`).click();await page.waitForFunction(()=>document.querySelectorAll('#chart .pat-chip-drawing').length===2);
     check('Mehrere Muster gleichzeitig mit verschiedenen Zeichenfarben',await page.locator('#chart .pat-chip-drawing').evaluateAll(groups=>new Set(groups.map(g=>g.querySelector('line')?.getAttribute('stroke'))).size===2));
+    await page.locator('#chart-sec').screenshot({path:'/tmp/scalpdesk-364-muster.png'});
+    await page.click('#chart-full');await page.waitForFunction(()=>document.documentElement.dataset.chartfull==='1');
+    check('Vollbild behält Muster-Auswahl, Kursalarm-Knopf bleibt wie zuvor verborgen',!await page.locator('#alarm-here').isVisible()&&await page.locator('.chart-pattern-chip').first().isVisible()&&await page.evaluate(()=>__g09.chipSelection().length===2));
+    await page.click('#fb-exit');await page.waitForFunction(()=>!document.documentElement.dataset.chartfull);
     check('Keine Doppelungen in Leiste, Grenzen der Zonen gezeichnet',new Set(chip.map(c=>c.id)).size===chip.length&&await page.locator('#chart .pat-chip-zone').count()>0);
     check('Ausbruchslinie nutzt echtes Engine-Level brk',await page.locator('#chart .pat-chip-level[data-level="brk"]').count()>0);
     const nodes=await page.evaluate(()=>{window.m92ChipNodes=[...document.querySelectorAll('.chart-pattern-chip')];__g09.chipPaint();return window.m92ChipNodes.every((n,i)=>document.querySelectorAll('.chart-pattern-chip')[i]===n);});
