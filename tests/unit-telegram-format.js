@@ -33,6 +33,16 @@ const check = (name, ok) => { ok ? pass++ : fail++; console.log(`${ok ? '✓' : 
   const long = F.formatMessage('notice', { headline: 'Länge', lines: ['<&>😀'.repeat(2000)], at });
   check('4096-Zeichen-Grenze: Tags/Entities bleiben ganz und Uhrzeit erhalten', long.length <= 4096 && !/&[^;\s]*$/.test(long) && (long.match(/<b>/g) || []).length === (long.match(/<\/b>/g) || []).length && /^🕐 /.test(long.split('\n').at(-1)));
   check('Bildbeschriftung maximal 1024 Zeichen', F.telegramFields(long, { limit: 1024 }).text.length <= 1024);
+  // Die tatsächliche Multipart-Funktion prüfen, nicht eine manuelle Kopie des Wrappers.
+  const app = require('node:fs').readFileSync(require('node:path').join(__dirname, '../weather-widget-v2.html'), 'utf8'), source = app.slice(app.indexOf('async function tgPost('), app.indexOf('\nconst tgbForm', app.indexOf('async function tgPost(')));
+  let multipart;
+  const post = new Function('telegramFields', 'formatMessage', 'telegramPlain', 'telegramFormatRejected', 'TELEGRAM_CAPTION_LIMIT', 'fetch', source + '\nreturn tgPost;')(F.telegramFields, F.formatMessage, F.telegramPlain, F.telegramFormatRejected, F.TELEGRAM_CAPTION_LIMIT, async (_url, options) => { multipart = options.body; return { ok: true, status: 200, json: async () => ({ ok: true, result: { message_id: 1 } }) }; });
+  for (const media of [false, true]) {
+    const fd = new FormData(); fd.set(media ? 'media' : 'caption', media ? JSON.stringify({ type: 'document', media: 'attach://file', caption: long }) : long);
+    await post(media ? 'editMessageMedia' : 'sendDocument', fd, false, 'LOCAL_ONLY');
+    const caption = media ? JSON.parse(multipart.get('media')).caption : multipart.get('caption');
+    check('App-Multipart ' + (media ? 'Medienwechsel' : 'Datei') + ': lange HTML-Beschriftung auf 1024 begrenzt, Uhrzeit erhalten', caption.length <= 1024 && caption.includes('…') && /^🕐 /.test(caption.split('\n').at(-1)) && (media ? JSON.parse(multipart.get('media')).parse_mode : multipart.get('parse_mode')) === 'HTML');
+  }
   check('Klartext entpackt nur Format-Tags und korrekt einmal Entities', F.telegramPlain('<b>A&amp;B</b> &lt;x&gt; &amp;lt;') === 'A&B <x> &lt;');
   check('Fallback ausschließlich explizite Telegram-Formatablehnung', F.telegramFormatRejected(400, "Bad Request: can't parse entities") && !F.telegramFormatRejected(400, 'chat not found') && !F.telegramFormatRejected(429, "can't parse entities") && !F.telegramFormatRejected(0, 'timeout'));
   const fetchBefore = global.fetch, calls = [], svc = Object.create(S.Watcher.prototype); Object.assign(svc, { token: 'LOCAL_ONLY', now: () => at, secret: x => x });
