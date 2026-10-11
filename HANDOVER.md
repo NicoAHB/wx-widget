@@ -3,11 +3,11 @@
 Diese Datei ist der Einstieg für jede weitere Arbeit am Projekt. Wer sie liest, braucht kein Vorwissen. Die vollständige fachliche
 Vorgabe aller Gruppen G01–G14 steht in `docs/VORGABE-G01-G14.md` (Original-Übergabe; dort sind G10–G14 ausführlich beschrieben).
 
-## Aktueller Arbeitsstand 3.63.0 – Gesamtlauf beendet, Befunde werden nachgeprüft
+## Aktueller Arbeitsstand 3.63.0 – technisch abgenommen, Veröffentlichung folgt
 
 Branch `codex/telegram-muster-bot`, öffentlich weiterhin 3.62.0. Auf ausdrücklichen Nutzerauftrag alle Ergänzungen gemeinsam fertiggestellt, anschließend Fehlerprüfung und Veröffentlichung; keine erneute Gruppenfreigabe nötig.
 
-- Telegram: zwölf Felder unabhängig gespeichert, Rückfälle nur beim Versand; zentrale HTML-/USD-Darstellung und Klartext nur nach eindeutigem Formatfehler. Teil 1 vor Oracle separat 22/22; native Versandprüfung 8/8, reine Formatprüfung 33 Fälle geschrieben. Alte Formatannahmen und manuell gepflegte App-Testauszüge aktualisiert, Auslöser/Sendesperren erhalten.
+- Telegram: zwölf Felder unabhängig gespeichert, Rückfälle nur beim Versand; zentrale HTML-/USD-Darstellung und Klartext nur nach eindeutigem Formatfehler. Teil 1 vor Oracle separat 22/22; native Versandprüfung 8/8, reine Formatprüfung 33/33 einschließlich kleiner Tageslimit-Beträge und realer Caption-Aufrufe. Alte Formatannahmen und manuell gepflegte App-Testauszüge aktualisiert, Auslöser/Sendesperren erhalten.
 - Oracle: eigener reiner Chartmusterdienst auf pat-1, frisch bestätigte Formationen ab 80 %, langlebige Muster-IDs/Versandzustände, exklusiver Sender, tokenfreier Konfigurationsexport, systemd/Berlin/Logrotation. Reiner Dienst 16/16; Anleitung `docs/ORACLE_24-7.md` mit offiziellen Always-Free-/Rücknahmeregeln vom 11.10.2026. Private VM und echter Chat benötigen Nutzereinrichtung.
 - Gemeinsame Intervalle einschließlich 2h; Musterwechsel wartet auf eigene frisch geladene Kerzen. Echte 2h-Formation/Originallinien und Projektion 16/16, zentrale Intervalle 7/7. Sechs bisherige Gesamtsignal-Stimmen unverändert.
 - Muster-Bot: eigener klappbarer Analysebereich, alle 24 Einstellungen/Touch-Infos, 27 kausale Worker-Backtests und Einzeltest, getrennte Einstiegsarten, konservative SL-/Gebührenbehandlung, eigener coinfester Paperlauf und Chartmarker. Kern 23/23, Feed 8/8, Paper 9/9, nativer Worker/Mobilbreiten/Demo 18/18. Ein tatsächlicher Checkbox-Überstand bei 320–1440 px behoben.
@@ -23,7 +23,7 @@ Branch `codex/telegram-muster-bot`, öffentlich weiterhin 3.62.0. Auf ausdrückl
 
 **Letzte Diagnosekorrektur:** Discord aus `status-check.html` entfernt; App-HTML, Handels-/Erkennungslogik und Dienst unverändert. Nur Diagnose, ihr Manifest-Hash und SW-Buildkennung ändern sich: 2 der 142 bisher geschützten Dateien plus die separate Diagnose; 140 einschließlich App-HTML und Handels-/Dienstcode bleiben gleich. Die Diagnose wird zusätzlich in den finalen 143er-Hashsatz aufgenommen. Neues unverändertes Bündel 69/67; Lint erneut 0 Fehler. Gezielte vollständige Nachprüfung abgeschlossen: Status 7/7, Releasegraph 6/6, Offline-PWA 19/19 sowie Rauch/Sicht grün. Abschließend 5039/5039 über alle 158 eindeutigen Ziele samt vollständigen Nachläufen, Lint 0 Fehler; final 143 Dateien während der letzten fünf Prüfziele unverändert. Veröffentlichung folgt.
 
-**Nächster Schritt:** Korrigierten Produktstand einfrieren, alle 158 Release-Ziele vollständig seriell mit unverfälschten Rückgabewerten prüfen, Befunde korrigieren/nachprüfen, Lint mit 0 Fehlern, Pull Request (Inhalt/Tests/Offen), Merge-Commit und GitHub Pages/HTTPS für alle 69 PWA-Dateien nachweisen. Noch kein Release als bestanden oder online ausgeben. Reale iPhone-/iPad-/Oracle-/Telegram-Zugänge getrennt von lokalen Attrappen behandeln.
+**Nächster Schritt:** Alle 158 Ziele auf `6f4c575` vollständig seriell ausgeführt, vollständige Nachläufe grün; danach nur Discord-Diagnose/2 Liefermetadaten auf `bb1bbdb` korrigiert, alle 5 betroffenen Ziele vollständig geprüft. Abschließend 5039/5039; Lint 0 Fehler, 143 finale Produktdateien unverändert. [Vollnachweis](docs/3.63.0-TESTNACHWEIS.md). Autorisierten Release per Pull Request/Merge-Commit veröffentlichen und exakten Pages-Lauf samt 69 HTTPS-Dateien prüfen. Reale Geräte und private Oracle-/Telegram-Zugänge getrennt abnehmen.
 
 ## 1. Ziel und Architektur
 - **Ziel:** Scalp Desk ist eine Web-App (PWA) für Krypto-Scalping auf dem iPhone/iPad und am Rechner: Binance-Kurse, Chart mit Indikatoren,
