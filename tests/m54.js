@@ -59,7 +59,7 @@ const tests = {
     await page.evaluate(([p]) => { __g05.state.alarms.push({ id: 'LX1', symbol: 'ETHUSDT', source: 'spot', dir: 'above', price: +(p * 1.0005).toFixed(2), note: '', createdAt: Date.now(), armedAt: Date.now(), triggeredAt: null, triggerPrice: null }); __g05.persist(); __g05.renderAlarms(); __g05.syncStreams(); }, [P]);
     await page.waitForTimeout(1500); await h.ctl(`/set?symbol=ETHUSDT&price=${(P * 1.003).toFixed(2)}`);
     await until(() => page.evaluate(() => !!__g05.state.alarms.find(a => a.id === 'LX1')?.triggeredAt), 15000); await page.waitForTimeout(2000);
-    check('Kursalarm aus: Alarm in der App ausgelöst, aber nichts an Telegram', await page.evaluate(() => !!__g05.state.alarms.find(a => a.id === 'LX1')?.triggeredAt) && !(await tgSent(t0, /Kurs-Alarm ETH/)).length);
+    check('Kursalarm aus: Alarm in der App ausgelöst, aber nichts an Telegram', await page.evaluate(() => !!__g05.state.alarms.find(a => a.id === 'LX1')?.triggeredAt) && !(await tgSent(t0, /KURS-ALARM · ETH/)).length);
     // alter Schalter „Aktiv“ aus → alle Ziele aus
     const o = await openPage(browser, { 'scalpdesk.channels.v1': { tg: { token: TOKEN, chat: ALERT, on: false }, dc: { url: '', on: true }, ev: EV } });
     await openTgc(o.page); const m2 = await master(o.page);
@@ -72,7 +72,7 @@ const tests = {
     const { ctx, page, errors } = await openPage(browser, { 'scalpdesk.channels.v1': { tg: { token: TOKEN, chat: ALERT, thread: '', on: true }, dc: { url: '', on: true }, ev: EV } });
     await page.evaluate(() => { document.getElementById('chan-open').click(); }); await page.waitForTimeout(400);
     const f = await page.evaluate(() => ({ bchat: document.getElementById('tg-bchat').value, sum: document.getElementById('chan-summary').textContent }));
-    check('Frühere Einrichtung ohne Sicherungschat: Kursalarm-Chat jetzt ausdrücklich als Sicherungschat eingetragen (sichtbar)', f.bchat === ALERT && /Sicherung: wie Kursalarm \(eingetragen\)/.test(f.sum), JSON.stringify(f));
+    check('Frühere Einrichtung ohne Sicherungschat: Feld und gespeicherter Wert bleiben leer, kein Rückfall', f.bchat === '' && /Sicherung: kein Sicherungschat/.test(f.sum) && await page.evaluate(() => JSON.parse(localStorage.getItem('scalpdesk.channels.v1')).tg.bchat === ''), JSON.stringify(f));
     await page.evaluate(() => { document.getElementById('tg-bchat').value = ''; document.getElementById('tg-bchat').dispatchEvent(new Event('change', { bubbles: true })); __g05.readChanForm(); document.getElementById('chan-dialog').close(); });
     let t0 = Date.now(); await page.evaluate(() => __g05.sendTgBackup(true)); await page.waitForTimeout(1500);
     check('Sicherungschat geleert: „Jetzt senden“ sendet nichts – kein Ausweichen in den Kursalarm-Chat', !(await docs(t0)).length && /Kein Sicherungschat eingetragen/.test(await txt(page, '#tgb-info')), await txt(page, '#tgb-info'));
@@ -190,7 +190,7 @@ const tests = {
     const A = await openPage(browser, { 'scalpdesk.channels.v1': chanCfg(), 'scalpdesk.svc.v1': { url, key: KEY, inst: 'ipad0001' }, 'scalpdesk.alarms.v1': [a1, SX] });
     await until(() => A.page.evaluate(() => __g05.svc.reach === true), 8000);
     let t0 = Date.now(); await raise(150);
-    let got = await until(async () => (await tgSent(t0, /Kurs-Alarm SOL/)).length ? await tgSent(t0, /Kurs-Alarm SOL/) : null, 15000); await A.page.waitForTimeout(1500);
+    let got = await until(async () => (await tgSent(t0, /KURS-ALARM · SOL/)).length ? await tgSent(t0, /KURS-ALARM · SOL/) : null, 15000); await A.page.waitForTimeout(1500);
     let e = svc.w.evs[W.alarmEvent({ id: 'S1', armedAt: at })];
     check('App erkennt den Alarm: holt die Freigabe und sendet genau einmal; am Dienst „zugestellt“ von dieser App', got?.length === 1 && e?.by === 'app:ipad0001' && e.st === 'confirmed', JSON.stringify({ n: got?.length, e }));
     check('Protokoll des Dienstes: Ereignis-ID, Ziel, Sender, Zustand', svc.logs.some(l => l === `Ereignis ${W.alarmEvent({ id: 'S1', armedAt: at })} · Ziel course-alert · Sender app:ipad0001 · zugestellt`));
@@ -199,7 +199,7 @@ const tests = {
     await A.page.evaluate(([a]) => { __g05.state.alarms.push(a); __g05.persist(); __g05.renderAlarms(); }, [alarm('S2', 150.3, at)]);
     svc.w.reserveOwn(W.alarmEvent({ id: 'S2', armedAt: at }), 'Kurs-Alarm SOL'); svc.w.evSet(W.alarmEvent({ id: 'S2', armedAt: at }), 'confirmed');
     t0 = Date.now(); await raise(150); await until(() => A.page.evaluate(() => !!__g05.state.alarms.find(x => x.id === 'S2')?.triggeredAt), 10000); await A.page.waitForTimeout(2500);
-    check('Dienst hatte das Ereignis schon: App sendet nicht (keine Freigabe), „Letzte Meldungen“ nennt den Dienst', !(await tgSent(t0, /Kurs-Alarm SOL/)).length && await A.page.evaluate(() => __g05.svcLog.some(x => /der 24\/7-Dienst hat es schon/.test(x.what))), JSON.stringify(await A.page.evaluate(() => __g05.svcLog.slice(0, 2))));
+    check('Dienst hatte das Ereignis schon: App sendet nicht (keine Freigabe), „Letzte Meldungen“ nennt den Dienst', !(await tgSent(t0, /KURS-ALARM · SOL/)).length && await A.page.evaluate(() => __g05.svcLog.some(x => /der 24\/7-Dienst hat es schon/.test(x.what))), JSON.stringify(await A.page.evaluate(() => __g05.svcLog.slice(0, 2))));
     // 3) zwei Geräte
     await reset(A.page); at = Date.now(); const a3 = alarm('S3', 150.3, at);
     for (const pg of [A.page]) await pg.evaluate(([a]) => { __g05.state.alarms.push(a); __g05.persist(); __g05.renderAlarms(); }, [a3]);
@@ -208,31 +208,31 @@ const tests = {
     t0 = Date.now(); await raise(150);
     await until(() => Promise.all([A.page, B.page].map(p => p.evaluate(() => !!__g05.state.alarms.find(x => x.id === 'S3')?.triggeredAt))).then(v => v.every(Boolean)), 15000); await A.page.waitForTimeout(3000);
     e = svc.w.evs[W.alarmEvent(a3)];
-    check('iPad und iPhone offen: genau eine Telegram-Nachricht, Freigabe für eines der Geräte', (await tgSent(t0, /Kurs-Alarm SOL/)).length === 1 && /^app:(ipad0001|iphone01)$/.test(e?.by || '') && e.st === 'confirmed', JSON.stringify({ n: (await tgSent(t0, /Kurs-Alarm SOL/)).length, e }));
+    check('iPad und iPhone offen: genau eine Telegram-Nachricht, Freigabe für eines der Geräte', (await tgSent(t0, /KURS-ALARM · SOL/)).length === 1 && /^app:(ipad0001|iphone01)$/.test(e?.by || '') && e.st === 'confirmed', JSON.stringify({ n: (await tgSent(t0, /KURS-ALARM · SOL/)).length, e }));
     await B.ctx.close();
     // 4) Ziel am Dienst aus
     await reset(A.page); W.policyApply(svc.w.pol, svc.w.cmds, { commandId: 'test-off-01', expectedRevision: svc.w.pol.rev, set: { 'course-alert': false } }, Date.now()); svc.w.saveStateNow();
     await A.page.evaluate(() => __g05.svcRefresh(true)); at = Date.now(); await A.page.evaluate(([a]) => { __g05.state.alarms.push(a); __g05.persist(); __g05.renderAlarms(); }, [alarm('S4', 150.3, at)]);
     t0 = Date.now(); await raise(150); await until(() => A.page.evaluate(() => !!__g05.state.alarms.find(x => x.id === 'S4')?.triggeredAt), 10000); await A.page.waitForTimeout(2500);
-    check('Kursalarm am Dienst aus: kein Versand', !(await tgSent(t0, /Kurs-Alarm SOL/)).length);
+    check('Kursalarm am Dienst aus: kein Versand', !(await tgSent(t0, /KURS-ALARM · SOL/)).length);
     W.policyApply(svc.w.pol, svc.w.cmds, { commandId: 'test-on-001', expectedRevision: svc.w.pol.rev, set: { 'course-alert': true } }, Date.now()); svc.w.saveStateNow(); await A.page.evaluate(() => __g05.svcRefresh(true));
     // 5) verlorene Telegram-Antwort
     await reset(A.page); at = Date.now(); await A.page.evaluate(([a]) => { __g05.state.alarms.push(a); __g05.persist(); __g05.renderAlarms(); }, [alarm('S5', 150.3, at)]);
     await h.ctl('/chan?tgdrop=1'); t0 = Date.now(); await raise(150);
     await until(async () => svc.w.evs[W.alarmEvent({ id: 'S5', armedAt: at })]?.st === 'unconfirmed', 15000); await A.page.waitForTimeout(12000);
-    const s5 = await tgSent(t0, /Kurs-Alarm SOL/);
+    const s5 = await tgSent(t0, /KURS-ALARM · SOL/);
     check('Telegram-Antwort verloren: am Dienst „Zustellung unbestätigt“, genau ein Sendeversuch (kein zweiter, kein no-cors)', s5.length === 1 && s5[0].dropped && s5[0].mode !== 'no-cors' && svc.w.evs[W.alarmEvent({ id: 'S5', armedAt: at })].st === 'unconfirmed', JSON.stringify(s5.map(x => ({ d: x.dropped, mode: x.mode }))));
     await A.ctx.close();
     // 6) Start nach Auslösung durch den Dienst
     at = Date.now() - 600e3; const a6 = alarm('S6', 150.3, at); const id6 = W.alarmEvent(a6); svc.w.reserveOwn(id6, 'Kurs-Alarm SOL'); svc.w.evSet(id6, 'confirmed');
     t0 = Date.now(); const C = await openPage(browser, { 'scalpdesk.channels.v1': chanCfg(), 'scalpdesk.svc.v1': { url, key: KEY, inst: 'pc000001' }, 'scalpdesk.alarms.v1': [a6, SX] });
     await until(() => C.page.evaluate(() => !!__g05.state.alarms.find(x => x.id === 'S6')?.triggeredAt), 10000);
-    check('Start nach Auslösung durch den Dienst: Alarm gilt als ausgelöst „… und gemeldet vom 24/7-Dienst“, App sendet nichts', /und gemeldet vom 24\/7-Dienst/.test(await C.page.evaluate(() => __g05.alarmSub(__g05.state.alarms.find(x => x.id === 'S6')))) && !(await tgSent(t0, /Kurs-Alarm SOL/)).length, await C.page.evaluate(() => __g05.alarmSub(__g05.state.alarms.find(x => x.id === 'S6'))));
+    check('Start nach Auslösung durch den Dienst: Alarm gilt als ausgelöst „… und gemeldet vom 24/7-Dienst“, App sendet nichts', /und gemeldet vom 24\/7-Dienst/.test(await C.page.evaluate(() => __g05.alarmSub(__g05.state.alarms.find(x => x.id === 'S6')))) && !(await tgSent(t0, /KURS-ALARM · SOL/)).length, await C.page.evaluate(() => __g05.alarmSub(__g05.state.alarms.find(x => x.id === 'S6'))));
     // 7) Dienst nicht erreichbar: nach 60 s sendet die App mit Vermerk
     await reset(C.page); await svc.stop(); at = Date.now(); await C.page.evaluate(([a]) => { __g05.state.alarms.push(a); __g05.persist(); __g05.renderAlarms(); }, [alarm('S7', 150.3, at)]);
     t0 = Date.now(); await C.page.waitForTimeout(1200); await raise(150);
-    await C.page.waitForTimeout(20000); const early = (await tgSent(t0, /Kurs-Alarm SOL/)).length;
-    const late = await until(async () => (await tgSent(t0, /Kurs-Alarm SOL/)).length ? await tgSent(t0, /Kurs-Alarm SOL/) : null, 75000, 1000);
+    await C.page.waitForTimeout(20000); const early = (await tgSent(t0, /KURS-ALARM · SOL/)).length;
+    const late = await until(async () => (await tgSent(t0, /KURS-ALARM · SOL/)).length ? await tgSent(t0, /KURS-ALARM · SOL/) : null, 75000, 1000);
     check('Dienst nicht erreichbar: erst nach etwa 60 s sendet die App selbst – mit Vermerk', early === 0 && late?.length === 1 && /von der App gesendet – 24\/7-Dienst nicht erreichbar/.test(late[0].text) && late[0].at - t0 >= 55e3, JSON.stringify({ early, n: late?.length, s: late ? Math.round((late[0].at - t0) / 1000) : null }));
     await C.ctx.close();
     // 8) ohne Dienst: strikte Zustellung (verlorene Antwort → kein zweiter Versuch)
@@ -240,7 +240,7 @@ const tests = {
     const D = await openPage(browser, { 'scalpdesk.channels.v1': chanCfg(), 'scalpdesk.alarms.v1': [alarm('S8', 150.3, at)] });
     await D.page.waitForTimeout(1000); await h.ctl('/chan?tgdrop=1'); t0 = Date.now(); await raise(150);
     await until(() => D.page.evaluate(() => !!__g05.state.alarms.find(x => x.id === 'S8')?.triggeredAt), 10000); await D.page.waitForTimeout(15000);
-    const s8 = await tgSent(t0, /Kurs-Alarm SOL/);
+    const s8 = await tgSent(t0, /KURS-ALARM · SOL/);
     check('Ohne Dienst: verlorene Antwort → genau ein Versuch, Kanalstatus „Zustellung unbestätigt“', s8.length === 1 && await D.page.evaluate(() => /Zustellung unbestätigt/.test(__g05.chanState.tg?.text || '')), JSON.stringify({ n: s8.length, st: await D.page.evaluate(() => __g05.chanState.tg?.text) }));
     check('keine Fehler (Freigabe)', !real(A.errors).length && !real(C.errors).length && !real(D.errors).length, [...real(A.errors), ...real(C.errors), ...real(D.errors)].join(' | '));
     await D.ctx.close(); await h.ctl('/walk?on=1');

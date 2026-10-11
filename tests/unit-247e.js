@@ -47,7 +47,7 @@ const throws = fn => { try { fn(); return false; } catch { return true; } };
   const ev = `pat:${c.id}`, messages = sent.filter(x => x.body.text?.includes('Doppel-Boden'));
   check('App geschlossen: echte Erkennung sendet an Musterchat/Thema, nicht Kursalarm', messages.length === 1 && messages[0].body.chat_id === config.chat && messages[0].body.message_thread_id === config.thread && messages[0].usedToken === token);
   check('Gleiche echte Ereignis-ID dauerhaft für oracle bestätigt', w.evs[ev]?.st === 'confirmed' && w.evs[ev]?.by === 'oracle' && w.evs[ev]?.target === 'patterns');
-  check('Meldung erklärt Regelgüte, Ziel, Invalidierung und fehlende erlernte Statistik', /Regelbasiert \(Modell pat-1\)/.test(messages[0]?.body.text) && /rechnerisches Ziel/.test(messages[0]?.body.text) && /ungültig bei/.test(messages[0]?.body.text) && /noch zu wenige vergleichbare Fälle/.test(messages[0]?.body.text) && /keine Erfolgswahrscheinlichkeit/.test(messages[0]?.body.text));
+  check('Meldung erklärt Regelgüte, Ziel, Invalidierung und fehlende erlernte Statistik', /Modell pat-1/.test(messages[0]?.body.text) && /⭐ <b>Ziel:/.test(messages[0]?.body.text) && /Ungültig bei: <code>/.test(messages[0]?.body.text) && /⚠️ zu wenig Daten/.test(messages[0]?.body.text) && /keine Erfolgswahrscheinlichkeit/.test(messages[0]?.body.text));
   const before = sent.length; await Promise.all([w.notifyPattern(c, h), w.notifyPattern(c, h)]); await w.checkPatterns();
   check('Dienstprüfung und zwei offene Geräte melden denselben Fall insgesamt einmal', sent.length === before);
   w.saveStateNow(); const restarted = make('haupt'); now = P.patternEnd(c.tc, c.iv) + 2000; restarted.tg = w.tg; await restarted.checkPatterns();

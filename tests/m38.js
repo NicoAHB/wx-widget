@@ -30,9 +30,9 @@ async function open(browser, chan, extra = []) {
     check('Dialog zeigt beide Ziele (Kursalarm und Sicherungschat mit Thema)', form.chat === ALERT && form.bchat === BACKUP && form.bthread === '12' && form.thread === '', JSON.stringify(form));
     await h.ctl('/tgreset');
     await page.click('#tg-testall');
-    const tests = await until(async () => { const t = (await tg()).filter(m => /^🧪 Test „/.test(m.text || '')); return t.length >= 7 ? t : null; }, 20000);
+    const tests = await until(async () => { const t = (await tg()).filter(m => /^<b>🧪 TEST ·/.test(m.text || '')); return t.length >= 7 ? t : null; }, 20000);
     await page.waitForTimeout(1500);
-    const st = await page.textContent('#tg-status'), byKind = (tests || []).map(m => ({ name: /„(.+?)“/.exec(m.text)[1], chat: m.chat_id, thread: m.message_thread_id || '' }));
+    const st = await page.textContent('#tg-status'), byKind = (tests || []).map(m => ({ name: /TEST · (.+?)<\/b>/.exec(m.text)[1], chat: m.chat_id, thread: m.message_thread_id || '' }));
     const toAlert = byKind.filter(x => x.chat === ALERT && !x.thread).map(x => x.name), toBackup = byKind.filter(x => x.chat === BACKUP && x.thread === '12').map(x => x.name);
     check('Test je Nachrichtenart: Kurs-Alarm, Stop/Ziel, Tagesgrenze, News, Gewinn/Verlust, BTC-Puls → Kursalarm', toAlert.length === 6 && ['Kurs-Alarm', 'Stop-Loss/Take-Profit', 'Tages-Verlustlimit', 'News-Alarm (Wirtschaftstermin)', 'Gewinn-/Verlust-Alarm', 'BTC-Puls'].every(n => toAlert.includes(n)), toAlert.join(', '));
     check('Test je Nachrichtenart: Datensicherung → nur Sicherungschat (Thema 12)', toBackup.length === 1 && toBackup[0] === 'Datensicherung' && byKind.length === 7, JSON.stringify(byKind.filter(x => x.chat === BACKUP)));
@@ -56,13 +56,13 @@ async function open(browser, chan, extra = []) {
     const al = await until(async () => (await tg()).find(m => /Test Zuordnung/.test(m.text || '')), 15000);
     check('Kurs-Alarm → nur Kursalarm', al && al.chat_id === ALERT && !al.message_thread_id && !(await tg()).some(m => m.chat_id === BACKUP && /Test Zuordnung/.test(m.text || '')), al && al.chat_id);
     await h.ctl(`/set?symbol=BTCUSDT&price=${(p0 * 0.985).toFixed(2)}`);
-    const sl = await until(async () => (await tg()).find(m => /Stop-Loss/.test(m.text || '') && /BTC/.test(m.text || '')), 15000);
-    check('Stop-Loss einer Position → nur Kursalarm', sl && sl.chat_id === ALERT && !(await tg()).some(m => m.chat_id === BACKUP && /Stop-Loss/.test(m.text || '')), sl && `${sl.chat_id}: ${sl.text.split('\n')[0]}`);
+    const sl = await until(async () => (await tg()).find(m => /STOP-LOSS/.test(m.text || '') && /BTC/.test(m.text || '')), 15000);
+    check('Stop-Loss einer Position → nur Kursalarm', sl && sl.chat_id === ALERT && !(await tg()).some(m => m.chat_id === BACKUP && /STOP-LOSS/.test(m.text || '')), sl && `${sl.chat_id}: ${sl.text.split('\n')[0]}`);
     check('keine Fehler (Alarm, Stop)', !errors.length, errors.join(' | ')); await ctx.close();
     // 3. News-Alarm (wichtiger Wirtschaftstermin in 10 Minuten) → Kursalarm, nicht in den Sicherungschat
     await h.ctl('/tgreset'); await h.ctl('/cal?mode=soon&min=10');
     ({ ctx, page, errors } = await open(browser, CHAN));
-    const news = await until(async () => (await tg()).find(m => /^⚠ Wirtschaftstermin in \d+ min/.test(m.text || '')), 20000);
+    const news = await until(async () => (await tg()).find(m => /^<b>⚠️ WIRTSCHAFTSTERMIN · in \d+ min/.test(m.text || '')), 20000);
     check('News-Alarm (Wirtschaftstermin) → nur Kursalarm', news && news.chat_id === ALERT && !(await tg()).some(m => m.chat_id === BACKUP && m.text), news && `${news.chat_id}: ${news.text.split('\n')[0]}`);
     check('keine Fehler (News)', !errors.length, errors.join(' | ')); await ctx.close(); await h.ctl('/reset'); await h.ctl('/walk?on=0');
     // 4. „Chat-ID ermitteln“: Privatchat und Gruppen-Thema werden gelistet und lassen sich zuordnen
@@ -82,8 +82,8 @@ async function open(browser, chan, extra = []) {
     ({ ctx, page, errors } = await open(browser, { tg: { token: TOKEN, chat: ALERT, on: true }, dc: { url: '', on: true }, ev: { alarm: true, pos: true, day: true, news: true } }));
     await page.evaluate(() => { if (document.getElementById('data-panel').hidden) document.getElementById('data-toggle').click(); });
     await page.click('#tgb-now');
-    const doc2 = await until(async () => (await tg()).find(m => m.method === 'sendDocument'), 15000), sum2 = await page.textContent('#chan-summary');
-    check('Nur eine Chat-ID (alte Einrichtung): Sicherung weiter in diesen Chat, Übersicht „Sicherung: wie Kursalarm“', doc2 && doc2.chat_id === ALERT && !doc2.thread && /Sicherung: wie Kursalarm/.test(sum2), `${doc2?.chat_id} · ${sum2}`);
+    await page.waitForTimeout(1500); const doc2 = (await tg()).find(m => m.method === 'sendDocument'), sum2 = await page.textContent('#chan-summary');
+    check('Nur eine Chat-ID (alte Einrichtung): kein Sicherungsversand ohne eigenen Eintrag, Feld bleibt leer', !doc2 && /Sicherung: kein Sicherungschat/.test(sum2) && await page.evaluate(() => JSON.parse(localStorage.getItem('scalpdesk.channels.v1')).tg.bchat === ''), sum2);
     const ev = await page.evaluate(() => { const c = JSON.parse(localStorage.getItem('scalpdesk.channels.v1')); return c.ev; });
     check('Neue Nachrichtenarten (Gewinn/Verlust, BTC-Puls) sind bei alter Einrichtung eingeschaltet', ev.pnl !== false && ev.pulse !== false, JSON.stringify(ev));
     check('keine Fehler (alte Einrichtung)', !errors.length, errors.join(' | ')); await ctx.close();

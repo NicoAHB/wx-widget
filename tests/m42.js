@@ -9,7 +9,7 @@ const TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', ALERT = '987654321
 const chanCfg = pulse => ({ tg: { token: TOKEN, chat: ALERT, thread: '', bchat: BACKUP, bthread: '12', on: true }, dc: { url: '', on: true }, ev: { alarm: true, pos: true, day: true, news: true, pnl: true, pulse } });
 const live = page => page.waitForFunction(() => document.getElementById('status').dataset.feed === 'live', null, { timeout: 20000 }).catch(() => {});
 const until = async (fn, ms = 15000, step = 250) => { const t0 = Date.now(); for (;;) { const v = await fn(); if (v) return v; if (Date.now() - t0 > ms) return null; await h.sleep(step); } };
-const pulses = async since => (await h.ctl('/sent')).filter(m => m.svc === 'tg' && /^⚡ BTC-Puls/.test(m.text || '') && m.at >= since);
+const pulses = async since => (await h.ctl('/sent')).filter(m => m.svc === 'tg' && /^<b>[🟢🔴].* BTC-PULS ·/.test(m.text || '') && m.at >= since);
 // Zeitzone, in der es jetzt `hour` Uhr ist (Etc/GMT-x = UTC+x)
 const tzAt = hour => { const off = (hour - new Date().getUTCHours() + 24) % 24, o = off > 12 ? off - 24 : off; return o === 0 ? 'Etc/GMT' : o > 0 ? `Etc/GMT-${o}` : `Etc/GMT+${-o}`; };
 async function open(browser, tz, pulse = true) {
@@ -41,8 +41,9 @@ const flatBtc = async () => { await h.ctl('/shape?symbol=BTCUSDT&interval=1m&kin
     let m = await until(async () => { const x = await pulses(t0); return x.length ? x : null; });
     const txt = m?.[0]?.text || '';
     check('BTC −3 %: Nachricht an „Kursalarm“ (nicht an den Sicherungschat)', m?.length === 1 && m[0].chat_id === ALERT && !m[0].message_thread_id, JSON.stringify(m?.map(x => x.chat_id)));
-    check('Inhalt: Richtung, Größe, 5-Minuten-Fenster, Kurs, „ungewöhnlich stark für 23 Uhr“ mit Schwelle', /^⚡ BTC-Puls: BTC −3,00 % in 5 Min\. \([\d.,]+ USDT\) – ungewöhnlich stark für 23 Uhr \(Schwelle 0,50 %\)$/.test(txt.split('\n')[0]), txt.split('\n')[0]);
-    check('Zweite Zeile: die Vorauswahl im selben Zeitraum (ohne BTC), keine Prognose', /^Vorauswahl im selben Zeitraum: ETC [+−]?\d+,\d\d % · BCH [+−]?\d+,\d\d % · LTC [+−]?\d+,\d\d % · XRP [+−]?\d+,\d\d % · NEAR [+−]?\d+,\d\d %$/.test(txt.split('\n')[1] || '') && !/(wird|dürfte|Prognose|erwart)/i.test(txt), txt.split('\n')[1]);
+    check('Inhalt: Richtung, Größe, 5-Minuten-Fenster, USD-Kurs und Uhrzeitschwelle', /^<b>🔴⬇️ BTC-PULS · −3,00 %<\/b> in 5 Min$/.test(txt.split('\n')[0]) && /💰 Kurs: <code>[\d.,]+ USD<\/code>/.test(txt) && /<i>ungewöhnlich stark für 23 Uhr<\/i> · 6,0× Schwelle \(0,50 %\) 🔥/.test(txt), txt);
+    const table = /<pre>([\s\S]*?)<\/pre>/.exec(txt)?.[1] || '', coins = table.split('\n').map(x => x.match(/^[🟢🔴⚪] ([A-Z]+)\s+([+−][\d.,]+) %$/)).filter(Boolean); const amounts = coins.map(x => Math.abs(Number(x[2].replace(/\./g, '').replace(',', '.').replace('−', '-'))));
+    check('Vorauswahl als Liste im selben Zeitraum (ohne BTC), nach Betrag sortiert, keine Prognose', /📋 Vorauswahl im selben Zeitraum:/.test(txt) && coins.length === 5 && ['ETC', 'BCH', 'LTC', 'XRP', 'NEAR'].every(c => coins.some(x => x[1] === c)) && amounts.every((a,i) => !i || amounts[i-1] >= a) && !/(wird|dürfte|Prognose|erwart)/i.test(txt), table);
     check('Nachts lautlos (disable_notification)', m?.[0]?.disable_notification === 'true', String(m?.[0]?.disable_notification));
     const toast = await page.evaluate(() => [...document.querySelectorAll('#toasts .toast')].map(t => t.textContent).find(t => /BTC-Puls/.test(t)) || '');
     check('Hinweis in der App', /⚡ BTC-Puls: BTC −3,00 % in 5 Min\./.test(toast), toast.slice(0, 90));
@@ -51,13 +52,13 @@ const flatBtc = async () => { await h.ctl('/shape?symbol=BTCUSDT&interval=1m&kin
     check('−3,5 % (weniger als das 1,5-Fache): keine zweite Nachricht', (await pulses(t0)).length === 1);
     await h.ctl(`/set?symbol=BTCUSDT&price=${P0 * 0.95}`);
     m = await until(async () => { const x = await pulses(t0); return x.length >= 2 ? x : null; });
-    check('−5 % (deutlich mehr): genau eine weitere Nachricht „Bewegung legt weiter zu“', m?.length === 2 && /BTC −5,00 % in 5 Min\. \([\d.,]+ USDT\) – Bewegung legt weiter zu/.test(m[1].text), m?.[1]?.text.split('\n')[0]);
+    check('−5 % (deutlich mehr): genau eine weitere Nachricht „Bewegung legt weiter zu“', m?.length === 2 && /BTC-PULS · −5,00 %<\/b> in 5 Min/.test(m[1].text) && /Bewegung legt weiter zu/.test(m[1].text), m?.[1]?.text.split('\n')[0]);
     await h.ctl(`/set?symbol=BTCUSDT&price=${P0 * 0.9}`); await page.waitForTimeout(2500);
     check('−10 %: innerhalb 30 Minuten keine weitere (keine Serie)', (await pulses(t0)).length === 2);
     // Gegenrichtung: +3 % gegenüber dem Kurs vor 5 Minuten
     await h.ctl(`/set?symbol=BTCUSDT&price=${P0 * 1.03}`);
-    m = await until(async () => { const x = (await pulses(t0)).filter(y => /BTC \+/.test(y.text)); return x.length ? x : null; });
-    check('Gegenrichtung (+3 %): eigene Nachricht, unabhängig von der Sperre abwärts', m?.length === 1 && /^⚡ BTC-Puls: BTC \+3,00 % in 5 Min\./.test(m[0].text), m?.[0]?.text.split('\n')[0]);
+    m = await until(async () => { const x = (await pulses(t0)).filter(y => /BTC-PULS · \+/.test(y.text)); return x.length ? x : null; });
+    check('Gegenrichtung (+3 %): eigene Nachricht, unabhängig von der Sperre abwärts', m?.length === 1 && /^<b>🟢⬆️ BTC-PULS · \+3,00 %<\/b> in 5 Min/.test(m[0].text), m?.[0]?.text.split('\n')[0]);
     // Zweiter Tab: sendet nicht doppelt
     const page2 = await ctx.newPage(); h.collect(page2, errors); await page2.goto(h.URL_BASE + '/weather-widget-v2.html'); await live(page2); await page2.waitForTimeout(4000);
     check('Zweiter Tab: keine erneute Nachricht (Sperre gilt über Tabs)', (await pulses(t0)).length === 3, String((await pulses(t0)).length));
@@ -70,7 +71,7 @@ const flatBtc = async () => { await h.ctl('/shape?symbol=BTCUSDT&interval=1m&kin
     await page.waitForTimeout(2500); t0 = Date.now();
     await h.ctl(`/set?symbol=BTCUSDT&price=${P0 * 0.98}`);
     m = await until(async () => { const x = await pulses(t0); return x.length ? x : null; });
-    check('Tagsüber (12 Uhr) −2 %: Nachricht mit Ton, „ungewöhnlich stark für 12 Uhr“', m?.length === 1 && m[0].disable_notification === undefined && /BTC −2,00 % in 5 Min\. .* – ungewöhnlich stark für 12 Uhr/.test(m[0].text), `${m?.[0]?.disable_notification} · ${m?.[0]?.text.split('\n')[0]}`);
+    check('Tagsüber (12 Uhr) −2 %: Nachricht mit Ton, „ungewöhnlich stark für 12 Uhr“', m?.length === 1 && m[0].disable_notification === undefined && /BTC-PULS · −2,00 %<\/b> in 5 Min/.test(m[0].text) && /ungewöhnlich stark für 12 Uhr/.test(m[0].text), `${m?.[0]?.disable_notification} · ${m?.[0]?.text.split('\n')[0]}`);
     check('Tagsüber: keine Fehler', !errors.length, errors.join(' | ')); await ctx.close();
 
     // ================= Ausgeschaltet =================

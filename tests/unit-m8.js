@@ -2,7 +2,7 @@
 // Prüft Takt, Erkennungszeit toter Verbindungen, hartes Schließen, sofortiges Neuverbinden, Standby-Erkennung und Backoff.
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const html = fs.readFileSync(path.join(__dirname, '..', 'weather-widget-v2.html'), 'utf8');
-const a = html.indexOf('function liveFeed(port) {'), b = html.indexOf('\nconst live = { post:', a);
+const a = html.indexOf('function liveFeed(port, formatRejected) {'), b = html.indexOf('\nconst live = { post:', a);
 if (a < 0 || b < 0) throw new Error('liveFeed nicht gefunden');
 const SRC = html.slice(a, b);
 

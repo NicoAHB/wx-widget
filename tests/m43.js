@@ -10,7 +10,7 @@ const CHAN = { tg: { token: TOKEN, chat: CHAT, on: true }, dc: { url: '', on: tr
 const live = page => page.waitForFunction(() => document.getElementById('status').dataset.feed === 'live', null, { timeout: 20000 }).catch(() => {});
 const mock = p => fetch('http://127.0.0.1:8790' + p).then(r => r.json());
 const pinnedMsg = async () => { const m = (await mock(`/tgmsgs?chat=${CHAT}`)).filter(x => x.pinnedAt).sort((a, b) => b.message_id - a.message_id)[0] || null; if (m) m.caption = String(m.caption || '').replace(/\r/g, ''); return m; };
-const pulses = async since => (await h.ctl('/sent')).filter(m => m.svc === 'tg' && /^⚡ BTC-Puls/.test(m.text || '') && m.at >= since);
+const pulses = async since => (await h.ctl('/sent')).filter(m => m.svc === 'tg' && /^<b>[🟢🔴].* BTC-PULS ·/.test(m.text || '') && m.at >= since);
 const until = async (fn, ms = 20000, step = 250) => { const t0 = Date.now(); for (;;) { const v = await fn(); if (v) return v; if (Date.now() - t0 > ms) return null; await h.sleep(step); } };
 const tzAt = hour => { const off = (hour - new Date().getUTCHours() + 24) % 24, o = off > 12 ? off - 24 : off; return o === 0 ? 'Etc/GMT' : o > 0 ? `Etc/GMT-${o}` : `Etc/GMT+${-o}`; };
 function startService(dir) {
@@ -51,8 +51,8 @@ function startService(dir) {
     await until(async () => (await pulses(t0)).length, 15000); await h.sleep(5000);
     let m = await pulses(t0);
     const toast = await page.evaluate(() => [...document.querySelectorAll('#toasts .toast')].some(t => /BTC-Puls/.test(t.textContent)));
-    check('BTC −3 %: genau eine Nachricht – vom 24/7-Dienst; die App zeigt den Hinweis, sendet aber nicht zusätzlich', m.length === 1 && /· 24\/7-Dienst$/.test(m[0].text) && toast, m.map(x => x.text.split('\n').at(-1)).join(' | '));
-    check('Dienst: Inhalt wie in der App, nachts lautlos, mit Vorauswahl', /^⚡ BTC-Puls: BTC −3,00 % in 5 Min\. \([\d.,]+ USDT\) – ungewöhnlich stark für 23 Uhr \(Schwelle 0,50 %\)\nVorauswahl im selben Zeitraum: ETC [+−]?\d+,\d\d % · BCH .* · NEAR [+−]?\d+,\d\d %\n\d\d:\d\d:\d\d Uhr · 24\/7-Dienst$/.test(m[0]?.text || '') && m[0]?.disable_notification === true,
+    check('BTC −3 %: genau eine Nachricht vom Dienst; die App zeigt den Hinweis, ohne zusätzlichen Versand', m.length === 1 && m[0].mode === '' && /^🕐 \d\d:\d\d:\d\d$/.test(m[0].text.split('\n').at(-1)) && !/24\/7-Dienst/.test(m[0].text) && toast, m.map(x => x.text.split('\n').at(-1)).join(' | '));
+    check('Dienst: Inhalt wie in der App, nachts lautlos, mit Vorauswahlliste', /^<b>🔴⬇️ BTC-PULS · −3,00 %<\/b> in 5 Min\n/.test(m[0]?.text || '') && /💰 Kurs: <code>[\d.,]+ USD<\/code>/.test(m[0].text) && /ungewöhnlich stark für 23 Uhr/.test(m[0].text) && /Schwelle \(0,50 %\)/.test(m[0].text) && /<pre>[\s\S]*ETC[\s\S]*<\/pre>/.test(m[0].text) && /BCH\s+[+−]\d+,\d\d %/.test(m[0].text) && /NEAR\s+[+−]\d+,\d\d %/.test(m[0].text) && m[0]?.disable_notification === true,
       `${m[0]?.disable_notification} · ${m[0]?.text.replace(/\n/g, ' ⏎ ')}`);
     // Dienst fällt aus → App sendet den Puls wieder selbst
     svc.kill('SIGTERM'); await h.sleep(800); svc = null;
@@ -60,7 +60,7 @@ function startService(dir) {
     await page.click('#s247-check'); await until(async () => /nicht gemeldet/.test(await page.textContent('#s247-status')), 8000);
     t0 = Date.now(); await h.ctl(`/set?symbol=BTCUSDT&price=${P0 * 0.95}`);
     const own = await until(async () => { const x = await pulses(t0); return x.length ? x : null; }, 15000);
-    check('Dienst meldet sich nicht mehr: die App sendet den Puls selbst („legt weiter zu“, lautlos)', own?.length === 1 && !/24\/7-Dienst/.test(own[0].text) && /BTC −5,00 % in 5 Min\. .* – Bewegung legt weiter zu/.test(own[0].text) && own[0].disable_notification === 'true', own?.[0]?.text.split('\n')[0]);
+    check('Dienst meldet sich nicht mehr: die App sendet den Puls selbst („legt weiter zu“, lautlos)', own?.length === 1 && !/24\/7-Dienst/.test(own[0].text) && /BTC-PULS · −5,00 %<\/b> in 5 Min/.test(own[0].text) && /Bewegung legt weiter zu/.test(own[0].text) && own[0].mode === 'cors' && own[0].disable_notification === 'true', own?.[0]?.text.split('\n')[0]);
     check('Keine Fehler', !errors.length, errors.join(' | '));
     await ctx.close();
   } catch (e) { check('Abbruch', false, e.message.split('\n')[0]); }

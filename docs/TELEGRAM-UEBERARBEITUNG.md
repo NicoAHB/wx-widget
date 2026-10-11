@@ -36,3 +36,7 @@ Alle beauftragten Module sind implementiert. Gezielte native Telegram-Einstellun
 Nur eine eindeutige Telegram-Antwort „Format/Entities ungültig“ erlaubt einen einzelnen Klartextversuch. Timeout, verlorene Antwort, falscher Chat und Rate-Limit gelten weiter nach den vorhandenen Zustellregeln; der Format-Fallback erzeugt dabei keine zweite Nachricht. Trade-Fotos erhalten zusätzlich eine kurze Ergebnisbeschriftung; das Bild und die Auslöser bleiben erhalten.
 
 Format-/Fallbacktests wurden nach Abschluss aller Ergänzungen ausgeführt. Native HTML-/Klartext-Wege für Text, Sicherung und Trade-Foto: 8/8. Teil 1 wurde davor separat mit 22/22 Fällen geprüft. Technische Dienstübergaben zeigen ebenfalls kopierbare USD-Preise und hervorgehobene Alarm-/Zielmarken.
+
+## Abnahmebeispiele
+
+[22 vollständige Nachrichten mit Klartextansicht und HTML](TELEGRAM-BEISPIELE.md): alle Richtungstypen aufwärts/abwärts, zusätzlich Sicherung, Termin, Tageslimit, Dienstbestätigung und Test. Beispielwerte, keine echten Nachrichten versandt.

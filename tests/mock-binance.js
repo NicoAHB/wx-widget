@@ -206,7 +206,7 @@ async function channel(req, res, host, u) {
       if (cfg.tg429 > 0) { cfg.tg429--; return json(res, 429, { ok: false, error_code: 429, description: 'Too Many Requests: retry after 1', parameters: { retry_after: 1 } }, cors); }
       // 3.27.0: die nächsten n Versuche mit 502 ablehnen (/chan?tg502=n) oder alle passenden dauerhaft (/chan?tgfail=400&match=…)
       if (cfg.tg502 > 0) { cfg.tg502--; sent.at(-1).failed = 502; return json(res, 502, { ok: false, error_code: 502, description: 'Bad Gateway' }, cors); }
-      if (cfg.tgFail && String(f.text || '').includes(cfg.tgFail.match || '')) { sent.at(-1).failed = cfg.tgFail.code; return json(res, cfg.tgFail.code, { ok: false, error_code: cfg.tgFail.code, description: cfg.tgFail.code === 400 ? 'Bad Request: message is too long' : 'Bad Gateway' }, cors); }
+      if (cfg.tgFail && (!cfg.tgFail.serverOnly || !req.headers['sec-fetch-mode']) && String(f.text || '').includes(cfg.tgFail.match || '')) { sent.at(-1).failed = cfg.tgFail.code; return json(res, cfg.tgFail.code, { ok: false, error_code: cfg.tgFail.code, description: cfg.tgFail.code === 400 ? 'Bad Request: message is too long' : 'Bad Gateway' }, cors); }
       if (f.chat_id === '111') return json(res, 400, { ok: false, error_code: 400, description: 'Bad Request: chat not found' }, cors);
       return json(res, 200, { ok: true, result: { message_id: sent.length, chat: { id: Number(f.chat_id) }, text: tgPlain(f.text, f.parse_mode) } }, cors);
     }
@@ -573,7 +573,7 @@ http.createServer((req, res) => {
     case '/restdelay': cfg.restDelay = Number(q.ms) || 0; return ok();
     case '/eurhist': cfg.eurHist = q.mode || 'on'; return ok({ mode: cfg.eurHist });
     case '/t24': cfg.t24 = q.mode || 'ok'; return ok({ mode: cfg.t24 });
-    case '/chan': if ('tgformat' in q) cfg.tgFormat = Number(q.tgformat) || 0; if ('tg502' in q) cfg.tg502 = Number(q.tg502) || 0; if ('tgfail' in q) cfg.tgFail = q.tgfail ? { code: Number(q.tgfail), match: q.match || '' } : null; if ('nocors' in q) cfg.chanNoCors = q.nocors === '1'; if ('tg429' in q) cfg.tg429 = Number(q.tg429) || 0; if ('tgdrop' in q) cfg.tgDrop = Number(q.tgdrop) || 0; if ('photodrop' in q) cfg.photoDrop = Number(q.photodrop) || 0; if ('photofail' in q) cfg.photoFail = Number(q.photofail) || 0; if ('photodelay' in q) cfg.photoDelay = Number(q.photodelay) || 0; if ('docfail' in q) cfg.tgDocFail = q.docfail === '1'; if ('updates' in q) cfg.tgUpdates = q.updates === '1'; return ok();
+    case '/chan': if ('tgformat' in q) cfg.tgFormat = Number(q.tgformat) || 0; if ('tg502' in q) cfg.tg502 = Number(q.tg502) || 0; if ('tgfail' in q) cfg.tgFail = q.tgfail ? { code: Number(q.tgfail), match: q.match || '', serverOnly: q.from === 'server' } : null; if ('nocors' in q) cfg.chanNoCors = q.nocors === '1'; if ('tg429' in q) cfg.tg429 = Number(q.tg429) || 0; if ('tgdrop' in q) cfg.tgDrop = Number(q.tgdrop) || 0; if ('photodrop' in q) cfg.photoDrop = Number(q.photodrop) || 0; if ('photofail' in q) cfg.photoFail = Number(q.photofail) || 0; if ('photodelay' in q) cfg.photoDelay = Number(q.photodelay) || 0; if ('docfail' in q) cfg.tgDocFail = q.docfail === '1'; if ('updates' in q) cfg.tgUpdates = q.updates === '1'; return ok();
     case '/sent': return ok(sent);
     case '/tgmsgs': return ok([...tgMsgs.values()].filter(m => !q.chat || String(m.chat.id) === q.chat).map(m => ({ ...m, content: m.document ? tgFiles.get(m.document.file_id) : undefined })));
     case '/tgmulti': cfg.tgMulti = q.on === '1'; return ok();

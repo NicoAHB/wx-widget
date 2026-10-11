@@ -16,7 +16,7 @@ const pinnedMsg = async () => { const m = (await mock(`/tgmsgs?chat=${CHAT}`)).f
 const pinnedFile = async () => { const m = await pinnedMsg(); return m?.content ? { m, b: JSON.parse(m.content) } : null; };
 const msgs = async (re, since) => (await h.ctl('/sent')).filter(m => m.svc === 'tg' && re.test(m.text || '') && m.at >= since);
 const until = async (fn, ms = 20000, step = 250) => { const t0 = Date.now(); for (;;) { const v = await fn(); if (v) return v; if (Date.now() - t0 > ms) return null; await h.sleep(step); } };
-const PNL_RE = /(Gewinn|Verlust)-Alarm/;
+const PNL_RE = /(GEWINN|VERLUST)-ALARM/;
 function startService(dir) {
   const env = { ...process.env, SCALPDESK_FAST: '1', NODE_TLS_REJECT_UNAUTHORIZED: '0', SCALPDESK_TG_API: 'https://127.0.0.1/_h/api.telegram.org', SCALPDESK_SPOT_API: 'https://127.0.0.1/_h/data-api.binance.vision',
     SCALPDESK_FUT_API: 'https://127.0.0.1/_h/fapi.binance.com', SCALPDESK_CAL_URL: 'https://127.0.0.1/_h/raw.githubusercontent.com/NicoAHB/wx-widget/kalender/calendar.json', NODE_NO_WARNINGS: '1' };
@@ -72,7 +72,7 @@ async function setLimit(page, kind, v) {
     await page.close(); let t0 = Date.now();
     await h.ctl(`/set?symbol=BTCUSDT&price=${P0 + 60}`);
     let m = await until(async () => { const x = await msgs(PNL_RE, t0); return x.length ? x : null; }, 20000);
-    check('App geschlossen, Live-Ergebnis +60 ≥ +50: genau eine Meldung, vom Dienst', m?.length === 1 && /^📈 Gewinn-Alarm\nLive-Ergebnis \+60,00 USDT \(1 offene Position\) · Schwelle ≥ \+50,00 USDT erreicht\n\d\d:\d\d:\d\d Uhr · 24\/7-Dienst$/.test(m[0].text) && m[0].chat_id === CHAT, m?.map(x => x.text.replace(/\n/g, ' ⏎ ')).join(' | '));
+    check('App geschlossen, Live-Ergebnis +60 ≥ +50: genau eine Meldung vom Dienst', m?.length === 1 && /^<b>🟢 GEWINN-ALARM · \+60,00 USD<\/b>\n🎯 Schwelle erreicht: ⭐ <b>≥ \+50,00 USD<\/b> ⭐\nPositionen offen: 1\n🕐 \d\d:\d\d:\d\d$/.test(m[0].text) && m[0].chat_id === CHAT && m[0].mode === '', m?.map(x => x.text.replace(/\n/g, ' ⏎ ')).join(' | '));
     const gvl = await until(async () => (await pinnedMsg())?.caption.split('\n').find(l => l.startsWith('GV: Gewinn-Alarm ausgelöst')), 10000);
     check('… in der angehefteten Nachricht vermerkt', !!gvl && / bei \+60,00 USDT · @p:\d+:\d+:60$/.test(gvl), gvl);
     await h.sleep(4000);
@@ -93,19 +93,19 @@ async function setLimit(page, kind, v) {
     await until(async () => { const mm = await pinnedMsg(); const x = await pinnedFile(); return x && mm.caption.includes(`#${x.b.tag} übernommen`) ? true : null; }, 15000);
     st = await s247Status(page); t0 = Date.now();
     await h.ctl(`/set?symbol=BTCUSDT&price=${P0 - 40}`);
-    m = await until(async () => { const x = await msgs(/Verlust-Alarm/, t0); return x.length ? x : null; }, 20000);
-    await h.sleep(5000); m = await msgs(/Verlust-Alarm/, t0);
+    m = await until(async () => { const x = await msgs(/VERLUST-ALARM/, t0); return x.length ? x : null; }, 20000);
+    await h.sleep(5000); m = await msgs(/VERLUST-ALARM/, t0);
     const toast2 = await page.evaluate(() => [...document.querySelectorAll('#toasts .toast')].map(t => t.textContent).find(t => /Verlust-Alarm/.test(t)) || '');
-    check('App offen, −40 ≤ −30: genau eine Meldung, sofort von der App; der Dienst sendet nicht zusätzlich', m.length === 1 && /^📉 Verlust-Alarm\nLive-Ergebnis −40,00 USDT/.test(m[0].text) && /\n\d\d:\d\d:\d\d Uhr$/.test(m[0].text) && m[0].at - t0 < 3000 && /Verlust-Alarm/.test(toast2), JSON.stringify({ n: m.length, last: m.map(x => x.text.split('\n').at(-1)), ms: m.map(x => x.at - t0), toast2: toast2.slice(0, 60) }));
+    check('App offen, −40 ≤ −30: genau eine Meldung sofort von der App; der Dienst sendet nicht zusätzlich', m.length === 1 && /^<b>🔴 VERLUST-ALARM · −40,00 USD<\/b>/.test(m[0].text) && /\n🕐 \d\d:\d\d:\d\d$/.test(m[0].text) && m[0].mode === 'cors' && m[0].at - t0 < 3000 && /Verlust-Alarm/.test(toast2), JSON.stringify({ n: m.length, last: m.map(x => x.text.split('\n').at(-1)), ms: m.map(x => x.at - t0), toast2: toast2.slice(0, 60) }));
     const s2 = (await stored(page))?.loss, pfL = await pinnedFile();
     check('… in der App ausgelöst (von der App gemeldet), in der Übergabe als gemeldet vermerkt (done)', s2?.state === 'fired' && s2.svc === false && pfL?.b.pnl?.lim.find(l => l.k === 'loss')?.done === true, JSON.stringify({ s2, lim: pfL?.b.pnl?.lim }));
     // ---- Kurs-Alarm bleibt nach dem Auslösen kurz in der Übergabe; Meldung kommt vom Dienst ----
     t0 = Date.now();
     await h.ctl(`/set?symbol=BTCUSDT&price=${P0 + 210}`);
-    const am = await until(async () => { const x = await msgs(/Kurs-Alarm BTC/, t0); return x.length ? x : null; }, 20000);
+    const am = await until(async () => { const x = await msgs(/KURS-ALARM · BTC/, t0); return x.length ? x : null; }, 20000);
     await page.waitForTimeout(6000);
     const pf2 = await pinnedFile(), alarmState = await page.evaluate(() => JSON.parse(localStorage.getItem('scalpdesk.alarms.v1') || '[]')[0]);
-    check('Kurs-Alarm ausgelöst (App offen): genau eine Meldung, vom Dienst', (await msgs(/Kurs-Alarm BTC/, t0)).length === 1 && /· 24\/7-Dienst$/.test(am?.[0]?.text || ''), am?.map(x => x.text.split('\n').at(-1)).join(' | '));
+    check('Kurs-Alarm ausgelöst (App offen): genau eine Meldung vom Dienst', (await msgs(/KURS-ALARM · BTC/, t0)).length === 1 && am?.[0]?.mode === '' && /\n🕐 \d\d:\d\d:\d\d$/.test(am[0].text), am?.map(x => x.text.split('\n').at(-1)).join(' | '));
     check('… der ausgelöste Alarm bleibt noch in der Übergabe (vom Dienst gemeldet, svcAt gesetzt)', alarmState?.triggeredAt > 0 && alarmState.svcAt > 0 && pf2?.b.alarms.some(a => a.id === 'al1'), JSON.stringify({ trig: alarmState?.triggeredAt, svcAt: alarmState?.svcAt, inFile: pf2?.b.alarms.map(a => a.id) }));
     // ---- App offen, kurze Spitze: die App sieht sie und meldet; der Dienst (prüft nur alle 1,5 s) sieht sie meist nicht ----
     await h.ctl(`/set?symbol=BTCUSDT&price=${P0}`); await page.waitForTimeout(1500);
@@ -115,8 +115,8 @@ async function setLimit(page, kind, v) {
     t0 = Date.now(); await h.ctl(`/set?symbol=BTCUSDT&price=${P0 + 60}`);
     const spike = await until(async () => (await stored(page))?.profit?.state === 'fired' ? true : null, 8000, 50);
     await h.ctl(`/set?symbol=BTCUSDT&price=${P0}`); const spikeMs = Date.now() - t0;
-    await h.sleep(6000); m = await msgs(/Gewinn-Alarm/, t0);
-    check(`App offen, kurze Spitze (+60 für ${spikeMs} ms): genau eine Meldung, von der App; der Dienst meldet nicht zusätzlich`, reOk && spike && m.length === 1 && /\n\d\d:\d\d:\d\d Uhr$/.test(m[0].text), JSON.stringify({ reOk, spike, spikeMs, n: m.length, last: m.map(x => x.text.split('\n').at(-1)) }));
+    await h.sleep(6000); m = await msgs(/GEWINN-ALARM/, t0);
+    check(`App offen, kurze Spitze (+60 für ${spikeMs} ms): genau eine Meldung, von der App; der Dienst meldet nicht zusätzlich`, reOk && spike && m.length === 1 && /\n🕐 \d\d:\d\d:\d\d$/.test(m[0].text) && m[0].mode === 'cors', JSON.stringify({ reOk, spike, spikeMs, n: m.length, last: m.map(x => x.text.split('\n').at(-1)) }));
     check('Computer: keine Fehler', !real(errors).length, real(errors).join(' | '));
     await ctx.close();
     svc.kill(); svc = null;

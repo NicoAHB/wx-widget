@@ -6,7 +6,7 @@ const check = (name, ok) => { ok ? pass++ : fail++; console.log(`${ok ? '✓' : 
   await h.setup(); const browser = await h.launch();
   try {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }), page = await ctx.newPage(), errors = [];
-    page.on('pageerror', e => errors.push(e.message)); await page.goto(h.URL_BASE + '/weather-widget-v2.html');
+    page.on('pageerror', e => errors.push(e.stack || e.message)); await page.goto(h.URL_BASE + '/weather-widget-v2.html');
     await page.waitForFunction(() => window.__intervals && __g05.state.candles.length > 200);
     await page.click('.tb-main [data-interval="2h"]'); await page.waitForFunction(() => __g05.state.interval === '2h' && !__g05.state.busy && __g05.state.candles.length > 200);
     let s = await page.evaluate(() => ({ iv: __g05.state.interval, rows: __g05.state.candles, active: document.querySelector('.tb-main [data-interval="2h"]').getAttribute('aria-pressed'), rating: __intervals.ratingFor('2h') }));
@@ -29,7 +29,9 @@ const check = (name, ok) => { ok ? pass++ : fail++; console.log(`${ok ? '✓' : 
     });
     const hit = await page.evaluate(candles => __g09.engine().detect(candles, { from: 380, step: 7200000 }).hits.find(h => h.id === 'double_bottom' && /Ausbruch/.test(h.status)), candles);
     if (!hit) throw Error('2h-Formationsfixture fehlt');
-    await page.evaluate(hit => { const e = __g09.wl.c.get('BTCUSDT'); __g09.wl.c.set('BTCUSDT', { ...e, iv: '2h', pat: hit }); __intervals.openPattern('BTC'); }, hit);
+    // Nur den vorhandenen nativen Vorauswahl-Eintrag ändern, keinen unvollständigen Datensatz anlegen.
+    await page.waitForFunction(() => { const e = __g09.wl.c.get('BTCUSDT'); return e && Array.isArray(e.hist) && Array.isArray(e.closed) && !e.loading && e.at > 0; });
+    await page.evaluate(hit => { const e = __g09.wl.c.get('BTCUSDT'); e.iv = '2h'; e.pat = hit; __intervals.openPattern('BTC'); }, hit);
     await page.waitForFunction(() => __g05.state.interval === '2h' && !__g05.state.busy && __g09.pat.sel !== null && document.querySelector('#chart .pat-hl')).catch(async e => { console.log('DIAG', JSON.stringify(await page.evaluate(() => ({ iv: __g05.state.interval, count: __g05.state.candles.length, error: __g05.state.marketError, first: __g05.state.candles[0]?.close, sel: __g09.pat.sel, want: __g09.pat.want, meta: __g09.pat.meta && { reason: __g09.pat.meta.reason, n: __g09.pat.meta.n }, hits: __g09.pat.res?.hits.map(h => ({ id: h.id, t0: h.t0, t1: h.t1, q: h.q })) })))); throw e; });
     check('Klick auf echte 2h-Formation lädt Start/Ende und markiert genau das Muster', await page.evaluate(hit => { const h = __g09.pat.res.hits[__g09.pat.sel]; return h.id === hit.id && h.t0 === hit.t0 && h.t1 === hit.t1 && !!document.querySelector('#chart .pat-hl') && document.querySelectorAll('#chart .pat-line').length >= 2; }, hit));
     check('Originale Nacken-/Ausbruchslinie wird eingezeichnet', await page.evaluate(() => __g09.pat.res.hits[__g09.pat.sel].lines.some(l => l[4] === 'neck') && !!document.querySelector('#chart .pat-line[stroke-dasharray="5 3"]')));
@@ -44,6 +46,7 @@ const check = (name, ok) => { ok ? pass++ : fail++; console.log(`${ok ? '✓' : 
     await page.evaluate(() => { const b = document.getElementById('pat-project-bars'); b.value = '30'; document.getElementById('pat-project-on').checked = true; b.dispatchEvent(new Event('change')); });
     await page.waitForFunction(() => !!document.querySelector('#chart .pat-projection'));
     check('Länge und Schalter werden gespeichert, Durchbruch blasser markiert', await page.evaluate(() => __g09.projection().bars === 30 && JSON.parse(localStorage.getItem('scalpdesk.pattern-projection.v1')).on && !!document.querySelector('#chart .pat-projection.broken')));
+    if (errors.length) console.log('Laufzeitfehler:', JSON.stringify(errors));
     check('Keine JavaScript-Laufzeitfehler', errors.length === 0);
     await ctx.close();
   } finally { await browser.close(); await h.teardown(); }

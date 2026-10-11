@@ -30,7 +30,7 @@ const throws = fn => { try { fn(); return false; } catch { return true; } };
   policy.since = clock - 4 * M; stream.zones = [{ ...zone, filledAt: at }]; await svc.sendCandidates(result, 'BTCUSDT', config, svc.state.revision); check('Gefüllte Alarmzone nicht durch Setup-Original wieder aktivieren', sends.length === 2);
   stream.zones = [{ ...zone, id: 'new-zone' }]; allowSave = false; let failed = false; try { await svc.sendCandidates({ ...result, created: [] }, 'BTCUSDT', config, svc.state.revision); } catch { failed = true; }
   check('Nicht gespeicherte Stufensperre sendet nichts und rollt zurück', failed && sends.length === 2 && !svc.state.alerts[JSON.stringify(['new-zone', 1, policy.epoch])]); allowSave = true;
-  check('Nachricht deutsch, eigener PO3-Score/Preisplan, keine Order und vor Funding', /Entrybestätigung.*BTCUSDT/s.test(S.po3Message(sends[1])) && /TP1.*TP2.*TP3/s.test(S.po3Message(sends[1])) && /vor Funding.*Cross unbekannt/.test(S.po3Message(sends[1])));
+  check('Nachricht deutsch, eigener PO3-Score/Preisplan, keine Order und vor Funding', /Entrybestätigung.*BTC\/USDT/s.test(S.po3Message(sends[1])) && /Ziel 1:.*Ziel 2:.*Ziel 3:/s.test(S.po3Message(sends[1])) && /vor Funding.*Cross unbekannt/s.test(S.po3Message(sends[1])));
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'po3-service-')); let watcher;
   try {
     const opts = { token: '123456789:TEST_ONLY_NOT_A_REAL_TOKEN_000000000', chat: '-100777', key: 'k'.repeat(43), statePath: path.join(dir, 'state.json'), now: () => clock, kiClient: client, log: () => {} };

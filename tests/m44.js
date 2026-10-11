@@ -34,14 +34,14 @@ const sendNow = async page => { const t0 = Date.now(); await page.evaluate(() =>
   try {
     // 1. Update aus 3.23.1: gemerkt ist nur „Chat“ (altes Format) – die vorhandene Datei wird ersetzt, keine zweite gesendet
     const old = (await h.ctl(`/tgpin?chat=${CHAT}&bot=${B1}&pin=0&name=${FILE}&caption=${encodeURIComponent('💾 Scalp-Desk-Sicherung · alt')}`)).message_id;
-    let t0 = Date.now(), { ctx, page, errors } = await open(browser, tgc({}), [['scalpdesk.tgbackup.v1', { on: true, chat: CHAT, msg: old, at: Date.now() - 864e5, sig: '' }]]);
+    let t0 = Date.now(), { ctx, page, errors } = await open(browser, tgc({ bchat: CHAT }), [['scalpdesk.tgbackup.v1', { on: true, chat: CHAT, msg: old, at: Date.now() - 864e5, sig: '' }]]);
     let b = await until(async () => { const x = await backups(t0); return x.length ? x : null; }, 15000);
     let d = await docs(CHAT, B1), p = await until(async () => { const x = await pinned(CHAT, B1); return x?.message_id === old ? x : null; }, 5000);
     check('Update aus 3.23.1 (altes Speicherformat): die vorhandene Datei wird ersetzt, keine zweite gesendet', b?.length === 1 && b[0].method === 'editMessageMedia' && b[0].message_id === old && d.length === 1,
       JSON.stringify({ sent: b?.map(x => `${x.method}#${x.message_id}`), docs: d.map(x => x.message_id) }));
     check('… und für die anderen Geräte angeheftet (kein 24/7-Dienst in diesem Chat)', p?.message_id === old, `angeheftet: ${p?.message_id}`);
     let i = await info(page);
-    check('Anzeige: Ziel Kursalarm-Chat ohne eigenen Sicherungschat, Knopf „💾 Sicherungschat festlegen …“', /Ziel: Kursalarm-Chat .*kein eigener Sicherungschat eingetragen/.test(i.text) && i.setup && /Sicherungschat festlegen/.test(i.label), `${i.text.split(' · ').slice(-1)[0]} | ${i.label}`);
+    check('Anzeige: ausdrücklich eingetragener Sicherungschat, kein Einrichtungs-Knopf', /Ziel: Sicherungschat/.test(i.text) && !i.setup, i.text);
     // 2. Kursalarm auf ein Gruppen-Thema umstellen: die Sicherung bleibt, wo ihre Datei liegt (als Sicherungschat eingetragen)
     await h.ctl('/tgmulti?on=1'); await openChan(page); await page.click('#tg-detect');
     await page.waitForFunction(() => document.querySelectorAll('#tg-found .tg-found-row').length === 2, null, { timeout: 8000 }).catch(() => {});
@@ -60,7 +60,7 @@ const sendNow = async page => { const t0 = Date.now(); await page.evaluate(() =>
 
     // 3. Eigener Sicherungs-Bot: Sicherung über Bot 2 (eigener Privatchat), Alarme über Bot 1
     await h.ctl('/tgreset'); t0 = Date.now();
-    ({ ctx, page, errors } = await open(browser, tgc({ btoken: T2 }), [['scalpdesk.tgbackup.v1', { on: true }]]));
+    ({ ctx, page, errors } = await open(browser, tgc({ bchat: CHAT, btoken: T2 }), [['scalpdesk.tgbackup.v1', { on: true }]]));
     b = await until(async () => { const x = await backups(t0); return x.length ? x : null; }, 15000);
     p = await pinned(CHAT, B2);
     check('Eigener Sicherungs-Bot: die Datei geht über Bot 2 in dessen Chat und wird dort angeheftet; im Kursalarm-Chat (Bot 1) keine', b?.length === 1 && b[0].bot === B2 && b[0].method === 'sendDocument' && p?.message_id === b[0].message_id && !(await docs(CHAT, B1)).length,
@@ -114,7 +114,7 @@ const sendNow = async page => { const t0 = Date.now(); await page.evaluate(() =>
 
     // 6. 24/7-Dienst aktiv und Sicherung ohne eigenen Chat: Sicherung nicht anheften – dort hängt die Datei des Dienstes
     await h.ctl('/tgreset'); t0 = Date.now();
-    ({ ctx, page, errors } = await open(browser, tgc({}), [['scalpdesk.tgbackup.v1', { on: true }], ['scalpdesk.s247.v1', { on: true }]]));
+    ({ ctx, page, errors } = await open(browser, tgc({ bchat: CHAT }), [['scalpdesk.tgbackup.v1', { on: true }], ['scalpdesk.s247.v1', { on: true }]]));
     b = await until(async () => { const x = await backups(t0); return x.length ? x : null; }, 15000);
     await until(async () => (await pinned(CHAT, B1))?.document?.file_name === 'scalpdesk-247.json', 15000);
     await page.waitForTimeout(1500);
@@ -125,12 +125,12 @@ const sendNow = async page => { const t0 = Date.now(); await page.evaluate(() =>
 
     // 7. Haupt-Bot wechseln (bisher lief alles über Bot 2): die Sicherung bleibt beim alten Bot und ersetzt seine Datei
     await h.ctl('/tgreset'); t0 = Date.now();
-    ({ ctx, page, errors } = await open(browser, tgc({ token: T2 }), [['scalpdesk.tgbackup.v1', { on: true }]]));
+    ({ ctx, page, errors } = await open(browser, tgc({ token: T2, bchat: CHAT, btoken: T2 }), [['scalpdesk.tgbackup.v1', { on: true }]]));
     b = await until(async () => { const x = await backups(t0); return x.length ? x : null; }, 15000);
     const viaB2 = b?.[0]?.message_id;
     await openChan(page); await page.fill('#tg-token', T1); await page.locator('#tg-token').blur(); await page.waitForTimeout(400);
     const st7 = await page.evaluate(() => JSON.parse(localStorage.getItem('scalpdesk.channels.v1')).tg);
-    check('Haupt-Token gewechselt: der bisherige Bot wird als eigener Sicherungs-Bot eingetragen', st7.token.startsWith('123456789:') && st7.btoken.startsWith('555666777:') && st7.bchat === CHAT, JSON.stringify({ token: st7.token.slice(0, 9), btoken: st7.btoken.slice(0, 9), bchat: st7.bchat }));
+    check('Haupt-Token gewechselt: der ausdrücklich eingetragene eigene Sicherungs-Bot bleibt unverändert', st7.token.startsWith('123456789:') && st7.btoken.startsWith('555666777:') && st7.bchat === CHAT, JSON.stringify({ token: st7.token.slice(0, 9), btoken: st7.btoken.slice(0, 9), bchat: st7.bchat }));
     await page.click('#chan-done');
     b = await sendNow(page);
     check('… die nächste Sicherung ersetzt die Datei beim alten Bot – keine neue im Chat des neuen Bots', b?.length === 1 && b[0].method === 'editMessageMedia' && b[0].message_id === viaB2 && b[0].bot === B2 && !(await docs(CHAT, B1)).length && (await docs(CHAT, B2)).length === 1,

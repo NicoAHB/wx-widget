@@ -61,10 +61,10 @@ function startService(dir) {
     // ---- Alarm: genau eine Nachricht, vom Dienst ----
     const before = (await texts()).length;
     await h.ctl(`/wick?symbol=BTCUSDT&to=${(up * 1.002).toFixed(2)}`);
-    await until(async () => (await texts()).slice(before).some(t => /Kurs-Alarm BTC/.test(t)), 15000); await h.sleep(4000);
-    const al = (await texts()).slice(before).filter(t => /Kurs-Alarm BTC/.test(t));
+    await until(async () => (await texts()).slice(before).some(t => /KURS-ALARM · BTC/.test(t)), 15000); await h.sleep(4000);
+    const al = (await texts()).slice(before).filter(t => /KURS-ALARM · BTC/.test(t));
     const appSaw = await page.evaluate(() => [...document.querySelectorAll('.toast')].some(t => /Kurs-Alarm|auf\/über/.test(t.textContent)) || /ausgelöst|erreicht/.test(document.getElementById('alarms')?.textContent || ''));
-    check('Alarm erreicht: genau eine Telegram-Nachricht, vom 24/7-Dienst; die App zeigt ihn, sendet ihn aber nicht zusätzlich', al.length === 1 && /· 24\/7-Dienst$/.test(al[0]) && appSaw, `${al.length} Nachricht(en): ${al.map(t => t.split('\n').at(-1)).join(' | ')}`);
+    check('Alarm erreicht: genau eine Telegram-Nachricht, vom 24/7-Dienst; die App zeigt ihn, sendet ihn aber nicht zusätzlich', al.length === 1 && (await h.ctl('/sent')).find(m => m.text === al[0])?.mode === '' && /\n🕐 \d\d:\d\d:\d\d$/.test(al[0]) && appSaw, `${al.length} Nachricht(en): ${al.map(t => t.split('\n').at(-1)).join(' | ')}`);
     // 3.26.0: Der ausgelöste Alarm bleibt noch 3 Minuten in der Übergabe (der Dienst prüft die Kurse nur alle 15 s – so meldet er
     // ihn sicher, auch wenn die App ihn zuerst sieht); danach übergibt die App den neuen Stand (1 Alarm), der Dienst bestätigt ihn
     const t2 = Date.now(), still = await pinnedMsg(), stillB = still?.content ? JSON.parse(still.content) : null;
@@ -79,7 +79,7 @@ function startService(dir) {
     check('Lebenszeichen älter als 20 Minuten: „⚠ Der Dienst hat sich seit … nicht gemeldet – die App sendet wieder selbst“', /^⚠ Der Dienst hat sich seit \d\d:\d\d nicht gemeldet – die App sendet wieder selbst/.test(s.text) && !/24\/7-Dienst: aktiv/.test(s.sum), s.text.slice(0, 90));
     const before2 = (await texts()).length;
     await h.ctl(`/wick?symbol=BTCUSDT&to=${(down * 0.998).toFixed(2)}`);
-    const own = await until(async () => (await texts()).slice(before2).find(t => /Kurs-Alarm BTC/.test(t)), 15000);
+    const own = await until(async () => (await texts()).slice(before2).find(t => /KURS-ALARM · BTC/.test(t)), 15000);
     check('Zweiter Alarm ohne Dienst: die App sendet ihn selbst', !!own && !/24\/7-Dienst/.test(own), own?.split('\n')[0]);
     // ---- Ausschalten: „ausgeschaltet“ übergeben ----
     await page.uncheck('#s247-on');

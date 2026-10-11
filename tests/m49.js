@@ -46,8 +46,8 @@ const tests = {
       const st = await until(async () => { const t = await page.textContent('#s247-status'); return /^Übergeben ✓ vom Dienst bestätigt/.test(t) ? t : null; }, 40000, 500);
       check('App zeigt ohne Tippen „Übergeben ✓ vom Dienst bestätigt um … (1 Alarm, 0 Positionen · Dienst x.y.z)“', !!st && /^Übergeben ✓ vom Dienst bestätigt um \d\d:\d\d \(1 Alarm, 0 Positionen · Dienst \d+\.\d+\.\d+\)\./.test(st) && /auch bei geschlossener App/.test(st), (st || await page.textContent('#s247-status')).slice(0, 140));
       check('… innerhalb von 30 Sekunden nach dem Einschalten', !!st && Date.now() - t0 < 30000, `${Math.round((Date.now() - t0) / 1000)} s`);
-      const ack = (await sentTg(t0)).filter(m => /^✅ 24\/7-Dienst hat übernommen/.test(m.text || ''));
-      check('Telegram: Bestätigung „✅ 24/7-Dienst hat übernommen“ mit dem Alarm, lautlos, vom Bot der App', ack.length === 1 && ack[0].disable_notification === true && ack[0].bot === 123456789 && ack[0].text.includes(`• Kurs-Alarm BTC auf/über ${(P0 + 50).toLocaleString('de-DE', { minimumFractionDigits: 2 })} USDT`) && /auch bei geschlossener App\.$/.test(ack[0].text), ack[0]?.text.replace(/\n/g, ' ⏎ '));
+      const ack = (await sentTg(t0)).filter(m => /^<b>✅ Dienst hat übernommen/.test(m.text || ''));
+      check('Telegram: Bestätigung mit fett markiertem Alarm-Level in USD, lautlos, vom Bot der App', ack.length === 1 && ack[0].disable_notification === true && ack[0].bot === 123456789 && ack[0].text.includes(`⭐ <b>Alarm-Level: ${(P0 + 50).toLocaleString('de-DE', { minimumFractionDigits: 2 })} USD</b> ⭐ (auf/über)`) && /Auch bei geschlossener App\n🕐 \d\d:\d\d:\d\d$/.test(ack[0].text), ack[0]?.text.replace(/\n/g, ' ⏎ '));
       const L = () => svc.log.join('\n');
       check('Protokoll: gestartet · Bot · Chat, Übergabe erhalten, Alarme geladen, Kursprüfung, Bestätigung eingetragen und gesendet',
         / \d+\.\d+\.\d+ gestartet · Bot @test_kursalarm_bot \(ID 123456789\) · Chat 987654321/.test(L()) && /\nÜbergabe erhalten: Nachricht #\d+ · App /.test(L()) && /\nAlarme geladen: 1 Alarm, 0 Positionen – Kurs-Alarm BTC auf\/über /.test(L())
@@ -56,11 +56,11 @@ const tests = {
       // App schließen, dann erreicht der Kurs den Alarm
       await ctx.close(); await h.sleep(500);
       const t1 = Date.now(); await h.ctl(`/set?symbol=BTCUSDT&price=${P0 + 80}`);
-      const al = await until(async () => { const x = (await sentTg(t1)).filter(m => /^🔔 Kurs-Alarm BTC/.test(m.text || '')); return x.length ? x : null; }, 20000);
-      check('App geschlossen, Kurs über dem Alarm: Telegram-Nachricht vom Dienst (mit Ton, Kennzeichen „24/7-Dienst“)', !!al && al[0].bot === 123456789 && !al[0].disable_notification && /24\/7-Dienst/.test(al[0].text), al ? al[0].text.replace(/\n/g, ' ⏎ ').slice(0, 160) : 'keine Nachricht');
+      const al = await until(async () => { const x = (await sentTg(t1)).filter(m => /^<b>🟢⬆️ KURS-ALARM · BTC/.test(m.text || '')); return x.length ? x : null; }, 20000);
+      check('App geschlossen, Kurs über dem Alarm: Nachricht vom Dienst mit Ton, ohne Dienst-Suffix', !!al && al[0].bot === 123456789 && al[0].mode === '' && !al[0].disable_notification && !/24\/7-Dienst/.test(al[0].text) && /\n🕐 \d\d:\d\d:\d\d$/.test(al[0].text), al ? al[0].text.replace(/\n/g, ' ⏎ ').slice(0, 160) : 'keine Nachricht');
       check('… in unter 10 Sekunden (Dienst prüft hier alle 1,5 s statt 15 s)', !!al && al[0].at - t1 < 10000, al ? `${((al[0].at - t1) / 1000).toFixed(1)} s` : '');
       await h.sleep(4000);
-      check('… genau einmal', (await sentTg(t1)).filter(m => /^🔔 Kurs-Alarm BTC/.test(m.text || '')).length === 1);
+      check('… genau einmal', (await sentTg(t1)).filter(m => /^<b>🟢⬆️ KURS-ALARM · BTC/.test(m.text || '')).length === 1);
       check('Protokoll: „Alarm ausgelöst“ und „Telegram gesendet“', /\nAlarm ausgelöst: Kurs-Alarm BTC auf\/über .* \(Kurs .*\)/.test(L()) && /\nTelegram gesendet: Kurs-Alarm BTC \(Nachricht #\d+\)/.test(L()), svc.log.filter(l => /^(Alarm|Telegram)/.test(l)).join(' | '));
       const sr = statusRun(dir);
       check('--status (sudo scalpdesk-247 status): Bot, Chat, Datei, Bestätigung, beobachtete Marken, „alles in Ordnung“', sr.code === 0 && /✓ Bot @test_kursalarm_bot \(ID 123456789\)/.test(sr.out) && /✓ Datei der App angeheftet/.test(sr.out)
@@ -78,8 +78,8 @@ const tests = {
       await page.waitForTimeout(15000);
       let st = await page.textContent('#s247-status');
       check('Falscher Bot am Server: App wartet („wartet auf die Bestätigung … meist nach 20–30 Sekunden“)', /^Übergeben um \d\d:\d\d \(1 Alarm, 0 Positionen\) – wartet auf die Bestätigung des 24\/7-Dienstes/.test(st), st);
-      const hint = (await sentTg(t0)).filter(m => /^⏳ Scalp Desk 24\/7-Dienst/.test(m.text || ''));
-      check('Dienst: Hinweis in SEINEM Chat (Sicherungs-Bot), mit seinem Bot, der Chat-ID und dem Befehl --neu', hint.length >= 1 && hint[0].bot === 555666777 && hint[0].text.includes('dieser Bot (@test_sicherung_bot) und die Chat-ID 987654321') && hint[0].text.includes('--neu'), hint[0]?.text.replace(/\n/g, ' ⏎ ').slice(0, 200));
+      const hint = (await sentTg(t0)).filter(m => /^<b>⏳ Dienst wartet auf die App/.test(m.text || ''));
+      check('Dienst: Hinweis in SEINEM Chat (Sicherungs-Bot), mit seinem Bot, der Chat-ID und dem Befehl --neu', hint.length >= 1 && hint[0].bot === 555666777 && hint[0].text.includes('Bot: @test_sicherung_bot') && hint[0].text.includes('Chat-ID: 987654321') && hint[0].text.includes('--neu'), hint[0]?.text.replace(/\n/g, ' ⏎ ').slice(0, 200));
       check('Dienst: Protokoll „Warte auf die Übergabe der App …“ mit Bot und Chat-ID', svc.log.some(l => l.startsWith('Warte auf die Übergabe der App: Im Chat 987654321 (privat „Nico“) ist für @test_sicherung_bot keine Datei')), svc.log[1]);
       st = await until(async () => { const t = await page.textContent('#s247-status'); return /^⚠ Übergeben um/.test(t) ? t : null; }, 100000, 1000);
       check('App nach 90 s: „⚠ … hat nicht bestätigt“ mit Bot und Chat-ID dieser App und dem Prüfbefehl', !!st && st.includes('(hier: Bot @test_kursalarm_bot, Chat-ID 987654321)') && st.includes('sudo scalpdesk-247 status') && st.includes('Sicherungs-Bot'), (st || '').slice(0, 260));
@@ -87,7 +87,7 @@ const tests = {
       check('--status mit falschem Bot: ✗ keine Datei, Bot des Dienstes genannt, Befehl --neu', sr.code === 1 && /✓ Bot @test_sicherung_bot \(ID 555666777\)/.test(sr.out) && /✗ Keine Datei der App angeheftet \(angeheftet: nichts\)/.test(sr.out) && /--neu/.test(sr.out), sr.out.split('\n').slice(0, 5).join(' | ').slice(0, 400));
       // App schließen: Ohne passenden Bot kann der Dienst nichts melden – genau das zeigen Hinweis und Status
       await ctx.close(); const t1 = Date.now(); await h.ctl(`/set?symbol=BTCUSDT&price=${P0 + 80}`); await h.sleep(6000);
-      check('… bei geschlossener App kommt (erwartungsgemäß) keine Alarm-Nachricht – Ursache steht im Hinweis', !(await sentTg(t1)).some(m => /^🔔 Kurs-Alarm/.test(m.text || '')));
+      check('… bei geschlossener App kommt (erwartungsgemäß) keine Alarm-Nachricht – Ursache steht im Hinweis', !(await sentTg(t1)).some(m => /^<b>.*KURS-ALARM/.test(m.text || '')));
       check('keine Fehler (App)', !real(errors).length, real(errors).join(' | ').slice(0, 200));
     } finally { svc?.kill(); }
   },
