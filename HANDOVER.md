@@ -3,7 +3,18 @@
 Diese Datei ist der Einstieg für jede weitere Arbeit am Projekt. Wer sie liest, braucht kein Vorwissen. Die vollständige fachliche
 Vorgabe aller Gruppen G01–G14 steht in `docs/VORGABE-G01-G14.md` (Original-Übergabe; dort sind G10–G14 ausführlich beschrieben).
 
-## Aktueller Arbeitsstand 3.63.0 – online und technisch abgenommen
+## Aktueller Arbeitsstand 3.64.0 – Chart-Erweiterung, Release-Prüfung offen
+
+Branch `codex/chart-detail-muster`, Ausgangspunkt veröffentlichtes 3.63.0. Nutzerauftrag: feinere Detail-Kerzen ab Haupt-Zeitrahmen 1h und kompakte Formationschips im markierten Kursbereich neben „Alarm für diesen Kurs“; vorhandene BTC-Pfeile bleiben erreichbar. Keine Änderungen der Erkennungs-, Signal-, Alarm-, Positions- oder Oracle-Fachlogik.
+
+- Detailkern fertig: gemeinsame erlaubte Auflösungen, eigener begrenzter Anzeige-/Cachezustand, Binance-Paging in beide Richtungen, UTC-/OHLC-Prüfung, Live-Kontext und Verwerfen verspäteter Coin-Antworten. 35/35 Einheitentests.
+- Chipkern fertig: eindeutige Formationen, Status/Alter, Invalidierung erst auf abgeschlossenen Folgekerzen, unveränderte Mindestregelgüte/Filter. 17/17 Einheitentests. „Ausbruch fehlt“ wird ausdrücklich nicht als bestätigt dargestellt.
+- App integriert: mobile Auswahl, bis 1500 sichtbare Detail-Kerzen per Canvas, Hauptlinien zeitlich abgebildet, Hauptanalyse unverändert, mehrere Muster zeichnen/abtippen, unabhängige Auswahl, kein zusätzliches Telegram-/Archivschreiben bei passiver Leistenanalyse. Native Tests 31/31 bei 320–1440 px; bestehender 2h-/Projektions-Dialog M88 16/16. Lint 0 Fehler, 3 bekannte Warnungen.
+- App/SW gemeinsam 3.64.0, Dienst unverändert 2.12.0; vollständiges 71/69-Lieferbündel erzeugt. Bedienung und Grenzen in `docs/CHART-DETAIL-MUSTER.md`. Optionales Antippen einer Hauptkerze zum Zeitraumzoom nicht implementiert; Fadenkreuz bleibt erhalten.
+
+**Offen:** vollständiger serieller 161-Ziele-Gesamtlauf auf eingefrorenen Produktdateien, Befunde/Nachläufe, PR/Pages und komplette PWA-ZIP. Tatsächliche Safari-/iPhone-/iPad-Abnahme separat. Der Nutzer hat Veröffentlichung nach Abschluss/Test bereits autorisiert; keine zusätzliche Gruppenfreigabe erforderlich.
+
+## Vorheriger Arbeitsstand 3.63.0 – online und technisch abgenommen
 
 Branch `codex/telegram-muster-bot`, öffentlich 3.63.0. Auf ausdrücklichen Nutzerauftrag alle Ergänzungen gemeinsam fertiggestellt, anschließend Fehlerprüfung und Veröffentlichung; keine erneute Gruppenfreigabe nötig.
 

@@ -1,0 +1,51 @@
+// Feine Anzeige bleibt vom Analyse-/Alarmzustand unabhängig: Paging, UTC, Cache und Live-Kontext.
+let pass=0,fail=0;
+const check=(name,ok)=>{ok?pass++:fail++;console.log(`${ok?'✓':'✗'} ${name}`);};
+(async()=>{
+  const D=await import('../shared/chart-detail.mjs'),I=await import('../shared/market-intervals.mjs');
+  const allowed={'1h':'1m,5m,15m,30m','2h':'1m,5m,15m,30m,1h','4h':'5m,15m,30m,1h,2h','1d':'15m,30m,1h,2h,4h','1w':'1h,4h,1d','1M':'4h,1d,1w'};
+  for(const [iv,options]of Object.entries(allowed))check(`Sinnvolle Auflösungen für ${iv}`,D.detailOptions(iv).join(',')===options);
+  check('Kleine Hauptintervalle ohne Detail-Auswahl',!D.detailOptions('15m').length&&D.detailChoice('1h','1h')===''&&D.detailChoice('4h','1m')==='');
+  check('Ungültige gespeicherte Auswahl fällt auf normale Kerzen zurück',D.detailChoice('1h','1s')===''&&D.detailChoice('1d','1h')==='1h');
+  const monday=Date.UTC(2026,9,5),feb=Date.UTC(2026,1,1);
+  check('Wochen beginnen Montag UTC',D.candleStart(monday+6*86400000,'1w')===monday);
+  check('Monate folgen dem Kalender statt 30 Tagen',D.candleStart(feb+27*86400000,'1M')===feb&&I.intervalEnd(feb,'1M')===Date.UTC(2026,2,1));
+  const ms=60000,at=12000*ms-1,row=(i,iv='1m')=>{const time=i*I.INTERVAL_MS[iv];return{time,closeTime:I.intervalEnd(time,iv)-1,open:100,high:102,low:99,close:101,volume:10};};
+  const all=Array.from({length:12000},(_,i)=>row(i)),requests=[];
+  const request=async(ctx,iv,p)=>{requests.push({ctx,iv,...p});const source=iv==='1m'?all:Array.from({length:200},(_,i)=>row(i,iv));return p.startTime!==undefined?source.filter(c=>c.time>=p.startTime).slice(0,p.limit):source.filter(c=>c.time<=p.endTime).slice(-p.limit);};
+  const c=D.createDetailCandles({request,now:()=>at}),context={symbol:'BTCUSDT',source:'spot',main:'1h'};
+  await c.select(context,'1m',{start:0,end:at});
+  check('1500 sichtbare Kerzen und verständlicher Begrenzungshinweis',c.state.count===1500&&c.view().end-c.view().start===1500&&c.state.note.includes('1500'));
+  check('Binance-Seiten höchstens 1000, lückenlos nach Endzeit paginiert',requests.length===2&&requests.every(r=>r.limit<=1000)&&requests[1].endTime<requests[0].endTime&&c.state.candles.every((r,i,a)=>!i||r.time-a[i-1].time===ms));
+  check('Paging übernimmt ausschließlich Symbol und Markt des Charts',requests.every(r=>r.ctx.symbol==='BTCUSDT'&&r.ctx.source==='spot'&&r.iv==='1m'));
+  const end=c.state.candles.at(-1).time,initialLength=c.state.candles.length,initialFirst=c.state.candles[0].time;c.pan(1000);while(c.state.busy)await new Promise(r=>setTimeout(r,0));check('Historischer Ausschnitt bleibt am Kerzen-Zeitstempel verankert',c.state.anchorTime===end-1000*ms);
+  c.pan(c.state.candles.length-1500+20);while(c.state.busy)await new Promise(r=>setTimeout(r,0));
+  check('Linkes Scrollen lädt die nächste ältere Seite',c.state.candles.length===initialLength+2000&&c.state.candles[0].time===initialFirst-2000*ms);
+  for(let i=0;i<6;i++){c.pan(c.state.candles.length-1500+50);while(c.state.busy)await new Promise(r=>setTimeout(r,0));}
+  check('Mehr als 6000 Historienkerzen möglich bei begrenztem Cache',c.state.candles.length===6000&&c.state.candles[0].time<6000*ms&&!c.state.olderEnd);
+  const before=c.state.candles.at(-1).time;c.pan(1);while(c.state.busy)await new Promise(r=>setTimeout(r,0));
+  check('Beim Zurückscrollen nach rechts werden neuere Kerzen nachgeladen',c.state.candles.length===6000&&c.state.candles.at(-1).time>before);
+  await c.select(context,'1m',{start:at-20*ms,end:at});
+  check('Erneuter Live-Ausschnitt lädt nach Cache-Verschiebung passend',c.state.candles.at(-1).time===11999*ms&&!c.state.error);
+  const old=c.state.candles.at(-1),live={...old,close:101.5,volume:11};
+  check('Live-Kerze aktualisiert OHLC im selben Kontext',c.live(context,'1m',live)&&c.state.candles.at(-1).close===101.5);
+  check('Andere Coins, Markt oder Auflösung dürfen die Detail-Kerze nicht verändern',!c.live({...context,symbol:'LTCUSDT'},'1m',live)&&!c.live({...context,source:'futures'},'1m',live)&&!c.live(context,'5m',live));
+  check('Ältere Live-Pakete mit weniger Volumen werden ignoriert',!c.live(context,'1m',{...old,close:100.5})&&c.state.candles.at(-1).close===101.5);
+  check('Neue Kerze wird einmal angehängt',c.live(context,'1m',row(12000))&&c.state.candles.at(-1).time===12000*ms&&c.live(context,'1m',row(12000))&&c.state.candles.filter(r=>r.time===12000*ms).length===1);
+  check('Kein künstliches Füllen einer Live-Datenlücke',!c.live(context,'1m',row(12002))&&c.state.candles.at(-1).time===12000*ms);
+  check('Überlappende REST-Kerze überschreibt keinen neueren Live-Stand',D.detailMerge([live],[old],'1m')[0].close===101.5);
+  const fine=[row(59),row(60),row(61)],main=[row(0,'1h'),row(1,'1h')];
+  check('Haupt-Indikatoren erst nach Kerzenschluss auf Detailzeit abgebildet',JSON.stringify(D.closedSeries(main,[200,300],fine))===JSON.stringify([null,200,200]));
+  check('Zeitkoordinaten für Hauptlinien bleiben exakt und fractional',D.timeIndex([row(0),row(1),row(2)],90000,'1m')===1.5&&D.timeIndex([row(0),row(1)],-30000,'1m')===-.5);
+  for(const [name,rows]of [['Lücke',[row(0),row(2)]],['Ungültige OHLC',[{...row(0),high:100}]],['Falscher Schlusszeitpunkt',[{...row(0),closeTime:123}]],['Unbekannte Werte',[{...row(0),volume:NaN}]]]){let rejected=false;try{D.detailMerge([],rows,'1m');}catch{rejected=true;}check(`${name} wird abgefangen`,rejected);}
+  let pending;
+  const stale=D.createDetailCandles({now:()=>at,request:(ctx)=>ctx.symbol==='BTCUSDT'?new Promise(r=>pending=r):Promise.resolve([row(11999)])});
+  const first=stale.select(context,'1m',{start:11999*ms,end:at});await stale.select({...context,symbol:'LTCUSDT'},'1m',{start:11999*ms,end:at});pending([row(11999)]);await first;
+  check('Verspätete Daten des alten Coins werden nach Wechsel verworfen',stale.state.context.symbol==='LTCUSDT'&&stale.state.candles.length===1&&!stale.state.busy&&!stale.state.error);
+  const damaged=D.createDetailCandles({now:()=>at,request:async()=>{throw Error('Zu viele Abrufe – später versuchen.');}});await damaged.select(context,'1m',{start:0,end:at});
+  check('API-/Rate-Limit-Fehler beendet Laden mit Hinweis',!damaged.state.busy&&damaged.state.error.includes('Zu viele Abrufe'));
+  for(const symbol of ['AUSDT','BUSDT','CUSDT','DUSDT','EUSDT'])await c.select({...context,symbol},'1m',{start:at-10*ms,end:at});
+  check('Nur vier Coin/Markt/Auflösungs-Reihen im RAM-Cache',c.cacheSize()<=4);
+  await c.select(context,'30m',{start:0,end:at});check('Legale andere Auflösung und Stoppen ohne Restdaten',c.state.iv==='30m');await c.select(context,'',{start:0,end:at});check('Aus bedeutet normale Kerzen ohne Detail-Daten',!c.state.iv&&!c.state.candles.length&&!c.state.busy);
+  console.log(`\n${pass}/${pass+fail} bestanden`);process.exitCode=fail?1:0;
+})().catch(e=>{console.error(e);process.exitCode=1;});
