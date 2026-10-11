@@ -1,0 +1,28 @@
+let pass = 0, fail = 0;
+const check = (name, ok) => { ok ? pass++ : fail++; console.log(`${ok ? '✓' : '✗'} ${name}`); };
+(async () => {
+  const P = await import('../shared/pattern-projection.mjs'), ms = 7200000, base = Date.UTC(2026, 8, 1), now = base + 12 * ms;
+  const rows = Array.from({ length: 10 }, (_, i) => ({ time: base + i * ms, open: 100, high: 103, low: 97, close: 100, closeTime: base + (i + 1) * ms - 1 }));
+  const hit = { id: 'rectangle', kind: 'form', dir: 'neutral', t0: base, t1: base + 8 * ms, lines: [[base, 110, base + 8 * ms, 110, 'res'], [base, 90, base + 8 * ms, 90, 'sup']] }, opt = { timeframe: '2h', now };
+  let proj = P.projectPatternLines(hit, rows, opt);
+  check('Horizontale Unterstützung und Widerstand verlängert, Standard 25 Kerzen', proj.length === 2 && proj.every(x => x.toIndex === 34) && proj[0].price === 110 && proj[1].price === 90);
+  check('Zukunftszeit auf 2h genau 25 Kerzen nach der letzten Kerze', proj[0].toTime === rows.at(-1).time + 25 * ms);
+  const before = JSON.stringify([hit, rows]); P.projectPatternLines(hit, rows, opt); check('Erkennungsdaten und Kerzen bleiben unverändert', JSON.stringify([hit, rows]) === before);
+  const channel = { ...hit, id: 'asc_channel', dir: 'bull', lines: [[base, 105, base + 8 * ms, 109, 'res'], [base, 85, base + 8 * ms, 89, 'sup']] };
+  proj = P.projectPatternLines(channel, rows, opt); check('Schräger Kanal folgt der bestehenden Steigung', proj.length === 2 && proj[0].price === 122 && proj[1].price === 102);
+  const triangle = { ...hit, id: 'sym_triangle', lines: [[base, 112, base + 8 * ms, 108, 'res'], [base, 88, base + 8 * ms, 92, 'sup']] };
+  proj = P.projectPatternLines(triangle, rows, opt); check('Dreieck endet exakt an der gemeinsamen Spitze', proj.length === 2 && proj.every(x => x.toIndex === 24 && x.price === 100));
+  const pastApex = { ...triangle, lines: [[base, 104, base + 8 * ms, 100, 'res'], [base, 96, base + 8 * ms, 100, 'sup']] }; check('Spitze bereits erreicht: keine Verlängerung darüber hinaus', P.projectPatternLines(pastApex, rows, opt).length === 0);
+  const old = { ...hit, t1: base - ms }; check('Abgelaufene/fehlende Musterkerze wird nicht verlängert', P.projectPatternLines(old, rows, opt).length === 0 && P.projectPatternLines({ ...hit, status: 'ungültig' }, rows, opt).length === 0);
+  const more = [...rows, ...Array.from({ length: 10 }, (_, i) => ({ ...rows[0], time: base + (10 + i) * ms, closeTime: base + (11 + i) * ms - 1 }))]; check('Altersgrenze zählt Kerzen statt Minuten', P.projectPatternLines(hit, more, { ...opt, now: base + 30 * ms }).length === 0);
+  const bottom = { ...hit, id: 'double_bottom', dir: 'bull', levels: { inv: 90 }, lines: [...hit.lines, [base, 100, base + 8 * ms, 105, 'shape']] };
+  const dump = rows.map(c => ({ ...c })); dump[9].close = 89; check('Nachträgliche Invalidierung: gesamte Projektion aus', P.projectPatternLines(bottom, dump, opt).length === 0);
+  const breaking = rows.map(c => ({ ...c })); breaking[9].close = 111; proj = P.projectPatternLines(bottom, breaking, opt); check('Durchbruch markiert statt unverändertes Signal zu suggerieren', proj.length === 2 && proj[0].broken && !proj[1].broken);
+  breaking[9].closeTime = now + ms; check('Laufender Docht/Schluss invalidiert nicht vor Kerzenschluss', !P.projectPatternLines(bottom, breaking, opt)[0].broken);
+  check('Kerzenformen und reine Form-/Mastlinien werden nicht extrapoliert', P.projectPatternLines({ ...hit, kind: 'candle', id: 'hammer' }, rows, opt).length === 0 && P.projectPatternLines({ ...hit, lines: [[base, 100, base + 8 * ms, 105, 'shape']] }, rows, opt).length === 0);
+  check('Tassenrand sinnvoll horizontal, Tassenform nicht', P.projectPatternLines({ ...bottom, id: 'cup_handle' }, rows, opt).length === 2);
+  check('Einstellbarer Horizont bleibt begrenzt und robust', P.projectionSettings({ on: false, bars: 30 }).bars === 30 && !P.projectionSettings({ on: false }).on && P.projectionSettings({ bars: 1000 }).bars === 25);
+  check('Monatsprojektion ist kalendergenau', P.projectionTime(Date.UTC(2026, 0, 1), '1M', 2) === Date.UTC(2026, 2, 1));
+  for (const iv of ['1m', '5m', '15m', '1h', '2h', '4h', '1d']) check(`${iv}: Zukunftszeit ist gültig`, P.projectionTime(base, iv, 25) > base);
+  console.log(`\n${pass}/${pass + fail} bestanden`); process.exitCode = fail ? 1 : 0;
+})().catch(e => { console.error(e); process.exitCode = 1; });
