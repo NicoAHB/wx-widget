@@ -13454,6 +13454,7 @@ function patTgText(c, h) {
     learned: st ? { ...st, source: st === S.live ? 'live protokolliert' : 'rekonstruiert', horizon: PK_H } : { available: S.live.n + S.rek.n, minimum: 10 } });
 }
 async function patNotify(c, h) {
+  if (store.get('scalpdesk.patterns-oracle-only.v1', false)) return; // Einziger Sender ist der SSH-Dienst, keine lokalen Ersatzmeldungen.
   if (!tgtReady('patterns')) return;
   // 3.42.0 (G09 C6b): nach bestätigter Dienstübergabe ist ausschließlich Oracle Mustersender.
   // Bei Netzfehler kein lokaler Ersatzversand: der Dienst könnte dieselbe Formation bereits senden.
@@ -13617,6 +13618,27 @@ window.__g05 = { get state() { return state; }, get chan() { return chan; }, get
 // Sekundentakt: mit Dienst jede Minute den bestätigten Stand lesen (andere Geräte, Neustart des Dienstes)
 function svcTick(now) { if (svcOn() && !svc.busy && !document.hidden && now - svc.at > SVC_POLL) void svcRefresh(); if (typeof patSvcRender === 'function') patSvcRender(); }
 // ---- 3.42.0 (G09 C6b): Vorauswahl bewusst per HTTPS übernehmen; nur Metadaten, keine Bot-Token ----
+// Die SSH-Variante hat bewusst keinen öffentlichen Steuerungsport.
+function patOracleExport() {
+  const iv = wlSpan().iv, items = state.watch.map(wlSym).map(sym => {
+    const entry = wl.c.get(sym);
+    if (!entry?.at || entry.loading || entry.error || entry.iv !== iv) throw new Error('Vorauswahl noch nicht vollständig geladen – später erneut exportieren.');
+    return { sym, mkt: entry.market, iv };
+  });
+  if (!items.length) throw new Error('Zuerst Coins in der Vorauswahl wählen.');
+  return { kind: 'scalpdesk-patterns-watch', v: 1, model: 'pat-1', gap: false, items };
+}
+$('pat-oracle-only').checked = !!store.get('scalpdesk.patterns-oracle-only.v1', false);
+$('pat-oracle-only').addEventListener('change', () => {
+  if ($('pat-oracle-only').checked && svcOn() && svc.pol.conf?.patternWatch?.config && svc.pol.conf.targets?.patterns?.on) {
+    $('pat-oracle-only').checked = false; patSvcMessage('Zuerst Chartmuster am bisherigen HTTPS-Dienst ausschalten. Sonst würden zwei Dienste senden.'); return;
+  }
+  store.set('scalpdesk.patterns-oracle-only.v1', $('pat-oracle-only').checked); patSvcNote = ''; patSvcRender();
+});
+$('pat-oracle-export').addEventListener('click', () => {
+  try { const data = patOracleExport(), url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })), a = document.createElement('a'); a.href = url; a.download = 'scalpdesk-patterns-watch.json'; a.click(); setTimeout(() => URL.revokeObjectURL(url), 10000); patSvcMessage('Coin-Auswahl heruntergeladen. Keine Tokens oder Chat-IDs enthalten. Datei per SSH/Cloud Shell übernehmen.'); }
+  catch (e) { patSvcMessage(e.message); }
+});
 var patSvcBusy = false, patSvcNote = '';
 function patSvcMessage(text) { patSvcNote = text; patSvcRender(); }
 function patSvcConfig() {
@@ -13633,12 +13655,13 @@ function patSvcRender() {
   const status = $('pat-svc-status'), button = $('pat-svc-apply'); if (!status || !button) return;
   const watch = svcOn() ? svc.pol.conf?.patternWatch : null; let same = false, reason = '';
   try { same = !!watch?.config && JSON.stringify(watch.config) === JSON.stringify(patSvcConfig()); } catch (e) { reason = e.message; }
-  const text = patSvcBusy ? 'Wird am Dienst übernommen …' : patSvcNote || (!svcOn() ? 'Ohne HTTPS-Dienst: Meldungen nur aus der offenen App.' : !watch ? 'Dienst prüfen/auf 2.4.0 aktualisieren.' : same ? `Übernommen · Revision ${watch.rev} · ${watch.config.items.length} Märkte · ${tgtOn('patterns') ? 'Chartmuster an' : 'Chartmuster aus'}` : `Noch nicht synchronisiert. ${reason || 'Vorauswahl, Zeitraum oder Chat bewusst übernehmen.'}`);
+  const oracleOnly = !!store.get('scalpdesk.patterns-oracle-only.v1', false); $('pat-oracle-only').checked = oracleOnly;
+  const text = oracleOnly ? patSvcNote || 'Oracle ist der einzige Mustersender. Die App sendet keine Chartmuster; Datei und Dienst gemäß Anleitung einrichten. Auf jedem verwendeten Gerät aktivieren.' : patSvcBusy ? 'Wird am Dienst übernommen …' : patSvcNote || (!svcOn() ? 'Ohne HTTPS-Dienst: Meldungen nur aus der offenen App.' : !watch ? 'Dienst prüfen/auf 2.4.0 aktualisieren.' : same ? `Übernommen · Revision ${watch.rev} · ${watch.config.items.length} Märkte · ${tgtOn('patterns') ? 'Chartmuster an' : 'Chartmuster aus'}` : `Noch nicht synchronisiert. ${reason || 'Vorauswahl, Zeitraum oder Chat bewusst übernehmen.'}`);
   if (status.textContent !== text) status.textContent = text;
-  button.disabled = patSvcBusy || !svcOn();
+  button.disabled = patSvcBusy || !svcOn() || oracleOnly;
 }
 async function patSvcApply() {
-  if (patSvcBusy || !svcOn()) return;
+  if (patSvcBusy || !svcOn() || store.get('scalpdesk.patterns-oracle-only.v1', false)) return;
   patSvcBusy = true; patSvcNote = ''; patSvcRender();
   try {
     readChanForm(); if (!tgOk(chan.tg)) throw new Error('Telegram-Einstellungen prüfen.');
@@ -13657,7 +13680,7 @@ async function patSvcApply() {
   finally { patSvcBusy = false; patSvcRender(); }
 }
 $('pat-svc-apply').addEventListener('click', () => void patSvcApply());
-Object.assign(window.__g09, { patSvcConfig: () => patSvcConfig(), patSvcApply: () => patSvcApply(), patNotify: (c, h) => patNotify(c, h) });
+Object.assign(window.__g09, { patOracleExport: () => patOracleExport(), patSvcConfig: () => patSvcConfig(), patSvcApply: () => patSvcApply(), patNotify: (c, h) => patNotify(c, h) });
 // ---------- 3.34.0 (G06): Trade-Bild – eine geschlossene Position als genau ein Telegram-Foto ----------
 // Erst bucht die App den vollständigen Abschluss dauerhaft (saveClose, persist), dann entsteht daraus EIN Bild (Canvas 1080×1440)
 // an das Ziel „Trades“ – mit zentraler Ergebnisbeschriftung, nur aus der App, nie über den 24/7-Dienst.
@@ -15349,7 +15372,10 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
             <div class="tg-ids"><label>Chat-ID<span class="input-wrap"><input id="tg-pchat" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="Chat-ID für Chartmuster"></span></label><label>Thema <small>(optional)</small><span class="input-wrap"><input id="tg-pthread" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="—"></span></label></div>
             <label>Eigener Bot-Token <small>(optional)</small><span class="input-wrap"><input id="tg-ptoken" type="password" autocomplete="off" spellcheck="false" placeholder="leer = derselbe Bot wie Kursalarm"></span></label>
             <p class="muted">Der Dienst prüft die Coins der Vorauswahl im Kerzenintervall ihres gewählten Zeitraums, im Krypto-Modus ohne strenge Gaps. Änderungen erst bewusst übernehmen. Ein eigener Bot muss zusätzlich am Server eingerichtet sein; Token werden nicht übertragen.</p>
-            <button type="button" class="button ghost" id="pat-svc-apply">Vorauswahl am Dienst übernehmen</button><p class="muted" id="pat-svc-status" role="status" aria-live="polite"></p></div>
+            <button type="button" class="button ghost" id="pat-svc-apply">Vorauswahl am Dienst übernehmen</button><p class="muted" id="pat-svc-status" role="status" aria-live="polite"></p>
+            <details class="pat-oracle-setup"><summary>Oracle: nur Chartmuster, ohne HTTPS-Steuerung</summary><p>Die App und der Dienst verwenden dieselbe Erkennung. Oracle meldet frisch bestätigte Formationen ab 80 % Regelgüte. Sicherungen und Trades bleiben in der App.</p>
+            <label class="check"><input type="checkbox" id="pat-oracle-only"> Oracle ist der einzige Mustersender</label><p class="muted">Auf jedem verwendeten App-Gerät einschalten. Einen bisherigen Muster-Dienst zuerst stoppen. Ohne eingerichteten Oracle-Dienst kommen in diesem Modus keine Muster-Meldungen.</p>
+            <button type="button" class="button ghost" id="pat-oracle-export">Coin-Auswahl für Oracle herunterladen</button> <a href="./docs/ORACLE_24-7.md" target="_blank" rel="noopener">Schritt-für-Schritt-Anleitung</a><p class="muted">Export enthält nur Coins, Markt und Intervall. Bot-Token und Chat-ID stehen ausschließlich in der .env-Datei auf deinem Server.</p></details></div>
         </fieldset>
         <div class="tg-found" id="tg-found" hidden></div>
         <div class="row"><button type="button" class="button ghost" id="tg-detect">Chat-ID ermitteln</button><button type="button" class="button primary-lite" id="tg-test">Test senden</button><button type="button" class="button ghost" id="tg-testall">Test je Nachrichtenart</button><button type="button" class="button ghost" id="tg-tgc">Chats ein/aus …</button></div>

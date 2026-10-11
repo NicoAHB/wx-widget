@@ -1,3 +1,4 @@
+<!-- Oracle-Schritt 3.63 umgesetzt: reiner Chartmusterdienst auf bestehender Engine, dauerhafte IDs/Versandstatus, systemd/Berlin/Logs, tokenfreier Auswahl-Export und exklusiver Sender-Schalter. docs/ORACLE_24-7.md mit aktueller Oracle-Quelle/Idle-Regeln. Tests geschrieben, gemäß Nutzer erst am Ende ausführen. Private VM/realer Telegram-Abnahmetest weiter offen. Als Nächstes 2h und Muster-Bot, danach Gesamtlauf/Release. -->
 <!-- Telegram 3.63: zentrale HTML-Darstellung einschließlich USD-Preisen, Kurs-/Puls-/Muster-/Positions-/KI-/PO3-Meldungen, Sicherungs- und Trade-Beschriftung umgesetzt; Teil 1 zuvor 22/22. Neue Format-/Fallbacktests geschrieben, noch nicht ausgeführt. Oracle, 2h, Muster-Bot und Abschlussabnahme folgen vor Veröffentlichung. -->
 # HANDOVER – Scalp Desk (Übergabe an ChatGPT)
 
