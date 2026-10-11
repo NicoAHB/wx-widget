@@ -1,6 +1,6 @@
 # Telegram, Chartmuster-Dienst und Muster-Bot – Arbeitsstand 3.63.0
 
-Der Nutzer beauftragt am 11.10.2026 alle vier Aufgaben gemeinsam; vollständige Fehler-/Releaseprüfung und Veröffentlichung erst nach der Umsetzung. Ausnahme: Die Einstellungen werden ausdrücklich vor dem Oracle-Teil gezielt getestet. Bisheriger öffentlicher Stand 3.62.0.
+Der Nutzer beauftragt am 11.10.2026 alle vier Aufgaben gemeinsam; vollständige Fehler-/Releaseprüfung und Veröffentlichung erst nach der Umsetzung. Ausnahme: Die Einstellungen werden ausdrücklich vor dem Oracle-Teil gezielt getestet. 3.63.0 ist jetzt öffentlich; siehe den [Online-Liefernachweis](3.63.0-LIEFERUNG.md).
 
 ## Gefundene Nachrichtenwege
 
@@ -27,7 +27,7 @@ Gezielte native Prüfung `tests/m87.js`: **22/22**, alle zwölf Werte, vier unab
 
 ## Stand
 
-Alle beauftragten Module sind implementiert. Gezielte native Telegram-Einstellungen 22/22 und Versandwege 8/8, Format-/Dienstprüfungen bestanden. Vollständige gemeinsame Releaseprüfung und Veröffentlichung folgen; echte Bot-/Oracle-Abnahmen benötigen private Nutzereinrichtung.
+Alle beauftragten Module sind implementiert. Gezielte native Telegram-Einstellungen 22/22 und Versandwege 8/8, Format-/Dienstprüfungen bestanden. Alle 158 Release-Ziele vollständig seriell abgenommen, abschließend 5039/5039, Lint 0 Fehler; öffentliche App/SW und alle 69 PWA-Dateien geprüft. Echte Bot-/Oracle-Abnahmen benötigen private Nutzereinrichtung.
 
 ## Gemeinsame Darstellung (Arbeitsstand)
 
