@@ -6,6 +6,7 @@
 2. Eine feinere Auflösung auswählen. Der sichtbare Haupt-Zeitraum wird mit diesen Kerzen dargestellt. Bei mehr als **1500** Kerzen zeigt der Chart die letzten 1500 und einen kurzen Hinweis. Nach links wischen oder den Zurück-Knopf verwenden lädt ältere Kerzen nach. Mit dem Vorwärts-Knopf geht es zurück; **⟲** setzt den Ausschnitt zurück.
 3. Die Formationschips stehen neben **Alarm für diesen Kurs**, auf schmalen Displays darunter. Bei BTC bleiben beide BTC-Pfeile erreichbar. Die Liste lässt sich horizontal wischen. Ein Chip zeigt Name und Richtung, darunter Status und ausdrücklich Regelgüte; die Prozentzahl ist **keine Trefferwahrscheinlichkeit**.
 4. Antippen zeichnet Grenzen, Schlüsselpunkte, eine dezente Zone, Bezeichnung und verfügbare Ausbruch-/Zielwerte. Erneutes Antippen entfernt diese Zeichnung. Bis zu sechs verschiedene Formationen gleichzeitig; ungültige oder abgelaufene Muster werden gedimmt und abgewählt. Der vorhandene KI-Button mit Erklärung, Filtern und Regelgüte bleibt verfügbar.
+5. Im Vollbild öffnet **Werkzeuge** auch die Muster-Leiste. Zugeklappt bleibt die gesamte Fläche für den Chart; gewählte Muster bleiben eingezeichnet. Leerzustand und eintreffende Chips belegen dieselbe Höhe. Beide BTC-Pfeile haben feste Textzeilen.
 
 | Haupt-Zeitrahmen | Detail-Auflösungen |
 |---|---|

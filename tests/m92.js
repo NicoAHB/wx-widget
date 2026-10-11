@@ -83,7 +83,10 @@ let pass=0,fail=0;const check=(name,ok,extra='')=>{ok?pass++:fail++;console.log(
     check('Mehrere Muster gleichzeitig mit verschiedenen Zeichenfarben',await page.locator('#chart .pat-chip-drawing').evaluateAll(groups=>new Set(groups.map(g=>g.querySelector('line')?.getAttribute('stroke'))).size===2));
     await page.locator('#chart-sec').screenshot({path:'/tmp/scalpdesk-364-muster.png'});
     await page.click('#chart-full');await page.waitForFunction(()=>document.documentElement.dataset.chartfull==='1');
-    check('Vollbild behält Muster-Auswahl, Kursalarm-Knopf bleibt wie zuvor verborgen',!await page.locator('#alarm-here').isVisible()&&await page.locator('.chart-pattern-chip').first().isVisible()&&await page.evaluate(()=>__g09.chipSelection().length===2));
+    check('Vollbild behält Zeichnungen, zugeklappte Werkzeuge verbergen Leiste und Kursalarm',!await page.locator('#alarm-here').isVisible()&&!await page.locator('.chart-pattern-chip').first().isVisible()&&await page.evaluate(()=>__g09.chipSelection().length===2)&&await page.locator('#chart .pat-chip-drawing').count()===2);
+    await page.click('#fb-tools');
+    check('Werkzeuge öffnen macht Muster-Leiste im Vollbild wieder bedienbar',await page.locator('.chart-pattern-chip').first().isVisible()&&await page.evaluate(()=>__g09.chipSelection().length===2));
+    await page.click('#fb-tools');
     await page.click('#fb-exit');await page.waitForFunction(()=>!document.documentElement.dataset.chartfull);
     check('Keine Doppelungen in Leiste, Grenzen der Zonen gezeichnet',new Set(chip.map(c=>c.id)).size===chip.length&&await page.locator('#chart .pat-chip-zone').count()>0);
     check('Ausbruchslinie nutzt echtes Engine-Level brk',await page.locator('#chart .pat-chip-level[data-level="brk"]').count()>0);
@@ -95,6 +98,17 @@ let pass=0,fail=0;const check=(name,ok,extra='')=>{ok?pass++:fail++;console.log(
     check('Ungültiges Muster gedimmt, nicht auswählbar und Zeichnung entfernt',invalid.disabled&&invalid.selected===0);
     await page.evaluate(()=>{__g09.pat.minQ=101;__g09.chipPaint();});
     check('Leere Liste zeigt Keine Muster erkannt',await page.locator('#chart-pattern-empty').innerText()==='Keine Muster erkannt'&&await page.locator('.chart-pattern-chip').count()===0);
+    for(const width of [320,390,768,1440]){
+      await page.setViewportSize({width,height:900});
+      const stability=await page.evaluate(()=>{
+        const measure=()=>[document.getElementById('chart').getBoundingClientRect().top+scrollY,document.getElementById('chart-pattern-row').getBoundingClientRect().height,document.getElementById('of-btc-chart').getBoundingClientRect().height];
+        const empty=measure();__g09.pat.minQ=60;__g09.chipPaint();const filled=measure(),count=document.querySelectorAll('.chart-pattern-chip').length;
+        __g09.pat.minQ=101;__g09.chipPaint();const cleared=measure(),arrows=[...document.querySelectorAll('#of-btc-chart .of-btc-arrow')],original=arrows.map(n=>n.textContent),stages=[];
+        for(const glyph of ['↑','↗','→','↘','↓']){arrows.forEach((n,i)=>n.textContent=(i?'5m ':'1m ')+glyph);stages.push(measure());}arrows.forEach((n,i)=>n.textContent=original[i]);
+        return{empty,filled,cleared,stages,count};
+      });
+      check(width+'px: Leerzustand, Muster und alle BTC-Pfeile verschieben den Chart nicht',stability.count>0&&[stability.filled,stability.cleared,...stability.stages].every(row=>row.every((n,i)=>Math.abs(n-stability.empty[i])<.5)),stability);
+    }
     await page.evaluate(()=>__intervals.setMarket('LTCUSDT','1m'));await page.waitForFunction(()=>__g05.state.loadedSymbol==='LTCUSDT'&&!__g05.state.busy);
     check('Coin-/Timeframewechsel entfernt alte Muster-Auswahl',await page.evaluate(()=>__g09.chipSelection().length===0&&(!__g09.pat.res||__g09.pat.res.key.startsWith('LTCUSDT|'))));
     if(errors.length)console.log('Laufzeitfehler',errors);check('Keine JavaScript-Laufzeitfehler',errors.length===0);

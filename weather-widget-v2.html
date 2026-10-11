@@ -2221,9 +2221,9 @@ html[data-chartfull] #workspace-chart-tools{display:contents!important}html[data
 .pat-project-settings{padding:10px;border:1px solid var(--border);border-radius:12px}.pat-project-settings>summary{min-height:44px;cursor:pointer}.pat-project-settings label{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:8px 0}.pat-project-settings input[type=number]{width:90px;min-height:44px;font-size:16px}.pat-project-settings p{font-size:.8rem;color:var(--muted);line-height:1.5}
 /* 3.64.0: Detail-Kerzen und Formationen in der Kurszeile, ohne horizontales Seiten-Scrollen. */
 .chart-detail-control{display:flex;align-items:center;flex-wrap:wrap;gap:6px;max-width:100%;min-width:0;font-size:11px;color:var(--muted)}.chart-detail-control select{min-height:44px;max-width:100%;width:190px;font-size:16px;background:var(--field);color:var(--text);border:1px solid var(--border);border-radius:9px;padding:6px}.tb-main.detail-options{flex-wrap:wrap}.chart-detail-status{flex:1 1 100%;font-size:11px;color:var(--muted);overflow-wrap:anywhere}.chart-detail-status[data-error=true]{color:var(--warn-text)}.chart-detail-control[hidden],.chart-detail-status[hidden],.chart-pattern-empty[hidden]{display:none}
-.chart-pattern-row{display:flex;align-items:center;gap:8px;min-width:0;max-width:100%;padding:0 20px 10px}.chart-pattern-row .alarm-btn{flex:0 0 auto;margin:0;min-height:44px}.chart-pattern-row .of-btc-chart{flex:0 1 165px;font-size:11px;line-height:1.35;min-width:0;overflow-wrap:anywhere}.chart-pattern-chips{display:flex;gap:6px;flex:1 1 0;min-width:0;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin;padding:2px 0}.chart-pattern-chip{flex:0 0 auto;min-height:44px;max-width:310px;white-space:nowrap;padding:6px 10px;background:var(--surface-2);border:1px solid var(--border);border-radius:11px;font-size:11px;line-height:15px;white-space:pre;overflow:hidden;text-overflow:ellipsis;color:var(--muted)}.chart-pattern-chip.bull{color:var(--up-text)}.chart-pattern-chip.bear{color:var(--down-text)}.chart-pattern-chip.selected{border-color:var(--pattern-color);box-shadow:inset 0 -2px var(--pattern-color)}.chart-pattern-chip.invalid{opacity:.5}.chart-pattern-chip:focus-visible{outline:2px solid var(--text);outline-offset:2px}.chart-pattern-empty{min-width:0;font-size:11px;color:var(--muted)}.chart-pattern-chips:empty{display:none}
-@media(max-width:600px){.chart-pattern-row{flex-wrap:wrap;padding-inline:14px}.chart-pattern-row .alarm-btn{font-size:11px;padding:8px}.chart-pattern-chips{flex-basis:100%;order:2}.chart-pattern-empty{flex:1 1 0}.chart-detail-control{width:100%;justify-content:space-between}.chart-detail-control select{width:min(190px,65%)}.chart-pattern-row .of-btc-chart{margin-left:auto;flex-basis:140px}}
-html[data-chartfull] .chart-pattern-row{padding-inline:0}html[data-chartfull] .chart-pattern-row .alarm-btn{display:none}
+.chart-pattern-row{display:flex;align-items:center;gap:8px;min-width:0;max-width:100%;padding:0 20px 10px}.chart-pattern-row .alarm-btn{flex:0 0 auto;margin:0;min-height:44px}.chart-pattern-row .of-btc-chart{flex:0 1 140px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:15px 20px;justify-items:center;column-gap:4px;height:49px;padding:6px 8px;box-sizing:border-box;font-size:11px;line-height:15px;min-width:0;overflow-wrap:anywhere}.chart-pattern-row .of-btc-chart>span:first-child{grid-column:1/-1;white-space:nowrap}.chart-pattern-row .of-btc-chart>span:nth-child(3){display:none}.chart-pattern-row .of-btc-chart .of-btc-arrow{line-height:20px}.chart-pattern-chips{display:flex;align-items:center;gap:6px;flex:1 1 0;min-width:0;height:56px;box-sizing:border-box;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;scrollbar-width:thin;padding:2px 0}.chart-pattern-chip{flex:0 0 auto;min-height:44px;max-width:310px;white-space:nowrap;padding:6px 10px;background:var(--surface-2);border:1px solid var(--border);border-radius:11px;font-size:11px;line-height:15px;white-space:pre;overflow:hidden;text-overflow:ellipsis;color:var(--muted)}.chart-pattern-chip.bull{color:var(--up-text)}.chart-pattern-chip.bear{color:var(--down-text)}.chart-pattern-chip.selected{border-color:var(--pattern-color);box-shadow:inset 0 -2px var(--pattern-color)}.chart-pattern-chip.invalid{opacity:.5}.chart-pattern-chip:focus-visible{outline:2px solid var(--text);outline-offset:2px}.chart-pattern-empty{min-width:0;font-size:11px;color:var(--muted)}
+@media(max-width:600px){.chart-pattern-row{flex-wrap:wrap;padding-inline:14px}.chart-pattern-row .alarm-btn{font-size:11px;padding:8px}.chart-pattern-chips{flex-basis:100%;order:2}.chart-pattern-empty{flex:1 1 0}.chart-detail-control{width:100%;justify-content:space-between}.chart-detail-control select{width:min(190px,65%)}.chart-pattern-row .of-btc-chart{margin-left:auto;flex:1 1 100px;max-width:140px}}
+html[data-chartfull] .chart-pattern-row{padding:0;order:1;flex-wrap:nowrap}html[data-chartfull] .chart-pattern-chips{flex-basis:0;order:0}html[data-chartfull]:not([data-chartbar=open]) .chart-pattern-row{display:none}html[data-chartfull] .chart-pattern-row .alarm-btn{display:none}
 </style>
   <script type="module">
 import { MARKET_INTERVALS, CHART_INTERVALS, SIGNAL_INTERVALS, INTERVAL_MS, nearestChartInterval } from './bundles/3.64.0/shared/market-intervals.mjs';
@@ -10657,12 +10657,16 @@ function renderDivTip() {
   box.addEventListener('toggle', () => {
     if (!box.open) return;
     divgAck(divgList()); divgShown = ''; renderDivTip();
-    // Höhe bis zum unteren Fensterrand bzw. bis über die Tab-Leiste am iPad/Handy (160–520 px), der Rest scrollt in der
-    // Erklärung; im Vollbild begrenzt das CSS. Erst unter 160 px Platz bleibt es bei 220 px (die Seite scrollt). Bis 3.24.0 galten
-    // immer mindestens 220 px – seit die Kacheln höher sind, ragte die Erklärung am Computer sonst ein Stück heraus
+    // 3.64.0: Bei wenig Platz unter der erweiterten Kurszeile oberhalb öffnen, Rest innerhalb der Erklärung scrollen.
+    // Keine erzwungenen 220 px mehr außerhalb des Fensters; im Vollbild begrenzt weiterhin das CSS.
     const body = box.querySelector('.tip-body'), nav = $('tabbar'), end = nav?.getClientRects().length ? nav.getBoundingClientRect().top : innerHeight;
-    body.style.maxHeight = '';
-    if (!docEl.hasAttribute('data-chartfull')) { const room = end - body.getBoundingClientRect().top - 12; body.style.maxHeight = Math.round(Math.min(520, room >= 160 ? room : 220)) + 'px'; }
+    body.style.maxHeight = ''; body.style.top = ''; body.style.bottom = '';
+    if (!docEl.hasAttribute('data-chartfull')) {
+      let room = end - body.getBoundingClientRect().top - 12;
+      const anchor = box.getBoundingClientRect(), aboveEnd = Math.min(anchor.top - 8, end - 12), aboveRoom = aboveEnd - 12;
+      if (room < 160 && aboveRoom > room) { body.style.top = 'auto'; body.style.bottom = (anchor.bottom - aboveEnd) + 'px'; room = aboveRoom; }
+      body.style.maxHeight = Math.round(Math.max(0, Math.min(520, room))) + 'px';
+    }
   });
   // Alarm am Extrempunkt: iPad/Handy im Schnell-Alarm, am Computer im Formular (wie Fibonacci- und Orderbuch-Leiste)
   $('div-alarm').addEventListener('click', () => {
@@ -13283,7 +13287,7 @@ function patChipPaint() {
   host.setAttribute('aria-label',`Chartmuster ${state.interval}, ${rows.length} Formationen`);if(removed)scheduleDraw();
 }
 function patChipInit() {
-  const row=el('div','chart-pattern-row'),host=el('div','chart-pattern-chips'),empty=el('span','chart-pattern-empty','Keine Muster erkannt');row.id='chart-pattern-row';host.id='chart-pattern-chips';host.setAttribute('role','group');empty.id='chart-pattern-empty';row.append(host,empty);document.querySelector('#chart-sec .chart-toolbar').append(row);
+  const row=el('div','chart-pattern-row'),host=el('div','chart-pattern-chips'),empty=el('span','chart-pattern-empty','Keine Muster erkannt');row.id='chart-pattern-row';host.id='chart-pattern-chips';host.setAttribute('role','group');empty.id='chart-pattern-empty';host.append(empty);row.append(host);document.querySelector('#chart-sec .chart-toolbar').append(row);
   const heading=document.querySelector('#chart-sec .chart-heading'),alarm=$('alarm-here');heading.after(row);row.prepend(alarm);
   queueMicrotask(()=>{const btc=$('of-btc-chart');if(btc)alarm.after(btc);});patChipPaint();
 }

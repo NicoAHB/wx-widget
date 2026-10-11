@@ -24,7 +24,8 @@ const check=(name,ok,detail='')=>{ok?pass++:fail++;console.log(`${ok?'✓':'✗'
  check('Einrichtung nach erfolgreichem Start zugeklappt, Live-Position bleibt im Mittelpunkt',await page.evaluate(()=>!document.getElementById('paper-settings').open));
  check('Livekarte nennt Coin, Richtung, eigene Menge, Stop und Ziel eindeutig',/BTC\/USDT.*Long/.test(await page.textContent('#paper-positions'))&&await page.locator('#paper-positions dt').count()===8);
  await page.evaluate(()=>window.paper85Card=document.querySelector('[data-paper-position]'));prices.BTCUSDT=p.entry+(p.tp-p.entry)*.2;
- await page.waitForFunction(()=>Number(__paper.controller.state.quote?.bid)>__paper.controller.state.book.run.positions[0].entry);
+ // Die Quote wird vor der asynchronen IDB-Buchung gesetzt; die Karte folgt erst der bestätigten Buchung.
+ await page.waitForFunction(()=>{const s=__paper.controller.state;return s.book.run.quote?.bid>s.book.run.positions[0].entry&&s.book.run.quote.at===s.quote?.at;});
  check('Live-PnL steigt, gleiche Karte bleibt erhalten',await page.evaluate(()=>paper85Card===document.querySelector('[data-paper-position]')&&document.querySelector('.paper-position .bot-net-positive')));
  const second=await ctx.newPage();second.on('pageerror',e=>errors.push(e.message));await second.goto(h.URL_BASE+'/weather-widget-v2.html');await second.waitForFunction(()=>window.__paper?.controller.state.book.run);await second.click('#workspace-bot');await second.click('#paper-resume');await second.waitForFunction(()=>!__paper.controller.state.busy&&!!(__paper.controller.state.error||__paper.controller.state.active));
  const secondState=await second.evaluate(()=>({active:__paper.controller.state.active,error:__paper.controller.state.error,message:__paper.controller.state.message}));
