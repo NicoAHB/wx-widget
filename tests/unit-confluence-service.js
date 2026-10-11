@@ -16,9 +16,9 @@ const check = (name, ok, info = '') => { ok ? pass++ : fail++; console.log(`${ok
   check('Wiederholte Auftrags-ID und veraltete Revision ändern Konfiguration nicht', w.applyKiConfig(command).body.repeat && w.applyKiConfig({ ...command, commandId: 'ki-config-0002' }).status === 409);
   W.policyApply(w.pol, w.cmds, { commandId: 'ki-on-0000001', expectedRevision: 0, set: { ki: true } }, now); w.saveStateNow(); now = nowAt;
   await w.ki.scan();
-  const card = w.ki.state.cards[0], messages = sent.filter(x => x.body.text?.startsWith('🧠 KI-Signal'));
+  const card = w.ki.state.cards[0], messages = sent.filter(x => x.body.text?.includes('KI-SIGNAL · BTC/USDT'));
   check('Geschlossene App: echter Bitget-/EMA-/MACD-Kern erzeugt und sendet 80-Punkte-Karte', card?.score.score === 80 && card.chartRows.length === 120 && messages.length === 1, JSON.stringify({ score: card?.score.score, sent: messages.length, error: w.ki.state.error }));
-  check('Nachricht mit beiden Fenster-/Fallstatus, Kosten, Mustern und Cross-Grenze', /90 Tage.*N=0/.test(messages[0]?.body.text) && /2 Jahre.*N=0/.test(messages[0]?.body.text) && /Kosten:/.test(messages[0]?.body.text) && /Cross-Liquidation unbekannt/.test(messages[0]?.body.text));
+  check('Nachricht mit beiden Fenster-/Fallstatus, Kosten, Mustern und Cross-Grenze', /90 Tage\n(?:[^\n]*\n)*?Originalfälle: 0/.test(messages[0]?.body.text) && /2 Jahre\n(?:[^\n]*\n)*?Originalfälle: 0/.test(messages[0]?.body.text) && /Kosten:/.test(messages[0]?.body.text) && /Cross-Liquidation unbekannt/.test(messages[0]?.body.text));
   check('Alle Signalabrufe nur öffentliche Bitget-GETs ohne Konto/Order/Schlüssel', calls.length >= 6 && calls.every(c => c.url.includes('/api/v2/mix/market/') && c.init.method === 'GET' && !c.init.body && Object.keys(c.init.headers).join() === 'Accept'));
   const count = sent.length; await w.ki.scan(); await w.ki.send(card);
   check('Gleiche Karte einmal und höchstens eine Meldung je Coin/Horizont/Stunde', sent.length === count && w.ki.state.cards.length === 1);

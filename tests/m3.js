@@ -134,8 +134,8 @@ const tests = {
     await page.click('#notify-menu');
     check('Hinweis-Menü: Eintrag für Telegram/Discord mit Info-Symbol', await visible(page, '#chan-open') && await visible(page, '#notify-panel .head-line .tip') && /Noch kein Kanal/.test(await text(page, '#chan-summary')));
     await page.click('#chan-open');
-    const d = await page.evaluate(() => ({ open: document.getElementById('chan-dialog').open, guide: document.getElementById('tg-guide').open, steps: document.querySelectorAll('#tg-guide li').length, dsteps: document.querySelectorAll('#dc-guide li').length, tips: document.querySelectorAll('#chan-dialog details.tip').length }));
-    check('Fenster mit Schritt-für-Schritt-Anleitung (Telegram offen)', d.open && d.guide && d.steps === 6 && d.dsteps === 4 && d.tips >= 3, JSON.stringify(d));
+    const d = await page.evaluate(() => ({ open: document.getElementById('chan-dialog').open, guide: document.getElementById('tg-guide').open, steps: document.querySelectorAll('#tg-guide li').length, discordAbsent: !document.getElementById('dc-guide') && !document.getElementById('dc-url'), tips: document.querySelectorAll('#chan-dialog details.tip').length }));
+    check('Fenster mit Schritt-für-Schritt-Anleitung (Telegram offen)', d.open && d.guide && d.steps === 6 && d.discordAbsent && d.tips >= 3, JSON.stringify(d));
     await page.fill('#tg-token', 'falsch'); await page.click('#tg-detect');
     check('Ungültiger Token wird erklärt', await waitText(page, '#tg-status', /nicht wie ein Bot-Token|Bot-Token aus @BotFather/, 3000), await text(page, '#tg-status'));
     await page.fill('#tg-token', TG_TOKEN); await page.click('#tg-detect');
@@ -144,13 +144,10 @@ const tests = {
     check('Telegram-Test zugestellt', await waitText(page, '#tg-status', /zugestellt/, 6000), await text(page, '#tg-status'));
     let sent = await h.ctl('/sent');
     const tg = sent.find(s => s.svc === 'tg');
-    check('Telegram erhält Chat-ID und Text, ohne Vorschau', tg && tg.chat_id === '987654321' && /Test von Scalp Desk/.test(tg.text) && /is_disabled/.test(tg.link_preview_options || ''), JSON.stringify(tg));
-    await page.fill('#dc-url', DC_URL); await page.click('#dc-test');
-    check('Discord-Test zugestellt', await waitText(page, '#dc-status', /zugestellt/, 6000), await text(page, '#dc-status'));
-    sent = await h.ctl('/sent'); const dc = sent.find(s => s.svc === 'dc');
-    check('Discord ohne @-Erwähnungen', dc && /Test von Scalp Desk/.test(dc.content) && Array.isArray(dc.allowed_mentions?.parse) && !dc.allowed_mentions.parse.length, JSON.stringify(dc));
+    check('Telegram erhält Chat-ID und Text, ohne Vorschau', tg && tg.chat_id === '987654321' && tg.text.includes('<b>✅ TEST · Scalp Desk</b>') && tg.parse_mode === 'HTML' && /is_disabled/.test(tg.link_preview_options || ''), JSON.stringify(tg));
+    check('Discord-Felder und Versand entfernt', await page.locator('#dc-url,#dc-test').count() === 0 && !(await h.ctl('/sent')).some(s => s.svc === 'dc'));
     await page.click('#chan-done');
-    check('Zusammenfassung im Menü', /Telegram: aktiv.*Discord: aktiv/.test(await text(page, '#chan-summary')), await text(page, '#chan-summary'));
+    check('Zusammenfassung im Menü', /Telegram: aktiv/.test(await text(page, '#chan-summary')), await text(page, '#chan-summary'));
     // Zugangsdaten nicht im Backup
     await page.click('#backup-badge');
     const [dl] = await Promise.all([page.waitForEvent('download'), page.click('#backup-save')]);
@@ -164,11 +161,11 @@ const tests = {
     await page.waitForFunction(() => document.getElementById('alarm-form').hidden, null, { timeout: 8000 });
     await b.waitForFunction(() => document.querySelectorAll('.al-row').length === 1, null, { timeout: 5000 }).catch(() => {});
     await h.ctl(`/set?symbol=BTCUSDT&price=${(p0 * 1.004).toFixed(2)}`);
-    sent = await sentWait(s => s.filter(x => /Kurs-Alarm BTC/.test(x.text || x.content || '')).length >= 2, 10000);
+    sent = await sentWait(s => s.filter(x => /KURS-ALARM · BTC/.test(x.text || x.content || '')).length >= 1, 10000);
     await h.sleep(2500); sent = await h.ctl('/sent');
-    const al = sent.filter(x => /Kurs-Alarm BTC/.test(x.text || x.content || ''));
-    check('Kurs-Alarm an Telegram und Discord – je genau einmal trotz zwei Tabs', al.filter(x => x.svc === 'tg').length === 1 && al.filter(x => x.svc === 'dc').length === 1, JSON.stringify(al.map(x => x.svc)));
-    check('Meldungstext mit Kurs und Notiz', /auf\/über .* USDT erreicht · Kurs .*\nNotiz: Ausbruch\n\d\d:\d\d:\d\d Uhr/.test(al[0]?.text || al[0]?.content || ''), JSON.stringify(al[0]?.text || al[0]?.content));
+    const al = sent.filter(x => /KURS-ALARM · BTC/.test(x.text || x.content || ''));
+    check('Kurs-Alarm einmal an Telegram trotz zwei Tabs, kein Discord', al.filter(x => x.svc === 'tg').length === 1 && al.filter(x => x.svc === 'dc').length === 0, JSON.stringify(al.map(x => x.svc)));
+    check('Meldungstext mit Kurs und Notiz', al[0]?.text.includes('Level erreicht: ⭐ <b>') && al[0]?.text.includes(' USD</b> ⭐ (auf/über)') && al[0]?.text.includes('Notiz: Ausbruch') && /🕐 \d\d:\d\d:\d\d$/.test(al[0]?.text || ''), JSON.stringify(al[0]?.text || al[0]?.content));
     await b.close();
     // 429: Telegram bittet um Pause → erneuter Versuch
     await h.ctl('/sentreset'); await h.ctl('/chan?tg429=1');
@@ -186,8 +183,7 @@ const tests = {
     await page.click('#notify-menu'); await page.click('#chan-open');
     await page.fill('#tg-chat', '111'); await page.click('#tg-test');
     check('Falsche Chat-ID verständlich erklärt', await waitText(page, '#tg-status', /Chat nicht gefunden – dem Bot zuerst eine Nachricht schreiben/, 6000), await text(page, '#tg-status'));
-    await page.click('#dc-test');
-    check('Gelöschter Webhook verständlich erklärt', await waitText(page, '#dc-status', /gibt es nicht mehr/, 6000), await text(page, '#dc-status'));
+    check('Alter Webhook wird weder geladen noch angezeigt', await page.locator('#dc-test,#dc-status').count() === 0 && await page.evaluate(() => !JSON.parse(localStorage.getItem('scalpdesk.channels.v1')).dc));
     await h.ctl('/chan?updates=0'); await page.click('#tg-detect');
     check('Noch keine Nachricht an den Bot: Hinweis „Start“ tippen', await waitText(page, '#tg-status', /noch keine Nachricht von dir/, 6000), await text(page, '#tg-status'));
     // Ohne CORS-Freigabe: Zustellung unbestätigt, danach ohne Doppel-Sendung
@@ -203,8 +199,8 @@ const tests = {
   },
   async possl(browser) {
     // G14-Testbefund: unabhängige BTC-Puls-Meldungen sind keine ETH-Stop-Wiederholung.
-    const stopNotices = messages => messages.filter(x => /^🛑 ETH Long: Stop-Loss erreicht/.test(x.text || x.content || ''));
-    const exactly = (messages, count) => messages.length === count && messages.filter(x => x.svc === 'tg').length === count / 2 && messages.filter(x => x.svc === 'dc').length === count / 2;
+    const stopNotices = messages => messages.filter(x => /^<b>🔴⬇️ STOP-LOSS · ETH Long/.test(x.text || x.content || ''));
+    const exactly = (messages, count) => messages.length === count && messages.every(x => x.svc === 'tg');
     const now = Date.now();
     const seed = ({ token, url, now }) => { if (localStorage.getItem('scalpdesk.savedat.v1')) return;
       localStorage.setItem('scalpdesk.channels.v1', JSON.stringify({ tg: { token, chat: '987654321', on: true }, dc: { url, on: true }, ev: { alarm: true, pos: true, day: true } }));
@@ -213,17 +209,17 @@ const tests = {
     const { ctx, page, errors } = await open(browser, { init: [{ fn: seed, arg: { token: TG_TOKEN, url: DC_URL, now } }] });
     await h.sleep(1500); await h.ctl('/sentreset');
     await h.ctl('/set?symbol=ETHUSDT&price=2475');
-    let sent = stopNotices(await sentWait(s => stopNotices(s).length >= 2, 8000));
-    check('Stop-Loss an Telegram und Discord', exactly(sent, 2), JSON.stringify(sent.map(x => (x.text || x.content || '').split('\n')[0])));
+    let sent = stopNotices(await sentWait(s => stopNotices(s).length >= 1, 8000));
+    check('Stop-Loss genau einmal an Telegram', exactly(sent, 1), JSON.stringify(sent.map(x => (x.text || x.content || '').split('\n')[0])));
     await h.sleep(2000); sent = stopNotices(await h.ctl('/sent'));
-    check('Solange der Kurs unter dem Stop bleibt: keine Wiederholung', exactly(sent, 2), String(sent.length));
+    check('Solange der Kurs unter dem Stop bleibt: keine Wiederholung', exactly(sent, 1), String(sent.length));
     await page.click('.toast.sl button'); await h.ctl('/set?symbol=ETHUSDT&price=2495'); await h.sleep(2500);
     await h.ctl('/set?symbol=ETHUSDT&price=2470');
-    sent = stopNotices(await sentWait(s => stopNotices(s).length >= 4, 8000));
-    check('Kurs zurück und erneut unter dem Stop: neue Meldung', exactly(sent, 4), String(sent.length));
+    sent = stopNotices(await sentWait(s => stopNotices(s).length >= 2, 8000));
+    check('Kurs zurück und erneut unter dem Stop: neue Meldung', exactly(sent, 2), String(sent.length));
     await page.reload(); await page.waitForFunction(() => document.getElementById('price').textContent.trim() !== '—'); await h.sleep(2500);
     sent = stopNotices(await h.ctl('/sent'));
-    check('Neu laden mit Kurs unter dem Stop: keine Doppel-Meldung', exactly(sent, 4), String(sent.length));
+    check('Neu laden mit Kurs unter dem Stop: keine Doppel-Meldung', exactly(sent, 2), String(sent.length));
     await h.ctl('/walk?on=1');
     check('keine Fehler', !errors.length, errors.join(' | ')); await ctx.close();
   },
@@ -234,9 +230,9 @@ const tests = {
       localStorage.setItem('scalpdesk.daylimit.v1', '30');
       localStorage.setItem('scalpdesk.history.v1', JSON.stringify([{ id: 'dl1', symbol: 'BTCUSDT', side: 'long', mode: 'cross', entry: 64000, leverage: 10, qty: 0.1, margin: 640, openedAt: now - 1800e3, source: 'spot', liqExchange: null, preRealized: 0, sl: null, tp: null, ack: { sl: false, tp: false }, exit: 63600, fees: 0, pnl: -40, pnlSource: 'calc', closedAt: now - 60e3, fx: 1.16, note: '' }])); };
     const { ctx, page, errors } = await open(browser, { init: [{ fn: seed, arg: { token: TG_TOKEN, now } }] });
-    const sent = await sentWait(s => s.some(x => /Tages-Verlustlimit/.test(x.text || '')), 8000);
-    const m = sent.filter(x => /Tages-Verlustlimit/.test(x.text || ''));
-    check('Tages-Verlustlimit an Telegram', m.length === 1 && /Heute −40,00 USDT realisiert · Limit 30,00 USDT/.test(m[0].text), JSON.stringify(m.map(x => x.text)));
+    const sent = await sentWait(s => s.some(x => /TAGES-VERLUSTLIMIT/.test(x.text || '')), 8000);
+    const m = sent.filter(x => /TAGES-VERLUSTLIMIT/.test(x.text || ''));
+    check('Tages-Verlustlimit an Telegram', m.length === 1 && m[0].text.includes('Heute realisiert: −40,00 USD') && m[0].text.includes('<b>30,00 USD</b>'), JSON.stringify(m.map(x => x.text)));
     check('Banner im Dashboard', await visible(page, '#day-banner'));
     check('keine Fehler', !errors.length, errors.join(' | ')); await ctx.close(); void today;
   },

@@ -38,8 +38,10 @@ function s247Device() {
 const s247Plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 // Was der Dienst braucht – und nur das
 function s247Payload() {
-  const on = s247.cfg.on && chan.tg.on;
-  const alarms = on ? state.alarms.filter(a => !a.triggeredAt || (a.svcAt > 0 && Date.now() - a.svcAt < S247_GRACE)).map(a => ({ id: a.id, symbol: a.symbol, source: a.source, dir: a.dir, price: a.price, note: a.note || '', armedAt: a.armedAt || a.createdAt })) : [];
+  // 3.33.0: ohne HTTPS-Steuerung wirkt der Schalter „Kursalarm“ über die Übergabe (aus = der Dienst meldet nichts); mit
+  // Steuerung entscheidet der Schalter am Dienst selbst – er beobachtet weiter, sendet aber nicht
+  const on = s247.cfg.on && (svcOn() || tgtOn('course-alert'));
+  const alarms = on ? state.alarms.filter(a => !a.triggeredAt || (a.svcAt > 0 && Date.now() - a.svcAt < S247_GRACE)).map(a => ({ id: a.id, symbol: a.symbol, source: a.source, dir: a.dir, price: a.price, note: a.note || '', armedAt: a.armedAt || a.createdAt, ...(a.cl ? { cl: a.cl } : {}) })) : [];
   const positions = on ? state.positions.filter(p => p.sl > 0 || p.tp > 0).map(p => ({ id: p.id, symbol: p.symbol, source: p.source, side: p.side, tp: p.tp > 0 ? p.tp : null, sl: p.sl > 0 ? p.sl : null,
     since: p.slTpAt || p.openedAt, ack: { tp: !!p.ack?.tp, sl: !!p.ack?.sl } })) : [];
   let tz = 'UTC'; try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch { /* alter Browser */ }
@@ -52,8 +54,7 @@ function s247Sig(p) { const j = JSON.stringify(p); let h = 0; for (let i = 0; i 
 // Schlüssel der Meldungen, die der Dienst mit diesem Stand übernimmt – dieselben wie in notifyChannels
 function s247Keys(p) { return [...p.alarms.map(a => `al:${a.id}:${a.armedAt}`), ...p.positions.flatMap(x => ['tp', 'sl'].filter(t => x[t] > 0).map(t => `pos:${x.id}:${t}:${x.since}`)), ...(p.pnl?.lim || []).map(l => `pnl:${l.k}:${l.at}`)]; }
 function s247Caption(p) {
-  return [S247_MARK, `App: ${s247Stamp(p.at)} · ${p.on ? `${s247Plural(p.alarms.length, 'Alarm', 'Alarme')}, ${s247Plural(p.positions.length, 'Position', 'Positionen')}` : 'Übergabe ausgeschaltet'} · ${p.dev} · #${p.tag}`,
-    'Dienst: wartet auf Rückmeldung …'].join('\n');
+  return formatMessage('notice', { headline: '📌 Scalp Desk · Dienstübergabe', lines: [`App: ${s247Stamp(p.at)} · ${p.on ? `${s247Plural(p.alarms.length, 'Alarm', 'Alarme')}, ${s247Plural(p.positions.length, 'Position', 'Positionen')}` : 'Übergabe ausgeschaltet'} · ${p.dev} · #${p.tag}`, 'Dienst: wartet auf Rückmeldung …'], at: p.at, messageLimit: TELEGRAM_CAPTION_LIMIT });
 }
 const s247Ready = () => typeof tgConfigured === 'function' && tgConfigured() && (s247.cfg.on || s247.cfg.sentOn);
 function scheduleS247(delay = 3000) { if (!s247?.cfg || !s247Ready()) return; clearTimeout(s247.timer); s247.timer = setTimeout(() => { s247.timer = null; void sendS247(); }, delay); }
@@ -194,6 +195,8 @@ function renderS247() {
       : `Übergeben um ${hm(c.at)} (${counts}) – wartet auf die Bestätigung des 24/7-Dienstes (meist nach 20–30 Sekunden).${other}`;
     cls = late ? false : null;
   }
+  // 3.33.0 (G05): mit HTTPS-Steuerung entscheidet je Ereignis die Freigabe – nicht mehr nur die Bestätigung der Übergabe
+  if (typeof svcOn === 'function' && svcOn() && c.on) text += svc.reach === true ? ' Sendefreigabe über HTTPS aktiv: Je Kurs-Alarm, Stop/Ziel und Gewinn/Verlust sendet genau einer – diese App, wenn sie es zuerst erkennt, sonst der Dienst.' : svc.reach === false ? ' ⚠ HTTPS-Steuerung nicht erreichbar – ohne Freigabe sendet die App nach 60 s selbst (mit Vermerk).' : '';
   const p = $('s247-status'); if (p.textContent !== text) p.textContent = text; p.className = 'chan-status' + (cls === true ? ' ok' : cls === false ? ' err' : '');
   if (typeof renderPnl === 'function') renderPnl();
   if (typeof renderChanSummary === 'function') renderChanSummary();

@@ -75,7 +75,7 @@
   </div>
   <textarea id="report" readonly hidden aria-label="Testergebnis zum Kopieren"></textarea>
 
-  <footer>Diese Seite ruft die Binance-Endpunkte genauso ab wie das Dashboard: per Browser-Abruf von genau dieser Adresse aus, dazu die Live-Streams per WebSocket. Ein Link, der im Browser-Tab Zahlen zeigt, beweist das noch nicht. Es werden nur öffentliche Marktdaten gelesen, keine Schlüssel, keine Orders. Telegram und Discord werden nur ohne Zugangsdaten angefragt, um die Erreichbarkeit zu prüfen.</footer>
+  <footer>Diese Seite ruft die Binance-Endpunkte genauso ab wie das Dashboard: per Browser-Abruf von genau dieser Adresse aus, dazu die Live-Streams per WebSocket. Ein Link, der im Browser-Tab Zahlen zeigt, beweist das noch nicht. Es werden nur öffentliche Marktdaten gelesen, keine Schlüssel, keine Orders. Telegram wird nur ohne Zugangsdaten angefragt, um die Erreichbarkeit zu prüfen.</footer>
 </main>
 
 <script>
@@ -115,11 +115,9 @@
       url: "wss://stream.binance.com:9443/stream?streams=btcusdt@kline_1m" },
     { group: "live", ws: true, name: "Futures-Stream fstream.binance.com",
       url: "wss://fstream.binance.com/market/stream?streams=btcusdt@kline_1m" },
-    // Telegram und Discord: nur Erreichbarkeit prüfen. Ohne Zugangsdaten ist eine Fehlerantwort (401/404) das erwartete Ergebnis.
+    // Telegram: nur Erreichbarkeit prüfen. Ohne Zugangsdaten ist eine Fehlerantwort (401/404) das erwartete Ergebnis.
     { group: "notify", probe: true, name: "Telegram Bot API",
-      url: "https://api.telegram.org/bot0:status-check/getMe" },
-    { group: "notify", probe: true, name: "Discord-Webhooks",
-      url: "https://discord.com/api/webhooks/0/status-check" }
+      url: "https://api.telegram.org/bot0:status-check/getMe" }
   ];
 
   const $ = id => document.getElementById(id);

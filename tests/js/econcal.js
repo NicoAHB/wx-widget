@@ -1,5 +1,3 @@
-// 3.60.0: isolierte Kopie mit optionalem UI-Arbeitsbereich; Fachregeln unverändert.
-var workspace;
 // ---------- Schritt 4.1: Wirtschaftskalender mit Warnung vor wichtigen Terminen ----------
 // Quelle: Wochenkalender von Forex Factory. Der GitHub-Job .github/workflows/kalender.yml holt ihn alle 3 Stunden und legt
 // ihn als calendar.json im Zweig „kalender“ ab. Die App liest die Datei über raw.githubusercontent.com (Abruf aus dem
@@ -8,7 +6,7 @@ var workspace;
 // Anzeige unter dem Chart: die nächsten Termine der gewählten Währung (USD oder alle) und Bedeutung (hoch oder hoch und
 // mittel), auf Wunsch die ganze Woche; Zeiten in Ortszeit. Warnung ab 15 Minuten (einstellbar: 5, 30, 60, aus) vor einem
 // Termin mit hoher Bedeutung bis 15 Minuten danach: als Zeile in der Live-Leiste (auf jedem Tab) und im Kalender, dazu
-// einmal ein Hinweis mit Ton und Systemmeldung und, falls eingerichtet, eine Nachricht an Telegram/Discord. Termine zur
+// einmal ein Hinweis mit Ton und Systemmeldung und, falls eingerichtet, eine Nachricht an Telegram. Termine zur
 // selben Zeit (z. B. CPI m/m und CPI y/y) gelten als einer; bei mehreren Tabs meldet nur einer.
 // var statt const/let: econTick kann über den Sekundentakt schon laufen, bevor dieser Abschnitt ausgewertet ist
 var EC_URL = 'https://raw.githubusercontent.com/NicoAHB/wx-widget/kalender/calendar.json';
@@ -120,7 +118,7 @@ function renderEcon(now = Date.now()) {
     void ecNotify(g, now);
   } else { warnBox.hidden = true; chip.hidden = true; }
 }
-// Einmal je Termin vorab melden: Hinweis mit Ton, Systemmeldung, Telegram/Discord (nur ein Tab, auch nach dem Neuladen
+// Einmal je Termin vorab melden: Hinweis mit Ton, Systemmeldung, Telegram (nur ein Tab, auch nach dem Neuladen
 // nicht erneut). Nach der Veröffentlichung nicht mehr – dann bleiben nur die Warnzeilen.
 async function ecNotify(g, now) {
   const key = `econ:${g.t}`;
@@ -135,8 +133,7 @@ async function ecNotify(g, now) {
     t.append(el('span', '', `${title}: ${body}`), ok); $('toasts').append(t);
   }
   beep(); desktopNotify(title, body, key);
-  const vals = g.list.map(e => [e.forecast && `Prognose ${e.forecast}`, e.previous && `vorher ${e.previous}`].filter(Boolean).join(', ')).filter(Boolean);
-  void notifyChannels('news', `econ-chan:${g.t}`, `${title}\n${body}${vals.length ? `\n${vals.join(' · ')}` : ''}`, 24 * 3600e3);
+  void notifyChannels('news', `econ-chan:${g.t}`, formatMessage('news', { when, currency: cur, events: g.list }), 24 * 3600e3);
 }
 // Sekundentakt: abrufen, wenn fällig; Anzeige alle 15 s oder bei neuen Daten und Einstellungen – wie alle Live-Anzeigen über
 // calmDo: während des Scrollens wartet sie, danach bleibt der sichtbare Inhalt stehen (3.21.1: sonst Seitensprünge am Handy)

@@ -102,7 +102,7 @@ const waitChip = (page, re, ms = 15000) => page.waitForFunction(re => { const c 
     const hUp = parseInt(d.arrows[0]);
     await page.evaluate(() => document.getElementById('vola').scrollIntoView({ block: 'center' })); await page.click(`#vola-bars .vb[data-h="${hUp}"]`); await page.waitForTimeout(400); d = await info(page);
     check('Richtung der Stunde: „▲ steigt im Schnitt um … % – auch nach Gebühren gesichert“', /^▲ steigt im Schnitt um (0,9\d|1,0\d) % – auch nach Gebühren gesichert$/.test(d.dir), d.dir);
-    await page.click('[data-vday="we"]'); await page.waitForTimeout(400); const dWe = await info(page); await page.click('#vola-back'); await page.waitForTimeout(300);
+    await page.click('[data-vday="we"]'); await page.waitForTimeout(400); const dWe = await info(page); if (await page.isVisible('#vola-back')) await page.click('#vola-back'); else check('Gewählte Trendstunde ist bereits jetzt: Zurück-Knopf korrekt verborgen', dWe.sel_ === nowH()); await page.waitForTimeout(300);
     check('Auch am Wochenende (rund 24 Stunden je Zelle) gesichert', arrowsOk(dWe.arrows), dWe.arrows.join(' '));
     // Gebühr im Rechner 0,6 % je Seite: hin und zurück 1,2 % > 1 % Bewegung → keine Tendenz mehr
     const fee = v => page.evaluate(v => { const i = document.getElementById('risk-fee'); i.value = v; i.dispatchEvent(new Event('input', { bubbles: true })); }, v);
@@ -189,7 +189,7 @@ const waitChip = (page, re, ms = 15000) => page.waitForFunction(re => { const c 
       return { layout: document.documentElement.dataset.layout, cnews: y('cnews'), vola: y('vola'), signals: y('signals') }; });
     check('Tablet: im Chart-Reiter unter den News, vor der Signal-Übersicht', tab.vola.vis && tab.vola.t >= tab.cnews.b - 1 && tab.signals.t >= tab.vola.b - 1, JSON.stringify(tab));
     check('Tablet: keine Fehler', !errors.length, errors.join(' | ')); await ctx.close();
-  } catch (e) { check('Abbruch', false, e.message.split('\n')[0]); }
+  } catch (e) { check('Abbruch', false, e.stack?.split('\n').slice(0, 8).join(' | ')); }
   finally { await h.ctl('/reset').catch(() => {}); await browser.close(); await h.teardown(); }
   const bad = results.filter(r => !r.ok); console.log(`\n${results.length - bad.length}/${results.length} bestanden`); process.exit(bad.length ? 1 : 0);
 })();

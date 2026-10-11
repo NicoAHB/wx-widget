@@ -11,7 +11,7 @@ const SPOT = { BTCUSDT: 64000, ETHUSDT: 2500, XRPUSDT: 1.47, ETCUSDT: 18, BCHUSD
 const FUT = { ...SPOT, BSVUSDT: 32 };
 const orderflowMock = { multiplier: 1, hold: false, missing: false, staleMs: 0 };
 delete FUT.EURUSDT; delete FUT.PAXGUSDT; // PAXG: nur Spot (keine Futures, kein Open Interest)
-const cfg = { wsPeriod: 1000, futPeriod: 500, walk: true, silent: false, blockWs: false, restFail: false, restDelay: 0, chanNoCors: false, tg429: 0, tgUpdates: true, eurHist: 'on', t24: 'ok', log: [] }, sent = [];
+const cfg = { wsPeriod: 1000, futPeriod: 500, walk: true, silent: false, blockWs: false, restFail: false, restDelay: 0, chanNoCors: false, tg429: 0, tgFormat: 0, tgUpdates: true, eurHist: 'on', t24: 'ok', log: [] }, sent = [];
 // 3.31.0 (G03): historische EUR/USDT-Minutenkerzen für den Euro-Kurs nachgetragener Abschlüsse – fest berechenbar: Schlusskurs der
 // Kerze mit Minute k = 1,1 + (k mod 1000) / 100000. Vor dem 03.01.2020 gibt es das Paar nicht (leere Antwort). /eurhist?mode=on|empty|fail
 const eurClose = k => +(1.1 + (k % 1000) / 100000).toFixed(5);
@@ -112,7 +112,10 @@ function tgPinned(ck) { let best = null; for (const m of tgMsgs.values()) if (m.
 const TG_OK_TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw';
 // 3.25.0: zweiter Bot (eigener Sicherungs-Bot). Privatchats sind je Bot getrennt – gleiche Chat-ID (Nutzer-ID), aber zwei Chats;
 // Gruppen (negative IDs) teilen sich alle Bots. Bearbeiten und Löschen nur eigener Nachrichten.
-const TG_BOTS = { [TG_OK_TOKEN]: { id: 123456789, first_name: 'Kurs-Alarm', username: 'test_kursalarm_bot' }, '555666777:BBQkbXyzSicherungTestToken0123456789': { id: 555666777, first_name: 'Sicherung', username: 'test_sicherung_bot' } };
+// Ausschließlich lokale Attrappen, keine echten Bot-Zugangsdaten.
+const TG_BOTS = { [TG_OK_TOKEN]: { id: 123456789, first_name: 'Kurs-Alarm', username: 'test_kursalarm_bot' }, '555666777:BBQkbXyzSicherungTestToken0123456789': { id: 555666777, first_name: 'Sicherung', username: 'test_sicherung_bot' },
+  '777888999:CCTradesTestToken0123456789abcdefgh': { id: 777888999, first_name: 'Trades', username: 'test_trades_bot' },
+  '888999000:DDPatternTestToken0123456789abcdefg': { id: 888999000, first_name: 'Chartmuster', username: 'test_pattern_bot' } };
 const tgCk = (bot, chat) => Number(chat) > 0 ? `${bot}:${chat}` : String(chat);
 function readBody(req) { return new Promise(r => { const b = []; req.on('data', d => b.push(d)); req.on('end', () => r(Buffer.concat(b))); }); }
 // 3.34.0 (G06): multipart binärsicher (Fotos) – Felder als Text, Dateien als Buffer
@@ -135,6 +138,7 @@ function multipart(body, type) {
   const out = {}; for (const part of body.split('--' + (m[1] || m[2]))) { const i = part.indexOf('\r\n\r\n'); if (i < 0) continue; const head = part.slice(0, i), name = /name="([^"]+)"/.exec(head), fn = /filename="([^"]*)"/.exec(head); if (name) { out[name[1]] = part.slice(i + 4).replace(/\r\n$/, ''); if (fn) (out.__files || (out.__files = {}))[name[1]] = fn[1]; } }
   return out;
 }
+function tgPlain(text, mode) { return mode === 'HTML' ? String(text || '').replace(/<\/?(?:b|i|code|pre)>/g, '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&') : text; }
 async function channel(req, res, host, u) {
   const cors = !cfg.chanNoCors;
   if (req.method === 'OPTIONS') { res.writeHead(204, { 'access-control-allow-origin': '*', 'access-control-allow-methods': 'GET, POST, OPTIONS', 'access-control-allow-headers': 'content-type' }); return res.end(); }
@@ -153,9 +157,10 @@ async function channel(req, res, host, u) {
     // 3.34.0 (G06): Trade-Bild – Foto prüfen (PNG, Größe, Bildunterschrift) und zum Ansehen ablegen
     if (method === 'sendPhoto') {
       const f = mpBin(raw, req.headers['content-type']), ph = f.files.photo, png = !!ph && ph.buf.length > 24 && ph.buf.slice(1, 4).toString() === 'PNG';
-      const e = { at: Date.now(), svc: 'tg', bot: B.id, method, chat_id: f.fields.chat_id, thread: f.fields.message_thread_id || '', caption: f.fields.caption ?? null, fields: Object.keys(f.fields).sort(), photoName: ph?.name || '', photoType: ph?.type || '', bytes: ph?.buf.length || 0, png, w: png ? ph.buf.readUInt32BE(16) : 0, h: png ? ph.buf.readUInt32BE(20) : 0, mode: req.headers['sec-fetch-mode'] || '' };
+      const e = { at: Date.now(), svc: 'tg', bot: B.id, method, chat_id: f.fields.chat_id, thread: f.fields.message_thread_id || '', caption: f.fields.caption ?? null, caption: f.fields.caption || '', parse_mode: f.fields.parse_mode, fields: Object.keys(f.fields).sort(), photoName: ph?.name || '', photoType: ph?.type || '', bytes: ph?.buf.length || 0, png, w: png ? ph.buf.readUInt32BE(16) : 0, h: png ? ph.buf.readUInt32BE(20) : 0, mode: req.headers['sec-fetch-mode'] || '' };
       if (ph) { e.path = path.join(PHOTO_DIR, `photo-${++tgPhotoNo}.${png ? 'png' : 'bin'}`); fs.writeFileSync(e.path, ph.buf); }
       sent.push(e);
+      if (cfg.tgFormat > 0 && f.fields.parse_mode === 'HTML') { cfg.tgFormat--; e.formatRejected = true; return json(res, 400, { ok: false, error_code: 400, description: "Bad Request: can't parse entities: unsupported start tag" }, cors); }
       if (cfg.photoDelay) await new Promise(r => setTimeout(r, cfg.photoDelay));
       if (cfg.photoDrop > 0) { cfg.photoDrop--; e.dropped = true; res.socket?.destroy(); return; }
       if (cfg.photoFail) { e.failed = cfg.photoFail; return json(res, cfg.photoFail, { ok: false, error_code: cfg.photoFail, description: cfg.photoFail === 400 ? 'Bad Request: chat not found' : 'Bad Gateway' }, cors); }
@@ -164,19 +169,20 @@ async function channel(req, res, host, u) {
     }
     if (method === 'sendDocument' || method === 'editMessageMedia') {
       const f = multipart(body, req.headers['content-type']), chat = f.chat_id, file = f.document ?? f.file ?? '', ck = tgCk(B.id, chat), docs = tgDocs[ck] || (tgDocs[ck] = new Set());
+      if (cfg.tgFormat > 0 && (f.parse_mode === 'HTML' || JSON.parse(f.media || '{}').parse_mode === 'HTML')) { cfg.tgFormat--; sent.push({ at: Date.now(), svc: 'tg', bot: B.id, method, chat_id: chat, caption: f.caption, parse_mode: f.parse_mode, formatRejected: true }); return json(res, 400, { ok: false, error_code: 400, description: "Bad Request: can't parse entities: unsupported start tag" }, cors); }
       if (f.chat_id === '111') return json(res, 400, { ok: false, error_code: 400, description: 'Bad Request: chat not found' }, cors);
       if (cfg.tgDocFail) return json(res, 503, { ok: false, error_code: 503, description: 'Service Unavailable' }, cors); // 3.16.1: Upload scheitert
       if (method === 'editMessageMedia') {
         const id = Number(f.message_id); if (!docs.has(id)) return json(res, 400, { ok: false, error_code: 400, description: 'Bad Request: message to edit not found' }, cors);
         if (tgMsgs.get(id)?.bot !== B.id) return json(res, 400, { ok: false, error_code: 400, description: "Bad Request: message can't be edited" }, cors);
         let media = {}; try { media = JSON.parse(f.media || '{}'); } catch {}
-        const att = /^attach:\/\/(\w+)$/.exec(media.media || '')?.[1] || 'file', msg = tgStoreDoc(B.id, chat, id, f[att] ?? file, f.__files?.[att], media.caption);
-        sent.push({ at: Date.now(), svc: 'tg', bot: B.id, method, chat_id: chat, message_id: id, caption: media.caption || '', file: f[att] ?? file, name: f.__files?.[att] || '' });
+        const att = /^attach:\/\/(\w+)$/.exec(media.media || '')?.[1] || 'file', msg = tgStoreDoc(B.id, chat, id, f[att] ?? file, f.__files?.[att], tgPlain(media.caption, media.parse_mode));
+        sent.push({ at: Date.now(), svc: 'tg', bot: B.id, method, chat_id: chat, message_id: id, caption: media.caption || '', parse_mode: media.parse_mode, file: f[att] ?? file, name: f.__files?.[att] || '' });
         return json(res, 200, { ok: true, result: tgPublic(msg) }, cors);
       }
       const id = ++tgMsgId; docs.add(id);
-      const msg = tgStoreDoc(B.id, chat, id, file, f.__files?.document, f.caption);
-      sent.push({ at: Date.now(), svc: 'tg', bot: B.id, method, chat_id: chat, thread: f.message_thread_id || '', message_id: id, caption: f.caption || '', silent: f.disable_notification, file, name: f.__files?.document || '' });
+      const msg = tgStoreDoc(B.id, chat, id, file, f.__files?.document, tgPlain(f.caption, f.parse_mode));
+      sent.push({ at: Date.now(), svc: 'tg', bot: B.id, method, chat_id: chat, thread: f.message_thread_id || '', message_id: id, caption: f.caption || '', parse_mode: f.parse_mode, silent: f.disable_notification, file, name: f.__files?.document || '' });
       return json(res, 200, { ok: true, result: tgPublic(msg) }, cors);
     }
     const F = tgFields(body, req, u), chatOf = () => String(F.chat_id ?? ''), ckOf = () => tgCk(B.id, chatOf()), msgOf = () => { const x = tgMsgs.get(Number(F.message_id)); return x && x.ck === ckOf() ? x : null; };
@@ -188,20 +194,21 @@ async function channel(req, res, host, u) {
     if (method === 'getFile') { if (!tgFiles.has(F.file_id)) return bad('invalid file_id'); const x = [...tgMsgs.values()].find(v => v.document?.file_id === F.file_id); return json(res, 200, { ok: true, result: { file_id: F.file_id, file_unique_id: x?.document.file_unique_id || 'U0', file_size: tgFiles.get(F.file_id).length, file_path: `documents/${F.file_id}.json` } }, cors); }
     if (method === 'editMessageCaption') {
       const x = msgOf(); if (!x) return bad('message to edit not found');
-      if ((x.caption || '') === String(F.caption || '')) return bad('message is not modified: specified new message content and reply markup are exactly the same as a current content and reply markup of the message');
-      x.caption = String(F.caption || ''); x.edit_date = Math.floor(Date.now() / 1000); sent.push({ at: Date.now(), svc: 'tg', method, chat_id: chatOf(), message_id: x.message_id, caption: x.caption });
+      if ((x.caption || '') === String(tgPlain(F.caption, F.parse_mode) || '')) return bad('message is not modified: specified new message content and reply markup are exactly the same as a current content and reply markup of the message');
+      x.caption = String(tgPlain(F.caption, F.parse_mode) || ''); x.edit_date = Math.floor(Date.now() / 1000); sent.push({ at: Date.now(), svc: 'tg', method, chat_id: chatOf(), message_id: x.message_id, caption: F.caption, parse_mode: F.parse_mode });
       return json(res, 200, { ok: true, result: tgPublic(x) }, cors);
     }
     if (method === 'sendMessage') {
-      const f = F; sent.push({ at: Date.now(), svc: 'tg', bot: B.id, mode: req.headers['sec-fetch-mode'] || '', ...f, link_preview_options: typeof f.link_preview_options === 'object' ? JSON.stringify(f.link_preview_options) : f.link_preview_options });
+      const f = F; sent.push({ at: Date.now(), svc: 'tg', bot: B.id, mode: req.headers['sec-fetch-mode'] || '', transport: req.headers['content-type']?.includes('application/json') ? 'json' : 'form', ...f, link_preview_options: typeof f.link_preview_options === 'object' ? JSON.stringify(f.link_preview_options) : f.link_preview_options });
+      if (cfg.tgFormat > 0 && f.parse_mode === 'HTML') { cfg.tgFormat--; sent.at(-1).formatRejected = true; return json(res, 400, { ok: false, error_code: 400, description: "Bad Request: can't parse entities: unsupported start tag" }, cors); }
       // 3.33.0 (G05): Nachricht kommt an, die Antwort geht verloren (Verbindung abgerissen) – /chan?tgdrop=n
       if (cfg.tgDrop > 0) { cfg.tgDrop--; sent.at(-1).dropped = true; res.socket?.destroy(); return; }
       if (cfg.tg429 > 0) { cfg.tg429--; return json(res, 429, { ok: false, error_code: 429, description: 'Too Many Requests: retry after 1', parameters: { retry_after: 1 } }, cors); }
       // 3.27.0: die nächsten n Versuche mit 502 ablehnen (/chan?tg502=n) oder alle passenden dauerhaft (/chan?tgfail=400&match=…)
       if (cfg.tg502 > 0) { cfg.tg502--; sent.at(-1).failed = 502; return json(res, 502, { ok: false, error_code: 502, description: 'Bad Gateway' }, cors); }
-      if (cfg.tgFail && String(f.text || '').includes(cfg.tgFail.match || '')) { sent.at(-1).failed = cfg.tgFail.code; return json(res, cfg.tgFail.code, { ok: false, error_code: cfg.tgFail.code, description: cfg.tgFail.code === 400 ? 'Bad Request: message is too long' : 'Bad Gateway' }, cors); }
+      if (cfg.tgFail && (!cfg.tgFail.serverOnly || req.headers['content-type']?.includes('application/json')) && String(f.text || '').includes(cfg.tgFail.match || '')) { sent.at(-1).failed = cfg.tgFail.code; return json(res, cfg.tgFail.code, { ok: false, error_code: cfg.tgFail.code, description: cfg.tgFail.code === 400 ? 'Bad Request: message is too long' : 'Bad Gateway' }, cors); }
       if (f.chat_id === '111') return json(res, 400, { ok: false, error_code: 400, description: 'Bad Request: chat not found' }, cors);
-      return json(res, 200, { ok: true, result: { message_id: sent.length, chat: { id: Number(f.chat_id) }, text: f.text } }, cors);
+      return json(res, 200, { ok: true, result: { message_id: sent.length, chat: { id: Number(f.chat_id) }, text: tgPlain(f.text, f.parse_mode) } }, cors);
     }
     return json(res, 404, { ok: false, error_code: 404, description: 'Not Found' }, cors);
   }
@@ -562,11 +569,11 @@ http.createServer((req, res) => {
       return ok({ ...volaCfg });
     }
     case '/reset': if (volaCfg.mode !== 'normal' || volaCfg.drift !== null) { Object.assign(volaCfg, { mode: 'normal', drift: null }); for (const k of Object.keys(H)) if (k.endsWith('|1h')) delete H[k]; }
-      Object.assign(decCfg, decCfg0()); Object.assign(calCfg, { mode: 'normal', min: 10, hits: 0 }); Object.assign(newsCfg, { mode: 'normal', hits: 0 }); clearInterval(cfg.flood); cfg.flood = null; cfg.log.length = 0; Object.assign(oiCfg, { mode: 'wave', ago: 10, amount: 0.06 }); cfg.walk = true; cfg.silent = false; cfg.blockWs = false; cfg.restFail = false; cfg.restDelay = 0; cfg.chanNoCors = false; cfg.tg429 = 0; cfg.tgDocFail = false; cfg.tgUpdates = true; cfg.tgMulti = false; cfg.tg502 = 0; cfg.tgFail = null; cfg.tickFail = {}; cfg.tickDelay = {}; cfg.tickOld = {}; cfg.eurHist = 'on'; cfg.t24 = 'ok'; cfg.tgDrop = 0; cfg.photoDrop = 0; cfg.photoFail = 0; cfg.photoDelay = 0; Object.assign(capCfg, { cg: 'ok', cp: 'ok', ra: 120, delay: 0 }); capCfg.log.length = 0; sent.length = 0; Object.assign(bookCfg, { walls: [], step: 0.0002, levels: 1000 }); return ok();
+      Object.assign(decCfg, decCfg0()); Object.assign(calCfg, { mode: 'normal', min: 10, hits: 0 }); Object.assign(newsCfg, { mode: 'normal', hits: 0 }); clearInterval(cfg.flood); cfg.flood = null; cfg.log.length = 0; Object.assign(oiCfg, { mode: 'wave', ago: 10, amount: 0.06 }); cfg.walk = true; cfg.silent = false; cfg.blockWs = false; cfg.restFail = false; cfg.restDelay = 0; cfg.chanNoCors = false; cfg.tg429 = 0; cfg.tgFormat = 0; cfg.tgDocFail = false; cfg.tgUpdates = true; cfg.tgMulti = false; cfg.tg502 = 0; cfg.tgFail = null; cfg.tickFail = {}; cfg.tickDelay = {}; cfg.tickOld = {}; cfg.eurHist = 'on'; cfg.t24 = 'ok'; cfg.tgDrop = 0; cfg.photoDrop = 0; cfg.photoFail = 0; cfg.photoDelay = 0; Object.assign(capCfg, { cg: 'ok', cp: 'ok', ra: 120, delay: 0 }); capCfg.log.length = 0; sent.length = 0; Object.assign(bookCfg, { walls: [], step: 0.0002, levels: 1000 }); return ok();
     case '/restdelay': cfg.restDelay = Number(q.ms) || 0; return ok();
     case '/eurhist': cfg.eurHist = q.mode || 'on'; return ok({ mode: cfg.eurHist });
     case '/t24': cfg.t24 = q.mode || 'ok'; return ok({ mode: cfg.t24 });
-    case '/chan': if ('tg502' in q) cfg.tg502 = Number(q.tg502) || 0; if ('tgfail' in q) cfg.tgFail = q.tgfail ? { code: Number(q.tgfail), match: q.match || '' } : null; if ('nocors' in q) cfg.chanNoCors = q.nocors === '1'; if ('tg429' in q) cfg.tg429 = Number(q.tg429) || 0; if ('tgdrop' in q) cfg.tgDrop = Number(q.tgdrop) || 0; if ('photodrop' in q) cfg.photoDrop = Number(q.photodrop) || 0; if ('photofail' in q) cfg.photoFail = Number(q.photofail) || 0; if ('photodelay' in q) cfg.photoDelay = Number(q.photodelay) || 0; if ('docfail' in q) cfg.tgDocFail = q.docfail === '1'; if ('updates' in q) cfg.tgUpdates = q.updates === '1'; return ok();
+    case '/chan': if ('tgformat' in q) cfg.tgFormat = Number(q.tgformat) || 0; if ('tg502' in q) cfg.tg502 = Number(q.tg502) || 0; if ('tgfail' in q) cfg.tgFail = q.tgfail ? { code: Number(q.tgfail), match: q.match || '', serverOnly: q.from === 'server' } : null; if ('nocors' in q) cfg.chanNoCors = q.nocors === '1'; if ('tg429' in q) cfg.tg429 = Number(q.tg429) || 0; if ('tgdrop' in q) cfg.tgDrop = Number(q.tgdrop) || 0; if ('photodrop' in q) cfg.photoDrop = Number(q.photodrop) || 0; if ('photofail' in q) cfg.photoFail = Number(q.photofail) || 0; if ('photodelay' in q) cfg.photoDelay = Number(q.photodelay) || 0; if ('docfail' in q) cfg.tgDocFail = q.docfail === '1'; if ('updates' in q) cfg.tgUpdates = q.updates === '1'; return ok();
     case '/sent': return ok(sent);
     case '/tgmsgs': return ok([...tgMsgs.values()].filter(m => !q.chat || String(m.chat.id) === q.chat).map(m => ({ ...m, content: m.document ? tgFiles.get(m.document.file_id) : undefined })));
     case '/tgmulti': cfg.tgMulti = q.on === '1'; return ok();

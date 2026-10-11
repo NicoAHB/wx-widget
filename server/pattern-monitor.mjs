@@ -1,11 +1,10 @@
 // 2.4.0 (G09 C6b): Marktvertrag, frische bestätigte Formationen und deutscher Meldungstext.
 import { patEngine, PAT_NAMES } from './pattern-engine.mjs';
-export const PAT_STEPS = { '1m': 60e3, '3m': 18e4, '5m': 3e5, '15m': 9e5, '30m': 18e5, '1h': 36e5, '2h': 72e5, '4h': 144e5, '1d': 864e5, '1w': 6048e5, '1M': 0 };
+import { formatMessage } from './telegram-format.mjs';
+import { PATTERN_STEPS, intervalEnd } from './market-intervals.mjs';
+export const PAT_STEPS = PATTERN_STEPS;
 export const patternId = c => [c.mkt, c.sym, c.iv, c.pat, c.t0, c.t1, c.model].join('|');
-export function patternEnd(t, iv) {
-  if (iv === '1M') { const d = new Date(t); return Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1); }
-  return t + PAT_STEPS[iv];
-}
+export const patternEnd = intervalEnd;
 export function patternConfig(c) {
   if (c && ((c.model && c.model !== 'pat-1') || c.gap === true)) throw new Error('Chartmuster: nur Modell pat-1 im Krypto-Modus ohne strenge Gaps unterstützt.');
   if (!c || !Array.isArray(c.items) || c.items.length > 40 || !/^(-?\d{1,20}|@[A-Za-z][A-Za-z0-9_]{4,31})$/.test(c.chat) || !/^\d{1,20}$/.test(c.bot)
@@ -49,11 +48,9 @@ export function patternFresh(c, now, since) {
     && patternEnd(c.tc, c.iv) <= now && patternEnd(c.tc, c.iv) > since && patternEnd(patternEnd(patternEnd(c.tc, c.iv), c.iv), c.iv) > now;
 }
 export function patternText(c, h, archive = []) {
-  const price = x => x.toLocaleString('de-DE', { maximumFractionDigits: 8 }), lv = h.levels || {};
+  const lv = h.levels || {};
   const counts = src => { const a = archive.filter(x => x.mkt === c.mkt && x.sym === c.sym && x.iv === c.iv && x.pat === c.pat && x.model === c.model && x.profile === c.profile && x.src === src && x.res); return { n: a.length, auf: a.filter(x => x.res.out === 'auf').length, ab: a.filter(x => x.res.out === 'ab').length, seit: a.filter(x => x.res.out === 'seitwärts').length }; };
   const live = counts('live'), rek = counts('rekonstruiert'), st = live.n >= 10 ? live : rek.n >= 10 ? rek : null;
-  return [`📐 Chartmuster: ${PAT_NAMES[c.pat]} · ${c.sym.slice(0, -4)}/USDT ${c.mkt === 'spot' ? 'Spot' : 'Futures'} · ${c.iv}`,
-    `Ausbruch bestätigt · Richtung ${c.dir === 'bull' ? 'aufwärts' : 'abwärts'} · Kurs bei Bestätigung ${price(c.p0)}${Number.isFinite(lv.tgt) ? ` · rechnerisches Ziel ${price(lv.tgt)}` : ''}${Number.isFinite(lv.inv) ? ` · ungültig bei ${price(lv.inv)}` : ''}`,
-    `Regelbasiert (Modell pat-1), Regelgüte ${c.q} %`, st ? `Erlernt (${st === live ? 'live protokolliert' : 'rekonstruiert'}): nach 12 Kerzen ${st.auf} von ${st.n} aufwärts, ${st.ab} abwärts, ${st.seit} seitwärts` : `Erlernt: noch zu wenige vergleichbare Fälle (${live.n + rek.n} von mindestens 10)`,
-    'Kursrichtung ≠ Zieltreffer; keine Erfolgswahrscheinlichkeit.'].join('\n');
+  return formatMessage('pattern', { pattern: PAT_NAMES[c.pat], symbol: c.sym, market: c.mkt === 'spot' ? 'Spot' : 'Futures', timeframe: c.iv, status: 'Ausbruch bestätigt', direction: c.dir, entry: c.p0, target: lv.tgt, invalid: lv.inv, quality: c.q, model: c.model || 'pat-1',
+    learned: st ? { ...st, source: st === live ? 'live protokolliert' : 'rekonstruiert', horizon: 12 } : { available: live.n + rek.n, minimum: 10 } });
 }

@@ -1,11 +1,11 @@
 {
-  "version": "2.11.0",
-  "appVersion": "3.62.0",
+  "version": "2.12.0",
+  "appVersion": "3.63.0",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
-      "sha256": "d5696622d548c117d8fa10897ab187073e79c2b107ad60450688e1fab4cf9d2f",
-      "bytes": 126139
+      "sha256": "d0653527eccda0c4c706e0843745788f24c0bd7c79fcc2f3fb432308f9eb0ef5",
+      "bytes": 125451
     },
     {
       "path": "pattern-engine.mjs",
@@ -14,8 +14,23 @@
     },
     {
       "path": "pattern-monitor.mjs",
-      "sha256": "bae27f38ea88a979632ccc4b7a2aefe3538b3d9c67d59995674bd6516f0c1be8",
-      "bytes": 5417
+      "sha256": "373b536539612a00c2dfe1aa11709c535adbbbbf6f848dcf162811ee63c180d1",
+      "bytes": 4852
+    },
+    {
+      "path": "telegram-format.mjs",
+      "sha256": "2eefa259b1c49fa69d555a0373f43c28fa07b23e986ec9176650dd11081fbec6",
+      "bytes": 430
+    },
+    {
+      "path": "market-intervals.mjs",
+      "sha256": "7f1b63eb71189325235155d56909622def1b2f09eb69367135a69f67c44d4cc8",
+      "bytes": 412
+    },
+    {
+      "path": "patterns-247.mjs",
+      "sha256": "04f60b422abc13c68b268628eca2fc81f06b713b58b1486347048f8614bfa809",
+      "bytes": 9923
     },
     {
       "path": "ki-monitor.mjs",
@@ -29,8 +44,8 @@
     },
     {
       "path": "install.sh",
-      "sha256": "abcb8fcf6708ed597cc4ae323bc21b5c7902b8344da09c33c5d364ba5e3d4448",
-      "bytes": 19293
+      "sha256": "07bb7777ee2e59bb159c1a490cbdd5f3db819300c52c37e174a27bc9f62d33d4",
+      "bytes": 19236
     },
     {
       "path": "shared/adaptive-grid-feed.mjs",
@@ -139,8 +154,8 @@
     },
     {
       "path": "shared/confluence-service.mjs",
-      "sha256": "d11727870b7eaa03baa727d3ea81eefea318fd03c026963e6fb761893df987e5",
-      "bytes": 11783
+      "sha256": "698b434ca864ff532ecb38f7e3a783a5ec43b9d6cec230630d021a5bbc7d4ca1",
+      "bytes": 11609
     },
     {
       "path": "shared/confluence-worker.mjs",
@@ -148,14 +163,59 @@
       "bytes": 6539
     },
     {
+      "path": "shared/github-sync-view.mjs",
+      "sha256": "1ec538ce7eafe679fdf9b8060105bd22f920a909d2c49a658badecc1734b9e38",
+      "bytes": 10100
+    },
+    {
+      "path": "shared/github-sync.mjs",
+      "sha256": "1bb89d288e8a5b56ccb6543a845119e6f66bd068fdbace61d7a421b52dd3820f",
+      "bytes": 11241
+    },
+    {
       "path": "shared/indicators.mjs",
       "sha256": "9105a8ac09d5557e90ec05fd3035c915b36b8e345b31b96a158d0001da505540",
       "bytes": 9568
     },
     {
+      "path": "shared/market-intervals.mjs",
+      "sha256": "22b79903dd441da1806bdd23720d33f86c0e9efaa97d1a5e8f01478bc85ccece",
+      "bytes": 2263
+    },
+    {
       "path": "shared/model-archive.mjs",
-      "sha256": "49d3d9d037fbdf27dff2403cdf64705b05edaeeddcd18075926d661a14229be7",
-      "bytes": 4286
+      "sha256": "d2b5df4622599ee10e2c4e483986f85f25c2448f8032e8460e1ea4b4cdf212ff",
+      "bytes": 5202
+    },
+    {
+      "path": "shared/muster-bot-core.mjs",
+      "sha256": "c4cd9cf6501e7595372901302fc831451856f65f45915485d8f4f7a4a4fcd7a9",
+      "bytes": 11506
+    },
+    {
+      "path": "shared/muster-bot-feed.mjs",
+      "sha256": "e86a3da0eae70b8096ea185a48ca74b44259080358e95ed1305764040c17721e",
+      "bytes": 5012
+    },
+    {
+      "path": "shared/muster-bot-paper.mjs",
+      "sha256": "8ee4fc077c5331d0868a21e358193e58e5cb613ed7f90a406f8ca2b5318db130",
+      "bytes": 4140
+    },
+    {
+      "path": "shared/muster-bot-store.mjs",
+      "sha256": "aa428ac803fc8cef00c7bde03f2a670faf7fab781ca650423ad267602c87a6dd",
+      "bytes": 1551
+    },
+    {
+      "path": "shared/muster-bot-view.mjs",
+      "sha256": "7a45293db948e10be7465c786505637a39f512604415af9199b8a5b48d2899d6",
+      "bytes": 28053
+    },
+    {
+      "path": "shared/muster-bot-worker.mjs",
+      "sha256": "bd5f7d60af8c4fffa9423a3a6a1a92bf43dd996b3592bc8f44b8d7f5535fe7c4",
+      "bytes": 1695
     },
     {
       "path": "shared/orderflow-core.mjs",
@@ -218,6 +278,11 @@
       "bytes": 19219
     },
     {
+      "path": "shared/pattern-projection.mjs",
+      "sha256": "1e2444691e3e210eeff673b8b2ae3b91edb9581fccbacc2dea165f76ebeda5d7",
+      "bytes": 3943
+    },
+    {
       "path": "shared/pattern-score.mjs",
       "sha256": "585334abda80fd8802128e181d8efc04264770f3ee2a7f866d24481a6f7eabad",
       "bytes": 2683
@@ -234,8 +299,8 @@
     },
     {
       "path": "shared/po3-service.mjs",
-      "sha256": "c1cec8f5abc603859ca9f558ccc79a8ad6058e8d99ba199e39a77994f0549a88",
-      "bytes": 8554
+      "sha256": "c31ee68aab69a0117f6cfdb49c3c1a5612fbbcc08d1bd5a4da599ff7623464cb",
+      "bytes": 8541
     },
     {
       "path": "shared/po3-simulator.mjs",
@@ -261,6 +326,11 @@
       "path": "shared/signal-overview.mjs",
       "sha256": "f5428bbba259f07eac8d7c0cebf5569624e6d1d14db43ce5be0a7c1505468bf4",
       "bytes": 3314
+    },
+    {
+      "path": "shared/telegram-format.mjs",
+      "sha256": "63e24932d3e1fb901225c548ff082a32eecb027b76c398b22bc78169728eb728",
+      "bytes": 14163
     },
     {
       "path": "shared/widget-state.mjs",

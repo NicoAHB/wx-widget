@@ -7,10 +7,11 @@ const fs = require('fs'), path = require('path'), os = require('os');
 let pass = 0, fail = 0; const check = (n, ok, info = '') => { ok ? pass++ : fail++; console.log(`${ok ? '✓' : '✗'} ${n}${info ? ' — ' + info : ''}`); };
 const TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', CHAT = '987654321', M = 60e3, JS = path.join(__dirname, 'js');
 (async () => {
+  const { formatMessage, telegramPlain } = await import('../shared/telegram-format.mjs');
   const W = await import(require('path').join(__dirname, '..', 'server/scalpdesk-247.mjs'));
   const volaQ = new Function(`${/function volaQ\(sorted, q\) \{[\s\S]*?\n\}/.exec(fs.readFileSync(path.join(JS, 'vola.js'), 'utf8'))[0]}\nreturn volaQ;`)();
   const signed = (x, d = 2) => `${x > 0 ? '+' : x < 0 ? '−' : ''}${W.number(Math.abs(x), d)}`;
-  const A = new Function('volaQ', 'signed', 'number', 'priceText', `${fs.readFileSync(path.join(JS, 'pulse.js'), 'utf8')}\nreturn { pulseSlot, pulseStats, pulseLimit, pulseMove, pulseDecide, pulseText, PULSE_FLOOR, PULSE_WIN };`)(volaQ, signed, W.number, W.priceText);
+  const A = new Function('formatMessage', 'volaQ', 'signed', 'number', 'priceText', `${fs.readFileSync(path.join(JS, 'pulse.js'), 'utf8')}\nreturn { pulseSlot, pulseStats, pulseLimit, pulseMove, pulseDecide, pulseText, PULSE_FLOOR, PULSE_WIN };`)(formatMessage, volaQ, signed, W.number, W.priceText);
 
   // ---- Uhrzeit und Tagesart (UTC; das Fenster endet zum Zeitpunkt t) ----
   const s1 = A.pulseSlot(Date.UTC(2026, 8, 26, 14, 0)), s2 = A.pulseSlot(Date.UTC(2026, 8, 28, 0, 0)), s3 = A.pulseSlot(Date.UTC(2026, 8, 29, 9, 30));
@@ -59,8 +60,8 @@ const TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', CHAT = '987654321'
 
   // ---- Text ----
   const txt = A.pulseText({ w: 15, mv: -2.1, lim: 1.2, more: false }, 61230.5, '14', [['ETC', -2.8], ['XRP', -2.4]]);
-  check('Text: Richtung, Größe, Fenster, Kurs, Uhrzeit mit Schwelle, Vorauswahl – keine Prognose', txt === '⚡ BTC-Puls: BTC −2,10 % in 15 Min. (61.230,50 USDT) – ungewöhnlich stark für 14 Uhr (Schwelle 1,20 %)\nVorauswahl im selben Zeitraum: ETC −2,80 % · XRP −2,40 %', txt);
-  check('Text „legt weiter zu“, ohne Vorauswahl einzeilig', A.pulseText({ w: 5, mv: 3.3, lim: 0.5, more: true }, 60000, '03', []) === '⚡ BTC-Puls: BTC +3,30 % in 5 Min. (60.000,00 USDT) – Bewegung legt weiter zu – ungewöhnlich stark für 03 Uhr (Schwelle 0,50 %)');
+  check('Text: Richtung, Größe, Fenster, Kurs, Uhrzeit mit Schwelle, Vorauswahl – keine Prognose', txt === '<b>🔴⬇️ BTC-PULS · −2,10 %</b> in 15 Min\n💰 Kurs: <code>61.230,50 USD</code>\n⚡ <i>ungewöhnlich stark für 14 Uhr</i> · 1,8× Schwelle (1,20 %)\n\n📋 Vorauswahl im selben Zeitraum:\n<pre>🔴 ETC  −2,80 %\n🔴 XRP  −2,40 %</pre>', txt);
+  check('Text „legt weiter zu“, ohne Vorauswahl kompakt', A.pulseText({ w: 5, mv: 3.3, lim: 0.5, more: true }, 60000, '03', []) === '<b>🟢⬆️ BTC-PULS · +3,30 %</b> in 5 Min\n💰 Kurs: <code>60.000,00 USD</code>\n⚡ <i>ungewöhnlich stark für 03 Uhr</i> · 6,6× Schwelle (0,50 %) 🔥\nBewegung legt weiter zu');
 
   // ---- 3.25.0: Vorauswahl-Zeile – die Kacheln haben die Kerzen ihres Zeitraums (Standard 5m): 1m-Kerzen per REST, Frist 2,5 s ----
   {
@@ -73,8 +74,8 @@ const TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', CHAT = '987654321'
       ['XRPUSDT', { sym: 'XRPUSDT', iv: '5m', market: 'futures', closed: [], run: { close: 99 } }],
       ['NEARUSDT', { sym: 'NEARUSDT', iv: '5m', market: 'spot', closed: [], error: 'gibt es nicht' }]
     ]);
-    const P = new Function('volaQ', 'signed', 'number', 'priceText', 'wl', 'wlSym', 'wlPrice', 'state', 'api', 'FUTURES', 'spotGet', 'normalizeKlines',
-      `${fs.readFileSync(path.join(JS, 'pulse.js'), 'utf8')}\nreturn { pulseOthers };`)(volaQ, signed, W.number, x => W.number(x, 2), { c: wlc }, c => `${c}USDT`, e => e.run?.close ?? null,
+    const P = new Function('formatMessage', 'volaQ', 'signed', 'number', 'priceText', 'wl', 'wlSym', 'wlPrice', 'state', 'api', 'FUTURES', 'spotGet', 'normalizeKlines',
+      `${fs.readFileSync(path.join(JS, 'pulse.js'), 'utf8')}\nreturn { pulseOthers };`)(formatMessage, volaQ, signed, W.number, x => W.number(x, 2), { c: wlc }, c => `${c}USDT`, e => e.run?.close ?? null,
       { watch: ['BTC', 'ETC', 'XRP', 'NEAR'] }, { get: (base, p, q) => answer(q.symbol, q) }, 'FUT', (p, q) => answer(q.symbol, q), rows => rows);
     let o = await P.pulseOthers(5, NOW);
     check('Vorauswahl-Zeile (Kacheln auf 5m): 1m-Kerzen je Coin per REST (Spot bzw. Futures), Veränderung über 5 Minuten, ohne BTC und fehlerhafte', JSON.stringify(o) === JSON.stringify([['ETC', (105 / 101 - 1) * 100], ['XRP', (99 / 101 - 1) * 100]]) && calls.join() === 'ETCUSDT:1m:7,XRPUSDT:1m:7', JSON.stringify({ o, calls }));
@@ -114,9 +115,9 @@ const TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', CHAT = '987654321'
   check('Bestätigung: „Dienst: aktiv · … · Puls · #pu01 übernommen“', /\nDienst: aktiv · 29\.09\. 23:00 · v[\d.]+ · Puls · #pu01 übernommen$/.test(capP) && !/Puls/.test(capN), capP.split('\n').at(-1));
   // App liest „Puls“ und überlässt ihn dem Dienst nur dann
   const src = fs.readFileSync(path.join(JS, 's247.js'), 'utf8');
-  const S = new Function('store', 'navigator', '$', 'broadcastData', 'state', 'chan', 'APP_VERSION', 'ec', 'tgApi', 'tgPost', 'tgConfigured', 'document', 'addEventListener', 'renderChanSummary', 'pulseHandover',
+  const S = new Function('store', 'navigator', '$', 'broadcastData', 'state', 'chan', 'APP_VERSION', 'ec', 'tgApi', 'tgPost', 'tgConfigured', 'document', 'addEventListener', 'renderChanSummary', 'pulseHandover', 'formatMessage', 'TELEGRAM_CAPTION_LIMIT', 'svcOn', 'tgtOn',
     `${src}\nreturn { s247, s247Parse, s247Covers, s247Payload };`)({ get: () => null, set: () => true, claim: async () => true, release: async () => {} }, { userAgent: 'Mozilla/5.0 (iPad) Safari/605.1.15', maxTouchPoints: 5 }, () => null, () => {},
-    { alarms: [], positions: [], watch: ['BTC', 'ETC'] }, { tg: { on: true }, ev: { alarm: true, pos: true, news: true, pulse: true } }, '3.24.0', { cfg: { warn: 0, cur: 'usd' } }, null, null, () => true, { hidden: false, addEventListener() {} }, () => {}, () => {}, () => goodPulse);
+    { alarms: [], positions: [], watch: ['BTC', 'ETC'] }, { tg: { on: true }, ev: { alarm: true, pos: true, news: true, pulse: true } }, '3.24.0', { cfg: { warn: 0, cur: 'usd' } }, null, null, () => true, { hidden: false, addEventListener() {} }, () => {}, () => {}, () => goodPulse, formatMessage, 1024, () => false, () => true);
   const pm = cap => ({ message_id: 700, date: Math.floor(Date.now() / 1000), caption: cap, document: { file_name: 'scalpdesk-247.json' } });
   S.s247.cfg.on = true; const PL = S.s247Payload();
   check('App übergibt die Schwellen (ev.pulse, pulse) – der Dienst übernimmt sie', PL.ev.pulse === true && JSON.stringify(PL.pulse) === JSON.stringify(goodPulse) && W.pulseOn(W.parseConfig({ ...PL, tag: 'pu01', at: T })));
@@ -153,13 +154,13 @@ const TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', CHAT = '987654321'
   pinned = { message_id: 701, date: 1, caption: '📌 Scalp Desk · 24/7-Dienst\nApp: …\nDienst: wartet auf Rückmeldung …', document: { file_id: 'fP', file_unique_id: 'UP', file_name: 'scalpdesk-247.json' } };
   const statePath = path.join(os.tmpdir(), `pulse-state-${process.pid}.json`); try { fs.unlinkSync(statePath); } catch {}
   const logs = [], mk = () => new W.Watcher({ token: TOKEN, chat: CHAT, statePath, now: () => now2, log: (...a) => logs.push(a.join(' ')) });
-  let w = mk(); const INFO = /^(✅ 24\/7-Dienst hat übernommen|⏸ 24\/7-Dienst|⏳ Scalp Desk 24\/7-Dienst)/; // 1.4: Bestätigung und Hinweis sind keine Meldungen
-  const msgs = () => tgLog.filter(x => x.method === 'sendMessage' && /BTC-Puls/.test(x.text) && !INFO.test(x.text || ''));
+  let w = mk(); const INFO = /^<b>(✅ Dienst hat übernommen|⏸ Dienstübergabe|⏳ Dienst wartet)/; // 1.4: Bestätigung und Hinweis sind keine Meldungen
+  const msgs = () => tgLog.filter(x => x.method === 'sendMessage' && /BTC-PULS/.test(x.text) && !INFO.test(x.text || ''));
   await w.tick();
   const dLine = () => (pinned?.caption || '').split('\n').find(l => l.startsWith('Dienst:')) || ''; // 1.3: darunter folgt „Zustellung: …“
   check('Dienst: Datei mit Schwellen übernommen, Bestätigung mit „Puls“', W.pulseOn(w.conf?.data) && / · Puls · #pu01 übernommen$/.test(dLine()), dLine());
   check('Dienst: BTC −3 % in 5 Min. um 23:30 Uhr → Nachricht, lautlos, mit ETC (XRP ohne Paar weggelassen)', msgs().length === 1 && msgs()[0].disable_notification === true
-    && /^⚡ BTC-Puls: BTC −3,00 % in 5 Min\. \(58\.200,00 USDT\) – ungewöhnlich stark für 23 Uhr \(Schwelle 0,50 %\)\nVorauswahl im selben Zeitraum: ETC −4,00 %\n23:30:10 Uhr · 24\/7-Dienst$/.test(msgs()[0].text), msgs()[0]?.text);
+    && msgs()[0].text.includes('<b>🔴⬇️ BTC-PULS · −3,00 %</b> in 5 Min') && msgs()[0].text.includes('<code>58.200,00 USD</code>') && msgs()[0].text.includes('6,0× Schwelle (0,50 %)') && msgs()[0].text.includes('<pre>🔴 ETC  −4,00 %</pre>') && /🕐 23:30:10$/.test(msgs()[0].text), msgs()[0]?.text);
   now2 += 20e3; w.next.price = 0; await w.tick();
   check('Dienst: gleiche Bewegung 20 s später → keine zweite Nachricht', msgs().length === 1);
   w.saveStateNow(); w = mk(); await w.tick(); now2 += 20e3; w.next.price = 0; await w.tick();
@@ -167,12 +168,12 @@ const TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', CHAT = '987654321'
   drop.BTCUSDT = 0.96; now2 += 20e3; w.next.price = 0; await w.tick();
   check('Dienst: etwas mehr (−4 % < 1,5 × 3 %) → noch keine weitere', msgs().length === 1, String(msgs().length));
   drop.BTCUSDT = 0.95; now2 += 20e3; w.next.price = 0; await w.tick();
-  check('Dienst: Bewegung legt deutlich zu (−5 % ≥ 1,5 × 3 %) → eine weitere Nachricht', msgs().length === 2 && /−5,00 % in 5 Min\. .* – Bewegung legt weiter zu/.test(msgs()[1].text), `${msgs().length} · ${msgs()[1]?.text.split('\n')[0]}`);
+  check('Dienst: Bewegung legt deutlich zu (−5 % ≥ 1,5 × 3 %) → eine weitere Nachricht', msgs().length === 2 && msgs()[1].text.includes('−5,00 %</b> in 5 Min') && msgs()[1].text.includes('Bewegung legt weiter zu'), `${msgs().length} · ${msgs()[1]?.text.split('\n')[0]}`);
   drop.BTCUSDT = 0.9; now2 += 20e3; w.next.price = 0; await w.tick();
   check('Dienst: danach innerhalb 30 min keine weitere', msgs().length === 2, String(msgs().length));
   // tagsüber mit Ton; Aufwärts unabhängig
   now2 = Date.UTC(2026, 8, 30, 10, 0, 10); drop.BTCUSDT = 1.02; w.next.price = 0; await w.tick();
-  check('Dienst: tagsüber (12 Uhr) aufwärts +2 % → Nachricht mit Ton', msgs().length === 3 && msgs()[2].disable_notification === undefined && /BTC \+2,00 % in 5 Min\./.test(msgs()[2].text), `${msgs().length} · ${msgs()[2]?.text.split('\n')[0]} · ${JSON.stringify(logs.slice(-3))}`);
+  check('Dienst: tagsüber (12 Uhr) aufwärts +2 % → Nachricht mit Ton', msgs().length === 3 && msgs()[2].disable_notification === undefined && msgs()[2].text.includes('BTC-PULS · +2,00 %</b> in 5 Min'), `${msgs().length} · ${msgs()[2]?.text.split('\n')[0]} · ${JSON.stringify(logs.slice(-3))}`);
   // Meldung in der App ausgeschaltet → Dienst prüft nicht mehr
   files.set('fQ', JSON.stringify({ ...base, tag: 'pu02', ev: { alarm: true, pos: true, news: true, pulse: false }, pulse: goodPulse }));
   pinned = { ...pinned, message_id: 702, document: { file_id: 'fQ', file_unique_id: 'UQ', file_name: 'scalpdesk-247.json' } };

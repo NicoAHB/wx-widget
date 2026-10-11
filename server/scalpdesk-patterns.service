@@ -1,0 +1,27 @@
+[Unit]
+Description=Scalp Desk – ausschließlich Chartmuster
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=scalpdesk-patterns
+Group=scalpdesk-patterns
+WorkingDirectory=/opt/scalpdesk-patterns
+Environment=TZ=Europe/Berlin
+ExecStart=/usr/bin/node /opt/scalpdesk-patterns/server/patterns-247.mjs
+Restart=on-failure
+RestartSec=10
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+StateDirectory=scalpdesk-patterns
+LogsDirectory=scalpdesk-patterns
+ReadWritePaths=/var/lib/scalpdesk-patterns /var/log/scalpdesk-patterns
+StandardOutput=append:/var/log/scalpdesk-patterns/service.log
+StandardError=append:/var/log/scalpdesk-patterns/service.log
+
+[Install]
+WantedBy=multi-user.target

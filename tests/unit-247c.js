@@ -148,7 +148,7 @@ const TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', CHAT = '987654321'
   await call2('/v1/events/reserve', { eventId: W.alarmEvent({ id: 'al1', armedAt: armed }), targetId: 'course-alert', sender: 'app:iphone1', label: 'Kurs-Alarm BTC' });
   rows.BTCUSDT = [k(tc, 100, 100.2, 99.9, 100), k(tc + M, 100, 103, 99.9, 102.5)]; const n0 = sentTexts().length; await step();
   const newMsgs = sentTexts().slice(n0);
-  check('Kurs über beide Marken: al1 hatte die App schon reserviert → der Dienst schweigt dazu; al2 meldet der Dienst', newMsgs.filter(t => /Kurs-Alarm BTC/.test(t)).length === 1 && /auf\/über 102,00/.test(newMsgs.find(t => /Kurs-Alarm/.test(t)) || '') && logs.some(l => /^Ereignis al1:.*schon von App \(iphone1\) übernommen/.test(l)), newMsgs.join(' || ').slice(0, 300));
+  check('Kurs über beide Marken: al1 hatte die App schon reserviert → der Dienst schweigt dazu; al2 meldet der Dienst', newMsgs.filter(t => /KURS-ALARM · BTC/.test(t)).length === 1 && /<b>102,0000 USD<\/b> ⭐ \(auf\/über\)/.test(newMsgs.find(t => /KURS-ALARM/.test(t)) || '') && logs.some(l => /^Ereignis al1:.*schon von App \(iphone1\) übernommen/.test(l)), newMsgs.join(' || ').slice(0, 300));
   const e2id = W.alarmEvent({ id: 'al2', armedAt: armed }), st2 = w.evs[e2id];
   check('… al2: reserviert vom Dienst, nach dem Senden „zugestellt“', st2?.by === 'oracle' && st2.st === 'confirmed', JSON.stringify(st2));
   x = await call2('/v1/events/reserve', { eventId: e2id, targetId: 'course-alert', sender: 'app:ipad001' });
@@ -177,7 +177,7 @@ const TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', CHAT = '987654321'
   rows.SOLUSDT = [k(now - M, 150, 150.2, 149.9, 150), k(now, 150, 150.1, 149.95, 150)];
   const since = now - 20 * M; pin({ tag: 'cd34', alarms: [], positions: [{ id: 'P1', symbol: 'SOLUSDT', source: 'spot', side: 'long', sl: 149, tp: null, since, ack: { sl: false, tp: false } }] });
   await step(); await step();
-  const stopMsgs = () => sentTexts().filter(t => /SOL Long: Stop-Loss erreicht/.test(t)).length;
+  const stopMsgs = () => sentTexts().filter(t => /STOP-LOSS · SOL Long/.test(t)).length;
   const sol = (o, h, l, c) => { rows.SOLUSDT = [k(now - M, o, h, l, c), k(now, c, c, c, c)]; };
   sol(150, 150, 148.8, 148.9); await step();
   check('Stop-Loss erreicht: eine Meldung (Episode 0)', stopMsgs() === 1 && w.evs[`${W.posBase({ id: 'P1', since }, 'sl')}:0`]?.st === 'confirmed', String(stopMsgs()));
@@ -192,7 +192,7 @@ const TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', CHAT = '987654321'
   const pAt = now - M, lim = { k: 'profit', v: 50, at: pAt, w: false }; pin({ tag: 'ef56', pnl: { n: 1, pos: [{ id: 'E1', symbol: 'ETHUSDT', source: 'spot', side: 'long', entry: 100, qty: 10 }], lim: [lim] } });
   await step(); await call2('/v1/events/reserve', { eventId: W.pnlEvent(lim), targetId: 'course-alert', sender: 'app:iphone1', label: 'Gewinn-Alarm' });
   rows.ETHUSDT = [k(now - M, 100, 106, 100, 106), k(now, 106, 106, 106, 106)]; const nP = sentTexts().length; await step();
-  check('Gewinn-Alarm: App hatte reserviert → Dienst sendet nicht, wartet auch nicht', !sentTexts().slice(nP).some(t => /Gewinn-Alarm/.test(t)) && w.pnlFired[W.pnlKey(lim)]?.by === 'app' && !Object.keys(w.pnlPend).length);
+  check('Gewinn-Alarm: App hatte reserviert → Dienst sendet nicht, wartet auch nicht', !sentTexts().slice(nP).some(t => /GEWINN-ALARM/.test(t)) && w.pnlFired[W.pnlKey(lim)]?.by === 'app' && !Object.keys(w.pnlPend).length);
   // ---- Puls/Termine bei AUS ----
   rev = (await call2('/v1/state')).j.rev; await call2('/v1/policy', { commandId: 'off-pulse-1', expectedRevision: rev, set: { 'course-alert': false } });
   const nQ = sentTexts().length; await w.queue('⚡ BTC-Puls test', 'UTC', { label: 'BTC-Puls' });

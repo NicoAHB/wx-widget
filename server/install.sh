@@ -7,7 +7,7 @@
 # Was passiert:
 #  1. Node.js ab Version 18 (fehlt es, kommt Node 22 von NodeSource)
 #  2. Programm nach /opt/scalpdesk-247
-#  3. Einstellungen /etc/scalpdesk-247.json: Bot-Token, Chat-ID, optional Discord-Webhook (nur für den Dienst lesbar)
+#  3. Einstellungen /etc/scalpdesk-247.json: Bot-Token, Chat-ID (nur für den Dienst lesbar)
 #  4. Prüfung: Bot, Testnachricht an deinen Chat, Binance erreichbar
 #  5. Dienst „scalpdesk-247“ (systemd): startet mit dem Server und nach Fehlern von selbst neu
 #  6. HTTPS-Steuerung (ab 2.0): Zugangsschlüssel, öffentliche Adresse <IP>.sslip.io, Caddy mit kostenlosem Zertifikat,
@@ -60,7 +60,7 @@ curl -fsSL "$SRC/release-manifest.json" -o "$STAGE/release-manifest.json" || die
 PARTS=$(node - "$STAGE/release-manifest.json" <<'NODE'
 const fs=require('fs'),j=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
 if(!/^2\.\d+\.\d+$/.test(j.version)||!Array.isArray(j.files)||j.files.length>100)throw Error('Lieferliste ungültig');
-for(const f of j.files){if(!/^(?:scalpdesk-247\.mjs|pattern-engine\.mjs|pattern-monitor\.mjs|ki-monitor\.mjs|orderflow-explainer\.mjs|install\.sh|shared\/[a-z0-9-]+\.mjs)$/.test(f.path)||!/^[a-f0-9]{64}$/.test(f.sha256))throw Error('Lieferpfad ungültig'); console.log(f.path);}
+for(const f of j.files){if(!/^(?:scalpdesk-247\.mjs|pattern-engine\.mjs|pattern-monitor\.mjs|telegram-format\.mjs|patterns-247\.mjs|market-intervals\.mjs|ki-monitor\.mjs|orderflow-explainer\.mjs|install\.sh|shared\/[a-z0-9-]+\.mjs)$/.test(f.path)||!/^[a-f0-9]{64}$/.test(f.sha256))throw Error('Lieferpfad ungültig'); console.log(f.path);}
 NODE
 ) || die "Lieferliste ungültig; bisheriges Programm bleibt."
 while IFS= read -r part; do
@@ -91,7 +91,7 @@ OLD=$(readlink "$DIR/current" 2>/dev/null || true)
 # Erstes Update eines älteren Installers: vollständige bisherige Programmdateien als Rückfallstand erhalten.
 if [ -z "$OLD" ] && [ -f "$DIR/scalpdesk-247.mjs" ]; then
   OLD="releases/legacy-$(date +%s)"; mkdir -p "$DIR/$OLD"
-  for part in scalpdesk-247.mjs pattern-engine.mjs pattern-monitor.mjs ki-monitor.mjs orderflow-explainer.mjs install.sh shared server; do [ ! -e "$DIR/$part" ] || cp -a "$DIR/$part" "$DIR/$OLD/$part"; done
+  for part in scalpdesk-247.mjs pattern-engine.mjs pattern-monitor.mjs ki-monitor.mjs orderflow-explainer.mjs telegram-format.mjs market-intervals.mjs install.sh shared server; do [ ! -e "$DIR/$part" ] || cp -a "$DIR/$part" "$DIR/$OLD/$part"; done
   # Nur der alte CLI-Pfadvergleich benötigt die neue Symlink-Auflösung; Fach-/Zustandslogik bleibt unverändert.
   node - "$DIR/$OLD/scalpdesk-247.mjs" <<'NODE'
 const fs=require('fs'),file=process.argv[2],old=fs.readFileSync(file,'utf8');fs.writeFileSync(file,old.replace('path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)','fs.realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)'));
@@ -100,7 +100,7 @@ fi
 if [ -n "$OLD" ] && [ "$OLD" != "releases/$RELEASE" ]; then ln -s "$OLD" "$DIR/previous.new"; mv -Tf "$DIR/previous.new" "$DIR/previous"; fi
 ln -s "releases/$RELEASE" "$DIR/current.new"; mv -Tf "$DIR/current.new" "$DIR/current"
 # Node löst den Einstieg auf den realen immutable Releasepfad auf; relative Imports bleiben in demselben Bündel.
-for part in scalpdesk-247.mjs pattern-engine.mjs pattern-monitor.mjs ki-monitor.mjs orderflow-explainer.mjs install.sh shared server; do
+for part in scalpdesk-247.mjs pattern-engine.mjs pattern-monitor.mjs ki-monitor.mjs orderflow-explainer.mjs telegram-format.mjs market-intervals.mjs install.sh shared server; do
   if [ -d "$DIR/$part" ] && [ ! -L "$DIR/$part" ]; then mv "$DIR/$part" "$DIR/$part.legacy"; fi
   ln -s "current/$part" "$DIR/$part.new-link"; mv -Tf "$DIR/$part.new-link" "$DIR/$part"
 done
@@ -113,9 +113,9 @@ say "2/7 Programm $(node "$DIR/scalpdesk-247.mjs" --version) nach $DIR ✓ (voll
 # ---- 3. Einstellungen ----
 id "$USR" >/dev/null 2>&1 || useradd --system --no-create-home --shell /usr/sbin/nologin "$USR"
 if [ ! -s "$CONF" ] || [ "${1:-}" = "--neu" ]; then
-  say "3/7 Einstellungen – beides steht in der App unter 🔔 Hinweise → „Telegram / Discord einrichten“:"
+  say "3/7 Einstellungen – beides steht in der App unter 🔔 Hinweise → „Telegram einrichten“:"
   exec 3<"$TTY" || die "Keine Eingabe möglich. Bitte in einem Terminal ausführen (nicht über einen Dienst oder Cron)."
-  TOKEN="" CHAT="" DC=""
+  TOKEN="" CHAT=""
   while ! [[ "$TOKEN" =~ ^[0-9]{5,15}:[A-Za-z0-9_-]{30,80}$ ]]; do
     read -r -s -u 3 -p "  Bot-Token (123456789:AA…, Eingabe bleibt unsichtbar): " TOKEN || die "Eingabe abgebrochen."; echo
     TOKEN="$(printf '%s' "$TOKEN" | tr -d '[:space:]')"
@@ -125,9 +125,8 @@ if [ ! -s "$CONF" ] || [ "${1:-}" = "--neu" ]; then
     read -r -u 3 -p "  Chat-ID (z. B. 987654321): " CHAT || die "Eingabe abgebrochen."
     CHAT="$(printf '%s' "$CHAT" | tr -d '[:space:]')"
   done
-  read -r -u 3 -p "  Discord-Webhook (optional, Enter = keiner): " DC || DC=""; DC="$(printf '%s' "$DC" | tr -d '[:space:]')"
   exec 3<&-
-  ( umask 077; TOKEN="$TOKEN" CHAT="$CHAT" DC="$DC" node -e 'const e=process.env;process.stdout.write(JSON.stringify({token:e.TOKEN,chat:e.CHAT,discord:e.DC},null,1)+"\n")' > "$CONF.new" )
+  ( umask 077; TOKEN="$TOKEN" CHAT="$CHAT" node -e 'const e=process.env;process.stdout.write(JSON.stringify({token:e.TOKEN,chat:e.CHAT},null,1)+"\n")' > "$CONF.new" )
   mv "$CONF.new" "$CONF"
 else
   say "3/7 Einstellungen aus $CONF übernommen (neu eingeben: … | sudo bash -s -- --neu)"
@@ -246,7 +245,7 @@ EOF
 chmod 755 "$BIN"
 cat <<'EOF'
 
-Fertig. Jetzt in der App: 🔔 Hinweise → „Telegram / Discord einrichten“ → „An den 24/7-Dienst übergeben“ einschalten.
+Fertig. Jetzt in der App: 🔔 Hinweise → „Telegram einrichten“ → „An den 24/7-Dienst übergeben“ einschalten.
 Für die Chat-Schalter und die Sendefreigabe (ab App 3.33.0) dort unter „24/7-Dienst“ Adresse und Zugangsschlüssel eintragen:
   sudo scalpdesk-247 zugang
 Nach spätestens einer Minute steht dort „Übergeben ✓ vom Dienst bestätigt“, und in Telegram kommt „✅ 24/7-Dienst hat übernommen“.

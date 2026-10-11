@@ -94,6 +94,6 @@ const near = (a, b) => Number.isFinite(a) && Math.abs(a - b) < 1e-9, clone = x =
     check('Verworfene alte Meldung löscht weder Signalplan noch Beobachtung', JSON.stringify(upgraded.ki.state.cards[0]) === JSON.stringify(legacyCard) && JSON.stringify(upgraded.ki.state.observations[0]) === original);
   } finally { for (const w of watchers) { w.ki.stop(); w.po3.stop(); w.stopped = true; clearTimeout(w.saveTimer); } fs.rmSync(dir, { recursive: true, force: true }); }
   const message = kiMessage(normal, R.cardHistoricalStats(normal, { asOf: at }));
-  check('Diensttext nennt Netto-R:R, Gebühren und Slippage auf beiden Seiten', /Netto-R:R/.test(message) && /je Ein-\/Ausstieg mit Tickraster/.test(message) && /Modell cf-2/.test(message));
+  check('Diensttext nennt Netto-R:R, Gebühren und Slippage auf beiden Seiten', /Chance\/Risiko netto:/.test(message) && /je Ein-\/Ausstieg mit Tickraster/.test(message) && /Modell:? cf-2/.test(message));
   console.log(`\n${pass}/${pass + fail} bestanden`); process.exitCode = fail ? 1 : 0;
 })().catch(e => { console.error(e); process.exitCode = 1; });

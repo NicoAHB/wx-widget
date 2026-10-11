@@ -73,7 +73,7 @@ const tests = {
     const j = await waitJob(page, 'L1', x => x.st === 'ok'); await page.waitForTimeout(1500);
     const all = await photos(t0), p = all[0] || {};
     check('Vollständiger Abschluss: genau ein sendPhoto an den Trades-Chat', j && all.length === 1 && String(p.chat_id) === TRADES, JSON.stringify(all.map(x => ({ chat: x.chat_id, bytes: x.bytes }))));
-    check('… ohne Bildunterschrift und ohne weitere Felder (nur chat_id und das Foto)', p.caption === null && JSON.stringify(p.fields) === '["chat_id"]' && p.photoName === 'trade.png' && p.photoType === 'image/png', JSON.stringify({ caption: p.caption, fields: p.fields, name: p.photoName, type: p.photoType }));
+    check('… mit zentraler HTML-Ergebnisbeschriftung und nur Versandfeldern', /^<b>🟢 GEWINN · SOL Long · \+8,80 USD<\/b>/.test(p.caption || '') && /Einstieg: <code>147,3333 USD<\/code>/.test(p.caption) && /Kurs beim Abschluss: <code>150,3333 USD<\/code>/.test(p.caption) && JSON.stringify(p.fields) === JSON.stringify(['caption', 'chat_id', 'parse_mode']) && p.photoName === 'trade.png' && p.photoType === 'image/png', JSON.stringify({ caption: p.caption, fields: p.fields, name: p.photoName, type: p.photoType }));
     check('… PNG 1080×1440, unter 10 MB', p.png && p.w === 1080 && p.h === 1440 && p.bytes > 20000 && p.bytes < 10e6, JSON.stringify({ png: p.png, w: p.w, h: p.h, bytes: p.bytes }));
     check('… keine Textnachricht an Trades und nichts an Kursalarm oder Sicherung (außer Sicherung selbst)', !(await h.ctl('/sent')).some(m => m.svc === 'tg' && m.at >= t0 && (String(m.chat_id) === TRADES ? m.method !== 'sendPhoto' : m.method === 'sendPhoto')));
     check('Auftrag „gesendet“ mit Nachrichten-ID, automatisch, Kerzen für den Haltezeitraum', j?.st === 'ok' && j.msg > 0 && j.by === 'auto' && /^3m · \d+ Kerzen$/.test(j.chart || ''), JSON.stringify(j));
@@ -107,7 +107,7 @@ const tests = {
     const t0 = Date.now(); await close(page, 'S1', { qty: '2', exit: '', override: '45' });
     const j = await waitJob(page, 'S1', x => ['ok', 'fail', 'unconf', 'drop'].includes(x.st)); await page.waitForTimeout(800);
     const d = await page.evaluate(() => __g06.timgData('S1')), net = await journalNet(page, 'S1'), all = await photos(t0);
-    check('Short mit Nachkauf und Teilabschluss: genau ein Bild', j?.st === 'ok' && all.length === 1 && all[0].caption === null, JSON.stringify(j));
+    check('Short mit Nachkauf und Teilabschluss: genau ein Bild', j?.st === 'ok' && all.length === 1 && /^<b>🟢 GEWINN · ETH Short ·/.test(all[0].caption || '') && /Einstieg: <code>2.523,33 USD<\/code>/.test(all[0].caption), JSON.stringify(j));
     check('Short: Netto = Journal (Teilabschluss + Schluss laut Börse), Einstieg Ø aus beiden Verkäufen', d.side === 'short' && Math.abs(d.net - net) < 1e-9 && Math.abs(d.entry - (2 * 2520 + 2530) / 3) < 1e-6 && d.exchange, JSON.stringify({ net: d.net, journal: net, entry: d.entry }));
     check('Schluss ohne Ausstiegskurs: nicht erfunden – Ø-Ausstieg nur aus dem erfassten Teilabschluss, 1 von 2 ohne Kurs', d.exit === 2490 && d.exitMiss === 1 && d.sells[1].x === null, JSON.stringify({ exit: d.exit, miss: d.exitMiss, sells: d.sells }));
     keep.push(['short', all[0]?.path]);

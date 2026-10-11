@@ -12,9 +12,14 @@ const h = require('./harness'); let pass = 0, fail = 0; const check = (name, ok,
     await page.waitForFunction(() => window.__pdf2?.view.frame.result && __pdf2.feed.quote()?.fresh && ['1m', '5m', '1h', '4h'].every(iv => __pdf2.feed.state.series[iv]?.length >= 50), null, { timeout: 30000 });
     check('Vier echte Futures-Historien und fünf Gruppen', await page.evaluate(() => Object.keys(__pdf2.feed.state.series).length === 4 && __pdf2.view.frame.result.groups.length === 5 && !__pdf2.view.boundary.failed));
     // Feed übernimmt sofort, Darstellung zeichnet gebündelt nach höchstens 250 ms. Gleichen Stand vergleichen.
+    // Kurz vor dem Minutenwechsel kann das Anhalten des Streams genau die neue
+    // laufende Kerze verhindern. Dann ist „—“ korrekt, nicht der Anteil der fünf
+    // älteren Kerzen. Für diesen Zahlenvergleich erst die laufende Kerze laden
+    // und außerhalb des Wechselrandes messen; die Fachgrenze bleibt exakt gleich.
+    await page.waitForFunction(() => { const at = Date.now(), phase = at % 60000; return phase >= 2000 && phase <= 57000 && __pdf2.feed.state.series['1m'].at(-1)?.time === Math.floor(at / 60000) * 60000 && Number.isFinite(__pdf2.view.frame.share5); }, null, { timeout: 30000 });
     await h.ctl('/orderflow?hold=1'); await page.waitForTimeout(500);
     const ring = await page.evaluate(() => { const rows = __pdf2.feed.state.series['1m'].slice(-5); return { calculated: rows.reduce((s, c) => s + c.usdt.buy, 0) / rows.reduce((s, c) => s + c.usdt.total, 0), painted: __pdf2.view.frame.share5, slots: rows.map(c => c.time), at: Date.now() }; });
-    check('5-Minuten-Ring aus denselben USDT-Kerzen nachgerechnet', Math.abs(ring.painted - ring.calculated) < 1e-9, JSON.stringify(ring));
+    check('5-Minuten-Ring aus denselben USDT-Kerzen nachgerechnet', Number.isFinite(ring.painted) && ring.slots.at(-1) === Math.floor(ring.at / 60000) * 60000 && Math.abs(ring.painted - ring.calculated) < 1e-9, JSON.stringify(ring));
     await h.ctl('/orderflow');
     check('BTC 1m/5m plus 15m/60m und beide Pfeile im BTC-Chart', await page.evaluate(() => document.querySelectorAll('#of-btc .of-btc-arrow').length === 2 && !document.getElementById('of-btc-chart').hidden && document.querySelectorAll('#of-btc-chart .of-btc-arrow').length === 2 && /15m.*60m/.test(document.querySelector('.of-btc-context').textContent)));
     await page.click('#of-btc>summary'); await page.waitForFunction(() => document.querySelector('#of-btc .of-explanation').textContent.includes('60m'));

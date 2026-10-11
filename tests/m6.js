@@ -192,11 +192,11 @@ const tests = {
       const cdp = await ctx.newCDPSession(page); await cdp.send('Performance.enable');
       const m0 = (await cdp.send('Performance.getMetrics')).metrics.find(m => m.name === 'ScriptDuration').value;
       const r = await page.evaluate(async () => {
-        let urls = 0; const long = [], sec = new Date().getSeconds(), orig = HTMLCanvasElement.prototype.toDataURL;
+        let urls = 0; const long = [], longDetails = [], sec = new Date().getSeconds(), orig = HTMLCanvasElement.prototype.toDataURL;
         HTMLCanvasElement.prototype.toDataURL = function (...a) { urls++; return orig.apply(this, a); };
-        const po = new PerformanceObserver(l => { for (const e of l.getEntries()) if (e.duration > 50) long.push(Math.round(e.duration)); }); try { po.observe({ type: 'longtask' }); } catch {}
+        const po = new PerformanceObserver(l => { for (const e of l.getEntries()) if (e.duration > 50) { long.push(Math.round(e.duration)); longDetails.push({ start: e.startTime, duration: e.duration, name: e.name, at: Date.now(), heap: performance.memory?.usedJSHeapSize, attribution: e.attribution.map(a => ({ name: a.name, type: a.containerType, id: a.containerId })) }); } }); try { po.observe({ type: 'longtask' }); } catch {}
         setTimeout(() => document.getElementById('refresh').click(), 2000);
-        await new Promise(r => setTimeout(r, 10000)); po.disconnect(); return { urls, long, sec };
+        await new Promise(r => setTimeout(r, 10000)); po.disconnect(); return { urls, long, longDetails, sec };
       });
       const m1 = (await cdp.send('Performance.getMetrics')).metrics.find(m => m.name === 'ScriptDuration').value;
       res[on ? 'an' : 'aus'] = { ...r, scriptMsPerS: Math.round((m1 - m0) * 1000 / 10) };

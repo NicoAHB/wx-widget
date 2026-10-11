@@ -23,7 +23,7 @@ const tap = async (page, selector) => {
 };
 const live = page => page.waitForFunction(() => document.getElementById('status').dataset.feed === 'live', null, { timeout: 20000 }).catch(() => {});
 const phone = { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 };
-const TG = { tg: { token: '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', chat: '987654321', on: true }, dc: { url: '', on: true }, ev: { alarm: true, pos: true, day: true, news: true } }; // Test-Token der Attrappe
+const TG = { tg: { token: '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', chat: '987654321', bchat: '987654321', on: true }, dc: { url: '', on: true }, ev: { alarm: true, pos: true, day: true, news: true } }; // Test-Token der Attrappe
 // Teilen-Menü wie in Safari: nur im selben Tippen; mode 'abort' = Nutzer bricht ab
 const shareStub = () => {
   window.__share = { calls: [], mode: 'ok' };
@@ -78,7 +78,7 @@ const ui = page => page.evaluate(() => {
     await page.evaluate(() => document.getElementById('tgb-now').scrollIntoView({ block: 'center' })); await tap(page, '#tgb-now');
     let docs = []; for (let i = 0; i < 20 && !docs.length; i++) { await page.waitForTimeout(250); docs = (await h.ctl('/sent')).filter(m => m.svc === 'tg' && m.method === 'sendDocument'); }
     t = await page.evaluate(() => document.getElementById('tgb-info').textContent);
-    check('… sendet die Datei direkt an Telegram, Stand in der Anzeige', docs.length === 1 && /Scalp-Desk-Sicherung/.test(docs[0].caption) && /Zuletzt gesendet \d/.test(t), JSON.stringify({ n: docs.length, caption: docs[0]?.caption?.split('\n')[0], info: t }));
+    check('… sendet die Datei direkt an Telegram, Stand in der Anzeige', docs.length === 1 && /SCALP-DESK-SICHERUNG/.test(docs[0].caption) && /Zuletzt gesendet \d/.test(t), JSON.stringify({ n: docs.length, caption: docs[0]?.caption?.split('\n')[0], info: t }));
     await tap(page, '#tgb-now'); await page.waitForTimeout(1500);
     const edits = (await h.ctl('/sent')).filter(m => m.svc === 'tg' && m.method === 'editMessageMedia');
     check('Nochmal senden ersetzt die vorige Nachricht (keine zweite Datei im Chat)', edits.length === 1 && (await h.ctl('/sent')).filter(m => m.method === 'sendDocument').length === 1, `${edits.length} ersetzt`);

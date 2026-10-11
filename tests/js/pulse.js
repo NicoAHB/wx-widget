@@ -7,15 +7,15 @@
 // und nachts zu träge. Höchstens eine Nachricht je Richtung in 30 Minuten, außer die Bewegung legt deutlich weiter zu
 // (mindestens das 1,5-Fache der gemeldeten; auch dann höchstens eine weitere). Inhalt nur Fakten: Richtung, Größe, Fenster,
 // Kurs, „ungewöhnlich stark für 14 Uhr“ mit der Schwelle und die Bewegung der Vorauswahl-Coins im selben Fenster – keine
-// Prognose. Nachts (22–7 Uhr Ortszeit) kommt sie lautlos. Ziel: Telegram „Kursalarm“ (bzw. Discord). Mit dem 24/7-Dienst ab
+// Prognose. Nachts (22–7 Uhr Ortszeit) kommt sie lautlos. Ziel: Telegram „Kursalarm“ (Telegram). Mit dem 24/7-Dienst ab
 // Version 1.1 übernimmt dieser die Meldung, auch bei geschlossener App: Die Schwellen reisen in der angehefteten Datei mit,
 // und die App sendet dann nicht zusätzlich (s247Covers).
 // var statt const/let: pulseKline und syncStreams können über Stream und Sekundentakt schon laufen, bevor dieser Abschnitt ausgewertet ist
 var PULSE_WIN = [5, 15], PULSE_FLOOR = { 5: 0.5, 15: 0.8 }, PULSE_DAYS = 35, PULSE_EVERY = 24 * 3600e3, PULSE_RETRY = 15 * 60e3;
 var PULSE_GAP = 30 * 60e3, PULSE_MORE = 1.5, PULSE_MIN_N = 90, PULSE_KEY = 'scalpdesk.pulse.v1', PULSE_DB = 'pulse|BTCUSDT';
 var pulse = { rows: null, at: 0, busy: false, error: '', retryAt: 0, thr: null, m1: [], run: null, m1busy: false, m1at: 0, loaded: false };
-// Nur mit Kanal (Telegram oder Discord) und eingeschalteter Meldung – sonst keine Abrufe
-function pulseOn() { return !!chan?.ev?.pulse && ['tg', 'dc'].some(chanReady); }
+// Nur mit Kanal (Telegram) und eingeschalteter Meldung – sonst keine Abrufe
+function pulseOn() { return !!chan?.ev?.pulse && ['tg'].some(chanReady); }
 function pulseWants() { return !!pulse && pulseOn(); }
 // Stunde (UTC) und Tagesart eines Fensters, das zum Zeitpunkt t endet
 function pulseSlot(t) { const d = new Date(t - 1), wd = d.getUTCDay(); return { h: d.getUTCHours(), we: wd === 0 || wd === 6 }; }
@@ -58,9 +58,7 @@ function pulseDecide(moves, thr, now, last = {}) {
 }
 // Nachrichtentext: nur Fakten
 function pulseText(p, price, hourLocal, others) {
-  const pc = v => `${signed(v)} %`;
-  return `⚡ BTC-Puls: BTC ${pc(p.mv)} in ${p.w} Min. (${priceText(price)} USDT)${p.more ? ' – Bewegung legt weiter zu' : ''} – ungewöhnlich stark für ${hourLocal} Uhr (Schwelle ${number(p.lim)} %)`
-    + (others.length ? `\nVorauswahl im selben Zeitraum: ${others.map(([c, v]) => `${c} ${pc(v)}`).join(' · ')}` : '');
+  return formatMessage('pulse', { coin: 'BTC', change: p.mv, minutes: p.w, price, threshold: p.lim, reason: `ungewöhnlich stark für ${hourLocal} Uhr`, more: p.more, others });
 }
 // ---- Daten ----
 async function pulseDbGet() {
@@ -132,8 +130,8 @@ async function pulseOthers(w, now) {
 async function pulseSend(p, price, now) {
   const others = await pulseOthers(p.w, now);
   const hLocal = new Date(now).getHours(), text = pulseText(p, price, String(hLocal).padStart(2, '0'), others), silent = hLocal >= 22 || hLocal < 7;
-  simpleToast('pulse:' + p.d, 'alarm ' + p.d, text.split('\n')[0], null, p.d === 'up' ? 'green' : 'orange');
-  desktopNotify(`⚡ BTC ${signed(p.mv)} % in ${p.w} Min.`, text.replace(/\n/g, ' – '), 'pulse');
+  simpleToast('pulse:' + p.d, 'alarm ' + p.d, telegramPlain(text).split('\n')[0], null, p.d === 'up' ? 'green' : 'orange');
+  desktopNotify(`⚡ BTC ${signed(p.mv)} % in ${p.w} Min.`, telegramPlain(text).replace(/\n/g, ' – '), 'pulse');
   // je Richtung höchstens eine Nachricht in 30 Minuten (auch über Tabs hinweg), dazu höchstens eine „legt weiter zu“
   void notifyChannels('pulse', `pulse:${p.d}${p.more ? ':more' : ''}`, text, PULSE_GAP, { silent });
 }
@@ -150,7 +148,7 @@ function pulseHandover() { return pulse?.thr ? { thr: { wd: pulse.thr.wd, we: pu
 function renderPulseInfo() {
   if (!$('pulse-info')) return;
   const now = Date.now(), t = pulse?.thr;
-  put('pulse-info', !chan?.ev?.pulse ? 'aus' : !['tg', 'dc'].some(chanReady) ? 'wartet auf Telegram oder Discord' : t
+  put('pulse-info', !chan?.ev?.pulse ? 'aus' : !['tg'].some(chanReady) ? 'wartet auf Telegram' : t
     ? `jetzt (${String(new Date(now).getHours()).padStart(2, '0')} Uhr) ab ${number(pulseLimit(t, 5, now))} % in 5 Min. oder ${number(pulseLimit(t, 15, now))} % in 15 Min. · aus ${Math.round((t.to - t.from) / 864e5)} Tagen BTC-Kerzen`
     : pulse?.error ? `Schwellen noch nicht berechnet: ${pulse.error}` : 'Schwellen werden berechnet …');
 }

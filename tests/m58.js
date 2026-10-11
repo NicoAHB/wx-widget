@@ -279,7 +279,7 @@ const tests = {
     const txt = s[0]?.text || '';
     const allFresh = (await h.ctl('/sent')).filter(m => m.svc === 'tg' && !m.method && m.at >= t);
     check('Frisch bestätigte Formation (live, ≥ 80 %): genau eine Meldung in den Chartmuster-Chat, nicht in Kursalarm', s.length === 1 && allFresh.length === 1, JSON.stringify({ patterns: s.map(x => x.text?.split('\n')[0]), all: allFresh.map(x => ({ chat: String(x.chat_id), at: x.at, title: x.text?.split('\n')[0] })) }));
-    check('Meldung: Muster, Coin, Intervall, Status, Ziel und Invalidierung; Kennzeichnung „regelbasiert“ vs. „erlernt“; keine Erfolgswahrscheinlichkeit', /^📐 Chartmuster: Doppel-Boden · TG\/USDT Spot · 1h\n/.test(txt) && /Ausbruch bestätigt · Richtung aufwärts/.test(txt) && /rechnerisches Ziel/.test(txt) && /ungültig bei/.test(txt) && /Regelbasiert \(Modell pat-1\), Regelgüte 85 %/.test(txt) && /Erlernt: noch zu wenige vergleichbare Fälle \(\d+ von mindestens 10\)/.test(txt) && /keine Erfolgswahrscheinlichkeit/.test(txt), txt);
+    check('Meldung: Muster, Coin, Intervall, Status, Ziel und Invalidierung; Regelgüte vs. Erlernt, keine Erfolgswahrscheinlichkeit', /^<b>🟢⬆️ AUFWÄRTS · Doppel-Boden<\/b> · TG\/USDT\n📊 <b>TG\/USDT<\/b> Spot · 1h\n✅ Ausbruch bestätigt/.test(txt) && /⭐ <b>Ziel: [\d.,]+ USD<\/b> ⭐/.test(txt) && /Ungültig bei: <code>[\d.,]+ USD<\/code>/.test(txt) && /Regelgüte: ▓{9}░ 85 %/.test(txt) && /Erlernt: \d+\/10 Fälle ⚠️ zu wenig Daten/.test(txt) && /keine Erfolgswahrscheinlichkeit/.test(txt) && /🕐 \d\d:\d\d:\d\d · Modell pat-1$/.test(txt), txt);
     t = Date.now(); await fire(); await fire({ q: 70, shift: 1 }); await fire({ kind: 'candle', id: 'hammer', shift: 2 }); await fire({ back: 5, shift: 3 }); await page.waitForTimeout(1500); s = await sentP(t);
     check('Gleicher Fall nicht noch einmal; Regelgüte < 80 %, Einzelkerze und älter bestätigte Formation: keine Meldung', s.length === 0, JSON.stringify(s.map(x => x.text?.split('\n')[0])));
     // Ziel aus: keine Meldung, Epoche zählt hoch
@@ -292,7 +292,7 @@ const tests = {
     const learned = await page.evaluate(() => { const mk = (i, out) => { const c = { mkt: 'spot', sym: 'LRNUSDT', iv: '1h', pat: 'double_bottom', kind: 'form', dir: 'bull', t0: 4e12 + i * 1e7, t1: 4e12 + i * 1e7 + 5e6, tc: 4e12 + i * 1e7 + 6e6, p0: 100, model: 'pat-1', profile: 'H12-e0.10', q: 80, at: 1, src: 'live', rules: [], res: { at: 1, tH: 2, ph: 101, r: 1, out, path: [0, 1] } }; c.id = __g09.pkId(c); return c; };
       __g09.pkMerge(Array.from({ length: 10 }, (_, i) => mk(i, i < 7 ? 'auf' : i < 9 ? 'ab' : 'seitwärts')));
       return __g09.patTgText({ ...mk(99, 'auf'), res: null, q: 90 }, { status: 'Ausbruch bestätigt', levels: {} }); });
-    check('Ab 10 vergleichbaren Fällen: „Erlernt (live protokolliert): nach 12 Kerzen 7 von 10 aufwärts, 2 abwärts, 1 seitwärts“', /Erlernt \(live protokolliert\): nach 12 Kerzen 7 von 10 aufwärts, 2 abwärts, 1 seitwärts/.test(learned), learned);
+    check('Ab 10 vergleichbaren Fällen: Erlernt 7/10, live nach 12 Kerzen, 7 aufwärts / 2 abwärts / 1 seitwärts', /Erlernt: 7\/10 Fälle/.test(learned) && /Datenbasis: live protokolliert/.test(learned) && /Beobachtung: nach 12 Kerzen/.test(learned) && /Aufwärts: 7 Fälle/.test(learned) && /Abwärts: 2 Fälle/.test(learned) && /Seitwärts: 1 Fälle/.test(learned) && !/zu wenig Daten/.test(learned), learned);
     check('keine Fehler (tg)', !real(errors).length, real(errors).join(' | ')); await ctx.close();
   },
 };
