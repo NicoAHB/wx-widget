@@ -1,0 +1,3582 @@
+{
+  "version": "3.64.0",
+  "serviceVersion": "2.12.0",
+  "checkedAt": "2026-10-11T23:47:32.012762+00:00",
+  "fullRunSource": "d733f4a",
+  "followupSource": "f9ccffb3a914a8f7fe6f26d046a9290d65981b72",
+  "totalTargets": 161,
+  "passed": 5133,
+  "total": 5133,
+  "frozenProductFiles": 145,
+  "unchangedFromFullRun": 142,
+  "changedFromFullRun": [
+    "bundles/3.64.0/manifest.json",
+    "sw.js",
+    "weather-widget-v2.html"
+  ],
+  "originalFullRun": [
+    {
+      "target": "unit-chart-detail",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "35",
+        "35"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-chart-pattern-chips",
+      "exit": 0,
+      "seconds": 0.0,
+      "counts": [
+        "17",
+        "17"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m92",
+      "exit": 0,
+      "seconds": 7.7,
+      "counts": [
+        "37",
+        "37"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-pattern-projection",
+      "exit": 0,
+      "seconds": 0.0,
+      "counts": [
+        "22",
+        "22"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-github-sync",
+      "exit": 0,
+      "seconds": 0.5,
+      "counts": [
+        "24",
+        "24"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m91",
+      "exit": 0,
+      "seconds": 3.6,
+      "counts": [
+        "8",
+        "8"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m90",
+      "exit": 0,
+      "seconds": 8.9,
+      "counts": [
+        "18",
+        "18"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-muster-bot",
+      "exit": 0,
+      "seconds": 0.0,
+      "counts": [
+        "23",
+        "23"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-muster-feed",
+      "exit": 0,
+      "seconds": 0.0,
+      "counts": [
+        "8",
+        "8"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-muster-paper",
+      "exit": 0,
+      "seconds": 0.0,
+      "counts": [
+        "9",
+        "9"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m89",
+      "exit": 0,
+      "seconds": 3.7,
+      "counts": [
+        "18",
+        "18"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-market-intervals",
+      "exit": 0,
+      "seconds": 0.0,
+      "counts": [
+        "7",
+        "7"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m88",
+      "exit": 0,
+      "seconds": 4.4,
+      "counts": [
+        "16",
+        "16"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-patterns-only",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "16",
+        "16"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-telegram-format",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "33",
+        "33"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m87",
+      "exit": 0,
+      "seconds": 18.8,
+      "counts": [
+        "22",
+        "22"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-paper-bot",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "34",
+        "34"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-paper-controller",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "11",
+        "11"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-paper-worker",
+      "exit": 0,
+      "seconds": 2.1,
+      "counts": [
+        "5",
+        "5"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-adaptive-grid",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "54",
+        "54"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-adaptive-grid-feed",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "15",
+        "15"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-adaptive-grid-runtime",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "37",
+        "37"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-orderflow-demo",
+      "exit": 0,
+      "seconds": 0.0,
+      "counts": [
+        "30",
+        "30"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-orderflow-signal",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "69",
+        "69"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-orderflow-feed",
+      "exit": 0,
+      "seconds": 0.0,
+      "counts": [
+        "19",
+        "19"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-orderflow-journal",
+      "exit": 0,
+      "seconds": 0.0,
+      "counts": [
+        "19",
+        "19"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-orderflow-explainer",
+      "exit": 0,
+      "seconds": 8.3,
+      "counts": [
+        "12",
+        "12"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-orderflow",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "52",
+        "52"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-confluence-risk",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "28",
+        "28"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-confluence-evidence",
+      "exit": 0,
+      "seconds": 0.0,
+      "counts": [
+        "18",
+        "18"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-signal-overview",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "27",
+        "27"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-confluence-costs",
+      "exit": 0,
+      "seconds": 0.2,
+      "counts": [
+        "46",
+        "46"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-confluence-presentation",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "23",
+        "23"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-appearance",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "23",
+        "23"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-release",
+      "exit": 0,
+      "seconds": 0.2,
+      "counts": [
+        "6",
+        "6"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-model-archive",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "13",
+        "13"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-bot-limits",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "37",
+        "37"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-bot-simulation",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "16",
+        "16"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-po3",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "35",
+        "35"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-po3-service",
+      "exit": 0,
+      "seconds": 0.2,
+      "counts": [
+        "20",
+        "20"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-po3-stream",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "19",
+        "19"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-confluence-service",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "26",
+        "26"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-confluence-replay",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "33",
+        "33"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-bitget-history",
+      "exit": 0,
+      "seconds": 0.2,
+      "counts": [
+        "15",
+        "15"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-confluence-live",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "46",
+        "46"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-bitget-patterns",
+      "exit": 0,
+      "seconds": 0.2,
+      "counts": [
+        "20",
+        "20"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-bitget",
+      "exit": 0,
+      "seconds": 0.2,
+      "counts": [
+        "55",
+        "55"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-confluence",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "135",
+        "135"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-247e",
+      "exit": 0,
+      "seconds": 0.5,
+      "counts": [
+        "38",
+        "38"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-m8",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "24",
+        "24"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-zz",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "28",
+        "28"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-zzp",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "17",
+        "17"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-div",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "10",
+        "10"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-ew",
+      "exit": 0,
+      "seconds": 0.7,
+      "counts": [
+        "27",
+        "27"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-fib",
+      "exit": 0,
+      "seconds": 0.0,
+      "counts": [
+        "6",
+        "6"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-ob",
+      "exit": 0,
+      "seconds": 0.0,
+      "counts": [
+        "9",
+        "9"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-cd",
+      "exit": 0,
+      "seconds": 0.0,
+      "counts": [
+        "16",
+        "16"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-hl",
+      "exit": 0,
+      "seconds": 0.0,
+      "counts": [
+        "13",
+        "13"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-ec",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "22",
+        "22"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-cn",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "40",
+        "40"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-wl",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "64",
+        "64"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-fmt",
+      "exit": 0,
+      "seconds": 7.3,
+      "counts": [
+        "4",
+        "4"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-vola",
+      "exit": 0,
+      "seconds": 2.6,
+      "counts": [
+        "44",
+        "44"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-247",
+      "exit": 0,
+      "seconds": 0.6,
+      "counts": [
+        "96",
+        "96"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-247b",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "25",
+        "25"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-pub",
+      "exit": 0,
+      "seconds": 9.7,
+      "counts": [
+        "7",
+        "7"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-247d",
+      "exit": 0,
+      "seconds": 3.5,
+      "counts": [
+        "16",
+        "16"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-247c",
+      "exit": 0,
+      "seconds": 0.2,
+      "counts": [
+        "55",
+        "55"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-pulse",
+      "exit": 0,
+      "seconds": 2.8,
+      "counts": [
+        "44",
+        "44"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-lots",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "31",
+        "31"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-acct",
+      "exit": 0,
+      "seconds": 0.0,
+      "counts": [
+        "39",
+        "39"
+      ],
+      "failed": []
+    },
+    {
+      "target": "inst-247",
+      "exit": 0,
+      "seconds": 69.6,
+      "counts": [
+        "35",
+        "35"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m86",
+      "exit": 0,
+      "seconds": 34.8,
+      "counts": [
+        "18",
+        "18"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m85",
+      "exit": 1,
+      "seconds": 73.5,
+      "counts": [
+        "25",
+        "26"
+      ],
+      "failed": [
+        "✗ Live-PnL steigt, gleiche Karte bleibt erhalten"
+      ]
+    },
+    {
+      "target": "m84",
+      "exit": 0,
+      "seconds": 47.3,
+      "counts": [
+        "177",
+        "177"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m83",
+      "exit": 0,
+      "seconds": 29.0,
+      "counts": [
+        "49",
+        "49"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m82",
+      "exit": 0,
+      "seconds": 7.7,
+      "counts": [
+        "45",
+        "45"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m81",
+      "exit": 0,
+      "seconds": 40.0,
+      "counts": [
+        "41",
+        "41"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m80",
+      "exit": 0,
+      "seconds": 9.0,
+      "counts": [
+        "51",
+        "51"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m79",
+      "exit": 0,
+      "seconds": 27.6,
+      "counts": [
+        "49",
+        "49"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m78",
+      "exit": 0,
+      "seconds": 20.5,
+      "counts": [
+        "16",
+        "16"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m77",
+      "exit": 0,
+      "seconds": 18.2,
+      "counts": [
+        "35",
+        "35"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m76",
+      "exit": 0,
+      "seconds": 11.1,
+      "counts": [
+        "19",
+        "19"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m75",
+      "exit": 0,
+      "seconds": 49.1,
+      "counts": [
+        "15",
+        "15"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m74",
+      "exit": 0,
+      "seconds": 63.5,
+      "counts": [
+        "73",
+        "73"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m73",
+      "exit": 0,
+      "seconds": 7.7,
+      "counts": [
+        "20",
+        "20"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m72",
+      "exit": 0,
+      "seconds": 7.8,
+      "counts": [
+        "28",
+        "28"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m71",
+      "exit": 0,
+      "seconds": 9.7,
+      "counts": [
+        "23",
+        "23"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m70",
+      "exit": 0,
+      "seconds": 30.7,
+      "counts": [
+        "61",
+        "61"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m69",
+      "exit": 0,
+      "seconds": 10.3,
+      "counts": [
+        "19",
+        "19"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m68",
+      "exit": 0,
+      "seconds": 20.1,
+      "counts": [
+        "23",
+        "23"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m67",
+      "exit": 0,
+      "seconds": 14.4,
+      "counts": [
+        "22",
+        "22"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m66",
+      "exit": 0,
+      "seconds": 3.9,
+      "counts": [
+        "14",
+        "14"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m65",
+      "exit": 0,
+      "seconds": 6.1,
+      "counts": [
+        "12",
+        "12"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m64",
+      "exit": 0,
+      "seconds": 4.0,
+      "counts": [
+        "19",
+        "19"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m63",
+      "exit": 0,
+      "seconds": 17.6,
+      "counts": [
+        "36",
+        "36"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m62",
+      "exit": 0,
+      "seconds": 3.0,
+      "counts": [
+        "8",
+        "8"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m61",
+      "exit": 0,
+      "seconds": 2.7,
+      "counts": [
+        "8",
+        "8"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m60",
+      "exit": 0,
+      "seconds": 11.3,
+      "counts": [
+        "14",
+        "14"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m59",
+      "exit": 1,
+      "seconds": 4.8,
+      "counts": [
+        "1",
+        "2"
+      ],
+      "failed": [
+        "  ✗ Abbruch — page.evaluate: TypeError: Cannot read properties of undefined (reading 'symbol')"
+      ]
+    },
+    {
+      "target": "m58",
+      "exit": 0,
+      "seconds": 44.9,
+      "counts": [
+        "60",
+        "60"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m57",
+      "exit": 0,
+      "seconds": 55.8,
+      "counts": [
+        "41",
+        "41"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m56",
+      "exit": 0,
+      "seconds": 105.8,
+      "counts": [
+        "55",
+        "55"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m55",
+      "exit": 0,
+      "seconds": 129.7,
+      "counts": [
+        "49",
+        "49"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m54",
+      "exit": 0,
+      "seconds": 192.8,
+      "counts": [
+        "52",
+        "52"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m53",
+      "exit": 0,
+      "seconds": 212.9,
+      "counts": [
+        "102",
+        "102"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m52",
+      "exit": 0,
+      "seconds": 91.6,
+      "counts": [
+        "101",
+        "101"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m51",
+      "exit": 0,
+      "seconds": 73.4,
+      "counts": [
+        "73",
+        "73"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m50",
+      "exit": 0,
+      "seconds": 113.3,
+      "counts": [
+        "118",
+        "118"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m49",
+      "exit": 0,
+      "seconds": 127.3,
+      "counts": [
+        "18",
+        "18"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m48",
+      "exit": 0,
+      "seconds": 63.8,
+      "counts": [
+        "81",
+        "81"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m47",
+      "exit": 1,
+      "seconds": 224.6,
+      "counts": [
+        "50",
+        "51"
+      ],
+      "failed": [
+        "  ✗ 5000 Trades: Notiz speichern samt Neuzeichnen im Median 524 ms (vorher 2,2 s) — 584, 729, 524, 304, 224 ms"
+      ]
+    },
+    {
+      "target": "m46",
+      "exit": 0,
+      "seconds": 110.1,
+      "counts": [
+        "40",
+        "40"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m45",
+      "exit": 0,
+      "seconds": 122.6,
+      "counts": [
+        "75",
+        "75"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m44",
+      "exit": 0,
+      "seconds": 38.7,
+      "counts": [
+        "27",
+        "27"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m43",
+      "exit": 0,
+      "seconds": 19.7,
+      "counts": [
+        "7",
+        "7"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m42",
+      "exit": 0,
+      "seconds": 47.4,
+      "counts": [
+        "18",
+        "18"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m41",
+      "exit": 0,
+      "seconds": 26.4,
+      "counts": [
+        "20",
+        "20"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m40",
+      "exit": 0,
+      "seconds": 63.8,
+      "counts": [
+        "40",
+        "40"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m39",
+      "exit": 0,
+      "seconds": 57.6,
+      "counts": [
+        "50",
+        "50"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m38",
+      "exit": 0,
+      "seconds": 33.9,
+      "counts": [
+        "20",
+        "20"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m37",
+      "exit": 0,
+      "seconds": 35.8,
+      "counts": [
+        "22",
+        "22"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m36",
+      "exit": 0,
+      "seconds": 206.3,
+      "counts": [
+        "20",
+        "20"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m35",
+      "exit": 0,
+      "seconds": 185.2,
+      "counts": [
+        "40",
+        "40"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m34",
+      "exit": 0,
+      "seconds": 48.8,
+      "counts": [
+        "9",
+        "9"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m33",
+      "exit": 0,
+      "seconds": 42.8,
+      "counts": [
+        "16",
+        "16"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m32",
+      "exit": 0,
+      "seconds": 137.5,
+      "counts": [
+        "5",
+        "5"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m31",
+      "exit": 1,
+      "seconds": 54.2,
+      "counts": [
+        "19",
+        "21"
+      ],
+      "failed": [
+        "  ✗ Handy 390 px: Live-Werte verschieben nichts (Chart und Kacheln stehen) — {\"a0\":857,\"a1\":907}",
+        "  ✗ Handy 320 px: Live-Werte verschieben nichts (Chart und Kacheln stehen) — {\"a0\":931,\"a1\":935}"
+      ]
+    },
+    {
+      "target": "m30",
+      "exit": 0,
+      "seconds": 49.8,
+      "counts": [
+        "32",
+        "32"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m29",
+      "exit": 0,
+      "seconds": 15.1,
+      "counts": [
+        "12",
+        "12"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m28",
+      "exit": 0,
+      "seconds": 52.9,
+      "counts": [
+        "39",
+        "39"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m27",
+      "exit": 0,
+      "seconds": 33.8,
+      "counts": [
+        "22",
+        "22"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m26",
+      "exit": 0,
+      "seconds": 41.1,
+      "counts": [
+        "18",
+        "18"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m25",
+      "exit": 0,
+      "seconds": 32.6,
+      "counts": [
+        "21",
+        "21"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m24",
+      "exit": 1,
+      "seconds": 45.7,
+      "counts": [
+        "27",
+        "28"
+      ],
+      "failed": [
+        "  ✗ Erklärung öffnet über der Seite, ganz im Fenster — {\"l\":298,\"r\":678,\"t\":731,\"b\":951}"
+      ]
+    },
+    {
+      "target": "m23",
+      "exit": 0,
+      "seconds": 201.4,
+      "counts": [
+        "25",
+        "25"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m22",
+      "exit": 0,
+      "seconds": 143.8,
+      "counts": [
+        "26",
+        "26"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m21",
+      "exit": 0,
+      "seconds": 33.2,
+      "counts": [
+        "14",
+        "14"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m20",
+      "exit": 0,
+      "seconds": 43.0,
+      "counts": [
+        "12",
+        "12"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m19",
+      "exit": 0,
+      "seconds": 32.6,
+      "counts": [
+        "24",
+        "24"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m18",
+      "exit": 0,
+      "seconds": 45.8,
+      "counts": [
+        "31",
+        "31"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m17",
+      "exit": 0,
+      "seconds": 27.3,
+      "counts": [
+        "16",
+        "16"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m16",
+      "exit": 0,
+      "seconds": 41.3,
+      "counts": [
+        "23",
+        "23"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m15",
+      "exit": 0,
+      "seconds": 38.6,
+      "counts": [
+        "23",
+        "23"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m14",
+      "exit": 0,
+      "seconds": 102.8,
+      "counts": [
+        "18",
+        "18"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m13",
+      "exit": 0,
+      "seconds": 27.0,
+      "counts": [
+        "13",
+        "13"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m12",
+      "exit": 1,
+      "seconds": 14.3,
+      "counts": [
+        "16",
+        "17"
+      ],
+      "failed": [
+        "  ✗ iPhone Vollbild gedreht (quer): Kursspalte wie bisher — {\"gedreht\":true,\"schildchen\":0,\"kurse\":3,\"verdeckt\":2}"
+      ]
+    },
+    {
+      "target": "m11",
+      "exit": 0,
+      "seconds": 50.0,
+      "counts": [
+        "36",
+        "36"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m10",
+      "exit": 1,
+      "seconds": 78.5,
+      "counts": [
+        "89",
+        "93"
+      ],
+      "failed": [
+        "  ✗ iPhone hochkant 390×844: Vollbild öffnet, Werkzeuge eingeklappt, Chart nutzt die volle Höhe — {\"chart\":\"820×274\",\"sec\":\"844×390\",\"tools\":0,\"rot\":true}",
+        "  ✗ Handy quer 844×390: Vollbild öffnet, Werkzeuge eingeklappt, Chart nutzt die volle Höhe — {\"chart\":\"820×274\",\"sec\":\"844×390\",\"tools\":0,\"rot\":false}",
+        "  ✗ Bereichssicht/standard/320×780: Vollbild füllt den Bildschirm samt gezeichnetem Chart — {\"on\":true,\"display\":\"flex\",\"rot\":true,\"viewport\":[320,780],\"edges\":[0,0,320,780],\"chart\":[756,160],\"remaining\":152,\"svg\":[756,160],\"bar\":\"\",\"native\":false}",
+        "  ✗ Bereichssicht/dashboard/320×780: Vollbild füllt den Bildschirm samt gezeichnetem Chart — {\"on\":true,\"display\":\"flex\",\"rot\":true,\"viewport\":[320,780],\"edges\":[0,0,320,780],\"chart\":[756,160],\"remaining\":152,\"svg\":[756,160],\"bar\":\"\",\"native\":false}"
+      ]
+    },
+    {
+      "target": "m9",
+      "exit": 0,
+      "seconds": 129.2,
+      "counts": [
+        "9",
+        "9"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m8",
+      "exit": 0,
+      "seconds": 60.1,
+      "counts": [
+        "41",
+        "41"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m7",
+      "exit": 0,
+      "seconds": 259.8,
+      "counts": [
+        "47",
+        "47"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m6",
+      "exit": 0,
+      "seconds": 220.4,
+      "counts": [
+        "58",
+        "58"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m5",
+      "exit": 0,
+      "seconds": 84.9,
+      "counts": [
+        "24",
+        "24"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m4",
+      "exit": 0,
+      "seconds": 134.7,
+      "counts": [
+        "42",
+        "42"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m3",
+      "exit": 0,
+      "seconds": 55.7,
+      "counts": [
+        "67",
+        "67"
+      ],
+      "failed": []
+    },
+    {
+      "target": "ui",
+      "exit": 0,
+      "seconds": 54.8,
+      "counts": [
+        "63",
+        "63"
+      ],
+      "failed": []
+    },
+    {
+      "target": "functional",
+      "exit": 0,
+      "seconds": 84.6,
+      "counts": [
+        "35",
+        "35"
+      ],
+      "failed": []
+    },
+    {
+      "target": "statuscheck",
+      "exit": 0,
+      "seconds": 2.5,
+      "counts": [
+        "7",
+        "7"
+      ],
+      "failed": []
+    },
+    {
+      "target": "smoke",
+      "exit": 0,
+      "seconds": 17.6,
+      "counts": null,
+      "failed": []
+    },
+    {
+      "target": "visual",
+      "exit": 0,
+      "seconds": 15.2,
+      "counts": null,
+      "failed": []
+    }
+  ],
+  "followups": [
+    {
+      "target": "m92",
+      "exit": 0,
+      "counts": [
+        "42",
+        "42"
+      ],
+      "failed": [],
+      "seconds": null
+    },
+    {
+      "target": "m31",
+      "exit": 0,
+      "counts": [
+        "21",
+        "21"
+      ],
+      "failed": [],
+      "seconds": 58.1
+    },
+    {
+      "target": "m24",
+      "exit": 0,
+      "counts": [
+        "28",
+        "28"
+      ],
+      "failed": [],
+      "seconds": 53.0
+    },
+    {
+      "target": "m12",
+      "exit": 0,
+      "counts": [
+        "17",
+        "17"
+      ],
+      "failed": [],
+      "seconds": 18.1
+    },
+    {
+      "target": "m10",
+      "exit": 0,
+      "counts": [
+        "93",
+        "93"
+      ],
+      "failed": [],
+      "seconds": 85.7
+    },
+    {
+      "target": "m85",
+      "exit": 0,
+      "counts": [
+        "26",
+        "26"
+      ],
+      "failed": [],
+      "seconds": 72.1
+    },
+    {
+      "target": "m59",
+      "exit": 0,
+      "counts": [
+        "19",
+        "19"
+      ],
+      "failed": [],
+      "seconds": 18.0
+    },
+    {
+      "target": "m47",
+      "exit": 0,
+      "counts": [
+        "51",
+        "51"
+      ],
+      "failed": [],
+      "seconds": 200.3
+    },
+    {
+      "target": "m34",
+      "exit": 0,
+      "counts": [
+        "9",
+        "9"
+      ],
+      "failed": [],
+      "seconds": 55.9
+    },
+    {
+      "target": "m35",
+      "exit": 0,
+      "counts": [
+        "40",
+        "40"
+      ],
+      "failed": [],
+      "seconds": 131.5
+    },
+    {
+      "target": "m56",
+      "exit": 0,
+      "counts": [
+        "55",
+        "55"
+      ],
+      "failed": [],
+      "seconds": 101.1
+    },
+    {
+      "target": "m84",
+      "exit": 0,
+      "counts": [
+        "177",
+        "177"
+      ],
+      "failed": [],
+      "seconds": 37.1
+    },
+    {
+      "target": "m88",
+      "exit": 0,
+      "counts": [
+        "16",
+        "16"
+      ],
+      "failed": [],
+      "seconds": 6.3
+    },
+    {
+      "target": "m69",
+      "exit": 0,
+      "counts": [
+        "19",
+        "19"
+      ],
+      "failed": [],
+      "seconds": 10.6
+    },
+    {
+      "target": "unit-release",
+      "exit": 0,
+      "counts": [
+        "6",
+        "6"
+      ],
+      "failed": [],
+      "seconds": 0.2
+    },
+    {
+      "target": "functional",
+      "exit": 0,
+      "counts": [
+        "35",
+        "35"
+      ],
+      "failed": [],
+      "seconds": 91.0
+    },
+    {
+      "target": "statuscheck",
+      "exit": 0,
+      "counts": [
+        "7",
+        "7"
+      ],
+      "failed": [],
+      "seconds": 1.9
+    },
+    {
+      "target": "smoke",
+      "exit": 0,
+      "counts": null,
+      "failed": [],
+      "seconds": 17.2
+    },
+    {
+      "target": "visual",
+      "exit": 0,
+      "counts": null,
+      "failed": [],
+      "seconds": 15.9
+    }
+  ],
+  "finalResults": [
+    {
+      "target": "unit-chart-detail",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "35",
+        "35"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-chart-pattern-chips",
+      "exit": 0,
+      "seconds": 0.0,
+      "counts": [
+        "17",
+        "17"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m92",
+      "exit": 0,
+      "counts": [
+        "42",
+        "42"
+      ],
+      "failed": [],
+      "seconds": null
+    },
+    {
+      "target": "unit-pattern-projection",
+      "exit": 0,
+      "seconds": 0.0,
+      "counts": [
+        "22",
+        "22"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-github-sync",
+      "exit": 0,
+      "seconds": 0.5,
+      "counts": [
+        "24",
+        "24"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m91",
+      "exit": 0,
+      "seconds": 3.6,
+      "counts": [
+        "8",
+        "8"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m90",
+      "exit": 0,
+      "seconds": 8.9,
+      "counts": [
+        "18",
+        "18"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-muster-bot",
+      "exit": 0,
+      "seconds": 0.0,
+      "counts": [
+        "23",
+        "23"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-muster-feed",
+      "exit": 0,
+      "seconds": 0.0,
+      "counts": [
+        "8",
+        "8"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-muster-paper",
+      "exit": 0,
+      "seconds": 0.0,
+      "counts": [
+        "9",
+        "9"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m89",
+      "exit": 0,
+      "seconds": 3.7,
+      "counts": [
+        "18",
+        "18"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-market-intervals",
+      "exit": 0,
+      "seconds": 0.0,
+      "counts": [
+        "7",
+        "7"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m88",
+      "exit": 0,
+      "counts": [
+        "16",
+        "16"
+      ],
+      "failed": [],
+      "seconds": 6.3
+    },
+    {
+      "target": "unit-patterns-only",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "16",
+        "16"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-telegram-format",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "33",
+        "33"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m87",
+      "exit": 0,
+      "seconds": 18.8,
+      "counts": [
+        "22",
+        "22"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-paper-bot",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "34",
+        "34"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-paper-controller",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "11",
+        "11"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-paper-worker",
+      "exit": 0,
+      "seconds": 2.1,
+      "counts": [
+        "5",
+        "5"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-adaptive-grid",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "54",
+        "54"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-adaptive-grid-feed",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "15",
+        "15"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-adaptive-grid-runtime",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "37",
+        "37"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-orderflow-demo",
+      "exit": 0,
+      "seconds": 0.0,
+      "counts": [
+        "30",
+        "30"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-orderflow-signal",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "69",
+        "69"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-orderflow-feed",
+      "exit": 0,
+      "seconds": 0.0,
+      "counts": [
+        "19",
+        "19"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-orderflow-journal",
+      "exit": 0,
+      "seconds": 0.0,
+      "counts": [
+        "19",
+        "19"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-orderflow-explainer",
+      "exit": 0,
+      "seconds": 8.3,
+      "counts": [
+        "12",
+        "12"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-orderflow",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "52",
+        "52"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-confluence-risk",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "28",
+        "28"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-confluence-evidence",
+      "exit": 0,
+      "seconds": 0.0,
+      "counts": [
+        "18",
+        "18"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-signal-overview",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "27",
+        "27"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-confluence-costs",
+      "exit": 0,
+      "seconds": 0.2,
+      "counts": [
+        "46",
+        "46"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-confluence-presentation",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "23",
+        "23"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-appearance",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "23",
+        "23"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-release",
+      "exit": 0,
+      "counts": [
+        "6",
+        "6"
+      ],
+      "failed": [],
+      "seconds": 0.2
+    },
+    {
+      "target": "unit-model-archive",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "13",
+        "13"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-bot-limits",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "37",
+        "37"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-bot-simulation",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "16",
+        "16"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-po3",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "35",
+        "35"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-po3-service",
+      "exit": 0,
+      "seconds": 0.2,
+      "counts": [
+        "20",
+        "20"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-po3-stream",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "19",
+        "19"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-confluence-service",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "26",
+        "26"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-confluence-replay",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "33",
+        "33"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-bitget-history",
+      "exit": 0,
+      "seconds": 0.2,
+      "counts": [
+        "15",
+        "15"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-confluence-live",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "46",
+        "46"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-bitget-patterns",
+      "exit": 0,
+      "seconds": 0.2,
+      "counts": [
+        "20",
+        "20"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-bitget",
+      "exit": 0,
+      "seconds": 0.2,
+      "counts": [
+        "55",
+        "55"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-confluence",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "135",
+        "135"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-247e",
+      "exit": 0,
+      "seconds": 0.5,
+      "counts": [
+        "38",
+        "38"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-m8",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "24",
+        "24"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-zz",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "28",
+        "28"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-zzp",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "17",
+        "17"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-div",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "10",
+        "10"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-ew",
+      "exit": 0,
+      "seconds": 0.7,
+      "counts": [
+        "27",
+        "27"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-fib",
+      "exit": 0,
+      "seconds": 0.0,
+      "counts": [
+        "6",
+        "6"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-ob",
+      "exit": 0,
+      "seconds": 0.0,
+      "counts": [
+        "9",
+        "9"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-cd",
+      "exit": 0,
+      "seconds": 0.0,
+      "counts": [
+        "16",
+        "16"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-hl",
+      "exit": 0,
+      "seconds": 0.0,
+      "counts": [
+        "13",
+        "13"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-ec",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "22",
+        "22"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-cn",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "40",
+        "40"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-wl",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "64",
+        "64"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-fmt",
+      "exit": 0,
+      "seconds": 7.3,
+      "counts": [
+        "4",
+        "4"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-vola",
+      "exit": 0,
+      "seconds": 2.6,
+      "counts": [
+        "44",
+        "44"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-247",
+      "exit": 0,
+      "seconds": 0.6,
+      "counts": [
+        "96",
+        "96"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-247b",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "25",
+        "25"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-pub",
+      "exit": 0,
+      "seconds": 9.7,
+      "counts": [
+        "7",
+        "7"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-247d",
+      "exit": 0,
+      "seconds": 3.5,
+      "counts": [
+        "16",
+        "16"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-247c",
+      "exit": 0,
+      "seconds": 0.2,
+      "counts": [
+        "55",
+        "55"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-pulse",
+      "exit": 0,
+      "seconds": 2.8,
+      "counts": [
+        "44",
+        "44"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-lots",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "31",
+        "31"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-acct",
+      "exit": 0,
+      "seconds": 0.0,
+      "counts": [
+        "39",
+        "39"
+      ],
+      "failed": []
+    },
+    {
+      "target": "inst-247",
+      "exit": 0,
+      "seconds": 69.6,
+      "counts": [
+        "35",
+        "35"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m86",
+      "exit": 0,
+      "seconds": 34.8,
+      "counts": [
+        "18",
+        "18"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m85",
+      "exit": 0,
+      "counts": [
+        "26",
+        "26"
+      ],
+      "failed": [],
+      "seconds": 72.1
+    },
+    {
+      "target": "m84",
+      "exit": 0,
+      "counts": [
+        "177",
+        "177"
+      ],
+      "failed": [],
+      "seconds": 37.1
+    },
+    {
+      "target": "m83",
+      "exit": 0,
+      "seconds": 29.0,
+      "counts": [
+        "49",
+        "49"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m82",
+      "exit": 0,
+      "seconds": 7.7,
+      "counts": [
+        "45",
+        "45"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m81",
+      "exit": 0,
+      "seconds": 40.0,
+      "counts": [
+        "41",
+        "41"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m80",
+      "exit": 0,
+      "seconds": 9.0,
+      "counts": [
+        "51",
+        "51"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m79",
+      "exit": 0,
+      "seconds": 27.6,
+      "counts": [
+        "49",
+        "49"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m78",
+      "exit": 0,
+      "seconds": 20.5,
+      "counts": [
+        "16",
+        "16"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m77",
+      "exit": 0,
+      "seconds": 18.2,
+      "counts": [
+        "35",
+        "35"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m76",
+      "exit": 0,
+      "seconds": 11.1,
+      "counts": [
+        "19",
+        "19"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m75",
+      "exit": 0,
+      "seconds": 49.1,
+      "counts": [
+        "15",
+        "15"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m74",
+      "exit": 0,
+      "seconds": 63.5,
+      "counts": [
+        "73",
+        "73"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m73",
+      "exit": 0,
+      "seconds": 7.7,
+      "counts": [
+        "20",
+        "20"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m72",
+      "exit": 0,
+      "seconds": 7.8,
+      "counts": [
+        "28",
+        "28"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m71",
+      "exit": 0,
+      "seconds": 9.7,
+      "counts": [
+        "23",
+        "23"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m70",
+      "exit": 0,
+      "seconds": 30.7,
+      "counts": [
+        "61",
+        "61"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m69",
+      "exit": 0,
+      "counts": [
+        "19",
+        "19"
+      ],
+      "failed": [],
+      "seconds": 10.6
+    },
+    {
+      "target": "m68",
+      "exit": 0,
+      "seconds": 20.1,
+      "counts": [
+        "23",
+        "23"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m67",
+      "exit": 0,
+      "seconds": 14.4,
+      "counts": [
+        "22",
+        "22"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m66",
+      "exit": 0,
+      "seconds": 3.9,
+      "counts": [
+        "14",
+        "14"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m65",
+      "exit": 0,
+      "seconds": 6.1,
+      "counts": [
+        "12",
+        "12"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m64",
+      "exit": 0,
+      "seconds": 4.0,
+      "counts": [
+        "19",
+        "19"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m63",
+      "exit": 0,
+      "seconds": 17.6,
+      "counts": [
+        "36",
+        "36"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m62",
+      "exit": 0,
+      "seconds": 3.0,
+      "counts": [
+        "8",
+        "8"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m61",
+      "exit": 0,
+      "seconds": 2.7,
+      "counts": [
+        "8",
+        "8"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m60",
+      "exit": 0,
+      "seconds": 11.3,
+      "counts": [
+        "14",
+        "14"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m59",
+      "exit": 0,
+      "counts": [
+        "19",
+        "19"
+      ],
+      "failed": [],
+      "seconds": 18.0
+    },
+    {
+      "target": "m58",
+      "exit": 0,
+      "seconds": 44.9,
+      "counts": [
+        "60",
+        "60"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m57",
+      "exit": 0,
+      "seconds": 55.8,
+      "counts": [
+        "41",
+        "41"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m56",
+      "exit": 0,
+      "counts": [
+        "55",
+        "55"
+      ],
+      "failed": [],
+      "seconds": 101.1
+    },
+    {
+      "target": "m55",
+      "exit": 0,
+      "seconds": 129.7,
+      "counts": [
+        "49",
+        "49"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m54",
+      "exit": 0,
+      "seconds": 192.8,
+      "counts": [
+        "52",
+        "52"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m53",
+      "exit": 0,
+      "seconds": 212.9,
+      "counts": [
+        "102",
+        "102"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m52",
+      "exit": 0,
+      "seconds": 91.6,
+      "counts": [
+        "101",
+        "101"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m51",
+      "exit": 0,
+      "seconds": 73.4,
+      "counts": [
+        "73",
+        "73"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m50",
+      "exit": 0,
+      "seconds": 113.3,
+      "counts": [
+        "118",
+        "118"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m49",
+      "exit": 0,
+      "seconds": 127.3,
+      "counts": [
+        "18",
+        "18"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m48",
+      "exit": 0,
+      "seconds": 63.8,
+      "counts": [
+        "81",
+        "81"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m47",
+      "exit": 0,
+      "counts": [
+        "51",
+        "51"
+      ],
+      "failed": [],
+      "seconds": 200.3
+    },
+    {
+      "target": "m46",
+      "exit": 0,
+      "seconds": 110.1,
+      "counts": [
+        "40",
+        "40"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m45",
+      "exit": 0,
+      "seconds": 122.6,
+      "counts": [
+        "75",
+        "75"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m44",
+      "exit": 0,
+      "seconds": 38.7,
+      "counts": [
+        "27",
+        "27"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m43",
+      "exit": 0,
+      "seconds": 19.7,
+      "counts": [
+        "7",
+        "7"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m42",
+      "exit": 0,
+      "seconds": 47.4,
+      "counts": [
+        "18",
+        "18"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m41",
+      "exit": 0,
+      "seconds": 26.4,
+      "counts": [
+        "20",
+        "20"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m40",
+      "exit": 0,
+      "seconds": 63.8,
+      "counts": [
+        "40",
+        "40"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m39",
+      "exit": 0,
+      "seconds": 57.6,
+      "counts": [
+        "50",
+        "50"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m38",
+      "exit": 0,
+      "seconds": 33.9,
+      "counts": [
+        "20",
+        "20"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m37",
+      "exit": 0,
+      "seconds": 35.8,
+      "counts": [
+        "22",
+        "22"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m36",
+      "exit": 0,
+      "seconds": 206.3,
+      "counts": [
+        "20",
+        "20"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m35",
+      "exit": 0,
+      "counts": [
+        "40",
+        "40"
+      ],
+      "failed": [],
+      "seconds": 131.5
+    },
+    {
+      "target": "m34",
+      "exit": 0,
+      "counts": [
+        "9",
+        "9"
+      ],
+      "failed": [],
+      "seconds": 55.9
+    },
+    {
+      "target": "m33",
+      "exit": 0,
+      "seconds": 42.8,
+      "counts": [
+        "16",
+        "16"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m32",
+      "exit": 0,
+      "seconds": 137.5,
+      "counts": [
+        "5",
+        "5"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m31",
+      "exit": 0,
+      "counts": [
+        "21",
+        "21"
+      ],
+      "failed": [],
+      "seconds": 58.1
+    },
+    {
+      "target": "m30",
+      "exit": 0,
+      "seconds": 49.8,
+      "counts": [
+        "32",
+        "32"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m29",
+      "exit": 0,
+      "seconds": 15.1,
+      "counts": [
+        "12",
+        "12"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m28",
+      "exit": 0,
+      "seconds": 52.9,
+      "counts": [
+        "39",
+        "39"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m27",
+      "exit": 0,
+      "seconds": 33.8,
+      "counts": [
+        "22",
+        "22"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m26",
+      "exit": 0,
+      "seconds": 41.1,
+      "counts": [
+        "18",
+        "18"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m25",
+      "exit": 0,
+      "seconds": 32.6,
+      "counts": [
+        "21",
+        "21"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m24",
+      "exit": 0,
+      "counts": [
+        "28",
+        "28"
+      ],
+      "failed": [],
+      "seconds": 53.0
+    },
+    {
+      "target": "m23",
+      "exit": 0,
+      "seconds": 201.4,
+      "counts": [
+        "25",
+        "25"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m22",
+      "exit": 0,
+      "seconds": 143.8,
+      "counts": [
+        "26",
+        "26"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m21",
+      "exit": 0,
+      "seconds": 33.2,
+      "counts": [
+        "14",
+        "14"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m20",
+      "exit": 0,
+      "seconds": 43.0,
+      "counts": [
+        "12",
+        "12"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m19",
+      "exit": 0,
+      "seconds": 32.6,
+      "counts": [
+        "24",
+        "24"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m18",
+      "exit": 0,
+      "seconds": 45.8,
+      "counts": [
+        "31",
+        "31"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m17",
+      "exit": 0,
+      "seconds": 27.3,
+      "counts": [
+        "16",
+        "16"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m16",
+      "exit": 0,
+      "seconds": 41.3,
+      "counts": [
+        "23",
+        "23"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m15",
+      "exit": 0,
+      "seconds": 38.6,
+      "counts": [
+        "23",
+        "23"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m14",
+      "exit": 0,
+      "seconds": 102.8,
+      "counts": [
+        "18",
+        "18"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m13",
+      "exit": 0,
+      "seconds": 27.0,
+      "counts": [
+        "13",
+        "13"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m12",
+      "exit": 0,
+      "counts": [
+        "17",
+        "17"
+      ],
+      "failed": [],
+      "seconds": 18.1
+    },
+    {
+      "target": "m11",
+      "exit": 0,
+      "seconds": 50.0,
+      "counts": [
+        "36",
+        "36"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m10",
+      "exit": 0,
+      "counts": [
+        "93",
+        "93"
+      ],
+      "failed": [],
+      "seconds": 85.7
+    },
+    {
+      "target": "m9",
+      "exit": 0,
+      "seconds": 129.2,
+      "counts": [
+        "9",
+        "9"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m8",
+      "exit": 0,
+      "seconds": 60.1,
+      "counts": [
+        "41",
+        "41"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m7",
+      "exit": 0,
+      "seconds": 259.8,
+      "counts": [
+        "47",
+        "47"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m6",
+      "exit": 0,
+      "seconds": 220.4,
+      "counts": [
+        "58",
+        "58"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m5",
+      "exit": 0,
+      "seconds": 84.9,
+      "counts": [
+        "24",
+        "24"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m4",
+      "exit": 0,
+      "seconds": 134.7,
+      "counts": [
+        "42",
+        "42"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m3",
+      "exit": 0,
+      "seconds": 55.7,
+      "counts": [
+        "67",
+        "67"
+      ],
+      "failed": []
+    },
+    {
+      "target": "ui",
+      "exit": 0,
+      "seconds": 54.8,
+      "counts": [
+        "63",
+        "63"
+      ],
+      "failed": []
+    },
+    {
+      "target": "functional",
+      "exit": 0,
+      "counts": [
+        "35",
+        "35"
+      ],
+      "failed": [],
+      "seconds": 91.0
+    },
+    {
+      "target": "statuscheck",
+      "exit": 0,
+      "counts": [
+        "7",
+        "7"
+      ],
+      "failed": [],
+      "seconds": 1.9
+    },
+    {
+      "target": "smoke",
+      "exit": 0,
+      "counts": null,
+      "failed": [],
+      "seconds": 17.2
+    },
+    {
+      "target": "visual",
+      "exit": 0,
+      "counts": null,
+      "failed": [],
+      "seconds": 15.9
+    }
+  ],
+  "finalProductHashes": {
+    "bundles/3.64.0/data/muster-start.json": "9690cb5f3de127396fdc10b8cf24bbd17833a0c26291a12b6e50aa797688fd09",
+    "bundles/3.64.0/manifest.json": "43dc432f25ecb5fc93f589f1bf2b20b620ae9b44aaa7f761c29439cdba4fb1f1",
+    "bundles/3.64.0/server/pattern-engine.mjs": "c52ba04ee26dd8b3f03f84898f91921ae0bc9310ae1751cd8e91926267054c5e",
+    "bundles/3.64.0/shared/adaptive-grid-feed.mjs": "376b78a470ab24f0534c1fe44bb9c57f0e31430baa450bb79bd4964986b9609d",
+    "bundles/3.64.0/shared/adaptive-grid.mjs": "87e9d3ae1f94160f2b10c6e8ec0fd5a71efea7c79c8241487c95ac183de38c9d",
+    "bundles/3.64.0/shared/bitget-patterns.mjs": "fa678f92b17980d832684ddb1a0e8a12ea8a09b7fc0b0377c3cbdee1b36c871b",
+    "bundles/3.64.0/shared/bitget-public.mjs": "0711e6f19a350f2a0924880a6444b30cc631dd8955973fb5e693503f4066576c",
+    "bundles/3.64.0/shared/bot-limits.mjs": "ba4c27f94c47963481cc63b315d880fdf8b52634c3758e2dd6f274c95dd1f22f",
+    "bundles/3.64.0/shared/bot-simulation-store.mjs": "94605d4ba1adb957564e044a044622ba3425ed12b2c51d6f1e8e933b454e363e",
+    "bundles/3.64.0/shared/bot-simulation.mjs": "e951eecdf013a7a6cc17afb7edbcb88c9060811c80ce8f145ffa3447001c2197",
+    "bundles/3.64.0/shared/bot-view.mjs": "cd16b04d6dfe6d93317cac947c480713949aa20c01f8076060fababdc543030b",
+    "bundles/3.64.0/shared/chart-detail.mjs": "8f9faf895d414c9e8f310881cf6c53cea19dc02ff2e28baf5c9e685ee90ec513",
+    "bundles/3.64.0/shared/chart-pattern-chips.mjs": "c69b83e5028207ebc4b4e528179bcbe4d6bb28ea3e8e052331b56dd81624f7e9",
+    "bundles/3.64.0/shared/confluence-core.mjs": "43cee18caca000b04651e197c10fd06d2866d53120e0a8758ac76e434a02fce9",
+    "bundles/3.64.0/shared/confluence-evidence.mjs": "8c3fe3db1da5e5442257ea483577fd3cadac3827a838b23b1a24dac74a70b1f3",
+    "bundles/3.64.0/shared/confluence-history.mjs": "7df47def13546078d70e3fbe605a0ff29d80c611659cbda135b2267a40f44200",
+    "bundles/3.64.0/shared/confluence-legacy-core.mjs": "70e132c6628fae3fe59f1d9a820e09f556cfd98416a909845b901dce2985c6ad",
+    "bundles/3.64.0/shared/confluence-legacy-indicators.mjs": "9105a8ac09d5557e90ec05fd3035c915b36b8e345b31b96a158d0001da505540",
+    "bundles/3.64.0/shared/confluence-legacy-live.mjs": "bd9b1d10b9b696d11bbd25e1bb516a3f68f7d40099cdd9f2000105a7e39dde1b",
+    "bundles/3.64.0/shared/confluence-legacy-pattern-score.mjs": "585334abda80fd8802128e181d8efc04264770f3ee2a7f866d24481a6f7eabad",
+    "bundles/3.64.0/shared/confluence-legacy-replay.mjs": "f3f55b27498a8e13c5bd470d6cbe2d6665a233d9d5baa6bbe1cda2f577ffd96c",
+    "bundles/3.64.0/shared/confluence-live.mjs": "6dfc251c8f673c252754d0be13a02c9e9bb1fa97aefd3fccd244e415875bb3be",
+    "bundles/3.64.0/shared/confluence-presentation.mjs": "d23018d6f9bdfe1f1e90369bcbd89210b613c4be975becb7f35081e656a32822",
+    "bundles/3.64.0/shared/confluence-replay-store.mjs": "502590bc818e0697c6b6bcb1e54a9b449dba976d1578f7d001a9475b7cd1132b",
+    "bundles/3.64.0/shared/confluence-replay.mjs": "af2653ebd972a88fc5ed1e4a314828b772050bf095eed70a3b4877f3e5570b00",
+    "bundles/3.64.0/shared/confluence-risk-view.mjs": "2f14726a9e46dffca290cbfc0e80a34d44be65e99df956452ef3bc2bf84efa5a",
+    "bundles/3.64.0/shared/confluence-service.mjs": "698b434ca864ff532ecb38f7e3a783a5ec43b9d6cec230630d021a5bbc7d4ca1",
+    "bundles/3.64.0/shared/confluence-worker.mjs": "9f7b2067b36ea78086ee9ddf49c39b656cf600d6d2e93c35148d4f2599b01832",
+    "bundles/3.64.0/shared/github-sync-view.mjs": "1ec538ce7eafe679fdf9b8060105bd22f920a909d2c49a658badecc1734b9e38",
+    "bundles/3.64.0/shared/github-sync.mjs": "1bb89d288e8a5b56ccb6543a845119e6f66bd068fdbace61d7a421b52dd3820f",
+    "bundles/3.64.0/shared/indicators.mjs": "9105a8ac09d5557e90ec05fd3035c915b36b8e345b31b96a158d0001da505540",
+    "bundles/3.64.0/shared/market-intervals.mjs": "8d2781e22bed81fa13a361aa1ccd25dafa62364fa1845dfc730893eae502d812",
+    "bundles/3.64.0/shared/model-archive.mjs": "d2b5df4622599ee10e2c4e483986f85f25c2448f8032e8460e1ea4b4cdf212ff",
+    "bundles/3.64.0/shared/muster-bot-core.mjs": "c4cd9cf6501e7595372901302fc831451856f65f45915485d8f4f7a4a4fcd7a9",
+    "bundles/3.64.0/shared/muster-bot-feed.mjs": "e86a3da0eae70b8096ea185a48ca74b44259080358e95ed1305764040c17721e",
+    "bundles/3.64.0/shared/muster-bot-paper.mjs": "8ee4fc077c5331d0868a21e358193e58e5cb613ed7f90a406f8ca2b5318db130",
+    "bundles/3.64.0/shared/muster-bot-store.mjs": "aa428ac803fc8cef00c7bde03f2a670faf7fab781ca650423ad267602c87a6dd",
+    "bundles/3.64.0/shared/muster-bot-view.mjs": "7a45293db948e10be7465c786505637a39f512604415af9199b8a5b48d2899d6",
+    "bundles/3.64.0/shared/muster-bot-worker.mjs": "bd5f7d60af8c4fffa9423a3a6a1a92bf43dd996b3592bc8f44b8d7f5535fe7c4",
+    "bundles/3.64.0/shared/orderflow-core.mjs": "2579ff7cd28586ed206629b27d2db2cb19677cbd8e013bf0c9839774ad6337b7",
+    "bundles/3.64.0/shared/orderflow-demo.mjs": "41469126cb67eb7f357f809bb89d8b8e792ef0f0c474cbce508e19a8c76c90a4",
+    "bundles/3.64.0/shared/orderflow-journal.mjs": "46be78d92a5434e6eb21c830e1afc14332776907e4c0cecb79885df0e748a834",
+    "bundles/3.64.0/shared/orderflow-signal-core.mjs": "c4e413e4733ea0638f0574137a9321ac087e42391802e8ebaf1446103dcb965c",
+    "bundles/3.64.0/shared/orderflow-signal-feed.mjs": "ed69334f8f4e9d078d3a7bf1821bbee4153c12c9b24e6e033edc53f07df69926",
+    "bundles/3.64.0/shared/orderflow-signal-view.mjs": "03a0a91b2bdc6ee1c9c526cd72a9e0f96b2e3991ba85682c0b5d06c187dea46f",
+    "bundles/3.64.0/shared/orderflow-view.mjs": "33a774aaf2b0cad284b0cc3e06448064e31912397de5e25c14b07a6fcb8518e9",
+    "bundles/3.64.0/shared/paper-bot-controller.mjs": "45ebbcf6ade108e69e8d49332300cdffd07c2731ae2de9aedac279a5b8456ee7",
+    "bundles/3.64.0/shared/paper-bot-store.mjs": "c5184216ec7a901b4dca078028a1968dd9e972f7930c03ab93fa9e9ee946d680",
+    "bundles/3.64.0/shared/paper-bot-view.mjs": "6413cb5fdf2bbbfe092db42f4298e69c129617b2cb2d8abd3368499a67133985",
+    "bundles/3.64.0/shared/paper-bot-worker.mjs": "f5b26d50f054dfe38308dfe5c83020f29cc17a764ec460334bdb42896383a109",
+    "bundles/3.64.0/shared/paper-bot.mjs": "0603de27a26e69cea33c5863a269a0b6694bca8a801b18c7b807f91ae6187c95",
+    "bundles/3.64.0/shared/pattern-projection.mjs": "1e2444691e3e210eeff673b8b2ae3b91edb9581fccbacc2dea165f76ebeda5d7",
+    "bundles/3.64.0/shared/pattern-score.mjs": "585334abda80fd8802128e181d8efc04264770f3ee2a7f866d24481a6f7eabad",
+    "bundles/3.64.0/shared/po3-core.mjs": "abdb41c5cba00b1d6e9c98e6ba9a92fff3f62f9ff2ce47363cc2bdf5e32aaf08",
+    "bundles/3.64.0/shared/po3-feed.mjs": "cbee9b7bb5413eba98f817b867a51e416bee6d1f5fb072675cc5242990a90879",
+    "bundles/3.64.0/shared/po3-service.mjs": "c31ee68aab69a0117f6cfdb49c3c1a5612fbbcc08d1bd5a4da599ff7623464cb",
+    "bundles/3.64.0/shared/po3-simulator.mjs": "56002b0641e37acba8141471f09037432e7a7c3f90ce09b88b8ca2b37454f829",
+    "bundles/3.64.0/shared/po3-store.mjs": "7742b74895c6beff2bbaa8f27f5a26e7129d18007c7d2b1197a669d4c3950d57",
+    "bundles/3.64.0/shared/po3-stream.mjs": "ced8cc5f5ad895c7821e46231d72883df36428a019fc8b055eaaa777d57214d5",
+    "bundles/3.64.0/shared/po3-view.mjs": "be419cb4500ef531ad8440c2547a00ae0fd6146e7504f1cc114914c8dc3c6dbc",
+    "bundles/3.64.0/shared/signal-overview.mjs": "f5428bbba259f07eac8d7c0cebf5569624e6d1d14db43ce5be0a7c1505468bf4",
+    "bundles/3.64.0/shared/telegram-format.mjs": "63e24932d3e1fb901225c548ff082a32eecb027b76c398b22bc78169728eb728",
+    "bundles/3.64.0/shared/widget-state.mjs": "70092b206adad502d0cc1b16c4b642cc28b2914d392a046a1cf25d4f8b77214a",
+    "bundles/3.64.0/vendor/jsQR.LICENSE.txt": "c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08",
+    "bundles/3.64.0/vendor/jsQR.js": "f815a5e0556e7239411a29e92ca2a2c362ed8dae73aea8682ab823f82d4a856e",
+    "manifest.webmanifest": "75862c21b0cebc794875a7c33b852653d765452bc7dd1742b5c4be0e722b278a",
+    "server/generate-pattern-engine.mjs": "c83e4899f70f98ce6cc9adbb7548bdc53391e8b3b77a19eeff68d294ca5c07b1",
+    "server/install.sh": "07bb7777ee2e59bb159c1a490cbdd5f3db819300c52c37e174a27bc9f62d33d4",
+    "server/ki-monitor.mjs": "0c84f8ab527ae348534e6cb99600f45f9c3e4aaee1298148e41f8874bea22915",
+    "server/market-intervals.mjs": "7f1b63eb71189325235155d56909622def1b2f09eb69367135a69f67c44d4cc8",
+    "server/muster-export.mjs": "01e57157fe77a51e49db86498942870ad42bb632acb7cd81747886b7fce5cb45",
+    "server/orderflow-explainer.mjs": "b591fc77af8ff8735841c3d182518d710bf194e4efb1120eeb685efff9ab8b0d",
+    "server/pattern-engine.mjs": "c52ba04ee26dd8b3f03f84898f91921ae0bc9310ae1751cd8e91926267054c5e",
+    "server/pattern-monitor.mjs": "373b536539612a00c2dfe1aa11709c535adbbbbf6f848dcf162811ee63c180d1",
+    "server/patterns-247.mjs": "04f60b422abc13c68b268628eca2fc81f06b713b58b1486347048f8614bfa809",
+    "server/release-manifest.json": "fc7f399b3c9c58fef8e92e4f018493ef827f2f274d99aa986d55d0b233922234",
+    "server/scalpdesk-247.mjs": "d0653527eccda0c4c706e0843745788f24c0bd7c79fcc2f3fb432308f9eb0ef5",
+    "server/scalpdesk-patterns.service": "3e81c71aa20444bac524d3d5481b68a95b96a8b21ae691bcee8d4caf119bfb94",
+    "server/selbsttest.mjs": "21451dfb1c32ad64c80961911c7822e9ce02bfd03552bd17ed0645e86697019b",
+    "server/telegram-format.mjs": "2eefa259b1c49fa69d555a0373f43c28fa07b23e986ec9176650dd11081fbec6",
+    "shared/adaptive-grid-feed.mjs": "376b78a470ab24f0534c1fe44bb9c57f0e31430baa450bb79bd4964986b9609d",
+    "shared/adaptive-grid.mjs": "87e9d3ae1f94160f2b10c6e8ec0fd5a71efea7c79c8241487c95ac183de38c9d",
+    "shared/bitget-patterns.mjs": "fa678f92b17980d832684ddb1a0e8a12ea8a09b7fc0b0377c3cbdee1b36c871b",
+    "shared/bitget-public.mjs": "0711e6f19a350f2a0924880a6444b30cc631dd8955973fb5e693503f4066576c",
+    "shared/bot-limits.mjs": "ba4c27f94c47963481cc63b315d880fdf8b52634c3758e2dd6f274c95dd1f22f",
+    "shared/bot-simulation-store.mjs": "94605d4ba1adb957564e044a044622ba3425ed12b2c51d6f1e8e933b454e363e",
+    "shared/bot-simulation.mjs": "e951eecdf013a7a6cc17afb7edbcb88c9060811c80ce8f145ffa3447001c2197",
+    "shared/bot-view.mjs": "cd16b04d6dfe6d93317cac947c480713949aa20c01f8076060fababdc543030b",
+    "shared/chart-detail.mjs": "8f9faf895d414c9e8f310881cf6c53cea19dc02ff2e28baf5c9e685ee90ec513",
+    "shared/chart-pattern-chips.mjs": "c69b83e5028207ebc4b4e528179bcbe4d6bb28ea3e8e052331b56dd81624f7e9",
+    "shared/confluence-core.mjs": "43cee18caca000b04651e197c10fd06d2866d53120e0a8758ac76e434a02fce9",
+    "shared/confluence-evidence.mjs": "8c3fe3db1da5e5442257ea483577fd3cadac3827a838b23b1a24dac74a70b1f3",
+    "shared/confluence-history.mjs": "7df47def13546078d70e3fbe605a0ff29d80c611659cbda135b2267a40f44200",
+    "shared/confluence-legacy-core.mjs": "70e132c6628fae3fe59f1d9a820e09f556cfd98416a909845b901dce2985c6ad",
+    "shared/confluence-legacy-indicators.mjs": "9105a8ac09d5557e90ec05fd3035c915b36b8e345b31b96a158d0001da505540",
+    "shared/confluence-legacy-live.mjs": "bd9b1d10b9b696d11bbd25e1bb516a3f68f7d40099cdd9f2000105a7e39dde1b",
+    "shared/confluence-legacy-pattern-score.mjs": "585334abda80fd8802128e181d8efc04264770f3ee2a7f866d24481a6f7eabad",
+    "shared/confluence-legacy-replay.mjs": "f3f55b27498a8e13c5bd470d6cbe2d6665a233d9d5baa6bbe1cda2f577ffd96c",
+    "shared/confluence-live.mjs": "6dfc251c8f673c252754d0be13a02c9e9bb1fa97aefd3fccd244e415875bb3be",
+    "shared/confluence-presentation.mjs": "d23018d6f9bdfe1f1e90369bcbd89210b613c4be975becb7f35081e656a32822",
+    "shared/confluence-replay-store.mjs": "502590bc818e0697c6b6bcb1e54a9b449dba976d1578f7d001a9475b7cd1132b",
+    "shared/confluence-replay.mjs": "af2653ebd972a88fc5ed1e4a314828b772050bf095eed70a3b4877f3e5570b00",
+    "shared/confluence-risk-view.mjs": "2f14726a9e46dffca290cbfc0e80a34d44be65e99df956452ef3bc2bf84efa5a",
+    "shared/confluence-service.mjs": "698b434ca864ff532ecb38f7e3a783a5ec43b9d6cec230630d021a5bbc7d4ca1",
+    "shared/confluence-worker.mjs": "9f7b2067b36ea78086ee9ddf49c39b656cf600d6d2e93c35148d4f2599b01832",
+    "shared/github-sync-view.mjs": "1ec538ce7eafe679fdf9b8060105bd22f920a909d2c49a658badecc1734b9e38",
+    "shared/github-sync.mjs": "1bb89d288e8a5b56ccb6543a845119e6f66bd068fdbace61d7a421b52dd3820f",
+    "shared/indicators.mjs": "9105a8ac09d5557e90ec05fd3035c915b36b8e345b31b96a158d0001da505540",
+    "shared/market-intervals.mjs": "8d2781e22bed81fa13a361aa1ccd25dafa62364fa1845dfc730893eae502d812",
+    "shared/model-archive.mjs": "d2b5df4622599ee10e2c4e483986f85f25c2448f8032e8460e1ea4b4cdf212ff",
+    "shared/muster-bot-core.mjs": "c4cd9cf6501e7595372901302fc831451856f65f45915485d8f4f7a4a4fcd7a9",
+    "shared/muster-bot-feed.mjs": "e86a3da0eae70b8096ea185a48ca74b44259080358e95ed1305764040c17721e",
+    "shared/muster-bot-paper.mjs": "8ee4fc077c5331d0868a21e358193e58e5cb613ed7f90a406f8ca2b5318db130",
+    "shared/muster-bot-store.mjs": "aa428ac803fc8cef00c7bde03f2a670faf7fab781ca650423ad267602c87a6dd",
+    "shared/muster-bot-view.mjs": "7a45293db948e10be7465c786505637a39f512604415af9199b8a5b48d2899d6",
+    "shared/muster-bot-worker.mjs": "bd5f7d60af8c4fffa9423a3a6a1a92bf43dd996b3592bc8f44b8d7f5535fe7c4",
+    "shared/orderflow-core.mjs": "2579ff7cd28586ed206629b27d2db2cb19677cbd8e013bf0c9839774ad6337b7",
+    "shared/orderflow-demo.mjs": "41469126cb67eb7f357f809bb89d8b8e792ef0f0c474cbce508e19a8c76c90a4",
+    "shared/orderflow-journal.mjs": "46be78d92a5434e6eb21c830e1afc14332776907e4c0cecb79885df0e748a834",
+    "shared/orderflow-signal-core.mjs": "c4e413e4733ea0638f0574137a9321ac087e42391802e8ebaf1446103dcb965c",
+    "shared/orderflow-signal-feed.mjs": "ed69334f8f4e9d078d3a7bf1821bbee4153c12c9b24e6e033edc53f07df69926",
+    "shared/orderflow-signal-view.mjs": "03a0a91b2bdc6ee1c9c526cd72a9e0f96b2e3991ba85682c0b5d06c187dea46f",
+    "shared/orderflow-view.mjs": "33a774aaf2b0cad284b0cc3e06448064e31912397de5e25c14b07a6fcb8518e9",
+    "shared/paper-bot-controller.mjs": "45ebbcf6ade108e69e8d49332300cdffd07c2731ae2de9aedac279a5b8456ee7",
+    "shared/paper-bot-store.mjs": "c5184216ec7a901b4dca078028a1968dd9e972f7930c03ab93fa9e9ee946d680",
+    "shared/paper-bot-view.mjs": "6413cb5fdf2bbbfe092db42f4298e69c129617b2cb2d8abd3368499a67133985",
+    "shared/paper-bot-worker.mjs": "f5b26d50f054dfe38308dfe5c83020f29cc17a764ec460334bdb42896383a109",
+    "shared/paper-bot.mjs": "0603de27a26e69cea33c5863a269a0b6694bca8a801b18c7b807f91ae6187c95",
+    "shared/pattern-projection.mjs": "1e2444691e3e210eeff673b8b2ae3b91edb9581fccbacc2dea165f76ebeda5d7",
+    "shared/pattern-score.mjs": "585334abda80fd8802128e181d8efc04264770f3ee2a7f866d24481a6f7eabad",
+    "shared/po3-core.mjs": "abdb41c5cba00b1d6e9c98e6ba9a92fff3f62f9ff2ce47363cc2bdf5e32aaf08",
+    "shared/po3-feed.mjs": "cbee9b7bb5413eba98f817b867a51e416bee6d1f5fb072675cc5242990a90879",
+    "shared/po3-service.mjs": "c31ee68aab69a0117f6cfdb49c3c1a5612fbbcc08d1bd5a4da599ff7623464cb",
+    "shared/po3-simulator.mjs": "56002b0641e37acba8141471f09037432e7a7c3f90ce09b88b8ca2b37454f829",
+    "shared/po3-store.mjs": "7742b74895c6beff2bbaa8f27f5a26e7129d18007c7d2b1197a669d4c3950d57",
+    "shared/po3-stream.mjs": "ced8cc5f5ad895c7821e46231d72883df36428a019fc8b055eaaa777d57214d5",
+    "shared/po3-view.mjs": "be419cb4500ef531ad8440c2547a00ae0fd6146e7504f1cc114914c8dc3c6dbc",
+    "shared/signal-overview.mjs": "f5428bbba259f07eac8d7c0cebf5569624e6d1d14db43ce5be0a7c1505468bf4",
+    "shared/telegram-format.mjs": "63e24932d3e1fb901225c548ff082a32eecb027b76c398b22bc78169728eb728",
+    "shared/widget-state.mjs": "70092b206adad502d0cc1b16c4b642cc28b2914d392a046a1cf25d4f8b77214a",
+    "status-check.html": "485c1e02efab12d1e63de05424067510a312fa38c4d78d1d53fbeb8f66d3063d",
+    "sw.js": "e24f0b0a22e6b9cba33d8e596e98e9c9bc091f400c6ec72cfd942200f97be698",
+    "vendor/jsQR.LICENSE.txt": "c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08",
+    "vendor/jsQR.js": "f815a5e0556e7239411a29e92ca2a2c362ed8dae73aea8682ab823f82d4a856e",
+    "weather-widget-v2.html": "14eaf70b1653daa35363ecc94bd3a7025d9107998e80dfc7bf7066b0c2d43553"
+  },
+  "realSafariAccepted": false,
+  "privateOracleUpdated": false
+}

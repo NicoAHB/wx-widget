@@ -21,7 +21,9 @@ const trade = (id, sym, pnl, closedAt, extra = {}) => ({ id, symbol: sym, side: 
     const u = await page.evaluate(() => { const t = JSON.parse(localStorage.getItem('scalpdesk.history.v1')); const R = id => __opt4.tradeR(t.find(x => x.id === id)); return { a1: R('A1'), a2: R('A2'), a3: R('A3'), a4: R('A4'), part: __opt4.tradeR({ side: 'long', entry: 100, sl: 98, qty: 1, pnl: 4, part: { pos: 'P' } }) }; });
     check('R je Trade: Stop beim Schluss (+2), Anfangsrisiko r0 vor nachgezogenem Stop (−0,5), Short (+1,5); Stop auf Einstand oder Teilschluss ohne r0 → ohne R', u.a1 === 2 && u.a2 === -0.5 && u.a3 === 1.5 && u.a4 === null && u.part === null, JSON.stringify(u));
     // Optimierung 8: Kurs-Alarm erst beim 15m-Schlusskurs – Berührung löst nicht aus, Schluss über der Marke schon
-    const p0 = await page.evaluate(() => __g05.state.prices.BTCUSDT?.price), lvl = Math.round(p0 * 1.01 * 100) / 100;
+    // Erst den tatsächlich geladenen Kurs verwenden; feste Startpausen können davor enden.
+    await page.waitForFunction(() => Number.isFinite(__g05.state.prices.BTCUSDT?.price) && __g05.state.prices.BTCUSDT.price > 0, null, { timeout: 15000 });
+    const p0 = await page.evaluate(() => __g05.state.prices.BTCUSDT.price), lvl = Math.round(p0 * 1.01 * 100) / 100;
     await page.evaluate(() => document.getElementById('alarm-toggle').scrollIntoView()); await page.click('#alarm-toggle'); await page.fill('#al-symbol', 'BTC'); await page.fill('#al-price', String(lvl).replace('.', ',')); await page.selectOption('#al-cl', '15m'); await page.click('#al-save'); await page.waitForTimeout(600);
     const al = await page.evaluate(() => { const a = __g05.state.alarms.at(-1); return { cl: a?.cl, dir: a?.dir, sub: __g05.alarmSub(a), id: a?.id }; });
     check('Alarm „bei Schluss 15m“ gespeichert (cl), Liste zeigt „löst beim 15m-Schlusskurs aus“', al.cl === '15m' && al.dir === 'above' && /^löst beim 15m-Schlusskurs aus · /.test(al.sub), JSON.stringify(al));

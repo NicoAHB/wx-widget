@@ -1,6 +1,6 @@
 {
   "version": "2.12.0",
-  "appVersion": "3.63.0",
+  "appVersion": "3.64.0",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
@@ -86,6 +86,16 @@
       "path": "shared/bot-view.mjs",
       "sha256": "cd16b04d6dfe6d93317cac947c480713949aa20c01f8076060fababdc543030b",
       "bytes": 34048
+    },
+    {
+      "path": "shared/chart-detail.mjs",
+      "sha256": "8f9faf895d414c9e8f310881cf6c53cea19dc02ff2e28baf5c9e685ee90ec513",
+      "bytes": 10271
+    },
+    {
+      "path": "shared/chart-pattern-chips.mjs",
+      "sha256": "c69b83e5028207ebc4b4e528179bcbe4d6bb28ea3e8e052331b56dd81624f7e9",
+      "bytes": 2147
     },
     {
       "path": "shared/confluence-core.mjs",
@@ -179,8 +189,8 @@
     },
     {
       "path": "shared/market-intervals.mjs",
-      "sha256": "22b79903dd441da1806bdd23720d33f86c0e9efaa97d1a5e8f01478bc85ccece",
-      "bytes": 2263
+      "sha256": "8d2781e22bed81fa13a361aa1ccd25dafa62364fa1845dfc730893eae502d812",
+      "bytes": 2532
     },
     {
       "path": "shared/model-archive.mjs",

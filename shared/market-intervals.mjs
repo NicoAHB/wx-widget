@@ -7,7 +7,8 @@ const definitions = [
   ['12h', 43200000, 0, 0, 0, 1], ['1d', 86400000, 1, 1, 1, 1], ['3d', 259200000, 0, 0, 0, 1],
   ['1w', 604800000, 1, 0, 1, 1], ['1M', 2678000000, 1, 0, 1, 0]
 ];
-export const MARKET_INTERVALS = Object.freeze(definitions.map(([id, ms, chart = 0, signal = 0, pattern = 0, tradeImage = 0]) => Object.freeze({ id, api: id, label: id, ms, chart: !!chart, signal: !!signal, pattern: !!pattern, tradeImage: !!tradeImage, calendar: id === '1M' })));
+const details = { '1h': ['1m', '5m', '15m', '30m'], '2h': ['1m', '5m', '15m', '30m', '1h'], '4h': ['5m', '15m', '30m', '1h', '2h'], '1d': ['15m', '30m', '1h', '2h', '4h'], '1w': ['1h', '4h', '1d'], '1M': ['4h', '1d', '1w'] };
+export const MARKET_INTERVALS = Object.freeze(definitions.map(([id, ms, chart = 0, signal = 0, pattern = 0, tradeImage = 0]) => Object.freeze({ id, api: id, label: id, ms, chart: !!chart, signal: !!signal, pattern: !!pattern, tradeImage: !!tradeImage, calendar: id === '1M', details: Object.freeze(details[id] || []) })));
 export const CHART_INTERVALS = Object.freeze(MARKET_INTERVALS.filter(x => x.chart).map(x => x.id));
 export const SIGNAL_INTERVALS = Object.freeze(MARKET_INTERVALS.filter(x => x.signal).map(x => x.id));
 export const INTERVAL_MS = Object.freeze(Object.fromEntries(MARKET_INTERVALS.map(x => [x.id, x.ms])));
