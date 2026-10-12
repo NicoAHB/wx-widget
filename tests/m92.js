@@ -59,6 +59,7 @@ let pass=0,fail=0;const check=(name,ok,extra='')=>{ok?pass++:fail++;console.log(
     await page.locator('#chart').scrollIntoViewIfNeeded();await page.waitForFunction(()=>document.querySelector('#chart svg')); // Hauptchart zeichnet bewusst nur im sichtbaren Fenster.
     check('Detail-API-Fehler zeigt Hinweis und lässt Hauptchart benutzbar',await page.locator('#chart-detail-retry').isVisible()&&await page.locator('#chart svg').count()===1&&await page.evaluate(()=>__g05.state.candles.length>200&&!__g05.state.marketError),{retry:await page.locator('#chart-detail-retry').isVisible(),svg:await page.locator('#chart svg').count(),state:await page.evaluate(()=>({symbol:__g05.state.symbol,iv:__g05.state.interval,loaded:__g05.state.loadedSymbol,source:__g05.state.source,count:__g05.state.candles.length,marketError:__g05.state.marketError,detailError:__chartDetail.state.error,detailBusy:__chartDetail.state.busy})),requests:requests.slice(-8)});
     reject=false;await page.click('#chart-detail-retry');await page.waitForFunction(()=>!__chartDetail.state.error&&!__chartDetail.state.busy&&__chartDetail.state.candles.length>1000);
+    await page.locator('#chart').scrollIntoViewIfNeeded();await page.waitForFunction(()=>!!document.querySelector('#chart .detail-candles canvas'));
     check('Erneut laden stellt Detail-Chart nach Ausfall wieder her',!!await page.locator('#chart .detail-candles canvas').count());
     await page.selectOption('#chart-detail-resolution','');
     await page.evaluate(()=>__intervals.setMarket('BSVUSDT','1h'));await page.waitForFunction(()=>__g05.state.loadedSymbol==='BSVUSDT'&&__g05.state.source==='futures'&&!__g05.state.busy);
@@ -66,7 +67,7 @@ let pass=0,fail=0;const check=(name,ok,extra='')=>{ok?pass++:fail++;console.log(
     check('Futures-Coin nutzt ausschließlich Futures-Detailquelle',requests.filter(r=>r.symbol==='BSVUSDT'&&r.iv==='5m').every(r=>r.source==='futures')&&await page.evaluate(()=>__chartDetail.state.candles.every(c=>c.close<40)));
     await page.selectOption('#chart-detail-resolution','');
     await page.evaluate(()=>__intervals.setMarket('BTCUSDT','1M'));await page.waitForFunction(()=>__g05.state.interval==='1M'&&__g05.state.loadedSymbol==='BTCUSDT'&&!__g05.state.busy);
-    await page.selectOption('#chart-detail-resolution','1w');await page.waitForFunction(()=>__chartDetail.state.iv==='1w'&&!__chartDetail.state.busy&&__chartDetail.state.candles.length>200&&document.querySelector('#chart .detail-candles'));
+    await page.selectOption('#chart-detail-resolution','1w');await page.locator('#chart').scrollIntoViewIfNeeded();await page.waitForFunction(()=>__chartDetail.state.iv==='1w'&&!__chartDetail.state.busy&&__chartDetail.state.candles.length>200&&document.querySelector('#chart .detail-candles'));
     check('Monatschart mit echten Montag-UTC-Wochen als Detailauflösung',await page.evaluate(()=>__chartDetail.state.candles.every((c,i,a)=>new Date(c.time).getUTCDay()===1&&(!i||c.time-a[i-1].time===604800000))));
     check('Mehrjährige Detail-Zeitachse nennt auch das Jahr',await page.locator('#chart .axis-label').evaluateAll(nodes=>nodes.filter(n=>/^\d{2}\.\d{2}\.\d{2}$/.test(n.textContent)).length>=3));
     await page.selectOption('#chart-detail-resolution','');

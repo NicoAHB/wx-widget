@@ -104,7 +104,7 @@ const fillsScreen = g => g.on && g.display === 'flex' && g.edges.every((v, i) =>
     // Die alten Fälle prüfen weiter die Gesamtansicht. Hier ausdrücklich die neue Bereichssicht ohne Klickumleitung.
     for (const presentation of ['standard', 'dashboard']) for (const [width, height] of [[320, 780], [390, 844], [768, 1024], [1440, 900]]) {
       const phone = width <= 600, name = `Bereichssicht/${presentation}/${width}×${height}`;
-      const ctx = await browser.newContext({ viewport: { width, height }, hasTouch: true, isMobile: width < 1000 });
+      const ctx = await browser.newContext({ viewport: { width, height }, hasTouch: true, isMobile: width < 1000, scalpdeskNative: true });
       await ctx.addInitScript(presentation => {
         localStorage.setItem('scalpdesk.workspace.v1', JSON.stringify({ v: 1, mode: 'focus', view: 'chart', folds: {} }));
         localStorage.setItem('scalpdesk.presentation.v1', JSON.stringify(presentation));

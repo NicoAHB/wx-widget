@@ -377,7 +377,15 @@ function rest(req, res) {
   const u = new URL(req.url, 'https://x'), q = Object.fromEntries(u.searchParams), host = (req.headers.host || '').split(':')[0];
   if (host === 'api.telegram.org' || host === 'discord.com') return void channel(req, res, host, u);
   if (host === 'api.coingecko.com' || host === 'api.coinpaprika.com' || host === 'api.coinlore.net') { if (req.method === 'OPTIONS') { res.writeHead(204, { 'access-control-allow-origin': '*', 'access-control-allow-methods': 'GET', 'access-control-allow-headers': '*' }); return void res.end(); } return void capMock(req, res, host, u); }
-  if (host === 'raw.githubusercontent.com') return void (u.pathname.startsWith('/NicoAHB/wx-widget/news/') ? newsFile(req, res, u) : calendar(req, res, u));
+  if (host === 'raw.githubusercontent.com') {
+    if (u.pathname === '/NicoAHB/wx-widget/krypto-kalender/crypto-calendar.json') {
+      const today = Math.floor(Date.now() / 86400000) * 86400000;
+      return json(res, 200, { v: 1, fetchedAt: new Date().toISOString(), events: [
+        { id: 'cmc-101', t: today + 86400000, end: today + 86400000, dayOnly: true, title: 'Öffentlicher Kalender-Testtermin', coins: ['BTC'], url: 'https://coinmarketcal.com/event/kalender-testtermin' }
+      ] });
+    }
+    return void (u.pathname.startsWith('/NicoAHB/wx-widget/news/') ? newsFile(req, res, u) : calendar(req, res, u));
+  }
   if (cfg.restDelay && !req.delayed) { req.delayed = true; return void setTimeout(() => rest(req, res), cfg.restDelay); }
   cfg.log.push({ at: Date.now(), host, path: u.pathname, q });
   if (cfg.log.length > 2000) cfg.log.splice(0, 1000);

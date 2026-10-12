@@ -14057,7 +14057,7 @@ window.__g07 = { get ana() { return ana; }, get cap() { return CAP; }, blocks30:
   capKey: (...a) => capKey(...a), capPut: e => capPut(e), capGet: k => capGet(k), setCapMax: n => { CAP_MAX_BYTES = n; }, capBlock: p => capBlock(p), capSeries: (p, id, r) => capSeries(p, id, r), compactCap: v => compactCap(v), hzSeries: d => hzSeries(d),
   chartPoc: () => { const { start, end } = viewWindow(); return volumeProfile(state.candles.slice(start, end))?.poc ?? null; } };
 window.__g06 = { timgData: id => timgData(id), timgRange: d => timgRange(d), tgtEpoch: id => tgtEpoch(id), get jobs() { return loadTimg(); }, timgPreview: id => timgPreview(id) };
-window.__g05 = { get state() { return state; }, get chan() { return chan; }, get svc() { return svc; }, get svcLog() { return svcLog; }, get chanState() { return chanState; },
+window.__g05 = { get state() { return state; }, get workspace() { return workspace; }, get chan() { return chan; }, get svc() { return svc; }, get svcLog() { return svcLog; }, get chanState() { return chanState; },
   readChanForm, saveChannels, sendTgBackup, notifyChannels, svcRefresh, alarmSub, persist, renderAlarms, syncStreams, tgTarget, backupPayload, alarmEventId };
 // Sekundentakt: mit Dienst jede Minute den bestätigten Stand lesen (andere Geräte, Neustart des Dienstes)
 function svcTick(now) { if (svcOn() && !svc.busy && !document.hidden && now - svc.at > SVC_POLL) void svcRefresh(); if (typeof patSvcRender === 'function') patSvcRender(); }

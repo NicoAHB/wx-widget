@@ -4,7 +4,7 @@ const h = require('./harness'); let pass = 0, fail = 0;
 const check = (name, ok, info = '') => { ok ? pass++ : fail++; console.log(`${ok ? '✓' : '✗'} ${name}${info ? ' — ' + String(info).slice(0, 300) : ''}`); };
 (async () => { let browser;
   try {
-    await h.setup(); browser = await h.launch(); const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } }), page = await context.newPage(), errors = [];
+    await h.setup(); browser = await h.launch({ presentation: 'device' }); const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } }), page = await context.newPage(), errors = [];
     await context.addInitScript(() => {
       window.g14Resources = { intervals: 0, workers: 0, sockets: 0 };
       const interval = window.setInterval; window.setInterval = function(...args) { g14Resources.intervals++; return interval.apply(this, args); };
