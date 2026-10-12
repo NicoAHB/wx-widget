@@ -2229,6 +2229,20 @@ html[data-chartfull] .chart-pattern-row{padding:0;order:1;flex-wrap:nowrap}html[
 /* cpq-1: Punkte statt Wahrscheinlichkeit; Balken verändert weder Höhe noch Textkontrast. */
 .chart-pattern-chip{position:relative;padding-bottom:8px}.chart-pattern-chip::after{content:'';position:absolute;left:0;bottom:0;width:var(--quality-width,0%);height:3px;background:currentColor;border-radius:3px}.chart-pattern-tile.invalid .chart-pattern-chip::after{display:none}.pat-quality{border:1px solid var(--border);border-radius:12px;padding:12px;margin:12px 0;color:var(--text);background:var(--surface-2);font-size:13px}.pat-quality h3{margin:0 0 8px;font-size:15px}.pat-quality dl{margin:0;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px 12px}.pat-quality dt,.pat-quality dd{margin:0;min-width:0;overflow-wrap:anywhere}.pat-quality dd{font-variant-numeric:tabular-nums;text-align:right}.pat-quality small{display:block;font-size:11px;font-weight:normal;color:var(--muted);line-height:1.5}.pat-quality p{margin:8px 0 0;line-height:1.5}.pat-quality .quality-warning{color:var(--warn-text)}
 .chart-pattern-row{flex-wrap:wrap}.chart-pattern-summary{display:flex;align-items:center;flex-wrap:wrap;gap:4px 12px;flex:1 1 100%;min-width:0;font-size:11px;color:var(--muted)}.chart-pattern-overview{position:relative;width:min(100%,390px);height:68px;min-height:44px;max-width:100%;padding:6px 10px 9px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2);color:var(--text);text-align:left;font-size:11px;line-height:16px;overflow-wrap:anywhere}.chart-pattern-overview::after{content:'';position:absolute;left:8px;right:8px;bottom:4px;height:3px;border-radius:3px;background:linear-gradient(to right,var(--up-text) var(--bull-share,0%),var(--down-text) var(--bull-share,0%));opacity:.7}.chart-pattern-overview[data-empty=true]::after{background:var(--border)}.chart-pattern-overview:focus-visible{outline:2px solid var(--text);outline-offset:2px}.chart-pattern-summary small{font-size:11px;line-height:1.5;max-width:100%}.pat-overview-lines{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px 12px;font-size:13px}.pat-overview-lines>span{overflow-wrap:anywhere;min-width:0}.chart-pattern-summary{order:3}html[data-chartfull] .chart-pattern-row{flex-wrap:wrap}
+/* position-1: eigene Positionierung rechts in derselben Karte; zwei getrennte Tippziele. */
+.chart-pattern-overview-card{display:grid;grid-template-columns:minmax(0,1fr) 130px;width:min(100%,520px);height:92px;max-width:100%;border:1px solid var(--border);border-radius:10px;background:var(--surface-2)}
+.chart-pattern-overview-card>.chart-pattern-overview{width:100%;height:100%;border:0;background:transparent;min-width:0}
+.positioning-score{position:relative;min-width:0;padding:0 8px 10px 0;color:var(--text);font-size:11px;line-height:16px}
+.positioning-head{display:flex;align-items:center;justify-content:space-between;height:44px;gap:0}.positioning-head>span{min-width:0}
+.positioning-info{flex:0 0 44px;width:44px;height:44px;min-height:44px;border:0;border-radius:8px;background:transparent;color:var(--text);font-size:19px;cursor:pointer}
+.positioning-info:focus-visible{outline:2px solid var(--text);outline-offset:-2px}
+.positioning-value{display:block;font-size:12px;font-weight:650;line-height:18px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.positioning-warning{display:block;height:16px;line-height:16px;color:var(--warn-text);visibility:hidden}
+.positioning-bar{position:absolute;left:0;right:8px;bottom:4px;height:3px;border-radius:3px;background:linear-gradient(90deg,#e76d86,#d5a448 50%,#6bc999)}
+.positioning-marker{position:absolute;top:-3px;height:9px;width:3px;left:clamp(3px,var(--position,50%),calc(100% - 3px));transform:translateX(-50%);border-radius:2px;background:var(--text);outline:1px solid var(--surface-2)}
+.positioning-score[data-ready=false] .positioning-bar{opacity:.22}.positioning-score[data-ready=false] .positioning-marker{display:none}
+#positioning-body p{line-height:1.5}#positioning-body dl{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;font-size:13px}#positioning-body dt,#positioning-body dd{margin:0;overflow-wrap:anywhere}
+@media(max-width:360px){.chart-pattern-overview-card{height:120px}}
 </style>
   <script type="module">
 import { MARKET_INTERVALS, CHART_INTERVALS, SIGNAL_INTERVALS, INTERVAL_MS, nearestChartInterval } from './bundles/3.65.0/shared/market-intervals.mjs';
@@ -2236,6 +2250,8 @@ import { createDetailCandles, detailOptions, detailChoice, closedSeries, timeInd
 import { patternChipRows, patternChipKey } from './bundles/3.65.0/shared/chart-pattern-chips.mjs';
 import { PATTERN_QUALITY_CONFIG, chartPatternQuality, repricePatternQuality, sortPatternQuality, patternOverview } from './bundles/3.65.0/shared/chart-pattern-quality.mjs';
 import { createPatternOverviewFeed } from './bundles/3.65.0/shared/chart-pattern-overview-feed.mjs';
+// Arbeitsstand: bei der gemeinsamen Release-Freigabe in das neue Versionsbündel übernehmen.
+import { createPositioningFeed } from './shared/positioning-score.mjs';
 import { createMusterClient } from './bundles/3.65.0/shared/muster-bot-feed.mjs';
 import { createMusterPaper } from './bundles/3.65.0/shared/muster-bot-paper.mjs';
 import { readMusterPaper, writeMusterPaper } from './bundles/3.65.0/shared/muster-bot-store.mjs';
@@ -13389,6 +13405,55 @@ function patOverviewDetect(candles, iv, signal, ctx) {
     if(signal.aborted)abort();else patOverviewWorker.postMessage({id,k,opt});
   });
 }
+// position-1: unabhängig von Muster-/Handels-Scores, immer das USDT-Perpetual des gewählten Coins.
+var positioningOnScreen = false, positioningFeed = createPositioningFeed({
+  request: (path, params, signal) => {
+    const f = state.funding;
+    if (path === '/fapi/v1/premiumIndex' && f?.symbol === params.symbol && Math.abs(Date.now() - Number(f.time)) < 180000) return Promise.resolve(f);
+    return api.get(FUTURES, path, params, signal);
+  }, changed: () => positioningPaint()
+});
+function positioningTick() {
+  void positioningFeed.tick(state.symbol, !CAP.on && !state.paused && !document.hidden && navigator.onLine !== false && state.loadedSymbol === state.symbol && (positioningOnScreen || $('positioning-dialog')?.open));
+  positioningPaint();
+}
+function positioningPaint() {
+  const box = $('positioning-score'); if (!box) return;
+  const s = positioningFeed.state, q = s.symbol === state.symbol ? positioningFeed.usable() : null;
+  const text = q ? `${q.score} · ${q.label}` : '-', out = $('positioning-value');
+  if (out.textContent !== text) out.textContent = text;
+  out.classList.toggle('positive', !!q && q.score > 50); out.classList.toggle('negative', !!q && q.score < 50);
+  box.dataset.ready = String(!!q); box.style.setProperty('--position', `${q?.score ?? 50}%`);
+  $('positioning-warning').style.visibility = q?.squeeze ? 'visible' : 'hidden';
+  $('positioning-bar').setAttribute('aria-label', q ? `Positionierung ${q.score} von 100, ${q.label}${q.squeeze ? ', Squeeze-Risiko' : ''}` : 'Positionierung nicht verfügbar');
+  $('positioning-info').setAttribute('aria-label', `Positionierung für ${state.symbol} erklären`);
+  const dialog = $('positioning-dialog'); if (!dialog?.open) return;
+  const body = $('positioning-body'), error = s.symbol === state.symbol ? s.error : '';
+  const key = JSON.stringify([state.symbol, q, error]); if (body.dataset.signature === key) return; body.dataset.signature = key;
+  put('positioning-title', `Positionierung · ${state.symbol.replace(/USDT$/, '/USDT')}`);
+  const content = [el('p', '', 'Positionierung am Markt, keine Kursprognose.'),
+    el('p', '', 'Auch bei Spot: Daten des zugehörigen Binance-USDT-Perpetuals, eines Futures ohne Ablaufdatum. Vergleich: letzte 30 Tage dieses Coins. 0 = Short-lastig, 100 = Long-lastig, 50 = Neutral – jeweils relativ zu diesem Verlauf.'),
+    el('p', '', 'Funding ist die laufende Zahlung zwischen Long- und Short-Seite. Das Long/Short-Verhältnis zählt Konten, nicht deren Positionsgröße. Beide Teilwerte gehen zu je 50 % ein; der Score wird auf ganze Punkte gerundet.')];
+  if (q) {
+    const values = el('dl');
+    for (const [name, value] of [['Score', `${q.score} · ${q.label}`], ['Funding aktuell', `${signed(q.funding * 100, 4)} %`], ['Funding-Perzentil', `${number(q.fundingPercentile, 1)} / 100`], ['Long/Short-Konten', number(q.ratio, 4)], ['Long/Short-Perzentil', `${number(q.ratioPercentile, 1)} / 100`], ['Vergleichsdaten', `${q.fundingCount} Funding · ${q.ratioCount} × 4h`], ['Letzter Abgleich', localTime(q.at)]]) values.append(el('dt', '', name), el('dd', '', value));
+    content.push(values, el('p', '', 'Ein Perzentil sagt, wie hoch ein Wert im eigenen Verlauf liegt. Gleiche Werte teilen ihren Rang; eine gleichbleibende Reihe liegt bei 50. Bei jungen Coins kann der verfügbare Verlauf kürzer sein.'));
+  } else content.push(el('p', '', error || 'Noch keine aktuellen Vergleichsdaten verfügbar. Der Score bleibt dann „-“.'));
+  content.push(el('p', '', 'Unter 15 oder über 85: Squeeze-Risiko. Stark einseitige Positionierung kann Zwangsschließungen begünstigen. Das sagt weder Richtung noch Zeitpunkt einer Kursbewegung voraus.'));
+  body.replaceChildren(...content);
+}
+function positioningInit(card) {
+  const box = el('div', 'positioning-score'), head = el('div', 'positioning-head'), info = el('button', 'positioning-info', 'ⓘ'), out = el('output', 'positioning-value', '-'), warning = el('span', 'positioning-warning', 'Squeeze-Risiko'), bar = el('div', 'positioning-bar'), marker = el('span', 'positioning-marker');
+  box.id = 'positioning-score'; box.dataset.ready = 'false'; info.id = 'positioning-info'; info.type = 'button'; info.setAttribute('aria-haspopup', 'dialog'); info.setAttribute('aria-controls', 'positioning-dialog');
+  out.id = 'positioning-value'; out.setAttribute('aria-live', 'polite'); warning.id = 'positioning-warning'; bar.id = 'positioning-bar'; bar.setAttribute('role', 'img'); marker.setAttribute('aria-hidden', 'true');
+  head.append(el('span', '', 'Positionierung'), info); bar.append(marker); box.append(head, out, warning, bar); card.append(box);
+  new IntersectionObserver(entries => { positioningOnScreen = entries[0].isIntersecting; if (positioningOnScreen) positioningTick(); }).observe(box);
+  const dialog = el('dialog', 'sheet'), dialogHead = el('div', 'sheet-head'), title = el('h2', '', 'Positionierung'), close = el('button', 'button ghost icon', '×'), body = el('div', 'sheet-body');
+  dialog.id = 'positioning-dialog'; dialog.setAttribute('aria-labelledby', 'positioning-title'); title.id = 'positioning-title'; close.id = 'positioning-close'; close.type = 'button'; close.setAttribute('aria-label', 'Erklärung schließen'); body.id = 'positioning-body'; dialogHead.append(title, close); dialog.append(dialogHead, body); document.body.append(dialog);
+  close.addEventListener('click', () => dialog.close()); dialog.addEventListener('click', e => { if (e.target === dialog) { const r = dialog.getBoundingClientRect(); if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) dialog.close(); } });
+  info.addEventListener('click', () => { dialog.showModal(); positioningPaint(); }); positioningPaint();
+}
+window.__positioning = { feed: positioningFeed, tick: positioningTick, paint: positioningPaint };
 var patOverviewFeed = createPatternOverviewFeed({
   request: async(ctx,iv,limit,signal)=>{
     // Vollständige vorhandene Reihe wiederverwenden, ohne den Hauptchart zu verändern.
@@ -13426,6 +13491,7 @@ function patOverviewModel() {
   return patOverviewLiveMemo.value;
 }
 function patOverviewPaint() {
+  positioningPaint();
   const button=$('chart-pattern-overview');if(!button)return;
   const q=patOverviewModel(),s=patOverviewFeed.state,correct=s.key.startsWith(`${state.symbol}|${chartMarket()}|`),ready=correct?q.ready:0;
   const share=correct&&q.bull!==null?`${q.bull} % bullisch · ${q.bear} % bärisch`:'Keine aktiven Richtungsmuster';
@@ -13476,7 +13542,7 @@ function patChipInit() {
   const row=el('div','chart-pattern-row'),host=el('div','chart-pattern-chips'),empty=el('span','chart-pattern-empty','Keine Muster erkannt');row.id='chart-pattern-row';host.id='chart-pattern-chips';host.setAttribute('role','group');empty.id='chart-pattern-empty';host.append(empty);row.append(host);document.querySelector('#chart-sec .chart-toolbar').append(row);
   const heading=document.querySelector('#chart-sec .chart-heading'),alarm=$('alarm-here');heading.after(row);row.prepend(alarm);
   queueMicrotask(()=>{const btc=$('of-btc-chart');if(btc)alarm.after(btc);});patChipBindPress(host);patChipPaint();
-  const summary=el('div','chart-pattern-summary'),overview=el('button','chart-pattern-overview');overview.type='button';overview.id='chart-pattern-overview';overview.setAttribute('aria-haspopup','dialog');overview.setAttribute('aria-controls','pat-overview-info');summary.append(overview,el('small','','Score = Qualitätsmaß, keine Garantie für den Ausbruch.'));row.append(summary);
+  const summary=el('div','chart-pattern-summary'),card=el('div','chart-pattern-overview-card'),overview=el('button','chart-pattern-overview');overview.type='button';overview.id='chart-pattern-overview';overview.setAttribute('aria-haspopup','dialog');overview.setAttribute('aria-controls','pat-overview-info');card.append(overview);summary.append(card,el('small','','Muster-Score = Qualitätsmaß, keine Garantie für den Ausbruch.'));row.append(summary);positioningInit(card);
   const dialog=el('dialog','sheet');dialog.id='pat-overview-info';dialog.setAttribute('aria-labelledby','pat-overview-title');const head=el('div','sheet-head'),title=el('h2','','Muster-Gesamtbild'),close=el('button','button ghost icon','×'),body=el('div','sheet-body');title.id='pat-overview-title';close.type='button';close.id='pat-overview-close';close.setAttribute('aria-label','Erklärung schließen');body.id='pat-overview-body';head.append(title,close);dialog.append(head,body);document.body.append(dialog);
   close.addEventListener('click',()=>dialog.close());dialog.addEventListener('click',e=>{if(e.target===dialog){const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)dialog.close();}});overview.addEventListener('click',()=>{dialog.showModal();patOverviewPaint();});patOverviewPaint();
 }
@@ -13573,6 +13639,7 @@ function patWant() {
 function patTick() {
   patPrice();
   patOverviewTick();
+  positioningTick();
   if (!state.paused && !document.hidden && detailResolution && chartOnScreen) void detail.refresh();
   patChipPaint();
   if ($('pat-sheet').open && pat.res?.key === patKey() && (pat.panelBar !== state.candles.at(-1)?.time || pat.panelMinute !== Math.floor(Date.now() / 60000))) patSheet();

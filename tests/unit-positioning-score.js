@@ -49,5 +49,7 @@ let pass=0,fail=0;const check=(name,ok)=>{ok?pass++:fail++;console.log(`${ok?'�
   const paging=P.createPositioningFeed({now:()=>time,request:async(path,p,s)=>{if(!path.endsWith('fundingRate'))return request(path,p,s);pageCalls++;return many.filter(r=>r.fundingTime>=p.startTime).slice(0,1000);}});await paging.tick('BTCUSDT');check('Mehr als 1000 Funding-Raten mit Paginierung vollständig',pageCalls===2&&paging.usable().fundingCount===1001);
   const outside=P.createPositioningFeed({now:()=>time,request:async(path,p,s)=>path.endsWith('fundingRate')?[{symbol:p.symbol,fundingRate:'100',fundingTime:time-cfg.windowMs-1},...fund(p.symbol)]:request(path,p,s)});await outside.tick('LTCUSDT');check('Werte älter als 30 Tage zählen nicht',outside.usable().fundingCount===5);
   time+=330001;check('Alter Score nach Zeitüberschreitung nicht als aktuell',outside.usable()===null);
+  const started=time;let delayedNow=started;const delayed=P.createPositioningFeed({now:()=>delayedNow,request:async(path,p,s)=>{if(path.endsWith('premiumIndex'))delayedNow+=60000;return request(path,p,s);}});await delayed.tick('LTCUSDT');delayedNow+=cfg.updateMs-1;
+  check('Langsamer Abgleich lässt vor nächster Frist keinen leeren Zwischenstand',delayedNow<delayed.state.nextAt&&delayed.usable()!==null);
   console.log(`\n${pass}/${pass+fail} bestanden`);process.exitCode=fail?1:0;
 })().catch(e=>{console.error(e);process.exitCode=1;});

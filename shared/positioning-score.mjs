@@ -62,7 +62,7 @@ export function createPositioningFeed({ request, changed = () => {}, now = () =>
     const active = () => token === epoch && !ctrl.signal.aborted;
     const get = async (path, params) => {
       state.requests++; const r = await request(path, { symbol: captured, ...params }, ctrl.signal);
-      if (!active()) throw new DOMException('Abgebrochen', 'AbortError');
+      if (!active()) throw new globalThis.DOMException('Abgebrochen', 'AbortError');
       return r;
     };
     const promise = (async () => {
@@ -94,7 +94,7 @@ export function createPositioningFeed({ request, changed = () => {}, now = () =>
         const q = positioningScore(funding, ratioCurrent.value, entry.funding.map(r => r.value), entry.ratios.map(r => r.value), config);
         if (!q) throw Error('Zu wenig gültige Vergleichsdaten für die Positionierung.');
         if (!active()) return;
-        entry.result = { ...q, symbol: captured, at, fundingAt: time, ratioAt: ratioCurrent.at, fundingCount: entry.funding.length, ratioCount: entry.ratios.length,
+        entry.result = { ...q, symbol: captured, at: now(), fundingAt: time, ratioAt: ratioCurrent.at, fundingCount: entry.funding.length, ratioCount: entry.ratios.length,
           fundingFrom: entry.funding[0].at, ratioFrom: entry.ratios[0].at };
         entry.error = ''; entry.nextAt = now() + config.updateMs;
       } catch (e) {
