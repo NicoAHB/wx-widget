@@ -1,6 +1,6 @@
 {
   "version": "2.12.0",
-  "appVersion": "3.65.0",
+  "appVersion": "3.66.0",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
@@ -183,6 +183,11 @@
       "bytes": 6539
     },
     {
+      "path": "shared/crypto-calendar.mjs",
+      "sha256": "ca046d2b8d07e72161121e143b9f42ec9175c02a663350923cd926874bed7fe2",
+      "bytes": 5890
+    },
+    {
       "path": "shared/github-sync-view.mjs",
       "sha256": "1ec538ce7eafe679fdf9b8060105bd22f920a909d2c49a658badecc1734b9e38",
       "bytes": 10100
@@ -341,6 +346,11 @@
       "path": "shared/po3-view.mjs",
       "sha256": "be419cb4500ef531ad8440c2547a00ae0fd6146e7504f1cc114914c8dc3c6dbc",
       "bytes": 30361
+    },
+    {
+      "path": "shared/positioning-score.mjs",
+      "sha256": "65d8a0819e0fddef8d3d99cf2d105fbf7f9432ef27b4ea82fc70d4f293d64c27",
+      "bytes": 8335
     },
     {
       "path": "shared/signal-overview.mjs",
