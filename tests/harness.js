@@ -60,7 +60,9 @@ function legacyWidgetFixture(options) {
     byId('market-form').append(byId('watchlist'));
     document.querySelector('.of-chart-grid').append(byId('orderflow-panel'));
     const pane = document.querySelector('.of-chart-pane');
-    for (const selector of ['.fib-strip', '.wh-strip', '.chart-footer']) { const node = document.querySelector('#workspace-chart-tools ' + selector); if (node) pane.append(node); }
+    const fib = document.querySelector('#workspace-chart-tools .fib-strip');
+    if (fib) pane.insertBefore(fib, pane.querySelector('.lmap-strip'));
+    for (const selector of ['.wh-strip', '.chart-footer']) { const node = document.querySelector('#workspace-chart-tools ' + selector); if (node) pane.append(node); }
     // Auch leere <details display:contents> behalten eine anonyme Inhaltsbox.
     // Nach Rückgabe ihrer Originalknoten entfernen, sonst entsteht ein falscher Grid-Platz.
     for (const node of window.__g05.workspace.wrappers) node.remove();

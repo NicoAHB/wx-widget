@@ -29,7 +29,7 @@ Für **4 Stunden / 15m** ausschließlich diesen Wert auf `'4h'` ändern. Die bes
 
 Die neue App verändert eine bereits am Server übernommene Konfiguration nicht automatisch. Wenn dort noch `5m` hinterlegt ist, bleiben auch die Benachrichtigungen auf dieser Ebene.
 
-- **HTTPS-Dienst:** In der App den Tageszeitraum wählen, die Vorauswahl vollständig laden lassen und unter Chartmuster **Vorauswahl/Zeitraum am Dienst übernehmen**. Der Export/die Übergabe enthält dann `iv: '2h'`.
+- **HTTPS-Dienst:** In der App den Tageszeitraum wählen, die Vorauswahl vollständig laden lassen. Dann **Einstellungen → Hinweise & Telegram → Telegram einrichten … → Chartmuster → Vorauswahl am Dienst übernehmen**. Der Export/die Übergabe enthält dann `iv: '2h'`.
 - **Reiner SSH-Musterdienst:** Die Coin-Auswahl erneut herunterladen und anhand [ORACLE_24-7.md](ORACLE_24-7.md) ersetzen. Für einen bereits so eingerichteten Dienst nach dem Hochladen in der VM:
 
 ```bash
