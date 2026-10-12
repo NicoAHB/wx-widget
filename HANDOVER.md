@@ -26,6 +26,8 @@ App/SW gemeinsam **3.65.0** vorbereitet, Dienst **2.12.0** unverändert; vollst�
 
 Gegenüber dem Gesamtlauf verändern sich nur App-HTML (ein Navigationsziel), dessen Manifest-Hash und SW-Buildkennung, 146 Produktdateien unverändert. Lint danach erneut 0 Fehler/3 bekannte Warnungen. **Offen:** vollständige relevante Nachläufe auf erneut geschütztem Produktstand, abschließender Nachweis, PR/Pages/Code-Paket. Reale Geräteabnahme bleibt offen.
 
+**Zusätzlicher Nachlaufbefund:** `functional` 33/35, beide Nachalarm-Erwartungen. Der unveränderte Mock verliert bei erstmaliger Historienerzeugung nach Minutenwechsel die unmittelbar davor beobachtete Spitze (deterministischer Replay: Hoch 70,2115 statt 71,5). Reine LTC-1m-Marktfixture jetzt vor der Spitze initialisieren, keine App-/Alarmänderung, ursprüngliche 35 Kriterien erhalten. Gezielter nativer Minutenwechsel und vollständiger Nachlauf vor Veröffentlichung; fehlgeschlagener Zwischenlauf bleibt erhalten.
+
 ## Vorheriger Arbeitsstand 3.64.1 – direkte Mustererklärung online und technisch abgenommen
 
 Nutzerauftrag nach 3.64.0: Chartmuster-Kacheln leichter erklären, insbesondere per langem Drücken. Umsetzung in `codex/chartmuster-direktinfo`, jetzt öffentlich **3.64.1**.
