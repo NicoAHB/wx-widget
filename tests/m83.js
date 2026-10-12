@@ -104,7 +104,7 @@ async function importFile(page, file) { await page.setInputFiles('#backup-file',
     check('Alte vorbereitete Datei markiert neuere Änderungen nicht als gesichert', older.text === unencrypted.text && /Neuere Änderungen sind noch nicht gesichert/.test(await text(A.page, 'qr-file-status')) && await A.page.evaluate(() => +localStorage.getItem('scalpdesk.changes.v1') > 0));
     await A.page.evaluate(old => { __g05.state.trades[0].note = old; __g05.persist(); }, unencryptedPayload.history[0].note);
     for (const layout of ['standard', 'dashboard']) for (const width of [320, 390, 768]) {
-      await A.page.evaluate(layout => document.querySelector(`[data-presentation-set="${layout}"]`).click(), layout); await A.page.setViewportSize({ width, height: 1000 });
+      await A.page.setViewportSize({ width, height: 1000 }); await h.presentationFixture(A.page, layout);
       check(`${layout}/${width}px: Dateibox und Tasten ohne rechten Überlauf`, await A.page.evaluate(() => { const nodes = [...document.querySelectorAll('.qr-transfer,.qr-transfer .sheet-actions,.qr-transfer .button,.qr-transfer small')].filter(n => n.getClientRects().length); return nodes.every(n => n.scrollWidth <= n.clientWidth + 1) && nodes.filter(n => n.classList.contains('button')).every(n => n.getBoundingClientRect().height >= 44); }));
     }
     await A.page.locator('.qr-transfer').screenshot({ path: '/tmp/scalpdesk-359-qr-datei.png' });
@@ -140,13 +140,19 @@ async function importFile(page, file) { await page.setInputFiles('#backup-file',
     const big = await save(A.page, 'qr-big-file');
     check('Übergroßes QR-Backup wird als kompakte Datei mit QR-Passwort gespeichert', (fromCode(big.text)[3] & 2) && await A.page.evaluate(async text => (await __qr83.unpackBackup(Uint8Array.from(atob(text.slice(5, text.indexOf('.', 5))), c => c.charCodeAt(0)), 'Grosspass83')).payload.history.length === 160, big.text));
     await click(A.page, 'qr-big-code'); check('Alternativer Textcode übernimmt gewähltes QR-Passwort', await A.page.inputValue('#code-pass') === 'Grosspass83'); await click(A.page, 'code-close');
+    const verified = [A, S, N, R, V];
+    // Lokale Aufgabenserie: noch kein neues PWA-Bündel. Der normale Release-Lauf
+    // behält die Offline-Prüfung; "online" prüft nur den aktuellen Online-Code.
+    if (!process.argv.includes('online')) {
     const O = await open(browser, { seed: fixture }); contexts.push(O.ctx); await O.page.evaluate(() => navigator.serviceWorker.ready); await O.page.waitForFunction(() => !!navigator.serviceWorker.controller);
     await O.ctx.setOffline(true); await O.page.goto(h.URL_BASE + '/weather-widget-v2.html'); await O.page.waitForFunction(() => !!window.__g05);
     await O.page.click('#tabbar [data-tab="pos"]'); await click(O.page, 'data-toggle'); await click(O.page, 'qr-scan'); await O.page.waitForFunction(() => typeof window.jsQR === 'function');
     check('Frischer Offline-Start lädt QR-Scanner aus dem aktuellen vollständigen PWA-Bündel', await O.page.evaluate(() => typeof jsQR === 'function' && [...document.scripts].some(s => /bundles\/[\d.]+\/vendor\/jsQR\.js$/.test(s.src))));
     await click(O.page, 'qr-close'); await click(O.page, 'qr-export'); await O.page.waitForFunction(() => /Vollständige Sicherung/.test(document.getElementById('qr-calc').textContent)); await prepare(O.page, 'Offline83'); const offline = await save(O.page);
     check('Kompakte verschlüsselte Sicherung wird auch vollständig offline erzeugt', (fromCode(offline.text)[3] & 2) && offline.text.length > 100 && /verschluesselt\.txt$/.test(offline.name));
-    check('Keine JavaScript-Laufzeitfehler in allen Browserfähigkeiten', [A, S, N, R, V, O].every(v => !v.errors.length), [A, S, N, R, V, O].flatMap(v => v.errors).join(' | '));
+    verified.push(O);
+    }
+    check('Keine JavaScript-Laufzeitfehler in allen Browserfähigkeiten', verified.every(v => !v.errors.length), verified.flatMap(v => v.errors).join(' | '));
   } catch (e) { check('Abbruch', false, String(e.stack)); }
   finally { for (const ctx of contexts) await ctx.close(); if (browser) await browser.close(); await h.teardown(); try { fs.unlinkSync(path.join(root, debug)); } catch {} }
   console.log(`\n${pass}/${pass + fail} bestanden`); process.exitCode = fail ? 1 : 0;

@@ -30,29 +30,30 @@ const tests = {
     check('Zurück auf dunkel', await page.evaluate(() => document.documentElement.dataset.theme) === 'dark');
     check('keine Fehler', !errors.length, errors.join(' | ')); await ctx.close();
   },
-  async layout(browser) {
-    const { ctx, page, errors } = await open(browser);
-    check('Desktop: drei Spalten', await page.evaluate(() => getComputedStyle(document.getElementById('dash')).gridTemplateColumns.split(' ').length) === 3);
-    check('Desktop: Tab-Leiste verborgen', !(await visible(page, '#tabbar')));
-    await page.click('#view-menu'); await page.click('[data-layout-set="tablet"]'); await page.click('body', { position: { x: 5, y: 500 } });
-    check('iPad-Layout per Schalter', await page.evaluate(() => document.documentElement.dataset.layout) === 'tablet' && await visible(page, '#tabbar'));
-    await page.click('#tabbar [data-tab="pos"]');
-    check('Tab Positionen zeigt Positionen, verbirgt Chart und Rechner', await visible(page, '#positions') && !(await visible(page, '#chart-sec')) && !(await visible(page, '#calc-sec')));
-    await page.click('#tabbar [data-tab="calc"]');
-    check('Tab Rechner zeigt nur den Rechner', await visible(page, '#calc-sec') && !(await visible(page, '#positions')) && !(await visible(page, '#chart-sec')));
-    check('Aktiver Tab markiert', await page.evaluate(() => document.querySelector('#tabbar [aria-current="page"]')?.dataset.tab) === 'calc');
+  async layout() {
+    const native = await h.launch({ workspace: 'fresh' });
+    try {
+    const { ctx, page, errors } = await open(native);
+    check('PC: Arbeitsbereich Dashboard automatisch, zwei Spalten', await page.evaluate(() => document.documentElement.dataset.presentation === 'dashboard' && getComputedStyle(document.getElementById('dash')).gridTemplateColumns.split(' ').length === 2));
+    check('Nur Bereichsnavigation, keine alte Tab-/Layoutauswahl', await visible(page, '#workspace-nav') && !(await visible(page, '#tabbar')) && await page.locator('[data-layout-set],[data-presentation-set],[data-workspace-mode]').count() === 0);
+    await page.setViewportSize({ width: 768, height: 1024 });
+    check('Schmales PC-Fenster bleibt Dashboard und ordnet Karten untereinander', await page.evaluate(() => document.documentElement.dataset.presentation === 'dashboard' && getComputedStyle(document.getElementById('dash')).display === 'flex'));
+    await page.click('[data-workspace-target="pos"]');
+    check('Positionen und zugehöriger Rechner erreichbar, Chart verborgen', await visible(page, '#positions') && !(await visible(page, '#chart-sec')) && await visible(page, '#calc-sec'));
+    check('Aktiver Bereich markiert', await page.evaluate(() => document.querySelector('[data-workspace-target][aria-current="page"]')?.dataset.workspaceTarget) === 'pos');
     await page.click('.lb-market');
-    check('Live-Leiste springt zum Chart-Tab', await page.evaluate(() => document.documentElement.dataset.activeTab) === 'chart' && await visible(page, '#chart-sec'));
-    await page.waitForTimeout(400);
-    check('Chart nach Tabwechsel gezeichnet', await page.evaluate(() => document.querySelectorAll('#chart svg rect').length > 50));
-    await page.click('#tabbar [data-tab="ind"]');
-    check('Indikatoren im iPad-Layout zugeklappt', await page.evaluate(() => !document.getElementById('zones-sec').open && !document.getElementById('ind-sec').open));
-    await page.click('#zones-sec > summary'); await page.waitForTimeout(300);
-    await page.reload(); await page.waitForTimeout(800);
-    check('Tab und aufgeklappter Bereich werden gemerkt', await page.evaluate(() => document.documentElement.dataset.activeTab === 'ind' && document.getElementById('zones-sec').open));
-    await page.click('#view-menu'); await page.click('[data-layout-set="auto"]');
-    check('Automatisch → Desktop bei Maus und breitem Fenster', await page.evaluate(() => document.documentElement.dataset.layout) === 'desktop');
+    check('Live-Leiste springt zum Chart-Bereich', await page.evaluate(() => document.documentElement.dataset.workspaceView === 'chart') && await visible(page, '#chart-sec'));
+    await page.locator('#chart').scrollIntoViewIfNeeded(); await page.waitForFunction(() => document.querySelectorAll('#chart svg rect').length > 50);
+    check('Chart nach Bereichswechsel gezeichnet', await page.evaluate(() => document.querySelectorAll('#chart svg rect').length > 50));
+    await page.click('[data-workspace-target="ind"]');
+    check('Analysen lassen sich gezielt aufklappen', await page.locator('#zones-sec > summary').count() > 0);
+    if (!await page.locator('#zones-sec').evaluate(n => n.open)) await page.click('#zones-sec > summary');
+    await page.reload(); await page.waitForFunction(() => window.__g05 && document.documentElement.dataset.workspaceView === 'ind');
+    check('Bereich und aufgeklappte Analyse werden gemerkt', await page.evaluate(() => document.documentElement.dataset.workspaceView === 'ind' && document.getElementById('zones-sec').open));
+    await page.setViewportSize({ width: 1600, height: 1000 });
+    check('Breites PC-Fenster zeigt automatisch wieder zwei Dashboard-Spalten', await page.evaluate(() => document.documentElement.dataset.layout === 'desktop' && document.documentElement.dataset.presentation === 'dashboard'));
     check('keine Fehler', !errors.length, errors.join(' | ')); await ctx.close();
+    } finally { await native.close(); }
   },
   async touchauto(browser) {
     const ctx = await browser.newContext({ viewport: { width: 1180, height: 820 }, hasTouch: true, isMobile: true, deviceScaleFactor: 2 });

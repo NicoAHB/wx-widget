@@ -1,4 +1,4 @@
-// 3.60.0: echte frische Startansicht und Arbeitsbereiche, zusätzlich zur bisherigen Gesamtansicht.
+// Echte frische Arbeitsbereiche; Gerätewahl separat in M96, beide CSS-Profile als Breitenmatrix.
 // Keine Klickautomatik im Harness: sämtliche Wege werden hier am tatsächlichen UI bedient.
 const h = require('./harness'); let pass = 0, fail = 0;
 const check = (name, ok, detail = '') => { ok ? pass++ : fail++; console.log(`${ok ? '✓' : '✗'} ${name}${detail ? ' — ' + JSON.stringify(detail).slice(0, 550) : ''}`); };
@@ -20,10 +20,10 @@ const select = async (p, key) => { await p.click(`[data-workspace-target="${key}
   await ctx.route('https://raw.githubusercontent.com/NicoAHB/wx-widget/news/news.json', route => route.fulfill({ contentType: 'application/json', body: JSON.stringify({ v:1, fetchedAt:new Date().toISOString(), covered:['BTC'], binance:[], news:{BTC:Array.from({length:6},(_,i)=>({t:Date.now()-(i+1)*3600000,imp:'high',cat:'recht',title:'Bitcoin ETF Meldung '+i,outlet:'Testmedium',url:'https://news.google.com/rss/articles/ui84-'+i,more:0}))} }) }));
   await p.goto(h.URL_BASE + '/weather-widget-v2.html');
   await p.waitForFunction(() => window.__g05?.state.candles.length > 100 && !!window.__g12?.view.state.confirmed);
-  check('Frischer Start ohne Testpräferenz: Arbeitsbereich Chart, Standardlayout erhalten', await p.evaluate(() => document.documentElement.dataset.workspace === 'focus' && document.documentElement.dataset.workspaceView === 'chart' && document.documentElement.dataset.presentation === 'standard'));
+  check('Frischer Start ohne Testpräferenz: Arbeitsbereich Chart, PC-Dashboard automatisch', await p.evaluate(() => document.documentElement.dataset.workspace === 'focus' && document.documentElement.dataset.workspaceView === 'chart' && document.documentElement.dataset.presentation === 'dashboard'));
   check('Chart und echte Signalübersicht sichtbar, sekundäre Bereiche verborgen', await visible(p, 'chart-sec') && await visible(p, 'signals') && !await visible(p, 'positions') && !await visible(p, 'alarms') && !await visible(p, 'econ') && !await visible(p, 'calc-sec'));
   const chart = await p.locator('#chart-sec').boundingBox(), sig = await p.locator('#signals').boundingBox();
-  check('Desktop: zwei Spalten, Chart breiter und neben Signalen', chart.width > sig.width * 1.8 && sig.x >= chart.x + chart.width - 1 && Math.abs(chart.y - sig.y) < 1, { chart, sig });
+  check('PC-Dashboard: zwei Spalten, breiter Chart rechts neben Signalen', chart.width > sig.width * 1.8 && chart.x >= sig.x + sig.width - 1 && Math.abs(chart.y - sig.y) < 1, { chart, sig });
   check('Wichtige Vorauswahl oben sichtbar; Orderflow und Ebenen zunächst eingeklappt', await p.evaluate(() => document.getElementById('workspace-watch').open && document.getElementById('watchlist').getBoundingClientRect().top < document.getElementById('chart-sec').getBoundingClientRect().top && ['workspace-orderflow', 'workspace-chart-tools'].every(id => !document.getElementById(id).open)));
   await p.click('#workspace-watch > summary'); check('Chart: Vorauswahl per echtem Klick zugeklappt', !await visible(p, 'watchlist'));
   await p.click('#workspace-watch > summary'); check('Chart: dieselbe Vorauswahl erneut aufklappbar', await visible(p, 'watchlist'));
@@ -68,14 +68,11 @@ const select = async (p, key) => { await p.click(`[data-workspace-target="${key}
   for (const id of ['workspace-orderflow', 'workspace-chart-tools']) { if (!await p.locator('#' + id).evaluate(n => n.open)) await p.click('#' + id + ' > summary'); check(`${id}: tatsächlicher Inhalt nach Aufklappen sichtbar`, await p.evaluate(id => { const d = document.getElementById(id); return d.open && [...d.children].some(n => n.tagName !== 'SUMMARY' && n.getBoundingClientRect().height > 0); }, id)); }
   check('Alle existierenden UI-Knoten, Entwurf und Bücher über Navigation erhalten', await p.evaluate(() => ui84Nodes.every(n => n === document.getElementById(n.id)) && document.getElementById('pos-note').value === 'Nicht gespeicherter Entwurf – 84' && JSON.stringify([__g05.state.positions, __g05.state.trades, __g05.state.alarms]) === ui84Books));
   check('Navigation erzeugt keine zusätzlichen Worker oder Sekundentimer', await p.evaluate(() => JSON.stringify(ui84Resources) === ui84ResourcesBefore), await p.evaluate(() => ui84Resources));
-  await p.click('#workspace-all');
-  check('Gesamtansicht behält vorhandene drei Desktopspalten', await p.evaluate(() => document.documentElement.dataset.workspace === 'all' && getComputedStyle(document.getElementById('dash')).gridTemplateColumns.split(' ').length === 3));
-  check('Gesamtansicht stellt Sicherung/Menüs an ihre ursprünglichen Stellen zurück', await p.evaluate(() => document.getElementById('data-panel').parentElement.id === 'pos-over' && document.getElementById('view-panel').parentElement.classList.contains('menu-wrap') && document.getElementById('model-settings').parentElement.classList.contains('calc-side')));
-  check('Gesamtansicht entfernt neue Klapphüllen und stellt direkte Original-Eltern zurück', await p.evaluate(() => document.getElementById('watchlist').parentElement.id==='market-form' && document.getElementById('orderflow-panel').parentElement.classList.contains('of-chart-grid') && document.querySelector('#chart-sec .chart-footer').parentElement.classList.contains('of-chart-pane') && !document.getElementById('workspace-watch')));
-  await p.click('#view-menu'); await p.click('[data-workspace-mode="focus"]');
-  check('Arbeitsbereiche aus Ansicht zurück erreichbar, Knoten und Entwurf erhalten', await p.evaluate(() => document.documentElement.dataset.workspace === 'focus' && ui84Nodes.every(n => n === document.getElementById(n.id)) && document.getElementById('pos-note').value === 'Nicht gespeicherter Entwurf – 84'));
-  check('Rückkehr hängt dieselbe Vorauswahl wieder oben ein und erhält alle Klappflächen', await p.evaluate(() => document.getElementById('watchlist').parentElement.id==='workspace-watch' && document.getElementById('workspace-watch').parentElement.classList.contains('dash-top') && document.getElementById('orderflow-panel').parentElement.id==='workspace-orderflow' && document.querySelector('#chart-sec .chart-footer').parentElement.id==='workspace-chart-tools'));
-  check('Zuvor geöffnete Details über Gesamtansicht-Wechsel erhalten', await p.evaluate(() => ['workspace-orderflow', 'workspace-chart-tools'].every(id => document.getElementById(id).open)));
+  check('Keine Gesamtansicht oder manuellen Geräte-/Darstellungsschalter mehr', await p.evaluate(() => !document.querySelector('#workspace-all,[data-workspace-mode],[data-layout-set],[data-presentation-set]')));
+  await select(p, 'settings'); await p.click('#view-menu'); await select(p, 'chart');
+  check('Bereichswechsel erhält Knoten und Entwurf', await p.evaluate(() => document.documentElement.dataset.workspace === 'focus' && ui84Nodes.every(n => n === document.getElementById(n.id)) && document.getElementById('pos-note').value === 'Nicht gespeicherter Entwurf – 84'));
+  check('Vorauswahl und Klappflächen bleiben an den passenden Stellen', await p.evaluate(() => document.getElementById('watchlist').parentElement.id==='workspace-watch' && document.getElementById('workspace-watch').parentElement.classList.contains('dash-top') && document.getElementById('orderflow-panel').parentElement.id==='workspace-orderflow' && document.querySelector('#chart-sec .chart-footer').parentElement.id==='workspace-chart-tools'));
+  check('Zuvor geöffnete Details über Bereichswechsel erhalten', await p.evaluate(() => ['workspace-orderflow', 'workspace-chart-tools'].every(id => document.getElementById(id).open)));
   await select(p, 'settings'); await p.reload(); await p.waitForFunction(() => window.__g05 && document.documentElement.dataset.workspaceView === 'settings');
   check('Arbeitsbereich und Hintergrund nach Öffnen wiederhergestellt', await p.evaluate(() => document.documentElement.dataset.workspace === 'focus' && document.documentElement.dataset.theme === 'light' && document.documentElement.dataset.workspaceView === 'settings'));
   await select(p, 'chart'); check('Klappauswahl nach Neuladen wiederhergestellt', await p.evaluate(() => ['workspace-orderflow', 'workspace-chart-tools'].every(id => document.getElementById(id).open)));
@@ -100,7 +97,7 @@ const select = async (p, key) => { await p.click(`[data-workspace-target="${key}
   }
   await p.setViewportSize({ width: 390, height: 844 });
   for (const presentation of ['standard', 'dashboard']) {
-   await select(p, 'settings'); await p.click('#view-menu'); await p.click(`[data-presentation-set="${presentation}"]`);
+   await select(p, 'settings'); await p.click('#view-menu'); await h.presentationFixture(p, presentation);
    for (const theme of ['light', 'dark', 'custom']) {
     await p.click(`[data-theme-set="${theme}"]`); if (theme === 'custom') await p.click('[data-background-color="#f5eddf"]');
     check(`${presentation}/${theme}: Einstellungen ohne Überlauf, Farben weiter lesbar`, await p.evaluate(() => { const s = getComputedStyle(document.documentElement), v = k => s.getPropertyValue('--' + k).trim(); return document.documentElement.scrollWidth <= innerWidth + 1 && ['text', 'muted', 'up-text', 'down-text'].every(k => __sdAppearance.contrast(v(k), v('surface-2')) >= 4.5); }));
@@ -112,15 +109,15 @@ const select = async (p, key) => { await p.click(`[data-workspace-target="${key}
   await p.click('#chart-full'); check('Vollbild weiterhin erreichbar, Navigation verdeckt Chart nicht', await p.evaluate(() => document.documentElement.dataset.chartfull === '1') && !await visible(p, 'workspace-nav'));
   await p.click('#fb-tools'); check('Vollbild-Werkzeuge trotz eingeklappter Ebenen bedienbar', await visible(p, 'ov-all'));
   await p.click('#fb-exit'); check('Vollbild zurück zur selben Chartansicht', await visible(p, 'workspace-nav') && await visible(p, 'chart-sec'));
-  await p.setViewportSize({ width: 1440, height: 1000 }); await select(p, 'settings'); await p.click('#view-menu'); await p.click('[data-presentation-set="dashboard"]'); await select(p, 'chart');
-  check('Alternative Desktopdarstellung: breiter Chart rechts, gleiche Signale links', await p.evaluate(() => { const c = document.getElementById('chart-sec').getBoundingClientRect(), s = document.getElementById('signals').getBoundingClientRect(); return c.left > s.left && c.width > s.width * 1.8; }));
+  await p.setViewportSize({ width: 1440, height: 1000 }); await select(p, 'settings'); await p.click('#view-menu'); await h.presentationFixture(p, 'dashboard'); await select(p, 'chart');
+  check('Automatisches PC-Dashboard: breiter Chart rechts, gleiche Signale links', await p.evaluate(() => { const c = document.getElementById('chart-sec').getBoundingClientRect(), s = document.getElementById('signals').getBoundingClientRect(); return c.left > s.left && c.width > s.width * 1.8; }));
   await p.screenshot({ path: '/tmp/scalpdesk-360-dashboard-desktop.png' });
-  await select(p, 'settings'); await p.click('#view-menu'); await p.click('[data-presentation-set="standard"]'); await select(p, 'chart'); await p.screenshot({ path: '/tmp/scalpdesk-360-standard-desktop.png' });
+  await select(p, 'settings'); await p.click('#view-menu'); await h.presentationFixture(p, 'standard'); await select(p, 'chart'); await p.screenshot({ path: '/tmp/scalpdesk-360-standard-desktop.png' });
   const ready = await p.evaluate(async () => { const f=await import('/tests/fixtures/confluence-live.mjs'), {evaluateLive}=await import('/shared/confluence-live.mjs'), snapshot=f.liveFixture(), r=evaluateLive(snapshot), c=r.cards.find(c=>c.levels.status==='bereit'); window.ui84BitgetCard = c && {...c,chartRows:snapshot.saved.series.base.rows}; return !!c; });
   check('Zusätzlicher KI-Chart-Fall stammt aus dem tatsächlichen gemeinsamen Kartenkern', ready);
   for (const width of [320,390,1440]) for (const presentation of ['standard','dashboard']) {
    await p.setViewportSize({width,height:1000});
-   await select(p,'settings'); await p.click('#view-menu'); await p.click(`[data-presentation-set="${presentation}"]`); await select(p,'chart');
+   await select(p,'settings'); await p.click('#view-menu'); await h.presentationFixture(p, presentation); await select(p,'chart');
    await p.evaluate(() => __g10.showChart(ui84BitgetCard)); await p.waitForFunction(() => document.querySelector('#ki-chart svg'));
    const geometry=await p.evaluate(() => ({chart:document.getElementById('ki-chart-sec').getBoundingClientRect().toJSON(),signals:document.getElementById('signals').getBoundingClientRect().toJSON()}));
    const inPlace=width<1100 ? geometry.chart.bottom<geometry.signals.top && geometry.chart.width>=width-30 : geometry.chart.width>geometry.signals.width*1.8 && Math.abs(geometry.chart.top-geometry.signals.top)<1 && (presentation==='standard'?geometry.chart.left<geometry.signals.left:geometry.chart.left>geometry.signals.left);
@@ -128,11 +125,16 @@ const select = async (p, key) => { await p.click(`[data-workspace-target="${key}
    check(`${width}px/${presentation}: echte geschlossene Testkerzen und drei Referenzlinien im Bitget-Chart`, await p.locator('#ki-chart .ki-level').count()===3 && await p.locator('#ki-chart svg rect').count()===60);
    await p.click('#ki-chart-back'); check(`${width}px/${presentation}: Rückkehr zeigt denselben Binance-Chart ohne zweite sichtbare Chartzeile`, await visible(p,'chart-sec') && !await visible(p,'ki-chart-sec'));
   }
+  // Erst beim gemeinsamen Release wird das neue lokale Modul ins PWA-Bündel aufgenommen.
+  // Der ausdrücklich benannte lokale Online-Lauf prüft keine veraltete Lieferliste;
+  // der normale Gesamtlauf behält die vollständige Offline-Abnahme.
+  if (!process.argv.includes('online')) {
   // Frischer echter Offline-Aufruf erhält den gewählten Arbeitsbereich und das komplette PWA-Bündel.
   await select(p, 'settings'); await p.waitForFunction(() => !!navigator.serviceWorker.controller); await ctx.setOffline(true);
   const off = await ctx.newPage(); off.on('pageerror', e => errors.push(e.message)); await off.goto(h.URL_BASE + '/weather-widget-v2.html'); await off.waitForFunction(() => !!window.__g05 && document.documentElement.dataset.workspaceView === 'settings');
   check('Frischer Offline-Start stellt Navigation und vollständige Sicherung bereit', await visible(off, 'workspace-settings') && await off.evaluate(() => document.getElementById('data-panel').closest('#workspace-settings') && document.getElementById('backup-compact')));
   await ctx.setOffline(false); await off.close();
+  }
   check('Keine JavaScript-Fehler beim Neuordnen, Wechseln, Sichern oder Offline-Start', errors.length === 0, errors);
   await ctx.close();
   for (const width of [320, 390]) {
@@ -153,9 +155,10 @@ const select = async (p, key) => { await p.click(`[data-workspace-target="${key}
    await phone.tap('[data-workspace-target="chart"]'); await phone.tap('#workspace-orderflow > summary');
    check(`${width}px Touch: bestehendes Orderflow-Signal und alle zehn Kerzen erreichbar`, await visible(phone, 'of-signal') && await phone.locator('.of-row:not(.of-legend)').count() === 10);
    await phone.tap('#workspace-price-alarms'); check(`${width}px Touch: Preisalarme direkt aus Chart erreichbar`, await visible(phone, 'ki-price-panel') && await phone.evaluate(() => document.documentElement.dataset.workspaceView === 'ind'));
-   await phone.tap('[data-workspace-target="settings"]'); await phone.tap('#view-menu'); await phone.tap('[data-workspace-mode="all"]');
-   await phone.reload(); await phone.waitForFunction(() => window.__g05 && document.documentElement.dataset.workspace === 'all');
-   check(`${width}px Touch: Gesamtansicht dauerhaft gespeichert, ursprüngliche Tab-Leiste erhalten`, await visible(phone, 'tabbar') && !await visible(phone, 'workspace-nav'));
+   await phone.tap('[data-workspace-target="settings"]'); await phone.tap('#view-menu');
+   check(`${width}px Touch: Geräteansicht erklärt, keine Auswahl der Gesamtansicht`, await phone.evaluate(() => !!document.getElementById('device-view-name').textContent && !document.querySelector('[data-workspace-mode],[data-presentation-set],[data-layout-set]')));
+   await phone.reload(); await phone.waitForFunction(() => window.__g05 && document.documentElement.dataset.workspace === 'focus');
+   check(`${width}px Touch: Arbeitsbereiche nach Neustart erreichbar`, await visible(phone, 'workspace-nav') && !await visible(phone, 'tabbar'));
    await touch.close();
   }
   check('Auch echte Touch-Wege ohne JavaScript-Fehler', errors.length === 0, errors);

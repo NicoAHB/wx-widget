@@ -66,15 +66,29 @@
     };
     return Object.freeze({ normalize, contrast, evaluate, suggest, palette, build });
   })();
+  // Gerätezuordnung statt zusätzlicher Layout-Schalter. Bildschirmgröße ist die
+  // Gerätefläche, nicht das Fenster: Hoch-/Querformat und iPad Split View behalten dieselbe Ansicht.
+  window.__sdDeviceView = function (nav, display, coarse) {
+    const ua = String(nav.userAgent || ''), touch = Number(nav.maxTouchPoints) > 0;
+    const ipad = /iPad/i.test(ua) || (/Mac/i.test(nav.platform || '') && touch);
+    const phone = !ipad && (/iPhone|iPod|Android.*Mobile/i.test(ua) || nav.userAgentData?.mobile === true);
+    const tablet = ipad || /Android|Tablet/i.test(ua);
+    const desktop = !ipad && /Windows|X11|Linux.*(?:x86_64|i[3-6]86)|Macintosh/i.test(ua);
+    const shortEdge = Math.min(Number(display.width) || Infinity, Number(display.height) || Infinity);
+    const mobile = phone || (!tablet && !desktop && touch && coarse && shortEdge <= 600);
+    return { presentation: mobile ? 'standard' : 'dashboard', device: mobile ? 'phone' : tablet ? 'tablet' : 'desktop' };
+  };
   // Design, Layout und Tab vor dem ersten Zeichnen setzen (kein Aufblitzen). Werte liegen als JSON im localStorage-Spiegel.
   (function () {
     var d = document.documentElement, g = function (k) { try { var v = localStorage.getItem('scalpdesk.' + k); return v === null ? null : JSON.parse(v); } catch (e) { return null; } };
-    var t = g('theme.v1'), l = g('layout.v1'), tab = g('tab.v1');
+    var t = g('theme.v1'), tab = g('tab.v1');
+    var view = window.__sdDeviceView(navigator, screen, window.matchMedia && matchMedia('(pointer:coarse)').matches);
     d.setAttribute('data-theme', t === 'light' ? 'light' : 'dark');
-    d.setAttribute('data-layout', l === 'desktop' || l === 'tablet' ? l : (window.matchMedia && matchMedia('(min-width:1100px) and (hover:hover) and (pointer:fine)').matches ? 'desktop' : 'tablet'));
+    d.setAttribute('data-layout', window.matchMedia && matchMedia('(min-width:1100px) and (hover:hover) and (pointer:fine)').matches ? 'desktop' : 'tablet');
+    d.setAttribute('data-workspace', 'focus');
     d.setAttribute('data-active-tab', tab === 'calc' || tab === 'pos' || tab === 'ind' ? tab : 'chart');
     if (t === 'light') { var m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', '#eef1f5'); }
-    d.setAttribute('data-presentation', g('presentation.v1') === 'dashboard' ? 'dashboard' : 'standard');
+    d.setAttribute('data-presentation', view.presentation);
     var b = g('background.v1'), p = b && b.mode === 'custom' ? window.__sdAppearance.build(b.color) : null;
     if (p) { d.setAttribute('data-theme', p.theme); d.setAttribute('data-background', 'custom'); Object.keys(p.vars).forEach(function (k) { d.style.setProperty(k, p.vars[k]); }); document.querySelector('meta[name="theme-color"]').setAttribute('content', p.color); }
   })();
@@ -2090,7 +2104,19 @@ html[data-presentation=dashboard][data-layout=tablet] #acct{order:0}
 @media(max-width:600px){.bot-view .bot-grid,.bot-view .bot-limits,.bot-view .bot-run-facts{grid-template-columns:minmax(0,1fr)}.bot-view .bot-group,.bot-view .bot-run-card{padding:10px}.bot-view .bot-actions>.button{flex-basis:100%}}
 
 
-/* 3.60.0: fokussierte Arbeitsbereiche; die Gesamtansicht behält ihr bisheriges Raster. */
+/* Kurze Oberfläche, vollständige Erklärungen nach Antippen. */
+.explain-fold{margin:8px 0;border:1px solid var(--border);border-radius:10px;min-width:0;background:var(--surface-2)}
+.explain-fold>summary{display:flex;align-items:center;gap:8px;min-height:44px;padding:9px 12px;list-style:none;cursor:pointer;font-size:.8125rem;font-weight:600;color:var(--text-2)}
+.explain-fold>summary::-webkit-details-marker{display:none}.explain-fold>summary::after{content:"＋";margin-left:auto;color:var(--muted)}.explain-fold[open]>summary::after{content:"−"}
+.explain-fold>.explain-body{padding:0 12px 12px;overflow-wrap:anywhere;line-height:1.5}.tip-body .explain-fold{background:transparent}.explain-fold p{margin:6px 0}
+.crypto-calendar{margin:12px 14px 14px;border:1px solid var(--border);border-radius:12px;min-width:0;background:var(--surface-2)}
+.crypto-calendar>summary{padding:10px 12px;min-height:48px;cursor:pointer;font-size:.875rem;font-weight:600}.crypto-calendar-content{padding:0 12px 12px;display:grid;gap:10px}
+.crypto-calendar-tools{display:flex;flex-wrap:wrap;align-items:end;gap:8px}.crypto-calendar-tools label{font-size:.75rem;min-width:0;flex:1 1 120px}.crypto-calendar-tools select{display:block;width:100%;min-height:44px}.crypto-calendar-tools button{min-height:44px}
+.crypto-event{display:grid;gap:5px;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;min-width:0;overflow-wrap:anywhere;font-size:.8125rem}
+.crypto-event time{color:var(--muted)}.crypto-event strong{font-size:.875rem}.crypto-event-meta{display:flex;gap:6px;flex-wrap:wrap;align-items:center;color:var(--muted)}.crypto-event a{display:inline-flex;align-items:center;min-height:44px;color:var(--up-text);font-weight:600}
+.crypto-calendar-note{font-size:.75rem;color:var(--muted);line-height:1.5;overflow-wrap:anywhere}.crypto-calendar-note.err{color:var(--warn-text)}
+
+/* Arbeitsbereiche: Standard auf Handys, Dashboard auf PC/iPad. */
 .workspace-nav{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:12px 24px;border-bottom:1px solid var(--border);background:var(--surface);position:static}
 .workspace-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;flex:1 1 440px;max-width:680px}
 .workspace-tabs button{min-width:0;min-height:44px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2);color:var(--text-2);font-size:.875rem;font-weight:650;padding:8px}
@@ -2108,8 +2134,6 @@ html[data-presentation=dashboard][data-layout=tablet] #acct{order:0}
 .workspace-setting-card{min-width:0;padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--surface-2)}
 .workspace-setting-card h3{font-size:1rem;margin-bottom:4px}.workspace-setting-card p{font-size:.8125rem;color:var(--muted);line-height:1.5}
 .workspace-setting-card .data-head{margin-top:8px}.workspace-setting-card .data-panel{padding:12px}
-html[data-workspace=all] .workspace-nav,html[data-workspace=all] #workspace-settings{display:none!important}
-html[data-workspace=all] .workspace-fold{display:contents}html[data-workspace=all] .workspace-fold>summary,html[data-workspace=all] .workspace-actions{display:none}
 html[data-workspace=focus] [data-workspace-visible=false]{display:none!important}
 html[data-workspace=focus][data-layout] [data-workspace-visible=true]:not([hidden]){display:block!important}
 html[data-workspace=focus] .tabbar{display:none!important}
@@ -2229,42 +2253,59 @@ html[data-chartfull] .chart-pattern-row{padding:0;order:1;flex-wrap:nowrap}html[
 /* cpq-1: Punkte statt Wahrscheinlichkeit; Balken verändert weder Höhe noch Textkontrast. */
 .chart-pattern-chip{position:relative;padding-bottom:8px}.chart-pattern-chip::after{content:'';position:absolute;left:0;bottom:0;width:var(--quality-width,0%);height:3px;background:currentColor;border-radius:3px}.chart-pattern-tile.invalid .chart-pattern-chip::after{display:none}.pat-quality{border:1px solid var(--border);border-radius:12px;padding:12px;margin:12px 0;color:var(--text);background:var(--surface-2);font-size:13px}.pat-quality h3{margin:0 0 8px;font-size:15px}.pat-quality dl{margin:0;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px 12px}.pat-quality dt,.pat-quality dd{margin:0;min-width:0;overflow-wrap:anywhere}.pat-quality dd{font-variant-numeric:tabular-nums;text-align:right}.pat-quality small{display:block;font-size:11px;font-weight:normal;color:var(--muted);line-height:1.5}.pat-quality p{margin:8px 0 0;line-height:1.5}.pat-quality .quality-warning{color:var(--warn-text)}
 .chart-pattern-row{flex-wrap:wrap}.chart-pattern-summary{display:flex;align-items:center;flex-wrap:wrap;gap:4px 12px;flex:1 1 100%;min-width:0;font-size:11px;color:var(--muted)}.chart-pattern-overview{position:relative;width:min(100%,390px);height:68px;min-height:44px;max-width:100%;padding:6px 10px 9px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2);color:var(--text);text-align:left;font-size:11px;line-height:16px;overflow-wrap:anywhere}.chart-pattern-overview::after{content:'';position:absolute;left:8px;right:8px;bottom:4px;height:3px;border-radius:3px;background:linear-gradient(to right,var(--up-text) var(--bull-share,0%),var(--down-text) var(--bull-share,0%));opacity:.7}.chart-pattern-overview[data-empty=true]::after{background:var(--border)}.chart-pattern-overview:focus-visible{outline:2px solid var(--text);outline-offset:2px}.chart-pattern-summary small{font-size:11px;line-height:1.5;max-width:100%}.pat-overview-lines{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px 12px;font-size:13px}.pat-overview-lines>span{overflow-wrap:anywhere;min-width:0}.chart-pattern-summary{order:3}html[data-chartfull] .chart-pattern-row{flex-wrap:wrap}
+/* position-1: eigene Positionierung rechts in derselben Karte; zwei getrennte Tippziele. */
+.chart-pattern-overview-card{display:grid;grid-template-columns:minmax(0,1fr) 130px;width:min(100%,520px);height:92px;max-width:100%;border:1px solid var(--border);border-radius:10px;background:var(--surface-2)}
+.chart-pattern-overview-card>.chart-pattern-overview{width:100%;height:100%;border:0;background:transparent;min-width:0}
+.positioning-score{position:relative;min-width:0;padding:0 8px 10px 0;color:var(--text);font-size:11px;line-height:16px}
+.positioning-head{display:flex;align-items:center;justify-content:space-between;height:44px;gap:0}.positioning-head>span{min-width:0}
+.positioning-info{flex:0 0 44px;width:44px;height:44px;min-height:44px;border:0;border-radius:8px;background:transparent;color:var(--text);font-size:19px;cursor:pointer}
+.positioning-info:focus-visible{outline:2px solid var(--text);outline-offset:-2px}
+.positioning-value{display:block;font-size:12px;font-weight:650;line-height:18px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.positioning-warning{display:block;height:16px;line-height:16px;color:var(--warn-text);visibility:hidden}
+.positioning-bar{position:absolute;left:0;right:8px;bottom:4px;height:3px;border-radius:3px;background:linear-gradient(90deg,#e76d86,#d5a448 50%,#6bc999)}
+.positioning-marker{position:absolute;top:-3px;height:9px;width:3px;left:clamp(3px,var(--position,50%),calc(100% - 3px));transform:translateX(-50%);border-radius:2px;background:var(--text);outline:1px solid var(--surface-2)}
+.positioning-score[data-ready=false] .positioning-bar{opacity:.22}.positioning-score[data-ready=false] .positioning-marker{display:none}
+#positioning-body p{line-height:1.5}#positioning-body dl{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;font-size:13px}#positioning-body dt,#positioning-body dd{margin:0;overflow-wrap:anywhere}
+@media(max-width:360px){.chart-pattern-overview-card{height:120px}}
 </style>
   <script type="module">
-import { MARKET_INTERVALS, CHART_INTERVALS, SIGNAL_INTERVALS, INTERVAL_MS, nearestChartInterval } from './bundles/3.65.0/shared/market-intervals.mjs';
-import { createDetailCandles, detailOptions, detailChoice, closedSeries, timeIndex, DETAIL_VISIBLE_MAX } from './bundles/3.65.0/shared/chart-detail.mjs';
-import { patternChipRows, patternChipKey } from './bundles/3.65.0/shared/chart-pattern-chips.mjs';
-import { PATTERN_QUALITY_CONFIG, chartPatternQuality, repricePatternQuality, sortPatternQuality, patternOverview } from './bundles/3.65.0/shared/chart-pattern-quality.mjs';
-import { createPatternOverviewFeed } from './bundles/3.65.0/shared/chart-pattern-overview-feed.mjs';
-import { createMusterClient } from './bundles/3.65.0/shared/muster-bot-feed.mjs';
-import { createMusterPaper } from './bundles/3.65.0/shared/muster-bot-paper.mjs';
-import { readMusterPaper, writeMusterPaper } from './bundles/3.65.0/shared/muster-bot-store.mjs';
-import { projectPatternLines, projectionSettings, projectionTime } from './bundles/3.65.0/shared/pattern-projection.mjs';
-import { createGithubSyncView } from './bundles/3.65.0/shared/github-sync-view.mjs';
-import { stripSyncSecrets } from './bundles/3.65.0/shared/github-sync.mjs';
-import { createMusterView } from './bundles/3.65.0/shared/muster-bot-view.mjs';
-import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT } from './bundles/3.65.0/shared/telegram-format.mjs';
+import { MARKET_INTERVALS, CHART_INTERVALS, SIGNAL_INTERVALS, INTERVAL_MS, nearestChartInterval } from './bundles/3.66.0/shared/market-intervals.mjs';
+import { createDetailCandles, detailOptions, detailChoice, closedSeries, timeIndex, DETAIL_VISIBLE_MAX } from './bundles/3.66.0/shared/chart-detail.mjs';
+import { patternChipRows, patternChipKey } from './bundles/3.66.0/shared/chart-pattern-chips.mjs';
+import { PATTERN_QUALITY_CONFIG, chartPatternQuality, repricePatternQuality, sortPatternQuality, patternOverview } from './bundles/3.66.0/shared/chart-pattern-quality.mjs';
+import { createPatternOverviewFeed } from './bundles/3.66.0/shared/chart-pattern-overview-feed.mjs';
+// Arbeitsstand: bei der gemeinsamen Release-Freigabe in das neue Versionsbündel übernehmen.
+import { createPositioningFeed } from './bundles/3.66.0/shared/positioning-score.mjs';
+import { CRYPTO_CALENDAR, parseCryptoCalendar, cryptoCalendarEvents } from './bundles/3.66.0/shared/crypto-calendar.mjs';
+import { createMusterClient } from './bundles/3.66.0/shared/muster-bot-feed.mjs';
+import { createMusterPaper } from './bundles/3.66.0/shared/muster-bot-paper.mjs';
+import { readMusterPaper, writeMusterPaper } from './bundles/3.66.0/shared/muster-bot-store.mjs';
+import { projectPatternLines, projectionSettings, projectionTime } from './bundles/3.66.0/shared/pattern-projection.mjs';
+import { createGithubSyncView } from './bundles/3.66.0/shared/github-sync-view.mjs';
+import { stripSyncSecrets } from './bundles/3.66.0/shared/github-sync.mjs';
+import { createMusterView } from './bundles/3.66.0/shared/muster-bot-view.mjs';
+import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT } from './bundles/3.66.0/shared/telegram-format.mjs';
 // 3.45.0 (G10c): der vorhandene Binance-/G07-Kern bleibt eigenständig.
-import { exportModelArchive, importModelArchive, validateModelArchive, restoreModelOriginals } from './bundles/3.65.0/shared/model-archive.mjs';
-import { BotSimulationRuntime } from './bundles/3.65.0/shared/bot-simulation.mjs';
-import { readBotSimulation, saveBotSimulation } from './bundles/3.65.0/shared/bot-simulation-store.mjs';
-import { createBotView } from './bundles/3.65.0/shared/bot-view.mjs';
-import { createBitgetPublicClient as createPaperPublicClient } from './bundles/3.65.0/shared/bitget-public.mjs';
-import { readPaperBook, writePaperBook } from './bundles/3.65.0/shared/paper-bot-store.mjs';
-import { createPaperBotController } from './bundles/3.65.0/shared/paper-bot-controller.mjs';
-import { createPaperBotView } from './bundles/3.65.0/shared/paper-bot-view.mjs';
-import { createOrderflowView } from './bundles/3.65.0/shared/orderflow-view.mjs';
-import { createSignalView } from './bundles/3.65.0/shared/orderflow-signal-view.mjs';
-import { networkState, createWidgetBoundary } from './bundles/3.65.0/shared/widget-state.mjs';
-import { originalRisk as kiOriginalRisk } from './bundles/3.65.0/shared/confluence-risk-view.mjs';
-import { confluenceOverview, po3Overview, filterOverview, reconcileOverview } from './bundles/3.65.0/shared/signal-overview.mjs';
-import { createPo3View } from './bundles/3.65.0/shared/po3-view.mjs';
-import { cardState as kiCardState, scoreLabel as kiScoreLabel } from './bundles/3.65.0/shared/confluence-live.mjs';
-import { divergenceInfo as kiDivergenceInfo, parametersKey as kiParametersKey } from './bundles/3.65.0/shared/confluence-core.mjs';
-import { parametersKey as kiLegacyParametersKey } from './bundles/3.65.0/shared/confluence-legacy-core.mjs';
-import { presentCard as kiPresentCard, currentSignal as kiCurrentSignal } from './bundles/3.65.0/shared/confluence-presentation.mjs';
-import { observationKey as kiObservationKey } from './bundles/3.65.0/shared/confluence-replay.mjs';
-import { readReplay as kiReadHistory, saveReplay as kiSaveHistory, clearReplayJobs as kiClearHistoryJobs } from './bundles/3.65.0/shared/confluence-replay-store.mjs';
+import { exportModelArchive, importModelArchive, validateModelArchive, restoreModelOriginals } from './bundles/3.66.0/shared/model-archive.mjs';
+import { BotSimulationRuntime } from './bundles/3.66.0/shared/bot-simulation.mjs';
+import { readBotSimulation, saveBotSimulation } from './bundles/3.66.0/shared/bot-simulation-store.mjs';
+import { createBotView } from './bundles/3.66.0/shared/bot-view.mjs';
+import { createBitgetPublicClient as createPaperPublicClient } from './bundles/3.66.0/shared/bitget-public.mjs';
+import { readPaperBook, writePaperBook } from './bundles/3.66.0/shared/paper-bot-store.mjs';
+import { createPaperBotController } from './bundles/3.66.0/shared/paper-bot-controller.mjs';
+import { createPaperBotView } from './bundles/3.66.0/shared/paper-bot-view.mjs';
+import { createOrderflowView } from './bundles/3.66.0/shared/orderflow-view.mjs';
+import { createSignalView } from './bundles/3.66.0/shared/orderflow-signal-view.mjs';
+import { networkState, createWidgetBoundary } from './bundles/3.66.0/shared/widget-state.mjs';
+import { originalRisk as kiOriginalRisk } from './bundles/3.66.0/shared/confluence-risk-view.mjs';
+import { confluenceOverview, po3Overview, filterOverview, reconcileOverview } from './bundles/3.66.0/shared/signal-overview.mjs';
+import { createPo3View } from './bundles/3.66.0/shared/po3-view.mjs';
+import { cardState as kiCardState, scoreLabel as kiScoreLabel } from './bundles/3.66.0/shared/confluence-live.mjs';
+import { divergenceInfo as kiDivergenceInfo, parametersKey as kiParametersKey } from './bundles/3.66.0/shared/confluence-core.mjs';
+import { parametersKey as kiLegacyParametersKey } from './bundles/3.66.0/shared/confluence-legacy-core.mjs';
+import { presentCard as kiPresentCard, currentSignal as kiCurrentSignal } from './bundles/3.66.0/shared/confluence-presentation.mjs';
+import { observationKey as kiObservationKey } from './bundles/3.66.0/shared/confluence-replay.mjs';
+import { readReplay as kiReadHistory, saveReplay as kiSaveHistory, clearReplayJobs as kiClearHistoryJobs } from './bundles/3.66.0/shared/confluence-replay-store.mjs';
 // Pure, unrounded calculations. Prices are USDT per unit; FX is USDT per EUR.
 function rsi(closes, period = 14) {
   const out = Array(closes.length).fill(null);
@@ -3236,7 +3277,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
 // 3.43.0 (G10a): reiner Fachkern in shared/; Datenquelle und Karten folgen getrennt.
 // 3.44.0 (G10b): öffentlicher Adapter in shared/bitget-public.mjs; sichtbare Anbindung folgt mit G10(c).
-const APP_VERSION = '3.65.0', docEl = document.documentElement;
+const APP_VERSION = '3.66.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -7513,7 +7554,8 @@ function onTick(now) {
   status(); updateTitle(); // Tab-Titel spätestens jede Sekunde aktuell, auch im Hintergrund-Tab
   if (titleNeedsPoll(now)) void pollTitlePrices(now);
   whaleTick(); lastTagTick(); // 3.3: Countdown am Kurs-Schild, auch ohne Neuzeichnen
-  econTick(); // 4.1: Wirtschaftskalender abrufen, Warnung vor Terminen
+  econTick();
+  cryptoCalendarTick(); // Öffentlicher Krypto-Kalender: eigener, passiver Verbraucher.
   cnewsTick(); // 3.20: wichtige News und Termine zum geöffneten Coin
   wlTick(now); // 4.2: Mini-Watchlist laden und malen
   volaTick(now); // 4.3: Volatilität nach Uhrzeit, Warnung bei erhöhter Volatilität
@@ -7720,14 +7762,16 @@ if (window.ResizeObserver) {
 }
 // ---------- Design, Layout, Tabs ----------
 const THEME_KEY = 'scalpdesk.theme.v1', LAYOUT_KEY = 'scalpdesk.layout.v1', TAB_KEY = 'scalpdesk.tab.v1';
-// 3.51.0 (G14): Darstellungswahl getrennt vom Geräteformat und von Handelsdaten.
+// Hintergrund bleibt unabhängig von der automatisch zugeordneten Geräteansicht.
 const PRESENTATION_KEY = 'scalpdesk.presentation.v1', BACKGROUND_KEY = 'scalpdesk.background.v1', appearance = window.__sdAppearance;
 const appearanceVars = Object.keys(appearance.build(appearance.palette[0].color).vars);
-function applyPresentation(value, save = true) {
-  const selected = value === 'dashboard' ? 'dashboard' : 'standard'; docEl.dataset.presentation = selected;
-  document.querySelectorAll('[data-presentation-set]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.presentationSet === selected)));
-  if (!save) store.adopt(PRESENTATION_KEY, selected);
-  if (save) { store.set(PRESENTATION_KEY, selected); try { bc?.postMessage({ t: 'presentation', from: TAB_ID, value: selected }); } catch {} }
+function applyPresentation() {
+  const { presentation } = window.__sdDeviceView(navigator, screen, matchMedia('(pointer:coarse)').matches);
+  docEl.dataset.presentation = presentation;
+  put('device-view-name', presentation === 'dashboard' ? 'Arbeitsbereich Dashboard' : 'Arbeitsbereich Standard');
+  // Alte Sicherungen/Tabs dürfen keine fremde Geräteansicht erzwingen. Der alte
+  // Schlüssel bleibt für kompatible Sicherungen erhalten, ist aber keine Auswahl mehr.
+  store.adopt(PRESENTATION_KEY, presentation);
   // Der vorhandene ResizeObserver passt den bestehenden Chart an; kein neuer Datenabruf.
 }
 function renderOwnColor(color, custom) {
@@ -7763,16 +7807,13 @@ function applyTheme(t, save = true, background = null) {
   if (!save) { store.adopt(THEME_KEY, t); if (background) store.adopt(BACKGROUND_KEY, background); }
   if (lastChart) drawChart(); if ($('analysis').open) renderAnalysis();
 }
-const effectiveLayout = pref => pref === 'desktop' || pref === 'tablet' ? pref : desktopMq.matches ? 'desktop' : 'tablet';
-function applyLayout(pref, save = true) {
-  pref = ['auto', 'desktop', 'tablet'].includes(pref) ? pref : 'auto';
-  if (save) store.set(LAYOUT_KEY, pref);
-  const eff = effectiveLayout(pref), changed = docEl.dataset.layout !== eff; docEl.dataset.layout = eff;
-  document.querySelectorAll('[data-layout-set]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.layoutSet === pref)));
+function applyLayout() {
+  const eff = desktopMq.matches ? 'desktop' : 'tablet', changed = docEl.dataset.layout !== eff; docEl.dataset.layout = eff;
+  store.adopt(LAYOUT_KEY, 'auto'); applyPresentation();
   applyFoldDefaults(); measureLivebar();
   if (changed) requestAnimationFrame(() => renderMarket());
 }
-desktopMq.addEventListener?.('change', () => { if (store.get(LAYOUT_KEY, 'auto') === 'auto') applyLayout('auto', false); });
+desktopMq.addEventListener?.('change', () => applyLayout());
 const TABS = ['chart', 'calc', 'pos', 'ind', 'settings'];
 function setTab(tab, save = true) {
   tab = TABS.includes(tab) ? tab : 'chart';
@@ -7796,8 +7837,6 @@ function goTo(id) {
 function measureLivebar() { docEl.style.setProperty('--lb-h', $('livebar').offsetHeight + 'px'); }
 new ResizeObserver(measureLivebar).observe($('livebar'));
 document.querySelectorAll('[data-theme-set]').forEach(b => b.addEventListener('click', () => applyTheme(b.dataset.themeSet)));
-document.querySelectorAll('[data-layout-set]').forEach(b => b.addEventListener('click', () => applyLayout(b.dataset.layoutSet)));
-document.querySelectorAll('[data-presentation-set]').forEach(b => b.addEventListener('click', () => applyPresentation(b.dataset.presentationSet)));
 for (const { name, color } of appearance.palette) {
   const b = document.createElement('button'); b.type = 'button'; b.dataset.backgroundColor = color; b.style.setProperty('--swatch', color); b.className = 'background-swatch'; b.textContent = name; b.setAttribute('aria-label', name + ' ' + color); b.setAttribute('aria-pressed', 'false'); b.addEventListener('click', () => acceptOwnColor(color)); $('own-color-palette').append(b);
 }
@@ -8485,7 +8524,7 @@ addEventListener('offline', () => status());
 addEventListener('online', () => { live.post({ t: 'wake' }); state.next = Math.min(state.next, Date.now() + 500); status(); });
 // ---------- Start ----------
 put('app-version', `Version ${APP_VERSION}`);
-readPalette(); applyTheme(store.get(BACKGROUND_KEY, null)?.mode === 'custom' && appearance.evaluate(store.get(BACKGROUND_KEY, null)?.color).ok ? 'custom' : store.get(THEME_KEY, 'dark'), false); applyPresentation(store.get(PRESENTATION_KEY, 'standard'), false); applyLayout(store.get(LAYOUT_KEY, 'auto'), false); setTab(store.get(TAB_KEY, 'chart'), false);
+readPalette(); applyTheme(store.get(BACKGROUND_KEY, null)?.mode === 'custom' && appearance.evaluate(store.get(BACKGROUND_KEY, null)?.color).ok ? 'custom' : store.get(THEME_KEY, 'dark'), false); applyLayout(); setTab(store.get(TAB_KEY, 'chart'), false);
 syncLevUi('leverage'); syncStakeUi(); syncMoveUi();
 $('backup-share').hidden = !canShareFiles;
 importantSig = dataSig();
@@ -11061,7 +11100,7 @@ function cnewsTick() {
 // ---------- Vorauswahl (Mini-Watchlist): Live-Kacheln mit der Tendenz eines wählbaren Zeitraums ----------
 // Je Coin der Vorauswahl: Live-Kurs, Veränderung und Verlauf über den Zeitraum und die Tendenz – dieselben vier Regeln wie die
 // Signal-Übersicht (Trend, Kurs, RSI, MACD) auf abgeschlossenen Kerzen, −4 bis +4.
-// 3.25.0: Die Bewertung läuft über einen wählbaren Zeitraum, Standard die letzte Stunde: 5-Minuten-Kerzen (12 im Zeitraum) mit
+// Die Bewertung läuft über einen wählbaren Zeitraum, Standard der letzte Tag: 2-Stunden-Kerzen (12 im Zeitraum) mit
 // Vorlauf, damit EMA 50 und MACD eingeschwungen sind (260 geladen, die letzten 199 gerechnet). Neu gerechnet wird bei jedem Schluss
 // einer Kerze, der Kurs läuft über die laufende Kerze live weiter. Die Zeitraum-Knöpfe des Charts ändern daran nichts. Zeiträume
 // (je etwa 12 Kerzen): 1 Minute (1m-Kerzen, wie bis 3.24.0), 30 Minuten (3m), 1 Stunde (5m), 4 Stunden (15m), 1 Tag (2h).
@@ -11081,10 +11120,14 @@ function wlSpans() {
     '1d': { iv: '2h', n: 12, ms: 864e5, label: '1 Tag', of: 'des letzten Tages', the: 'den letzten Tag', name: '1 Tag', ivName: '2-Stunden' }
   });
 }
-function wlSpanKey() { const v = store.get(WL_SPAN_KEY); return wlSpans()[v] ? v : '1h'; }
+// Ein einziger Standardwert, auch für frühe Aufrufe vor der Initialisierung.
+// '4h' wäre 4 Stunden mit 15m-Kerzen; '1d' ist 1 Tag mit 2h-Kerzen.
+// 3.66.0: Tagesstandard; gültige manuelle Vorauswahl bleibt erhalten.
+function wlDefaultSpan() { return '1d'; }
+function wlSpanKey() { const v = store.get(WL_SPAN_KEY); return wlSpans()[v] ? v : wlDefaultSpan(); }
 var wl = { c: new Map(), vis: true, loadAt: 0, span: '' };
-// gewählter Zeitraum – beim ersten Zugriff aus dem Speicher (Standard: 1 Stunde)
-function wlSpan() { if (wl && !wl.span) wl.span = wlSpanKey(); const T = wlSpans(); return T[wl?.span] || T['1h']; }
+// Gewählter Zeitraum: gespeicherte manuelle Auswahl bleibt erhalten, sonst 1 Tag.
+function wlSpan() { if (wl && !wl.span) wl.span = wlSpanKey(); const T = wlSpans(); return T[wl?.span] || T[wlDefaultSpan()]; }
 var wlSym = coin => `${coin}USDT`;
 // Zeitraum wechseln (Auswahl im Detailfeld): gespeichert; alle Reihen im neuen Kerzen-Intervall neu laden, Streams umstellen
 function wlSetSpan(k) {
@@ -13389,6 +13432,55 @@ function patOverviewDetect(candles, iv, signal, ctx) {
     if(signal.aborted)abort();else patOverviewWorker.postMessage({id,k,opt});
   });
 }
+// position-1: unabhängig von Muster-/Handels-Scores, immer das USDT-Perpetual des gewählten Coins.
+var positioningOnScreen = false, positioningFeed = createPositioningFeed({
+  request: (path, params, signal) => {
+    const f = state.funding;
+    if (path === '/fapi/v1/premiumIndex' && f?.symbol === params.symbol && Math.abs(Date.now() - Number(f.time)) < 180000) return Promise.resolve(f);
+    return api.get(FUTURES, path, params, signal);
+  }, changed: () => positioningPaint()
+});
+function positioningTick() {
+  void positioningFeed.tick(state.symbol, !CAP.on && !state.paused && !document.hidden && navigator.onLine !== false && state.loadedSymbol === state.symbol && (positioningOnScreen || $('positioning-dialog')?.open));
+  positioningPaint();
+}
+function positioningPaint() {
+  const box = $('positioning-score'); if (!box) return;
+  const s = positioningFeed.state, q = s.symbol === state.symbol ? positioningFeed.usable() : null;
+  const text = q ? `${q.score} · ${q.label}` : '-', out = $('positioning-value');
+  if (out.textContent !== text) out.textContent = text;
+  out.classList.toggle('positive', !!q && q.score > 50); out.classList.toggle('negative', !!q && q.score < 50);
+  box.dataset.ready = String(!!q); box.style.setProperty('--position', `${q?.score ?? 50}%`);
+  $('positioning-warning').style.visibility = q?.squeeze ? 'visible' : 'hidden';
+  $('positioning-bar').setAttribute('aria-label', q ? `Positionierung ${q.score} von 100, ${q.label}${q.squeeze ? ', Squeeze-Risiko' : ''}` : 'Positionierung nicht verfügbar');
+  $('positioning-info').setAttribute('aria-label', `Positionierung für ${state.symbol} erklären`);
+  const dialog = $('positioning-dialog'); if (!dialog?.open) return;
+  const body = $('positioning-body'), error = s.symbol === state.symbol ? s.error : '';
+  const key = JSON.stringify([state.symbol, q, error]); if (body.dataset.signature === key) return; body.dataset.signature = key;
+  put('positioning-title', `Positionierung · ${state.symbol.replace(/USDT$/, '/USDT')}`);
+  const content = [el('p', '', 'Positionierung am Markt, keine Kursprognose.'),
+    el('p', '', 'Auch bei Spot: Daten des zugehörigen Binance-USDT-Perpetuals, eines Futures ohne Ablaufdatum. Vergleich: letzte 30 Tage dieses Coins. 0 = Short-lastig, 100 = Long-lastig, 50 = Neutral – jeweils relativ zu diesem Verlauf.'),
+    el('p', '', 'Funding ist die laufende Zahlung zwischen Long- und Short-Seite. Das Long/Short-Verhältnis zählt Konten, nicht deren Positionsgröße. Beide Teilwerte gehen zu je 50 % ein; der Score wird auf ganze Punkte gerundet.')];
+  if (q) {
+    const values = el('dl');
+    for (const [name, value] of [['Score', `${q.score} · ${q.label}`], ['Funding aktuell', `${signed(q.funding * 100, 4)} %`], ['Funding-Perzentil', `${number(q.fundingPercentile, 1)} / 100`], ['Long/Short-Konten', number(q.ratio, 4)], ['Long/Short-Perzentil', `${number(q.ratioPercentile, 1)} / 100`], ['Vergleichsdaten', `${q.fundingCount} Funding · ${q.ratioCount} × 4h`], ['Letzter Abgleich', localTime(q.at)]]) values.append(el('dt', '', name), el('dd', '', value));
+    content.push(values, el('p', '', 'Ein Perzentil sagt, wie hoch ein Wert im eigenen Verlauf liegt. Gleiche Werte teilen ihren Rang; eine gleichbleibende Reihe liegt bei 50. Bei jungen Coins kann der verfügbare Verlauf kürzer sein.'));
+  } else content.push(el('p', '', error || 'Noch keine aktuellen Vergleichsdaten verfügbar. Der Score bleibt dann „-“.'));
+  content.push(el('p', '', 'Unter 15 oder über 85: Squeeze-Risiko. Stark einseitige Positionierung kann Zwangsschließungen begünstigen. Das sagt weder Richtung noch Zeitpunkt einer Kursbewegung voraus.'));
+  body.replaceChildren(...content);
+}
+function positioningInit(card) {
+  const box = el('div', 'positioning-score'), head = el('div', 'positioning-head'), info = el('button', 'positioning-info', 'ⓘ'), out = el('output', 'positioning-value', '-'), warning = el('span', 'positioning-warning', 'Squeeze-Risiko'), bar = el('div', 'positioning-bar'), marker = el('span', 'positioning-marker');
+  box.id = 'positioning-score'; box.dataset.ready = 'false'; info.id = 'positioning-info'; info.type = 'button'; info.setAttribute('aria-haspopup', 'dialog'); info.setAttribute('aria-controls', 'positioning-dialog');
+  out.id = 'positioning-value'; out.setAttribute('aria-live', 'polite'); warning.id = 'positioning-warning'; bar.id = 'positioning-bar'; bar.setAttribute('role', 'img'); marker.setAttribute('aria-hidden', 'true');
+  head.append(el('span', '', 'Positionierung'), info); bar.append(marker); box.append(head, out, warning, bar); card.append(box);
+  new IntersectionObserver(entries => { positioningOnScreen = entries[0].isIntersecting; if (positioningOnScreen) positioningTick(); }).observe(box);
+  const dialog = el('dialog', 'sheet'), dialogHead = el('div', 'sheet-head'), title = el('h2', '', 'Positionierung'), close = el('button', 'button ghost icon', '×'), body = el('div', 'sheet-body');
+  dialog.id = 'positioning-dialog'; dialog.setAttribute('aria-labelledby', 'positioning-title'); title.id = 'positioning-title'; close.id = 'positioning-close'; close.type = 'button'; close.setAttribute('aria-label', 'Erklärung schließen'); body.id = 'positioning-body'; dialogHead.append(title, close); dialog.append(dialogHead, body); document.body.append(dialog);
+  close.addEventListener('click', () => dialog.close()); dialog.addEventListener('click', e => { if (e.target === dialog) { const r = dialog.getBoundingClientRect(); if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) dialog.close(); } });
+  info.addEventListener('click', () => { dialog.showModal(); positioningPaint(); }); positioningPaint();
+}
+window.__positioning = { feed: positioningFeed, tick: positioningTick, paint: positioningPaint };
 var patOverviewFeed = createPatternOverviewFeed({
   request: async(ctx,iv,limit,signal)=>{
     // Vollständige vorhandene Reihe wiederverwenden, ohne den Hauptchart zu verändern.
@@ -13426,6 +13518,7 @@ function patOverviewModel() {
   return patOverviewLiveMemo.value;
 }
 function patOverviewPaint() {
+  positioningPaint();
   const button=$('chart-pattern-overview');if(!button)return;
   const q=patOverviewModel(),s=patOverviewFeed.state,correct=s.key.startsWith(`${state.symbol}|${chartMarket()}|`),ready=correct?q.ready:0;
   const share=correct&&q.bull!==null?`${q.bull} % bullisch · ${q.bear} % bärisch`:'Keine aktiven Richtungsmuster';
@@ -13476,7 +13569,7 @@ function patChipInit() {
   const row=el('div','chart-pattern-row'),host=el('div','chart-pattern-chips'),empty=el('span','chart-pattern-empty','Keine Muster erkannt');row.id='chart-pattern-row';host.id='chart-pattern-chips';host.setAttribute('role','group');empty.id='chart-pattern-empty';host.append(empty);row.append(host);document.querySelector('#chart-sec .chart-toolbar').append(row);
   const heading=document.querySelector('#chart-sec .chart-heading'),alarm=$('alarm-here');heading.after(row);row.prepend(alarm);
   queueMicrotask(()=>{const btc=$('of-btc-chart');if(btc)alarm.after(btc);});patChipBindPress(host);patChipPaint();
-  const summary=el('div','chart-pattern-summary'),overview=el('button','chart-pattern-overview');overview.type='button';overview.id='chart-pattern-overview';overview.setAttribute('aria-haspopup','dialog');overview.setAttribute('aria-controls','pat-overview-info');summary.append(overview,el('small','','Score = Qualitätsmaß, keine Garantie für den Ausbruch.'));row.append(summary);
+  const summary=el('div','chart-pattern-summary'),card=el('div','chart-pattern-overview-card'),overview=el('button','chart-pattern-overview');overview.type='button';overview.id='chart-pattern-overview';overview.setAttribute('aria-haspopup','dialog');overview.setAttribute('aria-controls','pat-overview-info');card.append(overview);summary.append(card,el('small','','Muster-Score = Qualitätsmaß, keine Garantie für den Ausbruch.'));row.append(summary);positioningInit(card);
   const dialog=el('dialog','sheet');dialog.id='pat-overview-info';dialog.setAttribute('aria-labelledby','pat-overview-title');const head=el('div','sheet-head'),title=el('h2','','Muster-Gesamtbild'),close=el('button','button ghost icon','×'),body=el('div','sheet-body');title.id='pat-overview-title';close.type='button';close.id='pat-overview-close';close.setAttribute('aria-label','Erklärung schließen');body.id='pat-overview-body';head.append(title,close);dialog.append(head,body);document.body.append(dialog);
   close.addEventListener('click',()=>dialog.close());dialog.addEventListener('click',e=>{if(e.target===dialog){const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)dialog.close();}});overview.addEventListener('click',()=>{dialog.showModal();patOverviewPaint();});patOverviewPaint();
 }
@@ -13573,6 +13666,7 @@ function patWant() {
 function patTick() {
   patPrice();
   patOverviewTick();
+  positioningTick();
   if (!state.paused && !document.hidden && detailResolution && chartOnScreen) void detail.refresh();
   patChipPaint();
   if ($('pat-sheet').open && pat.res?.key === patKey() && (pat.panelBar !== state.candles.at(-1)?.time || pat.panelMinute !== Math.floor(Date.now() / 60000))) patSheet();
@@ -13964,7 +14058,7 @@ window.__g07 = { get ana() { return ana; }, get cap() { return CAP; }, blocks30:
   capKey: (...a) => capKey(...a), capPut: e => capPut(e), capGet: k => capGet(k), setCapMax: n => { CAP_MAX_BYTES = n; }, capBlock: p => capBlock(p), capSeries: (p, id, r) => capSeries(p, id, r), compactCap: v => compactCap(v), hzSeries: d => hzSeries(d),
   chartPoc: () => { const { start, end } = viewWindow(); return volumeProfile(state.candles.slice(start, end))?.poc ?? null; } };
 window.__g06 = { timgData: id => timgData(id), timgRange: d => timgRange(d), tgtEpoch: id => tgtEpoch(id), get jobs() { return loadTimg(); }, timgPreview: id => timgPreview(id) };
-window.__g05 = { get state() { return state; }, get chan() { return chan; }, get svc() { return svc; }, get svcLog() { return svcLog; }, get chanState() { return chanState; },
+window.__g05 = { get state() { return state; }, get workspace() { return workspace; }, get chan() { return chan; }, get svc() { return svc; }, get svcLog() { return svcLog; }, get chanState() { return chanState; },
   readChanForm, saveChannels, sendTgBackup, notifyChannels, svcRefresh, alarmSub, persist, renderAlarms, syncStreams, tgTarget, backupPayload, alarmEventId };
 // Sekundentakt: mit Dienst jede Minute den bestätigten Stand lesen (andere Geräte, Neustart des Dienstes)
 function svcTick(now) { if (svcOn() && !svc.busy && !document.hidden && now - svc.at > SVC_POLL) void svcRefresh(); if (typeof patSvcRender === 'function') patSvcRender(); }
@@ -14831,7 +14925,7 @@ function kiKick(delay = 0) {
   if (deadlines.length) ki.timer = setTimeout(() => { ki.timer = null; kiRender(); kiKick(); }, Math.max(1, Math.min(ki.open ? 60000 : Infinity, Math.min(...deadlines) - Date.now() + 1)));
 }
 function kiJob(request, options, type = 'load') {
-  if (!ki.worker) { ki.worker = new Worker(new URL('./bundles/3.65.0/shared/confluence-worker.mjs', location.href), { type: 'module' });
+  if (!ki.worker) { ki.worker = new Worker(new URL('./bundles/3.66.0/shared/confluence-worker.mjs', location.href), { type: 'module' });
     ki.worker.onmessage = ({ data }) => { if (!ki.pending || data.id !== ki.pending.id) return; if (data.progress) { ki.message = 'Historie: ' + data.progress.stage + (data.progress.total ? ` · ${data.progress.completed}/${data.progress.total}` : ` · ${data.progress.priceCandles || 0} Kurskerzen`); kiRender(); return; } const p = ki.pending; ki.pending = null; data.error ? p.reject(new Error(data.error)) : p.resolve(data); };
     ki.worker.onerror = () => { ki.pending?.reject(new Error('KI-Worker nicht verfügbar')); ki.pending = null; ki.worker?.terminate(); ki.worker = null; }; }
   return new Promise((resolve, reject) => { const id = ++ki.serial; ki.pending = { id, resolve, reject }; ki.worker.postMessage({ id, type, request, options }); });
@@ -15126,7 +15220,7 @@ const paperClient = createPaperPublicClient(), PAPER_PREF_KEY = 'scalpdesk.paper
 paperController = createPaperBotController({ read: readPaperBook, write: writePaperBook, currentSymbol: () => state.symbol,
   available: () => !document.hidden && !state.paused && navigator.onLine !== false,
   quote: (symbol, signal) => paperClient.quote({ symbol, decisionAt: Date.now(), signal }),
-  workerFactory: () => new Worker(new URL('./bundles/3.65.0/shared/paper-bot-worker.mjs', import.meta.url), { type: 'module' }),
+  workerFactory: () => new Worker(new URL('./bundles/3.66.0/shared/paper-bot-worker.mjs', import.meta.url), { type: 'module' }),
   settings: () => { const base = botView.paperSettings(), costs = paperView.settings(), po3 = { ...po3View.config(), criteria: po3View.config().criteria === 'pending' ? 'g10' : po3View.config().criteria, closure: 'tp1', feeEntry: costs.feeEntry, feeExit: costs.feeExit };
     const maxHoldMs = base.strategy === 'po3' ? po3.maxHoldMs : Math.min(86400000, (ki.cfg.shortHours || 24) * 3600000), [timeframe, contextTimeframe] = ki.cfg.shortPair.split('/');
     return { ...base, ...costs, maxHoldMs, rewardRisk: ki.cfg.rewardRisk, timeframe, contextTimeframe, po3, confluence: { ...kiCoreConfig(), minimumScore: base.minimumScore, feeEntry: costs.feeEntry, feeExit: costs.feeExit } }; },
@@ -15187,38 +15281,31 @@ function workspaceSyncTab(tab, save) {
   if (save) workspaceSave();
 }
 function workspaceOpenMenu(id) { $(id).hidden = false; const d = $(id).closest('details'); if (d) d.open = true; goTo(id); }
-function workspaceMode(mode, save = true) {
-  workspace.mode = mode === 'all' ? 'all' : 'focus'; docEl.dataset.workspace = workspace.mode;
+function workspaceApply() {
+  docEl.dataset.workspace = 'focus';
   workspace.watchView = null;
-  if (workspace.mode === 'focus') for (const { node, details, marker } of workspace.unwraps) { marker.after(details); details.append(node); }
-  for (const { node, marker, host } of workspace.moves) { if (workspace.mode === 'focus') host.append(node); else marker.after(node); }
-  // display:contents an <details> erhält dessen anonyme Inhaltsbox. In der
-  // Gesamtansicht deshalb die Originalelemente als direkte Kinder zurückstellen.
-  if (workspace.mode === 'all') for (const { node, details, marker } of workspace.unwraps) { marker.after(node); details.remove(); }
-  for (const id of ['view-panel', 'notify-panel']) { $(id).classList.toggle('workspace-menu', workspace.mode === 'focus'); $(id).hidden = workspace.mode !== 'focus'; }
-  for (const d of workspace.wrappers) if (d.id !== 'workspace-watch') d.open = workspace.mode === 'all' || !!workspace.folds[d.id];
-  for (const d of workspace.extraFolds) d.node.open = workspace.mode === 'all' ? d.original : !!workspace.folds[d.node.id];
-  for (const b of document.querySelectorAll('[data-workspace-mode]')) b.setAttribute('aria-pressed', String(b.dataset.workspaceMode === workspace.mode));
-  if (workspace.mode === 'focus') setTab(workspace.view, false); else { const tab = store.get(TAB_KEY, 'chart'); setTab(TABS.includes(tab) && tab !== 'settings' ? tab : 'chart', false); }
+  for (const { node, host } of workspace.moves) host.append(node);
+  for (const id of ['view-panel', 'notify-panel']) { $(id).classList.add('workspace-menu'); $(id).hidden = false; }
+  for (const d of workspace.wrappers) if (d.id !== 'workspace-watch') d.open = !!workspace.folds[d.id];
+  for (const d of workspace.extraFolds) d.open = !!workspace.folds[d.id];
+  setTab(workspace.view, false);
   ec.list = ''; cn.list = ''; renderEcon(); renderCnews(); measureLivebar();
-  if (save) workspaceSave(); requestAnimationFrame(() => renderMarket());
+  requestAnimationFrame(() => renderMarket());
 }
 function workspaceBuild() {
   const saved = store.get(WORKSPACE_KEY, null);
-  workspace = { mode: saved?.mode === 'all' ? 'all' : 'focus', view: saved?.view in WORKSPACE_VIEWS ? saved.view : 'chart', folds: saved?.folds && typeof saved.folds === 'object' ? { ...saved.folds } : {}, moves: [], wrappers: [], unwraps: [], extraFolds: [] };
+  workspace = { mode: 'focus', view: saved?.view in WORKSPACE_VIEWS ? saved.view : 'chart', folds: saved?.folds && typeof saved.folds === 'object' ? { ...saved.folds } : {}, moves: [], wrappers: [], extraFolds: [] };
+  if (saved?.mode === 'all') workspaceSave(); // Nur alte Ansichtspräferenz ersetzen, Bereich/Klappzustände erhalten.
   const nav = el('nav', 'workspace-nav'); nav.id = 'workspace-nav'; nav.setAttribute('aria-label', 'Arbeitsbereiche'); const tabs = el('div', 'workspace-tabs');
   for (const [key, [text]] of Object.entries(WORKSPACE_VIEWS)) { const b = el('button', '', text); b.type = 'button'; b.dataset.workspaceTarget = key; b.addEventListener('click', () => { setTab(key); if (key === 'ind') kiTab(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }); tabs.append(b); }
   const note = el('p', 'workspace-description'); note.id = 'workspace-description';
-  nav.append(tabs, note, kiButton('workspace-all', 'Gesamtansicht', () => workspaceMode('all'), 'button ghost')); $('livebar').after(nav);
+  nav.append(tabs, note); $('livebar').after(nav);
   new ResizeObserver(() => docEl.style.setProperty('--workspace-nav-h', nav.offsetHeight + 'px')).observe(nav);
-  const mode = el('div', 'side-toggle appearance-toggle'); mode.setAttribute('role', 'group'); mode.setAttribute('aria-label', 'Arbeitsbereiche oder Gesamtansicht');
-  for (const [key, text] of [['focus', 'Arbeitsbereiche'], ['all', 'Gesamtansicht']]) { const b = el('button', '', text); b.type = 'button'; b.dataset.workspaceMode = key; b.addEventListener('click', () => workspaceMode(key)); mode.append(b); }
-  $('view-panel').prepend(el('h4', '', 'Übersicht'), mode);
   const settings = el('section', 'panel workspace-settings'); settings.id = 'workspace-settings'; settings.dataset.workspaceScope = 'settings'; settings.dataset.tabs = 'settings'; settings.setAttribute('aria-labelledby', 'workspace-settings-title');
   const title = el('h2', '', 'Einstellungen & Sicherung'); title.id = 'workspace-settings-title'; const grid = el('div', 'workspace-settings-grid');
   settings.append(title, el('p', '', 'Einrichtung und Datenpflege an einem Ort. Handelsdaten bleiben beim Ansichtswechsel erhalten.'), grid); $('dash').append(settings);
-  const move = (node, host) => { const marker = document.createComment('Arbeitsbereich: ' + node.id); node.before(marker); workspace.moves.push({ node, marker, host }); };
-  const fold = (node, id, text) => { const d = el('details', 'workspace-fold'), marker = document.createComment('Klappfläche: ' + id); d.id = id; d.append(el('summary', '', text)); node.before(marker, d); d.append(node); workspace.wrappers.push(d); workspace.unwraps.push({ node, details: d, marker }); d.addEventListener('toggle', () => { if (workspace.mode === 'focus' && !docEl.dataset.chartfull && workspace.folds[id] !== d.open) { workspace.folds[id] = d.open; workspaceSave(); } }); return d; };
+  const move = (node, host) => { workspace.moves.push({ node, host }); };
+  const fold = (node, id, text) => { const d = el('details', 'workspace-fold'); d.id = id; d.append(el('summary', '', text)); node.before(d); d.append(node); workspace.wrappers.push(d); d.addEventListener('toggle', () => { if (!docEl.dataset.chartfull && workspace.folds[id] !== d.open) { workspace.folds[id] = d.open; workspaceSave(); } }); return d; };
   for (const [id, text, node] of [['workspace-appearance', 'Darstellung & App', $('view-panel')], ['workspace-notifications', 'Hinweise & Telegram', $('notify-panel')]]) {
     const d = el('details', 'workspace-fold'); d.id = id; d.append(el('summary', '', text)); grid.append(d); move(node, d);
   }
@@ -15228,11 +15315,11 @@ function workspaceBuild() {
   fold($('orderflow-panel'), 'workspace-orderflow', 'Orderflow · BTC-Pfeile, Kerzen & Demo');
   const tools = fold(document.querySelector('#chart-sec .chart-footer'), 'workspace-chart-tools', 'Chart-Ebenen, Whales & Werkzeuge');
   for (const node of document.querySelectorAll('#chart-sec .wh-strip, #chart-sec .lm-strip, #chart-sec .fib-strip')) move(node, tools);
-  for (const id of ['ki-setup', 'ki-settings']) { const node = $(id); workspace.extraFolds.push({ node, original: node.open }); node.addEventListener('toggle', () => { if (workspace.mode === 'focus' && workspace.folds[id] !== node.open) { workspace.folds[id] = node.open; workspaceSave(); } }); }
+  for (const id of ['ki-setup', 'ki-settings']) { const node = $(id); workspace.extraFolds.push(node); node.addEventListener('toggle', () => { if (workspace.folds[id] !== node.open) { workspace.folds[id] = node.open; workspaceSave(); } }); }
   for (const [scope, ids] of [['chart', ['chart-sec', 'ki-chart-sec']], ['chart ind', ['signals']], ['ind', ['alarms', 'zones-sec', 'ind-sec', 'dec-sec', 'econ', 'cnews', 'vola']], ['pos', ['positions', 'acct', 'journal', 'calc-sec']], ['settings', ['method-sec']]]) for (const id of ids) $(id).dataset.workspaceScope = scope;
   document.querySelector('.foot').dataset.workspaceScope = 'global';
   const actions = el('div', 'workspace-actions'); actions.append(kiButton('workspace-ki', 'KI-Signale', () => { kiTab(true); goTo('alarms'); }), kiButton('workspace-price-alarms', 'Preisalarme', () => { kiTab(false); goTo('alarms'); }), kiButton('workspace-bot', 'Trading-Bot', () => { botTab(); goTo('alarms'); })); $('signals').append(actions);
-  workspaceMode(workspace.mode, false);
+  workspaceApply();
 }
 
 // 3.63.0: eigener Muster-Bot, vom bisherigen KI-/Trading-Bot und persönlichen Büchern getrennt.
@@ -15245,7 +15332,7 @@ const musterPaper = createMusterPaper({ read: readMusterPaper, write: writeMuste
     await chanSend('tg', formatMessage(event.kind === 'entry' ? 'signal' : 'trade', data), false, 'trade', { coord: true });
   } });
 musterView = createMusterView({ host: musterHost, selection: musterSelection, currentPrice: (symbol, market) => state.symbol === symbol && state.source === market ? currentPrice() : null,
-  prefs: store.get('scalpdesk.muster.settings.v1', {}), savePrefs: value => store.set('scalpdesk.muster.settings.v1', value), workerFactory: () => new Worker(new URL('./bundles/3.65.0/shared/muster-bot-worker.mjs', import.meta.url), { type: 'module' }), paper: musterPaper, onMarkers: scheduleDraw });
+  prefs: store.get('scalpdesk.muster.settings.v1', {}), savePrefs: value => store.set('scalpdesk.muster.settings.v1', value), workerFactory: () => new Worker(new URL('./bundles/3.66.0/shared/muster-bot-worker.mjs', import.meta.url), { type: 'module' }), paper: musterPaper, onMarkers: scheduleDraw });
 void musterPaper.restore().then(() => musterPaper.poll());
 function musterDraw(svg, data, x, y, bottom) {
   for (const signal of musterView?.markers() || []) {
@@ -15257,6 +15344,83 @@ function musterDraw(svg, data, x, y, bottom) {
 }
 window.__muster = { view: musterView, paper: musterPaper, selection: musterSelection };
 workspaceBuild();
+
+// 3.66.0: Lange Erläuterungen bleiben vollständig am selben DOM-Knoten erhalten.
+// Aktuelle Werte, Datenfehler und Schutzwarnungen werden nicht eingeklappt.
+function explanationFold(nodes, title, id) {
+  const list = nodes.filter(Boolean); if (!list.length) return null;
+  const fold = el('details', 'explain-fold'), summary = el('summary', '', 'ⓘ ' + title), body = el('div', 'explain-body');
+  fold.id = id; fold.append(summary, body); list[0].before(fold); for (const node of list) body.append(node); return fold;
+}
+explanationFold([document.querySelector('#div-tip .div-honest')], 'Backtest & Grenzen', 'div-backtest-info');
+explanationFold([...document.querySelectorAll('#fs-tip .tip-body > p')].filter(p => /^Ehrlich:/.test(p.textContent)), 'Backtest & Grenzen', 'fib-backtest-info');
+explanationFold([$('ki-overview-note')], 'Modellhinweise', 'ki-overview-info');
+explanationFold([document.querySelector('.pnl-note')], 'Gewinn-/Verlust-Alarme erklärt', 'pnl-explanation');
+explanationFold([$('feed-note')], 'Datenstrom erklärt', 'feed-explanation');
+explanationFold([$('rec-note')], 'Sprung-Rekorder erklärt', 'rec-explanation');
+
+// 3.66.0: Kostenfreier Kalenderauszug über den öffentlichen GitHub-Datenzweig.
+// Tages-/Zeitraumangaben sind keine exakten Uhrzeiten: keine Termin-Alarme,
+// Telegram-Nachrichten oder Eingaben für KI/Trading-Bots aus diesem Verbraucher.
+var cryptoCal;
+const CRYPTO_CAL_KEY = 'scalpdesk.idb.crypto-calendar', CRYPTO_CAL_URL = 'https://raw.githubusercontent.com/NicoAHB/wx-widget/krypto-kalender/crypto-calendar.json';
+function cryptoCalendarPaint() {
+  if (!cryptoCal) return;
+  const now = Date.now(), rows = cryptoCalendarEvents(cryptoCal.data, { mode: cryptoCal.scope.value, coin: state.symbol, watch: state.watch }, now), show = cryptoCal.more ? rows : rows.slice(0, 3);
+  const sig = JSON.stringify([show, cryptoCal.more, cryptoCal.error, cryptoCal.data?.fetchedAt, state.symbol, state.watch, Math.floor(now / 60000)]);
+  if (sig === cryptoCal.signature) return; cryptoCal.signature = sig;
+  const date = t => new Date(t).toLocaleDateString('de-DE', { timeZone: 'UTC', day: '2-digit', month: '2-digit', year: 'numeric' });
+  const nodes = show.map(e => {
+    const card = el('article', 'crypto-event'), when = el('time', '', e.t === e.end ? date(e.t) + ' · Uhrzeit offen' : date(e.t) + ' – ' + date(e.end) + ' · Zeitraum'); when.dateTime = new Date(e.t).toISOString().slice(0, 10);
+    const meta = el('div', 'crypto-event-meta', e.coins.join(' · ') + (e.category ? ' · ' + e.category : ''));
+    const link = el('a', '', 'Quelle ansehen ↗'); link.href = e.url; link.target = '_blank'; link.rel = 'noopener noreferrer';
+    card.append(when, el('strong', '', e.title), meta, link); return card;
+  });
+  if (!nodes.length) nodes.push(el('p', 'crypto-calendar-note', cryptoCal.data ? 'Keine kommenden Krypto-Termine für diesen Filter im geladenen Auszug.' : cryptoCal.error || 'Auszug wird beim Aufklappen geladen.'));
+  cryptoCal.list.replaceChildren(...nodes);
+  cryptoCal.moreButton.hidden = rows.length <= 3; cryptoCal.moreButton.textContent = cryptoCal.more ? 'Weniger anzeigen' : `Alle ${rows.length} Termine`;
+  const at = cryptoCal.data?.fetchedAt, stale = !!at && now - at > CRYPTO_CALENDAR.staleMs;
+  cryptoCal.status.textContent = at ? `CoinMarketCal · öffentlicher Auszug · Stand ${new Date(at).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' })}${stale ? ' · veraltet' : ''}${cryptoCal.error ? ' · ' + cryptoCal.error : ''}` : cryptoCal.error || 'Kostenfrei · kein API-Schlüssel nötig';
+  cryptoCal.status.classList.toggle('err', stale || !!cryptoCal.error);
+}
+async function cryptoCalendarFetch() {
+  if (!cryptoCal || cryptoCal.busy) return;
+  cryptoCal.busy = true; cryptoCal.refresh.disabled = true;
+  const controller = new AbortController(), timeout = setTimeout(() => controller.abort(), 15000);
+  try {
+    const response = await fetch(CRYPTO_CAL_URL, { cache: 'no-store', credentials: 'omit', referrerPolicy: 'no-referrer', signal: controller.signal });
+    if (!response.ok) throw new Error(response.status === 404 ? 'Krypto-Auszug noch nicht veröffentlicht; Kalenderjob prüfen.' : `Krypto-Kalender nicht erreichbar (${response.status}).`);
+    const data = await response.json(), parsed = parseCryptoCalendar(data);
+    cryptoCal.data = parsed; cryptoCal.at = Date.now(); cryptoCal.error = ''; cryptoCal.retryAt = 0;
+    store.set(CRYPTO_CAL_KEY, { at: cryptoCal.at, data });
+  } catch (error) {
+    cryptoCal.error = controller.signal.aborted ? 'Kalenderabruf zu langsam; später erneut versuchen.' : error instanceof TypeError ? 'Kalender offline oder nicht erreichbar; letzter Stand bleibt.' : error.message;
+    cryptoCal.retryAt = Date.now() + CRYPTO_CALENDAR.retryMs;
+  } finally { clearTimeout(timeout); cryptoCal.busy = false; cryptoCal.refresh.disabled = false; cryptoCal.signature = ''; cryptoCalendarPaint(); }
+}
+function cryptoCalendarTick() {
+  if (!cryptoCal || !cryptoCal.root.open || document.hidden || state.paused || !cryptoCal.root.getBoundingClientRect().height) return;
+  const now = Date.now();
+  if (!cryptoCal.busy && now >= cryptoCal.retryAt && (!cryptoCal.at || now - cryptoCal.at >= CRYPTO_CALENDAR.refreshMs)) void cryptoCalendarFetch();
+  calmDo(cryptoCalendarPaint);
+}
+function cryptoCalendarBuild() {
+  const root = el('details', 'crypto-calendar'); root.id = 'crypto-calendar'; root.append(el('summary', '', 'Krypto-Termine · kostenfrei'));
+  const body = el('div', 'crypto-calendar-content'), tools = el('div', 'crypto-calendar-tools'), label = el('label', '', 'Termine für'), scope = el('select'); scope.id = 'crypto-calendar-scope';
+  for (const [value, title] of [['all', 'Alle Coins'], ['watch', 'Meine Vorauswahl'], ['coin', 'Geöffneter Coin']]) { const option = el('option', '', title); option.value = value; scope.append(option); } label.append(scope);
+  const refresh = btn('button ghost', 'Aktualisieren'); refresh.id = 'crypto-calendar-refresh'; tools.append(label, refresh);
+  const list = el('div'); list.id = 'crypto-calendar-list'; const status = el('p', 'crypto-calendar-note'); status.id = 'crypto-calendar-status'; status.setAttribute('role', 'status');
+  const moreButton = btn('button ghost', 'Mehr anzeigen'); moreButton.id = 'crypto-calendar-more'; moreButton.hidden = true;
+  const note = el('p', 'crypto-calendar-note', 'Datum/Zeitraum aus einem öffentlichen Auszug. Termine können fehlen oder verschoben werden; Quelle prüfen. Keine Kursprognose. Ohne bestätigte Uhrzeit keine automatischen Terminwarnungen.');
+  body.append(tools, list, moreButton, status, note); root.append(body); $('econ').append(root);
+  cryptoCal = { root, scope, refresh, list, status, moreButton, data: null, at: 0, error: '', busy: false, retryAt: 0, more: false, signature: '' };
+  try { const cached = store.get(CRYPTO_CAL_KEY); if (cached?.data) { cryptoCal.data = parseCryptoCalendar(cached.data); cryptoCal.at = Number(cached.at) || 0; } } catch { /* kaputter öffentlicher Cache wird neu geladen */ }
+  refresh.addEventListener('click', () => void cryptoCalendarFetch()); root.addEventListener('toggle', () => { if (root.open) { cryptoCalendarPaint(); cryptoCalendarTick(); } });
+  scope.addEventListener('change', () => { cryptoCal.more = false; cryptoCal.signature = ''; cryptoCalendarPaint(); }); moreButton.addEventListener('click', () => { cryptoCal.more = !cryptoCal.more; cryptoCalendarPaint(); });
+  explanationFold([note], 'Quelle & Grenzen', 'crypto-calendar-info'); cryptoCalendarPaint();
+}
+cryptoCalendarBuild();
+window.__cryptoCalendar = { tick: cryptoCalendarTick, fetch: cryptoCalendarFetch, paint: cryptoCalendarPaint, get state() { return cryptoCal; } };
 // Privater GitHub-Sync nutzt denselben geprüften persönlichen Import, mit zusätzlicher lokaler Notfallkopie.
 const GH_EMERGENCY_KEY = 'scalpdesk.github-emergency.v1';
 const GH_PREF_KEYS = [...new Set([...PREF_KEYS, 'scalpdesk.chart-interval.v1', WORKSPACE_KEY, LAYOUT_KEY, OVHIDE_KEY, DEC_RANK_KEY, DEC_SPOT_KEY, KI_CFG_KEY, PO3_CFG_KEY, PAPER_PREF_KEY, 'scalpdesk.muster.settings.v1', PK_KEY, PK_Q])];
@@ -15339,8 +15503,8 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
         <div class="menu-panel" id="view-panel" hidden>
           <h3>Ansicht</h3>
           <h4>Layout</h4>
-          <div class="side-toggle appearance-toggle" role="group" aria-label="Darstellung"><button type="button" data-presentation-set="standard" aria-pressed="true">Standard</button><button type="button" data-presentation-set="dashboard" aria-pressed="false">Dashboard</button></div>
-          <small>Gleiche Inhalte und Funktionen. Standard bleibt voreingestellt.</small>
+          <strong id="device-view-name">Arbeitsbereich</strong>
+          <small>Automatisch: Handy → Standard, PC und iPad → Dashboard. Alle Funktionen bleiben in den vier Arbeitsbereichen erreichbar.</small>
           <h4>Hintergrund</h4>
           <div class="side-toggle appearance-toggle" role="group" aria-label="Design"><button type="button" data-theme-set="light" aria-pressed="false">Hell</button><button type="button" data-theme-set="dark" aria-pressed="true">Dunkel</button><button type="button" data-theme-set="custom" aria-pressed="false">Eigene Farbe</button></div>
           <div id="own-color-controls" class="own-color-controls" hidden>
@@ -15351,9 +15515,6 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
             <button type="button" class="button ghost" id="own-color-suggest" hidden></button>
             <small>Text passt sich an. Mindestkontrast 4,5:1; sehr helle und dunkle Farben sind mit passender Schrift lesbar.</small>
           </div>
-          <h4>Bildschirmformat</h4>
-          <div class="side-toggle" role="group" aria-label="Layout"><button type="button" data-layout-set="auto" aria-pressed="true">Automatisch</button><button type="button" data-layout-set="desktop" aria-pressed="false">Desktop</button><button type="button" data-layout-set="tablet" aria-pressed="false">iPad</button></div>
-          <small id="layout-note">Automatisch passt die Ansicht an Bildschirm und Eingabe an: breite Arbeitsbereiche mit zwei Spalten, Handy und iPad untereinander. Die Gesamtansicht behält ihr bisheriges Layout.</small>
           <h4>App</h4>
           <button type="button" class="button ghost" id="install-btn" hidden>📲 Als App installieren</button>
           <small id="install-note"></small>

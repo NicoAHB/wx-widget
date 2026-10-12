@@ -48,12 +48,12 @@ const check = (name, ok, detail = '') => { ok ? pass++ : fail++; console.log(`${
       return { overflow: document.documentElement.scrollWidth > innerWidth + 1 || root.scrollWidth > root.clientWidth + 1, escaped, textEscaped, touch: controls.every(n => n.getBoundingClientRect().height >= 44) && [...root.querySelectorAll('.bot-toggle')].filter(shown).every(n => n.getBoundingClientRect().height >= 44), vertical: [...root.querySelectorAll('.bot-field')].filter(shown).every(n => n.querySelector('.bot-field-title').getBoundingClientRect().bottom <= n.querySelector('input,select').getBoundingClientRect().top) };
     });
     for (const width of [320, 390, 768, 1440]) { await page.setViewportSize({ width, height: 844 });
-      for (const layout of ['standard', 'dashboard']) { await page.evaluate(layout => document.querySelector(`[data-presentation-set="${layout}"]`).click(), layout); await page.waitForTimeout(200); const g = await geometry();
+      for (const layout of ['standard', 'dashboard']) { await h.presentationFixture(page, layout); await page.waitForTimeout(200); const g = await geometry();
         check(width + 'px / ' + layout + ': lange Texte und alle Felder innerhalb des Rahmens', !g.overflow && !g.escaped.length && !g.textEscaped.length, JSON.stringify(g));
         check(width + 'px / ' + layout + ': Beschriftung über eigenem Feld, mindestens 44px Tippflächen', g.vertical && g.touch, JSON.stringify(g));
       }
     }
-    for (const layout of ['standard', 'dashboard']) { await page.evaluate(layout => document.querySelector(`[data-presentation-set="${layout}"]`).click(), layout);
+    for (const layout of ['standard', 'dashboard']) { await h.presentationFixture(page, layout);
       for (const entry of await page.evaluate(() => __sdAppearance.palette)) { await page.evaluate(color => document.querySelector(`[data-background-color="${color}"]`).click(), entry.color);
         check(layout + '/' + entry.name + ': Bot-Texte und Gewinn-/Verlustfarben mit AA-Kontrast', await page.evaluate(() => { const cs = getComputedStyle(document.documentElement), v = k => cs.getPropertyValue('--' + k).trim(); return ['surface', 'surface-2', 'field'].every(bg => ['text', 'muted', 'up-text', 'down-text'].every(fg => __sdAppearance.contrast(v(fg), v(bg)) >= 4.5)); }));
       }

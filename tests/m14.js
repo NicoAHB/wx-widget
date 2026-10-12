@@ -17,10 +17,21 @@ const swing = async (k) => { for (let i = 0; i < k; i++) { await h.ctl('/set?sym
         const add = () => { const st = document.createElement('style'); st.textContent = '*{overflow-anchor:none!important}'; document.documentElement.append(st); }; if (document.documentElement) add(); else document.addEventListener('DOMContentLoaded', add);
         localStorage.setItem('scalpdesk.tab.v1', JSON.stringify('ind')); localStorage.setItem('scalpdesk.details.v1', JSON.stringify({ 'tablet:zones-sec': true, 'tablet:ind-sec': true, 'tablet:method-sec': false })); });
       const page = await ctx.newPage(), errors = []; h.collect(page, errors);
+      // Erst die tatsächliche Widget-Baseline messen, dann ihre Analyseantwort freigeben.
+      // Die asynchrone App-/Fixture-Initialisierung darf nicht als Daten-Schrumpfen zählen.
+      let releaseAnalysis; const analysisGate = new Promise(resolve => { releaseAnalysis = resolve; });
+      await page.route('**/*klines?*', async route => {
+        const q = new URL(route.request().url()).searchParams;
+        if (q.get('symbol') === 'BTCUSDT' && q.get('interval') === '4h' && q.get('limit') === '500') await analysisGate;
+        await route.continue();
+      });
       await page.goto(h.URL_BASE + PAGE);
+      await page.waitForFunction(() => window.__g05?.workspace?.mode === 'fixture' && document.documentElement.dataset.activeTab === 'ind', null, { timeout: 15000 }).catch(error => { releaseAnalysis(); throw error; });
       // Platzhalter (vor den Daten) gegen geladene Texte: die Hinweise dürfen nicht schrumpfen
       const skel = await page.evaluate(() => [...document.querySelectorAll('#zones-sec .zone-note, #ind-sec .indicator p')].filter(e => e.getClientRects().length).map(e => ({ id: e.id, h: e.offsetHeight, skel: e.classList.contains('skel') })));
+      releaseAnalysis();
       await page.waitForFunction(() => document.getElementById('status').dataset.feed === 'live', null, { timeout: 20000 }).catch(() => {});
+      await page.waitForFunction(() => !!window.__g07?.ana.calc && !__g07.ana.loading, null, { timeout: 15000 });
       await page.waitForTimeout(2500);
       const loaded = await page.evaluate(() => [...document.querySelectorAll('#zones-sec .zone-note, #ind-sec .indicator p')].filter(e => e.getClientRects().length).map(e => ({ id: e.id, h: e.offsetHeight })));
       const shrunk = skel.filter(s => s.skel).map(s => ({ ...s, after: loaded.find(l => l.id === s.id)?.h })).filter(s => s.after < s.h - 1);

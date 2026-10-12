@@ -377,7 +377,15 @@ function rest(req, res) {
   const u = new URL(req.url, 'https://x'), q = Object.fromEntries(u.searchParams), host = (req.headers.host || '').split(':')[0];
   if (host === 'api.telegram.org' || host === 'discord.com') return void channel(req, res, host, u);
   if (host === 'api.coingecko.com' || host === 'api.coinpaprika.com' || host === 'api.coinlore.net') { if (req.method === 'OPTIONS') { res.writeHead(204, { 'access-control-allow-origin': '*', 'access-control-allow-methods': 'GET', 'access-control-allow-headers': '*' }); return void res.end(); } return void capMock(req, res, host, u); }
-  if (host === 'raw.githubusercontent.com') return void (u.pathname.startsWith('/NicoAHB/wx-widget/news/') ? newsFile(req, res, u) : calendar(req, res, u));
+  if (host === 'raw.githubusercontent.com') {
+    if (u.pathname === '/NicoAHB/wx-widget/krypto-kalender/crypto-calendar.json') {
+      const today = Math.floor(Date.now() / 86400000) * 86400000;
+      return json(res, 200, { v: 1, fetchedAt: new Date().toISOString(), events: [
+        { id: 'cmc-101', t: today + 86400000, end: today + 86400000, dayOnly: true, title: 'Öffentlicher Kalender-Testtermin', coins: ['BTC'], url: 'https://coinmarketcal.com/event/kalender-testtermin' }
+      ] });
+    }
+    return void (u.pathname.startsWith('/NicoAHB/wx-widget/news/') ? newsFile(req, res, u) : calendar(req, res, u));
+  }
   if (cfg.restDelay && !req.delayed) { req.delayed = true; return void setTimeout(() => rest(req, res), cfg.restDelay); }
   cfg.log.push({ at: Date.now(), host, path: u.pathname, q });
   if (cfg.log.length > 2000) cfg.log.splice(0, 1000);
@@ -419,7 +427,18 @@ function rest(req, res) {
     case '/fapi/v1/premiumIndex': if (!need()) return; return json(res, 200, { symbol: sym, markPrice: String(price[sym]), indexPrice: String(price[sym]), lastFundingRate: '0.00010000', interestRate: '0.0001', nextFundingTime: Math.ceil(Date.now() / 288e5) * 288e5, time: Date.now() });
     case '/fapi/v1/openInterest': if (!need()) return; return json(res, 200, { symbol: sym, openInterest: oiAt(sym, 3e5, Math.floor((Date.now() - 5000) / 3e5), Math.floor((Date.now() - 5000) / 3e5)).toFixed(3), time: Date.now() });
     case '/futures/data/openInterestHist': if (!need()) return; if (!OIP[q.period]) return json(res, 400, { code: -1130, msg: 'Invalid period.' }); return json(res, 200, oiHist(sym, q));
-    case '/futures/data/globalLongShortAccountRatio': if (!need()) return; return json(res, 200, [{ symbol: sym, longShortRatio: '1.2', timestamp: Math.floor(Date.now() / 300000) * 300000 }]);
+    case '/fapi/v1/fundingRate': {
+      if (!need()) return;
+      const step = 28800000, end = Number(q.endTime) || Date.now(), start = Number(q.startTime) || end - 30 * 86400000, rows = [];
+      for (let at = Math.ceil(start / step) * step; at <= end && rows.length < Math.min(Number(q.limit) || 100, 1000); at += step) rows.push({ symbol: sym, fundingRate: '0.00010000', fundingTime: at });
+      return json(res, 200, rows);
+    }
+    case '/futures/data/globalLongShortAccountRatio': {
+      if (!need()) return;
+      if (q.period !== '4h') return json(res, 200, [{ symbol: sym, longShortRatio: '1.2', timestamp: Math.floor(Date.now() / 300000) * 300000 }]);
+      const step = 14400000, end = Math.floor((Number(q.endTime) || Date.now()) / step) * step, count = Math.min(Number(q.limit) || 30, 500), start = Number(q.startTime) || 0;
+      return json(res, 200, Array.from({ length: count }, (_, i) => ({ symbol: sym, longShortRatio: '1.2', timestamp: end - (count - 1 - i) * step })).filter(row => row.timestamp >= start));
+    }
     default: return json(res, 404, { code: -1, msg: 'not mocked ' + u.pathname });
   }
 }
