@@ -1,4 +1,4 @@
-// Anzeige-Modell cpq-1. pat-1, Regelgüte, Alarme und Handelsmodelle bleiben unverändert.
+// 3.65.0: Anzeige-Modell cpq-1. pat-1, Regelgüte, Alarme und Handelsmodelle unverändert.
 import { patternChipState } from './chart-pattern-chips.mjs';
 
 export const PATTERN_QUALITY_CONFIG = Object.freeze({
@@ -13,6 +13,7 @@ export const PATTERN_QUALITY_CONFIG = Object.freeze({
 });
 const finite = Number.isFinite, positive = n => finite(n) && n > 0;
 const clamp = n => Math.max(0, Math.min(1, n));
+const decimal = n => n.toFixed(2).replace('.', ',');
 const mean = rows => rows.length && rows.every(c => positive(c.volume)) ? rows.reduce((s, c) => s + c.volume, 0) / rows.length : null;
 const direction = h => h.dir === 'bull' ? 1 : h.dir === 'bear' ? -1 : 0;
 export const patternIsConfirmed = h => !h.prelim && !/fehlt|nicht|unbestätigt/i.test(h.status || '') && /bestätigt|^(über|unter) dem Kanal$/i.test(h.status || '');
@@ -21,8 +22,9 @@ export const patternIsConfirmed = h => !h.prelim && !/fehlt|nicht|unbestätigt/i
 // deshalb zählt die Bestätigungskerze selbst nicht als Zieltreffer. Bei Zielwick und
 // Gegen-Schluss in derselben Folgekerze gilt konservativ der gescheiterte Ausbruch.
 // Der erste terminale Zustand bleibt bestehen; spätere Kurse schreiben ihn nicht um.
-export function patternLifecycle(hit, candles, { now = Date.now(), maxAge = PATTERN_QUALITY_CONFIG.maxAge } = {}) {
-  const old = patternChipState(hit, candles, now, maxAge), confirmed = patternIsConfirmed(hit), dir = direction(hit);
+export function patternLifecycle(hit, candles, { now = Date.now(), maxAge = PATTERN_QUALITY_CONFIG.maxAge, ageOffset = 0 } = {}) {
+  const old = patternChipState(hit, candles, now, maxAge - ageOffset), confirmed = patternIsConfirmed(hit), dir = direction(hit);
+  old.age += ageOffset; // Hintergrundcache enthält nur geschlossene Kerzen; aktuelle Kerze mitzählen.
   if (confirmed && dir) for (const c of candles) {
     if (c.time <= hit.t1 || !(c.closeTime < now)) continue;
     if (positive(hit.levels?.brk) && (c.close - hit.levels.brk) * dir < 0)
@@ -44,13 +46,13 @@ function volumeFactor(hit, closed, confirmed, cfg) {
   // Fehlende Hälfte erhält keine Punkte, nicht heimlich das Gewicht der anderen Hälfte.
   return { value: confirmed ? decline === null && breakout === null ? null : ((decline ?? 0) + (breakout ?? 0)) / 2 : decline,
     known: confirmed ? (Number(decline !== null) + Number(breakout !== null)) / 2 : Number(decline !== null),
-    note: confirmed ? `Volumen: Formation ${decline === null ? 'fehlt' : second < first ? 'abnehmend' : 'nicht abnehmend'} · Ausbruch ${breakout === null ? 'fehlt' : (closed[i].volume / avg).toFixed(2) + '× Mittel der 20 Vorgänger'}` : `Formation: ${decline === null ? 'Volumen fehlt' : second < first ? 'Volumen abnehmend' : 'Volumen nicht abnehmend'}` };
+    note: confirmed ? `Volumen: Formation ${decline === null ? 'fehlt' : second < first ? 'abnehmend' : 'nicht abnehmend'} · Ausbruch ${breakout === null ? 'fehlt' : decimal(closed[i].volume / avg) + '× Mittel der 20 Vorgänger'}` : `Formation: ${decline === null ? 'Volumen fehlt' : second < first ? 'Volumen abnehmend' : 'Volumen nicht abnehmend'}` };
 }
 
 // Fehlende Daten: null im Faktor, 0 Punkte, keine Umgewichtung; Abdeckung separat.
 // Trendwerte sind exakt die vorhandenen Kauf-/Verkauf-/Halten-Chips, keine neue Trendregel.
-export function chartPatternQuality(hit, candles, { interval, trends = {}, levels = {}, atr = null, now = Date.now(), config = PATTERN_QUALITY_CONFIG } = {}) {
-  const life = patternLifecycle(hit, candles, { now, maxAge: config.maxAge }), dir = direction(hit);
+export function chartPatternQuality(hit, candles, { interval, trends = {}, levels = {}, atr = null, now = Date.now(), ageOffset = 0, config = PATTERN_QUALITY_CONFIG } = {}) {
+  const life = patternLifecycle(hit, candles, { now, maxAge: config.maxAge, ageOffset }), dir = direction(hit);
   const closed = candles.filter(c => c.closeTime < now), current = closed.at(-1)?.close;
   const entry = closed.find(c => c.time === hit.t1)?.close, inv = hit.levels?.inv, target = hit.levels?.tgt;
   const factors = [], add = (key, label, value, note, known = Number(value !== null)) => {
@@ -66,10 +68,10 @@ export function chartPatternQuality(hit, candles, { interval, trends = {}, level
   add('volume', 'Volumen', volume.value, volume.note, volume.known);
   const level = dir > 0 ? levels.support : dir < 0 ? levels.resistance : null;
   const location = dir && positive(inv) && positive(level) && positive(atr) ? clamp(1 - Math.abs(inv - level) / (config.levelDistanceAtr * atr)) : null;
-  add('location', 'Support / Widerstand', location, location === null ? 'Passendes Kurslevel oder ATR fehlt' : `Musterrand zum ${dir > 0 ? 'Support' : 'Widerstand'}: ${(Math.abs(inv - level) / atr).toFixed(2)} ATR · volle Punkte am Level`);
+  add('location', 'Support / Widerstand', location, location === null ? 'Passendes Kurslevel oder ATR fehlt (ATR = typische Kerzenspanne)' : `Musterrand zum ${dir > 0 ? 'Support' : 'Widerstand'}: ${decimal(Math.abs(inv - level) / atr)} ATR · ATR = typische Kerzenspanne`);
   const reward = (target - current) * dir, risk = (current - inv) * dir;
   const rr = dir && positive(current) && positive(target) && positive(inv) && risk > 0 && reward > 0 ? reward / risk : null;
-  add('rewardRisk', 'Chance / Risiko', rr === null ? null : rr / config.fullRewardRisk, rr === null ? 'Ziel / Gegenseite nicht sinnvoll bewertbar' : `Restziel / Musterrand: ${rr.toFixed(2)} : 1 · volle Punkte ab ${config.fullRewardRisk} : 1`);
+  add('rewardRisk', 'Chance / Risiko', rr === null ? null : rr / config.fullRewardRisk, rr === null ? 'Ziel / Gegenseite nicht sinnvoll bewertbar' : `Restziel / Musterrand: ${decimal(rr)} : 1 · volle Punkte ab ${config.fullRewardRisk} : 1`);
   const base = factors.reduce((s, f) => s + f.points, 0);
   // Bereits zurückgelegte Zielstrecke verliert Gewicht, auch bei langen Zeitebenen.
   // Referenz ist der tatsächliche Bestätigungsschluss, keine hypothetische Order.
@@ -78,7 +80,24 @@ export function chartPatternQuality(hit, candles, { interval, trends = {}, level
   const multiplier = life.status === 'gescheitert' ? config.failedMultiplier
     : ['erfüllt', 'ungültig', 'abgelaufen'].includes(life.status) ? 0 : remaining ?? 1;
   return { ...life, score: Math.round(base * multiplier), base, multiplier, remaining, rewardRisk: rr, factors,
-    coverage: Math.round(factors.reduce((s, f) => s + f.weight * f.known, 0)), model: 'cpq-1', entry: positive(entry) ? entry : null, price: positive(current) ? current : null };
+    coverage: Math.round(factors.reduce((s, f) => s + f.weight * f.known, 0)), model: 'cpq-1', entry: positive(entry) ? entry : null, price: positive(current) ? current : null, live:false, targetPending:false, breakoutPending:false };
+}
+
+// Preisabhängige Teile billig aktualisieren; keine erneute Muster-/Volumen-/Trend-
+// erkennung auf einem Tick. Live-Zielberührung wird bis zum Schluss kenntlich gemacht.
+// Der bestätigte/terminale Status kommt ausschließlich aus patternLifecycle.
+export function repricePatternQuality(q, hit, price, config = PATTERN_QUALITY_CONFIG, fresh = true) {
+  if(!positive(price))return q;
+  const dir=direction(hit),target=hit.levels?.tgt,inv=hit.levels?.inv;
+  const reward=(target-price)*dir,risk=(price-inv)*dir,rr=dir&&positive(target)&&positive(inv)&&risk>0&&reward>0?reward/risk:null;
+  const label=fresh?'Aktueller Kurs':'Letzter Chartkurs';
+  const factors=q.factors.map(f=>f.key!=='rewardRisk'?f:{...f,value:rr===null?null:clamp(rr/config.fullRewardRisk),points:rr===null?0:clamp(rr/config.fullRewardRisk)*f.weight,known:Number(rr!==null),note:rr===null?`${label}: Ziel / Gegenseite nicht sinnvoll bewertbar`:`${label}: Restziel / Musterrand ${decimal(rr)} : 1 · volle Punkte ab ${config.fullRewardRisk} : 1`});
+  const base=factors.reduce((s,f)=>s+f.points,0),distance=(target-q.entry)*dir;
+  const remaining=q.confirmed&&positive(q.entry)&&positive(target)&&distance>0?clamp((target-price)*dir/distance):null;
+  const multiplier=q.status==='gescheitert'?config.failedMultiplier:['erfüllt','ungültig','abgelaufen'].includes(q.status)?0:remaining??1;
+  return {...q,score:Math.round(base*multiplier),base,multiplier,remaining,rewardRisk:rr,factors,coverage:Math.round(factors.reduce((s,f)=>s+f.weight*f.known,0)),price,live:true,priceFresh:fresh,
+    targetPending:!q.disabled&&q.confirmed&&dir!==0&&positive(target)&&(price-target)*dir>=0,
+    breakoutPending:!q.disabled&&q.confirmed&&dir!==0&&positive(hit.levels?.brk)&&(price-hit.levels.brk)*dir<0};
 }
 
 export function sortPatternQuality(rows) {

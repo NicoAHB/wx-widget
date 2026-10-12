@@ -14,7 +14,11 @@ Automatische Tests für die App (`weather-widget-v2.html`) und den 24/7-Dienst (
 
 ## Voraussetzungen
 
-Muster-Qualität (in Arbeit): `unit-chart-pattern-quality.js` prüft 43 kausale Status-/Gewichts-/Datenlücken-/Restziel-/Sortier-/Gesamtbildfälle am separaten Anzeige-Modell cpq-1, einschließlich Doppel-Top 82.563 → 83.854 und unveränderter pat-1-Regelgüte. Im seriellen Gesamtlauf registriert.
+Muster-Qualität (3.65.0): `unit-chart-pattern-quality.js` prüft 52 kausale Status-/Gewichts-/Datenlücken-/Restziel-/Sortier-/Gesamtbildfälle am getrennten Anzeige-Modell cpq-1, einschließlich Doppel-Top 82.563 → 83.854, heutiger Wochen-Reststrecke und unveränderter pat-1-Regelgüte. `unit-chart-pattern-overview-feed.js` prüft 33 tatsächliche asynchrone Cache-/Abbruch-/Coin-/Quellen-/Schluss-/Lücken-/429-/Workerfehlerfälle. `m94.js` prüft tatsächliche App und benannten Worker, sieben Ebenen, native Info-/Vollbild-/Preisfortschreibung, 100 stabile Cache-Neuzeichnungen, Originalschutz, Teil-Ausfall und vier Breiten sowie AA-Faktoren in allen zehn Farbmodi. Alle drei Ziele im seriellen Gesamtlauf (165 Ziele). [Bedienung und Regeln](../docs/CHARTMUSTER-SCORE.md).
+
+M93 ergänzt nach Coinwechsel den Schutz vor einem nachgereichten Touch-Klick auf das neue Gesamtbild. M92 richtet nach Detail-API-Ausfall den Hauptchart ausdrücklich ins sichtbare Fenster, bevor es den tatsächlich vorhandenen SVG-Renderer prüft. Erstbefund: 500 Hauptkerzen, kein Kursfehler, Retry sichtbar, aber noch kein SVG im unsichtbaren Chart. Alle 42 Fachprüfungen und ihre Erwartungen erhalten, vollständiger Nachlauf 42/42. Keine Änderung der Detail-/Hauptberechnung.
+
+M93 zusätzlich neue Engineobjekte mit identischen Werten (Cache muss aktuelle Referenzen verwenden) und Live-Messwerte in einer offenen Erklärung mit erhaltenem Klapp-/Scrollstand; identische Neuberechnung auch während Haltegeste. Vorher beide Treffer index −1/Info öffnet nicht; nach gezielter Korrektur vollständig 40/40. M94 abschließend 39/39, einschließlich Wochen-Restziel am heutigen Kurs, Erhalt des letzten Chartkurses beim Funkloch und aller zehn Kontrastmodi. Temporäre Produktdiagnostik entfernt; echte Geräteabnahme weiterhin separat.
 
 - Node.js 22 und Playwright mit Chromium (in den Cloud-Sitzungen von Claude Code vorinstalliert unter `/opt/node22` bzw. `/opt/pw-browsers`).
 - `openssl`: Das Test-Zertifikat (`key.pem`, `cert.pem`) wird beim ersten Start erzeugt und nicht eingecheckt.
