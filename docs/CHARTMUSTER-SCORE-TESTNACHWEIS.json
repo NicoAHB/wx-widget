@@ -1,0 +1,4511 @@
+{
+  "version": "3.65.0",
+  "generatedAt": "2026-10-12T06:54:22.810760+00:00",
+  "targets": 165,
+  "passed": 5298,
+  "total": 5298,
+  "productCommit": "14a0a96baf710d65e9b78ec0d998869549f0fa4d",
+  "productHashes": {
+    "bundles/3.65.0/data/muster-start.json": "9690cb5f3de127396fdc10b8cf24bbd17833a0c26291a12b6e50aa797688fd09",
+    "bundles/3.65.0/manifest.json": "b04ce48f39649385d752f1abd16752bc3c629529323ffb276c25d5a2427a2655",
+    "bundles/3.65.0/server/pattern-engine.mjs": "c52ba04ee26dd8b3f03f84898f91921ae0bc9310ae1751cd8e91926267054c5e",
+    "bundles/3.65.0/shared/adaptive-grid-feed.mjs": "376b78a470ab24f0534c1fe44bb9c57f0e31430baa450bb79bd4964986b9609d",
+    "bundles/3.65.0/shared/adaptive-grid.mjs": "87e9d3ae1f94160f2b10c6e8ec0fd5a71efea7c79c8241487c95ac183de38c9d",
+    "bundles/3.65.0/shared/bitget-patterns.mjs": "fa678f92b17980d832684ddb1a0e8a12ea8a09b7fc0b0377c3cbdee1b36c871b",
+    "bundles/3.65.0/shared/bitget-public.mjs": "0711e6f19a350f2a0924880a6444b30cc631dd8955973fb5e693503f4066576c",
+    "bundles/3.65.0/shared/bot-limits.mjs": "ba4c27f94c47963481cc63b315d880fdf8b52634c3758e2dd6f274c95dd1f22f",
+    "bundles/3.65.0/shared/bot-simulation-store.mjs": "94605d4ba1adb957564e044a044622ba3425ed12b2c51d6f1e8e933b454e363e",
+    "bundles/3.65.0/shared/bot-simulation.mjs": "e951eecdf013a7a6cc17afb7edbcb88c9060811c80ce8f145ffa3447001c2197",
+    "bundles/3.65.0/shared/bot-view.mjs": "cd16b04d6dfe6d93317cac947c480713949aa20c01f8076060fababdc543030b",
+    "bundles/3.65.0/shared/chart-detail.mjs": "8f9faf895d414c9e8f310881cf6c53cea19dc02ff2e28baf5c9e685ee90ec513",
+    "bundles/3.65.0/shared/chart-pattern-chips.mjs": "c69b83e5028207ebc4b4e528179bcbe4d6bb28ea3e8e052331b56dd81624f7e9",
+    "bundles/3.65.0/shared/chart-pattern-overview-feed.mjs": "4994d9e16e124dbec0cd1541083a0fcd785a4cb8c577967527c2fc9a88453795",
+    "bundles/3.65.0/shared/chart-pattern-quality.mjs": "60e905c63eb9ff366017422078183e8fc225c7ef7caf4c45f4dca698f3a372b7",
+    "bundles/3.65.0/shared/confluence-core.mjs": "43cee18caca000b04651e197c10fd06d2866d53120e0a8758ac76e434a02fce9",
+    "bundles/3.65.0/shared/confluence-evidence.mjs": "8c3fe3db1da5e5442257ea483577fd3cadac3827a838b23b1a24dac74a70b1f3",
+    "bundles/3.65.0/shared/confluence-history.mjs": "7df47def13546078d70e3fbe605a0ff29d80c611659cbda135b2267a40f44200",
+    "bundles/3.65.0/shared/confluence-legacy-core.mjs": "70e132c6628fae3fe59f1d9a820e09f556cfd98416a909845b901dce2985c6ad",
+    "bundles/3.65.0/shared/confluence-legacy-indicators.mjs": "9105a8ac09d5557e90ec05fd3035c915b36b8e345b31b96a158d0001da505540",
+    "bundles/3.65.0/shared/confluence-legacy-live.mjs": "bd9b1d10b9b696d11bbd25e1bb516a3f68f7d40099cdd9f2000105a7e39dde1b",
+    "bundles/3.65.0/shared/confluence-legacy-pattern-score.mjs": "585334abda80fd8802128e181d8efc04264770f3ee2a7f866d24481a6f7eabad",
+    "bundles/3.65.0/shared/confluence-legacy-replay.mjs": "f3f55b27498a8e13c5bd470d6cbe2d6665a233d9d5baa6bbe1cda2f577ffd96c",
+    "bundles/3.65.0/shared/confluence-live.mjs": "6dfc251c8f673c252754d0be13a02c9e9bb1fa97aefd3fccd244e415875bb3be",
+    "bundles/3.65.0/shared/confluence-presentation.mjs": "d23018d6f9bdfe1f1e90369bcbd89210b613c4be975becb7f35081e656a32822",
+    "bundles/3.65.0/shared/confluence-replay-store.mjs": "502590bc818e0697c6b6bcb1e54a9b449dba976d1578f7d001a9475b7cd1132b",
+    "bundles/3.65.0/shared/confluence-replay.mjs": "af2653ebd972a88fc5ed1e4a314828b772050bf095eed70a3b4877f3e5570b00",
+    "bundles/3.65.0/shared/confluence-risk-view.mjs": "2f14726a9e46dffca290cbfc0e80a34d44be65e99df956452ef3bc2bf84efa5a",
+    "bundles/3.65.0/shared/confluence-service.mjs": "698b434ca864ff532ecb38f7e3a783a5ec43b9d6cec230630d021a5bbc7d4ca1",
+    "bundles/3.65.0/shared/confluence-worker.mjs": "9f7b2067b36ea78086ee9ddf49c39b656cf600d6d2e93c35148d4f2599b01832",
+    "bundles/3.65.0/shared/github-sync-view.mjs": "1ec538ce7eafe679fdf9b8060105bd22f920a909d2c49a658badecc1734b9e38",
+    "bundles/3.65.0/shared/github-sync.mjs": "1bb89d288e8a5b56ccb6543a845119e6f66bd068fdbace61d7a421b52dd3820f",
+    "bundles/3.65.0/shared/indicators.mjs": "9105a8ac09d5557e90ec05fd3035c915b36b8e345b31b96a158d0001da505540",
+    "bundles/3.65.0/shared/market-intervals.mjs": "8d2781e22bed81fa13a361aa1ccd25dafa62364fa1845dfc730893eae502d812",
+    "bundles/3.65.0/shared/model-archive.mjs": "d2b5df4622599ee10e2c4e483986f85f25c2448f8032e8460e1ea4b4cdf212ff",
+    "bundles/3.65.0/shared/muster-bot-core.mjs": "c4cd9cf6501e7595372901302fc831451856f65f45915485d8f4f7a4a4fcd7a9",
+    "bundles/3.65.0/shared/muster-bot-feed.mjs": "e86a3da0eae70b8096ea185a48ca74b44259080358e95ed1305764040c17721e",
+    "bundles/3.65.0/shared/muster-bot-paper.mjs": "8ee4fc077c5331d0868a21e358193e58e5cb613ed7f90a406f8ca2b5318db130",
+    "bundles/3.65.0/shared/muster-bot-store.mjs": "aa428ac803fc8cef00c7bde03f2a670faf7fab781ca650423ad267602c87a6dd",
+    "bundles/3.65.0/shared/muster-bot-view.mjs": "7a45293db948e10be7465c786505637a39f512604415af9199b8a5b48d2899d6",
+    "bundles/3.65.0/shared/muster-bot-worker.mjs": "bd5f7d60af8c4fffa9423a3a6a1a92bf43dd996b3592bc8f44b8d7f5535fe7c4",
+    "bundles/3.65.0/shared/orderflow-core.mjs": "2579ff7cd28586ed206629b27d2db2cb19677cbd8e013bf0c9839774ad6337b7",
+    "bundles/3.65.0/shared/orderflow-demo.mjs": "41469126cb67eb7f357f809bb89d8b8e792ef0f0c474cbce508e19a8c76c90a4",
+    "bundles/3.65.0/shared/orderflow-journal.mjs": "46be78d92a5434e6eb21c830e1afc14332776907e4c0cecb79885df0e748a834",
+    "bundles/3.65.0/shared/orderflow-signal-core.mjs": "c4e413e4733ea0638f0574137a9321ac087e42391802e8ebaf1446103dcb965c",
+    "bundles/3.65.0/shared/orderflow-signal-feed.mjs": "ed69334f8f4e9d078d3a7bf1821bbee4153c12c9b24e6e033edc53f07df69926",
+    "bundles/3.65.0/shared/orderflow-signal-view.mjs": "03a0a91b2bdc6ee1c9c526cd72a9e0f96b2e3991ba85682c0b5d06c187dea46f",
+    "bundles/3.65.0/shared/orderflow-view.mjs": "33a774aaf2b0cad284b0cc3e06448064e31912397de5e25c14b07a6fcb8518e9",
+    "bundles/3.65.0/shared/paper-bot-controller.mjs": "45ebbcf6ade108e69e8d49332300cdffd07c2731ae2de9aedac279a5b8456ee7",
+    "bundles/3.65.0/shared/paper-bot-store.mjs": "c5184216ec7a901b4dca078028a1968dd9e972f7930c03ab93fa9e9ee946d680",
+    "bundles/3.65.0/shared/paper-bot-view.mjs": "6413cb5fdf2bbbfe092db42f4298e69c129617b2cb2d8abd3368499a67133985",
+    "bundles/3.65.0/shared/paper-bot-worker.mjs": "f5b26d50f054dfe38308dfe5c83020f29cc17a764ec460334bdb42896383a109",
+    "bundles/3.65.0/shared/paper-bot.mjs": "0603de27a26e69cea33c5863a269a0b6694bca8a801b18c7b807f91ae6187c95",
+    "bundles/3.65.0/shared/pattern-projection.mjs": "1e2444691e3e210eeff673b8b2ae3b91edb9581fccbacc2dea165f76ebeda5d7",
+    "bundles/3.65.0/shared/pattern-score.mjs": "585334abda80fd8802128e181d8efc04264770f3ee2a7f866d24481a6f7eabad",
+    "bundles/3.65.0/shared/po3-core.mjs": "abdb41c5cba00b1d6e9c98e6ba9a92fff3f62f9ff2ce47363cc2bdf5e32aaf08",
+    "bundles/3.65.0/shared/po3-feed.mjs": "cbee9b7bb5413eba98f817b867a51e416bee6d1f5fb072675cc5242990a90879",
+    "bundles/3.65.0/shared/po3-service.mjs": "c31ee68aab69a0117f6cfdb49c3c1a5612fbbcc08d1bd5a4da599ff7623464cb",
+    "bundles/3.65.0/shared/po3-simulator.mjs": "56002b0641e37acba8141471f09037432e7a7c3f90ce09b88b8ca2b37454f829",
+    "bundles/3.65.0/shared/po3-store.mjs": "7742b74895c6beff2bbaa8f27f5a26e7129d18007c7d2b1197a669d4c3950d57",
+    "bundles/3.65.0/shared/po3-stream.mjs": "ced8cc5f5ad895c7821e46231d72883df36428a019fc8b055eaaa777d57214d5",
+    "bundles/3.65.0/shared/po3-view.mjs": "be419cb4500ef531ad8440c2547a00ae0fd6146e7504f1cc114914c8dc3c6dbc",
+    "bundles/3.65.0/shared/signal-overview.mjs": "f5428bbba259f07eac8d7c0cebf5569624e6d1d14db43ce5be0a7c1505468bf4",
+    "bundles/3.65.0/shared/telegram-format.mjs": "63e24932d3e1fb901225c548ff082a32eecb027b76c398b22bc78169728eb728",
+    "bundles/3.65.0/shared/widget-state.mjs": "70092b206adad502d0cc1b16c4b642cc28b2914d392a046a1cf25d4f8b77214a",
+    "bundles/3.65.0/vendor/jsQR.LICENSE.txt": "c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08",
+    "bundles/3.65.0/vendor/jsQR.js": "f815a5e0556e7239411a29e92ca2a2c362ed8dae73aea8682ab823f82d4a856e",
+    "manifest.webmanifest": "75862c21b0cebc794875a7c33b852653d765452bc7dd1742b5c4be0e722b278a",
+    "server/generate-pattern-engine.mjs": "c83e4899f70f98ce6cc9adbb7548bdc53391e8b3b77a19eeff68d294ca5c07b1",
+    "server/install.sh": "07bb7777ee2e59bb159c1a490cbdd5f3db819300c52c37e174a27bc9f62d33d4",
+    "server/ki-monitor.mjs": "0c84f8ab527ae348534e6cb99600f45f9c3e4aaee1298148e41f8874bea22915",
+    "server/market-intervals.mjs": "7f1b63eb71189325235155d56909622def1b2f09eb69367135a69f67c44d4cc8",
+    "server/muster-export.mjs": "01e57157fe77a51e49db86498942870ad42bb632acb7cd81747886b7fce5cb45",
+    "server/orderflow-explainer.mjs": "b591fc77af8ff8735841c3d182518d710bf194e4efb1120eeb685efff9ab8b0d",
+    "server/pattern-engine.mjs": "c52ba04ee26dd8b3f03f84898f91921ae0bc9310ae1751cd8e91926267054c5e",
+    "server/pattern-monitor.mjs": "373b536539612a00c2dfe1aa11709c535adbbbbf6f848dcf162811ee63c180d1",
+    "server/patterns-247.mjs": "04f60b422abc13c68b268628eca2fc81f06b713b58b1486347048f8614bfa809",
+    "server/release-manifest.json": "53fb533e406969893497a5c930c5f6d3a8df1d09313a143a24af928dc5871ae0",
+    "server/scalpdesk-247.mjs": "d0653527eccda0c4c706e0843745788f24c0bd7c79fcc2f3fb432308f9eb0ef5",
+    "server/scalpdesk-patterns.service": "3e81c71aa20444bac524d3d5481b68a95b96a8b21ae691bcee8d4caf119bfb94",
+    "server/selbsttest.mjs": "21451dfb1c32ad64c80961911c7822e9ce02bfd03552bd17ed0645e86697019b",
+    "server/telegram-format.mjs": "2eefa259b1c49fa69d555a0373f43c28fa07b23e986ec9176650dd11081fbec6",
+    "shared/adaptive-grid-feed.mjs": "376b78a470ab24f0534c1fe44bb9c57f0e31430baa450bb79bd4964986b9609d",
+    "shared/adaptive-grid.mjs": "87e9d3ae1f94160f2b10c6e8ec0fd5a71efea7c79c8241487c95ac183de38c9d",
+    "shared/bitget-patterns.mjs": "fa678f92b17980d832684ddb1a0e8a12ea8a09b7fc0b0377c3cbdee1b36c871b",
+    "shared/bitget-public.mjs": "0711e6f19a350f2a0924880a6444b30cc631dd8955973fb5e693503f4066576c",
+    "shared/bot-limits.mjs": "ba4c27f94c47963481cc63b315d880fdf8b52634c3758e2dd6f274c95dd1f22f",
+    "shared/bot-simulation-store.mjs": "94605d4ba1adb957564e044a044622ba3425ed12b2c51d6f1e8e933b454e363e",
+    "shared/bot-simulation.mjs": "e951eecdf013a7a6cc17afb7edbcb88c9060811c80ce8f145ffa3447001c2197",
+    "shared/bot-view.mjs": "cd16b04d6dfe6d93317cac947c480713949aa20c01f8076060fababdc543030b",
+    "shared/chart-detail.mjs": "8f9faf895d414c9e8f310881cf6c53cea19dc02ff2e28baf5c9e685ee90ec513",
+    "shared/chart-pattern-chips.mjs": "c69b83e5028207ebc4b4e528179bcbe4d6bb28ea3e8e052331b56dd81624f7e9",
+    "shared/chart-pattern-overview-feed.mjs": "4994d9e16e124dbec0cd1541083a0fcd785a4cb8c577967527c2fc9a88453795",
+    "shared/chart-pattern-quality.mjs": "60e905c63eb9ff366017422078183e8fc225c7ef7caf4c45f4dca698f3a372b7",
+    "shared/confluence-core.mjs": "43cee18caca000b04651e197c10fd06d2866d53120e0a8758ac76e434a02fce9",
+    "shared/confluence-evidence.mjs": "8c3fe3db1da5e5442257ea483577fd3cadac3827a838b23b1a24dac74a70b1f3",
+    "shared/confluence-history.mjs": "7df47def13546078d70e3fbe605a0ff29d80c611659cbda135b2267a40f44200",
+    "shared/confluence-legacy-core.mjs": "70e132c6628fae3fe59f1d9a820e09f556cfd98416a909845b901dce2985c6ad",
+    "shared/confluence-legacy-indicators.mjs": "9105a8ac09d5557e90ec05fd3035c915b36b8e345b31b96a158d0001da505540",
+    "shared/confluence-legacy-live.mjs": "bd9b1d10b9b696d11bbd25e1bb516a3f68f7d40099cdd9f2000105a7e39dde1b",
+    "shared/confluence-legacy-pattern-score.mjs": "585334abda80fd8802128e181d8efc04264770f3ee2a7f866d24481a6f7eabad",
+    "shared/confluence-legacy-replay.mjs": "f3f55b27498a8e13c5bd470d6cbe2d6665a233d9d5baa6bbe1cda2f577ffd96c",
+    "shared/confluence-live.mjs": "6dfc251c8f673c252754d0be13a02c9e9bb1fa97aefd3fccd244e415875bb3be",
+    "shared/confluence-presentation.mjs": "d23018d6f9bdfe1f1e90369bcbd89210b613c4be975becb7f35081e656a32822",
+    "shared/confluence-replay-store.mjs": "502590bc818e0697c6b6bcb1e54a9b449dba976d1578f7d001a9475b7cd1132b",
+    "shared/confluence-replay.mjs": "af2653ebd972a88fc5ed1e4a314828b772050bf095eed70a3b4877f3e5570b00",
+    "shared/confluence-risk-view.mjs": "2f14726a9e46dffca290cbfc0e80a34d44be65e99df956452ef3bc2bf84efa5a",
+    "shared/confluence-service.mjs": "698b434ca864ff532ecb38f7e3a783a5ec43b9d6cec230630d021a5bbc7d4ca1",
+    "shared/confluence-worker.mjs": "9f7b2067b36ea78086ee9ddf49c39b656cf600d6d2e93c35148d4f2599b01832",
+    "shared/github-sync-view.mjs": "1ec538ce7eafe679fdf9b8060105bd22f920a909d2c49a658badecc1734b9e38",
+    "shared/github-sync.mjs": "1bb89d288e8a5b56ccb6543a845119e6f66bd068fdbace61d7a421b52dd3820f",
+    "shared/indicators.mjs": "9105a8ac09d5557e90ec05fd3035c915b36b8e345b31b96a158d0001da505540",
+    "shared/market-intervals.mjs": "8d2781e22bed81fa13a361aa1ccd25dafa62364fa1845dfc730893eae502d812",
+    "shared/model-archive.mjs": "d2b5df4622599ee10e2c4e483986f85f25c2448f8032e8460e1ea4b4cdf212ff",
+    "shared/muster-bot-core.mjs": "c4cd9cf6501e7595372901302fc831451856f65f45915485d8f4f7a4a4fcd7a9",
+    "shared/muster-bot-feed.mjs": "e86a3da0eae70b8096ea185a48ca74b44259080358e95ed1305764040c17721e",
+    "shared/muster-bot-paper.mjs": "8ee4fc077c5331d0868a21e358193e58e5cb613ed7f90a406f8ca2b5318db130",
+    "shared/muster-bot-store.mjs": "aa428ac803fc8cef00c7bde03f2a670faf7fab781ca650423ad267602c87a6dd",
+    "shared/muster-bot-view.mjs": "7a45293db948e10be7465c786505637a39f512604415af9199b8a5b48d2899d6",
+    "shared/muster-bot-worker.mjs": "bd5f7d60af8c4fffa9423a3a6a1a92bf43dd996b3592bc8f44b8d7f5535fe7c4",
+    "shared/orderflow-core.mjs": "2579ff7cd28586ed206629b27d2db2cb19677cbd8e013bf0c9839774ad6337b7",
+    "shared/orderflow-demo.mjs": "41469126cb67eb7f357f809bb89d8b8e792ef0f0c474cbce508e19a8c76c90a4",
+    "shared/orderflow-journal.mjs": "46be78d92a5434e6eb21c830e1afc14332776907e4c0cecb79885df0e748a834",
+    "shared/orderflow-signal-core.mjs": "c4e413e4733ea0638f0574137a9321ac087e42391802e8ebaf1446103dcb965c",
+    "shared/orderflow-signal-feed.mjs": "ed69334f8f4e9d078d3a7bf1821bbee4153c12c9b24e6e033edc53f07df69926",
+    "shared/orderflow-signal-view.mjs": "03a0a91b2bdc6ee1c9c526cd72a9e0f96b2e3991ba85682c0b5d06c187dea46f",
+    "shared/orderflow-view.mjs": "33a774aaf2b0cad284b0cc3e06448064e31912397de5e25c14b07a6fcb8518e9",
+    "shared/paper-bot-controller.mjs": "45ebbcf6ade108e69e8d49332300cdffd07c2731ae2de9aedac279a5b8456ee7",
+    "shared/paper-bot-store.mjs": "c5184216ec7a901b4dca078028a1968dd9e972f7930c03ab93fa9e9ee946d680",
+    "shared/paper-bot-view.mjs": "6413cb5fdf2bbbfe092db42f4298e69c129617b2cb2d8abd3368499a67133985",
+    "shared/paper-bot-worker.mjs": "f5b26d50f054dfe38308dfe5c83020f29cc17a764ec460334bdb42896383a109",
+    "shared/paper-bot.mjs": "0603de27a26e69cea33c5863a269a0b6694bca8a801b18c7b807f91ae6187c95",
+    "shared/pattern-projection.mjs": "1e2444691e3e210eeff673b8b2ae3b91edb9581fccbacc2dea165f76ebeda5d7",
+    "shared/pattern-score.mjs": "585334abda80fd8802128e181d8efc04264770f3ee2a7f866d24481a6f7eabad",
+    "shared/po3-core.mjs": "abdb41c5cba00b1d6e9c98e6ba9a92fff3f62f9ff2ce47363cc2bdf5e32aaf08",
+    "shared/po3-feed.mjs": "cbee9b7bb5413eba98f817b867a51e416bee6d1f5fb072675cc5242990a90879",
+    "shared/po3-service.mjs": "c31ee68aab69a0117f6cfdb49c3c1a5612fbbcc08d1bd5a4da599ff7623464cb",
+    "shared/po3-simulator.mjs": "56002b0641e37acba8141471f09037432e7a7c3f90ce09b88b8ca2b37454f829",
+    "shared/po3-store.mjs": "7742b74895c6beff2bbaa8f27f5a26e7129d18007c7d2b1197a669d4c3950d57",
+    "shared/po3-stream.mjs": "ced8cc5f5ad895c7821e46231d72883df36428a019fc8b055eaaa777d57214d5",
+    "shared/po3-view.mjs": "be419cb4500ef531ad8440c2547a00ae0fd6146e7504f1cc114914c8dc3c6dbc",
+    "shared/signal-overview.mjs": "f5428bbba259f07eac8d7c0cebf5569624e6d1d14db43ce5be0a7c1505468bf4",
+    "shared/telegram-format.mjs": "63e24932d3e1fb901225c548ff082a32eecb027b76c398b22bc78169728eb728",
+    "shared/widget-state.mjs": "70092b206adad502d0cc1b16c4b642cc28b2914d392a046a1cf25d4f8b77214a",
+    "status-check.html": "485c1e02efab12d1e63de05424067510a312fa38c4d78d1d53fbeb8f66d3063d",
+    "sw.js": "7b3ab4b65ed235d26d5f0a819326a4195e130748f2ceeaf818b1742792feeaac",
+    "vendor/jsQR.LICENSE.txt": "c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08",
+    "vendor/jsQR.js": "f815a5e0556e7239411a29e92ca2a2c362ed8dae73aea8682ab823f82d4a856e",
+    "weather-widget-v2.html": "bcc2e7aeb15544bfc5835edea5112d30c03fd9da5128e492ccfc3c805b8c73f3"
+  },
+  "originalProductCommit": "64191bf1e3a9419f89eb44e57eaf215dbce9eee3",
+  "originalProductHashes": {
+    "bundles/3.65.0/data/muster-start.json": "9690cb5f3de127396fdc10b8cf24bbd17833a0c26291a12b6e50aa797688fd09",
+    "bundles/3.65.0/manifest.json": "8ec4a71cf835a30825960b93724d4c5b556c5a17a312e3dec85e5661cc3ce1e1",
+    "bundles/3.65.0/server/pattern-engine.mjs": "c52ba04ee26dd8b3f03f84898f91921ae0bc9310ae1751cd8e91926267054c5e",
+    "bundles/3.65.0/shared/adaptive-grid-feed.mjs": "376b78a470ab24f0534c1fe44bb9c57f0e31430baa450bb79bd4964986b9609d",
+    "bundles/3.65.0/shared/adaptive-grid.mjs": "87e9d3ae1f94160f2b10c6e8ec0fd5a71efea7c79c8241487c95ac183de38c9d",
+    "bundles/3.65.0/shared/bitget-patterns.mjs": "fa678f92b17980d832684ddb1a0e8a12ea8a09b7fc0b0377c3cbdee1b36c871b",
+    "bundles/3.65.0/shared/bitget-public.mjs": "0711e6f19a350f2a0924880a6444b30cc631dd8955973fb5e693503f4066576c",
+    "bundles/3.65.0/shared/bot-limits.mjs": "ba4c27f94c47963481cc63b315d880fdf8b52634c3758e2dd6f274c95dd1f22f",
+    "bundles/3.65.0/shared/bot-simulation-store.mjs": "94605d4ba1adb957564e044a044622ba3425ed12b2c51d6f1e8e933b454e363e",
+    "bundles/3.65.0/shared/bot-simulation.mjs": "e951eecdf013a7a6cc17afb7edbcb88c9060811c80ce8f145ffa3447001c2197",
+    "bundles/3.65.0/shared/bot-view.mjs": "cd16b04d6dfe6d93317cac947c480713949aa20c01f8076060fababdc543030b",
+    "bundles/3.65.0/shared/chart-detail.mjs": "8f9faf895d414c9e8f310881cf6c53cea19dc02ff2e28baf5c9e685ee90ec513",
+    "bundles/3.65.0/shared/chart-pattern-chips.mjs": "c69b83e5028207ebc4b4e528179bcbe4d6bb28ea3e8e052331b56dd81624f7e9",
+    "bundles/3.65.0/shared/chart-pattern-overview-feed.mjs": "4994d9e16e124dbec0cd1541083a0fcd785a4cb8c577967527c2fc9a88453795",
+    "bundles/3.65.0/shared/chart-pattern-quality.mjs": "60e905c63eb9ff366017422078183e8fc225c7ef7caf4c45f4dca698f3a372b7",
+    "bundles/3.65.0/shared/confluence-core.mjs": "43cee18caca000b04651e197c10fd06d2866d53120e0a8758ac76e434a02fce9",
+    "bundles/3.65.0/shared/confluence-evidence.mjs": "8c3fe3db1da5e5442257ea483577fd3cadac3827a838b23b1a24dac74a70b1f3",
+    "bundles/3.65.0/shared/confluence-history.mjs": "7df47def13546078d70e3fbe605a0ff29d80c611659cbda135b2267a40f44200",
+    "bundles/3.65.0/shared/confluence-legacy-core.mjs": "70e132c6628fae3fe59f1d9a820e09f556cfd98416a909845b901dce2985c6ad",
+    "bundles/3.65.0/shared/confluence-legacy-indicators.mjs": "9105a8ac09d5557e90ec05fd3035c915b36b8e345b31b96a158d0001da505540",
+    "bundles/3.65.0/shared/confluence-legacy-live.mjs": "bd9b1d10b9b696d11bbd25e1bb516a3f68f7d40099cdd9f2000105a7e39dde1b",
+    "bundles/3.65.0/shared/confluence-legacy-pattern-score.mjs": "585334abda80fd8802128e181d8efc04264770f3ee2a7f866d24481a6f7eabad",
+    "bundles/3.65.0/shared/confluence-legacy-replay.mjs": "f3f55b27498a8e13c5bd470d6cbe2d6665a233d9d5baa6bbe1cda2f577ffd96c",
+    "bundles/3.65.0/shared/confluence-live.mjs": "6dfc251c8f673c252754d0be13a02c9e9bb1fa97aefd3fccd244e415875bb3be",
+    "bundles/3.65.0/shared/confluence-presentation.mjs": "d23018d6f9bdfe1f1e90369bcbd89210b613c4be975becb7f35081e656a32822",
+    "bundles/3.65.0/shared/confluence-replay-store.mjs": "502590bc818e0697c6b6bcb1e54a9b449dba976d1578f7d001a9475b7cd1132b",
+    "bundles/3.65.0/shared/confluence-replay.mjs": "af2653ebd972a88fc5ed1e4a314828b772050bf095eed70a3b4877f3e5570b00",
+    "bundles/3.65.0/shared/confluence-risk-view.mjs": "2f14726a9e46dffca290cbfc0e80a34d44be65e99df956452ef3bc2bf84efa5a",
+    "bundles/3.65.0/shared/confluence-service.mjs": "698b434ca864ff532ecb38f7e3a783a5ec43b9d6cec230630d021a5bbc7d4ca1",
+    "bundles/3.65.0/shared/confluence-worker.mjs": "9f7b2067b36ea78086ee9ddf49c39b656cf600d6d2e93c35148d4f2599b01832",
+    "bundles/3.65.0/shared/github-sync-view.mjs": "1ec538ce7eafe679fdf9b8060105bd22f920a909d2c49a658badecc1734b9e38",
+    "bundles/3.65.0/shared/github-sync.mjs": "1bb89d288e8a5b56ccb6543a845119e6f66bd068fdbace61d7a421b52dd3820f",
+    "bundles/3.65.0/shared/indicators.mjs": "9105a8ac09d5557e90ec05fd3035c915b36b8e345b31b96a158d0001da505540",
+    "bundles/3.65.0/shared/market-intervals.mjs": "8d2781e22bed81fa13a361aa1ccd25dafa62364fa1845dfc730893eae502d812",
+    "bundles/3.65.0/shared/model-archive.mjs": "d2b5df4622599ee10e2c4e483986f85f25c2448f8032e8460e1ea4b4cdf212ff",
+    "bundles/3.65.0/shared/muster-bot-core.mjs": "c4cd9cf6501e7595372901302fc831451856f65f45915485d8f4f7a4a4fcd7a9",
+    "bundles/3.65.0/shared/muster-bot-feed.mjs": "e86a3da0eae70b8096ea185a48ca74b44259080358e95ed1305764040c17721e",
+    "bundles/3.65.0/shared/muster-bot-paper.mjs": "8ee4fc077c5331d0868a21e358193e58e5cb613ed7f90a406f8ca2b5318db130",
+    "bundles/3.65.0/shared/muster-bot-store.mjs": "aa428ac803fc8cef00c7bde03f2a670faf7fab781ca650423ad267602c87a6dd",
+    "bundles/3.65.0/shared/muster-bot-view.mjs": "7a45293db948e10be7465c786505637a39f512604415af9199b8a5b48d2899d6",
+    "bundles/3.65.0/shared/muster-bot-worker.mjs": "bd5f7d60af8c4fffa9423a3a6a1a92bf43dd996b3592bc8f44b8d7f5535fe7c4",
+    "bundles/3.65.0/shared/orderflow-core.mjs": "2579ff7cd28586ed206629b27d2db2cb19677cbd8e013bf0c9839774ad6337b7",
+    "bundles/3.65.0/shared/orderflow-demo.mjs": "41469126cb67eb7f357f809bb89d8b8e792ef0f0c474cbce508e19a8c76c90a4",
+    "bundles/3.65.0/shared/orderflow-journal.mjs": "46be78d92a5434e6eb21c830e1afc14332776907e4c0cecb79885df0e748a834",
+    "bundles/3.65.0/shared/orderflow-signal-core.mjs": "c4e413e4733ea0638f0574137a9321ac087e42391802e8ebaf1446103dcb965c",
+    "bundles/3.65.0/shared/orderflow-signal-feed.mjs": "ed69334f8f4e9d078d3a7bf1821bbee4153c12c9b24e6e033edc53f07df69926",
+    "bundles/3.65.0/shared/orderflow-signal-view.mjs": "03a0a91b2bdc6ee1c9c526cd72a9e0f96b2e3991ba85682c0b5d06c187dea46f",
+    "bundles/3.65.0/shared/orderflow-view.mjs": "33a774aaf2b0cad284b0cc3e06448064e31912397de5e25c14b07a6fcb8518e9",
+    "bundles/3.65.0/shared/paper-bot-controller.mjs": "45ebbcf6ade108e69e8d49332300cdffd07c2731ae2de9aedac279a5b8456ee7",
+    "bundles/3.65.0/shared/paper-bot-store.mjs": "c5184216ec7a901b4dca078028a1968dd9e972f7930c03ab93fa9e9ee946d680",
+    "bundles/3.65.0/shared/paper-bot-view.mjs": "6413cb5fdf2bbbfe092db42f4298e69c129617b2cb2d8abd3368499a67133985",
+    "bundles/3.65.0/shared/paper-bot-worker.mjs": "f5b26d50f054dfe38308dfe5c83020f29cc17a764ec460334bdb42896383a109",
+    "bundles/3.65.0/shared/paper-bot.mjs": "0603de27a26e69cea33c5863a269a0b6694bca8a801b18c7b807f91ae6187c95",
+    "bundles/3.65.0/shared/pattern-projection.mjs": "1e2444691e3e210eeff673b8b2ae3b91edb9581fccbacc2dea165f76ebeda5d7",
+    "bundles/3.65.0/shared/pattern-score.mjs": "585334abda80fd8802128e181d8efc04264770f3ee2a7f866d24481a6f7eabad",
+    "bundles/3.65.0/shared/po3-core.mjs": "abdb41c5cba00b1d6e9c98e6ba9a92fff3f62f9ff2ce47363cc2bdf5e32aaf08",
+    "bundles/3.65.0/shared/po3-feed.mjs": "cbee9b7bb5413eba98f817b867a51e416bee6d1f5fb072675cc5242990a90879",
+    "bundles/3.65.0/shared/po3-service.mjs": "c31ee68aab69a0117f6cfdb49c3c1a5612fbbcc08d1bd5a4da599ff7623464cb",
+    "bundles/3.65.0/shared/po3-simulator.mjs": "56002b0641e37acba8141471f09037432e7a7c3f90ce09b88b8ca2b37454f829",
+    "bundles/3.65.0/shared/po3-store.mjs": "7742b74895c6beff2bbaa8f27f5a26e7129d18007c7d2b1197a669d4c3950d57",
+    "bundles/3.65.0/shared/po3-stream.mjs": "ced8cc5f5ad895c7821e46231d72883df36428a019fc8b055eaaa777d57214d5",
+    "bundles/3.65.0/shared/po3-view.mjs": "be419cb4500ef531ad8440c2547a00ae0fd6146e7504f1cc114914c8dc3c6dbc",
+    "bundles/3.65.0/shared/signal-overview.mjs": "f5428bbba259f07eac8d7c0cebf5569624e6d1d14db43ce5be0a7c1505468bf4",
+    "bundles/3.65.0/shared/telegram-format.mjs": "63e24932d3e1fb901225c548ff082a32eecb027b76c398b22bc78169728eb728",
+    "bundles/3.65.0/shared/widget-state.mjs": "70092b206adad502d0cc1b16c4b642cc28b2914d392a046a1cf25d4f8b77214a",
+    "bundles/3.65.0/vendor/jsQR.LICENSE.txt": "c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08",
+    "bundles/3.65.0/vendor/jsQR.js": "f815a5e0556e7239411a29e92ca2a2c362ed8dae73aea8682ab823f82d4a856e",
+    "manifest.webmanifest": "75862c21b0cebc794875a7c33b852653d765452bc7dd1742b5c4be0e722b278a",
+    "server/generate-pattern-engine.mjs": "c83e4899f70f98ce6cc9adbb7548bdc53391e8b3b77a19eeff68d294ca5c07b1",
+    "server/install.sh": "07bb7777ee2e59bb159c1a490cbdd5f3db819300c52c37e174a27bc9f62d33d4",
+    "server/ki-monitor.mjs": "0c84f8ab527ae348534e6cb99600f45f9c3e4aaee1298148e41f8874bea22915",
+    "server/market-intervals.mjs": "7f1b63eb71189325235155d56909622def1b2f09eb69367135a69f67c44d4cc8",
+    "server/muster-export.mjs": "01e57157fe77a51e49db86498942870ad42bb632acb7cd81747886b7fce5cb45",
+    "server/orderflow-explainer.mjs": "b591fc77af8ff8735841c3d182518d710bf194e4efb1120eeb685efff9ab8b0d",
+    "server/pattern-engine.mjs": "c52ba04ee26dd8b3f03f84898f91921ae0bc9310ae1751cd8e91926267054c5e",
+    "server/pattern-monitor.mjs": "373b536539612a00c2dfe1aa11709c535adbbbbf6f848dcf162811ee63c180d1",
+    "server/patterns-247.mjs": "04f60b422abc13c68b268628eca2fc81f06b713b58b1486347048f8614bfa809",
+    "server/release-manifest.json": "53fb533e406969893497a5c930c5f6d3a8df1d09313a143a24af928dc5871ae0",
+    "server/scalpdesk-247.mjs": "d0653527eccda0c4c706e0843745788f24c0bd7c79fcc2f3fb432308f9eb0ef5",
+    "server/scalpdesk-patterns.service": "3e81c71aa20444bac524d3d5481b68a95b96a8b21ae691bcee8d4caf119bfb94",
+    "server/selbsttest.mjs": "21451dfb1c32ad64c80961911c7822e9ce02bfd03552bd17ed0645e86697019b",
+    "server/telegram-format.mjs": "2eefa259b1c49fa69d555a0373f43c28fa07b23e986ec9176650dd11081fbec6",
+    "shared/adaptive-grid-feed.mjs": "376b78a470ab24f0534c1fe44bb9c57f0e31430baa450bb79bd4964986b9609d",
+    "shared/adaptive-grid.mjs": "87e9d3ae1f94160f2b10c6e8ec0fd5a71efea7c79c8241487c95ac183de38c9d",
+    "shared/bitget-patterns.mjs": "fa678f92b17980d832684ddb1a0e8a12ea8a09b7fc0b0377c3cbdee1b36c871b",
+    "shared/bitget-public.mjs": "0711e6f19a350f2a0924880a6444b30cc631dd8955973fb5e693503f4066576c",
+    "shared/bot-limits.mjs": "ba4c27f94c47963481cc63b315d880fdf8b52634c3758e2dd6f274c95dd1f22f",
+    "shared/bot-simulation-store.mjs": "94605d4ba1adb957564e044a044622ba3425ed12b2c51d6f1e8e933b454e363e",
+    "shared/bot-simulation.mjs": "e951eecdf013a7a6cc17afb7edbcb88c9060811c80ce8f145ffa3447001c2197",
+    "shared/bot-view.mjs": "cd16b04d6dfe6d93317cac947c480713949aa20c01f8076060fababdc543030b",
+    "shared/chart-detail.mjs": "8f9faf895d414c9e8f310881cf6c53cea19dc02ff2e28baf5c9e685ee90ec513",
+    "shared/chart-pattern-chips.mjs": "c69b83e5028207ebc4b4e528179bcbe4d6bb28ea3e8e052331b56dd81624f7e9",
+    "shared/chart-pattern-overview-feed.mjs": "4994d9e16e124dbec0cd1541083a0fcd785a4cb8c577967527c2fc9a88453795",
+    "shared/chart-pattern-quality.mjs": "60e905c63eb9ff366017422078183e8fc225c7ef7caf4c45f4dca698f3a372b7",
+    "shared/confluence-core.mjs": "43cee18caca000b04651e197c10fd06d2866d53120e0a8758ac76e434a02fce9",
+    "shared/confluence-evidence.mjs": "8c3fe3db1da5e5442257ea483577fd3cadac3827a838b23b1a24dac74a70b1f3",
+    "shared/confluence-history.mjs": "7df47def13546078d70e3fbe605a0ff29d80c611659cbda135b2267a40f44200",
+    "shared/confluence-legacy-core.mjs": "70e132c6628fae3fe59f1d9a820e09f556cfd98416a909845b901dce2985c6ad",
+    "shared/confluence-legacy-indicators.mjs": "9105a8ac09d5557e90ec05fd3035c915b36b8e345b31b96a158d0001da505540",
+    "shared/confluence-legacy-live.mjs": "bd9b1d10b9b696d11bbd25e1bb516a3f68f7d40099cdd9f2000105a7e39dde1b",
+    "shared/confluence-legacy-pattern-score.mjs": "585334abda80fd8802128e181d8efc04264770f3ee2a7f866d24481a6f7eabad",
+    "shared/confluence-legacy-replay.mjs": "f3f55b27498a8e13c5bd470d6cbe2d6665a233d9d5baa6bbe1cda2f577ffd96c",
+    "shared/confluence-live.mjs": "6dfc251c8f673c252754d0be13a02c9e9bb1fa97aefd3fccd244e415875bb3be",
+    "shared/confluence-presentation.mjs": "d23018d6f9bdfe1f1e90369bcbd89210b613c4be975becb7f35081e656a32822",
+    "shared/confluence-replay-store.mjs": "502590bc818e0697c6b6bcb1e54a9b449dba976d1578f7d001a9475b7cd1132b",
+    "shared/confluence-replay.mjs": "af2653ebd972a88fc5ed1e4a314828b772050bf095eed70a3b4877f3e5570b00",
+    "shared/confluence-risk-view.mjs": "2f14726a9e46dffca290cbfc0e80a34d44be65e99df956452ef3bc2bf84efa5a",
+    "shared/confluence-service.mjs": "698b434ca864ff532ecb38f7e3a783a5ec43b9d6cec230630d021a5bbc7d4ca1",
+    "shared/confluence-worker.mjs": "9f7b2067b36ea78086ee9ddf49c39b656cf600d6d2e93c35148d4f2599b01832",
+    "shared/github-sync-view.mjs": "1ec538ce7eafe679fdf9b8060105bd22f920a909d2c49a658badecc1734b9e38",
+    "shared/github-sync.mjs": "1bb89d288e8a5b56ccb6543a845119e6f66bd068fdbace61d7a421b52dd3820f",
+    "shared/indicators.mjs": "9105a8ac09d5557e90ec05fd3035c915b36b8e345b31b96a158d0001da505540",
+    "shared/market-intervals.mjs": "8d2781e22bed81fa13a361aa1ccd25dafa62364fa1845dfc730893eae502d812",
+    "shared/model-archive.mjs": "d2b5df4622599ee10e2c4e483986f85f25c2448f8032e8460e1ea4b4cdf212ff",
+    "shared/muster-bot-core.mjs": "c4cd9cf6501e7595372901302fc831451856f65f45915485d8f4f7a4a4fcd7a9",
+    "shared/muster-bot-feed.mjs": "e86a3da0eae70b8096ea185a48ca74b44259080358e95ed1305764040c17721e",
+    "shared/muster-bot-paper.mjs": "8ee4fc077c5331d0868a21e358193e58e5cb613ed7f90a406f8ca2b5318db130",
+    "shared/muster-bot-store.mjs": "aa428ac803fc8cef00c7bde03f2a670faf7fab781ca650423ad267602c87a6dd",
+    "shared/muster-bot-view.mjs": "7a45293db948e10be7465c786505637a39f512604415af9199b8a5b48d2899d6",
+    "shared/muster-bot-worker.mjs": "bd5f7d60af8c4fffa9423a3a6a1a92bf43dd996b3592bc8f44b8d7f5535fe7c4",
+    "shared/orderflow-core.mjs": "2579ff7cd28586ed206629b27d2db2cb19677cbd8e013bf0c9839774ad6337b7",
+    "shared/orderflow-demo.mjs": "41469126cb67eb7f357f809bb89d8b8e792ef0f0c474cbce508e19a8c76c90a4",
+    "shared/orderflow-journal.mjs": "46be78d92a5434e6eb21c830e1afc14332776907e4c0cecb79885df0e748a834",
+    "shared/orderflow-signal-core.mjs": "c4e413e4733ea0638f0574137a9321ac087e42391802e8ebaf1446103dcb965c",
+    "shared/orderflow-signal-feed.mjs": "ed69334f8f4e9d078d3a7bf1821bbee4153c12c9b24e6e033edc53f07df69926",
+    "shared/orderflow-signal-view.mjs": "03a0a91b2bdc6ee1c9c526cd72a9e0f96b2e3991ba85682c0b5d06c187dea46f",
+    "shared/orderflow-view.mjs": "33a774aaf2b0cad284b0cc3e06448064e31912397de5e25c14b07a6fcb8518e9",
+    "shared/paper-bot-controller.mjs": "45ebbcf6ade108e69e8d49332300cdffd07c2731ae2de9aedac279a5b8456ee7",
+    "shared/paper-bot-store.mjs": "c5184216ec7a901b4dca078028a1968dd9e972f7930c03ab93fa9e9ee946d680",
+    "shared/paper-bot-view.mjs": "6413cb5fdf2bbbfe092db42f4298e69c129617b2cb2d8abd3368499a67133985",
+    "shared/paper-bot-worker.mjs": "f5b26d50f054dfe38308dfe5c83020f29cc17a764ec460334bdb42896383a109",
+    "shared/paper-bot.mjs": "0603de27a26e69cea33c5863a269a0b6694bca8a801b18c7b807f91ae6187c95",
+    "shared/pattern-projection.mjs": "1e2444691e3e210eeff673b8b2ae3b91edb9581fccbacc2dea165f76ebeda5d7",
+    "shared/pattern-score.mjs": "585334abda80fd8802128e181d8efc04264770f3ee2a7f866d24481a6f7eabad",
+    "shared/po3-core.mjs": "abdb41c5cba00b1d6e9c98e6ba9a92fff3f62f9ff2ce47363cc2bdf5e32aaf08",
+    "shared/po3-feed.mjs": "cbee9b7bb5413eba98f817b867a51e416bee6d1f5fb072675cc5242990a90879",
+    "shared/po3-service.mjs": "c31ee68aab69a0117f6cfdb49c3c1a5612fbbcc08d1bd5a4da599ff7623464cb",
+    "shared/po3-simulator.mjs": "56002b0641e37acba8141471f09037432e7a7c3f90ce09b88b8ca2b37454f829",
+    "shared/po3-store.mjs": "7742b74895c6beff2bbaa8f27f5a26e7129d18007c7d2b1197a669d4c3950d57",
+    "shared/po3-stream.mjs": "ced8cc5f5ad895c7821e46231d72883df36428a019fc8b055eaaa777d57214d5",
+    "shared/po3-view.mjs": "be419cb4500ef531ad8440c2547a00ae0fd6146e7504f1cc114914c8dc3c6dbc",
+    "shared/signal-overview.mjs": "f5428bbba259f07eac8d7c0cebf5569624e6d1d14db43ce5be0a7c1505468bf4",
+    "shared/telegram-format.mjs": "63e24932d3e1fb901225c548ff082a32eecb027b76c398b22bc78169728eb728",
+    "shared/widget-state.mjs": "70092b206adad502d0cc1b16c4b642cc28b2914d392a046a1cf25d4f8b77214a",
+    "status-check.html": "485c1e02efab12d1e63de05424067510a312fa38c4d78d1d53fbeb8f66d3063d",
+    "sw.js": "0eee2c826c103c5b23062bfef07b8cd462ce9786052deb2754c9592f5318a948",
+    "vendor/jsQR.LICENSE.txt": "c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08",
+    "vendor/jsQR.js": "f815a5e0556e7239411a29e92ca2a2c362ed8dae73aea8682ab823f82d4a856e",
+    "weather-widget-v2.html": "e71aadebaa1d2e644a713ac1fb16df6c94805d9338d69890472b66872a2d3f7c"
+  },
+  "changedFromFullRun": [
+    "bundles/3.65.0/manifest.json",
+    "sw.js",
+    "weather-widget-v2.html"
+  ],
+  "originalFullRun": [
+    {
+      "target": "m94",
+      "exit": 0,
+      "seconds": 11.0,
+      "counts": [
+        "39",
+        "39"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-chart-pattern-quality",
+      "exit": 0,
+      "seconds": 0.0,
+      "counts": [
+        "52",
+        "52"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-chart-pattern-overview-feed",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "33",
+        "33"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m93",
+      "exit": 0,
+      "seconds": 17.1,
+      "counts": [
+        "40",
+        "40"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-chart-detail",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "35",
+        "35"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-chart-pattern-chips",
+      "exit": 0,
+      "seconds": 0.0,
+      "counts": [
+        "17",
+        "17"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m92",
+      "exit": 0,
+      "seconds": 13.3,
+      "counts": [
+        "42",
+        "42"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-pattern-projection",
+      "exit": 0,
+      "seconds": 0.0,
+      "counts": [
+        "22",
+        "22"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-github-sync",
+      "exit": 0,
+      "seconds": 0.6,
+      "counts": [
+        "24",
+        "24"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m91",
+      "exit": 0,
+      "seconds": 4.2,
+      "counts": [
+        "8",
+        "8"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m90",
+      "exit": 0,
+      "seconds": 12.7,
+      "counts": [
+        "18",
+        "18"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-muster-bot",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "23",
+        "23"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-muster-feed",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "8",
+        "8"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-muster-paper",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "9",
+        "9"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m89",
+      "exit": 0,
+      "seconds": 6.3,
+      "counts": [
+        "18",
+        "18"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-market-intervals",
+      "exit": 0,
+      "seconds": 0.0,
+      "counts": [
+        "7",
+        "7"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m88",
+      "exit": 1,
+      "seconds": 34.5,
+      "counts": null,
+      "failed": []
+    },
+    {
+      "target": "unit-patterns-only",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "16",
+        "16"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-telegram-format",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "33",
+        "33"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m87",
+      "exit": 0,
+      "seconds": 18.6,
+      "counts": [
+        "22",
+        "22"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-paper-bot",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "34",
+        "34"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-paper-controller",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "11",
+        "11"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-paper-worker",
+      "exit": 0,
+      "seconds": 2.1,
+      "counts": [
+        "5",
+        "5"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-adaptive-grid",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "54",
+        "54"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-adaptive-grid-feed",
+      "exit": 0,
+      "seconds": 0.2,
+      "counts": [
+        "15",
+        "15"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-adaptive-grid-runtime",
+      "exit": 0,
+      "seconds": 0.2,
+      "counts": [
+        "37",
+        "37"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-orderflow-demo",
+      "exit": 0,
+      "seconds": 0.0,
+      "counts": [
+        "30",
+        "30"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-orderflow-signal",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "69",
+        "69"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-orderflow-feed",
+      "exit": 0,
+      "seconds": 0.0,
+      "counts": [
+        "19",
+        "19"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-orderflow-journal",
+      "exit": 0,
+      "seconds": 0.0,
+      "counts": [
+        "19",
+        "19"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-orderflow-explainer",
+      "exit": 0,
+      "seconds": 8.3,
+      "counts": [
+        "12",
+        "12"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-orderflow",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "52",
+        "52"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-confluence-risk",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "28",
+        "28"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-confluence-evidence",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "18",
+        "18"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-signal-overview",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "27",
+        "27"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-confluence-costs",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "46",
+        "46"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-confluence-presentation",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "23",
+        "23"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-appearance",
+      "exit": 0,
+      "seconds": 0.4,
+      "counts": [
+        "23",
+        "23"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-release",
+      "exit": 0,
+      "seconds": 0.2,
+      "counts": [
+        "6",
+        "6"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-model-archive",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "13",
+        "13"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-bot-limits",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "37",
+        "37"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-bot-simulation",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "16",
+        "16"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-po3",
+      "exit": 0,
+      "seconds": 0.2,
+      "counts": [
+        "35",
+        "35"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-po3-service",
+      "exit": 0,
+      "seconds": 0.4,
+      "counts": [
+        "20",
+        "20"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-po3-stream",
+      "exit": 0,
+      "seconds": 0.6,
+      "counts": [
+        "19",
+        "19"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-confluence-service",
+      "exit": 0,
+      "seconds": 0.8,
+      "counts": [
+        "26",
+        "26"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-confluence-replay",
+      "exit": 0,
+      "seconds": 0.2,
+      "counts": [
+        "33",
+        "33"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-bitget-history",
+      "exit": 0,
+      "seconds": 0.2,
+      "counts": [
+        "15",
+        "15"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-confluence-live",
+      "exit": 0,
+      "seconds": 0.4,
+      "counts": [
+        "46",
+        "46"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-bitget-patterns",
+      "exit": 0,
+      "seconds": 0.4,
+      "counts": [
+        "20",
+        "20"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-bitget",
+      "exit": 0,
+      "seconds": 0.5,
+      "counts": [
+        "55",
+        "55"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-confluence",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "135",
+        "135"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-247e",
+      "exit": 0,
+      "seconds": 0.8,
+      "counts": [
+        "38",
+        "38"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-m8",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "24",
+        "24"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-zz",
+      "exit": 0,
+      "seconds": 0.2,
+      "counts": [
+        "28",
+        "28"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-zzp",
+      "exit": 0,
+      "seconds": 0.2,
+      "counts": [
+        "17",
+        "17"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-div",
+      "exit": 0,
+      "seconds": 0.2,
+      "counts": [
+        "10",
+        "10"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-ew",
+      "exit": 0,
+      "seconds": 0.8,
+      "counts": [
+        "27",
+        "27"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-fib",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "6",
+        "6"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-ob",
+      "exit": 0,
+      "seconds": 0.2,
+      "counts": [
+        "9",
+        "9"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-cd",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "16",
+        "16"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-hl",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "13",
+        "13"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-ec",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "22",
+        "22"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-cn",
+      "exit": 0,
+      "seconds": 0.2,
+      "counts": [
+        "40",
+        "40"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-wl",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "64",
+        "64"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-fmt",
+      "exit": 0,
+      "seconds": 9.7,
+      "counts": [
+        "4",
+        "4"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-vola",
+      "exit": 0,
+      "seconds": 3.0,
+      "counts": [
+        "44",
+        "44"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-247",
+      "exit": 0,
+      "seconds": 0.6,
+      "counts": [
+        "96",
+        "96"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-247b",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "25",
+        "25"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-pub",
+      "exit": 0,
+      "seconds": 12.4,
+      "counts": [
+        "7",
+        "7"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-247d",
+      "exit": 0,
+      "seconds": 3.4,
+      "counts": [
+        "16",
+        "16"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-247c",
+      "exit": 0,
+      "seconds": 0.4,
+      "counts": [
+        "55",
+        "55"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-pulse",
+      "exit": 0,
+      "seconds": 2.8,
+      "counts": [
+        "44",
+        "44"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-lots",
+      "exit": 0,
+      "seconds": 0.2,
+      "counts": [
+        "31",
+        "31"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-acct",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "39",
+        "39"
+      ],
+      "failed": []
+    },
+    {
+      "target": "inst-247",
+      "exit": 0,
+      "seconds": 75.5,
+      "counts": [
+        "35",
+        "35"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m86",
+      "exit": 0,
+      "seconds": 35.5,
+      "counts": [
+        "18",
+        "18"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m85",
+      "exit": 0,
+      "seconds": 73.8,
+      "counts": [
+        "26",
+        "26"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m84",
+      "exit": 0,
+      "seconds": 40.4,
+      "counts": [
+        "177",
+        "177"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m83",
+      "exit": 0,
+      "seconds": 22.0,
+      "counts": [
+        "49",
+        "49"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m82",
+      "exit": 0,
+      "seconds": 8.0,
+      "counts": [
+        "45",
+        "45"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m81",
+      "exit": 0,
+      "seconds": 37.4,
+      "counts": [
+        "41",
+        "41"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m80",
+      "exit": 0,
+      "seconds": 7.1,
+      "counts": [
+        "51",
+        "51"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m79",
+      "exit": 0,
+      "seconds": 23.5,
+      "counts": [
+        "49",
+        "49"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m78",
+      "exit": 0,
+      "seconds": 17.8,
+      "counts": [
+        "16",
+        "16"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m77",
+      "exit": 0,
+      "seconds": 15.9,
+      "counts": [
+        "35",
+        "35"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m76",
+      "exit": 0,
+      "seconds": 11.3,
+      "counts": [
+        "19",
+        "19"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m75",
+      "exit": 0,
+      "seconds": 49.3,
+      "counts": [
+        "15",
+        "15"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m74",
+      "exit": 0,
+      "seconds": 59.2,
+      "counts": [
+        "73",
+        "73"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m73",
+      "exit": 0,
+      "seconds": 7.4,
+      "counts": [
+        "20",
+        "20"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m72",
+      "exit": 0,
+      "seconds": 6.4,
+      "counts": [
+        "28",
+        "28"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m71",
+      "exit": 0,
+      "seconds": 9.5,
+      "counts": [
+        "23",
+        "23"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m70",
+      "exit": 0,
+      "seconds": 29.0,
+      "counts": [
+        "61",
+        "61"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m69",
+      "exit": 0,
+      "seconds": 9.7,
+      "counts": [
+        "19",
+        "19"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m68",
+      "exit": 0,
+      "seconds": 20.6,
+      "counts": [
+        "23",
+        "23"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m67",
+      "exit": 0,
+      "seconds": 14.0,
+      "counts": [
+        "22",
+        "22"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m66",
+      "exit": 0,
+      "seconds": 4.8,
+      "counts": [
+        "14",
+        "14"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m65",
+      "exit": 0,
+      "seconds": 6.4,
+      "counts": [
+        "12",
+        "12"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m64",
+      "exit": 0,
+      "seconds": 3.3,
+      "counts": [
+        "19",
+        "19"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m63",
+      "exit": 0,
+      "seconds": 18.8,
+      "counts": [
+        "36",
+        "36"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m62",
+      "exit": 0,
+      "seconds": 2.9,
+      "counts": [
+        "8",
+        "8"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m61",
+      "exit": 0,
+      "seconds": 1.8,
+      "counts": [
+        "8",
+        "8"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m60",
+      "exit": 0,
+      "seconds": 11.9,
+      "counts": [
+        "14",
+        "14"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m59",
+      "exit": 0,
+      "seconds": 19.9,
+      "counts": [
+        "19",
+        "19"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m58",
+      "exit": 0,
+      "seconds": 40.7,
+      "counts": [
+        "60",
+        "60"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m57",
+      "exit": 0,
+      "seconds": 49.7,
+      "counts": [
+        "41",
+        "41"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m56",
+      "exit": 0,
+      "seconds": 90.9,
+      "counts": [
+        "55",
+        "55"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m55",
+      "exit": 0,
+      "seconds": 124.7,
+      "counts": [
+        "49",
+        "49"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m54",
+      "exit": 0,
+      "seconds": 188.7,
+      "counts": [
+        "52",
+        "52"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m53",
+      "exit": 0,
+      "seconds": 201.6,
+      "counts": [
+        "102",
+        "102"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m52",
+      "exit": 0,
+      "seconds": 97.9,
+      "counts": [
+        "101",
+        "101"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m51",
+      "exit": 0,
+      "seconds": 63.2,
+      "counts": [
+        "73",
+        "73"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m50",
+      "exit": 0,
+      "seconds": 146.9,
+      "counts": [
+        "118",
+        "118"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m49",
+      "exit": 0,
+      "seconds": 127.3,
+      "counts": [
+        "18",
+        "18"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m48",
+      "exit": 0,
+      "seconds": 53.3,
+      "counts": [
+        "81",
+        "81"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m47",
+      "exit": 0,
+      "seconds": 184.7,
+      "counts": [
+        "51",
+        "51"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m46",
+      "exit": 0,
+      "seconds": 103.2,
+      "counts": [
+        "40",
+        "40"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m45",
+      "exit": 0,
+      "seconds": 122.2,
+      "counts": [
+        "75",
+        "75"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m44",
+      "exit": 0,
+      "seconds": 43.9,
+      "counts": [
+        "27",
+        "27"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m43",
+      "exit": 0,
+      "seconds": 21.3,
+      "counts": [
+        "7",
+        "7"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m42",
+      "exit": 0,
+      "seconds": 53.3,
+      "counts": [
+        "18",
+        "18"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m41",
+      "exit": 0,
+      "seconds": 31.7,
+      "counts": [
+        "20",
+        "20"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m40",
+      "exit": 0,
+      "seconds": 71.6,
+      "counts": [
+        "40",
+        "40"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m39",
+      "exit": 0,
+      "seconds": 61.1,
+      "counts": [
+        "50",
+        "50"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m38",
+      "exit": 0,
+      "seconds": 37.2,
+      "counts": [
+        "20",
+        "20"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m37",
+      "exit": 0,
+      "seconds": 36.5,
+      "counts": [
+        "22",
+        "22"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m36",
+      "exit": 0,
+      "seconds": 207.8,
+      "counts": [
+        "20",
+        "20"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m35",
+      "exit": 1,
+      "seconds": 148.3,
+      "counts": [
+        "39",
+        "40"
+      ],
+      "failed": [
+        "  ✗ Aktuelle Stunde markiert und gewählt, Zeile „(jetzt)“, kein Zurück-Knopf — 6–7 Uhr (jetzt) · Mo–Fr · 59 Std. · Säule 6"
+      ]
+    },
+    {
+      "target": "m34",
+      "exit": 0,
+      "seconds": 48.9,
+      "counts": [
+        "9",
+        "9"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m33",
+      "exit": 0,
+      "seconds": 43.7,
+      "counts": [
+        "16",
+        "16"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m32",
+      "exit": 0,
+      "seconds": 136.8,
+      "counts": [
+        "5",
+        "5"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m31",
+      "exit": 0,
+      "seconds": 54.7,
+      "counts": [
+        "21",
+        "21"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m30",
+      "exit": 0,
+      "seconds": 49.2,
+      "counts": [
+        "32",
+        "32"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m29",
+      "exit": 0,
+      "seconds": 13.0,
+      "counts": [
+        "12",
+        "12"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m28",
+      "exit": 0,
+      "seconds": 46.7,
+      "counts": [
+        "39",
+        "39"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m27",
+      "exit": 0,
+      "seconds": 30.9,
+      "counts": [
+        "22",
+        "22"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m26",
+      "exit": 0,
+      "seconds": 52.7,
+      "counts": [
+        "18",
+        "18"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m25",
+      "exit": 0,
+      "seconds": 33.1,
+      "counts": [
+        "21",
+        "21"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m24",
+      "exit": 0,
+      "seconds": 47.7,
+      "counts": [
+        "28",
+        "28"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m23",
+      "exit": 0,
+      "seconds": 205.8,
+      "counts": [
+        "25",
+        "25"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m22",
+      "exit": 0,
+      "seconds": 147.8,
+      "counts": [
+        "26",
+        "26"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m21",
+      "exit": 0,
+      "seconds": 33.0,
+      "counts": [
+        "14",
+        "14"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m20",
+      "exit": 0,
+      "seconds": 41.8,
+      "counts": [
+        "12",
+        "12"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m19",
+      "exit": 0,
+      "seconds": 34.1,
+      "counts": [
+        "24",
+        "24"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m18",
+      "exit": 0,
+      "seconds": 44.1,
+      "counts": [
+        "31",
+        "31"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m17",
+      "exit": 1,
+      "seconds": 11.4,
+      "counts": [
+        "9",
+        "10"
+      ],
+      "failed": [
+        "  ✗ Abbruch — page.evaluate: TypeError: Cannot read properties of null (reading 'getAttribute')"
+      ]
+    },
+    {
+      "target": "m16",
+      "exit": 0,
+      "seconds": 36.5,
+      "counts": [
+        "23",
+        "23"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m15",
+      "exit": 0,
+      "seconds": 34.1,
+      "counts": [
+        "23",
+        "23"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m14",
+      "exit": 0,
+      "seconds": 97.3,
+      "counts": [
+        "18",
+        "18"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m13",
+      "exit": 0,
+      "seconds": 24.7,
+      "counts": [
+        "13",
+        "13"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m12",
+      "exit": 0,
+      "seconds": 13.0,
+      "counts": [
+        "17",
+        "17"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m11",
+      "exit": 0,
+      "seconds": 49.6,
+      "counts": [
+        "36",
+        "36"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m10",
+      "exit": 0,
+      "seconds": 80.3,
+      "counts": [
+        "93",
+        "93"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m9",
+      "exit": 0,
+      "seconds": 129.1,
+      "counts": [
+        "9",
+        "9"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m8",
+      "exit": 0,
+      "seconds": 66.7,
+      "counts": [
+        "41",
+        "41"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m7",
+      "exit": 0,
+      "seconds": 272.2,
+      "counts": [
+        "47",
+        "47"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m6",
+      "exit": 0,
+      "seconds": 284.2,
+      "counts": [
+        "58",
+        "58"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m5",
+      "exit": 0,
+      "seconds": 83.5,
+      "counts": [
+        "24",
+        "24"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m4",
+      "exit": 0,
+      "seconds": 136.0,
+      "counts": [
+        "42",
+        "42"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m3",
+      "exit": 0,
+      "seconds": 46.6,
+      "counts": [
+        "67",
+        "67"
+      ],
+      "failed": []
+    },
+    {
+      "target": "ui",
+      "exit": 0,
+      "seconds": 42.6,
+      "counts": [
+        "63",
+        "63"
+      ],
+      "failed": []
+    },
+    {
+      "target": "functional",
+      "exit": 0,
+      "seconds": 74.8,
+      "counts": [
+        "35",
+        "35"
+      ],
+      "failed": []
+    },
+    {
+      "target": "statuscheck",
+      "exit": 0,
+      "seconds": 1.9,
+      "counts": [
+        "7",
+        "7"
+      ],
+      "failed": []
+    },
+    {
+      "target": "smoke",
+      "exit": 0,
+      "seconds": 15.2,
+      "counts": null,
+      "failed": []
+    },
+    {
+      "target": "visual",
+      "exit": 0,
+      "seconds": 14.1,
+      "counts": null,
+      "failed": []
+    }
+  ],
+  "fullFollowups": [
+    {
+      "target": "m88",
+      "exit": 0,
+      "counts": [
+        "17",
+        "17"
+      ],
+      "failed": [],
+      "seconds": null,
+      "completedBeforeProtectedFollowups": true
+    },
+    {
+      "target": "m17",
+      "exit": 0,
+      "counts": [
+        "16",
+        "16"
+      ],
+      "failed": [],
+      "seconds": null,
+      "completedBeforeProtectedFollowups": true
+    },
+    {
+      "target": "m35",
+      "exit": 0,
+      "counts": [
+        "40",
+        "40"
+      ],
+      "failed": [],
+      "seconds": null,
+      "completedBeforeProtectedFollowups": true
+    },
+    {
+      "target": "m94",
+      "exit": 0,
+      "counts": [
+        "39",
+        "39"
+      ],
+      "failed": [],
+      "seconds": 14.7
+    },
+    {
+      "target": "m93",
+      "exit": 0,
+      "counts": [
+        "40",
+        "40"
+      ],
+      "failed": [],
+      "seconds": 20.5
+    },
+    {
+      "target": "m92",
+      "exit": 0,
+      "counts": [
+        "42",
+        "42"
+      ],
+      "failed": [],
+      "seconds": 16.6
+    },
+    {
+      "target": "m58",
+      "exit": 0,
+      "counts": [
+        "60",
+        "60"
+      ],
+      "failed": [],
+      "seconds": 53.2
+    },
+    {
+      "target": "m84",
+      "exit": 0,
+      "counts": [
+        "177",
+        "177"
+      ],
+      "failed": [],
+      "seconds": 54.0
+    },
+    {
+      "target": "m46",
+      "exit": 0,
+      "counts": [
+        "40",
+        "40"
+      ],
+      "failed": [],
+      "seconds": 111.2
+    },
+    {
+      "target": "m31",
+      "exit": 0,
+      "counts": [
+        "21",
+        "21"
+      ],
+      "failed": [],
+      "seconds": 58.6
+    },
+    {
+      "target": "m39",
+      "exit": 0,
+      "counts": [
+        "50",
+        "50"
+      ],
+      "failed": [],
+      "seconds": 64.4
+    },
+    {
+      "target": "m70",
+      "exit": 0,
+      "counts": [
+        "61",
+        "61"
+      ],
+      "failed": [],
+      "seconds": 36.1
+    },
+    {
+      "target": "m69",
+      "exit": 0,
+      "counts": [
+        "19",
+        "19"
+      ],
+      "failed": [],
+      "seconds": 12.8
+    },
+    {
+      "target": "unit-release",
+      "exit": 0,
+      "counts": [
+        "6",
+        "6"
+      ],
+      "failed": [],
+      "seconds": 0.3
+    },
+    {
+      "target": "functional",
+      "exit": 1,
+      "counts": [
+        "33",
+        "35"
+      ],
+      "failed": [
+        "  ✗ Verpasster Alarm wird nach dem Laden erkannt",
+        "  ✗ Liste: nachträglich erkannt"
+      ],
+      "seconds": 107.2,
+      "observation": "functional-before-fixture.observation.json"
+    },
+    {
+      "target": "functional",
+      "exit": 0,
+      "counts": [
+        "35",
+        "35"
+      ],
+      "failed": [],
+      "seconds": 95.4,
+      "log": "functional-after-fixture.log"
+    },
+    {
+      "target": "statuscheck",
+      "exit": 0,
+      "counts": [
+        "7",
+        "7"
+      ],
+      "failed": [],
+      "seconds": 4.0
+    },
+    {
+      "target": "smoke",
+      "exit": 0,
+      "counts": null,
+      "failed": [],
+      "seconds": 24.9
+    },
+    {
+      "target": "visual",
+      "exit": 0,
+      "counts": null,
+      "failed": [],
+      "seconds": 19.6
+    }
+  ],
+  "finalResults": [
+    {
+      "target": "m94",
+      "exit": 0,
+      "counts": [
+        "39",
+        "39"
+      ],
+      "failed": [],
+      "seconds": 14.7
+    },
+    {
+      "target": "unit-chart-pattern-quality",
+      "exit": 0,
+      "seconds": 0.0,
+      "counts": [
+        "52",
+        "52"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-chart-pattern-overview-feed",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "33",
+        "33"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m93",
+      "exit": 0,
+      "counts": [
+        "40",
+        "40"
+      ],
+      "failed": [],
+      "seconds": 20.5
+    },
+    {
+      "target": "unit-chart-detail",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "35",
+        "35"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-chart-pattern-chips",
+      "exit": 0,
+      "seconds": 0.0,
+      "counts": [
+        "17",
+        "17"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m92",
+      "exit": 0,
+      "counts": [
+        "42",
+        "42"
+      ],
+      "failed": [],
+      "seconds": 16.6
+    },
+    {
+      "target": "unit-pattern-projection",
+      "exit": 0,
+      "seconds": 0.0,
+      "counts": [
+        "22",
+        "22"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-github-sync",
+      "exit": 0,
+      "seconds": 0.6,
+      "counts": [
+        "24",
+        "24"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m91",
+      "exit": 0,
+      "seconds": 4.2,
+      "counts": [
+        "8",
+        "8"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m90",
+      "exit": 0,
+      "seconds": 12.7,
+      "counts": [
+        "18",
+        "18"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-muster-bot",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "23",
+        "23"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-muster-feed",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "8",
+        "8"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-muster-paper",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "9",
+        "9"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m89",
+      "exit": 0,
+      "seconds": 6.3,
+      "counts": [
+        "18",
+        "18"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-market-intervals",
+      "exit": 0,
+      "seconds": 0.0,
+      "counts": [
+        "7",
+        "7"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m88",
+      "exit": 0,
+      "counts": [
+        "17",
+        "17"
+      ],
+      "failed": [],
+      "seconds": null,
+      "completedBeforeProtectedFollowups": true
+    },
+    {
+      "target": "unit-patterns-only",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "16",
+        "16"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-telegram-format",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "33",
+        "33"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m87",
+      "exit": 0,
+      "seconds": 18.6,
+      "counts": [
+        "22",
+        "22"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-paper-bot",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "34",
+        "34"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-paper-controller",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "11",
+        "11"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-paper-worker",
+      "exit": 0,
+      "seconds": 2.1,
+      "counts": [
+        "5",
+        "5"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-adaptive-grid",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "54",
+        "54"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-adaptive-grid-feed",
+      "exit": 0,
+      "seconds": 0.2,
+      "counts": [
+        "15",
+        "15"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-adaptive-grid-runtime",
+      "exit": 0,
+      "seconds": 0.2,
+      "counts": [
+        "37",
+        "37"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-orderflow-demo",
+      "exit": 0,
+      "seconds": 0.0,
+      "counts": [
+        "30",
+        "30"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-orderflow-signal",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "69",
+        "69"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-orderflow-feed",
+      "exit": 0,
+      "seconds": 0.0,
+      "counts": [
+        "19",
+        "19"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-orderflow-journal",
+      "exit": 0,
+      "seconds": 0.0,
+      "counts": [
+        "19",
+        "19"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-orderflow-explainer",
+      "exit": 0,
+      "seconds": 8.3,
+      "counts": [
+        "12",
+        "12"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-orderflow",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "52",
+        "52"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-confluence-risk",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "28",
+        "28"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-confluence-evidence",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "18",
+        "18"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-signal-overview",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "27",
+        "27"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-confluence-costs",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "46",
+        "46"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-confluence-presentation",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "23",
+        "23"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-appearance",
+      "exit": 0,
+      "seconds": 0.4,
+      "counts": [
+        "23",
+        "23"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-release",
+      "exit": 0,
+      "counts": [
+        "6",
+        "6"
+      ],
+      "failed": [],
+      "seconds": 0.3
+    },
+    {
+      "target": "unit-model-archive",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "13",
+        "13"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-bot-limits",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "37",
+        "37"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-bot-simulation",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "16",
+        "16"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-po3",
+      "exit": 0,
+      "seconds": 0.2,
+      "counts": [
+        "35",
+        "35"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-po3-service",
+      "exit": 0,
+      "seconds": 0.4,
+      "counts": [
+        "20",
+        "20"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-po3-stream",
+      "exit": 0,
+      "seconds": 0.6,
+      "counts": [
+        "19",
+        "19"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-confluence-service",
+      "exit": 0,
+      "seconds": 0.8,
+      "counts": [
+        "26",
+        "26"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-confluence-replay",
+      "exit": 0,
+      "seconds": 0.2,
+      "counts": [
+        "33",
+        "33"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-bitget-history",
+      "exit": 0,
+      "seconds": 0.2,
+      "counts": [
+        "15",
+        "15"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-confluence-live",
+      "exit": 0,
+      "seconds": 0.4,
+      "counts": [
+        "46",
+        "46"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-bitget-patterns",
+      "exit": 0,
+      "seconds": 0.4,
+      "counts": [
+        "20",
+        "20"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-bitget",
+      "exit": 0,
+      "seconds": 0.5,
+      "counts": [
+        "55",
+        "55"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-confluence",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "135",
+        "135"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-247e",
+      "exit": 0,
+      "seconds": 0.8,
+      "counts": [
+        "38",
+        "38"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-m8",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "24",
+        "24"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-zz",
+      "exit": 0,
+      "seconds": 0.2,
+      "counts": [
+        "28",
+        "28"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-zzp",
+      "exit": 0,
+      "seconds": 0.2,
+      "counts": [
+        "17",
+        "17"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-div",
+      "exit": 0,
+      "seconds": 0.2,
+      "counts": [
+        "10",
+        "10"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-ew",
+      "exit": 0,
+      "seconds": 0.8,
+      "counts": [
+        "27",
+        "27"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-fib",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "6",
+        "6"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-ob",
+      "exit": 0,
+      "seconds": 0.2,
+      "counts": [
+        "9",
+        "9"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-cd",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "16",
+        "16"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-hl",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "13",
+        "13"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-ec",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "22",
+        "22"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-cn",
+      "exit": 0,
+      "seconds": 0.2,
+      "counts": [
+        "40",
+        "40"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-wl",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "64",
+        "64"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-fmt",
+      "exit": 0,
+      "seconds": 9.7,
+      "counts": [
+        "4",
+        "4"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-vola",
+      "exit": 0,
+      "seconds": 3.0,
+      "counts": [
+        "44",
+        "44"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-247",
+      "exit": 0,
+      "seconds": 0.6,
+      "counts": [
+        "96",
+        "96"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-247b",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "25",
+        "25"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-pub",
+      "exit": 0,
+      "seconds": 12.4,
+      "counts": [
+        "7",
+        "7"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-247d",
+      "exit": 0,
+      "seconds": 3.4,
+      "counts": [
+        "16",
+        "16"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-247c",
+      "exit": 0,
+      "seconds": 0.4,
+      "counts": [
+        "55",
+        "55"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-pulse",
+      "exit": 0,
+      "seconds": 2.8,
+      "counts": [
+        "44",
+        "44"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-lots",
+      "exit": 0,
+      "seconds": 0.2,
+      "counts": [
+        "31",
+        "31"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-acct",
+      "exit": 0,
+      "seconds": 0.1,
+      "counts": [
+        "39",
+        "39"
+      ],
+      "failed": []
+    },
+    {
+      "target": "inst-247",
+      "exit": 0,
+      "seconds": 75.5,
+      "counts": [
+        "35",
+        "35"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m86",
+      "exit": 0,
+      "seconds": 35.5,
+      "counts": [
+        "18",
+        "18"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m85",
+      "exit": 0,
+      "seconds": 73.8,
+      "counts": [
+        "26",
+        "26"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m84",
+      "exit": 0,
+      "counts": [
+        "177",
+        "177"
+      ],
+      "failed": [],
+      "seconds": 54.0
+    },
+    {
+      "target": "m83",
+      "exit": 0,
+      "seconds": 22.0,
+      "counts": [
+        "49",
+        "49"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m82",
+      "exit": 0,
+      "seconds": 8.0,
+      "counts": [
+        "45",
+        "45"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m81",
+      "exit": 0,
+      "seconds": 37.4,
+      "counts": [
+        "41",
+        "41"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m80",
+      "exit": 0,
+      "seconds": 7.1,
+      "counts": [
+        "51",
+        "51"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m79",
+      "exit": 0,
+      "seconds": 23.5,
+      "counts": [
+        "49",
+        "49"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m78",
+      "exit": 0,
+      "seconds": 17.8,
+      "counts": [
+        "16",
+        "16"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m77",
+      "exit": 0,
+      "seconds": 15.9,
+      "counts": [
+        "35",
+        "35"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m76",
+      "exit": 0,
+      "seconds": 11.3,
+      "counts": [
+        "19",
+        "19"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m75",
+      "exit": 0,
+      "seconds": 49.3,
+      "counts": [
+        "15",
+        "15"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m74",
+      "exit": 0,
+      "seconds": 59.2,
+      "counts": [
+        "73",
+        "73"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m73",
+      "exit": 0,
+      "seconds": 7.4,
+      "counts": [
+        "20",
+        "20"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m72",
+      "exit": 0,
+      "seconds": 6.4,
+      "counts": [
+        "28",
+        "28"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m71",
+      "exit": 0,
+      "seconds": 9.5,
+      "counts": [
+        "23",
+        "23"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m70",
+      "exit": 0,
+      "counts": [
+        "61",
+        "61"
+      ],
+      "failed": [],
+      "seconds": 36.1
+    },
+    {
+      "target": "m69",
+      "exit": 0,
+      "counts": [
+        "19",
+        "19"
+      ],
+      "failed": [],
+      "seconds": 12.8
+    },
+    {
+      "target": "m68",
+      "exit": 0,
+      "seconds": 20.6,
+      "counts": [
+        "23",
+        "23"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m67",
+      "exit": 0,
+      "seconds": 14.0,
+      "counts": [
+        "22",
+        "22"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m66",
+      "exit": 0,
+      "seconds": 4.8,
+      "counts": [
+        "14",
+        "14"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m65",
+      "exit": 0,
+      "seconds": 6.4,
+      "counts": [
+        "12",
+        "12"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m64",
+      "exit": 0,
+      "seconds": 3.3,
+      "counts": [
+        "19",
+        "19"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m63",
+      "exit": 0,
+      "seconds": 18.8,
+      "counts": [
+        "36",
+        "36"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m62",
+      "exit": 0,
+      "seconds": 2.9,
+      "counts": [
+        "8",
+        "8"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m61",
+      "exit": 0,
+      "seconds": 1.8,
+      "counts": [
+        "8",
+        "8"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m60",
+      "exit": 0,
+      "seconds": 11.9,
+      "counts": [
+        "14",
+        "14"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m59",
+      "exit": 0,
+      "seconds": 19.9,
+      "counts": [
+        "19",
+        "19"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m58",
+      "exit": 0,
+      "counts": [
+        "60",
+        "60"
+      ],
+      "failed": [],
+      "seconds": 53.2
+    },
+    {
+      "target": "m57",
+      "exit": 0,
+      "seconds": 49.7,
+      "counts": [
+        "41",
+        "41"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m56",
+      "exit": 0,
+      "seconds": 90.9,
+      "counts": [
+        "55",
+        "55"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m55",
+      "exit": 0,
+      "seconds": 124.7,
+      "counts": [
+        "49",
+        "49"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m54",
+      "exit": 0,
+      "seconds": 188.7,
+      "counts": [
+        "52",
+        "52"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m53",
+      "exit": 0,
+      "seconds": 201.6,
+      "counts": [
+        "102",
+        "102"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m52",
+      "exit": 0,
+      "seconds": 97.9,
+      "counts": [
+        "101",
+        "101"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m51",
+      "exit": 0,
+      "seconds": 63.2,
+      "counts": [
+        "73",
+        "73"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m50",
+      "exit": 0,
+      "seconds": 146.9,
+      "counts": [
+        "118",
+        "118"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m49",
+      "exit": 0,
+      "seconds": 127.3,
+      "counts": [
+        "18",
+        "18"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m48",
+      "exit": 0,
+      "seconds": 53.3,
+      "counts": [
+        "81",
+        "81"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m47",
+      "exit": 0,
+      "seconds": 184.7,
+      "counts": [
+        "51",
+        "51"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m46",
+      "exit": 0,
+      "counts": [
+        "40",
+        "40"
+      ],
+      "failed": [],
+      "seconds": 111.2
+    },
+    {
+      "target": "m45",
+      "exit": 0,
+      "seconds": 122.2,
+      "counts": [
+        "75",
+        "75"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m44",
+      "exit": 0,
+      "seconds": 43.9,
+      "counts": [
+        "27",
+        "27"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m43",
+      "exit": 0,
+      "seconds": 21.3,
+      "counts": [
+        "7",
+        "7"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m42",
+      "exit": 0,
+      "seconds": 53.3,
+      "counts": [
+        "18",
+        "18"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m41",
+      "exit": 0,
+      "seconds": 31.7,
+      "counts": [
+        "20",
+        "20"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m40",
+      "exit": 0,
+      "seconds": 71.6,
+      "counts": [
+        "40",
+        "40"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m39",
+      "exit": 0,
+      "counts": [
+        "50",
+        "50"
+      ],
+      "failed": [],
+      "seconds": 64.4
+    },
+    {
+      "target": "m38",
+      "exit": 0,
+      "seconds": 37.2,
+      "counts": [
+        "20",
+        "20"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m37",
+      "exit": 0,
+      "seconds": 36.5,
+      "counts": [
+        "22",
+        "22"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m36",
+      "exit": 0,
+      "seconds": 207.8,
+      "counts": [
+        "20",
+        "20"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m35",
+      "exit": 0,
+      "counts": [
+        "40",
+        "40"
+      ],
+      "failed": [],
+      "seconds": null,
+      "completedBeforeProtectedFollowups": true
+    },
+    {
+      "target": "m34",
+      "exit": 0,
+      "seconds": 48.9,
+      "counts": [
+        "9",
+        "9"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m33",
+      "exit": 0,
+      "seconds": 43.7,
+      "counts": [
+        "16",
+        "16"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m32",
+      "exit": 0,
+      "seconds": 136.8,
+      "counts": [
+        "5",
+        "5"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m31",
+      "exit": 0,
+      "counts": [
+        "21",
+        "21"
+      ],
+      "failed": [],
+      "seconds": 58.6
+    },
+    {
+      "target": "m30",
+      "exit": 0,
+      "seconds": 49.2,
+      "counts": [
+        "32",
+        "32"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m29",
+      "exit": 0,
+      "seconds": 13.0,
+      "counts": [
+        "12",
+        "12"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m28",
+      "exit": 0,
+      "seconds": 46.7,
+      "counts": [
+        "39",
+        "39"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m27",
+      "exit": 0,
+      "seconds": 30.9,
+      "counts": [
+        "22",
+        "22"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m26",
+      "exit": 0,
+      "seconds": 52.7,
+      "counts": [
+        "18",
+        "18"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m25",
+      "exit": 0,
+      "seconds": 33.1,
+      "counts": [
+        "21",
+        "21"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m24",
+      "exit": 0,
+      "seconds": 47.7,
+      "counts": [
+        "28",
+        "28"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m23",
+      "exit": 0,
+      "seconds": 205.8,
+      "counts": [
+        "25",
+        "25"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m22",
+      "exit": 0,
+      "seconds": 147.8,
+      "counts": [
+        "26",
+        "26"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m21",
+      "exit": 0,
+      "seconds": 33.0,
+      "counts": [
+        "14",
+        "14"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m20",
+      "exit": 0,
+      "seconds": 41.8,
+      "counts": [
+        "12",
+        "12"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m19",
+      "exit": 0,
+      "seconds": 34.1,
+      "counts": [
+        "24",
+        "24"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m18",
+      "exit": 0,
+      "seconds": 44.1,
+      "counts": [
+        "31",
+        "31"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m17",
+      "exit": 0,
+      "counts": [
+        "16",
+        "16"
+      ],
+      "failed": [],
+      "seconds": null,
+      "completedBeforeProtectedFollowups": true
+    },
+    {
+      "target": "m16",
+      "exit": 0,
+      "seconds": 36.5,
+      "counts": [
+        "23",
+        "23"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m15",
+      "exit": 0,
+      "seconds": 34.1,
+      "counts": [
+        "23",
+        "23"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m14",
+      "exit": 0,
+      "seconds": 97.3,
+      "counts": [
+        "18",
+        "18"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m13",
+      "exit": 0,
+      "seconds": 24.7,
+      "counts": [
+        "13",
+        "13"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m12",
+      "exit": 0,
+      "seconds": 13.0,
+      "counts": [
+        "17",
+        "17"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m11",
+      "exit": 0,
+      "seconds": 49.6,
+      "counts": [
+        "36",
+        "36"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m10",
+      "exit": 0,
+      "seconds": 80.3,
+      "counts": [
+        "93",
+        "93"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m9",
+      "exit": 0,
+      "seconds": 129.1,
+      "counts": [
+        "9",
+        "9"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m8",
+      "exit": 0,
+      "seconds": 66.7,
+      "counts": [
+        "41",
+        "41"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m7",
+      "exit": 0,
+      "seconds": 272.2,
+      "counts": [
+        "47",
+        "47"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m6",
+      "exit": 0,
+      "seconds": 284.2,
+      "counts": [
+        "58",
+        "58"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m5",
+      "exit": 0,
+      "seconds": 83.5,
+      "counts": [
+        "24",
+        "24"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m4",
+      "exit": 0,
+      "seconds": 136.0,
+      "counts": [
+        "42",
+        "42"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m3",
+      "exit": 0,
+      "seconds": 46.6,
+      "counts": [
+        "67",
+        "67"
+      ],
+      "failed": []
+    },
+    {
+      "target": "ui",
+      "exit": 0,
+      "seconds": 42.6,
+      "counts": [
+        "63",
+        "63"
+      ],
+      "failed": []
+    },
+    {
+      "target": "functional",
+      "exit": 0,
+      "counts": [
+        "35",
+        "35"
+      ],
+      "failed": [],
+      "seconds": 95.4,
+      "log": "functional-after-fixture.log"
+    },
+    {
+      "target": "statuscheck",
+      "exit": 0,
+      "counts": [
+        "7",
+        "7"
+      ],
+      "failed": [],
+      "seconds": 4.0
+    },
+    {
+      "target": "smoke",
+      "exit": 0,
+      "counts": null,
+      "failed": [],
+      "seconds": 24.9
+    },
+    {
+      "target": "visual",
+      "exit": 0,
+      "counts": null,
+      "failed": [],
+      "seconds": 19.6
+    }
+  ],
+  "lint": {
+    "errors": 0,
+    "knownWarnings": 3
+  },
+  "realSafariDeviceAcceptance": "offen",
+  "findings": "Der vollständige serielle Erstlauf dauerte 95,0 Minuten: alle 165 Ziele ausgeführt, 5273/5275 gezählte Prüfungen; M88 zusätzlich nach zehn positiven Fällen ohne Gesamtzählung abgebrochen. Alle 149 Produktdateien blieben während des Laufs unverändert. Drei Befunde wurden vor Veröffentlichung getrennt untersucht, die Erstlogs bleiben erhalten:\n\n1. **M88 – Vorauswahl-Mustersprung:** Der neue Kopfbereich brachte den Plot unter das sichtbare Fenster (top 1229,6 px bei 844 px Fensterhöhe). Intern waren das richtige Muster und 500 neue Kerzen vorhanden, ohne Kursfehler; der absichtlich erst bei Sichtbarkeit zeichnende Plot enthielt noch den alten SVG. Der explizite Mustersprung scrollt jetzt zum tatsächlichen Plot statt zum Kartenanfang. Nachlauf **17/17**, einschließlich neuer Sichtbarkeitsprüfung.\n2. **M17 – Fibonacci nach Neuladen:** Der wiederhergestellte Scrollstand setzte den Plot vollständig oberhalb des Fensters (bottom −326,2 px). 500 Kerzen waren vorhanden, ohne Kursfehler oder laufenden Ladeauftrag; das Rendering pausierte korrekt außerhalb des Fensters. Der Test scrollt vor dem SVG-Auslesen ausdrücklich zum Plot. Alle ursprünglichen Erwartungen bleiben erhalten; vollständiger Nachlauf **16/16**.\n3. **M35 – Stundenmarkierung:** Das Erstlog zeigt „Stand 06:59“, zunächst Auswahl/Anzeige 6–7, danach Rückkehr bereits 7–8. Die externe erwartete Stunde wurde damals nicht separat aufgezeichnet; der Stundenwechsel ist naheliegend, aber daraus allein nicht bewiesen. Der Test erhebt Uhr und UI jetzt im selben Browser-Snapshot und meidet nur das schmale Zeitfenster um den Stundenwechsel. Er wartet nicht auf eine gewünschte Markierung. App-Volatilitätsberechnung unverändert; Nachlauf **40/40**.\n\nGegenüber dem Erstlauf ändern sich nur HTML-Navigationsziel, zugehöriger Manifest-Hash und SW-Buildkennung: **3 Produktdateien geändert, 146 unverändert**. Die relevanten vollständigen Nachläufe laufen seriell auf erneut hashgeschütztem Produktstand; die JSON-Ergebnisse trennen Erst- und Endergebnisse.\n\nBereits vor dem Erstlauf wurde ein reproduzierbarer Referenzfehler bei wertgleichen neuen Engineobjekten behoben: alte Cache-Referenzen verhinderten die Erklärung. Native Vorherdiagnose mit Index −1, danach stabile Muster-ID und Ergebnisobjektbindung; M93 **40/40** einschließlich Erklärung während Haltegeste und Erhalt von Messwerten/Klapp-/Scrollstand. Der Cache wird bei unveränderten Ticks weiterhin wiederverwendet. Keine temporäre Produktdiagnostik im Release.\n\n**Zusätzlicher Befund im relevanten Nachlauf:** `functional` 33/35, beide Erwartungen zur nachträglichen LTC-Alarmierung fehlgeschlagen; der 165-Ziele-Erstlauf war hier 35/35. Der unveränderte Binance-Mock erzeugt beim ersten `series()`-Abruf synthetische Vorgängerkerzen. Bei einem Minutenwechsel zwischen beobachteter Spitze und erstem Abruf geht der echte Vorgängerdocht verloren. Zeitgesteuerter Replay derselben unveränderten Mock-Funktionen: Spitze 71,5 kurz vor der Grenze, erster Abruf danach → geliefertes Hoch 70,2115, Alarm 71 nicht erreichbar; mit zuvor initialisierter Historie Hoch 71,5. Die reine Marktfixture wird jetzt vor der Spitze initialisiert, keine App geöffnet und kein Alarmcode geändert. Alle 35 Erwartungen bleiben erhalten; gezielt erzwungene Minutengrenze zusätzlich nativ geprüft. Der fehlgeschlagene Nachlauf bleibt in der JSON-Ergebnisliste neben dem vollständigen erfolgreichen Nachlauf stehen.\n\nFür den fehlgeschlagenen funktionalen Zwischenlauf wurde der Rohlog-Dateipfad beim erneuten Lauf wiederverwendet. Das zuvor ausgelesene Ergebnis und die Fehlerbeobachtung sind deshalb ausdrücklich als `functional-before-fixture.observation.json` erhalten, nicht als unverändertes Originalrohlog bezeichnet. Rückgabewert und 33/35 bleiben in der Ergebnisliste; Erst-Gesamtlauf und alle übrigen Rohlogs sind separat erhalten.\n",
+  "testHashes": {
+    "fullRun": {
+      "tests/eslint-g01.config.mjs": "8c11138760ccd07dfd77441ee557871d22f220a0bc3751630fce3229fdb20a90",
+      "tests/eslint-server.config.mjs": "947080ad930a31a47af31d90a5e1ef864f8d002790681959f8f0b805bbbd1eb0",
+      "tests/fixtures/bitget-worker.mjs": "d364750d01b2c4aedfbf2630898587a300cd5bbe246a0e546f1428b15d4853e5",
+      "tests/fixtures/bitget.mjs": "a555574457898feead29e8ded3ab7c54b96fbb0725545a9dc57cef3c668b9399",
+      "tests/fixtures/confluence-live-worker.mjs": "5c45b105e1e6d38564e289e14bb411eec525f577d4fee93563bf561bac3c6ca9",
+      "tests/fixtures/confluence-live.mjs": "ab20edec5282bd1be2bf0700b1f42c1d89dfd8a327951ffe4f835cabdb52fda1",
+      "tests/fixtures/confluence-replay.mjs": "14b1621cdb2c89d83ca9bde756eef36ce63b7b3eb572fe64d53fd5b3049ca19d",
+      "tests/fixtures/confluence-worker.mjs": "2cc2afe68cd3d8687e664d52dcb98428e55505429d33f5784f04c1e55e899dfd",
+      "tests/fixtures/confluence.mjs": "57d47cc3b082d21576f9e09d1e2af038f8c1e71fb776d268a86c85f8b326d2e8",
+      "tests/fixtures/model-archive.mjs": "9da879be45119ea5c851ccf461c54c0ee2a5279670a22d14aeb1590c4e8aec80",
+      "tests/fixtures/sw-3.45.js": "e335d3681cb119d9c1e4db550d43b48db83ee888fb6682e96d54f89f4891833f",
+      "tests/functional.js": "b9f0ce25686846404042ca58e32ae9232be23b5614935a43c9b4ded835780d8c",
+      "tests/harness.js": "ce49504179a2fb83e620ab33bc226625be35a3b44110ca3e0285160b2a59e6e8",
+      "tests/inst-247.sh": "497af72362675dc8a94c33a9aece09d8ec5b230b8d09720ac40708ec8af6336d",
+      "tests/js/coinnews.js": "573c1d60c4fcacc7407e970b826d0d373a37636ef8a74fa5d6194a55adb8661c",
+      "tests/js/countdown.js": "d4c0a565282eae5db36175f0128453037e59853f1e884f43bf7fe2ff5b15c8c5",
+      "tests/js/econcal.js": "d7bd287fef50431f8772a77d3595c251570b07bb2cab3324c70b0e1bd571cd80",
+      "tests/js/hilo.js": "0ea07c5140b6f1a7ff8e9ba6057a046c4e9c7867dbb27d3401f8394bf2ecac46",
+      "tests/js/pulse.js": "5f6950ac598c4c04ab6854d0e81e4ff86eb3f6e3d8cb77f55b2ab9841b880d39",
+      "tests/js/s247.js": "8fdef4f34c841179cd5bd3be732a28e20c316978850de6243f3c28aca419ad65",
+      "tests/js/vola.js": "f9dd8413f889cdae83f0e12bc4778b62b128844b25e3982d168b3b7e8dd4e6cf",
+      "tests/js/watchlive.js": "2bac2a25144955a1e3520a1af0e2391ff67697ad3911683a973eefc84e3105f1",
+      "tests/lint.sh": "f5152ef8bff860332e72d04176e5da8c32e30679c732c32cc51932a51244dff3",
+      "tests/m10.js": "bf5ab9abe045635565461ebb082d750f1089dca62bb4ab2e30dbc49391e6d07c",
+      "tests/m11.js": "8ffbe31c5f907372814b57a019adeb933bfefd3cfebe00a96a3eb2bbfcfa915e",
+      "tests/m12.js": "4b17ccaf8aa0f8f600f3553230e563c343f76f0daa2c102b36b40251f4595db5",
+      "tests/m13.js": "96b2f8c57d7177e6dd4a6b80ef23187b7e564024c18a58041ab2d9c19bd9d5fa",
+      "tests/m14.js": "47623172ba25352164226bf780aeb7ef2b93df0fe36414182749c2f92336b6a0",
+      "tests/m15.js": "ec581cba81a5b500e0935379dc82e9322f8a5ffd58e091e098a4f22ba3bf225e",
+      "tests/m16.js": "692fb50bc01652892455a7121c68b8554bd5f680101ea5c1c702890052475fd9",
+      "tests/m17.js": "78ae5e75dee0ef584d2e1cd5101c1cb04171438cc5fb0d93c55a3ff86374f7a3",
+      "tests/m18.js": "d452a2667d7e8449f44414214de7add06da11fe85d2632907450f9ddeebddf2f",
+      "tests/m19.js": "2a7b51ba2d937e20ca87fcaa7bdb997f3c8c1e4613611d1904d214ae75bc9918",
+      "tests/m20.js": "4377fd3d5c5d2ebca35b8f471b09f115c719f7f7dea1a800e638448ae6412582",
+      "tests/m21.js": "37486f711fb683a7cf4ce88e23b2110c912676f54b4b0e8d8b05f9c90c2510de",
+      "tests/m22.js": "fb831e09a04e57cfcd2ea8a0c6022cd73f275c7b343880ee67986afb8de0f2f1",
+      "tests/m23.js": "4bdc158ef597c1f459203ad36a72a5a8764d5255bb8151f4890c84832ca0f274",
+      "tests/m24.js": "3d0eb0c84e890397ba3116b343515af2b1d4d4448e489360759c8a20457f4e99",
+      "tests/m25.js": "ba13eadde1946ec64bf0fc009da267ad0d34d597551e32dbf41c2411e1bdb500",
+      "tests/m26.js": "27227d59ae10d8ef0cb4e4f9c7a15a21847a997105c75dc6591a55abfd37abd6",
+      "tests/m27.js": "40208dc639550a61a56114c7204c75da8ece1231b0f711341342bc7755380818",
+      "tests/m28.js": "b48b0d17ebfc3d079cd6cb53c171b3c7b52e71a1ffe2f58031c50ead6391a2a4",
+      "tests/m29.js": "af195fe335584d05619f1a7575ef3cce053fd956b2db12612c4865da5e5dc53d",
+      "tests/m3.js": "8b4304d19586acb5d17327a6cd5472afbc6ed68512630286d3e58d1a78821e50",
+      "tests/m30.js": "00362d108b73c91d98b3ba4b75c3447c6a0bcbe3b7d59cce3511dbacd8012cbd",
+      "tests/m31.js": "27b0648f11eaf5a49347440f9703b1aa58b99fff4f22d7f29466bbb2050fef98",
+      "tests/m32.js": "0e5559e7b51b3e482d334a62e585ab84afe13fa079ad2089673f4352b1046a53",
+      "tests/m33.js": "e4f41c4edb411ebcfc65a349b9e70a8545b7bbb9c23ee2902b23f3052c6d3d19",
+      "tests/m34.js": "70b6a5f63f82c99040dad22901544d24022ad46d7e09cd2830f5b26f841ffec6",
+      "tests/m35.js": "ddf1a59b80b374b1625d1e640c9b70a71dd954cccdd48be2fd197b8f541d968d",
+      "tests/m36.js": "06a631f7d18c6d732f1ce7a41ba925b3f8cf7e2c6744b3a114a71c81c6f2530c",
+      "tests/m37.js": "ba9f7995b856c01e5dbc611746069ea187cf2788adf24a3b2830106ab4d8690e",
+      "tests/m38.js": "a43987b19ba4c7eaf19005362c463d3476adb22f986b822ca1c949b74e1877a3",
+      "tests/m39.js": "8ae6a35768ebe7b13e2ef150733e8184d5a8902deeb715e72c20954444a764c2",
+      "tests/m4.js": "54f3d3737871a963383239906841a03b4e1f62ff29441ec5a3daf349a0262b1e",
+      "tests/m40.js": "3394712a8eefff95a2781fcb84c9f8d8ece37a950d23ad56a77993e35d1c2f36",
+      "tests/m41.js": "0bf182e80af6bab3f222b8fa2df3ad08ff682cac7b75883b676a9e6b43f98e55",
+      "tests/m42.js": "383da6b2fd21a63d309f0b35a52de41da8e590411a0d38ba1ef0f65086450b5e",
+      "tests/m43.js": "10bcbc608a1fd6b8a793c2b4e3b29feacbb921ba4f7d4899a64fbf32eaf04e12",
+      "tests/m44.js": "0c6f92f291eded5ab980470593b75208a4bb80799066d5751f89109f212b414a",
+      "tests/m45.js": "1e9725a4939cb3e7e119388fdd45e110bd6f53ec2ceac793393ee1a67a2d9979",
+      "tests/m46.js": "6c829ab53da4a89445ef327717cba5744b61f7b4910c0e35dd6ff05cc9454713",
+      "tests/m47.js": "c205d15b56ae886dd0690927a5158ea8f303bf422b20712b5d830c696d1e8160",
+      "tests/m48.js": "a82dd1373eccae42c5bc2bec88bdb89086a763808cf4a107bdaf6dc285f78ca2",
+      "tests/m49.js": "2b6f737a123f1e7f0691104c575f729f92f42f09cbf82f347545218fcf7953d3",
+      "tests/m5.js": "be45079103decc1c0b4f8d1899c05f2ec2b42ae4db11bd65a3065379c1b6abdf",
+      "tests/m50.js": "442845eefea1e43cff5b7d5a47b407d31761d6aae4d0950efe6ac6cee5a61b77",
+      "tests/m51.js": "f02b644d8a0d0b83c7dcfbc8540d9de6c409d4cef09fa354e268594c6d930f59",
+      "tests/m52.js": "22d6786039f1e7a6955ead1e84c49c24bcae1c68ebfed8c170656d1c67ba459e",
+      "tests/m53.js": "d55c4b3ba6e05e550e940107891caeda28d97fb9cfea39e49a53a7bf41f266c6",
+      "tests/m54.js": "894ebf41850354efc052f4802a459a66e66ea0f0a93164fd2cec8bc91ed035e7",
+      "tests/m55.js": "b2f716a045adca0ef32ed5f858ecc34e9a81caab05c83e686c75ae5643cb7d87",
+      "tests/m56.js": "af1f8986ad66b776561de853253cea6b7acecd7057ff1fe0a6ba817969524bbb",
+      "tests/m57.js": "c246b15b77a3950339b057ac484164b8c17d735e6db307394a7d449bff7d6a78",
+      "tests/m58.js": "fb8c9d45970f0e1c0246433b7729981a4c559487543f6059232103ee7f2d748b",
+      "tests/m59.js": "9dc736c062287e51dd1561b78d63135077b4b7647e3fe3b89fb73ea764c61987",
+      "tests/m6.js": "82031369bcee4e5cf059b6d157886f6a17fed6c19f179c0bc75d5d243a4bb3f3",
+      "tests/m60.js": "3a5fb77b2414b07a7689b92e0af1a4914a30da89c5a2adecccc9f35309fb5998",
+      "tests/m61.js": "8591c7ecccba13be80aadd10ed73c3cf9d5a5e3f43f524740a3d0fa6aca99cff",
+      "tests/m62.js": "135b5c8740023780c731df36cc0f762516adf0e0917975ebeb7a6448b8cb8bab",
+      "tests/m63.js": "92c8b7da68f6b6c527bb41b368f46227e751b084b79180dfb1c9eef1305f7939",
+      "tests/m64.js": "e768918999904eac90f6ab75ce6e03f981508077539aa7017f8efa212b33e8b1",
+      "tests/m65.js": "f4dd2e49dc6bb26259efaba2be25924a28edd8f15ca0245c609b88be0c6e58e0",
+      "tests/m66.js": "6a0fc29816342baa520a03f1b1826188a0cf70f9767114e85a838e57211d03b4",
+      "tests/m67.js": "511432a6571d85eee763819f1283f5e4bb00c9ca9d6116cc30cfb4f09d192281",
+      "tests/m68.js": "d61055a4b5c21699325781a087c2b16eeac8a7d8cb45f8cef5848a40b04b7733",
+      "tests/m69.js": "26657e041d5f55108cb266e0f01f1037a8435c32c6f4167e938b378c5a438522",
+      "tests/m7.js": "38b60013646ef585069ce7c628270a09d40f301694af2e85d2abf11b823472e3",
+      "tests/m70.js": "c7eb7ebd18fec465eba2331ce3979251df30855d502b3ed1b7ac9557e9369a5f",
+      "tests/m71.js": "1f7771b0e368704377f31ffaafe4d4aee76daf272d6cc7eb650f6a3478933e6b",
+      "tests/m72.js": "356e7fcaed75d2418a8897aed95dc3f19b34e5ffa6ce58931afb5e47f22ba80f",
+      "tests/m73.js": "9271bde4601ea744b935b6bd337b55ed81fec6817b5b2c398ac4fc430723885b",
+      "tests/m74.js": "739469d285fa90ce98671c23f12c7a5c1f145b159016e6ba5ae35d5a2d817cde",
+      "tests/m75.js": "75d3bdbc524d112a6d8ec82974283bdd046c948892666697e1a252f14178335a",
+      "tests/m76.js": "2f851a919ac345c3c4a3f6ca9e086d163566582eaba50c6058a9a074b73a4bbb",
+      "tests/m77.js": "69fc4a04dc5987f656d11037295e9dced9ba8e2f33b59273e4d5c63d9e4d323f",
+      "tests/m78.js": "516311312ab1c16a10588b157704659e35611212d1af7295439561d84646114e",
+      "tests/m79.js": "dcba913f0b5c3a6d8873acea95c4a8722684e729db289f8c29f13d18d624ad34",
+      "tests/m8.js": "9ccbb7f9e23c60f46ffabc61deb4de1b5ae38b27c244ce511afd11ad296da2db",
+      "tests/m80.js": "1a9889589402c31cef175cc545dc87cf544dfb33c4d1f57ff0404a2414b79d32",
+      "tests/m81.js": "ae79e87b768f46e685f9da92c03033c186ba08feffe7fbdd48644812f9644f52",
+      "tests/m82.js": "3367a59bcc923f86a6e2620969e88273e8220a09388dfd545d9705eee19a7ed3",
+      "tests/m83.js": "f17958cd25d93fdca62292d136bc8798872709c994ed4a6e9aa9d9ea5902b310",
+      "tests/m84.js": "152ff40560e7941e00c0a58e7a6c8d29b1933852449292d3bcb141fcf5664c20",
+      "tests/m85.js": "f443a70a76b363cf491ff43ba8517e2176eb0de828bf23e9630fd24c22819a42",
+      "tests/m86.js": "169d59c988df498953d687c9a2cf977ca8a1c781ac0e58a381caf58e7d199450",
+      "tests/m87.js": "8c2c529869c1c4bd4a40cb32aeb54a9b49850c3a834e40bac109ef17f89736c0",
+      "tests/m88.js": "5039bd2f91b960ac0f927faf9a2d2227277adc9d8e0c5447ad6388afb2a5c651",
+      "tests/m89.js": "b0a1d50853308b0a108efcf52212a285d59c8bb97f6178bb3e503aaa44e37b4f",
+      "tests/m9.js": "d184a3e9cb6c93d6d9933e573cbe9c7986757ae3a757f61dea751c70e4f69c8e",
+      "tests/m90.js": "9515b0d0b4aed4fed69de9c19b186f418962ec71e6d81c19d3062ce95a16b467",
+      "tests/m91.js": "36885b3e64bbfda1ec9bf235a91d2badd621d7fbe8de74fa48ea15b1094aa729",
+      "tests/m92.js": "d3d66fa99d17767961050757034cbea8f81eb9478c914d564669e6fbdee4f577",
+      "tests/m93.js": "c252de2247c50a07f875726c0ebbc17303a0af4efab5dd52cff951434d01e0a1",
+      "tests/m94.js": "0724f977c2334a92e60bde9c94a3297248e59c5fc6caa079df93f7f87adae566",
+      "tests/mock-binance.js": "91e5cfb0646085fa910c1dd8cafdba80b0508f1996410d92ee0dd1af30572df9",
+      "tests/muster-fixtures.js": "cba4e2dd2014d76d76dbdaa9235716b11e8b0004d4b72363edecd805c51e0a3c",
+      "tests/node_modules/globals/index.js": "2998fa25447dc5e0032334703ccec8604d66b750afb5b84e13eb778bf66fbb38",
+      "tests/node_modules/ws/browser.js": "010da44addea1d88b2b732540c3f1fd0cbcb28926b96623d4c64222e0ead2d0e",
+      "tests/node_modules/ws/index.js": "924564d5be26d59b9682c4263f68320e48dde7240bd2d1ad17ec305537429dd2",
+      "tests/node_modules/ws/lib/buffer-util.js": "8b0a45739132f82e25ea13163780abf547ccfe989267f3eb7abb475beec92da3",
+      "tests/node_modules/ws/lib/constants.js": "391e823142b8b370e55a2fd32b022deaf03b8415c56000009674ebc86a0b4f86",
+      "tests/node_modules/ws/lib/event-target.js": "c45d3c6e12d170c860c0c3f1a050aa0f864d9806632b609a1e607d675aba128c",
+      "tests/node_modules/ws/lib/extension.js": "852564f0f6b460287043803eae732666fb5610f676874354fc89f06aa4e986ed",
+      "tests/node_modules/ws/lib/limiter.js": "e0469d4b83f6ba764b15f80e1766b75c136fbff68f048f4c050f0b1c7f065f69",
+      "tests/node_modules/ws/lib/permessage-deflate.js": "16a91536988a53c23047ee5882392068728a839a244178c3b09b8c54982f58b0",
+      "tests/node_modules/ws/lib/receiver.js": "a6ada33c9a2d54eaf595824b821ea89ca2c6395f89aa06755c52142148274884",
+      "tests/node_modules/ws/lib/sender.js": "d0791d30c3defd44dcabbddb879a901c757993fea2c00a7ffea01d53b23b4b77",
+      "tests/node_modules/ws/lib/stream.js": "a56fcb6e2b152097ee820b6f5410b1f71e59819b45d08d9f8bda588fe39070ec",
+      "tests/node_modules/ws/lib/subprotocol.js": "be3f6323d6f549568577dcba9004c1479d95c65a7abb0fe0c582875b9fac0b7c",
+      "tests/node_modules/ws/lib/validation.js": "41ce8e83d0d434132e1704895fedb91f6703a701b42d91c80954ab29b2845593",
+      "tests/node_modules/ws/lib/websocket-server.js": "6d8dd89a841748c80445fd5fcdb5ba8005369b53cc3525135e11304c8b9c55e5",
+      "tests/node_modules/ws/lib/websocket.js": "7ccf305925f0cdb74e06b75b4c84de134b1bd771a220ef409b24520def08128f",
+      "tests/node_modules/ws/wrapper.mjs": "fe154662301fd558f935f9c217fccbe7a7dac02ff39e648a000589403ff27c7f",
+      "tests/run-all.sh": "dbda97345219a417f6c82ac563fcede2c22e9a509fe545ecf2370fb5cecabf00",
+      "tests/smoke.js": "52ba8accb1bab2b36e47f2bd3f5df45c8794cfedb041d6ffdab4066b8aad2a58",
+      "tests/statuscheck.js": "dcb0000715c5460de8da2fa280a30cf3b07999b6013c98436a1d381ed74a8054",
+      "tests/ui.js": "f20dead840c68bf466ea2d2f91f89ecd687b0fdd1261ec117e10dfab94720c64",
+      "tests/unit-247.js": "94629742a5db40e64670608944394aef81685304d81851b75f911f4162496e41",
+      "tests/unit-247b.js": "29e8002521ecbcb95f5f7845ea58b5437339af7a3f21ec225d95c4897b10391d",
+      "tests/unit-247c.js": "93322922b24bc3bd4a84b9a78a4043c66cbf7c022bc0cb3961701d83df93c127",
+      "tests/unit-247d.js": "4ff14ed3609cd7184b6e5439c2b00685b4deb6cf075e50119fab704b2fa10c44",
+      "tests/unit-247e.js": "91392424dfaa78a9f6519b39782b931442fd7c4ee4cd4ca609d5fc994e5dd9b1",
+      "tests/unit-acct.js": "686b9f6aeccd3c5a41dc94a56079ae53229c10c7b3e189fdde0857ff78ab11cc",
+      "tests/unit-adaptive-grid-feed.js": "92e7af209e277598936b06cddef3f05d44540bb667e09e799b0af9825ffb2dce",
+      "tests/unit-adaptive-grid-runtime.js": "fbd8fb7689038b46d3be945e701e41cf7cde2a7b7b3cd7d8545f839e6fd28a7d",
+      "tests/unit-adaptive-grid.js": "696d77922c71ade7e1324cfca08941682a4292e286b25b435e7d5120b7a782cf",
+      "tests/unit-appearance.js": "760362156169445cfaa5b51c7b7deddbd2375b801bf8e316f85e8a212d147f79",
+      "tests/unit-bitget-history.js": "4bf55668ec6710045a802b0822e6dab04c83ff435123db7bf03b7ba8b99494f0",
+      "tests/unit-bitget-patterns.js": "f0f9e663b2907e4972c284a5a03ff67b6862e022e6fd496f3662dbce7f23ac84",
+      "tests/unit-bitget.js": "c552cb8794eabc374cc49d4c3d0eedcc56f8e922d7358868c8b2d2d3343c6c1e",
+      "tests/unit-bot-limits.js": "cfb8f7ec7c88de64ca77dce6c55667a5983efa26bc2d1088bc0de5f0ac9201b4",
+      "tests/unit-bot-simulation.js": "fce0e1ecf2d2234521e403397556f8cc43bbba3d9bcf2cb7b0fa85487520d9e7",
+      "tests/unit-cd.js": "b9b541db7ded250a473d259811f4b3c2c0a23d727e140b1fefb28fd71cf34ad8",
+      "tests/unit-chart-detail.js": "3f058f419fb560d91d3cc1a21e621289c37d9f6f2c323ce99c3f416e042ab0eb",
+      "tests/unit-chart-pattern-chips.js": "0af52e4deaf027107b7cf2fa533afb0b4a177407c8b7227c2dabc3c014652c83",
+      "tests/unit-chart-pattern-overview-feed.js": "569c0b10b9babc26865f6d594ed8985ae6aa16d4cab225b78365af34c254cf8a",
+      "tests/unit-chart-pattern-quality.js": "30d1d660ebda4be62521b308a45a1ea28b4277daf8755f927afa4dea25df543d",
+      "tests/unit-cn-app.js": "b15101fc9d1044cb25775b67b92360c5f5b7a00a9365b98548049a69e3e44ae9",
+      "tests/unit-cn.js": "644340fc18ec264cc2c7c1dcad26498d4cbb9dde211511cbea25f95258e58ec7",
+      "tests/unit-confluence-costs.js": "85db23bd077d383ab5313ca4c72f6563e823abb2e0ddb4a854eafd061edc7e9d",
+      "tests/unit-confluence-evidence.js": "9800a5d73388ba58b28f21e127b5f8244f901dc3c26bd67518ca4b964df208ac",
+      "tests/unit-confluence-live.js": "3cb50e6ef86a9f5a030e42e9e1236a7de3c57bbf1f6c257488da22c38adb6fcd",
+      "tests/unit-confluence-presentation.js": "ccccfe9c4d9de0bda366e7f55bf7ae7e39385613db7a2dd91c8a64cd66ee7c6c",
+      "tests/unit-confluence-replay.js": "223f0556c2fd101fa1b21e9a41a7d580eb0707a5286172ba98673aaba8198b3c",
+      "tests/unit-confluence-risk.js": "03a459501d8477991f5543020b8ee9a9fb610c9c039aa4cf4888fcb49c7e3875",
+      "tests/unit-confluence-service.js": "fd72f8bbc8edc12f96c27fa0ebd408c94a7d2f9398bb3a517f2402d4f84c9e02",
+      "tests/unit-confluence.js": "f9b10af0bcc1c27271ac5aa26c3de53d85f8c0a2a9e9e92478f0cf4bbb5a0aba",
+      "tests/unit-div.js": "25107a0d15772a8b22f540aeb180e47c73443f4905129f294e6a510b2d39445a",
+      "tests/unit-ec.js": "90bbf9e601a6ce82b2d4d1abb817ced03285091db5c3ab1d077b18ec872d67a1",
+      "tests/unit-ew.js": "b4e1f1910b988131f6671a7da68c36f9b593ab0872d6a060d99ef80d56518bea",
+      "tests/unit-fib.js": "40cc24b3a17ec43b8e7001f9410e0dbd63c3c6d4157c209a194663f668ec8bd8",
+      "tests/unit-fmt.js": "02c28759f00e59aa4ac19db7a8170b9c7a252804a8d2a09d0312457a72279cbe",
+      "tests/unit-github-sync.js": "341443ada84b718127652835ea56668906282913dfc406070d2426ca485e5b2a",
+      "tests/unit-hl.js": "d8f4d7d4a83a9cf77b9d57e9aa1be4314cd6cc9b8631609382563336df47e5df",
+      "tests/unit-lots.js": "6076791273c77c93c8182437651a8aef1501166aad02989f37db798fee7b72a4",
+      "tests/unit-m8.js": "18e72a3f0361d4a4456b4afd6f897d706645b6af3fce2cea9acfae2a20ddce47",
+      "tests/unit-market-intervals.js": "8dfa1d90e161dcece1da4cf7bc12debb0a7920c025069f3a4033a5c4c003bff7",
+      "tests/unit-model-archive.js": "48a4afd822babf0645b8f9b2cc1c579045e5496db893ebb9a82305d579729ce2",
+      "tests/unit-muster-bot.js": "9acf43361b31ecebfa6eca885f280ccc294c21c3673567c0ddfe3ab4466742fe",
+      "tests/unit-muster-feed.js": "9ecf5a84cd2db73f6dd84fffa8038223c76f0d8bdc20b80c4d63236bc9df1572",
+      "tests/unit-muster-paper.js": "34ad03246baac38b274b3a5d6dba9646f656f896227cdd2b82d19c092784e83e",
+      "tests/unit-ob.js": "4f7ce9ac07e5b1e18fc81f52fea064beb40502c4a8b3f5f25f98cfabb79643ce",
+      "tests/unit-orderflow-demo.js": "029c2b9758eb8565680f06797ce68d863375ce9e03c5f11cb7eaec323e9fd5ed",
+      "tests/unit-orderflow-explainer.js": "4ba822b9b9befac455d743234508c30a4ab496b16042645a50c9ce362448e7b2",
+      "tests/unit-orderflow-feed.js": "7e6801964034767068fc0cd0e24fb473d7caaded5747af2ee027f89f043da6b1",
+      "tests/unit-orderflow-journal.js": "668f73ea7149a887ea815cbc1b90458c101972f8207a1209dd3e619a74b7b78f",
+      "tests/unit-orderflow-signal.js": "37fc459fb2eaa7b1c00acd1044cd718d97553c39de946bc4657f8c2aa687f8d3",
+      "tests/unit-orderflow.js": "113dcf2a64b7393088b4ea7eae57c9edb40e33cc973f6b93821649e1932a85d1",
+      "tests/unit-paper-bot.js": "b60f0d221c8527230ddc3696ea7daa3aa426d67b477386ac97d71fcd0fde6276",
+      "tests/unit-paper-controller.js": "7b11ee2b9e6030e7afdf500c3678ac23a15f2e98330188d12ce48c8dd8980c09",
+      "tests/unit-paper-worker.js": "f3ff861ec0e1c7032bc31c816eef79575e7966bbc0e60ea7b1cc422adf52c2b0",
+      "tests/unit-pattern-projection.js": "d9941ceffcafc98cdeabcee640aba56fc107b0802b3caa35c90809aaacd8ba0d",
+      "tests/unit-patterns-only.js": "6eb1a08d00b83d0b90a570bc20d412f4c1c08231bc7c86c8bec2187c76b995b9",
+      "tests/unit-po3-service.js": "33228cd27746898a6659879043d3e27a77a110cb8145873fd4fd48db30fe9e96",
+      "tests/unit-po3-stream.js": "869af55d6032f10c56a4505a3339c8d3da1fc45950816e3e6f04e6f50bdc7b7c",
+      "tests/unit-po3.js": "be50e0a2486985b44164a0619ce05c9e784c4a024accc71429ac17f3a56b6047",
+      "tests/unit-pub.js": "80fa9569123b2a38065c4ce6fbc88cc721624ebfe87af343fbffd1cd7fdbf75c",
+      "tests/unit-pulse.js": "4087c958f963ab376cd11d2c48a98bb04a8b31f1670552be1620ae8f0cf94bc8",
+      "tests/unit-release.js": "cd30fdc3f71438525cd65cbdb80a7110602715cf12cbdcf0b6a33e1cb034c21e",
+      "tests/unit-signal-overview.js": "078c44ed0e834c7d416de0da5d5c7676f421ea477ded5654bd21c1c5e8923e93",
+      "tests/unit-telegram-format.js": "7a0321eb9172d915fe19c7c8c9e4e1b71941f20616bc601c0f1ed517db9d7f96",
+      "tests/unit-vola.js": "8860a97cb6a1f6e7c5f5994f4ab1ac03bba6b58adc3d7b47f9552a1f9c46f608",
+      "tests/unit-wl.js": "03b3ada69d47e9bca2fc54c03b4e3999fb2ff2652cc31f4b3e89b4b255a19c11",
+      "tests/unit-zz.js": "863f8e289d98e098d4b6fb9dc569c7d69ced29a46a426f153d5d512837ed7ee1",
+      "tests/unit-zzp.js": "2442d7e216787f83d9c420ceda47bb6163da68c9b3ec5bf6b427ca9146e751c0",
+      "tests/visual.js": "dae283f62ac8252440a2865f70ab8165debc7bffb67a2db360241470dd3595a8"
+    },
+    "followupStart": {
+      "tests/eslint-g01.config.mjs": "8c11138760ccd07dfd77441ee557871d22f220a0bc3751630fce3229fdb20a90",
+      "tests/eslint-server.config.mjs": "947080ad930a31a47af31d90a5e1ef864f8d002790681959f8f0b805bbbd1eb0",
+      "tests/fixtures/bitget-worker.mjs": "d364750d01b2c4aedfbf2630898587a300cd5bbe246a0e546f1428b15d4853e5",
+      "tests/fixtures/bitget.mjs": "a555574457898feead29e8ded3ab7c54b96fbb0725545a9dc57cef3c668b9399",
+      "tests/fixtures/confluence-live-worker.mjs": "5c45b105e1e6d38564e289e14bb411eec525f577d4fee93563bf561bac3c6ca9",
+      "tests/fixtures/confluence-live.mjs": "ab20edec5282bd1be2bf0700b1f42c1d89dfd8a327951ffe4f835cabdb52fda1",
+      "tests/fixtures/confluence-replay.mjs": "14b1621cdb2c89d83ca9bde756eef36ce63b7b3eb572fe64d53fd5b3049ca19d",
+      "tests/fixtures/confluence-worker.mjs": "2cc2afe68cd3d8687e664d52dcb98428e55505429d33f5784f04c1e55e899dfd",
+      "tests/fixtures/confluence.mjs": "57d47cc3b082d21576f9e09d1e2af038f8c1e71fb776d268a86c85f8b326d2e8",
+      "tests/fixtures/model-archive.mjs": "9da879be45119ea5c851ccf461c54c0ee2a5279670a22d14aeb1590c4e8aec80",
+      "tests/fixtures/sw-3.45.js": "e335d3681cb119d9c1e4db550d43b48db83ee888fb6682e96d54f89f4891833f",
+      "tests/functional.js": "b9f0ce25686846404042ca58e32ae9232be23b5614935a43c9b4ded835780d8c",
+      "tests/harness.js": "ce49504179a2fb83e620ab33bc226625be35a3b44110ca3e0285160b2a59e6e8",
+      "tests/inst-247.sh": "497af72362675dc8a94c33a9aece09d8ec5b230b8d09720ac40708ec8af6336d",
+      "tests/js/coinnews.js": "573c1d60c4fcacc7407e970b826d0d373a37636ef8a74fa5d6194a55adb8661c",
+      "tests/js/countdown.js": "d4c0a565282eae5db36175f0128453037e59853f1e884f43bf7fe2ff5b15c8c5",
+      "tests/js/econcal.js": "d7bd287fef50431f8772a77d3595c251570b07bb2cab3324c70b0e1bd571cd80",
+      "tests/js/hilo.js": "0ea07c5140b6f1a7ff8e9ba6057a046c4e9c7867dbb27d3401f8394bf2ecac46",
+      "tests/js/pulse.js": "5f6950ac598c4c04ab6854d0e81e4ff86eb3f6e3d8cb77f55b2ab9841b880d39",
+      "tests/js/s247.js": "8fdef4f34c841179cd5bd3be732a28e20c316978850de6243f3c28aca419ad65",
+      "tests/js/vola.js": "f9dd8413f889cdae83f0e12bc4778b62b128844b25e3982d168b3b7e8dd4e6cf",
+      "tests/js/watchlive.js": "2bac2a25144955a1e3520a1af0e2391ff67697ad3911683a973eefc84e3105f1",
+      "tests/lint.sh": "f5152ef8bff860332e72d04176e5da8c32e30679c732c32cc51932a51244dff3",
+      "tests/m10.js": "bf5ab9abe045635565461ebb082d750f1089dca62bb4ab2e30dbc49391e6d07c",
+      "tests/m11.js": "8ffbe31c5f907372814b57a019adeb933bfefd3cfebe00a96a3eb2bbfcfa915e",
+      "tests/m12.js": "4b17ccaf8aa0f8f600f3553230e563c343f76f0daa2c102b36b40251f4595db5",
+      "tests/m13.js": "96b2f8c57d7177e6dd4a6b80ef23187b7e564024c18a58041ab2d9c19bd9d5fa",
+      "tests/m14.js": "47623172ba25352164226bf780aeb7ef2b93df0fe36414182749c2f92336b6a0",
+      "tests/m15.js": "ec581cba81a5b500e0935379dc82e9322f8a5ffd58e091e098a4f22ba3bf225e",
+      "tests/m16.js": "692fb50bc01652892455a7121c68b8554bd5f680101ea5c1c702890052475fd9",
+      "tests/m17.js": "5b84ecb1f67b373aa59d4f8f4e2d089419dfd68568fd1f2c1d7a03651f7d75ba",
+      "tests/m18.js": "d452a2667d7e8449f44414214de7add06da11fe85d2632907450f9ddeebddf2f",
+      "tests/m19.js": "2a7b51ba2d937e20ca87fcaa7bdb997f3c8c1e4613611d1904d214ae75bc9918",
+      "tests/m20.js": "4377fd3d5c5d2ebca35b8f471b09f115c719f7f7dea1a800e638448ae6412582",
+      "tests/m21.js": "37486f711fb683a7cf4ce88e23b2110c912676f54b4b0e8d8b05f9c90c2510de",
+      "tests/m22.js": "fb831e09a04e57cfcd2ea8a0c6022cd73f275c7b343880ee67986afb8de0f2f1",
+      "tests/m23.js": "4bdc158ef597c1f459203ad36a72a5a8764d5255bb8151f4890c84832ca0f274",
+      "tests/m24.js": "3d0eb0c84e890397ba3116b343515af2b1d4d4448e489360759c8a20457f4e99",
+      "tests/m25.js": "ba13eadde1946ec64bf0fc009da267ad0d34d597551e32dbf41c2411e1bdb500",
+      "tests/m26.js": "27227d59ae10d8ef0cb4e4f9c7a15a21847a997105c75dc6591a55abfd37abd6",
+      "tests/m27.js": "40208dc639550a61a56114c7204c75da8ece1231b0f711341342bc7755380818",
+      "tests/m28.js": "b48b0d17ebfc3d079cd6cb53c171b3c7b52e71a1ffe2f58031c50ead6391a2a4",
+      "tests/m29.js": "af195fe335584d05619f1a7575ef3cce053fd956b2db12612c4865da5e5dc53d",
+      "tests/m3.js": "8b4304d19586acb5d17327a6cd5472afbc6ed68512630286d3e58d1a78821e50",
+      "tests/m30.js": "00362d108b73c91d98b3ba4b75c3447c6a0bcbe3b7d59cce3511dbacd8012cbd",
+      "tests/m31.js": "27b0648f11eaf5a49347440f9703b1aa58b99fff4f22d7f29466bbb2050fef98",
+      "tests/m32.js": "0e5559e7b51b3e482d334a62e585ab84afe13fa079ad2089673f4352b1046a53",
+      "tests/m33.js": "e4f41c4edb411ebcfc65a349b9e70a8545b7bbb9c23ee2902b23f3052c6d3d19",
+      "tests/m34.js": "70b6a5f63f82c99040dad22901544d24022ad46d7e09cd2830f5b26f841ffec6",
+      "tests/m35.js": "71ffbcc8796d0bd0473124da364d44341386910c4271a066086771083443ae83",
+      "tests/m36.js": "06a631f7d18c6d732f1ce7a41ba925b3f8cf7e2c6744b3a114a71c81c6f2530c",
+      "tests/m37.js": "ba9f7995b856c01e5dbc611746069ea187cf2788adf24a3b2830106ab4d8690e",
+      "tests/m38.js": "a43987b19ba4c7eaf19005362c463d3476adb22f986b822ca1c949b74e1877a3",
+      "tests/m39.js": "8ae6a35768ebe7b13e2ef150733e8184d5a8902deeb715e72c20954444a764c2",
+      "tests/m4.js": "54f3d3737871a963383239906841a03b4e1f62ff29441ec5a3daf349a0262b1e",
+      "tests/m40.js": "3394712a8eefff95a2781fcb84c9f8d8ece37a950d23ad56a77993e35d1c2f36",
+      "tests/m41.js": "0bf182e80af6bab3f222b8fa2df3ad08ff682cac7b75883b676a9e6b43f98e55",
+      "tests/m42.js": "383da6b2fd21a63d309f0b35a52de41da8e590411a0d38ba1ef0f65086450b5e",
+      "tests/m43.js": "10bcbc608a1fd6b8a793c2b4e3b29feacbb921ba4f7d4899a64fbf32eaf04e12",
+      "tests/m44.js": "0c6f92f291eded5ab980470593b75208a4bb80799066d5751f89109f212b414a",
+      "tests/m45.js": "1e9725a4939cb3e7e119388fdd45e110bd6f53ec2ceac793393ee1a67a2d9979",
+      "tests/m46.js": "6c829ab53da4a89445ef327717cba5744b61f7b4910c0e35dd6ff05cc9454713",
+      "tests/m47.js": "c205d15b56ae886dd0690927a5158ea8f303bf422b20712b5d830c696d1e8160",
+      "tests/m48.js": "a82dd1373eccae42c5bc2bec88bdb89086a763808cf4a107bdaf6dc285f78ca2",
+      "tests/m49.js": "2b6f737a123f1e7f0691104c575f729f92f42f09cbf82f347545218fcf7953d3",
+      "tests/m5.js": "be45079103decc1c0b4f8d1899c05f2ec2b42ae4db11bd65a3065379c1b6abdf",
+      "tests/m50.js": "442845eefea1e43cff5b7d5a47b407d31761d6aae4d0950efe6ac6cee5a61b77",
+      "tests/m51.js": "f02b644d8a0d0b83c7dcfbc8540d9de6c409d4cef09fa354e268594c6d930f59",
+      "tests/m52.js": "22d6786039f1e7a6955ead1e84c49c24bcae1c68ebfed8c170656d1c67ba459e",
+      "tests/m53.js": "d55c4b3ba6e05e550e940107891caeda28d97fb9cfea39e49a53a7bf41f266c6",
+      "tests/m54.js": "894ebf41850354efc052f4802a459a66e66ea0f0a93164fd2cec8bc91ed035e7",
+      "tests/m55.js": "b2f716a045adca0ef32ed5f858ecc34e9a81caab05c83e686c75ae5643cb7d87",
+      "tests/m56.js": "af1f8986ad66b776561de853253cea6b7acecd7057ff1fe0a6ba817969524bbb",
+      "tests/m57.js": "c246b15b77a3950339b057ac484164b8c17d735e6db307394a7d449bff7d6a78",
+      "tests/m58.js": "fb8c9d45970f0e1c0246433b7729981a4c559487543f6059232103ee7f2d748b",
+      "tests/m59.js": "9dc736c062287e51dd1561b78d63135077b4b7647e3fe3b89fb73ea764c61987",
+      "tests/m6.js": "82031369bcee4e5cf059b6d157886f6a17fed6c19f179c0bc75d5d243a4bb3f3",
+      "tests/m60.js": "3a5fb77b2414b07a7689b92e0af1a4914a30da89c5a2adecccc9f35309fb5998",
+      "tests/m61.js": "8591c7ecccba13be80aadd10ed73c3cf9d5a5e3f43f524740a3d0fa6aca99cff",
+      "tests/m62.js": "135b5c8740023780c731df36cc0f762516adf0e0917975ebeb7a6448b8cb8bab",
+      "tests/m63.js": "92c8b7da68f6b6c527bb41b368f46227e751b084b79180dfb1c9eef1305f7939",
+      "tests/m64.js": "e768918999904eac90f6ab75ce6e03f981508077539aa7017f8efa212b33e8b1",
+      "tests/m65.js": "f4dd2e49dc6bb26259efaba2be25924a28edd8f15ca0245c609b88be0c6e58e0",
+      "tests/m66.js": "6a0fc29816342baa520a03f1b1826188a0cf70f9767114e85a838e57211d03b4",
+      "tests/m67.js": "511432a6571d85eee763819f1283f5e4bb00c9ca9d6116cc30cfb4f09d192281",
+      "tests/m68.js": "d61055a4b5c21699325781a087c2b16eeac8a7d8cb45f8cef5848a40b04b7733",
+      "tests/m69.js": "26657e041d5f55108cb266e0f01f1037a8435c32c6f4167e938b378c5a438522",
+      "tests/m7.js": "38b60013646ef585069ce7c628270a09d40f301694af2e85d2abf11b823472e3",
+      "tests/m70.js": "c7eb7ebd18fec465eba2331ce3979251df30855d502b3ed1b7ac9557e9369a5f",
+      "tests/m71.js": "1f7771b0e368704377f31ffaafe4d4aee76daf272d6cc7eb650f6a3478933e6b",
+      "tests/m72.js": "356e7fcaed75d2418a8897aed95dc3f19b34e5ffa6ce58931afb5e47f22ba80f",
+      "tests/m73.js": "9271bde4601ea744b935b6bd337b55ed81fec6817b5b2c398ac4fc430723885b",
+      "tests/m74.js": "739469d285fa90ce98671c23f12c7a5c1f145b159016e6ba5ae35d5a2d817cde",
+      "tests/m75.js": "75d3bdbc524d112a6d8ec82974283bdd046c948892666697e1a252f14178335a",
+      "tests/m76.js": "2f851a919ac345c3c4a3f6ca9e086d163566582eaba50c6058a9a074b73a4bbb",
+      "tests/m77.js": "69fc4a04dc5987f656d11037295e9dced9ba8e2f33b59273e4d5c63d9e4d323f",
+      "tests/m78.js": "516311312ab1c16a10588b157704659e35611212d1af7295439561d84646114e",
+      "tests/m79.js": "dcba913f0b5c3a6d8873acea95c4a8722684e729db289f8c29f13d18d624ad34",
+      "tests/m8.js": "9ccbb7f9e23c60f46ffabc61deb4de1b5ae38b27c244ce511afd11ad296da2db",
+      "tests/m80.js": "1a9889589402c31cef175cc545dc87cf544dfb33c4d1f57ff0404a2414b79d32",
+      "tests/m81.js": "ae79e87b768f46e685f9da92c03033c186ba08feffe7fbdd48644812f9644f52",
+      "tests/m82.js": "3367a59bcc923f86a6e2620969e88273e8220a09388dfd545d9705eee19a7ed3",
+      "tests/m83.js": "f17958cd25d93fdca62292d136bc8798872709c994ed4a6e9aa9d9ea5902b310",
+      "tests/m84.js": "152ff40560e7941e00c0a58e7a6c8d29b1933852449292d3bcb141fcf5664c20",
+      "tests/m85.js": "f443a70a76b363cf491ff43ba8517e2176eb0de828bf23e9630fd24c22819a42",
+      "tests/m86.js": "169d59c988df498953d687c9a2cf977ca8a1c781ac0e58a381caf58e7d199450",
+      "tests/m87.js": "8c2c529869c1c4bd4a40cb32aeb54a9b49850c3a834e40bac109ef17f89736c0",
+      "tests/m88.js": "00a8e37531d3f1f91858fef79b256f4780fc01641a1232da2e3de7f4b729977e",
+      "tests/m89.js": "b0a1d50853308b0a108efcf52212a285d59c8bb97f6178bb3e503aaa44e37b4f",
+      "tests/m9.js": "d184a3e9cb6c93d6d9933e573cbe9c7986757ae3a757f61dea751c70e4f69c8e",
+      "tests/m90.js": "9515b0d0b4aed4fed69de9c19b186f418962ec71e6d81c19d3062ce95a16b467",
+      "tests/m91.js": "36885b3e64bbfda1ec9bf235a91d2badd621d7fbe8de74fa48ea15b1094aa729",
+      "tests/m92.js": "d3d66fa99d17767961050757034cbea8f81eb9478c914d564669e6fbdee4f577",
+      "tests/m93.js": "c252de2247c50a07f875726c0ebbc17303a0af4efab5dd52cff951434d01e0a1",
+      "tests/m94.js": "0724f977c2334a92e60bde9c94a3297248e59c5fc6caa079df93f7f87adae566",
+      "tests/mock-binance.js": "91e5cfb0646085fa910c1dd8cafdba80b0508f1996410d92ee0dd1af30572df9",
+      "tests/muster-fixtures.js": "cba4e2dd2014d76d76dbdaa9235716b11e8b0004d4b72363edecd805c51e0a3c",
+      "tests/node_modules/globals/index.js": "2998fa25447dc5e0032334703ccec8604d66b750afb5b84e13eb778bf66fbb38",
+      "tests/node_modules/ws/browser.js": "010da44addea1d88b2b732540c3f1fd0cbcb28926b96623d4c64222e0ead2d0e",
+      "tests/node_modules/ws/index.js": "924564d5be26d59b9682c4263f68320e48dde7240bd2d1ad17ec305537429dd2",
+      "tests/node_modules/ws/lib/buffer-util.js": "8b0a45739132f82e25ea13163780abf547ccfe989267f3eb7abb475beec92da3",
+      "tests/node_modules/ws/lib/constants.js": "391e823142b8b370e55a2fd32b022deaf03b8415c56000009674ebc86a0b4f86",
+      "tests/node_modules/ws/lib/event-target.js": "c45d3c6e12d170c860c0c3f1a050aa0f864d9806632b609a1e607d675aba128c",
+      "tests/node_modules/ws/lib/extension.js": "852564f0f6b460287043803eae732666fb5610f676874354fc89f06aa4e986ed",
+      "tests/node_modules/ws/lib/limiter.js": "e0469d4b83f6ba764b15f80e1766b75c136fbff68f048f4c050f0b1c7f065f69",
+      "tests/node_modules/ws/lib/permessage-deflate.js": "16a91536988a53c23047ee5882392068728a839a244178c3b09b8c54982f58b0",
+      "tests/node_modules/ws/lib/receiver.js": "a6ada33c9a2d54eaf595824b821ea89ca2c6395f89aa06755c52142148274884",
+      "tests/node_modules/ws/lib/sender.js": "d0791d30c3defd44dcabbddb879a901c757993fea2c00a7ffea01d53b23b4b77",
+      "tests/node_modules/ws/lib/stream.js": "a56fcb6e2b152097ee820b6f5410b1f71e59819b45d08d9f8bda588fe39070ec",
+      "tests/node_modules/ws/lib/subprotocol.js": "be3f6323d6f549568577dcba9004c1479d95c65a7abb0fe0c582875b9fac0b7c",
+      "tests/node_modules/ws/lib/validation.js": "41ce8e83d0d434132e1704895fedb91f6703a701b42d91c80954ab29b2845593",
+      "tests/node_modules/ws/lib/websocket-server.js": "6d8dd89a841748c80445fd5fcdb5ba8005369b53cc3525135e11304c8b9c55e5",
+      "tests/node_modules/ws/lib/websocket.js": "7ccf305925f0cdb74e06b75b4c84de134b1bd771a220ef409b24520def08128f",
+      "tests/node_modules/ws/wrapper.mjs": "fe154662301fd558f935f9c217fccbe7a7dac02ff39e648a000589403ff27c7f",
+      "tests/run-all.sh": "dbda97345219a417f6c82ac563fcede2c22e9a509fe545ecf2370fb5cecabf00",
+      "tests/smoke.js": "52ba8accb1bab2b36e47f2bd3f5df45c8794cfedb041d6ffdab4066b8aad2a58",
+      "tests/statuscheck.js": "dcb0000715c5460de8da2fa280a30cf3b07999b6013c98436a1d381ed74a8054",
+      "tests/ui.js": "f20dead840c68bf466ea2d2f91f89ecd687b0fdd1261ec117e10dfab94720c64",
+      "tests/unit-247.js": "94629742a5db40e64670608944394aef81685304d81851b75f911f4162496e41",
+      "tests/unit-247b.js": "29e8002521ecbcb95f5f7845ea58b5437339af7a3f21ec225d95c4897b10391d",
+      "tests/unit-247c.js": "93322922b24bc3bd4a84b9a78a4043c66cbf7c022bc0cb3961701d83df93c127",
+      "tests/unit-247d.js": "4ff14ed3609cd7184b6e5439c2b00685b4deb6cf075e50119fab704b2fa10c44",
+      "tests/unit-247e.js": "91392424dfaa78a9f6519b39782b931442fd7c4ee4cd4ca609d5fc994e5dd9b1",
+      "tests/unit-acct.js": "686b9f6aeccd3c5a41dc94a56079ae53229c10c7b3e189fdde0857ff78ab11cc",
+      "tests/unit-adaptive-grid-feed.js": "92e7af209e277598936b06cddef3f05d44540bb667e09e799b0af9825ffb2dce",
+      "tests/unit-adaptive-grid-runtime.js": "fbd8fb7689038b46d3be945e701e41cf7cde2a7b7b3cd7d8545f839e6fd28a7d",
+      "tests/unit-adaptive-grid.js": "696d77922c71ade7e1324cfca08941682a4292e286b25b435e7d5120b7a782cf",
+      "tests/unit-appearance.js": "760362156169445cfaa5b51c7b7deddbd2375b801bf8e316f85e8a212d147f79",
+      "tests/unit-bitget-history.js": "4bf55668ec6710045a802b0822e6dab04c83ff435123db7bf03b7ba8b99494f0",
+      "tests/unit-bitget-patterns.js": "f0f9e663b2907e4972c284a5a03ff67b6862e022e6fd496f3662dbce7f23ac84",
+      "tests/unit-bitget.js": "c552cb8794eabc374cc49d4c3d0eedcc56f8e922d7358868c8b2d2d3343c6c1e",
+      "tests/unit-bot-limits.js": "cfb8f7ec7c88de64ca77dce6c55667a5983efa26bc2d1088bc0de5f0ac9201b4",
+      "tests/unit-bot-simulation.js": "fce0e1ecf2d2234521e403397556f8cc43bbba3d9bcf2cb7b0fa85487520d9e7",
+      "tests/unit-cd.js": "b9b541db7ded250a473d259811f4b3c2c0a23d727e140b1fefb28fd71cf34ad8",
+      "tests/unit-chart-detail.js": "3f058f419fb560d91d3cc1a21e621289c37d9f6f2c323ce99c3f416e042ab0eb",
+      "tests/unit-chart-pattern-chips.js": "0af52e4deaf027107b7cf2fa533afb0b4a177407c8b7227c2dabc3c014652c83",
+      "tests/unit-chart-pattern-overview-feed.js": "569c0b10b9babc26865f6d594ed8985ae6aa16d4cab225b78365af34c254cf8a",
+      "tests/unit-chart-pattern-quality.js": "30d1d660ebda4be62521b308a45a1ea28b4277daf8755f927afa4dea25df543d",
+      "tests/unit-cn-app.js": "b15101fc9d1044cb25775b67b92360c5f5b7a00a9365b98548049a69e3e44ae9",
+      "tests/unit-cn.js": "644340fc18ec264cc2c7c1dcad26498d4cbb9dde211511cbea25f95258e58ec7",
+      "tests/unit-confluence-costs.js": "85db23bd077d383ab5313ca4c72f6563e823abb2e0ddb4a854eafd061edc7e9d",
+      "tests/unit-confluence-evidence.js": "9800a5d73388ba58b28f21e127b5f8244f901dc3c26bd67518ca4b964df208ac",
+      "tests/unit-confluence-live.js": "3cb50e6ef86a9f5a030e42e9e1236a7de3c57bbf1f6c257488da22c38adb6fcd",
+      "tests/unit-confluence-presentation.js": "ccccfe9c4d9de0bda366e7f55bf7ae7e39385613db7a2dd91c8a64cd66ee7c6c",
+      "tests/unit-confluence-replay.js": "223f0556c2fd101fa1b21e9a41a7d580eb0707a5286172ba98673aaba8198b3c",
+      "tests/unit-confluence-risk.js": "03a459501d8477991f5543020b8ee9a9fb610c9c039aa4cf4888fcb49c7e3875",
+      "tests/unit-confluence-service.js": "fd72f8bbc8edc12f96c27fa0ebd408c94a7d2f9398bb3a517f2402d4f84c9e02",
+      "tests/unit-confluence.js": "f9b10af0bcc1c27271ac5aa26c3de53d85f8c0a2a9e9e92478f0cf4bbb5a0aba",
+      "tests/unit-div.js": "25107a0d15772a8b22f540aeb180e47c73443f4905129f294e6a510b2d39445a",
+      "tests/unit-ec.js": "90bbf9e601a6ce82b2d4d1abb817ced03285091db5c3ab1d077b18ec872d67a1",
+      "tests/unit-ew.js": "b4e1f1910b988131f6671a7da68c36f9b593ab0872d6a060d99ef80d56518bea",
+      "tests/unit-fib.js": "40cc24b3a17ec43b8e7001f9410e0dbd63c3c6d4157c209a194663f668ec8bd8",
+      "tests/unit-fmt.js": "02c28759f00e59aa4ac19db7a8170b9c7a252804a8d2a09d0312457a72279cbe",
+      "tests/unit-github-sync.js": "341443ada84b718127652835ea56668906282913dfc406070d2426ca485e5b2a",
+      "tests/unit-hl.js": "d8f4d7d4a83a9cf77b9d57e9aa1be4314cd6cc9b8631609382563336df47e5df",
+      "tests/unit-lots.js": "6076791273c77c93c8182437651a8aef1501166aad02989f37db798fee7b72a4",
+      "tests/unit-m8.js": "18e72a3f0361d4a4456b4afd6f897d706645b6af3fce2cea9acfae2a20ddce47",
+      "tests/unit-market-intervals.js": "8dfa1d90e161dcece1da4cf7bc12debb0a7920c025069f3a4033a5c4c003bff7",
+      "tests/unit-model-archive.js": "48a4afd822babf0645b8f9b2cc1c579045e5496db893ebb9a82305d579729ce2",
+      "tests/unit-muster-bot.js": "9acf43361b31ecebfa6eca885f280ccc294c21c3673567c0ddfe3ab4466742fe",
+      "tests/unit-muster-feed.js": "9ecf5a84cd2db73f6dd84fffa8038223c76f0d8bdc20b80c4d63236bc9df1572",
+      "tests/unit-muster-paper.js": "34ad03246baac38b274b3a5d6dba9646f656f896227cdd2b82d19c092784e83e",
+      "tests/unit-ob.js": "4f7ce9ac07e5b1e18fc81f52fea064beb40502c4a8b3f5f25f98cfabb79643ce",
+      "tests/unit-orderflow-demo.js": "029c2b9758eb8565680f06797ce68d863375ce9e03c5f11cb7eaec323e9fd5ed",
+      "tests/unit-orderflow-explainer.js": "4ba822b9b9befac455d743234508c30a4ab496b16042645a50c9ce362448e7b2",
+      "tests/unit-orderflow-feed.js": "7e6801964034767068fc0cd0e24fb473d7caaded5747af2ee027f89f043da6b1",
+      "tests/unit-orderflow-journal.js": "668f73ea7149a887ea815cbc1b90458c101972f8207a1209dd3e619a74b7b78f",
+      "tests/unit-orderflow-signal.js": "37fc459fb2eaa7b1c00acd1044cd718d97553c39de946bc4657f8c2aa687f8d3",
+      "tests/unit-orderflow.js": "113dcf2a64b7393088b4ea7eae57c9edb40e33cc973f6b93821649e1932a85d1",
+      "tests/unit-paper-bot.js": "b60f0d221c8527230ddc3696ea7daa3aa426d67b477386ac97d71fcd0fde6276",
+      "tests/unit-paper-controller.js": "7b11ee2b9e6030e7afdf500c3678ac23a15f2e98330188d12ce48c8dd8980c09",
+      "tests/unit-paper-worker.js": "f3ff861ec0e1c7032bc31c816eef79575e7966bbc0e60ea7b1cc422adf52c2b0",
+      "tests/unit-pattern-projection.js": "d9941ceffcafc98cdeabcee640aba56fc107b0802b3caa35c90809aaacd8ba0d",
+      "tests/unit-patterns-only.js": "6eb1a08d00b83d0b90a570bc20d412f4c1c08231bc7c86c8bec2187c76b995b9",
+      "tests/unit-po3-service.js": "33228cd27746898a6659879043d3e27a77a110cb8145873fd4fd48db30fe9e96",
+      "tests/unit-po3-stream.js": "869af55d6032f10c56a4505a3339c8d3da1fc45950816e3e6f04e6f50bdc7b7c",
+      "tests/unit-po3.js": "be50e0a2486985b44164a0619ce05c9e784c4a024accc71429ac17f3a56b6047",
+      "tests/unit-pub.js": "80fa9569123b2a38065c4ce6fbc88cc721624ebfe87af343fbffd1cd7fdbf75c",
+      "tests/unit-pulse.js": "4087c958f963ab376cd11d2c48a98bb04a8b31f1670552be1620ae8f0cf94bc8",
+      "tests/unit-release.js": "cd30fdc3f71438525cd65cbdb80a7110602715cf12cbdcf0b6a33e1cb034c21e",
+      "tests/unit-signal-overview.js": "078c44ed0e834c7d416de0da5d5c7676f421ea477ded5654bd21c1c5e8923e93",
+      "tests/unit-telegram-format.js": "7a0321eb9172d915fe19c7c8c9e4e1b71941f20616bc601c0f1ed517db9d7f96",
+      "tests/unit-vola.js": "8860a97cb6a1f6e7c5f5994f4ab1ac03bba6b58adc3d7b47f9552a1f9c46f608",
+      "tests/unit-wl.js": "03b3ada69d47e9bca2fc54c03b4e3999fb2ff2652cc31f4b3e89b4b255a19c11",
+      "tests/unit-zz.js": "863f8e289d98e098d4b6fb9dc569c7d69ced29a46a426f153d5d512837ed7ee1",
+      "tests/unit-zzp.js": "2442d7e216787f83d9c420ceda47bb6163da68c9b3ec5bf6b427ca9146e751c0",
+      "tests/visual.js": "dae283f62ac8252440a2865f70ab8165debc7bffb67a2db360241470dd3595a8"
+    },
+    "afterMarketFixture": {
+      "tests/eslint-g01.config.mjs": "8c11138760ccd07dfd77441ee557871d22f220a0bc3751630fce3229fdb20a90",
+      "tests/eslint-server.config.mjs": "947080ad930a31a47af31d90a5e1ef864f8d002790681959f8f0b805bbbd1eb0",
+      "tests/fixtures/bitget-worker.mjs": "d364750d01b2c4aedfbf2630898587a300cd5bbe246a0e546f1428b15d4853e5",
+      "tests/fixtures/bitget.mjs": "a555574457898feead29e8ded3ab7c54b96fbb0725545a9dc57cef3c668b9399",
+      "tests/fixtures/confluence-live-worker.mjs": "5c45b105e1e6d38564e289e14bb411eec525f577d4fee93563bf561bac3c6ca9",
+      "tests/fixtures/confluence-live.mjs": "ab20edec5282bd1be2bf0700b1f42c1d89dfd8a327951ffe4f835cabdb52fda1",
+      "tests/fixtures/confluence-replay.mjs": "14b1621cdb2c89d83ca9bde756eef36ce63b7b3eb572fe64d53fd5b3049ca19d",
+      "tests/fixtures/confluence-worker.mjs": "2cc2afe68cd3d8687e664d52dcb98428e55505429d33f5784f04c1e55e899dfd",
+      "tests/fixtures/confluence.mjs": "57d47cc3b082d21576f9e09d1e2af038f8c1e71fb776d268a86c85f8b326d2e8",
+      "tests/fixtures/model-archive.mjs": "9da879be45119ea5c851ccf461c54c0ee2a5279670a22d14aeb1590c4e8aec80",
+      "tests/fixtures/sw-3.45.js": "e335d3681cb119d9c1e4db550d43b48db83ee888fb6682e96d54f89f4891833f",
+      "tests/functional.js": "f11e5ddaa8b67c148bb89fb642543ffc80ab4242dcec60f8529b5e5e5e6612b9",
+      "tests/harness.js": "ce49504179a2fb83e620ab33bc226625be35a3b44110ca3e0285160b2a59e6e8",
+      "tests/inst-247.sh": "497af72362675dc8a94c33a9aece09d8ec5b230b8d09720ac40708ec8af6336d",
+      "tests/js/coinnews.js": "573c1d60c4fcacc7407e970b826d0d373a37636ef8a74fa5d6194a55adb8661c",
+      "tests/js/countdown.js": "d4c0a565282eae5db36175f0128453037e59853f1e884f43bf7fe2ff5b15c8c5",
+      "tests/js/econcal.js": "d7bd287fef50431f8772a77d3595c251570b07bb2cab3324c70b0e1bd571cd80",
+      "tests/js/hilo.js": "0ea07c5140b6f1a7ff8e9ba6057a046c4e9c7867dbb27d3401f8394bf2ecac46",
+      "tests/js/pulse.js": "5f6950ac598c4c04ab6854d0e81e4ff86eb3f6e3d8cb77f55b2ab9841b880d39",
+      "tests/js/s247.js": "8fdef4f34c841179cd5bd3be732a28e20c316978850de6243f3c28aca419ad65",
+      "tests/js/vola.js": "f9dd8413f889cdae83f0e12bc4778b62b128844b25e3982d168b3b7e8dd4e6cf",
+      "tests/js/watchlive.js": "2bac2a25144955a1e3520a1af0e2391ff67697ad3911683a973eefc84e3105f1",
+      "tests/lint.sh": "f5152ef8bff860332e72d04176e5da8c32e30679c732c32cc51932a51244dff3",
+      "tests/m10.js": "bf5ab9abe045635565461ebb082d750f1089dca62bb4ab2e30dbc49391e6d07c",
+      "tests/m11.js": "8ffbe31c5f907372814b57a019adeb933bfefd3cfebe00a96a3eb2bbfcfa915e",
+      "tests/m12.js": "4b17ccaf8aa0f8f600f3553230e563c343f76f0daa2c102b36b40251f4595db5",
+      "tests/m13.js": "96b2f8c57d7177e6dd4a6b80ef23187b7e564024c18a58041ab2d9c19bd9d5fa",
+      "tests/m14.js": "47623172ba25352164226bf780aeb7ef2b93df0fe36414182749c2f92336b6a0",
+      "tests/m15.js": "ec581cba81a5b500e0935379dc82e9322f8a5ffd58e091e098a4f22ba3bf225e",
+      "tests/m16.js": "692fb50bc01652892455a7121c68b8554bd5f680101ea5c1c702890052475fd9",
+      "tests/m17.js": "5b84ecb1f67b373aa59d4f8f4e2d089419dfd68568fd1f2c1d7a03651f7d75ba",
+      "tests/m18.js": "d452a2667d7e8449f44414214de7add06da11fe85d2632907450f9ddeebddf2f",
+      "tests/m19.js": "2a7b51ba2d937e20ca87fcaa7bdb997f3c8c1e4613611d1904d214ae75bc9918",
+      "tests/m20.js": "4377fd3d5c5d2ebca35b8f471b09f115c719f7f7dea1a800e638448ae6412582",
+      "tests/m21.js": "37486f711fb683a7cf4ce88e23b2110c912676f54b4b0e8d8b05f9c90c2510de",
+      "tests/m22.js": "fb831e09a04e57cfcd2ea8a0c6022cd73f275c7b343880ee67986afb8de0f2f1",
+      "tests/m23.js": "4bdc158ef597c1f459203ad36a72a5a8764d5255bb8151f4890c84832ca0f274",
+      "tests/m24.js": "3d0eb0c84e890397ba3116b343515af2b1d4d4448e489360759c8a20457f4e99",
+      "tests/m25.js": "ba13eadde1946ec64bf0fc009da267ad0d34d597551e32dbf41c2411e1bdb500",
+      "tests/m26.js": "27227d59ae10d8ef0cb4e4f9c7a15a21847a997105c75dc6591a55abfd37abd6",
+      "tests/m27.js": "40208dc639550a61a56114c7204c75da8ece1231b0f711341342bc7755380818",
+      "tests/m28.js": "b48b0d17ebfc3d079cd6cb53c171b3c7b52e71a1ffe2f58031c50ead6391a2a4",
+      "tests/m29.js": "af195fe335584d05619f1a7575ef3cce053fd956b2db12612c4865da5e5dc53d",
+      "tests/m3.js": "8b4304d19586acb5d17327a6cd5472afbc6ed68512630286d3e58d1a78821e50",
+      "tests/m30.js": "00362d108b73c91d98b3ba4b75c3447c6a0bcbe3b7d59cce3511dbacd8012cbd",
+      "tests/m31.js": "27b0648f11eaf5a49347440f9703b1aa58b99fff4f22d7f29466bbb2050fef98",
+      "tests/m32.js": "0e5559e7b51b3e482d334a62e585ab84afe13fa079ad2089673f4352b1046a53",
+      "tests/m33.js": "e4f41c4edb411ebcfc65a349b9e70a8545b7bbb9c23ee2902b23f3052c6d3d19",
+      "tests/m34.js": "70b6a5f63f82c99040dad22901544d24022ad46d7e09cd2830f5b26f841ffec6",
+      "tests/m35.js": "71ffbcc8796d0bd0473124da364d44341386910c4271a066086771083443ae83",
+      "tests/m36.js": "06a631f7d18c6d732f1ce7a41ba925b3f8cf7e2c6744b3a114a71c81c6f2530c",
+      "tests/m37.js": "ba9f7995b856c01e5dbc611746069ea187cf2788adf24a3b2830106ab4d8690e",
+      "tests/m38.js": "a43987b19ba4c7eaf19005362c463d3476adb22f986b822ca1c949b74e1877a3",
+      "tests/m39.js": "8ae6a35768ebe7b13e2ef150733e8184d5a8902deeb715e72c20954444a764c2",
+      "tests/m4.js": "54f3d3737871a963383239906841a03b4e1f62ff29441ec5a3daf349a0262b1e",
+      "tests/m40.js": "3394712a8eefff95a2781fcb84c9f8d8ece37a950d23ad56a77993e35d1c2f36",
+      "tests/m41.js": "0bf182e80af6bab3f222b8fa2df3ad08ff682cac7b75883b676a9e6b43f98e55",
+      "tests/m42.js": "383da6b2fd21a63d309f0b35a52de41da8e590411a0d38ba1ef0f65086450b5e",
+      "tests/m43.js": "10bcbc608a1fd6b8a793c2b4e3b29feacbb921ba4f7d4899a64fbf32eaf04e12",
+      "tests/m44.js": "0c6f92f291eded5ab980470593b75208a4bb80799066d5751f89109f212b414a",
+      "tests/m45.js": "1e9725a4939cb3e7e119388fdd45e110bd6f53ec2ceac793393ee1a67a2d9979",
+      "tests/m46.js": "6c829ab53da4a89445ef327717cba5744b61f7b4910c0e35dd6ff05cc9454713",
+      "tests/m47.js": "c205d15b56ae886dd0690927a5158ea8f303bf422b20712b5d830c696d1e8160",
+      "tests/m48.js": "a82dd1373eccae42c5bc2bec88bdb89086a763808cf4a107bdaf6dc285f78ca2",
+      "tests/m49.js": "2b6f737a123f1e7f0691104c575f729f92f42f09cbf82f347545218fcf7953d3",
+      "tests/m5.js": "be45079103decc1c0b4f8d1899c05f2ec2b42ae4db11bd65a3065379c1b6abdf",
+      "tests/m50.js": "442845eefea1e43cff5b7d5a47b407d31761d6aae4d0950efe6ac6cee5a61b77",
+      "tests/m51.js": "f02b644d8a0d0b83c7dcfbc8540d9de6c409d4cef09fa354e268594c6d930f59",
+      "tests/m52.js": "22d6786039f1e7a6955ead1e84c49c24bcae1c68ebfed8c170656d1c67ba459e",
+      "tests/m53.js": "d55c4b3ba6e05e550e940107891caeda28d97fb9cfea39e49a53a7bf41f266c6",
+      "tests/m54.js": "894ebf41850354efc052f4802a459a66e66ea0f0a93164fd2cec8bc91ed035e7",
+      "tests/m55.js": "b2f716a045adca0ef32ed5f858ecc34e9a81caab05c83e686c75ae5643cb7d87",
+      "tests/m56.js": "af1f8986ad66b776561de853253cea6b7acecd7057ff1fe0a6ba817969524bbb",
+      "tests/m57.js": "c246b15b77a3950339b057ac484164b8c17d735e6db307394a7d449bff7d6a78",
+      "tests/m58.js": "fb8c9d45970f0e1c0246433b7729981a4c559487543f6059232103ee7f2d748b",
+      "tests/m59.js": "9dc736c062287e51dd1561b78d63135077b4b7647e3fe3b89fb73ea764c61987",
+      "tests/m6.js": "82031369bcee4e5cf059b6d157886f6a17fed6c19f179c0bc75d5d243a4bb3f3",
+      "tests/m60.js": "3a5fb77b2414b07a7689b92e0af1a4914a30da89c5a2adecccc9f35309fb5998",
+      "tests/m61.js": "8591c7ecccba13be80aadd10ed73c3cf9d5a5e3f43f524740a3d0fa6aca99cff",
+      "tests/m62.js": "135b5c8740023780c731df36cc0f762516adf0e0917975ebeb7a6448b8cb8bab",
+      "tests/m63.js": "92c8b7da68f6b6c527bb41b368f46227e751b084b79180dfb1c9eef1305f7939",
+      "tests/m64.js": "e768918999904eac90f6ab75ce6e03f981508077539aa7017f8efa212b33e8b1",
+      "tests/m65.js": "f4dd2e49dc6bb26259efaba2be25924a28edd8f15ca0245c609b88be0c6e58e0",
+      "tests/m66.js": "6a0fc29816342baa520a03f1b1826188a0cf70f9767114e85a838e57211d03b4",
+      "tests/m67.js": "511432a6571d85eee763819f1283f5e4bb00c9ca9d6116cc30cfb4f09d192281",
+      "tests/m68.js": "d61055a4b5c21699325781a087c2b16eeac8a7d8cb45f8cef5848a40b04b7733",
+      "tests/m69.js": "26657e041d5f55108cb266e0f01f1037a8435c32c6f4167e938b378c5a438522",
+      "tests/m7.js": "38b60013646ef585069ce7c628270a09d40f301694af2e85d2abf11b823472e3",
+      "tests/m70.js": "c7eb7ebd18fec465eba2331ce3979251df30855d502b3ed1b7ac9557e9369a5f",
+      "tests/m71.js": "1f7771b0e368704377f31ffaafe4d4aee76daf272d6cc7eb650f6a3478933e6b",
+      "tests/m72.js": "356e7fcaed75d2418a8897aed95dc3f19b34e5ffa6ce58931afb5e47f22ba80f",
+      "tests/m73.js": "9271bde4601ea744b935b6bd337b55ed81fec6817b5b2c398ac4fc430723885b",
+      "tests/m74.js": "739469d285fa90ce98671c23f12c7a5c1f145b159016e6ba5ae35d5a2d817cde",
+      "tests/m75.js": "75d3bdbc524d112a6d8ec82974283bdd046c948892666697e1a252f14178335a",
+      "tests/m76.js": "2f851a919ac345c3c4a3f6ca9e086d163566582eaba50c6058a9a074b73a4bbb",
+      "tests/m77.js": "69fc4a04dc5987f656d11037295e9dced9ba8e2f33b59273e4d5c63d9e4d323f",
+      "tests/m78.js": "516311312ab1c16a10588b157704659e35611212d1af7295439561d84646114e",
+      "tests/m79.js": "dcba913f0b5c3a6d8873acea95c4a8722684e729db289f8c29f13d18d624ad34",
+      "tests/m8.js": "9ccbb7f9e23c60f46ffabc61deb4de1b5ae38b27c244ce511afd11ad296da2db",
+      "tests/m80.js": "1a9889589402c31cef175cc545dc87cf544dfb33c4d1f57ff0404a2414b79d32",
+      "tests/m81.js": "ae79e87b768f46e685f9da92c03033c186ba08feffe7fbdd48644812f9644f52",
+      "tests/m82.js": "3367a59bcc923f86a6e2620969e88273e8220a09388dfd545d9705eee19a7ed3",
+      "tests/m83.js": "f17958cd25d93fdca62292d136bc8798872709c994ed4a6e9aa9d9ea5902b310",
+      "tests/m84.js": "152ff40560e7941e00c0a58e7a6c8d29b1933852449292d3bcb141fcf5664c20",
+      "tests/m85.js": "f443a70a76b363cf491ff43ba8517e2176eb0de828bf23e9630fd24c22819a42",
+      "tests/m86.js": "169d59c988df498953d687c9a2cf977ca8a1c781ac0e58a381caf58e7d199450",
+      "tests/m87.js": "8c2c529869c1c4bd4a40cb32aeb54a9b49850c3a834e40bac109ef17f89736c0",
+      "tests/m88.js": "00a8e37531d3f1f91858fef79b256f4780fc01641a1232da2e3de7f4b729977e",
+      "tests/m89.js": "b0a1d50853308b0a108efcf52212a285d59c8bb97f6178bb3e503aaa44e37b4f",
+      "tests/m9.js": "d184a3e9cb6c93d6d9933e573cbe9c7986757ae3a757f61dea751c70e4f69c8e",
+      "tests/m90.js": "9515b0d0b4aed4fed69de9c19b186f418962ec71e6d81c19d3062ce95a16b467",
+      "tests/m91.js": "36885b3e64bbfda1ec9bf235a91d2badd621d7fbe8de74fa48ea15b1094aa729",
+      "tests/m92.js": "d3d66fa99d17767961050757034cbea8f81eb9478c914d564669e6fbdee4f577",
+      "tests/m93.js": "c252de2247c50a07f875726c0ebbc17303a0af4efab5dd52cff951434d01e0a1",
+      "tests/m94.js": "0724f977c2334a92e60bde9c94a3297248e59c5fc6caa079df93f7f87adae566",
+      "tests/mock-binance.js": "91e5cfb0646085fa910c1dd8cafdba80b0508f1996410d92ee0dd1af30572df9",
+      "tests/muster-fixtures.js": "cba4e2dd2014d76d76dbdaa9235716b11e8b0004d4b72363edecd805c51e0a3c",
+      "tests/node_modules/globals/index.js": "2998fa25447dc5e0032334703ccec8604d66b750afb5b84e13eb778bf66fbb38",
+      "tests/node_modules/ws/browser.js": "010da44addea1d88b2b732540c3f1fd0cbcb28926b96623d4c64222e0ead2d0e",
+      "tests/node_modules/ws/index.js": "924564d5be26d59b9682c4263f68320e48dde7240bd2d1ad17ec305537429dd2",
+      "tests/node_modules/ws/lib/buffer-util.js": "8b0a45739132f82e25ea13163780abf547ccfe989267f3eb7abb475beec92da3",
+      "tests/node_modules/ws/lib/constants.js": "391e823142b8b370e55a2fd32b022deaf03b8415c56000009674ebc86a0b4f86",
+      "tests/node_modules/ws/lib/event-target.js": "c45d3c6e12d170c860c0c3f1a050aa0f864d9806632b609a1e607d675aba128c",
+      "tests/node_modules/ws/lib/extension.js": "852564f0f6b460287043803eae732666fb5610f676874354fc89f06aa4e986ed",
+      "tests/node_modules/ws/lib/limiter.js": "e0469d4b83f6ba764b15f80e1766b75c136fbff68f048f4c050f0b1c7f065f69",
+      "tests/node_modules/ws/lib/permessage-deflate.js": "16a91536988a53c23047ee5882392068728a839a244178c3b09b8c54982f58b0",
+      "tests/node_modules/ws/lib/receiver.js": "a6ada33c9a2d54eaf595824b821ea89ca2c6395f89aa06755c52142148274884",
+      "tests/node_modules/ws/lib/sender.js": "d0791d30c3defd44dcabbddb879a901c757993fea2c00a7ffea01d53b23b4b77",
+      "tests/node_modules/ws/lib/stream.js": "a56fcb6e2b152097ee820b6f5410b1f71e59819b45d08d9f8bda588fe39070ec",
+      "tests/node_modules/ws/lib/subprotocol.js": "be3f6323d6f549568577dcba9004c1479d95c65a7abb0fe0c582875b9fac0b7c",
+      "tests/node_modules/ws/lib/validation.js": "41ce8e83d0d434132e1704895fedb91f6703a701b42d91c80954ab29b2845593",
+      "tests/node_modules/ws/lib/websocket-server.js": "6d8dd89a841748c80445fd5fcdb5ba8005369b53cc3525135e11304c8b9c55e5",
+      "tests/node_modules/ws/lib/websocket.js": "7ccf305925f0cdb74e06b75b4c84de134b1bd771a220ef409b24520def08128f",
+      "tests/node_modules/ws/wrapper.mjs": "fe154662301fd558f935f9c217fccbe7a7dac02ff39e648a000589403ff27c7f",
+      "tests/run-all.sh": "dbda97345219a417f6c82ac563fcede2c22e9a509fe545ecf2370fb5cecabf00",
+      "tests/smoke.js": "52ba8accb1bab2b36e47f2bd3f5df45c8794cfedb041d6ffdab4066b8aad2a58",
+      "tests/statuscheck.js": "dcb0000715c5460de8da2fa280a30cf3b07999b6013c98436a1d381ed74a8054",
+      "tests/ui.js": "f20dead840c68bf466ea2d2f91f89ecd687b0fdd1261ec117e10dfab94720c64",
+      "tests/unit-247.js": "94629742a5db40e64670608944394aef81685304d81851b75f911f4162496e41",
+      "tests/unit-247b.js": "29e8002521ecbcb95f5f7845ea58b5437339af7a3f21ec225d95c4897b10391d",
+      "tests/unit-247c.js": "93322922b24bc3bd4a84b9a78a4043c66cbf7c022bc0cb3961701d83df93c127",
+      "tests/unit-247d.js": "4ff14ed3609cd7184b6e5439c2b00685b4deb6cf075e50119fab704b2fa10c44",
+      "tests/unit-247e.js": "91392424dfaa78a9f6519b39782b931442fd7c4ee4cd4ca609d5fc994e5dd9b1",
+      "tests/unit-acct.js": "686b9f6aeccd3c5a41dc94a56079ae53229c10c7b3e189fdde0857ff78ab11cc",
+      "tests/unit-adaptive-grid-feed.js": "92e7af209e277598936b06cddef3f05d44540bb667e09e799b0af9825ffb2dce",
+      "tests/unit-adaptive-grid-runtime.js": "fbd8fb7689038b46d3be945e701e41cf7cde2a7b7b3cd7d8545f839e6fd28a7d",
+      "tests/unit-adaptive-grid.js": "696d77922c71ade7e1324cfca08941682a4292e286b25b435e7d5120b7a782cf",
+      "tests/unit-appearance.js": "760362156169445cfaa5b51c7b7deddbd2375b801bf8e316f85e8a212d147f79",
+      "tests/unit-bitget-history.js": "4bf55668ec6710045a802b0822e6dab04c83ff435123db7bf03b7ba8b99494f0",
+      "tests/unit-bitget-patterns.js": "f0f9e663b2907e4972c284a5a03ff67b6862e022e6fd496f3662dbce7f23ac84",
+      "tests/unit-bitget.js": "c552cb8794eabc374cc49d4c3d0eedcc56f8e922d7358868c8b2d2d3343c6c1e",
+      "tests/unit-bot-limits.js": "cfb8f7ec7c88de64ca77dce6c55667a5983efa26bc2d1088bc0de5f0ac9201b4",
+      "tests/unit-bot-simulation.js": "fce0e1ecf2d2234521e403397556f8cc43bbba3d9bcf2cb7b0fa85487520d9e7",
+      "tests/unit-cd.js": "b9b541db7ded250a473d259811f4b3c2c0a23d727e140b1fefb28fd71cf34ad8",
+      "tests/unit-chart-detail.js": "3f058f419fb560d91d3cc1a21e621289c37d9f6f2c323ce99c3f416e042ab0eb",
+      "tests/unit-chart-pattern-chips.js": "0af52e4deaf027107b7cf2fa533afb0b4a177407c8b7227c2dabc3c014652c83",
+      "tests/unit-chart-pattern-overview-feed.js": "569c0b10b9babc26865f6d594ed8985ae6aa16d4cab225b78365af34c254cf8a",
+      "tests/unit-chart-pattern-quality.js": "30d1d660ebda4be62521b308a45a1ea28b4277daf8755f927afa4dea25df543d",
+      "tests/unit-cn-app.js": "b15101fc9d1044cb25775b67b92360c5f5b7a00a9365b98548049a69e3e44ae9",
+      "tests/unit-cn.js": "644340fc18ec264cc2c7c1dcad26498d4cbb9dde211511cbea25f95258e58ec7",
+      "tests/unit-confluence-costs.js": "85db23bd077d383ab5313ca4c72f6563e823abb2e0ddb4a854eafd061edc7e9d",
+      "tests/unit-confluence-evidence.js": "9800a5d73388ba58b28f21e127b5f8244f901dc3c26bd67518ca4b964df208ac",
+      "tests/unit-confluence-live.js": "3cb50e6ef86a9f5a030e42e9e1236a7de3c57bbf1f6c257488da22c38adb6fcd",
+      "tests/unit-confluence-presentation.js": "ccccfe9c4d9de0bda366e7f55bf7ae7e39385613db7a2dd91c8a64cd66ee7c6c",
+      "tests/unit-confluence-replay.js": "223f0556c2fd101fa1b21e9a41a7d580eb0707a5286172ba98673aaba8198b3c",
+      "tests/unit-confluence-risk.js": "03a459501d8477991f5543020b8ee9a9fb610c9c039aa4cf4888fcb49c7e3875",
+      "tests/unit-confluence-service.js": "fd72f8bbc8edc12f96c27fa0ebd408c94a7d2f9398bb3a517f2402d4f84c9e02",
+      "tests/unit-confluence.js": "f9b10af0bcc1c27271ac5aa26c3de53d85f8c0a2a9e9e92478f0cf4bbb5a0aba",
+      "tests/unit-div.js": "25107a0d15772a8b22f540aeb180e47c73443f4905129f294e6a510b2d39445a",
+      "tests/unit-ec.js": "90bbf9e601a6ce82b2d4d1abb817ced03285091db5c3ab1d077b18ec872d67a1",
+      "tests/unit-ew.js": "b4e1f1910b988131f6671a7da68c36f9b593ab0872d6a060d99ef80d56518bea",
+      "tests/unit-fib.js": "40cc24b3a17ec43b8e7001f9410e0dbd63c3c6d4157c209a194663f668ec8bd8",
+      "tests/unit-fmt.js": "02c28759f00e59aa4ac19db7a8170b9c7a252804a8d2a09d0312457a72279cbe",
+      "tests/unit-github-sync.js": "341443ada84b718127652835ea56668906282913dfc406070d2426ca485e5b2a",
+      "tests/unit-hl.js": "d8f4d7d4a83a9cf77b9d57e9aa1be4314cd6cc9b8631609382563336df47e5df",
+      "tests/unit-lots.js": "6076791273c77c93c8182437651a8aef1501166aad02989f37db798fee7b72a4",
+      "tests/unit-m8.js": "18e72a3f0361d4a4456b4afd6f897d706645b6af3fce2cea9acfae2a20ddce47",
+      "tests/unit-market-intervals.js": "8dfa1d90e161dcece1da4cf7bc12debb0a7920c025069f3a4033a5c4c003bff7",
+      "tests/unit-model-archive.js": "48a4afd822babf0645b8f9b2cc1c579045e5496db893ebb9a82305d579729ce2",
+      "tests/unit-muster-bot.js": "9acf43361b31ecebfa6eca885f280ccc294c21c3673567c0ddfe3ab4466742fe",
+      "tests/unit-muster-feed.js": "9ecf5a84cd2db73f6dd84fffa8038223c76f0d8bdc20b80c4d63236bc9df1572",
+      "tests/unit-muster-paper.js": "34ad03246baac38b274b3a5d6dba9646f656f896227cdd2b82d19c092784e83e",
+      "tests/unit-ob.js": "4f7ce9ac07e5b1e18fc81f52fea064beb40502c4a8b3f5f25f98cfabb79643ce",
+      "tests/unit-orderflow-demo.js": "029c2b9758eb8565680f06797ce68d863375ce9e03c5f11cb7eaec323e9fd5ed",
+      "tests/unit-orderflow-explainer.js": "4ba822b9b9befac455d743234508c30a4ab496b16042645a50c9ce362448e7b2",
+      "tests/unit-orderflow-feed.js": "7e6801964034767068fc0cd0e24fb473d7caaded5747af2ee027f89f043da6b1",
+      "tests/unit-orderflow-journal.js": "668f73ea7149a887ea815cbc1b90458c101972f8207a1209dd3e619a74b7b78f",
+      "tests/unit-orderflow-signal.js": "37fc459fb2eaa7b1c00acd1044cd718d97553c39de946bc4657f8c2aa687f8d3",
+      "tests/unit-orderflow.js": "113dcf2a64b7393088b4ea7eae57c9edb40e33cc973f6b93821649e1932a85d1",
+      "tests/unit-paper-bot.js": "b60f0d221c8527230ddc3696ea7daa3aa426d67b477386ac97d71fcd0fde6276",
+      "tests/unit-paper-controller.js": "7b11ee2b9e6030e7afdf500c3678ac23a15f2e98330188d12ce48c8dd8980c09",
+      "tests/unit-paper-worker.js": "f3ff861ec0e1c7032bc31c816eef79575e7966bbc0e60ea7b1cc422adf52c2b0",
+      "tests/unit-pattern-projection.js": "d9941ceffcafc98cdeabcee640aba56fc107b0802b3caa35c90809aaacd8ba0d",
+      "tests/unit-patterns-only.js": "6eb1a08d00b83d0b90a570bc20d412f4c1c08231bc7c86c8bec2187c76b995b9",
+      "tests/unit-po3-service.js": "33228cd27746898a6659879043d3e27a77a110cb8145873fd4fd48db30fe9e96",
+      "tests/unit-po3-stream.js": "869af55d6032f10c56a4505a3339c8d3da1fc45950816e3e6f04e6f50bdc7b7c",
+      "tests/unit-po3.js": "be50e0a2486985b44164a0619ce05c9e784c4a024accc71429ac17f3a56b6047",
+      "tests/unit-pub.js": "80fa9569123b2a38065c4ce6fbc88cc721624ebfe87af343fbffd1cd7fdbf75c",
+      "tests/unit-pulse.js": "4087c958f963ab376cd11d2c48a98bb04a8b31f1670552be1620ae8f0cf94bc8",
+      "tests/unit-release.js": "cd30fdc3f71438525cd65cbdb80a7110602715cf12cbdcf0b6a33e1cb034c21e",
+      "tests/unit-signal-overview.js": "078c44ed0e834c7d416de0da5d5c7676f421ea477ded5654bd21c1c5e8923e93",
+      "tests/unit-telegram-format.js": "7a0321eb9172d915fe19c7c8c9e4e1b71941f20616bc601c0f1ed517db9d7f96",
+      "tests/unit-vola.js": "8860a97cb6a1f6e7c5f5994f4ab1ac03bba6b58adc3d7b47f9552a1f9c46f608",
+      "tests/unit-wl.js": "03b3ada69d47e9bca2fc54c03b4e3999fb2ff2652cc31f4b3e89b4b255a19c11",
+      "tests/unit-zz.js": "863f8e289d98e098d4b6fb9dc569c7d69ced29a46a426f153d5d512837ed7ee1",
+      "tests/unit-zzp.js": "2442d7e216787f83d9c420ceda47bb6163da68c9b3ec5bf6b427ca9146e751c0",
+      "tests/visual.js": "dae283f62ac8252440a2865f70ab8165debc7bffb67a2db360241470dd3595a8"
+    }
+  },
+  "marketFixtureTestCommit": "48997721a8a1c353a89b627fbea10073fa33d910",
+  "functionalFailedFollowupObservation": {
+    "result": {
+      "target": "functional",
+      "exit": 1,
+      "counts": [
+        "33",
+        "35"
+      ],
+      "failed": [
+        "  ✗ Verpasster Alarm wird nach dem Laden erkannt",
+        "  ✗ Liste: nachträglich erkannt"
+      ],
+      "seconds": 107.2
+    },
+    "observationSource": "Nach Fehler aus dem Log gelesene Tool-Ausgabe; ursprünglicher Dateipfad beim Nachlauf wiederverwendet, daher hier als Beobachtung statt unverändertes Rohlog ausgewiesen.",
+    "capturedLogExcerpt": "▶ catchup\n  ✗ Verpasster Alarm wird nach dem Laden erkannt\n  ✗ Liste: nachträglich erkannt\n  ✓ keine Fehler\n\n33/35 bestanden\n"
+  },
+  "minuteBoundaryReplay": {
+    "cold": {
+      "warm": false,
+      "spikeMinute": "2026-10-12T06:43:00.000Z",
+      "high": 70.21152255877784,
+      "detectable": false,
+      "rows": [
+        {
+          "time": "2026-10-12T06:41:00.000Z",
+          "high": 70.1727483311986
+        },
+        {
+          "time": "2026-10-12T06:42:00.000Z",
+          "high": 70.14533612810305
+        },
+        {
+          "time": "2026-10-12T06:43:00.000Z",
+          "high": 70.21152255877784
+        },
+        {
+          "time": "2026-10-12T06:44:00.000Z",
+          "high": 70
+        }
+      ]
+    },
+    "warm": {
+      "warm": true,
+      "spikeMinute": "2026-10-12T06:43:00.000Z",
+      "high": 71.5,
+      "detectable": true,
+      "rows": [
+        {
+          "time": "2026-10-12T06:41:00.000Z",
+          "high": 70.14533612810305
+        },
+        {
+          "time": "2026-10-12T06:42:00.000Z",
+          "high": 70.21152255877784
+        },
+        {
+          "time": "2026-10-12T06:43:00.000Z",
+          "high": 71.5
+        },
+        {
+          "time": "2026-10-12T06:44:00.000Z",
+          "high": 70
+        }
+      ]
+    }
+  },
+  "nativeForcedMinuteBoundary": "▶ catchup\n[fixture] Spitze 2026-10-12T06:49:20.010Z\n[fixture] erster Appstart 2026-10-12T06:50:00.113Z\n  ✓ Verpasster Alarm wird nach dem Laden erkannt — 🔔 LTC auf/über 71,0000 um 06:49 erreicht, während die Seite nicht aktiv war · Kurs 70,0000 – TestOK\n  ✓ Liste: nachträglich erkannt\n  ✓ keine Fehler\n\n3/3 bestanden\n"
+}
