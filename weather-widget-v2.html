@@ -2104,6 +2104,18 @@ html[data-presentation=dashboard][data-layout=tablet] #acct{order:0}
 @media(max-width:600px){.bot-view .bot-grid,.bot-view .bot-limits,.bot-view .bot-run-facts{grid-template-columns:minmax(0,1fr)}.bot-view .bot-group,.bot-view .bot-run-card{padding:10px}.bot-view .bot-actions>.button{flex-basis:100%}}
 
 
+/* Kurze Oberfläche, vollständige Erklärungen nach Antippen. */
+.explain-fold{margin:8px 0;border:1px solid var(--border);border-radius:10px;min-width:0;background:var(--surface-2)}
+.explain-fold>summary{display:flex;align-items:center;gap:8px;min-height:44px;padding:9px 12px;list-style:none;cursor:pointer;font-size:.8125rem;font-weight:600;color:var(--text-2)}
+.explain-fold>summary::-webkit-details-marker{display:none}.explain-fold>summary::after{content:"＋";margin-left:auto;color:var(--muted)}.explain-fold[open]>summary::after{content:"−"}
+.explain-fold>.explain-body{padding:0 12px 12px;overflow-wrap:anywhere;line-height:1.5}.tip-body .explain-fold{background:transparent}.explain-fold p{margin:6px 0}
+.crypto-calendar{margin:12px 14px 14px;border:1px solid var(--border);border-radius:12px;min-width:0;background:var(--surface-2)}
+.crypto-calendar>summary{padding:10px 12px;min-height:48px;cursor:pointer;font-size:.875rem;font-weight:600}.crypto-calendar-content{padding:0 12px 12px;display:grid;gap:10px}
+.crypto-calendar-tools{display:flex;flex-wrap:wrap;align-items:end;gap:8px}.crypto-calendar-tools label{font-size:.75rem;min-width:0;flex:1 1 120px}.crypto-calendar-tools select{display:block;width:100%;min-height:44px}.crypto-calendar-tools button{min-height:44px}
+.crypto-event{display:grid;gap:5px;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;min-width:0;overflow-wrap:anywhere;font-size:.8125rem}
+.crypto-event time{color:var(--muted)}.crypto-event strong{font-size:.875rem}.crypto-event-meta{display:flex;gap:6px;flex-wrap:wrap;align-items:center;color:var(--muted)}.crypto-event a{display:inline-flex;align-items:center;min-height:44px;color:var(--up-text);font-weight:600}
+.crypto-calendar-note{font-size:.75rem;color:var(--muted);line-height:1.5;overflow-wrap:anywhere}.crypto-calendar-note.err{color:var(--warn-text)}
+
 /* Arbeitsbereiche: Standard auf Handys, Dashboard auf PC/iPad. */
 .workspace-nav{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:12px 24px;border-bottom:1px solid var(--border);background:var(--surface);position:static}
 .workspace-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;flex:1 1 440px;max-width:680px}
@@ -2264,6 +2276,7 @@ import { PATTERN_QUALITY_CONFIG, chartPatternQuality, repricePatternQuality, sor
 import { createPatternOverviewFeed } from './bundles/3.65.0/shared/chart-pattern-overview-feed.mjs';
 // Arbeitsstand: bei der gemeinsamen Release-Freigabe in das neue Versionsbündel übernehmen.
 import { createPositioningFeed } from './shared/positioning-score.mjs';
+import { CRYPTO_CALENDAR, parseCryptoCalendar, cryptoCalendarEvents } from './shared/crypto-calendar.mjs';
 import { createMusterClient } from './bundles/3.65.0/shared/muster-bot-feed.mjs';
 import { createMusterPaper } from './bundles/3.65.0/shared/muster-bot-paper.mjs';
 import { readMusterPaper, writeMusterPaper } from './bundles/3.65.0/shared/muster-bot-store.mjs';
@@ -7541,7 +7554,8 @@ function onTick(now) {
   status(); updateTitle(); // Tab-Titel spätestens jede Sekunde aktuell, auch im Hintergrund-Tab
   if (titleNeedsPoll(now)) void pollTitlePrices(now);
   whaleTick(); lastTagTick(); // 3.3: Countdown am Kurs-Schild, auch ohne Neuzeichnen
-  econTick(); // 4.1: Wirtschaftskalender abrufen, Warnung vor Terminen
+  econTick();
+  cryptoCalendarTick(); // Öffentlicher Krypto-Kalender: eigener, passiver Verbraucher.
   cnewsTick(); // 3.20: wichtige News und Termine zum geöffneten Coin
   wlTick(now); // 4.2: Mini-Watchlist laden und malen
   volaTick(now); // 4.3: Volatilität nach Uhrzeit, Warnung bei erhöhter Volatilität
@@ -11086,7 +11100,7 @@ function cnewsTick() {
 // ---------- Vorauswahl (Mini-Watchlist): Live-Kacheln mit der Tendenz eines wählbaren Zeitraums ----------
 // Je Coin der Vorauswahl: Live-Kurs, Veränderung und Verlauf über den Zeitraum und die Tendenz – dieselben vier Regeln wie die
 // Signal-Übersicht (Trend, Kurs, RSI, MACD) auf abgeschlossenen Kerzen, −4 bis +4.
-// 3.25.0: Die Bewertung läuft über einen wählbaren Zeitraum, Standard die letzte Stunde: 5-Minuten-Kerzen (12 im Zeitraum) mit
+// Die Bewertung läuft über einen wählbaren Zeitraum, Standard der letzte Tag: 2-Stunden-Kerzen (12 im Zeitraum) mit
 // Vorlauf, damit EMA 50 und MACD eingeschwungen sind (260 geladen, die letzten 199 gerechnet). Neu gerechnet wird bei jedem Schluss
 // einer Kerze, der Kurs läuft über die laufende Kerze live weiter. Die Zeitraum-Knöpfe des Charts ändern daran nichts. Zeiträume
 // (je etwa 12 Kerzen): 1 Minute (1m-Kerzen, wie bis 3.24.0), 30 Minuten (3m), 1 Stunde (5m), 4 Stunden (15m), 1 Tag (2h).
@@ -11106,10 +11120,13 @@ function wlSpans() {
     '1d': { iv: '2h', n: 12, ms: 864e5, label: '1 Tag', of: 'des letzten Tages', the: 'den letzten Tag', name: '1 Tag', ivName: '2-Stunden' }
   });
 }
-function wlSpanKey() { const v = store.get(WL_SPAN_KEY); return wlSpans()[v] ? v : '1h'; }
+// Ein einziger Standardwert, auch für frühe Aufrufe vor der Initialisierung.
+// '4h' wäre 4 Stunden mit 15m-Kerzen; '1d' ist 1 Tag mit 2h-Kerzen.
+function wlDefaultSpan() { return '1d'; }
+function wlSpanKey() { const v = store.get(WL_SPAN_KEY); return wlSpans()[v] ? v : wlDefaultSpan(); }
 var wl = { c: new Map(), vis: true, loadAt: 0, span: '' };
-// gewählter Zeitraum – beim ersten Zugriff aus dem Speicher (Standard: 1 Stunde)
-function wlSpan() { if (wl && !wl.span) wl.span = wlSpanKey(); const T = wlSpans(); return T[wl?.span] || T['1h']; }
+// Gewählter Zeitraum: gespeicherte manuelle Auswahl bleibt erhalten, sonst 1 Tag.
+function wlSpan() { if (wl && !wl.span) wl.span = wlSpanKey(); const T = wlSpans(); return T[wl?.span] || T[wlDefaultSpan()]; }
 var wlSym = coin => `${coin}USDT`;
 // Zeitraum wechseln (Auswahl im Detailfeld): gespeichert; alle Reihen im neuen Kerzen-Intervall neu laden, Streams umstellen
 function wlSetSpan(k) {
@@ -15326,6 +15343,83 @@ function musterDraw(svg, data, x, y, bottom) {
 }
 window.__muster = { view: musterView, paper: musterPaper, selection: musterSelection };
 workspaceBuild();
+
+// Lange Erläuterungen bleiben vollständig am selben DOM-Knoten erhalten.
+// Aktuelle Werte, Datenfehler und Schutzwarnungen werden nicht eingeklappt.
+function explanationFold(nodes, title, id) {
+  const list = nodes.filter(Boolean); if (!list.length) return null;
+  const fold = el('details', 'explain-fold'), summary = el('summary', '', 'ⓘ ' + title), body = el('div', 'explain-body');
+  fold.id = id; fold.append(summary, body); list[0].before(fold); for (const node of list) body.append(node); return fold;
+}
+explanationFold([document.querySelector('#div-tip .div-honest')], 'Backtest & Grenzen', 'div-backtest-info');
+explanationFold([...document.querySelectorAll('#fs-tip .tip-body > p')].filter(p => /^Ehrlich:/.test(p.textContent)), 'Backtest & Grenzen', 'fib-backtest-info');
+explanationFold([$('ki-overview-note')], 'Modellhinweise', 'ki-overview-info');
+explanationFold([document.querySelector('.pnl-note')], 'Gewinn-/Verlust-Alarme erklärt', 'pnl-explanation');
+explanationFold([$('feed-note')], 'Datenstrom erklärt', 'feed-explanation');
+explanationFold([$('rec-note')], 'Sprung-Rekorder erklärt', 'rec-explanation');
+
+// Kostenfreier Kalenderauszug über den öffentlichen GitHub-Datenzweig.
+// Tages-/Zeitraumangaben sind keine exakten Uhrzeiten: keine Termin-Alarme,
+// Telegram-Nachrichten oder Eingaben für KI/Trading-Bots aus diesem Verbraucher.
+var cryptoCal;
+const CRYPTO_CAL_KEY = 'scalpdesk.idb.crypto-calendar', CRYPTO_CAL_URL = 'https://raw.githubusercontent.com/NicoAHB/wx-widget/krypto-kalender/crypto-calendar.json';
+function cryptoCalendarPaint() {
+  if (!cryptoCal) return;
+  const now = Date.now(), rows = cryptoCalendarEvents(cryptoCal.data, { mode: cryptoCal.scope.value, coin: state.symbol, watch: state.watch }, now), show = cryptoCal.more ? rows : rows.slice(0, 3);
+  const sig = JSON.stringify([show, cryptoCal.more, cryptoCal.error, cryptoCal.data?.fetchedAt, state.symbol, state.watch, Math.floor(now / 60000)]);
+  if (sig === cryptoCal.signature) return; cryptoCal.signature = sig;
+  const date = t => new Date(t).toLocaleDateString('de-DE', { timeZone: 'UTC', day: '2-digit', month: '2-digit', year: 'numeric' });
+  const nodes = show.map(e => {
+    const card = el('article', 'crypto-event'), when = el('time', '', e.t === e.end ? date(e.t) + ' · Uhrzeit offen' : date(e.t) + ' – ' + date(e.end) + ' · Zeitraum'); when.dateTime = new Date(e.t).toISOString().slice(0, 10);
+    const meta = el('div', 'crypto-event-meta', e.coins.join(' · ') + (e.category ? ' · ' + e.category : ''));
+    const link = el('a', '', 'Quelle ansehen ↗'); link.href = e.url; link.target = '_blank'; link.rel = 'noopener noreferrer';
+    card.append(when, el('strong', '', e.title), meta, link); return card;
+  });
+  if (!nodes.length) nodes.push(el('p', 'crypto-calendar-note', cryptoCal.data ? 'Keine kommenden Krypto-Termine für diesen Filter im geladenen Auszug.' : cryptoCal.error || 'Auszug wird beim Aufklappen geladen.'));
+  cryptoCal.list.replaceChildren(...nodes);
+  cryptoCal.moreButton.hidden = rows.length <= 3; cryptoCal.moreButton.textContent = cryptoCal.more ? 'Weniger anzeigen' : `Alle ${rows.length} Termine`;
+  const at = cryptoCal.data?.fetchedAt, stale = !!at && now - at > CRYPTO_CALENDAR.staleMs;
+  cryptoCal.status.textContent = at ? `CoinMarketCal · öffentlicher Auszug · Stand ${new Date(at).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' })}${stale ? ' · veraltet' : ''}${cryptoCal.error ? ' · ' + cryptoCal.error : ''}` : cryptoCal.error || 'Kostenfrei · kein API-Schlüssel nötig';
+  cryptoCal.status.classList.toggle('err', stale || !!cryptoCal.error);
+}
+async function cryptoCalendarFetch() {
+  if (!cryptoCal || cryptoCal.busy) return;
+  cryptoCal.busy = true; cryptoCal.refresh.disabled = true;
+  const controller = new AbortController(), timeout = setTimeout(() => controller.abort(), 15000);
+  try {
+    const response = await fetch(CRYPTO_CAL_URL, { cache: 'no-store', credentials: 'omit', referrerPolicy: 'no-referrer', signal: controller.signal });
+    if (!response.ok) throw new Error(response.status === 404 ? 'Krypto-Auszug noch nicht veröffentlicht; Kalenderjob prüfen.' : `Krypto-Kalender nicht erreichbar (${response.status}).`);
+    const data = await response.json(), parsed = parseCryptoCalendar(data);
+    cryptoCal.data = parsed; cryptoCal.at = Date.now(); cryptoCal.error = ''; cryptoCal.retryAt = 0;
+    store.set(CRYPTO_CAL_KEY, { at: cryptoCal.at, data });
+  } catch (error) {
+    cryptoCal.error = controller.signal.aborted ? 'Kalenderabruf zu langsam; später erneut versuchen.' : error instanceof TypeError ? 'Kalender offline oder nicht erreichbar; letzter Stand bleibt.' : error.message;
+    cryptoCal.retryAt = Date.now() + CRYPTO_CALENDAR.retryMs;
+  } finally { clearTimeout(timeout); cryptoCal.busy = false; cryptoCal.refresh.disabled = false; cryptoCal.signature = ''; cryptoCalendarPaint(); }
+}
+function cryptoCalendarTick() {
+  if (!cryptoCal || !cryptoCal.root.open || document.hidden || state.paused || !cryptoCal.root.getBoundingClientRect().height) return;
+  const now = Date.now();
+  if (!cryptoCal.busy && now >= cryptoCal.retryAt && (!cryptoCal.at || now - cryptoCal.at >= CRYPTO_CALENDAR.refreshMs)) void cryptoCalendarFetch();
+  calmDo(cryptoCalendarPaint);
+}
+function cryptoCalendarBuild() {
+  const root = el('details', 'crypto-calendar'); root.id = 'crypto-calendar'; root.append(el('summary', '', 'Krypto-Termine · kostenfrei'));
+  const body = el('div', 'crypto-calendar-content'), tools = el('div', 'crypto-calendar-tools'), label = el('label', '', 'Termine für'), scope = el('select'); scope.id = 'crypto-calendar-scope';
+  for (const [value, title] of [['all', 'Alle Coins'], ['watch', 'Meine Vorauswahl'], ['coin', 'Geöffneter Coin']]) { const option = el('option', '', title); option.value = value; scope.append(option); } label.append(scope);
+  const refresh = btn('button ghost', 'Aktualisieren'); refresh.id = 'crypto-calendar-refresh'; tools.append(label, refresh);
+  const list = el('div'); list.id = 'crypto-calendar-list'; const status = el('p', 'crypto-calendar-note'); status.id = 'crypto-calendar-status'; status.setAttribute('role', 'status');
+  const moreButton = btn('button ghost', 'Mehr anzeigen'); moreButton.id = 'crypto-calendar-more'; moreButton.hidden = true;
+  const note = el('p', 'crypto-calendar-note', 'Datum/Zeitraum aus einem öffentlichen Auszug. Termine können fehlen oder verschoben werden; Quelle prüfen. Keine Kursprognose. Ohne bestätigte Uhrzeit keine automatischen Terminwarnungen.');
+  body.append(tools, list, moreButton, status, note); root.append(body); $('econ').append(root);
+  cryptoCal = { root, scope, refresh, list, status, moreButton, data: null, at: 0, error: '', busy: false, retryAt: 0, more: false, signature: '' };
+  try { const cached = store.get(CRYPTO_CAL_KEY); if (cached?.data) { cryptoCal.data = parseCryptoCalendar(cached.data); cryptoCal.at = Number(cached.at) || 0; } } catch { /* kaputter öffentlicher Cache wird neu geladen */ }
+  refresh.addEventListener('click', () => void cryptoCalendarFetch()); root.addEventListener('toggle', () => { if (root.open) { cryptoCalendarPaint(); cryptoCalendarTick(); } });
+  scope.addEventListener('change', () => { cryptoCal.more = false; cryptoCal.signature = ''; cryptoCalendarPaint(); }); moreButton.addEventListener('click', () => { cryptoCal.more = !cryptoCal.more; cryptoCalendarPaint(); });
+  explanationFold([note], 'Quelle & Grenzen', 'crypto-calendar-info'); cryptoCalendarPaint();
+}
+cryptoCalendarBuild();
+window.__cryptoCalendar = { tick: cryptoCalendarTick, fetch: cryptoCalendarFetch, paint: cryptoCalendarPaint, get state() { return cryptoCal; } };
 // Privater GitHub-Sync nutzt denselben geprüften persönlichen Import, mit zusätzlicher lokaler Notfallkopie.
 const GH_EMERGENCY_KEY = 'scalpdesk.github-emergency.v1';
 const GH_PREF_KEYS = [...new Set([...PREF_KEYS, 'scalpdesk.chart-interval.v1', WORKSPACE_KEY, LAYOUT_KEY, OVHIDE_KEY, DEC_RANK_KEY, DEC_SPOT_KEY, KI_CFG_KEY, PO3_CFG_KEY, PAPER_PREF_KEY, 'scalpdesk.muster.settings.v1', PK_KEY, PK_Q])];

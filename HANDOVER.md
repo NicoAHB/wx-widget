@@ -3,7 +3,18 @@
 Diese Datei ist der Einstieg für jede weitere Arbeit am Projekt. Wer sie liest, braucht kein Vorwissen. Die vollständige fachliche
 Vorgabe aller Gruppen G01–G14 steht in `docs/VORGABE-G01-G14.md` (Original-Übergabe; dort sind G10–G14 ausführlich beschrieben).
 
-## Aktueller lokaler Arbeitsstand – Geräteansichten (noch nicht veröffentlicht)
+## Aktueller Arbeitsstand – gemeinsame Veröffentlichung 3.66.0 vorbereiten
+
+Neuer Nutzerauftrag: Erklärungen standardmäßig einklappen, ruhigere Vorauswahl und kostenfreier Krypto-Kalender ohne API-Schlüssel. **Der Nutzer hat jetzt ausdrücklich Prüfung und Online-Veröffentlichung autorisiert.** Die bisherige Warteanweisung ist damit für den gesamten lokalen Arbeitsstand aufgehoben; Positionierungs-Score und Geräteansichten werden gemeinsam ausgeliefert. Branch `codex/positionierungs-score`.
+
+- **Fertig:** sechs gezielte native Erklärungsfalten, historische Texte unverändert, aktuelle Werte/Fehler/Schutzwarnungen nicht verborgen. Tagesstandard `wlDefaultSpan() → '1d'`, bestehende Zuordnung 12 × 2h, gültige manuelle Präferenz bleibt. Neue Standardwahl auch im Oracle-Export; eine bestehende VM-Konfiguration muss bewusst erneut übernommen werden.
+- **Fertig:** `shared/crypto-calendar.mjs`, öffentliche CoinMarketCal-Seite ohne API-Schlüssel statt kostenpflichtiger API. Strikte JSON-Auswertung ohne Ausführung fremden Website-Codes; nur konkrete Tages-/Zeitraumangaben, keine erfundenen Stunden oder Termine. Eigener GitHub-Datenzweig/3h-Workflow, kompakte native Kalenderfläche unter Analysen, drei Filter, Quellenlinks, 30-Minuten-Cache/Teilfehler und Wiederherstellung. Keine neuen Telegram-, Score-, Bot- oder Order-Regeln. Echte anonyme Quelle geprüft: 13 gültige laufende/kommende Termine; CoinPaprika-Events wegen überwiegend veralteter Angaben nicht verwendet.
+- **Gezielte Prüfung:** echter Vorauswahlcode aus HTML 64/64, Kalenderkern/Aktualisierer 31/31, neue native Oberfläche abschließend 27/27. Erst-WL 62/64: zwei explizite 5m-Testfälle noch ohne manuelle Stundenwahl; diese Fälle wählen jetzt ihre bestehende Stunde ausdrücklich. M97 zweimal 26/27: alte Annahme, alle Erläuterungen seien bereits beim Start textlich gefüllt; KI-Modellhinweis entsteht erst beim Öffnen. Test prüft initial geschlossene Falten und nach Öffnen vollständige dynamische Inhalte, keine Produktänderung für diesen Befund. Lint 0 Fehler/3 bekannte Warnungen.
+- Ältere isolierte Widgettests erhalten im Test-Gerüst ausdrücklich eine manuelle Stunde, um vorhandene 5m-Fälle weiter zu prüfen; frische Defaults werden nativ in M97 geprüft. Das Produkt hat keine Testschalter. Zwei neue Gesamtlaufziele registriert (171 insgesamt). **Offen:** neues Versionsbündel, vollständige serielle Abnahme, PR/Pages und tatsächlicher öffentlicher Kalenderjob; anschließend öffentliche Hash-/Datenprüfung. Keine Veröffentlichung vor erfolgreichem Abschluss der erforderlichen Prüfungen.
+
+[Änderungen, genaue Standardzeile, Oracle-Übernahme und Kurztest](docs/UEBERSICHT-KALENDER-VORAUSWAHL.md).
+
+## Vorausgehender lokaler Arbeitsstand – Geräteansichten (noch nicht veröffentlicht)
 
 Weiterer Nutzerauftrag auf `codex/positionierungs-score`: **Handy → Arbeitsbereich Standard; PC/iPad → Arbeitsbereich Dashboard; übrige Ansichten entfernen.** Die vorausgehende Regel bleibt gültig: weitere Aufgaben folgen, **kein Gesamtlauf und keine Veröffentlichung**, bis der Nutzer diese ausdrücklich anfordert. Positionierungs-Score bleibt Teil desselben unveröffentlichten Arbeitsstands.
 

@@ -30,7 +30,7 @@ async function launch(opts = {}) {
   const browser = await chromium.launch({ headless: true, args: ['--no-proxy-server', '--host-resolver-rules=MAP *.binance.com 127.0.0.1, MAP *.binance.vision 127.0.0.1, MAP data-api.binance.vision 127.0.0.1, MAP api.telegram.org 127.0.0.1, MAP discord.com 127.0.0.1, MAP raw.githubusercontent.com 127.0.0.1, MAP api.coingecko.com 127.0.0.1, MAP api.coinpaprika.com 127.0.0.1, MAP api.coinlore.net 127.0.0.1', '--ignore-certificate-errors', ...(opts.args || [])] });
   if (opts.workspace !== 'fresh') {
     const createContext = browser.newContext.bind(browser);
-    browser.newContext = async (...args) => { const ctx = await createContext(...args); await ctx.addInitScript(legacyWidgetFixture); return ctx; };
+    browser.newContext = async (...args) => { const ctx = await createContext(...args); if (opts.watch !== 'fresh') await ctx.addInitScript(() => { try { if (!localStorage.getItem('scalpdesk.wlspan.v1')) localStorage.setItem('scalpdesk.wlspan.v1', '"1h"'); } catch {} }); await ctx.addInitScript(legacyWidgetFixture); return ctx; };
   }
   return browser;
 }

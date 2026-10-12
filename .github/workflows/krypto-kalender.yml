@@ -1,0 +1,50 @@
+name: Krypto-Kalender
+on:
+  schedule:
+    - cron: '29 */3 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/krypto-kalender.yml', '.github/kalender/crypto.mjs', 'shared/crypto-calendar.mjs']
+permissions:
+  contents: write
+concurrency:
+  group: krypto-kalender
+  cancel-in-progress: false
+jobs:
+  kalender:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            .github/kalender
+            shared
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Öffentlichen Kalender ohne Schlüssel lesen
+        id: collect
+        run: |
+          if ! curl --fail --silent --show-error --max-time 30 --max-filesize 2097152 \
+              -A "ScalpDesk-Kalender (github.com/${GITHUB_REPOSITORY})" \
+              https://coinmarketcal.com/en/ -o public-calendar.html; then
+            echo "::warning::Öffentlicher Krypto-Kalender nicht erreichbar; letzter Stand bleibt."
+            echo "skip=1" >> "$GITHUB_OUTPUT"
+          elif ! node .github/kalender/crypto.mjs public-calendar.html > crypto-calendar.json; then
+            echo "::warning::Krypto-Kalenderformat geändert; letzter Stand bleibt."
+            echo "skip=1" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Auszug separat veröffentlichen
+        if: steps.collect.outputs.skip != '1'
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir out && cp crypto-calendar.json out/ && cd out
+          git init -q -b krypto-kalender
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add crypto-calendar.json
+          git commit -q -m "Krypto-Kalender $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push -q -f "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" krypto-kalender

@@ -1,0 +1,50 @@
+// Neue Bedienung: echte Arbeitsbereiche, tägliche Vorauswahl, passive Krypto-Termine.
+const h = require('./harness'); let pass = 0, fail = 0;
+const check = (name, ok, detail = '') => { ok ? pass++ : fail++; console.log(`${ok ? '✓' : '✗'} ${name}${!ok && detail ? ' ' + JSON.stringify(detail) : ''}`); };
+(async () => { let browser;
+  try {
+    await h.setup(); await h.ctl('/walk?on=0'); browser = await h.launch({ workspace: 'fresh' });
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, serviceWorkers: 'block', userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1' });
+    const page = await ctx.newPage(), errors = [], day = Math.floor(Date.now() / 86400000) * 86400000; page.on('pageerror', error => errors.push(error.message));
+    let requests = 0, responseMode = 'ok';
+    const data = { v: 1, fetchedAt: new Date().toISOString(), source: 'CoinMarketCal · öffentlicher Auszug', events: ['BTC', 'ETH', 'SOL', 'BTC'].map((coin, i) => ({ id: 'cmc-' + (i + 1), t: day + (i + 1) * 86400000, end: day + (i + 1) * 86400000, dayOnly: true, title: i === 3 ? '<img src=x onerror=alert(1)> Termin' : coin + '-Netzwerktermin', coins: [coin], category: 'Upgrade', url: 'https://coinmarketcal.com/event/test-' + i })) };
+    await ctx.route('https://raw.githubusercontent.com/NicoAHB/wx-widget/krypto-kalender/crypto-calendar.json', route => { requests++; return responseMode === 'fail' ? route.fulfill({ status: 503, body: 'nicht erreichbar' }) : responseMode === 'bad' ? route.fulfill({ json: { events: 'kaputt' } }) : route.fulfill({ json: data }); });
+    await page.goto(h.URL_BASE + '/weather-widget-v2.html'); await page.waitForFunction(() => window.__cryptoCalendar && __g05.state.candles.length > 100);
+    await page.waitForFunction(() => __g09.wl.c.size === __g05.state.watch.length && [...__g09.wl.c.values()].every(e => e.at && !e.loading));
+    check('Frisch ohne gespeicherte Vorauswahl: 1 Tag, echte 2h-Reihen', await page.evaluate(() => localStorage.getItem('scalpdesk.wlspan.v1') === null && [...__g09.wl.c.values()].every(e => e.iv === '2h') && [...document.querySelectorAll('#watchlist .wl-chg')].every(n => n.textContent.startsWith('1 Tag '))));
+    check('Chart-Intervall unverändert, eigener Vorauswahlstream 2h', await page.evaluate(() => __g05.state.interval === '1m') && (await h.ctl('/state')).conns.some(c => c.streams?.some(s => s.includes('@kline_2h'))));
+    check('Oracle-Export enthält genau die geladenen Märkte auf 2h und keine Zugangsdaten', await page.evaluate(() => { const p = __g09.patOracleExport(); return p.items.length === __g05.state.watch.length && p.items.every(x => x.iv === '2h') && !JSON.stringify(p).includes('token'); }));
+    check('Alle langen Erklärungen zunächst geschlossen; historische Originaltexte vollständig', await page.evaluate(() => ['div-backtest-info', 'fib-backtest-info', 'ki-overview-info', 'pnl-explanation', 'feed-explanation', 'rec-explanation'].every(id => !document.getElementById(id).open) && /48–51/.test(document.getElementById('div-backtest-info').textContent) && /27–31/.test(document.getElementById('fib-backtest-info').textContent)));
+    await page.click('[data-workspace-target="ind"]'); await page.click('#workspace-ki');
+    await page.click('#ki-overview-info > summary'); check('Modellhinweise nativ aufklappbar, dynamische Texte vollständig sichtbar', await page.locator('#ki-overview-info').evaluate(n => n.open) && await page.locator('#ki-overview-note').isVisible() && /Kandidaten.*Score ≠.*Archiv/s.test(await page.locator('#ki-overview-note').innerText()));
+    await page.click('#ki-overview-info > summary'); check('Modellhinweise wieder einklappbar, Status nicht in Erklärung versteckt', !await page.locator('#ki-overview-note').isVisible() && await page.locator('#ki-status').evaluate(n => !n.closest('.explain-fold')));
+    check('Geschlossener Krypto-Bereich startet keinen Abruf', requests === 0 && !await page.locator('#crypto-calendar').evaluate(n => n.open));
+    const books = await page.evaluate(() => JSON.stringify([__g05.state.positions, __g05.state.trades, __g05.state.alarms, __g12.view.state.confirmed])); const sent = (await h.ctl('/sent')).length;
+    await page.click('#crypto-calendar > summary'); await page.waitForFunction(() => __cryptoCalendar.state.data?.events.length === 4);
+    check('Kostenfreier Auszug beim Öffnen geladen, kompakte drei Karten', requests === 1 && await page.locator('.crypto-event').count() === 3 && /öffentlicher Auszug/.test(await page.locator('#crypto-calendar-status').innerText()));
+    check('Tagesangaben nennen keine erfundene Auslösestunde', (await page.locator('.crypto-event time').allTextContents()).every(x => /Uhrzeit offen/.test(x) && !/00:00/.test(x)));
+    check('Jede Karte verlinkt die konkrete Quelle sicher und mit großer Tippfläche', await page.locator('.crypto-event a').evaluateAll(nodes => nodes.every(n => n.href.startsWith('https://coinmarketcal.com/event/') && n.rel.includes('noopener') && n.getBoundingClientRect().height >= 44)));
+    await page.click('#crypto-calendar-more'); check('Mehr anzeigen erhält alle vier Originaltermine', await page.locator('.crypto-event').count() === 4);
+    check('Dynamischer HTML-Text wird nur als Text dargestellt', await page.locator('.crypto-event img').count() === 0 && (await page.locator('.crypto-event').last().innerText()).includes('<img src=x'));
+    await page.selectOption('#crypto-calendar-scope', 'watch'); check('Vorauswahlfilter korrekt, ohne neue Quellenabfrage', await page.locator('.crypto-event').count() === 2 && requests === 1);
+    await page.selectOption('#crypto-calendar-scope', 'coin'); check('Geöffneter BTC: nur BTC-Termine', await page.locator('.crypto-event').count() === 2 && (await page.locator('.crypto-event-meta').allTextContents()).every(x => x.startsWith('BTC')));
+    await page.evaluate(() => __intervals.setMarket('LTCUSDT', '1h')); await page.waitForFunction(() => __g05.state.loadedSymbol === 'LTCUSDT'); await page.evaluate(() => __cryptoCalendar.paint());
+    check('Coinwechsel ohne fremde Ersatztermine', await page.locator('.crypto-event').count() === 0 && /für diesen Filter/.test(await page.locator('#crypto-calendar-list').innerText()));
+    await page.selectOption('#crypto-calendar-scope', 'all');
+    for (const width of [320, 390, 768, 1440]) { await page.setViewportSize({ width, height: 900 }); await page.locator('#crypto-calendar').scrollIntoViewIfNeeded(); check(`${width}px: Kalender und Erklärung ohne Überlauf, Bedienelemente ≥44px`, await page.evaluate(() => { const d = document.getElementById('crypto-calendar'); return document.documentElement.scrollWidth <= innerWidth + 1 && [...d.querySelectorAll('select,button,a,summary')].filter(n => n.getClientRects().length).every(n => n.getBoundingClientRect().height >= 44 && n.getBoundingClientRect().right <= innerWidth + 1); })); }
+    await page.click('#crypto-calendar-info > summary'); check('Quellen-/Abdeckungsgrenzen hinter ⓘ vollständig erreichbar', await page.locator('#crypto-calendar-info').evaluate(n => n.open) && /Termine können fehlen/.test(await page.locator('#crypto-calendar-info').innerText()));
+    responseMode = 'fail'; await page.click('#crypto-calendar-refresh'); await page.waitForFunction(() => !__cryptoCalendar.state.busy && !!__cryptoCalendar.state.error);
+    check('API-Ausfall bleibt auf Kalender begrenzt, letzter Stand erhalten', await page.locator('.crypto-event').count() === 3 && /nicht erreichbar/.test(await page.locator('#crypto-calendar-status').innerText()) && await page.evaluate(() => !__g05.state.marketError));
+    responseMode = 'bad'; await page.click('#crypto-calendar-refresh'); await page.waitForFunction(() => !__cryptoCalendar.state.busy && /ungültig/.test(__cryptoCalendar.state.error));
+    check('Kaputte Quelle überschreibt keine gültigen Termine', await page.evaluate(() => __cryptoCalendar.state.data.events.length === 4));
+    responseMode = 'ok'; await page.click('#crypto-calendar-refresh'); await page.waitForFunction(() => !__cryptoCalendar.state.busy && !__cryptoCalendar.state.error);
+    const before = requests; await page.evaluate(() => { for (let i = 0; i < 40; i++) __cryptoCalendar.tick(); }); check('30-Minuten-Cache verhindert ständige Abrufe', requests === before);
+    check('Krypto-Termine ändern keine persönlichen Bücher, Bots oder Nachrichtenzahl', books === await page.evaluate(() => JSON.stringify([__g05.state.positions, __g05.state.trades, __g05.state.alarms, __g12.view.state.confirmed])) && sent === (await h.ctl('/sent')).length);
+    await page.reload(); await page.waitForFunction(() => !!window.__cryptoCalendar); check('Letzter öffentlicher Stand nach Neustart lokal verfügbar, Bereich standardmäßig zu', await page.evaluate(() => __cryptoCalendar.state.data?.events.length === 4 && !__cryptoCalendar.state.root.open));
+    check('Keine JavaScript-Laufzeitfehler', errors.length === 0, errors);
+    await ctx.close();
+    const manual = await browser.newContext({ serviceWorkers: 'block' }); await manual.addInitScript(() => localStorage.setItem('scalpdesk.wlspan.v1', '"4h"')); const other = await manual.newPage(); await other.goto(h.URL_BASE + '/weather-widget-v2.html'); await other.waitForFunction(() => window.__g09?.wl.c.size && [...__g09.wl.c.values()].every(e => e.at));
+    check('Ausdrücklich gespeicherte 4h-Auswahl bleibt 15m statt neuem Tagesstandard', await other.evaluate(() => [...__g09.wl.c.values()].every(e => e.iv === '15m'))); await manual.close();
+  } finally { await browser?.close(); await h.teardown(); }
+  console.log(`${pass}/${pass + fail} bestanden`); process.exitCode = fail ? 1 : 0;
+})().catch(error => { console.error(error); process.exitCode = 1; });

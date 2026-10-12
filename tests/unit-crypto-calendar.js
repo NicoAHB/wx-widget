@@ -1,0 +1,32 @@
+// Gemeinsamer Krypto-Kalenderkern und tatsächlicher öffentlicher Aktualisierer.
+let pass = 0, fail = 0;
+const check = (name, ok) => { ok ? pass++ : fail++; console.log(`${ok ? '✓' : '✗'} ${name}`); };
+const throws = fn => { try { fn(); return false; } catch { return true; } };
+(async () => {
+  const C = await import('../shared/crypto-calendar.mjs'), B = await import('../.github/kalender/crypto.mjs'), now = Date.UTC(2026, 9, 12, 12);
+  const event = (extra = {}) => ({ id: 1, slug: 'ethereum-upgrade-test', title: 'Ethereum-Upgrade', dateEvent: '2026-10-13T00:00:00.000Z', dateTypeSelected: 'date', displayDateType: 'exact', coins: [{ symbol: 'eth' }], categories: [{ name: 'Upgrade' }], ...extra });
+  const html = (rows, extra = []) => '<script>globalThis.CALENDAR_SCRIPT_MUST_NOT_RUN=true</script><script>self.__next_f.push(' + JSON.stringify([1, '7:' + JSON.stringify({ initialEvents: rows, initialOngoingEvents: extra })]) + ')</script>';
+  const source = html([event(), event({ id: 2, slug: 'bitcoin-etf-test', title: 'ETF-Prüfung', coins: [{ symbol: 'btc' }] })]);
+  check('Öffentliche eingebettete JSON-Liste gelesen, Website-Code nie ausgeführt', C.readPublicCryptoPage(source).length === 2 && !globalThis.CALENDAR_SCRIPT_MUST_NOT_RUN);
+  check('Leeres gültiges Kalenderformat von geänderter Seite unterschieden', C.readPublicCryptoPage(html([])).length === 0 && throws(() => C.readPublicCryptoPage('<html>kein Kalender</html>')));
+  check('Größenlimit und kaputte JSON-Daten abgewiesen', throws(() => C.readPublicCryptoPage('x'.repeat(2 * 1024 * 1024 + 1))) && throws(() => C.readPublicCryptoPage('<script>self.__next_f.push([1,"broken"])</script>')));
+  const file = B.buildCryptoCalendar(source, now), data = C.parseCryptoCalendar(file);
+  check('Aktualisierer und App identische zwei Termine, Datenstand und Quelle', data.events.length === 2 && data.fetchedAt === now && file.source.includes('öffentlicher Auszug'));
+  check('Nur echte Kalenderdaten, keinerlei API-Schlüssel erforderlich', Object.keys(file).join() === 'v,source,fetchedAt,page,coverage,events' && !JSON.stringify(file).includes('token'));
+  const one = C.normalizePublicCryptoEvents([event()], now)[0];
+  check('Coin in Großschrift, Datum als UTC-Tag und Uhrzeit ausdrücklich unbekannt', one.coins.join() === 'ETH' && one.t === Date.UTC(2026, 9, 13) && one.end === one.t && one.dayOnly === true);
+  check('Quelle führt zum konkreten öffentlichen Ereignis', one.url === 'https://coinmarketcal.com/event/ethereum-upgrade-test');
+  check('Doppelte IDs aus Haupt-/hervorgehobener Liste zählen einmal', C.normalizePublicCryptoEvents([event(), event()], now).length === 1);
+  for (const [name, change] of [['ungültiger Februartag', { dateEvent: '2026-02-30' }], ['Monat ohne konkreten Tag', { dateTypeSelected: 'month', displayDateType: 'month' }], ['Quartal', { dateTypeSelected: 'quarter' }], ['beendeter Termin', { dateEvent: '2026-10-11' }], ['zu fern', { dateEvent: '2028-02-01' }], ['kein Coin', { coins: [] }], ['Script im Slug', { slug: 'evil?<script>' }], ['ungültige ID', { id: false }], ['leerer Titel', { title: '' }], ['rückwärtiger Zeitraum', { dateEventTo: '2026-10-12' }]]) check(name + ' erzeugt keinen scheinbar genauen Termin', !C.normalizePublicCryptoEvents([event(change)], now).length);
+  const ongoing = event({ id: 3, slug: 'ongoing-window-test', dateEvent: '2026-10-01', dateEventTo: '2026-10-31', displayDateType: 'range' });
+  check('Laufender Zeitraum erhalten, Tag bleibt ohne erfundene Uhrzeit', C.normalizePublicCryptoEvents([ongoing], now)[0]?.end === Date.UTC(2026, 9, 31));
+  check('Zeitfenster erst nach letztem Kalendertag abgelaufen', C.normalizePublicCryptoEvents([ongoing], Date.UTC(2026, 10, 1)).length === 0);
+  check('Erwähnte Formate/Quelle falsch: Datei nicht still als leer behandeln', throws(() => C.parseCryptoCalendar({ events: [] })) && throws(() => C.parseCryptoCalendar({ ...file, fetchedAt: 'kaputt' })));
+  check('Leere echte Terminliste zulässig', C.parseCryptoCalendar({ ...file, events: [] }).events.length === 0);
+  for (const url of ['javascript:alert(1)', 'http://coinmarketcal.com/event/test', 'https://evil.example/event/test', 'https://coinmarketcal.com.evil.example/event/test', 'https://user@coinmarketcal.com/event/test']) check('Unsichere Quellen-URL abgewiesen: ' + url, throws(() => C.parseCryptoCalendar({ ...file, events: [{ ...one, url }] })));
+  check('Alle Coins, Vorauswahl und geöffneter Coin unabhängig filterbar', C.cryptoCalendarEvents(data, { mode: 'all' }, now).length === 2 && C.cryptoCalendarEvents(data, { mode: 'watch', watch: ['ETH'] }, now).length === 1 && C.cryptoCalendarEvents(data, { mode: 'coin', coin: 'BTCUSDT' }, now)[0].coins.join() === 'BTC');
+  check('Kein fremder Coin als Ersatz bei leerem Filter', C.cryptoCalendarEvents(data, { mode: 'coin', coin: 'LTCUSDT' }, now).length === 0);
+  check('Vergangene Tage ohne neue Netzabfrage entfernt', C.cryptoCalendarEvents(data, { mode: 'all' }, Date.UTC(2026, 9, 14)).length === 0);
+  check('Schemaänderung oder ausschließlich ungültige Termine: Aktualisierer behält alten Stand', throws(() => B.buildCryptoCalendar('kein Schema', now)) && throws(() => B.buildCryptoCalendar(html([event({ dateTypeSelected: 'quarter' })]), now)));
+  console.log(`${pass}/${pass + fail} bestanden`); process.exitCode = fail ? 1 : 0;
+})().catch(error => { console.error(error); process.exitCode = 1; });
