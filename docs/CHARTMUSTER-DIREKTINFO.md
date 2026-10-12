@@ -4,7 +4,7 @@ Die Chartmuster-Kacheln im Kursbereich sind direkt erklärbar:
 
 1. **Kurz antippen:** Muster im Chart einzeichnen oder ausblenden, wie bisher.
 2. **Etwa eine halbe Sekunde gedrückt halten:** Die vorhandene Erklärung öffnet sich. Das Loslassen verändert die Zeichnungsauswahl nicht.
-3. **ⓘ antippen:** Dieselbe Erklärung sofort öffnen. Der Knopf hat mindestens 44 × 44 px Tippfläche. Auch ungültige/abgelaufene Muster bleiben darüber erklärbar, ihre Zeichnung bleibt gesperrt.
+3. **ⓘ antippen:** Dieselbe Erklärung sofort öffnen. Der Knopf hat mindestens 44 × 44 px Tippfläche. Auch ungültige/abgelaufene Muster bleiben darüber erklärbar, ihre Zeichnung bleibt gesperrt. Der aktive Infoknopf bleibt in allen Hintergrundmodi kontrastreich, während der gesperrte Mustertext abgegraut ist.
 4. **×, Schließen oder Escape:** Erklärung wieder schließen. **Im Chart zeigen** setzt den Ausschnitt auf das erklärte gültige Muster. Bei zwischenzeitlicher neuer Sortierung wird dieses Muster anhand seiner ID wiedergefunden.
 
 Die Erklärung zeigt die bestehende Kerzen-/Formationszeichnung, Musterbeschreibung, Bestätigungsbedingungen, gemessene Werte, verfügbare Kurslevel und die Begründung der Regelgüte. Es werden keine neuen Prognosen oder Erfolgswahrscheinlichkeiten berechnet.

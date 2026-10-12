@@ -80,6 +80,26 @@ const check = (name, ok, extra = '') => { ok ? pass++ : fail++; console.log(`${o
     await page.evaluate(key => { const r = __g09.chipRows().find(r => r.key === key); r.hit.status = 'ungültig'; __g09.chipPaint(); }, row.key);
     await info.click();
     check('Ungültiges Muster bleibt über Info erklärbar, Zeichnung und Zoom gesperrt', await shown() && await tile.isDisabled() && await page.locator('#pat-info-zoom').isDisabled() && await selection() === '[]' && (await page.locator('#pat-info-body').innerText()).includes('Status: ungültig')); await close();
+    // Der aktive Info-Knopf muss auch an einer abgegrauten, gesperrten Kachel lesbar bleiben.
+    const infoContrast = () => page.evaluate(key => {
+      const button = document.querySelector(`button[data-pattern-info-key="${key}"]`), tile = button.parentElement;
+      const rgb = text => text.match(/[\d.]+/g).slice(0, 3).map(Number), hex = values => '#' + values.map(v => Math.round(v).toString(16).padStart(2, '0')).join('');
+      let alpha = 1; for (let n = button; n; n = n.parentElement) alpha *= Number(getComputedStyle(n).opacity);
+      let backdrop = tile.parentElement; while (backdrop.parentElement && getComputedStyle(backdrop).backgroundColor === 'rgba(0, 0, 0, 0)') backdrop = backdrop.parentElement;
+      const base = rgb(getComputedStyle(backdrop).backgroundColor), mix = values => values.map((v, i) => alpha * v + (1 - alpha) * base[i]);
+      return { opacity: alpha, contrast: __sdAppearance.contrast(hex(mix(rgb(getComputedStyle(button).color))), hex(mix(rgb(getComputedStyle(tile).backgroundColor)))) };
+    }, row.key);
+    await page.click('#view-menu');
+    for (const mode of ['light', 'dark']) {
+      await page.click(`[data-theme-set=${mode}]`); const result = await infoContrast();
+      check(mode + ': aktiver Info-Knopf an ungültigem Muster mit mindestens 4,5:1', result.contrast >= 4.5, result);
+    }
+    await page.click('[data-theme-set=custom]');
+    for (const { name, color } of await page.evaluate(() => __sdAppearance.palette)) {
+      await page.click(`[data-background-color="${color}"]`); const result = await infoContrast();
+      check(name + ': aktiver Info-Knopf an ungültigem Muster mit mindestens 4,5:1', result.contrast >= 4.5, result);
+    }
+    await page.click('[data-theme-set=dark]'); await page.click('#view-menu');
     await page.evaluate(({ key, status }) => { __g09.chipRows().find(r => r.key === key).hit.status = status; __g09.chipPaint(); }, row);
 
     for (const width of [320, 390, 768, 1440]) {
