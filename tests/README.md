@@ -13,6 +13,15 @@
 Automatische Tests für die App (`weather-widget-v2.html`) und den 24/7-Dienst (`server/`). Sie laufen vollständig lokal gegen einen Test-Server: Binance, Telegram, Discord und GitHub werden nachgebildet (`mock-binance.js`). Es werden keine echten Kurse abgefragt und keine echten Nachrichten gesendet.
 
 ## Voraussetzungen
+
+Muster-Qualität (3.65.0): `unit-chart-pattern-quality.js` prüft 52 kausale Status-/Gewichts-/Datenlücken-/Restziel-/Sortier-/Gesamtbildfälle am getrennten Anzeige-Modell cpq-1, einschließlich Doppel-Top 82.563 → 83.854, heutiger Wochen-Reststrecke und unveränderter pat-1-Regelgüte. `unit-chart-pattern-overview-feed.js` prüft 33 tatsächliche asynchrone Cache-/Abbruch-/Coin-/Quellen-/Schluss-/Lücken-/429-/Workerfehlerfälle. `m94.js` prüft tatsächliche App und benannten Worker, sieben Ebenen, native Info-/Vollbild-/Preisfortschreibung, 100 stabile Cache-Neuzeichnungen, Originalschutz, Teil-Ausfall und vier Breiten sowie AA-Faktoren in allen zehn Farbmodi. Alle drei Ziele im seriellen Gesamtlauf (165 Ziele). [Bedienung und Regeln](../docs/CHARTMUSTER-SCORE.md).
+
+M93 ergänzt nach Coinwechsel den Schutz vor einem nachgereichten Touch-Klick auf das neue Gesamtbild. M92 richtet nach Detail-API-Ausfall den Hauptchart ausdrücklich ins sichtbare Fenster, bevor es den tatsächlich vorhandenen SVG-Renderer prüft. Erstbefund: 500 Hauptkerzen, kein Kursfehler, Retry sichtbar, aber noch kein SVG im unsichtbaren Chart. Alle 42 Fachprüfungen und ihre Erwartungen erhalten, vollständiger Nachlauf 42/42. Keine Änderung der Detail-/Hauptberechnung.
+
+M93 zusätzlich neue Engineobjekte mit identischen Werten (Cache muss aktuelle Referenzen verwenden) und Live-Messwerte in einer offenen Erklärung mit erhaltenem Klapp-/Scrollstand; identische Neuberechnung auch während Haltegeste. Vorher beide Treffer index −1/Info öffnet nicht; nach gezielter Korrektur vollständig 40/40. M94 abschließend 39/39, einschließlich Wochen-Restziel am heutigen Kurs, Erhalt des letzten Chartkurses beim Funkloch und aller zehn Kontrastmodi. Temporäre Produktdiagnostik entfernt; echte Geräteabnahme weiterhin separat.
+
+3.65.0-Gesamtlauf: M88-Diagnose mit intern ausgewähltem Muster/500 fehlerfreien Kerzen, aber Plot top 1229,6 außerhalb 844px und alter Preisachse. Expliziter Mustersprung zeigt jetzt den Plot; zusätzliche Sichtbarkeitsprüfung, 17/17. M17 nach Reload Plot komplett oberhalb des Fensters, SVG bewusst nicht gezeichnet; SVG-Messhelper richtet den Plot wie bei manueller Betrachtung sichtbar aus, 16/16 bei unveränderten Fibonacci-/Preis-/Speicher-/Vollbild-/Mobilkriterien. M35 liest Erwartungsuhr nun im selben Snapshot wie die Markierungen und meidet eine Stundengrenze als reine Zeitvorbedingung; sämtliche 40 Erwartungen bleiben, keine Wartebedingung auf deren Erfüllung. Erstlogs und vollständige Nachläufe getrennt dokumentieren.
+
 - Node.js 22 und Playwright mit Chromium (in den Cloud-Sitzungen von Claude Code vorinstalliert unter `/opt/node22` bzw. `/opt/pw-browsers`).
 - `openssl`: Das Test-Zertifikat (`key.pem`, `cert.pem`) wird beim ersten Start erzeugt und nicht eingecheckt.
 - Einmalig im Ordner `tests/`: `npm install`.
@@ -198,3 +207,5 @@ UI-Gesamtlauf 3.58.0: m4 wartete vor dem Value-Area-Vergleich nur auf Signalzeit
 - `m91.js`: tatsächliche HTML-/Klartext-Wege in Worker, Sicherungsdatei und Trade-PNG, richtige Chats sowie kein Fallback bei sonstigen 400-Fehlern.
 
 3.63.0: Release-Liste **158 serielle Ziele**. Telegram-Auszüge `tests/js/{pulse,econcal,s247}.js` entsprechen dem aktuellen App-Code und verwenden den tatsächlichen zentralen Formatter; Original-Auslöser, Mehrtab-/429-/Neustart-/Sendesperren bleiben geprüft. Discord-Regression prüft keinen Versand trotz alter Einstellungen. Neue native Fälle m87 22/22, m88 16/16, m89 18/18, m90 18/18, m91 8/8; Endlauf separat dokumentieren.
+
+Muster-Score 3.65.0: `functional` initialisiert die reine LTC-1m-Marktfixture vor der Offline-Spitze. Die Binance-Attrappe erzeugt beim ersten Historienabruf sonst synthetische Altdaten und kann eine kurz zuvor beobachtete Spitze am Minutenwechsel verlieren. Kein App-/Alarmcode geändert; alle 35 Erwartungen bleiben. Ein zeitgesteuerter Replay der unveränderten Mock-Funktionen zeigt ohne Initialisierung ein Hoch unter 71 statt 71,5, mit Initialisierung 71,5. Erstlauf/Nachlauf bleiben getrennt im Release-Nachweis.

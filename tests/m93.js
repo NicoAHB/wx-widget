@@ -41,6 +41,11 @@ const check = (name, ok, extra = '') => { ok ? pass++ : fail++; console.log(`${o
     check('Info-Knopf öffnet vorhandene Erklärung ohne Zeichnungsauswahl', await shown() && before === await selection());
     check('Erklärung enthält Kerzenzeichnung, Regeln, Messwerte und Bestätigung', await page.locator('#pat-info-body svg').count() === 1 && (await page.locator('#pat-info-body').innerText()).includes('Gemessen') && (await page.locator('#pat-info-body').innerText()).includes('Bestätigung') && await page.locator('#pat-info-body .pat-why li').count() > 0);
     const title = await page.locator('#pat-info-title').innerText(); await dialog.screenshot({ path: '/tmp/scalpdesk-3641-muster-info.png' }); await close();
+    const refresh=await page.evaluate(()=>{__g09.chipRows();__g09.pat.res={...__g09.pat.res,hits:__g09.pat.res.hits.map(h=>({...h}))};__g09.chipPaint();return __g09.chipRows().map(r=>({key:r.key,index:__g09.pat.res.hits.indexOf(r.hit)}));});await info.click();
+    check('Neue Engineobjekte mit identischen Werten behalten Erklärung und aktuelle Referenzen',await shown()&&refresh.every(r=>r.index>=0),refresh);
+    if(!await shown())throw Error('Identisch neu berechnetes Muster öffnet keine Erklärung.');
+    await page.locator('.pat-why summary').click();const update=await page.evaluate(key=>{const p=__g09.pat,old=p.res.hits,body=document.getElementById('pat-info-body'),scroll=body.scrollTop;p.res={...p.res,hits:p.res.hits.map(h=>h.id+'|'+h.t0===key?{...h,q:72,rules:h.rules.map((r,i)=>i===0?{...r,v:'neuer Messstand'}:r)}:h)};__g09.chipPaint();const answer={fresh:body.textContent.includes('Regelgüte 72 %')&&body.textContent.includes('neuer Messstand'),open:body.querySelector('.pat-why').open,scroll:body.scrollTop===scroll};p.res={...p.res,hits:old};__g09.chipPaint();return answer;},row.key);
+    check('Neue Messwerte aktualisieren geöffnete Erklärung und erhalten ihren Klapp-/Scrollstand',update.fresh&&update.open&&update.scroll,update);await close();
     await start(); await page.waitForTimeout(250);
     check('Kurzer Druck öffnet noch keine Erklärung', !await shown());
     await end(); await page.waitForTimeout(100);
@@ -59,15 +64,19 @@ const check = (name, ok, extra = '') => { ok ? pass++ : fail++; console.log(`${o
     check('Horizontales Wischen scrollt die Liste, ohne Erklärung oder Auswahl', !await shown() && await selection() === '[]' && await page.locator('#chart-pattern-chips').evaluate(n => n.scrollLeft) > scrollBefore);
     await start(); await touch.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] }); await page.waitForTimeout(650);
     check('Abgebrochener Touch öffnet nichts und zeichnet nichts', !await shown() && await selection() === '[]');
-    await start(); await page.evaluate(() => __g09.chipPaint()); await page.waitForFunction(() => document.getElementById('pat-info').open); await end();
+    await start(); await page.evaluate(() => {__g09.pat.res={...__g09.pat.res,hits:__g09.pat.res.hits.map(h=>({...h}))};__g09.chipPaint();}); await page.waitForFunction(() => document.getElementById('pat-info').open); await end();
     check('Live-Neuzeichnung erhält den gedrückten Chip und seine Erklärung', await page.locator('#pat-info-title').innerText() === title && await selection() === '[]'); await close();
     await start(); await page.evaluate(() => { __g09.pat.minQ = 101; __g09.chipPaint(); }); await page.waitForTimeout(650); await end();
     check('Während Druck herausgefiltertes Muster öffnet keine alte Erklärung; Info-Knoten entfernt', !await shown() && await page.locator('.chart-pattern-info').count() === 0);
     await page.evaluate(() => { __g09.pat.minQ = 60; __g09.chipPaint(); });
     await start(); await page.evaluate(() => __intervals.setMarket('LTCUSDT', '1h')); await page.waitForTimeout(650); await end();
-    check('Coinwechsel bricht laufenden Druck ab und öffnet kein BTC-Muster', !await shown() && await selection() === '[]'); await load();
+    check('Coinwechsel bricht laufenden Druck ab und öffnet kein BTC-Muster', !await shown() && !await page.locator('#pat-overview-info').isVisible() && await selection() === '[]'); await load();
 
-    await tile.scrollIntoViewIfNeeded(); const mouse = await point(); await page.mouse.move(mouse.x, mouse.y); await page.mouse.down(); await page.waitForFunction(() => document.getElementById('pat-info').open); await page.mouse.up();
+    await page.evaluate(() => { window.__m93Trace=[];for(const name of ['pointerdown','pointermove','pointerup','scroll','blur'])document.addEventListener(name,e=>{const b=document.querySelector('.chart-pattern-chip'),r=b?.getBoundingClientRect();__m93Trace.push({name,target:e.target.id||e.target.className,x:e.clientX,y:e.clientY,isPrimary:e.isPrimary,pointerType:e.pointerType,button:e.button,scrollY,top:r?.top,left:r?.left,disabled:b?.disabled,caption:document.getElementById('chart-pattern-overview')?.textContent});if(__m93Trace.length>35)__m93Trace.shift();},{capture:true,passive:true}); });
+    await tile.scrollIntoViewIfNeeded(); const mouse = await point(); await page.mouse.move(mouse.x, mouse.y); await page.mouse.down();
+    try { await page.waitForFunction(() => document.getElementById('pat-info').open); }
+    catch(e) { console.log('Maus-Haltebefund',await page.evaluate(({mouse,key})=>({trace:__m93Trace,hit:document.elementFromPoint(mouse.x,mouse.y)?.outerHTML.slice(0,1000),wanted:document.querySelector(`button[data-pattern-key="${key}"]`)?.getBoundingClientRect().toJSON(),rows:__g09.chipRows().map(r=>({id:r.hit.id,key:r.key,status:r.status,score:r.score,disabled:r.disabled})),overview:document.getElementById('chart-pattern-overview')?.textContent}),{mouse,key:row.key}));throw e; }
+    await page.mouse.up();
     check('Langer Mausklick erklärt ohne Zeichnungsklick', await shown() && await selection() === '[]'); await close();
     await tile.click({ button: 'right' });
     check('Rechtsklick öffnet Erklärung anstelle des Browser-Kontextmenüs', await shown() && await selection() === '[]'); await close();

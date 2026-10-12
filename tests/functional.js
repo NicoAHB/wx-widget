@@ -129,7 +129,16 @@ const tests = {
     await ctx.close();
   },
   async catchup(browser) {
-    await h.ctl('/walk?on=0'); await h.ctl('/set?symbol=LTCUSDT&price=70');
+    await h.ctl('/walk?on=0');
+    // Die Attrappe muss ihre erste 1m-Historie VOR der Spitze erzeugen. Sonst ersetzt sie beim
+    // Minutenwechsel vor dem ersten Abruf den beobachteten Docht durch synthetische Altdaten.
+    // Nur Marktfixture laden, keine App öffnen; Nachprüfung und alle Alarm-Erwartungen bleiben gleich.
+    const primeCtx = await browser.newContext(), prime = await primeCtx.newPage();
+    try {
+      const response = await prime.goto('https://api.binance.com/api/v3/klines?symbol=LTCUSDT&interval=1m&limit=5');
+      if (!response?.ok() || (await response.json()).length !== 5) throw new Error('LTC-Testhistorie fehlt.');
+    } finally { await primeCtx.close(); }
+    await h.ctl('/set?symbol=LTCUSDT&price=70');
     await h.ctl('/set?symbol=LTCUSDT&price=71.5'); await h.ctl('/set?symbol=LTCUSDT&price=70'); // Spitze, während die Seite zu ist
     const now = Date.now();
     const seed = ({ now }) => { if (localStorage.getItem('scalpdesk.savedat.v1')) return;

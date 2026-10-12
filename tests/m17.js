@@ -4,13 +4,13 @@
 const h = require('./harness');
 const results = [];
 const check = (name, cond, detail = '') => { results.push({ name, ok: !!cond, detail }); console.log(`${cond ? '  ✓' : '  ✗'} ${name}${detail ? ' — ' + detail : ''}`); };
-const fib = page => page.evaluate(() => {
+const fib = async page => { await page.locator('#chart').scrollIntoViewIfNeeded();await page.waitForFunction(()=>document.querySelector('#chart svg'));return page.evaluate(() => {
   const b = document.querySelector('[data-overlay="fib"]'), g = document.querySelector('#chart svg .fib');
   const lines = g ? [...g.querySelectorAll('.fib-line')].map(l => ({ r: l.dataset.r, y: +l.getAttribute('y1'), x1: +l.getAttribute('x1'), x2: +l.getAttribute('x2') })) : [];
   const labels = g ? [...g.querySelectorAll('.fib-label')].map(t => ({ r: t.dataset.r, t: t.textContent, y: t.getBBox().y })) : [];
   const zone = g?.querySelector('.fib-zone'), svg = document.querySelector('#chart svg');
   return { pressed: b?.getAttribute('aria-pressed'), g: !!g, cls: g?.getAttribute('class') || '', tip: g?.querySelector('title')?.textContent || '', lines, labels, zone: zone ? { y: +zone.getAttribute('y'), h: +zone.getAttribute('height') } : null, vbw: +svg.getAttribute('viewBox').split(' ')[2] };
-});
+}); };
 const settle = page => page.waitForTimeout(900);
 const load = async (page, sym) => { await page.fill('#symbol', sym); await page.press('#symbol', 'Enter'); await page.waitForFunction(s => document.getElementById('lb-sym').textContent === s, sym, { timeout: 15000 }).catch(() => {}); await page.waitForTimeout(1500); };
 const num = s => +s.replace(/\./g, '').replace(',', '.');

@@ -2226,40 +2226,45 @@ html[data-chartfull] #workspace-chart-tools{display:contents!important}html[data
 html[data-chartfull] .chart-pattern-row{padding:0;order:1;flex-wrap:nowrap}html[data-chartfull] .chart-pattern-chips{flex-basis:0;order:0}html[data-chartfull]:not([data-chartbar=open]) .chart-pattern-row{display:none}html[data-chartfull] .chart-pattern-row .alarm-btn{display:none}
 /* 3.64.1: Erklärung direkt an jeder Kachel; gleiche Leistenhöhe, native Wischgesten bleiben frei. */
 .chart-pattern-tile{display:flex;flex:0 0 auto;align-items:stretch;max-width:356px;border:1px solid var(--border);border-radius:11px;background:var(--surface-2)}.chart-pattern-tile.selected{border-color:var(--pattern-color)}.chart-pattern-tile .chart-pattern-chip{flex:0 1 auto;min-width:0;border:0;border-radius:10px 0 0 10px;background:transparent;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}.chart-pattern-info{flex:0 0 44px;width:44px;min-height:44px;padding:0;border:0;border-left:1px solid var(--border);border-radius:0 10px 10px 0;background:transparent;color:var(--text);font-size:19px;cursor:pointer;-webkit-touch-callout:none}.chart-pattern-info:focus-visible{outline:2px solid var(--text);outline-offset:2px}
+/* cpq-1: Punkte statt Wahrscheinlichkeit; Balken verändert weder Höhe noch Textkontrast. */
+.chart-pattern-chip{position:relative;padding-bottom:8px}.chart-pattern-chip::after{content:'';position:absolute;left:0;bottom:0;width:var(--quality-width,0%);height:3px;background:currentColor;border-radius:3px}.chart-pattern-tile.invalid .chart-pattern-chip::after{display:none}.pat-quality{border:1px solid var(--border);border-radius:12px;padding:12px;margin:12px 0;color:var(--text);background:var(--surface-2);font-size:13px}.pat-quality h3{margin:0 0 8px;font-size:15px}.pat-quality dl{margin:0;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px 12px}.pat-quality dt,.pat-quality dd{margin:0;min-width:0;overflow-wrap:anywhere}.pat-quality dd{font-variant-numeric:tabular-nums;text-align:right}.pat-quality small{display:block;font-size:11px;font-weight:normal;color:var(--muted);line-height:1.5}.pat-quality p{margin:8px 0 0;line-height:1.5}.pat-quality .quality-warning{color:var(--warn-text)}
+.chart-pattern-row{flex-wrap:wrap}.chart-pattern-summary{display:flex;align-items:center;flex-wrap:wrap;gap:4px 12px;flex:1 1 100%;min-width:0;font-size:11px;color:var(--muted)}.chart-pattern-overview{position:relative;width:min(100%,390px);height:68px;min-height:44px;max-width:100%;padding:6px 10px 9px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2);color:var(--text);text-align:left;font-size:11px;line-height:16px;overflow-wrap:anywhere}.chart-pattern-overview::after{content:'';position:absolute;left:8px;right:8px;bottom:4px;height:3px;border-radius:3px;background:linear-gradient(to right,var(--up-text) var(--bull-share,0%),var(--down-text) var(--bull-share,0%));opacity:.7}.chart-pattern-overview[data-empty=true]::after{background:var(--border)}.chart-pattern-overview:focus-visible{outline:2px solid var(--text);outline-offset:2px}.chart-pattern-summary small{font-size:11px;line-height:1.5;max-width:100%}.pat-overview-lines{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px 12px;font-size:13px}.pat-overview-lines>span{overflow-wrap:anywhere;min-width:0}.chart-pattern-summary{order:3}html[data-chartfull] .chart-pattern-row{flex-wrap:wrap}
 </style>
   <script type="module">
-import { MARKET_INTERVALS, CHART_INTERVALS, SIGNAL_INTERVALS, INTERVAL_MS, nearestChartInterval } from './bundles/3.64.1/shared/market-intervals.mjs';
-import { createDetailCandles, detailOptions, detailChoice, closedSeries, timeIndex, DETAIL_VISIBLE_MAX } from './bundles/3.64.1/shared/chart-detail.mjs';
-import { patternChipRows, patternChipKey } from './bundles/3.64.1/shared/chart-pattern-chips.mjs';
-import { createMusterClient } from './bundles/3.64.1/shared/muster-bot-feed.mjs';
-import { createMusterPaper } from './bundles/3.64.1/shared/muster-bot-paper.mjs';
-import { readMusterPaper, writeMusterPaper } from './bundles/3.64.1/shared/muster-bot-store.mjs';
-import { projectPatternLines, projectionSettings, projectionTime } from './bundles/3.64.1/shared/pattern-projection.mjs';
-import { createGithubSyncView } from './bundles/3.64.1/shared/github-sync-view.mjs';
-import { stripSyncSecrets } from './bundles/3.64.1/shared/github-sync.mjs';
-import { createMusterView } from './bundles/3.64.1/shared/muster-bot-view.mjs';
-import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT } from './bundles/3.64.1/shared/telegram-format.mjs';
+import { MARKET_INTERVALS, CHART_INTERVALS, SIGNAL_INTERVALS, INTERVAL_MS, nearestChartInterval } from './bundles/3.65.0/shared/market-intervals.mjs';
+import { createDetailCandles, detailOptions, detailChoice, closedSeries, timeIndex, DETAIL_VISIBLE_MAX } from './bundles/3.65.0/shared/chart-detail.mjs';
+import { patternChipRows, patternChipKey } from './bundles/3.65.0/shared/chart-pattern-chips.mjs';
+import { PATTERN_QUALITY_CONFIG, chartPatternQuality, repricePatternQuality, sortPatternQuality, patternOverview } from './bundles/3.65.0/shared/chart-pattern-quality.mjs';
+import { createPatternOverviewFeed } from './bundles/3.65.0/shared/chart-pattern-overview-feed.mjs';
+import { createMusterClient } from './bundles/3.65.0/shared/muster-bot-feed.mjs';
+import { createMusterPaper } from './bundles/3.65.0/shared/muster-bot-paper.mjs';
+import { readMusterPaper, writeMusterPaper } from './bundles/3.65.0/shared/muster-bot-store.mjs';
+import { projectPatternLines, projectionSettings, projectionTime } from './bundles/3.65.0/shared/pattern-projection.mjs';
+import { createGithubSyncView } from './bundles/3.65.0/shared/github-sync-view.mjs';
+import { stripSyncSecrets } from './bundles/3.65.0/shared/github-sync.mjs';
+import { createMusterView } from './bundles/3.65.0/shared/muster-bot-view.mjs';
+import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT } from './bundles/3.65.0/shared/telegram-format.mjs';
 // 3.45.0 (G10c): der vorhandene Binance-/G07-Kern bleibt eigenständig.
-import { exportModelArchive, importModelArchive, validateModelArchive, restoreModelOriginals } from './bundles/3.64.1/shared/model-archive.mjs';
-import { BotSimulationRuntime } from './bundles/3.64.1/shared/bot-simulation.mjs';
-import { readBotSimulation, saveBotSimulation } from './bundles/3.64.1/shared/bot-simulation-store.mjs';
-import { createBotView } from './bundles/3.64.1/shared/bot-view.mjs';
-import { createBitgetPublicClient as createPaperPublicClient } from './bundles/3.64.1/shared/bitget-public.mjs';
-import { readPaperBook, writePaperBook } from './bundles/3.64.1/shared/paper-bot-store.mjs';
-import { createPaperBotController } from './bundles/3.64.1/shared/paper-bot-controller.mjs';
-import { createPaperBotView } from './bundles/3.64.1/shared/paper-bot-view.mjs';
-import { createOrderflowView } from './bundles/3.64.1/shared/orderflow-view.mjs';
-import { createSignalView } from './bundles/3.64.1/shared/orderflow-signal-view.mjs';
-import { networkState, createWidgetBoundary } from './bundles/3.64.1/shared/widget-state.mjs';
-import { originalRisk as kiOriginalRisk } from './bundles/3.64.1/shared/confluence-risk-view.mjs';
-import { confluenceOverview, po3Overview, filterOverview, reconcileOverview } from './bundles/3.64.1/shared/signal-overview.mjs';
-import { createPo3View } from './bundles/3.64.1/shared/po3-view.mjs';
-import { cardState as kiCardState, scoreLabel as kiScoreLabel } from './bundles/3.64.1/shared/confluence-live.mjs';
-import { divergenceInfo as kiDivergenceInfo, parametersKey as kiParametersKey } from './bundles/3.64.1/shared/confluence-core.mjs';
-import { parametersKey as kiLegacyParametersKey } from './bundles/3.64.1/shared/confluence-legacy-core.mjs';
-import { presentCard as kiPresentCard, currentSignal as kiCurrentSignal } from './bundles/3.64.1/shared/confluence-presentation.mjs';
-import { observationKey as kiObservationKey } from './bundles/3.64.1/shared/confluence-replay.mjs';
-import { readReplay as kiReadHistory, saveReplay as kiSaveHistory, clearReplayJobs as kiClearHistoryJobs } from './bundles/3.64.1/shared/confluence-replay-store.mjs';
+import { exportModelArchive, importModelArchive, validateModelArchive, restoreModelOriginals } from './bundles/3.65.0/shared/model-archive.mjs';
+import { BotSimulationRuntime } from './bundles/3.65.0/shared/bot-simulation.mjs';
+import { readBotSimulation, saveBotSimulation } from './bundles/3.65.0/shared/bot-simulation-store.mjs';
+import { createBotView } from './bundles/3.65.0/shared/bot-view.mjs';
+import { createBitgetPublicClient as createPaperPublicClient } from './bundles/3.65.0/shared/bitget-public.mjs';
+import { readPaperBook, writePaperBook } from './bundles/3.65.0/shared/paper-bot-store.mjs';
+import { createPaperBotController } from './bundles/3.65.0/shared/paper-bot-controller.mjs';
+import { createPaperBotView } from './bundles/3.65.0/shared/paper-bot-view.mjs';
+import { createOrderflowView } from './bundles/3.65.0/shared/orderflow-view.mjs';
+import { createSignalView } from './bundles/3.65.0/shared/orderflow-signal-view.mjs';
+import { networkState, createWidgetBoundary } from './bundles/3.65.0/shared/widget-state.mjs';
+import { originalRisk as kiOriginalRisk } from './bundles/3.65.0/shared/confluence-risk-view.mjs';
+import { confluenceOverview, po3Overview, filterOverview, reconcileOverview } from './bundles/3.65.0/shared/signal-overview.mjs';
+import { createPo3View } from './bundles/3.65.0/shared/po3-view.mjs';
+import { cardState as kiCardState, scoreLabel as kiScoreLabel } from './bundles/3.65.0/shared/confluence-live.mjs';
+import { divergenceInfo as kiDivergenceInfo, parametersKey as kiParametersKey } from './bundles/3.65.0/shared/confluence-core.mjs';
+import { parametersKey as kiLegacyParametersKey } from './bundles/3.65.0/shared/confluence-legacy-core.mjs';
+import { presentCard as kiPresentCard, currentSignal as kiCurrentSignal } from './bundles/3.65.0/shared/confluence-presentation.mjs';
+import { observationKey as kiObservationKey } from './bundles/3.65.0/shared/confluence-replay.mjs';
+import { readReplay as kiReadHistory, saveReplay as kiSaveHistory, clearReplayJobs as kiClearHistoryJobs } from './bundles/3.65.0/shared/confluence-replay-store.mjs';
 // Pure, unrounded calculations. Prices are USDT per unit; FX is USDT per EUR.
 function rsi(closes, period = 14) {
   const out = Array(closes.length).fill(null);
@@ -3231,7 +3236,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
 // 3.43.0 (G10a): reiner Fachkern in shared/; Datenquelle und Karten folgen getrennt.
 // 3.44.0 (G10b): öffentlicher Adapter in shared/bitget-public.mjs; sichtbare Anbindung folgt mit G10(c).
-const APP_VERSION = '3.64.1', docEl = document.documentElement;
+const APP_VERSION = '3.65.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -13246,7 +13251,7 @@ function patSvg(id) {
 // --- Zustand, Worker, Analyse ---
 const PAT_MAX = 500, PAT_CTX = 40;
 // 3.45.1: Nur die Panelanzeige altert; Erkennung, Güte, Score und Meldungen bleiben unverändert.
-const PAT_FRESH_MAX = 3, PAT_ACTIVE_MAX = 10;
+const PAT_FRESH_MAX = 3, PAT_ACTIVE_MAX = PATTERN_QUALITY_CONFIG.maxAge;
 function patAge(hit, now = Date.now()) {
   const rows = state.candles, index = rows.findLastIndex(c => c.time === hit.t1);
   const age = index >= 0 ? rows.length - 1 - index : new Set([...(pat.res?.k || []).map(c => c.t), ...rows.map(c => c.time)].filter(t => t > hit.t1)).size;
@@ -13269,20 +13274,24 @@ var pat = { on: false, res: null, sel: null, filter: 'all', minQ: 60, gap: false
 var patChipSelections = new Map(), patChipNodes = new Map(), patChipColorNext = 0;
 // 3.64.1: Kurzer Tipp zeichnet; langer Druck erklärt dasselbe Muster, ohne anschließenden Zeichnungsklick.
 const PAT_CHIP_HOLD = 550, PAT_CHIP_SLOP = 12;
-var patChipPress = null, patChipNoClickKey = null, patChipInfoKey = null;
+var patChipPress = null, patChipNoClickKey = null, patChipInfoKey = null, patChipGesture = null, patChipGhost = null;
 function patChipPressClear() { if (patChipPress) clearTimeout(patChipPress.timer); patChipPress = null; }
 function patChipOpenInfo(key) {
-  const row = patChipList().find(r => r.key === key), i = row ? pat.res.hits.indexOf(row.hit) : -1;
+  const row = patChipList().find(r => r.key === key), i = row ? pat.res.hits.findIndex(h=>patternChipKey(h)===key) : -1;
   if (i < 0) return;
-  patOpenInfo(i); patChipInfoKey = { key, scope: patKey() }; $('pat-info-zoom').disabled = row.disabled;
+  patOpenInfo(i); patChipInfoKey = { key, scope: patKey(), restrict:true }; $('pat-info-zoom').disabled = row.disabled;
 }
 function patChipBindPress(host) {
+  // Nachgereichter Touch-Klick: nach Coinwechsel/langer Erklärung kein anderes
+  // Bedienelement betätigen. Eine neue bewusste Geste ist sofort wieder erlaubt.
+  document.addEventListener('pointerdown',()=>{patChipGhost=null;patChipGesture=null;patChipPressClear();},{capture:true});
+  document.addEventListener('click',e=>{const g=patChipGhost;if(g&&e.detail>0&&Date.now()<g.until&&Math.hypot(e.clientX-g.x,e.clientY-g.y)<24){patChipGhost=null;e.preventDefault();e.stopImmediatePropagation();}},{capture:true});
   host.addEventListener('pointerdown', e => {
     patChipNoClickKey = null;
     if (!e.isPrimary || (e.pointerType === 'mouse' && e.button !== 0)) { patChipPressClear(); return; }
     const button = e.target.closest('.chart-pattern-chip'); if (!button || button.disabled) return;
     patChipPressClear();
-    const p = { id: e.pointerId, key: button.dataset.patternKey, x: e.clientX, y: e.clientY, opened: false };
+    const p = { id: e.pointerId, key: button.dataset.patternKey, x: e.clientX, y: e.clientY, opened: false, button, scope:patKey(), cancelled:false };patChipGesture=p;
     p.timer = setTimeout(() => {
       if (patChipPress !== p || !button.isConnected) return;
       p.opened = true; patChipNoClickKey = p.key; patChipOpenInfo(p.key);
@@ -13291,10 +13300,10 @@ function patChipBindPress(host) {
   });
   document.addEventListener('pointermove', e => {
     const p = patChipPress; if (!p || p.id !== e.pointerId) return;
-    if (Math.hypot(e.clientX - p.x, e.clientY - p.y) > PAT_CHIP_SLOP) { patChipNoClickKey = p.key; patChipPressClear(); }
+    if (Math.hypot(e.clientX - p.x, e.clientY - p.y) > PAT_CHIP_SLOP) { p.cancelled=true;patChipNoClickKey = p.key; patChipPressClear(); }
   }, { passive: true });
-  for (const type of ['pointerup', 'pointercancel']) document.addEventListener(type, e => { if (patChipPress?.id === e.pointerId) patChipPressClear(); });
-  host.addEventListener('scroll', patChipPressClear, { passive: true });
+  for (const type of ['pointerup', 'pointercancel']) document.addEventListener(type, e => { const p=patChipGesture;if(p?.id===e.pointerId){if(type==='pointercancel'||p.cancelled||p.opened||p.scope!==patKey()||!p.button.isConnected)patChipGhost={x:e.clientX,y:e.clientY,until:Date.now()+700};patChipGesture=null;}if (patChipPress?.id === e.pointerId) patChipPressClear(); });
+  host.addEventListener('scroll',()=>{if(patChipGesture)patChipGesture.cancelled=true;patChipPressClear();}, { passive: true });
   window.addEventListener('blur', patChipPressClear);
   document.addEventListener('visibilitychange', () => { if (document.hidden) patChipPressClear(); });
   host.addEventListener('click', e => {
@@ -13308,7 +13317,131 @@ function patChipBindPress(host) {
     patChipNoClickKey = key; patChipPressClear();
   });
 }
-function patChipList() { return pat.res?.key === patKey() ? patternChipRows(pat.res.hits,state.candles,{minimum:pat.minQ,filter:pat.filter,maxAge:PAT_ACTIVE_MAX}) : []; }
+// 3.65.0: getrennte Qualitätsanzeige. Teure Kerzenfaktoren nur nach Schluss;
+// Restziel / CRV billig am tatsächlichen frischen Chartkurs fortschreiben.
+var patQualityContextMemo = { key: '', context: null }, patQualityRowsMemo = { key: '', rows: [] }, patQualityLiveMemo = {key:'',rows:[]};
+var patQualityQuoteMemo = {key:'',price:null};
+function patQualityQuote() {
+  const source=chartMarket(),key=`${state.symbol}|${source}`,price=state.loadedSymbol===state.symbol&&source?currentPrice():null;
+  if(patQualityQuoteMemo.key!==key)patQualityQuoteMemo={key,price:null};
+  const fresh=price>0&&!state.marketError&&!state.paused&&!state.fromCache&&(feedFresh(source)||Date.now()-state.marketAt<15000);
+  if(fresh||patQualityQuoteMemo.price===null&&price>0)patQualityQuoteMemo.price=price;
+  return{price:patQualityQuoteMemo.price,fresh:!!fresh}; // Funkloch darf keine alten Wochenkurs-Punkte zurückbringen.
+}
+function patQualityTrends() {
+  const trends = {};
+  for (const iv of PATTERN_QUALITY_CONFIG.trendIntervals) {
+    const m = iv === state.interval ? { rating: patQualityContext().rating, error: state.marketError } : state.mtf[iv];
+    if (!state.paused && !state.marketError && !m?.error && m?.rating && m.rating.closeTime + IV_MS[iv] + 10000 >= Date.now()) trends[iv] = m.rating.verdict;
+  }
+  return trends;
+}
+function patQualityContext() {
+  const last = state.candles.findLast(c => c.closeTime < Date.now()), key = `${patKey()}|${last?.time}|${last?.close}|${last?.volume}|${state.candles.length}`;
+  if (patQualityContextMemo.key !== key) {
+    const closed = state.candles.filter(c => c.closeTime < Date.now());
+    patQualityContextMemo = { key, context: { rating: signalRating(closed), levels: last ? pivotLevels(closed, last.close) : {}, atr: closed.length >= 14 ? atr(closed, 14).at(-1) : null } };
+  }
+  return patQualityContextMemo.context;
+}
+function patChipList() {
+  if (pat.res?.key !== patKey()) return [];
+  const trends = patQualityTrends(), context = patQualityContext();
+  const signature = JSON.stringify(pat.res.hits.map(h => [h.id,h.t0,h.t1,h.q,h.status,h.prelim,h.levels]));
+  const key = `${patQualityContextMemo.key}|${state.candles.at(-1)?.time}|${pat.minQ}|${pat.filter}|${JSON.stringify(trends)}|${signature}`;
+  if (patQualityRowsMemo.key !== key || patQualityRowsMemo.res !== pat.res) {
+    patQualityRowsMemo = { key, res:pat.res, rows: sortPatternQuality(patternChipRows(pat.res.hits,state.candles,{minimum:pat.minQ,filter:pat.filter,maxAge:PAT_ACTIVE_MAX})
+      .map(r => ({ ...r, ...chartPatternQuality(r.hit,state.candles,{ interval:state.interval,trends,levels:context.levels,atr:context.atr }) }))) };
+    patQualityLiveMemo.key=''; // Identische neue Werte sind trotzdem neue Erkennungsobjekte.
+  }
+  const quote=patQualityQuote(),liveKey=`${key}|${quote.price}|${quote.fresh}`;
+  if(patQualityLiveMemo.key!==liveKey)patQualityLiveMemo={key:liveKey,rows:sortPatternQuality(patQualityRowsMemo.rows.map(r=>repricePatternQuality(r,r.hit,quote.price,PATTERN_QUALITY_CONFIG,quote.fresh)))};
+  return patQualityLiveMemo.rows;
+}
+function patQualityBlock(q, hit = q.hit) {
+  const box = el('section','pat-quality'), list = el('dl'); box.id = 'pat-quality';
+  box.dataset.hit=JSON.stringify(hit)||'';
+  box.append(el('h3','',`Score ${q.score} / 100 · ${q.status}`));
+  for (const f of q.factors) { const term = el('dt','',f.label);term.append(el('small','',f.note));list.append(term,el('dd','',f.known ? `${number(f.points,1)} / ${f.weight}` : `— / ${f.weight}`)); }
+  box.append(list,el('p','',`Datenabdeckung ${q.coverage} % · fehlende Werte geben keine Punkte; Gewichte bleiben gleich.`));
+  if (q.trap) box.append(el('p','quality-warning',`${q.trap} · geschlossener Kurs zurück über/unter dem Ausbruchslevel · Basispunkte × 0,3.`));
+  else if (q.remaining !== null && q.multiplier < 1 && !q.disabled) box.append(el('p','',`Noch ${number(q.remaining*100,0)} % Zielstrecke übrig · Basispunkte × ${number(q.multiplier,2)}.`));
+  if (q.status === 'erfüllt') box.append(el('p','','Ziel auf einer geschlossenen Folgekerze erreicht; zählt nicht mehr als offenes Signal.'));
+  if(q.targetPending||q.breakoutPending)box.append(el('p','quality-warning',q.targetPending?`${q.priceFresh===false?'Letzter Chartkurs':'Aktueller Kurs'} am Ziel: keine Restzielpunkte mehr. Zielberührung noch auf laufender Kerze; Status erst nach Schluss bestätigt.`:`${q.priceFresh===false?'Letzter Chartkurs':'Aktueller Kurs'} zurück am Ausbruchslevel: mögliche Falle. Gegen-Schluss abwarten; Status noch nicht gescheitert.`));
+  box.append(el('p','','Score = Qualitätsmaß, keine Garantie für den Ausbruch.'),el('small','',`Form / Status auf geschlossenen Kerzen · Restziel / Chance-Risiko: ${q.live?q.priceFresh===false?'letzter Chartkurs':'aktueller Chartkurs':'Schlusskurs dieser Zeitebene'} · cpq-1 · Musterrand ist keine gesetzte Stop-Order. Keine Kauf-/Verkaufsempfehlung.`));
+  return box;
+}
+// Eigener serieller pat-1-Worker: keine Seiteneffekte des bisherigen Lern-/Alarmwegs.
+var patOverviewWorker = null, patOverviewPending = new Map(), patOverviewRequestId = 0, patOverviewModelMemo = { key:'', value:null }, patOverviewLiveMemo = {key:'',value:null};
+function patOverviewDetect(candles, iv, signal, ctx) {
+  const k=candles.map(c=>({t:c.time,o:c.open,h:c.high,l:c.low,c:c.close,v:c.volume})), opt={from:0,step:IV_MS[iv],gap:ctx.gap,running:false,formOnly:true};
+  if(patOverviewWorker===null)try {
+    const url=URL.createObjectURL(new Blob([`const E=(${patEngine.toString()})();onmessage=e=>{try{postMessage({id:e.data.id,r:E.detect(e.data.k,e.data.opt)})}catch(e){postMessage({id:e.data.id,error:e.message})}};`],{type:'text/javascript'}));
+    patOverviewWorker=new Worker(url,{name:'scalpdesk-pattern-overview'});URL.revokeObjectURL(url);
+    patOverviewWorker.onmessage=e=>{const job=patOverviewPending.get(e.data.id);if(job)e.data.error?job.reject(Error(e.data.error)):job.resolve(e.data.r);};
+    patOverviewWorker.onerror=()=>{for(const job of patOverviewPending.values())job.reject(Error('Muster-Worker nicht verfügbar.'));patOverviewWorker.terminate();patOverviewWorker=false;};
+  }catch{patOverviewWorker=false;}
+  if(!patOverviewWorker)return new Promise((resolve,reject)=>setTimeout(()=>{if(signal.aborted){reject(new DOMException('Abgebrochen','AbortError'));return;}try{PAT_E=PAT_E||patEngine();resolve(PAT_E.detect(k,opt));}catch(e){reject(e);}},0));
+  return new Promise((resolve,reject)=>{
+    const id=++patOverviewRequestId, done=(fn,value)=>{clearTimeout(timer);signal.removeEventListener('abort',abort);patOverviewPending.delete(id);fn(value);}, abort=()=>done(reject,new DOMException('Abgebrochen','AbortError'));
+    const timer=setTimeout(()=>{done(reject,Error('Muster-Worker antwortet nicht; diese Ebene wird später erneut geprüft.'));patOverviewWorker?.terminate();patOverviewWorker=null;},8000);
+    patOverviewPending.set(id,{resolve:r=>done(resolve,r),reject:e=>done(reject,e)});signal.addEventListener('abort',abort,{once:true});
+    if(signal.aborted)abort();else patOverviewWorker.postMessage({id,k,opt});
+  });
+}
+var patOverviewFeed = createPatternOverviewFeed({
+  request: async(ctx,iv,limit,signal)=>{
+    // Vollständige vorhandene Reihe wiederverwenden, ohne den Hauptchart zu verändern.
+    const main=state.symbol===ctx.symbol&&state.source===ctx.source&&state.interval===iv&&state.loadedSymbol===ctx.symbol?state.candles:null;
+    const cached=kc.mem.get(kcKey(ctx.source,ctx.symbol,iv))?.candles;
+    const current=main?.findLast(c=>c.closeTime<Date.now()), saved=cached?.at(-1);
+    const fresh=c=>c?.closeTime+IV_MS[iv]+2500>=Date.now();
+    if(main?.length>=60&&fresh(current))return{source:ctx.source,candles:main.slice(-limit)};
+    if(cached?.length>=60&&fresh(saved))return{source:ctx.source,candles:cached.slice(-limit)};
+    const params={symbol:ctx.symbol,interval:iv,limit},rows=ctx.source==='futures'?await api.get(FUTURES,'/fapi/v1/klines',params,signal):await spotGet('/api/v3/klines',params,signal);
+    return{source:ctx.source,candles:normalizeKlines(rows)};
+  }, detect:patOverviewDetect, changed:()=>patOverviewPaint()
+});
+function patOverviewTick() {
+  const source=chartMarket(), ctx=source?{symbol:state.symbol,source,gap:pat.gap}:null;
+  void patOverviewFeed.tick(ctx,!CAP.on&&!state.paused&&!document.hidden&&navigator.onLine!==false&&!state.marketError&&state.loadedSymbol===state.symbol&&(chartOnScreen||pat.on));
+  patOverviewPaint();
+}
+function patOverviewModel() {
+  const s=patOverviewFeed.state, trends=patQualityTrends(), entries=[...s.entries];
+  const key=JSON.stringify([s.key,pat.minQ,trends,entries.map(([iv,e])=>[iv,e.closedAt,e.firstAt,e.at,e.error,patOverviewFeed.usable(e,iv),Math.floor(Math.max(0,Date.now()-(e.closedAt||0)-1)/IV_MS[iv])])]);
+  if(patOverviewModelMemo.key!==key){
+  const rows=[], frames=[];
+  for(const iv of PATTERN_QUALITY_CONFIG.overviewIntervals){
+    const e=s.entries.get(iv),usable=patOverviewFeed.usable(e,iv),ageOffset=e?.closedAt?1+Math.floor(Math.max(0,Date.now()-e.closedAt-1)/IV_MS[iv]):1;
+    if(usable){const closed=e.candles,last=closed.at(-1),levels=pivotLevels(closed,last.close),a=atr(closed,14).at(-1);
+      const scored=patternChipRows(e.hits,closed,{minimum:pat.minQ,maxAge:PAT_ACTIVE_MAX}).map(r=>({...r,interval:iv,...chartPatternQuality(r.hit,closed,{interval:iv,trends,levels,atr:a,ageOffset})}));
+      rows.push(...scored);frames.push({iv,ready:true,at:e.closedAt,...patternOverview(scored)});
+    }else frames.push({iv,ready:false,error:e?.error||'Noch nicht geprüft'});
+  }
+  patOverviewModelMemo={key,value:{rows,frames}};
+  }
+  const quote=patQualityQuote(),liveKey=`${key}|${quote.price}|${quote.fresh}`;
+  if(patOverviewLiveMemo.key!==liveKey){const base=patOverviewModelMemo.value,rows=base.rows.map(r=>repricePatternQuality(r,r.hit,quote.price,PATTERN_QUALITY_CONFIG,quote.fresh)),frames=base.frames.map(f=>f.ready?{...f,...patternOverview(rows.filter(r=>r.interval===f.iv))}:f);patOverviewLiveMemo={key:liveKey,value:{...patternOverview(rows),rows,frames,ready:frames.filter(f=>f.ready).length}};}
+  return patOverviewLiveMemo.value;
+}
+function patOverviewPaint() {
+  const button=$('chart-pattern-overview');if(!button)return;
+  const q=patOverviewModel(),s=patOverviewFeed.state,correct=s.key.startsWith(`${state.symbol}|${chartMarket()}|`),ready=correct?q.ready:0;
+  const share=correct&&q.bull!==null?`${q.bull} % bullisch · ${q.bear} % bärisch`:'Keine aktiven Richtungsmuster';
+  const caption=`Muster-Gesamtbild · 5m–1w\n${share}\n${ready}/7 Ebenen${correct&&q.conflict?' · Widersprüchlich':state.paused?' · Pausiert':s.busy?' · lädt':''}`;
+  if(button.textContent!==caption)button.textContent=caption;
+  button.style.whiteSpace='pre-line';button.style.setProperty('--bull-share',`${correct?q.bull??0:0}%`);button.dataset.empty=String(!correct||q.bull===null);
+  button.setAttribute('aria-label',caption.replace('\n','. ')+'. Erklärung öffnen');
+  const dialog=$('pat-overview-info');if(!dialog?.open)return;
+  const body=$('pat-overview-body'),signature=JSON.stringify([caption,q]);if(body.dataset.signature===signature)return;body.dataset.signature=signature;
+  const list=el('div','pat-overview-lines');
+  for(const f of q.frames)list.append(el('b','',f.iv),el('span','',f.ready?`${f.bull===null?'Keine aktiven Richtungsmuster':`${f.bull} % bullisch · ${f.bear} % bärisch · ${f.count} Muster`} · Schluss ${new Date(f.at+1).toLocaleString('de-DE')}`:f.error));
+  body.replaceChildren(el('h3','',share+(q.conflict?' · Widersprüchlich':'')),el('p','',`${ready}/7 Zeitebenen bewertet. Anteil = Summe der Score-Punkte bullischer bzw. bärischer Muster. Keine Trefferwahrscheinlichkeit.`),list,
+    el('p','','Nur aktive/bestätigte, gerichtete Formationen zählen; je Art und Zeitebene die jüngste. Mindestregelgüte wie im Musterpanel; Bullish/Bearish-Anzeigefilter verändert dieses Gesamtbild nicht.'),
+    el('p','','„Widersprüchlich“: Muster ab Score 60 dominieren auf 1d/1w und auf kleineren Ebenen mit mindestens 65 % in entgegengesetzte Richtungen.'),
+    el('p','','Bis zu 500 geschlossene Kerzen pro Ebene · identischer Coin und Spot-/Futures-Markt wie im Chart · Aktualisierung bei Kerzenschluss, während die App und der Chart sichtbar sind.'),el('p','','Score = Qualitätsmaß, keine Garantie für den Ausbruch.'));
+}
 function patChipColor(key) { const colors=[PAL.up,PAL.vp,PAL.ema,PAL.down,PAL.bb,PAL.short];return colors[(patChipSelections.get(key) ?? 0)%colors.length]; }
 function patChipToggle(key) {
   const row=patChipList().find(r=>r.key===key);if(!row || row.disabled)return;
@@ -13322,18 +13455,30 @@ function patChipPaint() {
   let removed=false;for(const key of patChipSelections.keys())if(!keys.has(key)){patChipSelections.delete(key);removed=true;}
   for(const [key,button] of patChipNodes)if(!rows.some(r=>r.key===key)){button.parentElement.remove();patChipNodes.delete(key);}
   rows.forEach((r,index)=>{let button=patChipNodes.get(r.key);if(!button){const tile=el('span','chart-pattern-tile'),info=el('button','chart-pattern-info','ⓘ');button=el('button','chart-pattern-chip');button.type=info.type='button';button.dataset.patternKey=r.key;info.dataset.patternInfoKey=r.key;info.setAttribute('aria-haspopup','dialog');info.setAttribute('aria-controls','pat-info');button.addEventListener('click',()=>patChipToggle(r.key));info.addEventListener('click',()=>patChipOpenInfo(r.key));tile.append(button,info);patChipNodes.set(r.key,button);}
-    const selected=patChipSelections.has(r.key),title=PAT_LIB[r.hit.id]?.n.replace(/ \(.*\)$/,'')||r.hit.id,label=`${r.hit.dir==='bull'?'↑':r.hit.dir==='bear'?'↓':'→'} ${title}\n${r.status}${r.preliminary?' · vorläufig':''} · Regelgüte ${r.hit.q} %`;
+    const selected=patChipSelections.has(r.key),title=PAT_LIB[r.hit.id]?.n.replace(/ \(.*\)$/,'')||r.hit.id,label=`${r.hit.dir==='bull'?'↑':r.hit.dir==='bear'?'↓':'→'} ${title} · ${r.status}${r.targetPending?' · Ziel berührt':r.breakoutPending?' · Gegenbewegung':''}${r.preliminary?' · vorläufig':''}\nScore ${r.score} · Regelgüte ${r.hit.q} %`;
     const tile=button.parentElement,info=tile.querySelector('.chart-pattern-info');
-    if(button.textContent!==label)button.textContent=label;button.className=`chart-pattern-chip ${r.hit.dir}${selected?' selected':''}${r.disabled?' invalid':''}`;button.disabled=r.disabled;button.setAttribute('aria-pressed',String(selected));button.title=`${title} · ${state.interval} · Regelgüte ${r.hit.q} %, keine Trefferwahrscheinlichkeit. ${selected?'Antippen blendet die Zeichnung aus.':'Antippen zeichnet Grenzen, Schlüsselpunkte und Levels.'} Lange drücken oder ⓘ antippen öffnet die Erklärung.`;tile.className=`chart-pattern-tile${selected?' selected':''}${r.disabled?' invalid':''}`;tile.style.setProperty('--pattern-color',selected?patChipColor(r.key):r.hit.dir==='bull'?PAL.up:r.hit.dir==='bear'?PAL.down:PAL.vp);info.setAttribute('aria-label',`Erklärung zu ${title} · ${r.status}`);info.title=`${title} erklären`;
-    if(host.children[index]!==tile)host.insertBefore(tile,host.children[index]||null);
+    if(button.textContent!==label)button.textContent=label;button.className=`chart-pattern-chip ${r.hit.dir}${selected?' selected':''}${r.disabled?' invalid':''}`;button.disabled=r.disabled;button.style.setProperty('--quality-width',`${r.score}%`);button.setAttribute('aria-pressed',String(selected));button.title=`${title} · ${state.interval} · ${r.status} · Score ${r.score}/100 · Regelgüte ${r.hit.q} %, keine Trefferwahrscheinlichkeit. Datenabdeckung ${r.coverage} %. ${selected?'Antippen blendet die Zeichnung aus.':'Antippen zeichnet Grenzen, Schlüsselpunkte und Levels.'} Lange drücken oder ⓘ antippen öffnet die Erklärung.`;tile.className=`chart-pattern-tile${selected?' selected':''}${r.disabled?' invalid':''}`;tile.style.setProperty('--pattern-color',selected?patChipColor(r.key):r.hit.dir==='bull'?PAL.up:r.hit.dir==='bear'?PAL.down:PAL.vp);info.setAttribute('aria-label',`Erklärung zu ${title} · ${r.status}`);info.title=`${title} erklären`;
+    if(!tile.isConnected&&patChipGesture)host.append(tile);else if(!patChipGesture&&host.children[index]!==tile)host.insertBefore(tile,host.children[index]||null);
   });
   empty.hidden=!!rows.length;const text=CAP.on?'Muster im Kurschart verfügbar':pat.busy&&!pat.res?'Muster werden geprüft …':'Keine Muster erkannt';if(empty.textContent!==text)empty.textContent=text;
   host.setAttribute('aria-label',`Chartmuster ${state.interval}, ${rows.length} Formationen`);if(removed)scheduleDraw();
+  if ($('pat-info').open && patChipInfoKey?.scope === patKey()) {
+    const h=pat.res?.hits.find(h=>patternChipKey(h)===patChipInfoKey.key),ctx=patQualityContext(),q = rows.find(r => r.key === patChipInfoKey.key) || (h ? chartPatternQuality(h,state.candles,{interval:state.interval,trends:patQualityTrends(),levels:ctx.levels,atr:ctx.atr}) : null), block = $('pat-quality');
+    if(!q)$('pat-info-zoom').disabled=true;
+    if(q&&block&&h&&block.dataset.hit!==JSON.stringify(h)) {
+      const scope=patChipInfoKey,body=$('pat-info-body'),scroll=body.scrollTop,open=[...body.querySelectorAll('details')].map(d=>d.open);
+      patOpenInfo(pat.res.hits.indexOf(h));patChipInfoKey=scope;
+      [...body.querySelectorAll('details')].forEach((d,i)=>{d.open=!!open[i];});body.scrollTop=scroll;$('pat-info-zoom').disabled=!!scope.restrict&&q.disabled;
+    } else if(q && block && block.dataset.signature !== JSON.stringify(q)) { const next = patQualityBlock(q,h);next.dataset.signature=JSON.stringify(q);block.replaceWith(next);$('pat-info-zoom').disabled=!!patChipInfoKey.restrict&&q.disabled;const status=document.querySelector('#pat-info-body .pat-info-status');if(status)status.textContent=`Status: ${q.status}`; }
+  }
 }
 function patChipInit() {
   const row=el('div','chart-pattern-row'),host=el('div','chart-pattern-chips'),empty=el('span','chart-pattern-empty','Keine Muster erkannt');row.id='chart-pattern-row';host.id='chart-pattern-chips';host.setAttribute('role','group');empty.id='chart-pattern-empty';host.append(empty);row.append(host);document.querySelector('#chart-sec .chart-toolbar').append(row);
   const heading=document.querySelector('#chart-sec .chart-heading'),alarm=$('alarm-here');heading.after(row);row.prepend(alarm);
   queueMicrotask(()=>{const btc=$('of-btc-chart');if(btc)alarm.after(btc);});patChipBindPress(host);patChipPaint();
+  const summary=el('div','chart-pattern-summary'),overview=el('button','chart-pattern-overview');overview.type='button';overview.id='chart-pattern-overview';overview.setAttribute('aria-haspopup','dialog');overview.setAttribute('aria-controls','pat-overview-info');summary.append(overview,el('small','','Score = Qualitätsmaß, keine Garantie für den Ausbruch.'));row.append(summary);
+  const dialog=el('dialog','sheet');dialog.id='pat-overview-info';dialog.setAttribute('aria-labelledby','pat-overview-title');const head=el('div','sheet-head'),title=el('h2','','Muster-Gesamtbild'),close=el('button','button ghost icon','×'),body=el('div','sheet-body');title.id='pat-overview-title';close.type='button';close.id='pat-overview-close';close.setAttribute('aria-label','Erklärung schließen');body.id='pat-overview-body';head.append(title,close);dialog.append(head,body);document.body.append(dialog);
+  close.addEventListener('click',()=>dialog.close());dialog.addEventListener('click',e=>{if(e.target===dialog){const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)dialog.close();}});overview.addEventListener('click',()=>{dialog.showModal();patOverviewPaint();});patOverviewPaint();
 }
 function patDrawChips(svg, over, g) {
   if(CAP.on)return;let labelRow=0;
@@ -13388,7 +13533,7 @@ function patDone(id, r) {
     pat.want = null; const i = pat.res.hits.findIndex(h => h.id === w.id && h.t0 === w.t0), L = PAT_LIB[w.id];
     if (i >= 0) { pat.sel = i; if (pat.res.hits[i].q < pat.minQ) pat.minQ = 0; infoToast(`${L.n} · ${w.iv} · ${pat.res.hits[i].status} – im Chart markiert`); }
     else infoToast(`${L.n} ist im Chart-Ausschnitt nicht mehr eindeutig erkennbar – die übrigen Muster sind markiert`, 5000);
-    $('chart-sec').scrollIntoView({ block: 'start' });
+    $('chart').scrollIntoView({ block: 'center' }); // Mustersprung zeigt den Plot auch unter dem höheren Kurs-/Score-Kopf.
   }
   patSheet(); patChipPaint(); scheduleDraw();
 }
@@ -13399,7 +13544,7 @@ function patShown() {
   for (const h of pat.res.hits) if (h.q >= pat.minQ && (pat.filter === 'all' || h.dir === pat.filter)) { const g = by.get(h.id); if (!g) by.set(h.id, { h, more: 0 }); else { g.more++; if (h.t1 > g.h.t1) g.h = h; } }
   return [...by.values()].map(g => (g.h.more = g.more, g.h)).sort((a, b) => patAge(a).bars - patAge(b).bars || b.q - a.q);
 }
-function patClear() { patChipPressClear(); patChipNoClickKey = null; $('pat-expired').open = false; pat.res = null; pat.sel = null; pat.req++; pat.busy = false; patChipSelections.clear(); patSheet(); patChipPaint(); }
+function patClear() { patChipPressClear(); patChipNoClickKey = null; $('pat-expired').open = false; pat.res = null; pat.sel = null; pat.req++; pat.busy = false; patChipSelections.clear(); patSheet(); patChipPaint();patOverviewFeed?.tick(null,false); }
 // Neuberechnung nur bei Kerzenschluss, nach einem Kontextwechsel oder auf Tipp – nicht bei jedem Tick
 // 3.37.0 (G09, Punkt 11): Vorauswahl – jüngste Formation (Regelgüte ≥ 60 %) auf den abgeschlossenen Kerzen der Kachel
 function wlPat(e) {
@@ -13427,6 +13572,7 @@ function patWant() {
 }
 function patTick() {
   patPrice();
+  patOverviewTick();
   if (!state.paused && !document.hidden && detailResolution && chartOnScreen) void detail.refresh();
   patChipPaint();
   if ($('pat-sheet').open && pat.res?.key === patKey() && (pat.panelBar !== state.candles.at(-1)?.time || pat.panelMinute !== Math.floor(Date.now() / 60000))) patSheet();
@@ -13451,16 +13597,18 @@ function patSheet() {
   put('pat-scope', R ? `${state.symbol.slice(0, -4)}/USDT · ${state.interval} · ${R.n === R.nVis ? `${R.n} sichtbare Kerzen` : `die letzten ${R.n} von ${R.nVis} sichtbaren Kerzen`} (${patTime(R.t0)} – ${patTime(R.t1)} UTC)${R.running ? ' · laufende Kerze vorläufig' : ''}` : pat.busy ? 'Analysiert die sichtbaren Kerzen …' : 'Noch nicht analysiert.');
   const existing = new Map([...list.querySelectorAll('.pat-row')].map(row => [row.dataset.patKey, row])), current = [], expired = [];
   for (const h of hits) {
-    const L = PAT_LIB[h.id], i = R.hits.indexOf(h), age = patAge(h), key = `${h.id}|${h.t0}|${h.t1}`;
+    const L = PAT_LIB[h.id], i = R.hits.indexOf(h), age = patAge(h), key = `${h.id}|${h.t0}|${h.t1}`, q = h.kind === 'form' ? patChipList().find(r=>r.key===patternChipKey(h)) : null;
     const row = existing.get(key) || el('div'); row.dataset.patKey = key;
     row.className = `pat-row ${h.dir}${pat.sel === i ? ' sel' : ''}${age.status === 'Abgelaufen' ? ' expired' : ''}`;
-    const signature = JSON.stringify([h.q, h.status, h.more, h.levels]);
+    const signature = JSON.stringify([h.q, h.status, h.more, h.levels, q?.score, q?.status]);
     if (row.dataset.content !== signature) {
       row.dataset.content = signature;
       const main = el('button', 'pat-main'), info = el('button', 'pat-i', 'i'); main.type = info.type = 'button'; info.setAttribute('aria-label', `Info zu ${L.n}`);
       const head = el('span', 'pat-h'); head.append(el('b', '', L.n), el('span', 'pat-q', `Regelgüte ${h.q} %`));
       const span = h.i1 - h.i0 + 1, meta = el('span', 'pat-m', `${PAT_DIR[h.dir]} · ${L.f} · ${span} ${span === 1 ? 'Kerze' : 'Kerzen'} · ${patTime(h.t0)}${h.t1 !== h.t0 ? ` – ${patTime(h.t1)}` : ''} · ${h.status}`);
-      main.append(head, el('span', 'pat-age-line'), meta, el('span', 'pat-e', L.e));
+      main.append(head, el('span', 'pat-age-line'), meta);
+      if(q)main.append(el('span','pat-m',`Score ${q.score} / 100 · ${q.status}${q.trap?' · '+q.trap:''}`));
+      main.append(el('span', 'pat-e', L.e));
       if (h.more) main.append(el('span', 'pat-m', `+${h.more} weitere im Ausschnitt`));
       if (h.levels) {
         const lv = el('span', 'pat-lv'), add = (label, value, cls = '') => { if (value == null) return; if (lv.childNodes.length) lv.append(' · '); lv.append(el('span', cls, `${label} ${priceText(value)}`)); };
@@ -13499,6 +13647,9 @@ function patOpenInfo(i, external = null) {
   const L = PAT_LIB[h.id], d = $('pat-info'); pat.info = external ? null : i; kiPatternContext = external ? { card: external.card, hit: h } : null;
   $('pat-info-zoom').disabled = !!external && external.card.levels.status !== 'bereit';
   put('pat-info-title', L.n);
+  const ctx = !external && h.kind === 'form' ? patQualityContext() : null;
+  const q = ctx ? patChipList().find(r => r.key === patternChipKey(h)) || chartPatternQuality(h,state.candles,{interval:state.interval,trends:patQualityTrends(),levels:ctx.levels,atr:ctx.atr}) : null;
+  if(q)patChipInfoKey={key:patternChipKey(h),scope:patKey(),restrict:false}; // Historische Erklärung behält ihren vorhandenen Chart-Zoom.
   const body = $('pat-info-body'), kv = (k, v) => { const p = el('p', 'pat-kv'); p.append(el('b', '', k + ': '), String(v)); return p; };
   const vals = el('div', 'pat-vals'); vals.append(el('h3', '', 'Gemessen'));
   for (const [k, v] of Object.entries(h.vals || {})) vals.append(kv(k, patFmt(k, v)));
@@ -13508,10 +13659,12 @@ function patOpenInfo(i, external = null) {
   for (const r of h.rules) { const li = el('li', r.ok === true ? 'ok' : r.ok === false ? 'no' : 'unk'); li.append(el('span', 'pat-mark', r.ok === true ? '✓' : r.ok === false ? '✗' : '?'), `${r.k} (Gewicht ${r.w})${r.v ? ' – ' + r.v : ''}`); ul.append(li); }
   why.append(sum, el('p', '', 'Regelgüte = erfüllte Regelgewichte ÷ mögliche Gewichte; unbekannte Regeln zählen im Nenner mit. Das ist keine statistische Trefferquote.'), ul);
   body.replaceChildren(
-    (() => { const top = el('div', 'pat-info-top'); top.append(patSvg(h.id)); const t = el('div'); const fmt = external ? v => new Date(v).toISOString().slice(0, 16).replace('T', ' ') : patTime; t.append(el('p', `pat-dir ${h.dir}`, `${PAT_DIR[h.dir]} · ${L.f} · Regelgüte ${h.q} %`), el('p', '', `${(external?.scope.instrument || state.symbol).slice(0, -4)}/USDT · ${external?.scope.timeframe || state.interval} · ${fmt(h.t0)}${h.t1 !== h.t0 ? ` – ${fmt(h.t1)}` : ''} UTC${external ? ' · Bitget USDT-Futures' : ''}`), el('p', '', `Status: ${h.status}`)); top.append(t); return top; })(),
+    (() => { const top = el('div', 'pat-info-top'); top.append(patSvg(h.id)); const t = el('div'); const fmt = external ? v => new Date(v).toISOString().slice(0, 16).replace('T', ' ') : patTime; t.append(el('p', `pat-dir ${h.dir}`, `${PAT_DIR[h.dir]} · ${L.f} · Regelgüte ${h.q} %`), el('p', '', `${(external?.scope.instrument || state.symbol).slice(0, -4)}/USDT · ${external?.scope.timeframe || state.interval} · ${fmt(h.t0)}${h.t1 !== h.t0 ? ` – ${fmt(h.t1)}` : ''} UTC${external ? ' · Bitget USDT-Futures' : ''}`), el('p', 'pat-info-status', `Status: ${q?.status || h.status}`)); top.append(t); return top; })(),
     el('p', '', L.e), kv('Bestätigung', L.c), vals, why, external ? el('p', 'ki-note', 'Bitget-Muster: G09-Kursrichtungsstatistik noch nicht ausgewertet. Konfluenz-TP/SL-Auswertung separat in der KI-Karte; unterschiedliche Modelle werden nicht vermischt.') : pkSection(h),
     el('p', 'pat-note', `Automatische Mustererkennung nach festen Regeln (${R.ver}${h.id.match(/star|piercing|dark_cloud/) ? !external && pat.gap ? ', strenger Gap-Modus' : ', Krypto-Variante ohne Gap' : ''}), keine Anlageberatung.`));
   if (!d.open) d.showModal();
+  if(q) { const block=patQualityBlock(q,h);block.dataset.signature=JSON.stringify(q);body.children[0].after(block); }
+  body.scrollTop=0;
 }
 // „Im Chart zeigen“: Ausschnitt bewusst um das Muster legen; danach ist der Chart frei bedienbar
 function patZoom(i) {
@@ -13523,7 +13676,8 @@ function patZoom(i) {
 // --- Chart: kleine Labels für Kerzen, Linien/Zonen für Formationen ---
 function patProjectionRows() {
   if (!patProjection.on || (!pat.on && !patChipSelections.size) || chartViewState().pan > 0 || pat.res?.key !== patKey()) return [];
-  const forms = patShown().filter(h => h.kind === 'form'), selected = pat.res?.hits[pat.sel];
+  const valid=new Set(patChipList().filter(r=>!r.disabled).map(r=>r.key));
+  const forms = patShown().filter(h => h.kind === 'form'&&valid.has(patternChipKey(h))), selected = pat.res?.hits[pat.sel];
   const chosen = patChipList().filter(r=>patChipSelections.has(r.key)&&!r.disabled).map(r=>r.hit);
   const hits = [...new Set([...(pat.on ? forms.slice(0, 2) : []), ...(selected?.kind === 'form' && forms.includes(selected) ? [selected] : []), ...chosen])];
   return hits.flatMap(hit => projectPatternLines(hit, state.candles, { timeframe: state.interval, bars: patProjection.bars, maxAge: PAT_ACTIVE_MAX }).map(line => ({ ...line, hit })));
@@ -13877,7 +14031,7 @@ async function patSvcApply() {
   finally { patSvcBusy = false; patSvcRender(); }
 }
 $('pat-svc-apply').addEventListener('click', () => void patSvcApply());
-Object.assign(window.__g09, { projection: () => ({ ...patProjection }), projectionRows: () => patProjectionRows(), chartScale: () => chartGeom && ({ min: chartGeom.min, max: chartGeom.max, step: chartGeom.step }), chipRows: () => patChipList(), chipToggle: key => patChipToggle(key), chipPaint: () => patChipPaint(), chipSelection: () => [...patChipSelections.keys()] });
+Object.assign(window.__g09, { projection: () => ({ ...patProjection }), projectionRows: () => patProjectionRows(), chartScale: () => chartGeom && ({ min: chartGeom.min, max: chartGeom.max, step: chartGeom.step }), chipRows: () => patChipList(), chipToggle: key => patChipToggle(key), chipPaint: () => patChipPaint(), chipSelection: () => [...patChipSelections.keys()], overview:()=>patOverviewModel(),overviewFeed:patOverviewFeed,overviewTick:()=>patOverviewTick() });
 window.__intervals = { config: MARKET_INTERVALS, chart: INTERVALS, signal: SIGNAL_INTERVALS, setMarket, ratingFor, openPattern: coin => patFromWl(coin) };
 Object.assign(window.__g09, { patOracleExport: () => patOracleExport(), patSvcConfig: () => patSvcConfig(), patSvcApply: () => patSvcApply(), patNotify: (c, h) => patNotify(c, h) });
 // ---------- 3.34.0 (G06): Trade-Bild – eine geschlossene Position als genau ein Telegram-Foto ----------
@@ -14677,7 +14831,7 @@ function kiKick(delay = 0) {
   if (deadlines.length) ki.timer = setTimeout(() => { ki.timer = null; kiRender(); kiKick(); }, Math.max(1, Math.min(ki.open ? 60000 : Infinity, Math.min(...deadlines) - Date.now() + 1)));
 }
 function kiJob(request, options, type = 'load') {
-  if (!ki.worker) { ki.worker = new Worker(new URL('./bundles/3.64.1/shared/confluence-worker.mjs', location.href), { type: 'module' });
+  if (!ki.worker) { ki.worker = new Worker(new URL('./bundles/3.65.0/shared/confluence-worker.mjs', location.href), { type: 'module' });
     ki.worker.onmessage = ({ data }) => { if (!ki.pending || data.id !== ki.pending.id) return; if (data.progress) { ki.message = 'Historie: ' + data.progress.stage + (data.progress.total ? ` · ${data.progress.completed}/${data.progress.total}` : ` · ${data.progress.priceCandles || 0} Kurskerzen`); kiRender(); return; } const p = ki.pending; ki.pending = null; data.error ? p.reject(new Error(data.error)) : p.resolve(data); };
     ki.worker.onerror = () => { ki.pending?.reject(new Error('KI-Worker nicht verfügbar')); ki.pending = null; ki.worker?.terminate(); ki.worker = null; }; }
   return new Promise((resolve, reject) => { const id = ++ki.serial; ki.pending = { id, resolve, reject }; ki.worker.postMessage({ id, type, request, options }); });
@@ -14972,7 +15126,7 @@ const paperClient = createPaperPublicClient(), PAPER_PREF_KEY = 'scalpdesk.paper
 paperController = createPaperBotController({ read: readPaperBook, write: writePaperBook, currentSymbol: () => state.symbol,
   available: () => !document.hidden && !state.paused && navigator.onLine !== false,
   quote: (symbol, signal) => paperClient.quote({ symbol, decisionAt: Date.now(), signal }),
-  workerFactory: () => new Worker(new URL('./bundles/3.64.1/shared/paper-bot-worker.mjs', import.meta.url), { type: 'module' }),
+  workerFactory: () => new Worker(new URL('./bundles/3.65.0/shared/paper-bot-worker.mjs', import.meta.url), { type: 'module' }),
   settings: () => { const base = botView.paperSettings(), costs = paperView.settings(), po3 = { ...po3View.config(), criteria: po3View.config().criteria === 'pending' ? 'g10' : po3View.config().criteria, closure: 'tp1', feeEntry: costs.feeEntry, feeExit: costs.feeExit };
     const maxHoldMs = base.strategy === 'po3' ? po3.maxHoldMs : Math.min(86400000, (ki.cfg.shortHours || 24) * 3600000), [timeframe, contextTimeframe] = ki.cfg.shortPair.split('/');
     return { ...base, ...costs, maxHoldMs, rewardRisk: ki.cfg.rewardRisk, timeframe, contextTimeframe, po3, confluence: { ...kiCoreConfig(), minimumScore: base.minimumScore, feeEntry: costs.feeEntry, feeExit: costs.feeExit } }; },
@@ -15091,7 +15245,7 @@ const musterPaper = createMusterPaper({ read: readMusterPaper, write: writeMuste
     await chanSend('tg', formatMessage(event.kind === 'entry' ? 'signal' : 'trade', data), false, 'trade', { coord: true });
   } });
 musterView = createMusterView({ host: musterHost, selection: musterSelection, currentPrice: (symbol, market) => state.symbol === symbol && state.source === market ? currentPrice() : null,
-  prefs: store.get('scalpdesk.muster.settings.v1', {}), savePrefs: value => store.set('scalpdesk.muster.settings.v1', value), workerFactory: () => new Worker(new URL('./bundles/3.64.1/shared/muster-bot-worker.mjs', import.meta.url), { type: 'module' }), paper: musterPaper, onMarkers: scheduleDraw });
+  prefs: store.get('scalpdesk.muster.settings.v1', {}), savePrefs: value => store.set('scalpdesk.muster.settings.v1', value), workerFactory: () => new Worker(new URL('./bundles/3.65.0/shared/muster-bot-worker.mjs', import.meta.url), { type: 'module' }), paper: musterPaper, onMarkers: scheduleDraw });
 void musterPaper.restore().then(() => musterPaper.poll());
 function musterDraw(svg, data, x, y, bottom) {
   for (const signal of musterView?.markers() || []) {
