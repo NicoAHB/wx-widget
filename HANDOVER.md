@@ -3,7 +3,16 @@
 Diese Datei ist der Einstieg für jede weitere Arbeit am Projekt. Wer sie liest, braucht kein Vorwissen. Die vollständige fachliche
 Vorgabe aller Gruppen G01–G14 steht in `docs/VORGABE-G01-G14.md` (Original-Übergabe; dort sind G10–G14 ausführlich beschrieben).
 
-## Aktueller Arbeitsstand 3.64.1 – direkte Mustererklärung online und technisch abgenommen
+## Aktueller Arbeitsstand – Muster-Gesamt-Score in Arbeit (Basis 3.64.1)
+
+Nutzerauftrag: getrennten Qualitäts-Score 0–100, gescheitert/erfüllt, Restzielgewicht, Aufschlüsselung und Gesamtbild 5m–1w ergänzen. Branch `codex/chartmuster-score`; Veröffentlichung erst nach Abschlussprüfung. Zuerst Kernpunkte 1/2 geprüft, danach Anzeige und Hintergrundanalyse. Keine Änderung von pat-1, Regelgüte, Alarmen, KI-/Bot-Handelsmodellen oder Positionen.
+
+- Kern `shared/chart-pattern-quality.mjs` fertig: zentrale Gewichte/Startschwellen, sieben Faktoren, vorhandene Kauf-/Verkauf-/Halten-Trendchips, ehrliche Datenabdeckung ohne Umgewichtung. Geschlossene Folgekerze zurück über/unter dem bestätigten Ausbruch → gescheitert ×0,3; Zielwick auf geschlossener Folgekerze → erfüllt. Gleichzeitiger Zielwick/Gegen-Schluss konservativ gescheitert; erster terminaler Zustand bleibt. Bestätigungskerzenwick zählt nicht als vorher bekannter Zieltreffer. Restzielgewicht relativ zum tatsächlichen Bestätigungsschluss, kein fiktiver Trade.
+- Geprüft: 43/43 reine Fachfälle. Doppel-Top mit Ausbruch 82.563 und folgendem Schluss 83.854: Regelgüte bleibt 100 %, neuer Score 25, Status gescheitert/Mögliche Bärenfalle. Laufende Gegenkerze verändert den Status noch nicht. Bestehende Erkennungsobjekte unverändert.
+
+**Offen:** native Chips/Info, Quelle/Epochenschutz und schonender Mehrzeitebenen-Cache, relevante UI-/Offline-/Leistungsprüfungen, Lint/serieller Release-Gesamtlauf, synchroner App/SW-Versionsschritt und lauffähige Lieferung. Oracle-Dienst unverändert; keine neuen Telegram-Auslöser.
+
+## Vorheriger Arbeitsstand 3.64.1 – direkte Mustererklärung online und technisch abgenommen
 
 Nutzerauftrag nach 3.64.0: Chartmuster-Kacheln leichter erklären, insbesondere per langem Drücken. Umsetzung in `codex/chartmuster-direktinfo`, jetzt öffentlich **3.64.1**.
 

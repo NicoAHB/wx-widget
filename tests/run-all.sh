@@ -1,4 +1,5 @@
 #!/bin/bash
+echo "== unit-chart-pattern-quality"; timeout 120 node unit-chart-pattern-quality.js 2>&1 | grep -E "✗|bestanden"
 cd "$(dirname "$0")"
 set -o pipefail
 failed=0

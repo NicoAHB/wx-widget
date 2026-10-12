@@ -13,6 +13,9 @@
 Automatische Tests für die App (`weather-widget-v2.html`) und den 24/7-Dienst (`server/`). Sie laufen vollständig lokal gegen einen Test-Server: Binance, Telegram, Discord und GitHub werden nachgebildet (`mock-binance.js`). Es werden keine echten Kurse abgefragt und keine echten Nachrichten gesendet.
 
 ## Voraussetzungen
+
+Muster-Qualität (in Arbeit): `unit-chart-pattern-quality.js` prüft 43 kausale Status-/Gewichts-/Datenlücken-/Restziel-/Sortier-/Gesamtbildfälle am separaten Anzeige-Modell cpq-1, einschließlich Doppel-Top 82.563 → 83.854 und unveränderter pat-1-Regelgüte. Im seriellen Gesamtlauf registriert.
+
 - Node.js 22 und Playwright mit Chromium (in den Cloud-Sitzungen von Claude Code vorinstalliert unter `/opt/node22` bzw. `/opt/pw-browsers`).
 - `openssl`: Das Test-Zertifikat (`key.pem`, `cert.pem`) wird beim ersten Start erzeugt und nicht eingecheckt.
 - Einmalig im Ordner `tests/`: `npm install`.
