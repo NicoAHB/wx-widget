@@ -27,7 +27,8 @@ jobs:
       - name: Öffentlichen Kalender ohne Schlüssel lesen
         id: collect
         run: |
-          if ! curl --fail --silent --show-error --max-time 30 --max-filesize 2097152 \
+          if ! curl --fail --location --max-redirs 3 --proto '=https' --proto-redir '=https' \
+              --silent --show-error --max-time 30 --max-filesize 2097152 \
               -A "ScalpDesk-Kalender (github.com/${GITHUB_REPOSITORY})" \
               https://coinmarketcal.com/en/ -o public-calendar.html; then
             echo "::warning::Öffentlicher Krypto-Kalender nicht erreichbar; letzter Stand bleibt."
