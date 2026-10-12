@@ -1179,11 +1179,12 @@ html[data-chartfull] .overlay-toggles button{flex:0 0 auto;white-space:nowrap;mi
 html[data-chartfull] #ohlc{order:3}
 html[data-chartfull] #chart{order:4}
 /* Schmale Handys: sieben Werkzeuge (mit Vollbild) passen in eine Zeile */
-@media (max-width:380px){.chart-toolbar .zoom-controls button{min-width:38px;padding:0 4px}}
+@media (max-width:380px){.chart-toolbar .zoom-controls{gap:2px}.chart-toolbar .zoom-controls button{min-width:35px;padding:0 3px}.chart-toolbar #zones-btn{font-size:.6875rem;padding:0 2px}} /* 3.68.0: Platz für „Zonen“ */
 /* 3.32.0 (G04.5): mit ⟲ passt die Reihe auch bei 320 px – etwas schmalere Knöpfe; ist zusätzlich „Jetzt“ zu sehen (zurückgeblättert),
    weicht ⟲ bis dahin (Jetzt zuerst, danach ⟲); notfalls lässt sich die Reihe seitlich wischen statt abzuschneiden */
 @media (max-width:360px){.chart-toolbar .zoom-controls{min-width:0;max-width:100%;overflow-x:auto;scrollbar-width:none;gap:2px}.chart-toolbar .zoom-controls::-webkit-scrollbar{display:none}
-  .chart-toolbar .zoom-controls button{flex:0 0 auto;min-width:33px;padding:0 3px}.chart-toolbar #pan-now:not([hidden])~#zoom-reset{display:none}}
+  .chart-toolbar .zoom-controls button{flex:0 0 auto;min-width:33px;padding:0 3px}
+  .chart-toolbar #zones-btn{font-size:.6875rem;padding:0 2px}.chart-toolbar #pan-now:not([hidden])~#zoom-reset{display:none}}
 /* Vollbild am iPhone hochkant: Chart ins Querformat gedreht (siehe chartfull); Ränder für Notch und Home-Leiste mitgedreht */
 html[data-chartfull] #chart{touch-action:none}
 @media (orientation:portrait) and (max-width:600px) and (pointer:coarse){
@@ -1585,8 +1586,10 @@ html[data-layout=tablet] .wl-tile{height:64px}
 .wl-d-pat.none{border-color:var(--border);background:none;color:var(--muted);cursor:default}
 .wl-d-pat.bull{border-color:var(--up-border);background:var(--up-bg);color:var(--up-text)}.wl-d-pat.bear{border-color:var(--down-border);background:var(--down-bg);color:var(--down-text)}
 #pat-btn{font-weight:700;font-size:.8125rem}#pat-btn[aria-pressed=true]{background:var(--up-bg-2);color:var(--up-text);border-color:var(--up-border)}
-@container ctb (min-width:640px) and (max-width:780px){.chart-toolbar .zoom-controls{gap:2px}.chart-toolbar .zoom-controls button{min-width:40px}}
-@container ctb (min-width:331px) and (max-width:400px){.chart-toolbar .zoom-controls{gap:2px}.chart-toolbar .zoom-controls button{min-width:40px}}
+/* 3.68.0: mit dem Knopf „Zonen“ etwas schmalere Werkzeugknöpfe, damit die Leiste am iPad mini in der Intervallzeile bleibt und am Handy nicht übersteht */
+@container ctb (min-width:640px) and (max-width:780px){.chart-toolbar .zoom-controls{gap:1px}.chart-toolbar .zoom-controls button{min-width:35px;padding:0 3px}.chart-toolbar #zones-btn{font-size:.6875rem;padding:0 2px}}
+@container ctb (min-width:331px) and (max-width:400px){.chart-toolbar .zoom-controls{gap:2px}.chart-toolbar .zoom-controls button{min-width:36px;padding:0 3px}.chart-toolbar #zones-btn{font-size:.6875rem;padding:0 2px}}
+@container ctb (min-width:401px) and (max-width:460px){.chart-toolbar .zoom-controls{gap:2px}.chart-toolbar .zoom-controls button{min-width:40px;padding:0 4px}.chart-toolbar #zones-btn{font-size:.75rem;padding:0 3px}}
 .pat-scope{margin:0;font-size:.8125rem;color:var(--muted)}
 .pat-bar{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}.pat-bar label{display:flex;align-items:center;gap:6px;font-size:.8125rem;color:var(--muted)}
 .pat-bar select{min-height:34px;border:1px solid var(--field-border);border-radius:6px;background:var(--field);color:var(--text);padding:0 6px}
