@@ -3,23 +3,17 @@
 //   Löschen, Export; ungültige Zusatzwerte → eingeschränkt geladen. reasons: keine stille Kürzung beim Laden, Herkunft des Setups.
 // backup: Schema 8 vollständig, ohne Zugangsdaten und Gerätezustände; Prüfsumme der Datei; alte Sicherungen; doppelter Import;
 //   Rückgängig; Speicherfehler beim Übernehmen; neuere Schema-Version; manipulierte Packung. code: Textcode iPhone → PC, mit und ohne
-//   Passwort, beschädigt/unvollständig. qr: 10 Teile mit Wechsel, Pause, Vor/Zurück, Geschwindigkeit, Lesbarkeit (M, ≤ 20, ≥ 3 px);
-//   Scan durcheinander und doppelt, fehlender und widersprüchlicher Teil; 11 Teile → kein QR. conflict: zwei Geräte ändern dieselbe
+//   Passwort, beschädigt/unvollständig. (3.67.0: QR-Teil entfernt, QR-Übertragung gibt es nicht mehr.) conflict: zwei Geräte ändern dieselbe
 //   Grundlage offline (auch mit falscher Uhr) → „Änderungen vergleichen“, nichts vorausgewählt, später/behalten/übernehmen; schneller
 //   Vorlauf und ältere Fassung ohne Rückfrage; Löschung gegen Änderung; Einstellungen; Alarm-Kennung iPhone → iPad ohne erneutes Auslösen.
 // money: selbst eingegebenes Datum einer Geldbewegung (vor 2017) bleibt nach dem Neuladen gültig; außerhalb 2009–2099 lehnt das Formular ab.
-// Aufruf: node m50.js [integrity|reasons|backup|code|qr|conflict|alarmid|money|sync]
+// Aufruf: node m50.js [integrity|reasons|backup|code|conflict|alarmid|money|sync]
 const h = require('./harness'), fs = require('fs'), path = require('path'), os = require('os'), zlib = require('zlib');
 const results = [];
 const check = (name, cond, detail = '') => { results.push({ name, ok: !!cond, detail }); console.log(`${cond ? '  ✓' : '  ✗'} ${name}${detail ? ' — ' + String(detail).slice(0, 300) : ''}`); };
 const REPO = require('path').resolve(__dirname, '..'), DBG = 'weather-widget-v2.g01.html';
 const real = errs => errs.filter(e => !/Service Worker registration blocked|willReadFrequently/.test(e)); // getImageData des Tests selbst
 const until = async (fn, ms = 20000, step = 200) => { const t0 = Date.now(); for (;;) { const v = await fn(); if (v) return v; if (Date.now() - t0 > ms) return null; await h.sleep(step); } };
-function writeDebugPage() {
-  const s = fs.readFileSync(`${REPO}/weather-widget-v2.html`, 'utf8'), anchor = '\nrender();startLive();';
-  if (!s.includes(anchor)) throw new Error('Einstiegspunkt fehlt');
-  fs.writeFileSync(`${REPO}/${DBG}`, s.replace(anchor, '\nwindow.__g = { get state() { return state; }, qr, onScanText, parseQrPart, quarList, confList, setLin, packBackup };' + anchor));
-}
 async function openPage(browser, seed = {}, { ctx = null, viewport = { width: 1600, height: 1000 }, debug = false, init = null, perm = false } = {}) {
   ctx = ctx || await browser.newContext({ viewport, acceptDownloads: true, timezoneId: 'Europe/Berlin', ...(perm ? { permissions: ['clipboard-read', 'clipboard-write'] } : {}) });
   if (!ctx.seeded) {
@@ -55,8 +49,6 @@ async function take(page, box = 'sync-preview') { await jsClick(page, `#${box} .
 const trade = (id, sym, pnl, closedAt, extra = {}) => ({ id, symbol: sym, side: 'long', mode: 'isolated', entry: 100, leverage: 10, qty: 1, margin: 10, openedAt: closedAt - 3600e3, source: 'spot', liqExchange: null, preRealized: 0, sl: null, tp: null, ack: { sl: false, tp: false }, note: '', exit: 100 + pnl, fees: 0, pnl, pnlSource: 'calc', closedAt, fx: 1.16, ...extra });
 const position = (id, sym, entry, extra = {}) => ({ id, symbol: sym, side: 'long', mode: 'cross', entry, leverage: 10, qty: 1, margin: entry / 10, openedAt: Date.now() - 3600e3, source: 'spot', liqExchange: null, preRealized: 0, sl: null, tp: null, ack: { sl: false, tp: false }, ...extra });
 const alarm = (id, sym, price, dir = 'above', extra = {}) => ({ id, symbol: sym, dir, price, note: '', source: 'spot', createdAt: Date.now() - 600e3, triggeredAt: null, triggerPrice: null, ...extra });
-// feste Pseudozufallstexte (gleiches n → gleiche Daten): die Grenze 10/11 Teile ist so reproduzierbar
-const rnd = (n, seed = 1) => { let x = seed * 2654435761 >>> 0; return Array.from({ length: n }, () => { x ^= x << 13; x >>>= 0; x ^= x >>> 17; x ^= x << 5; x >>>= 0; return 'abcdefghijklmnopqrstuvwxyz0123456789'[x % 36]; }).join(''); };
 async function exportCode(page, pass = '') {
   await openData(page); await jsClick(page, '#code-export'); await page.waitForTimeout(150);
   await page.fill('#code-pass', pass); await jsClick(page, '#code-make');
@@ -284,98 +276,6 @@ const tests = {
     const cut = e1.code.slice(0, 40) + e1.code.slice(60), r2 = await importCode(B.page, cut);
     check('Code mit fehlendem Mittelstück (Ende vorhanden): erkannt, nichts übernommen', /beschädigt oder unvollständig|Prüfsumme stimmt nicht/.test(r2.error) && (await ls(B.page, 'scalpdesk.history.v1')).length === 300, r2.error);
     check('keine Fehler (PC)', !real(B.errors).length, real(B.errors).join(' | ')); await B.ctx.close();
-  },
-  // ================= QR-Code: höchstens 10 Teile, Wechsel, Lesbarkeit, Scan =================
-  async qr(browser) {
-    writeDebugPage();
-    const T0 = Date.UTC(2026, 8, 4, 9), mk = n => Array.from({ length: n }, (_, i) => trade('Q' + i, 'BTCUSDT', 1, T0 + i * 60e3, { note: rnd(120, i + 7) }));
-    const parts = async page => { await openData(page); await jsClick(page, '#qr-export'); await until(() => page.evaluate(() => /Teil/.test(document.getElementById('qr-calc').textContent)), 15000); const t = await txt(page, '#qr-calc'); await jsClick(page, '#qr-close'); return { n: Number((/· (\d+) Teile?/.exec(t) || [])[1] || 0), t }; };
-    // Größe suchen: genau 10 und genau 11 Teile
-    let lo = 5, hi = 120, n10 = null, n11 = null, seen = new Map();
-    const probe = async n => { if (seen.has(n)) return seen.get(n); const P = await openPage(browser, { 'scalpdesk.history.v1': mk(n) }, { debug: true }); const r = await parts(P.page); await P.ctx.close(); seen.set(n, r.n); return r.n; };
-    while (lo < hi) { const mid = (lo + hi) >> 1; if (await probe(mid) <= 10) lo = mid + 1; else hi = mid; }
-    // 3.54.0: neue persönliche Journalbücher ändern die Packgröße. Die tatsächlich berechnete,
-    // tatsächlich erzeugte vollständige Packung behalten; keine feste Tradezahl als Teilezahl ausgeben.
-    const prepared = async (n, target, extra = {}, viewport = { width: 1600, height: 1000 }) => {
-      for (let attempt = 0; attempt < 20; attempt++) {
-        const P = await openPage(browser, { 'scalpdesk.history.v1': mk(n), ...extra }, { debug: true, viewport });
-        await openData(P.page); await jsClick(P.page, '#qr-export');
-        const ready = await until(() => P.page.evaluate(() => /Teil/.test(document.getElementById('qr-calc').textContent)), 15000);
-        const before = await txt(P.page, '#qr-calc'); await jsClick(P.page, '#qr-make');
-        const generated = await until(() => P.page.evaluate(() => !document.getElementById('qr-big').hidden || !document.getElementById('qr-out').hidden), 20000);
-        const actual = Number((/· (\d+) Teile?/.exec(await txt(P.page, '#qr-calc')) || [])[1] || 0);
-        console.log('  QR-Testpackung:', JSON.stringify({ attempt, n, target, actual, viewport: viewport.width, before, generated }));
-        if (ready && generated && actual === target) {
-          if (target <= 10) await P.page.evaluate(() => { if (!__g.qr.paused) document.getElementById('qr-pause').click(); });
-          return { ...P, n, parts: actual, before };
-        }
-        await P.ctx.close(); if (!ready || !actual) throw new Error('QR-Testpackung nicht bereit');
-        n = Math.max(5, Math.min(120, n + (actual < target ? 1 : -1)));
-      }
-      throw new Error('Keine vollständige QR-Testpackung mit genau ' + target + ' Teilen gefunden');
-    };
-    const ten = await prepared(lo - 1, 10, { 'scalpdesk.alarms.v1': [alarm('QA', 'ETHUSDT', 3000)], 'scalpdesk.theme.v1': 'dark' }, { width: 390, height: 844 });
-    const eleven = await prepared(lo, 11); n10 = ten.n; n11 = eleven.n;
-    check('Testgröße gefunden: genau 10 und 11 Teile (vollständige eingefrorene Sicherungen)', ten.parts === 10 && eleven.parts === 11, `Test mit ${n10} (10 Teile) und ${n11} (11 Teile)`);
-    // 11 Teile → kein QR, Textcode/Datei angeboten
-    let S = eleven; // bereits aus der vollständigen Sicherung erzeugt
-    await until(() => S.page.evaluate(() => !document.getElementById('qr-big').hidden || !document.getElementById('qr-out').hidden), 15000);
-    const big = await S.page.evaluate(() => ({ big: !document.getElementById('qr-big').hidden, text: document.getElementById('qr-big-text').textContent, out: !document.getElementById('qr-out').hidden }));
-    check('11 Teile: kein QR-Code, „Sicherung zu groß für QR: 11 Teile nötig, höchstens 10 – Textcode oder Datei verwenden“', big.big && !big.out && /11 Teile nötig, höchstens 10 – Textcode oder Datei verwenden\. Es wird nichts weggelassen/.test(big.text), big.text);
-    check('… mit Knöpfen „Textcode anzeigen“ und „Backup herunterladen“', await vis(S.page, '#qr-big-code') && await vis(S.page, '#qr-big-file'));
-    await S.ctx.close();
-    // 10 Teile → einzeln, groß, Wechsel
-    S = ten; // exakt die oben erzeugte Packung, einschließlich Alarm und eigener Bücher
-    for (let i = 0; i < 10 && await S.page.evaluate(() => __g.qr.idx !== 0); i++) await jsClick(S.page, '#qr-prev');
-    await jsClick(S.page, '#qr-pause'); // bei Teil 1 weiterlaufen lassen
-    const calc = ten.before;
-    check('Vor dem Start: vollständige Sicherung, gepackte Größe und Teilezahl', /Vollständige Sicherung: .*Trades.*KB gepackt · \d+ Teile/.test(calc), calc);
-    await until(() => S.page.evaluate(() => !document.getElementById('qr-out').hidden), 20000); // erzeugte Packung unverändert lassen
-    const q = await S.page.evaluate(() => { const c = document.getElementById('qr-canvas'), ctx = c.getContext('2d'), px = (x, y) => ctx.getImageData(x, y, 1, 1).data[0]; const k = Number(c.dataset.px), s = c.width / c.getBoundingClientRect().width;
-      return { n: __g.qr.codes.length, label: document.getElementById('qr-part').textContent, ver: Number(c.dataset.version), ecl: c.dataset.ecl, k, w: c.getBoundingClientRect().width, size: __g.qr.codes[0].size, corner: px(1, 1), finder: px(Math.round((4 + 3.5) * k * s), Math.round((4 + 3.5) * k * s)), vw: innerWidth }; });
-    check('Mobil (390 px): 10 Teile, „Teil 1 von 10 · wechselt alle 1 s“', q.n === 10 && /^Teil 1 von 10 · wechselt alle 1 s/.test(q.label), JSON.stringify(q));
-    check('Lesbarkeit: Fehlerkorrektur M, Version ≤ 20, ganze 3+ CSS-Pixel je Modul, 4 Module Rand', q.ecl === 'M' && q.ver <= 20 && q.k >= 3 && Number.isInteger(q.k) && Math.abs(q.w - (q.size + 8) * q.k) < 0.5, `M=${q.ecl} v${q.ver} ${q.k}px ${q.w}px`);
-    check('Schwarz auf weiß auch im dunklen Design (Rand weiß, Suchmuster schwarz)', q.corner === 255 && q.finder === 0, `${q.corner}/${q.finder}`);
-    const seq = []; for (let i = 0; i < 6; i++) { seq.push(Number((/Teil (\d+)/.exec(await txt(S.page, '#qr-part')) || [])[1])); await h.sleep(500); }
-    check('Automatischer Wechsel in Endlosschleife (Teil wechselt etwa jede Sekunde)', new Set(seq).size >= 3, seq.join(','));
-    await S.page.selectOption('#qr-speed', '500'); const s5 = []; for (let i = 0; i < 6; i++) { s5.push(Number((/Teil (\d+)/.exec(await txt(S.page, '#qr-part')) || [])[1])); await h.sleep(250); }
-    check('Geschwindigkeit 0,5 s wählbar („wechselt alle 0,5 s“)', /wechselt alle 0,5 s/.test(await txt(S.page, '#qr-part')) && new Set(s5).size >= 3, s5.join(','));
-    await jsClick(S.page, '#qr-pause'); const p1 = await txt(S.page, '#qr-part'); await h.sleep(1500);
-    check('Pause hält den Teil an („angehalten“), Weiter setzt fort', p1 === await txt(S.page, '#qr-part') && /angehalten/.test(p1) && await txt(S.page, '#qr-pause') === 'Weiter', p1);
-    const cur = Number((/Teil (\d+)/.exec(p1) || [])[1]); await jsClick(S.page, '#qr-next'); const nx = Number((/Teil (\d+)/.exec(await txt(S.page, '#qr-part')) || [])[1]); await jsClick(S.page, '#qr-prev'); await jsClick(S.page, '#qr-prev'); const pv2 = Number((/Teil (\d+)/.exec(await txt(S.page, '#qr-part')) || [])[1]);
-    check('Vor und Zurück (von 10 weiter zu 1)', nx === cur % 10 + 1 && pv2 === ((cur + 8) % 10) + 1, `${cur}→${nx}→${pv2}`);
-    // Alle Teile als Bild abgreifen und die Texte merken
-    const shots = new Map();
-    for (let i = 0; i < 10; i++) { await S.page.evaluate(i => { document.getElementById('qr-pause').click(); }, i); break; }
-    for (let t = 0; t < 40 && shots.size < 10; t++) { const i = Number((/Teil (\d+)/.exec(await txt(S.page, '#qr-part')) || [])[1]); if (!shots.has(i)) shots.set(i, await S.page.$eval('#qr-canvas', c => c.toDataURL('image/png'))); await jsClick(S.page, '#qr-next'); }
-    const texts = await S.page.evaluate(() => __g.qr.sp.parts);
-    check('Alle 10 Teile abgegriffen', shots.size === 10, shots.size);
-    check('Jeder Teil nennt Übertragung, Nummer, Anzahl und Gesamtprüfsumme', texts.every((t, i) => new RegExp(`^SQ1:${i + 1}:10:[0-9A-Z]{6}:[0-9A-F]{8}:\\d+:`).test(t)) && new Set(texts.map(t => t.split(':')[3])).size === 1);
-    check('keine Fehler (Sender)', !real(S.errors).length, real(S.errors).join(' | ')); await S.ctx.close();
-    // Empfänger: Fotos durcheinander und doppelt, ein widersprüchlicher Teil, erst vollständig übernehmen
-    const R = await openPage(browser, {}, { debug: true, viewport: { width: 820, height: 1180 } });
-    await openData(R.page); await jsClick(R.page, '#qr-scan'); await R.page.waitForTimeout(800);
-    const order = [7, 2, 9, 2, 5, 1, 7, 10, 3];
-    for (const i of order) { const f = path.join(os.tmpdir(), `m50-qr-${i}.png`); fs.writeFileSync(f, Buffer.from(shots.get(i).split(',')[1], 'base64')); await R.page.setInputFiles('#qr-photo', f); await R.page.waitForTimeout(350); }
-    const prog = await R.page.evaluate(() => ({ status: document.getElementById('qr-scan-status').textContent, boxes: [...document.querySelectorAll('#qr-scan-parts i')].map(i => i.className === 'ok' ? 1 : 0).join('') }));
-    check('Durcheinander und doppelt gescannt: „7 von 10 Teilen gelesen – fehlt noch: 4, 6, 8“', /^7 von 10 Teilen gelesen – fehlt noch: 4, 6, 8\./.test(prog.status) && prog.boxes === '1110101011', JSON.stringify(prog));
-    check('Kein vorzeitiger Import (noch keine Vorschau, keine Daten)', await R.page.evaluate(() => document.getElementById('qr-preview').hidden) && !(await ls(R.page, 'scalpdesk.history.v1')));
-    const bad1 = (() => { const p = texts[0].split(':'), d = p.slice(6).join(':'); return [...p.slice(0, 6), (d[0] === 'A' ? 'B' : 'A') + d.slice(1)].join(':'); })();
-    await R.page.evaluate(t => __g.onScanText(t), bad1);
-    const warn1 = await txt(R.page, '#qr-scan-warn');
-    check('Widersprüchlicher Teil (Teil 1 mit anderem Inhalt): abgelehnt, Hinweis', /Teil 1 widerspricht einem schon gelesenen Teil – abgelehnt/.test(warn1), warn1);
-    await R.page.evaluate(t => __g.onScanText(t), texts[3].replace(/^SQ1:4:10:/, 'SQ1:4:9:'));
-    check('Teil mit abweichender Anzahl: ignoriert, zählt nicht', /passt nicht zur laufenden Übertragung/.test(await txt(R.page, '#qr-scan-warn')) && /^7 von 10/.test(await txt(R.page, '#qr-scan-status')));
-    for (const i of [4, 6]) { const f = path.join(os.tmpdir(), `m50-qr-${i}.png`); fs.writeFileSync(f, Buffer.from(shots.get(i).split(',')[1], 'base64')); await R.page.setInputFiles('#qr-photo', f); await R.page.waitForTimeout(350); }
-    check('9 von 10: weiter keine Vorschau', /^9 von 10 Teilen gelesen – fehlt noch: 8\./.test(await txt(R.page, '#qr-scan-status')) && await R.page.evaluate(() => document.getElementById('qr-preview').hidden), await txt(R.page, '#qr-scan-status'));
-    { const f = path.join(os.tmpdir(), 'm50-qr-8.png'); fs.writeFileSync(f, Buffer.from(shots.get(8).split(',')[1], 'base64')); await R.page.setInputFiles('#qr-photo', f); }
-    await until(() => R.page.evaluate(() => !document.getElementById('qr-preview').hidden), 15000);
-    const items = await R.page.evaluate(() => [...document.querySelectorAll('#qr-preview .sp-list > li')].map(li => li.innerText.replace(/\s*\n\s*/g, ' ⏎ ')));
-    check('Alle 10 gelesen, Prüfsumme stimmt → Vorschau (ohne Passwort)', items.some(i => new RegExp(`^Neu: ${n10} Trades, 1 Kurs-Alarm`).test(i)), items.join(' ## '));
-    await jsClick(R.page, '#qr-preview .sp-actions .button.primary-lite'); await R.page.waitForTimeout(600);
-    check('Übernommen: alle Trades und der Alarm', (await ls(R.page, 'scalpdesk.history.v1'))?.length === n10 && (await ls(R.page, 'scalpdesk.alarms.v1'))?.[0]?.id === 'QA');
-    check('keine Fehler (Empfänger)', !real(R.errors).length, real(R.errors).join(' | ')); await R.ctx.close();
-    try { fs.unlinkSync(`${REPO}/${DBG}`); } catch {}
   },
   // ================= Konflikte: zwei Geräte, gleiche Grundlage, falsche Uhr =================
   async conflict(browser) {

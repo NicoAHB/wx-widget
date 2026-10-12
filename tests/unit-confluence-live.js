@@ -88,8 +88,10 @@ const clone = x => structuredClone(x), near = (a, b) => Number.isFinite(a) && Ma
   check('Andere Funding-/Ankerpolitik bleibt getrennt', unknown.cards[0].id !== card.id && L.evaluateLive({ ...f, options: { ...f.options, anchorPolicy: 'latest-pivot' } }).cards[0].id !== card.id);
   const qData = [{ symbol: 'BTCUSDT', bidPr: '100', askPr: '100.1', markPrice: '100', ts: String(f.quote.at) }], qContext = { symbol: 'BTCUSDT', decisionAt: card.decisionAt, providerAt: f.quote.providerAt, observedAt: f.quote.knownAt };
   check('Öffentlicher Bitget-Ticker wird mit Provider-/Kenntniszeit validiert', B.normalizeBitgetQuote(qData, qContext).ask === 100.1);
-  let rejects = 0; for (const bad of [[], [...qData, ...qData], [{ ...qData[0], bidPr: '' }], [{ ...qData[0], ts: String(card.decisionAt - 1) }]]) { try { B.normalizeBitgetQuote(bad, qContext); } catch { rejects++; } }
+  let rejects = 0; for (const bad of [[], [...qData, ...qData], [{ ...qData[0], bidPr: '' }], [{ ...qData[0], ts: String(card.decisionAt - 5001) }]]) { try { B.normalizeBitgetQuote(bad, qContext); } catch { rejects++; } }
   check('Leerer/doppelter/veralteter/ungültiger Ticker wird verworfen', rejects === 4);
+  const early = B.normalizeBitgetQuote([{ ...qData[0], ts: String(card.decisionAt - 500) }], qContext);
+  check('3.67.0: Tickerstand 0,5 s vor der Entscheidung gilt zum Abfragezeitpunkt (Zeit = Entscheidung)', early.at === card.decisionAt && early.ask === 100.1);
   const F = await import(pathToFileURL(path.join(__dirname, 'fixtures/bitget.mjs'))), t = F.transport({ mutate(body, u) { if (u.pathname.endsWith('/ticker')) body.data = [{ ...qData[0], ts: String(F.NOW) }]; } });
   const q = await t.client.quote({ symbol: 'BTCUSDT', decisionAt: F.NOW });
   check('Ticker nutzt denselben seriellen öffentlichen GET-Transport ohne Konto/Orderpfad', q.at === F.NOW && new URL(t.calls[0].url).pathname === '/api/v2/mix/market/ticker' && t.calls[0].init.method === 'GET' && t.calls[0].init.credentials === 'omit');

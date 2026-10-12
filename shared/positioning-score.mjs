@@ -1,7 +1,11 @@
 // position-1: getrennte Anzeigenbewertung, keine Handelsstimme und keine Kursprognose.
+// 3.67.0: Binance stellt Long/Short-Daten nur für die letzten 30 Tage bereit. Eine Startzeit genau an dieser Grenze
+// liegt beim Eintreffen schon außerhalb und wird abgelehnt; der Verlauf wird deshalb ohne Startzeit über die Anzahl
+// (180 × 4h = 30 Tage) geladen. Zeitstempel der 4h-Reihe dürfen bis zu zwei Perioden alt sein (Periodenbeginn plus
+// Veröffentlichung), kleine Uhrabweichungen des Geräts verwerfen keine frischen Werte mehr.
 export const POSITIONING_CONFIG = Object.freeze({
   windowMs: 30 * 86400000, updateMs: 300000, fundingHistoryMs: 3600000,
-  ratioHistoryMs: 14400000, ratioPeriod: '4h', cacheSize: 4, minSamples: 2,
+  ratioHistoryMs: 14400000, ratioPeriod: '4h', ratioLimit: 180, ratioMaxAgeMs: 2 * 14400000 + 300000, clockSkewMs: 600000, cacheSize: 4, minSamples: 2,
   fundingWeight: .5, ratioWeight: .5, squeezeLow: 15, squeezeHigh: 85
 });
 const numeric = v => (typeof v === 'number' || typeof v === 'string' && v.trim() !== '') && Number.isFinite(Number(v)) ? Number(v) : null;
@@ -57,7 +61,7 @@ export function createPositioningFeed({ request, changed = () => {}, now = () =>
     if (!enabled || !state.symbol) { if (state.busy) cancel(); return; }
     if (task) return task;
     if (now() < Math.max(state.nextAt, blockedUntil)) return;
-    const token = epoch, captured = state.symbol, entry = current, ctrl = new AbortController(), at = now(), from = at - config.windowMs;
+    const token = epoch, captured = state.symbol, entry = current, ctrl = new AbortController(), at = now(), from = at - config.windowMs, to = at + config.clockSkewMs;
     controller = ctrl; state.busy = true; notify();
     const active = () => token === epoch && !ctrl.signal.aborted;
     const get = async (path, params) => {
@@ -69,28 +73,28 @@ export function createPositioningFeed({ request, changed = () => {}, now = () =>
       try {
         const premium = await get('/fapi/v1/premiumIndex', {}), funding = numeric(premium?.lastFundingRate), time = numeric(premium?.time);
         if (premium?.symbol !== captured || funding === null || time === null || Math.abs(at - time) > 180000) throw Error('Aktuelle Funding-Rate nicht verfügbar.');
-        entry.funding = merge(entry.funding, [], from, at); entry.ratios = merge(entry.ratios, [], from, at);
+        entry.funding = merge(entry.funding, [], from, to); entry.ratios = merge(entry.ratios, [], from, to);
         if (!entry.fundingAt || at - entry.fundingAt >= config.fundingHistoryMs || entry.funding.length < config.minSamples) {
           const fresh = []; let startTime = entry.funding.length >= config.minSamples ? entry.funding.at(-1).at + 1 : from;
           // fundingRate liefert aufsteigend maximal 1000 Werte; auch kürzere Funding-Intervalle vollständig laden.
           for (let page = 0; page < 8; page++) {
             const rows = await get('/fapi/v1/fundingRate', { startTime, endTime: at, limit: 1000 });
-            const part = series(rows, captured, 'funding', from, at); fresh.push(...part);
+            const part = series(rows, captured, 'funding', from, to); fresh.push(...part);
             if (rows.length < 1000) break;
             if (!part.length || part.at(-1).at < startTime || page === 7) throw Error('Funding-Historie konnte nicht vollständig geladen werden.');
             startTime = part.at(-1).at + 1; if (startTime > at) break;
           }
-          entry.funding = merge(entry.funding, fresh, from, at); entry.fundingAt = at;
+          entry.funding = merge(entry.funding, fresh, from, to); entry.fundingAt = at;
         }
         let ratioCurrent;
         if (!entry.ratiosAt || at - entry.ratiosAt >= config.ratioHistoryMs || entry.ratios.length < config.minSamples) {
-          entry.ratios = series(await get('/futures/data/globalLongShortAccountRatio', { period: config.ratioPeriod, startTime: from, endTime: at, limit: 500 }), captured, 'ratio', from, at);
+          entry.ratios = series(await get('/futures/data/globalLongShortAccountRatio', { period: config.ratioPeriod, limit: config.ratioLimit }), captured, 'ratio', from, to);
           entry.ratiosAt = at; ratioCurrent = entry.ratios.at(-1);
         } else {
-          const latest = series(await get('/futures/data/globalLongShortAccountRatio', { period: config.ratioPeriod, limit: 1 }), captured, 'ratio', from, at);
-          ratioCurrent = latest.at(-1); entry.ratios = merge(entry.ratios, latest, from, at);
+          const latest = series(await get('/futures/data/globalLongShortAccountRatio', { period: config.ratioPeriod, limit: 1 }), captured, 'ratio', from, to);
+          ratioCurrent = latest.at(-1); entry.ratios = merge(entry.ratios, latest, from, to);
         }
-        if (!ratioCurrent || at - ratioCurrent.at > config.ratioHistoryMs + config.updateMs) throw Error('Aktuelles Long/Short-Verhältnis nicht verfügbar.');
+        if (!ratioCurrent || at - ratioCurrent.at > config.ratioMaxAgeMs) throw Error('Aktuelles Long/Short-Verhältnis nicht verfügbar.');
         const q = positioningScore(funding, ratioCurrent.value, entry.funding.map(r => r.value), entry.ratios.map(r => r.value), config);
         if (!q) throw Error('Zu wenig gültige Vergleichsdaten für die Positionierung.');
         if (!active()) return;

@@ -10,7 +10,7 @@ if (!/^\d+\.\d+\.\d+$/.test(version)) throw new Error('App-Version fehlt');
 const sha = bytes => crypto.createHash('sha256').update(bytes).digest('hex');
 const bundle = 'bundles/' + version, files = [];
 function write(name, bytes) { const target = path.join(root, name); if (check) { if (!fs.existsSync(target) || !fs.readFileSync(target).equals(Buffer.from(bytes))) throw new Error('Lieferstand veraltet: ' + name); } else { fs.mkdirSync(path.dirname(target), { recursive: true }); fs.writeFileSync(target, bytes); } }
-const parts = [...fs.readdirSync(path.join(root, 'shared')).filter(x => x.endsWith('.mjs')).sort().map(x => 'shared/' + x), 'server/pattern-engine.mjs', 'vendor/jsQR.js', 'vendor/jsQR.LICENSE.txt', 'data/muster-start.json'];
+const parts = [...fs.readdirSync(path.join(root, 'shared')).filter(x => x.endsWith('.mjs')).sort().map(x => 'shared/' + x), 'server/pattern-engine.mjs', 'data/muster-start.json'];
 for (const name of parts) { const bytes = read(name), target = bundle + '/' + name; write(target, bytes); files.push({ path: './' + target, sha256: sha(bytes), bytes: bytes.length, alias: './' + name }); }
 for (const name of ['weather-widget-v2.html', 'manifest.webmanifest', 'status-check.html', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png']) { const bytes = read(name); files.push({ path: './' + name, sha256: sha(bytes), bytes: bytes.length }); }
 const manifest = JSON.stringify({ version, files }, null, 2) + '\n'; write(bundle + '/manifest.json', manifest);

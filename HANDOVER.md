@@ -3,6 +3,17 @@
 Diese Datei ist der Einstieg für jede weitere Arbeit am Projekt. Wer sie liest, braucht kein Vorwissen. Die vollständige fachliche
 Vorgabe aller Gruppen G01–G14 steht in `docs/VORGABE-G01-G14.md` (Original-Übergabe; dort sind G10–G14 ausführlich beschrieben).
 
+## Aktueller Stand – 3.67.0 (Claude): Aufräumen, Positionierung als Kreis, Trading-Bot repariert
+
+Nutzerauftrag: Fehler prüfen und verbessern; Sprung-Rekorder entfernen; QR-Code-Übertragung entfernen (Speicherung jetzt über den GitHub-Sync); Positionierungs-Score reparieren und als Kreis zeigen oder entfernen; KI-Trading-Roboter zum Laufen bringen. App/SW **3.67.0**, Dienst **2.12.1**. Ausführlich: [docs/3.67.0-AENDERUNGEN.md](docs/3.67.0-AENDERUNGEN.md).
+
+- **Sprung-Rekorder entfernt:** Menüpunkt, Anzeige, CSS, Aufzeichnungscode und die globale Umhüllung von `scrollBy`/`scrollTo`/`scrollIntoView`. Scroll-Ausgleich unverändert. Test `m33.js` gelöscht und aus `run-all.sh` genommen; `m34`/`m97` angepasst.
+- **QR entfernt:** QR-Encoder, Base45, Altformat bis 3.28, Kamera-/Fotoscanner, `vendor/jsQR.js` (auch aus `tools/build-release.mjs`). Die kompakte Datei bleibt als eigener Dialog `#transfer-dialog` (IDs `transfer-*`, JS `compactTransfer`/`openTransfer`). Tests: `ui.js transfer` ersetzt `qr`/`camera`, `m83` (45 Fälle) auf den Dialog umgestellt, QR-Teil aus `m50` entfernt, `m41`/`m84`/`visual`/`unit-release` angepasst.
+- **Positionierung:** Kreis (Zahl Mitte, Bogen 0–100, rot < 35 / gelb / grün > 65, „⚠ Squeeze“), ganzer Block ist die Info-Taste `#positioning-score`. Datenabruf: Long/Short-Verlauf `period=4h&limit=180` ohne Startzeit an Binances 30-Tage-Grenze, Frische bis zwei Perioden + 5 min, 10 min Uhrtoleranz. Echte Binance-API in der Cloud gesperrt → Ursachen aus dem Code, nicht live belegt. `unit-positioning-score` 40/40, `m95` 40/40, `m94` 39/39.
+- **Trading-Bot/KI-Signale:** `shared/bitget-public.mjs` verglich Bitget- und Gerätezeit ohne Toleranz (Antwort verworfen bei 1 ms Bitget-Vorsprung; Kurs verworfen, wenn Ticker vor der lokalen Entscheidung). Auf echten Geräten scheiterte so nahezu jeder Abruf. Jetzt Uhr-Schätzung (Median, ±60 s), Umrechnung in Gerätezeit, 2 s Resttoleranz, Ticker bis 5 s vor Entscheidung. Nachweis: M85 mit Bitget-Uhr +400 ms/−1,5 s alt ohne Trade, neu 26/26; neue Fälle in `unit-bitget` (61/61) schlagen mit altem Client fehl. Dienst 2.12.1, weil die KI-Überwachung denselben Client nutzt.
+- **Geprüft:** Lint 0 Fehler/3 bekannte Warnungen; Unit-Tests Bitget/Paper/Grid/Confluence/PO3/247 grün; Browser m34, m50 (backup, code), m80, m81, m83, m85, m86, m94, m95, ui transfer, functional, smoke, statuscheck grün; native Durchsicht aller Arbeitsbereiche (390/1440 px) ohne Konsolenfehler.
+- **Offen:** echte Geräteabnahme (iPhone/iPad) gegen die echten Börsen-APIs; Oracle-VM nur aktualisieren, wenn dort KI-Signale laufen. Alte Bündel `bundles/3.50.0`–`3.66.0` bleiben unverändert.
+
 ## Aktueller Stand – 3.66.0 online, App und Krypto-Kalender geprüft
 
 Neuer Nutzerauftrag: Erklärungen standardmäßig einklappen, ruhigere Vorauswahl und kostenfreier Krypto-Kalender ohne API-Schlüssel. **Der Nutzer hat jetzt ausdrücklich Prüfung und Online-Veröffentlichung autorisiert.** Die bisherige Warteanweisung ist damit für den gesamten lokalen Arbeitsstand aufgehoben; Positionierungs-Score und Geräteansichten werden gemeinsam ausgeliefert. Branch `codex/positionierungs-score`.

@@ -1,4 +1,4 @@
-// Oberfläche, Backup, QR-Abgleich, PWA. Aufruf: node ui.js [testname ...]
+// Oberfläche, Backup, kompakte Sicherungsdatei, PWA. Aufruf: node ui.js [testname ...]
 const h = require('./harness');
 const fs = require('fs'), path = require('path');
 const results = [];
@@ -141,47 +141,33 @@ const tests = {
     check('Nach Änderung automatisch gesichert', ab2?.writes >= 2 && JSON.parse(ab2.data).positions.length === 1, `writes=${ab2?.writes}`);
     check('keine Fehler', !errors.length, errors.join(' | ')); await ctx.close();
   },
-  async qr(browser) {
+  // 3.67.0: QR-Übertragung entfernt – vollständige verschlüsselte kompakte Datei von Gerät A nach Gerät B.
+  async transfer(browser) {
     const trades = Array.from({ length: 45 }, (_, i) => ({ ...mkPos('t' + i, 'BTCUSDT', 60000 + i), exit: 60100 + i, fees: 0.5, pnl: 10 + i, pnlSource: 'calc', closedAt: now - i * 3600e3, fx: 1.16, note: 'Test-Trade Nummer ' + i }));
-    const items = [['scalpdesk.positions.v1', [mkPos('q1', 'XRPUSDT', 1.4, { sl: 1.3, tp: 1.6 })]], ['scalpdesk.history.v1', trades], ['scalpdesk.alarms.v1', [{ id: 'qa', symbol: 'ETHUSDT', dir: 'above', price: 2600, note: 'QR', source: 'spot', createdAt: now, triggeredAt: null, triggerPrice: null }]]];
+    const items = [['scalpdesk.positions.v1', [mkPos('q1', 'XRPUSDT', 1.4, { sl: 1.3, tp: 1.6 })]], ['scalpdesk.history.v1', trades], ['scalpdesk.alarms.v1', [{ id: 'qa', symbol: 'ETHUSDT', dir: 'above', price: 2600, note: 'Übertragung', source: 'spot', createdAt: now, triggeredAt: null, triggerPrice: null }]]];
     const A = await open(browser, { init: [{ fn: seedLs, arg: { items } }] });
-    await A.page.click('#backup-badge'); await A.page.click('#qr-export');
-    check('Keine Umfangswahl mehr – immer die vollständige Sicherung', !(await A.page.$('input[name="qr-scope"]')) && await waitText(A.page, '#qr-calc', /Vollständige Sicherung: 1 Position, 45 Trades, 1 Kurs-Alarm/, 8000), await text(A.page, '#qr-calc'));
-    await A.page.fill('#qr-pass', 'geheim12'); await A.page.click('#qr-make');
-    await A.page.waitForSelector('#qr-out:not([hidden])', { timeout: 20000 });
-    const meta = await text(A.page, '#qr-size'); const n = Number((/(\d+) Teile?/.exec(meta) || [])[1] || 1);
-    check('QR-Codes erzeugt (verschlüsselt, mehrteilig)', n >= 2 && /verschlüsselt/.test(meta), meta);
-    await A.page.click('#qr-pause');
-    const shots = new Map();
-    for (let t = 0; t < n + 2 && shots.size < n; t++) { const lab = await text(A.page, '#qr-part'), i = Number((/Teil (\d+)/.exec(lab) || [0, 1])[1]); if (!shots.has(i)) shots.set(i, await A.page.$eval('#qr-canvas', c => c.toDataURL('image/png'))); await A.page.click('#qr-next'); }
-    check('Alle Teile abgegriffen', shots.size === n, `${shots.size}/${n}`);
+    await A.page.click('#backup-badge');
+    check('Keine QR-Knöpfe mehr in der Datensicherung', !(await A.page.$('#qr-export')) && !(await A.page.$('#qr-scan')) && !(await A.page.$('#qr-dialog')));
+    await A.page.click('#backup-compact');
+    check('Dialog zeigt die vollständige Sicherung', await waitText(A.page, '#transfer-info', /Vollständige Sicherung: 1 Position, 45 Trades, 1 Kurs-Alarm/, 8000), await text(A.page, '#transfer-info'));
+    await A.page.fill('#transfer-pass', 'geheim12'); await A.page.click('#transfer-file-make');
+    await A.page.waitForSelector('#transfer-file-ready:not([hidden])', { timeout: 20000 });
+    check('Kompakte Datei vorbereitet (verschlüsselt)', /verschlüsselt/.test(await text(A.page, '#transfer-file-status')), await text(A.page, '#transfer-file-status'));
+    const dlp = A.page.waitForEvent('download'); await A.page.click('#transfer-file-save'); const dl = await dlp, file = path.join(__dirname, 'ui-' + dl.suggestedFilename()); await dl.saveAs(file);
+    check('Datei heruntergeladen (SDB1-Textcode)', /verschluesselt\.txt$/.test(dl.suggestedFilename()) && /^SDB1:[A-Za-z0-9+/=]+\.\n$/.test(fs.readFileSync(file, 'utf8')), dl.suggestedFilename());
     await A.ctx.close();
-    // Zweites Gerät: leerer Speicher, Foto-Scan jedes Teils
+    // Zweites Gerät: leerer Speicher, Datei über „Backup einspielen“
     const B = await open(browser, { context: { viewport: { width: 820, height: 1180 }, hasTouch: true } });
-    await B.page.click('#backup-badge'); await B.page.click('#qr-scan');
-    for (const [i, url] of [...shots.entries()].sort((a, b) => b[0] - a[0])) { const f = path.join(__dirname, `qr-part-${i}.png`); fs.writeFileSync(f, Buffer.from(url.split(',')[1], 'base64')); await B.page.setInputFiles('#qr-photo', f); await h.sleep(400); }
-    check('Alle Teile gescannt (jsQR), verschlüsselt → Passwort', await B.page.waitForSelector('#qr-unlock:not([hidden])', { timeout: 10000 }).then(() => true, () => false), await text(B.page, '#qr-scan-status') + ' ' + await text(B.page, '#qr-scan-error'));
-    await B.page.fill('#qr-scan-pass', 'falsch1'); await B.page.click('#qr-apply');
-    check('Falsches Passwort abgewiesen', await waitText(B.page, '#qr-scan-error', /Passwort falsch/, 8000));
-    await B.page.fill('#qr-scan-pass', 'geheim12'); await B.page.click('#qr-apply');
-    check('QR: erst Vorschau („Entschlüsseln & prüfen“)', await B.page.waitForSelector('#qr-preview:not([hidden]) .sp-actions .button.primary-lite', { timeout: 10000 }).then(() => true, () => false), await text(B.page, '#qr-scan-status'));
-    await B.page.click('#qr-preview .sp-actions .button.primary-lite');
-    check('Daten übernommen', await waitText(B.page, '#qr-scan-status', /Übernommen: 1 Position neu, 45 Trades, 1 Kurs-Alarm/, 10000), await text(B.page, '#qr-scan-status'));
-    await B.page.click('#qr-apply');
+    await B.page.click('#backup-badge'); await B.page.setInputFiles('#backup-file', file);
+    check('Verschlüsselt → Passwortabfrage, noch nichts übernommen', await B.page.waitForSelector('#decrypt-row:not([hidden])', { timeout: 10000 }).then(() => true, () => false) && await B.page.evaluate(() => !document.querySelectorAll('.pos-card').length));
+    await B.page.fill('#backup-pass', 'falsch1'); await B.page.click('#backup-decrypt');
+    check('Falsches Passwort abgewiesen', await waitText(B.page, '#history-status', /Passwort falsch/, 8000), await text(B.page, '#history-status'));
+    await B.page.fill('#backup-pass', 'geheim12'); await B.page.click('#backup-decrypt');
+    check('Erst Vorschau', await B.page.waitForSelector('#sync-preview:not([hidden]) .sp-actions .button.primary-lite', { timeout: 10000 }).then(() => true, () => false), await text(B.page, '#history-status'));
+    await B.page.click('#sync-preview .sp-actions .button.primary-lite'); await B.page.waitForTimeout(800);
     check('Position und Alarm auf dem zweiten Gerät', await B.page.evaluate(() => document.querySelectorAll('.pos-card').length === 1 && document.querySelectorAll('.al-row').length === 1));
+    try { fs.unlinkSync(file); } catch {}
     check('keine Fehler', ![...A.errors, ...B.errors].length, [...A.errors, ...B.errors].join(' | ')); await B.ctx.close();
-  },
-  async camera(browser) {
-    const b2 = await h.launch({ args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] });
-    try {
-      const ctx = await b2.newContext({ viewport: { width: 820, height: 1180 }, permissions: ['camera'] });
-      const { page, errors } = await open(b2, { ctx });
-      await page.click('#backup-badge'); await page.click('#qr-scan');
-      check('Kamera läuft, Scanner sucht', await waitText(page, '#qr-scan-status', /Suche QR-Code/, 8000), await text(page, '#qr-scan-status') + await text(page, '#qr-scan-error'));
-      await page.waitForTimeout(1500); await page.click('#qr-close');
-      check('Kamera nach Schließen gestoppt', await page.evaluate(() => !document.getElementById('qr-video').srcObject));
-      check('keine Fehler', !errors.length, errors.join(' | ')); await ctx.close();
-    } finally { await b2.close(); }
   },
   async pwa(browser) {
     const ctx = await browser.newContext({ viewport: { width: 1400, height: 900 } });

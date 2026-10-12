@@ -27,7 +27,7 @@ const st = page => page.evaluate(() => { const p = document.getElementById('data
       for (let i = 0; i < 3; i++) { await page.tap('#data-toggle'); await page.waitForTimeout(350); const a = await st(page); await page.tap('#data-toggle'); await page.waitForTimeout(350); const b = await st(page); seq.push([a.hidden, a.exp, a.rot !== 'none', b.hidden, b.exp, b.rot === 'none']); }
       check(`${w}×${hh}: Tippen öffnet und schließt zuverlässig (3 Durchgänge), Pfeil zeigt den Zustand`, seq.every(x => x.join() === 'false,true,true,true,false,true'), JSON.stringify(seq));
       await page.tap('#data-toggle'); await page.waitForTimeout(350); s = await st(page);
-      check(`${w}×${hh}: aufgeklappt ist der ganze Inhalt erreichbar (Sichern, Einspielen, QR, Muster, Reset)`, !s.hidden && s.h > 200 && await page.evaluate(() => ['backup-save', 'backup-load', 'qr-export', 'zzp-export', 'reset-open'].every(id => { const r = document.getElementById(id).getBoundingClientRect(); return r.width > 0 && r.height > 0; })), `Höhe ${s.h}px`);
+      check(`${w}×${hh}: aufgeklappt ist der ganze Inhalt erreichbar (Sichern, Einspielen, Übertragen, Muster, Reset)`, !s.hidden && s.h > 200 && await page.evaluate(() => ['backup-save', 'backup-load', 'backup-compact', 'zzp-export', 'reset-open'].every(id => { const r = document.getElementById(id).getBoundingClientRect(); return r.width > 0 && r.height > 0; })), `Höhe ${s.h}px`);
       // Sichern: Datei herunterladen
       const dl = page.waitForEvent('download', { timeout: 10000 }).catch(() => null);
       await page.tap('#backup-save'); const d = await dl; let file = null;

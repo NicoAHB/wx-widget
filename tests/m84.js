@@ -150,8 +150,8 @@ const select = async (p, key) => { await p.click(`[data-workspace-target="${key}
    await phone.tap('[data-workspace-target="pos"]'); check(`${width}px Touch: Positionen ohne Vorauswahl`, !await visible(phone,'workspace-watch'));
    await phone.tap('[data-workspace-target="settings"]'); check(`${width}px Touch: Einstellungen ohne Vorauswahl`, !await visible(phone, 'workspace-watch') && !await visible(phone,'watchlist')); await phone.tap('#backup-badge');
    check(`${width}px Touch: Sicherung durch echte Tippgeste erreichbar`, await visible(phone, 'data-panel'));
-   await phone.tap('#backup-compact'); check(`${width}px Touch: kompakter vollständiger Übertragungsdialog erreichbar`, await phone.evaluate(() => document.getElementById('qr-dialog').open) && await visible(phone, 'qr-file-make'));
-   await phone.evaluate(() => document.getElementById('qr-dialog').close());
+   await phone.tap('#backup-compact'); check(`${width}px Touch: kompakter vollständiger Übertragungsdialog erreichbar`, await phone.evaluate(() => document.getElementById('transfer-dialog').open) && await visible(phone, 'transfer-file-make'));
+   await phone.evaluate(() => document.getElementById('transfer-dialog').close());
    await phone.tap('[data-workspace-target="chart"]'); await phone.tap('#workspace-orderflow > summary');
    check(`${width}px Touch: bestehendes Orderflow-Signal und alle zehn Kerzen erreichbar`, await visible(phone, 'of-signal') && await phone.locator('.of-row:not(.of-legend)').count() === 10);
    await phone.tap('#workspace-price-alarms'); check(`${width}px Touch: Preisalarme direkt aus Chart erreichbar`, await visible(phone, 'ki-price-panel') && await phone.evaluate(() => document.documentElement.dataset.workspaceView === 'ind'));

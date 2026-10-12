@@ -1,10 +1,10 @@
 {
-  "version": "2.12.0",
-  "appVersion": "3.66.0",
+  "version": "2.12.1",
+  "appVersion": "3.67.0",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
-      "sha256": "d0653527eccda0c4c706e0843745788f24c0bd7c79fcc2f3fb432308f9eb0ef5",
+      "sha256": "4f2b3722d0c8efee93d51b4fec6bbf8975e8183ac795fcd5a209ef2495979aab",
       "bytes": 125451
     },
     {
@@ -64,8 +64,8 @@
     },
     {
       "path": "shared/bitget-public.mjs",
-      "sha256": "0711e6f19a350f2a0924880a6444b30cc631dd8955973fb5e693503f4066576c",
-      "bytes": 21385
+      "sha256": "c47f25a45c51e03219e131966630659c9964c21cd45572c5c69ece4bf70a32fd",
+      "bytes": 23432
     },
     {
       "path": "shared/bot-limits.mjs",
@@ -349,8 +349,8 @@
     },
     {
       "path": "shared/positioning-score.mjs",
-      "sha256": "65d8a0819e0fddef8d3d99cf2d105fbf7f9432ef27b4ea82fc70d4f293d64c27",
-      "bytes": 8335
+      "sha256": "0f6699d2a764d1a50381459883d01895f0ca97be9804e761f9fd2907bef924a2",
+      "bytes": 8856
     },
     {
       "path": "shared/signal-overview.mjs",
