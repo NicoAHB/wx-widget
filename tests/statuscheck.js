@@ -8,6 +8,8 @@ const anonymous = (url, status) => url === 'https://api.telegram.org/bot0:status
     const p = await b.newPage();
     // Das Testprojekt hat kein Favicon; dessen Browserabruf ist keine Verbindungsprüfung.
     await p.route('**/favicon.ico', route => route.fulfill({ status: 204 }));
+    // 3.67.0: Bitget-Ticker (KI-Signale/Trading-Bot) mit 400 ms vorgehender Bitget-Uhr; die Seite zeigt die Abweichung.
+    await p.route('https://api.bitget.com/**', route => route.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ code: '00000', msg: 'success', requestTime: Date.now() + 400, data: [{ symbol: 'BTCUSDT', lastPr: '64000.5', bidPr: '64000', askPr: '64001', markPrice: '64000.4', ts: String(Date.now() + 400) }] }) }));
     p.on('pageerror', e => errors.push(e.message));
     p.on('request', r => requests.push(r.url()));
     p.on('response', r => { if (r.status() >= 400) responses.push({ url: r.url(), status: r.status() }); });
@@ -24,6 +26,8 @@ const anonymous = (url, status) => url === 'https://api.telegram.org/bot0:status
       live: [...document.querySelectorAll('#list-live li')].map(li => li.dataset.state),
       notify: [...document.querySelectorAll('#list-notify li')].map(li => ({ state: li.dataset.state, text: li.querySelector('.msg').textContent })) }));
     check('Alle drei Live-Quellen erreichbar, erfolgreiches Gesamturteil', first.verdict === 'Alles erreichbar, auch die Live-Streams.' && first.live.length === 3 && first.live.every(x => x === 'ok'));
+    const bot = await p.evaluate(() => [...document.querySelectorAll('#list-bot li')].map(li => ({ state: li.dataset.state, text: li.querySelector('.msg').textContent })));
+    check('Bitget-Kurs für KI-Signale/Trading-Bot geprüft, Uhrabweichung angezeigt (+0,4 s)', bot.length === 1 && bot[0].state === 'ok' && /Uhr Gerät ↔ Bitget \+0,[3-5] s/.test(bot[0].text), JSON.stringify(bot));
     check('Anonyme Benachrichtigungsprüfung: erwartete HTTP 401 korrekt als erreichbar erklärt', first.notify.length === 1 && first.notify.every(x => x.state === 'ok' && /ohne Zugangsdaten erwartet/.test(x.text)));
     blocked = true; await h.ctl('/blockws?on=1'); await p.click('#run');
     await p.waitForFunction(() => !document.getElementById('run').disabled, null, { timeout: 20000 });
