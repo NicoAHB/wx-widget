@@ -34,7 +34,21 @@ let pass = 0, fail = 0; const check = (name, ok) => { ok ? pass++ : fail++; cons
   check('Lücke ist eigener Zeitplatz, kein Verschieben älterer Werte', O.visibleCandles([c], '1m', now)[2].candle === null);
   const many = Array.from({ length: 40 }, (_, i) => ({ ...c, t: t - i * 60000 }));
   check('Minutenpuffer begrenzt, sortiert, Originaleingabe erhalten', O.mergeCandles([], many, '1m').length === 30 && many[0].t === t);
-  check('Stundenpuffer begrenzt', O.mergeCandles([], many, '1h').length === 5);
+  check('Stundenpuffer begrenzt (3.68.0: 30 Kerzen für den Mustervortrend)', O.mergeCandles([], many, '1h').length === 30);
+  { // 3.68.0: Kerzenmuster-Namen aus der Chart-Erkennung (pat-1), nur exakte Treffer abgeschlossener Kerzen
+    const H = 3600000, base = Math.floor(Date.now() / H) * H - 40 * H, mk = (i, o, h, l, cl, closed = true) => ({ t: base + i * H, T: base + i * H + H - 1, o, h, l, c: cl, closed, coins: { total: 100 } });
+    const down = Array.from({ length: 30 }, (_, i) => { const o = 200 - i * 2; return mk(i, o, o + .5, o - 2.5, o - 2); });
+    const hammer = [...down, mk(30, 139, 140, 134, 140)];
+    const hits = O.candlePatterns(hammer, '1h').get(hammer.at(-1).t) || [];
+    check('Hammer nach Abwärtstrend wird mit Name und Status erkannt', hits.some(x => x.id === 'hammer' && x.name === 'Hammer' && x.dir === 'bull' && x.rules.length > 2));
+    const up = Array.from({ length: 30 }, (_, i) => { const o = 100 + i * 2; return mk(i, o, o + 2.5, o - .5, o + 2); });
+    const engulf = [...up, mk(30, 160, 160.5, 159.5, 160.3), mk(31, 160.6, 160.8, 158, 158.2)];
+    check('Bärisches Engulfing nach Aufwärtstrend steht an der zweiten Kerze', (O.candlePatterns(engulf, '1h').get(engulf.at(-1).t) || []).some(x => x.id === 'engulfing_bear' && x.name === 'Bärisches Engulfing'));
+    const flat = [...Array.from({ length: 30 }, (_, i) => mk(i, 100 + (i % 2), 101.5, 99.5, 100 + ((i + 1) % 2))), mk(30, 100.6, 101, 95, 101)];
+    check('Hammerform ohne Abwärtstrend: kein Umkehrmustername', !(O.candlePatterns(flat, '1h').get(flat.at(-1).t) || []).some(x => x.id === 'hammer' || x.id === 'hanging_man'));
+    const running = [...down, mk(30, 139.6, 140, 134, 140, false)];
+    check('Laufende Kerze bekommt keinen Musternamen', !O.candlePatterns(running, '1h').has(running.at(-1).t));
+  }
   const full = Array.from({ length: 5 }, (_, i) => ({ ...c, t: t - (4 - i) * 60000, closed: i < 4 }));
   const q = (s = full, opts = {}) => O.dataQuality(s, '1m', { now, connected: true, ...opts });
   check('Nur passende vollständige Live-Kerzen sind frisch', q().kind === 'live');

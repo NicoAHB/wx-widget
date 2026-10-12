@@ -1,5 +1,5 @@
 import { INTERVAL_MS } from './market-intervals.mjs';
-import { musterSettings, musterCandles } from './muster-bot-core.mjs';
+import { musterSettings, musterCandles, musterWarmup } from './muster-bot-core.mjs';
 const abort = signal => { if (signal?.aborted) throw signal.reason || new globalThis.DOMException('Abgebrochen', 'AbortError'); };
 const wait = (ms, signal) => new Promise((resolve, reject) => { abort(signal); const timer = setTimeout(done, ms); function done() { signal?.removeEventListener('abort', cancelled); resolve(); } function cancelled() { clearTimeout(timer); reject(signal.reason || new globalThis.DOMException('Abgebrochen', 'AbortError')); } signal?.addEventListener('abort', cancelled, { once: true }); });
 export function createMusterClient({ fetcher = fetch, sleep = wait } = {}) {
@@ -39,8 +39,8 @@ export function createMusterClient({ fetcher = fetch, sleep = wait } = {}) {
   }
   async function load({ symbol, market, config: input, all = false, asOf = Date.now(), startTime = null, paper = false, signal, progress }) {
     const config = musterSettings(input), start = startTime ?? asOf - config.days * 86400000, frames = all ? ['5m', '15m', '1h'] : [config.timeframe], rows = {};
-    // Beide Indikatoren werden vor dem Auswertungsfenster mit realen Kerzen gestartet.
-    const warmup = Math.max(config.atrPeriod, config.volumePeriod, config.emaPeriod, config.supportBars) + 5;
+    // Alle Indikatoren werden vor dem Auswertungsfenster mit realen Kerzen gestartet (Konfluenz: EMA200 auf beiden Ebenen).
+    const warmup = all ? Math.max(...['both', 'confluence', 'po3'].map(pattern => musterWarmup({ ...config, pattern }))) : musterWarmup(config);
     const context = await history({ symbol, market, timeframe: '4h', from: start - warmup * INTERVAL_MS['4h'], to: asOf, signal, progress });
     for (const timeframe of frames) rows[timeframe] = await history({ symbol, market, timeframe, from: start - warmup * INTERVAL_MS[timeframe], to: asOf, signal, progress });
     return { symbol, market, config, rows, context, startTime: start, asOf, liveOpen: paper ? rows[config.timeframe]?.liveOpen : null };

@@ -1,4 +1,6 @@
 import { musterSettings, runMusterBacktest, MUSTER_VERSION } from './muster-bot-core.mjs';
+// 3.68.0: Telegram (wenn angekreuzt) auch bei Signalen mit späterem Einstieg (Buy-Stop/Schlusskurs). Bei Sofort-Einstieg
+// (Konfluenz, PO3, Standard) enthält die Einstiegsmeldung bereits Modell, Richtung und Score – keine Doppelmeldung.
 export function createMusterPaper({ read, write, client, selection, available = () => true, now = Date.now, changed = () => {}, notify = async () => {} }) {
   const state = { book: null, busy: false, message: '' }; let generation = 0, controller;
   async function persist(next) { const saved = await write(next, state.book?.revision ?? 0); state.book = saved; return saved; }
@@ -24,14 +26,14 @@ export function createMusterPaper({ read, write, client, selection, available = 
       if (mine !== generation || !state.book?.active) return;
       const result = runMusterBacktest({ ...data, rows: data.rows[run.config.timeframe], config: run.config });
       await persist({ ...state.book, result, checkedAt: now() });
-      for (const event of result.events.filter(e => ['entry', 'exit'].includes(e.kind))) {
+      for (const event of result.events.filter(e => ['entry', 'exit'].includes(e.kind) || (e.kind === 'signal' && e.entryMode !== 'instant'))) {
         const id = event.id + '|' + event.kind + '|' + event.at;
         if (!run.telegram || state.book.notified[id]) continue;
         if (Object.keys(state.book.notified).length >= 10000) { state.message = 'Meldungsjournal voll; Paper-Meldungen pausiert'; break; }
         await persist({ ...state.book, notified: { ...state.book.notified, [id]: now() } }); // vor Versand reservieren, kein Nachholen nach verlorener Antwort
-        if (mine === generation && state.book.active) { try { await notify(event); } catch { state.message = 'Paper-Meldung nicht bestätigt; kein zweiter Versand'; } }
+        if (mine === generation && state.book.active) { try { await notify({ ...event, symbol: event.symbol || run.symbol, market: run.market, timeframe: run.config.timeframe }); } catch { state.message = 'Paper-Meldung nicht bestätigt; kein zweiter Versand'; } }
       }
-      if (!state.message.includes('nicht bestätigt') && !state.message.includes('voll')) state.message = result.position ? 'Long offen; Stop/Ziel am abgeschlossenen Kerzenmodell prüfen' : result.pending ? 'Muster erkannt; Einstieg wird geprüft' : 'Demo läuft; noch kein passendes neues Muster';
+      if (!state.message.includes('nicht bestätigt') && !state.message.includes('voll')) state.message = result.position ? (result.position.direction === -1 ? 'Short' : 'Long') + ' offen; Stop/Ziel am abgeschlossenen Kerzenmodell prüfen' : result.pending ? 'Muster erkannt; Einstieg wird geprüft' : 'Demo läuft; noch kein passendes neues Muster';
     } catch (e) {
       if (mine !== generation || controller.signal.aborted) return; state.message = e.message;
       if (/gespeichert|anderen Tab/.test(e.message)) { if (state.book) state.book.active = false; }

@@ -18,7 +18,7 @@ const check = (name, ok, detail = '') => { ok ? pass++ : fail++; console.log(`${
     const conns = (await h.ctl('/state')).conns.filter(c => /fstream/.test(c.host));
     check('Eine gemeinsame Futures-Verbindung, 1m/1h einmal, korrekter /market/-Pfad', conns.length === 1 && conns[0].path.startsWith('/market/') && conns[0].streams.filter(s => s === 'btcusdt@kline_1m').length === 1 && conns[0].streams.includes('btcusdt@kline_1h'));
     const log = await h.ctl('/log'), requests = log.filter(e => e.path === '/fapi/v1/klines');
-    check('Start-Historie begrenzt: 30 Minuten, 5 Stunden', requests.some(e => e.q?.limit === '30' && e.q.interval === '1m') && requests.some(e => e.q?.limit === '5' && e.q.interval === '1h'), JSON.stringify(requests.map(e => e.q)));
+    check('Start-Historie begrenzt: 30 Minuten, 30 Stunden (3.68.0: Vortrend für Kerzenmuster)', requests.some(e => e.q?.limit === '30' && e.q.interval === '1m') && requests.some(e => e.q?.limit === '30' && e.q.interval === '1h'), JSON.stringify(requests.map(e => e.q)));
     await page.evaluate(() => { window.m74Rows = [...document.querySelectorAll('.of-row')]; window.m74Heights = [...document.querySelectorAll('.of-block')].map(n => n.offsetHeight); });
     await page.locator('.of-info>summary').click(); check('Info erklärt Taker, Delta und konkrete nächste Handlung', /Taker.*Delta.*Trend, Stop-Loss und Gebühren prüfen/s.test(await page.textContent('.of-info .of-explanation')));
     await page.locator('.of-info>summary').click(); await page.selectOption('#of-unit', 'coins');

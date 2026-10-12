@@ -4,6 +4,8 @@ set -o pipefail
 failed=0
 trap 'failed=1' ERR
 echo "== unit-crypto-calendar"; timeout 120 node unit-crypto-calendar.js 2>&1 | grep -E "✗|bestanden"
+echo "== unit-ki-zones"; timeout 120 node unit-ki-zones.js 2>&1 | grep -E "✗|bestanden"
+echo "== m98"; timeout 600 node m98.js 2>&1 | grep -E "✗|bestanden|Abbruch"
 echo "== m97"; timeout 600 node m97.js 2>&1 | grep -E "✗|bestanden|Abbruch"
 echo "== unit-positioning-score"; timeout 120 node unit-positioning-score.js 2>&1 | grep -E "✗|bestanden"
 echo "== unit-device-view"; timeout 120 node unit-device-view.js 2>&1 | grep -E "✗|bestanden"
@@ -85,7 +87,7 @@ echo "== unit-pulse"; timeout 120 node unit-pulse.js 2>&1 | grep -E "✗|bestand
 echo "== unit-lots"; timeout 180 node unit-lots.js 2>&1 | grep -E "✗|bestanden|Abbruch"
 echo "== unit-acct"; timeout 180 node unit-acct.js 2>&1 | grep -E "✗|bestanden|Abbruch"
 echo "== inst-247"; timeout 300 bash inst-247.sh 2>&1 | grep -E "✗|bestanden"
-for s in m86 m85 m84 m83 m82 m81 m80 m79 m78 m77 m76 m75 m74 m73 m72 m71 m70 m69 m68 m67 m66 m65 m64 m63 m62 m61 m60 m59 m58 m57 m56 m55 m54 m53 m52 m51 m50 m49 m48 m47 m46 m45 m44 m43 m42 m41 m40 m39 m38 m37 m36 m35 m34 m32 m31 m30 m29 m28 m27 m26 m25 m24 m23 m22 m21 m20 m19 m18 m17 m16 m15 m14 m13 m12 m11 m10 m9 m8 m7 m6 m5 m4 m3 ui functional; do echo "== $s"; timeout 900 node $s.js 2>&1 | grep -E "✗|bestanden|Abbruch"; done
+for s in m84 m83 m82 m79 m78 m77 m76 m75 m74 m70 m69 m64 m62 m61 m60 m59 m58 m57 m56 m55 m54 m53 m52 m51 m50 m49 m48 m47 m46 m45 m44 m43 m42 m41 m40 m39 m38 m37 m36 m35 m34 m32 m31 m30 m29 m28 m27 m26 m25 m24 m23 m22 m21 m20 m19 m18 m17 m16 m15 m14 m13 m12 m11 m10 m9 m8 m7 m6 m5 m4 m3 ui functional; do echo "== $s"; timeout 900 node $s.js 2>&1 | grep -E "✗|bestanden|Abbruch"; done
 echo "== statuscheck"; timeout 300 node statuscheck.js 2>&1 | grep -E "verdict|no errors" | head -3
 echo "== smoke"; timeout 400 node smoke.js 2>&1 | tail -2 | cut -c1-200
 echo "== visual"; timeout 300 node visual.js 2>&1 | tail -2

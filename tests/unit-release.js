@@ -6,7 +6,7 @@ const check = (name, ok) => { ok ? pass++ : fail++; console.log(`${ok ? '✓' : 
   const version = /APP_VERSION = '([^']+)'/.exec(html)[1], base = path.join(root, 'bundles', version);
   let generated = true; try { cp.execFileSync(process.execPath, ['tools/build-release.mjs', '--check'], { cwd: root, stdio: 'pipe' }); } catch { generated = false; }
   check('PWA-/Server-Lieferlisten und tatsächliche Module reproduzierbar aktuell', generated);
-  check('App/Service Worker identische Version, eigener unveränderlicher Workerpfad', /VERSION = '([^']+)'/.exec(sw)[1] === version && html.includes("new URL('./bundles/" + version + "/shared/confluence-worker.mjs"));
+  check('App/Service Worker identische Version, eigener unveränderlicher Workerpfad', /VERSION = '([^']+)'/.exec(sw)[1] === version && html.includes("new URL('./bundles/" + version + "/shared/muster-bot-worker.mjs"));
   const manifest = JSON.parse(fs.readFileSync(path.join(base, 'manifest.json'))); let missing = false;
   for (const entry of manifest.files.filter(x => x.path.endsWith('.mjs'))) { const file = path.join(root, entry.path.slice(2)), source = fs.readFileSync(file, 'utf8');
     for (const [, relative] of source.matchAll(/from\s+['"]([^'"]+)['"]/g)) if (relative.startsWith('.') && !fs.existsSync(path.resolve(path.dirname(file), relative))) missing = true; }

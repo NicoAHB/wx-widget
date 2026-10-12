@@ -66,8 +66,6 @@
   <ul id="list-futures"></ul>
   <div class="group">Live-Streams (WebSocket)</div>
   <ul id="list-live"></ul>
-  <div class="group">KI-Signale &amp; Trading-Bot (Bitget)</div>
-  <ul id="list-bot"></ul>
   <div class="group">Benachrichtigungen aufs Smartphone (optional)</div>
   <ul id="list-notify"></ul>
 
@@ -113,15 +111,6 @@
     { group: "futures", name: "Long/Short-Verhältnis (Positionierung)",
       url: "https://fapi.binance.com/futures/data/globalLongShortAccountRatio?symbol=BTCUSDT&period=4h&limit=180",
       read: j => Array.isArray(j) && j.length ? j.length + " Werte à 4 h, aktuell " + num(j[j.length - 1].longShortRatio) : null },
-    // 3.67.0: Datenquelle von KI-Signalen und Trading-Bot; zeigt zusätzlich die Uhrabweichung Gerät ↔ Bitget.
-    { group: "bot", aux: true, name: "Bitget-Kurs (KI-Signale, Trading-Bot)",
-      url: "https://api.bitget.com/api/v2/mix/market/ticker?symbol=BTCUSDT&productType=USDT-FUTURES",
-      read: (j, clock) => {
-        if (!j || j.code !== "00000" || !Array.isArray(j.data) || !j.data[0] || !Number.isFinite(Number(j.requestTime))) return null;
-        const skew = (Number(j.requestTime) - (clock.sentAt + clock.receivedAt) / 2) / 1000;
-        return "BTCUSDT " + num(j.data[0].lastPr) + " USDT · Uhr Gerät ↔ Bitget " + (skew >= 0 ? "+" : "−") + Math.abs(skew).toFixed(1).replace(".", ",") + " s" +
-          (Math.abs(skew) > 60 ? " – Geräteuhr stark verstellt: „Datum & Uhrzeit automatisch“ einschalten." : "");
-      } },
     // Live-Streams wie im Dashboard: erste Kerzenmeldung abwarten
     { group: "live", ws: true, name: "Spot-Stream data-stream.binance.vision",
       url: "wss://data-stream.binance.vision/stream?streams=btcusdt@kline_1m" },
@@ -166,7 +155,7 @@
     if (t.ws) return runWs(t);
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
-    const t0 = performance.now(), sentAt = Date.now();
+    const t0 = performance.now();
     try {
       const res = await fetch(t.url, { cache: "no-store", credentials: "omit", referrerPolicy: "no-referrer", signal: ctrl.signal });
       const ms = Math.round(performance.now() - t0);
@@ -177,7 +166,7 @@
       try { json = await res.json(); } catch (_) {
         return { state: "warn", kind: "parse", status: res.status, ms, msg: "Antwort erhalten, aber kein gültiges JSON." };
       }
-      const sample = t.read(json, { sentAt, receivedAt: Date.now() });
+      const sample = t.read(json);
       if (sample == null) return { state: "warn", kind: "parse", status: res.status, ms, msg: "Antwort erhalten, aber nicht im erwarteten Format." };
       return { state: "ok", kind: "ok", status: res.status, ms, msg: "Abruf erfolgreich: " + sample };
     } catch (e) {
@@ -208,8 +197,8 @@
   }
 
   function verdict(all) {
-    const [state, head, advice] = marketVerdict(all.filter(r => !r.t.probe && !r.t.aux)), probes = all.filter(r => r.t.probe && r.state !== "ok"), bot = all.filter(r => r.t.aux && r.state !== "ok");
-    return [state, head, advice + (bot.length ? " Bitget nicht erreichbar – KI-Signale und Trading-Bot erhalten von hier keine Kurse." : "") + (probes.length ? " Nicht erreichbar: " + probes.map(r => r.t.name).join(" und ") + " – Benachrichtigungen aufs Smartphone kommen von hier eventuell nicht an." : "")];
+    const [state, head, advice] = marketVerdict(all.filter(r => !r.t.probe)), probes = all.filter(r => r.t.probe && r.state !== "ok");
+    return [state, head, advice + (probes.length ? " Nicht erreichbar: " + probes.map(r => r.t.name).join(" und ") + " – Benachrichtigungen aufs Smartphone kommen von hier eventuell nicht an." : "")];
   }
   function marketVerdict(all) {
     const live = all.filter(r => r.t.ws), liveOk = live.some(r => r.state === "ok"), rest = restVerdict(all.filter(r => !r.t.ws));
@@ -254,7 +243,7 @@
       const b = document.createElement("b"); b.textContent = k + ": ";
       $("env").append(b, document.createTextNode(v));
     });
-    $("list-spot").innerHTML = ""; $("list-futures").innerHTML = ""; $("list-live").innerHTML = ""; $("list-bot").innerHTML = ""; $("list-notify").innerHTML = "";
+    $("list-spot").innerHTML = ""; $("list-futures").innerHTML = ""; $("list-live").innerHTML = ""; $("list-notify").innerHTML = "";
     const rows = TESTS.map(t => { const li = row(t); $("list-" + t.group).append(li); return li; });
 
     const results = await Promise.all(TESTS.map(t => runOne(t).then(r => Object.assign(r, { t }))));

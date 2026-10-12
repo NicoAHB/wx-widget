@@ -1,6 +1,7 @@
 // PDF Etappe 1: reine Binance-Kerzenprojektion. Keine Handelsentscheidung.
+import { patEngine, PAT_ALL_NAMES } from '../server/pattern-engine.mjs';
 export const ORDERFLOW_PERIODS = Object.freeze({ '1m': 60000, '1h': 3600000 });
-export const ORDERFLOW_LIMITS = Object.freeze({ '1m': 30, '1h': 5 });
+export const ORDERFLOW_LIMITS = Object.freeze({ '1m': 30, '1h': 30 }); // 3.68.0: 1h ebenfalls 30 Kerzen, damit Umkehrmuster einen Vortrend haben
 export const ORDERFLOW_FRESH_MS = 5000;
 const numeric = v => (typeof v === 'number' || typeof v === 'string' && v.trim() !== '') && Number.isFinite(Number(v)) ? Number(v) : null;
 function volumes(total, buy) {
@@ -77,6 +78,22 @@ export function candleAssessment(c) {
   if (share <= CANDLE_NEUTRAL_BODY_SHARE) return { tone: 'neutral', text: 'Neutral · kleiner Körper' };
   return c.c > c.o ? { tone: 'up', text: at >= .75 ? 'Bullisch · Schluss nahe Hoch' : 'Bullisch · positiver Körper' }
     : { tone: 'down', text: at <= .25 ? 'Bärisch · Schluss nahe Tief' : 'Bärisch · negativer Körper' };
+}
+// 3.68.0: Kerzenmuster-Namen wie im Chart („KI“, Regelwerk pat-1) für abgeschlossene Orderflow-Kerzen. Nur exakte Treffer:
+// Pflichtform erfüllt und bei Umkehrmustern der passende Vortrend (8 Kerzen). Laufende Kerzen bekommen keinen Namen.
+let candleEngine = null;
+export function candlePatterns(series, iv) {
+  const step = ORDERFLOW_PERIODS[iv], out = new Map(); if (!step || !Array.isArray(series)) return out;
+  const k = series.filter(c => c?.closed && [c.o, c.h, c.l, c.c].every(Number.isFinite)).sort((a, b) => a.t - b.t).map(c => ({ t: c.t, o: c.o, h: c.h, l: c.l, c: c.c, v: c.coins?.total ?? 0 }));
+  if (k.length < 2) return out;
+  candleEngine ||= patEngine();
+  for (const h of candleEngine.detect(k, { step, gap: false, running: false }).hits) {
+    if (h.kind !== 'candle' || h.prelim || !PAT_ALL_NAMES[h.id]) continue;
+    const t = k[h.i1].t, list = out.get(t) || []; list.push({ id: h.id, name: PAT_ALL_NAMES[h.id], dir: h.dir, status: h.status, q: h.q, rules: h.rules, t0: h.t0, t1: h.t1, candles: h.i1 - h.i0 + 1 }); out.set(t, list);
+  }
+  // Mehrkerzenmuster zuerst (aussagekräftiger), dann Regelgüte
+  for (const list of out.values()) list.sort((a, b) => b.candles - a.candles || b.q - a.q);
+  return out;
 }
 export function compactVolume(value, signed = false) {
   if (!Number.isFinite(value)) return '—';

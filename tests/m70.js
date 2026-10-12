@@ -13,18 +13,18 @@ const check = (name, ok, info = '') => { ok ? pass++ : fail++; console.log(`${ok
       window.WebSocket = class extends S { constructor(...args) { super(...args); g14Resources.sockets++; } };
     });
     page.on('pageerror', e => errors.push(e.message)); await page.goto(h.URL_BASE + '/weather-widget-v2.html');
-    await page.waitForFunction(() => !!window.__g05 && __g05.state.candles.length > 100 && !!window.__g12?.view.state.confirmed);
+    await page.waitForFunction(() => !!window.__g05 && __g05.state.candles.length > 100);
     check('Ohne Präferenz PC-Dashboard mit bestehendem AMOLED', await page.evaluate(() => document.documentElement.dataset.presentation === 'dashboard' && getComputedStyle(document.body).backgroundColor === 'rgb(0, 0, 0)'));
     await page.click('#pause'); await page.click('#view-menu');
     await page.evaluate(() => {
-      window.g14Nodes = ['dash', 'chart', 'pos-form', 'pos-note', 'ki-price-panel', 'ki-signal-panel', 'bot-simulation-panel'].map(id => document.getElementById(id));
+      window.g14Nodes = ['dash', 'chart', 'pos-form', 'pos-note', 'ki-price-panel', 'muster-bot'].map(id => document.getElementById(id));
       document.getElementById('pos-note').value = 'Noch nicht gespeicherter G14-Test';
-      window.g14Data = JSON.stringify([__g05.state.positions, __g05.state.trades, __g05.state.alarms, __g12.view.state.confirmed]);
+      window.g14Data = JSON.stringify([__g05.state.positions, __g05.state.trades, __g05.state.alarms]);
       window.g14ResourcesBefore = JSON.stringify(g14Resources);
     });
     await h.presentationFixture(page, 'dashboard');
     check('Dashboard wirklich anders angeordnet: Kontospalte links, Chart rechts', await page.evaluate(() => document.getElementById('acct').getBoundingClientRect().left < document.getElementById('chart-sec').getBoundingClientRect().left));
-    check('CSS-Matrix erhält DOM, Entwurf und fachliche Originaldaten', await page.evaluate(() => g14Nodes.every(n => n === document.getElementById(n.id)) && document.getElementById('pos-note').value === 'Noch nicht gespeicherter G14-Test' && g14Data === JSON.stringify([__g05.state.positions, __g05.state.trades, __g05.state.alarms, __g12.view.state.confirmed])));
+    check('CSS-Matrix erhält DOM, Entwurf und fachliche Originaldaten', await page.evaluate(() => g14Nodes.every(n => n === document.getElementById(n.id)) && document.getElementById('pos-note').value === 'Noch nicht gespeicherter G14-Test' && g14Data === JSON.stringify([__g05.state.positions, __g05.state.trades, __g05.state.alarms])));
     check('Keine zusätzlichen Intervalle/Worker/Kurs-Abos durch Layoutwechsel', await page.evaluate(() => g14ResourcesBefore === JSON.stringify(g14Resources)));
     await page.click('[data-theme-set=custom]');
     check('Eigene Farbe: acht Vorschläge, 48px-Schalter, klare zugängliche Auswahl', await page.evaluate(() => document.querySelectorAll('[data-background-color]').length === 8 && [...document.querySelectorAll('.appearance-toggle button,[data-background-color]')].every(b => b.getBoundingClientRect().height >= 48 && b.hasAttribute('aria-pressed'))));
