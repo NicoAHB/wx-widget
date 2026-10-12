@@ -61,6 +61,9 @@ function legacyWidgetFixture(options) {
     document.querySelector('.of-chart-grid').append(byId('orderflow-panel'));
     const pane = document.querySelector('.of-chart-pane');
     for (const selector of ['.fib-strip', '.wh-strip', '.chart-footer']) { const node = document.querySelector('#workspace-chart-tools ' + selector); if (node) pane.append(node); }
+    // Auch leere <details display:contents> behalten eine anonyme Inhaltsbox.
+    // Nach Rückgabe ihrer Originalknoten entfernen, sonst entsteht ein falscher Grid-Platz.
+    for (const node of window.__g05.workspace.wrappers) node.remove();
     for (const id of ['ki-setup', 'ki-settings']) byId(id).open = true;
     // Ursprüngliche Tab-Präferenz der isolierten Widgettests, einschließlich Reload.
     // Jetzt erledigen die Originalhandler auch Menüplatzierung/Schließen selbst.
