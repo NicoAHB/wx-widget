@@ -20,6 +20,8 @@ M93 ergänzt nach Coinwechsel den Schutz vor einem nachgereichten Touch-Klick au
 
 M93 zusätzlich neue Engineobjekte mit identischen Werten (Cache muss aktuelle Referenzen verwenden) und Live-Messwerte in einer offenen Erklärung mit erhaltenem Klapp-/Scrollstand; identische Neuberechnung auch während Haltegeste. Vorher beide Treffer index −1/Info öffnet nicht; nach gezielter Korrektur vollständig 40/40. M94 abschließend 39/39, einschließlich Wochen-Restziel am heutigen Kurs, Erhalt des letzten Chartkurses beim Funkloch und aller zehn Kontrastmodi. Temporäre Produktdiagnostik entfernt; echte Geräteabnahme weiterhin separat.
 
+3.65.0-Gesamtlauf: M88-Diagnose mit intern ausgewähltem Muster/500 fehlerfreien Kerzen, aber Plot top 1229,6 außerhalb 844px und alter Preisachse. Expliziter Mustersprung zeigt jetzt den Plot; zusätzliche Sichtbarkeitsprüfung, 17/17. M17 nach Reload Plot komplett oberhalb des Fensters, SVG bewusst nicht gezeichnet; SVG-Messhelper richtet den Plot wie bei manueller Betrachtung sichtbar aus, 16/16 bei unveränderten Fibonacci-/Preis-/Speicher-/Vollbild-/Mobilkriterien. M35 liest Erwartungsuhr nun im selben Snapshot wie die Markierungen und meidet eine Stundengrenze als reine Zeitvorbedingung; sämtliche 40 Erwartungen bleiben, keine Wartebedingung auf deren Erfüllung. Erstlogs und vollständige Nachläufe getrennt dokumentieren.
+
 - Node.js 22 und Playwright mit Chromium (in den Cloud-Sitzungen von Claude Code vorinstalliert unter `/opt/node22` bzw. `/opt/pw-browsers`).
 - `openssl`: Das Test-Zertifikat (`key.pem`, `cert.pem`) wird beim ersten Start erzeugt und nicht eingecheckt.
 - Einmalig im Ordner `tests/`: `npm install`.

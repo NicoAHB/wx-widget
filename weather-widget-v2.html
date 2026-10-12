@@ -13533,7 +13533,7 @@ function patDone(id, r) {
     pat.want = null; const i = pat.res.hits.findIndex(h => h.id === w.id && h.t0 === w.t0), L = PAT_LIB[w.id];
     if (i >= 0) { pat.sel = i; if (pat.res.hits[i].q < pat.minQ) pat.minQ = 0; infoToast(`${L.n} · ${w.iv} · ${pat.res.hits[i].status} – im Chart markiert`); }
     else infoToast(`${L.n} ist im Chart-Ausschnitt nicht mehr eindeutig erkennbar – die übrigen Muster sind markiert`, 5000);
-    $('chart-sec').scrollIntoView({ block: 'start' });
+    $('chart').scrollIntoView({ block: 'center' }); // Mustersprung zeigt den Plot auch unter dem höheren Kurs-/Score-Kopf.
   }
   patSheet(); patChipPaint(); scheduleDraw();
 }

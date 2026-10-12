@@ -13,7 +13,7 @@ const ready = page => page.waitForFunction(() => /Tage/.test(document.getElement
 const asSafari = () => { Object.defineProperty(Navigator.prototype, 'vendor', { get: () => 'Apple Computer, Inc.', configurable: true }); };
 const info = page => page.evaluate(() => {
   const q = id => document.getElementById(id), bars = [...document.querySelectorAll('#vola-bars .vb')];
-  return { src: q('vola-src').textContent, sel: q('vola-sel-t').textContent, med: q('vola-med').textContent, p90: q('vola-p90').textContent, dir: q('vola-dir').textContent,
+  return { sampledAt:Date.now(),hour:new Date().getHours(),src: q('vola-src').textContent, sel: q('vola-sel-t').textContent, med: q('vola-med').textContent, p90: q('vola-p90').textContent, dir: q('vola-dir').textContent,
     now: q('vola-now').textContent, badge: q('vola-badge').textContent, level: q('vola-nowbox').dataset.level, back: !q('vola-back').hidden,
     chip: q('lb-vola').hidden ? '' : q('lb-vola').innerText, strong: q('lb-vola').classList.contains('strong'), title: q('lb-vola').title, n: bars.length,
     heights: bars.map(g => parseFloat(g.children[1].style.height) || 0), arrows: bars.map((g, i) => g.children[2].textContent ? `${i}${g.children[2].textContent}` : '').filter(Boolean),
@@ -23,6 +23,9 @@ const berlin = (o, d = new Date()) => new Intl.DateTimeFormat('en-GB', { ...o, t
 const nowH = () => Number(berlin({ hour: 'numeric', hourCycle: 'h23' })), isWeekend = () => ['Sat', 'Sun'].includes(berlin({ weekday: 'short' }));
 // Minutengrenze meiden (Dochte sollen in derselben 1m-Kerze bleiben, die gerade läuft)
 const safeSecond = async () => { while (new Date().getSeconds() > 30 || new Date().getSeconds() < 3) await h.sleep(500); };
+// UI und Erwartungsuhr dürfen nicht auf verschiedene Seiten eines Stundenwechsels fallen.
+// Nur die Uhr ist Vorbedingung, keine Wartebedingung auf die erwarteten Markierungen.
+const safeHourRead=async()=>{for(;;){const d=new Date(),m=d.getMinutes(),s=d.getSeconds();if(!(m===59&&s>50||m===0&&s<8))return;await h.sleep(500);}};
 const localHour = (utcH, dayOffset = 0) => { const d = new Date(); d.setUTCDate(d.getUTCDate() - dayOffset); d.setUTCHours(utcH, 30, 0, 0); return Number(berlin({ hour: 'numeric', hourCycle: 'h23' }, d)); };
 // Spanne der letzten 60 Minuten gezielt setzen: 1m-Kerzen wie die App lesen, dann oben und unten je einen Docht so setzen, dass
 // Hoch bis Tief genau `pct` % der Eröffnung am Fensteranfang sind (der Kurs springt dabei nicht)
@@ -60,12 +63,12 @@ const waitChip = (page, re, ms = 15000) => page.waitForFunction(re => { const c 
     await page.goto(h.URL_BASE + '/weather-widget-v2.html'); await live(page); await ready(page);
     const ord = await page.evaluate(() => { const y = id => { const r = document.getElementById(id).getBoundingClientRect(); return { t: Math.round(r.top + scrollY), b: Math.round(r.bottom + scrollY) }; }; return { cnews: y('cnews'), vola: y('vola'), signals: y('signals') }; });
     check('Computer: Übersicht unter den News zum Coin, vor der Signal-Übersicht', ord.vola.t >= ord.cnews.b - 1 && ord.signals.t >= ord.vola.b - 1, JSON.stringify(ord));
-    let d = await info(page);
+    await safeHourRead();let d = await info(page);
     check('Daten: rund 83 Tage, 1.999 abgeschlossene Stundenkerzen, Stand mit Uhrzeit', /^8[23] Tage · 1\.999 Stunden · Stand \d\d:\d\d$/.test(d.src), d.src);
     const hh = d.heights, peak = hh.indexOf(Math.max(...hh)), hot = [localHour(14), localHour(15)], quiet = localHour(3);
     check('Säulen: 24 Stunden, am höchsten nachmittags (14–16 Uhr UTC = Ortszeit ' + hot.join('/') + ' Uhr), nachts höchstens halb so hoch', d.n === 24 && hot.includes(peak) && hh[quiet] < hh[peak] * 0.45, `Spitze ${peak} Uhr, ${hh[peak]} % Höhe, nachts ${hh[quiet]} %`);
-    let H = nowH();
-    check('Aktuelle Stunde markiert und gewählt, Zeile „(jetzt)“, kein Zurück-Knopf', d.now_ === H && d.sel_ === H && new RegExp(`^${H}–${(H + 1) % 24} Uhr \\(jetzt\\) · (Mo–Fr|Sa–So) · \\d+ Std\\.$`).test(d.sel) && !d.back, `${d.sel} · Säule ${d.sel_}`);
+    let H = d.hour;
+    check('Aktuelle Stunde markiert und gewählt, Zeile „(jetzt)“, kein Zurück-Knopf', d.now_ === H && d.sel_ === H && new RegExp(`^${H}–${(H + 1) % 24} Uhr \\(jetzt\\) · (Mo–Fr|Sa–So) · \\d+ Std\\.$`).test(d.sel) && !d.back, JSON.stringify({text:d.sel,selected:d.sel_,current:d.now_,expectedHour:H,back:d.back,sampledAt:new Date(d.sampledAt).toISOString()}));
     check('Richtung ohne echte Tendenz: keine Pfeile, „keine nachweisbare Tendenz“ ohne Zahl', !d.arrows.length && d.dir === 'keine nachweisbare Tendenz', d.dir);
     // Stunde antippen: Spitzenstunde am Werktag, dann Wochenende (halb so viel), dann zurück
     await page.evaluate(() => document.getElementById('vola').scrollIntoView({ block: 'center' })); await page.waitForTimeout(300);
