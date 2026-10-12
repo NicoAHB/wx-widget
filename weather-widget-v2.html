@@ -11122,6 +11122,7 @@ function wlSpans() {
 }
 // Ein einziger Standardwert, auch für frühe Aufrufe vor der Initialisierung.
 // '4h' wäre 4 Stunden mit 15m-Kerzen; '1d' ist 1 Tag mit 2h-Kerzen.
+// 3.66.0: Tagesstandard; gültige manuelle Vorauswahl bleibt erhalten.
 function wlDefaultSpan() { return '1d'; }
 function wlSpanKey() { const v = store.get(WL_SPAN_KEY); return wlSpans()[v] ? v : wlDefaultSpan(); }
 var wl = { c: new Map(), vis: true, loadAt: 0, span: '' };
@@ -15344,7 +15345,7 @@ function musterDraw(svg, data, x, y, bottom) {
 window.__muster = { view: musterView, paper: musterPaper, selection: musterSelection };
 workspaceBuild();
 
-// Lange Erläuterungen bleiben vollständig am selben DOM-Knoten erhalten.
+// 3.66.0: Lange Erläuterungen bleiben vollständig am selben DOM-Knoten erhalten.
 // Aktuelle Werte, Datenfehler und Schutzwarnungen werden nicht eingeklappt.
 function explanationFold(nodes, title, id) {
   const list = nodes.filter(Boolean); if (!list.length) return null;
@@ -15358,7 +15359,7 @@ explanationFold([document.querySelector('.pnl-note')], 'Gewinn-/Verlust-Alarme e
 explanationFold([$('feed-note')], 'Datenstrom erklärt', 'feed-explanation');
 explanationFold([$('rec-note')], 'Sprung-Rekorder erklärt', 'rec-explanation');
 
-// Kostenfreier Kalenderauszug über den öffentlichen GitHub-Datenzweig.
+// 3.66.0: Kostenfreier Kalenderauszug über den öffentlichen GitHub-Datenzweig.
 // Tages-/Zeitraumangaben sind keine exakten Uhrzeiten: keine Termin-Alarme,
 // Telegram-Nachrichten oder Eingaben für KI/Trading-Bots aus diesem Verbraucher.
 var cryptoCal;
