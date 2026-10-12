@@ -1,5 +1,7 @@
 # Sicherung übertragen – QR und kompakte Datei (3.59.0)
 
+> **3.67.0:** Die QR-Übertragung (Erzeugen und Scannen, `vendor/jsQR.js`) ist auf Nutzerwunsch entfernt; für den Geräteabgleich gibt es den privaten GitHub-Sync. Die kompakte Datei bleibt unverändert in einem eigenen Dialog „Kompakte Datei übertragen“. Die QR-Abschnitte unten beschreiben den historischen Stand. Details: [3.67.0-AENDERUNGEN.md](3.67.0-AENDERUNGEN.md).
+
 Unter **Positionen → Datensicherung → Kompakte Datei übertragen** gibt es eine vollständige persönliche Sicherung ohne die QR-Teilgrenze. Optional ein Passwort mit mindestens sechs Zeichen eingeben, dann **Kompakte Datei vorbereiten**. Anschließend **Datei teilen** (wenn der Browser Dateien teilen kann) oder **Datei herunterladen**. Auf dem anderen Gerät die Datei unter **Datensicherung → Backup einspielen** auswählen, bei Verschlüsselung das Passwort eingeben, die Vorschau prüfen und ausdrücklich übernehmen. Beide Apps vorher aktualisieren.
 
 Die `.txt`-Datei enthält den bestehenden langen Sicherungscode (`SDB1:….`), komprimiert und mit Prüfsumme, bei Passwort zusätzlich AES-256-GCM. AirDrop, die Dateien-App, ein Messenger oder eine eigene Notiz können den Code übertragen. Es wird kein Zusatzserver eingerichtet und kein kurzer Cloud-Abrufcode verwendet. Ohne Passwort kann ein Empfänger die Handelsdaten lesen. Das Teilen-Menü öffnet sich bewusst erst beim zweiten Tippen nach der Vorbereitung: Safari benötigt dafür eine unmittelbare Nutzergeste.

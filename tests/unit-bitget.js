@@ -65,10 +65,21 @@ const throws = fn => { try { fn(); return false; } catch { return true; } };
   const throttle = transport({ mutate() { return new Response('', { status: 429, headers: { 'Retry-After': '3' } }); } });
   const blocked = await throttle.client.load({ selection: selected }); await throttle.client.load({ selection: selected });
   check('429 mit Retry-After: gemeinsamer Cooldown, keine sofortige Wiederholung', blocked.retryAt === NOW + 3000 && throttle.calls.length === 1);
-  const stale = transport({ mutate(body) { body.requestTime -= 30001; } });
+  // 3.67.0: eine gleichbleibende Abweichung ist Uhrversatz; eine einzelne über 30 s alte Antwort nach frischen bleibt gesperrt.
+  const stale = transport({ mutate(body, u, n) { if (n === 4) body.requestTime -= 30001; } });
   check('Veraltete Providerzeit sperrt, keine alten Antworten als Live-Daten', (await stale.client.load({ selection: selected })).data === null);
-  const future = transport({ mutate(body) { body.requestTime++; } });
-  check('Zukünftige Providerzeit sperrt', (await future.client.load({ selection: selected })).data === null);
+  const farStale = transport({ mutate(body) { body.requestTime -= 90000; } });
+  check('Durchgehend 90 s alte Providerzeit (unplausibler Versatz) sperrt', (await farStale.client.load({ selection: selected })).data === null);
+  const future = transport({ mutate(body) { body.requestTime += 120000; } });
+  check('Unplausibel zukünftige Providerzeit (+2 min) sperrt', (await future.client.load({ selection: selected })).data === null);
+  // 3.67.0: echte Geräte weichen um einige 10–100 ms von der Bitget-Uhr ab; das darf keine Daten sperren.
+  for (const [name, shift] of [['Geräteuhr 300 ms hinter Bitget', 300], ['Geräteuhr 1,5 s vor Bitget', -1500], ['Geräteuhr 8 s hinter Bitget', 8000], ['Geräteuhr 45 s hinter Bitget (von Hand gestellt)', 45000]]) {
+    const skewed = transport({ mutate(body) { body.requestTime += shift; if (Array.isArray(body.data) && body.data[0]?.ts) body.data[0].ts = String(Number(body.data[0].ts) + shift); } });
+    const ok = (await skewed.client.load({ selection: selected, config: p })).status === 'bereit', q = await skewed.client.quote({ symbol: 'BTCUSDT', decisionAt: skewed.now() }).catch(e => e);
+    check(`${name}: Daten und Referenzkurs bleiben nutzbar, Zeiten in Gerätezeit`, ok && q.ask > 0 && q.at >= skewed.now() - 2000 && q.at <= q.knownAt && Math.abs(q.providerAt - q.knownAt) <= 2000);
+  }
+  const outlier = transport({ mutate(body, u, n) { if (n === 3) body.requestTime -= 25000; } });
+  check('Einzelne verspätete Antwort verschiebt die Uhrschätzung nicht', (await outlier.client.load({ selection: selected, config: p })).status === 'bereit');
   const parallel = transport(); await Promise.all([parallel.client.load({ selection: selected }), parallel.client.load({ selection: selected })]);
   check('Ein Client serialisiert gleichzeitige Aufrufe', parallel.maxActive === 1);
   const noWarmup = transport();

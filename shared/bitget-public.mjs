@@ -5,6 +5,12 @@ export const FEED_VERSION = 'bg-public-1';
 export const BITGET_ORIGIN = 'https://api.bitget.com';
 export const BITGET_FRAMES = Object.freeze({ '1m': { granularity: '1m', periodMs: 60e3 }, '5m': { granularity: '5m', periodMs: 300e3 }, '15m': { granularity: '15m', periodMs: 900e3 }, '1h': { granularity: '1H', periodMs: 3600e3 }, '4h': { granularity: '4H', periodMs: 14400e3 }, '1d': { granularity: '1Dutc', periodMs: 86400e3 } });
 const TAIL = 512, MAX_PAGES = 8, MAX_BODY = 1024 * 1024;
+// 3.67.0: Geräte- und Bitget-Uhr weichen in der Praxis um einige 10–100 ms voneinander ab. Bisher wurde jede Antwort
+// verworfen, deren Providerzeit auch nur 1 ms nach der Empfangszeit lag (oder vor der Entscheidung) – auf echten Geräten
+// scheiterte damit regelmäßig der Kursabruf der Handelsdemo. Der Client schätzt die Abweichung als Median der letzten
+// Antworten (nur plausible Werte bis ±60 s) und rechnet Providerzeiten in die Gerätezeit um; kleine Restabweichungen
+// bis 2 s sind erlaubt. Die 30-s-Frischegrenze bleibt.
+export const BITGET_CLOCK = Object.freeze({ maxSkewMs: 60000, samples: 15, toleranceMs: 2000, tickerAgeMs: 5000 });
 const time = x => Number.isSafeInteger(x) && x >= 0;
 const positive = x => Number.isFinite(x) && x > 0;
 const clone = x => JSON.parse(JSON.stringify(x));
@@ -47,10 +53,10 @@ export function normalizeBitgetCandles(data, { timeframe, from, to, knownAt }) {
 }
 
 // Grid: laufendes Volumen ist kein bestätigter Schlusskurs und ersetzt keine Historie.
-export function normalizeBitgetLiveVolume(data, { symbol, providerAt, observedAt }) {
+export function normalizeBitgetLiveVolume(data, { symbol, providerAt, observedAt, offset = 0 }) {
   instrument(symbol);
-  if (!Array.isArray(data) || data.length > 10 || ![providerAt, observedAt].every(time) || providerAt > observedAt || observedAt - providerAt > 30000) throw new Error('Bitget-Livevolumen/Providerzeit ungültig');
-  const start = Math.floor(providerAt / 900000) * 900000, rows = data.filter(row => Array.isArray(row) && numeric(row[0]) === start);
+  if (!Array.isArray(data) || data.length > 10 || ![providerAt, observedAt].every(time) || providerAt > observedAt + BITGET_CLOCK.toleranceMs || observedAt - providerAt > 30000) throw new Error('Bitget-Livevolumen/Providerzeit ungültig');
+  const start = Math.floor((providerAt + offset) / 900000) * 900000, rows = data.filter(row => Array.isArray(row) && numeric(row[0]) === start);
   if (!rows.length) return null;
   if (rows.length !== 1) throw new Error('Mehrdeutiges Bitget-Livevolumen');
   const [t, open, high, low, close, volume] = rows[0].slice(0, 6).map(numeric);
@@ -71,7 +77,7 @@ export function normalizeBitgetContract(data, symbol) {
 }
 
 export function normalizeBitgetFunding(data, { symbol, source, providerAt, observedAt }) {
-  if (!Array.isArray(data) || ![providerAt, observedAt].every(time) || providerAt > observedAt || observedAt - providerAt > 30000) throw new Error('Bitget-Fundingzeit fehlt/ist veraltet');
+  if (!Array.isArray(data) || ![providerAt, observedAt].every(time) || providerAt > observedAt + BITGET_CLOCK.toleranceMs || observedAt - providerAt > 30000) throw new Error('Bitget-Fundingzeit fehlt/ist veraltet');
   const rows = data.filter(x => x?.symbol === instrument(symbol));
   if (rows.length !== 1) throw new Error('Bitget-Funding fehlt oder ist mehrdeutig');
   const f = rows[0], rate = numeric(f.fundingRate), intervalHours = numeric(f.fundingRateInterval), nextAt = numeric(f.nextUpdate);
@@ -81,12 +87,16 @@ export function normalizeBitgetFunding(data, { symbol, source, providerAt, obser
 }
 
 // G10(c): öffentlicher Referenzkurs erst nach der Score-Entscheidung, keine rückwirkende Ausführung.
-export function normalizeBitgetQuote(data, { symbol, decisionAt, providerAt, observedAt }) {
-  if (![decisionAt, providerAt, observedAt].every(time) || decisionAt > observedAt || providerAt < decisionAt || providerAt > observedAt || observedAt - providerAt > 30000 || !Array.isArray(data)) throw new Error('Bitget-Referenzkurs nach Entscheidung fehlt');
+// offset: geschätzte Bitget-minus-Gerätezeit; `ts` des Tickers wird damit in Gerätezeit umgerechnet. Der Kurs wurde nach der
+// Entscheidung abgefragt; ein Tickerstand bis 5 s davor (Frischegrenze der Handelsdemo) gilt deshalb als zum Abfragezeitpunkt
+// gültig (Zeit = Entscheidung).
+export function normalizeBitgetQuote(data, { symbol, decisionAt, providerAt, observedAt, offset = 0 }) {
+  const tol = BITGET_CLOCK.toleranceMs;
+  if (![decisionAt, providerAt, observedAt].every(time) || !Number.isFinite(offset) || decisionAt > observedAt || providerAt < decisionAt - tol || providerAt > observedAt + tol || observedAt - providerAt > 30000 || !Array.isArray(data)) throw new Error('Bitget-Referenzkurs nach Entscheidung fehlt');
   const matches = data.filter(x => x?.symbol === instrument(symbol));
   if (matches.length !== 1) throw new Error('Bitget-Referenzkurs fehlt oder ist mehrdeutig');
-  const r = matches[0], at = numeric(r.ts), bid = numeric(r.bidPr), ask = numeric(r.askPr), markPrice = numeric(r.markPrice);
-  if (!time(at) || at < decisionAt || at > observedAt || observedAt - at > 30000 || ![bid, ask, markPrice].every(positive) || bid > ask) throw new Error('Bitget-Referenzkurs veraltet/ungültig');
+  const r = matches[0], raw = Math.round(numeric(r.ts) - offset), at = Math.max(decisionAt, Math.min(raw, observedAt)), bid = numeric(r.bidPr), ask = numeric(r.askPr), markPrice = numeric(r.markPrice);
+  if (!time(raw) || !time(at) || raw > observedAt + tol || raw < decisionAt - BITGET_CLOCK.tickerAgeMs || observedAt - at > 30000 || ![bid, ask, markPrice].every(positive) || bid > ask) throw new Error('Bitget-Referenzkurs veraltet/ungültig');
   return { venue: 'bitget', product: 'USDT-FUTURES', instrument: symbol, quote: 'USDT', bid, ask, markPrice, at, providerAt, knownAt: observedAt };
 }
 
@@ -138,7 +148,14 @@ function validateSaved(saved, scope, asOf) {
 
 export function createBitgetPublicClient({ fetch: fetcher = globalThis.fetch, now = Date.now, wait = ms => new Promise(r => setTimeout(r, ms)), timeoutMs = 8000, spacingMs = 150 } = {}) {
   if (typeof fetcher !== 'function' || typeof now !== 'function' || typeof wait !== 'function' || !Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 30000 || !Number.isFinite(spacingMs) || spacingMs < 0) throw new Error('Bitget-Transportkonfiguration ungültig');
-  let queue = Promise.resolve(), nextRequestAt = 0, cooldown = 0;
+  let queue = Promise.resolve(), nextRequestAt = 0, cooldown = 0, offset = 0;
+  const skew = [];
+  // Median plausibler Stichproben (Providerzeit minus Mitte von Senden/Empfang); unplausible Ausreißer bleiben unberücksichtigt.
+  function clock(providerTime, sentAt, receivedAt) {
+    const sample = providerTime - (sentAt + receivedAt) / 2;
+    if (Math.abs(sample) <= BITGET_CLOCK.maxSkewMs) { skew.push(sample); if (skew.length > BITGET_CLOCK.samples) skew.shift(); const sorted = [...skew].sort((a, b) => a - b); offset = Math.round(sorted[sorted.length >> 1]); }
+    return offset;
+  }
   function request(path, params, signal) {
     const task = queue.then(async () => {
       signal?.throwIfAborted();
@@ -150,7 +167,7 @@ export function createBitgetPublicClient({ fetch: fetcher = globalThis.fetch, no
       signal?.addEventListener('abort', abort, { once: true });
       const timer = setTimeout(() => controller.abort(new Error('Bitget-Abfrage dauert zu lange')), timeoutMs);
       try {
-        const res = await fetcher(url.href, { method: 'GET', credentials: 'omit', cache: 'no-store', redirect: 'error', referrerPolicy: 'no-referrer', headers: { Accept: 'application/json' }, signal: controller.signal });
+        const sentAt = now(), res = await fetcher(url.href, { method: 'GET', credentials: 'omit', cache: 'no-store', redirect: 'error', referrerPolicy: 'no-referrer', headers: { Accept: 'application/json' }, signal: controller.signal });
         const observedAt = now();
         if (res.status === 429) {
           const value = res.headers?.get('retry-after'), parsed = value && /^\d+$/.test(value) ? Number(value) : null;
@@ -161,8 +178,10 @@ export function createBitgetPublicClient({ fetch: fetcher = globalThis.fetch, no
         if (!res.ok || res.redirected || (res.url && new URL(res.url).origin !== BITGET_ORIGIN)) throw new Error('Bitget-HTTP-Antwort nicht verfügbar');
         const text = await readBody(res);
         const body = JSON.parse(text), receivedAt = now();
-        if (body?.code !== '00000' || !time(body.requestTime) || body.requestTime > receivedAt || receivedAt - body.requestTime > 30000) throw new Error('Bitget-Antwortcode oder Providerzeit ungültig/veraltet');
-        return { data: body.data, providerAt: body.requestTime, observedAt: receivedAt };
+        if (body?.code !== '00000' || !time(body.requestTime)) throw new Error('Bitget-Antwortcode oder Providerzeit ungültig/veraltet');
+        const shift = clock(body.requestTime, sentAt, receivedAt), providerAt = body.requestTime - shift;
+        if (!time(providerAt) || providerAt > receivedAt + BITGET_CLOCK.toleranceMs || receivedAt - providerAt > 30000) throw new Error('Bitget-Antwortcode oder Providerzeit ungültig/veraltet');
+        return { data: body.data, providerAt, observedAt: receivedAt, offset: shift };
       } finally { clearTimeout(timer); signal?.removeEventListener('abort', abort); }
     });
     queue = task.catch(() => {}); return task;
@@ -231,7 +250,7 @@ export function createBitgetPublicClient({ fetch: fetcher = globalThis.fetch, no
   async function quote({ symbol, decisionAt, signal }) {
     if (!time(decisionAt) || decisionAt > now()) throw new Error('Bitget-Entscheidungszeit ungültig');
     const r = await request('/api/v2/mix/market/ticker', { symbol: instrument(symbol), productType: 'USDT-FUTURES' }, signal);
-    return normalizeBitgetQuote(r.data, { symbol, decisionAt, providerAt: r.providerAt, observedAt: r.observedAt });
+    return normalizeBitgetQuote(r.data, { symbol, decisionAt, providerAt: r.providerAt, observedAt: r.observedAt, offset: r.offset });
   }
   async function contract({ symbol, signal }) {
     const r = await request('/api/v2/mix/market/contracts', { symbol: instrument(symbol), productType: 'USDT-FUTURES' }, signal);
@@ -243,7 +262,7 @@ export function createBitgetPublicClient({ fetch: fetcher = globalThis.fetch, no
   }
   async function liveVolume({ symbol, signal }) {
     const r = await request('/api/v2/mix/market/candles', { symbol: instrument(symbol), productType: 'USDT-FUTURES', granularity: '15m', limit: 2 }, signal);
-    return normalizeBitgetLiveVolume(r.data, { symbol, providerAt: r.providerAt, observedAt: r.observedAt });
+    return normalizeBitgetLiveVolume(r.data, { symbol, providerAt: r.providerAt, observedAt: r.observedAt, offset: r.offset });
   }
   return Object.freeze({ range, load, quote, markRange, fundingPage, contract, currentFunding, liveVolume });
 }

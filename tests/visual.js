@@ -25,12 +25,11 @@ const h = require('./harness');
     await h.ctl('/walk?on=0'); await h.ctl('/set?symbol=XRPUSDT&price=1.535'); await h.sleep(3000);
     await p.evaluate(() => document.getElementById('positions').scrollIntoView());
     await p.screenshot({ path: __dirname + '/shots/v-desktop-alert.png' });
-    await p.click('#qr-export'); await p.fill('#qr-pass', 'geheim12'); await p.click('#qr-make');
-    // Vollständige Journale können die Sicherung über die QR-Grenze bringen; die Exportansicht zeigt dann den ehrlichen Dateihinweis.
-    await p.waitForFunction(() => !document.getElementById('qr-out').hidden || !document.getElementById('qr-big').hidden);
-    console.log('QR-Exportansicht:', await p.textContent('#qr-calc'), await p.textContent('#qr-big-text')); await h.sleep(300);
-    await p.screenshot({ path: __dirname + '/shots/v-desktop-qr.png' });
-    await p.click('#qr-close');
+    await p.click('#backup-compact'); await p.fill('#transfer-pass', 'geheim12'); await p.click('#transfer-file-make');
+    await p.waitForFunction(() => !document.getElementById('transfer-file-ready').hidden);
+    console.log('Kompakte Datei:', await p.textContent('#transfer-file-status')); await h.sleep(300);
+    await p.screenshot({ path: __dirname + '/shots/v-desktop-transfer.png' });
+    await p.click('#transfer-close');
     await p.click('#signals .tip > summary'); await h.sleep(200);
     await p.screenshot({ path: __dirname + '/shots/v-desktop-tip.png', clip: { x: 0, y: 0, width: 1600, height: 1000 } });
     await ctx.close();

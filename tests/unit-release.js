@@ -11,7 +11,7 @@ const check = (name, ok) => { ok ? pass++ : fail++; console.log(`${ok ? '✓' : 
   for (const entry of manifest.files.filter(x => x.path.endsWith('.mjs'))) { const file = path.join(root, entry.path.slice(2)), source = fs.readFileSync(file, 'utf8');
     for (const [, relative] of source.matchAll(/from\s+['"]([^'"]+)['"]/g)) if (relative.startsWith('.') && !fs.existsSync(path.resolve(path.dirname(file), relative))) missing = true; }
   check('Jeder relative Modulimport bleibt in vollständigem Releasegraph importierbar', !missing);
-  check('QR-Bibliothek mit unverändertem Lizenztext geliefert', fs.existsSync(path.join(base, 'vendor/jsQR.js')) && fs.readFileSync(path.join(base, 'vendor/jsQR.LICENSE.txt')).equals(fs.readFileSync(path.join(root, 'vendor/jsQR.LICENSE.txt'))));
+  check('Keine QR-Bibliothek mehr im Lieferstand (3.67.0: QR-Übertragung entfernt)', !fs.existsSync(path.join(base, 'vendor')) && !manifest.files.some(x => /jsQR/i.test(x.path)) && !/jsQR|qr-dialog/.test(html));
   check('SVG-Musterkatalog bleibt im versionierten HTML, keine neue Erkennungsengine', html.includes('function patSvg(') && fs.readFileSync(path.join(base, 'server/pattern-engine.mjs')).equals(fs.readFileSync(path.join(root, 'server/pattern-engine.mjs'))));
   check('Service Worker syntaktisch gültig und löscht keinen persönlichen Datenspeicher', (() => { try { new Function(sw); return !/indexedDB\.deleteDatabase|localStorage\.clear/.test(sw); } catch { return false; } })());
   console.log(`${pass}/${pass + fail} bestanden`); process.exitCode = fail ? 1 : 0;

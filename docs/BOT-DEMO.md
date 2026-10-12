@@ -1,5 +1,7 @@
 # Lokale KI-Handelsdemo · 3.61.0
 
+> **3.67.0:** Die Demo scheiterte auf echten Geräten an zu strengen Zeitprüfungen des Bitget-Clients (Geräte- gegen Bitget-Uhr ohne Toleranz) und eröffnete deshalb nie einen Trade. Behoben in `shared/bitget-public.mjs`; Erklärung und Nachweis in [3.67.0-AENDERUNGEN.md](3.67.0-AENDERUNGEN.md).
+
 Unter **Analysen → Trading-Bot** (oder dem Bot-Knopf beim Chart) stehen Status, eigener Demokurs, Ergebnis, offene Positionen und Abschlüsse zusammen. „Demo einrichten“ ist zunächst geschlossen. Strategie, eigene Übungsbasis, Exposition und Stoprisiko wählen; „Übungswerte einsetzen“ füllt nur leere Geldfelder. Fehlende Eingaben werden mit ihrem Feldnamen gemeldet. Kosten sind editierbar. Anschließend bewusst **Demo starten**.
 
 Ein neuer Lauf verwendet genau den Coin der Vorauswahl. Ein vorhandener Lauf bleibt beim ursprünglichen Coin; „Auswahl“ und „Lauf“ zeigen beide ausdrücklich. Verfügbare Demo-Kurse sind öffentliche **Bitget USDT-Futures**. Die manuelle Orderflow-Übung nimmt dagegen unverändert den angezeigten Markt/Kurs der Vorauswahl (Spot oder Futures). Beide sind mit ihrer Quelle gekennzeichnet.
@@ -24,7 +26,7 @@ Der Executor läuft nur bei sichtbarer, fortgesetzter App mit verfügbaren Daten
 
 **Demo-Trade-Daten löschen** löscht nach Beenden und eigener Bestätigung nur das Bot-Demo-Buch. In **Orderflow → Demo üben** löscht **Orderflow-Demo-Daten löschen** nach Bestätigung nur diese Übungen aller Coins. Persönliche Positionen, eigene DEMO-Bücher aus dem Positionsformular, KI-Originalarchive und die jeweils andere Demo bleiben erhalten.
 
-Neue persönliche Sicherungen enthalten **keine Übungstrades**: Bot-Buch, Orderflow-Buch und persönliche DEMO-Positionen/-Historie bleiben lokal. Auch Demo-Kontexte in exportierter Orderflow-Positionsbegleitung und Signaljournal werden ausgefiltert; der lokale Originalbestand bleibt stehen. Datei, Textcode, QR/kompakte Datei, Teilen und Telegram verwenden denselben bereinigten Payload. Reine Demoänderungen lösen keine automatische persönliche Sicherung aus. Schema-8-Demofelder bleiben für ältere Leser leer. Alte Sicherungen mit Demo-Einträgen bleiben bewusst importierbar.
+Neue persönliche Sicherungen enthalten **keine Übungstrades**: Bot-Buch, Orderflow-Buch und persönliche DEMO-Positionen/-Historie bleiben lokal. Auch Demo-Kontexte in exportierter Orderflow-Positionsbegleitung und Signaljournal werden ausgefiltert; der lokale Originalbestand bleibt stehen. Datei, Textcode, kompakte Datei, GitHub-Sync, Teilen und Telegram verwenden denselben bereinigten Payload. Reine Demoänderungen lösen keine automatische persönliche Sicherung aus. Schema-8-Demofelder bleiben für ältere Leser leer. Alte Sicherungen mit Demo-Einträgen bleiben bewusst importierbar.
 
 ## Prüfen
 

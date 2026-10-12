@@ -1,36 +1,46 @@
-# Positionierungs-Score – lokaler Arbeitsstand
+# Positionierungs-Score
 
-Noch nicht veröffentlicht. Der Nutzer sammelt weitere Aufgaben und fordert Gesamttest/Veröffentlichung später ausdrücklich an. Die öffentliche Version bleibt 3.65.0.
+Seit 3.66.0 veröffentlicht, in **3.67.0** als Kreis-Score neu dargestellt und im Datenabruf korrigiert (siehe unten).
 
-## Was hinzugekommen ist
+## Anzeige (3.67.0)
 
-Rechts in der Karte **Muster-Gesamtbild** steht ein eigener Block **Positionierung** mit Zahl/Label, rot-orange-grünem Balken und Marker. Unter 15 bzw. über 85 erscheint **Squeeze-Risiko**. ⓘ erklärt die Teilwerte und Datenmenge; X oder Tippen daneben schließt. Das bisherige Muster-Gesamtbild links behält sein eigenes Tippziel.
+Rechts in der Karte **Muster-Gesamtbild** steht der Block **Positionierung ⓘ** als Kreis: Die Zahl 0–100 steht in der Mitte, der farbige Bogen läuft ab 12 Uhr im Uhrzeigersinn bis zum Score. Farbe: **rot** unter 35 (Short-lastig), **gelb** 35–65 (neutral), **grün** über 65 (Long-lastig). Darunter steht das Label (Short-lastig / Neutral / Long-lastig); unter 15 bzw. über 85 erscheint stattdessen **⚠ Squeeze**. Ohne aktuelle Daten zeigt der Kreis nur den grauen Ring, „–“ und „nicht verfügbar“ bzw. „lädt …“.
+
+Der ganze Block ist eine Taste (mindestens 44 px): Antippen öffnet die Erklärung mit Teilwerten und Datenumfang; X oder Tippen daneben schließt. Das Muster-Gesamtbild links behält sein eigenes Tippziel.
 
 0 = Short-lastig, 100 = Long-lastig, 50 = Neutral, jeweils **relativ zum eigenen Verlauf**. Das ist kein absoluter Anteil aller Long-/Short-Positionen. Die globale Binance-Long/Short-Ratio zählt Konten, nicht deren Positionsgröße. **Positionierung am Markt, keine Kursprognose.** Der Wert beeinflusst weder Muster-Qualität noch Handels-, Bot- oder Alarmentscheidungen.
+
+## Korrektur 3.67.0: warum der Score bisher „-“ blieb
+
+Die echte Binance-API war in der Entwicklungsumgebung gesperrt (Netzwerkrichtlinie). Die folgenden drei Stellen sind deshalb die im Code gefundenen wahrscheinlichen Ursachen, nicht live nachgewiesen; alle drei sind behoben.
+
+- **30-Tage-Grenze:** Binance liefert Long/Short-Daten nur für die letzten 30 Tage. Die App fragte mit `startTime` = genau jetzt − 30 Tage an. Beim Eintreffen der Anfrage liegt dieser Zeitpunkt bereits außerhalb des verfügbaren Fensters; Binance kann solche Startzeiten ablehnen. Der Verlauf wird jetzt **ohne Startzeit** über die Anzahl geladen: `period=4h&limit=180` (180 × 4 h = 30 Tage).
+- **Frischeprüfung:** Der neueste 4h-Wert durfte höchstens 4 h 5 min alt sein. Trägt der Zeitstempel den Periodenbeginn, ist der neueste veröffentlichte Wert jedoch bis zu acht Stunden alt. Grenze jetzt zwei Perioden plus 5 min.
+- **Geräteuhr:** Werte mit einem Zeitstempel kurz nach der Geräteuhr wurden verworfen. Jetzt sind bis zu 10 min Abweichung zulässig.
+
+Die Mock-Tests konnten diese Fälle nicht zeigen, weil der Test-Server jede Startzeit akzeptierte. Die Unit-Tests prüfen jetzt ausdrücklich: keine Startzeit an der Grenze, 4h10 alter Periodenwert gültig, Geräteuhr 2 min hinter Binance.
 
 ## Berechnung und öffentliche Daten
 
 - Immer das gleichnamige Binance-USDT-Perpetual des gewählten Coins, auch bei Spot, z. B. `LTCUSDT`. Kein Ausweichen auf BTC oder einen anderen Coin.
 - Aktuelle Funding-Rate aus `/fapi/v1/premiumIndex`; bereits verfügbare frische Funding-Antwort desselben Coins aus der App wird wiederverwendet.
 - Abgerechnete Funding-Raten der letzten 30 Tage aus `/fapi/v1/fundingRate`, gegebenenfalls paginiert (1000 Werte pro Seite).
-- Kontenverhältnis aus `/futures/data/globalLongShortAccountRatio`, `period=4h`, 30 Tage. Ein vollständiger Abruf mit Limit 500 reicht für die ungefähr 180 Zeitpunkte; dazwischen nur neuester Wert mit Limit 1.
+- Kontenverhältnis aus `/futures/data/globalLongShortAccountRatio`, `period=4h`, `limit=180` ohne Start-/Endzeit; dazwischen nur neuester Wert mit `limit=1`.
 - Empirischer Perzentilrang = `100 × (Anzahl kleinerer Werte + 0,5 × Anzahl gleicher Werte) / Anzahl Vergleichswerte`. Eine konstante Reihe ergibt 50. Nur endliche Zahlen und mindestens zwei Vergleichswerte je Teil werden bewertet.
 - Score = gerundetes Mittel beider Perzentile mit jeweils 50 % Gewicht. Richtung und Extremhinweis verwenden diesen angezeigten ganzzahligen Score. Fehlende Faktoren werden nicht umgewichtet.
 
-Fachkern und Startwerte stehen in `shared/positioning-score.mjs`, `POSITIONING_CONFIG`. Ein kürzer verfügbarer Verlauf junger Coins wird nicht verlängert oder erfunden; tatsächliche Mengen stehen in der Erklärung. Funding wird entsprechend dem Nutzerauftrag als Rate verglichen, ohne zusätzliche Kosten-/Handelsrechnung. Open Interest ist kein zusätzlicher Faktor.
+Fachkern und Startwerte stehen in `shared/positioning-score.mjs`, `POSITIONING_CONFIG` (neu: `ratioLimit`, `ratioMaxAgeMs`, `clockSkewMs`).
 
 ## Abgleich und Fehlerschutz
 
-Abgleich alle 5 Minuten bei sichtbarer Karte oder geöffneter Erklärung, aktiver App und laufender Aktualisierung. Eigene Sichtbarkeit: der Plot muss dafür noch nicht im Fenster liegen. Pause, unsichtbare App und vom Gerät gemeldetes Offline stoppen Abrufe. Vier Coins im RAM-Cache, keine neuen Speicher-/Sicherungsdaten.
+Abgleich alle 5 Minuten bei sichtbarer Karte oder geöffneter Erklärung, aktiver App und laufender Aktualisierung. Pause, unsichtbare App und vom Gerät gemeldetes Offline stoppen Abrufe. Vier Coins im RAM-Cache, keine neuen Speicher-/Sicherungsdaten.
 
-Funding-Historie stündlich inkrementell ergänzen und auf 30 Tage kürzen. Konten-Historie alle vier Stunden erneuern, neue aktuelle Zeitpunkte dazwischen einfügen. Coin-/Intervallwechsel vermischen keine Daten; Timeframe und Spot/Futures beeinflussen das verwendete Perpetual nicht. Verspätete Antworten verworfen, gemeinsamer vorhandener Binance-API-Client mit Timeout/Rate-Limit, kontrollierte Wiederholung frühestens nach fünf Minuten bzw. längerer Retry-Frist.
+Funding-Historie stündlich inkrementell ergänzen und auf 30 Tage kürzen. Konten-Historie alle vier Stunden erneuern, neue aktuelle Zeitpunkte dazwischen einfügen. Verspätete Antworten werden verworfen; gemeinsamer Binance-API-Client mit Timeout/Rate-Limit; kontrollierte Wiederholung frühestens nach fünf Minuten.
 
-Bei Fehler, fehlendem passenden Futures, unvollständigen/veralteten Daten oder zu kurzer Vergleichsreihe **„-“** zeigen. Keine NaN-/Infinity-Ausgabe und keine alten Punkte als aktuelle Antwort. Grund über ⓘ erreichbar; übrige App bleibt bedienbar.
+Bei Fehler, fehlendem passenden Futures, unvollständigen/veralteten Daten oder zu kurzer Vergleichsreihe zeigt der Kreis „–“. Den Grund nennt die Erklärung (Antippen); die übrige App bleibt bedienbar.
 
-## Gezielt prüfen
+## Prüfen
 
-`node tests/unit-positioning-score.js` und `node tests/m95.js`, Browserziele seriell. Bestehende Musteranzeige/Erklärung zusätzlich M94/M93. Keine echten Orders, Nachrichten oder Schlüssel. Der Gesamtlauf mit nun 167 Zielen wird erst nach Nutzeranweisung gestartet.
+Automatisch: `node tests/unit-positioning-score.js` (40 Fälle) und `node tests/m95.js` (40 Fälle, Browserziele seriell), zusätzlich M94.
 
-Auf einem echten iPhone: BTC und LTC öffnen, eigenes Label und Marker prüfen; ⓘ und linkes Muster-Gesamtbild getrennt öffnen; Hell/Dunkel/eigene Farbe, 320px, Vollbild und längsten Widerspruchstext prüfen. Fehlender Futures-Coin bleibt „-“. Reale Safari-/CORS-Abnahme separat.
-
-Vor späterem Release den derzeit lokalen Root-Modulimport in das neue Versionsbündel übernehmen und APP_VERSION/SW-VERSION gemeinsam erhöhen. Veröffentlichte Bündel 3.65.0 bleiben unverändert.
+Auf dem iPhone: BTC und LTC öffnen – der Kreis muss nach wenigen Sekunden eine Zahl zeigen. Antippen öffnet die Erklärung mit „Vergleichsdaten … Funding · 180 × 4h“. Bleibt „–“, steht der genaue Grund in der Erklärung (z. B. Binance-Fehlercode); diesen Text bitte melden.
