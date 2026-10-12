@@ -27,14 +27,23 @@ jobs:
       - name: Öffentlichen Kalender ohne Schlüssel lesen
         id: collect
         run: |
-          if ! curl --fail --location --max-redirs 3 --proto '=https' --proto-redir '=https' \
-              --silent --show-error --max-time 30 --max-filesize 2097152 \
-              -A "ScalpDesk-Kalender (github.com/${GITHUB_REPOSITORY})" \
-              https://coinmarketcal.com/en/ -o public-calendar.html; then
-            echo "::warning::Öffentlicher Krypto-Kalender nicht erreichbar; letzter Stand bleibt."
-            echo "skip=1" >> "$GITHUB_OUTPUT"
-          elif ! node .github/kalender/crypto.mjs public-calendar.html > crypto-calendar.json; then
-            echo "::warning::Krypto-Kalenderformat geändert; letzter Stand bleibt."
+          calendar_ready=0
+          # Nur die öffentliche Kalenderseite; keine Nutzerdaten oder Zugangsdaten.
+          # Cloudflare kann GitHub-IP-Adressen ablehnen. Der freie Reader liefert
+          # dieselbe HTML-Seite, die der unveränderte Collector streng als JSON liest.
+          for calendar_endpoint in https://coinmarketcal.com/en/ https://r.jina.ai/https://coinmarketcal.com/en; do
+            if curl --fail --location --max-redirs 3 --proto '=https' --proto-redir '=https' \
+                --silent --show-error --max-time 45 --max-filesize 2097152 \
+                -A "ScalpDesk-Kalender (github.com/${GITHUB_REPOSITORY})" \
+                -H 'X-Return-Format: html' "$calendar_endpoint" -o public-calendar.html \
+                && node .github/kalender/crypto.mjs public-calendar.html > crypto-calendar.json; then
+              calendar_ready=1
+              break
+            fi
+            echo "::notice::Kalenderabruf fehlgeschlagen; nächsten öffentlichen Abrufweg prüfen."
+          done
+          if [ "$calendar_ready" != 1 ]; then
+            echo "::warning::Öffentlicher Krypto-Kalender nicht erreichbar oder Format geändert; letzter Stand bleibt."
             echo "skip=1" >> "$GITHUB_OUTPUT"
           fi
       - name: Auszug separat veröffentlichen
