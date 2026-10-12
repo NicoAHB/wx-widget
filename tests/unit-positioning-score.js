@@ -1,0 +1,53 @@
+// position-1: relative Ränge, echte asynchrone Abrufe, Coinbindung und Cache-Fristen.
+let pass=0,fail=0;const check=(name,ok)=>{ok?pass++:fail++;console.log(`${ok?'✓':'✗'} ${name}`);};
+(async()=>{
+  const P=await import('../shared/positioning-score.mjs'),cfg=P.POSITIONING_CONFIG,values=Array.from({length:100},(_,i)=>i);
+  check('Verlangte Gewichte/Fristen zentral',cfg.fundingWeight===.5&&cfg.ratioWeight===.5&&cfg.windowMs===30*86400000&&cfg.updateMs===300000&&cfg.ratioPeriod==='4h');
+  check('Unter/über allen Vergleichswerten: 0/100',P.positioningPercentile(-1,[0,1,2])===0&&P.positioningPercentile(3,[0,1,2])===100);
+  check('Gleiche Raten sind neutral statt scheinbar extrem',P.positioningPercentile(0,[0,0,0])===50&&P.positioningPercentile(2,[1,2,2,3])===50);
+  check('Rang unabhängig von Sortierung',P.positioningPercentile(2,[3,1,2])===P.positioningPercentile(2,[1,2,3]));
+  const q=P.positioningScore(59.5,63.5,values,values);
+  check('62 Punkte aus Funding 60 und Long/Short 64',q.score===62&&q.fundingPercentile===60&&q.ratioPercentile===64&&q.label==='Long-lastig'&&!q.squeeze);
+  check('Short/Neutral/Long korrekt',P.positioningScore(-1,0,[0,1],[1,2]).label==='Short-lastig'&&P.positioningScore(0,1,[0,0],[1,1]).label==='Neutral'&&P.positioningScore(2,3,[0,1],[1,2]).label==='Long-lastig');
+  check('Squeeze erst unter 15 und über 85',!P.positioningScore(14.5,14.5,values,values).squeeze&&P.positioningScore(13.5,13.5,values,values).squeeze&&!P.positioningScore(84.5,84.5,values,values).squeeze&&P.positioningScore(85.5,85.5,values,values).squeeze);
+  check('Keine fehlenden/NaN/Infinity-Werte bewerten',[null,NaN,Infinity].every(v=>P.positioningScore(v,1,[0,1],[1,2])===null)&&P.positioningPercentile(1,[0,NaN])===null);
+  check('Zu wenige Daten und negative Kontenratio nicht bewerten',P.positioningScore(0,1,[0],[1])===null&&P.positioningScore(0,-1,[0,1],[1,2])===null);
+  const before=JSON.stringify(values);P.positioningScore(1,1,values,values);check('Originalhistorie wird nicht verändert',JSON.stringify(values)===before);
+  let time=Date.UTC(2026,9,12,12),calls=[];const fresh=(sym='BTCUSDT')=>({symbol:sym,lastFundingRate:'0',time});
+  const fund=(sym)=>Array.from({length:5},(_,i)=>({symbol:sym,fundingRate:String((i-2)/10000),fundingTime:time-(5-i)*28800000}));
+  const ratios=sym=>Array.from({length:5},(_,i)=>({symbol:sym,longShortRatio:String(.8+i/10),timestamp:time-(4-i)*14400000}));
+  const request=async(path,params,signal)=>{calls.push({path,params,signal});if(path.endsWith('premiumIndex'))return fresh(params.symbol);if(path.endsWith('fundingRate'))return fund(params.symbol).filter(r=>r.fundingTime>=params.startTime);return params.limit===1?[{symbol:params.symbol,longShortRatio:'1',timestamp:time}]:ratios(params.symbol);};
+  const feed=P.createPositioningFeed({request,now:()=>time});await feed.tick('LTCUSDT');
+  check('Initialisiert exakt passendes Perpetual, kein BTC-Ersatz',calls.length===3&&calls.every(r=>r.params.symbol==='LTCUSDT')&&feed.usable().symbol==='LTCUSDT');
+  check('30 Tage und 4h/500 für Konten-Historie',calls.find(r=>r.params.period)?.params.period==='4h'&&calls.find(r=>r.params.period).params.limit===500&&calls.find(r=>r.params.period).params.startTime===time-cfg.windowMs);
+  check('Funding 0 ist gültig, Anfrage ohne Schlüssel',feed.usable().funding===0&&calls.every(r=>r.signal instanceof AbortSignal&&!('apiKey' in r.params)));
+  await feed.tick('LTCUSDT');time+=299999;await feed.tick('LTCUSDT');check('Vor 5 Minuten keinerlei Zusatzabruf',calls.length===3);
+  time++;await feed.tick('LTCUSDT');check('Nach 5 Minuten nur aktuelle Werte, Historien behalten',calls.length===5&&calls.filter(r=>r.path.endsWith('fundingRate')).length===1&&calls.filter(r=>r.params.limit===500).length===1&&calls.at(-1).params.limit===1);
+  time+=55*60000;await feed.tick('LTCUSDT');check('Funding nach einer Stunde inkrementell statt wieder 30 Tage',calls.filter(r=>r.path.endsWith('fundingRate')).length===2&&calls.filter(r=>r.path.endsWith('fundingRate')).at(-1).params.startTime>time-cfg.windowMs&&calls.filter(r=>r.params.limit===500).length===1);
+  time+=3*3600000;await feed.tick('LTCUSDT');check('Nach 4 Stunden Kontenvergleich erneuern',calls.filter(r=>r.params.limit===500).length===2);
+  const atReturn=calls.length;await feed.tick('BTCUSDT');await feed.tick('LTCUSDT');check('Coinwechsel getrennt, Rückkehr nutzt passenden Cache',calls.length===atReturn+3&&feed.usable().symbol==='LTCUSDT');
+  await feed.tick('LTCUSDT',false);check('Pause lädt nichts',calls.length===atReturn+3);
+  await feed.tick('INVALID<script>');check('Ungültiges Symbol bleibt leer',feed.state.symbol===''&&feed.usable()===null);
+  for(const sym of ['ETHUSDT','BCHUSDT','XRPUSDT','NEARUSDT'])await feed.tick(sym);const count=calls.length;await feed.tick('BTCUSDT');check('Begrenzter Cache entfernt alte Coins',calls.length===count+3);
+  let oldResolve,oldSignal;const slow=P.createPositioningFeed({now:()=>time,request:(path,p,s)=>p.symbol==='BTCUSDT'?(oldSignal=s,new Promise(r=>oldResolve=r)):request(path,p,s)});
+  const old=slow.tick('BTCUSDT');await slow.tick('LTCUSDT');oldResolve(fresh('BTCUSDT'));await old;
+  check('Alter BTC-Abruf abgebrochen; Antwort überschreibt LTC nicht',oldSignal.aborted&&slow.usable().symbol==='LTCUSDT'&&!slow.state.busy);
+  let pausedResolve;const paused=P.createPositioningFeed({now:()=>time,request:()=>new Promise(r=>pausedResolve=r)});const pending=paused.tick('BTCUSDT');await paused.tick('BTCUSDT',false);pausedResolve(fresh());await pending;
+  check('Antwort nach Pause verworfen',!paused.state.busy&&paused.usable()===null);
+  let errorCalls=0;const error=P.createPositioningFeed({now:()=>time,request:async()=>{errorCalls++;throw Error('Test-Timeout');}});await error.tick('BTCUSDT');await error.tick('BTCUSDT');
+  check('API-Fehler ehrlich ohne Score; kein Abrufsturm',error.usable()===null&&error.state.error==='Test-Timeout'&&errorCalls===1&&error.state.nextAt===time+300000);
+  time+=300000;await error.tick('BTCUSDT');check('Fehler nach 5 Minuten kontrolliert neu prüfen',errorCalls===2);
+  const missing=P.createPositioningFeed({now:()=>time,request:async()=>{throw Object.assign(Error('Symbol'),{code:-1121});}});await missing.tick('PAXGUSDT');check('Kein Futures-Coin: verständlich nicht verfügbar',missing.usable()===null&&/kein Binance-USDT-Perpetual/.test(missing.state.error));
+  let rateCalls=0;const rate=P.createPositioningFeed({now:()=>time,request:async()=>{rateCalls++;throw Object.assign(Error('Limit'),{rate:true,retryMs:600000});}});await rate.tick('BTCUSDT');await rate.tick('LTCUSDT');
+  check('429 auch über Coinwechsel respektiert',rateCalls===1&&rate.state.result===null);time+=600001;await rate.tick('LTCUSDT');check('Nach Retry-Frist ein neuer Versuch',rateCalls===2);
+  for(const [name,change]of [['fremdes Symbol',r=>({...r,symbol:'ETHUSDT'})],['leere Rate',r=>({...r,fundingRate:''})],['boolesche Rate',r=>({...r,fundingRate:false})],['ungültiger Zeitpunkt',r=>({...r,fundingTime:'falsch'})]]){
+    const bad=P.createPositioningFeed({now:()=>time,request:async(path,p,s)=>path.endsWith('fundingRate')?fund(p.symbol).map(change):request(path,p,s)});await bad.tick('LTCUSDT');check(name+': keine erfundenen Punkte',bad.usable()===null&&/Unvollständige/.test(bad.state.error));
+  }
+  const stale=P.createPositioningFeed({now:()=>time,request:async()=>({...fresh(),time:time-180001})});await stale.tick('BTCUSDT');check('Altes Funding nicht aktuell rechnen',stale.usable()===null);
+  const oldRatio=P.createPositioningFeed({now:()=>time,request:async(path,p,s)=>path.includes('globalLongShort')?ratios(p.symbol).map(r=>({...r,timestamp:r.timestamp-30000000})):request(path,p,s)});await oldRatio.tick('LTCUSDT');check('Veraltete Kontenratio nicht aktuell rechnen',oldRatio.usable()===null);
+  let pageCalls=0;const many=Array.from({length:1001},(_,i)=>({symbol:'BTCUSDT',fundingRate:String(i/10000000),fundingTime:time-(1001-i)*600000}));
+  const paging=P.createPositioningFeed({now:()=>time,request:async(path,p,s)=>{if(!path.endsWith('fundingRate'))return request(path,p,s);pageCalls++;return many.filter(r=>r.fundingTime>=p.startTime).slice(0,1000);}});await paging.tick('BTCUSDT');check('Mehr als 1000 Funding-Raten mit Paginierung vollständig',pageCalls===2&&paging.usable().fundingCount===1001);
+  const outside=P.createPositioningFeed({now:()=>time,request:async(path,p,s)=>path.endsWith('fundingRate')?[{symbol:p.symbol,fundingRate:'100',fundingTime:time-cfg.windowMs-1},...fund(p.symbol)]:request(path,p,s)});await outside.tick('LTCUSDT');check('Werte älter als 30 Tage zählen nicht',outside.usable().fundingCount===5);
+  time+=330001;check('Alter Score nach Zeitüberschreitung nicht als aktuell',outside.usable()===null);
+  console.log(`\n${pass}/${pass+fail} bestanden`);process.exitCode=fail?1:0;
+})().catch(e=>{console.error(e);process.exitCode=1;});

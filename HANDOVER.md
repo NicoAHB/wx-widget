@@ -3,7 +3,19 @@
 Diese Datei ist der Einstieg für jede weitere Arbeit am Projekt. Wer sie liest, braucht kein Vorwissen. Die vollständige fachliche
 Vorgabe aller Gruppen G01–G14 steht in `docs/VORGABE-G01-G14.md` (Original-Übergabe; dort sind G10–G14 ausführlich beschrieben).
 
-## Aktueller Arbeitsstand 3.65.0 – Muster-Score technisch abgenommen
+## Aktueller lokaler Arbeitsstand – Positionierungs-Score (noch nicht veröffentlicht)
+
+Nutzerauftrag nach 3.65.0: Positionierung des gewählten Coins rechts im Muster-Gesamtbild, strikt getrennt vom Muster-Qualitätsmaß. **Explizite Nutzerregel:** weitere Aufgaben folgen; keinen Gesamttest und keine Veröffentlichung ausführen, bis der Nutzer diese ausdrücklich anfordert. Branch `codex/positionierungs-score`, Ausgangspunkt veröffentlichtes `d8f137e`.
+
+- `shared/positioning-score.mjs`, Modell position-1: Funding-/Long-Short-Perzentile des eigenen 30-Tage-Verlaufs, 50/50 gewichtet und auf ganze Punkte gerundet. Gleiche Werte teilen ihren Rang, konstante Reihe neutral 50. Zentrale Fristen/Gewichte/Extremgrenzen; mindestens zwei Vergleichswerte je Faktor. Unter 15/über 85 Squeeze-Hinweis; keine Handels-/Alarm-/Bot-Stimme und keine Kursprognose.
+- Öffentliche Binance-USDT-Perpetual-Daten auch bei Spot-Charts, kein BTC-Ersatz. Gemeinsamer vorhandener API-Client/Rate-Limit; Abgleich alle 5 Minuten, RAM-Cache für vier Coins, Funding zunächst vollständig/paginiert, danach stündlich inkrementell; Long/Short-Historie 4h/30 Tage alle vier Stunden, dazwischen nur neuester Wert. Pause/Unsichtbarkeit, Abbruch/verspätete Coin-Antworten, fehlende/ungültige/veraltete Daten und API-Ausfälle bleiben auf diese Anzeige begrenzt.
+- Karte mit getrennten Tippzielen: bisheriges Muster-Gesamtbild links, Positionierung rechts mit Zahl/Label, rot-orange-grünem Balken/Marker und 44px-ⓘ. Eigene deutsche Erklärung mit tatsächlichen Teilwerten und Datenumfang; außerhalb tippen/X schließt. Muster-Hinweis als „Muster-Score“ beschriftet, damit der neue Positionierungswert nicht als Qualität verstanden wird.
+- Gezielt geprüft: Kern-/Feedfälle **37/37**, native Oberfläche zunächst **39/39** samt beiden Squeeze-Extremen, Perpetual trotz Spot, AA-Farbmodi und Fehler-/Vollbild-/Coinwegen. Längster Textzustand/gezielte Bestandsregression/Lint abschließend noch in Arbeit. **Kein Gesamtlauf, keine Veröffentlichung.**
+- Erste Native-Prüfung nach 23 positiven Fällen beim LTC-Wechsel abgebrochen: nach Menübedienung Karte top 941,1 / Plot top 1339,6 bei Fensterhöhe 844, LTC geladen/kein Kursfehler, keine neue Positionierungsanfrage. Test richtet den tatsächlichen Verbraucher sichtbar aus. Die neue Anzeige beobachtet ihre eigene Sichtbarkeit, sodass eine bereits sichtbare Karte unabhängig vom noch darunter liegenden Plot lädt. Kein Alarm-/Handelscode geändert; Erst-/Diagnose-/Nachlogs unter `/workspace/.wx-widget-tools/positionierungs-score-*` getrennt erhalten.
+
+App/SW bleiben vorerst **3.65.0**, Dienst **2.12.0**. Die bereits veröffentlichten Versionsbündel werden nicht verändert. Der neue Modulimport nutzt im lokalen Arbeitsstand `./shared/positioning-score.mjs`; bei der späteren gemeinsamen Release-Freigabe Versionen/Imports/Bündel gemeinsam vorbereiten, Lint/Gesamtlauf durchführen und dann erst PR/Pages veröffentlichen. Praktische Safari-/Geräteabnahme weiterhin separat.
+
+## Zuletzt veröffentlichter Stand 3.65.0 – Muster-Score technisch abgenommen
 
 Nutzerauftrag vollständig umgesetzt in `codex/chartmuster-score`: getrennter Qualitäts-Score 0–100, kausale Zustände, Restziel, Aufschlüsselung und Gesamtbild 5m–1w. Zuerst Kernpunkte 1/2 geprüft, anschließend Anzeige/Hintergrundanalyse; keine neue Zwischenfreigabe nötig. Keine Änderung von pat-1, Regelgüte, Handelsmodellen, Alarm-Auslösern oder Positionen.
 
