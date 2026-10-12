@@ -3,7 +3,17 @@
 Diese Datei ist der Einstieg für jede weitere Arbeit am Projekt. Wer sie liest, braucht kein Vorwissen. Die vollständige fachliche
 Vorgabe aller Gruppen G01–G14 steht in `docs/VORGABE-G01-G14.md` (Original-Übergabe; dort sind G10–G14 ausführlich beschrieben).
 
-## Aktueller Arbeitsstand 3.64.0 – Chart-Erweiterung online und technisch abgenommen
+## Aktueller Arbeitsstand 3.64.1 – direkte Mustererklärung umgesetzt, Releaseprüfung
+
+Nutzerauftrag nach 3.64.0: Chartmuster-Kacheln leichter erklären, insbesondere per langem Drücken. Branch `codex/chartmuster-direktinfo`, online weiterhin 3.64.0.
+
+- Langer Druck (550 ms) auf den Mustertext öffnet die vorhandene Erklärung mit Zeichnung, Messwerten und Regelbegründung; Loslassen schaltet keine Zeichnung. Kurzer Tipp zeichnet weiterhin ein/aus. Bewegung über 12 px, Touch-Abbruch, Coinwechsel und herausgefilterte Kachel verhindern alte Erklärungen.
+- Zusätzlich pro Kachel ein sichtbarer ⓘ-Knopf mit 44-px-Tippfläche und beschriftetem Tastaturzugang. Auch ungültige Kacheln bleiben darüber erklärbar; Zeichnung/Zoom sind dort gesperrt. Gruppen werden bei Live-Updates wiederverwendet, Leistenhöhe bleibt gleich. „Im Chart zeigen“ bindet sich an die Muster-ID statt eines überholten Listenindex.
+- App/SW gemeinsam 3.64.1, Dienst unverändert 2.12.0; neues Bündel 71/69. Native Touchprüfung M93 abschließend 28/28 einschließlich identischer Muster-ID auf einem anderen Coin, bisherige Chartprüfung M92 42/42, Sichtprüfung der Kachel/Erklärung und Lint 0 Fehler, 3 bekannte Warnungen. Erster M93-Versuch wartete auf passive Analyse bei noch außerhalb des Fensters liegendem Chart (Testdaten korrekt, keine App-Laufzeitfehler); Test scrollt jetzt ausdrücklich zum Chart. Erstlogs erhalten. Bedienung: [docs/CHARTMUSTER-DIREKTINFO.md](docs/CHARTMUSTER-DIREKTINFO.md).
+
+**Offen:** vollständiger serieller Release-Gesamtlauf, PR/Pages und Nachweise. Reale Safari-Geräteabnahme separat. Veröffentlichung nach Abschluss/Test bereits im laufenden Auftrag autorisiert; keine erneute Gruppenfreigabe erforderlich. Handels-/Erkennungs-/Alarmregeln unverändert. Produktstand für alle 162 Release-Ziele eingefroren; Browserprüfungen ausschließlich seriell.
+
+## Vorheriger Arbeitsstand 3.64.0 – Chart-Erweiterung online und technisch abgenommen
 
 Umsetzung in `codex/chart-detail-muster`, Ausgangspunkt veröffentlichtes 3.63.0; jetzt öffentlich **3.64.0**. Nutzerauftrag: feinere Detail-Kerzen ab Haupt-Zeitrahmen 1h und kompakte Formationschips im markierten Kursbereich neben „Alarm für diesen Kurs“; vorhandene BTC-Pfeile bleiben erreichbar. Keine Änderungen der Erkennungs-, Signal-, Alarm-, Positions- oder Oracle-Fachlogik.
 
