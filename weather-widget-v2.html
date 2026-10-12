@@ -66,15 +66,29 @@
     };
     return Object.freeze({ normalize, contrast, evaluate, suggest, palette, build });
   })();
+  // Gerätezuordnung statt zusätzlicher Layout-Schalter. Bildschirmgröße ist die
+  // Gerätefläche, nicht das Fenster: Hoch-/Querformat und iPad Split View behalten dieselbe Ansicht.
+  window.__sdDeviceView = function (nav, display, coarse) {
+    const ua = String(nav.userAgent || ''), touch = Number(nav.maxTouchPoints) > 0;
+    const ipad = /iPad/i.test(ua) || (/Mac/i.test(nav.platform || '') && touch);
+    const phone = !ipad && (/iPhone|iPod|Android.*Mobile/i.test(ua) || nav.userAgentData?.mobile === true);
+    const tablet = ipad || /Android|Tablet/i.test(ua);
+    const desktop = !ipad && /Windows|X11|Linux.*(?:x86_64|i[3-6]86)|Macintosh/i.test(ua);
+    const shortEdge = Math.min(Number(display.width) || Infinity, Number(display.height) || Infinity);
+    const mobile = phone || (!tablet && !desktop && touch && coarse && shortEdge <= 600);
+    return { presentation: mobile ? 'standard' : 'dashboard', device: mobile ? 'phone' : tablet ? 'tablet' : 'desktop' };
+  };
   // Design, Layout und Tab vor dem ersten Zeichnen setzen (kein Aufblitzen). Werte liegen als JSON im localStorage-Spiegel.
   (function () {
     var d = document.documentElement, g = function (k) { try { var v = localStorage.getItem('scalpdesk.' + k); return v === null ? null : JSON.parse(v); } catch (e) { return null; } };
-    var t = g('theme.v1'), l = g('layout.v1'), tab = g('tab.v1');
+    var t = g('theme.v1'), tab = g('tab.v1');
+    var view = window.__sdDeviceView(navigator, screen, window.matchMedia && matchMedia('(pointer:coarse)').matches);
     d.setAttribute('data-theme', t === 'light' ? 'light' : 'dark');
-    d.setAttribute('data-layout', l === 'desktop' || l === 'tablet' ? l : (window.matchMedia && matchMedia('(min-width:1100px) and (hover:hover) and (pointer:fine)').matches ? 'desktop' : 'tablet'));
+    d.setAttribute('data-layout', window.matchMedia && matchMedia('(min-width:1100px) and (hover:hover) and (pointer:fine)').matches ? 'desktop' : 'tablet');
+    d.setAttribute('data-workspace', 'focus');
     d.setAttribute('data-active-tab', tab === 'calc' || tab === 'pos' || tab === 'ind' ? tab : 'chart');
     if (t === 'light') { var m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', '#eef1f5'); }
-    d.setAttribute('data-presentation', g('presentation.v1') === 'dashboard' ? 'dashboard' : 'standard');
+    d.setAttribute('data-presentation', view.presentation);
     var b = g('background.v1'), p = b && b.mode === 'custom' ? window.__sdAppearance.build(b.color) : null;
     if (p) { d.setAttribute('data-theme', p.theme); d.setAttribute('data-background', 'custom'); Object.keys(p.vars).forEach(function (k) { d.style.setProperty(k, p.vars[k]); }); document.querySelector('meta[name="theme-color"]').setAttribute('content', p.color); }
   })();
@@ -2090,7 +2104,7 @@ html[data-presentation=dashboard][data-layout=tablet] #acct{order:0}
 @media(max-width:600px){.bot-view .bot-grid,.bot-view .bot-limits,.bot-view .bot-run-facts{grid-template-columns:minmax(0,1fr)}.bot-view .bot-group,.bot-view .bot-run-card{padding:10px}.bot-view .bot-actions>.button{flex-basis:100%}}
 
 
-/* 3.60.0: fokussierte Arbeitsbereiche; die Gesamtansicht behält ihr bisheriges Raster. */
+/* Arbeitsbereiche: Standard auf Handys, Dashboard auf PC/iPad. */
 .workspace-nav{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:12px 24px;border-bottom:1px solid var(--border);background:var(--surface);position:static}
 .workspace-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;flex:1 1 440px;max-width:680px}
 .workspace-tabs button{min-width:0;min-height:44px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2);color:var(--text-2);font-size:.875rem;font-weight:650;padding:8px}
@@ -2108,8 +2122,6 @@ html[data-presentation=dashboard][data-layout=tablet] #acct{order:0}
 .workspace-setting-card{min-width:0;padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--surface-2)}
 .workspace-setting-card h3{font-size:1rem;margin-bottom:4px}.workspace-setting-card p{font-size:.8125rem;color:var(--muted);line-height:1.5}
 .workspace-setting-card .data-head{margin-top:8px}.workspace-setting-card .data-panel{padding:12px}
-html[data-workspace=all] .workspace-nav,html[data-workspace=all] #workspace-settings{display:none!important}
-html[data-workspace=all] .workspace-fold{display:contents}html[data-workspace=all] .workspace-fold>summary,html[data-workspace=all] .workspace-actions{display:none}
 html[data-workspace=focus] [data-workspace-visible=false]{display:none!important}
 html[data-workspace=focus][data-layout] [data-workspace-visible=true]:not([hidden]){display:block!important}
 html[data-workspace=focus] .tabbar{display:none!important}
@@ -7736,14 +7748,16 @@ if (window.ResizeObserver) {
 }
 // ---------- Design, Layout, Tabs ----------
 const THEME_KEY = 'scalpdesk.theme.v1', LAYOUT_KEY = 'scalpdesk.layout.v1', TAB_KEY = 'scalpdesk.tab.v1';
-// 3.51.0 (G14): Darstellungswahl getrennt vom Geräteformat und von Handelsdaten.
+// Hintergrund bleibt unabhängig von der automatisch zugeordneten Geräteansicht.
 const PRESENTATION_KEY = 'scalpdesk.presentation.v1', BACKGROUND_KEY = 'scalpdesk.background.v1', appearance = window.__sdAppearance;
 const appearanceVars = Object.keys(appearance.build(appearance.palette[0].color).vars);
-function applyPresentation(value, save = true) {
-  const selected = value === 'dashboard' ? 'dashboard' : 'standard'; docEl.dataset.presentation = selected;
-  document.querySelectorAll('[data-presentation-set]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.presentationSet === selected)));
-  if (!save) store.adopt(PRESENTATION_KEY, selected);
-  if (save) { store.set(PRESENTATION_KEY, selected); try { bc?.postMessage({ t: 'presentation', from: TAB_ID, value: selected }); } catch {} }
+function applyPresentation() {
+  const { presentation } = window.__sdDeviceView(navigator, screen, matchMedia('(pointer:coarse)').matches);
+  docEl.dataset.presentation = presentation;
+  put('device-view-name', presentation === 'dashboard' ? 'Arbeitsbereich Dashboard' : 'Arbeitsbereich Standard');
+  // Alte Sicherungen/Tabs dürfen keine fremde Geräteansicht erzwingen. Der alte
+  // Schlüssel bleibt für kompatible Sicherungen erhalten, ist aber keine Auswahl mehr.
+  store.adopt(PRESENTATION_KEY, presentation);
   // Der vorhandene ResizeObserver passt den bestehenden Chart an; kein neuer Datenabruf.
 }
 function renderOwnColor(color, custom) {
@@ -7779,16 +7793,13 @@ function applyTheme(t, save = true, background = null) {
   if (!save) { store.adopt(THEME_KEY, t); if (background) store.adopt(BACKGROUND_KEY, background); }
   if (lastChart) drawChart(); if ($('analysis').open) renderAnalysis();
 }
-const effectiveLayout = pref => pref === 'desktop' || pref === 'tablet' ? pref : desktopMq.matches ? 'desktop' : 'tablet';
-function applyLayout(pref, save = true) {
-  pref = ['auto', 'desktop', 'tablet'].includes(pref) ? pref : 'auto';
-  if (save) store.set(LAYOUT_KEY, pref);
-  const eff = effectiveLayout(pref), changed = docEl.dataset.layout !== eff; docEl.dataset.layout = eff;
-  document.querySelectorAll('[data-layout-set]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.layoutSet === pref)));
+function applyLayout() {
+  const eff = desktopMq.matches ? 'desktop' : 'tablet', changed = docEl.dataset.layout !== eff; docEl.dataset.layout = eff;
+  store.adopt(LAYOUT_KEY, 'auto'); applyPresentation();
   applyFoldDefaults(); measureLivebar();
   if (changed) requestAnimationFrame(() => renderMarket());
 }
-desktopMq.addEventListener?.('change', () => { if (store.get(LAYOUT_KEY, 'auto') === 'auto') applyLayout('auto', false); });
+desktopMq.addEventListener?.('change', () => applyLayout());
 const TABS = ['chart', 'calc', 'pos', 'ind', 'settings'];
 function setTab(tab, save = true) {
   tab = TABS.includes(tab) ? tab : 'chart';
@@ -7812,8 +7823,6 @@ function goTo(id) {
 function measureLivebar() { docEl.style.setProperty('--lb-h', $('livebar').offsetHeight + 'px'); }
 new ResizeObserver(measureLivebar).observe($('livebar'));
 document.querySelectorAll('[data-theme-set]').forEach(b => b.addEventListener('click', () => applyTheme(b.dataset.themeSet)));
-document.querySelectorAll('[data-layout-set]').forEach(b => b.addEventListener('click', () => applyLayout(b.dataset.layoutSet)));
-document.querySelectorAll('[data-presentation-set]').forEach(b => b.addEventListener('click', () => applyPresentation(b.dataset.presentationSet)));
 for (const { name, color } of appearance.palette) {
   const b = document.createElement('button'); b.type = 'button'; b.dataset.backgroundColor = color; b.style.setProperty('--swatch', color); b.className = 'background-swatch'; b.textContent = name; b.setAttribute('aria-label', name + ' ' + color); b.setAttribute('aria-pressed', 'false'); b.addEventListener('click', () => acceptOwnColor(color)); $('own-color-palette').append(b);
 }
@@ -8501,7 +8510,7 @@ addEventListener('offline', () => status());
 addEventListener('online', () => { live.post({ t: 'wake' }); state.next = Math.min(state.next, Date.now() + 500); status(); });
 // ---------- Start ----------
 put('app-version', `Version ${APP_VERSION}`);
-readPalette(); applyTheme(store.get(BACKGROUND_KEY, null)?.mode === 'custom' && appearance.evaluate(store.get(BACKGROUND_KEY, null)?.color).ok ? 'custom' : store.get(THEME_KEY, 'dark'), false); applyPresentation(store.get(PRESENTATION_KEY, 'standard'), false); applyLayout(store.get(LAYOUT_KEY, 'auto'), false); setTab(store.get(TAB_KEY, 'chart'), false);
+readPalette(); applyTheme(store.get(BACKGROUND_KEY, null)?.mode === 'custom' && appearance.evaluate(store.get(BACKGROUND_KEY, null)?.color).ok ? 'custom' : store.get(THEME_KEY, 'dark'), false); applyLayout(); setTab(store.get(TAB_KEY, 'chart'), false);
 syncLevUi('leverage'); syncStakeUi(); syncMoveUi();
 $('backup-share').hidden = !canShareFiles;
 importantSig = dataSig();
@@ -15254,38 +15263,31 @@ function workspaceSyncTab(tab, save) {
   if (save) workspaceSave();
 }
 function workspaceOpenMenu(id) { $(id).hidden = false; const d = $(id).closest('details'); if (d) d.open = true; goTo(id); }
-function workspaceMode(mode, save = true) {
-  workspace.mode = mode === 'all' ? 'all' : 'focus'; docEl.dataset.workspace = workspace.mode;
+function workspaceApply() {
+  docEl.dataset.workspace = 'focus';
   workspace.watchView = null;
-  if (workspace.mode === 'focus') for (const { node, details, marker } of workspace.unwraps) { marker.after(details); details.append(node); }
-  for (const { node, marker, host } of workspace.moves) { if (workspace.mode === 'focus') host.append(node); else marker.after(node); }
-  // display:contents an <details> erhält dessen anonyme Inhaltsbox. In der
-  // Gesamtansicht deshalb die Originalelemente als direkte Kinder zurückstellen.
-  if (workspace.mode === 'all') for (const { node, details, marker } of workspace.unwraps) { marker.after(node); details.remove(); }
-  for (const id of ['view-panel', 'notify-panel']) { $(id).classList.toggle('workspace-menu', workspace.mode === 'focus'); $(id).hidden = workspace.mode !== 'focus'; }
-  for (const d of workspace.wrappers) if (d.id !== 'workspace-watch') d.open = workspace.mode === 'all' || !!workspace.folds[d.id];
-  for (const d of workspace.extraFolds) d.node.open = workspace.mode === 'all' ? d.original : !!workspace.folds[d.node.id];
-  for (const b of document.querySelectorAll('[data-workspace-mode]')) b.setAttribute('aria-pressed', String(b.dataset.workspaceMode === workspace.mode));
-  if (workspace.mode === 'focus') setTab(workspace.view, false); else { const tab = store.get(TAB_KEY, 'chart'); setTab(TABS.includes(tab) && tab !== 'settings' ? tab : 'chart', false); }
+  for (const { node, host } of workspace.moves) host.append(node);
+  for (const id of ['view-panel', 'notify-panel']) { $(id).classList.add('workspace-menu'); $(id).hidden = false; }
+  for (const d of workspace.wrappers) if (d.id !== 'workspace-watch') d.open = !!workspace.folds[d.id];
+  for (const d of workspace.extraFolds) d.open = !!workspace.folds[d.id];
+  setTab(workspace.view, false);
   ec.list = ''; cn.list = ''; renderEcon(); renderCnews(); measureLivebar();
-  if (save) workspaceSave(); requestAnimationFrame(() => renderMarket());
+  requestAnimationFrame(() => renderMarket());
 }
 function workspaceBuild() {
   const saved = store.get(WORKSPACE_KEY, null);
-  workspace = { mode: saved?.mode === 'all' ? 'all' : 'focus', view: saved?.view in WORKSPACE_VIEWS ? saved.view : 'chart', folds: saved?.folds && typeof saved.folds === 'object' ? { ...saved.folds } : {}, moves: [], wrappers: [], unwraps: [], extraFolds: [] };
+  workspace = { mode: 'focus', view: saved?.view in WORKSPACE_VIEWS ? saved.view : 'chart', folds: saved?.folds && typeof saved.folds === 'object' ? { ...saved.folds } : {}, moves: [], wrappers: [], extraFolds: [] };
+  if (saved?.mode === 'all') workspaceSave(); // Nur alte Ansichtspräferenz ersetzen, Bereich/Klappzustände erhalten.
   const nav = el('nav', 'workspace-nav'); nav.id = 'workspace-nav'; nav.setAttribute('aria-label', 'Arbeitsbereiche'); const tabs = el('div', 'workspace-tabs');
   for (const [key, [text]] of Object.entries(WORKSPACE_VIEWS)) { const b = el('button', '', text); b.type = 'button'; b.dataset.workspaceTarget = key; b.addEventListener('click', () => { setTab(key); if (key === 'ind') kiTab(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }); tabs.append(b); }
   const note = el('p', 'workspace-description'); note.id = 'workspace-description';
-  nav.append(tabs, note, kiButton('workspace-all', 'Gesamtansicht', () => workspaceMode('all'), 'button ghost')); $('livebar').after(nav);
+  nav.append(tabs, note); $('livebar').after(nav);
   new ResizeObserver(() => docEl.style.setProperty('--workspace-nav-h', nav.offsetHeight + 'px')).observe(nav);
-  const mode = el('div', 'side-toggle appearance-toggle'); mode.setAttribute('role', 'group'); mode.setAttribute('aria-label', 'Arbeitsbereiche oder Gesamtansicht');
-  for (const [key, text] of [['focus', 'Arbeitsbereiche'], ['all', 'Gesamtansicht']]) { const b = el('button', '', text); b.type = 'button'; b.dataset.workspaceMode = key; b.addEventListener('click', () => workspaceMode(key)); mode.append(b); }
-  $('view-panel').prepend(el('h4', '', 'Übersicht'), mode);
   const settings = el('section', 'panel workspace-settings'); settings.id = 'workspace-settings'; settings.dataset.workspaceScope = 'settings'; settings.dataset.tabs = 'settings'; settings.setAttribute('aria-labelledby', 'workspace-settings-title');
   const title = el('h2', '', 'Einstellungen & Sicherung'); title.id = 'workspace-settings-title'; const grid = el('div', 'workspace-settings-grid');
   settings.append(title, el('p', '', 'Einrichtung und Datenpflege an einem Ort. Handelsdaten bleiben beim Ansichtswechsel erhalten.'), grid); $('dash').append(settings);
-  const move = (node, host) => { const marker = document.createComment('Arbeitsbereich: ' + node.id); node.before(marker); workspace.moves.push({ node, marker, host }); };
-  const fold = (node, id, text) => { const d = el('details', 'workspace-fold'), marker = document.createComment('Klappfläche: ' + id); d.id = id; d.append(el('summary', '', text)); node.before(marker, d); d.append(node); workspace.wrappers.push(d); workspace.unwraps.push({ node, details: d, marker }); d.addEventListener('toggle', () => { if (workspace.mode === 'focus' && !docEl.dataset.chartfull && workspace.folds[id] !== d.open) { workspace.folds[id] = d.open; workspaceSave(); } }); return d; };
+  const move = (node, host) => { workspace.moves.push({ node, host }); };
+  const fold = (node, id, text) => { const d = el('details', 'workspace-fold'); d.id = id; d.append(el('summary', '', text)); node.before(d); d.append(node); workspace.wrappers.push(d); d.addEventListener('toggle', () => { if (!docEl.dataset.chartfull && workspace.folds[id] !== d.open) { workspace.folds[id] = d.open; workspaceSave(); } }); return d; };
   for (const [id, text, node] of [['workspace-appearance', 'Darstellung & App', $('view-panel')], ['workspace-notifications', 'Hinweise & Telegram', $('notify-panel')]]) {
     const d = el('details', 'workspace-fold'); d.id = id; d.append(el('summary', '', text)); grid.append(d); move(node, d);
   }
@@ -15295,11 +15297,11 @@ function workspaceBuild() {
   fold($('orderflow-panel'), 'workspace-orderflow', 'Orderflow · BTC-Pfeile, Kerzen & Demo');
   const tools = fold(document.querySelector('#chart-sec .chart-footer'), 'workspace-chart-tools', 'Chart-Ebenen, Whales & Werkzeuge');
   for (const node of document.querySelectorAll('#chart-sec .wh-strip, #chart-sec .lm-strip, #chart-sec .fib-strip')) move(node, tools);
-  for (const id of ['ki-setup', 'ki-settings']) { const node = $(id); workspace.extraFolds.push({ node, original: node.open }); node.addEventListener('toggle', () => { if (workspace.mode === 'focus' && workspace.folds[id] !== node.open) { workspace.folds[id] = node.open; workspaceSave(); } }); }
+  for (const id of ['ki-setup', 'ki-settings']) { const node = $(id); workspace.extraFolds.push(node); node.addEventListener('toggle', () => { if (workspace.folds[id] !== node.open) { workspace.folds[id] = node.open; workspaceSave(); } }); }
   for (const [scope, ids] of [['chart', ['chart-sec', 'ki-chart-sec']], ['chart ind', ['signals']], ['ind', ['alarms', 'zones-sec', 'ind-sec', 'dec-sec', 'econ', 'cnews', 'vola']], ['pos', ['positions', 'acct', 'journal', 'calc-sec']], ['settings', ['method-sec']]]) for (const id of ids) $(id).dataset.workspaceScope = scope;
   document.querySelector('.foot').dataset.workspaceScope = 'global';
   const actions = el('div', 'workspace-actions'); actions.append(kiButton('workspace-ki', 'KI-Signale', () => { kiTab(true); goTo('alarms'); }), kiButton('workspace-price-alarms', 'Preisalarme', () => { kiTab(false); goTo('alarms'); }), kiButton('workspace-bot', 'Trading-Bot', () => { botTab(); goTo('alarms'); })); $('signals').append(actions);
-  workspaceMode(workspace.mode, false);
+  workspaceApply();
 }
 
 // 3.63.0: eigener Muster-Bot, vom bisherigen KI-/Trading-Bot und persönlichen Büchern getrennt.
@@ -15406,8 +15408,8 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
         <div class="menu-panel" id="view-panel" hidden>
           <h3>Ansicht</h3>
           <h4>Layout</h4>
-          <div class="side-toggle appearance-toggle" role="group" aria-label="Darstellung"><button type="button" data-presentation-set="standard" aria-pressed="true">Standard</button><button type="button" data-presentation-set="dashboard" aria-pressed="false">Dashboard</button></div>
-          <small>Gleiche Inhalte und Funktionen. Standard bleibt voreingestellt.</small>
+          <strong id="device-view-name">Arbeitsbereich</strong>
+          <small>Automatisch: Handy → Standard, PC und iPad → Dashboard. Alle Funktionen bleiben in den vier Arbeitsbereichen erreichbar.</small>
           <h4>Hintergrund</h4>
           <div class="side-toggle appearance-toggle" role="group" aria-label="Design"><button type="button" data-theme-set="light" aria-pressed="false">Hell</button><button type="button" data-theme-set="dark" aria-pressed="true">Dunkel</button><button type="button" data-theme-set="custom" aria-pressed="false">Eigene Farbe</button></div>
           <div id="own-color-controls" class="own-color-controls" hidden>
@@ -15418,9 +15420,6 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
             <button type="button" class="button ghost" id="own-color-suggest" hidden></button>
             <small>Text passt sich an. Mindestkontrast 4,5:1; sehr helle und dunkle Farben sind mit passender Schrift lesbar.</small>
           </div>
-          <h4>Bildschirmformat</h4>
-          <div class="side-toggle" role="group" aria-label="Layout"><button type="button" data-layout-set="auto" aria-pressed="true">Automatisch</button><button type="button" data-layout-set="desktop" aria-pressed="false">Desktop</button><button type="button" data-layout-set="tablet" aria-pressed="false">iPad</button></div>
-          <small id="layout-note">Automatisch passt die Ansicht an Bildschirm und Eingabe an: breite Arbeitsbereiche mit zwei Spalten, Handy und iPad untereinander. Die Gesamtansicht behält ihr bisheriges Layout.</small>
           <h4>App</h4>
           <button type="button" class="button ghost" id="install-btn" hidden>📲 Als App installieren</button>
           <small id="install-note"></small>

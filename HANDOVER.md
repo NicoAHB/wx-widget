@@ -3,7 +3,18 @@
 Diese Datei ist der Einstieg für jede weitere Arbeit am Projekt. Wer sie liest, braucht kein Vorwissen. Die vollständige fachliche
 Vorgabe aller Gruppen G01–G14 steht in `docs/VORGABE-G01-G14.md` (Original-Übergabe; dort sind G10–G14 ausführlich beschrieben).
 
-## Aktueller lokaler Arbeitsstand – Positionierungs-Score (noch nicht veröffentlicht)
+## Aktueller lokaler Arbeitsstand – Geräteansichten (noch nicht veröffentlicht)
+
+Weiterer Nutzerauftrag auf `codex/positionierungs-score`: **Handy → Arbeitsbereich Standard; PC/iPad → Arbeitsbereich Dashboard; übrige Ansichten entfernen.** Die vorausgehende Regel bleibt gültig: weitere Aufgaben folgen, **kein Gesamtlauf und keine Veröffentlichung**, bis der Nutzer diese ausdrücklich anfordert. Positionierungs-Score bleibt Teil desselben unveröffentlichten Arbeitsstands.
+
+- Gemeinsame Gerätezuordnung im frühen HTML-Skript und in der Laufzeit. iPhone/iPod/Android-Handys Standard; iPad auch mit Mac-Desktopkennung und schmalem Split View sowie PC/andere Tablets Dashboard. Drehung oder schmaler PC-Browser ändern nicht das Geräteprofil. Die vorhandene responsive Anordnung passt sich weiter der Fensterbreite an.
+- Gesamtansicht samt Rückbau-/Umschaltlogik und manuellen Geräte-/Darstellungsschaltern entfernt. Unter „Darstellung & App“ steht die tatsächlich verwendete Ansicht. Vier Bereiche, identische Originalknoten, Vorauswahl-Voreinstellungen, Klappflächen und Hell/Dunkel/Eigene Farbe erhalten. Alte Gesamtansichtspräferenz wird mit Bereich/Klappzuständen auf Arbeitsbereiche migriert; alte importierte Geräte-/Darstellungsschlüssel können die automatische Zuordnung nicht überschreiben. Schlüssel bleiben zur Lesbarkeit älterer Sicherungen erhalten.
+- **Gezielte Geräteabnahme:** Zuordnung **22/22**, vorhandene Farbprüfung **23/23**, native Geräte-/Navigations-/Altpräferenz-/Farb-/Dreh-/Neustartprüfung **122/122**. Erstlauf **118/122**: Windows-Touch-PC irrtümlich mit Playwright `isMobile:true` simuliert (Mobile Client Hint); ausschließlich Gerätefixture korrigiert, vollständiger Nachlauf 122/122. Lint **0 Fehler / 3 bekannte Warnungen**. Kein Gesamtlauf.
+- Entfernte Ansichten werden nicht durch Testschalter im Produkt erhalten. Ältere isolierte Widgettests bekommen ihr Sammelraster ausschließlich aus `tests/harness.js` (echte DOM-Knoten, keine App-/Berechnungsänderung); native Navigation prüft `launch({workspace:'fresh'})`. Alte Schalterbedienung in CSS-Matrizen auf ausdrücklich benannte `presentationFixture` umgestellt; tatsächliche Gerätewahl ausschließlich nativ geprüft. M84 bietet für diesen lokalen Aufgabenblock `online`, der volle Release-Lauf behält seine Offline-Abnahme. Neues Positionierungsmodul wird erst beim gemeinsamen Release ins PWA-Bündel aufgenommen.
+
+[Bedienung/Geräteprüfung](docs/ARBEITSBEREICHE-GERAETE.md). **Offen:** gezielte Nachprüfungen der betroffenen vorhandenen Oberfläche, anschließend weitere Nutzeraufgabe. Gesamtlauf, Versionsbündel, PR/Pages und praktische Safari-Abnahme bleiben bis zur entsprechenden Freigabe offen. App/SW **3.65.0**, Dienst **2.12.0** unverändert; keine Remote-Veröffentlichung.
+
+## Vorausgehender lokaler Arbeitsstand – Positionierungs-Score (noch nicht veröffentlicht)
 
 Nutzerauftrag nach 3.65.0: Positionierung des gewählten Coins rechts im Muster-Gesamtbild, strikt getrennt vom Muster-Qualitätsmaß. **Explizite Nutzerregel:** weitere Aufgaben folgen; keinen Gesamttest und keine Veröffentlichung ausführen, bis der Nutzer diese ausdrücklich anfordert. Branch `codex/positionierungs-score`, Ausgangspunkt veröffentlichtes `d8f137e`.
 
