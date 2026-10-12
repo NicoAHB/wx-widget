@@ -1,6 +1,6 @@
 {
   "version": "2.12.0",
-  "appVersion": "3.64.1",
+  "appVersion": "3.65.0",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
@@ -96,6 +96,16 @@
       "path": "shared/chart-pattern-chips.mjs",
       "sha256": "c69b83e5028207ebc4b4e528179bcbe4d6bb28ea3e8e052331b56dd81624f7e9",
       "bytes": 2147
+    },
+    {
+      "path": "shared/chart-pattern-overview-feed.mjs",
+      "sha256": "4994d9e16e124dbec0cd1541083a0fcd785a4cb8c577967527c2fc9a88453795",
+      "bytes": 4462
+    },
+    {
+      "path": "shared/chart-pattern-quality.mjs",
+      "sha256": "60e905c63eb9ff366017422078183e8fc225c7ef7caf4c45f4dca698f3a372b7",
+      "bytes": 11509
     },
     {
       "path": "shared/confluence-core.mjs",
