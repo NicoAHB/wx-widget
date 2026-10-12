@@ -419,7 +419,18 @@ function rest(req, res) {
     case '/fapi/v1/premiumIndex': if (!need()) return; return json(res, 200, { symbol: sym, markPrice: String(price[sym]), indexPrice: String(price[sym]), lastFundingRate: '0.00010000', interestRate: '0.0001', nextFundingTime: Math.ceil(Date.now() / 288e5) * 288e5, time: Date.now() });
     case '/fapi/v1/openInterest': if (!need()) return; return json(res, 200, { symbol: sym, openInterest: oiAt(sym, 3e5, Math.floor((Date.now() - 5000) / 3e5), Math.floor((Date.now() - 5000) / 3e5)).toFixed(3), time: Date.now() });
     case '/futures/data/openInterestHist': if (!need()) return; if (!OIP[q.period]) return json(res, 400, { code: -1130, msg: 'Invalid period.' }); return json(res, 200, oiHist(sym, q));
-    case '/futures/data/globalLongShortAccountRatio': if (!need()) return; return json(res, 200, [{ symbol: sym, longShortRatio: '1.2', timestamp: Math.floor(Date.now() / 300000) * 300000 }]);
+    case '/fapi/v1/fundingRate': {
+      if (!need()) return;
+      const step = 28800000, end = Number(q.endTime) || Date.now(), start = Number(q.startTime) || end - 30 * 86400000, rows = [];
+      for (let at = Math.ceil(start / step) * step; at <= end && rows.length < Math.min(Number(q.limit) || 100, 1000); at += step) rows.push({ symbol: sym, fundingRate: '0.00010000', fundingTime: at });
+      return json(res, 200, rows);
+    }
+    case '/futures/data/globalLongShortAccountRatio': {
+      if (!need()) return;
+      if (q.period !== '4h') return json(res, 200, [{ symbol: sym, longShortRatio: '1.2', timestamp: Math.floor(Date.now() / 300000) * 300000 }]);
+      const step = 14400000, end = Math.floor((Number(q.endTime) || Date.now()) / step) * step, count = Math.min(Number(q.limit) || 30, 500), start = Number(q.startTime) || 0;
+      return json(res, 200, Array.from({ length: count }, (_, i) => ({ symbol: sym, longShortRatio: '1.2', timestamp: end - (count - 1 - i) * step })).filter(row => row.timestamp >= start));
+    }
     default: return json(res, 404, { code: -1, msg: 'not mocked ' + u.pathname });
   }
 }

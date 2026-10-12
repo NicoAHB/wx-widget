@@ -22,7 +22,7 @@ const check = (name, ok, detail = '') => { ok ? pass++ : fail++; console.log(`${
     check('Alle sechs Auswertungen und die Monatsübersicht vollständig vorhanden', await page.evaluate(() => [...document.querySelectorAll('#breakdowns .bd h4')].map(n => n.textContent).join('|') === 'Nach Grund|Nach Bereich der Gründe|Nach Coin|Long / Short|Einstiegszeit|Haltedauer' && document.querySelectorAll('#monthly .mo-row:not(.head)>span').length >= 12));
     check('Kleine Stichproben klar vorläufig markiert und ohne gedämpfte Zahlen', await page.evaluate(() => document.querySelectorAll('#breakdowns .bd-row.thin').length > 0 && [...document.querySelectorAll('#breakdowns .bd-row.thin')].every(n => getComputedStyle(n.firstElementChild, '::after').content.includes('vorläufig') && getComputedStyle(n.children[3]).opacity === '1')));
     for (const layout of ['standard', 'dashboard']) {
-      await page.evaluate(layout => document.querySelector(`[data-presentation-set="${layout}"]`).click(), layout);
+      await h.presentationFixture(page, layout);
       for (const width of [320, 390, 768, 1440]) {
         await page.setViewportSize({ width, height: 1000 }); await page.waitForTimeout(180);
         const result = await page.evaluate(() => { const nodes = [...document.querySelectorAll('#breakdowns .bd,#breakdowns .bd-row,#breakdowns .bd-row>span,#breakdowns .bd-bar b,#monthly,#monthly .mo-row,#monthly .mo-row>span')].filter(n => n.getClientRects().length); const bad = nodes.filter(n => n.scrollWidth > n.clientWidth + 1).map(n => n.className + ': ' + n.scrollWidth + '/' + n.clientWidth); return { side: document.documentElement.scrollWidth > innerWidth + 1, bad: bad.slice(0, 8) }; });
@@ -36,7 +36,7 @@ const check = (name, ok, detail = '') => { ok ? pass++ : fail++; console.log(`${
       }
     }
     check('Originalpositionen, abgeschlossene Trades und Geldbewegungen erhalten', await page.evaluate(raw => JSON.stringify({ positions: __g05.state.positions, trades: __g05.state.trades, movements: __g05.state.movements }) === raw, originals));
-    await page.setViewportSize({ width: 390, height: 844 }); await page.evaluate(() => { document.querySelector('[data-presentation-set="standard"]').click(); document.querySelector('[data-theme-set="light"]').click(); }); await page.waitForTimeout(200);
+    await page.setViewportSize({ width: 390, height: 844 }); await h.presentationFixture(page, 'standard'); await page.evaluate(() => document.querySelector('[data-theme-set="light"]').click()); await page.waitForTimeout(200);
     await page.locator('#breakdowns .bd').first().screenshot({ path: '/tmp/scalpdesk-358-auswertung-mobile.png' }); await page.locator('#monthly').screenshot({ path: '/tmp/scalpdesk-358-monate-mobile.png' });
     await page.click('#tabbar [data-tab="chart"]'); await page.locator('.of-block[data-interval="1m"] .of-row[data-running="true"]').screenshot({ path: '/tmp/scalpdesk-358-restzeit.png' });
     // UTC-Schlusswechsel kontrolliert am echten View-Vertrag, ohne die Uhr oder Originaldaten der App zu verändern.

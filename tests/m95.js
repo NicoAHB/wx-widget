@@ -2,7 +2,7 @@
 const h=require('./harness');let pass=0,fail=0;
 const check=(name,ok,detail='')=>{ok?pass++:fail++;console.log(`${ok?'✓':'✗'} ${name}${!ok&&detail?' '+JSON.stringify(detail):''}`);};
 (async()=>{
-  await h.setup();const browser=await h.launch();
+  await h.setup();const browser=await h.launch({workspace:'fresh'});
   try{
     await h.ctl('/walk?on=0');const sentBefore=(await h.ctl('/sent')).length;
     let time=Date.now(),high=false,low=false,failRatio=false,delayed=null;const requests=[];
@@ -52,6 +52,7 @@ const check=(name,ok,detail='')=>{ok?pass++:fail++;console.log(`${ok?'✓':'✗'
       const result=await page.locator('#positioning-score').evaluate(box=>{const hex=s=>'#'+s.match(/[\d.]+/g).slice(0,3).map(n=>Math.round(+n).toString(16).padStart(2,'0')).join(''),bg=hex(getComputedStyle(box.parentElement).backgroundColor);return [...box.querySelectorAll('.positioning-head>span,button,output,.positioning-warning')].map(n=>__sdAppearance.contrast(hex(getComputedStyle(n).color),bg));});
       check(mode.name+': Zahlen, Info und Hinweis mit AA-Kontrast',result.every(v=>v>=4.5),result);
     }
+    await page.click('[data-workspace-target="chart"]');
     await page.evaluate(()=>__intervals.setMarket('LTCUSDT','1h'));await page.locator('.chart-pattern-overview-card').scrollIntoViewIfNeeded();await page.waitForFunction(()=>__positioning.feed.usable()?.symbol==='LTCUSDT');
     check('LTC: eigene Daten und Short-lastig statt BTC-Wert',await page.locator('#positioning-value').innerText()==='30 · Short-lastig'&&requests.some(r=>r.sym==='LTCUSDT'&&r.path.endsWith('fundingRate')));
     const ltcFunding=requests.filter(r=>r.sym==='LTCUSDT'&&r.path.endsWith('fundingRate')).length;await page.evaluate(()=>__intervals.setMarket('LTCUSDT','4h'));await page.waitForTimeout(1200);check('Timeframewechsel nutzt dieselbe Perpetual-Positionierung',await page.locator('#positioning-value').innerText()==='30 · Short-lastig'&&requests.filter(r=>r.sym==='LTCUSDT'&&r.path.endsWith('fundingRate')).length===ltcFunding);

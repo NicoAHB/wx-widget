@@ -1,4 +1,5 @@
-// G14: tatsächliche Layout-/Farbwahl, DOM-/Daten-/Fokuserhalt und Speicherung.
+// G14: native Farbwahl, beide CSS-Profile als Matrix, DOM-/Datenerhalt und Speicherung.
+// Automatische Gerätewahl und entfernte Layout-Schalter werden nativ in M96 geprüft.
 const h = require('./harness'); let pass = 0, fail = 0;
 const check = (name, ok, info = '') => { ok ? pass++ : fail++; console.log(`${ok ? '✓' : '✗'} ${name}${info ? ' — ' + String(info).slice(0, 300) : ''}`); };
 (async () => { let browser;
@@ -13,7 +14,7 @@ const check = (name, ok, info = '') => { ok ? pass++ : fail++; console.log(`${ok
     });
     page.on('pageerror', e => errors.push(e.message)); await page.goto(h.URL_BASE + '/weather-widget-v2.html');
     await page.waitForFunction(() => !!window.__g05 && __g05.state.candles.length > 100 && !!window.__g12?.view.state.confirmed);
-    check('Ohne Präferenz echtes Standardlayout mit bestehendem AMOLED', await page.evaluate(() => document.documentElement.dataset.presentation === 'standard' && getComputedStyle(document.body).backgroundColor === 'rgb(0, 0, 0)'));
+    check('Ohne Präferenz PC-Dashboard mit bestehendem AMOLED', await page.evaluate(() => document.documentElement.dataset.presentation === 'dashboard' && getComputedStyle(document.body).backgroundColor === 'rgb(0, 0, 0)'));
     await page.click('#pause'); await page.click('#view-menu');
     await page.evaluate(() => {
       window.g14Nodes = ['dash', 'chart', 'pos-form', 'pos-note', 'ki-price-panel', 'ki-signal-panel', 'bot-simulation-panel'].map(id => document.getElementById(id));
@@ -21,14 +22,14 @@ const check = (name, ok, info = '') => { ok ? pass++ : fail++; console.log(`${ok
       window.g14Data = JSON.stringify([__g05.state.positions, __g05.state.trades, __g05.state.alarms, __g12.view.state.confirmed]);
       window.g14ResourcesBefore = JSON.stringify(g14Resources);
     });
-    await page.click('[data-presentation-set=dashboard]');
+    await h.presentationFixture(page, 'dashboard');
     check('Dashboard wirklich anders angeordnet: Kontospalte links, Chart rechts', await page.evaluate(() => document.getElementById('acct').getBoundingClientRect().left < document.getElementById('chart-sec').getBoundingClientRect().left));
-    check('Wechsel erhält DOM, Entwurf, Fokus und fachliche Originaldaten', await page.evaluate(() => g14Nodes.every(n => n === document.getElementById(n.id)) && document.getElementById('pos-note').value === 'Noch nicht gespeicherter G14-Test' && document.activeElement.dataset.presentationSet === 'dashboard' && g14Data === JSON.stringify([__g05.state.positions, __g05.state.trades, __g05.state.alarms, __g12.view.state.confirmed])));
+    check('CSS-Matrix erhält DOM, Entwurf und fachliche Originaldaten', await page.evaluate(() => g14Nodes.every(n => n === document.getElementById(n.id)) && document.getElementById('pos-note').value === 'Noch nicht gespeicherter G14-Test' && g14Data === JSON.stringify([__g05.state.positions, __g05.state.trades, __g05.state.alarms, __g12.view.state.confirmed])));
     check('Keine zusätzlichen Intervalle/Worker/Kurs-Abos durch Layoutwechsel', await page.evaluate(() => g14ResourcesBefore === JSON.stringify(g14Resources)));
     await page.click('[data-theme-set=custom]');
     check('Eigene Farbe: acht Vorschläge, 48px-Schalter, klare zugängliche Auswahl', await page.evaluate(() => document.querySelectorAll('[data-background-color]').length === 8 && [...document.querySelectorAll('.appearance-toggle button,[data-background-color]')].every(b => b.getBoundingClientRect().height >= 48 && b.hasAttribute('aria-pressed'))));
     for (const layout of ['standard', 'dashboard']) {
-      await page.click(`[data-presentation-set=${layout}]`);
+      await h.presentationFixture(page, layout);
       for (const mode of ['light', 'dark']) {
         await page.click(`[data-theme-set=${mode}]`);
         check(layout + ' / ' + mode + ': bisherige Oberfläche und Kontrast erhalten', await page.evaluate(mode => document.documentElement.dataset.theme === mode && !document.documentElement.dataset.background && __sdAppearance.contrast(getComputedStyle(document.documentElement).getPropertyValue('--text').trim(), mode === 'light' ? '#eef1f5' : '#000000') >= 4.5, mode));
@@ -61,26 +62,26 @@ const check = (name, ok, info = '') => { ok ? pass++ : fail++; console.log(`${ok
     check('Hell/Dunkel löschen die gemerkte eigene Farbe nicht', await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() === '#10251f'));
     await page.fill('#own-color-hex', '#000000'); await page.click('#own-color-apply');
     const savedColor = await page.evaluate(() => localStorage.getItem('scalpdesk.background.v1'));
-    await page.click('[data-presentation-set=standard]'); await page.click('[data-presentation-set=dashboard]');
+    await h.presentationFixture(page, 'standard'); await h.presentationFixture(page, 'dashboard');
     check('Hintergrund unabhängig von Layout gespeichert; beide Präferenzen im Backup', await page.evaluate(saved => localStorage.getItem('scalpdesk.background.v1') === saved && __g05.backupPayload().prefs['scalpdesk.presentation.v1'] === 'dashboard' && __g05.backupPayload().prefs['scalpdesk.background.v1'].color === '#000000', savedColor));
     await page.reload(); await page.waitForFunction(() => !!window.__g05);
     check('Neustart stellt Layout/Farbe wieder her, eigene Farbe markiert', await page.evaluate(() => document.documentElement.dataset.presentation === 'dashboard' && document.documentElement.dataset.background === 'custom' && document.querySelector('[data-theme-set=custom]').getAttribute('aria-pressed') === 'true'));
     const p2 = await context.newPage(); await p2.goto(h.URL_BASE + '/weather-widget-v2.html'); await p2.waitForFunction(() => !!window.__g05);
-    await page.click('#view-menu'); await page.click('[data-background-color="#e7eef6"]'); await page.click('[data-presentation-set=standard]');
-    await p2.waitForFunction(() => document.documentElement.dataset.presentation === 'standard' && getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() === '#e7eef6');
-    check('Zweiter Tab übernimmt dieselbe Wahl ohne Rückkopplung und hält lokalen Store aktuell', await p2.evaluate(() => __g05.backupPayload().prefs['scalpdesk.presentation.v1'] === 'standard' && __g05.backupPayload().prefs['scalpdesk.background.v1'].color === '#e7eef6')); await p2.close();
+    await page.click('#view-menu'); await page.click('[data-background-color="#e7eef6"]');
+    await p2.waitForFunction(() => document.documentElement.dataset.presentation === 'dashboard' && getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() === '#e7eef6');
+    check('Zweiter Tab übernimmt dieselbe Wahl ohne Rückkopplung und hält lokalen Store aktuell', await p2.evaluate(() => __g05.backupPayload().prefs['scalpdesk.presentation.v1'] === 'dashboard' && __g05.backupPayload().prefs['scalpdesk.background.v1'].color === '#e7eef6')); await p2.close();
     for (const width of [320, 390, 768, 1440]) {
       await page.setViewportSize({ width, height: 1000 });
       for (const layout of ['standard', 'dashboard']) {
-        await page.click(`[data-presentation-set=${layout}]`);
+        await h.presentationFixture(page, layout);
         check(width + 'px / ' + layout + ': Menü und Seite ohne Überlauf', await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1 && document.getElementById('view-panel').scrollWidth <= document.getElementById('view-panel').clientWidth + 1));
       }
     }
-    await page.focus('[data-presentation-set=standard]'); await page.keyboard.press('Enter');
-    check('Layout per Tastatur umschaltbar, Fokus bleibt am Schalter', await page.evaluate(() => document.documentElement.dataset.presentation === 'standard' && document.activeElement.dataset.presentationSet === 'standard'));
+    await page.focus('[data-theme-set=light]'); await page.keyboard.press('Enter');
+    check('Hintergrund per Tastatur umschaltbar, Fokus bleibt am Schalter', await page.evaluate(() => document.documentElement.dataset.theme === 'light' && document.activeElement.dataset.themeSet === 'light'));
     await page.setViewportSize({ width: 320, height: 844 });
     for (const layout of ['standard', 'dashboard']) {
-      await page.click(`[data-presentation-set=${layout}]`); await page.click('#view-menu');
+      await h.presentationFixture(page, layout); await page.click('#view-menu');
       for (const tab of ['chart', 'calc', 'pos', 'ind']) {
         await page.click(`#tabbar [data-tab=${tab}]`);
         check('320px / ' + layout + ' / ' + tab + ': vorhandener Reiter erreichbar, kein Überlauf', await page.evaluate(tab => document.documentElement.dataset.activeTab === tab && document.documentElement.scrollWidth <= innerWidth + 1 && [...document.querySelectorAll('[data-tabs]')].some(e => e.dataset.tabs.split(' ').includes(tab) && e.getBoundingClientRect().height > 0), tab));
@@ -89,7 +90,7 @@ const check = (name, ok, info = '') => { ok ? pass++ : fail++; console.log(`${ok
     }
     await context.close(); const invalid = await browser.newContext(); await invalid.addInitScript(() => { localStorage.setItem('scalpdesk.presentation.v1', '"unbekannt"'); localStorage.setItem('scalpdesk.background.v1', JSON.stringify({ mode: 'custom', color: '#777777' })); });
     const bad = await invalid.newPage(); await bad.goto(h.URL_BASE + '/weather-widget-v2.html'); await bad.waitForFunction(() => !!window.__g05);
-    check('Ungültige gespeicherte Präferenzen fallen sicher auf Standard/Dunkel zurück', await bad.evaluate(() => document.documentElement.dataset.presentation === 'standard' && !document.documentElement.dataset.background && document.documentElement.dataset.theme === 'dark'));
+    check('Ungültige gespeicherte Präferenzen fallen sicher auf PC-Dashboard/Dunkel zurück', await bad.evaluate(() => document.documentElement.dataset.presentation === 'dashboard' && !document.documentElement.dataset.background && document.documentElement.dataset.theme === 'dark'));
     // Tatsächlicher alter Schema-8-Dateiimport: ausdrückliche Anzeigeübernahme bleibt gültig.
     for (const [theme, take] of [['light', true], ['dark', true], ['light', false]]) {
       const legacyContext = await browser.newContext({ viewport: { width: 1440, height: 1000 } }), legacy = await legacyContext.newPage();

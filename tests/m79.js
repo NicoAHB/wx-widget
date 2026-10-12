@@ -48,7 +48,7 @@ const check = (name, ok, detail = '') => { ok ? pass++ : fail++; console.log(`${
     }
     check('Längere Begründungen/Warnungen vollständig scrollbar und per Tastatur erreichbar', await page.evaluate(() => [...document.querySelectorAll('.of-signal-reason,.of-signal-explanation,#of-signal>.of-notice')].every(n => n.tabIndex === 0 && getComputedStyle(n).overflowY === 'auto' && n.clientHeight > 0)));
     for (const layout of ['standard', 'dashboard']) {
-      await page.evaluate(layout => document.querySelector(`[data-presentation-set="${layout}"]`).click(), layout); await page.waitForTimeout(300);
+      await h.presentationFixture(page, layout); await page.waitForTimeout(300);
       check(`${layout}: Signal vor den übrigen Live-Blöcken, identische zehn Karten`, await page.evaluate(() => document.getElementById('of-btc').nextElementSibling.id === 'of-signal' && document.getElementById('of-signal').nextElementSibling.id === 'of-position' && document.querySelectorAll('.of-row:not(.of-legend)').length === 10 && document.documentElement.scrollWidth <= innerWidth + 1));
       for (const entry of await page.evaluate(() => __sdAppearance.palette)) {
         await page.evaluate(color => document.querySelector(`[data-background-color="${color}"]`).click(), entry.color);
