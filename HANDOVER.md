@@ -3,7 +3,23 @@
 Diese Datei ist der Einstieg für jede weitere Arbeit am Projekt. Wer sie liest, braucht kein Vorwissen. Die vollständige fachliche
 Vorgabe aller Gruppen G01–G14 steht in `docs/VORGABE-G01-G14.md` (Original-Übergabe; dort sind G10–G14 ausführlich beschrieben).
 
-## Aktueller Arbeitsstand 3.64.0 – Chart-Erweiterung online und technisch abgenommen
+## Aktueller Arbeitsstand 3.64.1 – direkte Mustererklärung technisch abgenommen
+
+Nutzerauftrag nach 3.64.0: Chartmuster-Kacheln leichter erklären, insbesondere per langem Drücken. Branch `codex/chartmuster-direktinfo`, online weiterhin 3.64.0.
+
+- Langer Druck (550 ms) auf den Mustertext öffnet die vorhandene Erklärung mit Zeichnung, Messwerten und Regelbegründung; Loslassen schaltet keine Zeichnung. Kurzer Tipp zeichnet weiterhin ein/aus. Bewegung über 12 px, Touch-Abbruch, Coinwechsel und herausgefilterte Kachel verhindern alte Erklärungen.
+- Zusätzlich pro Kachel ein sichtbarer ⓘ-Knopf mit 44-px-Tippfläche und beschriftetem Tastaturzugang. Auch ungültige Kacheln bleiben darüber erklärbar; Zeichnung/Zoom sind dort gesperrt. Gruppen werden bei Live-Updates wiederverwendet, Leistenhöhe bleibt gleich. „Im Chart zeigen“ bindet sich an die Muster-ID statt eines überholten Listenindex.
+- App/SW gemeinsam 3.64.1, Dienst unverändert 2.12.0; neues Bündel 71/69. Native Touch-/Kontrastprüfung M93 abschließend 38/38 einschließlich identischer Muster-ID auf einem anderen Coin und aller zehn Farbmodi, bisherige Chartprüfung M92 42/42, Sichtprüfung der Kachel/Erklärung und Lint 0 Fehler, 3 bekannte Warnungen. Erster M93-Versuch wartete auf passive Analyse bei noch außerhalb des Fensters liegendem Chart (Testdaten korrekt, keine App-Laufzeitfehler); Test scrollt jetzt ausdrücklich zum Chart. Erstlogs erhalten. Bedienung: [docs/CHARTMUSTER-DIREKTINFO.md](docs/CHARTMUSTER-DIREKTINFO.md).
+
+**Offen:** PR/Pages-Veröffentlichung und Code-Paket. Vollständiger serieller Release-Gesamtlauf und relevante Nachläufe abgeschlossen; reale Safari-Geräteabnahme separat. Veröffentlichung nach Abschluss/Test bereits im laufenden Auftrag autorisiert; keine erneute Gruppenfreigabe erforderlich. Handels-/Erkennungs-/Alarmregeln unverändert; Browserprüfungen ausschließlich seriell.
+
+**Abschlussprüfung der Infodarstellung:** Bei ungültigen Kacheln erbt der neue aktive Infoknopf die 0,5-Gruppendeckkraft. Aus den realen Hellmodusfarben ergibt sich rechnerisch 3,25:1 statt mindestens 4,5:1; ohne Abgrauen 16,34:1. Nach dem unveränderten Gesamtlauf eng korrigieren: nur gesperrten Mustertext dimmen, aktiven Info-Knopf normal lesbar lassen. Vorher-/Nachherprüfung über alle zehn Hintergrundmodi und vollständige relevante UI-/PWA-Nachläufe; noch keine Produktdatei im laufenden Gesamtlauf geändert. [Entwurf PR #105](https://github.com/NicoAHB/wx-widget/pull/105).
+
+**Vollständiger Gesamtlauf abgeschlossen:** Alle 162 Ziele auf `1f1b275`, **5161/5161**, 92,3 Minuten; alle 145 Produktdateien währenddessen unverändert, keine Erstbefunde im Gesamtlauf. Zusätzlicher Kontrasttest mit unverändertem Produkt reproduziert anschließend **33/38**: Hell und die vier hellen eigenen Farben jeweils 3,228:1 am aktiven Info-Knopf. Nur die gesperrte Musterfläche wird nun abgegraut; der aktive Infoknopf behält volle Lesbarkeit. Gegenüber dem Gesamtlauf verändern sich ausschließlich App-HTML, dessen Manifest-Hash und SW-Buildkennung; 142 Produktdateien einschließlich aller Handels-/Erkennungs-/Dienstmodule unverändert. M93 um zehn reale Kontrastfälle erweitert; Lint erneut 0 Fehler, 3 bekannte Warnungen. Vollständige relevante Nachläufe vor Veröffentlichung folgen; Erst-/Vorherlogs bleiben erhalten.
+
+**Technische Abnahme abgeschlossen:** Alle 162 registrierten Ziele vollständig seriell ausgeführt; nach der eng begrenzten Kontrastkorrektur elf vollständige relevante Nachläufe, abschließend **5171/5171** sowie Status/Rauch/Sicht grün. M93 38/38, M92 42/42, M31 21/21, M70 61/61, M88 16/16, M69 19/19, Releasegraph 6/6, Funktionen 35/35 und Status 7/7. Finaler Produktstand `0ef956d`, alle 145 Produktdateien während der Nachläufe unverändert; Lint 0 Fehler, drei bestehende Warnungen. [Testnachweis](docs/CHARTMUSTER-DIREKTINFO-TESTNACHWEIS.md) und [vollständige Erst-/Vorher-/Nachher-Ergebnisse samt Hashes](docs/CHARTMUSTER-DIREKTINFO-TESTNACHWEIS.json). Jetzt autorisierte Veröffentlichung, keine weitere Produktänderung.
+
+## Vorheriger Arbeitsstand 3.64.0 – Chart-Erweiterung online und technisch abgenommen
 
 Umsetzung in `codex/chart-detail-muster`, Ausgangspunkt veröffentlichtes 3.63.0; jetzt öffentlich **3.64.0**. Nutzerauftrag: feinere Detail-Kerzen ab Haupt-Zeitrahmen 1h und kompakte Formationschips im markierten Kursbereich neben „Alarm für diesen Kurs“; vorhandene BTC-Pfeile bleiben erreichbar. Keine Änderungen der Erkennungs-, Signal-, Alarm-, Positions- oder Oracle-Fachlogik.
 

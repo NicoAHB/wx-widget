@@ -2224,40 +2224,42 @@ html[data-chartfull] #workspace-chart-tools{display:contents!important}html[data
 .chart-pattern-row{display:flex;align-items:center;gap:8px;min-width:0;max-width:100%;padding:0 20px 10px}.chart-pattern-row .alarm-btn{flex:0 0 auto;margin:0;min-height:44px}.chart-pattern-row .of-btc-chart{flex:0 1 140px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:15px 20px;justify-items:center;column-gap:4px;height:49px;padding:6px 8px;box-sizing:border-box;font-size:11px;line-height:15px;min-width:0;overflow-wrap:anywhere}.chart-pattern-row .of-btc-chart>span:first-child{grid-column:1/-1;white-space:nowrap}.chart-pattern-row .of-btc-chart>span:nth-child(3){display:none}.chart-pattern-row .of-btc-chart .of-btc-arrow{line-height:20px}.chart-pattern-chips{display:flex;align-items:center;gap:6px;flex:1 1 0;min-width:0;height:56px;box-sizing:border-box;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;scrollbar-width:thin;padding:2px 0}.chart-pattern-chip{flex:0 0 auto;min-height:44px;max-width:310px;white-space:nowrap;padding:6px 10px;background:var(--surface-2);border:1px solid var(--border);border-radius:11px;font-size:11px;line-height:15px;white-space:pre;overflow:hidden;text-overflow:ellipsis;color:var(--muted)}.chart-pattern-chip.bull{color:var(--up-text)}.chart-pattern-chip.bear{color:var(--down-text)}.chart-pattern-chip.selected{border-color:var(--pattern-color);box-shadow:inset 0 -2px var(--pattern-color)}.chart-pattern-chip.invalid{opacity:.5}.chart-pattern-chip:focus-visible{outline:2px solid var(--text);outline-offset:2px}.chart-pattern-empty{min-width:0;font-size:11px;color:var(--muted)}
 @media(max-width:600px){.chart-pattern-row{flex-wrap:wrap;padding-inline:14px}.chart-pattern-row .alarm-btn{font-size:11px;padding:8px}.chart-pattern-chips{flex-basis:100%;order:2}.chart-pattern-empty{flex:1 1 0}.chart-detail-control{width:100%;justify-content:space-between}.chart-detail-control select{width:min(190px,65%)}.chart-pattern-row .of-btc-chart{margin-left:auto;flex:1 1 100px;max-width:140px}}
 html[data-chartfull] .chart-pattern-row{padding:0;order:1;flex-wrap:nowrap}html[data-chartfull] .chart-pattern-chips{flex-basis:0;order:0}html[data-chartfull]:not([data-chartbar=open]) .chart-pattern-row{display:none}html[data-chartfull] .chart-pattern-row .alarm-btn{display:none}
+/* 3.64.1: Erklärung direkt an jeder Kachel; gleiche Leistenhöhe, native Wischgesten bleiben frei. */
+.chart-pattern-tile{display:flex;flex:0 0 auto;align-items:stretch;max-width:356px;border:1px solid var(--border);border-radius:11px;background:var(--surface-2)}.chart-pattern-tile.selected{border-color:var(--pattern-color)}.chart-pattern-tile .chart-pattern-chip{flex:0 1 auto;min-width:0;border:0;border-radius:10px 0 0 10px;background:transparent;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}.chart-pattern-info{flex:0 0 44px;width:44px;min-height:44px;padding:0;border:0;border-left:1px solid var(--border);border-radius:0 10px 10px 0;background:transparent;color:var(--text);font-size:19px;cursor:pointer;-webkit-touch-callout:none}.chart-pattern-info:focus-visible{outline:2px solid var(--text);outline-offset:2px}
 </style>
   <script type="module">
-import { MARKET_INTERVALS, CHART_INTERVALS, SIGNAL_INTERVALS, INTERVAL_MS, nearestChartInterval } from './bundles/3.64.0/shared/market-intervals.mjs';
-import { createDetailCandles, detailOptions, detailChoice, closedSeries, timeIndex, DETAIL_VISIBLE_MAX } from './bundles/3.64.0/shared/chart-detail.mjs';
-import { patternChipRows, patternChipKey } from './bundles/3.64.0/shared/chart-pattern-chips.mjs';
-import { createMusterClient } from './bundles/3.64.0/shared/muster-bot-feed.mjs';
-import { createMusterPaper } from './bundles/3.64.0/shared/muster-bot-paper.mjs';
-import { readMusterPaper, writeMusterPaper } from './bundles/3.64.0/shared/muster-bot-store.mjs';
-import { projectPatternLines, projectionSettings, projectionTime } from './bundles/3.64.0/shared/pattern-projection.mjs';
-import { createGithubSyncView } from './bundles/3.64.0/shared/github-sync-view.mjs';
-import { stripSyncSecrets } from './bundles/3.64.0/shared/github-sync.mjs';
-import { createMusterView } from './bundles/3.64.0/shared/muster-bot-view.mjs';
-import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT } from './bundles/3.64.0/shared/telegram-format.mjs';
+import { MARKET_INTERVALS, CHART_INTERVALS, SIGNAL_INTERVALS, INTERVAL_MS, nearestChartInterval } from './bundles/3.64.1/shared/market-intervals.mjs';
+import { createDetailCandles, detailOptions, detailChoice, closedSeries, timeIndex, DETAIL_VISIBLE_MAX } from './bundles/3.64.1/shared/chart-detail.mjs';
+import { patternChipRows, patternChipKey } from './bundles/3.64.1/shared/chart-pattern-chips.mjs';
+import { createMusterClient } from './bundles/3.64.1/shared/muster-bot-feed.mjs';
+import { createMusterPaper } from './bundles/3.64.1/shared/muster-bot-paper.mjs';
+import { readMusterPaper, writeMusterPaper } from './bundles/3.64.1/shared/muster-bot-store.mjs';
+import { projectPatternLines, projectionSettings, projectionTime } from './bundles/3.64.1/shared/pattern-projection.mjs';
+import { createGithubSyncView } from './bundles/3.64.1/shared/github-sync-view.mjs';
+import { stripSyncSecrets } from './bundles/3.64.1/shared/github-sync.mjs';
+import { createMusterView } from './bundles/3.64.1/shared/muster-bot-view.mjs';
+import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT } from './bundles/3.64.1/shared/telegram-format.mjs';
 // 3.45.0 (G10c): der vorhandene Binance-/G07-Kern bleibt eigenständig.
-import { exportModelArchive, importModelArchive, validateModelArchive, restoreModelOriginals } from './bundles/3.64.0/shared/model-archive.mjs';
-import { BotSimulationRuntime } from './bundles/3.64.0/shared/bot-simulation.mjs';
-import { readBotSimulation, saveBotSimulation } from './bundles/3.64.0/shared/bot-simulation-store.mjs';
-import { createBotView } from './bundles/3.64.0/shared/bot-view.mjs';
-import { createBitgetPublicClient as createPaperPublicClient } from './bundles/3.64.0/shared/bitget-public.mjs';
-import { readPaperBook, writePaperBook } from './bundles/3.64.0/shared/paper-bot-store.mjs';
-import { createPaperBotController } from './bundles/3.64.0/shared/paper-bot-controller.mjs';
-import { createPaperBotView } from './bundles/3.64.0/shared/paper-bot-view.mjs';
-import { createOrderflowView } from './bundles/3.64.0/shared/orderflow-view.mjs';
-import { createSignalView } from './bundles/3.64.0/shared/orderflow-signal-view.mjs';
-import { networkState, createWidgetBoundary } from './bundles/3.64.0/shared/widget-state.mjs';
-import { originalRisk as kiOriginalRisk } from './bundles/3.64.0/shared/confluence-risk-view.mjs';
-import { confluenceOverview, po3Overview, filterOverview, reconcileOverview } from './bundles/3.64.0/shared/signal-overview.mjs';
-import { createPo3View } from './bundles/3.64.0/shared/po3-view.mjs';
-import { cardState as kiCardState, scoreLabel as kiScoreLabel } from './bundles/3.64.0/shared/confluence-live.mjs';
-import { divergenceInfo as kiDivergenceInfo, parametersKey as kiParametersKey } from './bundles/3.64.0/shared/confluence-core.mjs';
-import { parametersKey as kiLegacyParametersKey } from './bundles/3.64.0/shared/confluence-legacy-core.mjs';
-import { presentCard as kiPresentCard, currentSignal as kiCurrentSignal } from './bundles/3.64.0/shared/confluence-presentation.mjs';
-import { observationKey as kiObservationKey } from './bundles/3.64.0/shared/confluence-replay.mjs';
-import { readReplay as kiReadHistory, saveReplay as kiSaveHistory, clearReplayJobs as kiClearHistoryJobs } from './bundles/3.64.0/shared/confluence-replay-store.mjs';
+import { exportModelArchive, importModelArchive, validateModelArchive, restoreModelOriginals } from './bundles/3.64.1/shared/model-archive.mjs';
+import { BotSimulationRuntime } from './bundles/3.64.1/shared/bot-simulation.mjs';
+import { readBotSimulation, saveBotSimulation } from './bundles/3.64.1/shared/bot-simulation-store.mjs';
+import { createBotView } from './bundles/3.64.1/shared/bot-view.mjs';
+import { createBitgetPublicClient as createPaperPublicClient } from './bundles/3.64.1/shared/bitget-public.mjs';
+import { readPaperBook, writePaperBook } from './bundles/3.64.1/shared/paper-bot-store.mjs';
+import { createPaperBotController } from './bundles/3.64.1/shared/paper-bot-controller.mjs';
+import { createPaperBotView } from './bundles/3.64.1/shared/paper-bot-view.mjs';
+import { createOrderflowView } from './bundles/3.64.1/shared/orderflow-view.mjs';
+import { createSignalView } from './bundles/3.64.1/shared/orderflow-signal-view.mjs';
+import { networkState, createWidgetBoundary } from './bundles/3.64.1/shared/widget-state.mjs';
+import { originalRisk as kiOriginalRisk } from './bundles/3.64.1/shared/confluence-risk-view.mjs';
+import { confluenceOverview, po3Overview, filterOverview, reconcileOverview } from './bundles/3.64.1/shared/signal-overview.mjs';
+import { createPo3View } from './bundles/3.64.1/shared/po3-view.mjs';
+import { cardState as kiCardState, scoreLabel as kiScoreLabel } from './bundles/3.64.1/shared/confluence-live.mjs';
+import { divergenceInfo as kiDivergenceInfo, parametersKey as kiParametersKey } from './bundles/3.64.1/shared/confluence-core.mjs';
+import { parametersKey as kiLegacyParametersKey } from './bundles/3.64.1/shared/confluence-legacy-core.mjs';
+import { presentCard as kiPresentCard, currentSignal as kiCurrentSignal } from './bundles/3.64.1/shared/confluence-presentation.mjs';
+import { observationKey as kiObservationKey } from './bundles/3.64.1/shared/confluence-replay.mjs';
+import { readReplay as kiReadHistory, saveReplay as kiSaveHistory, clearReplayJobs as kiClearHistoryJobs } from './bundles/3.64.1/shared/confluence-replay-store.mjs';
 // Pure, unrounded calculations. Prices are USDT per unit; FX is USDT per EUR.
 function rsi(closes, period = 14) {
   const out = Array(closes.length).fill(null);
@@ -3229,7 +3231,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
 // 3.43.0 (G10a): reiner Fachkern in shared/; Datenquelle und Karten folgen getrennt.
 // 3.44.0 (G10b): öffentlicher Adapter in shared/bitget-public.mjs; sichtbare Anbindung folgt mit G10(c).
-const APP_VERSION = '3.64.0', docEl = document.documentElement;
+const APP_VERSION = '3.64.1', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -13265,6 +13267,47 @@ var patProjection = projectionSettings(store.get(PAT_PROJECTION_KEY));
 var pat = { on: false, res: null, sel: null, filter: 'all', minQ: 60, gap: false, worker: null, req: 0, busy: false, cache: new Map(), runs: 0, viaWorker: 0 };
 // 3.64.0: kompakte Formationsleiste; eigene Mehrfachauswahl statt Änderung der KI-Auswahl.
 var patChipSelections = new Map(), patChipNodes = new Map(), patChipColorNext = 0;
+// 3.64.1: Kurzer Tipp zeichnet; langer Druck erklärt dasselbe Muster, ohne anschließenden Zeichnungsklick.
+const PAT_CHIP_HOLD = 550, PAT_CHIP_SLOP = 12;
+var patChipPress = null, patChipNoClickKey = null, patChipInfoKey = null;
+function patChipPressClear() { if (patChipPress) clearTimeout(patChipPress.timer); patChipPress = null; }
+function patChipOpenInfo(key) {
+  const row = patChipList().find(r => r.key === key), i = row ? pat.res.hits.indexOf(row.hit) : -1;
+  if (i < 0) return;
+  patOpenInfo(i); patChipInfoKey = { key, scope: patKey() }; $('pat-info-zoom').disabled = row.disabled;
+}
+function patChipBindPress(host) {
+  host.addEventListener('pointerdown', e => {
+    patChipNoClickKey = null;
+    if (!e.isPrimary || (e.pointerType === 'mouse' && e.button !== 0)) { patChipPressClear(); return; }
+    const button = e.target.closest('.chart-pattern-chip'); if (!button || button.disabled) return;
+    patChipPressClear();
+    const p = { id: e.pointerId, key: button.dataset.patternKey, x: e.clientX, y: e.clientY, opened: false };
+    p.timer = setTimeout(() => {
+      if (patChipPress !== p || !button.isConnected) return;
+      p.opened = true; patChipNoClickKey = p.key; patChipOpenInfo(p.key);
+    }, PAT_CHIP_HOLD);
+    patChipPress = p;
+  });
+  document.addEventListener('pointermove', e => {
+    const p = patChipPress; if (!p || p.id !== e.pointerId) return;
+    if (Math.hypot(e.clientX - p.x, e.clientY - p.y) > PAT_CHIP_SLOP) { patChipNoClickKey = p.key; patChipPressClear(); }
+  }, { passive: true });
+  for (const type of ['pointerup', 'pointercancel']) document.addEventListener(type, e => { if (patChipPress?.id === e.pointerId) patChipPressClear(); });
+  host.addEventListener('scroll', patChipPressClear, { passive: true });
+  window.addEventListener('blur', patChipPressClear);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) patChipPressClear(); });
+  host.addEventListener('click', e => {
+    const button = e.target.closest('.chart-pattern-chip');
+    if (button?.dataset.patternKey === patChipNoClickKey && e.detail > 0) { patChipNoClickKey = null; e.preventDefault(); e.stopImmediatePropagation(); }
+  }, true);
+  host.addEventListener('contextmenu', e => {
+    const button = e.target.closest('.chart-pattern-chip'); if (!button) return;
+    e.preventDefault(); const key = button.dataset.patternKey;
+    if (!patChipPress?.opened) patChipOpenInfo(key);
+    patChipNoClickKey = key; patChipPressClear();
+  });
+}
 function patChipList() { return pat.res?.key === patKey() ? patternChipRows(pat.res.hits,state.candles,{minimum:pat.minQ,filter:pat.filter,maxAge:PAT_ACTIVE_MAX}) : []; }
 function patChipColor(key) { const colors=[PAL.up,PAL.vp,PAL.ema,PAL.down,PAL.bb,PAL.short];return colors[(patChipSelections.get(key) ?? 0)%colors.length]; }
 function patChipToggle(key) {
@@ -13277,11 +13320,12 @@ function patChipPaint() {
   const host=$('chart-pattern-chips'),empty=$('chart-pattern-empty');if(!host)return;
   const rows=patChipList(), keys=new Set(rows.filter(r=>!r.disabled).map(r=>r.key));
   let removed=false;for(const key of patChipSelections.keys())if(!keys.has(key)){patChipSelections.delete(key);removed=true;}
-  for(const [key,button] of patChipNodes)if(!rows.some(r=>r.key===key)){button.remove();patChipNodes.delete(key);}
-  rows.forEach((r,index)=>{let button=patChipNodes.get(r.key);if(!button){button=el('button','chart-pattern-chip');button.type='button';button.dataset.patternKey=r.key;button.addEventListener('click',()=>patChipToggle(r.key));patChipNodes.set(r.key,button);}
+  for(const [key,button] of patChipNodes)if(!rows.some(r=>r.key===key)){button.parentElement.remove();patChipNodes.delete(key);}
+  rows.forEach((r,index)=>{let button=patChipNodes.get(r.key);if(!button){const tile=el('span','chart-pattern-tile'),info=el('button','chart-pattern-info','ⓘ');button=el('button','chart-pattern-chip');button.type=info.type='button';button.dataset.patternKey=r.key;info.dataset.patternInfoKey=r.key;info.setAttribute('aria-haspopup','dialog');info.setAttribute('aria-controls','pat-info');button.addEventListener('click',()=>patChipToggle(r.key));info.addEventListener('click',()=>patChipOpenInfo(r.key));tile.append(button,info);patChipNodes.set(r.key,button);}
     const selected=patChipSelections.has(r.key),title=PAT_LIB[r.hit.id]?.n.replace(/ \(.*\)$/,'')||r.hit.id,label=`${r.hit.dir==='bull'?'↑':r.hit.dir==='bear'?'↓':'→'} ${title}\n${r.status}${r.preliminary?' · vorläufig':''} · Regelgüte ${r.hit.q} %`;
-    if(button.textContent!==label)button.textContent=label;button.className=`chart-pattern-chip ${r.hit.dir}${selected?' selected':''}${r.disabled?' invalid':''}`;button.disabled=r.disabled;button.setAttribute('aria-pressed',String(selected));button.title=`${title} · ${state.interval} · Regelgüte ${r.hit.q} %, keine Trefferwahrscheinlichkeit. ${selected?'Antippen blendet die Zeichnung aus.':'Antippen zeichnet Grenzen, Schlüsselpunkte und Levels.'}`;button.style.setProperty('--pattern-color',selected?patChipColor(r.key):r.hit.dir==='bull'?PAL.up:r.hit.dir==='bear'?PAL.down:PAL.vp);
-    if(host.children[index]!==button)host.insertBefore(button,host.children[index]||null);
+    const tile=button.parentElement,info=tile.querySelector('.chart-pattern-info');
+    if(button.textContent!==label)button.textContent=label;button.className=`chart-pattern-chip ${r.hit.dir}${selected?' selected':''}${r.disabled?' invalid':''}`;button.disabled=r.disabled;button.setAttribute('aria-pressed',String(selected));button.title=`${title} · ${state.interval} · Regelgüte ${r.hit.q} %, keine Trefferwahrscheinlichkeit. ${selected?'Antippen blendet die Zeichnung aus.':'Antippen zeichnet Grenzen, Schlüsselpunkte und Levels.'} Lange drücken oder ⓘ antippen öffnet die Erklärung.`;tile.className=`chart-pattern-tile${selected?' selected':''}${r.disabled?' invalid':''}`;tile.style.setProperty('--pattern-color',selected?patChipColor(r.key):r.hit.dir==='bull'?PAL.up:r.hit.dir==='bear'?PAL.down:PAL.vp);info.setAttribute('aria-label',`Erklärung zu ${title} · ${r.status}`);info.title=`${title} erklären`;
+    if(host.children[index]!==tile)host.insertBefore(tile,host.children[index]||null);
   });
   empty.hidden=!!rows.length;const text=CAP.on?'Muster im Kurschart verfügbar':pat.busy&&!pat.res?'Muster werden geprüft …':'Keine Muster erkannt';if(empty.textContent!==text)empty.textContent=text;
   host.setAttribute('aria-label',`Chartmuster ${state.interval}, ${rows.length} Formationen`);if(removed)scheduleDraw();
@@ -13289,7 +13333,7 @@ function patChipPaint() {
 function patChipInit() {
   const row=el('div','chart-pattern-row'),host=el('div','chart-pattern-chips'),empty=el('span','chart-pattern-empty','Keine Muster erkannt');row.id='chart-pattern-row';host.id='chart-pattern-chips';host.setAttribute('role','group');empty.id='chart-pattern-empty';host.append(empty);row.append(host);document.querySelector('#chart-sec .chart-toolbar').append(row);
   const heading=document.querySelector('#chart-sec .chart-heading'),alarm=$('alarm-here');heading.after(row);row.prepend(alarm);
-  queueMicrotask(()=>{const btc=$('of-btc-chart');if(btc)alarm.after(btc);});patChipPaint();
+  queueMicrotask(()=>{const btc=$('of-btc-chart');if(btc)alarm.after(btc);});patChipBindPress(host);patChipPaint();
 }
 function patDrawChips(svg, over, g) {
   if(CAP.on)return;let labelRow=0;
@@ -13355,7 +13399,7 @@ function patShown() {
   for (const h of pat.res.hits) if (h.q >= pat.minQ && (pat.filter === 'all' || h.dir === pat.filter)) { const g = by.get(h.id); if (!g) by.set(h.id, { h, more: 0 }); else { g.more++; if (h.t1 > g.h.t1) g.h = h; } }
   return [...by.values()].map(g => (g.h.more = g.more, g.h)).sort((a, b) => patAge(a).bars - patAge(b).bars || b.q - a.q);
 }
-function patClear() { $('pat-expired').open = false; pat.res = null; pat.sel = null; pat.req++; pat.busy = false; patChipSelections.clear(); patSheet(); patChipPaint(); }
+function patClear() { patChipPressClear(); patChipNoClickKey = null; $('pat-expired').open = false; pat.res = null; pat.sel = null; pat.req++; pat.busy = false; patChipSelections.clear(); patSheet(); patChipPaint(); }
 // Neuberechnung nur bei Kerzenschluss, nach einem Kontextwechsel oder auf Tipp – nicht bei jedem Tick
 // 3.37.0 (G09, Punkt 11): Vorauswahl – jüngste Formation (Regelgüte ≥ 60 %) auf den abgeschlossenen Kerzen der Kachel
 function wlPat(e) {
@@ -13451,6 +13495,7 @@ function patFmt(k, v) {
 }
 function patOpenInfo(i, external = null) {
   const R = external || pat.res, h = R?.hits[i]; if (!h) return;
+  patChipInfoKey = null;
   const L = PAT_LIB[h.id], d = $('pat-info'); pat.info = external ? null : i; kiPatternContext = external ? { card: external.card, hit: h } : null;
   $('pat-info-zoom').disabled = !!external && external.card.levels.status !== 'bereit';
   put('pat-info-title', L.n);
@@ -13528,7 +13573,7 @@ function patDraw(svg, over, g) {
   $('pat-close').addEventListener('click', () => $('pat-sheet').close());
   $('pat-off').addEventListener('click', () => { pat.on = false; pat.sel = null; patSheet(); scheduleDraw(); $('pat-sheet').close(); });
   for (const id of ['pat-info-close', 'pat-info-x']) $(id).addEventListener('click', () => $('pat-info').close());
-  $('pat-info-zoom').addEventListener('click', () => { const i = pat.info, external = kiPatternContext; $('pat-info').close(); $('pat-sheet').close(); if (external) { kiShowChart(external.card); return; } pat.on = true; patZoom(i); });
+  $('pat-info-zoom').addEventListener('click', () => { const i = patChipInfoKey ? patChipInfoKey.scope === patKey() ? pat.res?.hits.findIndex(h => patternChipKey(h) === patChipInfoKey.key) ?? -1 : -1 : pat.info, external = kiPatternContext; $('pat-info').close(); $('pat-sheet').close(); if (external) { kiShowChart(external.card); return; } if (i < 0) { infoToast('Dieses Muster ist im aktuellen Ausschnitt nicht mehr verfügbar.'); return; } pat.on = true; patZoom(i); });
   $('pat-sheet').addEventListener('click', e => {
     const f = e.target.closest('[data-pfil]'), s = e.target.closest('[data-pat-sel]'), inf = e.target.closest('[data-pat-info]');
     if (f) { pat.filter = f.dataset.pfil; patSheet(); scheduleDraw(); }
@@ -14632,7 +14677,7 @@ function kiKick(delay = 0) {
   if (deadlines.length) ki.timer = setTimeout(() => { ki.timer = null; kiRender(); kiKick(); }, Math.max(1, Math.min(ki.open ? 60000 : Infinity, Math.min(...deadlines) - Date.now() + 1)));
 }
 function kiJob(request, options, type = 'load') {
-  if (!ki.worker) { ki.worker = new Worker(new URL('./bundles/3.64.0/shared/confluence-worker.mjs', location.href), { type: 'module' });
+  if (!ki.worker) { ki.worker = new Worker(new URL('./bundles/3.64.1/shared/confluence-worker.mjs', location.href), { type: 'module' });
     ki.worker.onmessage = ({ data }) => { if (!ki.pending || data.id !== ki.pending.id) return; if (data.progress) { ki.message = 'Historie: ' + data.progress.stage + (data.progress.total ? ` · ${data.progress.completed}/${data.progress.total}` : ` · ${data.progress.priceCandles || 0} Kurskerzen`); kiRender(); return; } const p = ki.pending; ki.pending = null; data.error ? p.reject(new Error(data.error)) : p.resolve(data); };
     ki.worker.onerror = () => { ki.pending?.reject(new Error('KI-Worker nicht verfügbar')); ki.pending = null; ki.worker?.terminate(); ki.worker = null; }; }
   return new Promise((resolve, reject) => { const id = ++ki.serial; ki.pending = { id, resolve, reject }; ki.worker.postMessage({ id, type, request, options }); });
@@ -14927,7 +14972,7 @@ const paperClient = createPaperPublicClient(), PAPER_PREF_KEY = 'scalpdesk.paper
 paperController = createPaperBotController({ read: readPaperBook, write: writePaperBook, currentSymbol: () => state.symbol,
   available: () => !document.hidden && !state.paused && navigator.onLine !== false,
   quote: (symbol, signal) => paperClient.quote({ symbol, decisionAt: Date.now(), signal }),
-  workerFactory: () => new Worker(new URL('./bundles/3.64.0/shared/paper-bot-worker.mjs', import.meta.url), { type: 'module' }),
+  workerFactory: () => new Worker(new URL('./bundles/3.64.1/shared/paper-bot-worker.mjs', import.meta.url), { type: 'module' }),
   settings: () => { const base = botView.paperSettings(), costs = paperView.settings(), po3 = { ...po3View.config(), criteria: po3View.config().criteria === 'pending' ? 'g10' : po3View.config().criteria, closure: 'tp1', feeEntry: costs.feeEntry, feeExit: costs.feeExit };
     const maxHoldMs = base.strategy === 'po3' ? po3.maxHoldMs : Math.min(86400000, (ki.cfg.shortHours || 24) * 3600000), [timeframe, contextTimeframe] = ki.cfg.shortPair.split('/');
     return { ...base, ...costs, maxHoldMs, rewardRisk: ki.cfg.rewardRisk, timeframe, contextTimeframe, po3, confluence: { ...kiCoreConfig(), minimumScore: base.minimumScore, feeEntry: costs.feeEntry, feeExit: costs.feeExit } }; },
@@ -15046,7 +15091,7 @@ const musterPaper = createMusterPaper({ read: readMusterPaper, write: writeMuste
     await chanSend('tg', formatMessage(event.kind === 'entry' ? 'signal' : 'trade', data), false, 'trade', { coord: true });
   } });
 musterView = createMusterView({ host: musterHost, selection: musterSelection, currentPrice: (symbol, market) => state.symbol === symbol && state.source === market ? currentPrice() : null,
-  prefs: store.get('scalpdesk.muster.settings.v1', {}), savePrefs: value => store.set('scalpdesk.muster.settings.v1', value), workerFactory: () => new Worker(new URL('./bundles/3.64.0/shared/muster-bot-worker.mjs', import.meta.url), { type: 'module' }), paper: musterPaper, onMarkers: scheduleDraw });
+  prefs: store.get('scalpdesk.muster.settings.v1', {}), savePrefs: value => store.set('scalpdesk.muster.settings.v1', value), workerFactory: () => new Worker(new URL('./bundles/3.64.1/shared/muster-bot-worker.mjs', import.meta.url), { type: 'module' }), paper: musterPaper, onMarkers: scheduleDraw });
 void musterPaper.restore().then(() => musterPaper.poll());
 function musterDraw(svg, data, x, y, bottom) {
   for (const signal of musterView?.markers() || []) {
