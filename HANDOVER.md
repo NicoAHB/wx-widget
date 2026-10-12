@@ -18,7 +18,9 @@ Nutzerauftrag vollständig umgesetzt in `codex/chartmuster-score`: getrennter Qu
 
 Finaler Produktstand `14a0a96baf710d65e9b78ec0d998869549f0fa4d`: gegenüber Gesamtlauf nur HTML-Navigationsziel, Manifest-Hash und SW-Buildkennung geändert; **146 von 149** Produktdateien unverändert. Alle finalen Nachläufe auf erneut hashgeschütztem Stand. Keine temporäre Produktdiagnostik im Release.
 
-[Bedienung/Kurztest](docs/CHARTMUSTER-SCORE.md), [Testnachweis](docs/CHARTMUSTER-SCORE-TESTNACHWEIS.md), [Erst-/Endergebnisse und alle Produkt-Hashes](docs/CHARTMUSTER-SCORE-TESTNACHWEIS.json). [PR #107](https://github.com/NicoAHB/wx-widget/pull/107). **Offen:** autorisierte Veröffentlichung/Pages und vollständige Code-Lieferung; praktische iPhone-/iPad-/Safari-Abnahme separat. Kein Oracle-Update nötig.
+[Bedienung/Kurztest](docs/CHARTMUSTER-SCORE.md), [Testnachweis](docs/CHARTMUSTER-SCORE-TESTNACHWEIS.md), [Erst-/Endergebnisse und alle Produkt-Hashes](docs/CHARTMUSTER-SCORE-TESTNACHWEIS.json). [PR #107](https://github.com/NicoAHB/wx-widget/pull/107). **Offen:** praktische iPhone-/iPad-/Safari-Abnahme anhand der Anleitung; technische Umsetzung, Prüfung, Veröffentlichung und Code-Lieferung abgeschlossen. Kein Oracle-Update nötig.
+
+**Veröffentlicht am 12.10.2026:** [PR #107](https://github.com/NicoAHB/wx-widget/pull/107), Merge `dd7d4b2f8b455b588cf45a10808aed5f6b03baaf`, [Pages-Lauf 38214995566](https://github.com/NicoAHB/wx-widget/actions/runs/38214995566) erfolgreich. App/SW/Lieferliste und alle 73 öffentlichen PWA-Dateien byte-/hashgleich; nach Merge alle 149 Produktdateien identisch zum finalen Prüfstand. [Liefernachweis](docs/CHARTMUSTER-SCORE-LIEFERUNG.md), [öffentliche Hashes](docs/CHARTMUSTER-SCORE-LIEFERUNG.json), vollständiges Paket `/workspace/ScalpDesk-3.65.0-PWA.zip`. Dienst bleibt 2.12.0, kein Oracle-Update. Nur diese Lieferdokumentation ergänzt, keine Produktänderung nach Abnahme.
 
 ## Vorheriger Arbeitsstand 3.64.1 – direkte Mustererklärung online und technisch abgenommen
 
