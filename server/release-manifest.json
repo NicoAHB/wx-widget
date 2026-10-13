@@ -1,6 +1,6 @@
 {
   "version": "2.12.1",
-  "appVersion": "3.68.0",
+  "appVersion": "3.68.1",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
@@ -198,6 +198,11 @@
       "bytes": 11241
     },
     {
+      "path": "shared/heikin-ashi.mjs",
+      "sha256": "b9d0eb6c047026ecf828004e9a7ca6b13b68bfca910bf84aa9e289f3e81a7670",
+      "bytes": 1126
+    },
+    {
       "path": "shared/indicators.mjs",
       "sha256": "9105a8ac09d5557e90ec05fd3035c915b36b8e345b31b96a158d0001da505540",
       "bytes": 9568
@@ -371,6 +376,11 @@
       "path": "shared/widget-state.mjs",
       "sha256": "70092b206adad502d0cc1b16c4b642cc28b2914d392a046a1cf25d4f8b77214a",
       "bytes": 1598
+    },
+    {
+      "path": "shared/zone-strength.mjs",
+      "sha256": "e1a9a03df9ba01beb1738345e6e9a31fee274af2cc9ee3ca356d8a15cf61a9f1",
+      "bytes": 13265
     }
   ]
 }

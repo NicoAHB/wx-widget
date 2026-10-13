@@ -3,7 +3,17 @@
 Diese Datei ist der Einstieg für jede weitere Arbeit am Projekt. Wer sie liest, braucht kein Vorwissen. Die vollständige fachliche
 Vorgabe aller Gruppen G01–G14 steht in `docs/VORGABE-G01-G14.md` (Original-Übergabe; dort sind G10–G14 ausführlich beschrieben).
 
-## Aktueller Stand – 3.68.0 (Claude): KI-Signale entfernt, Muster-Bot mit Konfluenz/PO3, Kerzenmuster, KI-Zonen
+## Aktueller Stand – 3.68.1 (Claude): Telegram-Chat-ID, Pfeil nach oben, Heikin-Ashi, starke Zonen/Signale/Backtest, Wischleisten, Modellannahmen zugeklappt
+
+Ausführlich: [docs/3.68.1-AENDERUNGEN.md](docs/3.68.1-AENDERUNGEN.md). Einstellungen: `#workspace-models` ist jetzt ein `details` (bei jedem Start zu, öffnet `#model-settings` mit). Wischleisten mit `overflow-y:hidden`.
+
+**Starke Zonen** ([docs/STARKE-ZONEN.md](docs/STARKE-ZONEN.md)): `shared/zone-strength.mjs` mit `ZONE_STRENGTH` (Gewichte Struktur 25/Volumen 25/Derivate 10/Trend 20/Auslöser 20, Schwelle 70, gegen EMA 200 85, ≥ 3 Gruppen), `scoreZoneStrength`, `ZONE_SIGNAL`, `zoneSignal`, `zoneStep`, `zoneOutcome`, `summarizeZoneBacktest`. HTML: `kiz.mode` off/all/strong (Schlüssel `scalpdesk.kizones.v1` jetzt `{mode}`), `kiZoneContext` (Quellen: `ana.calc`, `fibSwing`, `chartGeom.levels`, `volumeProfile`, `lmClustersNow`, `wh.whales`, `state.mtf` Trend, `rsiDivergences`, pat-1-Umkehrkerzen), `kiZonesStrong`; `zoneWalk` (Walk-forward, `window.__zs.walk`), Klappfläche `#zone-lab` (Hebel `scalpdesk.zonesig.v1`, Backtest-Tabelle `#zs-bt-table`), Knopf `#zsig-btn`, `zoneSignalsDraw` (▲/▼ `.zsig-mark`, Linien `.zsig-line`). Werkzeuggruppe wischbar per Container-Query (≤ 460 px, 640–780 px), ⓘ-Popup dann `position:fixed`. Tests `unit-zone-strength.js` 28/28, `m98.js` 32/32, `m99.js` 14/14.
+
+Chat-ID-Felder in voller Breite mit Knopf **Einfügen** (Zahl oder `t.me/c/…`-Link inkl. Thema, `parseTgChat`, Testzugriff `window.__tgParse`), Thema darunter; `label.check`-Kästchen 22 px; Fußzeile mit `#to-top` (↑, scrollt nach oben). **Heikin-Ashi:** Umschalter `#ha-btn` in `.ohlc-row` (schmal „HA“), `var ha`/`haOn()`/`haSet()`, Schlüssel `scalpdesk.heikin.v1` in `PREF_KEYS`, Umrechnung `shared/heikin-ashi.mjs`; in `renderChartContent` ersetzt `bodies` die Kerzen nur für Skala und Körper/Dochte/Volumen (auch `detailBodies`), alles andere bleibt auf echten Kursen; `unit-heikin-ashi.js` 8/8, Testzugriff `window.__ha`. Version/Bündel 3.68.1.
+
+**Gesamtlauf** (alle Ziele aus `run-all.sh` seriell, Commit `fe579f2`): 5196/5202 gezählte Kriterien, keine neuen Befunde. m44 (503 vom Testserver) und m56 (Zeitachse Market-Cap, uhrzeitabhängig) einzeln grün; bekannte Altbefunde m18/m19, Abbrüche m40/m79/m92. Details: [docs/3.68.1-AENDERUNGEN.md](docs/3.68.1-AENDERUNGEN.md).
+
+## Stand 3.68.0 (Claude, veröffentlicht): KI-Signale entfernt, Muster-Bot mit Konfluenz/PO3, Kerzenmuster, KI-Zonen
 
 Nutzerauftrag: KI-Signale (Panel mit Konfluenz/Power of Three) und Trading-Bot entfernen; die Modelle im Muster-Bot anbieten (mit Erklärung, Chartmarke, Telegram bei Haken); Papertrading-Ankreuzfeld reparieren und erklären; Hebel im Muster-Bot; Kerzenmuster-Namen mit ⓘ in den Orderflow-Kerzen; neue lokale „KI-Zonen“. **Wichtig vom Nutzer:** Die KI-Anzeige im Chart (Knopf „KI“, Chartmuster) muss weiter funktionieren – unverändert, M64/M58 grün. App/SW **3.68.0**, Dienst **2.12.1** unverändert. Ausführlich: [docs/3.68.0-AENDERUNGEN.md](docs/3.68.0-AENDERUNGEN.md), [docs/MUSTER-BOT.md](docs/MUSTER-BOT.md), [docs/KI-ZONEN.md](docs/KI-ZONEN.md).
 
