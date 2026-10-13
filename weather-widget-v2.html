@@ -1415,6 +1415,7 @@ html[data-chartfull]:not([data-chartbar=open]) .chart-toolbar,html[data-chartful
 .ohlc-row{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
 .ohlc-row>.ohlc{flex:1 1 auto;min-width:0}
 .ohlc-row>.ohlc.skel{flex:0 1 auto}
+/* 3.68.1: Starke Zonen · Signale & Backtest */.zone-lab{margin:8px 12px 12px}.zone-lab-body{display:grid;gap:10px;padding:4px 0 8px}.zone-lab-body p{margin:0;line-height:1.45}.zone-lab-lev{display:grid;gap:4px;max-width:220px;font-size:.8125rem;font-weight:600}.zone-lab-actions{display:flex;flex-wrap:wrap;gap:8px}.zone-lab-scroll{max-width:100%;overflow-x:auto;border:1px solid var(--border);border-radius:10px}#zs-bt-table{width:100%;border-collapse:collapse;font-size:.78rem;font-variant-numeric:tabular-nums}#zs-bt-table th,#zs-bt-table td{padding:8px;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap}#zs-bt-table th:first-child,#zs-bt-table td:first-child{text-align:left}.zone-lab-note{font-size:.75rem}
 /* 3.68.1: Umschalter Heikin-Ashi ↔ normale Kerzen direkt über dem Chart */.ha-btn{flex:none;align-self:center;min-height:36px;margin:6px 12px 0 0;padding:0 10px;border:1px solid var(--border);border-radius:7px;background:var(--field);color:var(--muted);font:inherit;font-size:.75rem;font-weight:700;white-space:nowrap;cursor:pointer}.ha-btn[aria-pressed=true]{background:var(--up-bg-2);color:var(--up-text);border-color:var(--up-border)}.ha-btn .ha-short{display:none}@media (max-width:430px){.ha-btn{min-width:44px;padding:0 8px}.ha-btn .ha-long{display:none}.ha-btn .ha-short{display:inline}} /* schmale Handys: „HA“, damit die OHLC-Werte zweizeilig bleiben */html[data-chartfull] .ha-btn{min-height:22px;margin:2px 8px 0 0;padding:0 6px;font-size:.6875rem} /* Vollbild: flach, damit der Chart die Höhe behält */
 details.div-tip{flex:0 0 auto;display:block;margin:5px 14px 0 0;border-radius:999px;color:var(--mint)}
 details.div-tip.bear{color:var(--down)}
@@ -2225,7 +2226,7 @@ import { stripSyncSecrets } from './bundles/3.68.1/shared/github-sync.mjs';
 import { createMusterView } from './bundles/3.68.1/shared/muster-bot-view.mjs';
 import { computeKiZones, KI_ZONE_INTERVALS } from './bundles/3.68.1/shared/ki-zones.mjs';
 import { heikinAshi } from './bundles/3.68.1/shared/heikin-ashi.mjs';
-import { scoreZoneStrength, ZONE_STRENGTH } from './bundles/3.68.1/shared/zone-strength.mjs';
+import { scoreZoneStrength, ZONE_STRENGTH, ZONE_SIGNAL, zoneSignal, zoneStep, zoneOutcome, summarizeZoneBacktest } from './bundles/3.68.1/shared/zone-strength.mjs';
 // 3.68.0: KI-Signale/Trading-Bot entfernt; der GitHub-Sync behält sein Format inklusive vorhandener Modelloriginale.
 import { exportModelArchive, importModelArchive, validateModelArchive, restoreModelOriginals } from './bundles/3.68.1/shared/model-archive.mjs';
 import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT } from './bundles/3.68.1/shared/telegram-format.mjs';
@@ -5545,7 +5546,7 @@ function backupStatus(msg) { put('history-status', msg); }
 // Löschungen, Prüfliste, offene Konflikte, Anzeige-Einstellungen und das eigene Musterlernen (der öffentliche Startbestand nur als
 // Verweis mit Version). Nie enthalten: Zugangsdaten (Telegram-Token und API-Schlüssel), die Übergabe an den 24/7-Dienst, Sendesperren
 // und andere gerätegebundene Zustände. Alle Felder von Schema 7 bleiben gleich – ältere App-Versionen lesen die Datei weiter.
-const PREF_KEYS = ['scalpdesk.pattern-projection.v1', 'scalpdesk.orderflow-journal.v1', 'scalpdesk.orderflow-position.v1', 'scalpdesk.orderflow-signal.v1', 'scalpdesk.orderflow.v1', 'scalpdesk.ki.risk-view.v1', 'scalpdesk.theme.v1', 'scalpdesk.presentation.v1', 'scalpdesk.background.v1', 'scalpdesk.overlays.v1', 'scalpdesk.zigzag.v1', 'scalpdesk.whale.v1', 'scalpdesk.orderbook.v1', 'scalpdesk.ladder.v1', 'scalpdesk.vola.v1', 'scalpdesk.econ.v1', 'scalpdesk.cnews.v1', 'scalpdesk.wlspan.v1', 'scalpdesk.titleprice.v1', 'scalpdesk.details.v1', 'scalpdesk.posdefaults.v1', 'scalpdesk.daylimitnote.v1', 'scalpdesk.warnclose.v1', 'scalpdesk.evalyear.v1', 'scalpdesk.acctrange.v1', 'scalpdesk.anaiv.v1', 'scalpdesk.decouple.v1', 'scalpdesk.kizones.v1', 'scalpdesk.heikin.v1'];
+const PREF_KEYS = ['scalpdesk.pattern-projection.v1', 'scalpdesk.orderflow-journal.v1', 'scalpdesk.orderflow-position.v1', 'scalpdesk.orderflow-signal.v1', 'scalpdesk.orderflow.v1', 'scalpdesk.ki.risk-view.v1', 'scalpdesk.theme.v1', 'scalpdesk.presentation.v1', 'scalpdesk.background.v1', 'scalpdesk.overlays.v1', 'scalpdesk.zigzag.v1', 'scalpdesk.whale.v1', 'scalpdesk.orderbook.v1', 'scalpdesk.ladder.v1', 'scalpdesk.vola.v1', 'scalpdesk.econ.v1', 'scalpdesk.cnews.v1', 'scalpdesk.wlspan.v1', 'scalpdesk.titleprice.v1', 'scalpdesk.details.v1', 'scalpdesk.posdefaults.v1', 'scalpdesk.daylimitnote.v1', 'scalpdesk.warnclose.v1', 'scalpdesk.evalyear.v1', 'scalpdesk.acctrange.v1', 'scalpdesk.anaiv.v1', 'scalpdesk.decouple.v1', 'scalpdesk.kizones.v1', 'scalpdesk.heikin.v1', 'scalpdesk.zonesig.v1'];
 const personalBackupItem = x => !['dpos','dtrade'].includes(x.kind) && !['dpos','dtrade'].includes(x.localKind) && ![DEMO_POS_KEY,DEMO_HIST_KEY,'scalpdesk.orderflow-demo.v1'].includes(x.raw?.key) && !['demoPositions','demoHistory'].includes(x.raw?.field);
 // Übungsdaten können auch in Positionsbegleitung/Signaljournal stehen; nur die Exportkopie bereinigen.
 const demoContext = x => x?.demo === true || x?.practice === true || /^(demo|practice)\|/.test(x?.id || '');
@@ -14301,6 +14302,83 @@ kiZonesButton(); $('zones-btn').addEventListener('click', () => kiZonesSet(KIZ_M
   document.addEventListener('pointerup', e => { const p = tap; tap = null; if (p && Math.hypot(e.clientX - p.x, e.clientY - p.y) < 12 && Date.now() - p.at < 800) kiZoneInfo(p.i); }, true);
 }
 window.__kiz = { state: kiz, now: kiZonesNow, set: kiZonesSet, context: kiZoneContext, strong: kiZonesStrong };
+
+// 3.68.1 Schritt 2: Walk-forward über die abgeschlossenen Kerzen des Charts. Je Kerze t nur Daten bis t (Zonen, Fraktale,
+// EMA/Bollinger/RSI, ZigZag, Divergenz, Umkehrkerzen, Trend 1h/4h, Analyse-Ebene). Folgekerzen dienen nur der Auswertung
+// („Zone gehalten?“, Trade-Verlauf). Liquidation/Whales gibt es nicht historisch – die Derivate-Gruppe zählt im Backtest nicht.
+const ZS_KEY = 'scalpdesk.zonesig.v1';
+var zs = (() => { const v = store.get(ZS_KEY, {}) || {}, lev = Number(v.leverage); return { on: v.on === true, leverage: lev >= 1 && lev <= ZONE_SIGNAL.maxLeverage ? Math.round(lev) : ZONE_SIGNAL.leverage, walk: null, busy: false, controller: null }; })();
+function zsSave() { store.set(ZS_KEY, { on: zs.on, leverage: zs.leverage }); }
+async function zoneWalk({ signal = null, progress = () => {}, leverage = zs.leverage } = {}) {
+  if (!KI_ZONE_INTERVALS.includes(state.interval)) throw new Error('Backtest gibt es für 5m bis 1d – Zeitrahmen wechseln.');
+  const now = Date.now(), closed = state.candles.filter(c => c.closeTime < now), n = closed.length, start = 210;
+  if (n < start + 30) throw new Error(`Zu wenige abgeschlossene Kerzen (${n}, nötig ≥ ${start + 30}).`);
+  const closes = closed.map(c => c.close), e200 = ema(closes, 200), bb = bollinger(closes), pct = zzPct(), engine = (kiz.engine ||= patEngine());
+  const k = closed.map(c => ({ t: c.time, o: c.open, h: c.high, l: c.low, c: c.close, v: c.volume }));
+  // Umkehrkerzen einmal: ein Treffer an Kerze i1 nutzt nur Kerzen bis i1 (Bestätigungsregel wird nicht verwendet)
+  const hits = engine.detect(k, { from: 0, step: IV_MS[state.interval], gap: false, running: false }).hits.filter(h => h.kind === 'candle' && (h.dir === 'bull' || h.dir === 'bear') && !h.id.startsWith('marubozu'))
+    .map(h => { const part = k.slice(h.i0, h.i1 + 1); return { dir: h.dir, i1: h.i1, low: Math.min(...part.map(c => c.l)), high: Math.max(...part.map(c => c.h)), name: PAT_LIB[h.id]?.n.replace(/ \(.*\)$/, '') || h.id }; });
+  const trendSeries = iv => { const src = iv === state.interval ? closed : state.mtf[iv]?.closed; if (!src?.length) return null; const c = src.map(x => x.close), a = ema(c, 20), b = ema(c, 50); return { t: src.map(x => x.closeTime), v: a.map((x, i) => Number.isFinite(x) && Number.isFinite(b[i]) ? Math.sign(x - b[i]) : 0) }; };
+  const lastAt = (times, time) => { let lo = 0, hi = times.length - 1, r = -1; while (lo <= hi) { const m = (lo + hi) >> 1; if (times[m] <= time) { r = m; lo = m + 1; } else hi = m - 1; } return r; };
+  const t1h = trendSeries('1h'), t4h = trendSeries('4h'), trendAt = (sr, time) => { if (!sr) return 0; const j = lastAt(sr.t, time); return j >= 0 ? sr.v[j] : 0; };
+  const A = ana.iv !== state.interval && ana.closed?.length ? ana.closed : null, aTimes = A?.map(c => c.closeTime), aCloses = A?.map(c => c.close), aE = A && A.length >= 200 ? ema(aCloses, 200) : null, aBB = A && A.length >= 20 ? bollinger(aCloses) : null, aProf = new Map();
+  const higherAt = time => { if (!A) return null; const j = lastAt(aTimes, time); if (j < 0) return null; if (!aProf.has(j)) aProf.set(j, j + 1 >= ANA_POC_MIN ? volumeProfile(A.slice(Math.max(0, j + 1 - ANA_POC_N), j + 1)) : null); const pr = aProf.get(j);
+    return { label: anaLabel(ana.iv), poc: pr?.poc, vaLow: pr?.vaLow, vaHigh: pr?.vaHigh, ema200: aE?.[j], bbUpper: aBB?.upper[j], bbLower: aBB?.lower[j] }; };
+  const tests = [], trades = [], signals = [], recent = new Map(); let lastScored = [], lastAtr = null, position = null;
+  for (let t = start; t < n; t++) {
+    if ((t - start) % 8 === 0) { progress((t - start) / (n - start)); await new Promise(r => setTimeout(r, 0)); if (signal?.aborted) throw new DOMException('Abgebrochen', 'AbortError'); }
+    const c = closed[t];
+    // a) Zonentest: berührt Kerze t eine Zone aus Schritt t−1? Score stammt von vor der Berührung.
+    for (const z of lastScored) if (c.low <= z.high && c.high >= z.low) { const key = z.side + '|' + Math.round(z.mid / (lastAtr || 1)); if ((recent.get(key) ?? -99) > t - 10) continue; recent.set(key, t); tests.push({ score: z.strength.score, strong: z.strength.strong, outcome: zoneOutcome(z, closed, t, lastAtr) }); }
+    // b) Zonen und Score zum Schluss von Kerze t
+    const hist = closed.slice(Math.max(0, t + 1 - 500), t + 1), prof = volumeProfile(hist), bands = { upper: bb.upper[t], lower: bb.lower[t] };
+    const res = computeKiZones({ candles: hist, interval: state.interval, profile: prof, ema200: e200[t], bands });
+    const piv = zigzag(closed.slice(0, t + 1), pct), divs = rsiDivergences([...closed.slice(0, t + 1), closed[t]], pct); // letzte Kerze gilt dort als laufend: Kerze t doppelt anhängen
+    const ctx = { atr: res.atr, price: c.close, ema200: e200[t], bands, profile: prof ? { poc: prof.poc, vaLow: prof.vaLow, vaHigh: prof.vaHigh } : null, periodHigh: Math.max(...hist.map(x => x.high)), periodLow: Math.min(...hist.map(x => x.low)),
+      higher: higherAt(c.closeTime), fib: fibSwing(piv)?.levels || [], sr: [], liq: null, whales: null, trend: { '1h': trendAt(t1h, c.closeTime), '4h': trendAt(t4h, c.closeTime) },
+      divergences: divs.map(v => ({ kind: v.kind, price: v.b.price, age: t - v.b.i })), reversals: hits.filter(h => h.i1 <= t && t - h.i1 <= ZONE_STRENGTH.reversalBars).map(h => ({ ...h, age: t - h.i1 })) };
+    const scored = res.zones.filter(z => !z.broken).map(z => ({ ...z, strength: scoreZoneStrength(z, ctx) }));
+    lastScored = scored; lastAtr = res.atr;
+    // c) Position mit Kerze t führen, danach neues Signal zum Schluss von t
+    const sig = zoneSignal({ strong: scored.filter(z => z.strength.strong), candle: c, ctx, targets: { zones: res.zones, poc: prof?.poc, liq: null }, pivots: piv.filter(p => p.ok), leverage });
+    if (position && position.time < c.time) { const ex = zoneStep(position, c, sig.ok && sig.dir === -position.dir); if (ex) { const r = position.dir * (ex.price - position.entry) / position.risk; trades.push({ ...position, exit: ex.price, exitTime: ex.time, reason: ex.reason, r, pct: position.dir * (ex.price - position.entry) / position.entry * 100 * position.leverage }); position = null; } }
+    if (sig.ok) signals.push(sig);
+    if (!position && sig.ok) position = sig;
+  }
+  progress(1);
+  return { tests, trades, signals, open: position, rows: summarizeZoneBacktest({ tests, trades }), from: closed[start].time, to: closed.at(-1).time, candles: n - start, interval: state.interval, symbol: state.symbol, leverage };
+}
+// Klappfläche unten im Chartbereich: Hebel, Backtest-Tabelle (Signale-Knopf und Linien folgen in Schritt 3)
+const zoneLab = el('details', 'workspace-fold zone-lab'); zoneLab.id = 'zone-lab';
+zoneLab.innerHTML = `<summary>Starke Zonen · Signale &amp; Backtest</summary><div class="zone-lab-body">
+  <p class="muted">Starke Zone = Score ≥ ${ZONE_STRENGTH.strongScore} aus mindestens ${ZONE_STRENGTH.minGroups} unabhängigen Faktorgruppen (gegen den EMA-200-Trend ≥ ${ZONE_STRENGTH.strongAgainstEma}). Entscheidungshilfe, keine Garantie.</p>
+  <label class="zone-lab-lev">Hebel für Signale <span class="input-wrap"><input id="zs-leverage" type="text" inputmode="numeric" autocomplete="off" value="${zs.leverage}"><span>×</span></span></label>
+  <p class="muted" id="zs-lev-note"></p>
+  <div class="zone-lab-actions"><button type="button" class="button" id="zs-bt-run">Backtest starten</button><button type="button" class="button ghost" id="zs-bt-stop" hidden>Abbrechen</button></div>
+  <p class="muted" id="zs-bt-status" role="status" aria-live="polite">Noch kein Backtest. Er nutzt die geladenen Kerzen dieses Charts.</p>
+  <div class="zone-lab-scroll"><table id="zs-bt-table"><thead><tr><th>Score</th><th>Zonen getestet</th><th>gehalten</th><th>Signale</th><th>Treffer&shy;quote</th><th>Ø Ergebnis</th><th>Ø CRV</th><th>Max. Drawdown</th></tr></thead><tbody></tbody></table></div>
+  <p class="muted zone-lab-note">Ohne Look-Ahead: Je Kerze werden Zonen, Score und Signal nur aus Daten bis zu dieser Kerze berechnet; die Folgekerzen zeigen, ob die Zone hielt (≥ ${ZONE_SIGNAL.holdMoveATR} ATR Abprall vor einem Schluss ${String(ZONE_SIGNAL.brokenATR).replace('.', ',')} ATR jenseits, höchstens ${ZONE_SIGNAL.horizon} Kerzen) und wie der Trade endete (Stop vor Ziel). Ergebnis in R (Vielfaches des Risikos) und in % auf den Einsatz mit Hebel, ohne Gebühren. Liquidationscluster und Whales gibt es nicht als Historie – die Derivate-Gruppe zählt im Backtest nicht.</p></div>`;
+$('chart-sec').append(zoneLab);
+function zsLevNote() { const lev = zs.leverage; $('zs-lev-note').textContent = lev > 1 ? `Hebel ${lev}×: Liquidation etwa ${String(Math.max(0, 100 / lev - ZONE_SIGNAL.mmr * 100).toFixed(1)).replace('.', ',')} % entfernt; ein Signal entsteht nur, wenn der Stop höchstens ${Math.round(ZONE_SIGNAL.liqSafety * 100)} % dieses Abstands nutzt.` : 'Hebel 1 = ohne Hebel.'; }
+$('zs-leverage').addEventListener('change', e => { const v = Math.round(Number(String(e.target.value).replace(',', '.'))); zs.leverage = v >= 1 && v <= ZONE_SIGNAL.maxLeverage ? v : zs.leverage; e.target.value = zs.leverage; zsSave(); zsLevNote(); zs.walk = null; scheduleDraw(); });
+zsLevNote();
+const zsFmt = (v, d = 1, suffix = '') => v === null || !Number.isFinite(v) ? '–' : v.toLocaleString('de-DE', { minimumFractionDigits: d, maximumFractionDigits: d }) + suffix;
+function zsPaint(result) {
+  const body = $('zs-bt-table').tBodies[0]; body.replaceChildren();
+  for (const r of result.rows) { const tr = el('tr'); for (const v of [r.band, String(r.zones), r.zones ? `${r.held} (${zsFmt(r.heldRate, 0, ' %')})` : '–', String(r.trades), zsFmt(r.winRate, 0, ' %'), r.trades ? `${zsFmt(r.avgR, 2, ' R')} · ${zsFmt(r.avgPct, 1, ' %')}` : '–', zsFmt(r.avgCrv, 2), r.trades ? zsFmt(r.maxDd, 2, ' R') : '–']) tr.append(el('td', '', v)); body.append(tr); }
+}
+$('zs-bt-run').addEventListener('click', async () => {
+  if (zs.busy) return; zs.busy = true; zs.controller = new AbortController(); $('zs-bt-run').disabled = true; $('zs-bt-stop').hidden = false;
+  const status = $('zs-bt-status');
+  try {
+    const result = await zoneWalk({ signal: zs.controller.signal, progress: f => { status.textContent = `Backtest läuft … ${Math.round(f * 100)} %`; } });
+    zsPaint(result); window.__zoneBacktest = result;
+    status.textContent = `${result.symbol.replace(/USDT$/, '/USDT')} · ${result.interval} · ${result.candles} Kerzen (${utcDate(result.from)} – ${utcDate(result.to)} UTC) · ${result.tests.length} Zonentests · ${result.trades.length} ${result.trades.length === 1 ? 'Signal' : 'Signale'} abgeschlossen${result.open ? ' · 1 offen' : ''} · Hebel ${result.leverage}×. Wenig Fälle = unsichere Zahlen. Entscheidungshilfe, keine Garantie.`;
+  } catch (e) { status.textContent = e.name === 'AbortError' ? 'Backtest abgebrochen.' : e.message; }
+  finally { zs.busy = false; $('zs-bt-run').disabled = false; $('zs-bt-stop').hidden = true; }
+});
+$('zs-bt-stop').addEventListener('click', () => zs.controller?.abort());
+window.__zs = { state: zs, walk: zoneWalk };
 
 // 3.63.0: eigener Muster-Bot, vom bisherigen KI-/Trading-Bot und persönlichen Büchern getrennt.
 const musterHost = el('section', 'panel'); musterHost.id = 'muster-bot-panel'; musterHost.dataset.tabs = 'ind'; musterHost.dataset.workspaceScope = 'ind'; $('alarms').after(musterHost);
