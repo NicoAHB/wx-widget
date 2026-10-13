@@ -1174,7 +1174,7 @@ html[data-chartfull] .chart-toolbar{order:1}
 html[data-chartfull] .chart-footer{order:2;display:block;margin:2px 0 4px;padding:0;border:0}
 html[data-chartfull] .chart-footer .lg,html[data-chartfull] #chart-caption{display:none}
 html[data-chartfull] .chart-legend{display:block;margin:0}
-html[data-chartfull] .overlay-toggles{display:flex;flex-wrap:nowrap;gap:6px;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;margin:0}
+html[data-chartfull] .overlay-toggles{display:flex;flex-wrap:nowrap;gap:6px;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;scrollbar-width:none;margin:0}
 html[data-chartfull] .overlay-toggles::-webkit-scrollbar{display:none}
 html[data-chartfull] .overlay-toggles button{flex:0 0 auto;white-space:nowrap;min-height:34px}
 html[data-chartfull] #ohlc{order:3}
@@ -1183,7 +1183,7 @@ html[data-chartfull] #chart{order:4}
 @media (max-width:380px){.chart-toolbar .zoom-controls{gap:2px}.chart-toolbar .zoom-controls button{min-width:35px;padding:0 3px}.chart-toolbar #zones-btn{font-size:.6875rem;padding:0 2px}} /* 3.68.0: Platz für „Zonen“ */
 /* 3.32.0 (G04.5): mit ⟲ passt die Reihe auch bei 320 px – etwas schmalere Knöpfe; ist zusätzlich „Jetzt“ zu sehen (zurückgeblättert),
    weicht ⟲ bis dahin (Jetzt zuerst, danach ⟲); notfalls lässt sich die Reihe seitlich wischen statt abzuschneiden */
-@media (max-width:360px){.chart-toolbar .zoom-controls{min-width:0;max-width:100%;overflow-x:auto;scrollbar-width:none;gap:2px}.chart-toolbar .zoom-controls::-webkit-scrollbar{display:none}
+@media (max-width:360px){.chart-toolbar .zoom-controls{min-width:0;max-width:100%;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;gap:2px}.chart-toolbar .zoom-controls::-webkit-scrollbar{display:none}
   .chart-toolbar .zoom-controls button{flex:0 0 auto;min-width:33px;padding:0 3px}
   .chart-toolbar #zones-btn,.chart-toolbar #zsig-btn{font-size:.6875rem;padding:0 2px}.chart-toolbar #pan-now:not([hidden])~#zoom-reset{display:none}}
 /* Vollbild am iPhone hochkant: Chart ins Querformat gedreht (siehe chartfull); Ränder für Notch und Home-Leiste mitgedreht */
@@ -1209,7 +1209,7 @@ html[data-chartbar=open] #fb-tools .fb-chev{transform:rotate(180deg)}
 #fb-exit{padding:0 8px}
 /* Werkzeuge im Vollbild einzeilig: Zeiträume wischbar statt Umbruch */
 html[data-chartfull] .chart-toolbar{display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:8px}
-html[data-chartfull] .intervals{flex:1 1 auto;min-width:0;display:flex;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+html[data-chartfull] .intervals{flex:1 1 auto;min-width:0;display:flex;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
 html[data-chartfull] .intervals::-webkit-scrollbar{display:none}
 html[data-chartfull] .zoom-controls{flex:0 0 auto}
 /* Eingeklappt (Standard beim Öffnen): Werkzeuge, Ebenen-Schalter und OHLC gleiten weg, der Chart wächst mit */
@@ -1581,7 +1581,7 @@ html[data-layout=tablet] .wl-tile{height:64px}
    (iPad mini hochkant hatte nur 20 px Luft); bei knappem Platz werden die Intervall-Knöpfe etwas schmaler statt umzubrechen */
 .chart-toolbar{container:ctb/inline-size}
 .tb-main{display:flex;flex-wrap:nowrap;align-items:center;gap:6px;flex:1 1 0;min-width:min(100%,22rem)}
-.tb-main .intervals{flex-wrap:nowrap;min-width:0;overflow-x:auto;scrollbar-width:thin}
+.tb-main .intervals{flex-wrap:nowrap;min-width:0;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;scrollbar-width:thin} /* 3.68.1: nur waagerecht wischbar (vorher auch senkrecht verschiebbar) */
 /* 3.37.0 (G09): Chartmuster */
 .pk{display:grid;gap:6px}.pk-btn{justify-self:start}.pk-out{display:grid;gap:6px;font-size:.8125rem}.pk-out p{margin:0}.pk-h{font-weight:600}.pk-note,.pk-ex{color:var(--muted);font-size:.75rem}.pk-pub{padding:6px 8px;border:1px solid var(--border);border-radius:8px;font-size:.75rem}
 .pk-svg{width:100%;max-width:420px;height:auto;background:var(--field);border-radius:8px}.pk-zero{stroke:var(--muted);stroke-dasharray:3 3}.pk-band{fill:var(--up-bg-2);opacity:.8}.pk-med{stroke:var(--up-text);stroke-width:2}.pk-rep{stroke:var(--text-2);stroke-width:1;stroke-dasharray:4 2}
@@ -1595,8 +1595,8 @@ html[data-layout=tablet] .wl-tile{height:64px}
 @container ctb (min-width:401px) and (max-width:460px){.chart-toolbar .zoom-controls{gap:2px}.chart-toolbar .zoom-controls button{min-width:40px;padding:0 4px}.chart-toolbar #zones-btn{font-size:.75rem;padding:0 3px}}
 /* 3.68.1: „Starke Zonen“/„Zonen ausblenden“ sind breiter – die Knopfgruppe wird bei Bedarf seitlich wischbar statt umzubrechen
    (Handy: eigene Zeile; iPad mini hochkant: bleibt in der Intervallzeile). Hilfe-Popup siehe zoomTipFix. */
-@container ctb (max-width:460px){.chart-toolbar .zoom-controls{min-width:0;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;padding:2px 0;gap:1px}.chart-toolbar .zoom-controls::-webkit-scrollbar{display:none}.chart-toolbar .zoom-controls>*{flex:0 1 auto}.chart-toolbar .zoom-controls>#zones-btn,.chart-toolbar .zoom-controls>#zsig-btn,.chart-toolbar .zoom-controls>details{flex:0 0 auto}.chart-toolbar #zones-btn,.chart-toolbar #zsig-btn{font-size:.6875rem;padding:0 2px}}
-@container ctb (min-width:640px) and (max-width:780px){.chart-toolbar .zoom-controls{min-width:0;max-width:calc(100% - min(100%,22rem) - 6px);overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;padding:2px 0}.chart-toolbar .zoom-controls::-webkit-scrollbar{display:none}.chart-toolbar .zoom-controls>*{flex:0 1 auto}.chart-toolbar .zoom-controls>#zones-btn,.chart-toolbar .zoom-controls>#zsig-btn,.chart-toolbar .zoom-controls>details{flex:0 0 auto}}
+@container ctb (max-width:460px){.chart-toolbar .zoom-controls{min-width:0;max-width:100%;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;scrollbar-width:none;padding:2px 0;gap:1px}.chart-toolbar .zoom-controls::-webkit-scrollbar{display:none}.chart-toolbar .zoom-controls>*{flex:0 1 auto}.chart-toolbar .zoom-controls>#zones-btn,.chart-toolbar .zoom-controls>#zsig-btn,.chart-toolbar .zoom-controls>details{flex:0 0 auto}.chart-toolbar #zones-btn,.chart-toolbar #zsig-btn{font-size:.6875rem;padding:0 2px}}
+@container ctb (min-width:640px) and (max-width:780px){.chart-toolbar .zoom-controls{min-width:0;max-width:calc(100% - min(100%,22rem) - 6px);overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;scrollbar-width:none;padding:2px 0}.chart-toolbar .zoom-controls::-webkit-scrollbar{display:none}.chart-toolbar .zoom-controls>*{flex:0 1 auto}.chart-toolbar .zoom-controls>#zones-btn,.chart-toolbar .zoom-controls>#zsig-btn,.chart-toolbar .zoom-controls>details{flex:0 0 auto}}
 .pat-scope{margin:0;font-size:.8125rem;color:var(--muted)}
 .pat-bar{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}.pat-bar label{display:flex;align-items:center;gap:6px;font-size:.8125rem;color:var(--muted)}
 .pat-bar select{min-height:34px;border:1px solid var(--field-border);border-radius:6px;background:var(--field);color:var(--text);padding:0 6px}
