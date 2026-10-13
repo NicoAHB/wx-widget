@@ -1,5 +1,7 @@
 # Tests für Scalp Desk
 
+**Gesamtlauf 3.69.0:** 5355/5363. m53 und m31 einzeln grün; Altbefunde m7, m18, m19; Abbrüche m40, m79. Danach (Musterdienst 1.2.0) alle Servertests, `m58` und `m69` einzeln grün.
+
 **3.69.0 Chartmuster-Karten über Oracle (Musterdienst 1.2.0, Claude):**
 - Neu `unit-pattern-card.js` (51): Karte (Beispielwerte exakt, Abwärts, lange Namen, fehlende Werte, PNG und Pixel), Versand (Karte, Textersatz, 400/429/verloren, Multipart) und Bereinigung (Stichtag, Monatswechsel, Probelauf, Sperren, Wiederaufnahme, Protokolle, systemd).
 - PNG-Prüfungen brauchen `server/node_modules` (`npm ci` im Ordner `server`); ohne sie werden sie übersprungen.

@@ -14,8 +14,8 @@
     },
     {
       "path": "pattern-monitor.mjs",
-      "sha256": "5332f1224fca0647d98517d78221db5eb5cfe8ffafbd04e97e6def71dbdf3fe5",
-      "bytes": 6747
+      "sha256": "22f50f1d4ad57064f7b63f423dde6940ebc6fc4d2b6e51e87acfd5c8eb9275dc",
+      "bytes": 6970
     },
     {
       "path": "telegram-format.mjs",
@@ -29,8 +29,8 @@
     },
     {
       "path": "patterns-247.mjs",
-      "sha256": "eed7eb8c6ccb1ccc3aabb245d7359d5ad2a1198625da0207f7788ac6e325ebe5",
-      "bytes": 13214
+      "sha256": "12d368fb4e5082adbf332f304432081b92247eb25372c5abd9a6f952b5a78c2b",
+      "bytes": 19618
     },
     {
       "path": "ki-monitor.mjs",
