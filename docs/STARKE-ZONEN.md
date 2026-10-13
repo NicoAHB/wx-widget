@@ -49,11 +49,11 @@ In „Starke Zonen · Signale & Backtest“ → **Backtest starten**. Walk-forwa
 - **Tabelle je Score-Stufe** (<50, 50–69, 70–84, ≥85): getestete Zonen, gehalten (Anzahl und %), Signale, Trefferquote, Ø Ergebnis (R und % auf den Einsatz mit Hebel, ohne Gebühren), Ø CRV, max. Drawdown in R.
 - Liquidationscluster und Whales gibt es nicht als Historie: Die Derivate-Gruppe zählt im Backtest nicht; S/R-Linien ebenfalls nicht.
 - Wenige Fälle (z. B. 500 Kerzen) ergeben unsichere Zahlen.
-- Im Chart-Vollbild steht die Klappfläche oben unter der Kopfzeile und scrollt geöffnet in sich; der Kopf bleibt stehen, der Chart behält mindestens 160 px (3.68.2). Der Backtest gibt nach höchstens 12 ms Rechenzeit ab, die Bedienung bleibt flüssig.
+- Im Chart-Vollbild ist die Klappfläche ausgeblendet; der Platz gehört dem Chart (3.68.3). Der Knopf „Signale“ bleibt in der Werkzeugleiste. Der Backtest gibt nach höchstens 12 ms Rechenzeit ab, die Bedienung bleibt flüssig.
 
 ## Prüfen
 
 - `node tests/unit-zone-strength.js` (28): Gruppen je einmal, Schwellen 70/85, 3 Gruppen, Derivate nur mit Daten, Faktortext, Signalregeln (Trend, Auslöser, CRV, Liquidation, Short), Positionsführung, „Zone gehalten“, Tabelle, keine Elliott-/Prognose-Eingaben.
 - `node tests/m98.js` (32): drei Zustände, Farben, Hinweis, Faktorliste, ohne Neuberechnung, alte Einstellung.
-- `node tests/m100.js` (25, davon Vollbild-Teil): Fläche oben, scrollt in sich, Minimieren danach.
+- `node tests/m100.js` (26, davon Vollbild-Teil): keine Klappfläche im Vollbild, Werkzeugleiste sauber, Minimieren danach.
 - `node tests/m99.js` (14): Panel, Hebel, Backtest-Tabelle, **kein Look-Ahead** (gleiche Signale/Scores bei um 40 Kerzen gekürzter Reihe), Abbrechen, Signale-Knopf, ▲/▼, Linien, Details, Ausblenden, Leiste ohne Überlauf.
