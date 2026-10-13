@@ -409,7 +409,7 @@ html[data-chartfull] .of-chart-grid,html[data-chartfull] .of-chart-pane{display:
 .overlay-toggles button[aria-pressed=false] .sw{opacity:.3}
 .overlay-toggles .ov-all{color:var(--text);font-weight:600}
 .atr-red{color:var(--down-text)}.atr-amber{color:var(--warn-text)}.atr-green{color:var(--up-text)}.atr-blue{color:var(--violet-text,#8fb4ff)}#atr-advice p{margin:0 0 6px}
-.mtf{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:6px 0 2px;overflow-anchor:none;font-size:.75rem;font-variant-numeric:tabular-nums}.mtf-l{color:var(--muted)}
+.mtf{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:6px 0 2px;padding:0 20px;overflow-anchor:none;font-size:.75rem;font-variant-numeric:tabular-nums}.mtf-l{color:var(--muted)}
 .mtf-c{padding:2px 8px;border-radius:10px;border:1px solid var(--border);color:var(--muted);white-space:nowrap}.mtf-c.up{color:var(--up-text);border-color:var(--up-border);background:var(--up-bg)}.mtf-c.down{color:var(--down-text);border-color:var(--down-border);background:var(--down-bg)}.mtf-c.mix{color:var(--text)}
 svg text{font-family:var(--font);font-variant-numeric:tabular-nums}
 svg .grid-line{stroke:var(--grid);stroke-width:1}
@@ -429,7 +429,7 @@ svg .crosshair{stroke:var(--cross);stroke-width:1;stroke-dasharray:3 4;pointer-e
 .verdict.sell{background:var(--sell);color:var(--sell-ink)}
 .verdict.stale{opacity:.55}
 .signal-rows{display:grid;gap:4px}
-.signal-row{display:grid;grid-template-columns:48px 124px 52px minmax(0,1fr) auto;align-items:center;gap:10px;min-height:50px;padding:6px 10px;border:1px solid transparent;border-radius:8px;background:transparent;text-align:left;border-left:5px solid var(--hold)}
+.signal-row{display:grid;grid-template-columns:48px 140px 52px minmax(0,1fr) auto;align-items:center;gap:10px;min-height:50px;padding:6px 10px;border:1px solid transparent;border-radius:8px;background:transparent;text-align:left;border-left:5px solid var(--hold)}
 .signal-row:hover{background:var(--hover-2)}
 .signal-row.current{border-color:var(--field-border);border-left-width:5px}
 .signal-row[data-tone=p3]{background:var(--t-p3);border-left-color:var(--buy)}
@@ -439,6 +439,7 @@ svg .crosshair{stroke:var(--cross);stroke-width:1;stroke-dasharray:3 4;pointer-e
 .signal-row[data-tone=m2]{background:var(--t-m2);border-left-color:var(--sell)}
 .signal-row[data-tone=m3]{background:var(--t-m3);border-left-color:var(--sell)}
 .signal-row>b{font-weight:700}
+.signal-row .verdict{max-width:100%;padding:2px 7px;overflow:hidden;text-overflow:ellipsis} /* 3.70.0: nie über die Spalte hinaus */
 .signal-row .pts{font-variant-numeric:tabular-nums;font-weight:700;font-size:.875rem;text-align:center;border-radius:5px;padding:2px 0}
 .signal-row[data-tone^=p] .pts{color:var(--up-text)}
 .signal-row[data-tone^=m] .pts{color:var(--down-text)}
@@ -851,6 +852,7 @@ dialog.sheet::backdrop{background:rgba(0,0,0,.6)}
   .chart-toolbar{padding:6px 8px}
   .intervals{gap:1px}.intervals button{min-width:34px;padding:0 7px}
   .ohlc{padding:8px 14px 2px;min-height:44px}
+  .mtf{padding:0 14px}
   .chart-footer{padding:10px 14px}
   .market-form{padding:14px}
 }
@@ -1437,7 +1439,7 @@ html[data-chartfull]:not([data-chartbar=open]) .chart-toolbar,html[data-chartful
 .ohlc-row{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
 .ohlc-row>.ohlc{flex:1 1 auto;min-width:0}
 .ohlc-row>.ohlc.skel{flex:0 1 auto}
-/* 3.68.1: Starke Zonen · Signale & Backtest */.zone-lab{margin:8px 12px 12px}.zone-lab-body{display:grid;gap:10px;padding:4px 0 8px}.zone-lab-body p{margin:0;line-height:1.45}.zone-lab-lev{display:grid;gap:4px;max-width:220px;font-size:.8125rem;font-weight:600}.zone-lab-actions{display:flex;flex-wrap:wrap;gap:8px}.zone-lab-scroll{max-width:100%;overflow-x:auto;border:1px solid var(--border);border-radius:10px}#zs-bt-table{width:100%;border-collapse:collapse;font-size:.78rem;font-variant-numeric:tabular-nums}#zs-bt-table th,#zs-bt-table td{padding:8px;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap}#zs-bt-table th:first-child,#zs-bt-table td:first-child{text-align:left}.zone-lab-note{font-size:.75rem}
+/* 3.68.1: Starke Zonen · Signale & Backtest */.zone-lab{margin:8px 14px 14px}.zone-lab-body{display:grid;gap:10px;padding:4px 0 8px}.zone-lab-body p{margin:0;line-height:1.45}.zone-lab-lev{display:grid;gap:4px;max-width:220px;font-size:.8125rem;font-weight:600}.zone-lab-actions{display:flex;flex-wrap:wrap;gap:8px}.zone-lab-scroll{max-width:100%;overflow-x:auto;border:1px solid var(--border);border-radius:10px}#zs-bt-table{width:100%;border-collapse:collapse;font-size:.78rem;font-variant-numeric:tabular-nums}#zs-bt-table th,#zs-bt-table td{padding:8px;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap}#zs-bt-table th:first-child,#zs-bt-table td:first-child{text-align:left}.zone-lab-note{font-size:.75rem}
 /* 3.68.3: Im Vollbild gehört der Platz dem Chart – die Klappfläche „Starke Zonen · Signale & Backtest“ erscheint nur in der normalen Ansicht (Signale-Knopf bleibt in der Werkzeugleiste). Innenabstand wie der Kopf. */.zone-lab-body{padding:4px 14px 12px}html[data-chartfull] #chart-sec>.zone-lab{display:none}
 /* 3.68.3: Heikin-Ashi als Ein/Aus-Schalter direkt über dem Chart – Name links, Schalter rechts (aus = grau links, an = grün rechts). „Normal | HA“ war missverständlich. */.ha-btn{flex:none;align-self:center;display:inline-flex;align-items:center;gap:7px;min-height:36px;margin:6px 12px 0 0;padding:0 8px 0 10px;border:1px solid var(--border);border-radius:7px;background:var(--field);color:var(--muted);font:inherit;font-size:.75rem;font-weight:700;white-space:nowrap;cursor:pointer}.ha-switch{position:relative;flex:none;width:30px;height:18px;border-radius:9px;background:var(--border);transition:background .15s}.ha-switch::after{content:"";position:absolute;top:3px;left:3px;width:12px;height:12px;border-radius:50%;background:var(--muted);transition:transform .15s,background .15s}.ha-btn[aria-checked=true]{color:var(--up-text);border-color:var(--up-border)}.ha-btn[aria-checked=true] .ha-switch{background:var(--up-text)}.ha-btn[aria-checked=true] .ha-switch::after{transform:translateX(12px);background:var(--bg)}@media (prefers-reduced-motion:reduce){.ha-switch,.ha-switch::after{transition:none}}.ha-btn .ha-short{display:none}@media (max-width:430px){.ha-btn .ha-long{display:none}.ha-btn .ha-short{display:inline}}@media (max-width:359px){.ha-btn{gap:5px;margin-right:4px;padding:0 6px}.ha-switch{width:26px;height:16px}.ha-switch::after{top:2px;left:2px}.ha-btn[aria-checked=true] .ha-switch::after{transform:translateX(10px)}} /* schmale Handys: „HA“, damit die OHLC-Werte zweizeilig bleiben */html[data-chartfull] .ha-btn{min-height:24px;margin:2px 8px 0 0;padding:0 6px;font-size:.6875rem} /* Vollbild: flach, damit der Chart die Höhe behält */
 details.div-tip{flex:0 0 auto;display:block;margin:5px 14px 0 0;border-radius:999px;color:var(--mint)}
@@ -1506,7 +1508,7 @@ svg .hl-mark.lo line{stroke:var(--c-down)}
 svg .hl-mark text{fill:var(--c-up);font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round}
 svg .hl-mark.lo text{fill:var(--c-down)}
 .sw.hilo{height:8px;background:linear-gradient(180deg,var(--c-up) 0 2px,transparent 2px 6px,var(--c-down) 6px)}
-.sw.fvg{width:16px;height:10px;border-radius:2px;background:linear-gradient(90deg,color-mix(in srgb,var(--c-up) 45%,transparent) 0 50%,color-mix(in srgb,var(--c-down) 45%,transparent) 50%)} /* 3.70.0: Fair Value Gaps */
+.sw.fvg{width:16px;height:10px;border-radius:2px;background:linear-gradient(90deg,color-mix(in srgb,var(--c-up) 70%,transparent) 0 50%,color-mix(in srgb,var(--c-down) 70%,transparent) 50%);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--text) 18%,transparent)} /* 3.70.0: Fair Value Gaps */
 .ov-pair{display:inline-flex;align-items:center;gap:2px;flex:0 0 auto} /* Knopf und ⓘ bleiben beim Umbrechen zusammen */
 html[data-chartfull] .fvg-tip{display:none} /* im Vollbild würde die Erklärung abgeschnitten – dort erklärt der Hinweis beim Einschalten */
 
@@ -2147,7 +2149,7 @@ html[data-workspace=focus] .workspace-menu{position:static!important;display:blo
 html[data-workspace=focus] .workspace-menu>h3{display:none}
 html[data-workspace=focus] .workspace-menu small,html[data-workspace=focus] .workspace-menu label{overflow-wrap:anywhere}
 html[data-workspace=focus] #workspace-settings .model-settings{margin:0;width:100%}
-html[data-workspace=focus] .signal-row{grid-template-columns:36px 124px 42px minmax(0,1fr);gap:6px;padding:6px;min-height:48px}
+html[data-workspace=focus] .signal-row{grid-template-columns:36px 140px 42px minmax(0,1fr);gap:6px;padding:6px;min-height:48px}
 html[data-workspace=focus] #signals .signals-head{flex-wrap:wrap;gap:8px}
 html[data-workspace=focus] #signals .signal-spark{max-width:100%}
 html[data-workspace=focus] .workspace-setting-card button{max-width:100%;white-space:normal;overflow-wrap:anywhere}
@@ -2188,7 +2190,7 @@ html[data-chartfull] #workspace-chart-tools{display:contents!important}html[data
  .workspace-tabs button{font-size:clamp(.6875rem,2.9vw,.875rem);padding:6px 2px;white-space:nowrap}.workspace-settings{padding:12px}
  html[data-workspace=focus] .brand .tag{display:none}html[data-workspace=focus] .topbar{padding:10px 14px;gap:8px}
  html[data-workspace=focus] .update-controls{gap:4px}.workspace-setting-card{padding:10px}
- html[data-workspace=focus] .signal-row{grid-template-columns:36px 124px 42px minmax(0,1fr)}
+ html[data-workspace=focus] .signal-row{grid-template-columns:36px 140px 42px minmax(0,1fr)}
  html[data-workspace=focus] .workspace-description{display:none}
  html[data-workspace=focus] .market-form{padding:12px;gap:8px}
  html[data-workspace=focus] .market-form>label{flex:1 1 140px;max-width:none}
@@ -2240,33 +2242,33 @@ html[data-chartfull] .chart-pattern-row{padding:0;order:1;flex-wrap:nowrap}html[
 @media(max-width:360px){.chart-pattern-overview-card{height:120px;grid-template-columns:minmax(0,1fr) 112px}}
 </style>
   <script type="module">
-import { MARKET_INTERVALS, CHART_INTERVALS, SIGNAL_INTERVALS, INTERVAL_MS, nearestChartInterval } from './bundles/3.69.0/shared/market-intervals.mjs';
-import { createDetailCandles, detailOptions, detailChoice, closedSeries, timeIndex, DETAIL_VISIBLE_MAX } from './bundles/3.69.0/shared/chart-detail.mjs';
-import { patternChipRows, patternChipKey } from './bundles/3.69.0/shared/chart-pattern-chips.mjs';
-import { PATTERN_QUALITY_CONFIG, chartPatternQuality, repricePatternQuality, sortPatternQuality, patternOverview } from './bundles/3.69.0/shared/chart-pattern-quality.mjs';
-import { createPatternOverviewFeed } from './bundles/3.69.0/shared/chart-pattern-overview-feed.mjs';
+import { MARKET_INTERVALS, CHART_INTERVALS, SIGNAL_INTERVALS, INTERVAL_MS, nearestChartInterval } from './bundles/3.70.0/shared/market-intervals.mjs';
+import { createDetailCandles, detailOptions, detailChoice, closedSeries, timeIndex, DETAIL_VISIBLE_MAX } from './bundles/3.70.0/shared/chart-detail.mjs';
+import { patternChipRows, patternChipKey } from './bundles/3.70.0/shared/chart-pattern-chips.mjs';
+import { PATTERN_QUALITY_CONFIG, chartPatternQuality, repricePatternQuality, sortPatternQuality, patternOverview } from './bundles/3.70.0/shared/chart-pattern-quality.mjs';
+import { createPatternOverviewFeed } from './bundles/3.70.0/shared/chart-pattern-overview-feed.mjs';
 // Arbeitsstand: bei der gemeinsamen Release-Freigabe in das neue Versionsbündel übernehmen.
-import { createPositioningFeed } from './bundles/3.69.0/shared/positioning-score.mjs';
-import { CRYPTO_CALENDAR, parseCryptoCalendar, cryptoCalendarEvents } from './bundles/3.69.0/shared/crypto-calendar.mjs';
-import { createMusterClient } from './bundles/3.69.0/shared/muster-bot-feed.mjs';
-import { createMusterPaper } from './bundles/3.69.0/shared/muster-bot-paper.mjs';
-import { readMusterPaper, writeMusterPaper } from './bundles/3.69.0/shared/muster-bot-store.mjs';
-import { projectPatternLines, projectionSettings, projectionTime } from './bundles/3.69.0/shared/pattern-projection.mjs';
-import { createGithubSyncView } from './bundles/3.69.0/shared/github-sync-view.mjs';
-import { createDocViewer } from './bundles/3.69.0/shared/doc-viewer.mjs';
-import { PATTERN_FILTER_PRESET_NAMES, PATTERN_FILTER_FIELDS, HIGHER_TIMEFRAME, patternFilterSettings, patternFilterFromForm, evaluatePatternSignal, selectPatternSignals, patternJournalEntry, addPatternJournal, resolvePatternJournal, patternHitStats, patternJournalStats, PATTERN_OUTCOME_NAMES, backtestPatternFilter } from './bundles/3.69.0/shared/pattern-quality.mjs';
-import { stripSyncSecrets } from './bundles/3.69.0/shared/github-sync.mjs';
-import { createMusterView } from './bundles/3.69.0/shared/muster-bot-view.mjs';
-import { computeKiZones, KI_ZONE_INTERVALS } from './bundles/3.69.0/shared/ki-zones.mjs';
-import { heikinAshi } from './bundles/3.69.0/shared/heikin-ashi.mjs';
-import { detectFvgs, fvgSummary } from './bundles/3.69.0/shared/fvg.mjs';
-import { scoreZoneStrength, ZONE_STRENGTH, ZONE_SIGNAL, zoneSignal, zoneStep, zoneOutcome, summarizeZoneBacktest } from './bundles/3.69.0/shared/zone-strength.mjs';
+import { createPositioningFeed } from './bundles/3.70.0/shared/positioning-score.mjs';
+import { CRYPTO_CALENDAR, parseCryptoCalendar, cryptoCalendarEvents } from './bundles/3.70.0/shared/crypto-calendar.mjs';
+import { createMusterClient } from './bundles/3.70.0/shared/muster-bot-feed.mjs';
+import { createMusterPaper } from './bundles/3.70.0/shared/muster-bot-paper.mjs';
+import { readMusterPaper, writeMusterPaper } from './bundles/3.70.0/shared/muster-bot-store.mjs';
+import { projectPatternLines, projectionSettings, projectionTime } from './bundles/3.70.0/shared/pattern-projection.mjs';
+import { createGithubSyncView } from './bundles/3.70.0/shared/github-sync-view.mjs';
+import { createDocViewer } from './bundles/3.70.0/shared/doc-viewer.mjs';
+import { PATTERN_FILTER_PRESET_NAMES, PATTERN_FILTER_FIELDS, HIGHER_TIMEFRAME, patternFilterSettings, patternFilterFromForm, evaluatePatternSignal, selectPatternSignals, patternJournalEntry, addPatternJournal, resolvePatternJournal, patternHitStats, patternJournalStats, PATTERN_OUTCOME_NAMES, backtestPatternFilter } from './bundles/3.70.0/shared/pattern-quality.mjs';
+import { stripSyncSecrets } from './bundles/3.70.0/shared/github-sync.mjs';
+import { createMusterView } from './bundles/3.70.0/shared/muster-bot-view.mjs';
+import { computeKiZones, KI_ZONE_INTERVALS } from './bundles/3.70.0/shared/ki-zones.mjs';
+import { heikinAshi } from './bundles/3.70.0/shared/heikin-ashi.mjs';
+import { detectFvgs, fvgSummary } from './bundles/3.70.0/shared/fvg.mjs';
+import { scoreZoneStrength, ZONE_STRENGTH, ZONE_SIGNAL, zoneSignal, zoneStep, zoneOutcome, summarizeZoneBacktest } from './bundles/3.70.0/shared/zone-strength.mjs';
 // 3.68.0: KI-Signale/Trading-Bot entfernt; der GitHub-Sync behält sein Format inklusive vorhandener Modelloriginale.
-import { exportModelArchive, importModelArchive, validateModelArchive, restoreModelOriginals } from './bundles/3.69.0/shared/model-archive.mjs';
-import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT } from './bundles/3.69.0/shared/telegram-format.mjs';
-import { createOrderflowView } from './bundles/3.69.0/shared/orderflow-view.mjs';
-import { createSignalView } from './bundles/3.69.0/shared/orderflow-signal-view.mjs';
-import { networkState, createWidgetBoundary } from './bundles/3.69.0/shared/widget-state.mjs';
+import { exportModelArchive, importModelArchive, validateModelArchive, restoreModelOriginals } from './bundles/3.70.0/shared/model-archive.mjs';
+import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT } from './bundles/3.70.0/shared/telegram-format.mjs';
+import { createOrderflowView } from './bundles/3.70.0/shared/orderflow-view.mjs';
+import { createSignalView } from './bundles/3.70.0/shared/orderflow-signal-view.mjs';
+import { networkState, createWidgetBoundary } from './bundles/3.70.0/shared/widget-state.mjs';
 // Pure, unrounded calculations. Prices are USDT per unit; FX is USDT per EUR.
 function rsi(closes, period = 14) {
   const out = Array(closes.length).fill(null);
@@ -3121,7 +3123,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
 // 3.43.0 (G10a): reiner Fachkern in shared/; Datenquelle und Karten folgen getrennt.
 // 3.44.0 (G10b): öffentlicher Adapter in shared/bitget-public.mjs; sichtbare Anbindung folgt mit G10(c).
-const APP_VERSION = '3.69.0', docEl = document.documentElement;
+const APP_VERSION = '3.70.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -14862,7 +14864,7 @@ const musterPaper = createMusterPaper({ read: readMusterPaper, write: writeMuste
   } });
 const MUSTER_TG_NAMES = { hammer: 'Hammer', engulfing: 'Bullish Engulfing', confluence: 'Konfluenz', po3: 'Power of Three' };
 musterView = createMusterView({ host: musterHost, selection: musterSelection, currentPrice: (symbol, market) => state.symbol === symbol && state.source === market ? currentPrice() : null,
-  prefs: store.get('scalpdesk.muster.settings.v1', {}), savePrefs: value => store.set('scalpdesk.muster.settings.v1', value), workerFactory: () => new Worker(new URL('./bundles/3.69.0/shared/muster-bot-worker.mjs', import.meta.url), { type: 'module' }), paper: musterPaper, onMarkers: scheduleDraw,
+  prefs: store.get('scalpdesk.muster.settings.v1', {}), savePrefs: value => store.set('scalpdesk.muster.settings.v1', value), workerFactory: () => new Worker(new URL('./bundles/3.70.0/shared/muster-bot-worker.mjs', import.meta.url), { type: 'module' }), paper: musterPaper, onMarkers: scheduleDraw,
   telegramStatus: () => tgtReady('trades') ? null : 'Hinweis: Telegram ist noch nicht eingerichtet oder das Ziel „Trades“ ist aus (Einstellungen → Telegram).' });
 void musterPaper.restore().then(() => musterPaper.poll());
 function musterDraw(svg, data, x, y, bottom) {

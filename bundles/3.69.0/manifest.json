@@ -176,12 +176,6 @@
       "alias": "./shared/doc-viewer.mjs"
     },
     {
-      "path": "./bundles/3.69.0/shared/fvg.mjs",
-      "sha256": "bf07efd328bfd65cbadec830ac25f00b51a0df3db408eaf4294ba2e70f8edf70",
-      "bytes": 2439,
-      "alias": "./shared/fvg.mjs"
-    },
-    {
       "path": "./bundles/3.69.0/shared/github-sync-view.mjs",
       "sha256": "a198ed465ae0352c959c1f3b874fde98cfb3e7d59a9de491d474813ba0f3cf0c",
       "bytes": 13569,
@@ -435,8 +429,8 @@
     },
     {
       "path": "./weather-widget-v2.html",
-      "sha256": "3ab3b3cf7f368987f83c09c10a13c2250519f01ceae12cbc5b654c116996a2b5",
-      "bytes": 1628570
+      "sha256": "d46e4333a05204e1a1dc343402b981fd05fd6a0aff7bcfff443f03439c1de36a",
+      "bytes": 1623522
     },
     {
       "path": "./manifest.webmanifest",
