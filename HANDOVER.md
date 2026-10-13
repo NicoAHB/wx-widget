@@ -9,7 +9,7 @@ Rückmeldungen vom iPhone zu 3.68.3. App/SW **3.68.4**, Dienst 2.12.1 unverände
 
 - `shared/github-sync-view.mjs`: Statuszeile `#github-sync-state` (`data-ready`), `#github-sync-last` jetzt ein `dl`. Einrichtung in drei `.github-sync-step` (Repository · Zugang · Gerät) mit Chip `.github-sync-setup-state`. Token-Einfügen `#github-sync-token-paste` mit `parseGithubToken`. Neuer Parameter `openGuide(url, title)`; ohne ihn bleibt der Link. IDs und Ablauf sind unverändert (m90).
 - Neu `shared/doc-viewer.mjs`: `renderMarkdown` (sicherer Teil, baut DOM-Knoten, kein `innerHTML`) und `createDocViewer` (Dialog `#doc-viewer` im `sheet`-Stil, `#doc-viewer-close`). Ein Klick-Abfangen im HTML öffnet alle Links `./docs/*.md` im Viewer. Testzugriff `window.__docViewer`. docs/*.md liegen nicht im SW-Cache; offline zeigt der Viewer einen Hinweis.
-- Vollbild mit offenen Werkzeugen: `.overlay-toggles` umbrechend (max. 128 px, darin scrollbar), `.chart-pattern-summary` ausgeblendet, `#chart-sec{overflow-y:auto}` und `#chart{min-height:220px}` nur bei `data-chartbar=open`.
+- Vollbild mit offenen Werkzeugen: `.overlay-toggles` umbrechend (max. 128 px, darin scrollbar), `.chart-pattern-summary>small` ausgeblendet (die Karte bleibt, m95 tippt im Vollbild auf `#positioning-score`), `#chart-sec{overflow-y:auto}` und `#chart{min-height:220px}` nur bei `data-chartbar=open`.
 - CSS: `#data-panel .github-sync` ohne eigenen Rahmen; der Kopf der Einrichtung bricht um (sonst an 320 px Überlauf durch den nicht umbrechenden Chip, m90).
 - Tests: neu `m101.js` (24), `m100.js` jetzt 27; beide in `run-all.sh`.
 

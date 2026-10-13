@@ -1219,10 +1219,10 @@ html[data-chartfull] .chart-toolbar>.zoom-controls{flex:0 1 auto;min-width:0;max
 html[data-chartfull] .chart-toolbar>.zoom-controls::-webkit-scrollbar{display:none}
 html[data-chartfull] .chart-toolbar>.zoom-controls>*{flex:0 0 auto}
 html[data-chartfull] #chart-full{display:none}
-/* 3.68.4: Werkzeuge im Vollbild am Handy: alle Ebenen-Schalter (Volumenprofil, EMA, Bollinger …) umbrechend sichtbar statt einer einzigen Wischzeile (höchstens drei Reihen, darin scrollbar); die große Gesamtbild-/Positionierungs-Karte entfällt im Vollbild. Ist trotzdem mehr da als der Bildschirm fasst, scrollt der Vollbild-Bereich selbst – vorher lag der Rest unerreichbar unter dem Rand und die Ansicht wirkte eingefroren. */
+/* 3.68.4: Werkzeuge im Vollbild am Handy: alle Ebenen-Schalter (Volumenprofil, EMA, Bollinger …) umbrechend sichtbar statt einer einzigen Wischzeile (höchstens drei Reihen, darin scrollbar); unter der Gesamtbild-/Positionierungs-Karte entfällt die Erklärzeile (Karte und Positionierungs-Info bleiben erreichbar). Ist trotzdem mehr da als der Bildschirm fasst, scrollt der Vollbild-Bereich selbst – vorher lag der Rest unerreichbar unter dem Rand und die Ansicht wirkte eingefroren. */
 html[data-chartfull] .overlay-toggles{flex-wrap:wrap;overflow-x:hidden;overflow-y:auto;max-height:128px;overscroll-behavior:contain;align-content:flex-start;row-gap:6px}
 html[data-chartfull] .overlay-toggles button{min-height:36px}
-html[data-chartfull] .chart-pattern-summary{display:none}
+html[data-chartfull] .chart-pattern-summary>small{display:none}
 html[data-chartfull][data-chartbar=open] #chart-sec{overflow-y:auto;overscroll-behavior:contain}
 html[data-chartfull][data-chartbar=open] #chart{min-height:220px}
 /* Eingeklappt (Standard beim Öffnen): Werkzeuge, Ebenen-Schalter und OHLC gleiten weg, der Chart wächst mit */
