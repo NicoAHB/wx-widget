@@ -122,7 +122,7 @@ export function evaluatePatternSignal({ c, h, k, i1 = h?.i1, price = null, highe
   if (progress * 100 > s.maxProgress) add('progress', `Kurs schon ${de(progress * 100, 0)} % des Wegs zum Ziel gelaufen (höchstens ${de(s.maxProgress, 0)} %)`);
   if (!(fin(atr) && reward >= s.minTargetAtr * atr)) add('atr', `Zielabstand ${fin(atr) && atr > 0 ? de(reward / atr, 1) : '–'} × ATR(14) unter ${de(s.minTargetAtr, 1)} ×`);
   if (!(targetPct >= s.minFeeMultiple * costs)) add('fees', `Ziel ${de(targetPct, 2)} % unter ${de(s.minFeeMultiple, 1)} × Gebühren + Spread (${de(costs, 3)} %)`);
-  if (!(volume24h >= s.minVolume24h * 1e6)) add('volume24h', `24h-Volumen ${de(volume24h / 1e6, 1)} Mio. USDT unter ${de(s.minVolume24h, 0)} Mio.`);
+  if (fin(volume24h) && volume24h < s.minVolume24h * 1e6) add('volume24h', `24h-Volumen ${de(volume24h / 1e6, 1)} Mio. USDT unter ${de(s.minVolume24h, 0)} Mio.`);   // ohne Volumenangabe: nicht bewertet (wie ein fehlender Spread)
   if (spread !== null && spread > s.maxSpread) add('spread', `Spread ${de(spread, 3)} % über ${de(s.maxSpread, 3)} %`);
   const counter = !!ht && ht.dir === -sign;
   if (counter && !s.counterTrend) add('trend', `Gegentrend zum ${htf} (Kurs ${ht.above > 0 ? 'über' : 'unter'} EMA 200, EMA 50 ${ht.rising > 0 ? 'steigt' : 'fällt'})`);

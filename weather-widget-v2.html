@@ -1226,6 +1226,7 @@ html[data-chartfull] .chart-toolbar>.zoom-controls>*{flex:0 0 auto}
 html[data-chartfull] #chart-full{display:none}
 html[data-chartfull] .chart-toolbar>.zoom-controls>#pan-now,html[data-chartfull] .chart-toolbar>.zoom-controls>#zoom-reset{order:10}   /* 3.69.0: „Jetzt“ und „⟲“ erscheinen nur bei verschobener/gezoomter Ansicht – am Zeilenende, damit KI, Magnet, Zonen und Signale nicht verrutschen */
 html[data-chartfull] .chart-toolbar>.zoom-controls>details.tip{order:11}
+html[data-chartfull] .chart-toolbar>.zoom-controls>#zones-btn{min-width:var(--zones-w,8.6em);text-align:center}   /* 3.69.0: Breite der längsten Beschriftung („Zonen ausblenden“) – „Signale“ rückt beim Umschalten nicht mehr */
 @container ctb (min-width:1060px){html[data-chartfull] .chart-toolbar>.tb-main{flex:1 1 0}html[data-chartfull] .chart-toolbar>.zoom-controls{flex:0 0 auto}}
 /* 3.68.4: Werkzeuge im Vollbild am Handy: alle Ebenen-Schalter (Volumenprofil, EMA, Bollinger …) umbrechend sichtbar statt einer einzigen Wischzeile (höchstens drei Reihen, darin scrollbar); unter der Gesamtbild-/Positionierungs-Karte entfällt die Erklärzeile (Karte und Positionierungs-Info bleiben erreichbar). Ist trotzdem mehr da als der Bildschirm fasst, scrollt der Vollbild-Bereich selbst – vorher lag der Rest unerreichbar unter dem Rand und die Ansicht wirkte eingefroren. */
 html[data-chartfull] .overlay-toggles{flex-wrap:wrap;overflow-x:hidden;overflow-y:auto;max-height:128px;overscroll-behavior:contain;align-content:flex-start;row-gap:6px}
@@ -9418,6 +9419,7 @@ function setChartFull(on) {
     chartHold.style.height = sec.offsetHeight + 'px'; chartHold.style.margin = getComputedStyle(sec).margin; sec.before(chartHold);
     delete docEl.dataset.chartbar; $('fb-tools').setAttribute('aria-expanded', 'false'); // Werkzeuge standardmäßig eingeklappt
     applyFsRotate(); docEl.dataset.chartfull = '1'; renderFullBar(); $('chart').focus({ preventScroll: true });
+    if (typeof zonesBtnWidth === 'function') requestAnimationFrame(() => zonesBtnWidth());
     document.querySelector('.chart-toolbar .zoom-controls')?.scrollTo?.(0, 0);   // 3.69.0: Knopfzeile immer am Anfang (sonst blieb der rechtsbündige Stand der normalen Ansicht stehen und Knöpfe sprangen)
   } else {
     // 3.68.2: Eingabefeld im Vollbild (z. B. Hebel) verlassen und innere Scrollstände zurücksetzen, bevor der Bereich in die Seite zurückkehrt
@@ -9479,7 +9481,7 @@ function fullBarSyms() { return docEl.dataset.chartfull === '1' ? [FULL_BTC, ful
 function swapTarget() { return state.symbol === FULL_BTC ? fullAlt : FULL_BTC; }
 function setChartBar(open) {
   if (open) docEl.dataset.chartbar = 'open'; else delete docEl.dataset.chartbar;
-  if (open) document.querySelector('.chart-toolbar .zoom-controls')?.scrollTo?.(0, 0);
+  if (open) { document.querySelector('.chart-toolbar .zoom-controls')?.scrollTo?.(0, 0); requestAnimationFrame(() => zonesBtnWidth()); }
   $('fb-tools').setAttribute('aria-expanded', String(!!open));
   // während des Gleitens mitzeichnen, damit der Chart flüssig auf die neue Höhe wächst
   const t0 = performance.now(), step = () => { scheduleDraw(); if (performance.now() - t0 < 340) requestAnimationFrame(step); }; requestAnimationFrame(step);
@@ -14459,6 +14461,8 @@ function kiZonesSet(mode) {
   tip?.addEventListener('toggle', () => { body.style.cssText = ''; const zc = tip.closest('.zoom-controls'); if (!tip.open || zc.scrollWidth <= zc.clientWidth + 1) return;
     const r = tip.getBoundingClientRect(); Object.assign(body.style, { position: 'fixed', top: Math.round(r.bottom + 8) + 'px', right: Math.max(8, Math.round(innerWidth - r.right - 8)) + 'px', left: 'auto' }); }); }
 kiZonesButton(); $('zones-btn').addEventListener('click', () => kiZonesSet(KIZ_MODES[(KIZ_MODES.indexOf(kiz.mode) + 1) % KIZ_MODES.length]));
+// 3.69.0: im Vollbild feste Breite für die längste Beschriftung messen (beim Öffnen des Vollbilds, Schrift je Gerät verschieden)
+function zonesBtnWidth() { const b = $('zones-btn'); if (!b || docEl.dataset.chartfull !== '1') return; const t = b.textContent; b.style.minWidth = '0'; let w = 0; for (const [label] of Object.values(KIZ_BUTTON)) { b.textContent = label; w = Math.max(w, b.getBoundingClientRect().width); } b.textContent = t; b.style.minWidth = ''; if (w > 0) b.style.setProperty('--zones-w', Math.ceil(w) + 'px'); }
 { // Antippen über Ort und Zeit wie bei den Chartmuster-Labels (der Chart kann zwischen Drücken und Loslassen neu zeichnen)
   let tap = null;
   $('chart').addEventListener('pointerdown', e => { const t = e.target.closest?.('[data-kiz]'); tap = t ? { i: +t.getAttribute('data-kiz'), x: e.clientX, y: e.clientY, at: Date.now() } : null; if (t) e.stopPropagation(); }, true);

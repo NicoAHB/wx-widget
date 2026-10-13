@@ -1,6 +1,6 @@
 # Tests für Scalp Desk
 
-**3.69.0 / Dienst 2.13.0 (Claude):** Neu `unit-pattern-quality.js` (33: K.O.-Kriterien, Score, Anti-Spam, Tracking, Backtest; Beispiele R/R 0,34, zwei gleiche Richtung, Gegentrend) und `m102.js` (14: Qualitätsfilter in der App). Erweitert `unit-patterns-only` (20), `unit-247e` (43), `m58` (Scorezeile). Zustellungstests mit fester Kunstreihe setzen einen lockeren Filter (`LENIENT` bzw. `scalpdesk.patfilter.v1`). Telegram-Attrappe akzeptiert nur das Test-Token `123456789:AAHdq…`.
+**3.69.0 / Dienst 2.13.0 (Claude):** Neu `unit-pattern-quality.js` (34: K.O.-Kriterien, Score, Anti-Spam, Tracking, Backtest; Beispiele R/R 0,34, zwei gleiche Richtung, Gegentrend) und `m102.js` (14: Qualitätsfilter in der App). Erweitert `unit-patterns-only` (20), `unit-247e` (43), `m58` (Scorezeile). Zustellungstests mit fester Kunstreihe setzen einen lockeren Filter (`LENIENT` bzw. `scalpdesk.patfilter.v1`). Telegram-Attrappe akzeptiert nur das Test-Token `123456789:AAHdq…`.
 
 **3.68.4 (Claude):** Neu `m101.js` (24): Markdown-Viewer (sicher, formatiert), GitHub-Einrichtung (Status, drei Schritte, Felder mit Rahmen, Token-Einfügen), Anleitung als Fenster mit „Schließen“ (auch Oracle-Anleitung aus dem Telegram-Fenster). `m100.js` jetzt 27 (Ebenen-Schalter im Vollbild umbrechend, Erklärzeile aus, Vollbild-Bereich scrollbar, Chart ≥ 220 px). Gesamtlauf 3.68.4: 5166/5174; m94/m95 nach Korrektur grün, m31/m9 einzeln grün, Altbefunde m7/m18/m19, Abbrüche m40/m79/m92.
 

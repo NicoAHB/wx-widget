@@ -95,6 +95,6 @@ Alle Zeiten und Grenzen sind einstellbar.
 
 ## Prüfen
 
-- `node tests/unit-pattern-quality.js` (33): alle K.O.-Kriterien, Score-Teile, Kurzbegründung, Regelgüte-Streckung, Trefferquote ab 10 Fällen, Anti-Spam (gleiche Richtung, gegensätzlich, Sperrzeit, Stundenlimit), Tracking, Statistik, Journal, Backtest. Enthält die drei Beispiele: Chance/Risiko 0,34 : 1; zwei Muster gleicher Richtung; Gegentrend.
+- `node tests/unit-pattern-quality.js` (34): alle K.O.-Kriterien, Score-Teile, Kurzbegründung, Regelgüte-Streckung, Trefferquote ab 10 Fällen, Anti-Spam (gleiche Richtung, gegensätzlich, Sperrzeit, Stundenlimit), Tracking, Statistik, Journal, Backtest. Enthält die drei Beispiele: Chance/Risiko 0,34 : 1; zwei Muster gleicher Richtung; Gegentrend.
 - `node tests/unit-patterns-only.js` (20) und `node tests/unit-247e.js` (43): Filter in beiden Diensten, gefiltert nur Journal/Log, Scorezeile in der Meldung, App-Weitergabe nur mit Bewertung, Statistik-Endpunkt.
 - `node tests/m102.js` (14): App mit Einstellungen, Presets, Journal, Telegram-Versand nur des besten Signals mit Scorezeile, Log im Chartmuster-Fenster, Tracking, Backtest.

@@ -333,8 +333,8 @@
     },
     {
       "path": "./bundles/3.69.0/shared/pattern-quality.mjs",
-      "sha256": "c59e750988d8a51126de4b32eb33bb65b3429e54460416cd7c7e351af8b8d7df",
-      "bytes": 23070,
+      "sha256": "3a8eb4e7f7020f88ccaac0348df772dade95d6e1869143e7ced1b9809685c1a1",
+      "bytes": 23151,
       "alias": "./shared/pattern-quality.mjs"
     },
     {
@@ -429,8 +429,8 @@
     },
     {
       "path": "./weather-widget-v2.html",
-      "sha256": "f8f0e7a3241051d2123e7a7120a8a200578155a73f44416adbe30b2a43ff762b",
-      "bytes": 1603919
+      "sha256": "5c0abf2506828461e2624e6e68ab0d87d319cfb341914bca58816f3624c37fe8",
+      "bytes": 1604833
     },
     {
       "path": "./manifest.webmanifest",

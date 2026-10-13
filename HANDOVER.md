@@ -25,7 +25,7 @@ Nutzerauftrag: viel zu viele Chartmuster-Meldungen über Telegram/Oracle → Qua
   - `patOracleExport`/`patSvcConfig` enthalten `filter`.
 - Regelgüte trennt kaum: Die Pflichtregeln sind bei Treffern immer erfüllt, nur die Volumenregeln schwanken (88–100 %). Im Score deshalb nur 10 Punkte, gestreckt 85→0 bis 100→10.
 - Tests:
-  - neu `unit-pattern-quality.js` (33) und `m102.js` (14), beide in `run-all.sh`;
+  - neu `unit-pattern-quality.js` (34) und `m102.js` (14), beide in `run-all.sh`;
   - erweitert `unit-patterns-only` (20), `unit-247e` (43), `m58`, `unit-247d` (Version);
   - Zustellungstests mit lockerem Filter (die Kunstreihen sind keine handelbaren Signale).
 - **Server-Update nötig** (Oracle-Musterdienst bzw. 24/7-Dienst), danach Coin-Auswahl neu exportieren bzw. am Dienst übernehmen.
@@ -33,6 +33,7 @@ Nutzerauftrag: viel zu viele Chartmuster-Meldungen über Telegram/Oracle → Qua
   - `zsAnnounce`/`zs.announce`: Toast nach jedem Tipp auf „Signale“.
   - Vollbild-Leiste: `.tb-main{flex:1 1 100%}`, `.zoom-controls{flex:1 1 100%}`, einzeilig erst `@container ctb (min-width:1060px)`; `.chart-detail-control` im Vollbild nowrap, Titel unter 700 px aus.
   - `html[data-chartfull] .chart-pattern-summary{display:none}`; m94/m95 entsprechend angepasst.
+  - `#pan-now`/`#zoom-reset` im Vollbild `order:10`, `#zones-btn` mit `--zones-w` (gemessen in `zonesBtnWidth`), Knopfzeile beim Öffnen auf `scrollLeft 0`. Fehlendes Kerzenvolumen gilt im Filter als „nicht bewertet“ (kein Liquiditäts-K.O.).
 
 ## Stand 3.68.4 (Claude): GitHub-Einrichtung übersichtlich, Anleitungen in der App, Werkzeuge im Vollbild bedienbar
 

@@ -46,6 +46,7 @@ function series(n, { start = 100, drift = .0008, t0 = Date.UTC(2026, 0, 1), step
   check('Ziel unter 3 × (Gebühren + Spread) → gefiltert', Q.evaluatePatternSignal({ ...s, k, higher: up4h, btc: btcUp, liquidity: { volume24h: 80e6, spreadPct: .9 }, settings: { preset: 'eigen', maxSpread: 5 } }).ko.some(x => x.key === 'fees'));
   check('Liquidität: zu wenig 24h-Volumen bzw. zu großer Spread → gefiltert', Q.evaluatePatternSignal({ ...s, k, higher: up4h, btc: btcUp, liquidity: { volume24h: 1e6, spreadPct: .02 } }).ko.some(x => x.key === 'volume24h') && Q.evaluatePatternSignal({ ...s, k, higher: up4h, btc: btcUp, liquidity: { volume24h: 80e6, spreadPct: .3 } }).ko.some(x => x.key === 'spread'));
   check('Signalscore unter Mindestscore → gefiltert mit Grund', (() => { const e = Q.evaluatePatternSignal({ ...s, k, higher: up4h, btc: btcUp, liquidity: liq, settings: { preset: 'eigen', minScore: 99 } }); return !e.pass && !e.ko.length && /Signalscore \d+ unter 99/.test(e.reason); })());
+  check('Ohne Volumenangabe in den Kerzen kein Liquiditäts-K.O. (nicht bewertet)', !Q.evaluatePatternSignal({ ...s, k: k.map(x => ({ ...x, v: undefined })), higher: up4h, btc: btcUp, liquidity: { spreadPct: .02 } }).ko.some(x => x.key === 'volume24h'));
   check('24h-Volumen aus Kerzen: 1h → letzte 24 Kerzen × Kurs', Math.abs(Q.volume24hFromCandles(k, '1h') - k.slice(-24).reduce((t, x) => t + x.v * x.c, 0)) < 1e-6);
   // ---- Anti-Spam ----
   const now = k[i1].t + 36e5, cand = (id, over, e) => ({ id, sym: 'ETHUSDT', iv: '1h', dir: 'bull', tc: k[i1].t, ...over, eval: e });
