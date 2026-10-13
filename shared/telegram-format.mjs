@@ -62,7 +62,9 @@ export function formatMessage(type, d = {}) {
   if (type === 'pattern') {
     const risk = finite(d.entry) && finite(d.invalid) ? Math.abs(d.entry - d.invalid) : 0, reward = finite(d.entry) && finite(d.target) ? Math.abs(d.target - d.entry) : null, crv = risk > 0 && finite(reward) ? reward / risk : null;
     blocks = [[`<b>${direction.icon} ${direction.label} · ${escapeTelegram(d.pattern)}</b>${pair ? ' · ' + pair : ''}`,
-      `📊 <b>${pair}</b>${value(d.market) ? ' ' + escapeTelegram(d.market) : ''}${value(d.timeframe) ? ' · ' + escapeTelegram(d.timeframe) : ''}`, line('✅ ', d.status)],
+      `📊 <b>${pair}</b>${value(d.market) ? ' ' + escapeTelegram(d.market) : ''}${value(d.timeframe) ? ' · ' + escapeTelegram(d.timeframe) : ''}`, line('✅ ', d.status),
+      // 3.69.0: Qualitätsfilter – Signalscore mit Kurzbegründung (z. B. „Trend ✔ · Volumen ✔ · R/R 2,6“)
+      numLine('🎯 Signalscore ', d.score, v => telegramNumber(v, 0) + '/100' + (value(d.scoreWhy) ? ' · ' + escapeTelegram(d.scoreWhy) : ''))],
     [numLine('💰 Einstieg: ', d.entry, code), numLine('🎯 ⭐ <b>Ziel: ', d.target, v => money(v) + '</b> ⭐' + pctDistance(v, d.entry)), numLine('🛑 Ungültig bei: ', d.invalid, v => code(v) + pctDistance(v, d.entry)),
       numLine('⚖️ Chance/Risiko: ', crv, v => telegramNumber(v, 2) + ' : 1' + (v < 1 ? ' ⚠️' : ''))],
     [numLine('🧠 Regelgüte: ', d.quality, v => telegramBar(v) + ' ' + telegramNumber(v, Number.isInteger(v) ? 0 : 2) + ' %'), ...learned(d.learned, direction), '<i>ℹ️ Kursrichtung ≠ Zieltreffer · keine Erfolgswahrscheinlichkeit</i>', line('Modell: ', d.model)]];

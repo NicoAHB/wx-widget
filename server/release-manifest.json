@@ -1,11 +1,11 @@
 {
-  "version": "2.12.1",
-  "appVersion": "3.68.4",
+  "version": "2.13.0",
+  "appVersion": "3.69.0",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
-      "sha256": "4f2b3722d0c8efee93d51b4fec6bbf8975e8183ac795fcd5a209ef2495979aab",
-      "bytes": 125451
+      "sha256": "dc177ce791a9d995241b38bfbe192a48fb4cc227939396b65432cd4fe125e848",
+      "bytes": 130250
     },
     {
       "path": "pattern-engine.mjs",
@@ -14,8 +14,8 @@
     },
     {
       "path": "pattern-monitor.mjs",
-      "sha256": "373b536539612a00c2dfe1aa11709c535adbbbbf6f848dcf162811ee63c180d1",
-      "bytes": 4852
+      "sha256": "5332f1224fca0647d98517d78221db5eb5cfe8ffafbd04e97e6def71dbdf3fe5",
+      "bytes": 6747
     },
     {
       "path": "telegram-format.mjs",
@@ -29,8 +29,8 @@
     },
     {
       "path": "patterns-247.mjs",
-      "sha256": "04f60b422abc13c68b268628eca2fc81f06b713b58b1486347048f8614bfa809",
-      "bytes": 9923
+      "sha256": "eed7eb8c6ccb1ccc3aabb245d7359d5ad2a1198625da0207f7788ac6e325ebe5",
+      "bytes": 13214
     },
     {
       "path": "ki-monitor.mjs",
@@ -323,6 +323,11 @@
       "bytes": 3943
     },
     {
+      "path": "shared/pattern-quality.mjs",
+      "sha256": "c59e750988d8a51126de4b32eb33bb65b3429e54460416cd7c7e351af8b8d7df",
+      "bytes": 23070
+    },
+    {
       "path": "shared/pattern-score.mjs",
       "sha256": "585334abda80fd8802128e181d8efc04264770f3ee2a7f866d24481a6f7eabad",
       "bytes": 2683
@@ -374,8 +379,8 @@
     },
     {
       "path": "shared/telegram-format.mjs",
-      "sha256": "63e24932d3e1fb901225c548ff082a32eecb027b76c398b22bc78169728eb728",
-      "bytes": 14163
+      "sha256": "5a6039dd12efa31dde7313d18881064a002f9b1b22e646145253e4affc53095b",
+      "bytes": 14429
     },
     {
       "path": "shared/widget-state.mjs",

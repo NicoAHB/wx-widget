@@ -3,10 +3,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
-import { klines } from './scalpdesk-247.mjs';
-import { PAT_STEPS, patternCandles, patternCases, patternFresh, patternText, patternEnd } from './pattern-monitor.mjs';
+import { klines, bookTicker } from './scalpdesk-247.mjs';
+import { PAT_STEPS, PQ, patternCandles, patternCases, patternFresh, patternText, patternEnd, patternEvaluate, patternFilterLog } from './pattern-monitor.mjs';
 import { formatMessage, telegramFields, telegramPlain, telegramFormatRejected } from './telegram-format.mjs';
-export const PATTERNS_VERSION = '1.0.0';
+export const PATTERNS_VERSION = '1.1.0';   // 1.1.0: Qualitätsfilter (K.O.-Kriterien, Signalscore, Anti-Spam, Ergebnis-Tracking)
 export function readPatternEnvironment(file) {
   const out = {}; for (const line of fs.readFileSync(file, 'utf8').split(/\r?\n/)) {
     if (!line.trim() || /^\s*#/.test(line)) continue;
@@ -17,13 +17,13 @@ export function readPatternEnvironment(file) {
   return { token: out.PATTERN_BOT_TOKEN, chat: out.PATTERN_CHAT_ID, thread: out.PATTERN_THREAD_ID || '' };
 }
 export function patternWatchFile(raw) {
-  if (!raw || Object.keys(raw).some(k => !['kind', 'v', 'model', 'gap', 'items'].includes(k)) || raw.kind !== 'scalpdesk-patterns-watch' || raw.v !== 1 || raw.model !== 'pat-1' || raw.gap !== false || !Array.isArray(raw.items) || !raw.items.length || raw.items.length > 40) throw new Error('Muster-Auswahl ungültig; neu aus der App exportieren');
+  if (!raw || Object.keys(raw).some(k => !['kind', 'v', 'model', 'gap', 'items', 'filter'].includes(k)) || raw.kind !== 'scalpdesk-patterns-watch' || raw.v !== 1 || raw.model !== 'pat-1' || raw.gap !== false || !Array.isArray(raw.items) || !raw.items.length || raw.items.length > 40) throw new Error('Muster-Auswahl ungültig; neu aus der App exportieren');
   const items = raw.items.map(x => {
     if (!x || Object.keys(x).some(k => !['sym', 'mkt', 'iv'].includes(k)) || !/^[A-Z0-9]{2,20}USDT$/.test(x.sym) || !['spot', 'futures'].includes(x.mkt) || !Object.hasOwn(PAT_STEPS, x.iv)) throw new Error('Coin, Markt oder Intervall in der Muster-Auswahl ungültig');
     return { sym: x.sym, mkt: x.mkt, iv: x.iv };
   }).sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
   if (new Set(items.map(x => JSON.stringify(x))).size !== items.length) throw new Error('Coin/Markt/Intervall doppelt');
-  return { kind: raw.kind, v: 1, model: 'pat-1', gap: false, items };
+  return { kind: raw.kind, v: 1, model: 'pat-1', gap: false, items, filter: PQ.patternFilterSettings(raw.filter) };   // 1.1.0: Filter-Schwellen aus der App (ohne Angabe: Preset „Normal“)
 }
 export function atomicPatternState(file, state) {
   fs.mkdirSync(path.dirname(file), { recursive: true, mode: 0o700 }); const tmp = file + '.tmp', fd = fs.openSync(tmp, 'w', 0o600);
@@ -31,13 +31,15 @@ export function atomicPatternState(file, state) {
   fs.renameSync(tmp, file); const dir = fs.openSync(path.dirname(file), 'r'); try { fs.fsyncSync(dir); } finally { fs.closeSync(dir); }
 }
 export class PatternsOnlyService {
-  constructor({ destination, watch, stateFile, now = Date.now, fetchRows = (item) => klines(item.mkt, item.sym, 541, item.iv), send = null, log = console.log }) {
-    Object.assign(this, { destination, stateFile, now, fetchRows }); this.log = msg => log(String(msg).replaceAll(destination.token, '[geheim]').replaceAll(destination.chat, '[Chat]')); this.send = send || (text => this.telegram(text)); this.busy = false; this.due = new Map();
+  constructor({ destination, watch, stateFile, now = Date.now, fetchRows = (item, limit = 541) => klines(item.mkt, item.sym, limit, item.iv), fetchSpread = c => bookTicker(c.mkt, c.sym), send = null, log = console.log }) {
+    Object.assign(this, { destination, stateFile, now, fetchRows, fetchSpread }); this.log = msg => log(String(msg).replaceAll(destination.token, '[geheim]').replaceAll(destination.chat, '[Chat]')); this.send = send || (text => this.telegram(text)); this.busy = false; this.due = new Map();
     const config = patternWatchFile(watch), sig = crypto.createHash('sha256').update(JSON.stringify(config)).digest('hex');
     this.state = fs.existsSync(stateFile) ? JSON.parse(fs.readFileSync(stateFile, 'utf8')) : { v: 1, since: now(), sig, cases: {}, events: {} };
     if (this.state.v !== 1 || !Number.isFinite(this.state.since) || !this.state.events || !this.state.cases || Array.isArray(this.state.events) || Array.isArray(this.state.cases)) throw new Error('Dienstzustand beschädigt; Originaldatei erhalten und prüfen');
     if (this.state.sig !== sig) { this.state.sig = sig; this.state.since = now(); }
     for (const event of Object.values(this.state.events)) if (event.st === 'sending') { event.st = 'unconfirmed'; this.log('Nach Neustart unbestätigte Zustellung: kein Doppelversand'); }
+    if (!Array.isArray(this.state.signals)) this.state.signals = [];   // 1.1.0: Journal aller bewerteten Signale (gesendet und gefiltert)
+    if (!Array.isArray(this.state.sent)) this.state.sent = [];         // 1.1.0: gesendete Meldungen für die Anti-Spam-Regeln
     this.config = config; this.persist();
   }
   persist() { atomicPatternState(this.stateFile, this.state); }
@@ -80,30 +82,49 @@ export class PatternsOnlyService {
   async scan() {
     if (this.busy) return; this.busy = true;
     try {
+      // 1.1.0: erst alle Märkte prüfen und Kandidaten bewerten, dann gemeinsam auswählen (höchster Score zuerst, Anti-Spam).
+      const candidates = [], cache = new Map(), filter = this.config.filter;
       for (const item of this.config.items) {
         const key = `${item.mkt}|${item.sym}|${item.iv}`; if ((this.due.get(key) || 0) > this.now()) continue;
         try {
           const k = patternCandles(await this.fetchRows(item), item.iv, this.now()); this.resolve(item, k);
+          PQ.resolvePatternJournal(this.state.signals, item, k, this.now());
           for (const { c, h } of patternCases(k, item, this.now())) {
-            if (!patternFresh(c, this.now(), this.state.since) || this.state.events[c.id]) continue;
+            if (!patternFresh(c, this.now(), this.state.since) || this.state.events[c.id] || this.state.signals.some(e => e.id === c.id)) continue;
             if (Object.keys(this.state.events).length >= 10000) throw new Error('Musterjournal voll: Versand pausiert; Originalbestand bleibt');
-            this.state.cases[c.id] = c;
-            this.state.events[c.id] = { st: 'queued', retryAt: 0, c, text: patternText(c, h, Object.values(this.state.cases)) }; this.persist();
+            const ev = await patternEvaluate({ c, h, k, fetchRows: this.fetchRows, fetchSpread: this.fetchSpread, cache, settings: filter, journal: this.state.signals, now: this.now() });
+            candidates.push({ id: c.id, sym: c.sym, iv: c.iv, dir: c.dir, tc: c.tc, eval: ev, c, h });
           }
-          this.persist(); if (k.length) this.due.set(key, patternEnd(patternEnd(k.at(-1).t, item.iv), item.iv) + 2000);
+          if (k.length) this.due.set(key, patternEnd(patternEnd(k.at(-1).t, item.iv), item.iv) + 2000);
         } catch { this.due.set(key, this.now() + 60000); this.log('Kerzen/Journal prüfen: ' + item.sym + ' · ' + item.iv + '; nächster Versuch in einer Minute'); }
       }
+      if (candidates.length) {
+        const decisions = PQ.selectPatternSignals(candidates, this.state.sent, filter, this.now());
+        for (const x of candidates.sort((a, b) => b.eval.score - a.eval.score)) {
+          const d = decisions.get(x.id), { c, h, eval: ev } = x;
+          this.state.cases[c.id] = c;   // Lernbestand (Kursrichtung nach 12 Kerzen) wie bisher aus allen bestätigten Fällen
+          this.state.signals = PQ.addPatternJournal(this.state.signals, PQ.patternJournalEntry(c, ev, d, this.now()));
+          this.log(patternFilterLog(c, ev, d));
+          if (!d.send) continue;   // gefiltert: nur Journal und Log, nichts an Telegram
+          this.state.sent = [...this.state.sent.filter(y => this.now() - y.at < 24 * 36e5), { at: this.now(), sym: c.sym, iv: c.iv, dir: c.dir, id: c.id }];
+          this.state.events[c.id] = { st: 'queued', retryAt: 0, c, text: patternText(c, h, Object.values(this.state.cases), ev) };
+        }
+      }
+      this.persist();
       await this.deliver();
     } finally { this.busy = false; }
   }
+  // 1.1.0: Statistik für `--statistik` und Prüfung: je Muster, Zeitrahmen und Coin; „Erlernt“ zählt nur abgeschlossene Fälle.
+  statistics() { return { pat: PQ.patternJournalStats(this.state.signals, 'pat'), iv: PQ.patternJournalStats(this.state.signals, 'iv'), sym: PQ.patternJournalStats(this.state.signals, 'sym'), signals: this.state.signals.length }; }
 }
 export async function patternsMain(args = process.argv.slice(2)) {
   const argument = (name, fallback) => { const i = args.indexOf(name); return i < 0 ? fallback : args[i + 1]; };
   const destination = readPatternEnvironment(argument('--env', '/etc/scalpdesk-patterns.env'));
   const watch = JSON.parse(fs.readFileSync(argument('--watch', '/etc/scalpdesk-patterns-watch.json'), 'utf8'));
   const service = new PatternsOnlyService({ destination, watch, stateFile: argument('--state', '/var/lib/scalpdesk-patterns/state.json') });
-  if (args.includes('--test')) { await service.telegram(formatMessage('notice', { headline: '✅ CHARTMUSTER · Test erfolgreich', lines: ['Dieser Dienst sendet ausschließlich bestätigte Chartmuster', 'Regelgüte mindestens 80 %', 'Keine Sicherungen, Trades oder echten Orders'], at: Date.now(), timezone: 'Europe/Berlin' })); console.log('Testnachricht zugestellt'); return; }
-  console.log('Chartmusterdienst gestartet · Modell pat-1 · ' + service.config.items.length + ' Märkte');
+  if (args.includes('--test')) { await service.telegram(formatMessage('notice', { headline: '✅ CHARTMUSTER · Test erfolgreich', lines: ['Dieser Dienst sendet ausschließlich bestätigte Chartmuster', 'Qualitätsfilter: Preset ' + (PQ.PATTERN_FILTER_PRESET_NAMES[service.config.filter.preset] || service.config.filter.preset) + ' · Mindestscore ' + service.config.filter.minScore + ' · Chance/Risiko ≥ ' + String(service.config.filter.minRR).replace('.', ','), 'Keine Sicherungen, Trades oder echten Orders'], at: Date.now(), timezone: 'Europe/Berlin' })); console.log('Testnachricht zugestellt'); return; }
+  if (args.includes('--statistik')) { const st = service.statistics(), row = r => `${r.key}: ${r.signals} Signale (${r.sent} gesendet, ${r.filtered} gefiltert) · abgeschlossen ${r.n} · Ziel ${r.ziel} · Ungültig ${r.ungueltig} · Timeout ${r.timeout}`; console.log('Chartmuster-Signale: ' + st.signals); for (const [name, rows] of [['Je Muster', st.pat], ['Je Zeitrahmen', st.iv], ['Je Coin', st.sym]]) { console.log(name + ':'); for (const r of rows) console.log('  ' + row(r)); } return; }
+  console.log('Chartmusterdienst gestartet · Modell pat-1 · ' + service.config.items.length + ' Märkte · Qualitätsfilter ' + (PQ.PATTERN_FILTER_PRESET_NAMES[service.config.filter.preset] || service.config.filter.preset) + ' (Score ≥ ' + service.config.filter.minScore + ')');
   let stopping = false; const timer = globalThis.setInterval(() => { if (!stopping) service.scan().catch(() => { console.error('Dienstzustand nicht schreibbar; Dienst wird neu gestartet'); process.exit(1); }); }, 5000);
   for (const signal of ['SIGTERM', 'SIGINT']) process.once(signal, () => { stopping = true; globalThis.clearInterval(timer); });
   await service.scan();

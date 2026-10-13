@@ -2195,6 +2195,7 @@ html[data-chartfull] #workspace-chart-tools{display:contents!important}html[data
 /* Verschlüsselter privater GitHub-Sync, mobil ohne Überlauf. */
 .github-sync{border:1px solid var(--border);border-radius:14px;background:var(--surface);min-width:0}.github-sync>summary,.github-sync-setup>summary{padding:12px;cursor:pointer;font-weight:650;min-height:44px}.github-sync-body{display:grid;gap:12px;padding:12px;min-width:0}.github-sync-actions{display:flex;flex-wrap:wrap;gap:8px}.github-sync-actions>button{flex:1 1 220px;min-height:48px;white-space:normal;overflow-wrap:anywhere}.github-sync-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:12px}.github-sync-fields label,.github-sync-dialog label{display:grid;gap:6px;font-size:.85rem;min-width:0}.github-sync-fields input,.github-sync-dialog input{width:100%;min-width:0;box-sizing:border-box;min-height:44px;font-size:16px}.github-sync-fields p,.github-sync-fields a{grid-column:1/-1}.github-sync-status,.github-sync-last,.github-sync-hint{overflow-wrap:anywhere}.github-sync-hint{border:1px solid var(--border);border-radius:12px;background:var(--surface-2);padding:10px;display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:8px 0}.github-sync-hint[hidden]{display:none}.github-sync-hint>span{flex:1 1 240px}.github-sync-hint button{min-height:44px}.github-sync-dialog{box-sizing:border-box;width:min(480px,calc(100vw - 24px));max-height:calc(100dvh - 24px);padding:18px;border:1px solid var(--border);border-radius:16px;color:var(--text);background:var(--surface);overflow:auto}.github-sync-dialog::backdrop{background:#0009}.github-sync-dialog form{display:grid;gap:14px}.github-sync-dialog h3,.github-sync-dialog p{margin:0;overflow-wrap:anywhere}.github-sync-dialog p{font-size:.9rem;line-height:1.5}@media(max-width:480px){.github-sync-fields{grid-template-columns:minmax(0,1fr)}.github-sync-actions>button{flex-basis:100%}}
 /* 3.68.4: GitHub-Sync übersichtlich – ohne vierten Rahmen, Statuszeile, Sichern/Laden nebeneinander, Einrichtung in drei nummerierten Schritten, Felder mit Rahmen (vorher sahen sie wie Text aus). */#data-panel .github-sync{border:0;border-radius:0;background:none;border-bottom:1px solid var(--border);padding-bottom:6px}#data-panel .github-sync>summary{padding:4px 0 10px}#data-panel .github-sync-body{padding:0 0 8px}.github-sync-info{margin:0;color:var(--muted);font-size:.8125rem;line-height:1.45}.github-sync-state{margin:0;padding:8px 10px;border-radius:9px;font-size:.8125rem;font-weight:650;background:var(--warn-bg,var(--surface-2));color:var(--warn-text,var(--text))}.github-sync-state[data-ready=true]{background:var(--up-bg-2);color:var(--up-text)}dl.github-sync-last{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 10px;margin:0;font-size:.8125rem}dl.github-sync-last dt{color:var(--muted)}dl.github-sync-last dd{margin:0;min-width:0;overflow-wrap:anywhere}.github-sync-actions>button{flex:1 1 140px}.github-sync-actions>#github-sync-undo{flex-basis:100%;min-height:40px;font-size:.8125rem}.github-sync-setup{border:1px solid var(--border);border-radius:12px;background:var(--surface-2)}.github-sync-setup>summary{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 10px;list-style:none;padding:12px 14px}.github-sync-setup>summary::-webkit-details-marker{display:none}.github-sync-setup>summary::after{content:"＋";color:var(--muted);flex:none}.github-sync-setup[open]>summary::after{content:"−"}.github-sync-setup-title{flex:1 1 7rem;min-width:0}.github-sync-setup-state{flex:none;white-space:nowrap;font-size:.75rem;font-weight:650;padding:3px 8px;border-radius:999px;background:var(--warn-bg,var(--field));color:var(--warn-text,var(--muted))}.github-sync-setup-state[data-ready=true]{background:var(--up-bg-2);color:var(--up-text)}.github-sync-fields{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;padding:4px 14px 14px}.github-sync-step{display:grid;gap:8px;min-width:0}.github-sync-step h4{display:flex;align-items:center;gap:8px;margin:0;font-size:.875rem}.github-sync-num{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--border);font-size:.75rem}.github-sync-step-text{margin:0;color:var(--muted);font-size:.78rem;line-height:1.45}.github-sync-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}.github-sync-field{display:grid;gap:5px;min-width:0;font-size:.8rem;color:var(--muted)}.github-sync-fields .github-sync-field input{background:var(--field);border:1px solid var(--field-border);border-radius:8px;padding:0 12px;color:var(--text)}.github-sync-fields .github-sync-field input:focus{border-color:var(--mint);outline:none}.github-sync-token{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px}.github-sync-paste{min-height:44px;padding:0 12px}.github-sync-note{margin:0;color:var(--muted);font-size:.78rem;line-height:1.45}.github-sync-fields .github-sync-guide{grid-column:auto;justify-self:start;min-height:44px}
+/* 3.69.0: Qualitätsfilter für Chartmuster – Einstellungen (Telegram-Fenster) und Signal-Log (Chartmuster-Fenster) */.patq-settings{margin:10px 0;border:1px solid var(--border);border-radius:10px;background:var(--surface-2)}.patq-settings>summary{padding:10px 12px;cursor:pointer;font-weight:650;min-height:44px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}.patq-form{display:grid;gap:10px;padding:0 12px 12px}.patq-preset{display:grid;gap:4px;font-size:.8125rem}.patq-preset select{min-height:44px;font-size:16px;background:var(--field);color:var(--text);border:1px solid var(--field-border);border-radius:8px;padding:0 10px}.patq-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}.patq-field{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:2px 6px;font-size:.75rem;color:var(--muted)}.patq-field>span{grid-column:1/-1}.patq-field input{min-height:40px;width:100%;min-width:0;font-size:16px;background:var(--field);color:var(--text);border:1px solid var(--field-border);border-radius:8px;padding:0 8px}.patq-field small{white-space:nowrap}.patq-note{margin:0;font-size:.75rem;line-height:1.45}.patq-log{margin:10px 0;border:1px solid var(--border);border-radius:10px}.patq-log>summary{padding:10px 12px;cursor:pointer;font-weight:650;min-height:44px}.patq-log-body{display:grid;gap:10px;padding:0 12px 12px;min-width:0}.patq-table{width:100%;border-collapse:collapse;font-size:.75rem;font-variant-numeric:tabular-nums}.patq-table th,.patq-table td{padding:5px 4px;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap}.patq-table th:first-child,.patq-table td:first-child{text-align:left;white-space:normal}.patq-items{display:grid;gap:6px}.patq-item{border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-size:.78rem}.patq-item>summary{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:baseline;cursor:pointer;list-style:none}.patq-item>summary::-webkit-details-marker{display:none}.patq-when{color:var(--muted)}.patq-score{font-variant-numeric:tabular-nums}.patq-ok{color:var(--up-text);font-weight:650}.patq-no{color:var(--warn-text,var(--muted));font-weight:650}.patq-why{margin:6px 0 2px}.patq-item p{margin:2px 0}.patq-crit{margin:4px 0 0;padding-left:18px;color:var(--muted)}.patq-bt{display:grid;gap:6px}.patq-bt p{margin:0;font-size:.75rem}.patq-by{justify-self:start}
 /* 3.68.4: Anleitung in der App (docs/*.md) mit „Schließen“ */dialog.doc-viewer{width:min(720px,96vw)}.doc-viewer .sheet-head{position:sticky;top:0;background:var(--surface);z-index:1}.doc-viewer-close{min-height:40px;white-space:nowrap}.doc-viewer-body{display:block;line-height:1.55;font-size:.9rem;overflow-wrap:anywhere}.doc-viewer-body>*{margin:0 0 12px}.doc-viewer-body h2,.doc-viewer-body h3,.doc-viewer-body h4{margin:18px 0 8px;line-height:1.3}.doc-viewer-body h2{font-size:1.05rem}.doc-viewer-body h3{font-size:.98rem}.doc-viewer-body ol,.doc-viewer-body ul{padding-left:22px}.doc-viewer-body li{margin:0 0 8px}.doc-viewer-body code{font-size:.85em;padding:1px 4px;border-radius:4px;background:var(--surface-2);overflow-wrap:anywhere}.doc-viewer-body pre{overflow-x:auto;padding:10px 12px;border-radius:8px;background:var(--field);border:1px solid var(--border)}.doc-viewer-body pre code{padding:0;background:none;white-space:pre}.doc-table{overflow-x:auto;border:1px solid var(--border);border-radius:8px}.doc-table table{width:100%;border-collapse:collapse;font-size:.82rem}.doc-table th,.doc-table td{padding:8px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top;min-width:120px}.doc-viewer-body blockquote{padding-left:10px;border-left:3px solid var(--border);color:var(--muted)}
 .pat-project-settings{padding:10px;border:1px solid var(--border);border-radius:12px}.pat-project-settings>summary{min-height:44px;cursor:pointer}.pat-project-settings label{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:8px 0}.pat-project-settings input[type=number]{width:90px;min-height:44px;font-size:16px}.pat-project-settings p{font-size:.8rem;color:var(--muted);line-height:1.5}
 /* 3.64.0: Detail-Kerzen und Formationen in der Kurszeile, ohne horizontales Seiten-Scrollen. */
@@ -2226,31 +2227,32 @@ html[data-chartfull] .chart-pattern-row{padding:0;order:1;flex-wrap:nowrap}html[
 @media(max-width:360px){.chart-pattern-overview-card{height:120px;grid-template-columns:minmax(0,1fr) 112px}}
 </style>
   <script type="module">
-import { MARKET_INTERVALS, CHART_INTERVALS, SIGNAL_INTERVALS, INTERVAL_MS, nearestChartInterval } from './bundles/3.68.4/shared/market-intervals.mjs';
-import { createDetailCandles, detailOptions, detailChoice, closedSeries, timeIndex, DETAIL_VISIBLE_MAX } from './bundles/3.68.4/shared/chart-detail.mjs';
-import { patternChipRows, patternChipKey } from './bundles/3.68.4/shared/chart-pattern-chips.mjs';
-import { PATTERN_QUALITY_CONFIG, chartPatternQuality, repricePatternQuality, sortPatternQuality, patternOverview } from './bundles/3.68.4/shared/chart-pattern-quality.mjs';
-import { createPatternOverviewFeed } from './bundles/3.68.4/shared/chart-pattern-overview-feed.mjs';
+import { MARKET_INTERVALS, CHART_INTERVALS, SIGNAL_INTERVALS, INTERVAL_MS, nearestChartInterval } from './bundles/3.69.0/shared/market-intervals.mjs';
+import { createDetailCandles, detailOptions, detailChoice, closedSeries, timeIndex, DETAIL_VISIBLE_MAX } from './bundles/3.69.0/shared/chart-detail.mjs';
+import { patternChipRows, patternChipKey } from './bundles/3.69.0/shared/chart-pattern-chips.mjs';
+import { PATTERN_QUALITY_CONFIG, chartPatternQuality, repricePatternQuality, sortPatternQuality, patternOverview } from './bundles/3.69.0/shared/chart-pattern-quality.mjs';
+import { createPatternOverviewFeed } from './bundles/3.69.0/shared/chart-pattern-overview-feed.mjs';
 // Arbeitsstand: bei der gemeinsamen Release-Freigabe in das neue Versionsbündel übernehmen.
-import { createPositioningFeed } from './bundles/3.68.4/shared/positioning-score.mjs';
-import { CRYPTO_CALENDAR, parseCryptoCalendar, cryptoCalendarEvents } from './bundles/3.68.4/shared/crypto-calendar.mjs';
-import { createMusterClient } from './bundles/3.68.4/shared/muster-bot-feed.mjs';
-import { createMusterPaper } from './bundles/3.68.4/shared/muster-bot-paper.mjs';
-import { readMusterPaper, writeMusterPaper } from './bundles/3.68.4/shared/muster-bot-store.mjs';
-import { projectPatternLines, projectionSettings, projectionTime } from './bundles/3.68.4/shared/pattern-projection.mjs';
-import { createGithubSyncView } from './bundles/3.68.4/shared/github-sync-view.mjs';
-import { createDocViewer } from './bundles/3.68.4/shared/doc-viewer.mjs';
-import { stripSyncSecrets } from './bundles/3.68.4/shared/github-sync.mjs';
-import { createMusterView } from './bundles/3.68.4/shared/muster-bot-view.mjs';
-import { computeKiZones, KI_ZONE_INTERVALS } from './bundles/3.68.4/shared/ki-zones.mjs';
-import { heikinAshi } from './bundles/3.68.4/shared/heikin-ashi.mjs';
-import { scoreZoneStrength, ZONE_STRENGTH, ZONE_SIGNAL, zoneSignal, zoneStep, zoneOutcome, summarizeZoneBacktest } from './bundles/3.68.4/shared/zone-strength.mjs';
+import { createPositioningFeed } from './bundles/3.69.0/shared/positioning-score.mjs';
+import { CRYPTO_CALENDAR, parseCryptoCalendar, cryptoCalendarEvents } from './bundles/3.69.0/shared/crypto-calendar.mjs';
+import { createMusterClient } from './bundles/3.69.0/shared/muster-bot-feed.mjs';
+import { createMusterPaper } from './bundles/3.69.0/shared/muster-bot-paper.mjs';
+import { readMusterPaper, writeMusterPaper } from './bundles/3.69.0/shared/muster-bot-store.mjs';
+import { projectPatternLines, projectionSettings, projectionTime } from './bundles/3.69.0/shared/pattern-projection.mjs';
+import { createGithubSyncView } from './bundles/3.69.0/shared/github-sync-view.mjs';
+import { createDocViewer } from './bundles/3.69.0/shared/doc-viewer.mjs';
+import { PATTERN_FILTER_PRESET_NAMES, PATTERN_FILTER_FIELDS, HIGHER_TIMEFRAME, patternFilterSettings, patternFilterFromForm, evaluatePatternSignal, selectPatternSignals, patternJournalEntry, addPatternJournal, resolvePatternJournal, patternHitStats, patternJournalStats, PATTERN_OUTCOME_NAMES, backtestPatternFilter } from './bundles/3.69.0/shared/pattern-quality.mjs';
+import { stripSyncSecrets } from './bundles/3.69.0/shared/github-sync.mjs';
+import { createMusterView } from './bundles/3.69.0/shared/muster-bot-view.mjs';
+import { computeKiZones, KI_ZONE_INTERVALS } from './bundles/3.69.0/shared/ki-zones.mjs';
+import { heikinAshi } from './bundles/3.69.0/shared/heikin-ashi.mjs';
+import { scoreZoneStrength, ZONE_STRENGTH, ZONE_SIGNAL, zoneSignal, zoneStep, zoneOutcome, summarizeZoneBacktest } from './bundles/3.69.0/shared/zone-strength.mjs';
 // 3.68.0: KI-Signale/Trading-Bot entfernt; der GitHub-Sync behält sein Format inklusive vorhandener Modelloriginale.
-import { exportModelArchive, importModelArchive, validateModelArchive, restoreModelOriginals } from './bundles/3.68.4/shared/model-archive.mjs';
-import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT } from './bundles/3.68.4/shared/telegram-format.mjs';
-import { createOrderflowView } from './bundles/3.68.4/shared/orderflow-view.mjs';
-import { createSignalView } from './bundles/3.68.4/shared/orderflow-signal-view.mjs';
-import { networkState, createWidgetBoundary } from './bundles/3.68.4/shared/widget-state.mjs';
+import { exportModelArchive, importModelArchive, validateModelArchive, restoreModelOriginals } from './bundles/3.69.0/shared/model-archive.mjs';
+import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT } from './bundles/3.69.0/shared/telegram-format.mjs';
+import { createOrderflowView } from './bundles/3.69.0/shared/orderflow-view.mjs';
+import { createSignalView } from './bundles/3.69.0/shared/orderflow-signal-view.mjs';
+import { networkState, createWidgetBoundary } from './bundles/3.69.0/shared/widget-state.mjs';
 // Pure, unrounded calculations. Prices are USDT per unit; FX is USDT per EUR.
 function rsi(closes, period = 14) {
   const out = Array(closes.length).fill(null);
@@ -3105,7 +3107,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
 // 3.43.0 (G10a): reiner Fachkern in shared/; Datenquelle und Karten folgen getrennt.
 // 3.44.0 (G10b): öffentlicher Adapter in shared/bitget-public.mjs; sichtbare Anbindung folgt mit G10(c).
-const APP_VERSION = '3.68.4', docEl = document.documentElement;
+const APP_VERSION = '3.69.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -5564,7 +5566,7 @@ function backupStatus(msg) { put('history-status', msg); }
 // Löschungen, Prüfliste, offene Konflikte, Anzeige-Einstellungen und das eigene Musterlernen (der öffentliche Startbestand nur als
 // Verweis mit Version). Nie enthalten: Zugangsdaten (Telegram-Token und API-Schlüssel), die Übergabe an den 24/7-Dienst, Sendesperren
 // und andere gerätegebundene Zustände. Alle Felder von Schema 7 bleiben gleich – ältere App-Versionen lesen die Datei weiter.
-const PREF_KEYS = ['scalpdesk.pattern-projection.v1', 'scalpdesk.orderflow-journal.v1', 'scalpdesk.orderflow-position.v1', 'scalpdesk.orderflow-signal.v1', 'scalpdesk.orderflow.v1', 'scalpdesk.ki.risk-view.v1', 'scalpdesk.theme.v1', 'scalpdesk.presentation.v1', 'scalpdesk.background.v1', 'scalpdesk.overlays.v1', 'scalpdesk.zigzag.v1', 'scalpdesk.whale.v1', 'scalpdesk.orderbook.v1', 'scalpdesk.ladder.v1', 'scalpdesk.vola.v1', 'scalpdesk.econ.v1', 'scalpdesk.cnews.v1', 'scalpdesk.wlspan.v1', 'scalpdesk.titleprice.v1', 'scalpdesk.details.v1', 'scalpdesk.posdefaults.v1', 'scalpdesk.daylimitnote.v1', 'scalpdesk.warnclose.v1', 'scalpdesk.evalyear.v1', 'scalpdesk.acctrange.v1', 'scalpdesk.anaiv.v1', 'scalpdesk.decouple.v1', 'scalpdesk.kizones.v1', 'scalpdesk.heikin.v1', 'scalpdesk.zonesig.v1'];
+const PREF_KEYS = ['scalpdesk.pattern-projection.v1', 'scalpdesk.orderflow-journal.v1', 'scalpdesk.orderflow-position.v1', 'scalpdesk.orderflow-signal.v1', 'scalpdesk.orderflow.v1', 'scalpdesk.ki.risk-view.v1', 'scalpdesk.theme.v1', 'scalpdesk.presentation.v1', 'scalpdesk.background.v1', 'scalpdesk.overlays.v1', 'scalpdesk.zigzag.v1', 'scalpdesk.whale.v1', 'scalpdesk.orderbook.v1', 'scalpdesk.ladder.v1', 'scalpdesk.vola.v1', 'scalpdesk.econ.v1', 'scalpdesk.cnews.v1', 'scalpdesk.wlspan.v1', 'scalpdesk.titleprice.v1', 'scalpdesk.details.v1', 'scalpdesk.posdefaults.v1', 'scalpdesk.daylimitnote.v1', 'scalpdesk.warnclose.v1', 'scalpdesk.evalyear.v1', 'scalpdesk.acctrange.v1', 'scalpdesk.anaiv.v1', 'scalpdesk.decouple.v1', 'scalpdesk.kizones.v1', 'scalpdesk.heikin.v1', 'scalpdesk.zonesig.v1', 'scalpdesk.patfilter.v1'];
 const personalBackupItem = x => !['dpos','dtrade'].includes(x.kind) && !['dpos','dtrade'].includes(x.localKind) && ![DEMO_POS_KEY,DEMO_HIST_KEY,'scalpdesk.orderflow-demo.v1'].includes(x.raw?.key) && !['demoPositions','demoHistory'].includes(x.raw?.field);
 // Übungsdaten können auch in Positionsbegleitung/Signaljournal stehen; nur die Exportkopie bereinigen.
 const demoContext = x => x?.demo === true || x?.practice === true || /^(demo|practice)\|/.test(x?.id || '');
@@ -10921,7 +10923,7 @@ async function wlLoad(e) {
     e.closed = r.candles.filter(c => c.closeTime < now).slice(-WL_LIMIT);
     const last = r.candles.at(-1); e.run = last && last.closeTime >= now ? last : null;
     e.market = r.source === 'futures' ? 'futures' : 'spot'; e.rating = signalRating(e.closed.slice(-WL_WINDOW)); e.patAt = 0; // 3.37.0 (G09): Chartmuster – gerechnet kurz nach dem Zeichnen, damit Laden und Neuzeichnen nicht warten
-    setTimeout(() => { e.pat = wlPat(e); e.patAt = Date.now(); try { pkResolve(e.market, e.sym, e.iv, e.closed.map(c => ({ t: c.time, c: c.close })), e.closed.length - 1); } catch {} if (wldSel && wlSym(wldSel) === e.sym) wldPaint(Date.now(), true); }, 30); // 3.38.0 (G09 C)
+    setTimeout(() => { e.pat = wlPat(e); e.patAt = Date.now(); try { pkResolve(e.market, e.sym, e.iv, e.closed.map(c => ({ t: c.time, c: c.close })), e.closed.length - 1); patqResolve(e.market, e.sym, e.iv, e.closed.map(c => ({ t: c.time, h: c.high, l: c.low, c: c.close }))); } catch {} if (wldSel && wlSym(wldSel) === e.sym) wldPaint(Date.now(), true); }, 30); // 3.38.0 (G09 C)
     e.error = ''; e.gap = false; e.at = now;
   } catch (err) {
     e.error = err?.message || String(err); e.retryAt = Date.now() + WL_RETRY;
@@ -12100,7 +12102,7 @@ var TGT = [
   { id: 'backup', name: 'Sicherung', icon: '💾', purpose: 'Datensicherung – nur aus der App, nie über den Dienst' },
   { id: 'course-alert', name: 'Kursalarm', icon: '🔔', purpose: 'Kurs-Alarme, Stop/Ziel, Gewinn/Verlust, Tages-Limit, Termine, BTC-Puls' },
   { id: 'trades', name: 'Trades', icon: '📊', purpose: 'Ein Bild je vollständig geschlossener Position – nur aus der App, nie über den Dienst' },
-  { id: 'patterns', name: 'Chartmuster', icon: '📐', purpose: 'Wichtige bestätigte Formationen (Regelgüte ≥ 80 %) – mit übernommener Vorauswahl auch bei geschlossener App' }];
+  { id: 'patterns', name: 'Chartmuster', icon: '📐', purpose: 'Bestätigte Formationen, die den Qualitätsfilter bestehen (Signalscore, Chance/Risiko, Trend) – mit übernommener Vorauswahl auch bei geschlossener App' }];
 var SVC_KEY = 'scalpdesk.svc.v1', POL_KEY = 'scalpdesk.policy.v1', SVC_URL_RE = /^(https:\/\/[a-z0-9.-]+|http:\/\/(127\.0\.0\.1|localhost))(:\d{1,5})?$/, SVC_KEY_RE = /^[A-Za-z0-9_-]{32,64}$/, SVC_POLL = 60e3;
 var svc = { cfg: null, pol: null, reach: null, at: 0, err: '', pending: null, notice: '', busy: false, ptimer: 0, events: [], eps: {}, ver: '', first: null };
 svc.cfg = loadSvc(); svc.pol = loadPol();
@@ -13288,7 +13290,7 @@ function patDone(id, r) {
   pat.cache.set(m.ck, r); if (pat.cache.size > 16) pat.cache.delete(pat.cache.keys().next().value);
   const T = i => m.k[Math.max(0, Math.min(m.k.length - 1, i))].t;
   pat.res = { ...m, ver: r.ver, hits: r.hits.map(h => ({ ...h, lines: (h.lines || []).map(([a, p, b, q, kd]) => [T(a), p, T(b), q, kd]) })).sort((a, b) => b.q - a.q || b.t1 - a.t1) };
-  if(!m.passive)try { const mkt = state.source === 'futures' ? 'futures' : 'spot', [sym, , iv] = m.key.split('|'); pkRecord(m, r.hits, mkt); pkResolve(mkt, sym, iv, m.k, m.running ? m.k.length - 2 : m.k.length - 1); void pkSync(); } catch {} // 3.38.0 (G09 C)
+  if(!m.passive)try { const mkt = state.source === 'futures' ? 'futures' : 'spot', [sym, , iv] = m.key.split('|'); pkRecord(m, r.hits, mkt); pkResolve(mkt, sym, iv, m.k, m.running ? m.k.length - 2 : m.k.length - 1); patqResolve(mkt, sym, iv, m.running ? m.k.slice(0, -1) : m.k); void pkSync(); } catch {} // 3.38.0 (G09 C)
   pat.sel = null;
   const w = pat.want;
   if (w?.ran && m.reason === 'Vorauswahl') {   // aus der Vorauswahl: genau diese Formation markieren (oder ehrlich sagen, dass sie fehlt)
@@ -13563,7 +13565,7 @@ function pkRecord(m, hits, mkt) {
     const lastT = m.k[m.running ? m.k.length - 2 : m.k.length - 1]?.t ?? 0;   // 3.40.0 (G09 C6a): frisch bestätigt → Ziel „Chartmuster“
     if (c.src === 'live' && c.kind === 'form' && c.q >= PAT_TG_Q && c.tc >= lastT - step && !pk.cases[c.id]) tg.push([c, h]);
   }
-  for (const [c, h] of tg) patNotify(c, h).catch(() => {});
+  if (tg.length) void patqRun(m, tg).catch(() => {});   // 3.69.0: erst Qualitätsfilter, dann Telegram
   if (pk.full) return 0;
   const r = pkMerge(list);
   if (JSON.stringify(Object.values(pk.cases).filter(c => !c.ext)).length > PK_MAX) pk.full = true;   // Warteschlange = noch nicht extern gespeicherte Fälle   // volle Warteschlange: neues Lernen stoppt mit Hinweis, nichts wird gelöscht
@@ -13574,12 +13576,12 @@ function pkRecord(m, hits, mkt) {
 // Jede Fall-ID höchstens einmal: in diesem Browser per Abstimmung der Tabs (14 Tage), mit 24/7-Dienst ab 2.2.0 zusätzlich per
 // Sendefreigabe (Ereignis „pat:<Fall-ID>“) – so meldet von mehreren Geräten genau eins. Ziel aus → nichts, auch kein Nachholen.
 const PAT_TG_Q = 80;
-function patTgText(c, h) {
+function patTgText(c, h, ev = null) {
   const L = PAT_LIB[c.pat], S = pkStats({ mkt: c.mkt, sym: c.sym, iv: c.iv, pat: c.pat }), st = S.live.n >= 10 ? S.live : S.rek.n >= 10 ? S.rek : null, lv = h.levels || {};
   return formatMessage('pattern', { pattern: L.n, symbol: c.sym, market: c.mkt === 'spot' ? 'Spot' : 'Futures', timeframe: c.iv, status: h.status, direction: c.dir, entry: c.p0, target: lv.tgt, invalid: lv.inv, quality: c.q, model: c.model || 'pat-1',
-    learned: st ? { ...st, source: st === S.live ? 'live protokolliert' : 'rekonstruiert', horizon: PK_H } : { available: S.live.n + S.rek.n, minimum: 10 } });
+    learned: st ? { ...st, source: st === S.live ? 'live protokolliert' : 'rekonstruiert', horizon: PK_H } : { available: S.live.n + S.rek.n, minimum: 10 }, score: ev?.score, scoreWhy: ev?.summary });
 }
-async function patNotify(c, h) {
+async function patNotify(c, h, qev = null) {
   if (store.get('scalpdesk.patterns-oracle-only.v1', false)) return; // Einziger Sender ist der SSH-Dienst, keine lokalen Ersatzmeldungen.
   if (!tgtReady('patterns')) return;
   // 3.42.0 (G09 C6b): nach bestätigter Dienstübergabe ist ausschließlich Oracle Mustersender.
@@ -13588,14 +13590,14 @@ async function patNotify(c, h) {
   if (watch?.config) {
     const dest = tgDest('patterns'), cfg = watch.config;
     if (!dest || dest.chat !== cfg.chat || dest.thread !== cfg.thread || tgBot(dest.token) !== cfg.bot) { patSvcMessage('Musterziel geändert – erst am Dienst übernehmen.'); return; }
-    try { const { status, j } = await svcFetch('/v1/patterns/notify', { method: 'POST', body: { expectedRevision: watch.rev, c, levels: h.levels || {} } });
+    try { const { status, j } = await svcFetch('/v1/patterns/notify', { method: 'POST', body: { expectedRevision: watch.rev, c, levels: h.levels || {}, quality: qev ? { pass: qev.pass, score: qev.score, summary: qev.summary, criteria: qev.criteria, parts: qev.parts } : null } });
       if (status !== 200 || !j?.ok) throw new Error(j?.error || `Fehler ${status}`);
       pat.tgLog = [{ ev: `pat:${c.id}`, st: j.st || j.reason, at: Date.now() }, ...(pat.tgLog || [])].slice(0, 20);
     } catch (e) { patSvcMessage(`Musterzustellung unbestätigt: ${e.message}. Kein Ersatzversand aus der App.`); }
     return;
   }
   const ev = `pat:${c.id}`; if (!(await store.claim(`ev:${ev}`, 14 * 864e5))) return;
-  const text = patTgText(c, h), coord = svcOn() && !!svc.pol.conf?.targets?.patterns;   // Dienst ab 2.2.0 kennt das Ziel
+  const text = patTgText(c, h, qev), coord = svcOn() && !!svc.pol.conf?.targets?.patterns;   // Dienst ab 2.2.0 kennt das Ziel
   let fallback = !coord;
   if (coord) {
     const r = await svcReserve(ev, chanLabel(text), 'patterns');
@@ -13609,6 +13611,120 @@ async function patNotify(c, h) {
   if (coord && !fallback) void svcReport(ev, st, m?.ok ? '' : m?.lost ? 'Telegram-Antwort verloren' : String(m?.msg || '').slice(0, 100));
   pat.tgLog = [{ ev, st, at: Date.now() }, ...(pat.tgLog || [])].slice(0, 20);
 }
+// ---- 3.69.0: Qualitätsfilter für Chartmuster-Meldungen (gemeinsames Modul shared/pattern-quality.mjs, identisch im Oracle-Dienst) ----
+// Zwischen Erkennung (pkRecord) und Versand (patNotify): K.O.-Kriterien, Signalscore 0–100, Anti-Spam. Jedes bewertete Signal –
+// gesendet oder gefiltert – kommt mit Filtergrund ins lokale Journal (scalpdesk.patsignals.v1, nicht in Sicherung/Sync); das
+// Ergebnis (Ziel / Ungültig / Timeout nach 48 Kerzen) wird automatisch nachgetragen. Gefilterte Signale gehen nie an Telegram.
+const PATQ_KEY = 'scalpdesk.patfilter.v1', PATQ_LOG = 'scalpdesk.patsignals.v1', PATQ_MAX = 500;
+var patq = { settings: patternFilterSettings(store.get(PATQ_KEY)), by: 'pat', bt: null, btBusy: false, btCtl: null };
+function patqJournal() { const v = store.get(PATQ_LOG); return { list: Array.isArray(v?.list) ? v.list : [], sent: Array.isArray(v?.sent) ? v.sent : [] }; }
+function patqStore(j) { store.set(PATQ_LOG, { v: 1, list: j.list.slice(-PATQ_MAX), sent: j.sent.filter(x => Date.now() - x.at < 24 * 36e5) }); }
+async function patqCandles(mkt, sym, iv, limit = 260) {
+  const raw = mkt === 'futures' ? await api.get(FUTURES, '/fapi/v1/klines', { symbol: sym, interval: iv, limit }) : await spotGet('/api/v3/klines', { symbol: sym, interval: iv, limit }), now = Date.now();
+  return normalizeKlines(raw).filter(x => x.closeTime < now).map(x => ({ t: x.time, o: x.open, h: x.high, l: x.low, c: x.close, v: x.volume }));
+}
+async function patqSpread(mkt, sym) {
+  try { const d = mkt === 'futures' ? await api.get(FUTURES, '/fapi/v1/ticker/bookTicker', { symbol: sym }) : await spotGet('/api/v3/ticker/bookTicker', { symbol: sym }), bid = Number(d?.bidPrice), ask = Number(d?.askPrice); return bid > 0 && ask >= bid ? (ask - bid) / ((ask + bid) / 2) * 100 : null; } catch { return null; }
+}
+async function patqEvaluate(c, h, k, cache = new Map()) {
+  const htf = HIGHER_TIMEFRAME[c.iv], load = (sym, iv) => { const key = `${c.mkt}|${sym}|${iv}`; if (!cache.has(key)) cache.set(key, patqCandles(c.mkt, sym, iv).catch(() => null)); return cache.get(key); };
+  const higher = htf ? await load(c.sym, htf) : null, btc = htf && !/^BTC/.test(c.sym) ? await load('BTCUSDT', htf) : null, spreadPct = await patqSpread(c.mkt, c.sym);
+  const price = state.symbol === c.sym ? state.prices[c.sym]?.price ?? null : null;
+  return evaluatePatternSignal({ c, h, k, i1: h.i1, price, higher, btc, liquidity: { spreadPct }, hits: patternHitStats(patqJournal().list, c.pat, c.iv), settings: patq.settings });
+}
+async function patqRun(m, tg) {
+  if (store.get('scalpdesk.patterns-oracle-only.v1', false) || !tgtReady('patterns')) return;   // App sendet keine Chartmuster → nichts zu filtern
+  const k = m.running ? m.k.slice(0, -1) : m.k, cache = new Map(), cands = [];
+  for (const [c, h] of tg) { if (patqJournal().list.some(e => e.id === c.id) || h.i1 >= k.length) continue; cands.push({ id: c.id, sym: c.sym, iv: c.iv, dir: c.dir, tc: c.tc, eval: await patqEvaluate(c, h, k, cache), c, h }); }
+  if (!cands.length) return;
+  const j = patqJournal(), now = Date.now(), dec = selectPatternSignals(cands, j.sent, patq.settings, now);
+  for (const x of cands.sort((a, b) => b.eval.score - a.eval.score)) {
+    const d = dec.get(x.id); j.list = addPatternJournal(j.list, patternJournalEntry(x.c, x.eval, d, now), PATQ_MAX);
+    if (d.send) j.sent.push({ at: now, sym: x.c.sym, iv: x.c.iv, dir: x.c.dir, id: x.c.id });
+  }
+  patqStore(j); patqLogPaint();
+  for (const x of cands) if (dec.get(x.id).send) await patNotify(x.c, x.h, x.eval).catch(() => {});
+}
+function patqResolve(mkt, sym, iv, k) {
+  if (!Array.isArray(k) || k.length < 2) return; const j = patqJournal();
+  if (!j.list.some(e => !e.res && e.mkt === mkt && e.sym === sym && e.iv === iv)) return;
+  if (resolvePatternJournal(j.list, { mkt, sym, iv }, k, Date.now())) { patqStore(j); patqLogPaint(); }
+}
+// Einstellungen im Telegram-Fenster (Ziel „Chartmuster“): Presets Streng / Normal / Locker, jede Schwelle änderbar
+function patqFormBuild() {
+  const host = $('patq-form'); if (!host) return;
+  const preset = el('label', 'patq-preset'), select = el('select'); select.id = 'patq-preset';
+  for (const [key, name] of Object.entries(PATTERN_FILTER_PRESET_NAMES)) { const o = el('option', '', name); o.value = key; select.append(o); }
+  preset.append(el('span', '', 'Voreinstellung'), select);
+  const grid = el('div', 'patq-grid');
+  for (const f of PATTERN_FILTER_FIELDS) { const l = el('label', 'patq-field'), i = el('input'); i.type = 'number'; i.id = 'patq-' + f.key; i.min = f.min; i.max = f.max; i.step = f.step; i.inputMode = 'decimal'; i.dataset.key = f.key; l.append(el('span', '', f.label), i, el('small', '', f.unit)); grid.append(l); }
+  const ct = el('label', 'check patq-counter'), cb = el('input'); cb.type = 'checkbox'; cb.id = 'patq-counter'; ct.append(cb, document.createTextNode(' Gegentrend-Signale zulassen (Richtung gegen den nächsthöheren Zeitrahmen)'));
+  const note = el('p', 'muted patq-note', 'K.O.: Chance/Risiko, bestätigter Ausbruch (Schlusskurs außerhalb der Musterlinie), Signalalter, gelaufener Weg, Zielabstand in ATR und gegenüber Gebühren + Spread, 24h-Volumen, Spread, Trend (Kurs zur EMA 200, Steigung EMA 50 im nächsthöheren Zeitrahmen: 5m/15m → 1h, 1h → 4h). Score: Chance/Risiko 20 · Trend inkl. BTC 20 · Ausbruchsvolumen 20 · Marktphase (ADX bzw. Bollinger-Squeeze) 15 · Regelgüte 10 · Trefferquote 15 (ab 10 abgeschlossenen Fällen, vorher 7). Gilt für die App und – nach Übernahme bzw. neuem Export – für den Dienst.');
+  host.replaceChildren(preset, grid, ct, note);
+  const read = () => { const v = { counterTrend: cb.checked }; for (const f of PATTERN_FILTER_FIELDS) v[f.key] = Number(String($('patq-' + f.key).value).replace(',', '.')); return v; };
+  select.addEventListener('change', () => { patqSet(select.value === 'eigen' ? patternFilterSettings({ ...patq.settings, ...read(), preset: 'eigen' }) : patternFilterSettings({ preset: select.value, counterTrend: cb.checked })); });
+  grid.addEventListener('change', () => patqSet(patternFilterFromForm(read(), select.value === 'eigen' ? 'normal' : select.value)));
+  cb.addEventListener('change', () => patqSet(patternFilterSettings({ ...patq.settings, counterTrend: cb.checked })));
+  patqFormFill();
+}
+function patqFormFill() {
+  const s = patq.settings; if (!$('patq-preset')) return;
+  $('patq-preset').value = s.preset; for (const f of PATTERN_FILTER_FIELDS) $('patq-' + f.key).value = String(s[f.key]); $('patq-counter').checked = s.counterTrend;
+  put('patq-preset-label', `${PATTERN_FILTER_PRESET_NAMES[s.preset]} · Score ≥ ${s.minScore} · R/R ≥ ${String(s.minRR).replace('.', ',')}${s.counterTrend ? ' · Gegentrend an' : ''}`);
+}
+function patqSet(next) { patq.settings = next; store.set(PATQ_KEY, next); patqFormFill(); if (typeof patSvcRender === 'function') patSvcRender(); }
+// Signal-Log im Chartmuster-Fenster: gesendete und gefilterte Signale mit Grund, Ergebnis und Statistik; Backtest zum Kalibrieren
+const patqTime = t => new Date(t).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+function patqLogPaint() {
+  const body = $('patq-log-body'); if (!body) return;
+  const j = patqJournal(), list = j.list.slice().reverse(), stats = patternJournalStats(j.list, patq.by), name = k => patq.by === 'pat' ? PAT_LIB[k]?.n.replace(/ \(.*\)$/, '') || k : k;
+  put('patq-log-count', `(${list.length} · ${list.filter(e => e.sent).length} gesendet)`);
+  const seg = el('div', 'dec-seg patq-by'); seg.setAttribute('role', 'group'); seg.setAttribute('aria-label', 'Statistik gruppieren');
+  for (const [k, t] of [['pat', 'je Muster'], ['iv', 'je Zeitrahmen'], ['sym', 'je Coin']]) { const b = el('button', '', t); b.type = 'button'; b.dataset.patqBy = k; b.setAttribute('aria-pressed', String(patq.by === k)); seg.append(b); }
+  const table = el('table', 'patq-table'), head = el('tr');
+  for (const t of ['', 'Signale', 'gesendet', 'abgeschl.', 'Ziel', 'Ungültig', 'Timeout', 'Treffer']) head.append(el('th', '', t));
+  table.append(el('thead')); table.tHead.append(head); const tb = el('tbody'); table.append(tb);
+  for (const r of stats.slice(0, 12)) { const tr = el('tr'); for (const v of [name(r.key), r.signals, r.sent, `${r.n}${r.n < 10 ? '/10' : ''}`, r.ziel, r.ungueltig, r.timeout, r.rate === null ? '–' : Math.round(r.rate * 100) + ' %']) tr.append(el('td', '', String(v))); tb.append(tr); }
+  const items = el('div', 'patq-items');
+  for (const e of list.slice(0, 40)) {
+    const d = el('details', 'patq-item' + (e.sent ? ' sent' : '')), sm = el('summary');
+    sm.append(el('span', 'patq-when', patqTime(e.at)), el('b', '', `${e.sym.replace(/USDT$/, '')} ${e.iv}`), el('span', '', `${PAT_LIB[e.pat]?.n.replace(/ \(.*\)$/, '') || e.pat} ${e.dir === 'bull' ? '▲' : '▼'}`), el('span', 'patq-score', `Score ${e.score}`), el('span', e.sent ? 'patq-ok' : 'patq-no', e.sent ? '✔ gesendet' : '✖ gefiltert'));
+    const why = el('p', 'patq-why', e.sent ? e.summary : `Filtergrund: ${e.reason}`), res = el('p', 'muted', e.res ? `Ergebnis: ${PATTERN_OUTCOME_NAMES[e.res.out]} nach ${e.res.bars} Kerzen` : 'Ergebnis offen (Ziel, Ungültig oder 48 Kerzen)');
+    const lv = el('p', 'muted', `Einstieg ${priceText(e.entry)} · Ziel ${priceText(e.target)} · Ungültig ${priceText(e.invalid)}`), crit = el('ul', 'patq-crit'); for (const t of [...e.criteria, ...e.ko.map(x => '✖ ' + x)]) crit.append(el('li', '', t));
+    d.append(sm, why, res, lv, crit); items.append(d);
+  }
+  if (!list.length) items.append(el('p', 'muted', 'Noch keine Signale bewertet. Bewertet werden frisch bestätigte Formationen, wenn das Ziel „Chartmuster“ eingerichtet ist und die App sendet (nicht im Modus „Oracle ist der einzige Mustersender“ – dort stehen gefilterte Signale im Protokoll des Dienstes).'));
+  const bt = el('div', 'patq-bt'), run = el('button', 'button ghost', patq.btBusy ? 'Backtest läuft …' : 'Backtest: aktueller Coin und Zeitrahmen'); run.type = 'button'; run.id = 'patq-bt-run'; run.disabled = patq.btBusy; bt.append(run);
+  if (patq.bt) {
+    const r = patq.bt, p = x => x.n ? `${x.ziel}/${x.n} (${Math.round(x.ziel / x.n * 100)} %)` : '–';
+    if (r.error) bt.append(el('p', 'muted', r.error));
+    else { bt.append(el('p', 'muted', `${r.sym.replace(/USDT$/, '/USDT')} · ${r.iv} · ${r.candles} Kerzen · ${r.journal.length} Ausbrüche bewertet · würde senden: Ziel erreicht ${p(r.passed)} · gefiltert: Ziel erreicht ${p(r.filtered)}`));
+      const t2 = el('table', 'patq-table'), h2 = el('tr'); for (const x of ['Score', 'Fälle', 'Ziel', 'Ungültig', 'Timeout']) h2.append(el('th', '', x)); t2.append(el('thead')); t2.tHead.append(h2); const b2 = el('tbody'); t2.append(b2);
+      for (const row of r.rows) { const tr = el('tr'); for (const v of [row.band, row.n, row.ziel, row.ungueltig, row.timeout]) tr.append(el('td', '', String(v))); b2.append(tr); } bt.append(t2);
+      const top = Object.entries(r.reasons).sort((a, b) => b[1] - a[1]).slice(0, 4); if (top.length) bt.append(el('p', 'muted', 'Häufigste Filtergründe: ' + top.map(([t, n]) => `${t.replace(/#/g, '…')} (${n})`).join(' · ')));
+      bt.append(el('p', 'muted', 'Ohne Blick in die Zukunft: je Kerze nur Daten bis dahin. Wenige Fälle = unsichere Zahlen. Spread und 24h-Volumen wie heute.')); }
+  }
+  body.replaceChildren(seg, table, items, bt);
+}
+async function patqBacktest() {
+  if (patq.btBusy) return; patq.btBusy = true; patq.bt = null; patqLogPaint();
+  const sym = state.symbol, iv = state.interval, mkt = state.source === 'futures' ? 'futures' : 'spot', now = Date.now();
+  try {
+    if (!HIGHER_TIMEFRAME[iv]) throw new Error('Für diesen Zeitrahmen gibt es keinen Backtest.');
+    const k = state.candles.filter(c => c.closeTime < now).map(c => ({ t: c.time, o: c.open, h: c.high, l: c.low, c: c.close, v: c.volume }));
+    if (k.length < 300) throw new Error(`Zu wenige Kerzen (${k.length}, nötig ≥ 300).`);
+    const htf = HIGHER_TIMEFRAME[iv], higher = await patqCandles(mkt, sym, htf, 1000).catch(() => null), btc = /^BTC/.test(sym) ? null : await patqCandles(mkt, 'BTCUSDT', htf, 1000).catch(() => null);
+    PAT_E = PAT_E || patEngine(); const step = IV_MS[iv];
+    const r = await backtestPatternFilter({ k, iv, sym, mkt, higher, btc, settings: patq.settings, from: 250, detect: part => PAT_E.detect(part, { from: Math.max(0, part.length - 2), step, gap: false, running: false, formOnly: true }).hits });
+    patq.bt = { ...r, sym, iv };
+  } catch (e) { patq.bt = { error: e.message }; }
+  finally { patq.btBusy = false; patqLogPaint(); }
+}
+(function patqInit() {
+  patqFormBuild(); patqLogPaint();
+  $('patq-log-body')?.addEventListener('click', e => { const b = e.target.closest('[data-patq-by]'); if (b) { patq.by = b.dataset.patqBy; patqLogPaint(); } else if (e.target.closest('#patq-bt-run')) void patqBacktest(); });
+})();
+window.__patq = { state: patq, journal: patqJournal, run: patqRun, evaluate: patqEvaluate, set: patqSet, backtest: patqBacktest, resolve: patqResolve };
 // Ergebnisse anhängen, sobald 12 weitere abgeschlossene Kerzen da sind (Pfad normiert in % für die Verlaufsansicht)
 function pkResolve(mkt, sym, iv, k, closedEnd) {
   let n = 0; const idx = new Map(k.map((c, i) => [c.t, i]));
@@ -13752,7 +13868,7 @@ function patOracleExport() {
     return { sym, mkt: entry.market, iv };
   });
   if (!items.length) throw new Error('Zuerst Coins in der Vorauswahl wählen.');
-  return { kind: 'scalpdesk-patterns-watch', v: 1, model: 'pat-1', gap: false, items };
+  return { kind: 'scalpdesk-patterns-watch', v: 1, model: 'pat-1', gap: false, items, filter: patternFilterSettings(patq.settings) };   // 3.69.0: Filter-Schwellen für Oracle
 }
 $('pat-oracle-only').checked = !!store.get('scalpdesk.patterns-oracle-only.v1', false);
 $('pat-oracle-only').addEventListener('change', () => {
@@ -13775,7 +13891,7 @@ function patSvcConfig() {
     if (!e?.at || e.loading || e.error || e.iv !== iv) throw new Error('Vorauswahl noch nicht vollständig geladen – später erneut übernehmen.');
     return { sym, mkt: e.market, iv };
   }).sort((a, b) => `${a.mkt}|${a.sym}|${a.iv}`.localeCompare(`${b.mkt}|${b.sym}|${b.iv}`));
-  return { model: 'pat-1', gap: false, chat: dest.chat, thread: dest.thread, bot: tgBot(dest.token), items };
+  return { model: 'pat-1', gap: false, chat: dest.chat, thread: dest.thread, bot: tgBot(dest.token), items, filter: patternFilterSettings(patq.settings) };
 }
 function patSvcRender() {
   const status = $('pat-svc-status'), button = $('pat-svc-apply'); if (!status || !button) return;
@@ -14479,7 +14595,7 @@ const musterPaper = createMusterPaper({ read: readMusterPaper, write: writeMuste
   } });
 const MUSTER_TG_NAMES = { hammer: 'Hammer', engulfing: 'Bullish Engulfing', confluence: 'Konfluenz', po3: 'Power of Three' };
 musterView = createMusterView({ host: musterHost, selection: musterSelection, currentPrice: (symbol, market) => state.symbol === symbol && state.source === market ? currentPrice() : null,
-  prefs: store.get('scalpdesk.muster.settings.v1', {}), savePrefs: value => store.set('scalpdesk.muster.settings.v1', value), workerFactory: () => new Worker(new URL('./bundles/3.68.4/shared/muster-bot-worker.mjs', import.meta.url), { type: 'module' }), paper: musterPaper, onMarkers: scheduleDraw,
+  prefs: store.get('scalpdesk.muster.settings.v1', {}), savePrefs: value => store.set('scalpdesk.muster.settings.v1', value), workerFactory: () => new Worker(new URL('./bundles/3.69.0/shared/muster-bot-worker.mjs', import.meta.url), { type: 'module' }), paper: musterPaper, onMarkers: scheduleDraw,
   telegramStatus: () => tgtReady('trades') ? null : 'Hinweis: Telegram ist noch nicht eingerichtet oder das Ziel „Trades“ ist aus (Einstellungen → Telegram).' });
 void musterPaper.restore().then(() => musterPaper.poll());
 function musterDraw(svg, data, x, y, bottom) {
@@ -15050,6 +15166,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
       <div class="pat-bar"><div class="dec-seg" role="group" aria-label="Richtung"><button type="button" data-pfil="all" aria-pressed="true">Alle</button><button type="button" data-pfil="bull" aria-pressed="false">Bullish</button><button type="button" data-pfil="bear" aria-pressed="false">Bearish</button></div><label>Mindestregelgüte <select id="pat-minq"><option value="0">0 %</option><option value="40">40 %</option><option value="60" selected>60 %</option><option value="80">80 %</option></select></label><label class="dec-corr"><input type="checkbox" id="pat-gap"> Strenger Gap-Modus</label></div>
       <details class="pat-project-settings"><summary>Linienprojektion einstellen</summary><label class="check"><input type="checkbox" id="pat-project-on" checked> Linien in die Zukunft verlängern</label><label>Länge in Kerzen <input type="number" id="pat-project-bars" min="1" max="100" step="1" value="25" inputmode="numeric"></label><p>Dezente gestrichelte Linien zeigen mögliche Unterstützungen und Widerstände, keine Kursprognose. Keile, Dreiecke und Wimpel enden spätestens an der Spitze. Durchbrochene Linien erscheinen blasser; abgelaufene oder ungültige Muster werden nicht verlängert. Die Preisachse bleibt unverändert.</p></details>
       <div id="pat-list"><div class="pat-list" id="pat-current-list"></div><p class="pat-empty" id="pat-current-empty" hidden></p><details id="pat-expired" hidden><summary id="pat-expired-label">Abgelaufen (0)</summary><div class="pat-list" id="pat-expired-list"></div></details></div>
+      <details class="patq-log" id="patq-log"><summary>Telegram-Signale · Qualitätsfilter <span id="patq-log-count"></span></summary><div id="patq-log-body" class="patq-log-body"></div></details>
       <p class="pat-note">Regelgüte = erfüllte Regelgewichte ÷ mögliche Gewichte (unbekannte Regeln zählen mit) – keine Trefferquote. Automatische Mustererkennung, keine Anlageberatung.</p>
       <div class="sheet-actions"><button type="button" class="button ghost" id="pat-off">Markierungen ausblenden</button></div></div>
   </dialog>
@@ -15096,14 +15213,15 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
           <div class="tg-target trades"><p><b>📊 Trades</b> <small>ein Bild mit kurzer Ergebniszeile je vollständig geschlossener Position · nur aus der App, nie über den 24/7-Dienst</small></p>
             <div class="tg-ids"><label>Chat-ID<span class="input-wrap tg-wrap"><input id="tg-tchat" type="text" inputmode="text" autocomplete="off" autocapitalize="off" autocorrect="off" enterkeyhint="done" spellcheck="false" placeholder="Chat-ID für Trades"><button type="button" class="tg-paste" data-paste="tg-tchat" data-thread="tg-tthread" aria-label="Chat-ID aus der Zwischenablage einfügen">Einfügen</button></span></label><label>Thema <small>(optional)</small><span class="input-wrap"><input id="tg-tthread" type="text" inputmode="numeric" autocomplete="off" enterkeyhint="done" spellcheck="false" placeholder="—"></span></label></div>
             <label>Eigener Bot-Token <small>(optional)</small><span class="input-wrap tg-wrap"><input id="tg-ttoken" type="password" autocomplete="off" spellcheck="false" placeholder="leer = derselbe Bot wie die Sicherung"><button type="button" class="tg-paste" data-token="tg-ttoken" aria-label="Bot-Token aus der Zwischenablage einfügen">Einfügen</button></span></label></div>
-          <div class="tg-target patterns"><p><b>📐 Chartmuster</b> <small>wichtige bestätigte Formationen aus „KI“ (live, Regelgüte ≥ 80 %, gerade bestätigt) · mit Dienstübergabe auch bei geschlossener App</small></p>
+          <div class="tg-target patterns"><p><b>📐 Chartmuster</b> <small>frisch bestätigte Formationen, die den Qualitätsfilter bestehen (Signalscore, Chance/Risiko, Trend, Liquidität, Anti-Spam) · mit Dienstübergabe auch bei geschlossener App</small></p>
             <div class="tg-ids"><label>Chat-ID<span class="input-wrap tg-wrap"><input id="tg-pchat" type="text" inputmode="text" autocomplete="off" autocapitalize="off" autocorrect="off" enterkeyhint="done" spellcheck="false" placeholder="Chat-ID für Chartmuster"><button type="button" class="tg-paste" data-paste="tg-pchat" data-thread="tg-pthread" aria-label="Chat-ID aus der Zwischenablage einfügen">Einfügen</button></span></label><label>Thema <small>(optional)</small><span class="input-wrap"><input id="tg-pthread" type="text" inputmode="numeric" autocomplete="off" enterkeyhint="done" spellcheck="false" placeholder="—"></span></label></div>
             <label>Eigener Bot-Token <small>(optional)</small><span class="input-wrap tg-wrap"><input id="tg-ptoken" type="password" autocomplete="off" spellcheck="false" placeholder="leer = derselbe Bot wie Kursalarm"><button type="button" class="tg-paste" data-token="tg-ptoken" aria-label="Bot-Token aus der Zwischenablage einfügen">Einfügen</button></span></label>
+            <details class="patq-settings" id="patq-settings"><summary>Qualitätsfilter · <span id="patq-preset-label">Normal</span></summary><div id="patq-form" class="patq-form"></div></details>
             <p class="muted">Der Dienst prüft die Coins der Vorauswahl im Kerzenintervall ihres gewählten Zeitraums, im Krypto-Modus ohne strenge Gaps. Änderungen erst bewusst übernehmen. Ein eigener Bot muss zusätzlich am Server eingerichtet sein; Token werden nicht übertragen.</p>
             <button type="button" class="button ghost" id="pat-svc-apply">Vorauswahl am Dienst übernehmen</button><p class="muted" id="pat-svc-status" role="status" aria-live="polite"></p>
-            <details class="pat-oracle-setup"><summary>Oracle: nur Chartmuster, ohne HTTPS-Steuerung</summary><p>Die App und der Dienst verwenden dieselbe Erkennung. Oracle meldet frisch bestätigte Formationen ab 80 % Regelgüte. Sicherungen und Trades bleiben in der App.</p>
+            <details class="pat-oracle-setup"><summary>Oracle: nur Chartmuster, ohne HTTPS-Steuerung</summary><p>Die App und der Dienst verwenden dieselbe Erkennung und denselben Qualitätsfilter. Oracle meldet frisch bestätigte Formationen, die den Filter bestehen; gefilterte Signale stehen nur im Protokoll des Dienstes. Sicherungen und Trades bleiben in der App.</p>
             <label class="check"><input type="checkbox" id="pat-oracle-only"> Oracle ist der einzige Mustersender</label><p class="muted">Auf jedem verwendeten App-Gerät einschalten. Einen bisherigen Muster-Dienst zuerst stoppen. Ohne eingerichteten Oracle-Dienst kommen in diesem Modus keine Muster-Meldungen.</p>
-            <button type="button" class="button ghost" id="pat-oracle-export">Coin-Auswahl für Oracle herunterladen</button> <a href="./docs/ORACLE_24-7.md" target="_blank" rel="noopener">Schritt-für-Schritt-Anleitung</a><p class="muted">Export enthält nur Coins, Markt und Intervall. Bot-Token und Chat-ID stehen ausschließlich in der .env-Datei auf deinem Server.</p></details></div>
+            <button type="button" class="button ghost" id="pat-oracle-export">Coin-Auswahl für Oracle herunterladen</button> <a href="./docs/ORACLE_24-7.md" target="_blank" rel="noopener">Schritt-für-Schritt-Anleitung</a><p class="muted">Export enthält nur Coins, Markt, Intervall und die Schwellen des Qualitätsfilters. Bot-Token und Chat-ID stehen ausschließlich in der .env-Datei auf deinem Server. Nach geänderten Schwellen neu exportieren.</p></details></div>
         </fieldset>
         <div class="tg-found" id="tg-found" hidden></div>
         <div class="row"><button type="button" class="button ghost" id="tg-detect">Chat-ID ermitteln</button><button type="button" class="button primary-lite" id="tg-test">Test senden</button><button type="button" class="button ghost" id="tg-testall">Test je Nachrichtenart</button><button type="button" class="button ghost" id="tg-tgc">Chats ein/aus …</button></div>

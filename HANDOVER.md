@@ -3,7 +3,34 @@
 Diese Datei ist der Einstieg für jede weitere Arbeit am Projekt. Wer sie liest, braucht kein Vorwissen. Die vollständige fachliche
 Vorgabe aller Gruppen G01–G14 steht in `docs/VORGABE-G01-G14.md` (Original-Übergabe; dort sind G10–G14 ausführlich beschrieben).
 
-## Aktueller Stand – 3.68.4 (Claude): GitHub-Einrichtung übersichtlich, Anleitungen in der App, Werkzeuge im Vollbild bedienbar
+## Aktueller Stand – 3.69.0 / Dienst 2.13.0 / Musterdienst 1.1.0 (Claude): Qualitätsfilter für Chartmuster-Meldungen
+
+Nutzerauftrag: viel zu viele Chartmuster-Meldungen über Telegram/Oracle → Qualitätsfilter. Kursalarme, Trades und Sicherung sind unverändert, kein neuer Chat. Ausführlich: [docs/CHARTMUSTER-QUALITAETSFILTER.md](docs/CHARTMUSTER-QUALITAETSFILTER.md), [docs/3.69.0-AENDERUNGEN.md](docs/3.69.0-AENDERUNGEN.md).
+
+- `shared/pattern-quality.mjs`:
+  - Einstellungen: `PATTERN_FILTER_PRESETS`/`FIELDS`, `patternFilterSettings`, `patternFilterFromForm`;
+  - Bewertung: `HIGHER_TIMEFRAME`, `evaluatePatternSignal` (K.O. + Score);
+  - Auswahl: `selectPatternSignals` (Anti-Spam);
+  - Journal: `patternJournalEntry`/`addPatternJournal`/`resolvePatternJournal` (Ziel/Ungültig/Timeout 48), `patternHitStats`, `patternJournalStats`;
+  - `backtestPatternFilter` (Walk-forward mit `detect`-Callback).
+- Server:
+  - `server/pattern-monitor.mjs` lädt das Modul per Shim (`PQ`), `patternConfig` liefert `filter`, dazu `patternEvaluate` (höherer Zeitrahmen, BTC und Spread nur für Kandidaten) und `patternFilterLog`; `patternText(..., ev)` setzt die Scorezeile.
+  - `patterns-247.mjs` 1.1.0: Watch-Datei mit optionalem `filter`, Auswahl über alle Märkte eines Laufs, `state.signals`/`state.sent`, `statistics()`, `--statistik`.
+  - `scalpdesk-247.mjs` 2.13.0: `bookTicker`, `patSignals`/`patSent` im Zustand, `gatePatterns`, `notifyPattern(c, h, evaluation)`. `POST /v1/patterns/notify` nur mit `quality.pass`; bekannte Ereignisse bleiben idempotent. Neu `GET /v1/patterns/signals`.
+- App:
+  - `patqRun` statt direktem `patNotify` in `pkRecord`; nur wenn das Ziel „Chartmuster“ bereit ist und „Oracle ist der einzige Mustersender“ aus ist.
+  - `patqEvaluate` (Kerzen über `api.get`/`spotGet`, `bookTicker`), `patqResolve` in `patDone` und in der Vorauswahl.
+  - Einstellungen `#patq-settings` im Telegram-Fenster, Log `#patq-log` im Chartmuster-Fenster mit Backtest. Testzugriff `window.__patq`.
+  - Journal `scalpdesk.patsignals.v1` (500, lokal), Einstellungen `scalpdesk.patfilter.v1` (in `PREF_KEYS`).
+  - `patOracleExport`/`patSvcConfig` enthalten `filter`.
+- Regelgüte trennt kaum: Die Pflichtregeln sind bei Treffern immer erfüllt, nur die Volumenregeln schwanken (88–100 %). Im Score deshalb nur 10 Punkte, gestreckt 85→0 bis 100→10.
+- Tests:
+  - neu `unit-pattern-quality.js` (33) und `m102.js` (14), beide in `run-all.sh`;
+  - erweitert `unit-patterns-only` (20), `unit-247e` (43), `m58`, `unit-247d` (Version);
+  - Zustellungstests mit lockerem Filter (die Kunstreihen sind keine handelbaren Signale).
+- **Server-Update nötig** (Oracle-Musterdienst bzw. 24/7-Dienst), danach Coin-Auswahl neu exportieren bzw. am Dienst übernehmen.
+
+## Stand 3.68.4 (Claude): GitHub-Einrichtung übersichtlich, Anleitungen in der App, Werkzeuge im Vollbild bedienbar
 
 Rückmeldungen vom iPhone zu 3.68.3. App/SW **3.68.4**, Dienst 2.12.1 unverändert. Ausführlich: [docs/3.68.4-AENDERUNGEN.md](docs/3.68.4-AENDERUNGEN.md).
 

@@ -31,8 +31,10 @@ const throws = fn => { try { fn(); return false; } catch { return true; } };
   check('Monatsende kalendergenau einschließlich Februar, kein 30-Tage-Ersatz', P.patternEnd(Date.UTC(2026, 1, 1), '1M') === Date.UTC(2026, 2, 1));
   const token = '123456789:TEST_ONLY_not_a_real_token_000000000', key = 'k'.repeat(43), dir = fs.mkdtempSync(path.join(os.tmpdir(), 's247e-')), logs = [], sent = [];
   // Jeder unabhängige Dienst startet vor dem Schluss der festen Bestätigungskerze.
-  const make = (name, extra = {}) => { now = c.tc + 1; return new W.Watcher({ token, chat: '111', key, listen: '127.0.0.1:0', statePath: path.join(dir, name, 'state.json'), now: () => now, log: (...x) => logs.push(x.join(' ')), patternFetch: async () => rows(), ...extra }); };
-  const config = { items: [item], bot: token.split(':')[0], chat: '-100888', thread: '77' };
+  const make = (name, extra = {}) => { now = c.tc + 1; return new W.Watcher({ token, chat: '111', key, listen: '127.0.0.1:0', statePath: path.join(dir, name, 'state.json'), now: () => now, log: (...x) => logs.push(x.join(' ')), patternFetch: async () => rows(), patternSpread: async () => null, ...extra }); };
+  // 2.13.0: Zustellungsprüfungen mit lockerem Qualitätsfilter (die feste Kunstreihe ist kein handelbares Signal); der Filter selbst: unit-pattern-quality.js
+  const LENIENT = { preset: 'eigen', minScore: 0, minRR: 0.5, maxAge: 10, maxProgress: 100, minTargetAtr: 0, minFeeMultiple: 0, minVolume24h: 0, maxSpread: 5, cooldownMin: 0, oppositeMin: 0, maxPerHour: 60, counterTrend: true };
+  const config = { items: [item], bot: token.split(':')[0], chat: '-100888', thread: '77', filter: LENIENT };
   const w = make('haupt');
   const cfg = (watcher, id = 'watch-cmd-0001', conf = config, revision = watcher.patternWatch.rev) => watcher.applyPatternWatch({ commandId: id, expectedRevision: revision, config: conf });
   now = c.tc + 1; let r = cfg(w);
@@ -93,7 +95,7 @@ const throws = fn => { try { fn(); return false; } catch { return true; } };
   await Promise.all([parallel.notifyPattern(c, h), parallel.notifyPattern(c, h), parallel.deliver()]);
   check('Gleichzeitige Dienst-/HTTP-Takte serialisieren den Ausgang', concurrent === 1);
   const countFetch = make('scheduler'); cfg(countFetch); now = P.patternEnd(c.tc, c.iv) + 2000; let fetched = 0;
-  countFetch.patternFetch = async () => { fetched++; return rows(); }; countFetch.tg = async () => ({ message_id: 1 });
+  countFetch.patternFetch = async (mkt, sym, limit, iv) => { if (iv === item.iv) fetched++; return rows(); }; countFetch.tg = async () => ({ message_id: 1 });   // 2.13.0: der höhere Zeitrahmen für den Filter zählt nicht als Historienabruf des Markts
   await countFetch.checkPatterns(); await countFetch.checkPatterns();
   check('Kein wiederholter Historienabruf innerhalb derselben Kerze', fetched === 1);
   const changed = make('liste-im-abruf'); cfg(changed); now = P.patternEnd(c.tc, c.iv) + 2000;
@@ -106,7 +108,7 @@ const throws = fn => { try { fn(); return false; } catch { return true; } };
   check('Frischefilter sperrt unbestätigte, schwache und ältere Fälle', !P.patternFresh({ ...c, q: 79 }, now, 0) && !P.patternFresh({ ...c, src: 'rekonstruiert' }, now, 0) && !P.patternFresh(c, now + 3 * 36e5, 0));
   const detached = make('langsamer-markt'); cfg(detached); now = P.patternEnd(c.tc, c.iv) + 2000;
   let releaseFetch; detached.syncConfig = async () => {}; detached.tg = async () => ({ message_id: 1 });
-  detached.patternFetch = () => new Promise(resolve => { releaseFetch = resolve; });
+  let released = false; detached.patternFetch = () => released ? Promise.resolve(rows()) : new Promise(resolve => { releaseFetch = v => { released = true; resolve(v); }; });   // 2.13.0: Folgeabrufe (höherer Zeitrahmen) nach der Freigabe sofort
   await detached.tick();
   check('Langsamer Muster-Abruf blockiert den bisherigen Diensttakt nicht', detached.patternBusy && typeof releaseFetch === 'function');
   releaseFetch(rows()); while (detached.patternBusy) await new Promise(resolve => setTimeout(resolve, 5));
@@ -117,8 +119,23 @@ const throws = fn => { try { fn(); return false; } catch { return true; } };
   const response = await (await call('/v1/patterns/notify', { expectedRevision: 1, c, levels: h.levels })).json();
   check('HTTP-Meldung eines bereits gesendeten Falls bleibt idempotent', response.ok && response.reason === 'already-reserved' && sent.length === before);
   check('Status/Protokoll/Zustand enthalten keine Bot-Token oder Dienstschlüssel', !JSON.stringify(w.stateView()).includes(token) && !JSON.stringify(logs).includes(token) && !JSON.stringify(logs).includes(key) && !fs.readFileSync(w.statePath, 'utf8').includes(key));
+  // 2.13.0: Qualitätsfilter im Dienst – Standard-Schwellen (Normal) lassen die Kunstreihe nicht durch: nur Journal und Log
+  const strict = make('qualitaet'); strict.applyPatternWatch({ commandId: 'watch-strict-01', expectedRevision: 0, config: { items: [item], bot: token.split(':')[0], chat: '-100888', thread: '77' } }); now = P.patternEnd(c.tc, c.iv) + 2000;
+  const strictSent = []; strict.tg = async (method, body) => { strictSent.push(body); return { message_id: 1 }; }; await strict.checkPatterns();
+  const sj = strict.patSignals.find(e => e.id === c.id);
+  check('Qualitätsfilter (Normal): schwaches Signal wird nicht an Telegram gesendet, aber mit Score, Kriterien und Filtergrund protokolliert', strictSent.length === 0 && sj && sj.sent === false && sj.reason.length > 5 && sj.criteria.length === 6 && Number.isFinite(sj.score) && logs.some(x => x.includes('Chartmuster gefiltert') && x.includes('Doppel-Boden')), JSON.stringify(sj && { reason: sj.reason, score: sj.score }));
+  check('Filter-Schwellen kommen mit der Musterliste (Standard Normal, Score ≥ 70)', strict.patternWatch.config.filter.preset === 'normal' && strict.patternWatch.config.filter.minScore === 70);
+  const c2 = { ...c, t0: c.t0 - 36e5 }; c2.id = P.patternId(c2);
+  const noQ = await (await call('/v1/patterns/notify', { expectedRevision: 1, c: c2, levels: h.levels })).json();
+  check('App-Meldung ohne bestandene Qualitätsbewertung wird nicht gesendet', noQ.ok && noQ.sent === false && noQ.reason === 'quality-missing' && sent.length === before);
+  const withQ = await (await call('/v1/patterns/notify', { expectedRevision: 1, c: c2, levels: h.levels, quality: { pass: true, score: 77, summary: 'Trend ✔ · Volumen ✔ · R/R 2,6', criteria: ['x'] } })).json();
+  await new Promise(r2 => setTimeout(r2, 50));
+  const last = sent.at(-1)?.body?.text || '';
+  check('App-Meldung mit bestandener Bewertung: Anti-Spam am Dienst, Versand mit Zeile „🎯 Signalscore 77/100 · Trend ✔ · Volumen ✔ · R/R 2,6“', withQ.ok && sent.length === before + 1 && last.includes('🎯 Signalscore 77/100 · Trend ✔ · Volumen ✔ · R/R 2,6') && last.includes('⭐ <b>Ziel:'), JSON.stringify(withQ));
+  const stats = await (await call('/v1/patterns/signals')).json();
+  check('GET /v1/patterns/signals: Statistik je Muster, Zeitrahmen und Coin, letzte Signale mit Filtergrund', stats.ok && stats.pat.some(r => r.key === 'double_bottom') && stats.iv.some(r => r.key === '1h') && stats.sym.some(r => r.key === 'BTCUSDT') && Array.isArray(stats.recent) && stats.filter.preset === 'eigen', JSON.stringify(stats).slice(0, 200));
   w.server.close();
-  for (const watcher of [w, restarted, appFirst, off, failing, queue, lost, during, crash, recovered, parallel, countFetch, changed, ownBot, detached]) { clearTimeout(watcher.saveTimer); clearTimeout(watcher.arch?.timer); }
+  for (const watcher of [w, restarted, appFirst, off, failing, queue, lost, during, crash, recovered, parallel, countFetch, changed, ownBot, detached, strict]) { clearTimeout(watcher.saveTimer); clearTimeout(watcher.arch?.timer); }
   fs.rmSync(dir, { recursive: true, force: true });
   console.log(`\n${pass}/${pass + fail} bestanden`); process.exit(fail ? 1 : 0);
 })().catch(e => { console.error(e); process.exit(1); });

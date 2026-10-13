@@ -132,6 +132,19 @@ sudo systemctl status scalpdesk-patterns --no-pager
 
 Nach einem Update des Unit-Files erneut `sudo install …` und `sudo systemctl daemon-reload` aus Abschnitt 4 ausführen. Coin-Auswahl ändern: erneut exportieren/hochladen, mit `sudo install -o scalpdesk-patterns -g scalpdesk-patterns -m 600 … /etc/scalpdesk-patterns-watch.json` ersetzen und den Dienst neu starten. Neu übernommene Einstellungen gelten ab diesem Zeitpunkt; keine historischen Alarmwellen.
 
+### Qualitätsfilter (ab Musterdienst 1.1.0, App 3.69.0)
+
+Seit 1.1.0 meldet der Dienst nur noch Chartmuster, die den Qualitätsfilter bestehen: K.O.-Kriterien, Signalscore ≥ 70, Anti-Spam. Beschreibung: [CHARTMUSTER-QUALITAETSFILTER.md](CHARTMUSTER-QUALITAETSFILTER.md).
+- **Schwellen:** in der App einstellen (Telegram einrichten → Chartmuster → Qualitätsfilter). Danach die Coin-Auswahl **neu exportieren** und wie oben ersetzen; die Datei enthält das Feld `filter`. Eine ältere Datei ohne `filter` gilt mit dem Preset „Normal“.
+- **Gefilterte Signale** gehen nicht an Telegram. Sie stehen im Protokoll als „Chartmuster gefiltert: Coin · Zeitrahmen · Muster · Score – Grund“, gesendete als „Chartmuster gesendet: …“.
+- **Statistik** je Muster, Zeitrahmen und Coin (Signale, gesendet, gefiltert, Ziel, Ungültig, Timeout nach 48 Kerzen):
+
+```bash
+sudo -u scalpdesk-patterns /usr/bin/node /opt/scalpdesk-patterns/server/patterns-247.mjs --statistik
+```
+
+Nach dem Update auf 1.1.0 ist ein Neustart nötig (Befehle oben). Der Testbefehl `--test` nennt Preset, Mindestscore und Chance/Risiko.
+
 ```bash
 sudo tail -f /var/log/scalpdesk-patterns/service.log
 sudo journalctl -u scalpdesk-patterns -n 50 --no-pager

@@ -48,11 +48,11 @@ import http from 'node:http';
 import crypto from 'node:crypto';
 import { Buffer } from 'node:buffer';
 import { fileURLToPath } from 'node:url';
-import { patternConfig, patternCandles, patternCases, patternFresh, patternText, patternEnd } from './pattern-monitor.mjs';
+import { PQ, patternConfig, patternCandles, patternCases, patternFresh, patternText, patternEnd, patternEvaluate, patternFilterLog } from './pattern-monitor.mjs';
 import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT } from './telegram-format.mjs';
 import { ConfluenceService, kiMessage, Po3Service, po3Message, BotSimulationRuntime } from './ki-monitor.mjs';
 
-export const VERSION = '2.12.1';
+export const VERSION = '2.13.0';   // 2.13.0: Qualitätsfilter für Chartmuster-Meldungen
 const E = process.env;
 // Adressen (für Tests über Umgebungsvariablen änderbar)
 export const API = {
@@ -457,10 +457,11 @@ export class PatternArchive {
   }
 }
 export class Watcher {
-  constructor({ token, chat, patternToken = '', kiUsers = [], kiClient, key = '', origins = [APP_ORIGIN], listen = LISTEN, host = '', statePath = '', now = () => Date.now(), log = (...a) => console.log(...a), patternFetch = klines }) {
-    Object.assign(this, { token, chat, patternToken, kiUsers, key, origins, listen, host, statePath, now, log, patternFetch });
+  constructor({ token, chat, patternToken = '', kiUsers = [], kiClient, key = '', origins = [APP_ORIGIN], listen = LISTEN, host = '', statePath = '', now = () => Date.now(), log = (...a) => console.log(...a), patternFetch = klines, patternSpread = c => bookTicker(c.mkt, c.sym) }) {
+    Object.assign(this, { token, chat, patternToken, kiUsers, key, origins, listen, host, statePath, now, log, patternFetch, patternSpread });
     this.kiStartedAt = now(); this.kiOffset = null; this.kiCommandsBusy = false;
     this.patternWatch = { rev: 0, since: 0, config: null }; this.patternProgress = new Map(); this.patternBusy = false;
+    this.patSignals = []; this.patSent = [];   // 2.13.0: Journal aller bewerteten Chartmuster-Signale und gesendete Meldungen (Anti-Spam)
     // 2.0 (G05): Ziel-Schalter (Revision, Epoche, Einschaltzeit), ausgeführte Aufträge, Ereignis-Freigaben, Episoden
     this.pol = policyNew(now()); this.cmds = []; this.evs = {}; this.eps = {}; this.server = null; this.authFail = { n: 0, t: 0 };
     this.conf = null; this.fired = {}; this.seen = new Map(); this.rearm = new Map(); this.lastCheck = new Map(); this.prevCandle = new Map();
@@ -518,11 +519,12 @@ export class Watcher {
         if (s.evs && typeof s.evs === 'object') this.evs = s.evs; if (s.eps && typeof s.eps === 'object') this.eps = s.eps; }
       if (s?.patternWatch?.config) this.patternWatch = { rev: Number(s.patternWatch.rev) || 0, since: Number(s.patternWatch.since) || 0, config: patternConfig(s.patternWatch.config) };
       if (Number.isSafeInteger(s?.kiOffset) && s.kiOffset >= 0) this.kiOffset = s.kiOffset;
+      if (Array.isArray(s?.patSignals)) this.patSignals = s.patSignals.filter(e => e && typeof e.id === 'string').slice(-2000); if (Array.isArray(s?.patSent)) this.patSent = s.patSent.filter(e => e && Number.isFinite(e.at));
       // 2.4.0: Prozessabbruch während eines Muster-POSTs ist unklare Zustellung, niemals erneut senden.
       this.out = this.out.filter(m => { if (!['patterns', 'ki'].includes(m.target) || !m.inFlight) return true; if (m.ev) evReport(this.evs, { eventId: m.ev, sender: 'oracle', st: 'unconfirmed', why: 'Neustart während Telegram-Versand' }, this.now()); return false; });
     } catch { /* erster Start oder beschädigt: neu anfangen */ }
   }
-  stateJson() { const c = this.conf; return JSON.stringify({ v: 2, kiOffset: this.kiOffset, patternWatch: this.patternWatch, pol: this.pol, cmds: this.cmds, evs: this.evs, eps: this.eps, fired: this.fired, pulse: this.pulseLast, pnl: { st: this.pnlSt, pend: this.pnlPend, fired: this.pnlFired }, out: this.out, last: this.last, sendErr: this.sendErr, conf: c && { msgId: c.msgId, fileUid: c.fileUid, data: c.data }, cal: this.cal && { at: this.calAt, events: this.cal }, hintAt: this.hintAt, ack: this.ackKeys && { keys: this.ackKeys, t: this.ackAt, on: this.ackOn } }); }
+  stateJson() { const c = this.conf; return JSON.stringify({ v: 2, kiOffset: this.kiOffset, patternWatch: this.patternWatch, patSignals: this.patSignals, patSent: this.patSent, pol: this.pol, cmds: this.cmds, evs: this.evs, eps: this.eps, fired: this.fired, pulse: this.pulseLast, pnl: { st: this.pnlSt, pend: this.pnlPend, fired: this.pnlFired }, out: this.out, last: this.last, sendErr: this.sendErr, conf: c && { msgId: c.msgId, fileUid: c.fileUid, data: c.data }, cal: this.cal && { at: this.calAt, events: this.cal }, hintAt: this.hintAt, ack: this.ackKeys && { keys: this.ackKeys, t: this.ackAt, on: this.ackOn } }); }
   saveStateNow() {
     if (!this.statePath) return false;
     try { fs.mkdirSync(path.dirname(this.statePath), { recursive: true }); const tmp = this.statePath + '.tmp'; fs.writeFileSync(tmp, this.stateJson()); fs.renameSync(tmp, this.statePath); return true; }
@@ -922,7 +924,8 @@ export class Watcher {
     if (changed) { this.patternProgress.clear(); this.log(`Chartmuster: Revision ${this.patternWatch.rev}, ${config.items.length} Märkte übernommen (Modell pat-1).`); }
     return { status: 200, body };
   }
-  async notifyPattern(c, h) {
+  // 2.13.0: wird nur noch für Signale aufgerufen, die den Qualitätsfilter bestanden haben (ev = Bewertung für die Scorezeile).
+  async notifyPattern(c, h, evaluation = null) {
     const cfg = this.patternWatch.config, since = Math.max(this.patternWatch.since, this.pol.targets.patterns.since);
     if (!this.key || !cfg || !this.patternDestination(cfg)) return { sent: false, reason: 'not-configured' };
     if (!this.pol.targets.patterns.on || !patternFresh(c, this.now(), since)) return { sent: false, reason: 'off-or-old' };
@@ -930,13 +933,26 @@ export class Watcher {
     if (!r.grant) return { sent: false, reason: 'already-reserved', eventId: ev };
     if (!this.saveStateNow()) { this.evSet(ev, 'failed', 'Freigabe nicht dauerhaft gespeichert'); return { sent: false, reason: 'storage-error', eventId: ev }; }
     this.arch?.add([c]);
-    await this.queue(patternText(c, h, this.arch?.export() || []), this.conf?.data?.tz || 'Europe/Berlin', { target: 'patterns', ev, label, destination: { chat: cfg.chat, thread: cfg.thread, bot: cfg.bot } });
+    await this.queue(patternText(c, h, this.arch?.export() || [], evaluation), this.conf?.data?.tz || 'Europe/Berlin', { target: 'patterns', ev, label, destination: { chat: cfg.chat, thread: cfg.thread, bot: cfg.bot } });
     return { sent: this.evs[ev]?.st === 'confirmed', st: this.evs[ev]?.st, eventId: ev };
   }
+  // 2.13.0: Qualitätsfilter – Kandidaten eines Prüflaufs gemeinsam auswählen; gefilterte nur ins Journal und Log.
+  async gatePatterns(candidates) {
+    if (!candidates.length) return [];
+    const filter = this.patternWatch.config?.filter, decisions = PQ.selectPatternSignals(candidates, this.patSent, filter, this.now()), out = [];
+    for (const x of candidates.sort((a, b) => b.eval.score - a.eval.score)) {
+      const d = decisions.get(x.id); this.patSignals = PQ.addPatternJournal(this.patSignals, PQ.patternJournalEntry(x.c, x.eval, d, this.now()));
+      this.log(patternFilterLog(x.c, x.eval, d));
+      if (d.send) { this.patSent = [...this.patSent.filter(y => this.now() - y.at < 24 * 36e5), { at: this.now(), sym: x.c.sym, iv: x.c.iv, dir: x.c.dir, id: x.c.id }]; out.push(x); }
+      else out.push({ ...x, filtered: d.reason });
+    }
+    this.saveState(); return out;
+  }
+  patternStatistics() { return { pat: PQ.patternJournalStats(this.patSignals, 'pat'), iv: PQ.patternJournalStats(this.patSignals, 'iv'), sym: PQ.patternJournalStats(this.patSignals, 'sym'), recent: this.patSignals.slice(-50).reverse() }; }
   async checkPatterns() {
     if (this.patternBusy || !this.patternWatch.config || !this.pol.targets.patterns.on) return;
     this.patternBusy = true;
-    const rev = this.patternWatch.rev, epoch = this.pol.targets.patterns.epoch, cfg = this.patternWatch.config;
+    const rev = this.patternWatch.rev, epoch = this.pol.targets.patterns.epoch, cfg = this.patternWatch.config, candidates = [], cache = new Map();
     try {
       // Ein Abruf gleichzeitig; je Markt erst wieder nach dessen nächstem Kerzenschluss, Fehler mit 30 s Pause.
       for (const item of cfg.items) {
@@ -947,10 +963,16 @@ export class Watcher {
           if (rev !== this.patternWatch.rev || epoch !== this.pol.targets.patterns.epoch || !this.pol.targets.patterns.on) break;
           const k = patternCandles(rows, item.iv, now);
           if (k.length < 40) throw new Error('Weniger als 40 abgeschlossene Kerzen.');
-          for (const { c, h } of patternCases(k, item, now)) await this.notifyPattern(c, h);
+          PQ.resolvePatternJournal(this.patSignals, item, k, now);
+          for (const { c, h } of patternCases(k, item, now)) {
+            if (this.patSignals.some(e => e.id === c.id) || this.evs[`pat:${c.id}`]) continue;
+            const ev = await patternEvaluate({ c, h, k, fetchRows: (x, limit) => this.patternFetch(x.mkt, x.sym, limit, x.iv), fetchSpread: this.patternSpread, cache, settings: cfg.filter, journal: this.patSignals, now });
+            candidates.push({ id: c.id, sym: c.sym, iv: c.iv, dir: c.dir, tc: c.tc, eval: ev, c, h });
+          }
           this.patternProgress.set(name, { next: patternEnd(patternEnd(k.at(-1).t, item.iv), item.iv) + 2000, at: now }); this.clear(`Chartmuster ${name}`);
         } catch (e) { this.patternProgress.set(name, { next: this.now() + 30e3 }); this.note(`Chartmuster ${name}`, e.message); }
       }
+      if (rev === this.patternWatch.rev && epoch === this.pol.targets.patterns.epoch) for (const x of await this.gatePatterns(candidates)) if (!x.filtered) await this.notifyPattern(x.c, x.h, x.eval);
     } finally { this.patternBusy = false; }
   }
   stateView(days = 3) {
@@ -1028,12 +1050,21 @@ export class Watcher {
     if (route === 'POST /v1/patterns/notify') {
       if (body?.expectedRevision !== this.patternWatch.rev) return send(409, { ok: false, error: 'Musterziel am Dienst geändert – aktuellen Stand prüfen.' });
       if (!patternFresh(body?.c, t, 0)) return send(400, { ok: false, error: 'Kein frischer bestätigter Musterfall.' });
-      return send(200, { ok: true, ...(await this.notifyPattern(body.c, { levels: body.levels || {} })) });
+      // 2.13.0: Die App schickt nur Signale, die ihren Qualitätsfilter bestanden haben, samt Bewertung; der Dienst prüft Anti-Spam
+      // (Sperrzeiten, Stundenlimit) gemeinsam mit seinen eigenen Meldungen. Ohne gültige Bewertung kein Versand.
+      if (this.evs[`pat:${body.c.id}`]) return send(200, { ok: true, ...(await this.notifyPattern(body.c, { levels: body.levels || {} })) });   // bereits reserviert/gesendet: idempotent
+      const q = body?.quality, score = Number(q?.score);
+      if (!q || q.pass !== true || !Number.isFinite(score) || score < 0 || score > 100) return send(200, { ok: true, sent: false, reason: 'quality-missing' });
+      const evaluation = { pass: true, score: Math.round(score), summary: String(q.summary || '').slice(0, 80), ko: [], parts: q.parts && typeof q.parts === 'object' ? q.parts : {}, criteria: Array.isArray(q.criteria) ? q.criteria.slice(0, 8).map(x => String(x).slice(0, 120)) : [], reason: '', entry: body.c.p0, target: body.levels?.tgt, invalid: body.levels?.inv };
+      const [gate] = await this.gatePatterns([{ id: body.c.id, sym: body.c.sym, iv: body.c.iv, dir: body.c.dir, tc: body.c.tc, eval: evaluation, c: body.c, h: { levels: body.levels || {} } }]);
+      if (gate.filtered) return send(200, { ok: true, sent: false, reason: 'filtered', why: gate.filtered });
+      return send(200, { ok: true, ...(await this.notifyPattern(body.c, { levels: body.levels || {} }, evaluation)) });
     }
     if (u.pathname.startsWith('/v1/patterns/')) {
       if (!this.arch) return send(503, { ok: false, error: 'Muster-Archiv nicht eingerichtet (kein Zustandsordner).' });
       if (route === 'POST /v1/patterns/cases') { const r = this.arch.add(body?.cases); if (r.stored || r.results || r.conflicts) this.log(`Muster-Archiv: ${r.stored} neu, ${r.results} Ergebnisse, ${r.conflicts} Konflikte, ${r.dup} doppelt, ${r.rejected} abgelehnt`); return send(200, { ...this.arch.status(), ...r }); }
       if (route === 'GET /v1/patterns/status') return send(200, this.arch.status());
+      if (route === 'GET /v1/patterns/signals') return send(200, { ok: true, v: VERSION, filter: this.patternWatch.config?.filter || PQ.patternFilterSettings(null), ...this.patternStatistics() });
       if (route === 'GET /v1/patterns/export') return send(200, { ok: true, v: VERSION, at: this.now(), cases: this.arch.export() });
     }
     return send(404, { ok: false, error: 'Unbekannter Aufruf.' });
@@ -1220,6 +1251,16 @@ export async function klines(source, symbol, limit = 3, interval = '1m') {
     } catch (e) { last = e; if (e.code === -1121) break; }
   }
   throw last;
+}
+
+// 2.13.0: Spread für den Chartmuster-Qualitätsfilter (Geld/Brief, in % vom Mittelkurs); bei Fehlern null = nicht bewertet.
+export async function bookTicker(source, symbol) {
+  const bases = source === 'futures' ? [API.fut] : API.spot, p = source === 'futures' ? '/fapi/v1/ticker/bookTicker' : '/api/v3/ticker/bookTicker';
+  for (const b of bases) {
+    try { const r = await fetch(`${b}${p}?symbol=${symbol}`, { signal: AbortSignal.timeout(8000) }); if (!r.ok) continue; const d = await r.json(), bid = Number(d?.bidPrice), ask = Number(d?.askPrice);
+      if (bid > 0 && ask >= bid) return (ask - bid) / ((ask + bid) / 2) * 100; } catch { /* nächste Adresse */ }
+  }
+  return null;
 }
 
 // ---------- Aufruf ----------
