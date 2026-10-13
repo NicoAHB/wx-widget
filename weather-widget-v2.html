@@ -9418,6 +9418,7 @@ function setChartFull(on) {
     chartHold.style.height = sec.offsetHeight + 'px'; chartHold.style.margin = getComputedStyle(sec).margin; sec.before(chartHold);
     delete docEl.dataset.chartbar; $('fb-tools').setAttribute('aria-expanded', 'false'); // Werkzeuge standardmäßig eingeklappt
     applyFsRotate(); docEl.dataset.chartfull = '1'; renderFullBar(); $('chart').focus({ preventScroll: true });
+    document.querySelector('.chart-toolbar .zoom-controls')?.scrollTo?.(0, 0);   // 3.69.0: Knopfzeile immer am Anfang (sonst blieb der rechtsbündige Stand der normalen Ansicht stehen und Knöpfe sprangen)
   } else {
     // 3.68.2: Eingabefeld im Vollbild (z. B. Hebel) verlassen und innere Scrollstände zurücksetzen, bevor der Bereich in die Seite zurückkehrt
     if (sec.contains(document.activeElement) && document.activeElement.matches('input, textarea, select')) document.activeElement.blur();
@@ -9478,6 +9479,7 @@ function fullBarSyms() { return docEl.dataset.chartfull === '1' ? [FULL_BTC, ful
 function swapTarget() { return state.symbol === FULL_BTC ? fullAlt : FULL_BTC; }
 function setChartBar(open) {
   if (open) docEl.dataset.chartbar = 'open'; else delete docEl.dataset.chartbar;
+  if (open) document.querySelector('.chart-toolbar .zoom-controls')?.scrollTo?.(0, 0);
   $('fb-tools').setAttribute('aria-expanded', String(!!open));
   // während des Gleitens mitzeichnen, damit der Chart flüssig auf die neue Höhe wächst
   const t0 = performance.now(), step = () => { scheduleDraw(); if (performance.now() - t0 < 340) requestAnimationFrame(step); }; requestAnimationFrame(step);
