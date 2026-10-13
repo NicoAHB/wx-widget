@@ -3,7 +3,18 @@
 Diese Datei ist der Einstieg für jede weitere Arbeit am Projekt. Wer sie liest, braucht kein Vorwissen. Die vollständige fachliche
 Vorgabe aller Gruppen G01–G14 steht in `docs/VORGABE-G01-G14.md` (Original-Übergabe; dort sind G10–G14 ausführlich beschrieben).
 
-## Aktueller Stand – 3.68.3 (Claude): Heikin-Ashi-Schalter, Vollbild ohne Klappfläche, Werkzeugleiste im Vollbild zweizeilig, Einfügen-Felder als Raster
+## Aktueller Stand – 3.68.4 (Claude): GitHub-Einrichtung übersichtlich, Anleitungen in der App, Werkzeuge im Vollbild bedienbar
+
+Rückmeldungen vom iPhone zu 3.68.3. App/SW **3.68.4**, Dienst 2.12.1 unverändert. Ausführlich: [docs/3.68.4-AENDERUNGEN.md](docs/3.68.4-AENDERUNGEN.md).
+
+- `shared/github-sync-view.mjs`: Statuszeile `#github-sync-state` (`data-ready`), `#github-sync-last` jetzt ein `dl`. Einrichtung in drei `.github-sync-step` (Repository · Zugang · Gerät) mit Chip `.github-sync-setup-state`. Token-Einfügen `#github-sync-token-paste` mit `parseGithubToken`. Neuer Parameter `openGuide(url, title)`; ohne ihn bleibt der Link. IDs und Ablauf sind unverändert (m90).
+- Neu `shared/doc-viewer.mjs`: `renderMarkdown` (sicherer Teil, baut DOM-Knoten, kein `innerHTML`) und `createDocViewer` (Dialog `#doc-viewer` im `sheet`-Stil, `#doc-viewer-close`). Ein Klick-Abfangen im HTML öffnet alle Links `./docs/*.md` im Viewer. Testzugriff `window.__docViewer`. docs/*.md liegen nicht im SW-Cache; offline zeigt der Viewer einen Hinweis.
+- Vollbild mit offenen Werkzeugen: `.overlay-toggles` umbrechend (max. 128 px, darin scrollbar), `.chart-pattern-summary>small` ausgeblendet (die Karte bleibt, m95 tippt im Vollbild auf `#positioning-score`), `#chart-sec{overflow-y:auto}` und `#chart{min-height:220px}` nur bei `data-chartbar=open`.
+- CSS: `#data-panel .github-sync` ohne eigenen Rahmen; der Kopf der Einrichtung bricht um (sonst an 320 px Überlauf durch den nicht umbrechenden Chip, m90).
+- Tests: neu `m101.js` (24), `m100.js` jetzt 27; beide in `run-all.sh`.
+- **Gesamtlauf** (Commit `e60041b`): 5166/5174. Gefunden: m94/m95 klicken im Vollbild auf die Gesamtbild-Karte → Karte bleibt (nur Erklärzeile aus), Nachlauf m94 39/39, m95 40/40, m100 27/27, m10 93/93. m31 und m9 einzeln grün. Altbefunde m7 (Flake), m18/m19, Abbrüche m40/m79/m92.
+
+## Stand 3.68.3 (Claude): Heikin-Ashi-Schalter, Vollbild ohne Klappfläche, Werkzeugleiste im Vollbild zweizeilig, Einfügen-Felder als Raster
 
 Rückmeldungen vom iPhone zu 3.68.2. App/SW **3.68.3**, Dienst 2.12.1 unverändert. Ausführlich: [docs/3.68.3-AENDERUNGEN.md](docs/3.68.3-AENDERUNGEN.md).
 

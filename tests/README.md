@@ -1,5 +1,7 @@
 # Tests für Scalp Desk
 
+**3.68.4 (Claude):** Neu `m101.js` (24): Markdown-Viewer (sicher, formatiert), GitHub-Einrichtung (Status, drei Schritte, Felder mit Rahmen, Token-Einfügen), Anleitung als Fenster mit „Schließen“ (auch Oracle-Anleitung aus dem Telegram-Fenster). `m100.js` jetzt 27 (Ebenen-Schalter im Vollbild umbrechend, Erklärzeile aus, Vollbild-Bereich scrollbar, Chart ≥ 220 px). Gesamtlauf 3.68.4: 5166/5174; m94/m95 nach Korrektur grün, m31/m9 einzeln grün, Altbefunde m7/m18/m19, Abbrüche m40/m79/m92.
+
 **3.68.3 (Claude):** `m100.js` jetzt 26 Fälle: Heikin-Ashi-Schalter (`role=switch`) an 320/360/390/1440 px; Vollbild hochkant **ohne App-Drehung** (`scalpdesk.fsrotate.v1 = "native"`, wie am iPhone des Nutzers): keine Klappfläche, Werkzeugleiste zweizeilig ohne Überlagerung, Ebene/Zeitraum/Zoom lassen das Vollbild offen; gedrehtes Vollbild weiter einzeilig; Einfügen-Felder als Raster.
 
 **3.68.2 (Claude):** Neu `m100.js` (25): Kerzenart-Knopf „Normal | HA“ an 320/360/390/1440 px, Backtest-Klappfläche im Vollbild (oben, Chart bis unten, scrollt in sich, Verzögerung während des Backtests < 250 ms), Minimieren danach (Seite bedienbar, keine langen Blockaden), Einfügen für Bot-Token (nur Bot-ID im Hinweis) und Chat-ID. Hinweis: `Input.synthesizeScrollGesture` mit Touch scrollt im Testbrowser nicht – Scrollen in Flächen per Mausrad prüfen.

@@ -9,6 +9,7 @@ echo "== unit-heikin-ashi"; timeout 120 node unit-heikin-ashi.js 2>&1 | grep -E 
 echo "== unit-ki-zones"; timeout 120 node unit-ki-zones.js 2>&1 | grep -E "✗|bestanden"
 echo "== m99"; timeout 600 node m99.js 2>&1 | grep -E "✗|bestanden|Abbruch"
 echo "== m100"; timeout 600 node m100.js 2>&1 | grep -E "✗|bestanden|Abbruch"
+echo "== m101"; timeout 600 node m101.js 2>&1 | grep -E "✗|bestanden|Abbruch"
 echo "== m98"; timeout 600 node m98.js 2>&1 | grep -E "✗|bestanden|Abbruch"
 echo "== m97"; timeout 600 node m97.js 2>&1 | grep -E "✗|bestanden|Abbruch"
 echo "== unit-positioning-score"; timeout 120 node unit-positioning-score.js 2>&1 | grep -E "✗|bestanden"

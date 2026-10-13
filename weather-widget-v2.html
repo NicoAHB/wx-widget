@@ -1219,6 +1219,12 @@ html[data-chartfull] .chart-toolbar>.zoom-controls{flex:0 1 auto;min-width:0;max
 html[data-chartfull] .chart-toolbar>.zoom-controls::-webkit-scrollbar{display:none}
 html[data-chartfull] .chart-toolbar>.zoom-controls>*{flex:0 0 auto}
 html[data-chartfull] #chart-full{display:none}
+/* 3.68.4: Werkzeuge im Vollbild am Handy: alle Ebenen-Schalter (Volumenprofil, EMA, Bollinger …) umbrechend sichtbar statt einer einzigen Wischzeile (höchstens drei Reihen, darin scrollbar); unter der Gesamtbild-/Positionierungs-Karte entfällt die Erklärzeile (Karte und Positionierungs-Info bleiben erreichbar). Ist trotzdem mehr da als der Bildschirm fasst, scrollt der Vollbild-Bereich selbst – vorher lag der Rest unerreichbar unter dem Rand und die Ansicht wirkte eingefroren. */
+html[data-chartfull] .overlay-toggles{flex-wrap:wrap;overflow-x:hidden;overflow-y:auto;max-height:128px;overscroll-behavior:contain;align-content:flex-start;row-gap:6px}
+html[data-chartfull] .overlay-toggles button{min-height:36px}
+html[data-chartfull] .chart-pattern-summary>small{display:none}
+html[data-chartfull][data-chartbar=open] #chart-sec{overflow-y:auto;overscroll-behavior:contain}
+html[data-chartfull][data-chartbar=open] #chart{min-height:220px}
 /* Eingeklappt (Standard beim Öffnen): Werkzeuge, Ebenen-Schalter und OHLC gleiten weg, der Chart wächst mit */
 html[data-chartfull] .chart-toolbar,html[data-chartfull] .chart-footer,html[data-chartfull] #ohlc{max-height:200px;transition:max-height .25s ease,opacity .2s ease,margin .25s ease,padding .25s ease,visibility 0s}
 html[data-chartfull]:not([data-chartbar=open]) .chart-toolbar,html[data-chartfull]:not([data-chartbar=open]) .chart-footer,html[data-chartfull]:not([data-chartbar=open]) #ohlc{max-height:0;min-height:0 !important;opacity:0;margin-top:0;margin-bottom:0;padding-top:0;padding-bottom:0;border-width:0;overflow:hidden;visibility:hidden;transition:max-height .25s ease,opacity .2s ease,margin .25s ease,padding .25s ease,visibility 0s linear .25s}
@@ -2188,6 +2194,8 @@ html[data-chartfull] #workspace-chart-tools{display:contents!important}html[data
 @media(max-width:420px){.muster-grid{grid-template-columns:1fr}.muster-info{min-width:40px;min-height:40px}.muster-group,.muster-live,.muster-results{padding:10px}}
 /* Verschlüsselter privater GitHub-Sync, mobil ohne Überlauf. */
 .github-sync{border:1px solid var(--border);border-radius:14px;background:var(--surface);min-width:0}.github-sync>summary,.github-sync-setup>summary{padding:12px;cursor:pointer;font-weight:650;min-height:44px}.github-sync-body{display:grid;gap:12px;padding:12px;min-width:0}.github-sync-actions{display:flex;flex-wrap:wrap;gap:8px}.github-sync-actions>button{flex:1 1 220px;min-height:48px;white-space:normal;overflow-wrap:anywhere}.github-sync-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:12px}.github-sync-fields label,.github-sync-dialog label{display:grid;gap:6px;font-size:.85rem;min-width:0}.github-sync-fields input,.github-sync-dialog input{width:100%;min-width:0;box-sizing:border-box;min-height:44px;font-size:16px}.github-sync-fields p,.github-sync-fields a{grid-column:1/-1}.github-sync-status,.github-sync-last,.github-sync-hint{overflow-wrap:anywhere}.github-sync-hint{border:1px solid var(--border);border-radius:12px;background:var(--surface-2);padding:10px;display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:8px 0}.github-sync-hint[hidden]{display:none}.github-sync-hint>span{flex:1 1 240px}.github-sync-hint button{min-height:44px}.github-sync-dialog{box-sizing:border-box;width:min(480px,calc(100vw - 24px));max-height:calc(100dvh - 24px);padding:18px;border:1px solid var(--border);border-radius:16px;color:var(--text);background:var(--surface);overflow:auto}.github-sync-dialog::backdrop{background:#0009}.github-sync-dialog form{display:grid;gap:14px}.github-sync-dialog h3,.github-sync-dialog p{margin:0;overflow-wrap:anywhere}.github-sync-dialog p{font-size:.9rem;line-height:1.5}@media(max-width:480px){.github-sync-fields{grid-template-columns:minmax(0,1fr)}.github-sync-actions>button{flex-basis:100%}}
+/* 3.68.4: GitHub-Sync übersichtlich – ohne vierten Rahmen, Statuszeile, Sichern/Laden nebeneinander, Einrichtung in drei nummerierten Schritten, Felder mit Rahmen (vorher sahen sie wie Text aus). */#data-panel .github-sync{border:0;border-radius:0;background:none;border-bottom:1px solid var(--border);padding-bottom:6px}#data-panel .github-sync>summary{padding:4px 0 10px}#data-panel .github-sync-body{padding:0 0 8px}.github-sync-info{margin:0;color:var(--muted);font-size:.8125rem;line-height:1.45}.github-sync-state{margin:0;padding:8px 10px;border-radius:9px;font-size:.8125rem;font-weight:650;background:var(--warn-bg,var(--surface-2));color:var(--warn-text,var(--text))}.github-sync-state[data-ready=true]{background:var(--up-bg-2);color:var(--up-text)}dl.github-sync-last{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 10px;margin:0;font-size:.8125rem}dl.github-sync-last dt{color:var(--muted)}dl.github-sync-last dd{margin:0;min-width:0;overflow-wrap:anywhere}.github-sync-actions>button{flex:1 1 140px}.github-sync-actions>#github-sync-undo{flex-basis:100%;min-height:40px;font-size:.8125rem}.github-sync-setup{border:1px solid var(--border);border-radius:12px;background:var(--surface-2)}.github-sync-setup>summary{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 10px;list-style:none;padding:12px 14px}.github-sync-setup>summary::-webkit-details-marker{display:none}.github-sync-setup>summary::after{content:"＋";color:var(--muted);flex:none}.github-sync-setup[open]>summary::after{content:"−"}.github-sync-setup-title{flex:1 1 7rem;min-width:0}.github-sync-setup-state{flex:none;white-space:nowrap;font-size:.75rem;font-weight:650;padding:3px 8px;border-radius:999px;background:var(--warn-bg,var(--field));color:var(--warn-text,var(--muted))}.github-sync-setup-state[data-ready=true]{background:var(--up-bg-2);color:var(--up-text)}.github-sync-fields{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;padding:4px 14px 14px}.github-sync-step{display:grid;gap:8px;min-width:0}.github-sync-step h4{display:flex;align-items:center;gap:8px;margin:0;font-size:.875rem}.github-sync-num{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--border);font-size:.75rem}.github-sync-step-text{margin:0;color:var(--muted);font-size:.78rem;line-height:1.45}.github-sync-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}.github-sync-field{display:grid;gap:5px;min-width:0;font-size:.8rem;color:var(--muted)}.github-sync-fields .github-sync-field input{background:var(--field);border:1px solid var(--field-border);border-radius:8px;padding:0 12px;color:var(--text)}.github-sync-fields .github-sync-field input:focus{border-color:var(--mint);outline:none}.github-sync-token{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px}.github-sync-paste{min-height:44px;padding:0 12px}.github-sync-note{margin:0;color:var(--muted);font-size:.78rem;line-height:1.45}.github-sync-fields .github-sync-guide{grid-column:auto;justify-self:start;min-height:44px}
+/* 3.68.4: Anleitung in der App (docs/*.md) mit „Schließen“ */dialog.doc-viewer{width:min(720px,96vw)}.doc-viewer .sheet-head{position:sticky;top:0;background:var(--surface);z-index:1}.doc-viewer-close{min-height:40px;white-space:nowrap}.doc-viewer-body{display:block;line-height:1.55;font-size:.9rem;overflow-wrap:anywhere}.doc-viewer-body>*{margin:0 0 12px}.doc-viewer-body h2,.doc-viewer-body h3,.doc-viewer-body h4{margin:18px 0 8px;line-height:1.3}.doc-viewer-body h2{font-size:1.05rem}.doc-viewer-body h3{font-size:.98rem}.doc-viewer-body ol,.doc-viewer-body ul{padding-left:22px}.doc-viewer-body li{margin:0 0 8px}.doc-viewer-body code{font-size:.85em;padding:1px 4px;border-radius:4px;background:var(--surface-2);overflow-wrap:anywhere}.doc-viewer-body pre{overflow-x:auto;padding:10px 12px;border-radius:8px;background:var(--field);border:1px solid var(--border)}.doc-viewer-body pre code{padding:0;background:none;white-space:pre}.doc-table{overflow-x:auto;border:1px solid var(--border);border-radius:8px}.doc-table table{width:100%;border-collapse:collapse;font-size:.82rem}.doc-table th,.doc-table td{padding:8px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top;min-width:120px}.doc-viewer-body blockquote{padding-left:10px;border-left:3px solid var(--border);color:var(--muted)}
 .pat-project-settings{padding:10px;border:1px solid var(--border);border-radius:12px}.pat-project-settings>summary{min-height:44px;cursor:pointer}.pat-project-settings label{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:8px 0}.pat-project-settings input[type=number]{width:90px;min-height:44px;font-size:16px}.pat-project-settings p{font-size:.8rem;color:var(--muted);line-height:1.5}
 /* 3.64.0: Detail-Kerzen und Formationen in der Kurszeile, ohne horizontales Seiten-Scrollen. */
 .chart-detail-control{display:flex;align-items:center;flex-wrap:wrap;gap:6px;max-width:100%;min-width:0;font-size:11px;color:var(--muted)}.chart-detail-control select{min-height:44px;max-width:100%;width:190px;font-size:16px;background:var(--field);color:var(--text);border:1px solid var(--border);border-radius:9px;padding:6px}.tb-main.detail-options{flex-wrap:wrap}.chart-detail-status{flex:1 1 100%;font-size:11px;color:var(--muted);overflow-wrap:anywhere}.chart-detail-status[data-error=true]{color:var(--warn-text)}.chart-detail-control[hidden],.chart-detail-status[hidden],.chart-pattern-empty[hidden]{display:none}
@@ -2218,30 +2226,31 @@ html[data-chartfull] .chart-pattern-row{padding:0;order:1;flex-wrap:nowrap}html[
 @media(max-width:360px){.chart-pattern-overview-card{height:120px;grid-template-columns:minmax(0,1fr) 112px}}
 </style>
   <script type="module">
-import { MARKET_INTERVALS, CHART_INTERVALS, SIGNAL_INTERVALS, INTERVAL_MS, nearestChartInterval } from './bundles/3.68.3/shared/market-intervals.mjs';
-import { createDetailCandles, detailOptions, detailChoice, closedSeries, timeIndex, DETAIL_VISIBLE_MAX } from './bundles/3.68.3/shared/chart-detail.mjs';
-import { patternChipRows, patternChipKey } from './bundles/3.68.3/shared/chart-pattern-chips.mjs';
-import { PATTERN_QUALITY_CONFIG, chartPatternQuality, repricePatternQuality, sortPatternQuality, patternOverview } from './bundles/3.68.3/shared/chart-pattern-quality.mjs';
-import { createPatternOverviewFeed } from './bundles/3.68.3/shared/chart-pattern-overview-feed.mjs';
+import { MARKET_INTERVALS, CHART_INTERVALS, SIGNAL_INTERVALS, INTERVAL_MS, nearestChartInterval } from './bundles/3.68.4/shared/market-intervals.mjs';
+import { createDetailCandles, detailOptions, detailChoice, closedSeries, timeIndex, DETAIL_VISIBLE_MAX } from './bundles/3.68.4/shared/chart-detail.mjs';
+import { patternChipRows, patternChipKey } from './bundles/3.68.4/shared/chart-pattern-chips.mjs';
+import { PATTERN_QUALITY_CONFIG, chartPatternQuality, repricePatternQuality, sortPatternQuality, patternOverview } from './bundles/3.68.4/shared/chart-pattern-quality.mjs';
+import { createPatternOverviewFeed } from './bundles/3.68.4/shared/chart-pattern-overview-feed.mjs';
 // Arbeitsstand: bei der gemeinsamen Release-Freigabe in das neue Versionsbündel übernehmen.
-import { createPositioningFeed } from './bundles/3.68.3/shared/positioning-score.mjs';
-import { CRYPTO_CALENDAR, parseCryptoCalendar, cryptoCalendarEvents } from './bundles/3.68.3/shared/crypto-calendar.mjs';
-import { createMusterClient } from './bundles/3.68.3/shared/muster-bot-feed.mjs';
-import { createMusterPaper } from './bundles/3.68.3/shared/muster-bot-paper.mjs';
-import { readMusterPaper, writeMusterPaper } from './bundles/3.68.3/shared/muster-bot-store.mjs';
-import { projectPatternLines, projectionSettings, projectionTime } from './bundles/3.68.3/shared/pattern-projection.mjs';
-import { createGithubSyncView } from './bundles/3.68.3/shared/github-sync-view.mjs';
-import { stripSyncSecrets } from './bundles/3.68.3/shared/github-sync.mjs';
-import { createMusterView } from './bundles/3.68.3/shared/muster-bot-view.mjs';
-import { computeKiZones, KI_ZONE_INTERVALS } from './bundles/3.68.3/shared/ki-zones.mjs';
-import { heikinAshi } from './bundles/3.68.3/shared/heikin-ashi.mjs';
-import { scoreZoneStrength, ZONE_STRENGTH, ZONE_SIGNAL, zoneSignal, zoneStep, zoneOutcome, summarizeZoneBacktest } from './bundles/3.68.3/shared/zone-strength.mjs';
+import { createPositioningFeed } from './bundles/3.68.4/shared/positioning-score.mjs';
+import { CRYPTO_CALENDAR, parseCryptoCalendar, cryptoCalendarEvents } from './bundles/3.68.4/shared/crypto-calendar.mjs';
+import { createMusterClient } from './bundles/3.68.4/shared/muster-bot-feed.mjs';
+import { createMusterPaper } from './bundles/3.68.4/shared/muster-bot-paper.mjs';
+import { readMusterPaper, writeMusterPaper } from './bundles/3.68.4/shared/muster-bot-store.mjs';
+import { projectPatternLines, projectionSettings, projectionTime } from './bundles/3.68.4/shared/pattern-projection.mjs';
+import { createGithubSyncView } from './bundles/3.68.4/shared/github-sync-view.mjs';
+import { createDocViewer } from './bundles/3.68.4/shared/doc-viewer.mjs';
+import { stripSyncSecrets } from './bundles/3.68.4/shared/github-sync.mjs';
+import { createMusterView } from './bundles/3.68.4/shared/muster-bot-view.mjs';
+import { computeKiZones, KI_ZONE_INTERVALS } from './bundles/3.68.4/shared/ki-zones.mjs';
+import { heikinAshi } from './bundles/3.68.4/shared/heikin-ashi.mjs';
+import { scoreZoneStrength, ZONE_STRENGTH, ZONE_SIGNAL, zoneSignal, zoneStep, zoneOutcome, summarizeZoneBacktest } from './bundles/3.68.4/shared/zone-strength.mjs';
 // 3.68.0: KI-Signale/Trading-Bot entfernt; der GitHub-Sync behält sein Format inklusive vorhandener Modelloriginale.
-import { exportModelArchive, importModelArchive, validateModelArchive, restoreModelOriginals } from './bundles/3.68.3/shared/model-archive.mjs';
-import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT } from './bundles/3.68.3/shared/telegram-format.mjs';
-import { createOrderflowView } from './bundles/3.68.3/shared/orderflow-view.mjs';
-import { createSignalView } from './bundles/3.68.3/shared/orderflow-signal-view.mjs';
-import { networkState, createWidgetBoundary } from './bundles/3.68.3/shared/widget-state.mjs';
+import { exportModelArchive, importModelArchive, validateModelArchive, restoreModelOriginals } from './bundles/3.68.4/shared/model-archive.mjs';
+import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT } from './bundles/3.68.4/shared/telegram-format.mjs';
+import { createOrderflowView } from './bundles/3.68.4/shared/orderflow-view.mjs';
+import { createSignalView } from './bundles/3.68.4/shared/orderflow-signal-view.mjs';
+import { networkState, createWidgetBoundary } from './bundles/3.68.4/shared/widget-state.mjs';
 // Pure, unrounded calculations. Prices are USDT per unit; FX is USDT per EUR.
 function rsi(closes, period = 14) {
   const out = Array(closes.length).fill(null);
@@ -3096,7 +3105,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
 // 3.43.0 (G10a): reiner Fachkern in shared/; Datenquelle und Karten folgen getrennt.
 // 3.44.0 (G10b): öffentlicher Adapter in shared/bitget-public.mjs; sichtbare Anbindung folgt mit G10(c).
-const APP_VERSION = '3.68.3', docEl = document.documentElement;
+const APP_VERSION = '3.68.4', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -14470,7 +14479,7 @@ const musterPaper = createMusterPaper({ read: readMusterPaper, write: writeMuste
   } });
 const MUSTER_TG_NAMES = { hammer: 'Hammer', engulfing: 'Bullish Engulfing', confluence: 'Konfluenz', po3: 'Power of Three' };
 musterView = createMusterView({ host: musterHost, selection: musterSelection, currentPrice: (symbol, market) => state.symbol === symbol && state.source === market ? currentPrice() : null,
-  prefs: store.get('scalpdesk.muster.settings.v1', {}), savePrefs: value => store.set('scalpdesk.muster.settings.v1', value), workerFactory: () => new Worker(new URL('./bundles/3.68.3/shared/muster-bot-worker.mjs', import.meta.url), { type: 'module' }), paper: musterPaper, onMarkers: scheduleDraw,
+  prefs: store.get('scalpdesk.muster.settings.v1', {}), savePrefs: value => store.set('scalpdesk.muster.settings.v1', value), workerFactory: () => new Worker(new URL('./bundles/3.68.4/shared/muster-bot-worker.mjs', import.meta.url), { type: 'module' }), paper: musterPaper, onMarkers: scheduleDraw,
   telegramStatus: () => tgtReady('trades') ? null : 'Hinweis: Telegram ist noch nicht eingerichtet oder das Ziel „Trades“ ist aus (Einstellungen → Telegram).' });
 void musterPaper.restore().then(() => musterPaper.poll());
 function musterDraw(svg, data, x, y, bottom) {
@@ -14604,7 +14613,11 @@ async function ghApply(data) {
     setTimeout(() => location.reload(), 1800); throw new Error(e.message + ' Der bisherige lokale Stand wurde wiederhergestellt.');
   } finally { ghImportBusy = false; }
 }
-const ghSync = createGithubSyncView({ host: $('data-panel'), storage: { getItem: key => localStorage.getItem(key), setItem: (key, value) => localStorage.setItem(key, value) }, collect: ghCollect, apply: ghApply, hasUndo: () => !!store.get(GH_EMERGENCY_KEY),
+// 3.68.4: Anleitungen (docs/*.md) als Fenster in der App mit „Schließen“ – auch für Links im Text (z. B. Oracle-Anleitung).
+const docViewer = createDocViewer();
+document.addEventListener('click', e => { const a = e.target.closest?.('a[href]'); const href = a?.getAttribute('href') || ''; if (!a || a.closest('#doc-viewer') || !/^\.?\/?docs\/[\w.-]+\.md(#.*)?$/.test(href)) return; e.preventDefault(); void docViewer.open(href, a.textContent.trim() || 'Anleitung'); });
+window.__docViewer = docViewer;
+const ghSync = createGithubSyncView({ host: $('data-panel'), openGuide: (url, title) => docViewer.open(url, title), storage: { getItem: key => localStorage.getItem(key), setItem: (key, value) => localStorage.setItem(key, value) }, collect: ghCollect, apply: ghApply, hasUndo: () => !!store.get(GH_EMERGENCY_KEY),
   undo: async () => { await ghRestoreEmergency(store.get(GH_EMERGENCY_KEY)); store.del(GH_EMERGENCY_KEY); if (!await store.flush()) throw new Error('Stand wiederhergestellt; Notfallkopie konnte noch nicht entfernt werden.'); setTimeout(() => location.reload(), 1200); return 'Stand vor GitHub-Laden wiederhergestellt.'; },
   onSaved: () => markBackedUp('github', true), hintHost: $('livebar').parentElement });
 window.__githubSync = { collect: ghCollect, checkNewer: ghSync.checkNewer };
