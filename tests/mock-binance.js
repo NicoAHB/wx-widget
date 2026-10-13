@@ -574,6 +574,17 @@ http.createServer((req, res) => {
       // short (nur n Kerzen Historie, Standard 30)
       // 3.24.0 BTC-Puls: gleichbleibender Kurs (n Kerzen, Standard 60) – keine Zufallsbewegung, die einen Puls auslösen könnte
       if (kind === 'flat') { const n = Math.max(2, Number(q.n) || 60); return put(Array(n).fill(base)); }
+      // 3.70.0 FVG: feste Kerzen (je 100 = Grundpreis) mit genau zwei Lücken – bullisch 100,2…101 an Kerze 40 (berührt 70,
+      // geschlossen 75) und bärisch 99,8…100,3 an Kerze 92 (bleibt offen); sonst überlappende Kerzen ohne Lücke
+      if (kind === 'fvg') {
+        const R = [], f = base / 100, flat = (n, p) => { for (let i = 0; i < n; i++) { const o = p + (i % 2 ? 0.04 : -0.04), c = p + (i % 2 ? -0.04 : 0.04); R.push([o, Math.max(o, c) + 0.1, Math.min(o, c) - 0.1, c]); } };
+        flat(38, 100); R.push([100, 100.2, 99.9, 100.05], [100.05, 102.1, 100, 102], [102, 102.5, 101, 102.3]);
+        flat(29, 102.2); R.push([101, 102.3, 100.5, 101.5]); flat(4, 101); R.push([100.4, 101.1, 100.15, 100.9]); // grüne Zwischenkerzen: keine weitere Lücke
+        flat(14, 100.5); R.push([100.5, 100.6, 100.3, 100.45], [100.45, 100.5, 98.4, 98.5], [98.5, 99.8, 98, 98.3]); flat(27, 98.3);
+        H[sym + '|' + iv] = R.map(([o, h, l, c], i) => { const t = last.t - (R.length - i) * step; return krow(t, pz(o * f), pz(h * f), pz(l * f), pz(c * f), 100, t + step - 1, 10); });
+        const lp = pz(R.at(-1)[3] * f); for (const k of Object.keys(candles)) if (k.startsWith(sym + '|')) Object.assign(candles[k], { o: lp, h: lp, l: lp, c: lp });
+        touch(sym, lp); return ok({ n: R.length, last: lp });
+      }
       if (kind === 'short') { const n = Math.max(2, Number(q.n) || 30), pts = []; for (let i = 0; i < n; i++) pts.push(base * (1 + Math.sin(i / 3) * 0.004)); return put(pts); }
       if (kind.startsWith('ew-')) {
         let r = 5; const rr = () => { r = (r * 48271) % 2147483647; return r / 2147483647; }, m = kind === 'ew-down' ? v => 2 - v : v => v, pts = [];

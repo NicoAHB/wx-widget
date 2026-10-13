@@ -193,6 +193,11 @@
       "bytes": 6436
     },
     {
+      "path": "shared/fvg.mjs",
+      "sha256": "bf07efd328bfd65cbadec830ac25f00b51a0df3db408eaf4294ba2e70f8edf70",
+      "bytes": 2439
+    },
+    {
       "path": "shared/github-sync-view.mjs",
       "sha256": "a198ed465ae0352c959c1f3b874fde98cfb3e7d59a9de491d474813ba0f3cf0c",
       "bytes": 13569
