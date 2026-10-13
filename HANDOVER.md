@@ -607,4 +607,4 @@ Code: `patEngine()` (reine Engine, läuft als Blob-Worker), `PAT_LIB` (41 Eintr�
 3. Mit dem Nutzer klären, ob zuerst G09 C6b oder direkt G10 – dann G10 in den Schritten (a)–(e), danach G11, G12, G13, G14.
 
 ## 7. Startprompt für ChatGPT
-Siehe `ANLEITUNG-CHATGPT-GITHUB.md` (Abschnitt „Startprompt“).
+Siehe `ANLEITUNG-CHATGPT-GITHUB.md` (Abschnitt „Startprompt“). Für die Server-Einrichtung bei Oracle (Musterdienst mit Trading-Karten, monatliche Bereinigung, 24/7-Dienst) führt `ANLEITUNG-CHATGPT-ORACLE.md` mit eigenem Starttext und Prüfpunkten – ChatGPT erklärt nur, Zugangsdaten gibt der Nutzer ausschließlich am Server ein.

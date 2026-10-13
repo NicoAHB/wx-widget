@@ -2,6 +2,8 @@
 
 Diese Anleitung ist für Safari auf iPad/iPhone geschrieben. Der neue Dienst `server/patterns-247.mjs` verwendet **dieselbe pat-1-Erkennung und dieselben Muster-IDs wie die App**: gerade bestätigte Formationen, Regelgüte mindestens 80 %, abgeschlossene Kerzen. Einzelkerzen, „in Bildung“, Sicherungen, persönliche Trades und echte Orders werden von diesem Dienst nicht gesendet. Der bestehende umfassende HTTPS-Dienst bleibt ein eigener, anderer Dienst.
 
+> **Mit ChatGPT Schritt für Schritt:** [`ANLEITUNG-CHATGPT-ORACLE.md`](../ANLEITUNG-CHATGPT-ORACLE.md) enthält einen Starttext und Prüfpunkte, mit denen ChatGPT dich durch diese Anleitung führt. Token und Chat-IDs gibst du dabei nur am Server ein, nie im Chat.
+
 ## 1. Konto und kostenlose Grenzen
 
 1. Öffne https://www.oracle.com/cloud/free/ und tippe **Start for free / Kostenlos starten**.
