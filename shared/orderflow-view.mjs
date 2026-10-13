@@ -1,9 +1,9 @@
-import { ORDERFLOW_PERIODS, ORDERFLOW_LIMITS, ORDERFLOW_FRESH_MS, restCandle, liveCandle, mergeCandles, visibleCandles, dataQuality, compactVolume, candleGlyph, candleCountdown, candleAssessment } from './orderflow-core.mjs';
+import { ORDERFLOW_PERIODS, ORDERFLOW_LIMITS, ORDERFLOW_FRESH_MS, restCandle, liveCandle, mergeCandles, visibleCandles, dataQuality, compactVolume, candleGlyph, candleCountdown, candleAssessment, candlePatterns } from './orderflow-core.mjs';
 import { createOrderflowDemo } from './orderflow-demo.mjs';
 import { createWidgetBoundary } from './widget-state.mjs';
 
 // Verbraucher des bestehenden Binance-Workers; kein zweiter Worker/keine doppelten Futures-Abos, keine Signale/Orders.
-export function createOrderflowView({ root, context, now, fetchRows, readPrefs, savePrefs, streamsChanged, formatPrice = String, readDemo = () => null, saveDemo = () => {}, selectedQuote, updateLayout = fn => fn() }) {
+export function createOrderflowView({ root, context, now, fetchRows, readPrefs, savePrefs, streamsChanged, formatPrice = String, readDemo = () => null, saveDemo = () => {}, selectedQuote, updateLayout = fn => fn(), explainCandle = null }) {
   const doc = root.ownerDocument, state = { symbol: '', paused: false, unit: 'usdt', series: { '1m': [], '1h': [] }, errors: {}, unavailable: false, epoch: 0, since: 0 };
   const blocks = {}, pending = new Map(), attempted = new Set(), loadedAt = {}, repaired = {};
   let paintTimer = null, initialTimer = null, lastConnected = false, lastTick = 0;
@@ -24,6 +24,7 @@ export function createOrderflowView({ root, context, now, fetchRows, readPrefs, 
     'Die waagerechte Kerze zeigt Tief links und Hoch rechts; der Körper liegt zwischen Öffnung und Schluss. Grün = Schluss über Öffnung, Rot = darunter, Grau = gleich. O = Öffnung, H = Hoch, T = Tief, S = Schluss (bei „jetzt“ aktueller Kurs). Alle fünf Kerzen je Block verwenden denselben Preismaßstab. Rest = Zeit bis zum nächsten UTC-Kerzenschluss.',
     'Handlung: Delta allein ist kein Einstieg. Trend, Stop-Loss und Gebühren prüfen. Fehlende Werte erscheinen als Strich. Demo-Einstieg und -Ausstieg sind nur mit aktuellem Live-Kurs möglich.',
     'Kerzenbild: regelbasierte Kurzbewertung der sichtbaren Kerze. Körper bis 10 % der Spanne = neutral; sonst Schluss über Öffnung = bullisch, darunter = bärisch. „Vorläufig“ gilt bis zum Abschluss. Kein eigener Modellscore und keine zusätzliche KI-Abfrage je Tick.',
+    'Kerzenmuster: Erkennt die Chart-Mustererkennung („KI“, Regelwerk pat-1) auf einer abgeschlossenen Kerze ein Muster eindeutig – Pflichtform erfüllt, bei Umkehrmustern auch der passende Vortrend –, steht sein Name darunter (z. B. Hammer, Bärisches Engulfing). Bei Mehrkerzenmustern steht der Name an der letzten Kerze. ⓘ erklärt das Muster.',
     'Quelle: Binance USDT-Futures, auch wenn der Hauptchart Spot zeigt. Coins und USDT stammen jeweils aus den gelieferten Taker-Feldern; fehlende Werte werden nicht geschätzt. Diese Volumenwerte sind keine Einstiegsempfehlung.'
   ]) explanation.append(el('p', '', p));
   info.append(explanation); head.append(title, info);
@@ -45,11 +46,15 @@ export function createOrderflowView({ root, context, now, fetchRows, readPrefs, 
       const group = doc.createElementNS(svg.namespaceURI, 'g'); group.setAttribute('transform', 'translate(42 0) rotate(90)');
       svg.classList.add('of-candle-svg'); svg.setAttribute('viewBox', '0 0 42 28'); svg.setAttribute('preserveAspectRatio', 'none'); svg.setAttribute('aria-hidden', 'true'); wick.setAttribute('x1', '14'); wick.setAttribute('x2', '14'); body.setAttribute('x', '8'); body.setAttribute('width', '12'); wick.setAttribute('vector-effect', 'non-scaling-stroke'); body.setAttribute('vector-effect', 'non-scaling-stroke'); group.append(wick, body); svg.append(group); glyph.append(svg, empty);
       const prices = Object.fromEntries([['o', 'O'], ['h', 'H'], ['l', 'T'], ['c', 'S']].map(([key, name]) => { const n = el(iv === '1m' ? 'button' : 'span'), label = el('b', '', name), value = el('span', 'of-price-value', '—'); if (iv === '1m') { n.type = 'button'; n.dataset.priceKey = { o: 'open', h: 'high', l: 'low', c: 'close' }[key]; n.title = name + ' als Einstieg vorbelegen'; } n.append(label, value); values.append(n); return [key, value]; }));
-      const assessment = el('span', 'of-candle-assessment'); values.append(assessment);
+      // 3.68.0: Kerzenbild (Zeile 1) und erkannter Kerzenmustername (Zeile 2) teilen sich einen festen 32-px-Bereich mit ⓘ rechts,
+      // damit die Kartenhöhe beim Kerzenschluss gleich bleibt. Name und Erklärung aus derselben Bibliothek wie „KI“ im Chart.
+      const note = el('span', 'of-candle-note'), lines = el('span', 'of-note-lines'), assessment = el('span', 'of-candle-assessment'), pattern = el('span', 'of-candle-pattern'), patternText = pattern, patternInfo = el('button', 'of-pattern-info', 'i');
+      patternInfo.type = 'button'; patternInfo.hidden = true; lines.append(assessment, pattern); note.append(lines, patternInfo); values.append(note); pattern.hidden = true;
       // 3.58.0: Restlaufzeit direkt an der laufenden Kerze, bestehender Sekundentakt und feste Knoten.
       rowCountdown.hidden = true; rowCountdown.title = 'Restlaufzeit bis zum Kerzenschluss (UTC)'; time.append(timeLabel, rowCountdown);
       fill.setAttribute('aria-hidden', 'true'); volumes.append(fill, buy, sell); main.append(glyph, volumes); row.append(time, main, delta, values); section.append(row);
-      return { row, time, timeLabel, rowCountdown, volumes, fill, buy, sell, delta, glyph, svg, wick, body, empty, prices, assessment };
+      patternInfo.addEventListener('click', () => { const hit = patternInfo._hit; if (hit && explainCandle) explainCandle(hit, { interval: iv, symbol: state.symbol }); });
+      return { row, time, timeLabel, rowCountdown, volumes, fill, buy, sell, delta, glyph, svg, wick, body, empty, prices, assessment, pattern, patternText, patternInfo };
     }); blocks[iv] = { section, quality, countdown, rows }; root.append(section);
   }
   function quote() {
@@ -76,7 +81,7 @@ export function createOrderflowView({ root, context, now, fetchRows, readPrefs, 
       const b = blocks[iv], q = dataQuality(state.series[iv], iv, { now: at, receivedNow: Date.now(), connected: ctx.connected && !state.unavailable, paused: state.paused, unit: state.unit });
       // Nutzerwunsch: keine Datenalter-/Sekundenzeile. Frische bleibt als interne Handelssperre erhalten.
       const remaining = candleCountdown(iv, at); b.section.dataset.quality = q.kind; text(b.quality, ''); text(b.countdown, `Rest ${remaining}`); b.countdown.title = 'Zeit bis zum nächsten Kerzenschluss (UTC)';
-      const slots = visibleCandles(state.series[iv], iv, at), known = slots.filter(s => s.candle).map(s => s.candle), low = Math.min(...known.map(c => c.l)), high = Math.max(...known.map(c => c.h));
+      const names = patternNames(iv), slots = visibleCandles(state.series[iv], iv, at), known = slots.filter(s => s.candle).map(s => s.candle), low = Math.min(...known.map(c => c.l)), high = Math.max(...known.map(c => c.h));
       slots.forEach((slot, i) => {
         const r = b.rows[i], v = slot.candle?.[state.unit]; r.row.dataset.time = String(slot.t); r.row.dataset.running = String(slot.running); r.row.dataset.closed = String(!!slot.candle?.closed);
         r.row.classList.toggle('of-running', slot.running); r.row.classList.toggle('of-missing', !v || !slot.running && !slot.candle.closed);
@@ -91,10 +96,15 @@ export function createOrderflowView({ root, context, now, fetchRows, readPrefs, 
         for (const key of ['o', 'h', 'l', 'c']) text(r.prices[key], c ? formatPrice(c[key]) : '—');
         r.glyph.title = c ? `Öffnung ${formatPrice(c.o)} · Hoch ${formatPrice(c.h)} · Tief ${formatPrice(c.l)} · ${slot.running ? 'Aktuell' : 'Schluss'} ${formatPrice(c.c)}` : 'Kerze nicht verfügbar';
         const opinion = candleAssessment(c); text(r.assessment, opinion.text + (c && slot.running ? ' · vorläufig' : '')); r.assessment.dataset.tone = opinion.tone;
+        const hits = !slot.running && c?.closed ? names.get(slot.t) || [] : [], top = hits[0]; r.pattern.hidden = !top; r.patternInfo.hidden = !top || !explainCandle; r.patternInfo._hit = top || null;
+        if (top) { text(r.patternText, `Muster: ${hits.slice(0, 2).map(x => x.name).join(' + ')} · ${top.status}`); r.pattern.dataset.tone = top.dir === 'bull' ? 'up' : top.dir === 'bear' ? 'down' : 'neutral'; r.patternInfo.setAttribute('aria-label', 'Erklärung: ' + top.name); }
       });
     }
     demo.render();
   }
+  // Mustererkennung nur bei neuen abgeschlossenen Kerzen neu rechnen, nicht bei jedem Live-Tick.
+  const patternCache = {};
+  function patternNames(iv) { const closed = state.series[iv].filter(c => c.closed), last = closed.at(-1), key = state.symbol + '|' + closed.length + '|' + (last ? last.t + ':' + last.c + ':' + last.h + ':' + last.l : ''); if (patternCache[iv]?.key !== key) patternCache[iv] = { key, map: candlePatterns(state.series[iv], iv) }; return patternCache[iv].map; }
   function schedule() { if (!paintTimer) paintTimer = setTimeout(() => { paintTimer = null; paint(); }, 250); }
   function acceptRest({ symbol, interval, rows, startedAt }) {
     if (symbol !== state.symbol || state.paused || state.unavailable || startedAt < state.since || !ORDERFLOW_PERIODS[interval] || !Array.isArray(rows)) return;

@@ -1,6 +1,6 @@
 {
   "version": "2.12.1",
-  "appVersion": "3.67.0",
+  "appVersion": "3.68.0",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
@@ -203,6 +203,11 @@
       "bytes": 9568
     },
     {
+      "path": "shared/ki-zones.mjs",
+      "sha256": "abd9bf0ede4453361574038ac4e40372710b98c556a91b778afed3a9087fe50a",
+      "bytes": 10847
+    },
+    {
       "path": "shared/market-intervals.mjs",
       "sha256": "8d2781e22bed81fa13a361aa1ccd25dafa62364fa1845dfc730893eae502d812",
       "bytes": 2532
@@ -214,18 +219,18 @@
     },
     {
       "path": "shared/muster-bot-core.mjs",
-      "sha256": "c4cd9cf6501e7595372901302fc831451856f65f45915485d8f4f7a4a4fcd7a9",
-      "bytes": 11506
+      "sha256": "06008503cafca91546806105d4b018b7944a91de1b96fce5ea1834a729320d3d",
+      "bytes": 22224
     },
     {
       "path": "shared/muster-bot-feed.mjs",
-      "sha256": "e86a3da0eae70b8096ea185a48ca74b44259080358e95ed1305764040c17721e",
-      "bytes": 5012
+      "sha256": "aa9f1000364a76fe886a1f0c47d0d8361ca002350077f8fdf429cd055fdc5a30",
+      "bytes": 5098
     },
     {
       "path": "shared/muster-bot-paper.mjs",
-      "sha256": "8ee4fc077c5331d0868a21e358193e58e5cb613ed7f90a406f8ca2b5318db130",
-      "bytes": 4140
+      "sha256": "08e25441b28cd313b30048a2184e061bcc08a63a353dc0066d007031010a4358",
+      "bytes": 4585
     },
     {
       "path": "shared/muster-bot-store.mjs",
@@ -234,8 +239,8 @@
     },
     {
       "path": "shared/muster-bot-view.mjs",
-      "sha256": "7a45293db948e10be7465c786505637a39f512604415af9199b8a5b48d2899d6",
-      "bytes": 28053
+      "sha256": "464e0f8a97a25d1dfd94357fdedb7be216b6062ab4de49c7ab446c2d01653333",
+      "bytes": 39763
     },
     {
       "path": "shared/muster-bot-worker.mjs",
@@ -244,8 +249,8 @@
     },
     {
       "path": "shared/orderflow-core.mjs",
-      "sha256": "2579ff7cd28586ed206629b27d2db2cb19677cbd8e013bf0c9839774ad6337b7",
-      "bytes": 6636
+      "sha256": "1b0a8c8953d5a5e91c3734b09fd17d76165d60d50ddf57362a41c534e86fd1bd",
+      "bytes": 8026
     },
     {
       "path": "shared/orderflow-demo.mjs",
@@ -274,8 +279,8 @@
     },
     {
       "path": "shared/orderflow-view.mjs",
-      "sha256": "33a774aaf2b0cad284b0cc3e06448064e31912397de5e25c14b07a6fcb8518e9",
-      "bytes": 16711
+      "sha256": "5c513c7c70502eacaf66d28fc6331e587e2e77917d6f7a173d18423474fefce8",
+      "bytes": 18915
     },
     {
       "path": "shared/paper-bot-controller.mjs",

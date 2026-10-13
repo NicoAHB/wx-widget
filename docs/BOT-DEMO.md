@@ -1,5 +1,7 @@
 # Lokale KI-Handelsdemo · 3.61.0
 
+> **3.68.0: entfernt.** Der Trading-Bot und die KI-Signale sind auf Wunsch des Nutzers aus der App entfernt. Konfluenz und Power of Three gibt es jetzt als Modelle im Muster-Bot (siehe [MUSTER-BOT.md](MUSTER-BOT.md)). Dieses Dokument beschreibt den früheren Stand.
+
 > **3.67.0:** Die Demo scheiterte auf echten Geräten an zu strengen Zeitprüfungen des Bitget-Clients (Geräte- gegen Bitget-Uhr ohne Toleranz) und eröffnete deshalb nie einen Trade. Behoben in `shared/bitget-public.mjs`; Erklärung und Nachweis in [3.67.0-AENDERUNGEN.md](3.67.0-AENDERUNGEN.md).
 
 Unter **Analysen → Trading-Bot** (oder dem Bot-Knopf beim Chart) stehen Status, eigener Demokurs, Ergebnis, offene Positionen und Abschlüsse zusammen. „Demo einrichten“ ist zunächst geschlossen. Strategie, eigene Übungsbasis, Exposition und Stoprisiko wählen; „Übungswerte einsetzen“ füllt nur leere Geldfelder. Fehlende Eingaben werden mit ihrem Feldnamen gemeldet. Kosten sind editierbar. Anschließend bewusst **Demo starten**.

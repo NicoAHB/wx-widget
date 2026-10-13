@@ -2,6 +2,13 @@ const { fixture } = require('./muster-fixtures');
 let pass = 0, fail = 0;
 const check = (name, ok) => { ok ? pass++ : fail++; console.log(`${ok ? '✓' : '✗'} ${name}`); };
 const throws = f => { try { f(); return false; } catch { return true; } };
+// 3.68.0: reproduzierbarer Zufallspfad (xorshift) für Konfluenz/PO3, ohne echte Börsendaten
+function series(n, ms, seed, start = Date.UTC(2026, 0, 1)) {
+  let x = seed >>> 0, price = 100, drift = 0; const rnd = () => { x ^= x << 13; x >>>= 0; x ^= x >>> 17; x ^= x << 5; x >>>= 0; return x / 4294967296; }, rows = [];
+  for (let i = 0; i < n; i++) { if (i % 200 === 0) drift = (rnd() - .5) * .004; const open = price, close = Math.max(1, open * (1 + drift + (rnd() - .5) * .02)), high = Math.max(open, close) * (1 + rnd() * .006), low = Math.min(open, close) * (1 - rnd() * .006);
+    rows.push({ time: start + i * ms, open, high, low, close, volume: 1000 * (.5 + rnd() * (rnd() < .05 ? 4 : 1)), end: start + (i + 1) * ms }); price = close; }
+  return rows;
+}
 (async () => {
   const M = await import('../shared/muster-bot-core.mjs');
   const run = (data, config = {}) => M.runMusterBacktest({ ...data, config: { timeframe: '15m', ...config } });
@@ -32,8 +39,32 @@ const throws = f => { try { f(); return false; } catch { return true; } };
   check('Zukunfts-/laufende Kerzen ändern frühere Signale nicht', JSON.stringify(before.signals) === JSON.stringify(after.signals.filter(s => s.end <= cut)) && before.position === null && before.pending?.stage === 'open');
   const open = run({ ...d, asOf: cut, liveOpen: { time: cut, open: 102 } }); check('Live darf das bekannte nächste Open nutzen, ohne künftiges High/Low', open.position?.entry === 102 && open.trades.length === 0);
   r = run(fixture(), { riskPercent: 10 }); check('Positionsgröße wird auf verfügbares Kapital ohne Hebel begrenzt', r.position?.capitalCapped && r.position.quantity * r.position.entry + r.position.entryFee <= 1000 + 1e-8);
-  const combinations = M.musterCombinations({ hammerEntry: 'close', engulfEntry: 'instant' }); check('27 eindeutige Kombinationen und gleicher Einstieg bei Beide', combinations.length === 27 && new Set(combinations.map(c => [c.pattern, c.timeframe, c.hammerEntry].join('|'))).size === 27 && combinations.every(c => c.hammerEntry === c.engulfEntry));
+  // 3.68.0: 27 Hammer/Engulfing-Varianten plus Konfluenz und Power of Three je Zeitrahmen
+  const combinations = M.musterCombinations({ hammerEntry: 'close', engulfEntry: 'instant' }), classic = combinations.filter(c => !M.musterModel(c.pattern));
+  check('33 eindeutige Kombinationen (27 Hammer/Engulfing + Konfluenz/PO3 × 3 Ebenen), gleicher Einstieg bei Beide', combinations.length === 33 && classic.length === 27 && new Set(combinations.map(c => [c.pattern, c.timeframe, c.hammerEntry].join('|'))).size === 33 && combinations.every(c => c.hammerEntry === c.engulfEntry) && combinations.filter(c => c.pattern === 'confluence').length === 3 && combinations.filter(c => c.pattern === 'po3').length === 3);
   r = run(fixture()); check('Weniger als 100 Abschlüsse ehrlich markiert, keine NaN/Infinity-Quoten', r.stats.lowSample && r.stats.winRate === null && r.stats.profitFactor === null && r.stats.averageR === null);
   check('Ungültige Einstellungen/Datenlücken/Zeiten abgelehnt', throws(() => M.musterSettings({ riskPercent: 0 })) && throws(() => run({ ...fixture(), rows: fixture().rows.filter((_, i) => i !== 20) })) && throws(() => run({ ...fixture(), asOf: NaN })));
+  // ---- 3.68.0: Hebel, Größenwahl, Liquidation, Short, Konfluenz und Power of Three ----
+  check('Hammer/Engulfing-IDs unverändert (bestehende Demos bleiben gültig)', run(fixture()).signals[0]?.id.startsWith(M.MUSTER_VERSION + '|') && M.MUSTER_VERSION === 'hammer-engulfing-1');
+  r = run(fixture(), { riskPercent: 10, leverage: 10 }); check('Mit Hebel 10 wird Risiko 10 % nicht mehr durch das Kapital begrenzt; Margin = Wert ÷ Hebel', r.position && !r.position.capitalCapped && Math.abs(r.position.riskCash - 100) < 1e-6 && Math.abs(r.position.margin - r.position.quantity * r.position.entry / 10) < 1e-9 && r.position.leverage === 10);
+  r = run(fixture(), { sizing: 'margin', marginPercent: 10, leverage: 5 }); check('Größe nach Einsatz: 10 % Margin × Hebel 5', r.position && Math.abs(r.position.margin - 100) < 1e-6 && Math.abs(r.position.quantity * r.position.entry - 500) < 1e-6);
+  check('Liquidationspreis Long = Einstieg × (1 − 1/Hebel + Wartungsmarge)', Math.abs(r.position.liquidation - r.position.entry * (1 - 1 / 5 + M.MUSTER_MMR)) < 1e-9 && run(fixture()).position.liquidation === null);
+  d = fixture(); d.rows[31] = { ...d.rows[31], high: 102, low: 98, close: 99 }; r = run(d, { sizing: 'margin', marginPercent: 10, leverage: 50 });
+  check('Hebel 50: Liquidation vor dem zu weiten Stop, Verlust höchstens Margin + Gebühren', r.trades[0]?.reason === 'Liquidation' && r.stats.liquidations === 1 && Math.abs(r.trades[0].gross + r.trades[0].margin) < 1e-6 && r.trades[0].pnl >= -(r.trades[0].margin + r.trades[0].fees) - 1e-9);
+  d = fixture(); d.rows[31] = { ...d.rows[31], high: 102, low: 98, close: 99 }; r = run(d, { sizing: 'margin', marginPercent: 10, leverage: 2 }); check('Hebel 2: Stop greift vor der Liquidation', r.trades[0]?.reason === 'Stop' && r.stats.liquidations === 0);
+  check('Ungültiger Hebel/Einsatz abgelehnt', throws(() => M.musterSettings({ leverage: 0 })) && throws(() => M.musterSettings({ leverage: 51 })) && throws(() => M.musterSettings({ sizing: 'alles' })) && throws(() => M.musterSettings({ marginPercent: 0 })));
+  const ms15 = 900e3, walk = series(6000, ms15, 7), ctx4h = series(1600, 4 * 3600e3, 11, walk[0].time - 600 * 4 * 3600e3), asOf = walk.at(-1).end;
+  const model = (pattern, config = {}, rows = walk, until = asOf) => M.runMusterBacktest({ rows, context: ctx4h.filter(c => c.end <= until), config: { pattern, timeframe: '15m', ...config }, asOf: until });
+  const conf = model('confluence'), confLong = model('confluence', { allowShort: false });
+  check('Konfluenz erzeugt Long- und Short-Signale mit Score ≥ Mindestscore und Stop auf der richtigen Seite', conf.signals.length >= 5 && conf.signals.some(x => x.direction === 1) && conf.signals.some(x => x.direction === -1) && conf.signals.every(x => x.score >= conf.config.confMinScore && x.score <= 100 && x.direction * (walk.find(c => c.time === x.time).close - x.stop) > 0));
+  check('Nur Long: keine Short-Signale bei Konfluenz und PO3', confLong.signals.length > 0 && confLong.signals.every(x => x.direction === 1) && model('po3', { allowShort: false }).signals.every(x => x.direction === 1));
+  check('Short-Ergebnis spiegelbildlich: Gewinn bei fallendem Kurs, Verlust höchstens Margin', conf.trades.every(t => Math.abs(t.gross - Math.max(t.direction * t.quantity * (t.exit - t.entry), -t.margin)) < 1e-9) && conf.trades.some(t => t.direction === -1));
+  check('Konfluenz-IDs mit Modellversion und Richtung', conf.signals.every(x => x.id.startsWith(M.MUSTER_MODELS_VERSION + '|') && x.id.endsWith('|' + x.direction)));
+  const causal = pattern => { const full = model(pattern); return full.signals.slice(0, 6).every(x => { const cut = walk.findIndex(c => c.time === x.time) + 1, part = model(pattern, {}, walk.slice(0, cut), walk[cut - 1].end); return part.signals.some(y => y.id === x.id); }) && full.signals.length > 0; };
+  check('Konfluenz kausal: spätere Kerzen ändern frühere Signale nicht', causal('confluence'));
+  const po3 = model('po3', {}, series(9000, ms15, 3), series(9000, ms15, 3).at(-1).end);
+  check('Power of Three: Signale nur mit Sweep-Stop jenseits des Extrems und Score ≥ 70', po3.signals.every(x => x.score >= 70 && x.direction * (x.sweep - x.stop) > 0 && x.entryMode === 'instant'));
+  check('Power of Three kausal', (() => { const rows = series(9000, ms15, 3), full = M.runMusterBacktest({ rows, context: ctx4h, config: { pattern: 'po3', timeframe: '15m' }, asOf: rows.at(-1).end }); return full.signals.slice(0, 4).every(x => { const cut = rows.findIndex(c => c.time === x.time) + 1; return M.runMusterBacktest({ rows: rows.slice(0, cut), context: ctx4h, config: { pattern: 'po3', timeframe: '15m' }, asOf: rows[cut - 1].end }).signals.some(y => y.id === x.id); }); })());
+  check('Warmup: Konfluenz braucht EMA 200, PO3 zusätzliche Box-Historie', M.musterWarmup(M.musterSettings({ pattern: 'confluence' })) >= 205 && M.musterWarmup(M.musterSettings({ pattern: 'po3' })) > M.musterWarmup(M.musterSettings({ pattern: 'hammer' })));
   console.log(`\n${pass}/${pass + fail} bestanden`); process.exitCode = fail ? 1 : 0;
 })().catch(e => { console.error(e); process.exitCode = 1; });

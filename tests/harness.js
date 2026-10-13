@@ -66,7 +66,6 @@ function legacyWidgetFixture(options) {
     // Auch leere <details display:contents> behalten eine anonyme Inhaltsbox.
     // Nach Rückgabe ihrer Originalknoten entfernen, sonst entsteht ein falscher Grid-Platz.
     for (const node of window.__g05.workspace.wrappers) node.remove();
-    for (const id of ['ki-setup', 'ki-settings']) byId(id).open = true;
     // Ursprüngliche Tab-Präferenz der isolierten Widgettests, einschließlich Reload.
     // Jetzt erledigen die Originalhandler auch Menüplatzierung/Schließen selbst.
     try { const tab = JSON.parse(localStorage.getItem('scalpdesk.tab.v1')); if (['chart', 'calc', 'pos', 'ind'].includes(tab)) byId('tabbar').querySelector(`[data-tab="${tab}"]`).click(); } catch {}

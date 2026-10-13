@@ -21,7 +21,7 @@ const check = (name, ok, info = '') => { ok ? pass++ : fail++; console.log(`${ok
     await page.fill('#symbol', 'BSV'); await page.press('#symbol', 'Enter');
     await page.waitForFunction(() => __g05.state.sourceFor === 'BSVUSDT' && __g05.state.source === 'futures' && !__g05.state.busy);
     await page.locator('[data-interval="1h"]').first().click();
-    await page.waitForFunction(() => __g05.state.interval === '1h' && !__g05.state.busy && __pdf1.view.state.series['1h'].length === 5);
+    await page.waitForFunction(() => __g05.state.interval === '1h' && !__g05.state.busy && __pdf1.view.state.series['1h'].length === 30); // 3.68.0: 30 Stundenkerzen (Vortrend für Kerzenmuster)
     await page.waitForFunction(() => __pdf1.view.state.series['1m'].at(-1).source === 'ws');
     check('Bereits offener Panel-Feed gehört nach Futures-Chartwechsel zur bisherigen Wiederverbindungsprüfung', await page.evaluate(() => __pdf1.live.need.has('futures') && __pdf1.live.everUp.futures));
     const logs = await h.ctl('/log'), hour = logs.filter(e => e.path === '/fapi/v1/klines' && e.q.symbol === 'BSVUSDT' && e.q.interval === '1h');

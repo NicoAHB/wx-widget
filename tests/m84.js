@@ -19,7 +19,7 @@ const select = async (p, key) => { await p.click(`[data-workspace-target="${key}
   await ctx.route('https://raw.githubusercontent.com/NicoAHB/wx-widget/kalender/calendar.json', route => route.fulfill({ contentType: 'application/json', body: JSON.stringify({ v: 1, source: 'Forex Factory', fetchedAt: new Date().toISOString(), lists: 1, events: Array.from({length:6},(_,i)=>({ t: Date.now()+(i+1)*3600000, cur:'USD',impact:'high',title:'Zinsentscheid '+i,forecast:'',previous:'',actual:'' })) }) }));
   await ctx.route('https://raw.githubusercontent.com/NicoAHB/wx-widget/news/news.json', route => route.fulfill({ contentType: 'application/json', body: JSON.stringify({ v:1, fetchedAt:new Date().toISOString(), covered:['BTC'], binance:[], news:{BTC:Array.from({length:6},(_,i)=>({t:Date.now()-(i+1)*3600000,imp:'high',cat:'recht',title:'Bitcoin ETF Meldung '+i,outlet:'Testmedium',url:'https://news.google.com/rss/articles/ui84-'+i,more:0}))} }) }));
   await p.goto(h.URL_BASE + '/weather-widget-v2.html');
-  await p.waitForFunction(() => window.__g05?.state.candles.length > 100 && !!window.__g12?.view.state.confirmed);
+  await p.waitForFunction(() => window.__g05?.state.candles.length > 100);
   check('Frischer Start ohne Testpräferenz: Arbeitsbereich Chart, PC-Dashboard automatisch', await p.evaluate(() => document.documentElement.dataset.workspace === 'focus' && document.documentElement.dataset.workspaceView === 'chart' && document.documentElement.dataset.presentation === 'dashboard'));
   check('Chart und echte Signalübersicht sichtbar, sekundäre Bereiche verborgen', await visible(p, 'chart-sec') && await visible(p, 'signals') && !await visible(p, 'positions') && !await visible(p, 'alarms') && !await visible(p, 'econ') && !await visible(p, 'calc-sec'));
   const chart = await p.locator('#chart-sec').boundingBox(), sig = await p.locator('#signals').boundingBox();
@@ -34,20 +34,18 @@ const select = async (p, key) => { await p.click(`[data-workspace-target="${key}
   await p.click('#pause');
   const order = await p.evaluate(() => [...__g05.state.watch]); await p.locator('#watchlist .wl-tile').first().focus(); await p.keyboard.press('Alt+ArrowRight');
   check('Bestehende Vorauswahl-Umsortierung per Tastatur im neuen oberen Bereich', await p.evaluate(before => __g05.state.watch[0]===before[1] && __g05.state.watch[1]===before[0] && __g05.state.watch.slice(2).join()===before.slice(2).join(), order));
-  await p.evaluate(() => { window.ui84Nodes = ['chart', 'market-form', 'watchlist', 'pos-form', 'pos-note', 'view-panel', 'notify-panel', 'data-panel', 'model-settings', 'ki-signal-panel', 'bot-simulation-panel', 'orderflow-panel'].map(id => document.getElementById(id)); document.getElementById('pos-note').value = 'Nicht gespeicherter Entwurf – 84'; window.ui84Books = JSON.stringify([__g05.state.positions, __g05.state.trades, __g05.state.alarms]); window.ui84ResourcesBefore = JSON.stringify(ui84Resources); });
+  await p.evaluate(() => { window.ui84Nodes = ['chart', 'market-form', 'watchlist', 'pos-form', 'pos-note', 'view-panel', 'notify-panel', 'data-panel', 'model-settings', 'ki-price-panel', 'orderflow-panel'].map(id => document.getElementById(id)); document.getElementById('pos-note').value = 'Nicht gespeicherter Entwurf – 84'; window.ui84Books = JSON.stringify([__g05.state.positions, __g05.state.trades, __g05.state.alarms]); window.ui84ResourcesBefore = JSON.stringify(ui84Resources); });
   await select(p, 'ind');
-  check('Analysen: Vorauswahl zunächst geschlossen, gleicher gewählter Coin auch in KI', await p.evaluate(() => !document.getElementById('workspace-watch').open && document.getElementById('workspace-watch-title').textContent.includes(__g05.state.symbol.replace('USDT','/USDT')) && document.getElementById('ki-coin').value === __g05.state.symbol));
+  check('Analysen: Vorauswahl zunächst geschlossen, gleicher gewählter Coin', await p.evaluate(() => !document.getElementById('workspace-watch').open && document.getElementById('workspace-watch-title').textContent.includes(__g05.state.symbol.replace('USDT','/USDT'))));
   await p.click('#workspace-watch > summary'); check('Analysen: originale Coin-Auswahl manuell aufklappbar', await visible(p,'watchlist'));
   await p.click('#workspace-watch > summary');
-  check('Analysen öffnen KI, Kurszonen und Umfeld ohne Kontospalte', await visible(p, 'alarms') && await visible(p, 'ki-signal-panel') && await visible(p, 'zones-sec') && await visible(p, 'econ') && !await visible(p, 'chart-sec') && !await visible(p, 'positions'));
+  check('Analysen öffnen Preisalarme, Kurszonen und Umfeld ohne Kontospalte', await visible(p, 'alarms') && await visible(p, 'ki-price-panel') && await visible(p, 'zones-sec') && await visible(p, 'econ') && !await visible(p, 'chart-sec') && !await visible(p, 'positions'));
   await p.waitForFunction(() => document.getElementById('econ-src').textContent && document.getElementById('cnews-src').textContent);
   check('Kalender und Coin-News: drei wichtige Einträge statt langer Listen', await p.locator('#econ .ec-row').count() === 3 && await p.locator('#cnews .cn-row').count() === 3);
   await p.click('#econ-more'); await p.click('#cnews-more');
   check('Mehr anzeigen erhält alle sechs Ereignisse und Nachrichten', await p.locator('#econ .ec-row').count() === 6 && await p.locator('#cnews .cn-row').count() === 6);
   await p.click('#econ-more'); await p.click('#cnews-more');
-  check('KI-Einrichtung ohne Textwand zunächst zugeklappt', await p.evaluate(() => !document.getElementById('ki-setup').open && !document.getElementById('ki-settings').open));
-  await p.click('#ki-bot-tab'); check('Bot weiterhin erreichbar und unverändert standardmäßig aus', await visible(p, 'bot-simulation-panel') && await p.evaluate(() => !__g12.view.state.confirmed.enabled));
-  await p.click('#ki-price-tab'); check('Preisalarme innerhalb der Analyse weiterhin erreichbar', await visible(p, 'ki-price-panel') && !await visible(p, 'bot-simulation-panel'));
+  check('3.68.0: KI-Signale/Trading-Bot entfernt, Preisalarme ohne Tabs sichtbar', await p.evaluate(() => !document.getElementById('ki-setup') && !document.getElementById('ki-bot-tab') && !document.getElementById('ki-signal-panel')) && await visible(p, 'ki-price-panel'));
   await select(p, 'pos');
   check('Positionen, Konto, Journal und Rechner zusammen, Marktumfeld verborgen', await visible(p, 'positions') && await visible(p, 'acct') && await visible(p, 'journal') && await visible(p, 'calc-sec') && !await visible(p, 'econ') && !await visible(p, 'alarms'));
   await select(p, 'settings');
@@ -58,7 +56,6 @@ const select = async (p, key) => { await p.click(`[data-workspace-target="${key}
   await p.click('#notify-menu'); check('Header-Hinweise öffnen Hinweise und Telegram im eigenen Bereich', await visible(p, 'notify-panel') && await p.evaluate(() => document.getElementById('workspace-notifications').open));
   await p.click('#tgc-open'); check('Telegram-Chats öffnen weiterhin den bestehenden Dialog', await p.evaluate(() => document.getElementById('tgc-dialog').open));
   await p.evaluate(() => document.getElementById('tgc-dialog').close());
-  await p.click('#ki-open'); check('KI-Verknüpfung aus Einstellungen wechselt zum sichtbaren Modellbereich', await visible(p, 'ki-signal-panel') && await p.evaluate(() => document.documentElement.dataset.workspaceView === 'ind'));
   await select(p, 'settings'); await p.click('#workspace-notifications > summary'); await p.click('#workspace-notifications > summary');
   check('Hinweise bleiben nach KI-Verknüpfung erneut aufklappbar', await visible(p, 'notify-panel'));
   await p.click('#backup-badge'); check('Sicherungs-Shortcut öffnet vollständige Sicherung direkt in Einstellungen', await visible(p, 'data-panel') && await p.evaluate(() => document.documentElement.dataset.workspaceView === 'settings'));
@@ -113,18 +110,6 @@ const select = async (p, key) => { await p.click(`[data-workspace-target="${key}
   check('Automatisches PC-Dashboard: breiter Chart rechts, gleiche Signale links', await p.evaluate(() => { const c = document.getElementById('chart-sec').getBoundingClientRect(), s = document.getElementById('signals').getBoundingClientRect(); return c.left > s.left && c.width > s.width * 1.8; }));
   await p.screenshot({ path: '/tmp/scalpdesk-360-dashboard-desktop.png' });
   await select(p, 'settings'); await p.click('#view-menu'); await h.presentationFixture(p, 'standard'); await select(p, 'chart'); await p.screenshot({ path: '/tmp/scalpdesk-360-standard-desktop.png' });
-  const ready = await p.evaluate(async () => { const f=await import('/tests/fixtures/confluence-live.mjs'), {evaluateLive}=await import('/shared/confluence-live.mjs'), snapshot=f.liveFixture(), r=evaluateLive(snapshot), c=r.cards.find(c=>c.levels.status==='bereit'); window.ui84BitgetCard = c && {...c,chartRows:snapshot.saved.series.base.rows}; return !!c; });
-  check('Zusätzlicher KI-Chart-Fall stammt aus dem tatsächlichen gemeinsamen Kartenkern', ready);
-  for (const width of [320,390,1440]) for (const presentation of ['standard','dashboard']) {
-   await p.setViewportSize({width,height:1000});
-   await select(p,'settings'); await p.click('#view-menu'); await h.presentationFixture(p, presentation); await select(p,'chart');
-   await p.evaluate(() => __g10.showChart(ui84BitgetCard)); await p.waitForFunction(() => document.querySelector('#ki-chart svg'));
-   const geometry=await p.evaluate(() => ({chart:document.getElementById('ki-chart-sec').getBoundingClientRect().toJSON(),signals:document.getElementById('signals').getBoundingClientRect().toJSON()}));
-   const inPlace=width<1100 ? geometry.chart.bottom<geometry.signals.top && geometry.chart.width>=width-30 : geometry.chart.width>geometry.signals.width*1.8 && Math.abs(geometry.chart.top-geometry.signals.top)<1 && (presentation==='standard'?geometry.chart.left<geometry.signals.left:geometry.chart.left>geometry.signals.left);
-   check(`${width}px/${presentation}: tatsächlicher Bitget-KI-Chart direkt im Chartplatz, mobil vor Signalen`, await visible(p,'ki-chart-sec') && !await visible(p,'chart-sec') && inPlace,geometry);
-   check(`${width}px/${presentation}: echte geschlossene Testkerzen und drei Referenzlinien im Bitget-Chart`, await p.locator('#ki-chart .ki-level').count()===3 && await p.locator('#ki-chart svg rect').count()===60);
-   await p.click('#ki-chart-back'); check(`${width}px/${presentation}: Rückkehr zeigt denselben Binance-Chart ohne zweite sichtbare Chartzeile`, await visible(p,'chart-sec') && !await visible(p,'ki-chart-sec'));
-  }
   // Erst beim gemeinsamen Release wird das neue lokale Modul ins PWA-Bündel aufgenommen.
   // Der ausdrücklich benannte lokale Online-Lauf prüft keine veraltete Lieferliste;
   // der normale Gesamtlauf behält die vollständige Offline-Abnahme.
@@ -145,7 +130,7 @@ const select = async (p, key) => { await p.click(`[data-workspace-target="${key}
    await phone.locator('#chart').scrollIntoViewIfNeeded(); await phone.waitForFunction(() => document.querySelector('#chart svg')); check(`${width}px Touch: vorhandener Chart zeichnet beim Hineinscrollen`, await phone.locator('#chart svg').count() > 0);
    const chosen = await phone.locator('#watchlist .wl-tile').nth(1).getAttribute('data-watch'); await phone.locator('#watchlist .wl-tile').nth(1).tap(); await phone.waitForFunction(symbol => __g05.state.symbol === symbol && __g05.state.loadedSymbol === symbol, chosen + 'USDT');
    check(`${width}px Touch: ursprüngliche Vorauswahl lädt denselben Coin in Chart und Analyse`, await phone.evaluate(symbol => __g05.state.symbol === symbol && document.getElementById('pair-label').textContent.includes(symbol.slice(0,-4)), chosen + 'USDT'));
-   await phone.tap('[data-workspace-target="ind"]'); check(`${width}px Touch: Analysen geschlossen mit demselben Chart-Coin`, await phone.evaluate(symbol => !document.getElementById('workspace-watch').open && document.getElementById('ki-coin').value===symbol && __g05.state.symbol===symbol,chosen+'USDT'));
+   await phone.tap('[data-workspace-target="ind"]'); check(`${width}px Touch: Analysen geschlossen mit demselben Chart-Coin`, await phone.evaluate(symbol => !document.getElementById('workspace-watch').open && __g05.state.symbol===symbol,chosen+'USDT'));
    await phone.tap('#workspace-watch > summary'); check(`${width}px Touch: Analysen-Vorauswahl bedienbar`, await visible(phone,'watchlist'));
    await phone.tap('[data-workspace-target="pos"]'); check(`${width}px Touch: Positionen ohne Vorauswahl`, !await visible(phone,'workspace-watch'));
    await phone.tap('[data-workspace-target="settings"]'); check(`${width}px Touch: Einstellungen ohne Vorauswahl`, !await visible(phone, 'workspace-watch') && !await visible(phone,'watchlist')); await phone.tap('#backup-badge');
@@ -154,7 +139,7 @@ const select = async (p, key) => { await p.click(`[data-workspace-target="${key}
    await phone.evaluate(() => document.getElementById('transfer-dialog').close());
    await phone.tap('[data-workspace-target="chart"]'); await phone.tap('#workspace-orderflow > summary');
    check(`${width}px Touch: bestehendes Orderflow-Signal und alle zehn Kerzen erreichbar`, await visible(phone, 'of-signal') && await phone.locator('.of-row:not(.of-legend)').count() === 10);
-   await phone.tap('#workspace-price-alarms'); check(`${width}px Touch: Preisalarme direkt aus Chart erreichbar`, await visible(phone, 'ki-price-panel') && await phone.evaluate(() => document.documentElement.dataset.workspaceView === 'ind'));
+   await phone.tap('[data-workspace-target="ind"]'); check(`${width}px Touch: Preisalarme unter Analysen erreichbar`, await visible(phone, 'ki-price-panel') && await phone.evaluate(() => document.documentElement.dataset.workspaceView === 'ind'));
    await phone.tap('[data-workspace-target="settings"]'); await phone.tap('#view-menu');
    check(`${width}px Touch: Geräteansicht erklärt, keine Auswahl der Gesamtansicht`, await phone.evaluate(() => !!document.getElementById('device-view-name').textContent && !document.querySelector('[data-workspace-mode],[data-presentation-set],[data-layout-set]')));
    await phone.reload(); await phone.waitForFunction(() => window.__g05 && document.documentElement.dataset.workspace === 'focus');
