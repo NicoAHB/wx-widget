@@ -1214,15 +1214,21 @@ html[data-chartfull] .intervals::-webkit-scrollbar{display:none}
 html[data-chartfull] .zoom-controls{flex:0 0 auto}
 /* 3.68.3: Passt nicht alles in eine Zeile (Handy hochkant ohne App-Drehung), rutschen Zoom/KI/Zonen/Signale in eine eigene, wischbare Zeile – vorher wurden die Zeiträume auf 0 px gequetscht und Knöpfe überlagerten sich. Der Minimieren-Knopf der Leiste entfällt im Vollbild (oben rechts gibt es ihn schon; er lag in der gedrängten Leiste unter dem Finger). */
 html[data-chartfull] .chart-toolbar{flex-wrap:wrap;row-gap:4px}
-html[data-chartfull] .chart-toolbar>.tb-main{flex:1 1 18rem;min-width:min(100%,18rem)}
-html[data-chartfull] .chart-toolbar>.zoom-controls{flex:0 1 auto;min-width:0;max-width:100%;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;scrollbar-width:none}
+html[data-chartfull] .chart-toolbar>.tb-main{flex:1 1 100%;min-width:0;flex-wrap:nowrap}
+/* 3.69.0: im Vollbild immer gleich aufgebaut – Zeile 1 Zeiträume · MCap · Kerzen-Auflösung, Zeile 2 Zoom · KI · Magnet · Zonen · Signale. Vorher entschied die wechselnde Beschriftung („Zonen“/„Starke Zonen“, „Jetzt“, „⟲“), ob alles in eine Zeile passte – die Leiste sprang und Knöpfe wechselten die Position. Einzeilig erst ab 1060 px Leistenbreite (Computer). */
+html[data-chartfull] .tb-main.detail-options{flex-wrap:nowrap}
+html[data-chartfull] .chart-detail-control{flex:0 1 auto;width:auto;flex-wrap:nowrap;justify-content:flex-start;white-space:nowrap}
+html[data-chartfull] .chart-detail-control select{width:clamp(130px,26vw,210px)}
+@container ctb (max-width:699px){html[data-chartfull] .chart-detail-control>span{display:none}}
+html[data-chartfull] .chart-toolbar>.zoom-controls{flex:1 1 100%;justify-content:flex-start;min-width:0;max-width:100%;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;scrollbar-width:none}
 html[data-chartfull] .chart-toolbar>.zoom-controls::-webkit-scrollbar{display:none}
 html[data-chartfull] .chart-toolbar>.zoom-controls>*{flex:0 0 auto}
 html[data-chartfull] #chart-full{display:none}
+@container ctb (min-width:1060px){html[data-chartfull] .chart-toolbar>.tb-main{flex:1 1 0}html[data-chartfull] .chart-toolbar>.zoom-controls{flex:0 0 auto}}
 /* 3.68.4: Werkzeuge im Vollbild am Handy: alle Ebenen-Schalter (Volumenprofil, EMA, Bollinger …) umbrechend sichtbar statt einer einzigen Wischzeile (höchstens drei Reihen, darin scrollbar); unter der Gesamtbild-/Positionierungs-Karte entfällt die Erklärzeile (Karte und Positionierungs-Info bleiben erreichbar). Ist trotzdem mehr da als der Bildschirm fasst, scrollt der Vollbild-Bereich selbst – vorher lag der Rest unerreichbar unter dem Rand und die Ansicht wirkte eingefroren. */
 html[data-chartfull] .overlay-toggles{flex-wrap:wrap;overflow-x:hidden;overflow-y:auto;max-height:128px;overscroll-behavior:contain;align-content:flex-start;row-gap:6px}
 html[data-chartfull] .overlay-toggles button{min-height:36px}
-html[data-chartfull] .chart-pattern-summary>small{display:none}
+html[data-chartfull] .chart-pattern-summary{display:none}   /* 3.69.0: Gesamtbild und Positionierung im Vollbild aus (Nutzerwunsch: Platz für den Chart) */
 html[data-chartfull][data-chartbar=open] #chart-sec{overflow-y:auto;overscroll-behavior:contain}
 html[data-chartfull][data-chartbar=open] #chart{min-height:220px}
 /* Eingeklappt (Standard beim Öffnen): Werkzeuge, Ebenen-Schalter und OHLC gleiten weg, der Chart wächst mit */
@@ -14542,7 +14548,7 @@ const zsKey = () => { const now = Date.now(), last = state.candles.filter(c => c
 function zsEnsure() {
   const key = zsKey(); if (!key || zs.walk?.key === key || zs.pending === key || !KI_ZONE_INTERVALS.includes(state.interval)) return;
   zs.pending = key;
-  zoneWalk({ live: true }).then(result => { if (zs.pending === key) { zs.walk = { key, result }; zsInfo(); scheduleDraw(); } }).catch(e => { zs.walk = { key, error: e.message }; zsInfo(); }).finally(() => { if (zs.pending === key) zs.pending = null; });
+  zoneWalk({ live: true }).then(result => { if (zs.pending === key) { zs.walk = { key, result }; zsInfo(); scheduleDraw(); zsAnnounce(); } }).catch(e => { zs.walk = { key, error: e.message }; zsInfo(); zsAnnounce(); }).finally(() => { if (zs.pending === key) zs.pending = null; });
 }
 var zsShown = [];
 function zoneSignalsDraw(svg, over, { data, x, y, left, pw, top, bottom, min, max, rx }) {
@@ -14575,7 +14581,22 @@ function zsInfo() {
     : o ? `Offenes Signal: ${o.dir === 1 ? 'Long' : 'Short'} seit ${utcDate(o.time)} UTC · Einstieg ${p(o.entry)} · Stop ${p(o.stop)} · Ziel ${p(o.target)} (${o.targetName}) · CRV ${o.crv.toFixed(2).replace('.', ',')}. Entscheidungshilfe, keine Garantie.`
     : `Kein offenes Signal. Im geladenen Zeitraum ${w.result.trades.length} abgeschlossene Signale. Long nur an starker Kaufzone mit passendem Trend und Auslöser, Short spiegelverkehrt, CRV ≥ ${String(ZONE_SIGNAL.minCrv).replace('.', ',')}.`;
 }
-function zsSet(on) { zs.on = !!on; zsSave(); $('zsig-btn').setAttribute('aria-pressed', String(zs.on)); if (zs.on && !KI_ZONE_INTERVALS.includes(state.interval)) infoToast('Signale gibt es für 5m bis 1d – Zeitrahmen wechseln.'); zsInfo(); scheduleDraw(); }
+// 3.69.0: Antippen gibt immer eine sichtbare Rückmeldung – auch wenn im geladenen Zeitraum kein Signal entsteht (vorher wirkte der Knopf wie ohne Funktion).
+function zsAnnounce() {
+  if (!zs.announce || !zs.on) return; const w = zs.walk; if (!w || w.key !== zsKey()) return; zs.announce = false;
+  if (w.error) { infoToast(w.error, 6000); return; }
+  const r = w.result, n = r.trades.length, o = r.open;
+  infoToast(o ? `Signale an: offenes ${o.dir === 1 ? 'Long' : 'Short'}-Signal seit ${utcDate(o.time)} UTC – im Chart ▲ Einstieg und Linien für Stop, Ziel und Einstieg · ${n} abgeschlossen im geladenen Zeitraum. Entscheidungshilfe, keine Garantie.`
+    : n ? `Signale an: ${n} abgeschlossene im geladenen Zeitraum (▲ Einstieg, ▼ Ausstieg), gerade kein offenes Signal. Entscheidungshilfe, keine Garantie.`
+    : `Signale an – im geladenen Zeitraum (${r.candles} Kerzen) kein Signal. Signale entstehen nur an starken Zonen mit passendem Trend, frischem Auslöser und CRV ≥ ${String(ZONE_SIGNAL.minCrv).replace('.', ',')}.`, 8000);
+}
+function zsSet(on) {
+  zs.on = !!on; zsSave(); $('zsig-btn').setAttribute('aria-pressed', String(zs.on));
+  if (zs.on && !KI_ZONE_INTERVALS.includes(state.interval)) infoToast('Signale gibt es für 5m bis 1d – Zeitrahmen wechseln.');
+  else if (zs.on) { zs.announce = true; if (zs.walk?.key === zsKey()) zsAnnounce(); else infoToast('Signale an – werden berechnet …', 3000); }
+  else { zs.announce = false; infoToast('Signale ausgeblendet.', 2500); }
+  zsInfo(); scheduleDraw();
+}
 $('zsig-btn').setAttribute('aria-pressed', String(zs.on)); $('zsig-btn').addEventListener('click', () => zsSet(!zs.on)); zsInfo();
 window.__zs = { state: zs, walk: zoneWalk, set: zsSet };
 
