@@ -3,7 +3,7 @@
 Diese Datei ist der Einstieg für jede weitere Arbeit am Projekt. Wer sie liest, braucht kein Vorwissen. Die vollständige fachliche
 Vorgabe aller Gruppen G01–G14 steht in `docs/VORGABE-G01-G14.md` (Original-Übergabe; dort sind G10–G14 ausführlich beschrieben).
 
-## Aktueller Stand – 3.69.0 / Dienst 2.13.0 / Musterdienst 1.1.0 (Claude): Qualitätsfilter für Chartmuster-Meldungen
+## Aktueller Stand – 3.69.0 / Dienst 2.13.0 / Musterdienst 1.2.0 (Claude): Qualitätsfilter, Trade-Karte, FVG, Chartmuster-Karten über Oracle
 
 Nutzerauftrag: viel zu viele Chartmuster-Meldungen über Telegram/Oracle → Qualitätsfilter. Kursalarme, Trades und Sicherung sind unverändert, kein neuer Chat. Ausführlich: [docs/CHARTMUSTER-QUALITAETSFILTER.md](docs/CHARTMUSTER-QUALITAETSFILTER.md), [docs/3.69.0-AENDERUNGEN.md](docs/3.69.0-AENDERUNGEN.md).
 
@@ -60,6 +60,25 @@ Nutzerauftrag: viel zu viele Chartmuster-Meldungen über Telegram/Oracle → Qua
   - Tests: `fvg-ki/tests` (pytest, 19) und `tests/m104.js` (Browser, 14).
     - m104 braucht `FVG_PYTHON` mit den Bibliotheken aus `fvg-ki/requirements.txt`, sonst wird er übersprungen.
     - Die Scalp-Desk-App selbst zeichnet noch keine FVGs.
+- **Chartmuster als Trading-Karte über Oracle (Musterdienst 1.2.0, gleiche App-Version):** Ausführlich in [docs/3.69.0-AENDERUNGEN.md](docs/3.69.0-AENDERUNGEN.md) und [docs/ORACLE_24-7.md](docs/ORACLE_24-7.md), Abschnitt 6.
+  - Oracle = Always-Free-VM mit Node unter systemd. Keine Oracle-Datenbank.
+  - `server/pattern-card.mjs`:
+    - `patternCardModel` (Strings wie `formatMessage('pattern')`, „Nicht verfügbar“), `patternCardSvg` (Layout, Inter-Breitentabelle für Umbruch/Einpassen), `renderPatternCard` (resvg, lazy, optional), `patternCaption`, `EXAMPLE_SIGNAL`.
+    - Abhängigkeit `@resvg/resvg-js` 2.6.2 in `server/package.json` (+ Lock). `server/node_modules` steht in `.gitignore`.
+  - `pattern-monitor.mjs`: `patternMessageData` (Signaldaten), `patternText` daraus.
+  - `patterns-247.mjs` 1.2.0:
+    - Event mit `data`; `sendEvent` (Karte → `telegramPhoto` multipart; Text bei Renderfehler oder 400 ohne Chatproblem); `cardFor` (PNG in `karten/<sha>.png`, bei Wiederholung dasselbe).
+    - `confirmed` mit `sentAt`/`via`/`msgId`.
+    - Zeitstempel im Protokoll; `dienst.pid` solange der Dienst läuft.
+    - Aufrufe `--karte-beispiel`, `--bereinigen`, `--probelauf`, `--stichtag`.
+  - `server/pattern-retention.mjs`:
+    - `monthStart` (Intl, Sommer-/Winterzeit), `selectPurge`, `purgeSentMessages` (Sperre, Löschliste `bereinigung-offen.json`, atomarer Zustand, rotierte und komprimierte Protokolle), `purgeReport`.
+    - Altbestand ohne `sentAt`: erst ab Erkennung + 7 Tage vor dem Stichtag.
+  - systemd: `scalpdesk-patterns-bereinigung.service`/`.timer`.
+    - Dienst anhalten und nur bei Bedarf wieder starten.
+    - `service.log` per `+chown` dem Dienstbenutzer.
+  - Tests: `tests/unit-pattern-card.js` (51). Renderprüfungen brauchen `server/node_modules`.
+  - Der 24/7-Dienst sendet Muster weiter als Text; der Einbau dort wäre der nächste Schritt.
 - iPad-Rückmeldungen (gleiche Version):
   - `zsAnnounce`/`zs.announce`: Toast nach jedem Tipp auf „Signale“.
   - Vollbild-Leiste: `.tb-main{flex:1 1 100%}`, `.zoom-controls{flex:1 1 100%}`, einzeilig erst `@container ctb (min-width:1060px)`; `.chart-detail-control` im Vollbild nowrap, Titel unter 700 px aus.

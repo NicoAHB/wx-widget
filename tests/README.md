@@ -1,5 +1,10 @@
 # Tests für Scalp Desk
 
+**3.69.0 Chartmuster-Karten über Oracle (Musterdienst 1.2.0, Claude):**
+- Neu `unit-pattern-card.js` (51): Karte (Beispielwerte exakt, Abwärts, lange Namen, fehlende Werte, PNG und Pixel), Versand (Karte, Textersatz, 400/429/verloren, Multipart) und Bereinigung (Stichtag, Monatswechsel, Probelauf, Sperren, Wiederaufnahme, Protokolle, systemd).
+- PNG-Prüfungen brauchen `server/node_modules` (`npm ci` im Ordner `server`); ohne sie werden sie übersprungen.
+- Beispielbild unter `tests/out/` (nicht im Git).
+
 **3.69.0 Trade-Karte und FVG (Claude):**
 - Neu `m103.js` (27): Trade-Karte mit dem gemeldeten Beispiel XRP/USDT 24.09.2026, 22:09 – 25.09.2026, 00:01.
   - −1100 nachgestellt, Anfrage ganzzahlig und 1m.

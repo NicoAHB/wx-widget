@@ -1,0 +1,26 @@
+# Monatliche Bereinigung gesendeter Chartmuster-Nachrichten (Oracle-Musterdienst ab 1.2.0) – gestartet vom gleichnamigen Timer.
+# Hält den Chartmusterdienst für die Dauer der Bereinigung an (sonst würde er den Zustand überschreiben) und startet ihn danach
+# wieder – nur, wenn er vorher lief. systemd startet diese Einheit nie zweimal gleichzeitig; zusätzlich sperrt das Programm selbst.
+[Unit]
+Description=Scalp Desk – monatliche Bereinigung gesendeter Chartmuster-Nachrichten
+After=local-fs.target
+
+[Service]
+Type=oneshot
+User=scalpdesk-patterns
+Group=scalpdesk-patterns
+WorkingDirectory=/opt/scalpdesk-patterns
+Environment=TZ=Europe/Berlin
+ExecStartPre=+/bin/sh -c 'if systemctl is-active --quiet scalpdesk-patterns; then touch /run/scalpdesk-patterns-bereinigung.neustart; systemctl stop scalpdesk-patterns; fi'
+ExecStartPre=+/bin/sh -c 'for f in /var/log/scalpdesk-patterns/service.log; do [ -e "$f" ] && chown scalpdesk-patterns:scalpdesk-patterns "$f"; done; true'
+ExecStart=/usr/bin/node /opt/scalpdesk-patterns/server/patterns-247.mjs --bereinigen
+ExecStopPost=+/bin/sh -c 'if [ -e /run/scalpdesk-patterns-bereinigung.neustart ]; then rm -f /run/scalpdesk-patterns-bereinigung.neustart; systemctl start scalpdesk-patterns; fi'
+TimeoutStartSec=15min
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/scalpdesk-patterns /var/log/scalpdesk-patterns
+StandardOutput=append:/var/log/scalpdesk-patterns/bereinigung.log
+StandardError=append:/var/log/scalpdesk-patterns/bereinigung.log

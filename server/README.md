@@ -165,6 +165,8 @@ Die Zeitstempel davor setzt journalctl in der Zeitzone des Servers (bei Oracle m
 
 ## Chartmuster bei geschlossener App (ab Dienst 2.4.0, App 3.42.0)
 
+Hinweis (App 3.69.0): Der 24/7-Dienst sendet Chartmuster als Text. Übersichtliche **Trading-Karten** (PNG) und die **monatliche Bereinigung** gesendeter Nachrichten bietet der eigenständige Oracle-Musterdienst ab 1.2.0 – Anleitung: [docs/ORACLE_24-7.md](../docs/ORACLE_24-7.md), Abschnitt 6.
+
 1. Den bestehenden Dienst aktualisieren; der Installer lädt jetzt zusätzlich `pattern-engine.mjs` und `pattern-monitor.mjs`. Keine neue VM und keine erneute Einrichtung aller Chats nötig.
 2. In der App unter „Telegram einrichten“ den Chartmuster-Chat und optional sein Thema eintragen, die HTTPS-Dienstadresse prüfen und **„Vorauswahl am Dienst übernehmen“** drücken. Die Bestätigung zeigt Revision und Anzahl der Märkte. Nur Bot-ID, Chat, Thema, Coins, tatsächlicher Binance-Markt und Kerzenintervall werden übertragen, keine Bot-Token.
 3. Der Dienst prüft diese Märkte nach jedem Kerzenschluss, auch ohne offene App und unabhängig von der Telegram-Übergabedatei der Kursalarme. Er verwendet dieselbe unveränderte Engine `pat-1` wie die App, im kontinuierlichen Krypto-Modus ohne strenge Gaps. Der Standardzeitraum der Vorauswahl „1 Stunde“ verwendet **5m-Kerzen**, „30 Minuten“ 3m, „4 Stunden“ 15m, „1 Tag“ 2h; dies ist kein Bitget-/G10-Signal.
