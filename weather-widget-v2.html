@@ -1224,6 +1224,8 @@ html[data-chartfull] .chart-toolbar>.zoom-controls{flex:1 1 100%;justify-content
 html[data-chartfull] .chart-toolbar>.zoom-controls::-webkit-scrollbar{display:none}
 html[data-chartfull] .chart-toolbar>.zoom-controls>*{flex:0 0 auto}
 html[data-chartfull] #chart-full{display:none}
+html[data-chartfull] .chart-toolbar>.zoom-controls>#pan-now,html[data-chartfull] .chart-toolbar>.zoom-controls>#zoom-reset{order:10}   /* 3.69.0: „Jetzt“ und „⟲“ erscheinen nur bei verschobener/gezoomter Ansicht – am Zeilenende, damit KI, Magnet, Zonen und Signale nicht verrutschen */
+html[data-chartfull] .chart-toolbar>.zoom-controls>details.tip{order:11}
 @container ctb (min-width:1060px){html[data-chartfull] .chart-toolbar>.tb-main{flex:1 1 0}html[data-chartfull] .chart-toolbar>.zoom-controls{flex:0 0 auto}}
 /* 3.68.4: Werkzeuge im Vollbild am Handy: alle Ebenen-Schalter (Volumenprofil, EMA, Bollinger …) umbrechend sichtbar statt einer einzigen Wischzeile (höchstens drei Reihen, darin scrollbar); unter der Gesamtbild-/Positionierungs-Karte entfällt die Erklärzeile (Karte und Positionierungs-Info bleiben erreichbar). Ist trotzdem mehr da als der Bildschirm fasst, scrollt der Vollbild-Bereich selbst – vorher lag der Rest unerreichbar unter dem Rand und die Ansicht wirkte eingefroren. */
 html[data-chartfull] .overlay-toggles{flex-wrap:wrap;overflow-x:hidden;overflow-y:auto;max-height:128px;overscroll-behavior:contain;align-content:flex-start;row-gap:6px}

@@ -54,7 +54,7 @@ const TOKEN = '7012345678:AAHf3kQx_9zY-abcdefghijklmnopqrstuvw';
       const lay0 = await layoutOf(); const lays = [];
       for (let n = 0; n < 3; n++) { await page.evaluate(() => document.getElementById('zones-btn').click()); await page.waitForTimeout(150); lays.push(await layoutOf()); }
       check('Leiste stabil: Zonen-Beschriftung wechselt, Zeilen, Höhe, Zeiträume, KI-Knopf und Kerzen-Auflösung bleiben an ihrem Platz', lays.every(l => l.rows === 2 && l.h === lay0.h && l.iv.join() === lay0.iv.join() && l.zc === lay0.zc && l.ki === lay0.ki && l.selTop === lay0.selTop) && lay0.rows === 2, JSON.stringify({ lay0, lays }));
-      await page.evaluate(() => document.getElementById('toasts').replaceChildren()); await page.locator('#zsig-btn').scrollIntoViewIfNeeded(); await page.tap('#zsig-btn');
+      await page.evaluate(() => { __zs.set(false); document.getElementById('toasts').replaceChildren(); }); await page.locator('#zsig-btn').scrollIntoViewIfNeeded(); await page.tap('#zsig-btn');
       await page.waitForFunction(() => /Signale an/.test(document.getElementById('toasts').textContent), null, { timeout: 60000 });
       check('3.69.0: „Signale“ im Vollbild antippen → Knopf grün und Hinweis (auch wenn kein Signal entsteht), Vollbild bleibt', await page.evaluate(() => document.getElementById('zsig-btn').getAttribute('aria-pressed') === 'true' && document.documentElement.dataset.chartfull === '1'), await page.evaluate(() => document.getElementById('toasts').textContent.slice(0, 200)));
       await page.tap('#zsig-btn'); await page.waitForTimeout(150);
