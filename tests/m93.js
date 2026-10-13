@@ -88,7 +88,7 @@ const check = (name, ok, extra = '') => { ok ? pass++ : fail++; console.log(`${o
 
     await page.evaluate(key => { const r = __g09.chipRows().find(r => r.key === key); r.hit.status = 'ungültig'; __g09.chipPaint(); }, row.key);
     await info.click();
-    check('Ungültiges Muster bleibt über Info erklärbar, Zeichnung und Zoom gesperrt', await shown() && await tile.isDisabled() && await page.locator('#pat-info-zoom').isDisabled() && await selection() === '[]' && (await page.locator('#pat-info-body').innerText()).includes('Status: ungültig')); await close();
+    check('Ungültiges Muster bleibt über Info erklärbar, Zeichnung per Tipp gesperrt, Info bietet nur „Ausgegraut im Chart zeigen“ (3.70.0)', await shown() && await tile.isDisabled() && await page.locator('#pat-info-zoom').isEnabled() && (await page.locator('#pat-info-zoom').innerText()).trim() === 'Ausgegraut im Chart zeigen' && await selection() === '[]' && (await page.locator('#pat-info-body').innerText()).includes('Status: ungültig')); await close();
     // Der aktive Info-Knopf muss auch an einer abgegrauten, gesperrten Kachel lesbar bleiben.
     const infoContrast = () => page.evaluate(key => {
       const button = document.querySelector(`button[data-pattern-info-key="${key}"]`), tile = button.parentElement;

@@ -15,6 +15,10 @@
   - Trend-Zeile bündig mit OHLC;
   - „Starke Zonen“ bündig unter „Orderflow“;
   - FVG-Farbfeld.
+- Neu `m107.js` (15): beendetes Chartmuster (echte pat-1-Erkennung, Status ungültig) über ⓘ → „Ausgegraut im Chart zeigen“.
+  - Prüft: grau und gestrichelt, Sprung zum Muster, Name mit ✕, nur zur Ansicht, Vollbild.
+  - Ausblenden über den Knopf, durch Tipp auf den Namen und durch Intervallwechsel.
+  - `m93`/`m94` erwarten jetzt diesen Knopf statt eines gesperrten.
 - `unit-247e.js` (52): Trading-Karten im 24/7-Dienst 2.14.0.
   - Versand: `sendPhoto` an Chat/Thema, Multipart.
   - Fehlerfälle: 400 → Text, Chatfehler bleibt im Ausgang, 429, verloren, Renderer fehlt.

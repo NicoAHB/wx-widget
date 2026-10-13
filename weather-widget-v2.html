@@ -6716,6 +6716,7 @@ function renderChartContent(levels={}, ov={}, start=null, end=null) {
   if (pat.on) patDraw(svg, over, { data, x, y, timeX, left, pw, top, bottom, min, max, rx, step }); // 3.37.0 (G09): erkannte Chartmuster
   patDrawProjection(svg, over, { data, x, y, timeX, left, pw, top, bottom, min, max, rx, step });
   patDrawChips(svg, over, {data,x,y,timeX,left,pw,top,bottom,min,max,rx,step});
+  patDrawGhost(svg, over, {data,x,y,timeX,left,pw,top,bottom,min,max,rx,step}); // 3.70.0: beendetes Muster ausgegraut
   if (prof) { const yp=y(prof.poc); over.append(node('line',{x1:left,y1:yp,x2:left+pw,y2:yp,stroke:PAL.vp,'stroke-width':1.5,opacity:.95}),node('text',{x:left+6,y:yp-5,class:'axis-label',style:'fill:'+PAL.vp+';font-weight:600'},'POC')); }
   // 3.28.0: Demo-Positionen auch im Chart – blasser und mit „DEMO“ beschriftet (nur Anzeige)
   const chartPos = [...state.positions, ...state.demoPositions].filter(p => p.symbol === state.symbol), demoTag = p => isDemoPos(p) ? 'DEMO ' : '';
@@ -7637,7 +7638,7 @@ function acceptOwnColor(value) {
 }
 const desktopMq = matchMedia('(min-width:1100px) and (hover:hover) and (pointer:fine)');
 let PAL = {};
-function readPalette() { const cs = getComputedStyle(docEl), g = n => cs.getPropertyValue(n).trim(); PAL = { up: g('--c-up'), down: g('--c-down'), bb: g('--c-bb'), ema: g('--c-ema'), vp: g('--c-vp'), vpBar: g('--c-vpbar'), short: g('--c-short'), last: g('--c-last'), zero: g('--c-zero'), liq: g('--c-liq'), hz: g('--c-hz'), lm: [1, 2, 3, 4, 5].map(i => g('--c-lm' + i)), magnet: g('--c-magnet') }; }
+function readPalette() { const cs = getComputedStyle(docEl), g = n => cs.getPropertyValue(n).trim(); PAL = { up: g('--c-up'), down: g('--c-down'), bb: g('--c-bb'), ema: g('--c-ema'), vp: g('--c-vp'), vpBar: g('--c-vpbar'), short: g('--c-short'), last: g('--c-last'), zero: g('--c-zero'), liq: g('--c-liq'), hz: g('--c-hz'), lm: [1, 2, 3, 4, 5].map(i => g('--c-lm' + i)), magnet: g('--c-magnet'), muted: g('--muted') }; }
 function applyTheme(t, save = true, background = null) {
   const previous = store.get(BACKGROUND_KEY, null), color = appearance.evaluate(background?.color || previous?.color).ok ? appearance.normalize(background?.color || previous?.color) : appearance.palette[0].color;
   const custom = t === 'custom', palette = custom ? appearance.build(color) : null;
@@ -13042,7 +13043,7 @@ function patChipPressClear() { if (patChipPress) clearTimeout(patChipPress.timer
 function patChipOpenInfo(key) {
   const row = patChipList().find(r => r.key === key), i = row ? pat.res.hits.findIndex(h=>patternChipKey(h)===key) : -1;
   if (i < 0) return;
-  patOpenInfo(i); patChipInfoKey = { key, scope: patKey(), restrict:true }; $('pat-info-zoom').disabled = row.disabled;
+  patOpenInfo(i); patChipInfoKey = { key, scope: patKey(), restrict:true }; patInfoZoomMode(row);
 }
 function patChipBindPress(host) {
   // Nachgereichter Touch-Klick: nach Coinwechsel/langer Erklärung kein anderes
@@ -13284,8 +13285,8 @@ function patChipPaint() {
     if(q&&block&&h&&block.dataset.hit!==JSON.stringify(h)) {
       const scope=patChipInfoKey,body=$('pat-info-body'),scroll=body.scrollTop,open=[...body.querySelectorAll('details')].map(d=>d.open);
       patOpenInfo(pat.res.hits.indexOf(h));patChipInfoKey=scope;
-      [...body.querySelectorAll('details')].forEach((d,i)=>{d.open=!!open[i];});body.scrollTop=scroll;$('pat-info-zoom').disabled=!!scope.restrict&&q.disabled;
-    } else if(q && block && block.dataset.signature !== JSON.stringify(q)) { const next = patQualityBlock(q,h);next.dataset.signature=JSON.stringify(q);block.replaceWith(next);$('pat-info-zoom').disabled=!!patChipInfoKey.restrict&&q.disabled;const status=document.querySelector('#pat-info-body .pat-info-status');if(status)status.textContent=`Status: ${q.status}`; }
+      [...body.querySelectorAll('details')].forEach((d,i)=>{d.open=!!open[i];});body.scrollTop=scroll;patInfoZoomMode(scope.restrict?{key:scope.key,disabled:q.disabled,status:q.status}:null);
+    } else if(q && block && block.dataset.signature !== JSON.stringify(q)) { const next = patQualityBlock(q,h);next.dataset.signature=JSON.stringify(q);block.replaceWith(next);patInfoZoomMode(patChipInfoKey.restrict?{key:patChipInfoKey.key,disabled:q.disabled,status:q.status}:null);const status=document.querySelector('#pat-info-body .pat-info-status');if(status)status.textContent=`Status: ${q.status}`; }
   }
 }
 function patChipInit() {
@@ -13307,6 +13308,43 @@ function patDrawChips(svg, over, g) {
     for(const [key,name,dash]of [['brk','Ausbruch','5 4'],['brk2','Ausbruch unten','5 4'],['tgt','Ziel','2 3']]){const price=h.levels?.[key];if(!(price>0))continue;const yy=g.y(price);if(price>=g.min&&price<=g.max)group.append(node('line',{x1:Math.min(g.left+g.pw,Math.max(g.left,g.timeX(h.t1))),y1:yy,x2:g.left+g.pw,y2:yy,stroke:color,'stroke-dasharray':dash,opacity:.7,class:'pat-chip-level','data-level':key}));svg.append(node('text',{x:g.rx,y:clamp(yy-4,g.top+12,g.bottom-4),'text-anchor':'end',class:'axis-label pat-chip-level-label',style:`fill:${color};font-size:10px`},`${name} ${priceText(price)}${price>g.max?' ↑':price<g.min?' ↓':''}`));}
     over.append(group);const label=node('text',{x:g.left+6,y:g.top+13+labelRow++*14,'text-anchor':'start',class:'axis-label pat-chip-label',style:`fill:${color};font-size:10px;font-weight:650`},PAT_LIB[h.id]?.n.replace(/ \(.*\)$/,'')||h.id);label.append(node('title',{},`${r.status} · ${state.interval} · Regelgüte ${h.q} %`));svg.append(label);
   }
+}
+// 3.70.0 (Nutzerwunsch): Gescheiterte, abgelaufene, erfüllte oder ungültige Formationen bleiben per Tipp gesperrt (kein aktives
+// Muster), lassen sich aber über ⓘ → „Ausgegraut im Chart zeigen“ ansehen: grau und gestrichelt an der damaligen Stelle, der
+// Ausschnitt springt hin. Höchstens eines zugleich; Tipp auf den grauen Namen im Chart, derselbe Knopf oder ein Coin-/
+// Intervallwechsel blendet es aus. Keine Auswahl, keine Projektion, kein Alarm – nur Ansicht.
+var patGhost = null;   // { key, scope, hit, status }
+function patGhostActive() { if (patGhost && patGhost.scope !== patKey()) patGhost = null; return patGhost; }
+function patInfoZoomMode(row) {
+  const b = $('pat-info-zoom'), ghost = !!row?.disabled, on = ghost && patGhostActive()?.key === row.key;
+  const label = !ghost ? 'Im Chart zeigen' : on ? 'Ausgegraut ausblenden' : 'Ausgegraut im Chart zeigen';
+  b.disabled = false; b.dataset.ghost = ghost ? (on ? 'off' : 'on') : ''; if (b.textContent !== label) b.textContent = label;
+  b.title = ghost ? `${row.status ? row.status[0].toUpperCase() + row.status.slice(1) : 'Beendet'} – grau im Chart, nur zur Ansicht, kein aktives Muster` : '';
+}
+function patGhostShow(i) {
+  const h = pat.res?.hits[i]; if (!h) return;
+  const key = patternChipKey(h), row = patChipList().find(r => r.key === key), name = PAT_LIB[h.id]?.n.replace(/ \(.*\)$/, '') || h.id;
+  patGhost = { key, scope: patKey(), hit: h, status: row?.status || 'beendet' };
+  patZoom(i, false); scheduleDraw();
+  infoToast(`${name} (${patGhost.status}) ausgegraut im Chart – nur zur Ansicht, kein aktives Muster. Ausblenden: grauen Namen im Chart antippen.`, 7000);
+}
+function patGhostClear(say) { if (!patGhost) return; patGhost = null; scheduleDraw(); if (say) infoToast('Ausgegrautes Muster ausgeblendet.'); }
+function patDrawGhost(svg, over, g) {
+  const gh = patGhostActive(); if (!gh || CAP.on || !g.data.length) return;
+  const h = gh.hit, grey = PAL.muted || '#8f9bab', group = node('g', { class: 'pat-ghost', 'data-pattern-key': gh.key }), points = [];
+  const xa = g.timeX(h.t0) - g.step / 2, xb = g.timeX(h.t1) + g.step / 2;
+  group.append(node('rect', { x: xa, y: g.top, width: Math.max(2, xb - xa), height: g.bottom - g.top, fill: grey, opacity: .08, class: 'pat-ghost-hl' }));
+  const lines = (h.lines || []).filter(l => l.slice(0, 4).every(Number.isFinite));
+  const bounds = lines.filter(l => ['sup', 'res', 'neck'].includes(l[4]));
+  if (bounds.length >= 2) { const a = bounds[0], b = bounds[1]; group.append(node('polygon', { points: [[g.timeX(a[0]), a[1]], [g.timeX(a[2]), a[3]], [g.timeX(b[2]), b[3]], [g.timeX(b[0]), b[1]]].map(([x, p]) => `${x},${g.y(p)}`).join(' '), fill: grey, opacity: .07, class: 'pat-ghost-zone' })); }
+  for (const [t0, p0, t1, p1, kind] of lines) { const x0 = g.timeX(t0), x1 = g.timeX(t1); group.append(node('line', { x1: x0, y1: g.y(p0), x2: x1, y2: g.y(p1), stroke: grey, 'stroke-width': 1.5, 'stroke-dasharray': kind === 'shape' ? '6 3' : '3 3', opacity: .8, class: 'pat-ghost-line' })); points.push([x0, p0], [x1, p1]); }
+  const seen = new Set(); for (const [x, p] of points) { const k = `${x}|${p}`; if (seen.has(k) || seen.size >= 16) continue; seen.add(k); group.append(node('circle', { cx: x, cy: g.y(p), r: 2.2, fill: grey, opacity: .8, class: 'pat-ghost-point' })); }
+  for (const [key, name] of [['brk', 'Ausbruch'], ['tgt', 'Ziel']]) { const price = h.levels?.[key]; if (!(price >= g.min && price <= g.max)) continue; const yy = g.y(price); group.append(node('line', { x1: Math.max(g.left, xb), y1: yy, x2: g.left + g.pw, y2: yy, stroke: grey, 'stroke-dasharray': '2 4', opacity: .55, class: 'pat-ghost-level', 'data-level': key })); svg.append(node('text', { x: g.rx, y: clamp(yy - 4, g.top + 12, g.bottom - 4), 'text-anchor': 'end', class: 'axis-label pat-ghost-level-label', style: `fill:${grey};font-size:10px;opacity:.8` }, `${name} ${priceText(price)}`)); }
+  over.append(group);
+  const name = PAT_LIB[h.id]?.n.replace(/ \(.*\)$/, '') || h.id, text = `${name} · ${gh.status} · ausgegraut ✕`, ty = g.top + 13 + patChipSelections.size * 14;
+  const tag = node('g', { class: 'pat-ghost-tag', 'data-pat-ghost': gh.key, style: 'cursor:pointer' });
+  tag.append(node('rect', { x: g.left + 2, y: ty - 12, width: Math.min(g.pw - 4, text.length * 6 + 12), height: 18, rx: 4, fill: grey, opacity: .14 }), node('text', { x: g.left + 8, y: ty, 'text-anchor': 'start', class: 'axis-label pat-ghost-label', style: `fill:${grey};font-size:10px;font-weight:650` }, text));
+  tag.append(node('title', {}, `${name} · ${gh.status} · ${state.interval} – nur zur Ansicht, kein aktives Muster. Antippen blendet es aus.`)); svg.append(tag);
 }
 const patKey = () => `${state.symbol}|${state.source}|${state.interval}`;
 function patWorker() {
@@ -13474,7 +13512,7 @@ function patOpenInfo(i) { // 3.68.0: nur noch Chartmuster des Charts (KI-Signal-
   const R = pat.res, h = R?.hits[i]; if (!h) return;
   patChipInfoKey = null;
   const L = PAT_LIB[h.id], d = $('pat-info'); pat.info = i;
-  $('pat-info-zoom').disabled = false; $('pat-info-zoom').hidden = false;
+  $('pat-info-zoom').disabled = false; $('pat-info-zoom').hidden = false; patInfoZoomMode(null);
   put('pat-info-title', L.n);
   const ctx = h.kind === 'form' ? patQualityContext() : null;
   const q = ctx ? patChipList().find(r => r.key === patternChipKey(h)) || chartPatternQuality(h,state.candles,{interval:state.interval,trends:patQualityTrends(),levels:ctx.levels,atr:ctx.atr}) : null;
@@ -13496,11 +13534,11 @@ function patOpenInfo(i) { // 3.68.0: nur noch Chartmuster des Charts (KI-Signal-
   body.scrollTop=0;
 }
 // „Im Chart zeigen“: Ausschnitt bewusst um das Muster legen; danach ist der Chart frei bedienbar
-function patZoom(i) {
+function patZoom(i, select = true) {
   const h = pat.res?.hits[i]; if (!h) return;
   const len = state.candles.length, a = state.candles.findIndex(c => c.time === h.t0), b = state.candles.findIndex(c => c.time === h.t1); if (a < 0 || b < 0) return;
   const span = b - a + 1, n = Math.max(30, Math.round(span * 2.5)), endI = Math.min(len, b + 1 + Math.round((n - span) / 2));
-  pat.sel = i; state.count = Math.min(len, n); if(detailReady()){state.pan=len-endI;state.anchorTime=state.pan?state.candles[endI-1].time:null;detailSync(true,{start:state.candles[Math.max(0,endI-state.count)].time,end:state.candles[endI-1].closeTime});}else setPan(len - endI); patSheet(); scheduleDraw();
+  if (select) pat.sel = i; state.count = Math.min(len, n); if(detailReady()){state.pan=len-endI;state.anchorTime=state.pan?state.candles[endI-1].time:null;detailSync(true,{start:state.candles[Math.max(0,endI-state.count)].time,end:state.candles[endI-1].closeTime});}else setPan(len - endI); patSheet(); scheduleDraw();
 }
 // --- Chart: kleine Labels für Kerzen, Linien/Zonen für Formationen ---
 function patProjectionRows() {
@@ -13554,9 +13592,9 @@ function patDraw(svg, over, g) {
   patChipInit();
   btn.addEventListener('click', () => { pat.on = true; if (!patRun('Tipp')) patSheet(); patSheet(); const d = $('pat-sheet'); if (!d.open) d.showModal(); });
   $('pat-close').addEventListener('click', () => $('pat-sheet').close());
-  $('pat-off').addEventListener('click', () => { pat.on = false; pat.sel = null; patSheet(); scheduleDraw(); $('pat-sheet').close(); });
+  $('pat-off').addEventListener('click', () => { pat.on = false; pat.sel = null; patGhost = null; patSheet(); scheduleDraw(); $('pat-sheet').close(); });
   for (const id of ['pat-info-close', 'pat-info-x']) $(id).addEventListener('click', () => $('pat-info').close());
-  $('pat-info-zoom').addEventListener('click', () => { const i = patChipInfoKey ? patChipInfoKey.scope === patKey() ? pat.res?.hits.findIndex(h => patternChipKey(h) === patChipInfoKey.key) ?? -1 : -1 : pat.info; $('pat-info').close(); $('pat-sheet').close(); if (i < 0) { infoToast('Dieses Muster ist im aktuellen Ausschnitt nicht mehr verfügbar.'); return; } pat.on = true; patZoom(i); });
+  $('pat-info-zoom').addEventListener('click', () => { const mode = $('pat-info-zoom').dataset.ghost, i = patChipInfoKey ? patChipInfoKey.scope === patKey() ? pat.res?.hits.findIndex(h => patternChipKey(h) === patChipInfoKey.key) ?? -1 : -1 : pat.info; $('pat-info').close(); $('pat-sheet').close(); if (mode === 'off') { patGhostClear(true); return; } if (i < 0) { infoToast('Dieses Muster ist im aktuellen Ausschnitt nicht mehr verfügbar.'); return; } if (mode === 'on') { patGhostShow(i); return; } pat.on = true; patZoom(i); });
   $('pat-sheet').addEventListener('click', e => {
     const f = e.target.closest('[data-pfil]'), s = e.target.closest('[data-pat-sel]'), inf = e.target.closest('[data-pat-info]');
     if (f) { pat.filter = f.dataset.pfil; patSheet(); scheduleDraw(); }
@@ -13571,8 +13609,8 @@ function patDraw(svg, over, g) {
   // Label antippen: Der Chart zeichnet beim Bewegen neu, das Element kann zwischen Drücken und Loslassen ersetzt werden – deshalb
   // über Ort und Zeit statt über „click“; ein Ziehen (Blättern) öffnet nichts
   let tap = null;
-  $('chart').addEventListener('pointerdown', e => { const t = e.target.closest?.('[data-pat]'); tap = t ? { i: +t.getAttribute('data-pat'), x: e.clientX, y: e.clientY, at: Date.now() } : null; if (t) e.stopPropagation(); }, true);
-  document.addEventListener('pointerup', e => { const p = tap; tap = null; if (p && Math.hypot(e.clientX - p.x, e.clientY - p.y) < 12 && Date.now() - p.at < 800) patOpenInfo(p.i); }, true);
+  $('chart').addEventListener('pointerdown', e => { const t = e.target.closest?.('[data-pat],[data-pat-ghost]'); tap = t ? { i: +t.getAttribute('data-pat'), ghost: t.hasAttribute('data-pat-ghost'), x: e.clientX, y: e.clientY, at: Date.now() } : null; if (t) e.stopPropagation(); }, true);
+  document.addEventListener('pointerup', e => { const p = tap; tap = null; if (p && Math.hypot(e.clientX - p.x, e.clientY - p.y) < 12 && Date.now() - p.at < 800) { if (p.ghost) patGhostClear(true); else patOpenInfo(p.i); } }, true);
 })();
 // ---- 3.38.0 (G09 C1–C3): dauerhaftes Musterwissen (lokal), Kursrichtungsstatistik, vergangene Verläufe ----
 // Eigener Speicher, getrennt von Trades, Konten, Notizen und Zugängen; nicht in der persönlichen Sicherung; „Zurücksetzen“ und
@@ -13900,7 +13938,7 @@ window.__opt9 = { atr: () => chartAtr(), band: n => atrBand(n) };
 window.__opt8 = { tick: t => alClTick(t), get cl() { return alCl; } };
 window.__opt7 = { get mtf() { return mtf; }, calc: (c, p) => mtfCalc(c, p), paint: () => mtfPaint(true) };
 window.__opt4 = { tradeR: t => tradeR(t), tradeRisk: t => tradeRisk(t), groupStats: (t, f) => groupStats(t, f) };
-window.__g09 = { patTgText: (c, h) => patTgText(c, h), pkRecord: (m, h, mk) => pkRecord(m, h, mk), pkSync: () => pkSync(), pkState: c => pkState(c), get pub() { return pkPub; }, pubLoad: f => pkPubLoad(f), get pk() { return pk; }, pkMerge: l => pkMerge(l), pkStats: s => pkStats(s), pkBand: p => pkBand(p), pkId: c => pkId(c), wlPat: e => wlPat(e), get wl() { return wl; }, wldPaint: () => wldPaint(Date.now(), true), get pat() { return pat; }, engine: () => (PAT_E = PAT_E || patEngine()), lib: PAT_LIB, run: r => patRun(r), age: (hit, now) => patAge(hit, now), panel: () => patSheet(), info: i => patOpenInfo(i), zoom: i => patZoom(i), svg: id => patSvg(id).outerHTML };
+window.__g09 = { get ghost() { return patGhostActive(); }, ghostShow: i => patGhostShow(i), patTgText: (c, h) => patTgText(c, h), pkRecord: (m, h, mk) => pkRecord(m, h, mk), pkSync: () => pkSync(), pkState: c => pkState(c), get pub() { return pkPub; }, pubLoad: f => pkPubLoad(f), get pk() { return pk; }, pkMerge: l => pkMerge(l), pkStats: s => pkStats(s), pkBand: p => pkBand(p), pkId: c => pkId(c), wlPat: e => wlPat(e), get wl() { return wl; }, wldPaint: () => wldPaint(Date.now(), true), get pat() { return pat; }, engine: () => (PAT_E = PAT_E || patEngine()), lib: PAT_LIB, run: r => patRun(r), age: (hit, now) => patAge(hit, now), panel: () => patSheet(), info: i => patOpenInfo(i), zoom: i => patZoom(i), svg: id => patSvg(id).outerHTML };
 window.__g08 = { get dec() { return dec; }, decSignal: (c, b, cfg) => decSignal(c, b, cfg), decTick: (t, w, at) => decTick(t, DEC_WIN[w], at), decEvaluate: (r, sp, t, cfg, w, at) => decEvaluate(r, new Set(sp), new Map(Object.entries(t)), cfg, w, at),
   decPearson: (a, b, st) => decPearson(a, b, st), decClassify: a => decClassify(a), decLoreParse: j => decLoreParse(j), setEvery: ms => { DEC_EVERY = ms; }, kick: () => decKick(true) };
 window.__g07 = { get ana() { return ana; }, get cap() { return CAP; }, blocks30: (d, n) => blocks30(d, n), anaCalc: (c, iv) => anaCalc(c, iv), anaTrend: o => anaTrend(o), validateMarketCap: r => validateMarketCap(r), coinGeckoMarketCapPoints: j => coinGeckoMarketCapPoints(j),

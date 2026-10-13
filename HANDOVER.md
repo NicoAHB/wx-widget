@@ -3,7 +3,7 @@
 Diese Datei ist der Einstieg für jede weitere Arbeit am Projekt. Wer sie liest, braucht kein Vorwissen. Die vollständige fachliche
 Vorgabe aller Gruppen G01–G14 steht in `docs/VORGABE-G01-G14.md` (Original-Übergabe; dort sind G10–G14 ausführlich beschrieben).
 
-## Aktueller Stand – 3.70.0 / Dienst 2.14.0 / Musterdienst 1.2.0 (Claude): FVG-Knopf im Chart, Trading-Karten im 24/7-Dienst, ChatGPT-Anleitung für Oracle, optische Korrekturen
+## Aktueller Stand – 3.70.0 / Dienst 2.14.0 / Musterdienst 1.2.0 (Claude): FVG-Knopf im Chart, beendete Muster ausgegraut, Trading-Karten im 24/7-Dienst, ChatGPT-Anleitung für Oracle, optische Korrekturen
 
 Ausführlich: [docs/3.70.0-AENDERUNGEN.md](docs/3.70.0-AENDERUNGEN.md).
 
@@ -13,6 +13,11 @@ Ausführlich: [docs/3.70.0-AENDERUNGEN.md](docs/3.70.0-AENDERUNGEN.md).
   - Standard aus (`loadOverlays`), `OV_NEED.fvg = ['FVG', 3]`.
   - Zeichnen in `drawChart` über `fvgDraw(under, …)`: Boxen `.fvg-box bull|bear[ open]` in `<g class="fvg-layer">`, Deckkraft 0,2, höchstens 160.
   - `fvgList` merkt sich das Ergebnis je Kerzenstand. `fvgAnnounce` gibt die Rückmeldung beim Einschalten. Testzugriff `window.__fvg`.
+- **Beendete Chartmuster ausgegraut:** gescheitert, abgelaufen, erfüllt oder ungültig.
+  - Die Kachel bleibt gesperrt.
+  - Das ⓘ-Erklärfenster bietet „Ausgegraut im Chart zeigen“ bzw. „Ausgegraut ausblenden“ (`patInfoZoomMode`, `#pat-info-zoom[data-ghost]`).
+  - Zustand `patGhost` (`{ key, scope, hit, status }`, nur ein Muster, endet bei Coin-/Intervallwechsel). Zeichnung `patDrawGhost` (`.pat-ghost*`, `PAL.muted`); Tipp auf `[data-pat-ghost]` blendet aus.
+  - `patZoom(i, false)` springt hin, ohne `pat.sel` zu setzen.
 - **24/7-Dienst 2.14.0:**
   - `notifyPattern` legt `card: patternMessageData(…)` in den Ausgang.
   - `deliverPending` sendet für `target === 'patterns'` per `sendPhoto` (Multipart in `tg()`). Fällt auf `sendMessage` zurück, wenn der Renderer fehlt, die Karte scheitert oder Telegram mit 400 ablehnt, ohne dass es am Chat liegt (`CHAT_PROBLEM`).
@@ -22,7 +27,7 @@ Ausführlich: [docs/3.70.0-AENDERUNGEN.md](docs/3.70.0-AENDERUNGEN.md).
 - **`ANLEITUNG-CHATGPT-ORACLE.md`:** Starttext, Prüfpunkte, Fehlerhilfe. ChatGPT bekommt nie Token oder Chat-IDs.
 - **Optik:** „Verkaufssignal“-Etikett (Spalte 140 px), Trend-Zeile `.mtf` mit Einzug wie `.ohlc`, `.zone-lab` mit Rand 14 px, FVG-Farbfeld.
 - **Bündel:** `bundles/3.70.0`. `bundles/3.69.0` ist wieder genau der veröffentlichte Stand.
-- **Tests:** neu `unit-fvg` (10), `m105` (11) und `m106` (20), alle in `run-all.sh`; erweitert `unit-247e` (52) und `inst-247` (36).
+- **Tests:** neu `unit-fvg` (10), `m105` (11), `m106` (20) und `m107` (15), alle in `run-all.sh`; erweitert `unit-247e` (52) und `inst-247` (36); `m93`/`m94` an „Ausgegraut im Chart zeigen“ angepasst.
 - **Server aktualisieren** (macht der Nutzer selbst):
   - 24/7-Dienst: Installer erneut ausführen.
   - Musterdienst: `git pull`, bei geändertem `server/package-lock.json` zusätzlich `npm ci`; danach `systemctl restart scalpdesk-patterns`.

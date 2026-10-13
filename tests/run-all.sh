@@ -12,6 +12,7 @@ echo "== unit-ki-zones"; timeout 120 node unit-ki-zones.js 2>&1 | grep -E "✗|b
 echo "== unit-fvg"; timeout 180 node unit-fvg.js 2>&1 | grep -E "✗|bestanden|übersprungen"
 echo "== m105"; timeout 600 node m105.js 2>&1 | grep -E "✗|bestanden|Abbruch"
 echo "== m106"; timeout 600 node m106.js 2>&1 | grep -E "✗|bestanden|Abbruch"
+echo "== m107"; timeout 600 node m107.js 2>&1 | grep -E "✗|bestanden|Abbruch"
 echo "== m103"; timeout 900 node m103.js 2>&1 | grep -E "✗|bestanden|Abbruch"
 echo "== m104"; timeout 900 node m104.js 2>&1 | grep -E "✗|bestanden|Abbruch|übersprungen"
 echo "== m99"; timeout 600 node m99.js 2>&1 | grep -E "✗|bestanden|Abbruch"
