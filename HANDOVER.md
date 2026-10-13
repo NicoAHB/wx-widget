@@ -11,7 +11,7 @@ Rückmeldungen vom iPhone zu 3.68.1. App/SW **3.68.2**, Dienst 2.12.1 unverände
 - Vollbild: `#zone-lab` bleibt oben (eine Lage unter dem Chart verkürzte ihn, m10 „Chart endet am unteren Rand“). Geöffnet `html[data-chartfull] #chart-sec>.zone-lab[open]{flex:0 1 auto;max-height:62%;overflow-y:auto}`, Kopf `position:sticky`; die ID-Regel `#chart-sec>*{flex:0 0 auto}` braucht dafür die höhere Spezifität. `.zone-lab-body` mit Innenabstand 14 px.
 - `zoneWalk` gibt nach Zeit ab (> 12 ms seit der letzten Abgabe). `setChartFull(false)` verlässt fokussierte Eingabefelder im Chartbereich und setzt `sec.scrollTop` sowie den Scrollstand von `#zone-lab` zurück. Das gemeldete Einfrieren war im Testbrowser (auch mit Safari-Scrollausgleich `navigator.vendor`) nicht nachstellbar.
 - Telegram: `.tg-paste[data-token]` an `tg-token`, `tg-btoken`, `tg-ttoken`, `tg-ptoken`; `parseTgToken` (Testzugriff `window.__tgToken`), Hinweis nur mit Bot-ID. Der Chat-ID-Handler bindet jetzt nur noch `.tg-paste[data-paste]`.
-- Test `m100.js` (25), in `run-all.sh` eingetragen.
+- Test `m100.js` (25), in `run-all.sh` eingetragen. Gezielt grün: m10, m24, m69, m87, m98, m99, m100; m7 bis auf den bekannten Sicherungs-Flake. Kein Gesamtlauf.
 
 ## Stand 3.68.1 (Claude): Telegram-Chat-ID, Pfeil nach oben, Heikin-Ashi, starke Zonen/Signale/Backtest, Wischleisten, Modellannahmen zugeklappt
 
