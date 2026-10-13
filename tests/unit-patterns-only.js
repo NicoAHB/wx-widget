@@ -6,7 +6,9 @@ const throws = f => { try { f(); return false; } catch { return true; } };
 (async () => {
   const M = await import('../server/patterns-247.mjs'), P = await import('../server/pattern-monitor.mjs'), E = await import('../server/pattern-engine.mjs');
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'patterns-only-')), destination = { token: '123456789:LOCAL_ONLY_no_real_token_000000', chat: 'LOCAL_CHAT', thread: '' };
-  const watch = { kind: 'scalpdesk-patterns-watch', v: 1, model: 'pat-1', gap: false, items: [{ sym: 'BTCUSDT', mkt: 'spot', iv: '1h' }] };
+  // 1.1.0: Zustellungsprüfungen mit lockerem Qualitätsfilter (feste Kunstreihe); Filterwirkung siehe unten und unit-pattern-quality.js
+  const LENIENT = { preset: 'eigen', minScore: 0, minRR: 0.5, maxAge: 10, maxProgress: 100, minTargetAtr: 0, minFeeMultiple: 0, minVolume24h: 0, maxSpread: 5, cooldownMin: 0, oppositeMin: 0, maxPerHour: 60, counterTrend: true };
+  const watch = { kind: 'scalpdesk-patterns-watch', v: 1, model: 'pat-1', gap: false, items: [{ sym: 'BTCUSDT', mkt: 'spot', iv: '1h' }], filter: LENIENT };
   check('Token/Chat-ID im Auswahl-Export verboten', throws(() => M.patternWatchFile({ ...watch, token: destination.token })) && throws(() => M.patternWatchFile({ ...watch, chat: '1' })));
   check('Doppelte Coins/Intervalle und unbekannte Intervalle abgelehnt', throws(() => M.patternWatchFile({ ...watch, items: [...watch.items, ...watch.items] })) && throws(() => M.patternWatchFile({ ...watch, items: [{ ...watch.items[0], iv: '7x' }] })));
   const src = fs.readFileSync(path.join(__dirname, 'm58.js'), 'utf8'), build = vm.runInNewContext(src.slice(src.indexOf('const BUILD = () => {'), src.indexOf('\nconst tests = {')) + '\nBUILD()');
@@ -14,7 +16,7 @@ const throws = f => { try { f(); return false; } catch { return true; } };
   const hit = E.patEngine().detect(k, { from: 0, step: build.STEP }).hits.find(h => h.id === 'double_bottom' && /^Ausbruch/.test(h.status));
   if (!hit) throw new Error('Feste bestätigte Formation fehlt'); k = k.slice(0, hit.i1 + 1);
   const close = P.patternEnd(k.at(-1).t, '1h'), rows = k.map(c => [c.t, c.o, c.h, c.l, c.c, c.v, P.patternEnd(c.t, '1h') - 1]); let now = close - 1;
-  const sent = [], logs = [], stateFile = path.join(dir, 'state.json'), options = { destination, watch, stateFile, now: () => now, fetchRows: async () => rows, send: async text => { sent.push(text); }, log: msg => logs.push(msg) };
+  const sent = [], logs = [], stateFile = path.join(dir, 'state.json'), options = { destination, watch, stateFile, now: () => now, fetchRows: async () => rows, fetchSpread: async () => null, send: async text => { sent.push(text); }, log: msg => logs.push(msg) };
   const svc = new M.PatternsOnlyService(options); now = close + 2000; await svc.scan();
   check('Frisch bestätigter echter Doppel-Boden wird ohne App versandt', sent.some(x => x.includes('Doppel-Boden')) && sent.every(x => x.includes('Ausbruch bestätigt') && x.includes('USD')));
   const count = sent.length; svc.due.clear(); await svc.scan(); const restarted = new M.PatternsOnlyService(options); await restarted.scan();
@@ -36,5 +38,14 @@ const throws = f => { try { f(); return false; } catch { return true; } };
   const env = path.join(dir, 'test.env'); fs.writeFileSync(env, 'PATTERN_BOT_TOKEN=123456789:LOCAL_ONLY_no_real_token_000000\nPATTERN_CHAT_ID=-100123\nPATTERN_THREAD_ID=12\n');
   check('.env-Felder getrennt korrekt geladen', M.readPatternEnvironment(env).chat === '-100123' && M.readPatternEnvironment(env).thread === '12');
   const unit = fs.readFileSync(path.join(__dirname, '../server/scalpdesk-patterns.service'), 'utf8'); check('systemd: Autostart, Neustart, Berlin, Logdatei und eigener Benutzer', ['WantedBy=multi-user.target', 'Restart=on-failure', 'TZ=Europe/Berlin', 'StandardOutput=append:', 'User=scalpdesk-patterns'].every(s => unit.includes(s)));
+  // 1.1.0: Qualitätsfilter mit Standard-Schwellen (Normal) – Kunstreihe hat zu kleines Chance/Risiko: nichts an Telegram, Journal + Log
+  const strictSent = [], strictLogs = [], strict = new M.PatternsOnlyService({ ...options, watch: { ...watch, filter: undefined }, stateFile: path.join(dir, 'streng.json'), send: async text => { strictSent.push(text); }, log: msg => strictLogs.push(msg) });
+  now = close - 1; strict.state.since = close - 1; now = close + 2000; await strict.scan();
+  const sj = strict.state.signals[0], st = strict.statistics();
+  check('Qualitätsfilter: gefiltertes Signal geht nicht an Telegram, steht mit Filtergrund im Journal und im Log', strictSent.length === 0 && sj && sj.sent === false && /Chance\/Risiko/.test(sj.reason) && strictLogs.some(x => /Chartmuster gefiltert: BTCUSDT · 1h · Doppel-Boden/.test(x)));
+  check('Watch-Datei: Filter optional, ohne Angabe Preset Normal; unbekannte Felder weiter abgelehnt', M.patternWatchFile(watch).filter.preset === 'eigen' && M.patternWatchFile({ ...watch, filter: undefined }).filter.preset === 'normal' && throws(() => M.patternWatchFile({ ...watch, extra: 1 })));
+  check('Statistik je Muster, Zeitrahmen und Coin (gesendet/gefiltert getrennt)', st.signals === 1 && st.pat[0].key === 'double_bottom' && st.pat[0].filtered === 1 && st.iv[0].key === '1h' && st.sym[0].key === 'BTCUSDT');
+  const sentText = sent.find(x => x.includes('Doppel-Boden')) || '';
+  check('Gesendete Meldung: bisheriges Format plus „🎯 Signalscore …/100“ mit Kurzbegründung', /🎯 Signalscore \d+\/100 · Trend [✔~✖?] · Volumen [✔✖] · R\/R \d+,\d/.test(sentText) && sentText.includes('⭐ <b>Ziel:'));
   fs.rmSync(dir, { recursive: true, force: true }); console.log(`\n${pass}/${pass + fail} bestanden`); process.exitCode = fail ? 1 : 0;
 })().catch(e => { console.error(e); process.exitCode = 1; });

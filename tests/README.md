@@ -1,5 +1,30 @@
 # Tests für Scalp Desk
 
+**Gesamtlauf 3.69.0:** 5355/5363. m53 und m31 einzeln grün; Altbefunde m7, m18, m19; Abbrüche m40, m79. Danach (Musterdienst 1.2.0) alle Servertests, `m58` und `m69` einzeln grün.
+
+**3.69.0 Chartmuster-Karten über Oracle (Musterdienst 1.2.0, Claude):**
+- Neu `unit-pattern-card.js` (51): Karte (Beispielwerte exakt, Abwärts, lange Namen, fehlende Werte, PNG und Pixel), Versand (Karte, Textersatz, 400/429/verloren, Multipart) und Bereinigung (Stichtag, Monatswechsel, Probelauf, Sperren, Wiederaufnahme, Protokolle, systemd).
+- PNG-Prüfungen brauchen `server/node_modules` (`npm ci` im Ordner `server`); ohne sie werden sie übersprungen.
+- Beispielbild unter `tests/out/` (nicht im Git).
+
+**3.69.0 Trade-Karte und FVG (Claude):**
+- Neu `m103.js` (27): Trade-Karte mit dem gemeldeten Beispiel XRP/USDT 24.09.2026, 22:09 – 25.09.2026, 00:01.
+  - −1100 nachgestellt, Anfrage ganzzahlig und 1m.
+  - Kerzen in der IndexedDB, zweites Öffnen ohne Abruf.
+  - Max. Gewinn/Verlust und Positionswerte unabhängig nachgerechnet; Beschriftungen ohne Überlappung.
+  - Bildunterschrift.
+  - Ersatzquellen: Wiederholungen, data-api.binance.vision, Bybit, Ersatzlinie.
+  - Automatisch genau einmal; Telegram-Fehler im Klartext.
+- `m55.js` an Bildgröße 1080 × 1730, die kurze Bildunterschrift und die Ersatzlinie angepasst.
+- Neu `m104.js` (14): FVG-Chart (`fvg-ki/`, Python) im Browser, dazu pytest (19).
+  - Python mit den Bibliotheken über `FVG_PYTHON=/pfad/python`, sonst „übersprungen“.
+- Attrappe:
+  - −1100 bei Kommazahlen in startTime/endTime;
+  - Archivkerzen für alte Zeiträume;
+  - `/klinefail`, `/bybit`, Host `api.bybit.com`.
+
+**3.69.0 / Dienst 2.13.0 (Claude):** Neu `unit-pattern-quality.js` (34: K.O.-Kriterien, Score, Anti-Spam, Tracking, Backtest; Beispiele R/R 0,34, zwei gleiche Richtung, Gegentrend) und `m102.js` (14: Qualitätsfilter in der App). Erweitert `unit-patterns-only` (20), `unit-247e` (43), `m58` (Scorezeile). Zustellungstests mit fester Kunstreihe setzen einen lockeren Filter (`LENIENT` bzw. `scalpdesk.patfilter.v1`). Telegram-Attrappe akzeptiert nur das Test-Token `123456789:AAHdq…`.
+
 **3.68.4 (Claude):** Neu `m101.js` (24): Markdown-Viewer (sicher, formatiert), GitHub-Einrichtung (Status, drei Schritte, Felder mit Rahmen, Token-Einfügen), Anleitung als Fenster mit „Schließen“ (auch Oracle-Anleitung aus dem Telegram-Fenster). `m100.js` jetzt 27 (Ebenen-Schalter im Vollbild umbrechend, Erklärzeile aus, Vollbild-Bereich scrollbar, Chart ≥ 220 px). Gesamtlauf 3.68.4: 5166/5174; m94/m95 nach Korrektur grün, m31/m9 einzeln grün, Altbefunde m7/m18/m19, Abbrüche m40/m79/m92.
 
 **3.68.3 (Claude):** `m100.js` jetzt 26 Fälle: Heikin-Ashi-Schalter (`role=switch`) an 320/360/390/1440 px; Vollbild hochkant **ohne App-Drehung** (`scalpdesk.fsrotate.v1 = "native"`, wie am iPhone des Nutzers): keine Klappfläche, Werkzeugleiste zweizeilig ohne Überlagerung, Ebene/Zeitraum/Zoom lassen das Vollbild offen; gedrehtes Vollbild weiter einzeilig; Einfügen-Felder als Raster.

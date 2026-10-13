@@ -1,0 +1,15 @@
+# Am 1. jedes Monats um 03:00 Uhr deutscher Zeit (Sommer-/Winterzeit übernimmt systemd; am 1. gibt es keine Zeitumstellung).
+# Persistent=true: War der Server zu dem Zeitpunkt aus, läuft die Bereinigung beim nächsten Start nach – mit demselben Stichtag
+# (Monatsbeginn), weil das Programm den Stichtag aus dem Kalendermonat berechnet, nicht aus der Startzeit.
+[Unit]
+Description=Scalp Desk – Chartmuster-Nachrichten monatlich bereinigen
+
+[Timer]
+OnCalendar=*-*-01 03:00:00 Europe/Berlin
+Persistent=true
+AccuracySec=1min
+RandomizedDelaySec=0
+Unit=scalpdesk-patterns-bereinigung.service
+
+[Install]
+WantedBy=timers.target

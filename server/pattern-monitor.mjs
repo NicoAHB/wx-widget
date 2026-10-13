@@ -2,6 +2,9 @@
 import { patEngine, PAT_NAMES } from './pattern-engine.mjs';
 import { formatMessage } from './telegram-format.mjs';
 import { PATTERN_STEPS, intervalEnd } from './market-intervals.mjs';
+import fs from 'node:fs';
+// 2.13.0: gemeinsamer Qualitätsfilter (Repository ../shared, Installer ./shared) – derselbe Code wie in der App.
+export const PQ = await import(new URL((fs.existsSync(new URL('./shared/pattern-quality.mjs', import.meta.url)) ? './shared/' : '../shared/') + 'pattern-quality.mjs', import.meta.url));
 export const PAT_STEPS = PATTERN_STEPS;
 export const patternId = c => [c.mkt, c.sym, c.iv, c.pat, c.t0, c.t1, c.model].join('|');
 export const patternEnd = intervalEnd;
@@ -14,7 +17,7 @@ export function patternConfig(c) {
     return { sym: x.sym, mkt: x.mkt, iv: x.iv };
   }).sort((a, b) => `${a.mkt}|${a.sym}|${a.iv}`.localeCompare(`${b.mkt}|${b.sym}|${b.iv}`));
   if (new Set(items.map(x => `${x.mkt}|${x.sym}|${x.iv}`)).size !== items.length) throw new Error('Chartmuster: doppelter Markt.');
-  return { model: 'pat-1', gap: false, chat: String(c.chat), thread: String(c.thread || ''), bot: String(c.bot), items };
+  return { model: 'pat-1', gap: false, chat: String(c.chat), thread: String(c.thread || ''), bot: String(c.bot), items, filter: PQ.patternFilterSettings(c.filter) };
 }
 export function patternCandles(rows, iv, now) {
   if (!Array.isArray(rows)) throw new Error('Chartmuster: keine Kerzen.');
@@ -47,10 +50,22 @@ export function patternFresh(c, now, since) {
     && [c.t0, c.t1, c.tc, c.p0].every(Number.isFinite) && c.p0 > 0 && c.t0 <= c.t1 && c.t1 === c.tc
     && patternEnd(c.tc, c.iv) <= now && patternEnd(c.tc, c.iv) > since && patternEnd(patternEnd(patternEnd(c.tc, c.iv), c.iv), c.iv) > now;
 }
-export function patternText(c, h, archive = []) {
+// 2.13.0: Bewertung eines Kandidaten für den Qualitätsfilter. Höherer Zeitrahmen, BTC und Spread werden nur für Kandidaten
+// geladen (je Prüflauf zwischengespeichert); fehlen sie, zählt der Trend als unbekannt bzw. der Spread nicht.
+export async function patternEvaluate({ c, h, k, fetchRows, fetchSpread = null, cache = new Map(), settings, journal = [], now }) {
+  const htf = PQ.HIGHER_TIMEFRAME[c.iv];
+  const load = (sym, iv) => { const key = `${c.mkt}|${sym}|${iv}`; if (!cache.has(key)) cache.set(key, Promise.resolve().then(() => fetchRows({ mkt: c.mkt, sym, iv }, 260)).then(rows => patternCandles(rows, iv, now)).catch(() => null)); return cache.get(key); };
+  const higher = htf ? await load(c.sym, htf) : null, btc = htf && !/^BTC/.test(c.sym) ? await load('BTCUSDT', htf) : null;
+  let spreadPct = null; if (fetchSpread) { const key = `spread|${c.mkt}|${c.sym}`; if (!cache.has(key)) cache.set(key, Promise.resolve().then(() => fetchSpread(c)).catch(() => null)); spreadPct = await cache.get(key); }
+  return PQ.evaluatePatternSignal({ c, h, k, i1: h.i1, higher, btc, liquidity: { spreadPct }, hits: PQ.patternHitStats(journal, c.pat, c.iv), settings });
+}
+export const patternFilterLog = (c, ev, decision) => `Chartmuster ${decision.send ? 'gesendet' : 'gefiltert'}: ${c.sym} · ${c.iv} · ${PAT_NAMES[c.pat] || c.pat} · ${c.dir === 'bull' ? 'Long' : 'Short'} · Score ${ev.score}${decision.send ? '' : ' – ' + (decision.reason || ev.reason)}`;
+// 1.2.0: strukturierte Signaldaten der Meldung – daraus entstehen Textmeldung und Trading-Karte (gleiche Werte)
+export function patternMessageData(c, h, archive = [], ev = null) {
   const lv = h.levels || {};
   const counts = src => { const a = archive.filter(x => x.mkt === c.mkt && x.sym === c.sym && x.iv === c.iv && x.pat === c.pat && x.model === c.model && x.profile === c.profile && x.src === src && x.res); return { n: a.length, auf: a.filter(x => x.res.out === 'auf').length, ab: a.filter(x => x.res.out === 'ab').length, seit: a.filter(x => x.res.out === 'seitwärts').length }; };
   const live = counts('live'), rek = counts('rekonstruiert'), st = live.n >= 10 ? live : rek.n >= 10 ? rek : null;
-  return formatMessage('pattern', { pattern: PAT_NAMES[c.pat], symbol: c.sym, market: c.mkt === 'spot' ? 'Spot' : 'Futures', timeframe: c.iv, status: 'Ausbruch bestätigt', direction: c.dir, entry: c.p0, target: lv.tgt, invalid: lv.inv, quality: c.q, model: c.model || 'pat-1',
-    learned: st ? { ...st, source: st === live ? 'live protokolliert' : 'rekonstruiert', horizon: 12 } : { available: live.n + rek.n, minimum: 10 } });
+  return { pattern: PAT_NAMES[c.pat], symbol: c.sym, market: c.mkt === 'spot' ? 'Spot' : 'Futures', timeframe: c.iv, status: 'Ausbruch bestätigt', direction: c.dir, entry: c.p0, target: lv.tgt, invalid: lv.inv, quality: c.q, model: c.model || 'pat-1',
+    learned: st ? { ...st, source: st === live ? 'live protokolliert' : 'rekonstruiert', horizon: 12 } : { available: live.n + rek.n, minimum: 10 }, score: ev?.score, scoreWhy: ev?.summary };
 }
+export const patternText = (c, h, archive = [], ev = null) => formatMessage('pattern', patternMessageData(c, h, archive, ev));

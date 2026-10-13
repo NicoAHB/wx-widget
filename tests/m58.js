@@ -264,6 +264,8 @@ const tests = {
     // G09 C6a: Ziel „Chartmuster“ in „Telegram-Chats“ (Schalter, Epoche) – wichtige, frisch bestätigte Formationen als Meldung, je Fall einmal
     const TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', PCHAT = '-100888';
     const ctx = await browser.newContext({ viewport: { width: 1440, height: 1000 }, timezoneId: 'Europe/Berlin' }), errors = [];
+    // 3.69.0: Zustellungsprüfung mit lockerem Qualitätsfilter (die feste Kunstreihe ist kein handelbares Signal); Filterwirkung: m102, unit-pattern-quality
+    await ctx.addInitScript(() => { localStorage.setItem('scalpdesk.patfilter.v1', JSON.stringify({ preset: 'eigen', minScore: 0, minRR: 0.5, maxAge: 10, maxProgress: 100, minTargetAtr: 0, minFeeMultiple: 0, minVolume24h: 0, maxSpread: 5, cooldownMin: 0, oppositeMin: 0, maxPerHour: 60, counterTrend: true })); });
     await ctx.addInitScript(cfg => { if (!sessionStorage.getItem('s58tg')) { sessionStorage.setItem('s58tg', '1'); localStorage.setItem('scalpdesk.channels.v1', JSON.stringify(cfg)); } },
       { tg: { token: TOKEN, chat: '987654321', thread: '', bchat: '-100555', bthread: '', btoken: '', pchat: PCHAT, pthread: '', ptoken: '' }, dc: { url: '', on: true }, ev: {}, mig33: true });
     const page = await ctx.newPage(); h.collect(page, errors); await page.goto(`${h.URL_BASE}/weather-widget-v2.html`); await page.waitForTimeout(1500);
@@ -279,7 +281,7 @@ const tests = {
     const txt = s[0]?.text || '';
     const allFresh = (await h.ctl('/sent')).filter(m => m.svc === 'tg' && !m.method && m.at >= t);
     check('Frisch bestätigte Formation (live, ≥ 80 %): genau eine Meldung in den Chartmuster-Chat, nicht in Kursalarm', s.length === 1 && allFresh.length === 1, JSON.stringify({ patterns: s.map(x => x.text?.split('\n')[0]), all: allFresh.map(x => ({ chat: String(x.chat_id), at: x.at, title: x.text?.split('\n')[0] })) }));
-    check('Meldung: Muster, Coin, Intervall, Status, Ziel und Invalidierung; Regelgüte vs. Erlernt, keine Erfolgswahrscheinlichkeit', /^<b>🟢⬆️ AUFWÄRTS · Doppel-Boden<\/b> · TG\/USDT\n📊 <b>TG\/USDT<\/b> Spot · 1h\n✅ Ausbruch bestätigt/.test(txt) && /⭐ <b>Ziel: [\d.,]+ USD<\/b> ⭐/.test(txt) && /Ungültig bei: <code>[\d.,]+ USD<\/code>/.test(txt) && /Regelgüte: ▓{9}░ 85 %/.test(txt) && /Erlernt: \d+\/10 Fälle ⚠️ zu wenig Daten/.test(txt) && /keine Erfolgswahrscheinlichkeit/.test(txt) && /🕐 \d\d:\d\d:\d\d · Modell pat-1$/.test(txt), txt);
+    check('Meldung: Muster, Coin, Intervall, Status, Signalscore mit Kurzbegründung, Ziel und Invalidierung; Regelgüte vs. Erlernt, keine Erfolgswahrscheinlichkeit', /^<b>🟢⬆️ AUFWÄRTS · Doppel-Boden<\/b> · TG\/USDT\n📊 <b>TG\/USDT<\/b> Spot · 1h\n✅ Ausbruch bestätigt\n🎯 Signalscore \d+\/100 · Trend [✔~✖?] · Volumen [✔✖] · R\/R \d+,\d\n/.test(txt) && /⭐ <b>Ziel: [\d.,]+ USD<\/b> ⭐/.test(txt) && /Ungültig bei: <code>[\d.,]+ USD<\/code>/.test(txt) && /Regelgüte: ▓{9}░ 85 %/.test(txt) && /Erlernt: \d+\/10 Fälle ⚠️ zu wenig Daten/.test(txt) && /keine Erfolgswahrscheinlichkeit/.test(txt) && /🕐 \d\d:\d\d:\d\d · Modell pat-1$/.test(txt), txt);
     t = Date.now(); await fire(); await fire({ q: 70, shift: 1 }); await fire({ kind: 'candle', id: 'hammer', shift: 2 }); await fire({ back: 5, shift: 3 }); await page.waitForTimeout(1500); s = await sentP(t);
     check('Gleicher Fall nicht noch einmal; Regelgüte < 80 %, Einzelkerze und älter bestätigte Formation: keine Meldung', s.length === 0, JSON.stringify(s.map(x => x.text?.split('\n')[0])));
     // Ziel aus: keine Meldung, Epoche zählt hoch

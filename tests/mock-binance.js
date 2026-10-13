@@ -66,6 +66,22 @@ function series(sym, iv) {
   if (s.length > n0 + 500) s.splice(0, s.length - n0 - 200);
   return { rows: s, last };
 }
+// 3.69.0 (Trade-Karte): Kerzen weit vor der erzeugten Reihe (z. B. ein Trade vor drei Wochen) – ruhig schwankend, fest je
+// Kürzel, Intervall und Zeit (Grundpreis wie beim Start), damit gespeicherte und neu geladene Kerzen gleich sind
+const price0 = { ...price };
+function archive(sym, iv, start, end, limit) {
+  const step = IV[iv], base = price0[sym] || 1, r8 = v => +v.toPrecision(8), out = [];
+  const px = t => base * (1 + 0.012 * Math.sin(t / 2.7e6) + 0.006 * Math.sin(t / 7.3e5 + 1.3) + 0.002 * (noise(t / 6e4) - 0.5));
+  for (let t = Math.ceil(start / step) * step; t <= end && out.length < Math.min(limit || 500, 1000); t += step) {
+    const o = px(t), c = px(t + step), hi = Math.max(o, c) * (1 + 0.0012 * noise(t + 7)), lo = Math.min(o, c) * (1 - 0.0012 * noise(t + 13));
+    out.push(krow(t, r8(o), r8(hi), r8(lo), r8(c), 100 + 50 * noise(t + 3), t + step - 1, 10));
+  }
+  return out;
+}
+function klineRows(sym, iv, limit, startTime, endTime) {
+  if (startTime && endTime) { const { rows } = series(sym, iv); if (endTime < rows[0][0]) return archive(sym, iv, startTime, endTime, limit); }
+  return hist(sym, iv, limit, startTime, endTime);
+}
 function hist(sym, iv, limit, startTime, endTime) {
   const { rows, last } = series(sym, iv), n = Math.min(limit || 500, 1000);
   let all = [...rows, krow(last.t, last.o, last.h, last.l, last.c, last.v, last.T, 1)];
@@ -390,6 +406,16 @@ function rest(req, res) {
   cfg.log.push({ at: Date.now(), host, path: u.pathname, q });
   if (cfg.log.length > 2000) cfg.log.splice(0, 1000);
   if (cfg.restFail) return json(res, 503, { code: -1, msg: 'down' });
+  // 3.69.0: Bybit als letzte Ersatzquelle der Trade-Karte (/bybit?mode=ok|fail); Liste wie bei Bybit neueste zuerst
+  if (host === 'api.bybit.com') {
+    if (cfg.bybit === 'fail') return json(res, 503, { retCode: 10016, retMsg: 'service unavailable' });
+    if (u.pathname !== '/v5/market/kline') return json(res, 404, { retCode: 10001, retMsg: 'not found' });
+    const ivB = { 1: '1m', 5: '5m', 15: '15m', 60: '1h', 240: '4h', D: '1d' }[q.interval], book = q.category === 'linear' ? FUT : SPOT;
+    if (!ivB || !(q.symbol in book)) return json(res, 200, { retCode: 10001, retMsg: 'params error' });
+    if (![q.start, q.end].every(v => v === undefined || /^\d{1,20}$/.test(v))) return json(res, 200, { retCode: 10001, retMsg: 'params error: start/end' });
+    const rows = klineRows(q.symbol, ivB, Number(q.limit) || 200, Number(q.start) || 0, Number(q.end) || 0);
+    return json(res, 200, { retCode: 0, retMsg: 'OK', result: { symbol: q.symbol, category: q.category, list: rows.map(r => [String(r[0]), r[1], r[2], r[3], r[4], r[5], '0']).reverse() } });
+  }
   // 3.27.0: einzelne Kürzel beim Tickerpreis scheitern lassen oder verzögern (/tick?fail=A,B&delay=C:400)
   if ((u.pathname === '/api/v3/ticker/price' || u.pathname === '/fapi/v1/ticker/price') && q.symbol) {
     if (cfg.tickFail?.[q.symbol]) return json(res, 503, { code: -1, msg: 'Service unavailable ' + q.symbol });
@@ -408,7 +434,12 @@ function rest(req, res) {
   switch (u.pathname) {
     case '/fapi/v1/exchangeInfo': return json(res, 200, { symbols: Object.keys(book).filter(symbol => symbol.endsWith('USDT')).map(symbol => ({ symbol, filters: [{ filterType: 'PRICE_FILTER', tickSize: '0.0001' }] })) });
     case '/api/v3/ping': return json(res, 200, {});
-    case '/api/v3/klines': case '/fapi/v1/klines': if (!need()) return; if (!IV[q.interval]) return json(res, 400, { code: -1120, msg: 'bad interval' }); return json(res, 200, hist(sym, q.interval, Number(q.limit) || 500, Number(q.startTime) || 0, Number(q.endTime) || 0));
+    case '/api/v3/klines': case '/fapi/v1/klines': {
+      // 3.69.0: wie Binance – startTime/endTime nur als ganze Zahl, sonst −1100; gezielter Ausfall je Host (/klinefail?hosts=…&n=…)
+      for (const k of ['startTime', 'endTime']) if (q[k] !== undefined && !/^\d{1,20}$/.test(q[k])) return json(res, 400, { code: -1100, msg: `Illegal characters found in parameter '${k}'; legal range is '^[0-9]{1,20}$'.` });
+      const kf = cfg.klineFail; if (kf && kf.n > 0 && (kf.hosts.includes('all') || kf.hosts.includes(host))) { kf.n--; return json(res, kf.code, { code: kf.code === 400 ? -1100 : -1, msg: 'kline down' }); }
+      if (!need()) return; if (!IV[q.interval]) return json(res, 400, { code: -1120, msg: 'bad interval' }); return json(res, 200, klineRows(sym, q.interval, Number(q.limit) || 500, Number(q.startTime) || 0, Number(q.endTime) || 0));
+    }
     case '/api/v3/ticker/price': case '/fapi/v1/ticker/price': {
       if (q.symbols) { const list = JSON.parse(q.symbols); if (list.some(s => !(s in book))) return json(res, 400, { code: -1121, msg: 'Invalid symbol.' }); return json(res, 200, list.map(s => ({ symbol: s, price: String(price[s]) }))); }
       if (!need()) return; return json(res, 200, { symbol: sym, price: String(price[sym]), time: Date.now() - (cfg.tickOld?.[sym] || 0) }); // 3.32.0: /tick?old=SYM:ms – alter Zeitstempel
@@ -571,6 +602,8 @@ http.createServer((req, res) => {
     case '/silent': cfg.silent = q.on === '1'; return ok();
     case '/blockws': cfg.blockWs = q.on === '1'; if (cfg.blockWs) for (const c of conns) c.ws.terminate(); return ok();
     case '/restfail': cfg.restFail = q.on === '1'; return ok();
+    case '/klinefail': cfg.klineFail = q.hosts ? { hosts: q.hosts.split(','), n: q.n ? Number(q.n) : Infinity, code: Number(q.code) || 503 } : null; return ok();
+    case '/bybit': cfg.bybit = q.mode === 'fail' ? 'fail' : 'ok'; return ok();
     case '/dec': { if (q.reset === '1') Object.assign(decCfg, decCfg0()); for (const k of ['lore', 'bin']) if (k in q) decCfg[k] = q[k]; if ('ra' in q) decCfg.ra = Number(q.ra) || 0; if ('delay' in q) decCfg.delay = Number(q.delay) || 0;
       for (const k of ['zero', 'stale', 'inactive']) if (k in q) decCfg[k] = q[k] ? q[k].split(',') : []; if ('nobtc' in q) decCfg.nobtc = q.nobtc === '1';
       if (q.chg) for (const e of q.chg.split(',')) { const [sy, w, v] = e.split(':'); (decCfg.chg[sy] ||= {})[w] = Number(v); } if (q.clear === '1') decCfg.log.length = 0; return ok({ log: decCfg.log }); }
@@ -588,7 +621,7 @@ http.createServer((req, res) => {
       return ok({ ...volaCfg });
     }
     case '/reset': if (volaCfg.mode !== 'normal' || volaCfg.drift !== null) { Object.assign(volaCfg, { mode: 'normal', drift: null }); for (const k of Object.keys(H)) if (k.endsWith('|1h')) delete H[k]; }
-      Object.assign(decCfg, decCfg0()); Object.assign(calCfg, { mode: 'normal', min: 10, hits: 0 }); Object.assign(newsCfg, { mode: 'normal', hits: 0 }); clearInterval(cfg.flood); cfg.flood = null; cfg.log.length = 0; Object.assign(oiCfg, { mode: 'wave', ago: 10, amount: 0.06 }); cfg.walk = true; cfg.silent = false; cfg.blockWs = false; cfg.restFail = false; cfg.restDelay = 0; cfg.chanNoCors = false; cfg.tg429 = 0; cfg.tgFormat = 0; cfg.tgDocFail = false; cfg.tgUpdates = true; cfg.tgMulti = false; cfg.tg502 = 0; cfg.tgFail = null; cfg.tickFail = {}; cfg.tickDelay = {}; cfg.tickOld = {}; cfg.eurHist = 'on'; cfg.t24 = 'ok'; cfg.tgDrop = 0; cfg.photoDrop = 0; cfg.photoFail = 0; cfg.photoDelay = 0; Object.assign(capCfg, { cg: 'ok', cp: 'ok', ra: 120, delay: 0 }); capCfg.log.length = 0; sent.length = 0; Object.assign(bookCfg, { walls: [], step: 0.0002, levels: 1000 }); return ok();
+      Object.assign(decCfg, decCfg0()); Object.assign(calCfg, { mode: 'normal', min: 10, hits: 0 }); Object.assign(newsCfg, { mode: 'normal', hits: 0 }); clearInterval(cfg.flood); cfg.flood = null; cfg.log.length = 0; Object.assign(oiCfg, { mode: 'wave', ago: 10, amount: 0.06 }); cfg.walk = true; cfg.silent = false; cfg.blockWs = false; cfg.restFail = false; cfg.klineFail = null; cfg.bybit = 'ok'; cfg.restDelay = 0; cfg.chanNoCors = false; cfg.tg429 = 0; cfg.tgFormat = 0; cfg.tgDocFail = false; cfg.tgUpdates = true; cfg.tgMulti = false; cfg.tg502 = 0; cfg.tgFail = null; cfg.tickFail = {}; cfg.tickDelay = {}; cfg.tickOld = {}; cfg.eurHist = 'on'; cfg.t24 = 'ok'; cfg.tgDrop = 0; cfg.photoDrop = 0; cfg.photoFail = 0; cfg.photoDelay = 0; Object.assign(capCfg, { cg: 'ok', cp: 'ok', ra: 120, delay: 0 }); capCfg.log.length = 0; sent.length = 0; Object.assign(bookCfg, { walls: [], step: 0.0002, levels: 1000 }); return ok();
     case '/restdelay': cfg.restDelay = Number(q.ms) || 0; return ok();
     case '/eurhist': cfg.eurHist = q.mode || 'on'; return ok({ mode: cfg.eurHist });
     case '/t24': cfg.t24 = q.mode || 'ok'; return ok({ mode: cfg.t24 });

@@ -1,0 +1,10 @@
+{
+  "name": "scalpdesk-server",
+  "version": "1.2.0",
+  "private": true,
+  "description": "Scalp Desk Oracle-Dienste – einzige Abhängigkeit: resvg für Chartmuster-Karten (kostenlos, lokal, ohne Bild-KI). Ohne sie senden die Dienste Text.",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@resvg/resvg-js": "2.6.2"
+  }
+}

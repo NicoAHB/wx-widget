@@ -3,7 +3,89 @@
 Diese Datei ist der Einstieg für jede weitere Arbeit am Projekt. Wer sie liest, braucht kein Vorwissen. Die vollständige fachliche
 Vorgabe aller Gruppen G01–G14 steht in `docs/VORGABE-G01-G14.md` (Original-Übergabe; dort sind G10–G14 ausführlich beschrieben).
 
-## Aktueller Stand – 3.68.4 (Claude): GitHub-Einrichtung übersichtlich, Anleitungen in der App, Werkzeuge im Vollbild bedienbar
+## Aktueller Stand – 3.69.0 / Dienst 2.13.0 / Musterdienst 1.2.0 (Claude): Qualitätsfilter, Trade-Karte, FVG, Chartmuster-Karten über Oracle
+
+Nutzerauftrag: viel zu viele Chartmuster-Meldungen über Telegram/Oracle → Qualitätsfilter. Kursalarme, Trades und Sicherung sind unverändert, kein neuer Chat. Ausführlich: [docs/CHARTMUSTER-QUALITAETSFILTER.md](docs/CHARTMUSTER-QUALITAETSFILTER.md), [docs/3.69.0-AENDERUNGEN.md](docs/3.69.0-AENDERUNGEN.md).
+
+- `shared/pattern-quality.mjs`:
+  - Einstellungen: `PATTERN_FILTER_PRESETS`/`FIELDS`, `patternFilterSettings`, `patternFilterFromForm`;
+  - Bewertung: `HIGHER_TIMEFRAME`, `evaluatePatternSignal` (K.O. + Score);
+  - Auswahl: `selectPatternSignals` (Anti-Spam);
+  - Journal: `patternJournalEntry`/`addPatternJournal`/`resolvePatternJournal` (Ziel/Ungültig/Timeout 48), `patternHitStats`, `patternJournalStats`;
+  - `backtestPatternFilter` (Walk-forward mit `detect`-Callback).
+- Server:
+  - `server/pattern-monitor.mjs` lädt das Modul per Shim (`PQ`), `patternConfig` liefert `filter`, dazu `patternEvaluate` (höherer Zeitrahmen, BTC und Spread nur für Kandidaten) und `patternFilterLog`; `patternText(..., ev)` setzt die Scorezeile.
+  - `patterns-247.mjs` 1.1.0: Watch-Datei mit optionalem `filter`, Auswahl über alle Märkte eines Laufs, `state.signals`/`state.sent`, `statistics()`, `--statistik`.
+  - `scalpdesk-247.mjs` 2.13.0: `bookTicker`, `patSignals`/`patSent` im Zustand, `gatePatterns`, `notifyPattern(c, h, evaluation)`. `POST /v1/patterns/notify` nur mit `quality.pass`; bekannte Ereignisse bleiben idempotent. Neu `GET /v1/patterns/signals`.
+- App:
+  - `patqRun` statt direktem `patNotify` in `pkRecord`; nur wenn das Ziel „Chartmuster“ bereit ist und „Oracle ist der einzige Mustersender“ aus ist.
+  - `patqEvaluate` (Kerzen über `api.get`/`spotGet`, `bookTicker`), `patqResolve` in `patDone` und in der Vorauswahl.
+  - Einstellungen `#patq-settings` im Telegram-Fenster, Log `#patq-log` im Chartmuster-Fenster mit Backtest. Testzugriff `window.__patq`.
+  - Journal `scalpdesk.patsignals.v1` (500, lokal), Einstellungen `scalpdesk.patfilter.v1` (in `PREF_KEYS`).
+  - `patOracleExport`/`patSvcConfig` enthalten `filter`.
+- Regelgüte trennt kaum: Die Pflichtregeln sind bei Treffern immer erfüllt, nur die Volumenregeln schwanken (88–100 %). Im Score deshalb nur 10 Punkte, gestreckt 85→0 bis 100→10.
+- Tests:
+  - neu `unit-pattern-quality.js` (34) und `m102.js` (14), beide in `run-all.sh`;
+  - erweitert `unit-patterns-only` (20), `unit-247e` (43), `m58`, `unit-247d` (Version);
+  - Zustellungstests mit lockerem Filter (die Kunstreihen sind keine handelbaren Signale).
+- **Server-Update nötig** (Oracle-Musterdienst bzw. 24/7-Dienst), danach Coin-Auswahl neu exportieren bzw. am Dienst übernehmen.
+- **Trade-Karte (gleiche Version):** Ausführlich in [docs/3.69.0-AENDERUNGEN.md](docs/3.69.0-AENDERUNGEN.md), Abschnitt „Trade-Karte“.
+  - Ursache „Chartdaten nicht verfügbar, Fehler −1100“: `timgRange` lieferte `endTime = Austritt + 12 % der Haltedauer` als Kommazahl, Binance lehnt das mit −1100 ab.
+  - Neu `timgRange`: 10 Min. vor Eintritt bis 10 Min. nach Austritt, ganzzahlig. Intervall nach Haltedauer: bis 3 Std. 1m, bis 1 Tag 5m, länger 15m/1h (4h/1d), höchstens 300 Kerzen.
+  - Kerzenspeicher: eigene IndexedDB `scalpdesk-tradecandles` (Store `trades`, Schlüssel = Positions-ID).
+    - Datensatz `{v, key, iv, ms, from, to, end, src, label, alt, at, full, c: [[t, o, h, l, c], …]}`.
+    - Nicht im localStorage und nicht in Sicherung/Sync, weil 5 MB dafür nicht reichen. `key` = Kürzel|Markt|Eintritt|Austritt; nach einer Korrektur wird neu geladen.
+  - Laden: `timgCandles` (gemeinsamer Abruf je Trade) beim Abschluss (`timgAfterClose`, auch bei Ziel aus) und beim ersten Öffnen alter Trades. `full = false` direkt nach dem Abschluss; einmal ergänzt, wenn die 10 Minuten danach vorbei sind.
+  - Abruf `timgFetch`: Markt des Trades mit 2 Wiederholungen (`TIMG_WAIT`; keine bei −11xx/4xx/Sperre/Rate-Limit).
+    - Danach Futures → Spot über data-api.binance.vision, Spot → api.binance.com, dann Bybit (`timgBybit`, CORS ungeprüft).
+    - Scheitert alles: Ersatzlinie Einstieg → Ausstieg; dann wird nichts gespeichert.
+  - Kennzahlen `timgStats`: unrealisiert nach Gebühren mit zeitabhängiger Menge und Ø-Einstieg, nur sicher in der Haltezeit gehandelte Kurse.
+    - Hoch/Tief einer Kerze nur, wenn die Position die ganze Kerze offen war, sonst Ausführungskurs, Eröffnung, Schluss.
+    - Euro mit `d.fx` (eingefrorener Kurs der letzten Buchung), % vom Einsatz.
+  - Karte 1080 × 1730:
+    - Felder 8–11: Max. Gewinn/Verlust, höchster/tiefster Positionswert.
+    - Chart 1140–1530 mit Marken E/A/H/T. Beschriftungen „Kurs (± €)“ werden ohne Überlappung platziert; `timg.layout` ist für Tests zugänglich.
+  - Telegram (unverändert `timgPost`): Bildunterschrift `formatMessage('trade', { card: true, … })` in `shared/telegram-format.mjs`.
+  - Fehler: Fehlertext sichtbar unter dem Trade (`timgWhy`) und als Hinweis (`infoToast`). Ein verspätetes `close` der Vorschau nach erneutem Öffnen wird ignoriert.
+  - Testzugriff: `__g06.candles/stored/stats/layout/wait`.
+  - Attrappe:
+    - −1100 bei Kommazahlen, Archivkerzen für alte Zeiträume;
+    - `/klinefail?hosts=…&n=…&code=…`, `/bybit?mode=ok|fail`, Host `api.bybit.com` (auch in `harness.js`).
+- **FVG-Chart mit lokaler KI (neu, eigenständig):** `fvg-ki/` ist ein Python-Paket nach Model-View-Controller.
+  - Bausteine: Pandas, Plotly/Dash, scikit-learn, SQLite; keine Cloud-KI.
+  - Model: `model/detection.py` (`detect_fvgs`, Sparse-Table-Suche der schließenden Kerze), `features.py`, `learner.py` (Random Forest oder SGD mit `partial_fit`, `retrain_model`), `store.py` (SQLite-Upsert, Label bleibt), `data.py`.
+  - View: `view/chart.py`, `view/layout.py`.
+  - Controller: `controller/app_controller.py`.
+  - Start: `python app.py`; Anleitung in [fvg-ki/README.md](fvg-ki/README.md).
+  - Tests: `fvg-ki/tests` (pytest, 19) und `tests/m104.js` (Browser, 14).
+    - m104 braucht `FVG_PYTHON` mit den Bibliotheken aus `fvg-ki/requirements.txt`, sonst wird er übersprungen.
+    - Die Scalp-Desk-App selbst zeichnet noch keine FVGs.
+- **Chartmuster als Trading-Karte über Oracle (Musterdienst 1.2.0, gleiche App-Version):** Ausführlich in [docs/3.69.0-AENDERUNGEN.md](docs/3.69.0-AENDERUNGEN.md) und [docs/ORACLE_24-7.md](docs/ORACLE_24-7.md), Abschnitt 6.
+  - Oracle = Always-Free-VM mit Node unter systemd. Keine Oracle-Datenbank.
+  - `server/pattern-card.mjs`:
+    - `patternCardModel` (Strings wie `formatMessage('pattern')`, „Nicht verfügbar“), `patternCardSvg` (Layout, Inter-Breitentabelle für Umbruch/Einpassen), `renderPatternCard` (resvg, lazy, optional), `patternCaption`, `EXAMPLE_SIGNAL`.
+    - Abhängigkeit `@resvg/resvg-js` 2.6.2 in `server/package.json` (+ Lock). `server/node_modules` steht in `.gitignore`.
+  - `pattern-monitor.mjs`: `patternMessageData` (Signaldaten), `patternText` daraus.
+  - `patterns-247.mjs` 1.2.0:
+    - Event mit `data`; `sendEvent` (Karte → `telegramPhoto` multipart; Text bei Renderfehler oder 400 ohne Chatproblem); `cardFor` (PNG in `karten/<sha>.png`, bei Wiederholung dasselbe).
+    - `confirmed` mit `sentAt`/`via`/`msgId`.
+    - Zeitstempel im Protokoll; `dienst.pid` solange der Dienst läuft.
+    - Aufrufe `--karte-beispiel`, `--bereinigen`, `--probelauf`, `--stichtag`.
+  - `server/pattern-retention.mjs`:
+    - `monthStart` (Intl, Sommer-/Winterzeit), `selectPurge`, `purgeSentMessages` (Sperre, Löschliste `bereinigung-offen.json`, atomarer Zustand, rotierte und komprimierte Protokolle), `purgeReport`.
+    - Altbestand ohne `sentAt`: erst ab Erkennung + 7 Tage vor dem Stichtag.
+  - systemd: `scalpdesk-patterns-bereinigung.service`/`.timer`.
+    - Dienst anhalten und nur bei Bedarf wieder starten.
+    - `service.log` per `+chown` dem Dienstbenutzer.
+  - Tests: `tests/unit-pattern-card.js` (51). Renderprüfungen brauchen `server/node_modules`.
+  - Der 24/7-Dienst sendet Muster weiter als Text; der Einbau dort wäre der nächste Schritt.
+- iPad-Rückmeldungen (gleiche Version):
+  - `zsAnnounce`/`zs.announce`: Toast nach jedem Tipp auf „Signale“.
+  - Vollbild-Leiste: `.tb-main{flex:1 1 100%}`, `.zoom-controls{flex:1 1 100%}`, einzeilig erst `@container ctb (min-width:1060px)`; `.chart-detail-control` im Vollbild nowrap, Titel unter 700 px aus.
+  - `html[data-chartfull] .chart-pattern-summary{display:none}`; m94/m95 entsprechend angepasst.
+  - `#pan-now`/`#zoom-reset` im Vollbild `order:10`, `#zones-btn` mit `--zones-w` (gemessen in `zonesBtnWidth`), Knopfzeile beim Öffnen auf `scrollLeft 0`. Fehlendes Kerzenvolumen gilt im Filter als „nicht bewertet“ (kein Liquiditäts-K.O.).
+
+## Stand 3.68.4 (Claude): GitHub-Einrichtung übersichtlich, Anleitungen in der App, Werkzeuge im Vollbild bedienbar
 
 Rückmeldungen vom iPhone zu 3.68.3. App/SW **3.68.4**, Dienst 2.12.1 unverändert. Ausführlich: [docs/3.68.4-AENDERUNGEN.md](docs/3.68.4-AENDERUNGEN.md).
 

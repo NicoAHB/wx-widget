@@ -132,6 +132,117 @@ sudo systemctl status scalpdesk-patterns --no-pager
 
 Nach einem Update des Unit-Files erneut `sudo install …` und `sudo systemctl daemon-reload` aus Abschnitt 4 ausführen. Coin-Auswahl ändern: erneut exportieren/hochladen, mit `sudo install -o scalpdesk-patterns -g scalpdesk-patterns -m 600 … /etc/scalpdesk-patterns-watch.json` ersetzen und den Dienst neu starten. Neu übernommene Einstellungen gelten ab diesem Zeitpunkt; keine historischen Alarmwellen.
 
+### Qualitätsfilter (ab Musterdienst 1.1.0, App 3.69.0)
+
+Seit 1.1.0 meldet der Dienst nur noch Chartmuster, die den Qualitätsfilter bestehen: K.O.-Kriterien, Signalscore ≥ 70, Anti-Spam. Beschreibung: [CHARTMUSTER-QUALITAETSFILTER.md](CHARTMUSTER-QUALITAETSFILTER.md).
+- **Schwellen:** in der App einstellen (Telegram einrichten → Chartmuster → Qualitätsfilter). Danach die Coin-Auswahl **neu exportieren** und wie oben ersetzen; die Datei enthält das Feld `filter`. Eine ältere Datei ohne `filter` gilt mit dem Preset „Normal“.
+- **Gefilterte Signale** gehen nicht an Telegram. Sie stehen im Protokoll als „Chartmuster gefiltert: Coin · Zeitrahmen · Muster · Score – Grund“, gesendete als „Chartmuster gesendet: …“.
+- **Statistik** je Muster, Zeitrahmen und Coin (Signale, gesendet, gefiltert, Ziel, Ungültig, Timeout nach 48 Kerzen):
+
+```bash
+sudo -u scalpdesk-patterns /usr/bin/node /opt/scalpdesk-patterns/server/patterns-247.mjs --statistik
+```
+
+Nach dem Update auf 1.1.0 ist ein Neustart nötig (Befehle oben). Der Testbefehl `--test` nennt Preset, Mindestscore und Chance/Risiko.
+
+### Trading-Karten statt Text (ab Musterdienst 1.2.0)
+
+Seit 1.2.0 schickt der Dienst jede Chartmuster-Meldung als übersichtliche **Trading-Karte** (PNG, 1024 × 1536) per `sendPhoto` an den eingerichteten Chat.
+
+- **Inhalt der Karte:** Handelspaar, Markt und Zeitrahmen, Richtung, Muster und Status, die Preisfelder Einstieg, Ziel und Ungültig bei, dazu Chance/Risiko, Regelgüte, Lernstand, Hinweise, Uhrzeit und Modell.
+- **Bildunterschrift:** kurz, mit Paar, Zeitrahmen und Status, z. B. „LTC/USDT · 5 Minuten · Ausbruch bestätigt“.
+- **Wie die Karte entsteht:**
+  - Die Karte wird aus denselben Signaldaten wie die bisherige Textmeldung gezeichnet (SVG, gerendert mit resvg). Es ist keine Bild-KI beteiligt, Zahlen und Texte bleiben exakt.
+  - Fehlende Angaben stehen als „Nicht verfügbar“ da. Die Regelgüte ist ausdrücklich keine Erfolgswahrscheinlichkeit.
+- **Textmeldung als Ersatz:** Kann die Karte nicht erzeugt werden, sendet der Dienst die bisherige Textmeldung. Gründe können eine fehlende Bibliothek oder Schrift sein, oder Telegram lehnt das Bild ab.
+
+Einmalig in der VM die Schrift und den Renderer installieren. Beides ist kostenlos; npm kommt mit Node.js:
+
+```bash
+sudo apt-get install -y fonts-inter fonts-dejavu-core
+sudo git -C /opt/scalpdesk-patterns pull --ff-only
+cd /opt/scalpdesk-patterns/server && sudo npm ci --omit=dev --no-audit --no-fund && cd ~
+sudo -u scalpdesk-patterns /usr/bin/node /opt/scalpdesk-patterns/server/patterns-247.mjs --karte-beispiel /var/lib/scalpdesk-patterns/karte-beispiel.png
+sudo systemctl restart scalpdesk-patterns
+```
+
+Hinweise dazu:
+
+- `--karte-beispiel` erzeugt die Beispielkarte aus der Vorgabe mit der Kennzeichnung „BEISPIEL“. Mit `scp` aufs Gerät holen und ansehen. Fehlt `fonts-inter`, zeichnet der Renderer mit DejaVu Sans.
+- Nach späteren Updates (`git pull`) `npm ci` nur dann erneut ausführen, wenn sich `server/package-lock.json` geändert hat.
+
+Wie der Versand abläuft:
+
+- **Bestätigung:** Eine Nachricht gilt erst als gesendet, wenn Telegram den Versand bestätigt. Erst dann stehen im Zustand `confirmed`, `sentAt`, der Weg (`karte`/`text`) und die Nachrichtennummer.
+- **Rate-Limit:** Bei „Too Many Requests“ wartet der Dienst die von Telegram genannte Zeit und sendet dann dasselbe gespeicherte Bild.
+- **Verlorene Antwort:** Dann bleibt die Nachricht „unbestätigt“. Es gibt keinen zweiten Versuch, damit nichts doppelt ankommt.
+- **Ablehnung:**
+  - Ein falscher Chat oder ein gesperrter Bot führt zu „abgelehnt“.
+  - Ein abgelehntes Bild wird einmal als Text versucht.
+- **Kartenbilder:** Sie liegen bis zur monatlichen Bereinigung unter `/var/lib/scalpdesk-patterns/karten/`.
+- **Zugangsdaten:** Sie kommen weiterhin nur aus `/etc/scalpdesk-patterns.env` und stehen nie im Protokoll.
+
+### Monatliche Bereinigung gesendeter Nachrichten (ab 1.2.0)
+
+Ein systemd-Timer bereinigt die gespeicherten Nachrichtendaten am **1. jedes Monats um 03:00 Uhr (Europe/Berlin)**. Die Nachrichten im Telegram-Chat bleiben erhalten.
+
+- **Stichtag:** Beginn des laufenden Monats, also 00:00 Uhr am 1. in deutscher Zeit, mit Sommer- und Winterzeit. Er hängt nicht von der Startzeit ab, ein verspäteter Lauf benutzt denselben Stichtag.
+- **Gelöscht wird,** was vor dem Stichtag nachweislich gesendet wurde:
+  - der Nachrichtentext;
+  - die Kopie der Signaldaten dieser Nachricht;
+  - die Versandmetadaten des Eintrags;
+  - das Kartenbild;
+  - Anti-Spam-Merkeinträge vor dem Stichtag;
+  - die nachrichtenbezogenen Protokollzeilen vor dem Stichtag, auch in rotierten und komprimierten Protokollen: „Chartmuster zugestellt/gesendet“, Karten- und Zustellungszeilen;
+  - eine liegengebliebene Zwischendatei des Zustands.
+- **Nie gelöscht werden:**
+  - wartende Nachrichten und Wiederholungsversuche;
+  - Nachrichten, die gerade gesendet werden, sowie unbestätigte, abgelehnte und abgelaufene;
+  - alles nach dem Stichtag;
+  - Zugangsdaten (`.env`) und die Coin-Auswahl;
+  - Lernbestand und Signal-Journal (Statistik, „Erlernt“).
+- **Einträge von vor 1.2.0:** Sie haben noch keine Versandzeit und werden erst gelöscht, wenn die Erkennung mehr als 7 Tage vor dem Stichtag lag. Protokollzeilen von vor 1.2.0 tragen keinen Zeitstempel und bleiben; logrotate entfernt sie nach 4 Wochen.
+- **Ablauf:**
+  - Der Timer hält den Chartmusterdienst während der Bereinigung kurz an und startet ihn danach wieder, aber nur, wenn er vorher lief.
+  - Zwei Läufe gleichzeitig verhindern systemd und eine eigene Sperre. Neben dem laufenden Dienst löscht das Programm nichts.
+  - War der Server zum Termin aus, holt `Persistent=true` den Lauf beim nächsten Start nach.
+- **Wiederaufnahme:**
+  - Zuerst wird eine Löschliste geschrieben. Sie enthält nur Dateinamen.
+  - Dann wird der Zustand in einem Schritt geschrieben, atomar per Ersetzen der Datei. Danach werden Bilder und Protokollzeilen gelöscht.
+  - Scheitert eine Datei, bleibt sie auf der Löschliste, und der nächste Lauf setzt dort an.
+
+Einrichten:
+
+```bash
+sudo install -m 644 /opt/scalpdesk-patterns/server/scalpdesk-patterns-bereinigung.service /etc/systemd/system/
+sudo install -m 644 /opt/scalpdesk-patterns/server/scalpdesk-patterns-bereinigung.timer /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now scalpdesk-patterns-bereinigung.timer
+systemctl list-timers scalpdesk-patterns-bereinigung.timer --no-pager
+```
+
+**Probelauf.** Er zeigt nur Anzahl und Umfang, keine Nachrichteninhalte, und ändert nichts. Er darf neben dem laufenden Dienst laufen:
+
+```bash
+sudo -u scalpdesk-patterns /usr/bin/node /opt/scalpdesk-patterns/server/patterns-247.mjs --probelauf
+sudo -u scalpdesk-patterns /usr/bin/node /opt/scalpdesk-patterns/server/patterns-247.mjs --probelauf --stichtag 2026-11   # anderer Monatsbeginn
+```
+
+**Sofort bereinigen und Ergebnis ansehen** (hält den Dienst kurz an):
+
+```bash
+sudo systemctl start scalpdesk-patterns-bereinigung.service
+sudo tail -n 20 /var/log/scalpdesk-patterns/bereinigung.log
+```
+
+**Backups:**
+
+- Der Chartmusterdienst legt selbst keine Sicherungen an.
+- Hast du in Oracle Boot-Volume-Backups oder eigene Images angelegt, enthalten diese weiter die alten Nachrichtendaten, bis sie nach ihrer eigenen Aufbewahrung gelöscht werden. Die Bereinigung löscht nicht aus Backups.
+- Auch Kopien, die du selbst gezogen hast, bleiben erhalten, etwa mit `scp`.
+
+**24/7-Dienst:** Der 24/7-Dienst (`scalpdesk-247`) entfernt gesendete Meldungen sofort aus seinem Ausgang. Seine Ereignisdaten (ID, Zustand, Zeit) vergisst er nach 14 Tagen von selbst. Sein Protokoll liegt im systemd-Journal und folgt dessen Aufbewahrung. Er sendet Chartmuster weiterhin als Text.
+
 ```bash
 sudo tail -f /var/log/scalpdesk-patterns/service.log
 sudo journalctl -u scalpdesk-patterns -n 50 --no-pager

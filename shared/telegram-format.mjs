@@ -62,7 +62,9 @@ export function formatMessage(type, d = {}) {
   if (type === 'pattern') {
     const risk = finite(d.entry) && finite(d.invalid) ? Math.abs(d.entry - d.invalid) : 0, reward = finite(d.entry) && finite(d.target) ? Math.abs(d.target - d.entry) : null, crv = risk > 0 && finite(reward) ? reward / risk : null;
     blocks = [[`<b>${direction.icon} ${direction.label} · ${escapeTelegram(d.pattern)}</b>${pair ? ' · ' + pair : ''}`,
-      `📊 <b>${pair}</b>${value(d.market) ? ' ' + escapeTelegram(d.market) : ''}${value(d.timeframe) ? ' · ' + escapeTelegram(d.timeframe) : ''}`, line('✅ ', d.status)],
+      `📊 <b>${pair}</b>${value(d.market) ? ' ' + escapeTelegram(d.market) : ''}${value(d.timeframe) ? ' · ' + escapeTelegram(d.timeframe) : ''}`, line('✅ ', d.status),
+      // 3.69.0: Qualitätsfilter – Signalscore mit Kurzbegründung (z. B. „Trend ✔ · Volumen ✔ · R/R 2,6“)
+      numLine('🎯 Signalscore ', d.score, v => telegramNumber(v, 0) + '/100' + (value(d.scoreWhy) ? ' · ' + escapeTelegram(d.scoreWhy) : ''))],
     [numLine('💰 Einstieg: ', d.entry, code), numLine('🎯 ⭐ <b>Ziel: ', d.target, v => money(v) + '</b> ⭐' + pctDistance(v, d.entry)), numLine('🛑 Ungültig bei: ', d.invalid, v => code(v) + pctDistance(v, d.entry)),
       numLine('⚖️ Chance/Risiko: ', crv, v => telegramNumber(v, 2) + ' : 1' + (v < 1 ? ' ⚠️' : ''))],
     [numLine('🧠 Regelgüte: ', d.quality, v => telegramBar(v) + ' ' + telegramNumber(v, Number.isInteger(v) ? 0 : 2) + ' %'), ...learned(d.learned, direction), '<i>ℹ️ Kursrichtung ≠ Zieltreffer · keine Erfolgswahrscheinlichkeit</i>', line('Modell: ', d.model)]];
@@ -91,6 +93,15 @@ export function formatMessage(type, d = {}) {
   } else if (type === 'news') {
     blocks = [[`<b>⚠️ WIRTSCHAFTSTERMIN${value(d.when) ? ' · ' + escapeTelegram(d.when) : ''}</b>`, line('Währung: ', d.currency), 'Bedeutung: hoch', 'Starke Kursausschläge möglich'],
       (d.events || []).flatMap(e => [line('Termin: ', e.title), line('Prognose: ', e.forecast), line('Vorher: ', e.previous)])];
+  } else if (type === 'trade' && d.card) {
+    // 3.69.0: kurze Bildunterschrift zur Trade-Karte – Paar, Long/Short, Netto in € (ohne Euro-Kurs in USD) und %, Haltedauer,
+    // Max. Gewinn und Max. Verlust (unrealisiert, nach Gebühren). „nie im Minus/Plus“: Der Kurs lief nie gegen bzw. für die Position.
+    const inEur = finite(d.eur), res = inEur ? d.eur : d.pnl, unit = inEur ? ' €' : ' USD';
+    const ext = (usd, eur, never, word) => never ? telegramNumber(0) + unit + ' (' + word + ')' : finite(inEur ? eur : usd) ? telegramSigned(inEur ? eur : usd) + unit : '';
+    const gain = ext(d.gain, d.gainEur, d.neverPlus, 'nie im Plus'), loss = ext(d.loss, d.lossEur, d.neverMinus, 'nie im Minus');
+    blocks = [[`<b>${finite(res) ? res < 0 ? '🔴 VERLUST' : res > 0 ? '🟢 GEWINN' : '⚪ AUSGEGLICHEN' : direction.icon + ' TRADE'} · ${pair || coin}${value(d.side) ? ' ' + escapeTelegram(d.side === 'long' ? 'Long' : 'Short') : ''}</b>`,
+      finite(res) ? `${inEur ? '💶' : '💵'} Netto: <b>${telegramSigned(res)}${unit}</b>${finite(d.percent) ? ' · ' + telegramPercent(d.percent) : ''}` : '', line('⏱ Haltedauer: ', d.duration),
+      gain ? '📈 Max. Gewinn: ' + gain : '', loss ? '📉 Max. Verlust: ' + loss : '', !gain && !loss ? line('Max. Gewinn/Verlust: ', d.extremes) : '']];
   } else if (type === 'trade') {
     blocks = [[`<b>${d.paper ? 'PAPER · ' : ''}${finite(d.pnl) ? d.pnl < 0 ? '🔴 VERLUST' : d.pnl > 0 ? '🟢 GEWINN' : '⚪ AUSGEGLICHEN' : direction.icon + ' TRADE'} · ${coin}${value(d.side) ? ' ' + escapeTelegram(d.side === 'long' ? 'Long' : 'Short') : ''}${finite(d.pnl) ? ' · ' + telegramSigned(d.pnl) + ' USD' : ''}</b>`,
       numLine('💰 Einstieg: ', d.entry, code), numLine('Kurs beim Abschluss: ', d.exit, code), numLine('Ergebnis: ', d.percent, telegramPercent), line('Dauer: ', d.duration), numLine('Menge: ', d.quantity, v => telegramNumber(v, 8)), line('Gründe: ', d.reasons), line('Hinweis: ', d.note)]];

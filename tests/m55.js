@@ -1,8 +1,8 @@
 // 3.34.0 (G06) – geschlossene Position als genau ein Telegram-Bild (über die Oberfläche, Telegram aus der Attrappe).
-// flow:   Long mit Nachkauf und Teilabschluss, Schluss jetzt → genau ein sendPhoto ohne Bildunterschrift, PNG 1080×1440; Netto,
+// flow:   Long mit Nachkauf und Teilabschluss, Schluss jetzt → genau ein sendPhoto mit kurzer Bildunterschrift, PNG 1080×1730; Netto,
 //         Einsatz und Euro wie im Journal; Zustand in der Historie; Neuladen ohne zweites Bild; Vorschau.
 // short:  Short mit Nachkauf, Teilabschluss und Schluss „laut Börse“ ohne Ausstiegskurs → „nicht erfasst“ statt erfundenem Kurs.
-// nochart: Kerzen nicht abrufbar → trotzdem genau ein Bild („Chartdaten nicht verfügbar“), kein Textbericht.
+// nochart: Kerzen aus keiner Quelle abrufbar → trotzdem genau ein Bild mit Ersatzlinie Einstieg → Ausstieg (3.69.0), kein Textbericht.
 // off:    Ziel aus → kein Auftrag, keine Kerzen; AUS während des Erstellens → verworfen, nichts gesendet; aus und wieder an →
 //         verworfen (Epoche); keine Nachlieferung nach dem Wiedereinschalten oder Neuladen.
 // net:    Antwort verloren → „Zustellung unbestätigt“, genau ein Versuch; Telegram lehnt ab → „fehlgeschlagen“, bewusst erneut
@@ -73,10 +73,10 @@ const tests = {
     const j = await waitJob(page, 'L1', x => x.st === 'ok'); await page.waitForTimeout(1500);
     const all = await photos(t0), p = all[0] || {};
     check('Vollständiger Abschluss: genau ein sendPhoto an den Trades-Chat', j && all.length === 1 && String(p.chat_id) === TRADES, JSON.stringify(all.map(x => ({ chat: x.chat_id, bytes: x.bytes }))));
-    check('… mit zentraler HTML-Ergebnisbeschriftung und nur Versandfeldern', /^<b>🟢 GEWINN · SOL Long · \+8,80 USD<\/b>/.test(p.caption || '') && /Einstieg: <code>147,3333 USD<\/code>/.test(p.caption) && /Kurs beim Abschluss: <code>150,3333 USD<\/code>/.test(p.caption) && JSON.stringify(p.fields) === JSON.stringify(['caption', 'chat_id', 'parse_mode']) && p.photoName === 'trade.png' && p.photoType === 'image/png', JSON.stringify({ caption: p.caption, fields: p.fields, name: p.photoName, type: p.photoType }));
-    check('… PNG 1080×1440, unter 10 MB', p.png && p.w === 1080 && p.h === 1440 && p.bytes > 20000 && p.bytes < 10e6, JSON.stringify({ png: p.png, w: p.w, h: p.h, bytes: p.bytes }));
+    check('… mit kurzer HTML-Bildunterschrift (Paar, Richtung, Netto € und %, Haltedauer, Max. Gewinn/Verlust) und nur Versandfeldern', /^<b>🟢 GEWINN · SOL\/USDT Long<\/b>\r?\n💶 Netto: <b>\+[\d,]+ €<\/b> · \+[\d,]+ %\r?\n⏱ Haltedauer: 3 Std\.( \d+ Min\.)?\r?\n📈 Max\. Gewinn: [+−][\d,]+ €\r?\n📉 Max\. Verlust: ([−][\d,]+ €|0,00 € \(nie im Minus\))\r?\n🕐 /.test(p.caption || '') && JSON.stringify(p.fields) === JSON.stringify(['caption', 'chat_id', 'parse_mode']) && p.photoName === 'trade.png' && p.photoType === 'image/png', JSON.stringify({ caption: p.caption, fields: p.fields, name: p.photoName, type: p.photoType }));
+    check('… PNG 1080×1730, unter 10 MB', p.png && p.w === 1080 && p.h === 1730 && p.bytes > 20000 && p.bytes < 10e6, JSON.stringify({ png: p.png, w: p.w, h: p.h, bytes: p.bytes }));
     check('… keine Textnachricht an Trades und nichts an Kursalarm oder Sicherung (außer Sicherung selbst)', !(await h.ctl('/sent')).some(m => m.svc === 'tg' && m.at >= t0 && (String(m.chat_id) === TRADES ? m.method !== 'sendPhoto' : m.method === 'sendPhoto')));
-    check('Auftrag „gesendet“ mit Nachrichten-ID, automatisch, Kerzen für den Haltezeitraum', j?.st === 'ok' && j.msg > 0 && j.by === 'auto' && /^3m · \d+ Kerzen$/.test(j.chart || ''), JSON.stringify(j));
+    check('Auftrag „gesendet“ mit Nachrichten-ID, automatisch, Kerzen für den Haltezeitraum', j?.st === 'ok' && j.msg > 0 && j.by === 'auto' && /^(1m|5m) · \d+ Kerzen · Binance Spot · gespeichert$/.test(j.chart || ''), JSON.stringify(j));
     keep.push(['flow', p.path]);
     const d = await page.evaluate(() => __g06.timgData('L1')), net = await journalNet(page, 'L1');
     check('Bild-Daten = Journal: Netto (Summe der Buchungen), Ø-Einstieg, Ø-Ausstieg, Einsatz, Menge, Haltedauer', Math.abs(d.net - net) < 1e-9 && Math.abs(d.net - 8.8) < 1e-6 && Math.abs(d.entry - 442 / 3) < 1e-6 && Math.abs(d.exit - (149 + 302) / 3) < 1e-6 && Math.abs(d.margin - 44.2) < 1e-6 && d.qty === 3 && d.buys.length === 2 && d.sells.length === 2 && Math.abs(d.openedAt - T0) < 120e3, JSON.stringify({ net: d.net, journal: net, entry: d.entry, exit: d.exit, margin: d.margin, qty: d.qty }));
@@ -90,7 +90,7 @@ const tests = {
     await jsClick(page, '#history-list [data-trade="L1"] .tools [data-action="trade-img"]');
     await until(() => page.evaluate(() => !document.getElementById('timg-img').hidden), 10000);
     const v = await page.evaluate(() => ({ open: document.getElementById('timg-dialog').open, w: document.getElementById('timg-img').naturalWidth, h: document.getElementById('timg-img').naturalHeight, st: document.getElementById('timg-status').textContent, send: document.getElementById('timg-send').textContent, dl: document.getElementById('timg-save').download }));
-    check('Vorschau: Bild 1080×1440, „An Telegram gesendet um …“, Knopf „Erneut senden …“, „Bild speichern“', v.open && v.w === 1080 && v.h === 1440 && /^An Telegram gesendet um \d\d:\d\d\.$/.test(v.st) && v.send === 'Erneut senden …' && /^trade-SOL-\d{4}-\d\d-\d\d\.png$/.test(v.dl), JSON.stringify(v));
+    check('Vorschau: Bild 1080×1730, „An Telegram gesendet um …“, Knopf „Erneut senden …“, „Bild speichern“', v.open && v.w === 1080 && v.h === 1730 && /^An Telegram gesendet um \d\d:\d\d\.$/.test(v.st) && v.send === 'Erneut senden …' && /^trade-SOL-\d{4}-\d\d-\d\d\.png$/.test(v.dl), JSON.stringify(v));
     await page.click('#timg-send'); await page.waitForTimeout(300);
     const ask = await page.evaluate(() => ({ st: document.getElementById('timg-status').textContent, send: document.getElementById('timg-send').textContent }));
     check('Erneut senden: erst Rückfrage (zweites Bild im Chat), noch nichts gesendet', /Noch einmal senden\? Es kommt dann ein zweites Bild in den Chat\./.test(ask.st) && ask.send === 'Ja, noch einmal senden' && (await photos(t0)).length === 1, JSON.stringify(ask));
@@ -107,7 +107,7 @@ const tests = {
     const t0 = Date.now(); await close(page, 'S1', { qty: '2', exit: '', override: '45' });
     const j = await waitJob(page, 'S1', x => ['ok', 'fail', 'unconf', 'drop'].includes(x.st)); await page.waitForTimeout(800);
     const d = await page.evaluate(() => __g06.timgData('S1')), net = await journalNet(page, 'S1'), all = await photos(t0);
-    check('Short mit Nachkauf und Teilabschluss: genau ein Bild', j?.st === 'ok' && all.length === 1 && /^<b>🟢 GEWINN · ETH Short ·/.test(all[0].caption || '') && /Einstieg: <code>2.523,33 USD<\/code>/.test(all[0].caption), JSON.stringify(j));
+    check('Short mit Nachkauf und Teilabschluss: genau ein Bild', j?.st === 'ok' && all.length === 1 && /^<b>🟢 GEWINN · ETH\/USDT Short<\/b>\r?\n💶 Netto: <b>\+/.test(all[0].caption || ''), JSON.stringify(j));
     check('Short: Netto = Journal (Teilabschluss + Schluss laut Börse), Einstieg Ø aus beiden Verkäufen', d.side === 'short' && Math.abs(d.net - net) < 1e-9 && Math.abs(d.entry - (2 * 2520 + 2530) / 3) < 1e-6 && d.exchange, JSON.stringify({ net: d.net, journal: net, entry: d.entry }));
     check('Schluss ohne Ausstiegskurs: nicht erfunden – Ø-Ausstieg nur aus dem erfassten Teilabschluss, 1 von 2 ohne Kurs', d.exit === 2490 && d.exitMiss === 1 && d.sells[1].x === null, JSON.stringify({ exit: d.exit, miss: d.exitMiss, sells: d.sells }));
     keep.push(['short', all[0]?.path]);
@@ -128,7 +128,7 @@ const tests = {
     await close(page, 'N1', { qty: '1000', exit: '0,605' });
     const j = await waitJob(page, 'N1', x => ['ok', 'fail', 'unconf', 'drop'].includes(x.st), 40000); await h.ctl('/restfail?on=0'); await page.waitForTimeout(500);
     const all = await photos(t0);
-    check('Kerzen nicht abrufbar: trotzdem genau ein Bild (darin „Chartdaten nicht verfügbar“), kein Textbericht', j?.st === 'ok' && all.length === 1 && /^nicht verfügbar \(/.test(j.chart || '') && !(await h.ctl('/sent')).some(m => m.svc === 'tg' && !m.method && String(m.chat_id) === TRADES && m.at >= t0), JSON.stringify(j));
+    check('Kerzen aus keiner Quelle abrufbar: trotzdem genau ein Bild mit Ersatzlinie (nie „Chartdaten nicht verfügbar“), kein Textbericht', j?.st === 'ok' && all.length === 1 && /^Ersatzlinie Einstieg → Ausstieg \(Binance Spot: .*Bybit Spot \(Ersatzquelle\): /.test(j.chart || '') && (await page.evaluate(() => __g06.layout?.mode)) === 'line' && !(await h.ctl('/sent')).some(m => m.svc === 'tg' && !m.method && String(m.chat_id) === TRADES && m.at >= t0), JSON.stringify(j));
     keep.push(['nochart', all[0]?.path]);
     check('keine Fehler (nochart)', !real(errors).filter(e => !/503/.test(e)).length, real(errors).join(' | ')); await ctx.close(); await h.ctl('/walk?on=1');
   },
@@ -138,7 +138,7 @@ const tests = {
     const now = Date.now();
     const { ctx, page, errors } = await openPage(browser, { 'scalpdesk.channels.v1': chanCfg({}, { tgt: { 'course-alert': true, backup: true, trades: false } }), 'scalpdesk.positions.v1': [pos('O1', 'SOLUSDT', 'long', 148, 1, now - 3600e3), pos('O2', 'SOLUSDT', 'long', 149, 1, now - 3600e3), pos('O3', 'SOLUSDT', 'long', 147, 1, now - 3600e3)] });
     let t0 = Date.now(); await close(page, 'O1', { qty: '1', exit: '150' }); await page.waitForTimeout(3000);
-    check('Ziel „Trades“ aus: kein Auftrag, kein Bild, nicht einmal Kerzen dafür geladen', !(await job(page, 'O1')) && !(await photos(t0)).length && !(await imgReq(t0, 'SOLUSDT')).length);
+    check('Ziel „Trades“ aus: kein Auftrag, kein Bild; Kerzen nur einmal fürs Journal geladen (3.69.0)', !(await job(page, 'O1')) && !(await photos(t0)).length && (await imgReq(t0, 'SOLUSDT')).length === 1, (await imgReq(t0, 'SOLUSDT')).length);
     // einschalten, dann AUS während das Bild entsteht (Kerzenabruf verzögert)
     await openTgc(page); await page.click('#tgc-sw-trades'); await page.waitForTimeout(300); await page.evaluate(() => document.getElementById('tgc-dialog').close());
     await h.ctl('/restdelay?ms=5000'); t0 = Date.now(); await close(page, 'O2', { qty: '1', exit: '151' });
