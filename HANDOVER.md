@@ -3,7 +3,17 @@
 Diese Datei ist der Einstieg für jede weitere Arbeit am Projekt. Wer sie liest, braucht kein Vorwissen. Die vollständige fachliche
 Vorgabe aller Gruppen G01–G14 steht in `docs/VORGABE-G01-G14.md` (Original-Übergabe; dort sind G10–G14 ausführlich beschrieben).
 
-## Aktueller Stand – 3.68.2 (Claude): Kerzenart-Knopf „Normal | HA“, Backtest im Vollbild scrollbar, Minimieren abgesichert, Bot-Token einfügen
+## Aktueller Stand – 3.68.3 (Claude): Heikin-Ashi-Schalter, Vollbild ohne Klappfläche, Werkzeugleiste im Vollbild zweizeilig, Einfügen-Felder als Raster
+
+Rückmeldungen vom iPhone zu 3.68.2. App/SW **3.68.3**, Dienst 2.12.1 unverändert. Ausführlich: [docs/3.68.3-AENDERUNGEN.md](docs/3.68.3-AENDERUNGEN.md).
+
+- `#ha-btn` ist ein Schalter: `role="switch"`, `aria-checked`, Inhalt `.ha-long`/`.ha-short` + `.ha-switch` (Knopf per `::after`). `haButton()` setzt `aria-checked` und `title`. Unter 360 px kleinerer Schalter, damit die OHLC-Zeile zweizeilig bleibt (m7).
+- Vollbild: `html[data-chartfull] #chart-sec>.zone-lab{display:none}`. Die 3.68.2-Regeln für die geöffnete Fläche im Vollbild sind entfernt.
+- Werkzeugleiste im Vollbild: `.chart-toolbar{flex-wrap:wrap}`, `.tb-main{flex:1 1 18rem;min-width:min(100%,18rem)}` (die Basis 18rem entscheidet über den Umbruch, nicht die max-content-Breite), `.zoom-controls` wischbar, `#chart-full` im Vollbild ausgeblendet. Ursache des Nutzerfehlers: hochkant ohne App-Drehung (`data-fsnative`) wurden Zeiträume, MCap und Kerzen-Auflösung auf 0 px gedrückt (schon in 3.68.0), Knöpfe überlagerten sich, und der zweite Minimieren-Knopf lag unter dem Finger. m10 prüft das Vollbild hauptsächlich gedreht bzw. in Querformaten; den Fall hochkant ohne Drehung prüft jetzt m100.
+- Telegram: `.input-wrap.tg-wrap` als Raster `minmax(0,1fr) auto` für alle 8 Felder mit „Einfügen“.
+- Test `m100.js` jetzt 26 Fälle. Gezielt grün: m10, m24, m56, m69, m84, m87, m98, m99, m100; m7 bis auf den bekannten Sicherungs-Flake. Gesamtlauf steht noch aus (Nutzer: später nachholen).
+
+## Stand 3.68.2 (Claude): Kerzenart-Knopf „Normal | HA“, Backtest im Vollbild scrollbar, Minimieren abgesichert, Bot-Token einfügen
 
 Rückmeldungen vom iPhone zu 3.68.1. App/SW **3.68.2**, Dienst 2.12.1 unverändert. Ausführlich: [docs/3.68.2-AENDERUNGEN.md](docs/3.68.2-AENDERUNGEN.md).
 
