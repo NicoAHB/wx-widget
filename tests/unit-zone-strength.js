@@ -1,0 +1,36 @@
+// 3.68.1: Konfluenz-Score je Zone („starke Zonen“) – Gruppen zählen je einmal, Schwellen zentral.
+let pass = 0, fail = 0;
+const check = (name, ok, detail = '') => { ok ? pass++ : fail++; console.log(`${ok ? '✓' : '✗'} ${name}${detail ? ' — ' + detail : ''}`); };
+(async () => {
+  const Z = await import('../shared/zone-strength.mjs'), S = Z.ZONE_STRENGTH;
+  const zone = { side: 'buy', low: 99, high: 101, broken: false, volumeRatio: 1 }, base = { atr: 2, price: 110, ema200: 100 };
+  check('Gewichte ergeben 100, Schwellen zentral (70/85, 3 Gruppen)', Object.values(S.weights).reduce((a, b) => a + b, 0) === 100 && S.strongScore === 70 && S.strongAgainstEma === 85 && S.minGroups === 3);
+  let r = Z.scoreZoneStrength(zone, { ...base, fib: [{ r: .618, price: 100.2 }], sr: [{ price: 100, name: 'Unterstützung' }], periodLow: 99.5 });
+  check('Mehrere Struktur-Faktoren zählen als eine Gruppe', r.groups.find(g => g.key === 'struktur').points === S.weights.struktur && r.groups.find(g => g.key === 'struktur').factors.length === 3);
+  check('Trend: Kurs über EMA 200 bei Kaufzone, Richtung „mit“', r.groups.find(g => g.key === 'trend').factors.includes('über EMA 200') && r.withEma === true);
+  check('Nur zwei Gruppen: nicht stark', r.groupCount === 2 && r.score === 45 && !r.strong);
+  r = Z.scoreZoneStrength(zone, { ...base, fib: [{ r: .618, price: 100.2 }], profile: { poc: 100.4, vaLow: 95, vaHigh: 120 } });
+  check('Struktur + Volumen + Trend = 70 aus 3 Gruppen: stark', r.score === 70 && r.groupCount === 3 && r.strong, r.factorsText);
+  check('Faktorliste lesbar (z. B. „Fib 0,618 + POC + über EMA 200“)', r.factorsText === 'Fib 0,618 + POC + über EMA 200', r.factorsText);
+  const sell = { side: 'sell', low: 99, high: 101, broken: false };
+  r = Z.scoreZoneStrength(sell, { ...base, fib: [{ r: .5, price: 100 }], profile: { poc: 100 }, trend: { '1h': -1 } });
+  check('Gegen EMA-200-Richtung: Score 70 reicht nicht, Schwelle 85', r.withEma === false && r.threshold === 85 && r.score === 70 && !r.strong);
+  r = Z.scoreZoneStrength(sell, { ...base, fib: [{ r: .5, price: 100 }], profile: { poc: 100 }, trend: { '1h': -1 }, bands: { upper: 101.5 }, liq: [{ price: 100.5 }] });
+  check('Gegen EMA-200-Richtung mit 5 Gruppen (100): stark', r.score === 100 && r.strong && r.groupCount === 5);
+  r = Z.scoreZoneStrength(zone, { ...base, liq: null, whales: null, fib: [{ r: .618, price: 100 }], profile: { poc: 100 } });
+  check('Derivate ohne echte Daten (null) zählen nicht', r.groups.find(g => g.key === 'derivate').points === 0);
+  r = Z.scoreZoneStrength(zone, { ...base, whales: [{ price: 100, sell: true }, { price: 100.5, sell: false }] });
+  check('Whales: nur Käufe zählen bei Kaufzone', r.groups.find(g => g.key === 'derivate').factors[0] === 'Whale-Käufe');
+  r = Z.scoreZoneStrength(zone, { ...base, divergences: [{ kind: 'bull', price: 99.5, age: 3 }], reversals: [{ dir: 'bull', low: 99.2, high: 102, age: 2, name: 'Hammer' }], bands: { lower: 99.8 } });
+  check('Auslöser: Divergenz, Umkehrkerze (Name) und Bollinger-Rand als eine Gruppe', r.groups.find(g => g.key === 'ausloeser').points === S.weights.ausloeser && r.factorsText.includes('Umkehrkerze (Hammer)'));
+  r = Z.scoreZoneStrength(zone, { ...base, divergences: [{ kind: 'bull', price: 99.5, age: 60 }] });
+  check('Zu alte Divergenz zählt nicht', r.groups.find(g => g.key === 'ausloeser').points === 0);
+  r = Z.scoreZoneStrength({ ...zone, broken: true }, { ...base, fib: [{ r: .618, price: 100 }], profile: { poc: 100 }, trend: { '4h': 1 } });
+  check('Durchbrochene Zone ist nie stark', !r.strong && r.score >= 70);
+  r = Z.scoreZoneStrength(zone, { ...base, higher: { label: '4h', poc: 100.3 } });
+  check('„Zone 4h“ aus der Analyse-Ebene', r.factorsText === 'Zone 4h (POC) + über EMA 200', r.factorsText);
+  r = Z.scoreZoneStrength(zone, { ...base, sr: [{ price: 103, name: 'Unterstützung' }] });
+  check('Niveau außerhalb von 0,25 ATR zählt nicht', r.groups.find(g => g.key === 'struktur').points === 0);
+  check('Score-Stufen <50/50–69/70–84/≥85', Z.zoneScoreBand(49) === '<50' && Z.zoneScoreBand(50) === '50–69' && Z.zoneScoreBand(70) === '70–84' && Z.zoneScoreBand(85) === '≥85' && Z.zoneScoreBand(100) === '≥85');
+  console.log(`\n${pass}/${pass + fail} bestanden`); process.exitCode = fail ? 1 : 0;
+})().catch(e => { console.error(e); process.exitCode = 1; });

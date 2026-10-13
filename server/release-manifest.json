@@ -376,6 +376,11 @@
       "path": "shared/widget-state.mjs",
       "sha256": "70092b206adad502d0cc1b16c4b642cc28b2914d392a046a1cf25d4f8b77214a",
       "bytes": 1598
+    },
+    {
+      "path": "shared/zone-strength.mjs",
+      "sha256": "e1a9a03df9ba01beb1738345e6e9a31fee274af2cc9ee3ca356d8a15cf61a9f1",
+      "bytes": 13265
     }
   ]
 }

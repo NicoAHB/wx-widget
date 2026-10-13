@@ -996,7 +996,7 @@ fieldset.chan legend{font-size:.875rem;font-weight:650;padding:0 4px;color:var(-
 /* ---------- Magnet, Liquidation, Zwischenspeicher ---------- */
 #magnet{font-size:1.05rem}
 #magnet[aria-pressed=true]{background:var(--amber-bg);border-color:var(--amber-border);box-shadow:0 0 0 2px var(--amber-border)}
-/* 3.68.0: KI-Zonen – Knopf an = grün, aus = grau; Beschriftung im Chart antippbar */#zones-btn{font-weight:700;font-size:.8125rem;color:var(--muted)}#zones-btn[aria-pressed=true]{background:var(--up-bg-2);color:var(--up-text);border-color:var(--up-border)}.kiz-label{cursor:pointer}.kiz-label text{font-weight:700}
+/* 3.68.0: KI-Zonen – Knopf an = grün, aus = grau; Beschriftung im Chart antippbar */#zones-btn{font-weight:700;font-size:.8125rem;color:var(--muted);white-space:nowrap}#zones-btn[data-mode=all]{background:var(--up-bg-2);color:var(--up-text);border-color:var(--up-border)}#zones-btn[data-mode=strong]{background:var(--up-text);color:var(--bg);border-color:var(--up-text)} /* 3.68.1: aus = neutral, alle = grün, starke = kräftiges Grün */.kiz-label{cursor:pointer}.kiz-label text{font-weight:700}
 .chart.magnet{touch-action:none;cursor:copy}
 .chart.magnet::after{content:"🧲 Auf ein Level tippen oder klicken – der Alarm wird vorausgefüllt";position:absolute;top:6px;left:50%;transform:translateX(-50%);padding:4px 10px;border-radius:999px;background:var(--amber-bg);border:1px solid var(--amber-border);color:var(--amber);font-size:.75rem;font-weight:600;white-space:nowrap;pointer-events:none;max-width:calc(100% - 16px);overflow:hidden;text-overflow:ellipsis}
 svg .magnet-price{fill:#1d1606;font-size:11.5px;font-weight:700}
@@ -1415,7 +1415,7 @@ html[data-chartfull]:not([data-chartbar=open]) .chart-toolbar,html[data-chartful
 .ohlc-row{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
 .ohlc-row>.ohlc{flex:1 1 auto;min-width:0}
 .ohlc-row>.ohlc.skel{flex:0 1 auto}
-/* 3.68.1: Umschalter Heikin-Ashi ↔ normale Kerzen direkt über dem Chart */.ha-btn{flex:none;align-self:center;min-height:36px;margin:6px 12px 0 0;padding:0 10px;border:1px solid var(--border);border-radius:7px;background:var(--field);color:var(--muted);font:inherit;font-size:.75rem;font-weight:700;white-space:nowrap;cursor:pointer}.ha-btn[aria-pressed=true]{background:var(--up-bg-2);color:var(--up-text);border-color:var(--up-border)}.ha-btn .ha-short{display:none}@media (max-width:430px){.ha-btn{min-width:44px;padding:0 8px}.ha-btn .ha-long{display:none}.ha-btn .ha-short{display:inline}} /* schmale Handys: „HA“, damit die OHLC-Werte zweizeilig bleiben */
+/* 3.68.1: Umschalter Heikin-Ashi ↔ normale Kerzen direkt über dem Chart */.ha-btn{flex:none;align-self:center;min-height:36px;margin:6px 12px 0 0;padding:0 10px;border:1px solid var(--border);border-radius:7px;background:var(--field);color:var(--muted);font:inherit;font-size:.75rem;font-weight:700;white-space:nowrap;cursor:pointer}.ha-btn[aria-pressed=true]{background:var(--up-bg-2);color:var(--up-text);border-color:var(--up-border)}.ha-btn .ha-short{display:none}@media (max-width:430px){.ha-btn{min-width:44px;padding:0 8px}.ha-btn .ha-long{display:none}.ha-btn .ha-short{display:inline}} /* schmale Handys: „HA“, damit die OHLC-Werte zweizeilig bleiben */html[data-chartfull] .ha-btn{min-height:22px;margin:2px 8px 0 0;padding:0 6px;font-size:.6875rem} /* Vollbild: flach, damit der Chart die Höhe behält */
 details.div-tip{flex:0 0 auto;display:block;margin:5px 14px 0 0;border-radius:999px;color:var(--mint)}
 details.div-tip.bear{color:var(--down)}
 details.div-tip>summary{display:flex;align-items:center;gap:6px;width:auto;height:28px;margin:0;padding:0 4px 0 9px;border:1px solid currentColor;border-radius:999px;color:inherit;background:color-mix(in srgb,currentColor 10%,transparent);font:inherit;font-size:.75rem;font-weight:700;font-style:normal;white-space:nowrap;cursor:pointer;box-shadow:0 0 8px color-mix(in srgb,currentColor 35%,transparent)}
@@ -1592,6 +1592,10 @@ html[data-layout=tablet] .wl-tile{height:64px}
 @container ctb (min-width:640px) and (max-width:780px){.chart-toolbar .zoom-controls{gap:1px}.chart-toolbar .zoom-controls button{min-width:35px;padding:0 3px}.chart-toolbar #zones-btn{font-size:.6875rem;padding:0 2px}}
 @container ctb (min-width:331px) and (max-width:400px){.chart-toolbar .zoom-controls{gap:2px}.chart-toolbar .zoom-controls button{min-width:36px;padding:0 3px}.chart-toolbar #zones-btn{font-size:.6875rem;padding:0 2px}}
 @container ctb (min-width:401px) and (max-width:460px){.chart-toolbar .zoom-controls{gap:2px}.chart-toolbar .zoom-controls button{min-width:40px;padding:0 4px}.chart-toolbar #zones-btn{font-size:.75rem;padding:0 3px}}
+/* 3.68.1: „Starke Zonen“/„Zonen ausblenden“ sind breiter – die Knopfgruppe wird bei Bedarf seitlich wischbar statt umzubrechen
+   (Handy: eigene Zeile; iPad mini hochkant: bleibt in der Intervallzeile). Hilfe-Popup siehe zoomTipFix. */
+@container ctb (max-width:460px){.chart-toolbar .zoom-controls{min-width:0;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;padding:2px 0;gap:1px}.chart-toolbar .zoom-controls::-webkit-scrollbar{display:none}.chart-toolbar .zoom-controls>*{flex:0 1 auto}.chart-toolbar .zoom-controls>#zones-btn,.chart-toolbar .zoom-controls>details{flex:0 0 auto}.chart-toolbar #zones-btn{font-size:.6875rem;padding:0 2px}}
+@container ctb (min-width:640px) and (max-width:780px){.chart-toolbar .zoom-controls{min-width:0;max-width:calc(100% - min(100%,22rem) - 6px);overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;padding:2px 0}.chart-toolbar .zoom-controls::-webkit-scrollbar{display:none}.chart-toolbar .zoom-controls>*{flex:0 1 auto}.chart-toolbar .zoom-controls>#zones-btn,.chart-toolbar .zoom-controls>details{flex:0 0 auto}}
 .pat-scope{margin:0;font-size:.8125rem;color:var(--muted)}
 .pat-bar{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}.pat-bar label{display:flex;align-items:center;gap:6px;font-size:.8125rem;color:var(--muted)}
 .pat-bar select{min-height:34px;border:1px solid var(--field-border);border-radius:6px;background:var(--field);color:var(--text);padding:0 6px}
@@ -2221,6 +2225,7 @@ import { stripSyncSecrets } from './bundles/3.68.1/shared/github-sync.mjs';
 import { createMusterView } from './bundles/3.68.1/shared/muster-bot-view.mjs';
 import { computeKiZones, KI_ZONE_INTERVALS } from './bundles/3.68.1/shared/ki-zones.mjs';
 import { heikinAshi } from './bundles/3.68.1/shared/heikin-ashi.mjs';
+import { scoreZoneStrength, ZONE_STRENGTH } from './bundles/3.68.1/shared/zone-strength.mjs';
 // 3.68.0: KI-Signale/Trading-Bot entfernt; der GitHub-Sync behält sein Format inklusive vorhandener Modelloriginale.
 import { exportModelArchive, importModelArchive, validateModelArchive, restoreModelOriginals } from './bundles/3.68.1/shared/model-archive.mjs';
 import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT } from './bundles/3.68.1/shared/telegram-format.mjs';
@@ -6661,7 +6666,7 @@ function renderChartContent(levels={}, ov={}, start=null, end=null) {
     prof.bins.forEach((v,i)=>{ if(!(v>0)) return; const yt=y(prof.lo+(i+1)*prof.step), yb=y(prof.lo+i*prof.step), bw=v/peak*maxW, inVA=prof.lo+i*prof.step>=prof.vaLow-1e-12 && prof.lo+(i+1)*prof.step<=prof.vaHigh+1e-12;
       under.append(node('rect',{x:left+pw-bw,y:yt+.5,width:bw,height:Math.max(.5,yb-yt-1),fill:i===prof.pocIndex?PAL.vp:PAL.vpBar,opacity:i===prof.pocIndex?.5:inVA?.24:.1}));});
   }
-  const kizLabels = kiz?.on ? kiZonesDraw(under, { data, x, y, left, pw, top, bottom, min, max, rx, levels }) : null; // 3.68.0: KI-Zonen hinter den Kerzen
+  const kizLabels = kiz?.mode && kiz.mode !== 'off' ? kiZonesDraw(under, { data, x, y, left, pw, top, bottom, min, max, rx, levels }) : null; // 3.68.0: KI-Zonen hinter den Kerzen
   svg.append(under);
   const maxVolume=Math.max(...data.map(c=>c.volume),1);
   if (detailReady()) svg.append(detailBodies(bodies, {w,h,x,y,step,maxVolume}));
@@ -14214,29 +14219,59 @@ window.__ha = { state: ha, set: haSet, calc: heikinAshi };
 // 3.68.0: KI-Zonen – Kauf-/Verkaufszonen aus Swing-Punkten (shared/ki-zones.mjs), vollständig lokal. Neuberechnung nur bei
 // Zeitrahmen-/Coinwechsel oder neuem Kerzenschluss (Zwischenspeicher je Coin/Markt/Zeitrahmen); Ein/Aus zeichnet nur neu.
 // Volumenprofil/POC, EMA 200, Bollinger und S/R kommen aus den vorhandenen Funktionen der App.
-const KIZ_KEY = 'scalpdesk.kizones.v1';
-var kiz = { on: store.get(KIZ_KEY, {})?.on === true, cache: new Map(), shown: [], runs: 0 }; // var: der Chart kann vor dem Modulende zeichnen
+const KIZ_KEY = 'scalpdesk.kizones.v1', KIZ_MODES = ['off', 'all', 'strong'];
+// 3.68.1: drei Zustände – aus → alle Zonen (wie bisher) → nur starke Zonen (Konfluenz-Score, shared/zone-strength.mjs) → aus.
+// Ein gespeichertes {on:true} aus 3.68.0 gilt als „alle“. var: der Chart kann vor dem Modulende zeichnen.
+var kiz = (() => { const v = store.get(KIZ_KEY, {}) || {}; return { mode: KIZ_MODES.includes(v.mode) ? v.mode : v.on === true ? 'all' : 'off', cache: new Map(), shown: [], runs: 0, engine: null }; })();
+const kizTrendOf = rating => { const t = rating?.rules?.find(r => r.label === 'Trend')?.score; return t > 0 ? 1 : t < 0 ? -1 : 0; };
 function kiZonesNow() {
   if (!KI_ZONE_INTERVALS.includes(state.interval) || state.loadedSymbol !== state.symbol) return null;
   const now = Date.now(), closed = state.candles.filter(c => c.closeTime < now), last = closed.at(-1); if (!last) return null;
   const key = `${state.symbol}|${state.source}|${state.interval}`, hit = kiz.cache.get(key);
   if (hit && hit.lastTime === last.time && hit.count === closed.length) return hit.result;
   const rows = closed.slice(-500), closes = rows.map(c => c.close), bands = rows.length >= 20 ? bollinger(closes) : null, e200 = rows.length >= 200 ? ema(closes, 200).at(-1) : null;
-  const sr = chartGeom?.levels ? [chartGeom.levels.support, chartGeom.levels.resistance] : [];
-  const result = computeKiZones({ candles: rows, interval: state.interval, profile: volumeProfile(rows), ema200: e200, bands: bands ? { upper: bands.upper.at(-1), lower: bands.lower.at(-1) } : null, levels: sr });
+  const sr = chartGeom?.levels ? [chartGeom.levels.support, chartGeom.levels.resistance] : [], profile = volumeProfile(rows), bandNow = bands ? { upper: bands.upper.at(-1), lower: bands.lower.at(-1) } : null;
+  const result = computeKiZones({ candles: rows, interval: state.interval, profile, ema200: e200, bands: bandNow, levels: sr });
+  // Grundlage des Konfluenz-Scores (je Kerzenschluss): Volumenprofil, Bänder, EMA 200, Hoch/Tief, Umkehrkerzen der KI-Mustererkennung (pat-1)
+  let reversals = [];
+  try {
+    const k = rows.map(c => ({ t: c.time, o: c.open, h: c.high, l: c.low, c: c.close, v: c.volume })); kiz.engine ||= patEngine();
+    reversals = kiz.engine.detect(k, { from: Math.max(0, k.length - 40), step: IV_MS[state.interval], gap: false, running: false }).hits
+      .filter(h => h.kind === 'candle' && (h.dir === 'bull' || h.dir === 'bear') && !h.id.startsWith('marubozu'))
+      .map(h => { const part = k.slice(h.i0, h.i1 + 1); return { dir: h.dir, low: Math.min(...part.map(c => c.l)), high: Math.max(...part.map(c => c.h)), age: k.length - 1 - h.i1, name: PAT_LIB[h.id]?.n.replace(/ \(.*\)$/, '') || h.id }; });
+  } catch { reversals = []; }
+  result.base = { profile: profile ? { poc: profile.poc, vaLow: profile.vaLow, vaHigh: profile.vaHigh } : null, bands: bandNow, ema200: e200, hi: Math.max(...rows.map(c => c.high)), lo: Math.min(...rows.map(c => c.low)), reversals, trend: kizTrendOf(signalRating(closed)) };
   kiz.cache.delete(key); kiz.cache.set(key, { lastTime: last.time, count: closed.length, result }); kiz.runs++;
   while (kiz.cache.size > 16) kiz.cache.delete(kiz.cache.keys().next().value);
   return result;
 }
+// Kontext für den Konfluenz-Score aus den vorhandenen Funktionen der App; fehlende Daten zählen nicht (Derivate nur mit echten Daten).
+function kiZoneContext(res) {
+  const b = res.base || {}, A = ana.calc, safe = fn => { try { return fn(); } catch { return null; } };
+  const lv = chartGeom?.levels || {}, cl = safe(() => lmClustersNow()), last = state.candles.length - 2;
+  return { atr: res.atr, price: currentPrice(), ema200: b.ema200, bands: b.bands, profile: b.profile, periodHigh: b.hi, periodLow: b.lo,
+    higher: A && ana.iv !== state.interval ? { label: anaLabel(ana.iv), poc: A.prof?.poc, vaLow: A.prof?.vaLow, vaHigh: A.prof?.vaHigh, ema200: A.ema200, bbUpper: A.bb?.upper, bbLower: A.bb?.lower } : null,
+    fib: safe(() => fibSwing(pivotsFor())?.levels) || [], sr: [[lv.support, 'Unterstützung'], [lv.resistance, 'Widerstand']].filter(([v]) => Number.isFinite(v)).map(([price, name]) => ({ price, name })),
+    liq: cl ? [cl.short, cl.long].filter(Boolean).map(c => ({ price: c.price })) : null, whales: whOn() && wh.whales.length ? wh.whales : null,
+    trend: { '1h': state.interval === '1h' ? b.trend : kizTrendOf(state.mtf['1h']?.rating), '4h': state.interval === '4h' ? b.trend : kizTrendOf(state.mtf['4h']?.rating) },
+    divergences: (safe(() => rsiDivergences()) || []).map(v => ({ kind: v.kind, price: v.b.price, age: last - v.b.i })), reversals: b.reversals || [] };
+}
+function kiZonesStrong(res) {
+  const ctx = kiZoneContext(res), scored = res.zones.filter(z => !z.broken).map(z => ({ ...z, strength: scoreZoneStrength(z, ctx) })).filter(z => z.strength.strong);
+  const top = side => scored.filter(z => z.side === side).sort((a, b) => b.strength.score - a.strength.score || b.score - a.score).slice(0, 3);
+  return [...top('sell'), ...top('buy')];
+}
 function kiZonesDraw(under, { data, x, y, left, pw, top, bottom, min, max, rx }) {
   const res = kiZonesNow(); kiz.shown = []; if (!res || !data.length) return null;
-  const labels = node('g', { class: 'kiz-labels' }), right = left + pw;
-  for (const z of [...res.sell, ...res.buy]) {
+  const labels = node('g', { class: 'kiz-labels' }), right = left + pw, strongMode = kiz.mode === 'strong', list = strongMode ? kiZonesStrong(res) : [...res.sell, ...res.buy];
+  for (const z of list) {
     if (z.high < min || z.low > max) continue;
     const col = z.broken ? 'var(--muted)' : z.side === 'buy' ? PAL.up : PAL.down, i0 = data.findIndex(c => c.time >= z.firstTime), x0 = i0 <= 0 ? left : x(i0), yt = y(Math.min(max, z.high)), yb = y(Math.max(min, z.low));
-    under.append(node('rect', { x: x0, y: yt, width: Math.max(1, right - x0), height: Math.max(1, yb - yt), class: 'kiz-zone', 'data-side': z.side, 'data-broken': String(z.broken), style: `fill:${col};fill-opacity:${z.broken ? .1 : .16};stroke:${col};stroke-opacity:${z.broken ? .35 : .45}${z.broken ? ';stroke-dasharray:4 3' : ''}` }));
-    const short = pw < 480, p = v => number(v, res.digits), index = kiz.shown.push(z) - 1, text = `${z.side === 'buy' ? 'Kauf' : short ? 'Verk.' : 'Verkauf'} ${p(z.low)}–${p(z.high)} · ${z.score}${z.broken && !short ? ' · durchbrochen' : ''}`, ly = yb - yt >= 16 ? yt + 12 : yt - 4;
-    const g = node('g', { class: 'kiz-label', 'data-kiz': String(index), role: 'button', tabindex: '0', 'aria-label': `KI-${z.side === 'buy' ? 'Kaufzone' : 'Verkaufszone'} ${priceText(z.low)} bis ${priceText(z.high)}, Score ${z.score} von 100${z.broken ? ', durchbrochen' : ''}. Antippen für Details` });
+    under.append(node('rect', { x: x0, y: yt, width: Math.max(1, right - x0), height: Math.max(1, yb - yt), class: 'kiz-zone' + (strongMode ? ' kiz-strong' : ''), 'data-side': z.side, 'data-broken': String(z.broken), style: `fill:${col};fill-opacity:${z.broken ? .1 : strongMode ? .24 : .16};stroke:${col};stroke-opacity:${z.broken ? .35 : strongMode ? .8 : .45}${strongMode ? ';stroke-width:1.5' : ''}${z.broken ? ';stroke-dasharray:4 3' : ''}` }));
+    const short = pw < 480, p = v => number(v, res.digits), index = kiz.shown.push(z) - 1, score = strongMode ? z.strength.score : z.score;
+    const text = `${strongMode ? '★ ' : ''}${z.side === 'buy' ? 'Kauf' : short ? 'Verk.' : 'Verkauf'} ${p(z.low)}–${p(z.high)} · ${score}${z.broken && !short ? ' · durchbrochen' : ''}`, ly = yb - yt >= 16 ? yt + 12 : yt - 4;
+    const what = strongMode ? `Starke ${z.side === 'buy' ? 'Kaufzone' : 'Verkaufszone'}` : `KI-${z.side === 'buy' ? 'Kaufzone' : 'Verkaufszone'}`;
+    const g = node('g', { class: 'kiz-label', 'data-kiz': String(index), role: 'button', tabindex: '0', 'aria-label': `${what} ${priceText(z.low)} bis ${priceText(z.high)}, Score ${score} von 100${z.broken ? ', durchbrochen' : ''}. Antippen für Details` });
     g.append(node('rect', { x: rx - text.length * 6.4 - 6, y: ly - 14, width: text.length * 6.4 + 10, height: 20, fill: 'transparent' }), node('text', { x: rx, y: Math.max(top + 10, Math.min(bottom - 4, ly)), class: 'axis-label', 'text-anchor': 'end', style: `fill:${col}` }, text));
     g.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); kiZoneInfo(index); } }); labels.append(g);
   }
@@ -14244,20 +14279,28 @@ function kiZonesDraw(under, { data, x, y, left, pw, top, bottom, min, max, rx })
 }
 function kiZoneInfo(index) {
   const z = kiz.shown[index]; if (!z) return;
+  if (z.strength) { const st = z.strength; infoToast(`Starke ${z.side === 'buy' ? 'Kaufzone' : 'Verkaufszone'} ${priceText(z.low)}–${priceText(z.high)} · Score ${st.score}/100 aus ${st.groupCount} Faktorgruppen${st.withEma === false ? ' (gegen den EMA-200-Trend, Schwelle 85)' : ''}: ${st.factorsText}. Entscheidungshilfe, keine Garantie.`, 10000); return; }
   infoToast(`KI-${z.side === 'buy' ? 'Kaufzone' : 'Verkaufszone'} ${priceText(z.low)}–${priceText(z.high)} · Score ${z.score}/100: ${z.reasons.join(', ')}. Lokal berechnet, keine Anlageberatung.`, 9000);
 }
-function kiZonesSet(on) {
-  kiz.on = !!on; store.set(KIZ_KEY, { on: kiz.on }); $('zones-btn').setAttribute('aria-pressed', String(kiz.on));
-  if (kiz.on && !KI_ZONE_INTERVALS.includes(state.interval)) infoToast('KI-Zonen gibt es für 5m bis 1d – Zeitrahmen wechseln.');
+const KIZ_BUTTON = { off: ['Zonen', 'KI-Zonen einblenden'], all: ['Starke Zonen', 'Alle KI-Zonen sichtbar – tippen: nur starke Zonen'], strong: ['Zonen ausblenden', 'Nur starke Zonen sichtbar – tippen: Zonen ausblenden'] };
+function kiZonesButton() { const b = $('zones-btn'), [text, label] = KIZ_BUTTON[kiz.mode]; b.dataset.mode = kiz.mode; b.textContent = text; b.setAttribute('aria-pressed', String(kiz.mode !== 'off')); b.setAttribute('aria-label', label); }
+function kiZonesSet(mode) {
+  kiz.mode = KIZ_MODES.includes(mode) ? mode : 'off'; store.set(KIZ_KEY, { mode: kiz.mode }); kiZonesButton();
+  if (kiz.mode !== 'off' && !KI_ZONE_INTERVALS.includes(state.interval)) infoToast('KI-Zonen gibt es für 5m bis 1d – Zeitrahmen wechseln.');
+  else if (kiz.mode === 'strong') { const res = kiZonesNow(), n = res ? kiZonesStrong(res).length : 0; infoToast(`${n ? 'Nur Zonen, bei denen mehrere unabhängige Faktoren zusammentreffen' : 'Gerade keine starke Zone: keine Zone, bei der mehrere unabhängige Faktoren zusammentreffen'} (Score ≥ ${ZONE_STRENGTH.strongScore}, mindestens ${ZONE_STRENGTH.minGroups} Gruppen, gegen den EMA-200-Trend ≥ ${ZONE_STRENGTH.strongAgainstEma}). Entscheidungshilfe, keine Garantie.`, 6000); }
   scheduleDraw();
 }
-$('zones-btn').setAttribute('aria-pressed', String(kiz.on)); $('zones-btn').addEventListener('click', () => kiZonesSet(!kiz.on));
+// 3.68.1: Ist die Knopfgruppe wischbar (overflow), würde das ⓘ-Popup abgeschnitten – dann fest unter dem ⓘ positionieren.
+{ const tip = document.querySelector('.chart-toolbar .zoom-controls details.tip'), body = tip?.querySelector('.tip-body');
+  tip?.addEventListener('toggle', () => { body.style.cssText = ''; const zc = tip.closest('.zoom-controls'); if (!tip.open || zc.scrollWidth <= zc.clientWidth + 1) return;
+    const r = tip.getBoundingClientRect(); Object.assign(body.style, { position: 'fixed', top: Math.round(r.bottom + 8) + 'px', right: Math.max(8, Math.round(innerWidth - r.right - 8)) + 'px', left: 'auto' }); }); }
+kiZonesButton(); $('zones-btn').addEventListener('click', () => kiZonesSet(KIZ_MODES[(KIZ_MODES.indexOf(kiz.mode) + 1) % KIZ_MODES.length]));
 { // Antippen über Ort und Zeit wie bei den Chartmuster-Labels (der Chart kann zwischen Drücken und Loslassen neu zeichnen)
   let tap = null;
   $('chart').addEventListener('pointerdown', e => { const t = e.target.closest?.('[data-kiz]'); tap = t ? { i: +t.getAttribute('data-kiz'), x: e.clientX, y: e.clientY, at: Date.now() } : null; if (t) e.stopPropagation(); }, true);
   document.addEventListener('pointerup', e => { const p = tap; tap = null; if (p && Math.hypot(e.clientX - p.x, e.clientY - p.y) < 12 && Date.now() - p.at < 800) kiZoneInfo(p.i); }, true);
 }
-window.__kiz = { state: kiz, now: kiZonesNow, set: kiZonesSet };
+window.__kiz = { state: kiz, now: kiZonesNow, set: kiZonesSet, context: kiZoneContext, strong: kiZonesStrong };
 
 // 3.63.0: eigener Muster-Bot, vom bisherigen KI-/Trading-Bot und persönlichen Büchern getrennt.
 const musterHost = el('section', 'panel'); musterHost.id = 'muster-bot-panel'; musterHost.dataset.tabs = 'ind'; musterHost.dataset.workspaceScope = 'ind'; $('alarms').after(musterHost);
