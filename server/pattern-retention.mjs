@@ -60,7 +60,7 @@ export function selectPurge(state, cutoff, { cardDir, logFile } = {}) {
       const due = Number.isFinite(e.sentAt) ? e.sentAt < cutoff : Number.isFinite(e.c?.at) && e.c.at + LEGACY_MARGIN < cutoff;
       if (!due) { keep.current++; continue; }
       del.push(id); size.text += bytes(e.text); size.data += bytes(e.c) + bytes(e.data);
-      const { text, c, data, ...meta } = e; size.meta += bytes(meta);
+      size.meta += bytes(Object.fromEntries(Object.entries(e).filter(([k]) => !['text', 'c', 'data'].includes(k))));
       if (typeof e.img === 'string' && CARD_FILE.test(e.img)) images.add(e.img);
     } else keep[Object.hasOwn(keep, e?.st) ? e.st : 'other']++;
   }

@@ -60,10 +60,12 @@ export async function patternEvaluate({ c, h, k, fetchRows, fetchSpread = null, 
   return PQ.evaluatePatternSignal({ c, h, k, i1: h.i1, higher, btc, liquidity: { spreadPct }, hits: PQ.patternHitStats(journal, c.pat, c.iv), settings });
 }
 export const patternFilterLog = (c, ev, decision) => `Chartmuster ${decision.send ? 'gesendet' : 'gefiltert'}: ${c.sym} · ${c.iv} · ${PAT_NAMES[c.pat] || c.pat} · ${c.dir === 'bull' ? 'Long' : 'Short'} · Score ${ev.score}${decision.send ? '' : ' – ' + (decision.reason || ev.reason)}`;
-export function patternText(c, h, archive = [], ev = null) {
+// 1.2.0: strukturierte Signaldaten der Meldung – daraus entstehen Textmeldung und Trading-Karte (gleiche Werte)
+export function patternMessageData(c, h, archive = [], ev = null) {
   const lv = h.levels || {};
   const counts = src => { const a = archive.filter(x => x.mkt === c.mkt && x.sym === c.sym && x.iv === c.iv && x.pat === c.pat && x.model === c.model && x.profile === c.profile && x.src === src && x.res); return { n: a.length, auf: a.filter(x => x.res.out === 'auf').length, ab: a.filter(x => x.res.out === 'ab').length, seit: a.filter(x => x.res.out === 'seitwärts').length }; };
   const live = counts('live'), rek = counts('rekonstruiert'), st = live.n >= 10 ? live : rek.n >= 10 ? rek : null;
-  return formatMessage('pattern', { pattern: PAT_NAMES[c.pat], symbol: c.sym, market: c.mkt === 'spot' ? 'Spot' : 'Futures', timeframe: c.iv, status: 'Ausbruch bestätigt', direction: c.dir, entry: c.p0, target: lv.tgt, invalid: lv.inv, quality: c.q, model: c.model || 'pat-1',
-    learned: st ? { ...st, source: st === live ? 'live protokolliert' : 'rekonstruiert', horizon: 12 } : { available: live.n + rek.n, minimum: 10 }, score: ev?.score, scoreWhy: ev?.summary });
+  return { pattern: PAT_NAMES[c.pat], symbol: c.sym, market: c.mkt === 'spot' ? 'Spot' : 'Futures', timeframe: c.iv, status: 'Ausbruch bestätigt', direction: c.dir, entry: c.p0, target: lv.tgt, invalid: lv.inv, quality: c.q, model: c.model || 'pat-1',
+    learned: st ? { ...st, source: st === live ? 'live protokolliert' : 'rekonstruiert', horizon: 12 } : { available: live.n + rek.n, minimum: 10 }, score: ev?.score, scoreWhy: ev?.summary };
 }
+export const patternText = (c, h, archive = [], ev = null) => formatMessage('pattern', patternMessageData(c, h, archive, ev));
