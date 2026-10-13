@@ -3,7 +3,11 @@
 Diese Datei ist der Einstieg für jede weitere Arbeit am Projekt. Wer sie liest, braucht kein Vorwissen. Die vollständige fachliche
 Vorgabe aller Gruppen G01–G14 steht in `docs/VORGABE-G01-G14.md` (Original-Übergabe; dort sind G10–G14 ausführlich beschrieben).
 
-## Aktueller Stand – 3.68.0 (Claude): KI-Signale entfernt, Muster-Bot mit Konfluenz/PO3, Kerzenmuster, KI-Zonen
+## Arbeitsstand 3.68.1 (Claude, noch nicht veröffentlicht): Telegram-Chat-ID und Pfeil nach oben
+
+Chat-ID-Felder in voller Breite mit Knopf **Einfügen** (Zahl oder `t.me/c/…`-Link inkl. Thema, `parseTgChat`, Testzugriff `window.__tgParse`), Thema darunter; `label.check`-Kästchen 22 px; Fußzeile mit `#to-top` (↑, scrollt nach oben). Version/Bündel 3.68.1. Nur gezielt geprüft (Lint, unit-release, m87 22/22, Browser-Sichtprüfung); **Gesamtlauf und Veröffentlichung stehen auf Wunsch des Nutzers noch aus.** Details: [docs/3.68.1-AENDERUNGEN.md](docs/3.68.1-AENDERUNGEN.md).
+
+## Stand 3.68.0 (Claude, veröffentlicht): KI-Signale entfernt, Muster-Bot mit Konfluenz/PO3, Kerzenmuster, KI-Zonen
 
 Nutzerauftrag: KI-Signale (Panel mit Konfluenz/Power of Three) und Trading-Bot entfernen; die Modelle im Muster-Bot anbieten (mit Erklärung, Chartmarke, Telegram bei Haken); Papertrading-Ankreuzfeld reparieren und erklären; Hebel im Muster-Bot; Kerzenmuster-Namen mit ⓘ in den Orderflow-Kerzen; neue lokale „KI-Zonen“. **Wichtig vom Nutzer:** Die KI-Anzeige im Chart (Knopf „KI“, Chartmuster) muss weiter funktionieren – unverändert, M64/M58 grün. App/SW **3.68.0**, Dienst **2.12.1** unverändert. Ausführlich: [docs/3.68.0-AENDERUNGEN.md](docs/3.68.0-AENDERUNGEN.md), [docs/MUSTER-BOT.md](docs/MUSTER-BOT.md), [docs/KI-ZONEN.md](docs/KI-ZONEN.md).
 
