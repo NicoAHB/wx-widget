@@ -8,6 +8,8 @@ echo "== unit-zone-strength"; timeout 120 node unit-zone-strength.js 2>&1 | grep
 echo "== unit-pattern-quality"; timeout 120 node unit-pattern-quality.js 2>&1 | grep -E "✗|bestanden"
 echo "== unit-heikin-ashi"; timeout 120 node unit-heikin-ashi.js 2>&1 | grep -E "✗|bestanden"
 echo "== unit-ki-zones"; timeout 120 node unit-ki-zones.js 2>&1 | grep -E "✗|bestanden"
+echo "== m103"; timeout 900 node m103.js 2>&1 | grep -E "✗|bestanden|Abbruch"
+echo "== m104"; timeout 900 node m104.js 2>&1 | grep -E "✗|bestanden|Abbruch|übersprungen"
 echo "== m99"; timeout 600 node m99.js 2>&1 | grep -E "✗|bestanden|Abbruch"
 echo "== m100"; timeout 600 node m100.js 2>&1 | grep -E "✗|bestanden|Abbruch"
 echo "== m101"; timeout 600 node m101.js 2>&1 | grep -E "✗|bestanden|Abbruch"

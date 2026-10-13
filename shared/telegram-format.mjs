@@ -93,6 +93,15 @@ export function formatMessage(type, d = {}) {
   } else if (type === 'news') {
     blocks = [[`<b>⚠️ WIRTSCHAFTSTERMIN${value(d.when) ? ' · ' + escapeTelegram(d.when) : ''}</b>`, line('Währung: ', d.currency), 'Bedeutung: hoch', 'Starke Kursausschläge möglich'],
       (d.events || []).flatMap(e => [line('Termin: ', e.title), line('Prognose: ', e.forecast), line('Vorher: ', e.previous)])];
+  } else if (type === 'trade' && d.card) {
+    // 3.69.0: kurze Bildunterschrift zur Trade-Karte – Paar, Long/Short, Netto in € (ohne Euro-Kurs in USD) und %, Haltedauer,
+    // Max. Gewinn und Max. Verlust (unrealisiert, nach Gebühren). „nie im Minus/Plus“: Der Kurs lief nie gegen bzw. für die Position.
+    const inEur = finite(d.eur), res = inEur ? d.eur : d.pnl, unit = inEur ? ' €' : ' USD';
+    const ext = (usd, eur, never, word) => never ? telegramNumber(0) + unit + ' (' + word + ')' : finite(inEur ? eur : usd) ? telegramSigned(inEur ? eur : usd) + unit : '';
+    const gain = ext(d.gain, d.gainEur, d.neverPlus, 'nie im Plus'), loss = ext(d.loss, d.lossEur, d.neverMinus, 'nie im Minus');
+    blocks = [[`<b>${finite(res) ? res < 0 ? '🔴 VERLUST' : res > 0 ? '🟢 GEWINN' : '⚪ AUSGEGLICHEN' : direction.icon + ' TRADE'} · ${pair || coin}${value(d.side) ? ' ' + escapeTelegram(d.side === 'long' ? 'Long' : 'Short') : ''}</b>`,
+      finite(res) ? `${inEur ? '💶' : '💵'} Netto: <b>${telegramSigned(res)}${unit}</b>${finite(d.percent) ? ' · ' + telegramPercent(d.percent) : ''}` : '', line('⏱ Haltedauer: ', d.duration),
+      gain ? '📈 Max. Gewinn: ' + gain : '', loss ? '📉 Max. Verlust: ' + loss : '', !gain && !loss ? line('Max. Gewinn/Verlust: ', d.extremes) : '']];
   } else if (type === 'trade') {
     blocks = [[`<b>${d.paper ? 'PAPER · ' : ''}${finite(d.pnl) ? d.pnl < 0 ? '🔴 VERLUST' : d.pnl > 0 ? '🟢 GEWINN' : '⚪ AUSGEGLICHEN' : direction.icon + ' TRADE'} · ${coin}${value(d.side) ? ' ' + escapeTelegram(d.side === 'long' ? 'Long' : 'Short') : ''}${finite(d.pnl) ? ' · ' + telegramSigned(d.pnl) + ' USD' : ''}</b>`,
       numLine('💰 Einstieg: ', d.entry, code), numLine('Kurs beim Abschluss: ', d.exit, code), numLine('Ergebnis: ', d.percent, telegramPercent), line('Dauer: ', d.duration), numLine('Menge: ', d.quantity, v => telegramNumber(v, 8)), line('Gründe: ', d.reasons), line('Hinweis: ', d.note)]];

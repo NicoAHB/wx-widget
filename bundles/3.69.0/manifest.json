@@ -399,8 +399,8 @@
     },
     {
       "path": "./bundles/3.69.0/shared/telegram-format.mjs",
-      "sha256": "5a6039dd12efa31dde7313d18881064a002f9b1b22e646145253e4affc53095b",
-      "bytes": 14429,
+      "sha256": "3058a386a9798f0cc0994d14f6b3a2b7c779cb836e08114cc68e29c2ed027787",
+      "bytes": 15741,
       "alias": "./shared/telegram-format.mjs"
     },
     {
@@ -429,8 +429,8 @@
     },
     {
       "path": "./weather-widget-v2.html",
-      "sha256": "5c0abf2506828461e2624e6e68ab0d87d319cfb341914bca58816f3624c37fe8",
-      "bytes": 1604833
+      "sha256": "d46e4333a05204e1a1dc343402b981fd05fd6a0aff7bcfff443f03439c1de36a",
+      "bytes": 1623522
     },
     {
       "path": "./manifest.webmanifest",

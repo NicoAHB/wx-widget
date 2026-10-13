@@ -1689,6 +1689,7 @@ html[data-chartfull] .tb-main{flex:1 1 auto;min-width:0;flex-wrap:nowrap}
 .trade-row .timg-st.st-ok{color:var(--mint)}
 .trade-row .timg-st.st-fail,.trade-row .timg-st.st-unconf{color:var(--amber);border-color:var(--amber)}
 .trade-row .timg-st.st-drop{color:var(--muted)}
+.trade-row .timg-why{grid-column:1/-1;margin:2px 0 0;color:var(--amber);font-size:.75rem;line-height:1.35;overflow-wrap:anywhere}
 #timg-save{text-decoration:none}
 /* 3.33.0 (G05): Telegram-Chats – große Schalter je Ziel, Sammelschalter als Kästchen (gemischt: indeterminate) */
 .tgc-mode{margin:0 0 10px;font-size:.8125rem;color:var(--muted)}
@@ -5010,7 +5011,7 @@ function tradeRow(t, demo = false) {
   if (!demo && timgCanShow(t)) { const ib = btn('x timg-tool', '', 'trade-img'); ib.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3.2l1.8-2.6h6l1.8 2.6H20v11H4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="13.2" r="3.4" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>'; ib.setAttribute('aria-label', `Trade-Bild zu ${coin(t.symbol)} vom ${localTime(t.closedAt)} ansehen und senden`); ib.title = 'Trade-Bild: Vorschau und an Telegram senden'; tools.append(ib); } // 3.34.0 (G06)
   if (t.part?.pos && !t.part.final && findPos(t.part.pos)) { x.hidden = true; x.disabled = true; } // 3.30.0: Teilabschluss einer offenen Position – über „Letzten Schritt rückgängig machen“
   nb.setAttribute('aria-label', `Notiz zum Trade ${coin(t.symbol)} vom ${localTime(t.closedAt)} bearbeiten`); x.setAttribute('aria-label', `Trade ${coin(t.symbol)} vom ${localTime(t.closedAt)} löschen`); tools.append(nb, x); r.append(tools);
-  { const c = !demo && timgChip(t.id); if (c) r.append(c); } // 3.34.0: Zustand des Trade-Bilds
+  { const c = !demo && timgChip(t.id); if (c) r.append(c); const why = !demo && timgWhy(t.id); if (why) r.append(why); } // 3.34.0: Zustand des Trade-Bilds; 3.69.0: Grund im Klartext
   if (t.note && ui?.mode !== 'note') r.append(el('p', 'trade-note', t.note));
   if (ui === 'delete') { const c = el('div', 'confirm'); c.append(el('span', '', 'Trade endgültig löschen?'), btn('button danger-btn', 'Ja', 'trade-confirm'), btn('button ghost', 'Nein', 'trade-cancel')); r.append(c); }
   if (ui?.mode === 'fx') r.append(fxPanelDom(t, ui));
@@ -13866,7 +13867,9 @@ window.__g08 = { get dec() { return dec; }, decSignal: (c, b, cfg) => decSignal(
 window.__g07 = { get ana() { return ana; }, get cap() { return CAP; }, blocks30: (d, n) => blocks30(d, n), anaCalc: (c, iv) => anaCalc(c, iv), anaTrend: o => anaTrend(o), validateMarketCap: r => validateMarketCap(r), coinGeckoMarketCapPoints: j => coinGeckoMarketCapPoints(j),
   capKey: (...a) => capKey(...a), capPut: e => capPut(e), capGet: k => capGet(k), setCapMax: n => { CAP_MAX_BYTES = n; }, capBlock: p => capBlock(p), capSeries: (p, id, r) => capSeries(p, id, r), compactCap: v => compactCap(v), hzSeries: d => hzSeries(d),
   chartPoc: () => { const { start, end } = viewWindow(); return volumeProfile(state.candles.slice(start, end))?.poc ?? null; } };
-window.__g06 = { timgData: id => timgData(id), timgRange: d => timgRange(d), tgtEpoch: id => tgtEpoch(id), get jobs() { return loadTimg(); }, timgPreview: id => timgPreview(id) };
+window.__g06 = { timgData: id => timgData(id), timgRange: d => timgRange(d), tgtEpoch: id => tgtEpoch(id), get jobs() { return loadTimg(); }, timgPreview: id => timgPreview(id),
+  // 3.69.0: Kerzen-Speicher, Kennzahlen und zuletzt gezeichnete Beschriftungen der Trade-Karte
+  candles: id => timgCandles(timgData(id)), stored: id => tcGet(id), stats: async id => { const d = timgData(id); return timgStats(d, await timgCandles(d)); }, get layout() { return timg.layout || null; }, set wait(v) { TIMG_WAIT = v; } };
 window.__g05 = { get state() { return state; }, get workspace() { return workspace; }, get chan() { return chan; }, get svc() { return svc; }, get svcLog() { return svcLog; }, get chanState() { return chanState; },
   readChanForm, saveChannels, sendTgBackup, notifyChannels, svcRefresh, alarmSub, persist, renderAlarms, syncStreams, tgTarget, backupPayload, alarmEventId };
 // Sekundentakt: mit Dienst jede Minute den bestätigten Stand lesen (andere Geräte, Neustart des Dienstes)
@@ -13948,9 +13951,8 @@ Object.assign(window.__g09, { patOracleExport: () => patOracleExport(), patSvcCo
 // Auftrag je Gerät (scalpdesk.tradeimg.v1): wartet → wird erstellt → wird gesendet → gesendet | Zustellung unbestätigt |
 // fehlgeschlagen | verworfen. Ziel und Epoche prüft die App vor dem Kerzenabruf, nach dem Rendern und direkt vor dem Senden; AUS
 // verwirft. Bricht die App beim Senden ab oder fehlt die Antwort von Telegram, gilt „unbestätigt“ – kein automatischer zweiter Versuch.
-var TIMG_KEY = 'scalpdesk.tradeimg.v1', TIMG_W = 1080, TIMG_H = 1440, TIMG_KEEP = 200, TIMG_TTL = 24 * 3600e3, TIMG_HB = 5e3, TIMG_DEAD = 20e3;
+var TIMG_KEY = 'scalpdesk.tradeimg.v1', TIMG_W = 1080, TIMG_H = 1730, TIMG_KEEP = 200, TIMG_TTL = 24 * 3600e3, TIMG_HB = 5e3, TIMG_DEAD = 20e3;
 var TIMG_ST = { queued: 'wartet', render: 'wird erstellt …', send: 'wird gesendet …', ok: 'gesendet', unconf: 'Zustellung unbestätigt', fail: 'fehlgeschlagen', drop: 'verworfen' };
-var TIMG_IV = MARKET_INTERVALS.filter(x => x.tradeImage).map(x => [x.id, x.ms]);
 var TIMG_C = { bg: '#0b0f13', card: '#12171d', card2: '#181e25', line: '#242b33', grid: '#1b222a', text: '#f1f4f7', text2: '#c9d2dc', muted: '#a1abb8', faint: '#6b7988', up: '#90e4bf', down: '#ed8b9a', amber: '#e2bb76', blue: '#8ab8ff', band: 'rgba(138,184,255,0.08)' };
 var TIMG_FONT = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 function loadTimg() { const v = store.get(TIMG_KEY); return Array.isArray(v?.jobs) ? v.jobs.filter(j => j && typeof j.id === 'string' && TIMG_ST[j.st]).slice(-TIMG_KEEP) : []; }
@@ -13995,27 +13997,163 @@ function timgData(id) {
     entry: wavg(buys, 'p'), exit: wavg(sells, 'x'), exitMiss: sells.filter(s => !(s.x > 0)).length, qty: sumQ(buys), margin,
     net: g.pnl, pct: margin > 0 ? g.pnl / margin * 100 : null, eur: miss ? null : eurs.reduce((s, v) => s + v, 0), eurMiss: miss, eurN: g.trades.length,
     eurApprox: g.trades.some(t => t.fxSrc === 'day'), fees: g.trades.reduce((s, t) => s + (Number(t.fees) || 0), 0), funding: g.trades.reduce((s, t) => s + (Number(t.funding) || 0), 0),
-    exchange: g.trades.some(t => t.pnlSource === 'exchange'), late: !!fin.part?.late, reasons: reasonsOf(fin) };
+    exchange: g.trades.some(t => t.pnlSource === 'exchange'), late: !!fin.part?.late, reasons: reasonsOf(fin),
+    // 3.69.0: eingefrorener Euro-Kurs des Trades (USDT je EUR, zuletzt gebuchter) und die Buchungen in zeitlicher Folge (Ausstiegs-Beschriftung)
+    fx: (fin.fx > 0 ? fin.fx : [...g.trades].reverse().find(t => t.fx > 0)?.fx) || null,
+    bk: [...g.trades].sort((a, b) => a.closedAt - b.closedAt).map(t => ({ at: t.closedAt, usd: t.pnl, eur: tradeEur(t) })) };
 }
 // Euro-Kurs, den die App nach dem Abschluss gerade nachträgt (fxAutoFill) – höchstens 15 s abwarten, danach ohne Euro
 async function timgFxWait(id) {
   const d0 = timgData(id); if (d0.err || !d0.eurMiss || state.fxMode === 'manual' || Date.now() - d0.closedAt > 5 * 60e3) return;
   for (let i = 0; i < 30; i++) { await new Promise(r => setTimeout(r, 500)); const d = timgData(id); if (d.err || !d.eurMiss) return; }
 }
-// ---- Kerzen für den Haltezeitraum: Intervall so, dass etwa 60–150 Kerzen entstehen ----
+// ---- Kerzen für den Haltezeitraum (3.69.0) ----
+// Zeitraum 10 Minuten vor dem Eintritt bis 10 Minuten nach dem Austritt, startTime/endTime als ganze Millisekunden (Binance lehnt
+// Kommazahlen mit Fehler −1100 ab – daran scheiterte der Kursverlauf bisher). Intervall nach Haltedauer: bis 3 Std. 1m, bis 1 Tag
+// 5m, länger 15m bzw. 1h (sehr lange Trades 4h/1d) – höchstens etwa 300 Kerzen. Einmal geladen, liegen die Kerzen kompakt
+// (Zeit, Eröffnung, Hoch, Tief, Schluss) je Trade in einer eigenen IndexedDB „scalpdesk-tradecandles“ – nicht im localStorage
+// und nicht in Sicherung/Sync (dafür zu groß); danach braucht die Karte keine Börse mehr. Abruf: Markt des Trades mit bis zu zwei
+// Wiederholungen, dann eine Ersatzquelle von Binance, dann Bybit. Scheitert alles, zeigt die Karte eine Linie Einstieg → Ausstieg.
+var TIMG_PAD = 10 * 60e3, TIMG_MAXC = 300, TIMG_STEPS = [['1m', 60e3], ['5m', 3e5], ['15m', 9e5], ['1h', 36e5], ['4h', 144e5], ['1d', 864e5]], TIMG_WAIT = [1500, 3000];
 function timgRange(d) {
-  const D = Math.max(d.closedAt - d.openedAt, 60e3), padOf = ms => Math.max(D * 0.12, 3 * ms);
-  const iv = TIMG_IV.find(([, ms]) => (D + 2 * padOf(ms)) / ms <= 150) || TIMG_IV.at(-1), pad = padOf(iv[1]);
-  const from = Math.floor((d.openedAt - pad) / iv[1]) * iv[1], to = Math.min(Date.now(), d.closedAt + pad);
-  return { iv: iv[0], ms: iv[1], from, to, n: Math.min(1000, Math.ceil((to - from) / iv[1]) + 1) };
+  const a = Math.floor(d.openedAt - TIMG_PAD), b = Math.ceil(d.closedAt + TIMG_PAD), D = d.closedAt - d.openedAt;
+  let i = D <= 3 * 3600e3 ? 0 : D <= 864e5 ? 1 : 2;
+  while (i < TIMG_STEPS.length - 1 && (b - a) / TIMG_STEPS[i][1] > TIMG_MAXC) i++;
+  const [iv, ms] = TIMG_STEPS[i], from = Math.floor(a / ms) * ms, to = Math.min(Math.floor(Date.now()), b);
+  return { iv, ms, from, to, end: b, n: Math.max(1, Math.min(1000, Math.ceil((to - from) / ms) + 1)) };
 }
-async function timgCandles(d) {
-  const R = timgRange(d), p = { symbol: d.sym, interval: R.iv, startTime: R.from, endTime: R.to, limit: R.n };
+var tc = { db: undefined, mem: new Map(), busy: new Map() };
+function tcOpen() {
+  if (tc.db === undefined) tc.db = new Promise(resolve => {
+    if (!globalThis.indexedDB) return resolve(null);
+    const timer = setTimeout(() => resolve(null), 3000);
+    try {
+      const r = indexedDB.open('scalpdesk-tradecandles', 1);
+      r.onupgradeneeded = () => { if (!r.result.objectStoreNames.contains('trades')) r.result.createObjectStore('trades'); };
+      r.onsuccess = () => { clearTimeout(timer); const db = r.result; db.onversionchange = () => { db.close(); tc.db = undefined; }; resolve(db); };
+      r.onerror = r.onblocked = () => { clearTimeout(timer); resolve(null); };
+    } catch { clearTimeout(timer); resolve(null); }
+  });
+  return tc.db;
+}
+async function tcGet(id) {
+  if (tc.mem.has(id)) return tc.mem.get(id);
+  const db = await tcOpen(); if (!db) return null;
+  const v = await new Promise(res => { try { const q = db.transaction('trades').objectStore('trades').get(id); q.onsuccess = () => res(q.result || null); q.onerror = () => res(null); } catch { res(null); } });
+  if (v) tc.mem.set(id, v); return v;
+}
+async function tcPut(id, rec) {
+  tc.mem.set(id, rec); const db = await tcOpen(); if (!db) return false;
+  return new Promise(res => { try { const tx = db.transaction('trades', 'readwrite'); tx.objectStore('trades').put(rec, id); tx.oncomplete = () => res(true); tx.onerror = tx.onabort = () => res(false); } catch { res(false); } });
+}
+// Gespeicherte Kerzen gelten nur für denselben Trade-Stand (Kürzel, Markt, Eintritt, Austritt) – nach einer Korrektur neu laden
+const timgKey = d => `${d.sym}|${d.source}|${Math.floor(d.openedAt)}|${Math.floor(d.closedAt)}`;
+function tcDecode(rec, d) {
+  if (!rec || rec.v !== 1 || rec.key !== timgKey(d) || !(rec.ms > 0) || !Array.isArray(rec.c) || !rec.c.length) return null;
+  const candles = [];
+  for (const r of rec.c) { if (!Array.isArray(r) || r.length !== 5 || !r.every(Number.isFinite)) return null; candles.push({ time: r[0], open: r[1], high: r[2], low: r[3], close: r[4], closeTime: r[0] + rec.ms - 1 }); }
+  return { iv: rec.iv, ms: rec.ms, from: rec.from, to: rec.to, end: rec.end, n: candles.length, candles, src: rec.src, label: rec.label, alt: !!rec.alt, at: rec.at, full: !!rec.full, stored: true, err: null, errs: [] };
+}
+const timgSleep = ms => new Promise(r => setTimeout(r, ms));
+// Wiederholen lohnt nur bei Netz-, Zeit- und Serverfehlern – nicht bei ungültigen Angaben (−11xx, 4xx), Sperren oder Rate-Limit
+const timgRetry = e => !e?.rate && !/Fehler (?:-1[01]\d\d|4\d\d)\b|verweigert|nicht verfügbar\.|Rate-Limit/.test(String(e?.message || ''));
+async function timgBybit(sym, R, fut) {
+  const iv = { '1m': '1', '5m': '5', '15m': '15', '1h': '60', '4h': '240', '1d': 'D' }[R.iv];
+  const q = new URLSearchParams({ category: fut ? 'linear' : 'spot', symbol: sym, interval: iv, start: String(R.from), end: String(R.to), limit: String(Math.min(1000, R.n)) });
+  const ac = new AbortController(), tm = setTimeout(() => ac.abort(), 10000);
   try {
-    const rows = d.source === 'futures' ? await api.get(FUTURES, '/fapi/v1/klines', p) : await spotGet('/api/v3/klines', p);
-    const c = normalizeKlines(rows).filter(k => k.closeTime >= R.from && k.time <= R.to);
-    return { ...R, candles: c, err: c.length ? null : 'keine Kerzen für diesen Zeitraum' };
-  } catch (e) { return { ...R, candles: [], err: String(e?.message || e || 'Abruf fehlgeschlagen').slice(0, 140) }; }
+    const r = await fetch(`https://api.bybit.com/v5/market/kline?${q}`, { signal: ac.signal, cache: 'no-store', credentials: 'omit', referrerPolicy: 'no-referrer' });
+    let j = null; try { j = await r.json(); } catch {}
+    if (!r.ok || j?.retCode !== 0 || !Array.isArray(j?.result?.list)) throw new Error(`Bybit antwortet mit Fehler ${j?.retCode ?? r.status}${j?.retMsg ? ` (${String(j.retMsg).slice(0, 60)})` : ''}`);
+    return j.result.list.map(x => [Number(x[0]), x[1], x[2], x[3], x[4], x[5] ?? '0', Number(x[0]) + R.ms - 1]).sort((a, b) => a[0] - b[0]); // Bybit: neueste zuerst
+  } catch (e) {
+    if (ac.signal.aborted) throw new Error('Bybit: keine Antwort innerhalb von 10 Sekunden');
+    if (e instanceof TypeError) throw new Error('Bybit nicht erreichbar');
+    throw e;
+  } finally { clearTimeout(tm); }
+}
+async function timgFetch(d, R) {
+  const sym = String(d.sym || '').toUpperCase().replace(/[^A-Z0-9]/g, ''), fut = d.source === 'futures', errs = [];
+  const p = { symbol: sym, interval: R.iv, startTime: R.from, endTime: R.to, limit: R.n };
+  const clip = rows => normalizeKlines(rows).filter(k => k.closeTime >= R.from && k.time <= R.to);
+  const chain = fut
+    ? [['binance-futures', 'Binance Futures', () => api.get(FUTURES, '/fapi/v1/klines', p), 3, false],
+      ['binance-vision', 'Binance Spot über data-api.binance.vision (Ersatz für Futures)', () => api.get(SPOT, '/api/v3/klines', p), 1, true],
+      ['bybit', 'Bybit Futures (Ersatzquelle)', () => timgBybit(sym, R, true), 1, true]]
+    : [['binance-spot', 'Binance Spot', () => spotGet('/api/v3/klines', p), 3, false],
+      ['binance-api', 'Binance Spot über api.binance.com (Ersatzquelle)', () => api.get(SPOT_FALLBACK, '/api/v3/klines', p), 1, true],
+      ['bybit', 'Bybit Spot (Ersatzquelle)', () => timgBybit(sym, R, false), 1, true]];
+  for (const [src, label, run, tries, alt] of chain) {
+    for (let k = 0; k < tries; k++) {
+      if (k) await timgSleep(TIMG_WAIT[Math.min(k - 1, TIMG_WAIT.length - 1)]);
+      try { const c = clip(await run()); if (c.length) return { ...R, candles: c, src, label, alt, err: null, errs }; errs.push(`${label}: keine Kerzen für diesen Zeitraum`); break; }
+      catch (e) { if (k === tries - 1 || !timgRetry(e)) { errs.push(`${label}: ${String(e?.message || e || 'Abruf fehlgeschlagen').slice(0, 120)}`); break; } }
+    }
+  }
+  return { ...R, candles: [], src: null, label: null, alt: false, err: errs.join(' · ') || 'Abruf fehlgeschlagen', errs };
+}
+// Gespeichert und vollständig: ohne Börse. Direkt nach dem Abschluss fehlen die 10 Minuten danach noch – dann einmal ergänzen,
+// sobald sie vorbei sind. Gleichzeitige Aufrufe (Abschluss, Bild, Vorschau) teilen sich einen Abruf.
+function timgCandles(d) {
+  if (tc.busy.has(d.id)) return tc.busy.get(d.id);
+  const job = (async () => {
+    const R = timgRange(d), have = tcDecode(await tcGet(d.id), d);
+    if (have && (have.full || Date.now() < have.end + have.ms)) return have;
+    const got = await timgFetch(d, R);
+    if (!got.candles.length) return have || got;
+    const full = Date.now() >= R.end + R.ms;
+    const rec = { v: 1, key: timgKey(d), iv: R.iv, ms: R.ms, from: R.from, to: R.to, end: R.end, src: got.src, label: got.label, alt: got.alt, at: Date.now(), full, c: got.candles.map(k => [k.time, k.open, k.high, k.low, k.close]) };
+    return { ...got, at: rec.at, full, stored: await tcPut(d.id, rec) };
+  })();
+  tc.busy.set(d.id, job); void job.finally(() => tc.busy.delete(d.id)).catch(() => {});
+  return job;
+}
+// ---- Kennzahlen aus den Kerzen zwischen Ein- und Ausstieg (3.69.0) ----
+// Unrealisiert zu jedem Zeitpunkt mit der dann gültigen Menge und dem dann gültigen Ø-Einstieg: Long (Kurs − Ø) × Menge, Short
+// umgekehrt; abzüglich der Gebühren für die offene Menge (Einstieg anteilig, Ausstieg zum selben Satz; Satz = Gebühren des Trades
+// ÷ gehandeltes Volumen). Gezählt werden nur Kurse, die sicher in der Haltezeit lagen: Hoch und Tief einer Kerze nur, wenn die
+// Position die ganze Kerze offen war (mit Nachkauf/Teilverkauf darin der vorsichtigere Wert); in der Ein- und Ausstiegskerze
+// Ausführungskurs, Eröffnung bzw. Schluss. „Nie im Minus/Plus“: Der Kurs lief nie gegen bzw. nie für die Position.
+// Euro mit dem eingefrorenen Kurs des Trades aus dem Journal; % vom Einsatz (Margin-Modell wie auf der Karte).
+function timgStats(d, ch) {
+  const cs = ch?.candles || []; if (!cs.length || !(ch.ms > 0)) return null;
+  const dir = d.side === 'short' ? -1 : 1, ms = ch.ms;
+  const evs = [...d.buys.map(b => ({ at: b.at, b: true, q: b.q, p: b.p })), ...d.sells.map(s => ({ at: s.at, b: false, q: s.q, p: s.x > 0 ? s.x : null }))].sort((a, b) => a.at - b.at || (a.b ? -1 : 1));
+  const vol = evs.reduce((s, e) => s + (e.p > 0 ? e.q * e.p : 0), 0), fr = vol > 0 && d.fees > 0 ? d.fees / vol : 0;
+  let Q = 0, C = 0; const st = [];
+  for (const e of evs) {
+    const before = { Q, C };
+    if (e.b) { Q += e.q; C += e.q * e.p; } else if (Q > 0) { const k = Math.min(e.q, Q); C -= C * k / Q; Q -= k; if (Q <= 1e-12) { Q = 0; C = 0; } }
+    st.push({ at: e.at, p: e.p, before, after: { Q, C } });
+  }
+  const net = (s, px) => s.Q > 0 ? dir * (px * s.Q - s.C) - fr * (s.C + s.Q * px) : 0, gross = (s, px) => s.Q > 0 ? dir * (px * s.Q - s.C) : 0;
+  const cands = [], one = (at, px, s) => { if (s.Q > 0 && px > 0) { const v = net(s, px), g = gross(s, px), pv = s.Q * px; cands.push({ at, px, vHi: v, vLo: v, gHi: g, gLo: g, pvHi: pv, pvLo: pv, v }); } };
+  for (const c of cs) {
+    const t1 = c.time + ms; if (t1 <= d.openedAt || c.time > d.closedAt) continue;
+    let s0 = { Q: 0, C: 0 }; const inside = [];
+    for (const x of st) { if (x.at < c.time) s0 = x.after; else if (x.at < t1) inside.push(x); }
+    const segs = [s0, ...inside.map(x => x.after)], last = segs.at(-1);
+    one(c.time, c.open, s0);
+    for (const x of inside) { one(x.at, x.p, x.before); one(x.at, x.p, x.after); }
+    one(Math.min(t1 - 1, d.closedAt), c.close, last);
+    if (segs.every(s => s.Q > 0)) for (const px of [c.high, c.low]) {
+      const v = segs.map(s => net(s, px)), g = segs.map(s => gross(s, px)), pv = segs.map(s => s.Q * px);
+      // Hoch: für Long Gewinnseite, Tief: Verlustseite (Short umgekehrt) – Beschriftung mit dem vorsichtigeren Wert dieser Seite
+      const favour = (px === c.high) === (dir > 0);
+      cands.push({ at: c.time + ms / 2, px, vHi: Math.min(...v), vLo: Math.max(...v), gHi: Math.min(...g), gLo: Math.max(...g), pvHi: Math.min(...pv), pvLo: Math.max(...pv), v: favour ? Math.min(...v) : Math.max(...v) });
+    }
+  }
+  if (!cands.length) return null;
+  const pick = (k, hi) => cands.reduce((a, b) => (hi ? b[k] > a[k] : b[k] < a[k]) ? b : a);
+  const eur = v => d.fx > 0 ? eurOf(v, d.fx) : null, pct = v => d.margin > 0 ? v / d.margin * 100 : null;
+  const pt = (c, usd) => ({ usd, eur: eur(usd), pct: pct(usd), at: c.at, px: c.px });
+  const g = pick('vHi', true), l = pick('vLo', false), ph = pick('pvHi', true), pl = pick('pvLo', false), hi = pick('px', true), lo = pick('px', false);
+  const neverMinus = pick('gLo', false).gLo >= 0, neverPlus = pick('gHi', true).gHi <= 0;
+  return {
+    gain: neverPlus ? { usd: 0, eur: 0, pct: 0, at: null, px: null, never: true } : pt(g, g.vHi),
+    loss: neverMinus ? { usd: 0, eur: 0, pct: 0, at: null, px: null, never: true } : pt(l, l.vLo),
+    posHi: { usd: ph.pvHi, eur: eur(ph.pvHi), at: ph.at, px: ph.px }, posLo: { usd: pl.pvLo, eur: eur(pl.pvLo), at: pl.at, px: pl.px },
+    hi: { px: hi.px, at: hi.at, usd: hi.v, eur: eur(hi.v) }, lo: { px: lo.px, at: lo.at, usd: lo.v, eur: eur(lo.v) }, feeRate: fr, n: cands.length };
 }
 // ---- Zeichnen ----
 const timgDur = ms => { const m = Math.round(ms / 60e3); if (ms < 60e3) return `${Math.max(1, Math.round(ms / 1000))} s`; if (m < 60) return `${m} Min.`; const h = Math.floor(m / 60), r = m % 60; if (h < 48) return `${h} Std.${r ? ` ${r} Min.` : ''}`; const dd = Math.floor(h / 24), rh = h % 24; return `${dd} Tage${rh ? ` ${rh} Std.` : ''}`; };
@@ -14052,21 +14190,32 @@ function timgDraw(cv, d, ch) {
   cell(6, 'Menge', `${qtyText(d.qty)} ${coin(d.sym)}`, C.text, d.buys.length > 1 ? `aus ${d.buys.length} ${long ? 'Käufen' : 'Verkäufen'}` : '');
   const small = v => (v && Math.abs(v) < 0.1 ? 4 : 2);
   cell(7, d.funding ? 'Gebühren · Funding' : 'Gebühren', d.funding ? `${number(d.fees, small(d.fees))} · ${signed(d.funding, small(d.funding))} USD` : `${number(d.fees, small(d.fees))} USD`);
-  // Chart des Haltezeitraums
-  const X0 = L, X1 = R - 104, Y0 = 914, Y1 = 1222;
-  txt(`Kursverlauf${ch?.candles?.length ? ` · ${ch.iv}-Kerzen` : ''} · Binance ${d.source === 'futures' ? 'Futures' : 'Spot'}`, L, 878, F(700, 28), C.text, 'left', 600);
-  const span = ch ? `${tgcTime(ch.from)} – ${tgcTime(ch.to)}` : `${tgcTime(d.openedAt)} – ${tgcTime(d.closedAt)}`;
-  txt(span, R, 878, F(600, 22), C.muted, 'right');
-  box(X0 - 8, Y0 - 12, R - X0 + 8, Y1 - Y0 + 24, 14, C.card);
-  if (!ch || !ch.candles.length) {
-    g.setLineDash([10, 8]); g.strokeStyle = C.line; g.lineWidth = 2; g.strokeRect(X0 + 8, Y0 + 8, R - X0 - 24, Y1 - Y0 - 16); g.setLineDash([]);
-    txt('Chartdaten nicht verfügbar', (X0 + R) / 2, (Y0 + Y1) / 2 - 12, F(700, 36), C.amber, 'center');
-    txt(`Haltezeitraum ${tgcTime(d.openedAt)} – ${tgcTime(d.closedAt)}`, (X0 + R) / 2, (Y0 + Y1) / 2 + 32, F(600, 24), C.text2, 'center', R - X0 - 80);
-    if (ch?.err) txt(ch.err, (X0 + R) / 2, (Y0 + Y1) / 2 + 66, F(500, 20), C.muted, 'center', R - X0 - 80);
+  // 3.69.0: Kennzahlen aus den Kerzen der Haltezeit (Max. Gewinn/Verlust unrealisiert nach Gebühren, Positionswert = Menge × Kurs)
+  const S = d.stats !== undefined ? d.stats : timgStats(d, ch), eurOk = d.fx > 0, cur = eurOk ? '€' : 'USD';
+  const amt = (v, sgn = true) => { const x = eurOk && v.eur !== null ? v.eur : v.usd; return `${sgn ? signed(x) : number(x)} ${eurOk && v.eur !== null ? '€' : 'USD'}`; };
+  const pctOf = v => v.pct !== null ? `${signed(v.pct)} % vom Einsatz` : '';
+  if (!S) {
+    for (const [i, label] of [[8, 'Max. Gewinn'], [9, 'Max. Verlust'], [10, 'Höchster Positionswert'], [11, 'Tiefster Positionswert']]) cell(i, label, '—', C.muted, 'ohne Kerzendaten nicht berechenbar');
   } else {
-    const cs = ch.candles, t0 = ch.from, t1 = Math.max(ch.to, cs.at(-1).closeTime + 1), xs = t => X0 + (t - t0) / (t1 - t0) * (X1 - X0);
-    const ps = [...cs.flatMap(c => [c.low, c.high]), ...d.buys.map(b => b.p), ...d.sells.map(s => s.x), ...d.steps.map(s => s.avg)].filter(v => v > 0);
-    let lo = Math.min(...ps), hi = Math.max(...ps); const pad = (hi - lo) * 0.14 || hi * 0.002; lo -= pad; hi += pad; // Platz für Marken und Beschriftung
+    const tone = v => v > 0 ? C.up : v < 0 ? C.down : C.text;
+    cell(8, 'Max. Gewinn (unrealisiert)', S.gain.never ? `0,00 ${cur}` : amt(S.gain), S.gain.never ? C.text2 : tone(S.gain.usd), S.gain.never ? 'nie im Plus' : [pctOf(S.gain), tgcTime(S.gain.at)].filter(Boolean).join(' · '));
+    cell(9, 'Max. Verlust (unrealisiert)', S.loss.never ? `0,00 ${cur}` : amt(S.loss), S.loss.never ? C.text2 : tone(S.loss.usd), S.loss.never ? 'nie im Minus' : [pctOf(S.loss), tgcTime(S.loss.at)].filter(Boolean).join(' · '));
+    const pvSub = v => [v.eur !== null ? `≙ ${number(v.eur)} €` : '', `Kurs ${priceText(v.px)}`, tgcTime(v.at)].filter(Boolean).join(' · ');
+    cell(10, 'Höchster Positionswert', `${number(S.posHi.usd)} USD`, C.text, pvSub(S.posHi)); cell(11, 'Tiefster Positionswert', `${number(S.posLo.usd)} USD`, C.text, pvSub(S.posLo));
+  }
+  // Chart des Haltezeitraums – Kerzen aus dem Journal-Speicher bzw. der Börse; ohne Kerzen eine Linie zwischen den Ausführungskursen
+  const X0 = L, X1 = R - 104, Y0 = 1140, Y1 = 1530, cand = !!ch?.candles?.length;
+  txt(cand ? `Kursverlauf · ${ch.iv}-Kerzen` : 'Kursverlauf · Ersatzdarstellung', L, 1076, F(700, 28), C.text, 'left', 560);
+  txt(cand ? `Quelle: ${ch.label || `Binance ${d.source === 'futures' ? 'Futures' : 'Spot'}`}` : 'Quelle: keine Kerzen abrufbar – Linie Einstieg → Ausstieg', L, 1108, F(600, 22), cand && !ch.alt ? C.muted : C.amber, 'left', R - L);
+  const t0 = cand ? ch.from : d.openedAt - TIMG_PAD, t1 = cand ? Math.max(ch.to, ch.candles.at(-1).closeTime + 1) : d.closedAt + TIMG_PAD;
+  txt(`${tgcTime(t0)} – ${tgcTime(t1)}`, R, 1076, F(600, 22), C.muted, 'right');
+  box(X0 - 8, Y0 - 12, R - X0 + 8, Y1 - Y0 + 24, 14, C.card);
+  const cs = cand ? ch.candles : [], xs = t => X0 + (t - t0) / Math.max(1, t1 - t0) * (X1 - X0);
+  const ps = [...cs.flatMap(c => [c.low, c.high]), ...d.buys.map(b => b.p), ...d.sells.map(s => s.x), ...d.steps.map(s => s.avg)].filter(v => v > 0);
+  const lay = { mode: cand ? 'candles' : 'line', chart: { X0, X1, Y0, Y1 }, labels: [], marks: [] }; timg.layout = lay;
+  if (!ps.length) { txt('Kurse nicht erfasst', (X0 + R) / 2, (Y0 + Y1) / 2, F(700, 32), C.amber, 'center'); }
+  else {
+    let lo = Math.min(...ps), hi = Math.max(...ps); const pad = (hi - lo) * 0.16 || hi * 0.004; lo -= pad; hi += pad; // Platz für Marken und Beschriftung
     const ys = p => Y1 - (p - lo) / (hi - lo) * (Y1 - Y0);
     // Haltezeit
     g.fillStyle = C.band; g.fillRect(xs(d.openedAt), Y0, Math.max(2, xs(d.closedAt) - xs(d.openedAt)), Y1 - Y0);
@@ -14077,44 +14226,86 @@ function timgDraw(cv, d, ch) {
     // Zeitachse
     const multiDay = t1 - t0 > 36 * 3600e3;
     for (let i = 0; i <= 4; i++) { const t = t0 + (t1 - t0) * i / 4, x2 = xs(t); txt(new Date(t).toLocaleString('de-DE', multiDay ? { day: '2-digit', month: '2-digit' } : { hour: '2-digit', minute: '2-digit' }), x2, Y1 + 42, F(500, 20), C.faint, i === 0 ? 'left' : i === 4 ? 'right' : 'center'); }
-    // Kerzen (Lücken bleiben frei – keine verbindende Linie)
-    const w = Math.max(1, (X1 - X0) * ch.ms / (t1 - t0) * 0.68);
-    for (const c of cs) {
-      const cx = xs(c.time + ch.ms / 2), up = c.close >= c.open, col = up ? C.up : C.down;
-      g.strokeStyle = col; g.lineWidth = Math.max(1, Math.min(2, w / 4)); g.beginPath(); g.moveTo(cx, ys(c.high)); g.lineTo(cx, ys(c.low)); g.stroke();
-      const yt = ys(Math.max(c.open, c.close)), yb = ys(Math.min(c.open, c.close)); g.fillStyle = col; g.fillRect(cx - w / 2, yt, w, Math.max(1, yb - yt));
+    const occ = [], hit = r => occ.some(b => r.x < b.x + b.w && r.x + r.w > b.x && r.y < b.y + b.h && r.y + r.h > b.y);
+    if (cand) {
+      // Kerzen (Lücken bleiben frei – keine verbindende Linie)
+      const w = Math.max(1, (X1 - X0) * ch.ms / (t1 - t0) * 0.68);
+      for (const c of cs) {
+        const cx = xs(c.time + ch.ms / 2), up = c.close >= c.open, col = up ? C.up : C.down;
+        g.strokeStyle = col; g.lineWidth = Math.max(1, Math.min(2, w / 4)); g.beginPath(); g.moveTo(cx, ys(c.high)); g.lineTo(cx, ys(c.low)); g.stroke();
+        const yt = ys(Math.max(c.open, c.close)), yb = ys(Math.min(c.open, c.close)); g.fillStyle = col; g.fillRect(cx - w / 2, yt, w, Math.max(1, yb - yt));
+      }
+      let gap = cs[0].time > d.openedAt + ch.ms || cs.at(-1).closeTime < Math.min(d.closedAt, Date.now() - ch.ms) - ch.ms;
+      for (let i = 1; i < cs.length && !gap; i++) if (cs[i].time - cs[i - 1].time > ch.ms * 1.5) gap = true;
+      if (gap) { const gw = txt('Kursdaten mit Lücken – nichts aufgefüllt', X1, Y0 + 26, F(600, 20), C.amber, 'right'); occ.push({ x: X1 - gw - 6, y: Y0 + 4, w: gw + 12, h: 30 }); }
+    } else {
+      // Ersatz: Linie durch die Ausführungskurse in zeitlicher Folge, damit die Karte nie leer ist
+      const pts = [...d.buys.map(b => [b.at, b.p]), ...d.sells.map(s => [s.at, s.x])].filter(x => x[1] > 0).sort((a, b) => a[0] - b[0]);
+      g.strokeStyle = C.text2; g.lineWidth = 3; g.beginPath();
+      if (pts.length === 1) { g.moveTo(xs(d.openedAt), ys(pts[0][1])); g.lineTo(xs(d.closedAt), ys(pts[0][1])); } else pts.forEach(([t, p], i) => i ? g.lineTo(xs(t), ys(p)) : g.moveTo(xs(t), ys(p)));
+      g.stroke();
+      const nw = txt('Keine Kerzen abrufbar – vereinfachte Linie zwischen den Ausführungskursen', X0 + 12, Y0 + 26, F(600, 20), C.amber, 'left', X1 - X0 - 24);
+      occ.push({ x: X0, y: Y0 + 4, w: nw + 24, h: 30 });
+      if (ch?.err) { const ew = txt(ch.err, X0 + 12, Y0 + 52, F(500, 18), C.muted, 'left', X1 - X0 - 24); occ.push({ x: X0, y: Y0 + 34, w: ew + 24, h: 26 }); }
     }
     // Ø-Einstieg als Stufenlinie über die Haltezeit
     g.setLineDash([12, 8]); g.strokeStyle = C.blue; g.lineWidth = 2.5; g.beginPath(); let prev = null;
     for (let i = 0; i < d.steps.length; i++) { const s = d.steps[i], nx = i + 1 < d.steps.length ? d.steps[i + 1].at : d.closedAt; if (s.avg === null) continue; const y = ys(s.avg); if (prev === null || Math.abs(prev - s.avg) > s.avg * 1e-9) g.moveTo(xs(s.at), y); g.lineTo(xs(Math.max(s.at, nx)), y); prev = s.avg; }
     g.stroke(); g.setLineDash([]);
-    // Marken: E = Einstieg, A = Ausstieg (Teilabschluss/Schluss); ohne Kurs eine gestrichelte Linie mit „?“
-    const used = [], mark = (t, p, label, col, down) => {
-      const mx = xs(t); let my = p > 0 ? ys(p) : null;
-      if (my === null) { g.setLineDash([6, 6]); g.strokeStyle = col; g.lineWidth = 2; g.beginPath(); g.moveTo(mx, Y0); g.lineTo(mx, Y1); g.stroke(); g.setLineDash([]); my = Y0 + 30; label += ' ?'; }
-      else { g.fillStyle = col; g.beginPath(); if (down) { g.moveTo(mx, my + 2); g.lineTo(mx - 11, my - 18); g.lineTo(mx + 11, my - 18); } else { g.moveTo(mx, my - 2); g.lineTo(mx - 11, my + 18); g.lineTo(mx + 11, my + 18); } g.closePath(); g.fill(); g.strokeStyle = C.bg; g.lineWidth = 2; g.stroke(); }
-      // Beschriftung auf der freien Seite der Marke; am Rand auf die andere Seite, nie über die Marke
-      let up = down; if (up && my - 28 < Y0 + 22) up = false; else if (!up && my + 42 > Y1 - 4) up = true;
-      let ly = up ? my - 28 : my + 42; const dir = up ? -26 : 26;
-      for (let k = 0; k < 6 && used.some(u => Math.abs(u.x - mx) < 44 && Math.abs(u.y - ly) < 26); k++) ly += dir;
-      used.push({ x: mx, y: ly }); const edge = mx > X1 - 30 ? 'right' : mx < X0 + 30 ? 'left' : 'center';
-      txt(label, edge === 'right' ? mx - 8 : edge === 'left' ? mx + 8 : mx, ly, F(800, 22), col, edge);
-    };
-    d.buys.forEach((b, i) => mark(b.at, b.p, `E${d.buys.length > 1 ? i + 1 : ''}`, C.blue, !long));
-    d.sells.forEach((s, i) => mark(s.at, s.x, `A${d.sells.length > 1 ? i + 1 : ''}`, C.amber, long));
-    // Hinweis auf Lücken
-    let gap = cs[0].time > d.openedAt + ch.ms || cs.at(-1).closeTime < Math.min(d.closedAt, Date.now() - ch.ms) - ch.ms;
-    for (let i = 1; i < cs.length && !gap; i++) if (cs[i].time - cs[i - 1].time > ch.ms * 1.5) gap = true;
-    if (gap) txt('Kursdaten mit Lücken – nichts aufgefüllt', X1, Y0 + 26, F(600, 20), C.amber, 'right');
+    // Marken: ▲/▼ E = Einstieg, A = Ausstieg, ● H/T = höchster/tiefster Kurs in der Haltezeit; ohne Kurs eine gestrichelte Linie mit „?“
+    const lev = d.lev > 0 ? d.lev : 1, eurV = v => eurOk ? eurOf(v, d.fx) : null, money = (usd, e, sgn = true) => e !== null && e !== undefined ? `${sgn ? signed(e) : number(e)} €` : `${sgn ? signed(usd) : number(usd)} USD`;
+    const marks = [];
+    d.buys.forEach((b, i) => { const st0 = b.q * b.p / lev; marks.push({ kind: 'E', at: b.at, p: b.p, col: C.blue, down: !long, pri: 2 + i,
+      text: `E${d.buys.length > 1 ? i + 1 : ''} ${b.p > 0 ? priceText(b.p) : '?'}${b.p > 0 ? ` (Einsatz ${money(st0, eurV(st0), false)})` : ''}` }); });
+    const fr = S?.feeRate ?? 0, dir = long ? 1 : -1, sameBk = d.bk?.length === d.sells.length;
+    d.sells.forEach((s, i) => {
+      const usd = sameBk ? d.bk[i].usd : s.x > 0 && s.E > 0 ? dir * (s.x - s.E) * s.q - fr * (s.E + s.x) * s.q : null, e = sameBk && d.bk[i].eur !== null ? d.bk[i].eur : usd !== null ? eurV(usd) : null;
+      marks.push({ kind: 'A', at: s.at, p: s.x, col: usd > 0 ? C.up : usd < 0 ? C.down : C.amber, down: long, pri: i === d.sells.length - 1 ? 0 : 1 + i,
+        text: `A${d.sells.length > 1 ? i + 1 : ''} ${s.x > 0 ? priceText(s.x) : '?'}${s.x > 0 && usd !== null ? ` (${money(usd, e)})` : ''}` });
+    });
+    if (S && cand) for (const [k, v, up] of [['H', S.hi, true], ['T', S.lo, false]]) {
+      // fällt der Punkt auf eine Ein-/Ausstiegsmarke, nennt deren Beschriftung den Kurs schon
+      if (marks.some(m => m.p > 0 && Math.abs(xs(m.at) - xs(v.at)) < 26 && Math.abs(ys(m.p) - ys(v.px)) < 14)) continue;
+      marks.push({ kind: k, at: v.at, p: v.px, col: v.usd > 0 ? C.up : v.usd < 0 ? C.down : C.text2, down: up, dot: true, pri: 5, text: `${k} ${priceText(v.px)} (${money(v.usd, v.eur)})` });
+    }
+    // erst alle Marken zeichnen (und als belegt merken), dann die Beschriftungen auf freie Plätze
+    for (const m of marks) {
+      m.x = xs(m.at);
+      if (!(m.p > 0)) { g.setLineDash([6, 6]); g.strokeStyle = m.col; g.lineWidth = 2; g.beginPath(); g.moveTo(m.x, Y0); g.lineTo(m.x, Y1); g.stroke(); g.setLineDash([]); m.y = Y0 + 40; continue; }
+      m.y = ys(m.p); g.fillStyle = m.col; g.beginPath();
+      if (m.dot) g.arc(m.x, m.y, 9, 0, Math.PI * 2);
+      else if (m.down) { g.moveTo(m.x, m.y + 2); g.lineTo(m.x - 12, m.y - 20); g.lineTo(m.x + 12, m.y - 20); } else { g.moveTo(m.x, m.y - 2); g.lineTo(m.x - 12, m.y + 20); g.lineTo(m.x + 12, m.y + 20); }
+      g.closePath(); g.fill(); g.strokeStyle = C.bg; g.lineWidth = 2; g.stroke();
+      const r = m.dot ? { x: m.x - 11, y: m.y - 11, w: 22, h: 22 } : { x: m.x - 13, y: m.down ? m.y - 21 : m.y - 3, w: 26, h: 24 }; occ.push(r); lay.marks.push({ kind: m.kind, ...r });
+    }
+    const LF = F(800, 26), LH = 40, GAP = 6;
+    for (const m of [...marks].sort((a, b) => a.pri - b.pri)) {
+      g.font = LF; const w = Math.ceil(g.measureText(m.text).width) + 22, up0 = m.down, near = m.dot ? 14 : 24;
+      const xsOpt = [m.x - w / 2, m.x + 16, m.x - w - 16].map(x => Math.max(X0 - 4, Math.min(X1 + 4 - w, x)));
+      let at = null;
+      for (let k = 0; k < 9 && !at; k++) for (const up of [up0, !up0]) {
+        const y = up ? m.y - near - LH - k * (LH + GAP) : m.y + near + k * (LH + GAP);
+        if (y < Y0 - 6 || y + LH > Y1 + 6) continue;
+        for (const x of xsOpt) { const r = { x, y, w, h: LH }; if (!hit({ x: r.x - 3, y: r.y - 3, w: r.w + 6, h: r.h + 6 })) { at = r; break; } }
+        if (at) break;
+      }
+      if (!at) { if (m.pri > 0) continue; at = { x: xsOpt[0], y: Math.max(Y0 - 6, Math.min(Y1 + 6 - LH, up0 ? m.y - near - LH : m.y + near)), w, h: LH }; } // der Schluss steht immer da
+      occ.push(at); lay.labels.push({ kind: m.kind, text: m.text, ...at });
+      const ly = at.y + LH / 2, lx = Math.max(at.x, Math.min(at.x + w, m.x));
+      if (Math.abs(ly - m.y) > near + LH) { g.strokeStyle = m.col; g.globalAlpha = 0.55; g.lineWidth = 1.5; g.beginPath(); g.moveTo(m.x, m.y + (ly < m.y ? -near : near)); g.lineTo(lx, ly < m.y ? at.y + LH : at.y); g.stroke(); g.globalAlpha = 1; }
+      box(at.x, at.y, w, LH, 10, 'rgba(11,15,19,0.9)'); g.strokeStyle = m.col; g.lineWidth = 2; g.beginPath(); if (g.roundRect) g.roundRect(at.x, at.y, w, LH, 10); else g.rect(at.x, at.y, w, LH); g.stroke();
+      txt(m.text, at.x + w / 2, at.y + 29, LF, m.col, 'center');
+    }
   }
   // Legende und Fuß
-  if (ch?.candles?.length) { let lx = L; const item = (sym, col, label) => { lx += txt(sym, lx, 1310, F(800, 22), col) + 8; lx += txt(label, lx, 1310, F(600, 22), C.muted) + 30; };
-    item(long ? '▲ E' : '▼ E', C.blue, 'Einstieg'); item(long ? '▼ A' : '▲ A', C.amber, 'Ausstieg'); item('– –', C.blue, 'Ø Einstieg');
-    g.fillStyle = 'rgba(138,184,255,0.35)'; g.fillRect(lx, 1292, 22, 22); lx += 30; txt('Haltezeit', lx, 1310, F(600, 22), C.muted); }
+  { let lx = L; const item = (sym, col, label) => { lx += txt(sym, lx, 1620, F(800, 22), col) + 8; lx += txt(label, lx, 1620, F(600, 22), C.muted) + 28; };
+    item(long ? '▲ E' : '▼ E', C.blue, 'Einstieg'); item(long ? '▼ A' : '▲ A', C.amber, 'Ausstieg');
+    if (cand && S) item('● H/T', C.text2, 'Hoch/Tief'); else if (!cand) item('—', C.text2, 'Linie (Ersatz)');
+    item('– –', C.blue, 'Ø Einstieg'); g.fillStyle = 'rgba(138,184,255,0.35)'; g.fillRect(lx, 1602, 22, 22); lx += 30; txt('Haltezeit', lx, 1620, F(600, 22), C.muted); }
   const parts = d.sells.length - 1, bits = [`${d.buys.length} ${long ? (d.buys.length === 1 ? 'Kauf' : 'Käufe') : (d.buys.length === 1 ? 'Verkauf' : 'Verkäufe')}`, parts ? `${parts} ${parts === 1 ? 'Teilabschluss' : 'Teilabschlüsse'} + Schluss` : 'ein Schluss'];
   if (d.late) bits.push('nachgetragen'); if (d.reasons.length) bits.push(`Gründe: ${d.reasons.join(', ')}`);
-  txt(bits.join(' · '), L, 1356, F(600, 24), C.text2, 'left', R - L);
-  txt(`Scalp Desk · Bild erstellt ${timgWhen(Date.now())} · alle Werte aus dem Journal`, L, 1402, F(500, 20), C.faint, 'left', R - L);
+  txt(bits.join(' · '), L, 1664, F(600, 24), C.text2, 'left', R - L);
+  txt(`Scalp Desk · ${timgWhen(Date.now())} · Werte aus dem Journal · Max. Gewinn/Verlust nach Gebühren`, L, 1706, F(500, 20), C.faint, 'left', R - L);
 }
 function timgBlob(d, ch) {
   return new Promise((resolve, reject) => {
@@ -14130,7 +14321,10 @@ async function timgPost(blob, data, plainFallback = false) {
   const T = tgDest('trades'); if (!T) throw Object.assign(new Error('Ziel „Trades“ nicht eingerichtet'), { kind: 'fail' });
   if (navigator.onLine === false) throw Object.assign(new Error('offline'), { kind: 'offline' });
   const fd = new FormData(); fd.append('chat_id', T.chat); if (T.thread) fd.append('message_thread_id', T.thread); fd.append('photo', blob, blob.type === 'image/jpeg' ? 'trade.jpg' : 'trade.png');
-  const html = formatMessage('trade', { symbol: data.sym, side: data.side, pnl: data.net, percent: data.pct, entry: data.entry, exit: data.exit, quantity: data.qty, duration: `${Math.floor((data.closedAt - data.openedAt) / 60000)} Min`, reasons: data.reasons.join(', '), at: data.closedAt, messageLimit: TELEGRAM_CAPTION_LIMIT });
+  // 3.69.0: kurze Bildunterschrift – Paar, Long/Short, Netto in € und %, Haltedauer, Max. Gewinn und Max. Verlust in €
+  const S = data.stats || null;
+  const html = formatMessage('trade', { card: true, symbol: data.sym, side: data.side, pnl: data.net, eur: data.eur, percent: data.pct, duration: timgDur(data.closedAt - data.openedAt), at: data.closedAt, messageLimit: TELEGRAM_CAPTION_LIMIT,
+    ...(S ? { gain: S.gain.usd, gainEur: S.gain.eur, neverPlus: !!S.gain.never, loss: S.loss.usd, lossEur: S.loss.eur, neverMinus: !!S.loss.never } : { extremes: 'ohne Kerzendaten nicht berechnet' }) });
   fd.append('caption', plainFallback ? telegramPlain(html) : html); if (!plainFallback) fd.append('parse_mode', 'HTML');
   let r; try { r = await fetch(`https://api.telegram.org/bot${T.token}/sendPhoto`, { method: 'POST', body: fd, credentials: 'omit', referrerPolicy: 'no-referrer', cache: 'no-store' }); }
   catch { throw Object.assign(new Error('keine Antwort von Telegram'), { kind: 'lost' }); } // Anfrage kann angekommen sein
@@ -14153,6 +14347,7 @@ function timgQueue(id, by = 'auto') {
 // dauerhaft gespeichert ist; Häkchen „Trade-Bild“ an und Ziel „Trades“ eingerichtet und an
 function timgAfterClose(id) {
   const t = state.trades.find(x => x.id === id); if (!t || findPos(id) || !store.ok) return;
+  { const d = timgData(id); if (!d.err) void timgCandles(d).catch(() => {}); } // 3.69.0: Kerzen einmal laden und zum Trade speichern
   if (t.part?.late || chan.ev.trade === false || !tgtReady('trades')) return;
   timgQueue(id, 'auto');
 }
@@ -14173,8 +14368,8 @@ async function timgRun(id) {
     await timgFxWait(id);
     why = gate(); if (why) return timgSet(id, { st: 'drop', why }); // AUS: nicht einmal Kerzen laden
     const d = timgData(id); if (d.err) return timgSet(id, { st: 'fail', why: d.err });
-    const ch = await timgCandles(d);
-    timgSet(id, { chart: ch.candles.length ? `${ch.iv} · ${ch.candles.length} Kerzen` : `nicht verfügbar (${ch.err})` }); // zur Nachvollziehbarkeit
+    const ch = await timgCandles(d); d.stats = timgStats(d, ch); // 3.69.0: Kerzen aus dem Journal-Speicher bzw. mit Ersatzquellen
+    timgSet(id, { chart: ch.candles.length ? `${ch.iv} · ${ch.candles.length} Kerzen · ${ch.label}${ch.stored ? ' · gespeichert' : ''}` : `Ersatzlinie Einstieg → Ausstieg (${ch.err})` }); // zur Nachvollziehbarkeit
     why = gate(); if (why) return timgSet(id, { st: 'drop', why });
     let blob; try { blob = await timgBlob(d, ch); } catch (e) { return timgSet(id, { st: 'fail', why: `Bild konnte nicht erstellt werden (${String(e?.message || e).slice(0, 100)})` }); }
     why = gate(); if (why) return timgSet(id, { st: 'drop', why }); // direkt vor dem Senden
@@ -14184,6 +14379,7 @@ async function timgRun(id) {
     catch (e) {
       timgSet(id, e.kind === 'lost' ? { st: 'unconf', why: 'keine Antwort von Telegram – kein automatischer zweiter Versuch' }
         : e.kind === 'offline' ? { st: 'queued', why: 'offline – wird gesendet, sobald wieder Verbindung besteht' } : { st: 'fail', why: e.message });
+      if (e.kind !== 'offline') infoToast(`Trade-Bild ${coin(d.sym)} nicht an Telegram gesendet: ${timgJob(id)?.why || e.message}`, 9000); // 3.69.0: Fehler im Klartext
     }
   } finally { clearInterval(beat); timg.run.delete(id); void store.release(`timg:${id}`); }
 }
@@ -14213,6 +14409,11 @@ function timgChip(id) {
   const b = btn('timg-st st-' + j.st, `📷 ${TIMG_ST[j.st]}${j.st === 'ok' && j.sentAt ? ` ${hhmm(j.sentAt)}` : ''}`, 'trade-img');
   b.title = j.why || (j.st === 'ok' ? 'Trade-Bild an Telegram gesendet' : TIMG_ST[j.st]); return b;
 }
+// 3.69.0: Telegram-Fehler sichtbar unter dem Zustand (nicht nur als Tooltip)
+function timgWhy(id) {
+  const j = timg.jobs.find(x => x.id === id); if (!j || !j.why || !['fail', 'unconf', 'drop'].includes(j.st)) return null;
+  return el('p', 'timg-why', `Telegram: ${j.why}`);
+}
 async function timgPreview(id) {
   const dlg = $('timg-dialog'); if (timg.view?.url) URL.revokeObjectURL(timg.view.url);
   timg.view = { id, url: null, again: false }; $('timg-img').hidden = true; $('timg-img').removeAttribute('src'); $('timg-save').hidden = true;
@@ -14220,7 +14421,7 @@ async function timgPreview(id) {
   if (!dlg.open) dlg.showModal();
   timgViewStatus();
   const d = timgData(id); if (d.err) { put('timg-wait', d.err); return; }
-  const ch = await timgCandles(d); if (timg.view?.id !== id) return;
+  const ch = await timgCandles(d); if (timg.view?.id !== id) return; d.stats = timgStats(d, ch);
   try {
     const blob = await timgBlob(d, ch); if (timg.view?.id !== id) return;
     const url = URL.createObjectURL(blob); timg.view.url = url; // nur zur Anzeige hier – an Telegram geht die Datei selbst
@@ -14240,7 +14441,7 @@ function timgViewStatus() {
   const dlg = $('timg-dialog');
   const close = () => { dlg.close(); };
   $('timg-close').addEventListener('click', close);
-  dlg.addEventListener('close', () => { if (timg.view?.url) URL.revokeObjectURL(timg.view.url); timg.view = null; });
+  dlg.addEventListener('close', () => { if (dlg.open) return; if (timg.view?.url) URL.revokeObjectURL(timg.view.url); timg.view = null; }); // 3.69.0: verspätetes „close“ nach erneutem Öffnen ignorieren
   $('timg-retry').addEventListener('click', () => { $('timg-retry').hidden = true; if (timg.view) void timgPreview(timg.view.id); });
   $('timg-send').addEventListener('click', () => {
     const v = timg.view; if (!v) return; const j = timg.jobs.find(x => x.id === v.id);
