@@ -198,6 +198,11 @@
       "bytes": 11241
     },
     {
+      "path": "shared/heikin-ashi.mjs",
+      "sha256": "b9d0eb6c047026ecf828004e9a7ca6b13b68bfca910bf84aa9e289f3e81a7670",
+      "bytes": 1126
+    },
+    {
       "path": "shared/indicators.mjs",
       "sha256": "9105a8ac09d5557e90ec05fd3035c915b36b8e345b31b96a158d0001da505540",
       "bytes": 9568

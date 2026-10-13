@@ -3,9 +3,9 @@
 Diese Datei ist der Einstieg für jede weitere Arbeit am Projekt. Wer sie liest, braucht kein Vorwissen. Die vollständige fachliche
 Vorgabe aller Gruppen G01–G14 steht in `docs/VORGABE-G01-G14.md` (Original-Übergabe; dort sind G10–G14 ausführlich beschrieben).
 
-## Arbeitsstand 3.68.1 (Claude, noch nicht veröffentlicht): Telegram-Chat-ID und Pfeil nach oben
+## Arbeitsstand 3.68.1 (Claude, noch nicht veröffentlicht): Telegram-Chat-ID, Pfeil nach oben, Heikin-Ashi
 
-Chat-ID-Felder in voller Breite mit Knopf **Einfügen** (Zahl oder `t.me/c/…`-Link inkl. Thema, `parseTgChat`, Testzugriff `window.__tgParse`), Thema darunter; `label.check`-Kästchen 22 px; Fußzeile mit `#to-top` (↑, scrollt nach oben). Version/Bündel 3.68.1. Nur gezielt geprüft (Lint, unit-release, m87 22/22, Browser-Sichtprüfung); **Gesamtlauf und Veröffentlichung stehen auf Wunsch des Nutzers noch aus.** Details: [docs/3.68.1-AENDERUNGEN.md](docs/3.68.1-AENDERUNGEN.md).
+Chat-ID-Felder in voller Breite mit Knopf **Einfügen** (Zahl oder `t.me/c/…`-Link inkl. Thema, `parseTgChat`, Testzugriff `window.__tgParse`), Thema darunter; `label.check`-Kästchen 22 px; Fußzeile mit `#to-top` (↑, scrollt nach oben). **Heikin-Ashi:** Umschalter `#ha-btn` in `.ohlc-row` (schmal „HA“), `var ha`/`haOn()`/`haSet()`, Schlüssel `scalpdesk.heikin.v1` in `PREF_KEYS`, Umrechnung `shared/heikin-ashi.mjs`; in `renderChartContent` ersetzt `bodies` die Kerzen nur für Skala und Körper/Dochte/Volumen (auch `detailBodies`), alles andere bleibt auf echten Kursen; `unit-heikin-ashi.js` 8/8, Testzugriff `window.__ha`. Version/Bündel 3.68.1. Nur gezielt geprüft (Lint, unit-release, m87 22/22, Browser-Sichtprüfung); **Gesamtlauf und Veröffentlichung stehen auf Wunsch des Nutzers noch aus.** Details: [docs/3.68.1-AENDERUNGEN.md](docs/3.68.1-AENDERUNGEN.md).
 
 ## Stand 3.68.0 (Claude, veröffentlicht): KI-Signale entfernt, Muster-Bot mit Konfluenz/PO3, Kerzenmuster, KI-Zonen
 

@@ -182,6 +182,12 @@
       "alias": "./shared/github-sync.mjs"
     },
     {
+      "path": "./bundles/3.68.1/shared/heikin-ashi.mjs",
+      "sha256": "b9d0eb6c047026ecf828004e9a7ca6b13b68bfca910bf84aa9e289f3e81a7670",
+      "bytes": 1126,
+      "alias": "./shared/heikin-ashi.mjs"
+    },
+    {
       "path": "./bundles/3.68.1/shared/indicators.mjs",
       "sha256": "9105a8ac09d5557e90ec05fd3035c915b36b8e345b31b96a158d0001da505540",
       "bytes": 9568,
@@ -405,8 +411,8 @@
     },
     {
       "path": "./weather-widget-v2.html",
-      "sha256": "197bf39025d868a7d2dd1bb4f5614c333ea4399301cd0af961afa0ecb941f52f",
-      "bytes": 1543294
+      "sha256": "cc262ae0ad1be6c73e1e315fd197d11b3a4e9a49dfb51aa2fb6ff940bfe56d38",
+      "bytes": 1545367
     },
     {
       "path": "./manifest.webmanifest",
