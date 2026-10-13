@@ -48,11 +48,15 @@ import http from 'node:http';
 import crypto from 'node:crypto';
 import { Buffer } from 'node:buffer';
 import { fileURLToPath } from 'node:url';
-import { PQ, patternConfig, patternCandles, patternCases, patternFresh, patternText, patternEnd, patternEvaluate, patternFilterLog } from './pattern-monitor.mjs';
+import { PQ, patternConfig, patternCandles, patternCases, patternFresh, patternText, patternMessageData, patternEnd, patternEvaluate, patternFilterLog } from './pattern-monitor.mjs';
 import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT } from './telegram-format.mjs';
 import { ConfluenceService, kiMessage, Po3Service, po3Message, BotSimulationRuntime } from './ki-monitor.mjs';
 
-export const VERSION = '2.13.0';   // 2.13.0: Qualitätsfilter für Chartmuster-Meldungen
+export const VERSION = '2.14.0';   // 2.13.0: Qualitätsfilter für Chartmuster-Meldungen; 2.14.0: Chartmuster als Trading-Karte (Text als Ersatz)
+// 2.14.0: Kartenrenderer (pattern-card.mjs + resvg) nur bei Bedarf laden; fehlt er, bleibt es bei der Textmeldung
+let cardModule = null;
+const loadCards = () => (cardModule ??= import('./pattern-card.mjs').catch(() => null));
+const CHAT_PROBLEM = /chat|thread|topic|blocked|kicked|deactivated|not enough rights|have no rights/i;
 const E = process.env;
 // Adressen (für Tests über Umgebungsvariablen änderbar)
 export const API = {
@@ -457,8 +461,8 @@ export class PatternArchive {
   }
 }
 export class Watcher {
-  constructor({ token, chat, patternToken = '', kiUsers = [], kiClient, key = '', origins = [APP_ORIGIN], listen = LISTEN, host = '', statePath = '', now = () => Date.now(), log = (...a) => console.log(...a), patternFetch = klines, patternSpread = c => bookTicker(c.mkt, c.sym) }) {
-    Object.assign(this, { token, chat, patternToken, kiUsers, key, origins, listen, host, statePath, now, log, patternFetch, patternSpread });
+  constructor({ token, chat, patternToken = '', kiUsers = [], kiClient, key = '', origins = [APP_ORIGIN], listen = LISTEN, host = '', statePath = '', now = () => Date.now(), log = (...a) => console.log(...a), patternFetch = klines, patternSpread = c => bookTicker(c.mkt, c.sym), patternCards = true }) {
+    Object.assign(this, { token, chat, patternToken, kiUsers, key, origins, listen, host, statePath, now, log, patternFetch, patternSpread, patternCards });
     this.kiStartedAt = now(); this.kiOffset = null; this.kiCommandsBusy = false;
     this.patternWatch = { rev: 0, since: 0, config: null }; this.patternProgress = new Map(); this.patternBusy = false;
     this.patSignals = []; this.patSent = [];   // 2.13.0: Journal aller bewerteten Chartmuster-Signale und gesendete Meldungen (Anti-Spam)
@@ -545,7 +549,9 @@ export class Watcher {
       const payload = telegramFields(html, { at: this.now(), limit: key === 'caption' ? TELEGRAM_CAPTION_LIMIT : 4096 }); body = { ...body, [key]: payload.text, parse_mode: payload.parse_mode };
     }
     let r;
-    try { r = await fetch(`${API.tg}/bot${token}/${method}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body || {}), signal: AbortSignal.timeout(timeout) }); }
+    // 2.14.0: sendPhoto mit Bilddatei (Buffer) als multipart, alles andere als JSON
+    const photo = method === 'sendPhoto' && Buffer.isBuffer(body?.photo), req = photo ? (() => { const f = new globalThis.FormData(); for (const [k, v] of Object.entries(body)) if (k !== 'photo' && v !== undefined && v !== null) f.append(k, String(v)); f.append('photo', new globalThis.Blob([body.photo], { type: 'image/png' }), 'chartmuster.png'); return { body: f }; })() : { headers: { 'content-type': 'application/json' }, body: JSON.stringify(body || {}) };
+    try { r = await fetch(`${API.tg}/bot${token}/${method}`, { method: 'POST', ...req, signal: AbortSignal.timeout(timeout) }); }
     // 2.0: lost – die Anfrage kann Telegram erreicht haben, nur die Antwort fehlt (Zeitüberschreitung, Verbindung abgerissen):
     // dann nicht noch einmal senden (sonst womöglich doppelt); sonst (keine Verbindung, Name unbekannt) kam sie nie an
     catch (e) { const why = e.cause?.code || e.name || '', lost = /^(TimeoutError|AbortError|ECONNRESET|EPIPE|UND_ERR_SOCKET|UND_ERR_HEADERS_TIMEOUT|UND_ERR_BODY_TIMEOUT)$/.test(why);
@@ -559,12 +565,18 @@ export class Watcher {
   // Meldung in den Ausgang; sie bleibt dort (auch über Neustarts), bis Telegram sie angenommen hat. label: Art für die Zeile
   // „Zustellung: zuletzt …“, silent: ohne Ton (BTC-Puls nachts)
   // 2.0: target/epoch – Ziel und seine Epoche beim Erzeugen (vor dem Senden erneut geprüft); ev – Ereignis-ID der Freigabe
-  async queue(text, tz, { label = '', silent = false, ev = '', target = 'course-alert', destination = null, po3Rev = null } = {}) {
+  async queue(text, tz, { label = '', silent = false, ev = '', target = 'course-alert', destination = null, po3Rev = null, card = null } = {}) {
     const t = this.now(), tg = this.pol.targets[target];
     if (this.key && !tg.on) { this.log(`Nicht gesendet (Ziel Kursalarm ausgeschaltet): ${label || text.split('\n')[0]}`); return; }
-    this.out.push({ id: `${t}-${Math.random().toString(36).slice(2, 7)}`, text, tz, label, silent, at: t, tries: 0, next: 0, err: '', dc: false, target, epoch: tg.epoch, ...(destination ? { destination, watchRev: this.patternWatch.rev } : {}), ...(target === 'ki' ? (po3Rev !== null ? { po3Rev } : { kiRev: this.ki.state.rev }) : {}), ...(ev ? { ev } : {}) });
+    this.out.push({ id: `${t}-${Math.random().toString(36).slice(2, 7)}`, text, tz, label, silent, at: t, tries: 0, next: 0, err: '', dc: false, target, epoch: tg.epoch, ...(destination ? { destination, watchRev: this.patternWatch.rev } : {}), ...(target === 'ki' ? (po3Rev !== null ? { po3Rev } : { kiRev: this.ki.state.rev }) : {}), ...(ev ? { ev } : {}), ...(card ? { card } : {}) });
     if (!this.saveStateNow() && ['patterns', 'ki'].includes(target)) { this.out.pop(); if (ev) this.evSet(ev, 'failed', 'Ausgang nicht dauerhaft gespeichert'); return; }
     await this.deliver();
+  }
+  // 2.14.0: Karte aus den gespeicherten Signaldaten der Meldung (Zeit der Meldung wie beim Text; verspätet: Hinweis in der Bildunterschrift)
+  async patternCard(m, lateAt = 0) {
+    const P = await loadCards(); if (!P) throw new Error('Kartenrenderer fehlt (Installer erneut ausführen)');
+    const r = await P.renderPatternCard(m.card, { at: m.at, timezone: m.tz || 'Europe/Berlin' });
+    return { png: r.png, caption: r.caption + (lateAt ? ` · verspätet zugestellt ${timeText(lateAt, m.tz)} Uhr` : '') };
   }
   // 2.0: Zustand einer eigenen Freigabe fortschreiben (mit Protokollzeile: Ereignis, Ziel, Sender, Zustand)
   evSet(id, st, why = '') {
@@ -604,8 +616,18 @@ export class Watcher {
       try {
         const dest = m.target === 'patterns' ? m.destination : { chat: this.chat }, token = m.target === 'patterns' ? this.patternDestination(dest) : this.token;
         if (['patterns', 'ki'].includes(m.target)) { m.inFlight = true; if (!this.saveStateNow()) { m.inFlight = false; throw Object.assign(new Error('Muster-Versandstatus nicht dauerhaft gespeichert'), { code: 0 }); } }
-        const payload = telegramFields(full), sent = await this.tg('sendMessage', { chat_id: dest.chat, ...(dest.thread ? { message_thread_id: dest.thread } : {}), text: payload.text, parse_mode: payload.parse_mode, link_preview_options: { is_disabled: true }, ...(m.silent ? { disable_notification: true } : {}) }, 20000, token);
-        this.log(`Telegram gesendet: ${m.label || m.text.split('\n')[0]}${sent?.message_id ? ` (Nachricht #${sent.message_id})` : ''}${m.tries ? ` – nach ${plural(m.tries, 'Fehlversuch', 'Fehlversuchen')}` : ''}`);
+        const payload = telegramFields(full), base = { chat_id: dest.chat, ...(dest.thread ? { message_thread_id: dest.thread } : {}), ...(m.silent ? { disable_notification: true } : {}) };
+        // 2.14.0: Chartmuster als Trading-Karte (PNG); scheitert die Karte oder lehnt Telegram das Bild ab, die bisherige Textmeldung
+        let sent = null, via = '';
+        if (m.target === 'patterns' && m.card && this.patternCards) {
+          const card = await this.patternCard(m, late ? t : 0).catch(e => { this.note('Karte', `Karte nicht erzeugt – Text als Ersatz (${this.secret(e.message).slice(0, 120)})`); return null; });
+          if (card) {
+            try { sent = await this.tg('sendPhoto', { ...base, photo: card.png, caption: card.caption, parse_mode: 'HTML' }, 30000, token); via = ' als Karte'; }
+            catch (e) { if (e.lost || e.code !== 400 || CHAT_PROBLEM.test(e.message)) throw e; this.log(`Telegram lehnt das Bild ab – Text als Ersatz: ${m.label}`); }
+          }
+        }
+        if (!sent) sent = await this.tg('sendMessage', { ...base, text: payload.text, parse_mode: payload.parse_mode, link_preview_options: { is_disabled: true } }, 20000, token);
+        this.log(`Telegram gesendet${via}: ${m.label || m.text.split('\n')[0]}${sent?.message_id ? ` (Nachricht #${sent.message_id})` : ''}${m.tries ? ` – nach ${plural(m.tries, 'Fehlversuch', 'Fehlversuchen')}` : ''}`);
         this.out = this.out.filter(x => x !== m); this.last = { t, label: m.label }; if (m.ev) this.evSet(m.ev, 'confirmed');
         if (this.sendErr && !this.out.some(x => x.tries)) { this.log('Telegram: Zustellung wieder in Ordnung'); this.sendErr = null; }
         this.next.beat = 0; if (['patterns', 'ki'].includes(m.target)) this.saveStateNow(); else this.saveState(); // Zeile „Zustellung: zuletzt …“ gleich aktualisieren
@@ -933,7 +955,8 @@ export class Watcher {
     if (!r.grant) return { sent: false, reason: 'already-reserved', eventId: ev };
     if (!this.saveStateNow()) { this.evSet(ev, 'failed', 'Freigabe nicht dauerhaft gespeichert'); return { sent: false, reason: 'storage-error', eventId: ev }; }
     this.arch?.add([c]);
-    await this.queue(patternText(c, h, this.arch?.export() || [], evaluation), this.conf?.data?.tz || 'Europe/Berlin', { target: 'patterns', ev, label, destination: { chat: cfg.chat, thread: cfg.thread, bot: cfg.bot } });
+    const archive = this.arch?.export() || [];
+    await this.queue(patternText(c, h, archive, evaluation), this.conf?.data?.tz || 'Europe/Berlin', { target: 'patterns', ev, label, destination: { chat: cfg.chat, thread: cfg.thread, bot: cfg.bot }, card: patternMessageData(c, h, archive, evaluation) });
     return { sent: this.evs[ev]?.st === 'confirmed', st: this.evs[ev]?.st, eventId: ev };
   }
   // 2.13.0: Qualitätsfilter – Kandidaten eines Prüflaufs gemeinsam auswählen; gefilterte nur ins Journal und Log.
@@ -1182,6 +1205,7 @@ export class Watcher {
     this.log(`Scalp Desk 24/7-Dienst ${VERSION} – Status`);
     try { this.me = await this.tg('getMe'); say(true, `Bot ${this.botText()} (ID ${this.me.id}) – Token gültig`); }
     catch (e) { say(false, e.code === 401 || e.code === 404 ? 'Bot-Token ungültig – Token aus der App (Kursalarm) mit --neu neu eingeben.' : e.message); return false; }
+    { const P = this.patternCards ? await loadCards() : null, ready = P ? await P.cardRendererReady() : false; say(null, ready ? 'Chartmuster: als Trading-Karte (Bild), Text als Ersatz' : 'Chartmuster: als Text – für Trading-Karten den Installer erneut ausführen (kostenlos: Schrift und resvg)'); }
     let chat; try { chat = await this.tg('getChat', { chat_id: this.chat }); say(true, `Chat ${chatText(chat, this.chat)} erreichbar`); }
     catch (e) { say(false, `Chat ${this.chat}: ${e.message} – Chat-ID prüfen und dem Bot in Telegram einmal „Start“ schreiben.`); return false; }
     const pm = chat?.pinned_message;

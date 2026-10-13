@@ -10,7 +10,7 @@ cd "$(dirname "$0")"; REPO="$(cd .. && pwd)"
 CURRENT_SERVICE_VERSION=$(node -p "require('$REPO/server/release-manifest.json').version")
 pass=0; fail=0; ok() { if eval "$2"; then echo "  ✓ $1"; pass=$((pass+1)); else echo "  ✗ $1${3:+ — $3}"; fail=$((fail+1)); fi; }
 T=$(mktemp -d); SHIM=$T/bin; mkdir -p "$SHIM"; export SHIM_LOG=$T/calls.log; : > "$SHIM_LOG"
-for c in systemctl useradd userdel chown journalctl caddy netfilter-persistent; do printf '#!/bin/bash\necho "%s $*" >> "$SHIM_LOG"\nexit 0\n' "$c" > "$SHIM/$c"; done
+for c in systemctl useradd userdel chown journalctl caddy netfilter-persistent apt-get npm; do printf '#!/bin/bash\necho "%s $*" >> "$SHIM_LOG"\nexit 0\n' "$c" > "$SHIM/$c"; done
 # Root-Prüfung ebenso nachbauen: dieser Installer-Test verändert keine echten Benutzer/Dienste und läuft auch als Nicht-root.
 printf '#!/bin/bash\nif [ "$*" = "-u" ]; then echo "${TEST_INSTALLER_UID:-0}"; else exec /usr/bin/id "$@"; fi\n' > "$SHIM/id"
 # 2.0: iptables wie auf Oracle-Ubuntu – die Kette INPUT endet mit REJECT; -C (gibt es die Regel schon?) findet nichts
@@ -37,6 +37,7 @@ ok "Programm installiert und lauffähig" "[ -s '$T/opt/scalpdesk-247.mjs' ] && n
 ok "Einstellungen: Token, Chat-ID, kein Discord; nur für Besitzer und Gruppe lesbar (640)" "node -e 'const j=require(\"$T/etc/scalpdesk-247.json\");process.exit(j.token===\"$TOKEN\"&&j.chat===\"987654321\"&&!Object.hasOwn(j,\"discord\")?0:1)' && [ \"\$(stat -c %a '$T/etc/scalpdesk-247.json')\" = 640 ]"
 ok "Token erscheint nicht in der Ausgabe" "! grep -q '$TOKEN' '$T/out1.log'"
 ok "Prüfung: Bot, Testnachricht, Binance Spot und Futures" "grep -q '✓ Bot @test_kursalarm_bot (ID 123456789) erreichbar' '$T/out1.log' && grep -q '✓ Testnachricht an deinen Telegram-Chat gesendet' '$T/out1.log' && grep -q '✓ Binance Spot erreichbar' '$T/out1.log' && grep -q '✓ Binance Futures erreichbar' '$T/out1.log'"
+ok "2.14.0: Kartenrenderer mitgeliefert (pattern-card.mjs, package-lock.json); Schrift per apt und resvg per npm ci im Programmstand versucht" "[ -s '$T/opt/current/pattern-card.mjs' ] && [ -s '$T/opt/current/package-lock.json' ] && grep -q 'apt-get install -y -qq fonts-inter fonts-dejavu-core' '$SHIM_LOG' && grep -q '^npm ci --omit=dev' '$SHIM_LOG' && grep -q 'Chartmuster als Text (resvg konnte nicht geladen werden' '$T/out1.log'"
 ok "Testnachricht kam in Telegram an" "curl -s http://127.0.0.1:8790/sent | grep -q '<b>✅ Dienst eingerichtet</b>'"
 ok "Prüfung lief als eigener Benutzer „scalpdesk“" "grep -q 'runuser -u scalpdesk -- node' '$SHIM_LOG' && grep -q 'useradd --system --no-create-home --shell /usr/sbin/nologin scalpdesk' '$SHIM_LOG'"
 ok "Dienst-Datei: Benutzer, Programm, Einstellungen, Zustand, Neustart, Schutz" "grep -q '^User=scalpdesk$' '$T/etc/scalpdesk-247.service' && grep -q \"^ExecStart=.*node $T/opt/scalpdesk-247.mjs --config $T/etc/scalpdesk-247.json --state $T/state/state.json$\" '$T/etc/scalpdesk-247.service' && grep -q '^Restart=always$' '$T/etc/scalpdesk-247.service' && grep -q '^ProtectSystem=strict$' '$T/etc/scalpdesk-247.service'"
@@ -61,7 +62,7 @@ ok "2.4: Muster-Engine und Marktvertrag installiert und importierbar" "[ -s '$T/
 ok "2.5: gemeinsame KI-Module samt relativem Engine-Import installiert" "[ -s '$T/opt/shared/confluence-service.mjs' ] && [ -s '$T/opt/ki-monitor.mjs' ] && node --input-type=module -e \"const k=await import('file://$T/opt/ki-monitor.mjs');process.exit(typeof k.ConfluenceService==='function'?0:1)\""
 ok "2.8: gesamter Dienstgraph, PO3 und Bot-Kern aus einem realen Releasepfad" "[ -L '$T/opt/current' ] && node --input-type=module -e \"const k=await import('file://$T/opt/ki-monitor.mjs');process.exit(typeof k.Po3Service==='function'&&typeof k.BotSimulationRuntime==='function'?0:1)\""
 mkdir -p "$T/badsrc/server" "$T/badsrc/shared" "$T/state"
-cp "$REPO"/server/*.mjs "$REPO/server/install.sh" "$REPO/server/release-manifest.json" "$T/badsrc/server/"
+cp "$REPO"/server/*.mjs "$REPO/server/install.sh" "$REPO/server/release-manifest.json" "$REPO/server/package.json" "$REPO/server/package-lock.json" "$T/badsrc/server/"
 cp "$REPO"/shared/*.mjs "$T/badsrc/shared/"
 printf '{"marker":"Nutzerdaten bleiben"}' > "$T/state/user-keep.json"
 OLD_RELEASE=$(readlink "$T/opt/current"); CONF_HASH=$(sha256sum "$T/etc/scalpdesk-247.json")
