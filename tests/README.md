@@ -1,6 +1,6 @@
 # Tests für Scalp Desk
 
-**3.68.2 (Claude):** Neu `m100.js` (25): Kerzenart-Knopf „Normal | HA“ an 320/360/390/1440 px, Backtest-Klappfläche im Vollbild (unter dem Chart, scrollt in sich, Verzögerung während des Backtests < 250 ms), Minimieren danach (Seite bedienbar, keine langen Blockaden), Einfügen für Bot-Token (nur Bot-ID im Hinweis) und Chat-ID. Hinweis: `Input.synthesizeScrollGesture` mit Touch scrollt im Testbrowser nicht – Scrollen in Flächen per Mausrad prüfen.
+**3.68.2 (Claude):** Neu `m100.js` (25): Kerzenart-Knopf „Normal | HA“ an 320/360/390/1440 px, Backtest-Klappfläche im Vollbild (oben, Chart bis unten, scrollt in sich, Verzögerung während des Backtests < 250 ms), Minimieren danach (Seite bedienbar, keine langen Blockaden), Einfügen für Bot-Token (nur Bot-ID im Hinweis) und Chat-ID. Hinweis: `Input.synthesizeScrollGesture` mit Touch scrollt im Testbrowser nicht – Scrollen in Flächen per Mausrad prüfen.
 
 **3.68.1 (Claude):** Neu `unit-heikin-ashi.js` (8), `unit-zone-strength.js` (28: Gruppen-Score, Schwellen, Signalregeln, Positionsführung, „Zone gehalten“, Tabelle), `m99.js` (14: Backtest-Panel, Hebel, Tabelle je Score-Stufe, kein Look-Ahead bei gekürzter Reihe, Abbrechen, Signale-Knopf, ▲/▼, Linien, Details). `m98.js` jetzt 32 Fälle (drei Zustände des Zonen-Knopfs, starke Zonen, Hinweis, Faktorliste, Migration `{on:true}`). `m84` prüft „Modellannahmen & Dienst“ zugeklappt/aufklappbar. Gesamtlauf 3.68.1: 5196/5202, keine neuen Befunde (m44/m56 einzeln grün, Altbefunde m18/m19, Abbrüche m40/m79/m92).
 

@@ -8,7 +8,7 @@ Vorgabe aller Gruppen G01–G14 steht in `docs/VORGABE-G01-G14.md` (Original-Üb
 Rückmeldungen vom iPhone zu 3.68.1. App/SW **3.68.2**, Dienst 2.12.1 unverändert. Ausführlich: [docs/3.68.2-AENDERUNGEN.md](docs/3.68.2-AENDERUNGEN.md).
 
 - `#ha-btn` enthält zwei Felder `.ha-seg-normal` / `.ha-seg-ha` (darin `.ha-long`/`.ha-short`); hervorgehoben über `aria-pressed`. Unter 360 px nur das aktive Feld (sonst würde die OHLC-Zeile am 320-px-Handy dreizeilig, m7). `haButton()` setzt `aria-pressed` und `aria-label`.
-- Vollbild: `html[data-chartfull] #chart-sec>.zone-lab` mit `order:5` (unter dem Chart), geöffnet `flex:0 1 auto;max-height:62%;overflow-y:auto`, Kopf `position:sticky`. Die ID-Regel `#chart-sec>*{flex:0 0 auto}` braucht dafür die höhere Spezifität.
+- Vollbild: `#zone-lab` bleibt oben (eine Lage unter dem Chart verkürzte ihn, m10 „Chart endet am unteren Rand“). Geöffnet `html[data-chartfull] #chart-sec>.zone-lab[open]{flex:0 1 auto;max-height:62%;overflow-y:auto}`, Kopf `position:sticky`; die ID-Regel `#chart-sec>*{flex:0 0 auto}` braucht dafür die höhere Spezifität. `.zone-lab-body` mit Innenabstand 14 px.
 - `zoneWalk` gibt nach Zeit ab (> 12 ms seit der letzten Abgabe). `setChartFull(false)` verlässt fokussierte Eingabefelder im Chartbereich und setzt `sec.scrollTop` sowie den Scrollstand von `#zone-lab` zurück. Das gemeldete Einfrieren war im Testbrowser (auch mit Safari-Scrollausgleich `navigator.vendor`) nicht nachstellbar.
 - Telegram: `.tg-paste[data-token]` an `tg-token`, `tg-btoken`, `tg-ttoken`, `tg-ptoken`; `parseTgToken` (Testzugriff `window.__tgToken`), Hinweis nur mit Bot-ID. Der Chat-ID-Handler bindet jetzt nur noch `.tg-paste[data-paste]`.
 - Test `m100.js` (25), in `run-all.sh` eingetragen.
