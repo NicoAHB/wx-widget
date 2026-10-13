@@ -1,6 +1,6 @@
 {
   "version": "2.12.1",
-  "appVersion": "3.68.3",
+  "appVersion": "3.68.4",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
@@ -188,9 +188,14 @@
       "bytes": 5890
     },
     {
+      "path": "shared/doc-viewer.mjs",
+      "sha256": "2ebc39aa048d0bc36b4fb03a4c73db1f7aa95984208161c744eb217f3f241816",
+      "bytes": 6436
+    },
+    {
       "path": "shared/github-sync-view.mjs",
-      "sha256": "1ec538ce7eafe679fdf9b8060105bd22f920a909d2c49a658badecc1734b9e38",
-      "bytes": 10100
+      "sha256": "a198ed465ae0352c959c1f3b874fde98cfb3e7d59a9de491d474813ba0f3cf0c",
+      "bytes": 13569
     },
     {
       "path": "shared/github-sync.mjs",

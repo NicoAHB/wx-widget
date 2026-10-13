@@ -2,29 +2,52 @@ import { GITHUB_DEFAULTS, readGithubDevice, saveGithubDevice, createGithubClient
 const document = globalThis.document;
 const node = (tag, text, cls) => { const n = document.createElement(tag); if (text) n.textContent = text; if (cls) n.className = cls; return n; };
 const date = value => value && Number.isFinite(Date.parse(value)) ? new Date(value).toLocaleString('de-DE') : 'noch kein Sync';
-export function createGithubSyncView({ host, storage, collect, apply, undo, hasUndo, onSaved, hintHost }) {
+// 3.68.4: Einrichtung übersichtlich in drei Schritten (Repository · Zugang · Gerät), Felder mit Rahmen, Token-Einfügen, Statuszeile;
+// die Anleitung öffnet in der App (openGuide) statt als rohe Markdown-Datei.
+const GH_TOKEN_RE = /\b(github_pat_[A-Za-z0-9_]{20,}|gh[pousr]_[A-Za-z0-9]{20,})\b/;
+export const parseGithubToken = text => GH_TOKEN_RE.exec(String(text || ''))?.[1] || null;
+export function createGithubSyncView({ host, storage, collect, apply, undo, hasUndo, onSaved, hintHost, openGuide }) {
   let cfg = readGithubDevice(storage), busy = false, newer = null, askResolve = null;
   const root = node('details', '', 'github-sync'); root.id = 'github-sync'; root.open = true;
   root.append(node('summary', 'Verschlüsselt mit GitHub sichern'));
   const body = node('div', '', 'github-sync-body'), actions = node('div', '', 'github-sync-actions'), status = node('p', '', 'github-sync-status'); status.id = 'github-sync-status'; status.setAttribute('role', 'status'); status.setAttribute('aria-live', 'polite');
-  const info = node('p', 'Persönliche Trades, Einstellungen und Vorauswahl – verschlüsselt in deinem privaten Daten-Repository. Zugangsdaten und Übungen bleiben auf diesem Gerät.');
-  const last = node('p', '', 'github-sync-last'); last.id = 'github-sync-last';
-  const setup = node('details', '', 'github-sync-setup'); setup.append(node('summary', 'GitHub einrichten · Repository, Token & Gerät')); const form = node('div', '', 'github-sync-fields'), inputs = {};
-  for (const [key, title, type] of [['owner', 'GitHub-Owner', 'text'], ['repo', 'Privates Daten-Repository', 'text'], ['branch', 'Branch', 'text'], ['path', 'Dateipfad', 'text'], ['device', 'Name dieses Geräts', 'text'], ['token', 'Fine-grained GitHub-Token · nur auf diesem Gerät', 'password']]) {
-    const label = node('label', title), input = node('input'); input.id = 'github-sync-' + key; input.type = type; input.value = typeof cfg[key] === 'string' ? cfg[key] : GITHUB_DEFAULTS[key]; input.autocomplete = 'off'; input.spellcheck = false; input.autocapitalize = 'none'; label.htmlFor = input.id;
-    inputs[key] = input; label.append(input); form.append(label);
+  const info = node('p', 'Trades, Einstellungen und Vorauswahl verschlüsselt in deinem privaten GitHub-Repository – zum Abgleich zwischen deinen Geräten. Zugangsdaten und Übungen bleiben auf diesem Gerät.', 'github-sync-info');
+  const state = node('p', '', 'github-sync-state'); state.id = 'github-sync-state';
+  const last = node('dl', '', 'github-sync-last'); last.id = 'github-sync-last';
+  const setup = node('details', '', 'github-sync-setup'), setupHead = node('summary'), setupState = node('span', '', 'github-sync-setup-state');
+  setupHead.append(node('span', 'GitHub einrichten', 'github-sync-setup-title'), setupState); setup.append(setupHead);
+  const form = node('div', '', 'github-sync-fields'), inputs = {};
+  const field = (key, title, type, hint) => {
+    const label = node('label', '', 'github-sync-field'), input = node('input'); label.append(node('span', title, 'github-sync-label'));
+    input.id = 'github-sync-' + key; input.type = type; input.value = typeof cfg[key] === 'string' ? cfg[key] : GITHUB_DEFAULTS[key]; input.autocomplete = 'off'; input.spellcheck = false; input.autocapitalize = 'none'; input.setAttribute('autocorrect', 'off'); input.enterKeyHint = 'done'; label.htmlFor = input.id;
+    if (hint) input.placeholder = hint;
+    inputs[key] = input;
+    if (key === 'token') { const wrap = node('span', '', 'github-sync-token'), paste = node('button', 'Einfügen', 'button ghost github-sync-paste'); paste.type = 'button'; paste.id = 'github-sync-token-paste'; paste.setAttribute('aria-label', 'GitHub-Token aus der Zwischenablage einfügen');
+      paste.addEventListener('click', async () => { let text = ''; try { text = await globalThis.navigator.clipboard.readText(); } catch { status.textContent = 'Einfügen wurde nicht erlaubt – lange ins Token-Feld tippen und „Einfügen“ wählen.'; input.focus(); return; }
+        const token = parseGithubToken(text); if (!token) { status.textContent = 'In der Zwischenablage steht kein GitHub-Token (beginnt mit github_pat_…).'; return; }
+        input.value = token; input.dispatchEvent(new globalThis.Event('input', { bubbles: true })); status.textContent = 'Token eingefügt und auf diesem Gerät gespeichert.'; });
+      wrap.append(input, paste); label.append(wrap); } else label.append(input);
     input.addEventListener('input', () => {
       const oldTarget = [cfg.owner, cfg.repo, cfg.branch, cfg.path].join('|'); cfg = { ...cfg, ...Object.fromEntries(Object.entries(inputs).map(([k, el]) => [k, el.value])) };
       if (oldTarget !== [cfg.owner, cfg.repo, cfg.branch, cfg.path].join('|')) { cfg.lastSync = null; newer = null; showHint(); }
       try { saveGithubDevice(storage, cfg); status.textContent = 'Einstellungen auf diesem Gerät gespeichert.'; } catch (e) { status.textContent = e.message; }
       render();
     });
-  }
-  form.append(node('p', 'Token: nur dieses private Repository auswählen, „Contents: Read and write“. Die Passphrase wird erst beim Sichern oder Laden abgefragt und nie gespeichert. Ein vergessenes Passwort lässt sich nicht wiederherstellen.'));
-  const guide = node('a', 'Einrichtung Schritt für Schritt'); guide.href = './docs/GITHUB-SYNC.md'; guide.target = '_blank'; guide.rel = 'noopener'; form.append(guide); setup.append(form);
+    return label;
+  };
+  const step = (n, title, text, ...fields) => { const box = node('section', '', 'github-sync-step'), h = node('h4'); h.append(node('span', String(n), 'github-sync-num'), title); box.append(h); if (text) box.append(node('p', text, 'github-sync-step-text')); const grid = node('div', '', 'github-sync-grid'); grid.append(...fields); box.append(grid); return box; };
+  form.append(
+    step(1, 'Repository', 'Dein privates Daten-Repository auf GitHub (getrennt vom App-Code).', field('owner', 'GitHub-Name (Owner)', 'text'), field('repo', 'Repository (privat)', 'text'), field('branch', 'Branch', 'text'), field('path', 'Datei', 'text')),
+    step(2, 'Zugang', 'Fine-grained Token mit Zugriff nur auf dieses Repository und „Contents: Read and write“. Bleibt nur auf diesem Gerät.', field('token', 'GitHub-Token', 'password', 'github_pat_…')),
+    step(3, 'Dieses Gerät', 'Erscheint bei jeder Sicherung, damit du siehst, von welchem Gerät sie stammt.', field('device', 'Gerätename', 'text')));
+  const note = node('p', 'Die Passphrase wird erst beim Sichern oder Laden abgefragt und nie gespeichert. Ein vergessenes Passwort lässt sich nicht wiederherstellen.', 'github-sync-note');
+  let guide;
+  if (openGuide) { guide = node('button', '📖 Anleitung Schritt für Schritt', 'button ghost github-sync-guide'); guide.type = 'button'; guide.id = 'github-sync-guide'; guide.addEventListener('click', () => openGuide('./docs/GITHUB-SYNC.md', 'Verschlüsselte GitHub-Sicherung')); }
+  else { guide = node('a', 'Anleitung Schritt für Schritt', 'github-sync-guide'); guide.href = './docs/GITHUB-SYNC.md'; guide.target = '_blank'; guide.rel = 'noopener'; }
+  form.append(note, guide); setup.append(form);
   const save = node('button', 'Auf GitHub sichern', 'button primary-lite'), load = node('button', 'Von GitHub laden', 'button primary-lite'), revert = node('button', 'Rückgängig · Stand vor GitHub-Laden', 'button ghost');
   save.id = 'github-sync-save'; load.id = 'github-sync-load'; revert.id = 'github-sync-undo'; for (const b of [save, load, revert]) b.type = 'button'; actions.append(save, load, revert);
-  body.append(info, actions, last, setup, status); root.append(body); host.prepend(root);
+  body.append(info, state, last, actions, setup, status); root.append(body); host.prepend(root);
   const hint = node('div', '', 'github-sync-hint'); hint.id = 'github-sync-hint'; hint.hidden = true; hint.setAttribute('role', 'status');
   const hintText = node('span'), hintLoad = node('button', 'Laden …', 'button primary-lite'), dismiss = node('button', 'Später', 'button ghost'); hintLoad.type = dismiss.type = 'button'; hint.append(hintText, hintLoad, dismiss); hintHost?.append(hint);
   dismiss.addEventListener('click', () => { newer = null; showHint(); }); hintLoad.addEventListener('click', () => { void run('load'); });
@@ -44,7 +67,12 @@ export function createGithubSyncView({ host, storage, collect, apply, undo, hasU
   function render() {
     for (const b of [save, load, revert, hintLoad]) b.disabled = busy;
     for (const input of Object.values(inputs)) input.disabled = busy;
-    revert.hidden = !hasUndo(); last.textContent = `Letzter Sync: ${date(cfg.lastSync?.at)} · Dieses Gerät: ${cfg.device || GITHUB_DEFAULTS.device}${cfg.lastSync?.device ? ' · Sicherung von: ' + cfg.lastSync.device : ''}`;
+    revert.hidden = !hasUndo();
+    const rows = [['Letzter Abgleich', date(cfg.lastSync?.at)], ['Dieses Gerät', cfg.device || GITHUB_DEFAULTS.device], ...(cfg.lastSync?.device ? [['Sicherung von', cfg.lastSync.device]] : [])];
+    last.replaceChildren(...rows.flatMap(([k, v]) => [node('dt', k), node('dd', v)]));
+    const ready = !!(cfg.owner && cfg.repo && cfg.branch && cfg.path && cfg.token), missing = [!cfg.owner && 'GitHub-Name', !cfg.repo && 'Repository', !cfg.token && 'Token'].filter(Boolean);
+    state.dataset.ready = String(ready); state.textContent = ready ? `✓ Eingerichtet: ${cfg.owner}/${cfg.repo}` : `Noch nicht eingerichtet – unter „GitHub einrichten“ fehlt: ${missing.join(', ') || 'Angaben'}.`;
+    setupState.textContent = ready ? '✓ eingerichtet' : 'unvollständig'; setupState.dataset.ready = String(ready);
     setup.open ||= !cfg.token; showHint();
   }
   async function run(kind) {
