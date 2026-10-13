@@ -12,6 +12,7 @@ Rückmeldungen vom iPhone zu 3.68.3. App/SW **3.68.4**, Dienst 2.12.1 unverände
 - Vollbild mit offenen Werkzeugen: `.overlay-toggles` umbrechend (max. 128 px, darin scrollbar), `.chart-pattern-summary>small` ausgeblendet (die Karte bleibt, m95 tippt im Vollbild auf `#positioning-score`), `#chart-sec{overflow-y:auto}` und `#chart{min-height:220px}` nur bei `data-chartbar=open`.
 - CSS: `#data-panel .github-sync` ohne eigenen Rahmen; der Kopf der Einrichtung bricht um (sonst an 320 px Überlauf durch den nicht umbrechenden Chip, m90).
 - Tests: neu `m101.js` (24), `m100.js` jetzt 27; beide in `run-all.sh`.
+- **Gesamtlauf** (Commit `e60041b`): 5166/5174. Gefunden: m94/m95 klicken im Vollbild auf die Gesamtbild-Karte → Karte bleibt (nur Erklärzeile aus), Nachlauf m94 39/39, m95 40/40, m100 27/27, m10 93/93. m31 und m9 einzeln grün. Altbefunde m7 (Flake), m18/m19, Abbrüche m40/m79/m92.
 
 ## Stand 3.68.3 (Claude): Heikin-Ashi-Schalter, Vollbild ohne Klappfläche, Werkzeugleiste im Vollbild zweizeilig, Einfügen-Felder als Raster
 
