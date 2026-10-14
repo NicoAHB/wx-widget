@@ -165,7 +165,7 @@ Die Zeitstempel davor setzt journalctl in der Zeitzone des Servers (bei Oracle m
 
 ## Chartmuster bei geschlossener App (ab Dienst 2.4.0, App 3.42.0)
 
-Hinweis (ab Dienst 2.14.0): Chartmuster kommen als übersichtliche **Trading-Karte** (PNG) mit kurzer Bildunterschrift, Text nur als Ersatz. Der Installer richtet dafür kostenlos Schrift und resvg ein; `sudo scalpdesk-247 status` zeigt, ob Karten aktiv sind. Die monatliche Bereinigung gesendeter Nachrichten gibt es im eigenständigen Oracle-Musterdienst (der 24/7-Dienst hält gesendete Meldungen nicht vor) – Anleitung: [docs/ORACLE_24-7.md](../docs/ORACLE_24-7.md), Abschnitt 6.
+Hinweis (ab Dienst 2.14.0): Chartmuster kommen als übersichtliche **Trading-Karte** (PNG) mit kurzer Bildunterschrift, Text nur als Ersatz. Der Installer richtet dafür kostenlos resvg ein; die Schrift liegt ab 2.14.1 dem Programm bei (`fonts/`), damit die Karte auch auf Servern ohne Schriften Text zeigt. `sudo scalpdesk-247 status` zeigt, ob Karten aktiv sind. Die monatliche Bereinigung gesendeter Nachrichten gibt es im eigenständigen Oracle-Musterdienst (der 24/7-Dienst hält gesendete Meldungen nicht vor) – Anleitung: [docs/ORACLE_24-7.md](../docs/ORACLE_24-7.md), Abschnitt 6.
 
 1. Den bestehenden Dienst aktualisieren; der Installer lädt jetzt zusätzlich `pattern-engine.mjs` und `pattern-monitor.mjs`. Keine neue VM und keine erneute Einrichtung aller Chats nötig.
 2. In der App unter „Telegram einrichten“ den Chartmuster-Chat und optional sein Thema eintragen, die HTTPS-Dienstadresse prüfen und **„Vorauswahl am Dienst übernehmen“** drücken. Die Bestätigung zeigt Revision und Anzahl der Märkte. Nur Bot-ID, Chat, Thema, Coins, tatsächlicher Binance-Markt und Kerzenintervall werden übertragen, keine Bot-Token.

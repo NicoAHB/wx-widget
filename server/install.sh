@@ -13,7 +13,7 @@
 #  6. HTTPS-Steuerung (ab 2.0): Zugangsschlüssel, öffentliche Adresse <IP>.sslip.io, Caddy mit kostenlosem Zertifikat,
 #     Ports 80/443 in der Server-Firewall (in der Oracle-Konsole gibst du sie einmal selbst frei – siehe Anleitung)
 #  7. Kurzbefehl „sudo scalpdesk-247 status | zugang | https | protokoll | live | neustart“
-# 2.14.0: Chartmuster als Trading-Karte – dafür kostenlos Schrift (fonts-inter) und resvg (npm) im Programmstand
+# 2.14.0: Chartmuster als Trading-Karte – dafür kostenlos resvg (npm) im Programmstand; 2.14.1: Schrift liegt im Programm (fonts/)
 # Ohne HTTPS-Steuerung (wie bis 1.4): … | sudo bash -s -- --ohne-https
 set -euo pipefail
 SRC="${SCALPDESK_SRC:-https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server}"
@@ -60,8 +60,8 @@ trap 'rm -rf "$STAGE"' EXIT
 curl -fsSL "$SRC/release-manifest.json" -o "$STAGE/release-manifest.json" || die "Lieferliste konnte nicht geladen werden; bisheriges Programm bleibt."
 PARTS=$(node - "$STAGE/release-manifest.json" <<'NODE'
 const fs=require('fs'),j=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
-if(!/^2\.\d+\.\d+$/.test(j.version)||!Array.isArray(j.files)||j.files.length>100)throw Error('Lieferliste ungültig');
-for(const f of j.files){if(!/^(?:scalpdesk-247\.mjs|pattern-engine\.mjs|pattern-monitor\.mjs|pattern-card\.mjs|telegram-format\.mjs|patterns-247\.mjs|market-intervals\.mjs|ki-monitor\.mjs|orderflow-explainer\.mjs|install\.sh|package\.json|package-lock\.json|shared\/[a-z0-9-]+\.mjs)$/.test(f.path)||!/^[a-f0-9]{64}$/.test(f.sha256))throw Error('Lieferpfad ungültig'); console.log(f.path);}
+if(!/^2\.\d+\.\d+$/.test(j.version)||!Array.isArray(j.files)||j.files.length>150)throw Error('Lieferliste ungültig');
+for(const f of j.files){if(!/^(?:scalpdesk-247\.mjs|pattern-engine\.mjs|pattern-monitor\.mjs|pattern-card\.mjs|telegram-format\.mjs|patterns-247\.mjs|market-intervals\.mjs|ki-monitor\.mjs|orderflow-explainer\.mjs|install\.sh|package\.json|package-lock\.json|shared\/[a-z0-9-]+\.mjs|fonts\/(?:[A-Za-z0-9-]+\.(?:otf|ttf)|LIZENZ\.md))$/.test(f.path)||!/^[a-f0-9]{64}$/.test(f.sha256))throw Error('Lieferpfad ungültig'); console.log(f.path);}
 NODE
 ) || die "Lieferliste ungültig; bisheriges Programm bleibt."
 while IFS= read -r part; do
@@ -110,14 +110,18 @@ trap - EXIT
 PREVIOUS=$(readlink "$DIR/previous" 2>/dev/null || true)
 for candidate in "$DIR"/releases/*; do [ -d "$candidate" ] || continue; rel="releases/${candidate##*/}"; if [ "$rel" != "releases/$RELEASE" ] && [ "$rel" != "$PREVIOUS" ]; then case "${candidate##*/}" in 2.*-*|legacy-*) rm -rf "$candidate";; esac; fi; done
 say "2/7 Programm $(node "$DIR/scalpdesk-247.mjs" --version) nach $DIR ✓ (vollständiges Lieferbündel)"
-# 2.14.0: Chartmuster als Trading-Karte – kostenlos: Schrift (apt) und resvg (npm) im Programmstand. Fehlt beides, sendet der
-# Dienst die Chartmuster wie bisher als Text; ein späterer Lauf des Installers holt es nach.
+# 2.14.0: Chartmuster als Trading-Karte – kostenlos: resvg (npm) im Programmstand. 2.14.1: Die Schrift liegt dem Programm bei
+# (fonts/, verkleinerte Inter/DejaVu) – vorher kam die Karte auf Servern ohne Schriften ohne Text an. Fehlt der Renderer oder
+# zeichnet er keinen Text, sendet der Dienst die Chartmuster wie bisher als Text; ein späterer Lauf des Installers holt es nach.
 REL="$DIR/releases/$RELEASE"; CARDS="als Text (Kartenrenderer nicht installiert)"
-if command -v apt-get >/dev/null; then apt-get install -y -qq fonts-inter fonts-dejavu-core >/dev/null 2>&1 || apt-get install -y -qq fonts-dejavu-core >/dev/null 2>&1 || true; fi
 if [ -d "$REL/node_modules/@resvg/resvg-js" ]; then CARDS="als Trading-Karte (Bild)"
 elif command -v npm >/dev/null && [ -f "$REL/package-lock.json" ]; then
   if (cd "$REL" && npm ci --omit=dev --no-audit --no-fund --loglevel=error >/dev/null 2>&1) && [ -d "$REL/node_modules/@resvg/resvg-js" ]; then CARDS="als Trading-Karte (Bild)"
   else CARDS="als Text (resvg konnte nicht geladen werden – Installer später erneut ausführen)"; fi
+fi
+if [ "$CARDS" = "als Trading-Karte (Bild)" ]; then   # 2.14.1: zeichnet die Karte wirklich Text?
+  CHECK=$(cd "$REL" && node --input-type=module -e "const P = await import('./pattern-card.mjs'); console.log(await P.cardRendererStatus())" 2>/dev/null || echo fehler)
+  [ "$CHECK" = ok ] || CARDS="als Text (Karte würde ohne Schrift erscheinen – Installer erneut ausführen)"
 fi
 say "   Chartmuster $CARDS"
 

@@ -1,5 +1,14 @@
 # Tests für Scalp Desk
 
+**3.70.1 Trading-Karte ohne Text / Schrift mitgeliefert (Musterdienst 1.2.1, Dienst 2.14.1, Claude):**
+- `unit-pattern-card.js` (57): sechs neue Prüfungen.
+  - Schriftdateien und Lizenz vorhanden.
+  - Nachgestellter Server ohne Schrift: Karte ohne Text; mit mitgelieferter Schrift: Text da.
+  - Status `ok`/`schrift`; ohne Schrift keine Karte, sondern ein Fehler.
+  - Karte nur mit mitgelieferter Schrift; Musterdienst ohne Schrift sendet Text.
+- `inst-247.sh` (36): `fonts/` im Programmstand, keine Schrift per apt.
+- Hinweis: `Resvg#render().pixels` liefert bei jedem Zugriff eine neue Kopie, also einmal auslesen (sonst Speicherabbruch).
+
 **3.70.1 PC-Desktop-Ansicht (Claude):**
 - Neu `m108.js` (28): echte Gerätezuordnung über Kennung und Bildschirm (PC 1860/1280 px, iPad quer/hoch).
   - Einstellungen oben über die volle Breite, Methodik darunter, dann die Fußzeile; Karten ohne Wortbrüche.

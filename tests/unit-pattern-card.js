@@ -46,6 +46,18 @@ const check = (name, ok, detail = '') => { ok ? pass++ : fail++; console.log(`${
     const tall = await P.renderPatternCard({ ...P.EXAMPLE_SIGNAL, pattern: 'Aufsteigender Keil mit Ausbruch nach unten und Bestätigung durch Volumen', score: 78, scoreWhy: 'Trend ✔ · Volumen ✔ · R/R 2,6', learned: { total: 14, up: 8, down: 4, flat: 2, minimum: 10, source: 'live protokolliert', horizon: 12 } }, { at });
     check('Mehr Inhalt: Karte höher statt gedrängt', tall.png.readUInt32BE(16) === 1024 && tall.png.readUInt32BE(20) > 1536 && tall.height === tall.png.readUInt32BE(20));
     fs.mkdirSync(path.join(__dirname, 'out'), { recursive: true }); fs.writeFileSync(path.join(__dirname, 'out', 'trading-karte-beispiel.png'), (await P.renderPatternCard(P.EXAMPLE_SIGNAL, { at, preview: true })).png);
+    // 1.2.1 (Oracle-Rückmeldung: Karte kam ganz ohne Text): Schrift liegt bei; ohne jede Schrift keine Karte, sondern Text
+    const files = P.CARD_FONT_FILES, lic = fs.readFileSync(path.join(__dirname, '..', 'server', 'fonts', 'LIZENZ.md'), 'utf8');
+    check('1.2.1: Schrift mitgeliefert – Inter in sechs Stärken und DejaVu Sans, verkleinert, mit Lizenztexten (OFL, Bitstream Vera)', files.length === 8 && files.every(f => fs.statSync(f).size > 20000 && fs.statSync(f).size < 120000) && /SIL Open Font License/.test(lic) && /Bitstream Vera/.test(lic) && /PERMISSION & CONDITIONS/.test(lic), JSON.stringify(files.map(f => path.basename(f))));
+    // .pixels liefert bei jedem Zugriff eine neue Kopie – einmal auslesen
+    const bare = new Resvg(S.svg, { font: { loadSystemFonts: false, fontFiles: [], defaultFontFamily: 'Inter' } }).render().pixels, own = new Resvg(S.svg, { font: { loadSystemFonts: false, fontFiles: [...files], defaultFontFamily: 'Inter' } }).render().pixels;
+    let diff = 0; for (let i = 0; i < own.length; i += 4) if (Math.abs(own[i] - bare[i]) + Math.abs(own[i + 1] - bare[i + 1]) > 60) diff++;
+    check('Nachgestellt: ohne Schrift zeichnet resvg keinen Text (wie auf dem Server); mit der mitgelieferten Schrift steht er da', diff > 20000 && own.length === bare.length, JSON.stringify({ diff }));
+    check('Renderer-Status: mit mitgelieferter Schrift „ok“, ganz ohne Schrift „schrift“', await P.cardRendererStatus() === 'ok' && await P.cardRendererStatus({ bundledFonts: false, loadSystemFonts: false }) === 'schrift' && await P.cardRendererReady() === true);
+    let thrown = ''; try { await P.renderPatternCard(P.EXAMPLE_SIGNAL, { at, bundledFonts: false, loadSystemFonts: false }); } catch (e) { thrown = e.message; }
+    check('Ohne Schrift wird keine leere Karte erzeugt (Fehler → Dienst sendet Text)', /Keine Schrift für die Karte gefunden/.test(thrown), thrown);
+    const onlyOwn = await P.renderPatternCard(P.EXAMPLE_SIGNAL, { at, loadSystemFonts: false });
+    check('Nur mit der mitgelieferten Schrift (keine Systemschriften): vollständige Karte 1024 × 1536', onlyOwn.png.readUInt32BE(16) === 1024 && onlyOwn.png.readUInt32BE(20) === 1536 && onlyOwn.png.length > 30000);
   } else { skip++; console.log('– PNG-Prüfungen übersprungen (resvg fehlt: im Ordner server „npm install“)'); }
 
   // ---- Bereinigung: Stichtag ----
@@ -141,6 +153,10 @@ const check = (name, ok, detail = '') => { ok ? pass++ : fail++; console.log(`${
     const b = mk('ersatz', { renderCard: async () => { throw new Error('Schrift fehlt'); } }); b.set(close + 2000); await b.svc.scan();
     const eb = Object.values(b.svc.state.events)[0];
     check('Bilderzeugung scheitert → bisherige Textmeldung, als Text bestätigt', b.photos.length === 0 && b.texts.length === 1 && /Doppel-Boden/.test(b.texts[0]) && eb.st === 'confirmed' && eb.via === 'text' && b.logs.some(x => /Karte nicht erzeugt/.test(x)));
+    if (await P.cardRendererReady()) {   // 1.2.1: Server ohne Schrift – echte Renderfunktion, keine leere Karte
+      const nf = mk('ohne-schrift', { renderCard: (d, t) => P.renderPatternCard(d, { at: t, bundledFonts: false, loadSystemFonts: false }) }); nf.set(close + 2000); await nf.svc.scan();
+      check('1.2.1: Musterdienst ohne jede Schrift → kein Bild, sondern Textmeldung mit Grund im Protokoll', nf.photos.length === 0 && nf.texts.length === 1 && nf.logs.some(x => /Karte nicht erzeugt – Text als Ersatz.*Keine Schrift/.test(x)), nf.logs.join(' | '));
+    }
     // 3. Telegram lehnt das Bild ab (400) → Text
     const c = mk('abgelehnt', { sendPhoto: async () => { throw Object.assign(new Error('Telegram lehnt Bild ab'), { status: 400, description: 'Bad Request: IMAGE_PROCESS_FAILED' }); } }); c.set(close + 2000); await c.svc.scan();
     check('Bild abgelehnt (400) → Text als Ersatz', c.texts.length === 1 && Object.values(c.svc.state.events)[0].via === 'text');

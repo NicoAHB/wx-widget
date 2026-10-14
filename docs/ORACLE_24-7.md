@@ -156,12 +156,14 @@ Seit 1.2.0 schickt der Dienst jede Chartmuster-Meldung als übersichtliche **Tra
 - **Wie die Karte entsteht:**
   - Die Karte wird aus denselben Signaldaten wie die bisherige Textmeldung gezeichnet (SVG, gerendert mit resvg). Es ist keine Bild-KI beteiligt, Zahlen und Texte bleiben exakt.
   - Fehlende Angaben stehen als „Nicht verfügbar“ da. Die Regelgüte ist ausdrücklich keine Erfolgswahrscheinlichkeit.
-- **Textmeldung als Ersatz:** Kann die Karte nicht erzeugt werden, sendet der Dienst die bisherige Textmeldung. Gründe können eine fehlende Bibliothek oder Schrift sein, oder Telegram lehnt das Bild ab.
+- **Schrift (ab 1.2.1):** Die Schrift liegt dem Dienst bei (`server/fonts`, verkleinerte Inter und DejaVu Sans, Lizenzen in `server/fonts/LIZENZ.md`).
+  - Mit 1.2.0 kam die Karte auf Servern ohne installierte Schriften ganz ohne Text an. Minimale Ubuntu-Abbilder bei Oracle haben oft keine.
+  - Vor jeder Karte prüft der Dienst jetzt, ob Text wirklich gezeichnet wird. Sonst sendet er die Textmeldung.
+- **Textmeldung als Ersatz:** Kann die Karte nicht erzeugt werden, sendet der Dienst die bisherige Textmeldung. Gründe können der fehlende Renderer oder eine fehlende Schrift sein, oder Telegram lehnt das Bild ab.
 
-Einmalig in der VM die Schrift und den Renderer installieren. Beides ist kostenlos; npm kommt mit Node.js:
+Einmalig in der VM den Renderer installieren. Er ist kostenlos, npm kommt mit Node.js. Eine Schrift per apt ist ab 1.2.1 nicht mehr nötig:
 
 ```bash
-sudo apt-get install -y fonts-inter fonts-dejavu-core
 sudo git -C /opt/scalpdesk-patterns pull --ff-only
 cd /opt/scalpdesk-patterns/server && sudo npm ci --omit=dev --no-audit --no-fund && cd ~
 sudo -u scalpdesk-patterns /usr/bin/node /opt/scalpdesk-patterns/server/patterns-247.mjs --karte-beispiel /var/lib/scalpdesk-patterns/karte-beispiel.png
@@ -170,8 +172,17 @@ sudo systemctl restart scalpdesk-patterns
 
 Hinweise dazu:
 
-- `--karte-beispiel` erzeugt die Beispielkarte aus der Vorgabe mit der Kennzeichnung „BEISPIEL“. Mit `scp` aufs Gerät holen und ansehen. Fehlt `fonts-inter`, zeichnet der Renderer mit DejaVu Sans.
+- `--karte-beispiel` erzeugt die Beispielkarte aus der Vorgabe mit der Kennzeichnung „BEISPIEL“. Mit `scp` aufs Gerät holen und ansehen. Fehlt die Schrift, bricht der Befehl mit „Keine Schrift für die Karte gefunden“ ab, statt eine leere Karte zu speichern.
 - Nach späteren Updates (`git pull`) `npm ci` nur dann erneut ausführen, wenn sich `server/package-lock.json` geändert hat.
+- **Karte kam ohne Text (1.2.0):** Ein Update auf 1.2.1 genügt, `npm ci` ist dafür nicht nötig:
+
+  ```bash
+  sudo git -C /opt/scalpdesk-patterns pull --ff-only
+  sudo systemctl restart scalpdesk-patterns
+  sudo tail -n 3 /var/log/scalpdesk-patterns/service.log
+  ```
+
+  Die Startzeile muss lauten: „Chartmusterdienst 1.2.1 gestartet … Meldungen als Trading-Karte (Text als Ersatz)“.
 
 Wie der Versand abläuft:
 
@@ -248,7 +259,7 @@ sudo tail -n 20 /var/log/scalpdesk-patterns/bereinigung.log
 **Trading-Karten im 24/7-Dienst (ab 2.14.0):**
 
 - Auch der 24/7-Dienst sendet Chartmuster als Trading-Karte, mit derselben Karte und denselben Regeln wie der Musterdienst.
-- Der Installer richtet Schrift und resvg kostenlos mit ein, wenn er erneut läuft: `curl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/install.sh | sudo bash`.
+- Der Installer richtet resvg kostenlos mit ein, wenn er erneut läuft: `curl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/install.sh | sudo bash`. Die Schrift liegt ab 2.14.1 dem Programm bei; vorher konnte die Karte auf Servern ohne Schriften ohne Text ankommen.
 - `sudo scalpdesk-247 status` zeigt danach „Chartmuster: als Trading-Karte“. Fehlt etwas, sendet er wie bisher Text.
 - Die Karte wird beim Versand aus den Signaldaten der Meldung im Ausgang erzeugt und nicht als Datei gespeichert.
 - Bei verspäteter Zustellung steht „verspätet zugestellt hh:mm Uhr“ in der Bildunterschrift.

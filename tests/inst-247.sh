@@ -37,7 +37,7 @@ ok "Programm installiert und lauffähig" "[ -s '$T/opt/scalpdesk-247.mjs' ] && n
 ok "Einstellungen: Token, Chat-ID, kein Discord; nur für Besitzer und Gruppe lesbar (640)" "node -e 'const j=require(\"$T/etc/scalpdesk-247.json\");process.exit(j.token===\"$TOKEN\"&&j.chat===\"987654321\"&&!Object.hasOwn(j,\"discord\")?0:1)' && [ \"\$(stat -c %a '$T/etc/scalpdesk-247.json')\" = 640 ]"
 ok "Token erscheint nicht in der Ausgabe" "! grep -q '$TOKEN' '$T/out1.log'"
 ok "Prüfung: Bot, Testnachricht, Binance Spot und Futures" "grep -q '✓ Bot @test_kursalarm_bot (ID 123456789) erreichbar' '$T/out1.log' && grep -q '✓ Testnachricht an deinen Telegram-Chat gesendet' '$T/out1.log' && grep -q '✓ Binance Spot erreichbar' '$T/out1.log' && grep -q '✓ Binance Futures erreichbar' '$T/out1.log'"
-ok "2.14.0: Kartenrenderer mitgeliefert (pattern-card.mjs, package-lock.json); Schrift per apt und resvg per npm ci im Programmstand versucht" "[ -s '$T/opt/current/pattern-card.mjs' ] && [ -s '$T/opt/current/package-lock.json' ] && grep -q 'apt-get install -y -qq fonts-inter fonts-dejavu-core' '$SHIM_LOG' && grep -q '^npm ci --omit=dev' '$SHIM_LOG' && grep -q 'Chartmuster als Text (resvg konnte nicht geladen werden' '$T/out1.log'"
+ok "2.14.1: Kartenrenderer und Schrift mitgeliefert (pattern-card.mjs, package-lock.json, fonts/ mit Lizenz); resvg per npm ci versucht, keine Schrift per apt nötig" "[ -s '$T/opt/current/pattern-card.mjs' ] && [ -s '$T/opt/current/package-lock.json' ] && [ -s '$T/opt/current/fonts/Inter-Regular.otf' ] && [ -s '$T/opt/current/fonts/DejaVuSans.ttf' ] && [ -s '$T/opt/current/fonts/LIZENZ.md' ] && ! grep -q 'fonts-inter' '$SHIM_LOG' && grep -q '^npm ci --omit=dev' '$SHIM_LOG' && grep -q 'Chartmuster als Text (resvg konnte nicht geladen werden' '$T/out1.log'"
 ok "Testnachricht kam in Telegram an" "curl -s http://127.0.0.1:8790/sent | grep -q '<b>✅ Dienst eingerichtet</b>'"
 ok "Prüfung lief als eigener Benutzer „scalpdesk“" "grep -q 'runuser -u scalpdesk -- node' '$SHIM_LOG' && grep -q 'useradd --system --no-create-home --shell /usr/sbin/nologin scalpdesk' '$SHIM_LOG'"
 ok "Dienst-Datei: Benutzer, Programm, Einstellungen, Zustand, Neustart, Schutz" "grep -q '^User=scalpdesk$' '$T/etc/scalpdesk-247.service' && grep -q \"^ExecStart=.*node $T/opt/scalpdesk-247.mjs --config $T/etc/scalpdesk-247.json --state $T/state/state.json$\" '$T/etc/scalpdesk-247.service' && grep -q '^Restart=always$' '$T/etc/scalpdesk-247.service' && grep -q '^ProtectSystem=strict$' '$T/etc/scalpdesk-247.service'"
@@ -64,6 +64,7 @@ ok "2.8: gesamter Dienstgraph, PO3 und Bot-Kern aus einem realen Releasepfad" "[
 mkdir -p "$T/badsrc/server" "$T/badsrc/shared" "$T/state"
 cp "$REPO"/server/*.mjs "$REPO/server/install.sh" "$REPO/server/release-manifest.json" "$REPO/server/package.json" "$REPO/server/package-lock.json" "$T/badsrc/server/"
 cp "$REPO"/shared/*.mjs "$T/badsrc/shared/"
+mkdir -p "$T/badsrc/server/fonts"; cp "$REPO"/server/fonts/* "$T/badsrc/server/fonts/"
 printf '{"marker":"Nutzerdaten bleiben"}' > "$T/state/user-keep.json"
 OLD_RELEASE=$(readlink "$T/opt/current"); CONF_HASH=$(sha256sum "$T/etc/scalpdesk-247.json")
 printf '\n// gültige Syntax, falscher Hash\n' >> "$T/badsrc/shared/bot-limits.mjs"
