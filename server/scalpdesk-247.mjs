@@ -52,7 +52,7 @@ import { PQ, patternConfig, patternCandles, patternCases, patternFresh, patternT
 import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT } from './telegram-format.mjs';
 import { ConfluenceService, kiMessage, Po3Service, po3Message, BotSimulationRuntime } from './ki-monitor.mjs';
 
-export const VERSION = '2.14.1';   // 2.13.0: Qualitätsfilter für Chartmuster-Meldungen; 2.14.0: Chartmuster als Trading-Karte (Text als Ersatz); 2.14.1: Schrift mitgeliefert
+export const VERSION = '2.14.2';   // 2.13.0: Qualitätsfilter für Chartmuster-Meldungen; 2.14.0: Chartmuster als Trading-Karte (Text als Ersatz); 2.14.1: Schrift mitgeliefert; 2.14.2: Installer macht den Programmstand für den Dienstbenutzer lesbar
 // 2.14.0: Kartenrenderer (pattern-card.mjs + resvg) nur bei Bedarf laden; fehlt er, bleibt es bei der Textmeldung
 let cardModule = null;
 const loadCards = () => (cardModule ??= import('./pattern-card.mjs').catch(() => null));
