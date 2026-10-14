@@ -1,5 +1,7 @@
 # Tests für Scalp Desk
 
+**Gesamtlauf 3.70.0:** 5443/5448. Rot sind nur die Altbefunde m7, m18 und m19, dazu die bekannten Abbrüche m40 und m79. Sie sind wortgleich wie in den Läufen davor; m79 bricht auf dem veröffentlichten Stand (main) an derselben Stelle ab. Neu und grün: unit-fvg, m105, m106, m107; ebenfalls grün m103 (34), m93, m94, m58 und alle Servertests.
+
 **Gesamtlauf 3.69.0:** 5355/5363. m53 und m31 einzeln grün; Altbefunde m7, m18, m19; Abbrüche m40, m79. Danach (Musterdienst 1.2.0) alle Servertests, `m58` und `m69` einzeln grün.
 
 **3.70.0 FVG-Knopf, Karten im 24/7-Dienst, Optik (Claude):**
