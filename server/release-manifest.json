@@ -1,11 +1,11 @@
 {
-  "version": "2.14.3",
+  "version": "2.14.4",
   "appVersion": "3.70.2",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
-      "sha256": "847a766aa71ccd7b572be74ecb70d6298a280361c72f3c5d3910a0c5e7b27116",
-      "bytes": 133618
+      "sha256": "bb45409e748fd78c832aac1c3617b79f185610469fa4b9791a680d9d8e3d5edb",
+      "bytes": 133668
     },
     {
       "path": "pattern-engine.mjs",
@@ -59,8 +59,8 @@
     },
     {
       "path": "install.sh",
-      "sha256": "9eae047510eb8086d76f5300bfc1e85c67fd974d5fa7442e840480ae58ba00f0",
-      "bytes": 21046
+      "sha256": "0e041391af1644602926f61122a3a1ad34c69db11de99041e0f3810fa571da60",
+      "bytes": 21710
     },
     {
       "path": "fonts/DejaVuSans-Bold.ttf",

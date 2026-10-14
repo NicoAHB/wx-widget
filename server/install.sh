@@ -58,17 +58,23 @@ mkdir -p "$DIR/releases"
 STAGE=$(mktemp -d "$DIR/releases/.stage.XXXXXX")
 chmod 755 "$DIR" "$DIR/releases" "$STAGE"   # 2.14.2: mktemp legt 700 an – der Dienstbenutzer muss das Programm lesen können
 trap 'rm -rf "$STAGE"' EXIT
-curl -fsSL "$SRC/release-manifest.json" -o "$STAGE/release-manifest.json" || die "Lieferliste konnte nicht geladen werden; bisheriges Programm bleibt."
+# 2.14.4: jeder Abruf mit Zeitlimit und Wiederholung – vorher blieb der Installer bei einer hängenden Verbindung stumm stehen
+fetch() { curl -fsSL --connect-timeout 15 --max-time 90 --retry 3 --retry-delay 3 "$1" -o "$2"; }
+printf '   Lade Lieferliste …\n'
+fetch "$SRC/release-manifest.json" "$STAGE/release-manifest.json" || die "Lieferliste konnte nicht geladen werden; bisheriges Programm bleibt."
 PARTS=$(node - "$STAGE/release-manifest.json" <<'NODE'
 const fs=require('fs'),j=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
 if(!/^2\.\d+\.\d+$/.test(j.version)||!Array.isArray(j.files)||j.files.length>150)throw Error('Lieferliste ungültig');
 for(const f of j.files){if(!/^(?:scalpdesk-247\.mjs|pattern-engine\.mjs|pattern-monitor\.mjs|pattern-card\.mjs|telegram-format\.mjs|patterns-247\.mjs|market-intervals\.mjs|ki-monitor\.mjs|orderflow-explainer\.mjs|install\.sh|package\.json|package-lock\.json|shared\/[a-z0-9-]+\.mjs|fonts\/(?:[A-Za-z0-9-]+\.(?:otf|ttf)|LIZENZ\.md))$/.test(f.path)||!/^[a-f0-9]{64}$/.test(f.sha256))throw Error('Lieferpfad ungültig'); console.log(f.path);}
 NODE
 ) || die "Lieferliste ungültig; bisheriges Programm bleibt."
+N=0; TOTAL=$(printf '%s\n' "$PARTS" | grep -c .)
+printf '   Lade %s Programmdateien von GitHub …\n' "$TOTAL"
 while IFS= read -r part; do
   mkdir -p "$(dirname "$STAGE/$part")"
   case "$part" in shared/*) URL="${SRC%/server}/$part";; *) URL="$SRC/$part";; esac
-  curl -fsSL "$URL" -o "$STAGE/$part" || die "Lieferdatei $part fehlt; bisheriges Programm bleibt."
+  N=$((N + 1)); [ $((N % 15)) -eq 0 ] && printf '   … %s/%s Dateien geladen\n' "$N" "$TOTAL"
+  fetch "$URL" "$STAGE/$part" || die "Lieferdatei $part konnte nicht geladen werden (Verbindung zu GitHub?); bisheriges Programm bleibt. Installer einfach erneut starten."
   case "$part" in *.mjs) node --check "$STAGE/$part" || die "Lieferdatei $part ist beschädigt.";; *.sh) bash -n "$STAGE/$part" || die "Installer ist beschädigt.";; esac
 done <<< "$PARTS"
 verify_bundle() {
@@ -77,9 +83,10 @@ const fs=require('fs'),p=require('path'),c=require('crypto'),dir=process.argv[2]
 for(const f of j.files){const b=fs.readFileSync(p.join(dir,f.path));if(b.length!==f.bytes||c.createHash('sha256').update(b).digest('hex')!==f.sha256)throw Error('Lieferdatei widerspricht Liste: '+f.path);}
 NODE
 }
+printf '   Prüfe Dateien …\n'
 verify_bundle "$STAGE" || die "Unvollständiger/vermischter Lieferstand; bisheriges Programm bleibt."
 mkdir -p "$STAGE/server"; cp "$STAGE/pattern-engine.mjs" "$STAGE/server/pattern-engine.mjs"
-node --input-type=module - "$STAGE" <<'NODE' || die "Modulgraph nicht importierbar; bisheriges Programm bleibt."
+timeout 120 node --input-type=module - "$STAGE" <<'NODE' || die "Modulgraph nicht importierbar; bisheriges Programm bleibt."
 import { pathToFileURL } from 'node:url';
 const base=pathToFileURL(process.argv[2]+'/'); await import(new URL('ki-monitor.mjs',base)); await import(new URL('orderflow-explainer.mjs',base)); const app=await import(new URL('scalpdesk-247.mjs',base));
 if(typeof app.Watcher!=='function')throw Error('Dienstexport fehlt');
@@ -111,18 +118,19 @@ trap - EXIT
 # Zwei Programmstände behalten, keine Zustands-/Konfigurationsdatei liegt in diesem Programmverzeichnis.
 PREVIOUS=$(readlink "$DIR/previous" 2>/dev/null || true)
 for candidate in "$DIR"/releases/*; do [ -d "$candidate" ] || continue; rel="releases/${candidate##*/}"; if [ "$rel" != "releases/$RELEASE" ] && [ "$rel" != "$PREVIOUS" ]; then case "${candidate##*/}" in 2.*-*|legacy-*) rm -rf "$candidate";; esac; fi; done
-say "2/7 Programm $(node "$DIR/scalpdesk-247.mjs" --version) nach $DIR ✓ (vollständiges Lieferbündel)"
+say "2/7 Programm $(timeout 30 node "$DIR/scalpdesk-247.mjs" --version) nach $DIR ✓ (vollständiges Lieferbündel)"
 # 2.14.0: Chartmuster als Trading-Karte – kostenlos: resvg (npm) im Programmstand. 2.14.1: Die Schrift liegt dem Programm bei
 # (fonts/, verkleinerte Inter/DejaVu) – vorher kam die Karte auf Servern ohne Schriften ohne Text an. Fehlt der Renderer oder
 # zeichnet er keinen Text, sendet der Dienst die Chartmuster wie bisher als Text; ein späterer Lauf des Installers holt es nach.
 REL="$DIR/releases/$RELEASE"; CARDS="als Text (Kartenrenderer nicht installiert)"
 if [ -d "$REL/node_modules/@resvg/resvg-js" ]; then CARDS="als Trading-Karte (Bild)"
 elif command -v npm >/dev/null && [ -f "$REL/package-lock.json" ]; then
-  if (cd "$REL" && npm ci --omit=dev --no-audit --no-fund --loglevel=error >/dev/null 2>&1) && [ -d "$REL/node_modules/@resvg/resvg-js" ]; then CARDS="als Trading-Karte (Bild)"
+  printf '   Installiere Kartenrenderer (npm) …\n'
+  if (cd "$REL" && timeout 300 npm ci --omit=dev --no-audit --no-fund --loglevel=error >/dev/null 2>&1) && [ -d "$REL/node_modules/@resvg/resvg-js" ]; then CARDS="als Trading-Karte (Bild)"
   else CARDS="als Text (resvg konnte nicht geladen werden – Installer später erneut ausführen)"; fi
 fi
 if [ "$CARDS" = "als Trading-Karte (Bild)" ]; then   # 2.14.1: zeichnet die Karte wirklich Text?
-  CHECK=$(cd "$REL" && node --input-type=module -e "const P = await import('./pattern-card.mjs'); console.log(await P.cardRendererStatus())" 2>/dev/null || echo fehler)
+  CHECK=$(cd "$REL" && timeout 60 node --input-type=module -e "const P = await import('./pattern-card.mjs'); console.log(await P.cardRendererStatus())" 2>/dev/null || echo fehler)
   [ "$CHECK" = ok ] || CARDS="als Text (Karte würde ohne Schrift erscheinen – Installer erneut ausführen)"
 fi
 say "   Chartmuster $CARDS"
