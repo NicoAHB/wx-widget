@@ -1,5 +1,20 @@
 # Tests für Scalp Desk
 
+**3.70.1 Trading-Karte ohne Text / Schrift mitgeliefert (Musterdienst 1.2.1, Dienst 2.14.1, Claude):**
+- `unit-pattern-card.js` (57): sechs neue Prüfungen.
+  - Schriftdateien und Lizenz vorhanden.
+  - Nachgestellter Server ohne Schrift: Karte ohne Text; mit mitgelieferter Schrift: Text da.
+  - Status `ok`/`schrift`; ohne Schrift keine Karte, sondern ein Fehler.
+  - Karte nur mit mitgelieferter Schrift; Musterdienst ohne Schrift sendet Text.
+- `inst-247.sh` (36): `fonts/` im Programmstand, keine Schrift per apt.
+- Hinweis: `Resvg#render().pixels` liefert bei jedem Zugriff eine neue Kopie, also einmal auslesen (sonst Speicherabbruch).
+
+**3.70.1 PC-Desktop-Ansicht (Claude):**
+- Neu `m108.js` (28): echte Gerätezuordnung über Kennung und Bildschirm (PC 1860/1280 px, iPad quer/hoch).
+  - Einstellungen oben über die volle Breite, Methodik darunter, dann die Fußzeile; Karten ohne Wortbrüche.
+  - Analysen: Zonen und Indikatoren voll breit, Volatilität neben dem Kalender, keine Überlappung; Chart-Ansicht unverändert.
+- Gesamtlauf nur auf ausdrückliche Anweisung des Nutzers.
+
 **Gesamtlauf 3.70.0:** 5443/5448. Rot sind nur die Altbefunde m7, m18 und m19, dazu die bekannten Abbrüche m40 und m79. Sie sind wortgleich wie in den Läufen davor; m79 bricht auf dem veröffentlichten Stand (main) an derselben Stelle ab. Neu und grün: unit-fvg, m105, m106, m107; ebenfalls grün m103 (34), m93, m94, m58 und alle Servertests.
 
 **Gesamtlauf 3.69.0:** 5355/5363. m53 und m31 einzeln grün; Altbefunde m7, m18, m19; Abbrüche m40, m79. Danach (Musterdienst 1.2.0) alle Servertests, `m58` und `m69` einzeln grün.

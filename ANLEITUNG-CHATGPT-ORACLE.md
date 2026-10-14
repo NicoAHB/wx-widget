@@ -8,7 +8,7 @@ Mit dieser Anleitung führt dich ChatGPT Schritt für Schritt durch die Einricht
 - **Gib ChatGPT niemals** dein Bot-Token, deine Chat-IDs, den Zugangsschlüssel des 24/7-Dienstes, Börsenzugänge oder private SSH-Schlüssel.
   - Die Befehle fragen Token und Chat-ID **unsichtbar** direkt am Server ab.
   - Fragt ChatGPT danach, antworte: „Nein, das gebe ich nur am Server ein.“
-- Alles ist **kostenlos**: Oracle „Always Free“, Node.js, die Schrift (fonts-inter) und der Kartenrenderer (resvg). Wähle bei Oracle nur Angebote mit „Always Free eligible“.
+- Alles ist **kostenlos**: Oracle „Always Free“, Node.js und der Kartenrenderer (resvg). Die Schrift liegt dem Dienst bei. Wähle bei Oracle nur Angebote mit „Always Free eligible“.
 
 ## Was eingerichtet wird
 
@@ -78,14 +78,14 @@ Nach jedem Teil muss die genannte Ausgabe erscheinen. Erst dann geht es weiter.
 | Prüfpunkt | Befehl (Kurzform; vollständig in `docs/ORACLE_24-7.md`) | Erwartet |
 |---|---|---|
 | Programm aktuell | `sudo git -C /opt/scalpdesk-patterns pull --ff-only` (Neu: `git clone …`) | `Already up to date.` oder Liste geänderter Dateien |
-| Schrift und Renderer | `sudo apt-get install -y fonts-inter fonts-dejavu-core` und `cd /opt/scalpdesk-patterns/server && sudo npm ci --omit=dev --no-audit --no-fund` | `added … packages` ohne Fehler |
+| Renderer | `cd /opt/scalpdesk-patterns/server && sudo npm ci --omit=dev --no-audit --no-fund` (die Schrift liegt ab 1.2.1 bei) | `added … packages` ohne Fehler |
 | Beispielkarte | `sudo -u scalpdesk-patterns /usr/bin/node /opt/scalpdesk-patterns/server/patterns-247.mjs --karte-beispiel /var/lib/scalpdesk-patterns/karte-beispiel.png` | `Beispielkarte 1024 × 1536 gespeichert: …` |
 | Zugangsdaten (nur bei Neueinrichtung) | die `read`-Zeilen (Token und Chat-ID unsichtbar, Thema-ID sichtbar) und `printf … \| sudo tee /etc/scalpdesk-patterns.env` aus Abschnitt 4 | keine Ausgabe (die Eingaben sind unsichtbar) |
 | Testnachricht | `sudo -u scalpdesk-patterns /usr/bin/node /opt/scalpdesk-patterns/server/patterns-247.mjs --test` | `Testnachricht zugestellt` und im Muster-Chat „CHARTMUSTER · Test erfolgreich“ |
 | Dienst läuft | `sudo systemctl restart scalpdesk-patterns && sudo systemctl status scalpdesk-patterns --no-pager` | `active (running)` |
-| Startzeile | `sudo tail -n 5 /var/log/scalpdesk-patterns/service.log` | `Chartmusterdienst 1.2.0 gestartet … Meldungen als Trading-Karte (Text als Ersatz)` |
+| Startzeile | `sudo tail -n 5 /var/log/scalpdesk-patterns/service.log` | `Chartmusterdienst 1.2.1 gestartet … Meldungen als Trading-Karte (Text als Ersatz)` |
 
-Steht in der Startzeile „Text – Kartenrenderer fehlt“, fehlt der Schritt „Schrift und Renderer“. Der Dienst sendet dann trotzdem, nur als Text.
+Steht in der Startzeile „Text – Kartenrenderer fehlt“, fehlt der Schritt „Renderer“. Steht dort „Text – keine Schrift für die Karte“, fehlt der Ordner `server/fonts`; dann `git pull` wiederholen. Der Dienst sendet in beiden Fällen trotzdem, nur als Text.
 
 ### C. Monatliche Bereinigung
 
@@ -116,7 +116,8 @@ Steht dort „als Text (resvg konnte nicht geladen werden …)“, den Installer
 | `Permission denied (publickey)` | falscher Schlüssel oder Benutzer | Benutzer `ubuntu`, privaten Schlüssel aus der VM-Erstellung verwenden |
 | `Unauthorized` / HTTP 401 | Bot-Token falsch | Token am Server unsichtbar neu eingeben (Musterdienst: `.env`; 24/7: Installer mit `--neu`) |
 | `chat not found` / HTTP 400 | Chat-ID falsch oder Bot nie gestartet | Bot in Telegram mit **Start** anschreiben, Chat-ID prüfen, bei Gruppen Schreibrecht geben |
-| Startzeile „Text – Kartenrenderer fehlt“ | resvg nicht installiert | Schritt „Schrift und Renderer“ wiederholen, dann `sudo systemctl restart scalpdesk-patterns` |
+| Startzeile „Text – Kartenrenderer fehlt“ | resvg nicht installiert | Schritt „Renderer“ wiederholen, dann `sudo systemctl restart scalpdesk-patterns` |
+| Karte kommt ohne Text, nur Rahmen und Symbole | Version 1.2.0 auf einem Server ohne Schriften | auf 1.2.1 aktualisieren: `sudo git -C /opt/scalpdesk-patterns pull --ff-only` und `sudo systemctl restart scalpdesk-patterns`; 24/7-Dienst: Installer erneut ausführen |
 | `Bereinigung abgebrochen: Chartmusterdienst läuft` | `--bereinigen` von Hand bei laufendem Dienst | Bereinigung über den Timer starten: `sudo systemctl start scalpdesk-patterns-bereinigung.service` (hält den Dienst kurz an) |
 | Muster kommen doppelt | zwei Sender für denselben Muster-Chat | nur **einen** Sender verwenden (siehe oben) |
 | Keine Muster | normal, solange keine neue Formation den Qualitätsfilter besteht | Testnachricht und `active (running)` prüfen. Ausbleibende Muster sind kein Fehler. |

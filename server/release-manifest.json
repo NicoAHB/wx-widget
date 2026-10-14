@@ -1,11 +1,11 @@
 {
-  "version": "2.14.0",
-  "appVersion": "3.70.0",
+  "version": "2.14.1",
+  "appVersion": "3.70.1",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
-      "sha256": "700404c726aad66e38b6ff76ff13dcf55a00982cc572260349bd6dff0c760fb7",
-      "bytes": 132965
+      "sha256": "95cd807ada1efaa7a9d0bcf2127ef5faa99d055af1106da3418ef2518f26314b",
+      "bytes": 133111
     },
     {
       "path": "pattern-engine.mjs",
@@ -19,8 +19,8 @@
     },
     {
       "path": "pattern-card.mjs",
-      "sha256": "f0910731c4b53a6fd78dcd39208a7a0a342eece49d8d018d4a3f00795af174d0",
-      "bytes": 20141
+      "sha256": "03ae13bbfdd466d8f76be2fac36046fd9491d55f210898b5b985d46b82c2a25e",
+      "bytes": 22316
     },
     {
       "path": "package.json",
@@ -44,8 +44,8 @@
     },
     {
       "path": "patterns-247.mjs",
-      "sha256": "12d368fb4e5082adbf332f304432081b92247eb25372c5abd9a6f952b5a78c2b",
-      "bytes": 19618
+      "sha256": "f54b69b81e4012719dde466aed721e181477546f8a3861eedef17724d8284f03",
+      "bytes": 19781
     },
     {
       "path": "ki-monitor.mjs",
@@ -59,8 +59,53 @@
     },
     {
       "path": "install.sh",
-      "sha256": "b7cdb7da804f417b82a917f72cbea6f882c96db3bcb789e99c0e5fccdbdccbfe",
-      "bytes": 20356
+      "sha256": "d2b684a4e7f779781d0b43964e784753cb90abcec2e8b8839a5edac4e0e47cf1",
+      "bytes": 20787
+    },
+    {
+      "path": "fonts/DejaVuSans-Bold.ttf",
+      "sha256": "4eafdcfd2169d580293bdddd5029ba0ac66766df0bcd5a67b6dff22cd258b514",
+      "bytes": 51200
+    },
+    {
+      "path": "fonts/DejaVuSans.ttf",
+      "sha256": "5569a70549bbbee50956f49176fde135de9dacaed5a710f2da5481131a693ed7",
+      "bytes": 56852
+    },
+    {
+      "path": "fonts/Inter-Black.otf",
+      "sha256": "449dc5300e316586a49d45a827a2838ae097b6ef241d52564376c88132f9d2ca",
+      "bytes": 48300
+    },
+    {
+      "path": "fonts/Inter-Bold.otf",
+      "sha256": "93b90a2599e47e6159e48c823ab55f43a6777d0be85895f556cd096758d2b945",
+      "bytes": 48300
+    },
+    {
+      "path": "fonts/Inter-ExtraBold.otf",
+      "sha256": "cbe7733e08a0bd9424d67fdacb0486a748a1c0e4092b966e9134e9fc33f9a20c",
+      "bytes": 48548
+    },
+    {
+      "path": "fonts/Inter-Medium.otf",
+      "sha256": "b10a714d921af91bb563d52ff3425827b4c2c966ce4354c907152a7f23719aab",
+      "bytes": 48276
+    },
+    {
+      "path": "fonts/Inter-Regular.otf",
+      "sha256": "361d9fcd6220a5ab4b3b92c0ada88f81312b9243176cc0305a6888292379e67a",
+      "bytes": 47432
+    },
+    {
+      "path": "fonts/Inter-SemiBold.otf",
+      "sha256": "8bf671b254d62553d9f47c29dc933ae47cd447876d8a80e24df7c87f61c056af",
+      "bytes": 48344
+    },
+    {
+      "path": "fonts/LIZENZ.md",
+      "sha256": "8e5e0aeef2d7aab9f23ba648e3b4fb51d0e32773e620ef9d0ba733627547e802",
+      "bytes": 7693
     },
     {
       "path": "shared/adaptive-grid-feed.mjs",

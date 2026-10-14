@@ -4,6 +4,7 @@
 // „Nicht verfügbar“ da, nichts wird erfunden. „Regelgüte“ ist ausdrücklich keine Erfolgswahrscheinlichkeit.
 // resvg ist optional (npm install im Ordner server): Fehlt es oder scheitert das Rendern, sendet der Dienst die bisherige Textmeldung.
 import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 const base = fs.existsSync(new URL('./shared/telegram-format.mjs', import.meta.url)) ? './shared/' : '../shared/';
 const TF = await import(new URL(base + 'telegram-format.mjs', import.meta.url));
@@ -193,12 +194,32 @@ async function loadResvg() {
   if (!resvg) resvg = import('@resvg/resvg-js').then(m => m.Resvg || m.default?.Resvg).catch(() => null);
   const R = await resvg; if (!R) throw new Error('Kartenrenderer fehlt (im Ordner server: npm install)'); return R;
 }
-// Beim Start prüfen, ob Karten möglich sind (sonst sendet der Dienst Text)
-export async function cardRendererReady() { try { await loadResvg(); return true; } catch { return false; } }
-export async function renderPatternCard(data, { at, timezone, preview = false, fontFiles = [] } = {}) {
+// 1.2.1: Schrift mitgeliefert (fonts/: Inter und DejaVu Sans als verkleinerte Untermengen, Lizenzen in fonts/LIZENZ.md). Vorher nahm
+// resvg nur Systemschriften – auf Servern ohne Schriften (minimale Ubuntu-Abbilder bei Oracle) kam die Karte ganz ohne Text an.
+// Mit den mitgelieferten Dateien rendert jeder Server gleich; Systemschriften nur, falls der Ordner fehlt.
+const FONT_DIR = new URL('./fonts/', import.meta.url);
+export const CARD_FONT_FILES = Object.freeze(['Inter-Regular.otf', 'Inter-Medium.otf', 'Inter-SemiBold.otf', 'Inter-Bold.otf', 'Inter-ExtraBold.otf', 'Inter-Black.otf', 'DejaVuSans.ttf', 'DejaVuSans-Bold.ttf']
+  .map(f => fileURLToPath(new URL(f, FONT_DIR))).filter(f => fs.existsSync(f)));
+const fontOptions = (extra = [], system, bundled = true) => { const own = bundled ? CARD_FONT_FILES : []; return { loadSystemFonts: system ?? !own.length, fontFiles: [...own, ...extra], defaultFontFamily: 'Inter' }; };
+// Zeichnet die Schrift wirklich? Ohne passende Schrift lässt resvg Text stillschweigend weg – dann lieber die Textmeldung.
+const textCheck = new Map();
+async function textRenders(R, font) {
+  const key = JSON.stringify(font); if (textCheck.get(key)) return true;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="160" height="44"><text x="6" y="32" font-family="${CARD_FONT}" font-size="28" font-weight="700" fill="#000">Ag 0,5 €</text></svg>`;
+  const px = new R(svg, { font }).render().pixels; let ink = 0; for (let i = 3; i < px.length && ink < 50; i += 4) if (px[i] > 0) ink++;
+  if (ink >= 50) textCheck.set(key, true); return ink >= 50;
+}
+// Beim Start prüfen, ob Karten möglich sind (sonst sendet der Dienst Text): 'ok', 'renderer' (resvg fehlt) oder 'schrift' (keine Schrift)
+export async function cardRendererStatus({ fontFiles = [], loadSystemFonts, bundledFonts = true } = {}) {
+  let R; try { R = await loadResvg(); } catch { return 'renderer'; }
+  try { return await textRenders(R, fontOptions(fontFiles, loadSystemFonts, bundledFonts)) ? 'ok' : 'schrift'; } catch { return 'schrift'; }
+}
+export async function cardRendererReady(options) { return await cardRendererStatus(options) === 'ok'; }
+export async function renderPatternCard(data, { at, timezone, preview = false, fontFiles = [], loadSystemFonts, bundledFonts = true } = {}) {
   const m = patternCardModel(data, { at, timezone }), { svg, width, height } = patternCardSvg(m, { preview });
-  const Resvg = await loadResvg();
-  const png = new Resvg(svg, { fitTo: { mode: 'original' }, font: { loadSystemFonts: true, fontFiles, defaultFontFamily: 'Inter' } }).render().asPng();
+  const Resvg = await loadResvg(), font = fontOptions(fontFiles, loadSystemFonts, bundledFonts);
+  if (!await textRenders(Resvg, font)) throw new Error('Keine Schrift für die Karte gefunden – Karte wäre ohne Text');
+  const png = new Resvg(svg, { fitTo: { mode: 'original' }, font }).render().asPng();
   if (!png?.length) throw new Error('Kartenrenderer lieferte kein Bild');
   return { png: Buffer.from(png), width, height, model: m, caption: patternCaption(m), svg };
 }

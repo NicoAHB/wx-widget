@@ -3,7 +3,22 @@
 Diese Datei ist der Einstieg für jede weitere Arbeit am Projekt. Wer sie liest, braucht kein Vorwissen. Die vollständige fachliche
 Vorgabe aller Gruppen G01–G14 steht in `docs/VORGABE-G01-G14.md` (Original-Übergabe; dort sind G10–G14 ausführlich beschrieben).
 
-## Aktueller Stand – 3.70.0 / Dienst 2.14.0 / Musterdienst 1.2.0 (Claude): FVG-Knopf im Chart, beendete Muster ausgegraut, Trading-Karten im 24/7-Dienst, ChatGPT-Anleitung für Oracle, optische Korrekturen
+## In Arbeit – 3.70.1 / Dienst 2.14.1 / Musterdienst 1.2.1 (Claude): Optimierungen nach Rückmeldungen, Gesamtlauf erst auf Anweisung des Nutzers
+
+Ausführlich: [docs/3.70.1-AENDERUNGEN.md](docs/3.70.1-AENDERUNGEN.md).
+
+- **Trading-Karte ohne Text auf Oracle:** resvg nahm nur Systemschriften, der Server hatte keine.
+  - Jetzt liegt die Schrift bei: `server/fonts/` mit verkleinerter Inter (6 Stärken) und DejaVu Sans, plus `LIZENZ.md`.
+  - `CARD_FONT_FILES` werden immer genutzt; Systemschriften nur, wenn der Ordner fehlt.
+  - `textRenders()` prüft vor jeder Karte, ob Text gezeichnet wird. Sonst Fehler, und der Dienst sendet Text.
+  - `cardRendererStatus()` ergibt `ok`/`renderer`/`schrift`; genutzt in der Startzeile des Musterdienstes, im 24/7-`status` und im Installer.
+  - Lieferliste mit `fonts/`, Installer-Pfadfilter erweitert, Grenze 150 Dateien, kein apt mehr.
+
+- **PC-Desktop, Ansicht Einstellungen:** `#workspace-settings` und `#method-sec` werden in der Ansicht `settings` ausdrücklich über die volle Breite gelegt (Zeile 1 und 2), einspaltig steht `#method-sec` mit `order:3` hinter den Einstellungen. Vorher hob `[data-workspace-scope]{grid-area:auto}` die Spaltenangabe auf.
+- **PC-Desktop, Ansicht Analysen:** Dashboard ab 1100 px: Zonen und Indikatoren über die volle Breite; Volatilität (Spalte 1) neben dem Kalender (Spalte 2); danach News, Entkopplung, Signale, Muster-Bot.
+- **Tests:** neu `m108` (28), in `run-all.sh`.
+
+## Stand 3.70.0 / Dienst 2.14.0 / Musterdienst 1.2.0 (Claude): FVG-Knopf im Chart, beendete Muster ausgegraut, Trading-Karten im 24/7-Dienst, ChatGPT-Anleitung für Oracle, optische Korrekturen
 
 Ausführlich: [docs/3.70.0-AENDERUNGEN.md](docs/3.70.0-AENDERUNGEN.md).
 
