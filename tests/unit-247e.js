@@ -124,7 +124,7 @@ const throws = fn => { try { fn(); return false; } catch { return true; } };
   const strictSent = []; strict.tg = async (method, body) => { strictSent.push(body); return { message_id: 1 }; }; await strict.checkPatterns();
   const sj = strict.patSignals.find(e => e.id === c.id);
   check('Qualitätsfilter (Normal): schwaches Signal wird nicht an Telegram gesendet, aber mit Score, Kriterien und Filtergrund protokolliert', strictSent.length === 0 && sj && sj.sent === false && sj.reason.length > 5 && sj.criteria.length === 6 && Number.isFinite(sj.score) && logs.some(x => x.includes('Chartmuster gefiltert') && x.includes('Doppel-Boden')), JSON.stringify(sj && { reason: sj.reason, score: sj.score }));
-  check('Filter-Schwellen kommen mit der Musterliste (Standard Normal, Score ≥ 70)', strict.patternWatch.config.filter.preset === 'normal' && strict.patternWatch.config.filter.minScore === 70);
+  check('Filter-Schwellen kommen mit der Musterliste (Standard Normal, Score ≥ 55)', strict.patternWatch.config.filter.preset === 'normal' && strict.patternWatch.config.filter.minScore === 55);
   const c2 = { ...c, t0: c.t0 - 36e5 }; c2.id = P.patternId(c2);
   const noQ = await (await call('/v1/patterns/notify', { expectedRevision: 1, c: c2, levels: h.levels })).json();
   check('App-Meldung ohne bestandene Qualitätsbewertung wird nicht gesendet', noQ.ok && noQ.sent === false && noQ.reason === 'quality-missing' && sent.length === before);

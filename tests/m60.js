@@ -52,6 +52,11 @@ const results = [], check = (name, ok, info = '') => { results.push(!!ok); conso
     lost = true; await page.click('#pat-svc-apply'); await page.waitForFunction(() => /nicht erreichbar/.test(document.getElementById('pat-svc-status').textContent));
     const retryId = calls.at(-1).body.commandId; await page.click('#pat-svc-apply'); await page.waitForFunction(() => /Übernommen/.test(document.getElementById('pat-svc-status').textContent));
     check('Verlorene Übernahmeantwort: gleicher Command beim bewussten Retry', calls.at(-1).body.commandId === retryId);
+    // 3.70.2: Nur der Qualitätsfilter geändert → von selbst übernommen (Nutzer lockerte den Filter, der Dienst filterte weiter streng)
+    const watchCalls = () => calls.filter(x => x.p.endsWith('/watch')).length, w0 = watchCalls();
+    await page.evaluate(() => __patq.set({ preset: 'locker' }));
+    await page.waitForTimeout(2500);
+    check('3.70.2: Nur der Filter geändert → automatisch am Dienst übernommen (Preset „Locker“), Status „Übernommen“', watchCalls() === w0 + 1 && calls.at(-1).body.config.filter.preset === 'locker' && calls.at(-1).body.config.filter.minScore === 40 && /Übernommen/.test(await page.locator('#pat-svc-status').textContent()), JSON.stringify(calls.at(-1).body.config?.filter));
     const fire = () => page.evaluate(async () => {
       const t = Math.floor(Date.now() / 36e5) * 36e5 - 36e5, c = { mkt: 'spot', sym: 'BTCUSDT', iv: '1h', pat: 'double_bottom', kind: 'form', dir: 'bull', t0: t - 20 * 36e5, t1: t, tc: t, p0: 100, model: 'pat-1', profile: 'H12-e0.10', q: 88, src: 'live', rules: [], res: null };
       c.id = __g09.pkId(c); await __g09.patNotify(c, { levels: { tgt: 110, inv: 90 } });
@@ -63,6 +68,8 @@ const results = [], check = (name, ok, info = '') => { results.push(!!ok); conso
     check('Dienst nicht erreichbar: unbestätigt sichtbar, kein lokaler Ersatzversand', /unbestätigt.*Kein Ersatzversand/.test(await page.locator('#pat-svc-status').textContent()) && !(await h.ctl('/sent')).some(x => x.svc === 'tg' && String(x.chat_id) === '-100888'));
     await page.fill('#tg-pchat', '-100999'); await page.evaluate(() => document.getElementById('tg-pchat').dispatchEvent(new Event('change', { bubbles: true }))); const count = calls.length; await fire();
     check('Geänderter lokaler Chat wird vor neuer Übernahme nicht an alten Dienstchat gesendet', calls.length === count && /erst am Dienst übernehmen/.test(await page.locator('#pat-svc-status').textContent()));
+    const w1 = calls.filter(x => x.p.endsWith('/watch')).length; await page.evaluate(() => __patq.set({ preset: 'streng' })); await page.waitForTimeout(2500);
+    check('3.70.2: Filter geändert, aber auch der Chat → keine automatische Übernahme (Chat bleibt bewusst)', calls.filter(x => x.p.endsWith('/watch')).length === w1);
     check('Keine JavaScript-Fehler', !errors.filter(x => x.startsWith('[pageerror]')).length, errors.filter(x => x.startsWith('[pageerror]')).join(' | '));
     await ctx.close();
   } catch (e) { check('Abbruch', false, e.message); }

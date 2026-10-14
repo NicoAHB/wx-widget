@@ -1,11 +1,11 @@
 {
-  "version": "2.14.2",
-  "appVersion": "3.70.1",
+  "version": "2.14.3",
+  "appVersion": "3.70.2",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
-      "sha256": "de369eb0db050d9e1ca3a9a2e63587e859f4f1f6c315134ebab7199709c3d963",
-      "bytes": 133185
+      "sha256": "847a766aa71ccd7b572be74ecb70d6298a280361c72f3c5d3910a0c5e7b27116",
+      "bytes": 133618
     },
     {
       "path": "pattern-engine.mjs",
@@ -389,8 +389,8 @@
     },
     {
       "path": "shared/pattern-quality.mjs",
-      "sha256": "3a8eb4e7f7020f88ccaac0348df772dade95d6e1869143e7ced1b9809685c1a1",
-      "bytes": 23151
+      "sha256": "58c9c3d78da486f6640a27e784d9c7cbd7db206a4d485c5ac297b0099aaafb36",
+      "bytes": 23375
     },
     {
       "path": "shared/pattern-score.mjs",

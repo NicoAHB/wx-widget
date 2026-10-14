@@ -16,7 +16,7 @@ function series(n, { start = 100, drift = .0008, t0 = Date.UTC(2026, 0, 1), step
   const sig = (over = {}, lv = {}) => ({ c: { id: 'ETH|1h|asc_triangle|1', sym: 'ETHUSDT', mkt: 'futures', iv: '1h', pat: 'asc_triangle', dir: 'bull', p0: entry, q: 94, tc: k[i1].t, ...over },
     h: { status: 'Ausbruch bestätigt', i1, levels: { brk: entry - .2, tgt: entry + 8 * atr, inv: entry - 2.5 * atr, ...lv } } });
   const liq = { volume24h: 80e6, spreadPct: .02 };
-  check('Presets Streng/Normal/Locker; Normal = Vorgabe (Score 70, R/R 2, 3 Kerzen, 50 %, 2,5 × ATR, 3 × Kosten, Gegentrend aus)', (() => { const n = Q.patternFilterSettings({}); return n.preset === 'normal' && n.minScore === 70 && n.minRR === 2 && n.maxAge === 3 && n.maxProgress === 50 && n.minTargetAtr === 2.5 && n.minFeeMultiple === 3 && n.counterTrend === false && Q.patternFilterSettings({ preset: 'streng' }).minScore > 70 && Q.patternFilterSettings({ preset: 'locker' }).minScore < 70; })());
+  check('Presets Streng/Normal/Locker; Normal = Vorgabe (Score 55, R/R 1,2, 3 Kerzen, 50 %, 2,5 × ATR, 3 × Kosten, Gegentrend aus)', (() => { const n = Q.patternFilterSettings({}); return n.preset === 'normal' && n.minScore === 55 && n.minRR === 1.2 && n.maxAge === 3 && n.maxProgress === 50 && n.minTargetAtr === 2.5 && n.minFeeMultiple === 3 && n.counterTrend === false && Q.patternFilterSettings({ preset: 'streng' }).minScore > 55 && Q.patternFilterSettings({ preset: 'locker' }).minScore < 55; })());
   check('Eigene Werte: abweichendes Feld → Preset „eigen“, Werte begrenzt', (() => { const s = Q.patternFilterFromForm({ ...Q.PATTERN_FILTER_PRESETS.normal, minScore: 65, maxPerHour: 999 }, 'normal'); return s.preset === 'eigen' && s.minScore === 65 && s.maxPerHour === 60; })());
   check('Nächsthöherer Zeitrahmen 5m→1h, 15m→1h, 1h→4h', Q.HIGHER_TIMEFRAME['5m'] === '1h' && Q.HIGHER_TIMEFRAME['15m'] === '1h' && Q.HIGHER_TIMEFRAME['1h'] === '4h');
   check('Trend über Kurs zur EMA 200 und Steigung der EMA 50', Q.trendOf(up4h).dir === 1 && Q.trendOf(down4h).dir === -1 && Q.trendOf(up4h.slice(0, 100)) === null);
@@ -31,7 +31,7 @@ function series(n, { start = 100, drift = .0008, t0 = Date.UTC(2026, 0, 1), step
   check('Trefferquote erst ab 10 abgeschlossenen Fällen, vorher neutral 7 Punkte', Q.evaluatePatternSignal({ ...s, k, higher: up4h, btc: btcUp, liquidity: liq, hits: { n: 9, wins: 9 } }).parts.history === 7 && Q.evaluatePatternSignal({ ...s, k, higher: up4h, btc: btcUp, liquidity: liq, hits: { n: 10, wins: 6 } }).parts.history === 15 && Q.evaluatePatternSignal({ ...s, k, higher: up4h, btc: btcUp, liquidity: liq, hits: { n: 10, wins: 3 } }).parts.history === 0);
   // ---- Beispiel 1: Chance/Risiko 0,34 : 1 ----
   const e1 = Q.evaluatePatternSignal({ ...sig({}, { tgt: entry + .34 * 2.5 * atr }), k, higher: up4h, btc: btcUp, liquidity: liq });
-  check('BEISPIEL 1: Signal mit Chance/Risiko 0,34 : 1 wird gefiltert (K.O.)', !e1.pass && e1.ko[0].key === 'rr' && /0,34 : 1 unter 2,0 : 1/.test(e1.reason), `Grund: ${e1.reason}`);
+  check('BEISPIEL 1: Signal mit Chance/Risiko 0,34 : 1 wird gefiltert (K.O.)', !e1.pass && e1.ko[0].key === 'rr' && /0,34 : 1 unter 1,2 : 1/.test(e1.reason), `Grund: ${e1.reason}`);
   // ---- Beispiel 3: Gegentrend ----
   const e3 = Q.evaluatePatternSignal({ ...s, k, higher: down4h, btc: btcUp, liquidity: liq });
   check('BEISPIEL 3: Gegentrend-Signal (Long, 4h-Trend abwärts) wird gefiltert', !e3.pass && e3.ko.some(x => x.key === 'trend') && e3.counter, `Grund: ${e3.ko.find(x => x.key === 'trend')?.text}`);

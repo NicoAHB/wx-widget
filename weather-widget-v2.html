@@ -2258,33 +2258,33 @@ html[data-chartfull] .chart-pattern-row{padding:0;order:1;flex-wrap:nowrap}html[
 @media(max-width:360px){.chart-pattern-overview-card{height:120px;grid-template-columns:minmax(0,1fr) 112px}}
 </style>
   <script type="module">
-import { MARKET_INTERVALS, CHART_INTERVALS, SIGNAL_INTERVALS, INTERVAL_MS, nearestChartInterval } from './bundles/3.70.1/shared/market-intervals.mjs';
-import { createDetailCandles, detailOptions, detailChoice, closedSeries, timeIndex, DETAIL_VISIBLE_MAX } from './bundles/3.70.1/shared/chart-detail.mjs';
-import { patternChipRows, patternChipKey } from './bundles/3.70.1/shared/chart-pattern-chips.mjs';
-import { PATTERN_QUALITY_CONFIG, chartPatternQuality, repricePatternQuality, sortPatternQuality, patternOverview } from './bundles/3.70.1/shared/chart-pattern-quality.mjs';
-import { createPatternOverviewFeed } from './bundles/3.70.1/shared/chart-pattern-overview-feed.mjs';
+import { MARKET_INTERVALS, CHART_INTERVALS, SIGNAL_INTERVALS, INTERVAL_MS, nearestChartInterval } from './bundles/3.70.2/shared/market-intervals.mjs';
+import { createDetailCandles, detailOptions, detailChoice, closedSeries, timeIndex, DETAIL_VISIBLE_MAX } from './bundles/3.70.2/shared/chart-detail.mjs';
+import { patternChipRows, patternChipKey } from './bundles/3.70.2/shared/chart-pattern-chips.mjs';
+import { PATTERN_QUALITY_CONFIG, chartPatternQuality, repricePatternQuality, sortPatternQuality, patternOverview } from './bundles/3.70.2/shared/chart-pattern-quality.mjs';
+import { createPatternOverviewFeed } from './bundles/3.70.2/shared/chart-pattern-overview-feed.mjs';
 // Arbeitsstand: bei der gemeinsamen Release-Freigabe in das neue Versionsbündel übernehmen.
-import { createPositioningFeed } from './bundles/3.70.1/shared/positioning-score.mjs';
-import { CRYPTO_CALENDAR, parseCryptoCalendar, cryptoCalendarEvents } from './bundles/3.70.1/shared/crypto-calendar.mjs';
-import { createMusterClient } from './bundles/3.70.1/shared/muster-bot-feed.mjs';
-import { createMusterPaper } from './bundles/3.70.1/shared/muster-bot-paper.mjs';
-import { readMusterPaper, writeMusterPaper } from './bundles/3.70.1/shared/muster-bot-store.mjs';
-import { projectPatternLines, projectionSettings, projectionTime } from './bundles/3.70.1/shared/pattern-projection.mjs';
-import { createGithubSyncView } from './bundles/3.70.1/shared/github-sync-view.mjs';
-import { createDocViewer } from './bundles/3.70.1/shared/doc-viewer.mjs';
-import { PATTERN_FILTER_PRESET_NAMES, PATTERN_FILTER_FIELDS, HIGHER_TIMEFRAME, patternFilterSettings, patternFilterFromForm, evaluatePatternSignal, selectPatternSignals, patternJournalEntry, addPatternJournal, resolvePatternJournal, patternHitStats, patternJournalStats, PATTERN_OUTCOME_NAMES, backtestPatternFilter } from './bundles/3.70.1/shared/pattern-quality.mjs';
-import { stripSyncSecrets } from './bundles/3.70.1/shared/github-sync.mjs';
-import { createMusterView } from './bundles/3.70.1/shared/muster-bot-view.mjs';
-import { computeKiZones, KI_ZONE_INTERVALS } from './bundles/3.70.1/shared/ki-zones.mjs';
-import { heikinAshi } from './bundles/3.70.1/shared/heikin-ashi.mjs';
-import { detectFvgs, fvgSummary } from './bundles/3.70.1/shared/fvg.mjs';
-import { scoreZoneStrength, ZONE_STRENGTH, ZONE_SIGNAL, zoneSignal, zoneStep, zoneOutcome, summarizeZoneBacktest } from './bundles/3.70.1/shared/zone-strength.mjs';
+import { createPositioningFeed } from './bundles/3.70.2/shared/positioning-score.mjs';
+import { CRYPTO_CALENDAR, parseCryptoCalendar, cryptoCalendarEvents } from './bundles/3.70.2/shared/crypto-calendar.mjs';
+import { createMusterClient } from './bundles/3.70.2/shared/muster-bot-feed.mjs';
+import { createMusterPaper } from './bundles/3.70.2/shared/muster-bot-paper.mjs';
+import { readMusterPaper, writeMusterPaper } from './bundles/3.70.2/shared/muster-bot-store.mjs';
+import { projectPatternLines, projectionSettings, projectionTime } from './bundles/3.70.2/shared/pattern-projection.mjs';
+import { createGithubSyncView } from './bundles/3.70.2/shared/github-sync-view.mjs';
+import { createDocViewer } from './bundles/3.70.2/shared/doc-viewer.mjs';
+import { PATTERN_FILTER_PRESET_NAMES, PATTERN_FILTER_FIELDS, HIGHER_TIMEFRAME, patternFilterSettings, patternFilterFromForm, evaluatePatternSignal, selectPatternSignals, patternJournalEntry, addPatternJournal, resolvePatternJournal, patternHitStats, patternJournalStats, PATTERN_OUTCOME_NAMES, backtestPatternFilter } from './bundles/3.70.2/shared/pattern-quality.mjs';
+import { stripSyncSecrets } from './bundles/3.70.2/shared/github-sync.mjs';
+import { createMusterView } from './bundles/3.70.2/shared/muster-bot-view.mjs';
+import { computeKiZones, KI_ZONE_INTERVALS } from './bundles/3.70.2/shared/ki-zones.mjs';
+import { heikinAshi } from './bundles/3.70.2/shared/heikin-ashi.mjs';
+import { detectFvgs, fvgSummary } from './bundles/3.70.2/shared/fvg.mjs';
+import { scoreZoneStrength, ZONE_STRENGTH, ZONE_SIGNAL, zoneSignal, zoneStep, zoneOutcome, summarizeZoneBacktest } from './bundles/3.70.2/shared/zone-strength.mjs';
 // 3.68.0: KI-Signale/Trading-Bot entfernt; der GitHub-Sync behält sein Format inklusive vorhandener Modelloriginale.
-import { exportModelArchive, importModelArchive, validateModelArchive, restoreModelOriginals } from './bundles/3.70.1/shared/model-archive.mjs';
-import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT } from './bundles/3.70.1/shared/telegram-format.mjs';
-import { createOrderflowView } from './bundles/3.70.1/shared/orderflow-view.mjs';
-import { createSignalView } from './bundles/3.70.1/shared/orderflow-signal-view.mjs';
-import { networkState, createWidgetBoundary } from './bundles/3.70.1/shared/widget-state.mjs';
+import { exportModelArchive, importModelArchive, validateModelArchive, restoreModelOriginals } from './bundles/3.70.2/shared/model-archive.mjs';
+import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT } from './bundles/3.70.2/shared/telegram-format.mjs';
+import { createOrderflowView } from './bundles/3.70.2/shared/orderflow-view.mjs';
+import { createSignalView } from './bundles/3.70.2/shared/orderflow-signal-view.mjs';
+import { networkState, createWidgetBoundary } from './bundles/3.70.2/shared/widget-state.mjs';
 // Pure, unrounded calculations. Prices are USDT per unit; FX is USDT per EUR.
 function rsi(closes, period = 14) {
   const out = Array(closes.length).fill(null);
@@ -3139,7 +3139,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
 // 3.43.0 (G10a): reiner Fachkern in shared/; Datenquelle und Karten folgen getrennt.
 // 3.44.0 (G10b): öffentlicher Adapter in shared/bitget-public.mjs; sichtbare Anbindung folgt mit G10(c).
-const APP_VERSION = '3.70.1', docEl = document.documentElement;
+const APP_VERSION = '3.70.2', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -13778,7 +13778,17 @@ function patqFormFill() {
   $('patq-preset').value = s.preset; for (const f of PATTERN_FILTER_FIELDS) $('patq-' + f.key).value = String(s[f.key]); $('patq-counter').checked = s.counterTrend;
   put('patq-preset-label', `${PATTERN_FILTER_PRESET_NAMES[s.preset]} · Score ≥ ${s.minScore} · R/R ≥ ${String(s.minRR).replace('.', ',')}${s.counterTrend ? ' · Gegentrend an' : ''}`);
 }
-function patqSet(next) { patq.settings = next; store.set(PATQ_KEY, next); patqFormFill(); if (typeof patSvcRender === 'function') patSvcRender(); }
+// 3.70.2: Filteränderungen gehen von selbst an den 24/7-Dienst (vorher erst nach „Vorauswahl am Dienst übernehmen“ – der Dienst filterte weiter streng)
+var patqSyncTimer = 0;
+function patqSet(next) {
+  patq.settings = next; store.set(PATQ_KEY, next); patqFormFill(); if (typeof patSvcRender === 'function') patSvcRender();
+  clearTimeout(patqSyncTimer); patqSyncTimer = setTimeout(() => {
+    // nur wenn sich ausschließlich der Filter unterscheidet – Chat, Vorauswahl und Zeitraum bleiben eine bewusste Übernahme
+    const w = svcOn() && !store.get('scalpdesk.patterns-oracle-only.v1', false) ? svc.pol.conf?.patternWatch : null; if (!w?.config || typeof patSvcApply !== 'function') return;
+    let mine; try { mine = patSvcConfig(); } catch { return; }
+    if (JSON.stringify({ ...w.config, filter: null }) === JSON.stringify({ ...mine, filter: null }) && JSON.stringify(w.config.filter) !== JSON.stringify(mine.filter)) void patSvcApply();
+  }, 1200);
+}
 // Signal-Log im Chartmuster-Fenster: gesendete und gefilterte Signale mit Grund, Ergebnis und Statistik; Backtest zum Kalibrieren
 const patqTime = t => new Date(t).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 function patqLogPaint() {
@@ -14006,7 +14016,7 @@ function patSvcRender() {
   const watch = svcOn() ? svc.pol.conf?.patternWatch : null; let same = false, reason = '';
   try { same = !!watch?.config && JSON.stringify(watch.config) === JSON.stringify(patSvcConfig()); } catch (e) { reason = e.message; }
   const oracleOnly = !!store.get('scalpdesk.patterns-oracle-only.v1', false); $('pat-oracle-only').checked = oracleOnly;
-  const text = oracleOnly ? patSvcNote || 'Oracle ist der einzige Mustersender. Die App sendet keine Chartmuster; Datei und Dienst gemäß Anleitung einrichten. Auf jedem verwendeten Gerät aktivieren.' : patSvcBusy ? 'Wird am Dienst übernommen …' : patSvcNote || (!svcOn() ? 'Ohne HTTPS-Dienst: Meldungen nur aus der offenen App.' : !watch ? 'Dienst prüfen/auf 2.4.0 aktualisieren.' : same ? `Übernommen · Revision ${watch.rev} · ${watch.config.items.length} Märkte · ${tgtOn('patterns') ? 'Chartmuster an' : 'Chartmuster aus'}` : `Noch nicht synchronisiert. ${reason || 'Vorauswahl, Zeitraum oder Chat bewusst übernehmen.'}`);
+  const text = oracleOnly ? patSvcNote || 'Oracle ist der einzige Mustersender. Die App sendet keine Chartmuster; Datei und Dienst gemäß Anleitung einrichten. Auf jedem verwendeten Gerät aktivieren.' : patSvcBusy ? 'Wird am Dienst übernommen …' : patSvcNote || (!svcOn() ? 'Ohne HTTPS-Dienst: Meldungen nur aus der offenen App.' : !watch ? 'Dienst prüfen/auf 2.4.0 aktualisieren.' : same ? `Übernommen · Revision ${watch.rev} · ${watch.config.items.length} Märkte · ${tgtOn('patterns') ? 'Chartmuster an' : 'Chartmuster aus'}` : `Noch nicht synchronisiert. ${reason || 'Vorauswahl, Zeitraum, Chat oder Qualitätsfilter mit „Vorauswahl am Dienst übernehmen“ übernehmen.'}`);
   if (status.textContent !== text) status.textContent = text;
   button.disabled = patSvcBusy || !svcOn() || oracleOnly;
 }
@@ -14918,7 +14928,7 @@ const musterPaper = createMusterPaper({ read: readMusterPaper, write: writeMuste
   } });
 const MUSTER_TG_NAMES = { hammer: 'Hammer', engulfing: 'Bullish Engulfing', confluence: 'Konfluenz', po3: 'Power of Three' };
 musterView = createMusterView({ host: musterHost, selection: musterSelection, currentPrice: (symbol, market) => state.symbol === symbol && state.source === market ? currentPrice() : null,
-  prefs: store.get('scalpdesk.muster.settings.v1', {}), savePrefs: value => store.set('scalpdesk.muster.settings.v1', value), workerFactory: () => new Worker(new URL('./bundles/3.70.1/shared/muster-bot-worker.mjs', import.meta.url), { type: 'module' }), paper: musterPaper, onMarkers: scheduleDraw,
+  prefs: store.get('scalpdesk.muster.settings.v1', {}), savePrefs: value => store.set('scalpdesk.muster.settings.v1', value), workerFactory: () => new Worker(new URL('./bundles/3.70.2/shared/muster-bot-worker.mjs', import.meta.url), { type: 'module' }), paper: musterPaper, onMarkers: scheduleDraw,
   telegramStatus: () => tgtReady('trades') ? null : 'Hinweis: Telegram ist noch nicht eingerichtet oder das Ziel „Trades“ ist aus (Einstellungen → Telegram).' });
 void musterPaper.restore().then(() => musterPaper.poll());
 function musterDraw(svg, data, x, y, bottom) {
