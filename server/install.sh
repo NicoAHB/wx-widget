@@ -56,6 +56,7 @@ say "1/7 Node.js $(node -v) ✓"
 # ---- 2. Programm: vollständiges geprüftes Bündel, dann eine Zeigerumschaltung ----
 mkdir -p "$DIR/releases"
 STAGE=$(mktemp -d "$DIR/releases/.stage.XXXXXX")
+chmod 755 "$DIR" "$DIR/releases" "$STAGE"   # 2.14.2: mktemp legt 700 an – der Dienstbenutzer muss das Programm lesen können
 trap 'rm -rf "$STAGE"' EXIT
 curl -fsSL "$SRC/release-manifest.json" -o "$STAGE/release-manifest.json" || die "Lieferliste konnte nicht geladen werden; bisheriges Programm bleibt."
 PARTS=$(node - "$STAGE/release-manifest.json" <<'NODE'
@@ -88,6 +89,7 @@ const fs=require('fs'),c=require('crypto'),b=fs.readFileSync(process.argv[2]),j=
 NODE
 )
 if [ -e "$DIR/releases/$RELEASE" ]; then verify_bundle "$DIR/releases/$RELEASE" || die "Vorhandenes Lieferbündel beschädigt; nicht überschrieben."; rm -rf "$STAGE"; else mv "$STAGE" "$DIR/releases/$RELEASE"; fi
+chmod -R go+rX,go-w "$DIR/releases/$RELEASE"   # 2.14.2: auch ein schon vorhandener (mit 700 angelegter) Programmstand wird lesbar
 OLD=$(readlink "$DIR/current" 2>/dev/null || true)
 # Erstes Update eines älteren Installers: vollständige bisherige Programmdateien als Rückfallstand erhalten.
 if [ -z "$OLD" ] && [ -f "$DIR/scalpdesk-247.mjs" ]; then
