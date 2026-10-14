@@ -35,7 +35,8 @@ const jsClick = (page, sel) => page.evaluate(sel => { const e = document.querySe
 const openTgc = async page => { await page.evaluate(() => { if (!document.getElementById('tgc-dialog').open) document.getElementById('tgc-open').click(); }); await page.waitForTimeout(600); };
 const rows = page => page.evaluate(() => Object.fromEntries([...document.querySelectorAll('.tgc-row')].map(r => [r.dataset.tgt, { st: r.dataset.state, on: r.querySelector('input').checked, dis: r.querySelector('input').disabled, busy: r.querySelector('input').getAttribute('aria-busy') === 'true', text: r.querySelector('.tgc-st').textContent }])));
 const master = page => page.evaluate(() => { const a = document.getElementById('tgc-all'); return { checked: a.checked, ind: a.indeterminate, dis: a.disabled, count: document.getElementById('tgc-count').textContent }; });
-const tgSent = async (since, re = /./) => (await h.ctl('/sent')).filter(m => m.svc === 'tg' && !m.method && m.at >= since && re.test(m.text || ''));
+// 3.71.0: Fotos mit Bildunterschrift zählen mit (Gewinn-/Verlust-Test als Beispielbild „TEST · Verlust-Alarm · …“)
+const tgSent = async (since, re = /./) => (await h.ctl('/sent')).filter(m => m.svc === 'tg' && (!m.method || (m.method === 'sendPhoto' && /^TEST · /.test(m.caption || ''))) && m.at >= since && (re.test(m.text || '') || (m.method === 'sendPhoto' && String(re) === '/^<b>🧪 TEST ·/')));
 const docs = async since => (await h.ctl('/sent')).filter(m => m.svc === 'tg' && /Document|Media/.test(m.method || '') && m.at >= since);
 
 const tests = {

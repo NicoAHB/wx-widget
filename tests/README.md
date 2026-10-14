@@ -1,5 +1,14 @@
 # Tests für Scalp Desk
 
+**3.71.0 Gewinn-/Verlust-Alarm als Bild (Dienst 2.15.0, Claude):**
+- Neu `unit-pnl-card.js` (12): Beispiel nach Vorlage, Farben, keine Emojis, Bildunterschrift, Summe der Zeilen = große Zahl, mehr als 5 Positionen („weitere“), fehlende Kurse, PNG 1080 breit.
+- `unit-247.js` (100):
+  - Bild per `sendPhoto` mit einzeiliger Bildunterschrift;
+  - Bild nicht erzeugbar → Text;
+  - Die Ablaufprüfungen laufen mit `pnlCards: false`.
+  - Der Mock liest jetzt Multipart.
+- `m40`, `m46`, `m38`, `m54`: Gewinn-/Verlust-Alarm als Foto mit Bildunterschrift; „Alle testen“ schickt ein Beispielbild.
+
 **3.71.0 Chartmuster-Signalkarte und Alarm-Knopf (Dienst 2.15.0, Musterdienst 1.3.0, Claude):**
 - `unit-pattern-card.js` (71):
   - Beispiel nach Vorlage (DOT/USDT);

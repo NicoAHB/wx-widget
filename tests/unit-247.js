@@ -106,7 +106,8 @@ const TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', CHAT = '987654321'
   let tgFail = null, symDelay = {}; const dcLog = []; // 3.27.0: Telegram lehnt sendMessage ab ({ status, desc }) oder ist nicht erreichbar ('net'); Discord; langsame Kürzel
   const reply = (r, status = 200) => ({ ok: status < 300, status, json: async () => r });
   globalThis.fetch = async (url, o = {}) => {
-    const u = new URL(url), b = o.body ? JSON.parse(o.body) : {};
+    // 2.15.0: Foto (multipart) lesbar machen – Textfelder als Text, Dateien als Buffer
+    const u = new URL(url), b = o.body instanceof FormData ? Object.fromEntries(await Promise.all([...o.body.entries()].map(async ([k, v]) => [k, typeof v === 'string' ? v : Buffer.from(await v.arrayBuffer())]))) : o.body ? JSON.parse(o.body) : {};
     if (u.pathname.startsWith(`/file/bot${TOKEN}/`)) return reply(JSON.parse(files.get(u.pathname.split('/').pop())));
     if (/discord/.test(u.hostname)) { dcLog.push(b.content); return { ok: true, status: 204, json: async () => ({}) }; }
     const m = /^\/bot[^/]+\/(\w+)$/.exec(u.pathname);
@@ -245,7 +246,8 @@ const TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', CHAT = '987654321'
   check('… ohne Grenze oder Meldungsart aus: kein „GV“', !/GV/.test(W.statusLine({ ok: true, now: T, c })) && !W.pnlOn(W.parseConfig({ ...base, ev: { ...base.ev, pnl: false }, pnl: { n: 2, pos: POS, lim: lims() } })));
   // ---- Dienst mit nachgebautem Telegram/Binance ----
   const stateP = path.join(os.tmpdir(), `s247-pnl-${process.pid}.json`); try { fs.unlinkSync(stateP); } catch {}
-  let nowP = Date.UTC(2026, 8, 30, 14, 0); const logsP = [], wp = new W.Watcher({ token: TOKEN, chat: CHAT, statePath: stateP, now: () => nowP, log: (...a) => logsP.push(a.join(' ')) });
+  // 2.15.0: Die Ablaufprüfungen laufen im Textmodus (pnlCards: false); das Bild prüft der Abschnitt danach
+  let nowP = Date.UTC(2026, 8, 30, 14, 0); const logsP = [], wp = new W.Watcher({ token: TOKEN, chat: CHAT, statePath: stateP, now: () => nowP, log: (...a) => logsP.push(a.join(' ')), pnlCards: false });
   const kRow = c => [nowP - 30e3, String(c), String(c), String(c), String(c), '1', nowP + 30e3 - 1];
   const setP = (b, e) => { symRows = { BTCUSDT: [kRow(b)], ETHUSDT: [kRow(e)] }; };
   const step = async () => { nowP += 16e3; wp.next.price = 0; await wp.tick(); };
@@ -274,7 +276,7 @@ const TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', CHAT = '987654321'
   wp.next.config = 0; failSym = 'ETHUSDT'; setP(110, 50); await step();
   check('Neu scharf geschaltet (anderer Zeitpunkt), aber ein Kurs fehlt: keine Prüfung, keine Meldung', newSent().length === 2 && !wp.pnlFired[`pnl:profit:${A1 + 1}`] && !wp.pnlFired[`pnl:profit:${A1}`], Object.keys(wp.pnlFired).join());
   failSym = ''; wp.saveStateNow();
-  const wp2 = new W.Watcher({ token: TOKEN, chat: CHAT, statePath: stateP, now: () => nowP, log: () => {} });
+  const wp2 = new W.Watcher({ token: TOKEN, chat: CHAT, statePath: stateP, now: () => nowP, log: () => {}, pnlCards: false });
   check('Zustand übersteht einen Neustart (gesendete Verlust-Meldung, Zustand der neuen Gewinn-Grenze)', !!wp2.pnlFired[`pnl:loss:${A2}`] && wp2.pnlSt[`pnl:profit:${A1 + 1}`] === 'armed', JSON.stringify({ fired: Object.keys(wp2.pnlFired), st: wp2.pnlSt }));
   await step(); await step();
   check('Neue Gewinn-Grenze (neu scharf) wird gemeldet, die Verlust-Meldung nicht noch einmal', newSent().length === 3 && newSent()[2].startsWith('<b>🟢 GEWINN-ALARM · +20,00 USD</b>'), newSent()[2]?.split('\n')[1]);
@@ -294,7 +296,7 @@ const TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', CHAT = '987654321'
   pin({ ...base, tag: 'gv06', ev: { ...base.ev, pnl: true }, alarms: [], positions: [], pnl: { n: 2, pos: POS, lim: lims({ profit: { at: A1 + 5 }, loss: { at: A2 + 5, w: false } }) } }, 601, 'G6');
   wp.next.config = 0; setP(100, 50); await step(); setP(103, 50); await step();
   const kP6 = `pnl:profit:${A1 + 5}`; wp.saveStateNow();
-  const wp3 = new W.Watcher({ token: TOKEN, chat: CHAT, statePath: stateP, now: () => nowP, log: () => {} });
+  const wp3 = new W.Watcher({ token: TOKEN, chat: CHAT, statePath: stateP, now: () => nowP, log: () => {}, pnlCards: false });
   check('Erreicht und wartend: der Wartezustand übersteht einen Neustart', wp.pnlPend[kP6]?.val === 6 && wp3.pnlPend[kP6]?.val === 6, JSON.stringify(wp3.pnlPend));
   pin({ ...base, tag: 'gv07', ev: { ...base.ev, pnl: true }, alarms: [], positions: [], pnl: { n: 2, pos: POS, lim: lims({ profit: { at: A1 + 5, done: true }, loss: { at: A2 + 5, w: false } }) } }, 601, 'G7');
   await step();
@@ -317,5 +319,27 @@ const TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', CHAT = '987654321'
   check('… älterer Dienst ohne „GV“: die App sendet selbst', !A2app.s247Covers('pnl', `pnl:profit:${A1}`));
   check('Kein Token im Protokoll (Gewinn/Verlust)', !logsP.some(l => l.includes(TOKEN)) && logsP.some(l => /Gewinn-\/Verlust-Alarm \(≥ \+5 USDT, ≤ −3 USDT, 2 offene Positionen\)/.test(l)), logsP.find(l => /Datei der App übernommen \(#gv01\)/.test(l)));
   try { fs.unlinkSync(stateP); } catch {}
+  // ---- 2.15.0: Gewinn-/Verlust-Alarm als Bild (sendPhoto, eine Zeile Bildunterschrift), Text als Ersatz ----
+  let resvgOk = true; try { require('../server/node_modules/@resvg/resvg-js'); } catch { resvgOk = false; }
+  if (resvgOk) {
+    const photos = () => tgLog.filter(x => x.method === 'sendPhoto');
+    const runCard = async (name, patch = null) => {
+      const sp = path.join(os.tmpdir(), `s247-pnlbild-${name}-${process.pid}.json`); try { fs.unlinkSync(sp); } catch {}
+      nowP += 36e5; const x = new W.Watcher({ token: TOKEN, chat: CHAT, statePath: sp, now: () => nowP, log: () => {} }); if (patch) patch(x);
+      const at = nowP - 1000, p0 = photos().length, s0 = sent().length;
+      setP(101, 50.5); pin({ ...base, tag: 'gb' + name.slice(0, 2), ev: { ...base.ev, pnl: true }, alarms: [], positions: [], pnl: { n: 2, pos: POS, lim: lims({ profit: { at }, loss: { at: at + 1 } }) } }, 601, 'B' + name);
+      x.next.config = 0; nowP += 16e3; x.next.price = 0; await x.tick(); setP(103, 50); nowP += 16e3; x.next.price = 0; await x.tick(); nowP += 16e3; x.next.price = 0; await x.tick();
+      try { fs.unlinkSync(sp); } catch {}
+      return { ph: photos().slice(p0), tx: sent().slice(s0) };
+    };
+    const ok = await runCard('bild');
+    const ph = ok.ph[0] || {}, png = ph.photo;
+    check('2.15.0: Gewinn-Alarm als Bild – sendPhoto in den Chat Kursalarm, PNG 1080 breit, kein Text', ok.ph.length === 1 && ok.tx.length === 0 && String(ph.chat_id) === CHAT && Buffer.isBuffer(png) && png.slice(1, 4).toString() === 'PNG' && png.readUInt32BE(16) === 1080, JSON.stringify({ n: ok.ph.length, t: ok.tx.length }));
+    check('… Bildunterschrift eine Zeile ohne HTML: „Gewinn-Alarm · +6,00 USD“', ph.caption === 'Gewinn-Alarm · +6,00 USD' && !ph.parse_mode, ph.caption);
+    const P = await import('../server/pattern-card.mjs'), card = P.pnlAlarmCard({ profit: true, pnl: 6, level: 5, positions: W.pnlRows({ pos: POS, n: 2 }, new Map([['spot:BTCUSDT', 103.004], ['futures:ETHUSDT', 50.001]])), at: Date.UTC(2026, 9, 14, 18, 35, 15), bot: 'Mein Kurs Alarm' });
+    check('… Zeilen je Position mit derselben Formel wie das Live-Ergebnis; Summe der Zeilen = große Zahl', card.model.rows.length === 2 && Math.round(card.model.rows.reduce((t, r) => t + r.value, 0) * 100) === 600 && card.model.totalText === '+6,00', JSON.stringify(card.model.rows));
+    const fb = await runCard('ersatz', x => { x.pnlCardImage = async () => { throw new Error('Renderer kaputt'); }; });
+    check('… Bild nicht erzeugbar → bisherige Textmeldung', fb.ph.length === 0 && fb.tx.length === 1 && fb.tx[0].includes('<b>🟢 GEWINN-ALARM · +6,00 USD</b>'), JSON.stringify(fb.tx));
+  } else { console.log('– Bildprüfungen Gewinn/Verlust übersprungen (resvg fehlt)'); }
   console.log(`\n${pass}/${pass + fail} bestanden`); process.exit(fail ? 1 : 0);
 })().catch(e => { console.log('✗ Abbruch — ' + e.stack); process.exit(1); });

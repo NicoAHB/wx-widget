@@ -10,8 +10,12 @@ Vorgabe aller Gruppen G01–G14 steht in `docs/VORGABE-G01-G14.md` (Original-Üb
   - Aufbau: Gesamturteil Schwach/Mittel/Stark (Schwellen 40/70 einstellbar), Mini-Chart mit Zonen, Stop statt „Ungültig bei“ (Hinweis bei Stop < ATR 14), „Jetzt“ (gültig / verpasst ab 0,3 % / abgelaufen nach 6 Kerzen), Musterqualität blau, „Erlernt“ erst ab 10 Fällen, Fuß mit Datum.
   - Telegram: Bild plus Kurztext in derselben Reihenfolge; ohne Bild der Kurztext.
   - Schwache Signale gehen nur mit dem Schalter „Schwache Signale auch senden“ (Standard aus) an Telegram; in der App bleiben sie im Signal-Log, dort auch aufgeklappt als Karte.
+- **Gewinn-/Verlust-Alarm als Bild (Dienst 2.15.0):**
+  - `shared/pnl-alarm-card.mjs` (Modell, SVG, einzeilige Bildunterschrift).
+  - App über `chanSendCard`, Dienst über `pnlCard` im Ausgang. Ersatz ist die bisherige Textmeldung.
+  - Positionen: höchstens 5 plus „weitere“; die Zeilen ergeben genau die große Zahl.
 - **„🔔 Alarm für diesen Kurs“:** `openAlarmForm` wechselt per `goTo('alarms')` in den Bereich „Alarme“ (vorher öffnete das Formular unsichtbar).
-- **Tests:** neu `m109` (15); erweitert `unit-pattern-card` (71), `unit-pattern-quality` (40), `unit-patterns-only` (22), `m102` (19), `m58` tg (7); angepasst `unit-247e`, `unit-telegram-format`, `unit-247d`.
+- **Tests:** neu `m109` (15), `unit-pnl-card` (12); erweitert `unit-247` (100), `unit-pattern-card` (71), `unit-pattern-quality` (40), `unit-patterns-only` (22), `m102` (19), `m58` tg (7); angepasst `unit-247e`, `unit-telegram-format`, `unit-247d`.
 
 ### Davor in 3.71.0: Trade-Karte überarbeitet
 

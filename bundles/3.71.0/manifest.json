@@ -356,6 +356,12 @@
       "alias": "./shared/pattern-signal-card.mjs"
     },
     {
+      "path": "./bundles/3.71.0/shared/pnl-alarm-card.mjs",
+      "sha256": "0477b22eea5d7f2cd65ca483afa753c9b0dee4d0c633fe5b12cf178de3c96028",
+      "bytes": 8056,
+      "alias": "./shared/pnl-alarm-card.mjs"
+    },
+    {
       "path": "./bundles/3.71.0/shared/po3-core.mjs",
       "sha256": "abdb41c5cba00b1d6e9c98e6ba9a92fff3f62f9ff2ce47363cc2bdf5e32aaf08",
       "bytes": 10982,
@@ -441,8 +447,8 @@
     },
     {
       "path": "./weather-widget-v2.html",
-      "sha256": "dcf33e4d2a7d74a6071cd31faf1f25dacc84b8c5b174eee7a5f1ce87a2db489e",
-      "bytes": 1650735
+      "sha256": "38debfba75784f07418cacee40f0353ec046789175e8cec6b54eb55ab3842273",
+      "bytes": 1653716
     },
     {
       "path": "./manifest.webmanifest",

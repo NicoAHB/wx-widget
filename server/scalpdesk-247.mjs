@@ -176,6 +176,12 @@ export function pnlTotal(pnl, prices) {
   for (const p of pnl.pos) { const pr = prices.get(`${p.source}:${p.symbol}`); if (!(pr > 0)) return null; total += p.qty * (pr - p.entry) * (p.side === 'long' ? 1 : -1); }
   return Math.round(total * 100) / 100;
 }
+// 2.15.0: Ergebnis je Position für das Bild (dieselbe Formel wie pnlTotal; null, solange ein Kurs fehlt)
+export function pnlRows(pnl, prices) {
+  if (!pnl?.pos.length) return null; const rows = [];
+  for (const p of pnl.pos) { const pr = prices.get(`${p.source}:${p.symbol}`); if (!(pr > 0)) return null; rows.push({ symbol: p.symbol, side: p.side, pnl: p.qty * (pr - p.entry) * (p.side === 'long' ? 1 : -1) }); }
+  return rows;
+}
 const pnlCond = l => (l.k === 'profit' ? `≥ +${number(l.v)} USDT` : `≤ −${number(l.v)} USDT`);
 export const pnlName = k => (k === 'profit' ? 'Gewinn-Alarm' : 'Verlust-Alarm');
 export function pnlText(l, cur, n) {
@@ -461,8 +467,8 @@ export class PatternArchive {
   }
 }
 export class Watcher {
-  constructor({ token, chat, patternToken = '', kiUsers = [], kiClient, key = '', origins = [APP_ORIGIN], listen = LISTEN, host = '', statePath = '', now = () => Date.now(), log = (...a) => console.log(...a), patternFetch = klines, patternSpread = c => bookTicker(c.mkt, c.sym), patternCards = true }) {
-    Object.assign(this, { token, chat, patternToken, kiUsers, key, origins, listen, host, statePath, now, log, patternFetch, patternSpread, patternCards });
+  constructor({ token, chat, patternToken = '', kiUsers = [], kiClient, key = '', origins = [APP_ORIGIN], listen = LISTEN, host = '', statePath = '', now = () => Date.now(), log = (...a) => console.log(...a), patternFetch = klines, patternSpread = c => bookTicker(c.mkt, c.sym), patternCards = true, pnlCards = true }) {
+    Object.assign(this, { token, chat, patternToken, kiUsers, key, origins, listen, host, statePath, now, log, patternFetch, patternSpread, patternCards, pnlCards });   // 2.15.0: pnlCards – Gewinn-/Verlust-Alarm als Bild
     this.kiStartedAt = now(); this.kiOffset = null; this.kiCommandsBusy = false;
     this.patternWatch = { rev: 0, since: 0, config: null }; this.patternProgress = new Map(); this.patternBusy = false;
     this.patSignals = []; this.patSent = [];   // 2.13.0: Journal aller bewerteten Chartmuster-Signale und gesendete Meldungen (Anti-Spam)
@@ -565,10 +571,10 @@ export class Watcher {
   // Meldung in den Ausgang; sie bleibt dort (auch über Neustarts), bis Telegram sie angenommen hat. label: Art für die Zeile
   // „Zustellung: zuletzt …“, silent: ohne Ton (BTC-Puls nachts)
   // 2.0: target/epoch – Ziel und seine Epoche beim Erzeugen (vor dem Senden erneut geprüft); ev – Ereignis-ID der Freigabe
-  async queue(text, tz, { label = '', silent = false, ev = '', target = 'course-alert', destination = null, po3Rev = null, card = null } = {}) {
+  async queue(text, tz, { label = '', silent = false, ev = '', target = 'course-alert', destination = null, po3Rev = null, card = null, pnlCard = null } = {}) {
     const t = this.now(), tg = this.pol.targets[target];
     if (this.key && !tg.on) { this.log(`Nicht gesendet (Ziel Kursalarm ausgeschaltet): ${label || text.split('\n')[0]}`); return; }
-    this.out.push({ id: `${t}-${Math.random().toString(36).slice(2, 7)}`, text, tz, label, silent, at: t, tries: 0, next: 0, err: '', dc: false, target, epoch: tg.epoch, ...(destination ? { destination, watchRev: this.patternWatch.rev } : {}), ...(target === 'ki' ? (po3Rev !== null ? { po3Rev } : { kiRev: this.ki.state.rev }) : {}), ...(ev ? { ev } : {}), ...(card ? { card } : {}) });
+    this.out.push({ id: `${t}-${Math.random().toString(36).slice(2, 7)}`, text, tz, label, silent, at: t, tries: 0, next: 0, err: '', dc: false, target, epoch: tg.epoch, ...(destination ? { destination, watchRev: this.patternWatch.rev } : {}), ...(target === 'ki' ? (po3Rev !== null ? { po3Rev } : { kiRev: this.ki.state.rev }) : {}), ...(ev ? { ev } : {}), ...(card ? { card } : {}) , ...(pnlCard ? { pnlCard } : {}) });
     if (!this.saveStateNow() && ['patterns', 'ki'].includes(target)) { this.out.pop(); if (ev) this.evSet(ev, 'failed', 'Ausgang nicht dauerhaft gespeichert'); return; }
     await this.deliver();
   }
@@ -578,6 +584,12 @@ export class Watcher {
     // 2.15.0: Signalkarte – „Jetzt“ (Einstieg gültig/verpasst/abgelaufen) zur Zustellzeit; Bildunterschrift = Kurztext der Karte
     const r = await P.renderPatternCard(m.card, { at: m.at, now: lateAt || m.at, timezone: m.tz || 'Europe/Berlin', captionLimit: TELEGRAM_CAPTION_LIMIT - 80 });
     return { png: r.png, caption: r.caption + (lateAt ? `\n⏰ verspätet zugestellt ${timeText(lateAt, m.tz)} Uhr` : '') };
+  }
+  // 2.15.0: Gewinn-/Verlust-Alarm als Bild (Positionen und Wert zur Auslösung); Bildunterschrift eine Zeile ohne HTML
+  async pnlCardImage(m, lateAt = 0) {
+    const P = await loadCards(); if (!P?.renderPnlCard) throw new Error('Kartenrenderer fehlt (Installer erneut ausführen)');
+    const r = await P.renderPnlCard({ ...m.pnlCard, bot: this.me?.first_name || '' }, { timezone: m.tz || 'Europe/Berlin' });
+    return { png: r.png, caption: r.caption + (lateAt ? ` · verspätet ${timeText(lateAt, m.tz)} Uhr` : ''), html: false };
   }
   // 2.0: Zustand einer eigenen Freigabe fortschreiben (mit Protokollzeile: Ereignis, Ziel, Sender, Zustand)
   evSet(id, st, why = '') {
@@ -620,10 +632,12 @@ export class Watcher {
         const payload = telegramFields(full), base = { chat_id: dest.chat, ...(dest.thread ? { message_thread_id: dest.thread } : {}), ...(m.silent ? { disable_notification: true } : {}) };
         // 2.14.0: Chartmuster als Trading-Karte (PNG); scheitert die Karte oder lehnt Telegram das Bild ab, die bisherige Textmeldung
         let sent = null, via = '';
-        if (m.target === 'patterns' && m.card && this.patternCards) {
-          const card = await this.patternCard(m, late ? t : 0).catch(e => { this.note('Karte', `Karte nicht erzeugt – Text als Ersatz (${this.secret(e.message).slice(0, 120)})`); return null; });
+        // 2.15.0: ebenso der Gewinn-/Verlust-Alarm (Chat Kursalarm) als Bild mit einzeiliger Bildunterschrift
+        const makeCard = m.target === 'patterns' && m.card && this.patternCards ? () => this.patternCard(m, late ? t : 0) : m.pnlCard && this.pnlCards ? () => this.pnlCardImage(m, late ? t : 0) : null;
+        if (makeCard) {
+          const card = await makeCard().catch(e => { this.note('Karte', `Karte nicht erzeugt – Text als Ersatz (${this.secret(e.message).slice(0, 120)})`); return null; });
           if (card) {
-            try { sent = await this.tg('sendPhoto', { ...base, photo: card.png, caption: card.caption, parse_mode: 'HTML' }, 30000, token); via = ' als Karte'; }
+            try { sent = await this.tg('sendPhoto', { ...base, photo: card.png, caption: card.caption, ...(card.html === false ? {} : { parse_mode: 'HTML' }) }, 30000, token); via = ' als Karte'; }
             catch (e) { if (e.lost || e.code !== 400 || CHAT_PROBLEM.test(e.message)) throw e; this.log(`Telegram lehnt das Bild ab – Text als Ersatz: ${m.label}`); }
           }
         }
@@ -778,6 +792,7 @@ export class Watcher {
   // das in ihrer Datei) – die Datei gleich neu lesen; gemeldet wird in flushPnl
   async checkPnl(c, prices) {
     const cur = pnlTotal(c.pnl, prices); if (cur === null) return; // ohne offene Position oder mit fehlendem Kurs: keine Prüfung
+    const card = () => ({ pnlCard: { profit: null, pnl: cur, positions: pnlRows(c.pnl, prices), count: c.pnl.pos.length, at: this.now() } });   // 2.15.0: Bild
     const t = this.now();
     for (const l of c.pnl.lim) {
       const k = pnlKey(l); if (this.pnlFired[k] || this.pnlPend[k]) continue;
@@ -785,8 +800,8 @@ export class Watcher {
       if (st === 'wait') { if (!met) { this.pnlSt[k] = 'armed'; this.saveState(); } continue; }
       if (!met) continue;
       // 2.0: mit Steuerung sofort reservieren – wer zuerst reserviert (geöffnete App oder Dienst), meldet; kein Warten auf die Datei
-      if (this.key) { const ev = pnlEvent(l), g = this.reserveOwn(ev, pnlName(l.k)); this.pnlFired[k] = g.grant ? { t, val: cur } : { t, val: cur, by: 'app' }; this.saveState(); if (g.grant) { this.next.beat = 0; await this.queue(pnlText(l, cur, c.pnl.pos.length), c.tz, { label: pnlName(l.k), ev }); } continue; }
-      this.pnlPend[k] = { t, val: cur }; this.next.config = 0; this.saveState();
+      if (this.key) { const ev = pnlEvent(l), g = this.reserveOwn(ev, pnlName(l.k)); this.pnlFired[k] = g.grant ? { t, val: cur } : { t, val: cur, by: 'app' }; this.saveState(); if (g.grant) { this.next.beat = 0; const pc = card().pnlCard; await this.queue(pnlText(l, cur, c.pnl.pos.length), c.tz, { label: pnlName(l.k), ev, pnlCard: { ...pc, profit: l.k === 'profit', level: l.v } }); } continue; }
+      this.pnlPend[k] = { t, val: cur, rows: card().pnlCard.positions }; this.next.config = 0; this.saveState();
       this.log(`${pnlName(l.k)}: Live-Ergebnis ${cur} USDT (Grenze ${l.k === 'profit' ? '≥ +' : '≤ −'}${l.v}) – meldet in ${EVERY.pnlHold / 1000} s, falls die App es nicht schon tut`);
     }
   }
@@ -802,7 +817,7 @@ export class Watcher {
       if (!l || this.pnlFired[k]) continue;
       this.pnlFired[k] = { t: p.t, val: p.val }; this.saveState(); this.next.beat = 0; // gleich in der angepinnten Nachricht vermerken
       this.log(`${pnlName(l.k)} gemeldet: Live-Ergebnis ${p.val} USDT`);
-      await this.queue(pnlText(l, p.val, c.pnl.pos.length), c.tz, { label: pnlName(l.k) });
+      await this.queue(pnlText(l, p.val, c.pnl.pos.length), c.tz, { label: pnlName(l.k), pnlCard: { profit: l.k === 'profit', pnl: p.val, level: l.v, positions: p.rows || null, count: c.pnl.pos.length, at: p.t } });
     }
     this.saveState();
   }

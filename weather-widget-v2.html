@@ -2284,6 +2284,7 @@ import { scoreZoneStrength, ZONE_STRENGTH, ZONE_SIGNAL, zoneSignal, zoneStep, zo
 import { exportModelArchive, importModelArchive, validateModelArchive, restoreModelOriginals } from './bundles/3.71.0/shared/model-archive.mjs';
 import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT, patternGrade } from './bundles/3.71.0/shared/telegram-format.mjs';
 import { patternSignalCard, patternChartData } from './bundles/3.71.0/shared/pattern-signal-card.mjs';   // 3.71.0: Chartmuster-Signalkarte
+import { pnlAlarmCard } from './bundles/3.71.0/shared/pnl-alarm-card.mjs';   // 3.71.0: Gewinn-/Verlust-Alarm als Bild
 import { createOrderflowView } from './bundles/3.71.0/shared/orderflow-view.mjs';
 import { createSignalView } from './bundles/3.71.0/shared/orderflow-signal-view.mjs';
 import { networkState, createWidgetBoundary } from './bundles/3.71.0/shared/widget-state.mjs';
@@ -4976,15 +4977,15 @@ function renderOpenPositions() {
   $('pos-empty').hidden = state.positions.length + state.demoPositions.length > 0 || !$('pos-form').hidden;
   // 3.32.0 (G04.7): Fehlt zu einer Position ein aktueller Kurs (keiner oder älter als 60 s), ist die Summe nur eine Teilsumme der
   // übrigen – so beschriftet, mit den fehlenden Coins; ohne einen einzigen aktuellen Kurs gibt es keine Summe
-  let total = 0, missing = 0; const gone = [];
-  for (const card of list.children) { const pos = state.positions.find(p => p.id === card.dataset.id); if (!pos) continue; const m = updateCard(card, pos); if (m.pnl === null || !m.fresh) { missing++; gone.push(`${coin(pos.symbol)} (${m.pnl === null ? 'kein Kurs' : 'Kurs veraltet'})`); } else total += m.pnl; }
+  let total = 0, missing = 0; const gone = [], rows = [];   // 3.71.0: rows – Ergebnis je Position (Bild beim Gewinn-/Verlust-Alarm)
+  for (const card of list.children) { const pos = state.positions.find(p => p.id === card.dataset.id); if (!pos) continue; const m = updateCard(card, pos); if (m.pnl === null || !m.fresh) { missing++; gone.push(`${coin(pos.symbol)} (${m.pnl === null ? 'kein Kurs' : 'Kurs veraltet'})`); } else { total += m.pnl; rows.push({ symbol: pos.symbol, side: pos.side, pnl: m.pnl }); } }
   const n = state.positions.length, part = missing > 0 && missing < n, none = n > 0 && missing === n;
   $('open-total').textContent = !n || none ? '—' : `${signed(total)} USDT`; color('open-total', n && !none ? total : 0);
   put('open-total-label', part ? 'Offen – Teilsumme' : 'Offen, nicht realisiert'); $('open-total').classList.toggle('partial', part);
   renderDay(total);
   put('open-total-eur', (n ? `${none ? 'kein aktueller Kurs' : eurOpen(total)}${missing ? ` · ohne ${gone.join(', ')}` : ''} · ${n} offen` : 'keine offene Position') + quarMark('pos'));
   if (!$('pos-form').hidden) updateEntryNow();
-  state.openTotal = { total, missing, n, gone };
+  state.openTotal = { total, missing, n, gone, rows };
   // 3.31.0 (G03.11): zugeklappt zeigt die Überschrift das Wichtigste in einer Zeile
   if ($('pos-over').open) put('pos-over-sub', 'Von dir erfasst · Live-Kurs von Binance · USDT (Euro)');
   else { const d = dayStats(state.trades), ib = !$('integrity-banner').hidden, due = !$('backup-due').hidden && !$('data-toggle').classList.contains('ok');
@@ -8353,6 +8354,27 @@ function chanSend(k, text, test = false, kind = 'test', opts = {}) {
   if (opts.coord) m.coord = true; // 3.33.0: Alarm-Ereignis – kein blinder zweiter Versuch
   return new Promise(resolve => { sendWait.set(id, { k, resolve, test, label: test ? '' : chanLabel(text) }); live.post(m); });
 }
+// 3.71.0: Gewinn-/Verlust-Alarm als Bild (opts.card) mit einzeiliger Bildunterschrift; Bild nicht erzeugbar oder von Telegram
+// abgelehnt (ohne Chat-Problem) → die bisherige Textmeldung über chanSend. Verlorene Antwort: unbestätigt, kein zweiter Versand.
+const tgBotNames = new Map();
+const PNL_TEST_CARD = () => ({ profit: false, pnl: -170.1, level: 170, count: 3, at: Date.now(), positions: [{ symbol: 'BTCUSDT', side: 'long', pnl: -92.4 }, { symbol: 'ETHUSDT', side: 'short', pnl: 18.7 }, { symbol: 'SOLUSDT', side: 'long', pnl: -96.4 }] });
+async function tgBotName(token) {
+  if (!token) return ''; if (tgBotNames.has(token)) return tgBotNames.get(token);
+  let name = s247?.meTok === token ? s247.me?.first_name || '' : '';
+  if (!name) { try { name = (await tgApi(token, 'getMe'))?.first_name || ''; } catch { /* nur Anzeige */ } }
+  tgBotNames.set(token, name); return name;
+}
+async function chanSendCard(k, text, test = false, kind = 'test', opts = {}) {
+  const T = k === 'tg' && opts.card && kind === 'pnl' ? tgTarget(kind) : null; if (!T) return chanSend(k, text, test, kind, opts);
+  let m = null;
+  try {
+    const { svg, width, height, caption } = pnlAlarmCard({ ...opts.card, bot: await tgBotName(T.token) }, { timezone: opts.card.timezone || PAT_TZ });
+    m = await patPostCard(T, await svgPngBlob(svg, width, height), (test ? 'TEST · ' : '') + caption, { html: false, name: 'gewinn-verlust.png', silent: !!opts.silent });
+    if (m.ok) { if (!test) store.set(CHANLAST_KEY, { ...(store.get(CHANLAST_KEY) || {}), tg: { at: Date.now(), label: chanLabel(text) } }); chanState.tg = { ok: true, at: Date.now(), text: 'zugestellt' }; renderChanStatus(); renderChanSummary(); return m; }
+    if (m.lost || m.chat) return m.lost ? m : { ok: false, code: m.code, msg: m.msg };
+  } catch { /* Bild nicht erzeugbar → Text */ }
+  return chanSend(k, text, test, kind, opts);
+}
 function chanError(k, m) {
   if (m.code === -1) return 'Ziel nicht eingerichtet – in „Telegram einrichten“ eine Chat-ID dafür eintragen.';
   if (!m.code) return `Keine Verbindung zu ${CHAN_NAME[k]} – Internet, Werbeblocker oder Firmen-Firewall prüfen.`;
@@ -8384,7 +8406,7 @@ async function notifyChannels(type, key, text, ttl, opts = {}) {
   if (!(await store.claim(key, ttl))) return;
   chanClaimed.add(key);
   const msg = finishTelegram(text, Date.now());
-  for (const k of ks) void chanSend(k, msg, false, type, { ...opts, coord: strict }); // opts.silent: lautlos (BTC-Puls nachts); strict: kein blinder zweiter Versuch
+  for (const k of ks) void chanSendCard(k, msg, false, type, { ...opts, coord: strict }); // opts.silent: lautlos (BTC-Puls nachts); strict: kein blinder zweiter Versuch; 3.71.0: opts.card → Bild
 }
 // Kurs wieder weg von der Marke: nächste Berührung darf erneut melden (nur für selbst gesendete Meldungen)
 function chanRelease(key) { if (chanClaimed.delete(key)) void store.release(key); }
@@ -8494,7 +8516,9 @@ async function chanTestAll() {
   const off = [...new Set(TG_TESTS.map(([kind]) => TG_ROUTE[kind]).filter(id => tgDest(id) && !tgtOn(id)))]; // 3.33.0: Ziel AUS – auch kein Test dorthin
   for (const [kind, name] of TG_TESTS) {
     if (off.includes(TG_ROUTE[kind])) continue;
-    const r = await chanSend('tg', formatMessage('notice', { headline: '🧪 TEST · ' + name, lines: ['Gehört in: ' + (TG_ROUTE[kind] === 'backup' ? 'Sicherungschat' : TG_ROUTE[kind] === 'trades' ? 'Trades' : 'Kursalarm')], at: Date.now() }), true, kind);
+    const text = formatMessage('notice', { headline: '🧪 TEST · ' + name, lines: ['Gehört in: ' + (TG_ROUTE[kind] === 'backup' ? 'Sicherungschat' : TG_ROUTE[kind] === 'trades' ? 'Trades' : 'Kursalarm')], at: Date.now() });
+    // 3.71.0: Gewinn-/Verlust-Alarm als Beispielbild (wie im Ernstfall), Bildunterschrift mit „TEST ·“
+    const r = kind === 'pnl' ? await chanSendCard('tg', text, true, kind, { card: PNL_TEST_CARD() }) : await chanSend('tg', text, true, kind);
     if (r.ok) ok++;
     await new Promise(res => setTimeout(res, 1100)); // Telegram: etwa eine Nachricht pro Sekunde je Chat
   }
@@ -11275,13 +11299,15 @@ function pnlFire(k, a, cur) {
   const text = `Live-Ergebnis ${signed(cur)} USDT (${n} ${n === 1 ? 'offene Position' : 'offene Positionen'}) · Schwelle ${pnlCond(k, a.value)} erreicht`;
   beep(); desktopNotify(title, text, 'pnl:' + k);
   simpleToast('pnl:' + k, 'alarm ' + (k === 'profit' ? 'up' : 'down'), `${title}: ${text}`, null, k === 'profit' ? 'green' : 'orange');
-  a.svc = false; void pnlSend(k, a.at, formatMessage('pnl', { profit: k === 'profit', pnl: cur, positions: n, level: a.value }));
+  // 3.71.0: Bild mit den Positionen dieses Moments (Summe = Live-Ergebnis); die bisherige Textmeldung bleibt der Ersatz
+  const card = { profit: k === 'profit', pnl: cur, level: a.value, positions: state.openTotal?.rows || [], count: n, at: Date.now(), timezone: PAT_TZ };
+  a.svc = false; void pnlSend(k, a.at, formatMessage('pnl', { profit: k === 'profit', pnl: cur, positions: n, level: a.value }), card);
 }
 // Telegram: je Aktivierung genau eine Nachricht (auch mit mehreren offenen Tabs). 3.26.0 mit 24/7-Dienst: vorher in
 // die angeheftete Nachricht schauen – hat der Dienst diese Grenze schon gemeldet (App kam gerade erst in den Vordergrund),
 // das übernehmen statt noch einmal senden. Sonst senden und „gemeldet“ sofort übergeben: Der Dienst liest die Datei vor seiner
 // eigenen Meldung neu und schweigt dann.
-async function pnlSend(k, at, msg) {
+async function pnlSend(k, at, msg, card = null) {
   if (s247?.cfg?.on && chan.ev.pnl && typeof s247Parse === 'function' && tgConfigured() && !svcOn()) { // 3.33.0: mit Steuerung entscheidet die Freigabe
     try {
       const pm = (await tgApi(chan.tg.token, 'getChat', { chat_id: chan.tg.chat }))?.pinned_message, f = s247Parse(pm).gv?.find(x => x.k === k && x.at === at);
@@ -11289,7 +11315,7 @@ async function pnlSend(k, at, msg) {
     } catch { /* Telegram gerade nicht lesbar: lieber selbst senden */ }
     scheduleS247(0);
   }
-  void notifyChannels('pnl', `pnl:${k}:${at}`, msg, 30 * 864e5, { ev: pnlEventId(k, at) });
+  void notifyChannels('pnl', `pnl:${k}:${at}`, msg, 30 * 864e5, { ev: pnlEventId(k, at), card });
 }
 // Der Dienst hat diese Grenze schon gemeldet: dessen Zeit und Wert übernehmen, nichts senden
 function pnlTakeSvc(k, at, f) { const d = pnlGet(), a = d[k]; if (a.at !== at) return; a.state = 'fired'; a.firedAt = f.t; a.firedVal = f.val; a.svc = true; pnlSet(d); }
@@ -12387,7 +12413,7 @@ async function svcSendCoordinated(type, opts, text, ks) {
   if (!tgtReady('course-alert')) { if (!fallback) void svcReport(opts.ev, 'discarded', 'Ziel unmittelbar vor dem Senden aus'); svcNote(opts.ev, 'verworfen – Ziel Kursalarm aus'); return; }
   if (!fallback) await svcReport(opts.ev, 'sending');
   const msg = finishTelegram(text + (fallback ? '\n' + formatMessage('notice', { headline: 'Von der App gesendet', lines: ['Dienst nicht erreichbar'] }) : ''), Date.now());
-  const res = await Promise.all(ks.map(k => chanSend(k, msg, false, type, { ...opts, coord: true })));
+  const res = await Promise.all(ks.map(k => chanSendCard(k, msg, false, type, { ...opts, coord: true })));   // 3.71.0: Gewinn-/Verlust-Alarm als Bild
   const m = res[Math.max(0, ks.indexOf('tg'))], st = m?.ok ? (m.unconfirmed ? 'unconfirmed' : 'confirmed') : m?.lost ? 'unconfirmed' : 'failed';
   if (!fallback) void svcReport(opts.ev, st, m?.ok ? '' : m?.lost ? 'Telegram-Antwort verloren' : String(m?.msg || '').slice(0, 100));
   svcNote(opts.ev, `${fallback ? 'von der App ohne Freigabe gesendet (Dienst nicht erreichbar) · ' : 'Freigabe erhalten · '}${st === 'confirmed' ? 'zugestellt' : st === 'unconfirmed' ? 'Zustellung unbestätigt' : 'fehlgeschlagen'}`);
@@ -13699,20 +13725,21 @@ function patTgData(c, h, ev = null, chart = null) {
     chart, settings: { ...patq.settings }, timezone: PAT_TZ, now: Date.now(), at: Date.now() };
 }
 const patTgText = (c, h, ev = null, chart = null) => formatMessage('pattern', patTgData(c, h, ev, chart));
-// Karte im Browser zeichnen (SVG → Canvas → PNG); scheitert das, sendet patNotify den Kurztext
-async function patCardBlob(data) {
-  const { svg, width, height } = patternSignalCard(data, { now: Date.now(), timezone: PAT_TZ }), url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
+// Karte im Browser zeichnen (SVG → Canvas → PNG); scheitert das, sendet der Aufrufer den Text
+async function svgPngBlob(svg, width, height) {
+  const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
   try {
     const img = new Image(); img.src = url; await img.decode();
     const cv = document.createElement('canvas'); cv.width = width; cv.height = height; cv.getContext('2d').drawImage(img, 0, 0, width, height);
     return await new Promise((res, rej) => cv.toBlob(b => b?.size ? res(b) : rej(new Error('Karte leer')), 'image/png'));
   } finally { URL.revokeObjectURL(url); }
 }
+async function patCardBlob(data) { const { svg, width, height } = patternSignalCard(data, { now: Date.now(), timezone: PAT_TZ }); return svgPngBlob(svg, width, height); }
 // sendPhoto (wie das Trade-Bild direkt aus der Seite); Fehlerarten wie im Dienst: verloren → unbestätigt, Chat-Problem → fehlgeschlagen
 const PAT_CHAT_PROBLEM = /chat|thread|topic|blocked|kicked|deactivated|not enough rights|have no rights/i;
-async function patPostCard(T, blob, caption) {
+async function patPostCard(T, blob, caption, { html = true, name = 'chartmuster.png', silent = false } = {}) {
   const fd = new FormData(); fd.append('chat_id', T.chat); if (T.thread) fd.append('message_thread_id', T.thread);
-  fd.append('photo', blob, 'chartmuster.png'); fd.append('caption', caption); fd.append('parse_mode', 'HTML');
+  fd.append('photo', blob, name); fd.append('caption', caption); if (html) fd.append('parse_mode', 'HTML'); if (silent) fd.append('disable_notification', 'true');
   let r; try { r = await fetch(`https://api.telegram.org/bot${T.token}/sendPhoto`, { method: 'POST', body: fd, credentials: 'omit', referrerPolicy: 'no-referrer', cache: 'no-store' }); }
   catch { return { ok: false, lost: true }; }
   let j = null; try { j = await r.json(); } catch {}

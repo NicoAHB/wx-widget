@@ -122,6 +122,8 @@ Auslösung: erreicht
 
 ## Ergebnisalarm · Gewinn
 
+Ab 3.71.0 (Dienst 2.15.0) kommt der Gewinn-/Verlust-Alarm als Bild (PNG, 1080 px breit) mit der Bildunterschrift `Gewinn-Alarm · +50,00 USD` bzw. `Verlust-Alarm · −170,10 USD`. Auf dem Bild stehen das Label, die Uhrzeit, die große Zahl, die Schwelle, die offenen Positionen (höchstens 5 plus „weitere“) sowie Datum und Botname. Der folgende Text ist nur noch der Ersatz, wenn das Bild nicht erzeugt werden kann:
+
 ```text
 🟢 GEWINN-ALARM · +50,00 USD
 🎯 Schwelle erreicht: ⭐ ≥ +50,00 USD ⭐

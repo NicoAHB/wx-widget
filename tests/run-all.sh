@@ -7,6 +7,7 @@ echo "== unit-crypto-calendar"; timeout 120 node unit-crypto-calendar.js 2>&1 | 
 echo "== unit-zone-strength"; timeout 120 node unit-zone-strength.js 2>&1 | grep -E "✗|bestanden"
 echo "== unit-pattern-quality"; timeout 120 node unit-pattern-quality.js 2>&1 | grep -E "✗|bestanden"
 echo "== unit-pattern-card"; timeout 300 node unit-pattern-card.js 2>&1 | grep -E "✗|bestanden|Abbruch"
+echo "== unit-pnl-card"; timeout 300 node unit-pnl-card.js 2>&1 | grep -E "✗|bestanden|Abbruch"
 echo "== unit-heikin-ashi"; timeout 120 node unit-heikin-ashi.js 2>&1 | grep -E "✗|bestanden"
 echo "== unit-ki-zones"; timeout 120 node unit-ki-zones.js 2>&1 | grep -E "✗|bestanden"
 echo "== unit-fvg"; timeout 180 node unit-fvg.js 2>&1 | grep -E "✗|bestanden|übersprungen"

@@ -30,9 +30,13 @@ async function open(browser, chan, extra = []) {
     check('Dialog zeigt beide Ziele (Kursalarm und Sicherungschat mit Thema)', form.chat === ALERT && form.bchat === BACKUP && form.bthread === '12' && form.thread === '', JSON.stringify(form));
     await h.ctl('/tgreset');
     await page.click('#tg-testall');
-    const tests = await until(async () => { const t = (await tg()).filter(m => /^<b>🧪 TEST ·/.test(m.text || '')); return t.length >= 7 ? t : null; }, 20000);
+    // 3.71.0: der Gewinn-/Verlust-Alarm-Test kommt als Beispielbild mit „TEST · Verlust-Alarm · −170,10 USD“
+    const isPnlPhoto = m => m.method === 'sendPhoto' && /^TEST · (Gewinn|Verlust)-Alarm · /.test(m.caption || '');
+    const tests = await until(async () => { const t = (await tg()).filter(m => /^<b>🧪 TEST ·/.test(m.text || '') || isPnlPhoto(m)); return t.length >= 7 ? t : null; }, 20000);
     await page.waitForTimeout(1500);
-    const st = await page.textContent('#tg-status'), byKind = (tests || []).map(m => ({ name: /TEST · (.+?)<\/b>/.exec(m.text)[1], chat: m.chat_id, thread: m.message_thread_id || '' }));
+    const st = await page.textContent('#tg-status'), byKind = (tests || []).map(m => ({ name: isPnlPhoto(m) ? 'Gewinn-/Verlust-Alarm' : /TEST · (.+?)<\/b>/.exec(m.text)[1], chat: m.chat_id, thread: m.thread || m.message_thread_id || '' }));
+    const pnlTest = (tests || []).find(isPnlPhoto);
+    check('3.71.0: Test „Gewinn-/Verlust-Alarm“ als Beispielbild (PNG 1080 breit) mit „TEST · Verlust-Alarm · −170,10 USD“', pnlTest && pnlTest.png && pnlTest.w === 1080 && String(pnlTest.caption).replace(/\r/g, '') === 'TEST · Verlust-Alarm · −170,10 USD' && !pnlTest.parse_mode, JSON.stringify(pnlTest && { cap: pnlTest.caption, w: pnlTest.w }));
     const toAlert = byKind.filter(x => x.chat === ALERT && !x.thread).map(x => x.name), toBackup = byKind.filter(x => x.chat === BACKUP && x.thread === '12').map(x => x.name);
     check('Test je Nachrichtenart: Kurs-Alarm, Stop/Ziel, Tagesgrenze, News, Gewinn/Verlust, BTC-Puls → Kursalarm', toAlert.length === 6 && ['Kurs-Alarm', 'Stop-Loss/Take-Profit', 'Tages-Verlustlimit', 'News-Alarm (Wirtschaftstermin)', 'Gewinn-/Verlust-Alarm', 'BTC-Puls'].every(n => toAlert.includes(n)), toAlert.join(', '));
     check('Test je Nachrichtenart: Datensicherung → nur Sicherungschat (Thema 12)', toBackup.length === 1 && toBackup[0] === 'Datensicherung' && byKind.length === 7, JSON.stringify(byKind.filter(x => x.chat === BACKUP)));

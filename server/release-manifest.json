@@ -4,8 +4,8 @@
   "files": [
     {
       "path": "scalpdesk-247.mjs",
-      "sha256": "58d6e1b62608737dc299e9a5bc62cecbee1480a2bce8b28abfe8d21215c1fb6e",
-      "bytes": 134674
+      "sha256": "800228e77cf7cfe9e3fb14d199332d9eeef91682d9254f090dd8de01d1706d03",
+      "bytes": 136462
     },
     {
       "path": "pattern-engine.mjs",
@@ -19,8 +19,8 @@
     },
     {
       "path": "pattern-card.mjs",
-      "sha256": "fbefc8b7e743dd179ec2e63fd01a520063ec5dba36d8ebe385f5f8668311336b",
-      "bytes": 6752
+      "sha256": "667a8d71998c2a8350ab0683a318246cae3eaa236fe9d6f1712f2623e7edec29",
+      "bytes": 8049
     },
     {
       "path": "package.json",
@@ -401,6 +401,11 @@
       "path": "shared/pattern-signal-card.mjs",
       "sha256": "82f15c5c2239454082999cc7e57937389d28f8bb608eb2f3d943ab3c4c5a3981",
       "bytes": 21230
+    },
+    {
+      "path": "shared/pnl-alarm-card.mjs",
+      "sha256": "0477b22eea5d7f2cd65ca483afa753c9b0dee4d0c633fe5b12cf178de3c96028",
+      "bytes": 8056
     },
     {
       "path": "shared/po3-core.mjs",
