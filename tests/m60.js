@@ -56,7 +56,7 @@ const results = [], check = (name, ok, info = '') => { results.push(!!ok); conso
     const watchCalls = () => calls.filter(x => x.p.endsWith('/watch')).length, w0 = watchCalls();
     await page.evaluate(() => __patq.set({ preset: 'locker' }));
     await page.waitForTimeout(2500);
-    check('3.70.2: Nur der Filter geändert → automatisch am Dienst übernommen (Preset „Locker“), Status „Übernommen“', watchCalls() === w0 + 1 && calls.at(-1).body.config.filter.preset === 'locker' && calls.at(-1).body.config.filter.minScore === 60 && /Übernommen/.test(await page.locator('#pat-svc-status').textContent()), JSON.stringify(calls.at(-1).body.config?.filter));
+    check('3.70.2: Nur der Filter geändert → automatisch am Dienst übernommen (Preset „Locker“), Status „Übernommen“', watchCalls() === w0 + 1 && calls.at(-1).body.config.filter.preset === 'locker' && calls.at(-1).body.config.filter.minScore === 40 && /Übernommen/.test(await page.locator('#pat-svc-status').textContent()), JSON.stringify(calls.at(-1).body.config?.filter));
     const fire = () => page.evaluate(async () => {
       const t = Math.floor(Date.now() / 36e5) * 36e5 - 36e5, c = { mkt: 'spot', sym: 'BTCUSDT', iv: '1h', pat: 'double_bottom', kind: 'form', dir: 'bull', t0: t - 20 * 36e5, t1: t, tc: t, p0: 100, model: 'pat-1', profile: 'H12-e0.10', q: 88, src: 'live', rules: [], res: null };
       c.id = __g09.pkId(c); await __g09.patNotify(c, { levels: { tgt: 110, inv: 90 } });

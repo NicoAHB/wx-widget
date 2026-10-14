@@ -14,7 +14,7 @@ Kandidaten sind wie bisher frisch bestätigte Formationen: Ausbruch auf der letz
 
 Ein einziges nicht erfülltes Kriterium verhindert den Versand. Die Werte stehen für das Preset „Normal“.
 
-- **Chance/Risiko ≥ 2,0**: (Ziel − Einstieg) ÷ (Einstieg − Ungültig). Einstieg ist der Schlusskurs der Ausbruchskerze.
+- **Chance/Risiko ≥ 1,2** (bis 3.70.1: 2,0): (Ziel − Einstieg) ÷ (Einstieg − Ungültig). Einstieg ist der Schlusskurs der Ausbruchskerze.
 - **Ausbruch bestätigt**: Status „Ausbruch …“ und Schlusskurs der Ausbruchskerze außerhalb der Musterlinie (`levels.brk`).
 - **Signal höchstens 3 Kerzen alt**. Die Dienste prüfen ohnehin nur die letzten zwei abgeschlossenen Kerzen.
 - **Kurs höchstens 50 % des Wegs zum Ziel gelaufen**: In der App zählt der Live-Kurs, sonst der letzte Schlusskurs.
@@ -29,7 +29,7 @@ Ein einziges nicht erfülltes Kriterium verhindert den Versand. Die Werte stehen
 
 ## 2. Signalscore 0–100
 
-Mindestens 70 Punkte (einstellbar).
+Mindestens 55 Punkte im Preset „Normal“ (einstellbar; bis 3.70.1: 70). Die Presets wurden in 3.70.2 gesenkt, weil im Betrieb fast keine Meldung mehr durchkam.
 
 | Teil | Punkte | Regel |
 |---|---|---|
@@ -89,9 +89,9 @@ Alle Zeiten und Grenzen sind einstellbar.
 
 | Preset | Score | R/R | Alter | Weg | ATR | Kosten | 24h-Vol. | Spread | je Coin/TF | gegensätzlich | je Stunde |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| Streng | 80 | 2,5 | 2 | 35 % | 3 × | 4 × | 20 Mio. | 0,05 % | 90 Min. | 120 Min. | 2 |
-| Normal | 70 | 2,0 | 3 | 50 % | 2,5 × | 3 × | 5 Mio. | 0,10 % | 60 Min. | 60 Min. | 3 |
-| Locker | 60 | 1,8 | 4 | 65 % | 2 × | 2 × | 1 Mio. | 0,20 % | 30 Min. | 30 Min. | 5 |
+| Streng | 70 | 1,5 | 2 | 35 % | 3 × | 4 × | 20 Mio. | 0,05 % | 90 Min. | 120 Min. | 2 |
+| Normal | 55 | 1,2 | 3 | 50 % | 2,5 × | 3 × | 5 Mio. | 0,10 % | 60 Min. | 60 Min. | 3 |
+| Locker | 40 | 0,8 | 4 | 65 % | 1,5 × | 2 × | 1 Mio. | 0,20 % | 30 Min. | 30 Min. | 5 |
 
 ## Prüfen
 

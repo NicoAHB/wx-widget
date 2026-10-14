@@ -6,10 +6,12 @@
 
 // ---- Einstellungen ----
 export const PATTERN_FILTER_VERSION = 1;
+// 3.70.2: Schwellen gesenkt – im Betrieb lag Chance/Risiko bestätigter pat-1-Muster meist bei 0,2–1,6 und der Score bei 20–60;
+// mit R/R ≥ 2 (Normal) bzw. ≥ 1,8 (Locker) kam praktisch keine Meldung mehr an.
 export const PATTERN_FILTER_PRESETS = Object.freeze({
-  streng: Object.freeze({ minScore: 80, minRR: 2.5, maxAge: 2, maxProgress: 35, minTargetAtr: 3, minFeeMultiple: 4, minVolume24h: 20, maxSpread: 0.05, counterTrend: false, cooldownMin: 90, oppositeMin: 120, maxPerHour: 2, feeSpot: 0.1, feeFutures: 0.05 }),
-  normal: Object.freeze({ minScore: 70, minRR: 2, maxAge: 3, maxProgress: 50, minTargetAtr: 2.5, minFeeMultiple: 3, minVolume24h: 5, maxSpread: 0.1, counterTrend: false, cooldownMin: 60, oppositeMin: 60, maxPerHour: 3, feeSpot: 0.1, feeFutures: 0.05 }),
-  locker: Object.freeze({ minScore: 60, minRR: 1.8, maxAge: 4, maxProgress: 65, minTargetAtr: 2, minFeeMultiple: 2, minVolume24h: 1, maxSpread: 0.2, counterTrend: false, cooldownMin: 30, oppositeMin: 30, maxPerHour: 5, feeSpot: 0.1, feeFutures: 0.05 })
+  streng: Object.freeze({ minScore: 70, minRR: 1.5, maxAge: 2, maxProgress: 35, minTargetAtr: 3, minFeeMultiple: 4, minVolume24h: 20, maxSpread: 0.05, counterTrend: false, cooldownMin: 90, oppositeMin: 120, maxPerHour: 2, feeSpot: 0.1, feeFutures: 0.05 }),
+  normal: Object.freeze({ minScore: 55, minRR: 1.2, maxAge: 3, maxProgress: 50, minTargetAtr: 2.5, minFeeMultiple: 3, minVolume24h: 5, maxSpread: 0.1, counterTrend: false, cooldownMin: 60, oppositeMin: 60, maxPerHour: 3, feeSpot: 0.1, feeFutures: 0.05 }),
+  locker: Object.freeze({ minScore: 40, minRR: 0.8, maxAge: 4, maxProgress: 65, minTargetAtr: 1.5, minFeeMultiple: 2, minVolume24h: 1, maxSpread: 0.2, counterTrend: false, cooldownMin: 30, oppositeMin: 30, maxPerHour: 5, feeSpot: 0.1, feeFutures: 0.05 })
 });
 export const PATTERN_FILTER_PRESET_NAMES = Object.freeze({ streng: 'Streng', normal: 'Normal', locker: 'Locker', eigen: 'Eigene Werte' });
 // Felder für den Einstellungsdialog (Bereich, Schritt, Einheit) – dieselben Grenzen prüft patternFilterSettings.
