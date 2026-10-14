@@ -3,6 +3,25 @@
 Diese Datei ist der Einstieg für jede weitere Arbeit am Projekt. Wer sie liest, braucht kein Vorwissen. Die vollständige fachliche
 Vorgabe aller Gruppen G01–G14 steht in `docs/VORGABE-G01-G14.md` (Original-Übergabe; dort sind G10–G14 ausführlich beschrieben).
 
+## In Arbeit – 3.71.0 (Claude): Trade-Karte überarbeitet, Gesamtlauf erst auf Anweisung des Nutzers
+
+Ausführlich: [docs/3.71.0-AENDERUNGEN.md](docs/3.71.0-AENDERUNGEN.md).
+
+- **Trade-Karte nach Vorlage des Nutzers:**
+  - Aufbau: Kopf mit Trade-Nummer und Chips, Netto € groß, Ablauf in zwei Spalten, Qualität mit Exit-Effizienz, Max. Verlust und Gebühren.
+  - Schrift ≥ 22 px. Positionswerte und Legende entfallen. Design und Farben bleiben.
+- **Datenprüfung:**
+  - Einstieg > 0,5 % außerhalb der Kerze seiner Minute → „⚠ Einstieg weicht vom Chart ab“ auf der Karte, im Auftrag und im Konsolen-Log.
+  - Kursquelle ≠ gehandelter Markt → gelber Hinweis.
+  - Gebühren 0 → „⚠ nicht erfasst, bitte prüfen“.
+- **Chart:**
+  - Pills: E unter der Linie, H/T links vom Hoch/Tief, A unten rechts mit Linie zur Ausstiegskerze; nie über Kerzen.
+  - Y-Rand oben und unten je 24 %.
+- **Telegram:**
+  - Bildunterschrift einzeilig ohne HTML, zum Beispiel „XRP/USDT Long 20× · +43,88 € (+89,5 %) · 1:52 Std.“.
+  - Sendefehler mit Chat-Name im Auftrag, im Hinweis und im Konsolen-Log, nie mit Token.
+- **Tests:** `m103` (45), `m55` (49), `m102` (14). Das Bündel liegt in `bundles/3.71.0`, `bundles/3.70.2` ist unverändert.
+
 ## In Arbeit – 3.70.1 / Dienst 2.14.1 / Musterdienst 1.2.1 (Claude): Optimierungen nach Rückmeldungen, Gesamtlauf erst auf Anweisung des Nutzers
 
 Ausführlich: [docs/3.70.1-AENDERUNGEN.md](docs/3.70.1-AENDERUNGEN.md).

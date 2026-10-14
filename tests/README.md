@@ -1,5 +1,16 @@
 # Tests für Scalp Desk
 
+**3.71.0 Trade-Karte überarbeitet (Claude):**
+- `m103.js` (45):
+  - Beispiel XRP/USDT 24.09.2026 als Long-Gewinn (19:35–21:27, 760 XRP, 20×, Cross, Gebühren 0).
+  - Aufbau über `layout.texts` (Text und Schriftgröße) geprüft: Kopf, Netto €/USD, Ablauf, Exit-Effizienz nachgerechnet, Gebühren-Hinweis, Schrift ≥ 22 px, Quelle.
+  - Pills ohne Kerzen-Überdeckung (`layout.candles`) und an der richtigen Seite.
+  - Einzeilige Bildunterschrift.
+  - Verschobener Einstieg → Hinweis auf Karte, im Auftrag und im Log.
+  - Sendefehler im Log mit Chat-Name, ohne Token.
+  - Der Abrufzähler zählt nur noch Abrufe mit Zeitfenster. Vorher zählten die Live-Kerzen des Charts mit, was zu Wacklern auf main führte.
+- `m55.js` (49): neue Bildunterschrift und Fehlertexte. Die Warnungen zu frei gewählten Testkursen gelten nicht als Fehler.
+
 **3.70.1 Trading-Karte ohne Text / Schrift mitgeliefert (Musterdienst 1.2.1, Dienst 2.14.1, Claude):**
 - `unit-pattern-card.js` (57): sechs neue Prüfungen.
   - Schriftdateien und Lizenz vorhanden.

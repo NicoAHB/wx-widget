@@ -2258,33 +2258,33 @@ html[data-chartfull] .chart-pattern-row{padding:0;order:1;flex-wrap:nowrap}html[
 @media(max-width:360px){.chart-pattern-overview-card{height:120px;grid-template-columns:minmax(0,1fr) 112px}}
 </style>
   <script type="module">
-import { MARKET_INTERVALS, CHART_INTERVALS, SIGNAL_INTERVALS, INTERVAL_MS, nearestChartInterval } from './bundles/3.70.2/shared/market-intervals.mjs';
-import { createDetailCandles, detailOptions, detailChoice, closedSeries, timeIndex, DETAIL_VISIBLE_MAX } from './bundles/3.70.2/shared/chart-detail.mjs';
-import { patternChipRows, patternChipKey } from './bundles/3.70.2/shared/chart-pattern-chips.mjs';
-import { PATTERN_QUALITY_CONFIG, chartPatternQuality, repricePatternQuality, sortPatternQuality, patternOverview } from './bundles/3.70.2/shared/chart-pattern-quality.mjs';
-import { createPatternOverviewFeed } from './bundles/3.70.2/shared/chart-pattern-overview-feed.mjs';
+import { MARKET_INTERVALS, CHART_INTERVALS, SIGNAL_INTERVALS, INTERVAL_MS, nearestChartInterval } from './bundles/3.71.0/shared/market-intervals.mjs';
+import { createDetailCandles, detailOptions, detailChoice, closedSeries, timeIndex, DETAIL_VISIBLE_MAX } from './bundles/3.71.0/shared/chart-detail.mjs';
+import { patternChipRows, patternChipKey } from './bundles/3.71.0/shared/chart-pattern-chips.mjs';
+import { PATTERN_QUALITY_CONFIG, chartPatternQuality, repricePatternQuality, sortPatternQuality, patternOverview } from './bundles/3.71.0/shared/chart-pattern-quality.mjs';
+import { createPatternOverviewFeed } from './bundles/3.71.0/shared/chart-pattern-overview-feed.mjs';
 // Arbeitsstand: bei der gemeinsamen Release-Freigabe in das neue Versionsbündel übernehmen.
-import { createPositioningFeed } from './bundles/3.70.2/shared/positioning-score.mjs';
-import { CRYPTO_CALENDAR, parseCryptoCalendar, cryptoCalendarEvents } from './bundles/3.70.2/shared/crypto-calendar.mjs';
-import { createMusterClient } from './bundles/3.70.2/shared/muster-bot-feed.mjs';
-import { createMusterPaper } from './bundles/3.70.2/shared/muster-bot-paper.mjs';
-import { readMusterPaper, writeMusterPaper } from './bundles/3.70.2/shared/muster-bot-store.mjs';
-import { projectPatternLines, projectionSettings, projectionTime } from './bundles/3.70.2/shared/pattern-projection.mjs';
-import { createGithubSyncView } from './bundles/3.70.2/shared/github-sync-view.mjs';
-import { createDocViewer } from './bundles/3.70.2/shared/doc-viewer.mjs';
-import { PATTERN_FILTER_PRESET_NAMES, PATTERN_FILTER_FIELDS, HIGHER_TIMEFRAME, patternFilterSettings, patternFilterFromForm, evaluatePatternSignal, selectPatternSignals, patternJournalEntry, addPatternJournal, resolvePatternJournal, patternHitStats, patternJournalStats, PATTERN_OUTCOME_NAMES, backtestPatternFilter } from './bundles/3.70.2/shared/pattern-quality.mjs';
-import { stripSyncSecrets } from './bundles/3.70.2/shared/github-sync.mjs';
-import { createMusterView } from './bundles/3.70.2/shared/muster-bot-view.mjs';
-import { computeKiZones, KI_ZONE_INTERVALS } from './bundles/3.70.2/shared/ki-zones.mjs';
-import { heikinAshi } from './bundles/3.70.2/shared/heikin-ashi.mjs';
-import { detectFvgs, fvgSummary } from './bundles/3.70.2/shared/fvg.mjs';
-import { scoreZoneStrength, ZONE_STRENGTH, ZONE_SIGNAL, zoneSignal, zoneStep, zoneOutcome, summarizeZoneBacktest } from './bundles/3.70.2/shared/zone-strength.mjs';
+import { createPositioningFeed } from './bundles/3.71.0/shared/positioning-score.mjs';
+import { CRYPTO_CALENDAR, parseCryptoCalendar, cryptoCalendarEvents } from './bundles/3.71.0/shared/crypto-calendar.mjs';
+import { createMusterClient } from './bundles/3.71.0/shared/muster-bot-feed.mjs';
+import { createMusterPaper } from './bundles/3.71.0/shared/muster-bot-paper.mjs';
+import { readMusterPaper, writeMusterPaper } from './bundles/3.71.0/shared/muster-bot-store.mjs';
+import { projectPatternLines, projectionSettings, projectionTime } from './bundles/3.71.0/shared/pattern-projection.mjs';
+import { createGithubSyncView } from './bundles/3.71.0/shared/github-sync-view.mjs';
+import { createDocViewer } from './bundles/3.71.0/shared/doc-viewer.mjs';
+import { PATTERN_FILTER_PRESET_NAMES, PATTERN_FILTER_FIELDS, HIGHER_TIMEFRAME, patternFilterSettings, patternFilterFromForm, evaluatePatternSignal, selectPatternSignals, patternJournalEntry, addPatternJournal, resolvePatternJournal, patternHitStats, patternJournalStats, PATTERN_OUTCOME_NAMES, backtestPatternFilter } from './bundles/3.71.0/shared/pattern-quality.mjs';
+import { stripSyncSecrets } from './bundles/3.71.0/shared/github-sync.mjs';
+import { createMusterView } from './bundles/3.71.0/shared/muster-bot-view.mjs';
+import { computeKiZones, KI_ZONE_INTERVALS } from './bundles/3.71.0/shared/ki-zones.mjs';
+import { heikinAshi } from './bundles/3.71.0/shared/heikin-ashi.mjs';
+import { detectFvgs, fvgSummary } from './bundles/3.71.0/shared/fvg.mjs';
+import { scoreZoneStrength, ZONE_STRENGTH, ZONE_SIGNAL, zoneSignal, zoneStep, zoneOutcome, summarizeZoneBacktest } from './bundles/3.71.0/shared/zone-strength.mjs';
 // 3.68.0: KI-Signale/Trading-Bot entfernt; der GitHub-Sync behält sein Format inklusive vorhandener Modelloriginale.
-import { exportModelArchive, importModelArchive, validateModelArchive, restoreModelOriginals } from './bundles/3.70.2/shared/model-archive.mjs';
-import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT } from './bundles/3.70.2/shared/telegram-format.mjs';
-import { createOrderflowView } from './bundles/3.70.2/shared/orderflow-view.mjs';
-import { createSignalView } from './bundles/3.70.2/shared/orderflow-signal-view.mjs';
-import { networkState, createWidgetBoundary } from './bundles/3.70.2/shared/widget-state.mjs';
+import { exportModelArchive, importModelArchive, validateModelArchive, restoreModelOriginals } from './bundles/3.71.0/shared/model-archive.mjs';
+import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT } from './bundles/3.71.0/shared/telegram-format.mjs';
+import { createOrderflowView } from './bundles/3.71.0/shared/orderflow-view.mjs';
+import { createSignalView } from './bundles/3.71.0/shared/orderflow-signal-view.mjs';
+import { networkState, createWidgetBoundary } from './bundles/3.71.0/shared/widget-state.mjs';
 // Pure, unrounded calculations. Prices are USDT per unit; FX is USDT per EUR.
 function rsi(closes, period = 14) {
   const out = Array(closes.length).fill(null);
@@ -3139,7 +3139,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
 // 3.43.0 (G10a): reiner Fachkern in shared/; Datenquelle und Karten folgen getrennt.
 // 3.44.0 (G10b): öffentlicher Adapter in shared/bitget-public.mjs; sichtbare Anbindung folgt mit G10(c).
-const APP_VERSION = '3.70.2', docEl = document.documentElement;
+const APP_VERSION = '3.71.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -14261,154 +14261,202 @@ function timgStats(d, ch) {
 // ---- Zeichnen ----
 const timgDur = ms => { const m = Math.round(ms / 60e3); if (ms < 60e3) return `${Math.max(1, Math.round(ms / 1000))} s`; if (m < 60) return `${m} Min.`; const h = Math.floor(m / 60), r = m % 60; if (h < 48) return `${h} Std.${r ? ` ${r} Min.` : ''}`; const dd = Math.floor(h / 24), rh = h % 24; return `${dd} Tage${rh ? ` ${rh} Std.` : ''}`; };
 const timgWhen = ms => new Date(ms).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+// ---- 3.71.0: Prüfung der Daten vor dem Zeichnen ----
+// Einstieg gegen die Kerze der Einstiegsminute (bei längeren Trades die Kerze, die den Einstieg enthält): liegt der Kurs mehr als
+// 0,5 % außerhalb von Hoch/Tief, stimmt Journal oder Chart nicht – Hinweis auf der Karte und im Protokoll des Auftrags.
+// Quelle: der Markt des Trades (Futures/Spot); eine Ersatzquelle aus dem anderen Markt wird ausdrücklich genannt.
+function timgChecks(d, ch) {
+  const out = [], cs = ch?.candles || [], ms = ch?.ms || 0;
+  if (cs.length && ms > 0) {
+    let worst = 0;
+    for (const b of d.buys) {
+      if (!(b.p > 0)) continue;
+      const c = cs.find(k => b.at >= k.time && b.at < k.time + ms); if (!c) continue;
+      const dev = b.p < c.low ? (c.low - b.p) / c.low : b.p > c.high ? (b.p - c.high) / c.high : 0; worst = Math.max(worst, dev);
+    }
+    if (worst > 0.005) out.push({ key: 'entry', text: `⚠ Einstieg weicht vom Chart ab (${number(worst * 100, 1)} % außerhalb der ${ch.iv}-Kerze)` });
+  }
+  const fut = d.source === 'futures', srcFut = /futures|linear|fapi/i.test(`${ch?.src || ''} ${ch?.label || ''}`);
+  if (cs.length && fut !== srcFut) out.push({ key: 'source', text: `⚠ Kurse aus ${fut ? 'Spot' : 'Futures'} (Ersatzquelle) – gehandelt wurde ${fut ? 'Futures' : 'Spot'}` });
+  return out;
+}
+// Trade-Nummer (fortlaufend nach Abschlusszeit im Journal) und Tagesergebnis des Abschlusstags bis einschließlich dieses Trades
+function timgDay(d) {
+  const done = posResults(state.trades).done.sort((a, b) => a.closedAt - b.closedAt || String(a.id).localeCompare(String(b.id)));
+  const no = done.findIndex(r => r.id === d.id) + 1, day = new Date(d.closedAt).toDateString();
+  const same = done.filter(r => new Date(r.closedAt).toDateString() === day && r.closedAt <= d.closedAt);
+  const eurs = same.map(r => r.trades.reduce((s, t) => { const e = tradeEur(t); return s === null || e === null ? null : s + e; }, 0));
+  return { no: no || null, n: same.length, usd: same.reduce((s, r) => s + r.pnl, 0), eur: eurs.some(v => v === null) ? null : eurs.reduce((s, v) => s + v, 0) };
+}
 function timgDraw(cv, d, ch) {
   cv.width = TIMG_W; cv.height = TIMG_H;
   const g = cv.getContext('2d'); if (!g) throw new Error('Canvas nicht verfügbar');
   const C = TIMG_C, F = (w, s) => `${w} ${s}px ${TIMG_FONT}`, L = 56, R = TIMG_W - 56, long = d.side !== 'short', res = d.net > 0 ? C.up : d.net < 0 ? C.down : C.text2;
   const fit = (s, max) => { s = String(s); if (!max || g.measureText(s).width <= max) return s; while (s.length > 1 && g.measureText(s + '…').width > max) s = s.slice(0, -1); return s + '…'; };
-  const txt = (s, x, y, font, color, align = 'left', max = 0) => { g.font = font; g.fillStyle = color; g.textAlign = align; g.textBaseline = 'alphabetic'; g.fillText(fit(s, max), x, y); return g.measureText(fit(s, max)).width; };
+  const texts = [], txt = (s, x, y, font, color, align = 'left', max = 0) => { g.font = font; g.fillStyle = color; g.textAlign = align; g.textBaseline = 'alphabetic'; const v = fit(s, max); g.fillText(v, x, y); if (v) texts.push({ s: v, px: Number(/(\d+)px/.exec(font)[1]), color }); return g.measureText(v).width; };
   const box = (x, y, w, h, r, fill) => { g.beginPath(); if (g.roundRect) g.roundRect(x, y, w, h, r); else g.rect(x, y, w, h); g.fillStyle = fill; g.fill(); };
-  const chip = (s, x, y, fill, color) => { g.font = F(700, 26); const w = g.measureText(s).width + 32; box(x, y, w, 44, 10, fill); txt(s, x + 16, y + 31, F(700, 26), color); return x + w + 12; };
+  const chip = (s, x, y, fill, color) => { g.font = F(700, 28); const w = g.measureText(s).width + 36; box(x, y, w, 48, 12, fill); txt(s, x + 18, y + 34, F(700, 28), color); return x + w + 12; };
+  const eurOk = d.fx > 0 && d.eur !== null, eurV = v => d.fx > 0 ? eurOf(v, d.fx) : null;
+  const money = (usd, e, sgn = true) => e !== null && e !== undefined ? `${sgn ? signed(e) : number(e)} €` : `${sgn ? signed(usd) : number(usd)} USD`;
+  const S = d.stats !== undefined ? d.stats : timgStats(d, ch), warns = d.checks || timgChecks(d, ch), day = d.day || timgDay(d);
   g.fillStyle = C.bg; g.fillRect(0, 0, TIMG_W, TIMG_H);
-  // Kopf: Paar, Richtung, Hebel, Modus, Markt
-  txt(`${coin(d.sym)}/USDT`, L, 112, F(800, 64), C.text, 'left', 640);
-  txt('Trade abgeschlossen', R, 80, F(600, 26), C.muted, 'right');
-  txt(timgWhen(d.closedAt), R, 114, F(600, 28), C.text2, 'right');
-  let x = chip(long ? 'LONG' : 'SHORT', L, 140, long ? 'rgba(144,228,191,0.16)' : 'rgba(237,139,154,0.16)', long ? C.up : C.down);
-  x = chip(`${levText(d.lev)}×`, x, 140, C.card2, C.text); x = chip(d.mode === 'cross' ? 'Cross' : 'Isoliert', x, 140, C.card2, C.text);
-  chip(d.source === 'futures' ? 'Futures' : 'Spot', x, 140, C.card2, C.text);
-  // Ergebnis (aus dem Journal)
-  box(L, 212, R - L, 200, 22, C.card);
-  txt(d.exchange ? 'Netto-Ergebnis (laut Börse, aus dem Journal)' : 'Netto-Ergebnis (aus dem Journal)', L + 32, 258, F(600, 26), C.muted, 'left', 640);
-  txt(`${signed(d.net)} USD`, L + 32, 346, F(800, 80), res, 'left', 660);
-  if (d.pct !== null) { txt(`${signed(d.pct)} %`, R - 32, 314, F(800, 46), res, 'right'); txt('auf den Einsatz', R - 32, 346, F(600, 24), C.muted, 'right'); }
-  txt(d.eur !== null ? `${d.eurApprox ? '≈ ' : '≙ '}${signed(d.eur)} € · Euro-Kurse eingefroren je Buchung` : `Euro: Kurs zum Abschluss fehlt${d.eurN > 1 ? ` (${d.eurMiss} von ${d.eurN} Buchungen)` : ''}`, L + 32, 392, F(600, 26), d.eur !== null ? C.text2 : C.amber, 'left', R - L - 64);
-  // Eckdaten
-  const cell = (i, label, value, color = C.text, sub = '') => { const cx = i % 2 ? (L + R) / 2 + 12 : L, cy = 434 + Math.floor(i / 2) * 102, w = (R - L) / 2 - 12;
-    txt(label, cx, cy + 24, F(600, 24), C.muted, 'left', w); txt(value, cx, cy + 64, F(700, 36), color, 'left', w); if (sub) txt(sub, cx, cy + 88, F(500, 20), C.faint, 'left', w); };
-  cell(0, 'Eintritt', timgWhen(d.openedAt)); cell(1, 'Austritt', timgWhen(d.closedAt));
-  cell(2, long ? 'Einstieg (Kauf) Ø' : 'Einstieg (Verkauf) Ø', d.entry !== null ? `${priceText(d.entry)} USD` : 'nicht erfasst', d.entry !== null ? C.text : C.amber);
-  cell(3, long ? 'Ausstieg (Verkauf) Ø' : 'Ausstieg (Rückkauf) Ø', d.exit !== null ? `${priceText(d.exit)} USD` : 'nicht erfasst', d.exit !== null ? C.text : C.amber, d.exit !== null && d.exitMiss ? `${d.exitMiss} von ${d.sells.length} Ausstiegen ohne Kurs` : '');
-  cell(4, 'Haltedauer', timgDur(d.closedAt - d.openedAt)); cell(5, 'Einsatz (Margin-Modell)', `${number(d.margin)} USD`, C.text, `höchster Stand: Menge × Ø-Einstieg ÷ ${levText(d.lev)}×`);
-  cell(6, 'Menge', `${qtyText(d.qty)} ${coin(d.sym)}`, C.text, d.buys.length > 1 ? `aus ${d.buys.length} ${long ? 'Käufen' : 'Verkäufen'}` : '');
-  const small = v => (v && Math.abs(v) < 0.1 ? 4 : 2);
-  cell(7, d.funding ? 'Gebühren · Funding' : 'Gebühren', d.funding ? `${number(d.fees, small(d.fees))} · ${signed(d.funding, small(d.funding))} USD` : `${number(d.fees, small(d.fees))} USD`);
-  // 3.69.0: Kennzahlen aus den Kerzen der Haltezeit (Max. Gewinn/Verlust unrealisiert nach Gebühren, Positionswert = Menge × Kurs)
-  const S = d.stats !== undefined ? d.stats : timgStats(d, ch), eurOk = d.fx > 0, cur = eurOk ? '€' : 'USD';
-  const amt = (v, sgn = true) => { const x = eurOk && v.eur !== null ? v.eur : v.usd; return `${sgn ? signed(x) : number(x)} ${eurOk && v.eur !== null ? '€' : 'USD'}`; };
-  const pctOf = v => v.pct !== null ? `${signed(v.pct)} % vom Einsatz` : '';
-  if (!S) {
-    for (const [i, label] of [[8, 'Max. Gewinn'], [9, 'Max. Verlust'], [10, 'Höchster Positionswert'], [11, 'Tiefster Positionswert']]) cell(i, label, '—', C.muted, 'ohne Kerzendaten nicht berechenbar');
-  } else {
-    const tone = v => v > 0 ? C.up : v < 0 ? C.down : C.text;
-    cell(8, 'Max. Gewinn (unrealisiert)', S.gain.never ? `0,00 ${cur}` : amt(S.gain), S.gain.never ? C.text2 : tone(S.gain.usd), S.gain.never ? 'nie im Plus' : [pctOf(S.gain), tgcTime(S.gain.at)].filter(Boolean).join(' · '));
-    cell(9, 'Max. Verlust (unrealisiert)', S.loss.never ? `0,00 ${cur}` : amt(S.loss), S.loss.never ? C.text2 : tone(S.loss.usd), S.loss.never ? 'nie im Minus' : [pctOf(S.loss), tgcTime(S.loss.at)].filter(Boolean).join(' · '));
-    const pvSub = v => [v.eur !== null ? `≙ ${number(v.eur)} €` : '', `Kurs ${priceText(v.px)}`, tgcTime(v.at)].filter(Boolean).join(' · ');
-    cell(10, 'Höchster Positionswert', `${number(S.posHi.usd)} USD`, C.text, pvSub(S.posHi)); cell(11, 'Tiefster Positionswert', `${number(S.posLo.usd)} USD`, C.text, pvSub(S.posLo));
+  // Kopf: Paar groß, rechts „Trade #Nr. abgeschlossen“ und Datum, darunter Chips
+  txt(`${coin(d.sym)}/USDT`, L, 112, F(800, 72), C.text, 'left', 600);
+  txt(day.no ? `Trade #${day.no} abgeschlossen` : 'Trade abgeschlossen', R, 78, F(600, 28), C.muted, 'right', 380);
+  txt(timgWhen(d.closedAt), R, 116, F(600, 30), C.text, 'right');
+  let x = chip(long ? 'LONG' : 'SHORT', L, 142, long ? 'rgba(144,228,191,0.16)' : 'rgba(237,139,154,0.16)', long ? C.up : C.down);
+  x = chip(`${levText(d.lev)}×`, x, 142, C.card2, C.text); x = chip(d.mode === 'cross' ? 'Cross' : 'Isolated', x, 142, C.card2, C.text);
+  chip(d.source === 'futures' ? 'Futures' : 'Spot', x, 142, C.card2, C.text);
+  // Ergebnis-Karte: Netto in € groß, USD klein darunter, rechts % auf den Einsatz, darunter Tagesergebnis
+  box(L, 214, R - L, 258, 24, C.card);
+  txt('Netto-Ergebnis', L + 32, 260, F(600, 28), C.muted);
+  txt(eurOk ? `${signed(d.eur)} €` : `${signed(d.net)} USD`, L + 32, 362, F(800, 96), res, 'left', 620);
+  const fund = d.funding ? ` · inkl. Funding ${signed(d.funding, Math.abs(d.funding) < 0.1 ? 4 : 2)} USD` : '';
+  txt(eurOk ? `${d.eurApprox ? '≈ ' : ''}${signed(d.net)} USD · Netto aus dem Journal${fund}` : `Euro-Kurs fehlt · Netto aus dem Journal${fund}`, L + 32, 408, F(500, 26), eurOk ? C.text2 : C.amber, 'left', R - L - 64);
+  txt(`Heute ${day.eur !== null && eurOk ? `${signed(day.eur)} €` : `${signed(day.usd)} USD`} · ${day.n} ${day.n === 1 ? 'Trade' : 'Trades'}`, L + 32, 448, F(500, 24), C.muted, 'left', R - L - 64);
+  if (d.pct !== null) { txt(`${signed(d.pct, 1)} %`, R - 32, 330, F(800, 60), res, 'right'); txt('auf den Einsatz', R - 32, 368, F(500, 26), C.muted, 'right'); }
+  // Ablauf in zwei Spalten
+  const col = i => i % 2 ? (L + R) / 2 + 12 : L, cw = (R - L) / 2 - 12;
+  const cell = (i, y, label, value, color = C.text, sub = '', subColor = C.muted) => { const cx = col(i);
+    txt(label, cx, y, F(500, 26), C.muted, 'left', cw); txt(value, cx, y + 44, F(700, 40), color, 'left', cw); if (sub) txt(sub, cx, y + 80, F(500, 24), subColor, 'left', cw); };
+  const qExit = d.exit !== null;
+  cell(0, 520, d.buys.length > 1 ? 'Einstieg Ø' : 'Einstieg', d.entry !== null ? `${priceText(d.entry)} USD` : 'nicht erfasst', d.entry !== null ? C.text : C.amber, timgWhen(d.openedAt));
+  cell(1, 520, d.sells.length > 1 ? 'Ausstieg Ø' : 'Ausstieg', qExit ? `${priceText(d.exit)} USD` : 'nicht erfasst', qExit ? C.text : C.amber, d.exitMiss ? `${d.exitMiss} von ${d.sells.length} ohne Kurs` : timgWhen(d.closedAt), d.exitMiss ? C.amber : C.muted);
+  cell(2, 648, 'Haltedauer', timgDur(d.closedAt - d.openedAt));
+  cell(3, 648, 'Menge', `${qtyText(d.qty)} ${coin(d.sym)}`, C.text, `Einsatz ${eurV(d.margin) !== null ? `${number(eurV(d.margin))} € (${number(d.margin)} USD)` : `${number(d.margin)} USD`}`);
+  txt('Auslöser', L, 776, F(500, 26), C.muted);
+  txt(d.reasons.length ? d.reasons.join(' · ') : 'nicht erfasst', L, 822, F(700, 38), d.reasons.length ? C.text : C.faint, 'left', R - L);
+  let y = 852;
+  // Hinweise aus der Datenprüfung
+  for (const w of warns) { y += 10; txt(w.text, L, y + 26, F(600, 26), C.amber, 'left', R - L); y += 36; }
+  // Qualität: Exit-Effizienz (nur bei Max. Gewinn > 0), Max. Verlust, Gebühren
+  const gainV = S && !S.gain.never && S.gain.usd > 0 ? S.gain : null, effOn = !!gainV;
+  const qy = y + 18, qh = effOn ? 268 : 160; box(L, qy, R - L, qh, 24, C.card);
+  let iy = qy;
+  if (effOn) {
+    const netV = eurOk ? d.eur : d.net, maxV = eurOk && gainV.eur !== null ? gainV.eur : gainV.usd, eff = netV / maxV * 100, unit = eurOk && gainV.eur !== null ? '€' : 'USD';
+    const nm = (v, dd) => number(v, dd).replace('-', '−');   // typografisches Minus wie im übrigen Bild
+    txt('Exit-Effizienz', L + 32, qy + 50, F(600, 28), C.muted);
+    txt(`${nm(eff, 0)} %`, R - 32, qy + 56, F(800, 48), eff >= 50 ? C.up : eff > 0 ? C.amber : C.down, 'right');
+    box(L + 32, qy + 80, R - L - 64, 18, 9, C.line);
+    const bw = Math.max(0, Math.min(1, eff / 100)) * (R - L - 64); if (bw > 0) box(L + 32, qy + 80, Math.max(18, bw), 18, 9, eff >= 50 ? C.up : C.amber);
+    txt(`${nm(netV)} von ${nm(maxV)} ${unit} Max. Gewinn${gainV.at ? ` (${hhmm(gainV.at)})` : ''}`, L + 32, qy + 136, F(500, 26), C.text2, 'left', R - L - 64);
+    iy = qy + 108;
   }
-  // Chart des Haltezeitraums – Kerzen aus dem Journal-Speicher bzw. der Börse; ohne Kerzen eine Linie zwischen den Ausführungskursen
-  const X0 = L, X1 = R - 104, Y0 = 1140, Y1 = 1530, cand = !!ch?.candles?.length;
-  txt(cand ? `Kursverlauf · ${ch.iv}-Kerzen` : 'Kursverlauf · Ersatzdarstellung', L, 1076, F(700, 28), C.text, 'left', 560);
-  txt(cand ? `Quelle: ${ch.label || `Binance ${d.source === 'futures' ? 'Futures' : 'Spot'}`}` : 'Quelle: keine Kerzen abrufbar – Linie Einstieg → Ausstieg', L, 1108, F(600, 22), cand && !ch.alt ? C.muted : C.amber, 'left', R - L);
+  { const cx0 = L + 32, cx1 = (L + R) / 2 + 12, ty = iy + (effOn ? 70 : 48);
+    txt('Max. Verlust', cx0, ty, F(500, 26), C.muted);
+    if (!S) { txt('—', cx0, ty + 44, F(700, 38), C.muted); txt('ohne Kerzendaten', cx0, ty + 78, F(500, 24), C.muted); }
+    else if (S.loss.never) { txt(`0,00 ${eurOk ? '€' : 'USD'}`, cx0, ty + 44, F(700, 38), C.text); txt('nie im Minus', cx0, ty + 78, F(500, 24), C.muted); }
+    else { txt(money(S.loss.usd, eurOk ? S.loss.eur : null), cx0, ty + 44, F(700, 38), C.down); txt(S.loss.at ? hhmm(S.loss.at) : '', cx0, ty + 78, F(500, 24), C.muted); }
+    txt('Gebühren', cx1, ty, F(500, 26), C.muted);
+    const small = v => (v && Math.abs(v) < 0.1 ? 4 : 2);
+    txt(`${number(d.fees, small(d.fees))} USD`, cx1, ty + 44, F(700, 38), C.text);
+    txt(!(d.fees > 0) ? '⚠ nicht erfasst, bitte prüfen' : d.funding ? `Funding ${signed(d.funding, small(d.funding))} USD (im Netto)` : 'im Netto enthalten', cx1, ty + 78, F(500, 24), !(d.fees > 0) ? C.amber : C.muted, 'left', R - cx1 - 32); }
+  y = qy + qh;
+  // Chart des Haltezeitraums
+  const cand = !!ch?.candles?.length, X0 = L + 12, X1 = R - 120, Y0 = y + (cand || !ch?.err ? 120 : 150), Y1 = 1566;
+  txt(cand ? `Kursverlauf · ${ch.iv}-Kerzen` : 'Kursverlauf · Ersatzdarstellung', L, y + 54, F(700, 32), C.text, 'left', 600);
+  const srcWarn = warns.some(w => w.key === 'source');
+  txt(cand ? `Quelle: ${ch.label || `Binance ${d.source === 'futures' ? 'Futures' : 'Spot'}`}` : 'Quelle: keine Kerzen abrufbar – Linie Einstieg → Ausstieg', L, y + 88, F(500, 24), cand && !ch.alt && !srcWarn ? C.muted : C.amber, 'left', R - L - 300);
   const t0 = cand ? ch.from : d.openedAt - TIMG_PAD, t1 = cand ? Math.max(ch.to, ch.candles.at(-1).closeTime + 1) : d.closedAt + TIMG_PAD;
-  txt(`${tgcTime(t0)} – ${tgcTime(t1)}`, R, 1076, F(600, 22), C.muted, 'right');
-  box(X0 - 8, Y0 - 12, R - X0 + 8, Y1 - Y0 + 24, 14, C.card);
+  txt(`${hhmm(t0)} – ${hhmm(t1)}`, R, y + 54, F(500, 26), C.muted, 'right');
+  box(L - 8, Y0 - 16, R - L + 16, Y1 - Y0 + 32, 18, C.card);
   const cs = cand ? ch.candles : [], xs = t => X0 + (t - t0) / Math.max(1, t1 - t0) * (X1 - X0);
   const ps = [...cs.flatMap(c => [c.low, c.high]), ...d.buys.map(b => b.p), ...d.sells.map(s => s.x), ...d.steps.map(s => s.avg)].filter(v => v > 0);
-  const lay = { mode: cand ? 'candles' : 'line', chart: { X0, X1, Y0, Y1 }, labels: [], marks: [] }; timg.layout = lay;
-  if (!ps.length) { txt('Kurse nicht erfasst', (X0 + R) / 2, (Y0 + Y1) / 2, F(700, 32), C.amber, 'center'); }
+  const lay = { mode: cand ? 'candles' : 'line', chart: { X0, X1, Y0, Y1 }, labels: [], marks: [], candles: [], texts }; timg.layout = lay;   // texts: für Prüfungen
+  if (!ps.length) { txt('Kurse nicht erfasst', (X0 + X1) / 2, (Y0 + Y1) / 2, F(700, 32), C.amber, 'center'); }
   else {
-    let lo = Math.min(...ps), hi = Math.max(...ps); const pad = (hi - lo) * 0.16 || hi * 0.004; lo -= pad; hi += pad; // Platz für Marken und Beschriftung
+    // Y-Achse nur auf Kerzen und Marken; etwas Rand oben und unten für die Beschriftungen
+    let lo = Math.min(...ps), hi = Math.max(...ps); const span = hi - lo || hi * 0.004; lo -= span * 0.24; hi += span * 0.24;   // Platz für die Pills über dem Hoch und unter dem Tief
     const ys = p => Y1 - (p - lo) / (hi - lo) * (Y1 - Y0);
-    // Haltezeit
     g.fillStyle = C.band; g.fillRect(xs(d.openedAt), Y0, Math.max(2, xs(d.closedAt) - xs(d.openedAt)), Y1 - Y0);
-    // Raster und Preise
-    const stepOf = r => { const e = Math.pow(10, Math.floor(Math.log10(r / 4))), m = r / 4 / e; return (m >= 5 ? 5 : m >= 2 ? 2 : 1) * e; }, st = stepOf(hi - lo);
+    const stepOf = r => { const e = Math.pow(10, Math.floor(Math.log10(r / 5))), m = r / 5 / e; return (m >= 5 ? 5 : m >= 2 ? 2 : 1) * e; }, st = stepOf(hi - lo);
     g.lineWidth = 1;
-    for (let p = Math.ceil(lo / st) * st; p <= hi; p += st) { const y = Math.round(ys(p)) + 0.5; g.strokeStyle = C.grid; g.beginPath(); g.moveTo(X0, y); g.lineTo(X1, y); g.stroke(); txt(priceText(p), R - 8, y + 8, F(500, 20), C.faint, 'right'); }
-    // Zeitachse
+    for (let p = Math.ceil(lo / st) * st; p <= hi; p += st) { const yy = Math.round(ys(p)) + 0.5; if (yy < Y0 + 8 || yy > Y1 - 4) continue; g.strokeStyle = C.grid; g.beginPath(); g.moveTo(X0, yy); g.lineTo(X1, yy); g.stroke(); txt(priceText(p), R - 4, yy + 8, F(500, 22), C.faint, 'right'); }
     const multiDay = t1 - t0 > 36 * 3600e3;
-    for (let i = 0; i <= 4; i++) { const t = t0 + (t1 - t0) * i / 4, x2 = xs(t); txt(new Date(t).toLocaleString('de-DE', multiDay ? { day: '2-digit', month: '2-digit' } : { hour: '2-digit', minute: '2-digit' }), x2, Y1 + 42, F(500, 20), C.faint, i === 0 ? 'left' : i === 4 ? 'right' : 'center'); }
+    for (let i = 0; i <= 4; i++) { const t = t0 + (t1 - t0) * i / 4; txt(new Date(t).toLocaleString('de-DE', multiDay ? { day: '2-digit', month: '2-digit' } : { hour: '2-digit', minute: '2-digit' }), xs(t), Y1 + 50, F(500, 22), C.faint, i === 0 ? 'left' : i === 4 ? 'right' : 'center'); }
     const occ = [], hit = r => occ.some(b => r.x < b.x + b.w && r.x + r.w > b.x && r.y < b.y + b.h && r.y + r.h > b.y);
     if (cand) {
-      // Kerzen (Lücken bleiben frei – keine verbindende Linie)
       const w = Math.max(1, (X1 - X0) * ch.ms / (t1 - t0) * 0.68);
       for (const c of cs) {
-        const cx = xs(c.time + ch.ms / 2), up = c.close >= c.open, col = up ? C.up : C.down;
-        g.strokeStyle = col; g.lineWidth = Math.max(1, Math.min(2, w / 4)); g.beginPath(); g.moveTo(cx, ys(c.high)); g.lineTo(cx, ys(c.low)); g.stroke();
-        const yt = ys(Math.max(c.open, c.close)), yb = ys(Math.min(c.open, c.close)); g.fillStyle = col; g.fillRect(cx - w / 2, yt, w, Math.max(1, yb - yt));
+        const cx = xs(c.time + ch.ms / 2), up = c.close >= c.open, colr = up ? C.up : C.down;
+        g.strokeStyle = colr; g.lineWidth = Math.max(1, Math.min(2, w / 4)); g.beginPath(); g.moveTo(cx, ys(c.high)); g.lineTo(cx, ys(c.low)); g.stroke();
+        const yt = ys(Math.max(c.open, c.close)), yb = ys(Math.min(c.open, c.close)); g.fillStyle = colr; g.fillRect(cx - w / 2, yt, w, Math.max(1, yb - yt));
+        const r = { x: cx - Math.max(w, 3) / 2 - 1, y: ys(c.high) - 1, w: Math.max(w, 3) + 2, h: ys(c.low) - ys(c.high) + 2 }; occ.push(r); lay.candles.push(r);   // Beschriftungen verdecken keine Kerze
       }
       let gap = cs[0].time > d.openedAt + ch.ms || cs.at(-1).closeTime < Math.min(d.closedAt, Date.now() - ch.ms) - ch.ms;
       for (let i = 1; i < cs.length && !gap; i++) if (cs[i].time - cs[i - 1].time > ch.ms * 1.5) gap = true;
-      if (gap) { const gw = txt('Kursdaten mit Lücken – nichts aufgefüllt', X1, Y0 + 26, F(600, 20), C.amber, 'right'); occ.push({ x: X1 - gw - 6, y: Y0 + 4, w: gw + 12, h: 30 }); }
+      if (gap) { const gw = txt('Kursdaten mit Lücken – nichts aufgefüllt', X1, Y0 + 28, F(600, 22), C.amber, 'right'); occ.push({ x: X1 - gw - 6, y: Y0 + 4, w: gw + 12, h: 32 }); }
     } else {
-      // Ersatz: Linie durch die Ausführungskurse in zeitlicher Folge, damit die Karte nie leer ist
-      const pts = [...d.buys.map(b => [b.at, b.p]), ...d.sells.map(s => [s.at, s.x])].filter(x => x[1] > 0).sort((a, b) => a[0] - b[0]);
+      const pts = [...d.buys.map(b => [b.at, b.p]), ...d.sells.map(s => [s.at, s.x])].filter(v => v[1] > 0).sort((a, b) => a[0] - b[0]);
       g.strokeStyle = C.text2; g.lineWidth = 3; g.beginPath();
       if (pts.length === 1) { g.moveTo(xs(d.openedAt), ys(pts[0][1])); g.lineTo(xs(d.closedAt), ys(pts[0][1])); } else pts.forEach(([t, p], i) => i ? g.lineTo(xs(t), ys(p)) : g.moveTo(xs(t), ys(p)));
       g.stroke();
-      const nw = txt('Keine Kerzen abrufbar – vereinfachte Linie zwischen den Ausführungskursen', X0 + 12, Y0 + 26, F(600, 20), C.amber, 'left', X1 - X0 - 24);
-      occ.push({ x: X0, y: Y0 + 4, w: nw + 24, h: 30 });
-      if (ch?.err) { const ew = txt(ch.err, X0 + 12, Y0 + 52, F(500, 18), C.muted, 'left', X1 - X0 - 24); occ.push({ x: X0, y: Y0 + 34, w: ew + 24, h: 26 }); }
+      if (ch?.err) txt(ch.err, L, y + 120, F(500, 22), C.muted, 'left', R - L);   // Grund über dem Chart statt über der Linie
     }
-    // Ø-Einstieg als Stufenlinie über die Haltezeit
+    // Einstieg als blau gestrichelte Linie über die Haltezeit (bei Nachkäufen Ø-Stufen)
     g.setLineDash([12, 8]); g.strokeStyle = C.blue; g.lineWidth = 2.5; g.beginPath(); let prev = null;
-    for (let i = 0; i < d.steps.length; i++) { const s = d.steps[i], nx = i + 1 < d.steps.length ? d.steps[i + 1].at : d.closedAt; if (s.avg === null) continue; const y = ys(s.avg); if (prev === null || Math.abs(prev - s.avg) > s.avg * 1e-9) g.moveTo(xs(s.at), y); g.lineTo(xs(Math.max(s.at, nx)), y); prev = s.avg; }
+    for (let i = 0; i < d.steps.length; i++) { const s = d.steps[i], nx = i + 1 < d.steps.length ? d.steps[i + 1].at : d.closedAt; if (s.avg === null) continue; const yy = ys(s.avg); if (prev === null || Math.abs(prev - s.avg) > s.avg * 1e-9) g.moveTo(xs(s.at), yy); g.lineTo(xs(Math.max(s.at, nx)), yy); prev = s.avg; }
     g.stroke(); g.setLineDash([]);
-    // Marken: ▲/▼ E = Einstieg, A = Ausstieg, ● H/T = höchster/tiefster Kurs in der Haltezeit; ohne Kurs eine gestrichelte Linie mit „?“
-    const lev = d.lev > 0 ? d.lev : 1, eurV = v => eurOk ? eurOf(v, d.fx) : null, money = (usd, e, sgn = true) => e !== null && e !== undefined ? `${sgn ? signed(e) : number(e)} €` : `${sgn ? signed(usd) : number(usd)} USD`;
-    const marks = [];
-    d.buys.forEach((b, i) => { const st0 = b.q * b.p / lev; marks.push({ kind: 'E', at: b.at, p: b.p, col: C.blue, down: !long, pri: 2 + i,
+    // Marken: E (blau, Beschriftung unter der Linie), H bzw. T (bester Kurs, Beschriftung links davon), A (Beschriftung unten rechts, Linie hoch)
+    const lev = d.lev > 0 ? d.lev : 1, marks = [];
+    d.buys.forEach((b, i) => { const st0 = b.q * b.p / lev; marks.push({ kind: 'E', at: b.at, p: b.p, col: C.blue, tri: long ? 'up' : 'down', pref: 'below', pri: 2 + i,
       text: `E${d.buys.length > 1 ? i + 1 : ''} ${b.p > 0 ? priceText(b.p) : '?'}${b.p > 0 ? ` (Einsatz ${money(st0, eurV(st0), false)})` : ''}` }); });
     const fr = S?.feeRate ?? 0, dir = long ? 1 : -1, sameBk = d.bk?.length === d.sells.length;
     d.sells.forEach((s, i) => {
       const usd = sameBk ? d.bk[i].usd : s.x > 0 && s.E > 0 ? dir * (s.x - s.E) * s.q - fr * (s.E + s.x) * s.q : null, e = sameBk && d.bk[i].eur !== null ? d.bk[i].eur : usd !== null ? eurV(usd) : null;
-      marks.push({ kind: 'A', at: s.at, p: s.x, col: usd > 0 ? C.up : usd < 0 ? C.down : C.amber, down: long, pri: i === d.sells.length - 1 ? 0 : 1 + i,
+      marks.push({ kind: 'A', at: s.at, p: s.x, col: usd > 0 ? C.up : usd < 0 ? C.down : C.amber, tri: long ? 'down' : 'up', pref: 'belowRight', pri: i === d.sells.length - 1 ? 0 : 1 + i,
         text: `A${d.sells.length > 1 ? i + 1 : ''} ${s.x > 0 ? priceText(s.x) : '?'}${s.x > 0 && usd !== null ? ` (${money(usd, e)})` : ''}` });
     });
-    if (S && cand) for (const [k, v, up] of [['H', S.hi, true], ['T', S.lo, false]]) {
-      // fällt der Punkt auf eine Ein-/Ausstiegsmarke, nennt deren Beschriftung den Kurs schon
-      if (marks.some(m => m.p > 0 && Math.abs(xs(m.at) - xs(v.at)) < 26 && Math.abs(ys(m.p) - ys(v.px)) < 14)) continue;
-      marks.push({ kind: k, at: v.at, p: v.px, col: v.usd > 0 ? C.up : v.usd < 0 ? C.down : C.text2, down: up, dot: true, pri: 5, text: `${k} ${priceText(v.px)} (${money(v.usd, v.eur)})` });
-    }
-    // erst alle Marken zeichnen (und als belegt merken), dann die Beschriftungen auf freie Plätze
+    if (gainV && cand && gainV.px > 0 && !marks.some(m => m.p > 0 && Math.abs(xs(m.at) - xs(gainV.at)) < 26 && Math.abs(ys(m.p) - ys(gainV.px)) < 14))
+      marks.push({ kind: long ? 'H' : 'T', at: gainV.at, p: gainV.px, col: C.up, dot: true, pref: 'left', pri: 5, text: `${long ? 'H' : 'T'} ${priceText(gainV.px)} (${money(gainV.usd, eurOk ? gainV.eur : null)})`, short: `${long ? 'H' : 'T'} ${priceText(gainV.px)}` });
     for (const m of marks) {
       m.x = xs(m.at);
       if (!(m.p > 0)) { g.setLineDash([6, 6]); g.strokeStyle = m.col; g.lineWidth = 2; g.beginPath(); g.moveTo(m.x, Y0); g.lineTo(m.x, Y1); g.stroke(); g.setLineDash([]); m.y = Y0 + 40; continue; }
       m.y = ys(m.p); g.fillStyle = m.col; g.beginPath();
-      if (m.dot) g.arc(m.x, m.y, 9, 0, Math.PI * 2);
-      else if (m.down) { g.moveTo(m.x, m.y + 2); g.lineTo(m.x - 12, m.y - 20); g.lineTo(m.x + 12, m.y - 20); } else { g.moveTo(m.x, m.y - 2); g.lineTo(m.x - 12, m.y + 20); g.lineTo(m.x + 12, m.y + 20); }
+      if (m.dot) g.arc(m.x, m.y, 10, 0, Math.PI * 2);
+      else if (m.tri === 'down') { m.y -= 14; g.moveTo(m.x, m.y + 12); g.lineTo(m.x - 12, m.y - 10); g.lineTo(m.x + 12, m.y - 10); } else { m.y += 14; g.moveTo(m.x, m.y - 12); g.lineTo(m.x - 12, m.y + 10); g.lineTo(m.x + 12, m.y + 10); }
       g.closePath(); g.fill(); g.strokeStyle = C.bg; g.lineWidth = 2; g.stroke();
-      const r = m.dot ? { x: m.x - 11, y: m.y - 11, w: 22, h: 22 } : { x: m.x - 13, y: m.down ? m.y - 21 : m.y - 3, w: 26, h: 24 }; occ.push(r); lay.marks.push({ kind: m.kind, ...r });
+      const r = { x: m.x - 13, y: m.y - 13, w: 26, h: 26 }; occ.push(r); lay.marks.push({ kind: m.kind, ...r });
     }
-    const LF = F(800, 26), LH = 40, GAP = 6;
+    // Pills: bevorzugte Lage je Marke, sonst die nächste freie Stelle – nie über Kerzen, Marken oder anderen Pills
+    const LF = F(800, 26), LH = 44, inChart = r => r.x >= X0 - 4 && r.x + r.w <= X1 + 4 && r.y >= Y0 - 6 && r.y + r.h <= Y1 + 6;
+    const free = r => inChart(r) && !hit({ x: r.x - 4, y: r.y - 4, w: r.w + 8, h: r.h + 8 });
+    const spot = (m, text) => {
+      g.font = LF; const w = Math.ceil(g.measureText(text).width) + 28, clampX = v => Math.max(X0 - 4, Math.min(X1 + 4 - w, v));
+      const first = m.pref === 'left' ? { x: m.x - w - 22, y: m.y - LH / 2, k: 0 } : m.pref === 'belowRight' ? { x: m.x - w * 0.25, y: Y1 - LH - 10 } : { x: m.x - 20, y: m.y + 30 };
+      const tries = [first];
+      if (m.pref === 'left') {   // H/T: links vom Hoch bzw. Tief; die nächste freie Stelle zuerst, über dem Hoch bzw. unter dem Tief bevorzugt
+        const up = m.kind === 'H', c = [];
+        for (let dy = -240; dy <= 240; dy += 12) for (let dx = 0; dx >= -(X1 - X0); dx -= 40) c.push({ x: first.x + dx, y: first.y + dy, k: -dx + Math.abs(dy) * ((dy < 0) === up ? 1.2 : 2.4) });
+        for (let dy = -240; dy <= 240; dy += 12) for (let dx = 0; dx <= X1 - X0; dx += 40) c.push({ x: m.x + 22 + dx, y: first.y + dy, k: 420 + dx + Math.abs(dy) * 2 });   // rechts nur als Ausweg
+        tries.push(...c.sort((a, b) => a.k - b.k));
+      } else if (m.pref === 'belowRight') {   // A: unten rechts im Chart, von unten nach oben bis unter die Marke; sonst wie bisher
+        for (let yy = first.y; yy >= m.y + 24; yy -= 24) for (const dx of [0, -80, 80, -160, -240]) tries.push({ x: first.x + dx, y: yy });
+        for (let k = 0; k <= 14; k++) for (const dy of [k * 24, -k * 24 - 80]) for (const dx of [0, 80, -80, 160, -160]) tries.push({ x: m.x - w * 0.25 + dx, y: m.y + 40 + dy });
+      } else for (let k = 0; k <= 14; k++) for (const dy of [k * 24, -k * 24 - 80]) for (const dx of [0, 80, -80, 160, -160]) tries.push({ x: first.x + dx, y: first.y + dy });
+      for (const p of tries) { const r = { x: clampX(p.x), y: p.y, w, h: LH }; if (free(r)) return { at: r, w, k: p.k || 0, text }; }
+      return { at: null, w, k: Infinity, text, fb: { x: clampX(first.x), y: Math.max(Y0 - 6, Math.min(Y1 + 6 - LH, first.y)), w, h: LH } };
+    };
     for (const m of [...marks].sort((a, b) => a.pri - b.pri)) {
-      g.font = LF; const w = Math.ceil(g.measureText(m.text).width) + 22, up0 = m.down, near = m.dot ? 14 : 24;
-      const xsOpt = [m.x - w / 2, m.x + 16, m.x - w - 16].map(x => Math.max(X0 - 4, Math.min(X1 + 4 - w, x)));
-      let at = null;
-      for (let k = 0; k < 9 && !at; k++) for (const up of [up0, !up0]) {
-        const y = up ? m.y - near - LH - k * (LH + GAP) : m.y + near + k * (LH + GAP);
-        if (y < Y0 - 6 || y + LH > Y1 + 6) continue;
-        for (const x of xsOpt) { const r = { x, y, w, h: LH }; if (!hit({ x: r.x - 3, y: r.y - 3, w: r.w + 6, h: r.h + 6 })) { at = r; break; } }
-        if (at) break;
-      }
-      if (!at) { if (m.pri > 0) continue; at = { x: xsOpt[0], y: Math.max(Y0 - 6, Math.min(Y1 + 6 - LH, up0 ? m.y - near - LH : m.y + near)), w, h: LH }; } // der Schluss steht immer da
-      occ.push(at); lay.labels.push({ kind: m.kind, text: m.text, ...at });
-      const ly = at.y + LH / 2, lx = Math.max(at.x, Math.min(at.x + w, m.x));
-      if (Math.abs(ly - m.y) > near + LH) { g.strokeStyle = m.col; g.globalAlpha = 0.55; g.lineWidth = 1.5; g.beginPath(); g.moveTo(m.x, m.y + (ly < m.y ? -near : near)); g.lineTo(lx, ly < m.y ? at.y + LH : at.y); g.stroke(); g.globalAlpha = 1; }
-      box(at.x, at.y, w, LH, 10, 'rgba(11,15,19,0.9)'); g.strokeStyle = m.col; g.lineWidth = 2; g.beginPath(); if (g.roundRect) g.roundRect(at.x, at.y, w, LH, 10); else g.rect(at.x, at.y, w, LH); g.stroke();
-      txt(m.text, at.x + w / 2, at.y + 29, LF, m.col, 'center');
+      let P = spot(m, m.text);
+      if (m.short && P.k > 300) { const S2 = spot(m, m.short); if (S2.k < P.k && (S2.k <= 300 || !P.at)) P = S2; }   // weit weg: nur der Kurs, dafür nah an der Marke
+      let { at } = P; const { w, text } = P;
+      if (!at) { if (m.pri > 0) continue; at = P.fb; }   // der Schluss steht immer da
+      occ.push(at); lay.labels.push({ kind: m.kind, text, ...at });
+      // dünne Linie von der Pill zur Marke (A immer, sonst wenn die Pill weiter weg liegt)
+      const side = at.x + w <= m.x - 8, cy = at.y + LH / 2;   // Pill ganz links der Marke: waagerecht anbinden
+      const ex = side ? at.x + w : Math.max(at.x + 8, Math.min(at.x + w - 8, m.x)), ey = side ? Math.max(at.y + 10, Math.min(at.y + LH - 10, m.y)) : cy < m.y ? at.y + LH : at.y;
+      if (m.kind === 'A' || Math.hypot(ex - m.x, ey - m.y) > 46) { g.strokeStyle = m.col; g.globalAlpha = 0.7; g.lineWidth = 1.5; g.beginPath(); g.moveTo(side ? m.x - 13 : m.x, side ? m.y : m.y + (ey > m.y ? 13 : -13)); g.lineTo(ex, ey); g.stroke(); g.globalAlpha = 1; }
+      box(at.x, at.y, w, LH, 12, 'rgba(11,15,19,0.92)'); g.strokeStyle = m.col; g.lineWidth = 2; g.beginPath(); if (g.roundRect) g.roundRect(at.x, at.y, w, LH, 12); else g.rect(at.x, at.y, w, LH); g.stroke();
+      txt(text, at.x + w / 2, at.y + 31, LF, m.col, 'center');
     }
   }
-  // Legende und Fuß
-  { let lx = L; const item = (sym, col, label) => { lx += txt(sym, lx, 1620, F(800, 22), col) + 8; lx += txt(label, lx, 1620, F(600, 22), C.muted) + 28; };
-    item(long ? '▲ E' : '▼ E', C.blue, 'Einstieg'); item(long ? '▼ A' : '▲ A', C.amber, 'Ausstieg');
-    if (cand && S) item('● H/T', C.text2, 'Hoch/Tief'); else if (!cand) item('—', C.text2, 'Linie (Ersatz)');
-    item('– –', C.blue, 'Ø Einstieg'); g.fillStyle = 'rgba(138,184,255,0.35)'; g.fillRect(lx, 1602, 22, 22); lx += 30; txt('Haltezeit', lx, 1620, F(600, 22), C.muted); }
-  const parts = d.sells.length - 1, bits = [`${d.buys.length} ${long ? (d.buys.length === 1 ? 'Kauf' : 'Käufe') : (d.buys.length === 1 ? 'Verkauf' : 'Verkäufe')}`, parts ? `${parts} ${parts === 1 ? 'Teilabschluss' : 'Teilabschlüsse'} + Schluss` : 'ein Schluss'];
-  if (d.late) bits.push('nachgetragen'); if (d.reasons.length) bits.push(`Gründe: ${d.reasons.join(', ')}`);
-  txt(bits.join(' · '), L, 1664, F(600, 24), C.text2, 'left', R - L);
-  txt(`Scalp Desk · ${timgWhen(Date.now())} · Werte aus dem Journal · Max. Gewinn/Verlust nach Gebühren`, L, 1706, F(500, 20), C.faint, 'left', R - L);
+  // Fuß
+  const parts = d.sells.length - 1, nb = d.buys.length, bits = [`${nb} ${long ? (nb === 1 ? 'Kauf' : 'Käufe') : (nb === 1 ? 'Verkauf' : 'Verkäufe')}`, parts ? `${parts} ${parts === 1 ? 'Teilabschluss' : 'Teilabschlüsse'} + Schluss` : `1 ${long ? 'Verkauf' : 'Rückkauf'}`];
+  if (d.late) bits.push('nachgetragen');
+  txt(bits.join(', '), L, 1664, F(600, 26), C.text2, 'left', R - L);
+  txt(`Scalp Desk · Werte aus dem Journal · Max. Gewinn/Verlust nach Gebühren`, L, 1704, F(500, 22), C.faint, 'left', R - L);
 }
 function timgBlob(d, ch) {
   return new Promise((resolve, reject) => {
@@ -14420,22 +14468,24 @@ function timgBlob(d, ch) {
   });
 }
 // ---- Senden: genau ein Foto mit zentral formatierter Kurzinfo; keine blob:-Adresse, sondern die Datei selbst (multipart) ----
-async function timgPost(blob, data, plainFallback = false) {
+const timgHold = ms => { const m = Math.round(ms / 60e3); return m < 60 ? `${Math.max(1, m)} Min.` : `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')} Std.`; };
+function timgCaption(d) {
+  const res = d.eur !== null && d.fx > 0 ? `${signed(d.eur)} €` : `${signed(d.net)} USD`;
+  return `${coin(d.sym)}/USDT ${d.side === 'short' ? 'Short' : 'Long'} ${levText(d.lev)}× · ${res}${d.pct !== null ? ` (${signed(d.pct, 1)} %)` : ''} · ${timgHold(d.closedAt - d.openedAt)}`;
+}
+async function timgPost(blob, data) {
   const T = tgDest('trades'); if (!T) throw Object.assign(new Error('Ziel „Trades“ nicht eingerichtet'), { kind: 'fail' });
   if (navigator.onLine === false) throw Object.assign(new Error('offline'), { kind: 'offline' });
   const fd = new FormData(); fd.append('chat_id', T.chat); if (T.thread) fd.append('message_thread_id', T.thread); fd.append('photo', blob, blob.type === 'image/jpeg' ? 'trade.jpg' : 'trade.png');
-  // 3.69.0: kurze Bildunterschrift – Paar, Long/Short, Netto in € und %, Haltedauer, Max. Gewinn und Max. Verlust in €
-  const S = data.stats || null;
-  const html = formatMessage('trade', { card: true, symbol: data.sym, side: data.side, pnl: data.net, eur: data.eur, percent: data.pct, duration: timgDur(data.closedAt - data.openedAt), at: data.closedAt, messageLimit: TELEGRAM_CAPTION_LIMIT,
-    ...(S ? { gain: S.gain.usd, gainEur: S.gain.eur, neverPlus: !!S.gain.never, loss: S.loss.usd, lossEur: S.loss.eur, neverMinus: !!S.loss.never } : { extremes: 'ohne Kerzendaten nicht berechnet' }) });
-  fd.append('caption', plainFallback ? telegramPlain(html) : html); if (!plainFallback) fd.append('parse_mode', 'HTML');
+  // 3.71.0: eine Zeile, damit die Push-Vorschau reicht: „XRP/USDT Long 20× · +43,88 € (+89,5 %) · 1:52 Std.“ (höchstens 1024 Zeichen)
+  fd.append('caption', timgCaption(data).slice(0, TELEGRAM_CAPTION_LIMIT));
   let r; try { r = await fetch(`https://api.telegram.org/bot${T.token}/sendPhoto`, { method: 'POST', body: fd, credentials: 'omit', referrerPolicy: 'no-referrer', cache: 'no-store' }); }
   catch { throw Object.assign(new Error('keine Antwort von Telegram'), { kind: 'lost' }); } // Anfrage kann angekommen sein
   let j = null; try { j = await r.json(); } catch {}
   if (r.ok && j?.ok) return j.result?.message_id || 0;
-  if (!plainFallback && telegramFormatRejected(j?.error_code ?? r.status, j?.description)) return timgPost(blob, data, true);
   if (r.ok) throw Object.assign(new Error('Antwort von Telegram nicht lesbar'), { kind: 'lost' });
-  throw Object.assign(new Error(r.status === 401 || r.status === 404 ? 'Token ungültig' : `Telegram lehnt ab: ${String(j?.description || `Fehler ${r.status}`).slice(0, 120)}`), { kind: 'fail' });
+  // 3.71.0: Chat-Name und Fehlertext im Protokoll des Auftrags
+  throw Object.assign(new Error(`Chat „Trades“ (${T.chat}${T.thread ? ` · Thema ${T.thread}` : ''}): ${r.status === 401 || r.status === 404 ? 'Token ungültig' : `Telegram lehnt ab: ${String(j?.description || `Fehler ${r.status}`).slice(0, 120)}`}`), { kind: 'fail' });
 }
 // ---- Auftrag ----
 function timgQueue(id, by = 'auto') {
@@ -14472,6 +14522,7 @@ async function timgRun(id) {
     why = gate(); if (why) return timgSet(id, { st: 'drop', why }); // AUS: nicht einmal Kerzen laden
     const d = timgData(id); if (d.err) return timgSet(id, { st: 'fail', why: d.err });
     const ch = await timgCandles(d); d.stats = timgStats(d, ch); // 3.69.0: Kerzen aus dem Journal-Speicher bzw. mit Ersatzquellen
+    d.checks = timgChecks(d, ch); timgSet(id, { warn: d.checks.map(w => w.text).join(' · ') }); for (const w of d.checks) console.warn(`Trade-Bild ${coin(d.sym)} (${id}): ${w.text}`); // 3.71.0: Datenprüfung ins Protokoll
     timgSet(id, { chart: ch.candles.length ? `${ch.iv} · ${ch.candles.length} Kerzen · ${ch.label}${ch.stored ? ' · gespeichert' : ''}` : `Ersatzlinie Einstieg → Ausstieg (${ch.err})` }); // zur Nachvollziehbarkeit
     why = gate(); if (why) return timgSet(id, { st: 'drop', why });
     let blob; try { blob = await timgBlob(d, ch); } catch (e) { return timgSet(id, { st: 'fail', why: `Bild konnte nicht erstellt werden (${String(e?.message || e).slice(0, 100)})` }); }
@@ -14482,7 +14533,11 @@ async function timgRun(id) {
     catch (e) {
       timgSet(id, e.kind === 'lost' ? { st: 'unconf', why: 'keine Antwort von Telegram – kein automatischer zweiter Versuch' }
         : e.kind === 'offline' ? { st: 'queued', why: 'offline – wird gesendet, sobald wieder Verbindung besteht' } : { st: 'fail', why: e.message });
-      if (e.kind !== 'offline') infoToast(`Trade-Bild ${coin(d.sym)} nicht an Telegram gesendet: ${timgJob(id)?.why || e.message}`, 9000); // 3.69.0: Fehler im Klartext
+      if (e.kind !== 'offline') {
+        const why = timgJob(id)?.why || e.message;
+        infoToast(`Trade-Bild ${coin(d.sym)} nicht an Telegram gesendet: ${why}`, 9000); // 3.69.0: Fehler im Klartext
+        console.warn(`Trade-Bild ${coin(d.sym)} (${id}): ${/^Chat „/.test(why) ? '' : 'Chat „Trades“: '}${why}`); // 3.71.0: ins Protokoll, mit Chat-Name (nie mit Token)
+      }
     }
   } finally { clearInterval(beat); timg.run.delete(id); void store.release(`timg:${id}`); }
 }
@@ -14514,8 +14569,9 @@ function timgChip(id) {
 }
 // 3.69.0: Telegram-Fehler sichtbar unter dem Zustand (nicht nur als Tooltip)
 function timgWhy(id) {
-  const j = timg.jobs.find(x => x.id === id); if (!j || !j.why || !['fail', 'unconf', 'drop'].includes(j.st)) return null;
-  return el('p', 'timg-why', `Telegram: ${j.why}`);
+  const j = timg.jobs.find(x => x.id === id); if (!j) return null;
+  const err = j.why && ['fail', 'unconf', 'drop'].includes(j.st) ? `Telegram: ${j.why}` : '', text = [err, j.warn || ''].filter(Boolean).join(' · ');   // 3.71.0: auch Hinweise der Datenprüfung
+  return text ? el('p', 'timg-why', text) : null;
 }
 async function timgPreview(id) {
   const dlg = $('timg-dialog'); if (timg.view?.url) URL.revokeObjectURL(timg.view.url);
@@ -14928,7 +14984,7 @@ const musterPaper = createMusterPaper({ read: readMusterPaper, write: writeMuste
   } });
 const MUSTER_TG_NAMES = { hammer: 'Hammer', engulfing: 'Bullish Engulfing', confluence: 'Konfluenz', po3: 'Power of Three' };
 musterView = createMusterView({ host: musterHost, selection: musterSelection, currentPrice: (symbol, market) => state.symbol === symbol && state.source === market ? currentPrice() : null,
-  prefs: store.get('scalpdesk.muster.settings.v1', {}), savePrefs: value => store.set('scalpdesk.muster.settings.v1', value), workerFactory: () => new Worker(new URL('./bundles/3.70.2/shared/muster-bot-worker.mjs', import.meta.url), { type: 'module' }), paper: musterPaper, onMarkers: scheduleDraw,
+  prefs: store.get('scalpdesk.muster.settings.v1', {}), savePrefs: value => store.set('scalpdesk.muster.settings.v1', value), workerFactory: () => new Worker(new URL('./bundles/3.71.0/shared/muster-bot-worker.mjs', import.meta.url), { type: 'module' }), paper: musterPaper, onMarkers: scheduleDraw,
   telegramStatus: () => tgtReady('trades') ? null : 'Hinweis: Telegram ist noch nicht eingerichtet oder das Ziel „Trades“ ist aus (Einstellungen → Telegram).' });
 void musterPaper.restore().then(() => musterPaper.poll());
 function musterDraw(svg, data, x, y, bottom) {
