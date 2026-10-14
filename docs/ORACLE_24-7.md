@@ -2,6 +2,8 @@
 
 Diese Anleitung ist für Safari auf iPad/iPhone geschrieben. Der neue Dienst `server/patterns-247.mjs` verwendet **dieselbe pat-1-Erkennung und dieselben Muster-IDs wie die App**: gerade bestätigte Formationen, Regelgüte mindestens 80 %, abgeschlossene Kerzen. Einzelkerzen, „in Bildung“, Sicherungen, persönliche Trades und echte Orders werden von diesem Dienst nicht gesendet. Der bestehende umfassende HTTPS-Dienst bleibt ein eigener, anderer Dienst.
 
+> **Mit ChatGPT Schritt für Schritt:** [`ANLEITUNG-CHATGPT-ORACLE.md`](../ANLEITUNG-CHATGPT-ORACLE.md) enthält einen Starttext und Prüfpunkte, mit denen ChatGPT dich durch diese Anleitung führt. Token und Chat-IDs gibst du dabei nur am Server ein, nie im Chat.
+
 ## 1. Konto und kostenlose Grenzen
 
 1. Öffne https://www.oracle.com/cloud/free/ und tippe **Start for free / Kostenlos starten**.
@@ -241,7 +243,15 @@ sudo tail -n 20 /var/log/scalpdesk-patterns/bereinigung.log
 - Hast du in Oracle Boot-Volume-Backups oder eigene Images angelegt, enthalten diese weiter die alten Nachrichtendaten, bis sie nach ihrer eigenen Aufbewahrung gelöscht werden. Die Bereinigung löscht nicht aus Backups.
 - Auch Kopien, die du selbst gezogen hast, bleiben erhalten, etwa mit `scp`.
 
-**24/7-Dienst:** Der 24/7-Dienst (`scalpdesk-247`) entfernt gesendete Meldungen sofort aus seinem Ausgang. Seine Ereignisdaten (ID, Zustand, Zeit) vergisst er nach 14 Tagen von selbst. Sein Protokoll liegt im systemd-Journal und folgt dessen Aufbewahrung. Er sendet Chartmuster weiterhin als Text.
+**24/7-Dienst:** Der 24/7-Dienst (`scalpdesk-247`) entfernt gesendete Meldungen sofort aus seinem Ausgang. Seine Ereignisdaten (ID, Zustand, Zeit) vergisst er nach 14 Tagen von selbst. Sein Protokoll liegt im systemd-Journal und folgt dessen Aufbewahrung. Eine monatliche Bereinigung braucht er deshalb nicht.
+
+**Trading-Karten im 24/7-Dienst (ab 2.14.0):**
+
+- Auch der 24/7-Dienst sendet Chartmuster als Trading-Karte, mit derselben Karte und denselben Regeln wie der Musterdienst.
+- Der Installer richtet Schrift und resvg kostenlos mit ein, wenn er erneut läuft: `curl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/install.sh | sudo bash`.
+- `sudo scalpdesk-247 status` zeigt danach „Chartmuster: als Trading-Karte“. Fehlt etwas, sendet er wie bisher Text.
+- Die Karte wird beim Versand aus den Signaldaten der Meldung im Ausgang erzeugt und nicht als Datei gespeichert.
+- Bei verspäteter Zustellung steht „verspätet zugestellt hh:mm Uhr“ in der Bildunterschrift.
 
 ```bash
 sudo tail -f /var/log/scalpdesk-patterns/service.log

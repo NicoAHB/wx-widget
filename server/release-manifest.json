@@ -1,11 +1,11 @@
 {
-  "version": "2.13.0",
-  "appVersion": "3.69.0",
+  "version": "2.14.0",
+  "appVersion": "3.70.0",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
-      "sha256": "dc177ce791a9d995241b38bfbe192a48fb4cc227939396b65432cd4fe125e848",
-      "bytes": 130250
+      "sha256": "700404c726aad66e38b6ff76ff13dcf55a00982cc572260349bd6dff0c760fb7",
+      "bytes": 132965
     },
     {
       "path": "pattern-engine.mjs",
@@ -16,6 +16,21 @@
       "path": "pattern-monitor.mjs",
       "sha256": "22f50f1d4ad57064f7b63f423dde6940ebc6fc4d2b6e51e87acfd5c8eb9275dc",
       "bytes": 6970
+    },
+    {
+      "path": "pattern-card.mjs",
+      "sha256": "f0910731c4b53a6fd78dcd39208a7a0a342eece49d8d018d4a3f00795af174d0",
+      "bytes": 20141
+    },
+    {
+      "path": "package.json",
+      "sha256": "5776b5f1ac11c9c4b524af21f72c435993120d36510c4b7e9fb85da3b3c5530f",
+      "bytes": 328
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "bce64b09f2edaa714b0283631c9d917c1e3beeb79b2a39fdfa970497939ab12e",
+      "bytes": 7324
     },
     {
       "path": "telegram-format.mjs",
@@ -44,8 +59,8 @@
     },
     {
       "path": "install.sh",
-      "sha256": "07bb7777ee2e59bb159c1a490cbdd5f3db819300c52c37e174a27bc9f62d33d4",
-      "bytes": 19236
+      "sha256": "b7cdb7da804f417b82a917f72cbea6f882c96db3bcb789e99c0e5fccdbdccbfe",
+      "bytes": 20356
     },
     {
       "path": "shared/adaptive-grid-feed.mjs",
@@ -191,6 +206,11 @@
       "path": "shared/doc-viewer.mjs",
       "sha256": "2ebc39aa048d0bc36b4fb03a4c73db1f7aa95984208161c744eb217f3f241816",
       "bytes": 6436
+    },
+    {
+      "path": "shared/fvg.mjs",
+      "sha256": "bf07efd328bfd65cbadec830ac25f00b51a0df3db408eaf4294ba2e70f8edf70",
+      "bytes": 2439
     },
     {
       "path": "shared/github-sync-view.mjs",

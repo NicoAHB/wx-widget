@@ -1,6 +1,30 @@
 # Tests für Scalp Desk
 
+**Gesamtlauf 3.70.0:** 5443/5448. Rot sind nur die Altbefunde m7, m18 und m19, dazu die bekannten Abbrüche m40 und m79. Sie sind wortgleich wie in den Läufen davor; m79 bricht auf dem veröffentlichten Stand (main) an derselben Stelle ab. Neu und grün: unit-fvg, m105, m106, m107; ebenfalls grün m103 (34), m93, m94, m58 und alle Servertests.
+
 **Gesamtlauf 3.69.0:** 5355/5363. m53 und m31 einzeln grün; Altbefunde m7, m18, m19; Abbrüche m40, m79. Danach (Musterdienst 1.2.0) alle Servertests, `m58` und `m69` einzeln grün.
+
+**3.70.0 FVG-Knopf, Karten im 24/7-Dienst, Optik (Claude):**
+- Neu `unit-fvg.js` (10): `shared/fvg.mjs`.
+  - Prüft bullisch/bärisch, Farbe der mittleren Kerze, Berührung, Mitigation und die Zusammenfassung.
+  - Rechnet 4000 Zufallskerzen gegen eine einfache Schleife nach und misst das Tempo.
+  - Gleicht mit Python ab (`FVG_PYTHON`; ohne pandas „übersprungen“).
+- Neu `m105.js` (11): FVG-Knopf mit ⓘ in den Chart-Ebenen.
+  - Feste Lücken aus der Attrappe (`/shape?kind=fvg`); Boxen und Rückmeldung.
+  - Heikin-Ashi, Speichern, „Alle ausblenden“, Handy.
+- Neu `m106.js` (20): optische Korrekturen in der echten Navigation (`launch({ workspace: 'fresh' })`) auf 360/390/820/1400 px, hell und dunkel.
+  - „Verkaufssignal“ ganz sichtbar;
+  - Trend-Zeile bündig mit OHLC;
+  - „Starke Zonen“ bündig unter „Orderflow“;
+  - FVG-Farbfeld.
+- Neu `m107.js` (15): beendetes Chartmuster (echte pat-1-Erkennung, Status ungültig) über ⓘ → „Ausgegraut im Chart zeigen“.
+  - Prüft: grau und gestrichelt, Sprung zum Muster, Name mit ✕, nur zur Ansicht, Vollbild.
+  - Ausblenden über den Knopf, durch Tipp auf den Namen und durch Intervallwechsel.
+  - `m93`/`m94` erwarten jetzt diesen Knopf statt eines gesperrten.
+- `unit-247e.js` (52): Trading-Karten im 24/7-Dienst 2.14.0.
+  - Versand: `sendPhoto` an Chat/Thema, Multipart.
+  - Fehlerfälle: 400 → Text, Chatfehler bleibt im Ausgang, 429, verloren, Renderer fehlt.
+- `inst-247.sh` (36): Kartenrenderer im Programmstand, `npm ci`, Textmodus bei Fehlschlag.
 
 **3.69.0 Chartmuster-Karten über Oracle (Musterdienst 1.2.0, Claude):**
 - Neu `unit-pattern-card.js` (51): Karte (Beispielwerte exakt, Abwärts, lange Namen, fehlende Werte, PNG und Pixel), Versand (Karte, Textersatz, 400/429/verloren, Multipart) und Bereinigung (Stichtag, Monatswechsel, Probelauf, Sperren, Wiederaufnahme, Protokolle, systemd).

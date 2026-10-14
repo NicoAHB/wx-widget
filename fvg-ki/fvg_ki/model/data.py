@@ -15,7 +15,7 @@ BINANCE_PUBLIC = "https://data-api.binance.vision/api/v3/klines"  # öffentliche
 
 def load_csv(path: str) -> pd.DataFrame:
     """CSV mit Spalten time/open/high/low/close/volume (Zeit als Datum, Sekunden oder Millisekunden)."""
-    return normalize_ohlcv(pd.read_csv(path))
+    return normalize_ohlcv(pd.read_csv(path, float_precision='round_trip'))  # Kurse exakt wie in der Datei
 
 
 def fetch_binance(symbol: str = "BTCUSDT", interval: str = "1h", limit: int = 1000, timeout: float = 15) -> pd.DataFrame:

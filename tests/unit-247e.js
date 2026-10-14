@@ -31,7 +31,7 @@ const throws = fn => { try { fn(); return false; } catch { return true; } };
   check('Monatsende kalendergenau einschließlich Februar, kein 30-Tage-Ersatz', P.patternEnd(Date.UTC(2026, 1, 1), '1M') === Date.UTC(2026, 2, 1));
   const token = '123456789:TEST_ONLY_not_a_real_token_000000000', key = 'k'.repeat(43), dir = fs.mkdtempSync(path.join(os.tmpdir(), 's247e-')), logs = [], sent = [];
   // Jeder unabhängige Dienst startet vor dem Schluss der festen Bestätigungskerze.
-  const make = (name, extra = {}) => { now = c.tc + 1; return new W.Watcher({ token, chat: '111', key, listen: '127.0.0.1:0', statePath: path.join(dir, name, 'state.json'), now: () => now, log: (...x) => logs.push(x.join(' ')), patternFetch: async () => rows(), patternSpread: async () => null, ...extra }); };
+  const make = (name, extra = {}) => { now = c.tc + 1; return new W.Watcher({ token, chat: '111', key, listen: '127.0.0.1:0', statePath: path.join(dir, name, 'state.json'), now: () => now, log: (...x) => logs.push(x.join(' ')), patternFetch: async () => rows(), patternSpread: async () => null, patternCards: false, ...extra }); }; // 2.14.0: Textweg; Karten unten
   // 2.13.0: Zustellungsprüfungen mit lockerem Qualitätsfilter (die feste Kunstreihe ist kein handelbares Signal); der Filter selbst: unit-pattern-quality.js
   const LENIENT = { preset: 'eigen', minScore: 0, minRR: 0.5, maxAge: 10, maxProgress: 100, minTargetAtr: 0, minFeeMultiple: 0, minVolume24h: 0, maxSpread: 5, cooldownMin: 0, oppositeMin: 0, maxPerHour: 60, counterTrend: true };
   const config = { items: [item], bot: token.split(':')[0], chat: '-100888', thread: '77', filter: LENIENT };
@@ -134,8 +134,32 @@ const throws = fn => { try { fn(); return false; } catch { return true; } };
   check('App-Meldung mit bestandener Bewertung: Anti-Spam am Dienst, Versand mit Zeile „🎯 Signalscore 77/100 · Trend ✔ · Volumen ✔ · R/R 2,6“', withQ.ok && sent.length === before + 1 && last.includes('🎯 Signalscore 77/100 · Trend ✔ · Volumen ✔ · R/R 2,6') && last.includes('⭐ <b>Ziel:'), JSON.stringify(withQ));
   const stats = await (await call('/v1/patterns/signals')).json();
   check('GET /v1/patterns/signals: Statistik je Muster, Zeitrahmen und Coin, letzte Signale mit Filtergrund', stats.ok && stats.pat.some(r => r.key === 'double_bottom') && stats.iv.some(r => r.key === '1h') && stats.sym.some(r => r.key === 'BTCUSDT') && Array.isArray(stats.recent) && stats.filter.preset === 'eigen', JSON.stringify(stats).slice(0, 200));
+  // 2.14.0: Chartmuster als Trading-Karte (sendPhoto, multipart) – Text nur als Ersatz
+  const cardTests = [];
+  const cardRun = async (name, tgImpl) => { const x = make(name, { patternCards: true }); cardTests.push(x); now = c.tc + 1; cfg(x, `watch-card-${name}`.slice(0, 32).padEnd(16, '0')); now = P.patternEnd(c.tc, c.iv) + 2000; const calls = []; x.tg = async (method, body, timeout, usedToken) => { calls.push({ method, body, usedToken, timeout }); return tgImpl(method, body, calls); }; await x.checkPatterns(); return { x, calls }; };
+  const k1 = await cardRun('karte', () => ({ message_id: 41 }));
+  const ph = k1.calls.find(cl => cl.method === 'sendPhoto');
+  check('2.14.0: Chartmuster als Trading-Karte – sendPhoto mit PNG an Musterchat/Thema, Muster-Bot, kein Text', ph && Buffer.isBuffer(ph.body.photo) && ph.body.photo.slice(1, 4).toString() === 'PNG' && ph.body.photo.readUInt32BE(16) === 1024 && ph.body.chat_id === config.chat && ph.body.message_thread_id === config.thread && ph.usedToken === token && !k1.calls.some(cl => cl.method === 'sendMessage'), JSON.stringify(k1.calls.map(cl => cl.method)));
+  check('… kurze Bildunterschrift (Paar · Zeitrahmen · Status), HTML; Freigabe bestätigt', ph?.body.caption === '<b>BTC/USDT</b> · 1 Stunde · Ausbruch bestätigt' && ph.body.parse_mode === 'HTML' && k1.x.evs[ev]?.st === 'confirmed' && !k1.x.out.length, ph?.body.caption);
+  check('… Ausgang trägt bis zum Versand die Signaldaten (keine Zugangsdaten)', logs.some(l => /Telegram gesendet als Karte: Chartmuster BTC/.test(l)) && !JSON.stringify(k1.x.stateView()).includes(token));
+  const k2 = await cardRun('bild-abgelehnt', method => { if (method === 'sendPhoto') throw Object.assign(new Error('Telegram sendPhoto: Bad Request: IMAGE_PROCESS_FAILED'), { code: 400 }); return { message_id: 42 }; });
+  check('Bild abgelehnt (400) → bisherige Textmeldung im selben Versuch', k2.calls.map(cl => cl.method).join() === 'sendPhoto,sendMessage' && /Doppel-Boden/.test(k2.calls[1].body.text) && k2.x.evs[ev]?.st === 'confirmed', k2.calls.map(cl => cl.method).join());
+  const k3 = await cardRun('chat-falsch', () => { throw Object.assign(new Error('Telegram sendPhoto: Bad Request: chat not found'), { code: 400 }); });
+  check('Chat nicht gefunden (400) → kein Textversuch, bleibt im Ausgang (Wiederholung wie bisher)', k3.calls.length === 1 && k3.x.out.length === 1 && k3.x.out[0].tries === 1 && k3.x.out[0].card);
+  let n429 = 0; const k4 = await cardRun('ratelimit', method => { if (method === 'sendPhoto' && !n429++) throw Object.assign(new Error('Telegram sendPhoto: Too Many Requests'), { code: 429, retry: 30 }); return { message_id: 43 }; });
+  const waited = k4.x.out[0]?.next; now += 31000; await k4.x.deliver();
+  check('429 → wartet die genannte Zeit, dann Karte zugestellt', waited === P.patternEnd(c.tc, c.iv) + 2000 + 30000 && k4.calls.filter(cl => cl.method === 'sendPhoto').length === 2 && !k4.x.out.length && k4.x.evs[ev]?.st === 'confirmed');
+  const k5 = await cardRun('verloren', () => { throw Object.assign(new Error('Telegram antwortet nicht (TimeoutError)'), { code: 0, lost: true }); });
+  check('Antwort verloren → unbestätigt, kein Text hinterher', k5.calls.length === 1 && k5.x.evs[ev]?.st === 'unconfirmed' && !k5.x.out.length);
+  const k6 = await cardRun('ohne-renderer', () => ({ message_id: 44 })); // Renderer fehlt: Ersatz Text
+  const k6b = make('renderer-fehlt', { patternCards: true }); cardTests.push(k6b); now = c.tc + 1; cfg(k6b, 'watch-card-norend0'); now = P.patternEnd(c.tc, c.iv) + 2000; const nr = []; k6b.patternCard = async () => { throw new Error('Kartenrenderer fehlt'); }; k6b.tg = async (method, body) => { nr.push(method); return { message_id: 45 }; }; await k6b.checkPatterns();
+  check('Kartenrenderer fehlt → Textmeldung, Hinweis im Protokoll', k6.calls.some(cl => cl.method === 'sendPhoto') && nr.join() === 'sendMessage' && logs.some(l => /Karte nicht erzeugt – Text als Ersatz/.test(l)));
+  const realFetch = globalThis.fetch; let req = null; globalThis.fetch = async (url, init) => { req = { url: String(url), init }; return new Response(JSON.stringify({ ok: true, result: { message_id: 46 } }), { status: 200 }); };
+  try { await W.Watcher.prototype.tg.call(w, 'sendPhoto', { chat_id: '-100888', message_thread_id: '77', photo: Buffer.from('\x89PNG test'), caption: '<b>BTC/USDT</b>', parse_mode: 'HTML' }, 30000, token); }
+  finally { globalThis.fetch = realFetch; }
+  check('tg(sendPhoto): multipart mit Datei, Feldern und Token nur in der Adresse', /\/sendPhoto$/.test(req.url) && req.init.body.get('chat_id') === '-100888' && req.init.body.get('message_thread_id') === '77' && req.init.body.get('photo')?.type === 'image/png' && !req.init.headers);
   w.server.close();
-  for (const watcher of [w, restarted, appFirst, off, failing, queue, lost, during, crash, recovered, parallel, countFetch, changed, ownBot, detached, strict]) { clearTimeout(watcher.saveTimer); clearTimeout(watcher.arch?.timer); }
+  for (const watcher of [w, restarted, appFirst, off, failing, queue, lost, during, crash, recovered, parallel, countFetch, changed, ownBot, detached, strict, ...cardTests]) { clearTimeout(watcher.saveTimer); clearTimeout(watcher.arch?.timer); }
   fs.rmSync(dir, { recursive: true, force: true });
   console.log(`\n${pass}/${pass + fail} bestanden`); process.exit(fail ? 1 : 0);
 })().catch(e => { console.error(e); process.exit(1); });

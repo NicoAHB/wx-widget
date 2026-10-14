@@ -14,6 +14,7 @@ Der Dienst ist ein kleines Programm auf einem eigenen Server, der rund um die Uh
 
 **Kosten:** 0 €. Oracle prüft bei der Anmeldung eine Kreditkarte, belastet sie aber nicht, solange du nur Always-Free-Angebote nutzt.
 **Dauer:** etwa 20–30 Minuten.
+**Mit ChatGPT:** [`ANLEITUNG-CHATGPT-ORACLE.md`](../ANLEITUNG-CHATGPT-ORACLE.md) – Starttext und Prüfpunkte; Zugangsdaten nur am Server eingeben, nie im Chat.
 **Du brauchst:**
 - einen Computer oder ein iPad mit Browser,
 - die App mit eingerichtetem Telegram („Kursalarm“),
