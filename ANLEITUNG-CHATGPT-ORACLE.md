@@ -83,7 +83,7 @@ Nach jedem Teil muss die genannte Ausgabe erscheinen. Erst dann geht es weiter.
 | Zugangsdaten (nur bei Neueinrichtung) | die `read`-Zeilen (Token und Chat-ID unsichtbar, Thema-ID sichtbar) und `printf … \| sudo tee /etc/scalpdesk-patterns.env` aus Abschnitt 4 | keine Ausgabe (die Eingaben sind unsichtbar) |
 | Testnachricht | `sudo -u scalpdesk-patterns /usr/bin/node /opt/scalpdesk-patterns/server/patterns-247.mjs --test` | `Testnachricht zugestellt` und im Muster-Chat „CHARTMUSTER · Test erfolgreich“ |
 | Dienst läuft | `sudo systemctl restart scalpdesk-patterns && sudo systemctl status scalpdesk-patterns --no-pager` | `active (running)` |
-| Startzeile | `sudo tail -n 5 /var/log/scalpdesk-patterns/service.log` | `Chartmusterdienst 1.2.1 gestartet … Meldungen als Trading-Karte (Text als Ersatz)` |
+| Startzeile | `sudo tail -n 5 /var/log/scalpdesk-patterns/service.log` | `Chartmusterdienst 1.3.0 gestartet … Meldungen als Signalkarte mit Kurztext (Kurztext als Ersatz)` |
 
 Steht in der Startzeile „Text – Kartenrenderer fehlt“, fehlt der Schritt „Renderer“. Steht dort „Text – keine Schrift für die Karte“, fehlt der Ordner `server/fonts`; dann `git pull` wiederholen. Der Dienst sendet in beiden Fällen trotzdem, nur als Text.
 
@@ -103,7 +103,7 @@ Gelöscht wird nur, was **vor dem Monatsbeginn nachweislich gesendet** wurde. Wa
 | Prüfpunkt | Befehl | Erwartet |
 |---|---|---|
 | Installieren/aktualisieren | `curl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/install.sh \| sudo bash` | Schritte 1/7 bis 7/7 mit ✓, dazu die Zeile `Chartmuster als Trading-Karte (Bild)` |
-| Status | `sudo scalpdesk-247 status` | `✓ Bot … Token gültig`, `• Chartmuster: als Trading-Karte (Bild), Text als Ersatz` |
+| Status | `sudo scalpdesk-247 status` | `✓ Bot … Token gültig`, `• Chartmuster: als Signalkarte (Bild) mit Kurztext, Kurztext als Ersatz` |
 | Zugang für die App | `sudo scalpdesk-247 zugang` | Adresse und Zugangsschlüssel. Den Schlüssel **nur in die App** eintragen, nicht in ChatGPT. |
 
 Steht dort „als Text (resvg konnte nicht geladen werden …)“, den Installer später noch einmal ausführen. Bis dahin kommen die Chartmuster als Text.

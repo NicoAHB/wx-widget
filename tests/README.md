@@ -1,5 +1,24 @@
 # Tests für Scalp Desk
 
+**3.71.0 Chartmuster-Signalkarte und Alarm-Knopf (Dienst 2.15.0, Musterdienst 1.3.0, Claude):**
+- `unit-pattern-card.js` (71):
+  - Beispiel nach Vorlage (DOT/USDT);
+  - Gesamturteil-Schwellen, auch eigene;
+  - Jetzt: gültig, verpasst ab 0,3 %, abgelaufen; Restkerzen;
+  - Stop-Hinweis (ATR), „Erlernt“ ab 10 Fällen;
+  - Karte: Reihenfolge, Farben, Mini-Chart, Musterqualität blau;
+  - Kurztext in Kartenreihenfolge, höchstens 1024 Zeichen;
+  - Mini-Chart-Daten und ihre Prüfung; PNG.
+- `unit-pattern-quality.js` (40): Kartenwerte, Einstiegsfenster, Sperre für schwache Signale, Bewertungszeichen, Journalfelder.
+- `unit-patterns-only.js` (22): Signal unter der Schwelle nicht senden (Journal „schwach“), mit Schalter senden.
+- `m102.js` (19):
+  - Einstellungen der Signalkarte, Presetwechsel;
+  - Foto mit Kurztext;
+  - Karte im Signal-Log; schwach nur in der App; „⌛ abgelaufen“.
+- `m58.js` tg (7): Chartmuster aus der App als Foto mit Kurztext.
+- `m109.js` (15): „Alarm für diesen Kurs“ in der echten Navigation (iPhone, iPad, PC) bis zum Speichern.
+- Lockere Testfilter senden weiter auch schwache Signale (`sendWeak: true`).
+
 **3.71.0 Trade-Karte überarbeitet (Claude):**
 - `m103.js` (45):
   - Beispiel XRP/USDT 24.09.2026 als Long-Gewinn (19:35–21:27, 760 XRP, 20×, Cross, Gebühren 0).
@@ -10,6 +29,7 @@
   - Sendefehler im Log mit Chat-Name, ohne Token.
   - Der Abrufzähler zählt nur noch Abrufe mit Zeitfenster. Vorher zählten die Live-Kerzen des Charts mit, was zu Wacklern auf main führte.
 - `m55.js` (49): neue Bildunterschrift und Fehlertexte. Die Warnungen zu frei gewählten Testkursen gelten nicht als Fehler.
+- `m91.js` (8): Trade-Bild mit einzeiliger Bildunterschrift ohne HTML, genau ein Versand.
 
 **3.70.1 Trading-Karte ohne Text / Schrift mitgeliefert (Musterdienst 1.2.1, Dienst 2.14.1, Claude):**
 - `unit-pattern-card.js` (57): sechs neue Prüfungen.

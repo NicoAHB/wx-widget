@@ -52,7 +52,7 @@ import { PQ, patternConfig, patternCandles, patternCases, patternFresh, patternT
 import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT } from './telegram-format.mjs';
 import { ConfluenceService, kiMessage, Po3Service, po3Message, BotSimulationRuntime } from './ki-monitor.mjs';
 
-export const VERSION = '2.14.4';   // 2.13.0: Qualitätsfilter für Chartmuster-Meldungen; 2.14.0: Chartmuster als Trading-Karte (Text als Ersatz); 2.14.1: Schrift mitgeliefert; 2.14.4: Installer mit Zeitlimits und Fortschritt; 2.14.3: Status nennt den Chartmuster-Filter; 2.14.2: Installer macht den Programmstand für den Dienstbenutzer lesbar
+export const VERSION = '2.15.0';   // 2.13.0: Qualitätsfilter für Chartmuster-Meldungen; 2.14.0: Chartmuster als Trading-Karte (Text als Ersatz); 2.14.1: Schrift mitgeliefert; 2.14.4: Installer mit Zeitlimits und Fortschritt; 2.14.3: Status nennt den Chartmuster-Filter; 2.14.2: Installer macht den Programmstand für den Dienstbenutzer lesbar; 2.15.0: Chartmuster-Signalkarte (Gesamturteil, Jetzt, Mini-Chart), schwache Signale nur mit Schalter
 // 2.14.0: Kartenrenderer (pattern-card.mjs + resvg) nur bei Bedarf laden; fehlt er, bleibt es bei der Textmeldung
 let cardModule = null;
 const loadCards = () => (cardModule ??= import('./pattern-card.mjs').catch(() => null));
@@ -575,8 +575,9 @@ export class Watcher {
   // 2.14.0: Karte aus den gespeicherten Signaldaten der Meldung (Zeit der Meldung wie beim Text; verspätet: Hinweis in der Bildunterschrift)
   async patternCard(m, lateAt = 0) {
     const P = await loadCards(); if (!P) throw new Error('Kartenrenderer fehlt (Installer erneut ausführen)');
-    const r = await P.renderPatternCard(m.card, { at: m.at, timezone: m.tz || 'Europe/Berlin' });
-    return { png: r.png, caption: r.caption + (lateAt ? ` · verspätet zugestellt ${timeText(lateAt, m.tz)} Uhr` : '') };
+    // 2.15.0: Signalkarte – „Jetzt“ (Einstieg gültig/verpasst/abgelaufen) zur Zustellzeit; Bildunterschrift = Kurztext der Karte
+    const r = await P.renderPatternCard(m.card, { at: m.at, now: lateAt || m.at, timezone: m.tz || 'Europe/Berlin', captionLimit: TELEGRAM_CAPTION_LIMIT - 80 });
+    return { png: r.png, caption: r.caption + (lateAt ? `\n⏰ verspätet zugestellt ${timeText(lateAt, m.tz)} Uhr` : '') };
   }
   // 2.0: Zustand einer eigenen Freigabe fortschreiben (mit Protokollzeile: Ereignis, Ziel, Sender, Zustand)
   evSet(id, st, why = '') {
@@ -947,7 +948,7 @@ export class Watcher {
     return { status: 200, body };
   }
   // 2.13.0: wird nur noch für Signale aufgerufen, die den Qualitätsfilter bestanden haben (ev = Bewertung für die Scorezeile).
-  async notifyPattern(c, h, evaluation = null) {
+  async notifyPattern(c, h, evaluation = null, k = null) {
     const cfg = this.patternWatch.config, since = Math.max(this.patternWatch.since, this.pol.targets.patterns.since);
     if (!this.key || !cfg || !this.patternDestination(cfg)) return { sent: false, reason: 'not-configured' };
     if (!this.pol.targets.patterns.on || !patternFresh(c, this.now(), since)) return { sent: false, reason: 'off-or-old' };
@@ -956,7 +957,7 @@ export class Watcher {
     if (!this.saveStateNow()) { this.evSet(ev, 'failed', 'Freigabe nicht dauerhaft gespeichert'); return { sent: false, reason: 'storage-error', eventId: ev }; }
     this.arch?.add([c]);
     const archive = this.arch?.export() || [];
-    await this.queue(patternText(c, h, archive, evaluation), this.conf?.data?.tz || 'Europe/Berlin', { target: 'patterns', ev, label, destination: { chat: cfg.chat, thread: cfg.thread, bot: cfg.bot }, card: patternMessageData(c, h, archive, evaluation) });
+    await this.queue(patternText(c, h, archive, evaluation, k), this.conf?.data?.tz || 'Europe/Berlin', { target: 'patterns', ev, label, destination: { chat: cfg.chat, thread: cfg.thread, bot: cfg.bot }, card: patternMessageData(c, h, archive, evaluation, k) });
     return { sent: this.evs[ev]?.st === 'confirmed', st: this.evs[ev]?.st, eventId: ev };
   }
   // 2.13.0: Qualitätsfilter – Kandidaten eines Prüflaufs gemeinsam auswählen; gefilterte nur ins Journal und Log.
@@ -990,12 +991,12 @@ export class Watcher {
           for (const { c, h } of patternCases(k, item, now)) {
             if (this.patSignals.some(e => e.id === c.id) || this.evs[`pat:${c.id}`]) continue;
             const ev = await patternEvaluate({ c, h, k, fetchRows: (x, limit) => this.patternFetch(x.mkt, x.sym, limit, x.iv), fetchSpread: this.patternSpread, cache, settings: cfg.filter, journal: this.patSignals, now });
-            candidates.push({ id: c.id, sym: c.sym, iv: c.iv, dir: c.dir, tc: c.tc, eval: ev, c, h });
+            candidates.push({ id: c.id, sym: c.sym, iv: c.iv, dir: c.dir, tc: c.tc, eval: ev, c, h, k });
           }
           this.patternProgress.set(name, { next: patternEnd(patternEnd(k.at(-1).t, item.iv), item.iv) + 2000, at: now }); this.clear(`Chartmuster ${name}`);
         } catch (e) { this.patternProgress.set(name, { next: this.now() + 30e3 }); this.note(`Chartmuster ${name}`, e.message); }
       }
-      if (rev === this.patternWatch.rev && epoch === this.pol.targets.patterns.epoch) for (const x of await this.gatePatterns(candidates)) if (!x.filtered) await this.notifyPattern(x.c, x.h, x.eval);
+      if (rev === this.patternWatch.rev && epoch === this.pol.targets.patterns.epoch) for (const x of await this.gatePatterns(candidates)) if (!x.filtered) await this.notifyPattern(x.c, x.h, x.eval, x.k);
     } finally { this.patternBusy = false; }
   }
   stateView(days = 3) {
@@ -1075,13 +1076,17 @@ export class Watcher {
       if (!patternFresh(body?.c, t, 0)) return send(400, { ok: false, error: 'Kein frischer bestätigter Musterfall.' });
       // 2.13.0: Die App schickt nur Signale, die ihren Qualitätsfilter bestanden haben, samt Bewertung; der Dienst prüft Anti-Spam
       // (Sperrzeiten, Stundenlimit) gemeinsam mit seinen eigenen Meldungen. Ohne gültige Bewertung kein Versand.
-      if (this.evs[`pat:${body.c.id}`]) return send(200, { ok: true, ...(await this.notifyPattern(body.c, { levels: body.levels || {} })) });   // bereits reserviert/gesendet: idempotent
+      // 2.15.0: Mini-Chart der Signalkarte aus der App (geprüft: nur Zahlen, begrenzte Größe)
+      const P = this.patternCards ? await loadCards() : null, hit = { levels: body.levels || {}, chart: P ? P.cleanPatternChart(body.chart) : null };
+      if (this.evs[`pat:${body.c.id}`]) return send(200, { ok: true, ...(await this.notifyPattern(body.c, hit)) });   // bereits reserviert/gesendet: idempotent
       const q = body?.quality, score = Number(q?.score);
       if (!q || q.pass !== true || !Number.isFinite(score) || score < 0 || score > 100) return send(200, { ok: true, sent: false, reason: 'quality-missing' });
-      const evaluation = { pass: true, score: Math.round(score), summary: String(q.summary || '').slice(0, 80), ko: [], parts: q.parts && typeof q.parts === 'object' ? q.parts : {}, criteria: Array.isArray(q.criteria) ? q.criteria.slice(0, 8).map(x => String(x).slice(0, 120)) : [], reason: '', entry: body.c.p0, target: body.levels?.tgt, invalid: body.levels?.inv };
-      const [gate] = await this.gatePatterns([{ id: body.c.id, sym: body.c.sym, iv: body.c.iv, dir: body.c.dir, tc: body.c.tc, eval: evaluation, c: body.c, h: { levels: body.levels || {} } }]);
+      const num = v => Number.isFinite(Number(v)) && Number(v) > 0 ? Number(v) : null, mark = v => ['✔', '✖', '~', '?'].includes(v) ? v : null;
+      const evaluation = { pass: true, score: Math.round(score), summary: String(q.summary || '').slice(0, 80), ko: [], parts: q.parts && typeof q.parts === 'object' ? q.parts : {}, criteria: Array.isArray(q.criteria) ? q.criteria.slice(0, 8).map(x => String(x).slice(0, 120)) : [], reason: '', entry: body.c.p0, target: body.levels?.tgt, invalid: body.levels?.inv,
+        marks: { trend: mark(q.marks?.trend), volume: mark(q.marks?.volume) }, rr: num(q.rr), atr: num(q.atr), price: num(q.price), settings: this.patternWatch.config?.filter || PQ.patternFilterSettings(null) };   // 2.15.0: Felder der Signalkarte
+      const [gate] = await this.gatePatterns([{ id: body.c.id, sym: body.c.sym, iv: body.c.iv, dir: body.c.dir, tc: body.c.tc, eval: evaluation, c: body.c, h: hit }]);
       if (gate.filtered) return send(200, { ok: true, sent: false, reason: 'filtered', why: gate.filtered });
-      return send(200, { ok: true, ...(await this.notifyPattern(body.c, { levels: body.levels || {} }, evaluation)) });
+      return send(200, { ok: true, ...(await this.notifyPattern(body.c, hit, evaluation)) });
     }
     if (u.pathname.startsWith('/v1/patterns/')) {
       if (!this.arch) return send(503, { ok: false, error: 'Muster-Archiv nicht eingerichtet (kein Zustandsordner).' });
@@ -1205,7 +1210,7 @@ export class Watcher {
     this.log(`Scalp Desk 24/7-Dienst ${VERSION} – Status`);
     try { this.me = await this.tg('getMe'); say(true, `Bot ${this.botText()} (ID ${this.me.id}) – Token gültig`); }
     catch (e) { say(false, e.code === 401 || e.code === 404 ? 'Bot-Token ungültig – Token aus der App (Kursalarm) mit --neu neu eingeben.' : e.message); return false; }
-    { const P = this.patternCards ? await loadCards() : null, st = P ? await P.cardRendererStatus() : 'renderer'; { const f = this.patternWatch.config ? PQ.patternFilterSettings(this.patternWatch.config.filter) : null; if (f) say(null, `Chartmuster-Qualitätsfilter: ${PQ.PATTERN_FILTER_PRESET_NAMES[f.preset] || f.preset} · Score ≥ ${f.minScore} · Chance/Risiko ≥ ${String(f.minRR).replace('.', ',')} · Gegentrend ${f.counterTrend ? 'erlaubt' : 'aus'} · Revision ${this.patternWatch.rev}`); } say(null, st === 'ok' ? 'Chartmuster: als Trading-Karte (Bild), Text als Ersatz' : st === 'schrift' ? 'Chartmuster: als Text – die Karte würde ohne Schrift erscheinen; Installer erneut ausführen' : 'Chartmuster: als Text – für Trading-Karten den Installer erneut ausführen (kostenlos: resvg)'); }
+    { const P = this.patternCards ? await loadCards() : null, st = P ? await P.cardRendererStatus() : 'renderer'; { const f = this.patternWatch.config ? PQ.patternFilterSettings(this.patternWatch.config.filter) : null; if (f) say(null, `Chartmuster-Qualitätsfilter: ${PQ.PATTERN_FILTER_PRESET_NAMES[f.preset] || f.preset} · Score ≥ ${f.minScore} · Chance/Risiko ≥ ${String(f.minRR).replace('.', ',')} · Gegentrend ${f.counterTrend ? 'erlaubt' : 'aus'} · schwache Signale (Score < ${f.weakBelow}) ${f.sendWeak ? 'werden gesendet' : 'nur in der App'} · Revision ${this.patternWatch.rev}`); } say(null, st === 'ok' ? 'Chartmuster: als Signalkarte (Bild) mit Kurztext, Kurztext als Ersatz' : st === 'schrift' ? 'Chartmuster: als Text – die Karte würde ohne Schrift erscheinen; Installer erneut ausführen' : 'Chartmuster: als Text – für Trading-Karten den Installer erneut ausführen (kostenlos: resvg)'); }
     let chat; try { chat = await this.tg('getChat', { chat_id: this.chat }); say(true, `Chat ${chatText(chat, this.chat)} erreichbar`); }
     catch (e) { say(false, `Chat ${this.chat}: ${e.message} – Chat-ID prüfen und dem Bot in Telegram einmal „Start“ schreiben.`); return false; }
     const pm = chat?.pinned_message;

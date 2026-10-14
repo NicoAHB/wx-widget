@@ -7,7 +7,7 @@ const throws = f => { try { f(); return false; } catch { return true; } };
   const M = await import('../server/patterns-247.mjs'), P = await import('../server/pattern-monitor.mjs'), E = await import('../server/pattern-engine.mjs');
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'patterns-only-')), destination = { token: '123456789:LOCAL_ONLY_no_real_token_000000', chat: 'LOCAL_CHAT', thread: '' };
   // 1.1.0: Zustellungsprüfungen mit lockerem Qualitätsfilter (feste Kunstreihe); Filterwirkung siehe unten und unit-pattern-quality.js
-  const LENIENT = { preset: 'eigen', minScore: 0, minRR: 0.5, maxAge: 10, maxProgress: 100, minTargetAtr: 0, minFeeMultiple: 0, minVolume24h: 0, maxSpread: 5, cooldownMin: 0, oppositeMin: 0, maxPerHour: 60, counterTrend: true };
+  const LENIENT = { preset: 'eigen', sendWeak: true, minScore: 0, minRR: 0.5, maxAge: 10, maxProgress: 100, minTargetAtr: 0, minFeeMultiple: 0, minVolume24h: 0, maxSpread: 5, cooldownMin: 0, oppositeMin: 0, maxPerHour: 60, counterTrend: true };
   const watch = { kind: 'scalpdesk-patterns-watch', v: 1, model: 'pat-1', gap: false, items: [{ sym: 'BTCUSDT', mkt: 'spot', iv: '1h' }], filter: LENIENT };
   check('Token/Chat-ID im Auswahl-Export verboten', throws(() => M.patternWatchFile({ ...watch, token: destination.token })) && throws(() => M.patternWatchFile({ ...watch, chat: '1' })));
   check('Doppelte Coins/Intervalle und unbekannte Intervalle abgelehnt', throws(() => M.patternWatchFile({ ...watch, items: [...watch.items, ...watch.items] })) && throws(() => M.patternWatchFile({ ...watch, items: [{ ...watch.items[0], iv: '7x' }] })));
@@ -46,6 +46,13 @@ const throws = f => { try { f(); return false; } catch { return true; } };
   check('Watch-Datei: Filter optional, ohne Angabe Preset Normal; unbekannte Felder weiter abgelehnt', M.patternWatchFile(watch).filter.preset === 'eigen' && M.patternWatchFile({ ...watch, filter: undefined }).filter.preset === 'normal' && throws(() => M.patternWatchFile({ ...watch, extra: 1 })));
   check('Statistik je Muster, Zeitrahmen und Coin (gesendet/gefiltert getrennt)', st.signals === 1 && st.pat[0].key === 'double_bottom' && st.pat[0].filtered === 1 && st.iv[0].key === '1h' && st.sym[0].key === 'BTCUSDT');
   const sentText = sent.find(x => x.includes('Doppel-Boden')) || '';
-  check('Gesendete Meldung: bisheriges Format plus „🎯 Signalscore …/100“ mit Kurzbegründung', /🎯 Signalscore \d+\/100 · Trend [✔~✖?] · Volumen [✔✖] · R\/R \d+,\d/.test(sentText) && sentText.includes('⭐ <b>Ziel:'));
+  check('3.71.0: Gesendete Meldung = Kurztext der Signalkarte (Gesamturteil mit Score, Trend/Volumen, Chance/Risiko, Ziel, Stop, Jetzt, Musterqualität)', /(Schwaches|Mittleres|Starkes) Signal \d+\/100<\/b> · Trend [✔✖?] · Volumen [✔✖?] · Chance\/Risiko/.test(sentText) && sentText.includes('🎯 Ziel: <b>') && sentText.includes('🛑 Stop: <code>') && /⏱ Jetzt: .* Einstieg (gültig|verpasst|abgelaufen)/.test(sentText) && sentText.includes('🧠 Musterqualität:') && !/Ungültig bei|Regelgüte/.test(sentText), sentText);
+  // 3.71.0: Ohne „Schwache Signale auch senden“ geht ein Signal unter der Schwelle nicht an Telegram, steht aber im Journal (schwach)
+  const weakSent = [], weak = new M.PatternsOnlyService({ ...options, watch: { ...watch, filter: { ...LENIENT, sendWeak: false, weakBelow: 99, strongFrom: 100 } }, stateFile: path.join(dir, 'schwach.json'), send: async text => { weakSent.push(text); }, log: () => {} });
+  now = close - 1; weak.state.since = close - 1; now = close + 2000; await weak.scan(); const wj = weak.state.signals[0];
+  check('3.71.0: Schwaches Signal (Score unter der Schwelle) nicht an Telegram, im Journal mit „schwach“ und Grund', weakSent.length === 0 && wj && wj.sent === false && wj.weak === true && /Schwaches Signal \(Score \d+ unter 99\)/.test(wj.reason) && Number.isFinite(wj.until) && wj.q >= 80, JSON.stringify(wj && { reason: wj.reason, weak: wj.weak, until: wj.until }));
+  const strong = new M.PatternsOnlyService({ ...options, watch: { ...watch, filter: { ...LENIENT, sendWeak: true, weakBelow: 99, strongFrom: 100 } }, stateFile: path.join(dir, 'schwach-an.json'), send: async text => { weakSent.push(text); }, log: () => {} });
+  now = close - 1; strong.state.since = close - 1; now = close + 2000; await strong.scan();
+  check('… mit „Schwache Signale auch senden“ geht es raus, als „Schwaches Signal“ gekennzeichnet', weakSent.length === 1 && /🟠 <b>Schwaches Signal \d+\/100<\/b>/.test(weakSent[0]), weakSent[0]);
   fs.rmSync(dir, { recursive: true, force: true }); console.log(`\n${pass}/${pass + fail} bestanden`); process.exitCode = fail ? 1 : 0;
 })().catch(e => { console.error(e); process.exitCode = 1; });

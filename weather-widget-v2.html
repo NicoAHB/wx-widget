@@ -2227,6 +2227,7 @@ html[data-workspace=focus][data-workspace-view=settings] #method-sec{grid-column
 .github-sync{border:1px solid var(--border);border-radius:14px;background:var(--surface);min-width:0}.github-sync>summary,.github-sync-setup>summary{padding:12px;cursor:pointer;font-weight:650;min-height:44px}.github-sync-body{display:grid;gap:12px;padding:12px;min-width:0}.github-sync-actions{display:flex;flex-wrap:wrap;gap:8px}.github-sync-actions>button{flex:1 1 220px;min-height:48px;white-space:normal;overflow-wrap:anywhere}.github-sync-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:12px}.github-sync-fields label,.github-sync-dialog label{display:grid;gap:6px;font-size:.85rem;min-width:0}.github-sync-fields input,.github-sync-dialog input{width:100%;min-width:0;box-sizing:border-box;min-height:44px;font-size:16px}.github-sync-fields p,.github-sync-fields a{grid-column:1/-1}.github-sync-status,.github-sync-last,.github-sync-hint{overflow-wrap:anywhere}.github-sync-hint{border:1px solid var(--border);border-radius:12px;background:var(--surface-2);padding:10px;display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:8px 0}.github-sync-hint[hidden]{display:none}.github-sync-hint>span{flex:1 1 240px}.github-sync-hint button{min-height:44px}.github-sync-dialog{box-sizing:border-box;width:min(480px,calc(100vw - 24px));max-height:calc(100dvh - 24px);padding:18px;border:1px solid var(--border);border-radius:16px;color:var(--text);background:var(--surface);overflow:auto}.github-sync-dialog::backdrop{background:#0009}.github-sync-dialog form{display:grid;gap:14px}.github-sync-dialog h3,.github-sync-dialog p{margin:0;overflow-wrap:anywhere}.github-sync-dialog p{font-size:.9rem;line-height:1.5}@media(max-width:480px){.github-sync-fields{grid-template-columns:minmax(0,1fr)}.github-sync-actions>button{flex-basis:100%}}
 /* 3.68.4: GitHub-Sync übersichtlich – ohne vierten Rahmen, Statuszeile, Sichern/Laden nebeneinander, Einrichtung in drei nummerierten Schritten, Felder mit Rahmen (vorher sahen sie wie Text aus). */#data-panel .github-sync{border:0;border-radius:0;background:none;border-bottom:1px solid var(--border);padding-bottom:6px}#data-panel .github-sync>summary{padding:4px 0 10px}#data-panel .github-sync-body{padding:0 0 8px}.github-sync-info{margin:0;color:var(--muted);font-size:.8125rem;line-height:1.45}.github-sync-state{margin:0;padding:8px 10px;border-radius:9px;font-size:.8125rem;font-weight:650;background:var(--warn-bg,var(--surface-2));color:var(--warn-text,var(--text))}.github-sync-state[data-ready=true]{background:var(--up-bg-2);color:var(--up-text)}dl.github-sync-last{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 10px;margin:0;font-size:.8125rem}dl.github-sync-last dt{color:var(--muted)}dl.github-sync-last dd{margin:0;min-width:0;overflow-wrap:anywhere}.github-sync-actions>button{flex:1 1 140px}.github-sync-actions>#github-sync-undo{flex-basis:100%;min-height:40px;font-size:.8125rem}.github-sync-setup{border:1px solid var(--border);border-radius:12px;background:var(--surface-2)}.github-sync-setup>summary{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 10px;list-style:none;padding:12px 14px}.github-sync-setup>summary::-webkit-details-marker{display:none}.github-sync-setup>summary::after{content:"＋";color:var(--muted);flex:none}.github-sync-setup[open]>summary::after{content:"−"}.github-sync-setup-title{flex:1 1 7rem;min-width:0}.github-sync-setup-state{flex:none;white-space:nowrap;font-size:.75rem;font-weight:650;padding:3px 8px;border-radius:999px;background:var(--warn-bg,var(--field));color:var(--warn-text,var(--muted))}.github-sync-setup-state[data-ready=true]{background:var(--up-bg-2);color:var(--up-text)}.github-sync-fields{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;padding:4px 14px 14px}.github-sync-step{display:grid;gap:8px;min-width:0}.github-sync-step h4{display:flex;align-items:center;gap:8px;margin:0;font-size:.875rem}.github-sync-num{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--border);font-size:.75rem}.github-sync-step-text{margin:0;color:var(--muted);font-size:.78rem;line-height:1.45}.github-sync-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}.github-sync-field{display:grid;gap:5px;min-width:0;font-size:.8rem;color:var(--muted)}.github-sync-fields .github-sync-field input{background:var(--field);border:1px solid var(--field-border);border-radius:8px;padding:0 12px;color:var(--text)}.github-sync-fields .github-sync-field input:focus{border-color:var(--mint);outline:none}.github-sync-token{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px}.github-sync-paste{min-height:44px;padding:0 12px}.github-sync-note{margin:0;color:var(--muted);font-size:.78rem;line-height:1.45}.github-sync-fields .github-sync-guide{grid-column:auto;justify-self:start;min-height:44px}
 /* 3.69.0: Qualitätsfilter für Chartmuster – Einstellungen (Telegram-Fenster) und Signal-Log (Chartmuster-Fenster) */.patq-settings{margin:10px 0;border:1px solid var(--border);border-radius:10px;background:var(--surface-2)}.patq-settings>summary{padding:10px 12px;cursor:pointer;font-weight:650;min-height:44px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}.patq-form{display:grid;gap:10px;padding:0 12px 12px}.patq-preset{display:grid;gap:4px;font-size:.8125rem}.patq-preset select{min-height:44px;font-size:16px;background:var(--field);color:var(--text);border:1px solid var(--field-border);border-radius:8px;padding:0 10px}.patq-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}.patq-field{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:2px 6px;font-size:.75rem;color:var(--muted)}.patq-field>span{grid-column:1/-1}.patq-field input{min-height:40px;width:100%;min-width:0;font-size:16px;background:var(--field);color:var(--text);border:1px solid var(--field-border);border-radius:8px;padding:0 8px}.patq-field small{white-space:nowrap}.patq-note{margin:0;font-size:.75rem;line-height:1.45}.patq-log{margin:10px 0;border:1px solid var(--border);border-radius:10px}.patq-log>summary{padding:10px 12px;cursor:pointer;font-weight:650;min-height:44px}.patq-log-body{display:grid;gap:10px;padding:0 12px 12px;min-width:0}.patq-table{width:100%;border-collapse:collapse;font-size:.75rem;font-variant-numeric:tabular-nums}.patq-table th,.patq-table td{padding:5px 4px;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap}.patq-table th:first-child,.patq-table td:first-child{text-align:left;white-space:normal}.patq-items{display:grid;gap:6px}.patq-item{border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-size:.78rem}.patq-item>summary{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:baseline;cursor:pointer;list-style:none}.patq-item>summary::-webkit-details-marker{display:none}.patq-when{color:var(--muted)}.patq-score{font-variant-numeric:tabular-nums}.patq-ok{color:var(--up-text);font-weight:650}.patq-no{color:var(--warn-text,var(--muted));font-weight:650}.patq-why{margin:6px 0 2px}.patq-item p{margin:2px 0}.patq-crit{margin:4px 0 0;padding-left:18px;color:var(--muted)}.patq-bt{display:grid;gap:6px}.patq-bt p{margin:0;font-size:.75rem}.patq-by{justify-self:start}
+/* 3.71.0: Signalkarte im Signal-Log (dieselbe Karte wie bei Telegram), Gesamturteil und „abgelaufen“, Kartenwerte in den Einstellungen */.patq-card{display:block;width:100%;max-width:420px;height:auto;margin:8px 0 4px;border-radius:12px;border:1px solid var(--border);background:#0a1222}.patq-grade{font-weight:700;padding:0 6px;border-radius:6px;border:1px solid currentColor;font-size:.72rem}.patq-grade.weak{color:#fb923c}.patq-grade.medium{color:#facc15}.patq-grade.strong{color:var(--up-text)}[data-theme=light] .patq-grade.weak{color:#c2410c}[data-theme=light] .patq-grade.medium{color:#a16207}.patq-exp{color:var(--muted);font-size:.72rem}.patq-card-set{display:grid;gap:8px;padding:10px;border:1px solid var(--border);border-radius:10px}.patq-card-set>b{font-size:.8125rem}
 /* 3.68.4: Anleitung in der App (docs/*.md) mit „Schließen“ */dialog.doc-viewer{width:min(720px,96vw)}.doc-viewer .sheet-head{position:sticky;top:0;background:var(--surface);z-index:1}.doc-viewer-close{min-height:40px;white-space:nowrap}.doc-viewer-body{display:block;line-height:1.55;font-size:.9rem;overflow-wrap:anywhere}.doc-viewer-body>*{margin:0 0 12px}.doc-viewer-body h2,.doc-viewer-body h3,.doc-viewer-body h4{margin:18px 0 8px;line-height:1.3}.doc-viewer-body h2{font-size:1.05rem}.doc-viewer-body h3{font-size:.98rem}.doc-viewer-body ol,.doc-viewer-body ul{padding-left:22px}.doc-viewer-body li{margin:0 0 8px}.doc-viewer-body code{font-size:.85em;padding:1px 4px;border-radius:4px;background:var(--surface-2);overflow-wrap:anywhere}.doc-viewer-body pre{overflow-x:auto;padding:10px 12px;border-radius:8px;background:var(--field);border:1px solid var(--border)}.doc-viewer-body pre code{padding:0;background:none;white-space:pre}.doc-table{overflow-x:auto;border:1px solid var(--border);border-radius:8px}.doc-table table{width:100%;border-collapse:collapse;font-size:.82rem}.doc-table th,.doc-table td{padding:8px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top;min-width:120px}.doc-viewer-body blockquote{padding-left:10px;border-left:3px solid var(--border);color:var(--muted)}
 .pat-project-settings{padding:10px;border:1px solid var(--border);border-radius:12px}.pat-project-settings>summary{min-height:44px;cursor:pointer}.pat-project-settings label{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:8px 0}.pat-project-settings input[type=number]{width:90px;min-height:44px;font-size:16px}.pat-project-settings p{font-size:.8rem;color:var(--muted);line-height:1.5}
 /* 3.64.0: Detail-Kerzen und Formationen in der Kurszeile, ohne horizontales Seiten-Scrollen. */
@@ -2272,7 +2273,7 @@ import { readMusterPaper, writeMusterPaper } from './bundles/3.71.0/shared/muste
 import { projectPatternLines, projectionSettings, projectionTime } from './bundles/3.71.0/shared/pattern-projection.mjs';
 import { createGithubSyncView } from './bundles/3.71.0/shared/github-sync-view.mjs';
 import { createDocViewer } from './bundles/3.71.0/shared/doc-viewer.mjs';
-import { PATTERN_FILTER_PRESET_NAMES, PATTERN_FILTER_FIELDS, HIGHER_TIMEFRAME, patternFilterSettings, patternFilterFromForm, evaluatePatternSignal, selectPatternSignals, patternJournalEntry, addPatternJournal, resolvePatternJournal, patternHitStats, patternJournalStats, PATTERN_OUTCOME_NAMES, backtestPatternFilter } from './bundles/3.71.0/shared/pattern-quality.mjs';
+import { PATTERN_FILTER_PRESET_NAMES, PATTERN_FILTER_FIELDS, PATTERN_CARD_FIELDS, HIGHER_TIMEFRAME, patternFilterSettings, patternFilterFromForm, evaluatePatternSignal, selectPatternSignals, patternJournalEntry, addPatternJournal, resolvePatternJournal, patternHitStats, patternJournalStats, PATTERN_OUTCOME_NAMES, backtestPatternFilter } from './bundles/3.71.0/shared/pattern-quality.mjs';
 import { stripSyncSecrets } from './bundles/3.71.0/shared/github-sync.mjs';
 import { createMusterView } from './bundles/3.71.0/shared/muster-bot-view.mjs';
 import { computeKiZones, KI_ZONE_INTERVALS } from './bundles/3.71.0/shared/ki-zones.mjs';
@@ -2281,7 +2282,8 @@ import { detectFvgs, fvgSummary } from './bundles/3.71.0/shared/fvg.mjs';
 import { scoreZoneStrength, ZONE_STRENGTH, ZONE_SIGNAL, zoneSignal, zoneStep, zoneOutcome, summarizeZoneBacktest } from './bundles/3.71.0/shared/zone-strength.mjs';
 // 3.68.0: KI-Signale/Trading-Bot entfernt; der GitHub-Sync behält sein Format inklusive vorhandener Modelloriginale.
 import { exportModelArchive, importModelArchive, validateModelArchive, restoreModelOriginals } from './bundles/3.71.0/shared/model-archive.mjs';
-import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT } from './bundles/3.71.0/shared/telegram-format.mjs';
+import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT, patternGrade } from './bundles/3.71.0/shared/telegram-format.mjs';
+import { patternSignalCard, patternChartData } from './bundles/3.71.0/shared/pattern-signal-card.mjs';   // 3.71.0: Chartmuster-Signalkarte
 import { createOrderflowView } from './bundles/3.71.0/shared/orderflow-view.mjs';
 import { createSignalView } from './bundles/3.71.0/shared/orderflow-signal-view.mjs';
 import { networkState, createWidgetBoundary } from './bundles/3.71.0/shared/widget-state.mjs';
@@ -6402,7 +6404,8 @@ function openAlarmForm(open, sym = null, price = null) {
   $('alarm-form').hidden = !open; $('alarm-toggle').setAttribute('aria-expanded', String(open)); showNotice('al-error', null);
   if (!open) return;
   state.alDirManual = false; $('al-symbol').value = sym ? coin(sym) : coin(state.symbol); $('al-price').value = price ? plain(price) : ''; $('al-note').value = '';
-  alarmPreview(); $('alarms').scrollIntoView({ behavior: 'smooth', block: 'start' }); focusSoft($('al-price'));
+  // 3.71.0: über goTo – in der Bereichs-Navigation (Handy, PC) lag „Alarme“ in einem anderen Bereich, das Formular öffnete unsichtbar
+  alarmPreview(); goTo('alarms'); focusSoft($('al-price'));
 }
 async function saveAlarm(e) {
   e.preventDefault();
@@ -13682,12 +13685,42 @@ function pkRecord(m, hits, mkt) {
 // Jede Fall-ID höchstens einmal: in diesem Browser per Abstimmung der Tabs (14 Tage), mit 24/7-Dienst ab 2.2.0 zusätzlich per
 // Sendefreigabe (Ereignis „pat:<Fall-ID>“) – so meldet von mehreren Geräten genau eins. Ziel aus → nichts, auch kein Nachholen.
 const PAT_TG_Q = 80;
-function patTgText(c, h, ev = null) {
-  const L = PAT_LIB[c.pat], S = pkStats({ mkt: c.mkt, sym: c.sym, iv: c.iv, pat: c.pat }), st = S.live.n >= 10 ? S.live : S.rek.n >= 10 ? S.rek : null, lv = h.levels || {};
-  return formatMessage('pattern', { pattern: L.n, symbol: c.sym, market: c.mkt === 'spot' ? 'Spot' : 'Futures', timeframe: c.iv, status: h.status, direction: c.dir, entry: c.p0, target: lv.tgt, invalid: lv.inv, quality: c.q, model: c.model || 'pat-1',
-    learned: st ? { ...st, source: st === S.live ? 'live protokolliert' : 'rekonstruiert', horizon: PK_H } : { available: S.live.n + S.rek.n, minimum: 10 }, score: ev?.score, scoreWhy: ev?.summary });
+// 3.71.0: Signaldaten der Chartmuster-Signalkarte (dieselben Felder wie im Dienst: shared/pattern-signal-card.mjs, Kurztext
+// formatMessage('pattern')) – Gesamturteil, Trend/Volumen, Chance/Risiko, ATR, Kurs, Einstiegsfenster, Mini-Chart, Kartenwerte
+const PAT_TZ = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Berlin'; } catch { return 'Europe/Berlin'; } })();
+function patLearned(mkt, sym, iv, pat) {
+  const S = pkStats({ mkt, sym, iv, pat }), st = S.live.n >= 10 ? S.live : S.rek.n >= 10 ? S.rek : null;
+  return st ? { ...st, source: st === S.live ? 'live protokolliert' : 'rekonstruiert', horizon: PK_H } : { available: S.live.n + S.rek.n, minimum: 10 };
 }
-async function patNotify(c, h, qev = null) {
+function patTgData(c, h, ev = null, chart = null) {
+  const L = PAT_LIB[c.pat], lv = h.levels || {};
+  return { pattern: L.n, symbol: c.sym, market: c.mkt === 'spot' ? 'Spot' : 'Futures', timeframe: c.iv, status: h.status, direction: c.dir, entry: c.p0, target: lv.tgt, invalid: lv.inv, quality: c.q, model: c.model || 'pat-1',
+    learned: patLearned(c.mkt, c.sym, c.iv, c.pat), score: ev?.score, scoreWhy: ev?.summary, marks: ev?.marks || null, rr: ev?.rr ?? null, atr: ev?.atr ?? null, price: ev?.price ?? null, tc: c.tc,
+    chart, settings: { ...patq.settings }, timezone: PAT_TZ, now: Date.now(), at: Date.now() };
+}
+const patTgText = (c, h, ev = null, chart = null) => formatMessage('pattern', patTgData(c, h, ev, chart));
+// Karte im Browser zeichnen (SVG → Canvas → PNG); scheitert das, sendet patNotify den Kurztext
+async function patCardBlob(data) {
+  const { svg, width, height } = patternSignalCard(data, { now: Date.now(), timezone: PAT_TZ }), url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
+  try {
+    const img = new Image(); img.src = url; await img.decode();
+    const cv = document.createElement('canvas'); cv.width = width; cv.height = height; cv.getContext('2d').drawImage(img, 0, 0, width, height);
+    return await new Promise((res, rej) => cv.toBlob(b => b?.size ? res(b) : rej(new Error('Karte leer')), 'image/png'));
+  } finally { URL.revokeObjectURL(url); }
+}
+// sendPhoto (wie das Trade-Bild direkt aus der Seite); Fehlerarten wie im Dienst: verloren → unbestätigt, Chat-Problem → fehlgeschlagen
+const PAT_CHAT_PROBLEM = /chat|thread|topic|blocked|kicked|deactivated|not enough rights|have no rights/i;
+async function patPostCard(T, blob, caption) {
+  const fd = new FormData(); fd.append('chat_id', T.chat); if (T.thread) fd.append('message_thread_id', T.thread);
+  fd.append('photo', blob, 'chartmuster.png'); fd.append('caption', caption); fd.append('parse_mode', 'HTML');
+  let r; try { r = await fetch(`https://api.telegram.org/bot${T.token}/sendPhoto`, { method: 'POST', body: fd, credentials: 'omit', referrerPolicy: 'no-referrer', cache: 'no-store' }); }
+  catch { return { ok: false, lost: true }; }
+  let j = null; try { j = await r.json(); } catch {}
+  if (r.ok && j?.ok) return { ok: true, id: j.result?.message_id || 0 };
+  if (r.ok) return { ok: false, lost: true };
+  return { ok: false, code: r.status, msg: String(j?.description || `Fehler ${r.status}`).slice(0, 160), chat: [401, 403, 404].includes(r.status) || PAT_CHAT_PROBLEM.test(j?.description || '') };
+}
+async function patNotify(c, h, qev = null, chart = null) {
   if (store.get('scalpdesk.patterns-oracle-only.v1', false)) return; // Einziger Sender ist der SSH-Dienst, keine lokalen Ersatzmeldungen.
   if (!tgtReady('patterns')) return;
   // 3.42.0 (G09 C6b): nach bestätigter Dienstübergabe ist ausschließlich Oracle Mustersender.
@@ -13696,14 +13729,14 @@ async function patNotify(c, h, qev = null) {
   if (watch?.config) {
     const dest = tgDest('patterns'), cfg = watch.config;
     if (!dest || dest.chat !== cfg.chat || dest.thread !== cfg.thread || tgBot(dest.token) !== cfg.bot) { patSvcMessage('Musterziel geändert – erst am Dienst übernehmen.'); return; }
-    try { const { status, j } = await svcFetch('/v1/patterns/notify', { method: 'POST', body: { expectedRevision: watch.rev, c, levels: h.levels || {}, quality: qev ? { pass: qev.pass, score: qev.score, summary: qev.summary, criteria: qev.criteria, parts: qev.parts } : null } });
+    try { const { status, j } = await svcFetch('/v1/patterns/notify', { method: 'POST', body: { expectedRevision: watch.rev, c, levels: h.levels || {}, chart, quality: qev ? { pass: qev.pass, score: qev.score, summary: qev.summary, criteria: qev.criteria, parts: qev.parts, marks: qev.marks, rr: qev.rr, atr: qev.atr, price: qev.price } : null } });   // 3.71.0: Kartenfelder und Mini-Chart
       if (status !== 200 || !j?.ok) throw new Error(j?.error || `Fehler ${status}`);
       pat.tgLog = [{ ev: `pat:${c.id}`, st: j.st || j.reason, at: Date.now() }, ...(pat.tgLog || [])].slice(0, 20);
     } catch (e) { patSvcMessage(`Musterzustellung unbestätigt: ${e.message}. Kein Ersatzversand aus der App.`); }
     return;
   }
   const ev = `pat:${c.id}`; if (!(await store.claim(`ev:${ev}`, 14 * 864e5))) return;
-  const text = patTgText(c, h, qev), coord = svcOn() && !!svc.pol.conf?.targets?.patterns;   // Dienst ab 2.2.0 kennt das Ziel
+  const data = patTgData(c, h, qev, chart), text = formatMessage('pattern', data), coord = svcOn() && !!svc.pol.conf?.targets?.patterns;   // Dienst ab 2.2.0 kennt das Ziel
   let fallback = !coord;
   if (coord) {
     const r = await svcReserve(ev, chanLabel(text), 'patterns');
@@ -13712,7 +13745,13 @@ async function patNotify(c, h, qev = null) {
     if (!tgtReady('patterns')) { if (!fallback) void svcReport(ev, 'discarded', 'Ziel unmittelbar vor dem Senden aus'); svcNote(ev, 'verworfen – Ziel Chartmuster aus'); return; }
     if (!fallback) await svcReport(ev, 'sending');
   }
-  const m = await chanSend('tg', finishTelegram(text, Date.now()), false, 'pattern', { coord: true });
+  // 3.71.0: Signalkarte als Bild mit dem Kurztext als Bildunterschrift; geht das Bild nicht, derselbe Kurztext als Nachricht
+  let m = null; const T = tgDest('patterns');
+  try { const blob = await patCardBlob(data); m = T ? await patPostCard(T, blob, finishTelegram(text, Date.now(), undefined, TELEGRAM_CAPTION_LIMIT)) : null; if (m && !m.ok && !m.lost && !m.chat) { pat.cardErr = m.msg; m = null; } }
+  catch (e) { pat.cardErr = String(e?.message || e).slice(0, 120); m = null; }
+  if (m && !m.ok && m.chat) m = { ok: false, code: m.code, msg: m.msg };
+  if (m?.ok) { store.set(CHANLAST_KEY, { ...(store.get(CHANLAST_KEY) || {}), tg: { at: Date.now(), label: chanLabel(text) } }); renderChanSummary(); }   // „zuletzt …“ wie beim Text
+  if (!m) m = await chanSend('tg', finishTelegram(text, Date.now()), false, 'pattern', { coord: true });
   const st = m?.ok ? (m.unconfirmed ? 'unconfirmed' : 'confirmed') : m?.lost ? 'unconfirmed' : 'failed';
   if (coord && !fallback) void svcReport(ev, st, m?.ok ? '' : m?.lost ? 'Telegram-Antwort verloren' : String(m?.msg || '').slice(0, 100));
   pat.tgLog = [{ ev, st, at: Date.now() }, ...(pat.tgLog || [])].slice(0, 20);
@@ -13724,7 +13763,7 @@ async function patNotify(c, h, qev = null) {
 const PATQ_KEY = 'scalpdesk.patfilter.v1', PATQ_LOG = 'scalpdesk.patsignals.v1', PATQ_MAX = 500;
 var patq = { settings: patternFilterSettings(store.get(PATQ_KEY)), by: 'pat', bt: null, btBusy: false, btCtl: null };
 function patqJournal() { const v = store.get(PATQ_LOG); return { list: Array.isArray(v?.list) ? v.list : [], sent: Array.isArray(v?.sent) ? v.sent : [] }; }
-function patqStore(j) { store.set(PATQ_LOG, { v: 1, list: j.list.slice(-PATQ_MAX), sent: j.sent.filter(x => Date.now() - x.at < 24 * 36e5) }); }
+function patqStore(j) { const list = j.list.slice(-PATQ_MAX); store.set(PATQ_LOG, { v: 1, list: list.map((e, i) => i < list.length - 60 && e.chart ? { ...e, chart: undefined } : e), sent: j.sent.filter(x => Date.now() - x.at < 24 * 36e5) }); }   // 3.71.0: Mini-Chart nur für die letzten 60 Signale
 async function patqCandles(mkt, sym, iv, limit = 260) {
   const raw = mkt === 'futures' ? await api.get(FUTURES, '/fapi/v1/klines', { symbol: sym, interval: iv, limit }) : await spotGet('/api/v3/klines', { symbol: sym, interval: iv, limit }), now = Date.now();
   return normalizeKlines(raw).filter(x => x.closeTime < now).map(x => ({ t: x.time, o: x.open, h: x.high, l: x.low, c: x.close, v: x.volume }));
@@ -13745,11 +13784,11 @@ async function patqRun(m, tg) {
   if (!cands.length) return;
   const j = patqJournal(), now = Date.now(), dec = selectPatternSignals(cands, j.sent, patq.settings, now);
   for (const x of cands.sort((a, b) => b.eval.score - a.eval.score)) {
-    const d = dec.get(x.id); j.list = addPatternJournal(j.list, patternJournalEntry(x.c, x.eval, d, now), PATQ_MAX);
+    const d = dec.get(x.id); x.chart = patternChartData(k, x.h); j.list = addPatternJournal(j.list, { ...patternJournalEntry(x.c, x.eval, d, now), chart: x.chart }, PATQ_MAX);   // 3.71.0: Mini-Chart für die Karte im Signal-Log
     if (d.send) j.sent.push({ at: now, sym: x.c.sym, iv: x.c.iv, dir: x.c.dir, id: x.c.id });
   }
   patqStore(j); patqLogPaint();
-  for (const x of cands) if (dec.get(x.id).send) await patNotify(x.c, x.h, x.eval).catch(() => {});
+  for (const x of cands) if (dec.get(x.id).send) await patNotify(x.c, x.h, x.eval, x.chart).catch(() => {});
 }
 function patqResolve(mkt, sym, iv, k) {
   if (!Array.isArray(k) || k.length < 2) return; const j = patqJournal();
@@ -13766,17 +13805,24 @@ function patqFormBuild() {
   for (const f of PATTERN_FILTER_FIELDS) { const l = el('label', 'patq-field'), i = el('input'); i.type = 'number'; i.id = 'patq-' + f.key; i.min = f.min; i.max = f.max; i.step = f.step; i.inputMode = 'decimal'; i.dataset.key = f.key; l.append(el('span', '', f.label), i, el('small', '', f.unit)); grid.append(l); }
   const ct = el('label', 'check patq-counter'), cb = el('input'); cb.type = 'checkbox'; cb.id = 'patq-counter'; ct.append(cb, document.createTextNode(' Gegentrend-Signale zulassen (Richtung gegen den nächsthöheren Zeitrahmen)'));
   const note = el('p', 'muted patq-note', 'K.O.: Chance/Risiko, bestätigter Ausbruch (Schlusskurs außerhalb der Musterlinie), Signalalter, gelaufener Weg, Zielabstand in ATR und gegenüber Gebühren + Spread, 24h-Volumen, Spread, Trend (Kurs zur EMA 200, Steigung EMA 50 im nächsthöheren Zeitrahmen: 5m/15m → 1h, 1h → 4h). Score: Chance/Risiko 20 · Trend inkl. BTC 20 · Ausbruchsvolumen 20 · Marktphase (ADX bzw. Bollinger-Squeeze) 15 · Regelgüte 10 · Trefferquote 15 (ab 10 abgeschlossenen Fällen, vorher 7). Gilt für die App und – nach Übernahme bzw. neuem Export – für den Dienst.');
-  host.replaceChildren(preset, grid, ct, note);
-  const read = () => { const v = { counterTrend: cb.checked }; for (const f of PATTERN_FILTER_FIELDS) v[f.key] = Number(String($('patq-' + f.key).value).replace(',', '.')); return v; };
-  select.addEventListener('change', () => { patqSet(select.value === 'eigen' ? patternFilterSettings({ ...patq.settings, ...read(), preset: 'eigen' }) : patternFilterSettings({ preset: select.value, counterTrend: cb.checked })); });
+  // 3.71.0: Signalkarte – Schwellen des Gesamturteils, „Einstieg verpasst“, Einstiegsfenster, schwache Signale senden (gilt in jedem Preset)
+  const cs = el('div', 'patq-card-set'), cg = el('div', 'patq-grid');
+  for (const f of PATTERN_CARD_FIELDS) { const l = el('label', 'patq-field'), i = el('input'); i.type = 'number'; i.id = 'patq-' + f.key; i.min = f.min; i.max = f.max; i.step = f.step; i.inputMode = 'decimal'; l.append(el('span', '', f.label), i, el('small', '', f.unit)); cg.append(l); }
+  const wk = el('label', 'check patq-weak'), wb = el('input'); wb.type = 'checkbox'; wb.id = 'patq-sendweak'; wk.append(wb, document.createTextNode(' Schwache Signale auch senden'));
+  cs.append(el('b', '', 'Signalkarte'), cg, wk, el('p', 'muted patq-note', 'Gesamturteil nach Signalscore: unter der ersten Schwelle „Schwaches Signal“ (orange), ab der zweiten „Starkes Signal“ (grün), dazwischen „Mittleres Signal“ (gelb). Schwache Signale bleiben im Signal-Log der App sichtbar und gehen nur mit dem Schalter an Telegram. „Einstieg verpasst“, wenn der Kurs weiter als der Wert in Musterrichtung hinter dem Einstieg liegt. Das Einstiegsfenster endet nach der Kerzenzahl, danach gilt das Signal als abgelaufen.'));
+  host.replaceChildren(preset, grid, ct, cs, note);
+  const card = () => { const v = { sendWeak: wb.checked }; for (const f of PATTERN_CARD_FIELDS) v[f.key] = Number(String($('patq-' + f.key).value).replace(',', '.')); return v; };
+  const read = () => { const v = { counterTrend: cb.checked, ...card() }; for (const f of PATTERN_FILTER_FIELDS) v[f.key] = Number(String($('patq-' + f.key).value).replace(',', '.')); return v; };
+  select.addEventListener('change', () => { patqSet(select.value === 'eigen' ? patternFilterSettings({ ...patq.settings, ...read(), preset: 'eigen' }) : patternFilterSettings({ ...card(), preset: select.value, counterTrend: cb.checked })); });
   grid.addEventListener('change', () => patqSet(patternFilterFromForm(read(), select.value === 'eigen' ? 'normal' : select.value)));
   cb.addEventListener('change', () => patqSet(patternFilterSettings({ ...patq.settings, counterTrend: cb.checked })));
+  for (const x of [cg, wb]) x.addEventListener('change', () => patqSet(patternFilterSettings({ ...patq.settings, ...card() })));
   patqFormFill();
 }
 function patqFormFill() {
   const s = patq.settings; if (!$('patq-preset')) return;
-  $('patq-preset').value = s.preset; for (const f of PATTERN_FILTER_FIELDS) $('patq-' + f.key).value = String(s[f.key]); $('patq-counter').checked = s.counterTrend;
-  put('patq-preset-label', `${PATTERN_FILTER_PRESET_NAMES[s.preset]} · Score ≥ ${s.minScore} · R/R ≥ ${String(s.minRR).replace('.', ',')}${s.counterTrend ? ' · Gegentrend an' : ''}`);
+  $('patq-preset').value = s.preset; for (const f of [...PATTERN_FILTER_FIELDS, ...PATTERN_CARD_FIELDS]) $('patq-' + f.key).value = String(s[f.key]); $('patq-counter').checked = s.counterTrend; $('patq-sendweak').checked = s.sendWeak;
+  put('patq-preset-label', `${PATTERN_FILTER_PRESET_NAMES[s.preset]} · Score ≥ ${s.minScore} · R/R ≥ ${String(s.minRR).replace('.', ',')}${s.counterTrend ? ' · Gegentrend an' : ''} · schwache Signale ${s.sendWeak ? 'senden' : 'nur App'}`);
 }
 // 3.70.2: Filteränderungen gehen von selbst an den 24/7-Dienst (vorher erst nach „Vorauswahl am Dienst übernehmen“ – der Dienst filterte weiter streng)
 var patqSyncTimer = 0;
@@ -13794,6 +13840,7 @@ const patqTime = t => new Date(t).toLocaleString('de-DE', { day: '2-digit', mont
 function patqLogPaint() {
   const body = $('patq-log-body'); if (!body) return;
   const j = patqJournal(), list = j.list.slice().reverse(), stats = patternJournalStats(j.list, patq.by), name = k => patq.by === 'pat' ? PAT_LIB[k]?.n.replace(/ \(.*\)$/, '') || k : k;
+  patq.openIds = new Set([...body.querySelectorAll('.patq-item[open]')].map(x => x.dataset.patqId));   // 3.71.0: aufgeklappte Karten bleiben offen
   put('patq-log-count', `(${list.length} · ${list.filter(e => e.sent).length} gesendet)`);
   const seg = el('div', 'dec-seg patq-by'); seg.setAttribute('role', 'group'); seg.setAttribute('aria-label', 'Statistik gruppieren');
   for (const [k, t] of [['pat', 'je Muster'], ['iv', 'je Zeitrahmen'], ['sym', 'je Coin']]) { const b = el('button', '', t); b.type = 'button'; b.dataset.patqBy = k; b.setAttribute('aria-pressed', String(patq.by === k)); seg.append(b); }
@@ -13801,13 +13848,20 @@ function patqLogPaint() {
   for (const t of ['', 'Signale', 'gesendet', 'abgeschl.', 'Ziel', 'Ungültig', 'Timeout', 'Treffer']) head.append(el('th', '', t));
   table.append(el('thead')); table.tHead.append(head); const tb = el('tbody'); table.append(tb);
   for (const r of stats.slice(0, 12)) { const tr = el('tr'); for (const v of [name(r.key), r.signals, r.sent, `${r.n}${r.n < 10 ? '/10' : ''}`, r.ziel, r.ungueltig, r.timeout, r.rate === null ? '–' : Math.round(r.rate * 100) + ' %']) tr.append(el('td', '', String(v))); tb.append(tr); }
-  const items = el('div', 'patq-items');
+  const items = el('div', 'patq-items'), now = Date.now();
   for (const e of list.slice(0, 40)) {
-    const d = el('details', 'patq-item' + (e.sent ? ' sent' : '')), sm = el('summary');
-    sm.append(el('span', 'patq-when', patqTime(e.at)), el('b', '', `${e.sym.replace(/USDT$/, '')} ${e.iv}`), el('span', '', `${PAT_LIB[e.pat]?.n.replace(/ \(.*\)$/, '') || e.pat} ${e.dir === 'bull' ? '▲' : '▼'}`), el('span', 'patq-score', `Score ${e.score}`), el('span', e.sent ? 'patq-ok' : 'patq-no', e.sent ? '✔ gesendet' : '✖ gefiltert'));
+    // 3.71.0: Gesamturteil (Schwach/Mittel/Stark), „abgelaufen“ nach dem Einstiegsfenster; aufgeklappt die Signalkarte wie bei Telegram
+    const d = el('details', 'patq-item' + (e.sent ? ' sent' : '')), sm = el('summary'), g = e.grade || patternGrade(e.score, patq.settings)?.key, gone = Number.isFinite(e.until) && now >= e.until;
+    d.dataset.patqId = e.id;
+    sm.append(el('span', 'patq-when', patqTime(e.at)), el('b', '', `${e.sym.replace(/USDT$/, '')} ${e.iv}`), el('span', '', `${PAT_LIB[e.pat]?.n.replace(/ \(.*\)$/, '') || e.pat} ${e.dir === 'bull' ? '▲' : '▼'}`), el('span', 'patq-score', `Score ${e.score}`));
+    if (g) sm.append(el('span', 'patq-grade ' + g, { weak: 'Schwach', medium: 'Mittel', strong: 'Stark' }[g]));   // Gesamturteil zur Signalzeit
+    sm.append(el('span', e.sent ? 'patq-ok' : 'patq-no', e.sent ? '✔ gesendet' : e.weak ? '✖ schwach – nur App' : '✖ gefiltert'));
+    if (gone && !e.res) sm.append(el('span', 'patq-exp', '⌛ abgelaufen'));
     const why = el('p', 'patq-why', e.sent ? e.summary : `Filtergrund: ${e.reason}`), res = el('p', 'muted', e.res ? `Ergebnis: ${PATTERN_OUTCOME_NAMES[e.res.out]} nach ${e.res.bars} Kerzen` : 'Ergebnis offen (Ziel, Ungültig oder 48 Kerzen)');
-    const lv = el('p', 'muted', `Einstieg ${priceText(e.entry)} · Ziel ${priceText(e.target)} · Ungültig ${priceText(e.invalid)}`), crit = el('ul', 'patq-crit'); for (const t of [...e.criteria, ...e.ko.map(x => '✖ ' + x)]) crit.append(el('li', '', t));
+    const lv = el('p', 'muted', `Einstieg ${priceText(e.entry)} · Ziel ${priceText(e.target)} · Stop ${priceText(e.invalid)}`), crit = el('ul', 'patq-crit'); for (const t of [...e.criteria, ...e.ko.map(x => '✖ ' + x)]) crit.append(el('li', '', t));
     d.append(sm, why, res, lv, crit); items.append(d);
+    d.addEventListener('toggle', () => { if (d.open && !d.querySelector('.patq-card')) sm.after(patqCardImg(e)); });
+    if (patq.openIds?.has(e.id)) d.open = true;
   }
   if (!list.length) items.append(el('p', 'muted', 'Noch keine Signale bewertet. Bewertet werden frisch bestätigte Formationen, wenn das Ziel „Chartmuster“ eingerichtet ist und die App sendet (nicht im Modus „Oracle ist der einzige Mustersender“ – dort stehen gefilterte Signale im Protokoll des Dienstes).'));
   const bt = el('div', 'patq-bt'), run = el('button', 'button ghost', patq.btBusy ? 'Backtest läuft …' : 'Backtest: aktueller Coin und Zeitrahmen'); run.type = 'button'; run.id = 'patq-bt-run'; run.disabled = patq.btBusy; bt.append(run);
@@ -13821,6 +13875,17 @@ function patqLogPaint() {
       bt.append(el('p', 'muted', 'Ohne Blick in die Zukunft: je Kerze nur Daten bis dahin. Wenige Fälle = unsichere Zahlen. Spread und 24h-Volumen wie heute.')); }
   }
   body.replaceChildren(seg, table, items, bt);
+}
+// 3.71.0: Signalkarte eines Journal-Eintrags (Kurs „Jetzt“ live, sofern die App ihn kennt; sonst „Kurs nicht verfügbar“)
+function patqEntryData(e) {
+  const live = state.prices?.[e.sym], price = live?.price > 0 && Date.now() - (live.at || 0) < 120e3 ? live.price : null;
+  return { pattern: PAT_LIB[e.pat]?.n || e.pat, symbol: e.sym, market: e.mkt === 'spot' ? 'Spot' : 'Futures', timeframe: e.iv, status: 'Ausbruch bestätigt', direction: e.dir, entry: e.entry, target: e.target, invalid: e.invalid,
+    quality: e.q, model: 'pat-1', learned: patLearned(e.mkt, e.sym, e.iv, e.pat), score: e.score, scoreWhy: e.summary, marks: e.marks, rr: e.rr, atr: e.atr, price, tc: e.tc, until: e.until, at: e.at, chart: e.chart || null, settings: { ...patq.settings }, timezone: PAT_TZ };
+}
+function patqCardImg(e) {
+  const img = el('img', 'patq-card'); img.alt = `Signalkarte ${e.sym.replace(/USDT$/, '/USDT')} ${e.iv}`; img.decoding = 'async';
+  try { const { svg, width, height } = patternSignalCard(patqEntryData(e), { now: Date.now(), timezone: PAT_TZ }); img.width = width; img.height = height; img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg); } catch { img.alt = 'Signalkarte nicht verfügbar'; }
+  return img;
 }
 async function patqBacktest() {
   if (patq.btBusy) return; patq.btBusy = true; patq.bt = null; patqLogPaint();
@@ -13840,7 +13905,7 @@ async function patqBacktest() {
   patqFormBuild(); patqLogPaint();
   $('patq-log-body')?.addEventListener('click', e => { const b = e.target.closest('[data-patq-by]'); if (b) { patq.by = b.dataset.patqBy; patqLogPaint(); } else if (e.target.closest('#patq-bt-run')) void patqBacktest(); });
 })();
-window.__patq = { state: patq, journal: patqJournal, run: patqRun, evaluate: patqEvaluate, set: patqSet, backtest: patqBacktest, resolve: patqResolve };
+window.__patq = { state: patq, journal: patqJournal, run: patqRun, evaluate: patqEvaluate, set: patqSet, backtest: patqBacktest, resolve: patqResolve, store: patqStore, paint: patqLogPaint, entryData: patqEntryData, tgData: patTgData };   // 3.71.0: store/paint/entryData/tgData für Prüfungen
 // Ergebnisse anhängen, sobald 12 weitere abgeschlossene Kerzen da sind (Pfad normiert in % für die Verlaufsansicht)
 function pkResolve(mkt, sym, iv, k, closedEnd) {
   let n = 0; const idx = new Map(k.map((c, i) => [c.t, i]));

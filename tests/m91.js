@@ -27,9 +27,10 @@ async function waitSent(filter, count) { for (let i = 0; i < 60; i++) { const ro
     check('Sicherung bleibt im eigenen Chat; Schema/Inhalt der Datei unverändert', sent.every(s => s.chat_id === '9001') && JSON.parse(sent[1].file).app === 'scalp-desk');
     await page.evaluate(() => { document.getElementById('tgb-on').checked = false; document.getElementById('tgb-on').dispatchEvent(new Event('change')); });
     await page.evaluate(() => __g06.timgPreview('fallback-photo-91')); await page.waitForSelector('#timg-img:not([hidden])'); await h.ctl('/sentreset'); await h.ctl('/chan?tgformat=1'); await page.click('#timg-send');
-    sent = await waitSent(s => s.method === 'sendPhoto', 2);
-    check('Trade-Bild: HTML-Ergebniszeile und Klartext-Fallback im Trades-Chat', sent.length === 2 && sent[0].parse_mode === 'HTML' && sent[0].formatRejected && !sent[1].parse_mode && sent.every(s => s.chat_id === '9002') && sent[1].caption.includes('GEWINN') && sent[1].caption.includes('USD'));
-    check('Dasselbe vollständige PNG wird beim Fallback erhalten', sent.length === 2 && sent[0].bytes === sent[1].bytes && sent[0].bytes > 10000 && sent.every(s => s.png && s.w === 1080));
+    sent = await waitSent(s => s.method === 'sendPhoto', 1); await page.waitForTimeout(1200); sent = (await h.ctl('/sent')).filter(s => s.method === 'sendPhoto'); await h.ctl('/chan?tgformat=0');
+    // 3.71.0: Die Bildunterschrift des Trade-Bilds ist eine Zeile ohne HTML („XRP/USDT Long 20× · +43,88 € (+89,5 %) · 1:52 Std.“) – keine Formatablehnung, kein Zweitversand
+    check('3.71.0: Trade-Bild: einzeilige Bildunterschrift ohne HTML, genau ein Versand in den Trades-Chat (keine Formatablehnung möglich)', sent.length === 1 && !sent[0].parse_mode && !sent[0].formatRejected && sent[0].chat_id === '9002' && /^[A-Z0-9]+\/USDT (Long|Short) [\d,]+× · [+−][\d.,]+ (€|USD)/.test(sent[0].caption) && !/[<>\n]/.test(sent[0].caption), JSON.stringify(sent.map(s => ({ pm: s.parse_mode, rej: s.formatRejected, cap: s.caption }))));
+    check('… vollständiges PNG (1080 breit)', sent.length === 1 && sent[0].bytes > 10000 && sent[0].png && sent[0].w === 1080);
     check('Keine Laufzeitfehler', errors.length === 0); await ctx.close();
   } finally { await browser.close(); await h.teardown(); }
   console.log(`\n${pass}/${pass + fail} bestanden`); process.exitCode = fail ? 1 : 0;

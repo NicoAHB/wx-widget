@@ -1,6 +1,7 @@
 // Oracle-Musterdienst 1.2.0: Chartmuster als Trading-Karte (PNG) und monatliche Bereinigung gesendeter Nachrichten.
-// Karte: Beispielwerte exakt, Abwärts, lange Namen, fehlende Werte, „BEISPIEL“ nur in Vorschauen, Regelgüte nie als
-// Wahrscheinlichkeit, PNG 1024 × 1536 (resvg; ohne resvg werden nur die Renderprüfungen übersprungen).
+// 3.71.0 / Musterdienst 1.3.0: Signalkarte nach Vorlage – Gesamturteil (Schwellen einstellbar), Musterqualität (blau, keine
+// Wahrscheinlichkeit, Erlernt ab 10 Fällen), Jetzt (gültig/verpasst/abgelaufen), Stop mit ATR-Hinweis, Mini-Chart, kompakter Fuß
+// mit Datum, Kurztext in derselben Reihenfolge; PNG 1024 breit (resvg; ohne resvg werden nur die Renderprüfungen übersprungen).
 // Versand: sendPhoto mit kurzer Bildunterschrift, Text als Ersatz, Rate-Limit, verlorene Antwort, kein Doppelversand, keine Geheimnisse.
 // Bereinigung: Stichtag (Sommer-/Winterzeit), Auswahl am Monatswechsel, Probelauf ohne Inhalte, Wiederaufnahme, Sperren, systemd.
 const fs = require('fs'), path = require('path'), os = require('os'), vm = require('vm');
@@ -8,56 +9,77 @@ let pass = 0, fail = 0, skip = 0;
 const check = (name, ok, detail = '') => { ok ? pass++ : fail++; console.log(`${ok ? '✓' : '✗'} ${name}${!ok && detail !== '' ? ' — ' + String(detail).slice(0, 400) : ''}`); };
 (async () => {
   const P = await import('../server/pattern-card.mjs'), RT = await import('../server/pattern-retention.mjs');
-  const at = Date.UTC(2026, 9, 13, 19, 5, 5); // 21:05:05 in Berlin (Sommerzeit)
-  // ---- Karte: Beispielwerte aus der Vorgabe ----
-  const m = P.patternCardModel(P.EXAMPLE_SIGNAL, { at });
-  const want = { pair: 'LTC/USDT', market: 'Spot', timeframe: '5 Minuten', direction: 'AUFWÄRTS', pattern: 'Dreifach-Boden', status: 'Ausbruch bestätigt', entry: '62,0700 USD', target: '62,8767 USD', targetPct: '+1,30 %', invalid: '60,6700 USD', invalidPct: '−2,26 %', crv: '0,58 : 1', quality: '83 %', learned: '2/10 Fälle', time: '21:05:05', model: 'pat-1' };
+  // ---- 3.71.0: Signalkarte nach Vorlage des Nutzers (DOT/USDT, symmetrisches Dreieck, 5m, 14.10.2026 20:55:09 Berlin) ----
+  const EX = P.EXAMPLE_SIGNAL, at = EX.at, m = P.patternCardModel(EX, { at });
+  const want = { pair: 'DOT/USDT', market: 'Spot', timeframe: '5 Min', timeframeUpper: '5 MIN', direction: 'AUFWÄRTS', pattern: 'Symmetrisches Dreieck', status: 'Ausbruch bestätigt', entry: '1,1370 USD', target: '1,1598 USD', targetPct: '+2,01 %', stop: '1,1294 USD', stopPct: '−0,67 %', rr: '2,99 : 1', quality: '88 %', learned: 'noch nicht bewertet (0/10 Fälle)', time: '14.10.2026 · 20:55:09', model: 'pat-1', score: '44/100' };
   const diff = Object.entries(want).filter(([k, v]) => m[k] !== v);
-  check('Beispielwerte vollständig und unverändert (Paar, Markt, Zeitrahmen, Richtung, Muster, Status, Preise, %, CRV, Regelgüte, Erlernt, Zeit, Modell)', !diff.length, JSON.stringify(diff));
-  check('Warnungen: Chance < Risiko und „Zu wenig Daten“; Hinweise Kursrichtung ≠ Zieltreffer und keine Erfolgswahrscheinlichkeit', m.crvWarn && m.learnedWarn && m.hint === 'Kursrichtung ≠ Zieltreffer' && m.qualityNote === 'Keine Erfolgswahrscheinlichkeit');
-  const S = P.patternCardSvg(m), Sp = P.patternCardSvg(m, { preview: true }), txt = s => [...s.svg.matchAll(/<text[^>]*>([^<]*)<\/text>/g)].map(x => x[1].replace(/&lt;/g, '<').replace(/&amp;/g, '&'));
+  check('Beispielwerte vollständig und unverändert (Paar, Markt, Zeitrahmen, Richtung, Muster, Status, Preise, %, Chance/Risiko, Musterqualität, Erlernt, Datum + Zeit, Modell, Score)', !diff.length, JSON.stringify(diff));
+  check('1) Gesamturteil 44 → „Mittleres Signal“ (gelb) mit Trend ✖, Volumen ✖, Chance/Risiko ✔', m.grade?.label === 'Mittleres Signal' && m.grade.color === '#facc15' && m.trend === false && m.volume === false && m.rrOk === true);
+  const G = (score, st) => P.patternCardModel({ ...EX, score }, { at, settings: st }).grade?.label;
+  check('… Schwellen: 0–39 „Schwach“ (orange), 40–69 „Mittel“, 70–100 „Stark“ (grün)', G(0) === 'Schwaches Signal' && G(39) === 'Schwaches Signal' && G(40) === 'Mittleres Signal' && G(69) === 'Mittleres Signal' && G(70) === 'Starkes Signal' && G(100) === 'Starkes Signal' && P.patternCardModel({ ...EX, score: 12 }, { at }).grade.color === '#fb923c' && P.patternCardModel({ ...EX, score: 88 }, { at }).grade.color === '#4ade80');
+  check('… Schwellen einstellbar (schwach unter 50, stark ab 80)', G(49, { weakBelow: 50, strongFrom: 80 }) === 'Schwaches Signal' && G(50, { weakBelow: 50, strongFrom: 80 }) === 'Mittleres Signal' && G(80, { weakBelow: 50, strongFrom: 80 }) === 'Starkes Signal' && G(60, { weakBelow: 60, strongFrom: 40 }) === 'Mittleres Signal');
+  check('… ohne Score kein Banner (nichts erfunden)', P.patternCardModel({ ...EX, score: undefined }, { at }).grade === null);
+  check('3) Jetzt: Kurs, Abstand zum Einstieg, „Einstieg gültig“, „bis 21:25 · noch 6 Kerzen“', m.now.state === 'valid' && m.now.price === '1,1381 USD' && m.now.dist === '+0,10 %' && m.now.label === 'Einstieg gültig' && m.now.detail === 'bis 21:25 · noch 6 Kerzen', JSON.stringify(m.now));
+  const J = (o, opt = {}) => P.patternCardModel({ ...EX, ...o }, { at, ...opt }).now;
+  check('… verpasst erst über 0,3 % hinter dem Einstieg (Long darüber, Short darunter), einstellbar', J({ price: 1.137 * 1.003 }).state === 'valid' && J({ price: 1.137 * 1.0031 }).state === 'missed' && J({ price: 1.137 * 1.0031 }).label === 'Einstieg verpasst' && J({ price: 1.137 * 0.99 }).state === 'valid' && J({ price: 1.137 * 0.996, direction: 'bear' }).state === 'missed' && J({ price: 1.137 * 1.01, direction: 'bear' }).state === 'valid' && J({ price: 1.137 * 1.0031 }, { settings: { missedPct: 0.5 } }).state === 'valid');
+  check('… Gültigkeit läuft mit: nach 10 Min. „noch 4 Kerzen“, ab 21:25 „Einstieg abgelaufen“ (seit 21:25); 3 Kerzen einstellbar', J({}, { now: at + 600e3 }).detail === 'bis 21:25 · noch 4 Kerzen' && J({}, { now: EX.tc + 35 * 60e3 }).state === 'expired' && J({}, { now: EX.tc + 35 * 60e3 }).label === 'Einstieg abgelaufen' && J({}, { now: EX.tc + 35 * 60e3 }).detail === 'seit 21:25' && J({}, { settings: { validCandles: 3 } }).detail === 'bis 21:10 · noch 3 Kerzen');
+  check('… ohne Kurs: Zeitfenster trotzdem, kein erfundener Abstand', J({ price: null }).state === 'valid' && J({ price: null }).price === null && J({ price: null }).dist === null);
+  check('4) Stop statt „Ungültig bei“; Hinweis „Stop enger als normale Schwankung“ nur bei Abstand < ATR(14)', /^Stop enger als normale Schwankung \(ATR 14: 0,0090 USD\)$/.test(m.stopTight) && P.patternCardModel({ ...EX, atr: 0.007 }, { at }).stopTight === null && P.patternCardModel({ ...EX, atr: null }, { at }).stopTight === null, m.stopTight);
+  const L = l => P.patternCardModel({ ...EX, ...l }, { at }).learned;
+  check('2) Erlernt nur ab 10 Fällen mit Zahl, sonst „noch nicht bewertet (x/10 Fälle)“ ohne Warnung', L({ learned: { total: 14, up: 8, down: 4, flat: 2, minimum: 10, source: 'live protokolliert' } }) === '8/14 Fälle in Musterrichtung (live protokolliert)' && L({ direction: 'bear', learned: { total: 14, up: 8, down: 4, minimum: 10 } }) === '4/14 Fälle in Musterrichtung' && L({ learned: { total: 7, up: 5, down: 2 } }) === 'noch nicht bewertet (7/10 Fälle)' && L({ learned: { available: 3, minimum: 10 } }) === 'noch nicht bewertet (3/10 Fälle)');
+  const S = P.patternCardSvg({ ...m, iv: EX.timeframe, tc: EX.tc, nowAt: at }), Sp = P.patternCardSvg({ ...m, iv: EX.timeframe, tc: EX.tc, nowAt: at }, { preview: true }), txt = s => [...s.svg.matchAll(/<text[^>]*>([^<]*)<\/text>/g)].map(x => x[1].replace(/&lt;/g, '<').replace(/&amp;/g, '&'));
   const texts = txt(S), all = texts.join(' | ');
-  check('Alle Beispielwerte stehen auf der Karte', ['LTC/USDT', 'Dreifach-Boden', 'Ausbruch bestätigt', '62,0700 USD', '62,8767 USD', '+1,30 %', '60,6700 USD', '−2,26 %', '0,58 : 1', '83 %', '2/10 Fälle', 'Zu wenig Daten', 'Kursrichtung ≠ Zieltreffer', 'Keine Erfolgswahrscheinlichkeit', 'AUFWÄRTS', 'EINSTIEG', 'ZIEL', 'UNGÜLTIG BEI', 'Chance / Risiko', 'REGELGÜTE', 'Erlernt'].every(s => texts.includes(s)) && texts.some(s => s.includes('Spot') && s.includes('5 Minuten')) && texts.some(s => s.includes('21:05:05') && s.includes('Modell pat-1')), all);
+  check('Alle Werte stehen auf der Karte, in der Reihenfolge der Vorlage', ['CHARTMUSTER · SPOT · 5 MIN', 'AUFWÄRTS', 'DOT/USDT', 'Symmetrisches Dreieck', 'Mittleres Signal', '44/100', '2,99 : 1', 'ZIEL', 'STOP', 'EINSTIEG', '1,1370 USD', '1,1598 USD', '+2,01 %', '1,1294 USD', '−0,67 %', 'JETZT', '1,1381 USD', '+0,10 % zum Einstieg', 'Einstieg gültig', 'bis 21:25 · noch 6 Kerzen', 'MUSTERQUALITÄT', '88 %', 'Wie sauber das Muster ist, keine Erfolgswahrscheinlichkeit.', 'Erlernt: noch nicht bewertet (0/10 Fälle).', 'Kursrichtung ≠ Zieltreffer', '14.10.2026 · 20:55:09 · Modell pat-1'].every((s, i, a) => texts.includes(s) && (!i || texts.indexOf(s) >= texts.indexOf(a[i - 1]) || ['ZIEL', 'STOP', 'EINSTIEG', 'AUFWÄRTS'].includes(s) || ['ZIEL', 'STOP', 'EINSTIEG', 'AUFWÄRTS'].includes(a[i - 1]))), all);
+  check('6) Kompakt: Chance/Risiko nur einmal, keine Regelgüte, kein „Ungültig bei“, kein „Zu wenig Daten“', texts.filter(s => s === '2,99 : 1').length === 1 && !/Regelgüte|REGELGÜTE|UNGÜLTIG|Ungültig bei|Zu wenig Daten|Chance \/ Risiko/.test(all) && texts.filter(s => /wahrscheinlich/i.test(s)).join() === 'Wie sauber das Muster ist, keine Erfolgswahrscheinlichkeit.');
   check('„BEISPIEL“ nur in der Vorschau', !texts.includes('BEISPIEL') && txt(Sp).includes('BEISPIEL'));
-  check('Regelgüte nie als Wahrscheinlichkeit: einziges „Wahrscheinlichkeit“ ist „Keine Erfolgswahrscheinlichkeit“', texts.filter(s => /wahrscheinlich/i.test(s)).join() === 'Keine Erfolgswahrscheinlichkeit' && !/Gewinn/i.test(all));
-  check('Richtgröße 1024 × 1536', S.width === 1024 && S.height === 1536);
-  check('Farben mit Beschriftung: Ziel grün, Ungültig rot, Warnung gelb, Aufwärts grün', /fill="#4ade80"[^>]*>\+1,30 %/.test(S.svg) && /fill="#f87171"[^>]*>−2,26 %/.test(S.svg) && /fill="#fbbf24"[^>]*>Zu wenig Daten/.test(S.svg) && /fill="#4ade80"[^>]*>AUFWÄRTS/.test(S.svg));
-  check('Bildunterschrift: Paar, Zeitrahmen, Status', P.patternCaption(m) === '<b>LTC/USDT</b> · 5 Minuten · Ausbruch bestätigt');
-  // ---- Abwärts, lange Namen, Präzision ----
-  const bear = P.patternCardModel({ ...P.EXAMPLE_SIGNAL, direction: 'bear', symbol: '1000SATSUSDT', market: 'Futures', timeframe: '4h', pattern: 'Aufsteigender Keil mit Ausbruch nach unten und Bestätigung durch Volumen', entry: 0.000248, target: 0.000231, invalid: 0.000262 }, { at });
-  const bs = P.patternCardSvg(bear), lines = txt(bs).filter(s => /Keil|Ausbruch nach|Bestätigung|Volumen/.test(s) && s !== 'Ausbruch bestätigt');
-  check('Abwärts: „ABWÄRTS“ rot, Preise mit 8 Nachkommastellen unverändert', bear.direction === 'ABWÄRTS' && /fill="#f87171"[^>]*>ABWÄRTS/.test(bs.svg) && bear.entry === '0,00024800 USD' && bear.target === '0,00023100 USD' && bear.targetPct === '−6,85 %' && bear.timeframe === '4 Stunden');
-  check('Langer Mustername: höchstens 3 Zeilen, jede passt in die Breite; Karte wächst statt zu überlappen', lines.length >= 2 && lines.length <= 3 && bs.height >= 1536, JSON.stringify(lines));
+  check('Farben: Banner gelb (Mittel), Ziel-% grün, Stop-% rot, „Einstieg gültig“ grün, Musterqualität-Balken neutral blau (nicht grün)', /stroke="#facc15"/.test(S.svg) && /fill="#4ade80"[^>]*>\+2,01 %/.test(S.svg) && /fill="#f87171"[^>]*>−0,67 %/.test(S.svg) && /fill="#4ade80"[^>]*>Einstieg gültig/.test(S.svg) && /height="18" rx="9" fill="#7ea6f5"/.test(S.svg) && !/height="18" rx="9" fill="#4ade80"/.test(S.svg));
+  const poly = /<polyline points="([^"]+)"/.exec(S.svg)?.[1].split(' ') || [];
+  check('5) Mini-Chart: Kursverlauf, zwei Dreieck-Linien, Einstieg/Ziel/Stop-Linien, grüne und rote Zone, aktueller Kurs als Punkt', poly.length >= 40 && (S.svg.match(/stroke="#94a3b8" stroke-width="3"/g) || []).length === 2 && /fill="rgba\(74,222,128,0.13\)"/.test(S.svg) && /fill="rgba\(248,113,113,0.13\)"/.test(S.svg) && (S.svg.match(/stroke-dasharray="12 9"/g) || []).length === 2 && /stroke-dasharray="4 7"/.test(S.svg) && /<circle [^>]*r="10" fill="#4ade80"/.test(S.svg), JSON.stringify({ poly: poly.length }));
+  check('… Hinweis „Stop enger als normale Schwankung“ gelb auf der Karte', /fill="#fbbf24"[^>]*>Stop enger als normale Schwankung/.test(S.svg));
+  // Abwärts, lange Namen, Präzision
+  const bearD = { ...EX, direction: 'bear', symbol: '1000SATSUSDT', market: 'Futures', timeframe: '4h', pattern: 'Aufsteigender Keil mit Ausbruch nach unten und Bestätigung durch Volumen', entry: 0.000248, target: 0.000231, invalid: 0.000262, price: 0.000247, atr: null, chart: null };
+  const bear = P.patternCardModel(bearD, { at }), bs = P.patternCardSvg({ ...bear, iv: '4h', tc: EX.tc, nowAt: at }), lines = txt(bs).filter(s => /Keil|Ausbruch nach|Bestätigung|Volumen/.test(s) && s !== 'Ausbruch bestätigt' && s !== 'Volumen');
+  check('Abwärts: „ABWÄRTS“ rot, Preise mit 8 Nachkommastellen unverändert, „4 STD“', bear.direction === 'ABWÄRTS' && /fill="#f87171"[^>]*>ABWÄRTS/.test(bs.svg) && bear.entry === '0,00024800 USD' && bear.target === '0,00023100 USD' && bear.targetPct === '−6,85 %' && bear.timeframeUpper === '4 STD' && txt(bs).includes('CHARTMUSTER · FUTURES · 4 STD'));
+  check('Langer Mustername: höchstens 2 Zeilen, jede passt in die Breite; Status darunter; Karte wächst', lines.length === 2 && lines.every(l => P.textWidth(l, 40, 800) <= 944) && bs.height > S.height, JSON.stringify(lines));
   const long = P.wrapText('Aufsteigender Keil mit Ausbruch nach unten und Bestätigung durch Volumen', 76, 800, 928, 3, 54);
   check('… Umbruch rechnet mit den echten Zeichenbreiten', long.lines.every(l => P.textWidth(l, long.size, 800) <= 928));
-  // ---- fehlende Werte ----
-  const miss = P.patternCardModel({ symbol: 'ETHUSDT' }), ms = P.patternCardSvg(miss), mt = txt(ms).join(' | ');
-  check('Fehlende Werte: „Nicht verfügbar“, nichts erfunden (kein NaN/undefined/null, kein Prozent ohne Basis)', ['market', 'timeframe', 'direction', 'pattern', 'status', 'entry', 'target', 'invalid', 'crv', 'quality', 'learned', 'time', 'model'].every(k => miss[k] === P.NA) && miss.targetPct === null && !/NaN|undefined|null|Infinity/.test(ms.svg) && /Modell: Nicht verfügbar/.test(mt), mt);
-  check('Lernstand ab 10 Fällen: Treffer/Fälle mit Datenbasis, ohne Warnung', (() => { const x = P.patternCardModel({ ...P.EXAMPLE_SIGNAL, learned: { total: 14, up: 8, down: 4, flat: 2, minimum: 10, source: 'live protokolliert', horizon: 12 } }); return x.learned === '8/14 Fälle' && !x.learnedWarn && x.learnedSub.join('|') === 'Datenbasis: live protokolliert · nach 12 Kerzen|Aufwärts 8 · Abwärts 4 · Seitwärts 2'; })());
-  check('Zeitrahmen ausgeschrieben', P.timeframeName('1m') === '1 Minute' && P.timeframeName('1h') === '1 Stunde' && P.timeframeName('1d') === '1 Tag' && P.timeframeName('1w') === '1 Woche' && P.timeframeName('1M') === '1 Monat' && P.timeframeName(null) === null);
+  check('… Mini-Chart ohne Kerzen: „Kursverlauf nicht verfügbar“ statt erfundener Linie', txt(bs).includes('Kursverlauf nicht verfügbar') && !/<polyline/.test(bs.svg));
+  // fehlende Werte
+  const miss = P.patternCardModel({ symbol: 'ETHUSDT' }), ms = P.patternCardSvg({ ...miss, iv: null, tc: null, nowAt: null }), mt = txt(ms).join(' | ');
+  check('Fehlende Werte: „Nicht verfügbar“, nichts erfunden (kein NaN/undefined/null, kein Prozent ohne Basis, kein Banner, keine Jetzt-Zeile)', ['market', 'timeframe', 'direction', 'pattern', 'status', 'entry', 'target', 'stop', 'quality', 'time', 'model'].every(k => miss[k] === P.NA) && miss.targetPct === null && miss.grade === null && miss.now.state === null && !/NaN|undefined|null|Infinity/.test(ms.svg) && !mt.includes('JETZT') && /Modell Nicht verfügbar/.test(mt), mt);
+  check('Zeitrahmen ausgeschrieben (Dienst-Protokoll)', P.timeframeName('1m') === '1 Minute' && P.timeframeName('1h') === '1 Stunde' && P.timeframeName('1d') === '1 Tag' && P.timeframeName('1w') === '1 Woche' && P.timeframeName('1M') === '1 Monat' && P.timeframeName(null) === null);
+  // 8) Kurztext in derselben Reihenfolge (Bildunterschrift und Ersatz)
+  const cap = P.patternCaption(EX, { at }), order = ['<b>📐 DOT/USDT · Spot · 5 Min · 🟢⬆️ AUFWÄRTS</b>', '<b>Symmetrisches Dreieck</b> · ✅ Ausbruch bestätigt', '🟡 <b>Mittleres Signal 44/100</b> · Trend ✖ · Volumen ✖ · Chance/Risiko ✔ 2,99 : 1', '💰 Einstieg: <code>1,1370 USD</code>', '🎯 Ziel: <b>1,1598 USD</b> (+2,01 %)', '🛑 Stop: <code>1,1294 USD</code> (−0,67 %)', '⚠️ Stop enger als normale Schwankung', '⏱ Jetzt: 1,1381 USD (+0,10 % zum Einstieg) · ✅ Einstieg gültig bis 21:25 · noch 6 Kerzen', '🧠 Musterqualität: 88 % · keine Erfolgswahrscheinlichkeit', '📚 Erlernt: noch nicht bewertet (0/10 Fälle)', '<i>Kursrichtung ≠ Zieltreffer</i>', '🕐 14.10.2026 · 20:55:09 · Modell pat-1'];
+  check('8) Kurztext (Bildunterschrift/Ersatz) in der Reihenfolge der Karte, ≤ 1024 Zeichen, Datum im Fuß', order.every((s, i) => cap.includes(s) && (!i || cap.indexOf(s) > cap.indexOf(order[i - 1]))) && cap.length <= 1024, cap);
+  check('… Kurztext bleibt auch mit langen Werten unter 1024 Zeichen', P.patternCaption({ ...bearD, pattern: 'X'.repeat(2000) }, { at }).length <= 1024);
+  // Mini-Chart-Daten: aus Kerzen und Musterlinien; fremde Daten (App → Dienst) geprüft
+  const CD = P.patternChartData([{ t: 1, c: 2 }, { t: 2, c: 3 }, { t: 3, c: 4 }, { t: 4, c: 5 }], { t0: 3, lines: [[2, 4, 3, 5, 'res'], [9, 1, 10, 1]] }, { lead: 1 });
+  check('Mini-Chart-Daten: Schlusskurse ab kurz vor dem Muster, Linien in Zeit/Preis (ungültige Indizes weg)', JSON.stringify(CD) === JSON.stringify({ k: [[2, 3], [3, 4], [4, 5]], lines: [[3, 4, 4, 5]] }), JSON.stringify(CD));
+  const clean = P.cleanPatternChart({ k: [...Array.from({ length: 300 }, (_, i) => [i, 1 + i]), ['x', 1], [5, -1], [1, 2, 3]], lines: [[1, 2, 3, 4], [1, 'a', 3, 4], ...Array(10).fill([1, 1, 2, 2])] });
+  check('… fremde Daten: nur Zahlen, höchstens 160 Punkte und 6 Linien; Unsinn → null', clean.k.length === 160 && clean.k.every(r => r.length === 2 && r.every(Number.isFinite)) && clean.lines.length === 6 && P.cleanPatternChart({ k: 'x' }) === null && P.cleanPatternChart(null) === null && P.cleanPatternChart({ k: [[1, 1]] }) === null);
   // ---- PNG (resvg) ----
   let Resvg = null; try { Resvg = require('../server/node_modules/@resvg/resvg-js').Resvg; } catch { /* nicht installiert */ }
   if (Resvg) {
-    const r = await P.renderPatternCard(P.EXAMPLE_SIGNAL, { at }), png = r.png;
-    check('PNG 1024 × 1536 (Kopfdaten der Datei)', png.slice(1, 4).toString() === 'PNG' && png.readUInt32BE(16) === 1024 && png.readUInt32BE(20) === 1536 && png.length > 30000);
-    const px = new Resvg(S.svg, { font: { loadSystemFonts: true, defaultFontFamily: 'Inter' } }).render(), get = (x, y) => { const i = (y * px.width + x) * 4; return [px.pixels[i], px.pixels[i + 1], px.pixels[i + 2]]; };
-    const navy = get(8, 8), bar = get(500, 1081), track = get(900, 1081);
-    check('Dunkelblauer Hintergrund, Regelgüte-Balken bis 83 % grün, Rest dunkel', navy[2] > navy[0] && navy[2] < 70 && bar[1] > 180 && bar[0] < 120 && track[1] < 80, JSON.stringify({ navy, bar, track }));
-    const tall = await P.renderPatternCard({ ...P.EXAMPLE_SIGNAL, pattern: 'Aufsteigender Keil mit Ausbruch nach unten und Bestätigung durch Volumen', score: 78, scoreWhy: 'Trend ✔ · Volumen ✔ · R/R 2,6', learned: { total: 14, up: 8, down: 4, flat: 2, minimum: 10, source: 'live protokolliert', horizon: 12 } }, { at });
-    check('Mehr Inhalt: Karte höher statt gedrängt', tall.png.readUInt32BE(16) === 1024 && tall.png.readUInt32BE(20) > 1536 && tall.height === tall.png.readUInt32BE(20));
-    fs.mkdirSync(path.join(__dirname, 'out'), { recursive: true }); fs.writeFileSync(path.join(__dirname, 'out', 'trading-karte-beispiel.png'), (await P.renderPatternCard(P.EXAMPLE_SIGNAL, { at, preview: true })).png);
+    const r = await P.renderPatternCard(EX, { at }), png = r.png;
+    check('PNG 1024 breit, Höhe passt zum Inhalt (Kopfdaten der Datei)', png.slice(1, 4).toString() === 'PNG' && png.readUInt32BE(16) === 1024 && png.readUInt32BE(20) === r.height && r.height > 1600 && png.length > 30000, JSON.stringify({ h: r.height }));
+    const px = new Resvg(S.svg, { font: { loadSystemFonts: true, defaultFontFamily: 'Inter' } }).render(), pix = px.pixels, get = (x, y) => { const i = (y * px.width + x) * 4; return [pix[i], pix[i + 1], pix[i + 2]]; };
+    const by = Number(/<rect x="72" y="([\d.]+)" width="[\d.]+" height="18" rx="9" fill="#7ea6f5"/.exec(S.svg)?.[1]) + 9, navy = get(8, 8), bar = get(300, Math.round(by)), track = get(940, Math.round(by));
+    check('Dunkelblauer Hintergrund, Musterqualität-Balken bis 88 % blau, Rest dunkel', navy[2] > navy[0] && navy[2] < 70 && bar[2] > 220 && bar[0] < 150 && track[2] < 90, JSON.stringify({ navy, bar, track, by }));
+    const tall = await P.renderPatternCard({ ...EX, pattern: 'Aufsteigender Keil mit Ausbruch nach unten und Bestätigung durch Volumen', learned: { total: 14, up: 8, down: 4, flat: 2, minimum: 10, source: 'live protokolliert', horizon: 12 } }, { at });
+    check('Mehr Inhalt: Karte höher statt gedrängt', tall.png.readUInt32BE(16) === 1024 && tall.png.readUInt32BE(20) > r.height && tall.height === tall.png.readUInt32BE(20));
+    fs.mkdirSync(path.join(__dirname, 'out'), { recursive: true }); fs.writeFileSync(path.join(__dirname, 'out', 'trading-karte-beispiel.png'), (await P.renderPatternCard(EX, { at, preview: true })).png);
     // 1.2.1 (Oracle-Rückmeldung: Karte kam ganz ohne Text): Schrift liegt bei; ohne jede Schrift keine Karte, sondern Text
     const files = P.CARD_FONT_FILES, lic = fs.readFileSync(path.join(__dirname, '..', 'server', 'fonts', 'LIZENZ.md'), 'utf8');
     check('1.2.1: Schrift mitgeliefert – Inter in sechs Stärken und DejaVu Sans, verkleinert, mit Lizenztexten (OFL, Bitstream Vera)', files.length === 8 && files.every(f => fs.statSync(f).size > 20000 && fs.statSync(f).size < 120000) && /SIL Open Font License/.test(lic) && /Bitstream Vera/.test(lic) && /PERMISSION & CONDITIONS/.test(lic), JSON.stringify(files.map(f => path.basename(f))));
     // .pixels liefert bei jedem Zugriff eine neue Kopie – einmal auslesen
     const bare = new Resvg(S.svg, { font: { loadSystemFonts: false, fontFiles: [], defaultFontFamily: 'Inter' } }).render().pixels, own = new Resvg(S.svg, { font: { loadSystemFonts: false, fontFiles: [...files], defaultFontFamily: 'Inter' } }).render().pixels;
-    let diff = 0; for (let i = 0; i < own.length; i += 4) if (Math.abs(own[i] - bare[i]) + Math.abs(own[i + 1] - bare[i + 1]) > 60) diff++;
-    check('Nachgestellt: ohne Schrift zeichnet resvg keinen Text (wie auf dem Server); mit der mitgelieferten Schrift steht er da', diff > 20000 && own.length === bare.length, JSON.stringify({ diff }));
+    let diffPx = 0; for (let i = 0; i < own.length; i += 4) if (Math.abs(own[i] - bare[i]) + Math.abs(own[i + 1] - bare[i + 1]) > 60) diffPx++;
+    check('Nachgestellt: ohne Schrift zeichnet resvg keinen Text (wie auf dem Server); mit der mitgelieferten Schrift steht er da', diffPx > 20000 && own.length === bare.length, JSON.stringify({ diffPx }));
     check('Renderer-Status: mit mitgelieferter Schrift „ok“, ganz ohne Schrift „schrift“', await P.cardRendererStatus() === 'ok' && await P.cardRendererStatus({ bundledFonts: false, loadSystemFonts: false }) === 'schrift' && await P.cardRendererReady() === true);
-    let thrown = ''; try { await P.renderPatternCard(P.EXAMPLE_SIGNAL, { at, bundledFonts: false, loadSystemFonts: false }); } catch (e) { thrown = e.message; }
+    let thrown = ''; try { await P.renderPatternCard(EX, { at, bundledFonts: false, loadSystemFonts: false }); } catch (e) { thrown = e.message; }
     check('Ohne Schrift wird keine leere Karte erzeugt (Fehler → Dienst sendet Text)', /Keine Schrift für die Karte gefunden/.test(thrown), thrown);
-    const onlyOwn = await P.renderPatternCard(P.EXAMPLE_SIGNAL, { at, loadSystemFonts: false });
-    check('Nur mit der mitgelieferten Schrift (keine Systemschriften): vollständige Karte 1024 × 1536', onlyOwn.png.readUInt32BE(16) === 1024 && onlyOwn.png.readUInt32BE(20) === 1536 && onlyOwn.png.length > 30000);
+    const onlyOwn = await P.renderPatternCard(EX, { at, loadSystemFonts: false });
+    check('Nur mit der mitgelieferten Schrift (keine Systemschriften): vollständige Karte', onlyOwn.png.readUInt32BE(16) === 1024 && onlyOwn.png.readUInt32BE(20) === r.height && onlyOwn.png.length > 30000);
   } else { skip++; console.log('– PNG-Prüfungen übersprungen (resvg fehlt: im Ordner server „npm install“)'); }
 
   // ---- Bereinigung: Stichtag ----
@@ -132,7 +154,7 @@ const check = (name, ok, detail = '') => { ok ? pass++ : fail++; console.log(`${
   if (typeof PM.patternMessageData !== 'function') { check('patternMessageData vorhanden', false); }
   else {
     const work = fs.mkdtempSync(path.join(os.tmpdir(), 'karten-')), destination = { token: '123456789:LOCAL_ONLY_no_real_token_000000', chat: 'LOCAL_CHAT', thread: '' };
-    const LENIENT = { preset: 'eigen', minScore: 0, minRR: 0.5, maxAge: 10, maxProgress: 100, minTargetAtr: 0, minFeeMultiple: 0, minVolume24h: 0, maxSpread: 5, cooldownMin: 0, oppositeMin: 0, maxPerHour: 60, counterTrend: true };
+    const LENIENT = { preset: 'eigen', sendWeak: true, minScore: 0, minRR: 0.5, maxAge: 10, maxProgress: 100, minTargetAtr: 0, minFeeMultiple: 0, minVolume24h: 0, maxSpread: 5, cooldownMin: 0, oppositeMin: 0, maxPerHour: 60, counterTrend: true };
     const watch = { kind: 'scalpdesk-patterns-watch', v: 1, model: 'pat-1', gap: false, items: [{ sym: 'BTCUSDT', mkt: 'spot', iv: '1h' }], filter: LENIENT };
     const src = fs.readFileSync(path.join(__dirname, 'm58.js'), 'utf8'), build = vm.runInNewContext(src.slice(src.indexOf('const BUILD = () => {'), src.indexOf('\nconst tests = {')) + '\nBUILD()');
     let k = build.path(build.F.double_bottom).map((c, i) => ({ ...c, v: 200 - i }));
@@ -143,10 +165,11 @@ const check = (name, ok, detail = '') => { ok ? pass++ : fail++; console.log(`${
     const a = mk('karte'); a.set(close + 2000); await a.svc.scan();
     const ea = Object.values(a.svc.state.events)[0], pngFile = ea && path.join(work, 'karten', ea.img || '-');
     check('Signal → genau eine Karte per sendPhoto, kein Text', a.photos.length === 1 && a.texts.length === 0 && a.photos[0].png.slice(1, 4).toString() === 'PNG', JSON.stringify({ p: a.photos.length, t: a.texts.length }));
-    check('… Bildunterschrift: Paar, Zeitrahmen, Status', a.photos[0]?.caption === '<b>BTC/USDT</b> · 1 Stunde · Ausbruch bestätigt', a.photos[0]?.caption);
+    check('3.71.0: … Bildunterschrift = Kurztext der Karte (Paar · Markt · Zeitrahmen · Richtung, Muster · Status, Gesamturteil, Stop, Datum)', /^<b>📐 BTC\/USDT · Spot · 1 Std · 🟢⬆️ AUFWÄRTS<\/b>\n<b>Doppel-Boden<\/b> · ✅ Ausbruch bestätigt\n(🟠|🟡|🟢)/u.test(a.photos[0]?.caption) && /Signal \d+\/100<\/b>/.test(a.photos[0]?.caption) && /🛑 Stop: <code>/.test(a.photos[0]?.caption) && /🕐 \d\d\.\d\d\.\d{4} · /.test(a.photos[0]?.caption) && a.photos[0].caption.length <= 1024, a.photos[0]?.caption);
     check('… erst nach Bestätigung „gesendet“: confirmed mit Zeit, Weg und Nachrichtennummer, Bild gespeichert', ea?.st === 'confirmed' && ea.sentAt === close + 2000 && ea.via === 'karte' && ea.msgId === 8 && fs.existsSync(pngFile), JSON.stringify({ ...ea, text: undefined, c: undefined, data: undefined }));
     const d = ea.data, cm = P.patternCardModel(d, {}), text = ea.text;
-    check('Karte und Textmeldung aus denselben Signaldaten (Einstieg, Ziel, Ungültig, Regelgüte)', [cm.entry, cm.target, cm.invalid].every(v => text.includes(v.replace(' USD', ''))) && text.includes('Doppel-Boden') && cm.pattern === 'Doppel-Boden', JSON.stringify({ cm: [cm.entry, cm.target, cm.invalid] }));
+    check('Karte und Textmeldung aus denselben Signaldaten (Einstieg, Ziel, Stop, Musterqualität)', [cm.entry, cm.target, cm.stop, cm.quality].every(v => text.includes(v)) && text.includes('Doppel-Boden') && cm.pattern === 'Doppel-Boden', JSON.stringify({ cm: [cm.entry, cm.target, cm.stop] }));
+    check('3.71.0: … Signaldaten tragen Mini-Chart (Kurse + Musterlinien), Trend/Volumen, Chance/Risiko, ATR, Kurs, Bestätigungskerze und Kartenwerte', d.chart?.k?.length >= 20 && d.chart.lines.length >= 1 && ['✔', '✖', '~', '?'].includes(d.marks?.trend) && d.rr > 0 && d.atr > 0 && d.price > 0 && d.tc === ea.c.tc && d.settings?.weakBelow === 40 && d.settings.validCandles === 6, JSON.stringify({ chart: d.chart && { k: d.chart.k.length, l: d.chart.lines.length }, marks: d.marks, rr: d.rr, atr: d.atr, s: d.settings }));
     await a.svc.scan(); const again2 = new M.PatternsOnlyService(a.opts); await again2.scan();
     check('Wiederholung und Neustart: kein zweites Bild', a.photos.length === 1);
     // 2. Bilderzeugung scheitert → Text

@@ -1,11 +1,11 @@
 {
-  "version": "2.14.4",
+  "version": "2.15.0",
   "appVersion": "3.71.0",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
-      "sha256": "bb45409e748fd78c832aac1c3617b79f185610469fa4b9791a680d9d8e3d5edb",
-      "bytes": 133668
+      "sha256": "58d6e1b62608737dc299e9a5bc62cecbee1480a2bce8b28abfe8d21215c1fb6e",
+      "bytes": 134674
     },
     {
       "path": "pattern-engine.mjs",
@@ -14,13 +14,13 @@
     },
     {
       "path": "pattern-monitor.mjs",
-      "sha256": "22f50f1d4ad57064f7b63f423dde6940ebc6fc4d2b6e51e87acfd5c8eb9275dc",
-      "bytes": 6970
+      "sha256": "d87f203c0876bed570c81035646d55586843ddb8ab8bcb7053933591024cc19b",
+      "bytes": 7766
     },
     {
       "path": "pattern-card.mjs",
-      "sha256": "03ae13bbfdd466d8f76be2fac36046fd9491d55f210898b5b985d46b82c2a25e",
-      "bytes": 22316
+      "sha256": "fbefc8b7e743dd179ec2e63fd01a520063ec5dba36d8ebe385f5f8668311336b",
+      "bytes": 6752
     },
     {
       "path": "package.json",
@@ -44,8 +44,8 @@
     },
     {
       "path": "patterns-247.mjs",
-      "sha256": "f54b69b81e4012719dde466aed721e181477546f8a3861eedef17724d8284f03",
-      "bytes": 19781
+      "sha256": "fb63f3f2dc92ed995291e6dee3fe6f49364877d26ebc6f77e1f283346b8248e6",
+      "bytes": 19909
     },
     {
       "path": "ki-monitor.mjs",
@@ -389,13 +389,18 @@
     },
     {
       "path": "shared/pattern-quality.mjs",
-      "sha256": "58c9c3d78da486f6640a27e784d9c7cbd7db206a4d485c5ac297b0099aaafb36",
-      "bytes": 23375
+      "sha256": "8eddc831dd1c3ad9058756bbbeebb010da11aa935199df4e3b26746411a1cb27",
+      "bytes": 26786
     },
     {
       "path": "shared/pattern-score.mjs",
       "sha256": "585334abda80fd8802128e181d8efc04264770f3ee2a7f866d24481a6f7eabad",
       "bytes": 2683
+    },
+    {
+      "path": "shared/pattern-signal-card.mjs",
+      "sha256": "82f15c5c2239454082999cc7e57937389d28f8bb608eb2f3d943ab3c4c5a3981",
+      "bytes": 21230
     },
     {
       "path": "shared/po3-core.mjs",
@@ -444,8 +449,8 @@
     },
     {
       "path": "shared/telegram-format.mjs",
-      "sha256": "3058a386a9798f0cc0994d14f6b3a2b7c779cb836e08114cc68e29c2ed027787",
-      "bytes": 15741
+      "sha256": "5621a3b95d169da13e592b66070d9450abca195cdd3bafde0c4ac298ac7cb57b",
+      "bytes": 23513
     },
     {
       "path": "shared/widget-state.mjs",

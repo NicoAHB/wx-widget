@@ -339,8 +339,8 @@
     },
     {
       "path": "./bundles/3.71.0/shared/pattern-quality.mjs",
-      "sha256": "58c9c3d78da486f6640a27e784d9c7cbd7db206a4d485c5ac297b0099aaafb36",
-      "bytes": 23375,
+      "sha256": "8eddc831dd1c3ad9058756bbbeebb010da11aa935199df4e3b26746411a1cb27",
+      "bytes": 26786,
       "alias": "./shared/pattern-quality.mjs"
     },
     {
@@ -348,6 +348,12 @@
       "sha256": "585334abda80fd8802128e181d8efc04264770f3ee2a7f866d24481a6f7eabad",
       "bytes": 2683,
       "alias": "./shared/pattern-score.mjs"
+    },
+    {
+      "path": "./bundles/3.71.0/shared/pattern-signal-card.mjs",
+      "sha256": "82f15c5c2239454082999cc7e57937389d28f8bb608eb2f3d943ab3c4c5a3981",
+      "bytes": 21230,
+      "alias": "./shared/pattern-signal-card.mjs"
     },
     {
       "path": "./bundles/3.71.0/shared/po3-core.mjs",
@@ -405,8 +411,8 @@
     },
     {
       "path": "./bundles/3.71.0/shared/telegram-format.mjs",
-      "sha256": "3058a386a9798f0cc0994d14f6b3a2b7c779cb836e08114cc68e29c2ed027787",
-      "bytes": 15741,
+      "sha256": "5621a3b95d169da13e592b66070d9450abca195cdd3bafde0c4ac298ac7cb57b",
+      "bytes": 23513,
       "alias": "./shared/telegram-format.mjs"
     },
     {
@@ -435,8 +441,8 @@
     },
     {
       "path": "./weather-widget-v2.html",
-      "sha256": "bc56953b2461c780a22376d3565891bf2a0ddfd46a5f1f167b9f5a8f18936baa",
-      "bytes": 1641947
+      "sha256": "dcf33e4d2a7d74a6071cd31faf1f25dacc84b8c5b174eee7a5f1ce87a2db489e",
+      "bytes": 1650735
     },
     {
       "path": "./manifest.webmanifest",

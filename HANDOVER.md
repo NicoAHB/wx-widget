@@ -3,7 +3,17 @@
 Diese Datei ist der Einstieg für jede weitere Arbeit am Projekt. Wer sie liest, braucht kein Vorwissen. Die vollständige fachliche
 Vorgabe aller Gruppen G01–G14 steht in `docs/VORGABE-G01-G14.md` (Original-Übergabe; dort sind G10–G14 ausführlich beschrieben).
 
-## In Arbeit – 3.71.0 (Claude): Trade-Karte überarbeitet, Gesamtlauf erst auf Anweisung des Nutzers
+## In Arbeit – 3.71.0 / Dienst 2.15.0 / Musterdienst 1.3.0 (Claude): Trade-Karte, Chartmuster-Signalkarte, Alarm-Knopf – Gesamtlauf erst auf Anweisung des Nutzers
+
+- **Chartmuster-Signalkarte (nach Vorlage des Nutzers):** ein Modul für App, 24/7-Dienst und Oracle-Musterdienst.
+  - `shared/pattern-signal-card.mjs` zeichnet das SVG; Modell und Kurztext kommen aus `patternSignalModel` und `formatMessage('pattern')` in `shared/telegram-format.mjs`.
+  - Aufbau: Gesamturteil Schwach/Mittel/Stark (Schwellen 40/70 einstellbar), Mini-Chart mit Zonen, Stop statt „Ungültig bei“ (Hinweis bei Stop < ATR 14), „Jetzt“ (gültig / verpasst ab 0,3 % / abgelaufen nach 6 Kerzen), Musterqualität blau, „Erlernt“ erst ab 10 Fällen, Fuß mit Datum.
+  - Telegram: Bild plus Kurztext in derselben Reihenfolge; ohne Bild der Kurztext.
+  - Schwache Signale gehen nur mit dem Schalter „Schwache Signale auch senden“ (Standard aus) an Telegram; in der App bleiben sie im Signal-Log, dort auch aufgeklappt als Karte.
+- **„🔔 Alarm für diesen Kurs“:** `openAlarmForm` wechselt per `goTo('alarms')` in den Bereich „Alarme“ (vorher öffnete das Formular unsichtbar).
+- **Tests:** neu `m109` (15); erweitert `unit-pattern-card` (71), `unit-pattern-quality` (40), `unit-patterns-only` (22), `m102` (19), `m58` tg (7); angepasst `unit-247e`, `unit-telegram-format`, `unit-247d`.
+
+### Davor in 3.71.0: Trade-Karte überarbeitet
 
 Ausführlich: [docs/3.71.0-AENDERUNGEN.md](docs/3.71.0-AENDERUNGEN.md).
 

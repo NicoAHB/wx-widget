@@ -4,8 +4,34 @@
 // das Modul nicht. Ein Signal geht nur raus, wenn alle K.O.-Kriterien erfüllt sind, der Signalscore die Mindestgrenze
 // erreicht und die Anti-Spam-Regeln es zulassen. Jedes Signal (gesendet oder gefiltert) wird mit Grund protokolliert.
 
+import { intervalEnd, INTERVAL_MS } from './market-intervals.mjs';
+
 // ---- Einstellungen ----
 export const PATTERN_FILTER_VERSION = 1;
+// 3.71.0: Signalkarte – Gesamturteil nach Score (unter weakBelow „Schwach“, ab strongFrom „Stark“, dazwischen „Mittel“), Einstieg
+// verpasst ab missedPct % hinter dem Einstieg, Einstieg gültig validCandles Kerzen nach dem Bestätigungsschluss. Schwache Signale
+// gehen nur mit sendWeak an Telegram. Gelten in jedem Preset (wie der Gegentrend-Schalter) und gehen mit dem Filter an die Dienste.
+export const PATTERN_CARD_DEFAULTS = Object.freeze({ weakBelow: 40, strongFrom: 70, missedPct: 0.3, validCandles: 6, sendWeak: false });
+export const PATTERN_CARD_FIELDS = Object.freeze([
+  { key: 'weakBelow', label: 'Schwaches Signal unter Score', unit: '/100', min: 1, max: 99, step: 1 },
+  { key: 'strongFrom', label: 'Starkes Signal ab Score', unit: '/100', min: 2, max: 100, step: 1 },
+  { key: 'missedPct', label: 'Einstieg verpasst, wenn der Kurs mehr als … hinter dem Einstieg liegt', unit: '%', min: 0.05, max: 5, step: 0.05 },
+  { key: 'validCandles', label: 'Einstieg gültig für', unit: 'Kerzen des Intervalls', min: 1, max: 48, step: 1 }
+]);
+export function patternCardSettings(raw) {
+  const r = raw && typeof raw === 'object' ? raw : {}, out = {};
+  for (const f of PATTERN_CARD_FIELDS) { const v = Number(r[f.key] ?? PATTERN_CARD_DEFAULTS[f.key]); out[f.key] = Number.isFinite(v) ? Math.min(f.max, Math.max(f.min, v)) : PATTERN_CARD_DEFAULTS[f.key]; }
+  out.weakBelow = Math.round(out.weakBelow); out.validCandles = Math.round(out.validCandles); out.strongFrom = Math.round(out.strongFrom);
+  if (out.strongFrom <= out.weakBelow) out.strongFrom = Math.min(100, out.weakBelow + 1);
+  out.sendWeak = r.sendWeak === true;
+  return out;
+}
+// Ende des Einstiegsfensters: Schluss der Bestätigungskerze (Beginn tc) plus n Kerzen des Intervalls (Kalendermonate genau)
+export function patternValidUntil(tc, iv, n = PATTERN_CARD_DEFAULTS.validCandles) {
+  if (!Number.isFinite(tc) || !INTERVAL_MS[iv]) return null;
+  let e = intervalEnd(tc, iv); for (let i = 0; i < n; i++) e = intervalEnd(e, iv);
+  return e;
+}
 // 3.70.2: Schwellen gesenkt – im Betrieb lag Chance/Risiko bestätigter pat-1-Muster meist bei 0,2–1,6 und der Score bei 20–60;
 // mit R/R ≥ 2 (Normal) bzw. ≥ 1,8 (Locker) kam praktisch keine Meldung mehr an.
 export const PATTERN_FILTER_PRESETS = Object.freeze({
@@ -36,13 +62,13 @@ export function patternFilterSettings(raw) {
   const src = preset === 'eigen' ? r : base;   // ein benanntes Preset gilt vollständig; eigene Werte nur unter „eigen“
   for (const f of PATTERN_FILTER_FIELDS) { const v = Number(src[f.key] ?? base[f.key]); out[f.key] = Number.isFinite(v) ? Math.min(f.max, Math.max(f.min, v)) : base[f.key]; }
   out.counterTrend = r.counterTrend === true;   // Gegentrend-Signale standardmäßig aus – eigener Schalter in jedem Preset
-  return out;
+  return Object.assign(out, patternCardSettings(r));   // 3.71.0: Signalkarte, unabhängig vom Preset
 }
 // Der Gegentrend-Schalter gilt in jedem Preset; eigene Werte entstehen, sobald ein Feld vom Preset abweicht.
 export function patternFilterFromForm(values, preset) {
   const p = Object.hasOwn(PATTERN_FILTER_PRESETS, preset) ? preset : 'eigen', base = PATTERN_FILTER_PRESETS[p === 'eigen' ? 'normal' : p];
   const differs = PATTERN_FILTER_FIELDS.some(f => values[f.key] !== undefined && Math.abs(Number(values[f.key]) - base[f.key]) > 1e-9);
-  return patternFilterSettings({ ...values, preset: differs ? 'eigen' : p, counterTrend: values.counterTrend === true });
+  return patternFilterSettings({ ...values, preset: differs ? 'eigen' : p, counterTrend: values.counterTrend === true });   // Kartenwerte (weakBelow …) laufen mit
 }
 
 // ---- Zeitrahmen ----
@@ -158,7 +184,9 @@ export function evaluatePatternSignal({ c, h, k, i1 = h?.i1, price = null, highe
     `Trefferquote ${hn >= 10 ? `${hits.wins}/${hn}` : `neutral (${hn}/10 abgeschlossen)`} → ${de(pHist, 0)}/15`
   ];
   const pass = !ko.length && score >= s.minScore, reason = ko.length ? ko[0].text : score < s.minScore ? `Signalscore ${score} unter ${s.minScore}` : '';
-  return { pass, score, parts, ko, reason, summary, criteria, rr, entry, target, invalid, atr, age, progress, targetPct, costs, volume24h, spread, volumeRatio: vr, higherTf: htf, trend: ht?.dir ?? null, btcTrend: bt?.dir ?? null, counter, settings: s };
+  // 3.71.0: marks und price nur für die Anzeige (Banner „Trend ✔/✖ · Volumen ✔/✖“, Zeile „Jetzt“) – Rechnung unverändert
+  return { pass, score, parts, ko, reason, summary, criteria, rr, entry, target, invalid, atr, age, progress, targetPct, costs, volume24h, spread, volumeRatio: vr, higherTf: htf, trend: ht?.dir ?? null, btcTrend: bt?.dir ?? null, counter, settings: s,
+    marks: { trend: trendMark, volume: volMark }, price: fin(px) ? px : null };
 }
 
 // ---- Anti-Spam: Auswahl der zu sendenden Signale ----
@@ -173,6 +201,8 @@ export function selectPatternSignals(candidates, sent, settings, now) {
   const conflicted = new Set(ok.filter(x => ok.some(y => y.sym === x.sym && y.dir !== x.dir && Math.abs(y.tc - x.tc) < s.oppositeMin * min)).map(x => x.sym));
   const accepted = [], bestOf = new Map();
   for (const x of ok) {
+    // 3.71.0: schwache Signale (Score unter weakBelow) nur in der App/im Journal, an Telegram nur mit „Schwache Signale auch senden“
+    if (!s.sendWeak && x.eval.score < s.weakBelow) { out.set(x.id, { send: false, weak: true, reason: `Schwaches Signal (Score ${x.eval.score} unter ${s.weakBelow}) – nur in der App; „Schwache Signale auch senden“ ist aus` }); continue; }
     const group = `${x.sym}|${x.tc}|${x.dir}`, best = bestOf.get(group);
     if (best) { out.set(x.id, { send: false, reason: `Gleiche Richtung in derselben Kerze – nur das stärkste Muster (Score ${best.eval.score}) wird gemeldet` }); continue; }
     bestOf.set(group, x);
@@ -188,8 +218,12 @@ export function selectPatternSignals(candidates, sent, settings, now) {
 // ---- Ergebnis-Tracking ----
 export const PATTERN_TRACK_HORIZON = 48;
 export function patternJournalEntry(c, ev, decision, now) {
+  // 3.71.0: Felder der Signalkarte (Musterqualität, ATR, Chance/Risiko, Trend/Volumen, Kurs, Ende des Einstiegsfensters, schwach)
+  const s = patternCardSettings(ev.settings), r = v => Number.isFinite(v) ? +v.toPrecision(8) : null;
   return { id: c.id, at: now, sym: c.sym, mkt: c.mkt, iv: c.iv, pat: c.pat, dir: c.dir, tc: c.tc, entry: ev.entry, target: ev.target, invalid: ev.invalid, score: ev.score,
-    parts: Object.fromEntries(Object.entries(ev.parts).map(([k, v]) => [k, Math.round(v * 10) / 10])), summary: ev.summary, criteria: ev.criteria, ko: ev.ko.map(x => x.text), sent: !!decision.send, reason: decision.send ? '' : decision.reason || ev.reason, res: null };
+    parts: Object.fromEntries(Object.entries(ev.parts).map(([k, v]) => [k, Math.round(v * 10) / 10])), summary: ev.summary, criteria: ev.criteria, ko: ev.ko.map(x => x.text), sent: !!decision.send, reason: decision.send ? '' : decision.reason || ev.reason, res: null,
+    q: Number.isFinite(c.q) ? c.q : null, atr: r(ev.atr), rr: r(ev.rr), marks: ev.marks || null, price: r(ev.price), until: patternValidUntil(c.tc, c.iv, s.validCandles),
+    grade: ev.score >= s.strongFrom ? 'strong' : ev.score >= s.weakBelow ? 'medium' : 'weak', ...(decision.weak ? { weak: true } : {}) };   // Gesamturteil zur Signalzeit
 }
 export function addPatternJournal(journal, entry, max = 2000) {
   const list = Array.isArray(journal) ? journal.filter(x => x.id !== entry.id) : []; list.push(entry);
