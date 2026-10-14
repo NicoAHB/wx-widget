@@ -52,7 +52,7 @@ import { PQ, patternConfig, patternCandles, patternCases, patternFresh, patternT
 import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT } from './telegram-format.mjs';
 import { ConfluenceService, kiMessage, Po3Service, po3Message, BotSimulationRuntime } from './ki-monitor.mjs';
 
-export const VERSION = '2.14.2';   // 2.13.0: Qualitätsfilter für Chartmuster-Meldungen; 2.14.0: Chartmuster als Trading-Karte (Text als Ersatz); 2.14.1: Schrift mitgeliefert; 2.14.2: Installer macht den Programmstand für den Dienstbenutzer lesbar
+export const VERSION = '2.14.3';   // 2.13.0: Qualitätsfilter für Chartmuster-Meldungen; 2.14.0: Chartmuster als Trading-Karte (Text als Ersatz); 2.14.1: Schrift mitgeliefert; 2.14.3: Status nennt den Chartmuster-Filter; 2.14.2: Installer macht den Programmstand für den Dienstbenutzer lesbar
 // 2.14.0: Kartenrenderer (pattern-card.mjs + resvg) nur bei Bedarf laden; fehlt er, bleibt es bei der Textmeldung
 let cardModule = null;
 const loadCards = () => (cardModule ??= import('./pattern-card.mjs').catch(() => null));
@@ -1205,7 +1205,7 @@ export class Watcher {
     this.log(`Scalp Desk 24/7-Dienst ${VERSION} – Status`);
     try { this.me = await this.tg('getMe'); say(true, `Bot ${this.botText()} (ID ${this.me.id}) – Token gültig`); }
     catch (e) { say(false, e.code === 401 || e.code === 404 ? 'Bot-Token ungültig – Token aus der App (Kursalarm) mit --neu neu eingeben.' : e.message); return false; }
-    { const P = this.patternCards ? await loadCards() : null, st = P ? await P.cardRendererStatus() : 'renderer'; say(null, st === 'ok' ? 'Chartmuster: als Trading-Karte (Bild), Text als Ersatz' : st === 'schrift' ? 'Chartmuster: als Text – die Karte würde ohne Schrift erscheinen; Installer erneut ausführen' : 'Chartmuster: als Text – für Trading-Karten den Installer erneut ausführen (kostenlos: resvg)'); }
+    { const P = this.patternCards ? await loadCards() : null, st = P ? await P.cardRendererStatus() : 'renderer'; { const f = this.patternWatch.config ? PQ.patternFilterSettings(this.patternWatch.config.filter) : null; if (f) say(null, `Chartmuster-Qualitätsfilter: ${PQ.PATTERN_FILTER_PRESET_NAMES[f.preset] || f.preset} · Score ≥ ${f.minScore} · Chance/Risiko ≥ ${String(f.minRR).replace('.', ',')} · Gegentrend ${f.counterTrend ? 'erlaubt' : 'aus'} · Revision ${this.patternWatch.rev}`); } say(null, st === 'ok' ? 'Chartmuster: als Trading-Karte (Bild), Text als Ersatz' : st === 'schrift' ? 'Chartmuster: als Text – die Karte würde ohne Schrift erscheinen; Installer erneut ausführen' : 'Chartmuster: als Text – für Trading-Karten den Installer erneut ausführen (kostenlos: resvg)'); }
     let chat; try { chat = await this.tg('getChat', { chat_id: this.chat }); say(true, `Chat ${chatText(chat, this.chat)} erreichbar`); }
     catch (e) { say(false, `Chat ${this.chat}: ${e.message} – Chat-ID prüfen und dem Bot in Telegram einmal „Start“ schreiben.`); return false; }
     const pm = chat?.pinned_message;

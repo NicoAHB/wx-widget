@@ -1,11 +1,11 @@
 {
-  "version": "2.14.2",
-  "appVersion": "3.70.1",
+  "version": "2.14.3",
+  "appVersion": "3.70.2",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
-      "sha256": "de369eb0db050d9e1ca3a9a2e63587e859f4f1f6c315134ebab7199709c3d963",
-      "bytes": 133185
+      "sha256": "847a766aa71ccd7b572be74ecb70d6298a280361c72f3c5d3910a0c5e7b27116",
+      "bytes": 133618
     },
     {
       "path": "pattern-engine.mjs",
