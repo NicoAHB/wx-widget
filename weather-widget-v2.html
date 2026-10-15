@@ -1625,7 +1625,18 @@ html[data-layout=tablet] #econ{order:1}
   .wl-rule{font-size:.6875rem}
   .wl-rsi-l{font-size:.6875rem}
 }
-@container wlt (max-width:150px){.wl-price{font-size:.75rem}.wl-sym{font-size:.875rem}.wl-tfv{font-size:.625rem}.wl-rule{font-size:.625rem;gap:1px}}
+/* sehr schmale Kachel (Handy 320 px, etwa 140 px breit): Kürzel, Score und Kurs passen nebeneinander, die Felder bleiben lesbar */
+@container wlt (max-width:150px){
+  .wl-tile{padding:8px 7px 7px}
+  .wl-top{gap:4px}
+  .wl-sym{font-size:.8125rem}
+  .wl-sig{min-width:1.8em;height:18px;padding:0 4px;font-size:.625rem}
+  .wl-price{font-size:.6875rem}
+  .wl-tfv{font-size:.625rem;letter-spacing:-.02em}
+  .wl-rules{gap:3px}
+  .wl-rule{font-size:.5625rem;gap:1px}
+  .wl-rsi{gap:6px}.wl-rsi-l{min-width:3.3em;font-size:.625rem}
+}
 @media (pointer:coarse){.wl-item .chip-x{width:40px;height:40px;min-width:40px;min-height:40px;top:-14px;right:-12px}}
 /* 3.35.0 (G07): Market-Cap-Ansicht – Preisebenen und Leisten aus */
 /* Kompakter Umschalter in der Chart-Menüleiste: ein Knopf „MCap“ neben den Intervallen. Die Gruppe (Intervalle + MCap) zählt beim

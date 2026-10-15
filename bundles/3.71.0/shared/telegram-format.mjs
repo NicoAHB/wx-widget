@@ -21,13 +21,6 @@ const numLine = (label, v, transform = telegramPrice) => finite(v) ? label + tra
 const money = v => telegramPrice(v) + ' USD';
 const code = v => '<code>' + money(v) + '</code>';
 const pctDistance = (v, base) => { const p = telegramRelative(v, base); return finite(p) ? ' (' + telegramPercent(p) + ')' : ''; };
-const learned = (s, direction) => {
-  if (!s) return [];
-  const n = s.total ?? s.n, yes = direction.sign > 0 ? s.up ?? s.auf : s.down ?? s.ab, minimum = s.minimum ?? 10;
-  return [finite(n) && finite(yes) ? `📚 Erlernt: ${yes}/${n} Fälle${n < minimum ? ' ⚠️ zu wenig Daten' : ''}` : finite(s.available) ? `📚 Erlernt: ${s.available}/${minimum} Fälle ⚠️ zu wenig Daten` : '',
-    line('Datenbasis: ', s.source), finite(s.horizon) ? `Beobachtung: nach ${s.horizon} Kerzen` : '',
-    numLine('Aufwärts: ', s.up ?? s.auf, v => telegramNumber(v, 0) + ' Fälle'), numLine('Abwärts: ', s.down ?? s.ab, v => telegramNumber(v, 0) + ' Fälle'), numLine('Seitwärts: ', s.flat ?? s.seitwärts ?? s.seit, v => telegramNumber(v, 0) + ' Fälle')];
-};
 // Nur unsere vier erlaubten Tags bleiben stehen. Dynamischer Text wird vorab escaped.
 // Bei Kürzung keine halben Entities, Emojis oder offenen Tags an Telegram übergeben.
 export function clipTelegramHtml(html, limit = TELEGRAM_LIMIT) {

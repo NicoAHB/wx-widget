@@ -459,8 +459,8 @@
     },
     {
       "path": "shared/telegram-format.mjs",
-      "sha256": "5621a3b95d169da13e592b66070d9450abca195cdd3bafde0c4ac298ac7cb57b",
-      "bytes": 23513
+      "sha256": "03f4b2740dfbe6c35af10dc80629b648c3752e39fece97ca598aac874bb0f467",
+      "bytes": 22759
     },
     {
       "path": "shared/widget-state.mjs",
