@@ -27,7 +27,7 @@ const candleAt = (page, x) => page.evaluate(x => { const box = document.getEleme
     // ---------- iPhone: zwei Finger ----------
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, deviceScaleFactor: 3 }), page = await ctx.newPage(), errors = [];
     h.collect(page, errors);
-    await page.goto(`${h.URL_BASE}/weather-widget-v2.html`); await page.waitForFunction(() => __g05.state.candles.length > 100, null, { timeout: 20000 });
+    await page.goto(`${h.URL_BASE}/weather-widget-v2.html`); await page.waitForFunction(() => window.__g05?.state?.candles?.length > 100, null, { timeout: 20000 });
     await page.locator('#chart').scrollIntoViewIfNeeded(); await page.waitForFunction(() => document.querySelector('#chart svg'), null, { timeout: 15000 }); await page.waitForTimeout(800);
     await page.evaluate(WATCH);
     const cdp = await ctx.newCDPSession(page), box = await page.locator('#chart').boundingBox();
@@ -93,7 +93,7 @@ const candleAt = (page, x) => page.evaluate(x => { const box = document.getEleme
     // ---------- PC: Strg+Mausrad (Trackpad-Zoom), waagrechtes Blättern ----------
     const ctx2 = await browser.newContext({ viewport: { width: 1440, height: 900 } }), pc = await ctx2.newPage(), err2 = [];
     h.collect(pc, err2);
-    await pc.goto(`${h.URL_BASE}/weather-widget-v2.html`); await pc.waitForFunction(() => __g05.state.candles.length > 100, null, { timeout: 20000 });
+    await pc.goto(`${h.URL_BASE}/weather-widget-v2.html`); await pc.waitForFunction(() => window.__g05?.state?.candles?.length > 100, null, { timeout: 20000 });
     await pc.locator('#chart').scrollIntoViewIfNeeded(); await pc.waitForFunction(() => document.querySelector('#chart svg'), null, { timeout: 15000 }); await pc.waitForTimeout(800); await pc.evaluate(WATCH);
     const b2 = await pc.locator('#chart').boundingBox(), px = b2.x + b2.width * .4, py = b2.y + b2.height * .45;
     const w0 = await view(pc), m0 = await candleAt(pc, px), sy0 = await pc.evaluate(() => scrollY);

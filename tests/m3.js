@@ -61,7 +61,7 @@ const tests = {
     await page.click('#qa-open'); await page.waitForTimeout(400);
     check('Schnell-Alarm öffnet als Blatt von unten', await page.evaluate(() => { const d = document.getElementById('qa-dialog'), r = d.getBoundingClientRect(); return d.open && Math.abs(r.bottom - innerHeight) < 2; }));
     const lv = await page.$$eval('#qa-levels button', bs => bs.map(b => b.textContent));
-    check('Marken aus dem Chart angeboten (Widerstand/Unterstützung/POC)', lv.some(t => /POC/.test(t)), lv.join(' | '));
+    check('Marken aus dem Chart angeboten (Widerstand/Unterstützung/POC – Marken direkt am Kurs lässt die App weg)', lv.some(t => /^(POC|Widerstand|Unterstützung) /.test(t)), lv.join(' | '));
     await page.click('#qa-dialog [data-qa="1"]');
     const qv = await page.evaluate(() => ({ v: document.getElementById('qa-price').value, prev: document.getElementById('qa-preview').textContent, pressed: document.querySelector('#qa-dialog [data-qa="1"]').getAttribute('aria-pressed'), dis: document.getElementById('qa-save').disabled }));
     const target = Number(qv.v.replace(',', '.'));

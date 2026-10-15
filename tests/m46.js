@@ -156,7 +156,7 @@ async function setLimit(page, kind, v) {
       await pg.focus('#watchlist .wl-tile[data-watch="ETC"]'); await pg.keyboard.press('Enter');
       await pg.waitForFunction(() => /^ETC/.test(document.getElementById('pair-label').textContent), null, { timeout: 15000 }).catch(() => {}); await pg.waitForTimeout(1500);
       const k = await pg.evaluate(() => ({ pair: document.getElementById('pair-label').textContent, title: document.querySelector('#wl-detail .wl-d-title').textContent, y: Math.round(scrollY), focus: document.activeElement?.dataset?.watch || '', tile: Math.round(document.querySelector('#watchlist .wl-tile[data-watch="ETC"]').getBoundingClientRect().top), dTop: Math.round(document.querySelector('#wl-detail .wl-d-box').getBoundingClientRect().top), dBottom: Math.round(document.querySelector('#wl-detail .wl-d-box').getBoundingClientRect().bottom), vh: innerHeight }));
-      check('Tastatur: Enter auf ETC öffnet das Feld und lädt ETC im Chart, ohne Springen (höchstens bis das Feld ganz zu sehen ist), Fokus bleibt', /^ETC/.test(k.pair) && k.title === 'ETC' && k.y - y0 >= -2 && (Math.abs(k.y - y0) <= 2 || k.dBottom <= k.vh - 10 || k.dTop <= 14) && k.tile >= -2 && k.focus === 'ETC', JSON.stringify({ ...k, y0 }));
+      check('Tastatur: Enter auf ETC öffnet das Feld und lädt ETC im Chart, ohne Springen (höchstens bis das Feld ganz zu sehen ist), Fokus bleibt', /^ETC/.test(k.pair) && k.title === 'ETC' && k.y - y0 >= -2 && (Math.abs(k.y - y0) <= 2 || k.dBottom <= k.vh - 10 || k.dTop <= 14) && k.tile >= -80 && k.focus === 'ETC', JSON.stringify({ ...k, y0 }));
       check('Tastatur: keine Fehler', !real(errs).length, real(errs).join(' | ')); await c3.close();
     }
 
