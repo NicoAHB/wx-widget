@@ -1,7 +1,7 @@
 // 3.25.0 – Signalbewertung der Vorauswahl über einen wählbaren Zeitraum (Standard: die letzte Stunde aus 5-Minuten-Kerzen):
 // Laden (260 Kerzen im Intervall des Zeitraums) und Live-Streams, Überschrift „Signale der letzten Stunde · Stand HH:MM“ mit
 // Auswahl (1 Minute, 30 Minuten, 1 Stunde, 4 Stunden, 1 Tag), Veränderung über den Zeitraum in den Kacheln, Gesamtbewertung und
-// Hinweis „Zu wenig Bewegung“ passend zu den Kerzen (unabhängig nachgerechnet), Einstellung bleibt nach dem Neuladen, die
+// 3.71.5: kein pauschaler Hinweis „Zu wenig Bewegung“ bei ruhigen oder bewegten Kerzen; Einstellung bleibt nach dem Neuladen, die
 // Chart-Knöpfe ändern den Zeitraum nicht (und umgekehrt), Tastatur behält den Fokus, Handy 390/320 px ohne Zoom und Überlauf.
 // 3.26.0: Antippen lädt den Coin auch im Chart – dessen Chart-Stream zählt nicht zur Vorauswahl.
 // Aufruf: node m45.js
@@ -33,7 +33,7 @@ const panel = page => page.evaluate(() => {
   const m = q('.wl-d-meta').cloneNode(true); m.querySelectorAll('select').forEach(x => x.remove());
   return { open: d.dataset.open === '1', title: q('.wl-d-title').textContent, meta: m.textContent, value: sel.value, shown: q('.wl-d-pickv').textContent, label: sel.getAttribute('aria-label'),
     options: [...sel.options].map(o => `${o.value}:${o.textContent}`).join(), verdict: q('.wl-d-verdict').hidden ? null : q('.wl-d-verdict').textContent, vcls: q('.wl-d-verdict').className,
-    move: q('.wl-d-move').hidden ? null : q('.wl-d-movetxt').textContent, moveTip: q('.wl-d-move .tip-body').textContent, foot: q('.wl-d-foot').textContent };
+    moveExists: !!q('.wl-d-move'), obsolete: /zu wenig Bewegung|unrealistisch/i.test(d.textContent), foot: q('.wl-d-foot').textContent };
 });
 // Erwartung, unabhängig aus den Kerzen der Kachel nachgerechnet: Veränderung seit Beginn des Zeitraums, Zählung der Signale,
 // übliche Bewegung (ATR × √n), Stand = Ende der letzten bewerteten Kerze
@@ -76,8 +76,7 @@ async function verifySpan(page, key, tag) {
   check(`${tag}: Kopf „Signale ${S.of} · Stand ${x?.stand}“, Stand = Schluss der letzten ${S.ivName}-Kerze`, x && p.meta === `Signale ${S.of} · Stand ${x.stand}` && p.value === key && p.shown === S.of && x.iv === S.iv && x.rated % IVMS[S.iv] === 0 && x.age < 2 * IVMS[S.iv] && x.rated === x.lastClosed,
     JSON.stringify({ meta: p.meta, value: p.value, iv: x?.iv, age: x?.age }));
   check(`${tag}: Gesamtbewertung passt zur Zählung der Signale (${x?.verdict})`, x && p.verdict === x.verdict && p.vcls === `wl-d-verdict ${x.dir}`, JSON.stringify([p.verdict, x?.verdict]));
-  const moveTxt = `⚠ Zu wenig Bewegung – über ${S.name} etwa ${x?.move} %, ein Ziel von 1 % ist unrealistisch`;
-  check(`${tag}: „Zu wenig Bewegung“ genau dann, wenn ATR × √${S.n} unter 1 % liegt (hier ${x?.move} %)`, x && (x.low ? p.move === moveTxt && p.moveTip.includes(`ATR (mittlere wahre Spanne) der letzten ${S.n >= 10 ? S.n : 14} ${S.ivName}-Kerzen: ${x.atr} % je Kerze.`) : p.move === null), JSON.stringify({ move: p.move, low: x?.low }));
+  check(`${tag}: kein pauschaler Bewegungs-Hinweis in der Detailansicht`, !p.moveExists && !p.obsolete, JSON.stringify({ moveExists: p.moveExists, obsolete: p.obsolete }));
   check(`${tag}: Fußzeile „Beschreibt ${S.the} – kein Handelssignal mit nachgewiesenem Vorteil.“`, p.foot === `Beschreibt ${S.the} – kein Handelssignal mit nachgewiesenem Vorteil.`, p.foot);
   const wl = COINS.map(c => `${c.toLowerCase()}usdt@kline_${S.iv}`);
   const chart = await chartStream(page), orderflowStreams = await page.evaluate(() => { const v = __pdf1.view.state; return v.paused ? [] : [...(!v.unavailable ? ['1m', '5m', '1h', '4h'].map(iv => v.symbol.toLowerCase() + '@kline_' + iv) : []), 'btcusdt@kline_1m']; });
@@ -154,12 +153,12 @@ async function verifySpan(page, key, tag) {
     await h.ctl('/walk?on=0'); await force(0.0002); await page.waitForTimeout(300);
     p = await panel(page); let x = await expect(page, 'ETC', SP['1h']);
     const etcTitle = await page.$eval('#watchlist .wl-tile[data-watch="ETC"]', el => el.title);
-    check('Kaum Bewegung (Spanne 0,04 % je 5 Minuten): „⚠ Zu wenig Bewegung – über 1 Stunde etwa 0,14 % …“, auch im Kachel-Hinweis', p.move === `⚠ Zu wenig Bewegung – über 1 Stunde etwa ${x.move} %, ein Ziel von 1 % ist unrealistisch` && x.move === '0,14' && / · zu wenig Bewegung · /.test(etcTitle), JSON.stringify({ move: p.move, title: etcTitle }));
-    check('Erklärung: ATR der 12 Kerzen und Faustregel ATR × √12', /^ATR \(mittlere wahre Spanne\) der letzten 12 5-Minuten-Kerzen: 0,04 % je Kerze\.Über 1 Stunde bewegt sich der Kurs damit typischerweise etwa 0,14 % \(Faustregel: ATR × √12, 12 Kerzen im Zeitraum\)\. Das reicht nicht für ein Ziel von 1 %\.$/.test(p.moveTip), p.moveTip);
+    check('Kaum Bewegung (Spanne 0,04 % je 5 Minuten): kein pauschaler Warntext oder Restplatz im Detailfeld', x.move === '0,14' && !p.moveExists && !p.obsolete, JSON.stringify({ moveExists: p.moveExists, obsolete: p.obsolete }));
+    check('Auch der Kachel-Hinweis enthält keine unbelegte Aussage zur Bewegung oder zum Kursziel', !/zu wenig Bewegung|unrealistisch/i.test(etcTitle) && p.verdict === x.verdict, etcTitle);
     const hLow = await page.$eval('#wl-detail', d => d.getBoundingClientRect().height);
     await force(0.01); await page.waitForTimeout(300); p = await panel(page);
     const hHigh = await page.$eval('#wl-detail', d => d.getBoundingClientRect().height);
-    check('Viel Bewegung (Spanne 2 % je 5 Minuten): kein Hinweis; das Feld schrumpft dabei nicht', p.move === null && hHigh === hLow, JSON.stringify({ move: p.move, hLow, hHigh }));
+    check('Viel Bewegung (Spanne 2 % je 5 Minuten): kein Hinweis; das Feld schrumpft dabei nicht', !p.moveExists && !p.obsolete && hHigh === hLow, JSON.stringify({ moveExists: p.moveExists, hLow, hHigh }));
     await h.ctl('/walk?on=1');
     check('Computer: keine Fehler', !real(errors).length, real(errors).join(' | ')); await ctx.close();
 

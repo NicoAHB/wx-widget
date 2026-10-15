@@ -3,6 +3,14 @@
 Diese Datei ist der Einstieg für jede weitere Arbeit am Projekt. Wer sie liest, braucht kein Vorwissen. Die vollständige fachliche
 Vorgabe aller Gruppen G01–G14 steht in `docs/VORGABE-G01-G14.md` (Original-Übergabe; dort sind G10–G14 ausführlich beschrieben).
 
+## 3.71.5 (Codex): Alarmglocke mit Rücksprung, pauschalen Bewegungs-Hinweis entfernt
+
+- Zweiter Tipp auf die Glocke stellt den vorherigen Bereich/Tab, Vorauswahl-Klappzustand und Scrollposition wieder her. Ausstehende Scroll-Frames werden abgebrochen; Wiederherstellung nach dem Chart-Neuzeichnen. Touch und Tastatur verwenden denselben Weg, Beschriftung und `aria-pressed` folgen dem Zustand.
+- Bewusste andere Navigation verwirft den alten Abstecher. Nach Löschen/Auslösen des letzten Alarms bleibt die Glocke bis zur Rückkehr erreichbar. Keine Änderungen an Alarm-, Handels- oder Telegramdaten.
+- Nutzer möchte den ständig auftauchenden Hinweis „Zu wenig Bewegung … Ziel von 1 % ist unrealistisch“ korrigiert oder entfernt haben. Warnblock, Info-Symbol, Kachel-Tooltip-Zusatz und veralteter Methodik-Satz entfernt: ATR-Faustregel und feste 1-%-Schwelle belegen keine solche Aussage. Daten-/Signalberechnungen bleiben erhalten.
+- Neuer serieller Test `m114` sowie angepasste `m113`/`m45`; 356/356 gezielte Navigation-, Vorauswahl-, Mobil-, Scroll-, Offline- und Releaseprüfungen bestanden, Lint 0 Fehler/3 bekannte Warnungen. Der frühere vollständige Gesamtlauf bleibt 3.71.1 zugeordnet. [Verhalten, Prüfumfang und iPhone-Kontrolle](docs/ALARM-RUECKSPRUNG-3.71.5.md).
+- App/Service Worker 3.71.5 mit neuem Bündel; Dienst 2.15.0 und frühere Bündel unverändert. Abschließende Einzelresultate im verlinkten Nachweis und öffentliche Verifikation im PR.
+
 ## 3.71.4 (Codex): ausführlicher Trade-Text zum neuen Bild und antippbare Alarmzahl
 
 - Nutzer möchte den Telegram-Begleittext der früheren Trade-Karte zum aktuellen Verlaufsbild zurück und die Glocke mit aktiver Alarmzahl prüfen/korrigieren.

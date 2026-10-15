@@ -29,8 +29,11 @@ const real = errors => errors.filter(e => !/Service Worker registration blocked|
         check('Tastatur: auch Leertaste öffnet die Alarmliste', await page.locator('[data-alarm="active113"]').isVisible());
       }
       await page.locator('[data-alarm="active113"] .x').click();
+      await page.waitForFunction(() => document.getElementById('lb-alarm').textContent === '🔔 0');
+      check(`${width}px: nach Löschen des letzten Alarms bleibt der Rückweg erreichbar`, await page.locator('#lb-alarm').isVisible() && await page.locator('#lb-alarm').getAttribute('aria-pressed') === 'true');
+      await page.click('#lb-alarm');
       await page.waitForFunction(() => document.getElementById('lb-alarm').hidden);
-      check(`${width}px: ohne aktiven Alarm verschwindet die Glocke, ausgelöster Alarm bleibt`, await page.locator('[data-alarm="done113"]').count() === 1 && !await page.locator('#lb-alarm').isVisible());
+      check(`${width}px: nach Rückkehr ohne aktiven Alarm verschwindet die Glocke, ausgelöster Alarm bleibt`, await page.locator('[data-alarm="done113"]').count() === 1 && !await page.locator('#lb-alarm').isVisible());
       check(`${width}px: keine JavaScript-Fehler`, !real(errors).length, real(errors).join(' | '));
       await ctx.close();
     }
