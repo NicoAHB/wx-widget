@@ -16,3 +16,5 @@ Für diesen kleinen Darstellungsnachtrag werden die betroffenen Vorauswahl-, Sor
 Auf dem echten iPhone prüfen: Kopfzeile und drei Filter hochkant ohne Versatz, Stift/Fertig bedienen, Raster/Liste umschalten, Coins in beiden Ansichten verschieben und Ansicht/Reihenfolge nach Neustart kontrollieren. Die vollständige [iPhone-Checkliste](VORAUSWAHL-LISTE-TOUCH.md#iphone-test-checkliste) gilt weiterhin.
 
 Abschließende serielle Nachprüfung: **218/218 bestanden**. unit-wl 71/71, unit-release 6/6, m112 37/37, m111 23/23, m53-sort 26/26, m7 47/47, m69 8/8. Lint: 0 Fehler, drei bekannte Warnungen; reproduzierbarer Release-Abgleich erfolgreich. [Einzelnachweis](VORAUSWAHL-KOPFZEILE-3.71.2-TESTS.json).
+
+Nachtrag der öffentlichen Prüfung: Mit der Ersatzschrift des isolierten Browsers war der lange Filtertext bei 320 px zu breit. Dieser Befund wird in [3.71.3](VORAUSWAHL-KOPFZEILE-3.71.3.md) mit textabhängigen Spalten und einer zusätzlichen Schriftregression behoben. Die 218/218 oben beziehen sich auf die lokalen Nachprüfungen von 3.71.2.

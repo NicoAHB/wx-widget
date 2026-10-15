@@ -3,6 +3,13 @@
 Diese Datei ist der Einstieg für jede weitere Arbeit am Projekt. Wer sie liest, braucht kein Vorwissen. Die vollständige fachliche
 Vorgabe aller Gruppen G01–G14 steht in `docs/VORGABE-G01-G14.md` (Original-Übergabe; dort sind G10–G14 ausführlich beschrieben).
 
+## 3.71.3 (Codex): einzeilige Filter auch mit breiter Ersatzschrift
+
+- Der öffentliche 320-px-Test von 3.71.2 meldete vollständige Ausrichtung, aber „Schwach ≤ −2“ war mit der Ersatzschrift des isolierten Browsers zu breit für die gleich breite Spalte.
+- Auf schmalen Panels jetzt textabhängige Filterspalten (`repeat(3,auto)`), keine Änderung von Schriftgröße/Zeilenhöhe oder Datenlogik. Titel und Bedienung bleiben auf einer Höhe, alle drei Filter auf einer Zeile.
+- Zusätzliche Monospace-Regression in `m112`: vorher 37/38, korrigiert 38/38. Abschließend 146/146 gezielte Nachprüfungen, Lint 0 Fehler/3 bekannte Warnungen und Vorabprüfung des endgültigen Stands im isolierten Browser bei 320/390 px erfolgreich. Gezielte serielle Nachprüfung, Vorabprüfung mit dem isolierten Browser, anschließend öffentlicher Abgleich aller 82 Dateien und Geometrie bei 320/390 px.
+- App/Service Worker 3.71.3, neues Bündel; alte Bündel unverändert. Vollständiger alter Gesamtlauf und der bekannte Fibonacci-Magnetbefund bleiben 3.71.1 zugeordnet. Der 218-Prüfungen-Lauf zu Kopf/Sortieren/Mobil/Offline gehört zu 3.71.2; hier werden nur die betroffenen Prüfungen wiederholt. Endgültige Nachweise im zugehörigen PR und [Detaildokument](docs/VORAUSWAHL-KOPFZEILE-3.71.3.md).
+
 ## 3.71.2 (Codex): Vorauswahl-Kopfzeile ohne versetzte Umbrüche
 
 - Nach der Veröffentlichung von 3.71.1 hat der Nutzer einen iPhone-Screenshot des umgebrochenen Panelkopfs nachgereicht und eine übersichtlichere Ausrichtung in einer Zeile verlangt.
