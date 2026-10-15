@@ -3,6 +3,13 @@
 Diese Datei ist der Einstieg für jede weitere Arbeit am Projekt. Wer sie liest, braucht kein Vorwissen. Die vollständige fachliche
 Vorgabe aller Gruppen G01–G14 steht in `docs/VORGABE-G01-G14.md` (Original-Übergabe; dort sind G10–G14 ausführlich beschrieben).
 
+## 3.73.0 (Codex): Trend-Pullback 5/5 statt gleichzeitiger Kreuzungen
+
+- Nutzer meldet null Trades beim Testmodell und bestätigt ausdrücklich „Ja, Trend-Pullback 5/5 testen (empfohlen)“. Journalkorrektur 3.72.1 zuvor über PR #131 veröffentlicht und öffentlich verifiziert.
+- Fünf Pflichtregeln bleiben: 4h-Trend/EMA200, 15m-Kurs/EMA200, RSI-Erholung nach Pullback, MACD-Richtung mit anziehendem Histogramm und Volumen ≥1,2× der vorherigen 20 Kerzen. RSI-Rücksetzer innerhalb der acht vorherigen Kerzen: Long ≤45 und aktuell steigend 50–70, Short ≥55 und aktuell fallend 30–50; Grenzen 50/70/30 strikt. Keine gleichzeitigen frischen RSI-/MACD-Kreuzungen nötig. Neues Modell `watch-strict-2`; bisheriges Vier-Regel-Modell unverändert.
+- Alte v1-Vergleiche bleiben als solche lesbar; neue Läufe liefern zusätzlich je Pflichtregel Long-/Short-Treffer und gemeinsame 5/5-Kerzen. Kein automatischer Gewinner bei null Trades.
+- Branch `codex/watch-pullback-model` ab `main` c02de1b (3.72.1). Scratch `/workspace/work/watch-pullback-3.73.0`; tatsächliche 30-Tage-Spot-Stichprobe und alte Kernfassung unter `/workspace/work/watch-model-diagnose`. **499/499** gezielte Prüfungen bestanden (12 Programme), Lint 0 Fehler/3 bekannte Warnungen. Kontrollstichprobe: v1 0 Trades, v2 191 Trades / −3,66 R; alle sieben bisherigen Ergebnisbücher exakt unverändert. [Bedienung, Regeln, Ergebnisversionierung und Tests](docs/TREND-PULLBACK-3.73.0.md). Isolierte Vorabprüfung 320/390 px bestanden. Veröffentlichung und öffentlicher Nachweis im Release-PR.
+
 ## 3.72.1 (Codex): umrahmte Journalaktionen, Ja/Nein nebeneinander
 
 - Nutzerkorrektur: € / Foto / Stift / × jeweils einzeln umrahmt, gleichmäßig in einer Zeile; Frage zum Löschen darüber, Ja und Nein dauerhaft nebeneinander. Begrenzte CSS-Anpassung und eigene Klasse nur für die Trade-Löschbestätigung. Daten und Handler unverändert.

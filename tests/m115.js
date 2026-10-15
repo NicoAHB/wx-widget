@@ -1,4 +1,4 @@
-// 3.72.0: tatsächlicher Settings-Schalter, Live-Modell, Worker-Vergleich und persistentes Ergebnis.
+// 3.73.0: v2, Filterdiagnose und unveränderte v1-Ergebnisse; tatsächlicher Settings-Schalter, Live-Modell, Worker-Vergleich und persistentes Ergebnis.
 const h = require('./harness'), { watchFixture, mirrorWatch } = require('./watch-model-fixture');
 const results = [], check = (name, ok, detail = '') => { results.push(!!ok); console.log(`${ok ? '✓' : '✗'} ${name}${detail ? ' — ' + detail : ''}`); };
 const settings = async p => { await p.click('[data-workspace-target="settings"]'); await p.locator('#watch-model-toggle').scrollIntoViewIfNeeded(); };
@@ -46,10 +46,14 @@ const settings = async p => { await p.click('[data-workspace-target="settings"]'
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(rows) });
     });
     await p.setViewportSize({ width: 390, height: 844 }); await p.click('#watch-compare-start'); await p.waitForFunction(() => !__watchModels.view.state.busy, null, { timeout: 120000 });
-    let report = await p.evaluate(() => __watchModels.view.state.report); check('Echter Worker-Vergleich berechnet und speichert beide Modelle', report?.coins.length === 2 && report?.models.classic === 'watch-classic-1' && report?.models.strict === 'watch-strict-1', await p.locator('#watch-compare-status').textContent());
+    let report = await p.evaluate(() => __watchModels.view.state.report); check('Echter Worker-Vergleich berechnet und speichert beide Modelle', report?.coins.length === 2 && report?.models.classic === 'watch-classic-1' && report?.models.strict === 'watch-strict-2', await p.locator('#watch-compare-status').textContent());
     check('Gepaarte Coins und Zeitfenster, offene Fälle separat und Kosten sichtbar', report && report.coins.every(x => x.from === report.from && x.asOf === report.asOf && Object.keys(x.models).length === 2) && await p.locator('.wm-result-card').count() === 2 && /Gebühr.*Slippage/.test(await p.locator('#watch-compare-results').textContent()));
     if (!report) throw new Error('Kein Vergleichsergebnis');
-    for (const width of [320, 390, 768, 1440]) { await p.setViewportSize({ width, height: 900 }); check(`${width}px: Ergebniskarten bleiben innerhalb des Panels`, await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1 && [...document.querySelectorAll('.wm-result-card')].every(e => e.scrollWidth <= e.clientWidth + 1))); }
+    check('Neuer Lauf nennt v2 und speichert die Filterzahlen', report.coins.every(c => c.diagnostics?.rules.length === 5 && c.diagnostics.allLong + c.diagnostics.allShort === c.models.strict.stats.signals) && /Trend-Pullback.*v2/.test(await p.locator('.wm-result-card[data-model="strict"] h4').textContent()));
+    await p.click('.wm-diagnostics > summary');
+    check('Filterdiagnose zeigt fünf Einzelregeln und alle fünf gemeinsam', await p.locator('.wm-diagnostics tbody tr').count() === 6 && /Alle fünf gleichzeitig/.test(await p.locator('.wm-diagnostics').textContent()));
+    check('Null abgeschlossene Trades werden ausdrücklich nicht als Modellvorteil dargestellt', /Null Trades belegen keinen Modellvorteil/.test(await p.locator('#watch-compare-results').textContent()));
+    for (const width of [320, 390, 768, 1440]) { await p.setViewportSize({ width, height: 900 }); check(`${width}px: Ergebniskarten bleiben innerhalb des Panels`, await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1 && [...document.querySelectorAll('.wm-result-card,.wm-diagnostics table')].every(e => e.scrollWidth <= e.clientWidth + 1))); }
     const incomplete = async route => { const q = new URL(route.request().url()).searchParams; if (q.get('symbol') === 'ETCUSDT' && q.has('startTime') && q.get('limit') === '1000') await route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }); else await route.fallback(); };
     await c.route('**/api/v3/klines?**', incomplete); await p.click('#watch-compare-start'); await p.waitForFunction(() => !__watchModels.view.state.busy, null, { timeout: 120000 });
     report = await p.evaluate(() => __watchModels.view.state.report);
@@ -58,6 +62,15 @@ const settings = async p => { await p.click('[data-workspace-target="settings"]'
     await p.click('#watch-compare-start'); await p.click('#watch-compare-stop'); await p.waitForTimeout(500); check('Abbrechen erhält das vorherige Ergebnis', await p.evaluate(r => !__watchModels.view.state.busy && JSON.stringify(__watchModels.view.state.report) === r, JSON.stringify(report)));
     await p.reload(); await p.waitForFunction(() => window.__watchModels); await settings(p); await p.locator('#watch-model-comparison > summary').click();
     check('Vergleich überlebt Neustart und Rückwechsel ohne Neuberechnung', await p.evaluate(r => JSON.stringify(__watchModels.view.state.report) === r && __watchModels.mode === 'classic', JSON.stringify(report)));
+    const legacyReport = structuredClone(report); legacyReport.models.strict = 'watch-strict-1';
+    for (const coin of legacyReport.coins) { delete coin.diagnostics; coin.models.strict.version = 'watch-strict-1'; for (const trade of coin.models.strict.trades) trade.model = 'watch-strict-1'; }
+    const oldCtx = await b.newContext({ viewport: { width: 320, height: 844 }, isMobile: true, hasTouch: true });
+    await oldCtx.addInitScript(r => { localStorage.setItem('scalpdesk.watch-model.v1', '"strict"'); localStorage.setItem('scalpdesk.watch-compare.v1', JSON.stringify({ settings: r.settings, report: r })); }, legacyReport);
+    const oldPage = await oldCtx.newPage(), legacyErrors = []; oldPage.on('pageerror', e => legacyErrors.push(e.message)); await oldPage.goto(h.URL_BASE + '/weather-widget-v2.html'); await oldPage.waitForFunction(() => window.__watchModels);
+    await settings(oldPage); await oldPage.locator('#watch-model-comparison > summary').click();
+    check('V1-Bericht bleibt unverändert erhalten und als altes Modell beschriftet', await oldPage.evaluate(r => JSON.stringify(__watchModels.view.state.report) === r, JSON.stringify(legacyReport)) && /v1.*alt/.test(await oldPage.locator('.wm-result-card[data-model="strict"] h4').textContent()));
+    check('Aktiver v2-Test und alter v1-Bericht sind sichtbar unterschieden', /Trend-Pullback.*v2/.test(await oldPage.locator('#watch-model-current').textContent()) && /neuen Vergleich starten/.test(await oldPage.locator('.wm-report-version-note').textContent()) && await oldPage.locator('#watch-compare-download').isVisible());
+    await oldPage.click('.wm-diagnostics > summary'); check('Fehlende alte Diagnose verlangt neuen Lauf und erzeugt keine Fehler', /neuer Vergleich ergänzt/.test(await oldPage.locator('.wm-diagnostics').textContent()) && !legacyErrors.length); await oldCtx.close();
     // Beschädigte Sicherung darf keinen Modulstart oder Navigation verhindern.
     // Eigener frischer Kontext vermeidet absichtliche Konflikte mit dem bestehenden IDB-Snapshot.
     const bad = await b.newContext(); await bad.addInitScript(() => localStorage.setItem('scalpdesk.watch-compare.v1', '{"report":{"protocol":"watch-compare-1","models":{"classic":"watch-classic-1","strict":"watch-strict-1"},"coins":[{}]}}')); const q = await bad.newPage(); const badErrors = []; q.on('pageerror', e => badErrors.push(e.message)); await q.goto(h.URL_BASE + '/weather-widget-v2.html'); await q.waitForFunction(() => window.__watchModels); check('Beschädigter gespeicherter Bericht wird sicher verworfen', await q.evaluate(() => __watchModels.view.state.report === null) && !badErrors.length); await bad.close();

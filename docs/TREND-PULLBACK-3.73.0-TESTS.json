@@ -1,0 +1,119 @@
+{
+  "version": "3.73.0",
+  "model": "watch-strict-2",
+  "scope": "Gezielte Fach-/UI-/Kompatibilitäts-/PWA-Prüfungen; kein vollständiger Gesamtlauf",
+  "checks": [
+    {
+      "test": "unit-watch-models",
+      "exit": 0,
+      "passed": 60,
+      "total": 60,
+      "seconds": 0.5,
+      "failed": []
+    },
+    {
+      "test": "unit-watch-model-feed",
+      "exit": 0,
+      "passed": 14,
+      "total": 14,
+      "seconds": 0.4,
+      "failed": []
+    },
+    {
+      "test": "unit-wl",
+      "exit": 0,
+      "passed": 71,
+      "total": 71,
+      "seconds": 0.4,
+      "failed": []
+    },
+    {
+      "test": "unit-github-sync",
+      "exit": 0,
+      "passed": 24,
+      "total": 24,
+      "seconds": 0.8,
+      "failed": []
+    },
+    {
+      "test": "unit-trade-caption",
+      "exit": 0,
+      "passed": 17,
+      "total": 17,
+      "seconds": 0.4,
+      "failed": []
+    },
+    {
+      "test": "unit-release",
+      "exit": 0,
+      "passed": 6,
+      "total": 6,
+      "seconds": 0.7,
+      "failed": []
+    },
+    {
+      "test": "m115",
+      "exit": 0,
+      "passed": 38,
+      "total": 38,
+      "seconds": 17.2,
+      "failed": []
+    },
+    {
+      "test": "m116",
+      "exit": 0,
+      "passed": 44,
+      "total": 44,
+      "seconds": 6.4,
+      "failed": []
+    },
+    {
+      "test": "m112",
+      "exit": 0,
+      "passed": 38,
+      "total": 38,
+      "seconds": 55.6,
+      "failed": []
+    },
+    {
+      "test": "m90",
+      "exit": 0,
+      "passed": 22,
+      "total": 22,
+      "seconds": 15.0,
+      "failed": []
+    },
+    {
+      "test": "m84",
+      "exit": 0,
+      "passed": 157,
+      "total": 157,
+      "seconds": 29.0,
+      "failed": []
+    },
+    {
+      "test": "m69",
+      "exit": 0,
+      "passed": 8,
+      "total": 8,
+      "seconds": 9.0,
+      "failed": []
+    }
+  ],
+  "passed": 499,
+  "total": 499,
+  "lint": {
+    "errors": 0,
+    "knownWarnings": 3
+  },
+  "marketSample": {
+    "coins": 7,
+    "days": 30,
+    "v1ClosedTrades": 0,
+    "v2ClosedTrades": 191,
+    "v2NetR": -3.662308807731354,
+    "classicUnchangedAllCoins": true
+  },
+  "device": "Chromium mit Touch-Emulation; echtes iPhone/Safari separat offen",
+  "telegram": "Nur lokale Attrappen, kein echter Versand"
+}

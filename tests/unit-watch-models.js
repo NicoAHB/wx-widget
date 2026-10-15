@@ -30,7 +30,7 @@ const mirror = rows => rows.map(c => ({ ...c, open: 400 - c.open, high: 400 - c.
       if (rule === 1) l.at(-1).close = l.at(-1).ema;
       if (rule === 2) l.at(-1).rsi = direction === 1 ? 30 : 70;
       if (rule === 3) l.at(-1).macd = l.at(-1).signal;
-      if (rule === 4) l.at(-1).volume = 199;
+      if (rule === 4) l.at(-1).volume = 119;
       const g = a.watchStrictGates(l, h), chosen = direction === 1 ? g.long : g.short;
       assert.equal(chosen.filter(Boolean).length, 4);
     });
@@ -46,7 +46,18 @@ const mirror = rows => rows.map(c => ({ ...c, open: 400 - c.open, high: 400 - c.
     assert.deepEqual(a.watchStrictRating({ lower: l, higher: h, now: END }), strict);
   });
   check('Später bekannt gewordene Kerze kann nicht früher verwendet werden', () => { const h = structuredClone(higher); h.at(-1).knownAt = END + 1; assert.equal(a.watchStrictRating({ lower, higher: h, now: END }).ready, false); });
-  check('Volumenbasis schließt Kandidatenkerze aus; genau 2× genügt', () => { const l = structuredClone(lower); l.at(-1).volume = 200; const r = a.watchStrictRating({ lower: l, higher, now: END }); assert.equal(r.volumeRatio, 2); assert.equal(r.direction, 1); });
+  check('Volumenbasis schließt Kandidatenkerze aus; genau 1,2× genügt', () => { const l = structuredClone(lower); l.at(-1).volume = 120; const r = a.watchStrictRating({ lower: l, higher, now: END }); assert.equal(r.volumeRatio, 1.2); assert.equal(r.direction, 1); });
+  check('Neue feste Modellversion und Volumenfaktor sind eindeutig', () => { assert.equal(a.WATCH_MODELS.strict, 'watch-strict-2'); assert.equal(a.WATCH_PULLBACK.volumeMultiple, 1.2); });
+  for (const direction of [1, -1]) {
+    const get = () => ({ low: a.watchFeatures(direction === 1 ? lower : mirror(lower)), high: a.watchFeatures(direction === 1 ? higher : mirror(higher)) }), key = direction === 1 ? 'long' : 'short';
+    check(`Richtung ${direction}: MACD bestätigt auch ohne Kreuzung auf derselben Kerze`, () => { const { low, high } = get(), c = low.at(-1), p = low.at(-2); c.macd = direction * .4; c.signal = 0; p.macd = direction * .2; p.signal = 0; assert.equal(a.watchStrictGates(low, high)[key].filter(Boolean).length, 5); });
+    check(`Richtung ${direction}: nachlassendes MACD-Histogramm sperrt die Freigabe`, () => { const { low, high } = get(), c = low.at(-1), p = low.at(-2); c.macd = direction * .2; c.signal = 0; p.macd = direction * .4; p.signal = 0; assert.equal(a.watchStrictGates(low, high)[key][3], false); });
+    check(`Richtung ${direction}: RSI muss einen vorherigen Rücksetzer enthalten`, () => { const { low, high } = get(); for (const c of low.slice(-9, -1)) c.rsi = 49 + (direction === -1 ? 2 : 0); assert.equal(a.watchStrictGates(low, high)[key][2], false); });
+    check(`Richtung ${direction}: genau acht vorherige RSI-Kerzen, ältere zählen nicht`, () => { const { low, high } = get(); for (const c of low.slice(-9, -1)) c.rsi = direction === 1 ? 49 : 51; low.at(-1).rsi = direction === 1 ? 55 : 45; low.at(-9).rsi = direction === 1 ? 45 : 55; assert.equal(a.watchStrictGates(low, high)[key][2], true); low.at(-10).rsi = low.at(-9).rsi; low.at(-9).rsi = direction === 1 ? 49 : 51; assert.equal(a.watchStrictGates(low, high)[key][2], false); });
+    for (const boundary of [50, direction === 1 ? 70 : 30]) check(`Richtung ${direction}: RSI-Grenze ${boundary} bleibt gesperrt`, () => { const { low, high } = get(); low.at(-1).rsi = boundary; assert.equal(a.watchStrictGates(low, high)[key][2], false); });
+    check(`Richtung ${direction}: RSI muss sich aktuell weiter erholen`, () => { const { low, high } = get(); low.at(-2).rsi = low.at(-1).rsi; assert.equal(a.watchStrictGates(low, high)[key][2], false); });
+  }
+  check('Volumen knapp unter 1,2× reicht weiterhin nicht', () => { const l = structuredClone(lower); l.at(-1).volume = 119.999; assert.equal(a.watchStrictRating({ lower: l, higher, now: END }).direction, 0); });
   for (const direction of [1, -1]) {
     const config = a.watchCompareSettings(), plan = a.watchExecution(100, direction, 1, config), pos = { ...plan, symbol: 'BTCUSDT', direction, entryIndex: 1 };
     check(`Kostenrichtung ${direction}: modellierter Stop ist netto genau −1 R`, () => {
@@ -71,6 +82,9 @@ const mirror = rows => rows.map(c => ({ ...c, open: 400 - c.open, high: 400 - c.
   check('Vergleich kann abgebrochen werden', () => assert.ok(aborted));
   check('Statistik enthält offene/wartende Fälle separat', () => { const s = a.watchComparisonStats([{ symbol: 'BTCUSDT', exitAt: 1, netR: 2 }, { symbol: 'BTCUSDT', exitAt: 2, netR: -1 }], { open: 1, pending: 2 }); assert.equal(s.averageR, .5); assert.equal(s.profitFactor, 2); assert.equal(s.realizedDrawdownR, 1); assert.equal(s.open, 1); assert.equal(s.pending, 2); });
   check('Keine Trefferquote oder unendlicher Profitfaktor bei null Trades', () => { const s = a.watchComparisonStats([]); assert.equal(s.winRate, null); assert.equal(s.averageR, null); assert.equal(s.profitFactor, null); });
+  check('Filterdiagnose zählt Einzelregeln und vollständige Signal-Kerzen', () => { const d = result.diagnostics; assert.equal(d.bars, 25); assert.equal(d.rules.length, 5); assert.equal(d.allLong + d.allShort, result.models.strict.stats.signals); assert.ok(d.rules.every(r => r.longPass <= d.bars && r.shortPass <= d.bars)); });
+  check('Filterdiagnose lässt sich über dieselben Coins korrekt summieren', () => { const d = a.summarizeWatchDiagnostics([result, result]); assert.equal(d.bars, 2 * result.diagnostics.bars); assert.equal(d.allLong, 2 * result.diagnostics.allLong); assert.equal(d.rules[0].longPass, 2 * result.diagnostics.rules[0].longPass); });
+  check('Alte oder beschädigte Filterdiagnosen werden sicher ausgelassen', () => { assert.equal(a.summarizeWatchDiagnostics([{ ...result, diagnostics: undefined }]), null); const c = structuredClone(result); c.diagnostics.rules[0].longPass = NaN; assert.equal(a.summarizeWatchDiagnostics([c]), null); });
   if (process.env.WATCH_MODEL_FIXTURE) fs.writeFileSync(process.env.WATCH_MODEL_FIXTURE, JSON.stringify({ lower, higher }));
   console.log(`\n${passed}/${passed + failed} bestanden`); process.exitCode = failed ? 1 : 0;
 })().catch(e => { console.error(e); process.exitCode = 1; });
