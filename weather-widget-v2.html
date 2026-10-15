@@ -247,6 +247,8 @@ body::before{content:"";position:fixed;inset:0 0 auto 0;height:env(safe-area-ins
 .lb-num{font-weight:650;font-variant-numeric:tabular-nums}
 .lb-spacer{flex:1 1 0}
 .lb-alarm{color:var(--amber);font-weight:600}
+.livebar .lb-alarm{align-items:center;justify-content:center;white-space:nowrap;font-variant-numeric:tabular-nums}
+@media(pointer:coarse){.livebar button.lb-alarm{min-width:44px;min-height:44px}.livebar .lb-market{min-height:44px}}
 /* Signal-Ampel: je Zeitraum eine Zelle, eingefärbt nach Punktzahl */
 .heat{display:inline-flex;align-items:center;gap:3px;text-decoration:none}
 .heat .hc{font:inherit;font-style:normal;display:grid;place-items:center;min-width:34px;min-height:0;height:26px;margin:0;padding:0 5px;border:0;border-radius:5px;font-size:.72rem;font-weight:700;line-height:1;background:var(--hold);color:var(--hold-ink);font-variant-numeric:tabular-nums;cursor:pointer;-webkit-tap-highlight-color:transparent}
@@ -2334,36 +2336,36 @@ html[data-chartfull] .chart-pattern-row{padding:0;order:1;flex-wrap:nowrap}html[
 @media(max-width:360px){.chart-pattern-overview-card{height:120px;grid-template-columns:minmax(0,1fr) 112px}}
 </style>
   <script type="module">
-import { MARKET_INTERVALS, CHART_INTERVALS, SIGNAL_INTERVALS, INTERVAL_MS, nearestChartInterval } from './bundles/3.71.3/shared/market-intervals.mjs';
-import { createDetailCandles, detailOptions, detailChoice, closedSeries, timeIndex, DETAIL_VISIBLE_MAX } from './bundles/3.71.3/shared/chart-detail.mjs';
-import { patternChipRows, patternChipKey } from './bundles/3.71.3/shared/chart-pattern-chips.mjs';
-import { PATTERN_QUALITY_CONFIG, chartPatternQuality, repricePatternQuality, sortPatternQuality, patternOverview } from './bundles/3.71.3/shared/chart-pattern-quality.mjs';
-import { createPatternOverviewFeed } from './bundles/3.71.3/shared/chart-pattern-overview-feed.mjs';
+import { MARKET_INTERVALS, CHART_INTERVALS, SIGNAL_INTERVALS, INTERVAL_MS, nearestChartInterval } from './bundles/3.71.4/shared/market-intervals.mjs';
+import { createDetailCandles, detailOptions, detailChoice, closedSeries, timeIndex, DETAIL_VISIBLE_MAX } from './bundles/3.71.4/shared/chart-detail.mjs';
+import { patternChipRows, patternChipKey } from './bundles/3.71.4/shared/chart-pattern-chips.mjs';
+import { PATTERN_QUALITY_CONFIG, chartPatternQuality, repricePatternQuality, sortPatternQuality, patternOverview } from './bundles/3.71.4/shared/chart-pattern-quality.mjs';
+import { createPatternOverviewFeed } from './bundles/3.71.4/shared/chart-pattern-overview-feed.mjs';
 // Arbeitsstand: bei der gemeinsamen Release-Freigabe in das neue Versionsbündel übernehmen.
-import { createPositioningFeed } from './bundles/3.71.3/shared/positioning-score.mjs';
-import { CRYPTO_CALENDAR, parseCryptoCalendar, cryptoCalendarEvents } from './bundles/3.71.3/shared/crypto-calendar.mjs';
-import { createMusterClient } from './bundles/3.71.3/shared/muster-bot-feed.mjs';
-import { createMusterPaper } from './bundles/3.71.3/shared/muster-bot-paper.mjs';
-import { readMusterPaper, writeMusterPaper } from './bundles/3.71.3/shared/muster-bot-store.mjs';
-import { projectPatternLines, projectionSettings, projectionTime } from './bundles/3.71.3/shared/pattern-projection.mjs';
-import { createGithubSyncView } from './bundles/3.71.3/shared/github-sync-view.mjs';
-import { createDocViewer } from './bundles/3.71.3/shared/doc-viewer.mjs';
-import { PATTERN_FILTER_PRESET_NAMES, PATTERN_FILTER_FIELDS, PATTERN_CARD_FIELDS, HIGHER_TIMEFRAME, patternFilterSettings, patternFilterFromForm, evaluatePatternSignal, selectPatternSignals, patternJournalEntry, addPatternJournal, resolvePatternJournal, patternHitStats, patternJournalStats, PATTERN_OUTCOME_NAMES, backtestPatternFilter } from './bundles/3.71.3/shared/pattern-quality.mjs';
-import { stripSyncSecrets } from './bundles/3.71.3/shared/github-sync.mjs';
-import { createMusterView } from './bundles/3.71.3/shared/muster-bot-view.mjs';
-import { computeKiZones, KI_ZONE_INTERVALS } from './bundles/3.71.3/shared/ki-zones.mjs';
-import { heikinAshi } from './bundles/3.71.3/shared/heikin-ashi.mjs';
-import { detectFvgs, fvgSummary } from './bundles/3.71.3/shared/fvg.mjs';
-import { scoreZoneStrength, ZONE_STRENGTH, ZONE_SIGNAL, zoneSignal, zoneStep, zoneOutcome, summarizeZoneBacktest } from './bundles/3.71.3/shared/zone-strength.mjs';
+import { createPositioningFeed } from './bundles/3.71.4/shared/positioning-score.mjs';
+import { CRYPTO_CALENDAR, parseCryptoCalendar, cryptoCalendarEvents } from './bundles/3.71.4/shared/crypto-calendar.mjs';
+import { createMusterClient } from './bundles/3.71.4/shared/muster-bot-feed.mjs';
+import { createMusterPaper } from './bundles/3.71.4/shared/muster-bot-paper.mjs';
+import { readMusterPaper, writeMusterPaper } from './bundles/3.71.4/shared/muster-bot-store.mjs';
+import { projectPatternLines, projectionSettings, projectionTime } from './bundles/3.71.4/shared/pattern-projection.mjs';
+import { createGithubSyncView } from './bundles/3.71.4/shared/github-sync-view.mjs';
+import { createDocViewer } from './bundles/3.71.4/shared/doc-viewer.mjs';
+import { PATTERN_FILTER_PRESET_NAMES, PATTERN_FILTER_FIELDS, PATTERN_CARD_FIELDS, HIGHER_TIMEFRAME, patternFilterSettings, patternFilterFromForm, evaluatePatternSignal, selectPatternSignals, patternJournalEntry, addPatternJournal, resolvePatternJournal, patternHitStats, patternJournalStats, PATTERN_OUTCOME_NAMES, backtestPatternFilter } from './bundles/3.71.4/shared/pattern-quality.mjs';
+import { stripSyncSecrets } from './bundles/3.71.4/shared/github-sync.mjs';
+import { createMusterView } from './bundles/3.71.4/shared/muster-bot-view.mjs';
+import { computeKiZones, KI_ZONE_INTERVALS } from './bundles/3.71.4/shared/ki-zones.mjs';
+import { heikinAshi } from './bundles/3.71.4/shared/heikin-ashi.mjs';
+import { detectFvgs, fvgSummary } from './bundles/3.71.4/shared/fvg.mjs';
+import { scoreZoneStrength, ZONE_STRENGTH, ZONE_SIGNAL, zoneSignal, zoneStep, zoneOutcome, summarizeZoneBacktest } from './bundles/3.71.4/shared/zone-strength.mjs';
 // 3.68.0: KI-Signale/Trading-Bot entfernt; der GitHub-Sync behält sein Format inklusive vorhandener Modelloriginale.
-import { exportModelArchive, importModelArchive, validateModelArchive, restoreModelOriginals } from './bundles/3.71.3/shared/model-archive.mjs';
-import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT, patternGrade } from './bundles/3.71.3/shared/telegram-format.mjs';
-import { patternSignalCard, patternChartData } from './bundles/3.71.3/shared/pattern-signal-card.mjs';   // 3.71.0: Chartmuster-Signalkarte
-import { pnlAlarmCard } from './bundles/3.71.3/shared/pnl-alarm-card.mjs';   // 3.71.0: Gewinn-/Verlust-Alarm als Bild
-import { priceAlarmCard } from './bundles/3.71.3/shared/price-alarm-card.mjs';   // 3.71.0: Kurs-Alarm als Bild
-import { createOrderflowView } from './bundles/3.71.3/shared/orderflow-view.mjs';
-import { createSignalView } from './bundles/3.71.3/shared/orderflow-signal-view.mjs';
-import { networkState, createWidgetBoundary } from './bundles/3.71.3/shared/widget-state.mjs';
+import { exportModelArchive, importModelArchive, validateModelArchive, restoreModelOriginals } from './bundles/3.71.4/shared/model-archive.mjs';
+import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT, patternGrade } from './bundles/3.71.4/shared/telegram-format.mjs';
+import { patternSignalCard, patternChartData } from './bundles/3.71.4/shared/pattern-signal-card.mjs';   // 3.71.0: Chartmuster-Signalkarte
+import { pnlAlarmCard } from './bundles/3.71.4/shared/pnl-alarm-card.mjs';   // 3.71.0: Gewinn-/Verlust-Alarm als Bild
+import { priceAlarmCard } from './bundles/3.71.4/shared/price-alarm-card.mjs';   // 3.71.0: Kurs-Alarm als Bild
+import { createOrderflowView } from './bundles/3.71.4/shared/orderflow-view.mjs';
+import { createSignalView } from './bundles/3.71.4/shared/orderflow-signal-view.mjs';
+import { networkState, createWidgetBoundary } from './bundles/3.71.4/shared/widget-state.mjs';
 // Pure, unrounded calculations. Prices are USDT per unit; FX is USDT per EUR.
 function rsi(closes, period = 14) {
   const out = Array(closes.length).fill(null);
@@ -3218,7 +3220,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
 // 3.43.0 (G10a): reiner Fachkern in shared/; Datenquelle und Karten folgen getrennt.
 // 3.44.0 (G10b): öffentlicher Adapter in shared/bitget-public.mjs; sichtbare Anbindung folgt mit G10(c).
-const APP_VERSION = '3.71.3', docEl = document.documentElement;
+const APP_VERSION = '3.71.4', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -7846,7 +7848,8 @@ function renderLivebar() {
   const n0 = new Date(), d0 = new Date(n0.getFullYear(), n0.getMonth(), n0.getDate()).getTime(), d1 = new Date(n0.getFullYear(), n0.getMonth(), n0.getDate() + 1).getTime();
   const dt = state.trades.filter(t => t.closedAt >= d0 && t.closedAt < d1), de = dt.map(tradeEur), dm = de.filter(x => x === null).length;
   put('lb-day-eur', !dt.length ? '' : dm === dt.length ? '(€ n. v.)' : `(${signed(eurSum(de.filter(x => x !== null)))} €${dm ? ` · ${dm} ohne €` : ''})`); color('lb-day-eur', d.pnl);
-  const act = state.alarms.filter(a => !a.triggeredAt).length; $('lb-alarm').hidden = !act; put('lb-alarm', `🔔 ${act}`); $('lb-alarm').title = `${act} aktive Kurs-${act === 1 ? 'Alarm' : 'Alarme'}`;
+  const act = state.alarms.filter(a => !a.triggeredAt).length; $('lb-alarm').hidden = !act; put('lb-alarm', `🔔 ${act}`);
+  const alarmLabel = `${act} ${act === 1 ? 'aktiver Kurs-Alarm' : 'aktive Kurs-Alarme'} – Alarme öffnen`; $('lb-alarm').title = alarmLabel; $('lb-alarm').setAttribute('aria-label', alarmLabel);
   lbFit();
 }
 // Live-Ergebnis am Handy: Passt die obere Zeile nicht (ab 1.000 USDT, mit Alarm-Punkt, am iPhone mit „Offen“ und Kerzen-
@@ -14859,25 +14862,31 @@ function timgBlob(d, ch) {
     } catch (e) { reject(e); }
   });
 }
-// ---- Senden: genau ein Foto mit zentral formatierter Kurzinfo; keine blob:-Adresse, sondern die Datei selbst (multipart) ----
-const timgHold = ms => { const m = Math.round(ms / 60e3); return m < 60 ? `${Math.max(1, m)} Min.` : `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')} Std.`; };
+// ---- Senden: aktuelles Tradebild mit dem ausführlichen Begleittext, gemeinsam als eine Telegram-Nachricht ----
 function timgCaption(d) {
-  const res = d.eur !== null && d.fx > 0 ? `${signed(d.eur)} €` : `${signed(d.net)} USD`;
-  return `${coin(d.sym)}/USDT ${d.side === 'short' ? 'Short' : 'Long'} ${levText(d.lev)}× · ${res}${d.pct !== null ? ` (${signed(d.pct, 1)} %)` : ''} · ${timgHold(d.closedAt - d.openedAt)}`;
+  const S = d.stats || null;
+  return formatMessage('trade', { card: true, symbol: d.sym, side: d.side, pnl: d.net, eur: d.eur, percent: d.pct,
+    duration: timgDur(d.closedAt - d.openedAt), at: d.closedAt, messageLimit: TELEGRAM_CAPTION_LIMIT,
+    ...(S ? { gain: S.gain.usd, gainEur: S.gain.eur, neverPlus: !!S.gain.never, loss: S.loss.usd, lossEur: S.loss.eur, neverMinus: !!S.loss.never }
+      : { extremes: 'ohne Kerzendaten nicht berechnet' }) });
 }
 async function timgPost(blob, data) {
   const T = tgDest('trades'); if (!T) throw Object.assign(new Error('Ziel „Trades“ nicht eingerichtet'), { kind: 'fail' });
   if (navigator.onLine === false) throw Object.assign(new Error('offline'), { kind: 'offline' });
   const fd = new FormData(); fd.append('chat_id', T.chat); if (T.thread) fd.append('message_thread_id', T.thread); fd.append('photo', blob, blob.type === 'image/jpeg' ? 'trade.jpg' : 'trade.png');
-  // 3.71.0: eine Zeile, damit die Push-Vorschau reicht: „XRP/USDT Long 20× · +43,88 € (+89,5 %) · 1:52 Std.“ (höchstens 1024 Zeichen)
-  fd.append('caption', timgCaption(data).slice(0, TELEGRAM_CAPTION_LIMIT));
-  let r; try { r = await fetch(`https://api.telegram.org/bot${T.token}/sendPhoto`, { method: 'POST', body: fd, credentials: 'omit', referrerPolicy: 'no-referrer', cache: 'no-store' }); }
-  catch { throw Object.assign(new Error('keine Antwort von Telegram'), { kind: 'lost' }); } // Anfrage kann angekommen sein
-  let j = null; try { j = await r.json(); } catch {}
-  if (r.ok && j?.ok) return j.result?.message_id || 0;
-  if (r.ok) throw Object.assign(new Error('Antwort von Telegram nicht lesbar'), { kind: 'lost' });
-  // 3.71.0: Chat-Name und Fehlertext im Protokoll des Auftrags
-  throw Object.assign(new Error(`Chat „Trades“ (${T.chat}${T.thread ? ` · Thema ${T.thread}` : ''}): ${r.status === 401 || r.status === 404 ? 'Token ungültig' : `Telegram lehnt ab: ${String(j?.description || `Fehler ${r.status}`).slice(0, 120)}`}`), { kind: 'fail' });
+  const html = timgCaption(data); fd.append('caption', html); fd.append('parse_mode', 'HTML');
+  let plainFallback = false;
+  for (;;) {
+    let r; try { r = await fetch(`https://api.telegram.org/bot${T.token}/sendPhoto`, { method: 'POST', body: fd, credentials: 'omit', referrerPolicy: 'no-referrer', cache: 'no-store' }); }
+    catch { throw Object.assign(new Error('keine Antwort von Telegram'), { kind: 'lost' }); } // Anfrage kann angekommen sein
+    let j = null; try { j = await r.json(); } catch {}
+    if (r.ok && j?.ok) return j.result?.message_id || 0;
+    // Nur nach ausdrücklicher Format-Ablehnung erneut senden, mit derselben Bilddatei an dasselbe Ziel. Keine Wiederholung bei unklarer Zustellung.
+    if (!plainFallback && telegramFormatRejected(j?.error_code ?? r.status, j?.description)) { plainFallback = true; fd.set('caption', telegramPlain(html)); fd.delete('parse_mode'); continue; }
+    if (r.ok) throw Object.assign(new Error('Antwort von Telegram nicht lesbar'), { kind: 'lost' });
+    // 3.71.0: Chat-Name und Fehlertext im Protokoll des Auftrags
+    throw Object.assign(new Error(`Chat „Trades“ (${T.chat}${T.thread ? ` · Thema ${T.thread}` : ''}): ${r.status === 401 || r.status === 404 ? 'Token ungültig' : `Telegram lehnt ab: ${String(j?.description || `Fehler ${r.status}`).slice(0, 120)}`}`), { kind: 'fail' });
+  }
 }
 // ---- Auftrag ----
 function timgQueue(id, by = 'auto') {
@@ -15376,7 +15385,7 @@ const musterPaper = createMusterPaper({ read: readMusterPaper, write: writeMuste
   } });
 const MUSTER_TG_NAMES = { hammer: 'Hammer', engulfing: 'Bullish Engulfing', confluence: 'Konfluenz', po3: 'Power of Three' };
 musterView = createMusterView({ host: musterHost, selection: musterSelection, currentPrice: (symbol, market) => state.symbol === symbol && state.source === market ? currentPrice() : null,
-  prefs: store.get('scalpdesk.muster.settings.v1', {}), savePrefs: value => store.set('scalpdesk.muster.settings.v1', value), workerFactory: () => new Worker(new URL('./bundles/3.71.3/shared/muster-bot-worker.mjs', import.meta.url), { type: 'module' }), paper: musterPaper, onMarkers: scheduleDraw,
+  prefs: store.get('scalpdesk.muster.settings.v1', {}), savePrefs: value => store.set('scalpdesk.muster.settings.v1', value), workerFactory: () => new Worker(new URL('./bundles/3.71.4/shared/muster-bot-worker.mjs', import.meta.url), { type: 'module' }), paper: musterPaper, onMarkers: scheduleDraw,
   telegramStatus: () => tgtReady('trades') ? null : 'Hinweis: Telegram ist noch nicht eingerichtet oder das Ziel „Trades“ ist aus (Einstellungen → Telegram).' });
 void musterPaper.restore().then(() => musterPaper.poll());
 function musterDraw(svg, data, x, y, bottom) {
@@ -15583,7 +15592,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
     <button type="button" class="lb-market" data-goto="chart-sec" aria-label="Zum Chart"><span class="lb-sym" id="lb-sym">BTC</span><span class="lb-price skel" id="lb-price">—</span><span class="change" id="lb-change"></span></button>
     <div class="heat" id="lb-heat" role="group" aria-label="Signale je Zeitraum – Zeitraum antippen wechselt das Chart-Intervall"></div>
     <span class="lb-spacer"></span>
-    <span class="lb-alarm" id="lb-alarm" hidden></span>
+    <button type="button" class="lb-alarm" id="lb-alarm" data-goto="alarms" aria-controls="alarms" aria-label="Aktive Kurs-Alarme öffnen" hidden></button>
     <div class="lb-warns"><button type="button" class="lb-news" id="lb-news" data-goto="econ" hidden></button><button type="button" class="lb-vola" id="lb-vola" data-goto="vola" hidden><span class="lv-full"></span><span class="lv-short"></span></button></div>
     <button type="button" class="lb-pos" id="lb-pos" aria-haspopup="dialog" aria-expanded="false" aria-controls="pnl-panel" aria-label="Live-Ergebnis der offenen Positionen – Gewinn- und Verlust-Alarm einstellen"><span class="lb-label" id="lb-open-label">Offen</span><span class="lb-num" id="lb-open">—</span><span class="lb-num lb-eur lb-open-eur" id="lb-open-eur"></span><span class="lb-label opt">Heute</span><span class="lb-num opt" id="lb-day">—</span><span class="lb-num opt lb-eur" id="lb-day-eur"></span></button>
     <span class="lb-conn" id="lb-conn" role="img" aria-label="Verbindung" data-feed="off"></span>

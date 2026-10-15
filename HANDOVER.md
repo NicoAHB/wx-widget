@@ -3,6 +3,14 @@
 Diese Datei ist der Einstieg für jede weitere Arbeit am Projekt. Wer sie liest, braucht kein Vorwissen. Die vollständige fachliche
 Vorgabe aller Gruppen G01–G14 steht in `docs/VORGABE-G01-G14.md` (Original-Übergabe; dort sind G10–G14 ausführlich beschrieben).
 
+## 3.71.4 (Codex): ausführlicher Trade-Text zum neuen Bild und antippbare Alarmzahl
+
+- Nutzer möchte den Telegram-Begleittext der früheren Trade-Karte zum aktuellen Verlaufsbild zurück und die Glocke mit aktiver Alarmzahl prüfen/korrigieren.
+- `timgCaption` verwendet wieder den vorhandenen zentralen Trade-Kartentext: Gewinn/Verlust, Paar/Long/Short, Netto €/USD und %, Haltedauer, Max. Gewinn/Verlust einschließlich „nie im Minus/Plus“, Abschlussuhrzeit. Dieselben Daten wie im Bild; Renderer unverändert. Ein Foto mit HTML-Caption, sichere 1024-Zeichen-Grenze und einmaliger Klartext-Rückfall nur bei ausdrücklichem Formatfehler, keine Wiederholung bei unklarer Zustellung.
+- `#lb-alarm` ist ein nativer Button mit `data-goto="alarms"`, dynamischer Vorlesebeschriftung und mindestens 44 × 44 px Touch-Fläche. Öffnet die bestehende Alarmliste über die vorhandene Bereichsnavigation. Alle aktiven Kurs-Alarme zählen; ausgelöste nicht. Die reservierte Touch-Zeilenhöhe verhindert einen Sprung beim Ein-/Ausblenden.
+- Neue Tests `unit-trade-caption` und `m113` im seriellen Gesamtlauf. Abschließend 249/249 Fach-/UI-/Offlineprüfungen, Lint 0 Fehler/3 bekannte Warnungen und Vorabprüfung bei 320/390 px erfolgreich. Zusatz-m7 zunächst 46/47 (alter Sicherungs-Zeitfall), unverändert isoliert später 13/13; Vergleichsversion ebenfalls 13/13. Bestehende Bild-/Versandtests an die ausführliche Caption angepasst, Multipart-CRLF für Textvergleiche vereinheitlicht. Gezielte serielle Fach-/Mobil-/Offlineprüfungen und öffentlicher Nachweis im zugehörigen PR. Der ältere vollständige Gesamtlauf bleibt 3.71.1 zugeordnet.
+- App/Service Worker 3.71.4 mit neuem Bündel; Dienstversion und frühere Bündel unverändert. [Details, Prüfumfang und iPhone-Kontrolle](docs/TRADE-TEXT-ALARMGLOCKE-3.71.4.md).
+
 ## 3.71.3 (Codex): einzeilige Filter auch mit breiter Ersatzschrift
 
 - Der öffentliche 320-px-Test von 3.71.2 meldete vollständige Ausrichtung, aber „Schwach ≤ −2“ war mit der Ersatzschrift des isolierten Browsers zu breit für die gleich breite Spalte.
