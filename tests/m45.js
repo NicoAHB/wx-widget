@@ -11,6 +11,7 @@ const check = (name, cond, detail = '') => { results.push({ name, ok: !!cond, de
 const REPO = require('path').resolve(__dirname, '..'), DBG = 'weather-widget-v2.debug45.html';
 const live = page => page.waitForFunction(() => document.getElementById('status').dataset.feed === 'live', null, { timeout: 20000 }).catch(() => {});
 const SP = { '1m': { iv: '1m', ms: 60e3, n: 1, label: '1 Min.', of: 'der letzten Minute', the: 'die letzte Minute', name: '1 Minute', ivName: '1-Minuten' },
+  '5m': { iv: '1m', ms: 3e5, n: 5, label: '5 Min.', of: 'der letzten 5 Minuten', the: 'die letzten 5 Minuten', name: '5 Minuten', ivName: '1-Minuten' },
   '30m': { iv: '3m', ms: 18e5, n: 10, label: '30 Min.', of: 'der letzten 30 Minuten', the: 'die letzten 30 Minuten', name: '30 Minuten', ivName: '3-Minuten' },
   '1h': { iv: '5m', ms: 36e5, n: 12, label: '1 Std.', of: 'der letzten Stunde', the: 'die letzte Stunde', name: '1 Stunde', ivName: '5-Minuten' },
   '4h': { iv: '15m', ms: 144e5, n: 16, label: '4 Std.', of: 'der letzten 4 Stunden', the: 'die letzten 4 Stunden', name: '4 Stunden', ivName: '15-Minuten' },
@@ -18,12 +19,12 @@ const SP = { '1m': { iv: '1m', ms: 60e3, n: 1, label: '1 Min.', of: 'der letzten
 const IVMS = { '1m': 6e4, '3m': 18e4, '5m': 3e5, '15m': 9e5, '2h': 72e5 };
 const COINS = ['BTC', 'ETC', 'BCH', 'LTC', 'XRP', 'NEAR'];
 // alle Kacheln bewertet, und zwar im Intervall des gewählten Zeitraums
-const ready = (page, iv) => page.waitForFunction(iv => [...document.querySelectorAll('#watchlist .wl-tile')].every(t => { const e = window.__wl.c.get(t.dataset.watch + 'USDT'); return e && e.iv === iv && e.rating && /^[+−]?\d$/.test(t.querySelector('.wl-sig').textContent); }), iv, { timeout: 40000 }).then(() => true).catch(() => false);
+const ready = (page, iv) => page.waitForFunction(iv => [...document.querySelectorAll('#watchlist .wl-tile')].every(t => { const e = window.__wl.c.get(t.dataset.watch + 'USDT'); return e && e.market === 'spot' && e.iv === iv && e.rating && /^[+−]?\d$/.test(t.querySelector('.wl-sig').textContent); }), iv, { timeout: 40000 }).then(() => true).catch(() => false);
 const real = errs => errs.filter(e => !/Service Worker registration blocked/.test(e));
 const tiles = page => page.evaluate(() => [...document.querySelectorAll('#watchlist .wl-tile')].map(t => {
   const q = s => t.querySelector(s), r = t.getBoundingClientRect();
   // 3.71.0: Veränderung des Zeitraums = hervorgehobene Spalte der Kachel (1m · 5m · 1h · 1d bzw. mit 30m/4h)
-  const SEL = t.querySelector('.wl-tfc.sel'), SL = { '1m': '1 Min.', '30m': '30 Min.', '1h': '1 Std.', '4h': '4 Std.', '1d': '1 Tag' }[SEL?.dataset.tf] || '?', SV = SEL?.querySelector('.wl-tfv');
+  const SEL = t.querySelector('.wl-tfc.sel'), SL = { '1m': '1 Min.', '5m': '5 Min.', '30m': '30 Min.', '1h': '1 Std.', '4h': '4 Std.', '1d': '1 Tag' }[SEL?.dataset.tf] || '?', SV = SEL?.querySelector('.wl-tfv');
   return { coin: t.dataset.watch, chg: `${SL} ${SV?.textContent}${SV?.textContent === '–' ? '' : ' %'}`, cut: [q('.wl-top'), q('.wl-tf'), q('.wl-rules'), ...t.querySelectorAll('.wl-tfv, .wl-rule, .wl-rsi-l')].some(e => e.scrollWidth > e.clientWidth + 1), title: t.title, tone: q('.wl-sig').dataset.tone,
     inside: [...t.querySelectorAll('*')].filter(c => { const b = c.getBoundingClientRect(); return b.width && b.height && !c.classList.contains('sr-only'); }).every(c => { const b = c.getBoundingClientRect(); return b.left >= r.left - 0.5 && b.right <= r.right + 0.5 && b.top >= r.top - 0.5 && b.bottom <= r.bottom + 0.5; }) };
 }));
@@ -54,7 +55,9 @@ const chartStream = page => page.evaluate(() => `${document.getElementById('pair
 // nach eigenem Laden; 260, wenn der Zwischenspeicher mehr hatte (3.26.0: Coin auch im Chart geladen)
 const series = (page, sym) => page.evaluate(sym => { const c = window.__wl.c.get(sym).closed; let ok = c.length > 0; for (let i = 1; i < c.length; i++) if (c[i].time !== c[i - 1].closeTime + 1) ok = false; return { n: c.length, ok }; }, sym);
 const streams = async () => { const st = await h.ctl('/state'); return new Set(st.conns.flatMap(c => c.streams)); };
-const klineLog = async (since, sym) => (await h.ctl(`/log?since=${since}`)).filter(e => /\/klines$/.test(e.path || '') && e.q?.symbol === sym).map(e => `${e.q.interval}:${e.q.limit}`);
+// Diese Fixture prüft Spot-Kacheln. Futures-Orderflow und Chart-Schnappschüsse laden unabhängig weitere Intervalle.
+// Der Abruf des erwarteten Intervalls muss vorliegen; Ausschließlichkeit prüfen ready()/series() und die Abos statt des gemeinsamen Logs.
+const klineLog = async (since, sym) => (await h.ctl(`/log?since=${since}`)).filter(e => e.path === '/api/v3/klines' && e.q?.symbol === sym).map(e => `${e.q.interval}:${e.q.limit}`);
 function writeDebugPage() {
   const s = fs.readFileSync(`${REPO}/weather-widget-v2.html`, 'utf8');
   const hook = '\nwindow.__wl = { get c() { return wl.c; }, paint: () => wlPaint(Date.now(), true), get span() { return wl.span; } };\nrender();startLive();';
@@ -95,12 +98,12 @@ async function verifySpan(page, key, tag) {
     await page.goto(`${h.URL_BASE}/${DBG}`); await live(page);
     check('Standard: alle sechs Kacheln aus 5-Minuten-Kerzen bewertet', await ready(page, '5m'));
     let log = await klineLog(since, 'ETCUSDT');
-    check('Geladen: 260 Kerzen zu 5 Minuten (Vorlauf für EMA 50 und MACD), keine 1-Minuten-Kerzen mehr', log.includes('5m:260') && !log.some(l => l.startsWith('1m:')), log.join(' '));
+    check('Geladen: 260 Kerzen zu 5 Minuten (Vorlauf für EMA 50 und MACD)', log.includes('5m:260'), log.join(' '));
     const t0 = await tiles(page);
     check('Kacheln: Spalte 1h hervorgehoben (±x,xx), kein „1 Min.“/„30 Min.“ mehr', t0.every(x => /^1 Std\. [+−±]\d+,\d\d %$/.test(x.chg)) && !(await page.$('#watchlist .wl-chg30')), JSON.stringify(t0.map(x => x.chg)));
     await page.click('#watchlist .wl-tile[data-watch="ETC"]'); await page.waitForTimeout(500);
     let p = await panel(page);
-    check('Detailfeld: Auswahl in der Überschrift mit 1 Minute, 30 Minuten, 1 Stunde (gewählt), 4 Stunden, 1 Tag', p.open && p.options === '1m:der letzten Minute,30m:der letzten 30 Minuten,1h:der letzten Stunde,4h:der letzten 4 Stunden,1d:des letzten Tages' && p.value === '1h' && p.label === 'Zeitraum der Signalbewertung', JSON.stringify({ options: p.options, value: p.value }));
+    check('Detailfeld: Auswahl in der Überschrift mit 1 Minute, 5 Minuten, 30 Minuten, 1 Stunde (gewählt), 4 Stunden, 1 Tag', p.open && p.options === '1m:der letzten Minute,5m:der letzten 5 Minuten,30m:der letzten 30 Minuten,1h:der letzten Stunde,4h:der letzten 4 Stunden,1d:des letzten Tages' && p.value === '1h' && p.label === 'Zeitraum der Signalbewertung', JSON.stringify({ options: p.options, value: p.value }));
     const chartIv0 = await page.$eval('.intervals .active', b => b.dataset.interval);
     await verifySpan(page, '1h', '1 Stunde');
     // ---- Zeitraum wechseln: 4 Stunden ----
@@ -143,7 +146,7 @@ async function verifySpan(page, key, tag) {
       const S = SP[key], ok = await ready(page, S.iv); log = await klineLog(since, 'ETCUSDT');
       const ser = await series(page, 'ETCUSDT');
       // schon einmal geladen (Tastatur-Test, Start): nur die fehlenden Kerzen aus dem Zwischenspeicher nachgeladen
-      check(`${S.name}: alle Kacheln aus ${S.ivName}-Kerzen bewertet, Reihe mit Vorlauf (259–260 abgeschlossene, lückenlos, keine doppelt; 260 geladen oder nachgeladen)`, ok && ser.n >= 259 && ser.n <= 260 && ser.ok && log.some(l => l.startsWith(S.iv + ':')) && log.every(l => l.startsWith(S.iv + ':')), `${log.join(' ')} · ${JSON.stringify(ser)}`);
+      check(`${S.name}: alle Kacheln aus ${S.ivName}-Kerzen bewertet, Reihe mit Vorlauf (259–260 abgeschlossene, lückenlos, keine doppelt; 260 geladen oder nachgeladen)`, ok && ser.n >= 259 && ser.n <= 260 && ser.ok && log.some(l => l.startsWith(S.iv + ':')), `${log.join(' ')} · ${JSON.stringify(ser)}`);
       await verifySpan(page, key, S.name);
     }
     // ---- Bewegung erzwingen: ruhige und bewegte Kerzen (1 Stunde) ----
@@ -179,7 +182,7 @@ async function verifySpan(page, key, tag) {
         const tt = await tiles(page), pp = await panel(page), m = await page.evaluate(() => { const e = document.querySelector('#wl-detail .wl-d-meta'); return e.scrollWidth <= e.clientWidth + 1 && document.scrollingElement.scrollWidth <= innerWidth; });
         if (!tt.every(y => !y.cut && y.inside && y.chg.startsWith(SP[key].label)) || !m || pp.value !== key) cut.push(`${key}: ${JSON.stringify(tt.filter(y => y.cut || !y.inside).map(y => [y.coin, y.chg]))} meta ${m}`);
       }
-      check(`Handy ${w} px: alle fünf Zeiträume – Kacheln und Überschrift vollständig lesbar`, !cut.length, cut.join(' | '));
+      check(`Handy ${w} px: alle sechs Zeiträume – Kacheln und Überschrift vollständig lesbar`, !cut.length, cut.join(' | '));
       check(`Handy ${w} px: keine Fehler`, !real(errors).length, real(errors).join(' | ')); await ctx.close();
     }
   } catch (e) { check('Abbruch', false, e.message.split('\n')[0]); }

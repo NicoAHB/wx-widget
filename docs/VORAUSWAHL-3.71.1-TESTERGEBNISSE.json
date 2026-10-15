@@ -1,0 +1,1396 @@
+{
+  "release": "3.71.1",
+  "date": "2026-10-15",
+  "base_commit": "d5142dd472fbb552c601225ebaac21b08aa0fa93",
+  "pr": "https://github.com/NicoAHB/wx-widget/pull/125",
+  "serial": true,
+  "full_run": {
+    "command": "bash tests/run-all.sh",
+    "programs": 181,
+    "exit_code": 1,
+    "counted_passed": 5757,
+    "counted_total": 5769,
+    "log_sha256": "23559ebccefde50bd4fabf99f20df1b766eb7df1efd81b7f0600f103bcdabb08",
+    "results": [
+      {
+        "program": "unit-crypto-calendar",
+        "passed": 31,
+        "total": 31,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-zone-strength",
+        "passed": 28,
+        "total": 28,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-pattern-quality",
+        "passed": 40,
+        "total": 40,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-pattern-card",
+        "passed": 54,
+        "total": 62,
+        "status": "failed",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-pnl-card",
+        "passed": 13,
+        "total": 13,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-price-alarm-card",
+        "passed": 12,
+        "total": 12,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-heikin-ashi",
+        "passed": 8,
+        "total": 8,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-ki-zones",
+        "passed": 16,
+        "total": 16,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-fvg",
+        "passed": 9,
+        "total": 10,
+        "status": "failed",
+        "uncounted_result": null
+      },
+      {
+        "program": "m105",
+        "passed": 11,
+        "total": 11,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m106",
+        "passed": 20,
+        "total": 20,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m107",
+        "passed": 15,
+        "total": 15,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m108",
+        "passed": 28,
+        "total": 28,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m109",
+        "passed": 15,
+        "total": 15,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m110",
+        "passed": 16,
+        "total": 16,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m111",
+        "passed": 23,
+        "total": 23,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m112",
+        "passed": 32,
+        "total": 32,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m103",
+        "passed": 46,
+        "total": 46,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m104",
+        "passed": 0,
+        "total": 0,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m99",
+        "passed": 16,
+        "total": 16,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m100",
+        "passed": 29,
+        "total": 29,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m101",
+        "passed": 24,
+        "total": 24,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m102",
+        "passed": 19,
+        "total": 19,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m98",
+        "passed": 32,
+        "total": 32,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m97",
+        "passed": 26,
+        "total": 26,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-positioning-score",
+        "passed": 40,
+        "total": 40,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-device-view",
+        "passed": 22,
+        "total": 22,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m96",
+        "passed": 122,
+        "total": 122,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m95",
+        "passed": 40,
+        "total": 40,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m94",
+        "passed": 40,
+        "total": 40,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-chart-pattern-quality",
+        "passed": 52,
+        "total": 52,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-chart-pattern-overview-feed",
+        "passed": 33,
+        "total": 33,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m93",
+        "passed": 40,
+        "total": 40,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-chart-detail",
+        "passed": 35,
+        "total": 35,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-chart-pattern-chips",
+        "passed": 17,
+        "total": 17,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m92",
+        "passed": 42,
+        "total": 42,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-pattern-projection",
+        "passed": 22,
+        "total": 22,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-github-sync",
+        "passed": 24,
+        "total": 24,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m91",
+        "passed": 8,
+        "total": 8,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m90",
+        "passed": 18,
+        "total": 18,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-muster-bot",
+        "passed": 38,
+        "total": 38,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-muster-feed",
+        "passed": 8,
+        "total": 8,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-muster-paper",
+        "passed": 10,
+        "total": 10,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m89",
+        "passed": 22,
+        "total": 22,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-market-intervals",
+        "passed": 7,
+        "total": 7,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m88",
+        "passed": 17,
+        "total": 17,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-patterns-only",
+        "passed": 22,
+        "total": 22,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-telegram-format",
+        "passed": 33,
+        "total": 33,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m87",
+        "passed": 22,
+        "total": 22,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-paper-bot",
+        "passed": 34,
+        "total": 34,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-paper-controller",
+        "passed": 11,
+        "total": 11,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-paper-worker",
+        "passed": 5,
+        "total": 5,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-adaptive-grid",
+        "passed": 54,
+        "total": 54,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-adaptive-grid-feed",
+        "passed": 15,
+        "total": 15,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-adaptive-grid-runtime",
+        "passed": 37,
+        "total": 37,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-orderflow-demo",
+        "passed": 30,
+        "total": 30,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-orderflow-signal",
+        "passed": 69,
+        "total": 69,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-orderflow-feed",
+        "passed": 19,
+        "total": 19,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-orderflow-journal",
+        "passed": 19,
+        "total": 19,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-orderflow-explainer",
+        "passed": 12,
+        "total": 12,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-orderflow",
+        "passed": 56,
+        "total": 56,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-confluence-risk",
+        "passed": 28,
+        "total": 28,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-confluence-evidence",
+        "passed": 18,
+        "total": 18,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-signal-overview",
+        "passed": 27,
+        "total": 27,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-confluence-costs",
+        "passed": 46,
+        "total": 46,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-confluence-presentation",
+        "passed": 23,
+        "total": 23,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-appearance",
+        "passed": 23,
+        "total": 23,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-release",
+        "passed": 6,
+        "total": 6,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-model-archive",
+        "passed": 13,
+        "total": 13,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-bot-limits",
+        "passed": 37,
+        "total": 37,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-bot-simulation",
+        "passed": 16,
+        "total": 16,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-po3",
+        "passed": 35,
+        "total": 35,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-po3-service",
+        "passed": 20,
+        "total": 20,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-po3-stream",
+        "passed": 19,
+        "total": 19,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-confluence-service",
+        "passed": 26,
+        "total": 26,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-confluence-replay",
+        "passed": 33,
+        "total": 33,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-bitget-history",
+        "passed": 15,
+        "total": 15,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-confluence-live",
+        "passed": 47,
+        "total": 47,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-bitget-patterns",
+        "passed": 20,
+        "total": 20,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-bitget",
+        "passed": 61,
+        "total": 61,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-confluence",
+        "passed": 135,
+        "total": 135,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-247e",
+        "passed": 52,
+        "total": 52,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-m8",
+        "passed": 24,
+        "total": 24,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-zz",
+        "passed": 28,
+        "total": 28,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-zzp",
+        "passed": 17,
+        "total": 17,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-div",
+        "passed": 10,
+        "total": 10,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-ew",
+        "passed": 27,
+        "total": 27,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-fib",
+        "passed": 6,
+        "total": 6,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-ob",
+        "passed": 9,
+        "total": 9,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-cd",
+        "passed": 16,
+        "total": 16,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-hl",
+        "passed": 13,
+        "total": 13,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-ec",
+        "passed": 22,
+        "total": 22,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-cn",
+        "passed": 40,
+        "total": 40,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-wl",
+        "passed": 71,
+        "total": 71,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-fmt",
+        "passed": 4,
+        "total": 4,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-vola",
+        "passed": 44,
+        "total": 44,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-247",
+        "passed": 105,
+        "total": 105,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-247b",
+        "passed": 25,
+        "total": 25,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-pub",
+        "passed": 7,
+        "total": 7,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-247d",
+        "passed": 16,
+        "total": 16,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-247c",
+        "passed": 55,
+        "total": 55,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-pulse",
+        "passed": 44,
+        "total": 44,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-lots",
+        "passed": 31,
+        "total": 31,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "unit-acct",
+        "passed": 39,
+        "total": 39,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "inst-247",
+        "passed": 37,
+        "total": 37,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m84",
+        "passed": 157,
+        "total": 157,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m83",
+        "passed": 46,
+        "total": 46,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m82",
+        "passed": 45,
+        "total": 45,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m79",
+        "passed": 49,
+        "total": 49,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m78",
+        "passed": 16,
+        "total": 16,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m77",
+        "passed": 35,
+        "total": 35,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m76",
+        "passed": 19,
+        "total": 19,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m75",
+        "passed": 15,
+        "total": 15,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m74",
+        "passed": 73,
+        "total": 73,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m70",
+        "passed": 61,
+        "total": 61,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m69",
+        "passed": 8,
+        "total": 8,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m64",
+        "passed": 19,
+        "total": 19,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m62",
+        "passed": 8,
+        "total": 8,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m61",
+        "passed": 8,
+        "total": 8,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m60",
+        "passed": 16,
+        "total": 16,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m59",
+        "passed": 19,
+        "total": 19,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m58",
+        "passed": 60,
+        "total": 60,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m57",
+        "passed": 41,
+        "total": 41,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m56",
+        "passed": 55,
+        "total": 55,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m55",
+        "passed": 49,
+        "total": 49,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m54",
+        "passed": 52,
+        "total": 52,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m53",
+        "passed": 102,
+        "total": 102,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m52",
+        "passed": 101,
+        "total": 101,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m51",
+        "passed": 73,
+        "total": 73,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m50",
+        "passed": 96,
+        "total": 96,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m49",
+        "passed": 18,
+        "total": 18,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m48",
+        "passed": 81,
+        "total": 81,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m47",
+        "passed": 51,
+        "total": 51,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m46",
+        "passed": 40,
+        "total": 40,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m45",
+        "passed": 74,
+        "total": 75,
+        "status": "failed",
+        "uncounted_result": null
+      },
+      {
+        "program": "m44",
+        "passed": 27,
+        "total": 27,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m43",
+        "passed": 7,
+        "total": 7,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m42",
+        "passed": 18,
+        "total": 18,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m41",
+        "passed": 20,
+        "total": 20,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m40",
+        "passed": 40,
+        "total": 40,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m39",
+        "passed": 50,
+        "total": 50,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m38",
+        "passed": 22,
+        "total": 22,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m37",
+        "passed": 22,
+        "total": 22,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m36",
+        "passed": 20,
+        "total": 20,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m35",
+        "passed": 40,
+        "total": 40,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m34",
+        "passed": 7,
+        "total": 7,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m32",
+        "passed": 5,
+        "total": 5,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m31",
+        "passed": 21,
+        "total": 21,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m30",
+        "passed": 32,
+        "total": 32,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m29",
+        "passed": 12,
+        "total": 12,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m28",
+        "passed": 39,
+        "total": 39,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m27",
+        "passed": 22,
+        "total": 22,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m26",
+        "passed": 18,
+        "total": 18,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m25",
+        "passed": 21,
+        "total": 21,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m24",
+        "passed": 28,
+        "total": 28,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m23",
+        "passed": 25,
+        "total": 25,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m22",
+        "passed": 26,
+        "total": 26,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m21",
+        "passed": 14,
+        "total": 14,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m20",
+        "passed": 12,
+        "total": 12,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m19",
+        "passed": 24,
+        "total": 24,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m18",
+        "passed": 29,
+        "total": 31,
+        "status": "failed",
+        "uncounted_result": null
+      },
+      {
+        "program": "m17",
+        "passed": 16,
+        "total": 16,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m16",
+        "passed": 23,
+        "total": 23,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m15",
+        "passed": 23,
+        "total": 23,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m14",
+        "passed": 18,
+        "total": 18,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m13",
+        "passed": 13,
+        "total": 13,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m12",
+        "passed": 17,
+        "total": 17,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m11",
+        "passed": 36,
+        "total": 36,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m10",
+        "passed": 93,
+        "total": 93,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m9",
+        "passed": 9,
+        "total": 9,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m8",
+        "passed": 41,
+        "total": 41,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m7",
+        "passed": 47,
+        "total": 47,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m6",
+        "passed": 58,
+        "total": 58,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m5",
+        "passed": 24,
+        "total": 24,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m4",
+        "passed": 42,
+        "total": 42,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "m3",
+        "passed": 67,
+        "total": 67,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "ui",
+        "passed": 59,
+        "total": 59,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "functional",
+        "passed": 35,
+        "total": 35,
+        "status": "pass",
+        "uncounted_result": null
+      },
+      {
+        "program": "statuscheck",
+        "passed": null,
+        "total": null,
+        "status": "pass",
+        "uncounted_result": "no errors"
+      },
+      {
+        "program": "smoke",
+        "passed": null,
+        "total": null,
+        "status": "pass",
+        "uncounted_result": "no errors"
+      },
+      {
+        "program": "visual",
+        "passed": null,
+        "total": null,
+        "status": "pass",
+        "uncounted_result": "no errors"
+      }
+    ]
+  },
+  "final_retests": {
+    "unit-wl": {
+      "passed": 71,
+      "total": 71,
+      "exit_code": 0,
+      "log_sha256": "668772d9baa10262cd3dad2829ac5bb5d715126f6653bdb2f449f4ad06ba3b0a"
+    },
+    "m112": {
+      "passed": 33,
+      "total": 33,
+      "exit_code": 0,
+      "log_sha256": "60d01e9df82631e4c1faa8f5f3a8099c3f4d1c389d987d9984c4e6d678b61e9f"
+    },
+    "m111": {
+      "passed": 23,
+      "total": 23,
+      "exit_code": 0,
+      "log_sha256": "065054ab5ae3dc48cacc0cbb00312b63a16582e6b79c50db933effdec8a36c18"
+    },
+    "m53-sort": {
+      "passed": 26,
+      "total": 26,
+      "exit_code": 0,
+      "log_sha256": "446840227702198968f6cba515f0cf2f2da3670f306d9d32a320f543c5ffb8ba"
+    },
+    "m69": {
+      "passed": 8,
+      "total": 8,
+      "exit_code": 0,
+      "log_sha256": "023d64b255d06ca9de8513b615842149c149017f410bdb2161868a8fe741d96d"
+    },
+    "unit-release": {
+      "passed": 6,
+      "total": 6,
+      "exit_code": 0,
+      "log_sha256": "ec4283e390f27c4de4d84cb50d4c3efc06d113943b5cd48b1c0d31366c49ecc9"
+    },
+    "m18": {
+      "passed": 29,
+      "total": 31,
+      "exit_code": 1,
+      "log_sha256": "015ab0c6575f03b0ccf56eef60ab1a93f31fd43198badf81b79d9f5724939083"
+    },
+    "baseline-m18-repeat": {
+      "passed": 29,
+      "total": 31,
+      "exit_code": 1,
+      "log_sha256": "f1717e4c068defb677d3ad5b8fa34101dce6779f5a5a791685ed4198c10a23e0"
+    },
+    "unit-pattern-card": {
+      "passed": 71,
+      "total": 71,
+      "exit_code": null,
+      "log_sha256": "64213ee2debb18c990cc4666fa91b3234bcb5a3e8e2fc2c021a64ab5946f7e7a"
+    },
+    "unit-pnl-card": {
+      "passed": 15,
+      "total": 15,
+      "exit_code": null,
+      "log_sha256": "3b4ff4eacb55a7a60513aa3f93b51477c9e39ef5c0a65cd06f7a2f55ae898341"
+    },
+    "unit-price-alarm-card": {
+      "passed": 14,
+      "total": 14,
+      "exit_code": null,
+      "log_sha256": "3503d3c0949fb7505cdf8e848329b63d5b3f8afca84b180a79b17bf784a3ba89"
+    },
+    "unit-fvg": {
+      "passed": 10,
+      "total": 10,
+      "exit_code": null,
+      "log_sha256": "c918f7a220f4e89d4a724d05f0290dcf4c330b4a318215a2c13e47643ac6ccc0"
+    },
+    "m45": {
+      "passed": 75,
+      "total": 75,
+      "exit_code": 0,
+      "log_sha256": "6809f9114a736ce91986ef7bf63d7e8a6837b5eb76299db7c83cdbd3d44f6f3a"
+    }
+  },
+  "known_open": [
+    "m18: Fibonacci-Magnet liefert 38,2 % statt 50 %; unveränderter Ausgangsstand reproduziert exakt beide Fehler (29/31)."
+  ],
+  "hardware_iphone_safari_tested": false,
+  "font_probe": {
+    "fields": 30,
+    "failures_before": 30,
+    "failures_after": 0,
+    "font": "Inter, Tabellenziffern",
+    "width": 320
+  },
+  "lint": {
+    "exit_code": 0,
+    "errors": 0,
+    "known_warnings": 3
+  },
+  "release_bundle": {
+    "pwa_files": 82,
+    "server_files": 94,
+    "version": "3.71.1",
+    "build_id": "ec26f14294adc932",
+    "reproducible": true
+  },
+  "outcome": {
+    "programs": 181,
+    "programs_passing_after_retests": 180,
+    "known_failing_program": "m18",
+    "targeted_watchlist_checks": {
+      "passed": 228,
+      "total": 228
+    }
+  }
+}

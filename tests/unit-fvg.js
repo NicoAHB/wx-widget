@@ -18,7 +18,8 @@ const K = rows => rows.map(([open, high, low, close], i) => ({ time: i * 3600e3,
   check('Zusammenfassung: offen/geschlossen, nächste offene Lücke mit Abstand', s.total === 2 && s.open === 1 && s.bear === 1 && s.mitigated === 1 && s.near.dir === 'bear' && s.near.inside === false && Math.abs(s.near.pct - (-1 / 20 * 100)) < 1e-9 && F.fvgSummary(bear, 18).near.inside === true, JSON.stringify(s));
   // Zufallsreihe: gegen eine einfache Schleife
   let r = 7; const rnd = () => (r = (r * 48271) % 2147483647) / 2147483647, rows = []; let p = 100;
-  for (let i = 0; i < 4000; i++) { const o = p, shock = rnd() < .05 ? (rnd() - .5) * .04 : 0, c = o * (1 + (rnd() - .5) * .01 + shock), h = Math.max(o, c) * (1 + rnd() * .003), l = Math.min(o, c) * (1 - rnd() * .003); rows.push({ time: i * 3600e3, open: o, high: h, low: l, close: c, volume: 100 + rnd() * 50 }); p = c; }
+  // Echte Millisekunden-Zeitstempel: Werte ab 0 würden beim CSV-Import als Sekunden gelesen (außerhalb des Pandas-Zeitbereichs).
+  for (let i = 0; i < 4000; i++) { const o = p, shock = rnd() < .05 ? (rnd() - .5) * .04 : 0, c = o * (1 + (rnd() - .5) * .01 + shock), h = Math.max(o, c) * (1 + rnd() * .003), l = Math.min(o, c) * (1 - rnd() * .003); rows.push({ time: Date.UTC(2026, 0, 1) + i * 3600e3, open: o, high: h, low: l, close: c, volume: 100 + rnd() * 50 }); p = c; }
   const got = F.detectFvgs(rows), naive = [];
   for (let i = 2; i < rows.length; i++) for (const up of [true, false]) {
     const a = rows[i - 2], m = rows[i - 1], k = rows[i]; let top, bot;

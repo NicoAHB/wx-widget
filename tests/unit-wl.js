@@ -29,8 +29,8 @@ const near = (a, b) => Math.abs(a - b) < 1e-9;
 
 // ---- Zeiträume ----
 const SP = Object.entries(A.WL_SPANS);
-check('Fünf Zeiträume: 1 Minute, 30 Minuten, 1 Stunde, 4 Stunden, 1 Tag', SP.map(([key, S]) => `${key}:${S.label}`).join() === '1m:1 Min.,30m:30 Min.,1h:1 Std.,4h:4 Std.,1d:1 Tag', SP.map(([key, S]) => `${key}:${S.label}`).join());
-check('… auf 1-, 3-, 5-, 15-Minuten- und 2-Stunden-Kerzen; die Kerzen füllen genau den Zeitraum (1 Stunde = 12 × 5 Minuten)', SP.map(([, S]) => `${S.iv}×${S.n}`).join() === '1m×1,3m×10,5m×12,15m×16,2h×12' && SP.every(([, S]) => S.n * IVMS[S.iv] === S.ms), SP.map(([, S]) => `${S.iv}×${S.n}`).join());
+check('Sechs Zeiträume: 1 Minute, 5 Minuten, 30 Minuten, 1 Stunde, 4 Stunden, 1 Tag', SP.map(([key, S]) => `${key}:${S.label}`).join() === '1m:1 Min.,5m:5 Min.,30m:30 Min.,1h:1 Std.,4h:4 Std.,1d:1 Tag', SP.map(([key, S]) => `${key}:${S.label}`).join());
+check('… auf 1-, 3-, 5-, 15-Minuten- und 2-Stunden-Kerzen; die Kerzen füllen genau den Zeitraum (1 Stunde = 12 × 5 Minuten)', SP.map(([, S]) => `${S.iv}×${S.n}`).join() === '1m×1,1m×5,3m×10,5m×12,15m×16,2h×12' && SP.every(([, S]) => S.n * IVMS[S.iv] === S.ms), SP.map(([, S]) => `${S.iv}×${S.n}`).join());
 check('Standard ohne Einstellung: 1 Tag auf 2-Stunden-Kerzen', A.wlSpanKey() === '1d' && A.wlSpan().iv === '2h' && A.wlSpan().n === 12 && A.wlSpan().of === 'des letzten Tages' && A.wlSpan().ivName === '2-Stunden');
 mem.set(A.WL_SPAN_KEY, 'xyz'); const bad0 = A.wlSpanKey(); mem.set(A.WL_SPAN_KEY, '4h'); const kept0 = A.wlSpanKey(); mem.clear();
 check('Gespeicherte Einstellung wird gelesen, eine ungültige ergibt wieder 1 Tag', kept0 === '4h' && bad0 === '1d', `${kept0}/${bad0}`);
@@ -39,7 +39,7 @@ check('Vorlauf: 260 Kerzen geladen, die letzten 199 bewertet (EMA 50 und MACD ei
 // renderWatchlist() kann vor diesem Abschnitt laufen: Zeitraum und Regeln müssen dann schon gehen (Variablen noch leer)
 let early = null;
 try { early = new Function('state', 'store', `const S = wlSpan(), R = wlRules(null), T = Object.keys(wlSpans()); return { S, R, T };\n${src}`)(state, store); } catch (err) { early = { err: err.message }; }
-check('Früher Aufruf (vor dem Abschnitt): Zeitraum 1 Tag und neutrale Regeln, kein Fehler', early?.S?.iv === '2h' && early.R.length === 4 && early.T.length === 5, JSON.stringify(early?.err || early?.S?.label));
+check('Früher Aufruf (vor dem Abschnitt): Zeitraum 1 Tag und neutrale Regeln, kein Fehler', early?.S?.iv === '2h' && early.R.length === 4 && early.T.length === 6, JSON.stringify(early?.err || early?.S?.label));
 A.wl.span = '1h'; // Die folgenden vorhandenen 5m-Fälle prüfen eine ausdrücklich gewählte Stunde.
 
 // ---- Stream-Kerzen einordnen (5-Minuten-Kerzen) ----
@@ -67,6 +67,7 @@ check('… der Kursverlauf der letzten Minuten zählt dabei nicht', A.wlRef(e, n
 const young = { ...entry(0), closed: Array.from({ length: 5 }, (_, i) => mk(55 + i, 200 + i)) };
 check('… weniger als eine Stunde Kerzen oder gar keine: kein Wert', A.wlRef(young, now) === null && A.wlRef(entry(0), now) === null);
 const refOf = (span, iv) => { A.wl.span = span; const r = A.wlRef(entry(60, iv), T0 + 60 * iv + 30e3); return r; };
+check('5 Minuten: Schluss der letzten 1m-Kerze vor Beginn des Zeitraums', refOf('5m', M) === 154);
 const refs = [refOf('30m', 3 * M), refOf('4h', 15 * M), refOf('1d', 120 * M)];
 check('30 Minuten (3m), 4 Stunden (15m), 1 Tag (2h): jeweils die Kerze vor Beginn des Zeitraums', refs.join() === '149,143,147', refs.join());
 A.wl.span = '1m'; e = entry(60, M); now = T0 + 60 * M + 30e3;
