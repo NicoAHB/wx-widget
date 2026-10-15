@@ -18,6 +18,7 @@ const check = (name, ok) => { ok ? pass++ : fail++; console.log(`${ok ? '✓' : 
     await ctx.addInitScript(({ cfg, watch, withData }) => {
       if (localStorage.getItem('seeded-github-90')) return; localStorage.setItem('seeded-github-90', '1');
       localStorage.setItem('scalpdesk-github-device.v1', JSON.stringify(cfg)); localStorage.setItem('scalpdesk.watchlist.v1', JSON.stringify(watch));
+      localStorage.setItem('scalpdesk.watch-model.v1', JSON.stringify(withData ? 'strict' : 'classic'));
       localStorage.setItem('scalpdesk.muster.settings.v1', JSON.stringify({ capital: withData ? 1234 : 456 }));
       localStorage.setItem('scalpdesk.channels.v1', JSON.stringify({ tg: { token: '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', chat: '987654321' }, dc: { url: 'https://discord.com/api/webhooks/123456789012345678/LOCAL_DISCORD_SECRET_123456789012', on: true }, ev: { pulse: false, news: false } }));
       if (withData) localStorage.setItem('scalpdesk.history.v1', JSON.stringify([{ id: 'gh-personal-90', symbol: 'BTCUSDT', side: 'long', mode: 'isolated', entry: 64000, leverage: 1, qty: .01, margin: 640, openedAt: Date.now() - 7200000, source: 'spot', liqExchange: null, preRealized: 0, sl: null, tp: null, ack: { sl: false, tp: false }, exit: 65000, fees: 0, pnl: 10, pnlSource: 'calc', closedAt: Date.now() - 3600000, fx: 1.16, note: 'Persönlicher äö€-Trade' }]));
@@ -32,6 +33,7 @@ const check = (name, ok) => { ok ? pass++ : fail++; console.log(`${ok ? '✓' : 
     check('Discord vollständig aus der Oberfläche und lokalen Kanal-Einrichtung entfernt', await page.locator('#dc-url,#dc-test').count() === 0 && await page.evaluate(() => !__g05.chan.dc && !JSON.parse(localStorage.getItem('scalpdesk.channels.v1')).dc));
     const collected = await page.evaluate(() => __githubSync.collect());
     check('Vollständiger persönlicher Stand samt neuer Muster-Einstellung gesammelt', collected.backup.history.some(t => t.id === 'gh-personal-90') && collected.preferences.find(p => p.key === 'scalpdesk.muster.settings.v1').value.capital === 1234 && collected.models.bot === null);
+    check('Modellauswahl wird in der persönlichen Sicherung mitgeführt', collected.preferences.find(p => p.key === 'scalpdesk.watch-model.v1')?.value === 'strict');
     check('Token, Demo-Bücher, Dienst- und andere Zugangsdaten fehlen in der Nutzlast', !/LOCAL_GITHUB_TEST_TOKEN|AAHdqTcv|LOCAL_DISCORD_SECRET|scalpdesk\.channels|scalpdesk\.s247|scalpdesk\.github-emergency/.test(JSON.stringify(collected)) && collected.backup.demoPositions.length === 0 && collected.backup.demoHistory.length === 0);
     await page.click('#github-sync-save'); await page.waitForSelector('#github-sync-dialog[open]'); await page.fill('#github-sync-passphrase', phrase); await page.click('#github-sync-confirm');
     await page.waitForFunction(() => document.getElementById('github-sync-status').textContent.includes('auf GitHub gespeichert'));
@@ -48,14 +50,23 @@ const check = (name, ok) => { ok ? pass++ : fail++; console.log(`${ok ? '✓' : 
     await p2.waitForFunction(() => __g05.state.trades.some(t => t.id === 'gh-personal-90')); await p2.waitForTimeout(2300); await p2.waitForFunction(() => !!window.__githubSync);
     await p2.click('[data-workspace-target="settings"]'); await p2.evaluate(() => document.getElementById('data-panel').hidden = false);
     check('Persönlicher Trade und neue Einstellungen nach Neuladen übernommen', await p2.evaluate(() => __g05.state.trades.some(t => t.id === 'gh-personal-90') && JSON.parse(localStorage.getItem('scalpdesk.muster.settings.v1')).capital === 1234));
+    check('Geladene Modellauswahl ist nach Neustart wirklich aktiv', await p2.evaluate(() => __watchModels.mode === 'strict'));
     check('Gerät behält eigenen Namen/Token und bietet die lokale Notfallkopie an', (await p2.locator('#github-sync-last').innerText()).includes('iPad B') && await p2.locator('#github-sync-undo').isVisible());
     await p2.click('#github-sync-undo'); await p2.waitForTimeout(1700); await p2.waitForFunction(() => !!window.__githubSync);
     check('Rückgängig stellt den vollständigen früheren lokalen Stand wieder her', await p2.evaluate(() => __g05.state.trades.length === 0 && __g05.state.watch.join(',') === 'LTC' && JSON.parse(localStorage.getItem('scalpdesk.muster.settings.v1')).capital === 456));
+    check('Rückgängig stellt auch die frühere Modellauswahl wieder her', await p2.evaluate(() => __watchModels.mode === 'classic'));
     await page.click('#github-sync-save'); await page.waitForSelector('#github-sync-dialog[open]'); await page.fill('#github-sync-passphrase', phrase); await page.click('#github-sync-confirm'); await page.waitForFunction(() => document.getElementById('github-sync-status').textContent.includes('auf GitHub gespeichert'));
     check('Zweiter Upload verwendet SHA der bestehenden Datei', puts.length === 2 && puts[1].sha === '1');
     await page.click('#github-sync-load'); await page.waitForSelector('#github-sync-dialog[open]'); await page.locator('#github-sync-dialog button').filter({ hasText: 'Abbrechen' }).click();
     check('Abbrechen beendet Laden ohne Änderung oder offenes Passwort', await page.inputValue('#github-sync-passphrase') === '' && await page.evaluate(() => __g05.state.trades.some(t => t.id === 'gh-personal-90')));
     for (const width of [320, 390, 768]) { await page.setViewportSize({ width, height: 844 }); check(`Sync ohne rechten Überlauf bei ${width}px`, await page.evaluate(() => { const r = document.getElementById('github-sync').getBoundingClientRect(); return r.right <= innerWidth + 1 && [...document.querySelectorAll('#github-sync input')].every(e => e.getBoundingClientRect().right <= r.right + 1); })); }
+    // Ältere Sicherungen kennen die beiden neuen Schlüssel nicht. Sie bleiben vollständig ladbar.
+    const old = structuredClone(collected); old.preferences = old.preferences.filter(p => !['scalpdesk.watch-model.v1', 'scalpdesk.watch-compare.v1'].includes(p.key));
+    remote = await page.evaluate(async ({ data, phrase }) => { const { encryptGithubBackup } = await import('./shared/github-sync.mjs'); return encryptGithubBackup(data, phrase, 'Altgerät'); }, { data: old, phrase }); sha++;
+    await p2.click('[data-workspace-target="settings"]'); await p2.click('#watch-model-toggle'); await p2.waitForFunction(() => __watchModels.mode === 'strict' && !document.getElementById('watch-model-toggle').disabled);
+    await p2.evaluate(() => document.getElementById('data-panel').hidden = false); await p2.click('#github-sync-load'); await p2.waitForSelector('#github-sync-dialog[open]'); await p2.fill('#github-sync-passphrase', phrase); await p2.click('#github-sync-confirm');
+    await p2.waitForFunction(() => __g05.state.trades.some(t => t.id === 'gh-personal-90')); await p2.waitForTimeout(2300); await p2.waitForFunction(() => window.__watchModels);
+    check('Alte GitHub-Sicherung ohne Modellschlüssel bleibt ladbar und setzt auf Bisherig zurück', await p2.evaluate(() => __watchModels.mode === 'classic' && __g05.state.trades.some(t => t.id === 'gh-personal-90')));
     check('Abrufe ausdrücklich ohne Cache-Kennung und keine Laufzeitfehler', reads.every(u => u.searchParams.has('_') && u.searchParams.get('ref') === 'main') && errors.length === 0);
   } finally { for (const ctx of contexts) await ctx.close(); await browser.close(); await h.teardown(); }
   console.log(`\n${pass}/${pass + fail} bestanden`); process.exitCode = fail ? 1 : 0;

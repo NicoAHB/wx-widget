@@ -695,11 +695,21 @@ svg .crosshair{stroke:var(--cross);stroke-width:1;stroke-dasharray:3 4;pointer-e
 .history-summary strong{display:block;font-size:1.02rem;font-weight:600;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
 .history-summary small{font-size:.75rem;color:var(--muted)}
 .kpis{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))!important}
-.trade-row{display:grid;grid-template-columns:118px minmax(0,1fr) auto minmax(76px,auto);gap:4px 12px;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);font-size:.8125rem}
-.trade-row time{color:var(--muted);font-size:.75rem}
-.trade-row strong{font-variant-numeric:tabular-nums;text-align:right;font-weight:600}
-.trade-row strong small{display:block;font-weight:400;color:var(--muted);font-size:.72rem}
-.trade-row .tools{display:flex;gap:2px}
+.trade-row{display:grid;grid-template-columns:110px minmax(0,1fr) minmax(0,max-content);gap:8px 14px;align-items:start;padding:14px 0;border-bottom:1px solid var(--border);font-size:.8125rem;min-width:0}
+.trade-row time{color:var(--muted);font-size:.75rem;line-height:1.6}
+.trade-main{display:grid;gap:5px;min-width:0;line-height:1.4}
+.trade-heading{display:flex;flex-wrap:wrap;align-items:center;gap:5px 8px;font-weight:600;font-size:.9375rem}
+.trade-direction{font-size:.75rem;padding:1px 7px;border:1px solid var(--border);border-radius:5px;font-weight:500}
+.trade-meta,.trade-extra{font-size:.75rem;color:var(--muted);overflow-wrap:anywhere}
+.trade-prices{display:flex;flex-wrap:wrap;gap:5px 16px;font-variant-numeric:tabular-nums}
+.trade-prices>span{min-width:0;overflow-wrap:anywhere}.trade-prices small{color:var(--muted);font-size:.6875rem;margin-right:5px}
+.trade-row>.trade-profit{min-width:0;text-align:right;font-variant-numeric:tabular-nums;font-weight:600;font-size:1.0625rem;line-height:1.5}
+.trade-profit-value{white-space:nowrap}.trade-profit small{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:2px 10px;font-weight:400;color:var(--muted);font-size:.75rem}
+.trade-profit small>span{white-space:nowrap}
+.trade-footer{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px 10px;min-width:0}
+.trade-row .tools{display:flex;gap:3px;margin-left:auto;flex-shrink:0}.trade-row .tools .x{width:44px;min-height:44px;border-radius:6px}
+.trade-row .tools .x:hover,.trade-row .tools .x:focus-visible{background:var(--surface-2)}
+.trade-row .trade-footer .timg-st{margin:0;min-height:44px;max-width:100%;white-space:normal;text-align:left}
 .x{min-height:38px;width:38px;padding:0;border:0;background:none;color:var(--muted);font-size:1rem}
 .trade-row .confirm,.mv-row .confirm{grid-column:1/-1;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .trade-row .confirm button,.mv-row .confirm button{min-height:40px;padding:0 12px;font-size:.8125rem}
@@ -782,8 +792,9 @@ svg .crosshair{stroke:var(--cross);stroke-width:1;stroke-dasharray:3 4;pointer-e
 }
 @container (max-width:560px){
   .history-summary{grid-template-columns:1fr 1fr}
-  .trade-row{grid-template-columns:minmax(0,1fr) auto minmax(76px,auto)}.trade-row time{grid-column:1/-1}
-  .trade-row>span:not(.tools){grid-column:1/-1}.trade-row>strong{grid-column:1/3} /* 3.31.0: mit dem €-Knopf Beschreibung über die volle Breite, Betrag und Knöpfe darunter */
+  .trade-row{grid-template-columns:minmax(0,1fr);gap:8px}
+  .trade-row time,.trade-row>.trade-main,.trade-row>.trade-profit{grid-column:1/-1}
+  .trade-row>.trade-profit{text-align:left;font-size:1.125rem}.trade-profit small{justify-content:flex-start}
   .mv-row{grid-template-columns:minmax(0,1fr) auto 38px}.mv-row time{grid-column:1/-1}
   .money-form .side-toggle{flex:1 1 100%}
   .pos-totals{gap:14px}
@@ -2333,38 +2344,61 @@ html[data-chartfull] .chart-pattern-row{padding:0;order:1;flex-wrap:nowrap}html[
 .positioning-score[data-ready=false] .positioning-arc{display:none}.positioning-score[data-ready=false] .positioning-number,.positioning-score[data-ready=false] .positioning-label{color:var(--muted)}
 #positioning-body p{line-height:1.5}#positioning-body dl{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;font-size:13px}#positioning-body dt,#positioning-body dd{margin:0;overflow-wrap:anywhere}
 @media(max-width:360px){.chart-pattern-overview-card{height:120px;grid-template-columns:minmax(0,1fr) 112px}}
+
+/* 3.72.0: reversibler Vorauswahl-Modelltest und gepaarter Vergleich. */
+.watch-model-settings{grid-column:1/-1;min-width:0}
+.watch-model-settings h3{margin:0 0 12px}.watch-model-settings p{line-height:1.5;overflow-wrap:anywhere}
+.watch-model-settings .wm-switch{min-height:44px;max-width:100%;white-space:normal;border:1px solid var(--border);text-align:left}
+.watch-model-settings .wm-switch::before{content:'○';font-size:1.25rem;margin-right:10px}.watch-model-settings .wm-switch[aria-checked=true]::before{content:'●';color:var(--up-text)}
+.wm-current{font-weight:700}.wm-explain,.wm-comparison{margin-top:14px;padding-top:10px;border-top:1px solid var(--border)}
+.wm-explain>summary,.wm-comparison>summary{cursor:pointer;min-height:44px;display:flex;align-items:center;line-height:1.4;font-weight:650}
+.wm-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:12px 0}
+.wm-fields label{min-width:0;font-size:.8125rem;line-height:1.4;display:flex;flex-direction:column;gap:6px}.wm-fields input{width:100%;min-width:0;min-height:44px;font-size:16px;box-sizing:border-box}
+.wm-actions{display:flex;flex-wrap:wrap;gap:8px}.wm-actions .button{min-height:44px;white-space:normal;max-width:100%}
+.wm-status{min-height:1.5em;color:var(--muted)}.wm-error{color:var(--warn-text)}
+.wm-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.wm-result-card{padding:12px;border:1px solid var(--border);border-radius:12px;min-width:0;background:var(--surface)}
+.wm-result-card h4{margin:0 0 10px}.wm-result-card dl{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;font-size:.8125rem}.wm-result-card dt,.wm-result-card dd{margin:0;overflow-wrap:anywhere}.wm-result-card dd{font-variant-numeric:tabular-nums;text-align:right;font-weight:650;max-width:12em}
+.wm-model-note{margin:0 0 8px;font-size:.75rem;color:var(--muted)}.wm-detail{font-size:.8125rem;line-height:1.5}.wm-detail li{margin:6px 0}.wm-detail-status{font-weight:700}
+.wl-tile[data-wm-signal=long]{animation:wmLong 2s ease-in-out infinite}.wl-tile[data-wm-signal=short]{animation:wmShort 2s ease-in-out infinite}
+@keyframes wmLong{0%,100%{box-shadow:inset 0 0 0 1px var(--up-text)}50%{box-shadow:inset 0 0 0 3px var(--up-text);background:var(--up-bg-2)}}
+@keyframes wmShort{0%,100%{box-shadow:inset 0 0 0 1px var(--down-text)}50%{box-shadow:inset 0 0 0 3px var(--down-text);background:var(--down-bg-2)}}
+@media(max-width:600px){.wm-fields{grid-template-columns:repeat(2,minmax(0,1fr))}.wm-cards{grid-template-columns:minmax(0,1fr)}}
+@media(prefers-reduced-motion:reduce){.wl-tile[data-wm-signal=long],.wl-tile[data-wm-signal=short]{animation:none}.wl-tile[data-wm-signal=long]{box-shadow:inset 0 0 0 2px var(--up-text)}.wl-tile[data-wm-signal=short]{box-shadow:inset 0 0 0 2px var(--down-text)}}
 </style>
   <script type="module">
-import { MARKET_INTERVALS, CHART_INTERVALS, SIGNAL_INTERVALS, INTERVAL_MS, nearestChartInterval } from './bundles/3.71.5/shared/market-intervals.mjs';
-import { createDetailCandles, detailOptions, detailChoice, closedSeries, timeIndex, DETAIL_VISIBLE_MAX } from './bundles/3.71.5/shared/chart-detail.mjs';
-import { patternChipRows, patternChipKey } from './bundles/3.71.5/shared/chart-pattern-chips.mjs';
-import { PATTERN_QUALITY_CONFIG, chartPatternQuality, repricePatternQuality, sortPatternQuality, patternOverview } from './bundles/3.71.5/shared/chart-pattern-quality.mjs';
-import { createPatternOverviewFeed } from './bundles/3.71.5/shared/chart-pattern-overview-feed.mjs';
+import { MARKET_INTERVALS, CHART_INTERVALS, SIGNAL_INTERVALS, INTERVAL_MS, nearestChartInterval } from './bundles/3.72.0/shared/market-intervals.mjs';
+import { createDetailCandles, detailOptions, detailChoice, closedSeries, timeIndex, DETAIL_VISIBLE_MAX } from './bundles/3.72.0/shared/chart-detail.mjs';
+import { patternChipRows, patternChipKey } from './bundles/3.72.0/shared/chart-pattern-chips.mjs';
+import { PATTERN_QUALITY_CONFIG, chartPatternQuality, repricePatternQuality, sortPatternQuality, patternOverview } from './bundles/3.72.0/shared/chart-pattern-quality.mjs';
+import { createPatternOverviewFeed } from './bundles/3.72.0/shared/chart-pattern-overview-feed.mjs';
 // Arbeitsstand: bei der gemeinsamen Release-Freigabe in das neue Versionsbündel übernehmen.
-import { createPositioningFeed } from './bundles/3.71.5/shared/positioning-score.mjs';
-import { CRYPTO_CALENDAR, parseCryptoCalendar, cryptoCalendarEvents } from './bundles/3.71.5/shared/crypto-calendar.mjs';
-import { createMusterClient } from './bundles/3.71.5/shared/muster-bot-feed.mjs';
-import { createMusterPaper } from './bundles/3.71.5/shared/muster-bot-paper.mjs';
-import { readMusterPaper, writeMusterPaper } from './bundles/3.71.5/shared/muster-bot-store.mjs';
-import { projectPatternLines, projectionSettings, projectionTime } from './bundles/3.71.5/shared/pattern-projection.mjs';
-import { createGithubSyncView } from './bundles/3.71.5/shared/github-sync-view.mjs';
-import { createDocViewer } from './bundles/3.71.5/shared/doc-viewer.mjs';
-import { PATTERN_FILTER_PRESET_NAMES, PATTERN_FILTER_FIELDS, PATTERN_CARD_FIELDS, HIGHER_TIMEFRAME, patternFilterSettings, patternFilterFromForm, evaluatePatternSignal, selectPatternSignals, patternJournalEntry, addPatternJournal, resolvePatternJournal, patternHitStats, patternJournalStats, PATTERN_OUTCOME_NAMES, backtestPatternFilter } from './bundles/3.71.5/shared/pattern-quality.mjs';
-import { stripSyncSecrets } from './bundles/3.71.5/shared/github-sync.mjs';
-import { createMusterView } from './bundles/3.71.5/shared/muster-bot-view.mjs';
-import { computeKiZones, KI_ZONE_INTERVALS } from './bundles/3.71.5/shared/ki-zones.mjs';
-import { heikinAshi } from './bundles/3.71.5/shared/heikin-ashi.mjs';
-import { detectFvgs, fvgSummary } from './bundles/3.71.5/shared/fvg.mjs';
-import { scoreZoneStrength, ZONE_STRENGTH, ZONE_SIGNAL, zoneSignal, zoneStep, zoneOutcome, summarizeZoneBacktest } from './bundles/3.71.5/shared/zone-strength.mjs';
+import { createPositioningFeed } from './bundles/3.72.0/shared/positioning-score.mjs';
+import { CRYPTO_CALENDAR, parseCryptoCalendar, cryptoCalendarEvents } from './bundles/3.72.0/shared/crypto-calendar.mjs';
+import { createMusterClient } from './bundles/3.72.0/shared/muster-bot-feed.mjs';
+import { createMusterPaper } from './bundles/3.72.0/shared/muster-bot-paper.mjs';
+import { readMusterPaper, writeMusterPaper } from './bundles/3.72.0/shared/muster-bot-store.mjs';
+import { projectPatternLines, projectionSettings, projectionTime } from './bundles/3.72.0/shared/pattern-projection.mjs';
+import { createGithubSyncView } from './bundles/3.72.0/shared/github-sync-view.mjs';
+import { createDocViewer } from './bundles/3.72.0/shared/doc-viewer.mjs';
+import { PATTERN_FILTER_PRESET_NAMES, PATTERN_FILTER_FIELDS, PATTERN_CARD_FIELDS, HIGHER_TIMEFRAME, patternFilterSettings, patternFilterFromForm, evaluatePatternSignal, selectPatternSignals, patternJournalEntry, addPatternJournal, resolvePatternJournal, patternHitStats, patternJournalStats, PATTERN_OUTCOME_NAMES, backtestPatternFilter } from './bundles/3.72.0/shared/pattern-quality.mjs';
+import { stripSyncSecrets } from './bundles/3.72.0/shared/github-sync.mjs';
+import { createMusterView } from './bundles/3.72.0/shared/muster-bot-view.mjs';
+import { computeKiZones, KI_ZONE_INTERVALS } from './bundles/3.72.0/shared/ki-zones.mjs';
+import { heikinAshi } from './bundles/3.72.0/shared/heikin-ashi.mjs';
+import { detectFvgs, fvgSummary } from './bundles/3.72.0/shared/fvg.mjs';
+import { scoreZoneStrength, ZONE_STRENGTH, ZONE_SIGNAL, zoneSignal, zoneStep, zoneOutcome, summarizeZoneBacktest } from './bundles/3.72.0/shared/zone-strength.mjs';
 // 3.68.0: KI-Signale/Trading-Bot entfernt; der GitHub-Sync behält sein Format inklusive vorhandener Modelloriginale.
-import { exportModelArchive, importModelArchive, validateModelArchive, restoreModelOriginals } from './bundles/3.71.5/shared/model-archive.mjs';
-import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT, patternGrade } from './bundles/3.71.5/shared/telegram-format.mjs';
-import { patternSignalCard, patternChartData } from './bundles/3.71.5/shared/pattern-signal-card.mjs';   // 3.71.0: Chartmuster-Signalkarte
-import { pnlAlarmCard } from './bundles/3.71.5/shared/pnl-alarm-card.mjs';   // 3.71.0: Gewinn-/Verlust-Alarm als Bild
-import { priceAlarmCard } from './bundles/3.71.5/shared/price-alarm-card.mjs';   // 3.71.0: Kurs-Alarm als Bild
-import { createOrderflowView } from './bundles/3.71.5/shared/orderflow-view.mjs';
-import { createSignalView } from './bundles/3.71.5/shared/orderflow-signal-view.mjs';
-import { networkState, createWidgetBoundary } from './bundles/3.71.5/shared/widget-state.mjs';
+import { exportModelArchive, importModelArchive, validateModelArchive, restoreModelOriginals } from './bundles/3.72.0/shared/model-archive.mjs';
+import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT, patternGrade } from './bundles/3.72.0/shared/telegram-format.mjs';
+import { patternSignalCard, patternChartData } from './bundles/3.72.0/shared/pattern-signal-card.mjs';   // 3.71.0: Chartmuster-Signalkarte
+import { pnlAlarmCard } from './bundles/3.72.0/shared/pnl-alarm-card.mjs';   // 3.71.0: Gewinn-/Verlust-Alarm als Bild
+import { priceAlarmCard } from './bundles/3.72.0/shared/price-alarm-card.mjs';   // 3.71.0: Kurs-Alarm als Bild
+import { createOrderflowView } from './bundles/3.72.0/shared/orderflow-view.mjs';
+import { createSignalView } from './bundles/3.72.0/shared/orderflow-signal-view.mjs';
+import { WATCH_MODEL_KEY, WATCH_COMPARE_KEY } from './bundles/3.72.0/shared/watch-model-core.mjs';
+import { createWatchModelFeed } from './bundles/3.72.0/shared/watch-model-feed.mjs';
+import { createWatchModelView } from './bundles/3.72.0/shared/watch-model-view.mjs';
+import { networkState, createWidgetBoundary } from './bundles/3.72.0/shared/widget-state.mjs';
 // Pure, unrounded calculations. Prices are USDT per unit; FX is USDT per EUR.
 function rsi(closes, period = 14) {
   const out = Array(closes.length).fill(null);
@@ -3219,7 +3253,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
 // 3.43.0 (G10a): reiner Fachkern in shared/; Datenquelle und Karten folgen getrennt.
 // 3.44.0 (G10b): öffentlicher Adapter in shared/bitget-public.mjs; sichtbare Anbindung folgt mit G10(c).
-const APP_VERSION = '3.71.5', docEl = document.documentElement;
+const APP_VERSION = '3.72.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -4363,7 +4397,7 @@ function renderWatchlist() {
   wlApplyView();
   // Ausgewählte Kachel entfernt (Bearbeiten, „Standard“, Sicherung eingespielt): Detailfeld schließen, keine falsche Auswahl
   if (wldSel && !state.watch.includes(wldSel)) wldClose(false);
-  const S = wlSpan(), key = JSON.stringify([state.watch, state.watchEdit, S.label, wlTfCols()]), curKey = JSON.stringify([key, base, showAdd]);
+  const S = wlSpan(), model = wmMode(), key = JSON.stringify([state.watch, state.watchEdit, S.label, wlTfCols(), model]), curKey = JSON.stringify([key, base, showAdd]);
   // 3.26.0: Wechselt nur der Coin im Chart (Kachel angetippt), bleiben Kopfzeile und Kacheln stehen; neu sind nur die
   // Markierung „im Chart geöffnet“ und „+ Coin“. Der Neuaufbau nahm der angetippten Kachel den Tastatur-Fokus, und Chrome
   // verschob dabei die Seite (Scroll-Anker in den ersetzten Kacheln).
@@ -4375,7 +4409,7 @@ function renderWatchlist() {
   // nur die Reihenfolge geändert (Umsortieren, anderer Tab, Sicherung), werden die vorhandenen Kacheln verschoben statt neu gebaut.
   if (wlDrag) { wlDrag.dirty = true; return; }
   const grid0 = box.querySelector('.wl-grid'), k0 = (() => { try { return JSON.parse(watchKey || 'null'); } catch { return null; } })();
-  if (grid0 && k0 && k0[1] === state.watchEdit && k0[2] === S.label && k0[0].length === state.watch.length && [...k0[0]].sort().join() === [...state.watch].sort().join()) {
+  if (grid0 && k0 && k0[4] === model && k0[1] === state.watchEdit && k0[2] === S.label && k0[0].length === state.watch.length && [...k0[0]].sort().join() === [...state.watch].sort().join()) {
     const items = new Map([...grid0.children].map(i => [i.querySelector('.wl-tile')?.dataset.watch, i]));
     state.watch.forEach((c, i) => { const it = items.get(c); if (it && grid0.children[i] !== it) grid0.insertBefore(it, grid0.children[i] || null); });
     const addIt = grid0.querySelector(':scope > .wl-add-item'); if (addIt) grid0.append(addIt);
@@ -4390,6 +4424,7 @@ function renderWatchlist() {
     el('p', '', `Tendenz: die Summe dieser vier Regeln – dieselben wie in der Signal-Übersicht – auf abgeschlossenen ${S.ivName}-Kerzen, von −4 bis +4, neu bei jedem Kerzenschluss. Kräftig grün bzw. rot erst, wenn mindestens 3 der 4 Regeln in dieselbe Richtung zeigen (Long- bzw. Short-Tendenz). Den Zeitraum (1 Minute bis 1 Tag) wählst du im Detailfeld oder oben in der Liste; die Zeitraum-Knöpfe des Charts ändern ihn nicht. Eine Beschreibung ${S.of}, kein Handelssignal mit nachgewiesenem Vorteil.`),
     el('p', '', 'Antippen zeigt darunter die Signale des Coins mit Erklärungen und lädt ihn im Chart weiter unten – die Seite springt nicht dorthin. „Bearbeiten“ entfernt Coins, „+ Coin“ nimmt den geöffneten Coin auf. Fehlen Daten (Coin lädt noch, keine Verbindung), steht neutral „–“.'),
     el('p', '', 'Reihenfolge ändern: eine Kachel oder Zeile etwa 350 ms gedrückt halten und an den neuen Platz ziehen. In „Bearbeiten“ auch mit ◀ ▶ oder am Griff ⠿, mit der Tastatur Alt + Pfeiltaste. Die Reihenfolge wird gespeichert und ist Teil der Sicherung.'));
+  if (wmStrict()) body.replaceChildren(el('p', '', 'Testmodell 5/5: geschlossene 15m-Kerze und 4h-Trend, EMA 200, RSI-Kreuzung, neue MACD-Kreuzung und Volumen ≥ 2 × Ø20. Nur 5/5 bestätigt Long oder Short; fehlende/veraltete Daten sperren die Freigabe. Der Badge zeigt die größte erfüllte Regelzahl; ohne 5/5 bleibt er neutral.'), el('p', '', 'Die Prozent-Zeiträume und der Verlauf bleiben wählbar; die Testregeln verwenden immer 15m/4h. Modellschalter und gemeinsamer Vergleich: Einstellungen → Vorauswahl · Modelltest. Antippen, Raster/Liste und Verschieben funktionieren wie bisher.')) ;
   tip.append(sum, body);
   const heading = el('span', 'wl-heading'); heading.append(el('span', 'wl-label', 'Vorauswahl'), tip); head.append(heading);
   // 3.71.0: Filter nach der Tendenz und Sortierung (Score ↓ / eigene Reihenfolge) – gespeichert je Gerät
@@ -4411,6 +4446,7 @@ function renderWatchlist() {
   if (!periodKeys.includes(spanKey)) periodKeys.splice(spanKey === '30m' ? 2 : 3, 0, spanKey);
   for (const k of periodKeys) { const b = btn('', k); b.dataset.wlperiod = k; b.setAttribute('aria-label', wlSpans()[k].name); periods.append(b); }
   head.append(periods);
+  const modelNote = el('p', 'wm-model-note', 'Streng 5/5 · Signale 15m / Trend 4h'); modelNote.hidden = !wmStrict();
   const grid = el('div', 'wl-grid');
   for (const coin of state.watch) {
     const item = el('span', 'wl-item'), tile = btn('wl-tile'), svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -4442,7 +4478,7 @@ function renderWatchlist() {
   const addItem = el('span', 'wl-item wl-add-item'), add = btn('wl-add', '+ Coin hinzufügen'); add.dataset.addcoin = '1'; addItem.append(add); grid.append(addItem);
   // das Detailfeld bleibt eingehängt (3.25.0): sonst verlöre die Zeitraum-Auswahl darin beim Wechsel den Fokus
   const d = wldBox();
-  if (d.parentNode === box) { for (const n of [...box.childNodes]) if (n !== d) n.remove(); d.before(head, grid); } else box.replaceChildren(head, grid, d);
+  if (d.parentNode === box) { for (const n of [...box.childNodes]) if (n !== d) n.remove(); d.before(head, modelNote, grid); } else box.replaceChildren(head, modelNote, grid, d);
   wlApplyView(); wlSortState(); wlMarkCurrent(base, showAdd); wlHeadPaint();
   if (typeof wlPaint === 'function') wlPaint(Date.now(), true);
 }
@@ -4491,21 +4527,23 @@ function wlSortEff() { return state.watchEdit ? 'own' : wlSortKey(); }   // Bear
 function wlHeadPaint() {
   const box = $('watchlist'), f = wlFilterKey(), sb = box?.querySelector('[data-wlsort]'); if (!box) return;
   for (const b of box.querySelectorAll('[data-wlfilter]')) b.setAttribute('aria-pressed', String(b.dataset.wlfilter === f));
+  const strict = wmStrict();
+  for (const [k, label] of [['strong', strict ? 'Long 5/5' : 'Stark ≥ +2'], ['weak', strict ? 'Short 5/5' : 'Schwach ≤ −2']]) { const b = box.querySelector(`[data-wlfilter="${k}"]`); if (b) b.textContent = label; }
   const all = box.querySelector('[data-wlfilter="all"]'); if (all) all.textContent = `Alle ${state.watch.length}`;
-  if (sb) { const sc = wlSortKey() === 'score'; sb.textContent = sc ? 'Score ↓' : 'Manuell'; sb.setAttribute('aria-pressed', String(sc)); sb.title = sc ? 'Sortiert nach Tendenz (höchster Score zuerst) – antippen: manuelle Reihenfolge' : 'Manuelle Reihenfolge – antippen: nach Tendenz sortieren'; sb.disabled = state.watchEdit; }
+  if (sb) { const sc = wlSortKey() === 'score'; sb.textContent = sc ? 'Score ↓' : 'Manuell'; sb.setAttribute('aria-pressed', String(sc)); sb.title = sc && strict ? 'Bestätigte 5/5-Signale zuerst, danach erfüllte Regeln – antippen: manuell' : sc ? 'Sortiert nach Tendenz (höchster Score zuerst) – antippen: manuelle Reihenfolge' : 'Manuelle Reihenfolge – antippen: nach Tendenz sortieren'; sb.disabled = state.watchEdit; }
 }
 // Kacheln filtern und (bei „Score ↓“) nach der Tendenz ordnen – nur Umhängen, nichts neu bauen; nie während eine Kachel gezogen wird
 function wlArrange() {
   const grid = $('watchlist')?.querySelector('.wl-grid'); if (!grid || wlDrag) return;
   const f = wlFilterKey(), items = [...grid.querySelectorAll(':scope > .wl-item:not(.wl-add-item)')], addIt = grid.querySelector(':scope > .wl-add-item');
-  const score = it => wl?.c.get(wlSym(it.dataset.coin))?.rating?.score ?? null, idx = it => state.watch.indexOf(it.dataset.coin);
+  const strict = wmStrict(), score = it => strict ? wmScore(it.dataset.coin) : wl?.c.get(wlSym(it.dataset.coin))?.rating?.score ?? null, idx = it => state.watch.indexOf(it.dataset.coin);
   let shown = 0;
   for (const it of items) { const sc = score(it), ok = f === 'all' || (sc !== null && (f === 'strong' ? sc >= 2 : sc <= -2)); if (it.hidden === ok) it.hidden = !ok; if (ok) shown++; }
-  const order = [...items].sort(wlSortEff() === 'score' ? (a, b) => (score(b) ?? -9) - (score(a) ?? -9) || idx(a) - idx(b) : (a, b) => idx(a) - idx(b));
+  const order = [...items].sort(wlSortEff() === 'score' ? (a, b) => (strict ? wmSortScore(b.dataset.coin) - wmSortScore(a.dataset.coin) : (score(b) ?? -9) - (score(a) ?? -9)) || idx(a) - idx(b) : (a, b) => idx(a) - idx(b));
   order.forEach((it, i) => { if (grid.children[i] !== it) grid.insertBefore(it, grid.children[i] || null); });
   if (addIt && grid.lastElementChild !== addIt) grid.append(addIt);
   let empty = grid.querySelector(':scope > .wl-empty');
-  if (f !== 'all' && !shown) { if (!empty) { empty = el('span', 'wl-empty'); grid.insertBefore(empty, addIt); } wlSet(empty, 'textContent', f === 'strong' ? 'Gerade kein Coin mit Tendenz ≥ +2.' : 'Gerade kein Coin mit Tendenz ≤ −2.'); }
+  if (f !== 'all' && !shown) { if (!empty) { empty = el('span', 'wl-empty'); grid.insertBefore(empty, addIt); } wlSet(empty, 'textContent', strict ? `Gerade kein bestätigtes ${f === 'strong' ? 'Long' : 'Short'}-Signal mit 5/5.` : f === 'strong' ? 'Gerade kein Coin mit Tendenz ≥ +2.' : 'Gerade kein Coin mit Tendenz ≤ −2.'); }
   else empty?.remove();
 }
 
@@ -5201,15 +5239,27 @@ function fxPanelDom(t, ui) {
 // 3.27.0: eine Zeile des Verlaufs (vorher direkt in renderHistory) – unveränderte Zeilen werden wiederverwendet
 function tradeRow(t, demo = false) {
   const r = el('div', 'trade-row' + (demo ? ' demo' : '')), ui = state.histUi[t.id]; r.dataset.trade = t.id;
-  r.append(el('time', '', localTime(t.closedAt)), el('span', '', `${coin(t.symbol)} ${t.side === 'long' ? 'Long' : 'Short'} ${levText(t.leverage)}× ${t.mode === 'cross' ? 'Cross' : 'Isoliert'} · ${qtyText(t.qty)} ${coin(t.symbol)} · ${priceText(t.entry)} → ${priceText(t.exit)}${t.pnlSource === 'exchange' ? ' · G/V laut Börse' : ''}${partText(t)}${reasonsOf(t).length ? ` · Gründe: ${reasonsOf(t).join(', ')}` : ''}`));
-  const eur = tradeEur(t), v = el('strong', t.pnl > 0 ? 'positive' : t.pnl < 0 ? 'negative' : '', `${signed(t.pnl)} USDT`), es = el('small', '', `${eur !== null ? `(${t.fxSrc === 'day' ? '≈ ' : ''}${signed(eur)} €)` : '(€ n. v.)'} · ${signed(t.pnl / t.margin * 100)} %`);
-  if (eur === null) es.title = 'EUR zum Abschlusszeitpunkt nicht verfügbar'; v.append(es); r.append(v); // 3.31.0: eingefrorener Euro-Wert
+  const time = el('time', '', localTime(t.closedAt)); time.dateTime = new Date(t.closedAt).toISOString();
+  const main = el('div', 'trade-main'), heading = el('div', 'trade-heading'), long = t.side === 'long';
+  heading.append(el('span', '', coin(t.symbol)), el('span', 'trade-direction ' + (long ? 'positive' : 'negative'), long ? 'Long' : 'Short'));
+  main.append(heading, el('div', 'trade-meta', `${levText(t.leverage)}× ${t.mode === 'cross' ? 'Cross' : 'Isoliert'} · ${qtyText(t.qty)} ${coin(t.symbol)}`));
+  const prices = el('div', 'trade-prices');
+  for (const [label, price] of [['Einstieg', t.entry], ['Ausstieg', t.exit]]) { const value = el('span'); value.append(el('small', '', label), document.createTextNode(priceText(price))); prices.append(value); }
+  main.append(prices);
+  const extra = `${t.pnlSource === 'exchange' ? 'G/V laut Börse' : ''}${partText(t)}${reasonsOf(t).length ? ` · Gründe: ${reasonsOf(t).join(', ')}` : ''}`.replace(/^ · /, '');
+  if (extra) main.append(el('div', 'trade-extra', extra));
+  r.append(time, main);
+  const eur = tradeEur(t), v = el('strong', 'trade-profit ' + (t.pnl > 0 ? 'positive' : t.pnl < 0 ? 'negative' : '')), es = el('small');
+  v.append(el('span', 'trade-profit-value', `${signed(t.pnl)} USDT`));
+  es.append(el('span', 'trade-eur', eur !== null ? `(${t.fxSrc === 'day' ? '≈ ' : ''}${signed(eur)} €)` : '(€ n. v.)'), el('span', 'trade-roi', `${signed(t.pnl / t.margin * 100)} %`));
+  if (eur === null) es.title = 'EUR zum Abschlusszeitpunkt nicht verfügbar'; v.append(es); r.append(v); // Eingefrorener Euro-Wert und ROI unverändert.
   const tools = el('span', 'tools'), fb = btn('x' + (eur === null ? ' fx-miss' : ''), '€', 'trade-fx'), nb = btn('x', '✎', 'trade-note'), x = btn('x', '×', 'trade-delete');
   fb.setAttribute('aria-label', `Euro-Kurs zum Trade ${coin(t.symbol)} vom ${localTime(t.closedAt)} ${eur === null ? 'nachtragen' : 'ansehen'}`); tools.append(fb);
   if (!demo && timgCanShow(t)) { const ib = btn('x timg-tool', '', 'trade-img'); ib.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3.2l1.8-2.6h6l1.8 2.6H20v11H4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="13.2" r="3.4" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>'; ib.setAttribute('aria-label', `Trade-Bild zu ${coin(t.symbol)} vom ${localTime(t.closedAt)} ansehen und senden`); ib.title = 'Trade-Bild: Vorschau und an Telegram senden'; tools.append(ib); } // 3.34.0 (G06)
   if (t.part?.pos && !t.part.final && findPos(t.part.pos)) { x.hidden = true; x.disabled = true; } // 3.30.0: Teilabschluss einer offenen Position – über „Letzten Schritt rückgängig machen“
-  nb.setAttribute('aria-label', `Notiz zum Trade ${coin(t.symbol)} vom ${localTime(t.closedAt)} bearbeiten`); x.setAttribute('aria-label', `Trade ${coin(t.symbol)} vom ${localTime(t.closedAt)} löschen`); tools.append(nb, x); r.append(tools);
-  { const c = !demo && timgChip(t.id); if (c) r.append(c); const why = !demo && timgWhy(t.id); if (why) r.append(why); } // 3.34.0: Zustand des Trade-Bilds; 3.69.0: Grund im Klartext
+  nb.setAttribute('aria-label', `Notiz zum Trade ${coin(t.symbol)} vom ${localTime(t.closedAt)} bearbeiten`); x.setAttribute('aria-label', `Trade ${coin(t.symbol)} vom ${localTime(t.closedAt)} löschen`); tools.append(nb, x);
+  const footer = el('div', 'trade-footer'), chip = !demo && timgChip(t.id); if (chip) footer.append(chip); footer.append(tools); r.append(footer);
+  { const why = !demo && timgWhy(t.id); if (why) r.append(why); } // 3.34.0: Zustand des Trade-Bilds; 3.69.0: Grund im Klartext
   if (t.note && ui?.mode !== 'note') r.append(el('p', 'trade-note', t.note));
   if (ui === 'delete') { const c = el('div', 'confirm'); c.append(el('span', '', 'Trade endgültig löschen?'), btn('button danger-btn', 'Ja', 'trade-confirm'), btn('button ghost', 'Nein', 'trade-cancel')); r.append(c); }
   if (ui?.mode === 'fx') r.append(fxPanelDom(t, ui));
@@ -5774,7 +5824,7 @@ function backupStatus(msg) { put('history-status', msg); }
 // Löschungen, Prüfliste, offene Konflikte, Anzeige-Einstellungen und das eigene Musterlernen (der öffentliche Startbestand nur als
 // Verweis mit Version). Nie enthalten: Zugangsdaten (Telegram-Token und API-Schlüssel), die Übergabe an den 24/7-Dienst, Sendesperren
 // und andere gerätegebundene Zustände. Alle Felder von Schema 7 bleiben gleich – ältere App-Versionen lesen die Datei weiter.
-const PREF_KEYS = ['scalpdesk.pattern-projection.v1', 'scalpdesk.orderflow-journal.v1', 'scalpdesk.orderflow-position.v1', 'scalpdesk.orderflow-signal.v1', 'scalpdesk.orderflow.v1', 'scalpdesk.ki.risk-view.v1', 'scalpdesk.theme.v1', 'scalpdesk.presentation.v1', 'scalpdesk.background.v1', 'scalpdesk.overlays.v1', 'scalpdesk.zigzag.v1', 'scalpdesk.whale.v1', 'scalpdesk.orderbook.v1', 'scalpdesk.ladder.v1', 'scalpdesk.vola.v1', 'scalpdesk.econ.v1', 'scalpdesk.cnews.v1', 'scalpdesk.wlspan.v1', 'scalpdesk.titleprice.v1', 'scalpdesk.details.v1', 'scalpdesk.posdefaults.v1', 'scalpdesk.daylimitnote.v1', 'scalpdesk.warnclose.v1', 'scalpdesk.evalyear.v1', 'scalpdesk.acctrange.v1', 'scalpdesk.anaiv.v1', 'scalpdesk.decouple.v1', 'scalpdesk.kizones.v1', 'scalpdesk.heikin.v1', 'scalpdesk.zonesig.v1', 'scalpdesk.patfilter.v1'];
+const PREF_KEYS = ['scalpdesk.watch-model.v1', 'scalpdesk.watch-compare.v1', 'scalpdesk.pattern-projection.v1', 'scalpdesk.orderflow-journal.v1', 'scalpdesk.orderflow-position.v1', 'scalpdesk.orderflow-signal.v1', 'scalpdesk.orderflow.v1', 'scalpdesk.ki.risk-view.v1', 'scalpdesk.theme.v1', 'scalpdesk.presentation.v1', 'scalpdesk.background.v1', 'scalpdesk.overlays.v1', 'scalpdesk.zigzag.v1', 'scalpdesk.whale.v1', 'scalpdesk.orderbook.v1', 'scalpdesk.ladder.v1', 'scalpdesk.vola.v1', 'scalpdesk.econ.v1', 'scalpdesk.cnews.v1', 'scalpdesk.wlspan.v1', 'scalpdesk.titleprice.v1', 'scalpdesk.details.v1', 'scalpdesk.posdefaults.v1', 'scalpdesk.daylimitnote.v1', 'scalpdesk.warnclose.v1', 'scalpdesk.evalyear.v1', 'scalpdesk.acctrange.v1', 'scalpdesk.anaiv.v1', 'scalpdesk.decouple.v1', 'scalpdesk.kizones.v1', 'scalpdesk.heikin.v1', 'scalpdesk.zonesig.v1', 'scalpdesk.patfilter.v1'];
 const personalBackupItem = x => !['dpos','dtrade'].includes(x.kind) && !['dpos','dtrade'].includes(x.localKind) && ![DEMO_POS_KEY,DEMO_HIST_KEY,'scalpdesk.orderflow-demo.v1'].includes(x.raw?.key) && !['demoPositions','demoHistory'].includes(x.raw?.field);
 // Übungsdaten können auch in Positionsbegleitung/Signaljournal stehen; nur die Exportkopie bereinigen.
 const demoContext = x => x?.demo === true || x?.practice === true || /^(demo|practice)\|/.test(x?.id || '');
@@ -8159,7 +8209,7 @@ addEventListener('beforeunload', e => {
 });
 // ---------- Abgleich zwischen offenen Tabs ----------
 const bc = (() => { try { return new BroadcastChannel('scalpdesk'); } catch { return null; } })();
-const SYNC_KEYS = [POS_KEY, HIST_KEY, MONEY_KEY, BAL_KEY, ALARM_KEY, SETUP_KEY, WATCH_KEY, CHANGES_KEY, 'scalpdesk.channels.v1', ZZP_KEY, 'scalpdesk.s247.v1', 'scalpdesk.pnlalarm.v1', 'scalpdesk.deleted.v1', 'scalpdesk.settingsat.v1', 'scalpdesk.listsat.v1', 'scalpdesk.demopositions.v1', 'scalpdesk.demohistory.v1', 'scalpdesk.quarantine.v1', 'scalpdesk.conflicts.v1', 'scalpdesk.settingsh.v1', 'scalpdesk.deletedh.v1', 'scalpdesk.svc.v1', 'scalpdesk.policy.v1', 'scalpdesk.tradeimg.v1'];
+const SYNC_KEYS = ['scalpdesk.watch-model.v1', POS_KEY, HIST_KEY, MONEY_KEY, BAL_KEY, ALARM_KEY, SETUP_KEY, WATCH_KEY, CHANGES_KEY, 'scalpdesk.channels.v1', ZZP_KEY, 'scalpdesk.s247.v1', 'scalpdesk.pnlalarm.v1', 'scalpdesk.deleted.v1', 'scalpdesk.settingsat.v1', 'scalpdesk.listsat.v1', 'scalpdesk.demopositions.v1', 'scalpdesk.demohistory.v1', 'scalpdesk.quarantine.v1', 'scalpdesk.conflicts.v1', 'scalpdesk.settingsh.v1', 'scalpdesk.deletedh.v1', 'scalpdesk.svc.v1', 'scalpdesk.policy.v1', 'scalpdesk.tradeimg.v1'];
 function broadcastData(keys) { if (!bc || !keys.length) return; try { bc.postMessage({ t: 'data', from: TAB_ID, items: keys.map(k => [k, store.get(k)]) }); } catch {} }
 function adoptData(items) {
   const pat = items.find(([k]) => k === ZZP_KEY); if (pat) { store.adopt(ZZP_KEY, pat[1]); zzpMem = null; items = items.filter(([k]) => k !== ZZP_KEY); if (!items.length) return; }
@@ -8168,6 +8218,7 @@ function adoptData(items) {
     // 3.63.0: Zugangsfelder einzeln abgleichen; ein alter Tab-Schalterstand darf keine neuere Eingabe löschen.
     if (k === 'scalpdesk.channels.v1') { chan = mergeChannelFields(chan, loadChannels(v)); store.set(k, chan); chanSavedFields = { ...chan.tg }; renderChanSummary(); if ($('chan-dialog').open) fillChanForm(true); continue; }
     store.adopt(k, v);
+    if (k === WATCH_MODEL_KEY) wmRefresh();
     if (k === POS_KEY) state.positions = loadRecords(POS_KEY, 'pos', 'sync');
     else if (k === HIST_KEY) state.trades = loadRecords(HIST_KEY, 'trade', 'sync');
     else if (k === DEMO_POS_KEY) state.demoPositions = loadRecords(DEMO_POS_KEY, 'dpos', 'sync'); // 3.28.0
@@ -11208,6 +11259,7 @@ function wlAdd(e, k, now) {
 }
 // Aus dem Live-Stream (onKline): nur Kerzen des Zeitraum-Intervalls der Vorauswahl
 function wlKline(m, now) {
+  if (typeof wmKline === 'function') wmKline(m);
   if (!wl || m.i !== wlSpan().iv) return;
   const e = wl.c.get(m.s);
   if (e && !e.loading && e.market === m.m && e.iv === m.i) { wlAdd(e, m.k, now); e.liveAt = now; }
@@ -11313,6 +11365,7 @@ function wlPaint(now = Date.now(), force = false) {
     const coin = tile.dataset.watch, e = wl.c.get(wlSym(coin));
     if (!e) continue;
     const v = wlView(e, now), q = s => tile.querySelector(s);
+    if (typeof wmPatchView === 'function') wmPatchView(v, e, now);
     const price = q('.wl-price'); if (price) { price.dataset.full = v.priceText; wlSet(price, 'textContent', v.priceText); wlFitText(price); }
     const tf = q('.wl-tf'); if (tf) v.tf.forEach((x, i) => {
       const c = tf.children[i]?.lastChild; if (!c) return;
@@ -11337,6 +11390,7 @@ function wlPaint(now = Date.now(), force = false) {
       : `${coin}/USDT${e.market === 'futures' ? ' (Futures)' : ''}: ${v.priceText} USDT · ${v.chgText}`
         + ` · Tendenz ${v.span.of} ${r ? `${scoreText(r.score)}/4 (${v.rules.map(x => `${x.label} ${x.arrow}`).join(', ')}) · ${vd.dir === 'long' ? 'Long-Tendenz' : vd.dir === 'short' ? 'Short-Tendenz' : 'Abwarten'}` : 'noch keine (mindestens 60 Kerzen)'} · antippen zeigt die Signale und lädt den Coin im Chart`;
     wlSet(tile, 'title', title);
+    if (typeof wmPaintTile === 'function') wmPaintTile(tile, v, coin);
   }
   if (typeof wlArrange === 'function') wlArrange(); // 3.71.0: Filter und Sortierung nach der Tendenz
   wldPaint(now, force); // Detailfeld (Schritt 6) im selben Takt
@@ -11359,7 +11413,7 @@ async function wlLoad(e) {
 function wlStreams() {
   if (!wl) return [];
   const iv = wlSpan().iv;
-  return state.watch.map(coin => { const s = wlSym(coin), e = wl.c.get(s); return e?.error ? null : { m: e?.market === 'futures' ? 'futures' : 'spot', s: `${s.toLowerCase()}@kline_${iv}` }; }).filter(Boolean);
+  return [...state.watch.map(coin => { const s = wlSym(coin), e = wl.c.get(s); return e?.error ? null : { m: e?.market === 'futures' ? 'futures' : 'spot', s: `${s.toLowerCase()}@kline_${iv}` }; }).filter(Boolean), ...(typeof wmStreams === 'function' ? wmStreams() : [])];
 }
 // Sekundentakt: Einträge anlegen und aufräumen, fehlende Reihen nacheinander laden (höchstens eine gleichzeitig), malen
 function wlTick(now) {
@@ -11375,6 +11429,7 @@ function wlTick(now) {
     if (next) { wl.loadAt = now; void wlLoad(next); } else if (tfNext) { wl.loadAt = now; void wlTfLoad(tfNext); }
   }
   wlPaint(now);
+  if (typeof wmTick === 'function') wmTick();
 }
 if ('IntersectionObserver' in window) new IntersectionObserver(es => { for (const e of es) { wl.vis = e.isIntersecting; if (wl.vis) wlPaint(Date.now(), true); } }).observe($('watchlist'));
 // ---------- Ablaufplan Schritt 6 (3.24.0): Detailfeld unter den Krypto-Kacheln ----------
@@ -11423,7 +11478,8 @@ function wldBox() {
   body.append(verdict, patb);
   // 3.32.0 (G04.2): schmale Zeile mit Tief und Hoch der letzten 24 Stunden (rollierend, Markt wie die Kachel)
   const r24 = el('p', 'wl-d-24h'); r24.append(el('span', 'wl-d-24k', '24h'), el('span', 'wl-d-24v', ''));
-  sec.append(head, r24, body, foot);
+  const test = el('div', 'wm-detail'); test.hidden = true;
+  sec.append(head, r24, body, test, foot);
   clip.append(sec); box.append(clip);
   close.addEventListener('click', () => wldClose(true));
   // Erklärung auch beim Überfahren mit der Maus (am iPad mit Trackpad ebenso); Klick auf ein so geöffnetes Info-Symbol heftet
@@ -11431,7 +11487,7 @@ function wldBox() {
   box.addEventListener('pointerover', e => { if (e.pointerType !== 'mouse') return; const t = e.target.closest('details.wl-d-tip'); if (t && !t.open) { t.dataset.hover = '1'; t.open = true; } });
   box.addEventListener('pointerout', e => { if (e.pointerType !== 'mouse') return; const t = e.target.closest('details.wl-d-tip'); if (t?.dataset.hover && !t.contains(e.relatedTarget)) { delete t.dataset.hover; t.open = false; } });
   box.addEventListener('click', e => { const t = e.target.closest('details.wl-d-tip'); if (t?.dataset.hover && e.target.closest('summary')) { e.preventDefault(); delete t.dataset.hover; } }, true);
-  wld = { box, clip, body, title, meta, pick, pickv, stand, up, down, none, items, verdict, foot, r24, patb, key: '', minH: 0, timer: 0 };
+  wld = { box, clip, body, test, title, meta, pick, pickv, stand, up, down, none, items, verdict, foot, r24, patb, key: '', minH: 0, timer: 0 };
   return box;
 }
 function wldTiles(fn) { for (const t of document.querySelectorAll('#watchlist .wl-tile')) fn(t); }
@@ -11486,6 +11542,7 @@ function wldPaint(now = Date.now(), force = false) {
   if (!wld || !wldSel) return;
   w24Paint(now);
   const coin = wldSel, e = wl?.c.get(wlSym(coin)), r = e?.rating || null;
+  if (typeof wmDetail === 'function' && wmDetail(e, now)) return;
   const S = wlSpan(), key = [coin, wl?.span, r ? r.closeTime + ':' + r.rules.map(x => x.score).join() : '-', e?.error || '', e ? 1 : 0, e?.pat ? e.pat.id + e.pat.t1 + e.pat.status : e?.patAt ? 'k' : ''].join('|');
   if (key === wld.key && !force) return;
   wld.key = key;
@@ -11526,6 +11583,49 @@ function wldPaint(now = Date.now(), force = false) {
 // Tastatur: Esc schließt das Feld (ist darin ein Info-Fenster offen, schließt Esc zuerst nur dieses – das erledigt der
 // allgemeine Esc-Handler, der nach diesem läuft)
 $('watchlist').addEventListener('keydown', e => { if (e.key !== 'Escape' || !wldSel || wld.box.querySelector('details.tip[open]')) return; const inPanel = wld.box.contains(document.activeElement); wldClose(inPanel || document.activeElement?.dataset.watch === wldSel); });
+// ---------- 3.72.0: reversibler Modelltest, getrennt von der unveränderten Vier-Regel-Vorauswahl ----------
+var wmFeed, wmView;
+function wmMode() { return store.get(WATCH_MODEL_KEY) === 'strict' ? 'strict' : 'classic'; }
+function wmStrict() { return wmMode() === 'strict'; }
+function wmRefresh() {
+  wmFeed?.sync(); wlPressClear(); wlDragEnd(false); watchKey = ''; renderWatchlist(); wmView?.paintMode(); syncStreams(); wmTick();
+}
+function wmTick() { if (wmFeed) void wmFeed.tick(); }
+function wmKline(m) { wmFeed?.kline(m); }
+function wmStreams() { return wmFeed?.streams() || []; }
+function wmCurrent(symbol) { return wmFeed?.result(symbol) || { ready: false, direction: 0, count: null, longCount: 0, shortCount: 0, rules: [], reason: '15m-/4h-Daten werden geladen.' }; }
+function wmScore(coin) { const r = wmCurrent(wlSym(coin)); return r.ready ? r.direction * 5 : null; }
+function wmSortScore(coin) { const r = wmCurrent(wlSym(coin)); return r.ready ? (r.direction ? 10 : 0) + r.count : -1; }
+function wmPatchView(v, e, now) {
+  if (!wmStrict()) return;
+  const r = wmCurrent(e.sym, now), score = (key, label) => { const x = r.rules.find(a => a.key === key); return { k: key, label, score: x?.long ? 1 : x?.short ? -1 : 0, arrow: x?.long ? '▲' : x?.short ? '▼' : '–', dir: x?.long ? 'up' : x?.short ? 'down' : 'none' }; };
+  v.rules = [score('trend', 'Trend 4h'), score('kurs', 'EMA 200'), score('rsi', 'RSI'), score('macd', 'MACD')];
+  v.sigText = r.ready ? `${r.count}/5` : '–'; v.tone = r.direction === 1 ? 'p3' : r.direction === -1 ? 'm3' : r.ready ? '0' : 'none'; v.rsi = r.ready ? r.rsi : null; v.testModel = r;
+}
+function wmPaintTile(tile, v, coin) {
+  const r = v.testModel; if (!r) { delete tile.dataset.wmSignal; return; }
+  tile.dataset.wmSignal = r.ready && r.direction ? (r.direction === 1 ? 'long' : 'short') : 'none';
+  const label = r.ready ? `Long ${r.longCount}/5, Short ${r.shortCount}/5; ${r.direction === 1 ? 'Long bestätigt' : r.direction === -1 ? 'Short bestätigt' : 'Abwarten'}` : r.reason;
+  tile.title = `${coin}/USDT · Streng 5/5 · 15m / 4h · ${label} · ${v.chgText}`;
+  const badge = tile.querySelector('.wl-sig'); if (badge) { badge.title = label; badge.setAttribute('aria-label', label); }
+}
+function wmDetail(e, now) {
+  if (!wld) return false;
+  const active = wmStrict(), pick = wld.pick.closest('.wl-d-pick');
+  wld.body.hidden = active; wld.test.hidden = !active; if (pick) pick.hidden = active;
+  if (wld.meta.firstChild?.nodeType === 3) wld.meta.firstChild.textContent = active ? 'Streng 5/5 · 15m / 4h' : 'Signale ';
+  if (!active) return false;
+  const r = wmCurrent(e?.sym || wlSym(wldSel), now), key = JSON.stringify([r, e?.market]);
+  wld.title.textContent = wldSel; wld.stand.textContent = r.ready ? ` · Stand ${WLD_T.format(r.closeTime + 1)}` : ' · Daten werden geprüft';
+  if (wld.test.dataset.key !== key) {
+    wld.test.dataset.key = key; wld.test.replaceChildren(el('p', 'wm-detail-status', !r.ready ? r.reason : r.direction ? `${r.direction === 1 ? '▲ Long' : '▼ Short'} bestätigt · 5/5 Regeln erfüllt` : r.reason));
+    if (r.ready) { const list = el('ul'); for (const rule of r.rules) list.append(el('li', '', `${rule.label}: Long ${rule.long ? '✓' : '–'} · Short ${rule.short ? '✓' : '–'}`)); wld.test.append(list, el('p', 'muted', `RSI ${number(r.rsi, 1)} · Volumen ${number(r.volumeRatio, 2)} × Ø20 · ${e?.market === 'futures' ? 'Binance Futures' : 'Binance Spot'}`)); }
+    const settings = btn('button ghost', 'Modell und Vergleich öffnen'); settings.dataset.goto = 'watch-model-settings'; wld.test.append(settings);
+  }
+  wld.foot.textContent = 'Nur geschlossene 15m-/4h-Kerzen. Alle fünf Regeln nötig; kein nachgewiesener Handelsvorteil. Prozent-Zeitraum und bisherige Tendenz bleiben beim Zurückschalten erhalten.';
+  return true;
+}
+
 // ---- 3.32.0 (G04.2): 24h-Tief / 24h-Hoch im Detailfeld ----
 // Rollierende letzte 24 Stunden laut Binance-24h-Statistik – unabhängig vom Chart und seinem Intervall. Derselbe Markt wie die
 // Kachel (wlLoad: Spot, ohne Spot-Paar USDT-Perpetual-Futures): Spot über /api/v3/ticker/24hr, Futures nur über
@@ -15407,7 +15507,7 @@ const musterPaper = createMusterPaper({ read: readMusterPaper, write: writeMuste
   } });
 const MUSTER_TG_NAMES = { hammer: 'Hammer', engulfing: 'Bullish Engulfing', confluence: 'Konfluenz', po3: 'Power of Three' };
 musterView = createMusterView({ host: musterHost, selection: musterSelection, currentPrice: (symbol, market) => state.symbol === symbol && state.source === market ? currentPrice() : null,
-  prefs: store.get('scalpdesk.muster.settings.v1', {}), savePrefs: value => store.set('scalpdesk.muster.settings.v1', value), workerFactory: () => new Worker(new URL('./bundles/3.71.5/shared/muster-bot-worker.mjs', import.meta.url), { type: 'module' }), paper: musterPaper, onMarkers: scheduleDraw,
+  prefs: store.get('scalpdesk.muster.settings.v1', {}), savePrefs: value => store.set('scalpdesk.muster.settings.v1', value), workerFactory: () => new Worker(new URL('./bundles/3.72.0/shared/muster-bot-worker.mjs', import.meta.url), { type: 'module' }), paper: musterPaper, onMarkers: scheduleDraw,
   telegramStatus: () => tgtReady('trades') ? null : 'Hinweis: Telegram ist noch nicht eingerichtet oder das Ziel „Trades“ ist aus (Einstellungen → Telegram).' });
 void musterPaper.restore().then(() => musterPaper.poll());
 function musterDraw(svg, data, x, y, bottom) {
@@ -15422,6 +15522,26 @@ function musterDraw(svg, data, x, y, bottom) {
 }
 window.__muster = { view: musterView, paper: musterPaper, selection: musterSelection };
 workspaceBuild();
+// 3.72.0: nur der Testschalter aktiviert zusätzliche Vorauswahl-Daten; der Vergleich läuft ausdrücklich per Knopf.
+wmFeed = createWatchModelFeed({ now: serverNow, context: () => ({ enabled: wmStrict(), paused: state.paused, hidden: document.hidden, online: navigator.onLine,
+  symbols: state.watch.map(wlSym).map(symbol => { const e = wl?.c.get(symbol); return e?.at && !e.error ? { symbol, market: e.market } : null; }).filter(Boolean) }), fetchRows: cachedKlines,
+  changed: () => { if (!userScrolling()) wlPaint(Date.now(), true); } });
+const wmSave = async (key, value) => { store.set(key, value); if (!store.ok || !await store.flush()) throw new Error('Modelltest konnte nicht gespeichert werden.'); };
+wmView = createWatchModelView({ host: document.querySelector('#workspace-settings .workspace-settings-grid'), read: key => store.get(key), save: wmSave, getMode: wmMode,
+  setMode: async mode => { const before = wmMode(); try { await wmSave(WATCH_MODEL_KEY, mode === 'strict' ? 'strict' : 'classic'); } catch (e) { store.set(WATCH_MODEL_KEY, before); throw e; } broadcastData([WATCH_MODEL_KEY]); wmRefresh(); },
+  now: serverNow, symbols: () => state.watch.map(wlSym), history: createMusterClient().history, available: () => !document.hidden && !state.paused && navigator.onLine !== false,
+  workerFactory: () => new Worker(new URL('./bundles/3.72.0/shared/watch-model-worker.mjs', import.meta.url), { type: 'module' }) });
+function wmAvailability() {
+  wmFeed.sync();
+  if ((document.hidden || state.paused || navigator.onLine === false) && wmView.state.busy) wmView.abort();
+  if (wmStrict()) wlPaint(Date.now(), true); // Ein pausiertes/unterbrochenes Modell darf nicht weiter blinken.
+  if (!document.hidden && !state.paused && navigator.onLine !== false) wmTick();
+}
+$('pause').addEventListener('click', wmAvailability);
+window.addEventListener('online', wmAvailability); window.addEventListener('offline', wmAvailability);
+document.addEventListener('visibilitychange', wmAvailability);
+wmTick();
+window.__watchModels = { get mode() { return wmMode(); }, feed: wmFeed, view: wmView, refresh: wmRefresh };
 
 // 3.66.0: Lange Erläuterungen bleiben vollständig am selben DOM-Knoten erhalten.
 // Aktuelle Werte, Datenfehler und Schutzwarnungen werden nicht eingeklappt.
@@ -15519,7 +15639,7 @@ async function ghCollect() {
   return stripSyncSecrets(data, Object.values(chan.tg).filter(v => typeof v === 'string' && TG_TOKEN_RE.test(v.trim())));
 }
 async function ghApply(data) {
-  if (data?.app !== 'scalpdesk-github-sync' || data.version !== 1 || !Array.isArray(data.preferences) || data.preferences.length !== GH_PREF_KEYS.length || data.preferences.some(x => !GH_PREF_KEYS.includes(x.key) || typeof x.present !== 'boolean') || new Set(data.preferences.map(x => x.key)).size !== GH_PREF_KEYS.length) throw new Error('Die entschlüsselte Datei ist kein gültiger Scalp-Desk-Stand.');
+  if (data?.app !== 'scalpdesk-github-sync' || data.version !== 1 || !Array.isArray(data.preferences) || data.preferences.length > GH_PREF_KEYS.length || data.preferences.some(x => !GH_PREF_KEYS.includes(x.key) || typeof x.present !== 'boolean') || new Set(data.preferences.map(x => x.key)).size !== data.preferences.length || GH_PREF_KEYS.filter(k => ![WATCH_MODEL_KEY, WATCH_COMPARE_KEY].includes(k)).some(k => !data.preferences.some(x => x.key === k))) throw new Error('Die entschlüsselte Datei ist kein gültiger Scalp-Desk-Stand.');
   if (commitBusy || ghImportBusy) throw new Error('Der Abgleich läuft bereits. Bitte kurz warten.');
   validateModelArchive(data.models);
   const copy = { v: 1, at: Date.now(), items: ghSnapshot(), models: await exportModelArchive(APP_VERSION, { includeBot: false }) };
@@ -15530,6 +15650,7 @@ async function ghApply(data) {
     const plan = planBackup(data.backup, 'GitHub');
     await importModelArchive({ ...data.models, bot: null });
     const result = await commitPlan(plan, { prefs: true, reload: false, github: true });
+    for (const key of [WATCH_MODEL_KEY, WATCH_COMPARE_KEY]) if (!data.preferences.some(x => x.key === key)) store.del(key);
     for (const item of data.preferences) {
       if (!item.present) store.del(item.key);
       else { const value = structuredClone(stripSyncSecrets(item.value)); if (['scalpdesk.ki.settings.v1', 'scalpdesk.po3.settings.v1'].includes(item.key) && isObj(value)) value.on = false; store.set(item.key, value, { force: true }); }

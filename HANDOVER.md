@@ -3,6 +3,14 @@
 Diese Datei ist der Einstieg für jede weitere Arbeit am Projekt. Wer sie liest, braucht kein Vorwissen. Die vollständige fachliche
 Vorgabe aller Gruppen G01–G14 steht in `docs/VORGABE-G01-G14.md` (Original-Übergabe; dort sind G10–G14 ausführlich beschrieben).
 
+## 3.72.0 (Codex): umschaltbares 5/5-Testmodell und übersichtliche Journalzeilen
+
+- Nutzer hat das strenge 5/5-Modell mit Vergleich ausdrücklich bestätigt. Standard bleibt die unveränderte bisherige Vorauswahl; gespeicherter Schalter in Einstellungen, keine Orders oder Telegram-Sendungen durch den Modelltest.
+- Neue isolierte Module `shared/watch-model-{core,feed,view,worker}.mjs`: bestätigte 15m-/4h-Kerzen, EMA200/RSI-/MACD-Kreuzung/Volumenspike, Freigabe nur bei allen fünf Regeln; zusätzliche Daten nur im Testmodus. Vergleich beider festen Modellversionen auf derselben Spot-Historie, Ausführung erst nächste Öffnung, gleiche ATR-/Kostenregeln, offene Fälle separat, Ergebnisse gespeichert und herunterladbar.
+- Neueste Nutzerergänzung: Journalzeile aus Screenshot übersichtlicher machen. Coin/Richtung, Positionsdaten, beschriftete Kurse, vollständiger Ergebnisbetrag/Euro/ROI und eigene Aktions-/Versandzeile; Handler und Daten unverändert.
+- **774/774** gezielte Fach-/UI-/PWA-Prüfungen bestanden (22 Programme), Lint 0 Fehler/3 bekannte Warnungen; reproduzierbares neues Bündel mit 86 PWA-Dateien. [Bedienung, Vergleichsannahmen, Testumfang und iPhone-Checkliste](docs/VORAUSWAHL-MODELLTEST-3.72.0.md). Kein neuer vollständiger Gesamtlauf; der ältere bleibt 3.71.1 zugeordnet.
+- Branch `codex/vorauswahl-modellvergleich` auf `main` 8745a4f (3.71.5), Scratch `/workspace/work/vorauswahl-modellvergleich-3.72.0`. Veröffentlichung ist beauftragt. Isolierte Vorabprüfung bei 320/390 px bestanden; Merge-/Pages- und öffentlicher Hash-/Browsernachweis im Release-PR. Dienstversion 2.15.0 und frühere Bündel unverändert. Live-App: https://nicoahb.github.io/wx-widget/weather-widget-v2.html.
+
 ## 3.71.5 (Codex): Alarmglocke mit Rücksprung, pauschalen Bewegungs-Hinweis entfernt
 
 - Zweiter Tipp auf die Glocke stellt den vorherigen Bereich/Tab, Vorauswahl-Klappzustand und Scrollposition wieder her. Ausstehende Scroll-Frames werden abgebrochen; Wiederherstellung nach dem Chart-Neuzeichnen. Touch und Tastatur verwenden denselben Weg, Beschriftung und `aria-pressed` folgen dem Zustand.
