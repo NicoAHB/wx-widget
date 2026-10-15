@@ -1,0 +1,89 @@
+{
+  "version": "3.71.3",
+  "date": "2026-10-15",
+  "base_commit": "32abfa78dc57978e902ce83a85acee0e85c4e68f",
+  "scope": "Nur Filterspalten auf schmalen Panels textabhängig dimensioniert",
+  "serial": true,
+  "results": [
+    {
+      "test": "unit-wl",
+      "passed": 71,
+      "total": 71,
+      "exit_code": 0,
+      "log_sha256": "668772d9baa10262cd3dad2829ac5bb5d715126f6653bdb2f449f4ad06ba3b0a"
+    },
+    {
+      "test": "unit-release",
+      "passed": 6,
+      "total": 6,
+      "exit_code": 0,
+      "log_sha256": "ec4283e390f27c4de4d84cb50d4c3efc06d113943b5cd48b1c0d31366c49ecc9"
+    },
+    {
+      "test": "m112",
+      "passed": 38,
+      "total": 38,
+      "exit_code": 0,
+      "log_sha256": "0528be72655ffa8d31b8150eb93d7d572e9e80e14f5251eb67d330ec4e1150f5"
+    },
+    {
+      "test": "m111",
+      "passed": 23,
+      "total": 23,
+      "exit_code": 0,
+      "log_sha256": "8d344c7660410bcc7b18499c8f0dbed655c2f8179544f687824bb73f0311779e"
+    },
+    {
+      "test": "m69",
+      "passed": 8,
+      "total": 8,
+      "exit_code": 0,
+      "log_sha256": "f4ba9aba8fe02daa4794670c82c7b8a075920a337e0144f48ed3c78d61845506"
+    }
+  ],
+  "passed": 146,
+  "total": 146,
+  "lint": {
+    "errors": 0,
+    "known_warnings": 3
+  },
+  "regression_before": {
+    "passed": 37,
+    "total": 38,
+    "failed": "320px: breite Monospace-Ersatzschrift muss in alle Filter passen"
+  },
+  "preflight": {
+    "url": "http://127.0.0.1:8765/wx-widget/weather-widget-v2.html",
+    "http": 200,
+    "viewport": 390,
+    "touch": true,
+    "view_toggle": true,
+    "unchanged_coin_order": true,
+    "list_survives_reload": true,
+    "no_horizontal_page_overflow": true,
+    "headers": [
+      {
+        "width": 320,
+        "topRow": true,
+        "filterRow": true,
+        "inside": true,
+        "readable": true
+      },
+      {
+        "width": 390,
+        "topRow": true,
+        "filterRow": true,
+        "inside": true,
+        "readable": true
+      }
+    ],
+    "javascript_errors": []
+  },
+  "full_suite_reference": "VORAUSWAHL-3.71.1-TESTERGEBNISSE.json",
+  "previous_header_checks": "VORAUSWAHL-KOPFZEILE-3.71.2-TESTS.json",
+  "full_suite_repeated": false,
+  "known_prior_failure": "m18 Fibonacci-Magnet: Altbefund, nicht erneut geprüft",
+  "build_id": "beece59251b7ec90",
+  "pwa_files": 82,
+  "hardware_iphone_safari_tested": false
+}

@@ -110,6 +110,11 @@ const center = (page, selector) => page.$eval(selector, e => { const r = e.getBo
           inside: [...top, ...filters].every(r => r.left >= box.left - .5 && r.right <= box.right + .5), readable: [...head.querySelectorAll('[data-wlfilter]')].every(n => n.scrollWidth <= n.clientWidth + 1), filterBelow: filters[0].top >= Math.max(...top.map(r => r.bottom)) - .5 };
       });
       check(`${width}px: Kopfbedienung auf einer Höhe, drei Filter in einer Zeile und vollständig lesbar`, Object.values(header).every(Boolean), JSON.stringify(header));
+      if (width === 320) {
+        await page.$$eval('#watchlist [data-wlfilter]', ns => ns.forEach(n => { n.style.fontFamily = 'monospace'; }));
+        check('320px: auch mit breiter Ersatzschrift sind alle Filter vollständig lesbar', await page.$$eval('#watchlist [data-wlfilter]', ns => ns.every(n => n.scrollWidth <= n.clientWidth + 1)));
+        await page.$$eval('#watchlist [data-wlfilter]', ns => ns.forEach(n => n.style.removeProperty('font-family')));
+      }
       const geometry = await page.$$eval('#watchlist .wl-tile', ts => ts.map(t => {
         const cells = [...t.querySelectorAll('.wl-tfc')], values = [...t.querySelectorAll('.wl-tfv')], price = t.querySelector('.wl-price');
         const fits = n => { const r = document.createRange(); r.selectNodeContents(n); return r.getBoundingClientRect().width <= n.clientWidth + .5; };
