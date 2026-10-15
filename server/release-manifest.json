@@ -4,8 +4,8 @@
   "files": [
     {
       "path": "scalpdesk-247.mjs",
-      "sha256": "800228e77cf7cfe9e3fb14d199332d9eeef91682d9254f090dd8de01d1706d03",
-      "bytes": 136462
+      "sha256": "74dfe6e039adedb661b999fafa8a0bde618ecdb5932f88c1aa6b17757c495313",
+      "bytes": 138297
     },
     {
       "path": "pattern-engine.mjs",
@@ -19,8 +19,8 @@
     },
     {
       "path": "pattern-card.mjs",
-      "sha256": "667a8d71998c2a8350ab0683a318246cae3eaa236fe9d6f1712f2623e7edec29",
-      "bytes": 8049
+      "sha256": "b7c55a1d8cd0c2f8d90973da311b2164022a2ec0dc57cbb47a37a7344b9dc64d",
+      "bytes": 8604
     },
     {
       "path": "package.json",
@@ -404,8 +404,8 @@
     },
     {
       "path": "shared/pnl-alarm-card.mjs",
-      "sha256": "0477b22eea5d7f2cd65ca483afa753c9b0dee4d0c633fe5b12cf178de3c96028",
-      "bytes": 8056
+      "sha256": "48eddfd7727ceb1f00dcd72d89d599a3697c9edc2a268db735f99c0270beecb0",
+      "bytes": 9572
     },
     {
       "path": "shared/po3-core.mjs",
@@ -446,6 +446,11 @@
       "path": "shared/positioning-score.mjs",
       "sha256": "0f6699d2a764d1a50381459883d01895f0ca97be9804e761f9fd2907bef924a2",
       "bytes": 8856
+    },
+    {
+      "path": "shared/price-alarm-card.mjs",
+      "sha256": "9ebf6d0d9c64f97641a9b22b4f391af7535e7040ac4ebb5310952cae976682f4",
+      "bytes": 8451
     },
     {
       "path": "shared/signal-overview.mjs",

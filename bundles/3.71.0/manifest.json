@@ -357,8 +357,8 @@
     },
     {
       "path": "./bundles/3.71.0/shared/pnl-alarm-card.mjs",
-      "sha256": "0477b22eea5d7f2cd65ca483afa753c9b0dee4d0c633fe5b12cf178de3c96028",
-      "bytes": 8056,
+      "sha256": "48eddfd7727ceb1f00dcd72d89d599a3697c9edc2a268db735f99c0270beecb0",
+      "bytes": 9572,
       "alias": "./shared/pnl-alarm-card.mjs"
     },
     {
@@ -410,6 +410,12 @@
       "alias": "./shared/positioning-score.mjs"
     },
     {
+      "path": "./bundles/3.71.0/shared/price-alarm-card.mjs",
+      "sha256": "9ebf6d0d9c64f97641a9b22b4f391af7535e7040ac4ebb5310952cae976682f4",
+      "bytes": 8451,
+      "alias": "./shared/price-alarm-card.mjs"
+    },
+    {
       "path": "./bundles/3.71.0/shared/signal-overview.mjs",
       "sha256": "f5428bbba259f07eac8d7c0cebf5569624e6d1d14db43ce5be0a7c1505468bf4",
       "bytes": 3314,
@@ -447,8 +453,8 @@
     },
     {
       "path": "./weather-widget-v2.html",
-      "sha256": "38debfba75784f07418cacee40f0353ec046789175e8cec6b54eb55ab3842273",
-      "bytes": 1653716
+      "sha256": "0e7c3974fc9adb060f7669064139625ad86e443766f22e52dc5635623ab2fc95",
+      "bytes": 1675009
     },
     {
       "path": "./manifest.webmanifest",

@@ -9,13 +9,20 @@ const check = (name, ok, detail = '') => { ok ? pass++ : fail++; console.log(`${
   const at = Date.UTC(2026, 9, 14, 18, 35, 15), texts = svg => [...svg.matchAll(/<text[^>]*>([^<]*)<\/text>/g)].map(x => x[1].replace(/&amp;/g, '&').replace(/&lt;/g, '<'));
   // Beispiel Verlust
   const v = C.pnlAlarmCard(P.EXAMPLE_PNL), tv = texts(v.svg);
-  check('Verlust-Beispiel: Label, Uhrzeit mit Sekunden, große Zahl, Schwelle, Kopf der Positionen, Zeilen, Fuß mit Datum und Botname', ['VERLUST-ALARM', '20:35:15', '−170,10', 'USD', 'Schwelle erreicht · ≤ −170,00 USD', 'OFFENE POSITIONEN · 3', 'BTC/USDT', 'Long', '−92,40 USD', 'ETH/USDT', 'Short', '+18,70 USD', 'SOL/USDT', '−96,40 USD', '14.10.2026 · Mein Kurs Alarm'].every(s => tv.includes(s)), tv.join(' | '));
+  check('Verlust-Beispiel: Label, Uhrzeit mit Sekunden, große Zahl, Euro in Klammern, Schwelle, Kopf der Positionen, Zeilen mit Euro, Fuß mit Datum und Botname', ['VERLUST-ALARM', '20:35:15', '−170,10', 'USD', '(−152,08 €)', 'Schwelle erreicht · ≤ −170,00 USD (−151,99 €)', 'OFFENE POSITIONEN · 3', '(−82,61 €)', '(+16,72 €)', '(−86,19 €)', 'BTC/USDT', 'Long', '−92,40 USD', 'ETH/USDT', 'Short', '+18,70 USD', 'SOL/USDT', '−96,40 USD', '14.10.2026 · Mein Kurs Alarm'].every(s => tv.includes(s)), tv.join(' | '));
   check('… Farben: Label rot auf dunkelrotem Grund, große Zahl rot, Gewinnzeile grün, Verlustzeile rot; Hintergrund #0E1A2E, Karte #131F36', /fill="#3a1c25"/.test(v.svg) && /fill="#F87171"[^>]*>VERLUST-ALARM/.test(v.svg) && /fill="#F87171"[^>]*>−170,10/.test(v.svg) && /fill="#4ADE80"[^>]*>\+18,70 USD/.test(v.svg) && /fill="#F87171"[^>]*>−92,40 USD/.test(v.svg) && /<rect width="1080" height="\d+" fill="#0E1A2E"/.test(v.svg) && /fill="#131F36"/.test(v.svg));
   check('… Bildunterschrift eine Zeile: „Verlust-Alarm · −170,10 USD“', v.caption === 'Verlust-Alarm · −170,10 USD', v.caption);
   check('… keine Emojis im Bild, 1080 breit', !/\p{Extended_Pictographic}/u.test(tv.join('')) && v.width === 1080 && v.height >= 1080);
   // Gewinn
   const g = C.pnlAlarmCard({ profit: true, pnl: 212.4, level: 200, at, bot: 'Mein Kurs Alarm', positions: [{ symbol: 'BTCUSDT', side: 'long', pnl: 138.2 }, { symbol: 'ETHUSDT', side: 'short', pnl: 61.5 }, { symbol: 'SOLUSDT', side: 'long', pnl: 12.7 }] }), tg = texts(g.svg);
   check('Gewinn: „GEWINN-ALARM“ grün auf dunkelgrünem Grund, „+212,40“ grün, „≥ +200,00 USD“, Bildunterschrift', /fill="#16351f"/.test(g.svg) && /fill="#4ADE80"[^>]*>GEWINN-ALARM/.test(g.svg) && /fill="#4ADE80"[^>]*>\+212,40/.test(g.svg) && tg.includes('Schwelle erreicht · ≥ +200,00 USD') && g.caption === 'Gewinn-Alarm · +212,40 USD', g.caption);
+  // 3.71.0: Euro in Klammern – nur mit Kurs; Summe der Euro-Zeilen = Euro-Betrag unter der großen Zahl
+  const eurSum = m => Math.round(m.rows.reduce((t, r) => t + r.eur, 0) * 100);
+  const ve = C.pnlCardModel(P.EXAMPLE_PNL), noFx = C.pnlAlarmCard({ ...P.EXAMPLE_PNL, fx: undefined }), tnf = texts(noFx.svg);
+  check('Euro: Summe der Euro-Zeilen = Euro-Betrag (−152,08 €), Bildunterschrift bleibt eine Zeile in USD', eurSum(ve) === Math.round(ve.totalEur * 100) && ve.totalEurText === '(−152,08 €)' && v.caption === 'Verlust-Alarm · −170,10 USD', JSON.stringify(ve.rows.map(r => r.eurText)));
+  check('Ohne EUR-Kurs: nur USD, keine leeren Klammern, Schwelle ohne Euro', !tnf.some(t => /€/.test(t)) && tnf.includes('Schwelle erreicht · ≤ −170,00 USD') && tnf.includes('−92,40 USD') && noFx.height < v.height, tnf.join(' | '));
+  const oddE = C.pnlCardModel({ profit: true, pnl: 0.03, fx: 1.17, positions: [{ symbol: 'AUSDT', pnl: 0.014 }, { symbol: 'BUSDT', pnl: 0.014 }, { symbol: 'CUSDT', pnl: 0.002 }] });
+  check('… auch bei Rundungsresten geht die Euro-Summe auf', eurSum(oddE) === Math.round(oddE.totalEur * 100), JSON.stringify(oddE.rows.map(r => r.eur)));
   // Summe = große Zahl (Rundung je Zeile ausgeglichen)
   const odd = C.pnlCardModel({ profit: true, pnl: 0.03, positions: [{ symbol: 'AUSDT', pnl: 0.014 }, { symbol: 'BUSDT', pnl: 0.014 }, { symbol: 'CUSDT', pnl: 0.002 }] });
   const sum = m => Math.round(m.rows.reduce((t, r) => t + r.value, 0) * 100 + (m.more ? m.more.value * 100 : 0));

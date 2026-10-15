@@ -50,6 +50,8 @@ Seitwärts: 2 Fälle
 
 ## Kursalarm · Aufwärts
 
+Ab 3.71.0 (Dienst 2.15.0) kommt der Kurs-Alarm als Bild (PNG, 1080 px breit) mit der Bildunterschrift `Kurs-Alarm · BTC · 81.840,13 USD`. Auf dem Bild stehen Kopf „KURS-ALARM · AUFWÄRTS/ABWÄRTS“ mit Uhrzeit, der Kurs groß, eine Leiste mit LEVEL-Marke und Kurspunkt sowie Level, Abstand, Auslösung (und die Notiz, falls eingetragen). Der folgende Text ist der Ersatz, falls das Bild nicht erzeugt werden kann.
+
 ```text
 🟢⬆️ KURS-ALARM · BTC · 84.862,79 USD
 🎯 Level erreicht: ⭐ 84.500,00 USD ⭐ (auf/über)
@@ -122,7 +124,7 @@ Auslösung: erreicht
 
 ## Ergebnisalarm · Gewinn
 
-Ab 3.71.0 (Dienst 2.15.0) kommt der Gewinn-/Verlust-Alarm als Bild (PNG, 1080 px breit) mit der Bildunterschrift `Gewinn-Alarm · +50,00 USD` bzw. `Verlust-Alarm · −170,10 USD`. Auf dem Bild stehen das Label, die Uhrzeit, die große Zahl, die Schwelle, die offenen Positionen (höchstens 5 plus „weitere“) sowie Datum und Botname. Der folgende Text ist nur noch der Ersatz, wenn das Bild nicht erzeugt werden kann:
+Ab 3.71.0 (Dienst 2.15.0) kommt der Gewinn-/Verlust-Alarm als Bild (PNG, 1080 px breit) mit der Bildunterschrift `Gewinn-Alarm · +50,00 USD` bzw. `Verlust-Alarm · −170,10 USD`. Auf dem Bild stehen das Label, die Uhrzeit, die große Zahl, die Schwelle, die offenen Positionen (höchstens 5 plus „weitere“) sowie Datum und Botname. Mit EUR-Kurs stehen alle Beträge zusätzlich in Euro in Klammern, z. B. „−170,10 USD“ und darunter „(−152,08 €)“. Der folgende Text ist nur noch der Ersatz, wenn das Bild nicht erzeugt werden kann:
 
 ```text
 🟢 GEWINN-ALARM · +50,00 USD

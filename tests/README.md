@@ -1,5 +1,13 @@
 # Tests für Scalp Desk
 
+**3.71.0 Kurs-Alarm als Bild, Euro auf der Gewinn-/Verlust-Karte, flüssiges Zoomen, Vorauswahl, Live-Wert (Dienst 2.15.0, Claude):**
+- Neu `unit-price-alarm-card.js` (14): Vorlagen aufwärts/abwärts, Farben, Leiste (Punkt rechts/links, Abstand), „<0,01 %“, kleine Kurse, Notiz und lange Auslösung, fehlende Werte, PNG 1080 breit.
+- Neu `m110.js` (16): Zoomen mit zwei Fingern (iPhone, CDP und 120-Hz-Bewegungen im Browser), Kerze bleibt unter den Fingern, Transformation statt Neuzeichnen, kein Mitscrollen, Schwung, Tippen; PC Trackpad-Zoom und waagrechtes Blättern.
+- Neu `m111.js` (23): Vorauswahl – Kopf, Kachel-Aufbau, Spalten füllen sich, Filter, Sortierung (gespeichert, kein Verschieben im Score-Modus), „+ Coin hinzufügen“; Schalter „Live-Wert offener Positionen“.
+- `unit-247.js` (105): Kurs-Alarm als Bild; Euro-Kurs (EURUSDT) für die Gewinn-/Verlust-Karte. `unit-pnl-card.js` (15): Euro in Klammern. `unit-wl.js` (70): Spalten, `wlTfRef`, Nachladen der 1m-/1h-Kerzen.
+- Angepasst auf Bild statt Text: `m3`, `m36`, `m38`, `m46`, `m47`, `m49`, `m54`. Auf die neue Kachel: `m31`, `m39`, `m45`.
+- Telegram-Attrappe: `sendPhoto` mit `from` (app/server); `/chan?tgfail=…&from=server&match=…` und `tg429` gelten auch für Bilder.
+
 **3.71.0 Gewinn-/Verlust-Alarm als Bild (Dienst 2.15.0, Claude):**
 - Neu `unit-pnl-card.js` (12): Beispiel nach Vorlage, Farben, keine Emojis, Bildunterschrift, Summe der Zeilen = große Zahl, mehr als 5 Positionen („weitere“), fehlende Kurse, PNG 1080 breit.
 - `unit-247.js` (100):

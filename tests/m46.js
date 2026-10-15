@@ -103,10 +103,10 @@ async function setLimit(page, kind, v) {
     // ---- Kurs-Alarm bleibt nach dem Auslösen kurz in der Übergabe; Meldung kommt vom Dienst ----
     t0 = Date.now();
     await h.ctl(`/set?symbol=BTCUSDT&price=${P0 + 210}`);
-    const am = await until(async () => { const x = await msgs(/KURS-ALARM · BTC/, t0); return x.length ? x : null; }, 20000);
+    const am = await until(async () => { const x = await msgs(/KURS-ALARM · BTC|^Kurs-Alarm · BTC · /, t0); return x.length ? x : null; }, 20000);
     await page.waitForTimeout(6000);
     const pf2 = await pinnedFile(), alarmState = await page.evaluate(() => JSON.parse(localStorage.getItem('scalpdesk.alarms.v1') || '[]')[0]);
-    check('Kurs-Alarm ausgelöst (App offen): genau eine Meldung vom Dienst', (await msgs(/KURS-ALARM · BTC/, t0)).length === 1 && am?.[0]?.transport === 'json' && /\n🕐 \d\d:\d\d:\d\d$/.test(am[0].text), am?.map(x => x.text.split('\n').at(-1)).join(' | '));
+    check('Kurs-Alarm ausgelöst (App offen): genau eine Meldung vom Dienst', (await msgs(/KURS-ALARM · BTC|^Kurs-Alarm · BTC · /, t0)).length === 1 && am?.[0]?.method === 'sendPhoto' && am[0].from === 'server' && am[0].photoName === 'kurs-alarm.png' && /^Kurs-Alarm · BTC · [\d.,]+ USD$/.test(am[0].text), am?.map(x => `${x.from}: ${x.text}`).join(' | '));
     check('… der ausgelöste Alarm bleibt noch in der Übergabe (vom Dienst gemeldet, svcAt gesetzt)', alarmState?.triggeredAt > 0 && alarmState.svcAt > 0 && pf2?.b.alarms.some(a => a.id === 'al1'), JSON.stringify({ trig: alarmState?.triggeredAt, svcAt: alarmState?.svcAt, inFile: pf2?.b.alarms.map(a => a.id) }));
     // ---- App offen, kurze Spitze: die App sieht sie und meldet; der Dienst (prüft nur alle 1,5 s) sieht sie meist nicht ----
     await h.ctl(`/set?symbol=BTCUSDT&price=${P0}`); await page.waitForTimeout(1500);

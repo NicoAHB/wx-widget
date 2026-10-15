@@ -10,8 +10,9 @@ const check = (name, cond, detail = '') => { results.push({ name, ok: !!cond, de
 const live = page => page.waitForFunction(() => document.getElementById('status').dataset.feed === 'live', null, { timeout: 20000 }).catch(() => {});
 const tiles = page => page.evaluate(() => [...document.querySelectorAll('#watchlist .wl-tile')].map(t => {
   const r = t.getBoundingClientRect(), q = s => t.querySelector(s);
-  return { coin: t.dataset.watch, pressed: t.getAttribute('aria-current') || 'false', expanded: t.getAttribute('aria-expanded'), price: q('.wl-price').textContent, chg: q('.wl-chg').textContent, chgCls: q('.wl-chg').className, sig: q('.wl-sig').textContent,
-    rules: [...q('.wl-rules').children].map(r => r.textContent).join(' '),
+  const SEL = t.querySelector('.wl-tfc.sel'), SL = { '1m': '1 Min.', '30m': '30 Min.', '1h': '1 Std.', '4h': '4 Std.', '1d': '1 Tag' }[SEL?.dataset.tf] || '?', SV = SEL?.querySelector('.wl-tfv');   // 3.71.0: Veränderung des Zeitraums = hervorgehobene Spalte
+  return { coin: t.dataset.watch, pressed: t.getAttribute('aria-current') || 'false', expanded: t.getAttribute('aria-expanded'), price: q('.wl-price').textContent, chg: `${SL} ${SV?.textContent}${SV?.textContent === '–' ? '' : ' %'}`, chgCls: SV?.className.replace('wl-tfv', 'wl-chg'), sig: q('.wl-sig').textContent,
+    rules: [...q('.wl-rules').children].map(r => r.textContent).join(' '), rsi: q('.wl-rsi-l').textContent, tf: [...q('.wl-tf').children].map(c => c.dataset.tf).join(),
     tone: q('.wl-sig').dataset.tone, pts: (q('polyline').getAttribute('points') || '').split(' ').filter(Boolean).length, title: t.title,
     box: [r.left, r.top + scrollY, r.width, r.height].map(Math.round), inside: [...t.querySelectorAll('*')].filter(c => { const b = c.getBoundingClientRect(); return b.width && b.height && !c.classList.contains('sr-only'); }).every(c => { const b = c.getBoundingClientRect(); return b.left >= r.left - 0.5 && b.right <= r.right + 0.5 && b.top >= r.top - 0.5 && b.bottom <= r.bottom + 0.5; }) };
 }));
@@ -26,8 +27,8 @@ const ready = page => page.waitForFunction(() => [...document.querySelectorAll('
     await page.goto(h.URL_BASE + '/weather-widget-v2.html'); await live(page); await ready(page); await page.waitForTimeout(1500);
     let t = await tiles(page);
     check('Sechs Kacheln in der Reihenfolge der Vorauswahl, BTC ausgewählt', t.map(x => x.coin).join() === 'BTC,ETC,BCH,LTC,XRP,NEAR' && t[0].pressed === 'true' && t.slice(1).every(x => x.pressed === 'false'), t.map(x => x.coin + ':' + x.pressed).join());
-    check('Jede Kachel: Kurs, „1 Std. ±x,xx %“, Linie der Stunde (12 Kerzen zu 5 Minuten und der Kurs), Tendenz −4…+4, Zeile Trend · Kurs · RSI n · MACD mit Pfeilen', t.every(x => /^\d[\d.]*,\d+$/.test(x.price) && /^1 Std\. [+−±]\d+,\d\d %$/.test(x.chg) && !x.c30 && x.pts === 13 && /^[+−]?\d$/.test(x.sig) && x.tone !== 'none' && /^Trend[▲▼–] Kurs[▲▼–] RSI \d{1,3}[▲▼–] MACD[▲▼–]$/.test(x.rules)),
-      JSON.stringify(t.map(x => [x.coin, x.price, x.chg, x.pts, x.sig, x.rules])));
+    check('Jede Kachel: Kurs, Spalten 1m · 5m · 1h · 1d mit „1h“ hervorgehoben (±x,xx), Linie der Stunde (12 Kerzen zu 5 Minuten und der Kurs), Tendenz −4…+4, Felder Trend · Kurs · MACD mit Pfeilen, RSI n', t.every(x => /^\d[\d.]*,\d+$/.test(x.price) && /^1 Std\. [+−±]\d+,\d\d %$/.test(x.chg) && x.tf === '1m,5m,1h,1d' && !x.c30 && x.pts === 13 && /^[+−]?\d$/.test(x.sig) && x.tone !== 'none' && /^Trend[▲▼–] Kurs[▲▼–] MACD[▲▼–]$/.test(x.rules) && /^RSI \d{1,3}$/.test(x.rsi)),
+      JSON.stringify(t.map(x => [x.coin, x.price, x.chg, x.tf, x.pts, x.sig, x.rules, x.rsi])));
     check('Hinweis beim Zeigen: Kurs, 1 Std., Tendenz der letzten Stunde mit Regeln und Gesamtbewertung', /^BTC\/USDT: [\d.,]+ USDT · 1 Std\. .+ % · Tendenz der letzten Stunde [+−]?\d\/4 \(Trend .+\) · (Long-Tendenz|Short-Tendenz|Abwarten)( · zu wenig Bewegung)? · antippen zeigt die Signale und lädt den Coin im Chart$/.test(t[0].title), t[0].title);
     const st = await h.ctl('/state'), subs = new Set(st.conns.flatMap(c => c.streams));
     check('Live-Stream: 5-Minuten-Kerzen aller sechs Coins abonniert', ['btcusdt', 'etcusdt', 'bchusdt', 'ltcusdt', 'xrpusdt', 'nearusdt'].every(s => subs.has(`${s}@kline_5m`)), [...subs].filter(s => s.endsWith('@kline_5m')).join(' '));
@@ -54,9 +55,9 @@ const ready = page => page.waitForFunction(() => [...document.querySelectorAll('
     check('„Standard“ stellt die sechs wieder her, „Fertig“ blendet × aus', t.length === 6 && !(await page.$('#watchlist [data-unwatch]')), t.map(x => x.coin).join());
     // Neuer Coin: „+ SOL“ in der Kopfzeile, danach eigene Kachel mit Live-Werten
     await page.fill('#symbol', 'SOL'); await page.click('#market-form [type=submit]'); await live(page); await page.waitForTimeout(2500);
-    const add = await page.evaluate(() => { const a = document.querySelector('#watchlist [data-addwatch]'); return a && { text: a.textContent, inHead: !!a.closest('.wl-head') }; });
+    const add = await page.evaluate(() => { const a = document.querySelector('#watchlist [data-addwatch]'); return a && { text: a.textContent, tile: a.classList.contains('wl-add') && a.closest('.wl-grid')?.lastElementChild === a.parentElement }; });
     const gridH0 = await page.evaluate(() => document.querySelector('#watchlist .wl-grid').getBoundingClientRect().height);
-    check('Geöffneter Coin nicht in der Vorauswahl: „+ SOL“ in der Kopfzeile (keine neue Kachelreihe)', add && add.text === '+ SOL' && add.inHead, JSON.stringify(add));
+    check('Geöffneter Coin nicht in der Vorauswahl: letzte Kachel „+ SOL hinzufügen“ (die Kachel war schon da – nichts verrutscht)', add && add.text === '+ SOL hinzufügen' && add.tile, JSON.stringify(add));
     await page.click('#watchlist [data-addwatch="SOL"]'); await page.waitForTimeout(500);
     await page.waitForFunction(() => /^[+−]?\d$/.test(document.querySelector('#watchlist .wl-tile[data-watch="SOL"] .wl-sig')?.textContent || ''), null, { timeout: 20000 }).catch(() => {});
     t = await tiles(page); const sol = t.find(x => x.coin === 'SOL');

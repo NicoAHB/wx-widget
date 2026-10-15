@@ -3,7 +3,18 @@
 Diese Datei ist der Einstieg für jede weitere Arbeit am Projekt. Wer sie liest, braucht kein Vorwissen. Die vollständige fachliche
 Vorgabe aller Gruppen G01–G14 steht in `docs/VORGABE-G01-G14.md` (Original-Übergabe; dort sind G10–G14 ausführlich beschrieben).
 
-## In Arbeit – 3.71.0 / Dienst 2.15.0 / Musterdienst 1.3.0 (Claude): Trade-Karte, Chartmuster-Signalkarte, Alarm-Knopf – Gesamtlauf erst auf Anweisung des Nutzers
+## 3.71.0 / Dienst 2.15.0 / Musterdienst 1.3.0 (Claude): Trade-Karte, Signalkarte, Gewinn-/Verlust- und Kurs-Alarm als Bild, flüssiges Zoomen, neue Vorauswahl
+
+Ausführlich: [docs/3.71.0-AENDERUNGEN.md](docs/3.71.0-AENDERUNGEN.md). Der Nutzer hat Gesamtlauf und Veröffentlichung freigegeben.
+
+- **Kurs-Alarm als Bild:** `shared/price-alarm-card.mjs` (Kopf AUFWÄRTS/ABWÄRTS, Kurs groß, Leiste mit LEVEL-Marke, Level/Abstand/Auslösung, Notiz nur wenn vorhanden). App über `CARD_KINDS.alarm` in `chanSendCard`, Dienst über `alarmCard` im Ausgang (`alarmCardImage`, Schalter `alarmCards`). Ersatz ist die Textmeldung; sendet die App ohne Dienst, steht „Von der App gesendet · Dienst nicht erreichbar“ als zweite Zeile in der Bildunterschrift.
+- **Gewinn-/Verlust-Karte mit Euro:** `fx` (USDT je EUR) im Kartenmodell; App mit `fxLive()`, Dienst mit `eurRate()` (Binance EURUSDT, 1 min Zwischenspeicher, 6 h Rückfall). Euro-Zeilen gehen genau auf.
+- **Flüssiges Zoomen/Blättern:** Gesten-Engine `chartLive` im Gesten-Block des Charts: Ziel in Bruchteilen von Kerzen, je Bild Transformation einer Ebene (`g.lv-clip > g`), vereinfachtes Zeichnen (`chartLite`) höchstens alle ≥ 50 ms, am Ende genau. `scheduleDraw` zählt Anforderungen (`drawReq/drawDone`). Zwei Finger zoomen und verschieben, Wischen mit Schwung, `touchmove` verhindert Mitscrollen. Test `m110`.
+- **Vorauswahl nach Entwurf:** neue Kachel (Kopf, Spalten 1m · 5m · 1h · 1d, Verlauf mit Punkt, Trend/Kurs/MACD, RSI-Leiste), Filter/Sortierung (`scalpdesk.wlfilter.v1`, `scalpdesk.wlsort.v1`, `wlArrange`), Kachel „+ Coin hinzufügen“. Spaltenwerte aus `wlTfRef` (Live-Verlauf 6 min, 1m-/1h-Kerzen über `wlTfLoad`, alle 15 min je Coin). Test `m111`.
+- **Live-Wert ausblenden:** `scalpdesk.lb-open.v1`, Knopf `#lb-open-toggle` in „Darstellung & App“.
+- **Tests:** neu `m110` (16), `m111` (23), `unit-price-alarm-card` (14); angepasst `unit-247` (105), `unit-pnl-card` (15), `unit-wl` (70), `m3`, `m31`, `m36`, `m38`, `m39`, `m45`, `m46`, `m47`, `m49`, `m54`; Telegram-Attrappe: Bilder mit `from` (app/server), `tgfail` und `tg429` auch für Bilder.
+
+### Davor in 3.71.0: Chartmuster-Signalkarte, Gewinn-/Verlust-Bild, Alarm-Knopf
 
 - **Chartmuster-Signalkarte (nach Vorlage des Nutzers):** ein Modul für App, 24/7-Dienst und Oracle-Musterdienst.
   - `shared/pattern-signal-card.mjs` zeichnet das SVG; Modell und Kurztext kommen aus `patternSignalModel` und `formatMessage('pattern')` in `shared/telegram-format.mjs`.

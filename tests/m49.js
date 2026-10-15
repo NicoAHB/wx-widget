@@ -33,7 +33,8 @@ async function openApp(browser, P0) {
   await page.check('#s247-on'); // wie in der Bedienung: „An den 24/7-Dienst übergeben“ einschalten
   return { ctx, page, errors };
 }
-const sentTg = async since => (await h.ctl('/sent')).filter(m => m.svc === 'tg' && !m.method && m.at >= since);
+// 3.71.0: Kurs-Alarm kommt als Bild – Fotos zählen mit, die Bildunterschrift gilt als Text
+const sentTg = async since => (await h.ctl('/sent')).filter(m => m.svc === 'tg' && (!m.method || m.method === 'sendPhoto') && m.at >= since).map(m => m.method ? { ...m, text: String(m.caption || '').replace(/\r/g, '') } : m);
 
 const tests = {
   async gleich(browser) {
@@ -56,12 +57,12 @@ const tests = {
       // App schließen, dann erreicht der Kurs den Alarm
       await ctx.close(); await h.sleep(500);
       const t1 = Date.now(); await h.ctl(`/set?symbol=BTCUSDT&price=${P0 + 80}`);
-      const al = await until(async () => { const x = (await sentTg(t1)).filter(m => /^<b>🟢⬆️ KURS-ALARM · BTC/.test(m.text || '')); return x.length ? x : null; }, 20000);
-      check('App geschlossen, Kurs über dem Alarm: Nachricht vom Dienst mit Ton, ohne Dienst-Suffix', !!al && al[0].bot === 123456789 && al[0].transport === 'json' && !al[0].disable_notification && !/24\/7-Dienst/.test(al[0].text) && /\n🕐 \d\d:\d\d:\d\d$/.test(al[0].text), al ? al[0].text.replace(/\n/g, ' ⏎ ').slice(0, 160) : 'keine Nachricht');
+      const al = await until(async () => { const x = (await sentTg(t1)).filter(m => /^<b>🟢⬆️ KURS-ALARM · BTC|^Kurs-Alarm · BTC · /.test(m.text || '')); return x.length ? x : null; }, 20000);
+      check('App geschlossen, Kurs über dem Alarm: Nachricht vom Dienst mit Ton, ohne Dienst-Suffix', !!al && al[0].bot === 123456789 && al[0].method === 'sendPhoto' && al[0].from === 'server' && !al[0].fields.includes('disable_notification') && /^Kurs-Alarm · BTC · [\d.,]+ USD$/.test(al[0].text) && al[0].w === 1080, al ? al[0].text.replace(/\n/g, ' ⏎ ').slice(0, 160) : 'keine Nachricht');
       check('… in unter 10 Sekunden (Dienst prüft hier alle 1,5 s statt 15 s)', !!al && al[0].at - t1 < 10000, al ? `${((al[0].at - t1) / 1000).toFixed(1)} s` : '');
       await h.sleep(4000);
-      check('… genau einmal', (await sentTg(t1)).filter(m => /^<b>🟢⬆️ KURS-ALARM · BTC/.test(m.text || '')).length === 1);
-      check('Protokoll: „Alarm ausgelöst“ und „Telegram gesendet“', /\nAlarm ausgelöst: Kurs-Alarm BTC auf\/über .* \(Kurs .*\)/.test(L()) && /\nTelegram gesendet: Kurs-Alarm BTC \(Nachricht #\d+\)/.test(L()), svc.log.filter(l => /^(Alarm|Telegram)/.test(l)).join(' | '));
+      check('… genau einmal', (await sentTg(t1)).filter(m => /^<b>🟢⬆️ KURS-ALARM · BTC|^Kurs-Alarm · BTC · /.test(m.text || '')).length === 1);
+      check('Protokoll: „Alarm ausgelöst“ und „Telegram gesendet“', /\nAlarm ausgelöst: Kurs-Alarm BTC auf\/über .* \(Kurs .*\)/.test(L()) && /\nTelegram gesendet als Karte: Kurs-Alarm BTC \(Nachricht #\d+\)/.test(L()), svc.log.filter(l => /^(Alarm|Telegram)/.test(l)).join(' | '));
       const sr = statusRun(dir);
       check('--status (sudo scalpdesk-247 status): Bot, Chat, Datei, Bestätigung, beobachtete Marken, „alles in Ordnung“', sr.code === 0 && /✓ Bot @test_kursalarm_bot \(ID 123456789\)/.test(sr.out) && /✓ Datei der App angeheftet/.test(sr.out)
         && /✓ Vom Dienst bestätigt: „Dienst: aktiv · .* · v\d+\.\d+\.\d+ · #\w+ übernommen“/.test(sr.out) && /• Zustand: zuletzt zugestellt .* \(Kurs-Alarm BTC\)/.test(sr.out) && /Ergebnis: alles in Ordnung\./.test(sr.out), sr.out.split('\n').slice(0, 9).join(' | ').slice(0, 500));
@@ -87,7 +88,7 @@ const tests = {
       check('--status mit falschem Bot: ✗ keine Datei, Bot des Dienstes genannt, Befehl --neu', sr.code === 1 && /✓ Bot @test_sicherung_bot \(ID 555666777\)/.test(sr.out) && /✗ Keine Datei der App angeheftet \(angeheftet: nichts\)/.test(sr.out) && /--neu/.test(sr.out), sr.out.split('\n').slice(0, 5).join(' | ').slice(0, 400));
       // App schließen: Ohne passenden Bot kann der Dienst nichts melden – genau das zeigen Hinweis und Status
       await ctx.close(); const t1 = Date.now(); await h.ctl(`/set?symbol=BTCUSDT&price=${P0 + 80}`); await h.sleep(6000);
-      check('… bei geschlossener App kommt (erwartungsgemäß) keine Alarm-Nachricht – Ursache steht im Hinweis', !(await sentTg(t1)).some(m => /^<b>.*KURS-ALARM/.test(m.text || '')));
+      check('… bei geschlossener App kommt (erwartungsgemäß) keine Alarm-Nachricht – Ursache steht im Hinweis', !(await sentTg(t1)).some(m => /^<b>.*KURS-ALARM|^Kurs-Alarm · /.test(m.text || '')));
       check('keine Fehler (App)', !real(errors).length, real(errors).join(' | ').slice(0, 200));
     } finally { svc?.kill(); }
   },

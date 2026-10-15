@@ -46,7 +46,8 @@ const TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', CHAT = '987654321'
   const sentMsgs = since => tgLog.filter(x => x.method === 'sendMessage' && x.at >= since);
   const statePath = path.join(os.tmpdir(), `s247b-${process.pid}.json`); try { fs.unlinkSync(statePath); } catch {}
   let logs = [];
-  const make = () => { const w = new W.Watcher({ token: TOKEN, chat: CHAT, statePath, now: () => now, log: (...a) => logs.push(a.join(' ')) }); w.me = { id: 123456789, username: 'kursalarm_bot' }; return w; };
+  // 2.15.0: Ablauf- und Abstimmungsprüfungen im Textmodus (alarmCards: false); Bildprüfungen in unit-247
+  const make = () => { const w = new W.Watcher({ alarmCards: false, token: TOKEN, chat: CHAT, statePath, now: () => now, log: (...a) => logs.push(a.join(' ')) }); w.me = { id: 123456789, username: 'kursalarm_bot' }; return w; };
   const step = async (w, ms) => { now += ms; await w.tick(); w.saveStateNow(); };
 
   // ==== Keine Datei der App (anderer Bot oder andere Chat-ID am Server) ====

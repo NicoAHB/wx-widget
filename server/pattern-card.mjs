@@ -11,6 +11,7 @@ const base = fs.existsSync(new URL('./shared/telegram-format.mjs', import.meta.u
 const TF = await import(new URL(base + 'telegram-format.mjs', import.meta.url));
 const SC = await import(new URL(base + 'pattern-signal-card.mjs', import.meta.url));
 const PC = await import(new URL(base + 'pnl-alarm-card.mjs', import.meta.url));   // 2.15.0: Gewinn-/Verlust-Alarm als Bild
+const AC = await import(new URL(base + 'price-alarm-card.mjs', import.meta.url));   // 2.15.0: Kurs-Alarm als Bild
 export const { CARD_W, CARD_FONT, textWidth, wrapText, patternChartData, cleanPatternChart } = SC;
 export const NA = TF.PATTERN_NA;
 const has = v => v !== null && v !== undefined && String(v).trim() !== '';
@@ -68,15 +69,18 @@ export async function renderPatternCard(data, { at = data.at, now, timezone = 'E
   return { png: Buffer.from(png), width, height, model: m, caption: patternCaption(data, { at, now, timezone, limit: captionLimit }), svg };
 }
 // 2.15.0: Gewinn-/Verlust-Alarm als Bild (1080 px breit) mit einzeiliger Bildunterschrift; ohne Schrift Fehler → Dienst sendet den Text
-export const pnlAlarmCard = PC.pnlAlarmCard;
-export async function renderPnlCard(data, { timezone = 'Europe/Berlin', fontFiles = [], loadSystemFonts, bundledFonts = true } = {}) {
-  const r = PC.pnlAlarmCard(data, { timezone }), Resvg = await loadResvg(), font = fontOptions(fontFiles, loadSystemFonts, bundledFonts);
+export const pnlAlarmCard = PC.pnlAlarmCard, priceAlarmCard = AC.priceAlarmCard;
+async function renderCard(r, { fontFiles = [], loadSystemFonts, bundledFonts = true } = {}) {
+  const Resvg = await loadResvg(), font = fontOptions(fontFiles, loadSystemFonts, bundledFonts);
   if (!await textRenders(Resvg, font)) throw new Error('Keine Schrift für die Karte gefunden – Karte wäre ohne Text');
   const png = new Resvg(r.svg, { fitTo: { mode: 'original' }, font }).render().asPng();
   if (!png?.length) throw new Error('Kartenrenderer lieferte kein Bild');
   return { png: Buffer.from(png), width: r.width, height: r.height, caption: r.caption, model: r.model, svg: r.svg };
 }
-export const EXAMPLE_PNL = Object.freeze({ profit: false, pnl: -170.1, level: 170, at: Date.UTC(2026, 9, 14, 18, 35, 15), bot: 'Mein Kurs Alarm',
+export const renderPnlCard = (data, { timezone = 'Europe/Berlin', ...o } = {}) => renderCard(PC.pnlAlarmCard(data, { timezone }), o);
+export const renderAlarmCard = (data, { timezone = 'Europe/Berlin', ...o } = {}) => renderCard(AC.priceAlarmCard(data, { timezone }), o);
+export const EXAMPLE_ALARM = Object.freeze({ symbol: 'BTCUSDT', direction: 'above', level: 81840, price: 81840.13, reached: 'erreicht', at: Date.UTC(2026, 9, 14, 19, 19, 16), bot: 'Mein Kurs Alarm' });
+export const EXAMPLE_PNL = Object.freeze({ profit: false, pnl: -170.1, level: 170, fx: 1.1185, at: Date.UTC(2026, 9, 14, 18, 35, 15), bot: 'Mein Kurs Alarm',
   positions: [{ symbol: 'BTCUSDT', side: 'long', pnl: -92.4 }, { symbol: 'ETHUSDT', side: 'short', pnl: 18.7 }, { symbol: 'SOLUSDT', side: 'long', pnl: -96.4 }] });
 // Beispiel nach der Vorlage des Nutzers (DOT/USDT, symmetrisches Dreieck, 5m) – für Vorschau (--karte-beispiel) und Tests
 const EX_T = Date.UTC(2026, 9, 14, 18, 50), EX_STEP = 3e5;

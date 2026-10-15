@@ -33,11 +33,17 @@ const chartPosition = page => page.evaluate(() => {
     detailHeight: Math.round(document.getElementById('wl-detail').getBoundingClientRect().height), symbol: document.getElementById('symbol').value };
 });
 // Kachel-Zustand aus dem DOM
+// 3.71.0: neue Kachel – Veränderung des Zeitraums = hervorgehobene Spalte, Felder Trend · Kurs · MACD, RSI als Leiste (Farbe des Knopfs =
+// RSI-Signal); für die Prüfungen wieder in der Reihenfolge Trend · Kurs · RSI · MACD (der RSI ohne eigene Pfeilfarbe)
 const tiles = page => page.evaluate(() => [...document.querySelectorAll('#watchlist .wl-tile')].map(t => {
-  const q = s => t.querySelector(s), rules = [...q('.wl-rules').children], R = e => e.getBoundingClientRect();
-  return { coin: t.dataset.watch, expanded: t.getAttribute('aria-expanded'), chart: t.getAttribute('aria-current') === 'true', price: q('.wl-price').textContent, c1: q('.wl-chg').textContent, c1cls: q('.wl-chg').className,
-    c30: q('.wl-chg30')?.textContent ?? null, rules: rules.map(r => ({ text: r.textContent, dir: r.className.replace('wl-rule', '').trim(), color: getComputedStyle(r.lastChild).color })),
-    oneLine: new Set(rules.map(r => Math.round(R(r).top))).size === 1, cut: [q('.wl-rules'), q('.wl-r2')].some(e => e.scrollWidth > e.clientWidth + 1) };
+  const q = s => t.querySelector(s), chips = [...q('.wl-rules').children], R = e => e.getBoundingClientRect();
+  const SEL = t.querySelector('.wl-tfc.sel'), SL = { '1m': '1 Min.', '30m': '30 Min.', '1h': '1 Std.', '4h': '4 Std.', '1d': '1 Tag' }[SEL?.dataset.tf] || '?', SV = SEL?.querySelector('.wl-tfv');
+  const rsiEl = q('.wl-rsi'), rsiDir = rsiEl.className.replace('wl-rsi', '').trim(), arrow = d => d === 'up' ? '▲' : d === 'down' ? '▼' : '–';
+  const rsiText = q('.wl-rsi-l').textContent.replace('RSI –', 'RSI').replace(/^RSI (\d+)$/, 'RSI $1') + arrow(rsiDir);
+  const ch = chips.map(r => ({ text: r.textContent, dir: r.className.replace('wl-rule', '').trim(), color: getComputedStyle(r.lastChild).color }));
+  return { coin: t.dataset.watch, expanded: t.getAttribute('aria-expanded'), chart: t.getAttribute('aria-current') === 'true', price: q('.wl-price').textContent, c1: `${SL} ${SV?.textContent}${SV?.textContent === '–' ? '' : ' %'}`, c1cls: SV?.className.replace('wl-tfv', 'wl-chg') || '',
+    c30: q('.wl-chg30')?.textContent ?? null, rules: [ch[0], ch[1], { text: rsiText, dir: rsiDir, color: null }, ch[2]],
+    oneLine: new Set(chips.map(r => Math.round(R(r).top))).size === 1, cut: [q('.wl-top'), q('.wl-rules'), q('.wl-tf'), ...t.querySelectorAll('.wl-tfv, .wl-rule, .wl-rsi-l')].some(e => e.scrollWidth > e.clientWidth + 1) };
 }));
 // Detailfeld aus dem DOM
 const panel = page => page.evaluate(() => {
@@ -73,10 +79,10 @@ const setRating = (page, coin, r) => page.evaluate(([c, r]) => { const e = windo
     const ok6 = t.filter(x => x.coin !== 'ABC'), abc = t.find(x => x.coin === 'ABC');
     check('Kacheln: je „1 Std. ±x,xx %“, kein „1 Min.“/„30 Min.“ mehr (BTC, ETC, BCH, LTC, XRP, NEAR)', ok6.length === 6 && ok6.every(x => /^1 Std\. [+−±]\d+,\d\d %$/.test(x.c1) && x.c30 === null), JSON.stringify(ok6.map(x => [x.coin, x.c1, x.c30])));
     check('Farbe der Veränderung folgt der Richtung (up grün, down rot, flat neutral)', ok6.every(x => /(^| )(up|down|flat)$/.test(x.c1cls) && (x.c1.includes('+') ? /up$/.test(x.c1cls) : x.c1.includes('−') ? /down$/.test(x.c1cls) : /flat$/.test(x.c1cls))), JSON.stringify(ok6.map(x => [x.c1, x.c1cls])));
-    check('Zeile Trend · Kurs · RSI (mit Zahl) · MACD mit Pfeilen ▲/▼/–', ok6.every(x => x.rules.map(r => r.text).join(' ').match(/^Trend[▲▼–] Kurs[▲▼–] RSI \d{1,3}[▲▼–] MACD[▲▼–]$/)), JSON.stringify(ok6.map(x => x.rules.map(r => r.text).join(' '))));
-    const colors = {}; for (const x of ok6) for (const r of x.rules) (colors[r.dir] ||= new Set()).add(r.color);
+    check('Felder Trend · Kurs · MACD mit Pfeilen ▲/▼/–, RSI mit Zahl (Knopf in der Farbe des Signals)', ok6.every(x => x.rules.map(r => r.text).join(' ').match(/^Trend[▲▼–] Kurs[▲▼–] RSI \d{1,3}[▲▼–] MACD[▲▼–]$/)), JSON.stringify(ok6.map(x => x.rules.map(r => r.text).join(' '))));
+    const colors = {}; for (const x of ok6) for (const r of x.rules) if (r.color) (colors[r.dir] ||= new Set()).add(r.color);
     check('Pfeile farbig: ▲ grün, ▼ rot, – neutral (je Bewertung eine eigene Farbe)', [...Object.values(colors)].every(s => s.size === 1) && new Set(Object.values(colors).map(s => [...s][0])).size === Object.keys(colors).length && ok6.every(x => x.rules.every(r => (r.text.endsWith('▲') ? r.dir === 'up' : r.text.endsWith('▼') ? r.dir === 'down' : r.dir === 'flat'))), JSON.stringify(Object.fromEntries(Object.entries(colors).map(([k, v]) => [k, [...v]]))));
-    check('iPad hoch: Werte und Zeile vollständig lesbar, die vier Regeln in einer Zeile', t.every(x => x.oneLine && !x.cut), JSON.stringify(t.filter(x => !x.oneLine || x.cut).map(x => x.coin)));
+    check('iPad hoch: Werte und Felder vollständig lesbar, Trend · Kurs · MACD in einer Zeile', t.every(x => x.oneLine && !x.cut), JSON.stringify(t.filter(x => !x.oneLine || x.cut).map(x => x.coin)));
     check('Fehlende Daten neutral: „—“, „1 Std. –“, Regeln „–“ ohne RSI-Zahl', abc && abc.price === '—' && abc.c1 === '1 Std. –' && /flat$/.test(abc.c1cls) && abc.rules.map(r => r.text).join(' ') === 'Trend– Kurs– RSI– MACD–' && abc.rules.every(r => r.dir === 'none'), JSON.stringify(abc));
     // ---- Detailfeld per Tippen ----
     let p = await panel(page);
@@ -173,7 +179,7 @@ const setRating = (page, coin, r) => page.evaluate(([c, r]) => { const e = windo
     ctx = await browser.newContext({ viewport: { width: 1180, height: 820 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 }); page = await ctx.newPage(); errors = []; h.collect(page, errors);
     await page.goto(`${h.URL_BASE}/${DBG}`); await live(page); await ready(page); await page.waitForTimeout(1500);
     t = await tiles(page);
-    check('iPad quer: Werte und Zeile vollständig lesbar, die vier Regeln in einer Zeile', t.every(x => x.oneLine && !x.cut), JSON.stringify(t.filter(x => !x.oneLine || x.cut).map(x => x.coin)));
+    check('iPad quer: Werte und Felder vollständig lesbar, Trend · Kurs · MACD in einer Zeile', t.every(x => x.oneLine && !x.cut), JSON.stringify(t.filter(x => !x.oneLine || x.cut).map(x => x.coin)));
     await page.evaluate(() => { const g = document.querySelector('#watchlist .wl-grid').getBoundingClientRect(); scrollBy(0, g.bottom - innerHeight + 90); }); await page.waitForTimeout(400);
     await page.tap('#watchlist .wl-tile[data-watch="NEAR"]'); await page.waitForTimeout(1200);
     const vis = await page.evaluate(() => { const r = document.getElementById('wl-detail').getBoundingClientRect(), tb = document.getElementById('tabbar'), tbTop = tb && getComputedStyle(tb).display !== 'none' ? tb.getBoundingClientRect().top : innerHeight; return { bottom: Math.round(r.bottom), limit: Math.round(tbTop), top: Math.round(r.top) }; });
@@ -221,7 +227,7 @@ const setRating = (page, coin, r) => page.evaluate(([c, r]) => { const e = windo
     ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 }); page = await ctx.newPage(); errors = []; h.collect(page, errors);
     await page.goto(`${h.URL_BASE}/${DBG}`); await live(page); await ready(page); await page.waitForTimeout(1500);
     t = await tiles(page);
-    check('Handy: alle Werte lesbar (nichts abgeschnitten), Regeln in zwei Zeilen', t.every(x => !x.cut && /^1 Std\./.test(x.c1)), JSON.stringify(t.filter(x => x.cut).map(x => x.coin)));
+    check('Handy: alle Werte lesbar (nichts abgeschnitten)', t.every(x => !x.cut && /^1 Std\./.test(x.c1)), JSON.stringify(t.filter(x => x.cut).map(x => x.coin)));
     await page.tap('#watchlist .wl-tile[data-watch="BTC"]'); await page.waitForTimeout(600);
     p = await panel(page);
     const hd = await page.evaluate(() => { const R = s => document.querySelector(s).getBoundingClientRect(), box = R('#wl-detail .wl-d-box'); return { closeIn: R('#wl-detail .wl-d-close').right <= box.right + 0.5, sw: document.scrollingElement.scrollWidth - innerWidth }; });

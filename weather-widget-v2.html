@@ -1554,54 +1554,78 @@ html[data-layout=tablet] #econ{order:1}
 .wl-head{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;min-height:36px;margin-bottom:6px}
 .wl-label{font-size:.8125rem;color:var(--muted)}
 .wl-tools{display:inline-flex;flex-wrap:wrap;align-items:center;gap:4px;margin-left:auto}
-/* 3.24.0 Ablaufplan Schritt 5: Kacheln in drei Zeilen – Kürzel, 30-Minuten-Verlauf, Kurs, 1m-Tendenz / „1 Min. …“ und
-   „30 Min. …“ / Trend · Kurs · RSI · MACD mit farbigen Pfeilen. Schmale Kacheln (Handy) in fünf Zeilen, siehe unten. */
-.wl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(198px,1fr));gap:6px}
+/* 3.71.0: Kacheln nach dem Entwurf des Nutzers – Kopf (Kürzel, Score −4…+4, Kurs), Veränderung je Zeitraum (1m · 5m · 1h · 1d,
+   der Zeitraum der Tendenz hervorgehoben), Verlauf über die ganze Breite mit Punkt am Ende, Trend · Kurs · MACD als farbige Felder,
+   RSI als Leiste mit Marken bei 30 und 70. Alle Zeilen haben feste Höhen – Live-Werte verschieben nichts. */
+.wl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
 .wl-item{position:relative;display:block;min-width:0;container:wlt/inline-size}
-.wl-tile{display:grid;width:100%;height:62px;grid-template-columns:auto minmax(0,1fr) auto auto;grid-template-rows:auto auto auto;grid-template-areas:"sym spark price sig" "r2 r2 r2 r2" "rules rules rules rules";column-gap:6px;row-gap:1px;align-content:center;align-items:center;padding:4px 8px;border:1px solid var(--field-border);border-radius:10px;background:var(--field);color:var(--text-2);font:inherit;line-height:1.3;text-align:left;overflow:hidden}
-.wl-tile[aria-current=true]{background:var(--up-bg-2);border-color:var(--up-border)}
+.wl-item[hidden]{display:none}
+.wl-tile{display:flex;flex-direction:column;gap:7px;width:100%;padding:11px 12px 10px;border:1px solid var(--field-border);border-radius:14px;background:var(--field);color:var(--text-2);font:inherit;line-height:1.25;text-align:left;overflow:hidden}
+.wl-tile[aria-current=true]{background:var(--up-bg);border-color:var(--up-text);box-shadow:inset 0 0 0 .5px var(--up-text)}
 .wl-tile[aria-expanded=true]{box-shadow:0 0 0 2px var(--mint);border-color:var(--mint)}
-.wl-sym{grid-area:sym;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.8125rem;font-weight:700;color:var(--text)}
-.wl-price{grid-area:price;justify-self:end;max-width:100%;overflow:hidden;white-space:nowrap;font-size:.8125rem;font-weight:600;font-variant-numeric:tabular-nums}
-.wl-spark{grid-area:spark;justify-self:center;width:100%;max-width:64px;height:16px;overflow:visible;color:var(--muted)}
-.wl-spark polyline{fill:none;stroke:currentColor;stroke-width:1.4;stroke-linejoin:round;stroke-linecap:round;vector-effect:non-scaling-stroke}
-.wl-spark.up{color:var(--up-text)}
-.wl-spark.down{color:var(--down-text)}
-.wl-r2{grid-area:r2;display:flex;justify-content:space-between;gap:8px;min-width:0;overflow:hidden}
-.wl-chg,.wl-chg30{white-space:nowrap;font-size:.72rem;font-weight:600;font-variant-numeric:tabular-nums;color:var(--muted)}
-.wl-chg{grid-area:c1}.wl-chg30{grid-area:c30;text-align:right}
-.wl-chg.up,.wl-chg30.up{color:var(--up-text)}
-.wl-chg.down,.wl-chg30.down{color:var(--down-text)}
-.wl-rules{grid-area:rules;display:flex;justify-content:space-between;gap:4px;min-width:0;overflow:hidden;white-space:nowrap;font-size:.6875rem;font-weight:600;font-variant-numeric:tabular-nums;color:var(--text-2)}
-.wl-rule i{margin-left:3px;font-style:normal;color:var(--muted)}
-.wl-rule.up i{color:var(--up-text)}.wl-rule.down i{color:var(--down-text)}
-.wl-rule.none{color:var(--muted)}
-.wl-sig{grid-area:sig;justify-self:end;display:grid;place-items:center;width:2.2em;height:18px;border-radius:4px;background:var(--hold);color:var(--hold-ink);font-size:.7rem;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
+.wl-top{display:flex;align-items:center;gap:7px;min-width:0;height:24px}
+.wl-sym{flex:none;font-size:1.0625rem;font-weight:800;color:var(--text);letter-spacing:.01em;white-space:nowrap}
+.wl-sig{flex:none;display:inline-grid;place-items:center;min-width:2.3em;height:22px;padding:0 6px;border-radius:999px;background:var(--hold);color:var(--hold-ink);font-size:.75rem;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
 .wl-sig[data-tone=p3],.wl-sig[data-tone=p2]{background:var(--buy);color:var(--buy-ink)}
-.wl-sig[data-tone=p1]{background:var(--t-p2);color:var(--text)}
-.wl-sig[data-tone=m1]{background:var(--t-m2);color:var(--text)}
+.wl-sig[data-tone=p1]{background:var(--up-bg-2);color:var(--up-text)}
+.wl-sig[data-tone=m1]{background:var(--down-bg-2);color:var(--down-text)}
 .wl-sig[data-tone=m2],.wl-sig[data-tone=m3]{background:var(--sell);color:var(--sell-ink)}
 .wl-sig[data-tone=none]{background:transparent;border:1px dashed var(--field-border);color:var(--muted)}
+.wl-price{margin-left:auto;min-width:0;overflow:hidden;white-space:nowrap;font-size:1rem;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums}
+.wl-tf{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:2px;height:40px}
+.wl-tfc{display:grid;align-content:center;justify-items:center;gap:2px;min-width:0;border-radius:8px}
+.wl-tfc.sel{background:color-mix(in srgb,var(--text) 10%,transparent)}
+.wl-tfc small{font-size:.6875rem;font-weight:600;color:var(--muted);line-height:1}
+.wl-tfv{max-width:100%;overflow:hidden;white-space:nowrap;font-size:.8125rem;font-weight:700;font-variant-numeric:tabular-nums;color:var(--muted);line-height:1.1}
+.wl-tfv.up{color:var(--up-text)}.wl-tfv.down{color:var(--down-text)}
+.wl-sparkbox{position:relative;display:block;height:24px;margin:0 4px 0 0;color:var(--muted)}
+.wl-sparkbox.up{color:var(--up-text)}.wl-sparkbox.down{color:var(--down-text)}
+.wl-spark{display:block;width:100%;height:100%;overflow:visible}
+.wl-spark polyline{fill:none;stroke:currentColor;stroke-width:2;stroke-linejoin:round;stroke-linecap:round;vector-effect:non-scaling-stroke}
+.wl-dot{position:absolute;right:-4px;top:50%;width:8px;height:8px;margin-top:-4px;border-radius:50%;background:currentColor}
+.wl-dot[hidden]{display:none}
+.wl-rules{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;height:28px}
+.wl-rule{display:flex;align-items:center;justify-content:center;gap:3px;min-width:0;border-radius:8px;background:var(--hold);color:var(--muted);font-size:.75rem;font-weight:700;white-space:nowrap;overflow:hidden}
+.wl-rule.up{background:var(--up-bg-2);color:var(--up-text)}
+.wl-rule.down{background:var(--down-bg-2);color:var(--down-text)}
+.wl-rule i{font-style:normal;font-size:.75em}
+.wl-rsi{display:flex;align-items:center;gap:10px;height:16px}
+.wl-rsi-l{flex:none;min-width:3.7em;font-size:.75rem;font-weight:700;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.wl-rsi-bar{position:relative;flex:1 1 auto;height:5px;margin-right:6px;border-radius:3px;background:var(--hold)}
+.wl-rsi-bar i{position:absolute;top:-3px;width:2px;height:11px;margin-left:-1px;border-radius:1px;background:var(--muted)}
+.wl-rsi-bar i:first-child{left:30%}.wl-rsi-bar i:nth-child(2){left:70%}
+.wl-rsi-bar b{position:absolute;top:50%;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;background:var(--text)}
+.wl-rsi-bar b[hidden]{display:none}
+.wl-rsi.up .wl-rsi-bar b{background:var(--up-text)}.wl-rsi.down .wl-rsi-bar b{background:var(--down-text)}   /* Farbe = RSI-Signal (unter 30 und steigend bullish, über 70 und fallend bearish) */
+/* „+ Coin hinzufügen“ als gestrichelte Kachel – immer da, damit beim Laden eines neuen Coins nichts verrutscht */
+.wl-add{display:grid;place-items:center;width:100%;height:100%;min-height:96px;padding:8px;border:1.5px dashed var(--field-border);border-radius:14px;background:none;color:var(--muted);font:inherit;font-size:.9375rem;font-weight:600;text-align:center}
+.wl-add[data-addwatch]{border-color:var(--up-border);color:var(--up-text)}
+.wl-add:hover{color:var(--text)}
+.wl-empty{grid-column:1/-1;padding:14px;border:1px dashed var(--field-border);border-radius:12px;color:var(--muted);font-size:.8125rem;text-align:center}
+/* Kopf: Filter (Alle · Stark ≥ +2 · Schwach ≤ −2) und Sortierung */
+.wl-filter{display:flex;flex-wrap:wrap;align-items:center;gap:6px;flex:1 1 100%;order:3;margin-top:2px}
+.wl-fchip{min-height:32px;padding:4px 11px;border:1px solid var(--field-border);border-radius:999px;background:var(--field);color:var(--text-2);font:inherit;font-size:.8125rem;font-weight:700;white-space:nowrap}
+.wl-fchip[aria-pressed=true]{background:var(--text);border-color:var(--text);color:var(--bg)}
+.wl-sortbtn{min-height:32px;padding:4px 8px 4px 4px;border:0;background:none;color:var(--muted);font:inherit;font-size:.8125rem;font-weight:600;white-space:nowrap}
+.wl-sortbtn[aria-pressed=true]{color:var(--text)}
 .wl-item .chip-x{position:absolute;top:-8px;right:-8px;z-index:1;width:28px;min-height:28px;height:28px;margin:0;border:1px solid var(--field-border);border-radius:50%;background:var(--surface);line-height:1}
-html[data-layout=tablet] .wl-tile{height:64px}
-/* Handys (bis 460 px Panelbreite): 2 Spalten statt einer langen Reihe – der Chart rutscht sonst weit nach unten */
-@container (max-width:460px){.wl-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-/* schmale Kachel (unter 190 px): Kürzel und Kurs / 1 Min. und Tendenz / 30 Min. mit Verlauf / Regeln in zwei Zeilen.
-   Der Kurs hat eine eigene Spur, unter der „1 Min.“ und „30 Min.“ weiterlaufen – rechts bleibt nur die schmale Spalte für
-   Tendenz und Verlauf. Sonst bestimmte der Kurs die rechte Spalte (BTC „64.141,32“), und bei 320 px ragte „30 Min. …“ bis
-   23 px aus seiner Zelle, mit langen Werten bis in den Verlauf */
-@container wlt (max-width:189px){
-  .wl-tile,html[data-layout=tablet] .wl-tile{height:86px;grid-template-columns:minmax(0,1fr) auto auto;grid-template-rows:repeat(4,auto);grid-template-areas:"sym price price" "c1 c1 sig" "c30 c30 spark" "rules rules rules";column-gap:4px;padding:4px 6px}
-  .wl-r2{display:contents}
-  .wl-chg30{text-align:left}
-  .wl-sym,.wl-price{font-size:.75rem}
-  .wl-spark{width:28px;height:12px;justify-self:end}
-  .wl-chg,.wl-chg30{font-size:.66rem}
-  .wl-sig{width:1.9em;height:16px;font-size:.66rem}
-  .wl-rules{display:grid;grid-template-columns:auto auto;justify-content:space-between;column-gap:6px;row-gap:1px;font-size:.625rem}
+/* Handys (bis 460 px Panelbreite): 2 Spalten */
+@container (max-width:460px){.wl-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}}
+/* schmale Kachel (Handy): etwas kleinere Schrift, gleiche Zeilen */
+@container wlt (max-width:200px){
+  .wl-tile{gap:6px;padding:9px 9px 8px}
+  .wl-top{gap:5px;height:22px}
+  .wl-sym{font-size:.9375rem}
+  .wl-sig{min-width:2em;height:20px;padding:0 5px;font-size:.6875rem}
+  .wl-price{font-size:.875rem}
+  .wl-tf{height:36px;gap:1px}
+  .wl-tfv{font-size:.6875rem;letter-spacing:-.01em}
+  .wl-tfc small{font-size:.625rem}
+  .wl-rules{gap:4px;height:26px}
+  .wl-rule{font-size:.6875rem}
+  .wl-rsi-l{font-size:.6875rem}
 }
-/* sehr schmale Kachel (Handy 320 px): Werte so groß wie die Regelzeile, damit auch „30 Min. −10,98 %“ neben den Verlauf passt */
-@container wlt (max-width:132px){.wl-chg,.wl-chg30{font-size:.625rem}}
+@container wlt (max-width:150px){.wl-price{font-size:.75rem}.wl-sym{font-size:.875rem}.wl-tfv{font-size:.625rem}.wl-rule{font-size:.625rem;gap:1px}}
 @media (pointer:coarse){.wl-item .chip-x{width:40px;height:40px;min-width:40px;min-height:40px;top:-14px;right:-12px}}
 /* 3.35.0 (G07): Market-Cap-Ansicht – Preisebenen und Leisten aus */
 /* Kompakter Umschalter in der Chart-Menüleiste: ein Knopf „MCap“ neben den Intervallen. Die Gruppe (Intervalle + MCap) zählt beim
@@ -1957,12 +1981,6 @@ html[data-layout=tablet] .wl-detail{scroll-margin-bottom:calc(84px + env(safe-ar
 :root .livebar[data-fit~="5"] .lb-pos{font-size:.82em}
 :root .livebar[data-fit~="5"]{column-gap:4px}
 :root .livebar[data-fit~="6"] .lb-market{font-size:.9em}:root .livebar[data-fit~="6"] .lb-price{font-size:1.02rem}
-/* 3.25.0: Vorauswahl über einen wählbaren Zeitraum – eine Veränderung je Kachel; in der schmalen Kachel nimmt der Verlauf
-   die frei gewordene Zeile ganz ein */
-@container wlt (max-width:189px){
-  .wl-tile,html[data-layout=tablet] .wl-tile{grid-template-areas:"sym price price" "c1 c1 sig" "spark spark spark" "rules rules rules"}
-  .wl-spark{width:100%;justify-self:stretch}
-}
 /* Detailfeld: Zeitraum in der Überschrift wählbar – sichtbar der Text, darüber unsichtbar die echte Auswahl (16 px: kein Zoom am iPhone) */
 .wl-d-pick{position:relative;display:inline-block;padding-right:.95em;border-bottom:1px dashed currentColor;cursor:pointer;white-space:nowrap}
 .wl-d-pick::after{content:"▾";position:absolute;right:0;top:50%;transform:translateY(-50%);font-size:.85em;pointer-events:none}
@@ -2285,6 +2303,7 @@ import { exportModelArchive, importModelArchive, validateModelArchive, restoreMo
 import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT, patternGrade } from './bundles/3.71.0/shared/telegram-format.mjs';
 import { patternSignalCard, patternChartData } from './bundles/3.71.0/shared/pattern-signal-card.mjs';   // 3.71.0: Chartmuster-Signalkarte
 import { pnlAlarmCard } from './bundles/3.71.0/shared/pnl-alarm-card.mjs';   // 3.71.0: Gewinn-/Verlust-Alarm als Bild
+import { priceAlarmCard } from './bundles/3.71.0/shared/price-alarm-card.mjs';   // 3.71.0: Kurs-Alarm als Bild
 import { createOrderflowView } from './bundles/3.71.0/shared/orderflow-view.mjs';
 import { createSignalView } from './bundles/3.71.0/shared/orderflow-signal-view.mjs';
 import { networkState, createWidgetBoundary } from './bundles/3.71.0/shared/widget-state.mjs';
@@ -3652,7 +3671,9 @@ function renderMarket() {
   drawChart();
 }
 // ---------- Chart-Ausschnitt: Zoom und Blättern ----------
-let lastChart = null, chartGeom = null, drawQueued = false;
+let lastChart = null, chartGeom = null, drawQueued = false, drawReq = 0, drawDone = 0;
+// 3.71.0: Geste läuft (Zoomen/Blättern) – chartLite: vereinfacht zeichnen (ohne Etiketten-Entzerrung und Nebenleisten), chartLive: Zustand der Geste
+let chartLite = false; var chartLive = { on: false, afterDraw() {}, stats: { draw: 0, lite: 0 } }; window.__chartLive = chartLive;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 function viewWindow() {
   const len = state.candles.length, count = Math.min(state.count, len);
@@ -3661,15 +3682,17 @@ function viewWindow() {
   const end = len - state.pan; return { start: Math.max(0, end - count), end };
 }
 function drawChart() {
+  drawDone = drawReq; chartLive.stats.draw++; if (chartLite) chartLive.stats.lite++; // ein schon angefordertes Zeichnen im nächsten Bild entfällt (dieses hier zeigt den neuesten Stand)
   if (CAP.on) { capRender(); renderZones(); ovButtons(); return; } // 3.35.0 (G07): Market-Cap-Ansicht statt Kerzen
   if (!lastChart) return;
-  const { start, end } = displayWindow(), vis = chartRows().slice(start, end), profile = vis.length ? volumeProfile(vis) : null;
-  renderFibStrip(); renderWhaleStrip(); renderDivTip(); ovButtons(); // 3.32.0 (G04.1): Sperren auch bei verdecktem Chart
+  const { start, end } = displayWindow(), vis = chartRows().slice(start, end), profile = vis.length ? volumeProfile(vis) : null, lite = chartLite || chartLive.on;
+  if (!lite) { renderFibStrip(); renderWhaleStrip(); renderDivTip(); ovButtons(); } // 3.32.0 (G04.1): Sperren auch bei verdecktem Chart
   if (chartOnScreen) renderChart(lastChart.levels, { bb: lastChart.bb && { upper: displaySeries(lastChart.bb.upper), lower: displaySeries(lastChart.bb.lower), mid: displaySeries(lastChart.bb.mid) }, ema200: displaySeries(lastChart.ema200), profile }, start, end); else chartStale = true;
-  renderZones(); // 3.35.0 (G07): aus der Analyse-Reihe, unabhängig vom Ausschnitt
+  if (!lite) renderZones(); // 3.35.0 (G07): aus der Analyse-Reihe, unabhängig vom Ausschnitt
   updateNav();
+  if (chartLive.on) chartLive.afterDraw(); // 3.71.0: während einer Geste das neue Bild gleich wieder dem Finger nachführen
 }
-function scheduleDraw() { if (drawQueued) return; drawQueued = true; requestAnimationFrame(() => { drawQueued = false; drawChart(); }); }
+function scheduleDraw() { drawReq++; if (drawQueued) return; drawQueued = true; requestAnimationFrame(() => { drawQueued = false; if (drawDone !== drawReq) drawChart(); }); }
 function setPan(p) {
   if (CAP.on) return; // 3.35.0: in der Cap-Ansicht bleibt der Kurs-Ausschnitt unverändert
   if (detailReady()) { detail.pan(p); scheduleDraw(); return; }
@@ -4281,7 +4304,7 @@ function renderWatchlist() {
   const box = $('watchlist'), base = state.symbol.slice(0, -4), showAdd = !state.watch.includes(base) && state.loadedSymbol === state.symbol;
   // Ausgewählte Kachel entfernt (Bearbeiten, „Standard“, Sicherung eingespielt): Detailfeld schließen, keine falsche Auswahl
   if (wldSel && !state.watch.includes(wldSel)) wldClose(false);
-  const S = wlSpan(), key = JSON.stringify([state.watch, state.watchEdit, S.label]), curKey = JSON.stringify([key, base, showAdd]);
+  const S = wlSpan(), key = JSON.stringify([state.watch, state.watchEdit, S.label, wlTfCols()]), curKey = JSON.stringify([key, base, showAdd]);
   // 3.26.0: Wechselt nur der Coin im Chart (Kachel angetippt), bleiben Kopfzeile und Kacheln stehen; neu sind nur die
   // Markierung „im Chart geöffnet“ und „+ Coin“. Der Neuaufbau nahm der angetippten Kachel den Tastatur-Fokus, und Chrome
   // verschob dabei die Seite (Scroll-Anker in den ersetzten Kacheln).
@@ -4296,32 +4319,42 @@ function renderWatchlist() {
   if (grid0 && k0 && k0[1] === state.watchEdit && k0[2] === S.label && k0[0].length === state.watch.length && [...k0[0]].sort().join() === [...state.watch].sort().join()) {
     const items = new Map([...grid0.children].map(i => [i.querySelector('.wl-tile')?.dataset.watch, i]));
     state.watch.forEach((c, i) => { const it = items.get(c); if (it && grid0.children[i] !== it) grid0.insertBefore(it, grid0.children[i] || null); });
-    watchKey = key; watchCurKey = curKey; wlSortState(); wlMarkCurrent(base, showAdd); return;
+    const addIt = grid0.querySelector(':scope > .wl-add-item'); if (addIt) grid0.append(addIt);
+    watchKey = key; watchCurKey = curKey; wlSortState(); wlMarkCurrent(base, showAdd); wlArrange(); return;
   }
   watchKey = key; watchCurKey = curKey;
   const head = el('div', 'wl-head'), tip = el('details', 'tip left wl-tip'), sum = el('summary');
   sum.setAttribute('aria-label', 'Was die Kacheln der Vorauswahl zeigen'); sum.append(el('span', '', 'i'));
   const body = el('div', 'tip-body');
-  body.append(el('p', '', `Je Coin: Live-Kurs, der Verlauf ${S.of} und rechts die Tendenz. Darunter die Veränderung über ${S.name} („${S.label} …“) und die Zeile Trend · Kurs · RSI (mit Wert) · MACD: ▲ grün = bullish, ▼ rot = bearish, – = neutral.`),
+  body.append(el('p', '', `Je Coin: Kürzel, Tendenz (Score −4 bis +4) und Live-Kurs. Darunter die Veränderung in Prozent über 1 Minute bis 1 Tag – hervorgehoben ${S.the}, über den die Tendenz rechnet –, der Verlauf ${S.of}, die Felder Trend · Kurs · MACD (▲ grün = bullish, ▼ rot = bearish, – neutral) und der RSI als Leiste mit den Marken 30 und 70.`),
+    el('p', '', '„Alle“, „Stark ≥ +2“ und „Schwach ≤ −2“ filtern nach der Tendenz; „Score ↓“ sortiert nach der Tendenz, „Eigene“ zeigt deine Reihenfolge (nur dort lassen sich Kacheln verschieben).'),
     el('p', '', `Tendenz: die Summe dieser vier Regeln – dieselben wie in der Signal-Übersicht – auf abgeschlossenen ${S.ivName}-Kerzen, von −4 bis +4, neu bei jedem Kerzenschluss. Kräftig grün bzw. rot erst, wenn mindestens 3 der 4 Regeln in dieselbe Richtung zeigen (Long- bzw. Short-Tendenz). Den Zeitraum (1 Minute bis 1 Tag) wählst du im Detailfeld; die Zeitraum-Knöpfe des Charts ändern ihn nicht. Eine Beschreibung ${S.of}, kein Handelssignal mit nachgewiesenem Vorteil.`),
     el('p', '', 'Antippen zeigt darunter die Signale des Coins mit Erklärungen und lädt ihn im Chart weiter unten – die Seite springt nicht dorthin. „Bearbeiten“ entfernt Coins, „+ Coin“ nimmt den geöffneten Coin auf. Fehlen Daten (Coin lädt noch, keine Verbindung), steht neutral „–“.'),
     el('p', '', 'Reihenfolge ändern: eine Kachel etwa eine halbe Sekunde gedrückt halten und an den neuen Platz ziehen. In „Bearbeiten“ auch mit ◀ ▶ oder am Griff ⠿, mit der Tastatur Alt + Pfeiltaste auf einer Kachel. Die Reihenfolge wird gespeichert und ist Teil der Sicherung.'));
   tip.append(sum, body);
   head.append(el('span', 'wl-label', 'Vorauswahl'), tip);
-  const tools = el('span', 'wl-tools');
+  // 3.71.0: Filter nach der Tendenz und Sortierung (Score ↓ / eigene Reihenfolge) – gespeichert je Gerät
+  const filter = el('span', 'wl-filter'); filter.setAttribute('role', 'group'); filter.setAttribute('aria-label', 'Vorauswahl filtern');
+  for (const [k, t] of [['all', `Alle ${state.watch.length}`], ['strong', 'Stark ≥ +2'], ['weak', 'Schwach ≤ −2']]) { const b = btn('wl-fchip', t); b.dataset.wlfilter = k; b.setAttribute('aria-pressed', String(wlFilterKey() === k)); filter.append(b); }
+  head.append(filter);
+  const tools = el('span', 'wl-tools'), sortB = btn('wl-sortbtn', ''); sortB.dataset.wlsort = '1'; tools.append(sortB);
   if (state.watchEdit && state.watch.join() !== DEFAULT_WATCH.join()) { const reset = btn('chip-tool', 'Standard'); reset.dataset.watchreset = '1'; tools.append(reset); }
   const edit = btn('chip-tool', state.watchEdit ? 'Fertig' : 'Bearbeiten'); edit.dataset.watchedit = '1'; edit.setAttribute('aria-pressed', String(state.watchEdit)); tools.append(edit);
   head.append(tools);
   const grid = el('div', 'wl-grid');
   for (const coin of state.watch) {
     const item = el('span', 'wl-item'), tile = btn('wl-tile'), svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    tile.dataset.watch = coin; tile.setAttribute('aria-expanded', String(coin === wldSel)); tile.setAttribute('aria-controls', 'wl-detail');
-    svg.setAttribute('class', 'wl-spark'); svg.setAttribute('viewBox', '0 0 44 16'); svg.setAttribute('preserveAspectRatio', 'none'); svg.setAttribute('aria-hidden', 'true');
+    item.dataset.coin = coin; tile.dataset.watch = coin; tile.setAttribute('aria-expanded', String(coin === wldSel)); tile.setAttribute('aria-controls', 'wl-detail');
+    svg.setAttribute('class', 'wl-spark'); svg.setAttribute('viewBox', '0 0 100 24'); svg.setAttribute('preserveAspectRatio', 'none'); svg.setAttribute('aria-hidden', 'true');
     svg.append(document.createElementNS('http://www.w3.org/2000/svg', 'polyline'));
-    const r2 = el('span', 'wl-r2'), rules = el('span', 'wl-rules');
-    r2.append(el('span', 'wl-chg flat', `${S.label} –`));
-    for (const x of wlRules(null)) { const s = el('span', `wl-rule ${x.dir}`); s.append(el('span', '', x.label), el('i', '', x.arrow)); rules.append(s); }
-    tile.append(el('b', 'wl-sym', coin), svg, el('span', 'wl-price', '…'), el('span', 'wl-sig', '·'), r2, rules);
+    // 3.71.0: Kopf · Veränderung je Zeitraum · Verlauf mit Punkt · Trend/Kurs/MACD · RSI-Leiste (Werte schreibt wlPaint)
+    const top = el('span', 'wl-top'), tf = el('span', 'wl-tf'), spark = el('span', 'wl-sparkbox'), rules = el('span', 'wl-rules'), rsi = el('span', 'wl-rsi'), bar = el('span', 'wl-rsi-bar');
+    top.append(el('b', 'wl-sym', coin), el('span', 'wl-sig', '·'), el('span', 'wl-price', '…'));
+    for (const k of wlTfCols()) { const c = el('span', `wl-tfc${k === (wl?.span || wlSpanKey()) ? ' sel' : ''}`); c.dataset.tf = k; c.append(el('small', '', k), el('span', 'wl-tfv', '–')); tf.append(c); }
+    const dot = el('i', 'wl-dot'); dot.hidden = true; spark.append(svg, dot);
+    for (const x of wlRules(null).filter(x => x.k !== 'rsi')) { const r = el('span', `wl-rule ${x.dir}`); r.append(el('span', '', x.label), el('i', '', x.arrow)); rules.append(r); }
+    const knob = el('b'); knob.hidden = true; bar.append(el('i'), el('i'), knob); rsi.append(el('span', 'wl-rsi-l', 'RSI –'), bar);
+    tile.append(top, tf, spark, rules, rsi);
     item.append(tile);
     if (state.watchEdit) {
       const x = btn('chip-x', '×'); x.dataset.unwatch = coin; x.setAttribute('aria-label', `${coin} aus der Vorauswahl entfernen`); item.append(x);
@@ -4333,10 +4366,11 @@ function renderWatchlist() {
     }
     grid.append(item);
   }
+  const addItem = el('span', 'wl-item wl-add-item'), add = btn('wl-add', '+ Coin hinzufügen'); add.dataset.addcoin = '1'; addItem.append(add); grid.append(addItem);
   // das Detailfeld bleibt eingehängt (3.25.0): sonst verlöre die Zeitraum-Auswahl darin beim Wechsel den Fokus
   const d = wldBox();
   if (d.parentNode === box) { for (const n of [...box.childNodes]) if (n !== d) n.remove(); d.before(head, grid); } else box.replaceChildren(head, grid, d);
-  wlSortState(); wlMarkCurrent(base, showAdd);
+  wlSortState(); wlMarkCurrent(base, showAdd); wlHeadPaint();
   if (typeof wlPaint === 'function') wlPaint(Date.now(), true);
 }
 // Kachel des Coins im Chart markieren (Rahmen, Vorlesetext) und „+ Coin“ zeigen, ohne etwas neu aufzubauen
@@ -4347,10 +4381,35 @@ function wlMarkCurrent(base, showAdd) {
     if (cur) t.setAttribute('aria-current', 'true'); else t.removeAttribute('aria-current');
     if (cur && !sr) t.append(el('span', 'sr-only', ' (im Chart geöffnet)')); else if (!cur && sr) sr.remove();
   }
-  const tools = box.querySelector('.wl-tools'), old = tools?.querySelector('[data-addwatch]');
-  if (!tools || (old && showAdd && old.dataset.addwatch === base) || (!old && !showAdd)) return;
-  old?.remove();
-  if (showAdd) { const add = btn('chip add', '+ ' + base); add.dataset.addwatch = base; add.setAttribute('aria-label', `${base} zur Vorauswahl hinzufügen`); tools.prepend(add); }
+  // 3.71.0: „+ Coin hinzufügen“ als letzte Kachel – mit geöffnetem Coin außerhalb der Vorauswahl „+ SOL hinzufügen“
+  const add = box.querySelector('.wl-add'); if (!add) return;
+  if (showAdd) { add.dataset.addwatch = base; delete add.dataset.addcoin; add.textContent = `+ ${base} hinzufügen`; add.setAttribute('aria-label', `${base} zur Vorauswahl hinzufügen`); }
+  else { delete add.dataset.addwatch; add.dataset.addcoin = '1'; add.textContent = '+ Coin hinzufügen'; add.setAttribute('aria-label', 'Coin suchen und zur Vorauswahl hinzufügen'); }
+}
+// 3.71.0: Filter und Sortierung der Vorauswahl (je Gerät gespeichert); var: renderWatchlist kann vor diesem Abschnitt laufen
+var WL_FILTER_KEY = 'scalpdesk.wlfilter.v1', WL_SORT_KEY = 'scalpdesk.wlsort.v1';
+function wlFilterKey() { const v = store.get(WL_FILTER_KEY); return ['all', 'strong', 'weak'].includes(v) ? v : 'all'; }
+function wlSortKey() { return store.get(WL_SORT_KEY) === 'score' ? 'score' : 'own'; }
+function wlSortEff() { return state.watchEdit ? 'own' : wlSortKey(); }   // Bearbeiten zeigt immer die eigene Reihenfolge
+function wlHeadPaint() {
+  const box = $('watchlist'), f = wlFilterKey(), sb = box?.querySelector('[data-wlsort]'); if (!box) return;
+  for (const b of box.querySelectorAll('[data-wlfilter]')) b.setAttribute('aria-pressed', String(b.dataset.wlfilter === f));
+  const all = box.querySelector('[data-wlfilter="all"]'); if (all) all.textContent = `Alle ${state.watch.length}`;
+  if (sb) { const sc = wlSortKey() === 'score'; sb.textContent = sc ? 'Score ↓' : 'Eigene ↕'; sb.setAttribute('aria-pressed', String(sc)); sb.title = sc ? 'Sortiert nach Tendenz (höchster Score zuerst) – antippen: eigene Reihenfolge' : 'Eigene Reihenfolge – antippen: nach Tendenz sortieren'; sb.disabled = state.watchEdit; }
+}
+// Kacheln filtern und (bei „Score ↓“) nach der Tendenz ordnen – nur Umhängen, nichts neu bauen; nie während eine Kachel gezogen wird
+function wlArrange() {
+  const grid = $('watchlist')?.querySelector('.wl-grid'); if (!grid || wlDrag) return;
+  const f = wlFilterKey(), items = [...grid.querySelectorAll(':scope > .wl-item:not(.wl-add-item)')], addIt = grid.querySelector(':scope > .wl-add-item');
+  const score = it => wl?.c.get(wlSym(it.dataset.coin))?.rating?.score ?? null, idx = it => state.watch.indexOf(it.dataset.coin);
+  let shown = 0;
+  for (const it of items) { const sc = score(it), ok = f === 'all' || (sc !== null && (f === 'strong' ? sc >= 2 : sc <= -2)); if (it.hidden === ok) it.hidden = !ok; if (ok) shown++; }
+  const order = [...items].sort(wlSortEff() === 'score' ? (a, b) => (score(b) ?? -9) - (score(a) ?? -9) || idx(a) - idx(b) : (a, b) => idx(a) - idx(b));
+  order.forEach((it, i) => { if (grid.children[i] !== it) grid.insertBefore(it, grid.children[i] || null); });
+  if (addIt && grid.lastElementChild !== addIt) grid.append(addIt);
+  let empty = grid.querySelector(':scope > .wl-empty');
+  if (f !== 'all' && !shown) { if (!empty) { empty = el('span', 'wl-empty'); grid.insertBefore(empty, addIt); } wlSet(empty, 'textContent', f === 'strong' ? 'Gerade kein Coin mit Tendenz ≥ +2.' : 'Gerade kein Coin mit Tendenz ≤ −2.'); }
+  else empty?.remove();
 }
 
 // ---- 3.32.0 (G04.8–10): Vorauswahl umsortieren ----
@@ -4363,7 +4422,7 @@ function wlMarkCurrent(base, showAdd) {
 // her – keine Kachel geht verloren. Gespeichert wird die Reihenfolge der Kürzel (state.watch, Sicherung „watchlist“).
 var WL_HOLD = 450, WL_SLOP = 8, wlDrag = null, wlPress = null, wlNoClickUntil = 0;
 function wlSortState() {
-  const items = [...document.querySelectorAll('#watchlist .wl-grid > .wl-item')], n = items.length;
+  const items = [...document.querySelectorAll('#watchlist .wl-grid > .wl-item:not(.wl-add-item)')], n = items.length;
   items.forEach((it, i) => {
     const prev = it.querySelector('[data-wlmove="-1"]'), next = it.querySelector('[data-wlmove="1"]'), grip = it.querySelector('.wl-grip'), c = grip?.dataset.coin;
     if (prev) prev.disabled = i === 0; if (next) next.disabled = i === n - 1;
@@ -4404,7 +4463,7 @@ function wlDragMove(x, y) {
   const d = wlDrag; if (!d) return; d.x = x; d.y = y;
   d.ghost.style.transform = `translate(${x - d.x0}px, ${y - d.y0}px) scale(1.04)`;
   for (const it of d.grid.children) {
-    if (it === d.item) continue; const r = it.getBoundingClientRect();
+    if (it === d.item || it.hidden || !it.dataset.coin) continue; const r = it.getBoundingClientRect();
     if (x < r.left || x > r.right || y < r.top || y > r.bottom) continue;
     const kids = [...d.grid.children], a = kids.indexOf(d.item), b = kids.indexOf(it);
     d.grid.insertBefore(d.item, a < b ? it.nextSibling : it); break;
@@ -4432,6 +4491,7 @@ $('watchlist').addEventListener('pointerdown', e => {
   if (wlDrag || !e.isPrimary || (e.pointerType === 'mouse' && e.button !== 0)) return;
   const grip = e.target.closest('.wl-grip'), tile = e.target.closest('.wl-tile'), item = (grip || tile)?.closest('.wl-grid > .wl-item'); if (!item) return;
   if (grip) { e.preventDefault(); wlDragStart(item, e, true); return; }
+  if (wlSortEff() === 'score' || wlFilterKey() !== 'all') return;   // 3.71.0: verschoben wird nur in der eigenen, ungefilterten Reihenfolge
   wlPressClear();
   const p = { id: e.pointerId, x: e.clientX, y: e.clientY, lx: e.clientX, ly: e.clientY, target: tile };
   p.t = setTimeout(() => { if (wlPress !== p) return; wlPress = null; wlDragStart(item, { pointerId: p.id, clientX: p.lx, clientY: p.ly, target: p.target }, false); }, WL_HOLD);
@@ -6329,7 +6389,9 @@ function triggerAlarm(a, price, info = {}) {
   // 3.26.0: meldet der 24/7-Dienst diesen Alarm, bleibt er noch 3 Minuten in der Übergabe (sonst könnte er ihn verpassen)
   const key = `al:${a.id}:${a.armedAt || a.createdAt}`; a.svcAt = s247Covers('alarm', key) ? Date.now() : 0;
   if (a.svcAt) setTimeout(() => scheduleS247(0), S247_GRACE + 1500);
-  void notifyChannels('alarm', key, formatMessage('alarm', { symbol: a.symbol, direction: a.dir, level: a.price, price, reached: howReached(info), note: a.note }), 864e5, { ev: alarmEventId(a) });
+  // 3.71.0: Bild mit denselben Werten (Kurs, Level, Abstand, Auslösung, Notiz); die Textmeldung bleibt der Ersatz
+  const card = { symbol: a.symbol, direction: a.dir, level: a.price, price, reached: howReached(info), note: a.note || '', at: Date.now(), timezone: PAT_TZ };
+  void notifyChannels('alarm', key, formatMessage('alarm', { symbol: a.symbol, direction: a.dir, level: a.price, price, reached: howReached(info), note: a.note }), 864e5, { ev: alarmEventId(a), card });
   simpleToast('al:' + a.id, 'alarm ' + (a.dir === 'above' ? 'up' : 'down'), `🔔 ${what} ${howReached(info)} · Kurs ${priceText(price)}${a.note ? ' – ' + a.note : ''}`, null, a.dir === 'above' ? 'green' : 'orange');
 }
 // Stop, Ziel und Kurs-Alarme prüfen – bei jeder Kursmeldung aus dem Stream und nach jedem REST-Abruf.
@@ -6707,7 +6769,7 @@ function renderChartContent(levels={}, ov={}, start=null, end=null) {
   const gridN=axisIn && bottom-top>420 ? 6 : 4, axisTags=[], lastTag=lastTagBox(state.candles.at(-1)?.close, {y, min, max, top, bottom, w, axisIn, data, x, step});
   for(let i=0;i<=gridN;i++) {const v=min+(max-min)*i/gridN,yy=y(v);svg.append(node('line',{x1:left,y1:yy,x2:w-right+4,y2:yy,class:'grid-line'}));
     if(lastTag && yy>lastTag.y-10 && yy<lastTag.y+lastTag.h+10) continue; // 3.3: das Kurs-Schild hat Vorrang vor der Rasterbeschriftung
-    if(!axisIn) svg.append(node('text',{x:w-right+10,y:yy+4,class:'axis-label'},priceText(v))); else if(i>0 && i<gridN) axisTags.push([yy,priceText(v)]);}
+    if(!axisIn) svg.append(node('text',{x:w-right+10,y:yy+4,class:'axis-label y-axis'},priceText(v))); else if(i>0 && i<gridN) axisTags.push([yy,priceText(v)]);}
   // rechte Beschriftungen (Einstieg, SL/TP, Alarme) enden am Handy hochkant vor den Kurs-Schildchen
   const laneW=[...axisTags.map(([,t])=>t.length*7+10), ...(axisIn && lastTag ? [lastTagW(lastTag, true)] : [])], laneX=laneW.length ? w-6-Math.max(...laneW) : Infinity, rx=Math.min(left+pw-6, laneX-4);
   const defs=node('defs',{}), clip=node('clipPath',{id:'plot-clip'}); clip.append(node('rect',{x:left,y:top,width:pw,height:bottom-top})); defs.append(clip); svg.append(defs);
@@ -6773,14 +6835,14 @@ function renderChartContent(levels={}, ov={}, start=null, end=null) {
   const cross=node('line',{x1:0,y1:top,x2:0,y2:h-30,class:'crosshair',visibility:'hidden'});svg.append(cross);
   function select(i) {i=Math.max(0,Math.min(data.length-1,i));state.selected=i;const c=data[i];state.selectedTime=c.time;cross.setAttribute('x1',x(i));cross.setAttribute('x2',x(i));cross.setAttribute('visibility','visible');put('ohlc',`${utcDate(c.time)} UTC · O ${priceText(c.open)}  H ${priceText(c.high)}\nL ${priceText(c.low)}  C ${priceText(c.close)}`);}
   const clear=()=>{cross.setAttribute('visibility','hidden');state.selected=null;state.selectedTime=null;put('ohlc',`O ${priceText(last.open)}  H ${priceText(last.high)}\nL ${priceText(last.low)}  C ${priceText(last.close)}`);};
-  chartGeom={w,h,left,pw:step*data.length,step,top,bottom,min,max,y,count:data.length,data,levels,prof,bbU,bbL,bbM,e200,select,clear,axisIn};
+  chartGeom={w,h,left,pw:step*data.length,plotW:pw,offset,step,top,bottom,min,max,y,count:data.length,data,levels,prof,bbU,bbL,bbM,e200,select,clear,axisIn};
   container.onkeydown=event=>{if(['ArrowLeft','ArrowRight'].includes(event.key)){event.preventDefault();select((state.selected??data.length-1)+(event.key==='ArrowLeft'?-1:1));}if(event.key==='+' || event.key==='-'){event.preventDefault();zoom(event.key==='+'?.7:1.4);}};
   for (const t of svg.querySelectorAll('.pat-label')) svg.append(t); // 3.37.0 (G09): Muster-Labels zuoberst, damit sie antippbar sind
   if (kizLabels) svg.append(kizLabels);
   if (zs?.on) zoneSignalsDraw(svg, over, { data, x, y, left, pw, top, bottom, min, max, rx }); // 3.68.1: Ein-/Ausstiegssignale
   musterDraw(svg, data, x, y, bottom);
   container.replaceChildren(svg);
-  declutterChart(svg, {top, bottom, left, right: left+pw});
+  if (!chartLite && !chartLive.on) declutterChart(svg, {top, bottom, left, right: left+pw}); // 3.71.0: während einer Geste nicht (getBBox ist teuer), am Ende der Geste schon
   const keep=state.selectedTime!=null?data.findIndex(c=>c.time===state.selectedTime):-1;
   if(keep>=0)select(keep);else{state.selected=null;put('ohlc',`O ${priceText(last.open)}  H ${priceText(last.high)}\nL ${priceText(last.low)}  C ${priceText(last.close)}`);}
   magnetRedraw();
@@ -6882,8 +6944,11 @@ $('watchlist').addEventListener('click',e=>{
   if(t.dataset.wlmove){const c=t.dataset.coin;wlMoveTo(c,state.watch.indexOf(c)+Number(t.dataset.wlmove));return;}
   if(t.classList.contains('wl-grip'))return;
   if(t.dataset.addwatch){if(!state.watch.includes(t.dataset.addwatch)){state.watch.push(t.dataset.addwatch);touchStamp(LISTS_AT_KEY,'watch');}saveWatch();renderWatchlist();return;}
+  if(t.dataset.addcoin){const f=$('symbol');if(f){f.scrollIntoView({block:'center',behavior:'smooth'});f.focus({preventScroll:true});f.select?.();}return;} // 3.71.0: Coin suchen
+  if(t.dataset.wlfilter){store.set(WL_FILTER_KEY,t.dataset.wlfilter);wlHeadPaint();wlArrange();return;}
+  if(t.dataset.wlsort){store.set(WL_SORT_KEY,wlSortKey()==='score'?'own':'score');wlHeadPaint();wlArrange();return;}
   if(t.dataset.unwatch){state.watch=state.watch.filter(s=>s!==t.dataset.unwatch);touchStamp(LISTS_AT_KEY,'watch');saveWatch();renderWatchlist();return;}
-  if(t.dataset.watchedit){state.watchEdit=!state.watchEdit;renderWatchlist();return;}
+  if(t.dataset.watchedit){state.watchEdit=!state.watchEdit;renderWatchlist();wlHeadPaint();wlArrange();return;}
   if(t.dataset.watchreset){state.watch=[...DEFAULT_WATCH];touchStamp(LISTS_AT_KEY,'watch');saveWatch();renderWatchlist();}
 });
 // ---- 3.32.0 (G04.1): Chart-Ebenen, die sich nicht berechnen lassen, sichtbar sperren ----
@@ -7081,41 +7146,99 @@ $('pan-back').addEventListener('click',()=>{const v=chartViewState();CAP.on?capP
 $('pan-fwd').addEventListener('click',()=>{const v=chartViewState();CAP.on?capPan(-1):setPan(v.pan-Math.max(1,Math.round(Math.min(v.count,chartRows().length)*.4)));});
 $('pan-now').addEventListener('click',()=>CAP.on?capPan(0):chartNow());
 $('zoom-reset').addEventListener('click',chartViewReset);
-// Gesten: ein Finger wischen = blättern, zwei Finger = zoomen, Tippen = Kerze wählen, doppelt tippen = zurück zu jetzt
+// Gesten: ein Finger wischen = blättern, zwei Finger = zoomen (und dabei verschieben), Tippen = Kerze wählen, doppelt tippen = zurück zu jetzt.
+// 3.71.0: flüssig auf allen Geräten – während einer Geste (Finger, Maus, Trackpad, Mausrad) folgt das fertige Chartbild dem Finger in jedem
+// Bild per Strecken/Verschieben (auch um Bruchteile einer Kerze); neu gezeichnet wird nur, wenn das letzte Zeichnen fertig ist und einige
+// Bilder vergangen sind (vereinfacht, Abstand je nach Zeichendauer), am Ende der Geste einmal genau und vollständig. Wischen läuft mit
+// Schwung aus; beim Zoomen mit zwei Fingern scrollt die Seite nicht mehr mit.
 (()=>{
-  const box=$('chart'), pts=new Map(); let g=null, lastTap=0;
-  const frac=clientX=>{const b=box.getBoundingClientRect(),G=chartGeom;return G?clamp(((clientX-b.left)*G.w/b.width-G.left)/G.pw,0,1):1;};
+  const box=$('chart'), pts=new Map(), L=chartLive; let g=null, lastTap=0;
+  Object.assign(L,{on:false,count:0,pan:0,raf:0,next:0,ms:20,r:null,fs:0,end:false,fling:null,idle:0});
+  const vx=clientX=>{const b=box.getBoundingClientRect(),G=chartGeom;return G?(clientX-b.left)*G.w/b.width:0;};
+  const frac=clientX=>{const G=chartGeom;return G?clamp((vx(clientX)-G.left)/G.pw,0,1):1;};
   const idxAt=clientX=>{const G=chartGeom;return G?Math.floor(frac(clientX)*G.count):0;};
-  const hideHint=()=>{};
+  const len=()=>chartRows().length, lim=()=>{const n=len();return [Math.min(15,n),Math.max(15,Math.min(detailReady()?DETAIL_VISIBLE_MAX:n,n))];};
+  // Kerzenbreite für n Kerzen (rechts Platz für Prognosen wie beim letzten Zeichnen) und erste Kerze des Ziels (Bruchteile erlaubt)
+  const stepFor=(n,p=L.pan)=>L.r?L.r.plotW/(n+(p>.5?0:L.fs*n)):1, geo=()=>({step:stepFor(L.count),start:len()-L.pan-L.count});
+  function target(n,p){const N=len();if(!N)return;const [lo,hi]=lim();L.count=clamp(n,lo,hi);L.pan=clamp(p,0,Math.max(0,N-L.count));}
+  function afterDraw(){
+    const G=chartGeom; if(!G)return; L.r={offset:G.offset,step:G.step,left:G.left,plotW:G.plotW};
+    if(!(chartViewState().pan>0))L.fs=Math.max(0,G.plotW/G.step-G.count)/Math.max(1,G.count); apply();
+  }
+  L.afterDraw=afterDraw;
+  function begin(){ if(L.on)return true; if(!chartGeom||CAP.on||!len())return false; const v=chartViewState(); Object.assign(L,{on:true,end:false,fling:null,next:0,count:Math.min(v.count,len()),pan:v.pan}); afterDraw(); return true; }
+  // Ebene, die mit den Kerzen wandert: Preisachse, Kurs-Schild und Rasterlinien bleiben stehen, der Rest wird auf die Zeichenfläche beschnitten
+  function layer(){
+    const svg=box.querySelector(':scope > svg'), G=chartGeom; if(!svg||!G)return null;
+    let inner=svg.querySelector(':scope > g.lv-clip > g'); if(inner)return inner;
+    const defs=svg.querySelector(':scope > defs'); if(!defs)return null;
+    const cp=node('clipPath',{id:'lv-clip'}); cp.append(node('rect',{x:G.left,y:0,width:G.plotW,height:G.h})); defs.append(cp);
+    const fixed=el=>el.tagName==='defs'||el.matches('.grid-line,.y-axis,.axis-tag,.axis-in,.last-line,.last-tag'), moving=[...svg.children].filter(el=>!fixed(el)); if(!moving.length)return null;
+    const outer=node('g',{class:'lv-clip','clip-path':'url(#lv-clip)'}); inner=node('g',{}); outer.append(inner); svg.insertBefore(outer,moving[0]); inner.append(...moving); return inner;
+  }
+  function apply(){
+    const r=L.r; if(!L.on||!r)return; const {step,start}=geo(), a=step/r.step, b=r.left*(1-a)+(r.offset-start)*step, same=Math.abs(a-1)<1e-4&&Math.abs(b)<.05;
+    const lay=same?box.querySelector(':scope > svg > g.lv-clip > g'):layer(); if(lay)lay.setAttribute('transform',same?'':`matrix(${a.toFixed(5)} 0 0 1 ${b.toFixed(2)} 0)`);
+  }
+  function commit(lite){
+    const N=len(); if(!N)return; const v=chartViewState(), [lo,hi]=lim(), n=clamp(Math.round(L.count),lo,hi);
+    v.count=n; chartLite=lite; try{ setPan(clamp(Math.round(L.pan),0,Math.max(0,N-n))); drawChart(); } finally { chartLite=false; }
+  }
+  function frame(now){
+    L.raf=0; if(!L.on)return;
+    if(L.fling){ const f=L.fling, dt=Math.min(48,now-f.t); f.t=now; target(L.count,L.pan+f.v*dt); f.v*=Math.pow(.94,dt/16); if(Math.abs(f.v)*16<.02*L.count/50||L.pan<=0||L.pan>=len()-L.count){L.fling=null;L.end=true;} }
+    if(L.end&&!L.fling){ L.end=false; L.on=false; commit(false); return; }   // Ende der Geste: genau und vollständig zeichnen
+    const v=chartViewState(), need=Math.round(L.count)!==Math.min(v.count,len())||Math.round(L.pan)!==v.pan;
+    if(need&&now>=L.next){ const t0=performance.now(); commit(true); const d=performance.now()-t0; L.ms=L.ms*.6+d*.4; L.next=performance.now()+Math.max(50,L.ms*2.5); }
+    apply(); if(L.fling||need)L.raf=requestAnimationFrame(frame);
+  }
+  const kick=()=>{ if(!L.raf)L.raf=requestAnimationFrame(frame); }, finish=()=>{ if(L.on){ L.end=true; kick(); } };
   box.addEventListener('pointerdown',e=>{
-    if(!chartGeom||CAP.on)return; pts.set(e.pointerId,{x:e.clientX,y:e.clientY}); try{box.setPointerCapture(e.pointerId);}catch{}
-    const v=chartViewState();if(pts.size===1)g={type:'tap',x0:e.clientX,y0:e.clientY,pan0:v.pan,count0:v.count};
-    else if(pts.size===2){const [a,b]=[...pts.values()];g={type:'pinch',d0:Math.max(20,Math.abs(a.x-b.x)),f:frac((a.x+b.x)/2),count0:v.count,pan0:v.pan};hideHint();}
+    if(!chartGeom||CAP.on)return; L.fling=null; pts.set(e.pointerId,{x:e.clientX,y:e.clientY}); try{box.setPointerCapture(e.pointerId);}catch{}
+    if(pts.size===1)g={type:'tap',x0:e.clientX,y0:e.clientY,trail:[]};
+    else if(pts.size===2&&begin()){const [a,b]=[...pts.values()], s=geo();g={type:'pinch',d0:Math.max(20,Math.abs(a.x-b.x)),idx:s.start+(vx((a.x+b.x)/2)-chartGeom.left)/s.step,count0:L.count};}
   });
   box.addEventListener('pointermove',e=>{
     if(!chartGeom)return;
     if(!pts.has(e.pointerId)){if(e.pointerType==='mouse')chartGeom.select(idxAt(e.clientX));return;}
     pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
-    if(g?.type==='pinch'&&pts.size>=2){const [a,b]=[...pts.values()];setView(g.count0*g.d0/Math.max(20,Math.abs(a.x-b.x)),g.f,g.count0,g.pan0);}
-    else if(g&&pts.size===1){
+    if(g?.type==='pinch'&&pts.size>=2){
+      // die Kerze unter der Fingermitte bleibt unter der Fingermitte – zoomen und gleichzeitig verschieben
+      const [a,b]=[...pts.values()], [lo,hi]=lim(), n=clamp(g.count0*g.d0/Math.max(20,Math.abs(a.x-b.x)),lo,hi), start=g.idx-(vx((a.x+b.x)/2)-chartGeom.left)/stepFor(n);
+      target(n,len()-start-n); kick();
+    } else if(g&&pts.size===1){
       const dx=e.clientX-g.x0;
-      if(g.type==='tap'&&Math.abs(dx)>8&&Math.abs(dx)>Math.abs(e.clientY-g.y0)){g.type='pan';hideHint();}
-      if(g.type==='pan'){const b=box.getBoundingClientRect(),perPx=chartGeom.count/(b.width*chartGeom.pw/chartGeom.w);setPan(g.pan0+dx*perPx);}
+      if(g.type==='tap'&&Math.abs(dx)>8&&Math.abs(dx)>Math.abs(e.clientY-g.y0)&&begin()){g.type='pan';g.pan0=L.pan;g.x0=e.clientX;}
+      if(g.type==='pan'){const b=box.getBoundingClientRect();target(L.count,g.pan0+(e.clientX-g.x0)*chartGeom.w/b.width/geo().step);g.trail.push([e.timeStamp,e.clientX]);if(g.trail.length>6)g.trail.shift();kick();}
       else if(e.pointerType==='mouse')chartGeom.select(idxAt(e.clientX));
     }
   });
   const end=e=>{
     if(!pts.has(e.pointerId))return; pts.delete(e.pointerId);
     if(g?.type==='tap'&&e.type==='pointerup'){if(magnet.on&&magnetCommit(e))lastTap=0;else{const now=Date.now();if(now-lastTap<320){setPan(0);lastTap=0;}else{lastTap=now;chartGeom?.select(idxAt(e.clientX));}}}
-    if(pts.size===0||g?.type==='pinch')g=pts.size===1?{type:'none'}:null;
+    if(g?.type==='pinch'&&pts.size===1){const [p]=[...pts.values()];g={type:'pan',x0:p.x,y0:p.y,pan0:L.pan,trail:[]};return;} // ein Finger bleibt: weiter blättern
+    if(pts.size)return;
+    if(g?.type==='pan'&&e.type==='pointerup'&&g.trail.length>=2){
+      // Schwung: Geschwindigkeit der letzten Bewegung (Pixel je ms) → Kerzen je ms, läuft mit Reibung aus
+      const [t0,x0]=g.trail[0],[t1,x1]=g.trail.at(-1), vpx=t1>t0?(x1-x0)/(t1-t0):0, b=box.getBoundingClientRect();
+      if(e.timeStamp-t1<90&&Math.abs(vpx)>.25){L.fling={v:clamp(vpx,-4,4)*chartGeom.w/b.width/geo().step,t:performance.now()};g=null;kick();return;}
+    }
+    g=null; finish();
   };
   box.addEventListener('pointerup',end); box.addEventListener('pointercancel',end);
   box.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse'&&!pts.size)chartGeom?.clear();});
   box.addEventListener('gesturestart',e=>e.preventDefault());
+  // zwei Finger auf dem Chart (oder waagrechtes Blättern): die Seite scrollt nicht mit
+  box.addEventListener('touchmove',e=>{if(e.touches.length>1||g?.type==='pan'||g?.type==='pinch')e.preventDefault();},{passive:false});
   box.addEventListener('wheel',e=>{
     if(!chartGeom||CAP.on)return;
-    const v=chartViewState();if(e.ctrlKey){e.preventDefault();setView(v.count*Math.exp(e.deltaY*.01),frac(e.clientX));hideHint();}
-    else if(Math.abs(e.deltaX)>Math.abs(e.deltaY)){e.preventDefault();setPan(v.pan+e.deltaX/8);hideHint();}
+    const zoomIt=e.ctrlKey, side=!zoomIt&&Math.abs(e.deltaX)>Math.abs(e.deltaY); if(!zoomIt&&!side)return;
+    e.preventDefault(); if(!begin())return; L.fling=null;
+    const px=e.deltaMode===1?16:e.deltaMode===2?400:1, s=geo(), b=box.getBoundingClientRect();
+    // Strg+Mausrad/Trackpad-Zoom um den Mauszeiger; ein grober Mausrad-Schritt zoomt höchstens etwa 1,65-fach
+    if(zoomIt){const x=vx(e.clientX)-chartGeom.left, idx=s.start+x/s.step, [lo,hi]=lim(), n=clamp(L.count*Math.exp(clamp(e.deltaY*px,-50,50)*.01),lo,hi);target(n,len()-(idx-x/stepFor(n))-n);}
+    else target(L.count,L.pan+e.deltaX*px*chartGeom.w/b.width/s.step);
+    kick(); clearTimeout(L.idle); L.idle=setTimeout(finish,160);
   },{passive:false});
 })();
 // Takt und Live-Kurse kommen aus dem Web Worker (siehe startLive)
@@ -7587,6 +7710,9 @@ function missedCheck(sym, candles, from) {
   renderAlarms(); renderOpenPositions(); renderLivebar();
 }
 // ---------- Live-Leiste ----------
+// 3.71.0: Live-Wert der offenen Positionen in der Kopfzeile ein-/ausblenden (Einstellungen → Darstellung & App → Kopfzeile)
+var LBOPEN_KEY = 'scalpdesk.lb-open.v1', lbOpenOn = store.get(LBOPEN_KEY, true) !== false;   // var: renderLivebar kann schon vorher laufen
+function renderLbOpenToggle() { const b = $('lb-open-toggle'); if (!b) return; b.textContent = `👁 Live-Wert offener Positionen: ${lbOpenOn ? 'an' : 'aus'}`; b.setAttribute('aria-pressed', String(lbOpenOn)); b.classList.toggle('sound-on', lbOpenOn); }
 function renderLivebar() {
   const last = state.loadedSymbol === state.symbol ? state.candles.at(-1) : null;
   put('lb-sym', state.symbol.slice(0, -4)); put('lb-price', last ? priceText(last.close) : '—');
@@ -7599,6 +7725,8 @@ function renderLivebar() {
   // 3.31.0 (G03.9): offener G/V auch in Euro – derselbe Live-Kurs wie in der Positionsübersicht, veraltet mit Kurszeit
   const oe = !o?.n || oNone ? '' : (() => { const f = fxLive(); return !f ? '(€ n. v.)' : `(${signed(o.total / f.v)} €${f.stale ? ' · Kurs veraltet' : ''})`; })();
   put('lb-open-eur', oe); color('lb-open-eur', o?.n ? o.total : 0); $('lb-open-eur').title = o?.n ? fxLiveNote() : '';
+  if (lbOpenOn === false) { put('lb-open', '•••'); color('lb-open', 0); put('lb-open-eur', ''); put('lb-open-label', 'Offen'); $('lb-pos').title = 'Live-Wert ausgeblendet – einblenden unter Einstellungen → Darstellung & App → Kopfzeile'; }
+  $('lb-pos').dataset.masked = String(lbOpenOn === false);
   // Heute realisiert: Summe der eingefrorenen Euro-Werte der heutigen Buchungen (nicht zum aktuellen Kurs)
   const d = dayStats(state.trades); put('lb-day', `${signed(d.pnl)} USDT`); color('lb-day', d.pnl);
   const n0 = new Date(), d0 = new Date(n0.getFullYear(), n0.getMonth(), n0.getDate()).getTime(), d1 = new Date(n0.getFullYear(), n0.getMonth(), n0.getDate() + 1).getTime();
@@ -8354,10 +8482,12 @@ function chanSend(k, text, test = false, kind = 'test', opts = {}) {
   if (opts.coord) m.coord = true; // 3.33.0: Alarm-Ereignis – kein blinder zweiter Versuch
   return new Promise(resolve => { sendWait.set(id, { k, resolve, test, label: test ? '' : chanLabel(text) }); live.post(m); });
 }
-// 3.71.0: Gewinn-/Verlust-Alarm als Bild (opts.card) mit einzeiliger Bildunterschrift; Bild nicht erzeugbar oder von Telegram
-// abgelehnt (ohne Chat-Problem) → die bisherige Textmeldung über chanSend. Verlorene Antwort: unbestätigt, kein zweiter Versand.
+// 3.71.0: Gewinn-/Verlust-Alarm und Kurs-Alarm als Bild (opts.card) mit einzeiliger Bildunterschrift; Bild nicht erzeugbar oder von
+// Telegram abgelehnt (ohne Chat-Problem) → die bisherige Textmeldung über chanSend. Verlorene Antwort: unbestätigt, kein zweiter Versand.
+const CARD_KINDS = { pnl: [pnlAlarmCard, 'gewinn-verlust.png'], alarm: [priceAlarmCard, 'kurs-alarm.png'] };
 const tgBotNames = new Map();
-const PNL_TEST_CARD = () => ({ profit: false, pnl: -170.1, level: 170, count: 3, at: Date.now(), positions: [{ symbol: 'BTCUSDT', side: 'long', pnl: -92.4 }, { symbol: 'ETHUSDT', side: 'short', pnl: 18.7 }, { symbol: 'SOLUSDT', side: 'long', pnl: -96.4 }] });
+const ALARM_TEST_CARD = () => ({ symbol: 'BTCUSDT', direction: 'above', level: 81840, price: 81840.13, reached: 'erreicht', at: Date.now() });
+const PNL_TEST_CARD = () => ({ profit: false, pnl: -170.1, level: 170, count: 3, fx: (f => f && !f.stale ? f.v : 1.1185)(fxLive()), at: Date.now(), positions: [{ symbol: 'BTCUSDT', side: 'long', pnl: -92.4 }, { symbol: 'ETHUSDT', side: 'short', pnl: 18.7 }, { symbol: 'SOLUSDT', side: 'long', pnl: -96.4 }] });
 async function tgBotName(token) {
   if (!token) return ''; if (tgBotNames.has(token)) return tgBotNames.get(token);
   let name = s247?.meTok === token ? s247.me?.first_name || '' : '';
@@ -8365,13 +8495,20 @@ async function tgBotName(token) {
   tgBotNames.set(token, name); return name;
 }
 async function chanSendCard(k, text, test = false, kind = 'test', opts = {}) {
-  const T = k === 'tg' && opts.card && kind === 'pnl' ? tgTarget(kind) : null; if (!T) return chanSend(k, text, test, kind, opts);
+  const K = CARD_KINDS[kind], T = k === 'tg' && opts.card && K ? tgTarget(kind) : null; if (!T) return chanSend(k, text, test, kind, opts);
   let m = null;
   try {
-    const { svg, width, height, caption } = pnlAlarmCard({ ...opts.card, bot: await tgBotName(T.token) }, { timezone: opts.card.timezone || PAT_TZ });
-    m = await patPostCard(T, await svgPngBlob(svg, width, height), (test ? 'TEST · ' : '') + caption, { html: false, name: 'gewinn-verlust.png', silent: !!opts.silent });
-    if (m.ok) { if (!test) store.set(CHANLAST_KEY, { ...(store.get(CHANLAST_KEY) || {}), tg: { at: Date.now(), label: chanLabel(text) } }); chanState.tg = { ok: true, at: Date.now(), text: 'zugestellt' }; renderChanStatus(); renderChanSummary(); return m; }
-    if (m.lost || m.chat) return m.lost ? m : { ok: false, code: m.code, msg: m.msg };
+    const { svg, width, height, caption } = K[0]({ ...opts.card, bot: await tgBotName(T.token) }, { timezone: opts.card.timezone || PAT_TZ });
+    // Bildunterschrift eine Zeile; nur ein Hinweis (z. B. „Von der App gesendet · Dienst nicht erreichbar“) kommt als zweite Zeile dazu
+    const blob = await svgPngBlob(svg, width, height), cap = (test ? 'TEST · ' : '') + caption + (opts.cardNote ? '\n' + opts.cardNote : '');
+    m = await patPostCard(T, blob, cap, { html: false, name: K[1], silent: !!opts.silent });
+    // „Too Many Requests“: die genannte Wartezeit abwarten (höchstens 30 s) und das Bild noch einmal senden
+    if (m.code === 429) { await new Promise(r => setTimeout(r, Math.min(30, m.retry || 5) * 1000 + 300)); m = await patPostCard(T, blob, cap, { html: false, name: K[1], silent: !!opts.silent }); }
+    const done = (ok, txt) => { chanState.tg = { ok, at: Date.now(), text: txt }; renderChanStatus(); renderChanSummary(); };
+    if (m.ok) { if (!test) store.set(CHANLAST_KEY, { ...(store.get(CHANLAST_KEY) || {}), tg: { at: Date.now(), label: chanLabel(text) } }); done(true, 'zugestellt'); return m; }
+    // Antwort verloren: kein zweiter Versuch (die Meldung könnte schon angekommen sein) – nur ohne Netz (sicher nicht gesendet) weiter mit Text
+    if (m.lost && !(self.navigator && navigator.onLine === false)) { done(false, 'Zustellung unbestätigt – keine Antwort von Telegram; kein zweiter Versuch, damit die Meldung nicht doppelt kommt'); return { ...m, code: 0, msg: 'Keine Antwort von Telegram – Zustellung unbestätigt' }; }
+    if (m.chat) { const r = { ok: false, code: m.code, msg: m.msg }; done(false, chanError('tg', r)); return r; }
   } catch { /* Bild nicht erzeugbar → Text */ }
   return chanSend(k, text, test, kind, opts);
 }
@@ -8517,8 +8654,8 @@ async function chanTestAll() {
   for (const [kind, name] of TG_TESTS) {
     if (off.includes(TG_ROUTE[kind])) continue;
     const text = formatMessage('notice', { headline: '🧪 TEST · ' + name, lines: ['Gehört in: ' + (TG_ROUTE[kind] === 'backup' ? 'Sicherungschat' : TG_ROUTE[kind] === 'trades' ? 'Trades' : 'Kursalarm')], at: Date.now() });
-    // 3.71.0: Gewinn-/Verlust-Alarm als Beispielbild (wie im Ernstfall), Bildunterschrift mit „TEST ·“
-    const r = kind === 'pnl' ? await chanSendCard('tg', text, true, kind, { card: PNL_TEST_CARD() }) : await chanSend('tg', text, true, kind);
+    // 3.71.0: Gewinn-/Verlust-Alarm und Kurs-Alarm als Beispielbild (wie im Ernstfall), Bildunterschrift mit „TEST ·“
+    const r = kind === 'pnl' ? await chanSendCard('tg', text, true, kind, { card: PNL_TEST_CARD() }) : kind === 'alarm' ? await chanSendCard('tg', text, true, kind, { card: ALARM_TEST_CARD() }) : await chanSend('tg', text, true, kind);
     if (r.ok) ok++;
     await new Promise(res => setTimeout(res, 1100)); // Telegram: etwa eine Nachricht pro Sekunde je Chat
   }
@@ -8926,11 +9063,12 @@ function calmDo(fn) {
   }, 200);
 }
 const calmRender = () => calmDo(render);
-// Chart nur zeichnen, wenn er (fast) im Bild ist; beim Hineinscrollen nachholen
+// Chart nur zeichnen, wenn er (fast) im Bild ist; beim Hineinscrollen nachholen. 3.71.0: „fast“ heißt bis 900 px darunter bzw.
+// darüber – die neuen Vorauswahl-Kacheln stehen am Handy über dem Chart, er soll beim Hinscrollen schon fertig sein
 let chartOnScreen = true, chartStale = false;
 if ('IntersectionObserver' in window) new IntersectionObserver(es => {
   for (const e of es) { chartOnScreen = e.isIntersecting; if (chartOnScreen && chartStale) { chartStale = false; drawChart(); } }
-}, { rootMargin: '150px 0px' }).observe($('chart'));
+}, { rootMargin: '900px 0px' }).observe($('chart'));
 // Tages-Verlustlimit: den Hinweis „mit offenen Positionen über dem Limit“ erst ausblenden, wenn der Verlust unter die Hälfte
 // des Limits gefallen ist – sonst taucht das Banner oben bei jedem Pendeln um die Grenze auf und verschwindet wieder,
 // und die ganze Seite springt um seine Höhe
@@ -10913,10 +11051,10 @@ function wlAdd(e, k, now) {
   if (last && c.time > last.closeTime + 1) { e.gap = true; return; }
   if (k.x) { e.closed.push(c); if (e.closed.length > WL_LIMIT) e.closed.splice(0, e.closed.length - WL_LIMIT); e.run = null; e.rating = signalRating(e.closed.slice(-WL_WINDOW)); }
   else e.run = c;
-  // Kursverlauf für die Veränderung der letzten Minute: höchstens ein Wert je Sekunde, 3 Minuten lang
+  // Kursverlauf für die Veränderung der letzten Minute (3.71.0: und der letzten 5 Minuten): höchstens ein Wert je Sekunde, 6 Minuten lang
   const h = e.hist, p = c.close;
   if (!h.length || now - h.at(-1)[0] >= 1000) h.push([now, p]); else h.at(-1)[1] = p;
-  while (h.length && now - h[0][0] > 180e3) h.shift();
+  while (h.length && now - h[0][0] > 360e3) h.shift();
 }
 // Aus dem Live-Stream (onKline): nur Kerzen des Zeitraum-Intervalls der Vorauswahl
 function wlKline(m, now) {
@@ -10940,7 +11078,7 @@ function orderflowSelectedQuote(sym) {
   return { price: knownPrice(sym, 5000), source: state.sourceFor === sym ? state.source : 'spot', fresh: !state.paused && livePriceFresh(sym) && Date.now() - (state.prices[sym]?.at || 0) <= 5000 };
 }
 // Verlauf des Zeitraums (mindestens 12 Kerzen) als Linie in einem Feld w × h (oben = höchster Kurs)
-function wlSpark(e, w = 44, h = 16) {
+function wlSpark(e, w = 100, h = 24) {
   const vals = [...e.closed.slice(-Math.max(wlSpan().n, 12)).map(c => c.close), wlPrice(e)].filter(v => v > 0);
   if (vals.length < 2) return '';
   const lo = Math.min(...vals), hi = Math.max(...vals), span = hi - lo || 1, step = w / (vals.length - 1);
@@ -10953,6 +11091,29 @@ function wlRules(r) {
     const x = r?.rules[i], s = x ? x.score : 0;
     return { k, label: x ? x.label : name, arrow: s > 0 ? '▲' : s < 0 ? '▼' : '–', dir: s > 0 ? 'up' : s < 0 ? 'down' : x ? 'flat' : 'none', score: s };
   });
+}
+// 3.71.0: Veränderung je Zeitraum auf der Kachel – Spalten 1m · 5m · 1h · 1d; ist als Zeitraum der Tendenz 30 Minuten bzw. 4 Stunden
+// gewählt, steht dieser statt 5m bzw. zwischen 1h und 1d (die Spalte des gewählten Zeitraums ist hervorgehoben)
+var WL_TF_MS = { '1m': 60e3, '5m': 3e5, '30m': 18e5, '1h': 36e5, '4h': 144e5, '1d': 864e5 }, WL_TF_EVERY = 15 * 60e3;
+function wlTfCols() { const k = (typeof wl !== 'undefined' && wl?.span) || wlSpanKey(); return k === '30m' ? ['1m', '30m', '1h', '1d'] : k === '4h' ? ['1m', '1h', '4h', '1d'] : ['1m', '5m', '1h', '1d']; }
+// Kurs vor `ms`: aus der Quelle mit dem nächstgelegenen Wert vor diesem Zeitpunkt – mitgeschriebener Live-Verlauf (je Sekunde, 6 Min.),
+// 1-Minuten-Kerzen (61), Kerzen des Zeitraums, Stundenkerzen (26); jeweils der Schlusskurs der letzten Kerze, die bis dahin geschlossen war
+function wlTfRef(e, ms, now) {
+  const t = now - ms; let best = null, err = Infinity;
+  const take = (time, v) => { if (time <= t && t - time < err && v > 0) { err = t - time; best = v; } };
+  for (let i = e.hist.length - 1; i >= 0; i--) if (e.hist[i][0] <= t) { take(e.hist[i][0], e.hist[i][1]); break; }
+  for (const list of [e.tf?.m1, e.closed, e.tf?.h1]) if (list?.length) for (let i = list.length - 1; i >= 0; i--) if (list[i].closeTime <= t) { take(list[i].closeTime, list[i].close); break; }
+  // nur, wenn der gefundene Wert nah genug am Zeitpunkt liegt (höchstens ein Viertel des Zeitraums, mindestens 70 s daneben)
+  return best !== null && err <= Math.max(70e3, ms / 4) ? best : null;
+}
+// 1m- und 1h-Kerzen für die Spalten nachladen (alle 15 Minuten je Coin, nacheinander; Zwischenspeicher wie die übrigen Reihen)
+async function wlTfLoad(e) {
+  e.tfLoading = true;
+  try {
+    const [a, b] = await Promise.all([cachedKlines(e.sym, '1m', 61), cachedKlines(e.sym, '1h', 26)]), now = Date.now();
+    e.tf = { m1: a.candles.filter(c => c.closeTime < now), h1: b.candles.filter(c => c.closeTime < now), at: now };
+  } catch { e.tf = { m1: e.tf?.m1 || [], h1: e.tf?.h1 || [], at: Date.now() - WL_TF_EVERY + 3 * 60e3 }; }   // in 3 Minuten erneut
+  finally { e.tfLoading = false; wlPaint(Date.now(), true); }
 }
 // 3.25.0 Gesamtbewertung: Long- bzw. Short-Tendenz nur, wenn mindestens 3 der 4 Signale in dieselbe Richtung zeigen
 function wlVerdict(r) {
@@ -10986,7 +11147,11 @@ function wlView(e, now) {
     priceText: price > 0 ? priceText(price) : e.error ? '—' : '…',
     chgText: `${S.label} ${pctOf(chg)}`, chgDir: dir(chg), sparkDir: dir(chg),
     sigText: e.rating ? scoreText(e.rating.score) : e.error ? '' : '·', tone: wlTone(e.rating), rules: wlRules(e.rating),
-    verdict: wlVerdict(e.rating), move: e.rating ? wlMove(e) : null
+    verdict: wlVerdict(e.rating), move: e.rating ? wlMove(e) : null,
+    // 3.71.0: Veränderung je Spalte in Prozent („+0,03“) und der RSI-Wert für die Leiste
+    // die Spalte des gewählten Zeitraums zeigt genau die Veränderung seit Beginn des Zeitraums (wie im Hinweis „1 Std. …“)
+    tf: wlTfCols().map(k => { const r = k === wl.span ? ref : price > 0 ? wlTfRef(e, WL_TF_MS[k], now) : null, v = price > 0 && r > 0 ? (price / r - 1) * 100 : null; return { k, v, sel: k === wl.span, dir: dir(v), text: v === null ? '–' : dir(v) === 'flat' ? '±0,00' : signed(v) }; }),
+    rsi: (v => Number.isFinite(v) ? v : null)(Number(/RSI (\d+)/.exec(e.rating?.rules?.[2]?.label || '')?.[1]))
   };
 }
 // Werte in die bestehenden Felder schreiben (nur was sich geändert hat)
@@ -10999,16 +11164,20 @@ function wlPaint(now = Date.now(), force = false) {
     if (!e) continue;
     const v = wlView(e, now), q = s => tile.querySelector(s);
     wlSet(q('.wl-price'), 'textContent', v.priceText);
-    const chg = q('.wl-chg'); wlSet(chg, 'textContent', v.chgText); wlSet(chg, 'className', `wl-chg ${v.chgDir}`);
-    const rs = q('.wl-rules'); if (rs) v.rules.forEach((x, i) => { const n = rs.children[i]; if (!n) return; wlSet(n.firstChild, 'textContent', x.label); wlSet(n.lastChild, 'textContent', x.arrow); wlSet(n, 'className', `wl-rule ${x.dir}`); });
+    const tf = q('.wl-tf'); if (tf) v.tf.forEach((x, i) => { const c = tf.children[i]?.lastChild; if (!c) return; wlSet(c, 'textContent', x.text); wlSet(c, 'className', `wl-tfv ${x.dir}`); });
+    // Trend · Kurs · MACD als Felder (der RSI hat eine eigene Leiste)
+    const rs = q('.wl-rules'); if (rs) v.rules.filter(x => x.k !== 'rsi').forEach((x, i) => { const n = rs.children[i]; if (!n) return; wlSet(n.firstChild, 'textContent', x.label); wlSet(n.lastChild, 'textContent', x.arrow); wlSet(n, 'className', `wl-rule ${x.dir}`); });
+    const rsi = q('.wl-rsi'); if (rsi) { const knob = rsi.querySelector('b'); wlSet(rsi.firstChild, 'textContent', v.rsi === null ? 'RSI –' : `RSI ${Math.round(v.rsi)}`); wlSet(knob, 'hidden', v.rsi === null); if (v.rsi !== null) { const l = `${Math.max(0, Math.min(100, v.rsi))}%`; if (knob.style.left !== l) knob.style.left = l; } wlSet(rsi, 'className', `wl-rsi ${v.rules[2].dir}`); }
     const sig = q('.wl-sig'); wlSet(sig, 'textContent', v.sigText); if (sig && sig.dataset.tone !== v.tone) sig.dataset.tone = v.tone;
-    const svg = q('.wl-spark'), pts = wlSpark(e); svg?.setAttribute('class', `wl-spark ${v.sparkDir}`);
+    const box2 = q('.wl-sparkbox'), svg = q('.wl-spark'), pts = wlSpark(e); wlSet(box2, 'className', `wl-sparkbox ${v.sparkDir}`);
     const line = svg?.firstChild; if (line && line.getAttribute('points') !== pts) line.setAttribute('points', pts);
+    const dot = q('.wl-dot'), lastY = Number(pts.split(' ').at(-1)?.split(',')[1]); wlSet(dot, 'hidden', !pts); if (dot && Number.isFinite(lastY)) { const tp = `${(lastY / 24 * 100).toFixed(1)}%`; if (dot.style.top !== tp) dot.style.top = tp; }
     const r = v.rating, vd = v.verdict, title = e.error ? `${coin}: ${e.error}`
       : `${coin}/USDT${e.market === 'futures' ? ' (Futures)' : ''}: ${v.priceText} USDT · ${v.chgText}`
         + ` · Tendenz ${v.span.of} ${r ? `${scoreText(r.score)}/4 (${v.rules.map(x => `${x.label} ${x.arrow}`).join(', ')}) · ${vd.dir === 'long' ? 'Long-Tendenz' : vd.dir === 'short' ? 'Short-Tendenz' : 'Abwarten'}${v.move?.low ? ' · zu wenig Bewegung' : ''}` : 'noch keine (mindestens 60 Kerzen)'} · antippen zeigt die Signale und lädt den Coin im Chart`;
     wlSet(tile, 'title', title);
   }
+  if (typeof wlArrange === 'function') wlArrange(); // 3.71.0: Filter und Sortierung nach der Tendenz
   wldPaint(now, force); // Detailfeld (Schritt 6) im selben Takt
 }
 // Reihe laden (Zwischenspeicher, sonst REST; ohne Spot-Paar die USDT-Futures) – im Intervall des gewählten Zeitraums
@@ -11037,10 +11206,12 @@ function wlTick(now) {
   const want = new Set(state.watch.map(wlSym)), iv = wlSpan().iv;
   for (const s of wl.c.keys()) if (!want.has(s)) wl.c.delete(s);
   for (const s of want) if (!wl.c.has(s)) wl.c.set(s, { sym: s, iv, closed: [], run: null, hist: [], rating: null, market: 'spot', loading: false, error: '', retryAt: 0, gap: false, at: 0 });
-  const busy = [...wl.c.values()].some(e => e.loading);
+  const busy = [...wl.c.values()].some(e => e.loading || e.tfLoading);
   if (!busy && now - wl.loadAt > 300) {
     const next = [...wl.c.values()].find(e => (!e.at && !e.error) || e.gap || (e.error && now >= e.retryAt) || (e.at && !e.run && e.closed.length && now - e.closed.at(-1).closeTime > 150e3));
-    if (next) { wl.loadAt = now; void wlLoad(next); }
+    // 3.71.0: danach (alle Reihen geladen) die 1m-/1h-Kerzen für die Spalten 1m · 5m · 1h · 1d, je Coin alle 15 Minuten
+    const tfNext = next ? null : [...wl.c.values()].find(e => e.at && !e.error && (!e.tf || now - e.tf.at > WL_TF_EVERY));
+    if (next) { wl.loadAt = now; void wlLoad(next); } else if (tfNext) { wl.loadAt = now; void wlTfLoad(tfNext); }
   }
   wlPaint(now);
 }
@@ -11300,7 +11471,8 @@ function pnlFire(k, a, cur) {
   beep(); desktopNotify(title, text, 'pnl:' + k);
   simpleToast('pnl:' + k, 'alarm ' + (k === 'profit' ? 'up' : 'down'), `${title}: ${text}`, null, k === 'profit' ? 'green' : 'orange');
   // 3.71.0: Bild mit den Positionen dieses Moments (Summe = Live-Ergebnis); die bisherige Textmeldung bleibt der Ersatz
-  const card = { profit: k === 'profit', pnl: cur, level: a.value, positions: state.openTotal?.rows || [], count: n, at: Date.now(), timezone: PAT_TZ };
+  // 3.71.0: Euro in Klammern mit dem Live-Kurs der Positionsübersicht (veraltet oder fehlend → nur USD)
+  const fx = fxLive(), card = { profit: k === 'profit', pnl: cur, level: a.value, positions: state.openTotal?.rows || [], count: n, fx: fx && !fx.stale ? fx.v : null, at: Date.now(), timezone: PAT_TZ };
   a.svc = false; void pnlSend(k, a.at, formatMessage('pnl', { profit: k === 'profit', pnl: cur, positions: n, level: a.value }), card);
 }
 // Telegram: je Aktivierung genau eine Nachricht (auch mit mehreren offenen Tabs). 3.26.0 mit 24/7-Dienst: vorher in
@@ -11429,6 +11601,8 @@ function pnlSave() {
 // nach dem Speichern: gültige Felder neu formatiert, fehlerhafte behalten die Eingabe zum Korrigieren
 function pnlRefill(parsed) { const d = pnlGet(); for (const k of PNL_KINDS) if (!parsed[k].err) { $(`pnl-${k}`).value = d[k].value ? plain(d[k].value) : ''; $(`pnl-${k}-on`).checked = d[k].on; } }
 $('lb-pos').addEventListener('click', () => pnlOpen());
+$('lb-open-toggle')?.addEventListener('click', () => { lbOpenOn = !lbOpenOn; store.set(LBOPEN_KEY, lbOpenOn); renderLbOpenToggle(); renderLivebar(); });
+renderLbOpenToggle();
 $('pnl-close').addEventListener('click', () => { pnlOpen(false); $('lb-pos').focus({ preventScroll: true }); });
 $('pnl-form').addEventListener('submit', e => { e.preventDefault(); pnlSave(); });
 for (const k of PNL_KINDS) {
@@ -12413,7 +12587,7 @@ async function svcSendCoordinated(type, opts, text, ks) {
   if (!tgtReady('course-alert')) { if (!fallback) void svcReport(opts.ev, 'discarded', 'Ziel unmittelbar vor dem Senden aus'); svcNote(opts.ev, 'verworfen – Ziel Kursalarm aus'); return; }
   if (!fallback) await svcReport(opts.ev, 'sending');
   const msg = finishTelegram(text + (fallback ? '\n' + formatMessage('notice', { headline: 'Von der App gesendet', lines: ['Dienst nicht erreichbar'] }) : ''), Date.now());
-  const res = await Promise.all(ks.map(k => chanSendCard(k, msg, false, type, { ...opts, coord: true })));   // 3.71.0: Gewinn-/Verlust-Alarm als Bild
+  const res = await Promise.all(ks.map(k => chanSendCard(k, msg, false, type, { ...opts, coord: true, ...(fallback ? { cardNote: 'Von der App gesendet · Dienst nicht erreichbar' } : {}) })));   // 3.71.0: Gewinn-/Verlust- und Kurs-Alarm als Bild
   const m = res[Math.max(0, ks.indexOf('tg'))], st = m?.ok ? (m.unconfirmed ? 'unconfirmed' : 'confirmed') : m?.lost ? 'unconfirmed' : 'failed';
   if (!fallback) void svcReport(opts.ev, st, m?.ok ? '' : m?.lost ? 'Telegram-Antwort verloren' : String(m?.msg || '').slice(0, 100));
   svcNote(opts.ev, `${fallback ? 'von der App ohne Freigabe gesendet (Dienst nicht erreichbar) · ' : 'Freigabe erhalten · '}${st === 'confirmed' ? 'zugestellt' : st === 'unconfirmed' ? 'Zustellung unbestätigt' : 'fehlgeschlagen'}`);
@@ -13745,7 +13919,7 @@ async function patPostCard(T, blob, caption, { html = true, name = 'chartmuster.
   let j = null; try { j = await r.json(); } catch {}
   if (r.ok && j?.ok) return { ok: true, id: j.result?.message_id || 0 };
   if (r.ok) return { ok: false, lost: true };
-  return { ok: false, code: r.status, msg: String(j?.description || `Fehler ${r.status}`).slice(0, 160), chat: [401, 403, 404].includes(r.status) || PAT_CHAT_PROBLEM.test(j?.description || '') };
+  return { ok: false, code: r.status, msg: String(j?.description || `Fehler ${r.status}`).slice(0, 160), chat: [401, 403, 404].includes(r.status) || PAT_CHAT_PROBLEM.test(j?.description || ''), retry: Number(j?.parameters?.retry_after) || 0 };
 }
 async function patNotify(c, h, qev = null, chart = null) {
   if (store.get('scalpdesk.patterns-oracle-only.v1', false)) return; // Einziger Sender ist der SSH-Dienst, keine lokalen Ersatzmeldungen.
@@ -15265,6 +15439,9 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
             <button type="button" class="button ghost" id="own-color-suggest" hidden></button>
             <small>Text passt sich an. Mindestkontrast 4,5:1; sehr helle und dunkle Farben sind mit passender Schrift lesbar.</small>
           </div>
+          <h4>Kopfzeile</h4>
+          <button type="button" class="button ghost" id="lb-open-toggle" aria-pressed="true">👁 Live-Wert offener Positionen: an</button>
+          <small>Aus: In der Kopfzeile steht „Offen •••“ statt Betrag – Antippen öffnet weiter den Gewinn-/Verlust-Alarm.</small>
           <h4>App</h4>
           <button type="button" class="button ghost" id="install-btn" hidden>📲 Als App installieren</button>
           <small id="install-note"></small>

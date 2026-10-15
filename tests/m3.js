@@ -161,11 +161,13 @@ const tests = {
     await page.waitForFunction(() => document.getElementById('alarm-form').hidden, null, { timeout: 8000 });
     await b.waitForFunction(() => document.querySelectorAll('.al-row').length === 1, null, { timeout: 5000 }).catch(() => {});
     await h.ctl(`/set?symbol=BTCUSDT&price=${(p0 * 1.004).toFixed(2)}`);
-    sent = await sentWait(s => s.filter(x => /KURS-ALARM · BTC/.test(x.text || x.content || '')).length >= 1, 10000);
+    // 3.71.0: Kurs-Alarm als Bild (Bildunterschrift „Kurs-Alarm · BTC · … USD“); Discord bleibt Text
+    const isAl = x => /KURS-ALARM · BTC/.test(x.text || x.content || '') || /^Kurs-Alarm · BTC · /.test(x.caption || '');
+    sent = await sentWait(s => s.filter(isAl).length >= 1, 10000);
     await h.sleep(2500); sent = await h.ctl('/sent');
-    const al = sent.filter(x => /KURS-ALARM · BTC/.test(x.text || x.content || ''));
+    const al = sent.filter(isAl);
     check('Kurs-Alarm einmal an Telegram trotz zwei Tabs, kein Discord', al.filter(x => x.svc === 'tg').length === 1 && al.filter(x => x.svc === 'dc').length === 0, JSON.stringify(al.map(x => x.svc)));
-    check('Meldungstext mit Kurs und Notiz', al[0]?.text.includes('Level erreicht: ⭐ <b>') && al[0]?.text.includes(' USD</b> ⭐ (auf/über)') && al[0]?.text.includes('Notiz: Ausbruch') && /🕐 \d\d:\d\d:\d\d$/.test(al[0]?.text || ''), JSON.stringify(al[0]?.text || al[0]?.content));
+    check('Kurs-Alarm als Bild: PNG 1080 breit, Bildunterschrift eine Zeile „Kurs-Alarm · BTC · … USD“ ohne HTML', al[0]?.method === 'sendPhoto' && al[0].png && al[0].w === 1080 && al[0].h >= 1080 && /^Kurs-Alarm · BTC · [\d.,]+ USD$/.test(al[0].caption) && !al[0].parse_mode && al[0].photoName === 'kurs-alarm.png', JSON.stringify(al[0] && { m: al[0].method, c: al[0].caption, w: al[0].w, n: al[0].photoName }));
     await b.close();
     // 429: Telegram bittet um Pause → erneuter Versuch
     await h.ctl('/sentreset'); await h.ctl('/chan?tg429=1');

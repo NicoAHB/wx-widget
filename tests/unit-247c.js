@@ -99,7 +99,8 @@ const TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', CHAT = '987654321'
   let fileNo = 0; const pin = data => { const id = `f${++fileNo}`; files.set(id, JSON.stringify({ kind: 'scalpdesk-247', v: 1, on: true, tz: 'UTC', app: '3.33.0', dev: 'Test', ev: { alarm: true, pos: true, news: true, pnl: true, pulse: false }, econ: { warn: 0, cur: 'usd' }, alarms: [], positions: [], ...data }));
     pinned = { message_id: 77, date: Math.floor(now / 1000), from: { id: 123456789 }, document: { file_id: id, file_unique_id: 'u' + id, file_name: 'scalpdesk-247.json' }, caption: '📌 Scalp Desk · 24/7-Dienst\nApp: x · #' + (data.tag || 'ab12') }; };
   const statePath = path.join(dir, 'state.json');
-  const make = () => new W.Watcher({ token: TOKEN, chat: CHAT, key: KEY, origins: [ORIGIN], listen: '127.0.0.1:0', host: 'test.sslip.io', statePath, now: () => now, log: (...a) => logs.push(a.join(' ')) });
+  // 2.15.0: Ablauf- und Abstimmungsprüfungen im Textmodus (alarmCards: false); Bildprüfungen in unit-247
+  const make = () => new W.Watcher({ alarmCards: false, token: TOKEN, chat: CHAT, key: KEY, origins: [ORIGIN], listen: '127.0.0.1:0', host: 'test.sslip.io', statePath, now: () => now, log: (...a) => logs.push(a.join(' ')) });
   let w = make(); const port = await w.listenNow();
   check('Steuerung lauscht (nur 127.0.0.1), Protokoll nennt Adresse und Herkunft, nicht den Schlüssel', port > 0 && logs.some(l => /^Steuerung bereit: lauscht auf 127\.0\.0\.1:\d+ · öffentlich https:\/\/test\.sslip\.io · Herkunft der App https:\/\/nicoahb\.github\.io$/.test(l)) && !logs.join('\n').includes(KEY), logs.at(-1));
   const U = p => `http://127.0.0.1:${port}${p}`, H = (extra = {}) => ({ authorization: `Bearer ${KEY}`, 'content-type': 'application/json', ...extra });
@@ -202,12 +203,12 @@ const TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', CHAT = '987654321'
   w.next.beat = 0; await w.tick(); const svc = pinned.caption.split('\n').find(l => l.startsWith('Dienst:')) || '';
   check('Zeile des Dienstes: „· v2.0.0 · HTTPS“; die Erkennung der App (3.32) liest sie weiter', /^Dienst: aktiv · .* · v2\.\d+\.\d+ · HTTPS( · GV)? · #ef56 übernommen$/.test(svc) && /^Dienst: (aktiv|Störung) · .*? · #([a-z0-9]{2,12}) übernommen(?: · (.*))?$/.test(svc), svc);
   check('Kein Schlüssel und kein Token im Protokoll', !logs.join('\n').includes(KEY) && !logs.join('\n').includes(TOKEN));
-  const sl = []; const ws = new W.Watcher({ token: TOKEN, chat: CHAT, key: KEY, listen: `127.0.0.1:${port2}`, host: '', statePath, now: () => now, log: l => sl.push(l) }); ws.saveState = () => {}; ws.saveStateNow = () => {};
+  const sl = []; const ws = new W.Watcher({ alarmCards: false, token: TOKEN, chat: CHAT, key: KEY, listen: `127.0.0.1:${port2}`, host: '', statePath, now: () => now, log: l => sl.push(l) }); ws.saveState = () => {}; ws.saveStateNow = () => {};
   await ws.status();
   check('„--status“: Steuerung lauscht, Ziele mit Revision, letzte Ereignisse mit Ziel, Sender und Zustand', sl.some(l => /^✓ Steuerung lauscht auf 127\.0\.0\.1:\d+ \(Dienst 2\.\d+\.\d+\)$/.test(l)) && sl.some(l => /^• Ziele \(Revision \d+\): Kursalarm an seit .* · Sicherung an seit .* · Trades an seit /.test(l)) && sl.some(l => /^• Letzte Ereignisse: .*→ Kursalarm, (24\/7-Dienst|App \(\w+\)), (zugestellt|Zustellung unbestätigt|verworfen)/.test(l)), sl.filter(l => /Steuerung|Ziele|Ereignisse/.test(l)).join(' | ').slice(0, 400));
   // ---- Zustand 1.4 übernehmen ----
   const old = path.join(dir, 'old.json'); fs.writeFileSync(old, JSON.stringify({ v: 1, fired: { 'al:x:1': 1 }, out: [], last: { t: 5, label: 'Kurs-Alarm X' } }));
-  const wo = new W.Watcher({ token: TOKEN, chat: CHAT, key: KEY, statePath: old, now: () => now, log: () => {} });
+  const wo = new W.Watcher({ alarmCards: false, token: TOKEN, chat: CHAT, key: KEY, statePath: old, now: () => now, log: () => {} });
   check('Zustand aus 1.4: übernommen, bisherige Ziele an und KI AUS, Revision 0; gespeichert als Version 2', wo.fired['al:x:1'] === 1 && wo.last.label === 'Kurs-Alarm X' && wo.pol.rev === 0 && W.TARGETS.every(id => wo.pol.targets[id].on === (id !== 'ki')) && (wo.saveStateNow(), JSON.parse(fs.readFileSync(old, 'utf8')).v === 2));
   // falscher Schlüssel: bremsen
   let st429 = 0; for (let i = 0; i < 22; i++) { const res = await realFetch(U2('/v1/state'), { headers: { authorization: 'Bearer falsch' } }); if (res.status === 429) st429++; }

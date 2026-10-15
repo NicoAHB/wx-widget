@@ -173,10 +173,13 @@ async function channel(req, res, host, u) {
     // 3.34.0 (G06): Trade-Bild – Foto prüfen (PNG, Größe, Bildunterschrift) und zum Ansehen ablegen
     if (method === 'sendPhoto') {
       const f = mpBin(raw, req.headers['content-type']), ph = f.files.photo, png = !!ph && ph.buf.length > 24 && ph.buf.slice(1, 4).toString() === 'PNG';
-      const e = { at: Date.now(), svc: 'tg', bot: B.id, method, chat_id: f.fields.chat_id, thread: f.fields.message_thread_id || '', caption: f.fields.caption ?? null, caption: f.fields.caption || '', parse_mode: f.fields.parse_mode, fields: Object.keys(f.fields).sort(), photoName: ph?.name || '', photoType: ph?.type || '', bytes: ph?.buf.length || 0, png, w: png ? ph.buf.readUInt32BE(16) : 0, h: png ? ph.buf.readUInt32BE(20) : 0, mode: req.headers['sec-fetch-mode'] || '' };
+      const e = { at: Date.now(), svc: 'tg', bot: B.id, method, chat_id: f.fields.chat_id, thread: f.fields.message_thread_id || '', caption: f.fields.caption ?? null, caption: f.fields.caption || '', parse_mode: f.fields.parse_mode, fields: Object.keys(f.fields).sort(), photoName: ph?.name || '', photoType: ph?.type || '', bytes: ph?.buf.length || 0, png, w: png ? ph.buf.readUInt32BE(16) : 0, h: png ? ph.buf.readUInt32BE(20) : 0, mode: req.headers['sec-fetch-mode'] || '', from: /^node/.test(req.headers['user-agent'] || '') ? 'server' : 'app' };
       if (ph) { e.path = path.join(PHOTO_DIR, `photo-${++tgPhotoNo}.${png ? 'png' : 'bin'}`); fs.writeFileSync(e.path, ph.buf); }
       sent.push(e);
       if (cfg.tgFormat > 0 && f.fields.parse_mode === 'HTML') { cfg.tgFormat--; e.formatRejected = true; return json(res, 400, { ok: false, error_code: 400, description: "Bad Request: can't parse entities: unsupported start tag" }, cors); }
+      // 3.71.0: /chan?tgfail=…&match=… gilt auch für Bilder (Bildunterschrift, ohne Groß-/Kleinschreibung: „KURS-ALARM“ trifft „Kurs-Alarm · BTC“)
+      if (cfg.tgFail && (!cfg.tgFail.serverOnly || e.from === 'server') && e.caption.toLowerCase().includes((cfg.tgFail.match || '').toLowerCase())) { e.failed = cfg.tgFail.code; return json(res, cfg.tgFail.code, { ok: false, error_code: cfg.tgFail.code, description: cfg.tgFail.code === 400 ? 'Bad Request: message is too long' : 'Bad Gateway' }, cors); }
+      if (cfg.tg429 > 0) { cfg.tg429--; e.failed = 429; return json(res, 429, { ok: false, error_code: 429, description: 'Too Many Requests: retry after 1', parameters: { retry_after: 1 } }, cors); }
       if (cfg.photoDelay) await new Promise(r => setTimeout(r, cfg.photoDelay));
       if (cfg.photoDrop > 0) { cfg.photoDrop--; e.dropped = true; res.socket?.destroy(); return; }
       if (cfg.photoFail) { e.failed = cfg.photoFail; return json(res, cfg.photoFail, { ok: false, error_code: cfg.photoFail, description: cfg.photoFail === 400 ? 'Bad Request: chat not found' : 'Bad Gateway' }, cors); }
