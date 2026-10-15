@@ -91,6 +91,13 @@
     d.setAttribute('data-presentation', view.presentation);
     var b = g('background.v1'), p = b && b.mode === 'custom' ? window.__sdAppearance.build(b.color) : null;
     if (p) { d.setAttribute('data-theme', p.theme); d.setAttribute('data-background', 'custom'); Object.keys(p.vars).forEach(function (k) { d.style.setProperty(k, p.vars[k]); }); document.querySelector('meta[name="theme-color"]').setAttribute('content', p.color); }
+    // Glas und Dekoration vor dem ersten Zeichnen; dieselben Grenzen wie panel-appearance.mjs.
+    var ps = g('panel-style.v1') || {}, snap = function (v, fallback, max, step) { return typeof v === 'number' && isFinite(v) ? Math.max(0, Math.min(max, Math.round(v / step) * step)) : fallback; };
+    var tr = snap(ps.transparency, 40, 70, 5), bl = snap(ps.blur, 12, 24, 2), br = snap(ps.border, 12, 40, 2);
+    d.style.setProperty('--panel-alpha', String(Math.round((1 - tr / 100) * 100) / 100)); d.style.setProperty('--panel-blur', bl + 'px'); d.style.setProperty('--panel-border-alpha', String(br / 100));
+    d.style.setProperty('--panel-backdrop', bl ? 'blur(var(--panel-blur))' : 'none'); d.style.setProperty('--display-bg', typeof ps.background === 'string' && /^#[0-9a-f]{6}$/i.test(ps.background) ? ps.background : 'var(--bg)');
+    d.setAttribute('data-panel-style', ps.enabled === false ? 'original' : 'glass'); d.setAttribute('data-bg-circles', ps.circles === false ? 'off' : 'on'); d.setAttribute('data-bg-lines', ps.lines === false ? 'off' : 'on');
+
   })();
   </script>
   <style>
@@ -133,6 +140,43 @@
   --buy:#15a35a;--buy-ink:#ffffff;--sell:#f2b6c0;--sell-ink:#5a0f1e;--hold:#e3e8ee;--hold-ink:#2f3a46;
   --t-p3:rgba(21,163,90,.26);--t-p2:rgba(21,163,90,.16);--t-p1:rgba(21,163,90,.07);--t-m1:rgba(214,64,92,.06);--t-m2:rgba(214,64,92,.12);--t-m3:rgba(214,64,92,.2);
   --toast-up-bg:#dcf5e6;--toast-up-text:#0b5c33;--toast-up-border:#86cfa3;--toast-down-bg:#fdebd8;--toast-down-text:#8a4300;--toast-down-border:#f0b77a}
+
+/* 3.74.0: kompakter Marktradar, dieselben Oberflächen und Fokusfarben wie die übrigen Klappbereiche. */
+.market-overview{min-width:0}
+.market-radar{margin:12px 14px 0;min-width:0;border:1px solid var(--border);border-radius:12px;background:var(--surface);color:var(--text);overflow:hidden;container-type:inline-size}
+.market-radar>summary{display:grid;grid-template-columns:30px minmax(0,1fr) auto 12px;align-items:center;gap:10px;min-height:64px;box-sizing:border-box;padding:10px 12px;cursor:pointer;list-style:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.market-radar>summary::-webkit-details-marker{display:none}
+.market-radar>summary:hover{background:var(--hover-2)}
+.market-radar>summary:focus-visible,.market-radar summary:focus-visible{outline:2px solid var(--mint);outline-offset:-3px;border-radius:10px}
+.mr-glyph{width:30px;height:30px;display:grid;place-items:center;border:1px solid var(--border);border-radius:9px;background:var(--surface-2);color:var(--mint)}
+.mr-glyph svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.2;stroke-linecap:round}
+.mr-heading{min-width:0;display:grid;gap:3px;line-height:1.25}.mr-heading>strong{font-size:14px;font-weight:650}.mr-meta{color:var(--muted);font-size:11px;overflow-wrap:anywhere}
+.mr-badge{white-space:nowrap;padding:5px 8px;border:1px solid var(--border);border-radius:7px;font-size:11px;font-weight:650;line-height:1.3;color:var(--text-2);background:var(--surface-2)}
+.market-radar[data-state=attention] .mr-badge{background:var(--warn-bg);color:var(--warn-text);border-color:var(--warn-border)}
+.market-radar[data-state=risk] .mr-badge{background:var(--down-bg);color:var(--down-text);border-color:var(--down-border)}
+.mr-chevron{color:var(--muted);font-size:17px;line-height:1;transition:transform .18s ease}.market-radar[open] .mr-chevron{transform:rotate(180deg)}
+.market-radar[open]>summary{border-bottom:1px solid var(--line)}
+.mr-body{padding:12px;min-width:0;font-size:12px;line-height:1.5}.mr-body p{margin:0}.mr-lead{color:var(--text-2);margin-bottom:12px!important}
+.mr-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:10px}
+.mr-card{min-width:0;display:flex;flex-direction:column;align-items:stretch;gap:8px;padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2);overflow-wrap:anywhere}
+.mr-card-head{display:flex;align-items:center;gap:7px;margin-bottom:2px}.mr-card-head h4{margin:0;font-size:13px;font-weight:600;flex:1;min-width:0}
+.mr-card-number{color:var(--muted);font:11px ui-monospace,monospace;font-variant-numeric:tabular-nums}.mr-card-state{font-size:10px;color:var(--muted);white-space:nowrap}
+.mr-card[data-state=attention] .mr-card-state{color:var(--warn-text)}.mr-card[data-state=risk] .mr-card-state{color:var(--down-text)}
+.mr-card[data-state=risk]{border-color:var(--down-border)}.mr-card[data-state=attention]{border-color:var(--warn-border)}
+.mr-value{font-size:23px;line-height:1.2;font-weight:650;letter-spacing:-.025em;font-variant-numeric:tabular-nums;overflow-wrap:anywhere;color:var(--text)}
+.mr-caption{font-size:11px;color:var(--muted)}.mr-fact{font-size:12px;color:var(--text-2);font-variant-numeric:tabular-nums}.mr-source{font-size:10px;color:var(--muted);line-height:1.6;margin-top:auto!important}
+.mr-bars{height:30px;display:flex;align-items:flex-end;gap:3px;margin:2px 0;overflow:hidden}.mr-bars[hidden]{display:none}.mr-bars i{display:block;flex:1;min-width:0;background:var(--field-border);border-radius:2px 2px 0 0}.mr-bars i[data-last]{background:var(--mint)}.mr-card[data-state=attention] .mr-bars i[data-last]{background:var(--amber)}
+.mr-event{font-size:14px;font-weight:600;line-height:1.5}.mr-headlines{display:grid;gap:8px}.mr-headline{display:grid;gap:4px;padding-top:8px;border-top:1px solid var(--line)}.mr-headline a,.mr-headline>span{font-size:12px;line-height:1.6;overflow-wrap:anywhere}.mr-headline a{color:var(--text-2);text-decoration:underline;text-decoration-color:var(--field-border);text-underline-offset:3px;min-height:44px;display:flex;align-items:center}.mr-headline small{font-size:10px;color:var(--muted)}
+.mr-freshness{margin:12px 0!important;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}.mr-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.mr-actions .button{min-height:44px;padding:8px 4px;font-size:12px;white-space:normal}
+.mr-method,.mr-journal{margin-top:12px;border-top:1px solid var(--line);font-size:11px;color:var(--muted)}.mr-method>summary,.mr-journal>summary{min-height:44px;display:flex;gap:10px;align-items:center;cursor:pointer;list-style:none;font-size:12px}.mr-method>summary::after,.mr-journal>summary::after{content:'＋';margin-left:auto;color:var(--muted)}.mr-method[open]>summary::after,.mr-journal[open]>summary::after{content:'−'}.mr-method>summary::-webkit-details-marker,.mr-journal>summary::-webkit-details-marker{display:none}.mr-method p{margin:0 0 10px;line-height:1.7}
+.mr-journal-count{font-size:10px;min-width:22px;text-align:center;border-radius:5px;padding:1px 5px;background:var(--surface-2);color:var(--text-2);font-variant-numeric:tabular-nums}.mr-journal-body{display:grid;gap:12px}.mr-track{display:flex;align-items:center;gap:10px;min-height:44px;color:var(--text-2);font-size:12px;cursor:pointer}.mr-track input{width:20px;height:20px;flex:0 0 20px;margin:0;accent-color:var(--mint)}
+.mr-observation{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}.mr-observation-label{display:grid;gap:3px;min-width:0}.mr-observation-label strong{font-size:12px;color:var(--text-2)}.mr-observation-label small{font-size:10px;overflow-wrap:anywhere}.mr-outcomes{display:flex;gap:12px;font-variant-numeric:tabular-nums}.mr-outcomes>span{display:grid;gap:3px;text-align:right}.mr-outcomes small{font-size:10px}.mr-outcomes b{font-size:11px;white-space:nowrap}.mr-outcomes [data-tone=up] b{color:var(--up-text)}.mr-outcomes [data-tone=down] b{color:var(--down-text)}
+.mr-journal-body>.button{justify-self:start;min-height:44px;font-size:12px;white-space:normal;text-align:left}.mr-save-error{margin-top:10px!important;color:var(--down-text)}
+.market-radar[data-widget-failure]>.mr-body{display:none}.market-radar>.widget-failure{margin:12px}
+html[data-chartfull] .market-overview{display:none!important}
+@container (max-width:310px){.market-radar>summary{gap:7px;padding-inline:10px;grid-template-columns:26px minmax(0,1fr) auto 10px}.mr-glyph{width:26px;height:28px}.mr-heading>strong{font-size:13px}.mr-meta{font-size:10px}.mr-badge{padding:4px 6px;font-size:10px}.mr-body{padding:10px}.mr-card{padding:10px}.mr-observation{grid-template-columns:minmax(0,1fr)}.mr-outcomes{justify-content:flex-start}.mr-outcomes>span{text-align:left}}
+@media(prefers-reduced-motion:reduce){.mr-chevron{transition:none}}
+
 /* ---------- Grundlagen ---------- */
 *{box-sizing:border-box}
 html{scroll-padding-top:120px;-webkit-text-size-adjust:100%}
@@ -2371,41 +2415,83 @@ html[data-chartfull] .chart-pattern-row{padding:0;order:1;flex-wrap:nowrap}html[
 @keyframes wmShort{0%,100%{box-shadow:inset 0 0 0 1px var(--down-text)}50%{box-shadow:inset 0 0 0 3px var(--down-text);background:var(--down-bg-2)}}
 @media(max-width:600px){.wm-fields{grid-template-columns:repeat(2,minmax(0,1fr))}.wm-cards{grid-template-columns:minmax(0,1fr)}}
 @media(prefers-reduced-motion:reduce){.wl-tile[data-wm-signal=long],.wl-tile[data-wm-signal=short]{animation:none}.wl-tile[data-wm-signal=long]{box-shadow:inset 0 0 0 2px var(--up-text)}.wl-tile[data-wm-signal=short]{box-shadow:inset 0 0 0 2px var(--down-text)}}
+
+/* 3.74.0: Glas nur auf großen Flächen. Innere Karten bekommen keinen eigenen Blur. Chart bleibt deckend. */
+:root{--panel-alpha:.6;--panel-blur:12px;--panel-border-alpha:.12;--panel-backdrop:blur(var(--panel-blur));--display-bg:var(--bg)}
+body{isolation:isolate}
+#display-backdrop{position:fixed;inset:0;z-index:-1;pointer-events:none;width:100%;height:100%;display:none;overflow:hidden}
+html[data-panel-style=glass] #display-backdrop{display:block}
+html[data-bg-circles=off] #display-circles,html[data-bg-lines=off] #display-lines{display:none}
+html[data-panel-style=glass] :is(.appearance-panel,body>dialog){background:rgba(0,0,0,var(--panel-alpha));border:1px solid rgba(255,255,255,var(--panel-border-alpha));color:#fff;-webkit-backdrop-filter:var(--panel-backdrop);backdrop-filter:var(--panel-backdrop)}
+html[data-panel-style=glass] .appearance-inner{background:transparent;border-color:rgba(255,255,255,.08);-webkit-backdrop-filter:none;backdrop-filter:none}
+html[data-panel-style=glass] :where(.wl-tile,.mr-card,.of-signal,.of-position,.sig-card,.ind-card,.position-card){border-color:rgba(255,255,255,.08)}
+:where(.appearance-panel,body>dialog) button{color:var(--text)}
+/* Glasflächen bleiben auch beim hellen Grunddesign lesbar. Deckende Unterkarten
+   und bestehende Bedienelemente behalten ihre ursprünglichen Textfarben. Die
+   Root-Aliase werden dort aufgelöst, bevor Panel-Variablen sie überschreiben. */
+:root{--pa-theme-text:var(--text);--pa-theme-text-2:var(--text-2);--pa-theme-label:var(--label);--pa-theme-muted:var(--muted);--pa-theme-faint:var(--faint)}
+html[data-panel-style=glass][data-theme=light] :is(.appearance-panel,body>dialog){--text:#fff;--text-2:#e0e6ed;--label:#e0e6ed;--muted:#d0d8e2;--faint:#b9c4d0}
+html[data-panel-style=glass][data-theme=light] :is(.appearance-panel,body>dialog) :where(
+  button:not(.ghost),input,select,textarea,.tip-body,.input-wrap,.note-box,.side-toggle,.chip,.notice,
+  .of-panel,.of-volumes,.of-pattern-info,.of-signal,.of-position,.of-groups,.of-demo-price,.of-demo-close,.of-row,
+  .risk-calc,.day-strip,.day-banner,.data-panel,.pos-card,.acct-kpis>div,.acct-form,.history-summary>div,
+  .fx-fill-out,.tax-row,.equity,.bd,.monthly,.mo-row.total,.ladder,.chan,.econ-warn,
+  .wl-tile,.wl-periods,.wl-fchip,.wl-d-box,.dec-seg,.dec-row,.vs,.tg-paste,.data-head,.sync-preview,.reasons,
+  .demo-hint,.demo-badge,.integrity,.quar-item,.code-box,.conf-table,.transfer-box,
+  .ki-positive,.ki-negative,.ki-warning,.explain-fold,.crypto-calendar,.crypto-event,.connection-dialog,
+  .muster-group,.muster-live,.muster-results,.muster-info,.muster-stop,.muster-run-status,.muster-equity,.muster-model-note,.muster-help,
+  .github-sync,.github-sync-hint,.github-sync-dialog,.github-sync-state,.github-sync-setup,.github-sync-setup-state,
+  .patq-settings,.doc-viewer .sheet-head,.doc-viewer-body code,.doc-viewer-body pre,.chart-pattern-tile,.chart-pattern-overview-card,.wm-result-card
+):not(.appearance-panel):not(.appearance-inner){--text:var(--pa-theme-text);--text-2:var(--pa-theme-text-2);--label:var(--pa-theme-label);--muted:var(--pa-theme-muted);--faint:var(--pa-theme-faint)}
+html[data-panel-style=glass][data-theme=light] .doc-viewer .sheet-head{color:var(--pa-theme-text)}
+html[data-panel-style=glass] #chart-sec{background:var(--surface);-webkit-backdrop-filter:none;backdrop-filter:none}
+.pa-settings{min-width:0;padding-bottom:16px;margin-bottom:16px;border-bottom:1px solid var(--line)}.pa-settings h3{margin:0 0 10px;font-size:15px;font-weight:650}.pa-settings .pa-note{display:block;margin:4px 0 12px;font-size:12px;line-height:1.6;color:var(--muted)}
+.pa-controls{display:grid;gap:8px;min-width:0}.pa-range{display:grid;gap:0;min-width:0}.pa-range-head{display:flex;justify-content:space-between;align-items:center;gap:10px}.pa-range-head label,.pa-color-label{font-size:13px;color:var(--text-2)}.pa-range output{font-size:13px;color:var(--text);font-variant-numeric:tabular-nums;white-space:nowrap}
+.pa-range input[type=range]{display:block;width:100%;height:44px;margin:0;padding:0;min-width:0;border:0;background:transparent;cursor:pointer;-webkit-appearance:none;appearance:none;touch-action:pan-y}
+.pa-range input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:3px;background:var(--field-border)}.pa-range input[type=range]::-webkit-slider-thumb{width:22px;height:22px;margin-top:-9px;border:2px solid var(--surface);border-radius:50%;background:var(--mint);-webkit-appearance:none}
+.pa-range input[type=range]::-moz-range-track{height:4px;border-radius:3px;background:var(--field-border)}.pa-range input[type=range]::-moz-range-thumb{width:18px;height:18px;border:2px solid var(--surface);border-radius:50%;background:var(--mint)}
+.pa-range input[type=range]:focus-visible{outline:2px solid var(--mint);outline-offset:1px;border-radius:7px}.pa-switch{display:flex!important;align-items:center;gap:12px;min-height:44px;font-size:13px;color:var(--text-2);cursor:pointer}.pa-switch input{appearance:auto;-webkit-appearance:checkbox;accent-color:var(--mint);width:22px;height:22px;min-height:0;flex:0 0 22px;margin:0;padding:0}
+.pa-controls select{min-height:44px;width:100%;min-width:0;font-size:14px}.pa-own-color{display:flex;align-items:center;gap:12px;min-height:44px;margin:0}.pa-own-color[hidden]{display:none}.pa-own-color input[type=color]{height:44px;width:56px;flex:0 0 56px;padding:3px;border:1px solid var(--field-border);border-radius:7px;background:var(--field)}.pa-own-color output{font:12px ui-monospace,monospace;color:var(--text-2)}
+.pa-reset{justify-self:start;min-height:44px;margin-top:8px;font-size:13px}.pa-error{color:var(--down-text)}
+@container (min-width:494px) and (max-width:733px){.mr-card[data-radar-card=context]{grid-column:1/-1}}
+
 </style>
   <script type="module">
-import { MARKET_INTERVALS, CHART_INTERVALS, SIGNAL_INTERVALS, INTERVAL_MS, nearestChartInterval } from './bundles/3.73.1/shared/market-intervals.mjs';
-import { createDetailCandles, detailOptions, detailChoice, closedSeries, timeIndex, DETAIL_VISIBLE_MAX } from './bundles/3.73.1/shared/chart-detail.mjs';
-import { patternChipRows, patternChipKey } from './bundles/3.73.1/shared/chart-pattern-chips.mjs';
-import { PATTERN_QUALITY_CONFIG, chartPatternQuality, repricePatternQuality, sortPatternQuality, patternOverview } from './bundles/3.73.1/shared/chart-pattern-quality.mjs';
-import { createPatternOverviewFeed } from './bundles/3.73.1/shared/chart-pattern-overview-feed.mjs';
+import { MARKET_INTERVALS, CHART_INTERVALS, SIGNAL_INTERVALS, INTERVAL_MS, nearestChartInterval } from './bundles/3.74.0/shared/market-intervals.mjs';
+import { createDetailCandles, detailOptions, detailChoice, closedSeries, timeIndex, DETAIL_VISIBLE_MAX } from './bundles/3.74.0/shared/chart-detail.mjs';
+import { patternChipRows, patternChipKey } from './bundles/3.74.0/shared/chart-pattern-chips.mjs';
+import { PATTERN_QUALITY_CONFIG, chartPatternQuality, repricePatternQuality, sortPatternQuality, patternOverview } from './bundles/3.74.0/shared/chart-pattern-quality.mjs';
+import { createPatternOverviewFeed } from './bundles/3.74.0/shared/chart-pattern-overview-feed.mjs';
 // Arbeitsstand: bei der gemeinsamen Release-Freigabe in das neue Versionsbündel übernehmen.
-import { createPositioningFeed } from './bundles/3.73.1/shared/positioning-score.mjs';
-import { CRYPTO_CALENDAR, parseCryptoCalendar, cryptoCalendarEvents } from './bundles/3.73.1/shared/crypto-calendar.mjs';
-import { createMusterClient } from './bundles/3.73.1/shared/muster-bot-feed.mjs';
-import { createMusterPaper } from './bundles/3.73.1/shared/muster-bot-paper.mjs';
-import { readMusterPaper, writeMusterPaper } from './bundles/3.73.1/shared/muster-bot-store.mjs';
-import { projectPatternLines, projectionSettings, projectionTime } from './bundles/3.73.1/shared/pattern-projection.mjs';
-import { createGithubSyncView } from './bundles/3.73.1/shared/github-sync-view.mjs';
-import { createDocViewer } from './bundles/3.73.1/shared/doc-viewer.mjs';
-import { PATTERN_FILTER_PRESET_NAMES, PATTERN_FILTER_FIELDS, PATTERN_CARD_FIELDS, HIGHER_TIMEFRAME, patternFilterSettings, patternFilterFromForm, evaluatePatternSignal, selectPatternSignals, patternJournalEntry, addPatternJournal, resolvePatternJournal, patternHitStats, patternJournalStats, PATTERN_OUTCOME_NAMES, backtestPatternFilter } from './bundles/3.73.1/shared/pattern-quality.mjs';
-import { stripSyncSecrets } from './bundles/3.73.1/shared/github-sync.mjs';
-import { createMusterView } from './bundles/3.73.1/shared/muster-bot-view.mjs';
-import { computeKiZones, KI_ZONE_INTERVALS } from './bundles/3.73.1/shared/ki-zones.mjs';
-import { heikinAshi } from './bundles/3.73.1/shared/heikin-ashi.mjs';
-import { detectFvgs, fvgSummary } from './bundles/3.73.1/shared/fvg.mjs';
-import { scoreZoneStrength, ZONE_STRENGTH, ZONE_SIGNAL, zoneSignal, zoneStep, zoneOutcome, summarizeZoneBacktest } from './bundles/3.73.1/shared/zone-strength.mjs';
+import { createPositioningFeed } from './bundles/3.74.0/shared/positioning-score.mjs';
+import { CRYPTO_CALENDAR, parseCryptoCalendar, cryptoCalendarEvents } from './bundles/3.74.0/shared/crypto-calendar.mjs';
+import { createMusterClient } from './bundles/3.74.0/shared/muster-bot-feed.mjs';
+import { createMusterPaper } from './bundles/3.74.0/shared/muster-bot-paper.mjs';
+import { readMusterPaper, writeMusterPaper } from './bundles/3.74.0/shared/muster-bot-store.mjs';
+import { projectPatternLines, projectionSettings, projectionTime } from './bundles/3.74.0/shared/pattern-projection.mjs';
+import { createGithubSyncView } from './bundles/3.74.0/shared/github-sync-view.mjs';
+import { createDocViewer } from './bundles/3.74.0/shared/doc-viewer.mjs';
+import { PATTERN_FILTER_PRESET_NAMES, PATTERN_FILTER_FIELDS, PATTERN_CARD_FIELDS, HIGHER_TIMEFRAME, patternFilterSettings, patternFilterFromForm, evaluatePatternSignal, selectPatternSignals, patternJournalEntry, addPatternJournal, resolvePatternJournal, patternHitStats, patternJournalStats, PATTERN_OUTCOME_NAMES, backtestPatternFilter } from './bundles/3.74.0/shared/pattern-quality.mjs';
+import { stripSyncSecrets } from './bundles/3.74.0/shared/github-sync.mjs';
+import { createMusterView } from './bundles/3.74.0/shared/muster-bot-view.mjs';
+import { computeKiZones, KI_ZONE_INTERVALS } from './bundles/3.74.0/shared/ki-zones.mjs';
+import { heikinAshi } from './bundles/3.74.0/shared/heikin-ashi.mjs';
+import { detectFvgs, fvgSummary } from './bundles/3.74.0/shared/fvg.mjs';
+import { scoreZoneStrength, ZONE_STRENGTH, ZONE_SIGNAL, zoneSignal, zoneStep, zoneOutcome, summarizeZoneBacktest } from './bundles/3.74.0/shared/zone-strength.mjs';
 // 3.68.0: KI-Signale/Trading-Bot entfernt; der GitHub-Sync behält sein Format inklusive vorhandener Modelloriginale.
-import { exportModelArchive, importModelArchive, validateModelArchive, restoreModelOriginals } from './bundles/3.73.1/shared/model-archive.mjs';
-import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT, patternGrade } from './bundles/3.73.1/shared/telegram-format.mjs';
-import { patternSignalCard, patternChartData } from './bundles/3.73.1/shared/pattern-signal-card.mjs';   // 3.71.0: Chartmuster-Signalkarte
-import { pnlAlarmCard } from './bundles/3.73.1/shared/pnl-alarm-card.mjs';   // 3.71.0: Gewinn-/Verlust-Alarm als Bild
-import { priceAlarmCard } from './bundles/3.73.1/shared/price-alarm-card.mjs';   // 3.71.0: Kurs-Alarm als Bild
-import { createOrderflowView } from './bundles/3.73.1/shared/orderflow-view.mjs';
-import { createSignalView } from './bundles/3.73.1/shared/orderflow-signal-view.mjs';
-import { WATCH_MODEL_KEY, WATCH_COMPARE_KEY } from './bundles/3.73.1/shared/watch-model-core.mjs';
-import { createWatchModelFeed } from './bundles/3.73.1/shared/watch-model-feed.mjs';
-import { createWatchModelView } from './bundles/3.73.1/shared/watch-model-view.mjs';
-import { networkState, createWidgetBoundary } from './bundles/3.73.1/shared/widget-state.mjs';
+import { exportModelArchive, importModelArchive, validateModelArchive, restoreModelOriginals } from './bundles/3.74.0/shared/model-archive.mjs';
+import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT, patternGrade } from './bundles/3.74.0/shared/telegram-format.mjs';
+import { patternSignalCard, patternChartData } from './bundles/3.74.0/shared/pattern-signal-card.mjs';   // 3.71.0: Chartmuster-Signalkarte
+import { pnlAlarmCard } from './bundles/3.74.0/shared/pnl-alarm-card.mjs';   // 3.71.0: Gewinn-/Verlust-Alarm als Bild
+import { priceAlarmCard } from './bundles/3.74.0/shared/price-alarm-card.mjs';   // 3.71.0: Kurs-Alarm als Bild
+import { createOrderflowView } from './bundles/3.74.0/shared/orderflow-view.mjs';
+import { createMarketRadarView } from './bundles/3.74.0/shared/market-radar-view.mjs';
+import { createPanelAppearanceSettings } from './bundles/3.74.0/shared/panel-appearance.mjs';
+import { createSignalView } from './bundles/3.74.0/shared/orderflow-signal-view.mjs';
+import { WATCH_MODEL_KEY, WATCH_COMPARE_KEY } from './bundles/3.74.0/shared/watch-model-core.mjs';
+import { createWatchModelFeed } from './bundles/3.74.0/shared/watch-model-feed.mjs';
+import { createWatchModelView } from './bundles/3.74.0/shared/watch-model-view.mjs';
+import { networkState, createWidgetBoundary } from './bundles/3.74.0/shared/widget-state.mjs';
 // Pure, unrounded calculations. Prices are USDT per unit; FX is USDT per EUR.
 function rsi(closes, period = 14) {
   const out = Array(closes.length).fill(null);
@@ -3260,7 +3346,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
 // 3.43.0 (G10a): reiner Fachkern in shared/; Datenquelle und Karten folgen getrennt.
 // 3.44.0 (G10b): öffentlicher Adapter in shared/bitget-public.mjs; sichtbare Anbindung folgt mit G10(c).
-const APP_VERSION = '3.73.1', docEl = document.documentElement;
+const APP_VERSION = '3.74.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -3736,6 +3822,7 @@ function refreshDueMtf(now = Date.now()) {
 }
 function renderMarket() {
   detailSync();
+  if (marketRadarView && marketRadarBoundary) marketRadarBoundary.run(() => marketRadarView.tick());
   if ($('workspace-watch-title')) put('workspace-watch-title', 'Vorauswahl · ' + state.symbol.replace(/USDT$/, '/USDT'));
   const c = state.candles, last = c.at(-1), p = currentPrice();
   musterView?.updateContext();
@@ -5831,7 +5918,7 @@ function backupStatus(msg) { put('history-status', msg); }
 // Löschungen, Prüfliste, offene Konflikte, Anzeige-Einstellungen und das eigene Musterlernen (der öffentliche Startbestand nur als
 // Verweis mit Version). Nie enthalten: Zugangsdaten (Telegram-Token und API-Schlüssel), die Übergabe an den 24/7-Dienst, Sendesperren
 // und andere gerätegebundene Zustände. Alle Felder von Schema 7 bleiben gleich – ältere App-Versionen lesen die Datei weiter.
-const PREF_KEYS = ['scalpdesk.watch-model.v1', 'scalpdesk.watch-compare.v1', 'scalpdesk.pattern-projection.v1', 'scalpdesk.orderflow-journal.v1', 'scalpdesk.orderflow-position.v1', 'scalpdesk.orderflow-signal.v1', 'scalpdesk.orderflow.v1', 'scalpdesk.ki.risk-view.v1', 'scalpdesk.theme.v1', 'scalpdesk.presentation.v1', 'scalpdesk.background.v1', 'scalpdesk.overlays.v1', 'scalpdesk.zigzag.v1', 'scalpdesk.whale.v1', 'scalpdesk.orderbook.v1', 'scalpdesk.ladder.v1', 'scalpdesk.vola.v1', 'scalpdesk.econ.v1', 'scalpdesk.cnews.v1', 'scalpdesk.wlspan.v1', 'scalpdesk.titleprice.v1', 'scalpdesk.details.v1', 'scalpdesk.posdefaults.v1', 'scalpdesk.daylimitnote.v1', 'scalpdesk.warnclose.v1', 'scalpdesk.evalyear.v1', 'scalpdesk.acctrange.v1', 'scalpdesk.anaiv.v1', 'scalpdesk.decouple.v1', 'scalpdesk.kizones.v1', 'scalpdesk.heikin.v1', 'scalpdesk.zonesig.v1', 'scalpdesk.patfilter.v1'];
+const PREF_KEYS = ['scalpdesk.panel-style.v1', 'scalpdesk.market-radar.v1', 'scalpdesk.watch-model.v1', 'scalpdesk.watch-compare.v1', 'scalpdesk.pattern-projection.v1', 'scalpdesk.orderflow-journal.v1', 'scalpdesk.orderflow-position.v1', 'scalpdesk.orderflow-signal.v1', 'scalpdesk.orderflow.v1', 'scalpdesk.ki.risk-view.v1', 'scalpdesk.theme.v1', 'scalpdesk.presentation.v1', 'scalpdesk.background.v1', 'scalpdesk.overlays.v1', 'scalpdesk.zigzag.v1', 'scalpdesk.whale.v1', 'scalpdesk.orderbook.v1', 'scalpdesk.ladder.v1', 'scalpdesk.vola.v1', 'scalpdesk.econ.v1', 'scalpdesk.cnews.v1', 'scalpdesk.wlspan.v1', 'scalpdesk.titleprice.v1', 'scalpdesk.details.v1', 'scalpdesk.posdefaults.v1', 'scalpdesk.daylimitnote.v1', 'scalpdesk.warnclose.v1', 'scalpdesk.evalyear.v1', 'scalpdesk.acctrange.v1', 'scalpdesk.anaiv.v1', 'scalpdesk.decouple.v1', 'scalpdesk.kizones.v1', 'scalpdesk.heikin.v1', 'scalpdesk.zonesig.v1', 'scalpdesk.patfilter.v1'];
 const personalBackupItem = x => !['dpos','dtrade'].includes(x.kind) && !['dpos','dtrade'].includes(x.localKind) && ![DEMO_POS_KEY,DEMO_HIST_KEY,'scalpdesk.orderflow-demo.v1'].includes(x.raw?.key) && !['demoPositions','demoHistory'].includes(x.raw?.field);
 // Übungsdaten können auch in Positionsbegleitung/Signaljournal stehen; nur die Exportkopie bereinigen.
 const demoContext = x => x?.demo === true || x?.practice === true || /^(demo|practice)\|/.test(x?.id || '');
@@ -7559,7 +7646,7 @@ function liveFeed(port, formatRejected) {
   });
 }
 const live = { post: () => {}, via: 'aus', markets: {}, lastMsg: { spot: 0, futures: 0 }, wantKey: {}, need: new Set(), downSince: {}, everUp: {}, chartAt: 0 };
-var orderflow, musterView; // Vor dem Start am Modulende initialisiert; bestehende frühe Stream-Aufrufe bleiben sicher.
+var orderflow, musterView, marketRadarView, marketRadarBoundary; // Vor dem Start am Modulende initialisiert.
 let baseStreams = { spot: new Set(), futures: new Set() };
 function startLive() {
   const fallback = () => {
@@ -7712,6 +7799,7 @@ function alClTick(now) {
 function onTick(now) {
   orderflow?.tick();
   orderflowSignal?.tick();
+  if (marketRadarView && !document.hidden) marketRadarBoundary.run(() => marketRadarView.tick());
   status(); updateTitle(); // Tab-Titel spätestens jede Sekunde aktuell, auch im Hintergrund-Tab
   if (titleNeedsPoll(now)) void pollTitlePrices(now);
   whaleTick(); lastTagTick(); // 3.3: Countdown am Kurs-Schild, auch ohne Neuzeichnen
@@ -15519,7 +15607,7 @@ const musterPaper = createMusterPaper({ read: readMusterPaper, write: writeMuste
   } });
 const MUSTER_TG_NAMES = { hammer: 'Hammer', engulfing: 'Bullish Engulfing', confluence: 'Konfluenz', po3: 'Power of Three' };
 musterView = createMusterView({ host: musterHost, selection: musterSelection, currentPrice: (symbol, market) => state.symbol === symbol && state.source === market ? currentPrice() : null,
-  prefs: store.get('scalpdesk.muster.settings.v1', {}), savePrefs: value => store.set('scalpdesk.muster.settings.v1', value), workerFactory: () => new Worker(new URL('./bundles/3.73.1/shared/muster-bot-worker.mjs', import.meta.url), { type: 'module' }), paper: musterPaper, onMarkers: scheduleDraw,
+  prefs: store.get('scalpdesk.muster.settings.v1', {}), savePrefs: value => store.set('scalpdesk.muster.settings.v1', value), workerFactory: () => new Worker(new URL('./bundles/3.74.0/shared/muster-bot-worker.mjs', import.meta.url), { type: 'module' }), paper: musterPaper, onMarkers: scheduleDraw,
   telegramStatus: () => tgtReady('trades') ? null : 'Hinweis: Telegram ist noch nicht eingerichtet oder das Ziel „Trades“ ist aus (Einstellungen → Telegram).' });
 void musterPaper.restore().then(() => musterPaper.poll());
 function musterDraw(svg, data, x, y, bottom) {
@@ -15534,6 +15622,22 @@ function musterDraw(svg, data, x, y, bottom) {
 }
 window.__muster = { view: musterView, paper: musterPaper, selection: musterSelection };
 workspaceBuild();
+// 3.74.0: passiver Verbraucher der vorhandenen Feeds. Kein weiterer Abruf, Stream, Auftrag oder Telegram-Versand.
+function marketRadarInput() {
+  const feed = orderflowSignal.feed, f = state.funding, cm = chartMarket(), oi = feed.oi(), w = wh;
+  return { symbol: state.symbol, now: serverNow(), receivedNow: Date.now(), paused: state.paused, offline: navigator.onLine === false,
+    futures: { symbol: feed.state.symbol, quote: feed.quote(), series: feed.state.series['1m'] || [] },
+    funding: f ? { symbol: f.symbol, rate: f.lastFundingRate == null || f.lastFundingRate === '' ? null : Number(f.lastFundingRate), at: Number(f.time), error: state.fundingError } : null,
+    oi: oi ? { ...oi, symbol: feed.state.symbol, error: feed.state.errors[feed.state.symbol + '|oi'] } : null,
+    whales: { symbol: w.key.split('|')[0], market: cm, enabled: whOn() && w.key === whKey(), connected: !!cm && feedFresh(cm) && !state.paused,
+      since: w.since, rows: w.whales, min: whMin() }, news: cn.data, calendar: ec.data };
+}
+const radarHost = el('div', 'market-overview'), radarRoot = el('details', 'market-radar');
+$('workspace-orderflow').before(radarHost); radarHost.append(radarRoot, $('workspace-orderflow'));
+marketRadarView = createMarketRadarView({ root: radarRoot, input: marketRadarInput, read: () => store.get('scalpdesk.market-radar.v1'),
+  save: value => { if (!store.set('scalpdesk.market-radar.v1', value)) throw Error('Marktradar konnte nicht gespeichert werden.'); broadcastData(['scalpdesk.market-radar.v1']); }, navigate: goTo });
+marketRadarBoundary = createWidgetBoundary(radarRoot, 'Marktradar', () => marketRadarView.tick());
+window.__marketRadar = { view: marketRadarView, input: marketRadarInput, tick: () => marketRadarBoundary.run(() => marketRadarView.tick()), boundary: marketRadarBoundary };
 // 3.72.0: nur der Testschalter aktiviert zusätzliche Vorauswahl-Daten; der Vergleich läuft ausdrücklich per Knopf.
 wmFeed = createWatchModelFeed({ now: serverNow, context: () => ({ enabled: wmStrict(), paused: state.paused, hidden: document.hidden, online: navigator.onLine,
   symbols: state.watch.map(wlSym).map(symbol => { const e = wl?.c.get(symbol); return e?.at && !e.error ? { symbol, market: e.market } : null; }).filter(Boolean) }), fetchRows: cachedKlines,
@@ -15542,7 +15646,7 @@ const wmSave = async (key, value) => { store.set(key, value); if (!store.ok || !
 wmView = createWatchModelView({ host: document.querySelector('#workspace-settings .workspace-settings-grid'), read: key => store.get(key), save: wmSave, getMode: wmMode,
   setMode: async mode => { const before = wmMode(); try { await wmSave(WATCH_MODEL_KEY, mode === 'strict' ? 'strict' : 'classic'); } catch (e) { store.set(WATCH_MODEL_KEY, before); throw e; } broadcastData([WATCH_MODEL_KEY]); wmRefresh(); },
   now: serverNow, symbols: () => state.watch.map(wlSym), history: createMusterClient().history, available: () => !document.hidden && !state.paused && navigator.onLine !== false,
-  workerFactory: () => new Worker(new URL('./bundles/3.73.1/shared/watch-model-worker.mjs', import.meta.url), { type: 'module' }) });
+  workerFactory: () => new Worker(new URL('./bundles/3.74.0/shared/watch-model-worker.mjs', import.meta.url), { type: 'module' }) });
 function wmAvailability() {
   wmFeed.sync();
   if ((document.hidden || state.paused || navigator.onLine === false) && wmView.state.busy) wmView.abort();
@@ -15629,6 +15733,10 @@ function cryptoCalendarBuild() {
   explanationFold([note], 'Quelle & Grenzen', 'crypto-calendar-info'); cryptoCalendarPaint();
 }
 cryptoCalendarBuild();
+var panelAppearanceView = createPanelAppearanceSettings({ host: $('view-panel'), read: () => store.get('scalpdesk.panel-style.v1'),
+  save: value => { if (!store.set('scalpdesk.panel-style.v1', value)) throw Error('Darstellung konnte nicht gespeichert werden.'); }, adopt: value => store.adopt('scalpdesk.panel-style.v1', value) });
+window.__panelAppearance = panelAppearanceView;
+
 window.__cryptoCalendar = { tick: cryptoCalendarTick, fetch: cryptoCalendarFetch, paint: cryptoCalendarPaint, get state() { return cryptoCal; } };
 // Privater GitHub-Sync nutzt denselben geprüften persönlichen Import, mit zusätzlicher lokaler Notfallkopie.
 const GH_EMERGENCY_KEY = 'scalpdesk.github-emergency.v1';
@@ -15689,10 +15797,21 @@ const connectionClose = el('button', 'button ghost', 'Schließen'); connectionCl
 $('status').tabIndex = 0; $('status').setAttribute('role', 'button'); $('status').setAttribute('aria-haspopup', 'dialog');
 const connectionOpen = () => { put('connection-detail', $('status').title); if (!connectionInfo.open) connectionInfo.showModal(); };
 $('status').addEventListener('click', connectionOpen); $('status').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); connectionOpen(); } });
+// Erst nach allen Fenstern einmal markieren. Verschachtelte Karten erhalten keinen zweiten Blur.
+const appearanceTargets = [...document.querySelectorAll('.panel, .workspace-fold, .workspace-setting-card, .menu-panel, dialog')].filter(n => !n.closest('#chart-sec'));
+for (const surface of appearanceTargets) {
+  const nested = appearanceTargets.some(parent => parent !== surface && parent.contains(surface));
+  surface.classList.add(nested ? 'appearance-inner' : 'appearance-panel');
+}
 render();startLive();void showCachedChart();void refresh();void initAutoBackup();void requestWake();void zzpStart();
 </script>
 </head>
 <body>
+  <svg id="display-backdrop" viewBox="0 0 1000 1600" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+    <rect width="1000" height="1600" fill="var(--display-bg)"/>
+    <g id="display-circles"><circle cx="100" cy="220" r="340" fill="#8a4fd0"/><circle cx="900" cy="900" r="420" fill="#d4537e"/><circle cx="175" cy="1480" r="390" fill="#1d9e9a"/></g>
+    <polyline id="display-lines" points="-100,920 0,850 90,890 180,770 260,810 350,650 440,720 530,610 610,690 690,570 780,650 860,510 950,560 1100,430" fill="none" stroke="#8fe3bf" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+  </svg>
 <div class="app">
   <header class="topbar">
     <a class="brand" href="weather-widget-v2.html" aria-label="Scalp Desk neu laden"><span class="brand-icon" aria-hidden="true">▥</span>Scalp<span>Desk</span><span class="tag">MARKET WORKSPACE</span></a>
@@ -15719,7 +15838,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
           <h4>Layout</h4>
           <strong id="device-view-name">Arbeitsbereich</strong>
           <small>Automatisch: Handy → Standard, PC und iPad → Dashboard. Alle Funktionen bleiben in den vier Arbeitsbereichen erreichbar.</small>
-          <h4>Hintergrund</h4>
+          <h4>Grunddesign</h4>
           <div class="side-toggle appearance-toggle" role="group" aria-label="Design"><button type="button" data-theme-set="light" aria-pressed="false">Hell</button><button type="button" data-theme-set="dark" aria-pressed="true">Dunkel</button><button type="button" data-theme-set="custom" aria-pressed="false">Eigene Farbe</button></div>
           <div id="own-color-controls" class="own-color-controls" hidden>
             <div id="own-color-palette" class="own-color-palette" role="group" aria-label="Lesbare Hintergrundfarben"></div>

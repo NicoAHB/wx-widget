@@ -1,6 +1,6 @@
 {
   "version": "2.15.1",
-  "appVersion": "3.73.1",
+  "appVersion": "3.74.0",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
@@ -288,6 +288,21 @@
       "bytes": 2532
     },
     {
+      "path": "shared/market-radar-core.mjs",
+      "sha256": "ec9c63f9e4cf8628b475a10c6f502d76be354c296a40a5a97b6b2e90c7db0f9d",
+      "bytes": 7688
+    },
+    {
+      "path": "shared/market-radar-journal.mjs",
+      "sha256": "6d451794ee065aaff60f4a830492c448daa24570b5a7f7835639921b02b2e33f",
+      "bytes": 2999
+    },
+    {
+      "path": "shared/market-radar-view.mjs",
+      "sha256": "2bf392952cdf34486b97dc1aa09027bdcf2c5d030b951b18f9aaf5c23158d39c",
+      "bytes": 15279
+    },
+    {
       "path": "shared/model-archive.mjs",
       "sha256": "d2b5df4622599ee10e2c4e483986f85f25c2448f8032e8460e1ea4b4cdf212ff",
       "bytes": 5202
@@ -356,6 +371,11 @@
       "path": "shared/orderflow-view.mjs",
       "sha256": "5c513c7c70502eacaf66d28fc6331e587e2e77917d6f7a173d18423474fefce8",
       "bytes": 18915
+    },
+    {
+      "path": "shared/panel-appearance.mjs",
+      "sha256": "6863bc2b7f51d429cf2883803336f450a79138e90eaa3fe1ab22113d6a5d59a6",
+      "bytes": 7681
     },
     {
       "path": "shared/paper-bot-controller.mjs",
