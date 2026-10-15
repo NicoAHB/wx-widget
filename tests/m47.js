@@ -255,7 +255,7 @@ const tests = {
     check('Bild scheitert (502) → Text; Telegram 5× „502“: die Meldung kommt beim 6. Versuch an (vorher nach 5 Versuchen verloren)', !!m && m.filter(y => y.method === 'sendPhoto' && y.failed === 502).length === 1 && m.filter(y => !y.method && y.failed === 502).length === 5 && m.filter(y => !y.failed).length === 1, m ? `${m.length} Versuche, zugestellt nach ${Math.round((m.at(-1).at - t0) / 1000)} s` : 'nicht zugestellt');
     await page.waitForTimeout(800); sum = await page.textContent('#chan-summary');
     check('… Übersicht: zuletzt zugestellt (Kurs-Alarm ETH)', /\(KURS-ALARM · ETH · [\d.,]+ USD\)/.test(sum), sum);
-    check('keine Fehler (Kanäle)', !real(errors).length, real(errors).join(' | ').slice(0, 300)); await ctx.close();
+    check('keine Fehler (Kanäle; ohne das absichtlich abgelehnte Bild mit 502)', !real(errors).filter(e => !/status of 502/.test(e)).length, real(errors).join(' | ').slice(0, 300)); await ctx.close();
   },
 
   // ================= 24/7-Dienst 1.3: Störung in der App, Nachstellen =================
