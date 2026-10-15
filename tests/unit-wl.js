@@ -16,12 +16,12 @@ const number = (x, d) => x.toFixed(d).replace('.', ',');
 const signed = (x, d = 2) => (x > 0 ? '+' : x < 0 ? '−' : '') + number(Math.abs(x), d);
 // eine Instanz der App (zweiter Aufruf = App neu geladen, derselbe Speicher)
 const load = () => new Function('state', 'store', 'cachedKlines', 'signalRating', 'priceText', 'number', 'scoreText', '$', 'userScrolling', 'syncStreams', 'renderWatchlist', 'wldPaint', 'window', 'document', 'signed',
-  `${src}\nreturn { wl, WL_SPANS: wlSpans(), WL_SPAN_KEY, WL_LIMIT, WL_WINDOW, wlSpanKey, wlSpan, wlSetSpan, wlAdd, wlKline, wlRef, wlPrice, wlSpark, wlView, wlRules, wlVerdict, wlTone, wlMove, wlStreams, wlTick, wlLoad, wlCandle };`)(
+  `${src}\nreturn { wl, WL_SPANS: wlSpans(), WL_SPAN_KEY, WL_LIMIT, WL_WINDOW, wlSpanKey, wlSpan, wlSetSpan, wlAdd, wlKline, wlRef, wlPrice, wlSpark, wlView, wlRules, wlVerdict, wlTone, wlMove, wlStreams, wlTick, wlLoad, wlCandle, wlTfCols, wlTfRef };`)(
   state, store, cachedKlines, signalRating, p => number(p, 2), number, s => (s > 0 ? '+' : s < 0 ? '−' : '') + Math.abs(s),
   () => null, () => false, () => { syncs++; }, () => { renders++; }, () => {}, {}, { hidden: false }, signed);
 const A = load();
 const M = 60e3, I = 5 * M, T0 = Date.UTC(2026, 8, 29, 20, 0);
-const IVMS = { '1m': M, '3m': 3 * M, '5m': I, '15m': 15 * M, '2h': 120 * M }, IVN = Object.fromEntries(Object.entries(IVMS).map(([n, ms]) => [ms, n]));
+const IVMS = { '1m': M, '3m': 3 * M, '5m': I, '15m': 15 * M, '1h': 60 * M, '2h': 120 * M }, IVN = Object.fromEntries(Object.entries(IVMS).map(([n, ms]) => [ms, n]));
 const mk = (i, c, iv = I) => ({ time: T0 + i * iv, open: c, high: c + 1, low: c - 1, close: c, volume: 1, closeTime: T0 + i * iv + iv - 1 });
 const k = (i, c, x = false, iv = I) => ({ t: T0 + i * iv, T: T0 + i * iv + iv - 1, o: c, h: c + 1, l: c - 1, c, v: 1, x });
 const entry = (n, iv = I) => ({ sym: 'XRPUSDT', iv: IVN[iv], closed: Array.from({ length: n }, (_, i) => mk(i, 100 + i, iv)), run: null, hist: [], rating: null, market: 'spot', loading: false, error: '', retryAt: 0, gap: false, at: 1 });
@@ -54,10 +54,10 @@ A.wlAdd(e, k(63, 170), now + 3 * I);
 check('Lücke (fehlende Kerzen): zum Neuladen markiert, nichts übernommen', e.gap === true && e.closed.length === 61 && e.run === null);
 const big = entry(260); A.wlAdd(big, k(260, 400, true), T0 + 261 * I);
 check('Höchstens 260 abgeschlossene Kerzen, bewertet werden die letzten 199', big.closed.length === 260 && big.closed.at(-1).close === 400 && big.closed[0].time === T0 + I && ratedLen === 199);
-// Verlauf: höchstens ein Wert je Sekunde, 3 Minuten lang
+// Verlauf: höchstens ein Wert je Sekunde, 6 Minuten lang (3.71.0: für die Spalten 1m und 5m der Kachel)
 e = entry(60); let t = T0 + 60 * I;
-for (let i = 0; i < 400; i++) A.wlAdd(e, k(60, 150 + i / 100, false), t + i * 500); // 200 s lang alle 0,5 s eine Meldung
-check('Kursverlauf: ein Wert je Sekunde, nur die letzten 3 Minuten', e.hist.length >= 179 && e.hist.length <= 182 && e.hist.at(-1)[0] - e.hist[0][0] <= 180e3, `${e.hist.length} Werte`);
+for (let i = 0; i < 800; i++) A.wlAdd(e, k(60, 150 + i / 100, false), t + i * 500); // 400 s lang alle 0,5 s eine Meldung
+check('Kursverlauf: ein Wert je Sekunde, nur die letzten 6 Minuten', e.hist.length >= 359 && e.hist.length <= 362 && e.hist.at(-1)[0] - e.hist[0][0] <= 360e3, `${e.hist.length} Werte`);
 
 // ---- Kurs zu Beginn des Zeitraums ----
 e = entry(60); now = T0 + 60 * I + 30e3;
@@ -131,7 +131,7 @@ check('wlView: Bewegung nur mit Bewertung', A.wlView({ ...flat(60, 100, 0.05), r
 // ---- Linie des Zeitraums ----
 e = entry(60); e.run = mk(60, 200);
 const pts = A.wlSpark(e).split(' ').map(p => p.split(',').map(Number));
-check('Linie: die 12 Schlusskurse der Stunde und der aktuelle Kurs, links nach rechts, höchster Kurs oben', pts.length === 13 && pts[0][0] === 0 && pts.at(-1)[0] === 44 && pts.at(-1)[1] === 1 && pts[0][1] === 15, JSON.stringify([pts.length, pts[0], pts.at(-1)]));
+check('Linie: die 12 Schlusskurse der Stunde und der aktuelle Kurs, links nach rechts, höchster Kurs oben (Feld 100 × 24)', pts.length === 13 && pts[0][0] === 0 && pts.at(-1)[0] === 100 && pts.at(-1)[1] === 1 && pts[0][1] === 23, JSON.stringify([pts.length, pts[0], pts.at(-1)]));
 A.wl.span = '4h'; e = entry(60, 15 * M); e.run = mk(60, 200, 15 * M); const n4 = A.wlSpark(e).split(' ').length;
 A.wl.span = '1m'; e = entry(60, M); e.run = mk(60, 200, M); const n1 = A.wlSpark(e).split(' ').length;
 A.wl.span = '1h';
@@ -151,9 +151,23 @@ const old = { ...entry(10, M), market: 'futures' }; A.wl.c.set('XRPUSDT', old);
 A.wlKline({ i: '5m', s: 'XRPUSDT', m: 'futures', k: k(10, 5, true, M) }, T0 + 11 * M);
 check('… eine Reihe aus dem vorigen Zeitraum (1m) nimmt keine 5m-Kerzen', old.closed.length === 10);
 
+// ---- 3.71.0: Spalten 1m · 5m · 1h · 1d der Kachel ----
+A.wl.span = '1h'; const c1h = A.wlTfCols().join(); A.wl.span = '30m'; const c30 = A.wlTfCols().join(); A.wl.span = '4h'; const c4h = A.wlTfCols().join(); A.wl.span = '1d'; const c1d = A.wlTfCols().join(); A.wl.span = '1h';
+check('Spalten: 1m · 5m · 1h · 1d; bei 30 Minuten bzw. 4 Stunden steht der gewählte Zeitraum mit drin', c1h === '1m,5m,1h,1d' && c1d === '1m,5m,1h,1d' && c30 === '1m,30m,1h,1d' && c4h === '1m,1h,4h,1d', [c1h, c30, c4h, c1d].join(' | '));
+{
+  const now2 = T0 + 400 * M, m1 = Array.from({ length: 61 }, (_, i) => ({ time: now2 - (61 - i) * M, closeTime: now2 - (60 - i) * M - 1, close: 1000 + i })), h1 = Array.from({ length: 26 }, (_, i) => ({ time: now2 - (26 - i) * 60 * M, closeTime: now2 - (25 - i) * 60 * M - 1, close: 900 + i }));
+  const ee = { ...entry(60), hist: [[now2 - 60e3, 1058.5], [now2 - 30e3, 1059]], tf: { m1, h1 }, closed: [] };
+  const r1 = A.wlTfRef(ee, 60e3, now2), r5 = A.wlTfRef(ee, 3e5, now2), r60 = A.wlTfRef(ee, 36e5, now2), r24 = A.wlTfRef(ee, 864e5, now2), rNo = A.wlTfRef({ ...ee, tf: null, hist: [] }, 864e5, now2);
+  check('Kurs vor 1 Min.: aus dem Live-Verlauf (genauer als die Minutenkerze); 5 Min. und 1 Std. aus den 1m-Kerzen; 1 Tag aus den Stundenkerzen', r1 === 1058.5 && r5 === 1055 && r60 === 1000 && r24 === 901, JSON.stringify([r1, r5, r60, r24]));
+  check('… ohne passende Daten (Abstand größer als ein Viertel des Zeitraums): kein Wert', rNo === null);
+  A.wl.span = '1h'; const vv = A.wlView({ ...ee, closed: entry(60).closed, run: { ...mk(60, 1062), close: 1062 } }, now2);
+  check('wlView: vier Spalten, die des Zeitraums (1h) hervorgehoben mit derselben Veränderung wie „1 Std. …“, Werte ohne %-Zeichen', vv.tf.map(x => x.k).join() === '1m,5m,1h,1d' && vv.tf.filter(x => x.sel).map(x => x.k).join() === '1h' && vv.tf.find(x => x.sel).text === vv.chgText.replace(/^1 Std\. /, '').replace(' %', '') && /^[+−±]\d+,\d\d$/.test(vv.tf[0].text), JSON.stringify(vv.tf));
+}
 (async () => {
   const tick = () => new Promise(r => setTimeout(r, 0));
   // ---- Laden: nacheinander, mit Spot/Futures, Fehler und neuer Versuch ----
+  // (3.71.0: dazwischen lädt die Vorauswahl je Coin 1m- und 1h-Kerzen für die Spalten – hier zählen nur die Reihen des Zeitraums)
+  const main = () => loads.filter(l => l[2] === 260);
   A.wl.c.clear(); loads = []; state.watch = ['BTC', 'XRP', 'NEAR'];
   const nowR = Date.now(), m0 = Math.floor(nowR / I) * I;
   const series = (ivMs, source) => { const b = Math.floor(nowR / ivMs) * ivMs; return { candles: [...Array.from({ length: 259 }, (_, i) => ({ ...mk(0, 100 + i), time: b - (259 - i) * ivMs, closeTime: b - (259 - i) * ivMs + ivMs - 1 })), { ...mk(0, 400), time: b, closeTime: b + ivMs - 1 }], source }; };
@@ -166,23 +180,27 @@ check('… eine Reihe aus dem vorigen Zeitraum (1m) nimmt keine 5m-Kerzen', old.
   const b = A.wl.c.get('BTCUSDT');
   check('Geladen: abgeschlossene Kerzen, laufende Kerze, Tendenz aus den letzten 199, Streams neu abgestimmt', b.closed.length === 259 && b.run?.close === 400 && b.rating && ratedLen === 199 && !b.loading && b.at > 0 && syncs >= 1, JSON.stringify({ n: b.closed.length, run: b.run?.close, ratedLen, syncs }));
   A.wlTick(nowR + 400); await tick(); A.wlTick(nowR + 800); await tick();
-  check('Nacheinander: danach XRP (Futures) und NEAR', loads.map(l => l[0]).join() === 'BTCUSDT,XRPUSDT,NEARUSDT' && A.wl.c.get('XRPUSDT').market === 'futures', loads.map(l => l[0]).join());
+  check('Nacheinander: danach XRP (Futures) und NEAR', main().map(l => l[0]).join() === 'BTCUSDT,XRPUSDT,NEARUSDT' && A.wl.c.get('XRPUSDT').market === 'futures', loads.map(l => l[0]).join());
   // Coin entfernt: Eintrag weg
   state.watch = ['BTC', 'NEAR']; A.wlTick(nowR + 1200);
-  check('Aus der Vorauswahl entfernt: Eintrag gelöscht, kein neuer Abruf', !A.wl.c.has('XRPUSDT') && loads.length === 3);
+  check('Aus der Vorauswahl entfernt: Eintrag gelöscht, kein neuer Abruf', !A.wl.c.has('XRPUSDT') && main().length === 3);
+  await tick();
+  check('3.71.0: alle Reihen geladen → danach je Coin 1m- (61) und 1h-Kerzen (26) für die Spalten, ein Coin nach dem anderen', loads.filter(l => l[2] !== 260).map(l => l.join(':')).join() === 'BTCUSDT:1m:61,BTCUSDT:1h:26' && A.wl.c.get('BTCUSDT').tf?.m1.length > 0, JSON.stringify(loads.filter(l => l[2] !== 260)));
+  A.wlTick(nowR + 1550); await tick();
+  check('… dann NEAR; BTC erst nach 15 Minuten wieder', loads.filter(l => l[2] !== 260).map(l => l[0]).join() === 'BTCUSDT,BTCUSDT,NEARUSDT,NEARUSDT', loads.filter(l => l[2] !== 260).map(l => l[0]).join());
   // Fehler und neuer Versuch nach einer Minute
   state.watch = ['BTC', 'NEAR', 'ABC']; klineAnswer = new Error('ABCUSDT ist bei Binance weder als Spot- noch als Futures-Paar verfügbar.');
-  A.wlTick(nowR + 1600); await tick();
+  A.wlTick(nowR + 1900); await tick();
   const abc = A.wl.c.get('ABCUSDT');
   check('Unbekannter Coin: Fehler gemerkt, kein Stream', /weder als Spot/.test(abc.error) && !A.wlStreams().some(s => s.s.startsWith('abcusdt')));
-  A.wlTick(nowR + 2000);
-  check('… kein neuer Versuch vor Ablauf einer Minute', loads.length === 4);
+  A.wlTick(nowR + 2300);
+  check('… kein neuer Versuch vor Ablauf einer Minute', main().length === 4);
   A.wlTick(abc.retryAt + 1); await tick();
-  check('… nach einer Minute erneut', loads.length === 5 && loads.at(-1)[0] === 'ABCUSDT');
+  check('… nach einer Minute erneut', main().length === 5 && main().at(-1)[0] === 'ABCUSDT');
   // Lücke → neu laden
   klineAnswer = () => ({ candles: [{ ...mk(0, 1), time: m0 - I, closeTime: m0 - 1 }], source: 'spot' }); A.wl.c.get('NEARUSDT').gap = true;
   A.wlTick(nowR + 70e3 + 100); await tick();
-  check('Lücke im Stream: Reihe wird neu geladen', loads.at(-1)[0] === 'NEARUSDT' && A.wl.c.get('NEARUSDT').gap === false);
+  check('Lücke im Stream: Reihe wird neu geladen', main().at(-1)[0] === 'NEARUSDT' && A.wl.c.get('NEARUSDT').gap === false);
   // Pause: nichts laden
   state.paused = true; const n0 = loads.length; A.wl.c.get('BTCUSDT').gap = true; A.wlTick(nowR + 80e3);
   check('Pause: kein Abruf', loads.length === n0); state.paused = false;

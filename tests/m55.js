@@ -1,5 +1,5 @@
 // 3.34.0 (G06) – geschlossene Position als genau ein Telegram-Bild (über die Oberfläche, Telegram aus der Attrappe).
-// flow:   Long mit Nachkauf und Teilabschluss, Schluss jetzt → genau ein sendPhoto mit kurzer Bildunterschrift, PNG 1080×1730; Netto,
+// flow:   Long mit Nachkauf und Teilabschluss, Schluss jetzt → genau ein sendPhoto mit einzeiliger Bildunterschrift, PNG 1080×1730; Netto,
 //         Einsatz und Euro wie im Journal; Zustand in der Historie; Neuladen ohne zweites Bild; Vorschau.
 // short:  Short mit Nachkauf, Teilabschluss und Schluss „laut Börse“ ohne Ausstiegskurs → „nicht erfasst“ statt erfundenem Kurs.
 // nochart: Kerzen aus keiner Quelle abrufbar → trotzdem genau ein Bild mit Ersatzlinie Einstieg → Ausstieg (3.69.0), kein Textbericht.
@@ -16,7 +16,9 @@
 const h = require('./harness');
 const results = [];
 const check = (name, cond, detail = '') => { results.push({ name, ok: !!cond }); console.log(`${cond ? '  ✓' : '  ✗'} ${name}${detail !== '' ? ' — ' + String(detail).slice(0, 600) : ''}`); };
-const real = errs => errs.filter(e => !/Service Worker registration blocked|Failed to load resource|ERR_CONNECTION_REFUSED|ERR_EMPTY_RESPONSE|net::ERR/.test(e));
+// 3.71.0: Die Einstiegskurse hier sind frei gewählt und passen nicht zu den Attrappen-Kerzen – die Warnung „Einstieg weicht vom
+// Chart ab“ im Konsolen-Log ist dann richtig (geprüft in m103) und kein Fehler; ebenso die gewollten Sendefehler („Chat „Trades“ …“).
+const real = errs => errs.filter(e => !/Service Worker registration blocked|Failed to load resource|ERR_CONNECTION_REFUSED|ERR_EMPTY_RESPONSE|net::ERR/.test(e) && !/^\[console\.warning\] Trade-Bild \w+ \(\w+\): (⚠ Einstieg weicht vom Chart ab|Chat „Trades“)/.test(e));
 const until = async (fn, ms = 20000, step = 200) => { const t0 = Date.now(); for (;;) { const v = await fn(); if (v) return v; if (Date.now() - t0 > ms) return null; await h.sleep(step); } };
 const TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', ALERT = '987654321', BACKUP = '-100555', TRADES = '-100777';
 const EV = { alarm: true, pos: true, day: true, news: false, pnl: false, pulse: false, trade: true };
@@ -73,7 +75,7 @@ const tests = {
     const j = await waitJob(page, 'L1', x => x.st === 'ok'); await page.waitForTimeout(1500);
     const all = await photos(t0), p = all[0] || {};
     check('Vollständiger Abschluss: genau ein sendPhoto an den Trades-Chat', j && all.length === 1 && String(p.chat_id) === TRADES, JSON.stringify(all.map(x => ({ chat: x.chat_id, bytes: x.bytes }))));
-    check('… mit kurzer HTML-Bildunterschrift (Paar, Richtung, Netto € und %, Haltedauer, Max. Gewinn/Verlust) und nur Versandfeldern', /^<b>🟢 GEWINN · SOL\/USDT Long<\/b>\r?\n💶 Netto: <b>\+[\d,]+ €<\/b> · \+[\d,]+ %\r?\n⏱ Haltedauer: 3 Std\.( \d+ Min\.)?\r?\n📈 Max\. Gewinn: [+−][\d,]+ €\r?\n📉 Max\. Verlust: ([−][\d,]+ €|0,00 € \(nie im Minus\))\r?\n🕐 /.test(p.caption || '') && JSON.stringify(p.fields) === JSON.stringify(['caption', 'chat_id', 'parse_mode']) && p.photoName === 'trade.png' && p.photoType === 'image/png', JSON.stringify({ caption: p.caption, fields: p.fields, name: p.photoName, type: p.photoType }));
+    check('… mit einzeiliger Bildunterschrift (3.71.0: „SOL/USDT Long 10× · +x,xx € (+x,x %) · 3:00 Std.“, ohne HTML) und nur Versandfeldern', /^SOL\/USDT Long \d+(,\d+)?× · \+[\d.]+,\d\d € \(\+[\d.]+,\d %\) · \d+:\d\d Std\.$/.test(p.caption || '') && JSON.stringify(p.fields) === JSON.stringify(['caption', 'chat_id']) && p.photoName === 'trade.png' && p.photoType === 'image/png', JSON.stringify({ caption: p.caption, fields: p.fields, name: p.photoName, type: p.photoType }));
     check('… PNG 1080×1730, unter 10 MB', p.png && p.w === 1080 && p.h === 1730 && p.bytes > 20000 && p.bytes < 10e6, JSON.stringify({ png: p.png, w: p.w, h: p.h, bytes: p.bytes }));
     check('… keine Textnachricht an Trades und nichts an Kursalarm oder Sicherung (außer Sicherung selbst)', !(await h.ctl('/sent')).some(m => m.svc === 'tg' && m.at >= t0 && (String(m.chat_id) === TRADES ? m.method !== 'sendPhoto' : m.method === 'sendPhoto')));
     check('Auftrag „gesendet“ mit Nachrichten-ID, automatisch, Kerzen für den Haltezeitraum', j?.st === 'ok' && j.msg > 0 && j.by === 'auto' && /^(1m|5m) · \d+ Kerzen · Binance Spot · gespeichert$/.test(j.chart || ''), JSON.stringify(j));
@@ -107,7 +109,7 @@ const tests = {
     const t0 = Date.now(); await close(page, 'S1', { qty: '2', exit: '', override: '45' });
     const j = await waitJob(page, 'S1', x => ['ok', 'fail', 'unconf', 'drop'].includes(x.st)); await page.waitForTimeout(800);
     const d = await page.evaluate(() => __g06.timgData('S1')), net = await journalNet(page, 'S1'), all = await photos(t0);
-    check('Short mit Nachkauf und Teilabschluss: genau ein Bild', j?.st === 'ok' && all.length === 1 && /^<b>🟢 GEWINN · ETH\/USDT Short<\/b>\r?\n💶 Netto: <b>\+/.test(all[0].caption || ''), JSON.stringify(j));
+    check('Short mit Nachkauf und Teilabschluss: genau ein Bild', j?.st === 'ok' && all.length === 1 && /^ETH\/USDT Short \d+(,\d+)?× · \+[\d.]+,\d\d € \(\+[\d.]+,\d %\) · \d+:\d\d Std\.$/.test(all[0].caption || ''), JSON.stringify(j));
     check('Short: Netto = Journal (Teilabschluss + Schluss laut Börse), Einstieg Ø aus beiden Verkäufen', d.side === 'short' && Math.abs(d.net - net) < 1e-9 && Math.abs(d.entry - (2 * 2520 + 2530) / 3) < 1e-6 && d.exchange, JSON.stringify({ net: d.net, journal: net, entry: d.entry }));
     check('Schluss ohne Ausstiegskurs: nicht erfunden – Ø-Ausstieg nur aus dem erfassten Teilabschluss, 1 von 2 ohne Kurs', d.exit === 2490 && d.exitMiss === 1 && d.sells[1].x === null, JSON.stringify({ exit: d.exit, miss: d.exitMiss, sells: d.sells }));
     keep.push(['short', all[0]?.path]);
@@ -177,7 +179,7 @@ const tests = {
     await jsClick(page, '#history-list [data-trade="WB"] .timg-st'); await until(() => page.evaluate(() => !document.getElementById('timg-img').hidden), 10000);
     const st = await txt(page, '#timg-status'); await page.click('#timg-send');
     const jb2 = await waitJob(page, 'WB', x => x.st === 'ok'); await page.click('#timg-close');
-    check('Erneut senden (Vorschau aus dem Zustand in der Historie): jetzt zugestellt, insgesamt 2 Versuche', /^Fehlgeschlagen – Telegram lehnt ab/.test(st) && jb2?.by === 'manual' && (await photos(t0)).length === 2, JSON.stringify({ st, jb2 }));
+    check('Erneut senden (Vorschau aus dem Zustand in der Historie): jetzt zugestellt, insgesamt 2 Versuche', /^Fehlgeschlagen – Chat „Trades“ \(-100777\): Telegram lehnt ab/.test(st) && jb2?.by === 'manual' && (await photos(t0)).length === 2, JSON.stringify({ st, jb2 }));
     // Neuladen während des Sendens
     await h.ctl('/chan?photodelay=8000'); t0 = Date.now(); await close(page, 'WC', { qty: '1', exit: '150' });
     await waitJob(page, 'WC', x => x.st === 'send', 15000); await page.reload();

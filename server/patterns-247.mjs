@@ -6,11 +6,11 @@ import { fileURLToPath } from 'node:url';
 import { klines, bookTicker } from './scalpdesk-247.mjs';
 import { PAT_STEPS, PQ, patternCandles, patternCases, patternFresh, patternText, patternMessageData, patternEnd, patternEvaluate, patternFilterLog } from './pattern-monitor.mjs';
 import { formatMessage, telegramFields, telegramPlain, telegramFormatRejected } from './telegram-format.mjs';
-import { renderPatternCard, patternCardModel, patternCaption, cardRendererStatus, EXAMPLE_SIGNAL } from './pattern-card.mjs';
+import { renderPatternCard, patternCaption, cardRendererStatus, EXAMPLE_SIGNAL } from './pattern-card.mjs';
 import { monthStart, purgeSentMessages, purgeReport } from './pattern-retention.mjs';
 // 1.1.0: Qualitätsfilter (K.O.-Kriterien, Signalscore, Anti-Spam, Ergebnis-Tracking)
 // 1.2.0: Meldung als Trading-Karte (PNG per sendPhoto, Text als Ersatz), monatliche Bereinigung gesendeter Nachrichten
-export const PATTERNS_VERSION = '1.2.1';   // 1.2.1: Schrift mitgeliefert, keine Karten ohne Text
+export const PATTERNS_VERSION = '1.3.0';   // 1.2.1: Schrift mitgeliefert, keine Karten ohne Text; 1.3.0: Signalkarte (Gesamturteil, Jetzt, Mini-Chart), schwache Signale nur mit Schalter
 // Telegram-Fehler, die das Ziel betreffen (dann hilft auch der Text nicht)
 const CHAT_PROBLEM = /chat|thread|topic|blocked|kicked|deactivated|not enough rights|have no rights/i;
 export function readPatternEnvironment(file) {
@@ -84,7 +84,7 @@ export class PatternsOnlyService {
   // Karte einmal erzeugen und speichern (Wiederholung nach Rate-Limit sendet dasselbe Bild)
   async cardFor(e) {
     const name = crypto.createHash('sha256').update(String(e.c?.id)).digest('hex').slice(0, 32) + '.png', file = path.join(this.cardDir, name);
-    if (e.img === name && fs.existsSync(file)) return { png: fs.readFileSync(file), caption: e.caption || patternCaption(patternCardModel(e.data)) };
+    if (e.img === name && fs.existsSync(file)) return { png: fs.readFileSync(file), caption: e.caption || patternCaption(e.data, { at: this.now(), timezone: 'Europe/Berlin' }) };
     const r = await this.renderCard(e.data, this.now());
     fs.mkdirSync(this.cardDir, { recursive: true, mode: 0o700 }); const tmp = file + '.tmp';
     fs.writeFileSync(tmp, r.png, { mode: 0o600 }); fs.renameSync(tmp, file);
@@ -143,7 +143,7 @@ export class PatternsOnlyService {
             if (!patternFresh(c, this.now(), this.state.since) || this.state.events[c.id] || this.state.signals.some(e => e.id === c.id)) continue;
             if (Object.keys(this.state.events).length >= 10000) throw new Error('Musterjournal voll: Versand pausiert; Originalbestand bleibt');
             const ev = await patternEvaluate({ c, h, k, fetchRows: this.fetchRows, fetchSpread: this.fetchSpread, cache, settings: filter, journal: this.state.signals, now: this.now() });
-            candidates.push({ id: c.id, sym: c.sym, iv: c.iv, dir: c.dir, tc: c.tc, eval: ev, c, h });
+            candidates.push({ id: c.id, sym: c.sym, iv: c.iv, dir: c.dir, tc: c.tc, eval: ev, c, h, k });
           }
           if (k.length) this.due.set(key, patternEnd(patternEnd(k.at(-1).t, item.iv), item.iv) + 2000);
         } catch { this.due.set(key, this.now() + 60000); this.log('Kerzen/Journal prüfen: ' + item.sym + ' · ' + item.iv + '; nächster Versuch in einer Minute'); }
@@ -158,7 +158,7 @@ export class PatternsOnlyService {
           if (!d.send) continue;   // gefiltert: nur Journal und Log, nichts an Telegram
           this.state.sent = [...this.state.sent.filter(y => this.now() - y.at < 24 * 36e5), { at: this.now(), sym: c.sym, iv: c.iv, dir: c.dir, id: c.id }];
           const cases = Object.values(this.state.cases);
-          this.state.events[c.id] = { st: 'queued', retryAt: 0, c, text: patternText(c, h, cases, ev), data: patternMessageData(c, h, cases, ev) };
+          this.state.events[c.id] = { st: 'queued', retryAt: 0, c, text: patternText(c, h, cases, ev, x.k), data: patternMessageData(c, h, cases, ev, x.k) };
         }
       }
       this.persist();
@@ -196,7 +196,7 @@ export async function patternsMain(args = process.argv.slice(2)) {
   // 1.2.0: Kennung des laufenden Dienstes – die Bereinigung löscht nichts, solange er läuft (er würde den Zustand überschreiben)
   const pidFile = path.join(path.dirname(stateFile), 'dienst.pid'); fs.writeFileSync(pidFile, String(process.pid), { mode: 0o600 });
   process.once('exit', () => { try { if (Number(fs.readFileSync(pidFile, 'utf8')) === process.pid) fs.rmSync(pidFile); } catch { /* schon weg */ } });
-  out('Chartmusterdienst ' + PATTERNS_VERSION + ' gestartet · Modell pat-1 · ' + service.config.items.length + ' Märkte · Qualitätsfilter ' + (PQ.PATTERN_FILTER_PRESET_NAMES[service.config.filter.preset] || service.config.filter.preset) + ' (Score ≥ ' + service.config.filter.minScore + ') · Meldungen als ' + (!service.cards ? 'Text' : { ok: 'Trading-Karte (Text als Ersatz)', renderer: 'Text – Kartenrenderer fehlt (im Ordner server: npm ci)', schrift: 'Text – keine Schrift für die Karte (Ordner server/fonts fehlt; git pull)' }[await cardRendererStatus()]));
+  out('Chartmusterdienst ' + PATTERNS_VERSION + ' gestartet · Modell pat-1 · ' + service.config.items.length + ' Märkte · Qualitätsfilter ' + (PQ.PATTERN_FILTER_PRESET_NAMES[service.config.filter.preset] || service.config.filter.preset) + ' (Score ≥ ' + service.config.filter.minScore + ') · Meldungen als ' + (!service.cards ? 'Text' : { ok: 'Signalkarte mit Kurztext (Kurztext als Ersatz)', renderer: 'Text – Kartenrenderer fehlt (im Ordner server: npm ci)', schrift: 'Text – keine Schrift für die Karte (Ordner server/fonts fehlt; git pull)' }[await cardRendererStatus()]));
   let stopping = false; const timer = globalThis.setInterval(() => { if (!stopping) service.scan().catch(() => { console.error('Dienstzustand nicht schreibbar; Dienst wird neu gestartet'); process.exit(1); }); }, 5000);
   for (const signal of ['SIGTERM', 'SIGINT']) process.once(signal, () => { stopping = true; globalThis.clearInterval(timer); });
   await service.scan();

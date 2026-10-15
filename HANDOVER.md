@@ -3,6 +3,55 @@
 Diese Datei ist der Einstieg für jede weitere Arbeit am Projekt. Wer sie liest, braucht kein Vorwissen. Die vollständige fachliche
 Vorgabe aller Gruppen G01–G14 steht in `docs/VORGABE-G01-G14.md` (Original-Übergabe; dort sind G10–G14 ausführlich beschrieben).
 
+## 3.71.0 / Dienst 2.15.0 / Musterdienst 1.3.0 (Claude): Trade-Karte, Signalkarte, Gewinn-/Verlust- und Kurs-Alarm als Bild, flüssiges Zoomen, neue Vorauswahl
+
+Ausführlich: [docs/3.71.0-AENDERUNGEN.md](docs/3.71.0-AENDERUNGEN.md). Der Nutzer hat Gesamtlauf und Veröffentlichung freigegeben.
+
+**Gesamtlauf 15.10.2026 (`tests/run-all.sh`, 108 Tests):** alles grün bis auf Fälle, die auf `main` (3.70.2) genauso fehlschlagen – geprüft im Vergleich:
+- `m18` (Magnet rastet an „Fib 38,2 %“ statt 50 %, iPad-Fib-Leiste), `m19` (iPad: Fib-Knöpfe abgeschnitten), `m7` (320 px: Euro-Wert in der Kopfzeile ragt 6–15 px über; Sicherung beim sofortigen Schließen), `m47` (10 000 Trades: Notiz speichern im Median gut 400 ms statt < 400 ms – schwankt mit der Rechnerlast).
+- Bekannte Abbrüche wie bisher: `m40` (`#lb-pos` vom stehenden Alarm-Hinweis verdeckt) und `m79` (`page.fill`-Zeitüberschreitung).
+- Im Lauf behoben und einzeln wiederholt: `unit-fvg` (im Container fehlten scikit-learn/joblib; der Test prüft sie jetzt vorab), `m6`/`m27` (Chart-Fotos erst ins Bild scrollen – der Chart liegt unter den höheren Kacheln).
+
+- **Kurs-Alarm als Bild:** `shared/price-alarm-card.mjs` (Kopf AUFWÄRTS/ABWÄRTS, Kurs groß, Leiste mit LEVEL-Marke, Level/Abstand/Auslösung, Notiz nur wenn vorhanden). App über `CARD_KINDS.alarm` in `chanSendCard`, Dienst über `alarmCard` im Ausgang (`alarmCardImage`, Schalter `alarmCards`). Ersatz ist die Textmeldung; sendet die App ohne Dienst, steht „Von der App gesendet · Dienst nicht erreichbar“ als zweite Zeile in der Bildunterschrift.
+- **Gewinn-/Verlust-Karte mit Euro:** `fx` (USDT je EUR) im Kartenmodell; App mit `fxLive()`, Dienst mit `eurRate()` (Binance EURUSDT, 1 min Zwischenspeicher, 6 h Rückfall). Euro-Zeilen gehen genau auf.
+- **Flüssiges Zoomen/Blättern:** Gesten-Engine `chartLive` im Gesten-Block des Charts: Ziel in Bruchteilen von Kerzen, je Bild Transformation einer Ebene (`g.lv-clip > g`), vereinfachtes Zeichnen (`chartLite`) höchstens alle ≥ 50 ms, am Ende genau. `scheduleDraw` zählt Anforderungen (`drawReq/drawDone`). Zwei Finger zoomen und verschieben, Wischen mit Schwung, `touchmove` verhindert Mitscrollen. Test `m110`.
+- **Vorauswahl nach Entwurf:** neue Kachel (Kopf, Spalten 1m · 5m · 1h · 1d, Verlauf mit Punkt, Trend/Kurs/MACD, RSI-Leiste), Filter/Sortierung (`scalpdesk.wlfilter.v1`, `scalpdesk.wlsort.v1`, `wlArrange`), Kachel „+ Coin hinzufügen“. Spaltenwerte aus `wlTfRef` (Live-Verlauf 6 min, 1m-/1h-Kerzen über `wlTfLoad`, alle 15 min je Coin). Test `m111`.
+- **Live-Wert ausblenden:** `scalpdesk.lb-open.v1`, Knopf `#lb-open-toggle` in „Darstellung & App“.
+- **Tests:** neu `m110` (16), `m111` (23), `unit-price-alarm-card` (14); angepasst `unit-247` (105), `unit-pnl-card` (15), `unit-wl` (70), `m3`, `m31`, `m36`, `m38`, `m39`, `m45`, `m46`, `m47`, `m49`, `m54`; Telegram-Attrappe: Bilder mit `from` (app/server), `tgfail` und `tg429` auch für Bilder.
+
+### Davor in 3.71.0: Chartmuster-Signalkarte, Gewinn-/Verlust-Bild, Alarm-Knopf
+
+- **Chartmuster-Signalkarte (nach Vorlage des Nutzers):** ein Modul für App, 24/7-Dienst und Oracle-Musterdienst.
+  - `shared/pattern-signal-card.mjs` zeichnet das SVG; Modell und Kurztext kommen aus `patternSignalModel` und `formatMessage('pattern')` in `shared/telegram-format.mjs`.
+  - Aufbau: Gesamturteil Schwach/Mittel/Stark (Schwellen 40/70 einstellbar), Mini-Chart mit Zonen, Stop statt „Ungültig bei“ (Hinweis bei Stop < ATR 14), „Jetzt“ (gültig / verpasst ab 0,3 % / abgelaufen nach 6 Kerzen), Musterqualität blau, „Erlernt“ erst ab 10 Fällen, Fuß mit Datum.
+  - Telegram: Bild plus Kurztext in derselben Reihenfolge; ohne Bild der Kurztext.
+  - Schwache Signale gehen nur mit dem Schalter „Schwache Signale auch senden“ (Standard aus) an Telegram; in der App bleiben sie im Signal-Log, dort auch aufgeklappt als Karte.
+- **Gewinn-/Verlust-Alarm als Bild (Dienst 2.15.0):**
+  - `shared/pnl-alarm-card.mjs` (Modell, SVG, einzeilige Bildunterschrift).
+  - App über `chanSendCard`, Dienst über `pnlCard` im Ausgang. Ersatz ist die bisherige Textmeldung.
+  - Positionen: höchstens 5 plus „weitere“; die Zeilen ergeben genau die große Zahl.
+- **„🔔 Alarm für diesen Kurs“:** `openAlarmForm` wechselt per `goTo('alarms')` in den Bereich „Alarme“ (vorher öffnete das Formular unsichtbar).
+- **Tests:** neu `m109` (15), `unit-pnl-card` (12); erweitert `unit-247` (100), `unit-pattern-card` (71), `unit-pattern-quality` (40), `unit-patterns-only` (22), `m102` (19), `m58` tg (7); angepasst `unit-247e`, `unit-telegram-format`, `unit-247d`.
+
+### Davor in 3.71.0: Trade-Karte überarbeitet
+
+Ausführlich: [docs/3.71.0-AENDERUNGEN.md](docs/3.71.0-AENDERUNGEN.md).
+
+- **Trade-Karte nach Vorlage des Nutzers:**
+  - Aufbau: Kopf mit Trade-Nummer und Chips, Netto € groß, Ablauf in zwei Spalten, Qualität mit Exit-Effizienz, Max. Verlust und Gebühren.
+  - Schrift ≥ 22 px. Positionswerte und Legende entfallen. Design und Farben bleiben.
+- **Datenprüfung:**
+  - Einstieg > 0,5 % außerhalb der Kerze seiner Minute → „⚠ Einstieg weicht vom Chart ab“ auf der Karte, im Auftrag und im Konsolen-Log.
+  - Kursquelle ≠ gehandelter Markt → gelber Hinweis.
+  - Gebühren 0 → „⚠ nicht erfasst, bitte prüfen“.
+- **Chart:**
+  - Pills: E unter der Linie, H/T links vom Hoch/Tief, A unten rechts mit Linie zur Ausstiegskerze; nie über Kerzen.
+  - Y-Rand oben und unten je 24 %.
+- **Telegram:**
+  - Bildunterschrift einzeilig ohne HTML, zum Beispiel „XRP/USDT Long 20× · +43,88 € (+89,5 %) · 1:52 Std.“.
+  - Sendefehler mit Chat-Name im Auftrag, im Hinweis und im Konsolen-Log, nie mit Token.
+- **Tests:** `m103` (45), `m55` (49), `m102` (14). Das Bündel liegt in `bundles/3.71.0`, `bundles/3.70.2` ist unverändert.
+
 ## In Arbeit – 3.70.1 / Dienst 2.14.1 / Musterdienst 1.2.1 (Claude): Optimierungen nach Rückmeldungen, Gesamtlauf erst auf Anweisung des Nutzers
 
 Ausführlich: [docs/3.70.1-AENDERUNGEN.md](docs/3.70.1-AENDERUNGEN.md).

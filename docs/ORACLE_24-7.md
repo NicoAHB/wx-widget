@@ -149,13 +149,23 @@ Nach dem Update auf 1.1.0 ist ein Neustart nötig (Befehle oben). Der Testbefehl
 
 ### Trading-Karten statt Text (ab Musterdienst 1.2.0)
 
-Seit 1.2.0 schickt der Dienst jede Chartmuster-Meldung als übersichtliche **Trading-Karte** (PNG, 1024 × 1536) per `sendPhoto` an den eingerichteten Chat.
+Seit 1.2.0 schickt der Dienst jede Chartmuster-Meldung als übersichtliche **Trading-Karte** (PNG, 1024 px breit) per `sendPhoto` an den eingerichteten Chat.
 
-- **Inhalt der Karte:** Handelspaar, Markt und Zeitrahmen, Richtung, Muster und Status, die Preisfelder Einstieg, Ziel und Ungültig bei, dazu Chance/Risiko, Regelgüte, Lernstand, Hinweise, Uhrzeit und Modell.
-- **Bildunterschrift:** kurz, mit Paar, Zeitrahmen und Status, z. B. „LTC/USDT · 5 Minuten · Ausbruch bestätigt“.
+- **Inhalt der Karte (ab Musterdienst 1.3.0 / 24/7-Dienst 2.15.0 als Signalkarte, 1024 px breit):**
+  - Kopf mit Markt und Zeitrahmen, Richtung, Paar, Muster und Status;
+  - Gesamturteil Schwach/Mittel/Stark mit Score, Trend, Volumen und Chance/Risiko;
+  - Mini-Chart mit Musterlinien und grüner/roter Zone;
+  - Einstieg, Ziel und Stop (mit Hinweis, wenn der Stop enger als die ATR 14 ist);
+  - „Jetzt“ mit Abstand zum Einstieg und Einstiegsfenster;
+  - Musterqualität (keine Erfolgswahrscheinlichkeit), „Erlernt“ ab 10 Fällen;
+  - Zeit mit Datum und Modell.
+
+  Einzelheiten stehen in `docs/3.71.0-AENDERUNGEN.md`.
+- **Bildunterschrift:** ein Kurztext in derselben Reihenfolge wie die Karte, höchstens 1024 Zeichen. Derselbe Text ist der Ersatz ohne Bild.
+- **Schwache Signale** (Score unter 40, einstellbar) gehen nur mit „Schwache Signale auch senden“ an Telegram. Den Schalter stellt man in der App ein; er geht mit dem Filter an den Dienst.
 - **Wie die Karte entsteht:**
   - Die Karte wird aus denselben Signaldaten wie die bisherige Textmeldung gezeichnet (SVG, gerendert mit resvg). Es ist keine Bild-KI beteiligt, Zahlen und Texte bleiben exakt.
-  - Fehlende Angaben stehen als „Nicht verfügbar“ da. Die Regelgüte ist ausdrücklich keine Erfolgswahrscheinlichkeit.
+  - Fehlende Angaben stehen als „Nicht verfügbar“ da. Die Musterqualität (früher Regelgüte) ist ausdrücklich keine Erfolgswahrscheinlichkeit.
 - **Schrift (ab 1.2.1):** Die Schrift liegt dem Dienst bei (`server/fonts`, verkleinerte Inter und DejaVu Sans, Lizenzen in `server/fonts/LIZENZ.md`).
   - Mit 1.2.0 kam die Karte auf Servern ohne installierte Schriften ganz ohne Text an. Minimale Ubuntu-Abbilder bei Oracle haben oft keine.
   - Vor jeder Karte prüft der Dienst jetzt, ob Text wirklich gezeichnet wird. Sonst sendet er die Textmeldung.

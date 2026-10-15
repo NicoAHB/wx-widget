@@ -1,11 +1,11 @@
 {
-  "version": "2.14.4",
-  "appVersion": "3.70.2",
+  "version": "2.15.0",
+  "appVersion": "3.71.0",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
-      "sha256": "bb45409e748fd78c832aac1c3617b79f185610469fa4b9791a680d9d8e3d5edb",
-      "bytes": 133668
+      "sha256": "74dfe6e039adedb661b999fafa8a0bde618ecdb5932f88c1aa6b17757c495313",
+      "bytes": 138297
     },
     {
       "path": "pattern-engine.mjs",
@@ -14,13 +14,13 @@
     },
     {
       "path": "pattern-monitor.mjs",
-      "sha256": "22f50f1d4ad57064f7b63f423dde6940ebc6fc4d2b6e51e87acfd5c8eb9275dc",
-      "bytes": 6970
+      "sha256": "d87f203c0876bed570c81035646d55586843ddb8ab8bcb7053933591024cc19b",
+      "bytes": 7766
     },
     {
       "path": "pattern-card.mjs",
-      "sha256": "03ae13bbfdd466d8f76be2fac36046fd9491d55f210898b5b985d46b82c2a25e",
-      "bytes": 22316
+      "sha256": "b7c55a1d8cd0c2f8d90973da311b2164022a2ec0dc57cbb47a37a7344b9dc64d",
+      "bytes": 8604
     },
     {
       "path": "package.json",
@@ -44,8 +44,8 @@
     },
     {
       "path": "patterns-247.mjs",
-      "sha256": "f54b69b81e4012719dde466aed721e181477546f8a3861eedef17724d8284f03",
-      "bytes": 19781
+      "sha256": "fb63f3f2dc92ed995291e6dee3fe6f49364877d26ebc6f77e1f283346b8248e6",
+      "bytes": 19909
     },
     {
       "path": "ki-monitor.mjs",
@@ -389,13 +389,23 @@
     },
     {
       "path": "shared/pattern-quality.mjs",
-      "sha256": "58c9c3d78da486f6640a27e784d9c7cbd7db206a4d485c5ac297b0099aaafb36",
-      "bytes": 23375
+      "sha256": "8eddc831dd1c3ad9058756bbbeebb010da11aa935199df4e3b26746411a1cb27",
+      "bytes": 26786
     },
     {
       "path": "shared/pattern-score.mjs",
       "sha256": "585334abda80fd8802128e181d8efc04264770f3ee2a7f866d24481a6f7eabad",
       "bytes": 2683
+    },
+    {
+      "path": "shared/pattern-signal-card.mjs",
+      "sha256": "82f15c5c2239454082999cc7e57937389d28f8bb608eb2f3d943ab3c4c5a3981",
+      "bytes": 21230
+    },
+    {
+      "path": "shared/pnl-alarm-card.mjs",
+      "sha256": "48eddfd7727ceb1f00dcd72d89d599a3697c9edc2a268db735f99c0270beecb0",
+      "bytes": 9572
     },
     {
       "path": "shared/po3-core.mjs",
@@ -438,14 +448,19 @@
       "bytes": 8856
     },
     {
+      "path": "shared/price-alarm-card.mjs",
+      "sha256": "9ebf6d0d9c64f97641a9b22b4f391af7535e7040ac4ebb5310952cae976682f4",
+      "bytes": 8451
+    },
+    {
       "path": "shared/signal-overview.mjs",
       "sha256": "f5428bbba259f07eac8d7c0cebf5569624e6d1d14db43ce5be0a7c1505468bf4",
       "bytes": 3314
     },
     {
       "path": "shared/telegram-format.mjs",
-      "sha256": "3058a386a9798f0cc0994d14f6b3a2b7c779cb836e08114cc68e29c2ed027787",
-      "bytes": 15741
+      "sha256": "03f4b2740dfbe6c35af10dc80629b648c3752e39fece97ca598aac874bb0f467",
+      "bytes": 22759
     },
     {
       "path": "shared/widget-state.mjs",

@@ -11,7 +11,8 @@ const check = (name, ok) => { ok ? pass++ : fail++; console.log(`${ok ? '✓' : 
   const at = Date.UTC(2026, 9, 11, 12), fixture = { symbol: 'BTCUSDT', pattern: 'Doppel-Boden', timeframe: '2h', market: 'Futures', status: 'Ausbruch bestätigt', entry: 100, target: 105, invalid: 90, quality: 84, learned: { n: 7, auf: 5, ab: 2 }, model: 'pat-1', at, timezone: 'Europe/Berlin' };
   for (const dir of ['bull', 'bear']) {
     const text = F.formatMessage('pattern', { ...fixture, dir });
-    check(`${dir}: Richtung, USD, Ziel, Balken, Fallzahl und Uhrzeit`, text.includes(dir === 'bull' ? '🟢⬆️' : '🔴⬇️') && text.includes('<code>100,0000 USD</code>') && text.includes('⭐ <b>Ziel: 105,0000 USD</b> ⭐ (+5,00 %)') && text.includes('0,50 : 1 ⚠️') && text.includes('▓▓▓▓▓▓▓▓░░ 84 %') && text.includes('7 Fälle ⚠️ zu wenig Daten') && /🕐 14:00:00 · Modell pat-1$/.test(text));
+    // 3.71.0: Kurztext der Signalkarte – Stop statt „Ungültig bei“, Musterqualität statt Regelgüte, Erlernt erst ab 10 Fällen, Datum im Fuß
+    check(`${dir}: Richtung, USD, Ziel, Stop, Chance/Risiko, Musterqualität, „noch nicht bewertet (7/10 Fälle)“ und Datum`, text.includes(dir === 'bull' ? '🟢⬆️' : '🔴⬇️') && text.includes('💰 Einstieg: <code>100,0000 USD</code>') && text.includes('🎯 Ziel: <b>105,0000 USD</b> (+5,00 %)') && text.includes('🛑 Stop: <code>90,0000 USD</code> (−10,00 %)') && text.includes('⚖️ Chance/Risiko: 0,50 : 1') && text.includes('🧠 Musterqualität: 84 % · keine Erfolgswahrscheinlichkeit') && text.includes('📚 Erlernt: noch nicht bewertet (7/10 Fälle)') && !/zu wenig Daten|Regelgüte|Ungültig bei/.test(text) && /🕐 11\.10\.2026 · 14:00:00 · Modell pat-1$/.test(text));
   }
   const zero = F.formatMessage('pattern', { ...fixture, entry: 0, invalid: 0 });
   check('Division durch null: keine erfundene CRV/Prozentzahl', !zero.includes('Chance/Risiko') && !zero.includes('Infinity') && !zero.includes('NaN'));

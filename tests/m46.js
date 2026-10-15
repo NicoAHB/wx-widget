@@ -14,9 +14,10 @@ const live = page => page.waitForFunction(() => document.getElementById('status'
 const mock = p => fetch('http://127.0.0.1:8790' + p).then(r => r.json());
 const pinnedMsg = async () => { const m = (await mock(`/tgmsgs?chat=${CHAT}`)).filter(x => x.pinnedAt).sort((a, b) => b.message_id - a.message_id)[0] || null; if (m) m.caption = String(m.caption || '').replace(/\r/g, ''); return m; };
 const pinnedFile = async () => { const m = await pinnedMsg(); return m?.content ? { m, b: JSON.parse(m.content) } : null; };
-const msgs = async (re, since) => (await h.ctl('/sent')).filter(m => m.svc === 'tg' && re.test(m.text || '') && m.at >= since);
+// 3.71.0 / Dienst 2.15.0: Gewinn-/Verlust-Alarm als Bild – text = Bildunterschrift („Gewinn-Alarm · +60,00 USD“)
+const msgs = async (re, since) => (await h.ctl('/sent')).filter(m => m.svc === 'tg' && re.test(m.caption || m.text || '') && m.at >= since).map(m => ({ ...m, text: String(m.caption || m.text || '').replace(/\r/g, '') }));
 const until = async (fn, ms = 20000, step = 250) => { const t0 = Date.now(); for (;;) { const v = await fn(); if (v) return v; if (Date.now() - t0 > ms) return null; await h.sleep(step); } };
-const PNL_RE = /(GEWINN|VERLUST)-ALARM/;
+const PNL_RE = /(GEWINN|VERLUST)-ALARM|(Gewinn|Verlust)-Alarm · /;   // 3.71.0: auch die Bildunterschrift
 function startService(dir) {
   const env = { ...process.env, SCALPDESK_FAST: '1', NODE_TLS_REJECT_UNAUTHORIZED: '0', SCALPDESK_TG_API: 'https://127.0.0.1/_h/api.telegram.org', SCALPDESK_SPOT_API: 'https://127.0.0.1/_h/data-api.binance.vision',
     SCALPDESK_FUT_API: 'https://127.0.0.1/_h/fapi.binance.com', SCALPDESK_CAL_URL: 'https://127.0.0.1/_h/raw.githubusercontent.com/NicoAHB/wx-widget/kalender/calendar.json', NODE_NO_WARNINGS: '1' };
@@ -72,7 +73,7 @@ async function setLimit(page, kind, v) {
     await page.close(); let t0 = Date.now();
     await h.ctl(`/set?symbol=BTCUSDT&price=${P0 + 60}`);
     let m = await until(async () => { const x = await msgs(PNL_RE, t0); return x.length ? x : null; }, 20000);
-    check('App geschlossen, Live-Ergebnis +60 ≥ +50: genau eine Meldung vom Dienst', m?.length === 1 && /^<b>🟢 GEWINN-ALARM · \+60,00 USD<\/b>\n🎯 Schwelle erreicht: ⭐ <b>≥ \+50,00 USD<\/b> ⭐\nPositionen offen: 1\n🕐 \d\d:\d\d:\d\d$/.test(m[0].text) && m[0].chat_id === CHAT && m[0].transport === 'json', m?.map(x => x.text.replace(/\n/g, ' ⏎ ')).join(' | '));
+    check('App geschlossen, Live-Ergebnis +60 ≥ +50: genau eine Meldung vom Dienst', m?.length === 1 && m[0].method === 'sendPhoto' && m[0].png && m[0].w === 1080 && m[0].text === 'Gewinn-Alarm · +60,00 USD' && m[0].chat_id === CHAT, m?.map(x => x.text.replace(/\n/g, ' ⏎ ')).join(' | '));
     const gvl = await until(async () => (await pinnedMsg())?.caption.split('\n').find(l => l.startsWith('GV: Gewinn-Alarm ausgelöst')), 10000);
     check('… in der angehefteten Nachricht vermerkt', !!gvl && / bei \+60,00 USDT · @p:\d+:\d+:60$/.test(gvl), gvl);
     await h.sleep(4000);
@@ -93,19 +94,19 @@ async function setLimit(page, kind, v) {
     await until(async () => { const mm = await pinnedMsg(); const x = await pinnedFile(); return x && mm.caption.includes(`#${x.b.tag} übernommen`) ? true : null; }, 15000);
     st = await s247Status(page); t0 = Date.now();
     await h.ctl(`/set?symbol=BTCUSDT&price=${P0 - 40}`);
-    m = await until(async () => { const x = await msgs(/VERLUST-ALARM/, t0); return x.length ? x : null; }, 20000);
-    await h.sleep(5000); m = await msgs(/VERLUST-ALARM/, t0);
+    m = await until(async () => { const x = await msgs(/VERLUST-ALARM|Verlust-Alarm/, t0); return x.length ? x : null; }, 20000);
+    await h.sleep(5000); m = await msgs(/VERLUST-ALARM|Verlust-Alarm/, t0);
     const toast2 = await page.evaluate(() => [...document.querySelectorAll('#toasts .toast')].map(t => t.textContent).find(t => /Verlust-Alarm/.test(t)) || '');
-    check('App offen, −40 ≤ −30: genau eine Meldung sofort von der App; der Dienst sendet nicht zusätzlich', m.length === 1 && /^<b>🔴 VERLUST-ALARM · −40,00 USD<\/b>/.test(m[0].text) && /\n🕐 \d\d:\d\d:\d\d$/.test(m[0].text) && m[0].transport === 'form' && m[0].at - t0 < 3000 && /Verlust-Alarm/.test(toast2), JSON.stringify({ n: m.length, last: m.map(x => x.text.split('\n').at(-1)), ms: m.map(x => x.at - t0), toast2: toast2.slice(0, 60) }));
+    check('App offen, −40 ≤ −30: genau eine Meldung sofort von der App; der Dienst sendet nicht zusätzlich', m.length === 1 && m[0].method === 'sendPhoto' && m[0].text === 'Verlust-Alarm · −40,00 USD' && m[0].w === 1080 && m[0].at - t0 < 3000 && /Verlust-Alarm/.test(toast2), JSON.stringify({ n: m.length, last: m.map(x => x.text.split('\n').at(-1)), ms: m.map(x => x.at - t0), toast2: toast2.slice(0, 60) }));
     const s2 = (await stored(page))?.loss, pfL = await pinnedFile();
     check('… in der App ausgelöst (von der App gemeldet), in der Übergabe als gemeldet vermerkt (done)', s2?.state === 'fired' && s2.svc === false && pfL?.b.pnl?.lim.find(l => l.k === 'loss')?.done === true, JSON.stringify({ s2, lim: pfL?.b.pnl?.lim }));
     // ---- Kurs-Alarm bleibt nach dem Auslösen kurz in der Übergabe; Meldung kommt vom Dienst ----
     t0 = Date.now();
     await h.ctl(`/set?symbol=BTCUSDT&price=${P0 + 210}`);
-    const am = await until(async () => { const x = await msgs(/KURS-ALARM · BTC/, t0); return x.length ? x : null; }, 20000);
+    const am = await until(async () => { const x = await msgs(/KURS-ALARM · BTC|^Kurs-Alarm · BTC · /, t0); return x.length ? x : null; }, 20000);
     await page.waitForTimeout(6000);
     const pf2 = await pinnedFile(), alarmState = await page.evaluate(() => JSON.parse(localStorage.getItem('scalpdesk.alarms.v1') || '[]')[0]);
-    check('Kurs-Alarm ausgelöst (App offen): genau eine Meldung vom Dienst', (await msgs(/KURS-ALARM · BTC/, t0)).length === 1 && am?.[0]?.transport === 'json' && /\n🕐 \d\d:\d\d:\d\d$/.test(am[0].text), am?.map(x => x.text.split('\n').at(-1)).join(' | '));
+    check('Kurs-Alarm ausgelöst (App offen): genau eine Meldung vom Dienst', (await msgs(/KURS-ALARM · BTC|^Kurs-Alarm · BTC · /, t0)).length === 1 && am?.[0]?.method === 'sendPhoto' && am[0].from === 'server' && am[0].photoName === 'kurs-alarm.png' && /^Kurs-Alarm · BTC · [\d.,]+ USD$/.test(am[0].text), am?.map(x => `${x.from}: ${x.text}`).join(' | '));
     check('… der ausgelöste Alarm bleibt noch in der Übergabe (vom Dienst gemeldet, svcAt gesetzt)', alarmState?.triggeredAt > 0 && alarmState.svcAt > 0 && pf2?.b.alarms.some(a => a.id === 'al1'), JSON.stringify({ trig: alarmState?.triggeredAt, svcAt: alarmState?.svcAt, inFile: pf2?.b.alarms.map(a => a.id) }));
     // ---- App offen, kurze Spitze: die App sieht sie und meldet; der Dienst (prüft nur alle 1,5 s) sieht sie meist nicht ----
     await h.ctl(`/set?symbol=BTCUSDT&price=${P0}`); await page.waitForTimeout(1500);
@@ -115,8 +116,8 @@ async function setLimit(page, kind, v) {
     t0 = Date.now(); await h.ctl(`/set?symbol=BTCUSDT&price=${P0 + 60}`);
     const spike = await until(async () => (await stored(page))?.profit?.state === 'fired' ? true : null, 8000, 50);
     await h.ctl(`/set?symbol=BTCUSDT&price=${P0}`); const spikeMs = Date.now() - t0;
-    await h.sleep(6000); m = await msgs(/GEWINN-ALARM/, t0);
-    check(`App offen, kurze Spitze (+60 für ${spikeMs} ms): genau eine Meldung, von der App; der Dienst meldet nicht zusätzlich`, reOk && spike && m.length === 1 && /\n🕐 \d\d:\d\d:\d\d$/.test(m[0].text) && m[0].transport === 'form', JSON.stringify({ reOk, spike, spikeMs, n: m.length, last: m.map(x => x.text.split('\n').at(-1)) }));
+    await h.sleep(6000); m = await msgs(/GEWINN-ALARM|Gewinn-Alarm/, t0);
+    check(`App offen, kurze Spitze (+60 für ${spikeMs} ms): genau eine Meldung, von der App; der Dienst meldet nicht zusätzlich`, reOk && spike && m.length === 1 && m[0].method === 'sendPhoto' && /^Gewinn-Alarm · \+[\d.,]+ USD$/.test(m[0].text), JSON.stringify({ reOk, spike, spikeMs, n: m.length, last: m.map(x => x.text.split('\n').at(-1)) }));
     check('Computer: keine Fehler', !real(errors).length, real(errors).join(' | '));
     await ctx.close();
     svc.kill(); svc = null;
@@ -134,9 +135,12 @@ async function setLimit(page, kind, v) {
       const before = await pg.evaluate(() => ({ y: Math.round(scrollY), tile: Math.round(document.querySelector('#watchlist .wl-tile[data-watch="NEAR"]').getBoundingClientRect().top), chart: Math.round(document.getElementById('chart').getBoundingClientRect().top) }));
       await pg.tap('#watchlist .wl-tile[data-watch="NEAR"]');
       await pg.waitForFunction(() => /^NEAR/.test(document.getElementById('pair-label').textContent), null, { timeout: 15000 }).catch(() => {}); await live(pg); await pg.waitForTimeout(2500);
-      const after = await pg.evaluate(() => ({ anchor: document.documentElement.dataset.anchor || 'browser', y: Math.round(scrollY), tile: Math.round(document.querySelector('#watchlist .wl-tile[data-watch="NEAR"]').getBoundingClientRect().top), pair: document.getElementById('pair-label').textContent, open: document.getElementById('wl-detail').dataset.open, title: document.querySelector('#wl-detail .wl-d-title').textContent, btn: !!document.querySelector('#wl-detail .wl-d-chart, [data-chartwatch]'), current: document.querySelector('#watchlist .wl-tile[data-watch="NEAR"]').getAttribute('aria-current'), chartTop: Math.round(document.getElementById('chart').getBoundingClientRect().top) }));
+      const after = await pg.evaluate(() => ({ anchor: document.documentElement.dataset.anchor || 'browser', y: Math.round(scrollY), tile: Math.round(document.querySelector('#watchlist .wl-tile[data-watch="NEAR"]').getBoundingClientRect().top), pair: document.getElementById('pair-label').textContent, open: document.getElementById('wl-detail').dataset.open, title: document.querySelector('#wl-detail .wl-d-title').textContent, btn: !!document.querySelector('#wl-detail .wl-d-chart, [data-chartwatch]'), current: document.querySelector('#watchlist .wl-tile[data-watch="NEAR"]').getAttribute('aria-current'), chartTop: Math.round(document.getElementById('chart').getBoundingClientRect().top), ...(b => ({ dTop: Math.round(b.top), dBottom: Math.round(b.bottom) }))(document.querySelector('#wl-detail .wl-d-box').getBoundingClientRect()), lim: (t => (t && getComputedStyle(t).display !== 'none' ? t.getBoundingClientRect().top : innerHeight) - 12)(document.getElementById('tabbar')) }));
       check(`${w} px ${mode}: NEAR antippen öffnet das Feld und lädt NEAR im Chart, kein Knopf „Im Chart öffnen“`, after.open === '1' && after.title === 'NEAR' && /^NEAR/.test(after.pair) && !after.btn && after.current === 'true', JSON.stringify(after));
-      check(`${w} px ${mode}: die Seite springt nicht zum Chart (Kachel bleibt an ihrer Stelle)`, Math.abs(after.y - before.y) <= 2 && Math.abs(after.tile - before.tile) <= 2 && after.chartTop > hh * 0.5, JSON.stringify({ before, after: { y: after.y, tile: after.tile, chartTop: after.chartTop } }));
+      // 3.71.0: Die Kacheln sind höher – passt das Detailfeld nicht ganz ins Bild, scrollt die App absichtlich nur so weit, bis es ganz zu sehen
+      // ist (höchstens bis zu seiner Oberkante); zum Chart springt sie nie, die Kachel bleibt im Bild
+      const moved = after.y - before.y, fits = after.dBottom <= after.lim + 2 || after.dTop <= 14;
+      check(`${w} px ${mode}: die Seite springt nicht zum Chart – höchstens so weit, dass das Detailfeld ganz zu sehen ist; Kachel bleibt im Bild`, moved >= -2 && Math.abs((before.tile - after.tile) - moved) <= 2 && after.tile >= -2 && fits && after.chartTop > hh * 0.5 && (moved <= 2 || after.dBottom >= after.lim - 30 || after.dTop <= 14), JSON.stringify({ before, after: { y: after.y, tile: after.tile, chartTop: after.chartTop, dTop: after.dTop, dBottom: after.dBottom, lim: after.lim } }));
       await pg.tap('#watchlist .wl-tile[data-watch="NEAR"]'); await pg.waitForTimeout(600);
       const closed = await pg.evaluate(() => ({ open: document.getElementById('wl-detail').dataset.open, pair: document.getElementById('pair-label').textContent }));
       check(`${w} px ${mode}: dieselbe Kachel erneut schließt das Feld, der Chart bleibt bei NEAR`, closed.open === '0' && /^NEAR/.test(closed.pair), JSON.stringify(closed));
@@ -146,11 +150,13 @@ async function setLimit(page, kind, v) {
     {
       const c3 = await browser.newContext({ viewport: { width: 1440, height: 1000 } }), pg = await c3.newPage(), errs = []; h.collect(pg, errs);
       await pg.goto(h.URL_BASE + '/weather-widget-v2.html'); await live(pg); await pg.waitForTimeout(1500);
+      // Platz für das Detailfeld: Kachel oben ins Bild (die Kacheln sind seit 3.71.0 höher)
+      await pg.evaluate(() => scrollBy(0, document.querySelector('#watchlist .wl-tile[data-watch="ETC"]').getBoundingClientRect().top - 70)); await pg.waitForTimeout(300);
       const y0 = await pg.evaluate(() => Math.round(scrollY));
       await pg.focus('#watchlist .wl-tile[data-watch="ETC"]'); await pg.keyboard.press('Enter');
       await pg.waitForFunction(() => /^ETC/.test(document.getElementById('pair-label').textContent), null, { timeout: 15000 }).catch(() => {}); await pg.waitForTimeout(1500);
-      const k = await pg.evaluate(() => ({ pair: document.getElementById('pair-label').textContent, title: document.querySelector('#wl-detail .wl-d-title').textContent, y: Math.round(scrollY), focus: document.activeElement?.dataset?.watch || '' }));
-      check('Tastatur: Enter auf ETC öffnet das Feld und lädt ETC im Chart, ohne Springen, Fokus bleibt', /^ETC/.test(k.pair) && k.title === 'ETC' && Math.abs(k.y - y0) <= 2 && k.focus === 'ETC', JSON.stringify(k));
+      const k = await pg.evaluate(() => ({ pair: document.getElementById('pair-label').textContent, title: document.querySelector('#wl-detail .wl-d-title').textContent, y: Math.round(scrollY), focus: document.activeElement?.dataset?.watch || '', tile: Math.round(document.querySelector('#watchlist .wl-tile[data-watch="ETC"]').getBoundingClientRect().top), dTop: Math.round(document.querySelector('#wl-detail .wl-d-box').getBoundingClientRect().top), dBottom: Math.round(document.querySelector('#wl-detail .wl-d-box').getBoundingClientRect().bottom), vh: innerHeight }));
+      check('Tastatur: Enter auf ETC öffnet das Feld und lädt ETC im Chart, ohne Springen (höchstens bis das Feld ganz zu sehen ist), Fokus bleibt', /^ETC/.test(k.pair) && k.title === 'ETC' && k.y - y0 >= -2 && (Math.abs(k.y - y0) <= 2 || k.dBottom <= k.vh - 10 || k.dTop <= 14) && k.tile >= -80 && k.focus === 'ETC', JSON.stringify({ ...k, y0 }));
       check('Tastatur: keine Fehler', !real(errs).length, real(errs).join(' | ')); await c3.close();
     }
 

@@ -239,20 +239,23 @@ const tests = {
     let { ctx, page, errors } = await openPage(browser, { 'scalpdesk.channels.v1': CHAN, 'scalpdesk.alarms.v1': [al('ab', 'BTCUSDT', B0 + 100), al('ae', 'ETHUSDT', E0 + 10)] });
     await live(page); await page.waitForTimeout(1500);
     let t0 = Date.now(); await h.ctl(`/set?symbol=BTCUSDT&price=${B0 + 150}`);
-    const sentOk = (re, since) => h.ctl('/sent').then(s => s.filter(m => m.svc === 'tg' && m.method === undefined && re.test(m.text || '') && m.at >= since));
-    let m = await until(async () => { const x = (await sentOk(/^<b>🟢⬆️ KURS-ALARM · BTC/, t0)).filter(y => !y.failed); return x.length ? x : null; }, 20000);
+    // 3.71.0: Kurs-Alarm als Bild (Bildunterschrift „Kurs-Alarm · BTC · … USD“); scheitert das Bild, die bisherige Textmeldung
+    const sentOk = (re, since) => h.ctl('/sent').then(s => s.filter(m => m.svc === 'tg' && (m.method === undefined || m.method === 'sendPhoto') && re.test(m.text || m.caption || '') && m.at >= since));
+    let m = await until(async () => { const x = (await sentOk(/^Kurs-Alarm · BTC · /, t0)).filter(y => !y.failed && y.method === 'sendPhoto' && y.w === 1080); return x.length ? x : null; }, 20000);
     await page.waitForTimeout(800);
     let sum = await page.textContent('#chan-summary');
     check('Kurs-Alarm gesendet: Übersicht „zuletzt zugestellt … (Kurs-Alarm BTC)“', !!m && /^Telegram: aktiv · zuletzt zugestellt \d\d\.\d\d\., \d\d:\d\d \(KURS-ALARM · BTC · [\d.,]+ USD\)/.test(sum), sum);
     await page.reload(); await page.waitForTimeout(2000); sum = await page.textContent('#chan-summary');
     check('… auch nach dem Neuladen', /zuletzt zugestellt \d\d\.\d\d\., \d\d:\d\d \(KURS-ALARM · BTC · [\d.,]+ USD\)/.test(sum), sum);
-    // Telegram lehnt 5 Versuche mit 502 ab: früher nach dem 5. Versuch verloren, jetzt kommt der 6. an (nach knapp 2 Minuten)
-    await live(page); await h.ctl('/chan?tg502=5'); t0 = Date.now(); await h.ctl(`/set?symbol=ETHUSDT&price=${E0 + 20}`);
-    m = await until(async () => { const x = await sentOk(/^<b>🟢⬆️ KURS-ALARM · ETH/, t0); return x.some(y => !y.failed) ? x : null; }, 170000, 1000);
-    check('Telegram 5× „502“: die Meldung kommt beim 6. Versuch an (vorher nach 5 Versuchen verloren)', !!m && m.filter(y => y.failed === 502).length === 5 && m.filter(y => !y.failed).length === 1, m ? `${m.length} Versuche, zugestellt nach ${Math.round((m.at(-1).at - t0) / 1000)} s` : 'nicht zugestellt');
+    // Telegram lehnt 5 Versuche mit 502 ab: früher nach dem 5. Versuch verloren, jetzt kommt der 6. an (nach knapp 2 Minuten);
+    // 3.71.0: das Bild scheitert (502) → Textmeldung mit den bisherigen Wiederholungen
+    await live(page); await h.ctl('/chan?tg502=5&photofail=502'); t0 = Date.now(); await h.ctl(`/set?symbol=ETHUSDT&price=${E0 + 20}`);
+    m = await until(async () => { const x = await sentOk(/^<b>🟢⬆️ KURS-ALARM · ETH|^Kurs-Alarm · ETH · /, t0); return x.some(y => !y.failed) ? x : null; }, 170000, 1000);
+    await h.ctl('/chan?photofail=0');
+    check('Bild scheitert (502) → Text; Telegram 5× „502“: die Meldung kommt beim 6. Versuch an (vorher nach 5 Versuchen verloren)', !!m && m.filter(y => y.method === 'sendPhoto' && y.failed === 502).length === 1 && m.filter(y => !y.method && y.failed === 502).length === 5 && m.filter(y => !y.failed).length === 1, m ? `${m.length} Versuche, zugestellt nach ${Math.round((m.at(-1).at - t0) / 1000)} s` : 'nicht zugestellt');
     await page.waitForTimeout(800); sum = await page.textContent('#chan-summary');
     check('… Übersicht: zuletzt zugestellt (Kurs-Alarm ETH)', /\(KURS-ALARM · ETH · [\d.,]+ USD\)/.test(sum), sum);
-    check('keine Fehler (Kanäle)', !real(errors).length, real(errors).join(' | ').slice(0, 300)); await ctx.close();
+    check('keine Fehler (Kanäle; ohne das absichtlich abgelehnte Bild mit 502)', !real(errors).filter(e => !/status of 502/.test(e)).length, real(errors).join(' | ').slice(0, 300)); await ctx.close();
   },
 
   // ================= 24/7-Dienst 1.3: Störung in der App, Nachstellen =================
@@ -296,7 +299,7 @@ const tests = {
       await page.close(); const closedFeed = await until(async () => (await h.ctl('/state')).conns.length === 0, 10000); check('App vor Kurssprung vollständig geschlossen: keine Live-Verbindung mehr', closedFeed && ctx.pages().length === 0); const t0 = Date.now();
       await h.ctl(`/set?symbol=BTCUSDT&price=${P0 + 250}`);
       const bad = await until(async () => { const m = await pinnedMsg(); return m && /\nDienst: Störung · .* · Telegram-Nachricht nicht zustellbar seit \d\d:\d\d \(Telegram sendMessage: Bad Request: message is too long/.test(m.caption) ? m : null; }, 30000);
-      const tries = (await h.ctl('/sent')).filter(m => m.svc === 'tg' && /^<b>🟢⬆️ KURS-ALARM · BTC/.test(m.text || '') && m.at >= t0);
+      const tries = (await h.ctl('/sent')).filter(m => m.svc === 'tg' && (/^<b>🟢⬆️ KURS-ALARM · BTC/.test(m.text || '') || /^Kurs-Alarm · BTC · /.test(m.caption || '')) && m.at >= t0);
       check('Telegram lehnt ab: Dienst meldet „Störung“ (Befund: galt als gesendet, Status „aktiv“), Meldung bleibt im Ausgang', !!bad && tries.length >= 1 && tries.every(m => m.failed === 400), (await pinnedMsg())?.caption.split('\n').find(l => l.startsWith('Dienst:')) || '');
       // Dieser Test nutzt die ältere Telegram-Übergabe, keine HTTPS-Sendefreigabe.
       // Kurs bei Wiederöffnung unter Ziel halten, bis die App die Dienststörung
@@ -311,13 +314,13 @@ const tests = {
       const beforeFallback = await page.evaluate(() => { const a = __g05.state.alarms.find(a => a.id === 'sv1'); return { triggeredAt: a?.triggeredAt, price: __g05.state.prices.BTCUSDT?.price }; });
       check('Legacy-Fallback erst nach bestätigter Störung und ohne vorherige App-Auslösung', beforeFallback.triggeredAt === null && beforeFallback.price < P0 + 200 && /Die App sendet deshalb selbst/.test(st), JSON.stringify(beforeFallback));
       await h.ctl(`/set?symbol=BTCUSDT&price=${P0 + 250}`);
-      const own = await until(async () => { const x = (await h.ctl('/sent')).filter(m => m.svc === 'tg' && /^<b>🟢⬆️ KURS-ALARM · BTC/.test(m.text || '') && m.transport === 'form' && !m.failed && m.at >= t0); return x.length ? x : null; }, 20000);
-      check('… und die App sendet den Kurs-Alarm selbst', own?.length === 1, own ? own[0].text.replace(/\n/g, ' ⏎ ') : 'keine Meldung der App');
+      const own = await until(async () => { const x = (await h.ctl('/sent')).filter(m => m.svc === 'tg' && /^Kurs-Alarm · BTC · /.test(m.caption || '') && m.from === 'app' && !m.failed && m.at >= t0); return x.length ? x : null; }, 20000);
+      check('… und die App sendet den Kurs-Alarm selbst (als Bild)', own?.length === 1, own ? own[0].caption : 'keine Meldung der App');
       // Telegram wieder in Ordnung: der Dienst stellt nach
       await h.ctl('/chan?tgfail=');
-      const done = await until(async () => { const x = (await h.ctl('/sent')).filter(m => m.svc === 'tg' && /^<b>🟢⬆️ KURS-ALARM · BTC/.test(m.text || '') && m.transport === 'json' && !m.failed && m.at >= t0); return x.length ? x : null; }, 150000, 1000);
+      const done = await until(async () => { const x = (await h.ctl('/sent')).filter(m => m.svc === 'tg' && /^Kurs-Alarm · BTC · /.test(m.caption || '') && m.from === 'server' && !m.failed && m.at >= t0); return x.length ? x : null; }, 150000, 1000);
       const cap = await until(async () => { const m = await pinnedMsg(); return m && /\nDienst: aktiv · /.test(m.caption) && /\nZustellung: zuletzt \d\d\.\d\d\. \d\d:\d\d · Kurs-Alarm BTC/.test(m.caption) ? m : null; }, 30000);
-      check('Telegram wieder erreichbar: Dienst stellt die Meldung einmal nach, Status wieder „aktiv“, „Zustellung: zuletzt … · Kurs-Alarm BTC“', done?.length === 1 && !!cap, `${done ? done[0].text.replace(/\n/g, ' ⏎ ') : 'nicht nachgestellt'} · ${cap ? 'Beschriftung ok' : (await pinnedMsg())?.caption.replace(/\n/g, ' ⏎ ')}`);
+      check('Telegram wieder erreichbar: Dienst stellt die Meldung einmal nach, Status wieder „aktiv“, „Zustellung: zuletzt … · Kurs-Alarm BTC“', done?.length === 1 && !!cap, `${done ? done[0].caption : 'nicht nachgestellt'} · ${cap ? 'Beschriftung ok' : (await pinnedMsg())?.caption.replace(/\n/g, ' ⏎ ')}`);
       st = await s247Status(page);
       check('App: „Übergeben ✓ vom Dienst bestätigt … Zuletzt zugestellt: … (Kurs-Alarm BTC).“', /^Übergeben ✓ vom Dienst bestätigt .*Zuletzt zugestellt: \d\d\.\d\d\., \d\d:\d\d \(Kurs-Alarm BTC\)\./.test(st), st);
       check('keine Fehler (24/7-Dienst)', !real(errors).length, real(errors).join(' | ').slice(0, 300));

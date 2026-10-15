@@ -1,5 +1,53 @@
 # Tests für Scalp Desk
 
+**3.71.0 Kurs-Alarm als Bild, Euro auf der Gewinn-/Verlust-Karte, flüssiges Zoomen, Vorauswahl, Live-Wert (Dienst 2.15.0, Claude):**
+- Neu `unit-price-alarm-card.js` (14): Vorlagen aufwärts/abwärts, Farben, Leiste (Punkt rechts/links, Abstand), „<0,01 %“, kleine Kurse, Notiz und lange Auslösung, fehlende Werte, PNG 1080 breit.
+- Neu `m110.js` (16): Zoomen mit zwei Fingern (iPhone, CDP und 120-Hz-Bewegungen im Browser), Kerze bleibt unter den Fingern, Transformation statt Neuzeichnen, kein Mitscrollen, Schwung, Tippen; PC Trackpad-Zoom und waagrechtes Blättern.
+- Neu `m111.js` (23): Vorauswahl – Kopf, Kachel-Aufbau, Spalten füllen sich, Filter, Sortierung (gespeichert, kein Verschieben im Score-Modus), „+ Coin hinzufügen“; Schalter „Live-Wert offener Positionen“.
+- `unit-247.js` (105): Kurs-Alarm als Bild; Euro-Kurs (EURUSDT) für die Gewinn-/Verlust-Karte. `unit-pnl-card.js` (15): Euro in Klammern. `unit-wl.js` (70): Spalten, `wlTfRef`, Nachladen der 1m-/1h-Kerzen.
+- Angepasst auf Bild statt Text: `m3`, `m36`, `m38`, `m46`, `m47`, `m49`, `m54`. Auf die neue Kachel: `m31`, `m39`, `m45`.
+- Telegram-Attrappe: `sendPhoto` mit `from` (app/server); `/chan?tgfail=…&from=server&match=…` und `tg429` gelten auch für Bilder.
+
+**3.71.0 Gewinn-/Verlust-Alarm als Bild (Dienst 2.15.0, Claude):**
+- Neu `unit-pnl-card.js` (12): Beispiel nach Vorlage, Farben, keine Emojis, Bildunterschrift, Summe der Zeilen = große Zahl, mehr als 5 Positionen („weitere“), fehlende Kurse, PNG 1080 breit.
+- `unit-247.js` (100):
+  - Bild per `sendPhoto` mit einzeiliger Bildunterschrift;
+  - Bild nicht erzeugbar → Text;
+  - Die Ablaufprüfungen laufen mit `pnlCards: false`.
+  - Der Mock liest jetzt Multipart.
+- `m40`, `m46`, `m38`, `m54`: Gewinn-/Verlust-Alarm als Foto mit Bildunterschrift; „Alle testen“ schickt ein Beispielbild.
+
+**3.71.0 Chartmuster-Signalkarte und Alarm-Knopf (Dienst 2.15.0, Musterdienst 1.3.0, Claude):**
+- `unit-pattern-card.js` (71):
+  - Beispiel nach Vorlage (DOT/USDT);
+  - Gesamturteil-Schwellen, auch eigene;
+  - Jetzt: gültig, verpasst ab 0,3 %, abgelaufen; Restkerzen;
+  - Stop-Hinweis (ATR), „Erlernt“ ab 10 Fällen;
+  - Karte: Reihenfolge, Farben, Mini-Chart, Musterqualität blau;
+  - Kurztext in Kartenreihenfolge, höchstens 1024 Zeichen;
+  - Mini-Chart-Daten und ihre Prüfung; PNG.
+- `unit-pattern-quality.js` (40): Kartenwerte, Einstiegsfenster, Sperre für schwache Signale, Bewertungszeichen, Journalfelder.
+- `unit-patterns-only.js` (22): Signal unter der Schwelle nicht senden (Journal „schwach“), mit Schalter senden.
+- `m102.js` (19):
+  - Einstellungen der Signalkarte, Presetwechsel;
+  - Foto mit Kurztext;
+  - Karte im Signal-Log; schwach nur in der App; „⌛ abgelaufen“.
+- `m58.js` tg (7): Chartmuster aus der App als Foto mit Kurztext.
+- `m109.js` (15): „Alarm für diesen Kurs“ in der echten Navigation (iPhone, iPad, PC) bis zum Speichern.
+- Lockere Testfilter senden weiter auch schwache Signale (`sendWeak: true`).
+
+**3.71.0 Trade-Karte überarbeitet (Claude):**
+- `m103.js` (45):
+  - Beispiel XRP/USDT 24.09.2026 als Long-Gewinn (19:35–21:27, 760 XRP, 20×, Cross, Gebühren 0).
+  - Aufbau über `layout.texts` (Text und Schriftgröße) geprüft: Kopf, Netto €/USD, Ablauf, Exit-Effizienz nachgerechnet, Gebühren-Hinweis, Schrift ≥ 22 px, Quelle.
+  - Pills ohne Kerzen-Überdeckung (`layout.candles`) und an der richtigen Seite.
+  - Einzeilige Bildunterschrift.
+  - Verschobener Einstieg → Hinweis auf Karte, im Auftrag und im Log.
+  - Sendefehler im Log mit Chat-Name, ohne Token.
+  - Der Abrufzähler zählt nur noch Abrufe mit Zeitfenster. Vorher zählten die Live-Kerzen des Charts mit, was zu Wacklern auf main führte.
+- `m55.js` (49): neue Bildunterschrift und Fehlertexte. Die Warnungen zu frei gewählten Testkursen gelten nicht als Fehler.
+- `m91.js` (8): Trade-Bild mit einzeiliger Bildunterschrift ohne HTML, genau ein Versand.
+
 **3.70.1 Trading-Karte ohne Text / Schrift mitgeliefert (Musterdienst 1.2.1, Dienst 2.14.1, Claude):**
 - `unit-pattern-card.js` (57): sechs neue Prüfungen.
   - Schriftdateien und Lizenz vorhanden.

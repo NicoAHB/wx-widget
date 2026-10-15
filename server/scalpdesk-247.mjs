@@ -52,7 +52,7 @@ import { PQ, patternConfig, patternCandles, patternCases, patternFresh, patternT
 import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT } from './telegram-format.mjs';
 import { ConfluenceService, kiMessage, Po3Service, po3Message, BotSimulationRuntime } from './ki-monitor.mjs';
 
-export const VERSION = '2.14.4';   // 2.13.0: Qualitätsfilter für Chartmuster-Meldungen; 2.14.0: Chartmuster als Trading-Karte (Text als Ersatz); 2.14.1: Schrift mitgeliefert; 2.14.4: Installer mit Zeitlimits und Fortschritt; 2.14.3: Status nennt den Chartmuster-Filter; 2.14.2: Installer macht den Programmstand für den Dienstbenutzer lesbar
+export const VERSION = '2.15.0';   // 2.13.0: Qualitätsfilter für Chartmuster-Meldungen; 2.14.0: Chartmuster als Trading-Karte (Text als Ersatz); 2.14.1: Schrift mitgeliefert; 2.14.4: Installer mit Zeitlimits und Fortschritt; 2.14.3: Status nennt den Chartmuster-Filter; 2.14.2: Installer macht den Programmstand für den Dienstbenutzer lesbar; 2.15.0: Chartmuster-Signalkarte (Gesamturteil, Jetzt, Mini-Chart), schwache Signale nur mit Schalter
 // 2.14.0: Kartenrenderer (pattern-card.mjs + resvg) nur bei Bedarf laden; fehlt er, bleibt es bei der Textmeldung
 let cardModule = null;
 const loadCards = () => (cardModule ??= import('./pattern-card.mjs').catch(() => null));
@@ -161,6 +161,8 @@ export function touched(level, below, v) {
 }
 const howReached = info => (info.close ? `beim ${info.close}-Schlusskurs erreicht` : info.wick ? `kurz per Docht erreicht (bis ${priceText(info.extreme)})` : 'erreicht');   // 2.3.0: Schluss-Alarm
 export const alarmText = (a, price, info) => formatMessage('alarm', { symbol: a.symbol, direction: a.dir, level: a.price, price, reached: howReached(info), note: a.note });
+// 2.15.0: dieselben Werte für das Bild (Kurs-Alarm als Karte)
+export const alarmCardData = (a, price, info, at) => ({ symbol: a.symbol, direction: a.dir, level: a.price, price, reached: howReached(info), note: a.note || '', at });
 export function posText(p, type, price, info) {
   return formatMessage('position', { symbol: p.symbol, side: p.side, hit: type, direction: (p.side === 'long') === (type === 'tp') ? 'up' : 'down', level: p[type], price, reached: howReached(info) });
 }
@@ -175,6 +177,12 @@ export function pnlTotal(pnl, prices) {
   let total = 0;
   for (const p of pnl.pos) { const pr = prices.get(`${p.source}:${p.symbol}`); if (!(pr > 0)) return null; total += p.qty * (pr - p.entry) * (p.side === 'long' ? 1 : -1); }
   return Math.round(total * 100) / 100;
+}
+// 2.15.0: Ergebnis je Position für das Bild (dieselbe Formel wie pnlTotal; null, solange ein Kurs fehlt)
+export function pnlRows(pnl, prices) {
+  if (!pnl?.pos.length) return null; const rows = [];
+  for (const p of pnl.pos) { const pr = prices.get(`${p.source}:${p.symbol}`); if (!(pr > 0)) return null; rows.push({ symbol: p.symbol, side: p.side, pnl: p.qty * (pr - p.entry) * (p.side === 'long' ? 1 : -1) }); }
+  return rows;
 }
 const pnlCond = l => (l.k === 'profit' ? `≥ +${number(l.v)} USDT` : `≤ −${number(l.v)} USDT`);
 export const pnlName = k => (k === 'profit' ? 'Gewinn-Alarm' : 'Verlust-Alarm');
@@ -461,8 +469,8 @@ export class PatternArchive {
   }
 }
 export class Watcher {
-  constructor({ token, chat, patternToken = '', kiUsers = [], kiClient, key = '', origins = [APP_ORIGIN], listen = LISTEN, host = '', statePath = '', now = () => Date.now(), log = (...a) => console.log(...a), patternFetch = klines, patternSpread = c => bookTicker(c.mkt, c.sym), patternCards = true }) {
-    Object.assign(this, { token, chat, patternToken, kiUsers, key, origins, listen, host, statePath, now, log, patternFetch, patternSpread, patternCards });
+  constructor({ token, chat, patternToken = '', kiUsers = [], kiClient, key = '', origins = [APP_ORIGIN], listen = LISTEN, host = '', statePath = '', now = () => Date.now(), log = (...a) => console.log(...a), patternFetch = klines, patternSpread = c => bookTicker(c.mkt, c.sym), patternCards = true, pnlCards = true, alarmCards = true }) {
+    Object.assign(this, { token, chat, patternToken, kiUsers, key, origins, listen, host, statePath, now, log, patternFetch, patternSpread, patternCards, pnlCards, alarmCards });   // 2.15.0: pnlCards/alarmCards – Gewinn-/Verlust- und Kurs-Alarm als Bild
     this.kiStartedAt = now(); this.kiOffset = null; this.kiCommandsBusy = false;
     this.patternWatch = { rev: 0, since: 0, config: null }; this.patternProgress = new Map(); this.patternBusy = false;
     this.patSignals = []; this.patSent = [];   // 2.13.0: Journal aller bewerteten Chartmuster-Signale und gesendete Meldungen (Anti-Spam)
@@ -550,7 +558,7 @@ export class Watcher {
     }
     let r;
     // 2.14.0: sendPhoto mit Bilddatei (Buffer) als multipart, alles andere als JSON
-    const photo = method === 'sendPhoto' && Buffer.isBuffer(body?.photo), req = photo ? (() => { const f = new globalThis.FormData(); for (const [k, v] of Object.entries(body)) if (k !== 'photo' && v !== undefined && v !== null) f.append(k, String(v)); f.append('photo', new globalThis.Blob([body.photo], { type: 'image/png' }), 'chartmuster.png'); return { body: f }; })() : { headers: { 'content-type': 'application/json' }, body: JSON.stringify(body || {}) };
+    const photo = method === 'sendPhoto' && Buffer.isBuffer(body?.photo), req = photo ? (() => { const f = new globalThis.FormData(); for (const [k, v] of Object.entries(body)) if (k !== 'photo' && k !== 'filename' && v !== undefined && v !== null) f.append(k, String(v)); f.append('photo', new globalThis.Blob([body.photo], { type: 'image/png' }), body.filename || 'chartmuster.png'); return { body: f }; })() : { headers: { 'content-type': 'application/json' }, body: JSON.stringify(body || {}) };
     try { r = await fetch(`${API.tg}/bot${token}/${method}`, { method: 'POST', ...req, signal: AbortSignal.timeout(timeout) }); }
     // 2.0: lost – die Anfrage kann Telegram erreicht haben, nur die Antwort fehlt (Zeitüberschreitung, Verbindung abgerissen):
     // dann nicht noch einmal senden (sonst womöglich doppelt); sonst (keine Verbindung, Name unbekannt) kam sie nie an
@@ -565,18 +573,38 @@ export class Watcher {
   // Meldung in den Ausgang; sie bleibt dort (auch über Neustarts), bis Telegram sie angenommen hat. label: Art für die Zeile
   // „Zustellung: zuletzt …“, silent: ohne Ton (BTC-Puls nachts)
   // 2.0: target/epoch – Ziel und seine Epoche beim Erzeugen (vor dem Senden erneut geprüft); ev – Ereignis-ID der Freigabe
-  async queue(text, tz, { label = '', silent = false, ev = '', target = 'course-alert', destination = null, po3Rev = null, card = null } = {}) {
+  async queue(text, tz, { label = '', silent = false, ev = '', target = 'course-alert', destination = null, po3Rev = null, card = null, pnlCard = null, alarmCard = null } = {}) {
     const t = this.now(), tg = this.pol.targets[target];
     if (this.key && !tg.on) { this.log(`Nicht gesendet (Ziel Kursalarm ausgeschaltet): ${label || text.split('\n')[0]}`); return; }
-    this.out.push({ id: `${t}-${Math.random().toString(36).slice(2, 7)}`, text, tz, label, silent, at: t, tries: 0, next: 0, err: '', dc: false, target, epoch: tg.epoch, ...(destination ? { destination, watchRev: this.patternWatch.rev } : {}), ...(target === 'ki' ? (po3Rev !== null ? { po3Rev } : { kiRev: this.ki.state.rev }) : {}), ...(ev ? { ev } : {}), ...(card ? { card } : {}) });
+    this.out.push({ id: `${t}-${Math.random().toString(36).slice(2, 7)}`, text, tz, label, silent, at: t, tries: 0, next: 0, err: '', dc: false, target, epoch: tg.epoch, ...(destination ? { destination, watchRev: this.patternWatch.rev } : {}), ...(target === 'ki' ? (po3Rev !== null ? { po3Rev } : { kiRev: this.ki.state.rev }) : {}), ...(ev ? { ev } : {}), ...(card ? { card } : {}) , ...(pnlCard ? { pnlCard } : {}), ...(alarmCard ? { alarmCard } : {}) });
     if (!this.saveStateNow() && ['patterns', 'ki'].includes(target)) { this.out.pop(); if (ev) this.evSet(ev, 'failed', 'Ausgang nicht dauerhaft gespeichert'); return; }
     await this.deliver();
   }
   // 2.14.0: Karte aus den gespeicherten Signaldaten der Meldung (Zeit der Meldung wie beim Text; verspätet: Hinweis in der Bildunterschrift)
   async patternCard(m, lateAt = 0) {
     const P = await loadCards(); if (!P) throw new Error('Kartenrenderer fehlt (Installer erneut ausführen)');
-    const r = await P.renderPatternCard(m.card, { at: m.at, timezone: m.tz || 'Europe/Berlin' });
-    return { png: r.png, caption: r.caption + (lateAt ? ` · verspätet zugestellt ${timeText(lateAt, m.tz)} Uhr` : '') };
+    // 2.15.0: Signalkarte – „Jetzt“ (Einstieg gültig/verpasst/abgelaufen) zur Zustellzeit; Bildunterschrift = Kurztext der Karte
+    const r = await P.renderPatternCard(m.card, { at: m.at, now: lateAt || m.at, timezone: m.tz || 'Europe/Berlin', captionLimit: TELEGRAM_CAPTION_LIMIT - 80 });
+    return { png: r.png, caption: r.caption + (lateAt ? `\n⏰ verspätet zugestellt ${timeText(lateAt, m.tz)} Uhr` : ''), name: 'chartmuster.png' };
+  }
+  // 2.15.0: Gewinn-/Verlust-Alarm als Bild (Positionen und Wert zur Auslösung); Bildunterschrift eine Zeile ohne HTML
+  async pnlCardImage(m, lateAt = 0) {
+    const P = await loadCards(); if (!P?.renderPnlCard) throw new Error('Kartenrenderer fehlt (Installer erneut ausführen)');
+    const r = await P.renderPnlCard({ ...m.pnlCard, bot: this.me?.first_name || '' }, { timezone: m.tz || 'Europe/Berlin' });
+    return { png: r.png, caption: r.caption + (lateAt ? ` · verspätet ${timeText(lateAt, m.tz)} Uhr` : ''), html: false, name: 'gewinn-verlust.png' };
+  }
+  // 2.15.0: EUR-Kurs (USDT je EUR) für die Euro-Beträge auf dem Gewinn-/Verlust-Bild – Binance Spot EURUSDT, höchstens einmal je
+  // Minute abgerufen; scheitert der Abruf, gilt der letzte Kurs noch 6 Stunden, sonst stehen nur USD-Beträge auf dem Bild
+  async eurRate() {
+    const t = this.now(); if (this.fx && t - this.fx.at < 60e3) return this.fx.v;
+    try { const c = candles(await klines('spot', 'EURUSDT', 2)).at(-1); if (c?.c > 0) { this.fx = { v: c.c, at: t }; return c.c; } } catch {}
+    return this.fx && t - this.fx.at < 6 * 3600e3 ? this.fx.v : null;
+  }
+  // 2.15.0: Kurs-Alarm als Bild (Kurs, Level, Abstand, Auslösung wie im Text); Bildunterschrift eine Zeile ohne HTML
+  async alarmCardImage(m, lateAt = 0) {
+    const P = await loadCards(); if (!P?.renderAlarmCard) throw new Error('Kartenrenderer fehlt (Installer erneut ausführen)');
+    const r = await P.renderAlarmCard({ ...m.alarmCard, bot: this.me?.first_name || '' }, { timezone: m.tz || 'Europe/Berlin' });
+    return { png: r.png, caption: r.caption + (lateAt ? ` · verspätet ${timeText(lateAt, m.tz)} Uhr` : ''), html: false, name: 'kurs-alarm.png' };
   }
   // 2.0: Zustand einer eigenen Freigabe fortschreiben (mit Protokollzeile: Ereignis, Ziel, Sender, Zustand)
   evSet(id, st, why = '') {
@@ -619,10 +647,12 @@ export class Watcher {
         const payload = telegramFields(full), base = { chat_id: dest.chat, ...(dest.thread ? { message_thread_id: dest.thread } : {}), ...(m.silent ? { disable_notification: true } : {}) };
         // 2.14.0: Chartmuster als Trading-Karte (PNG); scheitert die Karte oder lehnt Telegram das Bild ab, die bisherige Textmeldung
         let sent = null, via = '';
-        if (m.target === 'patterns' && m.card && this.patternCards) {
-          const card = await this.patternCard(m, late ? t : 0).catch(e => { this.note('Karte', `Karte nicht erzeugt – Text als Ersatz (${this.secret(e.message).slice(0, 120)})`); return null; });
+        // 2.15.0: ebenso der Gewinn-/Verlust-Alarm (Chat Kursalarm) als Bild mit einzeiliger Bildunterschrift
+        const makeCard = m.target === 'patterns' && m.card && this.patternCards ? () => this.patternCard(m, late ? t : 0) : m.pnlCard && this.pnlCards ? () => this.pnlCardImage(m, late ? t : 0) : m.alarmCard && this.alarmCards ? () => this.alarmCardImage(m, late ? t : 0) : null;
+        if (makeCard) {
+          const card = await makeCard().catch(e => { this.note('Karte', `Karte nicht erzeugt – Text als Ersatz (${this.secret(e.message).slice(0, 120)})`); return null; });
           if (card) {
-            try { sent = await this.tg('sendPhoto', { ...base, photo: card.png, caption: card.caption, parse_mode: 'HTML' }, 30000, token); via = ' als Karte'; }
+            try { sent = await this.tg('sendPhoto', { ...base, photo: card.png, filename: card.name, caption: card.caption, ...(card.html === false ? {} : { parse_mode: 'HTML' }) }, 30000, token); via = ' als Karte'; }
             catch (e) { if (e.lost || e.code !== 400 || CHAT_PROBLEM.test(e.message)) throw e; this.log(`Telegram lehnt das Bild ab – Text als Ersatz: ${m.label}`); }
           }
         }
@@ -750,7 +780,7 @@ export class Watcher {
         } else { v = rangeView(rows, from, Math.max(a.armedAt, armed(key)), prev); if (!v) continue; hit = touched(a.price, a.dir === 'below', v); }
         const what = `Kurs-Alarm ${coin(a.symbol)} ${a.dir === 'above' ? 'auf/über' : 'auf/unter'} ${priceText(a.price)}`;
         look(key, what, a.price, v.price, hit);
-        if (hit) { this.fired[key] = t; this.saveState(); this.log(`Alarm ausgelöst: ${what} (Kurs ${priceText(v.price)}${hit.wick ? `, per Docht bis ${priceText(hit.extreme)}` : ''})`); const ev = alarmEvent(a), label = `Kurs-Alarm ${coin(a.symbol)}`; if (this.reserveOwn(ev, label).grant) await this.queue(alarmText(a, v.price, hit), c.tz, { label, ev: this.key ? ev : '' }); } // 2.0: nur mit Freigabe
+        if (hit) { this.fired[key] = t; this.saveState(); this.log(`Alarm ausgelöst: ${what} (Kurs ${priceText(v.price)}${hit.wick ? `, per Docht bis ${priceText(hit.extreme)}` : ''})`); const ev = alarmEvent(a), label = `Kurs-Alarm ${coin(a.symbol)}`; if (this.reserveOwn(ev, label).grant) await this.queue(alarmText(a, v.price, hit), c.tz, { label, ev: this.key ? ev : '', alarmCard: alarmCardData(a, v.price, hit, t) }); } // 2.0: nur mit Freigabe; 2.15.0: Bild
       }
       for (const p of g.positions) for (const type of ['sl', 'tp']) {
         if (!(p[type] > 0)) continue;
@@ -777,6 +807,7 @@ export class Watcher {
   // das in ihrer Datei) – die Datei gleich neu lesen; gemeldet wird in flushPnl
   async checkPnl(c, prices) {
     const cur = pnlTotal(c.pnl, prices); if (cur === null) return; // ohne offene Position oder mit fehlendem Kurs: keine Prüfung
+    const card = () => ({ pnlCard: { profit: null, pnl: cur, positions: pnlRows(c.pnl, prices), count: c.pnl.pos.length, at: this.now() } });   // 2.15.0: Bild
     const t = this.now();
     for (const l of c.pnl.lim) {
       const k = pnlKey(l); if (this.pnlFired[k] || this.pnlPend[k]) continue;
@@ -784,8 +815,8 @@ export class Watcher {
       if (st === 'wait') { if (!met) { this.pnlSt[k] = 'armed'; this.saveState(); } continue; }
       if (!met) continue;
       // 2.0: mit Steuerung sofort reservieren – wer zuerst reserviert (geöffnete App oder Dienst), meldet; kein Warten auf die Datei
-      if (this.key) { const ev = pnlEvent(l), g = this.reserveOwn(ev, pnlName(l.k)); this.pnlFired[k] = g.grant ? { t, val: cur } : { t, val: cur, by: 'app' }; this.saveState(); if (g.grant) { this.next.beat = 0; await this.queue(pnlText(l, cur, c.pnl.pos.length), c.tz, { label: pnlName(l.k), ev }); } continue; }
-      this.pnlPend[k] = { t, val: cur }; this.next.config = 0; this.saveState();
+      if (this.key) { const ev = pnlEvent(l), g = this.reserveOwn(ev, pnlName(l.k)); this.pnlFired[k] = g.grant ? { t, val: cur } : { t, val: cur, by: 'app' }; this.saveState(); if (g.grant) { this.next.beat = 0; const pc = card().pnlCard; await this.queue(pnlText(l, cur, c.pnl.pos.length), c.tz, { label: pnlName(l.k), ev, pnlCard: { ...pc, profit: l.k === 'profit', level: l.v, fx: this.pnlCards ? await this.eurRate() : null } }); } continue; }
+      this.pnlPend[k] = { t, val: cur, rows: card().pnlCard.positions }; this.next.config = 0; this.saveState();
       this.log(`${pnlName(l.k)}: Live-Ergebnis ${cur} USDT (Grenze ${l.k === 'profit' ? '≥ +' : '≤ −'}${l.v}) – meldet in ${EVERY.pnlHold / 1000} s, falls die App es nicht schon tut`);
     }
   }
@@ -801,7 +832,7 @@ export class Watcher {
       if (!l || this.pnlFired[k]) continue;
       this.pnlFired[k] = { t: p.t, val: p.val }; this.saveState(); this.next.beat = 0; // gleich in der angepinnten Nachricht vermerken
       this.log(`${pnlName(l.k)} gemeldet: Live-Ergebnis ${p.val} USDT`);
-      await this.queue(pnlText(l, p.val, c.pnl.pos.length), c.tz, { label: pnlName(l.k) });
+      await this.queue(pnlText(l, p.val, c.pnl.pos.length), c.tz, { label: pnlName(l.k), pnlCard: { profit: l.k === 'profit', pnl: p.val, level: l.v, positions: p.rows || null, count: c.pnl.pos.length, fx: this.pnlCards ? await this.eurRate() : null, at: p.t } });
     }
     this.saveState();
   }
@@ -947,7 +978,7 @@ export class Watcher {
     return { status: 200, body };
   }
   // 2.13.0: wird nur noch für Signale aufgerufen, die den Qualitätsfilter bestanden haben (ev = Bewertung für die Scorezeile).
-  async notifyPattern(c, h, evaluation = null) {
+  async notifyPattern(c, h, evaluation = null, k = null) {
     const cfg = this.patternWatch.config, since = Math.max(this.patternWatch.since, this.pol.targets.patterns.since);
     if (!this.key || !cfg || !this.patternDestination(cfg)) return { sent: false, reason: 'not-configured' };
     if (!this.pol.targets.patterns.on || !patternFresh(c, this.now(), since)) return { sent: false, reason: 'off-or-old' };
@@ -956,7 +987,7 @@ export class Watcher {
     if (!this.saveStateNow()) { this.evSet(ev, 'failed', 'Freigabe nicht dauerhaft gespeichert'); return { sent: false, reason: 'storage-error', eventId: ev }; }
     this.arch?.add([c]);
     const archive = this.arch?.export() || [];
-    await this.queue(patternText(c, h, archive, evaluation), this.conf?.data?.tz || 'Europe/Berlin', { target: 'patterns', ev, label, destination: { chat: cfg.chat, thread: cfg.thread, bot: cfg.bot }, card: patternMessageData(c, h, archive, evaluation) });
+    await this.queue(patternText(c, h, archive, evaluation, k), this.conf?.data?.tz || 'Europe/Berlin', { target: 'patterns', ev, label, destination: { chat: cfg.chat, thread: cfg.thread, bot: cfg.bot }, card: patternMessageData(c, h, archive, evaluation, k) });
     return { sent: this.evs[ev]?.st === 'confirmed', st: this.evs[ev]?.st, eventId: ev };
   }
   // 2.13.0: Qualitätsfilter – Kandidaten eines Prüflaufs gemeinsam auswählen; gefilterte nur ins Journal und Log.
@@ -990,12 +1021,12 @@ export class Watcher {
           for (const { c, h } of patternCases(k, item, now)) {
             if (this.patSignals.some(e => e.id === c.id) || this.evs[`pat:${c.id}`]) continue;
             const ev = await patternEvaluate({ c, h, k, fetchRows: (x, limit) => this.patternFetch(x.mkt, x.sym, limit, x.iv), fetchSpread: this.patternSpread, cache, settings: cfg.filter, journal: this.patSignals, now });
-            candidates.push({ id: c.id, sym: c.sym, iv: c.iv, dir: c.dir, tc: c.tc, eval: ev, c, h });
+            candidates.push({ id: c.id, sym: c.sym, iv: c.iv, dir: c.dir, tc: c.tc, eval: ev, c, h, k });
           }
           this.patternProgress.set(name, { next: patternEnd(patternEnd(k.at(-1).t, item.iv), item.iv) + 2000, at: now }); this.clear(`Chartmuster ${name}`);
         } catch (e) { this.patternProgress.set(name, { next: this.now() + 30e3 }); this.note(`Chartmuster ${name}`, e.message); }
       }
-      if (rev === this.patternWatch.rev && epoch === this.pol.targets.patterns.epoch) for (const x of await this.gatePatterns(candidates)) if (!x.filtered) await this.notifyPattern(x.c, x.h, x.eval);
+      if (rev === this.patternWatch.rev && epoch === this.pol.targets.patterns.epoch) for (const x of await this.gatePatterns(candidates)) if (!x.filtered) await this.notifyPattern(x.c, x.h, x.eval, x.k);
     } finally { this.patternBusy = false; }
   }
   stateView(days = 3) {
@@ -1075,13 +1106,17 @@ export class Watcher {
       if (!patternFresh(body?.c, t, 0)) return send(400, { ok: false, error: 'Kein frischer bestätigter Musterfall.' });
       // 2.13.0: Die App schickt nur Signale, die ihren Qualitätsfilter bestanden haben, samt Bewertung; der Dienst prüft Anti-Spam
       // (Sperrzeiten, Stundenlimit) gemeinsam mit seinen eigenen Meldungen. Ohne gültige Bewertung kein Versand.
-      if (this.evs[`pat:${body.c.id}`]) return send(200, { ok: true, ...(await this.notifyPattern(body.c, { levels: body.levels || {} })) });   // bereits reserviert/gesendet: idempotent
+      // 2.15.0: Mini-Chart der Signalkarte aus der App (geprüft: nur Zahlen, begrenzte Größe)
+      const P = this.patternCards ? await loadCards() : null, hit = { levels: body.levels || {}, chart: P ? P.cleanPatternChart(body.chart) : null };
+      if (this.evs[`pat:${body.c.id}`]) return send(200, { ok: true, ...(await this.notifyPattern(body.c, hit)) });   // bereits reserviert/gesendet: idempotent
       const q = body?.quality, score = Number(q?.score);
       if (!q || q.pass !== true || !Number.isFinite(score) || score < 0 || score > 100) return send(200, { ok: true, sent: false, reason: 'quality-missing' });
-      const evaluation = { pass: true, score: Math.round(score), summary: String(q.summary || '').slice(0, 80), ko: [], parts: q.parts && typeof q.parts === 'object' ? q.parts : {}, criteria: Array.isArray(q.criteria) ? q.criteria.slice(0, 8).map(x => String(x).slice(0, 120)) : [], reason: '', entry: body.c.p0, target: body.levels?.tgt, invalid: body.levels?.inv };
-      const [gate] = await this.gatePatterns([{ id: body.c.id, sym: body.c.sym, iv: body.c.iv, dir: body.c.dir, tc: body.c.tc, eval: evaluation, c: body.c, h: { levels: body.levels || {} } }]);
+      const num = v => Number.isFinite(Number(v)) && Number(v) > 0 ? Number(v) : null, mark = v => ['✔', '✖', '~', '?'].includes(v) ? v : null;
+      const evaluation = { pass: true, score: Math.round(score), summary: String(q.summary || '').slice(0, 80), ko: [], parts: q.parts && typeof q.parts === 'object' ? q.parts : {}, criteria: Array.isArray(q.criteria) ? q.criteria.slice(0, 8).map(x => String(x).slice(0, 120)) : [], reason: '', entry: body.c.p0, target: body.levels?.tgt, invalid: body.levels?.inv,
+        marks: { trend: mark(q.marks?.trend), volume: mark(q.marks?.volume) }, rr: num(q.rr), atr: num(q.atr), price: num(q.price), settings: this.patternWatch.config?.filter || PQ.patternFilterSettings(null) };   // 2.15.0: Felder der Signalkarte
+      const [gate] = await this.gatePatterns([{ id: body.c.id, sym: body.c.sym, iv: body.c.iv, dir: body.c.dir, tc: body.c.tc, eval: evaluation, c: body.c, h: hit }]);
       if (gate.filtered) return send(200, { ok: true, sent: false, reason: 'filtered', why: gate.filtered });
-      return send(200, { ok: true, ...(await this.notifyPattern(body.c, { levels: body.levels || {} }, evaluation)) });
+      return send(200, { ok: true, ...(await this.notifyPattern(body.c, hit, evaluation)) });
     }
     if (u.pathname.startsWith('/v1/patterns/')) {
       if (!this.arch) return send(503, { ok: false, error: 'Muster-Archiv nicht eingerichtet (kein Zustandsordner).' });
@@ -1205,7 +1240,7 @@ export class Watcher {
     this.log(`Scalp Desk 24/7-Dienst ${VERSION} – Status`);
     try { this.me = await this.tg('getMe'); say(true, `Bot ${this.botText()} (ID ${this.me.id}) – Token gültig`); }
     catch (e) { say(false, e.code === 401 || e.code === 404 ? 'Bot-Token ungültig – Token aus der App (Kursalarm) mit --neu neu eingeben.' : e.message); return false; }
-    { const P = this.patternCards ? await loadCards() : null, st = P ? await P.cardRendererStatus() : 'renderer'; { const f = this.patternWatch.config ? PQ.patternFilterSettings(this.patternWatch.config.filter) : null; if (f) say(null, `Chartmuster-Qualitätsfilter: ${PQ.PATTERN_FILTER_PRESET_NAMES[f.preset] || f.preset} · Score ≥ ${f.minScore} · Chance/Risiko ≥ ${String(f.minRR).replace('.', ',')} · Gegentrend ${f.counterTrend ? 'erlaubt' : 'aus'} · Revision ${this.patternWatch.rev}`); } say(null, st === 'ok' ? 'Chartmuster: als Trading-Karte (Bild), Text als Ersatz' : st === 'schrift' ? 'Chartmuster: als Text – die Karte würde ohne Schrift erscheinen; Installer erneut ausführen' : 'Chartmuster: als Text – für Trading-Karten den Installer erneut ausführen (kostenlos: resvg)'); }
+    { const P = this.patternCards ? await loadCards() : null, st = P ? await P.cardRendererStatus() : 'renderer'; { const f = this.patternWatch.config ? PQ.patternFilterSettings(this.patternWatch.config.filter) : null; if (f) say(null, `Chartmuster-Qualitätsfilter: ${PQ.PATTERN_FILTER_PRESET_NAMES[f.preset] || f.preset} · Score ≥ ${f.minScore} · Chance/Risiko ≥ ${String(f.minRR).replace('.', ',')} · Gegentrend ${f.counterTrend ? 'erlaubt' : 'aus'} · schwache Signale (Score < ${f.weakBelow}) ${f.sendWeak ? 'werden gesendet' : 'nur in der App'} · Revision ${this.patternWatch.rev}`); } say(null, st === 'ok' ? 'Chartmuster: als Signalkarte (Bild) mit Kurztext, Kurztext als Ersatz' : st === 'schrift' ? 'Chartmuster: als Text – die Karte würde ohne Schrift erscheinen; Installer erneut ausführen' : 'Chartmuster: als Text – für Trading-Karten den Installer erneut ausführen (kostenlos: resvg)'); }
     let chat; try { chat = await this.tg('getChat', { chat_id: this.chat }); say(true, `Chat ${chatText(chat, this.chat)} erreichbar`); }
     catch (e) { say(false, `Chat ${this.chat}: ${e.message} – Chat-ID prüfen und dem Bot in Telegram einmal „Start“ schreiben.`); return false; }
     const pm = chat?.pinned_message;

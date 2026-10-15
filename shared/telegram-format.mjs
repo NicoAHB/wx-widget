@@ -1,4 +1,6 @@
 // 3.63.0: Gemeinsame Darstellung für App und Dienst. Keine Auslöser, Freigaben oder Netzwerkzugriffe.
+import { INTERVAL_MS } from './market-intervals.mjs';
+import { patternCardSettings, patternValidUntil } from './pattern-quality.mjs';
 export const TELEGRAM_LIMIT = 4096, TELEGRAM_CAPTION_LIMIT = 1024;
 const value = v => v !== null && v !== undefined && !(typeof v === 'number' && !Number.isFinite(v)) && !(typeof v === 'string' && /^(?:none|nan|undefined|null)?$/i.test(v.trim()));
 const finite = v => value(v) && typeof v === 'number' && Number.isFinite(v);
@@ -19,13 +21,6 @@ const numLine = (label, v, transform = telegramPrice) => finite(v) ? label + tra
 const money = v => telegramPrice(v) + ' USD';
 const code = v => '<code>' + money(v) + '</code>';
 const pctDistance = (v, base) => { const p = telegramRelative(v, base); return finite(p) ? ' (' + telegramPercent(p) + ')' : ''; };
-const learned = (s, direction) => {
-  if (!s) return [];
-  const n = s.total ?? s.n, yes = direction.sign > 0 ? s.up ?? s.auf : s.down ?? s.ab, minimum = s.minimum ?? 10;
-  return [finite(n) && finite(yes) ? `📚 Erlernt: ${yes}/${n} Fälle${n < minimum ? ' ⚠️ zu wenig Daten' : ''}` : finite(s.available) ? `📚 Erlernt: ${s.available}/${minimum} Fälle ⚠️ zu wenig Daten` : '',
-    line('Datenbasis: ', s.source), finite(s.horizon) ? `Beobachtung: nach ${s.horizon} Kerzen` : '',
-    numLine('Aufwärts: ', s.up ?? s.auf, v => telegramNumber(v, 0) + ' Fälle'), numLine('Abwärts: ', s.down ?? s.ab, v => telegramNumber(v, 0) + ' Fälle'), numLine('Seitwärts: ', s.flat ?? s.seitwärts ?? s.seit, v => telegramNumber(v, 0) + ' Fälle')];
-};
 // Nur unsere vier erlaubten Tags bleiben stehen. Dynamischer Text wird vorab escaped.
 // Bei Kürzung keine halben Entities, Emojis oder offenen Tags an Telegram übergeben.
 export function clipTelegramHtml(html, limit = TELEGRAM_LIMIT) {
@@ -43,13 +38,15 @@ export function clipTelegramHtml(html, limit = TELEGRAM_LIMIT) {
 export const telegramPlain = html => String(html).replace(/<\/?(?:b|i|code|pre)>/g, '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
 export const telegramFormatRejected = (status, description) => Number(status) === 400 && /can't parse entities|can.?t parse entities|unsupported start tag|unclosed start tag|entity.*(?:offset|end|invalid)/i.test(String(description));
 export function finishTelegram(html, at, timezone, limit = TELEGRAM_LIMIT) {
-  let body = String(html), model = '';
-  const m = /\nModell: ([^\n]*)$/.exec(body); if (m) { model = m[1]; body = body.slice(0, m.index); }
+  let body = String(html), model = '', dated = false;
+  // 3.71.0: „Modell · Datum:“ (Chartmuster) – Fuß mit Datum und Uhrzeit statt nur der Uhrzeit
+  const m = /\n(Modell|Modell · Datum): ([^\n]*)$/.exec(body); if (m) { model = m[2]; dated = m[1] !== 'Modell'; body = body.slice(0, m.index); }
   const last = body.split('\n').at(-1);
   if (/^🕐 /.test(last || '')) { const content = body.slice(0, -last.length).replace(/\n$/, ''); return clipTelegramHtml(content, Math.max(0, limit - last.length - 1)) + '\n' + last; }
-  if (!finite(at)) return clipTelegramHtml(body + (model ? '\nModell: ' + model : ''), limit);
-  const options = { hour: '2-digit', minute: '2-digit', second: '2-digit', ...(timezone ? { timeZone: timezone } : {}) };
-  let stamp; try { stamp = new Date(at).toLocaleTimeString('de-DE', options); } catch { stamp = new Date(at).toLocaleTimeString('de-DE', { ...options, timeZone: 'Europe/Berlin' }); }
+  if (!finite(at)) return clipTelegramHtml(body + (model ? (dated ? '\nModell · Datum: ' : '\nModell: ') + model : ''), limit);
+  const options = { hour: '2-digit', minute: '2-digit', second: '2-digit', ...(dated ? { day: '2-digit', month: '2-digit', year: 'numeric' } : {}), ...(timezone ? { timeZone: timezone } : {}) };
+  const fmt = o => (dated ? new Date(at).toLocaleString('de-DE', o).replace(', ', ' · ') : new Date(at).toLocaleTimeString('de-DE', o));
+  let stamp; try { stamp = fmt(options); } catch { stamp = fmt({ ...options, timeZone: 'Europe/Berlin' }); }
   const footer = '🕐 ' + stamp + (model ? ' · Modell ' + model : '');
   return clipTelegramHtml(body, Math.max(0, limit - footer.length - 1)) + '\n' + footer;
 }
@@ -60,14 +57,16 @@ export function formatMessage(type, d = {}) {
   const direction = telegramDirection(d.direction ?? d.dir ?? d.change), coin = escapeTelegram(d.coin ?? d.symbol?.replace(/USDT$/, '')), pair = escapeTelegram(d.pair ?? (d.symbol ? d.symbol.replace(/USDT$/, '/USDT') : ''));
   let blocks;
   if (type === 'pattern') {
-    const risk = finite(d.entry) && finite(d.invalid) ? Math.abs(d.entry - d.invalid) : 0, reward = finite(d.entry) && finite(d.target) ? Math.abs(d.target - d.entry) : null, crv = risk > 0 && finite(reward) ? reward / risk : null;
-    blocks = [[`<b>${direction.icon} ${direction.label} · ${escapeTelegram(d.pattern)}</b>${pair ? ' · ' + pair : ''}`,
-      `📊 <b>${pair}</b>${value(d.market) ? ' ' + escapeTelegram(d.market) : ''}${value(d.timeframe) ? ' · ' + escapeTelegram(d.timeframe) : ''}`, line('✅ ', d.status),
-      // 3.69.0: Qualitätsfilter – Signalscore mit Kurzbegründung (z. B. „Trend ✔ · Volumen ✔ · R/R 2,6“)
-      numLine('🎯 Signalscore ', d.score, v => telegramNumber(v, 0) + '/100' + (value(d.scoreWhy) ? ' · ' + escapeTelegram(d.scoreWhy) : ''))],
-    [numLine('💰 Einstieg: ', d.entry, code), numLine('🎯 ⭐ <b>Ziel: ', d.target, v => money(v) + '</b> ⭐' + pctDistance(v, d.entry)), numLine('🛑 Ungültig bei: ', d.invalid, v => code(v) + pctDistance(v, d.entry)),
-      numLine('⚖️ Chance/Risiko: ', crv, v => telegramNumber(v, 2) + ' : 1' + (v < 1 ? ' ⚠️' : ''))],
-    [numLine('🧠 Regelgüte: ', d.quality, v => telegramBar(v) + ' ' + telegramNumber(v, Number.isInteger(v) ? 0 : 2) + ' %'), ...learned(d.learned, direction), '<i>ℹ️ Kursrichtung ≠ Zieltreffer · keine Erfolgswahrscheinlichkeit</i>', line('Modell: ', d.model)]];
+    // 3.71.0: Kurztext in derselben Reihenfolge wie die Signalkarte (Bildunterschrift und Ersatz, wenn das Bild nicht geht)
+    const m = patternSignalModel(d), na = v => v === PATTERN_NA, ok = v => v === true ? '✔' : v === false ? '✖' : '?';
+    const nowLine = m.now.state ? `⏱ Jetzt: ${m.now.price ? escapeTelegram(m.now.price) + (m.now.dist ? ` (${escapeTelegram(m.now.dist)} zum Einstieg)` : '') + ' · ' : ''}${{ valid: '✅', missed: '🟠', expired: '⌛' }[m.now.state]} ${escapeTelegram(m.now.label)}${m.now.detail ? ' ' + escapeTelegram(m.now.detail) : ''}` : '';
+    blocks = [[`<b>📐 ${escapeTelegram(m.pair)} · ${escapeTelegram(m.market)} · ${escapeTelegram(m.timeframe)} · ${direction.icon} ${direction.label}</b>`,
+      `<b>${escapeTelegram(m.pattern)}</b>${na(m.status) ? '' : ' · ' + (m.confirmed ? '✅ ' : '') + escapeTelegram(m.status)}`,
+      m.grade ? `${m.grade.icon} <b>${m.grade.label} ${escapeTelegram(m.score)}</b> · Trend ${ok(m.trend)} · Volumen ${ok(m.volume)} · Chance/Risiko ${m.rr ? `${ok(m.rrOk)} ${escapeTelegram(m.rr)}` : '–'}` : m.rr ? `⚖️ Chance/Risiko: ${escapeTelegram(m.rr)}` : ''],
+    [na(m.entry) ? '' : `💰 Einstieg: <code>${escapeTelegram(m.entry)}</code>`, na(m.target) ? '' : `🎯 Ziel: <b>${escapeTelegram(m.target)}</b>${m.targetPct ? ' (' + escapeTelegram(m.targetPct) + ')' : ''}`,
+      na(m.stop) ? '' : `🛑 Stop: <code>${escapeTelegram(m.stop)}</code>${m.stopPct ? ' (' + escapeTelegram(m.stopPct) + ')' : ''}`, m.stopTight ? `⚠️ ${escapeTelegram(m.stopTight)}` : '', nowLine],
+    [na(m.quality) ? '' : `🧠 Musterqualität: ${escapeTelegram(m.quality)} · keine Erfolgswahrscheinlichkeit`, m.learned ? `📚 Erlernt: ${escapeTelegram(m.learned)}` : '',
+      `<i>${escapeTelegram(m.hint)}</i>`, na(m.model) ? '' : 'Modell · Datum: ' + escapeTelegram(m.model)]];
   } else if (type === 'alarm') {
     const distance = finite(d.price) && finite(d.level) ? d.price - d.level : null;
     blocks = [[`<b>${direction.icon} KURS-ALARM${coin ? ' · ' + coin : ''}</b>${finite(d.price) ? ' · ' + code(d.price) : ''}`,
@@ -125,4 +124,63 @@ export function formatMessage(type, d = {}) {
   }
   const html = blocks.map(b => b.filter(Boolean).join('\n')).filter(Boolean).join('\n\n');
   return finishTelegram(html, d.at, d.timezone, d.messageLimit || TELEGRAM_LIMIT);
+}
+
+// ---- 3.71.0: Chartmuster-Signalkarte – ein Anzeigemodell für Karte (Bild), App und Kurztext ----
+// Eingabe wie bisher (pattern, symbol, market, timeframe, status, direction, entry, target, invalid, quality, learned, score, model),
+// dazu marks {trend, volume}, rr, atr, price (Kurs zur Meldezeit bzw. jetzt), tc (Beginn der Bestätigungskerze), until, at, now,
+// chart {k: [[t, Schluss]], lines: [[t1, p1, t2, p2]]} und settings (Kartenwerte des Filters). Fehlendes bleibt „Nicht verfügbar“.
+export const PATTERN_NA = 'Nicht verfügbar';
+export const PATTERN_GRADES = Object.freeze({
+  weak: Object.freeze({ key: 'weak', label: 'Schwaches Signal', color: '#fb923c', icon: '🟠' }),
+  medium: Object.freeze({ key: 'medium', label: 'Mittleres Signal', color: '#facc15', icon: '🟡' }),
+  strong: Object.freeze({ key: 'strong', label: 'Starkes Signal', color: '#4ade80', icon: '🟢' })
+});
+export function patternGrade(score, settings) {
+  if (!finite(score)) return null; const s = patternCardSettings(settings);
+  return PATTERN_GRADES[score >= s.strongFrom ? 'strong' : score >= s.weakBelow ? 'medium' : 'weak'];
+}
+const TF_UNIT = { m: ['Min', 'MIN'], h: ['Std', 'STD'], d: ['Tag', 'TAG'], w: ['Woche', 'WOCHE'], M: ['Monat', 'MONAT'] };
+export const patternTimeframe = (iv, upper = false) => { const m = /^(\d+)([mhdwM])$/.exec(String(iv || '')); return m ? `${m[1]} ${TF_UNIT[m[2]][upper ? 1 : 0]}${m[2] === 'd' && m[1] !== '1' ? (upper ? 'E' : 'e') : ''}` : value(iv) ? String(iv) : PATTERN_NA; };
+const markOf = v => v === '✔' ? true : v === '✖' || v === '~' ? false : null;
+function stamp(at, timezone, o) { try { return new Date(at).toLocaleString('de-DE', { ...o, timeZone: timezone }); } catch { return new Date(at).toLocaleString('de-DE', { ...o, timeZone: 'Europe/Berlin' }); } }
+export function patternSignalModel(d = {}, { now = d.now ?? d.at, timezone = d.timezone || 'Europe/Berlin', settings = d.settings } = {}) {
+  const s = patternCardSettings(settings), dir = telegramDirection(d.direction ?? d.dir), sign = dir.sign, na = v => v ?? PATTERN_NA;
+  const pair = value(d.pair) ? String(d.pair) : value(d.symbol) ? String(d.symbol).replace(/USDT$/, '/USDT') : null;
+  const entry = finite(d.entry) && d.entry > 0 ? d.entry : null, target = finite(d.target) && d.target > 0 ? d.target : null, stop = [d.invalid, d.stop].find(v => finite(v) && v > 0) ?? null;
+  const money = v => v !== null ? telegramPrice(v) + ' USD' : null, pct = v => { const p = telegramRelative(v, entry); return finite(p) ? telegramPercent(p) : null; };
+  const risk = entry !== null && stop !== null ? Math.abs(entry - stop) : null, reward = entry !== null && target !== null ? Math.abs(target - entry) : null;
+  const rr = finite(d.rr) && d.rr > 0 ? d.rr : risk > 0 && finite(reward) ? reward / risk : null;
+  const summary = String(d.scoreWhy || ''), marks = d.marks || {};
+  const trend = markOf(marks.trend ?? /Trend (\S)/.exec(summary)?.[1]), volume = markOf(marks.volume ?? /Volumen (\S)/.exec(summary)?.[1]);
+  const minRR = finite(Number(settings?.minRR)) ? Number(settings.minRR) : 1;
+  // Jetzt: Abstand zum Einstieg; „verpasst“, wenn der Kurs mehr als missedPct % in Musterrichtung weitergelaufen ist; Fenster bis until
+  const step = INTERVAL_MS[d.timeframe] || null, until = finite(d.until) ? d.until : patternValidUntil(d.tc, d.timeframe, s.validCandles);
+  const price = finite(d.price) && d.price > 0 ? d.price : null, dist = price !== null && entry !== null ? (price / entry - 1) * 100 : null;
+  const expired = finite(until) && finite(now) && now >= until, missed = dist !== null && sign * dist > s.missedPct;
+  const state = expired ? 'expired' : missed ? 'missed' : finite(until) || dist !== null ? 'valid' : null;
+  const left = finite(until) && finite(now) && step ? Math.max(0, Math.ceil((until - now) / step)) : null;
+  const longWindow = finite(until) && step >= 864e5 / 2, untilText = finite(until) ? stamp(until, timezone, longWindow ? { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' } : { hour: '2-digit', minute: '2-digit' }).replace(', ', ' ') : null;
+  const detail = !finite(until) ? '' : expired ? `seit ${untilText}` : `bis ${untilText}${left !== null ? ` · noch ${left} ${left === 1 ? 'Kerze' : 'Kerzen'}` : ''}`;
+  // Erlernt: Zahl erst ab 10 abgeschlossenen Fällen
+  const L = d.learned || null; let learned = null;
+  if (L) {
+    const n = L.total ?? L.n, yes = sign > 0 ? L.up ?? L.auf : sign < 0 ? L.down ?? L.ab : null, min = L.minimum ?? 10;
+    learned = finite(n) && n >= min && finite(yes) ? `${telegramNumber(yes, 0)}/${telegramNumber(n, 0)} Fälle in Musterrichtung${value(L.source) ? ` (${L.source})` : ''}` : `noch nicht bewertet (${telegramNumber(Math.min(min, finite(n) ? n : finite(L.available) ? L.available : 0), 0)}/${telegramNumber(min, 0)} Fälle)`;
+  }
+  const status = value(d.status) ? String(d.status) : null, at = finite(d.at) ? d.at : null;
+  return {
+    pair: na(pair), market: value(d.market) ? String(d.market) : PATTERN_NA, timeframe: patternTimeframe(d.timeframe), timeframeUpper: patternTimeframe(d.timeframe, true),
+    direction: value(d.direction ?? d.dir) ? dir.label : PATTERN_NA, dirSign: sign, pattern: value(d.pattern) ? String(d.pattern) : PATTERN_NA, status: status ?? PATTERN_NA, confirmed: !!status && /bestätigt/i.test(status),
+    grade: patternGrade(d.score, s), score: finite(d.score) ? `${telegramNumber(d.score, 0)}/100` : null, trend, volume,
+    rr: finite(rr) ? telegramNumber(rr, 2) + ' : 1' : null, rrValue: finite(rr) ? rr : null, rrOk: finite(rr) ? rr >= minRR : null,
+    entry: na(money(entry)), target: na(money(target)), targetPct: target !== null ? pct(target) : null, stop: na(money(stop)), stopPct: stop !== null ? pct(stop) : null,
+    stopTight: finite(d.atr) && d.atr > 0 && risk !== null && risk < d.atr ? `Stop enger als normale Schwankung (ATR 14: ${telegramNumber(d.atr, priceDigits(entry))} USD)` : null,
+    now: { state, price: money(price), dist: finite(dist) ? telegramPercent(dist) : null, label: { valid: 'Einstieg gültig', missed: 'Einstieg verpasst', expired: 'Einstieg abgelaufen' }[state] || '', detail, until: finite(until) ? until : null, left },
+    quality: finite(d.quality) ? telegramNumber(d.quality, Number.isInteger(d.quality) ? 0 : 2) + ' %' : PATTERN_NA, qualityBar: finite(d.quality) ? Math.max(0, Math.min(100, d.quality)) : null,
+    qualityNote: 'Wie sauber das Muster ist, keine Erfolgswahrscheinlichkeit.', learned,
+    hint: 'Kursrichtung ≠ Zieltreffer', time: at !== null ? stamp(at, timezone, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }).replace(', ', ' · ') : PATTERN_NA,
+    model: value(d.model) ? String(d.model) : PATTERN_NA,
+    levels: { entry, target, stop, price }, chart: d.chart || null
+  };
 }

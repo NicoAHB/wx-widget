@@ -30,9 +30,14 @@ async function open(browser, chan, extra = []) {
     check('Dialog zeigt beide Ziele (Kursalarm und Sicherungschat mit Thema)', form.chat === ALERT && form.bchat === BACKUP && form.bthread === '12' && form.thread === '', JSON.stringify(form));
     await h.ctl('/tgreset');
     await page.click('#tg-testall');
-    const tests = await until(async () => { const t = (await tg()).filter(m => /^<b>🧪 TEST ·/.test(m.text || '')); return t.length >= 7 ? t : null; }, 20000);
+    // 3.71.0: Gewinn-/Verlust- und Kurs-Alarm-Test kommen als Beispielbild („TEST · Verlust-Alarm · −170,10 USD“, „TEST · Kurs-Alarm · BTC · …“)
+    const isPnlPhoto = m => m.method === 'sendPhoto' && /^TEST · (Gewinn|Verlust)-Alarm · /.test(m.caption || ''), isAlPhoto = m => m.method === 'sendPhoto' && /^TEST · Kurs-Alarm · /.test(m.caption || '');
+    const tests = await until(async () => { const t = (await tg()).filter(m => /^<b>🧪 TEST ·/.test(m.text || '') || isPnlPhoto(m) || isAlPhoto(m)); return t.length >= 7 ? t : null; }, 20000);
     await page.waitForTimeout(1500);
-    const st = await page.textContent('#tg-status'), byKind = (tests || []).map(m => ({ name: /TEST · (.+?)<\/b>/.exec(m.text)[1], chat: m.chat_id, thread: m.message_thread_id || '' }));
+    const st = await page.textContent('#tg-status'), byKind = (tests || []).map(m => ({ name: isPnlPhoto(m) ? 'Gewinn-/Verlust-Alarm' : isAlPhoto(m) ? 'Kurs-Alarm' : /TEST · (.+?)<\/b>/.exec(m.text)[1], chat: m.chat_id, thread: m.thread || m.message_thread_id || '' }));
+    const pnlTest = (tests || []).find(isPnlPhoto), alTest = (tests || []).find(isAlPhoto);
+    check('3.71.0: Test „Kurs-Alarm“ als Beispielbild (PNG 1080 breit) mit „TEST · Kurs-Alarm · BTC · 81.840,13 USD“', alTest && alTest.png && alTest.w === 1080 && String(alTest.caption).replace(/\r/g, '') === 'TEST · Kurs-Alarm · BTC · 81.840,13 USD' && !alTest.parse_mode && alTest.photoName === 'kurs-alarm.png', JSON.stringify(alTest && { cap: alTest.caption, w: alTest.w }));
+    check('3.71.0: Test „Gewinn-/Verlust-Alarm“ als Beispielbild (PNG 1080 breit) mit „TEST · Verlust-Alarm · −170,10 USD“', pnlTest && pnlTest.png && pnlTest.w === 1080 && String(pnlTest.caption).replace(/\r/g, '') === 'TEST · Verlust-Alarm · −170,10 USD' && !pnlTest.parse_mode, JSON.stringify(pnlTest && { cap: pnlTest.caption, w: pnlTest.w }));
     const toAlert = byKind.filter(x => x.chat === ALERT && !x.thread).map(x => x.name), toBackup = byKind.filter(x => x.chat === BACKUP && x.thread === '12').map(x => x.name);
     check('Test je Nachrichtenart: Kurs-Alarm, Stop/Ziel, Tagesgrenze, News, Gewinn/Verlust, BTC-Puls → Kursalarm', toAlert.length === 6 && ['Kurs-Alarm', 'Stop-Loss/Take-Profit', 'Tages-Verlustlimit', 'News-Alarm (Wirtschaftstermin)', 'Gewinn-/Verlust-Alarm', 'BTC-Puls'].every(n => toAlert.includes(n)), toAlert.join(', '));
     check('Test je Nachrichtenart: Datensicherung → nur Sicherungschat (Thema 12)', toBackup.length === 1 && toBackup[0] === 'Datensicherung' && byKind.length === 7, JSON.stringify(byKind.filter(x => x.chat === BACKUP)));
@@ -53,8 +58,10 @@ async function open(browser, chan, extra = []) {
     await h.ctl('/tgreset');
     ({ ctx, page, errors } = await open(browser, CHAN, [['scalpdesk.alarms.v1', ALARMS], ['scalpdesk.positions.v1', POS]]));
     await h.ctl(`/set?symbol=BTCUSDT&price=${(p0 * 1.006).toFixed(2)}`);
-    const al = await until(async () => (await tg()).find(m => /Test Zuordnung/.test(m.text || '')), 15000);
-    check('Kurs-Alarm → nur Kursalarm', al && al.chat_id === ALERT && !al.message_thread_id && !(await tg()).some(m => m.chat_id === BACKUP && /Test Zuordnung/.test(m.text || '')), al && al.chat_id);
+    // 3.71.0: Kurs-Alarm als Bild (Notiz steht im Bild, Bildunterschrift „Kurs-Alarm · BTC · … USD“)
+    const isAl = m => /Test Zuordnung/.test(m.text || '') || /^Kurs-Alarm · BTC · /.test(m.caption || '');
+    const al = await until(async () => (await tg()).find(isAl), 15000);
+    check('Kurs-Alarm → nur Kursalarm (als Bild)', al && al.method === 'sendPhoto' && al.chat_id === ALERT && !al.thread && !(await tg()).some(m => m.chat_id === BACKUP && isAl(m)), al && al.chat_id);
     await h.ctl(`/set?symbol=BTCUSDT&price=${(p0 * 0.985).toFixed(2)}`);
     const sl = await until(async () => (await tg()).find(m => /STOP-LOSS/.test(m.text || '') && /BTC/.test(m.text || '')), 15000);
     check('Stop-Loss einer Position → nur Kursalarm', sl && sl.chat_id === ALERT && !(await tg()).some(m => m.chat_id === BACKUP && /STOP-LOSS/.test(m.text || '')), sl && `${sl.chat_id}: ${sl.text.split('\n')[0]}`);

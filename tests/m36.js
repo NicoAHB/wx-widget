@@ -13,7 +13,8 @@ const openChan = async page => { await page.click('#notify-menu'); await page.wa
 const mock = p => fetch('http://127.0.0.1:8790' + p).then(r => r.json());
 const tgMsgs = () => mock(`/tgmsgs?chat=${CHAT}`);
 const pinnedMsg = async () => { const m = (await tgMsgs()).filter(x => x.pinnedAt).sort((a, b) => b.message_id - a.message_id)[0] || null; if (m) m.caption = String(m.caption || '').replace(/\r/g, ''); return m; };
-const texts = async () => (await h.ctl('/sent')).filter(m => m.svc === 'tg' && m.text).map(m => m.text);
+// 3.71.0: Kurs-Alarm kommt als Bild – die Bildunterschrift zählt wie ein Text
+const texts = async () => (await h.ctl('/sent')).filter(m => m.svc === 'tg' && (m.text || m.method === 'sendPhoto')).map(m => m.text || m.caption);
 const until = async (fn, ms = 20000, step = 250) => { const t0 = Date.now(); for (;;) { const v = await fn(); if (v) return v; if (Date.now() - t0 > ms) return null; await h.sleep(step); } };
 function startService(dir) {
   const env = { ...process.env, SCALPDESK_FAST: '1', NODE_TLS_REJECT_UNAUTHORIZED: '0', SCALPDESK_TG_API: 'https://127.0.0.1/_h/api.telegram.org', SCALPDESK_SPOT_API: 'https://127.0.0.1/_h/data-api.binance.vision',
@@ -61,10 +62,10 @@ function startService(dir) {
     // ---- Alarm: genau eine Nachricht, vom Dienst ----
     const before = (await texts()).length;
     await h.ctl(`/wick?symbol=BTCUSDT&to=${(up * 1.002).toFixed(2)}`);
-    await until(async () => (await texts()).slice(before).some(t => /KURS-ALARM · BTC/.test(t)), 15000); await h.sleep(4000);
-    const al = (await texts()).slice(before).filter(t => /KURS-ALARM · BTC/.test(t));
+    await until(async () => (await texts()).slice(before).some(t => /KURS-ALARM · BTC|^Kurs-Alarm · BTC · /.test(t)), 15000); await h.sleep(4000);
+    const al = (await texts()).slice(before).filter(t => /KURS-ALARM · BTC|^Kurs-Alarm · BTC · /.test(t));
     const appSaw = await page.evaluate(() => [...document.querySelectorAll('.toast')].some(t => /Kurs-Alarm|auf\/über/.test(t.textContent)) || /ausgelöst|erreicht/.test(document.getElementById('alarms')?.textContent || ''));
-    check('Alarm erreicht: genau eine Telegram-Nachricht, vom 24/7-Dienst; die App zeigt ihn, sendet ihn aber nicht zusätzlich', al.length === 1 && (await h.ctl('/sent')).find(m => m.text === al[0])?.transport === 'json' && /\n🕐 \d\d:\d\d:\d\d$/.test(al[0]) && appSaw, `${al.length} Nachricht(en): ${al.map(t => t.split('\n').at(-1)).join(' | ')}`);
+    check('Alarm erreicht: genau eine Telegram-Nachricht, vom 24/7-Dienst; die App zeigt ihn, sendet ihn aber nicht zusätzlich', al.length === 1 && (await h.ctl('/sent')).find(m => m.caption === al[0])?.from === 'server' && /^Kurs-Alarm · BTC · [\d.,]+ USD$/.test(al[0]) && appSaw, `${al.length} Nachricht(en): ${al.join(' | ')}`);
     // 3.26.0: Der ausgelöste Alarm bleibt noch 3 Minuten in der Übergabe (der Dienst prüft die Kurse nur alle 15 s – so meldet er
     // ihn sicher, auch wenn die App ihn zuerst sieht); danach übergibt die App den neuen Stand (1 Alarm), der Dienst bestätigt ihn
     const t2 = Date.now(), still = await pinnedMsg(), stillB = still?.content ? JSON.parse(still.content) : null;
@@ -79,8 +80,8 @@ function startService(dir) {
     check('Lebenszeichen älter als 20 Minuten: „⚠ Der Dienst hat sich seit … nicht gemeldet – die App sendet wieder selbst“', /^⚠ Der Dienst hat sich seit \d\d:\d\d nicht gemeldet – die App sendet wieder selbst/.test(s.text) && !/24\/7-Dienst: aktiv/.test(s.sum), s.text.slice(0, 90));
     const before2 = (await texts()).length;
     await h.ctl(`/wick?symbol=BTCUSDT&to=${(down * 0.998).toFixed(2)}`);
-    const own = await until(async () => (await texts()).slice(before2).find(t => /KURS-ALARM · BTC/.test(t)), 15000);
-    check('Zweiter Alarm ohne Dienst: die App sendet ihn selbst', !!own && !/24\/7-Dienst/.test(own), own?.split('\n')[0]);
+    const own = await until(async () => (await texts()).slice(before2).find(t => /KURS-ALARM · BTC|^Kurs-Alarm · BTC · /.test(t)), 15000);
+    check('Zweiter Alarm ohne Dienst: die App sendet ihn selbst (als Bild)', !!own && (await h.ctl('/sent')).filter(m => m.caption === own).some(m => m.from === 'app' && !m.failed), JSON.stringify((await h.ctl('/sent')).filter(m => m.method === 'sendPhoto').map(m => [m.caption, m.from, m.failed || 0, m.photoName])));
     // ---- Ausschalten: „ausgeschaltet“ übergeben ----
     await page.uncheck('#s247-on');
     const off = await until(async () => { const m = await pinnedMsg(); if (!m?.content) return null; const b = JSON.parse(m.content); return b.on === false ? { m, b } : null; }, 15000);

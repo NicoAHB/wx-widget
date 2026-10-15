@@ -22,7 +22,9 @@ const ready = (page, iv) => page.waitForFunction(iv => [...document.querySelecto
 const real = errs => errs.filter(e => !/Service Worker registration blocked/.test(e));
 const tiles = page => page.evaluate(() => [...document.querySelectorAll('#watchlist .wl-tile')].map(t => {
   const q = s => t.querySelector(s), r = t.getBoundingClientRect();
-  return { coin: t.dataset.watch, chg: q('.wl-chg').textContent, cut: [q('.wl-chg'), q('.wl-r2'), q('.wl-rules')].some(e => e.scrollWidth > e.clientWidth + 1), title: t.title, tone: q('.wl-sig').dataset.tone,
+  // 3.71.0: Veränderung des Zeitraums = hervorgehobene Spalte der Kachel (1m · 5m · 1h · 1d bzw. mit 30m/4h)
+  const SEL = t.querySelector('.wl-tfc.sel'), SL = { '1m': '1 Min.', '30m': '30 Min.', '1h': '1 Std.', '4h': '4 Std.', '1d': '1 Tag' }[SEL?.dataset.tf] || '?', SV = SEL?.querySelector('.wl-tfv');
+  return { coin: t.dataset.watch, chg: `${SL} ${SV?.textContent}${SV?.textContent === '–' ? '' : ' %'}`, cut: [q('.wl-top'), q('.wl-tf'), q('.wl-rules'), ...t.querySelectorAll('.wl-tfv, .wl-rule, .wl-rsi-l')].some(e => e.scrollWidth > e.clientWidth + 1), title: t.title, tone: q('.wl-sig').dataset.tone,
     inside: [...t.querySelectorAll('*')].filter(c => { const b = c.getBoundingClientRect(); return b.width && b.height && !c.classList.contains('sr-only'); }).every(c => { const b = c.getBoundingClientRect(); return b.left >= r.left - 0.5 && b.right <= r.right + 0.5 && b.top >= r.top - 0.5 && b.bottom <= r.bottom + 0.5; }) };
 }));
 const panel = page => page.evaluate(() => {
@@ -95,7 +97,7 @@ async function verifySpan(page, key, tag) {
     let log = await klineLog(since, 'ETCUSDT');
     check('Geladen: 260 Kerzen zu 5 Minuten (Vorlauf für EMA 50 und MACD), keine 1-Minuten-Kerzen mehr', log.includes('5m:260') && !log.some(l => l.startsWith('1m:')), log.join(' '));
     const t0 = await tiles(page);
-    check('Kacheln: „1 Std. ±x,xx %“, kein „1 Min.“/„30 Min.“ mehr', t0.every(x => /^1 Std\. [+−±]\d+,\d\d %$/.test(x.chg)) && !(await page.$('#watchlist .wl-chg30')), JSON.stringify(t0.map(x => x.chg)));
+    check('Kacheln: Spalte 1h hervorgehoben (±x,xx), kein „1 Min.“/„30 Min.“ mehr', t0.every(x => /^1 Std\. [+−±]\d+,\d\d %$/.test(x.chg)) && !(await page.$('#watchlist .wl-chg30')), JSON.stringify(t0.map(x => x.chg)));
     await page.click('#watchlist .wl-tile[data-watch="ETC"]'); await page.waitForTimeout(500);
     let p = await panel(page);
     check('Detailfeld: Auswahl in der Überschrift mit 1 Minute, 30 Minuten, 1 Stunde (gewählt), 4 Stunden, 1 Tag', p.open && p.options === '1m:der letzten Minute,30m:der letzten 30 Minuten,1h:der letzten Stunde,4h:der letzten 4 Stunden,1d:des letzten Tages' && p.value === '1h' && p.label === 'Zeitraum der Signalbewertung', JSON.stringify({ options: p.options, value: p.value }));

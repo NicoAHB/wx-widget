@@ -12,7 +12,8 @@ const CHAN = { tg: { token: TOKEN, chat: ALERT, thread: '', bchat: BACKUP, bthre
 const KEY = 'scalpdesk.pnlalarm.v1';
 const live = page => page.waitForFunction(() => document.getElementById('status').dataset.feed === 'live', null, { timeout: 20000 }).catch(() => {});
 const until = async (fn, ms = 15000, step = 200) => { const t0 = Date.now(); for (;;) { const v = await fn(); if (v) return v; if (Date.now() - t0 > ms) return null; await h.sleep(step); } };
-const pnlMsgs = async () => (await h.ctl('/sent')).filter(m => m.svc === 'tg' && /(GEWINN|VERLUST)-ALARM/.test(m.text || ''));
+// 3.71.0: Der Gewinn-/Verlust-Alarm kommt als Bild mit einzeiliger Bildunterschrift („Gewinn-Alarm · +100,00 USD“); text = Bildunterschrift
+const pnlMsgs = async () => (await h.ctl('/sent')).filter(m => m.svc === 'tg' && /(GEWINN|VERLUST)-ALARM|(Gewinn|Verlust)-Alarm · /.test(m.caption || m.text || '')).map(m => ({ ...m, text: String(m.caption || m.text || '').replace(/\r/g, '') }));
 const lbOpen = page => page.evaluate(() => document.getElementById('lb-open').textContent);
 const stored = page => page.evaluate(k => JSON.parse(localStorage.getItem(k) || 'null'), KEY);
 const ui = page => page.evaluate(() => { const $ = id => document.getElementById(id); return { open: !$('pnl-panel').hidden, exp: $('lb-pos').getAttribute('aria-expanded'), now: $('pnl-now').textContent, err: $('pnl-err').hidden ? '' : $('pnl-err').textContent, msg: $('pnl-msg').textContent,
@@ -65,7 +66,8 @@ async function open(browser, opts, seedPos = true) {
     await setPnl(page, 100);
     let m = await until(async () => { const x = await pnlMsgs(); return x.length ? x : null; });
     check('Genau auf der Schwelle (+100,00 USDT): Nachricht „Gewinn-Alarm“ an Kursalarm', m?.length === 1 && m[0].chat_id === ALERT && !m[0].message_thread_id, JSON.stringify(m?.map(x => [x.chat_id, x.text])));
-    check('Nachricht nennt Alarmtyp, aktuelles Live-Ergebnis und Schwelle', /^<b>🟢 GEWINN-ALARM · \+100,00 USD<\/b>\n🎯 Schwelle erreicht: ⭐ <b>≥ \+100,00 USD<\/b> ⭐\nPositionen offen: 1\n🕐 \d\d:\d\d:\d\d$/.test(m?.[0]?.text || '') && m[0].parse_mode === 'HTML', m?.[0]?.text);
+    check('3.71.0: Nachricht als Bild (PNG 1080 breit) mit einzeiliger Bildunterschrift „Gewinn-Alarm · +100,00 USD“ ohne HTML', m?.[0]?.method === 'sendPhoto' && m[0].png && m[0].w === 1080 && m[0].text === 'Gewinn-Alarm · +100,00 USD' && !m[0].parse_mode, JSON.stringify({ method: m?.[0]?.method, w: m?.[0]?.w, text: m?.[0]?.text }));
+    if (m?.[0]?.path) console.log('BILD gewinn-alarm: ' + m[0].path);
     for (const v of [105, 110.5, 101, 130]) await setPnl(page, v);
     await page.waitForTimeout(1500);
     check('Weitere Kursänderungen jenseits der Schwelle: keine weitere Nachricht (kein Duplikat)', (await pnlMsgs()).length === 1, String((await pnlMsgs()).length));
@@ -83,28 +85,28 @@ async function open(browser, opts, seedPos = true) {
     check('Ergebnis fällt unter die Grenze (+90): wieder scharf', s.profit.state === 'armed');
     await setPnl(page, 120);
     m = await until(async () => { const x = await pnlMsgs(); return x.length >= 2 ? x : null; });
-    check('Jenseits der Schwelle (+120,00 USDT): genau eine neue Nachricht mit dem aktuellen Wert', m?.length === 2 && /GEWINN-ALARM · \+120,00 USD/.test(m[1].text) && m[1].chat_id === ALERT, m?.[1]?.text);
+    check('Jenseits der Schwelle (+120,00 USDT): genau eine neue Nachricht mit dem aktuellen Wert', m?.length === 2 && /Gewinn-Alarm · \+120,00 USD/.test(m[1].text) && m[1].chat_id === ALERT, m?.[1]?.text);
     // ---- Verlust: knapp darüber, genau auf, jenseits ----
     await setPnl(page, -49.99); await page.waitForTimeout(1200);
-    check('Knapp über der Verlustgrenze (−49,99 USDT): keine Nachricht', !(await pnlMsgs()).some(x => /VERLUST-ALARM/.test(x.text)));
+    check('Knapp über der Verlustgrenze (−49,99 USDT): keine Nachricht', !(await pnlMsgs()).some(x => /VERLUST-ALARM|Verlust-Alarm/.test(x.text)));
     await setPnl(page, -50);
-    m = await until(async () => { const x = (await pnlMsgs()).filter(y => /VERLUST-ALARM/.test(y.text)); return x.length ? x : null; });
-    check('Genau auf der Verlustgrenze (−50,00 USDT): „Verlust-Alarm“ an Kursalarm', m?.length === 1 && m[0].chat_id === ALERT && /^<b>🔴 VERLUST-ALARM · −50,00 USD<\/b>\n🎯 Schwelle erreicht: ⭐ <b>≤ −50,00 USD<\/b> ⭐\nPositionen offen: 1\n🕐 \d\d:\d\d:\d\d$/.test(m[0].text), m?.[0]?.text);
+    m = await until(async () => { const x = (await pnlMsgs()).filter(y => /VERLUST-ALARM|Verlust-Alarm/.test(y.text)); return x.length ? x : null; });
+    check('Genau auf der Verlustgrenze (−50,00 USDT): „Verlust-Alarm“ an Kursalarm', m?.length === 1 && m[0].chat_id === ALERT && m[0].method === 'sendPhoto' && m[0].text === 'Verlust-Alarm · −50,00 USD', m?.[0]?.text);
     for (const v of [-55, -70.25, -51]) await setPnl(page, v);
     await page.waitForTimeout(1200);
-    check('Jenseits der Verlustgrenze: keine Nachrichtenserie', (await pnlMsgs()).filter(y => /VERLUST-ALARM/.test(y.text)).length === 1);
+    check('Jenseits der Verlustgrenze: keine Nachrichtenserie', (await pnlMsgs()).filter(y => /VERLUST-ALARM|Verlust-Alarm/.test(y.text)).length === 1);
     check('Alle Gewinn-/Verlust-Nachrichten nur an Kursalarm, keine an den Sicherungschat', (await pnlMsgs()).every(x => x.chat_id === ALERT) && !(await h.ctl('/sent')).some(x => x.chat_id === BACKUP && /Alarm/.test(x.text || '')));
     // ---- Deaktivieren und wieder aktivieren ----
     await page.tap('#lb-pos'); await page.waitForTimeout(250);
     await page.uncheck('#pnl-loss-on'); await page.click('#pnl-form [type=submit]'); await page.waitForTimeout(300); u = await ui(page); s = await stored(page);
     check('Deaktivieren: Verlust-Alarm aus, Betrag bleibt stehen', !s.loss.on && s.loss.value === 50 && /^deaktiviert/.test(u.lSt) && !u.lRe, u.lSt);
     await page.tap('#pnl-close'); await setPnl(page, -80); await page.waitForTimeout(1000);
-    check('Deaktiviert: auch weit jenseits keine Nachricht', (await pnlMsgs()).filter(y => /VERLUST-ALARM/.test(y.text)).length === 1);
+    check('Deaktiviert: auch weit jenseits keine Nachricht', (await pnlMsgs()).filter(y => /VERLUST-ALARM|Verlust-Alarm/.test(y.text)).length === 1);
     await setPnl(page, -10);
     await page.tap('#lb-pos'); await page.waitForTimeout(250); await page.check('#pnl-loss-on'); await page.click('#pnl-form [type=submit]'); await page.waitForTimeout(300); s = await stored(page);
     check('Wieder einschalten (Ergebnis −10): scharf', s.loss.on && s.loss.state === 'armed');
     await page.tap('#pnl-close'); await setPnl(page, -60);
-    m = await until(async () => { const x = (await pnlMsgs()).filter(y => /VERLUST-ALARM/.test(y.text)); return x.length >= 2 ? x : null; });
+    m = await until(async () => { const x = (await pnlMsgs()).filter(y => /VERLUST-ALARM|Verlust-Alarm/.test(y.text)); return x.length >= 2 ? x : null; });
     check('… und meldet beim nächsten Erreichen genau einmal', m?.length === 2 && /−60,00 USD/.test(m[1].text), m?.[1]?.text);
     const errs1 = errors.slice(); await ctx.close();
     check('iPad hoch: keine Fehler', !errs1.length, errs1.join(' | '));

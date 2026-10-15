@@ -1554,54 +1554,89 @@ html[data-layout=tablet] #econ{order:1}
 .wl-head{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;min-height:36px;margin-bottom:6px}
 .wl-label{font-size:.8125rem;color:var(--muted)}
 .wl-tools{display:inline-flex;flex-wrap:wrap;align-items:center;gap:4px;margin-left:auto}
-/* 3.24.0 Ablaufplan Schritt 5: Kacheln in drei Zeilen – Kürzel, 30-Minuten-Verlauf, Kurs, 1m-Tendenz / „1 Min. …“ und
-   „30 Min. …“ / Trend · Kurs · RSI · MACD mit farbigen Pfeilen. Schmale Kacheln (Handy) in fünf Zeilen, siehe unten. */
-.wl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(198px,1fr));gap:6px}
+/* 3.71.0: Kacheln nach dem Entwurf des Nutzers – Kopf (Kürzel, Score −4…+4, Kurs), Veränderung je Zeitraum (1m · 5m · 1h · 1d,
+   der Zeitraum der Tendenz hervorgehoben), Verlauf über die ganze Breite mit Punkt am Ende, Trend · Kurs · MACD als farbige Felder,
+   RSI als Leiste mit Marken bei 30 und 70. Alle Zeilen haben feste Höhen – Live-Werte verschieben nichts. */
+.wl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
 .wl-item{position:relative;display:block;min-width:0;container:wlt/inline-size}
-.wl-tile{display:grid;width:100%;height:62px;grid-template-columns:auto minmax(0,1fr) auto auto;grid-template-rows:auto auto auto;grid-template-areas:"sym spark price sig" "r2 r2 r2 r2" "rules rules rules rules";column-gap:6px;row-gap:1px;align-content:center;align-items:center;padding:4px 8px;border:1px solid var(--field-border);border-radius:10px;background:var(--field);color:var(--text-2);font:inherit;line-height:1.3;text-align:left;overflow:hidden}
-.wl-tile[aria-current=true]{background:var(--up-bg-2);border-color:var(--up-border)}
+.wl-item[hidden]{display:none}
+.wl-tile{display:flex;flex-direction:column;gap:7px;width:100%;padding:11px 12px 10px;border:1px solid var(--field-border);border-radius:14px;background:var(--field);color:var(--text-2);font:inherit;line-height:1.25;text-align:left;overflow:hidden}
+.wl-tile[aria-current=true]{background:var(--up-bg);border-color:var(--up-text);box-shadow:inset 0 0 0 .5px var(--up-text)}
 .wl-tile[aria-expanded=true]{box-shadow:0 0 0 2px var(--mint);border-color:var(--mint)}
-.wl-sym{grid-area:sym;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.8125rem;font-weight:700;color:var(--text)}
-.wl-price{grid-area:price;justify-self:end;max-width:100%;overflow:hidden;white-space:nowrap;font-size:.8125rem;font-weight:600;font-variant-numeric:tabular-nums}
-.wl-spark{grid-area:spark;justify-self:center;width:100%;max-width:64px;height:16px;overflow:visible;color:var(--muted)}
-.wl-spark polyline{fill:none;stroke:currentColor;stroke-width:1.4;stroke-linejoin:round;stroke-linecap:round;vector-effect:non-scaling-stroke}
-.wl-spark.up{color:var(--up-text)}
-.wl-spark.down{color:var(--down-text)}
-.wl-r2{grid-area:r2;display:flex;justify-content:space-between;gap:8px;min-width:0;overflow:hidden}
-.wl-chg,.wl-chg30{white-space:nowrap;font-size:.72rem;font-weight:600;font-variant-numeric:tabular-nums;color:var(--muted)}
-.wl-chg{grid-area:c1}.wl-chg30{grid-area:c30;text-align:right}
-.wl-chg.up,.wl-chg30.up{color:var(--up-text)}
-.wl-chg.down,.wl-chg30.down{color:var(--down-text)}
-.wl-rules{grid-area:rules;display:flex;justify-content:space-between;gap:4px;min-width:0;overflow:hidden;white-space:nowrap;font-size:.6875rem;font-weight:600;font-variant-numeric:tabular-nums;color:var(--text-2)}
-.wl-rule i{margin-left:3px;font-style:normal;color:var(--muted)}
-.wl-rule.up i{color:var(--up-text)}.wl-rule.down i{color:var(--down-text)}
-.wl-rule.none{color:var(--muted)}
-.wl-sig{grid-area:sig;justify-self:end;display:grid;place-items:center;width:2.2em;height:18px;border-radius:4px;background:var(--hold);color:var(--hold-ink);font-size:.7rem;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
+.wl-top{display:flex;align-items:center;gap:7px;min-width:0;height:24px}
+.wl-sym{flex:none;font-size:1.0625rem;font-weight:800;color:var(--text);letter-spacing:.01em;white-space:nowrap}
+.wl-sig{flex:none;display:inline-grid;place-items:center;min-width:2.3em;height:22px;padding:0 6px;border-radius:999px;background:var(--hold);color:var(--hold-ink);font-size:.75rem;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
 .wl-sig[data-tone=p3],.wl-sig[data-tone=p2]{background:var(--buy);color:var(--buy-ink)}
-.wl-sig[data-tone=p1]{background:var(--t-p2);color:var(--text)}
-.wl-sig[data-tone=m1]{background:var(--t-m2);color:var(--text)}
+.wl-sig[data-tone=p1]{background:var(--up-bg-2);color:var(--up-text)}
+.wl-sig[data-tone=m1]{background:var(--down-bg-2);color:var(--down-text)}
 .wl-sig[data-tone=m2],.wl-sig[data-tone=m3]{background:var(--sell);color:var(--sell-ink)}
 .wl-sig[data-tone=none]{background:transparent;border:1px dashed var(--field-border);color:var(--muted)}
+.wl-price{margin-left:auto;min-width:0;overflow:hidden;white-space:nowrap;font-size:1rem;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums}
+.wl-tf{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:2px;height:40px}
+.wl-tfc{display:grid;align-content:center;justify-items:center;gap:2px;min-width:0;border-radius:8px}
+.wl-tfc.sel{background:color-mix(in srgb,var(--text) 10%,transparent)}
+.wl-tfc small{font-size:.6875rem;font-weight:600;color:var(--muted);line-height:1}
+.wl-tfv{max-width:100%;overflow:hidden;white-space:nowrap;font-size:.8125rem;font-weight:700;font-variant-numeric:tabular-nums;color:var(--muted);line-height:1.1}
+.wl-tfv.up{color:var(--up-text)}.wl-tfv.down{color:var(--down-text)}
+.wl-sparkbox{position:relative;display:block;height:24px;margin:0 4px 0 0;color:var(--muted)}
+.wl-sparkbox.up{color:var(--up-text)}.wl-sparkbox.down{color:var(--down-text)}
+.wl-spark{display:block;width:100%;height:100%;overflow:visible}
+.wl-spark polyline{fill:none;stroke:currentColor;stroke-width:2;stroke-linejoin:round;stroke-linecap:round;vector-effect:non-scaling-stroke}
+.wl-dot{position:absolute;right:-4px;top:50%;width:8px;height:8px;margin-top:-4px;border-radius:50%;background:currentColor}
+.wl-dot[hidden]{display:none}
+.wl-rules{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;height:28px}
+.wl-rule{display:flex;align-items:center;justify-content:center;gap:3px;min-width:0;border-radius:8px;background:var(--hold);color:var(--muted);font-size:.75rem;font-weight:700;white-space:nowrap;overflow:hidden}
+.wl-rule.up{background:var(--up-bg-2);color:var(--up-text)}
+.wl-rule.down{background:var(--down-bg-2);color:var(--down-text)}
+.wl-rule i{font-style:normal;font-size:.75em}
+.wl-rsi{display:flex;align-items:center;gap:10px;height:16px}
+.wl-rsi-l{flex:none;min-width:3.7em;font-size:.75rem;font-weight:700;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.wl-rsi-bar{position:relative;flex:1 1 auto;height:5px;margin-right:6px;border-radius:3px;background:var(--hold)}
+.wl-rsi-bar i{position:absolute;top:-3px;width:2px;height:11px;margin-left:-1px;border-radius:1px;background:var(--muted)}
+.wl-rsi-bar i:first-child{left:30%}.wl-rsi-bar i:nth-child(2){left:70%}
+.wl-rsi-bar b{position:absolute;top:50%;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;background:var(--text)}
+.wl-rsi-bar b[hidden]{display:none}
+.wl-rsi.up .wl-rsi-bar b{background:var(--up-text)}.wl-rsi.down .wl-rsi-bar b{background:var(--down-text)}   /* Farbe = RSI-Signal (unter 30 und steigend bullish, über 70 und fallend bearish) */
+/* „+ Coin hinzufügen“ als gestrichelte Kachel – immer da, damit beim Laden eines neuen Coins nichts verrutscht */
+.wl-add{display:grid;place-items:center;width:100%;height:100%;min-height:96px;padding:8px;border:1.5px dashed var(--field-border);border-radius:14px;background:none;color:var(--muted);font:inherit;font-size:.9375rem;font-weight:600;text-align:center}
+.wl-add[data-addwatch]{border-color:var(--up-border);color:var(--up-text)}
+.wl-add:hover{color:var(--text)}
+.wl-empty{grid-column:1/-1;padding:14px;border:1px dashed var(--field-border);border-radius:12px;color:var(--muted);font-size:.8125rem;text-align:center}
+/* Kopf: Filter (Alle · Stark ≥ +2 · Schwach ≤ −2) und Sortierung */
+.wl-filter{display:flex;flex-wrap:wrap;align-items:center;gap:6px;flex:1 1 100%;order:3;margin-top:2px}
+.wl-fchip{min-height:32px;padding:4px 11px;border:1px solid var(--field-border);border-radius:999px;background:var(--field);color:var(--text-2);font:inherit;font-size:.8125rem;font-weight:700;white-space:nowrap}
+.wl-fchip[aria-pressed=true]{background:var(--text);border-color:var(--text);color:var(--bg)}
+.wl-sortbtn{min-height:32px;padding:4px 8px 4px 4px;border:0;background:none;color:var(--muted);font:inherit;font-size:.8125rem;font-weight:600;white-space:nowrap}
+.wl-sortbtn[aria-pressed=true]{color:var(--text)}
 .wl-item .chip-x{position:absolute;top:-8px;right:-8px;z-index:1;width:28px;min-height:28px;height:28px;margin:0;border:1px solid var(--field-border);border-radius:50%;background:var(--surface);line-height:1}
-html[data-layout=tablet] .wl-tile{height:64px}
-/* Handys (bis 460 px Panelbreite): 2 Spalten statt einer langen Reihe – der Chart rutscht sonst weit nach unten */
-@container (max-width:460px){.wl-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-/* schmale Kachel (unter 190 px): Kürzel und Kurs / 1 Min. und Tendenz / 30 Min. mit Verlauf / Regeln in zwei Zeilen.
-   Der Kurs hat eine eigene Spur, unter der „1 Min.“ und „30 Min.“ weiterlaufen – rechts bleibt nur die schmale Spalte für
-   Tendenz und Verlauf. Sonst bestimmte der Kurs die rechte Spalte (BTC „64.141,32“), und bei 320 px ragte „30 Min. …“ bis
-   23 px aus seiner Zelle, mit langen Werten bis in den Verlauf */
-@container wlt (max-width:189px){
-  .wl-tile,html[data-layout=tablet] .wl-tile{height:86px;grid-template-columns:minmax(0,1fr) auto auto;grid-template-rows:repeat(4,auto);grid-template-areas:"sym price price" "c1 c1 sig" "c30 c30 spark" "rules rules rules";column-gap:4px;padding:4px 6px}
-  .wl-r2{display:contents}
-  .wl-chg30{text-align:left}
-  .wl-sym,.wl-price{font-size:.75rem}
-  .wl-spark{width:28px;height:12px;justify-self:end}
-  .wl-chg,.wl-chg30{font-size:.66rem}
-  .wl-sig{width:1.9em;height:16px;font-size:.66rem}
-  .wl-rules{display:grid;grid-template-columns:auto auto;justify-content:space-between;column-gap:6px;row-gap:1px;font-size:.625rem}
+/* Handys (bis 460 px Panelbreite): 2 Spalten */
+@container (max-width:460px){.wl-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}}
+/* schmale Kachel (Handy): etwas kleinere Schrift, gleiche Zeilen */
+@container wlt (max-width:200px){
+  .wl-tile{gap:6px;padding:9px 9px 8px}
+  .wl-top{gap:5px;height:22px}
+  .wl-sym{font-size:.9375rem}
+  .wl-sig{min-width:2em;height:20px;padding:0 5px;font-size:.6875rem}
+  .wl-price{font-size:.875rem}
+  .wl-tf{height:36px;gap:1px}
+  .wl-tfv{font-size:.6875rem;letter-spacing:-.01em}
+  .wl-tfc small{font-size:.625rem}
+  .wl-rules{gap:4px;height:26px}
+  .wl-rule{font-size:.6875rem}
+  .wl-rsi-l{font-size:.6875rem}
 }
-/* sehr schmale Kachel (Handy 320 px): Werte so groß wie die Regelzeile, damit auch „30 Min. −10,98 %“ neben den Verlauf passt */
-@container wlt (max-width:132px){.wl-chg,.wl-chg30{font-size:.625rem}}
+/* sehr schmale Kachel (Handy 320 px, etwa 140 px breit): Kürzel, Score und Kurs passen nebeneinander, die Felder bleiben lesbar */
+@container wlt (max-width:150px){
+  .wl-tile{padding:8px 7px 7px}
+  .wl-top{gap:4px}
+  .wl-sym{font-size:.8125rem}
+  .wl-sig{min-width:1.8em;height:18px;padding:0 4px;font-size:.625rem}
+  .wl-price{font-size:.6875rem}
+  .wl-tfv{font-size:.625rem;letter-spacing:-.02em}
+  .wl-rules{gap:3px}
+  .wl-rule{font-size:.5625rem;gap:1px}
+  .wl-rsi{gap:6px}.wl-rsi-l{min-width:3.3em;font-size:.625rem}
+}
 @media (pointer:coarse){.wl-item .chip-x{width:40px;height:40px;min-width:40px;min-height:40px;top:-14px;right:-12px}}
 /* 3.35.0 (G07): Market-Cap-Ansicht – Preisebenen und Leisten aus */
 /* Kompakter Umschalter in der Chart-Menüleiste: ein Knopf „MCap“ neben den Intervallen. Die Gruppe (Intervalle + MCap) zählt beim
@@ -1957,12 +1992,6 @@ html[data-layout=tablet] .wl-detail{scroll-margin-bottom:calc(84px + env(safe-ar
 :root .livebar[data-fit~="5"] .lb-pos{font-size:.82em}
 :root .livebar[data-fit~="5"]{column-gap:4px}
 :root .livebar[data-fit~="6"] .lb-market{font-size:.9em}:root .livebar[data-fit~="6"] .lb-price{font-size:1.02rem}
-/* 3.25.0: Vorauswahl über einen wählbaren Zeitraum – eine Veränderung je Kachel; in der schmalen Kachel nimmt der Verlauf
-   die frei gewordene Zeile ganz ein */
-@container wlt (max-width:189px){
-  .wl-tile,html[data-layout=tablet] .wl-tile{grid-template-areas:"sym price price" "c1 c1 sig" "spark spark spark" "rules rules rules"}
-  .wl-spark{width:100%;justify-self:stretch}
-}
 /* Detailfeld: Zeitraum in der Überschrift wählbar – sichtbar der Text, darüber unsichtbar die echte Auswahl (16 px: kein Zoom am iPhone) */
 .wl-d-pick{position:relative;display:inline-block;padding-right:.95em;border-bottom:1px dashed currentColor;cursor:pointer;white-space:nowrap}
 .wl-d-pick::after{content:"▾";position:absolute;right:0;top:50%;transform:translateY(-50%);font-size:.85em;pointer-events:none}
@@ -2227,6 +2256,7 @@ html[data-workspace=focus][data-workspace-view=settings] #method-sec{grid-column
 .github-sync{border:1px solid var(--border);border-radius:14px;background:var(--surface);min-width:0}.github-sync>summary,.github-sync-setup>summary{padding:12px;cursor:pointer;font-weight:650;min-height:44px}.github-sync-body{display:grid;gap:12px;padding:12px;min-width:0}.github-sync-actions{display:flex;flex-wrap:wrap;gap:8px}.github-sync-actions>button{flex:1 1 220px;min-height:48px;white-space:normal;overflow-wrap:anywhere}.github-sync-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:12px}.github-sync-fields label,.github-sync-dialog label{display:grid;gap:6px;font-size:.85rem;min-width:0}.github-sync-fields input,.github-sync-dialog input{width:100%;min-width:0;box-sizing:border-box;min-height:44px;font-size:16px}.github-sync-fields p,.github-sync-fields a{grid-column:1/-1}.github-sync-status,.github-sync-last,.github-sync-hint{overflow-wrap:anywhere}.github-sync-hint{border:1px solid var(--border);border-radius:12px;background:var(--surface-2);padding:10px;display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:8px 0}.github-sync-hint[hidden]{display:none}.github-sync-hint>span{flex:1 1 240px}.github-sync-hint button{min-height:44px}.github-sync-dialog{box-sizing:border-box;width:min(480px,calc(100vw - 24px));max-height:calc(100dvh - 24px);padding:18px;border:1px solid var(--border);border-radius:16px;color:var(--text);background:var(--surface);overflow:auto}.github-sync-dialog::backdrop{background:#0009}.github-sync-dialog form{display:grid;gap:14px}.github-sync-dialog h3,.github-sync-dialog p{margin:0;overflow-wrap:anywhere}.github-sync-dialog p{font-size:.9rem;line-height:1.5}@media(max-width:480px){.github-sync-fields{grid-template-columns:minmax(0,1fr)}.github-sync-actions>button{flex-basis:100%}}
 /* 3.68.4: GitHub-Sync übersichtlich – ohne vierten Rahmen, Statuszeile, Sichern/Laden nebeneinander, Einrichtung in drei nummerierten Schritten, Felder mit Rahmen (vorher sahen sie wie Text aus). */#data-panel .github-sync{border:0;border-radius:0;background:none;border-bottom:1px solid var(--border);padding-bottom:6px}#data-panel .github-sync>summary{padding:4px 0 10px}#data-panel .github-sync-body{padding:0 0 8px}.github-sync-info{margin:0;color:var(--muted);font-size:.8125rem;line-height:1.45}.github-sync-state{margin:0;padding:8px 10px;border-radius:9px;font-size:.8125rem;font-weight:650;background:var(--warn-bg,var(--surface-2));color:var(--warn-text,var(--text))}.github-sync-state[data-ready=true]{background:var(--up-bg-2);color:var(--up-text)}dl.github-sync-last{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 10px;margin:0;font-size:.8125rem}dl.github-sync-last dt{color:var(--muted)}dl.github-sync-last dd{margin:0;min-width:0;overflow-wrap:anywhere}.github-sync-actions>button{flex:1 1 140px}.github-sync-actions>#github-sync-undo{flex-basis:100%;min-height:40px;font-size:.8125rem}.github-sync-setup{border:1px solid var(--border);border-radius:12px;background:var(--surface-2)}.github-sync-setup>summary{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 10px;list-style:none;padding:12px 14px}.github-sync-setup>summary::-webkit-details-marker{display:none}.github-sync-setup>summary::after{content:"＋";color:var(--muted);flex:none}.github-sync-setup[open]>summary::after{content:"−"}.github-sync-setup-title{flex:1 1 7rem;min-width:0}.github-sync-setup-state{flex:none;white-space:nowrap;font-size:.75rem;font-weight:650;padding:3px 8px;border-radius:999px;background:var(--warn-bg,var(--field));color:var(--warn-text,var(--muted))}.github-sync-setup-state[data-ready=true]{background:var(--up-bg-2);color:var(--up-text)}.github-sync-fields{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;padding:4px 14px 14px}.github-sync-step{display:grid;gap:8px;min-width:0}.github-sync-step h4{display:flex;align-items:center;gap:8px;margin:0;font-size:.875rem}.github-sync-num{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--border);font-size:.75rem}.github-sync-step-text{margin:0;color:var(--muted);font-size:.78rem;line-height:1.45}.github-sync-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}.github-sync-field{display:grid;gap:5px;min-width:0;font-size:.8rem;color:var(--muted)}.github-sync-fields .github-sync-field input{background:var(--field);border:1px solid var(--field-border);border-radius:8px;padding:0 12px;color:var(--text)}.github-sync-fields .github-sync-field input:focus{border-color:var(--mint);outline:none}.github-sync-token{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px}.github-sync-paste{min-height:44px;padding:0 12px}.github-sync-note{margin:0;color:var(--muted);font-size:.78rem;line-height:1.45}.github-sync-fields .github-sync-guide{grid-column:auto;justify-self:start;min-height:44px}
 /* 3.69.0: Qualitätsfilter für Chartmuster – Einstellungen (Telegram-Fenster) und Signal-Log (Chartmuster-Fenster) */.patq-settings{margin:10px 0;border:1px solid var(--border);border-radius:10px;background:var(--surface-2)}.patq-settings>summary{padding:10px 12px;cursor:pointer;font-weight:650;min-height:44px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}.patq-form{display:grid;gap:10px;padding:0 12px 12px}.patq-preset{display:grid;gap:4px;font-size:.8125rem}.patq-preset select{min-height:44px;font-size:16px;background:var(--field);color:var(--text);border:1px solid var(--field-border);border-radius:8px;padding:0 10px}.patq-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}.patq-field{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:2px 6px;font-size:.75rem;color:var(--muted)}.patq-field>span{grid-column:1/-1}.patq-field input{min-height:40px;width:100%;min-width:0;font-size:16px;background:var(--field);color:var(--text);border:1px solid var(--field-border);border-radius:8px;padding:0 8px}.patq-field small{white-space:nowrap}.patq-note{margin:0;font-size:.75rem;line-height:1.45}.patq-log{margin:10px 0;border:1px solid var(--border);border-radius:10px}.patq-log>summary{padding:10px 12px;cursor:pointer;font-weight:650;min-height:44px}.patq-log-body{display:grid;gap:10px;padding:0 12px 12px;min-width:0}.patq-table{width:100%;border-collapse:collapse;font-size:.75rem;font-variant-numeric:tabular-nums}.patq-table th,.patq-table td{padding:5px 4px;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap}.patq-table th:first-child,.patq-table td:first-child{text-align:left;white-space:normal}.patq-items{display:grid;gap:6px}.patq-item{border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-size:.78rem}.patq-item>summary{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:baseline;cursor:pointer;list-style:none}.patq-item>summary::-webkit-details-marker{display:none}.patq-when{color:var(--muted)}.patq-score{font-variant-numeric:tabular-nums}.patq-ok{color:var(--up-text);font-weight:650}.patq-no{color:var(--warn-text,var(--muted));font-weight:650}.patq-why{margin:6px 0 2px}.patq-item p{margin:2px 0}.patq-crit{margin:4px 0 0;padding-left:18px;color:var(--muted)}.patq-bt{display:grid;gap:6px}.patq-bt p{margin:0;font-size:.75rem}.patq-by{justify-self:start}
+/* 3.71.0: Signalkarte im Signal-Log (dieselbe Karte wie bei Telegram), Gesamturteil und „abgelaufen“, Kartenwerte in den Einstellungen */.patq-card{display:block;width:100%;max-width:420px;height:auto;margin:8px 0 4px;border-radius:12px;border:1px solid var(--border);background:#0a1222}.patq-grade{font-weight:700;padding:0 6px;border-radius:6px;border:1px solid currentColor;font-size:.72rem}.patq-grade.weak{color:#fb923c}.patq-grade.medium{color:#facc15}.patq-grade.strong{color:var(--up-text)}[data-theme=light] .patq-grade.weak{color:#c2410c}[data-theme=light] .patq-grade.medium{color:#a16207}.patq-exp{color:var(--muted);font-size:.72rem}.patq-card-set{display:grid;gap:8px;padding:10px;border:1px solid var(--border);border-radius:10px}.patq-card-set>b{font-size:.8125rem}
 /* 3.68.4: Anleitung in der App (docs/*.md) mit „Schließen“ */dialog.doc-viewer{width:min(720px,96vw)}.doc-viewer .sheet-head{position:sticky;top:0;background:var(--surface);z-index:1}.doc-viewer-close{min-height:40px;white-space:nowrap}.doc-viewer-body{display:block;line-height:1.55;font-size:.9rem;overflow-wrap:anywhere}.doc-viewer-body>*{margin:0 0 12px}.doc-viewer-body h2,.doc-viewer-body h3,.doc-viewer-body h4{margin:18px 0 8px;line-height:1.3}.doc-viewer-body h2{font-size:1.05rem}.doc-viewer-body h3{font-size:.98rem}.doc-viewer-body ol,.doc-viewer-body ul{padding-left:22px}.doc-viewer-body li{margin:0 0 8px}.doc-viewer-body code{font-size:.85em;padding:1px 4px;border-radius:4px;background:var(--surface-2);overflow-wrap:anywhere}.doc-viewer-body pre{overflow-x:auto;padding:10px 12px;border-radius:8px;background:var(--field);border:1px solid var(--border)}.doc-viewer-body pre code{padding:0;background:none;white-space:pre}.doc-table{overflow-x:auto;border:1px solid var(--border);border-radius:8px}.doc-table table{width:100%;border-collapse:collapse;font-size:.82rem}.doc-table th,.doc-table td{padding:8px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top;min-width:120px}.doc-viewer-body blockquote{padding-left:10px;border-left:3px solid var(--border);color:var(--muted)}
 .pat-project-settings{padding:10px;border:1px solid var(--border);border-radius:12px}.pat-project-settings>summary{min-height:44px;cursor:pointer}.pat-project-settings label{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:8px 0}.pat-project-settings input[type=number]{width:90px;min-height:44px;font-size:16px}.pat-project-settings p{font-size:.8rem;color:var(--muted);line-height:1.5}
 /* 3.64.0: Detail-Kerzen und Formationen in der Kurszeile, ohne horizontales Seiten-Scrollen. */
@@ -2258,33 +2288,36 @@ html[data-chartfull] .chart-pattern-row{padding:0;order:1;flex-wrap:nowrap}html[
 @media(max-width:360px){.chart-pattern-overview-card{height:120px;grid-template-columns:minmax(0,1fr) 112px}}
 </style>
   <script type="module">
-import { MARKET_INTERVALS, CHART_INTERVALS, SIGNAL_INTERVALS, INTERVAL_MS, nearestChartInterval } from './bundles/3.70.2/shared/market-intervals.mjs';
-import { createDetailCandles, detailOptions, detailChoice, closedSeries, timeIndex, DETAIL_VISIBLE_MAX } from './bundles/3.70.2/shared/chart-detail.mjs';
-import { patternChipRows, patternChipKey } from './bundles/3.70.2/shared/chart-pattern-chips.mjs';
-import { PATTERN_QUALITY_CONFIG, chartPatternQuality, repricePatternQuality, sortPatternQuality, patternOverview } from './bundles/3.70.2/shared/chart-pattern-quality.mjs';
-import { createPatternOverviewFeed } from './bundles/3.70.2/shared/chart-pattern-overview-feed.mjs';
+import { MARKET_INTERVALS, CHART_INTERVALS, SIGNAL_INTERVALS, INTERVAL_MS, nearestChartInterval } from './bundles/3.71.0/shared/market-intervals.mjs';
+import { createDetailCandles, detailOptions, detailChoice, closedSeries, timeIndex, DETAIL_VISIBLE_MAX } from './bundles/3.71.0/shared/chart-detail.mjs';
+import { patternChipRows, patternChipKey } from './bundles/3.71.0/shared/chart-pattern-chips.mjs';
+import { PATTERN_QUALITY_CONFIG, chartPatternQuality, repricePatternQuality, sortPatternQuality, patternOverview } from './bundles/3.71.0/shared/chart-pattern-quality.mjs';
+import { createPatternOverviewFeed } from './bundles/3.71.0/shared/chart-pattern-overview-feed.mjs';
 // Arbeitsstand: bei der gemeinsamen Release-Freigabe in das neue Versionsbündel übernehmen.
-import { createPositioningFeed } from './bundles/3.70.2/shared/positioning-score.mjs';
-import { CRYPTO_CALENDAR, parseCryptoCalendar, cryptoCalendarEvents } from './bundles/3.70.2/shared/crypto-calendar.mjs';
-import { createMusterClient } from './bundles/3.70.2/shared/muster-bot-feed.mjs';
-import { createMusterPaper } from './bundles/3.70.2/shared/muster-bot-paper.mjs';
-import { readMusterPaper, writeMusterPaper } from './bundles/3.70.2/shared/muster-bot-store.mjs';
-import { projectPatternLines, projectionSettings, projectionTime } from './bundles/3.70.2/shared/pattern-projection.mjs';
-import { createGithubSyncView } from './bundles/3.70.2/shared/github-sync-view.mjs';
-import { createDocViewer } from './bundles/3.70.2/shared/doc-viewer.mjs';
-import { PATTERN_FILTER_PRESET_NAMES, PATTERN_FILTER_FIELDS, HIGHER_TIMEFRAME, patternFilterSettings, patternFilterFromForm, evaluatePatternSignal, selectPatternSignals, patternJournalEntry, addPatternJournal, resolvePatternJournal, patternHitStats, patternJournalStats, PATTERN_OUTCOME_NAMES, backtestPatternFilter } from './bundles/3.70.2/shared/pattern-quality.mjs';
-import { stripSyncSecrets } from './bundles/3.70.2/shared/github-sync.mjs';
-import { createMusterView } from './bundles/3.70.2/shared/muster-bot-view.mjs';
-import { computeKiZones, KI_ZONE_INTERVALS } from './bundles/3.70.2/shared/ki-zones.mjs';
-import { heikinAshi } from './bundles/3.70.2/shared/heikin-ashi.mjs';
-import { detectFvgs, fvgSummary } from './bundles/3.70.2/shared/fvg.mjs';
-import { scoreZoneStrength, ZONE_STRENGTH, ZONE_SIGNAL, zoneSignal, zoneStep, zoneOutcome, summarizeZoneBacktest } from './bundles/3.70.2/shared/zone-strength.mjs';
+import { createPositioningFeed } from './bundles/3.71.0/shared/positioning-score.mjs';
+import { CRYPTO_CALENDAR, parseCryptoCalendar, cryptoCalendarEvents } from './bundles/3.71.0/shared/crypto-calendar.mjs';
+import { createMusterClient } from './bundles/3.71.0/shared/muster-bot-feed.mjs';
+import { createMusterPaper } from './bundles/3.71.0/shared/muster-bot-paper.mjs';
+import { readMusterPaper, writeMusterPaper } from './bundles/3.71.0/shared/muster-bot-store.mjs';
+import { projectPatternLines, projectionSettings, projectionTime } from './bundles/3.71.0/shared/pattern-projection.mjs';
+import { createGithubSyncView } from './bundles/3.71.0/shared/github-sync-view.mjs';
+import { createDocViewer } from './bundles/3.71.0/shared/doc-viewer.mjs';
+import { PATTERN_FILTER_PRESET_NAMES, PATTERN_FILTER_FIELDS, PATTERN_CARD_FIELDS, HIGHER_TIMEFRAME, patternFilterSettings, patternFilterFromForm, evaluatePatternSignal, selectPatternSignals, patternJournalEntry, addPatternJournal, resolvePatternJournal, patternHitStats, patternJournalStats, PATTERN_OUTCOME_NAMES, backtestPatternFilter } from './bundles/3.71.0/shared/pattern-quality.mjs';
+import { stripSyncSecrets } from './bundles/3.71.0/shared/github-sync.mjs';
+import { createMusterView } from './bundles/3.71.0/shared/muster-bot-view.mjs';
+import { computeKiZones, KI_ZONE_INTERVALS } from './bundles/3.71.0/shared/ki-zones.mjs';
+import { heikinAshi } from './bundles/3.71.0/shared/heikin-ashi.mjs';
+import { detectFvgs, fvgSummary } from './bundles/3.71.0/shared/fvg.mjs';
+import { scoreZoneStrength, ZONE_STRENGTH, ZONE_SIGNAL, zoneSignal, zoneStep, zoneOutcome, summarizeZoneBacktest } from './bundles/3.71.0/shared/zone-strength.mjs';
 // 3.68.0: KI-Signale/Trading-Bot entfernt; der GitHub-Sync behält sein Format inklusive vorhandener Modelloriginale.
-import { exportModelArchive, importModelArchive, validateModelArchive, restoreModelOriginals } from './bundles/3.70.2/shared/model-archive.mjs';
-import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT } from './bundles/3.70.2/shared/telegram-format.mjs';
-import { createOrderflowView } from './bundles/3.70.2/shared/orderflow-view.mjs';
-import { createSignalView } from './bundles/3.70.2/shared/orderflow-signal-view.mjs';
-import { networkState, createWidgetBoundary } from './bundles/3.70.2/shared/widget-state.mjs';
+import { exportModelArchive, importModelArchive, validateModelArchive, restoreModelOriginals } from './bundles/3.71.0/shared/model-archive.mjs';
+import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT, patternGrade } from './bundles/3.71.0/shared/telegram-format.mjs';
+import { patternSignalCard, patternChartData } from './bundles/3.71.0/shared/pattern-signal-card.mjs';   // 3.71.0: Chartmuster-Signalkarte
+import { pnlAlarmCard } from './bundles/3.71.0/shared/pnl-alarm-card.mjs';   // 3.71.0: Gewinn-/Verlust-Alarm als Bild
+import { priceAlarmCard } from './bundles/3.71.0/shared/price-alarm-card.mjs';   // 3.71.0: Kurs-Alarm als Bild
+import { createOrderflowView } from './bundles/3.71.0/shared/orderflow-view.mjs';
+import { createSignalView } from './bundles/3.71.0/shared/orderflow-signal-view.mjs';
+import { networkState, createWidgetBoundary } from './bundles/3.71.0/shared/widget-state.mjs';
 // Pure, unrounded calculations. Prices are USDT per unit; FX is USDT per EUR.
 function rsi(closes, period = 14) {
   const out = Array(closes.length).fill(null);
@@ -3139,7 +3172,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
 // 3.43.0 (G10a): reiner Fachkern in shared/; Datenquelle und Karten folgen getrennt.
 // 3.44.0 (G10b): öffentlicher Adapter in shared/bitget-public.mjs; sichtbare Anbindung folgt mit G10(c).
-const APP_VERSION = '3.70.2', docEl = document.documentElement;
+const APP_VERSION = '3.71.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -3649,7 +3682,9 @@ function renderMarket() {
   drawChart();
 }
 // ---------- Chart-Ausschnitt: Zoom und Blättern ----------
-let lastChart = null, chartGeom = null, drawQueued = false;
+let lastChart = null, chartGeom = null, drawQueued = false, drawReq = 0, drawDone = 0;
+// 3.71.0: Geste läuft (Zoomen/Blättern) – chartLite: vereinfacht zeichnen (ohne Etiketten-Entzerrung und Nebenleisten), chartLive: Zustand der Geste
+let chartLite = false; var chartLive = { on: false, afterDraw() {}, stats: { draw: 0, lite: 0 } }; window.__chartLive = chartLive;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 function viewWindow() {
   const len = state.candles.length, count = Math.min(state.count, len);
@@ -3658,15 +3693,17 @@ function viewWindow() {
   const end = len - state.pan; return { start: Math.max(0, end - count), end };
 }
 function drawChart() {
+  drawDone = drawReq; chartLive.stats.draw++; if (chartLite) chartLive.stats.lite++; // ein schon angefordertes Zeichnen im nächsten Bild entfällt (dieses hier zeigt den neuesten Stand)
   if (CAP.on) { capRender(); renderZones(); ovButtons(); return; } // 3.35.0 (G07): Market-Cap-Ansicht statt Kerzen
   if (!lastChart) return;
-  const { start, end } = displayWindow(), vis = chartRows().slice(start, end), profile = vis.length ? volumeProfile(vis) : null;
-  renderFibStrip(); renderWhaleStrip(); renderDivTip(); ovButtons(); // 3.32.0 (G04.1): Sperren auch bei verdecktem Chart
+  const { start, end } = displayWindow(), vis = chartRows().slice(start, end), profile = vis.length ? volumeProfile(vis) : null, lite = chartLite || chartLive.on;
+  if (!lite) { renderFibStrip(); renderWhaleStrip(); renderDivTip(); ovButtons(); } // 3.32.0 (G04.1): Sperren auch bei verdecktem Chart
   if (chartOnScreen) renderChart(lastChart.levels, { bb: lastChart.bb && { upper: displaySeries(lastChart.bb.upper), lower: displaySeries(lastChart.bb.lower), mid: displaySeries(lastChart.bb.mid) }, ema200: displaySeries(lastChart.ema200), profile }, start, end); else chartStale = true;
-  renderZones(); // 3.35.0 (G07): aus der Analyse-Reihe, unabhängig vom Ausschnitt
+  if (!lite) renderZones(); // 3.35.0 (G07): aus der Analyse-Reihe, unabhängig vom Ausschnitt
   updateNav();
+  if (chartLive.on) chartLive.afterDraw(); // 3.71.0: während einer Geste das neue Bild gleich wieder dem Finger nachführen
 }
-function scheduleDraw() { if (drawQueued) return; drawQueued = true; requestAnimationFrame(() => { drawQueued = false; drawChart(); }); }
+function scheduleDraw() { drawReq++; if (drawQueued) return; drawQueued = true; requestAnimationFrame(() => { drawQueued = false; if (drawDone !== drawReq) drawChart(); }); }
 function setPan(p) {
   if (CAP.on) return; // 3.35.0: in der Cap-Ansicht bleibt der Kurs-Ausschnitt unverändert
   if (detailReady()) { detail.pan(p); scheduleDraw(); return; }
@@ -4278,7 +4315,7 @@ function renderWatchlist() {
   const box = $('watchlist'), base = state.symbol.slice(0, -4), showAdd = !state.watch.includes(base) && state.loadedSymbol === state.symbol;
   // Ausgewählte Kachel entfernt (Bearbeiten, „Standard“, Sicherung eingespielt): Detailfeld schließen, keine falsche Auswahl
   if (wldSel && !state.watch.includes(wldSel)) wldClose(false);
-  const S = wlSpan(), key = JSON.stringify([state.watch, state.watchEdit, S.label]), curKey = JSON.stringify([key, base, showAdd]);
+  const S = wlSpan(), key = JSON.stringify([state.watch, state.watchEdit, S.label, wlTfCols()]), curKey = JSON.stringify([key, base, showAdd]);
   // 3.26.0: Wechselt nur der Coin im Chart (Kachel angetippt), bleiben Kopfzeile und Kacheln stehen; neu sind nur die
   // Markierung „im Chart geöffnet“ und „+ Coin“. Der Neuaufbau nahm der angetippten Kachel den Tastatur-Fokus, und Chrome
   // verschob dabei die Seite (Scroll-Anker in den ersetzten Kacheln).
@@ -4293,32 +4330,42 @@ function renderWatchlist() {
   if (grid0 && k0 && k0[1] === state.watchEdit && k0[2] === S.label && k0[0].length === state.watch.length && [...k0[0]].sort().join() === [...state.watch].sort().join()) {
     const items = new Map([...grid0.children].map(i => [i.querySelector('.wl-tile')?.dataset.watch, i]));
     state.watch.forEach((c, i) => { const it = items.get(c); if (it && grid0.children[i] !== it) grid0.insertBefore(it, grid0.children[i] || null); });
-    watchKey = key; watchCurKey = curKey; wlSortState(); wlMarkCurrent(base, showAdd); return;
+    const addIt = grid0.querySelector(':scope > .wl-add-item'); if (addIt) grid0.append(addIt);
+    watchKey = key; watchCurKey = curKey; wlSortState(); wlMarkCurrent(base, showAdd); wlArrange(); return;
   }
   watchKey = key; watchCurKey = curKey;
   const head = el('div', 'wl-head'), tip = el('details', 'tip left wl-tip'), sum = el('summary');
   sum.setAttribute('aria-label', 'Was die Kacheln der Vorauswahl zeigen'); sum.append(el('span', '', 'i'));
   const body = el('div', 'tip-body');
-  body.append(el('p', '', `Je Coin: Live-Kurs, der Verlauf ${S.of} und rechts die Tendenz. Darunter die Veränderung über ${S.name} („${S.label} …“) und die Zeile Trend · Kurs · RSI (mit Wert) · MACD: ▲ grün = bullish, ▼ rot = bearish, – = neutral.`),
+  body.append(el('p', '', `Je Coin: Kürzel, Tendenz (Score −4 bis +4) und Live-Kurs. Darunter die Veränderung in Prozent über 1 Minute bis 1 Tag – hervorgehoben ${S.the}, über den die Tendenz rechnet –, der Verlauf ${S.of}, die Felder Trend · Kurs · MACD (▲ grün = bullish, ▼ rot = bearish, – neutral) und der RSI als Leiste mit den Marken 30 und 70.`),
+    el('p', '', '„Alle“, „Stark ≥ +2“ und „Schwach ≤ −2“ filtern nach der Tendenz; „Score ↓“ sortiert nach der Tendenz, „Eigene“ zeigt deine Reihenfolge (nur dort lassen sich Kacheln verschieben).'),
     el('p', '', `Tendenz: die Summe dieser vier Regeln – dieselben wie in der Signal-Übersicht – auf abgeschlossenen ${S.ivName}-Kerzen, von −4 bis +4, neu bei jedem Kerzenschluss. Kräftig grün bzw. rot erst, wenn mindestens 3 der 4 Regeln in dieselbe Richtung zeigen (Long- bzw. Short-Tendenz). Den Zeitraum (1 Minute bis 1 Tag) wählst du im Detailfeld; die Zeitraum-Knöpfe des Charts ändern ihn nicht. Eine Beschreibung ${S.of}, kein Handelssignal mit nachgewiesenem Vorteil.`),
     el('p', '', 'Antippen zeigt darunter die Signale des Coins mit Erklärungen und lädt ihn im Chart weiter unten – die Seite springt nicht dorthin. „Bearbeiten“ entfernt Coins, „+ Coin“ nimmt den geöffneten Coin auf. Fehlen Daten (Coin lädt noch, keine Verbindung), steht neutral „–“.'),
     el('p', '', 'Reihenfolge ändern: eine Kachel etwa eine halbe Sekunde gedrückt halten und an den neuen Platz ziehen. In „Bearbeiten“ auch mit ◀ ▶ oder am Griff ⠿, mit der Tastatur Alt + Pfeiltaste auf einer Kachel. Die Reihenfolge wird gespeichert und ist Teil der Sicherung.'));
   tip.append(sum, body);
   head.append(el('span', 'wl-label', 'Vorauswahl'), tip);
-  const tools = el('span', 'wl-tools');
+  // 3.71.0: Filter nach der Tendenz und Sortierung (Score ↓ / eigene Reihenfolge) – gespeichert je Gerät
+  const filter = el('span', 'wl-filter'); filter.setAttribute('role', 'group'); filter.setAttribute('aria-label', 'Vorauswahl filtern');
+  for (const [k, t] of [['all', `Alle ${state.watch.length}`], ['strong', 'Stark ≥ +2'], ['weak', 'Schwach ≤ −2']]) { const b = btn('wl-fchip', t); b.dataset.wlfilter = k; b.setAttribute('aria-pressed', String(wlFilterKey() === k)); filter.append(b); }
+  head.append(filter);
+  const tools = el('span', 'wl-tools'), sortB = btn('wl-sortbtn', ''); sortB.dataset.wlsort = '1'; tools.append(sortB);
   if (state.watchEdit && state.watch.join() !== DEFAULT_WATCH.join()) { const reset = btn('chip-tool', 'Standard'); reset.dataset.watchreset = '1'; tools.append(reset); }
   const edit = btn('chip-tool', state.watchEdit ? 'Fertig' : 'Bearbeiten'); edit.dataset.watchedit = '1'; edit.setAttribute('aria-pressed', String(state.watchEdit)); tools.append(edit);
   head.append(tools);
   const grid = el('div', 'wl-grid');
   for (const coin of state.watch) {
     const item = el('span', 'wl-item'), tile = btn('wl-tile'), svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    tile.dataset.watch = coin; tile.setAttribute('aria-expanded', String(coin === wldSel)); tile.setAttribute('aria-controls', 'wl-detail');
-    svg.setAttribute('class', 'wl-spark'); svg.setAttribute('viewBox', '0 0 44 16'); svg.setAttribute('preserveAspectRatio', 'none'); svg.setAttribute('aria-hidden', 'true');
+    item.dataset.coin = coin; tile.dataset.watch = coin; tile.setAttribute('aria-expanded', String(coin === wldSel)); tile.setAttribute('aria-controls', 'wl-detail');
+    svg.setAttribute('class', 'wl-spark'); svg.setAttribute('viewBox', '0 0 100 24'); svg.setAttribute('preserveAspectRatio', 'none'); svg.setAttribute('aria-hidden', 'true');
     svg.append(document.createElementNS('http://www.w3.org/2000/svg', 'polyline'));
-    const r2 = el('span', 'wl-r2'), rules = el('span', 'wl-rules');
-    r2.append(el('span', 'wl-chg flat', `${S.label} –`));
-    for (const x of wlRules(null)) { const s = el('span', `wl-rule ${x.dir}`); s.append(el('span', '', x.label), el('i', '', x.arrow)); rules.append(s); }
-    tile.append(el('b', 'wl-sym', coin), svg, el('span', 'wl-price', '…'), el('span', 'wl-sig', '·'), r2, rules);
+    // 3.71.0: Kopf · Veränderung je Zeitraum · Verlauf mit Punkt · Trend/Kurs/MACD · RSI-Leiste (Werte schreibt wlPaint)
+    const top = el('span', 'wl-top'), tf = el('span', 'wl-tf'), spark = el('span', 'wl-sparkbox'), rules = el('span', 'wl-rules'), rsi = el('span', 'wl-rsi'), bar = el('span', 'wl-rsi-bar');
+    top.append(el('b', 'wl-sym', coin), el('span', 'wl-sig', '·'), el('span', 'wl-price', '…'));
+    for (const k of wlTfCols()) { const c = el('span', `wl-tfc${k === (wl?.span || wlSpanKey()) ? ' sel' : ''}`); c.dataset.tf = k; c.append(el('small', '', k), el('span', 'wl-tfv', '–')); tf.append(c); }
+    const dot = el('i', 'wl-dot'); dot.hidden = true; spark.append(svg, dot);
+    for (const x of wlRules(null).filter(x => x.k !== 'rsi')) { const r = el('span', `wl-rule ${x.dir}`); r.append(el('span', '', x.label), el('i', '', x.arrow)); rules.append(r); }
+    const knob = el('b'); knob.hidden = true; bar.append(el('i'), el('i'), knob); rsi.append(el('span', 'wl-rsi-l', 'RSI –'), bar);
+    tile.append(top, tf, spark, rules, rsi);
     item.append(tile);
     if (state.watchEdit) {
       const x = btn('chip-x', '×'); x.dataset.unwatch = coin; x.setAttribute('aria-label', `${coin} aus der Vorauswahl entfernen`); item.append(x);
@@ -4330,10 +4377,11 @@ function renderWatchlist() {
     }
     grid.append(item);
   }
+  const addItem = el('span', 'wl-item wl-add-item'), add = btn('wl-add', '+ Coin hinzufügen'); add.dataset.addcoin = '1'; addItem.append(add); grid.append(addItem);
   // das Detailfeld bleibt eingehängt (3.25.0): sonst verlöre die Zeitraum-Auswahl darin beim Wechsel den Fokus
   const d = wldBox();
   if (d.parentNode === box) { for (const n of [...box.childNodes]) if (n !== d) n.remove(); d.before(head, grid); } else box.replaceChildren(head, grid, d);
-  wlSortState(); wlMarkCurrent(base, showAdd);
+  wlSortState(); wlMarkCurrent(base, showAdd); wlHeadPaint();
   if (typeof wlPaint === 'function') wlPaint(Date.now(), true);
 }
 // Kachel des Coins im Chart markieren (Rahmen, Vorlesetext) und „+ Coin“ zeigen, ohne etwas neu aufzubauen
@@ -4344,10 +4392,35 @@ function wlMarkCurrent(base, showAdd) {
     if (cur) t.setAttribute('aria-current', 'true'); else t.removeAttribute('aria-current');
     if (cur && !sr) t.append(el('span', 'sr-only', ' (im Chart geöffnet)')); else if (!cur && sr) sr.remove();
   }
-  const tools = box.querySelector('.wl-tools'), old = tools?.querySelector('[data-addwatch]');
-  if (!tools || (old && showAdd && old.dataset.addwatch === base) || (!old && !showAdd)) return;
-  old?.remove();
-  if (showAdd) { const add = btn('chip add', '+ ' + base); add.dataset.addwatch = base; add.setAttribute('aria-label', `${base} zur Vorauswahl hinzufügen`); tools.prepend(add); }
+  // 3.71.0: „+ Coin hinzufügen“ als letzte Kachel – mit geöffnetem Coin außerhalb der Vorauswahl „+ SOL hinzufügen“
+  const add = box.querySelector('.wl-add'); if (!add) return;
+  if (showAdd) { add.dataset.addwatch = base; delete add.dataset.addcoin; add.textContent = `+ ${base} hinzufügen`; add.setAttribute('aria-label', `${base} zur Vorauswahl hinzufügen`); }
+  else { delete add.dataset.addwatch; add.dataset.addcoin = '1'; add.textContent = '+ Coin hinzufügen'; add.setAttribute('aria-label', 'Coin suchen und zur Vorauswahl hinzufügen'); }
+}
+// 3.71.0: Filter und Sortierung der Vorauswahl (je Gerät gespeichert); var: renderWatchlist kann vor diesem Abschnitt laufen
+var WL_FILTER_KEY = 'scalpdesk.wlfilter.v1', WL_SORT_KEY = 'scalpdesk.wlsort.v1';
+function wlFilterKey() { const v = store.get(WL_FILTER_KEY); return ['all', 'strong', 'weak'].includes(v) ? v : 'all'; }
+function wlSortKey() { return store.get(WL_SORT_KEY) === 'score' ? 'score' : 'own'; }
+function wlSortEff() { return state.watchEdit ? 'own' : wlSortKey(); }   // Bearbeiten zeigt immer die eigene Reihenfolge
+function wlHeadPaint() {
+  const box = $('watchlist'), f = wlFilterKey(), sb = box?.querySelector('[data-wlsort]'); if (!box) return;
+  for (const b of box.querySelectorAll('[data-wlfilter]')) b.setAttribute('aria-pressed', String(b.dataset.wlfilter === f));
+  const all = box.querySelector('[data-wlfilter="all"]'); if (all) all.textContent = `Alle ${state.watch.length}`;
+  if (sb) { const sc = wlSortKey() === 'score'; sb.textContent = sc ? 'Score ↓' : 'Eigene ↕'; sb.setAttribute('aria-pressed', String(sc)); sb.title = sc ? 'Sortiert nach Tendenz (höchster Score zuerst) – antippen: eigene Reihenfolge' : 'Eigene Reihenfolge – antippen: nach Tendenz sortieren'; sb.disabled = state.watchEdit; }
+}
+// Kacheln filtern und (bei „Score ↓“) nach der Tendenz ordnen – nur Umhängen, nichts neu bauen; nie während eine Kachel gezogen wird
+function wlArrange() {
+  const grid = $('watchlist')?.querySelector('.wl-grid'); if (!grid || wlDrag) return;
+  const f = wlFilterKey(), items = [...grid.querySelectorAll(':scope > .wl-item:not(.wl-add-item)')], addIt = grid.querySelector(':scope > .wl-add-item');
+  const score = it => wl?.c.get(wlSym(it.dataset.coin))?.rating?.score ?? null, idx = it => state.watch.indexOf(it.dataset.coin);
+  let shown = 0;
+  for (const it of items) { const sc = score(it), ok = f === 'all' || (sc !== null && (f === 'strong' ? sc >= 2 : sc <= -2)); if (it.hidden === ok) it.hidden = !ok; if (ok) shown++; }
+  const order = [...items].sort(wlSortEff() === 'score' ? (a, b) => (score(b) ?? -9) - (score(a) ?? -9) || idx(a) - idx(b) : (a, b) => idx(a) - idx(b));
+  order.forEach((it, i) => { if (grid.children[i] !== it) grid.insertBefore(it, grid.children[i] || null); });
+  if (addIt && grid.lastElementChild !== addIt) grid.append(addIt);
+  let empty = grid.querySelector(':scope > .wl-empty');
+  if (f !== 'all' && !shown) { if (!empty) { empty = el('span', 'wl-empty'); grid.insertBefore(empty, addIt); } wlSet(empty, 'textContent', f === 'strong' ? 'Gerade kein Coin mit Tendenz ≥ +2.' : 'Gerade kein Coin mit Tendenz ≤ −2.'); }
+  else empty?.remove();
 }
 
 // ---- 3.32.0 (G04.8–10): Vorauswahl umsortieren ----
@@ -4360,7 +4433,7 @@ function wlMarkCurrent(base, showAdd) {
 // her – keine Kachel geht verloren. Gespeichert wird die Reihenfolge der Kürzel (state.watch, Sicherung „watchlist“).
 var WL_HOLD = 450, WL_SLOP = 8, wlDrag = null, wlPress = null, wlNoClickUntil = 0;
 function wlSortState() {
-  const items = [...document.querySelectorAll('#watchlist .wl-grid > .wl-item')], n = items.length;
+  const items = [...document.querySelectorAll('#watchlist .wl-grid > .wl-item:not(.wl-add-item)')], n = items.length;
   items.forEach((it, i) => {
     const prev = it.querySelector('[data-wlmove="-1"]'), next = it.querySelector('[data-wlmove="1"]'), grip = it.querySelector('.wl-grip'), c = grip?.dataset.coin;
     if (prev) prev.disabled = i === 0; if (next) next.disabled = i === n - 1;
@@ -4401,7 +4474,7 @@ function wlDragMove(x, y) {
   const d = wlDrag; if (!d) return; d.x = x; d.y = y;
   d.ghost.style.transform = `translate(${x - d.x0}px, ${y - d.y0}px) scale(1.04)`;
   for (const it of d.grid.children) {
-    if (it === d.item) continue; const r = it.getBoundingClientRect();
+    if (it === d.item || it.hidden || !it.dataset.coin) continue; const r = it.getBoundingClientRect();
     if (x < r.left || x > r.right || y < r.top || y > r.bottom) continue;
     const kids = [...d.grid.children], a = kids.indexOf(d.item), b = kids.indexOf(it);
     d.grid.insertBefore(d.item, a < b ? it.nextSibling : it); break;
@@ -4429,6 +4502,7 @@ $('watchlist').addEventListener('pointerdown', e => {
   if (wlDrag || !e.isPrimary || (e.pointerType === 'mouse' && e.button !== 0)) return;
   const grip = e.target.closest('.wl-grip'), tile = e.target.closest('.wl-tile'), item = (grip || tile)?.closest('.wl-grid > .wl-item'); if (!item) return;
   if (grip) { e.preventDefault(); wlDragStart(item, e, true); return; }
+  if (wlSortEff() === 'score' || wlFilterKey() !== 'all') return;   // 3.71.0: verschoben wird nur in der eigenen, ungefilterten Reihenfolge
   wlPressClear();
   const p = { id: e.pointerId, x: e.clientX, y: e.clientY, lx: e.clientX, ly: e.clientY, target: tile };
   p.t = setTimeout(() => { if (wlPress !== p) return; wlPress = null; wlDragStart(item, { pointerId: p.id, clientX: p.lx, clientY: p.ly, target: p.target }, false); }, WL_HOLD);
@@ -4974,15 +5048,15 @@ function renderOpenPositions() {
   $('pos-empty').hidden = state.positions.length + state.demoPositions.length > 0 || !$('pos-form').hidden;
   // 3.32.0 (G04.7): Fehlt zu einer Position ein aktueller Kurs (keiner oder älter als 60 s), ist die Summe nur eine Teilsumme der
   // übrigen – so beschriftet, mit den fehlenden Coins; ohne einen einzigen aktuellen Kurs gibt es keine Summe
-  let total = 0, missing = 0; const gone = [];
-  for (const card of list.children) { const pos = state.positions.find(p => p.id === card.dataset.id); if (!pos) continue; const m = updateCard(card, pos); if (m.pnl === null || !m.fresh) { missing++; gone.push(`${coin(pos.symbol)} (${m.pnl === null ? 'kein Kurs' : 'Kurs veraltet'})`); } else total += m.pnl; }
+  let total = 0, missing = 0; const gone = [], rows = [];   // 3.71.0: rows – Ergebnis je Position (Bild beim Gewinn-/Verlust-Alarm)
+  for (const card of list.children) { const pos = state.positions.find(p => p.id === card.dataset.id); if (!pos) continue; const m = updateCard(card, pos); if (m.pnl === null || !m.fresh) { missing++; gone.push(`${coin(pos.symbol)} (${m.pnl === null ? 'kein Kurs' : 'Kurs veraltet'})`); } else { total += m.pnl; rows.push({ symbol: pos.symbol, side: pos.side, pnl: m.pnl }); } }
   const n = state.positions.length, part = missing > 0 && missing < n, none = n > 0 && missing === n;
   $('open-total').textContent = !n || none ? '—' : `${signed(total)} USDT`; color('open-total', n && !none ? total : 0);
   put('open-total-label', part ? 'Offen – Teilsumme' : 'Offen, nicht realisiert'); $('open-total').classList.toggle('partial', part);
   renderDay(total);
   put('open-total-eur', (n ? `${none ? 'kein aktueller Kurs' : eurOpen(total)}${missing ? ` · ohne ${gone.join(', ')}` : ''} · ${n} offen` : 'keine offene Position') + quarMark('pos'));
   if (!$('pos-form').hidden) updateEntryNow();
-  state.openTotal = { total, missing, n, gone };
+  state.openTotal = { total, missing, n, gone, rows };
   // 3.31.0 (G03.11): zugeklappt zeigt die Überschrift das Wichtigste in einer Zeile
   if ($('pos-over').open) put('pos-over-sub', 'Von dir erfasst · Live-Kurs von Binance · USDT (Euro)');
   else { const d = dayStats(state.trades), ib = !$('integrity-banner').hidden, due = !$('backup-due').hidden && !$('data-toggle').classList.contains('ok');
@@ -6326,7 +6400,9 @@ function triggerAlarm(a, price, info = {}) {
   // 3.26.0: meldet der 24/7-Dienst diesen Alarm, bleibt er noch 3 Minuten in der Übergabe (sonst könnte er ihn verpassen)
   const key = `al:${a.id}:${a.armedAt || a.createdAt}`; a.svcAt = s247Covers('alarm', key) ? Date.now() : 0;
   if (a.svcAt) setTimeout(() => scheduleS247(0), S247_GRACE + 1500);
-  void notifyChannels('alarm', key, formatMessage('alarm', { symbol: a.symbol, direction: a.dir, level: a.price, price, reached: howReached(info), note: a.note }), 864e5, { ev: alarmEventId(a) });
+  // 3.71.0: Bild mit denselben Werten (Kurs, Level, Abstand, Auslösung, Notiz); die Textmeldung bleibt der Ersatz
+  const card = { symbol: a.symbol, direction: a.dir, level: a.price, price, reached: howReached(info), note: a.note || '', at: Date.now(), timezone: PAT_TZ };
+  void notifyChannels('alarm', key, formatMessage('alarm', { symbol: a.symbol, direction: a.dir, level: a.price, price, reached: howReached(info), note: a.note }), 864e5, { ev: alarmEventId(a), card });
   simpleToast('al:' + a.id, 'alarm ' + (a.dir === 'above' ? 'up' : 'down'), `🔔 ${what} ${howReached(info)} · Kurs ${priceText(price)}${a.note ? ' – ' + a.note : ''}`, null, a.dir === 'above' ? 'green' : 'orange');
 }
 // Stop, Ziel und Kurs-Alarme prüfen – bei jeder Kursmeldung aus dem Stream und nach jedem REST-Abruf.
@@ -6402,7 +6478,8 @@ function openAlarmForm(open, sym = null, price = null) {
   $('alarm-form').hidden = !open; $('alarm-toggle').setAttribute('aria-expanded', String(open)); showNotice('al-error', null);
   if (!open) return;
   state.alDirManual = false; $('al-symbol').value = sym ? coin(sym) : coin(state.symbol); $('al-price').value = price ? plain(price) : ''; $('al-note').value = '';
-  alarmPreview(); $('alarms').scrollIntoView({ behavior: 'smooth', block: 'start' }); focusSoft($('al-price'));
+  // 3.71.0: über goTo – in der Bereichs-Navigation (Handy, PC) lag „Alarme“ in einem anderen Bereich, das Formular öffnete unsichtbar
+  alarmPreview(); goTo('alarms'); focusSoft($('al-price'));
 }
 async function saveAlarm(e) {
   e.preventDefault();
@@ -6703,7 +6780,7 @@ function renderChartContent(levels={}, ov={}, start=null, end=null) {
   const gridN=axisIn && bottom-top>420 ? 6 : 4, axisTags=[], lastTag=lastTagBox(state.candles.at(-1)?.close, {y, min, max, top, bottom, w, axisIn, data, x, step});
   for(let i=0;i<=gridN;i++) {const v=min+(max-min)*i/gridN,yy=y(v);svg.append(node('line',{x1:left,y1:yy,x2:w-right+4,y2:yy,class:'grid-line'}));
     if(lastTag && yy>lastTag.y-10 && yy<lastTag.y+lastTag.h+10) continue; // 3.3: das Kurs-Schild hat Vorrang vor der Rasterbeschriftung
-    if(!axisIn) svg.append(node('text',{x:w-right+10,y:yy+4,class:'axis-label'},priceText(v))); else if(i>0 && i<gridN) axisTags.push([yy,priceText(v)]);}
+    if(!axisIn) svg.append(node('text',{x:w-right+10,y:yy+4,class:'axis-label y-axis'},priceText(v))); else if(i>0 && i<gridN) axisTags.push([yy,priceText(v)]);}
   // rechte Beschriftungen (Einstieg, SL/TP, Alarme) enden am Handy hochkant vor den Kurs-Schildchen
   const laneW=[...axisTags.map(([,t])=>t.length*7+10), ...(axisIn && lastTag ? [lastTagW(lastTag, true)] : [])], laneX=laneW.length ? w-6-Math.max(...laneW) : Infinity, rx=Math.min(left+pw-6, laneX-4);
   const defs=node('defs',{}), clip=node('clipPath',{id:'plot-clip'}); clip.append(node('rect',{x:left,y:top,width:pw,height:bottom-top})); defs.append(clip); svg.append(defs);
@@ -6769,14 +6846,14 @@ function renderChartContent(levels={}, ov={}, start=null, end=null) {
   const cross=node('line',{x1:0,y1:top,x2:0,y2:h-30,class:'crosshair',visibility:'hidden'});svg.append(cross);
   function select(i) {i=Math.max(0,Math.min(data.length-1,i));state.selected=i;const c=data[i];state.selectedTime=c.time;cross.setAttribute('x1',x(i));cross.setAttribute('x2',x(i));cross.setAttribute('visibility','visible');put('ohlc',`${utcDate(c.time)} UTC · O ${priceText(c.open)}  H ${priceText(c.high)}\nL ${priceText(c.low)}  C ${priceText(c.close)}`);}
   const clear=()=>{cross.setAttribute('visibility','hidden');state.selected=null;state.selectedTime=null;put('ohlc',`O ${priceText(last.open)}  H ${priceText(last.high)}\nL ${priceText(last.low)}  C ${priceText(last.close)}`);};
-  chartGeom={w,h,left,pw:step*data.length,step,top,bottom,min,max,y,count:data.length,data,levels,prof,bbU,bbL,bbM,e200,select,clear,axisIn};
+  chartGeom={w,h,left,pw:step*data.length,plotW:pw,offset,step,top,bottom,min,max,y,count:data.length,data,levels,prof,bbU,bbL,bbM,e200,select,clear,axisIn};
   container.onkeydown=event=>{if(['ArrowLeft','ArrowRight'].includes(event.key)){event.preventDefault();select((state.selected??data.length-1)+(event.key==='ArrowLeft'?-1:1));}if(event.key==='+' || event.key==='-'){event.preventDefault();zoom(event.key==='+'?.7:1.4);}};
   for (const t of svg.querySelectorAll('.pat-label')) svg.append(t); // 3.37.0 (G09): Muster-Labels zuoberst, damit sie antippbar sind
   if (kizLabels) svg.append(kizLabels);
   if (zs?.on) zoneSignalsDraw(svg, over, { data, x, y, left, pw, top, bottom, min, max, rx }); // 3.68.1: Ein-/Ausstiegssignale
   musterDraw(svg, data, x, y, bottom);
   container.replaceChildren(svg);
-  declutterChart(svg, {top, bottom, left, right: left+pw});
+  if (!chartLite && !chartLive.on) declutterChart(svg, {top, bottom, left, right: left+pw}); // 3.71.0: während einer Geste nicht (getBBox ist teuer), am Ende der Geste schon
   const keep=state.selectedTime!=null?data.findIndex(c=>c.time===state.selectedTime):-1;
   if(keep>=0)select(keep);else{state.selected=null;put('ohlc',`O ${priceText(last.open)}  H ${priceText(last.high)}\nL ${priceText(last.low)}  C ${priceText(last.close)}`);}
   magnetRedraw();
@@ -6878,8 +6955,11 @@ $('watchlist').addEventListener('click',e=>{
   if(t.dataset.wlmove){const c=t.dataset.coin;wlMoveTo(c,state.watch.indexOf(c)+Number(t.dataset.wlmove));return;}
   if(t.classList.contains('wl-grip'))return;
   if(t.dataset.addwatch){if(!state.watch.includes(t.dataset.addwatch)){state.watch.push(t.dataset.addwatch);touchStamp(LISTS_AT_KEY,'watch');}saveWatch();renderWatchlist();return;}
+  if(t.dataset.addcoin){const f=$('symbol');if(f){f.scrollIntoView({block:'center',behavior:'smooth'});f.focus({preventScroll:true});f.select?.();}return;} // 3.71.0: Coin suchen
+  if(t.dataset.wlfilter){store.set(WL_FILTER_KEY,t.dataset.wlfilter);wlHeadPaint();wlArrange();return;}
+  if(t.dataset.wlsort){store.set(WL_SORT_KEY,wlSortKey()==='score'?'own':'score');wlHeadPaint();wlArrange();return;}
   if(t.dataset.unwatch){state.watch=state.watch.filter(s=>s!==t.dataset.unwatch);touchStamp(LISTS_AT_KEY,'watch');saveWatch();renderWatchlist();return;}
-  if(t.dataset.watchedit){state.watchEdit=!state.watchEdit;renderWatchlist();return;}
+  if(t.dataset.watchedit){state.watchEdit=!state.watchEdit;renderWatchlist();wlHeadPaint();wlArrange();return;}
   if(t.dataset.watchreset){state.watch=[...DEFAULT_WATCH];touchStamp(LISTS_AT_KEY,'watch');saveWatch();renderWatchlist();}
 });
 // ---- 3.32.0 (G04.1): Chart-Ebenen, die sich nicht berechnen lassen, sichtbar sperren ----
@@ -7077,41 +7157,99 @@ $('pan-back').addEventListener('click',()=>{const v=chartViewState();CAP.on?capP
 $('pan-fwd').addEventListener('click',()=>{const v=chartViewState();CAP.on?capPan(-1):setPan(v.pan-Math.max(1,Math.round(Math.min(v.count,chartRows().length)*.4)));});
 $('pan-now').addEventListener('click',()=>CAP.on?capPan(0):chartNow());
 $('zoom-reset').addEventListener('click',chartViewReset);
-// Gesten: ein Finger wischen = blättern, zwei Finger = zoomen, Tippen = Kerze wählen, doppelt tippen = zurück zu jetzt
+// Gesten: ein Finger wischen = blättern, zwei Finger = zoomen (und dabei verschieben), Tippen = Kerze wählen, doppelt tippen = zurück zu jetzt.
+// 3.71.0: flüssig auf allen Geräten – während einer Geste (Finger, Maus, Trackpad, Mausrad) folgt das fertige Chartbild dem Finger in jedem
+// Bild per Strecken/Verschieben (auch um Bruchteile einer Kerze); neu gezeichnet wird nur, wenn das letzte Zeichnen fertig ist und einige
+// Bilder vergangen sind (vereinfacht, Abstand je nach Zeichendauer), am Ende der Geste einmal genau und vollständig. Wischen läuft mit
+// Schwung aus; beim Zoomen mit zwei Fingern scrollt die Seite nicht mehr mit.
 (()=>{
-  const box=$('chart'), pts=new Map(); let g=null, lastTap=0;
-  const frac=clientX=>{const b=box.getBoundingClientRect(),G=chartGeom;return G?clamp(((clientX-b.left)*G.w/b.width-G.left)/G.pw,0,1):1;};
+  const box=$('chart'), pts=new Map(), L=chartLive; let g=null, lastTap=0;
+  Object.assign(L,{on:false,count:0,pan:0,raf:0,next:0,ms:20,r:null,fs:0,end:false,fling:null,idle:0});
+  const vx=clientX=>{const b=box.getBoundingClientRect(),G=chartGeom;return G?(clientX-b.left)*G.w/b.width:0;};
+  const frac=clientX=>{const G=chartGeom;return G?clamp((vx(clientX)-G.left)/G.pw,0,1):1;};
   const idxAt=clientX=>{const G=chartGeom;return G?Math.floor(frac(clientX)*G.count):0;};
-  const hideHint=()=>{};
+  const len=()=>chartRows().length, lim=()=>{const n=len();return [Math.min(15,n),Math.max(15,Math.min(detailReady()?DETAIL_VISIBLE_MAX:n,n))];};
+  // Kerzenbreite für n Kerzen (rechts Platz für Prognosen wie beim letzten Zeichnen) und erste Kerze des Ziels (Bruchteile erlaubt)
+  const stepFor=(n,p=L.pan)=>L.r?L.r.plotW/(n+(p>.5?0:L.fs*n)):1, geo=()=>({step:stepFor(L.count),start:len()-L.pan-L.count});
+  function target(n,p){const N=len();if(!N)return;const [lo,hi]=lim();L.count=clamp(n,lo,hi);L.pan=clamp(p,0,Math.max(0,N-L.count));}
+  function afterDraw(){
+    const G=chartGeom; if(!G)return; L.r={offset:G.offset,step:G.step,left:G.left,plotW:G.plotW};
+    if(!(chartViewState().pan>0))L.fs=Math.max(0,G.plotW/G.step-G.count)/Math.max(1,G.count); apply();
+  }
+  L.afterDraw=afterDraw;
+  function begin(){ if(L.on)return true; if(!chartGeom||CAP.on||!len())return false; const v=chartViewState(); Object.assign(L,{on:true,end:false,fling:null,next:0,count:Math.min(v.count,len()),pan:v.pan}); afterDraw(); return true; }
+  // Ebene, die mit den Kerzen wandert: Preisachse, Kurs-Schild und Rasterlinien bleiben stehen, der Rest wird auf die Zeichenfläche beschnitten
+  function layer(){
+    const svg=box.querySelector(':scope > svg'), G=chartGeom; if(!svg||!G)return null;
+    let inner=svg.querySelector(':scope > g.lv-clip > g'); if(inner)return inner;
+    const defs=svg.querySelector(':scope > defs'); if(!defs)return null;
+    const cp=node('clipPath',{id:'lv-clip'}); cp.append(node('rect',{x:G.left,y:0,width:G.plotW,height:G.h})); defs.append(cp);
+    const fixed=el=>el.tagName==='defs'||el.matches('.grid-line,.y-axis,.axis-tag,.axis-in,.last-line,.last-tag'), moving=[...svg.children].filter(el=>!fixed(el)); if(!moving.length)return null;
+    const outer=node('g',{class:'lv-clip','clip-path':'url(#lv-clip)'}); inner=node('g',{}); outer.append(inner); svg.insertBefore(outer,moving[0]); inner.append(...moving); return inner;
+  }
+  function apply(){
+    const r=L.r; if(!L.on||!r)return; const {step,start}=geo(), a=step/r.step, b=r.left*(1-a)+(r.offset-start)*step, same=Math.abs(a-1)<1e-4&&Math.abs(b)<.05;
+    const lay=same?box.querySelector(':scope > svg > g.lv-clip > g'):layer(); if(lay)lay.setAttribute('transform',same?'':`matrix(${a.toFixed(5)} 0 0 1 ${b.toFixed(2)} 0)`);
+  }
+  function commit(lite){
+    const N=len(); if(!N)return; const v=chartViewState(), [lo,hi]=lim(), n=clamp(Math.round(L.count),lo,hi);
+    v.count=n; chartLite=lite; try{ setPan(clamp(Math.round(L.pan),0,Math.max(0,N-n))); drawChart(); } finally { chartLite=false; }
+  }
+  function frame(now){
+    L.raf=0; if(!L.on)return;
+    if(L.fling){ const f=L.fling, dt=Math.min(48,now-f.t); f.t=now; target(L.count,L.pan+f.v*dt); f.v*=Math.pow(.94,dt/16); if(Math.abs(f.v)*16<.02*L.count/50||L.pan<=0||L.pan>=len()-L.count){L.fling=null;L.end=true;} }
+    if(L.end&&!L.fling){ L.end=false; L.on=false; commit(false); return; }   // Ende der Geste: genau und vollständig zeichnen
+    const v=chartViewState(), need=Math.round(L.count)!==Math.min(v.count,len())||Math.round(L.pan)!==v.pan;
+    if(need&&now>=L.next){ const t0=performance.now(); commit(true); const d=performance.now()-t0; L.ms=L.ms*.6+d*.4; L.next=performance.now()+Math.max(50,L.ms*2.5); }
+    apply(); if(L.fling||need)L.raf=requestAnimationFrame(frame);
+  }
+  const kick=()=>{ if(!L.raf)L.raf=requestAnimationFrame(frame); }, finish=()=>{ if(L.on){ L.end=true; kick(); } };
   box.addEventListener('pointerdown',e=>{
-    if(!chartGeom||CAP.on)return; pts.set(e.pointerId,{x:e.clientX,y:e.clientY}); try{box.setPointerCapture(e.pointerId);}catch{}
-    const v=chartViewState();if(pts.size===1)g={type:'tap',x0:e.clientX,y0:e.clientY,pan0:v.pan,count0:v.count};
-    else if(pts.size===2){const [a,b]=[...pts.values()];g={type:'pinch',d0:Math.max(20,Math.abs(a.x-b.x)),f:frac((a.x+b.x)/2),count0:v.count,pan0:v.pan};hideHint();}
+    if(!chartGeom||CAP.on)return; L.fling=null; pts.set(e.pointerId,{x:e.clientX,y:e.clientY}); try{box.setPointerCapture(e.pointerId);}catch{}
+    if(pts.size===1)g={type:'tap',x0:e.clientX,y0:e.clientY,trail:[]};
+    else if(pts.size===2&&begin()){const [a,b]=[...pts.values()], s=geo();g={type:'pinch',d0:Math.max(20,Math.abs(a.x-b.x)),idx:s.start+(vx((a.x+b.x)/2)-chartGeom.left)/s.step,count0:L.count};}
   });
   box.addEventListener('pointermove',e=>{
     if(!chartGeom)return;
     if(!pts.has(e.pointerId)){if(e.pointerType==='mouse')chartGeom.select(idxAt(e.clientX));return;}
     pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
-    if(g?.type==='pinch'&&pts.size>=2){const [a,b]=[...pts.values()];setView(g.count0*g.d0/Math.max(20,Math.abs(a.x-b.x)),g.f,g.count0,g.pan0);}
-    else if(g&&pts.size===1){
+    if(g?.type==='pinch'&&pts.size>=2){
+      // die Kerze unter der Fingermitte bleibt unter der Fingermitte – zoomen und gleichzeitig verschieben
+      const [a,b]=[...pts.values()], [lo,hi]=lim(), n=clamp(g.count0*g.d0/Math.max(20,Math.abs(a.x-b.x)),lo,hi), start=g.idx-(vx((a.x+b.x)/2)-chartGeom.left)/stepFor(n);
+      target(n,len()-start-n); kick();
+    } else if(g&&pts.size===1){
       const dx=e.clientX-g.x0;
-      if(g.type==='tap'&&Math.abs(dx)>8&&Math.abs(dx)>Math.abs(e.clientY-g.y0)){g.type='pan';hideHint();}
-      if(g.type==='pan'){const b=box.getBoundingClientRect(),perPx=chartGeom.count/(b.width*chartGeom.pw/chartGeom.w);setPan(g.pan0+dx*perPx);}
+      if(g.type==='tap'&&Math.abs(dx)>8&&Math.abs(dx)>Math.abs(e.clientY-g.y0)&&begin()){g.type='pan';g.pan0=L.pan;g.x0=e.clientX;}
+      if(g.type==='pan'){const b=box.getBoundingClientRect();target(L.count,g.pan0+(e.clientX-g.x0)*chartGeom.w/b.width/geo().step);g.trail.push([e.timeStamp,e.clientX]);if(g.trail.length>6)g.trail.shift();kick();}
       else if(e.pointerType==='mouse')chartGeom.select(idxAt(e.clientX));
     }
   });
   const end=e=>{
     if(!pts.has(e.pointerId))return; pts.delete(e.pointerId);
     if(g?.type==='tap'&&e.type==='pointerup'){if(magnet.on&&magnetCommit(e))lastTap=0;else{const now=Date.now();if(now-lastTap<320){setPan(0);lastTap=0;}else{lastTap=now;chartGeom?.select(idxAt(e.clientX));}}}
-    if(pts.size===0||g?.type==='pinch')g=pts.size===1?{type:'none'}:null;
+    if(g?.type==='pinch'&&pts.size===1){const [p]=[...pts.values()];g={type:'pan',x0:p.x,y0:p.y,pan0:L.pan,trail:[]};return;} // ein Finger bleibt: weiter blättern
+    if(pts.size)return;
+    if(g?.type==='pan'&&e.type==='pointerup'&&g.trail.length>=2){
+      // Schwung: Geschwindigkeit der letzten Bewegung (Pixel je ms) → Kerzen je ms, läuft mit Reibung aus
+      const [t0,x0]=g.trail[0],[t1,x1]=g.trail.at(-1), vpx=t1>t0?(x1-x0)/(t1-t0):0, b=box.getBoundingClientRect();
+      if(e.timeStamp-t1<90&&Math.abs(vpx)>.25){L.fling={v:clamp(vpx,-4,4)*chartGeom.w/b.width/geo().step,t:performance.now()};g=null;kick();return;}
+    }
+    g=null; finish();
   };
   box.addEventListener('pointerup',end); box.addEventListener('pointercancel',end);
   box.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse'&&!pts.size)chartGeom?.clear();});
   box.addEventListener('gesturestart',e=>e.preventDefault());
+  // zwei Finger auf dem Chart (oder waagrechtes Blättern): die Seite scrollt nicht mit
+  box.addEventListener('touchmove',e=>{if(e.touches.length>1||g?.type==='pan'||g?.type==='pinch')e.preventDefault();},{passive:false});
   box.addEventListener('wheel',e=>{
     if(!chartGeom||CAP.on)return;
-    const v=chartViewState();if(e.ctrlKey){e.preventDefault();setView(v.count*Math.exp(e.deltaY*.01),frac(e.clientX));hideHint();}
-    else if(Math.abs(e.deltaX)>Math.abs(e.deltaY)){e.preventDefault();setPan(v.pan+e.deltaX/8);hideHint();}
+    const zoomIt=e.ctrlKey, side=!zoomIt&&Math.abs(e.deltaX)>Math.abs(e.deltaY); if(!zoomIt&&!side)return;
+    e.preventDefault(); if(!begin())return; L.fling=null;
+    const px=e.deltaMode===1?16:e.deltaMode===2?400:1, s=geo(), b=box.getBoundingClientRect();
+    // Strg+Mausrad/Trackpad-Zoom um den Mauszeiger; ein grober Mausrad-Schritt zoomt höchstens etwa 1,65-fach
+    if(zoomIt){const x=vx(e.clientX)-chartGeom.left, idx=s.start+x/s.step, [lo,hi]=lim(), n=clamp(L.count*Math.exp(clamp(e.deltaY*px,-50,50)*.01),lo,hi);target(n,len()-(idx-x/stepFor(n))-n);}
+    else target(L.count,L.pan+e.deltaX*px*chartGeom.w/b.width/s.step);
+    kick(); clearTimeout(L.idle); L.idle=setTimeout(finish,160);
   },{passive:false});
 })();
 // Takt und Live-Kurse kommen aus dem Web Worker (siehe startLive)
@@ -7583,6 +7721,9 @@ function missedCheck(sym, candles, from) {
   renderAlarms(); renderOpenPositions(); renderLivebar();
 }
 // ---------- Live-Leiste ----------
+// 3.71.0: Live-Wert der offenen Positionen in der Kopfzeile ein-/ausblenden (Einstellungen → Darstellung & App → Kopfzeile)
+var LBOPEN_KEY = 'scalpdesk.lb-open.v1', lbOpenOn = store.get(LBOPEN_KEY, true) !== false;   // var: renderLivebar kann schon vorher laufen
+function renderLbOpenToggle() { const b = $('lb-open-toggle'); if (!b) return; b.textContent = `👁 Live-Wert offener Positionen: ${lbOpenOn ? 'an' : 'aus'}`; b.setAttribute('aria-pressed', String(lbOpenOn)); b.classList.toggle('sound-on', lbOpenOn); }
 function renderLivebar() {
   const last = state.loadedSymbol === state.symbol ? state.candles.at(-1) : null;
   put('lb-sym', state.symbol.slice(0, -4)); put('lb-price', last ? priceText(last.close) : '—');
@@ -7595,6 +7736,8 @@ function renderLivebar() {
   // 3.31.0 (G03.9): offener G/V auch in Euro – derselbe Live-Kurs wie in der Positionsübersicht, veraltet mit Kurszeit
   const oe = !o?.n || oNone ? '' : (() => { const f = fxLive(); return !f ? '(€ n. v.)' : `(${signed(o.total / f.v)} €${f.stale ? ' · Kurs veraltet' : ''})`; })();
   put('lb-open-eur', oe); color('lb-open-eur', o?.n ? o.total : 0); $('lb-open-eur').title = o?.n ? fxLiveNote() : '';
+  if (lbOpenOn === false) { put('lb-open', '•••'); color('lb-open', 0); put('lb-open-eur', ''); put('lb-open-label', 'Offen'); $('lb-pos').title = 'Live-Wert ausgeblendet – einblenden unter Einstellungen → Darstellung & App → Kopfzeile'; }
+  $('lb-pos').dataset.masked = String(lbOpenOn === false);
   // Heute realisiert: Summe der eingefrorenen Euro-Werte der heutigen Buchungen (nicht zum aktuellen Kurs)
   const d = dayStats(state.trades); put('lb-day', `${signed(d.pnl)} USDT`); color('lb-day', d.pnl);
   const n0 = new Date(), d0 = new Date(n0.getFullYear(), n0.getMonth(), n0.getDate()).getTime(), d1 = new Date(n0.getFullYear(), n0.getMonth(), n0.getDate() + 1).getTime();
@@ -8350,6 +8493,36 @@ function chanSend(k, text, test = false, kind = 'test', opts = {}) {
   if (opts.coord) m.coord = true; // 3.33.0: Alarm-Ereignis – kein blinder zweiter Versuch
   return new Promise(resolve => { sendWait.set(id, { k, resolve, test, label: test ? '' : chanLabel(text) }); live.post(m); });
 }
+// 3.71.0: Gewinn-/Verlust-Alarm und Kurs-Alarm als Bild (opts.card) mit einzeiliger Bildunterschrift; Bild nicht erzeugbar oder von
+// Telegram abgelehnt (ohne Chat-Problem) → die bisherige Textmeldung über chanSend. Verlorene Antwort: unbestätigt, kein zweiter Versand.
+const CARD_KINDS = { pnl: [pnlAlarmCard, 'gewinn-verlust.png'], alarm: [priceAlarmCard, 'kurs-alarm.png'] };
+const tgBotNames = new Map();
+const ALARM_TEST_CARD = () => ({ symbol: 'BTCUSDT', direction: 'above', level: 81840, price: 81840.13, reached: 'erreicht', at: Date.now() });
+const PNL_TEST_CARD = () => ({ profit: false, pnl: -170.1, level: 170, count: 3, fx: (f => f && !f.stale ? f.v : 1.1185)(fxLive()), at: Date.now(), positions: [{ symbol: 'BTCUSDT', side: 'long', pnl: -92.4 }, { symbol: 'ETHUSDT', side: 'short', pnl: 18.7 }, { symbol: 'SOLUSDT', side: 'long', pnl: -96.4 }] });
+async function tgBotName(token) {
+  if (!token) return ''; if (tgBotNames.has(token)) return tgBotNames.get(token);
+  let name = s247?.meTok === token ? s247.me?.first_name || '' : '';
+  if (!name) { try { name = (await tgApi(token, 'getMe'))?.first_name || ''; } catch { /* nur Anzeige */ } }
+  tgBotNames.set(token, name); return name;
+}
+async function chanSendCard(k, text, test = false, kind = 'test', opts = {}) {
+  const K = CARD_KINDS[kind], T = k === 'tg' && opts.card && K ? tgTarget(kind) : null; if (!T) return chanSend(k, text, test, kind, opts);
+  let m = null;
+  try {
+    const { svg, width, height, caption } = K[0]({ ...opts.card, bot: await tgBotName(T.token) }, { timezone: opts.card.timezone || PAT_TZ });
+    // Bildunterschrift eine Zeile; nur ein Hinweis (z. B. „Von der App gesendet · Dienst nicht erreichbar“) kommt als zweite Zeile dazu
+    const blob = await svgPngBlob(svg, width, height), cap = (test ? 'TEST · ' : '') + caption + (opts.cardNote ? '\n' + opts.cardNote : '');
+    m = await patPostCard(T, blob, cap, { html: false, name: K[1], silent: !!opts.silent });
+    // „Too Many Requests“: die genannte Wartezeit abwarten (höchstens 30 s) und das Bild noch einmal senden
+    if (m.code === 429) { await new Promise(r => setTimeout(r, Math.min(30, m.retry || 5) * 1000 + 300)); m = await patPostCard(T, blob, cap, { html: false, name: K[1], silent: !!opts.silent }); }
+    const done = (ok, txt) => { chanState.tg = { ok, at: Date.now(), text: txt }; renderChanStatus(); renderChanSummary(); };
+    if (m.ok) { if (!test) store.set(CHANLAST_KEY, { ...(store.get(CHANLAST_KEY) || {}), tg: { at: Date.now(), label: chanLabel(text) } }); done(true, 'zugestellt'); return m; }
+    // Antwort verloren: kein zweiter Versuch (die Meldung könnte schon angekommen sein) – nur ohne Netz (sicher nicht gesendet) weiter mit Text
+    if (m.lost && !(self.navigator && navigator.onLine === false)) { done(false, 'Zustellung unbestätigt – keine Antwort von Telegram; kein zweiter Versuch, damit die Meldung nicht doppelt kommt'); return { ...m, code: 0, msg: 'Keine Antwort von Telegram – Zustellung unbestätigt' }; }
+    if (m.chat) { const r = { ok: false, code: m.code, msg: m.msg }; done(false, chanError('tg', r)); return r; }
+  } catch { /* Bild nicht erzeugbar → Text */ }
+  return chanSend(k, text, test, kind, opts);
+}
 function chanError(k, m) {
   if (m.code === -1) return 'Ziel nicht eingerichtet – in „Telegram einrichten“ eine Chat-ID dafür eintragen.';
   if (!m.code) return `Keine Verbindung zu ${CHAN_NAME[k]} – Internet, Werbeblocker oder Firmen-Firewall prüfen.`;
@@ -8381,7 +8554,7 @@ async function notifyChannels(type, key, text, ttl, opts = {}) {
   if (!(await store.claim(key, ttl))) return;
   chanClaimed.add(key);
   const msg = finishTelegram(text, Date.now());
-  for (const k of ks) void chanSend(k, msg, false, type, { ...opts, coord: strict }); // opts.silent: lautlos (BTC-Puls nachts); strict: kein blinder zweiter Versuch
+  for (const k of ks) void chanSendCard(k, msg, false, type, { ...opts, coord: strict }); // opts.silent: lautlos (BTC-Puls nachts); strict: kein blinder zweiter Versuch; 3.71.0: opts.card → Bild
 }
 // Kurs wieder weg von der Marke: nächste Berührung darf erneut melden (nur für selbst gesendete Meldungen)
 function chanRelease(key) { if (chanClaimed.delete(key)) void store.release(key); }
@@ -8491,7 +8664,9 @@ async function chanTestAll() {
   const off = [...new Set(TG_TESTS.map(([kind]) => TG_ROUTE[kind]).filter(id => tgDest(id) && !tgtOn(id)))]; // 3.33.0: Ziel AUS – auch kein Test dorthin
   for (const [kind, name] of TG_TESTS) {
     if (off.includes(TG_ROUTE[kind])) continue;
-    const r = await chanSend('tg', formatMessage('notice', { headline: '🧪 TEST · ' + name, lines: ['Gehört in: ' + (TG_ROUTE[kind] === 'backup' ? 'Sicherungschat' : TG_ROUTE[kind] === 'trades' ? 'Trades' : 'Kursalarm')], at: Date.now() }), true, kind);
+    const text = formatMessage('notice', { headline: '🧪 TEST · ' + name, lines: ['Gehört in: ' + (TG_ROUTE[kind] === 'backup' ? 'Sicherungschat' : TG_ROUTE[kind] === 'trades' ? 'Trades' : 'Kursalarm')], at: Date.now() });
+    // 3.71.0: Gewinn-/Verlust-Alarm und Kurs-Alarm als Beispielbild (wie im Ernstfall), Bildunterschrift mit „TEST ·“
+    const r = kind === 'pnl' ? await chanSendCard('tg', text, true, kind, { card: PNL_TEST_CARD() }) : kind === 'alarm' ? await chanSendCard('tg', text, true, kind, { card: ALARM_TEST_CARD() }) : await chanSend('tg', text, true, kind);
     if (r.ok) ok++;
     await new Promise(res => setTimeout(res, 1100)); // Telegram: etwa eine Nachricht pro Sekunde je Chat
   }
@@ -8899,11 +9074,12 @@ function calmDo(fn) {
   }, 200);
 }
 const calmRender = () => calmDo(render);
-// Chart nur zeichnen, wenn er (fast) im Bild ist; beim Hineinscrollen nachholen
+// Chart nur zeichnen, wenn er (fast) im Bild ist; beim Hineinscrollen nachholen. 3.71.0: „fast“ heißt bis 900 px darunter bzw.
+// darüber – die neuen Vorauswahl-Kacheln stehen am Handy über dem Chart, er soll beim Hinscrollen schon fertig sein
 let chartOnScreen = true, chartStale = false;
 if ('IntersectionObserver' in window) new IntersectionObserver(es => {
   for (const e of es) { chartOnScreen = e.isIntersecting; if (chartOnScreen && chartStale) { chartStale = false; drawChart(); } }
-}, { rootMargin: '150px 0px' }).observe($('chart'));
+}, { rootMargin: '900px 0px' }).observe($('chart'));
 // Tages-Verlustlimit: den Hinweis „mit offenen Positionen über dem Limit“ erst ausblenden, wenn der Verlust unter die Hälfte
 // des Limits gefallen ist – sonst taucht das Banner oben bei jedem Pendeln um die Grenze auf und verschwindet wieder,
 // und die ganze Seite springt um seine Höhe
@@ -10886,10 +11062,10 @@ function wlAdd(e, k, now) {
   if (last && c.time > last.closeTime + 1) { e.gap = true; return; }
   if (k.x) { e.closed.push(c); if (e.closed.length > WL_LIMIT) e.closed.splice(0, e.closed.length - WL_LIMIT); e.run = null; e.rating = signalRating(e.closed.slice(-WL_WINDOW)); }
   else e.run = c;
-  // Kursverlauf für die Veränderung der letzten Minute: höchstens ein Wert je Sekunde, 3 Minuten lang
+  // Kursverlauf für die Veränderung der letzten Minute (3.71.0: und der letzten 5 Minuten): höchstens ein Wert je Sekunde, 6 Minuten lang
   const h = e.hist, p = c.close;
   if (!h.length || now - h.at(-1)[0] >= 1000) h.push([now, p]); else h.at(-1)[1] = p;
-  while (h.length && now - h[0][0] > 180e3) h.shift();
+  while (h.length && now - h[0][0] > 360e3) h.shift();
 }
 // Aus dem Live-Stream (onKline): nur Kerzen des Zeitraum-Intervalls der Vorauswahl
 function wlKline(m, now) {
@@ -10913,7 +11089,7 @@ function orderflowSelectedQuote(sym) {
   return { price: knownPrice(sym, 5000), source: state.sourceFor === sym ? state.source : 'spot', fresh: !state.paused && livePriceFresh(sym) && Date.now() - (state.prices[sym]?.at || 0) <= 5000 };
 }
 // Verlauf des Zeitraums (mindestens 12 Kerzen) als Linie in einem Feld w × h (oben = höchster Kurs)
-function wlSpark(e, w = 44, h = 16) {
+function wlSpark(e, w = 100, h = 24) {
   const vals = [...e.closed.slice(-Math.max(wlSpan().n, 12)).map(c => c.close), wlPrice(e)].filter(v => v > 0);
   if (vals.length < 2) return '';
   const lo = Math.min(...vals), hi = Math.max(...vals), span = hi - lo || 1, step = w / (vals.length - 1);
@@ -10926,6 +11102,29 @@ function wlRules(r) {
     const x = r?.rules[i], s = x ? x.score : 0;
     return { k, label: x ? x.label : name, arrow: s > 0 ? '▲' : s < 0 ? '▼' : '–', dir: s > 0 ? 'up' : s < 0 ? 'down' : x ? 'flat' : 'none', score: s };
   });
+}
+// 3.71.0: Veränderung je Zeitraum auf der Kachel – Spalten 1m · 5m · 1h · 1d; ist als Zeitraum der Tendenz 30 Minuten bzw. 4 Stunden
+// gewählt, steht dieser statt 5m bzw. zwischen 1h und 1d (die Spalte des gewählten Zeitraums ist hervorgehoben)
+var WL_TF_MS = { '1m': 60e3, '5m': 3e5, '30m': 18e5, '1h': 36e5, '4h': 144e5, '1d': 864e5 }, WL_TF_EVERY = 15 * 60e3;
+function wlTfCols() { const k = (typeof wl !== 'undefined' && wl?.span) || wlSpanKey(); return k === '30m' ? ['1m', '30m', '1h', '1d'] : k === '4h' ? ['1m', '1h', '4h', '1d'] : ['1m', '5m', '1h', '1d']; }
+// Kurs vor `ms`: aus der Quelle mit dem nächstgelegenen Wert vor diesem Zeitpunkt – mitgeschriebener Live-Verlauf (je Sekunde, 6 Min.),
+// 1-Minuten-Kerzen (61), Kerzen des Zeitraums, Stundenkerzen (26); jeweils der Schlusskurs der letzten Kerze, die bis dahin geschlossen war
+function wlTfRef(e, ms, now) {
+  const t = now - ms; let best = null, err = Infinity;
+  const take = (time, v) => { if (time <= t && t - time < err && v > 0) { err = t - time; best = v; } };
+  for (let i = e.hist.length - 1; i >= 0; i--) if (e.hist[i][0] <= t) { take(e.hist[i][0], e.hist[i][1]); break; }
+  for (const list of [e.tf?.m1, e.closed, e.tf?.h1]) if (list?.length) for (let i = list.length - 1; i >= 0; i--) if (list[i].closeTime <= t) { take(list[i].closeTime, list[i].close); break; }
+  // nur, wenn der gefundene Wert nah genug am Zeitpunkt liegt (höchstens ein Viertel des Zeitraums, mindestens 70 s daneben)
+  return best !== null && err <= Math.max(70e3, ms / 4) ? best : null;
+}
+// 1m- und 1h-Kerzen für die Spalten nachladen (alle 15 Minuten je Coin, nacheinander; Zwischenspeicher wie die übrigen Reihen)
+async function wlTfLoad(e) {
+  e.tfLoading = true;
+  try {
+    const [a, b] = await Promise.all([cachedKlines(e.sym, '1m', 61), cachedKlines(e.sym, '1h', 26)]), now = Date.now();
+    e.tf = { m1: a.candles.filter(c => c.closeTime < now), h1: b.candles.filter(c => c.closeTime < now), at: now };
+  } catch { e.tf = { m1: e.tf?.m1 || [], h1: e.tf?.h1 || [], at: Date.now() - WL_TF_EVERY + 3 * 60e3 }; }   // in 3 Minuten erneut
+  finally { e.tfLoading = false; wlPaint(Date.now(), true); }
 }
 // 3.25.0 Gesamtbewertung: Long- bzw. Short-Tendenz nur, wenn mindestens 3 der 4 Signale in dieselbe Richtung zeigen
 function wlVerdict(r) {
@@ -10959,7 +11158,11 @@ function wlView(e, now) {
     priceText: price > 0 ? priceText(price) : e.error ? '—' : '…',
     chgText: `${S.label} ${pctOf(chg)}`, chgDir: dir(chg), sparkDir: dir(chg),
     sigText: e.rating ? scoreText(e.rating.score) : e.error ? '' : '·', tone: wlTone(e.rating), rules: wlRules(e.rating),
-    verdict: wlVerdict(e.rating), move: e.rating ? wlMove(e) : null
+    verdict: wlVerdict(e.rating), move: e.rating ? wlMove(e) : null,
+    // 3.71.0: Veränderung je Spalte in Prozent („+0,03“) und der RSI-Wert für die Leiste
+    // die Spalte des gewählten Zeitraums zeigt genau die Veränderung seit Beginn des Zeitraums (wie im Hinweis „1 Std. …“)
+    tf: wlTfCols().map(k => { const r = k === wl.span ? ref : price > 0 ? wlTfRef(e, WL_TF_MS[k], now) : null, v = price > 0 && r > 0 ? (price / r - 1) * 100 : null; return { k, v, sel: k === wl.span, dir: dir(v), text: v === null ? '–' : dir(v) === 'flat' ? '±0,00' : signed(v) }; }),
+    rsi: (v => Number.isFinite(v) ? v : null)(Number(/RSI (\d+)/.exec(e.rating?.rules?.[2]?.label || '')?.[1]))
   };
 }
 // Werte in die bestehenden Felder schreiben (nur was sich geändert hat)
@@ -10972,16 +11175,20 @@ function wlPaint(now = Date.now(), force = false) {
     if (!e) continue;
     const v = wlView(e, now), q = s => tile.querySelector(s);
     wlSet(q('.wl-price'), 'textContent', v.priceText);
-    const chg = q('.wl-chg'); wlSet(chg, 'textContent', v.chgText); wlSet(chg, 'className', `wl-chg ${v.chgDir}`);
-    const rs = q('.wl-rules'); if (rs) v.rules.forEach((x, i) => { const n = rs.children[i]; if (!n) return; wlSet(n.firstChild, 'textContent', x.label); wlSet(n.lastChild, 'textContent', x.arrow); wlSet(n, 'className', `wl-rule ${x.dir}`); });
+    const tf = q('.wl-tf'); if (tf) v.tf.forEach((x, i) => { const c = tf.children[i]?.lastChild; if (!c) return; wlSet(c, 'textContent', x.text); wlSet(c, 'className', `wl-tfv ${x.dir}`); });
+    // Trend · Kurs · MACD als Felder (der RSI hat eine eigene Leiste)
+    const rs = q('.wl-rules'); if (rs) v.rules.filter(x => x.k !== 'rsi').forEach((x, i) => { const n = rs.children[i]; if (!n) return; wlSet(n.firstChild, 'textContent', x.label); wlSet(n.lastChild, 'textContent', x.arrow); wlSet(n, 'className', `wl-rule ${x.dir}`); });
+    const rsi = q('.wl-rsi'); if (rsi) { const knob = rsi.querySelector('b'); wlSet(rsi.firstChild, 'textContent', v.rsi === null ? 'RSI –' : `RSI ${Math.round(v.rsi)}`); wlSet(knob, 'hidden', v.rsi === null); if (v.rsi !== null) { const l = `${Math.max(0, Math.min(100, v.rsi))}%`; if (knob.style.left !== l) knob.style.left = l; } wlSet(rsi, 'className', `wl-rsi ${v.rules[2].dir}`); }
     const sig = q('.wl-sig'); wlSet(sig, 'textContent', v.sigText); if (sig && sig.dataset.tone !== v.tone) sig.dataset.tone = v.tone;
-    const svg = q('.wl-spark'), pts = wlSpark(e); svg?.setAttribute('class', `wl-spark ${v.sparkDir}`);
+    const box2 = q('.wl-sparkbox'), svg = q('.wl-spark'), pts = wlSpark(e); wlSet(box2, 'className', `wl-sparkbox ${v.sparkDir}`);
     const line = svg?.firstChild; if (line && line.getAttribute('points') !== pts) line.setAttribute('points', pts);
+    const dot = q('.wl-dot'), lastY = Number(pts.split(' ').at(-1)?.split(',')[1]); wlSet(dot, 'hidden', !pts); if (dot && Number.isFinite(lastY)) { const tp = `${(lastY / 24 * 100).toFixed(1)}%`; if (dot.style.top !== tp) dot.style.top = tp; }
     const r = v.rating, vd = v.verdict, title = e.error ? `${coin}: ${e.error}`
       : `${coin}/USDT${e.market === 'futures' ? ' (Futures)' : ''}: ${v.priceText} USDT · ${v.chgText}`
         + ` · Tendenz ${v.span.of} ${r ? `${scoreText(r.score)}/4 (${v.rules.map(x => `${x.label} ${x.arrow}`).join(', ')}) · ${vd.dir === 'long' ? 'Long-Tendenz' : vd.dir === 'short' ? 'Short-Tendenz' : 'Abwarten'}${v.move?.low ? ' · zu wenig Bewegung' : ''}` : 'noch keine (mindestens 60 Kerzen)'} · antippen zeigt die Signale und lädt den Coin im Chart`;
     wlSet(tile, 'title', title);
   }
+  if (typeof wlArrange === 'function') wlArrange(); // 3.71.0: Filter und Sortierung nach der Tendenz
   wldPaint(now, force); // Detailfeld (Schritt 6) im selben Takt
 }
 // Reihe laden (Zwischenspeicher, sonst REST; ohne Spot-Paar die USDT-Futures) – im Intervall des gewählten Zeitraums
@@ -11010,10 +11217,12 @@ function wlTick(now) {
   const want = new Set(state.watch.map(wlSym)), iv = wlSpan().iv;
   for (const s of wl.c.keys()) if (!want.has(s)) wl.c.delete(s);
   for (const s of want) if (!wl.c.has(s)) wl.c.set(s, { sym: s, iv, closed: [], run: null, hist: [], rating: null, market: 'spot', loading: false, error: '', retryAt: 0, gap: false, at: 0 });
-  const busy = [...wl.c.values()].some(e => e.loading);
+  const busy = [...wl.c.values()].some(e => e.loading || e.tfLoading);
   if (!busy && now - wl.loadAt > 300) {
     const next = [...wl.c.values()].find(e => (!e.at && !e.error) || e.gap || (e.error && now >= e.retryAt) || (e.at && !e.run && e.closed.length && now - e.closed.at(-1).closeTime > 150e3));
-    if (next) { wl.loadAt = now; void wlLoad(next); }
+    // 3.71.0: danach (alle Reihen geladen) die 1m-/1h-Kerzen für die Spalten 1m · 5m · 1h · 1d, je Coin alle 15 Minuten
+    const tfNext = next ? null : [...wl.c.values()].find(e => e.at && !e.error && (!e.tf || now - e.tf.at > WL_TF_EVERY));
+    if (next) { wl.loadAt = now; void wlLoad(next); } else if (tfNext) { wl.loadAt = now; void wlTfLoad(tfNext); }
   }
   wlPaint(now);
 }
@@ -11272,13 +11481,16 @@ function pnlFire(k, a, cur) {
   const text = `Live-Ergebnis ${signed(cur)} USDT (${n} ${n === 1 ? 'offene Position' : 'offene Positionen'}) · Schwelle ${pnlCond(k, a.value)} erreicht`;
   beep(); desktopNotify(title, text, 'pnl:' + k);
   simpleToast('pnl:' + k, 'alarm ' + (k === 'profit' ? 'up' : 'down'), `${title}: ${text}`, null, k === 'profit' ? 'green' : 'orange');
-  a.svc = false; void pnlSend(k, a.at, formatMessage('pnl', { profit: k === 'profit', pnl: cur, positions: n, level: a.value }));
+  // 3.71.0: Bild mit den Positionen dieses Moments (Summe = Live-Ergebnis); die bisherige Textmeldung bleibt der Ersatz
+  // 3.71.0: Euro in Klammern mit dem Live-Kurs der Positionsübersicht (veraltet oder fehlend → nur USD)
+  const fx = fxLive(), card = { profit: k === 'profit', pnl: cur, level: a.value, positions: state.openTotal?.rows || [], count: n, fx: fx && !fx.stale ? fx.v : null, at: Date.now(), timezone: PAT_TZ };
+  a.svc = false; void pnlSend(k, a.at, formatMessage('pnl', { profit: k === 'profit', pnl: cur, positions: n, level: a.value }), card);
 }
 // Telegram: je Aktivierung genau eine Nachricht (auch mit mehreren offenen Tabs). 3.26.0 mit 24/7-Dienst: vorher in
 // die angeheftete Nachricht schauen – hat der Dienst diese Grenze schon gemeldet (App kam gerade erst in den Vordergrund),
 // das übernehmen statt noch einmal senden. Sonst senden und „gemeldet“ sofort übergeben: Der Dienst liest die Datei vor seiner
 // eigenen Meldung neu und schweigt dann.
-async function pnlSend(k, at, msg) {
+async function pnlSend(k, at, msg, card = null) {
   if (s247?.cfg?.on && chan.ev.pnl && typeof s247Parse === 'function' && tgConfigured() && !svcOn()) { // 3.33.0: mit Steuerung entscheidet die Freigabe
     try {
       const pm = (await tgApi(chan.tg.token, 'getChat', { chat_id: chan.tg.chat }))?.pinned_message, f = s247Parse(pm).gv?.find(x => x.k === k && x.at === at);
@@ -11286,7 +11498,7 @@ async function pnlSend(k, at, msg) {
     } catch { /* Telegram gerade nicht lesbar: lieber selbst senden */ }
     scheduleS247(0);
   }
-  void notifyChannels('pnl', `pnl:${k}:${at}`, msg, 30 * 864e5, { ev: pnlEventId(k, at) });
+  void notifyChannels('pnl', `pnl:${k}:${at}`, msg, 30 * 864e5, { ev: pnlEventId(k, at), card });
 }
 // Der Dienst hat diese Grenze schon gemeldet: dessen Zeit und Wert übernehmen, nichts senden
 function pnlTakeSvc(k, at, f) { const d = pnlGet(), a = d[k]; if (a.at !== at) return; a.state = 'fired'; a.firedAt = f.t; a.firedVal = f.val; a.svc = true; pnlSet(d); }
@@ -11400,6 +11612,8 @@ function pnlSave() {
 // nach dem Speichern: gültige Felder neu formatiert, fehlerhafte behalten die Eingabe zum Korrigieren
 function pnlRefill(parsed) { const d = pnlGet(); for (const k of PNL_KINDS) if (!parsed[k].err) { $(`pnl-${k}`).value = d[k].value ? plain(d[k].value) : ''; $(`pnl-${k}-on`).checked = d[k].on; } }
 $('lb-pos').addEventListener('click', () => pnlOpen());
+$('lb-open-toggle')?.addEventListener('click', () => { lbOpenOn = !lbOpenOn; store.set(LBOPEN_KEY, lbOpenOn); renderLbOpenToggle(); renderLivebar(); });
+renderLbOpenToggle();
 $('pnl-close').addEventListener('click', () => { pnlOpen(false); $('lb-pos').focus({ preventScroll: true }); });
 $('pnl-form').addEventListener('submit', e => { e.preventDefault(); pnlSave(); });
 for (const k of PNL_KINDS) {
@@ -12384,7 +12598,7 @@ async function svcSendCoordinated(type, opts, text, ks) {
   if (!tgtReady('course-alert')) { if (!fallback) void svcReport(opts.ev, 'discarded', 'Ziel unmittelbar vor dem Senden aus'); svcNote(opts.ev, 'verworfen – Ziel Kursalarm aus'); return; }
   if (!fallback) await svcReport(opts.ev, 'sending');
   const msg = finishTelegram(text + (fallback ? '\n' + formatMessage('notice', { headline: 'Von der App gesendet', lines: ['Dienst nicht erreichbar'] }) : ''), Date.now());
-  const res = await Promise.all(ks.map(k => chanSend(k, msg, false, type, { ...opts, coord: true })));
+  const res = await Promise.all(ks.map(k => chanSendCard(k, msg, false, type, { ...opts, coord: true, ...(fallback ? { cardNote: 'Von der App gesendet · Dienst nicht erreichbar' } : {}) })));   // 3.71.0: Gewinn-/Verlust- und Kurs-Alarm als Bild
   const m = res[Math.max(0, ks.indexOf('tg'))], st = m?.ok ? (m.unconfirmed ? 'unconfirmed' : 'confirmed') : m?.lost ? 'unconfirmed' : 'failed';
   if (!fallback) void svcReport(opts.ev, st, m?.ok ? '' : m?.lost ? 'Telegram-Antwort verloren' : String(m?.msg || '').slice(0, 100));
   svcNote(opts.ev, `${fallback ? 'von der App ohne Freigabe gesendet (Dienst nicht erreichbar) · ' : 'Freigabe erhalten · '}${st === 'confirmed' ? 'zugestellt' : st === 'unconfirmed' ? 'Zustellung unbestätigt' : 'fehlgeschlagen'}`);
@@ -13682,12 +13896,43 @@ function pkRecord(m, hits, mkt) {
 // Jede Fall-ID höchstens einmal: in diesem Browser per Abstimmung der Tabs (14 Tage), mit 24/7-Dienst ab 2.2.0 zusätzlich per
 // Sendefreigabe (Ereignis „pat:<Fall-ID>“) – so meldet von mehreren Geräten genau eins. Ziel aus → nichts, auch kein Nachholen.
 const PAT_TG_Q = 80;
-function patTgText(c, h, ev = null) {
-  const L = PAT_LIB[c.pat], S = pkStats({ mkt: c.mkt, sym: c.sym, iv: c.iv, pat: c.pat }), st = S.live.n >= 10 ? S.live : S.rek.n >= 10 ? S.rek : null, lv = h.levels || {};
-  return formatMessage('pattern', { pattern: L.n, symbol: c.sym, market: c.mkt === 'spot' ? 'Spot' : 'Futures', timeframe: c.iv, status: h.status, direction: c.dir, entry: c.p0, target: lv.tgt, invalid: lv.inv, quality: c.q, model: c.model || 'pat-1',
-    learned: st ? { ...st, source: st === S.live ? 'live protokolliert' : 'rekonstruiert', horizon: PK_H } : { available: S.live.n + S.rek.n, minimum: 10 }, score: ev?.score, scoreWhy: ev?.summary });
+// 3.71.0: Signaldaten der Chartmuster-Signalkarte (dieselben Felder wie im Dienst: shared/pattern-signal-card.mjs, Kurztext
+// formatMessage('pattern')) – Gesamturteil, Trend/Volumen, Chance/Risiko, ATR, Kurs, Einstiegsfenster, Mini-Chart, Kartenwerte
+const PAT_TZ = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Berlin'; } catch { return 'Europe/Berlin'; } })();
+function patLearned(mkt, sym, iv, pat) {
+  const S = pkStats({ mkt, sym, iv, pat }), st = S.live.n >= 10 ? S.live : S.rek.n >= 10 ? S.rek : null;
+  return st ? { ...st, source: st === S.live ? 'live protokolliert' : 'rekonstruiert', horizon: PK_H } : { available: S.live.n + S.rek.n, minimum: 10 };
 }
-async function patNotify(c, h, qev = null) {
+function patTgData(c, h, ev = null, chart = null) {
+  const L = PAT_LIB[c.pat], lv = h.levels || {};
+  return { pattern: L.n, symbol: c.sym, market: c.mkt === 'spot' ? 'Spot' : 'Futures', timeframe: c.iv, status: h.status, direction: c.dir, entry: c.p0, target: lv.tgt, invalid: lv.inv, quality: c.q, model: c.model || 'pat-1',
+    learned: patLearned(c.mkt, c.sym, c.iv, c.pat), score: ev?.score, scoreWhy: ev?.summary, marks: ev?.marks || null, rr: ev?.rr ?? null, atr: ev?.atr ?? null, price: ev?.price ?? null, tc: c.tc,
+    chart, settings: { ...patq.settings }, timezone: PAT_TZ, now: Date.now(), at: Date.now() };
+}
+const patTgText = (c, h, ev = null, chart = null) => formatMessage('pattern', patTgData(c, h, ev, chart));
+// Karte im Browser zeichnen (SVG → Canvas → PNG); scheitert das, sendet der Aufrufer den Text
+async function svgPngBlob(svg, width, height) {
+  const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
+  try {
+    const img = new Image(); img.src = url; await img.decode();
+    const cv = document.createElement('canvas'); cv.width = width; cv.height = height; cv.getContext('2d').drawImage(img, 0, 0, width, height);
+    return await new Promise((res, rej) => cv.toBlob(b => b?.size ? res(b) : rej(new Error('Karte leer')), 'image/png'));
+  } finally { URL.revokeObjectURL(url); }
+}
+async function patCardBlob(data) { const { svg, width, height } = patternSignalCard(data, { now: Date.now(), timezone: PAT_TZ }); return svgPngBlob(svg, width, height); }
+// sendPhoto (wie das Trade-Bild direkt aus der Seite); Fehlerarten wie im Dienst: verloren → unbestätigt, Chat-Problem → fehlgeschlagen
+const PAT_CHAT_PROBLEM = /chat|thread|topic|blocked|kicked|deactivated|not enough rights|have no rights/i;
+async function patPostCard(T, blob, caption, { html = true, name = 'chartmuster.png', silent = false } = {}) {
+  const fd = new FormData(); fd.append('chat_id', T.chat); if (T.thread) fd.append('message_thread_id', T.thread);
+  fd.append('photo', blob, name); fd.append('caption', caption); if (html) fd.append('parse_mode', 'HTML'); if (silent) fd.append('disable_notification', 'true');
+  let r; try { r = await fetch(`https://api.telegram.org/bot${T.token}/sendPhoto`, { method: 'POST', body: fd, credentials: 'omit', referrerPolicy: 'no-referrer', cache: 'no-store' }); }
+  catch { return { ok: false, lost: true }; }
+  let j = null; try { j = await r.json(); } catch {}
+  if (r.ok && j?.ok) return { ok: true, id: j.result?.message_id || 0 };
+  if (r.ok) return { ok: false, lost: true };
+  return { ok: false, code: r.status, msg: String(j?.description || `Fehler ${r.status}`).slice(0, 160), chat: [401, 403, 404].includes(r.status) || PAT_CHAT_PROBLEM.test(j?.description || ''), retry: Number(j?.parameters?.retry_after) || 0 };
+}
+async function patNotify(c, h, qev = null, chart = null) {
   if (store.get('scalpdesk.patterns-oracle-only.v1', false)) return; // Einziger Sender ist der SSH-Dienst, keine lokalen Ersatzmeldungen.
   if (!tgtReady('patterns')) return;
   // 3.42.0 (G09 C6b): nach bestätigter Dienstübergabe ist ausschließlich Oracle Mustersender.
@@ -13696,14 +13941,14 @@ async function patNotify(c, h, qev = null) {
   if (watch?.config) {
     const dest = tgDest('patterns'), cfg = watch.config;
     if (!dest || dest.chat !== cfg.chat || dest.thread !== cfg.thread || tgBot(dest.token) !== cfg.bot) { patSvcMessage('Musterziel geändert – erst am Dienst übernehmen.'); return; }
-    try { const { status, j } = await svcFetch('/v1/patterns/notify', { method: 'POST', body: { expectedRevision: watch.rev, c, levels: h.levels || {}, quality: qev ? { pass: qev.pass, score: qev.score, summary: qev.summary, criteria: qev.criteria, parts: qev.parts } : null } });
+    try { const { status, j } = await svcFetch('/v1/patterns/notify', { method: 'POST', body: { expectedRevision: watch.rev, c, levels: h.levels || {}, chart, quality: qev ? { pass: qev.pass, score: qev.score, summary: qev.summary, criteria: qev.criteria, parts: qev.parts, marks: qev.marks, rr: qev.rr, atr: qev.atr, price: qev.price } : null } });   // 3.71.0: Kartenfelder und Mini-Chart
       if (status !== 200 || !j?.ok) throw new Error(j?.error || `Fehler ${status}`);
       pat.tgLog = [{ ev: `pat:${c.id}`, st: j.st || j.reason, at: Date.now() }, ...(pat.tgLog || [])].slice(0, 20);
     } catch (e) { patSvcMessage(`Musterzustellung unbestätigt: ${e.message}. Kein Ersatzversand aus der App.`); }
     return;
   }
   const ev = `pat:${c.id}`; if (!(await store.claim(`ev:${ev}`, 14 * 864e5))) return;
-  const text = patTgText(c, h, qev), coord = svcOn() && !!svc.pol.conf?.targets?.patterns;   // Dienst ab 2.2.0 kennt das Ziel
+  const data = patTgData(c, h, qev, chart), text = formatMessage('pattern', data), coord = svcOn() && !!svc.pol.conf?.targets?.patterns;   // Dienst ab 2.2.0 kennt das Ziel
   let fallback = !coord;
   if (coord) {
     const r = await svcReserve(ev, chanLabel(text), 'patterns');
@@ -13712,7 +13957,13 @@ async function patNotify(c, h, qev = null) {
     if (!tgtReady('patterns')) { if (!fallback) void svcReport(ev, 'discarded', 'Ziel unmittelbar vor dem Senden aus'); svcNote(ev, 'verworfen – Ziel Chartmuster aus'); return; }
     if (!fallback) await svcReport(ev, 'sending');
   }
-  const m = await chanSend('tg', finishTelegram(text, Date.now()), false, 'pattern', { coord: true });
+  // 3.71.0: Signalkarte als Bild mit dem Kurztext als Bildunterschrift; geht das Bild nicht, derselbe Kurztext als Nachricht
+  let m = null; const T = tgDest('patterns');
+  try { const blob = await patCardBlob(data); m = T ? await patPostCard(T, blob, finishTelegram(text, Date.now(), undefined, TELEGRAM_CAPTION_LIMIT)) : null; if (m && !m.ok && !m.lost && !m.chat) { pat.cardErr = m.msg; m = null; } }
+  catch (e) { pat.cardErr = String(e?.message || e).slice(0, 120); m = null; }
+  if (m && !m.ok && m.chat) m = { ok: false, code: m.code, msg: m.msg };
+  if (m?.ok) { store.set(CHANLAST_KEY, { ...(store.get(CHANLAST_KEY) || {}), tg: { at: Date.now(), label: chanLabel(text) } }); renderChanSummary(); }   // „zuletzt …“ wie beim Text
+  if (!m) m = await chanSend('tg', finishTelegram(text, Date.now()), false, 'pattern', { coord: true });
   const st = m?.ok ? (m.unconfirmed ? 'unconfirmed' : 'confirmed') : m?.lost ? 'unconfirmed' : 'failed';
   if (coord && !fallback) void svcReport(ev, st, m?.ok ? '' : m?.lost ? 'Telegram-Antwort verloren' : String(m?.msg || '').slice(0, 100));
   pat.tgLog = [{ ev, st, at: Date.now() }, ...(pat.tgLog || [])].slice(0, 20);
@@ -13724,7 +13975,7 @@ async function patNotify(c, h, qev = null) {
 const PATQ_KEY = 'scalpdesk.patfilter.v1', PATQ_LOG = 'scalpdesk.patsignals.v1', PATQ_MAX = 500;
 var patq = { settings: patternFilterSettings(store.get(PATQ_KEY)), by: 'pat', bt: null, btBusy: false, btCtl: null };
 function patqJournal() { const v = store.get(PATQ_LOG); return { list: Array.isArray(v?.list) ? v.list : [], sent: Array.isArray(v?.sent) ? v.sent : [] }; }
-function patqStore(j) { store.set(PATQ_LOG, { v: 1, list: j.list.slice(-PATQ_MAX), sent: j.sent.filter(x => Date.now() - x.at < 24 * 36e5) }); }
+function patqStore(j) { const list = j.list.slice(-PATQ_MAX); store.set(PATQ_LOG, { v: 1, list: list.map((e, i) => i < list.length - 60 && e.chart ? { ...e, chart: undefined } : e), sent: j.sent.filter(x => Date.now() - x.at < 24 * 36e5) }); }   // 3.71.0: Mini-Chart nur für die letzten 60 Signale
 async function patqCandles(mkt, sym, iv, limit = 260) {
   const raw = mkt === 'futures' ? await api.get(FUTURES, '/fapi/v1/klines', { symbol: sym, interval: iv, limit }) : await spotGet('/api/v3/klines', { symbol: sym, interval: iv, limit }), now = Date.now();
   return normalizeKlines(raw).filter(x => x.closeTime < now).map(x => ({ t: x.time, o: x.open, h: x.high, l: x.low, c: x.close, v: x.volume }));
@@ -13745,11 +13996,11 @@ async function patqRun(m, tg) {
   if (!cands.length) return;
   const j = patqJournal(), now = Date.now(), dec = selectPatternSignals(cands, j.sent, patq.settings, now);
   for (const x of cands.sort((a, b) => b.eval.score - a.eval.score)) {
-    const d = dec.get(x.id); j.list = addPatternJournal(j.list, patternJournalEntry(x.c, x.eval, d, now), PATQ_MAX);
+    const d = dec.get(x.id); x.chart = patternChartData(k, x.h); j.list = addPatternJournal(j.list, { ...patternJournalEntry(x.c, x.eval, d, now), chart: x.chart }, PATQ_MAX);   // 3.71.0: Mini-Chart für die Karte im Signal-Log
     if (d.send) j.sent.push({ at: now, sym: x.c.sym, iv: x.c.iv, dir: x.c.dir, id: x.c.id });
   }
   patqStore(j); patqLogPaint();
-  for (const x of cands) if (dec.get(x.id).send) await patNotify(x.c, x.h, x.eval).catch(() => {});
+  for (const x of cands) if (dec.get(x.id).send) await patNotify(x.c, x.h, x.eval, x.chart).catch(() => {});
 }
 function patqResolve(mkt, sym, iv, k) {
   if (!Array.isArray(k) || k.length < 2) return; const j = patqJournal();
@@ -13766,17 +14017,24 @@ function patqFormBuild() {
   for (const f of PATTERN_FILTER_FIELDS) { const l = el('label', 'patq-field'), i = el('input'); i.type = 'number'; i.id = 'patq-' + f.key; i.min = f.min; i.max = f.max; i.step = f.step; i.inputMode = 'decimal'; i.dataset.key = f.key; l.append(el('span', '', f.label), i, el('small', '', f.unit)); grid.append(l); }
   const ct = el('label', 'check patq-counter'), cb = el('input'); cb.type = 'checkbox'; cb.id = 'patq-counter'; ct.append(cb, document.createTextNode(' Gegentrend-Signale zulassen (Richtung gegen den nächsthöheren Zeitrahmen)'));
   const note = el('p', 'muted patq-note', 'K.O.: Chance/Risiko, bestätigter Ausbruch (Schlusskurs außerhalb der Musterlinie), Signalalter, gelaufener Weg, Zielabstand in ATR und gegenüber Gebühren + Spread, 24h-Volumen, Spread, Trend (Kurs zur EMA 200, Steigung EMA 50 im nächsthöheren Zeitrahmen: 5m/15m → 1h, 1h → 4h). Score: Chance/Risiko 20 · Trend inkl. BTC 20 · Ausbruchsvolumen 20 · Marktphase (ADX bzw. Bollinger-Squeeze) 15 · Regelgüte 10 · Trefferquote 15 (ab 10 abgeschlossenen Fällen, vorher 7). Gilt für die App und – nach Übernahme bzw. neuem Export – für den Dienst.');
-  host.replaceChildren(preset, grid, ct, note);
-  const read = () => { const v = { counterTrend: cb.checked }; for (const f of PATTERN_FILTER_FIELDS) v[f.key] = Number(String($('patq-' + f.key).value).replace(',', '.')); return v; };
-  select.addEventListener('change', () => { patqSet(select.value === 'eigen' ? patternFilterSettings({ ...patq.settings, ...read(), preset: 'eigen' }) : patternFilterSettings({ preset: select.value, counterTrend: cb.checked })); });
+  // 3.71.0: Signalkarte – Schwellen des Gesamturteils, „Einstieg verpasst“, Einstiegsfenster, schwache Signale senden (gilt in jedem Preset)
+  const cs = el('div', 'patq-card-set'), cg = el('div', 'patq-grid');
+  for (const f of PATTERN_CARD_FIELDS) { const l = el('label', 'patq-field'), i = el('input'); i.type = 'number'; i.id = 'patq-' + f.key; i.min = f.min; i.max = f.max; i.step = f.step; i.inputMode = 'decimal'; l.append(el('span', '', f.label), i, el('small', '', f.unit)); cg.append(l); }
+  const wk = el('label', 'check patq-weak'), wb = el('input'); wb.type = 'checkbox'; wb.id = 'patq-sendweak'; wk.append(wb, document.createTextNode(' Schwache Signale auch senden'));
+  cs.append(el('b', '', 'Signalkarte'), cg, wk, el('p', 'muted patq-note', 'Gesamturteil nach Signalscore: unter der ersten Schwelle „Schwaches Signal“ (orange), ab der zweiten „Starkes Signal“ (grün), dazwischen „Mittleres Signal“ (gelb). Schwache Signale bleiben im Signal-Log der App sichtbar und gehen nur mit dem Schalter an Telegram. „Einstieg verpasst“, wenn der Kurs weiter als der Wert in Musterrichtung hinter dem Einstieg liegt. Das Einstiegsfenster endet nach der Kerzenzahl, danach gilt das Signal als abgelaufen.'));
+  host.replaceChildren(preset, grid, ct, cs, note);
+  const card = () => { const v = { sendWeak: wb.checked }; for (const f of PATTERN_CARD_FIELDS) v[f.key] = Number(String($('patq-' + f.key).value).replace(',', '.')); return v; };
+  const read = () => { const v = { counterTrend: cb.checked, ...card() }; for (const f of PATTERN_FILTER_FIELDS) v[f.key] = Number(String($('patq-' + f.key).value).replace(',', '.')); return v; };
+  select.addEventListener('change', () => { patqSet(select.value === 'eigen' ? patternFilterSettings({ ...patq.settings, ...read(), preset: 'eigen' }) : patternFilterSettings({ ...card(), preset: select.value, counterTrend: cb.checked })); });
   grid.addEventListener('change', () => patqSet(patternFilterFromForm(read(), select.value === 'eigen' ? 'normal' : select.value)));
   cb.addEventListener('change', () => patqSet(patternFilterSettings({ ...patq.settings, counterTrend: cb.checked })));
+  for (const x of [cg, wb]) x.addEventListener('change', () => patqSet(patternFilterSettings({ ...patq.settings, ...card() })));
   patqFormFill();
 }
 function patqFormFill() {
   const s = patq.settings; if (!$('patq-preset')) return;
-  $('patq-preset').value = s.preset; for (const f of PATTERN_FILTER_FIELDS) $('patq-' + f.key).value = String(s[f.key]); $('patq-counter').checked = s.counterTrend;
-  put('patq-preset-label', `${PATTERN_FILTER_PRESET_NAMES[s.preset]} · Score ≥ ${s.minScore} · R/R ≥ ${String(s.minRR).replace('.', ',')}${s.counterTrend ? ' · Gegentrend an' : ''}`);
+  $('patq-preset').value = s.preset; for (const f of [...PATTERN_FILTER_FIELDS, ...PATTERN_CARD_FIELDS]) $('patq-' + f.key).value = String(s[f.key]); $('patq-counter').checked = s.counterTrend; $('patq-sendweak').checked = s.sendWeak;
+  put('patq-preset-label', `${PATTERN_FILTER_PRESET_NAMES[s.preset]} · Score ≥ ${s.minScore} · R/R ≥ ${String(s.minRR).replace('.', ',')}${s.counterTrend ? ' · Gegentrend an' : ''} · schwache Signale ${s.sendWeak ? 'senden' : 'nur App'}`);
 }
 // 3.70.2: Filteränderungen gehen von selbst an den 24/7-Dienst (vorher erst nach „Vorauswahl am Dienst übernehmen“ – der Dienst filterte weiter streng)
 var patqSyncTimer = 0;
@@ -13794,6 +14052,7 @@ const patqTime = t => new Date(t).toLocaleString('de-DE', { day: '2-digit', mont
 function patqLogPaint() {
   const body = $('patq-log-body'); if (!body) return;
   const j = patqJournal(), list = j.list.slice().reverse(), stats = patternJournalStats(j.list, patq.by), name = k => patq.by === 'pat' ? PAT_LIB[k]?.n.replace(/ \(.*\)$/, '') || k : k;
+  patq.openIds = new Set([...body.querySelectorAll('.patq-item[open]')].map(x => x.dataset.patqId));   // 3.71.0: aufgeklappte Karten bleiben offen
   put('patq-log-count', `(${list.length} · ${list.filter(e => e.sent).length} gesendet)`);
   const seg = el('div', 'dec-seg patq-by'); seg.setAttribute('role', 'group'); seg.setAttribute('aria-label', 'Statistik gruppieren');
   for (const [k, t] of [['pat', 'je Muster'], ['iv', 'je Zeitrahmen'], ['sym', 'je Coin']]) { const b = el('button', '', t); b.type = 'button'; b.dataset.patqBy = k; b.setAttribute('aria-pressed', String(patq.by === k)); seg.append(b); }
@@ -13801,13 +14060,20 @@ function patqLogPaint() {
   for (const t of ['', 'Signale', 'gesendet', 'abgeschl.', 'Ziel', 'Ungültig', 'Timeout', 'Treffer']) head.append(el('th', '', t));
   table.append(el('thead')); table.tHead.append(head); const tb = el('tbody'); table.append(tb);
   for (const r of stats.slice(0, 12)) { const tr = el('tr'); for (const v of [name(r.key), r.signals, r.sent, `${r.n}${r.n < 10 ? '/10' : ''}`, r.ziel, r.ungueltig, r.timeout, r.rate === null ? '–' : Math.round(r.rate * 100) + ' %']) tr.append(el('td', '', String(v))); tb.append(tr); }
-  const items = el('div', 'patq-items');
+  const items = el('div', 'patq-items'), now = Date.now();
   for (const e of list.slice(0, 40)) {
-    const d = el('details', 'patq-item' + (e.sent ? ' sent' : '')), sm = el('summary');
-    sm.append(el('span', 'patq-when', patqTime(e.at)), el('b', '', `${e.sym.replace(/USDT$/, '')} ${e.iv}`), el('span', '', `${PAT_LIB[e.pat]?.n.replace(/ \(.*\)$/, '') || e.pat} ${e.dir === 'bull' ? '▲' : '▼'}`), el('span', 'patq-score', `Score ${e.score}`), el('span', e.sent ? 'patq-ok' : 'patq-no', e.sent ? '✔ gesendet' : '✖ gefiltert'));
+    // 3.71.0: Gesamturteil (Schwach/Mittel/Stark), „abgelaufen“ nach dem Einstiegsfenster; aufgeklappt die Signalkarte wie bei Telegram
+    const d = el('details', 'patq-item' + (e.sent ? ' sent' : '')), sm = el('summary'), g = e.grade || patternGrade(e.score, patq.settings)?.key, gone = Number.isFinite(e.until) && now >= e.until;
+    d.dataset.patqId = e.id;
+    sm.append(el('span', 'patq-when', patqTime(e.at)), el('b', '', `${e.sym.replace(/USDT$/, '')} ${e.iv}`), el('span', '', `${PAT_LIB[e.pat]?.n.replace(/ \(.*\)$/, '') || e.pat} ${e.dir === 'bull' ? '▲' : '▼'}`), el('span', 'patq-score', `Score ${e.score}`));
+    if (g) sm.append(el('span', 'patq-grade ' + g, { weak: 'Schwach', medium: 'Mittel', strong: 'Stark' }[g]));   // Gesamturteil zur Signalzeit
+    sm.append(el('span', e.sent ? 'patq-ok' : 'patq-no', e.sent ? '✔ gesendet' : e.weak ? '✖ schwach – nur App' : '✖ gefiltert'));
+    if (gone && !e.res) sm.append(el('span', 'patq-exp', '⌛ abgelaufen'));
     const why = el('p', 'patq-why', e.sent ? e.summary : `Filtergrund: ${e.reason}`), res = el('p', 'muted', e.res ? `Ergebnis: ${PATTERN_OUTCOME_NAMES[e.res.out]} nach ${e.res.bars} Kerzen` : 'Ergebnis offen (Ziel, Ungültig oder 48 Kerzen)');
-    const lv = el('p', 'muted', `Einstieg ${priceText(e.entry)} · Ziel ${priceText(e.target)} · Ungültig ${priceText(e.invalid)}`), crit = el('ul', 'patq-crit'); for (const t of [...e.criteria, ...e.ko.map(x => '✖ ' + x)]) crit.append(el('li', '', t));
+    const lv = el('p', 'muted', `Einstieg ${priceText(e.entry)} · Ziel ${priceText(e.target)} · Stop ${priceText(e.invalid)}`), crit = el('ul', 'patq-crit'); for (const t of [...e.criteria, ...e.ko.map(x => '✖ ' + x)]) crit.append(el('li', '', t));
     d.append(sm, why, res, lv, crit); items.append(d);
+    d.addEventListener('toggle', () => { if (d.open && !d.querySelector('.patq-card')) sm.after(patqCardImg(e)); });
+    if (patq.openIds?.has(e.id)) d.open = true;
   }
   if (!list.length) items.append(el('p', 'muted', 'Noch keine Signale bewertet. Bewertet werden frisch bestätigte Formationen, wenn das Ziel „Chartmuster“ eingerichtet ist und die App sendet (nicht im Modus „Oracle ist der einzige Mustersender“ – dort stehen gefilterte Signale im Protokoll des Dienstes).'));
   const bt = el('div', 'patq-bt'), run = el('button', 'button ghost', patq.btBusy ? 'Backtest läuft …' : 'Backtest: aktueller Coin und Zeitrahmen'); run.type = 'button'; run.id = 'patq-bt-run'; run.disabled = patq.btBusy; bt.append(run);
@@ -13821,6 +14087,17 @@ function patqLogPaint() {
       bt.append(el('p', 'muted', 'Ohne Blick in die Zukunft: je Kerze nur Daten bis dahin. Wenige Fälle = unsichere Zahlen. Spread und 24h-Volumen wie heute.')); }
   }
   body.replaceChildren(seg, table, items, bt);
+}
+// 3.71.0: Signalkarte eines Journal-Eintrags (Kurs „Jetzt“ live, sofern die App ihn kennt; sonst „Kurs nicht verfügbar“)
+function patqEntryData(e) {
+  const live = state.prices?.[e.sym], price = live?.price > 0 && Date.now() - (live.at || 0) < 120e3 ? live.price : null;
+  return { pattern: PAT_LIB[e.pat]?.n || e.pat, symbol: e.sym, market: e.mkt === 'spot' ? 'Spot' : 'Futures', timeframe: e.iv, status: 'Ausbruch bestätigt', direction: e.dir, entry: e.entry, target: e.target, invalid: e.invalid,
+    quality: e.q, model: 'pat-1', learned: patLearned(e.mkt, e.sym, e.iv, e.pat), score: e.score, scoreWhy: e.summary, marks: e.marks, rr: e.rr, atr: e.atr, price, tc: e.tc, until: e.until, at: e.at, chart: e.chart || null, settings: { ...patq.settings }, timezone: PAT_TZ };
+}
+function patqCardImg(e) {
+  const img = el('img', 'patq-card'); img.alt = `Signalkarte ${e.sym.replace(/USDT$/, '/USDT')} ${e.iv}`; img.decoding = 'async';
+  try { const { svg, width, height } = patternSignalCard(patqEntryData(e), { now: Date.now(), timezone: PAT_TZ }); img.width = width; img.height = height; img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg); } catch { img.alt = 'Signalkarte nicht verfügbar'; }
+  return img;
 }
 async function patqBacktest() {
   if (patq.btBusy) return; patq.btBusy = true; patq.bt = null; patqLogPaint();
@@ -13840,7 +14117,7 @@ async function patqBacktest() {
   patqFormBuild(); patqLogPaint();
   $('patq-log-body')?.addEventListener('click', e => { const b = e.target.closest('[data-patq-by]'); if (b) { patq.by = b.dataset.patqBy; patqLogPaint(); } else if (e.target.closest('#patq-bt-run')) void patqBacktest(); });
 })();
-window.__patq = { state: patq, journal: patqJournal, run: patqRun, evaluate: patqEvaluate, set: patqSet, backtest: patqBacktest, resolve: patqResolve };
+window.__patq = { state: patq, journal: patqJournal, run: patqRun, evaluate: patqEvaluate, set: patqSet, backtest: patqBacktest, resolve: patqResolve, store: patqStore, paint: patqLogPaint, entryData: patqEntryData, tgData: patTgData };   // 3.71.0: store/paint/entryData/tgData für Prüfungen
 // Ergebnisse anhängen, sobald 12 weitere abgeschlossene Kerzen da sind (Pfad normiert in % für die Verlaufsansicht)
 function pkResolve(mkt, sym, iv, k, closedEnd) {
   let n = 0; const idx = new Map(k.map((c, i) => [c.t, i]));
@@ -14261,154 +14538,202 @@ function timgStats(d, ch) {
 // ---- Zeichnen ----
 const timgDur = ms => { const m = Math.round(ms / 60e3); if (ms < 60e3) return `${Math.max(1, Math.round(ms / 1000))} s`; if (m < 60) return `${m} Min.`; const h = Math.floor(m / 60), r = m % 60; if (h < 48) return `${h} Std.${r ? ` ${r} Min.` : ''}`; const dd = Math.floor(h / 24), rh = h % 24; return `${dd} Tage${rh ? ` ${rh} Std.` : ''}`; };
 const timgWhen = ms => new Date(ms).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+// ---- 3.71.0: Prüfung der Daten vor dem Zeichnen ----
+// Einstieg gegen die Kerze der Einstiegsminute (bei längeren Trades die Kerze, die den Einstieg enthält): liegt der Kurs mehr als
+// 0,5 % außerhalb von Hoch/Tief, stimmt Journal oder Chart nicht – Hinweis auf der Karte und im Protokoll des Auftrags.
+// Quelle: der Markt des Trades (Futures/Spot); eine Ersatzquelle aus dem anderen Markt wird ausdrücklich genannt.
+function timgChecks(d, ch) {
+  const out = [], cs = ch?.candles || [], ms = ch?.ms || 0;
+  if (cs.length && ms > 0) {
+    let worst = 0;
+    for (const b of d.buys) {
+      if (!(b.p > 0)) continue;
+      const c = cs.find(k => b.at >= k.time && b.at < k.time + ms); if (!c) continue;
+      const dev = b.p < c.low ? (c.low - b.p) / c.low : b.p > c.high ? (b.p - c.high) / c.high : 0; worst = Math.max(worst, dev);
+    }
+    if (worst > 0.005) out.push({ key: 'entry', text: `⚠ Einstieg weicht vom Chart ab (${number(worst * 100, 1)} % außerhalb der ${ch.iv}-Kerze)` });
+  }
+  const fut = d.source === 'futures', srcFut = /futures|linear|fapi/i.test(`${ch?.src || ''} ${ch?.label || ''}`);
+  if (cs.length && fut !== srcFut) out.push({ key: 'source', text: `⚠ Kurse aus ${fut ? 'Spot' : 'Futures'} (Ersatzquelle) – gehandelt wurde ${fut ? 'Futures' : 'Spot'}` });
+  return out;
+}
+// Trade-Nummer (fortlaufend nach Abschlusszeit im Journal) und Tagesergebnis des Abschlusstags bis einschließlich dieses Trades
+function timgDay(d) {
+  const done = posResults(state.trades).done.sort((a, b) => a.closedAt - b.closedAt || String(a.id).localeCompare(String(b.id)));
+  const no = done.findIndex(r => r.id === d.id) + 1, day = new Date(d.closedAt).toDateString();
+  const same = done.filter(r => new Date(r.closedAt).toDateString() === day && r.closedAt <= d.closedAt);
+  const eurs = same.map(r => r.trades.reduce((s, t) => { const e = tradeEur(t); return s === null || e === null ? null : s + e; }, 0));
+  return { no: no || null, n: same.length, usd: same.reduce((s, r) => s + r.pnl, 0), eur: eurs.some(v => v === null) ? null : eurs.reduce((s, v) => s + v, 0) };
+}
 function timgDraw(cv, d, ch) {
   cv.width = TIMG_W; cv.height = TIMG_H;
   const g = cv.getContext('2d'); if (!g) throw new Error('Canvas nicht verfügbar');
   const C = TIMG_C, F = (w, s) => `${w} ${s}px ${TIMG_FONT}`, L = 56, R = TIMG_W - 56, long = d.side !== 'short', res = d.net > 0 ? C.up : d.net < 0 ? C.down : C.text2;
   const fit = (s, max) => { s = String(s); if (!max || g.measureText(s).width <= max) return s; while (s.length > 1 && g.measureText(s + '…').width > max) s = s.slice(0, -1); return s + '…'; };
-  const txt = (s, x, y, font, color, align = 'left', max = 0) => { g.font = font; g.fillStyle = color; g.textAlign = align; g.textBaseline = 'alphabetic'; g.fillText(fit(s, max), x, y); return g.measureText(fit(s, max)).width; };
+  const texts = [], txt = (s, x, y, font, color, align = 'left', max = 0) => { g.font = font; g.fillStyle = color; g.textAlign = align; g.textBaseline = 'alphabetic'; const v = fit(s, max); g.fillText(v, x, y); if (v) texts.push({ s: v, px: Number(/(\d+)px/.exec(font)[1]), color }); return g.measureText(v).width; };
   const box = (x, y, w, h, r, fill) => { g.beginPath(); if (g.roundRect) g.roundRect(x, y, w, h, r); else g.rect(x, y, w, h); g.fillStyle = fill; g.fill(); };
-  const chip = (s, x, y, fill, color) => { g.font = F(700, 26); const w = g.measureText(s).width + 32; box(x, y, w, 44, 10, fill); txt(s, x + 16, y + 31, F(700, 26), color); return x + w + 12; };
+  const chip = (s, x, y, fill, color) => { g.font = F(700, 28); const w = g.measureText(s).width + 36; box(x, y, w, 48, 12, fill); txt(s, x + 18, y + 34, F(700, 28), color); return x + w + 12; };
+  const eurOk = d.fx > 0 && d.eur !== null, eurV = v => d.fx > 0 ? eurOf(v, d.fx) : null;
+  const money = (usd, e, sgn = true) => e !== null && e !== undefined ? `${sgn ? signed(e) : number(e)} €` : `${sgn ? signed(usd) : number(usd)} USD`;
+  const S = d.stats !== undefined ? d.stats : timgStats(d, ch), warns = d.checks || timgChecks(d, ch), day = d.day || timgDay(d);
   g.fillStyle = C.bg; g.fillRect(0, 0, TIMG_W, TIMG_H);
-  // Kopf: Paar, Richtung, Hebel, Modus, Markt
-  txt(`${coin(d.sym)}/USDT`, L, 112, F(800, 64), C.text, 'left', 640);
-  txt('Trade abgeschlossen', R, 80, F(600, 26), C.muted, 'right');
-  txt(timgWhen(d.closedAt), R, 114, F(600, 28), C.text2, 'right');
-  let x = chip(long ? 'LONG' : 'SHORT', L, 140, long ? 'rgba(144,228,191,0.16)' : 'rgba(237,139,154,0.16)', long ? C.up : C.down);
-  x = chip(`${levText(d.lev)}×`, x, 140, C.card2, C.text); x = chip(d.mode === 'cross' ? 'Cross' : 'Isoliert', x, 140, C.card2, C.text);
-  chip(d.source === 'futures' ? 'Futures' : 'Spot', x, 140, C.card2, C.text);
-  // Ergebnis (aus dem Journal)
-  box(L, 212, R - L, 200, 22, C.card);
-  txt(d.exchange ? 'Netto-Ergebnis (laut Börse, aus dem Journal)' : 'Netto-Ergebnis (aus dem Journal)', L + 32, 258, F(600, 26), C.muted, 'left', 640);
-  txt(`${signed(d.net)} USD`, L + 32, 346, F(800, 80), res, 'left', 660);
-  if (d.pct !== null) { txt(`${signed(d.pct)} %`, R - 32, 314, F(800, 46), res, 'right'); txt('auf den Einsatz', R - 32, 346, F(600, 24), C.muted, 'right'); }
-  txt(d.eur !== null ? `${d.eurApprox ? '≈ ' : '≙ '}${signed(d.eur)} € · Euro-Kurse eingefroren je Buchung` : `Euro: Kurs zum Abschluss fehlt${d.eurN > 1 ? ` (${d.eurMiss} von ${d.eurN} Buchungen)` : ''}`, L + 32, 392, F(600, 26), d.eur !== null ? C.text2 : C.amber, 'left', R - L - 64);
-  // Eckdaten
-  const cell = (i, label, value, color = C.text, sub = '') => { const cx = i % 2 ? (L + R) / 2 + 12 : L, cy = 434 + Math.floor(i / 2) * 102, w = (R - L) / 2 - 12;
-    txt(label, cx, cy + 24, F(600, 24), C.muted, 'left', w); txt(value, cx, cy + 64, F(700, 36), color, 'left', w); if (sub) txt(sub, cx, cy + 88, F(500, 20), C.faint, 'left', w); };
-  cell(0, 'Eintritt', timgWhen(d.openedAt)); cell(1, 'Austritt', timgWhen(d.closedAt));
-  cell(2, long ? 'Einstieg (Kauf) Ø' : 'Einstieg (Verkauf) Ø', d.entry !== null ? `${priceText(d.entry)} USD` : 'nicht erfasst', d.entry !== null ? C.text : C.amber);
-  cell(3, long ? 'Ausstieg (Verkauf) Ø' : 'Ausstieg (Rückkauf) Ø', d.exit !== null ? `${priceText(d.exit)} USD` : 'nicht erfasst', d.exit !== null ? C.text : C.amber, d.exit !== null && d.exitMiss ? `${d.exitMiss} von ${d.sells.length} Ausstiegen ohne Kurs` : '');
-  cell(4, 'Haltedauer', timgDur(d.closedAt - d.openedAt)); cell(5, 'Einsatz (Margin-Modell)', `${number(d.margin)} USD`, C.text, `höchster Stand: Menge × Ø-Einstieg ÷ ${levText(d.lev)}×`);
-  cell(6, 'Menge', `${qtyText(d.qty)} ${coin(d.sym)}`, C.text, d.buys.length > 1 ? `aus ${d.buys.length} ${long ? 'Käufen' : 'Verkäufen'}` : '');
-  const small = v => (v && Math.abs(v) < 0.1 ? 4 : 2);
-  cell(7, d.funding ? 'Gebühren · Funding' : 'Gebühren', d.funding ? `${number(d.fees, small(d.fees))} · ${signed(d.funding, small(d.funding))} USD` : `${number(d.fees, small(d.fees))} USD`);
-  // 3.69.0: Kennzahlen aus den Kerzen der Haltezeit (Max. Gewinn/Verlust unrealisiert nach Gebühren, Positionswert = Menge × Kurs)
-  const S = d.stats !== undefined ? d.stats : timgStats(d, ch), eurOk = d.fx > 0, cur = eurOk ? '€' : 'USD';
-  const amt = (v, sgn = true) => { const x = eurOk && v.eur !== null ? v.eur : v.usd; return `${sgn ? signed(x) : number(x)} ${eurOk && v.eur !== null ? '€' : 'USD'}`; };
-  const pctOf = v => v.pct !== null ? `${signed(v.pct)} % vom Einsatz` : '';
-  if (!S) {
-    for (const [i, label] of [[8, 'Max. Gewinn'], [9, 'Max. Verlust'], [10, 'Höchster Positionswert'], [11, 'Tiefster Positionswert']]) cell(i, label, '—', C.muted, 'ohne Kerzendaten nicht berechenbar');
-  } else {
-    const tone = v => v > 0 ? C.up : v < 0 ? C.down : C.text;
-    cell(8, 'Max. Gewinn (unrealisiert)', S.gain.never ? `0,00 ${cur}` : amt(S.gain), S.gain.never ? C.text2 : tone(S.gain.usd), S.gain.never ? 'nie im Plus' : [pctOf(S.gain), tgcTime(S.gain.at)].filter(Boolean).join(' · '));
-    cell(9, 'Max. Verlust (unrealisiert)', S.loss.never ? `0,00 ${cur}` : amt(S.loss), S.loss.never ? C.text2 : tone(S.loss.usd), S.loss.never ? 'nie im Minus' : [pctOf(S.loss), tgcTime(S.loss.at)].filter(Boolean).join(' · '));
-    const pvSub = v => [v.eur !== null ? `≙ ${number(v.eur)} €` : '', `Kurs ${priceText(v.px)}`, tgcTime(v.at)].filter(Boolean).join(' · ');
-    cell(10, 'Höchster Positionswert', `${number(S.posHi.usd)} USD`, C.text, pvSub(S.posHi)); cell(11, 'Tiefster Positionswert', `${number(S.posLo.usd)} USD`, C.text, pvSub(S.posLo));
+  // Kopf: Paar groß, rechts „Trade #Nr. abgeschlossen“ und Datum, darunter Chips
+  txt(`${coin(d.sym)}/USDT`, L, 112, F(800, 72), C.text, 'left', 600);
+  txt(day.no ? `Trade #${day.no} abgeschlossen` : 'Trade abgeschlossen', R, 78, F(600, 28), C.muted, 'right', 380);
+  txt(timgWhen(d.closedAt), R, 116, F(600, 30), C.text, 'right');
+  let x = chip(long ? 'LONG' : 'SHORT', L, 142, long ? 'rgba(144,228,191,0.16)' : 'rgba(237,139,154,0.16)', long ? C.up : C.down);
+  x = chip(`${levText(d.lev)}×`, x, 142, C.card2, C.text); x = chip(d.mode === 'cross' ? 'Cross' : 'Isolated', x, 142, C.card2, C.text);
+  chip(d.source === 'futures' ? 'Futures' : 'Spot', x, 142, C.card2, C.text);
+  // Ergebnis-Karte: Netto in € groß, USD klein darunter, rechts % auf den Einsatz, darunter Tagesergebnis
+  box(L, 214, R - L, 258, 24, C.card);
+  txt('Netto-Ergebnis', L + 32, 260, F(600, 28), C.muted);
+  txt(eurOk ? `${signed(d.eur)} €` : `${signed(d.net)} USD`, L + 32, 362, F(800, 96), res, 'left', 620);
+  const fund = d.funding ? ` · inkl. Funding ${signed(d.funding, Math.abs(d.funding) < 0.1 ? 4 : 2)} USD` : '';
+  txt(eurOk ? `${d.eurApprox ? '≈ ' : ''}${signed(d.net)} USD · Netto aus dem Journal${fund}` : `Euro-Kurs fehlt · Netto aus dem Journal${fund}`, L + 32, 408, F(500, 26), eurOk ? C.text2 : C.amber, 'left', R - L - 64);
+  txt(`Heute ${day.eur !== null && eurOk ? `${signed(day.eur)} €` : `${signed(day.usd)} USD`} · ${day.n} ${day.n === 1 ? 'Trade' : 'Trades'}`, L + 32, 448, F(500, 24), C.muted, 'left', R - L - 64);
+  if (d.pct !== null) { txt(`${signed(d.pct, 1)} %`, R - 32, 330, F(800, 60), res, 'right'); txt('auf den Einsatz', R - 32, 368, F(500, 26), C.muted, 'right'); }
+  // Ablauf in zwei Spalten
+  const col = i => i % 2 ? (L + R) / 2 + 12 : L, cw = (R - L) / 2 - 12;
+  const cell = (i, y, label, value, color = C.text, sub = '', subColor = C.muted) => { const cx = col(i);
+    txt(label, cx, y, F(500, 26), C.muted, 'left', cw); txt(value, cx, y + 44, F(700, 40), color, 'left', cw); if (sub) txt(sub, cx, y + 80, F(500, 24), subColor, 'left', cw); };
+  const qExit = d.exit !== null;
+  cell(0, 520, d.buys.length > 1 ? 'Einstieg Ø' : 'Einstieg', d.entry !== null ? `${priceText(d.entry)} USD` : 'nicht erfasst', d.entry !== null ? C.text : C.amber, timgWhen(d.openedAt));
+  cell(1, 520, d.sells.length > 1 ? 'Ausstieg Ø' : 'Ausstieg', qExit ? `${priceText(d.exit)} USD` : 'nicht erfasst', qExit ? C.text : C.amber, d.exitMiss ? `${d.exitMiss} von ${d.sells.length} ohne Kurs` : timgWhen(d.closedAt), d.exitMiss ? C.amber : C.muted);
+  cell(2, 648, 'Haltedauer', timgDur(d.closedAt - d.openedAt));
+  cell(3, 648, 'Menge', `${qtyText(d.qty)} ${coin(d.sym)}`, C.text, `Einsatz ${eurV(d.margin) !== null ? `${number(eurV(d.margin))} € (${number(d.margin)} USD)` : `${number(d.margin)} USD`}`);
+  txt('Auslöser', L, 776, F(500, 26), C.muted);
+  txt(d.reasons.length ? d.reasons.join(' · ') : 'nicht erfasst', L, 822, F(700, 38), d.reasons.length ? C.text : C.faint, 'left', R - L);
+  let y = 852;
+  // Hinweise aus der Datenprüfung
+  for (const w of warns) { y += 10; txt(w.text, L, y + 26, F(600, 26), C.amber, 'left', R - L); y += 36; }
+  // Qualität: Exit-Effizienz (nur bei Max. Gewinn > 0), Max. Verlust, Gebühren
+  const gainV = S && !S.gain.never && S.gain.usd > 0 ? S.gain : null, effOn = !!gainV;
+  const qy = y + 18, qh = effOn ? 268 : 160; box(L, qy, R - L, qh, 24, C.card);
+  let iy = qy;
+  if (effOn) {
+    const netV = eurOk ? d.eur : d.net, maxV = eurOk && gainV.eur !== null ? gainV.eur : gainV.usd, eff = netV / maxV * 100, unit = eurOk && gainV.eur !== null ? '€' : 'USD';
+    const nm = (v, dd) => number(v, dd).replace('-', '−');   // typografisches Minus wie im übrigen Bild
+    txt('Exit-Effizienz', L + 32, qy + 50, F(600, 28), C.muted);
+    txt(`${nm(eff, 0)} %`, R - 32, qy + 56, F(800, 48), eff >= 50 ? C.up : eff > 0 ? C.amber : C.down, 'right');
+    box(L + 32, qy + 80, R - L - 64, 18, 9, C.line);
+    const bw = Math.max(0, Math.min(1, eff / 100)) * (R - L - 64); if (bw > 0) box(L + 32, qy + 80, Math.max(18, bw), 18, 9, eff >= 50 ? C.up : C.amber);
+    txt(`${nm(netV)} von ${nm(maxV)} ${unit} Max. Gewinn${gainV.at ? ` (${hhmm(gainV.at)})` : ''}`, L + 32, qy + 136, F(500, 26), C.text2, 'left', R - L - 64);
+    iy = qy + 108;
   }
-  // Chart des Haltezeitraums – Kerzen aus dem Journal-Speicher bzw. der Börse; ohne Kerzen eine Linie zwischen den Ausführungskursen
-  const X0 = L, X1 = R - 104, Y0 = 1140, Y1 = 1530, cand = !!ch?.candles?.length;
-  txt(cand ? `Kursverlauf · ${ch.iv}-Kerzen` : 'Kursverlauf · Ersatzdarstellung', L, 1076, F(700, 28), C.text, 'left', 560);
-  txt(cand ? `Quelle: ${ch.label || `Binance ${d.source === 'futures' ? 'Futures' : 'Spot'}`}` : 'Quelle: keine Kerzen abrufbar – Linie Einstieg → Ausstieg', L, 1108, F(600, 22), cand && !ch.alt ? C.muted : C.amber, 'left', R - L);
+  { const cx0 = L + 32, cx1 = (L + R) / 2 + 12, ty = iy + (effOn ? 70 : 48);
+    txt('Max. Verlust', cx0, ty, F(500, 26), C.muted);
+    if (!S) { txt('—', cx0, ty + 44, F(700, 38), C.muted); txt('ohne Kerzendaten', cx0, ty + 78, F(500, 24), C.muted); }
+    else if (S.loss.never) { txt(`0,00 ${eurOk ? '€' : 'USD'}`, cx0, ty + 44, F(700, 38), C.text); txt('nie im Minus', cx0, ty + 78, F(500, 24), C.muted); }
+    else { txt(money(S.loss.usd, eurOk ? S.loss.eur : null), cx0, ty + 44, F(700, 38), C.down); txt(S.loss.at ? hhmm(S.loss.at) : '', cx0, ty + 78, F(500, 24), C.muted); }
+    txt('Gebühren', cx1, ty, F(500, 26), C.muted);
+    const small = v => (v && Math.abs(v) < 0.1 ? 4 : 2);
+    txt(`${number(d.fees, small(d.fees))} USD`, cx1, ty + 44, F(700, 38), C.text);
+    txt(!(d.fees > 0) ? '⚠ nicht erfasst, bitte prüfen' : d.funding ? `Funding ${signed(d.funding, small(d.funding))} USD (im Netto)` : 'im Netto enthalten', cx1, ty + 78, F(500, 24), !(d.fees > 0) ? C.amber : C.muted, 'left', R - cx1 - 32); }
+  y = qy + qh;
+  // Chart des Haltezeitraums
+  const cand = !!ch?.candles?.length, X0 = L + 12, X1 = R - 120, Y0 = y + (cand || !ch?.err ? 120 : 150), Y1 = 1566;
+  txt(cand ? `Kursverlauf · ${ch.iv}-Kerzen` : 'Kursverlauf · Ersatzdarstellung', L, y + 54, F(700, 32), C.text, 'left', 600);
+  const srcWarn = warns.some(w => w.key === 'source');
+  txt(cand ? `Quelle: ${ch.label || `Binance ${d.source === 'futures' ? 'Futures' : 'Spot'}`}` : 'Quelle: keine Kerzen abrufbar – Linie Einstieg → Ausstieg', L, y + 88, F(500, 24), cand && !ch.alt && !srcWarn ? C.muted : C.amber, 'left', R - L - 300);
   const t0 = cand ? ch.from : d.openedAt - TIMG_PAD, t1 = cand ? Math.max(ch.to, ch.candles.at(-1).closeTime + 1) : d.closedAt + TIMG_PAD;
-  txt(`${tgcTime(t0)} – ${tgcTime(t1)}`, R, 1076, F(600, 22), C.muted, 'right');
-  box(X0 - 8, Y0 - 12, R - X0 + 8, Y1 - Y0 + 24, 14, C.card);
+  txt(`${hhmm(t0)} – ${hhmm(t1)}`, R, y + 54, F(500, 26), C.muted, 'right');
+  box(L - 8, Y0 - 16, R - L + 16, Y1 - Y0 + 32, 18, C.card);
   const cs = cand ? ch.candles : [], xs = t => X0 + (t - t0) / Math.max(1, t1 - t0) * (X1 - X0);
   const ps = [...cs.flatMap(c => [c.low, c.high]), ...d.buys.map(b => b.p), ...d.sells.map(s => s.x), ...d.steps.map(s => s.avg)].filter(v => v > 0);
-  const lay = { mode: cand ? 'candles' : 'line', chart: { X0, X1, Y0, Y1 }, labels: [], marks: [] }; timg.layout = lay;
-  if (!ps.length) { txt('Kurse nicht erfasst', (X0 + R) / 2, (Y0 + Y1) / 2, F(700, 32), C.amber, 'center'); }
+  const lay = { mode: cand ? 'candles' : 'line', chart: { X0, X1, Y0, Y1 }, labels: [], marks: [], candles: [], texts }; timg.layout = lay;   // texts: für Prüfungen
+  if (!ps.length) { txt('Kurse nicht erfasst', (X0 + X1) / 2, (Y0 + Y1) / 2, F(700, 32), C.amber, 'center'); }
   else {
-    let lo = Math.min(...ps), hi = Math.max(...ps); const pad = (hi - lo) * 0.16 || hi * 0.004; lo -= pad; hi += pad; // Platz für Marken und Beschriftung
+    // Y-Achse nur auf Kerzen und Marken; etwas Rand oben und unten für die Beschriftungen
+    let lo = Math.min(...ps), hi = Math.max(...ps); const span = hi - lo || hi * 0.004; lo -= span * 0.24; hi += span * 0.24;   // Platz für die Pills über dem Hoch und unter dem Tief
     const ys = p => Y1 - (p - lo) / (hi - lo) * (Y1 - Y0);
-    // Haltezeit
     g.fillStyle = C.band; g.fillRect(xs(d.openedAt), Y0, Math.max(2, xs(d.closedAt) - xs(d.openedAt)), Y1 - Y0);
-    // Raster und Preise
-    const stepOf = r => { const e = Math.pow(10, Math.floor(Math.log10(r / 4))), m = r / 4 / e; return (m >= 5 ? 5 : m >= 2 ? 2 : 1) * e; }, st = stepOf(hi - lo);
+    const stepOf = r => { const e = Math.pow(10, Math.floor(Math.log10(r / 5))), m = r / 5 / e; return (m >= 5 ? 5 : m >= 2 ? 2 : 1) * e; }, st = stepOf(hi - lo);
     g.lineWidth = 1;
-    for (let p = Math.ceil(lo / st) * st; p <= hi; p += st) { const y = Math.round(ys(p)) + 0.5; g.strokeStyle = C.grid; g.beginPath(); g.moveTo(X0, y); g.lineTo(X1, y); g.stroke(); txt(priceText(p), R - 8, y + 8, F(500, 20), C.faint, 'right'); }
-    // Zeitachse
+    for (let p = Math.ceil(lo / st) * st; p <= hi; p += st) { const yy = Math.round(ys(p)) + 0.5; if (yy < Y0 + 8 || yy > Y1 - 4) continue; g.strokeStyle = C.grid; g.beginPath(); g.moveTo(X0, yy); g.lineTo(X1, yy); g.stroke(); txt(priceText(p), R - 4, yy + 8, F(500, 22), C.faint, 'right'); }
     const multiDay = t1 - t0 > 36 * 3600e3;
-    for (let i = 0; i <= 4; i++) { const t = t0 + (t1 - t0) * i / 4, x2 = xs(t); txt(new Date(t).toLocaleString('de-DE', multiDay ? { day: '2-digit', month: '2-digit' } : { hour: '2-digit', minute: '2-digit' }), x2, Y1 + 42, F(500, 20), C.faint, i === 0 ? 'left' : i === 4 ? 'right' : 'center'); }
+    for (let i = 0; i <= 4; i++) { const t = t0 + (t1 - t0) * i / 4; txt(new Date(t).toLocaleString('de-DE', multiDay ? { day: '2-digit', month: '2-digit' } : { hour: '2-digit', minute: '2-digit' }), xs(t), Y1 + 50, F(500, 22), C.faint, i === 0 ? 'left' : i === 4 ? 'right' : 'center'); }
     const occ = [], hit = r => occ.some(b => r.x < b.x + b.w && r.x + r.w > b.x && r.y < b.y + b.h && r.y + r.h > b.y);
     if (cand) {
-      // Kerzen (Lücken bleiben frei – keine verbindende Linie)
       const w = Math.max(1, (X1 - X0) * ch.ms / (t1 - t0) * 0.68);
       for (const c of cs) {
-        const cx = xs(c.time + ch.ms / 2), up = c.close >= c.open, col = up ? C.up : C.down;
-        g.strokeStyle = col; g.lineWidth = Math.max(1, Math.min(2, w / 4)); g.beginPath(); g.moveTo(cx, ys(c.high)); g.lineTo(cx, ys(c.low)); g.stroke();
-        const yt = ys(Math.max(c.open, c.close)), yb = ys(Math.min(c.open, c.close)); g.fillStyle = col; g.fillRect(cx - w / 2, yt, w, Math.max(1, yb - yt));
+        const cx = xs(c.time + ch.ms / 2), up = c.close >= c.open, colr = up ? C.up : C.down;
+        g.strokeStyle = colr; g.lineWidth = Math.max(1, Math.min(2, w / 4)); g.beginPath(); g.moveTo(cx, ys(c.high)); g.lineTo(cx, ys(c.low)); g.stroke();
+        const yt = ys(Math.max(c.open, c.close)), yb = ys(Math.min(c.open, c.close)); g.fillStyle = colr; g.fillRect(cx - w / 2, yt, w, Math.max(1, yb - yt));
+        const r = { x: cx - Math.max(w, 3) / 2 - 1, y: ys(c.high) - 1, w: Math.max(w, 3) + 2, h: ys(c.low) - ys(c.high) + 2 }; occ.push(r); lay.candles.push(r);   // Beschriftungen verdecken keine Kerze
       }
       let gap = cs[0].time > d.openedAt + ch.ms || cs.at(-1).closeTime < Math.min(d.closedAt, Date.now() - ch.ms) - ch.ms;
       for (let i = 1; i < cs.length && !gap; i++) if (cs[i].time - cs[i - 1].time > ch.ms * 1.5) gap = true;
-      if (gap) { const gw = txt('Kursdaten mit Lücken – nichts aufgefüllt', X1, Y0 + 26, F(600, 20), C.amber, 'right'); occ.push({ x: X1 - gw - 6, y: Y0 + 4, w: gw + 12, h: 30 }); }
+      if (gap) { const gw = txt('Kursdaten mit Lücken – nichts aufgefüllt', X1, Y0 + 28, F(600, 22), C.amber, 'right'); occ.push({ x: X1 - gw - 6, y: Y0 + 4, w: gw + 12, h: 32 }); }
     } else {
-      // Ersatz: Linie durch die Ausführungskurse in zeitlicher Folge, damit die Karte nie leer ist
-      const pts = [...d.buys.map(b => [b.at, b.p]), ...d.sells.map(s => [s.at, s.x])].filter(x => x[1] > 0).sort((a, b) => a[0] - b[0]);
+      const pts = [...d.buys.map(b => [b.at, b.p]), ...d.sells.map(s => [s.at, s.x])].filter(v => v[1] > 0).sort((a, b) => a[0] - b[0]);
       g.strokeStyle = C.text2; g.lineWidth = 3; g.beginPath();
       if (pts.length === 1) { g.moveTo(xs(d.openedAt), ys(pts[0][1])); g.lineTo(xs(d.closedAt), ys(pts[0][1])); } else pts.forEach(([t, p], i) => i ? g.lineTo(xs(t), ys(p)) : g.moveTo(xs(t), ys(p)));
       g.stroke();
-      const nw = txt('Keine Kerzen abrufbar – vereinfachte Linie zwischen den Ausführungskursen', X0 + 12, Y0 + 26, F(600, 20), C.amber, 'left', X1 - X0 - 24);
-      occ.push({ x: X0, y: Y0 + 4, w: nw + 24, h: 30 });
-      if (ch?.err) { const ew = txt(ch.err, X0 + 12, Y0 + 52, F(500, 18), C.muted, 'left', X1 - X0 - 24); occ.push({ x: X0, y: Y0 + 34, w: ew + 24, h: 26 }); }
+      if (ch?.err) txt(ch.err, L, y + 120, F(500, 22), C.muted, 'left', R - L);   // Grund über dem Chart statt über der Linie
     }
-    // Ø-Einstieg als Stufenlinie über die Haltezeit
+    // Einstieg als blau gestrichelte Linie über die Haltezeit (bei Nachkäufen Ø-Stufen)
     g.setLineDash([12, 8]); g.strokeStyle = C.blue; g.lineWidth = 2.5; g.beginPath(); let prev = null;
-    for (let i = 0; i < d.steps.length; i++) { const s = d.steps[i], nx = i + 1 < d.steps.length ? d.steps[i + 1].at : d.closedAt; if (s.avg === null) continue; const y = ys(s.avg); if (prev === null || Math.abs(prev - s.avg) > s.avg * 1e-9) g.moveTo(xs(s.at), y); g.lineTo(xs(Math.max(s.at, nx)), y); prev = s.avg; }
+    for (let i = 0; i < d.steps.length; i++) { const s = d.steps[i], nx = i + 1 < d.steps.length ? d.steps[i + 1].at : d.closedAt; if (s.avg === null) continue; const yy = ys(s.avg); if (prev === null || Math.abs(prev - s.avg) > s.avg * 1e-9) g.moveTo(xs(s.at), yy); g.lineTo(xs(Math.max(s.at, nx)), yy); prev = s.avg; }
     g.stroke(); g.setLineDash([]);
-    // Marken: ▲/▼ E = Einstieg, A = Ausstieg, ● H/T = höchster/tiefster Kurs in der Haltezeit; ohne Kurs eine gestrichelte Linie mit „?“
-    const lev = d.lev > 0 ? d.lev : 1, eurV = v => eurOk ? eurOf(v, d.fx) : null, money = (usd, e, sgn = true) => e !== null && e !== undefined ? `${sgn ? signed(e) : number(e)} €` : `${sgn ? signed(usd) : number(usd)} USD`;
-    const marks = [];
-    d.buys.forEach((b, i) => { const st0 = b.q * b.p / lev; marks.push({ kind: 'E', at: b.at, p: b.p, col: C.blue, down: !long, pri: 2 + i,
+    // Marken: E (blau, Beschriftung unter der Linie), H bzw. T (bester Kurs, Beschriftung links davon), A (Beschriftung unten rechts, Linie hoch)
+    const lev = d.lev > 0 ? d.lev : 1, marks = [];
+    d.buys.forEach((b, i) => { const st0 = b.q * b.p / lev; marks.push({ kind: 'E', at: b.at, p: b.p, col: C.blue, tri: long ? 'up' : 'down', pref: 'below', pri: 2 + i,
       text: `E${d.buys.length > 1 ? i + 1 : ''} ${b.p > 0 ? priceText(b.p) : '?'}${b.p > 0 ? ` (Einsatz ${money(st0, eurV(st0), false)})` : ''}` }); });
     const fr = S?.feeRate ?? 0, dir = long ? 1 : -1, sameBk = d.bk?.length === d.sells.length;
     d.sells.forEach((s, i) => {
       const usd = sameBk ? d.bk[i].usd : s.x > 0 && s.E > 0 ? dir * (s.x - s.E) * s.q - fr * (s.E + s.x) * s.q : null, e = sameBk && d.bk[i].eur !== null ? d.bk[i].eur : usd !== null ? eurV(usd) : null;
-      marks.push({ kind: 'A', at: s.at, p: s.x, col: usd > 0 ? C.up : usd < 0 ? C.down : C.amber, down: long, pri: i === d.sells.length - 1 ? 0 : 1 + i,
+      marks.push({ kind: 'A', at: s.at, p: s.x, col: usd > 0 ? C.up : usd < 0 ? C.down : C.amber, tri: long ? 'down' : 'up', pref: 'belowRight', pri: i === d.sells.length - 1 ? 0 : 1 + i,
         text: `A${d.sells.length > 1 ? i + 1 : ''} ${s.x > 0 ? priceText(s.x) : '?'}${s.x > 0 && usd !== null ? ` (${money(usd, e)})` : ''}` });
     });
-    if (S && cand) for (const [k, v, up] of [['H', S.hi, true], ['T', S.lo, false]]) {
-      // fällt der Punkt auf eine Ein-/Ausstiegsmarke, nennt deren Beschriftung den Kurs schon
-      if (marks.some(m => m.p > 0 && Math.abs(xs(m.at) - xs(v.at)) < 26 && Math.abs(ys(m.p) - ys(v.px)) < 14)) continue;
-      marks.push({ kind: k, at: v.at, p: v.px, col: v.usd > 0 ? C.up : v.usd < 0 ? C.down : C.text2, down: up, dot: true, pri: 5, text: `${k} ${priceText(v.px)} (${money(v.usd, v.eur)})` });
-    }
-    // erst alle Marken zeichnen (und als belegt merken), dann die Beschriftungen auf freie Plätze
+    if (gainV && cand && gainV.px > 0 && !marks.some(m => m.p > 0 && Math.abs(xs(m.at) - xs(gainV.at)) < 26 && Math.abs(ys(m.p) - ys(gainV.px)) < 14))
+      marks.push({ kind: long ? 'H' : 'T', at: gainV.at, p: gainV.px, col: C.up, dot: true, pref: 'left', pri: 5, text: `${long ? 'H' : 'T'} ${priceText(gainV.px)} (${money(gainV.usd, eurOk ? gainV.eur : null)})`, short: `${long ? 'H' : 'T'} ${priceText(gainV.px)}` });
     for (const m of marks) {
       m.x = xs(m.at);
       if (!(m.p > 0)) { g.setLineDash([6, 6]); g.strokeStyle = m.col; g.lineWidth = 2; g.beginPath(); g.moveTo(m.x, Y0); g.lineTo(m.x, Y1); g.stroke(); g.setLineDash([]); m.y = Y0 + 40; continue; }
       m.y = ys(m.p); g.fillStyle = m.col; g.beginPath();
-      if (m.dot) g.arc(m.x, m.y, 9, 0, Math.PI * 2);
-      else if (m.down) { g.moveTo(m.x, m.y + 2); g.lineTo(m.x - 12, m.y - 20); g.lineTo(m.x + 12, m.y - 20); } else { g.moveTo(m.x, m.y - 2); g.lineTo(m.x - 12, m.y + 20); g.lineTo(m.x + 12, m.y + 20); }
+      if (m.dot) g.arc(m.x, m.y, 10, 0, Math.PI * 2);
+      else if (m.tri === 'down') { m.y -= 14; g.moveTo(m.x, m.y + 12); g.lineTo(m.x - 12, m.y - 10); g.lineTo(m.x + 12, m.y - 10); } else { m.y += 14; g.moveTo(m.x, m.y - 12); g.lineTo(m.x - 12, m.y + 10); g.lineTo(m.x + 12, m.y + 10); }
       g.closePath(); g.fill(); g.strokeStyle = C.bg; g.lineWidth = 2; g.stroke();
-      const r = m.dot ? { x: m.x - 11, y: m.y - 11, w: 22, h: 22 } : { x: m.x - 13, y: m.down ? m.y - 21 : m.y - 3, w: 26, h: 24 }; occ.push(r); lay.marks.push({ kind: m.kind, ...r });
+      const r = { x: m.x - 13, y: m.y - 13, w: 26, h: 26 }; occ.push(r); lay.marks.push({ kind: m.kind, ...r });
     }
-    const LF = F(800, 26), LH = 40, GAP = 6;
+    // Pills: bevorzugte Lage je Marke, sonst die nächste freie Stelle – nie über Kerzen, Marken oder anderen Pills
+    const LF = F(800, 26), LH = 44, inChart = r => r.x >= X0 - 4 && r.x + r.w <= X1 + 4 && r.y >= Y0 - 6 && r.y + r.h <= Y1 + 6;
+    const free = r => inChart(r) && !hit({ x: r.x - 4, y: r.y - 4, w: r.w + 8, h: r.h + 8 });
+    const spot = (m, text) => {
+      g.font = LF; const w = Math.ceil(g.measureText(text).width) + 28, clampX = v => Math.max(X0 - 4, Math.min(X1 + 4 - w, v));
+      const first = m.pref === 'left' ? { x: m.x - w - 22, y: m.y - LH / 2, k: 0 } : m.pref === 'belowRight' ? { x: m.x - w * 0.25, y: Y1 - LH - 10 } : { x: m.x - 20, y: m.y + 30 };
+      const tries = [first];
+      if (m.pref === 'left') {   // H/T: links vom Hoch bzw. Tief; die nächste freie Stelle zuerst, über dem Hoch bzw. unter dem Tief bevorzugt
+        const up = m.kind === 'H', c = [];
+        for (let dy = -240; dy <= 240; dy += 12) for (let dx = 0; dx >= -(X1 - X0); dx -= 40) c.push({ x: first.x + dx, y: first.y + dy, k: -dx + Math.abs(dy) * ((dy < 0) === up ? 1.2 : 2.4) });
+        for (let dy = -240; dy <= 240; dy += 12) for (let dx = 0; dx <= X1 - X0; dx += 40) c.push({ x: m.x + 22 + dx, y: first.y + dy, k: 420 + dx + Math.abs(dy) * 2 });   // rechts nur als Ausweg
+        tries.push(...c.sort((a, b) => a.k - b.k));
+      } else if (m.pref === 'belowRight') {   // A: unten rechts im Chart, von unten nach oben bis unter die Marke; sonst wie bisher
+        for (let yy = first.y; yy >= m.y + 24; yy -= 24) for (const dx of [0, -80, 80, -160, -240]) tries.push({ x: first.x + dx, y: yy });
+        for (let k = 0; k <= 14; k++) for (const dy of [k * 24, -k * 24 - 80]) for (const dx of [0, 80, -80, 160, -160]) tries.push({ x: m.x - w * 0.25 + dx, y: m.y + 40 + dy });
+      } else for (let k = 0; k <= 14; k++) for (const dy of [k * 24, -k * 24 - 80]) for (const dx of [0, 80, -80, 160, -160]) tries.push({ x: first.x + dx, y: first.y + dy });
+      for (const p of tries) { const r = { x: clampX(p.x), y: p.y, w, h: LH }; if (free(r)) return { at: r, w, k: p.k || 0, text }; }
+      return { at: null, w, k: Infinity, text, fb: { x: clampX(first.x), y: Math.max(Y0 - 6, Math.min(Y1 + 6 - LH, first.y)), w, h: LH } };
+    };
     for (const m of [...marks].sort((a, b) => a.pri - b.pri)) {
-      g.font = LF; const w = Math.ceil(g.measureText(m.text).width) + 22, up0 = m.down, near = m.dot ? 14 : 24;
-      const xsOpt = [m.x - w / 2, m.x + 16, m.x - w - 16].map(x => Math.max(X0 - 4, Math.min(X1 + 4 - w, x)));
-      let at = null;
-      for (let k = 0; k < 9 && !at; k++) for (const up of [up0, !up0]) {
-        const y = up ? m.y - near - LH - k * (LH + GAP) : m.y + near + k * (LH + GAP);
-        if (y < Y0 - 6 || y + LH > Y1 + 6) continue;
-        for (const x of xsOpt) { const r = { x, y, w, h: LH }; if (!hit({ x: r.x - 3, y: r.y - 3, w: r.w + 6, h: r.h + 6 })) { at = r; break; } }
-        if (at) break;
-      }
-      if (!at) { if (m.pri > 0) continue; at = { x: xsOpt[0], y: Math.max(Y0 - 6, Math.min(Y1 + 6 - LH, up0 ? m.y - near - LH : m.y + near)), w, h: LH }; } // der Schluss steht immer da
-      occ.push(at); lay.labels.push({ kind: m.kind, text: m.text, ...at });
-      const ly = at.y + LH / 2, lx = Math.max(at.x, Math.min(at.x + w, m.x));
-      if (Math.abs(ly - m.y) > near + LH) { g.strokeStyle = m.col; g.globalAlpha = 0.55; g.lineWidth = 1.5; g.beginPath(); g.moveTo(m.x, m.y + (ly < m.y ? -near : near)); g.lineTo(lx, ly < m.y ? at.y + LH : at.y); g.stroke(); g.globalAlpha = 1; }
-      box(at.x, at.y, w, LH, 10, 'rgba(11,15,19,0.9)'); g.strokeStyle = m.col; g.lineWidth = 2; g.beginPath(); if (g.roundRect) g.roundRect(at.x, at.y, w, LH, 10); else g.rect(at.x, at.y, w, LH); g.stroke();
-      txt(m.text, at.x + w / 2, at.y + 29, LF, m.col, 'center');
+      let P = spot(m, m.text);
+      if (m.short && P.k > 300) { const S2 = spot(m, m.short); if (S2.k < P.k && (S2.k <= 300 || !P.at)) P = S2; }   // weit weg: nur der Kurs, dafür nah an der Marke
+      let { at } = P; const { w, text } = P;
+      if (!at) { if (m.pri > 0) continue; at = P.fb; }   // der Schluss steht immer da
+      occ.push(at); lay.labels.push({ kind: m.kind, text, ...at });
+      // dünne Linie von der Pill zur Marke (A immer, sonst wenn die Pill weiter weg liegt)
+      const side = at.x + w <= m.x - 8, cy = at.y + LH / 2;   // Pill ganz links der Marke: waagerecht anbinden
+      const ex = side ? at.x + w : Math.max(at.x + 8, Math.min(at.x + w - 8, m.x)), ey = side ? Math.max(at.y + 10, Math.min(at.y + LH - 10, m.y)) : cy < m.y ? at.y + LH : at.y;
+      if (m.kind === 'A' || Math.hypot(ex - m.x, ey - m.y) > 46) { g.strokeStyle = m.col; g.globalAlpha = 0.7; g.lineWidth = 1.5; g.beginPath(); g.moveTo(side ? m.x - 13 : m.x, side ? m.y : m.y + (ey > m.y ? 13 : -13)); g.lineTo(ex, ey); g.stroke(); g.globalAlpha = 1; }
+      box(at.x, at.y, w, LH, 12, 'rgba(11,15,19,0.92)'); g.strokeStyle = m.col; g.lineWidth = 2; g.beginPath(); if (g.roundRect) g.roundRect(at.x, at.y, w, LH, 12); else g.rect(at.x, at.y, w, LH); g.stroke();
+      txt(text, at.x + w / 2, at.y + 31, LF, m.col, 'center');
     }
   }
-  // Legende und Fuß
-  { let lx = L; const item = (sym, col, label) => { lx += txt(sym, lx, 1620, F(800, 22), col) + 8; lx += txt(label, lx, 1620, F(600, 22), C.muted) + 28; };
-    item(long ? '▲ E' : '▼ E', C.blue, 'Einstieg'); item(long ? '▼ A' : '▲ A', C.amber, 'Ausstieg');
-    if (cand && S) item('● H/T', C.text2, 'Hoch/Tief'); else if (!cand) item('—', C.text2, 'Linie (Ersatz)');
-    item('– –', C.blue, 'Ø Einstieg'); g.fillStyle = 'rgba(138,184,255,0.35)'; g.fillRect(lx, 1602, 22, 22); lx += 30; txt('Haltezeit', lx, 1620, F(600, 22), C.muted); }
-  const parts = d.sells.length - 1, bits = [`${d.buys.length} ${long ? (d.buys.length === 1 ? 'Kauf' : 'Käufe') : (d.buys.length === 1 ? 'Verkauf' : 'Verkäufe')}`, parts ? `${parts} ${parts === 1 ? 'Teilabschluss' : 'Teilabschlüsse'} + Schluss` : 'ein Schluss'];
-  if (d.late) bits.push('nachgetragen'); if (d.reasons.length) bits.push(`Gründe: ${d.reasons.join(', ')}`);
-  txt(bits.join(' · '), L, 1664, F(600, 24), C.text2, 'left', R - L);
-  txt(`Scalp Desk · ${timgWhen(Date.now())} · Werte aus dem Journal · Max. Gewinn/Verlust nach Gebühren`, L, 1706, F(500, 20), C.faint, 'left', R - L);
+  // Fuß
+  const parts = d.sells.length - 1, nb = d.buys.length, bits = [`${nb} ${long ? (nb === 1 ? 'Kauf' : 'Käufe') : (nb === 1 ? 'Verkauf' : 'Verkäufe')}`, parts ? `${parts} ${parts === 1 ? 'Teilabschluss' : 'Teilabschlüsse'} + Schluss` : `1 ${long ? 'Verkauf' : 'Rückkauf'}`];
+  if (d.late) bits.push('nachgetragen');
+  txt(bits.join(', '), L, 1664, F(600, 26), C.text2, 'left', R - L);
+  txt(`Scalp Desk · Werte aus dem Journal · Max. Gewinn/Verlust nach Gebühren`, L, 1704, F(500, 22), C.faint, 'left', R - L);
 }
 function timgBlob(d, ch) {
   return new Promise((resolve, reject) => {
@@ -14420,22 +14745,24 @@ function timgBlob(d, ch) {
   });
 }
 // ---- Senden: genau ein Foto mit zentral formatierter Kurzinfo; keine blob:-Adresse, sondern die Datei selbst (multipart) ----
-async function timgPost(blob, data, plainFallback = false) {
+const timgHold = ms => { const m = Math.round(ms / 60e3); return m < 60 ? `${Math.max(1, m)} Min.` : `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')} Std.`; };
+function timgCaption(d) {
+  const res = d.eur !== null && d.fx > 0 ? `${signed(d.eur)} €` : `${signed(d.net)} USD`;
+  return `${coin(d.sym)}/USDT ${d.side === 'short' ? 'Short' : 'Long'} ${levText(d.lev)}× · ${res}${d.pct !== null ? ` (${signed(d.pct, 1)} %)` : ''} · ${timgHold(d.closedAt - d.openedAt)}`;
+}
+async function timgPost(blob, data) {
   const T = tgDest('trades'); if (!T) throw Object.assign(new Error('Ziel „Trades“ nicht eingerichtet'), { kind: 'fail' });
   if (navigator.onLine === false) throw Object.assign(new Error('offline'), { kind: 'offline' });
   const fd = new FormData(); fd.append('chat_id', T.chat); if (T.thread) fd.append('message_thread_id', T.thread); fd.append('photo', blob, blob.type === 'image/jpeg' ? 'trade.jpg' : 'trade.png');
-  // 3.69.0: kurze Bildunterschrift – Paar, Long/Short, Netto in € und %, Haltedauer, Max. Gewinn und Max. Verlust in €
-  const S = data.stats || null;
-  const html = formatMessage('trade', { card: true, symbol: data.sym, side: data.side, pnl: data.net, eur: data.eur, percent: data.pct, duration: timgDur(data.closedAt - data.openedAt), at: data.closedAt, messageLimit: TELEGRAM_CAPTION_LIMIT,
-    ...(S ? { gain: S.gain.usd, gainEur: S.gain.eur, neverPlus: !!S.gain.never, loss: S.loss.usd, lossEur: S.loss.eur, neverMinus: !!S.loss.never } : { extremes: 'ohne Kerzendaten nicht berechnet' }) });
-  fd.append('caption', plainFallback ? telegramPlain(html) : html); if (!plainFallback) fd.append('parse_mode', 'HTML');
+  // 3.71.0: eine Zeile, damit die Push-Vorschau reicht: „XRP/USDT Long 20× · +43,88 € (+89,5 %) · 1:52 Std.“ (höchstens 1024 Zeichen)
+  fd.append('caption', timgCaption(data).slice(0, TELEGRAM_CAPTION_LIMIT));
   let r; try { r = await fetch(`https://api.telegram.org/bot${T.token}/sendPhoto`, { method: 'POST', body: fd, credentials: 'omit', referrerPolicy: 'no-referrer', cache: 'no-store' }); }
   catch { throw Object.assign(new Error('keine Antwort von Telegram'), { kind: 'lost' }); } // Anfrage kann angekommen sein
   let j = null; try { j = await r.json(); } catch {}
   if (r.ok && j?.ok) return j.result?.message_id || 0;
-  if (!plainFallback && telegramFormatRejected(j?.error_code ?? r.status, j?.description)) return timgPost(blob, data, true);
   if (r.ok) throw Object.assign(new Error('Antwort von Telegram nicht lesbar'), { kind: 'lost' });
-  throw Object.assign(new Error(r.status === 401 || r.status === 404 ? 'Token ungültig' : `Telegram lehnt ab: ${String(j?.description || `Fehler ${r.status}`).slice(0, 120)}`), { kind: 'fail' });
+  // 3.71.0: Chat-Name und Fehlertext im Protokoll des Auftrags
+  throw Object.assign(new Error(`Chat „Trades“ (${T.chat}${T.thread ? ` · Thema ${T.thread}` : ''}): ${r.status === 401 || r.status === 404 ? 'Token ungültig' : `Telegram lehnt ab: ${String(j?.description || `Fehler ${r.status}`).slice(0, 120)}`}`), { kind: 'fail' });
 }
 // ---- Auftrag ----
 function timgQueue(id, by = 'auto') {
@@ -14472,6 +14799,7 @@ async function timgRun(id) {
     why = gate(); if (why) return timgSet(id, { st: 'drop', why }); // AUS: nicht einmal Kerzen laden
     const d = timgData(id); if (d.err) return timgSet(id, { st: 'fail', why: d.err });
     const ch = await timgCandles(d); d.stats = timgStats(d, ch); // 3.69.0: Kerzen aus dem Journal-Speicher bzw. mit Ersatzquellen
+    d.checks = timgChecks(d, ch); timgSet(id, { warn: d.checks.map(w => w.text).join(' · ') }); for (const w of d.checks) console.warn(`Trade-Bild ${coin(d.sym)} (${id}): ${w.text}`); // 3.71.0: Datenprüfung ins Protokoll
     timgSet(id, { chart: ch.candles.length ? `${ch.iv} · ${ch.candles.length} Kerzen · ${ch.label}${ch.stored ? ' · gespeichert' : ''}` : `Ersatzlinie Einstieg → Ausstieg (${ch.err})` }); // zur Nachvollziehbarkeit
     why = gate(); if (why) return timgSet(id, { st: 'drop', why });
     let blob; try { blob = await timgBlob(d, ch); } catch (e) { return timgSet(id, { st: 'fail', why: `Bild konnte nicht erstellt werden (${String(e?.message || e).slice(0, 100)})` }); }
@@ -14482,7 +14810,11 @@ async function timgRun(id) {
     catch (e) {
       timgSet(id, e.kind === 'lost' ? { st: 'unconf', why: 'keine Antwort von Telegram – kein automatischer zweiter Versuch' }
         : e.kind === 'offline' ? { st: 'queued', why: 'offline – wird gesendet, sobald wieder Verbindung besteht' } : { st: 'fail', why: e.message });
-      if (e.kind !== 'offline') infoToast(`Trade-Bild ${coin(d.sym)} nicht an Telegram gesendet: ${timgJob(id)?.why || e.message}`, 9000); // 3.69.0: Fehler im Klartext
+      if (e.kind !== 'offline') {
+        const why = timgJob(id)?.why || e.message;
+        infoToast(`Trade-Bild ${coin(d.sym)} nicht an Telegram gesendet: ${why}`, 9000); // 3.69.0: Fehler im Klartext
+        console.warn(`Trade-Bild ${coin(d.sym)} (${id}): ${/^Chat „/.test(why) ? '' : 'Chat „Trades“: '}${why}`); // 3.71.0: ins Protokoll, mit Chat-Name (nie mit Token)
+      }
     }
   } finally { clearInterval(beat); timg.run.delete(id); void store.release(`timg:${id}`); }
 }
@@ -14514,8 +14846,9 @@ function timgChip(id) {
 }
 // 3.69.0: Telegram-Fehler sichtbar unter dem Zustand (nicht nur als Tooltip)
 function timgWhy(id) {
-  const j = timg.jobs.find(x => x.id === id); if (!j || !j.why || !['fail', 'unconf', 'drop'].includes(j.st)) return null;
-  return el('p', 'timg-why', `Telegram: ${j.why}`);
+  const j = timg.jobs.find(x => x.id === id); if (!j) return null;
+  const err = j.why && ['fail', 'unconf', 'drop'].includes(j.st) ? `Telegram: ${j.why}` : '', text = [err, j.warn || ''].filter(Boolean).join(' · ');   // 3.71.0: auch Hinweise der Datenprüfung
+  return text ? el('p', 'timg-why', text) : null;
 }
 async function timgPreview(id) {
   const dlg = $('timg-dialog'); if (timg.view?.url) URL.revokeObjectURL(timg.view.url);
@@ -14928,7 +15261,7 @@ const musterPaper = createMusterPaper({ read: readMusterPaper, write: writeMuste
   } });
 const MUSTER_TG_NAMES = { hammer: 'Hammer', engulfing: 'Bullish Engulfing', confluence: 'Konfluenz', po3: 'Power of Three' };
 musterView = createMusterView({ host: musterHost, selection: musterSelection, currentPrice: (symbol, market) => state.symbol === symbol && state.source === market ? currentPrice() : null,
-  prefs: store.get('scalpdesk.muster.settings.v1', {}), savePrefs: value => store.set('scalpdesk.muster.settings.v1', value), workerFactory: () => new Worker(new URL('./bundles/3.70.2/shared/muster-bot-worker.mjs', import.meta.url), { type: 'module' }), paper: musterPaper, onMarkers: scheduleDraw,
+  prefs: store.get('scalpdesk.muster.settings.v1', {}), savePrefs: value => store.set('scalpdesk.muster.settings.v1', value), workerFactory: () => new Worker(new URL('./bundles/3.71.0/shared/muster-bot-worker.mjs', import.meta.url), { type: 'module' }), paper: musterPaper, onMarkers: scheduleDraw,
   telegramStatus: () => tgtReady('trades') ? null : 'Hinweis: Telegram ist noch nicht eingerichtet oder das Ziel „Trades“ ist aus (Einstellungen → Telegram).' });
 void musterPaper.restore().then(() => musterPaper.poll());
 function musterDraw(svg, data, x, y, bottom) {
@@ -15117,6 +15450,9 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
             <button type="button" class="button ghost" id="own-color-suggest" hidden></button>
             <small>Text passt sich an. Mindestkontrast 4,5:1; sehr helle und dunkle Farben sind mit passender Schrift lesbar.</small>
           </div>
+          <h4>Kopfzeile</h4>
+          <button type="button" class="button ghost" id="lb-open-toggle" aria-pressed="true">👁 Live-Wert offener Positionen: an</button>
+          <small>Aus: In der Kopfzeile steht „Offen •••“ statt Betrag – Antippen öffnet weiter den Gewinn-/Verlust-Alarm.</small>
           <h4>App</h4>
           <button type="button" class="button ghost" id="install-btn" hidden>📲 Als App installieren</button>
           <small id="install-note"></small>
