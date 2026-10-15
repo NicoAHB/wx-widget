@@ -4,6 +4,8 @@ Version **3.71.1**, auf Basis des bestehenden Stands 3.71.0. Veröffentlichung u
 
 App: https://nicoahb.github.io/wx-widget/weather-widget-v2.html · Änderungen: https://github.com/NicoAHB/wx-widget/pull/125
 
+Aktueller Darstellungsnachtrag: [Kopfzeile 3.71.2](VORAUSWAHL-KOPFZEILE-3.71.2.md) mit ausgerichteter Kopfbedienung und einzeiligen Filtern.
+
 ## Änderungen
 
 - Zwei kleine Raster-/Listenknöpfe neben „Bearbeiten“. Die Ansicht wird mit dem vorhandenen Speicher (IndexedDB und localStorage-Spiegel) je Gerät gesichert.

@@ -3,6 +3,14 @@
 Diese Datei ist der Einstieg für jede weitere Arbeit am Projekt. Wer sie liest, braucht kein Vorwissen. Die vollständige fachliche
 Vorgabe aller Gruppen G01–G14 steht in `docs/VORGABE-G01-G14.md` (Original-Übergabe; dort sind G10–G14 ausführlich beschrieben).
 
+## 3.71.2 (Codex): Vorauswahl-Kopfzeile ohne versetzte Umbrüche
+
+- Nach der Veröffentlichung von 3.71.1 hat der Nutzer einen iPhone-Screenshot des umgebrochenen Panelkopfs nachgereicht und eine übersichtlichere Ausrichtung in einer Zeile verlangt.
+- Feste Titel-/Info-Gruppe und ausgerichtete Kopfbedienung; auf schmalen Panels Stift/Häkchen mit Vorlesebeschriftung. Drei gleich breite Filter in einer Zeile, Zeitraumleiste darunter. Der Bearbeiten-Standardknopf bekommt bei Bedarf eine eigene Zeile.
+- Daten-/Signallogik, Filter, Speicherung und Ziehen unverändert. Neue vier Geometrieprüfungen in `m112` bei 320/390/430/768 px; abschließend 37/37. Alle gezielten Nachprüfungen 218/218; Lint 0 Fehler, 3 bekannte Warnungen.
+- App/Service Worker 3.71.2, neues erzeugtes Bündel; vorherige Bündel unverändert. Abschließende serielle Nachprüfungen des Darstellungsnachtrags und öffentlicher Lieferabgleich im zugehörigen PR. Der vollständige 181-Programme-Lauf bleibt ausdrücklich dem unmittelbaren Ausgangsrelease 3.71.1 zugeordnet und wird für diese kleine Kopfkorrektur nicht erneut ausgeführt.
+- [Details und Prüfumfang](docs/VORAUSWAHL-KOPFZEILE-3.71.2.md). Live-App: https://nicoahb.github.io/wx-widget/weather-widget-v2.html. Echte iPhone-/Safari-Abnahme bleibt offen.
+
 ## 3.71.1 (Codex): Vorauswahl als Liste, Touch-Sortierung und Zahlenbreiten
 
 - Ausgangspunkt: `main` bei `d5142dd` (3.71.0). Umsetzung der drei vom Nutzer gemeinsam beauftragten Vorauswahl-Aufgaben. Der Nutzer hat anschließend ausdrücklich „bitte teste und stelle online“ beauftragt. Release 3.71.1 über den bestehenden Pages-Weg; [PR #125](https://github.com/NicoAHB/wx-widget/pull/125) enthält den abschließenden Online-Nachweis.
