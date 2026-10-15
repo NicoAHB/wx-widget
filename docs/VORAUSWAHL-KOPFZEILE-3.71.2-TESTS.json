@@ -1,0 +1,70 @@
+{
+  "version": "3.71.2",
+  "date": "2026-10-15",
+  "base_commit": "05242604a2c1302787a1ff0beb5af225e5f59b84",
+  "scope": "Darstellungsnachtrag am Vorauswahl-Kopf, keine Daten-/Signallogikänderung",
+  "serial": true,
+  "results": [
+    {
+      "test": "unit-wl",
+      "passed": 71,
+      "total": 71,
+      "exit_code": 0,
+      "log_sha256": "668772d9baa10262cd3dad2829ac5bb5d715126f6653bdb2f449f4ad06ba3b0a"
+    },
+    {
+      "test": "unit-release",
+      "passed": 6,
+      "total": 6,
+      "exit_code": 0,
+      "log_sha256": "ec4283e390f27c4de4d84cb50d4c3efc06d113943b5cd48b1c0d31366c49ecc9"
+    },
+    {
+      "test": "m112",
+      "passed": 37,
+      "total": 37,
+      "exit_code": 0,
+      "log_sha256": "df40f000b7d2874e2428b53555689f78accac95704e8c915f572d0387de54c3d"
+    },
+    {
+      "test": "m111",
+      "passed": 23,
+      "total": 23,
+      "exit_code": 0,
+      "log_sha256": "065054ab5ae3dc48cacc0cbb00312b63a16582e6b79c50db933effdec8a36c18"
+    },
+    {
+      "test": "m53-sort",
+      "passed": 26,
+      "total": 26,
+      "exit_code": 0,
+      "log_sha256": "4b479c7a18f77f0f76422203077d41ae0aea1a10e8830264d4fc67e4cff5646f"
+    },
+    {
+      "test": "m7",
+      "passed": 47,
+      "total": 47,
+      "exit_code": 0,
+      "log_sha256": "893b2c48d00f141f566da13f2fbb0d7c02c1ea704249332622ba64b33e473c01"
+    },
+    {
+      "test": "m69",
+      "passed": 8,
+      "total": 8,
+      "exit_code": 0,
+      "log_sha256": "1a6258b10b55c48a4234e105460f86187901ff19252f028019cff3ccde01a7f7"
+    }
+  ],
+  "passed": 218,
+  "total": 218,
+  "lint": {
+    "errors": 0,
+    "known_warnings": 3
+  },
+  "full_suite_reference": "VORAUSWAHL-3.71.1-TESTERGEBNISSE.json",
+  "full_suite_repeated_for_3_71_2": false,
+  "known_prior_failure": "m18: Fibonacci-Magnet, 29/31 auch auf unverändertem Ausgangsstand von 3.71.1; kein neuer m18-Lauf für diesen Darstellungsnachtrag",
+  "build_id": "6a61914020f3bdb6",
+  "pwa_files": 82,
+  "hardware_iphone_safari_tested": false
+}

@@ -103,6 +103,13 @@ const center = (page, selector) => page.$eval(selector, e => { const r = e.getBo
     for (const width of [320, 390, 430, 768]) {
       await page.$$eval('#watchlist .wl-tile', ts => ts.forEach((t, i) => { const p = t.querySelector('.wl-price'); p.dataset.full = i ? '1.234.567,89' : '81.245,67'; p.textContent = p.dataset.full; t.querySelectorAll('.wl-tfv').forEach((v, j) => { v.dataset.full = ['+0,40', '−2,98', '−5,75', '+12,34'][j]; v.dataset.compact = ['+0,4', '−3,0', '−5,8', '+12,3'][j]; v.textContent = v.dataset.full; }); }));
       await page.setViewportSize({ width, height: 844 }); await page.waitForTimeout(200);
+      const header = await page.$eval('#watchlist .wl-head', head => {
+        const rect = n => { const r = n.getBoundingClientRect(); return { left: r.left, right: r.right, top: r.top, bottom: r.bottom, middle: (r.top + r.bottom) / 2 }; }, box = rect(head);
+        const top = [...head.querySelectorAll('.wl-heading,.wl-sortbtn,.wl-view,[data-watchedit]')].map(rect), filters = [...head.querySelectorAll('[data-wlfilter]')].map(rect);
+        return { oneTopRow: Math.max(...top.map(r => r.middle)) - Math.min(...top.map(r => r.middle)) < 1, oneFilterRow: Math.max(...filters.map(r => r.top)) - Math.min(...filters.map(r => r.top)) < 1,
+          inside: [...top, ...filters].every(r => r.left >= box.left - .5 && r.right <= box.right + .5), readable: [...head.querySelectorAll('[data-wlfilter]')].every(n => n.scrollWidth <= n.clientWidth + 1), filterBelow: filters[0].top >= Math.max(...top.map(r => r.bottom)) - .5 };
+      });
+      check(`${width}px: Kopfbedienung auf einer Höhe, drei Filter in einer Zeile und vollständig lesbar`, Object.values(header).every(Boolean), JSON.stringify(header));
       const geometry = await page.$$eval('#watchlist .wl-tile', ts => ts.map(t => {
         const cells = [...t.querySelectorAll('.wl-tfc')], values = [...t.querySelectorAll('.wl-tfv')], price = t.querySelector('.wl-price');
         const fits = n => { const r = document.createRange(); r.selectNodeContents(n); return r.getBoundingClientRect().width <= n.clientWidth + .5; };
