@@ -1,8 +1,8 @@
 // 3.69.0 – Trade-Karte: Kerzen ohne Fehler −1100, einmal geladen und zum Trade gespeichert, Ersatzquellen, Kennzahlen,
-// Markierungen und kurze Bildunterschrift. Beispiel-Trade wie gemeldet: XRP/USDT 24.09.2026, 1:52 Std. (3.71.0: Long-Gewinn 19:35 bis 21:27).
+// Markierungen und ausführliche Bildunterschrift. Beispiel-Trade wie gemeldet: XRP/USDT 24.09.2026, 1:52 Std. (3.71.0: Long-Gewinn 19:35 bis 21:27).
 // xrp:      Anfrage mit ganzzahligen startTime/endTime (10 Min. vor Eintritt bis 10 Min. nach Austritt, 1m), Kerzen kompakt in der
 //           IndexedDB, zweites Öffnen ohne Börse (auch bei Ausfall); Max. Gewinn/Verlust und Positionswerte unabhängig nachgerechnet;
-//           Beschriftungen „Kurs (± €)“ ohne Überlappung im Chart; Senden von Hand mit kurzer Bildunterschrift.
+//           Beschriftungen „Kurs (± €)“ ohne Überlappung im Chart; Senden von Hand mit ausführlicher Bildunterschrift.
 // fallback: Futures mit zwei Wiederholungen; −1100 ohne Wiederholung; dann data-api.binance.vision; dann Bybit; alles aus →
 //           Ersatzlinie (nichts gespeichert), später nachgeladen.
 // auto:     Abschluss in der App → Kerzen sofort gespeichert, genau ein Bild; Neuladen ohne zweites; Telegram-Fehler im Klartext.
@@ -42,7 +42,8 @@ async function openPage(browser, seed = {}, viewport = { width: 1500, height: 10
 const ls = (page, k) => page.evaluate(k => JSON.parse(localStorage.getItem(k) || 'null'), k);
 const jsClick = (page, sel) => page.evaluate(sel => { const e = document.querySelector(sel); if (!e) throw new Error('fehlt: ' + sel); e.click(); }, sel);
 const txt = (page, sel) => page.evaluate(sel => document.querySelector(sel)?.textContent ?? null, sel);
-const photos = async since => (await h.ctl('/sent')).filter(m => m.svc === 'tg' && m.method === 'sendPhoto' && m.at >= since);
+// Multipart überträgt Zeilenumbrüche als CRLF; für Textvergleiche auf LF vereinheitlichen.
+const photos = async since => (await h.ctl('/sent')).filter(m => m.svc === 'tg' && m.method === 'sendPhoto' && m.at >= since).map(m => ({ ...m, caption: String(m.caption || '').replace(/\r/g, '') }));
 const kreq = async (since, f = () => true) => (await h.ctl('/log')).filter(e => (/klines$/.test(e.path || '') || /\/v5\/market\/kline$/.test(e.path || '')) && e.q?.symbol === 'XRPUSDT' && (e.q.startTime || e.q.start) && e.at >= since && f(e));   // nur Abrufe mit Zeitfenster (Trade-Karte), nicht die Live-Kerzen des Charts
 const job = async (page, id) => (await ls(page, 'scalpdesk.tradeimg.v1'))?.jobs?.find(j => j.id === id) || null;
 const waitJob = (page, id, test, ms = 25000) => until(async () => { const j = await job(page, id); return j && test(j) ? j : null; }, ms);
@@ -124,7 +125,7 @@ const tests = {
     t0 = Date.now(); await page.click('#timg-send'); const j = await waitJob(page, 'X1', x => x.st === 'ok'); const p = (await photos(t0))[0] || {};
     const cap = String(p.caption || '').replace(/\r/g, ''), pct = (T.pnl / T.margin * 100);
     check('Senden von Hand: genau ein Foto 1080×1730 an „Trades“', j && (await photos(t0)).length === 1 && String(p.chat_id) === TRADES && p.w === 1080 && p.h === 1730, JSON.stringify({ j, w: p.w, h: p.h }));
-    check('3.71.0: Bildunterschrift eine Zeile für die Push-Vorschau: „XRP/USDT Long 20× · ±x,xx € (±x,x %) · 1:52 Std.“, als Foto', cap === `XRP/USDT Long 20× · ${sg(euroNet)} € (${(pct < 0 ? '−' : '+') + Math.abs(pct).toFixed(1).replace('.', ',')} %) · 1:52 Std.` && cap.length <= 1024 && !p.parse_mode, cap);
+    check('Ausführlicher Begleittext: Netto und Maximalwerte wie unabhängig nachgerechnet, Haltedauer und Abschlusszeit', cap.startsWith('<b>🟢 GEWINN · XRP/USDT Long</b>\n') && cap.includes(`💶 Netto: <b>${sg(euroNet)} €</b> · ${sg(pct)} %`) && cap.includes('⏱ Haltedauer: 1 Std. 52 Min.') && cap.includes(`📈 Max. Gewinn: ${sg(eur(E.gain))} €`) && cap.includes(E.neverMinus ? '📉 Max. Verlust: 0,00 € (nie im Minus)' : `📉 Max. Verlust: ${sg(eur(E.loss))} €`) && cap.endsWith('🕐 ' + new Date(CLOSE).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Europe/Berlin' })) && cap.length <= 1024 && p.parse_mode === 'HTML', cap);
     keep.push(['xrp', p.path]);
     // 3.71.0: Einstieg 1,5 % neben der Einstiegskerze → Hinweis auf der Karte und im Protokoll des Auftrags
     await ctx.close();
@@ -184,7 +185,7 @@ const tests = {
     const rec = await stored(page, 'A1'), r = await kreq(t0), p = (await photos(t0))[0] || {};
     check('Abschluss: Kerzen einmal geladen und zum Trade gespeichert (1m, Rand nach dem Austritt folgt später)', rec && rec.iv === '1m' && rec.src === 'binance-futures' && rec.full === false && r.length === 1 && Number(r[0].q.startTime) % 60e3 === 0, JSON.stringify({ rec: rec && { iv: rec.iv, n: rec.c.length, full: rec.full }, n: r.length }));
     check('… genau ein Bild automatisch, mit Kerzen (keine Ersatzlinie)', j?.by === 'auto' && (await photos(t0)).length === 1 && /^1m · \d+ Kerzen · Binance Futures · gespeichert$/.test(j.chart), JSON.stringify(j));
-    check('… Bildunterschrift „XRP/USDT Long 20× · ±x,xx € (±x,x %) · h:mm Std.“', /^XRP\/USDT Long 20× · [+−][\d.]+,\d\d € \([+−][\d.]+,\d %\) · (\d+:\d\d Std\.|\d+ Min\.)$/.test(String(p.caption || '')), p.caption);
+    check('… Foto enthält wieder ausführlichen Trade-Text mit Netto, Haltedauer und Uhrzeit', /^<b>[🟢🔴⚪].* · XRP\/USDT Long<\/b>\n/u.test(String(p.caption || '')) && /💶 Netto: <b>[+−][\d.]+,\d\d €<\/b>/.test(p.caption || '') && /⏱ Haltedauer:/.test(p.caption || '') && /🕐 \d\d:\d\d:\d\d$/.test(p.caption || '') && p.parse_mode === 'HTML', p.caption);
     await page.reload(); await page.waitForTimeout(4000);
     check('Neu laden: kein zweites Bild (Trade-ID „gesendet“ gemerkt)', (await photos(t0)).length === 1 && (await job(page, 'A1'))?.st === 'ok');
     // Telegram lehnt ab → Grund im Klartext in der Historie und als Hinweis

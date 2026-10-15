@@ -1,0 +1,167 @@
+{
+  "version": "3.71.4",
+  "date": "2026-10-15",
+  "base_commit": "476afb5098cc4de2b98b200a94c12c2cb9e20b7d",
+  "scope": "Tradebild-Begleittext und Alarmnavigation",
+  "serial": true,
+  "results": [
+    {
+      "test": "unit-trade-caption",
+      "passed": 17,
+      "total": 17,
+      "exit_code": 0,
+      "log_sha256": "ce48c8ce2fa4dd056cfc5b9d274e2547e4dd1f46a5b3f26bf4c84f0304534fde"
+    },
+    {
+      "test": "unit-telegram-format",
+      "passed": 33,
+      "total": 33,
+      "exit_code": 0,
+      "log_sha256": "1c661207df5402d2ea1bae1334f97ef81aabc5f50ffc6cd4c5f5cc15657d10fe"
+    },
+    {
+      "test": "unit-release",
+      "passed": 6,
+      "total": 6,
+      "exit_code": 0,
+      "log_sha256": "ec4283e390f27c4de4d84cb50d4c3efc06d113943b5cd48b1c0d31366c49ecc9"
+    },
+    {
+      "test": "m113",
+      "passed": 29,
+      "total": 29,
+      "exit_code": 0,
+      "log_sha256": "3e9ea23cb44cd68aa8145a07aebbfc2eac17da53add6513d728ea9d00c5d88f0"
+    },
+    {
+      "test": "m55",
+      "passed": 49,
+      "total": 49,
+      "exit_code": 0,
+      "log_sha256": "852a6c4111ab5f96b433dbd35a07ef7e1f78157be3a0c89fda2a7f2e83b7be39"
+    },
+    {
+      "test": "m103",
+      "passed": 46,
+      "total": 46,
+      "exit_code": 0,
+      "log_sha256": "6ad8ee1b4398f692d574b4b0da3f290caab272db2ca05198827ea2541190e4cc"
+    },
+    {
+      "test": "m5-heights",
+      "passed": 8,
+      "total": 8,
+      "exit_code": 0,
+      "log_sha256": "7dca7d2d986511591f445a94e54217966b0cc4107ecdb80e94cd3975aa9f88be"
+    },
+    {
+      "test": "m109",
+      "passed": 15,
+      "total": 15,
+      "exit_code": 0,
+      "log_sha256": "92339d7a8743496f3af971e6ed9d59eb1b062435b13eb758f50b5fedde0298ca"
+    },
+    {
+      "test": "m112",
+      "passed": 38,
+      "total": 38,
+      "exit_code": 0,
+      "log_sha256": "407e86fe1a206d0324bef6d02308a5170b04c8aa75d5b028bebfbe8134944f5e"
+    },
+    {
+      "test": "m69",
+      "passed": 8,
+      "total": 8,
+      "exit_code": 0,
+      "log_sha256": "534e8d24984fb3851d74c4c2e9f1566a60082092ba354be927d76ef3c3ca0314"
+    }
+  ],
+  "passed": 249,
+  "total": 249,
+  "lint": {
+    "errors": 0,
+    "known_warnings": 3
+  },
+  "additional_mobile_checks": [
+    {
+      "test": "m7",
+      "passed": 46,
+      "total": 47,
+      "exit_code": 1,
+      "log_sha256": "d029a7cea62f26fbcb5a44048213f01cc61e72d672ca51896fe9d6b748553e3d"
+    },
+    {
+      "test": "m7-tgbackup",
+      "passed": 12,
+      "total": 13,
+      "exit_code": 1,
+      "log_sha256": "7f7fe99fbdd576ad91baf68ed80f7567d7da80a55942839e84548ad92d2daa25"
+    },
+    {
+      "test": "m7-tgbackup-repeat",
+      "passed": 13,
+      "total": 13,
+      "exit_code": 0,
+      "log_sha256": "3e450e60a73ea931e361b0637ffda4724b1bf3da75d3246dbdb5dd438c86043c"
+    },
+    {
+      "test": "m7-tgbackup-baseline",
+      "passed": 13,
+      "total": 13,
+      "exit_code": 0,
+      "log_sha256": "0880e86698fd183fa4fc11dee290b47ccf0863c297e9ff2dc330ce72fec98987"
+    }
+  ],
+  "additional_mobile_note": "m7 zunächst 46/47; Sicherung beim Schließen nach 200 ms zunächst 12/13, unverändert später 13/13. Ausgangsversion 3.71.3 isoliert ebenfalls 13/13. Früher dokumentierter Timingfall, nicht als durchgängig grüner Gesamtlauf ausgegeben.",
+  "first_caption_fixture_runs": [
+    {
+      "test": "m55-first",
+      "passed": 47,
+      "total": 49,
+      "exit_code": 1,
+      "log_sha256": "44550bbad6d244aa495c7eb9ac9ffa1db0b5c5c41e7eae1a3b1278aa46d7d652"
+    },
+    {
+      "test": "m103-first",
+      "passed": 45,
+      "total": 46,
+      "exit_code": 1,
+      "log_sha256": "4d183969c0f552a69f611a559ecf51b8bf0e708dd1a6fe9922e7227739d502d2"
+    }
+  ],
+  "caption_fixture_note": "Multipart-CRLF beim Textvergleich auf LF vereinheitlicht; vollständige m55-/m103-Läufe anschließend grün.",
+  "renderer": {
+    "renderer_unchanged": true,
+    "sha256": "246ad5dfa55140f92a88823b07f281955beba928115e82fbbe3031e094d831b2",
+    "source_base": "476afb5098cc4de2b98b200a94c12c2cb9e20b7d"
+  },
+  "preflight": {
+    "version": "3.71.4",
+    "url": "http://127.0.0.1:8765/wx-widget/weather-widget-v2.html",
+    "http": 200,
+    "detailed_trade_caption_present": true,
+    "alarm_survives_reload": true,
+    "layouts": [
+      {
+        "width": 320,
+        "touch_target_44": true,
+        "alarm_list_opens": true,
+        "no_unrequested_form": true,
+        "no_horizontal_overflow": true
+      },
+      {
+        "width": 390,
+        "touch_target_44": true,
+        "alarm_list_opens": true,
+        "no_unrequested_form": true,
+        "no_horizontal_overflow": true
+      }
+    ],
+    "javascript_errors": []
+  },
+  "full_suite_reference": "VORAUSWAHL-3.71.1-TESTERGEBNISSE.json",
+  "full_suite_repeated": false,
+  "build_id": "0d45c5868fafea5f",
+  "pwa_files": 82,
+  "hardware_iphone_safari_tested": false
+}
