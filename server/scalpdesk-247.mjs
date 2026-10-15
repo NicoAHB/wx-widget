@@ -52,7 +52,7 @@ import { PQ, patternConfig, patternCandles, patternCases, patternFresh, patternT
 import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT } from './telegram-format.mjs';
 import { ConfluenceService, kiMessage, Po3Service, po3Message, BotSimulationRuntime } from './ki-monitor.mjs';
 
-export const VERSION = '2.15.0';   // 2.13.0: Qualitätsfilter für Chartmuster-Meldungen; 2.14.0: Chartmuster als Trading-Karte (Text als Ersatz); 2.14.1: Schrift mitgeliefert; 2.14.4: Installer mit Zeitlimits und Fortschritt; 2.14.3: Status nennt den Chartmuster-Filter; 2.14.2: Installer macht den Programmstand für den Dienstbenutzer lesbar; 2.15.0: Chartmuster-Signalkarte (Gesamturteil, Jetzt, Mini-Chart), schwache Signale nur mit Schalter
+export const VERSION = '2.15.1';   // 2.13.0: Qualitätsfilter für Chartmuster-Meldungen; 2.14.0: Chartmuster als Trading-Karte (Text als Ersatz); 2.14.1: Schrift mitgeliefert; 2.14.4: Installer mit Zeitlimits und Fortschritt; 2.14.3: Status nennt den Chartmuster-Filter; 2.14.2: Installer macht den Programmstand für den Dienstbenutzer lesbar; 2.15.0: Chartmuster-Signalkarte (Gesamturteil, Jetzt, Mini-Chart), schwache Signale nur mit Schalter
 // 2.14.0: Kartenrenderer (pattern-card.mjs + resvg) nur bei Bedarf laden; fehlt er, bleibt es bei der Textmeldung
 let cardModule = null;
 const loadCards = () => (cardModule ??= import('./pattern-card.mjs').catch(() => null));
@@ -260,7 +260,16 @@ export function watchItems(c) {
     ...(c.ev.pos ? c.positions.map(p => ({ key: `pos:${p.id}:${p.since}:${p.sl}:${p.tp}`, data: { label: `${coin(p.symbol)} ${p.side === 'long' ? 'Long' : 'Short'}`, stop: p.sl, target: p.tp }, text: `${coin(p.symbol)} ${p.side === 'long' ? 'Long' : 'Short'}: ${[p.sl ? `Stop-Loss ${priceText(p.sl)}` : '', p.tp ? `Take-Profit ${priceText(p.tp)}` : ''].filter(Boolean).join(' · ')}` })) : []),
     ...(pnlOn(c) ? c.pnl.lim.map(l => ({ key: `${pnlKey(l)}:${l.v}`, data: { label: `${pnlName(l.k)} ${pnlCond(l).replace('USDT', 'USD')}` }, text: `${pnlName(l.k)} ${pnlCond(l)}` })) : [])];
 }
-// Bestätigung: was neu beobachtet wird (höchstens 8 Zeilen) und was insgesamt; ausgeschaltet → ein Satz
+// 2.15.1: Gewinn-/Verlust-Grenzen werden still übernommen. Ihr einziges Telegram-Ereignis ist das Alarmbild;
+// Scharfschalten, Quittieren und erneutes Aktivieren dürfen keine zusätzliche Übergabenachricht auslösen.
+export const handoverItems = c => watchItems(c).filter(x => !x.key.startsWith('pnl:'));
+export function handoverAckNeeded(c, keys, on) {
+  const items = handoverItems(c);
+  if (!keys) return !pnlOn(c) || items.length > 0;
+  const was = new Set(keys);
+  return on !== c.on || items.some(x => !was.has(x.key));
+}
+// Bestätigung: neue Kurs-/Stop-/Ziel-Marken (höchstens 8 Zeilen) und was insgesamt; ausgeschaltet → ein Satz
 export function ackText(c, fresh, now) {
   return formatMessage('handover', { headline: c.on ? '✅ Dienst hat übernommen' : '⏸ Dienstübergabe ausgeschaltet', items: c.on ? fresh.slice(0, 8).map(x => x.data) : [], lines: c.on ? [
     fresh.length > 8 ? `${fresh.length - 8} weitere` : '',
@@ -647,15 +656,18 @@ export class Watcher {
         const payload = telegramFields(full), base = { chat_id: dest.chat, ...(dest.thread ? { message_thread_id: dest.thread } : {}), ...(m.silent ? { disable_notification: true } : {}) };
         // 2.14.0: Chartmuster als Trading-Karte (PNG); scheitert die Karte oder lehnt Telegram das Bild ab, die bisherige Textmeldung
         let sent = null, via = '';
-        // 2.15.0: ebenso der Gewinn-/Verlust-Alarm (Chat Kursalarm) als Bild mit einzeiliger Bildunterschrift
-        const makeCard = m.target === 'patterns' && m.card && this.patternCards ? () => this.patternCard(m, late ? t : 0) : m.pnlCard && this.pnlCards ? () => this.pnlCardImage(m, late ? t : 0) : m.alarmCard && this.alarmCards ? () => this.alarmCardImage(m, late ? t : 0) : null;
+        // 2.15.1: Gewinn-/Verlust-Alarm ausschließlich als Bild, bei Bildfehler im Ausgang behalten.
+        const pnlPhotoOnly = !!(m.pnlCard && this.pnlCards);
+        const makeCard = m.target === 'patterns' && m.card && this.patternCards ? () => this.patternCard(m, late ? t : 0) : pnlPhotoOnly ? () => this.pnlCardImage(m, late ? t : 0) : m.alarmCard && this.alarmCards ? () => this.alarmCardImage(m, late ? t : 0) : null;
         if (makeCard) {
-          const card = await makeCard().catch(e => { this.note('Karte', `Karte nicht erzeugt – Text als Ersatz (${this.secret(e.message).slice(0, 120)})`); return null; });
+          const card = await makeCard().catch(e => { if (pnlPhotoOnly) throw e; this.note('Karte', `Karte nicht erzeugt – Text als Ersatz (${this.secret(e.message).slice(0, 120)})`); return null; });
+          if (!card && pnlPhotoOnly) throw new Error('Gewinn-/Verlust-Bild nicht erzeugt');
           if (card) {
             try { sent = await this.tg('sendPhoto', { ...base, photo: card.png, filename: card.name, caption: card.caption, ...(card.html === false ? {} : { parse_mode: 'HTML' }) }, 30000, token); via = ' als Karte'; }
-            catch (e) { if (e.lost || e.code !== 400 || CHAT_PROBLEM.test(e.message)) throw e; this.log(`Telegram lehnt das Bild ab – Text als Ersatz: ${m.label}`); }
+            catch (e) { if (pnlPhotoOnly || e.lost || e.code !== 400 || CHAT_PROBLEM.test(e.message)) throw e; this.log(`Telegram lehnt das Bild ab – Text als Ersatz: ${m.label}`); }
           }
         }
+        if (!sent && pnlPhotoOnly) throw Object.assign(new Error('Telegram hat das Gewinn-/Verlust-Bild nicht bestätigt'), { lost: true });
         if (!sent) sent = await this.tg('sendMessage', { ...base, text: payload.text, parse_mode: payload.parse_mode, link_preview_options: { is_disabled: true } }, 20000, token);
         this.log(`Telegram gesendet${via}: ${m.label || m.text.split('\n')[0]}${sent?.message_id ? ` (Nachricht #${sent.message_id})` : ''}${m.tries ? ` – nach ${plural(m.tries, 'Fehlversuch', 'Fehlversuchen')}` : ''}`);
         this.out = this.out.filter(x => x !== m); this.last = { t, label: m.label }; if (m.ev) this.evSet(m.ev, 'confirmed');
@@ -724,9 +736,8 @@ export class Watcher {
       : 'Alarme geladen: keine – Übergabe in der App ausgeschaltet, der Dienst meldet nichts');
     // Bestätigung per Telegram, wenn etwas Neues beobachtet wird oder die Übergabe ein-/ausgeschaltet wurde (nicht bei bloßem
     // Entfernen, z. B. nach einem ausgelösten Alarm); sonst den bestätigten Stand still nachführen
-    const was = new Set(this.ackKeys || []), fresh = items.filter(x => !was.has(x.key));
-    if (!this.ackKeys || fresh.length || this.ackOn !== data.on) this.ackPend = true;
-    else { this.ackKeys = items.map(x => x.key); }
+    this.ackPend = handoverAckNeeded(data, this.ackKeys, this.ackOn);
+    if (!this.ackPend) { this.ackKeys = handoverItems(data).map(x => x.key); this.ackOn = data.on; }
     if (!old || old.tag !== data.tag) this.next.beat = 0; // gleich in der angehefteten Nachricht bestätigen
     this.saveState();
   }
@@ -734,7 +745,9 @@ export class Watcher {
   // Bestätigung mit dem neuesten Stand). Keine Meldung im Sinne von „Zustellung: zuletzt …“.
   async sendAck() {
     const c = this.conf?.data; if (!c) { this.ackPend = false; return; }
-    const items = watchItems(c), was = new Set(this.ackKeys || []), fresh = this.ackKeys ? items.filter(x => !was.has(x.key)) : items, t = this.now();
+    // Erneut prüfen: Eine inzwischen entfernte Marke oder reine PnL-Übergabe braucht keinen verspäteten Text.
+    if (!handoverAckNeeded(c, this.ackKeys, this.ackOn)) { this.ackPend = false; this.ackKeys = handoverItems(c).map(x => x.key); this.ackOn = c.on; this.saveState(); return; }
+    const items = handoverItems(c), was = new Set(this.ackKeys || []), fresh = this.ackKeys ? items.filter(x => !was.has(x.key)) : items, t = this.now();
     const r = await this.tg('sendMessage', { chat_id: this.chat, text: ackText(c, fresh, t), disable_notification: true, link_preview_options: { is_disabled: true } });
     this.ackPend = false; this.ackKeys = items.map(x => x.key); this.ackAt = t; this.ackOn = c.on; this.saveState();
     this.log(`Bestätigung an Telegram gesendet: ${c.on ? `${plural(items.length, 'Marke', 'Marken')} beobachtet${fresh.length ? `, neu: ${fresh.slice(0, 4).map(x => x.text).join(' · ')}${fresh.length > 4 ? ' …' : ''}` : ''}` : 'Übergabe ausgeschaltet'}${r?.message_id ? ` (Nachricht #${r.message_id})` : ''}`);

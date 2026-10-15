@@ -332,7 +332,7 @@ const TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', CHAT = '987654321'
       setP(101, 50.5); pin({ ...base, tag: 'gb' + name.slice(0, 2), ev: { ...base.ev, pnl: true }, alarms: [], positions: [], pnl: { n: 2, pos: POS, lim: lims({ profit: { at }, loss: { at: at + 1 } }) } }, 601, 'B' + name);
       x.next.config = 0; nowP += 16e3; x.next.price = 0; await x.tick(); setP(103, 50); nowP += 16e3; x.next.price = 0; await x.tick(); nowP += 16e3; x.next.price = 0; await x.tick();
       try { fs.unlinkSync(sp); } catch {}
-      return { ph: photos().slice(p0), tx: sent().slice(s0) };
+      return { ph: photos().slice(p0), tx: sent().slice(s0), queued: x.out.length };
     };
     let seenCard = null;
     const ok = await runCard('bild', x => { const o = x.pnlCardImage.bind(x); x.pnlCardImage = async (m, l) => { seenCard = m.pnlCard; return o(m, l); }; });
@@ -343,7 +343,7 @@ const TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', CHAT = '987654321'
     const P = await import('../server/pattern-card.mjs'), card = P.pnlAlarmCard({ profit: true, pnl: 6, level: 5, positions: W.pnlRows({ pos: POS, n: 2 }, new Map([['spot:BTCUSDT', 103.004], ['futures:ETHUSDT', 50.001]])), at: Date.UTC(2026, 9, 14, 18, 35, 15), bot: 'Mein Kurs Alarm' });
     check('… Zeilen je Position mit derselben Formel wie das Live-Ergebnis; Summe der Zeilen = große Zahl', card.model.rows.length === 2 && Math.round(card.model.rows.reduce((t, r) => t + r.value, 0) * 100) === 600 && card.model.totalText === '+6,00', JSON.stringify(card.model.rows));
     const fb = await runCard('ersatz', x => { x.pnlCardImage = async () => { throw new Error('Renderer kaputt'); }; });
-    check('… Bild nicht erzeugbar → bisherige Textmeldung', fb.ph.length === 0 && fb.tx.length === 1 && fb.tx[0].includes('<b>🟢 GEWINN-ALARM · +6,00 USD</b>'), JSON.stringify(fb.tx));
+    check('… Gewinn-/Verlust-Bild nicht erzeugbar → kein Text, Bild bleibt im Ausgang', fb.ph.length === 0 && fb.tx.length === 0 && fb.queued === 1, JSON.stringify(fb));
     // ---- 2.15.0: Kurs-Alarm als Bild – derselbe Auslöser wie oben (Docht der laufenden Kerze bis 103,60 über 103,50) ----
     const runAl = async (name, patch = null) => {
       const sp = path.join(os.tmpdir(), `s247-kursbild-${name}-${process.pid}.json`); try { fs.unlinkSync(sp); } catch {}

@@ -1,3 +1,10 @@
+## 3.73.1 / Dienst 2.15.1 (Codex): Gewinn/Verlust nur als Bild
+
+- Nutzer meldet Alarmfoto plus „Dienst hat übernommen“-Text. Ursache: Gewinn-/Verlust-Grenzen wurden als neu zu bestätigende Übergabemarken behandelt. Der Dienst übernimmt diese jetzt still; Kurs-/Stop-/Ziel-Bestätigungen bleiben erhalten. Nachführen der PnL-Auslösung, erste reine PnL-Übergabe und Altzustandsmigration ohne zusätzliche Nachricht.
+- Gewinn-/Verlust-Versand in App und Dienst ausschließlich als Foto mit kurzer Caption in derselben Nachricht. Kein Text-Ersatz bei Bildfehlern; Dienst-Ausgang/Retry und Schutz vor erneutem POST bei verlorener Antwort bleiben erhalten. Ausführliche Captions abgeschlossener Trades bleiben erhalten.
+- Branch `codex/pnl-photo-only` ab `main` 31be979 (3.73.0), Scratch `/workspace/work/pnl-photo-only-3.73.1`. Neuer Fachtest `unit-pnl-photo-only`, verschärfte reale Browserprüfungen `m40`/`m46`. **520/520** gezielte Prüfungen in 15 Programmen, Lint 0 Fehler / 3 bekannte Warnungen. Isolierte Freigabeprüfung 320/390 px bestanden. Pages-Nachweis im Release-PR. [Details und iPhone-Kontrolle](docs/TELEGRAM-GEWINN-VERLUST-3.73.1.md).
+- Veröffentlichung ist weiter beauftragt. Kein konfigurierter Zugang zur privaten Oracle-VM: Dienstpaket öffentlich bereitzustellen, VM-Installation nicht als ausgeführt behaupten. Nutzer wurde nach vorhandenem SSH-Zugang bzw. eigener Ausführung des bekannten Installationsbefehls gefragt. Keine echten Telegram-Testnachrichten.
+
 # HANDOVER – Scalp Desk (Übergabe an ChatGPT)
 
 Diese Datei ist der Einstieg für jede weitere Arbeit am Projekt. Wer sie liest, braucht kein Vorwissen. Die vollständige fachliche

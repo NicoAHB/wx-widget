@@ -41,7 +41,7 @@ const check = (name, ok, detail = '') => { ok ? pass++ : fail++; console.log(`${
     const r = await P.renderPnlCard(P.EXAMPLE_PNL), png = r.png;
     check('Dienst: PNG 1080 breit, Höhe passt zum Inhalt, Bildunterschrift aus demselben Modell', png.slice(1, 4).toString() === 'PNG' && png.readUInt32BE(16) === 1080 && png.readUInt32BE(20) === r.height && png.length > 20000 && r.caption === 'Verlust-Alarm · −170,10 USD');
     let thrown = ''; try { await P.renderPnlCard(P.EXAMPLE_PNL, { bundledFonts: false, loadSystemFonts: false }); } catch (e) { thrown = e.message; }
-    check('… ohne Schrift keine leere Karte, sondern Fehler (Dienst sendet die Textmeldung)', /Keine Schrift/.test(thrown), thrown);
+    check('… ohne Schrift keine leere Karte, sondern Fehler (Dienst behält die Bildmeldung im Ausgang)', /Keine Schrift/.test(thrown), thrown);
     require('fs').mkdirSync(require('path').join(__dirname, 'out'), { recursive: true }); require('fs').writeFileSync(require('path').join(__dirname, 'out', 'gewinn-verlust-beispiel.png'), png);
   } else console.log('– PNG-Prüfungen übersprungen (resvg fehlt)');
   console.log(`\n${pass}/${pass + fail} bestanden`); process.exitCode = fail ? 1 : 0;

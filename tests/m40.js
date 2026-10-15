@@ -112,6 +112,8 @@ async function open(browser, opts, seedPos = true) {
     check('iPad hoch: keine Fehler', !errs1.length, errs1.join(' | '));
 
     // ================= Zwei Tabs: nur eine Nachricht =================
+    const photosOnly = await pnlMsgs();
+    check('Gewinn und Verlust: alle Alarmmeldungen sind sendPhoto, keine separate Textmeldung', photosOnly.length >= 2 && photosOnly.every(m => m.method === 'sendPhoto'));
     await h.ctl('/tgreset'); await h.ctl(`/set?symbol=BTCUSDT&price=${P0}`);
     ({ ctx, page, errors } = await open(browser, { viewport: { width: 1440, height: 1000 } }));
     await page.click('#lb-pos'); await fill(page, '40', ''); await page.click('#pnl-close');
