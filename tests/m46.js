@@ -175,6 +175,9 @@ async function setLimit(page, kind, v) {
       check('iPad hochkant: „Ansicht“ ebenfalls mittig und ganz im Bild', v1.mid && v1.l >= 0 && v1.r <= v1.vw && await pg.evaluate(() => document.getElementById('notify-panel').hidden), JSON.stringify(v1));
       check('iPad: keine Fehler', !real(errs).length, real(errs).join(' | ')); await c4.close();
     }
+    const outgoing = await h.ctl('/sent'), pnl = outgoing.filter(m => m.svc === 'tg' && PNL_RE.test(m.caption || m.text || ''));
+    check('App und Dienst: Gewinn-/Verlust-Meldungen ausschließlich als Foto', pnl.length > 0 && pnl.every(m => m.method === 'sendPhoto'));
+    check('Keine separate Dienstbestätigung für Gewinn-/Verlust-Grenzen', !outgoing.some(m => m.svc === 'tg' && m.method === 'sendMessage' && /Dienst hat übernommen/.test(m.text || '') && /Gewinn-Alarm|Verlust-Alarm/.test(m.text || '')));
   } catch (e) { check('Abbruch', false, e.message.split('\n').slice(0, 8).join(' ¦ ')); }
   finally { if (svc) svc.kill(); await browser.close(); await h.teardown(); try { fs.rmSync(dir, { recursive: true, force: true }); } catch {} }
   const bad = results.filter(r => !r.ok); console.log(`\n${results.length - bad.length}/${results.length} bestanden`); process.exit(bad.length ? 1 : 0);

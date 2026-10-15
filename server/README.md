@@ -8,8 +8,10 @@ Kleines Programm für einen eigenen Server, der rund um die Uhr läuft (z. B. ko
 - den Gewinn-/Verlust-Alarm am Live-Ergebnis der offenen Positionen (ab Version 1.2).
 
 Ab Version 1.3 prüft er, ob Telegram jede Meldung angenommen hat. Wenn nicht, versucht er es erneut und meldet eine Störung.
-Ab Version 1.4 bestätigt er jede neue Übergabe lautlos im Chat, sagt selbst, wenn er keine Datei der App findet (meist ein anderer Bot oder eine andere Chat-ID am Server), und zeigt mit `sudo scalpdesk-247 status` den ganzen Weg auf einen Blick.
+Ab Version 1.4 bestätigt er neue Kurs-/Stop-/Ziel-Marken lautlos im Chat (ab 2.15.1 ohne Gewinn-/Verlust-Grenzen), sagt selbst, wenn er keine Datei der App findet (meist ein anderer Bot oder eine andere Chat-ID am Server), und zeigt mit `sudo scalpdesk-247 status` den ganzen Weg auf einen Blick.
 Ab Version 2.0 steuert die App ihn über eine gesicherte HTTPS-Adresse: Chat-Schalter mit Bestätigung und eine Sendefreigabe, damit jeder Alarm genau einmal kommt (siehe „HTTPS-Steuerung“).
+
+**Ab Dienst 2.15.1 / App 3.73.1:** Gewinn-/Verlust-Alarme werden ausschließlich als Foto mit kurzer Bildunterschrift in derselben Nachricht gesendet. Neue Grenzen, Wiederaktivieren und Quittieren erzeugen keine zusätzliche „Dienst hat übernommen“-Nachricht. Der Dienst bestätigt die Übernahme weiterhin in der vorhandenen angepinnten Nachricht. Bei einem Bildfehler bleibt die Bildmeldung im Ausgang; kein Text-Ersatz. Bei verlorener Telegram-Antwort kein zweiter Versand. Die installierte Oracle-VM muss separat mit dem bestehenden Installationsbefehl aktualisiert werden; eine Pages-Veröffentlichung aktualisiert sie nicht.
 
 **Schritt-für-Schritt-Anleitung für Oracle Cloud (Neueinrichtung, Aktualisieren, Fehlerhilfe): [ANLEITUNG-ORACLE.md](ANLEITUNG-ORACLE.md)**
 
