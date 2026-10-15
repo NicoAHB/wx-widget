@@ -1557,13 +1557,13 @@ html[data-layout=tablet] #econ{order:1}
 /* 3.71.0: Kacheln nach dem Entwurf des Nutzers – Kopf (Kürzel, Score −4…+4, Kurs), Veränderung je Zeitraum (1m · 5m · 1h · 1d,
    der Zeitraum der Tendenz hervorgehoben), Verlauf über die ganze Breite mit Punkt am Ende, Trend · Kurs · MACD als farbige Felder,
    RSI als Leiste mit Marken bei 30 und 70. Alle Zeilen haben feste Höhen – Live-Werte verschieben nichts. */
-.wl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.wl-grid{position:relative;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
 .wl-item{position:relative;display:block;min-width:0;container:wlt/inline-size}
 .wl-item[hidden]{display:none}
 .wl-tile{display:flex;flex-direction:column;gap:7px;width:100%;padding:11px 12px 10px;border:1px solid var(--field-border);border-radius:14px;background:var(--field);color:var(--text-2);font:inherit;line-height:1.25;text-align:left;overflow:hidden}
 .wl-tile[aria-current=true]{background:var(--up-bg);border-color:var(--up-text);box-shadow:inset 0 0 0 .5px var(--up-text)}
 .wl-tile[aria-expanded=true]{box-shadow:0 0 0 2px var(--mint);border-color:var(--mint)}
-.wl-top{display:flex;align-items:center;gap:7px;min-width:0;height:24px}
+.wl-top{display:grid;grid-template-columns:max-content max-content minmax(0,1fr);align-items:center;gap:7px;min-width:0;height:24px}
 .wl-sym{flex:none;font-size:1.0625rem;font-weight:800;color:var(--text);letter-spacing:.01em;white-space:nowrap}
 .wl-sig{flex:none;display:inline-grid;place-items:center;min-width:2.3em;height:22px;padding:0 6px;border-radius:999px;background:var(--hold);color:var(--hold-ink);font-size:.75rem;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
 .wl-sig[data-tone=p3],.wl-sig[data-tone=p2]{background:var(--buy);color:var(--buy-ink)}
@@ -1571,12 +1571,12 @@ html[data-layout=tablet] #econ{order:1}
 .wl-sig[data-tone=m1]{background:var(--down-bg-2);color:var(--down-text)}
 .wl-sig[data-tone=m2],.wl-sig[data-tone=m3]{background:var(--sell);color:var(--sell-ink)}
 .wl-sig[data-tone=none]{background:transparent;border:1px dashed var(--field-border);color:var(--muted)}
-.wl-price{margin-left:auto;min-width:0;overflow:hidden;white-space:nowrap;font-size:1rem;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums}
-.wl-tf{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:2px;height:40px}
+.wl-price{display:block;width:100%;min-width:0;white-space:nowrap;text-align:right;font-size:1rem;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums}
+.wl-tf{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;height:40px}
 .wl-tfc{display:grid;align-content:center;justify-items:center;gap:2px;min-width:0;border-radius:8px}
 .wl-tfc.sel{background:color-mix(in srgb,var(--text) 10%,transparent)}
 .wl-tfc small{font-size:.6875rem;font-weight:600;color:var(--muted);line-height:1}
-.wl-tfv{max-width:100%;overflow:hidden;white-space:nowrap;font-size:.8125rem;font-weight:700;font-variant-numeric:tabular-nums;color:var(--muted);line-height:1.1}
+.wl-tfv{display:block;width:100%;min-width:0;text-align:center;white-space:nowrap;font-size:.8125rem;font-weight:700;font-variant-numeric:tabular-nums;color:var(--muted);line-height:1.1}
 .wl-tfv.up{color:var(--up-text)}.wl-tfv.down{color:var(--down-text)}
 .wl-sparkbox{position:relative;display:block;height:24px;margin:0 4px 0 0;color:var(--muted)}
 .wl-sparkbox.up{color:var(--up-text)}.wl-sparkbox.down{color:var(--down-text)}
@@ -1618,7 +1618,7 @@ html[data-layout=tablet] #econ{order:1}
   .wl-sym{font-size:.9375rem}
   .wl-sig{min-width:2em;height:20px;padding:0 5px;font-size:.6875rem}
   .wl-price{font-size:.875rem}
-  .wl-tf{height:36px;gap:1px}
+  .wl-tf{height:36px;gap:4px}
   .wl-tfv{font-size:.6875rem;letter-spacing:-.01em}
   .wl-tfc small{font-size:.625rem}
   .wl-rules{gap:4px;height:26px}
@@ -1638,6 +1638,35 @@ html[data-layout=tablet] #econ{order:1}
   .wl-rsi{gap:6px}.wl-rsi-l{min-width:3.3em;font-size:.625rem}
 }
 @media (pointer:coarse){.wl-item .chip-x{width:40px;height:40px;min-width:40px;min-height:40px;top:-14px;right:-12px}}
+/* 3.71.0 (Arbeitsstand): beide Vorauswahl-Ansichten verwenden dieselben Knoten, Daten und Sortierung. */
+.wl-view{display:inline-flex;align-items:center;gap:1px;padding:2px;border:1px solid var(--field-border);border-radius:8px}
+.wl-view button{display:grid;place-items:center;width:30px;min-height:30px;padding:5px;border:0;border-radius:5px;background:none;color:var(--muted)}
+.wl-view button[aria-pressed=true]{background:var(--hover);color:var(--text)}
+.wl-view svg,.wl-alarm svg{display:block;width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.wl-periods{display:flex;flex:1 1 100%;order:4;gap:3px;padding:3px;border:1px solid var(--field-border);border-radius:10px;background:var(--field)}
+.wl-periods button{flex:1;min-width:0;min-height:36px;border:0;border-radius:7px;background:none;color:var(--muted);font:inherit;font-size:.8125rem;font-weight:700}
+.wl-periods button[aria-pressed=true]{background:var(--text);color:var(--bg)}
+.wl-arrows,.wl-list-change,.wl-alarm{display:none}
+.watchlist[data-wlview=list] .wl-grid{grid-template-columns:minmax(0,1fr)}
+.wl-list-item .wl-tile{display:grid;grid-template-columns:minmax(64px,max-content) minmax(20px,1fr) minmax(0,max-content) minmax(56px,max-content);grid-template-rows:22px 20px;align-items:center;gap:2px 8px;min-height:72px;padding:11px 12px}
+.wl-list-item .wl-top{display:contents}
+.wl-list-item .wl-sym{grid-area:1/1;display:inline-flex;align-items:center;gap:4px;font-size:1rem}
+.wl-list-item .wl-alarm:not([hidden]){display:inline-flex;color:var(--mint)}
+.wl-list-item .wl-alarm svg{width:13px;height:13px}
+.wl-list-item .wl-sig{grid-area:2/1;justify-self:start;font-size:.6875rem;height:20px;min-width:2.3em;padding:0 5px}
+.wl-list-item .wl-arrows{grid-area:2/1;display:flex;align-items:center;gap:2px;margin-left:35px;font-size:8px;line-height:1}
+.wl-arrows i{font-style:normal}.wl-arrows .up{color:var(--up-text)}.wl-arrows .down{color:var(--down-text)}.wl-arrows .none,.wl-arrows .flat{color:var(--muted)}
+.wl-list-item .wl-tf,.wl-list-item .wl-rules,.wl-list-item .wl-rsi-bar{display:none}
+.wl-list-item .wl-sparkbox{grid-area:1/2/3/3;width:100%;height:24px;margin:0}
+.wl-list-item .wl-dot{display:none}
+.wl-list-item .wl-price{grid-area:1/3;font-size:clamp(.6875rem,4cqw,1rem)}
+.wl-list-item .wl-rsi{grid-area:2/3;justify-content:flex-end;height:16px;gap:0}
+.wl-list-item .wl-rsi-l{min-width:0;font-size:.6875rem}
+.wl-list-item .wl-list-change{grid-area:1/4/3/5;display:grid;place-items:center;min-width:0;min-height:40px;padding:0 8px;border-radius:9px;background:var(--hold);color:var(--muted);font-size:clamp(.75rem,4.3cqw,1rem);font-weight:800;white-space:nowrap;font-variant-numeric:tabular-nums}
+.wl-list-change.up{background:var(--buy);color:var(--buy-ink)}.wl-list-change.down{background:var(--sell);color:var(--sell-ink)}
+.wl-list-item .wl-add{min-height:48px}
+@container wlt (max-width:310px){.wl-list-item .wl-tile{gap:2px 5px;padding:10px 8px;grid-template-columns:64px minmax(20px,1fr) minmax(0,max-content) 58px}.wl-list-item .wl-list-change{padding:0 5px}}
+@media (pointer:coarse){.wl-view button{width:36px;min-height:36px}.wl-periods button{min-height:40px}}
 /* 3.35.0 (G07): Market-Cap-Ansicht – Preisebenen und Leisten aus */
 /* Kompakter Umschalter in der Chart-Menüleiste: ein Knopf „MCap“ neben den Intervallen. Die Gruppe (Intervalle + MCap) zählt beim
    Umbruch der Leiste nur mit ihrer Mindestbreite, damit die Zoom-Knöpfe nicht wegen des neuen Knopfs in eine zweite Zeile rutschen
@@ -4313,6 +4342,7 @@ function renderSignals() {
 let watchKey = '', watchCurKey = '';
 function renderWatchlist() {
   const box = $('watchlist'), base = state.symbol.slice(0, -4), showAdd = !state.watch.includes(base) && state.loadedSymbol === state.symbol;
+  wlApplyView();
   // Ausgewählte Kachel entfernt (Bearbeiten, „Standard“, Sicherung eingespielt): Detailfeld schließen, keine falsche Auswahl
   if (wldSel && !state.watch.includes(wldSel)) wldClose(false);
   const S = wlSpan(), key = JSON.stringify([state.watch, state.watchEdit, S.label, wlTfCols()]), curKey = JSON.stringify([key, base, showAdd]);
@@ -4338,10 +4368,10 @@ function renderWatchlist() {
   sum.setAttribute('aria-label', 'Was die Kacheln der Vorauswahl zeigen'); sum.append(el('span', '', 'i'));
   const body = el('div', 'tip-body');
   body.append(el('p', '', `Je Coin: Kürzel, Tendenz (Score −4 bis +4) und Live-Kurs. Darunter die Veränderung in Prozent über 1 Minute bis 1 Tag – hervorgehoben ${S.the}, über den die Tendenz rechnet –, der Verlauf ${S.of}, die Felder Trend · Kurs · MACD (▲ grün = bullish, ▼ rot = bearish, – neutral) und der RSI als Leiste mit den Marken 30 und 70.`),
-    el('p', '', '„Alle“, „Stark ≥ +2“ und „Schwach ≤ −2“ filtern nach der Tendenz; „Score ↓“ sortiert nach der Tendenz, „Eigene“ zeigt deine Reihenfolge (nur dort lassen sich Kacheln verschieben).'),
-    el('p', '', `Tendenz: die Summe dieser vier Regeln – dieselben wie in der Signal-Übersicht – auf abgeschlossenen ${S.ivName}-Kerzen, von −4 bis +4, neu bei jedem Kerzenschluss. Kräftig grün bzw. rot erst, wenn mindestens 3 der 4 Regeln in dieselbe Richtung zeigen (Long- bzw. Short-Tendenz). Den Zeitraum (1 Minute bis 1 Tag) wählst du im Detailfeld; die Zeitraum-Knöpfe des Charts ändern ihn nicht. Eine Beschreibung ${S.of}, kein Handelssignal mit nachgewiesenem Vorteil.`),
+    el('p', '', '„Alle“, „Stark ≥ +2“ und „Schwach ≤ −2“ filtern nach der Tendenz; „Score ↓“ sortiert nach der Tendenz, „Manuell“ zeigt deine Reihenfolge. Verschieben wechselt automatisch auf „Manuell“. Raster und Liste zeigen dieselben Coins.'),
+    el('p', '', `Tendenz: die Summe dieser vier Regeln – dieselben wie in der Signal-Übersicht – auf abgeschlossenen ${S.ivName}-Kerzen, von −4 bis +4, neu bei jedem Kerzenschluss. Kräftig grün bzw. rot erst, wenn mindestens 3 der 4 Regeln in dieselbe Richtung zeigen (Long- bzw. Short-Tendenz). Den Zeitraum (1 Minute bis 1 Tag) wählst du im Detailfeld oder oben in der Liste; die Zeitraum-Knöpfe des Charts ändern ihn nicht. Eine Beschreibung ${S.of}, kein Handelssignal mit nachgewiesenem Vorteil.`),
     el('p', '', 'Antippen zeigt darunter die Signale des Coins mit Erklärungen und lädt ihn im Chart weiter unten – die Seite springt nicht dorthin. „Bearbeiten“ entfernt Coins, „+ Coin“ nimmt den geöffneten Coin auf. Fehlen Daten (Coin lädt noch, keine Verbindung), steht neutral „–“.'),
-    el('p', '', 'Reihenfolge ändern: eine Kachel etwa eine halbe Sekunde gedrückt halten und an den neuen Platz ziehen. In „Bearbeiten“ auch mit ◀ ▶ oder am Griff ⠿, mit der Tastatur Alt + Pfeiltaste auf einer Kachel. Die Reihenfolge wird gespeichert und ist Teil der Sicherung.'));
+    el('p', '', 'Reihenfolge ändern: eine Kachel oder Zeile etwa 350 ms gedrückt halten und an den neuen Platz ziehen. In „Bearbeiten“ auch mit ◀ ▶ oder am Griff ⠿, mit der Tastatur Alt + Pfeiltaste. Die Reihenfolge wird gespeichert und ist Teil der Sicherung.'));
   tip.append(sum, body);
   head.append(el('span', 'wl-label', 'Vorauswahl'), tip);
   // 3.71.0: Filter nach der Tendenz und Sortierung (Score ↓ / eigene Reihenfolge) – gespeichert je Gerät
@@ -4350,8 +4380,18 @@ function renderWatchlist() {
   head.append(filter);
   const tools = el('span', 'wl-tools'), sortB = btn('wl-sortbtn', ''); sortB.dataset.wlsort = '1'; tools.append(sortB);
   if (state.watchEdit && state.watch.join() !== DEFAULT_WATCH.join()) { const reset = btn('chip-tool', 'Standard'); reset.dataset.watchreset = '1'; tools.append(reset); }
+  const views = el('span', 'wl-view'); views.setAttribute('role', 'group'); views.setAttribute('aria-label', 'Ansicht der Vorauswahl');
+  for (const [k, label, path] of [['grid', 'Kacheln', 'M3 3h6v6H3z M15 3h6v6h-6z M3 15h6v6H3z M15 15h6v6h-6z'], ['list', 'Liste', 'M8 5h13 M8 12h13 M8 19h13 M3 5h.1 M3 12h.1 M3 19h.1']]) {
+    const b = btn(''); b.dataset.wlview = k; b.title = label; b.setAttribute('aria-label', label); b.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${path}"/></svg>`; views.append(b);
+  }
+  tools.append(views);
   const edit = btn('chip-tool', state.watchEdit ? 'Fertig' : 'Bearbeiten'); edit.dataset.watchedit = '1'; edit.setAttribute('aria-pressed', String(state.watchEdit)); tools.append(edit);
   head.append(tools);
+  const periods = el('span', 'wl-periods'); periods.setAttribute('role', 'group'); periods.setAttribute('aria-label', 'Zeitraum der Vorauswahl');
+  const periodKeys = ['1m', '5m', '1h', '1d'], spanKey = wl?.span || wlSpanKey();
+  if (!periodKeys.includes(spanKey)) periodKeys.splice(spanKey === '30m' ? 2 : 3, 0, spanKey);
+  for (const k of periodKeys) { const b = btn('', k); b.dataset.wlperiod = k; b.setAttribute('aria-label', wlSpans()[k].name); periods.append(b); }
+  head.append(periods);
   const grid = el('div', 'wl-grid');
   for (const coin of state.watch) {
     const item = el('span', 'wl-item'), tile = btn('wl-tile'), svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -4361,11 +4401,14 @@ function renderWatchlist() {
     // 3.71.0: Kopf · Veränderung je Zeitraum · Verlauf mit Punkt · Trend/Kurs/MACD · RSI-Leiste (Werte schreibt wlPaint)
     const top = el('span', 'wl-top'), tf = el('span', 'wl-tf'), spark = el('span', 'wl-sparkbox'), rules = el('span', 'wl-rules'), rsi = el('span', 'wl-rsi'), bar = el('span', 'wl-rsi-bar');
     top.append(el('b', 'wl-sym', coin), el('span', 'wl-sig', '·'), el('span', 'wl-price', '…'));
+    const bell = el('span', 'wl-alarm'); bell.hidden = true; bell.setAttribute('role', 'img'); bell.setAttribute('aria-label', 'Aktiver Kursalarm'); bell.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9 M10 21h4"/></svg>'; top.firstChild.append(bell);
     for (const k of wlTfCols()) { const c = el('span', `wl-tfc${k === (wl?.span || wlSpanKey()) ? ' sel' : ''}`); c.dataset.tf = k; c.append(el('small', '', k), el('span', 'wl-tfv', '–')); tf.append(c); }
     const dot = el('i', 'wl-dot'); dot.hidden = true; spark.append(svg, dot);
     for (const x of wlRules(null).filter(x => x.k !== 'rsi')) { const r = el('span', `wl-rule ${x.dir}`); r.append(el('span', '', x.label), el('i', '', x.arrow)); rules.append(r); }
     const knob = el('b'); knob.hidden = true; bar.append(el('i'), el('i'), knob); rsi.append(el('span', 'wl-rsi-l', 'RSI –'), bar);
     tile.append(top, tf, spark, rules, rsi);
+    const arrows = el('span', 'wl-arrows'); arrows.setAttribute('aria-hidden', 'true'); arrows.append(el('i', 'none', '–'), el('i', 'none', '–'), el('i', 'none', '–'));
+    tile.append(arrows, el('span', 'wl-list-change', '–'));
     item.append(tile);
     if (state.watchEdit) {
       const x = btn('chip-x', '×'); x.dataset.unwatch = coin; x.setAttribute('aria-label', `${coin} aus der Vorauswahl entfernen`); item.append(x);
@@ -4381,7 +4424,7 @@ function renderWatchlist() {
   // das Detailfeld bleibt eingehängt (3.25.0): sonst verlöre die Zeitraum-Auswahl darin beim Wechsel den Fokus
   const d = wldBox();
   if (d.parentNode === box) { for (const n of [...box.childNodes]) if (n !== d) n.remove(); d.before(head, grid); } else box.replaceChildren(head, grid, d);
-  wlSortState(); wlMarkCurrent(base, showAdd); wlHeadPaint();
+  wlApplyView(); wlSortState(); wlMarkCurrent(base, showAdd); wlHeadPaint();
   if (typeof wlPaint === 'function') wlPaint(Date.now(), true);
 }
 // Kachel des Coins im Chart markieren (Rahmen, Vorlesetext) und „+ Coin“ zeigen, ohne etwas neu aufzubauen
@@ -4398,7 +4441,33 @@ function wlMarkCurrent(base, showAdd) {
   else { delete add.dataset.addwatch; add.dataset.addcoin = '1'; add.textContent = '+ Coin hinzufügen'; add.setAttribute('aria-label', 'Coin suchen und zur Vorauswahl hinzufügen'); }
 }
 // 3.71.0: Filter und Sortierung der Vorauswahl (je Gerät gespeichert); var: renderWatchlist kann vor diesem Abschnitt laufen
-var WL_FILTER_KEY = 'scalpdesk.wlfilter.v1', WL_SORT_KEY = 'scalpdesk.wlsort.v1';
+var WL_FILTER_KEY = 'scalpdesk.wlfilter.v1', WL_SORT_KEY = 'scalpdesk.wlsort.v1', WL_VIEW_KEY = 'scalpdesk.wlview.v1';
+function wlViewKey() { return store.get(WL_VIEW_KEY || 'scalpdesk.wlview.v1') === 'list' ? 'list' : 'grid'; }
+function wlApplyView() {
+  const box = $('watchlist'); if (!box) return;
+  const view = wlViewKey(); box.dataset.wlview = view;
+  for (const it of box.querySelectorAll('.wl-item')) it.classList.toggle('wl-list-item', view === 'list');
+  for (const b of box.querySelectorAll('[data-wlview]')) b.setAttribute('aria-pressed', String(b.dataset.wlview === view));
+  const periods = box.querySelector('.wl-periods'); if (periods) periods.hidden = view !== 'list';
+  for (const b of box.querySelectorAll('[data-wlperiod]')) b.setAttribute('aria-pressed', String(b.dataset.wlperiod === (wl?.span || wlSpanKey())));
+}
+// Schrift an die echte Feldbreite anpassen; Prozentwerte zuerst auf eine Nachkommastelle kürzen.
+// Die vollständigen Zahlen bleiben für Vorlesen und Tooltips erhalten. Kein Abschneiden oder Zusammenlaufen.
+var wlMeasure;
+function wlFitText(node) {
+  if (!node || node.getClientRects().length === 0) return;
+  node.style.removeProperty('font-size');
+  const s = getComputedStyle(node), width = node.clientWidth - parseFloat(s.paddingLeft) - parseFloat(s.paddingRight);
+  if (width <= 0) return;
+  wlMeasure ||= document.createElement('canvas').getContext('2d'); if (!wlMeasure) return;
+  wlMeasure.font = `${s.fontWeight} ${s.fontSize} ${s.fontFamily}`;
+  const full = node.dataset.full || node.textContent, measure = t => wlMeasure.measureText(t).width + Math.max(0, t.length - 1) * (parseFloat(s.letterSpacing) || 0);
+  const text = measure(full) > width - 1 && node.dataset.compact ? node.dataset.compact : full;
+  wlSet(node, 'textContent', text);
+  const ratio = Math.min(1, (width - 1) / Math.max(1, measure(text)));
+  if (ratio < 1) node.style.fontSize = `${parseFloat(s.fontSize) * ratio}px`;
+}
+function wlFitNumbers() { for (const n of $('watchlist').querySelectorAll('.wl-price,.wl-tfv,.wl-list-change')) wlFitText(n); }
 function wlFilterKey() { const v = store.get(WL_FILTER_KEY); return ['all', 'strong', 'weak'].includes(v) ? v : 'all'; }
 function wlSortKey() { return store.get(WL_SORT_KEY) === 'score' ? 'score' : 'own'; }
 function wlSortEff() { return state.watchEdit ? 'own' : wlSortKey(); }   // Bearbeiten zeigt immer die eigene Reihenfolge
@@ -4406,7 +4475,7 @@ function wlHeadPaint() {
   const box = $('watchlist'), f = wlFilterKey(), sb = box?.querySelector('[data-wlsort]'); if (!box) return;
   for (const b of box.querySelectorAll('[data-wlfilter]')) b.setAttribute('aria-pressed', String(b.dataset.wlfilter === f));
   const all = box.querySelector('[data-wlfilter="all"]'); if (all) all.textContent = `Alle ${state.watch.length}`;
-  if (sb) { const sc = wlSortKey() === 'score'; sb.textContent = sc ? 'Score ↓' : 'Eigene ↕'; sb.setAttribute('aria-pressed', String(sc)); sb.title = sc ? 'Sortiert nach Tendenz (höchster Score zuerst) – antippen: eigene Reihenfolge' : 'Eigene Reihenfolge – antippen: nach Tendenz sortieren'; sb.disabled = state.watchEdit; }
+  if (sb) { const sc = wlSortKey() === 'score'; sb.textContent = sc ? 'Score ↓' : 'Manuell'; sb.setAttribute('aria-pressed', String(sc)); sb.title = sc ? 'Sortiert nach Tendenz (höchster Score zuerst) – antippen: manuelle Reihenfolge' : 'Manuelle Reihenfolge – antippen: nach Tendenz sortieren'; sb.disabled = state.watchEdit; }
 }
 // Kacheln filtern und (bei „Score ↓“) nach der Tendenz ordnen – nur Umhängen, nichts neu bauen; nie während eine Kachel gezogen wird
 function wlArrange() {
@@ -4424,14 +4493,14 @@ function wlArrange() {
 }
 
 // ---- 3.32.0 (G04.8–10): Vorauswahl umsortieren ----
-// Langes Drücken (450 ms) auf einer Kachel hebt sie an; danach folgt sie dem Finger bzw. der Maus in beide Richtungen durch das
+// Langes Drücken (350 ms) auf einer Kachel/Zeile hebt sie an; danach folgt sie dem Finger bzw. der Maus in beide Richtungen durch das
 // Raster, ihr Platz bleibt gestrichelt frei und wandert mit, Loslassen setzt sie dort ab. Bewegt sich der Finger vor Ablauf der
 // Zeit um mehr als 8 px, ist es Scrollen (die Seite scrollt normal). Ein kurzer Tipp öffnet wie bisher das Detailfeld; nach
 // einem Anheben folgt kein zusätzlicher Tipp. Während des Ziehens verhindert ein touchmove-Listener nur auf der Vorauswahl das
 // Scrollen (Safari übernimmt ein nachträglich gesetztes touch-action nicht); der Griff ⠿ im Bearbeiten-Modus hat touch-action:
 // none von Anfang an und zieht sofort. Abbruch (Esc, Zeiger verloren, Drehen, Fenster gewechselt) stellt die alte Reihenfolge
 // her – keine Kachel geht verloren. Gespeichert wird die Reihenfolge der Kürzel (state.watch, Sicherung „watchlist“).
-var WL_HOLD = 450, WL_SLOP = 8, wlDrag = null, wlPress = null, wlNoClickUntil = 0;
+var WL_HOLD = 350, WL_SLOP = 8, wlDrag = null, wlPress = null, wlNoClickUntil = 0;
 function wlSortState() {
   const items = [...document.querySelectorAll('#watchlist .wl-grid > .wl-item:not(.wl-add-item)')], n = items.length;
   items.forEach((it, i) => {
@@ -4442,27 +4511,38 @@ function wlSortState() {
 }
 function wlSay(t) { let r = $('wl-live'); if (!r) { r = el('span', 'sr-only'); r.id = 'wl-live'; r.setAttribute('aria-live', 'polite'); document.body.append(r); } r.textContent = t; }
 // Coin an Stelle idx (0-basiert) der aktuellen Liste setzen; true, wenn sich etwas geändert hat
-function wlMoveTo(coin, idx) {
+function wlMoveTo(coin, idx, order = state.watch) {
   if (!state.watch.includes(coin)) return false;
-  const w = state.watch.filter(c => c !== coin); idx = Math.max(0, Math.min(w.length, idx)); w.splice(idx, 0, coin);
-  if (w.join() === state.watch.join()) return false;
+  const w = [...new Set([...order, ...state.watch])].filter(c => c !== coin && state.watch.includes(c)); idx = Math.max(0, Math.min(w.length, idx)); w.splice(idx, 0, coin);
+  if (w.join() === state.watch.join() && wlSortKey() !== 'score') return false;
   const act = document.activeElement;
-  state.watch = w; touchStamp(LISTS_AT_KEY, 'watch'); saveWatch(); renderWatchlist();
+  store.set(WL_SORT_KEY, 'own'); state.watch = w; touchStamp(LISTS_AT_KEY, 'watch'); saveWatch(); renderWatchlist(); wlHeadPaint(); wlArrange();
   // Fokus bleibt auf dem bedienten Element (beim Verschieben im DOM kann er verloren gehen); ganz vorn/hinten auf den Griff
   if (act?.isConnected && act.closest('#watchlist') && document.activeElement !== act) (act.disabled ? act.parentElement?.querySelector('.wl-grip') || act : act).focus({ preventScroll: true });
   else if (act?.disabled) act.parentElement?.querySelector('.wl-grip')?.focus({ preventScroll: true });
   wlSay(`${coin}: Platz ${idx + 1} von ${w.length}`); return true;
 }
+function wlDomOrder(grid) { return [...grid.children].filter(it => it.dataset.coin).map(it => it.dataset.coin); }
+function wlStep(coin, step) { const order = wlDomOrder($('watchlist').querySelector('.wl-grid')); wlMoveTo(coin, order.indexOf(coin) + step, order); }
+// FLIP: die übrigen Kacheln/Zeilen gleiten vom bisherigen zum neuen Platz; Trefferflächen folgen dem echten Raster.
+function wlAnimateReorder(grid, change) {
+  const items = [...grid.children].filter(it => !it.hidden && it !== wlDrag?.item), before = items.map(it => it.getBoundingClientRect());
+  for (const it of items) for (const a of it.getAnimations()) a.cancel();
+  change();
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  items.forEach((it, i) => { const r = it.getBoundingClientRect(), dx = before[i].left - r.left, dy = before[i].top - r.top; if (dx || dy) it.animate([{ transform: `translate(${dx}px,${dy}px)` }, { transform: 'none' }], { duration: 160, easing: 'ease-out' }); });
+}
 function wlDragStart(item, pt, viaGrip) {
+  if (!item.isConnected) return;
   const r = item.getBoundingClientRect(), ghost = item.cloneNode(true);
   ghost.classList.add('wl-ghost'); ghost.setAttribute('aria-hidden', 'true'); ghost.inert = true;
   for (const n of ghost.querySelectorAll('[id]')) n.removeAttribute('id');
-  Object.assign(ghost.style, { position: 'fixed', left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px' });
+  Object.assign(ghost.style, { position: 'fixed', left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px', transform: 'scale(1.04)' });
   document.body.append(ghost); item.classList.add('wl-ph');
   const coin = item.querySelector('.wl-tile')?.dataset.watch;
   // Zeiger am Raster festhalten, nicht an der Kachel – die wandert beim Ziehen im DOM
   const grid = item.parentElement;
-  wlDrag = { item, coin, grid, ghost, id: pt.pointerId, x0: pt.clientX, y0: pt.clientY, x: pt.clientX, y: pt.clientY, w: innerWidth, dirty: false, raf: 0 };
+  wlDrag = { item, coin, grid, ghost, order: wlDomOrder(grid), id: pt.pointerId, x0: pt.clientX, y0: pt.clientY, x: pt.clientX, y: pt.clientY, w: innerWidth, dirty: false, raf: 0 };
   try { grid.setPointerCapture?.(pt.pointerId); } catch { /* Zeiger schon weg */ }
   try { navigator.vibrate?.(12); } catch { /* nicht überall erlaubt */ }
   docEl.dataset.wldrag = viaGrip ? 'grip' : 'hold';
@@ -4473,36 +4553,38 @@ function wlDragStart(item, pt, viaGrip) {
 function wlDragMove(x, y) {
   const d = wlDrag; if (!d) return; d.x = x; d.y = y;
   d.ghost.style.transform = `translate(${x - d.x0}px, ${y - d.y0}px) scale(1.04)`;
+  const g = d.grid.getBoundingClientRect();
   for (const it of d.grid.children) {
-    if (it === d.item || it.hidden || !it.dataset.coin) continue; const r = it.getBoundingClientRect();
+    if (it === d.item || it.hidden || !it.dataset.coin) continue;
+    const r = { left: g.left + it.offsetLeft, right: g.left + it.offsetLeft + it.offsetWidth, top: g.top + it.offsetTop, bottom: g.top + it.offsetTop + it.offsetHeight };
     if (x < r.left || x > r.right || y < r.top || y > r.bottom) continue;
     const kids = [...d.grid.children], a = kids.indexOf(d.item), b = kids.indexOf(it);
-    d.grid.insertBefore(d.item, a < b ? it.nextSibling : it); break;
+    wlAnimateReorder(d.grid, () => d.grid.insertBefore(d.item, a < b ? it.nextSibling : it)); break;
   }
 }
 // am oberen bzw. unteren Rand (über der unteren Leiste) mitscrollen
 function wlAutoScroll() {
   const d = wlDrag, tb = $('tabbar'), bottom = tb && getComputedStyle(tb).display !== 'none' ? tb.getBoundingClientRect().top : innerHeight, edge = 56;
-  const v = d.y < edge ? -Math.ceil((edge - d.y) / 4) : d.y > bottom - edge ? Math.ceil((d.y - bottom + edge) / 4) : 0;
+  const v = d.y < edge ? -Math.min(12, Math.ceil((edge - d.y) / 4)) : d.y > bottom - edge ? Math.min(12, Math.ceil((d.y - bottom + edge) / 4)) : 0;
   if (v) { const y0 = scrollY; window.scrollBy(0, v); if (scrollY !== y0) wlDragMove(d.x, d.y); }
 }
 function wlDragEnd(commit) {
   const d = wlDrag; if (!d) return; wlDrag = null; delete docEl.dataset.wldrag;
   cancelAnimationFrame(d.raf); d.ghost.remove(); d.item.classList.remove('wl-ph'); wlNoClickUntil = performance.now() + 450;
   try { if (d.grid.hasPointerCapture?.(d.id)) d.grid.releasePointerCapture(d.id); } catch { /* schon frei */ }
-  const idx = [...d.grid.children].indexOf(d.item);
-  if (commit && d.item.isConnected && idx >= 0 && wlMoveTo(d.coin, idx)) return;
+  const order = wlDomOrder(d.grid), idx = order.indexOf(d.coin), moved = order.join() !== d.order.join();
+  if (d.dirty) watchKey = '';
+  if (commit && moved && d.item.isConnected && idx >= 0 && wlMoveTo(d.coin, idx, order)) return;
   // nichts geändert oder abgebrochen: Kacheln wieder in die gespeicherte Reihenfolge (auch nach Änderungen aus einem anderen Tab)
-  watchKey = d.dirty ? '' : watchKey; renderWatchlist();
-  if (!d.dirty) { const items = new Map([...d.grid.children].map(i => [i.querySelector('.wl-tile')?.dataset.watch, i])); state.watch.forEach((c, i) => { const it = items.get(c); if (it && d.grid.children[i] !== it) d.grid.insertBefore(it, d.grid.children[i] || null); }); wlSortState(); }
+  renderWatchlist(); wlArrange(); wlSortState();
   if (!commit) wlSay(`Verschieben abgebrochen – ${d.coin} bleibt an Platz ${state.watch.indexOf(d.coin) + 1}`);
 }
 function wlPressClear() { if (wlPress) { clearTimeout(wlPress.t); wlPress = null; } }
 $('watchlist').addEventListener('pointerdown', e => {
-  if (wlDrag || !e.isPrimary || (e.pointerType === 'mouse' && e.button !== 0)) return;
+  if (!e.isPrimary) { wlPressClear(); wlDragEnd(false); return; }
+  if (wlDrag || (e.pointerType === 'mouse' && e.button !== 0)) return;
   const grip = e.target.closest('.wl-grip'), tile = e.target.closest('.wl-tile'), item = (grip || tile)?.closest('.wl-grid > .wl-item'); if (!item) return;
   if (grip) { e.preventDefault(); wlDragStart(item, e, true); return; }
-  if (wlSortEff() === 'score' || wlFilterKey() !== 'all') return;   // 3.71.0: verschoben wird nur in der eigenen, ungefilterten Reihenfolge
   wlPressClear();
   const p = { id: e.pointerId, x: e.clientX, y: e.clientY, lx: e.clientX, ly: e.clientY, target: tile };
   p.t = setTimeout(() => { if (wlPress !== p) return; wlPress = null; wlDragStart(item, { pointerId: p.id, clientX: p.lx, clientY: p.ly, target: p.target }, false); }, WL_HOLD);
@@ -4518,6 +4600,9 @@ document.addEventListener('pointercancel', e => { if (wlPress?.id === e.pointerI
 $('watchlist').addEventListener('lostpointercapture', e => { if (wlDrag?.id === e.pointerId) wlDragEnd(false); });
 // Während des Ziehens nicht scrollen (nur hier, damit die übrige Seite nicht auf das Skript warten muss)
 $('watchlist').addEventListener('touchmove', e => { if (wlDrag) e.preventDefault(); }, { passive: false });
+document.addEventListener('touchstart', e => { if (e.touches.length > 1) { wlPressClear(); wlDragEnd(false); } }, { passive: true });
+addEventListener('scroll', wlPressClear, { passive: true });
+if ('ResizeObserver' in window) new ResizeObserver(wlFitNumbers).observe($('watchlist'));
 // Langes Drücken öffnet kein Kontextmenü (Android) bzw. keine Textauswahl; nach dem Ziehen kein zusätzlicher Tipp
 $('watchlist').addEventListener('contextmenu', e => { if (wlPress || wlDrag || performance.now() < wlNoClickUntil) e.preventDefault(); });
 // nur der eine Klick, den das Loslassen erzeugt (Zeiger-Klick, detail > 0) – Tastatur und spätere Klicks bleiben unberührt
@@ -4532,7 +4617,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) { wlP
 $('watchlist').addEventListener('keydown', e => {
   const k = { ArrowLeft: -1, ArrowUp: -1, ArrowRight: 1, ArrowDown: 1 }[e.key]; if (!k) return;
   const grip = e.target.closest('.wl-grip'), tile = e.target.closest('.wl-grid .wl-tile'); if (!(grip || (tile && e.altKey))) return;
-  const c = grip ? grip.dataset.coin : tile.dataset.watch; e.preventDefault(); wlMoveTo(c, state.watch.indexOf(c) + k);
+  const c = grip ? grip.dataset.coin : tile.dataset.watch; e.preventDefault(); wlStep(c, k);
 });
 
 function renderFutures() {
@@ -6952,11 +7037,13 @@ $('signal-rows').addEventListener('click',e=>{const row=e.target.closest('[data-
 $('watchlist').addEventListener('click',e=>{
   const t=e.target.closest('button'); if(!t) return;
   if(t.classList.contains('wl-tile')){const c=t.dataset.watch;wldToggle(c);if(wldSel===c&&state.symbol!==c+'USDT'){try{void setMarket(c);}catch(error){showNotice('market-error',error.message);}}return;}
-  if(t.dataset.wlmove){const c=t.dataset.coin;wlMoveTo(c,state.watch.indexOf(c)+Number(t.dataset.wlmove));return;}
+  if(t.dataset.wlmove){wlStep(t.dataset.coin,Number(t.dataset.wlmove));return;}
   if(t.classList.contains('wl-grip'))return;
   if(t.dataset.addwatch){if(!state.watch.includes(t.dataset.addwatch)){state.watch.push(t.dataset.addwatch);touchStamp(LISTS_AT_KEY,'watch');}saveWatch();renderWatchlist();return;}
   if(t.dataset.addcoin){const f=$('symbol');if(f){f.scrollIntoView({block:'center',behavior:'smooth'});f.focus({preventScroll:true});f.select?.();}return;} // 3.71.0: Coin suchen
   if(t.dataset.wlfilter){store.set(WL_FILTER_KEY,t.dataset.wlfilter);wlHeadPaint();wlArrange();return;}
+  if(t.dataset.wlview){wlPressClear();wlDragEnd(false);store.set(WL_VIEW_KEY,t.dataset.wlview);wlApplyView();requestAnimationFrame(wlFitNumbers);return;}
+  if(t.dataset.wlperiod){wlSetSpan(t.dataset.wlperiod);return;}
   if(t.dataset.wlsort){store.set(WL_SORT_KEY,wlSortKey()==='score'?'own':'score');wlHeadPaint();wlArrange();return;}
   if(t.dataset.unwatch){state.watch=state.watch.filter(s=>s!==t.dataset.unwatch);touchStamp(LISTS_AT_KEY,'watch');saveWatch();renderWatchlist();return;}
   if(t.dataset.watchedit){state.watchEdit=!state.watchEdit;renderWatchlist();wlHeadPaint();wlArrange();return;}
@@ -11029,6 +11116,7 @@ var WL_LIMIT = 260, WL_WINDOW = 199, WL_RETRY = 60e3, WL_SPAN_KEY = 'scalpdesk.w
 function wlSpans() {
   return wlSpans.t || (wlSpans.t = {
     '1m': { iv: '1m', n: 1, ms: 60e3, label: '1 Min.', of: 'der letzten Minute', the: 'die letzte Minute', name: '1 Minute', ivName: '1-Minuten' },
+    '5m': { iv: '1m', n: 5, ms: 3e5, label: '5 Min.', of: 'der letzten 5 Minuten', the: 'die letzten 5 Minuten', name: '5 Minuten', ivName: '1-Minuten' },
     '30m': { iv: '3m', n: 10, ms: 18e5, label: '30 Min.', of: 'der letzten 30 Minuten', the: 'die letzten 30 Minuten', name: '30 Minuten', ivName: '3-Minuten' },
     '1h': { iv: '5m', n: 12, ms: 36e5, label: '1 Std.', of: 'der letzten Stunde', the: 'die letzte Stunde', name: '1 Stunde', ivName: '5-Minuten' },
     '4h': { iv: '15m', n: 16, ms: 144e5, label: '4 Std.', of: 'der letzten 4 Stunden', the: 'die letzten 4 Stunden', name: '4 Stunden', ivName: '15-Minuten' },
@@ -11174,8 +11262,19 @@ function wlPaint(now = Date.now(), force = false) {
     const coin = tile.dataset.watch, e = wl.c.get(wlSym(coin));
     if (!e) continue;
     const v = wlView(e, now), q = s => tile.querySelector(s);
-    wlSet(q('.wl-price'), 'textContent', v.priceText);
-    const tf = q('.wl-tf'); if (tf) v.tf.forEach((x, i) => { const c = tf.children[i]?.lastChild; if (!c) return; wlSet(c, 'textContent', x.text); wlSet(c, 'className', `wl-tfv ${x.dir}`); });
+    const price = q('.wl-price'); if (price) { price.dataset.full = v.priceText; wlSet(price, 'textContent', v.priceText); wlFitText(price); }
+    const tf = q('.wl-tf'); if (tf) v.tf.forEach((x, i) => {
+      const c = tf.children[i]?.lastChild; if (!c) return;
+      c.dataset.full = x.text; c.dataset.compact = x.v === null ? '–' : x.dir === 'flat' ? '±0,0' : signed(x.v, 1);
+      c.setAttribute('aria-label', `${x.k}: ${x.text}${x.v === null ? '' : ' %'}`); c.title = x.v === null ? 'Nicht verfügbar' : `${x.text} %`;
+      wlSet(c, 'className', `wl-tfv ${x.dir}`); wlFitText(c);
+    });
+    const change = q('.wl-list-change'); if (change) {
+      const text = v.chg === null ? '–' : `${v.chgDir === 'flat' ? '±0,00' : signed(v.chg)}%`;
+      change.dataset.full = text; change.setAttribute('aria-label', v.chgText); wlSet(change, 'textContent', text); wlSet(change, 'className', `wl-list-change ${v.chgDir}`); wlFitText(change);
+    }
+    const bell = q('.wl-alarm'); if (bell) wlSet(bell, 'hidden', !state.alarms.some(a => a.symbol === e.sym && !a.triggeredAt));
+    const arrows = q('.wl-arrows'); if (arrows) v.rules.filter(x => x.k !== 'rsi').forEach((x, i) => { wlSet(arrows.children[i], 'textContent', x.arrow); wlSet(arrows.children[i], 'className', x.dir); arrows.children[i].title = `${x.label}: ${x.arrow}`; });
     // Trend · Kurs · MACD als Felder (der RSI hat eine eigene Leiste)
     const rs = q('.wl-rules'); if (rs) v.rules.filter(x => x.k !== 'rsi').forEach((x, i) => { const n = rs.children[i]; if (!n) return; wlSet(n.firstChild, 'textContent', x.label); wlSet(n.lastChild, 'textContent', x.arrow); wlSet(n, 'className', `wl-rule ${x.dir}`); });
     const rsi = q('.wl-rsi'); if (rsi) { const knob = rsi.querySelector('b'); wlSet(rsi.firstChild, 'textContent', v.rsi === null ? 'RSI –' : `RSI ${Math.round(v.rsi)}`); wlSet(knob, 'hidden', v.rsi === null); if (v.rsi !== null) { const l = `${Math.max(0, Math.min(100, v.rsi))}%`; if (knob.style.left !== l) knob.style.left = l; } wlSet(rsi, 'className', `wl-rsi ${v.rules[2].dir}`); }

@@ -3,6 +3,17 @@
 Diese Datei ist der Einstieg für jede weitere Arbeit am Projekt. Wer sie liest, braucht kein Vorwissen. Die vollständige fachliche
 Vorgabe aller Gruppen G01–G14 steht in `docs/VORGABE-G01-G14.md` (Original-Übergabe; dort sind G10–G14 ausführlich beschrieben).
 
+## Arbeitsstand 15.10.2026 (Codex): Vorauswahl als Liste, Touch-Sortierung und Zahlenbreiten
+
+- Ausgangspunkt: `main` bei `d5142dd` (3.71.0). Umsetzung der drei vom Nutzer gemeinsam beauftragten Vorauswahl-Aufgaben; kein Release und keine Veröffentlichung.
+- Raster-/Listenumschalter neben „Bearbeiten“, gespeichert unter `scalpdesk.wlview.v1` über den vorhandenen Speicher. Dieselben Coin-Knoten, Live-Daten, Filter und Reihenfolgen in beiden Ansichten.
+- Liste: Score und Trend/Kurs/MACD-Dreiecke, Mini-Verlauf, Preis, RSI, Prozentfeld, aktive Alarmglocke und ausgewählter Coin. Zeitraumauswahl 1m / 5m / 1h / 1d; bestehende 30m-/4h-Auswahl bleibt zusätzlich direkt erreichbar. 5m verwendet den bestehenden Berechnungsweg mit fünf 1m-Kerzen.
+- Bestehende Drag-Engine gezielt erweitert: 350 ms Haltezeit, Abbruch des Haltens beim Wischen vor dem Anheben, animiertes Nachrücken, Anheben mit Schatten, Auto-Scroll und Abbruch bei zweitem Finger/Breitenänderung. Im Score-Modus ist Ziehen möglich; erst wirkliches Verschieben speichert die sichtbare Reihenfolge als „Manuell“. Abbruch speichert nichts. Tastatur, Griffe, Mehrtab-Abgleich und Sicherungsreihenfolge bleiben erhalten.
+- Zahlen: vier gleiche Spalten mit Abstand, echte Breitenmessung, bei Platzmangel eine Nachkommastelle, Tabellenziffern und vollständige Preise. Bestehende Farben und Kachelzeilen/-höhe bleiben erhalten.
+- Neue native Browserprüfung `tests/m112.js`; bestehende Prüfungen m111, m45 und unit-wl an den neuen Sortiernamen bzw. 5m-Zeitraum angepasst; neuer Test im seriellen Gesamtlauf.
+- Gezielte Prüfung: **227/227** bestanden (unit-wl 71, m111 23, m112 32, m53 sort 26, m45 75), JavaScript-Syntax und Diff-Prüfung erfolgreich. Chromium-Touch-Emulation bei 320/390/430/768 px; echte iPhone-Abnahme und Release-Gesamtlauf nicht ausgeführt.
+- Details und iPhone-Abnahme: [docs/VORAUSWAHL-LISTE-TOUCH.md](docs/VORAUSWAHL-LISTE-TOUCH.md). APP_VERSION, Service Worker und bestehende Release-Bündel unverändert. Vor einer späteren Veröffentlichung gilt weiterhin der Release-Ablauf aus Abschnitt 4.
+
 ## 3.71.0 / Dienst 2.15.0 / Musterdienst 1.3.0 (Claude): Trade-Karte, Signalkarte, Gewinn-/Verlust- und Kurs-Alarm als Bild, flüssiges Zoomen, neue Vorauswahl
 
 Ausführlich: [docs/3.71.0-AENDERUNGEN.md](docs/3.71.0-AENDERUNGEN.md). Der Nutzer hat Gesamtlauf und Veröffentlichung freigegeben.

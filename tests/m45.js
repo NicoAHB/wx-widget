@@ -11,6 +11,7 @@ const check = (name, cond, detail = '') => { results.push({ name, ok: !!cond, de
 const REPO = require('path').resolve(__dirname, '..'), DBG = 'weather-widget-v2.debug45.html';
 const live = page => page.waitForFunction(() => document.getElementById('status').dataset.feed === 'live', null, { timeout: 20000 }).catch(() => {});
 const SP = { '1m': { iv: '1m', ms: 60e3, n: 1, label: '1 Min.', of: 'der letzten Minute', the: 'die letzte Minute', name: '1 Minute', ivName: '1-Minuten' },
+  '5m': { iv: '1m', ms: 3e5, n: 5, label: '5 Min.', of: 'der letzten 5 Minuten', the: 'die letzten 5 Minuten', name: '5 Minuten', ivName: '1-Minuten' },
   '30m': { iv: '3m', ms: 18e5, n: 10, label: '30 Min.', of: 'der letzten 30 Minuten', the: 'die letzten 30 Minuten', name: '30 Minuten', ivName: '3-Minuten' },
   '1h': { iv: '5m', ms: 36e5, n: 12, label: '1 Std.', of: 'der letzten Stunde', the: 'die letzte Stunde', name: '1 Stunde', ivName: '5-Minuten' },
   '4h': { iv: '15m', ms: 144e5, n: 16, label: '4 Std.', of: 'der letzten 4 Stunden', the: 'die letzten 4 Stunden', name: '4 Stunden', ivName: '15-Minuten' },
@@ -23,7 +24,7 @@ const real = errs => errs.filter(e => !/Service Worker registration blocked/.tes
 const tiles = page => page.evaluate(() => [...document.querySelectorAll('#watchlist .wl-tile')].map(t => {
   const q = s => t.querySelector(s), r = t.getBoundingClientRect();
   // 3.71.0: Veränderung des Zeitraums = hervorgehobene Spalte der Kachel (1m · 5m · 1h · 1d bzw. mit 30m/4h)
-  const SEL = t.querySelector('.wl-tfc.sel'), SL = { '1m': '1 Min.', '30m': '30 Min.', '1h': '1 Std.', '4h': '4 Std.', '1d': '1 Tag' }[SEL?.dataset.tf] || '?', SV = SEL?.querySelector('.wl-tfv');
+  const SEL = t.querySelector('.wl-tfc.sel'), SL = { '1m': '1 Min.', '5m': '5 Min.', '30m': '30 Min.', '1h': '1 Std.', '4h': '4 Std.', '1d': '1 Tag' }[SEL?.dataset.tf] || '?', SV = SEL?.querySelector('.wl-tfv');
   return { coin: t.dataset.watch, chg: `${SL} ${SV?.textContent}${SV?.textContent === '–' ? '' : ' %'}`, cut: [q('.wl-top'), q('.wl-tf'), q('.wl-rules'), ...t.querySelectorAll('.wl-tfv, .wl-rule, .wl-rsi-l')].some(e => e.scrollWidth > e.clientWidth + 1), title: t.title, tone: q('.wl-sig').dataset.tone,
     inside: [...t.querySelectorAll('*')].filter(c => { const b = c.getBoundingClientRect(); return b.width && b.height && !c.classList.contains('sr-only'); }).every(c => { const b = c.getBoundingClientRect(); return b.left >= r.left - 0.5 && b.right <= r.right + 0.5 && b.top >= r.top - 0.5 && b.bottom <= r.bottom + 0.5; }) };
 }));
@@ -100,7 +101,7 @@ async function verifySpan(page, key, tag) {
     check('Kacheln: Spalte 1h hervorgehoben (±x,xx), kein „1 Min.“/„30 Min.“ mehr', t0.every(x => /^1 Std\. [+−±]\d+,\d\d %$/.test(x.chg)) && !(await page.$('#watchlist .wl-chg30')), JSON.stringify(t0.map(x => x.chg)));
     await page.click('#watchlist .wl-tile[data-watch="ETC"]'); await page.waitForTimeout(500);
     let p = await panel(page);
-    check('Detailfeld: Auswahl in der Überschrift mit 1 Minute, 30 Minuten, 1 Stunde (gewählt), 4 Stunden, 1 Tag', p.open && p.options === '1m:der letzten Minute,30m:der letzten 30 Minuten,1h:der letzten Stunde,4h:der letzten 4 Stunden,1d:des letzten Tages' && p.value === '1h' && p.label === 'Zeitraum der Signalbewertung', JSON.stringify({ options: p.options, value: p.value }));
+    check('Detailfeld: Auswahl in der Überschrift mit 1 Minute, 5 Minuten, 30 Minuten, 1 Stunde (gewählt), 4 Stunden, 1 Tag', p.open && p.options === '1m:der letzten Minute,5m:der letzten 5 Minuten,30m:der letzten 30 Minuten,1h:der letzten Stunde,4h:der letzten 4 Stunden,1d:des letzten Tages' && p.value === '1h' && p.label === 'Zeitraum der Signalbewertung', JSON.stringify({ options: p.options, value: p.value }));
     const chartIv0 = await page.$eval('.intervals .active', b => b.dataset.interval);
     await verifySpan(page, '1h', '1 Stunde');
     // ---- Zeitraum wechseln: 4 Stunden ----
@@ -179,7 +180,7 @@ async function verifySpan(page, key, tag) {
         const tt = await tiles(page), pp = await panel(page), m = await page.evaluate(() => { const e = document.querySelector('#wl-detail .wl-d-meta'); return e.scrollWidth <= e.clientWidth + 1 && document.scrollingElement.scrollWidth <= innerWidth; });
         if (!tt.every(y => !y.cut && y.inside && y.chg.startsWith(SP[key].label)) || !m || pp.value !== key) cut.push(`${key}: ${JSON.stringify(tt.filter(y => y.cut || !y.inside).map(y => [y.coin, y.chg]))} meta ${m}`);
       }
-      check(`Handy ${w} px: alle fünf Zeiträume – Kacheln und Überschrift vollständig lesbar`, !cut.length, cut.join(' | '));
+      check(`Handy ${w} px: alle sechs Zeiträume – Kacheln und Überschrift vollständig lesbar`, !cut.length, cut.join(' | '));
       check(`Handy ${w} px: keine Fehler`, !real(errors).length, real(errors).join(' | ')); await ctx.close();
     }
   } catch (e) { check('Abbruch', false, e.message.split('\n')[0]); }

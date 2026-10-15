@@ -1,5 +1,5 @@
-// 3.71.0 – Vorauswahl nach dem Entwurf des Nutzers: Filter „Alle n · Stark ≥ +2 · Schwach ≤ −2“, Sortierung „Score ↓“ / „Eigene“ (gespeichert,
-// Verschieben nur in der eigenen Reihenfolge), Kachel „+ Coin hinzufügen“ (mit geöffnetem Coin außerhalb der Vorauswahl „+ SOL hinzufügen“),
+// 3.71.0 – Vorauswahl nach dem Entwurf des Nutzers: Filter „Alle n · Stark ≥ +2 · Schwach ≤ −2“, Sortierung „Score ↓“ / „Manuell“ (gespeichert,
+// Verschieben wechselt in die manuelle Reihenfolge), Kachel „+ Coin hinzufügen“ (mit geöffnetem Coin außerhalb der Vorauswahl „+ SOL hinzufügen“),
 // Spalten 1m · 5m · 1h · 1d, RSI-Leiste. Dazu der Schalter „Live-Wert offener Positionen“ in den Einstellungen (Kopfzeile „Offen •••“).
 // Aufruf: node m111.js
 const h = require('./harness');
@@ -20,11 +20,11 @@ const visible = page => page.evaluate(() => [...document.querySelectorAll('#watc
     h.collect(page, errors);
     await page.goto(`${h.URL_BASE}/weather-widget-v2.html`); await live(page); await ready(page); await page.waitForTimeout(1500);
     const head = await page.evaluate(() => ({ chips: [...document.querySelectorAll('#watchlist [data-wlfilter]')].map(b => `${b.textContent}:${b.getAttribute('aria-pressed')}`), sort: document.querySelector('#watchlist [data-wlsort]')?.textContent, add: document.querySelector('#watchlist .wl-grid > .wl-add-item:last-child .wl-add')?.textContent }));
-    check('Kopf: „Alle 6“ (gewählt), „Stark ≥ +2“, „Schwach ≤ −2“; Sortierung „Eigene ↕“; letzte Kachel „+ Coin hinzufügen“', head.chips.join() === 'Alle 6:true,Stark ≥ +2:false,Schwach ≤ −2:false' && head.sort === 'Eigene ↕' && head.add === '+ Coin hinzufügen', JSON.stringify(head));
+    check('Kopf: „Alle 6“ (gewählt), „Stark ≥ +2“, „Schwach ≤ −2“; Sortierung „Manuell“; letzte Kachel „+ Coin hinzufügen“', head.chips.join() === 'Alle 6:true,Stark ≥ +2:false,Schwach ≤ −2:false' && head.sort === 'Manuell' && head.add === '+ Coin hinzufügen', JSON.stringify(head));
     const tile = await page.evaluate(() => { const t = document.querySelector('#watchlist .wl-tile[data-watch="BTC"]'), q = s => t.querySelector(s); return { top: [q('.wl-sym').textContent, q('.wl-sig').textContent, q('.wl-price').textContent], tf: [...t.querySelectorAll('.wl-tfc')].map(c => `${c.dataset.tf}${c.classList.contains('sel') ? '*' : ''}`).join(), chips: [...q('.wl-rules').children].map(c => c.firstChild.textContent).join(), rsi: q('.wl-rsi-l').textContent, knob: !q('.wl-rsi-bar b').hidden, dot: !q('.wl-dot').hidden }; });
     check('Kachel: Kürzel · Score · Kurs; Spalten 1m · 5m · 1h* · 1d (Zeitraum 1 Std. hervorgehoben); Felder Trend · Kurs · MACD; RSI mit Leiste; Punkt am Ende der Linie', tile.top[0] === 'BTC' && /^[+−]?\d$/.test(tile.top[1]) && /\d/.test(tile.top[2]) && tile.tf === '1m,5m,1h*,1d' && tile.chips === 'Trend,Kurs,MACD' && /^RSI \d+$/.test(tile.rsi) && tile.knob && tile.dot, JSON.stringify(tile));
     // Spalten füllen sich (1m-/1h-Kerzen nacheinander je Coin)
-    const filled = await page.waitForFunction(() => [...document.querySelectorAll('#watchlist .wl-tile')].every(t => [...t.querySelectorAll('.wl-tfv')].filter(v => /^[+−±]\d+,\d\d$/.test(v.textContent)).length >= 3), null, { timeout: 30000 }).then(() => true).catch(() => false);
+    const filled = await page.waitForFunction(() => [...document.querySelectorAll('#watchlist .wl-tile')].every(t => [...t.querySelectorAll('.wl-tfv')].filter(v => /^[+−±]\d+,\d{1,2}$/.test(v.textContent)).length >= 3), null, { timeout: 30000 }).then(() => true).catch(() => false);
     check('Veränderungen je Spalte füllen sich für alle Coins (mindestens 1h, 1d und eine kurze Spalte)', filled, await page.evaluate(() => [...document.querySelectorAll('#watchlist .wl-tile')].map(t => t.dataset.watch + ':' + [...t.querySelectorAll('.wl-tfv')].map(v => v.textContent).join('/')).join(' ')));
     // Filter
     await rate(page, { BTC: 3, ETC: -2, BCH: 1, LTC: 2, XRP: -3, NEAR: 0 }); await page.waitForTimeout(1300);
@@ -41,11 +41,11 @@ const visible = page => page.evaluate(() => [...document.querySelectorAll('#watc
     check('„Score ↓“: nach Tendenz, gleiche Tendenz in eigener Reihenfolge (BTC +3, LTC +2, BCH +1, XRP +1, ETC 0, NEAR 0)', await visible(page) === 'BTC,LTC,BCH,XRP,ETC,NEAR' && await page.textContent('#watchlist [data-wlsort]') === 'Score ↓', await visible(page));
     await rate(page, { NEAR: 4 }); await page.waitForTimeout(1300);
     check('… ändert sich eine Tendenz, ordnet sich die Kachel neu ein (NEAR +4 nach vorn)', (await visible(page)).startsWith('NEAR,BTC,LTC'), await visible(page));
-    // langes Drücken verschiebt im Score-Modus nicht
+    // Langes Drücken ist auch im Score-Modus möglich; erst tatsächliches Verschieben schaltet auf Manuell.
     const nb = await page.locator('#watchlist .wl-tile[data-watch="LTC"]').boundingBox(), cdp = await ctx.newCDPSession(page);
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: nb.x + 20, y: nb.y + 20 }] }); await page.waitForTimeout(700);
     const lifted = await page.evaluate(() => document.documentElement.dataset.wldrag || ''); await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await page.waitForTimeout(400);
-    check('… im Score-Modus hebt langes Drücken keine Kachel an (verschoben wird nur in der eigenen Reihenfolge)', !lifted, lifted);
+    check('… auch im Score-Modus hebt langes Drücken an; Loslassen ohne Verschieben behält Score-Sortierung', lifted === 'hold' && await page.textContent('#watchlist [data-wlsort]') === 'Score ↓', lifted);
     await page.evaluate(() => { const t = document.querySelector('#watchlist .wl-tile[aria-expanded="true"]'); if (t) t.click(); }); await page.waitForTimeout(300);
     await page.reload(); await live(page); await ready(page); await page.waitForTimeout(1000);
     check('Nach dem Neuladen: Sortierung „Score ↓“ und Filter bleiben gespeichert', await page.textContent('#watchlist [data-wlsort]') === 'Score ↓' && await page.getAttribute('#watchlist [data-wlfilter="all"]', 'aria-pressed') === 'true');
@@ -53,7 +53,7 @@ const visible = page => page.evaluate(() => [...document.querySelectorAll('#watc
     check('Bearbeiten zeigt die eigene Reihenfolge (Sortierknopf gesperrt)', await visible(page) === 'BTC,ETC,BCH,LTC,XRP,NEAR' && await page.evaluate(() => document.querySelector('#watchlist [data-wlsort]').disabled), await visible(page));
     await page.tap('#watchlist [data-watchedit]'); await page.waitForTimeout(300);
     await page.tap('#watchlist [data-wlsort]'); await page.waitForTimeout(300);
-    check('„Eigene ↕“: wieder die eigene Reihenfolge', await visible(page) === 'BTC,ETC,BCH,LTC,XRP,NEAR' && await page.textContent('#watchlist [data-wlsort]') === 'Eigene ↕', await visible(page));
+    check('„Manuell“: wieder die eigene Reihenfolge', await visible(page) === 'BTC,ETC,BCH,LTC,XRP,NEAR' && await page.textContent('#watchlist [data-wlsort]') === 'Manuell', await visible(page));
     // „+ Coin hinzufügen“
     await page.tap('#watchlist .wl-add'); await page.waitForTimeout(700);
     check('„+ Coin hinzufügen“ führt zur Coin-Suche (Feld fokussiert)', await page.evaluate(() => document.activeElement?.id) === 'symbol', await page.evaluate(() => document.activeElement?.id));
