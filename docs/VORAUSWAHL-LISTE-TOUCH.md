@@ -1,6 +1,8 @@
 # Vorauswahl: Liste, Touch-Sortierung und lesbare Zahlen
 
-Arbeitsstand auf Basis von 3.71.0, ohne Veröffentlichung.
+Version **3.71.1**, auf Basis des bestehenden Stands 3.71.0. Veröffentlichung und Tests wurden vom Nutzer beauftragt.
+
+App: https://nicoahb.github.io/wx-widget/weather-widget-v2.html · Änderungen: https://github.com/NicoAHB/wx-widget/pull/125
 
 ## Änderungen
 
@@ -10,7 +12,7 @@ Arbeitsstand auf Basis von 3.71.0, ohne Veröffentlichung.
 - Die Leiste wählt 1m / 5m / 1h / 1d über den vorhandenen Zeitraumwechsel. 5m ergänzt dessen bestehende Berechnung um fünf 1m-Kerzen; Score-Regeln und Datenquellen bleiben gleich. Gespeicherte 30m-/4h-Einstellungen bleiben gültig und werden weiterhin angezeigt.
 - Nach 350 ms hebt eine Kachel oder Zeile an. Bewegt sich der Finger vorher mehr als 8 px, bleibt die Geste normales Scrollen. Nachbarn gleiten animiert an ihren neuen Platz; am Bildschirmrand greift Auto-Scroll. Reduzierte Bewegung wird berücksichtigt.
 - Verschieben unter „Score ↓“ übernimmt die sichtbare Reihenfolge und speichert „Manuell“. Ein Tipp wählt wieder „Score ↓“. Abbruch, zweiter Finger und Breitenänderung beenden die Geste ohne neue Speicherung. Tastatur und Bearbeiten-Griffe bleiben erhalten.
-- Vier gleich breite Prozentspalten mit 4 px Abstand und Tabellenziffern. Bei Platzmangel erscheint eine Nachkommastelle; die Schrift wird anhand der wirklichen Feldbreite angepasst. Der vollständige Wert bleibt für Vorlesen/Tooltip erhalten. Auch Preise werden vollständig eingepasst; die Kachelzeilen und -höhe bleiben erhalten.
+- Vier gleich breite Prozentspalten mit 4 px Abstand und Tabellenziffern. Bei Platzmangel erscheint eine Nachkommastelle; die Schrift wird anhand der tatsächlichen gerenderten Textbreite angepasst, einschließlich Tabellenziffern und Ersatzzeichen. Der vollständige Wert bleibt für Vorlesen/Tooltip erhalten. Auch Preise werden vollständig eingepasst; die Kachelzeilen und -höhe bleiben erhalten.
 
 ## Dateien
 
@@ -19,7 +21,10 @@ Arbeitsstand auf Basis von 3.71.0, ohne Veröffentlichung.
 - `tests/m111.js`: bisherige Vorauswahl-Prüfungen mit dem neuen Namen „Manuell“ und erlaubtem Anheben bei Score-Sortierung.
 - `tests/unit-wl.js`, `tests/m45.js`: zusätzliche 5-Minuten-Auswahl im vorhandenen Zeitraum-Prüfplan.
 - `tests/run-all.sh`: neuer Test im seriellen Gesamtlauf.
+- `tests/unit-fvg.js`: bestehende Python-Vergleichsfixture mit eindeutigem Millisekunden-Zeitstempel; OHLC-Werte und Erwartungen unverändert.
+- `sw.js`, `bundles/3.71.1/`, `server/release-manifest.json`: gemeinsam erzeugter, versionierter Lieferstand; ältere Bündel unverändert.
 - `HANDOVER.md`: Stand dieser Änderung.
+- [VORAUSWAHL-3.71.1-TESTNACHWEIS.md](VORAUSWAHL-3.71.1-TESTNACHWEIS.md): Gesamtlauf, Nachprüfungen und bekannte Abweichung.
 
 ## Gezielte Prüfung
 
@@ -33,9 +38,11 @@ node tests/m53.js sort
 node tests/m45.js
 ```
 
-Ergebnis vom 15.10.2026: **227/227 gezielte Prüfungen bestanden** – unit-wl 71/71, m111 23/23, m112 32/32, m53 sort 26/26, m45 75/75. JavaScript-Syntax und `git diff --check` ebenfalls erfolgreich. Browser: vorhandenes Chromium mit echten simulierten Touch-Ereignissen; Breiten 320, 390, 430 und 768 px.
+Prüfung am 15.10.2026: Der serielle Gesamtlauf `bash tests/run-all.sh` hat alle **181 Prüfprogramme** ausgeführt. Nach der abschließenden Korrektur der Textmessung wurden die betroffenen Vorauswahl- und Offline-Prüfungen erneut ausgeführt. Einzelresultate und die bereits auf dem bisherigen Stand reproduzierte Fibonacci-Magnetabweichung stehen im [Testnachweis](VORAUSWAHL-3.71.1-TESTNACHWEIS.md).
 
-Der Testserver verwendet lokale Marktdaten-Attrappen. Diese Prüfung ersetzt keine Abnahme auf echter iPhone-Hardware. Es wurde kein Release erzeugt, keine Versionsnummer verändert und nichts live geschaltet; vorhandene Release-Bündel bleiben unberührt.
+Browser: Chromium mit simulierten Touch-Ereignissen, Breiten 320, 390, 430 und 768 px. Der Testserver verwendet lokale Marktdaten-Attrappen. Die zusätzliche Schriftprüfung verwendet Inter mit Tabellenziffern und viele Einsen; alle 30 Zahlenfelder passen vollständig. Eine echte iPhone-/Safari-Abnahme bleibt anhand der folgenden Liste durchzuführen.
+
+App und Service Worker tragen 3.71.1. Die neue Lieferliste umfasst 82 PWA-Dateien. Der öffentliche Pages-Lieferstand wird nach dem Merge einschließlich Dateigrößen, SHA-256-Hashes und JavaScript-MIME-Typen geprüft; der abschließende Veröffentlichungsnachweis steht in PR #125.
 
 ## iPhone-Test-Checkliste
 

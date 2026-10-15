@@ -19,7 +19,7 @@ const SP = { '1m': { iv: '1m', ms: 60e3, n: 1, label: '1 Min.', of: 'der letzten
 const IVMS = { '1m': 6e4, '3m': 18e4, '5m': 3e5, '15m': 9e5, '2h': 72e5 };
 const COINS = ['BTC', 'ETC', 'BCH', 'LTC', 'XRP', 'NEAR'];
 // alle Kacheln bewertet, und zwar im Intervall des gewählten Zeitraums
-const ready = (page, iv) => page.waitForFunction(iv => [...document.querySelectorAll('#watchlist .wl-tile')].every(t => { const e = window.__wl.c.get(t.dataset.watch + 'USDT'); return e && e.iv === iv && e.rating && /^[+−]?\d$/.test(t.querySelector('.wl-sig').textContent); }), iv, { timeout: 40000 }).then(() => true).catch(() => false);
+const ready = (page, iv) => page.waitForFunction(iv => [...document.querySelectorAll('#watchlist .wl-tile')].every(t => { const e = window.__wl.c.get(t.dataset.watch + 'USDT'); return e && e.market === 'spot' && e.iv === iv && e.rating && /^[+−]?\d$/.test(t.querySelector('.wl-sig').textContent); }), iv, { timeout: 40000 }).then(() => true).catch(() => false);
 const real = errs => errs.filter(e => !/Service Worker registration blocked/.test(e));
 const tiles = page => page.evaluate(() => [...document.querySelectorAll('#watchlist .wl-tile')].map(t => {
   const q = s => t.querySelector(s), r = t.getBoundingClientRect();
@@ -55,7 +55,9 @@ const chartStream = page => page.evaluate(() => `${document.getElementById('pair
 // nach eigenem Laden; 260, wenn der Zwischenspeicher mehr hatte (3.26.0: Coin auch im Chart geladen)
 const series = (page, sym) => page.evaluate(sym => { const c = window.__wl.c.get(sym).closed; let ok = c.length > 0; for (let i = 1; i < c.length; i++) if (c[i].time !== c[i - 1].closeTime + 1) ok = false; return { n: c.length, ok }; }, sym);
 const streams = async () => { const st = await h.ctl('/state'); return new Set(st.conns.flatMap(c => c.streams)); };
-const klineLog = async (since, sym) => (await h.ctl(`/log?since=${since}`)).filter(e => /\/klines$/.test(e.path || '') && e.q?.symbol === sym).map(e => `${e.q.interval}:${e.q.limit}`);
+// Diese Fixture prüft Spot-Kacheln. Futures-Orderflow und Chart-Schnappschüsse laden unabhängig weitere Intervalle.
+// Der Abruf des erwarteten Intervalls muss vorliegen; Ausschließlichkeit prüfen ready()/series() und die Abos statt des gemeinsamen Logs.
+const klineLog = async (since, sym) => (await h.ctl(`/log?since=${since}`)).filter(e => e.path === '/api/v3/klines' && e.q?.symbol === sym).map(e => `${e.q.interval}:${e.q.limit}`);
 function writeDebugPage() {
   const s = fs.readFileSync(`${REPO}/weather-widget-v2.html`, 'utf8');
   const hook = '\nwindow.__wl = { get c() { return wl.c; }, paint: () => wlPaint(Date.now(), true), get span() { return wl.span; } };\nrender();startLive();';
@@ -96,7 +98,7 @@ async function verifySpan(page, key, tag) {
     await page.goto(`${h.URL_BASE}/${DBG}`); await live(page);
     check('Standard: alle sechs Kacheln aus 5-Minuten-Kerzen bewertet', await ready(page, '5m'));
     let log = await klineLog(since, 'ETCUSDT');
-    check('Geladen: 260 Kerzen zu 5 Minuten (Vorlauf für EMA 50 und MACD), keine 1-Minuten-Kerzen mehr', log.includes('5m:260') && !log.some(l => l.startsWith('1m:')), log.join(' '));
+    check('Geladen: 260 Kerzen zu 5 Minuten (Vorlauf für EMA 50 und MACD)', log.includes('5m:260'), log.join(' '));
     const t0 = await tiles(page);
     check('Kacheln: Spalte 1h hervorgehoben (±x,xx), kein „1 Min.“/„30 Min.“ mehr', t0.every(x => /^1 Std\. [+−±]\d+,\d\d %$/.test(x.chg)) && !(await page.$('#watchlist .wl-chg30')), JSON.stringify(t0.map(x => x.chg)));
     await page.click('#watchlist .wl-tile[data-watch="ETC"]'); await page.waitForTimeout(500);
@@ -144,7 +146,7 @@ async function verifySpan(page, key, tag) {
       const S = SP[key], ok = await ready(page, S.iv); log = await klineLog(since, 'ETCUSDT');
       const ser = await series(page, 'ETCUSDT');
       // schon einmal geladen (Tastatur-Test, Start): nur die fehlenden Kerzen aus dem Zwischenspeicher nachgeladen
-      check(`${S.name}: alle Kacheln aus ${S.ivName}-Kerzen bewertet, Reihe mit Vorlauf (259–260 abgeschlossene, lückenlos, keine doppelt; 260 geladen oder nachgeladen)`, ok && ser.n >= 259 && ser.n <= 260 && ser.ok && log.some(l => l.startsWith(S.iv + ':')) && log.every(l => l.startsWith(S.iv + ':')), `${log.join(' ')} · ${JSON.stringify(ser)}`);
+      check(`${S.name}: alle Kacheln aus ${S.ivName}-Kerzen bewertet, Reihe mit Vorlauf (259–260 abgeschlossene, lückenlos, keine doppelt; 260 geladen oder nachgeladen)`, ok && ser.n >= 259 && ser.n <= 260 && ser.ok && log.some(l => l.startsWith(S.iv + ':')), `${log.join(' ')} · ${JSON.stringify(ser)}`);
       await verifySpan(page, key, S.name);
     }
     // ---- Bewegung erzwingen: ruhige und bewegte Kerzen (1 Stunde) ----

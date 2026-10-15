@@ -3,16 +3,18 @@
 Diese Datei ist der Einstieg für jede weitere Arbeit am Projekt. Wer sie liest, braucht kein Vorwissen. Die vollständige fachliche
 Vorgabe aller Gruppen G01–G14 steht in `docs/VORGABE-G01-G14.md` (Original-Übergabe; dort sind G10–G14 ausführlich beschrieben).
 
-## Arbeitsstand 15.10.2026 (Codex): Vorauswahl als Liste, Touch-Sortierung und Zahlenbreiten
+## 3.71.1 (Codex): Vorauswahl als Liste, Touch-Sortierung und Zahlenbreiten
 
-- Ausgangspunkt: `main` bei `d5142dd` (3.71.0). Umsetzung der drei vom Nutzer gemeinsam beauftragten Vorauswahl-Aufgaben; kein Release und keine Veröffentlichung.
+- Ausgangspunkt: `main` bei `d5142dd` (3.71.0). Umsetzung der drei vom Nutzer gemeinsam beauftragten Vorauswahl-Aufgaben. Der Nutzer hat anschließend ausdrücklich „bitte teste und stelle online“ beauftragt. Release 3.71.1 über den bestehenden Pages-Weg; [PR #125](https://github.com/NicoAHB/wx-widget/pull/125) enthält den abschließenden Online-Nachweis.
 - Raster-/Listenumschalter neben „Bearbeiten“, gespeichert unter `scalpdesk.wlview.v1` über den vorhandenen Speicher. Dieselben Coin-Knoten, Live-Daten, Filter und Reihenfolgen in beiden Ansichten.
 - Liste: Score und Trend/Kurs/MACD-Dreiecke, Mini-Verlauf, Preis, RSI, Prozentfeld, aktive Alarmglocke und ausgewählter Coin. Zeitraumauswahl 1m / 5m / 1h / 1d; bestehende 30m-/4h-Auswahl bleibt zusätzlich direkt erreichbar. 5m verwendet den bestehenden Berechnungsweg mit fünf 1m-Kerzen.
 - Bestehende Drag-Engine gezielt erweitert: 350 ms Haltezeit, Abbruch des Haltens beim Wischen vor dem Anheben, animiertes Nachrücken, Anheben mit Schatten, Auto-Scroll und Abbruch bei zweitem Finger/Breitenänderung. Im Score-Modus ist Ziehen möglich; erst wirkliches Verschieben speichert die sichtbare Reihenfolge als „Manuell“. Abbruch speichert nichts. Tastatur, Griffe, Mehrtab-Abgleich und Sicherungsreihenfolge bleiben erhalten.
 - Zahlen: vier gleiche Spalten mit Abstand, echte Breitenmessung, bei Platzmangel eine Nachkommastelle, Tabellenziffern und vollständige Preise. Bestehende Farben und Kachelzeilen/-höhe bleiben erhalten.
 - Neue native Browserprüfung `tests/m112.js`; bestehende Prüfungen m111, m45 und unit-wl an den neuen Sortiernamen bzw. 5m-Zeitraum angepasst; neuer Test im seriellen Gesamtlauf.
-- Gezielte Prüfung: **227/227** bestanden (unit-wl 71, m111 23, m112 32, m53 sort 26, m45 75), JavaScript-Syntax und Diff-Prüfung erfolgreich. Chromium-Touch-Emulation bei 320/390/430/768 px; echte iPhone-Abnahme und Release-Gesamtlauf nicht ausgeführt.
-- Details und iPhone-Abnahme: [docs/VORAUSWAHL-LISTE-TOUCH.md](docs/VORAUSWAHL-LISTE-TOUCH.md). APP_VERSION, Service Worker und bestehende Release-Bündel unverändert. Vor einer späteren Veröffentlichung gilt weiterhin der Release-Ablauf aus Abschnitt 4.
+- Auf den seriellen Gesamtlauf `bash tests/run-all.sh` folgen gezielte Nachprüfungen der betroffenen Oberfläche und PWA. Alle 181 Prüfprogramme ausgeführt; Erstlauf 5757/5769 gezählte Einzelprüfungen, drei weitere Programme ohne Fehler. Setup-/Fixtureabweichungen wurden behoben und nachgeprüft; die alte Fibonacci-Magnetabweichung (`m18`, 29/31) bleibt offen und wurde auch im unveränderten `main` reproduziert. Genaue Ergebnisse: [Testnachweis](docs/VORAUSWAHL-3.71.1-TESTNACHWEIS.md).
+- Die abschließende Textmessung verwendet DOM-Range statt Canvas: Tabellenziffern, Ersatzzeichen und die tatsächlich gerenderte Schrift werden berücksichtigt. Neue Regression im Test `m112`, zuletzt 33/33; Zusatzprobe mit Inter: 30/30 Zahlenfelder vollständig. Chromium-Touch-Emulation bei 320/390/430/768 px; echte iPhone-Abnahme offen.
+- App/Service Worker 3.71.1; erzeugtes neues Bündel `bundles/3.71.1/`, 82 PWA-Einträge. `build-release.mjs --check` und `unit-release` 6/6 prüfen Reproduzierbarkeit. Dienstversion bleibt 2.15.0, alte Bündel unverändert. Lint: 0 Fehler, 3 bekannte Warnungen.
+- Details und iPhone-Abnahme: [docs/VORAUSWAHL-LISTE-TOUCH.md](docs/VORAUSWAHL-LISTE-TOUCH.md). Veröffentlichung: Merge-Commit, erfolgreicher Pages-Build, öffentlicher Abgleich aller 82 Dateigrößen/Hashes und Modul-MIME-Typen; endgültige Ergebnisse im PR.
 
 ## 3.71.0 / Dienst 2.15.0 / Musterdienst 1.3.0 (Claude): Trade-Karte, Signalkarte, Gewinn-/Verlust- und Kurs-Alarm als Bild, flüssiges Zoomen, neue Vorauswahl
 

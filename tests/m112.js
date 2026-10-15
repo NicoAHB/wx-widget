@@ -112,6 +112,15 @@ const center = (page, selector) => page.$eval(selector, e => { const r = e.getBo
       if (width === 320) check('Bei knappem Platz wird auf eine Nachkommastelle gerundet', geometry.some(g => g.texts.some(t => /^[+−]\d+,\d$/.test(t))));
       if (process.env.PROOF_DIR && [320, 390].includes(width)) { fs.mkdirSync(process.env.PROOF_DIR, { recursive: true }); await page.locator('#watchlist').screenshot({ path: path.join(process.env.PROOF_DIR, `vorauswahl-raster-${width}.png`) }); }
     }
+    // Inter hat proportionale Standardziffern. Die CSS-Tabellenziffern müssen nach ihrer gerenderten Breite eingepasst werden.
+    await page.evaluate(async () => {
+      const font = new FontFace('Ziffernprobe', 'url(/server/fonts/Inter-Regular.otf)'); await font.load(); document.fonts.add(font);
+      for (const n of document.querySelectorAll('#watchlist .wl-price,#watchlist .wl-tfv')) { n.style.fontFamily = 'Ziffernprobe'; n.style.fontWeight = '400'; }
+      document.querySelectorAll('#watchlist .wl-price').forEach((n, i) => { n.dataset.full = i % 2 ? '1.111.111,11' : '111.111,11'; n.textContent = n.dataset.full; });
+      document.querySelectorAll('#watchlist .wl-tfv').forEach(n => { n.dataset.full = '+11,11'; n.dataset.compact = '+11,1'; n.textContent = n.dataset.full; });
+    });
+    await page.setViewportSize({ width: 321, height: 844 }); await page.waitForTimeout(200);
+    check('Tabellenziffern: auch eine proportionale Schrift und viele Einsen bleiben vollständig im Feld', await page.$$eval('#watchlist .wl-price,#watchlist .wl-tfv', ns => ns.every(n => { const r = document.createRange(); r.selectNodeContents(n); return r.getBoundingClientRect().width <= n.clientWidth + .5; })));
     await page.setViewportSize({ width: 320, height: 844 }); await page.tap('button[data-wlview="list"]'); await page.waitForTimeout(200);
     check('320px-Liste: lange Preise bleiben vollständig im Feld', await page.$$eval('#watchlist .wl-price', ns => ns.every(n => n.scrollWidth <= n.clientWidth + 1)));
     check('Kein Textmarkieren beim langen Drücken', await page.$eval(tile('BTC'), t => (getComputedStyle(t).webkitUserSelect || getComputedStyle(t).userSelect) === 'none'));
