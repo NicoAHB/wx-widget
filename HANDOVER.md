@@ -3,6 +3,12 @@
 Diese Datei ist der Einstieg für jede weitere Arbeit am Projekt. Wer sie liest, braucht kein Vorwissen. Die vollständige fachliche
 Vorgabe aller Gruppen G01–G14 steht in `docs/VORGABE-G01-G14.md` (Original-Übergabe; dort sind G10–G14 ausführlich beschrieben).
 
+## 3.72.1 (Codex): umrahmte Journalaktionen, Ja/Nein nebeneinander
+
+- Nutzerkorrektur: € / Foto / Stift / × jeweils einzeln umrahmt, gleichmäßig in einer Zeile; Frage zum Löschen darüber, Ja und Nein dauerhaft nebeneinander. Begrenzte CSS-Anpassung und eigene Klasse nur für die Trade-Löschbestätigung. Daten und Handler unverändert.
+- Bestehender nativer Journaltest `m116` ergänzt um tatsächliche Rahmen-/Abstands-/Zeilengeometrie und die Bestätigung mit eingeblendeter Warnmeldung bei 320/390/430/768/1440 px. Ausgangsstand zeigt die fehlende Absicherung (33/43); Korrektur mit zusätzlichem Schriftfall 44/44, abschließend alle acht Programme mit 165/165 Einzelprüfungen bestanden. Lint 0 Fehler/3 bekannte Warnungen; [Details und iPhone-Kontrolle](docs/JOURNAL-AKTIONEN-3.72.1.md).
+- Branch `codex/journal-aktionsleiste` ab veröffentlichtem `main` ecb46b1 (3.72.0); Scratch `/workspace/work/journal-aktionsleiste-3.72.1`. Frühere Freigabe zum Testen und Online-Stellen gilt weiter. App/SW 3.72.1 mit eigenem Bündel (86 PWA-Dateien), frühere Bündel und Dienstlogik 2.15.0 unverändert. Isolierte Vorabprüfung 320/390 px bestanden; Merge/Pages und öffentlicher Nachweis im Release-PR.
+
 ## 3.72.0 (Codex): umschaltbares 5/5-Testmodell und übersichtliche Journalzeilen
 
 - Nutzer hat das strenge 5/5-Modell mit Vergleich ausdrücklich bestätigt. Standard bleibt die unveränderte bisherige Vorauswahl; gespeicherter Schalter in Einstellungen, keine Orders oder Telegram-Sendungen durch den Modelltest.
