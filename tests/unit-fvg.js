@@ -29,7 +29,7 @@ const K = rows => rows.map(([open, high, low, close], i) => ({ time: i * 3600e3,
   check('4000 Zufallskerzen: identisch mit einfacher Schleife', got.length > 50 && JSON.stringify(got.map(g => [g.i, g.dir, g.top, g.bottom, g.touch, g.mit])) === JSON.stringify(naive), `${got.length} vs ${naive.length}`);
   const t0 = Date.now(); for (let i = 0; i < 20; i++) F.detectFvgs(rows); check('Tempo: 4000 Kerzen in unter 5 ms je Lauf', (Date.now() - t0) / 20 < 5, (Date.now() - t0) / 20);
   // Abgleich mit dem Python-Programm (gleiche Kerzen als CSV)
-  const PY = process.env.FVG_PYTHON || 'python3', ok = spawnSync(PY, ['-c', 'import pandas, numpy'], { encoding: 'utf8' }).status === 0;
+  const PY = process.env.FVG_PYTHON || 'python3', ok = spawnSync(PY, ['-c', 'import pandas, numpy, sklearn, joblib'], { encoding: 'utf8' }).status === 0;   // fvg_ki lädt beim Import auch das Lernmodell (scikit-learn, joblib)
   if (ok) {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fvg-js-')), csv = path.join(dir, 'k.csv');
     fs.writeFileSync(csv, 'time,open,high,low,close,volume\n' + rows.map(k => [k.time, k.open, k.high, k.low, k.close, k.volume].join(',')).join('\n'));
@@ -38,6 +38,6 @@ const K = rows => rows.map(([open, high, low, close], i) => ({ time: i * 3600e3,
     const js = got.map(g => [g.i, g.dir, g.top, g.bottom, g.touch, g.mit]), bad = pyList ? pyList.findIndex((x, i) => JSON.stringify(x) !== JSON.stringify(js[i])) : 0;
     check('Gleiches Ergebnis wie fvg-ki (Python, Pandas/NumPy)', pyList && pyList.length === js.length && bad < 0, py.stderr || `erste Abweichung #${bad}: Python ${JSON.stringify(pyList[bad])} / JS ${JSON.stringify(js[bad])}`);
     fs.rmSync(dir, { recursive: true, force: true });
-  } else console.log('– Abgleich mit Python übersprungen (pandas fehlt; FVG_PYTHON setzen)');
+  } else console.log('– Abgleich mit Python übersprungen (pandas, numpy, scikit-learn oder joblib fehlt – siehe fvg-ki/requirements.txt; FVG_PYTHON setzen)');
   console.log(`\n${pass}/${pass + fail} bestanden`); process.exitCode = fail ? 1 : 0;
 })();
