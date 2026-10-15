@@ -1,0 +1,83 @@
+{
+  "version": "3.72.1",
+  "scope": "Gezielte Journal-/Bild-/Modell-/PWA-Prüfungen; kein vollständiger Gesamtlauf",
+  "checks": [
+    {
+      "test": "m116",
+      "exit": 0,
+      "passed": 44,
+      "total": 44,
+      "seconds": 6.4,
+      "failed": []
+    },
+    {
+      "test": "m47-history",
+      "exit": 0,
+      "passed": 9,
+      "total": 9,
+      "seconds": 21.9,
+      "failed": []
+    },
+    {
+      "test": "m55-flow",
+      "exit": 0,
+      "passed": 13,
+      "total": 13,
+      "seconds": 13.6,
+      "failed": []
+    },
+    {
+      "test": "m55-manual",
+      "exit": 0,
+      "passed": 7,
+      "total": 7,
+      "seconds": 17.8,
+      "failed": []
+    },
+    {
+      "test": "m103",
+      "exit": 0,
+      "passed": 46,
+      "total": 46,
+      "seconds": 28.3,
+      "failed": []
+    },
+    {
+      "test": "m115",
+      "exit": 0,
+      "passed": 32,
+      "total": 32,
+      "seconds": 15.6,
+      "failed": []
+    },
+    {
+      "test": "m69",
+      "exit": 0,
+      "passed": 8,
+      "total": 8,
+      "seconds": 9.0,
+      "failed": []
+    },
+    {
+      "test": "unit-release",
+      "exit": 0,
+      "passed": 6,
+      "total": 6,
+      "seconds": 0.8,
+      "failed": []
+    }
+  ],
+  "passed": 165,
+  "total": 165,
+  "lint": {
+    "errors": 0,
+    "knownWarnings": 3
+  },
+  "baseline_geometry_test": {
+    "version": "3.72.0",
+    "passed": 33,
+    "total": 43
+  },
+  "device": "Chromium mit Touch-Emulation; echtes iPhone/Safari separat offen",
+  "telegram": "Ausschließlich lokale Attrappen, kein echter Versand"
+}
