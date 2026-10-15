@@ -50,7 +50,7 @@ const brief = d => d && JSON.stringify({ hi: d.hi && { t: d.hi.text, y: d.hi.y, 
     check('Neues Hoch live: „Hoch“ springt an die laufende Kerze (zeigt nach links), Kurs + 150', atTips(d) && Math.abs(d.hi.price - (hi0 + 150)) < .01 && Math.abs(d.hi.x1 - d.lastX) < .06 && d.hi.anchor === 'end', brief(d));
     await h.ctl(`/set?symbol=BTCUSDT&price=${(lo0 - 150).toFixed(2)}`); await page.waitForTimeout(2500); d = await hl(page);
     check('Neues Tief live: „Tief“ an der laufenden Kerze, Kurs − 150; Hoch bleibt', atTips(d) && Math.abs(d.lo.price - (lo0 - 150)) < .01 && Math.abs(d.lo.x1 - d.lastX) < .06 && Math.abs(d.hi.price - (hi0 + 150)) < .01, brief(d));
-    await page.screenshot({ path: __dirname + '/shots/m27-desktop.png', clip: await (await page.$('#chart')).boundingBox() });
+    await page.locator('#chart').screenshot({ path: __dirname + '/shots/m27-desktop.png' });   // 3.71.0: scrollt selbst hin (Chart liegt unter den höheren Vorauswahl-Kacheln)
     // Zurückblättern: es gilt der sichtbare Ausschnitt
     await page.click('#pan-back'); await page.waitForTimeout(1200); d = await hl(page);
     check('Zurückgeblättert: Hoch und Tief des sichtbaren Ausschnitts', atTips(d) && d.hi.price < hi0 + 150 && d.lo.price > lo0 - 150, brief(d));
@@ -84,7 +84,7 @@ const brief = d => d && JSON.stringify({ hi: d.hi && { t: d.hi.text, y: d.hi.y, 
       await pp.goto(h.URL_BASE + '/weather-widget-v2.html'); await live(pp); await pp.waitForTimeout(1500);
       await pp.evaluate(() => document.getElementById('chart').scrollIntoView({ block: 'center' })); await pp.waitForTimeout(800);
       const m = await hl(pp);
-      if (w === 390) await pp.screenshot({ path: __dirname + '/shots/m27-phone-390.png', clip: await (await pp.$('#chart')).boundingBox() });
+      if (w === 390) await pp.locator('#chart').screenshot({ path: __dirname + '/shots/m27-phone-390.png' });
       check(`Handy ${w} px: nur der Kurs, an den Dochtspitzen, Kurs wie an der Achse`, atTips(m) && /^[\d.]+,\d\d$/.test(m.hi.text) && /^[\d.]+,\d\d$/.test(m.lo.text), brief(m));
       check(`Handy ${w} px: Beschriftung endet vor den Kurs-Schildchen, im Chart, nichts liegt darauf, kein seitliches Scrollen`, m && [m.hi, m.lo].every(k => k.box.l >= 0 && k.box.r <= m.w && !k.laneHit && !k.hits.length) && m.sw <= 0,
         JSON.stringify(m && { hits: [m.hi.hits, m.lo.hits], lane: [m.hi.laneHit, m.lo.laneHit], jüngste: [Math.abs(m.hi.x1 - m.lastX) < .06, Math.abs(m.lo.x1 - m.lastX) < .06], sw: m.sw }));

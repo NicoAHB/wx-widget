@@ -70,7 +70,7 @@ const tests = {
     await page.waitForFunction(v => Math.abs(Number(document.getElementById('lm-short').dataset.price) / v - 1) > .01, T.short20, { timeout: 10000 }).catch(() => {});
     const s3 = await strip(page);
     check('Liegt die 20×-Short-Zone über 10 % entfernt, zählt die 50×-Zone', within(s3.short, T.short50, .002), `${s3.short} vs ${T.short50.toFixed(2)}`);
-    await page.screenshot({ path: __dirname + '/shots/m6-spike.png', clip: await page.$eval('#chart-sec', e => { const r = e.getBoundingClientRect(); return { x: r.x, y: r.y, width: r.width, height: r.height }; }) });
+    await page.locator('#chart-sec').screenshot({ path: __dirname + '/shots/m6-spike.png' });
     check('keine Fehler', !errors.length, errors.join(' | ')); await ctx.close();
   },
   async toggle(browser) {
@@ -140,7 +140,7 @@ const tests = {
     await page.waitForFunction(() => /Open Interest 1h/.test(document.getElementById('lm-src').textContent) && document.querySelector('#chart svg image.lmap'), null, { timeout: 15000 }).catch(() => {});
     const s = await strip(page), log = (await h.ctl('/log?since=' + since)).filter(e => e.path === '/futures/data/openInterestHist' && e.q.limit === '500').map(e => e.q.period);
     check('1h-Chart: Open Interest je Stunde', /Open Interest 1h/.test(s.src) && s.img && log.includes('1h'), `${s.src} · ${log.join(',')}`);
-    await page.screenshot({ path: __dirname + '/shots/m6-1h.png', clip: await page.$eval('#chart-sec', e => { const r = e.getBoundingClientRect(); return { x: r.x, y: r.y, width: r.width, height: r.height }; }) });
+    await page.locator('#chart-sec').screenshot({ path: __dirname + '/shots/m6-1h.png' });
     await page.click('[data-interval="1w"]'); await page.waitForTimeout(1500);
     const w = await strip(page);
     check('1w-Chart: Hinweis, keine Heatmap', /bis zum Intervall 1d/.test(w.note) && !w.img, w.note);
