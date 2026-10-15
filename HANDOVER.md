@@ -7,6 +7,11 @@ Vorgabe aller Gruppen G01–G14 steht in `docs/VORGABE-G01-G14.md` (Original-Üb
 
 Ausführlich: [docs/3.71.0-AENDERUNGEN.md](docs/3.71.0-AENDERUNGEN.md). Der Nutzer hat Gesamtlauf und Veröffentlichung freigegeben.
 
+**Gesamtlauf 15.10.2026 (`tests/run-all.sh`, 108 Tests):** alles grün bis auf Fälle, die auf `main` (3.70.2) genauso fehlschlagen – geprüft im Vergleich:
+- `m18` (Magnet rastet an „Fib 38,2 %“ statt 50 %, iPad-Fib-Leiste), `m19` (iPad: Fib-Knöpfe abgeschnitten), `m7` (320 px: Euro-Wert in der Kopfzeile ragt 6–15 px über; Sicherung beim sofortigen Schließen), `m47` (10 000 Trades: Notiz speichern im Median gut 400 ms statt < 400 ms – schwankt mit der Rechnerlast).
+- Bekannte Abbrüche wie bisher: `m40` (`#lb-pos` vom stehenden Alarm-Hinweis verdeckt) und `m79` (`page.fill`-Zeitüberschreitung).
+- Im Lauf behoben und einzeln wiederholt: `unit-fvg` (im Container fehlten scikit-learn/joblib; der Test prüft sie jetzt vorab), `m6`/`m27` (Chart-Fotos erst ins Bild scrollen – der Chart liegt unter den höheren Kacheln).
+
 - **Kurs-Alarm als Bild:** `shared/price-alarm-card.mjs` (Kopf AUFWÄRTS/ABWÄRTS, Kurs groß, Leiste mit LEVEL-Marke, Level/Abstand/Auslösung, Notiz nur wenn vorhanden). App über `CARD_KINDS.alarm` in `chanSendCard`, Dienst über `alarmCard` im Ausgang (`alarmCardImage`, Schalter `alarmCards`). Ersatz ist die Textmeldung; sendet die App ohne Dienst, steht „Von der App gesendet · Dienst nicht erreichbar“ als zweite Zeile in der Bildunterschrift.
 - **Gewinn-/Verlust-Karte mit Euro:** `fx` (USDT je EUR) im Kartenmodell; App mit `fxLive()`, Dienst mit `eurRate()` (Binance EURUSDT, 1 min Zwischenspeicher, 6 h Rückfall). Euro-Zeilen gehen genau auf.
 - **Flüssiges Zoomen/Blättern:** Gesten-Engine `chartLive` im Gesten-Block des Charts: Ziel in Bruchteilen von Kerzen, je Bild Transformation einer Ebene (`g.lv-clip > g`), vereinfachtes Zeichnen (`chartLite`) höchstens alle ≥ 50 ms, am Ende genau. `scheduleDraw` zählt Anforderungen (`drawReq/drawDone`). Zwei Finger zoomen und verschieben, Wischen mit Schwung, `touchmove` verhindert Mitscrollen. Test `m110`.
