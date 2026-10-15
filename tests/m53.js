@@ -321,9 +321,9 @@ const tests = {
     await until(() => page.evaluate(() => [...document.querySelectorAll('#watchlist .wl-price')].filter(p => /\d/.test(p.textContent)).length >= 5), 30000);
     const T = c => `#watchlist .wl-tile[data-watch="${c}"]`;
     check('Start: Standard-Reihenfolge', await order(page) === 'BTC,ETC,BCH,LTC,XRP,NEAR', await order(page));
-    await page.evaluate(() => document.querySelectorAll('#watchlist .wl-item').forEach(i => { i.__m = i.querySelector('.wl-tile').dataset.watch; }));
+    await page.evaluate(() => document.querySelectorAll('#watchlist .wl-item:not(.wl-add-item)').forEach(i => { i.__m = i.querySelector('.wl-tile').dataset.watch; }));
     const p0 = await page.evaluate(() => [...document.querySelectorAll('#watchlist .wl-price')].map(p => p.textContent).join()); await page.waitForTimeout(3500);
-    const live = await page.evaluate(p0 => ({ same: [...document.querySelectorAll('#watchlist .wl-item')].every(i => i.__m === i.querySelector('.wl-tile').dataset.watch), changed: [...document.querySelectorAll('#watchlist .wl-price')].map(p => p.textContent).join() !== p0 }), p0);
+    const live = await page.evaluate(p0 => ({ same: [...document.querySelectorAll('#watchlist .wl-item:not(.wl-add-item)')].every(i => i.__m === i.querySelector('.wl-tile').dataset.watch), changed: [...document.querySelectorAll('#watchlist .wl-price')].map(p => p.textContent).join() !== p0 }), p0);
     check('Live-Kurse ändern sich, ohne das Raster neu zu bauen (dieselben Kacheln)', live.same && live.changed, JSON.stringify(live));
     // Maus: lang drücken und ziehen
     const drag = async (from, to, { hold = 600, steps = 12, esc = false, resize = false } = {}) => {
@@ -341,7 +341,7 @@ const tests = {
       await page.mouse.up(); await page.waitForTimeout(500); return mid;
     };
     let mid = await drag('ETC', 'XRP');
-    let st = await page.evaluate(() => ({ ghost: !!document.querySelector('.wl-ghost'), ph: !!document.querySelector('#watchlist .wl-ph'), open: !!document.querySelector('#watchlist .wl-tile[aria-expanded="true"]'), same: [...document.querySelectorAll('#watchlist .wl-item')].every(i => i.__m === i.querySelector('.wl-tile').dataset.watch) }));
+    let st = await page.evaluate(() => ({ ghost: !!document.querySelector('.wl-ghost'), ph: !!document.querySelector('#watchlist .wl-ph'), open: !!document.querySelector('#watchlist .wl-tile[aria-expanded="true"]'), same: [...document.querySelectorAll('#watchlist .wl-item:not(.wl-add-item)')].every(i => i.__m === i.querySelector('.wl-tile').dataset.watch) }));
     check('Lang drücken (Maus): Kachel angehoben, Platzhalter sichtbar', mid.ghost && mid.ph && mid.drag === 'hold', JSON.stringify(mid));
     check('Ziehen auf XRP: ETC steht danach hinter XRP, gespeichert', await order(page) === 'BTC,BCH,LTC,XRP,ETC,NEAR' && (await ls(page, 'scalpdesk.watchlist.v1')).join() === 'BTC,BCH,LTC,XRP,ETC,NEAR', await order(page));
     check('Nach dem Ziehen: kein zusätzlicher Tipp (Detailfeld zu, Chart weiter BTC), Kacheln verschoben statt neu gebaut', !st.ghost && !st.ph && !st.open && await sym(page) === 'BTC' && st.same, JSON.stringify(st));
@@ -358,19 +358,19 @@ const tests = {
     const escAfter = await page.evaluate(() => ({ ghost: !!document.querySelector('.wl-ghost'), ph: !!document.querySelector('#watchlist .wl-ph'), open: document.querySelector('#watchlist .wl-tile[aria-expanded="true"]')?.dataset.watch || null, drag: document.documentElement.dataset.wldrag || '', scroll: scrollY }));
     check('Esc während des Ziehens: alte Reihenfolge, nichts angehoben, kein Tipp', mid.ghost && await order(page) === 'BTC,BCH,LTC,XRP,ETC,NEAR' && !(await page.$('.wl-ghost')) && !(await page.$('#watchlist .wl-ph')) && await sym(page) === s0 && !(await page.$('#watchlist .wl-tile[aria-expanded="true"]')), JSON.stringify({ mid, after: escAfter, order: await order(page), before: s0, symbol: await sym(page) }));
     mid = await drag('BCH', 'NEAR', { resize: true });
-    check('Breite ändert sich während des Ziehens (Drehen): Abbruch, keine Kachel verloren', mid.ghost && await order(page) === 'BTC,BCH,LTC,XRP,ETC,NEAR' && await page.evaluate(() => document.querySelectorAll('#watchlist .wl-grid > .wl-item').length) === 6 && !(await page.$('.wl-ghost')), await order(page));
+    check('Breite ändert sich während des Ziehens (Drehen): Abbruch, keine Kachel verloren', mid.ghost && await order(page) === 'BTC,BCH,LTC,XRP,ETC,NEAR' && await page.evaluate(() => document.querySelectorAll('#watchlist .wl-grid > .wl-item:not(.wl-add-item)').length) === 6 && !(await page.$('.wl-ghost')), await order(page));
     await page.setViewportSize({ width: 1500, height: 1000 }); await page.waitForTimeout(400);
     // Tastatur: Alt + Pfeil auf einer Kachel, zweiter Tab übernimmt ohne Neubau
     const B = await openPage(browser, {}, { ctx });
-    await B.page.evaluate(() => document.querySelectorAll('#watchlist .wl-item').forEach(i => { i.__m = i.querySelector('.wl-tile').dataset.watch; }));
+    await B.page.evaluate(() => document.querySelectorAll('#watchlist .wl-item:not(.wl-add-item)').forEach(i => { i.__m = i.querySelector('.wl-tile').dataset.watch; }));
     await page.focus(T('BTC')); await page.keyboard.press('Alt+ArrowRight'); await page.waitForTimeout(300);
     check('Alt + Pfeil rechts auf BTC: eine Stelle nach hinten, Fokus bleibt auf BTC, Ansage', await order(page) === 'BCH,BTC,LTC,XRP,ETC,NEAR' && await page.evaluate(() => document.activeElement?.dataset.watch === 'BTC') && /BTC: Platz 2 von 6/.test(await txt(page, '#wl-live')), `${await order(page)} · ${await txt(page, '#wl-live')}`);
     await until(async () => await order(B.page) === 'BCH,BTC,LTC,XRP,ETC,NEAR', 5000);
-    check('Zweiter Tab: neue Reihenfolge übernommen, Kacheln verschoben statt neu gebaut', await order(B.page) === 'BCH,BTC,LTC,XRP,ETC,NEAR' && await B.page.evaluate(() => [...document.querySelectorAll('#watchlist .wl-item')].every(i => i.__m === i.querySelector('.wl-tile').dataset.watch)), await order(B.page));
+    check('Zweiter Tab: neue Reihenfolge übernommen, Kacheln verschoben statt neu gebaut', await order(B.page) === 'BCH,BTC,LTC,XRP,ETC,NEAR' && await B.page.evaluate(() => [...document.querySelectorAll('#watchlist .wl-item:not(.wl-add-item)')].every(i => i.__m === i.querySelector('.wl-tile').dataset.watch)), await order(B.page));
     await B.page.close();
     // Bearbeiten: ◀ ▶ und Griff
     await jsClick(page, '#watchlist [data-watchedit]'); await page.waitForTimeout(300);
-    const ed = await page.evaluate(() => { const it = [...document.querySelectorAll('#watchlist .wl-grid > .wl-item')]; return { bars: it.filter(i => i.querySelector('.wl-sort')).length, firstPrev: it[0].querySelector('[data-wlmove="-1"]').disabled, lastNext: it.at(-1).querySelector('[data-wlmove="1"]').disabled, mid: it[2].querySelector('[data-wlmove="1"]').disabled, grip: it[1].querySelector('.wl-grip').getAttribute('aria-label') }; });
+    const ed = await page.evaluate(() => { const it = [...document.querySelectorAll('#watchlist .wl-grid > .wl-item:not(.wl-add-item)')]; return { bars: it.filter(i => i.querySelector('.wl-sort')).length, firstPrev: it[0].querySelector('[data-wlmove="-1"]').disabled, lastNext: it.at(-1).querySelector('[data-wlmove="1"]').disabled, mid: it[2].querySelector('[data-wlmove="1"]').disabled, grip: it[1].querySelector('.wl-grip').getAttribute('aria-label') }; });
     check('Bearbeiten: je Kachel ◀ ⠿ ▶; ganz vorn ◀ und ganz hinten ▶ gesperrt; Griff mit Platzangabe', ed.bars === 6 && ed.firstPrev && ed.lastNext && !ed.mid && ed.grip === 'BTC verschieben, Platz 2 von 6 – ziehen oder Pfeiltasten', JSON.stringify(ed));
     await page.focus('#watchlist [data-wlmove="1"][data-coin="LTC"]'); await page.keyboard.press('Enter'); await page.waitForTimeout(300);
     check('▶ bei LTC (Tastatur): eine Stelle nach hinten, Fokus bleibt auf diesem Knopf', await order(page) === 'BCH,BTC,XRP,LTC,ETC,NEAR' && await page.evaluate(() => document.activeElement?.dataset.coin === 'LTC' && document.activeElement?.dataset.wlmove === '1'), await order(page));
