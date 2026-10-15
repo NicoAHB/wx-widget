@@ -1,5 +1,7 @@
 // 3.72.0: feste Modelle für Vorauswahl und gepaarten Vergleich. Keine Orders oder Netzwerkzugriffe.
-export const WATCH_MODELS = Object.freeze({ classic: 'watch-classic-1', strict: 'watch-strict-1' });
+export const WATCH_MODELS = Object.freeze({ classic: 'watch-classic-1', strict: 'watch-strict-2' });
+// 3.73.0: vorab festes Trend-Pullback-Modell; keine Optimierung anhand von Backtest-Gewinnen.
+export const WATCH_PULLBACK = Object.freeze({ rsiBars: 8, longPullback: 45, shortPullback: 55, volumeMultiple: 1.2 });
 export const WATCH_MODEL_KEY = 'scalpdesk.watch-model.v1';
 export const WATCH_COMPARE_KEY = 'scalpdesk.watch-compare.v1';
 export const WATCH_BASE_MS = 900000, WATCH_TREND_MS = 14400000, WATCH_HISTORY = 500, WATCH_WARMUP = 300;
@@ -86,10 +88,15 @@ export function watchFeatures(rows) {
 }
 
 export function watchStrictGates(low, high) {
-  const c = low.at(-1), p = low.at(-2), h = high.at(-1), hp = high.at(-2);
-  const avg = low.slice(-21, -1).reduce((sum, x) => sum + x.volume, 0) / 20, volume = avg > 0 && c.volume >= 2 * avg;
-  const long = [h.close > h.ema && h.ema > hp.ema, c.close > c.ema, p.rsi <= 30 && c.rsi > 30, p.macd <= p.signal && c.macd > c.signal, volume];
-  const short = [h.close < h.ema && h.ema < hp.ema, c.close < c.ema, p.rsi >= 70 && c.rsi < 70, p.macd >= p.signal && c.macd < c.signal, volume];
+  const c = low.at(-1), p = low.at(-2), h = high.at(-1), hp = high.at(-2), cfg = WATCH_PULLBACK;
+  const recent = low.slice(-cfg.rsiBars - 1, -1), ready = recent.length === cfg.rsiBars && recent.every(x => Number.isFinite(x.rsi));
+  // Pullback liegt vor der Entscheidung. Erholung und Momentum werden auf der aktuellen Schlusskerze bestätigt.
+  const rsiLong = ready && Math.min(...recent.map(x => x.rsi)) <= cfg.longPullback && c.rsi > 50 && c.rsi < 70 && c.rsi > p.rsi;
+  const rsiShort = ready && Math.max(...recent.map(x => x.rsi)) >= cfg.shortPullback && c.rsi < 50 && c.rsi > 30 && c.rsi < p.rsi;
+  const histogram = c.macd - c.signal, previous = p.macd - p.signal;
+  const avg = low.slice(-21, -1).reduce((sum, x) => sum + x.volume, 0) / 20, volume = avg > 0 && c.volume >= cfg.volumeMultiple * avg;
+  const long = [h.close > h.ema && h.ema > hp.ema, c.close > c.ema, rsiLong, histogram > 0 && histogram > previous, volume];
+  const short = [h.close < h.ema && h.ema < hp.ema, c.close < c.ema, rsiShort, histogram < 0 && histogram < previous, volume];
   return { long, short, volumeRatio: avg > 0 ? c.volume / avg : null };
 }
 
@@ -103,7 +110,7 @@ export function watchStrictRating({ lower, higher, now }) {
     const l = watchFeatures(low), h = watchFeatures(high), last = l.at(-1), prev = l.at(-2), top = h.at(-1), topPrev = h.at(-2);
     if (![last.ema, last.rsi, prev.rsi, last.macd, prev.macd, last.signal, prev.signal, top.ema, topPrev.ema].every(Number.isFinite)) throw new Error('Indikatoren noch nicht bereit.');
     const { long, short, volumeRatio } = watchStrictGates(l, h), count = xs => xs.filter(Boolean).length, longCount = count(long), shortCount = count(short), direction = longCount === 5 ? 1 : shortCount === 5 ? -1 : 0;
-    const keys = ['trend', 'kurs', 'rsi', 'macd', 'volume'], labels = ['4h-Trend · EMA 200', '15m-Kurs · EMA 200', 'RSI 14 · Kreuzung 30/70', 'MACD · neue Kreuzung', 'Volumen ≥ 2 × Ø20 davor'];
+    const keys = ['trend', 'kurs', 'rsi', 'macd', 'volume'], labels = ['4h-Trend · EMA 200', '15m-Kurs · EMA 200', 'RSI 14 · Pullback 8 / Erholung 50', 'MACD · Momentum bestätigt', 'Volumen ≥ 1,2 × Ø20 davor'];
     const rules = keys.map((key, i) => ({ key, label: labels[i], long: long[i], short: short[i] }));
     return { ready: true, model: WATCH_MODELS.strict, direction, longCount, shortCount, count: Math.max(longCount, shortCount), rules, rsi: last.rsi, volumeRatio, closeTime: end - 1, expiresAt: end + WATCH_BASE_MS,
       reason: direction ? '' : `${longCount}/5 Long · ${shortCount}/5 Short – alle fünf Regeln müssen gleichzeitig passen.` };
@@ -163,6 +170,7 @@ export async function compareWatchModels({ lower, higher, symbol, from, asOf, se
   const firstHigh = high.filter(c => c.end <= from);
   if (firstHigh.length < WATCH_HISTORY || from - firstHigh.at(-1).end >= WATCH_TREND_MS) throw new Error('4h-Vorlauf fehlt.');
   const atr = atrRows(low), books = Object.fromEntries(['classic', 'strict'].map(k => [k, { trades: [], position: null, pending: null, signals: 0 }]));
+  const diagnostics = { bars: 0, allLong: 0, allShort: 0, rules: [] };
   let hi = -1, sliceAt = performance.now();
   for (let i = start; i < low.length; i++) {
     if (cancelled()) throw new Error('Vergleich abgebrochen.');
@@ -172,6 +180,9 @@ export async function compareWatchModels({ lower, higher, symbol, from, asOf, se
     const before = low.slice(Math.max(0, i - WATCH_HISTORY + 1), i + 1), h = high.slice(Math.max(0, hi - WATCH_HISTORY + 1), hi + 1);
     const strict = watchStrictRating({ lower: before, higher: h, now: bar.end });
     if (!strict.ready) throw new Error(strict.reason); // derselbe gültige Datenbereich für beide Modelle
+    if (!diagnostics.rules.length) diagnostics.rules = strict.rules.map(r => ({ key: r.key, label: r.label, longPass: 0, shortPass: 0 }));
+    strict.rules.forEach((rule, k) => { diagnostics.rules[k].longPass += Number(rule.long); diagnostics.rules[k].shortPass += Number(rule.short); });
+    diagnostics.bars++; diagnostics.allLong += Number(strict.direction === 1); diagnostics.allShort += Number(strict.direction === -1);
     const directions = { classic: watchClassicDirection(watchClassicRating(before.slice(-199))), strict: strict.direction };
     for (const [key, book] of Object.entries(books)) {
       if (book.pending) {
@@ -186,7 +197,7 @@ export async function compareWatchModels({ lower, higher, symbol, from, asOf, se
     }
   }
   progress(1);
-  const result = { symbol, from, asOf, market: 'spot', models: {} };
+  const result = { symbol, from, asOf, market: 'spot', models: {}, diagnostics };
   for (const [key, book] of Object.entries(books)) result.models[key] = { version: WATCH_MODELS[key], trades: book.trades, stats: watchComparisonStats(book.trades, { open: book.position ? 1 : 0, pending: book.pending ? 1 : 0, signals: book.signals }), openPosition: book.position, pendingSignal: book.pending };
   return result;
 }
@@ -196,4 +207,19 @@ export function summarizeWatchComparison(coins) {
     const all = coins.flatMap(c => c.models[key].trades), sum = k => coins.reduce((n, c) => n + c.models[key].stats[k], 0);
     return [key, watchComparisonStats(all, { open: sum('open'), pending: sum('pending'), signals: sum('signals') })];
   }));
+}
+
+// Diagnose zählt Entscheidungskerzen, keine ausgeführten Trades. Alte Berichte bleiben ohne Diagnose lesbar.
+export function summarizeWatchDiagnostics(coins) {
+  const out = { bars: 0, allLong: 0, allShort: 0, rules: [] }, keys = ['trend', 'kurs', 'rsi', 'macd', 'volume'];
+  if (!Array.isArray(coins) || !coins.length) return null;
+  for (const coin of coins) {
+    const d = coin.diagnostics;
+    if (!d || !Number.isSafeInteger(d.bars) || d.bars < 1 || !['allLong', 'allShort'].every(k => Number.isSafeInteger(d[k]) && d[k] >= 0 && d[k] <= d.bars) || d.allLong + d.allShort > d.bars || !Array.isArray(d.rules) || d.rules.length !== 5) return null;
+    if (d.rules.some((r, i) => !r || r.key !== keys[i] || typeof r.label !== 'string' || !['longPass', 'shortPass'].every(k => Number.isSafeInteger(r[k]) && r[k] >= 0 && r[k] <= d.bars))) return null;
+    if (!out.rules.length) out.rules = d.rules.map(r => ({ key: r.key, label: r.label, longPass: 0, shortPass: 0 }));
+    out.bars += d.bars; out.allLong += d.allLong; out.allShort += d.allShort;
+    d.rules.forEach((r, i) => { out.rules[i].longPass += r.longPass; out.rules[i].shortPass += r.shortPass; });
+  }
+  return out;
 }

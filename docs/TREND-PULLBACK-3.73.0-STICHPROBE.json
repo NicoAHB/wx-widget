@@ -1,0 +1,657 @@
+{
+  "source": "Binance Spot",
+  "models": {
+    "classic": "watch-classic-1",
+    "strict": "watch-strict-2"
+  },
+  "settings": {
+    "days": 30,
+    "feePct": 0.05,
+    "slippagePct": 0.02,
+    "stopAtr": 1.5,
+    "rewardRisk": 2,
+    "holdBars": 16
+  },
+  "cohort": [
+    "BTCUSDT",
+    "ETCUSDT",
+    "BCHUSDT",
+    "LTCUSDT",
+    "XRPUSDT",
+    "NEARUSDT",
+    "DOTUSDT"
+  ],
+  "results": [
+    {
+      "symbol": "BTCUSDT",
+      "from": 1789495200000,
+      "asOf": 1792087200000,
+      "classicUnchanged": true,
+      "classic": {
+        "trades": 224,
+        "wins": 68,
+        "losses": 156,
+        "netR": -81.28230814391354,
+        "averageR": -0.36286744707104257,
+        "winRate": 30.357142857142854,
+        "profitFactor": 0.4360240273657078,
+        "noLosses": false,
+        "realizedDrawdownR": 82.78288221362088,
+        "open": 1,
+        "pending": 0,
+        "signals": 1271
+      },
+      "v1": {
+        "trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "netR": 0,
+        "averageR": null,
+        "winRate": null,
+        "profitFactor": null,
+        "noLosses": false,
+        "realizedDrawdownR": 0,
+        "open": 0,
+        "pending": 0,
+        "signals": 0
+      },
+      "v2": {
+        "trades": 26,
+        "wins": 6,
+        "losses": 20,
+        "netR": -11.052981682999357,
+        "averageR": -0.4251146801153599,
+        "winRate": 23.076923076923077,
+        "profitFactor": 0.3877580286873624,
+        "noLosses": false,
+        "realizedDrawdownR": 11.052981682999357,
+        "open": 0,
+        "pending": 0,
+        "signals": 45
+      },
+      "diagnostics": {
+        "bars": 2881,
+        "allLong": 45,
+        "allShort": 0,
+        "rules": [
+          {
+            "key": "trend",
+            "label": "4h-Trend · EMA 200",
+            "longPass": 2753,
+            "shortPass": 128
+          },
+          {
+            "key": "kurs",
+            "label": "15m-Kurs · EMA 200",
+            "longPass": 1576,
+            "shortPass": 1305
+          },
+          {
+            "key": "rsi",
+            "label": "RSI 14 · Pullback 8 / Erholung 50",
+            "longPass": 309,
+            "shortPass": 281
+          },
+          {
+            "key": "macd",
+            "label": "MACD · Momentum bestätigt",
+            "longPass": 778,
+            "shortPass": 755
+          },
+          {
+            "key": "volume",
+            "label": "Volumen ≥ 1,2 × Ø20 davor",
+            "longPass": 772,
+            "shortPass": 772
+          }
+        ]
+      }
+    },
+    {
+      "symbol": "ETCUSDT",
+      "from": 1789495200000,
+      "asOf": 1792087200000,
+      "classicUnchanged": true,
+      "classic": {
+        "trades": 204,
+        "wins": 70,
+        "losses": 134,
+        "netR": -43.69422722171269,
+        "averageR": -0.21418738834172885,
+        "winRate": 34.31372549019608,
+        "profitFactor": 0.6440647087375228,
+        "noLosses": false,
+        "realizedDrawdownR": 46.69261375596563,
+        "open": 1,
+        "pending": 0,
+        "signals": 1294
+      },
+      "v1": {
+        "trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "netR": 0,
+        "averageR": null,
+        "winRate": null,
+        "profitFactor": null,
+        "noLosses": false,
+        "realizedDrawdownR": 0,
+        "open": 0,
+        "pending": 0,
+        "signals": 0
+      },
+      "v2": {
+        "trades": 28,
+        "wins": 12,
+        "losses": 16,
+        "netR": 2.472395591050421,
+        "averageR": 0.08829984253751504,
+        "winRate": 42.857142857142854,
+        "profitFactor": 1.1726717593912657,
+        "noLosses": false,
+        "realizedDrawdownR": 4.078397034429212,
+        "open": 0,
+        "pending": 0,
+        "signals": 38
+      },
+      "diagnostics": {
+        "bars": 2881,
+        "allLong": 22,
+        "allShort": 16,
+        "rules": [
+          {
+            "key": "trend",
+            "label": "4h-Trend · EMA 200",
+            "longPass": 1952,
+            "shortPass": 929
+          },
+          {
+            "key": "kurs",
+            "label": "15m-Kurs · EMA 200",
+            "longPass": 1336,
+            "shortPass": 1545
+          },
+          {
+            "key": "rsi",
+            "label": "RSI 14 · Pullback 8 / Erholung 50",
+            "longPass": 251,
+            "shortPass": 279
+          },
+          {
+            "key": "macd",
+            "label": "MACD · Momentum bestätigt",
+            "longPass": 777,
+            "shortPass": 710
+          },
+          {
+            "key": "volume",
+            "label": "Volumen ≥ 1,2 × Ø20 davor",
+            "longPass": 795,
+            "shortPass": 795
+          }
+        ]
+      }
+    },
+    {
+      "symbol": "BCHUSDT",
+      "from": 1789495200000,
+      "asOf": 1792087200000,
+      "classicUnchanged": true,
+      "classic": {
+        "trades": 219,
+        "wins": 73,
+        "losses": 146,
+        "netR": -40.48376749663975,
+        "averageR": -0.18485738582940525,
+        "winRate": 33.33333333333333,
+        "profitFactor": 0.696803278670871,
+        "noLosses": false,
+        "realizedDrawdownR": 43.763479540193615,
+        "open": 1,
+        "pending": 0,
+        "signals": 1292
+      },
+      "v1": {
+        "trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "netR": 0,
+        "averageR": null,
+        "winRate": null,
+        "profitFactor": null,
+        "noLosses": false,
+        "realizedDrawdownR": 0,
+        "open": 0,
+        "pending": 0,
+        "signals": 0
+      },
+      "v2": {
+        "trades": 19,
+        "wins": 5,
+        "losses": 14,
+        "netR": -7.55895244949872,
+        "averageR": -0.3978396026051958,
+        "winRate": 26.31578947368421,
+        "profitFactor": 0.40763115763012975,
+        "noLosses": false,
+        "realizedDrawdownR": 10.288183449143077,
+        "open": 0,
+        "pending": 0,
+        "signals": 28
+      },
+      "diagnostics": {
+        "bars": 2881,
+        "allLong": 16,
+        "allShort": 12,
+        "rules": [
+          {
+            "key": "trend",
+            "label": "4h-Trend · EMA 200",
+            "longPass": 2000,
+            "shortPass": 881
+          },
+          {
+            "key": "kurs",
+            "label": "15m-Kurs · EMA 200",
+            "longPass": 1382,
+            "shortPass": 1499
+          },
+          {
+            "key": "rsi",
+            "label": "RSI 14 · Pullback 8 / Erholung 50",
+            "longPass": 239,
+            "shortPass": 251
+          },
+          {
+            "key": "macd",
+            "label": "MACD · Momentum bestätigt",
+            "longPass": 772,
+            "shortPass": 746
+          },
+          {
+            "key": "volume",
+            "label": "Volumen ≥ 1,2 × Ø20 davor",
+            "longPass": 666,
+            "shortPass": 666
+          }
+        ]
+      }
+    },
+    {
+      "symbol": "LTCUSDT",
+      "from": 1789495200000,
+      "asOf": 1792087200000,
+      "classicUnchanged": true,
+      "classic": {
+        "trades": 212,
+        "wins": 78,
+        "losses": 134,
+        "netR": -22.249863446314066,
+        "averageR": -0.10495218606751917,
+        "winRate": 36.79245283018868,
+        "profitFactor": 0.8153448880430777,
+        "noLosses": false,
+        "realizedDrawdownR": 33.544320282984714,
+        "open": 1,
+        "pending": 0,
+        "signals": 1295
+      },
+      "v1": {
+        "trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "netR": 0,
+        "averageR": null,
+        "winRate": null,
+        "profitFactor": null,
+        "noLosses": false,
+        "realizedDrawdownR": 0,
+        "open": 0,
+        "pending": 0,
+        "signals": 0
+      },
+      "v2": {
+        "trades": 25,
+        "wins": 11,
+        "losses": 14,
+        "netR": 1.884424728508617,
+        "averageR": 0.07537698914034469,
+        "winRate": 44,
+        "profitFactor": 1.134601766322044,
+        "noLosses": false,
+        "realizedDrawdownR": 4,
+        "open": 0,
+        "pending": 0,
+        "signals": 43
+      },
+      "diagnostics": {
+        "bars": 2881,
+        "allLong": 36,
+        "allShort": 7,
+        "rules": [
+          {
+            "key": "trend",
+            "label": "4h-Trend · EMA 200",
+            "longPass": 2552,
+            "shortPass": 329
+          },
+          {
+            "key": "kurs",
+            "label": "15m-Kurs · EMA 200",
+            "longPass": 1453,
+            "shortPass": 1428
+          },
+          {
+            "key": "rsi",
+            "label": "RSI 14 · Pullback 8 / Erholung 50",
+            "longPass": 236,
+            "shortPass": 250
+          },
+          {
+            "key": "macd",
+            "label": "MACD · Momentum bestätigt",
+            "longPass": 780,
+            "shortPass": 743
+          },
+          {
+            "key": "volume",
+            "label": "Volumen ≥ 1,2 × Ø20 davor",
+            "longPass": 790,
+            "shortPass": 790
+          }
+        ]
+      }
+    },
+    {
+      "symbol": "XRPUSDT",
+      "from": 1789495200000,
+      "asOf": 1792087200000,
+      "classicUnchanged": true,
+      "classic": {
+        "trades": 224,
+        "wins": 79,
+        "losses": 145,
+        "netR": -47.54594816963038,
+        "averageR": -0.21225869718584991,
+        "winRate": 35.267857142857146,
+        "profitFactor": 0.6490295542830233,
+        "noLosses": false,
+        "realizedDrawdownR": 58.867052078693725,
+        "open": 1,
+        "pending": 0,
+        "signals": 1319
+      },
+      "v1": {
+        "trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "netR": 0,
+        "averageR": null,
+        "winRate": null,
+        "profitFactor": null,
+        "noLosses": false,
+        "realizedDrawdownR": 0,
+        "open": 0,
+        "pending": 0,
+        "signals": 0
+      },
+      "v2": {
+        "trades": 26,
+        "wins": 10,
+        "losses": 16,
+        "netR": -2.274675611713192,
+        "averageR": -0.08748752352743046,
+        "winRate": 38.46153846153847,
+        "profitFactor": 0.8562805380917331,
+        "noLosses": false,
+        "realizedDrawdownR": 7.909508649521942,
+        "open": 0,
+        "pending": 0,
+        "signals": 38
+      },
+      "diagnostics": {
+        "bars": 2881,
+        "allLong": 22,
+        "allShort": 16,
+        "rules": [
+          {
+            "key": "trend",
+            "label": "4h-Trend · EMA 200",
+            "longPass": 1880,
+            "shortPass": 1001
+          },
+          {
+            "key": "kurs",
+            "label": "15m-Kurs · EMA 200",
+            "longPass": 1164,
+            "shortPass": 1717
+          },
+          {
+            "key": "rsi",
+            "label": "RSI 14 · Pullback 8 / Erholung 50",
+            "longPass": 270,
+            "shortPass": 270
+          },
+          {
+            "key": "macd",
+            "label": "MACD · Momentum bestätigt",
+            "longPass": 777,
+            "shortPass": 755
+          },
+          {
+            "key": "volume",
+            "label": "Volumen ≥ 1,2 × Ø20 davor",
+            "longPass": 744,
+            "shortPass": 744
+          }
+        ]
+      }
+    },
+    {
+      "symbol": "NEARUSDT",
+      "from": 1789495200000,
+      "asOf": 1792087200000,
+      "classicUnchanged": true,
+      "classic": {
+        "trades": 209,
+        "wins": 78,
+        "losses": 131,
+        "netR": -7.6799598398877365,
+        "averageR": -0.036746219329606394,
+        "winRate": 37.32057416267943,
+        "profitFactor": 0.9360129370143433,
+        "noLosses": false,
+        "realizedDrawdownR": 20.16737262665549,
+        "open": 0,
+        "pending": 1,
+        "signals": 1326
+      },
+      "v1": {
+        "trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "netR": 0,
+        "averageR": null,
+        "winRate": null,
+        "profitFactor": null,
+        "noLosses": false,
+        "realizedDrawdownR": 0,
+        "open": 0,
+        "pending": 0,
+        "signals": 0
+      },
+      "v2": {
+        "trades": 37,
+        "wins": 13,
+        "losses": 24,
+        "netR": 0.2842448136736013,
+        "averageR": 0.007682292261448684,
+        "winRate": 35.13513513513514,
+        "profitFactor": 1.0124627430653035,
+        "noLosses": false,
+        "realizedDrawdownR": 7.093007855203083,
+        "open": 0,
+        "pending": 0,
+        "signals": 61
+      },
+      "diagnostics": {
+        "bars": 2881,
+        "allLong": 61,
+        "allShort": 0,
+        "rules": [
+          {
+            "key": "trend",
+            "label": "4h-Trend · EMA 200",
+            "longPass": 2881,
+            "shortPass": 0
+          },
+          {
+            "key": "kurs",
+            "label": "15m-Kurs · EMA 200",
+            "longPass": 1869,
+            "shortPass": 1012
+          },
+          {
+            "key": "rsi",
+            "label": "RSI 14 · Pullback 8 / Erholung 50",
+            "longPass": 269,
+            "shortPass": 289
+          },
+          {
+            "key": "macd",
+            "label": "MACD · Momentum bestätigt",
+            "longPass": 734,
+            "shortPass": 801
+          },
+          {
+            "key": "volume",
+            "label": "Volumen ≥ 1,2 × Ø20 davor",
+            "longPass": 820,
+            "shortPass": 820
+          }
+        ]
+      }
+    },
+    {
+      "symbol": "DOTUSDT",
+      "from": 1789495200000,
+      "asOf": 1792087200000,
+      "classicUnchanged": true,
+      "classic": {
+        "trades": 206,
+        "wins": 77,
+        "losses": 129,
+        "netR": -27.214533850773186,
+        "averageR": -0.13210938762511257,
+        "winRate": 37.37864077669903,
+        "profitFactor": 0.7713321980644174,
+        "noLosses": false,
+        "realizedDrawdownR": 31.607445389898395,
+        "open": 1,
+        "pending": 0,
+        "signals": 1253
+      },
+      "v1": {
+        "trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "netR": 0,
+        "averageR": null,
+        "winRate": null,
+        "profitFactor": null,
+        "noLosses": false,
+        "realizedDrawdownR": 0,
+        "open": 0,
+        "pending": 0,
+        "signals": 0
+      },
+      "v2": {
+        "trades": 30,
+        "wins": 17,
+        "losses": 13,
+        "netR": 12.583235803247275,
+        "averageR": 0.4194411934415758,
+        "winRate": 56.666666666666664,
+        "profitFactor": 2.152280726395733,
+        "noLosses": false,
+        "realizedDrawdownR": 3.412006668326219,
+        "open": 0,
+        "pending": 0,
+        "signals": 48
+      },
+      "diagnostics": {
+        "bars": 2881,
+        "allLong": 45,
+        "allShort": 3,
+        "rules": [
+          {
+            "key": "trend",
+            "label": "4h-Trend · EMA 200",
+            "longPass": 2648,
+            "shortPass": 233
+          },
+          {
+            "key": "kurs",
+            "label": "15m-Kurs · EMA 200",
+            "longPass": 1715,
+            "shortPass": 1166
+          },
+          {
+            "key": "rsi",
+            "label": "RSI 14 · Pullback 8 / Erholung 50",
+            "longPass": 284,
+            "shortPass": 294
+          },
+          {
+            "key": "macd",
+            "label": "MACD · Momentum bestätigt",
+            "longPass": 783,
+            "shortPass": 748
+          },
+          {
+            "key": "volume",
+            "label": "Volumen ≥ 1,2 × Ø20 davor",
+            "longPass": 766,
+            "shortPass": 766
+          }
+        ]
+      }
+    }
+  ],
+  "purpose": "Funktionskontrolle der vorab festgelegten Regeln, keine Optimierung auf Gewinn und kein Nachweis eines künftigen Vorteils.",
+  "summary": {
+    "classic": {
+      "trades": 1498,
+      "netR": -270.1506081688714,
+      "open": 6,
+      "pending": 1,
+      "signals": 9050
+    },
+    "v1": {
+      "trades": 0,
+      "netR": 0,
+      "open": 0,
+      "pending": 0,
+      "signals": 0
+    },
+    "v2": {
+      "trades": 191,
+      "netR": -3.662308807731354,
+      "open": 0,
+      "pending": 0,
+      "signals": 301
+    }
+  },
+  "fromUtc": "2026-09-15T18:00:00+00:00",
+  "asOfUtc": "2026-10-15T18:00:00+00:00",
+  "sourceDataSha256": {
+    "BTCUSDT": "fbe185c549cea2329208792752d08c4de896195b455c5a04772a5b87af2b0194",
+    "ETCUSDT": "99b642114c86cd4b0353d8de1390ca4646c0f42e9544e37ad976403f9fd7b242",
+    "BCHUSDT": "e3ca8ad5b90cd33c860fe042d3d4d9bd72bb1031ee464cf7e8c3d57ab93f697b",
+    "LTCUSDT": "6806258e54c4a2cd31d8b18a3ef15addb0a8643e5443a2699715e745b12c31d1",
+    "XRPUSDT": "b123ff3be281c2a915dfbd811f9ddee02e26e6293e2949580f28d776d6a5d13d",
+    "NEARUSDT": "a9b5557f98385f51eee291b0e77d863f7755a9a501e2d46dee037600b349e733",
+    "DOTUSDT": "b34fad61d94bc1992d83db141365040e1a9e76e52a28ede004b9cc6cef283ed4"
+  },
+  "baselineDeepEqualityAllCoins": true
+}

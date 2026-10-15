@@ -1,6 +1,6 @@
 {
   "version": "2.15.0",
-  "appVersion": "3.72.1",
+  "appVersion": "3.73.0",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
@@ -464,8 +464,8 @@
     },
     {
       "path": "shared/watch-model-core.mjs",
-      "sha256": "c93594425de2126060e19bfd0c729f69cc08a7a9a38b5688d4c49673db256ccc",
-      "bytes": 14004
+      "sha256": "85ed6680070b22ad8bba7c1ff08059e83a06781a49c58300d28af191e9eb4ce9",
+      "bytes": 16506
     },
     {
       "path": "shared/watch-model-feed.mjs",
@@ -474,8 +474,8 @@
     },
     {
       "path": "shared/watch-model-view.mjs",
-      "sha256": "61bcffddac8cba14d24540db4b8847b5912e89162c9ee6e16c575ee8e2743fef",
-      "bytes": 15368
+      "sha256": "08e7ea6f92e204067f5e32700be346a228005a73c3b26fa1057715a4dab6f2ee",
+      "bytes": 18231
     },
     {
       "path": "shared/watch-model-worker.mjs",
