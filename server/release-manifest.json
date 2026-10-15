@@ -1,6 +1,6 @@
 {
   "version": "2.15.0",
-  "appVersion": "3.71.5",
+  "appVersion": "3.72.0",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
@@ -461,6 +461,26 @@
       "path": "shared/telegram-format.mjs",
       "sha256": "03f4b2740dfbe6c35af10dc80629b648c3752e39fece97ca598aac874bb0f467",
       "bytes": 22759
+    },
+    {
+      "path": "shared/watch-model-core.mjs",
+      "sha256": "c93594425de2126060e19bfd0c729f69cc08a7a9a38b5688d4c49673db256ccc",
+      "bytes": 14004
+    },
+    {
+      "path": "shared/watch-model-feed.mjs",
+      "sha256": "800a753e79dd5e4782877b556d0a44daab75be13a0611e892fd6a7127a773219",
+      "bytes": 5107
+    },
+    {
+      "path": "shared/watch-model-view.mjs",
+      "sha256": "61bcffddac8cba14d24540db4b8847b5912e89162c9ee6e16c575ee8e2743fef",
+      "bytes": 15368
+    },
+    {
+      "path": "shared/watch-model-worker.mjs",
+      "sha256": "7a57b1d12383284e3f5858bc8dd6820424a2a065132a1f0579a55edd6bf12c8d",
+      "bytes": 633
     },
     {
       "path": "shared/widget-state.mjs",

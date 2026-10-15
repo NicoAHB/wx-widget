@@ -1,0 +1,234 @@
+{
+  "version": "3.72.0",
+  "scope": "Gezielte Fach-/UI-/PWA-Regression; kein vollständiger Gesamtlauf",
+  "checks": [
+    {
+      "target": "unit-watch-models",
+      "exit": 0,
+      "seconds": 0.4,
+      "counts": [
+        "41",
+        "41"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-watch-model-feed",
+      "exit": 0,
+      "seconds": 0.3,
+      "counts": [
+        "14",
+        "14"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-wl",
+      "exit": 0,
+      "seconds": 0.4,
+      "counts": [
+        "71",
+        "71"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-github-sync",
+      "exit": 0,
+      "seconds": 0.8,
+      "counts": [
+        "24",
+        "24"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-trade-caption",
+      "exit": 0,
+      "seconds": 0.4,
+      "counts": [
+        "17",
+        "17"
+      ],
+      "failed": []
+    },
+    {
+      "target": "unit-release",
+      "exit": 0,
+      "counts": [
+        "6",
+        "6"
+      ],
+      "failed": [],
+      "phase": "abschließender Nachlauf"
+    },
+    {
+      "target": "m115",
+      "exit": 0,
+      "counts": [
+        "32",
+        "32"
+      ],
+      "failed": [],
+      "phase": "abschließender Nachlauf"
+    },
+    {
+      "target": "m116",
+      "exit": 0,
+      "counts": [
+        "27",
+        "27"
+      ],
+      "failed": [],
+      "phase": "abschließender Nachlauf"
+    },
+    {
+      "target": "m112",
+      "exit": 0,
+      "seconds": 56.2,
+      "counts": [
+        "38",
+        "38"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m45",
+      "exit": 0,
+      "seconds": 123.8,
+      "counts": [
+        "75",
+        "75"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m114",
+      "exit": 0,
+      "seconds": 73.2,
+      "counts": [
+        "92",
+        "92"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m113",
+      "exit": 0,
+      "seconds": 16.1,
+      "counts": [
+        "33",
+        "33"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m84",
+      "exit": 0,
+      "seconds": 28.8,
+      "counts": [
+        "157",
+        "157"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m90",
+      "exit": 0,
+      "seconds": 14.5,
+      "counts": [
+        "22",
+        "22"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m101",
+      "exit": 0,
+      "seconds": 9.1,
+      "counts": [
+        "24",
+        "24"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m55 flow",
+      "exit": 0,
+      "seconds": 14.2,
+      "counts": [
+        "13",
+        "13"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m55 manual",
+      "exit": 0,
+      "seconds": 18.4,
+      "counts": [
+        "7",
+        "7"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m103",
+      "exit": 0,
+      "seconds": 28.3,
+      "counts": [
+        "46",
+        "46"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m47 history",
+      "exit": 0,
+      "seconds": 21.7,
+      "counts": [
+        "9",
+        "9"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m5 heights",
+      "exit": 0,
+      "seconds": 17.0,
+      "counts": [
+        "8",
+        "8"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m7 calm",
+      "exit": 0,
+      "seconds": 112.5,
+      "counts": [
+        "10",
+        "10"
+      ],
+      "failed": []
+    },
+    {
+      "target": "m69",
+      "exit": 0,
+      "seconds": 8.9,
+      "counts": [
+        "8",
+        "8"
+      ],
+      "failed": []
+    }
+  ],
+  "passed": 774,
+  "total": 774,
+  "lint": {
+    "errors": 0,
+    "knownWarnings": 3
+  },
+  "device": "Chromium mit Touch-/Mobil-Emulation; echtes iPhone/Safari separat offen",
+  "telegram": "Nur lokale Attrappen; kein echter Versand"
+}
