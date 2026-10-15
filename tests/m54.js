@@ -240,7 +240,7 @@ const tests = {
     // 8) ohne Dienst: strikte Zustellung (verlorene Antwort → kein zweiter Versuch)
     await h.ctl('/set?symbol=SOLUSDT&price=150'); at = Date.now() - 5e3;
     const D = await openPage(browser, { 'scalpdesk.channels.v1': chanCfg(), 'scalpdesk.alarms.v1': [alarm('S8', 150.3, at)] });
-    await D.page.waitForTimeout(1000); await h.ctl('/chan?photodrop=1'); t0 = Date.now(); await raise(150);
+    await D.page.waitForTimeout(1000); await h.ctl('/chan?photocut=1'); t0 = Date.now(); await raise(150);   // Antwort halb da, dann weg (kein Neuversand durch den Browser)
     await until(() => D.page.evaluate(() => !!__g05.state.alarms.find(x => x.id === 'S8')?.triggeredAt), 10000); await D.page.waitForTimeout(15000);
     const s8 = await tgSent(t0, /KURS-ALARM · SOL|^Kurs-Alarm · SOL · /);
     check('Ohne Dienst: verlorene Antwort → genau ein Versuch, Kanalstatus „Zustellung unbestätigt“', s8.length === 1 && await D.page.evaluate(() => /Zustellung unbestätigt/.test(__g05.chanState.tg?.text || '')), JSON.stringify({ n: s8.length, st: await D.page.evaluate(() => __g05.chanState.tg?.text) }));
