@@ -1,5 +1,6 @@
-// 3.72.0: feste Modelle für Vorauswahl und gepaarten Vergleich. Keine Orders oder Netzwerkzugriffe.
-export const WATCH_MODELS = Object.freeze({ classic: 'watch-classic-1', strict: 'watch-strict-2' });
+// Feste Modelle für Vorauswahl und gepaarten Vergleich. Keine Orders oder Netzwerkzugriffe.
+import { rsiSignal } from './rsi-momentum.mjs';
+export const WATCH_MODELS = Object.freeze({ classic: 'watch-classic-2', strict: 'watch-strict-2' });
 // 3.73.0: vorab festes Trend-Pullback-Modell; keine Optimierung anhand von Backtest-Gewinnen.
 export const WATCH_PULLBACK = Object.freeze({ rsiBars: 8, longPullback: 45, shortPullback: 55, volumeMultiple: 1.2 });
 export const WATCH_MODEL_KEY = 'scalpdesk.watch-model.v1';
@@ -7,7 +8,7 @@ export const WATCH_COMPARE_KEY = 'scalpdesk.watch-compare.v1';
 export const WATCH_BASE_MS = 900000, WATCH_TREND_MS = 14400000, WATCH_HISTORY = 500, WATCH_WARMUP = 300;
 export const WATCH_COMPARE_DEFAULTS = Object.freeze({ days: 30, feePct: .05, slippagePct: .02, stopAtr: 1.5, rewardRisk: 2, holdBars: 16 });
 
-// Die bisherigen SMA-/Wilder-Starts und vier Signalregeln unverändert übernommen.
+// SMA-/Wilder-Starts bleiben erhalten; die Long-RSI-Regel erhält in v2 eine Momentum-Alternative.
 function rsi(closes, period = 14) {
   const out = Array(closes.length).fill(null);
   if (closes.length <= period) return out;
@@ -51,14 +52,15 @@ export function watchClassicRating(closed) {
   const r = rsi(closes), rNow = r.at(-1), rPrev = r.at(-2), m = macd(closes), mLine = m.line.at(-1), mSig = m.signal.at(-1);
   if (![last, e20, e50, rNow, rPrev, mLine, mSig].every(Number.isFinite)) return null;
   const cmp = (a, b) => a > b ? 1 : a < b ? -1 : 0;
+  const rsiRule = rsiSignal(r);
   const rules = [
     { label: 'Trend', score: cmp(e20, e50), detail: 'EMA 20 zu EMA 50' },
     { label: 'Kurs', score: cmp(last, e20), detail: 'Schluss zu EMA 20' },
-    { label: 'RSI ' + Math.round(rNow), score: rNow < 30 && rNow > rPrev ? 1 : rNow > 70 && rNow < rPrev ? -1 : 0, detail: 'RSI 14' },
+    { label: 'RSI ' + Math.round(rNow), score: rsiRule.score, detail: 'RSI 14 · Erholung oder Momentum' },
     { label: 'MACD', score: cmp(mLine, mSig), detail: 'MACD zu Signallinie' }
   ];
   const score = rules.reduce((s, x) => s + x.score, 0);
-  return { score, verdict: score >= 2 ? 'buy' : score <= -2 ? 'sell' : 'hold', rules, closeTime: closed.at(-1).closeTime };
+  return { score, verdict: score >= 2 ? 'buy' : score <= -2 ? 'sell' : 'hold', rules, closeTime: closed.at(-1).closeTime, rsiRule };
 }
 export function watchCompareSettings(input = {}) {
   const c = { ...WATCH_COMPARE_DEFAULTS, ...input };

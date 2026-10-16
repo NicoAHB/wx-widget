@@ -4,6 +4,7 @@ const element = (tag, cls = '', text = '') => { const e = globalThis.document.cr
 const num = (v, digits = 2) => Number.isFinite(v) ? v.toLocaleString('de-DE', { minimumFractionDigits: digits, maximumFractionDigits: digits }) : '–';
 const date = value => new Intl.DateTimeFormat('de-DE', { dateStyle: 'short', timeStyle: 'short' }).format(value);
 const modelName = version => version === 'watch-strict-1' ? 'Streng 5/5 · v1 (alt)' : 'Trend-Pullback 5/5 · v2';
+const classicName = version => version === 'watch-classic-1' ? 'Bisheriges Modell · v1 (ohne Momentum)' : 'Standard + RSI-Momentum · v2';
 const button = (text, id) => { const b = element('button', 'button ghost', text); b.type = 'button'; if (id) b.id = id; return b; };
 export function createWatchModelView({ host, read, save, getMode, setMode, symbols, history, workerFactory, now = Date.now, available = () => true }) {
   const root = element('section', 'workspace-setting-card watch-model-settings'); root.id = 'watch-model-settings';
@@ -12,12 +13,12 @@ export function createWatchModelView({ host, read, save, getMode, setMode, symbo
   const current = element('p', 'wm-current'), note = element('p', 'muted'); current.id = 'watch-model-current'; toggle.setAttribute('aria-describedby', current.id);
   const go = button('Zur Vorauswahl'); go.dataset.goto = 'watchlist';
   const explain = element('details', 'wm-explain'); explain.append(element('summary', '', 'Regeln und Vergleich erklären'));
-  explain.append(element('p', '', 'Bisherig: unveränderte vier Regeln und deine bisherige Zeitraumwahl. Trend-Pullback v2: nur abgeschlossene 15m-Kerzen mit 4h-Kontext; Long oder Short erst bei 5/5. Fehlende oder veraltete Daten sperren die Freigabe. Die Prozent-Zeiträume der Kacheln bleiben unabhängig davon wählbar.'));
+  explain.append(element('p', '', 'Standard v2: vier Regeln mit deiner Zeitraumwahl. RSI-Long bei Erholung unter 30 oder neu bei positivem ΔRSI über SMA20(ΔRSI) + 2 × σ20. Mittelwert und Populations-σ verwenden die letzten 20 Veränderungen einschließlich der aktuellen abgeschlossenen Kerze. Short bleibt RSI über 70 und fallend. Trend-Pullback v2 bleibt unverändert: abgeschlossene 15m-Kerzen mit 4h-Kontext; Long oder Short erst bei 5/5. Fehlende oder veraltete Daten sperren die Freigabe. Die Prozent-Zeiträume der Kacheln bleiben unabhängig davon wählbar.'));
   const list = element('ol');
   for (const text of ['4h: Schluss über steigender EMA 200 (Short: darunter und fallend).', '15m: Schluss über EMA 200 (Short: darunter).', 'RSI 14: in den 8 vorherigen 15m-Kerzen mindestens einmal ≤45, jetzt steigend über 50 und unter 70. Short: vorher ≥55, jetzt fallend unter 50 und über 30.', 'MACD 12/26/9: oberhalb der Signallinie und Histogramm steigt. Short: darunter und Histogramm fällt. Eine Kreuzung auf derselben Kerze ist nicht erforderlich.', 'Volumen mindestens 1,2 × Durchschnitt der 20 vorherigen Kerzen (ohne die aktuelle Kerze).']) list.append(element('li', '', text));
   explain.append(list, element('p', '', 'Alle fünf Bedingungen müssen auf der aktuellen Schlusskerze erfüllt sein; der RSI-Rücksetzer liegt davor. Volumen und Momentum bestätigen den Wiedereinstieg in Trendrichtung. Ein Signal bleibt nur bis zum nächsten 15m-Schluss gültig. 5/5 bedeutet Regelübereinstimmung; eine Trefferwahrscheinlichkeit ist daraus nicht bekannt.'));
   const comparison = element('details', 'wm-comparison'); comparison.id = 'watch-model-comparison'; comparison.append(element('summary', '', 'Beide Modelle vergleichen'));
-  comparison.append(element('p', '', 'Beide Modelle werden immer auf denselben Binance-Spot-Kerzen (15m, zusätzlich 4h für das Testmodell) und denselben Coins geprüft. Das bisherige Modell nutzt dabei unverändert seine vier Regeln. Der Schalter beeinflusst das Testergebnis nicht.'));
+  comparison.append(element('p', '', 'Beide Modelle werden auf denselben Binance-Spot-Kerzen (15m, zusätzlich 4h für das Testmodell) und denselben Coins geprüft. Standard v2 enthält den neuen RSI-Momentum-Trigger; Trend-Pullback 5/5 v2 behält seine Regeln. Der Schalter beeinflusst das Testergebnis nicht. Alte gespeicherte Vergleiche behalten ihre ursprünglichen Modellversionen.'));
   const inputs = element('div', 'wm-fields'), fields = {};
   const saved = read(WATCH_COMPARE_KEY); let settings;
   try { settings = watchCompareSettings(saved?.settings || {}); } catch { settings = { ...WATCH_COMPARE_DEFAULTS }; }
@@ -34,7 +35,7 @@ export function createWatchModelView({ host, read, save, getMode, setMode, symbo
   // Sicherungen können alt oder beschädigt sein. Unvollständige Berichte niemals als Ergebnis darstellen.
   function restoreReport(r) {
     try {
-      if (r?.protocol !== 'watch-compare-1' || r.models?.classic !== WATCH_MODELS.classic || !['watch-strict-1', WATCH_MODELS.strict].includes(r.models?.strict) || !Number.isSafeInteger(r.from) || !Number.isSafeInteger(r.asOf) || r.from >= r.asOf || !Number.isFinite(r.createdAt)) return null;
+      if (r?.protocol !== 'watch-compare-1' || !['watch-classic-1', WATCH_MODELS.classic].includes(r.models?.classic) || !['watch-strict-1', WATCH_MODELS.strict].includes(r.models?.strict) || !Number.isSafeInteger(r.from) || !Number.isSafeInteger(r.asOf) || r.from >= r.asOf || !Number.isFinite(r.createdAt)) return null;
       if (![r.from, r.asOf, r.createdAt].every(t => t > 0 && t < 8640000000000000)) return null;
       if (!r.settings || typeof r.settings !== 'object') return null;
       watchCompareSettings(r.settings);
@@ -56,19 +57,19 @@ export function createWatchModelView({ host, read, save, getMode, setMode, symbo
   let controller, worker, runId = 0, lastProgress = 0;
   function paintMode() {
     const strict = getMode() === 'strict'; toggle.setAttribute('aria-checked', String(strict));
-    current.textContent = strict ? 'Aktiv: Trend-Pullback 5/5 · v2 · Signale 15m / Trend 4h' : 'Aktiv: Bisherige Vorauswahl';
-    note.textContent = 'Gespeicherte Auswahl. Zurückschalten stellt die bisherige Logik und ihre Zeitraumwahl sofort wieder her. Vergleichsergebnisse bleiben erhalten.';
+    current.textContent = strict ? 'Aktiv: Trend-Pullback 5/5 · v2 · Signale 15m / Trend 4h' : 'Aktiv: Standard + RSI-Momentum · v2';
+    note.textContent = 'Gespeicherte Auswahl. Zurückschalten aktiviert Standard v2 mit RSI-Momentum und deiner Zeitraumwahl. Gespeicherte Vergleichsergebnisse bleiben ihren damaligen Modellversionen zugeordnet.';
   }
   function paintResult() {
     results.replaceChildren(); const r = state.report; download.hidden = !r;
     if (!r) return;
     const stats = summarizeWatchComparison(r.coins);
-    const legacy = r.models.strict !== WATCH_MODELS.strict;
-    results.append(element('p', 'wm-report-version-note', legacy ? 'Gespeicherter Vergleich mit Streng 5/5 v1. Für das neue Trend-Pullback-Modell v2 bitte einen neuen Vergleich starten; dieses Ergebnis bleibt dem alten Modell zugeordnet.' : 'Dieser Vergleich verwendet Trend-Pullback 5/5 v2.'));
+    const legacy = r.models.strict !== WATCH_MODELS.strict || r.models.classic !== WATCH_MODELS.classic;
+    results.append(element('p', 'wm-report-version-note', legacy ? `Gespeicherter Vergleich: ${classicName(r.models.classic)} gegen ${modelName(r.models.strict)}. Für die aktuellen Modelle bitte einen neuen Vergleich starten; dieses Ergebnis bleibt den damaligen Regeln zugeordnet.` : 'Dieser Vergleich verwendet Standard + RSI-Momentum v2 und Trend-Pullback 5/5 v2.'));
     results.append(element('p', 'wm-report-meta', `${date(r.from)} – ${date(r.asOf)} · ${r.coins.length}/${r.symbols.length} Coins · Binance Spot · 15m/4h`));
     results.append(element('p', 'muted', `Annahmen dieses Laufs: ${num(r.settings.feePct)} % Gebühr + ${num(r.settings.slippagePct)} % Slippage je Seite · Stop ${num(r.settings.stopAtr, 1)} ATR · Ziel ${num(r.settings.rewardRisk, 1)} × Stopabstand · höchstens ${r.settings.holdBars} Kerzen. Einstellungen oben ändern ein gespeichertes Ergebnis nicht.`));
     const cards = element('div', 'wm-cards');
-    for (const [key, label] of [['classic', 'Bisheriges Modell'], ['strict', modelName(r.models.strict)]]) {
+    for (const [key, label] of [['classic', classicName(r.models.classic)], ['strict', modelName(r.models.strict)]]) {
       const s = stats[key], card = element('section', 'wm-result-card'); card.dataset.model = key; card.append(element('h4', '', label));
       const dl = element('dl');
       for (const [name, value] of [['Signal-Kerzen', String(s.signals)], ['Abgeschlossene Trades', String(s.trades)], ['Netto gesamt', num(s.netR) + ' R'], ['Ø Netto je Trade', num(s.averageR) + (s.averageR === null ? '' : ' R')], ['Trefferquote', num(s.winRate, 1) + (s.winRate === null ? '' : ' %')], ['Profitfaktor', s.noLosses ? 'keine Verlustfälle' : num(s.profitFactor)], ['Rückgang · realisiert', num(s.realizedDrawdownR) + ' R'], ['Offen / wartet', `${s.open} / ${s.pending}`]]) dl.append(element('dt', '', name), element('dd', '', value));
@@ -93,7 +94,7 @@ export function createWatchModelView({ host, read, save, getMode, setMode, symbo
     results.append(diagnosis);
     if (r.failed?.length) results.append(element('p', 'wm-error', 'Teilvergleich – ausgeschlossen: ' + r.failed.map(x => x.symbol + ': ' + x.reason).join(' · ')));
     const perCoin = element('details'); perCoin.append(element('summary', '', 'Ergebnisse je Coin'));
-    for (const c of r.coins) { const a = c.models.classic.stats, b = c.models.strict.stats; perCoin.append(element('p', '', `${c.symbol}: Bisherig ${a.trades} Trades / ${num(a.netR)} R · ${modelName(r.models.strict)} ${b.trades} Trades / ${num(b.netR)} R`)); }
+    for (const c of r.coins) { const a = c.models.classic.stats, b = c.models.strict.stats; perCoin.append(element('p', '', `${c.symbol}: ${classicName(r.models.classic)} ${a.trades} Trades / ${num(a.netR)} R · ${modelName(r.models.strict)} ${b.trades} Trades / ${num(b.netR)} R`)); }
     results.append(perCoin);
   }
   function busy(on) { state.busy = on; start.disabled = on; stop.hidden = !on; for (const input of Object.values(fields)) input.disabled = on; }

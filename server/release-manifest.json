@@ -1,6 +1,6 @@
 {
   "version": "2.15.1",
-  "appVersion": "3.75.1",
+  "appVersion": "3.76.0",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
@@ -473,6 +473,11 @@
       "bytes": 8451
     },
     {
+      "path": "shared/rsi-momentum.mjs",
+      "sha256": "b16f43572d38ef9f08c6558d499444de4823c6b161bb72f1336e4fa919fc0ebf",
+      "bytes": 2215
+    },
+    {
       "path": "shared/signal-overview.mjs",
       "sha256": "f5428bbba259f07eac8d7c0cebf5569624e6d1d14db43ce5be0a7c1505468bf4",
       "bytes": 3314
@@ -484,8 +489,8 @@
     },
     {
       "path": "shared/watch-model-core.mjs",
-      "sha256": "d327d9b181dfed9a2d8af7453db049d2253259cecd8ab50b064a64d2eecd04e8",
-      "bytes": 17096
+      "sha256": "024ca5b30a813c1d28b3bc46ab5ff746c53d974829f457aeed84accbf6895c4f",
+      "bytes": 17165
     },
     {
       "path": "shared/watch-model-feed.mjs",
@@ -494,8 +499,8 @@
     },
     {
       "path": "shared/watch-model-view.mjs",
-      "sha256": "08e7ea6f92e204067f5e32700be346a228005a73c3b26fa1057715a4dab6f2ee",
-      "bytes": 18231
+      "sha256": "b8ec8acfdb33a3f16f29effb5fb383050a8cfac408c8bd9145f9c54f20e6f4b8",
+      "bytes": 18957
     },
     {
       "path": "shared/watch-model-worker.mjs",
@@ -504,8 +509,8 @@
     },
     {
       "path": "shared/watch-signal-reasons.mjs",
-      "sha256": "734636c589c4749f46bb2cb97dc783a652e4194322a2ff6d3e8f083b31aabd3e",
-      "bytes": 17304
+      "sha256": "f098fc81c4f37e67785f1311fc01aa8dffdedf65d388e71f99e49ad576fe0575",
+      "bytes": 18124
     },
     {
       "path": "shared/widget-state.mjs",
