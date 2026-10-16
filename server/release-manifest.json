@@ -1,6 +1,6 @@
 {
   "version": "2.15.1",
-  "appVersion": "3.76.3",
+  "appVersion": "3.77.0",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
@@ -283,6 +283,11 @@
       "bytes": 10847
     },
     {
+      "path": "shared/macd-chart.mjs",
+      "sha256": "96357651f8bf7d96ca33f66629e580e61293520dcf365d6947baed39087225fb",
+      "bytes": 13436
+    },
+    {
       "path": "shared/market-intervals.mjs",
       "sha256": "8d2781e22bed81fa13a361aa1ccd25dafa62364fa1845dfc730893eae502d812",
       "bytes": 2532
@@ -514,8 +519,8 @@
     },
     {
       "path": "shared/watch-signal-reasons.mjs",
-      "sha256": "f098fc81c4f37e67785f1311fc01aa8dffdedf65d388e71f99e49ad576fe0575",
-      "bytes": 18124
+      "sha256": "43f84fc03644bc5a12fe76b014345997eec917731c144df1bbe0e114e33c7eec",
+      "bytes": 18222
     },
     {
       "path": "shared/widget-state.mjs",
