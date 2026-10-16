@@ -5,6 +5,7 @@ failed=0
 trap 'failed=1' ERR
 echo "== unit-market-radar"; timeout 120 node unit-market-radar.js 2>&1 | grep -E "✗|bestanden"
 echo "== unit-panel-appearance"; timeout 120 node unit-panel-appearance.js 2>&1 | grep -E "✗|bestanden"
+echo "== m119"; timeout 600 node m119.js 2>&1 | grep -E "✗|bestanden|Abbruch"
 echo "== m117"; timeout 600 node m117.js 2>&1 | grep -E "✗|bestanden|Abbruch"
 echo "== m118"; timeout 600 node m118.js 2>&1 | grep -E "✗|bestanden|Abbruch"
 echo "== unit-crypto-calendar"; timeout 120 node unit-crypto-calendar.js 2>&1 | grep -E "✗|bestanden"

@@ -1,3 +1,10 @@
+## 3.74.1 (Codex): mobile Darstellungsprüfung und zwei unverknüpfte Vorschauen
+
+- Nutzer beauftragt Punkt 5 (iPhone-Darstellung prüfen). Punkt 2 (Risikoübersicht) und nachträglich Punkt 3 (Signalgründe) ausdrücklich nur erklären/zeigen, **noch nicht umsetzen**. Beide Vorschauen bleiben in Scratch, ohne App-Anbindung und mit gekennzeichneten Beispieldaten.
+- Transparente große Flächen erhalten dunkle Textkanten, ausgenommen deckende Karten/Felder/gefüllte Buttons und vollständig der große Chart. Neues Hintergrund-Auswahlfeld explizit 16 px. Alpha, Daten, Modelle, Signale und funktionales Verhalten unverändert.
+- Zusätzliche Playwright-WebKit-Prüfung neben Chromium bei 320–820 px, ausschließlich lokale REST-/WSS-Attrappen mit lokalem Testzertifikat. Physisches iPhone/iPad nicht verfügbar; keine Akku-/native iOS-Abnahme behaupten. Scroll-Messungen auf dem Testrechner für 0/12/24 px, keine automatische Begrenzung der Nutzerwerte.
+- Branch `codex/iphone-darstellung` ab `main` daf9431 (3.74.0), Scratch `/workspace/work/iphone-audit-3.74.1`. App/SW 3.74.1, Dienst 2.15.1 unverändert, neues Bündel 90 PWA-Dateien. Veröffentlichung bleibt beauftragt. [Änderungen, Prüfgrenzen und reale Gerätecheckliste](docs/IPHONE-DARSTELLUNG-3.74.1.md). **500/500** gezielte Prüfungen in elf Läufen bestanden, Lint 0 Fehler / 3 bekannte Warnungen; isolierte Freigabeprüfung bei 320/390/768 px bestanden. Öffentlicher Nachweis im Release-PR.
+
 ## 3.74.0 (Codex): Marktradar und globale Darstellung ohne Chart-Dekoration
 
 - Nutzer beauftragt den aufklappbaren Marktradar und anschließend live einstellbare Glasflächen, statische SVG-Kreise/Linie, Hintergrundfarben, Speicherung und Reset. Zusätzlicher Hauptschalter ausdrücklich für alle Bereiche; großer Chart ausdrücklich ausgenommen, dort dürfen keine Kreise/Linien durchscheinen.
