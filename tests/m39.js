@@ -7,6 +7,7 @@
 // Computer (Maus), Handy 390 px. Die Signalzustände setzt der Test über eine Testseite mit Zugriff auf die Kachel-Daten.
 // 3.25.0: Kacheln „1 Std. …“ (ohne „30 Min.“), Kopf „Signale der letzten Stunde · Stand HH:MM“, Gesamtbewertung je Zustand,
 // Fußzeile „kein Handelssignal mit nachgewiesenem Vorteil“.
+// 3.75.0: Die alten Erklärungen liegen im nativen Unterbereich; Höhen dürfen bei zusätzlichen Gründen wachsen.
 // Aufruf: node m39.js
 const h = require('./harness'), fs = require('fs');
 const results = [];
@@ -91,10 +92,12 @@ const setRating = (page, coin, r) => page.evaluate(([c, r]) => { const e = windo
     await page.tap('#watchlist .wl-tile[data-watch="LTC"]'); await page.waitForTimeout(90);
     await page.waitForFunction(() => !!window.__m39Opening);
     const openingTime = await page.evaluate(() => window.__m39Opening), hMid = openingTime.height; await page.waitForTimeout(600);
+    const openedHeight=await page.$eval('#wl-detail',n=>n.getBoundingClientRect().height);
+    await page.locator('.wl-d-legacy>summary').tap();
     p = await panel(page); t = await tiles(page);
     const ltc = t.find(x => x.coin === 'LTC'), wantUp = ltc.rules.filter(r => r.dir === 'up').length, wantDown = ltc.rules.filter(r => r.dir === 'down').length;
     check('Tippen auf LTC öffnet das Feld unter den Kacheln, nur LTC aufgeklappt', p.open && p.title === 'LTC' && t.filter(x => x.expanded === 'true').map(x => x.coin).join() === 'LTC' && p.visible === 'visible', JSON.stringify({ title: p.title, exp: t.filter(x => x.expanded === 'true').map(x => x.coin) }));
-    check('Weiches Aufklappen: nach 90 ms erst teilweise offen', hMid > 0 && hMid < p.height, `${hMid} → ${p.height} px · ${JSON.stringify(openingTime)}`);
+    check('Weiches Aufklappen: nach 90 ms erst teilweise offen', hMid > 0 && hMid < openedHeight, `${hMid} → ${p.height} px · ${JSON.stringify(openingTime)}`);
     check('Gruppen wie die Bewertung der Kachel: bullish = ▲-Regeln, bearish = ▼-Regeln, leere Gruppe verborgen', p.up.items.length === wantUp && p.down.items.length === wantDown && p.up.hidden === !wantUp && p.down.hidden === !wantDown && (wantUp || wantDown ? !p.none : p.none === 'Aktuell keine Signale'),
       JSON.stringify({ tile: ltc.rules.map(r => r.text), up: p.up.items.map(i => i.text), down: p.down.items.map(i => i.text), none: p.none }));
     check('Kopf: Coin, „Signale der letzten Stunde · Stand HH:MM“, kein Knopf „Im Chart öffnen“ (3.26.0)', /^Signale der letzten Stunde · Stand \d\d:\d\d$/.test(p.meta) && !p.chartBtn, p.meta);
@@ -136,6 +139,7 @@ const setRating = (page, coin, r) => page.evaluate(([c, r]) => { const e = windo
     check('Coin ohne Daten: Feld neutral („keine Daten“, keine Gruppen)', p.open && p.up.hidden && p.down.hidden && /^Keine Daten für ABC/.test(p.none) && p.meta === 'Signale der letzten Stunde · keine Daten' && p.verdict === null, JSON.stringify({ none: p.none, meta: p.meta, verdict: p.verdict }));
     // ---- Signalzustände (über die Testseite gesetzt) ----
     await page.tap('#watchlist .wl-tile[data-watch="LTC"]'); await page.waitForTimeout(400);
+    await page.locator('.wl-d-legacy>summary').tap();
     await setRating(page, 'LTC', rating([1, 1, 1, 1], 27)); await page.waitForTimeout(150); p = await panel(page); t = await tiles(page);
     check('Nur bullish (4 Signale): grüne Gruppe, bearish verborgen; Kachel zeigt dieselben vier ▲', !p.up.hidden && p.up.items.length === 4 && p.down.hidden && !p.none && p.up.items.map(i => i.k).join() === 'trend,kurs,rsi,macd' && t.find(x => x.coin === 'LTC').rules.every(r => r.dir === 'up'),
       JSON.stringify(p.up.items.map(i => i.text)));
@@ -150,7 +154,7 @@ const setRating = (page, coin, r) => page.evaluate(([c, r]) => { const e = windo
     check('Beide Gruppen: Trend bullish, MACD bearish; Gesamtbewertung „Abwarten – Signale widersprechen sich“', !p.up.hidden && !p.down.hidden && p.up.items.map(i => i.k).join() === 'trend' && p.down.items.map(i => i.k).join() === 'macd' && p.verdict === 'Abwarten – Signale widersprechen sich', p.verdict);
     await setRating(page, 'LTC', rating([0, 0, 0, 0])); await page.waitForTimeout(150); p = await panel(page);
     check('Keine Signale: beide Gruppen verborgen, „Aktuell keine Signale“, „Abwarten – keine Signale“, Hinweis zum Vorteil bleibt', p.up.hidden && p.down.hidden && p.none === 'Aktuell keine Signale' && p.verdict === 'Abwarten – keine Signale' && /kein Handelssignal mit nachgewiesenem Vorteil\.$/.test(p.foot), p.verdict);
-    check('Live-Änderung: das Feld schrumpft nicht (Chart darunter springt nicht)', p.height === hFull, `${hFull} → ${p.height} px`);
+    check('Live-Änderung: das Feld schrumpft nicht (Chart darunter springt nicht)', p.height >= hFull, `${hFull} → ${p.height} px`);
     await setRating(page, 'LTC', null); await page.waitForTimeout(150); p = await panel(page); t = await tiles(page);
     check('Ohne Bewertung (zu wenige Kerzen): neutraler Hinweis (5-Minuten-Kerzen), keine Gesamtbewertung, Kachel-Regeln neutral', /^Noch keine Daten – die Signale erscheinen, sobald 60 abgeschlossene 5-Minuten-Kerzen vorliegen\.$/.test(p.none) && p.verdict === null && p.up.hidden && p.down.hidden && t.find(x => x.coin === 'LTC').rules.every(r => r.dir === 'none'), p.none);
     // ---- Entfernen und Hinzufügen: keine falsche Auswahl ----
@@ -183,7 +187,7 @@ const setRating = (page, coin, r) => page.evaluate(([c, r]) => { const e = windo
     await page.evaluate(() => { const g = document.querySelector('#watchlist .wl-grid').getBoundingClientRect(); scrollBy(0, g.bottom - innerHeight + 90); }); await page.waitForTimeout(400);
     await page.tap('#watchlist .wl-tile[data-watch="NEAR"]'); await page.waitForTimeout(1200);
     const vis = await page.evaluate(() => { const r = document.getElementById('wl-detail').getBoundingClientRect(), tb = document.getElementById('tabbar'), tbTop = tb && getComputedStyle(tb).display !== 'none' ? tb.getBoundingClientRect().top : innerHeight; return { bottom: Math.round(r.bottom), limit: Math.round(tbTop), top: Math.round(r.top) }; });
-    check('Aufgeklappt am unteren Rand: Feld wird ganz ins Bild gerückt (über der Tab-Leiste)', vis.bottom <= vis.limit + 1 && vis.top > 0, JSON.stringify(vis));
+    check('Aufgeklappt am unteren Rand: Kopf sichtbar, langer Inhalt bleibt scrollbar', vis.top >= 0 && vis.top < vis.limit && (vis.bottom <= vis.limit + 1 || vis.top <= 13), JSON.stringify(vis));
     await live(page); await page.waitForTimeout(2500);
     p = await panel(page); t = await tiles(page);
     check('Antippen lädt NEAR im Chart, Kachel als Chart-Coin markiert, Feld bleibt offen', /^NEAR/.test(await page.evaluate(() => document.getElementById('pair-label').textContent)) && t.find(x => x.coin === 'NEAR').chart && p.open && p.title === 'NEAR' && !p.chartBtn, p.title);
@@ -199,6 +203,7 @@ const setRating = (page, coin, r) => page.evaluate(([c, r]) => { const e = windo
     let tabs = 0; for (; tabs < 12; tabs++) { await page.keyboard.press('Tab'); if (await page.evaluate(() => document.getElementById('wl-detail').contains(document.activeElement))) break; }
     check('Tastatur: mit Tab ins Feld (Knöpfe erreichbar)', tabs < 12, `${tabs + 1} × Tab → ${await page.evaluate(() => document.activeElement.className)}`);
     await setRating(page, 'ETC', rating([1, -1, 0, 0])); await page.waitForTimeout(150);
+    await page.locator('.wl-d-legacy>summary').click();
     await page.focus('#wl-detail li.wl-d-sig:not([hidden]) details.tip summary'); await page.keyboard.press('Enter'); await page.waitForTimeout(250);
     const kOpen = await page.evaluate(() => !!document.querySelector('#wl-detail details.tip[open]'));
     await page.keyboard.press('Escape'); await page.waitForTimeout(250);
@@ -210,6 +215,7 @@ const setRating = (page, coin, r) => page.evaluate(([c, r]) => { const e = windo
     // Maus: Hover zeigt die Erklärung, Wegbewegen schließt sie; Klick heftet sie an
     await page.click('#watchlist .wl-tile[data-watch="ETC"]'); await page.waitForTimeout(500);
     await setRating(page, 'ETC', rating([1, -1, 0, 0])); await page.waitForTimeout(150);
+    await page.locator('.wl-d-legacy>summary').click();
     const sumSel = '#wl-detail li.wl-d-sig[data-k="trend"] details.tip summary';
     await page.hover(sumSel); await page.waitForTimeout(300);
     const hov = await page.evaluate(() => { const d = document.querySelector('#wl-detail li.wl-d-sig[data-k="trend"] details.tip'); return { open: d.open, text: d.querySelector('.tip-body').innerText }; });
