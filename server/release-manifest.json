@@ -1,6 +1,6 @@
 {
   "version": "2.15.1",
-  "appVersion": "3.75.0",
+  "appVersion": "3.75.1",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
@@ -504,8 +504,8 @@
     },
     {
       "path": "shared/watch-signal-reasons.mjs",
-      "sha256": "01f4506b43be95f8c581ceda196bdd4c41ab6b7e948fa8ebddd840f4ce824d94",
-      "bytes": 11646
+      "sha256": "734636c589c4749f46bb2cb97dc783a652e4194322a2ff6d3e8f083b31aabd3e",
+      "bytes": 17304
     },
     {
       "path": "shared/widget-state.mjs",

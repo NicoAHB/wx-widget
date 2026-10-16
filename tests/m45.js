@@ -32,8 +32,8 @@ const panel = page => page.evaluate(() => {
   const d = document.getElementById('wl-detail'), q = s => d.querySelector(s), sel = q('select.wl-d-span');
   const m = q('.wl-d-meta').cloneNode(true); m.querySelectorAll('select').forEach(x => x.remove());
   return { open: d.dataset.open === '1', title: q('.wl-d-title').textContent, meta: m.textContent, value: sel.value, shown: q('.wl-d-pickv').textContent, label: sel.getAttribute('aria-label'),
-    options: [...sel.options].map(o => `${o.value}:${o.textContent}`).join(), verdict: q('.wl-d-verdict').hidden ? null : q('.wl-d-verdict').textContent, vcls: q('.wl-d-verdict').className,
-    moveExists: !!q('.wl-d-move'), obsolete: /zu wenig Bewegung|unrealistisch/i.test(d.textContent), foot: q('.wl-d-foot').textContent };
+    options: [...sel.options].map(o => `${o.value}:${o.textContent}`).join(), verdict: q('.wsr-status').textContent, vcls: q('.signal-reasons').dataset.state, count: q('.wsr-count').textContent,
+    moveExists: !!q('.wl-d-move'), obsolete: /zu wenig Bewegung|unrealistisch/i.test(d.textContent), foot: q('.wsr-note').textContent };
 });
 // Erwartung, unabhängig aus den Kerzen der Kachel nachgerechnet: Veränderung seit Beginn des Zeitraums, Zählung der Signale,
 // übliche Bewegung (ATR × √n), Stand = Ende der letzten bewerteten Kerze
@@ -45,8 +45,8 @@ const expect = (page, coin, S) => page.evaluate(([coin, S]) => {
   const len = S.n >= 10 ? S.n : 14; let sum = 0; for (let i = c.length - len; i < c.length; i++) { const k = c[i], pc = c[i - 1].close; sum += Math.max(k.high - k.low, Math.abs(k.high - pc), Math.abs(k.low - pc)); }
   const atrPct = sum / len / c.at(-1).close * 100, movePct = atrPct * Math.sqrt(S.n), r = e.rating;
   const bull = r.rules.filter(x => x.score > 0).length, bear = r.rules.filter(x => x.score < 0).length;
-  const verdict = bull >= 3 ? `▲ Long-Tendenz – ${bull} von 4 Signalen bullish` : bear >= 3 ? `▼ Short-Tendenz – ${bear} von 4 Signalen bearish` : bull + bear ? 'Abwarten – Signale widersprechen sich' : 'Abwarten – keine Signale';
-  return { chgText: chg == null ? null : `${S.label} ${pct(chg)}`, atr: num(atrPct, 2), move: num(movePct, 2), low: movePct < 1, verdict, dir: bull >= 3 ? 'long' : bear >= 3 ? 'short' : 'wait',
+  const verdict = bull >= 3 ? 'Long-Tendenz' : bear >= 3 ? 'Short-Tendenz' : 'Abwarten';
+  return { chgText: chg == null ? null : `${S.label} ${pct(chg)}`, atr: num(atrPct, 2), move: num(movePct, 2), low: movePct < 1, verdict, dir: bull >= 3 ? 'long' : bear >= 3 ? 'short' : 'wait', count: Math.max(bull,bear) + '/4 erfüllt',
     rated: r.closeTime + 1, age: now - (r.closeTime + 1), lastClosed: c.at(-1).closeTime + 1, stand: new Intl.DateTimeFormat('de-DE', { hour: '2-digit', minute: '2-digit' }).format(r.closeTime + 1), iv: e.iv, n: c.length };
 }, [coin, S]);
 // Stream des Charts (Coin im Chart, Chart-Intervall)
@@ -75,9 +75,9 @@ async function verifySpan(page, key, tag) {
   check(`${tag}: Kacheln „${S.label} …“ = Veränderung seit Beginn des Zeitraums (nachgerechnet)`, chgOk, JSON.stringify(t.map((y, i) => [y.coin, y.chg, want[i]?.chgText])));
   check(`${tag}: Kopf „Signale ${S.of} · Stand ${x?.stand}“, Stand = Schluss der letzten ${S.ivName}-Kerze`, x && p.meta === `Signale ${S.of} · Stand ${x.stand}` && p.value === key && p.shown === S.of && x.iv === S.iv && x.rated % IVMS[S.iv] === 0 && x.age < 2 * IVMS[S.iv] && x.rated === x.lastClosed,
     JSON.stringify({ meta: p.meta, value: p.value, iv: x?.iv, age: x?.age }));
-  check(`${tag}: Gesamtbewertung passt zur Zählung der Signale (${x?.verdict})`, x && p.verdict === x.verdict && p.vcls === `wl-d-verdict ${x.dir}`, JSON.stringify([p.verdict, x?.verdict]));
+  check(`${tag}: Gesamtbewertung passt zur Zählung der Signale (${x?.verdict})`, x && p.verdict === x.verdict && p.vcls === x.dir && p.count === x.count, JSON.stringify([p.verdict, x?.verdict]));
   check(`${tag}: kein pauschaler Bewegungs-Hinweis in der Detailansicht`, !p.moveExists && !p.obsolete, JSON.stringify({ moveExists: p.moveExists, obsolete: p.obsolete }));
-  check(`${tag}: Fußzeile „Beschreibt ${S.the} – kein Handelssignal mit nachgewiesenem Vorteil.“`, p.foot === `Beschreibt ${S.the} – kein Handelssignal mit nachgewiesenem Vorteil.`, p.foot);
+  check(`${tag}: genau ein Hinweis zum bisherigen 3/4-Modell`, /Nur geschlossene Kerzen.*3\/4 Regeln; kein nachgewiesener Handelsvorteil/.test(p.foot) && await page.locator('#wl-detail .wl-d-verdict,#wl-detail .wl-d-foot,#wl-detail .wl-d-legacy').count() === 0, p.foot);
   const wl = COINS.map(c => `${c.toLowerCase()}usdt@kline_${S.iv}`);
   const chart = await chartStream(page), orderflowStreams = await page.evaluate(() => { const v = __pdf1.view.state; return v.paused ? [] : [...(!v.unavailable ? ['1m', '5m', '1h', '4h'].map(iv => v.symbol.toLowerCase() + '@kline_' + iv) : []), 'btcusdt@kline_1m']; });
   const connections = (await h.ctl('/state')).conns, futures = connections.filter(c => /fstream/.test(c.host)).flatMap(c => c.streams);
