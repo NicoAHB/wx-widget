@@ -54,36 +54,109 @@ export function macdFindings(rows, series, { now = Date.now(), expiresAt = Infin
   return { ready: true, reason: '', events, current: { index: last, time: rows[last].time, closeTime: rows[last].closeTime, line: line[last], signal: signal[last], histogram: histogram(last) } };
 }
 
-export function macdPaneLayout(height, enabled) {
-  const bottom = height - 77;
-  if (!enabled) return { priceBottom: bottom, height: 0 };
-  const size = Math.min(146, Math.max(72, height * .24));
-  return { priceBottom: bottom - size - 14, top: bottom - size, bottom, plotTop: bottom - size + 23, plotBottom: bottom - 5, height: size };
+// NEU 3.77.1: gemeinsame Flächen für Preis / MACD / Volumen, ohne feste Pixel-Kappen.
+export function macdPaneLayout(height, enabled, { expanded = false, width = 390 } = {}) {
+  if (!enabled) return { priceBottom: height - 77, height: 0, volumeTop: height - 63, volumeBottom: height - 31, volumeHeight: 32 };
+  const top = 18, gap = 8, volumeBottom = height - 30, available = Math.max(0, volumeBottom - top - 2 * gap);
+  const priceBottom = top + available * (expanded ? .4 : .6), size = available * (expanded ? .45 : .25);
+  const paneTop = priceBottom + gap, bottom = paneTop + size, volumeTop = bottom + gap;
+  const inline = width >= 620 || size < 80, header = inline ? 24 : 36;
+  return { priceBottom, top: paneTop, bottom, plotTop: paneTop + header, plotBottom: bottom - 4, height: size, volumeTop, volumeBottom, volumeHeight: volumeBottom - volumeTop, inline, expanded };
 }
 
-// Derselbe SVG- und Kerzen-X-Maßstab wie der Kurschart: Zoom und Pan bleiben synchron.
-export function drawMacdPane(svg, { node, series, offset, stop, x, step, left, width, layout }) {
-  if (!layout.height) return;
-  const line = series.line.slice(offset, stop), signal = series.signal.slice(offset, stop), histogram = line.map((v, i) => finite(v) && finite(signal[i]) ? v - signal[i] : null);
-  const values = [...line, ...signal, ...histogram].filter(finite), span = Math.max(...values.map(Math.abs), 1e-12) * 1.12;
+// NEU: vier Histogramm-Farben; die erste sichtbare Kerze vergleicht sich mit
+// ihrem wirklichen Vorgänger außerhalb des Ausschnitts, nicht mit einem Ersatzwert.
+export function macdHistogramTone(current, previous) {
+  if (!finite(current)) return null;
+  const sign = current >= 0 ? 'up' : 'down';
+  return sign + ' ' + (!finite(previous) || current === previous ? 'flat' : current > previous ? 'rising' : 'falling');
+}
+export function macdScale(series, offset, stop) {
+  let extent = 0;
+  for (let i = offset; i < stop; i++) {
+    const m = series.line[i], s = series.signal[i];
+    if (finite(m)) extent = Math.max(extent, Math.abs(m));
+    if (finite(s)) extent = Math.max(extent, Math.abs(s));
+    if (finite(m) && finite(s)) extent = Math.max(extent, Math.abs(m - s));
+  }
+  // Kein künstlicher Mindestwert bei sehr kleinen Coins; null bleibt zentriert.
+  return (extent || 1) * 1.08;
+}
+export function macdCrossings(series, offset, stop) {
+  const found = [];
+  for (let i = Math.max(1, offset); i < stop; i++) {
+    const a = series.line[i - 1], b = series.signal[i - 1], c = series.line[i], d = series.signal[i];
+    if (![a, b, c, d].every(finite)) continue;
+    const before = a - b, after = c - d;
+    const direction = before <= 0 && after > 0 ? 1 : before >= 0 && after < 0 ? -1 : 0;
+    if (!direction) continue;
+    const fraction = before === 0 ? 0 : -before / (after - before);
+    const index = i - 1 + fraction;
+    if (index < offset || index > stop - 1) continue;
+    found.push({ index, candle: i, fraction, direction, value: a + (c - a) * fraction });
+  }
+  return found;
+}
+export function macdValue(value) {
+  if (!finite(value)) return '–';
+  const v = Math.abs(value);
+  return value.toLocaleString('de-DE', v > 0 && (v < .001 || v >= 1e6)
+    ? { notation: 'scientific', maximumSignificantDigits: 4 }
+    : { maximumSignificantDigits: 5 });
+}
+
+// NEU: Nulllinie im festen Achsenrand, sichtbare Kreuzungen und ein Readout,
+// dessen Textknoten bei Fingerbewegungen lediglich aktualisiert werden.
+export function drawMacdPane(svg, { node, series, candles, offset, stop, x, step, left, width, layout, now = Date.now() }) {
+  if (!layout.height) return null;
+  const span = macdScale(series, offset, stop);
   const y = v => layout.plotTop + (span - v) / (2 * span) * (layout.plotBottom - layout.plotTop), zero = y(0);
   const frame = node('g', { class: 'macd-frame' });
-  frame.append(node('line', { x1: left, x2: left + width, y1: layout.top, y2: layout.top, class: 'macd-separator' }), node('text', { x: left + 2, y: layout.top + 14, class: 'macd-caption' }, 'MACD 12/26/9'));
-  for (const [label, cls, dx] of [['MACD', 'macd-line', 114], ['Signal', 'macd-signal', 188]]) {
-    frame.append(node('line', { x1: left + dx, x2: left + dx + 13, y1: layout.top + 10, y2: layout.top + 10, class: cls }), node('text', { x: left + dx + 18, y: layout.top + 14, class: 'macd-caption' }, label));
+  frame.append(node('line', { x1: left, x2: left + width, y1: layout.top, y2: layout.top, class: 'macd-separator' }), node('line', { x1: left, x2: left + width, y1: layout.volumeTop - 4, y2: layout.volumeTop - 4, class: 'macd-separator macd-volume-separator' }));
+  const readout = node('g', { class: 'macd-readout', 'data-selected': 'false' }), tip = node('title', {}, 'MACD 12/26/9');
+  const fields = [];
+  for (const [index, label, cls] of [[0, 'MACD 12/26/9', 'macd-readout-line'], [1, 'Signal', 'macd-readout-signal'], [2, 'Histogramm', 'macd-readout-hist']]) {
+    const field = node('text', { x: left + 2 + width * index / 3, y: layout.top + (layout.inline ? 16 : 12), class: 'macd-caption ' + cls });
+    const name = node('tspan', {}, layout.inline && width < 600 ? ['M ', 'S ', 'H '][index] : label + (layout.inline ? ' ' : ''));
+    const value = node('tspan', { class: 'macd-readout-value', ...(layout.inline ? {} : { x: left + 2 + width * index / 3, dy: 16 }) }, '–');
+    field.append(name, value); readout.append(field); fields.push(value);
   }
-  frame.append(node('line', { x1: left, x2: left + width, y1: zero, y2: zero, class: 'macd-zero' }), node('text', { x: left + width - 3, y: zero - 4, 'text-anchor': 'end', class: 'macd-caption macd-zero-label' }, '0'));
+  readout.append(tip); frame.append(readout);
+  frame.append(node('line', { x1: left, x2: left + width, y1: zero, y2: zero, class: 'macd-zero' }), node('rect', { x: left + width + 3, y: zero - 9, width: 17, height: 18, rx: 3, class: 'macd-zero-tag' }), node('text', { x: left + width + 11.5, y: zero + 4, 'text-anchor': 'middle', class: 'macd-caption macd-zero-label' }, '0'));
   svg.append(frame);
   const defs = svg.querySelector('defs'), clip = node('clipPath', { id: 'macd-clip' });
-  clip.append(node('rect', { x: left, y: layout.plotTop, width, height: layout.plotBottom - layout.plotTop })); defs.append(clip);
-  const group = node('g', { class: 'macd-series', 'clip-path': 'url(#macd-clip)' });
-  histogram.forEach((v, i) => { if (finite(v)) group.append(node('rect', { x: x(i) - Math.max(.6, step * .6) / 2, y: Math.min(y(v), zero), width: Math.max(.6, step * .6), height: Math.abs(y(v) - zero), class: 'macd-hist ' + (v >= 0 ? 'up' : 'down') })); });
-  for (const [arr, cls] of [[line, 'macd-line'], [signal, 'macd-signal']]) {
+  clip.append(node('rect', { x: left, y: layout.plotTop, width, height: Math.max(0, layout.plotBottom - layout.plotTop) })); defs.append(clip);
+  const group = node('g', { class: 'macd-series', 'clip-path': 'url(#macd-clip)', 'data-span': span });
+  const histogram = i => finite(series.line[i]) && finite(series.signal[i]) ? series.line[i] - series.signal[i] : null;
+  for (let i = offset; i < stop; i++) {
+    const v = histogram(i); if (!finite(v)) continue;
+    const bar = node('rect', { x: x(i - offset) - Math.max(.6, step * .7) / 2, y: Math.min(y(v), zero), width: Math.max(.6, step * .7), height: Math.abs(y(v) - zero), class: 'macd-hist ' + macdHistogramTone(v, histogram(i - 1)) });
+    group.append(bar);
+  }
+  for (const [arr, cls] of [[series.line, 'macd-line'], [series.signal, 'macd-signal']]) {
     let d = '', pen = false;
-    arr.forEach((v, i) => { if (finite(v)) { d += `${pen ? 'L' : 'M'}${x(i).toFixed(2)} ${y(v).toFixed(2)}`; pen = true; } else pen = false; });
+    for (let i = offset; i < stop; i++) { const v = arr[i]; if (finite(v)) { d += `${pen ? 'L' : 'M'}${x(i - offset).toFixed(2)} ${y(v).toFixed(2)}`; pen = true; } else pen = false; }
     group.append(node('path', { d, class: cls, 'vector-effect': 'non-scaling-stroke' }));
   }
+  for (const hit of macdCrossings(series, offset, stop)) {
+    const confirmed = candles?.[hit.candle]?.closeTime < now;
+    const dot = node('circle', { cx: x(hit.index - offset), cy: y(hit.value), r: 3.3, class: 'macd-cross ' + (hit.direction > 0 ? 'bull' : 'bear') + (confirmed ? '' : ' provisional'), 'data-candle': hit.candle, 'data-fraction': hit.fraction, 'data-confirmed': String(confirmed), 'vector-effect': 'non-scaling-stroke' });
+    dot.append(node('title', {}, `${hit.direction > 0 ? 'Bullishe' : 'Bearishe'} MACD-Kreuzung${confirmed ? ' · geschlossene Kerze' : ' · vorläufig, laufende Kerze'}`)); group.append(dot);
+  }
   svg.append(group);
+  let previousIndex = -1, previousSelected = null;
+  function select(index, selected = true) {
+    index = Math.max(0, Math.min(stop - offset - 1, index));
+    if (index === previousIndex && selected === previousSelected) return;
+    previousIndex = index; previousSelected = selected;
+    const i = offset + index, values = [series.line[i], series.signal[i], histogram(i)];
+    fields.forEach((n, j) => { n.textContent = macdValue(values[j]); });
+    readout.dataset.index = String(i); readout.dataset.time = String(candles?.[i]?.time ?? ''); readout.dataset.selected = String(selected);
+    for (const [j, key] of ['macd', 'signal', 'histogram'].entries()) readout.dataset[key] = finite(values[j]) ? String(values[j]) : '';
+    tip.textContent = `MACD 12/26/9 · ${candles?.[i] ? utc(candles[i].time) : ''} · MACD ${macdValue(values[0])} · Signal ${macdValue(values[1])} · Histogramm ${macdValue(values[2])}${selected ? '' : ' · jüngste Kerze'}`;
+  }
+  select(stop - offset - 1, false);
+  return { select, clear: () => select(stop - offset - 1, false) };
 }
 
 const STRATEGIES = [
@@ -104,7 +177,7 @@ export function createMacdHelp({ document, button, read }) {
   const dialog = el('dialog', 'sheet macd-help'), head = el('div', 'sheet-head'), title = el('h2', '', 'MACD verstehen'), close = el('button', 'button ghost icon', '×'), body = el('div', 'sheet-body macd-help-body');
   dialog.id = 'macd-help'; title.id = 'macd-help-title'; dialog.setAttribute('aria-labelledby', title.id); close.type = 'button'; close.setAttribute('aria-label', 'MACD-Erklärung schließen'); head.append(title, close); dialog.append(head, body); document.body.append(dialog);
   const context = el('p', 'macd-context'), status = el('p', 'macd-status'), values = el('p', 'macd-values');
-  body.append(context, el('p', '', 'Die blaue MACD-Linie ist EMA 12 minus EMA 26. Die orange Signallinie ist ihr EMA über 9 Kerzen. Grau gestrichelt: null. Die Balken zeigen MACD minus Signallinie, grün über null und rot darunter.'), status, values);
+  body.append(context, el('p', '', 'Die blaue MACD-Linie ist EMA 12 minus EMA 26. Die orange Signallinie ist ihr EMA über 9 Kerzen. Grau gestrichelt: null. Die Balken zeigen MACD minus Signallinie: hellgrün positiv steigend, dunkelgrün positiv fallend, hellrot negativ fallend und dunkelrot negativ steigend. Bei unveränderten Werten bleibt der Balken dunkel. Ausgefüllte grüne/rote Punkte markieren Kreuzungen auf geschlossenen Kerzen; hohle Punkte sind vorläufig. Im MACD ziehen: Fadenkreuz und Werte verschieben. Doppeltippen: MACD vorübergehend vergrößern oder zurückstellen.'), status, values);
   const cards = [];
   for (const [key, name, bull, bear] of STRATEGIES) {
     const fold = el('details', 'macd-strategy'), summary = el('summary'), heading = el('strong', '', name), state = el('span', 'macd-strategy-state'), grid = el('div', 'macd-directions'); summary.append(heading, state); fold.dataset.strategy = key; fold.append(summary, grid);
