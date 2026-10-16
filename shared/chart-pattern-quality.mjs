@@ -1,12 +1,14 @@
-// 3.65.0: Anzeige-Modell cpq-1. pat-1, Regelgüte, Alarme und Handelsmodelle unverändert.
+// 3.77.5: Anzeige-Modell cpq-2 mit Rücktests. pat-1, Regelgüte, Alarme und Handelsmodelle unverändert.
 import { patternChipState } from './chart-pattern-chips.mjs';
+import { patternIsConfirmed, confirmedPatternLifecycle } from './pattern-lifecycle.mjs';
+export { patternIsConfirmed } from './pattern-lifecycle.mjs';
 
 export const PATTERN_QUALITY_CONFIG = Object.freeze({
   weights: Object.freeze({ form: 25, timeframe: 20, trend: 15, status: 15, volume: 10, location: 10, rewardRisk: 5 }),
   timeframes: Object.freeze({ '1m': .2, '5m': .3, '15m': .4, '1h': .55, '2h': .65, '4h': .75, '1d': .9, '1w': 1, '1M': 1 }),
   trendIntervals: Object.freeze(['5m', '15m', '1h', '4h', '1d']),
   overviewIntervals: Object.freeze(['5m', '15m', '1h', '2h', '4h', '1d', '1w']),
-  status: Object.freeze({ aktiv: .5, bestätigt: 1, gescheitert: 0, erfüllt: 0, abgelaufen: 0, ungültig: 0 }),
+  status: Object.freeze({ aktiv: .5, bestätigt: 1, rücktest: 1, gescheitert: 0, erfüllt: 0, abgelaufen: 0, ungültig: 0 }),
   maxAge: 10, failedMultiplier: .3, fullRewardRisk: 3, levelDistanceAtr: 2,
   volumeDecline: .75, volumeIncrease: 1.25, fullBreakoutVolume: 2,
   conflictMinimumScore: 60, conflictShare: .65
@@ -16,24 +18,12 @@ const clamp = n => Math.max(0, Math.min(1, n));
 const decimal = n => n.toFixed(2).replace('.', ',');
 const mean = rows => rows.length && rows.every(c => positive(c.volume)) ? rows.reduce((s, c) => s + c.volume, 0) / rows.length : null;
 const direction = h => h.dir === 'bull' ? 1 : h.dir === 'bear' ? -1 : 0;
-export const patternIsConfirmed = h => !h.prelim && !/fehlt|nicht|unbestätigt/i.test(h.status || '') && /bestätigt|^(über|unter) dem Kanal$/i.test(h.status || '');
 
-// Nur geschlossene Folgekerzen. Ein Zielwick kann vor dem Bestätigungsschluss liegen,
-// deshalb zählt die Bestätigungskerze selbst nicht als Zieltreffer. Bei Zielwick und
-// Gegen-Schluss in derselben Folgekerze gilt konservativ der gescheiterte Ausbruch.
-// Der erste terminale Zustand bleibt bestehen; spätere Kurse schreiben ihn nicht um.
+// Chips, Score und Projektionen teilen denselben kausalen Lebenszyklus.
 export function patternLifecycle(hit, candles, { now = Date.now(), maxAge = PATTERN_QUALITY_CONFIG.maxAge, ageOffset = 0 } = {}) {
-  const old = patternChipState(hit, candles, now, maxAge - ageOffset), confirmed = patternIsConfirmed(hit), dir = direction(hit);
+  const old = confirmedPatternLifecycle(hit, candles, { now, maxAge: maxAge - ageOffset, liveOffset: ageOffset }) || patternChipState(hit, candles, now, maxAge - ageOffset), confirmed = patternIsConfirmed(hit);
   old.age += ageOffset; // Hintergrundcache enthält nur geschlossene Kerzen; aktuelle Kerze mitzählen.
-  if (confirmed && dir) for (const c of candles) {
-    if (c.time <= hit.t1 || !(c.closeTime < now)) continue;
-    if (positive(hit.levels?.brk) && (c.close - hit.levels.brk) * dir < 0)
-      return { ...old, status: 'gescheitert', disabled: true, terminalAt: c.closeTime, trap: dir > 0 ? 'Mögliche Bullenfalle' : 'Mögliche Bärenfalle', confirmed };
-    const extreme = dir > 0 ? c.high : c.low;
-    if (positive(hit.levels?.tgt) && finite(extreme) && (extreme - hit.levels.tgt) * dir >= 0)
-      return { ...old, status: 'erfüllt', disabled: true, terminalAt: c.closeTime, confirmed };
-  }
-  return { ...old, status: old.disabled ? old.status : confirmed ? 'bestätigt' : 'aktiv', confirmed };
+  return { ...old, confirmed };
 }
 
 function volumeFactor(hit, closed, confirmed, cfg) {
@@ -80,7 +70,7 @@ export function chartPatternQuality(hit, candles, { interval, trends = {}, level
   const multiplier = life.status === 'gescheitert' ? config.failedMultiplier
     : ['erfüllt', 'ungültig', 'abgelaufen'].includes(life.status) ? 0 : remaining ?? 1;
   return { ...life, score: Math.round(base * multiplier), base, multiplier, remaining, rewardRisk: rr, factors,
-    coverage: Math.round(factors.reduce((s, f) => s + f.weight * f.known, 0)), model: 'cpq-1', entry: positive(entry) ? entry : null, price: positive(current) ? current : null, live:false, targetPending:false, breakoutPending:false };
+    coverage: Math.round(factors.reduce((s, f) => s + f.weight * f.known, 0)), model: 'cpq-2', entry: positive(entry) ? entry : null, price: positive(current) ? current : null, live:false, targetPending:false, breakoutPending:false };
 }
 
 // Preisabhängige Teile billig aktualisieren; keine erneute Muster-/Volumen-/Trend-
@@ -97,7 +87,7 @@ export function repricePatternQuality(q, hit, price, config = PATTERN_QUALITY_CO
   const multiplier=q.status==='gescheitert'?config.failedMultiplier:['erfüllt','ungültig','abgelaufen'].includes(q.status)?0:remaining??1;
   return {...q,score:Math.round(base*multiplier),base,multiplier,remaining,rewardRisk:rr,factors,coverage:Math.round(factors.reduce((s,f)=>s+f.weight*f.known,0)),price,live:true,priceFresh:fresh,
     targetPending:!q.disabled&&q.confirmed&&dir!==0&&positive(target)&&(price-target)*dir>=0,
-    breakoutPending:!q.disabled&&q.confirmed&&dir!==0&&positive(hit.levels?.brk)&&(price-hit.levels.brk)*dir<0};
+    breakoutPending:!q.disabled&&q.confirmed&&dir!==0&&positive(q.breakoutBoundary)&&(price-q.breakoutBoundary)*dir<0};
 }
 
 export function sortPatternQuality(rows) {
@@ -107,7 +97,7 @@ export function sortPatternQuality(rows) {
 // Prozentanteile der Score-Gewichte, ausdrücklich keine Zieltreffer-Wahrscheinlichkeit.
 export function patternOverview(entries, config = PATTERN_QUALITY_CONFIG) {
   const unique = new Map();
-  for (const e of entries) if (config.overviewIntervals.includes(e.interval) && !e.disabled && ['aktiv', 'bestätigt'].includes(e.status) && ['bull', 'bear'].includes(e.hit.dir) && positive(e.score)) {
+  for (const e of entries) if (config.overviewIntervals.includes(e.interval) && !e.disabled && ['aktiv', 'bestätigt', 'rücktest'].includes(e.status) && ['bull', 'bear'].includes(e.hit.dir) && positive(e.score)) {
     const key = `${e.interval}|${e.hit.id}|${e.hit.t0}`; if (!unique.has(key) || unique.get(key).hit.t1 < e.hit.t1) unique.set(key, e);
   }
   const rows = [...unique.values()], sum = (arr, dir) => arr.filter(e => e.hit.dir === dir).reduce((s, e) => s + e.score, 0);
