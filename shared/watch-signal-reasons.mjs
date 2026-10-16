@@ -19,7 +19,7 @@ function rsiChange(previous, current) {
   if (number(previous) === number(current)) return `Zuletzt ${number(current)} · minimal ${direction} (gerundet)`;
   return `Vorher ${number(previous)} → zuletzt ${number(current)} · ${direction}`;
 }
-function ruleHelp({ key, strict, up, ready, passed, interval, values: v, evidence: e, ratio }) {
+function ruleHelp({ key, strict, up, ready, passed, interval, values: v, evidence: e, ratio, rsiRule }) {
   const direction = up ? 'Long' : 'Short', over = up ? 'über' : 'unter';
   const frame = strict ? key === 'trend' ? '4h' : '15m' : interval;
   let meaning, rule, measured;
@@ -37,8 +37,13 @@ function ruleHelp({ key, strict, up, ready, passed, interval, values: v, evidenc
   if (key === 'rsi') {
     meaning = 'Der RSI beschreibt die Stärke der jüngsten Kursbewegungen auf einer Skala von 0 bis 100. „14“ bedeutet 14 Kerzen. „Vorher“ und „zuletzt“ beziehen sich auf die letzten beiden abgeschlossenen Kerzen.';
     rule = strict ? up ? `Für Long: In den ${WATCH_PULLBACK.rsiBars} vorigen Kerzen mindestens einmal RSI ≤ ${WATCH_PULLBACK.longPullback}; zuletzt über 50, unter 70 und weiter steigend.` : `Für Short: In den ${WATCH_PULLBACK.rsiBars} vorigen Kerzen mindestens einmal RSI ≥ ${WATCH_PULLBACK.shortPullback}; zuletzt über 30, unter 50 und weiter fallend.`
-      : up ? 'Für Long: Der letzte RSI muss unter 30 liegen und gegenüber der vorigen Kerze steigen. Ein steigender RSI bei etwa 56 erfüllt diese Regel nicht.' : 'Für Short: Der letzte RSI muss über 70 liegen und gegenüber der vorigen Kerze fallen. Ein fallender RSI zwischen 30 und 70 erfüllt diese Regel nicht.';
+      : up ? 'Für Long reicht eine von zwei Bedingungen: RSI unter 30 und steigend ODER ein positiver Anstieg über dem statistischen Normalbereich: ΔRSI > SMA20(ΔRSI) + 2 × σ20 und ΔRSI > 0. Der Momentum-Trigger kann auch bei einem RSI über 30 zählen.' : 'Für Short: Der letzte RSI muss über 70 liegen und gegenüber der vorigen Kerze fallen. Der neue Momentum-Zusatz gilt nur für Long.';
     measured = `Vorher ${number(strict ? e.rsi?.previous : v.rPrev, 4)} · zuletzt ${number(strict ? e.rsi?.current : v.rNow, 4)}. Werte sind gerundet; die Regel wird ungerundet geprüft.`;
+    if (!strict && ready) {
+      const s = rsiRule?.momentum;
+      measured += s?.ready ? ` ΔRSI ${number(s.delta, 4)} · Durchschnitt ${number(s.mean, 4)} · σ ${number(s.sigma, 4)} · Schwelle ${number(s.threshold, 4)}. Momentum ${rsiRule.momentumLong ? 'erfüllt' : 'nicht erfüllt'}${s.exceeds && s.delta <= 0 ? ' (Anstieg muss positiv sein)' : ''}.` : ' Momentum noch nicht auswertbar: 21 gültige RSI-Werte für 20 Veränderungen nötig.';
+      measured += ' Mittelwert und σ verwenden die letzten 20 Veränderungen inklusive der aktuellen; σ wird durch 20 geteilt (Population).';
+    }
   }
   if (key === 'macd') {
     meaning = 'Der MACD beschreibt den Kursschwung: EMA 12 minus EMA 26. Sein geglätteter 9er-Durchschnitt heißt Signallinie. Im großen Kurschart dieser App wird die MACD-Signallinie derzeit nicht eingezeichnet; hier werden die berechneten Werte verglichen.';
@@ -92,11 +97,11 @@ export function signalReasonsModel(input, preferredSide) {
       label = ['EMA-Trend', 'Kurs zum EMA 20', 'Kursstärke (RSI 14)', 'Kursschwung (MACD)'][i];
       if (key === 'trend') { detail = `EMA 20 (${price(v.e20)}) ${compare(v.e20, v.e50, 'über', 'unter', 'auf')} EMA 50 (${price(v.e50)})`; requirement = `Für ${up ? 'Long' : 'Short'}: EMA 20 ${up ? 'über' : 'unter'} EMA 50.`; }
       if (key === 'kurs') { detail = `Schlusskurs ${price(v.last)} ${compare(v.last, v.e20, 'über', 'unter', 'auf')} EMA 20 (${price(v.e20)})`; requirement = `Für ${up ? 'Long' : 'Short'}: Schlusskurs ${up ? 'über' : 'unter'} EMA 20.`; }
-      if (key === 'rsi') { detail = rsiChange(v.rPrev, v.rNow); requirement = `Für ${up ? 'Long' : 'Short'}: RSI ${up ? 'unter 30 und steigend' : 'über 70 und fallend'}.`; }
+      if (key === 'rsi') { detail = rsiChange(v.rPrev, v.rNow) + (r?.rsiRule?.momentumLong ? ' · Momentum bestätigt' : ''); requirement = up ? 'Für Long: RSI unter 30 und steigend oder positiver Anstieg über Durchschnitt + 2σ.' : 'Für Short: RSI über 70 und fallend.'; }
       if (key === 'macd') { detail = `MACD ${compare(v.mLine, v.mSig, 'über', 'unter', 'auf')} seinem 9er-Durchschnitt (Signallinie)`; requirement = `Für ${up ? 'Long' : 'Short'}: MACD ${up ? 'über' : 'unter'} Signallinie.`; }
     }
     return { key, label, passed, detail: ready ? detail : '–', requirement: ready && passed === false ? requirement : '',
-      info: ruleHelp({ key, strict, up, ready, passed, interval, values: v, evidence, ratio: r?.volumeRatio }) };
+      info: ruleHelp({ key, strict, up, ready, passed, interval, values: v, evidence, ratio: r?.volumeRatio, rsiRule: r?.rsiRule }) };
   });
   const fulfilled = count(side), confirmed = ready && direction === (up ? 1 : -1), missing = rows.filter(x => x.passed === false).map(x => x.label);
   const status = !ready ? paused ? 'Pausiert' : offline ? 'Offline' : 'Prüfung offen' : confirmed ? strict ? `${up ? 'Long' : 'Short'} bestätigt` : `${up ? 'Long' : 'Short'}-Tendenz` : strict ? `Kein ${up ? 'Long' : 'Short'}-Signal` : 'Abwarten';
@@ -106,7 +111,7 @@ export function signalReasonsModel(input, preferredSide) {
   const source = `${market === 'futures' ? 'Binance Futures' : market === 'spot' ? 'Binance Spot' : 'Markt wird geprüft'} · ${strict ? '15m / 4h' : interval + '-Kerzen'}`;
   const stand = ready ? strict ? `15m-Schluss ${stamp(r.closeTime + 1)} · 4h-Schluss ${stamp(top.closeTime + 1)}` : `Kerzenschluss ${stamp(r.closeTime + 1)}` : 'Keine aktuelle Freigabe';
   return { strict, total, threshold, ready, side, fulfilled, longCount, shortCount, rows, status, reason, other, confirmed, source, stand,
-    title: strict ? 'Trend-Pullback 5/5 v2' : 'Bisheriges Modell · vier Regeln',
+    title: strict ? 'Trend-Pullback 5/5 v2' : 'Standard + RSI-Momentum v2 · vier Regeln',
     note: strict ? 'Nur geschlossene Kerzen. 5/5 ist Regelübereinstimmung, keine garantierte Gewinnchance.' : 'Nur geschlossene Kerzen. Die bisherige Tendenz benötigt 3/4 Regeln; kein nachgewiesener Handelsvorteil.' };
 }
 

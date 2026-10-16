@@ -9,9 +9,10 @@ const mirror = rows => rows.map(c => ({ ...c, open: 400 - c.open, high: 400 - c.
 (async () => {
   const a = await import('../shared/watch-model-core.mjs');
   const html = fs.readFileSync(require('path').join(__dirname, '../weather-widget-v2.html'), 'utf8');
-  const original = new Function(html.slice(html.indexOf('function rsi('), html.indexOf('\nfunction trueRanges(')) + html.slice(html.indexOf('function ema(values, period)'), html.indexOf('\nfunction overallRating(')) + '\nreturn signalRating;')();
+  const { rsiSignal } = await import('../shared/rsi-momentum.mjs');
+  const original = new Function('rsiSignal', html.slice(html.indexOf('function rsi('), html.indexOf('\nfunction trueRanges(')) + html.slice(html.indexOf('function ema(values, period)'), html.indexOf('\nfunction overallRating(')) + '\nreturn signalRating;')(rsiSignal);
   for (const [name, prices] of [['aufwärts', range(700, 100, 200)], ['abwärts', range(700, 200, 100)], ['neutral', Array(700).fill(100)], ['wechselnd', Array.from({ length: 700 }, (_, i) => 100 + Math.sin(i / 5) * 6 + Math.cos(i / 11))]]) {
-    check('Baseline bytegenau gleiche Ergebnisse: ' + name, () => assert.deepEqual(a.watchClassicRating(candles(prices).slice(-199)), original(candles(prices).slice(-199))));
+    check('Live-Anzeige und Backtest verwenden dieselbe neue RSI-Regel: ' + name, () => assert.deepEqual(a.watchClassicRating(candles(prices).slice(-199)), original(candles(prices).slice(-199))));
   }
   const higher = candles(range(500, 80, 180), H); let lower, strict;
   outer: for (const count of [8, 12, 16, 20, 25, 30]) for (const slope of [.2, .4, .6, 1]) for (const bounce of [1, 2, 3, 5, 8, 12]) {

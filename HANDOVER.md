@@ -1,3 +1,10 @@
+## 3.76.0 (Codex): zusätzlicher statistischer RSI-Long-Trigger
+
+- Nutzer beauftragt ΔRSI > SMA20(ΔRSI) + 2 × σ20 und bestätigt ausdrücklich zusätzlichen Filter ΔRSI > 0. Im bisherigen Vier-Regel-Modell ergänzt dies die Erholung unter 30 per ODER, ein RSI-Punkt insgesamt. Short, EMA/Kurs/MACD und Gesamtbewertung unverändert. Trend-Pullback 5/5 bleibt unverändert als Vergleich.
+- Gemeinsame reine Berechnung für Live-Signalübersicht, Vorauswahl und Worker-Backtest. 20 Veränderungen einschließlich aktueller abgeschlossener Kerze, Populations-σ (Division durch 20), strikt >, kein Ersatznullen-/Vorlauf-Trigger. RSI-Info nennt konkrete Statistikwerte und Ergebnis. Keine zusätzlichen Kurshistorien oder Orders.
+- Neue Standardkennung `watch-classic-2` / „Standard + RSI-Momentum v2“. Gespeicherte Vergleiche mit Standard v1 bleiben unverändert erhalten und als ohne Momentum erkennbar; neue Läufe verwenden v2. `watch-strict-2` bleibt erhalten. Keine automatische Neubewertung alter Ergebnisse.
+- Branch `codex/rsi-momentum` ab `main` 033776b; App/SW 3.76.0, Dienstquellstand 2.15.1 unverändert, 92 PWA-/104 Dienstdateien. [Definition, Umfang und Gerätecheck](docs/RSI-MOMENTUM-3.76.0.md). **583/583** gezielte Prüfungen in 15 Läufen bestanden, einschließlich Chromium/WebKit und 500 zusätzlicher OHLCV-Fälle. Lint 0 Fehler / 3 bekannte Warnungen. Isolierte Freigabeprüfung einschließlich veröffentlichbarer Mathematik und 320/390/768 px bestanden. Öffentlicher Nachweis im Release-PR. Punkt 2 bleibt ein Entwurf.
+
 ## 3.75.1 (Codex): doppelte Signalansicht entfernt, verständliche Regel-Infos
 
 - Nutzer meldet doppelte Indikatorlisten und unklare Begriffe/Werte. Alte Bullish-/Bearish-Liste samt zweiter Bewertung/Fußtext vollständig entfernt. Gemeinsame Regelprüfung mit Info-Button je Regel; Erklärungen klappen innerhalb derselben Zeile auf/zu. Chartmuster im bisherigen Modell einmal separat, lange Texte ohne Abschneiden.

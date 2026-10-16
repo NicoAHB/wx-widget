@@ -1662,7 +1662,7 @@ html[data-layout=tablet] #econ{order:1}
 .wl-rsi-bar i:first-child{left:30%}.wl-rsi-bar i:nth-child(2){left:70%}
 .wl-rsi-bar b{position:absolute;top:50%;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;background:var(--text)}
 .wl-rsi-bar b[hidden]{display:none}
-.wl-rsi.up .wl-rsi-bar b{background:var(--up-text)}.wl-rsi.down .wl-rsi-bar b{background:var(--down-text)}   /* Farbe = RSI-Signal (unter 30 und steigend bullish, über 70 und fallend bearish) */
+.wl-rsi.up .wl-rsi-bar b{background:var(--up-text)}.wl-rsi.down .wl-rsi-bar b{background:var(--down-text)}   /* Farbe = RSI-Signal (Erholung oder positives statistisches Momentum bullish; Short unverändert) */
 /* „+ Coin hinzufügen“ als gestrichelte Kachel – immer da, damit beim Laden eines neuen Coins nichts verrutscht */
 .wl-add{display:grid;place-items:center;width:100%;height:100%;min-height:96px;padding:8px;border:1.5px dashed var(--field-border);border-radius:14px;background:none;color:var(--muted);font:inherit;font-size:.9375rem;font-weight:600;text-align:center}
 .wl-add[data-addwatch]{border-color:var(--up-border);color:var(--up-text)}
@@ -2471,42 +2471,43 @@ html[data-panel-style=glass] #chart-sec{background:var(--surface);-webkit-backdr
 
 </style>
   <script type="module">
-import { MARKET_INTERVALS, CHART_INTERVALS, SIGNAL_INTERVALS, INTERVAL_MS, nearestChartInterval } from './bundles/3.75.1/shared/market-intervals.mjs';
-import { createDetailCandles, detailOptions, detailChoice, closedSeries, timeIndex, DETAIL_VISIBLE_MAX } from './bundles/3.75.1/shared/chart-detail.mjs';
-import { patternChipRows, patternChipKey } from './bundles/3.75.1/shared/chart-pattern-chips.mjs';
-import { PATTERN_QUALITY_CONFIG, chartPatternQuality, repricePatternQuality, sortPatternQuality, patternOverview } from './bundles/3.75.1/shared/chart-pattern-quality.mjs';
-import { createPatternOverviewFeed } from './bundles/3.75.1/shared/chart-pattern-overview-feed.mjs';
+import { MARKET_INTERVALS, CHART_INTERVALS, SIGNAL_INTERVALS, INTERVAL_MS, nearestChartInterval } from './bundles/3.76.0/shared/market-intervals.mjs';
+import { createDetailCandles, detailOptions, detailChoice, closedSeries, timeIndex, DETAIL_VISIBLE_MAX } from './bundles/3.76.0/shared/chart-detail.mjs';
+import { patternChipRows, patternChipKey } from './bundles/3.76.0/shared/chart-pattern-chips.mjs';
+import { PATTERN_QUALITY_CONFIG, chartPatternQuality, repricePatternQuality, sortPatternQuality, patternOverview } from './bundles/3.76.0/shared/chart-pattern-quality.mjs';
+import { createPatternOverviewFeed } from './bundles/3.76.0/shared/chart-pattern-overview-feed.mjs';
 // Arbeitsstand: bei der gemeinsamen Release-Freigabe in das neue Versionsbündel übernehmen.
-import { createPositioningFeed } from './bundles/3.75.1/shared/positioning-score.mjs';
-import { CRYPTO_CALENDAR, parseCryptoCalendar, cryptoCalendarEvents } from './bundles/3.75.1/shared/crypto-calendar.mjs';
-import { createMusterClient } from './bundles/3.75.1/shared/muster-bot-feed.mjs';
-import { createMusterPaper } from './bundles/3.75.1/shared/muster-bot-paper.mjs';
-import { readMusterPaper, writeMusterPaper } from './bundles/3.75.1/shared/muster-bot-store.mjs';
-import { projectPatternLines, projectionSettings, projectionTime } from './bundles/3.75.1/shared/pattern-projection.mjs';
-import { createGithubSyncView } from './bundles/3.75.1/shared/github-sync-view.mjs';
-import { createDocViewer } from './bundles/3.75.1/shared/doc-viewer.mjs';
-import { PATTERN_FILTER_PRESET_NAMES, PATTERN_FILTER_FIELDS, PATTERN_CARD_FIELDS, HIGHER_TIMEFRAME, patternFilterSettings, patternFilterFromForm, evaluatePatternSignal, selectPatternSignals, patternJournalEntry, addPatternJournal, resolvePatternJournal, patternHitStats, patternJournalStats, PATTERN_OUTCOME_NAMES, backtestPatternFilter } from './bundles/3.75.1/shared/pattern-quality.mjs';
-import { stripSyncSecrets } from './bundles/3.75.1/shared/github-sync.mjs';
-import { createMusterView } from './bundles/3.75.1/shared/muster-bot-view.mjs';
-import { computeKiZones, KI_ZONE_INTERVALS } from './bundles/3.75.1/shared/ki-zones.mjs';
-import { heikinAshi } from './bundles/3.75.1/shared/heikin-ashi.mjs';
-import { detectFvgs, fvgSummary } from './bundles/3.75.1/shared/fvg.mjs';
-import { scoreZoneStrength, ZONE_STRENGTH, ZONE_SIGNAL, zoneSignal, zoneStep, zoneOutcome, summarizeZoneBacktest } from './bundles/3.75.1/shared/zone-strength.mjs';
+import { createPositioningFeed } from './bundles/3.76.0/shared/positioning-score.mjs';
+import { CRYPTO_CALENDAR, parseCryptoCalendar, cryptoCalendarEvents } from './bundles/3.76.0/shared/crypto-calendar.mjs';
+import { createMusterClient } from './bundles/3.76.0/shared/muster-bot-feed.mjs';
+import { createMusterPaper } from './bundles/3.76.0/shared/muster-bot-paper.mjs';
+import { readMusterPaper, writeMusterPaper } from './bundles/3.76.0/shared/muster-bot-store.mjs';
+import { projectPatternLines, projectionSettings, projectionTime } from './bundles/3.76.0/shared/pattern-projection.mjs';
+import { createGithubSyncView } from './bundles/3.76.0/shared/github-sync-view.mjs';
+import { createDocViewer } from './bundles/3.76.0/shared/doc-viewer.mjs';
+import { PATTERN_FILTER_PRESET_NAMES, PATTERN_FILTER_FIELDS, PATTERN_CARD_FIELDS, HIGHER_TIMEFRAME, patternFilterSettings, patternFilterFromForm, evaluatePatternSignal, selectPatternSignals, patternJournalEntry, addPatternJournal, resolvePatternJournal, patternHitStats, patternJournalStats, PATTERN_OUTCOME_NAMES, backtestPatternFilter } from './bundles/3.76.0/shared/pattern-quality.mjs';
+import { stripSyncSecrets } from './bundles/3.76.0/shared/github-sync.mjs';
+import { createMusterView } from './bundles/3.76.0/shared/muster-bot-view.mjs';
+import { computeKiZones, KI_ZONE_INTERVALS } from './bundles/3.76.0/shared/ki-zones.mjs';
+import { heikinAshi } from './bundles/3.76.0/shared/heikin-ashi.mjs';
+import { detectFvgs, fvgSummary } from './bundles/3.76.0/shared/fvg.mjs';
+import { scoreZoneStrength, ZONE_STRENGTH, ZONE_SIGNAL, zoneSignal, zoneStep, zoneOutcome, summarizeZoneBacktest } from './bundles/3.76.0/shared/zone-strength.mjs';
 // 3.68.0: KI-Signale/Trading-Bot entfernt; der GitHub-Sync behält sein Format inklusive vorhandener Modelloriginale.
-import { exportModelArchive, importModelArchive, validateModelArchive, restoreModelOriginals } from './bundles/3.75.1/shared/model-archive.mjs';
-import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT, patternGrade } from './bundles/3.75.1/shared/telegram-format.mjs';
-import { patternSignalCard, patternChartData } from './bundles/3.75.1/shared/pattern-signal-card.mjs';   // 3.71.0: Chartmuster-Signalkarte
-import { pnlAlarmCard } from './bundles/3.75.1/shared/pnl-alarm-card.mjs';   // 3.71.0: Gewinn-/Verlust-Alarm als Bild
-import { priceAlarmCard } from './bundles/3.75.1/shared/price-alarm-card.mjs';   // 3.71.0: Kurs-Alarm als Bild
-import { createOrderflowView } from './bundles/3.75.1/shared/orderflow-view.mjs';
-import { createMarketRadarView } from './bundles/3.75.1/shared/market-radar-view.mjs';
-import { createPanelAppearanceSettings } from './bundles/3.75.1/shared/panel-appearance.mjs';
-import { createSignalView } from './bundles/3.75.1/shared/orderflow-signal-view.mjs';
-import { WATCH_MODEL_KEY, WATCH_COMPARE_KEY } from './bundles/3.75.1/shared/watch-model-core.mjs';
-import { createWatchModelFeed } from './bundles/3.75.1/shared/watch-model-feed.mjs';
-import { createSignalReasonsView } from './bundles/3.75.1/shared/watch-signal-reasons.mjs';
-import { createWatchModelView } from './bundles/3.75.1/shared/watch-model-view.mjs';
-import { networkState, createWidgetBoundary } from './bundles/3.75.1/shared/widget-state.mjs';
+import { exportModelArchive, importModelArchive, validateModelArchive, restoreModelOriginals } from './bundles/3.76.0/shared/model-archive.mjs';
+import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT, patternGrade } from './bundles/3.76.0/shared/telegram-format.mjs';
+import { patternSignalCard, patternChartData } from './bundles/3.76.0/shared/pattern-signal-card.mjs';   // 3.71.0: Chartmuster-Signalkarte
+import { pnlAlarmCard } from './bundles/3.76.0/shared/pnl-alarm-card.mjs';   // 3.71.0: Gewinn-/Verlust-Alarm als Bild
+import { priceAlarmCard } from './bundles/3.76.0/shared/price-alarm-card.mjs';   // 3.71.0: Kurs-Alarm als Bild
+import { createOrderflowView } from './bundles/3.76.0/shared/orderflow-view.mjs';
+import { createMarketRadarView } from './bundles/3.76.0/shared/market-radar-view.mjs';
+import { createPanelAppearanceSettings } from './bundles/3.76.0/shared/panel-appearance.mjs';
+import { createSignalView } from './bundles/3.76.0/shared/orderflow-signal-view.mjs';
+import { WATCH_MODEL_KEY, WATCH_COMPARE_KEY } from './bundles/3.76.0/shared/watch-model-core.mjs';
+import { rsiSignal } from './bundles/3.76.0/shared/rsi-momentum.mjs';
+import { createWatchModelFeed } from './bundles/3.76.0/shared/watch-model-feed.mjs';
+import { createSignalReasonsView } from './bundles/3.76.0/shared/watch-signal-reasons.mjs';
+import { createWatchModelView } from './bundles/3.76.0/shared/watch-model-view.mjs';
+import { networkState, createWidgetBoundary } from './bundles/3.76.0/shared/widget-state.mjs';
 // Pure, unrounded calculations. Prices are USDT per unit; FX is USDT per EUR.
 function rsi(closes, period = 14) {
   const out = Array(closes.length).fill(null);
@@ -2592,14 +2593,15 @@ function signalRating(closed) {
   const r = rsi(closes), rNow = r.at(-1), rPrev = r.at(-2), m = macd(closes), mLine = m.line.at(-1), mSig = m.signal.at(-1);
   if (![last, e20, e50, rNow, rPrev, mLine, mSig].every(Number.isFinite)) return null;
   const cmp = (a, b) => a > b ? 1 : a < b ? -1 : 0;
+  const rsiRule = rsiSignal(r);
   const rules = [
     { label: 'Trend', score: cmp(e20, e50), detail: 'EMA 20 zu EMA 50' },
     { label: 'Kurs', score: cmp(last, e20), detail: 'Schluss zu EMA 20' },
-    { label: 'RSI ' + Math.round(rNow), score: rNow < 30 && rNow > rPrev ? 1 : rNow > 70 && rNow < rPrev ? -1 : 0, detail: 'RSI 14' },
+    { label: 'RSI ' + Math.round(rNow), score: rsiRule.score, detail: 'RSI 14 · Erholung oder Momentum' },
     { label: 'MACD', score: cmp(mLine, mSig), detail: 'MACD zu Signallinie' }
   ];
   const score = rules.reduce((s, x) => s + x.score, 0);
-  return { score, verdict: score >= 2 ? 'buy' : score <= -2 ? 'sell' : 'hold', rules, closeTime: closed.at(-1).closeTime };
+  return { score, verdict: score >= 2 ? 'buy' : score <= -2 ? 'sell' : 'hold', rules, closeTime: closed.at(-1).closeTime, rsiRule };
 }
 function overallRating(ratings, minimum = 4) {
   const valid = ratings.filter(Boolean);
@@ -3361,7 +3363,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
 // 3.43.0 (G10a): reiner Fachkern in shared/; Datenquelle und Karten folgen getrennt.
 // 3.44.0 (G10b): öffentlicher Adapter in shared/bitget-public.mjs; sichtbare Anbindung folgt mit G10(c).
-const APP_VERSION = '3.75.1', docEl = document.documentElement;
+const APP_VERSION = '3.76.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -4528,7 +4530,7 @@ function renderWatchlist() {
   const head = el('div', 'wl-head'), tip = el('details', 'tip left wl-tip'), sum = el('summary');
   sum.setAttribute('aria-label', 'Was die Kacheln der Vorauswahl zeigen'); sum.append(el('span', '', 'i'));
   const body = el('div', 'tip-body');
-  body.append(el('p', '', `Je Coin: Kürzel, Tendenz (Score −4 bis +4) und Live-Kurs. Darunter die Veränderung in Prozent über 1 Minute bis 1 Tag – hervorgehoben ${S.the}, über den die Tendenz rechnet –, der Verlauf ${S.of}, die Felder Trend · Kurs · MACD (▲ grün = bullish, ▼ rot = bearish, – neutral) und der RSI als Leiste mit den Marken 30 und 70.`),
+  body.append(el('p', '', 'Standard v2: Der RSI-Long-Punkt zählt auch bei einem positiven Anstieg über Durchschnitt + 2 × Standardabweichung der letzten 20 RSI-Veränderungen. Die aktuelle abgeschlossene Kerze zählt mit; Short bleibt unverändert.'), el('p', '', `Je Coin: Kürzel, Tendenz (Score −4 bis +4) und Live-Kurs. Darunter die Veränderung in Prozent über 1 Minute bis 1 Tag – hervorgehoben ${S.the}, über den die Tendenz rechnet –, der Verlauf ${S.of}, die Felder Trend · Kurs · MACD (▲ grün = bullish, ▼ rot = bearish, – neutral) und der RSI als Leiste mit den Marken 30 und 70.`),
     el('p', '', '„Alle“, „Stark ≥ +2“ und „Schwach ≤ −2“ filtern nach der Tendenz; „Score ↓“ sortiert nach der Tendenz, „Manuell“ zeigt deine Reihenfolge. Verschieben wechselt automatisch auf „Manuell“. Raster und Liste zeigen dieselben Coins.'),
     el('p', '', `Tendenz: die Summe dieser vier Regeln – dieselben wie in der Signal-Übersicht – auf abgeschlossenen ${S.ivName}-Kerzen, von −4 bis +4, neu bei jedem Kerzenschluss. Kräftig grün bzw. rot erst, wenn mindestens 3 der 4 Regeln in dieselbe Richtung zeigen (Long- bzw. Short-Tendenz). Den Zeitraum (1 Minute bis 1 Tag) wählst du im Detailfeld oder oben in der Liste; die Zeitraum-Knöpfe des Charts ändern ihn nicht. Eine Beschreibung ${S.of}, kein Handelssignal mit nachgewiesenem Vorteil.`),
     el('p', '', 'Antippen zeigt darunter die Signale des Coins mit Erklärungen und lädt ihn im Chart weiter unten – die Seite springt nicht dorthin. „Bearbeiten“ entfernt Coins, „+ Coin“ nimmt den geöffneten Coin auf. Fehlen Daten (Coin lädt noch, keine Verbindung), steht neutral „–“.'),
@@ -15561,7 +15563,7 @@ const musterPaper = createMusterPaper({ read: readMusterPaper, write: writeMuste
   } });
 const MUSTER_TG_NAMES = { hammer: 'Hammer', engulfing: 'Bullish Engulfing', confluence: 'Konfluenz', po3: 'Power of Three' };
 musterView = createMusterView({ host: musterHost, selection: musterSelection, currentPrice: (symbol, market) => state.symbol === symbol && state.source === market ? currentPrice() : null,
-  prefs: store.get('scalpdesk.muster.settings.v1', {}), savePrefs: value => store.set('scalpdesk.muster.settings.v1', value), workerFactory: () => new Worker(new URL('./bundles/3.75.1/shared/muster-bot-worker.mjs', import.meta.url), { type: 'module' }), paper: musterPaper, onMarkers: scheduleDraw,
+  prefs: store.get('scalpdesk.muster.settings.v1', {}), savePrefs: value => store.set('scalpdesk.muster.settings.v1', value), workerFactory: () => new Worker(new URL('./bundles/3.76.0/shared/muster-bot-worker.mjs', import.meta.url), { type: 'module' }), paper: musterPaper, onMarkers: scheduleDraw,
   telegramStatus: () => tgtReady('trades') ? null : 'Hinweis: Telegram ist noch nicht eingerichtet oder das Ziel „Trades“ ist aus (Einstellungen → Telegram).' });
 void musterPaper.restore().then(() => musterPaper.poll());
 function musterDraw(svg, data, x, y, bottom) {
@@ -15600,7 +15602,7 @@ const wmSave = async (key, value) => { store.set(key, value); if (!store.ok || !
 wmView = createWatchModelView({ host: document.querySelector('#workspace-settings .workspace-settings-grid'), read: key => store.get(key), save: wmSave, getMode: wmMode,
   setMode: async mode => { const before = wmMode(); try { await wmSave(WATCH_MODEL_KEY, mode === 'strict' ? 'strict' : 'classic'); } catch (e) { store.set(WATCH_MODEL_KEY, before); throw e; } broadcastData([WATCH_MODEL_KEY]); wmRefresh(); },
   now: serverNow, symbols: () => state.watch.map(wlSym), history: createMusterClient().history, available: () => !document.hidden && !state.paused && navigator.onLine !== false,
-  workerFactory: () => new Worker(new URL('./bundles/3.75.1/shared/watch-model-worker.mjs', import.meta.url), { type: 'module' }) });
+  workerFactory: () => new Worker(new URL('./bundles/3.76.0/shared/watch-model-worker.mjs', import.meta.url), { type: 'module' }) });
 function wmAvailability() {
   wmFeed.sync();
   if ((document.hidden || state.paused || navigator.onLine === false) && wmView.state.busy) wmView.abort();
@@ -15865,7 +15867,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
       <section class="panel cnews cq" id="cnews" data-tabs="chart" aria-labelledby="cnews-title"><div class="econ-head"><div class="head-line"><h2 id="cnews-title">News &amp; Termine · <span id="cnews-coin">BTC</span></h2><details class="tip left"><summary aria-label="Woher die Meldungen kommen und was als wichtig gilt"><span>i</span></summary><div class="tip-body"><p>Nur ganz wichtige Meldungen und Termine zum geöffneten Coin.</p><p><b>Binance:</b> Listings, Delistings, entfernte USDT-Handelspaare, Netzwerk-Upgrades und Hard Forks (Ein- und Auszahlungen ruhen dann), Token-Tausch und die Beobachtungsliste (Monitoring-Tag: erhöhtes Risiko, ein Delisting ist möglich).</p><p><b>Schlagzeilen</b> deutschsprachiger Medien über Google News, für 36 bekannte Coins. Sehr wichtig: Hacks und gestohlene Gelder, ETF-Entscheidungen, Behörden und Gerichte (z. B. SEC, Klagen), Upgrades, Forks und Netzwerk-Ausfälle, Delistings und Listings großer Börsen, Insolvenzen. Mit „auch wichtig“ dazu ETF-Zuflüsse, Escrow und Token-Freigaben, Regulierung und Übernahmen. Kursprognosen und Marktberichte fallen weg; dieselbe Geschichte aus mehreren Medien steht nur einmal da.</p><p>Ausgewählt wird über Stichwörter – Wichtiges kann fehlen, Unwichtiges durchrutschen. Ein GitHub-Job sammelt stündlich, die App lädt alle 15 Minuten. Kein Kauf- oder Verkaufssignal.</p></div></details></div><span class="econ-src" id="cnews-src"></span></div><div class="cn-list" id="cnews-list"></div><div class="econ-foot"><label>Bedeutung <select id="cnews-imp"><option value="high">sehr wichtig</option><option value="medium">auch wichtig</option></select></label><button type="button" class="button ghost econ-more" id="cnews-more" hidden>Alle anzeigen</button></div></section>
       <section class="panel vola cq" id="vola" data-tabs="chart" aria-labelledby="vola-title"><div class="econ-head"><div class="head-line"><h2 id="vola-title">Volatilität<span class="vola-long"> nach Uhrzeit</span> · <span id="vola-coin">BTC</span></h2><details class="tip left"><summary aria-label="Was die Säulen zeigen und wann gewarnt wird"><span>i</span></summary><div class="tip-body"><p>Wie stark schwankt der Kurs des geöffneten Coins normalerweise zu welcher Uhrzeit? Grundlage sind die letzten 2.000 Stundenkerzen von Binance (rund 83 Tage), getrennt nach Werktagen (Mo–Fr) und Wochenende (Sa–So), Uhrzeiten in deiner Ortszeit.</p><p><b>Säulen:</b> Spanne einer Stunde = Hoch minus Tief in Prozent. Kräftig die typische Spanne (die Hälfte der Stunden liegt darunter), hell der Wert, unter dem 9 von 10 Stunden bleiben (diese Stunde und ihre Nachbarn). Säule antippen zeigt die Stunde genauer.</p><p><b>Strich und Warnung:</b> Der Strich auf der aktuellen Stunde ist die Spanne der letzten 60 Minuten, „1,9×“ heißt fast doppelt so viel wie typisch. Gehört sie zu den stärksten 10, 5 oder 1 % der vergleichbaren Stunden (Einstellung „Warnen bei“), erscheint oben in der Live-Leiste eine Warnung: Der Kurs schwankt dann stärker als üblich, in beide Richtungen.</p><p><b>Richtung:</b> ▲ oder ▼ nur, wenn eine Stunde im Schnitt auch nach Gebühren (hin und zurück, wie im Positionsrechner eingestellt) sicher steigt oder fällt – mit 95 % Sicherheit für alle Stunden zugleich geprüft. Meist ist das nicht so, dann steht dort „keine nachweisbare Tendenz“. Vergangene Muster sind keine Garantie.</p></div></details></div><span class="econ-src vola-src" id="vola-src"></span></div><div class="vola-bars" id="vola-bars" role="group" tabindex="0" aria-label="Typische Spanne je Stunde"></div><div class="vola-hours" id="vola-hours" aria-hidden="true"></div><div class="vola-info"><div class="vola-hour" aria-live="polite"><div class="vola-selrow"><span class="vola-sel" id="vola-sel-t"></span><button type="button" class="vola-back" id="vola-back" hidden>↺ jetzt</button></div><div class="vola-strip"><div class="vs"><span class="vs-k">typisch</span><span class="vs-v" id="vola-med">—</span></div><div class="vs"><span class="vs-k">9 von 10 unter</span><span class="vs-v" id="vola-p90">—</span></div></div><p class="vola-dirrow"><span class="vola-k">Richtung:</span> <span class="vola-dirv" id="vola-dir"></span></p></div><div class="vs vs-now" id="vola-nowbox" data-level="0"><span class="vs-k"><span>Letzte 60 Minuten</span><span class="vola-badge" id="vola-badge"></span></span><span class="vs-v" id="vola-now">—</span></div></div><div class="econ-foot"><div class="side-toggle vola-days" role="group" aria-label="Tage"><button type="button" data-vday="wd" aria-pressed="true">Mo–Fr</button><button type="button" data-vday="we" aria-pressed="false">Sa–So</button></div><label>Warnen bei <select id="vola-warn"><option value="0">aus</option><option value="90">stärkste 10 %</option><option value="95">stärkste 5 %</option><option value="99">stärkste 1 %</option></select></label></div></section>
       <section class="panel signals cq" id="signals" data-tabs="chart" aria-labelledby="signals-title">
-        <div class="signals-head"><div><div class="head-line"><h2 id="signals-title">Signal-Übersicht</h2><details class="tip left"><summary aria-label="So entsteht die Bewertung"><span>i</span></summary><div class="tip-body"><p>Je Zeitraum vier Regeln mit +1, 0 oder −1: EMA 20 über/unter EMA 50 · Schluss über/unter EMA 20 · RSI unter 30 und steigend (+1) bzw. über 70 und fallend (−1) · MACD über/unter Signallinie.</p><p>Ab +2 Punkten Kaufsignal, ab −2 Verkaufssignal, dazwischen Halten. Gesamt: Anzahl Kauf- minus Verkaufssignale, ab ±2.</p><p>Trend: Der Pfeil vergleicht den Gesamtscore mit dem Stand vor 5 Minuten (↗ gestiegen, ↘ gefallen, → gleich), die Balken zeigen die letzten 60 Minuten. Pfeile in den Zeilen: Punkte eines Zeitraums haben sich in den letzten 5 Minuten geändert. Rekonstruiert aus abgeschlossenen Kerzen, gilt also auch direkt nach dem Öffnen.</p><p>Mechanische Auswertung vergangener Kurse, keine Vorhersage; Gebühren, Funding und Hebel sind nicht berücksichtigt.</p></div></details></div><p>Trend, Kurslage, RSI und MACD · nur abgeschlossene Kerzen · Zeile antippen wechselt den Chart</p></div><div class="overall"><span>Gesamt über alle Zeiträume</span><div class="sig-trend"><strong id="overall-verdict" class="verdict skel">—</strong><span class="score skel" id="overall-score">—</span></div><div class="spark-wrap" id="overall-spark-wrap"><svg class="spark" id="overall-spark" viewBox="0 0 132 34" preserveAspectRatio="none" role="img" aria-label="Verlauf der Gesamtwertung"></svg><small class="spark-cap" aria-hidden="true"><span>vor 60 Min.</span><span>jetzt</span></small></div><small id="overall-detail" class="skel">Wartet auf Kerzendaten.</small></div></div>
+        <div class="signals-head"><div><div class="head-line"><h2 id="signals-title">Signal-Übersicht</h2><details class="tip left"><summary aria-label="So entsteht die Bewertung"><span>i</span></summary><div class="tip-body"><p>Je Zeitraum vier Regeln mit +1, 0 oder −1: EMA 20 über/unter EMA 50 · Schluss über/unter EMA 20 · RSI unter 30 und steigend ODER positives ΔRSI über SMA20(ΔRSI) + 2 × σ20 (+1), RSI über 70 und fallend (−1) · MACD über/unter Signallinie.</p><p>Ab +2 Punkten Kaufsignal, ab −2 Verkaufssignal, dazwischen Halten. Gesamt: Anzahl Kauf- minus Verkaufssignale, ab ±2.</p><p>Trend: Der Pfeil vergleicht den Gesamtscore mit dem Stand vor 5 Minuten (↗ gestiegen, ↘ gefallen, → gleich), die Balken zeigen die letzten 60 Minuten. Pfeile in den Zeilen: Punkte eines Zeitraums haben sich in den letzten 5 Minuten geändert. Rekonstruiert aus abgeschlossenen Kerzen, gilt also auch direkt nach dem Öffnen.</p><p>Mechanische Auswertung vergangener Kurse, keine Vorhersage; Gebühren, Funding und Hebel sind nicht berücksichtigt.</p></div></details></div><p>Trend, Kurslage, RSI und MACD · nur abgeschlossene Kerzen · Zeile antippen wechselt den Chart</p></div><div class="overall"><span>Gesamt über alle Zeiträume</span><div class="sig-trend"><strong id="overall-verdict" class="verdict skel">—</strong><span class="score skel" id="overall-score">—</span></div><div class="spark-wrap" id="overall-spark-wrap"><svg class="spark" id="overall-spark" viewBox="0 0 132 34" preserveAspectRatio="none" role="img" aria-label="Verlauf der Gesamtwertung"></svg><small class="spark-cap" aria-hidden="true"><span>vor 60 Min.</span><span>jetzt</span></small></div><small id="overall-detail" class="skel">Wartet auf Kerzendaten.</small></div></div>
         <div class="signal-rows" id="signal-rows"></div>
       </section>
       <details class="fold cq" id="zones-sec" data-tabs="ind" open>
