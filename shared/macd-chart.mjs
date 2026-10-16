@@ -213,8 +213,18 @@ export function createMacdHelp({ document, button, read }) {
   }
   body.append(el('p', 'macd-method', 'Hervorhebung: Ereignis innerhalb der letzten 3 abgeschlossenen Kerzen, solange kein Widerspruch vorliegt. Divergenzen vergleichen die letzten bestätigten Kurs-Pivots innerhalb von 60 Kerzen; je 2 abgeschlossene Nachbarkerzen links und rechts sind nötig. Die laufende Kerze ist in den Linien sichtbar, zählt aber nie als Bestätigung.'), el('p', 'macd-caution', 'Seitwärtsphasen können viele Fehlsignale durch wiederholte Kreuzungen erzeugen. Trend und Risiko zusätzlich prüfen. Die Anzeige ergänzt die Orientierung; sie ändert weder Vorauswahl-Modelle noch Alarme und eröffnet keine Trades.'));
   function update(opening = false) {
-    if (!dialog.open && !opening) return;
     const c = read(), result = c.findings;
+    // 3.77.3: derselbe frische Befund wie im Dialog, auch bei geschlossener Info.
+    const active = result.ready ? STRATEGIES.filter(([key]) => result.events[key]) : [];
+    const bull = active.some(([key]) => result.events[key].direction === 1), bear = active.some(([key]) => result.events[key].direction === -1);
+    const tone = bull && bear ? 'mixed' : bull ? 'bull' : bear ? 'bear' : 'neutral';
+    if (button.dataset.macdTone !== tone) button.dataset.macdTone = tone;
+    const hint = active.length ? `${bull && bear ? 'Bullishe und bearishe Befunde' : bull ? 'Bullisher Befund' : 'Bearisher Befund'}: ${active.map(([, name]) => name).join(', ')}. Informationen öffnen.` : '';
+    const label = 'MACD und Handelsstrategien erklären' + (hint ? ' · ' + hint : '');
+    if (button.getAttribute('aria-label') !== label) button.setAttribute('aria-label', label);
+    const tooltip = 'MACD: Linien, Kreuzungen und Divergenzen erklären' + (hint ? ' · ' + hint : '');
+    if (button.title !== tooltip) button.title = tooltip;
+    if (!dialog.open && !opening) return;
     context.textContent = `${c.symbol.replace(/USDT$/, '/USDT')} · ${c.interval}-Kerzen · ${c.source === 'futures' ? 'Binance Futures' : 'Binance Spot'} · normale Schlusskurse${c.analysisInterval !== c.interval ? ' · Hauptanalyse ' + c.analysisInterval : ''}`;
     status.textContent = result.ready ? `${c.enabled ? 'MACD im Chart an' : 'MACD im Chart aus'} · letzte Schlusskerze ${utc(result.current.closeTime + 1)}` : result.reason;
     values.textContent = result.current ? `Geschlossen: MACD ${number(result.current.line)} · Signal ${number(result.current.signal)} · Histogramm ${number(result.current.histogram)}` : '';
