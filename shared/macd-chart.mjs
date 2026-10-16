@@ -209,7 +209,7 @@ const STRATEGIES = [
     'Der Kurs bildet ein höheres Hoch, die MACD-Linie an denselben beiden Kurs-Hochs jedoch ein niedrigeres Hoch. Das deutet auf nachlassenden Kaufdruck hin. Eine Korrektur kann folgen, ist damit aber nicht bestätigt.']
 ];
 const number = v => finite(v) ? v.toLocaleString('de-DE', { maximumSignificantDigits: 6 }) : '–';
-const utc = time => new Date(time).toLocaleString('de-DE', { timeZone: 'UTC', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) + ' UTC';
+const utc = time => new Date(time).toLocaleString('de-DE', { timeZone: 'Europe/Berlin', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) + ' MEZ/MESZ';
 export function createMacdHelp({ document, button, read, loadNotices, saveNotices, now = () => Date.now() }) {
   const notice = createMacdNotice({ load: loadNotices, save: saveNotices });
   const el = (tag, cls = '', text = '') => { const n = document.createElement(tag); n.className = cls; n.textContent = text; return n; };

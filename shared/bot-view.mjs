@@ -2,7 +2,7 @@
 import { GRID_MODEL_VERSION } from './adaptive-grid.mjs';
 const doc = () => globalThis.document;
 function el(tag, text = '', className = '') { const n = doc().createElement(tag); n.textContent = text; n.className = className; return n; }
-const date = x => Number.isFinite(x) ? new Date(x).toLocaleString('de-DE') : 'noch kein Lauf';
+const date = x => Number.isFinite(x) ? new Date(x).toLocaleString('de-DE', { timeZone: 'Europe/Berlin' }) : 'noch kein Lauf';
 const decimal = input => input.value.trim().replace(',', '.');
 export function createBotView({ host, globalHost, load, command, exportState, currentSymbol, fxReference, changed, gridMarket = null, destination = 'local' }) {
   const state = { confirmed: null, destination: destination === 'oracle' ? 'oracle' : 'local', busy: false, message: 'Bot deaktiviert. Simulation einrichten; Demo/Echtgeld gesperrt.' };

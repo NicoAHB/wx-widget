@@ -8,7 +8,7 @@ const number = (v, digits = 2) => {
   return formats.get(digits).format(v);
 };
 const price = v => number(v, Math.abs(v) >= 100 ? 2 : Math.abs(v) >= 1 ? 4 : 6);
-const time = new Intl.DateTimeFormat('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+const time = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 const stamp = v => Number.isFinite(v) && v > 0 ? time.format(v) : '–';
 const compare = (a, b, yes, no, equal) => !Number.isFinite(a) || !Number.isFinite(b) ? '–' : a > b ? yes : a < b ? no : equal;
 const indicator = v => number(v, Math.abs(v) >= 1 ? 4 : 6);

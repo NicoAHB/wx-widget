@@ -3,7 +3,7 @@ import { PO3_DEFAULTS, PO3_FRAMES, po3Settings, po3Key, fvgOverlaps } from './po
 import { po3JournalStats } from './po3-simulator.mjs';
 const doc = () => globalThis.document;
 function el(tag, text = '', className = '') { const n = doc().createElement(tag); n.textContent = text; n.className = className; return n; }
-const date = t => Number.isFinite(t) ? new Date(t).toLocaleString('de-DE', { timeZone: 'UTC', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) + ' UTC' : 'offen';
+const date = t => Number.isFinite(t) ? new Date(t).toLocaleString('de-DE', { timeZone: 'Europe/Berlin', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) + ' MEZ/MESZ' : 'offen';
 const num = x => Number.isFinite(x) ? x.toLocaleString('de-DE', { maximumFractionDigits: 8 }) : 'nicht verfügbar';
 const defaultOptions = () => ({ on: false, config: { ...PO3_DEFAULTS }, windowMode: 'today', from: '', to: '', balanceUSDT: null, riskPercent: null, leverage: 20, journalPeriod: '7', instrument: '', direction: '', minimumScore: 70, contextFilter: '', cohort: '', fvgMode: 'all', origin: 'beobachtet' });
 export function createPo3View({ host, options: initial = {}, save, request, changed, symbol, navigate, serviceConfigure, serviceJournal, serviceState = () => null, compact = false, onRender = () => {} }) {
