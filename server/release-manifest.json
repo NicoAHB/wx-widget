@@ -1,6 +1,6 @@
 {
   "version": "2.15.1",
-  "appVersion": "3.76.2",
+  "appVersion": "3.76.3",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
@@ -474,8 +474,8 @@
     },
     {
       "path": "shared/projection-inspector.mjs",
-      "sha256": "05f9062b2cf7d59bcae23c7dffd985c2630cf89cfa24787406734afeaa27319a",
-      "bytes": 10445
+      "sha256": "825fe98f0d1128323604bb6dcc95fdf223aac69fc2fbdf0508772207d5e4e91c",
+      "bytes": 10610
     },
     {
       "path": "shared/rsi-momentum.mjs",
