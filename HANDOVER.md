@@ -1,3 +1,9 @@
+## 3.75.1 (Codex): doppelte Signalansicht entfernt, verständliche Regel-Infos
+
+- Nutzer meldet doppelte Indikatorlisten und unklare Begriffe/Werte. Alte Bullish-/Bearish-Liste samt zweiter Bewertung/Fußtext vollständig entfernt. Gemeinsame Regelprüfung mit Info-Button je Regel; Erklärungen klappen innerhalb derselben Zeile auf/zu. Chartmuster im bisherigen Modell einmal separat, lange Texte ohne Abschneiden.
+- „Kurs zum EMA 20“, RSI ausdrücklich vorher/zuletzt mit Richtung; unveränderte und gleich gerundete Werte sauber unterschieden. MACD-Info nennt Signallinie/Werte und erklärt, dass diese im großen Kurschart aktuell nicht eingezeichnet ist. Keine neue Chart-Ebene, Modell-/Daten-/Order-/Alarmänderung. Punkt 2 bleibt unverbaut.
+- Branch `codex/signalgruende-klar` ab `main` b3e2729; App/SW 3.75.1, Dienst 2.15.1 unverändert, 91 PWA-/103 Dienstdateien, ältere Bündel unverändert. [Umfang und Gerätecheck](docs/SIGNALGRUENDE-3.75.1.md). **522/522** gezielte Prüfungen in zwölf Läufen bestanden; Lint 0 Fehler / 3 bekannte Warnungen. Isolierte Freigabeprüfung bei 320/390/768 px bestanden, keine Seitenfehler oder Telegram-Aufrufe. Öffentlicher Nachweis im Release-PR.
+
 ## 3.75.0 (Codex): aufklappbare Signalgründe
 
 - Punkt 3 nach der separaten Vorschau jetzt ausdrücklich zur Umsetzung freigegeben. Gemeinsames Coin-Detailfeld in Vorauswahl/Kacheln und Liste; gleicher Coin, × oder Esc schließen. Long/Short-Prüfung ohne Order/Modellwechsel, tatsächliche Regeln und Beobachtungswerte, fehlende Regeln und Quellen-/Schlusszeiten. Vier Regeln im bisherigen Modell, fünf im Trend-Pullback v2; Parameter/Entscheidungen/Backtest unverändert. Bisherige Detail-Erklärungen und Chartmuster separat aufklappbar.
