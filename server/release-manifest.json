@@ -1,6 +1,6 @@
 {
   "version": "2.15.1",
-  "appVersion": "3.76.0",
+  "appVersion": "3.76.1",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
@@ -471,6 +471,11 @@
       "path": "shared/price-alarm-card.mjs",
       "sha256": "9ebf6d0d9c64f97641a9b22b4f391af7535e7040ac4ebb5310952cae976682f4",
       "bytes": 8451
+    },
+    {
+      "path": "shared/projection-inspector.mjs",
+      "sha256": "b57251d82d62994d72b86188c10321b86d66640ed5bc1adce5024086a6a3bc05",
+      "bytes": 9891
     },
     {
       "path": "shared/rsi-momentum.mjs",

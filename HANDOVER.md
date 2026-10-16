@@ -1,3 +1,11 @@
+## 3.76.1 (Codex): Prognose-Linien antippen, ein Live-Wert-Label
+
+- Nutzerwunsch: bestehende gestrichelte Projektionen im Chart mit 26-CSS-px-Fingerzielen antippen. Genau ein Label zeigt Punktkurs/UTC-Zeit, obere/untere Grenze und Dollar-Abstand; Linienfarbe als Akzent. Andere Linie versetzt, anderer Chart-Tipp schließt nur das Label. Sichtbare Linien und Berechnungen unverändert.
+- Neue reine Darstellungshilfe `shared/projection-inspector.mjs`; vorhandener Chart zeichnet zusätzliche unsichtbare Ziele. Auswahl an absoluten Zeitpunkt gebunden, Live-Neuberechnung aktualisiert Werte. Deutsche Zahlen, ab 1.000 ganzzahlig gekürzt wie im Beispiel; kleine Coins mit passender Genauigkeit. Äußere Grenzen auch bei zwei verschiedenen Mustern; bei fehlender Gegengrenze „–“.
+- Kurzer Tipp bleibt von Pan/Pinch getrennt; Alarm-Magnet und vorhandene Muster-/Zonen-Infos behalten Vorrang. Positionierung mit SVG-Matrizen unterstützt auch die iPhone-Vollbilddrehung; Label nimmt keine Pointer-Ereignisse an und weicht bestehenden Beschriftungen möglichst aus. Die Hilfe am Chart erklärt die Bedienung.
+- Zusätzlicher Nutzerwunsch: In der 24h-Zeile nur den Tiefwert rot und den Hochwert grün einfärben; sichtbaren Spot-Zusatz entfernen. Bestehende Marktdaten-/Futures-Zuordnung, Aktualisierung, Cache und Fehlerbehandlung unverändert.
+- Branch `codex/prognose-label` ab `main` 92e29bc; App/SW 3.76.1, Dienst 2.15.1 unverändert, 93 PWA-/105 Dienstdateien. [Umfang und Gerätecheck](docs/PROGNOSE-LABEL-3.76.1.md). 259/259 gezielte Prüfungen in 13 Läufen, Lint 0 Fehler / 3 bekannte Warnungen; Freigabe und öffentlicher Nachweis im Release-PR. RSI-Erweiterung zuvor separat mit PR #138 veröffentlicht und öffentlich geprüft. Andere Modelle, Daten, Alarme und Telegram-Funktionen unverändert.
+
 ## 3.76.0 (Codex): zusätzlicher statistischer RSI-Long-Trigger
 
 - Nutzer beauftragt ΔRSI > SMA20(ΔRSI) + 2 × σ20 und bestätigt ausdrücklich zusätzlichen Filter ΔRSI > 0. Im bisherigen Vier-Regel-Modell ergänzt dies die Erholung unter 30 per ODER, ein RSI-Punkt insgesamt. Short, EMA/Kurs/MACD und Gesamtbewertung unverändert. Trend-Pullback 5/5 bleibt unverändert als Vergleich.
