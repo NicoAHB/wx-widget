@@ -1,3 +1,9 @@
+## 3.77.2 (Codex): MACD-Skala, gefilterte Kreuzungspunkte und klare Zeitachse
+
+- Nur drei Darstellungsänderungen: MACD-Minimum/Maximum des sichtbaren Ausschnitts einschließlich null, je 8 % Rand; Kreuzungsradius 2.3 statt 3.3 mit separaten Konstanten für 2 % Histogramm-Schwelle und zwei geschlossene Kerzen; Zeitachse ab 1h mit Datum/Uhrzeit, darunter Datum beim Tageswechsel, kollisionsfreie Tick-Auswahl.
+- Marker erscheinen erst nach Bestätigung und bleiben am ursprünglichen interpolierten Schnitt; späte Schwellenbestätigung erlaubt, Gegenrichtung/Gleichstand/Datenlücke unterbrechen. Info-Text angepasst. Farben, Höhen 60/25/15, MACD-Werte, Info-Befund-/Handels-/Vorauswahl-/Backtest-/Alarmregeln, Live-/Fadenkreuz-/Prognosebedienung unverändert. Zeitbezug weiter UTC. [Code-Stellen und Gerätecheck](docs/MACD-REFINE-3.77.2.md).
+- Branch `codex/macd-scale-cross-axis` ab `main` 6674e035; App/SW 3.77.2, Dienstquellstand unverändert 2.15.1, 95 PWA-/107 Dienstdateien; ältere Bündel unverändert. **402/402** Prüfungen in 14 Läufen: MACD-/Zeitachsen-Rechenfälle, Chromium/WebKit, 320–1440 px, vier Farben/Marker/Geometrie/Fadenkreuz/Live/Detail/beide Vollbilder, Prognose-Labels/-Punkte, Pan/Zoom/Pinch und PWA-Update/Offline. Lint 0 Fehler / 3 bekannte Warnungen. Isolierte Freigabeprüfung des fertigen Pakets bestanden; öffentlicher Nachweis im Release-PR. Keine physischen iOS-Geräte verfügbar, keine echten Telegram-Testnachrichten.
+
 ## 3.77.1 (Codex): lesbarer MACD, vier Farben und synchrones Fadenkreuz
 
 - Nutzer meldet zu niedrigen MACD, ungenutzte Fläche zum Volumen und überlappendes Null-Label. Neuer gemeinsamer Höhenplan 60/25/15 mit 8-px-Trennräumen, eigener rechter Achsenrand und deutlicher Nulllinie. Normale MACD-Ansicht mindestens 480 px Gesamthöhe, Vollbild nutzt verfügbare Fläche. Bei ausgeschaltetem MACD bleiben alte Preis-/Volumenmaße erhalten. SVG- und Canvas-Detail-Kerzen verwenden denselben Höhenplan.

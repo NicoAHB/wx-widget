@@ -1,6 +1,6 @@
 {
   "version": "2.15.1",
-  "appVersion": "3.77.1",
+  "appVersion": "3.77.2",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
@@ -168,6 +168,11 @@
       "bytes": 11509
     },
     {
+      "path": "shared/chart-time-axis.mjs",
+      "sha256": "c67acee5b01224d3ed913597a21685db84ffd3eae09c8ed5efc19b71a94049e3",
+      "bytes": 1932
+    },
+    {
       "path": "shared/confluence-core.mjs",
       "sha256": "43cee18caca000b04651e197c10fd06d2866d53120e0a8758ac76e434a02fce9",
       "bytes": 22614
@@ -284,8 +289,8 @@
     },
     {
       "path": "shared/macd-chart.mjs",
-      "sha256": "9eb15e6df006fe1a72e27c919715f1c544d375aacb8cab66c676cb4df1606723",
-      "bytes": 18753
+      "sha256": "b42317d8af6bcb61139ec34f966f8be97882bc46ab3027606ebba99249ca3169",
+      "bytes": 20710
     },
     {
       "path": "shared/market-intervals.mjs",

@@ -1,5 +1,9 @@
 // MACD-Darstellung: verwendet die vorhandenen 12/26/9-Werte, verändert keine Handelsregeln.
 const finite = Number.isFinite;
+// NEU 3.77.2: ausschließlich Darstellungsfilter für Kreuzungsmarker.
+export const MACD_CROSS_MIN_FRACTION = .02; // 2 % des größten sichtbaren |Histogramms|
+export const MACD_CROSS_MIN_BARS = 2;       // Kreuzungskerze + mindestens eine Folgekerze, beide geschlossen
+export const MACD_CROSS_RADIUS = 2.3;       // vorher 3.3: rund 30 % kleiner
 export const MACD_CHART = Object.freeze({ fast: 12, slow: 26, signal: 9, minBars: 35, freshBars: 3, pivotStrength: 2, pivotLookback: 60 });
 
 // Nur geschlossene Kerzen prüfen. Ein Ereignis bleibt höchstens drei Schlusskerzen
@@ -72,17 +76,25 @@ export function macdHistogramTone(current, previous) {
   return sign + ' ' + (!finite(previous) || current === previous ? 'flat' : current > previous ? 'rising' : 'falling');
 }
 export function macdScale(series, offset, stop) {
-  let extent = 0;
+  // GEÄNDERT 3.77.2: null gehört auch bei rein positiven/negativen Werten zum Bereich.
+  let min = 0, max = 0;
   for (let i = offset; i < stop; i++) {
     const m = series.line[i], s = series.signal[i];
-    if (finite(m)) extent = Math.max(extent, Math.abs(m));
-    if (finite(s)) extent = Math.max(extent, Math.abs(s));
-    if (finite(m) && finite(s)) extent = Math.max(extent, Math.abs(m - s));
+    for (const value of [m, s, finite(m) && finite(s) ? m - s : null]) {
+      if (finite(value)) { min = Math.min(min, value); max = Math.max(max, value); }
+    }
   }
-  // Kein künstlicher Mindestwert bei sehr kleinen Coins; null bleibt zentriert.
-  return (extent || 1) * 1.08;
+  if (min === max) return { min: -1, max: 1 }; // nur leere oder exakt nullwertige Reihen
+  const padding = (max - min) * .08;
+  return { min: min - padding, max: max + padding };
 }
-export function macdCrossings(series, offset, stop) {
+export function macdCrossings(series, offset, stop, { candles, now = Date.now() } = {}) {
+  // GEÄNDERT 3.77.2: erst ausreichenden Abstand UND anhaltende Richtung bestätigen.
+  if (!candles) return [];
+  const histogram = i => finite(series.line[i]) && finite(series.signal[i]) ? series.line[i] - series.signal[i] : null;
+  let peak = 0;
+  for (let i = offset; i < stop; i++) if (finite(histogram(i))) peak = Math.max(peak, Math.abs(histogram(i)));
+  const threshold = peak * MACD_CROSS_MIN_FRACTION;
   const found = [];
   for (let i = Math.max(1, offset); i < stop; i++) {
     const a = series.line[i - 1], b = series.signal[i - 1], c = series.line[i], d = series.signal[i];
@@ -93,7 +105,18 @@ export function macdCrossings(series, offset, stop) {
     const fraction = before === 0 ? 0 : -before / (after - before);
     const index = i - 1 + fraction;
     if (index < offset || index > stop - 1) continue;
-    found.push({ index, candle: i, fraction, direction, value: a + (c - a) * fraction });
+    const previous = candles[i - 1];
+    if (!finite(previous?.closeTime) || previous.closeTime >= now) continue;
+    let magnitude = 0;
+    for (let j = i; j < Math.min(series.line.length, series.signal.length, candles.length); j++) {
+      const bar = candles[j], value = histogram(j);
+      if (!finite(bar?.time) || !finite(bar?.closeTime) || bar.time > bar.closeTime || bar.closeTime >= now || bar.time !== candles[j - 1].closeTime + 1 || !finite(value) || direction * value <= 0) break;
+      magnitude = Math.max(magnitude, direction * value);
+      if (j - i + 1 >= MACD_CROSS_MIN_BARS && magnitude >= threshold) {
+        found.push({ index, candle: i, fraction, direction, value: a + (c - a) * fraction, confirmedIndex: j });
+        break;
+      }
+    }
   }
   return found;
 }
@@ -109,8 +132,9 @@ export function macdValue(value) {
 // dessen Textknoten bei Fingerbewegungen lediglich aktualisiert werden.
 export function drawMacdPane(svg, { node, series, candles, offset, stop, x, step, left, width, layout, now = Date.now() }) {
   if (!layout.height) return null;
-  const span = macdScale(series, offset, stop);
-  const y = v => layout.plotTop + (span - v) / (2 * span) * (layout.plotBottom - layout.plotTop), zero = y(0);
+  // GEÄNDERT 3.77.2: bei jedem Zeichnen aus dem aktuellen Ausschnitt berechnen.
+  const scale = macdScale(series, offset, stop), span = scale.max - scale.min;
+  const y = v => layout.plotTop + (scale.max - v) / span * (layout.plotBottom - layout.plotTop), zero = y(0);
   const frame = node('g', { class: 'macd-frame' });
   frame.append(node('line', { x1: left, x2: left + width, y1: layout.top, y2: layout.top, class: 'macd-separator' }), node('line', { x1: left, x2: left + width, y1: layout.volumeTop - 4, y2: layout.volumeTop - 4, class: 'macd-separator macd-volume-separator' }));
   const readout = node('g', { class: 'macd-readout', 'data-selected': 'false' }), tip = node('title', {}, 'MACD 12/26/9');
@@ -126,7 +150,7 @@ export function drawMacdPane(svg, { node, series, candles, offset, stop, x, step
   svg.append(frame);
   const defs = svg.querySelector('defs'), clip = node('clipPath', { id: 'macd-clip' });
   clip.append(node('rect', { x: left, y: layout.plotTop, width, height: Math.max(0, layout.plotBottom - layout.plotTop) })); defs.append(clip);
-  const group = node('g', { class: 'macd-series', 'clip-path': 'url(#macd-clip)', 'data-span': span });
+  const group = node('g', { class: 'macd-series', 'clip-path': 'url(#macd-clip)', 'data-span': span, 'data-min': scale.min, 'data-max': scale.max });
   const histogram = i => finite(series.line[i]) && finite(series.signal[i]) ? series.line[i] - series.signal[i] : null;
   for (let i = offset; i < stop; i++) {
     const v = histogram(i); if (!finite(v)) continue;
@@ -138,10 +162,10 @@ export function drawMacdPane(svg, { node, series, candles, offset, stop, x, step
     for (let i = offset; i < stop; i++) { const v = arr[i]; if (finite(v)) { d += `${pen ? 'L' : 'M'}${x(i - offset).toFixed(2)} ${y(v).toFixed(2)}`; pen = true; } else pen = false; }
     group.append(node('path', { d, class: cls, 'vector-effect': 'non-scaling-stroke' }));
   }
-  for (const hit of macdCrossings(series, offset, stop)) {
-    const confirmed = candles?.[hit.candle]?.closeTime < now;
-    const dot = node('circle', { cx: x(hit.index - offset), cy: y(hit.value), r: 3.3, class: 'macd-cross ' + (hit.direction > 0 ? 'bull' : 'bear') + (confirmed ? '' : ' provisional'), 'data-candle': hit.candle, 'data-fraction': hit.fraction, 'data-confirmed': String(confirmed), 'vector-effect': 'non-scaling-stroke' });
-    dot.append(node('title', {}, `${hit.direction > 0 ? 'Bullishe' : 'Bearishe'} MACD-Kreuzung${confirmed ? ' · geschlossene Kerze' : ' · vorläufig, laufende Kerze'}`)); group.append(dot);
+  // GEÄNDERT 3.77.2: kleinere Punkte, ausschließlich nach Filterbestätigung.
+  for (const hit of macdCrossings(series, offset, stop, { candles, now })) {
+    const dot = node('circle', { cx: x(hit.index - offset), cy: y(hit.value), r: MACD_CROSS_RADIUS, class: 'macd-cross ' + (hit.direction > 0 ? 'bull' : 'bear'), 'data-candle': hit.candle, 'data-fraction': hit.fraction, 'data-confirmed': 'true', 'data-confirmed-index': hit.confirmedIndex, 'vector-effect': 'non-scaling-stroke' });
+    dot.append(node('title', {}, `${hit.direction > 0 ? 'Bullishe' : 'Bearishe'} MACD-Kreuzung · Richtung mindestens ${MACD_CROSS_MIN_BARS} Schlusskerzen bestätigt · Abstand mindestens ${MACD_CROSS_MIN_FRACTION * 100} % des sichtbaren Histogramm-Maximums`)); group.append(dot);
   }
   svg.append(group);
   let previousIndex = -1, previousSelected = null;
@@ -177,7 +201,7 @@ export function createMacdHelp({ document, button, read }) {
   const dialog = el('dialog', 'sheet macd-help'), head = el('div', 'sheet-head'), title = el('h2', '', 'MACD verstehen'), close = el('button', 'button ghost icon', '×'), body = el('div', 'sheet-body macd-help-body');
   dialog.id = 'macd-help'; title.id = 'macd-help-title'; dialog.setAttribute('aria-labelledby', title.id); close.type = 'button'; close.setAttribute('aria-label', 'MACD-Erklärung schließen'); head.append(title, close); dialog.append(head, body); document.body.append(dialog);
   const context = el('p', 'macd-context'), status = el('p', 'macd-status'), values = el('p', 'macd-values');
-  body.append(context, el('p', '', 'Die blaue MACD-Linie ist EMA 12 minus EMA 26. Die orange Signallinie ist ihr EMA über 9 Kerzen. Grau gestrichelt: null. Die Balken zeigen MACD minus Signallinie: hellgrün positiv steigend, dunkelgrün positiv fallend, hellrot negativ fallend und dunkelrot negativ steigend. Bei unveränderten Werten bleibt der Balken dunkel. Ausgefüllte grüne/rote Punkte markieren Kreuzungen auf geschlossenen Kerzen; hohle Punkte sind vorläufig. Im MACD ziehen: Fadenkreuz und Werte verschieben. Doppeltippen: MACD vorübergehend vergrößern oder zurückstellen.'), status, values);
+  body.append(context, el('p', '', 'Die blaue MACD-Linie ist EMA 12 minus EMA 26. Die orange Signallinie ist ihr EMA über 9 Kerzen. Grau gestrichelt: null. Die Balken zeigen MACD minus Signallinie: hellgrün positiv steigend, dunkelgrün positiv fallend, hellrot negativ fallend und dunkelrot negativ steigend. Bei unveränderten Werten bleibt der Balken dunkel. Grüne/rote Kreuzungspunkte erscheinen erst nach bestätigter Richtung und ausreichendem Histogramm-Abstand. Die Mindestdauer und Schwelle sind im Code einstellbar. Im MACD ziehen: Fadenkreuz und Werte verschieben. Doppeltippen: MACD vorübergehend vergrößern oder zurückstellen.'), status, values);
   const cards = [];
   for (const [key, name, bull, bear] of STRATEGIES) {
     const fold = el('details', 'macd-strategy'), summary = el('summary'), heading = el('strong', '', name), state = el('span', 'macd-strategy-state'), grid = el('div', 'macd-directions'); summary.append(heading, state); fold.dataset.strategy = key; fold.append(summary, grid);
