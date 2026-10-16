@@ -474,8 +474,8 @@
     },
     {
       "path": "shared/projection-inspector.mjs",
-      "sha256": "39b21e590d28a63b3638519de1cde46ba202c1043ef915422a25cd030994ee7e",
-      "bytes": 9388
+      "sha256": "b57251d82d62994d72b86188c10321b86d66640ed5bc1adce5024086a6a3bc05",
+      "bytes": 9891
     },
     {
       "path": "shared/rsi-momentum.mjs",

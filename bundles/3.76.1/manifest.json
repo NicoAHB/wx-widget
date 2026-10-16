@@ -441,8 +441,8 @@
     },
     {
       "path": "./bundles/3.76.1/shared/projection-inspector.mjs",
-      "sha256": "39b21e590d28a63b3638519de1cde46ba202c1043ef915422a25cd030994ee7e",
-      "bytes": 9388,
+      "sha256": "b57251d82d62994d72b86188c10321b86d66640ed5bc1adce5024086a6a3bc05",
+      "bytes": 9891,
       "alias": "./shared/projection-inspector.mjs"
     },
     {
@@ -519,8 +519,8 @@
     },
     {
       "path": "./weather-widget-v2.html",
-      "sha256": "f105abfe4e576fe68551717565f7ee861ca313f8dedc15b5944415ace092b498",
-      "bytes": 1719351
+      "sha256": "cfea690d336acf72bd40e711e5088649371d329416df6eb7c517345c79c51398",
+      "bytes": 1719380
     },
     {
       "path": "./manifest.webmanifest",

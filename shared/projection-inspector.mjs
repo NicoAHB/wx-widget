@@ -56,17 +56,21 @@ export function placeProjectionLabel(point, size, bounds, obstacles = []) {
   }
   return candidates.sort((a,b)=>a.score-b.score)[0].box;
 }
-export function createProjectionInspector(host) {
+export function createProjectionInspector(host,{rotated=()=>false}={}) {
   const document=host.ownerDocument,win=document.defaultView;
   let rows = [], scope = '', selected = null, label = null, frame = null, obstacles = [];
   // Alle Labelkoordinaten liegen im Chart. Auch dessen vorhandene iPhone-90°-Drehung
   // und die Matrix des flüssigen Zooms werden über die echten SVG-Matrizen abgebildet.
   const transform=(m,x,y)=>({x:m.a*x+m.c*y+m.e,y:m.b*x+m.d*y+m.f});
   function space() {
-    const svg=host.querySelector(':scope > svg'),m=svg?.getScreenCTM();if(!m)return null;
+    const svg=host.querySelector(':scope > svg'),m=svg?.getCTM();if(!m)return null;
     const inverse=m.inverse(),sx=host.clientWidth/svg.viewBox.baseVal.width,sy=host.clientHeight/svg.viewBox.baseVal.height;
-    const physical=(x,y)=>{const p=transform(inverse,x,y);return{x:p.x*sx,y:p.y*sy};};
-    const local=(element,x,y)=>{const p=transform(inverse.multiply(element.getScreenCTM()),x,y);return{x:p.x*sx,y:p.y*sy};};
+    // Safari berücksichtigt die CSS-Drehung des Vorfahren nicht zuverlässig in
+    // getScreenCTM. Für Bildschirm → Chart daher das echte HTML-Rechteck verwenden
+    // (die App hat getBoundingClientRect für ihre bisherigen Gesten überschrieben).
+    const actual=win.Element.prototype.getBoundingClientRect.call(host),turned=rotated();
+    const physical=(x,y)=>turned?{x:(y-actual.top)*host.clientWidth/actual.height,y:(actual.right-x)*host.clientHeight/actual.width}:{x:(x-actual.left)*host.clientWidth/actual.width,y:(y-actual.top)*host.clientHeight/actual.height};
+    const local=(element,x,y)=>{const p=transform(inverse.multiply(element.getCTM()),x,y);return{x:p.x*sx,y:p.y*sy};};
     const rect=r=>{const points=[[r.left,r.top],[r.right,r.top],[r.right,r.bottom],[r.left,r.bottom]].map(([x,y])=>physical(x,y)),xs=points.map(p=>p.x),ys=points.map(p=>p.y);return{x:Math.min(...xs),y:Math.min(...ys),width:Math.max(...xs)-Math.min(...xs),height:Math.max(...ys)-Math.min(...ys)};};
     return{svg,sx,sy,physical,local,rect};
   }

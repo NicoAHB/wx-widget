@@ -3881,7 +3881,7 @@ function renderMarket() {
 }
 // ---------- Chart-Ausschnitt: Zoom und Blättern ----------
 let lastChart = null, chartGeom = null, drawQueued = false, drawReq = 0, drawDone = 0;
-const projectionInspector = createProjectionInspector($('chart'));
+const projectionInspector = createProjectionInspector($('chart'),{rotated:()=>chartRotated()});
 // 3.71.0: Geste läuft (Zoomen/Blättern) – chartLite: vereinfacht zeichnen (ohne Etiketten-Entzerrung und Nebenleisten), chartLive: Zustand der Geste
 let chartLite = false; var chartLive = { on: false, afterDraw() {}, stats: { draw: 0, lite: 0 } }; window.__chartLive = chartLive;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
