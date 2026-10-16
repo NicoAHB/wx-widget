@@ -1,5 +1,5 @@
 // 3.72.0: Schalter und gepaarter Modellvergleich im vorhandenen Einstellungsbereich.
-import { WATCH_COMPARE_KEY, WATCH_MODELS, WATCH_COMPARE_DEFAULTS, WATCH_BASE_MS, WATCH_TREND_MS, WATCH_HISTORY, watchCompareSettings, summarizeWatchComparison, summarizeWatchDiagnostics } from './watch-model-core.mjs';
+import { WATCH_COMPARE_KEY, WATCH_MODELS, WATCH_CALCULATION_REVISION, WATCH_COMPARE_DEFAULTS, WATCH_BASE_MS, WATCH_TREND_MS, WATCH_HISTORY, watchCompareSettings, summarizeWatchComparison, summarizeWatchDiagnostics } from './watch-model-core.mjs';
 const element = (tag, cls = '', text = '') => { const e = globalThis.document.createElement(tag); e.className = cls; e.textContent = text; return e; };
 const num = (v, digits = 2) => Number.isFinite(v) ? v.toLocaleString('de-DE', { minimumFractionDigits: digits, maximumFractionDigits: digits }) : '–';
 const date = value => new Intl.DateTimeFormat('de-DE', { dateStyle: 'short', timeStyle: 'short' }).format(value);
@@ -64,8 +64,8 @@ export function createWatchModelView({ host, read, save, getMode, setMode, symbo
     results.replaceChildren(); const r = state.report; download.hidden = !r;
     if (!r) return;
     const stats = summarizeWatchComparison(r.coins);
-    const legacy = r.models.strict !== WATCH_MODELS.strict || r.models.classic !== WATCH_MODELS.classic;
-    results.append(element('p', 'wm-report-version-note', legacy ? `Gespeicherter Vergleich: ${classicName(r.models.classic)} gegen ${modelName(r.models.strict)}. Für die aktuellen Modelle bitte einen neuen Vergleich starten; dieses Ergebnis bleibt den damaligen Regeln zugeordnet.` : 'Dieser Vergleich verwendet Standard + RSI-Momentum v2 und Trend-Pullback 5/5 v2.'));
+    const legacy = r.models.strict !== WATCH_MODELS.strict || r.models.classic !== WATCH_MODELS.classic || r.calculationRevision !== WATCH_CALCULATION_REVISION;
+    results.append(element('p', 'wm-report-version-note', legacy ? `Gespeicherter Vergleich: ${classicName(r.models.classic)} gegen ${modelName(r.models.strict)}. Für den aktuellen Berechnungsstand mit MACD-Rundungskorrektur bitte einen neuen Vergleich starten; dieses Ergebnis bleibt unverändert.` : 'Standard + RSI-Momentum v2 und Trend-Pullback 5/5 v2 · MACD-Rundungskorrektur aktiv.'));
     results.append(element('p', 'wm-report-meta', `${date(r.from)} – ${date(r.asOf)} · ${r.coins.length}/${r.symbols.length} Coins · Binance Spot · 15m/4h`));
     results.append(element('p', 'muted', `Annahmen dieses Laufs: ${num(r.settings.feePct)} % Gebühr + ${num(r.settings.slippagePct)} % Slippage je Seite · Stop ${num(r.settings.stopAtr, 1)} ATR · Ziel ${num(r.settings.rewardRisk, 1)} × Stopabstand · höchstens ${r.settings.holdBars} Kerzen. Einstellungen oben ändern ein gespeichertes Ergebnis nicht.`));
     const cards = element('div', 'wm-cards');
@@ -134,7 +134,7 @@ export function createWatchModelView({ host, read, save, getMode, setMode, symbo
         } catch (e) { if (mine !== runId || signal.aborted) return; failed.push({ symbol, reason: e.message }); }
       }
       if (!coins.length) throw new Error('Kein vollständiger Vergleich möglich. ' + failed.map(x => x.symbol + ': ' + x.reason).join(' · '));
-      const report = { protocol: 'watch-compare-1', models: WATCH_MODELS, createdAt: now(), asOf, from, settings: config, symbols: selected, coins, failed };
+      const report = { protocol: 'watch-compare-1', models: WATCH_MODELS, calculationRevision: WATCH_CALCULATION_REVISION, createdAt: now(), asOf, from, settings: config, symbols: selected, coins, failed };
       const value = { settings: config, report };
       if (JSON.stringify(value).length > 2e6) throw new Error('Ergebnis zu groß zum Speichern – kürzeren Zeitraum oder weniger Coins wählen.');
       if (mine !== runId || signal.aborted) return;
