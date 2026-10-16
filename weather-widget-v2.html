@@ -2399,6 +2399,7 @@ html[data-chartfull] .chart-pattern-row{padding:0;order:1;flex-wrap:nowrap}html[
 .wm-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.wm-result-card{padding:12px;border:1px solid var(--border);border-radius:12px;min-width:0;background:var(--surface)}
 .wm-result-card h4{margin:0 0 10px}.wm-result-card dl{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;font-size:.8125rem}.wm-result-card dt,.wm-result-card dd{margin:0;overflow-wrap:anywhere}.wm-result-card dd{font-variant-numeric:tabular-nums;text-align:right;font-weight:650;max-width:12em}
 .wm-report-version-note{font-weight:600}.wm-diagnostics{margin-top:14px}.wm-diagnostics>summary{min-height:44px;cursor:pointer;line-height:1.4}.wm-diagnostics table{width:100%;table-layout:fixed;border-collapse:collapse;font-size:.75rem}.wm-diagnostics th,.wm-diagnostics td{padding:8px 4px;border-bottom:1px solid var(--border);overflow-wrap:anywhere;text-align:right;font-variant-numeric:tabular-nums}.wm-diagnostics th:first-child{text-align:left;width:44%}.wm-diagnostics td>span,.wm-diagnostics td>small{display:block}.wm-diagnostics td>small{color:var(--muted)}
+html[data-chartfull] #chart-signal-model{display:none}
 .wm-model-note{margin:0 0 8px;font-size:.75rem;color:var(--muted)}.wm-detail{font-size:.8125rem;line-height:1.5}
 /* Signalgründe: feste Knoten, vorhandene Modellprüfung, keine zusätzlichen Datenabrufe. */
 .signal-reasons{--wsr-tone:var(--up-text);padding-top:8px;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
@@ -2492,48 +2493,49 @@ html[data-panel-style=glass] #chart-sec{background:var(--surface);-webkit-backdr
 .macd-help .sheet-head button{min-width:44px;min-height:44px}.macd-help-body{gap:12px}.macd-help-body p{margin:0;overflow-wrap:anywhere}.macd-context,.macd-values{font-variant-numeric:tabular-nums}.macd-values{padding:10px;border:1px solid var(--border);border-radius:9px;background:var(--surface-2)}.macd-strategy{border:1px solid var(--border);border-radius:12px;overflow:hidden}.macd-strategy>summary{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;min-height:56px;padding:10px 12px;cursor:pointer;list-style:none}.macd-strategy>summary::-webkit-details-marker{display:none}.macd-strategy>summary::before{content:'›';font-size:22px}.macd-strategy[open]>summary::before{transform:rotate(90deg)}.macd-strategy>summary strong{flex:1 1 220px;font-size:14px}.macd-strategy-state{font-size:12px;color:var(--muted)}.macd-directions{display:grid;gap:10px;padding:0 10px 10px}.macd-direction{min-width:0;padding:12px;border:1px solid var(--border);border-radius:9px;background:var(--surface-2)}.macd-direction h3{font-size:14px;margin:0 0 6px}.macd-direction .macd-found{font-size:12px;color:var(--muted);margin-top:8px}.macd-direction[data-direction="1"].is-active{border-color:var(--up-text);background:var(--up-bg);box-shadow:inset 0 0 16px var(--up-border),0 0 8px var(--up-border)}.macd-direction[data-direction="-1"].is-active{border-color:var(--down-text);background:var(--down-bg);box-shadow:inset 0 0 16px var(--down-border),0 0 8px var(--down-border)}.macd-direction[data-direction="1"].is-active h3,.macd-direction[data-direction="1"].is-active .macd-found,.macd-strategy[data-tone=bull] .macd-strategy-state{color:var(--up-text)}.macd-direction[data-direction="-1"].is-active h3,.macd-direction[data-direction="-1"].is-active .macd-found,.macd-strategy[data-tone=bear] .macd-strategy-state{color:var(--down-text)}.macd-help-body .macd-method,.macd-help-body .macd-caution{font-size:12px}.macd-caution{padding:10px 0 0;border-top:1px solid var(--border)}
 </style>
   <script type="module">
-import { MARKET_INTERVALS, CHART_INTERVALS, SIGNAL_INTERVALS, INTERVAL_MS, nearestChartInterval } from './bundles/3.77.5/shared/market-intervals.mjs';
-import { createDetailCandles, detailOptions, detailChoice, closedSeries, timeIndex, DETAIL_VISIBLE_MAX } from './bundles/3.77.5/shared/chart-detail.mjs';
-import { patternChipRows, patternChipKey } from './bundles/3.77.5/shared/chart-pattern-chips.mjs';
-import { PATTERN_QUALITY_CONFIG, chartPatternQuality, repricePatternQuality, sortPatternQuality, patternOverview } from './bundles/3.77.5/shared/chart-pattern-quality.mjs';
-import { createPatternOverviewFeed } from './bundles/3.77.5/shared/chart-pattern-overview-feed.mjs';
+import { MARKET_INTERVALS, CHART_INTERVALS, SIGNAL_INTERVALS, INTERVAL_MS, nearestChartInterval } from './bundles/3.77.6/shared/market-intervals.mjs';
+import { createDetailCandles, detailOptions, detailChoice, closedSeries, timeIndex, DETAIL_VISIBLE_MAX } from './bundles/3.77.6/shared/chart-detail.mjs';
+import { patternChipRows, patternChipKey } from './bundles/3.77.6/shared/chart-pattern-chips.mjs';
+import { PATTERN_QUALITY_CONFIG, chartPatternQuality, repricePatternQuality, sortPatternQuality, patternOverview } from './bundles/3.77.6/shared/chart-pattern-quality.mjs';
+import { createPatternOverviewFeed } from './bundles/3.77.6/shared/chart-pattern-overview-feed.mjs';
 // Arbeitsstand: bei der gemeinsamen Release-Freigabe in das neue Versionsbündel übernehmen.
-import { createPositioningFeed } from './bundles/3.77.5/shared/positioning-score.mjs';
-import { CRYPTO_CALENDAR, parseCryptoCalendar, cryptoCalendarEvents } from './bundles/3.77.5/shared/crypto-calendar.mjs';
-import { createMusterClient } from './bundles/3.77.5/shared/muster-bot-feed.mjs';
-import { createMusterPaper } from './bundles/3.77.5/shared/muster-bot-paper.mjs';
-import { readMusterPaper, writeMusterPaper } from './bundles/3.77.5/shared/muster-bot-store.mjs';
-import { projectPatternLines, projectionSettings, projectionTime } from './bundles/3.77.5/shared/pattern-projection.mjs';
-import { MACD_CHART, macdFindings, macdPaneLayout, drawMacdPane, createMacdHelp } from './bundles/3.77.5/shared/macd-chart.mjs';
-import { MACD_NOTICE } from './bundles/3.77.5/shared/macd-notice.mjs';
+import { createPositioningFeed } from './bundles/3.77.6/shared/positioning-score.mjs';
+import { CRYPTO_CALENDAR, parseCryptoCalendar, cryptoCalendarEvents } from './bundles/3.77.6/shared/crypto-calendar.mjs';
+import { createMusterClient } from './bundles/3.77.6/shared/muster-bot-feed.mjs';
+import { createMusterPaper } from './bundles/3.77.6/shared/muster-bot-paper.mjs';
+import { readMusterPaper, writeMusterPaper } from './bundles/3.77.6/shared/muster-bot-store.mjs';
+import { projectPatternLines, projectionSettings, projectionTime } from './bundles/3.77.6/shared/pattern-projection.mjs';
+import { MACD_CHART, macdFindings, macdPaneLayout, drawMacdPane, createMacdHelp } from './bundles/3.77.6/shared/macd-chart.mjs';
+import { MACD_NOTICE } from './bundles/3.77.6/shared/macd-notice.mjs';
 // NEU 3.77.3: Zeitachse mit Datum und kollisionsfreien Beschriftungen.
-import { chartTimeTicks } from './bundles/3.77.5/shared/chart-time-axis.mjs';
-import { createProjectionInspector, projectionPrice, projectionIndexTime, projectionTimeIndex } from './bundles/3.77.5/shared/projection-inspector.mjs';
-import { createGithubSyncView } from './bundles/3.77.5/shared/github-sync-view.mjs';
-import { createDocViewer } from './bundles/3.77.5/shared/doc-viewer.mjs';
-import { PATTERN_FILTER_PRESET_NAMES, PATTERN_FILTER_FIELDS, PATTERN_CARD_FIELDS, HIGHER_TIMEFRAME, patternFilterSettings, patternFilterFromForm, evaluatePatternSignal, selectPatternSignals, patternJournalEntry, addPatternJournal, resolvePatternJournal, patternHitStats, patternJournalStats, PATTERN_OUTCOME_NAMES, backtestPatternFilter } from './bundles/3.77.5/shared/pattern-quality.mjs';
-import { stripSyncSecrets } from './bundles/3.77.5/shared/github-sync.mjs';
-import { createMusterView } from './bundles/3.77.5/shared/muster-bot-view.mjs';
-import { computeKiZones, KI_ZONE_INTERVALS } from './bundles/3.77.5/shared/ki-zones.mjs';
-import { heikinAshi } from './bundles/3.77.5/shared/heikin-ashi.mjs';
-import { detectFvgs, fvgSummary } from './bundles/3.77.5/shared/fvg.mjs';
-import { scoreZoneStrength, ZONE_STRENGTH, ZONE_SIGNAL, zoneSignal, zoneStep, zoneOutcome, summarizeZoneBacktest } from './bundles/3.77.5/shared/zone-strength.mjs';
+import { chartTimeTicks } from './bundles/3.77.6/shared/chart-time-axis.mjs';
+import { createProjectionInspector, projectionPrice, projectionIndexTime, projectionTimeIndex } from './bundles/3.77.6/shared/projection-inspector.mjs';
+import { createGithubSyncView } from './bundles/3.77.6/shared/github-sync-view.mjs';
+import { createDocViewer } from './bundles/3.77.6/shared/doc-viewer.mjs';
+import { PATTERN_FILTER_PRESET_NAMES, PATTERN_FILTER_FIELDS, PATTERN_CARD_FIELDS, HIGHER_TIMEFRAME, patternFilterSettings, patternFilterFromForm, evaluatePatternSignal, selectPatternSignals, patternJournalEntry, addPatternJournal, resolvePatternJournal, patternHitStats, patternJournalStats, PATTERN_OUTCOME_NAMES, backtestPatternFilter } from './bundles/3.77.6/shared/pattern-quality.mjs';
+import { stripSyncSecrets } from './bundles/3.77.6/shared/github-sync.mjs';
+import { createMusterView } from './bundles/3.77.6/shared/muster-bot-view.mjs';
+import { computeKiZones, KI_ZONE_INTERVALS } from './bundles/3.77.6/shared/ki-zones.mjs';
+import { heikinAshi } from './bundles/3.77.6/shared/heikin-ashi.mjs';
+import { detectFvgs, fvgSummary } from './bundles/3.77.6/shared/fvg.mjs';
+import { scoreZoneStrength, ZONE_STRENGTH, ZONE_SIGNAL, zoneSignal, zoneStep, zoneOutcome, summarizeZoneBacktest } from './bundles/3.77.6/shared/zone-strength.mjs';
 // 3.68.0: KI-Signale/Trading-Bot entfernt; der GitHub-Sync behält sein Format inklusive vorhandener Modelloriginale.
-import { exportModelArchive, importModelArchive, validateModelArchive, restoreModelOriginals } from './bundles/3.77.5/shared/model-archive.mjs';
-import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT, patternGrade } from './bundles/3.77.5/shared/telegram-format.mjs';
-import { patternSignalCard, patternChartData } from './bundles/3.77.5/shared/pattern-signal-card.mjs';   // 3.71.0: Chartmuster-Signalkarte
-import { pnlAlarmCard } from './bundles/3.77.5/shared/pnl-alarm-card.mjs';   // 3.71.0: Gewinn-/Verlust-Alarm als Bild
-import { priceAlarmCard } from './bundles/3.77.5/shared/price-alarm-card.mjs';   // 3.71.0: Kurs-Alarm als Bild
-import { createOrderflowView } from './bundles/3.77.5/shared/orderflow-view.mjs';
-import { createMarketRadarView } from './bundles/3.77.5/shared/market-radar-view.mjs';
-import { createPanelAppearanceSettings } from './bundles/3.77.5/shared/panel-appearance.mjs';
-import { createSignalView } from './bundles/3.77.5/shared/orderflow-signal-view.mjs';
-import { WATCH_MODEL_KEY, WATCH_COMPARE_KEY } from './bundles/3.77.5/shared/watch-model-core.mjs';
-import { rsiSignal } from './bundles/3.77.5/shared/rsi-momentum.mjs';
-import { createWatchModelFeed } from './bundles/3.77.5/shared/watch-model-feed.mjs';
-import { createSignalReasonsView } from './bundles/3.77.5/shared/watch-signal-reasons.mjs';
-import { createWatchModelView } from './bundles/3.77.5/shared/watch-model-view.mjs';
-import { networkState, createWidgetBoundary } from './bundles/3.77.5/shared/widget-state.mjs';
+import { exportModelArchive, importModelArchive, validateModelArchive, restoreModelOriginals } from './bundles/3.77.6/shared/model-archive.mjs';
+import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT, patternGrade } from './bundles/3.77.6/shared/telegram-format.mjs';
+import { patternSignalCard, patternChartData } from './bundles/3.77.6/shared/pattern-signal-card.mjs';   // 3.71.0: Chartmuster-Signalkarte
+import { pnlAlarmCard } from './bundles/3.77.6/shared/pnl-alarm-card.mjs';   // 3.71.0: Gewinn-/Verlust-Alarm als Bild
+import { priceAlarmCard } from './bundles/3.77.6/shared/price-alarm-card.mjs';   // 3.71.0: Kurs-Alarm als Bild
+import { createOrderflowView } from './bundles/3.77.6/shared/orderflow-view.mjs';
+import { createMarketRadarView } from './bundles/3.77.6/shared/market-radar-view.mjs';
+import { createPanelAppearanceSettings } from './bundles/3.77.6/shared/panel-appearance.mjs';
+import { createSignalView } from './bundles/3.77.6/shared/orderflow-signal-view.mjs';
+import { neutralMacdSignal } from './bundles/3.77.6/shared/indicators.mjs';
+import { WATCH_MODEL_KEY, WATCH_COMPARE_KEY } from './bundles/3.77.6/shared/watch-model-core.mjs';
+import { rsiSignal } from './bundles/3.77.6/shared/rsi-momentum.mjs';
+import { createWatchModelFeed } from './bundles/3.77.6/shared/watch-model-feed.mjs';
+import { createSignalReasonsView } from './bundles/3.77.6/shared/watch-signal-reasons.mjs';
+import { createWatchModelView } from './bundles/3.77.6/shared/watch-model-view.mjs';
+import { networkState, createWidgetBoundary } from './bundles/3.77.6/shared/widget-state.mjs';
 // Pure, unrounded calculations. Prices are USDT per unit; FX is USDT per EUR.
 function rsi(closes, period = 14) {
   const out = Array(closes.length).fill(null);
@@ -2609,7 +2611,7 @@ function macd(values, fast = 12, slow = 26, signalPeriod = 9) {
   const line = values.map((_, i) => f[i] === null || s[i] === null ? null : f[i] - s[i]);
   const start = line.findIndex(v => v !== null), signal = Array(values.length).fill(null);
   if (start >= 0) ema(line.slice(start), signalPeriod).forEach((v, j) => { signal[start + j] = v; });
-  return { line, signal };
+  return { line, signal: neutralMacdSignal(line, signal, values) };
 }
 // Regelbasierte Bewertung auf abgeschlossenen Kerzen: vier Regeln je +1/0/−1.
 function signalRating(closed) {
@@ -3389,7 +3391,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
 // 3.43.0 (G10a): reiner Fachkern in shared/; Datenquelle und Karten folgen getrennt.
 // 3.44.0 (G10b): öffentlicher Adapter in shared/bitget-public.mjs; sichtbare Anbindung folgt mit G10(c).
-const APP_VERSION = '3.77.5', docEl = document.documentElement;
+const APP_VERSION = '3.77.6', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -4410,7 +4412,7 @@ function renderZones() {
   }
   put('trend-foot', 'Startparameter, nicht optimiert · kein Renditeversprechen · verhindert keine Buchungen oder Alarme');
 }
-const VERDICT = { buy: 'Kaufsignal', sell: 'Verkaufssignal', hold: 'Halten' };
+const VERDICT = { buy: 'Long-Tendenz', sell: 'Short-Tendenz', hold: 'Abwarten' };
 function verdictNode(rating, stale) {
   const el = document.createElement('strong');
   el.className = 'verdict' + (rating ? ' ' + rating.verdict : '') + (stale ? ' stale' : '');
@@ -4491,7 +4493,7 @@ function heatNodes({ all, overall, anyStale }, tr) {
   go.setAttribute('aria-label', `${overall ? `Gesamt ${VERDICT[overall.verdict]}, Score ${scoreText(overall.net)}` : 'Gesamturteil'} – zur Signal-Übersicht`);
   return [...cells, go];
 }
-const VERDICT_SHORT = { buy: 'Kauf', sell: 'Verkauf', hold: 'Halten' };
+const VERDICT_SHORT = { buy: 'Long', sell: 'Short', hold: 'Warten' };
 const heatLabel = ({ all, overall }, tr) => `Signale: ${all.map(x => `${x.iv} ${x.rating ? `${VERDICT[x.rating.verdict]} ${scoreText(x.rating.score)}` : 'ohne Bewertung'}`).join(', ')}${overall ? `. Gesamt ${VERDICT[overall.verdict]}, Score ${scoreText(overall.net)}${tr?.dir ? `, vor ${TREND_REF} Minuten ${scoreText(tr.ref)}` : ''}` : ''}. Zeitraum antippen wechselt das Chart-Intervall.`;
 // Zeitraum in der Live-Leiste oder unter dem Kurs antippen: dieselbe Logik wie die Intervall-Leiste über dem Chart
 document.addEventListener('click', e => { const b = e.target.closest('.heat [data-iv]'); if (b) void setMarket(state.symbol, b.dataset.iv); });
@@ -4500,6 +4502,7 @@ document.addEventListener('click', e => { const b = e.target.closest('.heat [dat
 let sigKey = '';
 function renderSignals() {
   const st = signalState(), rows = $('signal-rows'), now = Date.now();
+  if ($('chart-signal-model')) put('chart-signal-model', `Chart-Tendenzen: Standard · Kerzen ${state.interval}. Vorauswahl: ${wmStrict()?'Trend-Pullback 5/5 · 15m/4h':'Standard · '+wlSpan().label}. Modellschalter gilt nur für die Vorauswahl; eine Tendenz ist keine Einstiegsfreigabe.`);
   const key = state.interval + '|' + Math.floor(now / 60000) + '|' + state.paused + '|' + st.all.map(x => `${x.iv}:${x.rating ? x.rating.verdict + x.rating.score + x.rating.closeTime + x.rating.rules.map(r => r.label + r.score).join() : '-'}:${x.stale}:${x.error || ''}:${x.loading ? 1 : 0}`).join('|');
   if (key === sigKey) return; sigKey = key;
   const tr = signalTrend(now), waiting = !state.paused && st.all.some(x => !x.rating && x.loading && !x.error);
@@ -4525,10 +4528,10 @@ function renderSignals() {
   const { overall, anyStale } = st, pend = !overall && waiting;
   const ov = $('overall-verdict'); ov.className = 'verdict' + (overall ? ' ' + overall.verdict : '') + (anyStale ? ' stale' : '') + (pend ? ' skel' : ''); ov.textContent = overall ? VERDICT[overall.verdict] : '—';
   const sc = $('overall-score'); sc.classList.toggle('skel', pend);
-  if (overall) { sc.replaceChildren(document.createTextNode(scoreText(overall.net))); if (tr.dir) sc.append(trendNode(tr)); sc.title = `Gesamtscore: ${overall.buy} Kauf- minus ${overall.sell} Verkaufssignale${tr.dir ? ` · vor ${TREND_REF} Min.: ${scoreText(tr.ref)}` : ''}`; }
+  if (overall) { sc.replaceChildren(document.createTextNode(scoreText(overall.net))); if (tr.dir) sc.append(trendNode(tr)); sc.title = `Gesamtscore: ${overall.buy} Long- minus ${overall.sell} Short-Tendenzen${tr.dir ? ` · vor ${TREND_REF} Min.: ${scoreText(tr.ref)}` : ''}`; }
   else { sc.textContent = pend ? '—' : ''; sc.title = ''; }
   renderSpark(tr);
-  put('overall-detail', overall ? `${overall.buy} Kauf · ${overall.hold} Halten · ${overall.sell} Verkauf${anyStale ? ' · teils veraltet' : ''}` : pend ? 'Wartet auf Kerzendaten.' : 'Mindestens 4 bewertete Zeiträume nötig.');
+  put('overall-detail', overall ? `${overall.buy} Long · ${overall.hold} Neutral · ${overall.sell} Short${anyStale ? ' · teils veraltet' : ''}` : pend ? 'Wartet auf Kerzendaten.' : 'Mindestens 4 bewertete Zeiträume nötig.');
   $('overall-detail').classList.toggle('skel', pend);
   const line = $('signal-line'), any = st.all.some(x => x.rating);
   line.hidden = !any;
@@ -4597,7 +4600,7 @@ function renderWatchlist() {
   if (!periodKeys.includes(spanKey)) periodKeys.splice(spanKey === '30m' ? 2 : 3, 0, spanKey);
   for (const k of periodKeys) { const b = btn('', k); b.dataset.wlperiod = k; b.setAttribute('aria-label', wlSpans()[k].name); periods.append(b); }
   head.append(periods);
-  const modelNote = el('p', 'wm-model-note', `${wmStrict() ? 'Trend-Pullback 5/5 v2 · 15m / 4h · ' : ''}Coin antippen: Signalgründe öffnen / schließen.`);
+  const modelNote = el('p', 'wm-model-note', `${wmStrict() ? 'Vorauswahl: Trend-Pullback 5/5 v2 · 15m / 4h · ' : 'Vorauswahl: Standard v2 · '+wlSpan().label+' · '}Coin antippen: Signalgründe öffnen / schließen.`);
   const grid = el('div', 'wl-grid');
   for (const coin of state.watch) {
     const item = el('span', 'wl-item'), tile = btn('wl-tile'), svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -11711,7 +11714,7 @@ var wmFeed, wmView;
 function wmMode() { return store.get(WATCH_MODEL_KEY) === 'strict' ? 'strict' : 'classic'; }
 function wmStrict() { return wmMode() === 'strict'; }
 function wmRefresh() {
-  wmFeed?.sync(); wlPressClear(); wlDragEnd(false); watchKey = ''; renderWatchlist(); wmView?.paintMode(); syncStreams(); wmTick();
+  wmFeed?.sync(); wlPressClear(); wlDragEnd(false); watchKey = ''; renderWatchlist(); wmView?.paintMode(); renderSignals(); syncStreams(); wmTick();
 }
 function wmTick() { if (wmFeed) void wmFeed.tick(); }
 function wmKline(m) { wmFeed?.kline(m); }
@@ -13848,7 +13851,7 @@ function patOverviewPaint() {
   const button=$('chart-pattern-overview');if(!button)return;
   const q=patOverviewModel(),s=patOverviewFeed.state,correct=s.key.startsWith(`${state.symbol}|${chartMarket()}|`),ready=correct?q.ready:0;
   const share=correct&&q.bull!==null?`${q.bull} % bullisch · ${q.bear} % bärisch`:'Keine aktiven Richtungsmuster';
-  const caption=`Muster-Gesamtbild · 5m–1w\n${share}\n${ready}/7 Ebenen${correct&&q.conflict?' · Widersprüchlich':state.paused?' · Pausiert':s.busy?' · lädt':''}`;
+  const caption=`Muster-Gesamtbild · 5m–1w\n${share}\nScore-Anteile · ${ready}/7 Ebenen${correct&&q.conflict?' · Widersprüchlich':state.paused?' · Pausiert':s.busy?' · lädt':''}`;
   if(button.textContent!==caption)button.textContent=caption;
   button.style.whiteSpace='pre-line';button.style.setProperty('--bull-share',`${correct?q.bull??0:0}%`);button.dataset.empty=String(!correct||q.bull===null);
   button.setAttribute('aria-label',caption.replace('\n','. ')+'. Erklärung öffnen');
@@ -13895,7 +13898,7 @@ function patChipInit() {
   const row=el('div','chart-pattern-row'),host=el('div','chart-pattern-chips'),empty=el('span','chart-pattern-empty','Keine Muster erkannt');row.id='chart-pattern-row';host.id='chart-pattern-chips';host.setAttribute('role','group');empty.id='chart-pattern-empty';host.append(empty);row.append(host);document.querySelector('#chart-sec .chart-toolbar').append(row);
   const heading=document.querySelector('#chart-sec .chart-heading'),alarm=$('alarm-here');heading.after(row);row.prepend(alarm);
   queueMicrotask(()=>{const btc=$('of-btc-chart');if(btc)alarm.after(btc);});patChipBindPress(host);patChipPaint();
-  const summary=el('div','chart-pattern-summary'),card=el('div','chart-pattern-overview-card'),overview=el('button','chart-pattern-overview');overview.type='button';overview.id='chart-pattern-overview';overview.setAttribute('aria-haspopup','dialog');overview.setAttribute('aria-controls','pat-overview-info');card.append(overview);summary.append(card,el('small','','Muster-Score = Qualitätsmaß, keine Garantie für den Ausbruch.'));row.append(summary);positioningInit(card);
+  const summary=el('div','chart-pattern-summary'),card=el('div','chart-pattern-overview-card'),overview=el('button','chart-pattern-overview');overview.type='button';overview.id='chart-pattern-overview';overview.setAttribute('aria-haspopup','dialog');overview.setAttribute('aria-controls','pat-overview-info');card.append(overview);summary.append(card,el('small','','Muster-Score = Qualitätsmaß. Score-Anteile sind keine Trefferwahrscheinlichkeit.'));row.append(summary);positioningInit(card);
   const dialog=el('dialog','sheet');dialog.id='pat-overview-info';dialog.setAttribute('aria-labelledby','pat-overview-title');const head=el('div','sheet-head'),title=el('h2','','Muster-Gesamtbild'),close=el('button','button ghost icon','×'),body=el('div','sheet-body');title.id='pat-overview-title';close.type='button';close.id='pat-overview-close';close.setAttribute('aria-label','Erklärung schließen');body.id='pat-overview-body';head.append(title,close);dialog.append(head,body);document.body.append(dialog);
   close.addEventListener('click',()=>dialog.close());dialog.addEventListener('click',e=>{if(e.target===dialog){const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)dialog.close();}});overview.addEventListener('click',()=>{dialog.showModal();patOverviewPaint();});patOverviewPaint();
 }
@@ -15390,6 +15393,7 @@ function workspaceBuild() {
   // 3.68.1: „Modellannahmen & Dienst“ bei jedem Start zugeklappt; aufgeklappt zeigt es die Umrechnung/Modellannahmen direkt offen.
   const models = el('details', 'workspace-setting-card workspace-models-fold'), modelsHead = el('summary'); models.id = 'workspace-models'; modelsHead.append(el('h3', '', 'Modellannahmen & Dienst'), el('p', '', 'Gebühren, Liquidationsmodell und Meldungen getrennt von den Live-Signalen.')); models.append(modelsHead); grid.append(models); move($('model-settings'), models);
   models.addEventListener('toggle', () => { if (models.open) $('model-settings').open = true; });
+  const chartModel=el('p','wm-model-note');chartModel.id='chart-signal-model';document.querySelector('#chart-sec .chart-heading').after(chartModel);
   const watch = fold($('watchlist'), 'workspace-watch', 'Vorauswahl · ' + state.symbol.replace(/USDT$/, '/USDT')); watch.dataset.workspaceScope = 'chart ind'; watch.firstElementChild.id = 'workspace-watch-title'; move(watch, document.querySelector('.dash-top'));
   fold($('orderflow-panel'), 'workspace-orderflow', 'Orderflow · BTC-Pfeile, Kerzen & Demo');
   const tools = fold(document.querySelector('#chart-sec .chart-footer'), 'workspace-chart-tools', 'Chart-Ebenen, Whales & Werkzeuge');
@@ -15651,7 +15655,7 @@ const musterPaper = createMusterPaper({ read: readMusterPaper, write: writeMuste
   } });
 const MUSTER_TG_NAMES = { hammer: 'Hammer', engulfing: 'Bullish Engulfing', confluence: 'Konfluenz', po3: 'Power of Three' };
 musterView = createMusterView({ host: musterHost, selection: musterSelection, currentPrice: (symbol, market) => state.symbol === symbol && state.source === market ? currentPrice() : null,
-  prefs: store.get('scalpdesk.muster.settings.v1', {}), savePrefs: value => store.set('scalpdesk.muster.settings.v1', value), workerFactory: () => new Worker(new URL('./bundles/3.77.5/shared/muster-bot-worker.mjs', import.meta.url), { type: 'module' }), paper: musterPaper, onMarkers: scheduleDraw,
+  prefs: store.get('scalpdesk.muster.settings.v1', {}), savePrefs: value => store.set('scalpdesk.muster.settings.v1', value), workerFactory: () => new Worker(new URL('./bundles/3.77.6/shared/muster-bot-worker.mjs', import.meta.url), { type: 'module' }), paper: musterPaper, onMarkers: scheduleDraw,
   telegramStatus: () => tgtReady('trades') ? null : 'Hinweis: Telegram ist noch nicht eingerichtet oder das Ziel „Trades“ ist aus (Einstellungen → Telegram).' });
 void musterPaper.restore().then(() => musterPaper.poll());
 function musterDraw(svg, data, x, y, bottom) {
@@ -15690,7 +15694,7 @@ const wmSave = async (key, value) => { store.set(key, value); if (!store.ok || !
 wmView = createWatchModelView({ host: document.querySelector('#workspace-settings .workspace-settings-grid'), read: key => store.get(key), save: wmSave, getMode: wmMode,
   setMode: async mode => { const before = wmMode(); try { await wmSave(WATCH_MODEL_KEY, mode === 'strict' ? 'strict' : 'classic'); } catch (e) { store.set(WATCH_MODEL_KEY, before); throw e; } broadcastData([WATCH_MODEL_KEY]); wmRefresh(); },
   now: serverNow, symbols: () => state.watch.map(wlSym), history: createMusterClient().history, available: () => !document.hidden && !state.paused && navigator.onLine !== false,
-  workerFactory: () => new Worker(new URL('./bundles/3.77.5/shared/watch-model-worker.mjs', import.meta.url), { type: 'module' }) });
+  workerFactory: () => new Worker(new URL('./bundles/3.77.6/shared/watch-model-worker.mjs', import.meta.url), { type: 'module' }) });
 function wmAvailability() {
   wmFeed.sync();
   if ((document.hidden || state.paused || navigator.onLine === false) && wmView.state.busy) wmView.abort();

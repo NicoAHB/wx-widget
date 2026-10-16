@@ -2,6 +2,16 @@
 const finite = Number.isFinite;
 const validTime = x => Number.isSafeInteger(x) && x >= 0;
 
+// 3.77.6: Nur Gleitkomma-Rauschen neutralisieren, kein neuer Momentumfilter.
+// Relative Kursskala erhält echte kleine MACD-Abstände auch bei kleinen Coins.
+export function neutralMacdSignal(line, signal, prices) {
+  return signal.map((v, i) => {
+    if (![v, line[i], prices[i]].every(finite)) return v;
+    const tolerance = 32 * Number.EPSILON * Math.max(Math.abs(prices[i]), Math.abs(line[i]), Math.abs(v), Number.MIN_VALUE);
+    return Math.abs(line[i] - v) <= tolerance ? line[i] : v;
+  });
+}
+
 function emaState(period) { return { period, count: 0, sum: 0, value: null }; }
 function emaNext(s, value) {
   if (!finite(value)) return null; // fehlende Eingänge werden nie mit 0 aufgefüllt
@@ -21,7 +31,7 @@ export function ema(values, period) {
 export function macd(values) {
   const fast = ema(values, 12), slow = ema(values, 26);
   const line = values.map((_, i) => fast[i] === null || slow[i] === null ? null : fast[i] - slow[i]);
-  const signal = ema(line, 9);
+  const signal = neutralMacdSignal(line, ema(line, 9), values);
   return { line, signal, histogram: line.map((x, i) => x === null || signal[i] === null ? null : x - signal[i]) };
 }
 

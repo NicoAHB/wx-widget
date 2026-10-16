@@ -1,5 +1,7 @@
 // Feste Modelle für Vorauswahl und gepaarten Vergleich. Keine Orders oder Netzwerkzugriffe.
 import { rsiSignal } from './rsi-momentum.mjs';
+import { neutralMacdSignal } from './indicators.mjs';
+export const WATCH_CALCULATION_REVISION = 'macd-neutral-1';
 export const WATCH_MODELS = Object.freeze({ classic: 'watch-classic-2', strict: 'watch-strict-2' });
 // 3.73.0: vorab festes Trend-Pullback-Modell; keine Optimierung anhand von Backtest-Gewinnen.
 export const WATCH_PULLBACK = Object.freeze({ rsiBars: 8, longPullback: 45, shortPullback: 55, volumeMultiple: 1.2 });
@@ -42,7 +44,7 @@ function macd(values, fast = 12, slow = 26, signalPeriod = 9) {
   const line = values.map((_, i) => f[i] === null || s[i] === null ? null : f[i] - s[i]);
   const start = line.findIndex(v => v !== null), signal = Array(values.length).fill(null);
   if (start >= 0) ema(line.slice(start), signalPeriod).forEach((v, j) => { signal[start + j] = v; });
-  return { line, signal };
+  return { line, signal: neutralMacdSignal(line, signal, values) };
 }
 // Regelbasierte Bewertung auf abgeschlossenen Kerzen: vier Regeln je +1/0/−1.
 export function watchClassicRating(closed) {
