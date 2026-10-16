@@ -1,6 +1,9 @@
 // 3.64.0: reine Auswahl-/Statushilfe auf den unveränderten pat-1-Treffern.
+import { confirmedPatternLifecycle } from './pattern-lifecycle.mjs';
 export const patternChipKey = hit => `${hit.id}|${hit.t0}`;
 export function patternChipState(hit, candles, now = Date.now(), maxAge = 10) {
+  const confirmed = confirmedPatternLifecycle(hit, candles, { now, maxAge });
+  if (confirmed) return confirmed;
   const index = new Map(candles.map((c, i) => [c.time, i])), end = index.get(hit.t1);
   const age = end === undefined ? candles.filter(c => c.time > hit.t1).length : candles.length - 1 - end;
   if (age > maxAge) return { status: 'abgelaufen', disabled: true, age };

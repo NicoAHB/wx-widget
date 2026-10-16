@@ -1,6 +1,6 @@
 {
   "version": "2.15.1",
-  "appVersion": "3.77.4",
+  "appVersion": "3.77.5",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
@@ -154,8 +154,8 @@
     },
     {
       "path": "shared/chart-pattern-chips.mjs",
-      "sha256": "c69b83e5028207ebc4b4e528179bcbe4d6bb28ea3e8e052331b56dd81624f7e9",
-      "bytes": 2147
+      "sha256": "83f1d8d860a97c8b2a7633375a15e5b104dbd632fae9b8bf7637d5785985972b",
+      "bytes": 2329
     },
     {
       "path": "shared/chart-pattern-overview-feed.mjs",
@@ -164,8 +164,8 @@
     },
     {
       "path": "shared/chart-pattern-quality.mjs",
-      "sha256": "60e905c63eb9ff366017422078183e8fc225c7ef7caf4c45f4dca698f3a372b7",
-      "bytes": 11509
+      "sha256": "4a9c5525927f491d83d0661cfe5011b31bdb9c563234067932e1837163cfa288",
+      "bytes": 10681
     },
     {
       "path": "shared/chart-time-axis.mjs",
@@ -418,9 +418,14 @@
       "bytes": 19219
     },
     {
+      "path": "shared/pattern-lifecycle.mjs",
+      "sha256": "7c17bf87dff9e389a5f7351d7ba09b2deb19bca9921aa0d0669e922f11f18dae",
+      "bytes": 5587
+    },
+    {
       "path": "shared/pattern-projection.mjs",
-      "sha256": "1e2444691e3e210eeff673b8b2ae3b91edb9581fccbacc2dea165f76ebeda5d7",
-      "bytes": 3943
+      "sha256": "7a1a956a16f4d90b72074271134c97bc86b76542cc3befb01b16a2e8d0636a22",
+      "bytes": 4219
     },
     {
       "path": "shared/pattern-quality.mjs",
