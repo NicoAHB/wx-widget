@@ -1,4 +1,5 @@
 // MACD-Darstellung: verwendet die vorhandenen 12/26/9-Werte, verändert keine Handelsregeln.
+import { MACD_NOTICE, createMacdNotice } from './macd-notice.mjs';
 const finite = Number.isFinite;
 // NEU 3.77.2: ausschließlich Darstellungsfilter für Kreuzungsmarker.
 export const MACD_CROSS_MIN_FRACTION = .02; // 2 % des größten sichtbaren |Histogramms|
@@ -9,7 +10,7 @@ export const MACD_CHART = Object.freeze({ fast: 12, slow: 26, signal: 9, minBars
 // Nur geschlossene Kerzen prüfen. Ein Ereignis bleibt höchstens drei Schlusskerzen
 // hervorgehoben und verfällt früher, wenn seine Richtung bereits widersprochen wird.
 export function macdFindings(rows, series, { now = Date.now(), expiresAt = Infinity, issue = '' } = {}) {
-  const empty = reason => ({ ready: false, reason, events: {}, current: null });
+  const empty = reason => ({ ready: false, reason, events: {}, pending: {}, current: null });
   if (issue) return empty(issue);
   if (!Array.isArray(rows) || series?.line?.length !== rows.length || series?.signal?.length !== rows.length) return empty('MACD-Daten fehlen.');
   const last = rows.findLastIndex(c => finite(c?.closeTime) && c.closeTime < now);
@@ -21,21 +22,32 @@ export function macdFindings(rows, series, { now = Date.now(), expiresAt = Infin
   }
   const { line, signal } = series, histogram = i => finite(line[i]) && finite(signal[i]) ? line[i] - signal[i] : null;
   if (![line[last], line[last - 1], signal[last], signal[last - 1]].every(finite)) return empty('MACD-Vorlauf fehlt.');
-  const events = {}, start = Math.max(1, last - MACD_CHART.freshBars + 1);
-  const note = (kind, direction, index, extra = {}) => { events[kind] = { direction, index, age: last - index, confirmedAt: rows[index].closeTime + 1, ...extra }; };
-  for (let i = start; i <= last; i++) {
-    const before = histogram(i - 1), current = histogram(i);
-    if (finite(before) && finite(current)) {
-      if (before <= 0 && current > 0) note('signal', 1, i);
-      if (before >= 0 && current < 0) note('signal', -1, i);
+  const events = {}, pending = {}, start = Math.max(1, last - MACD_CHART.freshBars + 1);
+  // 3.77.4: feste Referenz am Ereignis, ausschließlich damalige Schlusskerzen.
+  // Zoom, spätere Ausschläge und die laufende Kerze verändern diese Schwelle nicht.
+  const thresholdAt = (valueAt, index) => {
+    let peak = 0;
+    for (let j = Math.max(0, index - MACD_NOTICE.referenceBars + 1); j <= index; j++) {
+      const value = valueAt(j); if (finite(value)) peak = Math.max(peak, Math.abs(value));
     }
-    if (finite(line[i - 1]) && finite(line[i])) {
-      if (line[i - 1] <= 0 && line[i] > 0) note('zero', 1, i);
-      if (line[i - 1] >= 0 && line[i] < 0) note('zero', -1, i);
+    return peak * MACD_NOTICE.minFraction;
+  };
+  for (const [kind, valueAt] of [['signal', histogram], ['zero', i => line[i]]]) {
+    for (let i = Math.max(1, start - MACD_NOTICE.confirmBars + 1); i <= last; i++) {
+      const before = valueAt(i - 1), current = valueAt(i);
+      if (![before, current].every(finite)) continue;
+      const direction = before <= 0 && current > 0 ? 1 : before >= 0 && current < 0 ? -1 : 0;
+      if (!direction) continue;
+      const index = i + MACD_NOTICE.confirmBars - 1, threshold = thresholdAt(valueAt, i);
+      const observation = { direction, originTime: rows[i].time, observedAt: rows[i].closeTime + 1, threshold, distance: direction * current };
+      if (index > last) { pending[kind] = { ...observation, waitingBars: index - last }; continue; }
+      // Kein später Nachzügler: die unmittelbar folgende Schlusskerze muss genügen.
+      let holds = true;
+      for (let j = i; j <= last; j++) if (!finite(valueAt(j)) || direction * valueAt(j) <= 0) holds = false;
+      if (!holds || direction * valueAt(index) < threshold || direction * valueAt(last) < threshold) continue;
+      events[kind] = { ...observation, index, age: last - index, confirmedAt: rows[index].closeTime + 1, delayBars: MACD_NOTICE.confirmBars - 1, delayMs: rows[index].closeTime - rows[i].closeTime, distance: direction * valueAt(last) };
     }
   }
-  if (events.signal && events.signal.direction * histogram(last) <= 0) delete events.signal;
-  if (events.zero && events.zero.direction * line[last] <= 0) delete events.zero;
   const strength = MACD_CHART.pivotStrength;
   for (const [field, direction] of [['low', 1], ['high', -1]]) {
     let previous = null;
@@ -49,13 +61,15 @@ export function macdFindings(rows, series, { now = Date.now(), expiresAt = Infin
       const a = previous; previous = i;
       if (a === null || i + strength < start || ![line[a], line[i]].every(finite)) continue;
       if (direction * (price - rows[a][field]) >= 0 || direction * (line[i] - line[a]) <= 0) continue;
+      const threshold = thresholdAt(j => line[j], i), distance = direction * (line[i] - line[a]);
+      if (distance < threshold) continue;
       if (rows.slice(i + 1, last + 1).some(c => direction * (c[field] - price) < 0)) continue;
-      const found = { direction, index: i + strength, age: last - i - strength, confirmedAt: rows[i + strength].closeTime + 1, first: a, second: i, firstPrice: rows[a][field], secondPrice: price, firstMacd: line[a], secondMacd: line[i] };
+      const found = { direction, index: i + strength, age: last - i - strength, confirmedAt: rows[i + strength].closeTime + 1, originTime: rows[i].time, firstTime: rows[a].time, secondTime: rows[i].time, delayBars: strength, delayMs: rows[i + strength].closeTime - rows[i].closeTime, threshold, distance, first: a, second: i, firstPrice: rows[a][field], secondPrice: price, firstMacd: line[a], secondMacd: line[i] };
       if (!events.divergence || found.index > events.divergence.index) events.divergence = found;
       else if (found.index === events.divergence.index && found.direction !== events.divergence.direction) delete events.divergence; // kein bevorzugtes Vorzeichen bei gleichzeitigen Gegenbefunden
     }
   }
-  return { ready: true, reason: '', events, current: { index: last, time: rows[last].time, closeTime: rows[last].closeTime, line: line[last], signal: signal[last], histogram: histogram(last) } };
+  return { ready: true, reason: '', events, pending, current: { index: last, time: rows[last].time, closeTime: rows[last].closeTime, line: line[last], signal: signal[last], histogram: histogram(last) } };
 }
 
 // NEU 3.77.1: gemeinsame Flächen für Preis / MACD / Volumen, ohne feste Pixel-Kappen.
@@ -196,7 +210,8 @@ const STRATEGIES = [
 ];
 const number = v => finite(v) ? v.toLocaleString('de-DE', { maximumSignificantDigits: 6 }) : '–';
 const utc = time => new Date(time).toLocaleString('de-DE', { timeZone: 'UTC', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) + ' UTC';
-export function createMacdHelp({ document, button, read }) {
+export function createMacdHelp({ document, button, read, loadNotices, saveNotices, now = () => Date.now() }) {
+  const notice = createMacdNotice({ load: loadNotices, save: saveNotices });
   const el = (tag, cls = '', text = '') => { const n = document.createElement(tag); n.className = cls; n.textContent = text; return n; };
   const dialog = el('dialog', 'sheet macd-help'), head = el('div', 'sheet-head'), title = el('h2', '', 'MACD verstehen'), close = el('button', 'button ghost icon', '×'), body = el('div', 'sheet-body macd-help-body');
   dialog.id = 'macd-help'; title.id = 'macd-help-title'; dialog.setAttribute('aria-labelledby', title.id); close.type = 'button'; close.setAttribute('aria-label', 'MACD-Erklärung schließen'); head.append(title, close); dialog.append(head, body); document.body.append(dialog);
@@ -211,15 +226,19 @@ export function createMacdHelp({ document, button, read }) {
     }
     body.append(fold); cards.push({ key, fold, state, pair });
   }
-  body.append(el('p', 'macd-method', 'Hervorhebung: Ereignis innerhalb der letzten 3 abgeschlossenen Kerzen, solange kein Widerspruch vorliegt. Divergenzen vergleichen die letzten bestätigten Kurs-Pivots innerhalb von 60 Kerzen; je 2 abgeschlossene Nachbarkerzen links und rechts sind nötig. Die laufende Kerze ist in den Linien sichtbar, zählt aber nie als Bestätigung.'), el('p', 'macd-caution', 'Seitwärtsphasen können viele Fehlsignale durch wiederholte Kreuzungen erzeugen. Trend und Risiko zusätzlich prüfen. Die Anzeige ergänzt die Orientierung; sie ändert weder Vorauswahl-Modelle noch Alarme und eröffnet keine Trades.'));
+  body.append(el('p', 'macd-method', 'Gelbes ⓘ: erste Kreuzung beobachtet, noch unbestätigt. Grün/Rot: Kreuzungskerze und unmittelbar folgende Schlusskerze halten dieselbe Richtung, mit mindestens 2 % Abstand zur größten absoluten Auslenkung der bis zu 60 vorherigen Schlusskerzen einschließlich Kreuzungskerze. Bei Signallinien-Kreuzungen zählt das Histogramm, bei Nulllinien-Kreuzungen der MACD. Bestätigung kostet eine Folgekerze: bei 5m etwa 5 Minuten, bei 15m etwa 15 Minuten. Zu kleiner Abstand auf der Folgekerze wird verworfen, nicht später nachgemeldet. Divergenzen vergleichen bestätigte Kurs-Pivots und brauchen wie bisher je 2 abgeschlossene Nachbarn links und rechts sowie ausreichenden MACD-Abstand; keine zusätzliche Wartekerze. Der bestätigte Befund bleibt höchstens 3 Schlusskerzen hervorgehoben, bei Widerspruch kürzer. Das ⓘ blinkt einmal etwa 5 Sekunden, danach bleibt es farbig. Beim Wiederöffnen oder Wechseln blinkt derselbe Befund nicht erneut. Mehr als 30 Sekunden verspätet eintreffende Bestätigungen bleiben ruhig farbig. Die laufende Kerze bestätigt nichts. Dies ist ein gefilterter Hinweis, kein nachgewiesener Einstiegsvorteil.'), el('p', 'macd-caution', 'Seitwärtsphasen können viele Fehlsignale durch wiederholte Kreuzungen erzeugen. Trend und Risiko zusätzlich prüfen. Die Anzeige ergänzt die Orientierung; sie ändert weder Vorauswahl-Modelle noch Alarme und eröffnet keine Trades.'));
   function update(opening = false) {
     const c = read(), result = c.findings;
     // 3.77.3: derselbe frische Befund wie im Dialog, auch bei geschlossener Info.
     const active = result.ready ? STRATEGIES.filter(([key]) => result.events[key]) : [];
     const bull = active.some(([key]) => result.events[key].direction === 1), bear = active.some(([key]) => result.events[key].direction === -1);
-    const tone = bull && bear ? 'mixed' : bull ? 'bull' : bear ? 'bear' : 'neutral';
+    const early = result.ready ? STRATEGIES.filter(([key]) => result.pending?.[key]) : [];
+    const tone = bull && bear ? 'mixed' : bull ? 'bull' : bear ? 'bear' : early.length ? 'pending' : 'neutral';
     if (button.dataset.macdTone !== tone) button.dataset.macdTone = tone;
-    const hint = active.length ? `${bull && bear ? 'Bullishe und bearishe Befunde' : bull ? 'Bullisher Befund' : 'Bearisher Befund'}: ${active.map(([, name]) => name).join(', ')}. Informationen öffnen.` : '';
+    const pulse = notice.update(c, now());
+    if (pulse.started) { button.dataset.macdBlink = 'false'; void button.offsetWidth; } // nur einmal je neuem Befund, nie pro Live-Tick
+    if (button.dataset.macdBlink !== String(pulse.blink)) button.dataset.macdBlink = String(pulse.blink);
+    const hint = active.length ? `${bull && bear ? 'Bullishe und bearishe Befunde' : bull ? 'Bullisher Befund' : 'Bearisher Befund'}: ${active.map(([, name]) => name).join(', ')}. Informationen öffnen.` : early.length ? `Noch unbestätigt: ${early.map(([, name]) => name).join(', ')}. Eine weitere Schlusskerze und Mindestabstand nötig. Informationen öffnen.` : '';
     const label = 'MACD und Handelsstrategien erklären' + (hint ? ' · ' + hint : '');
     if (button.getAttribute('aria-label') !== label) button.setAttribute('aria-label', label);
     const tooltip = 'MACD: Linien, Kreuzungen und Divergenzen erklären' + (hint ? ' · ' + hint : '');
@@ -229,12 +248,12 @@ export function createMacdHelp({ document, button, read }) {
     status.textContent = result.ready ? `${c.enabled ? 'MACD im Chart an' : 'MACD im Chart aus'} · letzte Schlusskerze ${utc(result.current.closeTime + 1)}` : result.reason;
     values.textContent = result.current ? `Geschlossen: MACD ${number(result.current.line)} · Signal ${number(result.current.signal)} · Histogramm ${number(result.current.histogram)}` : '';
     for (const { key, fold, state, pair } of cards) {
-      const event = result.events[key]; fold.dataset.tone = event ? event.direction > 0 ? 'bull' : 'bear' : 'neutral';
-      state.textContent = event ? `${event.direction > 0 ? 'Bullish' : 'Bearish'} · ${event.age === 0 ? 'zuletzt bestätigt' : 'vor ' + event.age + (event.age === 1 ? ' Kerze' : ' Kerzen')}` : result.ready ? 'Kein frischer Befund' : 'Nicht aktuell geprüft';
-      if (opening) fold.open = key === 'signal' || !!event;
+      const event = result.events[key], early = result.pending?.[key]; fold.dataset.tone = event ? event.direction > 0 ? 'bull' : 'bear' : early ? 'pending' : 'neutral';
+      state.textContent = event ? `${event.direction > 0 ? 'Bullish' : 'Bearish'} · ${event.age === 0 ? 'zuletzt bestätigt' : 'vor ' + event.age + (event.age === 1 ? ' Kerze' : ' Kerzen')}` : early ? `${early.direction > 0 ? 'Bullish' : 'Bearish'} beobachtet · 1/${MACD_NOTICE.confirmBars} Schlusskerzen · noch unbestätigt` : result.ready ? 'Kein frischer Befund' : 'Nicht aktuell geprüft';
+      if (opening) fold.open = key === 'signal' || !!event || !!early;
       for (const { direction, card, found } of pair) {
         const active = event?.direction === direction; card.classList.toggle('is-active', active);
-        found.textContent = active ? `Erkannt · ${utc(event.confirmedAt)}${key === 'divergence' ? ` · Kurs ${number(event.firstPrice)} → ${number(event.secondPrice)} · MACD ${number(event.firstMacd)} → ${number(event.secondMacd)}` : ''}` : 'Aktuell nicht bestätigt.';
+        found.textContent = active ? `Erkannt · ${utc(event.confirmedAt)} · nach ${event.delayBars ?? 0} Folgekerze(n) · Abstand ${number(event.distance)} / mindestens ${number(event.threshold)}${key === 'divergence' ? ` · Kurs ${number(event.firstPrice)} → ${number(event.secondPrice)} · MACD ${number(event.firstMacd)} → ${number(event.secondMacd)}` : ''}` : early?.direction === direction ? `Beobachtet · ${utc(early.observedAt)} · noch unbestätigt. Die folgende Schlusskerze muss Richtung und Mindestabstand bestätigen.` : 'Aktuell nicht bestätigt.';
       }
     }
   }
