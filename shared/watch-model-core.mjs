@@ -113,6 +113,13 @@ export function watchStrictRating({ lower, higher, now }) {
     const keys = ['trend', 'kurs', 'rsi', 'macd', 'volume'], labels = ['4h-Trend · EMA 200', '15m-Kurs · EMA 200', 'RSI 14 · Pullback 8 / Erholung 50', 'MACD · Momentum bestätigt', 'Volumen ≥ 1,2 × Ø20 davor'];
     const rules = keys.map((key, i) => ({ key, label: labels[i], long: long[i], short: short[i] }));
     return { ready: true, model: WATCH_MODELS.strict, direction, longCount, shortCount, count: Math.max(longCount, shortCount), rules, rsi: last.rsi, volumeRatio, closeTime: end - 1, expiresAt: end + WATCH_BASE_MS,
+      // Beobachtungswerte aus genau derselben abgeschlossenen Prüfung; die Regeln bleiben unverändert.
+      evidence: {
+        trend: { close: top.close, ema: top.ema, previousEma: topPrev.ema, closeTime: high.at(-1).end - 1 },
+        price: { close: last.close, ema: last.ema },
+        rsi: { current: last.rsi, previous: prev.rsi, low: Math.min(...l.slice(-WATCH_PULLBACK.rsiBars - 1, -1).map(x => x.rsi)), high: Math.max(...l.slice(-WATCH_PULLBACK.rsiBars - 1, -1).map(x => x.rsi)) },
+        macd: { current: last.macd - last.signal, previous: prev.macd - prev.signal }
+      },
       reason: direction ? '' : `${longCount}/5 Long · ${shortCount}/5 Short – alle fünf Regeln müssen gleichzeitig passen.` };
   } catch (e) { return { ready: false, model: WATCH_MODELS.strict, direction: 0, longCount: 0, shortCount: 0, count: null, rules: [], reason: e.message }; }
 }

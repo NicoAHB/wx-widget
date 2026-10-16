@@ -2409,7 +2409,32 @@ html[data-chartfull] .chart-pattern-row{padding:0;order:1;flex-wrap:nowrap}html[
 .wm-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.wm-result-card{padding:12px;border:1px solid var(--border);border-radius:12px;min-width:0;background:var(--surface)}
 .wm-result-card h4{margin:0 0 10px}.wm-result-card dl{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;font-size:.8125rem}.wm-result-card dt,.wm-result-card dd{margin:0;overflow-wrap:anywhere}.wm-result-card dd{font-variant-numeric:tabular-nums;text-align:right;font-weight:650;max-width:12em}
 .wm-report-version-note{font-weight:600}.wm-diagnostics{margin-top:14px}.wm-diagnostics>summary{min-height:44px;cursor:pointer;line-height:1.4}.wm-diagnostics table{width:100%;table-layout:fixed;border-collapse:collapse;font-size:.75rem}.wm-diagnostics th,.wm-diagnostics td{padding:8px 4px;border-bottom:1px solid var(--border);overflow-wrap:anywhere;text-align:right;font-variant-numeric:tabular-nums}.wm-diagnostics th:first-child{text-align:left;width:44%}.wm-diagnostics td>span,.wm-diagnostics td>small{display:block}.wm-diagnostics td>small{color:var(--muted)}
-.wm-model-note{margin:0 0 8px;font-size:.75rem;color:var(--muted)}.wm-detail{font-size:.8125rem;line-height:1.5}.wm-detail li{margin:6px 0}.wm-detail-status{font-weight:700}
+.wm-model-note{margin:0 0 8px;font-size:.75rem;color:var(--muted)}.wm-detail{font-size:.8125rem;line-height:1.5}
+/* Signalgründe: feste Knoten, vorhandene Modellprüfung, keine zusätzlichen Datenabrufe. */
+.signal-reasons{--wsr-tone:var(--up-text);padding-top:8px;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.signal-reasons[data-side=short]{--wsr-tone:var(--down-text)}
+.wsr-model{margin:0 0 8px;color:var(--muted);font-size:.75rem}
+.wsr-sides{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:8px 0 14px}
+.wsr-sides button{min-height:44px;padding:8px;border:1px solid var(--border);border-radius:10px;background:transparent;color:var(--muted);font:inherit;font-weight:650;cursor:pointer}
+.wsr-sides button[aria-pressed=true]{color:var(--text);border-color:var(--wsr-tone);background:var(--surface)}
+.wsr-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px}.wsr-count{font-size:1.375rem;line-height:1.3;letter-spacing:-.4px}
+.wsr-status{font-size:.6875rem;padding:5px 8px;border-radius:7px;color:var(--warn-text);border:1px solid var(--border)}
+.signal-reasons[data-state=long] .wsr-status,.signal-reasons[data-state=short] .wsr-status{color:var(--wsr-tone)}
+.signal-reasons[data-state=unknown] .wsr-status{color:var(--muted)}
+.wsr-progress{display:flex;gap:5px;margin:12px 0 10px}.wsr-progress i{flex:1;height:4px;border-radius:4px;background:var(--border)}
+.wsr-progress [data-state=pass]{background:var(--wsr-tone)}.wsr-progress [data-state=fail]{background:var(--warn-text);opacity:.5}
+.wsr-source,.wsr-stand{margin:2px 0;color:var(--muted);font-size:.6875rem;line-height:1.6}
+.wsr-rules{padding:0;margin:14px 0;list-style:none}.wsr-rules li{display:flex;gap:10px;margin:0;padding:12px 0;border-top:1px solid var(--border)}
+.wsr-icon{display:grid;place-items:center;flex:0 0 23px;height:23px;border:1px solid currentColor;border-radius:50%;color:var(--muted);margin-top:1px;font-size:.75rem}
+.wsr-rules [data-state=pass] .wsr-icon{color:var(--wsr-tone)}.wsr-rules [data-state=fail] .wsr-icon{color:var(--warn-text)}
+.wsr-rule-copy{min-width:0}.wsr-rule-copy strong{font-weight:650}.wsr-rule-copy p,.wsr-rule-copy small{display:block;margin:3px 0 0;font-size:.6875rem;color:var(--muted);line-height:1.6}
+.wsr-reason{padding:10px 12px;border:1px solid var(--border);border-radius:10px;color:var(--warn-text);line-height:1.6}
+.signal-reasons[data-state=long] .wsr-reason,.signal-reasons[data-state=short] .wsr-reason{color:var(--wsr-tone)}
+.signal-reasons[data-state=unknown] .wsr-reason{color:var(--muted)}
+.wsr-other{font-weight:650}.wsr-note{color:var(--muted);font-size:.6875rem;line-height:1.6}.wsr-settings{min-height:44px;max-width:100%;white-space:normal}
+.wl-d-legacy{margin-top:12px;border-top:1px solid var(--border)}.wl-d-legacy>summary{min-height:44px;display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.75rem;color:var(--muted)}
+.wl-d-legacy>summary::before{content:'›';font-size:1.125rem}.wl-d-legacy[open]>summary::before{transform:rotate(90deg)}
+@container wld (max-width:520px){.wl-d-head .wl-d-meta{flex-basis:100%}}
 .wl-tile[data-wm-signal=long]{animation:wmLong 2s ease-in-out infinite}.wl-tile[data-wm-signal=short]{animation:wmShort 2s ease-in-out infinite}
 @keyframes wmLong{0%,100%{box-shadow:inset 0 0 0 1px var(--up-text)}50%{box-shadow:inset 0 0 0 3px var(--up-text);background:var(--up-bg-2)}}
 @keyframes wmShort{0%,100%{box-shadow:inset 0 0 0 1px var(--down-text)}50%{box-shadow:inset 0 0 0 3px var(--down-text);background:var(--down-bg-2)}}
@@ -2460,41 +2485,42 @@ html[data-panel-style=glass] #chart-sec{background:var(--surface);-webkit-backdr
 
 </style>
   <script type="module">
-import { MARKET_INTERVALS, CHART_INTERVALS, SIGNAL_INTERVALS, INTERVAL_MS, nearestChartInterval } from './bundles/3.74.1/shared/market-intervals.mjs';
-import { createDetailCandles, detailOptions, detailChoice, closedSeries, timeIndex, DETAIL_VISIBLE_MAX } from './bundles/3.74.1/shared/chart-detail.mjs';
-import { patternChipRows, patternChipKey } from './bundles/3.74.1/shared/chart-pattern-chips.mjs';
-import { PATTERN_QUALITY_CONFIG, chartPatternQuality, repricePatternQuality, sortPatternQuality, patternOverview } from './bundles/3.74.1/shared/chart-pattern-quality.mjs';
-import { createPatternOverviewFeed } from './bundles/3.74.1/shared/chart-pattern-overview-feed.mjs';
+import { MARKET_INTERVALS, CHART_INTERVALS, SIGNAL_INTERVALS, INTERVAL_MS, nearestChartInterval } from './bundles/3.75.0/shared/market-intervals.mjs';
+import { createDetailCandles, detailOptions, detailChoice, closedSeries, timeIndex, DETAIL_VISIBLE_MAX } from './bundles/3.75.0/shared/chart-detail.mjs';
+import { patternChipRows, patternChipKey } from './bundles/3.75.0/shared/chart-pattern-chips.mjs';
+import { PATTERN_QUALITY_CONFIG, chartPatternQuality, repricePatternQuality, sortPatternQuality, patternOverview } from './bundles/3.75.0/shared/chart-pattern-quality.mjs';
+import { createPatternOverviewFeed } from './bundles/3.75.0/shared/chart-pattern-overview-feed.mjs';
 // Arbeitsstand: bei der gemeinsamen Release-Freigabe in das neue Versionsbündel übernehmen.
-import { createPositioningFeed } from './bundles/3.74.1/shared/positioning-score.mjs';
-import { CRYPTO_CALENDAR, parseCryptoCalendar, cryptoCalendarEvents } from './bundles/3.74.1/shared/crypto-calendar.mjs';
-import { createMusterClient } from './bundles/3.74.1/shared/muster-bot-feed.mjs';
-import { createMusterPaper } from './bundles/3.74.1/shared/muster-bot-paper.mjs';
-import { readMusterPaper, writeMusterPaper } from './bundles/3.74.1/shared/muster-bot-store.mjs';
-import { projectPatternLines, projectionSettings, projectionTime } from './bundles/3.74.1/shared/pattern-projection.mjs';
-import { createGithubSyncView } from './bundles/3.74.1/shared/github-sync-view.mjs';
-import { createDocViewer } from './bundles/3.74.1/shared/doc-viewer.mjs';
-import { PATTERN_FILTER_PRESET_NAMES, PATTERN_FILTER_FIELDS, PATTERN_CARD_FIELDS, HIGHER_TIMEFRAME, patternFilterSettings, patternFilterFromForm, evaluatePatternSignal, selectPatternSignals, patternJournalEntry, addPatternJournal, resolvePatternJournal, patternHitStats, patternJournalStats, PATTERN_OUTCOME_NAMES, backtestPatternFilter } from './bundles/3.74.1/shared/pattern-quality.mjs';
-import { stripSyncSecrets } from './bundles/3.74.1/shared/github-sync.mjs';
-import { createMusterView } from './bundles/3.74.1/shared/muster-bot-view.mjs';
-import { computeKiZones, KI_ZONE_INTERVALS } from './bundles/3.74.1/shared/ki-zones.mjs';
-import { heikinAshi } from './bundles/3.74.1/shared/heikin-ashi.mjs';
-import { detectFvgs, fvgSummary } from './bundles/3.74.1/shared/fvg.mjs';
-import { scoreZoneStrength, ZONE_STRENGTH, ZONE_SIGNAL, zoneSignal, zoneStep, zoneOutcome, summarizeZoneBacktest } from './bundles/3.74.1/shared/zone-strength.mjs';
+import { createPositioningFeed } from './bundles/3.75.0/shared/positioning-score.mjs';
+import { CRYPTO_CALENDAR, parseCryptoCalendar, cryptoCalendarEvents } from './bundles/3.75.0/shared/crypto-calendar.mjs';
+import { createMusterClient } from './bundles/3.75.0/shared/muster-bot-feed.mjs';
+import { createMusterPaper } from './bundles/3.75.0/shared/muster-bot-paper.mjs';
+import { readMusterPaper, writeMusterPaper } from './bundles/3.75.0/shared/muster-bot-store.mjs';
+import { projectPatternLines, projectionSettings, projectionTime } from './bundles/3.75.0/shared/pattern-projection.mjs';
+import { createGithubSyncView } from './bundles/3.75.0/shared/github-sync-view.mjs';
+import { createDocViewer } from './bundles/3.75.0/shared/doc-viewer.mjs';
+import { PATTERN_FILTER_PRESET_NAMES, PATTERN_FILTER_FIELDS, PATTERN_CARD_FIELDS, HIGHER_TIMEFRAME, patternFilterSettings, patternFilterFromForm, evaluatePatternSignal, selectPatternSignals, patternJournalEntry, addPatternJournal, resolvePatternJournal, patternHitStats, patternJournalStats, PATTERN_OUTCOME_NAMES, backtestPatternFilter } from './bundles/3.75.0/shared/pattern-quality.mjs';
+import { stripSyncSecrets } from './bundles/3.75.0/shared/github-sync.mjs';
+import { createMusterView } from './bundles/3.75.0/shared/muster-bot-view.mjs';
+import { computeKiZones, KI_ZONE_INTERVALS } from './bundles/3.75.0/shared/ki-zones.mjs';
+import { heikinAshi } from './bundles/3.75.0/shared/heikin-ashi.mjs';
+import { detectFvgs, fvgSummary } from './bundles/3.75.0/shared/fvg.mjs';
+import { scoreZoneStrength, ZONE_STRENGTH, ZONE_SIGNAL, zoneSignal, zoneStep, zoneOutcome, summarizeZoneBacktest } from './bundles/3.75.0/shared/zone-strength.mjs';
 // 3.68.0: KI-Signale/Trading-Bot entfernt; der GitHub-Sync behält sein Format inklusive vorhandener Modelloriginale.
-import { exportModelArchive, importModelArchive, validateModelArchive, restoreModelOriginals } from './bundles/3.74.1/shared/model-archive.mjs';
-import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT, patternGrade } from './bundles/3.74.1/shared/telegram-format.mjs';
-import { patternSignalCard, patternChartData } from './bundles/3.74.1/shared/pattern-signal-card.mjs';   // 3.71.0: Chartmuster-Signalkarte
-import { pnlAlarmCard } from './bundles/3.74.1/shared/pnl-alarm-card.mjs';   // 3.71.0: Gewinn-/Verlust-Alarm als Bild
-import { priceAlarmCard } from './bundles/3.74.1/shared/price-alarm-card.mjs';   // 3.71.0: Kurs-Alarm als Bild
-import { createOrderflowView } from './bundles/3.74.1/shared/orderflow-view.mjs';
-import { createMarketRadarView } from './bundles/3.74.1/shared/market-radar-view.mjs';
-import { createPanelAppearanceSettings } from './bundles/3.74.1/shared/panel-appearance.mjs';
-import { createSignalView } from './bundles/3.74.1/shared/orderflow-signal-view.mjs';
-import { WATCH_MODEL_KEY, WATCH_COMPARE_KEY } from './bundles/3.74.1/shared/watch-model-core.mjs';
-import { createWatchModelFeed } from './bundles/3.74.1/shared/watch-model-feed.mjs';
-import { createWatchModelView } from './bundles/3.74.1/shared/watch-model-view.mjs';
-import { networkState, createWidgetBoundary } from './bundles/3.74.1/shared/widget-state.mjs';
+import { exportModelArchive, importModelArchive, validateModelArchive, restoreModelOriginals } from './bundles/3.75.0/shared/model-archive.mjs';
+import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT, patternGrade } from './bundles/3.75.0/shared/telegram-format.mjs';
+import { patternSignalCard, patternChartData } from './bundles/3.75.0/shared/pattern-signal-card.mjs';   // 3.71.0: Chartmuster-Signalkarte
+import { pnlAlarmCard } from './bundles/3.75.0/shared/pnl-alarm-card.mjs';   // 3.71.0: Gewinn-/Verlust-Alarm als Bild
+import { priceAlarmCard } from './bundles/3.75.0/shared/price-alarm-card.mjs';   // 3.71.0: Kurs-Alarm als Bild
+import { createOrderflowView } from './bundles/3.75.0/shared/orderflow-view.mjs';
+import { createMarketRadarView } from './bundles/3.75.0/shared/market-radar-view.mjs';
+import { createPanelAppearanceSettings } from './bundles/3.75.0/shared/panel-appearance.mjs';
+import { createSignalView } from './bundles/3.75.0/shared/orderflow-signal-view.mjs';
+import { WATCH_MODEL_KEY, WATCH_COMPARE_KEY } from './bundles/3.75.0/shared/watch-model-core.mjs';
+import { createWatchModelFeed } from './bundles/3.75.0/shared/watch-model-feed.mjs';
+import { createSignalReasonsView } from './bundles/3.75.0/shared/watch-signal-reasons.mjs';
+import { createWatchModelView } from './bundles/3.75.0/shared/watch-model-view.mjs';
+import { networkState, createWidgetBoundary } from './bundles/3.75.0/shared/widget-state.mjs';
 // Pure, unrounded calculations. Prices are USDT per unit; FX is USDT per EUR.
 function rsi(closes, period = 14) {
   const out = Array(closes.length).fill(null);
@@ -3349,7 +3375,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
 // 3.43.0 (G10a): reiner Fachkern in shared/; Datenquelle und Karten folgen getrennt.
 // 3.44.0 (G10b): öffentlicher Adapter in shared/bitget-public.mjs; sichtbare Anbindung folgt mit G10(c).
-const APP_VERSION = '3.74.1', docEl = document.documentElement;
+const APP_VERSION = '3.75.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -4543,7 +4569,7 @@ function renderWatchlist() {
   if (!periodKeys.includes(spanKey)) periodKeys.splice(spanKey === '30m' ? 2 : 3, 0, spanKey);
   for (const k of periodKeys) { const b = btn('', k); b.dataset.wlperiod = k; b.setAttribute('aria-label', wlSpans()[k].name); periods.append(b); }
   head.append(periods);
-  const modelNote = el('p', 'wm-model-note', 'Trend-Pullback 5/5 v2 · Signale 15m / Trend 4h'); modelNote.hidden = !wmStrict();
+  const modelNote = el('p', 'wm-model-note', `${wmStrict() ? 'Trend-Pullback 5/5 v2 · 15m / 4h · ' : ''}Coin antippen: Signalgründe öffnen / schließen.`);
   const grid = el('div', 'wl-grid');
   for (const coin of state.watch) {
     const item = el('span', 'wl-item'), tile = btn('wl-tile'), svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -11581,8 +11607,10 @@ function wldBox() {
   body.append(verdict, patb);
   // 3.32.0 (G04.2): schmale Zeile mit Tief und Hoch der letzten 24 Stunden (rollierend, Markt wie die Kachel)
   const r24 = el('p', 'wl-d-24h'); r24.append(el('span', 'wl-d-24k', '24h'), el('span', 'wl-d-24v', ''));
-  const test = el('div', 'wm-detail'); test.hidden = true;
-  sec.append(head, r24, body, test, foot);
+  const test = el('div', 'wm-detail'), reasons = createSignalReasonsView({ root: test });
+  const legacy = el('details', 'wl-d-legacy'); legacy.append(el('summary', '', 'Indikator-Erklärungen & Chartmuster'), body);
+  legacy.addEventListener('toggle', () => { if (legacy.open) wldPaint(Date.now(), true); });
+  sec.append(head, r24, test, legacy, foot);
   clip.append(sec); box.append(clip);
   close.addEventListener('click', () => wldClose(true));
   // Erklärung auch beim Überfahren mit der Maus (am iPad mit Trackpad ebenso); Klick auf ein so geöffnetes Info-Symbol heftet
@@ -11590,7 +11618,7 @@ function wldBox() {
   box.addEventListener('pointerover', e => { if (e.pointerType !== 'mouse') return; const t = e.target.closest('details.wl-d-tip'); if (t && !t.open) { t.dataset.hover = '1'; t.open = true; } });
   box.addEventListener('pointerout', e => { if (e.pointerType !== 'mouse') return; const t = e.target.closest('details.wl-d-tip'); if (t?.dataset.hover && !t.contains(e.relatedTarget)) { delete t.dataset.hover; t.open = false; } });
   box.addEventListener('click', e => { const t = e.target.closest('details.wl-d-tip'); if (t?.dataset.hover && e.target.closest('summary')) { e.preventDefault(); delete t.dataset.hover; } }, true);
-  wld = { box, clip, body, test, title, meta, pick, pickv, stand, up, down, none, items, verdict, foot, r24, patb, key: '', minH: 0, timer: 0 };
+  wld = { box, clip, body, test, reasons, legacy, title, meta, pick, pickv, stand, up, down, none, items, verdict, foot, r24, patb, key: '', minH: 0, timer: 0 };
   return box;
 }
 function wldTiles(fn) { for (const t of document.querySelectorAll('#watchlist .wl-tile')) fn(t); }
@@ -11601,6 +11629,7 @@ function wldOpen(coin) {
   wldTiles(t => t.setAttribute('aria-expanded', String(t.dataset.watch === coin)));
   // anderer Coin: Mindesthöhe neu – der Wechsel kommt vom Nutzer, da darf sich die Höhe ändern
   wld.minH = 0; wld.body.style.minHeight = ''; wld.key = '';
+  wld.reasons.resetHeight();
   wldPaint(Date.now(), true);
   if (was) return;
   wld.clip.inert = false; wld.box.dataset.open = '1'; clearTimeout(wld.timer);
@@ -11715,17 +11744,16 @@ function wmPaintTile(tile, v, coin) {
 function wmDetail(e, now) {
   if (!wld) return false;
   const active = wmStrict(), pick = wld.pick.closest('.wl-d-pick');
-  wld.body.hidden = active; wld.test.hidden = !active; if (pick) pick.hidden = active;
-  if (wld.meta.firstChild?.nodeType === 3) wld.meta.firstChild.textContent = active ? 'Trend-Pullback 5/5 v2 · 15m / 4h' : 'Signale ';
+  wld.legacy.hidden = active; if (pick) pick.hidden = active;
+  if (wld.meta.firstChild?.nodeType === 3) wld.meta.firstChild.textContent = active ? 'Signalgründe · 15m / 4h' : 'Signale ';
+  const r = active ? wmCurrent(e?.sym || wlSym(wldSel), now) : e?.rating;
+  wld.reasons.paint({ mode: active ? 'strict' : 'classic', symbol: e?.sym || wlSym(wldSel), rating: r,
+    values: !active && r ? wldVals(e) : {}, market: e?.market, interval: e?.iv || wlSpan().iv,
+    intervalMs: INTERVAL_MS[e?.iv || wlSpan().iv], now, paused: state.paused, offline: navigator.onLine === false,
+    error: active ? '' : e?.error || '' });
   if (!active) return false;
-  const r = wmCurrent(e?.sym || wlSym(wldSel), now), key = JSON.stringify([r, e?.market]);
   wld.title.textContent = wldSel; wld.stand.textContent = r.ready ? ` · Stand ${WLD_T.format(r.closeTime + 1)}` : ' · Daten werden geprüft';
-  if (wld.test.dataset.key !== key) {
-    wld.test.dataset.key = key; wld.test.replaceChildren(el('p', 'wm-detail-status', !r.ready ? r.reason : r.direction ? `${r.direction === 1 ? '▲ Long' : '▼ Short'} bestätigt · 5/5 Regeln erfüllt` : r.reason));
-    if (r.ready) { const list = el('ul'); for (const rule of r.rules) list.append(el('li', '', `${rule.label}: Long ${rule.long ? '✓' : '–'} · Short ${rule.short ? '✓' : '–'}`)); wld.test.append(list, el('p', 'muted', `RSI ${number(r.rsi, 1)} · Volumen ${number(r.volumeRatio, 2)} × Ø20 · ${e?.market === 'futures' ? 'Binance Futures' : 'Binance Spot'}`)); }
-    const settings = btn('button ghost', 'Modell und Vergleich öffnen'); settings.dataset.goto = 'watch-model-settings'; wld.test.append(settings);
-  }
-  wld.foot.textContent = 'Nur geschlossene 15m-/4h-Kerzen. Alle fünf Regeln nötig; kein nachgewiesener Handelsvorteil. Prozent-Zeitraum und bisherige Tendenz bleiben beim Zurückschalten erhalten.';
+  wld.foot.textContent = 'Prozent-Zeitraum und bisherige Tendenz bleiben beim Zurückschalten erhalten.';
   return true;
 }
 
@@ -15610,7 +15638,7 @@ const musterPaper = createMusterPaper({ read: readMusterPaper, write: writeMuste
   } });
 const MUSTER_TG_NAMES = { hammer: 'Hammer', engulfing: 'Bullish Engulfing', confluence: 'Konfluenz', po3: 'Power of Three' };
 musterView = createMusterView({ host: musterHost, selection: musterSelection, currentPrice: (symbol, market) => state.symbol === symbol && state.source === market ? currentPrice() : null,
-  prefs: store.get('scalpdesk.muster.settings.v1', {}), savePrefs: value => store.set('scalpdesk.muster.settings.v1', value), workerFactory: () => new Worker(new URL('./bundles/3.74.1/shared/muster-bot-worker.mjs', import.meta.url), { type: 'module' }), paper: musterPaper, onMarkers: scheduleDraw,
+  prefs: store.get('scalpdesk.muster.settings.v1', {}), savePrefs: value => store.set('scalpdesk.muster.settings.v1', value), workerFactory: () => new Worker(new URL('./bundles/3.75.0/shared/muster-bot-worker.mjs', import.meta.url), { type: 'module' }), paper: musterPaper, onMarkers: scheduleDraw,
   telegramStatus: () => tgtReady('trades') ? null : 'Hinweis: Telegram ist noch nicht eingerichtet oder das Ziel „Trades“ ist aus (Einstellungen → Telegram).' });
 void musterPaper.restore().then(() => musterPaper.poll());
 function musterDraw(svg, data, x, y, bottom) {
@@ -15649,11 +15677,12 @@ const wmSave = async (key, value) => { store.set(key, value); if (!store.ok || !
 wmView = createWatchModelView({ host: document.querySelector('#workspace-settings .workspace-settings-grid'), read: key => store.get(key), save: wmSave, getMode: wmMode,
   setMode: async mode => { const before = wmMode(); try { await wmSave(WATCH_MODEL_KEY, mode === 'strict' ? 'strict' : 'classic'); } catch (e) { store.set(WATCH_MODEL_KEY, before); throw e; } broadcastData([WATCH_MODEL_KEY]); wmRefresh(); },
   now: serverNow, symbols: () => state.watch.map(wlSym), history: createMusterClient().history, available: () => !document.hidden && !state.paused && navigator.onLine !== false,
-  workerFactory: () => new Worker(new URL('./bundles/3.74.1/shared/watch-model-worker.mjs', import.meta.url), { type: 'module' }) });
+  workerFactory: () => new Worker(new URL('./bundles/3.75.0/shared/watch-model-worker.mjs', import.meta.url), { type: 'module' }) });
 function wmAvailability() {
   wmFeed.sync();
   if ((document.hidden || state.paused || navigator.onLine === false) && wmView.state.busy) wmView.abort();
   if (wmStrict()) wlPaint(Date.now(), true); // Ein pausiertes/unterbrochenes Modell darf nicht weiter blinken.
+  else wldPaint(Date.now(), true); // Auch die vier Regelgründe dürfen bei Pause/Offline keine aktuelle Bestätigung zeigen.
   if (!document.hidden && !state.paused && navigator.onLine !== false) wmTick();
 }
 $('pause').addEventListener('click', wmAvailability);

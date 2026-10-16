@@ -1,3 +1,9 @@
+## 3.75.0 (Codex): aufklappbare Signalgründe
+
+- Punkt 3 nach der separaten Vorschau jetzt ausdrücklich zur Umsetzung freigegeben. Gemeinsames Coin-Detailfeld in Vorauswahl/Kacheln und Liste; gleicher Coin, × oder Esc schließen. Long/Short-Prüfung ohne Order/Modellwechsel, tatsächliche Regeln und Beobachtungswerte, fehlende Regeln und Quellen-/Schlusszeiten. Vier Regeln im bisherigen Modell, fünf im Trend-Pullback v2; Parameter/Entscheidungen/Backtest unverändert. Bisherige Detail-Erklärungen und Chartmuster separat aufklappbar.
+- Pause, Offline und abgelaufene Daten neutralisieren die Gründe. Feste DOM-Knoten; keine zusätzliche Historie oder Telegram-Nachrichten. Punkt 2 (Risikoübersicht) bleibt unverbaut.
+- Branch `codex/signalgruende` ab `main` afd4e35; App/SW 3.75.0, Dienst 2.15.1 unverändert, 91 PWA-/103 Dienstdateien, ältere Bündel unverändert. [Funktionsumfang und Gerätecheck](docs/SIGNALGRUENDE-3.75.0.md). **497/497** gezielte Prüfungen in zwölf Läufen bestanden, Lint 0 Fehler / 3 bekannte Warnungen. Isolierte Freigabeprüfung bei 320/390/768 px bestanden; keine Seitenfehler/Telegram-Aufrufe. Öffentlicher Nachweis im Release-PR.
+
 ## 3.74.1 (Codex): mobile Darstellungsprüfung und zwei unverknüpfte Vorschauen
 
 - Nutzer beauftragt Punkt 5 (iPhone-Darstellung prüfen). Punkt 2 (Risikoübersicht) und nachträglich Punkt 3 (Signalgründe) ausdrücklich nur erklären/zeigen, **noch nicht umsetzen**. Beide Vorschauen bleiben in Scratch, ohne App-Anbindung und mit gekennzeichneten Beispieldaten.
