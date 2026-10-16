@@ -433,6 +433,10 @@ html[data-chartfull] .of-chart-grid,html[data-chartfull] .of-chart-pane{display:
 .zoom-controls #pan-now{font-size:.75rem;font-weight:600;color:var(--mint);border-color:var(--up-border)}
 .ohlc{padding:10px 20px 4px;color:var(--muted);font-size:.75rem;font-variant-numeric:tabular-nums;min-height:36px;overflow-wrap:anywhere}
 .chart{height:340px;width:100%;position:relative;overflow:hidden;touch-action:pan-y;cursor:crosshair;-webkit-user-select:none;user-select:none}
+/* 3.76.1: unsichtbare Fingerziele, ein Wert-Label; keine weitere Chart-/Glasebene. */
+.pat-projection-hit{stroke:transparent;stroke-width:26;fill:none;pointer-events:stroke;vector-effect:non-scaling-stroke;cursor:pointer;-webkit-touch-callout:none}
+.projection-inspector{position:absolute;z-index:3;pointer-events:none;box-sizing:border-box;width:max-content;max-width:236px;padding:10px 12px;border:1px solid var(--projection-color);border-radius:9px;background:var(--surface);color:var(--text);box-shadow:0 3px 12px #0005;font-size:12px;line-height:1.5;font-variant-numeric:tabular-nums;white-space:nowrap;-webkit-user-select:none;user-select:none}
+.projection-inspector[hidden]{display:none}.projection-inspector>strong{display:block;color:var(--projection-color);font-size:14px;margin-bottom:4px}.projection-inspector>span{display:flex;justify-content:space-between;gap:16px}.projection-inspector b{font-weight:600}.projection-inspector small{display:block;margin-top:5px;color:var(--muted);font-size:10px}
 .chart svg{display:block;width:100%;height:100%}
 .chart.stale{opacity:.58}
 .chart-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding:24px;background:repeating-linear-gradient(0deg,transparent,transparent 64px,var(--stripe) 65px)}
@@ -2036,6 +2040,7 @@ html[data-layout=tablet] .wl-detail{scroll-margin-bottom:calc(84px + env(safe-ar
 .wl-d-24h{display:flex;align-items:baseline;gap:8px;min-height:22px;margin:2px 0 0;font-size:.8125rem;line-height:1.4;color:var(--text-2);font-variant-numeric:tabular-nums}
 .wl-d-24k{flex:0 0 auto;font-size:.6875rem;font-weight:700;letter-spacing:.06em;color:var(--muted)}
 .wl-d-24v{min-width:0}
+.wl-d-24lo{color:var(--down-text)}.wl-d-24hi{color:var(--up-text)}
 .wl-d-24h.skel-txt .wl-d-24v{color:var(--faint)}
 @media (prefers-reduced-motion:reduce){.wl-detail,.wl-d-clip{transition:none}}
 /* 3.24.0 Ablaufplan Schritt 7: Gewinn- und Verlust-Alarm – Feld unter dem Live-Ergebnis oben rechts */
@@ -2471,43 +2476,44 @@ html[data-panel-style=glass] #chart-sec{background:var(--surface);-webkit-backdr
 
 </style>
   <script type="module">
-import { MARKET_INTERVALS, CHART_INTERVALS, SIGNAL_INTERVALS, INTERVAL_MS, nearestChartInterval } from './bundles/3.76.0/shared/market-intervals.mjs';
-import { createDetailCandles, detailOptions, detailChoice, closedSeries, timeIndex, DETAIL_VISIBLE_MAX } from './bundles/3.76.0/shared/chart-detail.mjs';
-import { patternChipRows, patternChipKey } from './bundles/3.76.0/shared/chart-pattern-chips.mjs';
-import { PATTERN_QUALITY_CONFIG, chartPatternQuality, repricePatternQuality, sortPatternQuality, patternOverview } from './bundles/3.76.0/shared/chart-pattern-quality.mjs';
-import { createPatternOverviewFeed } from './bundles/3.76.0/shared/chart-pattern-overview-feed.mjs';
+import { MARKET_INTERVALS, CHART_INTERVALS, SIGNAL_INTERVALS, INTERVAL_MS, nearestChartInterval } from './bundles/3.76.1/shared/market-intervals.mjs';
+import { createDetailCandles, detailOptions, detailChoice, closedSeries, timeIndex, DETAIL_VISIBLE_MAX } from './bundles/3.76.1/shared/chart-detail.mjs';
+import { patternChipRows, patternChipKey } from './bundles/3.76.1/shared/chart-pattern-chips.mjs';
+import { PATTERN_QUALITY_CONFIG, chartPatternQuality, repricePatternQuality, sortPatternQuality, patternOverview } from './bundles/3.76.1/shared/chart-pattern-quality.mjs';
+import { createPatternOverviewFeed } from './bundles/3.76.1/shared/chart-pattern-overview-feed.mjs';
 // Arbeitsstand: bei der gemeinsamen Release-Freigabe in das neue Versionsbündel übernehmen.
-import { createPositioningFeed } from './bundles/3.76.0/shared/positioning-score.mjs';
-import { CRYPTO_CALENDAR, parseCryptoCalendar, cryptoCalendarEvents } from './bundles/3.76.0/shared/crypto-calendar.mjs';
-import { createMusterClient } from './bundles/3.76.0/shared/muster-bot-feed.mjs';
-import { createMusterPaper } from './bundles/3.76.0/shared/muster-bot-paper.mjs';
-import { readMusterPaper, writeMusterPaper } from './bundles/3.76.0/shared/muster-bot-store.mjs';
-import { projectPatternLines, projectionSettings, projectionTime } from './bundles/3.76.0/shared/pattern-projection.mjs';
-import { createGithubSyncView } from './bundles/3.76.0/shared/github-sync-view.mjs';
-import { createDocViewer } from './bundles/3.76.0/shared/doc-viewer.mjs';
-import { PATTERN_FILTER_PRESET_NAMES, PATTERN_FILTER_FIELDS, PATTERN_CARD_FIELDS, HIGHER_TIMEFRAME, patternFilterSettings, patternFilterFromForm, evaluatePatternSignal, selectPatternSignals, patternJournalEntry, addPatternJournal, resolvePatternJournal, patternHitStats, patternJournalStats, PATTERN_OUTCOME_NAMES, backtestPatternFilter } from './bundles/3.76.0/shared/pattern-quality.mjs';
-import { stripSyncSecrets } from './bundles/3.76.0/shared/github-sync.mjs';
-import { createMusterView } from './bundles/3.76.0/shared/muster-bot-view.mjs';
-import { computeKiZones, KI_ZONE_INTERVALS } from './bundles/3.76.0/shared/ki-zones.mjs';
-import { heikinAshi } from './bundles/3.76.0/shared/heikin-ashi.mjs';
-import { detectFvgs, fvgSummary } from './bundles/3.76.0/shared/fvg.mjs';
-import { scoreZoneStrength, ZONE_STRENGTH, ZONE_SIGNAL, zoneSignal, zoneStep, zoneOutcome, summarizeZoneBacktest } from './bundles/3.76.0/shared/zone-strength.mjs';
+import { createPositioningFeed } from './bundles/3.76.1/shared/positioning-score.mjs';
+import { CRYPTO_CALENDAR, parseCryptoCalendar, cryptoCalendarEvents } from './bundles/3.76.1/shared/crypto-calendar.mjs';
+import { createMusterClient } from './bundles/3.76.1/shared/muster-bot-feed.mjs';
+import { createMusterPaper } from './bundles/3.76.1/shared/muster-bot-paper.mjs';
+import { readMusterPaper, writeMusterPaper } from './bundles/3.76.1/shared/muster-bot-store.mjs';
+import { projectPatternLines, projectionSettings, projectionTime } from './bundles/3.76.1/shared/pattern-projection.mjs';
+import { createProjectionInspector, projectionPrice, projectionIndexTime, projectionTimeIndex } from './bundles/3.76.1/shared/projection-inspector.mjs';
+import { createGithubSyncView } from './bundles/3.76.1/shared/github-sync-view.mjs';
+import { createDocViewer } from './bundles/3.76.1/shared/doc-viewer.mjs';
+import { PATTERN_FILTER_PRESET_NAMES, PATTERN_FILTER_FIELDS, PATTERN_CARD_FIELDS, HIGHER_TIMEFRAME, patternFilterSettings, patternFilterFromForm, evaluatePatternSignal, selectPatternSignals, patternJournalEntry, addPatternJournal, resolvePatternJournal, patternHitStats, patternJournalStats, PATTERN_OUTCOME_NAMES, backtestPatternFilter } from './bundles/3.76.1/shared/pattern-quality.mjs';
+import { stripSyncSecrets } from './bundles/3.76.1/shared/github-sync.mjs';
+import { createMusterView } from './bundles/3.76.1/shared/muster-bot-view.mjs';
+import { computeKiZones, KI_ZONE_INTERVALS } from './bundles/3.76.1/shared/ki-zones.mjs';
+import { heikinAshi } from './bundles/3.76.1/shared/heikin-ashi.mjs';
+import { detectFvgs, fvgSummary } from './bundles/3.76.1/shared/fvg.mjs';
+import { scoreZoneStrength, ZONE_STRENGTH, ZONE_SIGNAL, zoneSignal, zoneStep, zoneOutcome, summarizeZoneBacktest } from './bundles/3.76.1/shared/zone-strength.mjs';
 // 3.68.0: KI-Signale/Trading-Bot entfernt; der GitHub-Sync behält sein Format inklusive vorhandener Modelloriginale.
-import { exportModelArchive, importModelArchive, validateModelArchive, restoreModelOriginals } from './bundles/3.76.0/shared/model-archive.mjs';
-import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT, patternGrade } from './bundles/3.76.0/shared/telegram-format.mjs';
-import { patternSignalCard, patternChartData } from './bundles/3.76.0/shared/pattern-signal-card.mjs';   // 3.71.0: Chartmuster-Signalkarte
-import { pnlAlarmCard } from './bundles/3.76.0/shared/pnl-alarm-card.mjs';   // 3.71.0: Gewinn-/Verlust-Alarm als Bild
-import { priceAlarmCard } from './bundles/3.76.0/shared/price-alarm-card.mjs';   // 3.71.0: Kurs-Alarm als Bild
-import { createOrderflowView } from './bundles/3.76.0/shared/orderflow-view.mjs';
-import { createMarketRadarView } from './bundles/3.76.0/shared/market-radar-view.mjs';
-import { createPanelAppearanceSettings } from './bundles/3.76.0/shared/panel-appearance.mjs';
-import { createSignalView } from './bundles/3.76.0/shared/orderflow-signal-view.mjs';
-import { WATCH_MODEL_KEY, WATCH_COMPARE_KEY } from './bundles/3.76.0/shared/watch-model-core.mjs';
-import { rsiSignal } from './bundles/3.76.0/shared/rsi-momentum.mjs';
-import { createWatchModelFeed } from './bundles/3.76.0/shared/watch-model-feed.mjs';
-import { createSignalReasonsView } from './bundles/3.76.0/shared/watch-signal-reasons.mjs';
-import { createWatchModelView } from './bundles/3.76.0/shared/watch-model-view.mjs';
-import { networkState, createWidgetBoundary } from './bundles/3.76.0/shared/widget-state.mjs';
+import { exportModelArchive, importModelArchive, validateModelArchive, restoreModelOriginals } from './bundles/3.76.1/shared/model-archive.mjs';
+import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT, patternGrade } from './bundles/3.76.1/shared/telegram-format.mjs';
+import { patternSignalCard, patternChartData } from './bundles/3.76.1/shared/pattern-signal-card.mjs';   // 3.71.0: Chartmuster-Signalkarte
+import { pnlAlarmCard } from './bundles/3.76.1/shared/pnl-alarm-card.mjs';   // 3.71.0: Gewinn-/Verlust-Alarm als Bild
+import { priceAlarmCard } from './bundles/3.76.1/shared/price-alarm-card.mjs';   // 3.71.0: Kurs-Alarm als Bild
+import { createOrderflowView } from './bundles/3.76.1/shared/orderflow-view.mjs';
+import { createMarketRadarView } from './bundles/3.76.1/shared/market-radar-view.mjs';
+import { createPanelAppearanceSettings } from './bundles/3.76.1/shared/panel-appearance.mjs';
+import { createSignalView } from './bundles/3.76.1/shared/orderflow-signal-view.mjs';
+import { WATCH_MODEL_KEY, WATCH_COMPARE_KEY } from './bundles/3.76.1/shared/watch-model-core.mjs';
+import { rsiSignal } from './bundles/3.76.1/shared/rsi-momentum.mjs';
+import { createWatchModelFeed } from './bundles/3.76.1/shared/watch-model-feed.mjs';
+import { createSignalReasonsView } from './bundles/3.76.1/shared/watch-signal-reasons.mjs';
+import { createWatchModelView } from './bundles/3.76.1/shared/watch-model-view.mjs';
+import { networkState, createWidgetBoundary } from './bundles/3.76.1/shared/widget-state.mjs';
 // Pure, unrounded calculations. Prices are USDT per unit; FX is USDT per EUR.
 function rsi(closes, period = 14) {
   const out = Array(closes.length).fill(null);
@@ -3363,7 +3369,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
 // 3.43.0 (G10a): reiner Fachkern in shared/; Datenquelle und Karten folgen getrennt.
 // 3.44.0 (G10b): öffentlicher Adapter in shared/bitget-public.mjs; sichtbare Anbindung folgt mit G10(c).
-const APP_VERSION = '3.76.0', docEl = document.documentElement;
+const APP_VERSION = '3.76.1', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -3875,6 +3881,7 @@ function renderMarket() {
 }
 // ---------- Chart-Ausschnitt: Zoom und Blättern ----------
 let lastChart = null, chartGeom = null, drawQueued = false, drawReq = 0, drawDone = 0;
+const projectionInspector = createProjectionInspector($('chart'));
 // 3.71.0: Geste läuft (Zoomen/Blättern) – chartLite: vereinfacht zeichnen (ohne Etiketten-Entzerrung und Nebenleisten), chartLive: Zustand der Geste
 let chartLite = false; var chartLive = { on: false, afterDraw() {}, stats: { draw: 0, lite: 0 } }; window.__chartLive = chartLive;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -7014,6 +7021,7 @@ function node(tag,attributes,text) { const el=document.createElementNS(NS,tag); 
 var chartBoundary;
 function renderChart(levels={}, ov={}, start=null, end=null) { return chartBoundary ? chartBoundary.run(() => renderChartContent(levels, ov, start, end)) : renderChartContent(levels, ov, start, end); }
 function renderChartContent(levels={}, ov={}, start=null, end=null) {
+  projectionInspector.begin(`${state.symbol}|${state.interval}|${chartMarket()}`);
   const rows=chartRows(), view=chartViewState(), container=$('chart'), offset=start ?? Math.max(0,rows.length-view.count), stop=end ?? rows.length, data=rows.slice(offset, stop);
   // 3.68.1: Heikin-Ashi über die ganze Reihe rechnen (HA_Open hängt von der Vorgängerkerze ab), dann denselben Ausschnitt zeigen.
   // Nur die Kerzen ändern sich; Kurslinie, Indikatoren, Muster, Zonen und Alarme arbeiten weiter mit den echten Kursen.
@@ -7120,6 +7128,7 @@ function renderChartContent(levels={}, ov={}, start=null, end=null) {
   const keep=state.selectedTime!=null?data.findIndex(c=>c.time===state.selectedTime):-1;
   if(keep>=0)select(keep);else{state.selected=null;put('ohlc',`O ${priceText(last.open)}  H ${priceText(last.high)}\nL ${priceText(last.low)}  C ${priceText(last.close)}`);}
   magnetRedraw();
+  projectionInspector.draw(svg, {left, right:left+pw, top, bottom});
   put('chart-caption', detailReady() ? `${data.length} Detail-Kerzen · ${detailResolution} · Haupt-Zeitrahmen ${state.interval} · UTC` : state.pan>0 ? `Kerzen ${offset+1}–${stop} von ${state.candles.length} · UTC · ${state.interval}` : `${data.length} / ${state.candles.length} Kerzen · UTC · ${state.interval}`);
   container.setAttribute('aria-label',`${state.symbol}, ${state.interval}${detailReady() ? ', Detail-Kerzen '+detailResolution : ''}, ${data.length} Kerzen. Letzter Kurs ${priceText(last.close)} USDT. Pfeiltasten wählen Kerzen.`);
 }
@@ -7455,6 +7464,7 @@ $('zoom-reset').addEventListener('click',chartViewReset);
   function apply(){
     const r=L.r; if(!L.on||!r)return; const {step,start}=geo(), a=step/r.step, b=r.left*(1-a)+(r.offset-start)*step, same=Math.abs(a-1)<1e-4&&Math.abs(b)<.05;
     const lay=same?box.querySelector(':scope > svg > g.lv-clip > g'):layer(); if(lay)lay.setAttribute('transform',same?'':`matrix(${a.toFixed(5)} 0 0 1 ${b.toFixed(2)} 0)`);
+    projectionInspector.position();
   }
   function commit(lite){
     const N=len(); if(!N)return; const v=chartViewState(), [lo,hi]=lim(), n=clamp(Math.round(L.count),lo,hi);
@@ -7471,7 +7481,7 @@ $('zoom-reset').addEventListener('click',chartViewReset);
   const kick=()=>{ if(!L.raf)L.raf=requestAnimationFrame(frame); }, finish=()=>{ if(L.on){ L.end=true; kick(); } };
   box.addEventListener('pointerdown',e=>{
     if(!chartGeom||CAP.on)return; L.fling=null; pts.set(e.pointerId,{x:e.clientX,y:e.clientY}); try{box.setPointerCapture(e.pointerId);}catch{}
-    if(pts.size===1)g={type:'tap',x0:e.clientX,y0:e.clientY,trail:[]};
+    if(pts.size===1)g={type:'tap',x0:e.clientX,y0:e.clientY,moved:false,target:e.target,trail:[]};
     else if(pts.size===2&&begin()){const [a,b]=[...pts.values()], s=geo();g={type:'pinch',d0:Math.max(20,Math.abs(a.x-b.x)),idx:s.start+(vx((a.x+b.x)/2)-chartGeom.left)/s.step,count0:L.count};}
   });
   box.addEventListener('pointermove',e=>{
@@ -7483,6 +7493,7 @@ $('zoom-reset').addEventListener('click',chartViewReset);
       const [a,b]=[...pts.values()], [lo,hi]=lim(), n=clamp(g.count0*g.d0/Math.max(20,Math.abs(a.x-b.x)),lo,hi), start=g.idx-(vx((a.x+b.x)/2)-chartGeom.left)/stepFor(n);
       target(n,len()-start-n); kick();
     } else if(g&&pts.size===1){
+      g.moved ||= Math.hypot(e.clientX-g.x0,e.clientY-g.y0)>8;
       const dx=e.clientX-g.x0;
       if(g.type==='tap'&&Math.abs(dx)>8&&Math.abs(dx)>Math.abs(e.clientY-g.y0)&&begin()){g.type='pan';g.pan0=L.pan;g.x0=e.clientX;}
       if(g.type==='pan'){const b=box.getBoundingClientRect();target(L.count,g.pan0+(e.clientX-g.x0)*chartGeom.w/b.width/geo().step);g.trail.push([e.timeStamp,e.clientX]);if(g.trail.length>6)g.trail.shift();kick();}
@@ -7491,7 +7502,7 @@ $('zoom-reset').addEventListener('click',chartViewReset);
   });
   const end=e=>{
     if(!pts.has(e.pointerId))return; pts.delete(e.pointerId);
-    if(g?.type==='tap'&&e.type==='pointerup'){if(magnet.on&&magnetCommit(e))lastTap=0;else{const now=Date.now();if(now-lastTap<320){setPan(0);lastTap=0;}else{lastTap=now;chartGeom?.select(idxAt(e.clientX));}}}
+    if(g?.type==='tap'&&e.type==='pointerup'){if(!g.moved&&projectionInspector.tap(e,!magnet.on,g.target))lastTap=0;else if(magnet.on&&magnetCommit(e))lastTap=0;else{const now=Date.now();if(now-lastTap<320){setPan(0);lastTap=0;}else{lastTap=now;chartGeom?.select(idxAt(e.clientX));}}}
     if(g?.type==='pinch'&&pts.size===1){const [p]=[...pts.values()];g={type:'pan',x0:p.x,y0:p.y,pan0:L.pan,trail:[]};return;} // ein Finger bleibt: weiter blättern
     if(pts.size)return;
     if(g?.type==='pan'&&e.type==='pointerup'&&g.trail.length>=2){
@@ -11715,11 +11726,15 @@ function w24Paint(now = Date.now()) {
   const coin = wldSel, sym = wlSym(coin), e = wl?.c.get(sym), ready = !!e && (e.at > 0 || !!e.error), market = e?.market === 'futures' ? 'futures' : 'spot';
   const key = `${market}:${sym}`, d = ready && !e.error ? w24.get(key) : null;
   if (ready && !e.error && !state.paused && !d?.busy && (!d?.got || now - d.got > W24_TTL) && now >= (d?.retryAt || 0)) void w24Load(key, sym, market);
-  const has = d?.got > 0 && now - d.got < 10 * 60e3, lab = market === 'futures' ? ' · Futures' : ' · Spot';
+  const has = d?.got > 0 && now - d.got < 10 * 60e3, lab = market === 'futures' ? ' · Futures' : '';
   const t = !ready ? 'Tief — · Hoch — (wird geladen …)' : e.error ? 'nicht verfügbar – keine Kursdaten für diesen Coin'
     : has ? `Tief ${priceText(d.lo)} · Hoch ${priceText(d.hi)}${lab}${d.error ? ' · Stand ' + new Date(d.at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : ''}`
     : d?.error ? `nicht verfügbar – ${d.error}` : `Tief — · Hoch — (wird geladen …)`;
-  const v = wld.r24.lastChild; if (v.textContent !== t) v.textContent = t;
+  const v = wld.r24.lastChild;
+  if (v.textContent !== t) {
+    if (has && !e?.error) v.replaceChildren('Tief ', el('span', 'wl-d-24lo', priceText(d.lo)), ' · Hoch ', el('span', 'wl-d-24hi', priceText(d.hi)), lab + (d.error ? ' · Stand ' + new Date(d.at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : ''));
+    else v.textContent = t;
+  }
   wld.r24.classList.toggle('skel-txt', !has && !d?.error && !e?.error);
   const tip = has ? `Tiefster und höchster Kurs der letzten 24 Stunden (rollierend, ${market === 'futures' ? 'USDT-Perpetual-Futures' : 'Spot'}) laut Binance, Stand ${new Date(d.at).toLocaleTimeString('de-DE')} – unabhängig vom Chart.` : '';
   if (wld.r24.title !== tip) wld.r24.title = tip;
@@ -14078,16 +14093,28 @@ function patProjectionRows() {
 function patDrawProjection(svg, over, g) {
   const rows = patProjectionRows(); if (!rows.length) return;
   const offset = state.candles.findIndex(c => c.time === g.data[0]?.time), limitX = Math.min(g.rx - 4, g.left + g.pw - 4);
-  const used = [];
+  const used = [], kinds = new Map();
   for (const line of rows) {
     const color = patChipSelections.has(patternChipKey(line.hit)) ? patChipColor(patternChipKey(line.hit)) : line.hit.dir === 'bull' ? PAL.up : line.hit.dir === 'bear' ? PAL.down : PAL.vp;
     const at = i => state.candles[i]?.time ?? projectionTime(state.candles.at(-1).time,state.interval,i-state.candles.length+1), px = detailReady() ? g.timeX(at(line.fromIndex)) : g.x(line.fromIndex-offset), projectedX=detailReady() ? g.timeX(line.toTime) : g.x(line.toIndex-offset), endX = Math.min(limitX, projectedX);
     if (endX <= px) continue;
     const fraction=(endX-px)/(projectedX-px),visibleIndex=line.fromIndex+(line.toIndex-line.fromIndex)*fraction,price=line.fromPrice+(line.price-line.fromPrice)*fraction,yp=g.y(price);
     over.append(node('line', { x1: px, y1: g.y(line.fromPrice), x2: endX, y2: yp, stroke: color, 'stroke-width': .9, 'stroke-dasharray': line.broken ? '2 5' : '3 4', opacity: line.broken ? .22 : .48, class: 'pat-projection' + (line.broken ? ' broken' : ''), 'data-pattern': line.hit.id }));
+    // Fingerziel nur im Zukunftsbereich. Die sichtbare Linie und ihre Berechnung bleiben unverändert.
+    const futureX=g.x(g.data.length-1),hitX=Math.max(px,futureX);
+    if(hitX<endX){
+      const f=(hitX-px)/(projectedX-px),firstIndex=line.fromIndex+(line.toIndex-line.fromIndex)*f,firstPrice=line.fromPrice+(line.price-line.fromPrice)*f,firstY=g.y(firstPrice);
+      const hit=node('line',{x1:hitX,y1:firstY,x2:endX,y2:yp,class:'pat-projection-hit','aria-hidden':'true'});over.append(hit);
+      const group=patternChipKey(line.hit),base=group+'|'+line.kind,n=kinds.get(base)||0;kinds.set(base,n+1);
+      const indexAt=fraction=>firstIndex+(visibleIndex-firstIndex)*fraction;
+      const coordinateAt=time=>detailReady()?g.timeX(time):g.x(projectionTimeIndex(state.candles,state.interval,time)-offset);
+      projectionInspector.add({key:base+'|'+n,group,kind:line.kind,color,element:hit,x1:hitX,y1:firstY,x2:endX,y2:yp,fromPrice:firstPrice,price,
+        timeAt:fraction=>detailReady()?projectionIndexTime(g.data,chartInterval(),(hitX+(endX-hitX)*fraction-g.left)/g.step-.5):projectionIndexTime(state.candles,state.interval,indexAt(fraction)),
+        fractionAt:time=>(coordinateAt(time)-hitX)/(endX-hitX)});
+    }
     if (price < g.min || price > g.max || used.some(y => Math.abs(y - yp) < 14)) continue;
     used.push(yp);
-    const text = node('text', { x: endX - 3, y: clamp(yp - 4, g.top + 12, g.bottom - 4), 'text-anchor': 'end', class: 'axis-label pat-projection-price', style: `fill:${color};opacity:${line.broken ? .5 : .8};font-size:10px` }, '≈ ' + priceText(price));
+    const text = node('text', { x: endX - 3, y: clamp(yp - 4, g.top + 12, g.bottom - 4), 'text-anchor': 'end', class: 'axis-label pat-projection-price', style: `fill:${color};opacity:${line.broken ? .5 : .8};font-size:10px` }, '≈ ' + projectionPrice(price));
     text.append(node('title', {}, `${PAT_LIB[line.hit.id]?.n || line.hit.id} · ${line.broken ? 'durchbrochen' : 'Linienprojektion'} · ${new Date(projectionTime(state.candles.at(-1).time, state.interval, visibleIndex - state.candles.length + 1)).toLocaleString('de-DE')} · keine Kursprognose`)); svg.append(text);
   }
 }
@@ -14136,7 +14163,7 @@ function patDraw(svg, over, g) {
   // über Ort und Zeit statt über „click“; ein Ziehen (Blättern) öffnet nichts
   let tap = null;
   $('chart').addEventListener('pointerdown', e => { const t = e.target.closest?.('[data-pat],[data-pat-ghost]'); tap = t ? { i: +t.getAttribute('data-pat'), ghost: t.hasAttribute('data-pat-ghost'), x: e.clientX, y: e.clientY, at: Date.now() } : null; if (t) e.stopPropagation(); }, true);
-  document.addEventListener('pointerup', e => { const p = tap; tap = null; if (p && Math.hypot(e.clientX - p.x, e.clientY - p.y) < 12 && Date.now() - p.at < 800) { if (p.ghost) patGhostClear(true); else patOpenInfo(p.i); } }, true);
+  document.addEventListener('pointerup', e => { const p = tap; tap = null; if (p && Math.hypot(e.clientX - p.x, e.clientY - p.y) < 12 && Date.now() - p.at < 800) { projectionInspector.close(); if (p.ghost) patGhostClear(true); else patOpenInfo(p.i); } }, true);
 })();
 // ---- 3.38.0 (G09 C1–C3): dauerhaftes Musterwissen (lokal), Kursrichtungsstatistik, vergangene Verläufe ----
 // Eigener Speicher, getrennt von Trades, Konten, Notizen und Zugängen; nicht in der persönlichen Sicherung; „Zurücksetzen“ und
@@ -15405,7 +15432,7 @@ function zonesBtnWidth() { const b = $('zones-btn'); if (!b || docEl.dataset.cha
 { // Antippen über Ort und Zeit wie bei den Chartmuster-Labels (der Chart kann zwischen Drücken und Loslassen neu zeichnen)
   let tap = null;
   $('chart').addEventListener('pointerdown', e => { const t = e.target.closest?.('[data-kiz]'); tap = t ? { i: +t.getAttribute('data-kiz'), x: e.clientX, y: e.clientY, at: Date.now() } : null; if (t) e.stopPropagation(); }, true);
-  document.addEventListener('pointerup', e => { const p = tap; tap = null; if (p && Math.hypot(e.clientX - p.x, e.clientY - p.y) < 12 && Date.now() - p.at < 800) kiZoneInfo(p.i); }, true);
+  document.addEventListener('pointerup', e => { const p = tap; tap = null; if (p && Math.hypot(e.clientX - p.x, e.clientY - p.y) < 12 && Date.now() - p.at < 800) { projectionInspector.close(); kiZoneInfo(p.i); } }, true);
 }
 window.__kiz = { state: kiz, now: kiZonesNow, set: kiZonesSet, context: kiZoneContext, strong: kiZonesStrong };
 
@@ -15520,7 +15547,7 @@ function zsDetails(k) {
 }
 { let tap = null; // Antippen über Ort und Zeit wie bei den übrigen Chart-Beschriftungen
   $('chart').addEventListener('pointerdown', e => { const t = e.target.closest?.('[data-zsig]'); tap = t ? { i: +t.getAttribute('data-zsig'), x: e.clientX, y: e.clientY, at: Date.now() } : null; if (t) e.stopPropagation(); }, true);
-  document.addEventListener('pointerup', e => { const q = tap; tap = null; if (q && Math.hypot(e.clientX - q.x, e.clientY - q.y) < 12 && Date.now() - q.at < 800) zsDetails(q.i); }, true); }
+  document.addEventListener('pointerup', e => { const q = tap; tap = null; if (q && Math.hypot(e.clientX - q.x, e.clientY - q.y) < 12 && Date.now() - q.at < 800) { projectionInspector.close(); zsDetails(q.i); } }, true); }
 const zsInfoLine = el('p', 'zone-lab-signal'); zsInfoLine.id = 'zs-signal-now'; zsInfoLine.setAttribute('role', 'status'); $('zs-lev-note').after(zsInfoLine);
 function zsInfo() {
   const w = zs.walk, o = w?.result?.open, p = v => priceText(v);
@@ -15563,7 +15590,7 @@ const musterPaper = createMusterPaper({ read: readMusterPaper, write: writeMuste
   } });
 const MUSTER_TG_NAMES = { hammer: 'Hammer', engulfing: 'Bullish Engulfing', confluence: 'Konfluenz', po3: 'Power of Three' };
 musterView = createMusterView({ host: musterHost, selection: musterSelection, currentPrice: (symbol, market) => state.symbol === symbol && state.source === market ? currentPrice() : null,
-  prefs: store.get('scalpdesk.muster.settings.v1', {}), savePrefs: value => store.set('scalpdesk.muster.settings.v1', value), workerFactory: () => new Worker(new URL('./bundles/3.76.0/shared/muster-bot-worker.mjs', import.meta.url), { type: 'module' }), paper: musterPaper, onMarkers: scheduleDraw,
+  prefs: store.get('scalpdesk.muster.settings.v1', {}), savePrefs: value => store.set('scalpdesk.muster.settings.v1', value), workerFactory: () => new Worker(new URL('./bundles/3.76.1/shared/muster-bot-worker.mjs', import.meta.url), { type: 'module' }), paper: musterPaper, onMarkers: scheduleDraw,
   telegramStatus: () => tgtReady('trades') ? null : 'Hinweis: Telegram ist noch nicht eingerichtet oder das Ziel „Trades“ ist aus (Einstellungen → Telegram).' });
 void musterPaper.restore().then(() => musterPaper.poll());
 function musterDraw(svg, data, x, y, bottom) {
@@ -15602,7 +15629,7 @@ const wmSave = async (key, value) => { store.set(key, value); if (!store.ok || !
 wmView = createWatchModelView({ host: document.querySelector('#workspace-settings .workspace-settings-grid'), read: key => store.get(key), save: wmSave, getMode: wmMode,
   setMode: async mode => { const before = wmMode(); try { await wmSave(WATCH_MODEL_KEY, mode === 'strict' ? 'strict' : 'classic'); } catch (e) { store.set(WATCH_MODEL_KEY, before); throw e; } broadcastData([WATCH_MODEL_KEY]); wmRefresh(); },
   now: serverNow, symbols: () => state.watch.map(wlSym), history: createMusterClient().history, available: () => !document.hidden && !state.paused && navigator.onLine !== false,
-  workerFactory: () => new Worker(new URL('./bundles/3.76.0/shared/watch-model-worker.mjs', import.meta.url), { type: 'module' }) });
+  workerFactory: () => new Worker(new URL('./bundles/3.76.1/shared/watch-model-worker.mjs', import.meta.url), { type: 'module' }) });
 function wmAvailability() {
   wmFeed.sync();
   if ((document.hidden || state.paused || navigator.onLine === false) && wmView.state.busy) wmView.abort();
@@ -15854,7 +15881,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
         </form>
         <div id="market-error" class="notice error" role="alert" hidden></div>
         <div class="chart-heading"><div><div class="pair-title"><span class="coin-icon" id="coin-icon">B</span><h2 id="pair-label">BTC <span>/ USDT</span></h2><span class="badge" id="market-badge">SPOT</span></div><div class="price-row"><strong id="price" class="skel">—</strong><span class="unit">USDT</span><span class="change skel" id="candle-change">—</span></div><div class="signal-line" id="signal-line" hidden></div><button type="button" class="button ghost alarm-btn" id="alarm-here">🔔 Alarm für diesen Kurs</button></div><div class="chart-meta"><span id="price-eur">Eurokurs ausstehend</span><span id="updated">Noch keine Marktdaten</span></div></div>
-        <div class="chart-toolbar"><div class="tb-main"><div class="intervals" role="group" aria-label="Kerzenintervall"><button type="button" data-interval="1m" class="active" aria-pressed="true">1m</button><button type="button" data-interval="5m" aria-pressed="false">5m</button><button type="button" data-interval="15m" aria-pressed="false">15m</button><button type="button" data-interval="1h" aria-pressed="false">1h</button><button type="button" data-interval="2h" aria-pressed="false">2h</button><button type="button" data-interval="4h" aria-pressed="false">4h</button><button type="button" data-interval="1d" aria-pressed="false">1d</button><button type="button" data-interval="1w" aria-pressed="false">1w</button><button type="button" data-interval="1M" aria-pressed="false" title="1 Monat">1M</button></div><button type="button" class="metric-btn" data-metric="cap" aria-pressed="false" aria-label="Market Cap in USD statt Kurs anzeigen" title="Market Cap (USD) statt Kurs – noch einmal tippen: zurück zum Kurs. Historische Werte schlüssellos von CoinGecko, sonst CoinPaprika">MCap</button></div><div class="zoom-controls" role="group" aria-label="Chart zoomen und blättern"><button id="pan-back" type="button" aria-label="Weiter zurück in der Zeit">◀</button><button id="zoom-out" type="button" aria-label="Herauszoomen, mehr Kerzen">−</button><button id="zoom-in" type="button" aria-label="Hineinzoomen, weniger Kerzen">+</button><button id="pan-fwd" type="button" aria-label="Weiter Richtung jetzt">▶</button><button id="pan-now" type="button" hidden>Jetzt</button><button id="zoom-reset" type="button" hidden aria-label="Standardansicht: 80 Kerzen bis zur aktuellen Kerze" title="Standardansicht: 80 Kerzen bis zur aktuellen Kerze">⟲</button><button id="pat-btn" type="button" aria-pressed="false" aria-label="KI: Chartmuster im sichtbaren Ausschnitt erkennen (regelbasiert, lokal)" title="Chartmuster erkennen – regelbasiert im Browser, keine externe KI">KI</button><button id="magnet" type="button" aria-pressed="false" title="Magnet: auf ein Chart-Level tippen oder klicken, um dort einen Kurs-Alarm zu setzen" aria-label="Magnet: Kurs-Alarm per Klick auf ein Chart-Level">🧲</button><button id="zones-btn" type="button" aria-pressed="false" aria-label="KI-Zonen: Kauf- und Verkaufszonen im Chart ein- oder ausblenden (lokal berechnet)" title="KI-Zonen – grüne Kauf- und rote Verkaufszonen aus Swing-Punkten, Volumen und Übereinstimmungen, lokal berechnet (5m bis 1d)">Zonen</button><button id="zsig-btn" type="button" aria-pressed="false" aria-label="Ein- und Ausstiegssignale an starken Zonen ein- oder ausblenden" title="Signale an starken Zonen: ▲ Einstieg, ▼ Ausstieg, Stop- und Ziel-Linie (Entscheidungshilfe, keine Garantie)">Signale</button><button id="chart-full" type="button" aria-pressed="false" aria-label="Chart im Vollbild" title="Vollbild – schließen mit Enter, Esc oder diesem Symbol"><svg class="ico-max" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><svg class="ico-min" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><details class="tip"><summary aria-label="Bedienung des Charts"><span>i</span></summary><div class="tip-body"><p>Zoomen: zwei Finger auseinander/zusammen, Strg + Mausrad oder − / +.</p><p>Zurückblättern: mit einem Finger wischen, waagrecht scrollen oder ◀ ▶. Doppelt tippen: zurück zu jetzt.</p><p>🧲 Magnet: einschalten, dann auf eine Linie oder Kerze tippen bzw. klicken – der Kurs-Alarm wird mit genau diesem Preis vorausgefüllt. Der Preis rastet an POC, Value Area, Pivots, EMA 200, Bollinger, Kerzen-Hochs und -Tiefs, Liquidationslinien sowie den Liq-Clustern der Heatmap ein. Am Computer geht es jederzeit auch per Rechtsklick.</p><p><b>Zonen</b> (KI-Zonen): grün = Kaufzonen aus wiederholten Swing-Tiefs, rot = Verkaufszonen aus Swing-Hochs, grau = deutlich durchbrochen. Je Seite die drei stärksten Zonen mit Score 1–100 aus Berührungen, Abprall, Volumen, Aktualität und Übereinstimmung mit POC, EMA 200, Bollinger, S/R und Hoch/Tief. Beschriftung antippen zeigt die Gründe. Lokal berechnet für 5m bis 1d, neu bei Zeitrahmenwechsel und Kerzenschluss; keine Anlageberatung.</p><p>Rote gestrichelte Linie: Liquidationspreis deiner Position (Wert der Börse oder Modell bei isolierter Margin), rot getönt der Bereich dahinter. Dünner: das Szenario aus dem Positionsrechner.</p><p>Tastatur: Pfeiltasten wählen Kerzen, + und − zoomen.</p></div></details></div></div>
+        <div class="chart-toolbar"><div class="tb-main"><div class="intervals" role="group" aria-label="Kerzenintervall"><button type="button" data-interval="1m" class="active" aria-pressed="true">1m</button><button type="button" data-interval="5m" aria-pressed="false">5m</button><button type="button" data-interval="15m" aria-pressed="false">15m</button><button type="button" data-interval="1h" aria-pressed="false">1h</button><button type="button" data-interval="2h" aria-pressed="false">2h</button><button type="button" data-interval="4h" aria-pressed="false">4h</button><button type="button" data-interval="1d" aria-pressed="false">1d</button><button type="button" data-interval="1w" aria-pressed="false">1w</button><button type="button" data-interval="1M" aria-pressed="false" title="1 Monat">1M</button></div><button type="button" class="metric-btn" data-metric="cap" aria-pressed="false" aria-label="Market Cap in USD statt Kurs anzeigen" title="Market Cap (USD) statt Kurs – noch einmal tippen: zurück zum Kurs. Historische Werte schlüssellos von CoinGecko, sonst CoinPaprika">MCap</button></div><div class="zoom-controls" role="group" aria-label="Chart zoomen und blättern"><button id="pan-back" type="button" aria-label="Weiter zurück in der Zeit">◀</button><button id="zoom-out" type="button" aria-label="Herauszoomen, mehr Kerzen">−</button><button id="zoom-in" type="button" aria-label="Hineinzoomen, weniger Kerzen">+</button><button id="pan-fwd" type="button" aria-label="Weiter Richtung jetzt">▶</button><button id="pan-now" type="button" hidden>Jetzt</button><button id="zoom-reset" type="button" hidden aria-label="Standardansicht: 80 Kerzen bis zur aktuellen Kerze" title="Standardansicht: 80 Kerzen bis zur aktuellen Kerze">⟲</button><button id="pat-btn" type="button" aria-pressed="false" aria-label="KI: Chartmuster im sichtbaren Ausschnitt erkennen (regelbasiert, lokal)" title="Chartmuster erkennen – regelbasiert im Browser, keine externe KI">KI</button><button id="magnet" type="button" aria-pressed="false" title="Magnet: auf ein Chart-Level tippen oder klicken, um dort einen Kurs-Alarm zu setzen" aria-label="Magnet: Kurs-Alarm per Klick auf ein Chart-Level">🧲</button><button id="zones-btn" type="button" aria-pressed="false" aria-label="KI-Zonen: Kauf- und Verkaufszonen im Chart ein- oder ausblenden (lokal berechnet)" title="KI-Zonen – grüne Kauf- und rote Verkaufszonen aus Swing-Punkten, Volumen und Übereinstimmungen, lokal berechnet (5m bis 1d)">Zonen</button><button id="zsig-btn" type="button" aria-pressed="false" aria-label="Ein- und Ausstiegssignale an starken Zonen ein- oder ausblenden" title="Signale an starken Zonen: ▲ Einstieg, ▼ Ausstieg, Stop- und Ziel-Linie (Entscheidungshilfe, keine Garantie)">Signale</button><button id="chart-full" type="button" aria-pressed="false" aria-label="Chart im Vollbild" title="Vollbild – schließen mit Enter, Esc oder diesem Symbol"><svg class="ico-max" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><svg class="ico-min" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><details class="tip"><summary aria-label="Bedienung des Charts"><span>i</span></summary><div class="tip-body"><p>Zoomen: zwei Finger auseinander/zusammen, Strg + Mausrad oder − / +.</p><p>Zurückblättern: mit einem Finger wischen, waagrecht scrollen oder ◀ ▶. Doppelt tippen: zurück zu jetzt.</p><p>🧲 Magnet: einschalten, dann auf eine Linie oder Kerze tippen bzw. klicken – der Kurs-Alarm wird mit genau diesem Preis vorausgefüllt. Der Preis rastet an POC, Value Area, Pivots, EMA 200, Bollinger, Kerzen-Hochs und -Tiefs, Liquidationslinien sowie den Liq-Clustern der Heatmap ein. Am Computer geht es jederzeit auch per Rechtsklick.</p><p><b>Zonen</b> (KI-Zonen): grün = Kaufzonen aus wiederholten Swing-Tiefs, rot = Verkaufszonen aus Swing-Hochs, grau = deutlich durchbrochen. Je Seite die drei stärksten Zonen mit Score 1–100 aus Berührungen, Abprall, Volumen, Aktualität und Übereinstimmung mit POC, EMA 200, Bollinger, S/R und Hoch/Tief. Beschriftung antippen zeigt die Gründe. Lokal berechnet für 5m bis 1d, neu bei Zeitrahmenwechsel und Kerzenschluss; keine Anlageberatung.</p><p>Rote gestrichelte Linie: Liquidationspreis deiner Position (Wert der Börse oder Modell bei isolierter Margin), rot getönt der Bereich dahinter. Dünner: das Szenario aus dem Positionsrechner.</p><p>Gestrichelte Musterlinien rechts der letzten Kerze antippen: Kurs und Uhrzeit (UTC), obere/untere Grenze und Abstand anzeigen. Bei mehreren Linien gelten die äußeren Grenzen. Ein Tipp auf die andere Linie verschiebt das Label; ein Tipp daneben schließt es. Die Linien bleiben sichtbar.</p><p>Tastatur: Pfeiltasten wählen Kerzen, + und − zoomen.</p></div></details></div></div>
         <div class="mtf" id="mtf" role="group" aria-label="Trend je Zeitebene: Kurs, EMA 50 und EMA 200"></div>
         <div class="ohlc-row"><div class="ohlc skel" id="ohlc">O — &nbsp; H — &nbsp; L — &nbsp; C —</div><button type="button" id="ha-btn" class="ha-btn" role="switch" aria-checked="false" aria-label="Heikin-Ashi-Kerzen" title="Heikin-Ashi-Kerzen ein oder aus – aus: normale Kerzen"><span class="ha-long">Heikin-Ashi</span><span class="ha-short" aria-hidden="true">HA</span><span class="ha-switch" aria-hidden="true"></span></button><details class="tip div-tip" id="div-tip" hidden><summary aria-label="RSI-Divergenz: Erklärung und Handlungsleitfaden"><i class="div-dot" aria-hidden="true"></i><b class="div-l" id="div-chip-l">RSI-Divergenz</b><b class="div-s" id="div-chip-s">Div.</b><span>i</span></summary><div class="tip-body div-body"><p class="div-title" id="div-title"></p><p id="div-case"></p><p class="div-tent" id="div-tent" hidden></p><p class="div-other" id="div-other" hidden></p><p class="div-h">Handlungsleitfaden</p><ol class="div-steps"><li><b>Kein Einstiegssignal.</b> Die Divergenz zeigt nachlassenden Schwung, keine Umkehr. Auch Warten auf eine Bestätigung half im Backtest nicht (unten).</li><li id="div-step-ext"></li><li id="div-step-pos"></li><li id="div-step-risk"></li></ol><p class="div-alarm-row"><button type="button" class="button ghost" id="div-alarm">🔔 Alarm</button></p><p class="div-honest"><b>Ehrlich – Backtest mit genau diesem Scanner</b> (echte BTC-Stundenkerzen 2017–2019, Coinbase und Bitfinex): Nach einer Divergenz lief der Kurs nur in 48–51 % der Fälle zuerst um die Mindestbewegung in die erwartete Richtung – als Trade nach Gebühren (0,06 % je Seite) durchweg ein Verlust (−25 % bis −47 %). Warten machte es nicht besser: ab der Bestätigung des Umkehrpunkts 44–48 %, nach einem Schlusskurs über dem Zwischenhoch bzw. unter dem Zwischentief nur 21–39 %. Deshalb zeigt die App dazu keine Trefferquote und kein Kauf- oder Verkaufssignal.</p><p class="div-note">Grün = bullisch, rot = bärisch. Eine neue Divergenz pulsiert, bis du diese Erklärung geöffnet hast, danach leuchtet sie ruhig. Ist „Bewegung reduzieren“ im System eingestellt, leuchtet sie ohne Pulsieren.</p></div></details></div>
         <div class="of-chart-grid"><div class="of-chart-pane"><div id="chart" class="chart" tabindex="0" role="img" aria-label="Kerzenchart. Mit Pfeiltasten Kerzen auswählen, mit Plus und Minus zoomen."><div class="chart-skel" aria-hidden="true"><i class="skel" style="height:38%"></i><i class="skel" style="height:52%"></i><i class="skel" style="height:46%"></i><i class="skel" style="height:61%"></i><i class="skel" style="height:57%"></i><i class="skel" style="height:70%"></i><i class="skel" style="height:64%"></i><i class="skel" style="height:49%"></i><i class="skel" style="height:55%"></i><i class="skel" style="height:68%"></i><i class="skel" style="height:74%"></i><i class="skel" style="height:66%"></i><i class="skel" style="height:58%"></i><i class="skel" style="height:63%"></i><i class="skel" style="height:77%"></i><i class="skel" style="height:71%"></i><i class="skel" style="height:80%"></i><i class="skel" style="height:69%"></i><i class="skel" style="height:62%"></i><i class="skel" style="height:72%"></i><i class="skel" style="height:84%"></i><i class="skel" style="height:78%"></i><i class="skel" style="height:73%"></i><i class="skel" style="height:88%"></i></div><span class="sr-only">Marktdaten werden geladen</span></div>

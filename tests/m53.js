@@ -95,9 +95,10 @@ const tests = {
     const api = (host, path) => page.evaluate(async u => (await fetch(u)).json(), `https://${host}${path}`);
     let t0 = Date.now();
     await jsClick(page, '#watchlist .wl-tile[data-watch="BTC"]');
-    let r = await rowFor(/^Tief [\d.,]+ · Hoch [\d.,]+ · Spot$/);
+    let r = await rowFor(/^Tief [\d.,]+ · Hoch [\d.,]+$/);
     let a = await api('data-api.binance.vision', '/api/v3/ticker/24hr?symbol=BTCUSDT'), m = r?.match(/Tief ([\d.,]+) · Hoch ([\d.,]+)/) || [];
-    check('BTC (Spot): Zeile „24h  Tief … · Hoch … · Spot“ mit den Werten der 24h-Statistik', r && Math.abs(num(m[1]) / +a.lowPrice - 1) < 0.003 && Math.abs(num(m[2]) / +a.highPrice - 1) < 0.003 && num(m[1]) <= num(m[2]), `${r} · API ${a.lowPrice}/${a.highPrice}`);
+    check('BTC: Zeile „24h  Tief … · Hoch …“ ohne Spot-Zusatz mit den unveränderten Statistikwerten', r && Math.abs(num(m[1]) / +a.lowPrice - 1) < 0.003 && Math.abs(num(m[2]) / +a.highPrice - 1) < 0.003 && num(m[1]) <= num(m[2]), `${r} · API ${a.lowPrice}/${a.highPrice}`);
+    check('24h-Tief rot und Hoch grün; nur die Werte eingefärbt',await page.evaluate(()=>{const lo=document.querySelector('.wl-d-24lo'),hi=document.querySelector('.wl-d-24hi'),rgb=n=>getComputedStyle(n).color.match(/[\d.]+/g).map(Number);if(!lo||!hi)return false;const l=rgb(lo),h=rgb(hi);return l[0]>l[1]&&h[1]>h[0]&&!/Tief|Hoch|Spot/.test(lo.textContent+hi.textContent)&&!document.querySelector('.wl-d-24v').textContent.includes('Spot');}));
     let log = await h.ctl(`/log?since=${t0}`);
     check('Abruf über /api/v3/ticker/24hr (Spot), nicht über die Futures', log.some(e => e.path === '/api/v3/ticker/24hr' && e.q.symbol === 'BTCUSDT') && !log.some(e => e.path === '/fapi/v1/ticker/24hr' && e.q.symbol === 'BTCUSDT'), JSON.stringify(log.filter(e => /24hr/.test(e.path)).map(e => e.host + e.path)));
     const tip = await page.evaluate(() => document.querySelector('#wl-detail .wl-d-24h').title);
