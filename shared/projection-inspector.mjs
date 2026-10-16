@@ -1,4 +1,4 @@
-// Reine Darstellung der bereits gezeichneten Musterlinien; keine neue Prognose.
+// Reine Darstellung bereits gezeichneter Projektionen; keine neue Prognose.
 import { projectionTime } from './pattern-projection.mjs';
 import { timeIndex } from './chart-detail.mjs';
 export function projectionIndexTime(candles, interval, index) {
@@ -37,10 +37,11 @@ export function projectionValues(lines, selection) {
   if (!touched) return null;
   const sample = r => { const f = r.fractionAt(selection.time); return Number.isFinite(f) && f >= -1e-8 && f <= 1+1e-8 ? { price: r.fromPrice+(r.price-r.fromPrice)*f, x: r.x1+(r.x2-r.x1)*f, y: r.y1+(r.y2-r.y1)*f } : null; };
   const point = sample(touched); if (!point) return null;
-  // Der sichtbare Korridor kann auch aus zwei unterschiedlichen Mustern stammen.
+  // Muster und ZigZag-Band getrennt halten. Der Muster-Korridor kann auch aus
+  // zwei unterschiedlichen Mustern stammen.
   // Nur tatsächlich bis zu dieser Uhrzeit gezeichnete Linien verwenden; bei mehr
   // als zwei Linien bezeichnen „Oben/Unten“ die äußeren Grenzen.
-  const prices=lines.map(sample).filter(Boolean).map(r=>r.price);
+  const prices=lines.filter(r=>(r.family||'pattern')===(touched.family||'pattern')).map(sample).filter(Boolean).map(r=>r.price);
   const top=prices.length>=2?Math.max(...prices):null,bottom=prices.length>=2?Math.min(...prices):null;
   return { touched, point, top, bottom, spread: top !== null && bottom !== null ? Math.abs(top-bottom) : null };
 }
@@ -103,7 +104,7 @@ export function createProjectionInspector(host,{rotated=()=>false}={}) {
     const title=document.createElement('strong'),time=new Date(selected.time),fmt=v=>projectionPrice(v)+' $';
     title.textContent=projectionPrice(values.point.price)+' · '+time.toLocaleTimeString('de-DE',{timeZone:'UTC',hour:'2-digit',minute:'2-digit'});label.append(title);
     for(const [name,value] of [['Oben',values.top],['Unten',values.bottom],['Abstand',values.spread]]){const row=document.createElement('span'),key=document.createElement('span'),val=document.createElement('b');key.textContent=name;val.textContent=value===null?'–':fmt(value);row.append(key,val);label.append(row);}
-    const note=document.createElement('small');note.textContent=time.toLocaleDateString('de-DE',{timeZone:'UTC',day:'2-digit',month:'2-digit'})+' · UTC · Linienprojektion';label.append(note);
+    const note=document.createElement('small');note.textContent=time.toLocaleDateString('de-DE',{timeZone:'UTC',day:'2-digit',month:'2-digit'})+' · UTC · '+(values.touched.label||'Linienprojektion');label.append(note);
     label.dataset.lineKey=selected.key;label.dataset.time=String(selected.time);label.dataset.price=String(values.point.price);host.append(label);
     const s=space();obstacles=s?[...svg.querySelectorAll('.axis-label,.last-tag,.magnet-g')].filter(n=>n.getAttribute('visibility')!=='hidden'&&n.style.display!=='none').map(n=>{const r=s.rect(n.getBoundingClientRect());return{x:r.x-3,y:r.y-3,width:r.width+6,height:r.height+6};}):[];position();
   }
@@ -113,7 +114,7 @@ export function createProjectionInspector(host,{rotated=()=>false}={}) {
     const inside=point.x>=s.plot.left&&point.x<=s.plot.right&&point.y>=s.plot.top&&point.y<=s.plot.bottom;
     // Deutlich beschriftete/antippbare bestehende Chart-Elemente behalten Vorrang.
     const blocked=target?.closest?.('[data-pat],[data-pat-ghost],[data-kiz],[data-zsig],.last-tag,.axis-label');
-    const segments=inspect&&inside&&!blocked ? rows.map(row=>({a:s.local(row.element,row.x1,row.y1),b:s.local(row.element,row.x2,row.y2),row})).filter(l=>l.a&&l.b) : [];
+    const segments=inspect&&inside&&!blocked ? rows.filter(row=>row.interactive!==false).map(row=>({a:s.local(row.element,row.x1,row.y1),b:s.local(row.element,row.x2,row.y2),row})).filter(l=>l.a&&l.b) : [];
     const nearest=nearestProjection(segments,point);if(!nearest){close();return false;}
     const row=nearest.line.row;selected={key:row.key,time:row.timeAt(nearest.fraction)};draw(s.svg,frame);return true;
   }

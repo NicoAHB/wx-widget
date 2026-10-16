@@ -1,3 +1,9 @@
+## 3.76.3 (Codex): ZigZag-Prognose mit Kurs-Label und Punkt
+
+- Nutzer meldet fehlende Wertanzeige bei ETC 4h mit HA im Hochformat-Vollbild. Ursache: Der bisherige Inspector war nur an Chartmuster-Projektionen angebunden, nicht an die türkis gestrichelte ZigZag-Prognose. Jetzt auch dort ein unsichtbares 26-CSS-px-Fingerziel, ein Kurs-/Zeit-Label und ein farbiger Punkt auf derselben Linie. Gemeinsame Auswahl-/Vollbild-/Gestenlogik bleibt erhalten.
+- Bandwerte werden aus dem bereits gezeichneten ZigZag-Kegel übernommen. Eigene Prognosefamilie verhindert Vermischung mit Musterlinien; Bandgrenzen sind reine Daten, keine zusätzlichen sichtbaren/tippbaren Linien. Absoluter Auswahlzeitpunkt, Live-Neuberechnung und gemeinsames Schließen von Label/Punkt wie bisher. Prognose-/Lernberechnung, OHLCV, Signale und sonstiges Layout unverändert.
+- Branch `codex/zigzag-prognose-touch` ab `main` dc426d7; App/SW 3.76.3, Dienstquellstand 2.15.1 unverändert, ältere Bündel unverändert. **181/181** gezielte Prüfungen in neun Läufen, einschließlich ETC-4h-Regression und bestehender Musterprojektion in Chromium/WebKit, 320–1440 px, Hochformat-/gedrehtem Vollbild, Chart-Gesten, ZigZag-Lernen und PWA-Update/Offline. Lint 0 Fehler / 3 bekannte Warnungen. [Umfang und Gerätecheck](docs/ZIGZAG-PROGNOSE-3.76.3.md). Isolierte Freigabe und öffentlicher Nachweis im Release-PR; keine physischen iOS-Geräte verfügbar.
+
 ## 3.76.2 (Codex): farbiger Punkt an der gewählten Prognose-Stelle
 
 - Nutzerwunsch: Herkunft des angezeigten Prognose-Kurses direkt auf der gestrichelten Linie markieren. Ein 12-CSS-px-Punkt in Linien-/Label-Farbe mit dunkler Einfassung sitzt am selben ungerundeten Anker wie das Label. Beim Wechsel zur anderen Linie, Live-Neuberechnung und Zoom wird er mitgeführt; beim Schließen oder Coinwechsel gemeinsam entfernt. Keine zusätzlichen Daten oder Prognoseberechnungen.
