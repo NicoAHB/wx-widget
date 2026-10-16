@@ -1,6 +1,6 @@
 {
   "version": "2.15.1",
-  "appVersion": "3.77.3",
+  "appVersion": "3.77.4",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
@@ -289,8 +289,13 @@
     },
     {
       "path": "shared/macd-chart.mjs",
-      "sha256": "8f0470ca114326d314d19dacf32b0de3f238392327b4fbcb033dd2435f2956fc",
-      "bytes": 21741
+      "sha256": "072d7a801381e3292be6a1c7bbf950fce17a9fb5b5c6a97c3e04cace20e73f5c",
+      "bytes": 25131
+    },
+    {
+      "path": "shared/macd-notice.mjs",
+      "sha256": "348685cba3459013e6a3df7e4478f6c99dc953568be7b3b7c723e08efb670821",
+      "bytes": 2330
     },
     {
       "path": "shared/market-intervals.mjs",
