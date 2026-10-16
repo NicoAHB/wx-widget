@@ -2,7 +2,7 @@
 import { paperResult, paperQuote } from './paper-bot.mjs';
 const el=(tag,text='',cls='')=>{const n=globalThis.document.createElement(tag);n.textContent=text;n.className=cls;return n;};
 const text=(n,s)=>{if(n.textContent!==s)n.textContent=s;},num=x=>Number.isFinite(Number(x))?Number(x).toLocaleString('de-DE',{maximumFractionDigits:6}):'—';
-const price=x=>num(x)+' USDT',date=at=>new Date(at).toLocaleString('de-DE'),tone=(n,x)=>{n.classList.toggle('bot-net-positive',x>0);n.classList.toggle('bot-net-negative',x<0);};
+const price=x=>num(x)+' USDT',date=at=>new Date(at).toLocaleString('de-DE', { timeZone: 'Europe/Berlin' }),tone=(n,x)=>{n.classList.toggle('bot-net-positive',x>0);n.classList.toggle('bot-net-negative',x<0);};
 export function createPaperBotView({host,controller,settingsHost,currentSymbol,formatPrice=price,savePrefs=()=>{},prefs={}}){
  const root=el('section','','paper-demo bot-view');root.id='paper-demo';const head=el('div','','paper-head'),badge=el('span','','ki-tone');badge.id='paper-status';badge.setAttribute('role','status');head.append(el('h2','KI-Handelsdemo'),badge);root.append(head);
  const context=el('p','','paper-context');context.id='paper-context';root.append(context,el('p','Lokal mit öffentlichen Bitget-USDT-Futures-Kursen. Nur in sichtbarer, geöffneter App. Übungsbuch, keine Börsenorders.','bot-hint'));

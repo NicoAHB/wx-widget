@@ -102,9 +102,9 @@ export function createProjectionInspector(host,{rotated=()=>false}={}) {
     label=document.createElement('div');label.className='projection-inspector';label.setAttribute('role','status');label.style.setProperty('--projection-color',values.touched.color);
     marker=document.createElement('span');marker.className='projection-inspector-point';marker.setAttribute('aria-hidden','true');marker.style.setProperty('--projection-color',values.touched.color);host.append(marker);
     const title=document.createElement('strong'),time=new Date(selected.time),fmt=v=>projectionPrice(v)+' $';
-    title.textContent=projectionPrice(values.point.price)+' · '+time.toLocaleTimeString('de-DE',{timeZone:'UTC',hour:'2-digit',minute:'2-digit'});label.append(title);
+    title.textContent=projectionPrice(values.point.price)+' · '+time.toLocaleTimeString('de-DE',{timeZone:'Europe/Berlin',hour:'2-digit',minute:'2-digit'});label.append(title);
     for(const [name,value] of [['Oben',values.top],['Unten',values.bottom],['Abstand',values.spread]]){const row=document.createElement('span'),key=document.createElement('span'),val=document.createElement('b');key.textContent=name;val.textContent=value===null?'–':fmt(value);row.append(key,val);label.append(row);}
-    const note=document.createElement('small');note.textContent=time.toLocaleDateString('de-DE',{timeZone:'UTC',day:'2-digit',month:'2-digit'})+' · UTC · '+(values.touched.label||'Linienprojektion');label.append(note);
+    const note=document.createElement('small');note.textContent=time.toLocaleDateString('de-DE',{timeZone:'Europe/Berlin',day:'2-digit',month:'2-digit'})+' · MEZ/MESZ · '+(values.touched.label||'Linienprojektion');label.append(note);
     label.dataset.lineKey=selected.key;label.dataset.time=String(selected.time);label.dataset.price=String(values.point.price);host.append(label);
     const s=space();obstacles=s?[...svg.querySelectorAll('.axis-label,.last-tag,.magnet-g')].filter(n=>n.getAttribute('visibility')!=='hidden'&&n.style.display!=='none').map(n=>{const r=s.rect(n.getBoundingClientRect());return{x:r.x-3,y:r.y-3,width:r.width+6,height:r.height+6};}):[];position();
   }

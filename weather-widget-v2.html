@@ -2493,49 +2493,49 @@ html[data-panel-style=glass] #chart-sec{background:var(--surface);-webkit-backdr
 .macd-help .sheet-head button{min-width:44px;min-height:44px}.macd-help-body{gap:12px}.macd-help-body p{margin:0;overflow-wrap:anywhere}.macd-context,.macd-values{font-variant-numeric:tabular-nums}.macd-values{padding:10px;border:1px solid var(--border);border-radius:9px;background:var(--surface-2)}.macd-strategy{border:1px solid var(--border);border-radius:12px;overflow:hidden}.macd-strategy>summary{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;min-height:56px;padding:10px 12px;cursor:pointer;list-style:none}.macd-strategy>summary::-webkit-details-marker{display:none}.macd-strategy>summary::before{content:'›';font-size:22px}.macd-strategy[open]>summary::before{transform:rotate(90deg)}.macd-strategy>summary strong{flex:1 1 220px;font-size:14px}.macd-strategy-state{font-size:12px;color:var(--muted)}.macd-directions{display:grid;gap:10px;padding:0 10px 10px}.macd-direction{min-width:0;padding:12px;border:1px solid var(--border);border-radius:9px;background:var(--surface-2)}.macd-direction h3{font-size:14px;margin:0 0 6px}.macd-direction .macd-found{font-size:12px;color:var(--muted);margin-top:8px}.macd-direction[data-direction="1"].is-active{border-color:var(--up-text);background:var(--up-bg);box-shadow:inset 0 0 16px var(--up-border),0 0 8px var(--up-border)}.macd-direction[data-direction="-1"].is-active{border-color:var(--down-text);background:var(--down-bg);box-shadow:inset 0 0 16px var(--down-border),0 0 8px var(--down-border)}.macd-direction[data-direction="1"].is-active h3,.macd-direction[data-direction="1"].is-active .macd-found,.macd-strategy[data-tone=bull] .macd-strategy-state{color:var(--up-text)}.macd-direction[data-direction="-1"].is-active h3,.macd-direction[data-direction="-1"].is-active .macd-found,.macd-strategy[data-tone=bear] .macd-strategy-state{color:var(--down-text)}.macd-help-body .macd-method,.macd-help-body .macd-caution{font-size:12px}.macd-caution{padding:10px 0 0;border-top:1px solid var(--border)}
 </style>
   <script type="module">
-import { MARKET_INTERVALS, CHART_INTERVALS, SIGNAL_INTERVALS, INTERVAL_MS, nearestChartInterval } from './bundles/3.77.6/shared/market-intervals.mjs';
-import { createDetailCandles, detailOptions, detailChoice, closedSeries, timeIndex, DETAIL_VISIBLE_MAX } from './bundles/3.77.6/shared/chart-detail.mjs';
-import { patternChipRows, patternChipKey } from './bundles/3.77.6/shared/chart-pattern-chips.mjs';
-import { PATTERN_QUALITY_CONFIG, chartPatternQuality, repricePatternQuality, sortPatternQuality, patternOverview } from './bundles/3.77.6/shared/chart-pattern-quality.mjs';
-import { createPatternOverviewFeed } from './bundles/3.77.6/shared/chart-pattern-overview-feed.mjs';
+import { MARKET_INTERVALS, CHART_INTERVALS, SIGNAL_INTERVALS, INTERVAL_MS, nearestChartInterval } from './bundles/3.77.7/shared/market-intervals.mjs';
+import { createDetailCandles, detailOptions, detailChoice, closedSeries, timeIndex, DETAIL_VISIBLE_MAX } from './bundles/3.77.7/shared/chart-detail.mjs';
+import { patternChipRows, patternChipKey } from './bundles/3.77.7/shared/chart-pattern-chips.mjs';
+import { PATTERN_QUALITY_CONFIG, chartPatternQuality, repricePatternQuality, sortPatternQuality, patternOverview } from './bundles/3.77.7/shared/chart-pattern-quality.mjs';
+import { createPatternOverviewFeed } from './bundles/3.77.7/shared/chart-pattern-overview-feed.mjs';
 // Arbeitsstand: bei der gemeinsamen Release-Freigabe in das neue Versionsbündel übernehmen.
-import { createPositioningFeed } from './bundles/3.77.6/shared/positioning-score.mjs';
-import { CRYPTO_CALENDAR, parseCryptoCalendar, cryptoCalendarEvents } from './bundles/3.77.6/shared/crypto-calendar.mjs';
-import { createMusterClient } from './bundles/3.77.6/shared/muster-bot-feed.mjs';
-import { createMusterPaper } from './bundles/3.77.6/shared/muster-bot-paper.mjs';
-import { readMusterPaper, writeMusterPaper } from './bundles/3.77.6/shared/muster-bot-store.mjs';
-import { projectPatternLines, projectionSettings, projectionTime } from './bundles/3.77.6/shared/pattern-projection.mjs';
-import { MACD_CHART, macdFindings, macdPaneLayout, drawMacdPane, createMacdHelp } from './bundles/3.77.6/shared/macd-chart.mjs';
-import { MACD_NOTICE } from './bundles/3.77.6/shared/macd-notice.mjs';
+import { createPositioningFeed } from './bundles/3.77.7/shared/positioning-score.mjs';
+import { CRYPTO_CALENDAR, parseCryptoCalendar, cryptoCalendarEvents } from './bundles/3.77.7/shared/crypto-calendar.mjs';
+import { createMusterClient } from './bundles/3.77.7/shared/muster-bot-feed.mjs';
+import { createMusterPaper } from './bundles/3.77.7/shared/muster-bot-paper.mjs';
+import { readMusterPaper, writeMusterPaper } from './bundles/3.77.7/shared/muster-bot-store.mjs';
+import { projectPatternLines, projectionSettings, projectionTime } from './bundles/3.77.7/shared/pattern-projection.mjs';
+import { MACD_CHART, macdFindings, macdPaneLayout, drawMacdPane, createMacdHelp } from './bundles/3.77.7/shared/macd-chart.mjs';
+import { MACD_NOTICE } from './bundles/3.77.7/shared/macd-notice.mjs';
 // NEU 3.77.3: Zeitachse mit Datum und kollisionsfreien Beschriftungen.
-import { chartTimeTicks } from './bundles/3.77.6/shared/chart-time-axis.mjs';
-import { createProjectionInspector, projectionPrice, projectionIndexTime, projectionTimeIndex } from './bundles/3.77.6/shared/projection-inspector.mjs';
-import { createGithubSyncView } from './bundles/3.77.6/shared/github-sync-view.mjs';
-import { createDocViewer } from './bundles/3.77.6/shared/doc-viewer.mjs';
-import { PATTERN_FILTER_PRESET_NAMES, PATTERN_FILTER_FIELDS, PATTERN_CARD_FIELDS, HIGHER_TIMEFRAME, patternFilterSettings, patternFilterFromForm, evaluatePatternSignal, selectPatternSignals, patternJournalEntry, addPatternJournal, resolvePatternJournal, patternHitStats, patternJournalStats, PATTERN_OUTCOME_NAMES, backtestPatternFilter } from './bundles/3.77.6/shared/pattern-quality.mjs';
-import { stripSyncSecrets } from './bundles/3.77.6/shared/github-sync.mjs';
-import { createMusterView } from './bundles/3.77.6/shared/muster-bot-view.mjs';
-import { computeKiZones, KI_ZONE_INTERVALS } from './bundles/3.77.6/shared/ki-zones.mjs';
-import { heikinAshi } from './bundles/3.77.6/shared/heikin-ashi.mjs';
-import { detectFvgs, fvgSummary } from './bundles/3.77.6/shared/fvg.mjs';
-import { scoreZoneStrength, ZONE_STRENGTH, ZONE_SIGNAL, zoneSignal, zoneStep, zoneOutcome, summarizeZoneBacktest } from './bundles/3.77.6/shared/zone-strength.mjs';
+import { chartTimeTicks } from './bundles/3.77.7/shared/chart-time-axis.mjs';
+import { createProjectionInspector, projectionPrice, projectionIndexTime, projectionTimeIndex } from './bundles/3.77.7/shared/projection-inspector.mjs';
+import { createGithubSyncView } from './bundles/3.77.7/shared/github-sync-view.mjs';
+import { createDocViewer } from './bundles/3.77.7/shared/doc-viewer.mjs';
+import { PATTERN_FILTER_PRESET_NAMES, PATTERN_FILTER_FIELDS, PATTERN_CARD_FIELDS, HIGHER_TIMEFRAME, patternFilterSettings, patternFilterFromForm, evaluatePatternSignal, selectPatternSignals, patternJournalEntry, addPatternJournal, resolvePatternJournal, patternHitStats, patternJournalStats, PATTERN_OUTCOME_NAMES, backtestPatternFilter } from './bundles/3.77.7/shared/pattern-quality.mjs';
+import { stripSyncSecrets } from './bundles/3.77.7/shared/github-sync.mjs';
+import { createMusterView } from './bundles/3.77.7/shared/muster-bot-view.mjs';
+import { computeKiZones, KI_ZONE_INTERVALS } from './bundles/3.77.7/shared/ki-zones.mjs';
+import { heikinAshi } from './bundles/3.77.7/shared/heikin-ashi.mjs';
+import { detectFvgs, fvgSummary } from './bundles/3.77.7/shared/fvg.mjs';
+import { scoreZoneStrength, ZONE_STRENGTH, ZONE_SIGNAL, zoneSignal, zoneStep, zoneOutcome, summarizeZoneBacktest } from './bundles/3.77.7/shared/zone-strength.mjs';
 // 3.68.0: KI-Signale/Trading-Bot entfernt; der GitHub-Sync behält sein Format inklusive vorhandener Modelloriginale.
-import { exportModelArchive, importModelArchive, validateModelArchive, restoreModelOriginals } from './bundles/3.77.6/shared/model-archive.mjs';
-import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT, patternGrade } from './bundles/3.77.6/shared/telegram-format.mjs';
-import { patternSignalCard, patternChartData } from './bundles/3.77.6/shared/pattern-signal-card.mjs';   // 3.71.0: Chartmuster-Signalkarte
-import { pnlAlarmCard } from './bundles/3.77.6/shared/pnl-alarm-card.mjs';   // 3.71.0: Gewinn-/Verlust-Alarm als Bild
-import { priceAlarmCard } from './bundles/3.77.6/shared/price-alarm-card.mjs';   // 3.71.0: Kurs-Alarm als Bild
-import { createOrderflowView } from './bundles/3.77.6/shared/orderflow-view.mjs';
-import { createMarketRadarView } from './bundles/3.77.6/shared/market-radar-view.mjs';
-import { createPanelAppearanceSettings } from './bundles/3.77.6/shared/panel-appearance.mjs';
-import { createSignalView } from './bundles/3.77.6/shared/orderflow-signal-view.mjs';
-import { neutralMacdSignal } from './bundles/3.77.6/shared/indicators.mjs';
-import { WATCH_MODEL_KEY, WATCH_COMPARE_KEY } from './bundles/3.77.6/shared/watch-model-core.mjs';
-import { rsiSignal } from './bundles/3.77.6/shared/rsi-momentum.mjs';
-import { createWatchModelFeed } from './bundles/3.77.6/shared/watch-model-feed.mjs';
-import { createSignalReasonsView } from './bundles/3.77.6/shared/watch-signal-reasons.mjs';
-import { createWatchModelView } from './bundles/3.77.6/shared/watch-model-view.mjs';
-import { networkState, createWidgetBoundary } from './bundles/3.77.6/shared/widget-state.mjs';
+import { exportModelArchive, importModelArchive, validateModelArchive, restoreModelOriginals } from './bundles/3.77.7/shared/model-archive.mjs';
+import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT, patternGrade } from './bundles/3.77.7/shared/telegram-format.mjs';
+import { patternSignalCard, patternChartData } from './bundles/3.77.7/shared/pattern-signal-card.mjs';   // 3.71.0: Chartmuster-Signalkarte
+import { pnlAlarmCard } from './bundles/3.77.7/shared/pnl-alarm-card.mjs';   // 3.71.0: Gewinn-/Verlust-Alarm als Bild
+import { priceAlarmCard } from './bundles/3.77.7/shared/price-alarm-card.mjs';   // 3.71.0: Kurs-Alarm als Bild
+import { createOrderflowView } from './bundles/3.77.7/shared/orderflow-view.mjs';
+import { createMarketRadarView } from './bundles/3.77.7/shared/market-radar-view.mjs';
+import { createPanelAppearanceSettings } from './bundles/3.77.7/shared/panel-appearance.mjs';
+import { createSignalView } from './bundles/3.77.7/shared/orderflow-signal-view.mjs';
+import { neutralMacdSignal } from './bundles/3.77.7/shared/indicators.mjs';
+import { WATCH_MODEL_KEY, WATCH_COMPARE_KEY } from './bundles/3.77.7/shared/watch-model-core.mjs';
+import { rsiSignal } from './bundles/3.77.7/shared/rsi-momentum.mjs';
+import { createWatchModelFeed } from './bundles/3.77.7/shared/watch-model-feed.mjs';
+import { createSignalReasonsView } from './bundles/3.77.7/shared/watch-signal-reasons.mjs';
+import { createWatchModelView } from './bundles/3.77.7/shared/watch-model-view.mjs';
+import { networkState, createWidgetBoundary } from './bundles/3.77.7/shared/widget-state.mjs';
 // Pure, unrounded calculations. Prices are USDT per unit; FX is USDT per EUR.
 function rsi(closes, period = 14) {
   const out = Array(closes.length).fill(null);
@@ -3252,7 +3252,7 @@ function movementsCsv(list) {
 }
 const FX_CSV = { live: 'Binance EUR/USDT (Mitte)', m1: 'Binance EUR/USDT (1-Minuten-Kerze)', set: 'manueller Kurs (Einstellung)', man: 'selbst eingetragen', day: 'Tagesdurchschnitt (Näherung)' };
 function tradesCsv(trades, demo = false) {
-  const d = x => String(x).replace('.', ','), dt = ms => new Date(ms).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const d = x => String(x).replace('.', ','), dt = ms => new Date(ms).toLocaleString('de-DE', { timeZone:'Europe/Berlin', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   const rows = [['Geöffnet','Geschlossen','Symbol','Richtung','Modus','Hebel','Größe','Einstieg','Ausstieg','Margin USDT','Gebühren USDT','Vorher realisiert USDT','G/V USDT','Quelle G/V','EUR/USDT','G/V EUR','G/V % auf Margin','Gründe','Notiz','Funding USDT','Abschluss','EUR-Status','EUR-Kurs Quelle','EUR-Kurszeit', ...(demo ? ['Handelsmodus'] : [])]];
   for (const t of trades) rows.push([dt(t.openedAt), dt(t.closedAt), t.symbol, t.side === 'long' ? 'Long' : 'Short', t.mode === 'cross' ? 'Cross' : 'Isoliert', d(t.leverage), d(+t.qty.toPrecision(12)),
     d(t.entry), d(t.exit), d(t.margin.toFixed(4)), d(t.fees), d(t.preRealized), d(t.pnl.toFixed(4)), t.pnlSource === 'exchange' ? 'Börse' : 'berechnet',
@@ -3367,10 +3367,10 @@ const number = (x, decimals = 2) => { if (x === null || !Number.isFinite(x)) ret
 const priceText = x => number(x, x > 0 && x < 1 ? Math.min(10, 3 - Math.floor(Math.log10(x))) : x && x < 100 ? 4 : 2); // unter 1: 4 signifikante Stellen
 const signed = (x, decimals = 2) => Number.isFinite(x) ? `${x > 0 ? '+' : x < 0 ? '−' : ''}${number(Math.abs(x), decimals)}` : '—';
 const euro = x => Number.isFinite(x) ? number(x) + ' €' : '—';
-const UTC_T = new Intl.DateTimeFormat('de-DE', {timeZone:'UTC', hour:'2-digit', minute:'2-digit', second:'2-digit'}), UTC_D = new Intl.DateTimeFormat('de-DE', {timeZone:'UTC', day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+const DISPLAY_T = new Intl.DateTimeFormat('de-DE', {timeZone:'Europe/Berlin', hour:'2-digit', minute:'2-digit', second:'2-digit'}), DISPLAY_D = new Intl.DateTimeFormat('de-DE', {timeZone:'Europe/Berlin', day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
 const fmtDate = (f, ms) => { const d = new Date(ms); return Number.isNaN(d.getTime()) ? 'Invalid Date' : f.format(d); }; // wie toLocale…String bei ungültigem Datum
-const utcTime = ms => fmtDate(UTC_T, ms);
-const utcDate = ms => fmtDate(UTC_D, ms);
+const deTime = ms => fmtDate(DISPLAY_T, ms);
+const deDate = ms => fmtDate(DISPLAY_D, ms);
 const value = id => $(id).value === '' ? NaN : Number($(id).value);
 const showNotice = (id, message) => { put(id, message || ''); $(id).hidden = !message; };
 const color = (id, x) => { $(id).classList.toggle('positive', x > 0); $(id).classList.toggle('negative', x < 0); };
@@ -3391,7 +3391,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
 // 3.43.0 (G10a): reiner Fachkern in shared/; Datenquelle und Karten folgen getrennt.
 // 3.44.0 (G10b): öffentlicher Adapter in shared/bitget-public.mjs; sichtbare Anbindung folgt mit G10(c).
-const APP_VERSION = '3.77.6', docEl = document.documentElement;
+const APP_VERSION = '3.77.7', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -3882,7 +3882,7 @@ function renderMarket() {
   put('price',priceText(p));
   const change = last ? (last.close/last.open-1)*100 : null;
   put('candle-change',last ? `${signed(change)} % · Kerze` : '—'); color('candle-change',change);
-  put('updated',state.marketAt ? `${state.marketError ? 'Letzter Stand' : chartFeedFresh() ? 'Live' : state.fromCache ? 'Zwischenspeicher, wird aktualisiert ·' : 'Abgerufen'} ${utcTime(state.marketAt)} UTC` : 'Noch keine Marktdaten');
+  put('updated',state.marketAt ? `${state.marketError ? 'Letzter Stand' : chartFeedFresh() ? 'Live' : state.fromCache ? 'Zwischenspeicher, wird aktualisiert ·' : 'Abgerufen'} ${deTime(state.marketAt)} MEZ/MESZ` : 'Noch keine Marktdaten');
   put('price-eur',p && currentFx()>0 ? `≈ ${euro(p/currentFx())} / ${base}` : 'EUR/USDT-Kurs ausstehend');
   const closed = c.filter(x=>x.closeTime < Date.now());
   const levels = p ? pivotLevels(closed,p) : {};
@@ -4167,8 +4167,8 @@ function capRender() { return chartBoundary ? chartBoundary.run(capRenderContent
 function capRenderContent() {
   if (!CAP.on) return;
   const box = $('chart'), d = CAP.data, resTxt = r => (r === '1d' ? 'täglich' : 'stündlich');
-  const head = d ? `Market Cap (USD) · ${CAP_PROV[d.prov].name} · ${resTxt(d.res)}${d.res !== d.want ? '' : ` (Chart ${state.interval})`} · Datenstand ${d.now ? `${utcDate(d.now[0])} UTC` : `${utcDate(d.pts.at(-1)[0])} UTC`}` : '';
-  put('ohlc', d ? `MCap ${compactCap(d.pts.at(-1)[1])} · ${CAP_PROV[d.prov].name}${d.stale ? ` · Stand von ${utcDate(d.fetchedAt)} UTC (${d.stale})` : ''}` : CAP.loading ? 'Market Cap wird geladen …' : `Market Cap nicht verfügbar`);
+  const head = d ? `Market Cap (USD) · ${CAP_PROV[d.prov].name} · ${resTxt(d.res)}${d.res !== d.want ? '' : ` (Chart ${state.interval})`} · Datenstand ${d.now ? `${deDate(d.now[0])} MEZ/MESZ` : `${deDate(d.pts.at(-1)[0])} MEZ/MESZ`}` : '';
+  put('ohlc', d ? `MCap ${compactCap(d.pts.at(-1)[1])} · ${CAP_PROV[d.prov].name}${d.stale ? ` · Stand von ${deDate(d.fetchedAt)} MEZ/MESZ (${d.stale})` : ''}` : CAP.loading ? 'Market Cap wird geladen …' : `Market Cap nicht verfügbar`);
   if (!d) {
     const empty = el('div', 'chart-empty'), mark = el('span', 'empty-mark', '₵'); mark.setAttribute('aria-hidden', 'true');
     empty.append(mark, el('strong', '', CAP.loading ? 'Market Cap wird geladen …' : 'Market Cap nicht verfügbar'), el('span', 'cap-why', CAP.loading ? 'Historische Marktkapitalisierung (USD), schlüssellos von CoinGecko oder CoinPaprika' : CAP.err || ''));
@@ -4179,15 +4179,15 @@ function capRenderContent() {
   // Kopf und Unterzeile brechen zwischen den „·“-Abschnitten um (am Handy ragte der Kopf sonst über den Rand)
   const mc = capRender.mc || (capRender.mc = document.createElement('canvas').getContext('2d')), fam = getComputedStyle(box).fontFamily;
   const wrap = (txt, font) => { mc.font = font; const out = []; let line = ''; for (const part of txt.split(' · ')) { const t = line ? `${line} · ${part}` : part; if (line && mc.measureText(t).width > w - left - 12) { out.push(line); line = part; } else line = t; } if (line) out.push(line); return out; };
-  const sub = `Daten: ${CAP_PROV[d.prov].name}${d.note ? ` · ${d.note}` : ''}${d.stale ? ` · abgelaufen, Stand ${utcDate(d.fetchedAt)} UTC – ${d.stale}` : ''} · Preisebenen in dieser Ansicht aus`;
+  const sub = `Daten: ${CAP_PROV[d.prov].name}${d.note ? ` · ${d.note}` : ''}${d.stale ? ` · abgelaufen, Stand ${deDate(d.fetchedAt)} MEZ/MESZ – ${d.stale}` : ''} · Preisebenen in dieser Ansicht aus`;
   const headL = wrap(head, `600 12px ${fam}`), subL = wrap(sub, `12px ${fam}`), top = 18 + 14 * (headL.length + subL.length), bottom = h - 40, pw = w - left - right;
   let min = Math.min(...pts.map(p => p[1])), max = Math.max(...pts.map(p => p[1])); const pad = (max - min) * 0.1 || max * 0.01; min -= pad; max += pad;
   const t0 = pts[0][0], t1 = pts.at(-1)[0] === t0 ? t0 + 1 : pts.at(-1)[0], x = t => left + (t - t0) / (t1 - t0) * pw, y = v => top + (max - v) / (max - min) * (bottom - top);
   const svg = node('svg', { viewBox: `0 0 ${w} ${h}`, role: 'presentation', 'aria-hidden': 'true' });
   const gs = (max - min) / 4;
   for (let i = 0; i <= 4; i++) { const v = min + gs * i, yy = y(v); svg.append(node('line', { x1: left, y1: yy, x2: w - right + 4, y2: yy, class: 'grid-line' })); if (!axisIn) svg.append(node('text', { x: w - right + 10, y: yy + 4, class: 'axis-label' }, capAxis(v, gs))); else if (i > 0 && i < 4) svg.append(node('text', { x: w - 6, y: yy - 4, class: 'axis-label', 'text-anchor': 'end' }, capAxis(v, gs))); }
-  // Zeitachse in UTC wie der Kurs-Chart; nur so viele Beschriftungen, wie nebeneinander passen
-  const span = t1 - t0, fmt = span > 3 * 864e5 ? { day: '2-digit', month: '2-digit', timeZone: 'UTC' } : { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'UTC' };
+  // Zeitachse in deutscher Zeit wie der Kurs-Chart; nur so viele Beschriftungen, wie nebeneinander passen
+  const span = t1 - t0, fmt = span > 3 * 864e5 ? { day: '2-digit', month: '2-digit', timeZone: 'Europe/Berlin' } : { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Berlin' };
   mc.font = `12px ${fam}`; const lw = mc.measureText(new Date(t1).toLocaleString('de-DE', fmt)).width, nx = Math.max(2, Math.min(5, Math.floor((pw + 16) / (lw + 24))));
   for (let i = 0; i < nx; i++) { const t = t0 + span * i / (nx - 1); svg.append(node('text', { x: x(t), y: h - 14, class: 'axis-label', 'text-anchor': i === 0 ? 'start' : i === nx - 1 ? 'end' : 'middle' }, new Date(t).toLocaleString('de-DE', fmt))); }
   // eigene Linie mit Punkten – Lücken (mehr als das Doppelte der Auflösung) bleiben offen, keine erfundenen OHLC
@@ -4309,7 +4309,7 @@ function anaSet(iv) {
   if (!ANA_IVS.includes(iv) || iv === ana.iv) return;
   ana.iv = iv; store.set(ANA_KEY, iv); ana.nextAt = 0; renderAna(); void anaLoad(true);
 }
-const anaTime = ms => (ms ? `${utcDate(ms)} UTC` : '—'); // Datum und Uhrzeit (UTC)
+const anaTime = ms => (ms ? `${deDate(ms)} MEZ/MESZ` : '—'); // Datum und Uhrzeit (UTC)
 // Höhere Ebene? Nur dann heißt der Trendkontext „übergeordnet“ und die Zonen lassen sich im Chart zuschalten
 const anaHigher = () => ANA_MS[ana.iv] > (IV_MS[state.interval] || 0);
 function renderAna() {
@@ -4519,7 +4519,7 @@ function renderSignals() {
     else rules.textContent = error || (loading ? (state.paused ? 'Pausiert, noch keine Daten.' : 'Wartet auf Kerzendaten …') : 'Zu wenige abgeschlossene Kerzen (mind. 60).');
     if (skel) rules.classList.add('skel');
     if (rating && error) { const e = document.createElement('span'); e.textContent = 'veraltet: ' + error; rules.append(e); }
-    const time = document.createElement('time'); time.textContent = rating ? `Kerze bis ${utcTime(rating.closeTime + 1).slice(0, 5)} UTC` : '';
+    const time = document.createElement('time'); time.textContent = rating ? `Kerze bis ${deTime(rating.closeTime + 1).slice(0, 5)} MEZ/MESZ` : '';
     const verdict = verdictNode(rating, stale); if (skel) verdict.classList.add('skel');
     row.append(label, verdict, pts, rules, time);
     row.setAttribute('aria-label', `${iv}: ${rating ? VERDICT[rating.verdict] + ', ' + rating.score + ' von 4 Punkten' : 'keine Bewertung'}${moved ? `, vor ${TREND_REF} Minuten ${before.score}` : ''}${stale ? ', veraltet' : ''}. Chart auf ${iv} umschalten.`);
@@ -4833,18 +4833,18 @@ function renderFutures() {
   const funding = state.funding ? Number(state.funding.lastFundingRate)*100 : null;
   put('funding-value', funding == null ? '—' : `${signed(funding,4)} %`);
   put('funding-note',state.fundingError || (funding === null ? 'Keine Funding-Daten verfügbar.' : funding > 0 ? 'Positive Rate: Long zahlt typischerweise an Short.' : funding < 0 ? 'Negative Rate: Short zahlt typischerweise an Long.' : 'Rate null: aktuell kein Funding-Ausgleich aus dieser Rate.'));
-  put('funding-detail',state.funding ? `Nächster Termin: ${utcDate(Number(state.funding.nextFundingTime))} UTC · Rate kann sich ändern.` : 'Futures-Daten unabhängig von Spot');
+  put('funding-detail',state.funding ? `Nächster Termin: ${deDate(Number(state.funding.nextFundingTime))} MEZ/MESZ · Rate kann sich ändern.` : 'Futures-Daten unabhängig von Spot');
   const change = oiHourChange(state.oi,state.history);
   put('oi-value',change ? `${signed(change.percent)} %` : '—');
   const oiLevel = state.oi ? `${number(Number(state.oi.openInterest))} ${state.symbol.slice(0,-4)} aktuell. ` : '';
   put('oi-note', state.oiError || (change ? `${oiLevel}${change.percent > 0 ? 'Offener Mengenbestand gestiegen.' : change.percent < 0 ? 'Offener Mengenbestand gesunken.' : 'Offener Mengenbestand unverändert.'} Keine Kursrichtung ableitbar.` : oiLevel+(state.historyError || 'Kein passender Vergleichspunkt vor einer Stunde verfügbar.')));
-  put('oi-detail',change ? `${utcTime(change.start)}–${utcTime(change.end)} UTC · ${number(change.minutes,1)} Min. (5m-Raster)` : 'Δ ca. 1h · keine Ersatzwerte');
+  put('oi-detail',change ? `${deTime(change.start)}–${deTime(change.end)} MEZ/MESZ · ${number(change.minutes,1)} Min. (5m-Raster)` : 'Δ ca. 1h · keine Ersatzwerte');
 }
 
 function renderFx() {
   $('fx').disabled=state.fxMode==='auto';
   if (state.fxMode==='auto') $('fx').value=state.fx===null ? '' : String(state.fx);
-  put('fx-note',state.fxMode==='manual' ? 'Eigener Kurs in USDT je EUR; bleibt unverändert.' : state.fxError ? `${state.fxError} Bitte auf manuellen Kurs umstellen.` : state.fx ? `Mitte aus Geld-/Briefkurs · ${utcTime(state.fxAt)} UTC. Kein Ausführungskurs.` : 'Umrechnungskurs wird geladen.');
+  put('fx-note',state.fxMode==='manual' ? 'Eigener Kurs in USDT je EUR; bleibt unverändert.' : state.fxError ? `${state.fxError} Bitte auf manuellen Kurs umstellen.` : state.fx ? `Mitte aus Geld-/Briefkurs · ${deTime(state.fxAt)} MEZ/MESZ. Kein Ausführungskurs.` : 'Umrechnungskurs wird geladen.');
 }
 const fxNow = () => { const f = currentFx(); return Number.isFinite(f) && f > 0 ? f : null; };
 // 3.31.0 (G03.9): Kurs für offene Werte – derselbe Live-Kurs wie in der Positionsübersicht (usdtPerEur = USDT je 1 EUR, EUR = USDT /
@@ -4856,7 +4856,7 @@ function fxLive() {
   return { v: L.v, at: L.at, src: 'live', stale: Date.now() - L.at > FX_MAX_AGE };
 }
 // „(+10,55 €)“ zum offenen Wert; veraltet mit Kurszeit, ohne Kurs „€ n. v.“
-const eurOpen = (x, sign = true) => { if (!Number.isFinite(x)) return ''; const f = fxLive(); if (!f) return '(€ n. v. – kein EUR/USDT-Kurs)'; return `(${sign ? signed(x / f.v) : number(x / f.v)} €${f.stale ? ` · Kurs von ${new Date(f.at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}, veraltet` : ''})`; };
+const eurOpen = (x, sign = true) => { if (!Number.isFinite(x)) return ''; const f = fxLive(); if (!f) return '(€ n. v. – kein EUR/USDT-Kurs)'; return `(${sign ? signed(x / f.v) : number(x / f.v)} €${f.stale ? ` · Kurs von ${new Date(f.at).toLocaleTimeString('de-DE', { timeZone:'Europe/Berlin', hour: '2-digit', minute: '2-digit' })}, veraltet` : ''})`; };
 const fxLiveNote = () => { const f = fxLive(); return !f ? 'Euro: kein EUR/USDT-Kurs verfügbar' : f.src === 'set' ? `Euro: manueller Kurs ${number(f.v, 4)} USDT je EUR` : `Euro: Binance EUR/USDT ${number(f.v, 4)} USDT je EUR · ${new Date(f.at).toLocaleTimeString('de-DE')}${f.stale ? ' · veraltet' : ''}`; };
 const eurPart = (x, dec = 2, sign = false) => { const f = fxNow(); return !Number.isFinite(x) ? '' : f ? `(${sign ? signed(x / f, dec) : number(x / f, dec)} €)` : '(€ ausstehend)'; };
 const usdt = (x, dec = 2, sign = false) => Number.isFinite(x) ? `${sign ? signed(x, dec) : number(x, dec)} USDT ${eurPart(x, dec, sign)}` : '—';
@@ -4879,7 +4879,7 @@ function renderCalculator() {
     if (result.crossesLiquidation) warnings.push('Die Zielbewegung erreicht oder überschreitet die modellierte Liquidation. Der lineare Gewinn/Verlust ist dann kein erreichbares Ergebnis einer fortbestehenden Position.');
     if (!fx) warnings.push('Euro-Werte ausstehend: kein gültiger EUR/USDT-Kurs.');
     if (state.marketError) warnings.push('Kursabhängige Ergebnisse sind bis zum nächsten gültigen Abruf ausgesetzt.');
-    if (state.paused && state.marketAt) warnings.push(`Berechnung mit pausiertem Kursstand von ${utcTime(state.marketAt)} UTC.`);
+    if (state.paused && state.marketAt) warnings.push(`Berechnung mit pausiertem Kursstand von ${deTime(state.marketAt)} MEZ/MESZ.`);
     showNotice('scenario-warning',warnings.join(' '));
     renderLadder(result); noteCalcLiq(result);
     return result;
@@ -4892,7 +4892,7 @@ function renderCalculator() {
 
 // ---------- Meine Positionen ----------
 const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-const localTime = ms => new Date(ms).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+const localTime = ms => new Date(ms).toLocaleString('de-DE', { timeZone:'Europe/Berlin', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 const coin = sym => sym.slice(0, -4);
 const mmrNow = () => { const m = value('mmr'); return Number.isFinite(m) ? m / 100 : NaN; };
 const PLAIN_F = new Intl.NumberFormat('de-DE', { maximumFractionDigits: 10, useGrouping: false });
@@ -5081,7 +5081,7 @@ function fxMinuteFetch(at) {
   if (fxMinCache.size > 400) fxMinCache.delete(fxMinCache.keys().next().value);
   return c.p;
 }
-const fxTime = ms => new Date(ms).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+const fxTime = ms => new Date(ms).toLocaleString('de-DE', { timeZone:'Europe/Berlin', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
 function fxSrcText(src, at) {
   return src === 'live' ? `Binance EUR/USDT, Mitte aus Geld/Brief, abgerufen ${fxTime(at)}` : src === 'm1' ? `Binance EUR/USDT, Schlusskurs der Minute bis ${fxTime(at)}`
     : src === 'set' ? 'manueller Kurs aus den Einstellungen' : src === 'day' ? 'Tagesdurchschnitt – Näherung, selbst eingetragen' : src === 'man' ? 'selbst eingetragen' : 'Quelle nicht gespeichert (ältere Version)';
@@ -5524,7 +5524,7 @@ function acctProj() {
 const acctRev = () => fp(canon(state.anchors.map(a => [a.id, recHash(a, 'bal')])));
 const acctNum = u => u === null ? null : mNum(u);
 const acctTxt = u => u === null ? '—' : `${number(mNum(u))} USDT`;
-const acctDT = ms => new Date(ms).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+const acctDT = ms => new Date(ms).toLocaleString('de-DE', { timeZone:'Europe/Berlin', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 const localDT = ms => { const d = new Date(ms), z = n => String(n).padStart(2, '0'); return `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}`; };
 const setTxt = (id, t) => { const e = $(id); if (e.textContent !== t) e.textContent = t; };
 function tzLabel(ms = Date.now()) {
@@ -5538,7 +5538,7 @@ function acctLiveParts() {
     const pr = state.prices[p.symbol], price = pr?.price ?? null, m = positionMetrics(p, price, mmrNow());
     cost += (p.preRealized || 0) - (Array.isArray(p.ev) ? mNum(lotReplayMemo(p).feesOpen) : 0);
     if (m.pnl === null) { missing.push(`${coin(p.symbol)} (kein Kurs)`); continue; }
-    if (!priceFresh(pr)) { missing.push(`${coin(p.symbol)} (Kurs veraltet${pr?.at ? ', Stand ' + new Date(pr.at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : ''})`); continue; } // 3.32.0 (G04.7)
+    if (!priceFresh(pr)) { missing.push(`${coin(p.symbol)} (Kurs veraltet${pr?.at ? ', Stand ' + new Date(pr.at).toLocaleTimeString('de-DE', { timeZone:'Europe/Berlin', hour: '2-digit', minute: '2-digit' }) : ''})`); continue; } // 3.32.0 (G04.7)
     open += m.pnl;
   }
   return { open, cost, missing };
@@ -5957,7 +5957,7 @@ function renderBackupInfo() {
   for (const id of ['backup-due', 'backup-count']) { const b = $(id); b.hidden = !label; b.textContent = label; b.parentElement.classList.toggle('ok', !warn); b.parentElement.title = warn ? 'Änderungen seit dem letzten Backup – Backup erstellen' : 'Backup aktuell'; }
   $('tab-pos-badge').hidden = !warn || !has; put('tab-pos-badge', '!');
   // 3.24.0 Schritt 8: kurzer Stand in der zugeklappten Zeile „Datensicherung“
-  put('data-last', m ? `zuletzt ${new Date(m.at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}` : has ? 'noch keine Sicherung' : '');
+  put('data-last', m ? `zuletzt ${new Date(m.at).toLocaleString('de-DE', { timeZone:'Europe/Berlin', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}` : has ? 'noch keine Sicherung' : '');
   put('backup-info', `${m ? `Letztes Backup auf diesem Gerät: ${new Date(m.at).toLocaleString('de-DE')} · ${m.kind === 'auto' ? 'automatisch' : m.kind === 'telegram' ? 'per Telegram' : m.kind === 'share' ? 'geteilt' : m.kind === 'code' ? (m.encrypted ? 'als Textcode, verschlüsselt' : 'als Textcode') : m.encrypted ? 'verschlüsselt' : 'unverschlüsselt'} · ${m.positions} Positionen, ${m.trades} Trades${m.movements ? `, ${m.movements} Geldbewegungen` : ''}` : 'Auf diesem Gerät wurde noch kein Backup erstellt.'}${n ? ` · Seitdem ${n} ${n === 1 ? 'Änderung' : 'Änderungen'}.` : ''}`);
   if (autoBackup.supported) {
     $('autobackup-row').hidden = false; $('autobackup-setup').hidden = ab !== 'off'; $('autobackup-resume').hidden = ab !== 'paused'; $('autobackup-stop').hidden = ab === 'off';
@@ -6347,7 +6347,7 @@ const KIND_N = { pos: ['Position', 'Positionen'], trade: ['Trade', 'Trades'], dp
 function kindsText(items) { const c = {}; for (const x of items) c[x.kind] = (c[x.kind] || 0) + 1; return Object.keys(KIND_N).filter(k => c[k]).map(k => `${c[k]} ${KIND_N[k][c[k] === 1 ? 0 : 1]}`).join(', '); }
 function recText(kind, r) {
   if (!isObj(r)) return KIND_N[kind]?.[0] || 'Eintrag';
-  const d = ms => Number.isFinite(ms) ? new Date(ms).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '?', side = r.side === 'short' ? 'Short' : 'Long', sym = typeof r.symbol === 'string' && r.symbol.endsWith('USDT') ? coin(r.symbol) : String(r.symbol ?? '?');
+  const d = ms => Number.isFinite(ms) ? new Date(ms).toLocaleString('de-DE', { timeZone:'Europe/Berlin', day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '?', side = r.side === 'short' ? 'Short' : 'Long', sym = typeof r.symbol === 'string' && r.symbol.endsWith('USDT') ? coin(r.symbol) : String(r.symbol ?? '?');
   if (kind === 'trade' || kind === 'dtrade') return `${kind === 'dtrade' ? 'Demo-Trade' : 'Trade'} ${sym} ${side} vom ${d(r.closedAt)} (${signed(r.pnl)} USDT)`;
   if (kind === 'pos' || kind === 'dpos') return `${kind === 'dpos' ? 'Demo-Position' : 'Position'} ${sym} ${side}, Einstieg ${isNum(r.entry) ? priceText(r.entry) : '?'}`;
   if (kind === 'mv') return `${MV_TYPES[r.type] || 'Geldbewegung'} ${isNum(r.amount) ? number(r.amount) : '?'} ${r.currency || ''} vom ${isNum(r.date) ? new Date(r.date).toLocaleDateString('de-DE') : '?'}`.replace(/ {2}/g, ' ');
@@ -6365,7 +6365,7 @@ function diffText(a, b, kind) { const f = diffFields(a, b, kind, kind).map(k => 
 function fieldVal(k, v) {
   if (v === undefined) return '(fehlt)';
   if (v === null) return '–';
-  if (/At$|^date$/.test(k) && isNum(v)) return new Date(v).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  if (/At$|^date$/.test(k) && isNum(v)) return new Date(v).toLocaleString('de-DE', { timeZone:'Europe/Berlin', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   if (isNum(v)) return k === 'entry' || k === 'exit' || k === 'price' || k === 'sl' || k === 'tp' || k === 'triggerPrice' || k === 'liqExchange' ? priceText(v) : plain(v);
   if (k === 'ev' && Array.isArray(v)) return `${v.length} ${v.length === 1 ? 'Schritt' : 'Schritte'}`;
   if (Array.isArray(v)) return v.length ? v.map(x => typeof x === 'string' ? x : JSON.stringify(x)).join(', ') : '(keine)';
@@ -6670,7 +6670,7 @@ function simpleToast(key, cls, text, onOk, color = 'yellow') {
   const t = el('div', 'toast ' + cls); t.dataset.key = key; t.dataset.color = color; t.setAttribute('role', 'alert');
   const ok = btn('button ghost', 'OK'); ok.addEventListener('click', () => { t.remove(); onOk?.(); }); t.append(el('span', '', text), ok); $('toasts').append(t);
 }
-const hhmm = ms => new Date(ms).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+const hhmm = ms => new Date(ms).toLocaleTimeString('de-DE', { timeZone:'Europe/Berlin', hour: '2-digit', minute: '2-digit' });
 // Wie wurde die Marke erreicht? Direkt, nur per Docht (Kurs schon wieder zurück) oder während die Seite nicht aktiv war.
 const howReached = info => info.cl ? `beim ${info.cl}-Schlusskurs erreicht (Kerze bis ${hhmm(info.at)})` : info.missedAt ? `um ${hhmm(info.missedAt)} erreicht, während die Seite nicht aktiv war` : info.wick ? `kurz per Docht erreicht (bis ${priceText(info.extreme)})` : 'erreicht';
 const alertText = (pos, type, price, info = {}) => `${coin(pos.symbol)} ${pos.side === 'long' ? 'Long' : 'Short'}: ${type === 'tp' ? 'Take-Profit' : 'Stop-Loss'} ${priceText(type === 'tp' ? pos.tp : pos.sl)} ${howReached(info)} · Kurs ${priceText(price)}`;
@@ -6774,7 +6774,7 @@ function renderAlarms() {
 function alarmPreview() {
   const sym = (() => { try { return normalizeSymbol($('al-symbol').value); } catch { return null; } })(), target = parseNum($('al-price').value), cur = sym ? knownPrice(sym, ALARM_FRESH) : null;
   // 3.27.0: Richtung nur aus einem frischen Kurs. Ein älterer steht mit Uhrzeit da; beim Speichern holt die App den aktuellen.
-  const old = !cur && sym ? state.prices[sym] : null, oldTxt = old?.price > 0 && old.at ? `zuletzt ${priceText(old.price)} um ${new Date(old.at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}` : '';
+  const old = !cur && sym ? state.prices[sym] : null, oldTxt = old?.price > 0 && old.at ? `zuletzt ${priceText(old.price)} um ${new Date(old.at).toLocaleTimeString('de-DE', { timeZone:'Europe/Berlin', hour: '2-digit', minute: '2-digit' })}` : '';
   if (!state.alDirManual && target > 0 && cur) { const d = alarmDirection(target, cur); if (d) { state.alDir = d; setAlDir(d); } }
   put('al-preview', !sym ? 'Kürzel eingeben, z. B. XRP.' : !(target > 0) ? (cur ? `Aktueller Kurs ${priceText(cur)} USDT.` : oldTxt ? `Kein aktueller Kurs (${oldTxt}) – beim Speichern holt die App ihn.` : 'Preis eingeben.')
     : `Meldet sich, sobald ${coin(sym)} ${state.alDir === 'above' ? 'auf oder über' : 'auf oder unter'} ${priceText(target)} USDT liegt${cur ? ` (aktuell ${priceText(cur)}, ${number(Math.abs((target / cur - 1) * 100))} % entfernt)` : oldTxt ? ` (${oldTxt}; die Richtung prüft die App beim Speichern mit dem aktuellen Kurs)` : ''}.`);
@@ -7156,7 +7156,7 @@ function renderChartContent(levels={}, ov={}, start=null, end=null) {
     svg.append(node('text', { x: tick.x, y: h - 10, class: 'axis-label chart-time-label', 'text-anchor': 'middle' }, tick.label));
   }
   const cross=node('line',{x1:0,y1:top,x2:0,y2:h-30,class:'crosshair',visibility:'hidden'});svg.append(cross);
-  function select(i) {i=Math.max(0,Math.min(data.length-1,i));state.selected=i;const c=data[i];state.selectedTime=c.time;macdCursor?.select(i);cross.setAttribute('x1',x(i));cross.setAttribute('x2',x(i));cross.setAttribute('visibility','visible');put('ohlc',`${utcDate(c.time)} UTC · O ${priceText(c.open)}  H ${priceText(c.high)}\nL ${priceText(c.low)}  C ${priceText(c.close)}`);}
+  function select(i) {i=Math.max(0,Math.min(data.length-1,i));state.selected=i;const c=data[i];state.selectedTime=c.time;macdCursor?.select(i);cross.setAttribute('x1',x(i));cross.setAttribute('x2',x(i));cross.setAttribute('visibility','visible');put('ohlc',`${deDate(c.time)} MEZ/MESZ · O ${priceText(c.open)}  H ${priceText(c.high)}\nL ${priceText(c.low)}  C ${priceText(c.close)}`);}
   const clear=()=>{macdCursor?.clear();cross.setAttribute('visibility','hidden');state.selected=null;state.selectedTime=null;put('ohlc',`O ${priceText(last.open)}  H ${priceText(last.high)}\nL ${priceText(last.low)}  C ${priceText(last.close)}`);};
   chartGeom={w,h,left,pw:step*data.length,plotW:pw,offset,step,top,bottom,min,max,y,count:data.length,data,levels,prof,bbU,bbL,bbM,e200,select,clear,axisIn,macdLayout};
   container.onkeydown=event=>{if(['ArrowLeft','ArrowRight'].includes(event.key)){event.preventDefault();select((state.selected??data.length-1)+(event.key==='ArrowLeft'?-1:1));}if(event.key==='+' || event.key==='-'){event.preventDefault();zoom(event.key==='+'?.7:1.4);}};
@@ -7170,7 +7170,7 @@ function renderChartContent(levels={}, ov={}, start=null, end=null) {
   if(keep>=0)select(keep);else{state.selected=null;put('ohlc',`O ${priceText(last.open)}  H ${priceText(last.high)}\nL ${priceText(last.low)}  C ${priceText(last.close)}`);}
   magnetRedraw();
   projectionInspector.draw(svg, {left, right:left+pw, top, bottom});
-  put('chart-caption', detailReady() ? `${data.length} Detail-Kerzen · ${detailResolution} · Haupt-Zeitrahmen ${state.interval} · UTC` : state.pan>0 ? `Kerzen ${offset+1}–${stop} von ${state.candles.length} · UTC · ${state.interval}` : `${data.length} / ${state.candles.length} Kerzen · UTC · ${state.interval}`);
+  put('chart-caption', detailReady() ? `${data.length} Detail-Kerzen · ${detailResolution} · Haupt-Zeitrahmen ${state.interval} · MEZ/MESZ` : state.pan>0 ? `Kerzen ${offset+1}–${stop} von ${state.candles.length} · MEZ/MESZ · ${state.interval}` : `${data.length} / ${state.candles.length} Kerzen · MEZ/MESZ · ${state.interval}`);
   container.setAttribute('aria-label',`${state.symbol}, ${state.interval}${detailReady() ? ', Detail-Kerzen '+detailResolution : ''}, ${data.length} Kerzen. Letzter Kurs ${priceText(last.close)} USDT. Pfeiltasten wählen Kerzen.`);
 }
 function detailBodies(data, {w,h,x,y,step,maxVolume,volumeBottom=h-31,volumeHeight=32}) {
@@ -8809,7 +8809,7 @@ function chanLast(k) { const v = store.get(CHANLAST_KEY)?.[k]; return v && Numbe
 const chanLabel = text => telegramPlain(text).split('\n')[0].replace(/^[^\p{L}\p{N}]+/u, '').slice(0, 60);
 function chanLastText(k) {
   const L = chanLast(k); if (!L) return '';
-  return `zuletzt ${L.u ? 'gesendet' : 'zugestellt'} ${new Date(L.at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}${L.label ? ` (${L.label})` : ''}`;
+  return `zuletzt ${L.u ? 'gesendet' : 'zugestellt'} ${new Date(L.at).toLocaleString('de-DE', { timeZone:'Europe/Berlin', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}${L.label ? ` (${L.label})` : ''}`;
 }
 let sendSeq = 0;
 const tgOk = t => TG_TOKEN_RE.test((t.token || '').trim()) && TG_CHAT_RE.test((t.chat || '').trim()) && CHAN_TG_FIELDS.every(k => {
@@ -9777,7 +9777,7 @@ function renderLmStrip(cl = undefined) {
     if (v.textContent !== t) { if (c) { const [p, ...r] = t.split(' · '); v.replaceChildren(el('span', 'lm-p', p), el('span', 'lm-sep', ' · '), el('span', 'lm-r', r.join(' · '))); } else v.textContent = t; }
     b.title = c ? `Geschätzte ${side === 'short' ? 'Short' : 'Long'}-Liquidationen ≈ ${lmAmount(c.amt)} USDT um ${priceText(c.price)} USDT. Antippen: Alarm für diesen Kurs.` : '';
   }
-  put('lm-src', have ? `Schätzung · Open Interest ${P} · Stand ${utcTime(lm.oi.at(-1).t).slice(0, 5)} UTC${lm.error ? ' · Nachladen fehlgeschlagen' : ''}` : 'Schätzung aus Open Interest');
+  put('lm-src', have ? `Schätzung · Open Interest ${P} · Stand ${deTime(lm.oi.at(-1).t).slice(0, 5)} MEZ/MESZ${lm.error ? ' · Nachladen fehlgeschlagen' : ''}` : 'Schätzung aus Open Interest');
 }
 // Alarm am Cluster: iPad/Handy im Schnell-Alarm, am Computer im Formular
 document.querySelectorAll('#lmap-strip [data-lm]').forEach(b => b.addEventListener('click', () => {
@@ -10406,7 +10406,7 @@ $('zz-fc').addEventListener('click', () => { const on = !zzFcOn(); store.set(ZZ_
 // „Handelsdaten zurücksetzen“ ist der normale Reset: Er löscht Positionen, Trades, Geldbewegungen und Alarme, nie die Muster.
 function renderZzpInfo() {
   if (!$('zzp-info')) return;
-  const i = zzpInfo(), when = i.at ? new Date(i.at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+  const i = zzpInfo(), when = i.at ? new Date(i.at).toLocaleString('de-DE', { timeZone:'Europe/Berlin', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
   put('zzp-info', i.cases ? `${number(i.cases, 0)} Fälle in ${i.patterns} Mustern${i.base ? ` · Startbestand Version ${i.base} eingespielt` : ''}${when ? ` · zuletzt geändert ${when}` : ''}` : 'noch keine – sie entstehen beim Beobachten des Charts (ZigZag-Prognose).');
 }
 // Nur die Muster, ohne persönliche Daten: Grundlage für einen neuen Startbestand im GitHub-Projekt
@@ -11081,7 +11081,7 @@ function drawHiLo(svg, { data, x, y, left, step, laneX = Infinity, axisIn }) {
     const c = data[i], v = kind === 'hi' ? c.high : c.low, word = kind === 'hi' ? 'Hoch' : 'Tief', pt = priceText(v), text = axisIn ? pt : `${word} ${pt}`;
     const tw = text.length * 7, cx = x(i), yy = y(v), right = cx < (limL + limR) / 2, tx = right ? cx + 8 : Math.max(limL + tw, Math.min(cx - 8, limR));
     const g = node('g', { class: `hl-mark ${kind}` });
-    g.append(node('title', {}, `${word} des sichtbaren Zeitraums: ${pt} USDT (${utcDate(c.time)} UTC)`),
+    g.append(node('title', {}, `${word} des sichtbaren Zeitraums: ${pt} USDT (${deDate(c.time)} MEZ/MESZ)`),
       node('line', { x1: cx.toFixed(1), y1: yy.toFixed(1), x2: (right ? tx - 3 : tx + 3).toFixed(1), y2: yy.toFixed(1) }),
       node('text', { x: tx.toFixed(1), y: (yy + 4).toFixed(1), 'text-anchor': right ? 'start' : 'end' }, text));
     svg.append(g);
@@ -11157,7 +11157,7 @@ function ecDay(t, now) {
   if (diff === 0) return 'Heute'; if (diff === 1) return 'Morgen'; if (diff === -1) return 'Gestern';
   return d.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' }).replace(',', '');
 }
-var ecTime = t => new Date(t).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+var ecTime = t => new Date(t).toLocaleTimeString('de-DE', { timeZone:'Europe/Berlin', hour: '2-digit', minute: '2-digit' });
 var ecNum = s => s.replace(/(\d)\.(\d)/g, '$1,$2').replace(/(\d)%/, '$1 %');
 var ecDe = title => EC_DE.find(([re]) => re.test(title))?.[1] || '';
 var ecNames = g => g.list.map(e => e.title).join(', ');
@@ -11763,7 +11763,7 @@ function w24Valid(d, sym, now = Date.now()) {
   if (!d || d.symbol !== sym) throw new Error('Binance lieferte die 24h-Statistik eines anderen Paars.');
   if (!(hi > 0) || !(lo > 0) || !Number.isFinite(hi) || !Number.isFinite(lo) || lo > hi) throw new Error('Unplausible 24h-Werte erhalten.');
   if (!Number.isFinite(c) || !Number.isFinite(o) || Math.abs(c - o - 864e5) > 36e5) throw new Error('Kein 24-Stunden-Fenster erhalten.');
-  if (now - c > 5 * 60e3 || c - now > 60e3) throw new Error(`Die 24h-Statistik ist veraltet (Stand ${new Date(c).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}).`);
+  if (now - c > 5 * 60e3 || c - now > 60e3) throw new Error(`Die 24h-Statistik ist veraltet (Stand ${new Date(c).toLocaleTimeString('de-DE', { timeZone:'Europe/Berlin', hour: '2-digit', minute: '2-digit' })}).`);
   return { hi, lo, at: c };
 }
 async function w24Load(key, sym, market) {
@@ -11785,11 +11785,11 @@ function w24Paint(now = Date.now()) {
   if (ready && !e.error && !state.paused && !d?.busy && (!d?.got || now - d.got > W24_TTL) && now >= (d?.retryAt || 0)) void w24Load(key, sym, market);
   const has = d?.got > 0 && now - d.got < 10 * 60e3, lab = market === 'futures' ? ' · Futures' : '';
   const t = !ready ? 'Tief — · Hoch — (wird geladen …)' : e.error ? 'nicht verfügbar – keine Kursdaten für diesen Coin'
-    : has ? `Tief ${priceText(d.lo)} · Hoch ${priceText(d.hi)}${lab}${d.error ? ' · Stand ' + new Date(d.at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : ''}`
+    : has ? `Tief ${priceText(d.lo)} · Hoch ${priceText(d.hi)}${lab}${d.error ? ' · Stand ' + new Date(d.at).toLocaleTimeString('de-DE', { timeZone:'Europe/Berlin', hour: '2-digit', minute: '2-digit' }) : ''}`
     : d?.error ? `nicht verfügbar – ${d.error}` : `Tief — · Hoch — (wird geladen …)`;
   const v = wld.r24.lastChild;
   if (v.textContent !== t) {
-    if (has && !e?.error) v.replaceChildren('Tief ', el('span', 'wl-d-24lo', priceText(d.lo)), ' · Hoch ', el('span', 'wl-d-24hi', priceText(d.hi)), lab + (d.error ? ' · Stand ' + new Date(d.at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : ''));
+    if (has && !e?.error) v.replaceChildren('Tief ', el('span', 'wl-d-24lo', priceText(d.lo)), ' · Hoch ', el('span', 'wl-d-24hi', priceText(d.hi)), lab + (d.error ? ' · Stand ' + new Date(d.at).toLocaleTimeString('de-DE', { timeZone:'Europe/Berlin', hour: '2-digit', minute: '2-digit' }) : ''));
     else v.textContent = t;
   }
   wld.r24.classList.toggle('skel-txt', !has && !d?.error && !e?.error);
@@ -11887,7 +11887,7 @@ function pnlFromSvc(list) {
   for (const f of list || []) {
     const a = d[f.k]; if (!a || !a.on || !a.value || a.at !== f.at || a.state === 'fired') continue;
     a.state = 'fired'; a.firedAt = f.t; a.firedVal = f.val; a.svc = true; changed = true;
-    simpleToast('pnl:' + f.k, 'alarm ' + (f.k === 'profit' ? 'up' : 'down'), `${f.k === 'profit' ? '📈' : '📉'} ${pnlName(f.k)} – vom 24/7-Dienst gemeldet um ${new Date(f.t).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr: Live-Ergebnis ${signed(f.val)} USDT`, null, f.k === 'profit' ? 'green' : 'orange');
+    simpleToast('pnl:' + f.k, 'alarm ' + (f.k === 'profit' ? 'up' : 'down'), `${f.k === 'profit' ? '📈' : '📉'} ${pnlName(f.k)} – vom 24/7-Dienst gemeldet um ${new Date(f.t).toLocaleTimeString('de-DE', { timeZone:'Europe/Berlin', hour: '2-digit', minute: '2-digit' })} Uhr: Live-Ergebnis ${signed(f.val)} USDT`, null, f.k === 'profit' ? 'green' : 'orange');
   }
   if (changed) pnlSet(d);
 }
@@ -11915,7 +11915,7 @@ function pnlBadge(d = pnlGet()) {
 function pnlStatus(k, a) {
   if (!a.value) return { text: 'aus – kein Betrag eingetragen', cls: '' };
   if (!a.on) return { text: `deaktiviert (Grenze ${pnlCond(k, a.value)})`, cls: '' };
-  if (a.state === 'fired') return { text: `ausgelöst um ${new Date(a.firedAt).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr bei ${a.firedVal === null ? '—' : signed(a.firedVal)} USDT${a.svc ? ' (Meldung vom 24/7-Dienst)' : ''} – meldet erst nach „Wieder aktivieren“ erneut`, cls: 'fired' };
+  if (a.state === 'fired') return { text: `ausgelöst um ${new Date(a.firedAt).toLocaleTimeString('de-DE', { timeZone:'Europe/Berlin', hour: '2-digit', minute: '2-digit' })} Uhr bei ${a.firedVal === null ? '—' : signed(a.firedVal)} USDT${a.svc ? ' (Meldung vom 24/7-Dienst)' : ''} – meldet erst nach „Wieder aktivieren“ erneut`, cls: 'fired' };
   if (a.state === 'wait') return { text: `aktiv – die Grenze ist schon erreicht; meldet, sobald das Ergebnis sie erneut erreicht (${pnlCond(k, a.value)})`, cls: 'on' };
   return { text: `aktiv – meldet einmal bei Offen ${pnlCond(k, a.value)}`, cls: 'on' };
 }
@@ -12668,7 +12668,7 @@ function s247Settled() {
 // 3.27.0: Wann hat der Dienst zuletzt etwas zugestellt? Ein Dienst bis 1.2 prüft die Zustellung nicht – Hinweis aufs Update
 function s247LastText(st) {
   if (!st.svc?.zv) return ' Ob Telegram seine Meldungen annimmt, prüft der Dienst erst ab Version 1.3 – am Server den Installationsbefehl erneut ausführen.';
-  const dm = t => new Date(t).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  const dm = t => new Date(t).toLocaleString('de-DE', { timeZone:'Europe/Berlin', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
   return st.last ? ` Zuletzt zugestellt: ${dm(st.last.t)}${st.last.label ? ` (${st.last.label})` : ''}.` : ' Zugestellt hat er noch keine Meldung.';
 }
 // Kurzform für die Übersicht im Hinweis-Menü
@@ -12676,7 +12676,7 @@ function s247SumText() { const st = s247?.st; return s247Active() ? ' · 24/7-Di
 function s247Active() { const st = s247?.st, c = s247?.cfg; return !!(c?.on && st?.found && st.msg === c.msg && st.svc?.ok && st.svc.tag === c.tag && Date.now() - st.beat < S247_STALE); }
 function renderS247() {
   if (!s247?.cfg || !$('s247-on')) return;
-  const ok = typeof tgConfigured === 'function' && tgConfigured(), c = s247.cfg, st = s247.st, now = Date.now(), hm = t => new Date(t).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+  const ok = typeof tgConfigured === 'function' && tgConfigured(), c = s247.cfg, st = s247.st, now = Date.now(), hm = t => new Date(t).toLocaleTimeString('de-DE', { timeZone:'Europe/Berlin', hour: '2-digit', minute: '2-digit' });
   $('s247-on').checked = c.on; $('s247-on').disabled = !ok && !c.on; $('s247-check').disabled = !ok || s247.checking;
   const counts = `${s247Plural(c.n.a, 'Alarm', 'Alarme')}, ${s247Plural(c.n.p, 'Position', 'Positionen')}`, other = st?.dev && st.dev !== s247Device() ? ` Zuletzt übergeben hat „${st.dev}“ – nur auf einem Gerät einschalten.` : '';
   let text, cls = null;
@@ -12856,7 +12856,7 @@ function tgcMaster() {
   const conf = TGT.filter(t => tgDest(t.id)); if (!conf.length) return;
   const all = conf.every(t => tgtOn(t.id)); tgcSet(Object.fromEntries(conf.map(t => [t.id, !all])));
 }
-const tgcTime = t => new Date(t).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+const tgcTime = t => new Date(t).toLocaleString('de-DE', { timeZone:'Europe/Berlin', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 function tgcCount() {
   const conf = TGT.filter(t => tgDest(t.id)), on = conf.filter(t => tgtOn(t.id)).length;
   return { conf: conf.length, on, na: TGT.length - conf.length, text: `${on} von ${TGT.length} aktiv${TGT.length - conf.length ? ` · ${TGT.length - conf.length} nicht eingerichtet` : ''}` };
@@ -12990,7 +12990,7 @@ function svcReconcile() {
   for (const a of state.alarms) {
     if (a.triggeredAt) continue; const e = ids.get(alarmEventId(a)); if (!e) continue;
     a.triggeredAt = e.at; a.triggerPrice = null; a.svcAt = e.at; changed = true;
-    simpleToast('al:' + a.id, 'alarm ' + (a.dir === 'above' ? 'up' : 'down'), `🔔 ${coin(a.symbol)} ${a.dir === 'above' ? 'auf/über' : 'auf/unter'} ${priceText(a.price)} – ${e.by === 'oracle' ? 'vom 24/7-Dienst' : 'von einem anderen Gerät'} gemeldet um ${new Date(e.at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr`, null, a.dir === 'above' ? 'green' : 'orange');
+    simpleToast('al:' + a.id, 'alarm ' + (a.dir === 'above' ? 'up' : 'down'), `🔔 ${coin(a.symbol)} ${a.dir === 'above' ? 'auf/über' : 'auf/unter'} ${priceText(a.price)} – ${e.by === 'oracle' ? 'vom 24/7-Dienst' : 'von einem anderen Gerät'} gemeldet um ${new Date(e.at).toLocaleTimeString('de-DE', { timeZone:'Europe/Berlin', hour: '2-digit', minute: '2-digit' })} Uhr`, null, a.dir === 'above' ? 'green' : 'orange');
   }
   if (changed) { persist(); renderAlarms(); renderLivebar(); }
   const d = pnlGet();
@@ -13229,21 +13229,21 @@ function decRender() {
   const hits = R ? R.hits.filter(r => c.filter === 'all' || r.st === c.filter) : [];
   put('dec-context', !dec.open ? 'Top 100 · lädt beim Öffnen' : R ? `${W} · ${R.btc.B != null ? `${hits.length} Treffer` : 'BTC fehlt'}` : dec.running ? 'lädt …' : 'Top 100');
   // Zustand: lädt / Fehler ohne Bestand / veraltet / BTC fehlt / keine Treffer
-  const err = dec.err, stale = R && (err || Date.now() - R.at > 2 * DEC_EVERY + 30000), next = dec.blockUntil > Date.now() ? ` · nächster Versuch ab ${utcTime(dec.blockUntil)} UTC` : '';
+  const err = dec.err, stale = R && (err || Date.now() - R.at > 2 * DEC_EVERY + 30000), next = dec.blockUntil > Date.now() ? ` · nächster Versuch ab ${deTime(dec.blockUntil)} MEZ/MESZ` : '';
   let st = '', cls = '';
   if (!R && dec.running) { st = `Lädt Rangliste (CoinLore) und ${W}-Statistik (Binance Spot) …`; cls = 'load'; }
   else if (!R && err) { st = `Nicht verfügbar – ${err.message}${next}`; cls = 'err'; }
   else if (!R) st = 'Noch keine Daten.';
   else if (R.btc.B == null) { st = `BTC fehlt – Vergleich gesperrt (${R.btc.why}).`; cls = 'err'; }
   else if (!hits.length) st = `Keine Treffer bei diesen Schwellen (${W}: Coin ab ±${number(c.coin, 1)} %, BTC seitwärts unter ±${number(c.btc, 1)} %).`;
-  if (stale) { st = `Veraltet – Stand ${utcTime(R.at)} UTC${err ? ` · ${err.message}` : ''}${next}${st ? ' · ' + st : ''}`; cls = 'stale'; }
+  if (stale) { st = `Veraltet – Stand ${deTime(R.at)} MEZ/MESZ${err ? ` · ${err.message}` : ''}${next}${st ? ' · ' + st : ''}`; cls = 'stale'; }
   const sEl = $('dec-status'); sEl.textContent = st; sEl.hidden = !st; sEl.className = `dec-status ${cls}`;
   list.classList.toggle('stale', !!stale);
   const rows = hits.map(r => {
     const b = el('button', `dec-row ${r.st}${r.pair === state.symbol ? ' cur' : ''}`); b.type = 'button'; b.dataset.pair = r.pair;   // cur: gerade im Chart
     // Optimierung 3: nur das Wichtige – Kürzel, Rang und die Abweichung zu BTC; Name, Preis, Coin-/BTC-% und Datenzeit im Tooltip
     const rho = dec.rho.get(`${r.pair}|${W}`);
-    b.title = `${r.a.name} (${r.pair.slice(0, -4)}/USDT, Binance Spot): Coin ${decPct(r.C)}, BTC ${decPct(r.B)} → ${signed(r.D)} Prozentpunkte Abweichung · Preis ${priceText(r.price)} USDT · Daten ${utcTime(r.at).slice(0, 5)} UTC${c.corr && rho?.rho != null ? ` · Korrelation zu BTC ${number(rho.rho, 2)}` : ''} – antippen lädt den Chart, der Reiter bleibt`;
+    b.title = `${r.a.name} (${r.pair.slice(0, -4)}/USDT, Binance Spot): Coin ${decPct(r.C)}, BTC ${decPct(r.B)} → ${signed(r.D)} Prozentpunkte Abweichung · Preis ${priceText(r.price)} USDT · Daten ${deTime(r.at).slice(0, 5)} MEZ/MESZ${c.corr && rho?.rho != null ? ` · Korrelation zu BTC ${number(rho.rho, 2)}` : ''} – antippen lädt den Chart, der Reiter bleibt`;
     const n = el('span', 'dec-n'); n.append(el('b', '', r.a.sym), el('small', '', `#${r.a.rank}`));
     b.append(n);
     if (c.corr) { const k = el('span', 'dec-r', rho ? (rho.rho == null ? 'Korr. —' : `Korr. ${number(rho.rho, 2)}`) : 'Korr. …'); k.title = rho?.rho == null ? (rho?.why || 'wird berechnet') : 'Korrelation zu BTC (Pearson, 5m-Renditen im Zeitraum): 1 = läuft wie BTC, 0 = unabhängig, negativ = gegenläufig'; b.append(k); }
@@ -13259,7 +13259,7 @@ function decRender() {
     const ul = el('ul'); for (const [why, syms] of by) { const li = el('li'); li.append(el('b', '', `${why} (${syms.length}): `), syms.join(', ')); ul.append(li); }
     const gs = $('dec-gaps'); gs.hidden = !R.gaps.length; gs.querySelector('summary').textContent = `Nicht auswertbar: ${R.gaps.length}${R.unreviewed ? ` (davon ${R.unreviewed} ungeprüft)` : ''}`; gs.querySelector('ul')?.remove(); gs.append(ul);
   } else { put('dec-cov', ''); $('dec-gaps').hidden = true; }
-  put('dec-foot', `Rangliste: CoinLore${dec.rank ? `, Stand ${utcDate(dec.rank.at)} UTC${dec.rankErr ? ` (veraltet – ${dec.rankErr.message})` : ''}` : ''} · Kurse: Binance Spot, rollierendes ${W}-Fenster${R?.btc.at ? ` bis ${utcTime(R.btc.at)} UTC` : ''} · nur Signale, keine Kaufempfehlung${c.corr ? ' · niedrige Korrelation ist keine Erfolgswahrscheinlichkeit' : ''}`);
+  put('dec-foot', `Rangliste: CoinLore${dec.rank ? `, Stand ${deDate(dec.rank.at)} MEZ/MESZ${dec.rankErr ? ` (veraltet – ${dec.rankErr.message})` : ''}` : ''} · Kurse: Binance Spot, rollierendes ${W}-Fenster${R?.btc.at ? ` bis ${deTime(R.btc.at)} MEZ/MESZ` : ''} · nur Signale, keine Kaufempfehlung${c.corr ? ' · niedrige Korrelation ist keine Erfolgswahrscheinlichkeit' : ''}`);
 }
 // Klick: Coin in den vorhandenen Chart laden – kein Scrollen, kein Reiterwechsel, keine zweite Chart-Instanz
 async function decPick(pair) {
@@ -14044,7 +14044,7 @@ function patTick() {
 }
 // --- Anzeige: Bottom-Sheet ---
 const PAT_DIR = { bull: 'bullish', bear: 'bearish', neutral: 'neutral' };
-const patTime = t => (t ? (IV_MS[state.interval] >= 864e5 ? utcDate(t).slice(0, 10) : utcDate(t)) : '—');
+const patTime = t => (t ? (IV_MS[state.interval] >= 864e5 ? deDate(t).slice(0, 10) : deDate(t)) : '—');
 function patSheet() {
   const d = $('pat-sheet'); if (!d) return;
   const R = pat.res && pat.res.key === patKey() ? pat.res : null, list = $('pat-list'), hits = patShown();
@@ -14078,7 +14078,7 @@ function patSheet() {
       row.replaceChildren(main, info);
     }
     row.querySelector('.pat-main').dataset.patSel = row.querySelector('.pat-i').dataset.patInfo = String(i);
-    const line = row.querySelector('.pat-age-line'), ageText = `vor ${age.bars} ${age.bars === 1 ? 'Kerze' : 'Kerzen'} · ${new Date(h.t1).toISOString().slice(11, 16)} UTC · ${age.elapsed}`;
+    const line = row.querySelector('.pat-age-line'), ageText = `vor ${age.bars} ${age.bars === 1 ? 'Kerze' : 'Kerzen'} · ${deTime(h.t1).slice(0, 5)} MEZ/MESZ · ${age.elapsed}`;
     if (line.dataset.age !== ageText) { line.dataset.age = ageText; line.replaceChildren(el('span', 'pat-age-badge', age.status), ' ' + ageText); }
     (age.status === 'Abgelaufen' ? expired : current).push(row);
   }
@@ -14108,7 +14108,7 @@ function patCandleInfo(h, meta = {}) {
   const body = $('pat-info-body'), kv = (k, v) => { const p = el('p', 'pat-kv'); p.append(el('b', '', k + ': '), String(v)); return p; }, why = el('details', 'pat-why'), ul = el('ul');
   for (const r of h.rules || []) { const li = el('li', r.ok === true ? 'ok' : r.ok === false ? 'no' : 'unk'); li.append(el('span', 'pat-mark', r.ok === true ? '✓' : r.ok === false ? '✗' : '?'), `${r.k} (Gewicht ${r.w})${r.v ? ' – ' + r.v : ''}`); ul.append(li); }
   why.append(el('summary', '', `Warum ${h.q} %?`), el('p', '', 'Regelgüte = erfüllte Regelgewichte ÷ mögliche Gewichte; unbekannte Regeln zählen im Nenner mit. Das ist keine statistische Trefferquote.'), ul);
-  const top = el('div', 'pat-info-top'), t = el('div'), fmt = v => utcDate(v); top.append(patSvg(h.id));
+  const top = el('div', 'pat-info-top'), t = el('div'), fmt = v => deDate(v); top.append(patSvg(h.id));
   t.append(el('p', `pat-dir ${h.dir}`, `${PAT_DIR[h.dir]} · ${L.f} · Regelgüte ${h.q} %`), el('p', '', `${String(meta.symbol || state.symbol).replace(/USDT$/, '')}/USDT · ${meta.interval || ''} · ${fmt(h.t0)}${h.t1 !== h.t0 ? ` – ${fmt(h.t1)}` : ''} UTC · Orderflow-Kerzen (Binance-Futures)`), el('p', 'pat-info-status', `Status: ${h.status}`)); top.append(t);
   body.replaceChildren(top, el('p', '', L.e), kv('Bestätigung', L.c), why, el('p', 'pat-note', 'Automatische Mustererkennung nach festen Regeln (pat-1) wie beim Knopf „KI“ im Chart, keine Anlageberatung.'));
   if (!d.open) d.showModal(); body.scrollTop = 0;
@@ -14131,7 +14131,7 @@ function patOpenInfo(i) { // 3.68.0: nur noch Chartmuster des Charts (KI-Signal-
   for (const r of h.rules) { const li = el('li', r.ok === true ? 'ok' : r.ok === false ? 'no' : 'unk'); li.append(el('span', 'pat-mark', r.ok === true ? '✓' : r.ok === false ? '✗' : '?'), `${r.k} (Gewicht ${r.w})${r.v ? ' – ' + r.v : ''}`); ul.append(li); }
   why.append(sum, el('p', '', 'Regelgüte = erfüllte Regelgewichte ÷ mögliche Gewichte; unbekannte Regeln zählen im Nenner mit. Das ist keine statistische Trefferquote.'), ul);
   body.replaceChildren(
-    (() => { const top = el('div', 'pat-info-top'); top.append(patSvg(h.id)); const t = el('div'); const fmt = patTime; t.append(el('p', `pat-dir ${h.dir}`, `${PAT_DIR[h.dir]} · ${L.f} · Regelgüte ${h.q} %`), el('p', '', `${state.symbol.slice(0, -4)}/USDT · ${state.interval} · ${fmt(h.t0)}${h.t1 !== h.t0 ? ` – ${fmt(h.t1)}` : ''} UTC`), el('p', 'pat-info-status', `Status: ${q?.status || h.status}`)); top.append(t); return top; })(),
+    (() => { const top = el('div', 'pat-info-top'); top.append(patSvg(h.id)); const t = el('div'); const fmt = patTime; t.append(el('p', `pat-dir ${h.dir}`, `${PAT_DIR[h.dir]} · ${L.f} · Regelgüte ${h.q} %`), el('p', '', `${state.symbol.slice(0, -4)}/USDT · ${state.interval} · ${fmt(h.t0)}${h.t1 !== h.t0 ? ` – ${fmt(h.t1)}` : ''} MEZ/MESZ`), el('p', 'pat-info-status', `Status: ${q?.status || h.status}`)); top.append(t); return top; })(),
     el('p', '', L.e), kv('Bestätigung', L.c), vals, why, pkSection(h),
     el('p', 'pat-note', `Automatische Mustererkennung nach festen Regeln (${R.ver}${h.id.match(/star|piercing|dark_cloud/) ? pat.gap ? ', strenger Gap-Modus' : ', Krypto-Variante ohne Gap' : ''}), keine Anlageberatung.`));
   if (!d.open) d.showModal();
@@ -14435,7 +14435,7 @@ function patqSet(next) {
   }, 1200);
 }
 // Signal-Log im Chartmuster-Fenster: gesendete und gefilterte Signale mit Grund, Ergebnis und Statistik; Backtest zum Kalibrieren
-const patqTime = t => new Date(t).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+const patqTime = t => new Date(t).toLocaleString('de-DE', { timeZone:'Europe/Berlin', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 function patqLogPaint() {
   const body = $('patq-log-body'); if (!body) return;
   const j = patqJournal(), list = j.list.slice().reverse(), stats = patternJournalStats(j.list, patq.by), name = k => patq.by === 'pat' ? PAT_LIB[k]?.n.replace(/ \(.*\)$/, '') || k : k;
@@ -14597,19 +14597,19 @@ function pkSection(h) {
   const btn = el('button', 'button ghost pk-btn', 'Vergangene Verläufe ansehen'); btn.type = 'button';
   const out = el('div', 'pk-out'); out.hidden = true;
   const paint = () => {
-    const line = (name, st) => `${name}: ${st.n ? `${st.auf} von ${st.n} aufwärts, ${st.ab} abwärts, ${st.seitwärts} seitwärts` : 'noch keine abgeschlossenen Fälle'}${st.offen ? ` · ${st.offen} offen (Horizont nicht erreicht)` : ''}${st.konflikt ? ` · ${st.konflikt} mit Konflikt` : ''}${st.from ? ` · ${utcDate(st.from).slice(0, 10)} – ${utcDate(st.to).slice(0, 10)}` : ''}`;
+    const line = (name, st) => `${name}: ${st.n ? `${st.auf} von ${st.n} aufwärts, ${st.ab} abwärts, ${st.seitwärts} seitwärts` : 'noch keine abgeschlossenen Fälle'}${st.offen ? ` · ${st.offen} offen (Horizont nicht erreicht)` : ''}${st.konflikt ? ` · ${st.konflikt} mit Konflikt` : ''}${st.from ? ` · ${deDate(st.from).slice(0, 10)} – ${deDate(st.to).slice(0, 10)}` : ''}`;
     const kids = [el('p', 'pk-h', `${L.n} · ${state.symbol.slice(0, -4)}/USDT ${sel.mkt === 'spot' ? 'Spot' : 'Futures'} · ${state.interval} · Modell pat-1 · Kursrichtung ${PK_H} Kerzen nach der Bestätigung (±${number(PK_EPS, 2)} % = seitwärts)`),
       el('p', '', line('Live protokolliert', S.live)), el('p', '', line('Historisch rekonstruiert', S.rek))];
     const col = S.live.paths.length >= S.rek.paths.length ? { name: 'live', p: S.live.paths } : { name: 'rekonstruiert', p: S.rek.paths }, b = pkBand(col.p);
     if (b) {
       kids.push(pkBandSvg(b), el('p', 'pk-note', `Median (Linie) und 25–75-%-Band normierter Kurse (Start = Bestätigung) aus ${col.p.length} vollständigen ${col.name === 'live' ? 'live protokollierten' : 'rekonstruierten'} Fällen – kein Prognoseintervall. Chart: ${col.p.length} von ${(col.name === 'live' ? S.live : S.rek).n} Fällen.`));
-      const ex = (c, t) => el('p', 'pk-ex', `${t}: ${utcDate(c.tc)} UTC, Binance ${sel.mkt === 'spot' ? 'Spot' : 'Futures'}, nach ${PK_H} Kerzen ${signed(c.res.r)} % (${c.res.out})`);
+      const ex = (c, t) => el('p', 'pk-ex', `${t}: ${deDate(c.tc)} MEZ/MESZ, Binance ${sel.mkt === 'spot' ? 'Spot' : 'Futures'}, nach ${PK_H} Kerzen ${signed(c.res.r)} % (${c.res.out})`);
       kids.push(ex(b.rep, 'Repräsentativer Fall (geringste Abweichung vom Median, dünne Linie)'));
       if (b.neg && b.neg !== b.rep) kids.push(ex(b.neg, 'Gegenbeispiel (abwärts oder seitwärts)'));
     }
     kids.push(el('p', 'pk-note', `${S.all ? `${S.all} gespeicherte Fälle für diese Auswahl.` : 'Für diese Auswahl gibt es noch keine Fälle – ein Fall entsteht, sobald ein bestätigtes Muster erkannt wird; das Ergebnis folgt nach 12 Kerzen.'} Die übernommene ZigZag-Statistik (älterer Bestand) enthält nur Summen ohne Einzelverläufe und betrifft andere Muster. Speicher: ${(() => { const cs = Object.values(pk.cases).filter(c => c.mkt === sel.mkt && c.sym === sel.sym && c.iv === sel.iv && c.pat === sel.pat), n = {}; for (const c of cs) n[pkState(c)] = (n[pkState(c)] || 0) + 1; return cs.length ? Object.entries(n).map(([k, v]) => `${v} ${k}`).join(' · ') : (svcOn() ? 'Archiv am 24/7-Dienst eingerichtet' : 'nur lokal auf diesem Gerät (kein 24/7-Dienst eingerichtet)'); })()}${pk.extErr ? ` · Archiv: ${pk.extErr}` : ''}${pk.full ? ' · Lernspeicher voll – neues Lernen pausiert, nichts gelöscht' : ''}${pk.quarantined ? ' · ein beschädigter Bestand wurde in Quarantäne gelegt' : ''}. Kursrichtung ≠ Zieltreffer; keine Erfolgswahrscheinlichkeit.`));
     const pubKey = [sel.mkt, sel.sym, sel.iv, sel.pat].join('|'), g = pkPub.m && pkPub.group?.[pubKey], pl = (name, st) => `${name}: ${st.n ? `${st.auf} von ${st.n} aufwärts, ${st.ab} abwärts, ${st.sw} seitwärts` : 'keine abgeschlossenen Fälle'}`;
-    kids.push(el('p', 'pk-pub', !pkPub.at ? 'Veröffentlichter Stand wird geladen …' : pkPub.m ? `Veröffentlicht: Revision ${pkPub.m.rev} vom ${utcDate(pkPub.m.date).slice(0, 10)} (Fälle bis ${utcDate(pkPub.m.until).slice(0, 10)})${g ? ` · ${pl('live', g.live)} · ${pl('rekonstruiert', g.rek)}` : g === undefined ? ' · Zählung wird geladen …' : ' · für diese Auswahl nichts veröffentlicht'}` : `Gemeinsames Musterwissen: noch keine Veröffentlichung${pkPub.err ? ` (${pkPub.err})` : ''}`));
+    kids.push(el('p', 'pk-pub', !pkPub.at ? 'Veröffentlichter Stand wird geladen …' : pkPub.m ? `Veröffentlicht: Revision ${pkPub.m.rev} vom ${deDate(pkPub.m.date).slice(0, 10)} (Fälle bis ${deDate(pkPub.m.until).slice(0, 10)})${g ? ` · ${pl('live', g.live)} · ${pl('rekonstruiert', g.rek)}` : g === undefined ? ' · Zählung wird geladen …' : ' · für diese Auswahl nichts veröffentlicht'}` : `Gemeinsames Musterwissen: noch keine Veröffentlichung${pkPub.err ? ` (${pkPub.err})` : ''}`));
     out.replaceChildren(...kids);
   };
   btn.addEventListener('click', () => {
@@ -14924,7 +14924,7 @@ function timgStats(d, ch) {
 }
 // ---- Zeichnen ----
 const timgDur = ms => { const m = Math.round(ms / 60e3); if (ms < 60e3) return `${Math.max(1, Math.round(ms / 1000))} s`; if (m < 60) return `${m} Min.`; const h = Math.floor(m / 60), r = m % 60; if (h < 48) return `${h} Std.${r ? ` ${r} Min.` : ''}`; const dd = Math.floor(h / 24), rh = h % 24; return `${dd} Tage${rh ? ` ${rh} Std.` : ''}`; };
-const timgWhen = ms => new Date(ms).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+const timgWhen = ms => new Date(ms).toLocaleString('de-DE', { timeZone:'Europe/Berlin', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 // ---- 3.71.0: Prüfung der Daten vor dem Zeichnen ----
 // Einstieg gegen die Kerze der Einstiegsminute (bei längeren Trades die Kerze, die den Einstieg enthält): liegt der Kurs mehr als
 // 0,5 % außerhalb von Hoch/Tief, stimmt Journal oder Chart nicht – Hinweis auf der Karte und im Protokoll des Auftrags.
@@ -15576,7 +15576,7 @@ $('zs-bt-run').addEventListener('click', async () => {
   try {
     const result = await zoneWalk({ signal: zs.controller.signal, progress: f => { status.textContent = `Backtest läuft … ${Math.round(f * 100)} %`; } });
     zsPaint(result); window.__zoneBacktest = result;
-    status.textContent = `${result.symbol.replace(/USDT$/, '/USDT')} · ${result.interval} · ${result.candles} Kerzen (${utcDate(result.from)} – ${utcDate(result.to)} UTC) · ${result.tests.length} Zonentests · ${result.trades.length} ${result.trades.length === 1 ? 'Signal' : 'Signale'} abgeschlossen${result.open ? ' · 1 offen' : ''} · Hebel ${result.leverage}×. Wenig Fälle = unsichere Zahlen. Entscheidungshilfe, keine Garantie.`;
+    status.textContent = `${result.symbol.replace(/USDT$/, '/USDT')} · ${result.interval} · ${result.candles} Kerzen (${deDate(result.from)} – ${deDate(result.to)} MEZ/MESZ) · ${result.tests.length} Zonentests · ${result.trades.length} ${result.trades.length === 1 ? 'Signal' : 'Signale'} abgeschlossen${result.open ? ' · 1 offen' : ''} · Hebel ${result.leverage}×. Wenig Fälle = unsichere Zahlen. Entscheidungshilfe, keine Garantie.`;
   } catch (e) { status.textContent = e.name === 'AbortError' ? 'Backtest abgebrochen.' : e.message; }
   finally { zs.busy = false; $('zs-bt-run').disabled = false; $('zs-bt-stop').hidden = true; }
 });
@@ -15617,7 +15617,7 @@ const zsInfoLine = el('p', 'zone-lab-signal'); zsInfoLine.id = 'zs-signal-now'; 
 function zsInfo() {
   const w = zs.walk, o = w?.result?.open, p = v => priceText(v);
   zsInfoLine.textContent = !zs.on ? 'Signale aus – Knopf „Signale“ neben „Zonen“ blendet ▲ Einstieg, ▼ Ausstieg sowie Stop- und Ziel-Linie ein.' : w?.error ? w.error : !w ? 'Signale werden berechnet …'
-    : o ? `Offenes Signal: ${o.dir === 1 ? 'Long' : 'Short'} seit ${utcDate(o.time)} UTC · Einstieg ${p(o.entry)} · Stop ${p(o.stop)} · Ziel ${p(o.target)} (${o.targetName}) · CRV ${o.crv.toFixed(2).replace('.', ',')}. Entscheidungshilfe, keine Garantie.`
+    : o ? `Offenes Signal: ${o.dir === 1 ? 'Long' : 'Short'} seit ${deDate(o.time)} MEZ/MESZ · Einstieg ${p(o.entry)} · Stop ${p(o.stop)} · Ziel ${p(o.target)} (${o.targetName}) · CRV ${o.crv.toFixed(2).replace('.', ',')}. Entscheidungshilfe, keine Garantie.`
     : `Kein offenes Signal. Im geladenen Zeitraum ${w.result.trades.length} abgeschlossene Signale. Long nur an starker Kaufzone mit passendem Trend und Auslöser, Short spiegelverkehrt, CRV ≥ ${String(ZONE_SIGNAL.minCrv).replace('.', ',')}.`;
 }
 // 3.69.0: Antippen gibt immer eine sichtbare Rückmeldung – auch wenn im geladenen Zeitraum kein Signal entsteht (vorher wirkte der Knopf wie ohne Funktion).
@@ -15625,7 +15625,7 @@ function zsAnnounce() {
   if (!zs.announce || !zs.on) return; const w = zs.walk; if (!w || w.key !== zsKey()) return; zs.announce = false;
   if (w.error) { infoToast(w.error, 6000); return; }
   const r = w.result, n = r.trades.length, o = r.open;
-  infoToast(o ? `Signale an: offenes ${o.dir === 1 ? 'Long' : 'Short'}-Signal seit ${utcDate(o.time)} UTC – im Chart ▲ Einstieg und Linien für Stop, Ziel und Einstieg · ${n} abgeschlossen im geladenen Zeitraum. Entscheidungshilfe, keine Garantie.`
+  infoToast(o ? `Signale an: offenes ${o.dir === 1 ? 'Long' : 'Short'}-Signal seit ${deDate(o.time)} MEZ/MESZ – im Chart ▲ Einstieg und Linien für Stop, Ziel und Einstieg · ${n} abgeschlossen im geladenen Zeitraum. Entscheidungshilfe, keine Garantie.`
     : n ? `Signale an: ${n} abgeschlossene im geladenen Zeitraum (▲ Einstieg, ▼ Ausstieg), gerade kein offenes Signal. Entscheidungshilfe, keine Garantie.`
     : `Signale an – im geladenen Zeitraum (${r.candles} Kerzen) kein Signal. Signale entstehen nur an starken Zonen mit passendem Trend, frischem Auslöser und CRV ≥ ${String(ZONE_SIGNAL.minCrv).replace('.', ',')}.`, 8000);
 }
@@ -15655,7 +15655,7 @@ const musterPaper = createMusterPaper({ read: readMusterPaper, write: writeMuste
   } });
 const MUSTER_TG_NAMES = { hammer: 'Hammer', engulfing: 'Bullish Engulfing', confluence: 'Konfluenz', po3: 'Power of Three' };
 musterView = createMusterView({ host: musterHost, selection: musterSelection, currentPrice: (symbol, market) => state.symbol === symbol && state.source === market ? currentPrice() : null,
-  prefs: store.get('scalpdesk.muster.settings.v1', {}), savePrefs: value => store.set('scalpdesk.muster.settings.v1', value), workerFactory: () => new Worker(new URL('./bundles/3.77.6/shared/muster-bot-worker.mjs', import.meta.url), { type: 'module' }), paper: musterPaper, onMarkers: scheduleDraw,
+  prefs: store.get('scalpdesk.muster.settings.v1', {}), savePrefs: value => store.set('scalpdesk.muster.settings.v1', value), workerFactory: () => new Worker(new URL('./bundles/3.77.7/shared/muster-bot-worker.mjs', import.meta.url), { type: 'module' }), paper: musterPaper, onMarkers: scheduleDraw,
   telegramStatus: () => tgtReady('trades') ? null : 'Hinweis: Telegram ist noch nicht eingerichtet oder das Ziel „Trades“ ist aus (Einstellungen → Telegram).' });
 void musterPaper.restore().then(() => musterPaper.poll());
 function musterDraw(svg, data, x, y, bottom) {
@@ -15694,7 +15694,7 @@ const wmSave = async (key, value) => { store.set(key, value); if (!store.ok || !
 wmView = createWatchModelView({ host: document.querySelector('#workspace-settings .workspace-settings-grid'), read: key => store.get(key), save: wmSave, getMode: wmMode,
   setMode: async mode => { const before = wmMode(); try { await wmSave(WATCH_MODEL_KEY, mode === 'strict' ? 'strict' : 'classic'); } catch (e) { store.set(WATCH_MODEL_KEY, before); throw e; } broadcastData([WATCH_MODEL_KEY]); wmRefresh(); },
   now: serverNow, symbols: () => state.watch.map(wlSym), history: createMusterClient().history, available: () => !document.hidden && !state.paused && navigator.onLine !== false,
-  workerFactory: () => new Worker(new URL('./bundles/3.77.6/shared/watch-model-worker.mjs', import.meta.url), { type: 'module' }) });
+  workerFactory: () => new Worker(new URL('./bundles/3.77.7/shared/watch-model-worker.mjs', import.meta.url), { type: 'module' }) });
 function wmAvailability() {
   wmFeed.sync();
   if ((document.hidden || state.paused || navigator.onLine === false) && wmView.state.busy) wmView.abort();
@@ -15731,7 +15731,7 @@ function cryptoCalendarPaint() {
   const now = Date.now(), rows = cryptoCalendarEvents(cryptoCal.data, { mode: cryptoCal.scope.value, coin: state.symbol, watch: state.watch }, now), show = cryptoCal.more ? rows : rows.slice(0, 3);
   const sig = JSON.stringify([show, cryptoCal.more, cryptoCal.error, cryptoCal.data?.fetchedAt, state.symbol, state.watch, Math.floor(now / 60000)]);
   if (sig === cryptoCal.signature) return; cryptoCal.signature = sig;
-  const date = t => new Date(t).toLocaleDateString('de-DE', { timeZone: 'UTC', day: '2-digit', month: '2-digit', year: 'numeric' });
+  const date = t => new Date(t).toLocaleDateString('de-DE', { timeZone: 'Europe/Berlin', day: '2-digit', month: '2-digit', year: 'numeric' });
   const nodes = show.map(e => {
     const card = el('article', 'crypto-event'), when = el('time', '', e.t === e.end ? date(e.t) + ' · Uhrzeit offen' : date(e.t) + ' – ' + date(e.end) + ' · Zeitraum'); when.dateTime = new Date(e.t).toISOString().slice(0, 10);
     const meta = el('div', 'crypto-event-meta', e.coins.join(' · ') + (e.category ? ' · ' + e.category : ''));
@@ -15953,7 +15953,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
         <div class="fib-strip" id="fib-strip" role="group" aria-label="Fibonacci-Marken 38,2 / 50 / 61,8 % mit Abstand zum aktuellen Kurs – antippen legt einen Alarm an" hidden><div class="fs-head"><b id="fs-head">Fib</b><details class="tip left" id="fs-tip"><summary aria-label="Fibonacci-Marken erklärt"><span>i</span></summary><div class="tip-body"><p><b>Fibonacci-Retracement:</b> Wie weit läuft der Kurs nach einer Bewegung zurück? Gemessen in Prozent der letzten Schwungbewegung.</p><p id="fs-tip-swing">Grundlage ist der letzte abgeschlossene ZigZag-Schwung.</p><ul class="fs-tip-list"><li><b>23,6 %</b><span data-fl="23,6"></span> – flacher Rücklauf, gilt als Zeichen eines starken Trends</li><li><b>38,2 %</b><span data-fl="38,2"></span> – erste häufig beachtete Marke</li><li><b>50 %</b><span data-fl="50"></span> – halber Rücklauf; keine Fibonacci-Zahl, aber traditionell beachtet</li><li><b>61,8 %</b><span data-fl="61,8"></span> – der „goldene Schnitt“; 50–61,8&nbsp;% ist die „goldene Zone“ (im Chart hinterlegt)</li><li><b>78,6 %</b><span data-fl="78,6"></span> – tiefer Rücklauf, der Schwung ist dann fast ganz zurückgenommen</li></ul><p><b>So nutzen:</b> als Orientierung, wo Rücksetzer oder Erholungen oft vermutet werden. Eine Marke antippen legt dort einen Alarm an – dann die Reaktion des Kurses abwarten. Viele Trader achten besonders auf Marken, die mit anderen Levels zusammenfallen (POC, EMA 200, Unterstützung); geprüft ist das hier nicht.</p><p><b>Ehrlich:</b> Im Backtest mit echten BTC-Stundenkerzen (2017–2019) endeten Gegenbewegungen nicht häufiger an diesen Marken als an um 6 Punkte verschobenen (27–31&nbsp;% gegenüber 23–35&nbsp;%); knapp die Hälfte lief sogar über 100&nbsp;% hinaus. Deshalb keine Trefferquote – Orientierung, kein Handelssignal.</p><p>Die ZigZag-Mindestbewegung bestimmt den Schwung: kleiner heißt kürzere Schwünge und Marken näher am Kurs.</p></div></details></div><button type="button" class="fs-chip" data-fib="38,2" disabled><span class="fs-r">38,2<span class="fs-pc"> %</span></span><span class="fs-val skel">—</span><span class="fs-dist"></span></button><button type="button" class="fs-chip" data-fib="50" disabled><span class="fs-r">50<span class="fs-pc"> %</span></span><span class="fs-val skel">—</span><span class="fs-dist"></span></button><button type="button" class="fs-chip" data-fib="61,8" disabled><span class="fs-r">61,8<span class="fs-pc"> %</span></span><span class="fs-val skel">—</span><span class="fs-dist"></span></button><span class="fs-note" id="fs-note" hidden></span></div>
         <div class="lmap-strip" id="lmap-strip" hidden><span class="lm-head"><b>Liq-Heatmap</b><span class="lm-src" id="lm-src">Schätzung aus Open Interest</span><span class="lm-scale" role="img" aria-label="Farbskala: je kräftiger, desto mehr geschätzte Liquidationen"><small>wenig</small><i></i><small>viel</small></span><details class="tip left"><summary aria-label="So entsteht die Liquidations-Heatmap"><span>i</span></summary><div class="tip-body"><p><b>Wo würden viele gehebelte Positionen liquidiert?</b> Binance veröffentlicht das nicht – die Heatmap schätzt es aus öffentlichen Futures-Daten.</p><p>Steigt das Open Interest (offene Kontrakte) in einem Zeitraum, wurden neue Positionen eröffnet – zum Durchschnittspreis dieses Zeitraums. Den Long-/Short-Anteil liefern die Taker-Käufe. Für die Hebel gilt eine typische Verteilung (5× 10 %, 10× 25 %, 20× 30 %, 50× 20 %, 100× 15 %); die Liquidationspreise rechnet das Dashboard wie im Rechner, mit der dort eingestellten Maintenance Margin.</p><p>Sinkt das Open Interest, werden alle Zonen anteilig schwächer. Läuft der Kurs durch eine Zone, gilt sie als aufgelöst und endet im Chart. Je kräftiger die Farbe, desto mehr geschätzte Positionen.</p><p>Oberhalb des Kurses liegen Short-, unterhalb Long-Liquidationen. Die Knöpfe zeigen das stärkste Cluster je Seite im Bereich ±10 % – antippen legt einen Alarm an. Viele Trader sehen große Cluster als mögliche Kursziele; eine Garantie ist das nicht.</p></div></details></span><button type="button" class="lm-chip" id="lm-short" data-lm="short" disabled><span class="lm-side">Shorts ▲</span><span class="lm-val skel" id="lm-short-v">—</span></button><button type="button" class="lm-chip" id="lm-long" data-lm="long" disabled><span class="lm-side">Longs ▼</span><span class="lm-val skel" id="lm-long-v">—</span></button><span class="lm-note" id="lm-note" hidden></span></div>
         <div class="wh-strip" id="wh-strip" hidden><div class="wh-head"><b>Whales</b><select id="wh-min" class="wh-min" aria-label="Whale-Schwelle: Orders ab"><option value="100000">ab 100 Tsd.</option><option value="250000">ab 250 Tsd.</option><option value="500000">ab 500 Tsd.</option><option value="1000000">ab 1 Mio.</option></select><span class="wh-src" id="wh-src">letzte 60 s</span><span class="wh-last" id="wh-last"><span class="wl-l" id="wh-last-l"></span><span class="wl-s" id="wh-last-s"></span></span><details class="tip left"><summary aria-label="So funktioniert der Whale-Alert"><span>i</span></summary><div class="tip-body"><p><b>Große Marktorders („Whales“)</b> im Chart-Kürzel ab der gewählten Schwelle (Standard 100.000 USDT), live aus dem Einzel-Trade-Stream von Binance.</p><p>Räumt eine große Marktorder mehrere Preisstufen ab, meldet Binance mehrere Teil-Trades mit derselben Handelszeit, deren Preis in Order-Richtung weiterläuft (Kauf steigend, Verkauf fallend). Die App fasst genau diese zu einer Order zusammen; angezeigt wird der Durchschnittspreis.</p><p><b>Kauf</b> heißt: Jemand hat aktiv zum Marktpreis gekauft (Taker-Kauf), <b>Verkauf</b> entsprechend. Die Zeile „Alle Trades“ zeigt den Anteil der Taker-Käufe am gesamten Umsatz der letzten 60 s – aller Trades, nicht nur der großen.</p><p><b>Ehrlich:</b> Das beschreibt den laufenden Handel und ist keine Vorhersage. Ob große Orders den Kurs weiter in ihre Richtung treiben, ist hier nicht geprüft – dafür bräuchte es Einzel-Trade-Daten über lange Zeit.</p><p><b>Reiter „Orderbuch“:</b> wartende große Limit-Orders („Wände“) – die größte Kauf-Wand unter und die größte Verkaufs-Wand über dem Kurs im Bereich ±2 %. Als Wand gilt eine Preiszone (0,1 % des Kurses) mit mindestens doppelt so viel wie im Schnitt. Geladen wird nur bei offenem Reiter, alle 10 s (1000 Stufen je Seite; reicht das nicht bis ±2 %, steht der erfasste Bereich dabei). Limit-Orders können jederzeit zurückgezogen werden, auch absichtlich („Spoofing“), versteckte Orders sind nicht sichtbar – „seit …“ zeigt, wie lange eine Wand schon steht. Momentaufnahme, kein Versprechen.</p></div></details></div><div class="wh-chip buy" id="wh-buy" title="Große Kauforders der letzten 60 s: Anzahl · Summe in USDT"><span class="wh-k">▲<span class="wk-w"> Käufe</span></span><span class="wh-v skel" id="wh-buy-v">—</span></div><div class="wh-chip sell" id="wh-sell" title="Große Verkaufsorders der letzten 60 s: Anzahl · Summe in USDT"><span class="wh-k">▼<span class="wk-w"> Verkäufe</span></span><span class="wh-v skel" id="wh-sell-v">—</span></div><div class="wh-flow" id="wh-flow"><span class="wh-k">Alle Trades</span><span class="wh-bar" id="wh-bar"><i id="wh-bar-b"></i></span><span class="wh-v" id="wh-flow-v">—</span></div><details class="ob" id="ob"><summary class="ob-sum">Orderbuch <small id="ob-note">größte Wände ±2 %</small></summary><div class="ob-row"><button type="button" class="ob-chip bid" id="ob-bid" data-ob="bid" disabled><span class="ob-k"><span class="wl-l">Kauf-Wand</span><span class="wl-s">Kauf</span></span><span class="ob-p" id="ob-bid-p">—</span><span class="ob-d" id="ob-bid-d"></span><span class="ob-u" id="ob-bid-u"></span><span class="ob-a" id="ob-bid-a" hidden><span class="wl-l" id="ob-bid-al"></span><span class="wl-s" id="ob-bid-as"></span></span></button><button type="button" class="ob-chip ask" id="ob-ask" data-ob="ask" disabled><span class="ob-k"><span class="wl-l">Verkaufs-Wand</span><span class="wl-s">Verkauf</span></span><span class="ob-p" id="ob-ask-p">—</span><span class="ob-d" id="ob-ask-d"></span><span class="ob-u" id="ob-ask-u"></span><span class="ob-a" id="ob-ask-a" hidden><span class="wl-l" id="ob-ask-al"></span><span class="wl-s" id="ob-ask-as"></span></span></button></div></details></div>
-        <div class="chart-footer"><div class="chart-legend"><span class="lg"><i class="legend-line support"></i><span>Unterstützung<small id="lg-support" class="skel">—</small></span></span><span class="lg"><i class="legend-line resistance"></i><span>Widerstand<small id="lg-resistance" class="skel">—</small></span></span><span class="overlay-toggles" role="group" aria-label="Chart-Ebenen ein- und ausblenden"><button type="button" id="ov-all" class="ov-all" aria-pressed="false" title="Alle Chart-Ebenen auf einmal ausblenden – noch einmal tippen: genau dieselben wieder einblenden">👁 Alle ausblenden</button><button type="button" data-overlay="vp" aria-pressed="true"><i class="sw vp"></i>Volumenprofil · POC</button><button type="button" data-overlay="ema200" aria-pressed="true"><i class="sw ema"></i>EMA 200</button><button type="button" data-overlay="hz" aria-pressed="false" title="Höhere Zonen: EMA 200, Bollinger und POC/Value Area des Analyse-Intervalls – je Kerze der damals schon bestätigte Stand"><i class="sw hz"></i><span class="hz-l">Zonen 4h</span></button><button type="button" data-overlay="bb" aria-pressed="true"><i class="sw bb"></i>Bollinger</button><button type="button" data-overlay="hilo" aria-pressed="true" title="Hoch und Tief: höchster und tiefster Kurs der sichtbaren Kerzen, fett in Grün bzw. Rot an der Dochtspitze"><i class="sw hilo"></i>Hoch/Tief</button><button type="button" data-overlay="liq" aria-pressed="true" title="Liquidationspreise: offene Positionen (Wert der Börse oder Modell bei isolierter Margin) und Rechner-Szenario"><i class="sw liq"></i>Liquidation</button><button type="button" data-overlay="lmap" aria-pressed="true" title="Liquidations-Heatmap: geschätzte Zonen aus Open Interest und typischen Hebeln"><i class="sw lmap"></i>Liq-Heatmap</button><button type="button" data-overlay="zz" aria-pressed="true" title="ZigZag: Umkehrpunkte (Pivots) ab der eingestellten Mindestbewegung – Grundlage für Divergenzen, Elliott-Wellen und Fibonacci"><i class="sw zz"></i>ZigZag</button><select id="zz-pct" class="zz-pct" aria-label="ZigZag: Mindestbewegung für einen Umkehrpunkt" title="Mindestbewegung für einen Umkehrpunkt"><option value="0.25">0,25 %</option><option value="0.5">0,5 %</option><option value="1">1 %</option><option value="2">2 %</option><option value="3">3 %</option><option value="5">5 %</option><option value="8">8 %</option></select><button type="button" id="zz-fc" class="zz-fc-btn" aria-pressed="false" title="Prognose: statistische Projektion des nächsten ZigZag-Schwungs (Median bisheriger Schwünge dieses Charts) – keine Vorhersage"><i class="sw zzfc"></i>Prognose</button><button type="button" data-overlay="div" aria-pressed="true" title="RSI-Divergenzen: Kurs und RSI 14 laufen an den ZigZag-Umkehrpunkten auseinander (letzte 40 abgeschlossene Kerzen) – Hinweis, kein Handelssignal"><i class="sw div"></i>RSI-Div.</button><button type="button" data-overlay="ew" aria-pressed="true" title="Elliott-Wellen: schematische Zuordnung 1–5 und A–C auf den ZigZag-Umkehrpunkten nach den drei Grundregeln (ab 50 Kerzen) – andere Zählungen sind möglich, keine Prognose"><i class="sw ew"></i><span>Elliott</span></button><button type="button" data-overlay="ewfc" aria-pressed="false" title="Wellen-Prognose: schematischer Weg der nächsten Elliott-Wellen nach den üblichen Fibonacci-Faustregeln (nur bei einer aktuellen Zählung) – keine Prozentzahl, kein Handelssignal"><i class="sw ewfc"></i><span>Wellen-Prognose</span></button><button type="button" data-overlay="fib" aria-pressed="true" title="Fibonacci-Retracement: 23,6 bis 78,6 % des letzten abgeschlossenen ZigZag-Schwungs – Orientierung für Rücksetzer, kein Handelssignal"><i class="sw fib"></i>Fibonacci</button><span class="ov-pair"><button type="button" data-overlay="fvg" aria-pressed="false" title="Fair Value Gaps: Preislücken zwischen Kerze 1 und Kerze 3 – grün bullisch, rot bärisch; die Box endet, sobald eine Kerze die Lücke mit dem Docht komplett schließt"><i class="sw fvg"></i>FVG</button><details class="tip left fvg-tip" id="fvg-tip"><summary aria-label="Was ist ein FVG?"><span>i</span></summary><div class="tip-body"><p><b>Fair Value Gap (FVG)</b> – eine Preislücke aus drei Kerzen: Die mittlere Kerze bewegt den Kurs so schnell, dass sich die Dochte von <b>Kerze 1 und Kerze 3 nicht überlappen</b>. Dort wurde nur in eine Richtung gehandelt – ein <b>Marktungleichgewicht</b>.</p><p><b>Grün (bullisch):</b> Tief von Kerze 3 über dem Hoch von Kerze 1, mittlere Kerze grün. <b>Rot (bärisch):</b> Hoch von Kerze 3 unter dem Tief von Kerze 1, mittlere Kerze rot.</p><p>Läuft der Kurs später zurück in die Lücke, reagiert er dort oft. Schließt eine spätere Kerze die Lücke mit ihrem Docht <b>komplett</b>, gilt sie als <b>mitigiert</b> – die Box endet an dieser Kerze. Offene Lücken reichen bis zur letzten Kerze.</p><p>Berechnet auf allen geladenen Kerzen des Charts (normale Kerzen, auch bei Heikin-Ashi). Orientierung, kein Handelssignal. Eine lernende Bewertung gibt es im Begleitprogramm <code>fvg-ki/</code>.</p></div></details></span><span class="ov-pair macd-pair"><button type="button" data-overlay="macd" aria-pressed="false" title="MACD 12/26/9: blaue MACD-Linie, orange Signallinie, Nulllinie und Histogramm unter dem Kurschart"><i class="sw macd"></i>MACD</button><button type="button" id="macd-info" class="macd-info" aria-label="MACD und Handelsstrategien erklären" aria-haspopup="dialog" aria-controls="macd-help" title="MACD: Linien, Kreuzungen und Divergenzen erklären">i</button></span><button type="button" data-overlay="whale" aria-pressed="true" title="Whale-Alert: große Marktorders ab 100.000 USDT und Verhältnis der Käufe zu Verkäufen der letzten 60 s – Beschreibung, keine Vorhersage"><i class="sw whale"></i>Whales</button></span></div><span id="chart-caption">Zeitachse UTC · 1m</span></div></div><aside class="of-panel" id="orderflow-panel" aria-label="Kauf- und Verkaufsvolumen der Binance-Futures-Kerzen"></aside></div><i class="div-halo" id="div-halo" hidden aria-hidden="true"><b></b></i>
+        <div class="chart-footer"><div class="chart-legend"><span class="lg"><i class="legend-line support"></i><span>Unterstützung<small id="lg-support" class="skel">—</small></span></span><span class="lg"><i class="legend-line resistance"></i><span>Widerstand<small id="lg-resistance" class="skel">—</small></span></span><span class="overlay-toggles" role="group" aria-label="Chart-Ebenen ein- und ausblenden"><button type="button" id="ov-all" class="ov-all" aria-pressed="false" title="Alle Chart-Ebenen auf einmal ausblenden – noch einmal tippen: genau dieselben wieder einblenden">👁 Alle ausblenden</button><button type="button" data-overlay="vp" aria-pressed="true"><i class="sw vp"></i>Volumenprofil · POC</button><button type="button" data-overlay="ema200" aria-pressed="true"><i class="sw ema"></i>EMA 200</button><button type="button" data-overlay="hz" aria-pressed="false" title="Höhere Zonen: EMA 200, Bollinger und POC/Value Area des Analyse-Intervalls – je Kerze der damals schon bestätigte Stand"><i class="sw hz"></i><span class="hz-l">Zonen 4h</span></button><button type="button" data-overlay="bb" aria-pressed="true"><i class="sw bb"></i>Bollinger</button><button type="button" data-overlay="hilo" aria-pressed="true" title="Hoch und Tief: höchster und tiefster Kurs der sichtbaren Kerzen, fett in Grün bzw. Rot an der Dochtspitze"><i class="sw hilo"></i>Hoch/Tief</button><button type="button" data-overlay="liq" aria-pressed="true" title="Liquidationspreise: offene Positionen (Wert der Börse oder Modell bei isolierter Margin) und Rechner-Szenario"><i class="sw liq"></i>Liquidation</button><button type="button" data-overlay="lmap" aria-pressed="true" title="Liquidations-Heatmap: geschätzte Zonen aus Open Interest und typischen Hebeln"><i class="sw lmap"></i>Liq-Heatmap</button><button type="button" data-overlay="zz" aria-pressed="true" title="ZigZag: Umkehrpunkte (Pivots) ab der eingestellten Mindestbewegung – Grundlage für Divergenzen, Elliott-Wellen und Fibonacci"><i class="sw zz"></i>ZigZag</button><select id="zz-pct" class="zz-pct" aria-label="ZigZag: Mindestbewegung für einen Umkehrpunkt" title="Mindestbewegung für einen Umkehrpunkt"><option value="0.25">0,25 %</option><option value="0.5">0,5 %</option><option value="1">1 %</option><option value="2">2 %</option><option value="3">3 %</option><option value="5">5 %</option><option value="8">8 %</option></select><button type="button" id="zz-fc" class="zz-fc-btn" aria-pressed="false" title="Prognose: statistische Projektion des nächsten ZigZag-Schwungs (Median bisheriger Schwünge dieses Charts) – keine Vorhersage"><i class="sw zzfc"></i>Prognose</button><button type="button" data-overlay="div" aria-pressed="true" title="RSI-Divergenzen: Kurs und RSI 14 laufen an den ZigZag-Umkehrpunkten auseinander (letzte 40 abgeschlossene Kerzen) – Hinweis, kein Handelssignal"><i class="sw div"></i>RSI-Div.</button><button type="button" data-overlay="ew" aria-pressed="true" title="Elliott-Wellen: schematische Zuordnung 1–5 und A–C auf den ZigZag-Umkehrpunkten nach den drei Grundregeln (ab 50 Kerzen) – andere Zählungen sind möglich, keine Prognose"><i class="sw ew"></i><span>Elliott</span></button><button type="button" data-overlay="ewfc" aria-pressed="false" title="Wellen-Prognose: schematischer Weg der nächsten Elliott-Wellen nach den üblichen Fibonacci-Faustregeln (nur bei einer aktuellen Zählung) – keine Prozentzahl, kein Handelssignal"><i class="sw ewfc"></i><span>Wellen-Prognose</span></button><button type="button" data-overlay="fib" aria-pressed="true" title="Fibonacci-Retracement: 23,6 bis 78,6 % des letzten abgeschlossenen ZigZag-Schwungs – Orientierung für Rücksetzer, kein Handelssignal"><i class="sw fib"></i>Fibonacci</button><span class="ov-pair"><button type="button" data-overlay="fvg" aria-pressed="false" title="Fair Value Gaps: Preislücken zwischen Kerze 1 und Kerze 3 – grün bullisch, rot bärisch; die Box endet, sobald eine Kerze die Lücke mit dem Docht komplett schließt"><i class="sw fvg"></i>FVG</button><details class="tip left fvg-tip" id="fvg-tip"><summary aria-label="Was ist ein FVG?"><span>i</span></summary><div class="tip-body"><p><b>Fair Value Gap (FVG)</b> – eine Preislücke aus drei Kerzen: Die mittlere Kerze bewegt den Kurs so schnell, dass sich die Dochte von <b>Kerze 1 und Kerze 3 nicht überlappen</b>. Dort wurde nur in eine Richtung gehandelt – ein <b>Marktungleichgewicht</b>.</p><p><b>Grün (bullisch):</b> Tief von Kerze 3 über dem Hoch von Kerze 1, mittlere Kerze grün. <b>Rot (bärisch):</b> Hoch von Kerze 3 unter dem Tief von Kerze 1, mittlere Kerze rot.</p><p>Läuft der Kurs später zurück in die Lücke, reagiert er dort oft. Schließt eine spätere Kerze die Lücke mit ihrem Docht <b>komplett</b>, gilt sie als <b>mitigiert</b> – die Box endet an dieser Kerze. Offene Lücken reichen bis zur letzten Kerze.</p><p>Berechnet auf allen geladenen Kerzen des Charts (normale Kerzen, auch bei Heikin-Ashi). Orientierung, kein Handelssignal. Eine lernende Bewertung gibt es im Begleitprogramm <code>fvg-ki/</code>.</p></div></details></span><span class="ov-pair macd-pair"><button type="button" data-overlay="macd" aria-pressed="false" title="MACD 12/26/9: blaue MACD-Linie, orange Signallinie, Nulllinie und Histogramm unter dem Kurschart"><i class="sw macd"></i>MACD</button><button type="button" id="macd-info" class="macd-info" aria-label="MACD und Handelsstrategien erklären" aria-haspopup="dialog" aria-controls="macd-help" title="MACD: Linien, Kreuzungen und Divergenzen erklären">i</button></span><button type="button" data-overlay="whale" aria-pressed="true" title="Whale-Alert: große Marktorders ab 100.000 USDT und Verhältnis der Käufe zu Verkäufen der letzten 60 s – Beschreibung, keine Vorhersage"><i class="sw whale"></i>Whales</button></span></div><span id="chart-caption">Zeitachse MEZ/MESZ · 1m</span></div></div><aside class="of-panel" id="orderflow-panel" aria-label="Kauf- und Verkaufsvolumen der Binance-Futures-Kerzen"></aside></div><i class="div-halo" id="div-halo" hidden aria-hidden="true"><b></b></i>
       </section>
       <section class="panel econ cq" id="econ" data-tabs="chart" aria-labelledby="econ-title"><div class="econ-head"><div class="head-line"><h2 id="econ-title">Wirtschaftskalender</h2><details class="tip left"><summary aria-label="Woher die Termine kommen und wann gewarnt wird"><span>i</span></summary><div class="tip-body"><p>Wichtige Wirtschaftstermine wie Zinsentscheide der US-Notenbank (Fed), Inflations- und Arbeitsmarktdaten. Um solche Termine schwankt der Kurs oft stark, auch bei Kryptowährungen.</p><p>Quelle: Wochenkalender von Forex Factory. Ein GitHub-Job im Repository holt ihn alle 3 Stunden ab, die App lädt ihn alle 30 Minuten. Titel im Original (englisch), Zeiten in deiner Ortszeit. Angaben ohne Gewähr.</p><p>Warnung: ab der eingestellten Zeit vor einem Termin mit hoher Bedeutung bis 15 Minuten danach, oben in der Live-Leiste und hier. Vorab einmal als Hinweis mit Ton und, falls eingerichtet, an Telegram – nur solange die App offen ist.</p><p>Punkte: rot hohe, orange mittlere Bedeutung. Feiertage bedeuten oft wenig Handel.</p></div></details></div><span class="econ-src" id="econ-src"></span></div><div class="econ-warn" id="econ-warn" role="status" hidden></div><div class="econ-list" id="econ-list"></div><div class="econ-foot"><label>Währung <select id="econ-cur"><option value="usd">USD</option><option value="all">alle</option></select></label><label>Bedeutung <select id="econ-imp"><option value="high">hoch</option><option value="medium">hoch + mittel</option></select></label><label>Warnen <select id="econ-warn-min"><option value="0">aus</option><option value="5">5 min vorher</option><option value="15">15 min vorher</option><option value="30">30 min vorher</option><option value="60">60 min vorher</option></select></label><button type="button" class="button ghost econ-more" id="econ-more" hidden>Ganze Woche</button></div></section>
       <section class="panel cnews cq" id="cnews" data-tabs="chart" aria-labelledby="cnews-title"><div class="econ-head"><div class="head-line"><h2 id="cnews-title">News &amp; Termine · <span id="cnews-coin">BTC</span></h2><details class="tip left"><summary aria-label="Woher die Meldungen kommen und was als wichtig gilt"><span>i</span></summary><div class="tip-body"><p>Nur ganz wichtige Meldungen und Termine zum geöffneten Coin.</p><p><b>Binance:</b> Listings, Delistings, entfernte USDT-Handelspaare, Netzwerk-Upgrades und Hard Forks (Ein- und Auszahlungen ruhen dann), Token-Tausch und die Beobachtungsliste (Monitoring-Tag: erhöhtes Risiko, ein Delisting ist möglich).</p><p><b>Schlagzeilen</b> deutschsprachiger Medien über Google News, für 36 bekannte Coins. Sehr wichtig: Hacks und gestohlene Gelder, ETF-Entscheidungen, Behörden und Gerichte (z. B. SEC, Klagen), Upgrades, Forks und Netzwerk-Ausfälle, Delistings und Listings großer Börsen, Insolvenzen. Mit „auch wichtig“ dazu ETF-Zuflüsse, Escrow und Token-Freigaben, Regulierung und Übernahmen. Kursprognosen und Marktberichte fallen weg; dieselbe Geschichte aus mehreren Medien steht nur einmal da.</p><p>Ausgewählt wird über Stichwörter – Wichtiges kann fehlen, Unwichtiges durchrutschen. Ein GitHub-Job sammelt stündlich, die App lädt alle 15 Minuten. Kein Kauf- oder Verkaufssignal.</p></div></details></div><span class="econ-src" id="cnews-src"></span></div><div class="cn-list" id="cnews-list"></div><div class="econ-foot"><label>Bedeutung <select id="cnews-imp"><option value="high">sehr wichtig</option><option value="medium">auch wichtig</option></select></label><button type="button" class="button ghost econ-more" id="cnews-more" hidden>Alle anzeigen</button></div></section>

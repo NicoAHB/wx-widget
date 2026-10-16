@@ -20,8 +20,8 @@ export function createOrderflowView({ root, context, now, fetchRows, readPrefs, 
   const explanation = el('div', 'of-explanation');
   for (const p of [
     'Kauf = aggressiver Käufer (Taker), Verkauf = aggressiver Verkäufer. Jeder Trade hat beide Seiten; hier zählt, wer die Market-Order ausgelöst hat.',
-    'Grüner Balkenanteil = Kauf ÷ Gesamtvolumen. Delta = Kauf − Verkauf: + Käuferüberhang, − Verkäuferüberhang. Vier geschlossene Kerzen und die laufende Kerze „jetzt“, Zeiten UTC.',
-    'Die waagerechte Kerze zeigt Tief links und Hoch rechts; der Körper liegt zwischen Öffnung und Schluss. Grün = Schluss über Öffnung, Rot = darunter, Grau = gleich. O = Öffnung, H = Hoch, T = Tief, S = Schluss (bei „jetzt“ aktueller Kurs). Alle fünf Kerzen je Block verwenden denselben Preismaßstab. Rest = Zeit bis zum nächsten UTC-Kerzenschluss.',
+    'Grüner Balkenanteil = Kauf ÷ Gesamtvolumen. Delta = Kauf − Verkauf: + Käuferüberhang, − Verkäuferüberhang. Vier geschlossene Kerzen und die laufende Kerze „jetzt“, Zeiten MEZ/MESZ.',
+    'Die waagerechte Kerze zeigt Tief links und Hoch rechts; der Körper liegt zwischen Öffnung und Schluss. Grün = Schluss über Öffnung, Rot = darunter, Grau = gleich. O = Öffnung, H = Hoch, T = Tief, S = Schluss (bei „jetzt“ aktueller Kurs). Alle fünf Kerzen je Block verwenden denselben Preismaßstab. Rest = Zeit bis zum nächsten Börsen-Kerzenschluss; der UTC-Anker bleibt unverändert.',
     'Handlung: Delta allein ist kein Einstieg. Trend, Stop-Loss und Gebühren prüfen. Fehlende Werte erscheinen als Strich. Demo-Einstieg und -Ausstieg sind nur mit aktuellem Live-Kurs möglich.',
     'Kerzenbild: regelbasierte Kurzbewertung der sichtbaren Kerze. Körper bis 10 % der Spanne = neutral; sonst Schluss über Öffnung = bullisch, darunter = bärisch. „Vorläufig“ gilt bis zum Abschluss. Kein eigener Modellscore und keine zusätzliche KI-Abfrage je Tick.',
     'Kerzenmuster: Erkennt die Chart-Mustererkennung („KI“, Regelwerk pat-1) auf einer abgeschlossenen Kerze ein Muster eindeutig – Pflichtform erfüllt, bei Umkehrmustern auch der passende Vortrend –, steht sein Name darunter (z. B. Hammer, Bärisches Engulfing). Bei Mehrkerzenmustern steht der Name an der letzten Kerze. ⓘ erklärt das Muster.',
@@ -33,8 +33,8 @@ export function createOrderflowView({ root, context, now, fetchRows, readPrefs, 
   label.append(select); const retry = el('button', 'button ghost', 'Neu laden'); retry.type = 'button'; retry.id = 'of-retry'; settings.append(label, retry);
   const notice = el('p', 'of-notice'); notice.id = 'of-status'; notice.setAttribute('role', 'status');
   root.append(head, source, settings, notice);
-  const utc = new Intl.DateTimeFormat('de-DE', { timeZone: 'UTC', hour: '2-digit', minute: '2-digit' });
-  const date = new Intl.DateTimeFormat('de-DE', { timeZone: 'UTC', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  const utc = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', hour: '2-digit', minute: '2-digit' });
+  const date = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
   for (const [iv, name] of [['1m', '1-Minuten-Kerzen'], ['1h', '1-Stunden-Kerzen']]) {
     const section = el('details', 'of-block of-fold'), heading = el('summary', 'of-block-head'), h = el('h4', '', name), countdown = el('span', 'of-countdown'), quality = el('small', 'of-quality'), legend = el('div', 'of-row of-legend');
     fold(section, iv, true);
@@ -85,7 +85,7 @@ export function createOrderflowView({ root, context, now, fetchRows, readPrefs, 
       slots.forEach((slot, i) => {
         const r = b.rows[i], v = slot.candle?.[state.unit]; r.row.dataset.time = String(slot.t); r.row.dataset.running = String(slot.running); r.row.dataset.closed = String(!!slot.candle?.closed);
         r.row.classList.toggle('of-running', slot.running); r.row.classList.toggle('of-missing', !v || !slot.running && !slot.candle.closed);
-        text(r.timeLabel, slot.running ? 'jetzt' : utc.format(slot.t)); r.time.title = date.format(slot.t) + ' UTC'; r.rowCountdown.hidden = !slot.running; text(r.rowCountdown, slot.running ? remaining : ''); r.rowCountdown.setAttribute('aria-label', 'Restlaufzeit der ' + (iv === '1m' ? 'Minutenkerze' : 'Stundenkerze') + ': ' + remaining);
+        text(r.timeLabel, slot.running ? 'jetzt' : utc.format(slot.t)); r.time.title = date.format(slot.t) + ' MEZ/MESZ'; r.rowCountdown.hidden = !slot.running; text(r.rowCountdown, slot.running ? remaining : ''); r.rowCountdown.setAttribute('aria-label', 'Restlaufzeit der ' + (iv === '1m' ? 'Minutenkerze' : 'Stundenkerze') + ': ' + remaining);
         text(r.buy, compactVolume(v?.buy)); text(r.sell, compactVolume(v?.sell)); text(r.delta, compactVolume(v?.delta, true));
         r.delta.dataset.tone = v?.delta > 0 ? 'up' : v?.delta < 0 ? 'down' : 'neutral';
         r.volumes.classList.toggle('of-neutral', !v || v.share === null); r.fill.style.width = v?.share === null || !v ? '0%' : `${v.share * 100}%`;

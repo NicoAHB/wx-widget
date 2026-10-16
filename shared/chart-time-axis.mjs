@@ -1,15 +1,17 @@
-// NEU 3.77.2: Zeitbeschriftungen im bisherigen Chart-Zeitbezug UTC.
+// 3.77.7: deutsche Anzeigezeit; Kerzenzeitstempel bleiben Börsenzeitstempel.
+import { displayTimeParts } from './display-time.mjs';
 // Konservative Textbreite für die bestehende 12px-Achsenschrift; kein DOM-Messen pro Frame.
 export function chartTimeTicks(rows, { intervalMs, x, left, right, measure = text => text.length * 7.8 } = {}) {
   if (!rows.length || right <= left) return [];
-  const day = time => Math.floor(time / 864e5), pad = value => String(value).padStart(2, '0');
+  const day = time => displayTimeParts(time)?.day;
   const hourly = intervalMs >= 36e5, candidates = new Map();
   const add = (index, priority) => {
     if (!Number.isFinite(rows[index]?.time)) return;
     const old = candidates.get(index);
     if (old && old.priority <= priority) return;
-    const date = new Date(rows[index].time), dayChange = index > 0 && day(rows[index].time) !== day(rows[index - 1].time);
-    const label = (hourly || dayChange ? `${pad(date.getUTCDate())}.${pad(date.getUTCMonth() + 1)}. ` : '') + `${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}`;
+    const date = displayTimeParts(rows[index].time), previous = index > 0 ? displayTimeParts(rows[index - 1].time) : null, dayChange = previous && date.day !== previous.day;
+    const repeatedHour = previous && !dayChange && date.zone !== previous.zone && date.clock <= previous.clock;
+    const label = (hourly || dayChange ? date.day.slice(0, 6) + ' ' : '') + date.clock + (repeatedHour ? ' ' + date.zone : '');
     const width = measure(label);
     if (width > right - left) return;
     const position = Math.max(left + width / 2, Math.min(right - width / 2, x(index)));

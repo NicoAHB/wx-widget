@@ -1,7 +1,7 @@
 import { GITHUB_DEFAULTS, readGithubDevice, saveGithubDevice, createGithubClient, encryptGithubBackup, decryptGithubBackup } from './github-sync.mjs';
 const document = globalThis.document;
 const node = (tag, text, cls) => { const n = document.createElement(tag); if (text) n.textContent = text; if (cls) n.className = cls; return n; };
-const date = value => value && Number.isFinite(Date.parse(value)) ? new Date(value).toLocaleString('de-DE') : 'noch kein Sync';
+const date = value => value && Number.isFinite(Date.parse(value)) ? new Date(value).toLocaleString('de-DE', { timeZone: 'Europe/Berlin' }) : 'noch kein Sync';
 // 3.68.4: Einrichtung übersichtlich in drei Schritten (Repository · Zugang · Gerät), Felder mit Rahmen, Token-Einfügen, Statuszeile;
 // die Anleitung öffnet in der App (openGuide) statt als rohe Markdown-Datei.
 const GH_TOKEN_RE = /\b(github_pat_[A-Za-z0-9_]{20,}|gh[pousr]_[A-Za-z0-9]{20,})\b/;

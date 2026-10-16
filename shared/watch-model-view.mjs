@@ -2,7 +2,7 @@
 import { WATCH_COMPARE_KEY, WATCH_MODELS, WATCH_CALCULATION_REVISION, WATCH_COMPARE_DEFAULTS, WATCH_BASE_MS, WATCH_TREND_MS, WATCH_HISTORY, watchCompareSettings, summarizeWatchComparison, summarizeWatchDiagnostics } from './watch-model-core.mjs';
 const element = (tag, cls = '', text = '') => { const e = globalThis.document.createElement(tag); e.className = cls; e.textContent = text; return e; };
 const num = (v, digits = 2) => Number.isFinite(v) ? v.toLocaleString('de-DE', { minimumFractionDigits: digits, maximumFractionDigits: digits }) : '–';
-const date = value => new Intl.DateTimeFormat('de-DE', { dateStyle: 'short', timeStyle: 'short' }).format(value);
+const date = value => new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', dateStyle: 'short', timeStyle: 'short' }).format(value);
 const modelName = version => version === 'watch-strict-1' ? 'Streng 5/5 · v1 (alt)' : 'Trend-Pullback 5/5 · v2';
 const classicName = version => version === 'watch-classic-1' ? 'Bisheriges Modell · v1 (ohne Momentum)' : 'Standard + RSI-Momentum · v2';
 const button = (text, id) => { const b = element('button', 'button ghost', text); b.type = 'button'; if (id) b.id = id; return b; };

@@ -13,7 +13,7 @@ async function routedWebkit(){const {webkit}=require('playwright'),https=require
  const I=await import('../shared/market-intervals.mjs'),D=await import('../shared/chart-detail.mjs'),src=fs.readFileSync(path.join(__dirname,'m58.js'),'utf8');
  const B=vm.runInNewContext(src.slice(src.indexOf('const BUILD = () => {'),src.indexOf('\nconst tests = {'))+'\nBUILD()'),shape=B.path(B.F.rectangle),now=Date.now();
  await p.clock.setFixedTime(new Date(now));
- await ctx.addInitScript(()=>{localStorage.setItem('scalpdesk.symbol.v1','"BTCUSDT"');localStorage.setItem('scalpdesk.interval.v1','"5m"');});
+ await ctx.addInitScript(()=>{const NativeWorker=window.Worker;window.Worker=new Proxy(NativeWorker,{construct(Target,args){if(String(args[0]).startsWith('blob:'))throw Error('Kontrollierte WebSocket-Testdaten im Hauptthread');return Reflect.construct(Target,args);}});localStorage.setItem('scalpdesk.symbol.v1','"BTCUSDT"');localStorage.setItem('scalpdesk.interval.v1','"5m"');});
  const fixtureRoute=route=>{const q=new URL(route.request().url()).searchParams,iv=q.get('interval'),sym=q.get('symbol');if(!['BTCUSDT','ETCUSDT'].includes(sym)||!I.INTERVAL_MS[iv]||iv==='1M')return route.fallback();const ms=I.INTERVAL_MS[iv],start=D.candleStart(now,iv)-499*ms;
  const rows=[...Array.from({length:499-shape.length},()=>({o:90,h:90.1,l:89.9,c:90,v:100})),...shape,{o:94,h:94.1,l:93.9,c:94,v:1}],price=v=>sym==='BTCUSDT'?80000+(v-90)*246.878:7+(v-80)*.05;
  return route.fulfill({json:rows.map((r,i)=>[start+i*ms,price(r.o),price(r.h),price(r.l),price(r.c),r.v,I.intervalEnd(start+i*ms,iv)-1])});};
@@ -31,7 +31,7 @@ async function routedWebkit(){const {webkit}=require('playwright'),https=require
  async function tap(kind,dy=0){const q=await point(kind);await p.touchscreen.tap(q.x,q.y+dy);await p.waitForTimeout(80);return q;}
  const original=await signature();await tap('upper',10);
  check('26px-Fingerziel trifft die obere Linie auch 10px daneben',await label.count()===1&&/82\.493/.test(await label.textContent()),await label.textContent());
- check('Label enthält beide Grenzen, Abstand und UTC-Uhrzeit',/Oben82\.493 \$Unten79\.975 \$Abstand2\.518 \$/.test(await label.textContent())&&/\d{2}:\d{2}/.test(await label.textContent())&&/UTC/.test(await label.textContent()));
+ check('Label enthält beide Grenzen, Abstand und UTC-Uhrzeit',/Oben82\.493 \$Unten79\.975 \$Abstand2\.518 \$/.test(await label.textContent())&&/\d{2}:\d{2}/.test(await label.textContent())&&/MEZ\/MESZ/.test(await label.textContent()));
  check('Farbe kommt direkt von der ausgewählten Linie',await label.evaluate(n=>{const line=document.querySelector('#chart .pat-projection');return n.style.getPropertyValue('--projection-color')===line.getAttribute('stroke');}));
  check('Ein farbiger Punkt markiert exakt die Linie, auch wenn 10px daneben getippt wurde',await p.locator('.projection-inspector-point').count()===1&&await markerAt('upper')&&await p.locator('.projection-inspector-point').evaluate(n=>n.style.getPropertyValue('--projection-color')===document.querySelector('.projection-inspector').style.getPropertyValue('--projection-color')));
  check('Antippen verändert weder Linien noch deren Sichtbarkeit',await signature()===original&&await lineCount()===2);

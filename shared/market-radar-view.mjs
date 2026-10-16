@@ -4,9 +4,9 @@ import { radarBook, updateRadarBook, RADAR_KEY } from './market-radar-journal.mj
 const LABELS = { quiet: 'Ruhig', attention: 'Auffällig', risk: 'Risiko', partial: 'Teildaten', missing: 'Offen', loading: 'Lädt', stale: 'Veraltet', paused: 'Pausiert', offline: 'Offline' };
 const FLAGS = { volume: 'Volumen', oi: 'Open Interest', funding: 'Funding', macro: 'USD-Termin', announcement: 'Binance-Meldung', news: 'News' };
 const dec = new Intl.NumberFormat('de-DE', { maximumFractionDigits: 2 }), signed = new Intl.NumberFormat('de-DE', { maximumFractionDigits: 2, minimumFractionDigits: 2, signDisplay: 'exceptZero' });
-const clock = new Intl.DateTimeFormat('de-DE', { hour: '2-digit', minute: '2-digit' });
+const clock = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', hour: '2-digit', minute: '2-digit' });
 const compact = new Intl.NumberFormat('de-DE', { notation: 'compact', maximumFractionDigits: 1 });
-const stamp = new Intl.DateTimeFormat('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+const stamp = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 const pct = v => Number.isFinite(v) ? signed.format(v).replace('-', '−') + ' %' : '–';
 function age(at, now) {
   if (!(at > 0) || at > now) return 'Zeit unbekannt';

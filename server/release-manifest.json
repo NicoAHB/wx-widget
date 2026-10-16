@@ -1,6 +1,6 @@
 {
   "version": "2.15.1",
-  "appVersion": "3.77.6",
+  "appVersion": "3.77.7",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
@@ -144,8 +144,8 @@
     },
     {
       "path": "shared/bot-view.mjs",
-      "sha256": "cd16b04d6dfe6d93317cac947c480713949aa20c01f8076060fababdc543030b",
-      "bytes": 34048
+      "sha256": "5f9d5ff1e03d729d461b57ef674e5c8dd36858deb2132d7dd1c6574c506b5dba",
+      "bytes": 34079
     },
     {
       "path": "shared/chart-detail.mjs",
@@ -169,8 +169,8 @@
     },
     {
       "path": "shared/chart-time-axis.mjs",
-      "sha256": "c67acee5b01224d3ed913597a21685db84ffd3eae09c8ed5efc19b71a94049e3",
-      "bytes": 1932
+      "sha256": "9dbf5a81b5b5471fd04ea9f9e56393f295695c8eebbd5db72d6790952e808073",
+      "bytes": 2075
     },
     {
       "path": "shared/confluence-core.mjs",
@@ -253,6 +253,11 @@
       "bytes": 5890
     },
     {
+      "path": "shared/display-time.mjs",
+      "sha256": "e58ea741ed76a473bfe48ac8ccf39feebb75230469f1a6b09757debf345f35ae",
+      "bytes": 877
+    },
+    {
       "path": "shared/doc-viewer.mjs",
       "sha256": "2ebc39aa048d0bc36b4fb03a4c73db1f7aa95984208161c744eb217f3f241816",
       "bytes": 6436
@@ -264,8 +269,8 @@
     },
     {
       "path": "shared/github-sync-view.mjs",
-      "sha256": "a198ed465ae0352c959c1f3b874fde98cfb3e7d59a9de491d474813ba0f3cf0c",
-      "bytes": 13569
+      "sha256": "1b7a165581a5d39151e2c28a6c27c9650c21c039a37fde575bbc3589e8efafd0",
+      "bytes": 13600
     },
     {
       "path": "shared/github-sync.mjs",
@@ -289,8 +294,8 @@
     },
     {
       "path": "shared/macd-chart.mjs",
-      "sha256": "072d7a801381e3292be6a1c7bbf950fce17a9fb5b5c6a97c3e04cace20e73f5c",
-      "bytes": 25131
+      "sha256": "9c8de83d4589d75687588c5302cd66f7abfcccd7a5afc131b36477460156f07a",
+      "bytes": 25146
     },
     {
       "path": "shared/macd-notice.mjs",
@@ -314,8 +319,8 @@
     },
     {
       "path": "shared/market-radar-view.mjs",
-      "sha256": "2bf392952cdf34486b97dc1aa09027bdcf2c5d030b951b18f9aaf5c23158d39c",
-      "bytes": 15279
+      "sha256": "9599caf67229e9a7607904e872b7413cf2b86e939b8f03ba8961887ff43ea9af",
+      "bytes": 15333
     },
     {
       "path": "shared/model-archive.mjs",
@@ -344,8 +349,8 @@
     },
     {
       "path": "shared/muster-bot-view.mjs",
-      "sha256": "464e0f8a97a25d1dfd94357fdedb7be216b6062ab4de49c7ab446c2d01653333",
-      "bytes": 39763
+      "sha256": "350338ba976719e0129ddd5f5f61971f2d866b5bce2ecc556d7bfe7178920327",
+      "bytes": 39825
     },
     {
       "path": "shared/muster-bot-worker.mjs",
@@ -379,13 +384,13 @@
     },
     {
       "path": "shared/orderflow-signal-view.mjs",
-      "sha256": "5bd14b9c363238b0fe035a41a99e5b2c78d233fe3a331edefc533b26ba48ea59",
-      "bytes": 39859
+      "sha256": "fc046b4946f5b82944bbef3ec4dbba6b08655ff83cf53363d6fd567b0d7bbe03",
+      "bytes": 40007
     },
     {
       "path": "shared/orderflow-view.mjs",
-      "sha256": "5c513c7c70502eacaf66d28fc6331e587e2e77917d6f7a173d18423474fefce8",
-      "bytes": 18915
+      "sha256": "92653e60e7a9de8cfff5f314d74c0c67f118bf202e5abe4e1bcc3f755bee80c7",
+      "bytes": 18984
     },
     {
       "path": "shared/panel-appearance.mjs",
@@ -404,8 +409,8 @@
     },
     {
       "path": "shared/paper-bot-view.mjs",
-      "sha256": "6413cb5fdf2bbbfe092db42f4298e69c129617b2cb2d8abd3368499a67133985",
-      "bytes": 10695
+      "sha256": "f20ada25ad6f8b27a53f19c6d241224154a7cbf471a69fb1995190171b014254",
+      "bytes": 10726
     },
     {
       "path": "shared/paper-bot-worker.mjs",
@@ -479,8 +484,8 @@
     },
     {
       "path": "shared/po3-view.mjs",
-      "sha256": "be419cb4500ef531ad8440c2547a00ae0fd6146e7504f1cc114914c8dc3c6dbc",
-      "bytes": 30361
+      "sha256": "a763e595ebc206f5e6773abd302eaf6f1f6990d854f7aa1e0ceebd9a2933ad0d",
+      "bytes": 30376
     },
     {
       "path": "shared/positioning-score.mjs",
@@ -494,8 +499,8 @@
     },
     {
       "path": "shared/projection-inspector.mjs",
-      "sha256": "825fe98f0d1128323604bb6dcc95fdf223aac69fc2fbdf0508772207d5e4e91c",
-      "bytes": 10610
+      "sha256": "3cbaac2d3c6433db2ea2158e7064fa1b97ac6da7e1cfd974f31bef53bc5e40f8",
+      "bytes": 10635
     },
     {
       "path": "shared/rsi-momentum.mjs",
@@ -524,8 +529,8 @@
     },
     {
       "path": "shared/watch-model-view.mjs",
-      "sha256": "1827b5cf117db3dcc0c2d0b136c9bc4b68481e4217f55fc5b42ccd81bbdb3b05",
-      "bytes": 19112
+      "sha256": "f6b3bebfcf8dedca96ed6c7014bdfa617655bb047511eaaca566d44e5990b8a1",
+      "bytes": 19139
     },
     {
       "path": "shared/watch-model-worker.mjs",
@@ -534,8 +539,8 @@
     },
     {
       "path": "shared/watch-signal-reasons.mjs",
-      "sha256": "43f84fc03644bc5a12fe76b014345997eec917731c144df1bbe0e114e33c7eec",
-      "bytes": 18222
+      "sha256": "332d925c40f71e31b7dc96935c80409d85a6eefb07ed734867f1c81852c40e09",
+      "bytes": 18249
     },
     {
       "path": "shared/widget-state.mjs",
