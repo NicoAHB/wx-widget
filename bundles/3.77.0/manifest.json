@@ -213,8 +213,8 @@
     },
     {
       "path": "./bundles/3.77.0/shared/macd-chart.mjs",
-      "sha256": "0f472bd55bbf0ac608be2e09626aa5b635e2baf67b6bfa08c6a11a7087267922",
-      "bytes": 13279,
+      "sha256": "96357651f8bf7d96ca33f66629e580e61293520dcf365d6947baed39087225fb",
+      "bytes": 13436,
       "alias": "./shared/macd-chart.mjs"
     },
     {
@@ -525,8 +525,8 @@
     },
     {
       "path": "./weather-widget-v2.html",
-      "sha256": "6f34bbdbadedbd3d0ae8b66e60416696a72266e275ee9cc8bae0fcbe8c229be9",
-      "bytes": 1726385
+      "sha256": "94717764faef767c8cdbdc8c9c5fffe45f357004f6c673df43ac4fa7ba6f7e03",
+      "bytes": 1726441
     },
     {
       "path": "./manifest.webmanifest",

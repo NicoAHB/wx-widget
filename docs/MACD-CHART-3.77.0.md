@@ -28,6 +28,8 @@ Anbieter, Alarme oder automatischen Trades.
 
 Der i-Button öffnet ein auf kleinen Bildschirmen scrollbar bleibendes Infofenster
 mit drei aufklappbaren Strategien und jeweils einer bullishen/bearishen Erklärung.
+Die neuen Touchflächen bleiben auch im Vollbild mindestens 44 × 44 px groß;
+Esc schließt nur das Infofenster, ohne das Vollbild zu verlassen.
 Ein bestätigter Befund hebt die passende Erklärung grün oder rot mit Leuchtrand
 hervor. Auch die geschlossene Abschnittsüberschrift nennt dessen Richtung.
 

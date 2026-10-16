@@ -133,6 +133,8 @@ export function createMacdHelp({ document, button, read }) {
   }
   button.addEventListener('click', () => { if (!dialog.open) dialog.showModal(); update(true); });
   close.addEventListener('click', () => dialog.close());
+  // Native Dialogtasten (z. B. Esc) dürfen nicht gleichzeitig den Vollbild-Chart bedienen.
+  dialog.addEventListener('keydown', e => e.stopPropagation());
   dialog.addEventListener('click', e => { if (e.target === dialog) { const r = dialog.getBoundingClientRect(); if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) dialog.close(); } });
   return { update, dialog };
 }
