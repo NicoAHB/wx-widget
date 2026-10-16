@@ -58,42 +58,48 @@ export function placeProjectionLabel(point, size, bounds, obstacles = []) {
 }
 export function createProjectionInspector(host,{rotated=()=>false}={}) {
   const document=host.ownerDocument,win=document.defaultView;
-  let rows = [], scope = '', selected = null, label = null, frame = null, obstacles = [];
+  let rows = [], scope = '', selected = null, label = null, marker = null, frame = null, obstacles = [];
   // Alle Labelkoordinaten liegen im Chart. Auch dessen vorhandene iPhone-90°-Drehung
   // und die Matrix des flüssigen Zooms werden über die echten SVG-Matrizen abgebildet.
   const transform=(m,x,y)=>({x:m.a*x+m.c*y+m.e,y:m.b*x+m.d*y+m.f});
   function space() {
     const svg=host.querySelector(':scope > svg'),m=svg?.getCTM();if(!m)return null;
-    const inverse=m.inverse(),sx=host.clientWidth/svg.viewBox.baseVal.width,sy=host.clientHeight/svg.viewBox.baseVal.height;
     // Safari berücksichtigt die CSS-Drehung des Vorfahren nicht zuverlässig in
     // getScreenCTM. Für Bildschirm → Chart daher das echte HTML-Rechteck verwenden
     // (die App hat getBoundingClientRect für ihre bisherigen Gesten überschrieben).
     const actual=win.Element.prototype.getBoundingClientRect.call(host),turned=rotated();
     const physical=(x,y)=>turned?{x:(y-actual.top)*host.clientWidth/actual.height,y:(actual.right-x)*host.clientHeight/actual.width}:{x:(x-actual.left)*host.clientWidth/actual.width,y:(y-actual.top)*host.clientHeight/actual.height};
-    const local=(element,x,y)=>{const p=transform(inverse.multiply(element.getCTM()),x,y);return{x:p.x*sx,y:p.y*sy};};
+    // getCTM enthält auch preserveAspectRatio/Leerraum, wenn beim Resize noch
+    // das vorige SVG sichtbar ist. Punkt und Label bleiben dabei auf der Linie.
+    const local=(element,x,y)=>transform(element.getCTM(),x,y);
     const rect=r=>{const points=[[r.left,r.top],[r.right,r.top],[r.right,r.bottom],[r.left,r.bottom]].map(([x,y])=>physical(x,y)),xs=points.map(p=>p.x),ys=points.map(p=>p.y);return{x:Math.min(...xs),y:Math.min(...ys),width:Math.max(...xs)-Math.min(...xs),height:Math.max(...ys)-Math.min(...ys)};};
-    return{svg,sx,sy,physical,local,rect};
+    const a=local(svg,frame?.left||0,frame?.top||0),b=local(svg,frame?.right||0,frame?.bottom||0);
+    return{svg,physical,local,rect,plot:{left:a.x,top:a.y,right:b.x,bottom:b.y}};
   }
-  function close() { selected=null;label?.remove();label=null; }
-  function begin(next) { rows=[];frame=null;label?.remove();label=null;if(scope!==next){selected=null;scope=next;} }
+  function clearOutput() { label?.remove();marker?.remove();label=null;marker=null; }
+  function close() { selected=null;clearOutput(); }
+  function begin(next) { rows=[];frame=null;clearOutput();if(scope!==next){selected=null;scope=next;} }
   function add(row) { rows.push(row); }
   function position() {
     if (!label || !frame || !selected) return;
-    const values=projectionValues(rows,selected);if(!values){label.remove();label=null;return;}
+    const values=projectionValues(rows,selected);if(!values){clearOutput();return;}
     const s=space();if(!s)return;
     const anchor=s.local(values.touched.element,values.point.x,values.point.y);
     const viewport=win.visualViewport, vl=viewport?.offsetLeft||0,vt=viewport?.offsetTop||0;
     const visible=s.rect({left:vl,top:vt,right:vl+(viewport?.width||win.innerWidth),bottom:vt+(viewport?.height||win.innerHeight)});
     const right=Math.min(host.clientWidth,visible.x+visible.width)-7,bottom=Math.min(host.clientHeight,visible.y+visible.height)-7,left=Math.max(0,visible.x)+7,top=Math.max(0,visible.y)+7;
-    label.hidden=false;label.style.maxWidth=Math.min(236,Math.max(0,right-left))+'px';
-    if(!anchor||anchor.x<Math.max(frame.left*s.sx,left)||anchor.x>Math.min(frame.right*s.sx,right)||anchor.y<frame.top*s.sy||anchor.y>frame.bottom*s.sy||right-left<100||bottom-top<label.offsetHeight){label.hidden=true;return;}
+    label.hidden=false;marker.hidden=false;label.style.maxWidth=Math.min(236,Math.max(0,right-left))+'px';
+    if(!anchor||anchor.x<Math.max(s.plot.left,left)||anchor.x>Math.min(s.plot.right,right)||anchor.y<s.plot.top||anchor.y>s.plot.bottom||right-left<100||bottom-top<label.offsetHeight){label.hidden=true;marker.hidden=true;return;}
+    // Derselbe ungerundete Linienpunkt wie im Label, auch während Zoom und Live-Updates.
+    marker.style.left=anchor.x+'px';marker.style.top=anchor.y+'px';
     const p=placeProjectionLabel(anchor,{width:label.offsetWidth,height:label.offsetHeight},{left,top,right,bottom},obstacles);
     label.style.left=p.x+'px';label.style.top=p.y+'px';
   }
   function draw(svg,bounds) {
-    frame=bounds;label?.remove();label=null;
+    frame=bounds;clearOutput();
     const values=selected&&projectionValues(rows,selected);if(!values)return;
     label=document.createElement('div');label.className='projection-inspector';label.setAttribute('role','status');label.style.setProperty('--projection-color',values.touched.color);
+    marker=document.createElement('span');marker.className='projection-inspector-point';marker.setAttribute('aria-hidden','true');marker.style.setProperty('--projection-color',values.touched.color);host.append(marker);
     const title=document.createElement('strong'),time=new Date(selected.time),fmt=v=>projectionPrice(v)+' $';
     title.textContent=projectionPrice(values.point.price)+' · '+time.toLocaleTimeString('de-DE',{timeZone:'UTC',hour:'2-digit',minute:'2-digit'});label.append(title);
     for(const [name,value] of [['Oben',values.top],['Unten',values.bottom],['Abstand',values.spread]]){const row=document.createElement('span'),key=document.createElement('span'),val=document.createElement('b');key.textContent=name;val.textContent=value===null?'–':fmt(value);row.append(key,val);label.append(row);}
@@ -104,7 +110,7 @@ export function createProjectionInspector(host,{rotated=()=>false}={}) {
   function tap(event,inspect=true,target=event.target) {
     const s=space();if(!s||!frame){close();return false;}
     const point=event.__chartTurned?{x:event.clientX,y:event.clientY}:s.physical(event.clientX,event.clientY);
-    const inside=point.x>=frame.left*s.sx&&point.x<=frame.right*s.sx&&point.y>=frame.top*s.sy&&point.y<=frame.bottom*s.sy;
+    const inside=point.x>=s.plot.left&&point.x<=s.plot.right&&point.y>=s.plot.top&&point.y<=s.plot.bottom;
     // Deutlich beschriftete/antippbare bestehende Chart-Elemente behalten Vorrang.
     const blocked=target?.closest?.('[data-pat],[data-pat-ghost],[data-kiz],[data-zsig],.last-tag,.axis-label');
     const segments=inspect&&inside&&!blocked ? rows.map(row=>({a:s.local(row.element,row.x1,row.y1),b:s.local(row.element,row.x2,row.y2),row})).filter(l=>l.a&&l.b) : [];

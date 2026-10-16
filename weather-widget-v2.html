@@ -437,6 +437,7 @@ html[data-chartfull] .of-chart-grid,html[data-chartfull] .of-chart-pane{display:
 .pat-projection-hit{stroke:transparent;stroke-width:26;fill:none;pointer-events:stroke;vector-effect:non-scaling-stroke;cursor:pointer;-webkit-touch-callout:none}
 .projection-inspector{position:absolute;z-index:3;pointer-events:none;box-sizing:border-box;width:max-content;max-width:236px;padding:10px 12px;border:1px solid var(--projection-color);border-radius:9px;background:var(--surface);color:var(--text);box-shadow:0 3px 12px #0005;font-size:12px;line-height:1.5;font-variant-numeric:tabular-nums;white-space:nowrap;-webkit-user-select:none;user-select:none}
 .projection-inspector[hidden]{display:none}.projection-inspector>strong{display:block;color:var(--projection-color);font-size:14px;margin-bottom:4px}.projection-inspector>span{display:flex;justify-content:space-between;gap:16px}.projection-inspector b{font-weight:600}.projection-inspector small{display:block;margin-top:5px;color:var(--muted);font-size:10px}
+.projection-inspector-point{position:absolute;z-index:4;pointer-events:none;box-sizing:border-box;width:12px;height:12px;border:2px solid var(--surface);border-radius:50%;background:var(--projection-color);box-shadow:0 0 0 1px var(--projection-color);transform:translate(-50%,-50%)}.projection-inspector-point[hidden]{display:none}
 .chart svg{display:block;width:100%;height:100%}
 .chart.stale{opacity:.58}
 .chart-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding:24px;background:repeating-linear-gradient(0deg,transparent,transparent 64px,var(--stripe) 65px)}
@@ -2476,44 +2477,44 @@ html[data-panel-style=glass] #chart-sec{background:var(--surface);-webkit-backdr
 
 </style>
   <script type="module">
-import { MARKET_INTERVALS, CHART_INTERVALS, SIGNAL_INTERVALS, INTERVAL_MS, nearestChartInterval } from './bundles/3.76.1/shared/market-intervals.mjs';
-import { createDetailCandles, detailOptions, detailChoice, closedSeries, timeIndex, DETAIL_VISIBLE_MAX } from './bundles/3.76.1/shared/chart-detail.mjs';
-import { patternChipRows, patternChipKey } from './bundles/3.76.1/shared/chart-pattern-chips.mjs';
-import { PATTERN_QUALITY_CONFIG, chartPatternQuality, repricePatternQuality, sortPatternQuality, patternOverview } from './bundles/3.76.1/shared/chart-pattern-quality.mjs';
-import { createPatternOverviewFeed } from './bundles/3.76.1/shared/chart-pattern-overview-feed.mjs';
+import { MARKET_INTERVALS, CHART_INTERVALS, SIGNAL_INTERVALS, INTERVAL_MS, nearestChartInterval } from './bundles/3.76.2/shared/market-intervals.mjs';
+import { createDetailCandles, detailOptions, detailChoice, closedSeries, timeIndex, DETAIL_VISIBLE_MAX } from './bundles/3.76.2/shared/chart-detail.mjs';
+import { patternChipRows, patternChipKey } from './bundles/3.76.2/shared/chart-pattern-chips.mjs';
+import { PATTERN_QUALITY_CONFIG, chartPatternQuality, repricePatternQuality, sortPatternQuality, patternOverview } from './bundles/3.76.2/shared/chart-pattern-quality.mjs';
+import { createPatternOverviewFeed } from './bundles/3.76.2/shared/chart-pattern-overview-feed.mjs';
 // Arbeitsstand: bei der gemeinsamen Release-Freigabe in das neue Versionsbündel übernehmen.
-import { createPositioningFeed } from './bundles/3.76.1/shared/positioning-score.mjs';
-import { CRYPTO_CALENDAR, parseCryptoCalendar, cryptoCalendarEvents } from './bundles/3.76.1/shared/crypto-calendar.mjs';
-import { createMusterClient } from './bundles/3.76.1/shared/muster-bot-feed.mjs';
-import { createMusterPaper } from './bundles/3.76.1/shared/muster-bot-paper.mjs';
-import { readMusterPaper, writeMusterPaper } from './bundles/3.76.1/shared/muster-bot-store.mjs';
-import { projectPatternLines, projectionSettings, projectionTime } from './bundles/3.76.1/shared/pattern-projection.mjs';
-import { createProjectionInspector, projectionPrice, projectionIndexTime, projectionTimeIndex } from './bundles/3.76.1/shared/projection-inspector.mjs';
-import { createGithubSyncView } from './bundles/3.76.1/shared/github-sync-view.mjs';
-import { createDocViewer } from './bundles/3.76.1/shared/doc-viewer.mjs';
-import { PATTERN_FILTER_PRESET_NAMES, PATTERN_FILTER_FIELDS, PATTERN_CARD_FIELDS, HIGHER_TIMEFRAME, patternFilterSettings, patternFilterFromForm, evaluatePatternSignal, selectPatternSignals, patternJournalEntry, addPatternJournal, resolvePatternJournal, patternHitStats, patternJournalStats, PATTERN_OUTCOME_NAMES, backtestPatternFilter } from './bundles/3.76.1/shared/pattern-quality.mjs';
-import { stripSyncSecrets } from './bundles/3.76.1/shared/github-sync.mjs';
-import { createMusterView } from './bundles/3.76.1/shared/muster-bot-view.mjs';
-import { computeKiZones, KI_ZONE_INTERVALS } from './bundles/3.76.1/shared/ki-zones.mjs';
-import { heikinAshi } from './bundles/3.76.1/shared/heikin-ashi.mjs';
-import { detectFvgs, fvgSummary } from './bundles/3.76.1/shared/fvg.mjs';
-import { scoreZoneStrength, ZONE_STRENGTH, ZONE_SIGNAL, zoneSignal, zoneStep, zoneOutcome, summarizeZoneBacktest } from './bundles/3.76.1/shared/zone-strength.mjs';
+import { createPositioningFeed } from './bundles/3.76.2/shared/positioning-score.mjs';
+import { CRYPTO_CALENDAR, parseCryptoCalendar, cryptoCalendarEvents } from './bundles/3.76.2/shared/crypto-calendar.mjs';
+import { createMusterClient } from './bundles/3.76.2/shared/muster-bot-feed.mjs';
+import { createMusterPaper } from './bundles/3.76.2/shared/muster-bot-paper.mjs';
+import { readMusterPaper, writeMusterPaper } from './bundles/3.76.2/shared/muster-bot-store.mjs';
+import { projectPatternLines, projectionSettings, projectionTime } from './bundles/3.76.2/shared/pattern-projection.mjs';
+import { createProjectionInspector, projectionPrice, projectionIndexTime, projectionTimeIndex } from './bundles/3.76.2/shared/projection-inspector.mjs';
+import { createGithubSyncView } from './bundles/3.76.2/shared/github-sync-view.mjs';
+import { createDocViewer } from './bundles/3.76.2/shared/doc-viewer.mjs';
+import { PATTERN_FILTER_PRESET_NAMES, PATTERN_FILTER_FIELDS, PATTERN_CARD_FIELDS, HIGHER_TIMEFRAME, patternFilterSettings, patternFilterFromForm, evaluatePatternSignal, selectPatternSignals, patternJournalEntry, addPatternJournal, resolvePatternJournal, patternHitStats, patternJournalStats, PATTERN_OUTCOME_NAMES, backtestPatternFilter } from './bundles/3.76.2/shared/pattern-quality.mjs';
+import { stripSyncSecrets } from './bundles/3.76.2/shared/github-sync.mjs';
+import { createMusterView } from './bundles/3.76.2/shared/muster-bot-view.mjs';
+import { computeKiZones, KI_ZONE_INTERVALS } from './bundles/3.76.2/shared/ki-zones.mjs';
+import { heikinAshi } from './bundles/3.76.2/shared/heikin-ashi.mjs';
+import { detectFvgs, fvgSummary } from './bundles/3.76.2/shared/fvg.mjs';
+import { scoreZoneStrength, ZONE_STRENGTH, ZONE_SIGNAL, zoneSignal, zoneStep, zoneOutcome, summarizeZoneBacktest } from './bundles/3.76.2/shared/zone-strength.mjs';
 // 3.68.0: KI-Signale/Trading-Bot entfernt; der GitHub-Sync behält sein Format inklusive vorhandener Modelloriginale.
-import { exportModelArchive, importModelArchive, validateModelArchive, restoreModelOriginals } from './bundles/3.76.1/shared/model-archive.mjs';
-import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT, patternGrade } from './bundles/3.76.1/shared/telegram-format.mjs';
-import { patternSignalCard, patternChartData } from './bundles/3.76.1/shared/pattern-signal-card.mjs';   // 3.71.0: Chartmuster-Signalkarte
-import { pnlAlarmCard } from './bundles/3.76.1/shared/pnl-alarm-card.mjs';   // 3.71.0: Gewinn-/Verlust-Alarm als Bild
-import { priceAlarmCard } from './bundles/3.76.1/shared/price-alarm-card.mjs';   // 3.71.0: Kurs-Alarm als Bild
-import { createOrderflowView } from './bundles/3.76.1/shared/orderflow-view.mjs';
-import { createMarketRadarView } from './bundles/3.76.1/shared/market-radar-view.mjs';
-import { createPanelAppearanceSettings } from './bundles/3.76.1/shared/panel-appearance.mjs';
-import { createSignalView } from './bundles/3.76.1/shared/orderflow-signal-view.mjs';
-import { WATCH_MODEL_KEY, WATCH_COMPARE_KEY } from './bundles/3.76.1/shared/watch-model-core.mjs';
-import { rsiSignal } from './bundles/3.76.1/shared/rsi-momentum.mjs';
-import { createWatchModelFeed } from './bundles/3.76.1/shared/watch-model-feed.mjs';
-import { createSignalReasonsView } from './bundles/3.76.1/shared/watch-signal-reasons.mjs';
-import { createWatchModelView } from './bundles/3.76.1/shared/watch-model-view.mjs';
-import { networkState, createWidgetBoundary } from './bundles/3.76.1/shared/widget-state.mjs';
+import { exportModelArchive, importModelArchive, validateModelArchive, restoreModelOriginals } from './bundles/3.76.2/shared/model-archive.mjs';
+import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT, patternGrade } from './bundles/3.76.2/shared/telegram-format.mjs';
+import { patternSignalCard, patternChartData } from './bundles/3.76.2/shared/pattern-signal-card.mjs';   // 3.71.0: Chartmuster-Signalkarte
+import { pnlAlarmCard } from './bundles/3.76.2/shared/pnl-alarm-card.mjs';   // 3.71.0: Gewinn-/Verlust-Alarm als Bild
+import { priceAlarmCard } from './bundles/3.76.2/shared/price-alarm-card.mjs';   // 3.71.0: Kurs-Alarm als Bild
+import { createOrderflowView } from './bundles/3.76.2/shared/orderflow-view.mjs';
+import { createMarketRadarView } from './bundles/3.76.2/shared/market-radar-view.mjs';
+import { createPanelAppearanceSettings } from './bundles/3.76.2/shared/panel-appearance.mjs';
+import { createSignalView } from './bundles/3.76.2/shared/orderflow-signal-view.mjs';
+import { WATCH_MODEL_KEY, WATCH_COMPARE_KEY } from './bundles/3.76.2/shared/watch-model-core.mjs';
+import { rsiSignal } from './bundles/3.76.2/shared/rsi-momentum.mjs';
+import { createWatchModelFeed } from './bundles/3.76.2/shared/watch-model-feed.mjs';
+import { createSignalReasonsView } from './bundles/3.76.2/shared/watch-signal-reasons.mjs';
+import { createWatchModelView } from './bundles/3.76.2/shared/watch-model-view.mjs';
+import { networkState, createWidgetBoundary } from './bundles/3.76.2/shared/widget-state.mjs';
 // Pure, unrounded calculations. Prices are USDT per unit; FX is USDT per EUR.
 function rsi(closes, period = 14) {
   const out = Array(closes.length).fill(null);
@@ -3369,7 +3370,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
 // 3.43.0 (G10a): reiner Fachkern in shared/; Datenquelle und Karten folgen getrennt.
 // 3.44.0 (G10b): öffentlicher Adapter in shared/bitget-public.mjs; sichtbare Anbindung folgt mit G10(c).
-const APP_VERSION = '3.76.1', docEl = document.documentElement;
+const APP_VERSION = '3.76.2', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -15590,7 +15591,7 @@ const musterPaper = createMusterPaper({ read: readMusterPaper, write: writeMuste
   } });
 const MUSTER_TG_NAMES = { hammer: 'Hammer', engulfing: 'Bullish Engulfing', confluence: 'Konfluenz', po3: 'Power of Three' };
 musterView = createMusterView({ host: musterHost, selection: musterSelection, currentPrice: (symbol, market) => state.symbol === symbol && state.source === market ? currentPrice() : null,
-  prefs: store.get('scalpdesk.muster.settings.v1', {}), savePrefs: value => store.set('scalpdesk.muster.settings.v1', value), workerFactory: () => new Worker(new URL('./bundles/3.76.1/shared/muster-bot-worker.mjs', import.meta.url), { type: 'module' }), paper: musterPaper, onMarkers: scheduleDraw,
+  prefs: store.get('scalpdesk.muster.settings.v1', {}), savePrefs: value => store.set('scalpdesk.muster.settings.v1', value), workerFactory: () => new Worker(new URL('./bundles/3.76.2/shared/muster-bot-worker.mjs', import.meta.url), { type: 'module' }), paper: musterPaper, onMarkers: scheduleDraw,
   telegramStatus: () => tgtReady('trades') ? null : 'Hinweis: Telegram ist noch nicht eingerichtet oder das Ziel „Trades“ ist aus (Einstellungen → Telegram).' });
 void musterPaper.restore().then(() => musterPaper.poll());
 function musterDraw(svg, data, x, y, bottom) {
@@ -15629,7 +15630,7 @@ const wmSave = async (key, value) => { store.set(key, value); if (!store.ok || !
 wmView = createWatchModelView({ host: document.querySelector('#workspace-settings .workspace-settings-grid'), read: key => store.get(key), save: wmSave, getMode: wmMode,
   setMode: async mode => { const before = wmMode(); try { await wmSave(WATCH_MODEL_KEY, mode === 'strict' ? 'strict' : 'classic'); } catch (e) { store.set(WATCH_MODEL_KEY, before); throw e; } broadcastData([WATCH_MODEL_KEY]); wmRefresh(); },
   now: serverNow, symbols: () => state.watch.map(wlSym), history: createMusterClient().history, available: () => !document.hidden && !state.paused && navigator.onLine !== false,
-  workerFactory: () => new Worker(new URL('./bundles/3.76.1/shared/watch-model-worker.mjs', import.meta.url), { type: 'module' }) });
+  workerFactory: () => new Worker(new URL('./bundles/3.76.2/shared/watch-model-worker.mjs', import.meta.url), { type: 'module' }) });
 function wmAvailability() {
   wmFeed.sync();
   if ((document.hidden || state.paused || navigator.onLine === false) && wmView.state.busy) wmView.abort();

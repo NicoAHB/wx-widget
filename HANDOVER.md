@@ -1,3 +1,9 @@
+## 3.76.2 (Codex): farbiger Punkt an der gewählten Prognose-Stelle
+
+- Nutzerwunsch: Herkunft des angezeigten Prognose-Kurses direkt auf der gestrichelten Linie markieren. Ein 12-CSS-px-Punkt in Linien-/Label-Farbe mit dunkler Einfassung sitzt am selben ungerundeten Anker wie das Label. Beim Wechsel zur anderen Linie, Live-Neuberechnung und Zoom wird er mitgeführt; beim Schließen oder Coinwechsel gemeinsam entfernt. Keine zusätzlichen Daten oder Prognoseberechnungen.
+- Vorhandene Chart-/Safari-Koordinatenabbildung bleibt erhalten. Punkt ist eine nicht interaktive Anzeige (`pointer-events:none`), unverzerrt auch beim flüssigen Chart-Zoom. Die SVG-Viewport-Matrix berücksichtigt auch Leerraum beim kurzfristigen Größenwechsel vor dem Neuzeichnen; Kurven und alle anderen Funktionen unverändert.
+- Branch `codex/prognose-markierung` ab `main` f5e2e9c; App/SW 3.76.2, Dienstquellstand 2.15.1 unverändert, ältere Bündel unverändert. **109/109** gezielte Prüfungen in sechs Läufen einschließlich unabhängiger Bildschirmposition, Touch-Versatz, Linienwechsel, Live-Neuberechnung, 320–1440 px, gedrehtem Vollbild in Chromium/WebKit, Chart-Gesten und PWA-Update/Offline. Lint 0 Fehler / 3 bekannte Warnungen. Isolierte Freigabe und öffentlicher Nachweis im Release-PR; keine physischen iOS-Geräte verfügbar.
+
 ## 3.76.1 (Codex): Prognose-Linien antippen, ein Live-Wert-Label
 
 - Nutzerwunsch: bestehende gestrichelte Projektionen im Chart mit 26-CSS-px-Fingerzielen antippen. Genau ein Label zeigt Punktkurs/UTC-Zeit, obere/untere Grenze und Dollar-Abstand; Linienfarbe als Akzent. Andere Linie versetzt, anderer Chart-Tipp schließt nur das Label. Sichtbare Linien und Berechnungen unverändert.
