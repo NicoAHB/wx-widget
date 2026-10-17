@@ -1,3 +1,9 @@
+## 3.77.8 (Codex): klarere Hinweise im Risiko-Rechner
+
+- Kleine Verbesserung bei knappem Restguthaben: Bei unzureichender Margin empfiehlt der Rechner eine kleinere Position oder weniger Risiko statt höheren Hebel/engeren Stop. Stop an der Marktstruktur ausrichten. „Max. Verlust bis Stop“ heißt „Geplanter Verlust bis Stop“; neutraler Hinweis auf Gebühren sowie mögliche zusätzliche Verluste durch Slippage/Kurslücken. Bestehende echte Warnungen bleiben hervorgehoben, der neue allgemeine Hinweis allein erhält keine Warnfarbe.
+- Ausschließlich drei Textstellen im Risiko-Renderer plus Releasebindung geändert; vollständiges HTML nach diesen Ersetzungen identisch zu 3.77.7. Rechenfunktion, Positionserfassung, Modelle, Live-Daten und Layout unverändert. Unter Positionen → Positionsrechner → Positionsgröße aus Risiko. Branch `codex/risk-wording-3.77.8` ab main fc62f59; App/SW 3.77.8, Dienstquelle weiter 2.15.1, 98 PWA-/110 Dienstdateien; ältere Bündel unverändert.
+- 22/22 Browserprüfungen in Chromium/WebKit: 320/390/768 px, Long/Short, Marginwarnung und Rückkehr zur neutralen Farbe, unveränderte Planverluste, Übernahme in Positionsformular, keine Laufzeitfehler. PWA-Update/Offline 8/8, Releasegraph 6/6, Lint 0 Fehler / 3 bekannte Warnungen, exakte Quellvergleichsprüfung bestanden. Öffentlicher Liefernachweis im Release-PR. Keine physischen iOS-Geräte oder echten Telegram-Testnachrichten.
+
 ## 3.77.7 (Codex): deutsche Anzeigezeit ohne Verschieben der Börsendaten
 
 - Nutzer beauftragt deutsche Uhrzeitanzeige bei knappem Nutzungsguthaben und ausdrücklich unveränderten Börsenabrufen. Chart-/MCap-Achsen, Fadenkreuz, Prognose-Labels, MACD, Orderflow/Positionszuordnung, Signalgründe, Radar, Modellvergleich und weitere reine Ansichtsformatierer verwenden explizit Europe/Berlin. Keine feste Stundenaddition: Sommer-/Winterzeit automatisch. Deutsche Tageswechsel und wiederholte Herbststunde auf der Achse berücksichtigt; Formatierer und Achsenwerte gecacht.
