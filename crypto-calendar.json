@@ -1,0 +1,179 @@
+{
+  "v": 1,
+  "source": "CoinMarketCal · öffentlicher Auszug",
+  "fetchedAt": "2026-10-17T15:47:31.562Z",
+  "page": "https://coinmarketcal.com/en/",
+  "coverage": "Öffentlicher Ausschnitt, keine vollständige API-Historie",
+  "events": [
+    {
+      "id": "cmc-20659",
+      "t": 1792195200000,
+      "end": 1792195200000,
+      "dayOnly": true,
+      "title": "First Token Burn",
+      "coins": [
+        "BTT"
+      ],
+      "category": "Tokenomics",
+      "url": "https://coinmarketcal.com/event/first-token-burn-24375086-2",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-100001",
+      "t": 1792195200000,
+      "end": 1792195200000,
+      "dayOnly": true,
+      "title": "JST buyback & burn #5",
+      "coins": [
+        "JST"
+      ],
+      "category": "Tokenomics",
+      "url": "https://coinmarketcal.com/event/jst-buyback-burn-5-98323969-1",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-3849",
+      "t": 1784419200000,
+      "end": 1792195200000,
+      "dayOnly": true,
+      "title": "Rewards Season 2",
+      "coins": [
+        "BNKR"
+      ],
+      "category": "Airdrop/Snapshot",
+      "url": "https://coinmarketcal.com/event/rewards-season-2-23520627-1",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-99439",
+      "t": 1792022400000,
+      "end": 1792454400000,
+      "dayOnly": true,
+      "title": "Airdrop claim window",
+      "coins": [
+        "GENIUS"
+      ],
+      "category": "Airdrop/Snapshot",
+      "url": "https://coinmarketcal.com/event/airdrop-claim-window-50351417-2",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-99855",
+      "t": 1792195200000,
+      "end": 1792800000000,
+      "dayOnly": true,
+      "title": "Alpha V6 Vote",
+      "coins": [
+        "AZTEC"
+      ],
+      "category": "Other",
+      "url": "https://coinmarketcal.com/event/alpha-v6-vote-65717070-1",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-98704",
+      "t": 1789516800000,
+      "end": 1792800000000,
+      "dayOnly": true,
+      "title": "Harmonia RFP opens",
+      "coins": [
+        "SOL"
+      ],
+      "category": "Partnership",
+      "url": "https://coinmarketcal.com/event/harmonia-rfp-opens-40878241-1",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-99164",
+      "t": 1790812800000,
+      "end": 1796083200000,
+      "dayOnly": true,
+      "title": "Staking Rewards Boost",
+      "coins": [
+        "POL"
+      ],
+      "category": "Staking/Farming",
+      "url": "https://coinmarketcal.com/event/pol-staking-boost-71656278-1",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-97688",
+      "t": 1788220800000,
+      "end": 1798675200000,
+      "dayOnly": true,
+      "title": "First Token Buyback",
+      "coins": [
+        "VSN"
+      ],
+      "category": "Tokenomics",
+      "url": "https://coinmarketcal.com/event/first-token-buyback-63131711-1",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-99867",
+      "t": 1792022400000,
+      "end": 1807660800000,
+      "dayOnly": true,
+      "title": "Season 3 Begins",
+      "coins": [
+        "CHIP"
+      ],
+      "category": "Staking/Farming",
+      "url": "https://coinmarketcal.com/event/season-3-begins-48163972-2",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-99941",
+      "t": 1792368000000,
+      "end": 1792368000000,
+      "dayOnly": true,
+      "title": "Block Reward Changes",
+      "coins": [
+        "FIL"
+      ],
+      "category": "Tokenomics",
+      "url": "https://coinmarketcal.com/event/block-reward-changes-62583011-1",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-99869",
+      "t": 1792454400000,
+      "end": 1801353600000,
+      "dayOnly": true,
+      "title": "Season 2 Claims",
+      "coins": [
+        "CHIP"
+      ],
+      "category": "Airdrop/Snapshot",
+      "url": "https://coinmarketcal.com/event/season-2-claims-48163972-4",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-97855",
+      "t": 1792540800000,
+      "end": 1792540800000,
+      "dayOnly": true,
+      "title": "Alpenglow Upgrade",
+      "coins": [
+        "SOL"
+      ],
+      "category": "Release",
+      "url": "https://coinmarketcal.com/event/alpenglow-upgrade-61082658-4",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-57061",
+      "t": 1792540800000,
+      "end": 1792540800000,
+      "dayOnly": true,
+      "title": "Protocol Merge",
+      "coins": [
+        "AERO",
+        "VELO"
+      ],
+      "category": "Fork/Swap",
+      "url": "https://coinmarketcal.com/event/aero-velodrome-merge-310601",
+      "source": "CoinMarketCal · öffentlich"
+    }
+  ]
+}
