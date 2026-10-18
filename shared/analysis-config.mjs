@@ -20,12 +20,13 @@ export const ANALYSES = Object.freeze([
 export function analysisSettings(value = {}, definitions = ANALYSES) {
   const object = v => v && typeof v === 'object' && !Array.isArray(v) ? v : {};
   const flags = v => Object.fromEntries(Object.entries(object(v)).filter(([k, x]) => /^[A-Z0-9]{2,20}USDT$/.test(k) && typeof x === 'boolean'));
-  const rows = Object.fromEntries(definitions.map(d => { const r = object(value?.rows?.[d.id]); return [d.id, { telegram: r.telegram === true, chart: r.chart === true, coinsOpen: r.coinsOpen !== false, coins: flags(r.coins), ...(d.normalizeOptions ? {options:d.normalizeOptions(r.options)} : {}) }]; }));
+  // 3.79.1: bisher standardmäßig offene Listen einmal schließen; bewusste Auswahl danach erhalten.
+  const rows = Object.fromEntries(definitions.map(d => { const r = object(value?.rows?.[d.id]); return [d.id, { telegram: r.telegram === true, chart: r.chart === true, coinsOpen: value?.version >= 2 && r.coinsOpen === true, coins: flags(r.coins), ...(d.normalizeOptions ? {options:d.normalizeOptions(r.options)} : {}) }]; }));
   // 3.78.1: Name und Haken aktivieren dieselbe exklusive Ansicht; auch alte additive Einstellungen migrieren.
   const focus = definitions.some(d => d.id === value?.focus) ? value.focus : definitions.find(d => rows[d.id].chart)?.id || null;
   for (const d of definitions) rows[d.id].chart = d.id === focus;
   const base = Object.fromEntries(Object.entries(object(value?.base)).filter(([k, v]) => /^[a-z0-9]+$/.test(k) && typeof v === 'boolean'));
-  return { version: 1, open: value?.open === true, rows, globalCoins: flags(value?.globalCoins), focus, base: Object.keys(base).length ? base : null };
+  return { version: 2, open: value?.open === true, rows, globalCoins: flags(value?.globalCoins), focus, base: Object.keys(base).length ? base : null };
 }
 export function analysisCoinAllowed(settings, id, symbol, watch) {
   return watch.includes(symbol) && settings.rows[id]?.telegram === true && settings.globalCoins[symbol] !== false && settings.rows[id].coins[symbol] !== false;
