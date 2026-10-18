@@ -4,6 +4,9 @@ import { NY_OPEN, nyOptions, evaluateNyOpen } from './ny-open-core.mjs';
 import { createNyRuntime } from './ny-open-feed.mjs';
 import { describeNyOpen, nyStatus, createNyTools } from './ny-open-view.mjs';
 import { describeTopDown, topDownStatus } from './analysis-status.mjs';
+import { PULLBACK, pullbackOptions, evaluatePullback } from './trend-pullback-core.mjs';
+import { createPullbackRuntime } from './trend-pullback-feed.mjs';
+import { describePullback, pullbackStatus, createPullbackTools } from './trend-pullback-view.mjs';
 
 export const ANALYSIS_KEY = 'scalpdesk.analysis.v1';
 export const ANALYSIS_LOG_KEY = 'scalpdesk.analysis-log.v1';
@@ -14,7 +17,11 @@ export const ANALYSES = Object.freeze([
     description: '4h: Struktur + Trend + EMA 200. 1h: mindestens zwei unterschiedliche Bausteine in einer Zone. 15m: Umkehr und danach ein bestätigender Strukturschluss.',
     describe: describeTopDown, status: topDownStatus }),
   Object.freeze({ id:NY_OPEN.id, name:"NY Open Killzone", version:NY_OPEN.version, indicators:Object.freeze([]), intervals:Object.freeze([]), evaluate:evaluateNyOpen, createRuntime:createNyRuntime, normalizeOptions:nyOptions, tools:createNyTools,
-    description:"09:30–09:35 New York: Opening Range. 09:35–10:30: 1m-Ausbruch mit starkem Körper und bestätigtem FVG. Fester Stop, Ziel 2R; nur normale, geschlossene Kerzen. Maximal ein Signal pro Coin und NY-Handelstag.", describe:describeNyOpen, status:nyStatus })
+    description:"09:30–09:35 New York: Opening Range. 09:35–10:30: 1m-Ausbruch mit starkem Körper und bestätigtem FVG. Fester Stop, Ziel 2R; nur normale, geschlossene Kerzen. Maximal ein Signal pro Coin und NY-Handelstag.", describe:describeNyOpen, status:nyStatus }),
+  Object.freeze({ id:PULLBACK.id, name:PULLBACK.name, version:PULLBACK.version, indicators:Object.freeze([]), intervals:Object.freeze([]), evaluate:evaluatePullback,
+    createRuntime:createPullbackRuntime, normalizeOptions:pullbackOptions, tools:createPullbackTools, focusOnName:true, learning:true,
+    description:'4h-Trend mit EMA 21/50/200, Struktur und ADX. 1h-Fibonacci-Rücksetzer in EMA-Band oder 4h-Zone. 15m: mindestens zwei Bestätigungen, CRV/Stop-Filter. Lokale, zeitlich getrennt geprüfte logistische Regression; feste Regeln bleiben unverändert.',
+    describe:describePullback, status:pullbackStatus })
 ]);
 
 export function analysisSettings(value = {}, definitions = ANALYSES) {
