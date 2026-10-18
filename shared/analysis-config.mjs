@@ -1,5 +1,8 @@
 // Analyse-Katalog: neue Analysen ausschließlich hier per Code registrieren.
 import { evaluateTopDown } from './analysis-top-down.mjs';
+import { NY_OPEN, nyOptions, evaluateNyOpen } from './ny-open-core.mjs';
+import { createNyRuntime } from './ny-open-feed.mjs';
+import { describeNyOpen, nyStatus, createNyTools } from './ny-open-view.mjs';
 import { describeTopDown, topDownStatus } from './analysis-status.mjs';
 
 export const ANALYSIS_KEY = 'scalpdesk.analysis.v1';
@@ -9,13 +12,15 @@ export const ANALYSES = Object.freeze([
     indicators: Object.freeze(['ema200', 'macd']),
     intervals: Object.freeze(['4h', '1h', '15m']), evaluate: evaluateTopDown,
     description: '4h: Struktur + Trend + EMA 200. 1h: mindestens zwei unterschiedliche Bausteine in einer Zone. 15m: Umkehr und danach ein bestätigender Strukturschluss.',
-    describe: describeTopDown, status: topDownStatus })
+    describe: describeTopDown, status: topDownStatus }),
+  Object.freeze({ id:NY_OPEN.id, name:"NY Open Killzone", version:NY_OPEN.version, indicators:Object.freeze([]), intervals:Object.freeze([]), evaluate:evaluateNyOpen, createRuntime:createNyRuntime, normalizeOptions:nyOptions, tools:createNyTools,
+    description:"09:30–09:35 New York: Opening Range. 09:35–10:30: 1m-Ausbruch mit starkem Körper und bestätigtem FVG. Fester Stop, Ziel 2R; nur normale, geschlossene Kerzen. Maximal ein Signal pro Coin und NY-Handelstag.", describe:describeNyOpen, status:nyStatus })
 ]);
 
 export function analysisSettings(value = {}, definitions = ANALYSES) {
   const object = v => v && typeof v === 'object' && !Array.isArray(v) ? v : {};
   const flags = v => Object.fromEntries(Object.entries(object(v)).filter(([k, x]) => /^[A-Z0-9]{2,20}USDT$/.test(k) && typeof x === 'boolean'));
-  const rows = Object.fromEntries(definitions.map(d => { const r = object(value?.rows?.[d.id]); return [d.id, { telegram: r.telegram === true, chart: r.chart === true, coinsOpen: r.coinsOpen !== false, coins: flags(r.coins) }]; }));
+  const rows = Object.fromEntries(definitions.map(d => { const r = object(value?.rows?.[d.id]); return [d.id, { telegram: r.telegram === true, chart: r.chart === true, coinsOpen: r.coinsOpen !== false, coins: flags(r.coins), ...(d.normalizeOptions ? {options:d.normalizeOptions(r.options)} : {}) }]; }));
   // 3.78.1: Name und Haken aktivieren dieselbe exklusive Ansicht; auch alte additive Einstellungen migrieren.
   const focus = definitions.some(d => d.id === value?.focus) ? value.focus : definitions.find(d => rows[d.id].chart)?.id || null;
   for (const d of definitions) rows[d.id].chart = d.id === focus;

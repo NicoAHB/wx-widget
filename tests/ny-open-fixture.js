@@ -1,0 +1,4 @@
+const DAY='2026-10-16',START=Date.UTC(2026,9,16,13,35),M=60000;
+function fixture(direction=1){const one=Array.from({length:32},(_,i)=>{const time=START+(i-30)*M;return{time,end:time+M,open:100,close:100,high:100.04,low:99.96,volume:100};});Object.assign(one[25],{high:100.2,low:99.8});Object.assign(one[30],{open:100.1,close:100.5,high:100.54,low:100.08});Object.assign(one[31],{open:100.5,close:100.52,high:100.56,low:100.4});const five=[{time:START-5*M,end:START,open:100,close:100,high:100.2,low:99.8,volume:500}];if(direction===-1)for(const c of [...one,...five]){const h=c.high,l=c.low;c.open=200-c.open;c.close=200-c.close;c.high=200-l;c.low=200-h;}return{now:START+2*M+3000,symbol:'ETCUSDT',market:'spot',options:{biasFilter:false},candles:{'1m':one,'5m':five}};}
+const after=(s,n=120)=>Array.from({length:n},(_,i)=>({time:s.at+i*M,end:s.at+(i+1)*M,open:s.entry,close:s.entry,high:s.entry+.02,low:s.entry-.02,volume:100}));
+module.exports={fixture,after,DAY,START,M};

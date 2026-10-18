@@ -1,6 +1,6 @@
 {
   "version": "2.15.1",
-  "appVersion": "3.78.2",
+  "appVersion": "3.79.0",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
@@ -119,8 +119,8 @@
     },
     {
       "path": "shared/analysis-card.mjs",
-      "sha256": "55ceb519c64ec482fd2be68cf3aa14f7002cc81112cf3375d9c693f4afd6d640",
-      "bytes": 7014
+      "sha256": "e7f1e8c5de777423124f77b3e5503435b6d9ceede65a0b45d67bce2947d24d8f",
+      "bytes": 8897
     },
     {
       "path": "shared/analysis-chart.mjs",
@@ -129,23 +129,23 @@
     },
     {
       "path": "shared/analysis-config.mjs",
-      "sha256": "5890742e5a68f5ac32cc387f12c800467d22e680bddafa9552b48190c32b04d2",
-      "bytes": 2732
+      "sha256": "a8473acd1e08c43ced92482d30b4048e77ab73f4cd2262cc22378b3fe0e47673",
+      "bytes": 3531
     },
     {
       "path": "shared/analysis-delivery.mjs",
-      "sha256": "b5979a1014196c9054c2b2cb4e908e5c5593bc5c3995eedc9392e7203adf56c7",
-      "bytes": 1790
+      "sha256": "71a27a1e9de72303025d918214fd5ee0d2bdc0057f18872d881d5ef46d4e79ce",
+      "bytes": 1861
     },
     {
       "path": "shared/analysis-feed.mjs",
-      "sha256": "eaeecf7aff805267ecd807e789122925800aa97fc73177802f7b5e28c0530f79",
-      "bytes": 5715
+      "sha256": "b20799b9560e4260317bd9d4e4e98a89b19e83968d93c289db2e26f03896eb95",
+      "bytes": 6479
     },
     {
       "path": "shared/analysis-notices.mjs",
-      "sha256": "a81ff920b75c0644ea3dd9d153216bc9914365972ac0324632a87b4c51fe2a29",
-      "bytes": 4010
+      "sha256": "a9350c11600969488cf47ebc13d336926ab5e6ca57f841923e657fbacb1c1d13",
+      "bytes": 4147
     },
     {
       "path": "shared/analysis-status.mjs",
@@ -159,8 +159,8 @@
     },
     {
       "path": "shared/analysis-view.mjs",
-      "sha256": "d74432f75e11c9660aaeec39c17c590cf8ed332eae88987355ab17f6252a89e5",
-      "bytes": 14354
+      "sha256": "2f13f91687547b67df1af6e130a1f5d0e2fbbeaecb70eddb0de4710e3b6abd15",
+      "bytes": 14896
     },
     {
       "path": "shared/bitget-patterns.mjs",
@@ -379,8 +379,8 @@
     },
     {
       "path": "shared/muster-bot-feed.mjs",
-      "sha256": "aa9f1000364a76fe886a1f0c47d0d8361ca002350077f8fdf429cd055fdc5a30",
-      "bytes": 5098
+      "sha256": "fb3598947f126df3dccbc36a751532ef79fd49f6aec5a69430fe343b91a36a7b",
+      "bytes": 5104
     },
     {
       "path": "shared/muster-bot-paper.mjs",
@@ -401,6 +401,46 @@
       "path": "shared/muster-bot-worker.mjs",
       "sha256": "bd5f7d60af8c4fffa9423a3a6a1a92bf43dd996b3592bc8f44b8d7f5535fe7c4",
       "bytes": 1695
+    },
+    {
+      "path": "shared/ny-open-backtest.mjs",
+      "sha256": "e122a406c2f44603976461cf461991cd651f32739f46424bde9974ab3ae2a88c",
+      "bytes": 4010
+    },
+    {
+      "path": "shared/ny-open-chart.mjs",
+      "sha256": "95eebfd2288b26b3d6d6813d53fcac9d88c0f5d8565cea1372f70a9d565a206b",
+      "bytes": 5249
+    },
+    {
+      "path": "shared/ny-open-core.mjs",
+      "sha256": "4e29a4ab213f579be7b2ea96372dd41e9ee60b81a1c8cde846ed3fb2d59ad4b6",
+      "bytes": 10100
+    },
+    {
+      "path": "shared/ny-open-feed.mjs",
+      "sha256": "77b234e6be6d0c2f52aa88eb481c74d97566aa33082ecf14077de72cd8196d3d",
+      "bytes": 8643
+    },
+    {
+      "path": "shared/ny-open-history.mjs",
+      "sha256": "f78f2a0b293c8606f1780170de98e8476138e28b520255644b54b68a8426c3c2",
+      "bytes": 2306
+    },
+    {
+      "path": "shared/ny-open-notices.mjs",
+      "sha256": "3a2b6f2a48c895c288d994791729c01443c86291c72497c0862ce2b8fe9ca52e",
+      "bytes": 1533
+    },
+    {
+      "path": "shared/ny-open-time.mjs",
+      "sha256": "e9adbd8990588ee1769cf7fd964e17d1be8977678b46639cdf5936a67bc07b4c",
+      "bytes": 3617
+    },
+    {
+      "path": "shared/ny-open-view.mjs",
+      "sha256": "e72c5ded5ff604c80aa9a8535b944d35c45272219cb82f18df4f47d129a4324c",
+      "bytes": 8646
     },
     {
       "path": "shared/orderflow-core.mjs",

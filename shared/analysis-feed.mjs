@@ -2,14 +2,17 @@ import { ANALYSES } from './analysis-config.mjs';
 import { TOP_DOWN, analysisClosed } from './analysis-top-down.mjs';
 import { INTERVAL_MS } from './market-intervals.mjs';
 
-// Ein Abruf gleichzeitig; vorhandener App-/IndexedDB-Kerzen-Cache wird injiziert.
+// Pro Feed ein Abruf gleichzeitig; vorhandener App-/IndexedDB-Kerzen-Cache wird injiziert.
 // Kein Tick-/Sekundenkurs löst die Auswertung aus: Schlüssel sind ausschließlich die letzten Schlusszeiten.
-export function createAnalysisFeed({ context, fetchRows, definitions = ANALYSES, now = Date.now, changed = () => {}, signal = async () => {}, log = () => {} }) {
+export function createAnalysisFeed({ context, fetchRows, definitions = ANALYSES, now = Date.now, changed = () => {}, signal = async () => {}, log = () => {}, runtimeServices = {} }) {
   const state = { entries: new Map(), busy: false, generation: 0, evaluations: 0, requests: 0 };
   let signature = '', controller = null, lastStart = -Infinity;
+  // Erweiterbare, sessionspezifische Analysen; der bisherige Top-Down-Pfad bleibt unverändert.
+  const runtimes = new Map(definitions.filter(d => d.createRuntime).map(d => [d.id, d.createRuntime({ ...runtimeServices, context, fetchRows, now, changed, signal, log })]));
   function sync() {
+    for (const r of runtimes.values()) r.sync();
     const c = context(), enabled = !c.paused && !c.hidden && c.online !== false;
-    const wanted = (c.symbols || []).filter(s => /^[A-Z0-9]{2,20}USDT$/.test(s.symbol) && ['spot', 'futures'].includes(s.market));
+    const wanted = (c.symbols || []).map(s => ({ ...s, analyses:s.analyses.filter(id => !runtimes.has(id)) })).filter(s => s.analyses.length).filter(s => /^[A-Z0-9]{2,20}USDT$/.test(s.symbol) && ['spot', 'futures'].includes(s.market));
     const key = JSON.stringify([enabled, wanted.map(s => [s.symbol, s.market, [...s.analyses].sort()]).sort()]);
     if (key !== signature) {
       signature = key; state.generation++; controller?.abort(); controller = null; state.busy = false;
@@ -21,6 +24,7 @@ export function createAnalysisFeed({ context, fetchRows, definitions = ANALYSES,
     return enabled && wanted.length > 0;
   }
   function result(symbol, market, id) {
+    if (runtimes.has(id)) return runtimes.get(id).result(symbol, market);
     const c = context(); if (c.paused || c.hidden || c.online === false) return { ready: false, stage: 0, reason: 'Analyse pausiert oder offline.' };
     const e = state.entries.get(`${symbol}|${market}`), r = e?.results[id];
     if (e?.error) return { ready: false, stage: 0, reason: e.error };
@@ -28,6 +32,8 @@ export function createAnalysisFeed({ context, fetchRows, definitions = ANALYSES,
     return r && now() < r.expiresAt ? r : { ready: false, stage: 0, reason: r ? 'Neue Schlusskerzen werden geladen.' : 'Kerzendaten werden geladen.' };
   }
   async function tick() {
+    sync();
+    for (const r of runtimes.values()) void r.tick().catch(e => log({kind:"error",text:"NY-Analyse: " + e.message}));
     if (!sync() || state.busy || now() - lastStart < 750) return;
     const at = now();
     const e = [...state.entries.values()].find(e => at >= e.retryAt && e.analyses.some(id => definitions.find(d => d.id === id)?.intervals.some(iv => !e.rows[iv]?.length || at >= (e.next[iv] || 0))));
@@ -61,6 +67,8 @@ export function createAnalysisFeed({ context, fetchRows, definitions = ANALYSES,
   }
   // Einstellungen können während des Bildaufbaus geändert werden. Die Sendefreigabe wird deshalb im Aufrufer erneut geprüft.
   async function dispatch() {
+    sync();
+    for (const r of runtimes.values()) await r.dispatch();
     if (!sync()) return;
     for (const e of state.entries.values()) for (const id of e.analyses) {
       const s = result(e.symbol, e.market, id)?.signal; if (!s || now() >= s.expiresAt) continue;
@@ -68,5 +76,5 @@ export function createAnalysisFeed({ context, fetchRows, definitions = ANALYSES,
       if (!e.attempted.has(event) && await signal(s) !== false) e.attempted.add(event);
     }
   }
-  return { state, sync, tick, result, dispatch };
+  return { state, sync, tick, result, dispatch, runtime:id => runtimes.get(id) };
 }

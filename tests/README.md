@@ -1,5 +1,7 @@
 # Tests für Scalp Desk
 
+**3.79.0 NY Open Killzone:** `unit-ny-open.js` prüft NYSE/DST, geschlossene OHLC, ATR/FVG, 4h-Bias, Risiko, Limit, konservative Stop-/Zielauswertung, Tages-Duplikate, Cache und vollständigen 60-Tage-Lauf mit sieben dynamischen Coins. `m130.js` prüft natives Analyse-Menü und Chart, Touch/Info/Fokus, 320–1440px, gespeicherte Optionen/Journal, Backtest-Abbruch und isolierte PNG-Telegram-Karten. Chromium und `WX_BROWSER=webkit`; reale Nachrichten werden nicht gesendet. Bestehendes `m129.js` ist jetzt explizit auf die Top-Down-Zeile eingegrenzt.
+
 **3.71.0 Kurs-Alarm als Bild, Euro auf der Gewinn-/Verlust-Karte, flüssiges Zoomen, Vorauswahl, Live-Wert (Dienst 2.15.0, Claude):**
 - Neu `unit-price-alarm-card.js` (14): Vorlagen aufwärts/abwärts, Farben, Leiste (Punkt rechts/links, Abstand), „<0,01 %“, kleine Kurse, Notiz und lange Auslösung, fehlende Werte, PNG 1080 breit.
 - Neu `m110.js` (16): Zoomen mit zwei Fingern (iPhone, CDP und 120-Hz-Bewegungen im Browser), Kerze bleibt unter den Fingern, Transformation statt Neuzeichnen, kein Mitscrollen, Schwung, Tippen; PC Trackpad-Zoom und waagrechtes Blättern.
