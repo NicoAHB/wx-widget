@@ -1,6 +1,6 @@
 {
   "version": "2.15.1",
-  "appVersion": "3.77.8",
+  "appVersion": "3.78.0",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
@@ -116,6 +116,41 @@
       "path": "shared/adaptive-grid.mjs",
       "sha256": "87e9d3ae1f94160f2b10c6e8ec0fd5a71efea7c79c8241487c95ac183de38c9d",
       "bytes": 21867
+    },
+    {
+      "path": "shared/analysis-card.mjs",
+      "sha256": "55ceb519c64ec482fd2be68cf3aa14f7002cc81112cf3375d9c693f4afd6d640",
+      "bytes": 7014
+    },
+    {
+      "path": "shared/analysis-config.mjs",
+      "sha256": "43078ee1004ca19dab93ad7be4448cffc1de62c784a06c63953fa48982efbb92",
+      "bytes": 3121
+    },
+    {
+      "path": "shared/analysis-delivery.mjs",
+      "sha256": "b5979a1014196c9054c2b2cb4e908e5c5593bc5c3995eedc9392e7203adf56c7",
+      "bytes": 1790
+    },
+    {
+      "path": "shared/analysis-feed.mjs",
+      "sha256": "eaeecf7aff805267ecd807e789122925800aa97fc73177802f7b5e28c0530f79",
+      "bytes": 5715
+    },
+    {
+      "path": "shared/analysis-notices.mjs",
+      "sha256": "b81290760023f5da70985e17187ee1a3417541b17581bcef576ee48ba33a1699",
+      "bytes": 3914
+    },
+    {
+      "path": "shared/analysis-top-down.mjs",
+      "sha256": "2dc37c91e5ad05e65e9bf701eaa1114d7cee846b4173863cec52a99b7038a611",
+      "bytes": 16365
+    },
+    {
+      "path": "shared/analysis-view.mjs",
+      "sha256": "5f7c3cb487c1feee49bdee20049d447cedaca8704d1c075239c899bbac5240bd",
+      "bytes": 10733
     },
     {
       "path": "shared/bitget-patterns.mjs",
@@ -516,6 +551,11 @@
       "path": "shared/telegram-format.mjs",
       "sha256": "03f4b2740dfbe6c35af10dc80629b648c3752e39fece97ca598aac874bb0f467",
       "bytes": 22759
+    },
+    {
+      "path": "shared/volume-profile.mjs",
+      "sha256": "bbaec08e51be6297058ce38c76e4306695d6f9b9fa0e6450aa41d05ab490cb24",
+      "bytes": 2387
     },
     {
       "path": "shared/watch-model-core.mjs",
