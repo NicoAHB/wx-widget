@@ -8,3 +8,6 @@ const i=low.length-3;low[i]={...low[i],open:price+.2,close:price+.1,high:price+.
 const candles={'4h':high,'1h':hour,'15m':low};if(direction===-1)for(const cs of Object.values(candles))for(const c of cs){const{high,low}=c;c.open=400-c.open;c.close=400-c.close;c.high=400-low;c.low=400-high;}
 return{candles,now:LAST+Q+5000,symbol:'BTCUSDT',market:'spot'};}
 module.exports={fixture,rows,H,Q};
+// 3.78.2: bestätigte steigende Struktur nach langer Abwärtsphase; EMA-Lage bleibt bearish.
+function mixedFixture(){const f=fixture();f.candles['4h']=f.candles['4h'].map((c,i)=>{const close=(i<400?200-i*.2:120+(i-400)*.08)+Math.sin(i*.4)*1.2,open=close-Math.cos(i*.28)*.12;return{...c,open,close,high:Math.max(open,close)+.23,low:Math.min(open,close)-.23};});return f;}
+module.exports.mixedFixture=mixedFixture;

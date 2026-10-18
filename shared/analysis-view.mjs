@@ -90,7 +90,40 @@ export function createAnalysisView({ root, definitions = ANALYSES, read, save, g
       r.notice.hidden = !e; if (e) { r.reason.textContent = e.reason; r.row.dataset.noticeTone = e.tone; } else delete r.row.dataset.noticeTone;
     }
   }
-  function paintResult(text, entries = []) { if (status.textContent !== text) status.textContent = text; if (log.open) logList.replaceChildren(...entries.slice(-25).reverse().map(e => make(doc, 'li', '', e.text))); }
+  let statusKey = '';
+  function paintResult(text, entries = [], cards = []) {
+    const key = JSON.stringify(cards.length ? cards : text);
+    if (key !== statusKey) {
+      statusKey = key;
+      const folds = new Map([...status.querySelectorAll('details[data-status-fold]')].map(d => [d.dataset.statusFold, d.open]));
+      if (!cards.length) status.textContent = text;
+      else status.replaceChildren(...cards.map(card => {
+        const box = make(doc, 'section', 'analysis-status-card'), detail = card.detail;
+        if (card.title) { const head = make(doc, 'div', 'analysis-stage-head'); head.append(make(doc, 'strong', '', card.title)); if (detail) head.append(make(doc, 'span', 'analysis-stage-count', `${detail.stage}/3 Stufen`)); box.append(head); }
+        if (!detail) { box.append(make(doc, 'p', '', card.text)); return box; }
+        for (const step of detail.steps) {
+          const row = make(doc, 'div', 'analysis-stage'), head = make(doc, 'div', 'analysis-stage-head'), badge = make(doc, 'span', 'analysis-direction', step.state);
+          row.dataset.analysisStage = step.id; badge.dataset.tone = step.tone;
+          head.append(make(doc, 'strong', '', step.label), badge); row.append(head, make(doc, 'p', '', step.text));
+          if (step.id === '4h') {
+            const fold = make(doc, 'details', 'analysis-bias-details'), key = card.title + '|4h'; fold.dataset.statusFold = key; fold.open = folds.get(key) ?? detail.openChecks;
+            fold.append(make(doc, 'summary', '', 'ⓘ 4h-Prüfung · Was stimmt überein?'));
+            for (const check of detail.checks) {
+              const item = make(doc, 'div', 'analysis-bias-check'), label = make(doc, 'div', 'analysis-stage-head'), direction = make(doc, 'span', 'analysis-direction', check.state);
+              item.dataset.analysisCheck = check.id; direction.dataset.tone = check.tone;
+              label.append(make(doc, 'strong', '', check.label), direction); item.append(label, make(doc, 'p', '', check.value)); fold.append(item);
+            }
+            const help = make(doc, 'details', 'analysis-check-help'), helpKey = card.title + '|rules'; help.dataset.statusFold = helpKey; help.open = folds.get(helpKey) ?? false;
+            help.append(make(doc, 'summary', '', 'ⓘ Was bedeuten EMA 50/200 und die Farben?'), make(doc, 'p', '', detail.help)); fold.append(help, make(doc, 'small', 'analysis-basis', detail.basis)); row.append(fold);
+          }
+          box.append(row);
+        }
+        if (detail.levels.length) { const levels = make(doc, 'dl', 'analysis-status-levels'); for (const [label, value] of detail.levels) { const item = make(doc, 'div'); item.append(make(doc, 'dt', '', label), make(doc, 'dd', '', value)); levels.append(item); } box.append(levels); }
+        return box;
+      }));
+    }
+    if (log.open) logList.replaceChildren(...entries.slice(-25).reverse().map(e => make(doc, 'li', '', e.text)));
+  }
   function rememberManual(keys) { if (!settings.base) return; const current = getOverlays(); for (const k of keys) if (k in settings.base) settings.base[k] = !!current[k]; commit(); }
   // Persistierte Basis verhindert, dass nach einem Neustart die Fokus-Auswahl als ursprünglicher Zustand gespeichert wird.
   apply(); paint();

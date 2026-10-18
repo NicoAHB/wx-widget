@@ -1,5 +1,7 @@
 # Top-Down im Chart · 3.78.1
 
+Ab 3.78.2 erläutert die [Einzelprüfung der drei Stufen](ANALYSE-STATUS-3.78.2.md) konkret, was eine Freigabe verhindert.
+
 Unter **Chart-Ebenen, Whales & Werkzeuge → Analyse** aktivieren Name und Haken jetzt dieselbe exklusive Analyseansicht. Die bisherige additive Bedeutung des Hakens entfällt. Erneut ausschalten oder „Vorherige Ansicht wiederherstellen“ bringt die zuvor gewählten Indikatoren zurück, auch nach einem Neustart. Gespeicherte allgemeine Zonen-/Muster-Schalter werden lediglich beim Zeichnen übergangen.
 
 **Coin-Namen** in der aufgeklappten Vorauswahl-Liste sind jetzt Schaltflächen: Antippen öffnet den Chart dieses Coins mit der zugehörigen Analyse. Der gewählte Chart-Zeitrahmen und die gemerkte vorherige Indikator-Auswahl bleiben erhalten. Telegram-Schalter, globale Coin-Freigaben und deren gespeicherte Werte werden dadurch nicht geändert.

@@ -1,3 +1,13 @@
+## 3.78.2 (Codex): konkrete 4h-Diagnose und korrekte Stufenzuordnung
+
+- Nutzerfrage: „1h wartet“ bei neutralen Coins und Sammelbegründung „Struktur/Trend/EMA 200 stimmen nicht überein“ waren nicht nachvollziehbar. Analyse-Menü und Chart-Info verwenden jetzt dieselbe Diagnose aus `shared/analysis-status.mjs`.
+- Fünf 4h-Prüfungen mit Einzelrichtung und tatsächlichen Werten: bestätigte Hochs/Tiefs, EMA-50/200-Lage, beide EMA-Richtungen separat (jetzt gegenüber vor drei 4h-Kerzen), Schlusskurs zur EMA 200. Widerspruch nennt konkrete gegensätzliche Prüfungen; neutrale/noch unklare Kriterien werden benannt. Extrapräzision verhindert identisch gerundete Werte bei kleiner echter Änderung. EMA-/Farb-Erklärung und deutscher Zeitpunkt des verwendeten 4h-Schlusses.
+- Bei neutralem Bias heißen 1h/15m „Noch nicht geprüft“ mit Voraussetzung, statt pauschal „wartet“. Später fehlen entweder Konfluenzzone, gültige Berührung oder vollständiger Einstieg. Stufe 2 benennt die tatsächlich berührte Zone. Kein beliebiger erster Kandidat und keine 4h-Begründung unter 15m.
+- Diagnose standardmäßig bei neu angezeigtem neutralen Coin auf, einzeln klappbar; Sekundentakt erhält manuelle Klappzustände. Cache pro Ergebnis/Format, keine weiteren Abrufe. Styles ausschließlich im Analyse-Status; Fokus, Coin-Navigation, Telegram und Chartgeometrie unverändert.
+- Engine liefert nur zusätzliche Diagnosemetadaten und `setupZone`. Signalregeln/Version, Schwellen, Entry/Stop/Ziele, Zeitanker, Feed und Versand unverändert. Unitvergleich mit veröffentlichter 3.78.1-Engine für Long/Short/Neutral (bis auf zusätzliche Metadaten identisches Gesamtergebnis).
+- **286/286 Prüfungen in 9 Läufen**: neue Diagnose/Präzision/Stufen, bestehende Analyse/Chartmodelle und Releasegraph; Chromium/WebKit je 62 native Tests inkl. widersprüchlicher OHLCV, 320–1440px/Touch/Info/Klappzustände/Coin-Navigation; bestehender Live-Chart/Fadenkreuz/MACD/Prognosen, vier alte Telegram-Ziele sowie PWA-Update/Offline/Datenhaltung. Lint 0 Fehler / 3 bekannte Warnungen. Keine physischen iOS-Geräte, keine echten Telegram-Testnachrichten.
+- App/SW **3.78.2**, 108 PWA-/120 Dienstdateien; alte Bündel unverändert. Dienstquelle weiter **2.15.1**, keine VM-Bereitstellung. [Erklärung und Gerätetest](docs/ANALYSE-STATUS-3.78.2.md); öffentlicher Hash-/MIME-Nachweis im Release-PR.
+
 ## 3.78.1 (Codex): Top-Down exklusiv, erklärte Chartmarken und Coin-Navigation
 
 - Nutzerkorrektur: Name und Haken aktivieren dieselbe exklusive Analyseansicht. Erneut ausschalten / „Vorherige Ansicht wiederherstellen“ beendet sie vollständig; persistierte Basis wird auch nach Neustart und beim Ausschalten in einem zweiten Tab wiederhergestellt. Alte additive Haken migrieren zum Fokus.
