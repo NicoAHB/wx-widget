@@ -33,7 +33,7 @@ export function createAnalysisFeed({ context, fetchRows, definitions = ANALYSES,
   }
   async function tick() {
     sync();
-    for (const r of runtimes.values()) void r.tick().catch(e => log({kind:"error",text:"NY-Analyse: " + e.message}));
+    for (const [id,r] of runtimes) void r.tick().catch(e => log({kind:"error",text:(definitions.find(d=>d.id===id)?.name||'Analyse')+': '+e.message}));
     if (!sync() || state.busy || now() - lastStart < 750) return;
     const at = now();
     const e = [...state.entries.values()].find(e => at >= e.retryAt && e.analyses.some(id => definitions.find(d => d.id === id)?.intervals.some(iv => !e.rows[iv]?.length || at >= (e.next[iv] || 0))));

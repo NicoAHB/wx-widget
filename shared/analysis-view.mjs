@@ -31,23 +31,26 @@ export function createAnalysisView({ root, definitions = ANALYSES, read, save, g
 
   for (const d of definitions) {
     const row = make(doc, 'div', 'analysis-row'); row.dataset.analysis = d.id; row.setAttribute('role', 'row');
-    const nameCell = make(doc, 'div', 'analysis-name'), name = button(d.name, 'analysis-focus'), sub = make(doc, 'small', 'analysis-coin-count');
+    const nameCell = make(doc, 'div', 'analysis-name'), name = button(d.name, 'analysis-focus'), sub = d.focusOnName?button('', 'analysis-coin-count analysis-coins-button'):make(doc, 'small', 'analysis-coin-count');
     // Modellname klappt nur die Details; Chart-Fokus bleibt am Haken und am Coin-Namen.
-    name.addEventListener('click', () => { settings.rows[d.id].coinsOpen = !settings.rows[d.id].coinsOpen; commit(); paint(); }); nameCell.append(name, sub);
+    const toggleCoins=()=>{settings.rows[d.id].coinsOpen=!settings.rows[d.id].coinsOpen;commit();paint();};
+    name.addEventListener('click', () => { if(d.focusOnName){const on=!shown(d.id);activate(on?d.id:null);if(on)openCoin(selectedCoin(),d.id);}else toggleCoins(); }); nameCell.append(name, sub);
+    if(d.focusOnName){sub.addEventListener('click',toggleCoins);name.setAttribute('aria-label',d.name);name.setAttribute('aria-controls','chart');}
     const toggle = make(doc, 'label', 'analysis-switch'), telegram = make(doc, 'input'), onText = make(doc, 'span'); telegram.type = 'checkbox'; telegram.setAttribute('role', 'switch'); telegram.setAttribute('aria-label', `${d.name}: Telegram-Benachrichtigung`); toggle.append(telegram, onText);
     telegram.addEventListener('change', () => { settings.rows[d.id].telegram = telegram.checked; commit(); paint(); });
     const chartCell = make(doc, 'label', 'analysis-check'), chart = make(doc, 'input'); chart.type = 'checkbox'; chart.setAttribute('aria-label', `${d.name}: Im Chart anzeigen`); chartCell.append(chart);
-    chart.addEventListener('change', () => { activate(chart.checked ? d.id : null); });
+    chart.addEventListener('change', () => { activate(chart.checked ? d.id : null);if(chart.checked&&d.focusOnName)openCoin(selectedCoin(),d.id); });
     for (const n of [nameCell, toggle, chartCell]) n.setAttribute('role', 'cell');
-    const details = make(doc, 'div', 'analysis-model-details'), coinList = make(doc, 'div', 'analysis-coin-list'); details.id = 'analysis-coins-' + d.id; details.append(coinList); name.setAttribute('aria-controls', details.id);
+    const details = make(doc, 'div', 'analysis-model-details'), coinList = make(doc, 'div', 'analysis-coin-list'); details.id = 'analysis-coins-' + d.id; details.append(coinList); (d.focusOnName?sub:name).setAttribute('aria-controls', details.id);
     const notice = make(doc, 'div', 'analysis-notice'); notice.hidden = true;
     const reason = make(doc, 'span'), acknowledge = button('Gelesen', 'chip-tool'); notice.append(reason, acknowledge);
     acknowledge.addEventListener('click', () => acknowledgeNotice(d.id)); name.addEventListener('click', () => acknowledgeNotice(d.id));
     const status = make(doc, 'div', 'analysis-status'); status.setAttribute('role', 'cell');
     row.append(nameCell, toggle, chartCell, notice, status, details); table.append(row); rows.set(d.id, { row, name, sub, telegram, onText, chart, details, notice, reason, coinList, status, statusKey: null, coinKey: null });
     if (d.tools) rows.get(d.id).tools = d.tools({root:details,getOptions:()=>settings.rows[d.id].options,setOptions:value=>{settings.rows[d.id].options=d.normalizeOptions(value);commit();},services:toolServices});
+    if(d.learning){const actions=make(doc,'div','analysis-model-actions'),learn=button('ⓘ Lernstand','chip-tool');learn.addEventListener('click',()=>rows.get(d.id).tools.openLearning());actions.append(learn);details.before(actions);const count=make(doc,'span','analysis-signal-count');count.hidden=true;nameCell.append(count);rows.get(d.id).signalCount=count;}
   }
-  const hint = make(doc, 'p', 'analysis-hint', 'Modellname: Coins auf- oder zuklappen. Telegram: Benachrichtigungen für dieses Modell. Chart-Haken: nur diese Analyse im Chart anzeigen; ausschalten beendet den Fokus. Coin-Name: dessen Chart mit dieser Analyse öffnen. Prüfung & Erklärung: alle Stufen und ihre Werte ansehen.');
+  const hint = make(doc, 'p', 'analysis-hint', 'Top-Down / NY Open: Modellname klappt Coins auf oder zu. Rücksetzer: Modellname aktiviert den Chart-Fokus, „Coins“ klappt die Liste. Telegram schaltet Nachrichten für das Modell. Chart-Haken: nur diese Analyse anzeigen; ausschalten beendet den Fokus. Coin-Name öffnet dessen Chart. Prüfung & Erklärung zeigt alle Stufen und Werte.');
   const messages = make(doc, 'div', 'analysis-messages'); messages.setAttribute('role', 'status'); messages.hidden = true;
   const info = make(doc, 'details', 'analysis-info'), infoSummary = make(doc, 'summary', '', 'ⓘ Bedienung & Erklärungen');
   info.append(infoSummary, make(doc, 'p', '', definitions.map(d => d.name + ': ' + d.description).join(' ')), make(doc, 'p', '', 'EMA 200 zeigt den langfristigen Trend. Ein Order Block ist die letzte Gegenkerze vor einem Impuls von mindestens 1,5 ATR mit Strukturbruch. FVG ist eine noch offene Drei-Kerzen-Lücke. Ein Sweep durchsticht ein früher bestätigtes Hoch/Tief und schließt wieder dahinter. Liquiditätspools sind aus ähnlichen Hochs/Tiefs abgeleitete Preisbereiche; Beim Top-Down-Fokus erscheinen nur die tatsächlichen Konfluenzzonen und ihre Bausteine, die 4h-EMA-200 sowie MACD. Allgemeine Heatmaps, Muster und Prognosen bleiben ausgeblendet. Zonen und Markierungen antippen: Begründung und Werte öffnen. Top-Down zeichnet erst nach 15m-Bestätigung einen Einstieg ein. NY Open zeigt ausschließlich Opening Range, Signalfenster, FVG und bestätigte NY-Einstiegs-/Ausstiegsmarken.'), make(doc, 'p', '', 'Nur normale, geschlossene Börsenkerzen. Top-Down: Ein Setup braucht mindestens zwei unterschiedliche Bausteinarten. Eine Umkehr allein genügt nicht: erst der folgende 15m-Schluss über/unter der davor bekannten Mikrostruktur bestätigt. Ziele sind vorhandene Levels; fehlen zwei passende Ziele, gibt es kein Signal. CRV ist brutto, ohne Gebühren/Slippage.'), make(doc, 'p', '', 'Telegram muss für Analyse, Coin global und Coin in dieser Analyse an sein. Standard: Analyse aus, alle Coins freigegeben. Die App prüft die freigegebenen Coins im Hintergrund, solange sie geöffnet und aktiv ist. Spätere 24/7-Dienstübergabe ist vorbereitet; aktuell sendet der Dienst diese Analyse noch nicht. Top-Down: ein Signal je Setup, anschließend mindestens zwei Stunden Sperre je Coin und Richtung. NY Open: höchstens ein Signal pro Coin und NY-Handelstag, auch bei Richtungswechsel oder Neustart. Keine Erfolgswahrscheinlichkeit.'));
@@ -57,7 +60,7 @@ export function createAnalysisView({ root, definitions = ANALYSES, read, save, g
   root.addEventListener('toggle', () => { if (settings.open !== root.open) { settings.open = root.open; commit(); } });
   function paint() {
     const symbols = coins();
-    for (const d of definitions) { const r = rows.get(d.id), s = settings.rows[d.id]; r.name.setAttribute('aria-expanded', String(s.coinsOpen)); r.name.title = `${d.name}: Coins ${s.coinsOpen ? 'ausblenden' : 'anzeigen'}`; r.sub.textContent = `Coins (${symbols.filter(symbol => s.coins[symbol] !== false).length}/${symbols.length})${settings.focus === d.id ? ' · Im Chart' : ''}`; r.telegram.checked = s.telegram; r.onText.textContent = s.telegram ? 'An' : 'Aus'; r.chart.checked = shown(d.id); r.row.dataset.focus = String(settings.focus === d.id); r.details.hidden = !s.coinsOpen; paintCoins(d, r); if (root.open && s.coinsOpen) r.tools?.paint(); }
+    for (const d of definitions) { const r = rows.get(d.id), s = settings.rows[d.id]; (d.focusOnName?r.sub:r.name).setAttribute('aria-expanded', String(s.coinsOpen));if(d.focusOnName)r.name.setAttribute('aria-pressed',String(shown(d.id))); r.name.title = d.focusOnName?`${d.name}: Chart-Fokus ${shown(d.id)?'beenden':'öffnen'}`:`${d.name}: Coins ${s.coinsOpen ? 'ausblenden' : 'anzeigen'}`; r.sub.textContent = `Coins (${symbols.filter(symbol => s.coins[symbol] !== false).length}/${symbols.length})${settings.focus === d.id ? ' · Im Chart' : ''}`; r.telegram.checked = s.telegram; r.onText.textContent = s.telegram ? 'An' : 'Aus'; r.chart.checked = shown(d.id); r.row.dataset.focus = String(settings.focus === d.id); r.details.hidden = !s.coinsOpen; paintCoins(d, r); if (d.learning||root.open && s.coinsOpen) r.tools?.paint(); }
   }
   function paintCoins(d, row) {
     const symbols = coins(), key = symbols.join('|');
@@ -151,9 +154,11 @@ export function createAnalysisView({ root, definitions = ANALYSES, read, save, g
     if (log.open) logList.replaceChildren(...entries.slice(-25).reverse().map(e => make(doc, 'li', '', e.text)));
   }
   function rememberManual(keys) { if (!settings.base) return; const current = getOverlays(); for (const k of keys) if (k in settings.base) settings.base[k] = !!current[k]; commit(); }
+  const aggregate=make(doc,'span','analysis-signal-count');aggregate.hidden=true;summary.append(aggregate);
+  function paintHighlights(value){const row=rows.get('trend-pullback');if(!row)return;row.row.dataset.pullbackPulse=String(value.pulse);row.signalCount.hidden=!value.count;row.signalCount.textContent=String(value.count);row.signalCount.setAttribute('aria-label',`${value.count} Coins mit Rücksetzer-Signal`);aggregate.hidden=!value.count;aggregate.textContent=String(value.count);aggregate.setAttribute('aria-label',`${value.count} Coins mit Rücksetzer-Signal`);summary.dataset.pullbackPulse=String(value.pulse);}
   // Persistierte Basis verhindert, dass nach einem Neustart die Fokus-Auswahl als ursprünglicher Zustand gespeichert wird.
   apply(); paint();
   return { root, get settings() { return settings; }, paint, reload, shown, globalToggle, paintResult, paintNotices, rememberManual,
-    tools:id => rows.get(id)?.tools,
+    tools:id => rows.get(id)?.tools, paintHighlights, activate,
     endFocus: () => { if (!settings.focus) return; activate(null); } };
 }

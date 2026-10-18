@@ -97,13 +97,14 @@ export function advanceIndicators(saved, candles, asOf) {
 }
 
 // Strikte Extrema: gleiche Hochs/Tiefs bilden keinen eindeutigen Strukturpivot.
-export function confirmedPivots(candles, asOf, periodMs) {
+export function confirmedPivots(candles, asOf, periodMs, { left = 2, right = 2 } = {}) {
+  if (![left, right].every(v => Number.isInteger(v) && v >= 1)) throw Error('Ungültiger Swing-Vorlauf');
   const rows = closedCandles(candles, asOf, periodMs), pivots = [];
-  for (let i = 2; i < rows.length - 2; i++) {
-    const c = rows[i], neighbours = [rows[i - 2], rows[i - 1], rows[i + 1], rows[i + 2]];
-    const knownAt = Math.max(...rows.slice(i - 2, i + 3).map(x => x.knownAt));
+  for (let i = left; i < rows.length - right; i++) {
+    const c = rows[i], neighbours = [...rows.slice(i - left, i), ...rows.slice(i + 1, i + right + 1)];
+    const knownAt = Math.max(...rows.slice(i - left, i + right + 1).map(x => x.knownAt));
     for (const [type, field, d] of [['low', 'low', -1], ['high', 'high', 1]]) {
-      if (neighbours.every(n => d * c[field] > d * n[field])) pivots.push({ type, index: i, time: c.time, price: c[field], confirmedIndex: i + 2, knownAt });
+      if (neighbours.every(n => d * c[field] > d * n[field])) pivots.push({ type, index: i, time: c.time, price: c[field], confirmedIndex: i + right, knownAt });
     }
   }
   return pivots;

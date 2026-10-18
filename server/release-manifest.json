@@ -1,6 +1,6 @@
 {
   "version": "2.15.1",
-  "appVersion": "3.79.2",
+  "appVersion": "3.80.0",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
@@ -119,18 +119,18 @@
     },
     {
       "path": "shared/analysis-card.mjs",
-      "sha256": "e7f1e8c5de777423124f77b3e5503435b6d9ceede65a0b45d67bce2947d24d8f",
-      "bytes": 8897
+      "sha256": "ad7818674113ac8ae758e624fd8331cbf8218a28ac06893ddf845b4a85b83d51",
+      "bytes": 9617
     },
     {
       "path": "shared/analysis-chart.mjs",
-      "sha256": "c053f5cad69588c514e8a99a89eb1278cd3a9a7f3c72d5a4a18e6e851865c7c6",
-      "bytes": 13093
+      "sha256": "ef9afd6109e3cc4290603fe0415df104a1eadae4fdd36286ae9ee684d2fa3848",
+      "bytes": 13217
     },
     {
       "path": "shared/analysis-config.mjs",
-      "sha256": "681a86d9f80a7ee24241be37aa8720422e13bf23e52045eb5844e368a2873059",
-      "bytes": 3656
+      "sha256": "541615f8a5db72d4178116e53dec9f0b7acdafa36b2a03facfa5cc468a25205e",
+      "bytes": 4534
     },
     {
       "path": "shared/analysis-delivery.mjs",
@@ -139,8 +139,8 @@
     },
     {
       "path": "shared/analysis-feed.mjs",
-      "sha256": "b20799b9560e4260317bd9d4e4e98a89b19e83968d93c289db2e26f03896eb95",
-      "bytes": 6479
+      "sha256": "159c5d76e2b97742d2f793ec9a95fbeb85613f07a84bbadd3949633d4ae65724",
+      "bytes": 6513
     },
     {
       "path": "shared/analysis-notices.mjs",
@@ -149,8 +149,8 @@
     },
     {
       "path": "shared/analysis-overview.mjs",
-      "sha256": "25b45a5f42663d081d7aaa4a53303088d82aa1535518cf9c0199f5e1e5ac28bd",
-      "bytes": 1713
+      "sha256": "82646ee217bcdb9bff4adeebad5aeee59fb735cad55eefe9d7105961b9fb9c53",
+      "bytes": 2123
     },
     {
       "path": "shared/analysis-status.mjs",
@@ -164,8 +164,8 @@
     },
     {
       "path": "shared/analysis-view.mjs",
-      "sha256": "33f0596e3d6a95a64311e1effce8e3951c69e7f722360de6e658cf7fda453558",
-      "bytes": 16699
+      "sha256": "0aec2922244b31cdafbd7d3c8e478cbe75172a71f2b454471ddd80dacfdb6d94",
+      "bytes": 18399
     },
     {
       "path": "shared/bitget-patterns.mjs",
@@ -303,6 +303,11 @@
       "bytes": 5890
     },
     {
+      "path": "shared/directional-movement.mjs",
+      "sha256": "cd52380ab1ece1762dc3ecf8c3318953615c4448735a45e899cf9b0d1d379884",
+      "bytes": 1249
+    },
+    {
       "path": "shared/display-time.mjs",
       "sha256": "e58ea741ed76a473bfe48ac8ccf39feebb75230469f1a6b09757debf345f35ae",
       "bytes": 877
@@ -334,8 +339,8 @@
     },
     {
       "path": "shared/indicators.mjs",
-      "sha256": "c3abce0888b1352a4b28bb0ce398b18ac65a9e4dd3287ce03ce896fd36712ae6",
-      "bytes": 10104
+      "sha256": "d61f7fdb7c2fb577487da7a5badffa70f485d09be2a05038f6d42ab7b599fdc5",
+      "bytes": 10275
     },
     {
       "path": "shared/ki-zones.mjs",
@@ -356,6 +361,31 @@
       "path": "shared/market-intervals.mjs",
       "sha256": "8d2781e22bed81fa13a361aa1ccd25dafa62364fa1845dfc730893eae502d812",
       "bytes": 2532
+    },
+    {
+      "path": "shared/market-phase-check.mjs",
+      "sha256": "9039fb1253bd9fb275b1fc67085c6d9a9c13346517be4c0aba59c627f0b0781b",
+      "bytes": 4430
+    },
+    {
+      "path": "shared/market-phase-core.mjs",
+      "sha256": "97e183fa7aff924449f972e1ed1d8be4494633d12f582443e13836afa61942fc",
+      "bytes": 6002
+    },
+    {
+      "path": "shared/market-phase-feed.mjs",
+      "sha256": "adaa3e7f519bec04e1c3e9f13fee62ccc23f84a13cd57e970dcddf58af0b6f6f",
+      "bytes": 4869
+    },
+    {
+      "path": "shared/market-phase-view.mjs",
+      "sha256": "f991f3611c135847d884591e52cbd943635683a12b205fba9e2b3af0b149d719",
+      "bytes": 12473
+    },
+    {
+      "path": "shared/market-phase-worker.mjs",
+      "sha256": "bd60a94cc4c373da6d6b82ae13eeb4cedf9c64a49616817557c626519681a25d",
+      "bytes": 433
     },
     {
       "path": "shared/market-radar-core.mjs",
@@ -606,6 +636,56 @@
       "path": "shared/telegram-format.mjs",
       "sha256": "03f4b2740dfbe6c35af10dc80629b648c3752e39fece97ca598aac874bb0f467",
       "bytes": 22759
+    },
+    {
+      "path": "shared/trend-pullback-backtest.mjs",
+      "sha256": "0d19442f0a1eff4a5e366e76f20200cb97a018ea8a00b568e48d7301c5a0768e",
+      "bytes": 4931
+    },
+    {
+      "path": "shared/trend-pullback-chart.mjs",
+      "sha256": "ebcbd677c2d37a8b5c62da2dd4c9b4937bd8e76224cee8a483b2d7b9f152c892",
+      "bytes": 6117
+    },
+    {
+      "path": "shared/trend-pullback-core.mjs",
+      "sha256": "c407dcd1921ab96a3746fee8ef97db6a5677a50a91109b9db5e0f2032eae0fec",
+      "bytes": 16349
+    },
+    {
+      "path": "shared/trend-pullback-delivery.mjs",
+      "sha256": "fff9c3ec80b275aa2cc8636d84b7944b998e01e3451b4080f4d5137dd728f17e",
+      "bytes": 2379
+    },
+    {
+      "path": "shared/trend-pullback-feed.mjs",
+      "sha256": "ce49950c458a7a644647247c919f000701b4c1ae64d5ed01018c412135f281d2",
+      "bytes": 14225
+    },
+    {
+      "path": "shared/trend-pullback-learning.mjs",
+      "sha256": "5b4eaf69bb15366a0f6e2693bf92b99a44120b4dc44e744c27571a234bbb11d1",
+      "bytes": 8651
+    },
+    {
+      "path": "shared/trend-pullback-notices.mjs",
+      "sha256": "18da42a1ce1f3df94c337f9d1ffc7c17f85b711262adc421a43a7504c17fafb2",
+      "bytes": 848
+    },
+    {
+      "path": "shared/trend-pullback-store.mjs",
+      "sha256": "eb962a9dd392f17a5cb51f099d999b3bfe70e7e804b29963c4b9aee7646eec04",
+      "bytes": 4069
+    },
+    {
+      "path": "shared/trend-pullback-view.mjs",
+      "sha256": "7da1224eed613681176d6430dddc76f0cd27d4dddbc32cef626e7f4adfb66524",
+      "bytes": 10661
+    },
+    {
+      "path": "shared/trend-pullback-worker.mjs",
+      "sha256": "c6982481ca2648d168dc3bd67ae6164723e3329501ba03c2639467dd657b9e43",
+      "bytes": 432
     },
     {
       "path": "shared/volume-profile.mjs",

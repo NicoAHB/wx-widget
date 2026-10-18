@@ -1,0 +1,174 @@
+{
+  "app_version": "3.80.0",
+  "service_version": "2.15.1",
+  "build_id": "696df937f47aab46",
+  "pwa_files": 133,
+  "passed": 842,
+  "total": 842,
+  "runs": 24,
+  "tests": [
+    {
+      "test": "unit-trend-pullback",
+      "passed": 39,
+      "total": 39,
+      "exit_code": 0
+    },
+    {
+      "test": "unit-market-phase",
+      "passed": 18,
+      "total": 18,
+      "exit_code": 0
+    },
+    {
+      "test": "unit-analysis",
+      "passed": 35,
+      "total": 35,
+      "exit_code": 0
+    },
+    {
+      "test": "unit-analysis-chart",
+      "passed": 8,
+      "total": 8,
+      "exit_code": 0
+    },
+    {
+      "test": "unit-analysis-status",
+      "passed": 12,
+      "total": 12,
+      "exit_code": 0
+    },
+    {
+      "test": "unit-analysis-overview",
+      "passed": 10,
+      "total": 10,
+      "exit_code": 0
+    },
+    {
+      "test": "unit-ny-open",
+      "passed": 26,
+      "total": 26,
+      "exit_code": 0
+    },
+    {
+      "test": "unit-watch-signal-reasons",
+      "passed": 27,
+      "total": 27,
+      "exit_code": 0
+    },
+    {
+      "test": "unit-rsi-momentum",
+      "passed": 29,
+      "total": 29,
+      "exit_code": 0
+    },
+    {
+      "test": "unit-watch-models",
+      "passed": 60,
+      "total": 60,
+      "exit_code": 0
+    },
+    {
+      "test": "unit-watch-model-feed",
+      "passed": 14,
+      "total": 14,
+      "exit_code": 0
+    },
+    {
+      "test": "unit-pattern-lifecycle",
+      "passed": 210,
+      "total": 210,
+      "exit_code": 0
+    },
+    {
+      "test": "unit-macd-neutral",
+      "passed": 17,
+      "total": 17,
+      "exit_code": 0
+    },
+    {
+      "test": "unit-display-time",
+      "passed": 18,
+      "total": 18,
+      "exit_code": 0
+    },
+    {
+      "test": "unit-release",
+      "passed": 6,
+      "total": 6,
+      "exit_code": 0
+    },
+    {
+      "test": "m129",
+      "browser": "chromium",
+      "passed": 75,
+      "total": 75
+    },
+    {
+      "test": "m129",
+      "browser": "webkit",
+      "passed": 75,
+      "total": 75
+    },
+    {
+      "test": "m130",
+      "browser": "chromium",
+      "passed": 24,
+      "total": 24
+    },
+    {
+      "test": "m130",
+      "browser": "webkit",
+      "passed": 24,
+      "total": 24
+    },
+    {
+      "test": "m131",
+      "browser": "chromium",
+      "passed": 26,
+      "total": 26
+    },
+    {
+      "test": "m131",
+      "browser": "webkit",
+      "passed": 26,
+      "total": 26
+    },
+    {
+      "test": "m132",
+      "browser": "chromium",
+      "passed": 26,
+      "total": 26
+    },
+    {
+      "test": "m132",
+      "browser": "webkit",
+      "passed": 26,
+      "total": 26
+    },
+    {
+      "test": "m128",
+      "browser": "chromium",
+      "passed": 11,
+      "total": 11
+    }
+  ],
+  "lint": {
+    "errors": 0,
+    "existing_warnings": 3
+  },
+  "ohlcv_and_telegram": "local mocks only",
+  "physical_ios_device": false,
+  "private_vm_deployment": false,
+  "checks": [
+    "closed OHLC causality and prefix invariance",
+    "trend/pullback/confirmation risk gates",
+    "historical bootstrap and real module-worker scan",
+    "logistic regression temporal holdout and prior-version retention",
+    "new and old Telegram routing, photo/reply deduplication",
+    "phase invariance across 1m/5m/15m/1h/4h/1d and Heikin-Ashi",
+    "six-month historical phase check across seven coins and reload persistence",
+    "320–1440 px touch targets, popup bounds, reduced motion",
+    "existing Top-Down/NY, RSI, MACD, pattern lifecycle and German exchange/display time",
+    "PWA hashes, import graph and unchanged service source"
+  ]
+}
