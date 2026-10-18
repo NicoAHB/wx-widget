@@ -1,3 +1,4 @@
+import { nyNoticeCurrent } from './ny-open-notices.mjs';
 import { compactAnalysisSignal } from './analysis-chart.mjs';
 import { analysisSignalKey } from './analysis-delivery.mjs';
 
@@ -5,6 +6,7 @@ export const ANALYSIS_NOTICE_KEY = 'scalpdesk.analysis-notices.v1';
 export const ANALYSIS_BLINK_MS = 3 * 60000;
 export function analysisNoticeCurrent(event, result, { now, available = true } = {}) {
   if (!available || event.acknowledged || !Number.isFinite(event.at) || now < event.at || now >= event.until || !result?.ready || now >= result.expiresAt) return false;
+  if (event.analysisId === 'ny-open') return nyNoticeCurrent(event,result,now);
   if (event.type === 'entry') return !!result.signal && event.id === analysisSignalKey(result.signal) + '|entry' && now < result.signal.expiresAt;
   // Ziel-/Stop-Berührungen sind abgeschlossene Ereignisse, keine fortdauernde Long-/Short-Empfehlung.
   return event.at === result.at;

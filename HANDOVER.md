@@ -1,3 +1,12 @@
+## 3.79.0 (Codex): NY Open Killzone als zweite Analyse
+
+- Neuer Konfigurationseintrag, gespeicherte NYSE-/Bias-/Limit-/1R-Schalter; bestehendes Analyse-Menü, Fokus, Vorauswahl und drei Telegram-Freigaben wiederverwendet.
+- `ny-open-time/core/feed/history`: echte New-York-Zeitzone und NYSE-Kalender, geschlossene normale 5m/1m-OHLC, ATR/FVG aus vorhandenen Bausteinen, 4h-Bias unverändert aus Top-Down. Tages-Signal bleibt fest, atomarer Foto-Duplikatschutz pro Coin/NY-Tag.
+- `ny-open-chart/view/notices`: Range bis in freien rechten Chartbereich, FVG und Handelsmarken, Live-Abstand, Info, kurze begründete Hinweise; Ausschalten stellt vorherige Indikatoren wieder her. Keine Änderungen an Live-Preis, persönlichem Risiko oder Trades.
+- Bestehende `analysisCard` und `chanSendCard` um NY-Variante ergänzt; eigener Testknopf im fünften Analyse-Bereich. Vier bisherige Ziele/Token unverändert. Keine echten Testnachrichten gesendet.
+- Lokales IndexedDB-Protokoll und begrenzter Historiencache; abrufbegrenzter 60-Tage-Backtest auf dynamischer Vorauswahl. Gleiche Signale/Kosten für festen Stop vs. Stop auf Einstieg ab 1R; keine automatische Gewinnerwahl. Datenlücken und nach 2h offene Fälle sind keine abgeschlossenen Trades.
+- App/SW 3.79.0; alte Bündel unverändert, Dienstquelle 2.15.1 und keine VM-Bereitstellung. Versand weiterhin aus aktiver App. [Fünf Umsetzungsschritte, Dateien und Tests](docs/NY-OPEN-KILLZONE-3.79.0.md).
+
 ## 3.78.2 (Codex): konkrete 4h-Diagnose und korrekte Stufenzuordnung
 
 - Nutzerfrage: „1h wartet“ bei neutralen Coins und Sammelbegründung „Struktur/Trend/EMA 200 stimmen nicht überein“ waren nicht nachvollziehbar. Analyse-Menü und Chart-Info verwenden jetzt dieselbe Diagnose aus `shared/analysis-status.mjs`.

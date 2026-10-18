@@ -22,7 +22,7 @@ export function createMusterClient({ fetcher = fetch, sleep = wait } = {}) {
     throw problem || new Error('Kerzen nicht erreichbar');
   }
   async function history({ symbol, market, timeframe, from, to, signal, progress = () => {} }) {
-    if (!/^[A-Z0-9]{2,20}USDT$/.test(symbol) || !['spot', 'futures'].includes(market) || !['5m', '15m', '1h', '4h'].includes(timeframe) || !Number.isSafeInteger(from) || !Number.isSafeInteger(to) || from >= to) throw new Error('Historienauswahl ungültig');
+    if (!/^[A-Z0-9]{2,20}USDT$/.test(symbol) || !['spot', 'futures'].includes(market) || !['1m', '5m', '15m', '1h', '4h'].includes(timeframe) || !Number.isSafeInteger(from) || !Number.isSafeInteger(to) || from >= to) throw new Error('Historienauswahl ungültig');
     const ms = INTERVAL_MS[timeframe]; let cursor = Math.max(0, Math.floor(from / ms) * ms), calls = 0, liveOpen = null; const collected = [];
     while (cursor < to) {
       abort(signal); if (++calls > 300) throw new Error('Historie zu groß – kürzeren Zeitraum wählen');
