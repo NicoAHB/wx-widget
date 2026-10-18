@@ -1,6 +1,6 @@
 // G13: nur vollständig geladene/geprüfte Modulbündel aktivieren. Nutzerdaten nie löschen.
-const VERSION = '3.77.8';
-const BUILD_ID = '2d7f689cc7957736';
+const VERSION = '3.78.0';
+const BUILD_ID = '88ecc23672b33aa0';
 const CACHE = 'scalpdesk-' + VERSION + '-' + BUILD_ID;
 const scope = self.registration.scope;
 const absolute = path => new URL(path, scope).href;
@@ -15,7 +15,7 @@ self.addEventListener('install', event => {
     const response = await fetch(absolute('bundles/' + VERSION + '/manifest.json'), { cache: 'no-store' });
     if (!response.ok) throw new Error('Lieferliste fehlt'); const text = await response.text();
     if ((await sha(new TextEncoder().encode(text))).slice(0, 16) !== BUILD_ID) throw new Error('Lieferliste widerspricht Service Worker');
-    const manifest = JSON.parse(text); if (manifest.version !== VERSION || manifest.files.length > 100) throw new Error('Lieferstand ungültig');
+    const manifest = JSON.parse(text); if (manifest.version !== VERSION || manifest.files.length > 160) throw new Error('Lieferstand ungültig'); // 3.78.0: 106 gemeinsame PWA-Module/Assets
     const downloaded = await Promise.all(manifest.files.map(async file => {
       const url = absolute(file.path); if (!url.startsWith(scope)) throw new Error('Fremde Lieferdatei');
       const r = await fetch(url, { cache: 'no-store' }); if (!r.ok) throw new Error('Lieferdatei fehlt: ' + file.path);
