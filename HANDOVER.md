@@ -1,3 +1,10 @@
+## 3.79.1 (Codex): kompakte Modellübersicht mit klappbaren Coins
+
+- Modellname klappt ausschließlich die Coin-Liste auf/zu; Pfeil und `aria-expanded` zeigen den Zustand. Separater Coins-Knopf entfällt, Anzahl bleibt als kleine Info. NY-Werkzeuge liegen ebenfalls im klappbaren Modellbereich.
+- Chart-Fokus weiterhin über „Im Chart anzeigen“ oder Coin-Namen, Ausschalten stellt vorherige Indikatoren wieder her. Reines Auf-/Zuklappen verändert weder Fokus noch Telegram-Freigaben und berechnet keine andere Strategie.
+- Analyse-Präferenzformat 2 schließt die bisherigen standardmäßig offenen Listen einmalig; danach werden bewusste Klappzustände gespeichert. Coin-/Telegram-Schalter, Fokus, Basis und NY-Optionen bleiben erhalten.
+- Änderungen nur `analysis-config.mjs`, `analysis-view.mjs`, zugehörige App-Styles und Release-Verweise; native Bedien-/Persistenztests angepasst. App/SW 3.79.1, Dienst unverändert 2.15.1.
+
 ## 3.79.0 (Codex): NY Open Killzone als zweite Analyse
 
 - Neuer Konfigurationseintrag, gespeicherte NYSE-/Bias-/Limit-/1R-Schalter; bestehendes Analyse-Menü, Fokus, Vorauswahl und drei Telegram-Freigaben wiederverwendet.
