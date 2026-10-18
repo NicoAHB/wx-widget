@@ -1,5 +1,7 @@
 # Analyse · Top-Down (3.78.0)
 
+Ab 3.78.1 gilt die [vereinheitlichte Chart-Aktivierung mit Coin-Navigation](ANALYSE-CHART-3.78.1.md): Name und Haken sind exklusiv; die unten beschriebene additive Anzeige wurde ersetzt.
+
 Im Chart unter „Chart-Ebenen, Whales & Werkzeuge“, direkt über dem Marktradar. Der Bereich und die Coin-Liste sind auf-/zuklappbar. Standard: Telegram und zusätzliche Chart-Anzeige aus; alle Vorauswahl-Coins sind freigegeben.
 
 ## Die vier Umsetzungsschritte

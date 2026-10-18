@@ -1,3 +1,4 @@
+import { compactAnalysisSignal } from './analysis-chart.mjs';
 import { analysisSignalKey } from './analysis-delivery.mjs';
 
 export const ANALYSIS_NOTICE_KEY = 'scalpdesk.analysis-notices.v1';
@@ -13,7 +14,7 @@ export function analysisNoticeState(value = {}) {
 }
 export function observeAnalysis(state, { signal = null, symbol, market, rows = [], now }) {
   const next = analysisNoticeState(state); let changed = false;
-  const add = (s, type, at, tone, reason) => { const id = analysisSignalKey(s) + '|' + type; if (next.events.some(e => e.id === id)) return; next.events.push({ id, analysisId: s.analysisId, symbol: s.symbol, market: s.market, type, at, tone, reason, until: now + ANALYSIS_BLINK_MS, acknowledged: false }); changed = true; };
+  const add = (s, type, at, tone, reason) => { const id = analysisSignalKey(s) + '|' + type; if (next.events.some(e => e.id === id)) return; next.events.push({ id, analysisId: s.analysisId, symbol: s.symbol, market: s.market, type, at, tone, reason, signal: compactAnalysisSignal(s), until: now + ANALYSIS_BLINK_MS, acknowledged: false }); changed = true; };
   if (signal && signal.at <= now && now < signal.expiresAt) {
     const key = analysisSignalKey(signal);
     if (!next.seen.includes(key)) {
