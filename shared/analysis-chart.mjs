@@ -1,4 +1,5 @@
 // 3.78.1: reine Darstellung vorhandener Analyse-Ergebnisse. Keine neue Signal- oder Handelslogik.
+import { topDownStatus, topDownStatusText } from './analysis-status.mjs';
 import { analysisSignalKey } from './analysis-delivery.mjs';
 const QUARTER = 900000;
 export function compactAnalysisSignal(s) {
@@ -26,14 +27,14 @@ export function analysisChartModel({ result, ledger = {}, symbol, market, id, no
     if (zones.some(a => Math.max(a.low, z.low) <= Math.min(a.high, z.high))) continue;
     zones.push(z); if (zones.length === 2) break;
   }
-  return { ready, direction: ready ? r.direction : 0, stage: ready ? r.stage : 0,
+  return { result: r, ready, direction: ready ? r.direction : 0, stage: ready ? r.stage : 0,
     reason: r.reason || 'Analyse-Daten werden geladen.', zones, signal, events: history,
     current: ready && r.signal === signal, exit, trend: ready ? r.trend : {}, bias: r.bias };
 }
 
-export function analysisChartExplanation(model, price, number) {
+export function analysisChartExplanation(model, price, number, time) {
   const { signal: s } = model, dir = model.direction === 1 ? 'Long' : model.direction === -1 ? 'Short' : 'neutral';
-  let text = `Top-Down · ${model.ready ? model.stage + '/3 Stufen · 4h-Bias ' + dir : 'Daten nicht aktuell'}. ${model.reason}`;
+  let text = model.ready && model.result ? 'Top-Down · ' + topDownStatusText(topDownStatus(model.result, { price, number, time }), false) : `Top-Down · ${model.ready ? model.stage + '/3 Stufen · 4h-Bias ' + dir : 'Daten nicht aktuell'}. ${model.reason}`;
   text += ' Nur normale, geschlossene Kerzen. 4h: Struktur, Trend und EMA 200. 1h: mindestens zwei Bausteinarten in derselben Zone. 15m: Umkehr und anschließender Schlussbruch.';
   if (s) text += ` ${model.current ? 'Bestätigter Einstieg' : 'Zuletzt bestätigtes Signal (Historie)'} ${s.direction === 1 ? 'Long' : 'Short'} ${price(s.entry)} · Stop ${price(s.stop)} · Ziel 1 ${price(s.target1)} · Ziel 2 ${price(s.target2)} · CRV ${number(s.rr, 2)} / ${number(s.rr2, 2)}. Auslöser: ${(s.reversal?.reasons || []).join(' + ')} und Schluss ${s.direction === 1 ? 'über' : 'unter'} ${price(s.confirmationLevel)}. ${model.exit?.reason || 'Stop-/Zielmarken sind Hinweise, keine ausgeführten Orders.'}`;
   return text;

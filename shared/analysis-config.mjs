@@ -1,5 +1,6 @@
 // Analyse-Katalog: neue Analysen ausschließlich hier per Code registrieren.
 import { evaluateTopDown } from './analysis-top-down.mjs';
+import { describeTopDown, topDownStatus } from './analysis-status.mjs';
 
 export const ANALYSIS_KEY = 'scalpdesk.analysis.v1';
 export const ANALYSIS_LOG_KEY = 'scalpdesk.analysis-log.v1';
@@ -8,10 +9,7 @@ export const ANALYSES = Object.freeze([
     indicators: Object.freeze(['ema200', 'macd']),
     intervals: Object.freeze(['4h', '1h', '15m']), evaluate: evaluateTopDown,
     description: '4h: Struktur + Trend + EMA 200. 1h: mindestens zwei unterschiedliche Bausteine in einer Zone. 15m: Umkehr und danach ein bestätigender Strukturschluss.',
-    describe: (r, { price, number }) => {
-      const s = r.signal, zone = s?.zone || r.zones?.[0], direction = r.bias?.direction === 1 ? 'Long' : r.bias?.direction === -1 ? 'Short' : 'neutral';
-      return `${r.stage}/3 Stufen\n${r.stage >= 1 ? '✓' : '○'} 4h Bias: ${direction}\n${r.stage >= 2 ? '✓' : '○'} 1h Setup${zone ? ': ' + zone.labels.join(' + ') + ' · ' + price(zone.low) + '–' + price(zone.high) : ': wartet'}\n${r.stage >= 3 ? '✓' : '○'} 15m: ${r.reason}${s ? '\nEinstieg ' + price(s.entry) + ' · Stop ' + price(s.stop) + '\nZiel 1 ' + price(s.target1) + ' · Ziel 2 ' + price(s.target2) + ' · CRV ' + number(s.rr, 2) + ' / ' + number(s.rr2, 2) : ''}`;
-    } })
+    describe: describeTopDown, status: topDownStatus })
 ]);
 
 export function analysisSettings(value = {}, definitions = ANALYSES) {

@@ -1,6 +1,6 @@
 {
   "version": "2.15.1",
-  "appVersion": "3.78.1",
+  "appVersion": "3.78.2",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
@@ -124,13 +124,13 @@
     },
     {
       "path": "shared/analysis-chart.mjs",
-      "sha256": "158322a64953d5d1c0bb1a8e5fdb157fb3c8fbcab6c4e4f3b42044812543043d",
-      "bytes": 12874
+      "sha256": "c053f5cad69588c514e8a99a89eb1278cd3a9a7f3c72d5a4a18e6e851865c7c6",
+      "bytes": 13093
     },
     {
       "path": "shared/analysis-config.mjs",
-      "sha256": "83631bd0509355f091445ebe1a5b2ddf278c2c0a11d695f79d53042c59456aed",
-      "bytes": 3296
+      "sha256": "5890742e5a68f5ac32cc387f12c800467d22e680bddafa9552b48190c32b04d2",
+      "bytes": 2732
     },
     {
       "path": "shared/analysis-delivery.mjs",
@@ -148,14 +148,19 @@
       "bytes": 4010
     },
     {
+      "path": "shared/analysis-status.mjs",
+      "sha256": "5b170d63799b3ae9d0ba5f4b114ef1d1cc0a98bc7f4aca5abc2c8ea2a2129c72",
+      "bytes": 7507
+    },
+    {
       "path": "shared/analysis-top-down.mjs",
-      "sha256": "2dc37c91e5ad05e65e9bf701eaa1114d7cee846b4173863cec52a99b7038a611",
-      "bytes": 16365
+      "sha256": "ee02e461db85dcb7ec1cc69784d54798241ef282919d3dbd7700911081b409c9",
+      "bytes": 16656
     },
     {
       "path": "shared/analysis-view.mjs",
-      "sha256": "9a902f8dccde8c63bbd2762dbf8494206e6468e0978505591af344a5ae771bf9",
-      "bytes": 11643
+      "sha256": "d74432f75e11c9660aaeec39c17c590cf8ed332eae88987355ab17f6252a89e5",
+      "bytes": 14354
     },
     {
       "path": "shared/bitget-patterns.mjs",

@@ -30,7 +30,9 @@ export function topDownBias(rows, values = series(rows, INTERVAL_MS['4h'])) {
   const structure = highs.length === 2 && lows.length === 2 ? highs[1].price > highs[0].price && lows[1].price > lows[0].price ? 1 : highs[1].price < highs[0].price && lows[1].price < lows[0].price ? -1 : 0 : 0;
   const trend = v.ema50 > v.ema200 && v.ema50 > before.ema50 && v.ema200 > before.ema200 && last.close > v.ema200 ? 1 : v.ema50 < v.ema200 && v.ema50 < before.ema50 && v.ema200 < before.ema200 && last.close < v.ema200 ? -1 : 0;
   const direction = structure === trend ? trend : 0;
+  // 3.78.2: ausschließlich Diagnosewerte; Richtung und sämtliche Signalbedingungen bleiben unverändert.
   return { direction, structure, trend, ema200: v.ema200, ema50: v.ema50, highs, lows, at: last.end,
+    diagnostics: { close: last.close, ema50Before: before.ema50, ema200Before: before.ema200, slopeBars: TOP_DOWN.trendSlopeBars },
     reason: direction ? `${direction === 1 ? 'Höhere Hochs/Tiefs' : 'Tiefere Hochs/Tiefs'} und Trend/EMA 200 stimmen überein.` : '4h-Struktur, Trend und EMA 200 stimmen nicht vollständig überein.' };
 }
 
@@ -171,5 +173,6 @@ export function evaluateTopDown({ candles, now, symbol, market = 'spot' }) {
   const higherPivots = confirmedPivots(higher, higher.at(-1).end, INTERVAL_MS['4h']).slice(-24).map(p => ({ ...p, label: '4h-Strukturlevel' }));
   const signal = confirmTopDownEntry({ rows: base, values: lowerValues, zones: touched, components: setup.components, levels: [...setup.levels, ...higherPivots], direction: bias.direction, symbol, market });
   return { ...common, trend, stage: signal ? 3 : touched.length ? 2 : 1, signal, zones, contextZones, components: setup.components,
+    setupZone: signal?.zone || touched[0] || null,
     reason: signal ? '15m-Umkehr und Schlussbruch bestätigt.' : touched.length ? '1h-Konfluenzzone berührt; 15m-Umkehr und Schlussbruch abwarten.' : '4h-Bias aktiv; Eintritt in eine 1h-Zone mit mindestens zwei Bausteinarten abwarten.' };
 }
