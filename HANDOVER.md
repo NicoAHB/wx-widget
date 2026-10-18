@@ -1,3 +1,12 @@
+## 3.79.2 (Codex): Analyse als kompakte Modellkarten
+
+- Modellwahl und Auswertungsstatus zusammengeführt: je Modell nur eine Karte mit Coin, Richtung, Stufenzähler, kompaktem Fortschritt und aktuellem Wartegrund. Top-Down unterscheidet Bias und bestätigten Einstieg; Neutral nennt den konkreten 4h-Widerspruch. Bestätigte Handelsmarken bleiben direkt sichtbar.
+- „ⓘ Prüfung & Erklärung“ öffnet sämtliche bisherigen Stufen, Einzelprüfungen und Erklärungen. Coins öffnen weiterhin ausschließlich über den Modellnamen; Prüfungen und Coin-Liste lassen sich unabhängig bedienen. Klappzustände bleiben bei Ergebnis-Updates erhalten; unveränderte Karten werden nicht neu aufgebaut.
+- NY-Wochenende/NYSE-Schließtag zeigt eine ruhige Inaktivitätszeile. Offene/abgeschlossene NY-Beobachtungen behalten ihren tatsächlichen Status. Datenfehler bleiben sichtbar, ohne alte Signalpreise weiterzuzeigen.
+- Chart-Fokus nur durch mintfarbenen Kartenrand markiert, keine irreführend grüne Gesamtfläche bei Short. Sichtbare Rückkehrleiste samt Button entfernt wie gewünscht; bestehendes Ausschalten des Chart-Hakens, automatische Indikator-Rückkehr, Coin-Navigation und Telegram-Freigaben unverändert.
+- **295/295 Prüfungen in 10 erfolgreichen Läufen**: neue Übersicht und unveränderte Analyse-/NY-/Chartlogik; Chromium/WebKit je 75 + 24 native Tests mit 320–1440px, Touch, unabhängigen Aufklappern, Persistenz, Chart, Telegram-Gates und allen alten Zugangsdaten. Lint 0 Fehler / 3 bestehende Warnungen. Ausschließlich lokale Börsen-/Telegram-Mocks, keine physischen iOS-Geräte. Mock-Kerzen des Hauptcharts laufen mit der Testuhr weiter, damit längere WebKit-Läufe den Schutz gegen veraltete Daten nicht unbeabsichtigt auslösen.
+- Neue reine Präsentationsfunktion `analysis-overview.mjs`, Anpassungen an `analysis-view.mjs` und Analyse-Styles/-Aufruf der App. Keine Änderungen an Strategien, Börsenabrufen, Chart-Zeichnung oder Telegram-Versand. App/SW 3.79.2, Dienst unverändert 2.15.1. [Bedienung und Gerätetest](docs/ANALYSE-KARTEN-3.79.2.md).
+
 ## 3.79.1 (Codex): kompakte Modellübersicht mit klappbaren Coins
 
 - Modellname klappt ausschließlich die Coin-Liste auf/zu; Pfeil und `aria-expanded` zeigen den Zustand. Separater Coins-Knopf entfällt, Anzahl bleibt als kleine Info. NY-Werkzeuge liegen ebenfalls im klappbaren Modellbereich.
