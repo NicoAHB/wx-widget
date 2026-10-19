@@ -25,7 +25,8 @@ export function createNyRuntime({context,now,changed,signal,log,history,read=()=
     return{...base,phase:!s.eligible?'closed-day':now()<s.rangeEnd?'before':'closed',reason:!s.eligible?s.reason:now()<s.rangeEnd?'Nächste Range: 09:30–09:35 New York.':r?.day===s.day?'Signalfenster beendet; die heutige Range bleibt sichtbar.':'Keine heutige Range gespeichert; Abrufe und neue Signale nur 09:35–10:30 New York.'};
   }
   function save(r){const j=nyJournal(read(NY_JOURNAL_KEY)),key=nyRecordKey(r.symbol,r.day),existing=j.records[key];if(existing?.signal&&r.market!==existing.market)return;if(existing?.signal&&r.signal?.at!==existing.signal.at)r={...r,signal:existing.signal,outcome:existing.outcome};j.records[key]=r;const cutoff=now()-NY_OPEN.journalDays*86400000;for(const [k,v]of Object.entries(j.records))if(v.range.end<cutoff)delete j.records[k];write(NY_JOURNAL_KEY,j);}
-  async function send(e,s){if(!s||now()<s.at||now()>=s.expiresAt)return;const key=nyRecordKey(s.symbol,s.nyDay);if(e.attempted.has(key))return;if(await signal(s)!==false)e.attempted.add(key);}
+  // 3.82.2: schon während des Versands als versucht markieren (der Tick wartet nicht mehr darauf); bei false oder Fehler wieder frei
+  async function send(e,s){if(!s||now()<s.at||now()>=s.expiresAt)return;const key=nyRecordKey(s.symbol,s.nyDay);if(e.attempted.has(key))return;e.attempted.add(key);let ok=false;try{ok=await signal(s)!==false;}finally{if(!ok)e.attempted.delete(key);}}
   async function tick(){
     if(!sync()||state.busy||!history)return;const e=[...state.entries.values()].filter(e=>now()>=e.next).sort((a,b)=>a.next-b.next)[0];if(!e)return;
     const gen=generation,at=now(),cfg=options(),session=nySession(at,cfg),old=record(e);e.next=Math.floor(at/MINUTE)*MINUTE+MINUTE+2500;
@@ -48,7 +49,8 @@ export function createNyRuntime({context,now,changed,signal,log,history,read=()=
         const existing=old?.day===session.day?old:null,r=evaluateNyOpen({candles:e.rows,now:at,symbol:e.symbol,market:e.market,options:cfg,record:existing});state.evaluations++;e.result=r;
         if(r.signal&&learning)r.signal=learning.capture(r.signal);
         if(r.range){const saved=nyRecord(r,existing||{},e.rows['1m'],at);save(saved);if(saved.signal)learning?.observeNy(saved.signal,e.rows['1m'],at);e.result.record=saved;}
-        if(r.signal)await send(e,r.signal);
+        // 3.82.2: nicht abwarten – ein Signal gilt nur 60 s; ein langsamer Telegram-Versand hielt sonst alle anderen Coins auf
+        if(r.signal)void send(e,r.signal).catch(error=>log({kind:'error',symbol:e.symbol,text:`${e.symbol} · NY Open: Versand fehlgeschlagen – ${error?.message||error}`}));
       }
       for(const current of outstanding(e)){
         checkedRecord=current;
@@ -61,7 +63,8 @@ export function createNyRuntime({context,now,changed,signal,log,history,read=()=
       }
       e.error='';e.failures=0;
     }catch(error){if(!abort.aborted&&gen===generation){
-      e.error=error.message||'NY-Kerzen fehlen.';e.failures=(e.failures||0)+1;e.next=now()+Math.min(NY_OPEN.retryMaxMs,MINUTE*2**Math.min(e.failures-1,3));
+      // 3.82.2: im Signalfenster nach 5/10/15 s erneut (ein Signal gilt nur 60 s) – sonst wie bisher ab 1 Minute aufsteigend
+      e.error=error.message||'NY-Kerzen fehlen.';e.failures=(e.failures||0)+1;e.next=now()+(form?Math.min(15000,5000*e.failures):Math.min(NY_OPEN.retryMaxMs,MINUTE*2**Math.min(e.failures-1,3)));
       const current=checkedRecord,s=current?.signal;
       if(s&&now()>=s.at+(NY_OPEN.holdMinutes+(s.entryMode==='limit'?NY_OPEN.limitMinutes:0))*MINUTE){const retries=(current.outcome?.retries||0)+1;save({...current,updatedAt:now(),outcome:{...current.outcome,status:'data-gap',retries,final:retries>=NY_OPEN.outcomeRetries,reason:'Ergebnisdaten unvollständig; kein Ziel-/Stop-Treffer behauptet.'}});}
       log({kind:'error',symbol:e.symbol,text:`${e.symbol} · NY Open: ${e.error} Coin übersprungen.`});
