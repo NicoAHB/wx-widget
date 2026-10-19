@@ -1,0 +1,58 @@
+{
+  "appVersion": "3.82.1",
+  "serviceSourceVersion": "2.15.3",
+  "date": "2026-10-19",
+  "checks": [
+    {
+      "name": "unit-analysis",
+      "passed": 35,
+      "total": 35
+    },
+    {
+      "name": "unit-analysis-overview",
+      "passed": 10,
+      "total": 10
+    },
+    {
+      "name": "unit-release",
+      "passed": 6,
+      "total": 6
+    },
+    {
+      "name": "m135-chromium",
+      "passed": 36,
+      "total": 36
+    },
+    {
+      "name": "m135-webkit",
+      "passed": 36,
+      "total": 36
+    },
+    {
+      "name": "m129",
+      "passed": 75,
+      "total": 75
+    },
+    {
+      "name": "m69",
+      "passed": 8,
+      "total": 8
+    }
+  ],
+  "passed": 206,
+  "total": 206,
+  "lint": {
+    "errors": 0,
+    "knownAppWarnings": 3,
+    "sharedWarnings": 0
+  },
+  "pwaFiles": 148,
+  "installerFiles": 160,
+  "realTelegramMessagesSent": false,
+  "privateOracleUpdated": false,
+  "notes": [
+    "Native Chromium-/WebKit-Prüfungen mit kontrollierten Börsen-/Telegram-Attrappen; keine physischen iOS-Geräte.",
+    "Kompakter Modellkopf unter 100px, eine klappbare Coin-Liste, feste BTC-Vergleiche über sechs Chart-Zeitrahmen und Heikin-Ashi sowie alter Chart-Fokus/Telegram geprüft.",
+    "PWA-Update, Modulgraph, Datenerhalt und Offline-Appstart geprüft. Ein WebKit-Durchlauf hatte zunächst einen Timeout beim Chartladen; diagnostischer Wiederholungslauf vollständig bestanden."
+  ]
+}

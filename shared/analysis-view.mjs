@@ -31,6 +31,7 @@ export function createAnalysisView({ root, definitions = ANALYSES, read, save, g
 
   for (const d of definitions) {
     const row = make(doc, 'div', 'analysis-row'); row.dataset.analysis = d.id; row.setAttribute('role', 'row');
+    if (d.information) row.classList.add('analysis-compact');
     const nameCell = make(doc, 'div', 'analysis-name'), name = button(d.name, 'analysis-focus'), sub = d.focusOnName?button('', 'analysis-coin-count analysis-coins-button'):make(doc, 'small', 'analysis-coin-count');
     // Modellname klappt nur die Details; Chart-Fokus bleibt am Haken und am Coin-Namen.
     const toggleCoins=()=>{settings.rows[d.id].coinsOpen=!settings.rows[d.id].coinsOpen;commit();paint();};
@@ -45,7 +46,7 @@ export function createAnalysisView({ root, definitions = ANALYSES, read, save, g
     const notice = make(doc, 'div', 'analysis-notice'); notice.hidden = true;
     const reason = make(doc, 'span'), acknowledge = button('Gelesen', 'chip-tool'); notice.append(reason, acknowledge);
     acknowledge.addEventListener('click', () => acknowledgeNotice(d.id)); name.addEventListener('click', () => acknowledgeNotice(d.id));
-    const status = make(doc, 'div', 'analysis-status'); status.setAttribute('role', 'cell');
+    const status = make(doc, 'div', 'analysis-status'); status.setAttribute('role', 'cell'); status.hidden = !!d.information;
     row.append(nameCell, toggle, chartCell, notice, status, details); table.append(row); rows.set(d.id, { row, name, sub, telegram, onText, chart, details, notice, reason, coinList, status, statusKey: null, coinKey: null });
     if (d.tools) rows.get(d.id).tools = d.tools({root:details,getOptions:()=>settings.rows[d.id].options,setOptions:value=>{settings.rows[d.id].options=d.normalizeOptions(value);commit();},services:toolServices});
     if(d.learning){const actions=make(doc,'div','analysis-model-actions'),learn=button('ⓘ Lernstand','chip-tool');learn.addEventListener('click',()=>rows.get(d.id).tools.openLearning());actions.append(learn);details.before(actions);if(d.id==='trend-pullback'){const count=make(doc,'span','analysis-signal-count');count.hidden=true;nameCell.append(count);rows.get(d.id).signalCount=count;}}
@@ -75,7 +76,21 @@ export function createAnalysisView({ root, definitions = ANALYSES, read, save, g
         checkbox.addEventListener('change', () => { settings.rows[d.id].coins[symbol] = checkbox.checked; commit(); paint(); });
       }
     }
-    for (const choice of row.coinList.children) { const symbol = choice.dataset.coin, on = settings.rows[d.id].coins[symbol] !== false, name = choice.querySelector('.analysis-inline-coin'); if (symbol === selectedCoin()) name.setAttribute('aria-current', 'true'); else name.removeAttribute('aria-current'); choice.querySelector('input').checked = on; choice.querySelector('label span').textContent = on ? 'An' : 'Aus'; choice.querySelector('small').textContent = d.information?(on?'In der Auswahlhilfe':'Aus Auswahlhilfe ausgeblendet'):settings.globalCoins[symbol] === false ? 'Global stumm' : !settings.rows[d.id].telegram ? 'Analyse-Telegram aus' : on ? 'Telegram freigegeben' : 'Telegram stumm'; }
+    const ranking = new Map((row.ranking || []).map(item => [item.symbol, item]));
+    for (const choice of row.coinList.children) {
+      const symbol = choice.dataset.coin, on = settings.rows[d.id].coins[symbol] !== false, name = choice.querySelector('.analysis-inline-coin');
+      if (symbol === selectedCoin()) name.setAttribute('aria-current', 'true'); else name.removeAttribute('aria-current');
+      choice.querySelector('input').checked = on; choice.querySelector('label span').textContent = on ? 'An' : 'Aus';
+      const item = ranking.get(symbol);
+      choice.querySelector('small').textContent = d.information
+        ? !on ? 'Aus Auswahlhilfe ausgeblendet' : item ? `${item.rank}. · 4h ${item.changes[1].toLocaleString('de-DE', { maximumFractionDigits: 2 })} % zu BTC${item.stretched ? ' · weit gelaufen' : ''}` : '– · BTC-Vergleich wird geladen'
+        : settings.globalCoins[symbol] === false ? 'Global stumm' : !settings.rows[d.id].telegram ? 'Analyse-Telegram aus' : on ? 'Telegram freigegeben' : 'Telegram stumm';
+      if (d.information) name.textContent = symbol.replace(/USDT$/, '/USDT');
+    }
+    if (d.information) {
+      const ordered = [...row.coinList.children].sort((a, b) => (ranking.get(a.dataset.coin)?.rank ?? Infinity) - (ranking.get(b.dataset.coin)?.rank ?? Infinity) || symbols.indexOf(a.dataset.coin) - symbols.indexOf(b.dataset.coin));
+      ordered.forEach((choice, i) => { if (row.coinList.children[i] !== choice) row.coinList.insertBefore(choice, row.coinList.children[i] || null); });
+    }
   }
   function reload() {
     const previous = settings; settings = analysisSettings(read(), definitions);
@@ -96,6 +111,12 @@ export function createAnalysisView({ root, definitions = ANALYSES, read, save, g
   }
   // Jede Modellkarte aktualisiert sich unabhängig; aufgeklappte Prüfungen bleiben offen.
   function paintCard(target, card) {
+    // Auswahlhilfe: nur Modellkopf und eine klappbare Coin-/Rangliste, kein Signalstatus.
+    if (target.row.classList.contains('analysis-compact')) {
+      target.ranking = card.ranking || card.detail?.ranking || [];
+      paintCoins(definitions.find(d => d.id === card.id), target);
+      return;
+    }
     const key = JSON.stringify(card); if (target.statusKey === key) return; target.statusKey = key;
     const status = target.status, detail = card.detail, overview = analysisOverview(card);
     const folds = new Map([...status.querySelectorAll('details[data-status-fold]')].map(d => [d.dataset.statusFold, d.open]));
@@ -146,7 +167,6 @@ export function createAnalysisView({ root, definitions = ANALYSES, read, save, g
         box.append(row);
       }
 
-      if(detail.ranking){const ranking=make(doc,'ol','analysis-ranking');for(const item of detail.ranking){const li=make(doc,'li'),coin=button(item.symbol.replace('USDT','/USDT'),'analysis-inline-coin');coin.addEventListener('click',()=>{activate(card.id);openCoin(item.symbol,card.id);});const value=item.changes[1].toLocaleString('de-DE',{maximumFractionDigits:2});li.append(coin,make(doc,'span','',`${item.rank}. · 4h ${value} % zu BTC${item.stretched?' · weit gelaufen':''}`));ranking.append(li);}inspection.append(ranking);}
       status.append(inspection);
     }
     // Auch bei einer tatsächlich neuen geschlossenen Kerze den Tastaturfokus erhalten.

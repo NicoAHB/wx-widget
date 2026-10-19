@@ -1,6 +1,6 @@
 {
   "version": "2.15.3",
-  "appVersion": "3.82.0",
+  "appVersion": "3.82.1",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
@@ -204,8 +204,8 @@
     },
     {
       "path": "shared/analysis-view.mjs",
-      "sha256": "fd484ea3ea0e84a44eabe156e41618d653a95e96b5d07fd634788786736af1c9",
-      "bytes": 20988
+      "sha256": "c3688b1c05ff9219b0984a614f8af5c344f4c130bdaed6ff7cdb44332c1874a0",
+      "bytes": 21697
     },
     {
       "path": "shared/bitget-patterns.mjs",
