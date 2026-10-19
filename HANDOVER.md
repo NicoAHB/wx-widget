@@ -1,3 +1,24 @@
+## 3.83.0 / Dienst 2.15.4 (Claude): Prüfautomatik, zentrale Speicherschlüssel, einheitliche Trading-Logik, Leistung
+
+- Ausführlich: [docs/3.83.0-AENDERUNGEN.md](docs/3.83.0-AENDERUNGEN.md). Regeln für alle KI-Assistenten: [AGENTS.md](AGENTS.md).
+- **Automatische Prüfung:** bei jedem PR und auf `main` Lint, `build-release --check` und alle Einheitentests (`.github/workflows/ci.yml`);
+  jede Nacht 01:17 UTC der Gesamtlauf `run-all.sh` (`nachtlauf.yml`, Protokoll als Artefakt).
+- **Speicherschlüssel:** eine zentrale Liste `STORE_KEYS` (b/s/g/o), alle bisherigen Listen entstehen daraus. Marktradar und
+  BTC-Puls-Sperre werden zwischen Tabs abgeglichen. `store.set` meldet nur „geändert“; der Speichererfolg ist `store.ok`.
+- **Trading-Logik (Lernstände beginnen neu, vom Nutzer freigegeben):**
+  - ZigZag-Prognose zählt RSI wie die Signal-Übersicht (Regel 2), neuer Startbestand Version 2 (`tools/zzp-start.mjs`,
+    Workflow `startbestand.yml`);
+  - MACD bestätigt nur endgültig geschlossene Kerzen;
+  - NY Open wertet 2-h-Trades zum Schlusskurs, NY-Lernen `learn-2` mit New-York-Zeit.
+- **Leistung:**
+  - Analyse-Runde bei vollem Speicher ~155 ms → ~6 ms je Sekunde (Verzeichnis je Stand in Strategie- und Rücksetzer-Feed, `m137`);
+  - GitHub-Datei ohne doppelte Lernstände;
+  - schlanke Einträge im Phasenprotokoll.
+- **Repo:** alte Bündel aufgeräumt (69 → 13 Versionen, 73 → 18 MB) mit `tools/prune-bundles.mjs` – ab jetzt Teil jedes Releases.
+- Bewusst nicht: Sicherungen kürzen (Speicher sind schon begrenzt), `shared/` formatieren (Quelltext-Vergleichstests, Konfliktrisiko),
+  Kleinstmodule zusammenlegen (meist Worker-Einstiegspunkte).
+- App/SW **3.83.0**, Dienst unverändert **2.15.4** (kein neuer Installer-Lauf nötig).
+
 ## 3.82.2 / Dienst 2.15.4 (Claude): Prüfung des ChatGPT-Stands, Fehlerbehebungen
 
 - Code-Prüfung von 3.71.0 → 3.82.1 (App-Diff, alle neuen `shared/`-Module, Dienst). Jeder Befund ist mit einem Test belegt, der mit dem alten Code fehlschlägt. Ausführlich: [docs/3.82.2-AENDERUNGEN.md](docs/3.82.2-AENDERUNGEN.md).
