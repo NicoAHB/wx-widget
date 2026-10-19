@@ -4,9 +4,12 @@ const fs = require('fs'), path = require('path');
 const html = fs.readFileSync(path.join(__dirname, '..', 'weather-widget-v2.html'), 'utf8');
 const grab = name => { const a = html.indexOf(`function ${name}(`); if (a < 0) throw new Error(name); let d = 0, b = a; for (; b < html.length; b++) { if (html[b] === '{') d++; else if (html[b] === '}' && --d === 0) break; } return html.slice(a, b + 1); };
 const zzpLine = html.match(/var ZZP = \{[^}]*\}[^\n]*\n/)[0];
+// 3.77.6: macd() nutzt neutralMacdSignal aus shared/indicators.mjs (in der App importiert) – hier aus dem Modultext übernehmen
+const ind = fs.readFileSync(path.join(__dirname, '..', 'shared', 'indicators.mjs'), 'utf8'), indFn = name => { const a = ind.indexOf(`export function ${name}(`); if (a < 0) throw new Error(name); let d = 0, b = a; for (; b < ind.length; b++) { if (ind[b] === '{') d++; else if (ind[b] === '}' && --d === 0) break; } return ind.slice(a + 7, b + 1); };
+const indLine = (ind.match(/^const finite = [^\n]*\n/m) || [''])[0] + indFn('neutralMacdSignal') + '\n';
 const make = (fee = 0.06) => new Function(`const mem = {}, sent = []; const store = { get: k => mem[k], set: (k, v) => { mem[k] = JSON.parse(JSON.stringify(v)); return true; } }; const ZZP_KEY = 'zzp';
 const broadcastData = k => sent.push(...k); let tgb = null, zzpStartSet = null; const scheduleTgBackup = () => {}, renderZzpInfo = () => {}; const state = { symbol: 'BTCUSDT', interval: '1m', risk: { feePct: ${fee} } };
-${zzpLine}${['zzStepper', 'zigzag', 'zzForecast', 'rsi', 'ema', 'macd', 'wilsonLow', 'zzpIndicators', 'zzpKey', 'zzMoments', 'zzpData', 'zzpApply', 'zzpVerdict', 'zzpSave', 'zzpBackup', 'zzpImport'].map(grab).join('\n')}
+${zzpLine}${indLine}${['zzStepper', 'zigzag', 'zzForecast', 'rsi', 'ema', 'macd', 'wilsonLow', 'zzpIndicators', 'zzpKey', 'zzMoments', 'zzpData', 'zzpApply', 'zzpVerdict', 'zzpSave', 'zzpBackup', 'zzpImport'].map(grab).join('\n')}
 return { mem, sent, state, zigzag, zzForecast, zzMoments, zzpData, zzpApply, zzpVerdict, zzpBackup, zzpImport, wilsonLow, reset: () => { zzpMem = null; } };`)();
 let pass = 0, fail = 0; const check = (n, ok, info = '') => { ok ? pass++ : fail++; console.log(`${ok ? '✓' : '✗'} ${n}${info ? ' — ' + info : ''}`); };
 let seed = 5; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
