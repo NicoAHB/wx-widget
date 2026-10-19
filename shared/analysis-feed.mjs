@@ -54,7 +54,10 @@ export function createAnalysisFeed({ context, fetchRows, definitions = ANALYSES,
         const d = definitions.find(d => d.id === id); if (!d) continue;
         const key = d.version + '|' + d.intervals.map(iv => e.rows[iv]?.at(-1)?.end).join('|');
         if (key !== e.resultKeys[id]) { e.results[id] = d.evaluate({ candles: e.rows, symbol: e.symbol, market: e.market, now: now() }); e.resultKeys[id] = key; state.evaluations++; }
-        const r = e.results[id], s = r?.signal;
+        const r = e.results[id];
+        if(r?.signal&&runtimeServices.learning)r.signal=runtimeServices.learning.capture(r.signal);
+        runtimeServices.learning?.observeTopDown(e.symbol,e.market,e.rows['15m']||[],now());
+        const s=r?.signal;
         if (s && now() < s.expiresAt) {
           const event = `${id}|${s.symbol}|${s.market}|${s.direction}|${s.setupId}`;
           if (!e.attempted.has(event)) void Promise.resolve(signal(s)).then(attempted => { if (attempted !== false && !abort.aborted && generation === state.generation) e.attempted.add(event); }).catch(() => log({ kind: 'error', symbol: e.symbol, text: `${e.symbol}: Analyse-Versand fehlgeschlagen; die übrigen Coins werden weiter geprüft.` }));

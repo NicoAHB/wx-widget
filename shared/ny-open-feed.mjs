@@ -2,7 +2,7 @@ import { NY_OPEN, NY_JOURNAL_KEY, nyOptions, nySession, nyRecordKey, nyRecord, n
 import { TOP_DOWN } from './analysis-top-down.mjs';
 const MINUTE=60000,H4=14400000;
 export function nyJournal(value={}){return {records:Object.fromEntries(Object.entries(value?.records||{}).filter(([,r])=>r&&r.symbol&&r.day&&r.range).slice(-NY_OPEN.journalDays*NY_OPEN.maxCoins))};}
-export function createNyRuntime({context,now,changed,signal,log,history,read=()=>null,write=()=>{}}){
+export function createNyRuntime({context,now,changed,signal,log,history,read=()=>null,write=()=>{},learning}){
   const state={entries:new Map(),busy:false,requests:0,evaluations:0};let controller=null,signature='',generation=0;
   const options=()=>nyOptions(context().options?.[NY_OPEN.id]);
   function sync(){
@@ -46,7 +46,8 @@ export function createNyRuntime({context,now,changed,signal,log,history,read=()=
         const hEnd=Math.floor(at/H4)*H4;if(cfg.biasFilter&&e.rows['4h']?.at(-1)?.end!==hEnd)e.rows['4h']=await get('4h',hEnd-TOP_DOWN.history*H4,hEnd);
         if(abort.aborted||gen!==generation)return;
         const existing=old?.day===session.day?old:null,r=evaluateNyOpen({candles:e.rows,now:at,symbol:e.symbol,market:e.market,options:cfg,record:existing});state.evaluations++;e.result=r;
-        if(r.range){const saved=nyRecord(r,existing||{},e.rows['1m'],at);save(saved);e.result.record=saved;}
+        if(r.signal&&learning)r.signal=learning.capture(r.signal);
+        if(r.range){const saved=nyRecord(r,existing||{},e.rows['1m'],at);save(saved);if(saved.signal)learning?.observeNy(saved.signal,e.rows['1m'],at);e.result.record=saved;}
         if(r.signal)await send(e,r.signal);
       }
       for(const current of outstanding(e)){
@@ -55,7 +56,7 @@ export function createNyRuntime({context,now,changed,signal,log,history,read=()=
         if(to>s.at){
           const key=nyRecordKey(s.symbol,s.nyDay);e.observed??=new Map();let rows=e.observed.get(key)||[],from=rows.at(-1)?.end||s.at;
           if(to>from)rows=[...rows,...await get('1m',from,to)];if(abort.aborted||gen!==generation)return;
-          e.observed.set(key,rows);const updated=nyRecord({...current,session:current.session,signal:s},current,rows,at);save(updated);if(nyTerminal(updated.outcome))e.observed.delete(key);
+          e.observed.set(key,rows);const updated=nyRecord({...current,session:current.session,signal:s},current,rows,at);save(updated);learning?.observeNy(s,rows,at);if(nyTerminal(updated.outcome))e.observed.delete(key);
         }
       }
       e.error='';e.failures=0;

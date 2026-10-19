@@ -1,4 +1,5 @@
 // 3.79.0: Startwerte zentral. Reine Signale/Modellwerte, keine Broker-Aufträge.
+import { nyLearningFeatures } from './analysis-learning-features.mjs';
 import { nyDay, nyTime, nyTradingDay } from './ny-open-time.mjs';
 import { detectFvgs } from './fvg.mjs';
 import { musterCandles, musterIndicators } from './muster-bot-core.mjs';
@@ -47,6 +48,7 @@ export function evaluateNyOpen({candles={},now,symbol,market='spot',options={},r
     const signal={analysisId:NY_OPEN.id,analysisName:'NY Open Killzone',version:NY_OPEN.version,symbol,market,nyDay:session.day,setupId:'ny:'+session.day,side:dir===1?'long':'short',direction:dir,at:c.end,expiresAt:Math.min(c.end+NY_OPEN.signalAgeMs,session.windowEnd+NY_OPEN.closeGraceMs),
       range,fvg,session,entry,stop,target:entry+dir*risk*NY_OPEN.rewardRisk,oneR:entry+dir*risk*NY_OPEN.breakevenR,rr:NY_OPEN.rewardRisk,riskPct,atr,entryMode:cfg.limitEntry?'limit':'market',limitUntil:cfg.limitEntry?c.end+NY_OPEN.limitMinutes*60000:null,options:cfg,
       breakout:{time:m.time,end:m.end,open:m.open,close:m.close,high:m.high,low:m.low},bias:cfg.biasFilter?bias?.direction:null,chart:rows.slice(Math.max(0,i+2-60),i+2)};
+    signal.learningFeatures=nyLearningFeatures(signal,rows,values,i);
     return{...base,stage:3,direction:dir,signal,bias,phase:'signal',reason:cfg.limitEntry?`FVG bestätigt; Limit in der FVG-Mitte gültig für ${NY_OPEN.limitMinutes} Minuten.`:'FVG bestätigt; Einstieg zum Schlusskurs der Bestätigungskerze.'};
   }
   return{...base,stage:['fvg','risk'].includes(phase)?2:1,phase,reason,bias};

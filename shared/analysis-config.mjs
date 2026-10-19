@@ -1,4 +1,5 @@
 // Analyse-Katalog: neue Analysen ausschließlich hier per Code registrieren.
+import { createAnalysisLearningTools } from './analysis-learning-view.mjs';
 import { evaluateTopDown } from './analysis-top-down.mjs';
 import { NY_OPEN, nyOptions, evaluateNyOpen } from './ny-open-core.mjs';
 import { createNyRuntime } from './ny-open-feed.mjs';
@@ -15,8 +16,8 @@ export const ANALYSES = Object.freeze([
     indicators: Object.freeze(['ema200', 'macd']),
     intervals: Object.freeze(['4h', '1h', '15m']), evaluate: evaluateTopDown,
     description: '4h: Struktur + Trend + EMA 200. 1h: mindestens zwei unterschiedliche Bausteine in einer Zone. 15m: Umkehr und danach ein bestätigender Strukturschluss.',
-    describe: describeTopDown, status: topDownStatus }),
-  Object.freeze({ id:NY_OPEN.id, name:"NY Open Killzone", version:NY_OPEN.version, indicators:Object.freeze([]), intervals:Object.freeze([]), evaluate:evaluateNyOpen, createRuntime:createNyRuntime, normalizeOptions:nyOptions, tools:createNyTools,
+    describe: describeTopDown, status: topDownStatus, learning:true, tools:args=>createAnalysisLearningTools({...args,id:'top-down',name:'Top-Down'}) }),
+  Object.freeze({ id:NY_OPEN.id, name:"NY Open Killzone", version:NY_OPEN.version, indicators:Object.freeze([]), intervals:Object.freeze([]), evaluate:evaluateNyOpen, createRuntime:createNyRuntime, normalizeOptions:nyOptions, tools:args=>createAnalysisLearningTools({...args,id:NY_OPEN.id,name:'NY Open Killzone',existing:createNyTools(args)}), learning:true,
     description:"09:30–09:35 New York: Opening Range. 09:35–10:30: 1m-Ausbruch mit starkem Körper und bestätigtem FVG. Fester Stop, Ziel 2R; nur normale, geschlossene Kerzen. Maximal ein Signal pro Coin und NY-Handelstag.", describe:describeNyOpen, status:nyStatus }),
   Object.freeze({ id:PULLBACK.id, name:PULLBACK.name, version:PULLBACK.version, indicators:Object.freeze([]), intervals:Object.freeze([]), evaluate:evaluatePullback,
     createRuntime:createPullbackRuntime, normalizeOptions:pullbackOptions, tools:createPullbackTools, focusOnName:true, learning:true,
