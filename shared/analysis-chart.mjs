@@ -141,5 +141,5 @@ export function createAnalysisChartHelp(doc) {
   const content = doc.createElement('p'), close = doc.createElement('button'); close.type = 'button'; close.textContent = 'Schließen';
   dialog.addEventListener('keydown', e => e.stopPropagation()); // Escape schließt nur die Erklärung, nicht den Vollbild-Chart.
   close.addEventListener('click', () => dialog.close()); dialog.append(title, content, close); doc.body.append(dialog);
-  return text => { title.textContent=text.startsWith('Trendfolge-Rücksetzer')?'Trendfolge-Rücksetzer · Erklärung':'Top-Down · Erklärung';content.textContent = text; if (!dialog.open) dialog.showModal(); dialog.scrollTop = 0; };
+  return text => { title.textContent=(['Trendfolge-Rücksetzer','Range-Rückkehr','Ausbruch mit Rücktest','Relative Stärke'].find(name=>text.startsWith(name))||'Top-Down')+' · Erklärung';content.textContent = text; if (!dialog.open) dialog.showModal(); dialog.scrollTop = 0; };
 }

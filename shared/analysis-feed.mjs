@@ -7,8 +7,9 @@ import { INTERVAL_MS } from './market-intervals.mjs';
 export function createAnalysisFeed({ context, fetchRows, definitions = ANALYSES, now = Date.now, changed = () => {}, signal = async () => {}, log = () => {}, runtimeServices = {} }) {
   const state = { entries: new Map(), busy: false, generation: 0, evaluations: 0, requests: 0 };
   let signature = '', controller = null, lastStart = -Infinity;
+  const runtimeRegistry = new Map();
   // Erweiterbare, sessionspezifische Analysen; der bisherige Top-Down-Pfad bleibt unverändert.
-  const runtimes = new Map(definitions.filter(d => d.createRuntime).map(d => [d.id, d.createRuntime({ ...runtimeServices, context, fetchRows, now, changed, signal, log })]));
+  const runtimes = new Map(definitions.filter(d => d.createRuntime).map(d => [d.id, d.createRuntime({ ...runtimeServices, runtimeRegistry, context, fetchRows, now, changed, signal, log })]));
   function sync() {
     for (const r of runtimes.values()) r.sync();
     const c = context(), enabled = !c.paused && !c.hidden && c.online !== false;

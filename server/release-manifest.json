@@ -1,6 +1,6 @@
 {
   "version": "2.15.3",
-  "appVersion": "3.81.1",
+  "appVersion": "3.82.0",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
@@ -119,8 +119,8 @@
     },
     {
       "path": "shared/analysis-card.mjs",
-      "sha256": "0eeaad31fd189641a757478cc1ced305037fd51c9a7e6eea507caccb54a47dc4",
-      "bytes": 9904
+      "sha256": "a282890b6ff48d7d706e3ac6a853cb6189d867f32b18f506df455f76469e065e",
+      "bytes": 10741
     },
     {
       "path": "shared/analysis-channel.mjs",
@@ -129,13 +129,18 @@
     },
     {
       "path": "shared/analysis-chart.mjs",
-      "sha256": "eafe4f47e295288c0ffb6271875c0a105315a3570d2e60176fdd11ff23630de8",
-      "bytes": 13564
+      "sha256": "082b874b4a02145cd72f28cec2fffc3a68fe4a1089bdafbaf453b5865dadc8d4",
+      "bytes": 13612
     },
     {
       "path": "shared/analysis-config.mjs",
-      "sha256": "cc2ace6698cf7a531fefdc34bf24eeaf92a1312e7f87cc7c97cd5a9ae0e20bb1",
-      "bytes": 4820
+      "sha256": "1a9199e2cad73b708c3b7abd005b4b821e046ec2f7147c01698ff75e1d936dec",
+      "bytes": 6750
+    },
+    {
+      "path": "shared/analysis-context.mjs",
+      "sha256": "aa9a17787ed8b69965647d4ef5600043ce37faa9769f6e5309a61b2210fd93ae",
+      "bytes": 2804
     },
     {
       "path": "shared/analysis-delivery.mjs",
@@ -144,8 +149,8 @@
     },
     {
       "path": "shared/analysis-feed.mjs",
-      "sha256": "0505e953d3397e40ffc59ff2877c9d0409558ee3e377a05512f0ffd41ba728a4",
-      "bytes": 6718
+      "sha256": "ad724c0b581138db9e290c9478594278573e62389b67a05bd10110f20b4c9238",
+      "bytes": 6772
     },
     {
       "path": "shared/analysis-learning-features.mjs",
@@ -184,8 +189,8 @@
     },
     {
       "path": "shared/analysis-overview.mjs",
-      "sha256": "82646ee217bcdb9bff4adeebad5aeee59fb735cad55eefe9d7105961b9fb9c53",
-      "bytes": 2123
+      "sha256": "6f7c27d027b3f9603dfb6271e396c64f85d85c3f62e917d057225068a7d8748b",
+      "bytes": 2322
     },
     {
       "path": "shared/analysis-status.mjs",
@@ -199,8 +204,8 @@
     },
     {
       "path": "shared/analysis-view.mjs",
-      "sha256": "6361b8b519a183a2ac7c9ea46d937538399c6dc4d01edde0010a2bdb83cc2dfe",
-      "bytes": 18521
+      "sha256": "fd484ea3ea0e84a44eabe156e41618d653a95e96b5d07fd634788786736af1c9",
+      "bytes": 20988
     },
     {
       "path": "shared/bitget-patterns.mjs",
@@ -438,6 +443,31 @@
       "bytes": 15333
     },
     {
+      "path": "shared/market-strategy-core.mjs",
+      "sha256": "8b519d8666657719d4c92436b5e0bc9b97f5dce784ea108cbcc088797ed7b087",
+      "bytes": 12520
+    },
+    {
+      "path": "shared/market-strategy-feed.mjs",
+      "sha256": "98be1f1855d66468968c4947fe423543cea6f997fbbb629395c0523e0d98cef0",
+      "bytes": 10053
+    },
+    {
+      "path": "shared/market-strategy-history.mjs",
+      "sha256": "9f695968756eb58de262a6f0ba897f197c8e91ee341236ccd3e7d46d2fb684ff",
+      "bytes": 5602
+    },
+    {
+      "path": "shared/market-strategy-view.mjs",
+      "sha256": "90046bd8e5c8da85e92dc967e477a8df113cf99e74a4d019f2b558340e466a85",
+      "bytes": 9683
+    },
+    {
+      "path": "shared/market-strategy-worker.mjs",
+      "sha256": "ce2c102e55c62fe1a7206008c1ff0cf36a0f25d2bdd017f9ea2c6a9a6fe0b0ca",
+      "bytes": 266
+    },
+    {
       "path": "shared/model-archive.mjs",
       "sha256": "d2b5df4622599ee10e2c4e483986f85f25c2448f8032e8460e1ea4b4cdf212ff",
       "bytes": 5202
@@ -658,6 +688,11 @@
       "bytes": 10635
     },
     {
+      "path": "shared/relative-strength.mjs",
+      "sha256": "f199b0d01ff32a0e68f619551a392addacabe5f7e6bd0fcd76d054236ca3f583",
+      "bytes": 9960
+    },
+    {
       "path": "shared/rsi-momentum.mjs",
       "sha256": "b16f43572d38ef9f08c6558d499444de4823c6b161bb72f1336e4fa919fc0ebf",
       "bytes": 2215
@@ -684,13 +719,13 @@
     },
     {
       "path": "shared/trend-pullback-chart.mjs",
-      "sha256": "ebcbd677c2d37a8b5c62da2dd4c9b4937bd8e76224cee8a483b2d7b9f152c892",
-      "bytes": 6117
+      "sha256": "6dd80c048def8b349d2550ca7d2d71bf2e6d7eb8021fc6ad3822f705a1f44027",
+      "bytes": 6312
     },
     {
       "path": "shared/trend-pullback-core.mjs",
-      "sha256": "c407dcd1921ab96a3746fee8ef97db6a5677a50a91109b9db5e0f2032eae0fec",
-      "bytes": 16349
+      "sha256": "9f0b341a5ad70583a21710721cbbfb0a1b731114bb0fdd73aed87ca1dacb77e1",
+      "bytes": 16363
     },
     {
       "path": "shared/trend-pullback-delivery.mjs",

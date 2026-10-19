@@ -118,8 +118,8 @@ export function evaluatePullback(input) { return evaluatePreparedPullback(prepar
 
 // Stop hat Vorrang bei unbekannter Reihenfolge innerhalb derselben OHLC-Kerze.
 // Ziel 1 beendet das aktive Signal. Ziel 2 wird getrennt bis Stop/24h weiterbeobachtet.
-export function pullbackOutcome(s,rows,now,trendAt=()=>s.direction) {
-  const risk=Math.abs(s.entry-s.stop),direction=s.direction,end=s.at+PULLBACK.holdMs;
+export function pullbackOutcome(s,rows,now,trendAt=()=>s.direction,holdMs=PULLBACK.holdMs) {
+  const risk=Math.abs(s.entry-s.stop),direction=s.direction,end=s.at+holdMs;
   let cursor=s.at,mfeR=0,maeR=0,first=null,target2At=null,followEnded=false;
   for(const c of rows){if(c.time<s.at||c.end>now||c.time>=end)continue;
     if(c.time!==cursor)return {status:first?.status||'gap',first,target2At,mfeR,maeR,checkedAt:cursor,complete:false,reason:'Kerzenlücke; kein Treffer erfunden.'};
