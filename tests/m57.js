@@ -3,6 +3,7 @@
 // Fenster, C/B/D in Prozentpunkten, Lücken mit Grund, Klick lädt den Coin in den vorhandenen Chart, ein Scheduler mit Abbruch,
 // Bremsen und Backoff. Alles gegen den Test-Server (mock-binance.js, /dec).
 // Aufruf: node m57.js [abschnitt ...]   Abschnitte: unit, list, faults, corr, click, sched, errors
+// 3.82.2: Anzeigezeit seit 3.77.7 MEZ/MESZ statt UTC (Test war seitdem rot)
 const h = require('./harness');
 const results = [];
 const check = (name, cond, detail = '') => { results.push({ name, ok: !!cond }); console.log(`${cond ? '  ✓' : '  ✗'} ${name}${detail !== '' ? ' — ' + String(detail).slice(0, 600) : ''}`); };
@@ -56,11 +57,11 @@ const tests = {
     check('Geöffnet: eine Rangliste (CoinLore) und eine gebündelte 4h-Abfrage für BTC + 8 Paare', lg.filter(x => x.src === 'lore').length === 1 && lg.filter(x => x.src === 'bin').length === 1 && lg.find(x => x.src === 'bin')?.n === 9 && lg.find(x => x.src === 'bin')?.ws === '4h', JSON.stringify(lg));
     check('4h (BTC −1 %): SOL +4 Pp., LTC +4 Pp. (Gleichstand → Rang), XRP +3,5 Pp.; BCH −2,2 bei fallendem BTC kein Treffer', rs.map(r => r.pair).join() === 'SOLUSDT,LTCUSDT,XRPUSDT' && rs.every(r => r.st === 'bull'), JSON.stringify(rs.map(r => [r.pair, r.d])));
     const c = rs[0]?.cells || [], cap = await txt(page, '#dec-list .dec-cap');
-    check('Zeile (Optimierung 3): nur Kürzel, Rang und Abweichung zu BTC; Name, Preis, Coin-/BTC-% und Datenzeit im Tooltip; BTC-Wert einmal oben', JSON.stringify(c) === JSON.stringify(['SOL#5', '+4,00 %']) && /^Solana \(SOL\/USDT, Binance Spot\): Coin \+3,00 %, BTC −1,00 % → \+4,00 Prozentpunkte Abweichung · Preis 1[45]\d,\d+ USDT · Daten \d\d:\d\d UTC/.test(rs[0].title) && /^BTC 4h: −1,00 % · rechts: Abweichung des Coins zu BTC in Prozentpunkten/.test(cap), JSON.stringify({ c, t: rs[0]?.title, cap }));
+    check('Zeile (Optimierung 3): nur Kürzel, Rang und Abweichung zu BTC; Name, Preis, Coin-/BTC-% und Datenzeit im Tooltip; BTC-Wert einmal oben', JSON.stringify(c) === JSON.stringify(['SOL#5', '+4,00 %']) && /^Solana \(SOL\/USDT, Binance Spot\): Coin \+3,00 %, BTC −1,00 % → \+4,00 Prozentpunkte Abweichung · Preis 1[45]\d,\d+ USDT · Daten \d\d:\d\d MEZ\/MESZ/.test(rs[0].title) && /^BTC 4h: −1,00 % · rechts: Abweichung des Coins zu BTC in Prozentpunkten/.test(cap), JSON.stringify({ c, t: rs[0]?.title, cap }));
     const cov = await txt(page, '#dec-cov'), gaps = await page.evaluate(() => document.querySelector('#dec-gaps ul')?.textContent || '');
     check('Abdeckung aus echten Daten: „7 von 13 … auswertbar“, 3 Stablecoins (USDT, USDC, PAXG) entfernt und nicht aufgefüllt, BTC Referenz', /^7 von 13 grundsätzlich geeigneten Coins auswertbar · 3 Stablecoins entfernt/.test(cov) && /BTC ist Referenz/.test(cov), cov);
     check('Lücken mit Grund statt Nicht-Treffer: DOGE (Paar BREAK) und LEO nicht bei Binance, KAS Preis passt nicht, UNI mehrdeutig, XNEW und Unicorn ungeprüft', /nicht bei Binance Spot \(USDT\) \(2\): DOGE, LEO/.test(gaps) && /Zuordnung zweifelhaft\) \(1\): KAS/.test(gaps) && /Kürzel mehrdeutig in der Rangliste \(1\): UNI/.test(gaps) && /ungeprüft \(nicht in der Klassifikationsliste\) \(2\): XNEW, UNI/.test(gaps), gaps);
-    check('Quelle genannt: Rangliste CoinLore mit Stand, Binance Spot rollierendes 4h-Fenster, nur Signale', /^Rangliste: CoinLore, Stand \d\d\.\d\d\.\d{4}, \d\d:\d\d UTC · Kurse: Binance Spot, rollierendes 4h-Fenster bis \d\d:\d\d:\d\d UTC · nur Signale, keine Kaufempfehlung/.test(await txt(page, '#dec-foot')), await txt(page, '#dec-foot'));
+    check('Quelle genannt: Rangliste CoinLore mit Stand, Binance Spot rollierendes 4h-Fenster, nur Signale', /^Rangliste: CoinLore, Stand \d\d\.\d\d\.\d{4}, \d\d:\d\d MEZ\/MESZ · Kurse: Binance Spot, rollierendes 4h-Fenster bis \d\d:\d\d:\d\d MEZ\/MESZ · nur Signale, keine Kaufempfehlung/.test(await txt(page, '#dec-foot')), await txt(page, '#dec-foot'));
     await page.click('[data-dfil="bear"]'); await page.waitForTimeout(150);
     check('Filter Bearish: leerer Trefferbestand als eigener Zustand (nicht als Fehler)', !(await rows(page)).length && /^Keine Treffer bei diesen Schwellen \(4h: Coin ab ±2,0 %, BTC seitwärts unter ±0,5 %\)\.$/.test(await txt(page, '#dec-status')), await txt(page, '#dec-status'));
     await page.click('[data-dfil="all"]'); await page.click('[data-dwin="1h"]'); await decReady(page); await until(async () => (await rows(page)).length && (await page.evaluate(() => __g08.dec.res?.win)) === '1h', 8000);
@@ -151,7 +152,7 @@ const tests = {
     await h.ctl('/dec?bin=429&ra=30&clear=1'); await page.evaluate(() => __g08.kick()); await page.waitForTimeout(400); await decReady(page);
     const s429 = await txt(page, '#dec-status'), wait = await page.evaluate(() => __g08.dec.blockUntil - Date.now()); await page.waitForTimeout(4000);
     const n429 = (await decLog()).filter(x => x.src === 'bin').length;
-    check('429 mit Retry-After 30 s: „Rate-Limit (429)“ mit nächstem Versuch, alte Treffer „veraltet“ sichtbar, keine weitere Abfrage', /^Veraltet – Stand \d\d:\d\d:\d\d UTC · Binance: Rate-Limit \(429\) · nächster Versuch ab/.test(s429) && wait > 20000 && n429 === 1 && (await rows(page)).length === 3 && await page.evaluate(() => document.getElementById('dec-list').classList.contains('stale')), JSON.stringify({ s429, wait, n429 }));
+    check('429 mit Retry-After 30 s: „Rate-Limit (429)“ mit nächstem Versuch, alte Treffer „veraltet“ sichtbar, keine weitere Abfrage', /^Veraltet – Stand \d\d:\d\d:\d\d MEZ\/MESZ · Binance: Rate-Limit \(429\) · nächster Versuch ab/.test(s429) && wait > 20000 && n429 === 1 && (await rows(page)).length === 3 && await page.evaluate(() => document.getElementById('dec-list').classList.contains('stale')), JSON.stringify({ s429, wait, n429 }));
     await ctx.close();
     // CoinLore nicht erreichbar (Netz/CORS), ohne Bestand: verständlich „nicht verfügbar“, keine Liste
     await h.ctl('/dec?reset=1&lore=down'); ({ ctx, page, errors } = await openPage(browser)); await openDec(page); await decReady(page);

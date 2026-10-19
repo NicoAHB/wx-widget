@@ -15,6 +15,8 @@ const check=(name,test)=>{try{test();passed++;console.log('✓ '+name);}catch(e)
  check('Jahreswechsel verwendet den neuen Tag und Monat',()=>assert.ok(ticks(rows('2026-12-31T22:30Z',3e5),3e5).some(n=>n.label==='01.01. 00:00')));
  for(const width of[180,280,320,390,768,820,1440])check(width+'px: Labels bleiben innerhalb der Fläche und überschneiden sich nicht',()=>{for(const iv of[6e4,3e5,9e5,36e5,144e5,864e5])for(const n of[1,2,50,500]){const t=ticks(rows('2026-10-15T21:30Z',iv,n),iv,width);assert.ok(t.length>0);assert.ok(fits(t,width));}});
  check('Schmale Achse reduziert die Anzahl statt Überlappungen zu erzeugen',()=>{const r=rows('2026-10-15T19:00Z',36e5);assert.ok(ticks(r,36e5,320).length<ticks(r,36e5,1440).length);});
+ check('3.82.2: doppelte Stunde am 25.10. – jeder Tick darin trägt MESZ bzw. MEZ, sonst keiner',()=>{const r=rows('2026-10-24T23:00Z',3e5,48),t=ticks(r,3e5,1440),dup=n=>{const h=new Date(r[n.index].time).getUTCHours();return new Date(r[n.index].time).getUTCDate()===25&&h<2;};assert.ok(t.filter(dup).length>=2);t.forEach(n=>assert.equal(/ ME(S)?Z$/.test(n.label),dup(n),n.label));assert.ok(t.some(n=>/^02:\d\d MESZ$/.test(n.label))&&t.some(n=>/^02:\d\d MEZ$/.test(n.label)));});
+ check('3.82.2: Frühjahr (29.03.) bekommt keinen Zonenzusatz',()=>{const r=rows('2026-03-28T23:00Z',3e5,48);ticks(r,3e5,1440).forEach(n=>assert.doesNotMatch(n.label,/ME(S)?Z/));});
  check('Ungültige Zeitwerte erzeugen kein ungültiges Label',()=>assert.deepEqual(ticks([{time:NaN}],36e5),[]));
  check('Eingangsdaten bleiben unverändert',()=>{const r=rows('2026-10-15T19:00Z',36e5),before=JSON.stringify(r);ticks(r,36e5);assert.equal(JSON.stringify(r),before);});
  console.log(passed+'/'+(passed+failed)+' bestanden');process.exitCode=failed?1:0;

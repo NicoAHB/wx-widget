@@ -139,7 +139,7 @@ async function setLimit(page, kind, v) {
       check(`${w} px ${mode}: NEAR antippen öffnet das Feld und lädt NEAR im Chart, kein Knopf „Im Chart öffnen“`, after.open === '1' && after.title === 'NEAR' && /^NEAR/.test(after.pair) && !after.btn && after.current === 'true', JSON.stringify(after));
       // 3.71.0: Die Kacheln sind höher – passt das Detailfeld nicht ganz ins Bild, scrollt die App absichtlich nur so weit, bis es ganz zu sehen
       // ist (höchstens bis zu seiner Oberkante); zum Chart springt sie nie, die Kachel bleibt im Bild
-      const moved = after.y - before.y, fits = after.dBottom <= after.lim + 2 || after.dTop <= 14;
+      const moved = after.y - before.y, fits = after.dBottom <= after.lim + 2 || after.dTop <= 14 || (after.tile >= -2 && after.tile <= 12);   // 3.82.2: Feld höher als der Platz unter der Kachel → Kachel bleibt oben stehen
       check(`${w} px ${mode}: die Seite springt nicht zum Chart – höchstens so weit, dass das Detailfeld ganz zu sehen ist; Kachel bleibt im Bild`, moved >= -2 && Math.abs((before.tile - after.tile) - moved) <= 2 && after.tile >= -2 && fits && after.chartTop > hh * 0.5 && (moved <= 2 || after.dBottom >= after.lim - 30 || after.dTop <= 14), JSON.stringify({ before, after: { y: after.y, tile: after.tile, chartTop: after.chartTop, dTop: after.dTop, dBottom: after.dBottom, lim: after.lim } }));
       await pg.tap('#watchlist .wl-tile[data-watch="NEAR"]'); await pg.waitForTimeout(600);
       const closed = await pg.evaluate(() => ({ open: document.getElementById('wl-detail').dataset.open, pair: document.getElementById('pair-label').textContent }));
@@ -156,7 +156,7 @@ async function setLimit(page, kind, v) {
       await pg.focus('#watchlist .wl-tile[data-watch="ETC"]'); await pg.keyboard.press('Enter');
       await pg.waitForFunction(() => /^ETC/.test(document.getElementById('pair-label').textContent), null, { timeout: 15000 }).catch(() => {}); await pg.waitForTimeout(1500);
       const k = await pg.evaluate(() => ({ pair: document.getElementById('pair-label').textContent, title: document.querySelector('#wl-detail .wl-d-title').textContent, y: Math.round(scrollY), focus: document.activeElement?.dataset?.watch || '', tile: Math.round(document.querySelector('#watchlist .wl-tile[data-watch="ETC"]').getBoundingClientRect().top), dTop: Math.round(document.querySelector('#wl-detail .wl-d-box').getBoundingClientRect().top), dBottom: Math.round(document.querySelector('#wl-detail .wl-d-box').getBoundingClientRect().bottom), vh: innerHeight }));
-      check('Tastatur: Enter auf ETC öffnet das Feld und lädt ETC im Chart, ohne Springen (höchstens bis das Feld ganz zu sehen ist), Fokus bleibt', /^ETC/.test(k.pair) && k.title === 'ETC' && k.y - y0 >= -2 && (Math.abs(k.y - y0) <= 2 || k.dBottom <= k.vh - 10 || k.dTop <= 14) && k.tile >= -80 && k.focus === 'ETC', JSON.stringify({ ...k, y0 }));
+      check('Tastatur: Enter auf ETC öffnet das Feld und lädt ETC im Chart, ohne Springen (höchstens bis das Feld ganz zu sehen ist), Fokus bleibt', /^ETC/.test(k.pair) && k.title === 'ETC' && k.y - y0 >= -2 && (Math.abs(k.y - y0) <= 2 || k.dBottom <= k.vh - 10 || k.dTop <= 14 || (k.tile >= -2 && k.tile <= 12)) && k.tile >= -80 && k.focus === 'ETC', JSON.stringify({ ...k, y0 }));
       check('Tastatur: keine Fehler', !real(errs).length, real(errs).join(' | ')); await c3.close();
     }
 

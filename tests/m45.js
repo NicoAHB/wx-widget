@@ -47,7 +47,7 @@ const expect = (page, coin, S) => page.evaluate(([coin, S]) => {
   const bull = r.rules.filter(x => x.score > 0).length, bear = r.rules.filter(x => x.score < 0).length;
   const verdict = bull >= 3 ? 'Long-Tendenz' : bear >= 3 ? 'Short-Tendenz' : 'Abwarten';
   return { chgText: chg == null ? null : `${S.label} ${pct(chg)}`, atr: num(atrPct, 2), move: num(movePct, 2), low: movePct < 1, verdict, dir: bull >= 3 ? 'long' : bear >= 3 ? 'short' : 'wait', count: Math.max(bull,bear) + '/4 erfüllt',
-    rated: r.closeTime + 1, age: now - (r.closeTime + 1), lastClosed: c.at(-1).closeTime + 1, stand: new Intl.DateTimeFormat('de-DE', { hour: '2-digit', minute: '2-digit' }).format(r.closeTime + 1), iv: e.iv, n: c.length };
+    rated: r.closeTime + 1, age: now - (r.closeTime + 1), lastClosed: c.at(-1).closeTime + 1, stand: new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', hour: '2-digit', minute: '2-digit' }).format(r.closeTime + 1)   /* 3.82.2: Anzeigezeit Berlin wie überall seit 3.77.7 */, iv: e.iv, n: c.length };
 }, [coin, S]);
 // Stream des Charts (Coin im Chart, Chart-Intervall)
 const chartStream = page => page.evaluate(() => `${document.getElementById('pair-label').textContent.split(' ')[0].toLowerCase()}usdt@kline_${document.querySelector('.intervals .active').dataset.interval}`);

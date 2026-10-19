@@ -20,7 +20,9 @@ export function createWatchModelFeed({ context, fetchRows, now = Date.now, chang
     if (!sync()) return fail('Testmodell pausiert oder nicht aktiv.');
     const e = state.entries.get(symbol); if (!e) return fail('Coin-Daten werden geladen.');
     if (e.error) return fail(e.error);
-    const key = `${e.lower.at(-1)?.end}|${e.higher.at(-1)?.end}|${state.revision}`;
+    // 3.82.2: ohne globale Revision – jede Änderung dieses Coins setzt cachedKey selbst zurück; sonst rechnete jeder Abruf eines
+    // beliebigen Coins die Bewertung aller Coins neu
+    const key = `${e.lower.at(-1)?.end}|${e.higher.at(-1)?.end}`;
     if (key !== e.cachedKey) { e.cached = watchStrictRating({ lower: e.lower, higher: e.higher, now: at }); e.cachedKey = key; }
     const r = e.cached;
     if (r?.ready && at >= r.expiresAt) return fail('Neue 15m-Kerze fehlt – noch keine Freigabe.');

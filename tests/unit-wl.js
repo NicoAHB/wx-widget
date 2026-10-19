@@ -5,7 +5,7 @@
 // Aufruf: node unit-wl.js
 const fs = require('fs'), path = require('path');
 const html = fs.readFileSync(path.join(__dirname, '../weather-widget-v2.html'), 'utf8');
-const src = process.env.SRC ? fs.readFileSync(process.env.SRC, 'utf8') : html.slice(html.indexOf('// ---------- Vorauswahl (Mini-Watchlist): Live-Kacheln'), html.indexOf('// ---------- Ablaufplan Schritt 6'));
+const src = process.env.SRC ? fs.readFileSync(process.env.SRC, 'utf8') : html.slice(html.indexOf('// ---------- Vorauswahl (Mini-Watchlist): Live-Kacheln'), html.indexOf('// ---------- 3.75.1: eine gemeinsame Signalübersicht'));   // 3.75.1: Detailfeld beginnt mit dieser Marke (vorher „Ablaufplan Schritt 6“)
 let pass = 0, fail = 0; const check = (n, ok, info = '') => { ok ? pass++ : fail++; console.log(`${ok ? '✓' : '✗'} ${n}${info ? ' — ' + info : ''}`); };
 const state = { watch: ['BTC', 'XRP', 'NEAR'], paused: false };
 let loads = [], klineAnswer = null, syncs = 0, renders = 0, ratedLen = 0;

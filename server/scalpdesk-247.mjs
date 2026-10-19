@@ -52,7 +52,7 @@ import { PQ, patternConfig, patternCandles, patternCases, patternFresh, patternT
 import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT } from './telegram-format.mjs';
 import { ConfluenceService, kiMessage, Po3Service, po3Message, BotSimulationRuntime } from './ki-monitor.mjs';
 
-export const VERSION = '2.15.3';   // 2.13.0: Qualitätsfilter für Chartmuster-Meldungen; 2.14.0: Chartmuster als Trading-Karte (Text als Ersatz); 2.14.1: Schrift mitgeliefert; 2.14.4: Installer mit Zeitlimits und Fortschritt; 2.14.3: Status nennt den Chartmuster-Filter; 2.14.2: Installer macht den Programmstand für den Dienstbenutzer lesbar; 2.15.0: Chartmuster-Signalkarte (Gesamturteil, Jetzt, Mini-Chart), schwache Signale nur mit Schalter
+export const VERSION = '2.15.4';   // 2.15.4: Gewinn-/Verlust-Alarm als Text, wenn kein Bild möglich ist (statt still verworfen); verworfene Meldungen setzen das Ereignis auf „fehlgeschlagen“; 2.13.0: Qualitätsfilter für Chartmuster-Meldungen; 2.14.0: Chartmuster als Trading-Karte (Text als Ersatz); 2.14.1: Schrift mitgeliefert; 2.14.4: Installer mit Zeitlimits und Fortschritt; 2.14.3: Status nennt den Chartmuster-Filter; 2.14.2: Installer macht den Programmstand für den Dienstbenutzer lesbar; 2.15.0: Chartmuster-Signalkarte (Gesamturteil, Jetzt, Mini-Chart), schwache Signale nur mit Schalter
 // 2.14.0: Kartenrenderer (pattern-card.mjs + resvg) nur bei Bedarf laden; fehlt er, bleibt es bei der Textmeldung
 let cardModule = null;
 const loadCards = () => (cardModule ??= import('./pattern-card.mjs').catch(() => null));
@@ -636,7 +636,7 @@ export class Watcher {
   }
   async deliverPending() {
     const t0 = this.now(), old = this.out.filter(m => t0 - m.at > OUT_MAX_AGE);
-    if (old.length) { for (const m of old) this.log(`Meldung verworfen (über 24 Stunden nicht zustellbar): ${m.label || m.text.split('\n')[0]}`); this.out = this.out.filter(m => !old.includes(m)); this.saveState(); }
+    if (old.length) { for (const m of old) { this.log(`Meldung verworfen (über 24 Stunden nicht zustellbar): ${m.label || m.text.split('\n')[0]}`); if (m.ev) this.evSet(m.ev, 'failed', 'über 24 Stunden nicht zustellbar'); } this.out = this.out.filter(m => !old.includes(m)); this.saveState(); }
     for (const m of [...this.out]) {
       const t = this.now(); if (m.next > t) continue;
       // 2.0: unmittelbar vor dem Senden: Ziel noch an und dieselbe Epoche? Sonst verwerfen (AUS verwirft auch Wartendes; ein
@@ -653,18 +653,20 @@ export class Watcher {
         const payload = telegramFields(full), base = { chat_id: dest.chat, ...(dest.thread ? { message_thread_id: dest.thread } : {}), ...(m.silent ? { disable_notification: true } : {}) };
         // 2.14.0: Chartmuster als Trading-Karte (PNG); scheitert die Karte oder lehnt Telegram das Bild ab, die bisherige Textmeldung
         let sent = null, via = '';
-        // 2.15.1: Gewinn-/Verlust-Alarm ausschließlich als Bild, bei Bildfehler im Ausgang behalten.
-        const pnlPhotoOnly = !!(m.pnlCard && this.pnlCards);
-        const makeCard = m.target === 'patterns' && m.card && this.patternCards ? () => this.patternCard(m, late ? t : 0) : pnlPhotoOnly ? () => this.pnlCardImage(m, late ? t : 0) : m.alarmCard && this.alarmCards ? () => this.alarmCardImage(m, late ? t : 0) : null;
+        // 2.15.1: Gewinn-/Verlust-Alarm als Bild (keine zusätzliche Textnachricht). 2.15.4: Text nur noch, wenn sonst nichts ankäme –
+        // kein Bild erzeugbar (z. B. Server ohne Kartenrenderer) oder Telegram lehnt das Bild endgültig ab (400); bei unklarer
+        // Zustellung weiterhin kein zweiter Versuch. Vorher blieb der Alarm im Ausgang und wurde nach 24 Stunden still verworfen.
+        const pnlPhoto = !!(m.pnlCard && this.pnlCards);
+        const makeCard = m.target === 'patterns' && m.card && this.patternCards ? () => this.patternCard(m, late ? t : 0) : pnlPhoto ? () => this.pnlCardImage(m, late ? t : 0) : m.alarmCard && this.alarmCards ? () => this.alarmCardImage(m, late ? t : 0) : null;
         if (makeCard) {
-          const card = await makeCard().catch(e => { if (pnlPhotoOnly) throw e; this.note('Karte', `Karte nicht erzeugt – Text als Ersatz (${this.secret(e.message).slice(0, 120)})`); return null; });
-          if (!card && pnlPhotoOnly) throw new Error('Gewinn-/Verlust-Bild nicht erzeugt');
+          const card = await makeCard().catch(e => { this.note('Karte', `Karte nicht erzeugt – Text als Ersatz (${this.secret(e.message).slice(0, 120)})`); return null; });
           if (card) {
             try { sent = await this.tg('sendPhoto', { ...base, photo: card.png, filename: card.name, caption: card.caption, ...(card.html === false ? {} : { parse_mode: 'HTML' }) }, 30000, token); via = ' als Karte'; }
-            catch (e) { if (pnlPhotoOnly || e.lost || e.code !== 400 || CHAT_PROBLEM.test(e.message)) throw e; this.log(`Telegram lehnt das Bild ab – Text als Ersatz: ${m.label}`); }
+            catch (e) { if (e.lost || e.code !== 400 || CHAT_PROBLEM.test(e.message)) throw e; this.log(`Telegram lehnt das Bild ab – Text als Ersatz: ${m.label}`); }
+            // Telegram hat das Bild angenommen, aber ohne Antwortobjekt: Zustellung unklar – kein Text hinterher (kein Duplikat)
+            if (!sent && pnlPhoto && via) throw Object.assign(new Error('Telegram hat das Gewinn-/Verlust-Bild nicht bestätigt'), { lost: true });
           }
         }
-        if (!sent && pnlPhotoOnly) throw Object.assign(new Error('Telegram hat das Gewinn-/Verlust-Bild nicht bestätigt'), { lost: true });
         if (!sent) sent = await this.tg('sendMessage', { ...base, text: payload.text, parse_mode: payload.parse_mode, link_preview_options: { is_disabled: true } }, 20000, token);
         this.log(`Telegram gesendet${via}: ${m.label || m.text.split('\n')[0]}${sent?.message_id ? ` (Nachricht #${sent.message_id})` : ''}${m.tries ? ` – nach ${plural(m.tries, 'Fehlversuch', 'Fehlversuchen')}` : ''}`);
         this.out = this.out.filter(x => x !== m); this.last = { t, label: m.label }; if (m.ev) this.evSet(m.ev, 'confirmed');

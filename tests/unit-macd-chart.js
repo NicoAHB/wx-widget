@@ -94,6 +94,7 @@ const check=(name,test)=>{try{test();passed++;console.log('✓ '+name);}catch(e)
  check('Zukünftige Kerzen jenseits von now bestätigen keinen historischen Marker',()=>assert.deepEqual(crosses([-1,3,4],undefined,{...closeOptions(3),now:step},0,2),[]));
  check('Berührung ohne Seitenwechsel erzeugt noch keinen Marker',()=>assert.deepEqual(crosses([1,0,0]),[]));
  check('Indikatorlücken werden nicht mit einer Kreuzung verbunden',()=>assert.deepEqual(crosses([-1,null,1,2]),[]));
+ check('3.82.2: laufende Kerze verändert bestätigte Marker nicht (Schwelle nur aus geschlossenen Kerzen)',()=>{const base=[-1,-.8,-.6,-.4,-.03,.03,.4,.6,.8,1],o={candles:rows(11),now:10*step},a=crosses([...base,1.1],undefined,o),b=crosses([...base,40],undefined,o);assert.equal(a.length,1);assert.deepEqual(b,a);});
  check('Außerhalb des sichtbaren Segments erscheint kein Marker',()=>assert.deepEqual(crosses([-1,1,2],undefined,closeOptions(3),1,3),[]));
  check('Werteformat behält Vorzeichen und kleine Werte',()=>{assert.equal(V(null),'–');assert.equal(V(0),'0');assert.match(V(-2.5),/−|-|2,5/);assert.match(V(1e-12),/E-12/);assert.ok(V(1e-12)!=='0');});
  console.log(passed+'/'+(passed+failed)+' bestanden');process.exitCode=failed?1:0;

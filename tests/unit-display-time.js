@@ -16,7 +16,9 @@ const check=(name,fn)=>{try{fn();pass++;console.log('✓ '+name);}catch(e){fail+
  check('Doppelte Herbststunde wird auf der Achse unterschieden',()=>{const t=T(times,{intervalMs:3600000,left:0,right:800,x:i=>100+i*500});assert.equal(t.length,2);assert.notEqual(t[0].label,t[1].label);assert.ok(t[1].label.endsWith('MEZ'));});
  const before=JSON.stringify(times);T(times,{intervalMs:3600000,left:0,right:800,x:i=>100+i*500});
  check('Originale Millisekunden bleiben bitgenau erhalten',()=>assert.equal(JSON.stringify(times),before));
- for(const name of['market-intervals','chart-detail','watch-model-core','watch-model-feed','pattern-lifecycle'])check(name+': Rechen-/Abrufkern gegenüber 3.77.6 unverändert',()=>{const root=__dirname+'/../';assert.ok(fs.readFileSync(root+'shared/'+name+'.mjs').equals(fs.readFileSync(root+'bundles/3.77.6/shared/'+name+'.mjs')));});
+ for(const name of['market-intervals','chart-detail','watch-model-core','pattern-lifecycle'])check(name+': Rechen-/Abrufkern gegenüber 3.77.6 unverändert',()=>{const root=__dirname+'/../';assert.ok(fs.readFileSync(root+'shared/'+name+'.mjs').equals(fs.readFileSync(root+'bundles/3.77.6/shared/'+name+'.mjs')));});
+ // 3.82.2: einzige gewollte Änderung im Feed ist der Cache-Schlüssel ohne globale Revision (Leistung); sonst identisch mit 3.77.6
+ check('watch-model-feed: gegenüber 3.77.6 nur der Cache-Schlüssel geändert',()=>{const root=__dirname+'/../',strip=t=>t.replace(/^\s*\/\/.*\n/gm,'').replace('|${state.revision}`','`');assert.equal(strip(fs.readFileSync(root+'shared/watch-model-feed.mjs','utf8')),strip(fs.readFileSync(root+'bundles/3.77.6/shared/watch-model-feed.mjs','utf8')));});
  const html=fs.readFileSync(__dirname+'/../weather-widget-v2.html','utf8');
  check('UTC-Kerzenanker und UTC-BTC-Puls bleiben unverändert',()=>{assert.ok(html.includes("function pulseSlot(t) { const d = new Date(t - 1), wd = d.getUTCDay(); return { h: d.getUTCHours()"));assert.ok(html.includes('Math.floor(Date.now() / 864e5) * 864e5'));});
  console.log(`${pass}/${pass+fail} bestanden`);process.exitCode=fail?1:0;

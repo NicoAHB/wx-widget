@@ -10,7 +10,9 @@ export function chartTimeTicks(rows, { intervalMs, x, left, right, measure = tex
     const old = candidates.get(index);
     if (old && old.priority <= priority) return;
     const date = displayTimeParts(rows[index].time), previous = index > 0 ? displayTimeParts(rows[index - 1].time) : null, dayChange = previous && date.day !== previous.day;
-    const repeatedHour = previous && !dayChange && date.zone !== previous.zone && date.clock <= previous.clock;
+    // Doppelte Stunde bei der Rückstellung (25.10.: 02:00–02:59 gibt es als MESZ und als MEZ): jeder Tick in dieser Stunde bekommt die Zone,
+    // nicht nur der erste nach der Umstellung – sonst liefe die Achse ohne Kennzeichnung rückwärts.
+    const twin = displayTimeParts(rows[index].time + (date.zone === 'MEZ' ? -36e5 : 36e5)), repeatedHour = !!twin && twin.clock === date.clock && twin.day === date.day;
     const label = (hourly || dayChange ? date.day.slice(0, 6) + ' ' : '') + date.clock + (repeatedHour ? ' ' + date.zone : '');
     const width = measure(label);
     if (width > right - left) return;

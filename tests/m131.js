@@ -21,7 +21,7 @@ async function routedWebkit(){const {webkit}=require('playwright'),https=require
  return route.fulfill({headers:{'access-control-allow-origin':'*'},json:source.map(c=>[c.time,String(c.open),String(c.high),String(c.low),String(c.close),String(c.volume),c.end-1,'10000',5,'50','5000','0'])});});
  await ctx.route('https://api.telegram.org/**',async route=>{const url=route.request().url(),data=route.request().postDataBuffer(),body=data?.toString('latin1')||'',field=name=>new RegExp('name="'+name+'"\\r\\n\\r\\n([^\\r]*)').exec(body)?.[1];
  if(url.endsWith('/sendPhoto'))photos.push({chat:field('chat_id'),caption:Buffer.from(field('caption')||'','latin1').toString('utf8'),pngType:body.includes('image/png')});
- if(url.endsWith('/sendMessage'))replies.push({chat:field('chat_id'),text:Buffer.from(field('text')||'','latin1').toString('utf8'),reply:field('reply_parameters')});
+ /* 3.82.2: nur echte Antworten zählen – je nach Uhrzeit kam sonst ein Wirtschaftstermin-Hinweis dazwischen */if(url.endsWith('/sendMessage')&&/reply_parameters/.test(body))replies.push({chat:field('chat_id'),text:Buffer.from(field('text')||'','latin1').toString('utf8'),reply:field('reply_parameters')});
  return route.fulfill({headers:{'access-control-allow-origin':'*'},json:{ok:true,result:url.endsWith('/getMe')?{id:555555555,is_bot:true,first_name:'Analyse-Signale_111'}:{message_id:photos.length||1}}});});
  await p.goto(h.URL_BASE+'/weather-widget-v2.html');await p.waitForFunction(()=>window.__analysis&&__analysis.feed.result('BTCUSDT','spot','trend-pullback').signal&&__analysis.feed.result('ETCUSDT','spot','trend-pullback').signal,null,{timeout:60000});
  const row=p.locator('[data-analysis="trend-pullback"]');

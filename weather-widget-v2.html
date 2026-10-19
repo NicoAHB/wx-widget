@@ -1072,6 +1072,8 @@ fieldset.chan legend{font-size:.875rem;font-weight:650;padding:0 4px;color:var(-
 svg .magnet-price{fill:#1d1606;font-size:11.5px;font-weight:700}
 /* Handy hochkant: Kurse auf Schildchen im Chart statt in einer eigenen Spalte */
 svg .axis-tag{fill:var(--surface);opacity:.82}svg .axis-label.axis-in{font-weight:600}
+/* 3.82.2: Preisschilder am rechten Rand liegen über allem – Tipps an die Linien darunter (Ziel/Stop, Prognose) durchlassen */
+#chart .axis-tag,#chart .axis-label.axis-in{pointer-events:none}
 svg .magnet-label{font-size:12px;font-weight:700;paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round}
 .liq-chart-note{display:block;margin-top:4px;font-size:.75rem}
 .cached{opacity:.55;transition:opacity .25s}
@@ -1368,7 +1370,7 @@ html[data-chartfull]:not([data-chartbar=open]) .chart-toolbar,html[data-chartful
 .sw.fib{height:8px;background:repeating-linear-gradient(0deg,var(--c-fib) 0 1.5px,transparent 1.5px 3.5px)}
 #chart .fib-line{stroke:var(--c-fib);stroke-width:1;stroke-dasharray:2 3;opacity:.85}
 #chart .fib-zone{fill:var(--c-fib);opacity:.07}
-#chart .fib-label{fill:var(--c-fib);font-size:11px;font-weight:600;paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round}
+#chart .fib-label{fill:var(--c-fib);font-size:11px;font-weight:600;paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round;pointer-events:none}
 /* 3.11.1: Fibonacci-Leiste unter dem Chart – eine Zeile mit fester Höhe (Werte ändern nie die Höhe), drei Knöpfe
    38,2 / 50 / 61,8 % mit Kurs und Abstand; schmal (Handy) zweizeilig im Knopf: Marke und Abstand oben, Kurs darunter */
 .fib-strip{display:grid;grid-template-columns:auto repeat(3,minmax(0,1fr));grid-template-rows:34px;align-items:stretch;gap:0 8px;padding:8px 20px;border-top:1px solid var(--border);font-size:.75rem;color:var(--muted)}
@@ -2553,77 +2555,77 @@ html[data-analysis-focus] .mtf-c:not([data-trend-interval="4h"]):not([data-trend
 .analysis-fit{margin:6px 0;border-top:1px solid var(--line);font-size:.75rem}.analysis-fit>summary{min-height:44px;display:flex;align-items:center;cursor:pointer;line-height:1.5;color:var(--muted)}.analysis-fit[data-fit=fit]>summary{color:var(--mint)}.analysis-fit[data-fit=unfavorable]>summary{color:var(--amber)}.analysis-fit p{margin:0 0 10px;overflow-wrap:anywhere}.analysis-strength-note{display:block;color:var(--muted);line-height:1.6}.analysis-common-events{margin-top:12px;border-top:1px solid var(--line);font-size:.75rem}.analysis-common-events[hidden]{display:none}.analysis-common-events>summary{min-height:44px;cursor:pointer;display:flex;align-items:center;color:var(--mint)}.analysis-common-event{display:flex;align-items:center;gap:12px;flex-wrap:wrap;overflow-wrap:anywhere}.analysis-common-event span{flex:1;min-width:140px}.analysis-ranking{padding:0;list-style:none}.analysis-ranking li{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:12px;border-top:1px solid var(--line);min-height:44px}.analysis-ranking span{color:var(--muted);overflow-wrap:anywhere}.strategy-tools{margin-top:12px;font-size:.75rem;line-height:1.6}.strategy-actions{display:flex;flex-wrap:wrap;gap:8px}.strategy-tools button,.strategy-tools summary,.strategy-tools input{min-height:44px}.strategy-tools summary{display:flex;align-items:center;cursor:pointer;color:var(--mint)}.strategy-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,140px),1fr));gap:12px;margin-bottom:12px}.strategy-fields label{display:grid;gap:4px;min-width:0}.strategy-fields input{min-width:0;width:100%;box-sizing:border-box}.strategy-test-report p,.strategy-protocol p{overflow-wrap:anywhere}.strategy-protocol>div{max-height:360px;overflow:auto}.strategy-test-report details{border-top:1px solid var(--line)}
 </style>
   <script type="module">
-import { MARKET_INTERVALS, CHART_INTERVALS, SIGNAL_INTERVALS, INTERVAL_MS, nearestChartInterval } from './bundles/3.82.1/shared/market-intervals.mjs';
-import { createDetailCandles, detailOptions, detailChoice, closedSeries, timeIndex, DETAIL_VISIBLE_MAX } from './bundles/3.82.1/shared/chart-detail.mjs';
-import { patternChipRows, patternChipKey } from './bundles/3.82.1/shared/chart-pattern-chips.mjs';
-import { PATTERN_QUALITY_CONFIG, chartPatternQuality, repricePatternQuality, sortPatternQuality, patternOverview } from './bundles/3.82.1/shared/chart-pattern-quality.mjs';
-import { createPatternOverviewFeed } from './bundles/3.82.1/shared/chart-pattern-overview-feed.mjs';
+import { MARKET_INTERVALS, CHART_INTERVALS, SIGNAL_INTERVALS, INTERVAL_MS, nearestChartInterval } from './bundles/3.82.2/shared/market-intervals.mjs';
+import { createDetailCandles, detailOptions, detailChoice, closedSeries, timeIndex, DETAIL_VISIBLE_MAX } from './bundles/3.82.2/shared/chart-detail.mjs';
+import { patternChipRows, patternChipKey } from './bundles/3.82.2/shared/chart-pattern-chips.mjs';
+import { PATTERN_QUALITY_CONFIG, chartPatternQuality, repricePatternQuality, sortPatternQuality, patternOverview } from './bundles/3.82.2/shared/chart-pattern-quality.mjs';
+import { createPatternOverviewFeed } from './bundles/3.82.2/shared/chart-pattern-overview-feed.mjs';
 // Arbeitsstand: bei der gemeinsamen Release-Freigabe in das neue Versionsbündel übernehmen.
-import { createPositioningFeed } from './bundles/3.82.1/shared/positioning-score.mjs';
-import { CRYPTO_CALENDAR, parseCryptoCalendar, cryptoCalendarEvents } from './bundles/3.82.1/shared/crypto-calendar.mjs';
-import { createMusterClient } from './bundles/3.82.1/shared/muster-bot-feed.mjs';
-import { createMusterPaper } from './bundles/3.82.1/shared/muster-bot-paper.mjs';
-import { readMusterPaper, writeMusterPaper } from './bundles/3.82.1/shared/muster-bot-store.mjs';
-import { projectPatternLines, projectionSettings, projectionTime } from './bundles/3.82.1/shared/pattern-projection.mjs';
-import { MACD_CHART, macdFindings, macdPaneLayout, drawMacdPane, createMacdHelp } from './bundles/3.82.1/shared/macd-chart.mjs';
-import { MACD_NOTICE } from './bundles/3.82.1/shared/macd-notice.mjs';
+import { createPositioningFeed } from './bundles/3.82.2/shared/positioning-score.mjs';
+import { CRYPTO_CALENDAR, parseCryptoCalendar, cryptoCalendarEvents } from './bundles/3.82.2/shared/crypto-calendar.mjs';
+import { createMusterClient } from './bundles/3.82.2/shared/muster-bot-feed.mjs';
+import { createMusterPaper } from './bundles/3.82.2/shared/muster-bot-paper.mjs';
+import { readMusterPaper, writeMusterPaper } from './bundles/3.82.2/shared/muster-bot-store.mjs';
+import { projectPatternLines, projectionSettings, projectionTime } from './bundles/3.82.2/shared/pattern-projection.mjs';
+import { MACD_CHART, macdFindings, macdPaneLayout, drawMacdPane, createMacdHelp } from './bundles/3.82.2/shared/macd-chart.mjs';
+import { MACD_NOTICE } from './bundles/3.82.2/shared/macd-notice.mjs';
 // NEU 3.77.3: Zeitachse mit Datum und kollisionsfreien Beschriftungen.
-import { chartTimeTicks } from './bundles/3.82.1/shared/chart-time-axis.mjs';
-import { createProjectionInspector, projectionPrice, projectionIndexTime, projectionTimeIndex } from './bundles/3.82.1/shared/projection-inspector.mjs';
-import { createGithubSyncView } from './bundles/3.82.1/shared/github-sync-view.mjs';
-import { createDocViewer } from './bundles/3.82.1/shared/doc-viewer.mjs';
-import { PATTERN_FILTER_PRESET_NAMES, PATTERN_FILTER_FIELDS, PATTERN_CARD_FIELDS, HIGHER_TIMEFRAME, patternFilterSettings, patternFilterFromForm, evaluatePatternSignal, selectPatternSignals, patternJournalEntry, addPatternJournal, resolvePatternJournal, patternHitStats, patternJournalStats, PATTERN_OUTCOME_NAMES, backtestPatternFilter } from './bundles/3.82.1/shared/pattern-quality.mjs';
-import { stripSyncSecrets } from './bundles/3.82.1/shared/github-sync.mjs';
-import { createMusterView } from './bundles/3.82.1/shared/muster-bot-view.mjs';
-import { computeKiZones, KI_ZONE_INTERVALS } from './bundles/3.82.1/shared/ki-zones.mjs';
-import { heikinAshi } from './bundles/3.82.1/shared/heikin-ashi.mjs';
-import { detectFvgs, fvgSummary } from './bundles/3.82.1/shared/fvg.mjs';
-import { scoreZoneStrength, ZONE_STRENGTH, ZONE_SIGNAL, zoneSignal, zoneStep, zoneOutcome, summarizeZoneBacktest } from './bundles/3.82.1/shared/zone-strength.mjs';
+import { chartTimeTicks } from './bundles/3.82.2/shared/chart-time-axis.mjs';
+import { createProjectionInspector, projectionPrice, projectionIndexTime, projectionTimeIndex } from './bundles/3.82.2/shared/projection-inspector.mjs';
+import { createGithubSyncView } from './bundles/3.82.2/shared/github-sync-view.mjs';
+import { createDocViewer } from './bundles/3.82.2/shared/doc-viewer.mjs';
+import { PATTERN_FILTER_PRESET_NAMES, PATTERN_FILTER_FIELDS, PATTERN_CARD_FIELDS, HIGHER_TIMEFRAME, patternFilterSettings, patternFilterFromForm, evaluatePatternSignal, selectPatternSignals, patternJournalEntry, addPatternJournal, resolvePatternJournal, patternHitStats, patternJournalStats, PATTERN_OUTCOME_NAMES, backtestPatternFilter } from './bundles/3.82.2/shared/pattern-quality.mjs';
+import { stripSyncSecrets } from './bundles/3.82.2/shared/github-sync.mjs';
+import { createMusterView } from './bundles/3.82.2/shared/muster-bot-view.mjs';
+import { computeKiZones, KI_ZONE_INTERVALS } from './bundles/3.82.2/shared/ki-zones.mjs';
+import { heikinAshi } from './bundles/3.82.2/shared/heikin-ashi.mjs';
+import { detectFvgs, fvgSummary } from './bundles/3.82.2/shared/fvg.mjs';
+import { scoreZoneStrength, ZONE_STRENGTH, ZONE_SIGNAL, zoneSignal, zoneStep, zoneOutcome, summarizeZoneBacktest } from './bundles/3.82.2/shared/zone-strength.mjs';
 // 3.68.0: KI-Signale/Trading-Bot entfernt; der GitHub-Sync behält sein Format inklusive vorhandener Modelloriginale.
-import { exportModelArchive, importModelArchive, validateModelArchive, restoreModelOriginals } from './bundles/3.82.1/shared/model-archive.mjs';
-import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT, patternGrade } from './bundles/3.82.1/shared/telegram-format.mjs';
-import { patternSignalCard, patternChartData } from './bundles/3.82.1/shared/pattern-signal-card.mjs';   // 3.71.0: Chartmuster-Signalkarte
-import { pnlAlarmCard } from './bundles/3.82.1/shared/pnl-alarm-card.mjs';   // 3.71.0: Gewinn-/Verlust-Alarm als Bild
-import { priceAlarmCard } from './bundles/3.82.1/shared/price-alarm-card.mjs';   // 3.71.0: Kurs-Alarm als Bild
-import { createOrderflowView } from './bundles/3.82.1/shared/orderflow-view.mjs';
-import { createMarketRadarView } from './bundles/3.82.1/shared/market-radar-view.mjs';
-import { createPanelAppearanceSettings } from './bundles/3.82.1/shared/panel-appearance.mjs';
-import { createSignalView } from './bundles/3.82.1/shared/orderflow-signal-view.mjs';
-import { neutralMacdSignal } from './bundles/3.82.1/shared/indicators.mjs';
-import { WATCH_MODEL_KEY, WATCH_COMPARE_KEY } from './bundles/3.82.1/shared/watch-model-core.mjs';
-import { rsiSignal } from './bundles/3.82.1/shared/rsi-momentum.mjs';
-import { createWatchModelFeed } from './bundles/3.82.1/shared/watch-model-feed.mjs';
-import { createSignalReasonsView } from './bundles/3.82.1/shared/watch-signal-reasons.mjs';
-import { unknownPhase } from './bundles/3.82.1/shared/market-phase-core.mjs';
-import { createMarketPhaseFeed } from './bundles/3.82.1/shared/market-phase-feed.mjs';
-import { createMarketPhaseView } from './bundles/3.82.1/shared/market-phase-view.mjs';
-import { createWatchModelView } from './bundles/3.82.1/shared/watch-model-view.mjs';
-import { networkState, createWidgetBoundary } from './bundles/3.82.1/shared/widget-state.mjs';
-import { volumeProfile } from './bundles/3.82.1/shared/volume-profile.mjs';
-import { analysisChannelState, analysisChannelAllows } from './bundles/3.82.1/shared/analysis-channel.mjs';
-import { createAnalysisLearning } from './bundles/3.82.1/shared/analysis-learning-feed.mjs';
-import { ANALYSIS_LEARNING_KEY, LEARNING_IDS, mergeLearningData, validateLearningData } from './bundles/3.82.1/shared/analysis-learning.mjs';
-import { ANALYSES, ANALYSIS_KEY, ANALYSIS_LOG_KEY, analysisCoinAllowed, analysisDestination } from './bundles/3.82.1/shared/analysis-config.mjs';
-import { analysisChartModel, analysisChartExplanation, drawAnalysisChart, installAnalysisChartTap, createAnalysisChartHelp } from './bundles/3.82.1/shared/analysis-chart.mjs';
-import { createAnalysisView } from './bundles/3.82.1/shared/analysis-view.mjs';
-import { createAnalysisFeed } from './bundles/3.82.1/shared/analysis-feed.mjs';
-import { NY_OPEN, NY_JOURNAL_KEY, nyDailySignalKey, nyLiveRange } from './bundles/3.82.1/shared/ny-open-core.mjs';
-import { nyNoticeEvents } from './bundles/3.82.1/shared/ny-open-notices.mjs';
-import { mergeNyJournals } from './bundles/3.82.1/shared/ny-open-feed.mjs';
-import { createNyHistory } from './bundles/3.82.1/shared/ny-open-history.mjs';
-import { drawNyChart } from './bundles/3.82.1/shared/ny-open-chart.mjs';
-import { analysisCard, analysisTestSignal } from './bundles/3.82.1/shared/analysis-card.mjs';
-import { displayTimeParts } from './bundles/3.82.1/shared/display-time.mjs';
-import { createAnalysisDelivery } from './bundles/3.82.1/shared/analysis-delivery.mjs';
-import { PULLBACK, PULLBACK_DATA_KEY, PULLBACK_MODEL_KEY, PULLBACK_ACK_KEY, PULLBACK_DELIVERY_KEY, pullbackEligible } from './bundles/3.82.1/shared/trend-pullback-core.mjs';
-import { pullbackData, pullbackBackupData, mergePullbackData, validatePullbackData, validatePullbackModel } from './bundles/3.82.1/shared/trend-pullback-store.mjs';
-import { pullbackHighlights } from './bundles/3.82.1/shared/trend-pullback-notices.mjs';
-import { drawPullbackChart } from './bundles/3.82.1/shared/trend-pullback-chart.mjs';
-import { MARKET_STRATEGY, STRATEGY_IDS, STRATEGY_DATA_KEY, STRATEGY_REPORT_KEY, strategyData, mergeStrategyData, validateStrategyData, strategyAlertCurrent } from './bundles/3.82.1/shared/market-strategy-core.mjs';
-import { strategyNoticeEvents } from './bundles/3.82.1/shared/market-strategy-feed.mjs';
-import { analysisSuitability, groupAnalysisEvents } from './bundles/3.82.1/shared/analysis-context.mjs';
-import { createPullbackReplies } from './bundles/3.82.1/shared/trend-pullback-delivery.mjs';
-import { ANALYSIS_NOTICE_KEY, analysisNoticeState, observeAnalysis, analysisNoticeCurrent } from './bundles/3.82.1/shared/analysis-notices.mjs';
+import { exportModelArchive, importModelArchive, validateModelArchive, restoreModelOriginals } from './bundles/3.82.2/shared/model-archive.mjs';
+import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT, patternGrade } from './bundles/3.82.2/shared/telegram-format.mjs';
+import { patternSignalCard, patternChartData } from './bundles/3.82.2/shared/pattern-signal-card.mjs';   // 3.71.0: Chartmuster-Signalkarte
+import { pnlAlarmCard } from './bundles/3.82.2/shared/pnl-alarm-card.mjs';   // 3.71.0: Gewinn-/Verlust-Alarm als Bild
+import { priceAlarmCard } from './bundles/3.82.2/shared/price-alarm-card.mjs';   // 3.71.0: Kurs-Alarm als Bild
+import { createOrderflowView } from './bundles/3.82.2/shared/orderflow-view.mjs';
+import { createMarketRadarView } from './bundles/3.82.2/shared/market-radar-view.mjs';
+import { createPanelAppearanceSettings } from './bundles/3.82.2/shared/panel-appearance.mjs';
+import { createSignalView } from './bundles/3.82.2/shared/orderflow-signal-view.mjs';
+import { neutralMacdSignal } from './bundles/3.82.2/shared/indicators.mjs';
+import { WATCH_MODEL_KEY, WATCH_COMPARE_KEY } from './bundles/3.82.2/shared/watch-model-core.mjs';
+import { rsiSignal } from './bundles/3.82.2/shared/rsi-momentum.mjs';
+import { createWatchModelFeed } from './bundles/3.82.2/shared/watch-model-feed.mjs';
+import { createSignalReasonsView } from './bundles/3.82.2/shared/watch-signal-reasons.mjs';
+import { unknownPhase } from './bundles/3.82.2/shared/market-phase-core.mjs';
+import { createMarketPhaseFeed } from './bundles/3.82.2/shared/market-phase-feed.mjs';
+import { createMarketPhaseView } from './bundles/3.82.2/shared/market-phase-view.mjs';
+import { createWatchModelView } from './bundles/3.82.2/shared/watch-model-view.mjs';
+import { networkState, createWidgetBoundary } from './bundles/3.82.2/shared/widget-state.mjs';
+import { volumeProfile } from './bundles/3.82.2/shared/volume-profile.mjs';
+import { analysisChannelState, analysisChannelAllows } from './bundles/3.82.2/shared/analysis-channel.mjs';
+import { createAnalysisLearning } from './bundles/3.82.2/shared/analysis-learning-feed.mjs';
+import { ANALYSIS_LEARNING_KEY, LEARNING_IDS, mergeLearningData, validateLearningData } from './bundles/3.82.2/shared/analysis-learning.mjs';
+import { ANALYSES, ANALYSIS_KEY, ANALYSIS_LOG_KEY, analysisCoinAllowed, analysisDestination } from './bundles/3.82.2/shared/analysis-config.mjs';
+import { analysisChartModel, analysisChartExplanation, drawAnalysisChart, installAnalysisChartTap, createAnalysisChartHelp } from './bundles/3.82.2/shared/analysis-chart.mjs';
+import { createAnalysisView } from './bundles/3.82.2/shared/analysis-view.mjs';
+import { createAnalysisFeed } from './bundles/3.82.2/shared/analysis-feed.mjs';
+import { NY_OPEN, NY_JOURNAL_KEY, nyDailySignalKey, nyLiveRange } from './bundles/3.82.2/shared/ny-open-core.mjs';
+import { nyNoticeEvents } from './bundles/3.82.2/shared/ny-open-notices.mjs';
+import { mergeNyJournals } from './bundles/3.82.2/shared/ny-open-feed.mjs';
+import { createNyHistory } from './bundles/3.82.2/shared/ny-open-history.mjs';
+import { drawNyChart } from './bundles/3.82.2/shared/ny-open-chart.mjs';
+import { analysisCard, analysisTestSignal } from './bundles/3.82.2/shared/analysis-card.mjs';
+import { displayTimeParts } from './bundles/3.82.2/shared/display-time.mjs';
+import { createAnalysisDelivery } from './bundles/3.82.2/shared/analysis-delivery.mjs';
+import { PULLBACK, PULLBACK_DATA_KEY, PULLBACK_MODEL_KEY, PULLBACK_ACK_KEY, PULLBACK_DELIVERY_KEY, pullbackEligible } from './bundles/3.82.2/shared/trend-pullback-core.mjs';
+import { pullbackData, pullbackBackupData, mergePullbackData, validatePullbackData, validatePullbackModel } from './bundles/3.82.2/shared/trend-pullback-store.mjs';
+import { pullbackHighlights } from './bundles/3.82.2/shared/trend-pullback-notices.mjs';
+import { drawPullbackChart } from './bundles/3.82.2/shared/trend-pullback-chart.mjs';
+import { MARKET_STRATEGY, STRATEGY_IDS, STRATEGY_DATA_KEY, STRATEGY_REPORT_KEY, strategyData, mergeStrategyData, validateStrategyData, strategyAlertCurrent } from './bundles/3.82.2/shared/market-strategy-core.mjs';
+import { strategyNoticeEvents } from './bundles/3.82.2/shared/market-strategy-feed.mjs';
+import { analysisSuitability, groupAnalysisEvents } from './bundles/3.82.2/shared/analysis-context.mjs';
+import { createPullbackReplies } from './bundles/3.82.2/shared/trend-pullback-delivery.mjs';
+import { ANALYSIS_NOTICE_KEY, analysisNoticeState, observeAnalysis, analysisNoticeCurrent } from './bundles/3.82.2/shared/analysis-notices.mjs';
 // Pure, unrounded calculations. Prices are USDT per unit; FX is USDT per EUR.
 function rsi(closes, period = 14) {
   const out = Array(closes.length).fill(null);
@@ -3446,7 +3448,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
 // 3.43.0 (G10a): reiner Fachkern in shared/; Datenquelle und Karten folgen getrennt.
 // 3.44.0 (G10b): öffentlicher Adapter in shared/bitget-public.mjs; sichtbare Anbindung folgt mit G10(c).
-const APP_VERSION = '3.82.1', docEl = document.documentElement;
+const APP_VERSION = '3.82.2', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -3482,6 +3484,7 @@ const store = (() => {
   }
   const schedule = () => { if (!timer) timer = setTimeout(flush, 250); };
   const CLAIM_KEY = IDB_ONLY + 'claims.v1';
+  const claimAt = e => (typeof e === 'number' ? e : e?.at), claimKeep = (k, e) => (Number.isFinite(e?.ttl) ? e.ttl : k.startsWith('analysis:setup:') ? 30 * 864e5 : 864e5);
   function claimTx(change, strict = false) {
     if (!db) return Promise.resolve(!strict);
     return new Promise(resolve => {
@@ -3490,7 +3493,9 @@ const store = (() => {
       const st = tx.objectStore('kv'), r = st.get(CLAIM_KEY);
       r.onsuccess = () => {
         const map = r.result && typeof r.result === 'object' ? { ...r.result } : {}, now = Date.now();
-        for (const k of Object.keys(map)) if (!(now - map[k] < (k.startsWith('analysis:setup:') ? 30 * 864e5 : 864e5))) delete map[k]; // Analyse-Setups 30 Tage; bisherige Sperren unverändert einen Tag
+        // 3.82.2: Sperrdauer steht im Eintrag ({at, ttl}, mindestens ein Tag) – vorher galt für alles außer Analyse-Setups nur ein Tag,
+        // auch für Sperren mit 14 bzw. 450 Tagen. Alte Einträge (nur Zeitstempel) wie bisher: Analyse-Setups 30 Tage, sonst ein Tag.
+        for (const k of Object.keys(map)) if (!(now - claimAt(map[k]) < claimKeep(k, map[k]))) delete map[k];
         result = change(map); if (result) st.put(map, CLAIM_KEY);
       };
       tx.oncomplete = () => resolve(result); tx.onerror = tx.onabort = () => resolve(!strict);
@@ -3533,7 +3538,7 @@ const store = (() => {
     get ok() { return !!db || lsReliable; },
     // Ein Ereignis tab-übergreifend für sich beanspruchen (z. B. eine Benachrichtigung nur einmal senden): Lesen und Schreiben
     // in einer IndexedDB-Transaktion laufen über alle Tabs hinweg nacheinander ab. Ohne IndexedDB gewinnt jeder Tab (lieber doppelt als gar nicht).
-    claim(key, ttl, { strict = false } = {}) { return claimTx(map => { const now = Date.now(); if (map[key] && now - map[key] < ttl) return false; map[key] = now; return true; }, strict); },
+    claim(key, ttl, { strict = false } = {}) { return claimTx(map => { const now = Date.now(); if (map[key] && now - claimAt(map[key]) < ttl) return false; map[key] = { at: now, ttl: Math.max(864e5, ttl) }; return true; }, strict); },
     release(key) { return claimTx(map => { if (!(key in map)) return false; delete map[key]; return true; }); },
     // Dauerhaften Speicher höchstens einmal je Sitzung erbitten (Firefox fragt dabei per Dialog nach)
     async persist() { if (persistAsked || info.persisted === true || !navigator.storage?.persist) return info.persisted; persistAsked = true; try { info.persisted = await navigator.storage.persist(); } catch {} return info.persisted; },
@@ -4719,19 +4724,26 @@ function wlApplyView() {
 }
 // Schrift an die echte Feldbreite anpassen; Prozentwerte zuerst auf eine Nachkommastelle kürzen.
 // Die vollständigen Zahlen bleiben für Vorlesen und Tooltips erhalten. Kein Abschneiden oder Zusammenlaufen.
-function wlFitText(node) {
-  if (!node || node.getClientRects().length === 0) return;
+// 3.82.2: nur neu messen, wenn sich Text oder Kurzform geändert haben (force bei Größen-/Ansichtswechsel). Vorher lief die Messung
+// mit 2–3 erzwungenen Layouts je Feld jede Sekunde für alle Kacheln, auch ohne Änderung.
+function wlFitText(node, force = false) {
+  if (!node) return;
+  const full = node.dataset.full || node.textContent, key = `${full}\u0001${node.dataset.compact || ''}`;
+  if (!force && node.dataset.fit === key) return;
+  const plain = () => { wlSet(node, 'textContent', full); node.style.removeProperty('font-size'); delete node.dataset.fit; };
+  if (node.getClientRects().length === 0) return plain();
   node.style.removeProperty('font-size');
   const s = getComputedStyle(node), width = node.clientWidth - parseFloat(s.paddingLeft) - parseFloat(s.paddingRight);
-  if (width <= 0) return;
+  if (width <= 0) return plain();
   // Die echte Schriftform einschließlich Tabellenziffern und Ersatzzeichen messen (Canvas übernimmt diese Merkmale nicht).
-  const full = node.dataset.full || node.textContent, range = document.createRange();
+  const range = document.createRange();
   const measure = t => { wlSet(node, 'textContent', t); range.selectNodeContents(node); return range.getBoundingClientRect().width; };
   const fullWidth = measure(full), text = fullWidth > width - 1 && node.dataset.compact ? node.dataset.compact : full;
   const ratio = Math.min(1, (width - 1) / Math.max(1, text === full ? fullWidth : measure(text)));
   if (ratio < 1) node.style.fontSize = `${parseFloat(s.fontSize) * ratio}px`;
+  node.dataset.fit = key;
 }
-function wlFitNumbers() { for (const n of $('watchlist').querySelectorAll('.wl-price,.wl-tfv,.wl-list-change')) wlFitText(n); }
+function wlFitNumbers() { for (const n of $('watchlist').querySelectorAll('.wl-price,.wl-tfv,.wl-list-change')) wlFitText(n, true); }
 function wlFilterKey() { const v = store.get(WL_FILTER_KEY); return ['all', 'strong', 'weak'].includes(v) ? v : 'all'; }
 function wlSortKey() { return store.get(WL_SORT_KEY) === 'score' ? 'score' : 'own'; }
 function wlSortEff() { return state.watchEdit ? 'own' : wlSortKey(); }   // Bearbeiten zeigt immer die eigene Reihenfolge
@@ -6252,10 +6264,10 @@ function planBackup(data, src = 'Sicherung') {
   if (isObj(data.prefs)) {
     // 3.51.0 (G14): alte Hell-/Dunkelwahl bei ausdrücklicher Übernahme auch nach eigener Farbe anwenden.
     const values = { ...data.prefs }, backgroundKey = 'scalpdesk.background.v1', themeKey = 'scalpdesk.theme.v1', background = store.get(backgroundKey, null);
-    if(values[STRATEGY_DATA_KEY])validateStrategyData(values[STRATEGY_DATA_KEY]);
-    if(values[ANALYSIS_LEARNING_KEY])validateLearningData(values[ANALYSIS_LEARNING_KEY]);
-    if(values[PULLBACK_DATA_KEY])validatePullbackData(values[PULLBACK_DATA_KEY]);
-    if(values[PULLBACK_MODEL_KEY])validatePullbackModel(values[PULLBACK_MODEL_KEY]);
+    // 3.82.2: ein ungültiger Lern-/Protokollstand (z. B. aus einer anderen Modellversion) verwirft nur diesen einen Eintrag – vorher
+    // brach er die ganze Sicherung ab, auch Trades und Positionen
+    for (const [k, check] of [[STRATEGY_DATA_KEY, validateStrategyData], [ANALYSIS_LEARNING_KEY, validateLearningData], [PULLBACK_DATA_KEY, validatePullbackData], [PULLBACK_MODEL_KEY, validatePullbackModel]])
+      if (values[k]) try { check(values[k]); } catch (e) { delete values[k]; (p.dropped ||= []).push(`${k}: ${e.message}`); }
     if (Object.hasOwn(values, themeKey) && !Object.hasOwn(values, backgroundKey) && background?.mode === 'custom') values[backgroundKey] = { ...background, mode: values[themeKey] === 'light' ? 'light' : 'dark' };
     const keys = Object.keys(values).filter(k => PREF_KEYS.includes(k) && canon(values[k]) !== canon(store.get(k) ?? null)); if (keys.length) p.prefs = { keys, values };
   }
@@ -6445,6 +6457,7 @@ function planLines(p) {
   if (p.blocked.length) out.push(['Hier gelöscht', `${kindsText(p.blocked)} – noch in der Sicherung, ${p.blocked.length === 1 ? 'bleibt' : 'bleiben'} hier gelöscht`, ex(p.blocked, x => recText(x.kind, x.rec))]);
   if (p.conflicts.length) out.push(['⚖ Konflikte', `${p.conflicts.length} – beide Geräte haben dasselbe verschieden geändert. Nach „Übernehmen“ entscheidest du einzeln; bis dahin gilt der Stand dieses Geräts.`, ex(p.conflicts, c => c.kind === 'set' ? SET_NAME[c.f] : `${recText(c.localKind || c.kind, c.local || c.draft)}${c.why === 'deletedHere' ? ' – hier gelöscht, dort geändert' : c.why === 'deletedThere' ? ' – dort gelöscht, hier vorhanden' : c.why === 'setup' ? ' – Gründe: Herkunft unklar' : c.why === 'closedThere' ? ' – dort geschlossen, hier weiter geändert' : c.why === 'balTime' ? ' – gleicher Zeitpunkt, anderer Kontostand als hier' : c.why === 'balStart' ? ' – auf beiden Geräten ein Startwert' : ''}`)]);
   if (p.pending) out.push(['⚖ Schon offen', `${p.pending} ${p.pending === 1 ? 'Konflikt' : 'Konflikte'} aus einem früheren Abgleich – ${p.pending === 1 ? 'wartet' : 'warten'} weiter auf deine Entscheidung`]);
+  if (p.dropped?.length) out.push(['⚠ Lern-/Protokollstand übersprungen', `${p.dropped.length} ungültig (z. B. andere Modellversion) – der Rest der Sicherung wird normal übernommen`]);
   if (p.bad.length) out.push(['⚠ Fehlerhaft in der Sicherung', `${p.bad.length} – ${p.bad.length === 1 ? 'kommt' : 'kommen'} in die Prüfliste (nichts geht verloren)`, ex(p.bad, b => `${recText(b.kind, b.raw)}: ${b.why}`)]);
   if (p.quar.length) out.push(['Prüfliste des anderen Geräts', `${p.quar.length} ${p.quar.length === 1 ? 'Eintrag' : 'Einträge'} – ${p.quar.length === 1 ? 'kommt' : 'kommen'} in die Prüfliste`]);
   if (p.acks.length) out.push(['Quittierungen', `${p.acks.length} – auf dem anderen Gerät bestätigt`]);
@@ -8961,10 +8974,12 @@ async function chanSendCard(k, text, test = false, kind = 'test', opts = {}) {
     // Antwort verloren: kein zweiter Versuch (die Meldung könnte schon angekommen sein) – nur ohne Netz (sicher nicht gesendet) weiter mit Text
     if (m.lost && !(self.navigator && navigator.onLine === false)) { done(false, 'Zustellung unbestätigt – keine Antwort von Telegram; kein zweiter Versuch, damit die Meldung nicht doppelt kommt'); return { ...m, code: 0, msg: 'Keine Antwort von Telegram – Zustellung unbestätigt' }; }
     if (m.chat) { const r = { ok: false, code: m.code, msg: m.msg }; done(false, chanError('tg', r)); return r; }
-  } catch (error) { if (kind === 'analysis') m = { ok: false, code: 0, msg: 'Analyse-Bild konnte nicht erzeugt werden: ' + (error.message || 'Rendererfehler') }; /* Kurs-Alarm behält Text als Ersatz. */ }
-  if (kind === 'pnl' || kind === 'analysis') {
-    done(false, (kind === 'analysis' ? 'Analyse-Bild nicht gesendet – ' : 'Gewinn-/Verlust-Bild nicht gesendet – ') + (m ? kind === 'analysis' && !m.code ? m.msg : chanError('tg', m) : 'Bild konnte nicht erzeugt werden.'));
-    return m || { ok: false, code: 0, msg: kind === 'analysis' ? 'Analyse-Bild konnte nicht erzeugt werden' : 'Gewinn-/Verlust-Bild konnte nicht erzeugt werden' };
+  } catch (error) { if (kind === 'analysis') m = { ok: false, code: 0, msg: 'Analyse-Bild konnte nicht erzeugt werden: ' + (error.message || 'Rendererfehler') }; /* Kurs- und Gewinn-/Verlust-Alarm behalten Text als Ersatz. */ }
+  // 3.82.2: Gewinn/Verlust kommt normal nur als Bild; Text nur, wenn kein Bild erzeugt werden konnte oder Telegram es abgelehnt hat
+  // (unklare Zustellung und Chat-Probleme sind oben schon beendet) – sonst ginge ein Risiko-Alarm ganz verloren
+  if (kind === 'analysis') {
+    done(false, 'Analyse-Bild nicht gesendet – ' + (m ? !m.code ? m.msg : chanError('tg', m) : 'Bild konnte nicht erzeugt werden.'));
+    return m || { ok: false, code: 0, msg: 'Analyse-Bild konnte nicht erzeugt werden' };
   }
   return chanSend(k, text, test, kind, opts);
 }
@@ -11637,7 +11652,7 @@ function wlPaint(now = Date.now(), force = false) {
     if (!e) continue;
     const v = wlView(e, now), q = s => tile.querySelector(s);
     if (typeof wmPatchView === 'function') wmPatchView(v, e, now);
-    const price = q('.wl-price'); if (price) { price.dataset.full = v.priceText; wlSet(price, 'textContent', v.priceText); wlFitText(price); }
+    const price = q('.wl-price'); if (price) { price.dataset.full = v.priceText; wlFitText(price); }   // wlFitText schreibt den Text (sonst zweimal je Sekunde bei Kurzform)
     const tf = q('.wl-tf'); if (tf) v.tf.forEach((x, i) => {
       const c = tf.children[i]?.lastChild; if (!c) return;
       c.dataset.full = x.text; c.dataset.compact = x.v === null ? '–' : x.dir === 'flat' ? '±0,0' : signed(x.v, 1);
@@ -11646,7 +11661,7 @@ function wlPaint(now = Date.now(), force = false) {
     });
     const change = q('.wl-list-change'); if (change) {
       const text = v.chg === null ? '–' : `${v.chgDir === 'flat' ? '±0,00' : signed(v.chg)}%`;
-      change.dataset.full = text; change.setAttribute('aria-label', v.chgText); wlSet(change, 'textContent', text); wlSet(change, 'className', `wl-list-change ${v.chgDir}`); wlFitText(change);
+      change.dataset.full = text; change.setAttribute('aria-label', v.chgText); wlSet(change, 'className', `wl-list-change ${v.chgDir}`); wlFitText(change);
     }
     const bell = q('.wl-alarm'); if (bell) wlSet(bell, 'hidden', !state.alarms.some(a => a.symbol === e.sym && !a.triggeredAt));
     const arrows = q('.wl-arrows'); if (arrows) v.rules.filter(x => x.k !== 'rsi').forEach((x, i) => { wlSet(arrows.children[i], 'textContent', x.arrow); wlSet(arrows.children[i], 'className', x.dir); arrows.children[i].title = `${x.label}: ${x.arrow}`; });
@@ -11730,7 +11745,7 @@ function wldBox() {
   head.append(title, phaseHost, meta, close);
   const phase=createMarketPhaseView({root:phaseHost,getMarktphase,now:serverNow,read:key=>store.get(key),write:(key,value)=>store.set(key,value),
     symbols:()=>state.watch.map(wlSym).map(symbol=>{const e=wl?.c.get(symbol);return{symbol,market:e?.at&&!e.error?e.market:null};}),history:q=>nyHistory(q),
-    available:()=>!document.hidden&&!state.paused&&navigator.onLine!==false,workerFactory:()=>new Worker(new URL('./bundles/3.82.1/shared/market-phase-worker.mjs',import.meta.url),{type:'module'})});
+    available:()=>!document.hidden&&!state.paused&&navigator.onLine!==false,workerFactory:()=>new Worker(new URL('./bundles/3.82.2/shared/market-phase-worker.mjs',import.meta.url),{type:'module'})});
   const patb = el('button', 'wl-d-pat'); patb.type = 'button';
   patb.addEventListener('click', () => patFromWl(wldSel));
   const r24 = el('p', 'wl-d-24h'); r24.append(el('span', 'wl-d-24k', '24h'), el('span', 'wl-d-24v', ''));
@@ -11759,7 +11774,11 @@ function wldOpen(coin) {
   const into = () => {
     if (!wldSel) return;
     const r = wld.box.getBoundingClientRect(), tb = $('tabbar'), lim = (tb && getComputedStyle(tb).display !== 'none' ? tb.getBoundingClientRect().top : innerHeight) - 12, beh = matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
-    if (r.bottom > lim) scrollBy({ top: Math.min(r.bottom - lim, Math.max(0, r.top - 12)), behavior: beh }); else if (r.top < 0) wld.box.scrollIntoView({ block: 'nearest', behavior: beh });
+    // 3.82.2: seit der Signalübersicht (3.75.1) ist das Feld oft höher als der Bildschirm – dann schob „Feld ganz zeigen“ die angetippte
+    // Kachel aus dem Bild. Die Kachel bleibt oben stehen, solange der Kopf des Felds (160 px) dabei sichtbar bleibt; sonst wie bisher.
+    const tile = document.querySelector(`#watchlist .wl-tile[data-watch="${wldSel}"]`), tt = tile ? Math.max(0, tile.getBoundingClientRect().top - 8) : Infinity;
+    let by = Math.min(r.bottom - lim, Math.max(0, r.top - 12)); if (tt < by && r.top - tt + 160 <= lim) by = tt;
+    if (r.bottom > lim) scrollBy({ top: by, behavior: beh }); else if (r.top < 0) wld.box.scrollIntoView({ block: 'nearest', behavior: beh });
   };
   wld.timer = setTimeout(() => { if (!wldSel) return; wld.box.classList.add('shown'); into(); setTimeout(into, 450); }, 280);
 }
@@ -11778,7 +11797,7 @@ function wldVals(e) {
   const cl = e.closed.slice(-WL_WINDOW).map(c => c.close), R = rsi(cl), M = macd(cl);
   return (e.vals = { t: r.closeTime, last: cl.at(-1), e20: ema(cl, 20).at(-1), e50: ema(cl, 50).at(-1), rNow: R.at(-1), rPrev: R.at(-2), mLine: M.line.at(-1), mSig: M.signal.at(-1) });
 }
-const WLD_T = new Intl.DateTimeFormat('de-DE', { hour: '2-digit', minute: '2-digit' });
+const WLD_T = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', hour: '2-digit', minute: '2-digit' });   // 3.82.2: wie die übrigen Anzeigezeiten Berliner Zeit
 // Inhalt schreiben – aus wlPaint() (höchstens einmal je Sekunde, nur sichtbar) und beim Öffnen; neu nur, wenn sich Coin,
 // Bewertung oder Ladezustand ändern
 function wldPaint(now = Date.now(), force = false) {
@@ -14148,7 +14167,7 @@ function patSheet() {
   for (const b of d.querySelectorAll('[data-pfil]')) b.setAttribute('aria-pressed', String(b.dataset.pfil === pat.filter));
   $('pat-project-on').checked = patProjection.on; $('pat-project-bars').value = String(patProjection.bars);
   $('pat-minq').value = String(pat.minQ); $('pat-gap').checked = pat.gap;
-  put('pat-scope', R ? `${state.symbol.slice(0, -4)}/USDT · ${state.interval} · ${R.n === R.nVis ? `${R.n} sichtbare Kerzen` : `die letzten ${R.n} von ${R.nVis} sichtbaren Kerzen`} (${patTime(R.t0)} – ${patTime(R.t1)} UTC)${R.running ? ' · laufende Kerze vorläufig' : ''}` : pat.busy ? 'Analysiert die sichtbaren Kerzen …' : 'Noch nicht analysiert.');
+  put('pat-scope', R ? `${state.symbol.slice(0, -4)}/USDT · ${state.interval} · ${R.n === R.nVis ? `${R.n} sichtbare Kerzen` : `die letzten ${R.n} von ${R.nVis} sichtbaren Kerzen`} (${patTime(R.t0)} – ${patTime(R.t1)} MEZ/MESZ)${R.running ? ' · laufende Kerze vorläufig' : ''}` : pat.busy ? 'Analysiert die sichtbaren Kerzen …' : 'Noch nicht analysiert.');
   const existing = new Map([...list.querySelectorAll('.pat-row')].map(row => [row.dataset.patKey, row])), current = [], expired = [];
   for (const h of hits) {
     const L = PAT_LIB[h.id], i = R.hits.indexOf(h), age = patAge(h), key = `${h.id}|${h.t0}|${h.t1}`, q = h.kind === 'form' ? patChipList().find(r=>r.key===patternChipKey(h)) : null;
@@ -14203,7 +14222,7 @@ function patCandleInfo(h, meta = {}) {
   for (const r of h.rules || []) { const li = el('li', r.ok === true ? 'ok' : r.ok === false ? 'no' : 'unk'); li.append(el('span', 'pat-mark', r.ok === true ? '✓' : r.ok === false ? '✗' : '?'), `${r.k} (Gewicht ${r.w})${r.v ? ' – ' + r.v : ''}`); ul.append(li); }
   why.append(el('summary', '', `Warum ${h.q} %?`), el('p', '', 'Regelgüte = erfüllte Regelgewichte ÷ mögliche Gewichte; unbekannte Regeln zählen im Nenner mit. Das ist keine statistische Trefferquote.'), ul);
   const top = el('div', 'pat-info-top'), t = el('div'), fmt = v => deDate(v); top.append(patSvg(h.id));
-  t.append(el('p', `pat-dir ${h.dir}`, `${PAT_DIR[h.dir]} · ${L.f} · Regelgüte ${h.q} %`), el('p', '', `${String(meta.symbol || state.symbol).replace(/USDT$/, '')}/USDT · ${meta.interval || ''} · ${fmt(h.t0)}${h.t1 !== h.t0 ? ` – ${fmt(h.t1)}` : ''} UTC · Orderflow-Kerzen (Binance-Futures)`), el('p', 'pat-info-status', `Status: ${h.status}`)); top.append(t);
+  t.append(el('p', `pat-dir ${h.dir}`, `${PAT_DIR[h.dir]} · ${L.f} · Regelgüte ${h.q} %`), el('p', '', `${String(meta.symbol || state.symbol).replace(/USDT$/, '')}/USDT · ${meta.interval || ''} · ${fmt(h.t0)}${h.t1 !== h.t0 ? ` – ${fmt(h.t1)}` : ''} MEZ/MESZ · Orderflow-Kerzen (Binance-Futures)`), el('p', 'pat-info-status', `Status: ${h.status}`)); top.append(t);
   body.replaceChildren(top, el('p', '', L.e), kv('Bestätigung', L.c), why, el('p', 'pat-note', 'Automatische Mustererkennung nach festen Regeln (pat-1) wie beim Knopf „KI“ im Chart, keine Anlageberatung.'));
   if (!d.open) d.showModal(); body.scrollTop = 0;
 }
@@ -15749,7 +15768,7 @@ const musterPaper = createMusterPaper({ read: readMusterPaper, write: writeMuste
   } });
 const MUSTER_TG_NAMES = { hammer: 'Hammer', engulfing: 'Bullish Engulfing', confluence: 'Konfluenz', po3: 'Power of Three' };
 musterView = createMusterView({ host: musterHost, selection: musterSelection, currentPrice: (symbol, market) => state.symbol === symbol && state.source === market ? currentPrice() : null,
-  prefs: store.get('scalpdesk.muster.settings.v1', {}), savePrefs: value => store.set('scalpdesk.muster.settings.v1', value), workerFactory: () => new Worker(new URL('./bundles/3.82.1/shared/muster-bot-worker.mjs', import.meta.url), { type: 'module' }), paper: musterPaper, onMarkers: scheduleDraw,
+  prefs: store.get('scalpdesk.muster.settings.v1', {}), savePrefs: value => store.set('scalpdesk.muster.settings.v1', value), workerFactory: () => new Worker(new URL('./bundles/3.82.2/shared/muster-bot-worker.mjs', import.meta.url), { type: 'module' }), paper: musterPaper, onMarkers: scheduleDraw,
   telegramStatus: () => tgtReady('trades') ? null : 'Hinweis: Telegram ist noch nicht eingerichtet oder das Ziel „Trades“ ist aus (Einstellungen → Telegram).' });
 void musterPaper.restore().then(() => musterPaper.poll());
 function musterDraw(svg, data, x, y, bottom) {
@@ -15807,13 +15826,13 @@ const nyHistory = createNyHistory({ read:key=>store.get(key),write:(key,value)=>
 const nyServices = {read:key=>store.get(key),write:(key,value)=>{const ok=store.set(key,value);if(ok&&[STRATEGY_DATA_KEY,STRATEGY_REPORT_KEY,NY_JOURNAL_KEY,ANALYSIS_LEARNING_KEY,PULLBACK_DATA_KEY,PULLBACK_MODEL_KEY,PULLBACK_ACK_KEY,PULLBACK_DELIVERY_KEY].includes(key))broadcastData([key]);return ok;},history:nyHistory,now:serverNow,available:()=>!document.hidden&&!state.paused&&navigator.onLine!==false,
   symbols:()=>analysisCoins().map(symbol=>({symbol,market:wl?.c.get(symbol)?.market||null})),time:analysisFormats.time,price:priceText,
   strategySymbols:id=>analysisCoins().filter(symbol=>analysisView?.settings.rows[id]?.coins[symbol]!==false).map(symbol=>{const e=wl?.c.get(symbol);return {symbol,market:e?.at&&!e.error?e.market:null};}),
-  strategyRuntime:id=>analysisFeed?.runtime(id),getPhase:(symbol,market)=>{if(!analysisCoins().includes(symbol))return {ready:false,reason:'Coin ist nicht in der Vorauswahl; dafür wird keine feste 1H-Phase geladen.'};const r=getMarktphase(symbol);return r.market===market?r:{ready:false,reason:'Die feste 1H-Phase gehört noch nicht zum angefragten Börsenmarkt.'};},strategyWorkerFactory:()=>new Worker(new URL('./bundles/3.82.1/shared/market-strategy-worker.mjs',import.meta.url),{type:'module'}),
-  pullbackRuntime:()=>analysisFeed?.runtime(PULLBACK.id),pullbackWorkerFactory:()=>new Worker(new URL('./bundles/3.82.1/shared/trend-pullback-worker.mjs',import.meta.url),{type:'module'})};
-const analysisLearning=createAnalysisLearning({...nyServices,options:id=>analysisView?.settings.rows[id]?.options||{},changed:()=>analysisPaint(),log:analysisLog,workerFactory:()=>new Worker(new URL('./bundles/3.82.1/shared/analysis-learning-worker.mjs',import.meta.url),{type:'module'})});
+  strategyRuntime:id=>analysisFeed?.runtime(id),getPhase:(symbol,market)=>{if(!analysisCoins().includes(symbol))return {ready:false,reason:'Coin ist nicht in der Vorauswahl; dafür wird keine feste 1H-Phase geladen.'};const r=getMarktphase(symbol);return r.market===market?r:{ready:false,reason:'Die feste 1H-Phase gehört noch nicht zum angefragten Börsenmarkt.'};},strategyWorkerFactory:()=>new Worker(new URL('./bundles/3.82.2/shared/market-strategy-worker.mjs',import.meta.url),{type:'module'}),
+  pullbackRuntime:()=>analysisFeed?.runtime(PULLBACK.id),pullbackWorkerFactory:()=>new Worker(new URL('./bundles/3.82.2/shared/trend-pullback-worker.mjs',import.meta.url),{type:'module'})};
+const analysisLearning=createAnalysisLearning({...nyServices,options:id=>analysisView?.settings.rows[id]?.options||{},changed:()=>analysisPaint(),log:analysisLog,workerFactory:()=>new Worker(new URL('./bundles/3.82.2/shared/analysis-learning-worker.mjs',import.meta.url),{type:'module'})});
 nyServices.learning=analysisLearning;
 const pullbackReplies=createPullbackReplies({...nyServices,destination:()=>tgTarget('analysis'),allowed:analysisBaseAllowed,claim:(key,ttl)=>store.claim(key,ttl,{strict:true}),log:analysisLog,
   sendReply:async(target,id,text)=>{const fd=new FormData();fd.append('chat_id',target.chat);if(target.thread)fd.append('message_thread_id',target.thread);fd.append('text',text);fd.append('reply_parameters',JSON.stringify({message_id:id,allow_sending_without_reply:false}));await tgPost('sendMessage',fd,false,target.token);return {ok:true};}});
-const analysisDeliver = createAnalysisDelivery({ policy:s=>s.analysisId===NY_OPEN.id?{key:nyDailySignalKey(s),daily:true}:s.analysisId===PULLBACK.id||STRATEGY_IDS.includes(s.analysisId)?{daily:true}:null, now: serverNow, allowed: analysisAllowed, destination: () => tgTarget('analysis'), claim: (key, ttl) => store.claim(key, ttl, { strict: true }),
+const analysisDeliver = createAnalysisDelivery({ policy:s=>s.analysisId===NY_OPEN.id?{key:nyDailySignalKey(s),daily:true}:s.analysisId===PULLBACK.id||STRATEGY_IDS.includes(s.analysisId)?{daily:true}:null, now: serverNow, allowed: analysisAllowed, destination: () => tgTarget('analysis'), claim: (key, ttl) => store.claim(key, ttl, { strict: true }), release: key => store.release(key),
   send: async(signal, allowed) => {const target=tgTarget('analysis'),result=await chanSendCard('tg', `${signal.symbol} · ${signal.side} · Einstieg ${priceText(signal.entry)}`, false, 'analysis', { card: signal, allowed });pullbackReplies.remember(signal,result,target);return result;}, log: analysisLog });
 analysisView = createAnalysisView({ toolServices:nyServices, root: analysisRoot, read: () => store.get(ANALYSIS_KEY), save: value => { store.set(ANALYSIS_KEY, value); broadcastData([ANALYSIS_KEY]); }, getOverlays: () => ({ ...state.overlays }),
   setOverlays: (value, focus) => { state.overlays = { ...value }; store.set(OVERLAY_KEY, { ...value }); if (focus) docEl.dataset.analysisFocus = focus; else delete docEl.dataset.analysisFocus; ovButtons(); if (state.candles.length) renderMarket(); renderLmStrip(); if (lmOn()) void lmRefresh(); },
@@ -15859,7 +15878,7 @@ function analysisTick() { if (!analysisFeed) return;
   for (const symbol of analysisCoins()) { const error = wl?.c.get(symbol)?.error, enabled = ANALYSES.some(d => analysisCoinAllowed(analysisView.settings, d.id, symbol, analysisCoins()));
     if (enabled && error && analysisSkipped.get(symbol) !== error) { analysisSkipped.set(symbol, error); analysisLog({ symbol, kind: 'error', text: `${symbol}: Vorauswahl-Datenfehler; Analyse übersprungen (${error}).` }); } else if (!error) analysisSkipped.delete(symbol);
   }
-  void analysisFeed.tick();void analysisLearning.tick();analysisObserve(); analysisPaint(); nyLivePaint();void pullbackReplies.reconcile(Object.values(pullbackData(store.get(PULLBACK_DATA_KEY)).records)).catch(e=>analysisLog({kind:'error',text:'Rücksetzer-Ergebnis: '+e.message}));
+  void analysisFeed.tick();void analysisLearning.tick();analysisObserve(); if (!document.hidden) { analysisPaint(); nyLivePaint(); } void pullbackReplies.reconcile(Object.values(pullbackData(store.get(PULLBACK_DATA_KEY)).records)).catch(e=>analysisLog({kind:'error',text:'Rücksetzer-Ergebnis: '+e.message}));
 }
 function nyLivePaint() {
   if (!analysisView) return; const r=analysisFeed?.result(state.symbol,chartMarket(),NY_OPEN.id), p=!state.paused&&navigator.onLine!==false&&!state.marketError&&state.loadedSymbol===state.symbol?currentPrice():null;
@@ -15893,7 +15912,7 @@ for (const id of ['analysis-test-card','analysis-ny-test-card','analysis-pullbac
   if(!tgtOn('analysis')){note.textContent='Analyse-Signale sind unter „Telegram-Chats“ ausgeschaltet – Test nicht gesendet.';return;}
   if (!tgTarget('analysis')) { note.textContent = 'Eigenen Analyse-Bot und numerische Chat-ID prüfen. Die Chat-ID darf nicht die Bot-ID aus dem Token sein.'; return; }
   button.disabled = true; note.textContent = 'Testkarte wird erstellt …';
-  try { const r = await chanSendCard('tg', 'TEST · '+name, true, 'analysis', { card: analysisTestSignal(serverNow(),analysisId), allowed: () => true }); note.textContent = r.ok ? 'Testkarte ausschließlich an Analyse-Signale_111 zugestellt.' : r.lost ? 'Zustellung unbestätigt – kein zweiter Versand.' : !r.code && r.msg ? r.msg : chanError('tg', r); }
+  try { const r = await chanSendCard('tg', 'TEST · '+name, true, 'analysis', { card: analysisTestSignal(serverNow(),analysisId), allowed: () => true }); note.textContent = r.ok ? 'Testkarte ausschließlich an den Analyse-Chat zugestellt.' : r.lost ? 'Zustellung unbestätigt – kein zweiter Versand.' : !r.code && r.msg ? r.msg : chanError('tg', r); }
   finally { button.disabled = false; }
 });
 // Ein manueller Werkzeug-Klick beendet nur den Analyse-Fokus; die vorhandenen Handler erledigen weiter die eigentliche Bedienung.
@@ -15911,13 +15930,13 @@ wmFeed = createWatchModelFeed({ now: serverNow, context: () => ({ enabled: wmStr
   changed: () => { if (!userScrolling()) wlPaint(Date.now(), true); } });
 marketPhaseFeed=createMarketPhaseFeed({now:serverNow,fetchRows:cachedKlines,read:key=>store.get(key),write:(key,value)=>store.set(key,value),
   context:()=>({paused:state.paused,hidden:document.hidden,online:navigator.onLine,symbols:state.watch.map(wlSym).map(symbol=>{const e=wl?.c.get(symbol);return e?.at&&!e.error?{symbol,market:e.market}:null;}).filter(Boolean)}),
-  workerFactory:()=>new Worker(new URL('./bundles/3.82.1/shared/market-phase-worker.mjs',import.meta.url),{type:'module'}),changed:()=>{if(wldSel)wld?.phase.paint(wldSel);}});
+  workerFactory:()=>new Worker(new URL('./bundles/3.82.2/shared/market-phase-worker.mjs',import.meta.url),{type:'module'}),changed:()=>{if(wldSel)wld?.phase.paint(wldSel);}});
 window.__marketPhase={feed:marketPhaseFeed,getMarktphase};
 const wmSave = async (key, value) => { store.set(key, value); if (!store.ok || !await store.flush()) throw new Error('Modelltest konnte nicht gespeichert werden.'); };
 wmView = createWatchModelView({ host: document.querySelector('#workspace-settings .workspace-settings-grid'), read: key => store.get(key), save: wmSave, getMode: wmMode,
   setMode: async mode => { const before = wmMode(); try { await wmSave(WATCH_MODEL_KEY, mode === 'strict' ? 'strict' : 'classic'); } catch (e) { store.set(WATCH_MODEL_KEY, before); throw e; } broadcastData([WATCH_MODEL_KEY]); wmRefresh(); },
   now: serverNow, symbols: () => state.watch.map(wlSym), history: createMusterClient().history, available: () => !document.hidden && !state.paused && navigator.onLine !== false,
-  workerFactory: () => new Worker(new URL('./bundles/3.82.1/shared/watch-model-worker.mjs', import.meta.url), { type: 'module' }) });
+  workerFactory: () => new Worker(new URL('./bundles/3.82.2/shared/watch-model-worker.mjs', import.meta.url), { type: 'module' }) });
 function wmAvailability() {
   wmFeed.sync();
   marketPhaseFeed?.sync();wld?.phase.availabilityChanged();
@@ -16014,6 +16033,9 @@ window.__cryptoCalendar = { tick: cryptoCalendarTick, fetch: cryptoCalendarFetch
 // Privater GitHub-Sync nutzt denselben geprüften persönlichen Import, mit zusätzlicher lokaler Notfallkopie.
 const GH_EMERGENCY_KEY = 'scalpdesk.github-emergency.v1';
 const GH_PREF_KEYS = [...new Set([...PREF_KEYS, 'scalpdesk.chart-interval.v1', WORKSPACE_KEY, LAYOUT_KEY, OVHIDE_KEY, DEC_RANK_KEY, DEC_SPOT_KEY, 'scalpdesk.ki.settings.v1', 'scalpdesk.po3.settings.v1', 'scalpdesk.paper.settings.v1', 'scalpdesk.muster.settings.v1', PK_KEY, PK_Q])];
+// Schlüssel, die nach 3.71 dazukamen: in älteren Sync-Dateien fehlen sie (3.82.2: Darstellung und Marktradar ergänzt – solche Dateien
+// wurden seit 3.74 als „kein gültiger Scalp-Desk-Stand“ abgelehnt). Neue Präferenzschlüssel hier mit eintragen.
+const GH_OPTIONAL_KEYS = [WATCH_MODEL_KEY, WATCH_COMPARE_KEY, ANALYSIS_KEY, ANALYSIS_LEARNING_KEY, PULLBACK_DATA_KEY, PULLBACK_MODEL_KEY, STRATEGY_DATA_KEY, STRATEGY_REPORT_KEY, 'scalpdesk.panel-style.v1', 'scalpdesk.market-radar.v1'];
 const ghEmergencyKeys = [...new Set([...UNDO_KEYS, ...GH_PREF_KEYS, RL_KEY, IMPORTS_KEY, UNDO_KEY, CHANGES_KEY, BACKUP_META_KEY])];
 const ghSnapshot = () => ghEmergencyKeys.map(key => { const value = store.get(key); return value === undefined ? { key, present: false } : { key, present: true, value: structuredClone(value) }; });
 async function ghRestoreEmergency(copy) {
@@ -16032,7 +16054,7 @@ async function ghCollect() {
   return stripSyncSecrets(data, Object.values(chan.tg).filter(v => typeof v === 'string' && TG_TOKEN_RE.test(v.trim())));
 }
 async function ghApply(data) {
-  if (data?.app !== 'scalpdesk-github-sync' || data.version !== 1 || !Array.isArray(data.preferences) || data.preferences.length > GH_PREF_KEYS.length || data.preferences.some(x => !GH_PREF_KEYS.includes(x.key) || typeof x.present !== 'boolean') || new Set(data.preferences.map(x => x.key)).size !== data.preferences.length || GH_PREF_KEYS.filter(k => ![WATCH_MODEL_KEY, WATCH_COMPARE_KEY, ANALYSIS_KEY, ANALYSIS_LEARNING_KEY, PULLBACK_DATA_KEY, PULLBACK_MODEL_KEY,STRATEGY_DATA_KEY,STRATEGY_REPORT_KEY].includes(k)).some(k => !data.preferences.some(x => x.key === k))) throw new Error('Die entschlüsselte Datei ist kein gültiger Scalp-Desk-Stand.');
+  if (data?.app !== 'scalpdesk-github-sync' || data.version !== 1 || !Array.isArray(data.preferences) || data.preferences.length > GH_PREF_KEYS.length || data.preferences.some(x => !GH_PREF_KEYS.includes(x.key) || typeof x.present !== 'boolean') || new Set(data.preferences.map(x => x.key)).size !== data.preferences.length || GH_PREF_KEYS.filter(k => !GH_OPTIONAL_KEYS.includes(k)).some(k => !data.preferences.some(x => x.key === k))) throw new Error('Die entschlüsselte Datei ist kein gültiger Scalp-Desk-Stand.');
   if (commitBusy || ghImportBusy) throw new Error('Der Abgleich läuft bereits. Bitte kurz warten.');
   validateModelArchive(data.models);
   for(const item of data.preferences){if(!item.present)continue;if(item.key===STRATEGY_DATA_KEY)validateStrategyData(item.value);if(item.key===ANALYSIS_LEARNING_KEY)validateLearningData(item.value);if(item.key===PULLBACK_DATA_KEY)validatePullbackData(item.value);if(item.key===PULLBACK_MODEL_KEY)validatePullbackModel(item.value);}
@@ -16563,7 +16585,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
             <details class="pat-oracle-setup"><summary>Oracle: nur Chartmuster, ohne HTTPS-Steuerung</summary><p>Die App und der Dienst verwenden dieselbe Erkennung und denselben Qualitätsfilter. Oracle meldet frisch bestätigte Formationen, die den Filter bestehen; gefilterte Signale stehen nur im Protokoll des Dienstes. Sicherungen und Trades bleiben in der App.</p>
             <label class="check"><input type="checkbox" id="pat-oracle-only"> Oracle ist der einzige Mustersender</label><p class="muted">Auf jedem verwendeten App-Gerät einschalten. Einen bisherigen Muster-Dienst zuerst stoppen. Ohne eingerichteten Oracle-Dienst kommen in diesem Modus keine Muster-Meldungen.</p>
             <button type="button" class="button ghost" id="pat-oracle-export">Coin-Auswahl für Oracle herunterladen</button> <a href="./docs/ORACLE_24-7.md" target="_blank" rel="noopener">Schritt-für-Schritt-Anleitung</a><p class="muted">Export enthält nur Coins, Markt, Intervall und die Schwellen des Qualitätsfilters. Bot-Token und Chat-ID stehen ausschließlich in der .env-Datei auf deinem Server. Nach geänderten Schwellen neu exportieren.</p></details></div>
-          <div class="tg-target analysis" id="analysis-tg-target"><p><b>◇ Analyse-Signale</b> <small>Eigener Chat „Analyse-Signale_111“ · nur bestätigte Signale als Foto. Läuft aktuell aus der geöffneten App; spätere 24/7-Übergabe vorbereitet.</small></p>
+          <div class="tg-target analysis" id="analysis-tg-target"><p><b>◇ Analyse-Signale</b> <small>Eigener Chat für Analyse-Signale · nur bestätigte Signale als Foto. Läuft aktuell aus der geöffneten App; spätere 24/7-Übergabe vorbereitet.</small></p>
             <label>Eigener Bot-Token<span class="input-wrap tg-wrap"><input id="tg-atoken" type="password" autocomplete="off" spellcheck="false" placeholder="Token des Analyse-Bots"><button type="button" class="tg-paste" data-token="tg-atoken" aria-label="Analyse-Bot-Token einfügen">Einfügen</button></span></label>
             <div class="tg-ids"><label>Chat-ID<span class="input-wrap tg-wrap"><input id="tg-achat" type="text" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Numerische ID des Ziel-Chats"><button type="button" class="tg-paste" data-paste="tg-achat" data-thread="tg-athread" aria-label="Analyse-Chat-ID einfügen">Einfügen</button></span></label><label>Thema <small>(optional)</small><span class="input-wrap"><input id="tg-athread" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="—"></span></label></div>
             <p class="muted">Dem Analyse-Bot zuerst „Start“ senden. Hier die Chat-ID deiner Unterhaltung/Gruppe eintragen, niemals die Bot-ID aus dem Token. Bestehende Ziele bleiben unverändert. Gemeinsamer An/Aus-Schalter: „Telegram-Chats → Analyse-Signale“. Die Modell- und Coin-Freigaben unter Analyse gelten zusätzlich.</p>
@@ -16584,7 +16606,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
         <label class="switch"><input type="checkbox" id="chan-ev-trade" checked> 📊 Trade-Bild, wenn eine Position vollständig geschlossen ist (an „Trades“, nicht bei Demo)</label>
         <small class="pulse-info">Meldet, wenn BTC sich in 5 oder 15 Minuten stärker bewegt als 99 % der üblichen Bewegungen zu dieser Uhrzeit (mindestens 0,5 % bzw. 0,8 %), mit der Vorauswahl im selben Zeitraum; je Richtung höchstens alle 30 Minuten, nachts lautlos. <span id="pulse-info"></span></small>
       </fieldset>
-      <section class="chan" aria-labelledby="s247-title" id="s247"><div class="head-line"><h3 id="s247-title">🌙 24/7-Dienst</h3><details class="tip left"><summary aria-label="Wie funktioniert der 24/7-Dienst?"><span>i</span></summary><div class="tip-body"><p>Ein kleines Programm auf einem eigenen Server, der rund um die Uhr läuft (z. B. kostenlos bei Oracle Cloud), prüft die Kurse und meldet Kurs-Alarme, Stop-Loss/Take-Profit, die Warnung vor wichtigen Terminen, ab Version 1.1 den BTC-Puls und ab Version 1.2 den Gewinn-/Verlust-Alarm per Telegram – auch wenn die App überall geschlossen ist.</p><p><b>Übergabe:</b> Die App legt die aktiven Alarme und die Stop-/Ziel-Marken deiner Positionen als Datei in deinen Telegram-Chat, heftet sie oben an und ersetzt sie nach jeder Änderung. Einstiege und Mengen der offenen Positionen stehen nur darin, solange ein Gewinn- oder Verlust-Alarm aktiv ist – der Dienst braucht sie, um das Live-Ergebnis zu rechnen. Trades und Notizen bleiben in der App. Der Dienst liest die Datei mit demselben Bot und bestätigt in der angehefteten Nachricht („Dienst: aktiv“), neue Kurs-/Stop-/Ziel-Marken ab Version 1.4 zusätzlich lautlos im Chat („✅ 24/7-Dienst hat übernommen …“). Gewinn-/Verlust-Grenzen übernimmt er ab Dienst 2.15.1 still; bei Auslösung kommt nur das Alarmbild. Hier steht dann „Übergeben ✓ vom Dienst bestätigt“.</p><p><b>Derselbe Bot (wichtig):</b> Am Server müssen derselbe Bot und dieselbe Chat-ID eingetragen sein wie oben unter „Kursalarm“ – ein anderer Bot (z. B. der Sicherungs-Bot) sieht die angeheftete Datei nicht, dann bleibt es bei „wartet“. Ab Version 1.4 meldet der Dienst das nach 3 Minuten selbst in seinem Chat und zeigt es mit <code>sudo scalpdesk-247 status</code>.</p><p><b>Nicht doppelt:</b> Solange der Dienst aktiv ist und den aktuellen Stand hat, sendet diese App Kurs-Alarme, Stop/Ziel und Termin-Warnungen nicht zusätzlich. Meldet er sich 20 Minuten nicht oder meldet er eine Störung, sendet die App wieder selbst. Das Tages-Verlustlimit meldet immer die App.</p><p><b>Zustellung (ab Version 1.3):</b> Der Dienst prüft, ob Telegram jede Meldung angenommen hat. Wenn nicht, versucht er es erneut – nach 15 und 30 Sekunden, dann in wachsenden Abständen bis alle 5 Minuten, höchstens einen Tag lang. Eine verspätete Meldung trägt die ursprüngliche Uhrzeit und den Vermerk „verspätet“. Lehnt Telegram ab oder ist es länger als eine Minute nicht erreichbar, meldet der Dienst „Störung“ – dann sendet die App wieder selbst. Unter „Status prüfen“ steht, wann er zuletzt etwas zugestellt hat.</p><p><b>Gewinn-/Verlust-Alarm:</b> Bestätigt der Dienst mit „· GV“ (ab Version 1.2), prüft er das Live-Ergebnis alle 15 Sekunden mit. Erreicht es eine Grenze, wartet er einige Sekunden: Ist die App geöffnet, meldet sie selbst – sofort und auch bei kurzen Spitzen –, und der Dienst schweigt. Sonst meldet er, einmal je Grenze; die App übernimmt das beim Öffnen als „ausgelöst“. Ein älterer Dienst kann es nicht – dann prüft nur die geöffnete App.</p><p><b>BTC-Puls:</b> Die App gibt dem Dienst die Schwellen je Uhrzeit mit. Bestätigt er mit „· Puls“ (ab Version 1.1), meldet er den Puls und die App nicht zusätzlich; ein älterer Dienst kennt ihn nicht – dann sendet ihn weiter die geöffnete App.</p><p><b>Token:</b> Den Bot-Token gibst du am Server selbst ein – die App schickt ihn weiterhin nur an Telegram.</p><p>Nur auf einem Gerät einschalten – dem, auf dem du Alarme und Positionen pflegst.</p></div></details></div><p class="chan-sub">Meldungen auch bei geschlossener App – über ein kleines Programm auf einem eigenen Server, der rund um die Uhr läuft.</p><details class="chan-guide" id="s247-guide"><summary>Anleitung: kostenlos bei Oracle Cloud einrichten (ca. 20 Minuten)</summary><ol><li><b>Konto:</b> Auf <a href="https://www.oracle.com/cloud/free/" target="_blank" rel="noopener noreferrer">oracle.com/cloud/free</a> „Start for free“. Als Heimatregion <b>Germany Central (Frankfurt)</b> wählen – sie lässt sich später nicht ändern, und von US-Servern aus sperrt Binance den Zugriff. Die Kreditkarte dient nur der Prüfung; „Always Free“ kostet nichts.</li><li><b>Server anlegen:</b> In der Konsole „Create a VM instance“. Bei <i>Image</i> auf <b>Ubuntu</b> wechseln, bei <i>Shape</i> eine mit „Always Free-eligible“ lassen (z. B. VM.Standard.E2.1.Micro). Bei <i>Add SSH keys</i> „Generate a key pair for me“ und <b>Save private key</b> – diese Datei ist der Schlüssel zum Server, gut aufbewahren. Dann <b>Create</b>. Nach 1–2 Minuten steht der Server auf „Running“; die <b>Public IP address</b> notieren.</li><li><b>Verbinden:</b> Oben rechts in der Konsole die <b>Cloud Shell</b> öffnen (Symbol &gt;_). Im Menü des Cloud-Shell-Fensters <b>Upload</b> wählen und den privaten Schlüssel hochladen. Dann eingeben (IP ersetzen) und die Frage „Are you sure …“ mit <b>yes</b> beantworten:<span class="s247-cmd"><code>chmod 600 ssh-key-*.key &amp;&amp; ssh -i ssh-key-*.key ubuntu@IP</code><button type="button" class="button ghost" data-copy="chmod 600 ssh-key-*.key &amp;&amp; ssh -i ssh-key-*.key ubuntu@IP">Kopieren</button></span></li><li><b>Dienst installieren:</b> Im Server-Fenster eingeben:<span class="s247-cmd"><code>curl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/install.sh | sudo bash</code><button type="button" class="button ghost" data-copy="curl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/install.sh | sudo bash">Kopieren</button></span>Es fragt nach <b>Bot-Token</b> und <b>Chat-ID</b> – dieselben wie oben unter „Kursalarm“ (nicht der Sicherungs-Bot; den Token zeigt auch @BotFather mit /mybots → API Token). Am Ende kommt eine Testnachricht in Telegram.</li><li><b>Übergeben:</b> Unten „An den 24/7-Dienst übergeben“ einschalten. Nach höchstens einer Minute steht hier „Übergeben ✓ vom Dienst bestätigt“, ab Dienst 2.15.2 erfolgt das ohne zusätzliche Telegram-Nachricht. Oben im Chat ist „📌 Scalp Desk · 24/7-Dienst“ angeheftet – diese Nachricht nicht löschen.</li></ol><ul class="s247-tips"><li><b>Ausführlich</b> – mit Aktualisieren, Ausprobieren und Hilfe bei Fehlermeldungen: <a href="https://github.com/NicoAHB/wx-widget/blob/main/server/ANLEITUNG-ORACLE.md" target="_blank" rel="noopener noreferrer">Anleitung auf GitHub</a></li><li><b>Aktualisieren:</b> den Befehl aus Schritt 4 erneut ausführen; die Einstellungen bleiben. Für den Gewinn-/Verlust-Alarm braucht es Version 1.2, für die geprüfte Zustellung 1.3, für Bestätigung und Selbstprüfung 1.4. Ab 2.15.2 werden neue Alarme still übernommen; Telegram meldet den Kurs-Alarm erst beim Erreichen der Marke. Einen vorhandenen Dienst dafür einmal so aktualisieren.</li><li><b>Server-Größe:</b> „VM.Standard.E2.1.Micro“ reicht und ist fast immer verfügbar; „Ampere A1“ meldet oft „Out of capacity“.</li><li><b>Andere Rechner:</b> läuft auf jedem Linux-Rechner mit Internet, z. B. einem Raspberry Pi – derselbe Befehl.</li><li><b>Oracle:</b> Always-Free-Server, die 7 Tage kaum ausgelastet sind, kann Oracle anhalten – und der Dienst braucht sehr wenig. Abhilfe laut Oracle: das Konto auf „Pay As You Go“ umstellen; es bleibt kostenlos, solange nur Always-Free-Angebote genutzt werden. Sonst nach einer E-Mail von Oracle den Server in der Konsole wieder starten.</li><li><b>Am Server (ab 1.4):</b> alles prüfen <code>sudo scalpdesk-247 status</code>, Protokoll <code>sudo scalpdesk-247 protokoll</code>, live <code>sudo scalpdesk-247 live</code>. Token und Chat-ID neu eingeben: Befehl aus Schritt 4 mit <code>| sudo bash -s -- --neu</code> am Ende. Entfernen <code>sudo bash /opt/scalpdesk-247/install.sh --remove</code></li></ul></details><label class="switch"><input type="checkbox" id="s247-on"> An den 24/7-Dienst übergeben (Alarme, Stop/Ziel, Termin-Warnungen, Gewinn-/Verlust-Alarm)</label><div class="row"><button type="button" class="button ghost" id="s247-check">Status prüfen</button></div><p class="chan-status" id="s247-status" role="status"></p></section>
+      <section class="chan" aria-labelledby="s247-title" id="s247"><div class="head-line"><h3 id="s247-title">🌙 24/7-Dienst</h3><details class="tip left"><summary aria-label="Wie funktioniert der 24/7-Dienst?"><span>i</span></summary><div class="tip-body"><p>Ein kleines Programm auf einem eigenen Server, der rund um die Uhr läuft (z. B. kostenlos bei Oracle Cloud), prüft die Kurse und meldet Kurs-Alarme, Stop-Loss/Take-Profit, die Warnung vor wichtigen Terminen, ab Version 1.1 den BTC-Puls und ab Version 1.2 den Gewinn-/Verlust-Alarm per Telegram – auch wenn die App überall geschlossen ist.</p><p><b>Übergabe:</b> Die App legt die aktiven Alarme und die Stop-/Ziel-Marken deiner Positionen als Datei in deinen Telegram-Chat, heftet sie oben an und ersetzt sie nach jeder Änderung. Einstiege und Mengen der offenen Positionen stehen nur darin, solange ein Gewinn- oder Verlust-Alarm aktiv ist – der Dienst braucht sie, um das Live-Ergebnis zu rechnen. Trades und Notizen bleiben in der App. Der Dienst liest die Datei mit demselben Bot und bestätigt in der angehefteten Nachricht („Dienst: aktiv“), neue Kurs-/Stop-/Ziel-Marken ab Version 1.4 zusätzlich lautlos im Chat („✅ 24/7-Dienst hat übernommen …“). Gewinn-/Verlust-Grenzen übernimmt er ab Dienst 2.15.1 still; bei Auslösung kommt nur das Alarmbild (ab Dienst 2.15.4 ersatzweise als Text, wenn kein Bild möglich ist – z. B. ohne Kartenrenderer). Hier steht dann „Übergeben ✓ vom Dienst bestätigt“.</p><p><b>Derselbe Bot (wichtig):</b> Am Server müssen derselbe Bot und dieselbe Chat-ID eingetragen sein wie oben unter „Kursalarm“ – ein anderer Bot (z. B. der Sicherungs-Bot) sieht die angeheftete Datei nicht, dann bleibt es bei „wartet“. Ab Version 1.4 meldet der Dienst das nach 3 Minuten selbst in seinem Chat und zeigt es mit <code>sudo scalpdesk-247 status</code>.</p><p><b>Nicht doppelt:</b> Solange der Dienst aktiv ist und den aktuellen Stand hat, sendet diese App Kurs-Alarme, Stop/Ziel und Termin-Warnungen nicht zusätzlich. Meldet er sich 20 Minuten nicht oder meldet er eine Störung, sendet die App wieder selbst. Das Tages-Verlustlimit meldet immer die App.</p><p><b>Zustellung (ab Version 1.3):</b> Der Dienst prüft, ob Telegram jede Meldung angenommen hat. Wenn nicht, versucht er es erneut – nach 15 und 30 Sekunden, dann in wachsenden Abständen bis alle 5 Minuten, höchstens einen Tag lang. Eine verspätete Meldung trägt die ursprüngliche Uhrzeit und den Vermerk „verspätet“. Lehnt Telegram ab oder ist es länger als eine Minute nicht erreichbar, meldet der Dienst „Störung“ – dann sendet die App wieder selbst. Unter „Status prüfen“ steht, wann er zuletzt etwas zugestellt hat.</p><p><b>Gewinn-/Verlust-Alarm:</b> Bestätigt der Dienst mit „· GV“ (ab Version 1.2), prüft er das Live-Ergebnis alle 15 Sekunden mit. Erreicht es eine Grenze, wartet er einige Sekunden: Ist die App geöffnet, meldet sie selbst – sofort und auch bei kurzen Spitzen –, und der Dienst schweigt. Sonst meldet er, einmal je Grenze; die App übernimmt das beim Öffnen als „ausgelöst“. Ein älterer Dienst kann es nicht – dann prüft nur die geöffnete App.</p><p><b>BTC-Puls:</b> Die App gibt dem Dienst die Schwellen je Uhrzeit mit. Bestätigt er mit „· Puls“ (ab Version 1.1), meldet er den Puls und die App nicht zusätzlich; ein älterer Dienst kennt ihn nicht – dann sendet ihn weiter die geöffnete App.</p><p><b>Token:</b> Den Bot-Token gibst du am Server selbst ein – die App schickt ihn weiterhin nur an Telegram.</p><p>Nur auf einem Gerät einschalten – dem, auf dem du Alarme und Positionen pflegst.</p></div></details></div><p class="chan-sub">Meldungen auch bei geschlossener App – über ein kleines Programm auf einem eigenen Server, der rund um die Uhr läuft.</p><details class="chan-guide" id="s247-guide"><summary>Anleitung: kostenlos bei Oracle Cloud einrichten (ca. 20 Minuten)</summary><ol><li><b>Konto:</b> Auf <a href="https://www.oracle.com/cloud/free/" target="_blank" rel="noopener noreferrer">oracle.com/cloud/free</a> „Start for free“. Als Heimatregion <b>Germany Central (Frankfurt)</b> wählen – sie lässt sich später nicht ändern, und von US-Servern aus sperrt Binance den Zugriff. Die Kreditkarte dient nur der Prüfung; „Always Free“ kostet nichts.</li><li><b>Server anlegen:</b> In der Konsole „Create a VM instance“. Bei <i>Image</i> auf <b>Ubuntu</b> wechseln, bei <i>Shape</i> eine mit „Always Free-eligible“ lassen (z. B. VM.Standard.E2.1.Micro). Bei <i>Add SSH keys</i> „Generate a key pair for me“ und <b>Save private key</b> – diese Datei ist der Schlüssel zum Server, gut aufbewahren. Dann <b>Create</b>. Nach 1–2 Minuten steht der Server auf „Running“; die <b>Public IP address</b> notieren.</li><li><b>Verbinden:</b> Oben rechts in der Konsole die <b>Cloud Shell</b> öffnen (Symbol &gt;_). Im Menü des Cloud-Shell-Fensters <b>Upload</b> wählen und den privaten Schlüssel hochladen. Dann eingeben (IP ersetzen) und die Frage „Are you sure …“ mit <b>yes</b> beantworten:<span class="s247-cmd"><code>chmod 600 ssh-key-*.key &amp;&amp; ssh -i ssh-key-*.key ubuntu@IP</code><button type="button" class="button ghost" data-copy="chmod 600 ssh-key-*.key &amp;&amp; ssh -i ssh-key-*.key ubuntu@IP">Kopieren</button></span></li><li><b>Dienst installieren:</b> Im Server-Fenster eingeben:<span class="s247-cmd"><code>curl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/install.sh | sudo bash</code><button type="button" class="button ghost" data-copy="curl -fsSL https://raw.githubusercontent.com/NicoAHB/wx-widget/main/server/install.sh | sudo bash">Kopieren</button></span>Es fragt nach <b>Bot-Token</b> und <b>Chat-ID</b> – dieselben wie oben unter „Kursalarm“ (nicht der Sicherungs-Bot; den Token zeigt auch @BotFather mit /mybots → API Token). Am Ende kommt eine Testnachricht in Telegram.</li><li><b>Übergeben:</b> Unten „An den 24/7-Dienst übergeben“ einschalten. Nach höchstens einer Minute steht hier „Übergeben ✓ vom Dienst bestätigt“, ab Dienst 2.15.2 erfolgt das ohne zusätzliche Telegram-Nachricht. Oben im Chat ist „📌 Scalp Desk · 24/7-Dienst“ angeheftet – diese Nachricht nicht löschen.</li></ol><ul class="s247-tips"><li><b>Ausführlich</b> – mit Aktualisieren, Ausprobieren und Hilfe bei Fehlermeldungen: <a href="https://github.com/NicoAHB/wx-widget/blob/main/server/ANLEITUNG-ORACLE.md" target="_blank" rel="noopener noreferrer">Anleitung auf GitHub</a></li><li><b>Aktualisieren:</b> den Befehl aus Schritt 4 erneut ausführen; die Einstellungen bleiben. Für den Gewinn-/Verlust-Alarm braucht es Version 1.2, für die geprüfte Zustellung 1.3, für Bestätigung und Selbstprüfung 1.4. Ab 2.15.2 werden neue Alarme still übernommen; Telegram meldet den Kurs-Alarm erst beim Erreichen der Marke. Einen vorhandenen Dienst dafür einmal so aktualisieren.</li><li><b>Server-Größe:</b> „VM.Standard.E2.1.Micro“ reicht und ist fast immer verfügbar; „Ampere A1“ meldet oft „Out of capacity“.</li><li><b>Andere Rechner:</b> läuft auf jedem Linux-Rechner mit Internet, z. B. einem Raspberry Pi – derselbe Befehl.</li><li><b>Oracle:</b> Always-Free-Server, die 7 Tage kaum ausgelastet sind, kann Oracle anhalten – und der Dienst braucht sehr wenig. Abhilfe laut Oracle: das Konto auf „Pay As You Go“ umstellen; es bleibt kostenlos, solange nur Always-Free-Angebote genutzt werden. Sonst nach einer E-Mail von Oracle den Server in der Konsole wieder starten.</li><li><b>Am Server (ab 1.4):</b> alles prüfen <code>sudo scalpdesk-247 status</code>, Protokoll <code>sudo scalpdesk-247 protokoll</code>, live <code>sudo scalpdesk-247 live</code>. Token und Chat-ID neu eingeben: Befehl aus Schritt 4 mit <code>| sudo bash -s -- --neu</code> am Ende. Entfernen <code>sudo bash /opt/scalpdesk-247/install.sh --remove</code></li></ul></details><label class="switch"><input type="checkbox" id="s247-on"> An den 24/7-Dienst übergeben (Alarme, Stop/Ziel, Termin-Warnungen, Gewinn-/Verlust-Alarm)</label><div class="row"><button type="button" class="button ghost" id="s247-check">Status prüfen</button></div><p class="chan-status" id="s247-status" role="status"></p></section>
       <div class="svc-box" id="svc-box" role="group" aria-labelledby="svc-title"><h4 id="svc-title">🔐 Steuerung über HTTPS <small>(24/7-Dienst ab 2.0)</small></h4>
         <p class="svc-intro">Für die Chat-Schalter mit Bestätigung (gelten auf allen Geräten) und die Sendefreigabe, damit jeder Alarm genau einmal kommt. Am Server zeigt <code>sudo scalpdesk-247 zugang</code> Adresse und Zugangsschlüssel. Auf jedem Gerät einmal eintragen.</p>
         <label>Adresse<span class="input-wrap"><input id="svc-url" type="url" inputmode="url" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="https://130-61-1-2.sslip.io"></span></label>

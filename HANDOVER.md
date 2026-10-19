@@ -1,3 +1,32 @@
+## 3.82.2 / Dienst 2.15.4 (Claude): Prüfung des ChatGPT-Stands, Fehlerbehebungen
+
+- Code-Prüfung von 3.71.0 → 3.82.1 (App-Diff, alle neuen `shared/`-Module, Dienst). Jeder Befund ist mit einem Test belegt, der mit dem alten Code fehlschlägt. Ausführlich: [docs/3.82.2-AENDERUNGEN.md](docs/3.82.2-AENDERUNGEN.md).
+- Wichtigste Korrekturen:
+  - Gewinn-/Verlust-Alarm als Text-Ersatz, wenn kein Bild möglich ist (vorher still nach 24 h verworfen);
+  - NY-Open-Versand blockiert nicht mehr (60-s-Fenster), schnelle Wiederholung;
+  - Strategie-Feed verliert keine :00-Kerzen;
+  - eine Ergebnislücke sperrt keinen Coin mehr;
+  - Sendesperren behalten ihre Dauer;
+  - Analyse-Claims werden nach eindeutigem Fehlschlag freigegeben;
+  - GitHub-Abgleich nimmt 3.71–3.73-Dateien wieder an;
+  - Sicherungsimport bricht nicht an einem Lernstand ab;
+  - Fib-Beschriftungen blockieren keine Prognose-Linien;
+  - Zeitachse am 25.10., MACD-Marker, „UTC“-Beschriftungen;
+  - Vorauswahl misst Textbreiten nur bei Änderung (19 statt 60 Messungen pro Sekunde).
+- Tests:
+  - `unit-wl`, `unit-zzp` und `unit-247d` waren auf `main` rot und sind repariert;
+  - `m122`–`m125` und vier Unit-Tests stehen jetzt in `run-all.sh`;
+  - `m124` hat keine Zeitabhängigkeit mehr.
+- Zusätzlich behoben:
+  - Preisschilder am rechten Rand blockierten Tipps auf Ziel-/Stop-Linien;
+  - das Vorauswahl-Detail schob die angetippte Kachel aus dem Bild;
+  - m57 und m131 (Uhrzeit-Abhängigkeit) waren auf `main` rot.
+- Ergebnisse:
+  - Lint 0 Fehler / 3 bekannte Warnungen, 105/105 Unit-Tests, `build-release --check` grün.
+  - 33 gezielte Browser-Tests grün außer dem bekannten Abbruch in `m40` (auf `main` identisch).
+  - Kein Gesamtlauf (nur auf Anweisung des Nutzers).
+- App/SW **3.82.2**, Dienst **2.15.4** (auf dem Server Installer erneut ausführen). Alte Bündel unverändert.
+
 ## 3.82.1 (Codex): Relative Stärke als kompakte klappbare Coin-Liste
 
 - Ausschließlich die Informationsmodell-Darstellung verschlankt: eingeklappt nur Kopf mit Coin-Anzahl, aufgeklappt eine Liste mit Coin, Rang und 4h-Vergleich zu BTC. Großer Statusblock und doppelte Rangliste entfallen dort. Vorhandene Coin-Auswahl platzsparend rechts, Chart-Haken/Coin-Navigation und gespeicherter Klappzustand erhalten. Vergleichswerte aus vorhandenen Ergebnissen; keine neue Berechnung oder Börsenabfrage, übrige fünf Modelle und Telegram unverändert.
