@@ -5,7 +5,11 @@
   - `unit-wl` (Schnittmarke seit 3.75.1 „3.75.1: eine gemeinsame Signalübersicht“);
   - `unit-zzp` (übernimmt `neutralMacdSignal` aus `shared/indicators.mjs`);
   - `unit-247d` (Version nicht mehr festgenagelt);
-  - `m124` (regelmäßige Aktualisierung aus dem Messfenster geschoben).
+  - `m124` (regelmäßige Aktualisierung aus dem Messfenster geschoben);
+  - `m57` (MEZ/MESZ statt UTC);
+  - `m131` (nur echte Antworten mit `reply_parameters` zählen);
+  - `m45` (Stand in Berliner Zeit);
+  - `m46` (Feld höher als der Platz unter der Kachel: Kachel bleibt oben).
 - **Neu in `run-all.sh`:** `m122`–`m125`, `unit-macd-chart`, `unit-macd-notice`, `unit-chart-time-axis`, `unit-projection-inspector`.
 - **Neue Prüfungen:**
   - `unit-pnl-photo-only`: Text-Ersatz ohne Bild bzw. bei abgelehntem Bild, keiner bei unklarer Zustellung, 24-h-Verwurf setzt „fehlgeschlagen“;

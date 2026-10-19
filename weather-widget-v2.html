@@ -1072,6 +1072,8 @@ fieldset.chan legend{font-size:.875rem;font-weight:650;padding:0 4px;color:var(-
 svg .magnet-price{fill:#1d1606;font-size:11.5px;font-weight:700}
 /* Handy hochkant: Kurse auf Schildchen im Chart statt in einer eigenen Spalte */
 svg .axis-tag{fill:var(--surface);opacity:.82}svg .axis-label.axis-in{font-weight:600}
+/* 3.82.2: Preisschilder am rechten Rand liegen über allem – Tipps an die Linien darunter (Ziel/Stop, Prognose) durchlassen */
+#chart .axis-tag,#chart .axis-label.axis-in{pointer-events:none}
 svg .magnet-label{font-size:12px;font-weight:700;paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round}
 .liq-chart-note{display:block;margin-top:4px;font-size:.75rem}
 .cached{opacity:.55;transition:opacity .25s}
@@ -11772,7 +11774,11 @@ function wldOpen(coin) {
   const into = () => {
     if (!wldSel) return;
     const r = wld.box.getBoundingClientRect(), tb = $('tabbar'), lim = (tb && getComputedStyle(tb).display !== 'none' ? tb.getBoundingClientRect().top : innerHeight) - 12, beh = matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
-    if (r.bottom > lim) scrollBy({ top: Math.min(r.bottom - lim, Math.max(0, r.top - 12)), behavior: beh }); else if (r.top < 0) wld.box.scrollIntoView({ block: 'nearest', behavior: beh });
+    // 3.82.2: seit der Signalübersicht (3.75.1) ist das Feld oft höher als der Bildschirm – dann schob „Feld ganz zeigen“ die angetippte
+    // Kachel aus dem Bild. Die Kachel bleibt oben stehen, solange der Kopf des Felds (160 px) dabei sichtbar bleibt; sonst wie bisher.
+    const tile = document.querySelector(`#watchlist .wl-tile[data-watch="${wldSel}"]`), tt = tile ? Math.max(0, tile.getBoundingClientRect().top - 8) : Infinity;
+    let by = Math.min(r.bottom - lim, Math.max(0, r.top - 12)); if (tt < by && r.top - tt + 160 <= lim) by = tt;
+    if (r.bottom > lim) scrollBy({ top: by, behavior: beh }); else if (r.top < 0) wld.box.scrollIntoView({ block: 'nearest', behavior: beh });
   };
   wld.timer = setTimeout(() => { if (!wldSel) return; wld.box.classList.add('shown'); into(); setTimeout(into, 450); }, 280);
 }

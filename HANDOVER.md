@@ -17,7 +17,14 @@
   - `unit-wl`, `unit-zzp` und `unit-247d` waren auf `main` rot und sind repariert;
   - `m122`–`m125` und vier Unit-Tests stehen jetzt in `run-all.sh`;
   - `m124` hat keine Zeitabhängigkeit mehr.
-- Ergebnisse: Lint 0 Fehler / 3 bekannte Warnungen, 105/105 Unit-Tests, `build-release --check` grün. Gezielte Browser-Tests: siehe Änderungsdoku. Kein Gesamtlauf (nur auf Anweisung des Nutzers).
+- Zusätzlich behoben:
+  - Preisschilder am rechten Rand blockierten Tipps auf Ziel-/Stop-Linien;
+  - das Vorauswahl-Detail schob die angetippte Kachel aus dem Bild;
+  - m57 und m131 (Uhrzeit-Abhängigkeit) waren auf `main` rot.
+- Ergebnisse:
+  - Lint 0 Fehler / 3 bekannte Warnungen, 105/105 Unit-Tests, `build-release --check` grün.
+  - 33 gezielte Browser-Tests grün außer dem bekannten Abbruch in `m40` (auf `main` identisch).
+  - Kein Gesamtlauf (nur auf Anweisung des Nutzers).
 - App/SW **3.82.2**, Dienst **2.15.4** (auf dem Server Installer erneut ausführen). Alte Bündel unverändert.
 
 ## 3.82.1 (Codex): Relative Stärke als kompakte klappbare Coin-Liste
