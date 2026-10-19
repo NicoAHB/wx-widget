@@ -107,7 +107,8 @@ export function macdCrossings(series, offset, stop, { candles, now = Date.now() 
   if (!candles) return [];
   const histogram = i => finite(series.line[i]) && finite(series.signal[i]) ? series.line[i] - series.signal[i] : null;
   let peak = 0;
-  for (let i = offset; i < stop; i++) if (finite(histogram(i))) peak = Math.max(peak, Math.abs(histogram(i)));
+  // Schwelle nur aus geschlossenen Kerzen: sonst blendet die laufende Kerze längst bestätigte Marker ein und aus
+  for (let i = offset; i < stop; i++) if (candles[i]?.closeTime < now && finite(histogram(i))) peak = Math.max(peak, Math.abs(histogram(i)));
   const threshold = peak * MACD_CROSS_MIN_FRACTION;
   const found = [];
   for (let i = Math.max(1, offset); i < stop; i++) {

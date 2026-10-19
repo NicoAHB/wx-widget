@@ -1,4 +1,6 @@
 // 3.73.1 / Dienst 2.15.1: Gewinn/Verlust ausschließlich als Foto, keine separate Übergabebestätigung.
+// 3.82.2 / Dienst 2.15.4: Text nur noch als Ersatz, wenn kein Bild erzeugt werden kann oder Telegram es ablehnt (sonst ginge der
+// Alarm verloren); bei unklarer Zustellung weiterhin weder Text noch zweiter Versuch.
 // Alle Telegram-Aufrufe sind Attrappen. Echte Senderlogik, Konfigurationsübernahme und PNG-Renderer.
 const fs = require('fs'), os = require('os'), path = require('path');
 let pass = 0, fail = 0;
@@ -57,22 +59,24 @@ const check = (name, ok) => { ok ? pass++ : fail++; console.log(`${ok ? '✓' : 
     check('Auch neuer Kurs-Alarm wird still übernommen und weiterhin beobachtet', q.sent.length === 0 && !q.w.ackPend && W.watchItems(q.w.conf.data).some(x=>x.key.startsWith('al:')));
     clearTimeout(q.w.saveTimer);
 
-    // Fehlerfall: nur Bilder erneut versuchen; bei verlorener Telegram-Antwort keinen zweiten POST.
+    // Fehlerfall: kein Bild möglich oder abgelehnt → genau eine Textmeldung als Ersatz; bei verlorener Telegram-Antwort keinen zweiten POST.
     const card = { profit: false, pnl: -6, level: 5, positions: [{ symbol: 'BTCUSDT', side: 'long', pnl: -6 }], at: now };
     for (const mode of ['renderer', 'rejected', 'lost', 'empty']) {
       const r = make(config()), originalTg = r.w.tg;
       if (mode === 'renderer') r.w.pnlCardImage = async () => { throw new Error('Renderer fehlt'); };
       else r.w.tg = async (method, data) => { if (method === 'sendPhoto') { r.sent.push({ method }); if (mode === 'empty') return null; throw Object.assign(new Error('Testantwort'), mode === 'lost' ? { lost: true } : { code: 400 }); } return originalTg(method, data); };
-      await r.w.queue('Kein Ersatztext', 'Europe/Berlin', { label: 'Verlust-Alarm', pnlCard: card });
-      check(`${mode}: kein sendMessage als Ersatz`, !r.sent.some(m => m.method === 'sendMessage'));
-      const unclear = mode === 'lost' || mode === 'empty';
-      check(`${mode}: ${unclear ? 'keine Wiederholung bei unklarer Zustellung' : 'Bild bleibt im Ausgang'}`, unclear ? r.w.out.length === 0 : r.w.out.length === 1 && r.w.out[0].tries === 1);
-      if (!unclear) {
-        r.w.pnlCardImage = W.Watcher.prototype.pnlCardImage.bind(r.w); r.w.tg = originalTg; now += 16000; await r.w.deliver();
-        check(`${mode}: nach Erholung nur das Bild, Ausgang leer`, r.w.out.length === 0 && r.sent.filter(m => m.photo).length === 1 && !r.sent.some(m => m.method === 'sendMessage'));
-      }
+      await r.w.queue('Ersatztext Verlust', 'Europe/Berlin', { label: 'Verlust-Alarm', pnlCard: card, ev: 'pnl-test-' + mode });
+      const unclear = mode === 'lost' || mode === 'empty', texts = r.sent.filter(m => m.method === 'sendMessage' || (m.text !== undefined && !m.photo));
+      if (unclear) check(`${mode}: kein Text hinterher und keine Wiederholung bei unklarer Zustellung`, texts.length === 0 && r.w.out.length === 0);
+      else check(`${mode}: genau eine Textmeldung als Ersatz, Ausgang leer (Alarm geht nicht verloren)`, texts.length === 1 && /Ersatztext Verlust/.test(texts[0].text || '') && r.w.out.length === 0);
       clearTimeout(r.w.saveTimer);
     }
+    // 24 Stunden unzustellbar: verworfen und das Ereignis als fehlgeschlagen markiert (nicht dauerhaft „wird gesendet“)
+    { const r = make(config()); r.w.tg = async () => { throw Object.assign(new Error('Netz weg'), { code: 0 }); };
+      r.w.evs['ev-alt'] = { st: 'sending', target: 'course-alert', by: 'oracle', at: now }; await r.w.queue('Alt', 'Europe/Berlin', { label: 'Kurs-Alarm', ev: 'ev-alt' });
+      now += 25 * 3600e3; await r.w.deliver();
+      check('Nach 24 Stunden verworfen: Ereignis „fehlgeschlagen“ mit Grund', r.w.out.length === 0 && r.w.evs['ev-alt']?.st === 'failed' && /24 Stunden/.test(r.w.evs['ev-alt']?.why || ''));
+      clearTimeout(r.w.saveTimer); }
 
     // Originalfunktion aus dem App-Modul, isolierte Telegram-/Canvas-Grenzen.
     const html = fs.readFileSync(path.join(__dirname, '../weather-widget-v2.html'), 'utf8');
@@ -86,7 +90,9 @@ const check = (name, ok) => { ok ? pass++ : fail++; console.log(`${ok ? '✓' : 
         store: { set: () => {}, get: () => ({}) }, CHANLAST_KEY: 'last', chanLabel: () => 'Verlust', chanError: () => 'Testfehler', self: { navigator: { onLine: true } }, navigator: { onLine: true } };
       const run = new Function('env', `with(env) { ${source}; return chanSendCard; }`)(env);
       const result = await run('tg', 'Kein Ersatztext', false, 'pnl', mode === 'missing' ? {} : { card });
-      check(`App ${mode}: nur Foto bei Erfolg, kein Text bei Bildfehler`, !posts.includes('text') && (mode === 'ok' ? posts.length === 1 && result.ok : !result.ok));
+      if (mode === 'ok') check('App ok: nur das Foto, kein Text', posts.join() === 'photo' && result.ok);
+      else if (mode === 'lost') check('App lost: Zustellung unklar – kein Text hinterher', posts.join() === 'photo' && !result.ok);
+      else check(`App ${mode}: kein Bild möglich bzw. abgelehnt – Text als Ersatz`, posts.filter(x => x === 'text').length === 1 && result.ok);
       if (mode === 'renderer') { await run('tg', 'Kurs-Ersatz', false, 'alarm', { card }); check('Kurs-Alarme behalten ihren bisherigen Text-Ersatz', posts.includes('text')); }
     }
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
