@@ -31,11 +31,13 @@ jobs:
         with:
           node-version: 22
 
-      - name: Abhängigkeiten (Tests, Kartenrenderer, ESLint)
+      - name: Abhängigkeiten (Tests, Kartenrenderer, ESLint, Chromium für unit-fmt)
         run: |
           npm ci --prefix tests --no-audit --no-fund
           npm ci --prefix server --no-audit --no-fund
           npm install -g eslint@10.1.0 --no-audit --no-fund
+          npm install --prefix tests --no-save --no-audit --no-fund playwright@1.56.1
+          npx --prefix tests playwright install --with-deps chromium
 
       - name: Lint (App, Kopfskript, shared/)
         run: bash tests/lint.sh
