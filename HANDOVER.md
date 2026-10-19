@@ -1,3 +1,9 @@
+## 3.82.1 (Codex): Relative Stärke als kompakte klappbare Coin-Liste
+
+- Ausschließlich die Informationsmodell-Darstellung verschlankt: eingeklappt nur Kopf mit Coin-Anzahl, aufgeklappt eine Liste mit Coin, Rang und 4h-Vergleich zu BTC. Großer Statusblock und doppelte Rangliste entfallen dort. Vorhandene Coin-Auswahl platzsparend rechts, Chart-Haken/Coin-Navigation und gespeicherter Klappzustand erhalten. Vergleichswerte aus vorhandenen Ergebnissen; keine neue Berechnung oder Börsenabfrage, übrige fünf Modelle und Telegram unverändert.
+- `shared/analysis-view.mjs`, App-Styles/Ergebnisübergabe und vorhandene Browserprüfung angepasst. **206/206 Prüfungen in 7 erfolgreichen Läufen**, Chromium/WebKit 320–1440px, sechs Zeitrahmen/HA, Chart-Fokus, alte Analyse-/Telegrampfade, PWA-Update/Offline/Datenerhalt. Lint 0 Fehler / 3 bekannte App-Warnungen. Nur lokale Börsen-/Telegram-Attrappen, keine echten Nachrichten und keine physischen iOS-Geräte. [Resultate](docs/RELATIVE-STAERKE-KOMPAKT-3.82.1-TESTS.json).
+- App/SW **3.82.1**, 148 PWA-/160 Dienst-Lieferdateien. Alte Bündel unverändert, Dienstquelle bleibt **2.15.3**, kein privates Oracle-Update. [Bedienung und Gerätetest](docs/RELATIVE-STAERKE-KOMPAKT-3.82.1.md).
+
 ## 3.82.0 (Codex): Range, Rücktest und gemeinsame Auswahlhilfen
 
 - Drei neue Konfigurationseinträge im vorhandenen Analyse-Menü: **Range-Rückkehr**, **Ausbruch mit Rücktest** und **Relative Stärke**. Erstere nutzen geschlossene normale 1H-/15m-Kerzen, kausal bekannte Grenzen, Sweep-/Rücktest-Bestätigung, feste Stop-/Zielmarken sowie Kosten-/Stop-/CRV-Filter. Gemeinsame Datenabfragen, Setup-Duplikatschutz und Ergebnisbeobachtung; neue Telegram-Schalter standardmäßig aus, Beobachtung trotzdem aktiv. Relative Stärke vergleicht exakt gleiche geschlossene 1H-Fenster mit BTC desselben Marktes; ATR-normalisierte Auswahlhilfe, kein eigener Einstieg und kein Telegram-Foto.
