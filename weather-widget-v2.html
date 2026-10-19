@@ -2589,6 +2589,7 @@ import { pnlAlarmCard } from './bundles/3.82.2/shared/pnl-alarm-card.mjs';   // 
 import { priceAlarmCard } from './bundles/3.82.2/shared/price-alarm-card.mjs';   // 3.71.0: Kurs-Alarm als Bild
 import { createOrderflowView } from './bundles/3.82.2/shared/orderflow-view.mjs';
 import { createMarketRadarView } from './bundles/3.82.2/shared/market-radar-view.mjs';
+import { RADAR_KEY, radarBook } from './bundles/3.82.2/shared/market-radar-journal.mjs';
 import { createPanelAppearanceSettings } from './bundles/3.82.2/shared/panel-appearance.mjs';
 import { createSignalView } from './bundles/3.82.2/shared/orderflow-signal-view.mjs';
 import { neutralMacdSignal } from './bundles/3.82.2/shared/indicators.mjs';
@@ -6047,7 +6048,7 @@ function backupStatus(msg) { put('history-status', msg); }
 // Löschungen, Prüfliste, offene Konflikte, Anzeige-Einstellungen und das eigene Musterlernen (der öffentliche Startbestand nur als
 // Verweis mit Version). Nie enthalten: Zugangsdaten (Telegram-Token und API-Schlüssel), die Übergabe an den 24/7-Dienst, Sendesperren
 // und andere gerätegebundene Zustände. Alle Felder von Schema 7 bleiben gleich – ältere App-Versionen lesen die Datei weiter.
-const PREF_KEYS = [STRATEGY_DATA_KEY,STRATEGY_REPORT_KEY,ANALYSIS_LEARNING_KEY,PULLBACK_DATA_KEY, PULLBACK_MODEL_KEY, 'scalpdesk.analysis.v1', 'scalpdesk.panel-style.v1', 'scalpdesk.market-radar.v1', 'scalpdesk.watch-model.v1', 'scalpdesk.watch-compare.v1', 'scalpdesk.pattern-projection.v1', 'scalpdesk.orderflow-journal.v1', 'scalpdesk.orderflow-position.v1', 'scalpdesk.orderflow-signal.v1', 'scalpdesk.orderflow.v1', 'scalpdesk.ki.risk-view.v1', 'scalpdesk.theme.v1', 'scalpdesk.presentation.v1', 'scalpdesk.background.v1', 'scalpdesk.overlays.v1', 'scalpdesk.zigzag.v1', 'scalpdesk.whale.v1', 'scalpdesk.orderbook.v1', 'scalpdesk.ladder.v1', 'scalpdesk.vola.v1', 'scalpdesk.econ.v1', 'scalpdesk.cnews.v1', 'scalpdesk.wlspan.v1', 'scalpdesk.titleprice.v1', 'scalpdesk.details.v1', 'scalpdesk.posdefaults.v1', 'scalpdesk.daylimitnote.v1', 'scalpdesk.warnclose.v1', 'scalpdesk.evalyear.v1', 'scalpdesk.acctrange.v1', 'scalpdesk.anaiv.v1', 'scalpdesk.decouple.v1', 'scalpdesk.kizones.v1', 'scalpdesk.heikin.v1', 'scalpdesk.zonesig.v1', 'scalpdesk.patfilter.v1'];
+// PREF_KEYS (Sicherung/Einstellungen) entsteht aus der zentralen Liste STORE_KEYS (Abschnitt „Speicherschlüssel“, vor dem GitHub-Abgleich).
 const personalBackupItem = x => !['dpos','dtrade'].includes(x.kind) && !['dpos','dtrade'].includes(x.localKind) && ![DEMO_POS_KEY,DEMO_HIST_KEY,'scalpdesk.orderflow-demo.v1'].includes(x.raw?.key) && !['demoPositions','demoHistory'].includes(x.raw?.field);
 // Übungsdaten können auch in Positionsbegleitung/Signaljournal stehen; nur die Exportkopie bereinigen.
 const demoContext = x => x?.demo === true || x?.practice === true || /^(demo|practice)\|/.test(x?.id || '');
@@ -8460,7 +8461,7 @@ addEventListener('beforeunload', e => {
 });
 // ---------- Abgleich zwischen offenen Tabs ----------
 const bc = (() => { try { return new BroadcastChannel('scalpdesk'); } catch { return null; } })();
-const SYNC_KEYS = [STRATEGY_DATA_KEY,STRATEGY_REPORT_KEY,ANALYSIS_LEARNING_KEY,PULLBACK_DATA_KEY,PULLBACK_MODEL_KEY,PULLBACK_ACK_KEY,PULLBACK_DELIVERY_KEY,NY_JOURNAL_KEY, 'scalpdesk.analysis.v1', 'scalpdesk.watch-model.v1', POS_KEY, HIST_KEY, MONEY_KEY, BAL_KEY, ALARM_KEY, SETUP_KEY, WATCH_KEY, CHANGES_KEY, 'scalpdesk.channels.v1', ZZP_KEY, 'scalpdesk.s247.v1', 'scalpdesk.pnlalarm.v1', 'scalpdesk.deleted.v1', 'scalpdesk.settingsat.v1', 'scalpdesk.listsat.v1', 'scalpdesk.demopositions.v1', 'scalpdesk.demohistory.v1', 'scalpdesk.quarantine.v1', 'scalpdesk.conflicts.v1', 'scalpdesk.settingsh.v1', 'scalpdesk.deletedh.v1', 'scalpdesk.svc.v1', 'scalpdesk.policy.v1', 'scalpdesk.tradeimg.v1'];
+// SYNC_KEYS (Abgleich zwischen offenen Tabs) entsteht aus der zentralen Liste STORE_KEYS.
 function broadcastData(keys) { if (!bc || !keys.length) return; try { bc.postMessage({ t: 'data', from: TAB_ID, items: keys.map(k => [k, store.get(k)]) }); } catch {} }
 function adoptData(items) {
   const pat = items.find(([k]) => k === ZZP_KEY); if (pat) { store.adopt(ZZP_KEY, pat[1]); zzpMem = null; items = items.filter(([k]) => k !== ZZP_KEY); if (!items.length) return; }
@@ -8474,6 +8475,8 @@ function adoptData(items) {
     if(k===PULLBACK_DATA_KEY){store.set(k,mergePullbackData(store.get(k),v),{force:true});analysisFeed?.sync();analysisPaint();continue;}
     if(k===PULLBACK_ACK_KEY){const old=store.get(k)||{},coins={...old.coins};for(const [symbol,keys]of Object.entries(v?.coins||{}))coins[symbol]=[...new Set([...(coins[symbol]||[]),...keys])];store.set(k,{row:[...new Set([...(old.row||[]),...(v?.row||[])])],coins},{force:true});analysisPaint();continue;}
     if(k===PULLBACK_MODEL_KEY||k===PULLBACK_DELIVERY_KEY){store.adopt(k,v);analysisPaint();continue;}
+    // 3.83.0: Marktradar – Beobachtungen beider Tabs zusammenführen; ein Tab mit altem Stand überschreibt keine neueren Einträge mehr
+    if(k===RADAR_KEY){const seen=new Map();for(const r of [...radarBook(store.get(k)).observations,...radarBook(v).observations]){const o=seen.get(r.id);seen.set(r.id,o?{...o,after15:o.after15||r.after15,after60:o.after60||r.after60}:r);}store.set(k,radarBook({...radarBook(v),observations:[...seen.values()]}),{force:true});continue;}
     store.adopt(k, v);
     if (k === WATCH_MODEL_KEY) wmRefresh();
     if (k === POS_KEY) state.positions = loadRecords(POS_KEY, 'pos', 'sync');
@@ -11743,7 +11746,7 @@ function wldBox() {
   title.id = 'wl-d-title'; close.setAttribute('aria-label', 'Detailfeld schließen'); close.title = 'Schließen (Esc)';
   const phaseHost=el('span','market-phase-host');
   head.append(title, phaseHost, meta, close);
-  const phase=createMarketPhaseView({root:phaseHost,getMarktphase,now:serverNow,read:key=>store.get(key),write:(key,value)=>store.set(key,value),
+  const phase=createMarketPhaseView({root:phaseHost,getMarktphase,now:serverNow,read:key=>store.get(key),write:(key,value)=>{store.set(key,value);return store.ok;},
     symbols:()=>state.watch.map(wlSym).map(symbol=>{const e=wl?.c.get(symbol);return{symbol,market:e?.at&&!e.error?e.market:null};}),history:q=>nyHistory(q),
     available:()=>!document.hidden&&!state.paused&&navigator.onLine!==false,workerFactory:()=>new Worker(new URL('./bundles/3.82.2/shared/market-phase-worker.mjs',import.meta.url),{type:'module'})});
   const patb = el('button', 'wl-d-pat'); patb.type = 'button';
@@ -14751,7 +14754,7 @@ window.__g06 = { timgData: id => timgData(id), timgRange: d => timgRange(d), tgt
   // 3.69.0: Kerzen-Speicher, Kennzahlen und zuletzt gezeichnete Beschriftungen der Trade-Karte
   candles: id => timgCandles(timgData(id)), stored: id => tcGet(id), stats: async id => { const d = timgData(id); return timgStats(d, await timgCandles(d)); }, get layout() { return timg.layout || null; }, set wait(v) { TIMG_WAIT = v; } };
 window.__g05 = { get state() { return state; }, get workspace() { return workspace; }, get chan() { return chan; }, get svc() { return svc; }, get svcLog() { return svcLog; }, get chanState() { return chanState; },
-  readChanForm, saveChannels, sendTgBackup, notifyChannels, svcRefresh, alarmSub, persist, renderAlarms, syncStreams, tgTarget, backupPayload, alarmEventId };
+  readChanForm, saveChannels, sendTgBackup, notifyChannels, svcRefresh, alarmSub, persist, renderAlarms, syncStreams, tgTarget, backupPayload, alarmEventId, pulseLast };
 // Sekundentakt: mit Dienst jede Minute den bestätigten Stand lesen (andere Geräte, Neustart des Dienstes)
 function svcTick(now) { if (svcOn() && !svc.busy && !document.hidden && now - svc.at > SVC_POLL) void svcRefresh(); if (typeof patSvcRender === 'function') patSvcRender(); }
 // ---- 3.42.0 (G09 C6b): Vorauswahl bewusst per HTTPS übernehmen; nur Metadaten, keine Bot-Token ----
@@ -15437,7 +15440,7 @@ chartBoundary = createWidgetBoundary($('chart-sec'), 'Chart / Market Cap', () =>
 // 3.54.0: neue Panelhöhen auch im vorhandenen Safari-Scrollausgleich berücksichtigen.
 orderflow = createOrderflowView({ root: $('orderflow-panel'), selectedQuote: orderflowSelectedQuote, explainCandle: (hit, meta) => patCandleInfo(hit, meta), updateLayout: fn => nativeAnchor ? fn() : withAnchor(fn), context: () => ({ symbol: state.symbol, paused: state.paused, connected: live.markets.futures?.st === 'live' }), now: serverNow,
   fetchRows: (symbol, interval, limit, signal) => api.get(FUTURES, '/fapi/v1/klines', { symbol, interval, limit }, signal), readPrefs: () => store.get('scalpdesk.orderflow.v1'), savePrefs: prefs => store.set('scalpdesk.orderflow.v1', prefs), streamsChanged: () => syncStreams(), formatPrice: priceText,
-  readDemo: () => store.get('scalpdesk.orderflow-demo.v1'), saveDemo: book => { if (!store.set('scalpdesk.orderflow-demo.v1', book)) throw new Error('Demo konnte nicht gespeichert werden. Browser-Speicher prüfen.'); } });
+  readDemo: () => store.get('scalpdesk.orderflow-demo.v1'), saveDemo: book => { store.set('scalpdesk.orderflow-demo.v1', book); if (!store.ok) throw new Error('Demo konnte nicht gespeichert werden. Browser-Speicher prüfen.'); } });
 var orderflowSignal = createSignalView({ root: $('orderflow-panel'), fold: orderflow.fold, chartHost: document.querySelector('#chart-sec .chart-toolbar'), updateLayout: fn => nativeAnchor ? fn() : withAnchor(fn),
   context: () => ({ symbol: state.symbol, paused: state.paused, connected: live.markets.futures?.st === 'live', unavailable: orderflow.state.unavailable, events: (ec.data?.events || []).filter(e => e.impact === 'high' && e.cur === 'USD').map(e => ({ at: e.t, title: e.title })) }), now: serverNow,
   fetchKlines: (symbol, interval, limit, signal) => api.get(FUTURES, '/fapi/v1/klines', { symbol, interval, limit }, signal),
@@ -15796,7 +15799,7 @@ function marketRadarInput() {
 const radarHost = el('div', 'market-overview'), radarRoot = el('details', 'market-radar');
 $('workspace-orderflow').before(radarHost); radarHost.append(radarRoot, $('workspace-orderflow'));
 marketRadarView = createMarketRadarView({ root: radarRoot, input: marketRadarInput, read: () => store.get('scalpdesk.market-radar.v1'),
-  save: value => { if (!store.set('scalpdesk.market-radar.v1', value)) throw Error('Marktradar konnte nicht gespeichert werden.'); broadcastData(['scalpdesk.market-radar.v1']); }, navigate: goTo });
+  save: value => { const changed = store.set(RADAR_KEY, value); if (!store.ok) throw Error('Marktradar konnte nicht gespeichert werden.'); if (changed) broadcastData([RADAR_KEY]); }, navigate: goTo });
 marketRadarBoundary = createWidgetBoundary(radarRoot, 'Marktradar', () => marketRadarView.tick());
 
 // 3.78.0: Analyse-Menü und Hintergrundprüfung; kein weiterer Kurs-/Trade-Alarm, kein Dienst-Policy-Eingriff.
@@ -15822,8 +15825,8 @@ function analysisLog(entry) {
 }
 function analysisBaseAllowed(s) { return tgtReady('analysis')&&analysisChannelAllows(analysisChatState(),s.at)&&!!analysisView && store.info.idb === 'aktiv' && !state.paused && !document.hidden && navigator.onLine !== false && analysisCoinAllowed(analysisView.settings, s.analysisId, s.symbol, analysisCoins()); }
 function analysisAllowed(s) { return analysisBaseAllowed(s)&&(!STRATEGY_IDS.includes(s.analysisId)||strategyAlertCurrent(s,serverNow()))&&(s.analysisId!==PULLBACK.id||pullbackEligible(s,store.get(PULLBACK_MODEL_KEY)?.active,analysisView.settings.rows[PULLBACK.id].options)); }
-const nyHistory = createNyHistory({ read:key=>store.get(key),write:(key,value)=>store.set(key,value),remove:key=>store.del(key),peek:async(symbol,market,iv)=>{const c=await kcGet(symbol,iv);return c?.source===market?c.candles.map(c=>({...c,end:c.closeTime+1})):null;} });
-const nyServices = {read:key=>store.get(key),write:(key,value)=>{const ok=store.set(key,value);if(ok&&[STRATEGY_DATA_KEY,STRATEGY_REPORT_KEY,NY_JOURNAL_KEY,ANALYSIS_LEARNING_KEY,PULLBACK_DATA_KEY,PULLBACK_MODEL_KEY,PULLBACK_ACK_KEY,PULLBACK_DELIVERY_KEY].includes(key))broadcastData([key]);return ok;},history:nyHistory,now:serverNow,available:()=>!document.hidden&&!state.paused&&navigator.onLine!==false,
+const nyHistory = createNyHistory({ read:key=>store.get(key),write:(key,value)=>{store.set(key,value);return store.ok;},remove:key=>store.del(key),peek:async(symbol,market,iv)=>{const c=await kcGet(symbol,iv);return c?.source===market?c.candles.map(c=>({...c,end:c.closeTime+1})):null;} });
+const nyServices = {read:key=>store.get(key),write:(key,value)=>{const changed=store.set(key,value);if(changed&&SYNC_KEYS.includes(key))broadcastData([key]);return store.ok;},history:nyHistory,now:serverNow,available:()=>!document.hidden&&!state.paused&&navigator.onLine!==false,
   symbols:()=>analysisCoins().map(symbol=>({symbol,market:wl?.c.get(symbol)?.market||null})),time:analysisFormats.time,price:priceText,
   strategySymbols:id=>analysisCoins().filter(symbol=>analysisView?.settings.rows[id]?.coins[symbol]!==false).map(symbol=>{const e=wl?.c.get(symbol);return {symbol,market:e?.at&&!e.error?e.market:null};}),
   strategyRuntime:id=>analysisFeed?.runtime(id),getPhase:(symbol,market)=>{if(!analysisCoins().includes(symbol))return {ready:false,reason:'Coin ist nicht in der Vorauswahl; dafür wird keine feste 1H-Phase geladen.'};const r=getMarktphase(symbol);return r.market===market?r:{ready:false,reason:'Die feste 1H-Phase gehört noch nicht zum angefragten Börsenmarkt.'};},strategyWorkerFactory:()=>new Worker(new URL('./bundles/3.82.2/shared/market-strategy-worker.mjs',import.meta.url),{type:'module'}),
@@ -15928,7 +15931,7 @@ window.__marketRadar = { view: marketRadarView, input: marketRadarInput, tick: (
 wmFeed = createWatchModelFeed({ now: serverNow, context: () => ({ enabled: wmStrict(), paused: state.paused, hidden: document.hidden, online: navigator.onLine,
   symbols: state.watch.map(wlSym).map(symbol => { const e = wl?.c.get(symbol); return e?.at && !e.error ? { symbol, market: e.market } : null; }).filter(Boolean) }), fetchRows: cachedKlines,
   changed: () => { if (!userScrolling()) wlPaint(Date.now(), true); } });
-marketPhaseFeed=createMarketPhaseFeed({now:serverNow,fetchRows:cachedKlines,read:key=>store.get(key),write:(key,value)=>store.set(key,value),
+marketPhaseFeed=createMarketPhaseFeed({now:serverNow,fetchRows:cachedKlines,read:key=>store.get(key),write:(key,value)=>{store.set(key,value);return store.ok;},
   context:()=>({paused:state.paused,hidden:document.hidden,online:navigator.onLine,symbols:state.watch.map(wlSym).map(symbol=>{const e=wl?.c.get(symbol);return e?.at&&!e.error?{symbol,market:e.market}:null;}).filter(Boolean)}),
   workerFactory:()=>new Worker(new URL('./bundles/3.82.2/shared/market-phase-worker.mjs',import.meta.url),{type:'module'}),changed:()=>{if(wldSel)wld?.phase.paint(wldSel);}});
 window.__marketPhase={feed:marketPhaseFeed,getMarktphase};
@@ -16026,16 +16029,41 @@ function cryptoCalendarBuild() {
 }
 cryptoCalendarBuild();
 var panelAppearanceView = createPanelAppearanceSettings({ host: $('view-panel'), read: () => store.get('scalpdesk.panel-style.v1'),
-  save: value => { if (!store.set('scalpdesk.panel-style.v1', value)) throw Error('Darstellung konnte nicht gespeichert werden.'); }, adopt: value => store.adopt('scalpdesk.panel-style.v1', value) });
+  save: value => { store.set('scalpdesk.panel-style.v1', value); if (!store.ok) throw Error('Darstellung konnte nicht gespeichert werden.'); }, adopt: value => store.adopt('scalpdesk.panel-style.v1', value) });
 window.__panelAppearance = panelAppearanceView;
 
 window.__cryptoCalendar = { tick: cryptoCalendarTick, fetch: cryptoCalendarFetch, paint: cryptoCalendarPaint, get state() { return cryptoCal; } };
 // Privater GitHub-Sync nutzt denselben geprüften persönlichen Import, mit zusätzlicher lokaler Notfallkopie.
 const GH_EMERGENCY_KEY = 'scalpdesk.github-emergency.v1';
-const GH_PREF_KEYS = [...new Set([...PREF_KEYS, 'scalpdesk.chart-interval.v1', WORKSPACE_KEY, LAYOUT_KEY, OVHIDE_KEY, DEC_RANK_KEY, DEC_SPOT_KEY, 'scalpdesk.ki.settings.v1', 'scalpdesk.po3.settings.v1', 'scalpdesk.paper.settings.v1', 'scalpdesk.muster.settings.v1', PK_KEY, PK_Q])];
-// Schlüssel, die nach 3.71 dazukamen: in älteren Sync-Dateien fehlen sie (3.82.2: Darstellung und Marktradar ergänzt – solche Dateien
-// wurden seit 3.74 als „kein gültiger Scalp-Desk-Stand“ abgelehnt). Neue Präferenzschlüssel hier mit eintragen.
-const GH_OPTIONAL_KEYS = [WATCH_MODEL_KEY, WATCH_COMPARE_KEY, ANALYSIS_KEY, ANALYSIS_LEARNING_KEY, PULLBACK_DATA_KEY, PULLBACK_MODEL_KEY, STRATEGY_DATA_KEY, STRATEGY_REPORT_KEY, 'scalpdesk.panel-style.v1', 'scalpdesk.market-radar.v1'];
+// ---------- 3.83.0: Speicherschlüssel – eine zentrale Liste ----------
+// Neue Schlüssel NUR hier eintragen; die Listen darunter entstehen daraus (vorher vier getrennte Listen, die auseinanderliefen:
+// GitHub-Dateien aus 3.71–3.73 wurden abgelehnt, der Marktradar wurde zwischen Tabs nicht abgeglichen). Kennbuchstaben:
+//   b = in der Sicherung und im Einstellungs-Abgleich (PREF_KEYS)      s = zwischen offenen Tabs abgleichen (SYNC_KEYS)
+//   g = zusätzlich im GitHub-Abgleich (GH_PREF_KEYS; alles mit b ist dort immer dabei)
+//   o = darf in GitHub-Dateien fehlen, weil nach 3.71 dazugekommen (GH_OPTIONAL_KEYS) – bei jedem neuen b-/g-Schlüssel setzen
+const STORE_KEYS = [
+  [STRATEGY_DATA_KEY, 'bso'], [STRATEGY_REPORT_KEY, 'bso'], [ANALYSIS_LEARNING_KEY, 'bso'], [PULLBACK_DATA_KEY, 'bso'], [PULLBACK_MODEL_KEY, 'bso'],
+  [ANALYSIS_KEY, 'bso'], ['scalpdesk.panel-style.v1', 'bo'], [RADAR_KEY, 'bso'], [WATCH_MODEL_KEY, 'bso'], [WATCH_COMPARE_KEY, 'bo'],
+  ['scalpdesk.pattern-projection.v1', 'b'], ['scalpdesk.orderflow-journal.v1', 'b'], ['scalpdesk.orderflow-position.v1', 'b'], ['scalpdesk.orderflow-signal.v1', 'b'],
+  ['scalpdesk.orderflow.v1', 'b'], ['scalpdesk.ki.risk-view.v1', 'b'], ['scalpdesk.theme.v1', 'b'], ['scalpdesk.presentation.v1', 'b'],
+  ['scalpdesk.background.v1', 'b'], ['scalpdesk.overlays.v1', 'b'], ['scalpdesk.zigzag.v1', 'b'], ['scalpdesk.whale.v1', 'b'],
+  ['scalpdesk.orderbook.v1', 'b'], ['scalpdesk.ladder.v1', 'b'], ['scalpdesk.vola.v1', 'b'], ['scalpdesk.econ.v1', 'b'],
+  ['scalpdesk.cnews.v1', 'b'], ['scalpdesk.wlspan.v1', 'b'], ['scalpdesk.titleprice.v1', 'b'], ['scalpdesk.details.v1', 'b'],
+  ['scalpdesk.posdefaults.v1', 'b'], ['scalpdesk.daylimitnote.v1', 'b'], ['scalpdesk.warnclose.v1', 'b'], ['scalpdesk.evalyear.v1', 'b'],
+  ['scalpdesk.acctrange.v1', 'b'], ['scalpdesk.anaiv.v1', 'b'], ['scalpdesk.decouple.v1', 'b'], ['scalpdesk.kizones.v1', 'b'],
+  ['scalpdesk.heikin.v1', 'b'], ['scalpdesk.zonesig.v1', 'b'], ['scalpdesk.patfilter.v1', 'b'],
+  [PULLBACK_ACK_KEY, 's'], [PULLBACK_DELIVERY_KEY, 's'], [NY_JOURNAL_KEY, 's'], [POS_KEY, 's'], [HIST_KEY, 's'],
+  [MONEY_KEY, 's'], [BAL_KEY, 's'], [ALARM_KEY, 's'], [SETUP_KEY, 's'], [WATCH_KEY, 's'],
+  [CHANGES_KEY, 's'], ['scalpdesk.channels.v1', 's'], [ZZP_KEY, 's'], ['scalpdesk.s247.v1', 's'], ['scalpdesk.pnlalarm.v1', 's'],
+  ['scalpdesk.deleted.v1', 's'], ['scalpdesk.settingsat.v1', 's'], ['scalpdesk.listsat.v1', 's'], ['scalpdesk.demopositions.v1', 's'], ['scalpdesk.demohistory.v1', 's'],
+  ['scalpdesk.quarantine.v1', 's'], ['scalpdesk.conflicts.v1', 's'], ['scalpdesk.settingsh.v1', 's'], ['scalpdesk.deletedh.v1', 's'], ['scalpdesk.svc.v1', 's'],
+  ['scalpdesk.policy.v1', 's'], ['scalpdesk.tradeimg.v1', 's'], [PULSE_KEY, 's'],   // 3.83.0: Puls-Sperre kam vorher nicht im anderen Tab an
+  ['scalpdesk.chart-interval.v1', 'g'], [WORKSPACE_KEY, 'g'], [LAYOUT_KEY, 'g'], [OVHIDE_KEY, 'g'],
+  [DEC_RANK_KEY, 'g'], [DEC_SPOT_KEY, 'g'], ['scalpdesk.ki.settings.v1', 'g'], ['scalpdesk.po3.settings.v1', 'g'],
+  ['scalpdesk.paper.settings.v1', 'g'], ['scalpdesk.muster.settings.v1', 'g'], [PK_KEY, 'g'], [PK_Q, 'g']
+];
+const storeKeys = flag => [...new Set(STORE_KEYS.filter(([, f]) => f.includes(flag)).map(([k]) => k))];
+const PREF_KEYS = storeKeys('b'), SYNC_KEYS = storeKeys('s'), GH_PREF_KEYS = [...new Set([...PREF_KEYS, ...storeKeys('g')])], GH_OPTIONAL_KEYS = storeKeys('o');
 const ghEmergencyKeys = [...new Set([...UNDO_KEYS, ...GH_PREF_KEYS, RL_KEY, IMPORTS_KEY, UNDO_KEY, CHANGES_KEY, BACKUP_META_KEY])];
 const ghSnapshot = () => ghEmergencyKeys.map(key => { const value = store.get(key); return value === undefined ? { key, present: false } : { key, present: true, value: structuredClone(value) }; });
 async function ghRestoreEmergency(copy) {
