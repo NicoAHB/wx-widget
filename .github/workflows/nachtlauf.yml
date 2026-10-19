@@ -1,0 +1,67 @@
+# Nächtlicher Gesamtlauf (3.83.0): alle Browser- und Einheitentests aus tests/run-all.sh mit Chromium, rund 2,5 Stunden.
+# Läuft jede Nacht um 01:17 UTC und lässt sich unter „Actions → Nachtlauf → Run workflow“ von Hand starten.
+# Ergebnis: grüner/roter Lauf, Protokoll und Testbilder als Artefakt (14 Tage aufbewahrt).
+name: Nachtlauf
+
+on:
+  schedule:
+    - cron: '17 1 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nachtlauf
+  cancel-in-progress: false
+
+jobs:
+  gesamtlauf:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    env:
+      TZ: UTC
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Abhängigkeiten (Tests, Kartenrenderer, ESLint, Playwright mit Chromium)
+        run: |
+          npm ci --prefix tests --no-audit --no-fund
+          npm ci --prefix server --no-audit --no-fund
+          npm install -g eslint@10.1.0 --no-audit --no-fund
+          npm install --prefix tests --no-save --no-audit --no-fund playwright@1.56.1
+          npx --prefix tests playwright install --with-deps chromium
+
+      - name: Gesamtlauf
+        run: |
+          set -o pipefail
+          bash tests/run-all.sh 2>&1 | tee gesamtlauf.log
+
+      - name: Kurzfassung
+        if: always()
+        run: |
+          {
+            echo "### Nachtlauf"
+            echo
+            echo "Fehlgeschlagene Prüfungen:"
+            echo '```'
+            grep -E '^== |✗' gesamtlauf.log | grep -B1 '✗' | head -200 || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Protokoll und Testbilder
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nachtlauf-${{ github.run_number }}
+          path: |
+            gesamtlauf.log
+            tests/out/
+          retention-days: 14
+          if-no-files-found: ignore
