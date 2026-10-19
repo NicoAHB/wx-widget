@@ -1,0 +1,110 @@
+{
+  "appVersion": "3.81.1",
+  "serviceSourceVersion": "2.15.3",
+  "date": "2026-10-19",
+  "checks": [
+    {
+      "name": "unit-analysis-channel",
+      "passed": 12,
+      "total": 12
+    },
+    {
+      "name": "unit-247",
+      "passed": 105,
+      "total": 105
+    },
+    {
+      "name": "unit-247b",
+      "passed": 25,
+      "total": 25
+    },
+    {
+      "name": "unit-247c",
+      "passed": 55,
+      "total": 55
+    },
+    {
+      "name": "unit-analysis",
+      "passed": 35,
+      "total": 35
+    },
+    {
+      "name": "unit-trend-pullback",
+      "passed": 39,
+      "total": 39
+    },
+    {
+      "name": "unit-analysis-learning",
+      "passed": 32,
+      "total": 32
+    },
+    {
+      "name": "unit-handover-silent",
+      "passed": 24,
+      "total": 24
+    },
+    {
+      "name": "unit-release-final",
+      "passed": 6,
+      "total": 6
+    },
+    {
+      "name": "inst-247-final",
+      "passed": 37,
+      "total": 37
+    },
+    {
+      "name": "m134-chromium",
+      "passed": 29,
+      "total": 29
+    },
+    {
+      "name": "m134-webkit",
+      "passed": 29,
+      "total": 29
+    },
+    {
+      "name": "m54",
+      "passed": 52,
+      "total": 52
+    },
+    {
+      "name": "m58-tg",
+      "passed": 7,
+      "total": 7
+    },
+    {
+      "name": "m129",
+      "passed": 75,
+      "total": 75
+    },
+    {
+      "name": "m131",
+      "passed": 26,
+      "total": 26
+    },
+    {
+      "name": "m69",
+      "passed": 8,
+      "total": 8
+    }
+  ],
+  "passed": 596,
+  "total": 596,
+  "lint": {
+    "errors": 0,
+    "knownAppWarnings": 3,
+    "sharedWarnings": 0,
+    "serviceWarnings": 0
+  },
+  "pwaFiles": 141,
+  "installerFiles": 153,
+  "realTelegramMessagesSent": false,
+  "privateOracleUpdated": false,
+  "analysis24x7Enabled": false,
+  "notes": [
+    "Nur lokale Telegram-/Börsen-Attrappen; native Chromium-/WebKit-Tests, keine physischen iOS-Geräte.",
+    "Analyse-Freigabe wird vom Dienst bestätigt; Berechnung und Lernen weiterhin in aktiver App.",
+    "Installer prüft bestehenden Zugangsschlüssel, Konfiguration, Update, Hashfehler, Rückfall und Entfernung."
+  ]
+}

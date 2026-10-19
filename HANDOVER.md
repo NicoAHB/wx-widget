@@ -1,3 +1,11 @@
+## 3.81.1 (Codex): Analyse-Signale als fünfter Telegram-Chat
+
+- Bereits vorhandenen Analyse-Bot/Chat unter „Telegram-Chats“ eingebunden, einschließlich eigenem und gemeinsamem Schalter. Vier bisherige Ziele und alle 15 Token-/Chat-/Thema-Felder bleiben erhalten. Modell-/Coin-Freigaben gelten zusätzlich; Chart, Signale und Lernen unverändert.
+- Gemeinsame reine Analyse-Sendefreigabe mit lokalem bzw. bestätigtem Dienstzustand, Aktivierungszeit und Epochen. AUS sperrt Testkarten, Signal-Fotos und Ergebnis-Antworten; AUS/AN während Bildaufbau verwirft das alte Foto. Ältere Einstiege werden nicht nachgesendet. Telegram-Formular erhält Aktivierungszeit. Ältere Dienste bekommen keine unbekannten Befehle und zeigen lokalen Status samt Update-Hinweis.
+- Dienst 2.15.3 ergänzt ausschließlich das Policy-Ziel `analysis` in der bestehenden revisionsgebundenen Steuerung, Migration und Persistenz. Metadaten `policyReady:true,runtimeReady:false`: **kein neuer 24/7-Analyse-/Lernbetrieb**. Private VM nicht aktualisiert, dort dokumentiertes Installer-Update nötig. Stille Kursalarmübernahme unverändert.
+- Installer-Grenze auf 200 Lieferdateien angehoben: vollständiger aktueller Graph umfasst 153. Pfad-, Größen- und Hashprüfung sowie atomarer Wechsel bleiben erhalten. Alte Bündel unverändert, App/SW 3.81.1 mit 141 PWA-Dateien.
+- **596/596 Prüfungen in 17 Läufen**, Chromium/WebKit 320–820px, echte lokale Dienst-HTTP-Steuerung mit Konflikten, Neustart, Offline-Entwurf, Altversion, Touch-Zielen und gesperrten Fotos; bestehende Analyse-/Kursalarm-/Muster-/PWA-Regressionen. Lint 0 Fehler / 3 bekannte App-Warnungen, Shared-/Dienst-Lint sauber. Keine echten Telegram-Nachrichten und keine physischen iOS-Geräte. [Prüfergebnisse](docs/ANALYSE-TELEGRAM-SCHALTER-3.81.1-TESTS.json), [Bedienung und Oracle-Update](docs/ANALYSE-TELEGRAM-SCHALTER-3.81.1.md).
+
 ## 3.81.0 (Codex): getrenntes lokales Lernen für Top-Down und NY Open
 
 - Gemeinsamen logistischen Kern aus dem Rücksetzer-Lernen herausgelöst, bestehendes Modell mit identischen Regressionsergebnissen erhalten. Top-Down/NY bekommen eingefrorene Eingangsmerkmale und getrennte Archive; NY-Optionskohorten und Modelle bleiben auch beim Zurückschalten erhalten. Kein neuer Trigger, keine geänderten Einstiege, Stops, Ziele oder Zone-Regeln.
