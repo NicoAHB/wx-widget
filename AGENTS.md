@@ -33,6 +33,7 @@ zusammenführen, erst reparieren.** Der komplette Lauf `tests/run-all.sh` (rund 
 
 ## Release
 - `APP_VERSION` erhöhen und alle Importpfade `./bundles/<alt>/` auf `./bundles/<neu>/` umstellen. Danach `node tools/build-release.mjs` ausführen; das erzeugt das Bündel, `sw.js` und die Lieferlisten.
+- Anschließend `node tools/prune-bundles.mjs`: behält die neuesten fünf Bündel und jedes, das ein Test als Vergleichsstand lädt; ältere werden gelöscht (die Git-Historie behält sie). Soll ein Test gegen ein älteres Bündel vergleichen, den Pfad `bundles/X.Y.Z/` wörtlich in den Test schreiben – dann bleibt es erhalten.
 - Eine Dienständerung erhöht `VERSION` in `server/scalpdesk-247.mjs`. Der Nutzer muss auf dem Server den Installer erneut ausführen; im PR immer erwähnen.
 - Doku: `docs/<Version>-AENDERUNGEN.md` (oder passendes Dokument), einen Abschnitt oben in `HANDOVER.md` und einen Eintrag in `tests/README.md`.
 
