@@ -2547,76 +2547,82 @@ html[data-analysis-focus] .mtf-c:not([data-trend-interval="4h"]):not([data-trend
 .ny-costs,.ny-results{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.ny-costs label{display:grid;gap:6px;min-width:0}.ny-costs input{min-height:44px;width:100%;box-sizing:border-box}.ny-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}.ny-actions button{min-height:44px}
 .ny-range-live{font-weight:700;font-variant-numeric:tabular-nums}.ny-range-live[data-tone=long]{color:#8fe3bf}.ny-range-live[data-tone=short]{color:#e88a9a}.ny-results section{border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px;min-width:0}.ny-results dl>div{display:flex;justify-content:space-between;gap:8px;margin:10px 0}.ny-results dd{margin:0;font-variant-numeric:tabular-nums;text-align:right}.ny-journal ol{padding-left:20px}.ny-journal li{margin:12px 0;line-height:1.6;overflow-wrap:anywhere}.ny-backtest-status,.ny-backtest-report{font-size:13px;line-height:1.6;overflow-wrap:anywhere}
 @media(max-width:520px){.ny-results{grid-template-columns:1fr}.ny-costs{gap:8px}.ny-results dl>div{font-size:13px}}
+
+/* Analyse-Erweiterung: bestehende Panelgeometrie, alle neuen Info-/Testziele touchfähig. */
+.analysis-fit{margin:6px 0;border-top:1px solid var(--line);font-size:.75rem}.analysis-fit>summary{min-height:44px;display:flex;align-items:center;cursor:pointer;line-height:1.5;color:var(--muted)}.analysis-fit[data-fit=fit]>summary{color:var(--mint)}.analysis-fit[data-fit=unfavorable]>summary{color:var(--amber)}.analysis-fit p{margin:0 0 10px;overflow-wrap:anywhere}.analysis-strength-note{display:block;color:var(--muted);line-height:1.6}.analysis-common-events{margin-top:12px;border-top:1px solid var(--line);font-size:.75rem}.analysis-common-events[hidden]{display:none}.analysis-common-events>summary{min-height:44px;cursor:pointer;display:flex;align-items:center;color:var(--mint)}.analysis-common-event{display:flex;align-items:center;gap:12px;flex-wrap:wrap;overflow-wrap:anywhere}.analysis-common-event span{flex:1;min-width:140px}.analysis-ranking{padding:0;list-style:none}.analysis-ranking li{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:12px;border-top:1px solid var(--line);min-height:44px}.analysis-ranking span{color:var(--muted);overflow-wrap:anywhere}.strategy-tools{margin-top:12px;font-size:.75rem;line-height:1.6}.strategy-actions{display:flex;flex-wrap:wrap;gap:8px}.strategy-tools button,.strategy-tools summary,.strategy-tools input{min-height:44px}.strategy-tools summary{display:flex;align-items:center;cursor:pointer;color:var(--mint)}.strategy-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,140px),1fr));gap:12px;margin-bottom:12px}.strategy-fields label{display:grid;gap:4px;min-width:0}.strategy-fields input{min-width:0;width:100%;box-sizing:border-box}.strategy-test-report p,.strategy-protocol p{overflow-wrap:anywhere}.strategy-protocol>div{max-height:360px;overflow:auto}.strategy-test-report details{border-top:1px solid var(--line)}
 </style>
   <script type="module">
-import { MARKET_INTERVALS, CHART_INTERVALS, SIGNAL_INTERVALS, INTERVAL_MS, nearestChartInterval } from './bundles/3.81.1/shared/market-intervals.mjs';
-import { createDetailCandles, detailOptions, detailChoice, closedSeries, timeIndex, DETAIL_VISIBLE_MAX } from './bundles/3.81.1/shared/chart-detail.mjs';
-import { patternChipRows, patternChipKey } from './bundles/3.81.1/shared/chart-pattern-chips.mjs';
-import { PATTERN_QUALITY_CONFIG, chartPatternQuality, repricePatternQuality, sortPatternQuality, patternOverview } from './bundles/3.81.1/shared/chart-pattern-quality.mjs';
-import { createPatternOverviewFeed } from './bundles/3.81.1/shared/chart-pattern-overview-feed.mjs';
+import { MARKET_INTERVALS, CHART_INTERVALS, SIGNAL_INTERVALS, INTERVAL_MS, nearestChartInterval } from './bundles/3.82.0/shared/market-intervals.mjs';
+import { createDetailCandles, detailOptions, detailChoice, closedSeries, timeIndex, DETAIL_VISIBLE_MAX } from './bundles/3.82.0/shared/chart-detail.mjs';
+import { patternChipRows, patternChipKey } from './bundles/3.82.0/shared/chart-pattern-chips.mjs';
+import { PATTERN_QUALITY_CONFIG, chartPatternQuality, repricePatternQuality, sortPatternQuality, patternOverview } from './bundles/3.82.0/shared/chart-pattern-quality.mjs';
+import { createPatternOverviewFeed } from './bundles/3.82.0/shared/chart-pattern-overview-feed.mjs';
 // Arbeitsstand: bei der gemeinsamen Release-Freigabe in das neue Versionsbündel übernehmen.
-import { createPositioningFeed } from './bundles/3.81.1/shared/positioning-score.mjs';
-import { CRYPTO_CALENDAR, parseCryptoCalendar, cryptoCalendarEvents } from './bundles/3.81.1/shared/crypto-calendar.mjs';
-import { createMusterClient } from './bundles/3.81.1/shared/muster-bot-feed.mjs';
-import { createMusterPaper } from './bundles/3.81.1/shared/muster-bot-paper.mjs';
-import { readMusterPaper, writeMusterPaper } from './bundles/3.81.1/shared/muster-bot-store.mjs';
-import { projectPatternLines, projectionSettings, projectionTime } from './bundles/3.81.1/shared/pattern-projection.mjs';
-import { MACD_CHART, macdFindings, macdPaneLayout, drawMacdPane, createMacdHelp } from './bundles/3.81.1/shared/macd-chart.mjs';
-import { MACD_NOTICE } from './bundles/3.81.1/shared/macd-notice.mjs';
+import { createPositioningFeed } from './bundles/3.82.0/shared/positioning-score.mjs';
+import { CRYPTO_CALENDAR, parseCryptoCalendar, cryptoCalendarEvents } from './bundles/3.82.0/shared/crypto-calendar.mjs';
+import { createMusterClient } from './bundles/3.82.0/shared/muster-bot-feed.mjs';
+import { createMusterPaper } from './bundles/3.82.0/shared/muster-bot-paper.mjs';
+import { readMusterPaper, writeMusterPaper } from './bundles/3.82.0/shared/muster-bot-store.mjs';
+import { projectPatternLines, projectionSettings, projectionTime } from './bundles/3.82.0/shared/pattern-projection.mjs';
+import { MACD_CHART, macdFindings, macdPaneLayout, drawMacdPane, createMacdHelp } from './bundles/3.82.0/shared/macd-chart.mjs';
+import { MACD_NOTICE } from './bundles/3.82.0/shared/macd-notice.mjs';
 // NEU 3.77.3: Zeitachse mit Datum und kollisionsfreien Beschriftungen.
-import { chartTimeTicks } from './bundles/3.81.1/shared/chart-time-axis.mjs';
-import { createProjectionInspector, projectionPrice, projectionIndexTime, projectionTimeIndex } from './bundles/3.81.1/shared/projection-inspector.mjs';
-import { createGithubSyncView } from './bundles/3.81.1/shared/github-sync-view.mjs';
-import { createDocViewer } from './bundles/3.81.1/shared/doc-viewer.mjs';
-import { PATTERN_FILTER_PRESET_NAMES, PATTERN_FILTER_FIELDS, PATTERN_CARD_FIELDS, HIGHER_TIMEFRAME, patternFilterSettings, patternFilterFromForm, evaluatePatternSignal, selectPatternSignals, patternJournalEntry, addPatternJournal, resolvePatternJournal, patternHitStats, patternJournalStats, PATTERN_OUTCOME_NAMES, backtestPatternFilter } from './bundles/3.81.1/shared/pattern-quality.mjs';
-import { stripSyncSecrets } from './bundles/3.81.1/shared/github-sync.mjs';
-import { createMusterView } from './bundles/3.81.1/shared/muster-bot-view.mjs';
-import { computeKiZones, KI_ZONE_INTERVALS } from './bundles/3.81.1/shared/ki-zones.mjs';
-import { heikinAshi } from './bundles/3.81.1/shared/heikin-ashi.mjs';
-import { detectFvgs, fvgSummary } from './bundles/3.81.1/shared/fvg.mjs';
-import { scoreZoneStrength, ZONE_STRENGTH, ZONE_SIGNAL, zoneSignal, zoneStep, zoneOutcome, summarizeZoneBacktest } from './bundles/3.81.1/shared/zone-strength.mjs';
+import { chartTimeTicks } from './bundles/3.82.0/shared/chart-time-axis.mjs';
+import { createProjectionInspector, projectionPrice, projectionIndexTime, projectionTimeIndex } from './bundles/3.82.0/shared/projection-inspector.mjs';
+import { createGithubSyncView } from './bundles/3.82.0/shared/github-sync-view.mjs';
+import { createDocViewer } from './bundles/3.82.0/shared/doc-viewer.mjs';
+import { PATTERN_FILTER_PRESET_NAMES, PATTERN_FILTER_FIELDS, PATTERN_CARD_FIELDS, HIGHER_TIMEFRAME, patternFilterSettings, patternFilterFromForm, evaluatePatternSignal, selectPatternSignals, patternJournalEntry, addPatternJournal, resolvePatternJournal, patternHitStats, patternJournalStats, PATTERN_OUTCOME_NAMES, backtestPatternFilter } from './bundles/3.82.0/shared/pattern-quality.mjs';
+import { stripSyncSecrets } from './bundles/3.82.0/shared/github-sync.mjs';
+import { createMusterView } from './bundles/3.82.0/shared/muster-bot-view.mjs';
+import { computeKiZones, KI_ZONE_INTERVALS } from './bundles/3.82.0/shared/ki-zones.mjs';
+import { heikinAshi } from './bundles/3.82.0/shared/heikin-ashi.mjs';
+import { detectFvgs, fvgSummary } from './bundles/3.82.0/shared/fvg.mjs';
+import { scoreZoneStrength, ZONE_STRENGTH, ZONE_SIGNAL, zoneSignal, zoneStep, zoneOutcome, summarizeZoneBacktest } from './bundles/3.82.0/shared/zone-strength.mjs';
 // 3.68.0: KI-Signale/Trading-Bot entfernt; der GitHub-Sync behält sein Format inklusive vorhandener Modelloriginale.
-import { exportModelArchive, importModelArchive, validateModelArchive, restoreModelOriginals } from './bundles/3.81.1/shared/model-archive.mjs';
-import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT, patternGrade } from './bundles/3.81.1/shared/telegram-format.mjs';
-import { patternSignalCard, patternChartData } from './bundles/3.81.1/shared/pattern-signal-card.mjs';   // 3.71.0: Chartmuster-Signalkarte
-import { pnlAlarmCard } from './bundles/3.81.1/shared/pnl-alarm-card.mjs';   // 3.71.0: Gewinn-/Verlust-Alarm als Bild
-import { priceAlarmCard } from './bundles/3.81.1/shared/price-alarm-card.mjs';   // 3.71.0: Kurs-Alarm als Bild
-import { createOrderflowView } from './bundles/3.81.1/shared/orderflow-view.mjs';
-import { createMarketRadarView } from './bundles/3.81.1/shared/market-radar-view.mjs';
-import { createPanelAppearanceSettings } from './bundles/3.81.1/shared/panel-appearance.mjs';
-import { createSignalView } from './bundles/3.81.1/shared/orderflow-signal-view.mjs';
-import { neutralMacdSignal } from './bundles/3.81.1/shared/indicators.mjs';
-import { WATCH_MODEL_KEY, WATCH_COMPARE_KEY } from './bundles/3.81.1/shared/watch-model-core.mjs';
-import { rsiSignal } from './bundles/3.81.1/shared/rsi-momentum.mjs';
-import { createWatchModelFeed } from './bundles/3.81.1/shared/watch-model-feed.mjs';
-import { createSignalReasonsView } from './bundles/3.81.1/shared/watch-signal-reasons.mjs';
-import { unknownPhase } from './bundles/3.81.1/shared/market-phase-core.mjs';
-import { createMarketPhaseFeed } from './bundles/3.81.1/shared/market-phase-feed.mjs';
-import { createMarketPhaseView } from './bundles/3.81.1/shared/market-phase-view.mjs';
-import { createWatchModelView } from './bundles/3.81.1/shared/watch-model-view.mjs';
-import { networkState, createWidgetBoundary } from './bundles/3.81.1/shared/widget-state.mjs';
-import { volumeProfile } from './bundles/3.81.1/shared/volume-profile.mjs';
-import { analysisChannelState, analysisChannelAllows } from './bundles/3.81.1/shared/analysis-channel.mjs';
-import { createAnalysisLearning } from './bundles/3.81.1/shared/analysis-learning-feed.mjs';
-import { ANALYSIS_LEARNING_KEY, LEARNING_IDS, mergeLearningData, validateLearningData } from './bundles/3.81.1/shared/analysis-learning.mjs';
-import { ANALYSES, ANALYSIS_KEY, ANALYSIS_LOG_KEY, analysisCoinAllowed, analysisDestination } from './bundles/3.81.1/shared/analysis-config.mjs';
-import { analysisChartModel, analysisChartExplanation, drawAnalysisChart, installAnalysisChartTap, createAnalysisChartHelp } from './bundles/3.81.1/shared/analysis-chart.mjs';
-import { createAnalysisView } from './bundles/3.81.1/shared/analysis-view.mjs';
-import { createAnalysisFeed } from './bundles/3.81.1/shared/analysis-feed.mjs';
-import { NY_OPEN, NY_JOURNAL_KEY, nyDailySignalKey, nyLiveRange } from './bundles/3.81.1/shared/ny-open-core.mjs';
-import { nyNoticeEvents } from './bundles/3.81.1/shared/ny-open-notices.mjs';
-import { mergeNyJournals } from './bundles/3.81.1/shared/ny-open-feed.mjs';
-import { createNyHistory } from './bundles/3.81.1/shared/ny-open-history.mjs';
-import { drawNyChart } from './bundles/3.81.1/shared/ny-open-chart.mjs';
-import { analysisCard, analysisTestSignal } from './bundles/3.81.1/shared/analysis-card.mjs';
-import { displayTimeParts } from './bundles/3.81.1/shared/display-time.mjs';
-import { createAnalysisDelivery } from './bundles/3.81.1/shared/analysis-delivery.mjs';
-import { PULLBACK, PULLBACK_DATA_KEY, PULLBACK_MODEL_KEY, PULLBACK_ACK_KEY, PULLBACK_DELIVERY_KEY, pullbackEligible } from './bundles/3.81.1/shared/trend-pullback-core.mjs';
-import { pullbackData, pullbackBackupData, mergePullbackData, validatePullbackData, validatePullbackModel } from './bundles/3.81.1/shared/trend-pullback-store.mjs';
-import { pullbackHighlights } from './bundles/3.81.1/shared/trend-pullback-notices.mjs';
-import { drawPullbackChart } from './bundles/3.81.1/shared/trend-pullback-chart.mjs';
-import { createPullbackReplies } from './bundles/3.81.1/shared/trend-pullback-delivery.mjs';
-import { ANALYSIS_NOTICE_KEY, analysisNoticeState, observeAnalysis, analysisNoticeCurrent } from './bundles/3.81.1/shared/analysis-notices.mjs';
+import { exportModelArchive, importModelArchive, validateModelArchive, restoreModelOriginals } from './bundles/3.82.0/shared/model-archive.mjs';
+import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT, patternGrade } from './bundles/3.82.0/shared/telegram-format.mjs';
+import { patternSignalCard, patternChartData } from './bundles/3.82.0/shared/pattern-signal-card.mjs';   // 3.71.0: Chartmuster-Signalkarte
+import { pnlAlarmCard } from './bundles/3.82.0/shared/pnl-alarm-card.mjs';   // 3.71.0: Gewinn-/Verlust-Alarm als Bild
+import { priceAlarmCard } from './bundles/3.82.0/shared/price-alarm-card.mjs';   // 3.71.0: Kurs-Alarm als Bild
+import { createOrderflowView } from './bundles/3.82.0/shared/orderflow-view.mjs';
+import { createMarketRadarView } from './bundles/3.82.0/shared/market-radar-view.mjs';
+import { createPanelAppearanceSettings } from './bundles/3.82.0/shared/panel-appearance.mjs';
+import { createSignalView } from './bundles/3.82.0/shared/orderflow-signal-view.mjs';
+import { neutralMacdSignal } from './bundles/3.82.0/shared/indicators.mjs';
+import { WATCH_MODEL_KEY, WATCH_COMPARE_KEY } from './bundles/3.82.0/shared/watch-model-core.mjs';
+import { rsiSignal } from './bundles/3.82.0/shared/rsi-momentum.mjs';
+import { createWatchModelFeed } from './bundles/3.82.0/shared/watch-model-feed.mjs';
+import { createSignalReasonsView } from './bundles/3.82.0/shared/watch-signal-reasons.mjs';
+import { unknownPhase } from './bundles/3.82.0/shared/market-phase-core.mjs';
+import { createMarketPhaseFeed } from './bundles/3.82.0/shared/market-phase-feed.mjs';
+import { createMarketPhaseView } from './bundles/3.82.0/shared/market-phase-view.mjs';
+import { createWatchModelView } from './bundles/3.82.0/shared/watch-model-view.mjs';
+import { networkState, createWidgetBoundary } from './bundles/3.82.0/shared/widget-state.mjs';
+import { volumeProfile } from './bundles/3.82.0/shared/volume-profile.mjs';
+import { analysisChannelState, analysisChannelAllows } from './bundles/3.82.0/shared/analysis-channel.mjs';
+import { createAnalysisLearning } from './bundles/3.82.0/shared/analysis-learning-feed.mjs';
+import { ANALYSIS_LEARNING_KEY, LEARNING_IDS, mergeLearningData, validateLearningData } from './bundles/3.82.0/shared/analysis-learning.mjs';
+import { ANALYSES, ANALYSIS_KEY, ANALYSIS_LOG_KEY, analysisCoinAllowed, analysisDestination } from './bundles/3.82.0/shared/analysis-config.mjs';
+import { analysisChartModel, analysisChartExplanation, drawAnalysisChart, installAnalysisChartTap, createAnalysisChartHelp } from './bundles/3.82.0/shared/analysis-chart.mjs';
+import { createAnalysisView } from './bundles/3.82.0/shared/analysis-view.mjs';
+import { createAnalysisFeed } from './bundles/3.82.0/shared/analysis-feed.mjs';
+import { NY_OPEN, NY_JOURNAL_KEY, nyDailySignalKey, nyLiveRange } from './bundles/3.82.0/shared/ny-open-core.mjs';
+import { nyNoticeEvents } from './bundles/3.82.0/shared/ny-open-notices.mjs';
+import { mergeNyJournals } from './bundles/3.82.0/shared/ny-open-feed.mjs';
+import { createNyHistory } from './bundles/3.82.0/shared/ny-open-history.mjs';
+import { drawNyChart } from './bundles/3.82.0/shared/ny-open-chart.mjs';
+import { analysisCard, analysisTestSignal } from './bundles/3.82.0/shared/analysis-card.mjs';
+import { displayTimeParts } from './bundles/3.82.0/shared/display-time.mjs';
+import { createAnalysisDelivery } from './bundles/3.82.0/shared/analysis-delivery.mjs';
+import { PULLBACK, PULLBACK_DATA_KEY, PULLBACK_MODEL_KEY, PULLBACK_ACK_KEY, PULLBACK_DELIVERY_KEY, pullbackEligible } from './bundles/3.82.0/shared/trend-pullback-core.mjs';
+import { pullbackData, pullbackBackupData, mergePullbackData, validatePullbackData, validatePullbackModel } from './bundles/3.82.0/shared/trend-pullback-store.mjs';
+import { pullbackHighlights } from './bundles/3.82.0/shared/trend-pullback-notices.mjs';
+import { drawPullbackChart } from './bundles/3.82.0/shared/trend-pullback-chart.mjs';
+import { MARKET_STRATEGY, STRATEGY_IDS, STRATEGY_DATA_KEY, STRATEGY_REPORT_KEY, strategyData, mergeStrategyData, validateStrategyData, strategyAlertCurrent } from './bundles/3.82.0/shared/market-strategy-core.mjs';
+import { strategyNoticeEvents } from './bundles/3.82.0/shared/market-strategy-feed.mjs';
+import { analysisSuitability, groupAnalysisEvents } from './bundles/3.82.0/shared/analysis-context.mjs';
+import { createPullbackReplies } from './bundles/3.82.0/shared/trend-pullback-delivery.mjs';
+import { ANALYSIS_NOTICE_KEY, analysisNoticeState, observeAnalysis, analysisNoticeCurrent } from './bundles/3.82.0/shared/analysis-notices.mjs';
 // Pure, unrounded calculations. Prices are USDT per unit; FX is USDT per EUR.
 function rsi(closes, period = 14) {
   const out = Array(closes.length).fill(null);
@@ -3439,7 +3445,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
 // 3.43.0 (G10a): reiner Fachkern in shared/; Datenquelle und Karten folgen getrennt.
 // 3.44.0 (G10b): öffentlicher Adapter in shared/bitget-public.mjs; sichtbare Anbindung folgt mit G10(c).
-const APP_VERSION = '3.81.1', docEl = document.documentElement;
+const APP_VERSION = '3.82.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -6028,7 +6034,7 @@ function backupStatus(msg) { put('history-status', msg); }
 // Löschungen, Prüfliste, offene Konflikte, Anzeige-Einstellungen und das eigene Musterlernen (der öffentliche Startbestand nur als
 // Verweis mit Version). Nie enthalten: Zugangsdaten (Telegram-Token und API-Schlüssel), die Übergabe an den 24/7-Dienst, Sendesperren
 // und andere gerätegebundene Zustände. Alle Felder von Schema 7 bleiben gleich – ältere App-Versionen lesen die Datei weiter.
-const PREF_KEYS = [ANALYSIS_LEARNING_KEY,PULLBACK_DATA_KEY, PULLBACK_MODEL_KEY, 'scalpdesk.analysis.v1', 'scalpdesk.panel-style.v1', 'scalpdesk.market-radar.v1', 'scalpdesk.watch-model.v1', 'scalpdesk.watch-compare.v1', 'scalpdesk.pattern-projection.v1', 'scalpdesk.orderflow-journal.v1', 'scalpdesk.orderflow-position.v1', 'scalpdesk.orderflow-signal.v1', 'scalpdesk.orderflow.v1', 'scalpdesk.ki.risk-view.v1', 'scalpdesk.theme.v1', 'scalpdesk.presentation.v1', 'scalpdesk.background.v1', 'scalpdesk.overlays.v1', 'scalpdesk.zigzag.v1', 'scalpdesk.whale.v1', 'scalpdesk.orderbook.v1', 'scalpdesk.ladder.v1', 'scalpdesk.vola.v1', 'scalpdesk.econ.v1', 'scalpdesk.cnews.v1', 'scalpdesk.wlspan.v1', 'scalpdesk.titleprice.v1', 'scalpdesk.details.v1', 'scalpdesk.posdefaults.v1', 'scalpdesk.daylimitnote.v1', 'scalpdesk.warnclose.v1', 'scalpdesk.evalyear.v1', 'scalpdesk.acctrange.v1', 'scalpdesk.anaiv.v1', 'scalpdesk.decouple.v1', 'scalpdesk.kizones.v1', 'scalpdesk.heikin.v1', 'scalpdesk.zonesig.v1', 'scalpdesk.patfilter.v1'];
+const PREF_KEYS = [STRATEGY_DATA_KEY,STRATEGY_REPORT_KEY,ANALYSIS_LEARNING_KEY,PULLBACK_DATA_KEY, PULLBACK_MODEL_KEY, 'scalpdesk.analysis.v1', 'scalpdesk.panel-style.v1', 'scalpdesk.market-radar.v1', 'scalpdesk.watch-model.v1', 'scalpdesk.watch-compare.v1', 'scalpdesk.pattern-projection.v1', 'scalpdesk.orderflow-journal.v1', 'scalpdesk.orderflow-position.v1', 'scalpdesk.orderflow-signal.v1', 'scalpdesk.orderflow.v1', 'scalpdesk.ki.risk-view.v1', 'scalpdesk.theme.v1', 'scalpdesk.presentation.v1', 'scalpdesk.background.v1', 'scalpdesk.overlays.v1', 'scalpdesk.zigzag.v1', 'scalpdesk.whale.v1', 'scalpdesk.orderbook.v1', 'scalpdesk.ladder.v1', 'scalpdesk.vola.v1', 'scalpdesk.econ.v1', 'scalpdesk.cnews.v1', 'scalpdesk.wlspan.v1', 'scalpdesk.titleprice.v1', 'scalpdesk.details.v1', 'scalpdesk.posdefaults.v1', 'scalpdesk.daylimitnote.v1', 'scalpdesk.warnclose.v1', 'scalpdesk.evalyear.v1', 'scalpdesk.acctrange.v1', 'scalpdesk.anaiv.v1', 'scalpdesk.decouple.v1', 'scalpdesk.kizones.v1', 'scalpdesk.heikin.v1', 'scalpdesk.zonesig.v1', 'scalpdesk.patfilter.v1'];
 const personalBackupItem = x => !['dpos','dtrade'].includes(x.kind) && !['dpos','dtrade'].includes(x.localKind) && ![DEMO_POS_KEY,DEMO_HIST_KEY,'scalpdesk.orderflow-demo.v1'].includes(x.raw?.key) && !['demoPositions','demoHistory'].includes(x.raw?.field);
 // Übungsdaten können auch in Positionsbegleitung/Signaljournal stehen; nur die Exportkopie bereinigen.
 const demoContext = x => x?.demo === true || x?.practice === true || /^(demo|practice)\|/.test(x?.id || '');
@@ -6245,6 +6251,7 @@ function planBackup(data, src = 'Sicherung') {
   if (isObj(data.prefs)) {
     // 3.51.0 (G14): alte Hell-/Dunkelwahl bei ausdrücklicher Übernahme auch nach eigener Farbe anwenden.
     const values = { ...data.prefs }, backgroundKey = 'scalpdesk.background.v1', themeKey = 'scalpdesk.theme.v1', background = store.get(backgroundKey, null);
+    if(values[STRATEGY_DATA_KEY])validateStrategyData(values[STRATEGY_DATA_KEY]);
     if(values[ANALYSIS_LEARNING_KEY])validateLearningData(values[ANALYSIS_LEARNING_KEY]);
     if(values[PULLBACK_DATA_KEY])validatePullbackData(values[PULLBACK_DATA_KEY]);
     if(values[PULLBACK_MODEL_KEY])validatePullbackModel(values[PULLBACK_MODEL_KEY]);
@@ -7132,7 +7139,7 @@ function renderChartContent(levels={}, ov={}, start=null, end=null) {
   const show=state.overlays, vis=a=>a ? a.slice(offset, stop) : null;
   const bbU=show.bb && ov.bb ? vis(ov.bb.upper) : null, bbL=bbU ? vis(ov.bb.lower) : null, bbM=bbU ? vis(ov.bb.mid) : null, e200=analysisOnly ? analysisEma200(data) : show.ema200 && ov.ema200 ? vis(ov.ema200) : null, prof=show.vp ? ov.profile : null;
   let min=Math.min(...bodies.map(c=>c.low)),max=Math.max(...bodies.map(c=>c.high));
-  if(!CAP.on&&docEl.dataset.analysisFocus===PULLBACK.id){const r=analysisFeed?.result(state.symbol,chartMarket(),PULLBACK.id),s=r?.signal,i=s?.impulse||r?.setup?.impulse,z=s?.zone||r?.setup?.zone;for(const v of[s?.entry,s?.stop,s?.target1,s?.target2,i?.from.price,i?.to.price,i?.low,i?.high,z?.low,z?.high])if(Number.isFinite(v)){min=Math.min(min,v);max=Math.max(max,v);}}
+  if(!CAP.on&&(docEl.dataset.analysisFocus===PULLBACK.id||STRATEGY_IDS.includes(docEl.dataset.analysisFocus))){const r=analysisFeed?.result(state.symbol,chartMarket(),docEl.dataset.analysisFocus),s=r?.signal,i=s?.impulse||r?.setup?.impulse,z=s?.zone||r?.setup?.zone;for(const v of[s?.entry,s?.stop,s?.target1,s?.target2,i?.from.price,i?.to.price,i?.low,i?.high,z?.low,z?.high,...(STRATEGY_IDS.includes(docEl.dataset.analysisFocus)?[(s?.range||r?.range)?.low,(s?.range||r?.range)?.high]:[])])if(Number.isFinite(v)){min=Math.min(min,v);max=Math.max(max,v);}}
   if (bbU) { const u=bbU.filter(Number.isFinite), l=bbL.filter(Number.isFinite); if (u.length) { max=Math.max(max,...u); min=Math.min(min,...l); } }
   if (!analysisOnly && ewFcOn() && !(chartViewState().pan > 0)) { const ef=ewForecastNow(); if (ef) for (const p of ef.pts) { min=Math.min(min,p.price); max=Math.max(max,p.price); } }
   const span0=max-min || max*.005, padding=Math.max(span0*.12, axisIn && bottom-top>80 ? span0*18/(bottom-top-36) : 0);min-=padding;max+=padding; // 3.3: am Handy oben und unten mindestens 18 px frei (Kurs-Schild)
@@ -8439,7 +8446,7 @@ addEventListener('beforeunload', e => {
 });
 // ---------- Abgleich zwischen offenen Tabs ----------
 const bc = (() => { try { return new BroadcastChannel('scalpdesk'); } catch { return null; } })();
-const SYNC_KEYS = [ANALYSIS_LEARNING_KEY,PULLBACK_DATA_KEY,PULLBACK_MODEL_KEY,PULLBACK_ACK_KEY,PULLBACK_DELIVERY_KEY,NY_JOURNAL_KEY, 'scalpdesk.analysis.v1', 'scalpdesk.watch-model.v1', POS_KEY, HIST_KEY, MONEY_KEY, BAL_KEY, ALARM_KEY, SETUP_KEY, WATCH_KEY, CHANGES_KEY, 'scalpdesk.channels.v1', ZZP_KEY, 'scalpdesk.s247.v1', 'scalpdesk.pnlalarm.v1', 'scalpdesk.deleted.v1', 'scalpdesk.settingsat.v1', 'scalpdesk.listsat.v1', 'scalpdesk.demopositions.v1', 'scalpdesk.demohistory.v1', 'scalpdesk.quarantine.v1', 'scalpdesk.conflicts.v1', 'scalpdesk.settingsh.v1', 'scalpdesk.deletedh.v1', 'scalpdesk.svc.v1', 'scalpdesk.policy.v1', 'scalpdesk.tradeimg.v1'];
+const SYNC_KEYS = [STRATEGY_DATA_KEY,STRATEGY_REPORT_KEY,ANALYSIS_LEARNING_KEY,PULLBACK_DATA_KEY,PULLBACK_MODEL_KEY,PULLBACK_ACK_KEY,PULLBACK_DELIVERY_KEY,NY_JOURNAL_KEY, 'scalpdesk.analysis.v1', 'scalpdesk.watch-model.v1', POS_KEY, HIST_KEY, MONEY_KEY, BAL_KEY, ALARM_KEY, SETUP_KEY, WATCH_KEY, CHANGES_KEY, 'scalpdesk.channels.v1', ZZP_KEY, 'scalpdesk.s247.v1', 'scalpdesk.pnlalarm.v1', 'scalpdesk.deleted.v1', 'scalpdesk.settingsat.v1', 'scalpdesk.listsat.v1', 'scalpdesk.demopositions.v1', 'scalpdesk.demohistory.v1', 'scalpdesk.quarantine.v1', 'scalpdesk.conflicts.v1', 'scalpdesk.settingsh.v1', 'scalpdesk.deletedh.v1', 'scalpdesk.svc.v1', 'scalpdesk.policy.v1', 'scalpdesk.tradeimg.v1'];
 function broadcastData(keys) { if (!bc || !keys.length) return; try { bc.postMessage({ t: 'data', from: TAB_ID, items: keys.map(k => [k, store.get(k)]) }); } catch {} }
 function adoptData(items) {
   const pat = items.find(([k]) => k === ZZP_KEY); if (pat) { store.adopt(ZZP_KEY, pat[1]); zzpMem = null; items = items.filter(([k]) => k !== ZZP_KEY); if (!items.length) return; }
@@ -8447,6 +8454,7 @@ function adoptData(items) {
     if (!SYNC_KEYS.includes(k)) continue;
     // 3.63.0: Zugangsfelder einzeln abgleichen; ein alter Tab-Schalterstand darf keine neuere Eingabe löschen.
     if (k === 'scalpdesk.channels.v1') { chan = mergeChannelFields(chan, loadChannels(v)); store.set(k, chan); chanSavedFields = { ...chan.tg }; renderChanSummary(); if ($('chan-dialog').open) fillChanForm(true); continue; }
+    if(k===STRATEGY_DATA_KEY){store.set(k,mergeStrategyData(store.get(k),v),{force:true});analysisFeed?.sync();analysisPaint();continue;}
     if(k===ANALYSIS_LEARNING_KEY){store.set(k,mergeLearningData(store.get(k),v),{force:true});analysisPaint();continue;}
     if(k===NY_JOURNAL_KEY){store.set(k,mergeNyJournals(store.get(k),v),{force:true});analysisPaint();continue;}
     if(k===PULLBACK_DATA_KEY){store.set(k,mergePullbackData(store.get(k),v),{force:true});analysisFeed?.sync();analysisPaint();continue;}
@@ -10413,6 +10421,7 @@ async function zzpStart() {
 // narrow: Handy hochkant – rechts liegen die Kurs-Schildchen über dem Chart, dafür etwa ein Fünftel mehr Platz
 function chartFutureSlots(len, narrow = false) {
   if (chartViewState().pan > 0) return 0;
+  if(!CAP.on&&STRATEGY_IDS.includes(docEl.dataset.analysisFocus))return MARKET_STRATEGY.forecastBars;
   if(!CAP.on&&docEl.dataset.analysisFocus===PULLBACK.id)return PULLBACK.forecastBars;
   if(docEl.dataset.analysisFocus===NY_OPEN.id) return Math.min(NY_OPEN.futureSlotsMax,Math.max(NY_OPEN.futureSlotsMin,Math.ceil(len*NY_OPEN.futureShare)));
   const last = state.candles.length - 1; let need = 0;
@@ -11720,7 +11729,7 @@ function wldBox() {
   head.append(title, phaseHost, meta, close);
   const phase=createMarketPhaseView({root:phaseHost,getMarktphase,now:serverNow,read:key=>store.get(key),write:(key,value)=>store.set(key,value),
     symbols:()=>state.watch.map(wlSym).map(symbol=>{const e=wl?.c.get(symbol);return{symbol,market:e?.at&&!e.error?e.market:null};}),history:q=>nyHistory(q),
-    available:()=>!document.hidden&&!state.paused&&navigator.onLine!==false,workerFactory:()=>new Worker(new URL('./bundles/3.81.1/shared/market-phase-worker.mjs',import.meta.url),{type:'module'})});
+    available:()=>!document.hidden&&!state.paused&&navigator.onLine!==false,workerFactory:()=>new Worker(new URL('./bundles/3.82.0/shared/market-phase-worker.mjs',import.meta.url),{type:'module'})});
   const patb = el('button', 'wl-d-pat'); patb.type = 'button';
   patb.addEventListener('click', () => patFromWl(wldSel));
   const r24 = el('p', 'wl-d-24h'); r24.append(el('span', 'wl-d-24k', '24h'), el('span', 'wl-d-24v', ''));
@@ -12837,7 +12846,7 @@ var TGT = [
   { id: 'course-alert', name: 'Kursalarm', icon: '🔔', purpose: 'Kurs-Alarme, Stop/Ziel, Gewinn/Verlust, Tages-Limit, Termine, BTC-Puls' },
   { id: 'trades', name: 'Trades', icon: '📊', purpose: 'Ein Bild je vollständig geschlossener Position – nur aus der App, nie über den Dienst' },
   { id: 'patterns', name: 'Chartmuster', icon: '📐', purpose: 'Bestätigte Formationen, die den Qualitätsfilter bestehen (Signalscore, Chance/Risiko, Trend) – mit übernommener Vorauswahl auch bei geschlossener App' },
-  {id:'analysis',name:'Analyse-Signale',icon:'◇',purpose:'Top-Down, NY Open und Trendfolge-Rücksetzer. Gemeinsame Sendefreigabe; Berechnung und Versand aktuell aus der aktiven App.'}];
+  {id:'analysis',name:'Analyse-Signale',icon:'◇',purpose:'Bestätigte Signale der Handelsmodelle als Foto. Gemeinsame Sendefreigabe; Berechnung und Versand aktuell aus der aktiven App.'}];
 var SVC_KEY = 'scalpdesk.svc.v1', POL_KEY = 'scalpdesk.policy.v1', SVC_URL_RE = /^(https:\/\/[a-z0-9.-]+|http:\/\/(127\.0\.0\.1|localhost))(:\d{1,5})?$/, SVC_KEY_RE = /^[A-Za-z0-9_-]{32,64}$/, SVC_POLL = 60e3;
 var svc = { cfg: null, pol: null, reach: null, at: 0, err: '', pending: null, notice: '', busy: false, ptimer: 0, events: [], eps: {}, ver: '', first: null };
 svc.cfg = loadSvc(); svc.pol = loadPol();
@@ -15739,7 +15748,7 @@ const musterPaper = createMusterPaper({ read: readMusterPaper, write: writeMuste
   } });
 const MUSTER_TG_NAMES = { hammer: 'Hammer', engulfing: 'Bullish Engulfing', confluence: 'Konfluenz', po3: 'Power of Three' };
 musterView = createMusterView({ host: musterHost, selection: musterSelection, currentPrice: (symbol, market) => state.symbol === symbol && state.source === market ? currentPrice() : null,
-  prefs: store.get('scalpdesk.muster.settings.v1', {}), savePrefs: value => store.set('scalpdesk.muster.settings.v1', value), workerFactory: () => new Worker(new URL('./bundles/3.81.1/shared/muster-bot-worker.mjs', import.meta.url), { type: 'module' }), paper: musterPaper, onMarkers: scheduleDraw,
+  prefs: store.get('scalpdesk.muster.settings.v1', {}), savePrefs: value => store.set('scalpdesk.muster.settings.v1', value), workerFactory: () => new Worker(new URL('./bundles/3.82.0/shared/muster-bot-worker.mjs', import.meta.url), { type: 'module' }), paper: musterPaper, onMarkers: scheduleDraw,
   telegramStatus: () => tgtReady('trades') ? null : 'Hinweis: Telegram ist noch nicht eingerichtet oder das Ziel „Trades“ ist aus (Einstellungen → Telegram).' });
 void musterPaper.restore().then(() => musterPaper.poll());
 function musterDraw(svg, data, x, y, bottom) {
@@ -15792,25 +15801,27 @@ function analysisLog(entry) {
   const list = store.get(ANALYSIS_LOG_KEY, []); store.set(ANALYSIS_LOG_KEY, [...(Array.isArray(list) ? list : []), { ...entry, text, at }].slice(-100)); analysisPaint();
 }
 function analysisBaseAllowed(s) { return tgtReady('analysis')&&analysisChannelAllows(analysisChatState(),s.at)&&!!analysisView && store.info.idb === 'aktiv' && !state.paused && !document.hidden && navigator.onLine !== false && analysisCoinAllowed(analysisView.settings, s.analysisId, s.symbol, analysisCoins()); }
-function analysisAllowed(s) { return analysisBaseAllowed(s)&&(s.analysisId!==PULLBACK.id||pullbackEligible(s,store.get(PULLBACK_MODEL_KEY)?.active,analysisView.settings.rows[PULLBACK.id].options)); }
+function analysisAllowed(s) { return analysisBaseAllowed(s)&&(!STRATEGY_IDS.includes(s.analysisId)||strategyAlertCurrent(s,serverNow()))&&(s.analysisId!==PULLBACK.id||pullbackEligible(s,store.get(PULLBACK_MODEL_KEY)?.active,analysisView.settings.rows[PULLBACK.id].options)); }
 const nyHistory = createNyHistory({ read:key=>store.get(key),write:(key,value)=>store.set(key,value),remove:key=>store.del(key),peek:async(symbol,market,iv)=>{const c=await kcGet(symbol,iv);return c?.source===market?c.candles.map(c=>({...c,end:c.closeTime+1})):null;} });
-const nyServices = {read:key=>store.get(key),write:(key,value)=>{const ok=store.set(key,value);if(ok&&[NY_JOURNAL_KEY,ANALYSIS_LEARNING_KEY,PULLBACK_DATA_KEY,PULLBACK_MODEL_KEY,PULLBACK_ACK_KEY,PULLBACK_DELIVERY_KEY].includes(key))broadcastData([key]);return ok;},history:nyHistory,now:serverNow,available:()=>!document.hidden&&!state.paused&&navigator.onLine!==false,
+const nyServices = {read:key=>store.get(key),write:(key,value)=>{const ok=store.set(key,value);if(ok&&[STRATEGY_DATA_KEY,STRATEGY_REPORT_KEY,NY_JOURNAL_KEY,ANALYSIS_LEARNING_KEY,PULLBACK_DATA_KEY,PULLBACK_MODEL_KEY,PULLBACK_ACK_KEY,PULLBACK_DELIVERY_KEY].includes(key))broadcastData([key]);return ok;},history:nyHistory,now:serverNow,available:()=>!document.hidden&&!state.paused&&navigator.onLine!==false,
   symbols:()=>analysisCoins().map(symbol=>({symbol,market:wl?.c.get(symbol)?.market||null})),time:analysisFormats.time,price:priceText,
-  pullbackRuntime:()=>analysisFeed?.runtime(PULLBACK.id),pullbackWorkerFactory:()=>new Worker(new URL('./bundles/3.81.1/shared/trend-pullback-worker.mjs',import.meta.url),{type:'module'})};
-const analysisLearning=createAnalysisLearning({...nyServices,options:id=>analysisView?.settings.rows[id]?.options||{},changed:()=>analysisPaint(),log:analysisLog,workerFactory:()=>new Worker(new URL('./bundles/3.81.1/shared/analysis-learning-worker.mjs',import.meta.url),{type:'module'})});
+  strategySymbols:id=>analysisCoins().filter(symbol=>analysisView?.settings.rows[id]?.coins[symbol]!==false).map(symbol=>{const e=wl?.c.get(symbol);return {symbol,market:e?.at&&!e.error?e.market:null};}),
+  strategyRuntime:id=>analysisFeed?.runtime(id),getPhase:(symbol,market)=>{if(!analysisCoins().includes(symbol))return {ready:false,reason:'Coin ist nicht in der Vorauswahl; dafür wird keine feste 1H-Phase geladen.'};const r=getMarktphase(symbol);return r.market===market?r:{ready:false,reason:'Die feste 1H-Phase gehört noch nicht zum angefragten Börsenmarkt.'};},strategyWorkerFactory:()=>new Worker(new URL('./bundles/3.82.0/shared/market-strategy-worker.mjs',import.meta.url),{type:'module'}),
+  pullbackRuntime:()=>analysisFeed?.runtime(PULLBACK.id),pullbackWorkerFactory:()=>new Worker(new URL('./bundles/3.82.0/shared/trend-pullback-worker.mjs',import.meta.url),{type:'module'})};
+const analysisLearning=createAnalysisLearning({...nyServices,options:id=>analysisView?.settings.rows[id]?.options||{},changed:()=>analysisPaint(),log:analysisLog,workerFactory:()=>new Worker(new URL('./bundles/3.82.0/shared/analysis-learning-worker.mjs',import.meta.url),{type:'module'})});
 nyServices.learning=analysisLearning;
 const pullbackReplies=createPullbackReplies({...nyServices,destination:()=>tgTarget('analysis'),allowed:analysisBaseAllowed,claim:(key,ttl)=>store.claim(key,ttl,{strict:true}),log:analysisLog,
   sendReply:async(target,id,text)=>{const fd=new FormData();fd.append('chat_id',target.chat);if(target.thread)fd.append('message_thread_id',target.thread);fd.append('text',text);fd.append('reply_parameters',JSON.stringify({message_id:id,allow_sending_without_reply:false}));await tgPost('sendMessage',fd,false,target.token);return {ok:true};}});
-const analysisDeliver = createAnalysisDelivery({ policy:s=>s.analysisId===NY_OPEN.id?{key:nyDailySignalKey(s),daily:true}:s.analysisId===PULLBACK.id?{daily:true}:null, now: serverNow, allowed: analysisAllowed, destination: () => tgTarget('analysis'), claim: (key, ttl) => store.claim(key, ttl, { strict: true }),
+const analysisDeliver = createAnalysisDelivery({ policy:s=>s.analysisId===NY_OPEN.id?{key:nyDailySignalKey(s),daily:true}:s.analysisId===PULLBACK.id||STRATEGY_IDS.includes(s.analysisId)?{daily:true}:null, now: serverNow, allowed: analysisAllowed, destination: () => tgTarget('analysis'), claim: (key, ttl) => store.claim(key, ttl, { strict: true }),
   send: async(signal, allowed) => {const target=tgTarget('analysis'),result=await chanSendCard('tg', `${signal.symbol} · ${signal.side} · Einstieg ${priceText(signal.entry)}`, false, 'analysis', { card: signal, allowed });pullbackReplies.remember(signal,result,target);return result;}, log: analysisLog });
 analysisView = createAnalysisView({ toolServices:nyServices, root: analysisRoot, read: () => store.get(ANALYSIS_KEY), save: value => { store.set(ANALYSIS_KEY, value); broadcastData([ANALYSIS_KEY]); }, getOverlays: () => ({ ...state.overlays }),
   setOverlays: (value, focus) => { state.overlays = { ...value }; store.set(OVERLAY_KEY, { ...value }); if (focus) docEl.dataset.analysisFocus = focus; else delete docEl.dataset.analysisFocus; ovButtons(); if (state.candles.length) renderMarket(); renderLmStrip(); if (lmOn()) void lmRefresh(); },
-  coins: analysisCoins, selectedCoin: () => state.symbol, openCoin: (symbol,id) => { const iv=id===PULLBACK.id?'15m':state.interval;if (symbol !== state.symbol||iv!==state.interval) void setMarket(symbol,iv); goTo('chart-sec'); analysisPaint(); }, changed: () => { analysisCoinPaint(); analysisFeed?.sync(); analysisObserve(); analysisPaint(); void analysisFeed?.dispatch(); } });
+  coins: analysisCoins, selectedCoin: () => state.symbol, openCoin: (symbol,id) => { const iv=ANALYSES.find(d=>d.id===id)?.defaultInterval||(id===PULLBACK.id?'15m':state.interval);if (symbol !== state.symbol||iv!==state.interval) void setMarket(symbol,iv); goTo('chart-sec'); analysisPaint(); }, changed: () => { analysisCoinPaint(); analysisFeed?.sync(); analysisObserve(); analysisPaint(); void analysisFeed?.dispatch(); } });
 analysisFeed = createAnalysisFeed({ runtimeServices:nyServices, now: serverNow, fetchRows: cachedKlines, context: () => {
   const settings = analysisView.settings, symbols = new Map(), add = (symbol, market, id) => { const key = `${symbol}|${market}`; if (!symbols.has(key)) symbols.set(key, { symbol, market, analyses: [] }); if (!symbols.get(key).analyses.includes(id)) symbols.get(key).analyses.push(id); };
   for (const definition of ANALYSES) {
-    if (analysisView.shown(definition.id) || analysisRoot.open) { const market = chartMarket(); if (market) add(state.symbol, market, definition.id); }
-    for (const symbol of analysisCoins()) if (definition.learning?settings.rows[definition.id].coins[symbol]!==false:analysisCoinAllowed(settings, definition.id, symbol, analysisCoins())) { const e = wl?.c.get(symbol); if (e?.at && !e.error) add(symbol, e.market, definition.id); }
+    if (analysisView.shown(definition.id) || analysisRoot.open) { const market = chartMarket(); if (market&&(!definition.observe||analysisCoins().includes(state.symbol))) add(state.symbol, market, definition.id); }
+    for (const symbol of analysisCoins()) if ((definition.learning||definition.observe)?settings.rows[definition.id].coins[symbol]!==false:analysisCoinAllowed(settings, definition.id, symbol, analysisCoins())) { const e = wl?.c.get(symbol); if (e?.at && !e.error) add(symbol, e.market, definition.id); }
   }
   return { symbols: [...symbols.values()], options:Object.fromEntries(ANALYSES.map(d=>[d.id,settings.rows[d.id].options])), paused: state.paused, hidden: document.hidden, online: navigator.onLine };
 }, signal: analysisDeliver, log: analysisLog, changed: () => { analysisObserve(); analysisPaint(); if (ANALYSES.some(d => analysisView.shown(d.id))) scheduleDraw(); } });
@@ -15823,6 +15834,7 @@ function analysisObserve() {
       const update = observeAnalysis(value, { signal: notify?result.signal:null, symbol: entry.symbol, market: entry.market, rows: entry.rows['15m'], now: serverNow() }); value = update.state; changed ||= update.changed;
     }
   }
+  for(const event of strategyNoticeEvents(Object.values(strategyData(store.get(STRATEGY_DATA_KEY)).records),serverNow()))if((event.symbol===state.symbol&&(analysisRoot.open||analysisView.shown(event.analysisId))||analysisView.settings.rows[event.analysisId]?.coins[event.symbol]!==false)&&!value.events.some(e=>e.id===event.id)){value.events.push(event);changed=true;}
   for(const event of nyNoticeEvents(store.get(NY_JOURNAL_KEY),serverNow())) if((event.symbol===state.symbol&&(analysisRoot.open||analysisView.shown(NY_OPEN.id))||analysisCoinAllowed(analysisView.settings,NY_OPEN.id,event.symbol,analysisCoins()))&&!value.events.some(e=>e.id===event.id)){value.events.push(event);changed=true;}
   if (changed) store.set(ANALYSIS_NOTICE_KEY, analysisNoticeState(value));
 }
@@ -15833,12 +15845,13 @@ function analysisPaint() {
   for (const event of notices.events) if (!event.acknowledged) { const active = analysisNoticeCurrent(event, analysisFeed?.result(event.symbol, event.market || wl?.c.get(event.symbol)?.market || chartMarket(), event.analysisId), { now: at, available: !state.paused && !document.hidden && navigator.onLine !== false }); if (!active) { event.acknowledged = true; invalidated = true; } }
   if (invalidated) store.set(ANALYSIS_NOTICE_KEY, notices);
   analysisView.paintNotices(notices.events, at, analysisAcknowledge);
-  const cards = ANALYSES.map(d => { const r = analysisFeed?.result(state.symbol, chartMarket(), d.id), pair = state.symbol.replace(/USDT$/, '/USDT'), base = { id:d.id, pair };
+  const cards = ANALYSES.map(d => { const r = analysisFeed?.result(state.symbol, chartMarket(), d.id), pair = state.symbol.replace(/USDT$/, '/USDT'), base = { id:d.id, pair,fit:analysisSuitability(d.id,nyServices.getPhase(state.symbol,chartMarket()),r?.direction),strength:d.id==='relative-strength'?null:analysisFeed?.result(state.symbol,chartMarket(),'relative-strength')?.strength };
+    if(d.observe&&!analysisCoins().includes(state.symbol))return {...base,text:'Für dieses Modell den Coin zuerst in die Vorauswahl aufnehmen.'};
     if (!r?.ready) return { ...base, text:r?.reason || 'Analyse auswählen, um Kerzen zu laden.' };
     return { ...base, phase:r.phase, reason:r.reason, inactive:r.phase === 'closed-day', text:d.describe ? d.describe(r, analysisFormats) : r.reason || 'Analyse ausgewertet.', detail:(()=>{const detail=d.status?.(r,analysisFormats);if(detail&&LEARNING_IDS.includes(d.id)&&r.signal?.probabilityText)return {...detail,levels:[...(detail.levels||[]),['Ziel vor Stop',r.signal.probabilityText],...(r.signal.expectedMinutes?[["Dauer · Median",Math.round(r.signal.expectedMinutes)+' Min.']]:[])]};return detail;})() };
   });
   if (ANALYSES.some(d => analysisView.settings.rows[d.id].telegram) && !tgTarget('analysis')) cards.push({ text:'Analyse-Telegram: eigenen Bot und Chat unter „Alarme aufs Smartphone → Analyse-Signale“ einrichten.' });
-  analysisView.paintResult(cards.map(c => [c.pair, c.text].filter(Boolean).join('\n')).join('\n\n'), [...store.get(ANALYSIS_LOG_KEY, []), ...notices.events.map(e => ({ at:e.at, text:`${displayTimeParts(e.at).clock} ${displayTimeParts(e.at).zone} · ${e.reason}` }))].sort((a, b) => a.at - b.at), cards);
+  analysisView.paintResult(cards.map(c => [c.pair, c.text].filter(Boolean).join('\n')).join('\n\n'), [...store.get(ANALYSIS_LOG_KEY, []), ...notices.events.map(e => ({ at:e.at, text:`${displayTimeParts(e.at).clock} ${displayTimeParts(e.at).zone} · ${e.reason}` }))].sort((a, b) => a.at - b.at), cards,groupAnalysisEvents(analysisCoins().flatMap(symbol=>{const market=wl?.c.get(symbol)?.market;return market?ANALYSES.map(d=>analysisFeed?.result(symbol,market,d.id)?.signal).filter(Boolean):[];}),at));
 }
 function analysisTick() { if (!analysisFeed) return;
   for (const symbol of analysisCoins()) { const error = wl?.c.get(symbol)?.error, enabled = ANALYSES.some(d => analysisCoinAllowed(analysisView.settings, d.id, symbol, analysisCoins()));
@@ -15865,6 +15878,7 @@ function analysisChartDraw(svg, under, over, g) {
   if (!analysisFeed || CAP.on) return;
   for (const d of ANALYSES) if (analysisView.shown(d.id)) {
     const result = analysisFeed.result(state.symbol, chartMarket(), d.id);
+    if(d.draw){d.draw({node,svg,under,over,result,geometry:g,palette:PAL,price:priceText,explain:analysisChartHelp,inspector:projectionInspector,interval:chartInterval()});continue;}
     if(d.id===PULLBACK.id){drawPullbackChart({node,svg,under,over,result,geometry:g,palette:PAL,price:priceText,explain:analysisChartHelp,inspector:projectionInspector,interval:chartInterval()});continue;}
     if (d.id===NY_OPEN.id) { drawNyChart({node,svg,under,over,result,geometry:g,palette:PAL,price:priceText,explain:analysisChartHelp,now:serverNow(),livePrice:currentPrice()});continue; }
     const model = analysisChartModel({ result, ledger:store.get(ANALYSIS_NOTICE_KEY, {}), symbol:state.symbol, market:chartMarket(), id:d.id, now:serverNow() });
@@ -15872,8 +15886,8 @@ function analysisChartDraw(svg, under, over, g) {
   }
 }
 installAnalysisChartTap($('chart'), text => { projectionInspector.close(); analysisChartHelp(text); });
-for (const id of ['analysis-test-card','analysis-ny-test-card','analysis-pullback-test-card']) $(id).addEventListener('click', async () => {
-  readChanForm(); const note = $('analysis-tg-status'), button = $(id), analysisId=id==='analysis-pullback-test-card'?PULLBACK.id:id==='analysis-ny-test-card'?NY_OPEN.id:'top-down', name=ANALYSES.find(d=>d.id===analysisId).name;
+for (const id of ['analysis-test-card','analysis-ny-test-card','analysis-pullback-test-card','analysis-range-test-card','analysis-breakout-test-card']) $(id).addEventListener('click', async () => {
+  readChanForm(); const note = $('analysis-tg-status'), button = $(id), analysisId=id==='analysis-range-test-card'?'range-return':id==='analysis-breakout-test-card'?'breakout-retest':id==='analysis-pullback-test-card'?PULLBACK.id:id==='analysis-ny-test-card'?NY_OPEN.id:'top-down', name=ANALYSES.find(d=>d.id===analysisId).name;
   if(!tgtOn('analysis')){note.textContent='Analyse-Signale sind unter „Telegram-Chats“ ausgeschaltet – Test nicht gesendet.';return;}
   if (!tgTarget('analysis')) { note.textContent = 'Eigenen Analyse-Bot und numerische Chat-ID prüfen. Die Chat-ID darf nicht die Bot-ID aus dem Token sein.'; return; }
   button.disabled = true; note.textContent = 'Testkarte wird erstellt …';
@@ -15895,13 +15909,13 @@ wmFeed = createWatchModelFeed({ now: serverNow, context: () => ({ enabled: wmStr
   changed: () => { if (!userScrolling()) wlPaint(Date.now(), true); } });
 marketPhaseFeed=createMarketPhaseFeed({now:serverNow,fetchRows:cachedKlines,read:key=>store.get(key),write:(key,value)=>store.set(key,value),
   context:()=>({paused:state.paused,hidden:document.hidden,online:navigator.onLine,symbols:state.watch.map(wlSym).map(symbol=>{const e=wl?.c.get(symbol);return e?.at&&!e.error?{symbol,market:e.market}:null;}).filter(Boolean)}),
-  workerFactory:()=>new Worker(new URL('./bundles/3.81.1/shared/market-phase-worker.mjs',import.meta.url),{type:'module'}),changed:()=>{if(wldSel)wld?.phase.paint(wldSel);}});
+  workerFactory:()=>new Worker(new URL('./bundles/3.82.0/shared/market-phase-worker.mjs',import.meta.url),{type:'module'}),changed:()=>{if(wldSel)wld?.phase.paint(wldSel);}});
 window.__marketPhase={feed:marketPhaseFeed,getMarktphase};
 const wmSave = async (key, value) => { store.set(key, value); if (!store.ok || !await store.flush()) throw new Error('Modelltest konnte nicht gespeichert werden.'); };
 wmView = createWatchModelView({ host: document.querySelector('#workspace-settings .workspace-settings-grid'), read: key => store.get(key), save: wmSave, getMode: wmMode,
   setMode: async mode => { const before = wmMode(); try { await wmSave(WATCH_MODEL_KEY, mode === 'strict' ? 'strict' : 'classic'); } catch (e) { store.set(WATCH_MODEL_KEY, before); throw e; } broadcastData([WATCH_MODEL_KEY]); wmRefresh(); },
   now: serverNow, symbols: () => state.watch.map(wlSym), history: createMusterClient().history, available: () => !document.hidden && !state.paused && navigator.onLine !== false,
-  workerFactory: () => new Worker(new URL('./bundles/3.81.1/shared/watch-model-worker.mjs', import.meta.url), { type: 'module' }) });
+  workerFactory: () => new Worker(new URL('./bundles/3.82.0/shared/watch-model-worker.mjs', import.meta.url), { type: 'module' }) });
 function wmAvailability() {
   wmFeed.sync();
   marketPhaseFeed?.sync();wld?.phase.availabilityChanged();
@@ -16016,10 +16030,10 @@ async function ghCollect() {
   return stripSyncSecrets(data, Object.values(chan.tg).filter(v => typeof v === 'string' && TG_TOKEN_RE.test(v.trim())));
 }
 async function ghApply(data) {
-  if (data?.app !== 'scalpdesk-github-sync' || data.version !== 1 || !Array.isArray(data.preferences) || data.preferences.length > GH_PREF_KEYS.length || data.preferences.some(x => !GH_PREF_KEYS.includes(x.key) || typeof x.present !== 'boolean') || new Set(data.preferences.map(x => x.key)).size !== data.preferences.length || GH_PREF_KEYS.filter(k => ![WATCH_MODEL_KEY, WATCH_COMPARE_KEY, ANALYSIS_KEY, ANALYSIS_LEARNING_KEY, PULLBACK_DATA_KEY, PULLBACK_MODEL_KEY].includes(k)).some(k => !data.preferences.some(x => x.key === k))) throw new Error('Die entschlüsselte Datei ist kein gültiger Scalp-Desk-Stand.');
+  if (data?.app !== 'scalpdesk-github-sync' || data.version !== 1 || !Array.isArray(data.preferences) || data.preferences.length > GH_PREF_KEYS.length || data.preferences.some(x => !GH_PREF_KEYS.includes(x.key) || typeof x.present !== 'boolean') || new Set(data.preferences.map(x => x.key)).size !== data.preferences.length || GH_PREF_KEYS.filter(k => ![WATCH_MODEL_KEY, WATCH_COMPARE_KEY, ANALYSIS_KEY, ANALYSIS_LEARNING_KEY, PULLBACK_DATA_KEY, PULLBACK_MODEL_KEY,STRATEGY_DATA_KEY,STRATEGY_REPORT_KEY].includes(k)).some(k => !data.preferences.some(x => x.key === k))) throw new Error('Die entschlüsselte Datei ist kein gültiger Scalp-Desk-Stand.');
   if (commitBusy || ghImportBusy) throw new Error('Der Abgleich läuft bereits. Bitte kurz warten.');
   validateModelArchive(data.models);
-  for(const item of data.preferences){if(!item.present)continue;if(item.key===ANALYSIS_LEARNING_KEY)validateLearningData(item.value);if(item.key===PULLBACK_DATA_KEY)validatePullbackData(item.value);if(item.key===PULLBACK_MODEL_KEY)validatePullbackModel(item.value);}
+  for(const item of data.preferences){if(!item.present)continue;if(item.key===STRATEGY_DATA_KEY)validateStrategyData(item.value);if(item.key===ANALYSIS_LEARNING_KEY)validateLearningData(item.value);if(item.key===PULLBACK_DATA_KEY)validatePullbackData(item.value);if(item.key===PULLBACK_MODEL_KEY)validatePullbackModel(item.value);}
   const copy = { v: 1, at: Date.now(), items: ghSnapshot(), models: await exportModelArchive(APP_VERSION, { includeBot: false }) };
   store.set(GH_EMERGENCY_KEY, copy, { force: true });
   if (!store.ok || !await store.flush()) throw new Error('Notfallkopie konnte nicht gespeichert werden. Es wurde nichts übernommen.');
@@ -16551,7 +16565,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
             <label>Eigener Bot-Token<span class="input-wrap tg-wrap"><input id="tg-atoken" type="password" autocomplete="off" spellcheck="false" placeholder="Token des Analyse-Bots"><button type="button" class="tg-paste" data-token="tg-atoken" aria-label="Analyse-Bot-Token einfügen">Einfügen</button></span></label>
             <div class="tg-ids"><label>Chat-ID<span class="input-wrap tg-wrap"><input id="tg-achat" type="text" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Numerische ID des Ziel-Chats"><button type="button" class="tg-paste" data-paste="tg-achat" data-thread="tg-athread" aria-label="Analyse-Chat-ID einfügen">Einfügen</button></span></label><label>Thema <small>(optional)</small><span class="input-wrap"><input id="tg-athread" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="—"></span></label></div>
             <p class="muted">Dem Analyse-Bot zuerst „Start“ senden. Hier die Chat-ID deiner Unterhaltung/Gruppe eintragen, niemals die Bot-ID aus dem Token. Bestehende Ziele bleiben unverändert. Gemeinsamer An/Aus-Schalter: „Telegram-Chats → Analyse-Signale“. Die Modell- und Coin-Freigaben unter Analyse gelten zusätzlich.</p>
-            <button type="button" class="button ghost" id="analysis-test-card">Testkarte · Top-Down</button><button type="button" class="button ghost" id="analysis-ny-test-card">Testkarte · NY Open Killzone</button><button type="button" class="button ghost" id="analysis-pullback-test-card">Testkarte · Trendfolge-Rücksetzer</button><p class="chan-status" id="analysis-tg-status" role="status"></p>
+            <button type="button" class="button ghost" id="analysis-test-card">Testkarte · Top-Down</button><button type="button" class="button ghost" id="analysis-ny-test-card">Testkarte · NY Open Killzone</button><button type="button" class="button ghost" id="analysis-pullback-test-card">Testkarte · Trendfolge-Rücksetzer</button><button type="button" class="button ghost" id="analysis-range-test-card">Testkarte · Range-Rückkehr</button><button type="button" class="button ghost" id="analysis-breakout-test-card">Testkarte · Ausbruch mit Rücktest</button><p class="chan-status" id="analysis-tg-status" role="status"></p>
           </div>
         </fieldset>
         <div class="tg-found" id="tg-found" hidden></div>

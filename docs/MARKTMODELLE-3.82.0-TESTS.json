@@ -1,0 +1,136 @@
+{
+  "appVersion": "3.82.0",
+  "serviceSourceVersion": "2.15.3",
+  "date": "2026-10-19",
+  "checks": [
+    {
+      "name": "unit-market-strategies",
+      "passed": 33,
+      "total": 33
+    },
+    {
+      "name": "unit-analysis",
+      "passed": 35,
+      "total": 35
+    },
+    {
+      "name": "unit-analysis-status",
+      "passed": 12,
+      "total": 12
+    },
+    {
+      "name": "unit-analysis-chart",
+      "passed": 8,
+      "total": 8
+    },
+    {
+      "name": "unit-analysis-overview",
+      "passed": 10,
+      "total": 10
+    },
+    {
+      "name": "unit-ny-open",
+      "passed": 26,
+      "total": 26
+    },
+    {
+      "name": "unit-trend-pullback",
+      "passed": 39,
+      "total": 39
+    },
+    {
+      "name": "unit-analysis-learning",
+      "passed": 32,
+      "total": 32
+    },
+    {
+      "name": "unit-market-phase",
+      "passed": 18,
+      "total": 18
+    },
+    {
+      "name": "unit-analysis-channel",
+      "passed": 12,
+      "total": 12
+    },
+    {
+      "name": "unit-247",
+      "passed": 105,
+      "total": 105
+    },
+    {
+      "name": "unit-handover-silent",
+      "passed": 24,
+      "total": 24
+    },
+    {
+      "name": "unit-release",
+      "passed": 6,
+      "total": 6
+    },
+    {
+      "name": "m129",
+      "passed": 75,
+      "total": 75
+    },
+    {
+      "name": "m130",
+      "passed": 24,
+      "total": 24
+    },
+    {
+      "name": "m131",
+      "passed": 26,
+      "total": 26
+    },
+    {
+      "name": "m132",
+      "passed": 26,
+      "total": 26
+    },
+    {
+      "name": "m133",
+      "passed": 22,
+      "total": 22
+    },
+    {
+      "name": "m134",
+      "passed": 29,
+      "total": 29
+    },
+    {
+      "name": "m69",
+      "passed": 8,
+      "total": 8
+    },
+    {
+      "name": "m135-chromium",
+      "passed": 34,
+      "total": 34
+    },
+    {
+      "name": "m135-webkit",
+      "passed": 34,
+      "total": 34
+    }
+  ],
+  "passed": 638,
+  "total": 638,
+  "lint": {
+    "errors": 0,
+    "knownAppWarnings": 3,
+    "sharedWarnings": 0
+  },
+  "pwaFiles": 148,
+  "installerFiles": 160,
+  "realTelegramMessagesSent": false,
+  "privateOracleUpdated": false,
+  "analysis24x7Enabled": false,
+  "notes": [
+    "Kontrollierte Börsen-/Telegram-Attrappen; native Chromium-/WebKit-Tests, keine physischen iOS-Geräte.",
+    "Neue Handelsmodelle beobachten standardmäßig ohne Telegram. Relative Stärke ist eine Auswahlhilfe ohne eigene Signale.",
+    "Historienpfad, Modul-Worker, zeitliche 70/30-Trennung, Kosten, Datensicherung und alte Analyse-/Telegram-/Dienstpfade geprüft.",
+    "Analyseberechnung weiterhin in der aktiven App; Dienstquelle unverändert. Installer diesmal nicht erneut vollständig ausgeführt, kompletter Liefergraph und alle Dateihashes lokal geprüft.",
+    "Keine bestätigte Marktprofitabilität; historische Ergebnisse müssen in der App mit echten Börsendaten geprüft werden."
+  ]
+}
