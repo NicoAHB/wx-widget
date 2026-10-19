@@ -4,6 +4,7 @@ import { computeKiZones } from './ki-zones.mjs';
 import { detectFvgs } from './fvg.mjs';
 import { macdFindings } from './macd-chart.mjs';
 import { volumeProfile } from './volume-profile.mjs';
+import { topDownLearningFeatures } from './analysis-learning-features.mjs';
 import { INTERVAL_MS } from './market-intervals.mjs';
 
 export const TOP_DOWN = Object.freeze({ version: 'top-down-1', history: 500, warmup: 220, structureBars: 100,
@@ -156,7 +157,7 @@ export function confirmTopDownEntry({ rows, values, zones, components, levels, d
   return null;
 }
 
-export function evaluateTopDown({ candles, now, symbol, market = 'spot' }) {
+export function evaluateTopDown({ candles, now, symbol, market = 'spot', cache }) {
   const base = analysisClosed(candles['15m'], '15m', now);
   if (base.length < 80) return { ready: false, direction: 0, stage: 0, reason: 'Mindestens 80 geschlossene 15m-Kerzen nötig.' };
   const last = base.at(-1), expiresAt = last.end + QUARTER;
@@ -164,14 +165,20 @@ export function evaluateTopDown({ candles, now, symbol, market = 'spot' }) {
   const higher = analysisClosed(candles['4h'], '4h', last.time), hour = analysisClosed(candles['1h'], '1h', Math.floor(last.time / HOUR) * HOUR);
   if (higher.length < TOP_DOWN.warmup || hour.length < 80) return { ready: false, direction: 0, stage: 0, reason: '4h-/1h-Vorlauf fehlt.' };
   if (now >= expiresAt || last.end !== Math.floor(now / QUARTER) * QUARTER || higher.at(-1).end !== Math.floor(last.time / INTERVAL_MS['4h']) * INTERVAL_MS['4h'] || hour.at(-1).end !== Math.floor(last.time / HOUR) * HOUR) return { ready: false, direction: 0, stage: 0, reason: 'Neue Schlusskerzen fehlen – keine Freigabe.' };
-  const bias = topDownBias(higher), common = { ready: true, symbol, market, bias, direction: bias.direction, at: last.end, expiresAt, stage: bias.direction ? 1 : 0, signal: null, zones: [], components: [], trend: { '4h': bias.direction } };
+  const biasKey=higher[0].time+'|'+higher.at(-1).end, cachedBias=cache?.bias?.key===biasKey?cache.bias:null;
+  const bias = cachedBias?.value||topDownBias(higher), common = { ready: true, symbol, market, bias, direction: bias.direction, at: last.end, expiresAt, stage: bias.direction ? 1 : 0, signal: null, zones: [], components: [], trend: { '4h': bias.direction } };
+  if(cache)cache.bias={key:biasKey,value:bias};
   if (!bias.direction) return { ...common, reason: bias.reason };
-  const contextZones = computeKiZones({ candles: higher, interval: '4h', ema200: bias.ema200 }).zones.filter(z => !z.broken && z.side === (bias.direction === 1 ? 'buy' : 'sell')).sort((a, b) => b.score - a.score).slice(0, 2).map(z => ({ ...z, knownAt: higher.at(-1).end, label: '4h ' + (z.side === 'buy' ? 'Demand' : 'Supply') }));
-  const hv = series(hour, HOUR), lowerValues = series(base, QUARTER), setup = topDownComponents(hour, hv, bias.direction), zones = confluenceZones(setup.components, setup.atr);
+  const contextZones = cachedBias?.contextZones||computeKiZones({ candles: higher, interval: '4h', ema200: bias.ema200 }).zones.filter(z => !z.broken && z.side === (bias.direction === 1 ? 'buy' : 'sell')).sort((a, b) => b.score - a.score).slice(0, 2).map(z => ({ ...z, knownAt: higher.at(-1).end, label: '4h ' + (z.side === 'buy' ? 'Demand' : 'Supply') }));
+  if(cache)cache.bias.contextZones=contextZones;
+  const hourKey=hour[0].time+'|'+hour.at(-1).end+'|'+bias.direction, cachedHour=cache?.hour?.key===hourKey?cache.hour:null;
+  const hv = cachedHour?.values||series(hour,HOUR), lowerValues=series(base,QUARTER),setup=cachedHour?.setup||topDownComponents(hour,hv,bias.direction),zones=cachedHour?.zones||confluenceZones(setup.components,setup.atr);
+  if(cache)cache.hour={key:hourKey,values:hv,setup,zones};
   const trend = { '4h': bias.direction, '1h': Math.sign(hv.at(-1).ema50 - hv.at(-1).ema200), '15m': Math.sign(lowerValues.at(-1).ema50 - lowerValues.at(-1).ema200) };
   const touched = zones.filter(z => { const eligible = base.slice(-TOP_DOWN.executionBars).filter(c => c.time >= z.knownAt); return eligible.some(c => overlaps(c, z)) && eligible.every(c => bias.direction === 1 ? c.close >= z.low : c.close <= z.high); });
   const higherPivots = confirmedPivots(higher, higher.at(-1).end, INTERVAL_MS['4h']).slice(-24).map(p => ({ ...p, label: '4h-Strukturlevel' }));
   const signal = confirmTopDownEntry({ rows: base, values: lowerValues, zones: touched, components: setup.components, levels: [...setup.levels, ...higherPivots], direction: bias.direction, symbol, market });
+  if(signal)signal.learningFeatures=topDownLearningFeatures(signal,base,lowerValues);
   return { ...common, trend, stage: signal ? 3 : touched.length ? 2 : 1, signal, zones, contextZones, components: setup.components,
     setupZone: signal?.zone || touched[0] || null,
     reason: signal ? '15m-Umkehr und Schlussbruch bestätigt.' : touched.length ? '1h-Konfluenzzone berührt; 15m-Umkehr und Schlussbruch abwarten.' : '4h-Bias aktiv; Eintritt in eine 1h-Zone mit mindestens zwei Bausteinarten abwarten.' };

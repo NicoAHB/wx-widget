@@ -1,6 +1,6 @@
 {
   "version": "2.15.2",
-  "appVersion": "3.80.1",
+  "appVersion": "3.81.0",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
@@ -119,18 +119,18 @@
     },
     {
       "path": "shared/analysis-card.mjs",
-      "sha256": "ad7818674113ac8ae758e624fd8331cbf8218a28ac06893ddf845b4a85b83d51",
-      "bytes": 9617
+      "sha256": "0eeaad31fd189641a757478cc1ced305037fd51c9a7e6eea507caccb54a47dc4",
+      "bytes": 9904
     },
     {
       "path": "shared/analysis-chart.mjs",
-      "sha256": "ef9afd6109e3cc4290603fe0415df104a1eadae4fdd36286ae9ee684d2fa3848",
-      "bytes": 13217
+      "sha256": "eafe4f47e295288c0ffb6271875c0a105315a3570d2e60176fdd11ff23630de8",
+      "bytes": 13564
     },
     {
       "path": "shared/analysis-config.mjs",
-      "sha256": "541615f8a5db72d4178116e53dec9f0b7acdafa36b2a03facfa5cc468a25205e",
-      "bytes": 4534
+      "sha256": "cc2ace6698cf7a531fefdc34bf24eeaf92a1312e7f87cc7c97cd5a9ae0e20bb1",
+      "bytes": 4820
     },
     {
       "path": "shared/analysis-delivery.mjs",
@@ -139,8 +139,38 @@
     },
     {
       "path": "shared/analysis-feed.mjs",
-      "sha256": "159c5d76e2b97742d2f793ec9a95fbeb85613f07a84bbadd3949633d4ae65724",
-      "bytes": 6513
+      "sha256": "0505e953d3397e40ffc59ff2877c9d0409558ee3e377a05512f0ffd41ba728a4",
+      "bytes": 6718
+    },
+    {
+      "path": "shared/analysis-learning-features.mjs",
+      "sha256": "0e452d4266d72f0aa99dcb259189f1d21a787e9e6609629cf918c14837bfe34d",
+      "bytes": 1142
+    },
+    {
+      "path": "shared/analysis-learning-feed.mjs",
+      "sha256": "3c7cbf1570a8888ec2adbbc2d3a3d22008dddfe5b93f4cace4a01aa82ff3fe4a",
+      "bytes": 7589
+    },
+    {
+      "path": "shared/analysis-learning-history.mjs",
+      "sha256": "af7aa46bfa57bc3eb075a942b4865efb9c23f2f64823d9f6252d1b1eeb344d89",
+      "bytes": 3711
+    },
+    {
+      "path": "shared/analysis-learning-view.mjs",
+      "sha256": "0f3fd2de30eb2a61e63db878628befee49948203c22b7a80c38a067ea0b9f6fc",
+      "bytes": 8557
+    },
+    {
+      "path": "shared/analysis-learning-worker.mjs",
+      "sha256": "6b7ea525a742e085ba8a4a735eb3562e5ccab5ccf25941cde8892b2be847d8f0",
+      "bytes": 420
+    },
+    {
+      "path": "shared/analysis-learning.mjs",
+      "sha256": "89983e881b00452fd31272f4baf5d645bbd6b08c9aa061ad4ec69771975a55d3",
+      "bytes": 11965
     },
     {
       "path": "shared/analysis-notices.mjs",
@@ -159,13 +189,13 @@
     },
     {
       "path": "shared/analysis-top-down.mjs",
-      "sha256": "ee02e461db85dcb7ec1cc69784d54798241ef282919d3dbd7700911081b409c9",
-      "bytes": 16656
+      "sha256": "6074a514fed7b243179dd7bfb92f2401fed0714a6e1873668d2158bdfbe53e4d",
+      "bytes": 17304
     },
     {
       "path": "shared/analysis-view.mjs",
-      "sha256": "0aec2922244b31cdafbd7d3c8e478cbe75172a71f2b454471ddd80dacfdb6d94",
-      "bytes": 18399
+      "sha256": "6361b8b519a183a2ac7c9ea46d937538399c6dc4d01edde0010a2bdb83cc2dfe",
+      "bytes": 18521
     },
     {
       "path": "shared/bitget-patterns.mjs",
@@ -444,18 +474,18 @@
     },
     {
       "path": "shared/ny-open-chart.mjs",
-      "sha256": "95eebfd2288b26b3d6d6813d53fcac9d88c0f5d8565cea1372f70a9d565a206b",
-      "bytes": 5249
+      "sha256": "c0759af3b5139b793e634a88a648237139a961112ac29e6d6ac7c9c678825f66",
+      "bytes": 5314
     },
     {
       "path": "shared/ny-open-core.mjs",
-      "sha256": "4e29a4ab213f579be7b2ea96372dd41e9ee60b81a1c8cde846ed3fb2d59ad4b6",
-      "bytes": 10100
+      "sha256": "921e9720d967a5cdd5e7969bbed21d17c6318b1102b57776792c156d72a8186c",
+      "bytes": 10241
     },
     {
       "path": "shared/ny-open-feed.mjs",
-      "sha256": "77b234e6be6d0c2f52aa88eb481c74d97566aa33082ecf14077de72cd8196d3d",
-      "bytes": 8643
+      "sha256": "7944308d0f05c6d3dfec2efae0b26ede74222342a146e026c30fb32acb6391b1",
+      "bytes": 8816
     },
     {
       "path": "shared/ny-open-history.mjs",
@@ -474,8 +504,8 @@
     },
     {
       "path": "shared/ny-open-view.mjs",
-      "sha256": "e72c5ded5ff604c80aa9a8535b944d35c45272219cb82f18df4f47d129a4324c",
-      "bytes": 8646
+      "sha256": "a02532d4ec320fb5be169dc361401024a450f6ef6aee08348d2c211255e26fb8",
+      "bytes": 8683
     },
     {
       "path": "shared/orderflow-core.mjs",
@@ -628,6 +658,11 @@
       "bytes": 2215
     },
     {
+      "path": "shared/signal-learning.mjs",
+      "sha256": "78ef623e9d9ac66a2c5860a7dabce32311c1729a5446617e5e2fc100ee1d276b",
+      "bytes": 4110
+    },
+    {
       "path": "shared/signal-overview.mjs",
       "sha256": "f5428bbba259f07eac8d7c0cebf5569624e6d1d14db43ce5be0a7c1505468bf4",
       "bytes": 3314
@@ -664,8 +699,8 @@
     },
     {
       "path": "shared/trend-pullback-learning.mjs",
-      "sha256": "5b4eaf69bb15366a0f6e2693bf92b99a44120b4dc44e744c27571a234bbb11d1",
-      "bytes": 8651
+      "sha256": "93fd6c06cdd4c1350e2f20a86b89467a2de35ce26f47c8e23bd217c5cde292c7",
+      "bytes": 5088
     },
     {
       "path": "shared/trend-pullback-notices.mjs",

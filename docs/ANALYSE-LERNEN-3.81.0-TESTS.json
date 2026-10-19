@@ -1,0 +1,111 @@
+{
+  "appVersion": "3.81.0",
+  "serviceSourceVersion": "2.15.2",
+  "date": "2026-10-19",
+  "checks": [
+    {
+      "name": "unit-analysis-learning",
+      "passed": 32,
+      "total": 32
+    },
+    {
+      "name": "unit-analysis",
+      "passed": 35,
+      "total": 35
+    },
+    {
+      "name": "unit-analysis-status",
+      "passed": 12,
+      "total": 12
+    },
+    {
+      "name": "unit-analysis-chart",
+      "passed": 8,
+      "total": 8
+    },
+    {
+      "name": "unit-analysis-overview",
+      "passed": 10,
+      "total": 10
+    },
+    {
+      "name": "unit-ny-open",
+      "passed": 26,
+      "total": 26
+    },
+    {
+      "name": "unit-trend-pullback",
+      "passed": 39,
+      "total": 39
+    },
+    {
+      "name": "unit-handover-silent",
+      "passed": 24,
+      "total": 24
+    },
+    {
+      "name": "unit-market-phase",
+      "passed": 18,
+      "total": 18
+    },
+    {
+      "name": "unit-release",
+      "passed": 6,
+      "total": 6
+    },
+    {
+      "name": "m129-chromium",
+      "passed": 75,
+      "total": 75
+    },
+    {
+      "name": "m130-chromium",
+      "passed": 24,
+      "total": 24
+    },
+    {
+      "name": "m131-chromium",
+      "passed": 26,
+      "total": 26
+    },
+    {
+      "name": "m133-chromium",
+      "passed": 22,
+      "total": 22
+    },
+    {
+      "name": "m69-chromium",
+      "passed": 8,
+      "total": 8
+    },
+    {
+      "name": "m129-webkit",
+      "passed": 75,
+      "total": 75
+    },
+    {
+      "name": "m130-webkit",
+      "passed": 24,
+      "total": 24
+    },
+    {
+      "name": "m133-webkit",
+      "passed": 22,
+      "total": 22
+    }
+  ],
+  "passed": 486,
+  "total": 486,
+  "lint": {
+    "errors": 0,
+    "existing_app_warnings": 3,
+    "shared_warnings": 0
+  },
+  "pwaFiles": 140,
+  "installerFiles": 152,
+  "physical_ios_devices_tested": false,
+  "real_telegram_messages_sent": false,
+  "market_profitability_demonstrated": false,
+  "private_service_deployed": false,
+  "analysis_24_7_enabled": false
+}

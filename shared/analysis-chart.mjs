@@ -8,6 +8,7 @@ export function compactAnalysisSignal(s) {
   return { analysisId, analysisName, version, symbol, market, direction, side, at, expiresAt, setupId, bias,
     entry, stop, target1, target2, rr, rr2, setup, confirmationLevel,
     zone: s.zone && { id: s.zone.id, low: s.zone.low, high: s.zone.high, knownAt: s.zone.knownAt, labels: s.zone.labels, kinds: s.zone.kinds },
+    learningVersion:s.learningVersion,probability:s.probability,probabilityText:s.probabilityText,expectedMinutes:s.expectedMinutes,
     reversal: s.reversal && { at: s.reversal.at, reasons: s.reversal.reasons } };
 }
 
@@ -37,6 +38,7 @@ export function analysisChartExplanation(model, price, number, time) {
   let text = model.ready && model.result ? 'Top-Down · ' + topDownStatusText(topDownStatus(model.result, { price, number, time }), false) : `Top-Down · ${model.ready ? model.stage + '/3 Stufen · 4h-Bias ' + dir : 'Daten nicht aktuell'}. ${model.reason}`;
   text += ' Nur normale, geschlossene Kerzen. 4h: Struktur, Trend und EMA 200. 1h: mindestens zwei Bausteinarten in derselben Zone. 15m: Umkehr und anschließender Schlussbruch.';
   if (s) text += ` ${model.current ? 'Bestätigter Einstieg' : 'Zuletzt bestätigtes Signal (Historie)'} ${s.direction === 1 ? 'Long' : 'Short'} ${price(s.entry)} · Stop ${price(s.stop)} · Ziel 1 ${price(s.target1)} · Ziel 2 ${price(s.target2)} · CRV ${number(s.rr, 2)} / ${number(s.rr2, 2)}. Auslöser: ${(s.reversal?.reasons || []).join(' + ')} und Schluss ${s.direction === 1 ? 'über' : 'unter'} ${price(s.confirmationLevel)}. ${model.exit?.reason || 'Stop-/Zielmarken sind Hinweise, keine ausgeführten Orders.'}`;
+  if(s?.learningVersion)text+=` Ziel 1 vor Stop: ${s.probabilityText||'Lernphase'}. ${s.expectedMinutes?'Median bis Ziel: '+Math.round(s.expectedMinutes)+' Minuten.':''} Feste Handelsmarken bleiben unverändert.`;
   return text;
 }
 
