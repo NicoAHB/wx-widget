@@ -64,7 +64,8 @@ printf '   Lade Lieferliste …\n'
 fetch "$SRC/release-manifest.json" "$STAGE/release-manifest.json" || die "Lieferliste konnte nicht geladen werden; bisheriges Programm bleibt."
 PARTS=$(node - "$STAGE/release-manifest.json" <<'NODE'
 const fs=require('fs'),j=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
-if(!/^2\.\d+\.\d+$/.test(j.version)||!Array.isArray(j.files)||j.files.length>150)throw Error('Lieferliste ungültig');
+// Das gemeinsame App-/Dienst-Bündel umfasst inzwischen mehr als 150 Dateien.
+if(!/^2\.\d+\.\d+$/.test(j.version)||!Array.isArray(j.files)||j.files.length>200)throw Error('Lieferliste ungültig');
 for(const f of j.files){if(!/^(?:scalpdesk-247\.mjs|pattern-engine\.mjs|pattern-monitor\.mjs|pattern-card\.mjs|telegram-format\.mjs|patterns-247\.mjs|market-intervals\.mjs|ki-monitor\.mjs|orderflow-explainer\.mjs|install\.sh|package\.json|package-lock\.json|shared\/[a-z0-9-]+\.mjs|fonts\/(?:[A-Za-z0-9-]+\.(?:otf|ttf)|LIZENZ\.md))$/.test(f.path)||!/^[a-f0-9]{64}$/.test(f.sha256))throw Error('Lieferpfad ungültig'); console.log(f.path);}
 NODE
 ) || die "Lieferliste ungültig; bisheriges Programm bleibt."

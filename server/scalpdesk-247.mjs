@@ -52,7 +52,7 @@ import { PQ, patternConfig, patternCandles, patternCases, patternFresh, patternT
 import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT } from './telegram-format.mjs';
 import { ConfluenceService, kiMessage, Po3Service, po3Message, BotSimulationRuntime } from './ki-monitor.mjs';
 
-export const VERSION = '2.15.2';   // 2.13.0: Qualitätsfilter für Chartmuster-Meldungen; 2.14.0: Chartmuster als Trading-Karte (Text als Ersatz); 2.14.1: Schrift mitgeliefert; 2.14.4: Installer mit Zeitlimits und Fortschritt; 2.14.3: Status nennt den Chartmuster-Filter; 2.14.2: Installer macht den Programmstand für den Dienstbenutzer lesbar; 2.15.0: Chartmuster-Signalkarte (Gesamturteil, Jetzt, Mini-Chart), schwache Signale nur mit Schalter
+export const VERSION = '2.15.3';   // 2.13.0: Qualitätsfilter für Chartmuster-Meldungen; 2.14.0: Chartmuster als Trading-Karte (Text als Ersatz); 2.14.1: Schrift mitgeliefert; 2.14.4: Installer mit Zeitlimits und Fortschritt; 2.14.3: Status nennt den Chartmuster-Filter; 2.14.2: Installer macht den Programmstand für den Dienstbenutzer lesbar; 2.15.0: Chartmuster-Signalkarte (Gesamturteil, Jetzt, Mini-Chart), schwache Signale nur mit Schalter
 // 2.14.0: Kartenrenderer (pattern-card.mjs + resvg) nur bei Bedarf laden; fehlt er, bleibt es bei der Textmeldung
 let cardModule = null;
 const loadCards = () => (cardModule ??= import('./pattern-card.mjs').catch(() => null));
@@ -318,11 +318,11 @@ export function readServerConfig(file) {
 // ---------- 2.0 (G05): Ziel-Schalter und Ereignis-Freigaben (rein, ohne Netz – testbar) ----------
 // Ziele: Kursalarm (Preis-, Stop-/Ziel-, Gewinn-/Verlust-Alarme, Termine, BTC-Puls – sendet dieser Dienst bzw. die App mit
 // Freigabe), Sicherung und Trades (sendet nur die App direkt an Telegram; hier steht nur der Schalter, ohne Inhalte).
-export const TARGETS = ['course-alert', 'backup', 'trades', 'patterns', 'ki'];
+export const TARGETS = ['course-alert', 'backup', 'trades', 'patterns', 'analysis', 'ki'];
 export const CL_MS = { '5m': 3e5, '15m': 9e5, '1h': 36e5, '4h': 144e5 };   // 2.3.0: Alarm bei Kerzenschluss
 // letzte abgeschlossene Kerze (Schlusszeit vor jetzt); Treffer nur, wenn sie nach dem Scharfschalten schloss und ihr Schlusskurs die Marke erreicht
 export function closeHit(a, rows, armedAt, now) { const c = candles(rows).filter(x => x.T < now).at(-1); return c ? { price: c.c, hit: c.T > armedAt && (a.dir === 'below' ? c.c <= a.price : c.c >= a.price) } : null; }   // 2.2.0 (G09 C6a): Chartmuster
-export const TARGET_NAME = { 'course-alert': 'Kursalarm', backup: 'Sicherung', trades: 'Trades', patterns: 'Chartmuster', ki: 'KI-Signale' };
+export const TARGET_NAME = { 'course-alert': 'Kursalarm', backup: 'Sicherung', trades: 'Trades', patterns: 'Chartmuster', analysis:'Analyse-Signale', ki: 'KI-Signale' };
 const CMD_RE = /^[A-Za-z0-9_-]{8,64}$/, EV_RE = /^[A-Za-z0-9_.:|\-]{6,204}$/, SENDER_RE = /^(oracle|app:[a-z0-9]{4,24})$/;
 export const EV_FINAL = ['confirmed', 'unconfirmed', 'failed', 'discarded'], EV_ORDER = { reserved: 0, sending: 1, confirmed: 2, unconfirmed: 2, failed: 2, discarded: 2 };
 export const GRANT_WAIT = 5 * 60e3, EV_KEEP = 14 * 864e5, CMD_KEEP = 7 * 864e5, CMD_MAX = 300;
@@ -1036,7 +1036,7 @@ export class Watcher {
   }
   stateView(days = 3) {
     const t = this.now(), events = Object.entries(this.evs).filter(([, e]) => t - e.at < days * 864e5).sort((a, b) => b[1].at - a[1].at).slice(0, 300).map(([id, e]) => ({ id, ...e }));
-    return { ok: true, v: VERSION, now: t, botSimulation: { revision: this.botSimulation.state.revision, enabled: this.botSimulation.state.enabled, state: this.botSimulation.view().run?.state ?? null, simulationOnly: true, privateAdapterReady: false }, po3: this.po3.view(), ki: { ...this.ki.view(), destination: { chat: this.chat, bot: this.token.split(':')[0] }, commandsReady: this.kiUsers.length > 0 }, patternWatch: this.patternWatch, ...policyView(this.pol), eps: Object.fromEntries(Object.entries(this.eps).map(([b, x]) => [b, x.n])), events };
+    return { ok: true, v: VERSION, now: t, analysis:{policyReady:true,runtimeReady:false}, botSimulation: { revision: this.botSimulation.state.revision, enabled: this.botSimulation.state.enabled, state: this.botSimulation.view().run?.state ?? null, simulationOnly: true, privateAdapterReady: false }, po3: this.po3.view(), ki: { ...this.ki.view(), destination: { chat: this.chat, bot: this.token.split(':')[0] }, commandsReady: this.kiUsers.length > 0 }, patternWatch: this.patternWatch, ...policyView(this.pol), eps: Object.fromEntries(Object.entries(this.eps).map(([b, x]) => [b, x.n])), events };
   }
   keyOk(h) {
     const a = /^Bearer\s+(\S+)$/.exec(String(h || ''))?.[1] || '', x = crypto.createHash('sha256').update(a).digest(), y = crypto.createHash('sha256').update(this.key).digest();

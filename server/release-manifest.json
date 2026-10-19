@@ -1,11 +1,11 @@
 {
-  "version": "2.15.2",
-  "appVersion": "3.81.0",
+  "version": "2.15.3",
+  "appVersion": "3.81.1",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
-      "sha256": "07674257ca9e297bc40fcee84f8cb5ac811d08f2151bddf74f284e00e276172f",
-      "bytes": 138200
+      "sha256": "e91ee3685fc9afb749f210b1e06996f59d7d420d9a1a68a9155e505fb6814a63",
+      "bytes": 138288
     },
     {
       "path": "pattern-engine.mjs",
@@ -59,8 +59,8 @@
     },
     {
       "path": "install.sh",
-      "sha256": "0e041391af1644602926f61122a3a1ad34c69db11de99041e0f3810fa571da60",
-      "bytes": 21710
+      "sha256": "92b3dbb1990a6894fb5ee4a568ad6c01d2356c4ebc0a4cfb7e08f12ca6285622",
+      "bytes": 21789
     },
     {
       "path": "fonts/DejaVuSans-Bold.ttf",
@@ -121,6 +121,11 @@
       "path": "shared/analysis-card.mjs",
       "sha256": "0eeaad31fd189641a757478cc1ced305037fd51c9a7e6eea507caccb54a47dc4",
       "bytes": 9904
+    },
+    {
+      "path": "shared/analysis-channel.mjs",
+      "sha256": "8df76f22ae48007efef55179e7763524aa3eedeacacb434678c809387cceedd2",
+      "bytes": 687
     },
     {
       "path": "shared/analysis-chart.mjs",
