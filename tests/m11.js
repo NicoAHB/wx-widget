@@ -90,7 +90,7 @@ const settle = page => page.waitForTimeout(900);
       await page.click('#fb-exit'); await page.waitForTimeout(400);
       check('Prognose: keine Fehler', !errors.length, errors.join(' | ')); await ctx.close();
       // Gelernte Muster mit nachgewiesenem Vorteil (vorbelegt): Zahl in Richtungsfarbe; umgekehrt Fortsetzung
-      const seedPat = hits => ({ v: 1, s: Object.fromEntries(['+', '-'].flatMap(T => ['+', '0', '-'].flatMap(S => ['+', '0', '-'].map(R => [`1m|0.25|T${T}S${S}R${R}`, [400, hits]])))), r: {} });
+      const seedPat = hits => ({ v: 1, rule: 2, s: Object.fromEntries(['+', '-'].flatMap(T => ['+', '0', '-'].flatMap(S => ['+', '0', '-'].map(R => [`1m|0.25|T${T}M${S}R${R}`, [400, hits]])))), r: {} });
       for (const [hits, name] of [[380, 'Umkehr'], [20, 'Fortsetzung']]) {
         const c2 = await browser.newContext({ viewport: { width: 1440, height: 900 }, acceptDownloads: true });
         await c2.addInitScript(([p]) => { if (sessionStorage.getItem('seeded')) return; sessionStorage.setItem('seeded', '1'); localStorage.setItem('scalpdesk.zigzag.v1', JSON.stringify({ pct: 0.25, fc: true })); localStorage.setItem('scalpdesk.zzpatterns.v1', JSON.stringify(p)); }, [seedPat(hits)]);
@@ -105,21 +105,21 @@ const settle = page => page.waitForTimeout(900);
           // Sicherung enthält die Muster – ohne Erwähnung; Einspielen auf einem frischen Gerät übernimmt sie still
           const [dl] = await Promise.all([p2.waitForEvent('download'), p2.evaluate(() => document.getElementById('backup-save').click())]);
           const file = JSON.parse(fs.readFileSync(await dl.path(), 'utf8')), st = await p2.textContent('#history-status');
-          const nS = file.patterns?.s?.['1m|0.25|T+S0R0']?.[0] || 0;
+          const nS = file.patterns?.s?.['1m|0.25|T+M0R0']?.[0] || 0;
           check('Sicherungsdatei enthält die gelernten Muster, Meldung ohne Erwähnung', file.app === 'scalp-desk' && file.version === 8 && file.patterns?.v === 1 && nS >= 400 && !/Muster/.test(st), JSON.stringify({ muster: Object.keys(file.patterns?.s || {}).length, fälle: nS, meldung: st }));
           const tmp = path.join(__dirname, 'zzp-backup-test.json'); fs.writeFileSync(tmp, JSON.stringify(file));
           const c3 = await browser.newContext({ viewport: { width: 1440, height: 900 } }), p3 = await c3.newPage(), e3 = []; h.collect(p3, e3);
           await p3.goto(h.URL_BASE + '/weather-widget-v2.html'); await p3.waitForTimeout(1500);
           await p3.setInputFiles('#backup-file', tmp); await p3.waitForTimeout(500);
           const imp = await p3.evaluate(() => ({ s: JSON.parse(localStorage.getItem('scalpdesk.zzpatterns.v1') || '{}').s || {}, msg: document.getElementById('history-status').textContent }));
-          check('Einspielen auf einem frischen Gerät: Muster still übernommen', (imp.s['1m|0.25|T+S0R0']?.[0] || 0) >= 400 && !/Muster/.test(imp.msg), JSON.stringify({ fälle: imp.s['1m|0.25|T+S0R0'], meldung: imp.msg }));
+          check('Einspielen auf einem frischen Gerät: Muster still übernommen', (imp.s['1m|0.25|T+M0R0']?.[0] || 0) >= 400 && !/Muster/.test(imp.msg), JSON.stringify({ fälle: imp.s['1m|0.25|T+M0R0'], meldung: imp.msg }));
           check('Einspielen: keine Fehler', !e3.length, e3.join(' | ')); await c3.close();
         }
         check(`${name}: keine Fehler`, !e2.length, e2.join(' | ')); await c2.close();
       }
       // Handy 320 px: Beschriftung mit Trefferquote bleibt im Chart
       const pc = await browser.newContext({ viewport: { width: 320, height: 700 }, hasTouch: true, isMobile: true }); await pc.addInitScript(() => { localStorage.setItem('scalpdesk.zigzag.v1', JSON.stringify({ pct: 0.25, fc: true }));
-        localStorage.setItem('scalpdesk.zzpatterns.v1', JSON.stringify({ v: 1, s: Object.fromEntries(['+', '-'].flatMap(T => ['+', '0', '-'].flatMap(S => ['+', '0', '-'].map(R => [`1m|0.25|T${T}S${S}R${R}`, [400, 380]])))), r: {} })); });
+        localStorage.setItem('scalpdesk.zzpatterns.v1', JSON.stringify({ v: 1, rule: 2, s: Object.fromEntries(['+', '-'].flatMap(T => ['+', '0', '-'].flatMap(S => ['+', '0', '-'].map(R => [`1m|0.25|T${T}M${S}R${R}`, [400, 380]])))), r: {} })); });
       const pp = await pc.newPage(), pe = []; h.collect(pp, pe); await pp.goto(h.URL_BASE + '/weather-widget-v2.html');
       await pp.waitForFunction(() => document.getElementById('status').dataset.feed === 'live', null, { timeout: 20000 }).catch(() => {});
       await pp.evaluate(() => document.getElementById('chart').scrollIntoView({ block: 'center' })); await pp.waitForTimeout(1500);

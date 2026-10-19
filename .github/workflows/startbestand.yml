@@ -1,0 +1,44 @@
+# Startbestand der ZigZag-Prognose (data/muster-start.json) neu berechnen (3.83.0). Läuft, wenn sich das Rechenskript oder dieser
+# Workflow auf einem Arbeitszweig ändert, oder von Hand („Actions → Startbestand → Run workflow“). Holt die Coinbase-Stundenkerzen
+# (dafür braucht es Internet, das hier vorhanden ist), lernt mit den Funktionen der App, baut das Bündel neu und legt das Ergebnis
+# als Commit auf denselben Zweig. Auf main läuft er nicht automatisch – dort kommt der Bestand nur über einen geprüften PR an.
+name: Startbestand
+
+on:
+  push:
+    branches-ignore: [main]
+    paths: ['tools/zzp-start.mjs', '.github/workflows/startbestand.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: startbestand-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  berechnen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Startbestand berechnen
+        run: node tools/zzp-start.mjs
+
+      - name: Bündel und Lieferlisten aktualisieren
+        run: node tools/build-release.mjs
+
+      - name: Auf den Zweig legen
+        run: |
+          if git diff --quiet; then echo "Keine Änderung."; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A data/muster-start.json bundles sw.js server/release-manifest.json
+          git commit -q -m "Startbestand der ZigZag-Prognose neu berechnet (Regeln der App, Coinbase BTC-USD 1h 2017–2019)"
+          git push -q origin "HEAD:${GITHUB_REF_NAME}"

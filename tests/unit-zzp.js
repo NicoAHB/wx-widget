@@ -7,16 +7,19 @@ const zzpLine = html.match(/var ZZP = \{[^}]*\}[^\n]*\n/)[0];
 // 3.77.6: macd() nutzt neutralMacdSignal aus shared/indicators.mjs (in der App importiert) – hier aus dem Modultext übernehmen
 const ind = fs.readFileSync(path.join(__dirname, '..', 'shared', 'indicators.mjs'), 'utf8'), indFn = name => { const a = ind.indexOf(`export function ${name}(`); if (a < 0) throw new Error(name); let d = 0, b = a; for (; b < ind.length; b++) { if (ind[b] === '{') d++; else if (ind[b] === '}' && --d === 0) break; } return ind.slice(a + 7, b + 1); };
 const indLine = (ind.match(/^const finite = [^\n]*\n/m) || [''])[0] + indFn('neutralMacdSignal') + '\n';
+// 3.83.0: zzpKey zählt RSI wie die Signal-Übersicht (rsiSignal aus shared/rsi-momentum.mjs); Lernstände tragen die Regelnummer
+const rsiSrc = fs.readFileSync(path.join(__dirname, '..', 'shared', 'rsi-momentum.mjs'), 'utf8').replace(/^export /gm, '');
+const ruleLine = (html.match(/const ZZP_RULE = \d+;/) || ['const ZZP_RULE = 2;'])[0] + '\n';
 const make = (fee = 0.06) => new Function(`const mem = {}, sent = []; const store = { get: k => mem[k], set: (k, v) => { mem[k] = JSON.parse(JSON.stringify(v)); return true; } }; const ZZP_KEY = 'zzp';
 const broadcastData = k => sent.push(...k); let tgb = null, zzpStartSet = null; const scheduleTgBackup = () => {}, renderZzpInfo = () => {}; const state = { symbol: 'BTCUSDT', interval: '1m', risk: { feePct: ${fee} } };
-${zzpLine}${indLine}${['zzStepper', 'zigzag', 'zzForecast', 'rsi', 'ema', 'macd', 'wilsonLow', 'zzpIndicators', 'zzpKey', 'zzMoments', 'zzpData', 'zzpApply', 'zzpVerdict', 'zzpSave', 'zzpBackup', 'zzpImport'].map(grab).join('\n')}
-return { mem, sent, state, zigzag, zzForecast, zzMoments, zzpData, zzpApply, zzpVerdict, zzpBackup, zzpImport, wilsonLow, reset: () => { zzpMem = null; } };`)();
+${zzpLine}${ruleLine}${rsiSrc}\n${indLine}${['zzStepper', 'zigzag', 'zzForecast', 'rsi', 'ema', 'macd', 'wilsonLow', 'zzpIndicators', 'zzpKey', 'zzMoments', 'zzpData', 'zzpApply', 'zzpVerdict', 'zzpSave', 'zzpBackup', 'zzpImport'].map(grab).join('\n')}
+return { mem, sent, state, zigzag, zzForecast, zzMoments, zzpData, zzpApply, zzpVerdict, zzpBackup, zzpImport, zzpKey, wilsonLow, reset: () => { zzpMem = null; } };`)();
 let pass = 0, fail = 0; const check = (n, ok, info = '') => { ok ? pass++ : fail++; console.log(`${ok ? '✓' : '✗'} ${n}${info ? ' — ' + info : ''}`); };
 let seed = 5; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
 const K = []; let px = 100; for (let i = 0; i < 700; i++) { const o = px; px *= 1 + (rnd() - .5) * .01; K.push({ time: 1e12 + i * 60e3, open: o, high: Math.max(o, px) * (1 + rnd() * .002), low: Math.min(o, px) * (1 - rnd() * .002), close: px, volume: 1 }); }
 // Momente
 let A = make(); const ms = A.zzMoments(K.slice(0, 500), 0.5);
-check('Momente ab Kerze 250, zeitlich aufsteigend, Muster im Format T±S±0R±0', ms.length > 50 && ms.every((m, i) => (!i || m.time > ms[i - 1].time) && /^T[+-]S[+0-]R[+0-]$/.test(m.key) && m.time >= K[250].time), `${ms.length} Momente, z. B. ${ms[0]?.key}`);
+check('Momente ab Kerze 250, zeitlich aufsteigend, Muster im Format T±M±0R±0 (3.83.0: M = Signal-Bewertung wie die Signal-Übersicht)', ms.length > 50 && ms.every((m, i) => (!i || m.time > ms[i - 1].time) && /^T[+-]M[+0-]R[+0-]$/.test(m.key) && m.time >= K[250].time), `${ms.length} Momente, z. B. ${ms[0]?.key}`);
 check('Ergebnis je Moment: getroffen, verfehlt, unentschieden oder noch offen – die letzten sind offen', ms.every(m => [true, false, null, undefined].includes(m.hit)) && ms.at(-1).hit === undefined && ms.filter(m => m.hit !== undefined).length > 20, `${ms.filter(m => m.hit === true).length} / ${ms.filter(m => m.hit === false).length} / ${ms.filter(m => m.hit === null).length} / ${ms.filter(m => m.hit === undefined).length}`);
 // Kein Blick in die Zukunft: Momente bis t hängen nicht von späteren Kerzen ab (außer ihrem Ergebnis)
 const ms2 = A.zzMoments(K.slice(0, 600), 0.5), same = ms.filter(m => m.hit !== undefined).every(m => { const q = ms2.find(x => x.time === m.time); return q && q.key === m.key && q.ext === m.ext && q.hit === m.hit; });
@@ -33,7 +36,7 @@ A.zzpApply(P, A.zzMoments(K.slice(100, 700), 0.5), 'BTCUSDT|1m|0.5', '1m|0.5'); 
 const B2 = make(), P2 = B2.zzpData(); B2.zzpApply(P2, B2.zzMoments(K, 0.5), 'BTCUSDT|1m|0.5', '1m|0.5'); const nRef = Object.values(P2.s).reduce((a, s) => a + s[0], 0);
 check('Späteres Fenster (neu geladener Chart) lernt nur die neuen Momente dazu', n2 > n1 && Math.abs(n2 - nRef) <= Math.max(3, nRef * .1), `${n1} → ${n2} (in einem Durchgang: ${nRef})`);
 // Gate
-const seedAll = (A, pref, n, h) => { const P = A.zzpData(); for (const T of '+-') for (const S of '+0-') for (const R of '+0-') P.s[`${pref}|T${T}S${S}R${R}`] = [n, h]; };
+const seedAll = (A, pref, n, h) => { const P = A.zzpData(); for (const T of '+-') for (const S of '+0-') for (const R of '+0-') P.s[`${pref}|T${T}M${S}R${R}`] = [n, h]; };
 const C = K.slice(0, 500), live = { ...C.at(-1), time: C.at(-1).time + 60e3 }, cc = [...C, live], fc = A.zzForecast(A.zigzag(cc, 1), cc.length);
 A = make(); A.state.interval = '1m'; seedAll(A, '1m|1', 300, 230);
 let V = A.zzpVerdict(fc.up, 1, cc);
@@ -51,12 +54,23 @@ check('Ohne Gebühren (Schwelle 50 %): 58 % mit 300 Fällen reicht, angezeigte Z
 A = make(); seedAll(A, '1h|1', 300, 230); V = A.zzpVerdict(fc.up, 1, cc);
 check('Statistik eines anderen Intervalls zählt nicht', V && !V.ok && V.n === 0);
 // Sicherung
-A = make(); const L = A.zzpData(); L.s['1m|1|T+S0R0'] = [10, 6]; L.s['1m|1|T-S0R0'] = [30, 20]; L.r['BTCUSDT|1m|1'] = [500, 400, 'T+S0R0'];
-A.zzpImport({ v: 1, s: { '1m|1|T+S0R0': [20, 9], '1m|1|T-S0R0': [15, 7], '1h|2|T+S+R+': [5, 3], 'bad1': [3, 5], 'bad2': [-1, 0], 'bad3': [2.5, 1] }, r: { 'BTCUSDT|1m|1': [300, 1, ''], 'ETHUSDT|1m|1': [900, 800, 'T-S0R0'] } });
+A = make(); const L = A.zzpData(); L.s['1m|1|T+M0R0'] = [10, 6]; L.s['1m|1|T-M0R0'] = [30, 20]; L.r['BTCUSDT|1m|1'] = [500, 400, 'T+M0R0'];
+A.zzpImport({ v: 1, rule: 2, s: { '1m|1|T+M0R0': [20, 9], '1m|1|T-M0R0': [15, 7], '1h|2|T+M+R+': [5, 3], 'bad1': [3, 5], 'bad2': [-1, 0], 'bad3': [2.5, 1] }, r: { 'BTCUSDT|1m|1': [300, 1, ''], 'ETHUSDT|1m|1': [900, 800, 'T-M0R0'] } });
 const M = A.mem.zzp;
-check('Einspielen: je Muster die Fassung mit mehr Fällen, Ungültiges verworfen', M && M.s['1m|1|T+S0R0'][0] === 20 && M.s['1m|1|T-S0R0'][0] === 30 && M.s['1h|2|T+S+R+'][0] === 5 && !M.s.bad1 && !M.s.bad2 && !M.s.bad3, JSON.stringify(M?.s));
+check('Einspielen: je Muster die Fassung mit mehr Fällen, Ungültiges verworfen', M && M.s['1m|1|T+M0R0'][0] === 20 && M.s['1m|1|T-M0R0'][0] === 30 && M.s['1h|2|T+M+R+'][0] === 5 && !M.s.bad1 && !M.s.bad2 && !M.s.bad3, JSON.stringify(M?.s));
 check('Einspielen: je Reihe der spätere Lernstand, Tabs werden informiert', M.r['BTCUSDT|1m|1'][0] === 500 && M.r['ETHUSDT|1m|1'][0] === 900 && A.sent.includes('zzp'));
 A.zzpImport(null); A.zzpImport({ v: 2, s: {}, r: {} }); A.zzpImport({ v: 1, s: 'x', r: {} });
-check('Einspielen ohne oder mit fremden Mustern: nichts passiert, kein Fehler', A.mem.zzp.s['1m|1|T+S0R0'][0] === 20);
+check('Einspielen ohne oder mit fremden Mustern: nichts passiert, kein Fehler', A.mem.zzp.s['1m|1|T+M0R0'][0] === 20);
 check('Sicherung enthält die Muster (ohne Startbestand: dasselbe Objekt wie gespeichert)', JSON.stringify(A.zzpBackup()) === JSON.stringify(A.mem.zzp));
+// 3.83.0: Regel 2 – Signal-Bewertung wie die Signal-Übersicht; alte Lernstände (Regel 1) werden nicht vermischt
+{ const B = make(), n = 40, t = n - 1, arr = v => Array(n).fill(v);
+  // RSI pendelt um 45 und springt zuletzt auf 56: die alte Erholungsregel gibt 0, das RSI-Momentum (Signal-Übersicht) +1
+  const r = Array.from({ length: n }, (_, i) => (i === t ? 56 : 45 + (i % 2 ? 0.5 : -0.5)));
+  const ind = { e200: arr(90), e20: arr(101), e50: arr(100), r, m: { line: arr(-1), signal: arr(0) } }, closes = arr(102);
+  check('3.83.0: Signal-Bewertung zählt RSI-Momentum wie die Signal-Übersicht (Trend +1, Kurs +1, RSI +1, MACD −1 → „dafür“)', B.zzpKey(closes, ind, t, 1) === 'T+M+R0', B.zzpKey(closes, ind, t, 1)); }
+{ const B = make(); B.mem.zzp = { v: 1, s: { '1m|1|T+S0R0': [500, 400] }, r: { 'BTCUSDT|1m|1': [9e12, 0, ''] } }; B.reset();
+  const P = B.zzpData();
+  check('3.83.0: gespeicherter Lernstand nach alter Regel wird nicht verwendet (frischer Stand, Lernen ab den geladenen Kerzen)', P.rule === 2 && !Object.keys(P.s).length && !Object.keys(P.r).length, JSON.stringify(P)); }
+{ const B = make(); const n = B.zzpImport({ v: 1, s: { '1m|1|T+S0R0': [500, 400] }, r: {} }), n2 = B.zzpImport({ v: 1, rule: 2, s: { '1m|1|T+M0R0': [5, 3] }, r: {} });
+  check('3.83.0: Sicherung/Startbestand nach alter Regel wird nicht eingespielt, neue Regel schon', n === 0 && n2 > 0 && !B.zzpData().s['1m|1|T+S0R0'] && B.zzpData().s['1m|1|T+M0R0'][0] === 5); }
 console.log(`${pass}/${pass + fail} bestanden`); process.exit(fail ? 1 : 0);
