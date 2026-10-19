@@ -369,8 +369,8 @@
     },
     {
       "path": "./bundles/3.83.0/shared/market-phase-feed.mjs",
-      "sha256": "adaa3e7f519bec04e1c3e9f13fee62ccc23f84a13cd57e970dcddf58af0b6f6f",
-      "bytes": 4869,
+      "sha256": "4680162882f3ce11361393ecf638f3ed1cbb8d39a9bf8cf103d3f68fe49a7db2",
+      "bytes": 5631,
       "alias": "./shared/market-phase-feed.mjs"
     },
     {
@@ -411,8 +411,8 @@
     },
     {
       "path": "./bundles/3.83.0/shared/market-strategy-feed.mjs",
-      "sha256": "e55bde07cf6298d85b5fe1fbc65c48fdb34b9c880930af49d29c53d00e487a96",
-      "bytes": 11012,
+      "sha256": "63d157ae5335e02496c320ed9d4c07967355488a62ee26d7682e9825cae96f2e",
+      "bytes": 12276,
       "alias": "./shared/market-strategy-feed.mjs"
     },
     {
@@ -753,8 +753,8 @@
     },
     {
       "path": "./bundles/3.83.0/shared/trend-pullback-feed.mjs",
-      "sha256": "2bc9ee34415ae3157bd17df145edf9e7642364e2dd63869827eab03c7d2a0a49",
-      "bytes": 14998,
+      "sha256": "d7cd0929846027934118cbddb518cdb43a44e04620f5c6b114f38f106d108ace",
+      "bytes": 15789,
       "alias": "./shared/trend-pullback-feed.mjs"
     },
     {
@@ -849,8 +849,8 @@
     },
     {
       "path": "./weather-widget-v2.html",
-      "sha256": "a58d4bd4541d97f28e0f2382f37b1ede174536e8029faa809d1b476033e3078b",
-      "bytes": 1791397
+      "sha256": "ec094476822e5cffbe2fcb2dbb77901bfe8f572214dd691b906dd6dcebe13369",
+      "bytes": 1792106
     },
     {
       "path": "./manifest.webmanifest",

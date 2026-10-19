@@ -8,16 +8,22 @@ const Q=INTERVAL_MS['15m'];
 export function createPullbackRuntime({context,fetchRows,now,changed,signal,log,history,read=()=>null,write=()=>{},symbols=()=>[],pullbackWorkerFactory}) {
   const state={entries:new Map(),busy:false,requests:0,evaluations:0,backtest:{busy:false,text:''},training:false};
   let generation=0,signature='',controller=null,backtestController=null,trainController=null,nextBootstrap=now()+PULLBACK.bootstrapDelayMs,manualStop=false;
-  const data=()=>pullbackData(read(PULLBACK_DATA_KEY)),all=()=>Object.values(data().records),options=()=>pullbackOptions(context().options?.[PULLBACK.id]),available=()=>{const c=context();return !c.paused&&!c.hidden&&c.online!==false;};
+  // 3.83.0: Liste und Zuordnung je Coin nur neu bilden, wenn sich der gespeicherte Stand ändert (vorher bei jeder Abfrage, mehrmals je
+  // Sekunde, über alle bis zu 20 000 Einträge)
+  let indexed=null,index=null;
+  const view=()=>{const records=data().records;if(records!==indexed){indexed=records;const list=Object.values(records),live=new Map(),open=[];for(const r of list)if(r.source==='live'){const k=r.signal.symbol+'|'+r.signal.market;(live.get(k)||live.set(k,[]).get(k)).push(r);if(!r.outcome.complete)open.push(r);}index={list,live,open};}return index;};
+  // Prognose je aktivem Signal merken, bis sich Daten oder Modell ändern (result() läuft mehrmals je Sekunde)
+  const predicted=new WeakMap(),prediction=s=>{const list=all(),model=read(PULLBACK_MODEL_KEY),m=predicted.get(s);if(m?.list===list&&m.model===model)return m.value;const value=pullbackPrediction(s,list,model);predicted.set(s,{list,model,value});return value;};
+  const data=()=>pullbackData(read(PULLBACK_DATA_KEY)),all=()=>view().list,options=()=>pullbackOptions(context().options?.[PULLBACK.id]),available=()=>{const c=context();return !c.paused&&!c.hidden&&c.online!==false;};
   function saveData(next){const merged=mergePullbackData(data(),next);if(write(PULLBACK_DATA_KEY,merged)===false)throw Error('Rücksetzer-Lerndaten konnten nicht gespeichert werden.');return merged;}
-  function liveRecords(e){return all().filter(r=>r.source==='live'&&r.signal.symbol===e.symbol&&r.signal.market===e.market);}
+  function liveRecords(e){return view().live.get(e.symbol+'|'+e.market)||[];}
   function active(e){return liveRecords(e).filter(r=>!r.outcome.first&&now()<r.signal.expiresAt).sort((a,b)=>b.signal.at-a.signal.at)[0];}
   function sync(){
     const c=context(),wanted=(c.symbols||[]).filter(s=>s.analyses.includes(PULLBACK.id)),key=JSON.stringify([available(),wanted.map(s=>[s.symbol,s.market]),options()]);
     if(key!==signature){signature=key;generation++;controller?.abort();controller=null;state.busy=false;for(const e of state.entries.values())e.wanted=false;
       for(const s of wanted){const k=s.symbol+'|'+s.market,e=state.entries.get(k);if(e)e.wanted=true;else state.entries.set(k,{...s,wanted:true,next:0,rows:{},attempted:new Set()});}
     }
-    for(const r of all())if(r.source==='live'&&!r.outcome.complete){const s=r.signal,k=s.symbol+'|'+s.market;if(!state.entries.has(k))state.entries.set(k,{symbol:s.symbol,market:s.market,wanted:false,next:0,rows:{},attempted:new Set()});}
+    for(const r of view().open){const s=r.signal,k=s.symbol+'|'+s.market;if(!state.entries.has(k))state.entries.set(k,{symbol:s.symbol,market:s.market,wanted:false,next:0,rows:{},attempted:new Set()});}
     for(const [k,e]of state.entries)if(!e.wanted&&!liveRecords(e).some(r=>!r.outcome.complete))state.entries.delete(k);
     if(!available()){backtestController?.abort();trainController?.abort();}
     return available()&&state.entries.size>0;
@@ -28,7 +34,7 @@ export function createPullbackRuntime({context,fetchRows,now,changed,signal,log,
     if(e?.error)return {ready:false,signal:null,stage:0,reason:e.error};
     if(!r||now()>=r.expiresAt)return {ready:false,signal:null,stage:0,reason:r?'Neue Schlusskerzen werden geladen.':'Geschlossene Rücksetzer-Kerzen werden geladen.'};
     const record=active({symbol,market}),s=record?.signal;
-    if(s){const prediction=s.probabilityText?{}:pullbackPrediction(s,all(),read(PULLBACK_MODEL_KEY)),current={...s,...prediction,chart:e.rows['15m']?.filter(c=>c.end<=s.at).slice(-60)};
+    if(s){const known=s.probabilityText?{}:prediction(s),current={...s,...known,chart:e.rows['15m']?.filter(c=>c.end<=s.at).slice(-60)};
       return {...r,stage:3,phase:'signal',signal:current,record,direction:s.direction,eligible:pullbackEligible(current,read(PULLBACK_MODEL_KEY)?.active,options()),reason:'Signal aktiv · '+(s.direction===1?'Long':'Short')+' · '+current.probabilityText};}
     return {...r,signal:null,stage:Math.min(2,r.stage),phase:r.phase==='signal'?'cooldown':r.phase,reason:r.phase==='signal'?'Dieses Impuls-Setup ist bereits protokolliert oder in der Sperrzeit.':r.reason};
   }

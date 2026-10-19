@@ -24,10 +24,16 @@ export function createMarketPhaseFeed({ context, fetchRows, now = Date.now, chan
     return e.result;
   }
   function recordChange(result) {
-    const saved = read(PHASE_LOG_KEY), list = Array.isArray(saved) ? saved : [], previous = list.filter(x => x.symbol === result.symbol && x.market === result.market && x.version === result.version).at(-1);
+    const saved = read(PHASE_LOG_KEY), list = Array.isArray(saved) ? saved : [], previous = list.findLast(x => x.symbol === result.symbol && x.market === result.market && x.version === result.version);
     if (previous?.phase === result.phase) return;
     const id = [result.version, result.symbol, result.market, result.at, result.phase].join('|');
-    if (!list.some(x => x.id === id)) write(PHASE_LOG_KEY, [...list, { ...result, id, loggedAt: now() }].sort((a, b) => a.at - b.at).slice(-MARKET_PHASE.maxLog));
+    if (list.some(x => x.id === id)) return;
+    // 3.83.0: nur die Felder, die Protokollanzeige und Wechselprüfung brauchen (vorher das ganze Rechenergebnis samt Pivots und
+    // EMA-Werten, rund dreimal so groß – bei bis zu 10 000 Einträgen, die bei jedem Wechsel komplett geschrieben werden)
+    const v = result.votes, entry = { version: result.version, symbol: result.symbol, market: result.market, at: result.at, candleTime: result.candleTime, phase: result.phase, count: result.count,
+      votes: { structure: { direction: v.structure.direction }, ema: { direction: v.ema.direction }, adx: { direction: v.adx.direction, adx: v.adx.adx }, efficiency: { direction: v.efficiency.direction, value: v.efficiency.value } }, id, loggedAt: now() };
+    const next = [...list, entry]; if (list.length && list.at(-1).at > entry.at) next.sort((a, b) => a.at - b.at);
+    write(PHASE_LOG_KEY, next.slice(-MARKET_PHASE.maxLog));
   }
   async function tick() {
     if (!sync() || state.pending || now() - lastStart < MARKET_PHASE.requestSpacingMs) return;

@@ -2623,7 +2623,7 @@ import { pullbackData, pullbackBackupData, mergePullbackData, validatePullbackDa
 import { pullbackHighlights } from './bundles/3.83.0/shared/trend-pullback-notices.mjs';
 import { drawPullbackChart } from './bundles/3.83.0/shared/trend-pullback-chart.mjs';
 import { MARKET_STRATEGY, STRATEGY_IDS, STRATEGY_DATA_KEY, STRATEGY_REPORT_KEY, strategyData, mergeStrategyData, validateStrategyData, strategyAlertCurrent } from './bundles/3.83.0/shared/market-strategy-core.mjs';
-import { strategyNoticeEvents } from './bundles/3.83.0/shared/market-strategy-feed.mjs';
+import { strategyNoticeEvents, strategyNoticeRecords } from './bundles/3.83.0/shared/market-strategy-feed.mjs';
 import { analysisSuitability, groupAnalysisEvents } from './bundles/3.83.0/shared/analysis-context.mjs';
 import { createPullbackReplies } from './bundles/3.83.0/shared/trend-pullback-delivery.mjs';
 import { ANALYSIS_NOTICE_KEY, analysisNoticeState, observeAnalysis, analysisNoticeCurrent } from './bundles/3.83.0/shared/analysis-notices.mjs';
@@ -15862,7 +15862,7 @@ function analysisObserve() {
       const update = observeAnalysis(value, { signal: notify?result.signal:null, symbol: entry.symbol, market: entry.market, rows: entry.rows['15m'], now: serverNow() }); value = update.state; changed ||= update.changed;
     }
   }
-  for(const event of strategyNoticeEvents(Object.values(strategyData(store.get(STRATEGY_DATA_KEY)).records),serverNow()))if((event.symbol===state.symbol&&(analysisRoot.open||analysisView.shown(event.analysisId))||analysisView.settings.rows[event.analysisId]?.coins[event.symbol]!==false)&&!value.events.some(e=>e.id===event.id)){value.events.push(event);changed=true;}
+  for(const event of strategyNoticeEvents(strategyNoticeRecords(strategyData(store.get(STRATEGY_DATA_KEY)).records,serverNow()),serverNow()))if((event.symbol===state.symbol&&(analysisRoot.open||analysisView.shown(event.analysisId))||analysisView.settings.rows[event.analysisId]?.coins[event.symbol]!==false)&&!value.events.some(e=>e.id===event.id)){value.events.push(event);changed=true;}
   for(const event of nyNoticeEvents(store.get(NY_JOURNAL_KEY),serverNow())) if((event.symbol===state.symbol&&(analysisRoot.open||analysisView.shown(NY_OPEN.id))||analysisCoinAllowed(analysisView.settings,NY_OPEN.id,event.symbol,analysisCoins()))&&!value.events.some(e=>e.id===event.id)){value.events.push(event);changed=true;}
   if (changed) store.set(ANALYSIS_NOTICE_KEY, analysisNoticeState(value));
 }
@@ -15882,11 +15882,13 @@ function analysisPaint() {
   if (ANALYSES.some(d => analysisView.settings.rows[d.id].telegram) && !tgTarget('analysis')) cards.push({ text:'Analyse-Telegram: eigenen Bot und Chat unter „Alarme aufs Smartphone → Analyse-Signale“ einrichten.' });
   analysisView.paintResult(cards.map(c => [c.pair, c.text].filter(Boolean).join('\n')).join('\n\n'), [...store.get(ANALYSIS_LOG_KEY, []), ...notices.events.map(e => ({ at:e.at, text:`${displayTimeParts(e.at).clock} ${displayTimeParts(e.at).zone} · ${e.reason}` }))].sort((a, b) => a.at - b.at), cards,groupAnalysisEvents(analysisCoins().flatMap(symbol=>{const market=wl?.c.get(symbol)?.market;return market?ANALYSES.map(d=>analysisFeed?.result(symbol,market,d.id)?.signal).filter(Boolean):[];}),at));
 }
+// 3.83.0: Liste je gespeichertem Stand merken – die sekündliche Runde baute sonst jedes Mal bis zu 20 000 Einträge neu auf
+const recordLists = new WeakMap(), recordList = records => { let list = recordLists.get(records); if (!list) recordLists.set(records, list = Object.values(records)); return list; };
 function analysisTick() { if (!analysisFeed) return;
   for (const symbol of analysisCoins()) { const error = wl?.c.get(symbol)?.error, enabled = ANALYSES.some(d => analysisCoinAllowed(analysisView.settings, d.id, symbol, analysisCoins()));
     if (enabled && error && analysisSkipped.get(symbol) !== error) { analysisSkipped.set(symbol, error); analysisLog({ symbol, kind: 'error', text: `${symbol}: Vorauswahl-Datenfehler; Analyse übersprungen (${error}).` }); } else if (!error) analysisSkipped.delete(symbol);
   }
-  void analysisFeed.tick();void analysisLearning.tick();analysisObserve(); if (!document.hidden) { analysisPaint(); nyLivePaint(); } void pullbackReplies.reconcile(Object.values(pullbackData(store.get(PULLBACK_DATA_KEY)).records)).catch(e=>analysisLog({kind:'error',text:'Rücksetzer-Ergebnis: '+e.message}));
+  void analysisFeed.tick();void analysisLearning.tick();analysisObserve(); if (!document.hidden) { analysisPaint(); nyLivePaint(); } void pullbackReplies.reconcile(recordList(pullbackData(store.get(PULLBACK_DATA_KEY)).records)).catch(e=>analysisLog({kind:'error',text:'Rücksetzer-Ergebnis: '+e.message}));
 }
 function nyLivePaint() {
   if (!analysisView) return; const r=analysisFeed?.result(state.symbol,chartMarket(),NY_OPEN.id), p=!state.paused&&navigator.onLine!==false&&!state.marketError&&state.loadedSymbol===state.symbol?currentPrice():null;
@@ -16078,7 +16080,11 @@ async function ghRestoreEmergency(copy) {
   if (!store.ok || !await store.flush()) throw new Error('Notfallkopie konnte nicht vollständig wiederhergestellt werden. Sie bleibt erhalten; Speicher prüfen und erneut versuchen.');
 }
 async function ghCollect() {
-  const data = { app: 'scalpdesk-github-sync', version: 1, backup: backupPayload(), preferences: GH_PREF_KEYS.map(key => {
+  // 3.83.0: backup.prefs entfällt – dieselben Werte (PREF_KEYS ⊆ GH_PREF_KEYS) stehen in preferences und werden beim Laden ohnehin
+  // daraus gesetzt; vorher standen alle Lernstände (je bis 20 000 Einträge) doppelt in der Datei. Ältere Apps lesen die Datei
+  // weiter: planBackup behandelt prefs als optional.
+  const backup = backupPayload(); delete backup.prefs;
+  const data = { app: 'scalpdesk-github-sync', version: 1, backup, preferences: GH_PREF_KEYS.map(key => {
     const v = store.get(key); if (v === undefined) return { key, present: false };
     const value = structuredClone(personalBackupPref(key, v));
     if (['scalpdesk.ki.settings.v1', 'scalpdesk.po3.settings.v1'].includes(key) && isObj(value)) value.on = false; // kein Versand/Analyse-Start auf einem anderen Gerät

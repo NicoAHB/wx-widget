@@ -34,6 +34,7 @@ const check = (name, ok) => { ok ? pass++ : fail++; console.log(`${ok ? '✓' : 
     const collected = await page.evaluate(() => __githubSync.collect());
     check('Vollständiger persönlicher Stand samt neuer Muster-Einstellung gesammelt', collected.backup.history.some(t => t.id === 'gh-personal-90') && collected.preferences.find(p => p.key === 'scalpdesk.muster.settings.v1').value.capital === 1234 && collected.models.bot === null);
     check('Modellauswahl wird in der persönlichen Sicherung mitgeführt', collected.preferences.find(p => p.key === 'scalpdesk.watch-model.v1')?.value === 'strict');
+    check('3.83.0: Einstellungen und Lernstände nur einmal in der Datei (preferences, nicht zusätzlich backup.prefs)', !('prefs' in collected.backup) && collected.preferences.length > 40);
     check('Token, Demo-Bücher, Dienst- und andere Zugangsdaten fehlen in der Nutzlast', !/LOCAL_GITHUB_TEST_TOKEN|AAHdqTcv|LOCAL_DISCORD_SECRET|scalpdesk\.channels|scalpdesk\.s247|scalpdesk\.github-emergency/.test(JSON.stringify(collected)) && collected.backup.demoPositions.length === 0 && collected.backup.demoHistory.length === 0);
     await page.click('#github-sync-save'); await page.waitForSelector('#github-sync-dialog[open]'); await page.fill('#github-sync-passphrase', phrase); await page.click('#github-sync-confirm');
     await page.waitForFunction(() => document.getElementById('github-sync-status').textContent.includes('auf GitHub gespeichert'));
