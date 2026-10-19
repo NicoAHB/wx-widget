@@ -1368,7 +1368,7 @@ html[data-chartfull]:not([data-chartbar=open]) .chart-toolbar,html[data-chartful
 .sw.fib{height:8px;background:repeating-linear-gradient(0deg,var(--c-fib) 0 1.5px,transparent 1.5px 3.5px)}
 #chart .fib-line{stroke:var(--c-fib);stroke-width:1;stroke-dasharray:2 3;opacity:.85}
 #chart .fib-zone{fill:var(--c-fib);opacity:.07}
-#chart .fib-label{fill:var(--c-fib);font-size:11px;font-weight:600;paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round}
+#chart .fib-label{fill:var(--c-fib);font-size:11px;font-weight:600;paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round;pointer-events:none}
 /* 3.11.1: Fibonacci-Leiste unter dem Chart – eine Zeile mit fester Höhe (Werte ändern nie die Höhe), drei Knöpfe
    38,2 / 50 / 61,8 % mit Kurs und Abstand; schmal (Handy) zweizeilig im Knopf: Marke und Abstand oben, Kurs darunter */
 .fib-strip{display:grid;grid-template-columns:auto repeat(3,minmax(0,1fr));grid-template-rows:34px;align-items:stretch;gap:0 8px;padding:8px 20px;border-top:1px solid var(--border);font-size:.75rem;color:var(--muted)}
