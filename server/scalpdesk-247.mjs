@@ -12,8 +12,8 @@
 // werden mit wachsender Pause wiederholt, auch nach einem Neustart. Lehnt Telegram ab oder ist es länger nicht erreichbar,
 // steht „Störung“ in der angehefteten Nachricht; dann meldet die geöffnete App wieder selbst. Die letzte erfolgreiche
 // Zustellung steht dort als eigene Zeile („Zustellung: zuletzt …“).
-// Bestätigung und Selbstdiagnose (ab 1.4): Übernimmt der Dienst eine neue Übergabe, schreibt er das ins Protokoll und schickt
-// eine lautlose Bestätigung („✅ 24/7-Dienst hat übernommen …“) in den Chat. Findet er in seinem Chat keine Datei der App –
+// Bestätigung und Selbstdiagnose: Übernahmen werden ausschließlich im Protokoll und in der angehefteten Statusnachricht
+// bestätigt (ab 2.15.2 keine zusätzliche Telegram-Nachricht). Findet der Dienst keine Datei der App –
 // meist ist am Server ein anderer Bot oder eine andere Chat-ID eingetragen als in der App unter „Kursalarm“ –, sagt er das
 // im Protokoll (alle 10 Minuten) und einmal am Tag per Telegram, mit Bot und Chat-ID zum Vergleich. „--status“ zeigt den
 // ganzen Weg auf einen Blick, ohne etwas zu senden.
@@ -52,7 +52,7 @@ import { PQ, patternConfig, patternCandles, patternCases, patternFresh, patternT
 import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT } from './telegram-format.mjs';
 import { ConfluenceService, kiMessage, Po3Service, po3Message, BotSimulationRuntime } from './ki-monitor.mjs';
 
-export const VERSION = '2.15.1';   // 2.13.0: Qualitätsfilter für Chartmuster-Meldungen; 2.14.0: Chartmuster als Trading-Karte (Text als Ersatz); 2.14.1: Schrift mitgeliefert; 2.14.4: Installer mit Zeitlimits und Fortschritt; 2.14.3: Status nennt den Chartmuster-Filter; 2.14.2: Installer macht den Programmstand für den Dienstbenutzer lesbar; 2.15.0: Chartmuster-Signalkarte (Gesamturteil, Jetzt, Mini-Chart), schwache Signale nur mit Schalter
+export const VERSION = '2.15.2';   // 2.13.0: Qualitätsfilter für Chartmuster-Meldungen; 2.14.0: Chartmuster als Trading-Karte (Text als Ersatz); 2.14.1: Schrift mitgeliefert; 2.14.4: Installer mit Zeitlimits und Fortschritt; 2.14.3: Status nennt den Chartmuster-Filter; 2.14.2: Installer macht den Programmstand für den Dienstbenutzer lesbar; 2.15.0: Chartmuster-Signalkarte (Gesamturteil, Jetzt, Mini-Chart), schwache Signale nur mit Schalter
 // 2.14.0: Kartenrenderer (pattern-card.mjs + resvg) nur bei Bedarf laden; fehlt er, bleibt es bei der Textmeldung
 let cardModule = null;
 const loadCards = () => (cardModule ??= import('./pattern-card.mjs').catch(() => null));
@@ -67,7 +67,7 @@ export const API = {
 };
 // Takt: Kurse alle 15 s, angepinnte Datei alle 20 s (bis 1.3 jede Minute), Lebenszeichen alle 10 min, Kalender alle 30 min.
 // 1.4: hint – so lange ohne Datei der App, dann ein Hinweis per Telegram (höchstens einmal am Tag); waitLog – Protokollzeile
-// „Warte auf die Übergabe“ wiederholen; ack – Abstand zwischen zwei Bestätigungen „hat übernommen“
+// „Warte auf die Übergabe“ wiederholen; ack – Wartezeit für den rein lokalen Abschluss alter Bestätigungen.
 export const EVERY = E.SCALPDESK_FAST
   ? { tick: 300, price: 1500, config: 2000, beat: 15e3, cal: 60e3, econ: 1500, feedStale: 12e3, pnlHold: 1200, hint: 5e3, hintAgain: 60e3, waitLog: 10e3, ack: 3e3 }
   : { tick: 5e3, price: 15e3, config: 20e3, beat: 10 * 60e3, cal: 30 * 60e3, econ: 20e3, feedStale: 3 * 60e3, pnlHold: 8e3, hint: 3 * 60e3, hintAgain: 24 * 3600e3, waitLog: 10 * 60e3, ack: 60e3 }; // pnlHold: Gewinn/Verlust erreicht → so lange auf die App warten
@@ -263,13 +263,10 @@ export function watchItems(c) {
 // 2.15.1: Gewinn-/Verlust-Grenzen werden still übernommen. Ihr einziges Telegram-Ereignis ist das Alarmbild;
 // Scharfschalten, Quittieren und erneutes Aktivieren dürfen keine zusätzliche Übergabenachricht auslösen.
 export const handoverItems = c => watchItems(c).filter(x => !x.key.startsWith('pnl:'));
-export function handoverAckNeeded(c, keys, on) {
-  const items = handoverItems(c);
-  if (!keys) return !pnlOn(c) || items.length > 0;
-  const was = new Set(keys);
-  return on !== c.on || items.some(x => !was.has(x.key));
-}
-// Bestätigung: neue Kurs-/Stop-/Ziel-Marken (höchstens 8 Zeilen) und was insgesamt; ausgeschaltet → ein Satz
+// 2.15.2: Übernahme ist kein Alarmereignis. Auch neue/geänderte Marken, Ein-/Ausschalten
+// und Neustarts dürfen keine eigene Telegram-Nachricht erzeugen. Export für ältere Aufrufer erhalten.
+export const handoverAckNeeded = () => false;
+// Historisches Textformat für kompatible Aufrufer; der Dienst versendet es seit 2.15.2 nicht mehr.
 export function ackText(c, fresh, now) {
   return formatMessage('handover', { headline: c.on ? '✅ Dienst hat übernommen' : '⏸ Dienstübergabe ausgeschaltet', items: c.on ? fresh.slice(0, 8).map(x => x.data) : [], lines: c.on ? [
     fresh.length > 8 ? `${fresh.length - 8} weitere` : '',
@@ -734,23 +731,18 @@ export class Watcher {
     const items = watchItems(data);
     this.log(data.on ? `Alarme geladen: ${plural(data.alarms.length, 'Alarm', 'Alarme')}, ${plural(data.positions.length, 'Position', 'Positionen')}${data.econ.warn && data.ev.news ? `, Termin-Warnung ${data.econ.warn} min vorher` : ''}${pulseOn(data) ? ', BTC-Puls' : ''}${pnlOn(data) ? `, Gewinn-/Verlust-Alarm (${lims.map(l => `${l.k === 'profit' ? '≥ +' : '≤ −'}${l.v} USDT`).join(', ')}, ${plural(data.pnl.n, 'offene Position', 'offene Positionen')})` : ''}${items.length ? ` – ${items.slice(0, 6).map(x => x.text).join(' · ')}${items.length > 6 ? ` · … und ${items.length - 6} weitere` : ''}` : ''}`
       : 'Alarme geladen: keine – Übergabe in der App ausgeschaltet, der Dienst meldet nichts');
-    // Bestätigung per Telegram, wenn etwas Neues beobachtet wird oder die Übergabe ein-/ausgeschaltet wurde (nicht bei bloßem
-    // Entfernen, z. B. nach einem ausgelösten Alarm); sonst den bestätigten Stand still nachführen
+    // 2.15.2: Übernahmen immer still nachführen; die angeheftete Nachricht bestätigt den Stand.
     this.ackPend = handoverAckNeeded(data, this.ackKeys, this.ackOn);
     if (!this.ackPend) { this.ackKeys = handoverItems(data).map(x => x.key); this.ackOn = data.on; }
     if (!old || old.tag !== data.tag) this.next.beat = 0; // gleich in der angehefteten Nachricht bestätigen
     this.saveState();
   }
-  // 1.4: „✅ 24/7-Dienst hat übernommen …“ – lautlos, höchstens einmal je EVERY.ack (mehrere Übergaben kurz nacheinander: eine
-  // Bestätigung mit dem neuesten Stand). Keine Meldung im Sinne von „Zustellung: zuletzt …“.
+  // 2.15.2: Alt-/ausstehende Übernahmen nur lokal abschließen, niemals als Nachricht senden.
+  // Die angeheftete Statusbestätigung (beat) bleibt für App und Duplikatschutz unverändert.
   async sendAck() {
-    const c = this.conf?.data; if (!c) { this.ackPend = false; return; }
-    // Erneut prüfen: Eine inzwischen entfernte Marke oder reine PnL-Übergabe braucht keinen verspäteten Text.
-    if (!handoverAckNeeded(c, this.ackKeys, this.ackOn)) { this.ackPend = false; this.ackKeys = handoverItems(c).map(x => x.key); this.ackOn = c.on; this.saveState(); return; }
-    const items = handoverItems(c), was = new Set(this.ackKeys || []), fresh = this.ackKeys ? items.filter(x => !was.has(x.key)) : items, t = this.now();
-    const r = await this.tg('sendMessage', { chat_id: this.chat, text: ackText(c, fresh, t), disable_notification: true, link_preview_options: { is_disabled: true } });
-    this.ackPend = false; this.ackKeys = items.map(x => x.key); this.ackAt = t; this.ackOn = c.on; this.saveState();
-    this.log(`Bestätigung an Telegram gesendet: ${c.on ? `${plural(items.length, 'Marke', 'Marken')} beobachtet${fresh.length ? `, neu: ${fresh.slice(0, 4).map(x => x.text).join(' · ')}${fresh.length > 4 ? ' …' : ''}` : ''}` : 'Übergabe ausgeschaltet'}${r?.message_id ? ` (Nachricht #${r.message_id})` : ''}`);
+    this.ackPend = false;
+    const c = this.conf?.data; if (!c) return;
+    this.ackKeys = handoverItems(c).map(x => x.key); this.ackOn = c.on; this.saveState();
   }
   // 1.4: Datei der App fehlt seit EVERY.hint – einmal (dann höchstens alle EVERY.hintAgain) per Telegram sagen, was zusammenpassen
   // muss. Landet die Nachricht in einem anderen Chat als die Datei der App, sieht man daran sofort den falschen Bot/Chat.
@@ -1191,7 +1183,7 @@ export class Watcher {
     // 2.0: Freigaben ohne Rückmeldung des Geräts → „unbestätigt“ (nie an einen anderen Sender); alte Einträge vergessen
     if (t >= (this.next.sweep || 0)) { this.next.sweep = t + Math.min(60e3, EVERY.config); const done = evSweep(this.evs, this.eps, t); for (const id of done) this.evLog(id); if (done.length) this.saveState(); }
     if (t >= this.next.config) { this.next.config = t + EVERY.config; await run('Datei der App', () => this.syncConfig()); }
-    // 1.4: Bestätigung „hat übernommen“ (lautlos) und Hinweis, wenn die Datei der App fehlt – Fehler: im nächsten Takt erneut
+    // Alte ausstehende Bestätigungen lokal abschließen; Hinweis bei fehlender Datei bleibt unverändert.
     if (this.ackPend && this.conf && t - this.ackAt >= EVERY.ack) await run('Bestätigung an Telegram', () => this.sendAck());
     if (this.waiting && this.waitSince && t - this.waitSince >= EVERY.hint && (!this.hintAt || t - this.hintAt >= EVERY.hintAgain)) await run('Hinweis an Telegram', () => this.sendHint());
     if (c()?.on && t >= this.next.price) { this.next.price = t + EVERY.price; await run('Kursprüfung', () => this.checkPrices()); if (pulseOn(c())) await run('BTC-Puls', () => this.checkPulse()); } // Abruffehler je Kürzel meldet checkPrices selbst („Kurse“)

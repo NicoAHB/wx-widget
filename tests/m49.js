@@ -1,7 +1,7 @@
 // 3.28.0 / 24/7-Dienst 1.4 – „liefert keine Alarme bei geschlossener App“. Die App übergibt wie in der Bedienung (Schalter im
 // Fenster „Telegram / Discord einrichten“), der Dienst läuft als eigener Prozess gegen die Telegram-/Binance-Attrappe.
-// gleich: derselbe Bot wie in der App – „Übergeben ✓ vom Dienst bestätigt“ ohne Tippen, Bestätigung „✅ … hat übernommen“
-//   (lautlos) in Telegram, Protokoll Übergabe erhalten → Alarme geladen → Kursprüfung → Bestätigung; App schließen, Kurs über
+// gleich: derselbe Bot wie in der App – „Übergeben ✓ vom Dienst bestätigt“ ohne Tippen, keine Telegram-Übernahme-Nachricht.
+//   Protokoll Übergabe erhalten → Alarme geladen → Kursprüfung → Statusbestätigung; App schließen, Kurs über
 //   den Alarm knapp neben dem Kurs → Telegram-Nachricht vom Dienst (Alarm ausgelöst → Telegram gesendet), genau einmal.
 // anders: am Server der Sicherungs-Bot (gleiche Chat-ID) – die App bleibt bei „wartet“, nach 90 s nennt sie Bot und Chat-ID
 //   zum Vergleich; der Dienst schreibt „Warte auf die Übergabe …“ ins Protokoll und schickt in SEINEM Chat einen Hinweis.
@@ -48,11 +48,11 @@ const tests = {
       check('App zeigt ohne Tippen „Übergeben ✓ vom Dienst bestätigt um … (1 Alarm, 0 Positionen · Dienst x.y.z)“', !!st && /^Übergeben ✓ vom Dienst bestätigt um \d\d:\d\d \(1 Alarm, 0 Positionen · Dienst \d+\.\d+\.\d+\)\./.test(st) && /auch bei geschlossener App/.test(st), (st || await page.textContent('#s247-status')).slice(0, 140));
       check('… innerhalb von 30 Sekunden nach dem Einschalten', !!st && Date.now() - t0 < 30000, `${Math.round((Date.now() - t0) / 1000)} s`);
       const ack = (await sentTg(t0)).filter(m => /^<b>✅ Dienst hat übernommen/.test(m.text || ''));
-      check('Telegram: Bestätigung mit fett markiertem Alarm-Level in USD, lautlos, vom Bot der App', ack.length === 1 && ack[0].disable_notification === true && ack[0].bot === 123456789 && ack[0].text.includes(`⭐ <b>Alarm-Level: ${(P0 + 50).toLocaleString('de-DE', { minimumFractionDigits: 2 })} USD</b> ⭐ (auf/über)`) && /Auch bei geschlossener App\n🕐 \d\d:\d\d:\d\d$/.test(ack[0].text), ack[0]?.text.replace(/\n/g, ' ⏎ '));
+      check('Telegram: keine Übernahme-Nachricht vor Erreichen des Kurs-Alarms', ack.length === 0);
       const L = () => svc.log.join('\n');
-      check('Protokoll: gestartet · Bot · Chat, Übergabe erhalten, Alarme geladen, Kursprüfung, Bestätigung eingetragen und gesendet',
+      check('Protokoll: gestartet · Bot · Chat, Übergabe erhalten, Alarme geladen, Kursprüfung und Bestätigung im angehefteten Status',
         / \d+\.\d+\.\d+ gestartet · Bot @test_kursalarm_bot \(ID 123456789\) · Chat 987654321/.test(L()) && /\nÜbergabe erhalten: Nachricht #\d+ · App /.test(L()) && /\nAlarme geladen: 1 Alarm, 0 Positionen – Kurs-Alarm BTC auf\/über /.test(L())
-        && /\nKursprüfung: Kurs-Alarm BTC auf\/über .* – Kurs .*, noch 0,0\d % entfernt/.test(L()) && /\nBestätigung eingetragen: /.test(L()) && /\nBestätigung an Telegram gesendet: 1 Marke beobachtet/.test(L()), svc.log.slice(0, 8).join(' | ').slice(0, 400));
+        && /\nKursprüfung: Kurs-Alarm BTC auf\/über .* – Kurs .*, noch 0,0\d % entfernt/.test(L()) && /\nBestätigung eingetragen: /.test(L()) && !/\nBestätigung an Telegram gesendet:/.test(L()), svc.log.slice(0, 8).join(' | ').slice(0, 400));
       check('keine Fehler (App)', !real(errors).length, real(errors).join(' | ').slice(0, 200));
       // App schließen, dann erreicht der Kurs den Alarm
       await ctx.close(); await h.sleep(500);

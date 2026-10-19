@@ -1,0 +1,84 @@
+{
+  "app_version": "3.80.1",
+  "service_version": "2.15.2",
+  "passed": 412,
+  "total": 412,
+  "tests": [
+    {
+      "test": "unit-handover-silent",
+      "passed": 24,
+      "total": 24
+    },
+    {
+      "test": "unit-247",
+      "passed": 105,
+      "total": 105
+    },
+    {
+      "test": "unit-247b",
+      "passed": 25,
+      "total": 25
+    },
+    {
+      "test": "unit-247c",
+      "passed": 55,
+      "total": 55
+    },
+    {
+      "test": "unit-247e",
+      "passed": 52,
+      "total": 52
+    },
+    {
+      "test": "unit-pnl-photo-only",
+      "passed": 39,
+      "total": 39
+    },
+    {
+      "test": "unit-pulse",
+      "passed": 44,
+      "total": 44
+    },
+    {
+      "test": "unit-price-alarm-card",
+      "passed": 14,
+      "total": 14
+    },
+    {
+      "test": "unit-release",
+      "passed": 6,
+      "total": 6
+    },
+    {
+      "test": "m49-gleich",
+      "passed": 11,
+      "total": 11
+    },
+    {
+      "test": "inst-247",
+      "passed": 37,
+      "total": 37
+    }
+  ],
+  "app_lint": {
+    "errors": 0,
+    "existing_warnings": 3
+  },
+  "service_lint": {
+    "errors": 0,
+    "warnings": 0
+  },
+  "real_telegram_messages_sent": false,
+  "private_server_deployment": false,
+  "private_server_update_required": true,
+  "checks": [
+    "seven simulated daily renewals",
+    "above/below thresholds, file/HTTPS coordination",
+    "new/changed alarms, off/on and restart stay silent",
+    "exact threshold still sends one PNG",
+    "no duplicate after repeated checks or restart",
+    "native App→service: pinned status remains confirmed; alarm photo after closing App",
+    "installer preserves settings/state and supports complete update/rollback",
+    "reproducible public app/worker/service release graph"
+  ]
+}
