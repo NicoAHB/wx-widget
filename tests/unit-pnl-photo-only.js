@@ -54,7 +54,7 @@ const check = (name, ok) => { ok ? pass++ : fail++; console.log(`${ok ? '✓' : 
     q.update(only); await q.w.syncConfig(); await q.w.sendAck();
     check('Bestehende 2.15.0-Bestätigung wird ohne neue Telegram-Nachricht migriert', q.sent.length === 0 && q.w.ackKeys.length === 0);
     const mixed = config(); q.update(mixed); await q.w.syncConfig(); await q.w.sendAck();
-    check('Neuer Kurs-Alarm bekommt weiter eine Bestätigung, ohne Gewinn-/Verlust-Grenzen', q.sent.length === 1 && q.sent[0].method === 'sendMessage' && q.sent[0].text.includes('Kurs-Alarm BTC') && !/Verlust-Alarm|Gewinn-Alarm/.test(q.sent[0].text));
+    check('Auch neuer Kurs-Alarm wird still übernommen und weiterhin beobachtet', q.sent.length === 0 && !q.w.ackPend && W.watchItems(q.w.conf.data).some(x=>x.key.startsWith('al:')));
     clearTimeout(q.w.saveTimer);
 
     // Fehlerfall: nur Bilder erneut versuchen; bei verlorener Telegram-Antwort keinen zweiten POST.

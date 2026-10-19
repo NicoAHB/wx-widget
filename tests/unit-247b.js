@@ -2,8 +2,7 @@
 // - Keine Datei der App im Chat (anderer Bot / andere Chat-ID): Protokollzeile mit Bot und Chat (alle 10 min), nach 3 min ein
 //   Hinweis per Telegram, höchstens einmal am Tag (auch über einen Neustart), „--status“ mit ✗ und Abhilfe.
 // - Datei da: „Übergabe erhalten“, „Alarme geladen“, Bestätigung in der angehefteten Nachricht (mit Version) und lautlos per
-//   Telegram („✅ 24/7-Dienst hat übernommen …“, nur Neues, höchstens einmal je Minute, nicht nach Neustart, nicht bei bloßem
-//   Entfernen, „⏸“ beim Ausschalten), „Kursprüfung“, „Alarm ausgelöst“, „Telegram gesendet“, Übersicht alle 10 min.
+//   Status/Protokoll ohne Telegram-Übernahme-Nachricht (auch bei Änderung, Neustart und Ausschalten), „Kursprüfung“, „Alarm ausgelöst“, „Telegram gesendet“, Übersicht alle 10 min.
 // - Datei von einem anderen Bot (Gruppe): Bestätigen geht nicht, der Dienst prüft trotzdem und sagt es.
 // - Die App liest die Zeile des Dienstes 1.4 (mit „· v1.4.0“) wie bisher. Kein Token im Protokoll.
 // Aufruf: node unit-247b.js
@@ -84,9 +83,7 @@ const TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', CHAT = '987654321'
   const svc = (pinned.caption.split('\n').find(l => l.startsWith('Dienst:')) || '');
   check('Angeheftete Nachricht: „Dienst: aktiv · … · v1.4.0 · #ab12 übernommen“; Protokoll „Bestätigung eingetragen“', svc === `Dienst: aktiv · 30.09. 12:26 · v${W.VERSION} · #ab12 übernommen` && logs.some(l => l.startsWith('Bestätigung eingetragen: angeheftete Nachricht zeigt „aktiv · #ab12 übernommen“')), svc);
   let ack = sentMsgs(tA);
-  check('Bestätigung per Telegram: lautlos, mit der neuen Marke und dem Hinweis „auch bei geschlossener App“', ack.length === 1 && ack[0].disable_notification === true
-    && ack[0].text === '<b>✅ Dienst hat übernommen</b>\n\n<b>Kurs-Alarm BTC</b>\n⭐ <b>Alarm-Level: 103,5000 USD</b> ⭐ (auf/über)\n\nKurs-Alarme: 1\nPositionen mit Stop/Ziel: 0\nAuch bei geschlossener App\n🕐 12:26:05'
-    && logs.some(l => l.startsWith('Bestätigung an Telegram gesendet: 1 Marke beobachtet, neu: Kurs-Alarm BTC auf/über 103,50 USD')), ack[0]?.text.replace(/\n/g, ' ⏎ '));
+  check('Übernahme ausschließlich im Status/Protokoll: keine zusätzliche Telegram-Nachricht', ack.length === 0 && !w.ackPend && !logs.some(l => l.startsWith('Bestätigung an Telegram gesendet')));
   check('Protokoll: erste Kursprüfung der neuen Marke mit Kurs und Abstand', logs.some(l => l === 'Kursprüfung: Kurs-Alarm BTC auf/über 103,50 – Kurs 100,00, noch 3,50 % entfernt'), logs.find(l => l.startsWith('Kursprüfung')));
   // App liest die Zeile des Dienstes 1.4 wie bisher
   const appSrc = fs.readFileSync(require('path').join(__dirname, '..', 'weather-widget-v2.html'), 'utf8'), fn = /function s247Parse\(pm, now = Date\.now\(\)\) \{[\s\S]*?\n\}/.exec(appSrc)?.[0], lastFn = /function s247Last\(line, now\) \{[\s\S]*?\n\}/.exec(appSrc)?.[0];
@@ -104,7 +101,7 @@ const TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', CHAT = '987654321'
   check('Neue Übergabe innerhalb einer Minute: noch keine zweite Bestätigung', sentMsgs(tC).filter(x => x.text.startsWith('<b>✅ Dienst hat übernommen')).length === 0);
   for (let i = 0; i < 4; i++) await step(w, 16e3);
   ack = sentMsgs(tC).filter(x => x.text.startsWith('<b>✅ Dienst hat übernommen'));
-  check('… danach eine Bestätigung mit beiden neuen Alarmen (ohne den schon bestätigten)', ack.length === 1 && ack[0].text.includes('<b>Kurs-Alarm ETH</b>\n⭐ <b>Alarm-Level: 2.600,00 USD</b> ⭐ (auf/über)') && ack[0].text.includes('<b>Kurs-Alarm SOL</b>\n⭐ <b>Alarm-Level: 150,0000 USD</b> ⭐ (unter)') && ack[0].text.includes('Kurs-Alarme: 3') && !ack[0].text.includes('BTC'), ack[0]?.text.replace(/\n/g, ' ⏎ '));
+  check('Auch nach einer Minute bleiben neue Kursmarken ohne Übernahme-Nachricht', ack.length === 0 && w.ackKeys.length === 3 && !w.ackPend);
   // nur entfernt (z. B. Alarm ausgelöst und aus der App genommen): keine Bestätigung
   const tD = now; pin({ ...base, tag: 'gh78', at: now, alarms: [alarm('e1', 2600, 'ETHUSDT'), alarm('s1', 150, 'SOLUSDT', 'below')] }); w.next.config = 0; for (let i = 0; i < 5; i++) await step(w, 16e3);
   check('Übergabe, die nur etwas entfernt: keine Bestätigung per Telegram (aber in der angehefteten Nachricht bestätigt)', !sentMsgs(tD).some(x => x.text.startsWith('<b>✅ Dienst hat übernommen')) && / · #gh78 übernommen$/.test(pinned.caption.split('\n').find(l => l.startsWith('Dienst:'))));
@@ -119,7 +116,7 @@ const TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', CHAT = '987654321'
   check('Alle 10 Minuten eine Übersicht: aktiv, Marken, Kursprüfungen, Kurse', sum.length === 1 && /^Lebenszeichen: aktiv · 2 Marken beobachtet · \d+ Kursprüfungen seit der letzten Übersicht · (ETH|SOL) /.test(sum[0]), sum.join(' | '));
   // Übergabe ausgeschaltet
   const tF = now; pin({ ...base, tag: 'ij90', at: now, on: false, alarms: [] }); w.next.config = 0; for (let i = 0; i < 5; i++) await step(w, 16e3);
-  check('Übergabe in der App ausgeschaltet: „⏸ … ausgeschaltet“ (lautlos)', sentMsgs(tF).filter(x => x.text.startsWith('<b>⏸ Dienstübergabe ausgeschaltet</b>') && x.disable_notification).length === 1);
+  check('Übergabe in der App ausgeschaltet: keine zusätzliche Telegram-Nachricht', sentMsgs(tF).length === 0 && w.ackOn === false);
   // --status mit bestätigter Datei
   pin({ ...base, tag: 'kl12', at: now, alarms: [alarm('a1', 103.5)] }); w.next.config = 0; for (let i = 0; i < 2; i++) await step(w, 16e3);
   logs = []; ok = await w.status();

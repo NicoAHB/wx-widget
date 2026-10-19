@@ -1,3 +1,10 @@
+## 3.80.1 (Codex): Alarmübernahmen ohne zusätzliche Telegram-Meldung
+
+- Dienst 2.15.2 sendet keine Übernahmebestätigungen mehr: neue/geänderte Kurs-/Stop-/Zielmarken, tägliche Erneuerung, Ein-/Ausschalten und Neustarts bleiben still. Ausstehende Altbestätigungen werden lokal abgeschlossen. Angehefteter Heartbeat, App-Status und Protokoll bestätigen die Übernahme weiterhin; keine Änderungen an Erreichen der Kursmarke, Alarm-Foto, Koordination oder Duplikatschutz.
+- Anleitung in App und Oracle-Dokumentation korrigiert. App/SW 3.80.1, vollständige Dienst-Lieferliste 2.15.2; alte Bündel unverändert. Bereits laufender privater Dienst benötigt einmal das bestehende Installer-Update; diese Umgebung hat keinen eingerichteten Serverzugang. [Änderungen, Server-Update und Alltagstest](docs/STILLE-ALARMUEBERNAHME-3.80.1.md).
+- **412/412 Prüfungen bestanden**, einschließlich 37 Installer-Prüfungen und 11 nativen App→Dienst-Prüfungen. App-Lint 0 Fehler / 3 bekannte Warnungen, Dienst-Lint fehler- und warnungsfrei. [Einzelresultate](docs/STILLE-ALARMUEBERNAHME-3.80.1-TESTS.json).
+- Neue Regression über sieben virtuelle Tage für beide Richtungen und Datei-/HTTPS-Modus: vor der Marke keine Nachricht, bei exakter Marke genau ein PNG, kein Duplikat nach erneutem Prüfen/Neustart. Bestehende Dienst-, PnL-/Puls-/Karten-/Installer- und native App→Dienst-Prüfungen bleiben erhalten; ausschließlich lokale Telegram-/Börsen-Attrappen.
+
 ## 3.80.0 (Codex): Trendfolge-Rücksetzer und feste 1H-Marktphase
 
 - Dritte konfigurierte Analyse mit kausalem 4h-Trend (EMA 21/50/200, Struktur, ADX), 1h-Fibonacci-/EMA-/Zonen-Rücksetzer und mindestens zwei 15m-Bestätigungen. Feste Einstieg-/Stop-/Zielmarken, CRV-/Stopfilter, Signalende und Sperrzeit. `trend-pullback-core/feed` verwenden vorhandene Indikatoren, Swings und Zonen; neue Startwerte zentral in `PULLBACK`.

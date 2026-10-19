@@ -57,7 +57,7 @@ Token, Chat und Einstellungen bleiben erhalten.
 
 - **1.2:** Gewinn-/Verlust-Alarm bei geschlossener App.
 - **1.3:** Prüft, ob Telegram jede Meldung angenommen hat; sonst neuer Versuch und „Störung“.
-- **1.4:** Bestätigt jede neue Übergabe lautlos im Chat („✅ 24/7-Dienst hat übernommen …“). Findet er keine Datei der App, sagt er das im Protokoll und per Telegram – meist ist am Server ein anderer Bot oder eine andere Chat-ID eingetragen als in der App unter „Kursalarm“. `sudo scalpdesk-247 status` prüft den ganzen Weg.
+- **2.15.2:** Übernimmt neue und geänderte Alarme ohne zusätzliche Telegram-Nachricht. Die Bestätigung bleibt in der angehefteten Statusnachricht und im Protokoll; der Kurs-Alarm kommt erst beim Erreichen der Marke. Findet er keine Datei der App, sagt er das im Protokoll und per Telegram – meist ist am Server ein anderer Bot oder eine andere Chat-ID eingetragen als in der App unter „Kursalarm“. `sudo scalpdesk-247 status` prüft den ganzen Weg.
 
 </details>
 
@@ -142,7 +142,7 @@ Der Dienst startet ab jetzt mit dem Server und nach Fehlern von selbst neu. Du k
 
 1. In der App: **🔔 Hinweise → „Telegram / Discord einrichten“ → 🌙 24/7-Dienst** → **„An den 24/7-Dienst übergeben“** einschalten.
 2. Nach höchstens einer Minute (meist 20–30 Sekunden) steht dort **„Übergeben ✓ vom Dienst bestätigt“**.
-   - In Telegram kommt lautlos **„✅ 24/7-Dienst hat übernommen“** mit deinen Alarmen.
+   - Es kommt **keine zusätzliche Übernahme-Nachricht**. Der Status in der App und in der angehefteten Nachricht bestätigt die Übernahme. Telegram meldet den Kurs-Alarm beim Erreichen deiner Marke (ab Dienst 2.15.2).
    - Oben im Chat ist **„📌 Scalp Desk · 24/7-Dienst“** angeheftet. **Diese Nachricht nicht löschen** – über sie tauschen App und Dienst den aktuellen Stand aus.
    - Bleibt es bei „wartet auf die Bestätigung“, siehe [Wenn etwas nicht klappt](#wenn-etwas-nicht-klappt).
 3. Nur auf **einem** Gerät einschalten: dem, auf dem du Alarme und Positionen pflegst.
