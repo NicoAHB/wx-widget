@@ -343,7 +343,8 @@ const TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', CHAT = '987654321'
     const P = await import('../server/pattern-card.mjs'), card = P.pnlAlarmCard({ profit: true, pnl: 6, level: 5, positions: W.pnlRows({ pos: POS, n: 2 }, new Map([['spot:BTCUSDT', 103.004], ['futures:ETHUSDT', 50.001]])), at: Date.UTC(2026, 9, 14, 18, 35, 15), bot: 'Mein Kurs Alarm' });
     check('… Zeilen je Position mit derselben Formel wie das Live-Ergebnis; Summe der Zeilen = große Zahl', card.model.rows.length === 2 && Math.round(card.model.rows.reduce((t, r) => t + r.value, 0) * 100) === 600 && card.model.totalText === '+6,00', JSON.stringify(card.model.rows));
     const fb = await runCard('ersatz', x => { x.pnlCardImage = async () => { throw new Error('Renderer kaputt'); }; });
-    check('… Gewinn-/Verlust-Bild nicht erzeugbar → kein Text, Bild bleibt im Ausgang', fb.ph.length === 0 && fb.tx.length === 0 && fb.queued === 1, JSON.stringify(fb));
+    // 3.82.2 / Dienst 2.15.4: ohne Bild kommt der Alarm als Text, statt nach 24 Stunden still verworfen zu werden
+    check('… Gewinn-/Verlust-Bild nicht erzeugbar → genau eine Textmeldung als Ersatz, Ausgang leer', fb.ph.length === 0 && fb.tx.length === 1 && /GEWINN-ALARM/.test(fb.tx[0]) && fb.queued === 0, JSON.stringify(fb));
     // ---- 2.15.0: Kurs-Alarm als Bild – derselbe Auslöser wie oben (Docht der laufenden Kerze bis 103,60 über 103,50) ----
     const runAl = async (name, patch = null) => {
       const sp = path.join(os.tmpdir(), `s247-kursbild-${name}-${process.pid}.json`); try { fs.unlinkSync(sp); } catch {}

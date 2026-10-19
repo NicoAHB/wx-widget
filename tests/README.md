@@ -1,5 +1,22 @@
 # Tests für Scalp Desk
 
+**3.82.2 Prüfung des ChatGPT-Stands (Dienst 2.15.4, Claude):**
+- **Repariert:**
+  - `unit-wl` (Schnittmarke seit 3.75.1 „3.75.1: eine gemeinsame Signalübersicht“);
+  - `unit-zzp` (übernimmt `neutralMacdSignal` aus `shared/indicators.mjs`);
+  - `unit-247d` (Version nicht mehr festgenagelt);
+  - `m124` (regelmäßige Aktualisierung aus dem Messfenster geschoben).
+- **Neu in `run-all.sh`:** `m122`–`m125`, `unit-macd-chart`, `unit-macd-notice`, `unit-chart-time-axis`, `unit-projection-inspector`.
+- **Neue Prüfungen:**
+  - `unit-pnl-photo-only`: Text-Ersatz ohne Bild bzw. bei abgelehntem Bild, keiner bei unklarer Zustellung, 24-h-Verwurf setzt „fehlgeschlagen“;
+  - `unit-ny-open`: langsamer Versand blockiert nicht, Wiederholung ≤ 15 s;
+  - `unit-market-strategies`: Phase der Vorstunde, dauerhafte Ergebnislücke;
+  - `unit-trend-pullback`: Ausnahme beim Antworten, Rücktest übersprungen;
+  - `unit-analysis`: GitHub-Datei 3.71–3.73, Freigabe der Sperren nach Fehlschlag;
+  - `unit-analysis-learning`: kein Neuschreiben nur wegen Prüfzeit, Top-Down-Lücke abgeschlossen;
+  - `unit-chart-time-axis`: 25.10. und 29.03.;
+  - `unit-macd-chart`: laufende Kerze.
+
 **3.79.1 klappbare Analyse-Modelle:** `m129.js` prüft Modellname per Touch/Enter/Leertaste, unabhängige Coin-Listen, ruhigen Klappzustand trotz Updates, unveränderten Chart/Telegram und gespeicherten Zustand. `m130.js` verwendet den Chart-Haken; NY-Werkzeuge bleiben innerhalb der geöffneten Modell-Details erreichbar. `unit-analysis.js` prüft die einmalige Migration ohne Verlust von Schaltern, Fokus/Basis und NY-Optionen.
 
 

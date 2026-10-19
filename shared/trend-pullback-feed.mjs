@@ -62,7 +62,9 @@ export function createPullbackRuntime({context,fetchRows,now,changed,signal,log,
         }else e.rows[iv]=rows.slice(-PULLBACK.history);
       }
       const prepared=preparePullback(e.rows,at),r=evaluatePreparedPullback(prepared,{now:at,symbol:e.symbol,market:e.market});state.evaluations++;e.result=r;
-      for(const old of liveRecords(e).filter(r=>!r.outcome.complete)){
+      // 3.82.2: Fehler je Datensatz abfangen – eine dauerhafte Lücke im Ergebnisfenster eines alten Signals sperrte sonst den ganzen Coin
+      // (auch für neue Signale); nach Ablauf des Fensters und drei Fehlversuchen endgültig als Lücke abschließen
+      for(const old of liveRecords(e).filter(r=>!r.outcome.complete))try{
         let rows=e.rows['15m'].filter(c=>c.time>=old.signal.at);
         // Längere App-Pause: den bereits vorhandenen Historienclient für fehlende Ergebnis-Kerzen nutzen.
         if((rows[0]?.time??Infinity)>old.signal.at&&at>old.signal.at){const to=Math.min(Math.floor(at/Q)*Q,old.signal.expiresAt);if(history&&to>old.signal.at){state.requests++;rows=await history({symbol:e.symbol,market:e.market,timeframe:'15m',from:old.signal.at,to,signal:abort});}}
@@ -73,7 +75,9 @@ export function createPullbackRuntime({context,fetchRows,now,changed,signal,log,
         if(abort.aborted||gen!==generation)return;
         const outcome=pullbackOutcome(old.signal,rows,at,t=>pullbackTrend(outcomePrepared,t).direction);
         saveRecord({...old,outcome,updatedAt:at});
-      }
+      }catch(error){if(abort.aborted||gen!==generation)return;const retries=(old.outcome.retries||0)+1,final=at>=old.signal.expiresAt&&retries>=3;
+        saveRecord({...old,outcome:{...old.outcome,retries,...(final?{status:'gap',complete:true,reason:'Ergebnisdaten dauerhaft unvollständig; kein Treffer erfunden.'}:{})},updatedAt:at});
+        log({kind:'error',symbol:e.symbol,text:`${e.symbol} · Rücksetzer-Ergebnis nicht prüfbar (${error.message||error})${final?' – als Datenlücke abgeschlossen.':'.'}`});}
       const s=r.signal,existing=s&&data().records[pullbackRecordKey(s)],last=s&&liveRecords(e).filter(x=>x.signal.direction===s.direction).sort((a,b)=>b.signal.at-a.signal.at)[0];
       const locked=last&&at<(last.outcome.first?.at||last.signal.expiresAt)+PULLBACK.cooldownMs;
       if(s&&e.wanted&&!existing&&!locked){const current={...s,...pullbackPrediction(s,all(),read(PULLBACK_MODEL_KEY))};saveRecord({signal:compactPullbackSignal(current),outcome:pullbackOutcome(current,[],current.at),source:'live',updatedAt:at});log({kind:'signal',symbol:e.symbol,text:`${e.symbol} · Rücksetzer ${s.side} bestätigt; Einstieg ${s.entry}, Stop ${s.stop}, Ziel 1 ${s.target1}, Ziel 2 ${s.target2}.`});}

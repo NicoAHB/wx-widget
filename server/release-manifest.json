@@ -1,11 +1,11 @@
 {
-  "version": "2.15.3",
-  "appVersion": "3.82.1",
+  "version": "2.15.4",
+  "appVersion": "3.82.2",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
-      "sha256": "e91ee3685fc9afb749f210b1e06996f59d7d420d9a1a68a9155e505fb6814a63",
-      "bytes": 138288
+      "sha256": "e59b6883a333e58d120e7d6697ab7b3a127ee2fb450f6424df957e9b5c30495e",
+      "bytes": 138819
     },
     {
       "path": "pattern-engine.mjs",
@@ -144,8 +144,8 @@
     },
     {
       "path": "shared/analysis-delivery.mjs",
-      "sha256": "71a27a1e9de72303025d918214fd5ee0d2bdc0057f18872d881d5ef46d4e79ce",
-      "bytes": 1861
+      "sha256": "397ece44cfb4d473e83ed25b75c876b6154a5b4514f9a31b4f92766fc997664c",
+      "bytes": 2343
     },
     {
       "path": "shared/analysis-feed.mjs",
@@ -159,8 +159,8 @@
     },
     {
       "path": "shared/analysis-learning-feed.mjs",
-      "sha256": "3c7cbf1570a8888ec2adbbc2d3a3d22008dddfe5b93f4cace4a01aa82ff3fe4a",
-      "bytes": 7589
+      "sha256": "534f6eca000b41b91623d0b370f5d86981b0874dd22f78a87c87464d45b96a52",
+      "bytes": 8485
     },
     {
       "path": "shared/analysis-learning-history.mjs",
@@ -259,8 +259,8 @@
     },
     {
       "path": "shared/chart-time-axis.mjs",
-      "sha256": "9dbf5a81b5b5471fd04ea9f9e56393f295695c8eebbd5db72d6790952e808073",
-      "bytes": 2075
+      "sha256": "cd85877611559fc39cbe87235510d5d66616a87507e47af6f33127927b0d087b",
+      "bytes": 2382
     },
     {
       "path": "shared/confluence-core.mjs",
@@ -389,8 +389,8 @@
     },
     {
       "path": "shared/macd-chart.mjs",
-      "sha256": "9c8de83d4589d75687588c5302cd66f7abfcccd7a5afc131b36477460156f07a",
-      "bytes": 25146
+      "sha256": "e719edee3164343f6906b79b5723cf5aec93fda715920e3063e9d3daeb6368d0",
+      "bytes": 25293
     },
     {
       "path": "shared/macd-notice.mjs",
@@ -449,8 +449,8 @@
     },
     {
       "path": "shared/market-strategy-feed.mjs",
-      "sha256": "98be1f1855d66468968c4947fe423543cea6f997fbbb629395c0523e0d98cef0",
-      "bytes": 10053
+      "sha256": "e55bde07cf6298d85b5fe1fbc65c48fdb34b9c880930af49d29c53d00e487a96",
+      "bytes": 11012
     },
     {
       "path": "shared/market-strategy-history.mjs",
@@ -519,8 +519,8 @@
     },
     {
       "path": "shared/ny-open-feed.mjs",
-      "sha256": "7944308d0f05c6d3dfec2efae0b26ede74222342a146e026c30fb32acb6391b1",
-      "bytes": 8816
+      "sha256": "81b27457a46f32d088a04ad8b471c3c93b08c0a9cbd6217bab69ebbaba67b827",
+      "bytes": 9438
     },
     {
       "path": "shared/ny-open-history.mjs",
@@ -729,13 +729,13 @@
     },
     {
       "path": "shared/trend-pullback-delivery.mjs",
-      "sha256": "fff9c3ec80b275aa2cc8636d84b7944b998e01e3451b4080f4d5137dd728f17e",
-      "bytes": 2379
+      "sha256": "0259c52dca1cbbd0e3079735a3d4b6d5f7eda8a3dc7bd946b12e01f6994ec33f",
+      "bytes": 3175
     },
     {
       "path": "shared/trend-pullback-feed.mjs",
-      "sha256": "ce49950c458a7a644647247c919f000701b4c1ae64d5ed01018c412135f281d2",
-      "bytes": 14225
+      "sha256": "2bc9ee34415ae3157bd17df145edf9e7642364e2dd63869827eab03c7d2a0a49",
+      "bytes": 14998
     },
     {
       "path": "shared/trend-pullback-learning.mjs",
@@ -774,8 +774,8 @@
     },
     {
       "path": "shared/watch-model-feed.mjs",
-      "sha256": "800a753e79dd5e4782877b556d0a44daab75be13a0611e892fd6a7127a773219",
-      "bytes": 5107
+      "sha256": "0ace071f10011ab374a7ddf801e1244488bf80659e9cf78da59626a58c704323",
+      "bytes": 5277
     },
     {
       "path": "shared/watch-model-view.mjs",
