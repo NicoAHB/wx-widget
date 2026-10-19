@@ -55,12 +55,12 @@ export function evaluateNyOpen({candles={},now,symbol,market='spot',options={},r
 }
 
 export function nyOutcome(signal, candles, now, breakeven=signal.options?.breakeven!==false) {
-  const s=signal,rows=musterCandles(candles||[],'1m',now).filter(c=>c.time>=s.at),risk=Math.abs(s.entry-s.stop);let filledAt=s.entryMode==='limit'?null:s.at,stop=s.stop,oneRAt=null,checkedAt=s.at;
+  const s=signal,rows=musterCandles(candles||[],'1m',now).filter(c=>c.time>=s.at),risk=Math.abs(s.entry-s.stop);let filledAt=s.entryMode==='limit'?null:s.at,stop=s.stop,oneRAt=null,checkedAt=s.at,lastClose=null;
   const finish=(status,c,exit)=>({status,filledAt,checkedAt:c.end,at:c.end,exit,stop,oneRAt,grossR:s.direction*(exit-s.entry)/risk});
   for(const c of rows){
     if(filledAt!==null&&c.time>=filledAt+NY_OPEN.holdMinutes*60000)break;
     if(filledAt===null&&c.time>=s.limitUntil)break;
-    if(c.time!==checkedAt)return{status:'data-gap',filledAt,checkedAt,stop,oneRAt,reason:'1m-Kerzenlücke; kein Ergebnis behauptet.'};checkedAt=c.end;
+    if(c.time!==checkedAt)return{status:'data-gap',filledAt,checkedAt,stop,oneRAt,reason:'1m-Kerzenlücke; kein Ergebnis behauptet.'};checkedAt=c.end;lastClose=c.close;
     let justFilled=false,atOpen=false;
     if(filledAt===null){if(c.end>s.limitUntil)break;const touched=s.direction===1?c.low<=s.entry:c.high>=s.entry;if(!touched)continue;atOpen=s.direction===1?c.open<=s.entry:c.open>=s.entry;filledAt=c.time;justFilled=true;}
     const deadline=filledAt+NY_OPEN.holdMinutes*60000;if(c.time>=deadline)break;
@@ -73,6 +73,9 @@ export function nyOutcome(signal, candles, now, breakeven=signal.options?.breake
   if(filledAt===null)return{status:now>=s.limitUntil?(checkedAt>=s.limitUntil?'expired':'data-gap'):'pending',filledAt,checkedAt,stop,oneRAt};
   const deadline=filledAt+NY_OPEN.holdMinutes*60000;
   if(now>=deadline&&checkedAt<deadline)return{status:'data-gap',filledAt,checkedAt,stop,oneRAt,reason:'Ergebnisfenster nicht vollständig geladen.'};
+  // 3.83.0: nach Ablauf der Haltedauer zum Schlusskurs an der Frist bewerten (wie Top-Down „Zeit abgelaufen“) – vorher fehlten diese
+  // Trades in Trefferquote, Ø-R und Lernen (rechtszensiert); die Kerzen bis zur Frist sind vollständig geprüft
+  if(now>=deadline&&Number.isFinite(lastClose))return{status:'open_2h',filledAt,checkedAt,at:deadline,exit:lastClose,stop,oneRAt,grossR:s.direction*(lastClose-s.entry)/risk};
   return{status:now>=deadline?'open_2h':'open',filledAt,checkedAt,stop,oneRAt};
 }
 export const nyTerminal=o=>!!o&&(['target','stop','breakeven','expired','open_2h'].includes(o.status)||o.status==='data-gap'&&o.final===true);

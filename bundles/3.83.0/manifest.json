@@ -69,14 +69,14 @@
     },
     {
       "path": "./bundles/3.83.0/shared/analysis-learning-history.mjs",
-      "sha256": "af7aa46bfa57bc3eb075a942b4865efb9c23f2f64823d9f6252d1b1eeb344d89",
-      "bytes": 3711,
+      "sha256": "d67e00bf28127394898ff9762b95bdea8969c69b1f878e09b255dc60848c6d03",
+      "bytes": 3624,
       "alias": "./shared/analysis-learning-history.mjs"
     },
     {
       "path": "./bundles/3.83.0/shared/analysis-learning-view.mjs",
-      "sha256": "0f3fd2de30eb2a61e63db878628befee49948203c22b7a80c38a067ea0b9f6fc",
-      "bytes": 8557,
+      "sha256": "9a55e6afcccff04b8b05fe9d1f8dd8270357de9954a67648737e9d7b0899c55f",
+      "bytes": 8768,
       "alias": "./shared/analysis-learning-view.mjs"
     },
     {
@@ -87,8 +87,8 @@
     },
     {
       "path": "./bundles/3.83.0/shared/analysis-learning.mjs",
-      "sha256": "89983e881b00452fd31272f4baf5d645bbd6b08c9aa061ad4ec69771975a55d3",
-      "bytes": 11965,
+      "sha256": "ca5c61089768c71a0ceba8a97eaa31f16bd5856f77218ffea19d10f0a3366fd6",
+      "bytes": 12528,
       "alias": "./shared/analysis-learning.mjs"
     },
     {
@@ -339,8 +339,8 @@
     },
     {
       "path": "./bundles/3.83.0/shared/macd-chart.mjs",
-      "sha256": "e719edee3164343f6906b79b5723cf5aec93fda715920e3063e9d3daeb6368d0",
-      "bytes": 25293,
+      "sha256": "83942b0cee800a779be8dfc4e72aee0a3d80eb3f8c6fbab5527af503762d1551",
+      "bytes": 25643,
       "alias": "./shared/macd-chart.mjs"
     },
     {
@@ -489,8 +489,8 @@
     },
     {
       "path": "./bundles/3.83.0/shared/ny-open-core.mjs",
-      "sha256": "921e9720d967a5cdd5e7969bbed21d17c6318b1102b57776792c156d72a8186c",
-      "bytes": 10241,
+      "sha256": "7ecd171692e3478afb4d6e94366a83ddc4d97773b75cc67e1538e0f77aea1af1",
+      "bytes": 10704,
       "alias": "./shared/ny-open-core.mjs"
     },
     {
@@ -519,8 +519,8 @@
     },
     {
       "path": "./bundles/3.83.0/shared/ny-open-view.mjs",
-      "sha256": "a02532d4ec320fb5be169dc361401024a450f6ef6aee08348d2c211255e26fb8",
-      "bytes": 8683,
+      "sha256": "f722044ed945d7c9f04501655522c68af46f7ba6f86c066cfdbc4113f5b85760",
+      "bytes": 8751,
       "alias": "./shared/ny-open-view.mjs"
     },
     {
@@ -849,8 +849,8 @@
     },
     {
       "path": "./weather-widget-v2.html",
-      "sha256": "105e08e1b0a130fae742b306ab2e6706e15d842c3340e38e483d557b6e3fea3e",
-      "bytes": 1791219
+      "sha256": "a58d4bd4541d97f28e0f2382f37b1ede174536e8029faa809d1b476033e3078b",
+      "bytes": 1791397
     },
     {
       "path": "./manifest.webmanifest",

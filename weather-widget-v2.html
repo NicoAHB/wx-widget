@@ -7986,7 +7986,8 @@ function onTick(now) {
 // Laufende Kerze aus dem Stream übernehmen; eine neue Kerze wird angehängt, eine Lücke per REST geschlossen.
 function applyLiveCandle(k) {
   const arr = state.candles; if (!arr.length || state.loadedSymbol !== state.symbol) return false;
-  const last = arr.at(-1), c = { time: k.t, open: k.o, high: k.h, low: k.l, close: k.c, volume: k.v, closeTime: k.T };
+  // 3.83.0: final = Börse hat die Kerze endgültig geschlossen (x). MACD bestätigt nichts, solange nur die Uhr die Schlusszeit überschritten hat.
+  const last = arr.at(-1), c = { time: k.t, open: k.o, high: k.h, low: k.l, close: k.c, volume: k.v, closeTime: k.T, final: !!k.x };
   if (![c.time, c.open, c.high, c.low, c.close, c.volume, c.closeTime].every(Number.isFinite) || c.low <= 0 || c.high < c.low) return false;
   if (c.time === last.time) arr[arr.length - 1] = c;
   else if (c.time > last.time) {
@@ -8053,7 +8054,7 @@ function onKline(m) {
   if (state.paused) return;
   orderflow?.kline(m);
   orderflowSignal?.feed.kline(m);
-  if (detailResolution && detail.live({symbol:m.s,source:m.m},m.i,{time:m.k.t,open:m.k.o,high:m.k.h,low:m.k.l,close:m.k.c,volume:m.k.v,closeTime:m.k.T})) scheduleLiveRender(true);
+  if (detailResolution && detail.live({symbol:m.s,source:m.m},m.i,{time:m.k.t,open:m.k.o,high:m.k.h,low:m.k.l,close:m.k.c,volume:m.k.v,closeTime:m.k.T,final:!!m.k.x})) scheduleLiveRender(true);
   // Zusätzliche Futures-Kerzen des Panels dürfen Spot-Kurse, Positionen und Alarme nicht verändern.
   if (!baseStreams[m.m]?.has(`${m.s.toLowerCase()}@kline_${m.i}`)) return;
   clockSample(m.E); // Binance-Zeit weiter ausschließlich aus den bisherigen App-Streams.

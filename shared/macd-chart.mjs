@@ -9,11 +9,14 @@ export const MACD_CHART = Object.freeze({ fast: 12, slow: 26, signal: 9, minBars
 
 // Nur geschlossene Kerzen prüfen. Ein Ereignis bleibt höchstens drei Schlusskerzen
 // hervorgehoben und verfällt früher, wenn seine Richtung bereits widersprochen wird.
+// 3.83.0: geschlossen = Schlusszeit vorbei UND (Börse hat sie endgültig geschlossen ODER es gibt schon eine Folgekerze). Live-Kerzen
+// tragen final:false, bis die endgültige Kline (x) kommt; Kerzen ohne Kennung (REST, Rücktests) gelten wie bisher nach der Uhr.
+const closedBar = (rows, i, now) => finite(rows[i]?.closeTime) && rows[i].closeTime < now && (rows[i].final !== false || i < rows.length - 1);
 export function macdFindings(rows, series, { now = Date.now(), expiresAt = Infinity, issue = '' } = {}) {
   const empty = reason => ({ ready: false, reason, events: {}, pending: {}, current: null });
   if (issue) return empty(issue);
   if (!Array.isArray(rows) || series?.line?.length !== rows.length || series?.signal?.length !== rows.length) return empty('MACD-Daten fehlen.');
-  const last = rows.findLastIndex(c => finite(c?.closeTime) && c.closeTime < now);
+  const last = rows.findLastIndex((c, i) => closedBar(rows, i, now));
   if (last < MACD_CHART.minBars - 1) return empty('Mindestens 35 abgeschlossene Kerzen werden benötigt.');
   if (now >= expiresAt) return empty('Neue Schlusskerze fehlt · Prüfung veraltet.');
   for (let i = 0; i <= last; i++) {
@@ -108,7 +111,7 @@ export function macdCrossings(series, offset, stop, { candles, now = Date.now() 
   const histogram = i => finite(series.line[i]) && finite(series.signal[i]) ? series.line[i] - series.signal[i] : null;
   let peak = 0;
   // Schwelle nur aus geschlossenen Kerzen: sonst blendet die laufende Kerze längst bestätigte Marker ein und aus
-  for (let i = offset; i < stop; i++) if (candles[i]?.closeTime < now && finite(histogram(i))) peak = Math.max(peak, Math.abs(histogram(i)));
+  for (let i = offset; i < stop; i++) if (closedBar(candles, i, now) && finite(histogram(i))) peak = Math.max(peak, Math.abs(histogram(i)));
   const threshold = peak * MACD_CROSS_MIN_FRACTION;
   const found = [];
   for (let i = Math.max(1, offset); i < stop; i++) {
@@ -121,11 +124,11 @@ export function macdCrossings(series, offset, stop, { candles, now = Date.now() 
     const index = i - 1 + fraction;
     if (index < offset || index > stop - 1) continue;
     const previous = candles[i - 1];
-    if (!finite(previous?.closeTime) || previous.closeTime >= now) continue;
+    if (!closedBar(candles, i - 1, now)) continue;
     let magnitude = 0;
     for (let j = i; j < Math.min(series.line.length, series.signal.length, candles.length); j++) {
       const bar = candles[j], value = histogram(j);
-      if (!finite(bar?.time) || !finite(bar?.closeTime) || bar.time > bar.closeTime || bar.closeTime >= now || bar.time !== candles[j - 1].closeTime + 1 || !finite(value) || direction * value <= 0) break;
+      if (!finite(bar?.time) || !closedBar(candles, j, now) || bar.time > bar.closeTime || bar.time !== candles[j - 1].closeTime + 1 || !finite(value) || direction * value <= 0) break;
       magnitude = Math.max(magnitude, direction * value);
       if (j - i + 1 >= MACD_CROSS_MIN_BARS && magnitude >= threshold) {
         found.push({ index, candle: i, fraction, direction, value: a + (c - a) * fraction, confirmedIndex: j });
