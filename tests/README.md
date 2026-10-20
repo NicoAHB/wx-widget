@@ -1,5 +1,7 @@
 # Tests für Scalp Desk
 
+**3.88.0 Orderflow-Seite verdichtet (Claude):** keine neuen Tests; `m74` (1h-Block für die Maßprüfung aufklappen), `m77`/`m78` (Werkzeug-Bereich `#of-signal-tools` öffnen, Zeile antippen, dann O/H/T/S), `m79` (Standard-Klappzustände: 1m und Signal offen, 1h/Position/Werkzeuge zu; O/T-Prüfung an aufgeklappter Zeile) an das neue Layout angepasst. `m79` brach außerdem schon auf `main` vor dem Coinwechsel ab (Kürzel-Feld ohne Fläche nach der Farbprüfung); der Wechsel läuft jetzt über `__intervals.setMarket`.
+
 **3.87.2 NY Open: Grund „Kein Signal“ im Chart-Feld (Claude):**
 - **Neu in `run-all.sh`:** `m146` (Uhr gefälscht; Chart-Feld zeigt „Range wird gebildet“, „Noch kein Signal · wartet auf Ausbruch“, „Kein Signal: Range < 0,15 %“, „Kein Signal: Ausbruchskörper < 60 %“, „Heute kein Signal · Fenster beendet“; kein Hinweis, solange ein Signal von heute gilt; Erklärung und Karte nennen denselben ausführlichen Grund; Breiten 320 / 390 / 1440 px; mit `M146_SHOT=<Ordner>` entstehen Bilder).
 - **Erweitert:** `unit-ny-open` (+2: `nyNoSignalText` für jede Phase und gegen echte Auswertungen).

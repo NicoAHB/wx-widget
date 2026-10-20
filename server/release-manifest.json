@@ -1,6 +1,6 @@
 {
   "version": "2.16.0",
-  "appVersion": "3.87.2",
+  "appVersion": "3.88.0",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
@@ -589,13 +589,13 @@
     },
     {
       "path": "shared/orderflow-signal-view.mjs",
-      "sha256": "fc046b4946f5b82944bbef3ec4dbba6b08655ff83cf53363d6fd567b0d7bbe03",
-      "bytes": 40007
+      "sha256": "9f96e7091a46ff0900fb5ef442e30df10053b9592db542e16d8468d4577a6346",
+      "bytes": 40599
     },
     {
       "path": "shared/orderflow-view.mjs",
-      "sha256": "92653e60e7a9de8cfff5f314d74c0c67f118bf202e5abe4e1bcc3f755bee80c7",
-      "bytes": 18984
+      "sha256": "ed6f2f7ea7b7129af1a9ed353ebf8f5d7e4d1845b982d8d97a009e130fb9ca92",
+      "bytes": 19808
     },
     {
       "path": "shared/panel-appearance.mjs",
