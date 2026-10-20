@@ -885,7 +885,7 @@
     },
     {
       "path": "./bundles/3.84.0/data/muster-start.json",
-      "sha256": "30dc56a923bd283e69c18b0b0378a3bbadc46998fddb12b76803b5073ee9fe2e",
+      "sha256": "423e0c1db5ace06122f4fd307a4186362a319661ee33de93d85c2dff5088a889",
       "bytes": 6801,
       "alias": "./data/muster-start.json"
     },
