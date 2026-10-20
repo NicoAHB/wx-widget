@@ -169,8 +169,8 @@
     },
     {
       "path": "shared/analysis-learning-view.mjs",
-      "sha256": "9a55e6afcccff04b8b05fe9d1f8dd8270357de9954a67648737e9d7b0899c55f",
-      "bytes": 8768
+      "sha256": "5e34476862df1379d57c1c96790ea0e00df860c43a102768cf8b6a0024680e11",
+      "bytes": 9112
     },
     {
       "path": "shared/analysis-learning-worker.mjs",
@@ -179,8 +179,8 @@
     },
     {
       "path": "shared/analysis-learning.mjs",
-      "sha256": "ca5c61089768c71a0ceba8a97eaa31f16bd5856f77218ffea19d10f0a3366fd6",
-      "bytes": 12528
+      "sha256": "4b6537b0922ffa3361d0791fc61122cd34f01e2d4715e6de7d32cb87ec58c518",
+      "bytes": 12825
     },
     {
       "path": "shared/analysis-notices.mjs",
@@ -236,6 +236,16 @@
       "path": "shared/bot-view.mjs",
       "sha256": "5f9d5ff1e03d729d461b57ef674e5c8dd36858deb2132d7dd1c6574c506b5dba",
       "bytes": 34079
+    },
+    {
+      "path": "shared/calibration-view.mjs",
+      "sha256": "eb9ffed16b6dda7afb6600bfe74fbf6b92fe8e2bd00488c69897bb187df0c786",
+      "bytes": 1845
+    },
+    {
+      "path": "shared/calibration.mjs",
+      "sha256": "cd8c8a96d28b2afde97653767c7c3bae2400eddc3637945b92a61c007e56e1f4",
+      "bytes": 5312
     },
     {
       "path": "shared/chart-detail.mjs",
@@ -744,8 +754,8 @@
     },
     {
       "path": "shared/trend-pullback-learning.mjs",
-      "sha256": "93fd6c06cdd4c1350e2f20a86b89467a2de35ce26f47c8e23bd217c5cde292c7",
-      "bytes": 5088
+      "sha256": "03f9cce6331a683d5ba74c1c6ec444af4178aa8142b4c66ff169e15ea025e1bd",
+      "bytes": 5380
     },
     {
       "path": "shared/trend-pullback-notices.mjs",
@@ -759,8 +769,8 @@
     },
     {
       "path": "shared/trend-pullback-view.mjs",
-      "sha256": "7da1224eed613681176d6430dddc76f0cd27d4dddbc32cef626e7f4adfb66524",
-      "bytes": 10661
+      "sha256": "7af79c51a9c75f1333ccde79370bfbe6a1959d12438d91b65e1b81e3a8b45d67",
+      "bytes": 11007
     },
     {
       "path": "shared/trend-pullback-worker.mjs",

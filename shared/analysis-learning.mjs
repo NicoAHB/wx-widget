@@ -48,6 +48,8 @@ export function mergeLearningData(a,b){a=learningData(a);b=learningData(b);const
 export function learningRecords(data,id,options={},asOf=Infinity){const version=learningVersion(id,options);return Object.values(learningData(data).analyses[id]?.records||{}).filter(r=>r.signal.learningVersion===version&&r.signal.at<=asOf);}
 export function completedLearning(records,asOf=Infinity){return records.filter(r=>r.signal.learningFeatures&&r.outcome?.first&&r.outcome.status!=='gap'&&r.outcome.status!=='data-gap'&&finite(r.outcome.first.grossR)&&r.outcome.first.at<=asOf).sort((a,b)=>a.signal.at-b.signal.at||a.signal.symbol.localeCompare(b.signal.symbol));}
 const label=r=>r.outcome.first.status==='target1'?1:0;
+// 3.84.0: abgeschlossene Signale mit der beim Signal gespeicherten Wahrscheinlichkeit (für die Kalibrierung)
+export const learningCalibrationSamples=records=>completedLearning(records).filter(r=>finite(r.signal.probability)).map(r=>({p:r.signal.probability,y:label(r),live:r.source==='live'}));
 export function trainAnalysis(records,previous={},now=Date.now(),force=false){const rows=completedLearning(records,now);const version=records[0]?.signal.learningVersion||previous.version;
   // Ein vorheriges Modell mit anderen Options-/Regelversionen niemals übernehmen.
   return trainTemporalLogit({rows,previous:previous.version===version?previous:{},now,force,config:ANALYSIS_LEARNING,version,vector:learningVector,label,idPrefix:'analysis-logit'});}

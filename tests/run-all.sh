@@ -160,6 +160,7 @@ echo "== unit-store-keys"; timeout 60 node unit-store-keys.js 2>&1 | grep -E "�
 echo "== unit-store"; timeout 60 node unit-store.js 2>&1 | grep -E "✗|bestanden"
 echo "== unit-key-levels"; timeout 60 node unit-key-levels.js 2>&1 | grep -E "✗|bestanden"
 echo "== unit-vwap"; timeout 60 node unit-vwap.js 2>&1 | grep -E "✗|bestanden"
+echo "== unit-calibration"; timeout 60 node unit-calibration.js 2>&1 | grep -E "✗|bestanden"
 echo "== unit-247d"; timeout 120 node unit-247d.js 2>&1 | grep -E "✗|bestanden"
 echo "== unit-247c"; timeout 180 node unit-247c.js 2>&1 | grep -E "✗|bestanden|Abbruch"
 echo "== unit-pulse"; timeout 120 node unit-pulse.js 2>&1 | grep -E "✗|bestanden|Abbruch"
