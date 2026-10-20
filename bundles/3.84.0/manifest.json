@@ -332,6 +332,12 @@
       "alias": "./shared/indicators.mjs"
     },
     {
+      "path": "./bundles/3.84.0/shared/key-levels.mjs",
+      "sha256": "de92669b02b2f0c4ea3cead268572f12b0a6cd9008317a8d9110334ef5eed403",
+      "bytes": 6847,
+      "alias": "./shared/key-levels.mjs"
+    },
+    {
       "path": "./bundles/3.84.0/shared/ki-zones.mjs",
       "sha256": "abd9bf0ede4453361574038ac4e40372710b98c556a91b778afed3a9087fe50a",
       "bytes": 10847,
@@ -794,6 +800,12 @@
       "alias": "./shared/volume-profile.mjs"
     },
     {
+      "path": "./bundles/3.84.0/shared/vwap.mjs",
+      "sha256": "b006d23fad0b131693a72faa0e126353cad6ddb1c48e11df1bdcd0575eb5a254",
+      "bytes": 2943,
+      "alias": "./shared/vwap.mjs"
+    },
+    {
       "path": "./bundles/3.84.0/shared/watch-model-core.mjs",
       "sha256": "6607a712144d943bc23253867b15cf7bfc11af625db8c4f0bac0b67c22e19472",
       "bytes": 17320,
@@ -849,8 +861,8 @@
     },
     {
       "path": "./weather-widget-v2.html",
-      "sha256": "3bf4f29f0c35c91b52ab421e82333f233e36424b207646c98faf667717490d9c",
-      "bytes": 1792882
+      "sha256": "f32ef68375e88f806367e17f33ee7313dd39fa7339957dd16fc951008ba9f44c",
+      "bytes": 1809497
     },
     {
       "path": "./manifest.webmanifest",

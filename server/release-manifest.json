@@ -383,6 +383,11 @@
       "bytes": 10275
     },
     {
+      "path": "shared/key-levels.mjs",
+      "sha256": "de92669b02b2f0c4ea3cead268572f12b0a6cd9008317a8d9110334ef5eed403",
+      "bytes": 6847
+    },
+    {
       "path": "shared/ki-zones.mjs",
       "sha256": "abd9bf0ede4453361574038ac4e40372710b98c556a91b778afed3a9087fe50a",
       "bytes": 10847
@@ -766,6 +771,11 @@
       "path": "shared/volume-profile.mjs",
       "sha256": "bbaec08e51be6297058ce38c76e4306695d6f9b9fa0e6450aa41d05ab490cb24",
       "bytes": 2387
+    },
+    {
+      "path": "shared/vwap.mjs",
+      "sha256": "b006d23fad0b131693a72faa0e126353cad6ddb1c48e11df1bdcd0575eb5a254",
+      "bytes": 2943
     },
     {
       "path": "shared/watch-model-core.mjs",
