@@ -1,3 +1,10 @@
+## 3.83.1 / Dienst 2.15.4 (Claude): Vorauswahl-Liste zeigt Kurse beim Start in normaler Größe
+
+- Fehler seit 3.82.2: In der Listenansicht standen Kurse und Änderungen beim Start winzig da (~5 px) und wurden erst bei der nächsten
+  Kursänderung normal groß (live bis ~10 s). `wlFitText` las die Breite der inhaltsbreiten Spalte, solange noch „…“ darin stand.
+  Jetzt erst den vollen Text einsetzen, dann messen. Test `m138`. Ausführlich: [docs/3.83.1-AENDERUNGEN.md](docs/3.83.1-AENDERUNGEN.md).
+- App/SW **3.83.1**, Dienst unverändert **2.15.4**.
+
 ## 3.83.0 / Dienst 2.15.4 (Claude): Prüfautomatik, zentrale Speicherschlüssel, einheitliche Trading-Logik, Leistung
 
 - Ausführlich: [docs/3.83.0-AENDERUNGEN.md](docs/3.83.0-AENDERUNGEN.md). Regeln für alle KI-Assistenten: [AGENTS.md](AGENTS.md).
