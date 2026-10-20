@@ -1,0 +1,61 @@
+import { MARKET_STRATEGY as C, STRATEGY_IDS, STRATEGY_NAMES, STRATEGY_DATA_KEY, STRATEGY_REPORT_KEY, STRATEGY_OUTCOME, strategyData, mergeStrategyData, strategyKey, prepareStrategy, evaluatePreparedStrategy, strategyOutcome, strategyOptions } from './market-strategy-core.mjs';
+import { runMarketStrategyBacktest } from './market-strategy-history.mjs';
+import { analysisClosed } from './analysis-top-down.mjs';
+import { analysisSignalKey } from './analysis-delivery.mjs';
+import { ANALYSIS_BLINK_MS } from './analysis-notices.mjs';
+import { compactAnalysisSignal } from './analysis-chart.mjs';
+const H=3600000,Q=900000;
+// Beide Modelle teilen Kerzen, Abrufschlange und Ergebnisbeobachtung innerhalb eines Feed-Lebenszyklus.
+export function createStrategyRuntime(args){const registry=args.runtimeRegistry||new Map();let hub=registry.get('market-strategies');if(!hub){hub=createStrategyHub(args);registry.set('market-strategies',hub);}return hub.forModel(args.id);}
+export function createStrategyHub({context,fetchRows,now=Date.now,changed=()=>{},signal=async()=>false,log=()=>{},read=()=>null,write=()=>{},history,symbols=()=>[],getPhase=()=>null,strategyWorkerFactory,strategySymbols=id=>symbols(id)}){
+  const state={entries:new Map(),busy:false,requests:0,evaluations:0,backtests:new Map()};let generation=0,signature='',controller=null,lastStart=-Infinity;
+  // 3.83.0: Verzeichnis der Einträge (je Modell, offene, Signale ohne erstes Ergebnis je Modell/Coin) – neu gebaut nur, wenn sich der
+  // gespeicherte Stand ändert (Speichern und Tab-Abgleich erzeugen ein neues Objekt). Vorher durchsuchten records/sync/active bei jeder
+  // Abfrage alle bis zu 20 000 Einträge, mehrmals je Coin und Sekunde (gemessen: ~150 ms je Sekunde bei vollem Speicher).
+  let indexed=null,index=null;
+  const view=()=>{const all=data().records;if(all!==indexed){indexed=all;const byId=new Map(),open=[],pending=new Map(),add=(m,k,r)=>(m.get(k)||m.set(k,[]).get(k)).push(r);
+    for(const r of Object.values(all)){const s=r.signal;add(byId,s.analysisId,r);if(r.source!=='live')continue;if(!r.outcome.complete)open.push(r);if(!r.outcome.first)add(pending,s.analysisId+'|'+s.symbol+'|'+s.market,r);}
+    for(const list of pending.values())list.sort((a,b)=>b.signal.at-a.signal.at);index={byId,open,openCoins:new Set(open.map(r=>r.signal.symbol+'|'+r.signal.market)),pending};}return index;};
+  const available=()=>{const c=context();return !c.paused&&!c.hidden&&c.online!==false;},data=()=>strategyData(read(STRATEGY_DATA_KEY)),records=id=>view().byId.get(id)||[],save=value=>{const before=data(),merged=mergeStrategyData(before,value);if(JSON.stringify(before)===JSON.stringify(merged))return before;if(write(STRATEGY_DATA_KEY,merged)===false)throw Error('Strategie-Protokoll konnte nicht gespeichert werden.');return merged;},saveRecord=r=>save({version:1,records:{[strategyKey(r.signal)]:r}});
+  const options=id=>strategyOptions(context().options?.[id]);
+  function sync(){const wanted=(context().symbols||[]).map(s=>({...s,analyses:s.analyses.filter(id=>STRATEGY_IDS.includes(id))})).filter(s=>s.analyses.length),key=JSON.stringify([available(),wanted.map(s=>[s.symbol,s.market,[...s.analyses].sort()]).sort(),STRATEGY_IDS.map(options)]);
+    if(key!==signature){signature=key;generation++;controller?.abort();state.busy=false;for(const e of state.entries.values())e.wanted=[];for(const s of wanted){const k=s.symbol+'|'+s.market,e=state.entries.get(k);if(e){e.wanted=s.analyses;e.next=0;}else state.entries.set(k,{symbol:s.symbol,market:s.market,wanted:s.analyses,rows:{},results:{},next:0,attempted:new Set()});}}
+    for(const r of view().open){const s=r.signal,k=s.symbol+'|'+s.market;if(!state.entries.has(k))state.entries.set(k,{symbol:s.symbol,market:s.market,wanted:[],rows:{},results:{},next:0,attempted:new Set()});}
+    for(const [k,e]of state.entries)if(!e.wanted.length&&!view().openCoins.has(e.symbol+'|'+e.market))state.entries.delete(k);
+    if(!available())for(const run of state.backtests.values())run.controller?.abort();return available();
+  }
+  function active(e,id){const t=now();return (view().pending.get(id+'|'+e.symbol+'|'+e.market)||[]).find(r=>t<r.signal.expiresAt);}
+  function result(id,symbol,market){const e=state.entries.get(symbol+'|'+market),r=e?.results[id];if(!available()||e?.error||!r||now()>=r.expiresAt)return {ready:false,stage:0,signal:null,reason:e?.error||(!available()?'Analyse pausiert oder offline.':'Geschlossene Kerzen und feste 1H-Phase werden geladen.')};const record=active(e,id);
+    if(record)return {...r,stage:3,phase:'signal',direction:record.signal.direction,signal:{...record.signal,chart:e.rows['15m'].filter(c=>c.end<=record.signal.at).slice(-60)},record,reason:record.signal.reason+' Signal aktiv; Ziel 1 beendet den Einstiegshinweis.'};
+    return {...r,signal:null,stage:Math.min(2,r.stage),phase:r.phase==='signal'?'cooldown':r.phase,reason:r.phase==='signal'?'Setup bereits beobachtet oder in der Sperrzeit.':r.reason};
+  }
+  async function dispatch(id){if(!sync())return;for(const e of state.entries.values()){const s=e.wanted.includes(id)&&result(id,e.symbol,e.market).signal;if(s&&!e.attempted.has(strategyKey(s))&&await signal(s)!==false)e.attempted.add(strategyKey(s));}}
+  async function tick(){if(!sync()||state.busy||now()-lastStart<C.requestSpacingMs)return;const e=[...state.entries.values()].filter(e=>now()>=e.next).sort((a,b)=>a.next-b.next)[0];if(!e)return;const gen=generation;controller=new AbortController();const abort=controller.signal,at=now();state.busy=true;lastStart=at;e.next=Math.floor(at/Q)*Q+Q+C.closeGraceMs;
+    try{for(const [iv,ms,limit]of [['1h',H,C.history],['15m',Q,C.bars15]]){const end=Math.floor(at/ms)*ms;if(e.rows[iv]?.at(-1)?.end===end)continue;state.requests++;const loaded=await fetchRows(e.symbol,iv,limit+2,abort);if(abort.aborted||gen!==generation)return;if(loaded.source!==e.market)throw Error('Strategie und Vorauswahl müssen denselben Börsenmarkt verwenden.');const rows=analysisClosed(loaded.candles,iv,at);if(rows.at(-1)?.end!==end)throw Error(iv+': neueste geschlossene Kerze fehlt.');e.rows[iv]=rows.slice(-limit);}
+      // 3.82.2: Fehler je Datensatz abfangen (wie bei den Rücksetzern) – eine dauerhafte Ergebnislücke sperrte sonst den ganzen Coin
+      for(const old of view().open.filter(r=>r.signal.symbol===e.symbol&&r.signal.market===e.market))try{let rows=e.rows['15m'].filter(c=>c.time>=old.signal.at);const end=Math.min(Math.floor(at/Q)*Q,old.signal.expiresAt);if(rows[0]?.time>old.signal.at&&history&&end>old.signal.at)rows=await history({symbol:e.symbol,market:e.market,timeframe:'15m',from:old.signal.at,to:end,signal:abort});if(abort.aborted||gen!==generation)return;const outcome=strategyOutcome(old.signal,rows,at);if(JSON.stringify(outcome)!==JSON.stringify(old.outcome)){saveRecord({...old,outcome,updatedAt:at});if(!old.outcome.first&&outcome.first)log({kind:'result',symbol:e.symbol,text:`${STRATEGY_NAMES[old.signal.analysisId]} · ${e.symbol}: ${STRATEGY_OUTCOME[outcome.first.status]} · ${outcome.first.grossR.toFixed(2)} R brutto.`});}}
+      catch(error){if(abort.aborted||gen!==generation)return;const retries=(old.outcome.retries||0)+1,final=at>=old.signal.expiresAt&&retries>=3;saveRecord({...old,outcome:{...old.outcome,retries,...(final?{status:'gap',complete:true,reason:'Ergebnisdaten dauerhaft unvollständig; kein Treffer erfunden.'}:{})},updatedAt:at});log({kind:'error',symbol:e.symbol,text:`${STRATEGY_NAMES[old.signal.analysisId]} · ${e.symbol}: Ergebnis nicht prüfbar (${error.message||error})${final?' – als Datenlücke abgeschlossen.':'.'}`});}
+      // 3.82.2: zur vollen Stunde kann die Phase noch die der Vorstunde sein (ready, aber phase.at zu alt) – dann kurz warten statt
+      // die Kerze als „Phase nicht aktuell“ abzuhaken (sonst fehlte live jede :00-Kerze, die der Rücktest auswertet)
+      const phase=getPhase(e.symbol,e.market);if(!phase?.ready||phase.at!==Math.floor(at/H)*H){e.next=now()+C.closeGraceMs;e.error='';return;}
+      const prepared=prepareStrategy(e.rows,at);
+      for(const id of e.wanted){const r=evaluatePreparedStrategy(prepared,{id,symbol:e.symbol,market:e.market,now:at,phase,options:options(id)});e.results[id]=r;state.evaluations++;const s=r.signal;if(!s)continue;
+        const prior=records(id).filter(r=>r.source==='live'&&r.signal.symbol===e.symbol&&r.signal.market===e.market&&r.signal.direction===s.direction).sort((a,b)=>b.signal.at-a.signal.at)[0];
+        if(!data().records[strategyKey(s)]&&(!prior||s.at>=(prior.outcome.first?.at||prior.signal.expiresAt)+C.cooldownMs)){const saved={...s};delete saved.chart;saveRecord({signal:saved,outcome:strategyOutcome(s,[],s.at),source:'live',updatedAt:at});log({kind:'signal',symbol:e.symbol,text:`${s.analysisName} · ${e.symbol} ${s.side} bestätigt · Einstieg ${s.entry}, Stop ${s.stop}, Ziel ${s.target1}. Beobachtung, keine Order.`});}}
+      e.error='';e.failures=0;for(const id of e.wanted)await dispatch(id);
+    }catch(error){if(!abort.aborted&&gen===generation){e.error=error.message;e.failures=(e.failures||0)+1;e.next=now()+Math.min(C.maxRetryMs,C.retryMs*2**Math.min(e.failures,4));log({kind:'error',symbol:e.symbol,text:'Beobachtungsmodelle: '+error.message+' · Coin übersprungen.'});}}
+    finally{if(gen===generation){state.busy=false;controller=null;changed();}}
+  }
+  async function startBacktest(id){if(!available()||!history||[...state.backtests.values()].some(r=>r.busy))return;const run={busy:true,text:'Historische Kerzen werden begrenzt geladen …',controller:new AbortController()};state.backtests.set(id,run);changed();
+    try{const report=await runMarketStrategyBacktest({id,symbols:strategySymbols(id),history,now:now(),options:options(id),signal:run.controller.signal,workerFactory:strategyWorkerFactory,progress:p=>{run.text=`${p.checked}/${p.total} Coins · ${p.symbol} ${p.interval}`;changed();},completed:batch=>save({version:1,records:Object.fromEntries(batch.map(r=>[strategyKey(r.signal),r]))})});
+      const {records:ignored,...summary}=report;void ignored;const before=read(STRATEGY_REPORT_KEY)||{},next={...before,[id]:summary};if(JSON.stringify(before)!==JSON.stringify(next)&&write(STRATEGY_REPORT_KEY,next)===false)throw Error('Testergebnis konnte nicht gespeichert werden.');run.text=`${report.checked}/${report.symbols.length} Coins geprüft · ${report.errors.length} Datenfehler. Ergebnisse zeitlich getrennt.`;
+    }catch(e){run.text=run.controller.signal.aborted?'Test pausiert; bereits geprüfte Signale bleiben gespeichert.':e.message;}finally{run.busy=false;changed();}}
+  function forModel(id){return {state,sync,tick,result:(symbol,market)=>result(id,symbol,market),dispatch:()=>dispatch(id),records:()=>[...records(id)],startBacktest:()=>startBacktest(id),abortBacktest:()=>state.backtests.get(id)?.controller.abort()};}
+  return {state,sync,tick,result,dispatch,forModel};
+}
+// 3.83.0: Kandidaten je gespeichertem Stand merken (die App fragt jede Sekunde). Einträge werden mit der Zeit nur älter – was beim
+// Aufbau außerhalb des Hinweisfensters lag, kommt ohne neuen Stand nicht zurück; eine Minute Spielraum für Uhrkorrekturen.
+const noticeCandidates=new WeakMap();
+export function strategyNoticeRecords(records,now){let list=noticeCandidates.get(records);if(!list){list=Object.values(records).filter(r=>r.source==='live'&&(r.outcome.first?.at??r.signal.at)+ANALYSIS_BLINK_MS>now-60000);noticeCandidates.set(records,list);}return list;}
+export function strategyNoticeEvents(records,now){const events=[];for(const r of records){if(r.source!=='live')continue;const s=r.signal,first=r.outcome.first,at=first?.at??s.at;if(now<at||now>=at+ANALYSIS_BLINK_MS||!first&&now>=s.expiresAt)continue;
+  const type=first?.status||'entry',tone=first?(first.grossR>=0?'long':'short'):s.direction===1?'long':'short';events.push({id:analysisSignalKey(s)+'|'+type,analysisId:s.analysisId,symbol:s.symbol,market:s.market,type,at,until:at+ANALYSIS_BLINK_MS,acknowledged:false,tone,signal:compactAnalysisSignal(s),reason:first?`${s.analysisName} · ${s.symbol}: ${STRATEGY_OUTCOME[type]} · ${first.grossR.toFixed(2)} R brutto. Modellbeobachtung, keine Ausführungsbestätigung.`:`${s.analysisName} · ${s.symbol} ${s.side} bestätigt. ${s.reason}`});}return events;}

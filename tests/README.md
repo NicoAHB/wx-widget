@@ -1,5 +1,8 @@
 # Tests für Scalp Desk
 
+**3.85.0 Levels übersichtlich, VWAP-Anker (Claude):**
+- **Erweitert:** `unit-key-levels` (Zusammenfassen, Nächste, Beschriftungen ordnen), `unit-vwap` (Anker-Vorschläge aus synthetischen Kerzen), `m139` (Standard „Nächste“, Beschriftungen ohne Überlappung), `m140` (gruppiertes Menü, ⚓ nur bei „ab Anker“, zehn Anker gegen unabhängige Rechnung, Handy).
+
 **3.84.0 Levels, VWAP, Kalibrierung, Markt-Lage, Speicherschicht (Claude):**
 - **Neu in `run-all.sh`:**
   - `unit-store`: Speicherschicht, „unverändert?“-Erkennung mit Merkmal statt Volltext;
