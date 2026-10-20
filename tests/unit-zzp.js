@@ -3,17 +3,13 @@
 const fs = require('fs'), path = require('path');
 const html = fs.readFileSync(path.join(__dirname, '..', 'weather-widget-v2.html'), 'utf8');
 const grab = name => { const a = html.indexOf(`function ${name}(`); if (a < 0) throw new Error(name); let d = 0, b = a; for (; b < html.length; b++) { if (html[b] === '{') d++; else if (html[b] === '}' && --d === 0) break; } return html.slice(a, b + 1); };
-const zzpLine = html.match(/var ZZP = \{[^}]*\}[^\n]*\n/)[0];
-// 3.77.6: macd() nutzt neutralMacdSignal aus shared/indicators.mjs (in der App importiert) – hier aus dem Modultext übernehmen
-const ind = fs.readFileSync(path.join(__dirname, '..', 'shared', 'indicators.mjs'), 'utf8'), indFn = name => { const a = ind.indexOf(`export function ${name}(`); if (a < 0) throw new Error(name); let d = 0, b = a; for (; b < ind.length; b++) { if (ind[b] === '{') d++; else if (ind[b] === '}' && --d === 0) break; } return ind.slice(a + 7, b + 1); };
-const indLine = (ind.match(/^const finite = [^\n]*\n/m) || [''])[0] + indFn('neutralMacdSignal') + '\n';
-// 3.83.0: zzpKey zählt RSI wie die Signal-Übersicht (rsiSignal aus shared/rsi-momentum.mjs); Lernstände tragen die Regelnummer
-const rsiSrc = fs.readFileSync(path.join(__dirname, '..', 'shared', 'rsi-momentum.mjs'), 'utf8').replace(/^export /gm, '');
-const ruleLine = (html.match(/const ZZP_RULE = \d+;/) || ['const ZZP_RULE = 2;'])[0] + '\n';
-const make = (fee = 0.06) => new Function(`const mem = {}, sent = []; const store = { get: k => mem[k], set: (k, v) => { mem[k] = JSON.parse(JSON.stringify(v)); return true; } }; const ZZP_KEY = 'zzp';
+// 3.84.0: Rechnung (Momente, Schlüssel, Übernahme) aus shared/ importiert; Speicher, Urteil, Sicherung und Einspielen stehen noch in der App
+const Z = require('../shared/zigzag.mjs'), PAT = require('../shared/zigzag-patterns.mjs'), I = require('../shared/indicators.mjs'), R = require('../shared/rsi-momentum.mjs');
+const memLine = html.match(/var zzpMem = null[^\n]*\n/)[0];
+const make = (fee = 0.06) => new Function('ZZP', 'ZZP_RULE', 'zzStepper', 'zigzag', 'zzForecast', 'rsi', 'ema', 'macd', 'wilsonLow', 'zzpIndicators', 'zzpKey', 'zzMoments', 'zzpApply', 'rsiSignal', 'RSI_MOMENTUM', `const mem = {}, sent = []; const store = { get: k => mem[k], set: (k, v) => { mem[k] = JSON.parse(JSON.stringify(v)); return true; } }; const ZZP_KEY = 'zzp';
 const broadcastData = k => sent.push(...k); let tgb = null, zzpStartSet = null; const scheduleTgBackup = () => {}, renderZzpInfo = () => {}; const state = { symbol: 'BTCUSDT', interval: '1m', risk: { feePct: ${fee} } };
-${zzpLine}${ruleLine}${rsiSrc}\n${indLine}${['zzStepper', 'zigzag', 'zzForecast', 'rsi', 'ema', 'macd', 'wilsonLow', 'zzpIndicators', 'zzpKey', 'zzMoments', 'zzpData', 'zzpApply', 'zzpVerdict', 'zzpSave', 'zzpBackup', 'zzpImport'].map(grab).join('\n')}
-return { mem, sent, state, zigzag, zzForecast, zzMoments, zzpData, zzpApply, zzpVerdict, zzpBackup, zzpImport, zzpKey, wilsonLow, reset: () => { zzpMem = null; } };`)();
+${memLine}${['zzpData', 'zzpVerdict', 'zzpSave', 'zzpBackup', 'zzpImport'].map(grab).join('\n')}
+return { mem, sent, state, zigzag, zzForecast, zzMoments, zzpData, zzpApply, zzpVerdict, zzpBackup, zzpImport, zzpKey, wilsonLow, reset: () => { zzpMem = null; } };`)(PAT.ZZP, PAT.ZZP_RULE, Z.zzStepper, Z.zigzag, Z.zzForecast, I.rsi, I.ema, I.macd, PAT.wilsonLow, PAT.zzpIndicators, PAT.zzpKey, PAT.zzMoments, PAT.zzpApply, R.rsiSignal, R.RSI_MOMENTUM);
 let pass = 0, fail = 0; const check = (n, ok, info = '') => { ok ? pass++ : fail++; console.log(`${ok ? '✓' : '✗'} ${n}${info ? ' — ' + info : ''}`); };
 let seed = 5; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
 const K = []; let px = 100; for (let i = 0; i < 700; i++) { const o = px; px *= 1 + (rnd() - .5) * .01; K.push({ time: 1e12 + i * 60e3, open: o, high: Math.max(o, px) * (1 + rnd() * .002), low: Math.min(o, px) * (1 - rnd() * .002), close: px, volume: 1 }); }

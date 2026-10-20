@@ -35,6 +35,27 @@ export function macd(values) {
   return { line, signal, histogram: line.map((x, i) => x === null || signal[i] === null ? null : x - signal[i]) };
 }
 
+// RSI nach Wilder (3.84.0 aus weather-widget-v2.html hierher verlegt, Rechnung unverändert): null bis zur Kerze `period`, danach 0–100
+export function rsi(closes, period = 14) {
+  const out = Array(closes.length).fill(null);
+  if (closes.length <= period) return out;
+  let gain = 0, loss = 0;
+  for (let i = 1; i <= period; i++) {
+    const d = closes[i] - closes[i - 1];
+    gain += Math.max(d, 0); loss += Math.max(-d, 0);
+  }
+  gain /= period; loss /= period;
+  const value = () => gain === 0 && loss === 0 ? 50 : loss === 0 ? 100 : 100 - 100 / (1 + gain / loss);
+  out[period] = value();
+  for (let i = period + 1; i < closes.length; i++) {
+    const d = closes[i] - closes[i - 1];
+    gain = (gain * (period - 1) + Math.max(d, 0)) / period;
+    loss = (loss * (period - 1) + Math.max(-d, 0)) / period;
+    out[i] = value();
+  }
+  return out;
+}
+
 export function macdInDirection(histogram, direction) {
   if (![1, -1].includes(direction) || !Array.isArray(histogram) || histogram.length < 5 || !histogram.slice(-5).every(finite)) return null;
   const end = histogram.length - 1, now = histogram[end], slope = now - histogram[end - 1];

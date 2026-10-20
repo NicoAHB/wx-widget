@@ -11,7 +11,8 @@ const mirror = rows => rows.map(c => ({ ...c, open: 400 - c.open, high: 400 - c.
   const html = fs.readFileSync(require('path').join(__dirname, '../weather-widget-v2.html'), 'utf8');
   const { rsiSignal } = await import('../shared/rsi-momentum.mjs');
   const { neutralMacdSignal } = await import('../shared/indicators.mjs');
-  const original = new Function('rsiSignal', 'neutralMacdSignal', html.slice(html.indexOf('function rsi('), html.indexOf('\nfunction trueRanges(')) + html.slice(html.indexOf('function ema(values, period)'), html.indexOf('\nfunction overallRating(')) + '\nreturn signalRating;')(rsiSignal,neutralMacdSignal);
+  const IND = await import('../shared/indicators.mjs'); // 3.84.0: rsi/ema/macd stammen aus shared/indicators.mjs
+  const original = new Function('rsiSignal', 'rsi', 'ema', 'macd', html.slice(html.indexOf('function signalRating('), html.indexOf('\nfunction overallRating(')) + '\nreturn signalRating;')(rsiSignal, IND.rsi, IND.ema, IND.macd);
   for (const [name, prices] of [['aufwärts', range(700, 100, 200)], ['abwärts', range(700, 200, 100)], ['neutral', Array(700).fill(100)], ['wechselnd', Array.from({ length: 700 }, (_, i) => 100 + Math.sin(i / 5) * 6 + Math.cos(i / 11))]]) {
     check('Live-Anzeige und Backtest verwenden dieselbe neue RSI-Regel: ' + name, () => assert.deepEqual(a.watchClassicRating(candles(prices).slice(-199)), original(candles(prices).slice(-199))));
   }

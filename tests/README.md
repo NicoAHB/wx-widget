@@ -1,5 +1,14 @@
 # Tests für Scalp Desk
 
+**3.84.0 Levels, VWAP, Kalibrierung, Markt-Lage, Speicherschicht (Claude):**
+- **Neu in `run-all.sh`:**
+  - `unit-store`: Speicherschicht, „unverändert?“-Erkennung mit Merkmal statt Volltext;
+  - `unit-key-levels`, `unit-vwap`, `unit-calibration`, `unit-market-context` (inkl. Ablauf-Skript `.github/markt/build.mjs`);
+  - `m139` (Levels), `m140` (VWAP), `m141` (Markt-Lage); Werte werden dort unabhängig aus denselben Kerzen berechnet, die die Attrappe liefert.
+- **Erweitert:** `m137` (Heap-Grenze mit allen drei Lernspeichern). Die Attrappe kennt `ETHBTC` und `markt-lage.json` (`/markt?mode=ok|fehlt|alt|kaputt`).
+- **Umgestellt auf Importe aus `shared/`** statt Textauszug aus der HTML: `unit-zz`, `unit-zzp`, `unit-div`, `unit-ew`, `unit-macd-neutral`, `unit-watch-models`.
+  Neue Rechenkerne gehören nach `shared/` und werden direkt importiert (`require('../shared/x.mjs')` geht in Node 22).
+
 **3.83.1 Vorauswahl-Liste (Claude):** `m138` (in `run-all.sh`) – Listenansicht bei ruhigem Markt: Kurse und Änderungen haben direkt
 nach dem Start dieselbe Größe wie nach einer erzwungenen Neuberechnung (390 px und 320 px); vorher ~5 px bis zur nächsten Kursänderung.
 

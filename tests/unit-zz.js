@@ -1,8 +1,6 @@
 // ZigZag-Pivot-Erkennung ohne Browser: bekannte Verläufe und Eigenschaften auf Zufallsdaten. Aufruf: node unit-zz.js
-const fs = require('fs'), path = require('path');
-const html = fs.readFileSync(path.join(__dirname, '..', 'weather-widget-v2.html'), 'utf8');
-const grab = name => { const a = html.indexOf(`function ${name}(`); let d = 0, b = a; for (; b < html.length; b++) { if (html[b] === '{') d++; else if (html[b] === '}' && --d === 0) break; } return html.slice(a, b + 1); };
-const { zigzag, zzForecast, zzLearn } = new Function(`${grab('zzStepper')}\n${grab('zigzag')}\n${grab('zzForecast')}\n${grab('zzLearn')}\nreturn { zigzag, zzForecast, zzLearn };`)();
+// 3.84.0: die Rechnung liegt in shared/zigzag.mjs (vorher aus der HTML-Datei herausgeschnitten)
+const { zigzag, zzForecast, zzLearn } = require('../shared/zigzag.mjs');
 let pass = 0, fail = 0; const check = (n, ok, info = '') => { ok ? pass++ : fail++; console.log(`${ok ? '✓' : '✗'} ${n}${info ? ' — ' + info : ''}`); };
 const C = vs => vs.map((v, i) => ({ time: i, high: v, low: v }));
 const fmt = p => p.map(x => `${x.type}${x.i}@${x.price}${x.ok ? '' : '?'}`).join(' ');

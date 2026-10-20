@@ -3,9 +3,11 @@ const fs = require('fs'), path = require('path');
 const html = fs.readFileSync(path.join(__dirname, '..', 'weather-widget-v2.html'), 'utf8');
 const grab = name => { const a = html.indexOf(`function ${name}(`); if (a < 0) throw new Error(name); let d = 0, b = a; for (; b < html.length; b++) { if (html[b] === '{') d++; else if (html[b] === '}' && --d === 0) break; } return html.slice(a, b + 1); };
 const divLine = html.match(/var DIV = \{[^}]*\}[^\n]*\n/)[0];
-const make = () => new Function(`const state = { symbol: 'TEST', interval: '1m', candles: [] }; const zzPct = () => 1;
-${divLine}${['zzStepper', 'zigzag', 'rsi', 'rsiDivergences'].map(grab).join('\n')}
-return { state, rsiDivergences, zigzag, rsi };`)();
+// 3.84.0: ZigZag und RSI kommen aus shared/ (vorher aus der HTML-Datei herausgeschnitten); der Divergenz-Scanner selbst steht noch in der App
+const { zzStepper, zigzag } = require('../shared/zigzag.mjs'), { rsi } = require('../shared/indicators.mjs');
+const make = () => new Function('zzStepper', 'zigzag', 'rsi', `const state = { symbol: 'TEST', interval: '1m', candles: [] }; const zzPct = () => 1;
+${divLine}${grab('rsiDivergences')}
+return { state, rsiDivergences, zigzag, rsi };`)(zzStepper, zigzag, rsi);
 let pass = 0, fail = 0; const check = (n, ok, info = '') => { ok ? pass++ : fail++; console.log(`${ok ? '✓' : '✗'} ${n}${info ? ' — ' + info : ''}`); };
 // Verlauf aus Schlusskursen bauen (kleine Dochte), die letzte Kerze ist die laufende
 function candles(closes) { let seed = 3; const r = () => (seed = (seed * 16807) % 2147483647) / 2147483647;

@@ -339,8 +339,8 @@
     },
     {
       "path": "./bundles/3.84.0/shared/indicators.mjs",
-      "sha256": "d61f7fdb7c2fb577487da7a5badffa70f485d09be2a05038f6d42ab7b599fdc5",
-      "bytes": 10275,
+      "sha256": "a3888ebea48bc694c1d003595e40a5114738bc980301f7a0a088e1a8e10ae8fd",
+      "bytes": 11130,
       "alias": "./shared/indicators.mjs"
     },
     {
@@ -860,6 +860,18 @@
       "alias": "./shared/widget-state.mjs"
     },
     {
+      "path": "./bundles/3.84.0/shared/zigzag-patterns.mjs",
+      "sha256": "2f833190bab79dce529b9d1883f5ce2eeb3da89c66195afce5530dee947be3db",
+      "bytes": 6172,
+      "alias": "./shared/zigzag-patterns.mjs"
+    },
+    {
+      "path": "./bundles/3.84.0/shared/zigzag.mjs",
+      "sha256": "7f953ee6bd441cbf968a87108e5d3ce57e3ac70cbf7e0f99f14a272d6c72961d",
+      "bytes": 7319,
+      "alias": "./shared/zigzag.mjs"
+    },
+    {
       "path": "./bundles/3.84.0/shared/zone-strength.mjs",
       "sha256": "e1a9a03df9ba01beb1738345e6e9a31fee274af2cc9ee3ca356d8a15cf61a9f1",
       "bytes": 13265,
@@ -879,8 +891,8 @@
     },
     {
       "path": "./weather-widget-v2.html",
-      "sha256": "3c593bd080b4a77ead65646fc69e1f11e7b961fdc64aa698d8002fd6fa9a64be",
-      "bytes": 1817051
+      "sha256": "981f3f4a394d3afb01f2b95dd69ef33ab8777fca0edd1faefb0ed7180927ac38",
+      "bytes": 1803754
     },
     {
       "path": "./manifest.webmanifest",

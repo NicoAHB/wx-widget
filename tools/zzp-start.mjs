@@ -1,5 +1,6 @@
 // Startbestand der ZigZag-Prognose (data/muster-start.json) neu berechnen – mit genau den Regeln der App.
-// Die Lernfunktionen (zzMoments, zzpKey, zzpApply …) werden aus weather-widget-v2.html übernommen, nicht nachgebaut.
+// Die Lernfunktionen (zzMoments, zzpKey, zzpApply …) kommen aus shared/zigzag-patterns.mjs – dieselben, die die App benutzt (bis 3.83.x wurden sie aus
+// weather-widget-v2.html herausgeschnitten).
 // Ein Durchgang je Zeitrahmen und Mindestbewegung über die ganze Historie (zzMoments + zzpApply wie in der App); jeder Moment
 // zählt genau einmal, gruppiert je Extrempunkt und Muster wie beim Lernen im Chart.
 // Quelle wie beim bisherigen Bestand: Coinbase BTC-USD, Stundenkerzen 2017-07-01 bis 2019-10-17; 4h und 1d daraus gebildet.
@@ -10,29 +11,13 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { zzMoments, zzpApply, ZZP_RULE } from '../shared/zigzag-patterns.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = Object.fromEntries(process.argv.slice(2).reduce((a, x, i, all) => (x.startsWith('--') ? [...a, [x.slice(2), all[i + 1]?.startsWith('--') || all[i + 1] === undefined ? true : all[i + 1]]] : a), []));
 const OUT = path.resolve(ROOT, args.out || 'data/muster-start.json');
 const FROM = Date.UTC(2017, 6, 1), TO = Date.UTC(2019, 9, 17), H = 3600e3;
 const PCTS = [0.25, 0.5, 1, 2, 3, 5, 8];
-
-// ---- Lernfunktionen aus der App übernehmen ----
-function loadAppLearning() {
-  const html = fs.readFileSync(path.join(ROOT, 'weather-widget-v2.html'), 'utf8');
-  const grab = (src, name, prefix = 'function ') => {
-    const a = src.indexOf(`${prefix}${name}(`); if (a < 0) throw new Error(`Funktion ${name} fehlt`);
-    let d = 0, b = a; for (; b < src.length; b++) { if (src[b] === '{') d++; else if (src[b] === '}' && --d === 0) break; }
-    return src.slice(a, b + 1);
-  };
-  const ind = fs.readFileSync(path.join(ROOT, 'shared/indicators.mjs'), 'utf8');
-  const rsiMod = fs.readFileSync(path.join(ROOT, 'shared/rsi-momentum.mjs'), 'utf8').replace(/^export /gm, '');
-  const zzp = html.match(/var ZZP = \{[^}]*\}[^\n]*\n/)[0], rule = html.match(/const ZZP_RULE = (\d+);/);
-  if (!rule) throw new Error('ZZP_RULE fehlt in der App');
-  const code = [zzp, `const ZZP_RULE = ${rule[1]};`, (ind.match(/^const finite = [^\n]*\n/m) || [''])[0], grab(ind, 'neutralMacdSignal', 'export function ').slice(7), rsiMod,
-    ...['zzStepper', 'zigzag', 'zzForecast', 'rsi', 'ema', 'macd', 'zzpIndicators', 'zzpKey', 'zzMoments', 'zzpApply'].map(n => grab(html, n))].join('\n');
-  return new Function(`${code}\nreturn { zzMoments, zzpApply, ZZP_RULE };`)();
-}
 
 // ---- Kerzen ----
 async function coinbaseHours() {
@@ -62,7 +47,7 @@ function learn(app, candles, interval, P) {
   for (const pct of PCTS) app.zzpApply(P, app.zzMoments(candles.slice(0, -1), pct), `BTCUSD|${interval}|${pct}`, `${interval}|${pct}`);
 }
 
-const app = loadAppLearning();
+const app = { zzMoments, zzpApply, ZZP_RULE };
 const hours = args.candles ? JSON.parse(fs.readFileSync(path.resolve(args.candles), 'utf8')) : await coinbaseHours();
 if (hours.length < 1000) throw new Error(`Zu wenige Stundenkerzen (${hours.length})`);
 const P = { v: 1, rule: app.ZZP_RULE, s: {}, r: {} }, t0 = Date.now();

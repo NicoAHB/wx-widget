@@ -389,8 +389,8 @@
     },
     {
       "path": "shared/indicators.mjs",
-      "sha256": "d61f7fdb7c2fb577487da7a5badffa70f485d09be2a05038f6d42ab7b599fdc5",
-      "bytes": 10275
+      "sha256": "a3888ebea48bc694c1d003595e40a5114738bc980301f7a0a088e1a8e10ae8fd",
+      "bytes": 11130
     },
     {
       "path": "shared/key-levels.mjs",
@@ -821,6 +821,16 @@
       "path": "shared/widget-state.mjs",
       "sha256": "70092b206adad502d0cc1b16c4b642cc28b2914d392a046a1cf25d4f8b77214a",
       "bytes": 1598
+    },
+    {
+      "path": "shared/zigzag-patterns.mjs",
+      "sha256": "2f833190bab79dce529b9d1883f5ce2eeb3da89c66195afce5530dee947be3db",
+      "bytes": 6172
+    },
+    {
+      "path": "shared/zigzag.mjs",
+      "sha256": "7f953ee6bd441cbf968a87108e5d3ce57e3ac70cbf7e0f99f14a272d6c72961d",
+      "bytes": 7319
     },
     {
       "path": "shared/zone-strength.mjs",
