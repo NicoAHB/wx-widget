@@ -7,6 +7,7 @@
   - `m139` (Levels), `m140` (VWAP), `m141` (Markt-Lage); Werte werden dort unabhängig aus denselben Kerzen berechnet, die die Attrappe liefert.
 - **Erweitert:** `m137` (Heap-Grenze mit allen drei Lernspeichern). Die Attrappe kennt `ETHBTC` und `markt-lage.json` (`/markt?mode=ok|fehlt|alt|kaputt`).
 - **Umgestellt auf Importe aus `shared/`** statt Textauszug aus der HTML: `unit-zz`, `unit-zzp`, `unit-div`, `unit-ew`, `unit-macd-neutral`, `unit-watch-models`.
+- **Angepasst an die heutige Anzeige** (waren auf `main` rot): `m3` (Long/Neutral/Short, Rechner-Knopf), `m7` (Urteile Long/Short/Warten, fester Kurs im 320er-Test), `m39` (MACD-Info), `m56` (MEZ/MESZ statt UTC), `m106` (Short-Tendenz), `m19` (Stapelung des ⓘ nach Leistenbreite statt Fensterbreite). `m18` und `m19` prüfen jetzt auch die zweizeilige Fib-Leiste am iPad.
   Neue Rechenkerne gehören nach `shared/` und werden direkt importiert (`require('../shared/x.mjs')` geht in Node 22).
 
 **3.83.1 Vorauswahl-Liste (Claude):** `m138` (in `run-all.sh`) – Listenansicht bei ruhigem Markt: Kurse und Änderungen haben direkt

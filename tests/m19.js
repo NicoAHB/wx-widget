@@ -13,7 +13,7 @@ const tip = page => page.evaluate(() => {
   const lines = [...document.querySelectorAll('#chart .fib-line')].map(l => ({ r: l.dataset.r, y: +l.getAttribute('y1') }));
   return { open: t.open, visible: t.open && r.width > 0 && getComputedStyle(b).visibility !== 'hidden', body: { left: r.left, right: r.right, top: r.top, w: r.width }, vw: innerWidth,
     sum: { left: sr.left, top: sr.top, right: sr.right, bottom: sr.bottom, cx: sr.left + sr.width / 2, cy: sr.top + sr.height / 2 }, head: { left: hr.left, right: hr.right, top: hr.top, bottom: hr.bottom },
-    strip: { top: strip.top, bottom: strip.bottom, h: Math.round(strip.height) }, swing: document.getElementById('fs-tip-swing').textContent,
+    strip: { top: strip.top, bottom: strip.bottom, h: Math.round(strip.height), w: Math.round(strip.width) }, swing: document.getElementById('fs-tip-swing').textContent,
     marks: [...t.querySelectorAll('.fs-tip-list li')].map(li => ({ r: li.querySelector('b').textContent, p: li.querySelector('[data-fl]').textContent })), text: b.textContent, lines,
     next: Math.round(document.getElementById('lmap-strip').getBoundingClientRect().top), chips: [...document.querySelectorAll('#fib-strip .fs-chip')].map(c => ({ cut: c.scrollWidth > c.clientWidth + 1 || c.querySelector('.fs-val').scrollWidth > c.querySelector('.fs-val').clientWidth + 1, top: Math.round(c.getBoundingClientRect().top), hid: c.hidden })) };
 });
@@ -56,7 +56,7 @@ const inView = (d, min = 180) => d.visible && d.body.left >= 0 && d.body.right <
       await pp.goto(h.URL_BASE + '/weather-widget-v2.html'); await live(pp); await load(pp, 'SOL');
       await pp.evaluate(() => document.getElementById('fib-strip').scrollIntoView({ block: 'center' })); await pp.waitForTimeout(700);
       const a = await tip(pp), hy = (a.head.top + a.head.bottom) / 2, stacked = a.sum.cy > hy + 8 && Math.abs(a.sum.cx - (a.head.left + a.head.right) / 2) < 4;
-      check(`${name}: ⓘ ${w < 700 ? 'unter' : 'neben'} „Fib“ in der Leiste, Knöpfe nicht abgeschnitten`, (w < 700 ? stacked : a.sum.cx > a.head.right && Math.abs(a.sum.cy - hy) < 6) && a.sum.top >= a.strip.top && a.sum.bottom <= a.strip.bottom + 1 && a.chips.every(c => !c.cut && !c.hid && c.top === a.chips[0].top),
+      check(`${name}: ⓘ ${a.strip.w <= 640 ? 'unter' : 'neben'} „Fib“ in der Leiste (zweizeilig bis 640 px Leistenbreite), Knöpfe nicht abgeschnitten`, (a.strip.w <= 640 ? stacked : a.sum.cx > a.head.right && Math.abs(a.sum.cy - hy) < 6) && a.sum.top >= a.strip.top && a.sum.bottom <= a.strip.bottom + 1 && a.chips.every(c => !c.cut && !c.hid && c.top === a.chips[0].top),
         JSON.stringify({ sum: [Math.round(a.sum.left), Math.round(a.sum.top), Math.round(a.sum.bottom)], head: [Math.round(a.head.right), Math.round(a.head.bottom)], strip: [Math.round(a.strip.top), Math.round(a.strip.bottom)], cut: a.chips.map(c => c.cut) }));
       await pp.tap('#fs-tip > summary'); await pp.waitForTimeout(400); const b = await tip(pp);
       check(`${name}: Antippen öffnet die Erklärung, ganz im Fenster, nichts verschoben`, b.open && inView(b) && b.strip.h === a.strip.h && b.next === a.next, JSON.stringify({ body: b.body, vw: b.vw, h: [a.strip.h, b.strip.h] }));

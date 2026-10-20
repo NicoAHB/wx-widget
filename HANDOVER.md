@@ -10,6 +10,9 @@
 - **Speicherschicht:** Merkmal statt Volltext → Heap mit vollen Lernspeichern 78 → 42 MB.
 - **HTML aufgeteilt:** ZigZag, Prognose, Muster-Lernen und RSI liegen in `shared/` (`zigzag.mjs`, `zigzag-patterns.mjs`, `indicators.mjs`); Werkzeug und Tests importieren statt
   Text aus der HTML zu schneiden. Rechnung bewiesen identisch. `sw.js`: Dateigrenze 160 → 220.
+- **Rote Tests von `main` repariert** (m3, m7, m18, m19, m39, m56, m106), dabei drei echte Fehler behoben: Chart sprang beim Hover (OHLC-Zeile bricht um →
+  `min-height:50px`), Fib-Leiste am iPad im Querformat schnitt Kurse ab (Zweispaltenmodus bekommt die zweizeilige Form), VWAP-Paar am 320er zu breit (bricht um).
+  Details und das bekannte Live-Leisten-Randproblem: Abschnitt 7 der Änderungsdoku.
 - Bewusst nicht: Telegram-Nachricht bei rotem Nachtlauf (auf Wunsch).
 - App/SW **3.84.0**, Dienst unverändert **2.15.4** (kein neuer Installer-Lauf nötig).
 

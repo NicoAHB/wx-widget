@@ -1,5 +1,5 @@
 // 3.70.0 – optische Korrekturen in der echten App-Navigation (Handy, iPad, Desktop; hell und dunkel):
-// „Verkaufssignal“ passt vollständig ins Etikett der Signal-Übersicht, die Trend-Zeile unter der Werkzeugleiste beginnt bündig
+// „Short-Tendenz“ (längstes Etikett) passt vollständig ins Etikett der Signal-Übersicht, die Trend-Zeile unter der Werkzeugleiste beginnt bündig
 // mit der OHLC-Zeile, die Klappfläche „Starke Zonen“ steht bündig unter „Orderflow“, das FVG-Farbfeld ist auch ausgeschaltet sichtbar.
 // Aufruf: node m106.js
 const h = require('./harness');
@@ -25,8 +25,8 @@ const real = errs => errs.filter(e => !/Service Worker registration blocked|Fail
         const sw = document.querySelector('[data-overlay="fvg"] .sw.fvg'), swcs = getComputedStyle(sw);
         return { over: document.documentElement.scrollWidth - innerWidth, verdicts, mtf: textLeft(document.getElementById('mtf')), ohlc: textLeft(document.querySelector('.ohlc-row')), fold: [of.left, zl.left, of.right, zl.right].map(Math.round), sw: { bg: swcs.backgroundImage, shadow: swcs.boxShadow, w: sw.getBoundingClientRect().width } };
       });
-      const sell = m.verdicts.filter(v => v.t === 'Verkaufssignal');
-      check(`${name}: „Verkaufssignal“ vollständig im Etikett, kein Etikett abgeschnitten`, sell.length > 0 && m.verdicts.every(v => v.spare >= 0), JSON.stringify(m.verdicts));
+      const sell = m.verdicts.filter(v => v.t === 'Short-Tendenz');
+      check(`${name}: „Short-Tendenz“ vollständig im Etikett, kein Etikett abgeschnitten`, sell.length > 0 && m.verdicts.every(v => v.spare >= 0), JSON.stringify(m.verdicts));
       check(`${name}: Trend-Zeile bündig mit der OHLC-Zeile`, m.mtf !== null && m.mtf === m.ohlc && m.mtf >= 10, JSON.stringify({ mtf: m.mtf, ohlc: m.ohlc }));
       check(`${name}: „Starke Zonen“ bündig unter „Orderflow“`, Math.abs(m.fold[0] - m.fold[1]) <= 1 && Math.abs(m.fold[2] - m.fold[3]) <= 1, JSON.stringify(m.fold));
       check(`${name}: FVG-Farbfeld grün/rot mit Rand, kein seitliches Scrollen`, /gradient/.test(m.sw.bg) && m.sw.shadow !== 'none' && m.sw.w >= 14 && m.over <= 1, JSON.stringify(m.sw) + ' over=' + m.over);
