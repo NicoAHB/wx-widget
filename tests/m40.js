@@ -10,6 +10,8 @@ const check = (name, cond, detail = '') => { results.push({ name, ok: !!cond, de
 const TOKEN = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', ALERT = '987654321', BACKUP = '-1001234567890';
 const CHAN = { tg: { token: TOKEN, chat: ALERT, thread: '', bchat: BACKUP, bthread: '12', on: true }, dc: { url: '', on: true }, ev: { alarm: true, pos: true, day: true, news: true, pnl: true, pulse: true } };
 const KEY = 'scalpdesk.pnlalarm.v1';
+// Ausgelöste Alarme bleiben als Meldung stehen, bis man „OK“ tippt, und zwei gestapelte Meldungen decken das Live-Ergebnis zu: wie der Nutzer erst schließen, dann tippen
+const tapLive = async page => { await page.evaluate(() => document.querySelectorAll('#toasts .toast button').forEach(b => b.click())); await page.tap('#lb-pos'); };
 const live = page => page.waitForFunction(() => document.getElementById('status').dataset.feed === 'live', null, { timeout: 20000 }).catch(() => {});
 const until = async (fn, ms = 15000, step = 200) => { const t0 = Date.now(); for (;;) { const v = await fn(); if (v) return v; if (Date.now() - t0 > ms) return null; await h.sleep(step); } };
 // 3.71.0: Der Gewinn-/Verlust-Alarm kommt als Bild mit einzeiliger Bildunterschrift („Gewinn-Alarm · +100,00 USD“); text = Bildunterschrift
@@ -37,7 +39,7 @@ async function open(browser, opts, seedPos = true) {
     // ================= iPad hochkant (Touch) =================
     let { ctx, page, errors } = await open(browser, { viewport: { width: 820, height: 1180 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
     check('Ausgangslage: Live-Ergebnis „0,00 USDT“ (eine Position, Menge 1)', await setPnl(page, 0) === '0,00 USDT', await lbOpen(page));
-    await page.tap('#lb-pos'); await page.waitForTimeout(300);
+    await tapLive(page); await page.waitForTimeout(300);
     let u = await ui(page);
     const box = await page.evaluate(() => { const r = document.getElementById('pnl-panel').getBoundingClientRect(), p = document.getElementById('lb-pos').getBoundingClientRect(); return { l: Math.round(r.left), r: Math.round(r.right), t: Math.round(r.top), b: Math.round(r.bottom), posRight: Math.round(p.right), below: r.top >= p.bottom - 1 }; });
     check('Antippen des Live-Ergebnisses öffnet das Feld darunter (rechts, ganz im Bild)', u.open && u.exp === 'true' && box.below && box.l >= 0 && box.r <= 820 && box.b <= 1180, JSON.stringify(box));
@@ -45,9 +47,9 @@ async function open(browser, opts, seedPos = true) {
     check('Zwei Eingaben „Benachrichtigung bei Gewinn“ / „… bei Verlust“, Einheit USDT und Bezug sichtbar', /^Benachrichtigung bei Gewinn \| Benachrichtigung bei Verlust · Bezug: das Live-Ergebnis „Offen“ .*USDT/.test(labels) && /jetzt 0,00 USDT · 1 Position/.test(u.now), labels);
     await page.tap('#pair-label'); await page.waitForTimeout(250);
     check('Tippen daneben schließt das Feld', !(await ui(page)).open);
-    await page.tap('#lb-pos'); await page.waitForTimeout(250); await page.tap('#pnl-close'); await page.waitForTimeout(250);
+    await tapLive(page); await page.waitForTimeout(250); await page.tap('#pnl-close'); await page.waitForTimeout(250);
     check('„×“ schließt das Feld', !(await ui(page)).open);
-    await page.tap('#lb-pos'); await page.waitForTimeout(250);
+    await tapLive(page); await page.waitForTimeout(250);
     // ---- ungültige Eingaben ----
     await fill(page, 'abc', '-50'); u = await ui(page);
     check('Ungültig: „abc“ und „-50“ werden abgewiesen, markiert und nicht gespeichert', /Gewinn: kein gültiger Betrag/.test(u.err) && /Verlust: als positiven Betrag eingeben/.test(u.err) && u.pInv === 'true' && u.lInv === 'true' && !(await stored(page)), u.err);
@@ -71,11 +73,11 @@ async function open(browser, opts, seedPos = true) {
     for (const v of [105, 110.5, 101, 130]) await setPnl(page, v);
     await page.waitForTimeout(1500);
     check('Weitere Kursänderungen jenseits der Schwelle: keine weitere Nachricht (kein Duplikat)', (await pnlMsgs()).length === 1, String((await pnlMsgs()).length));
-    s = await stored(page); await page.tap('#lb-pos'); await page.waitForTimeout(250); u = await ui(page);
+    s = await stored(page); await tapLive(page); await page.waitForTimeout(250); u = await ui(page);
     check('Zustand „ausgelöst“ mit Zeit und Wert, „Wieder aktivieren“ sichtbar, Punkt gelb', s.profit.state === 'fired' && s.profit.firedVal === 100 && /^ausgelöst um \d\d:\d\d Uhr bei \+100,00 USDT/.test(u.pSt) && u.pRe && !u.lRe && u.badge === 'fired', u.pSt);
     // ---- Neuladen: Zustand bleibt, keine neue Nachricht ----
     await page.reload(); await live(page); await page.waitForTimeout(2500);
-    await page.tap('#lb-pos'); await page.waitForTimeout(300); u = await ui(page);
+    await tapLive(page); await page.waitForTimeout(300); u = await ui(page);
     check('Nach dem Neuladen: Werte und Zustand erhalten, keine neue Nachricht', (await page.inputValue('#pnl-profit')) === '100' && (await page.inputValue('#pnl-loss')) === '50' && /^ausgelöst/.test(u.pSt) && (await pnlMsgs()).length === 1, `${await page.inputValue('#pnl-profit')} / ${u.pSt}`);
     // ---- Wieder aktivieren, während die Grenze noch erreicht ist ----
     await page.tap('#pnl-profit-rearm'); await page.waitForTimeout(800); u = await ui(page); s = await stored(page);
@@ -97,13 +99,13 @@ async function open(browser, opts, seedPos = true) {
     check('Jenseits der Verlustgrenze: keine Nachrichtenserie', (await pnlMsgs()).filter(y => /VERLUST-ALARM|Verlust-Alarm/.test(y.text)).length === 1);
     check('Alle Gewinn-/Verlust-Nachrichten nur an Kursalarm, keine an den Sicherungschat', (await pnlMsgs()).every(x => x.chat_id === ALERT) && !(await h.ctl('/sent')).some(x => x.chat_id === BACKUP && /Alarm/.test(x.text || '')));
     // ---- Deaktivieren und wieder aktivieren ----
-    await page.tap('#lb-pos'); await page.waitForTimeout(250);
+    await tapLive(page); await page.waitForTimeout(250);
     await page.uncheck('#pnl-loss-on'); await page.click('#pnl-form [type=submit]'); await page.waitForTimeout(300); u = await ui(page); s = await stored(page);
     check('Deaktivieren: Verlust-Alarm aus, Betrag bleibt stehen', !s.loss.on && s.loss.value === 50 && /^deaktiviert/.test(u.lSt) && !u.lRe, u.lSt);
     await page.tap('#pnl-close'); await setPnl(page, -80); await page.waitForTimeout(1000);
     check('Deaktiviert: auch weit jenseits keine Nachricht', (await pnlMsgs()).filter(y => /VERLUST-ALARM|Verlust-Alarm/.test(y.text)).length === 1);
     await setPnl(page, -10);
-    await page.tap('#lb-pos'); await page.waitForTimeout(250); await page.check('#pnl-loss-on'); await page.click('#pnl-form [type=submit]'); await page.waitForTimeout(300); s = await stored(page);
+    await tapLive(page); await page.waitForTimeout(250); await page.check('#pnl-loss-on'); await page.click('#pnl-form [type=submit]'); await page.waitForTimeout(300); s = await stored(page);
     check('Wieder einschalten (Ergebnis −10): scharf', s.loss.on && s.loss.state === 'armed');
     await page.tap('#pnl-close'); await setPnl(page, -60);
     m = await until(async () => { const x = (await pnlMsgs()).filter(y => /VERLUST-ALARM|Verlust-Alarm/.test(y.text)); return x.length >= 2 ? x : null; });
@@ -144,7 +146,7 @@ async function open(browser, opts, seedPos = true) {
     for (const [w, hh] of [[1180, 820], [390, 844], [320, 700]]) {
       await h.ctl(`/set?symbol=BTCUSDT&price=${P0 + 12.34}`);
       ({ ctx, page, errors } = await open(browser, { viewport: { width: w, height: hh }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 }));
-      await page.tap('#lb-pos'); await page.waitForTimeout(300);
+      await tapLive(page); await page.waitForTimeout(300);
       const g = await page.evaluate(() => { const r = document.getElementById('pnl-panel').getBoundingClientRect(), n = document.getElementById('lb-open').getBoundingClientRect(), inp = document.getElementById('pnl-profit').getBoundingClientRect();
         return { l: Math.round(r.left), r: Math.round(r.right), b: Math.round(r.bottom), sw: document.scrollingElement.scrollWidth - innerWidth, num: document.getElementById('lb-open').textContent, numVis: n.width > 4 && n.right <= innerWidth, inpH: Math.round(inp.height) }; });
       check(`${w}×${hh}: Feld ganz im Bild, Live-Ergebnis sichtbar, Eingabe fingergroß, kein seitliches Scrollen`, g.l >= 0 && g.r <= w && g.b <= hh && g.sw <= 0 && g.numVis && g.num === '+12,34 USDT' && g.inpH >= 40, JSON.stringify(g));
