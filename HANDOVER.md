@@ -1,3 +1,13 @@
+## 3.85.0 / Dienst 2.15.4 (Claude): Levels übersichtlich, VWAP mit vorgeschlagenen Ankern
+
+- Ausführlich: [docs/3.85.0-AENDERUNGEN.md](docs/3.85.0-AENDERUNGEN.md).
+- **Levels:** Standard „Nächste“ = je drei Marken über/unter dem Kurs; Marken auf gleicher Höhe teilen sich Linie und Beschriftung; Beschriftungen stehen auf
+  Höhe ihrer Linie (eigene Anordnung `stackLabels`, nicht mehr von `declutterChart` verschoben). Neu in `shared/key-levels.mjs`.
+- **VWAP:** gruppiertes Menü mit Vorschlägen: Handelssitzungen (Asien/London/NY-Open), Vortag, Wochen, Vorwochen (je Hoch/Tief), Volumenspitze, Swing, eigener Anker.
+  ⚓ nur bei „ab Anker“. `anchorStart` in `shared/vwap.mjs`; Quellen 15m / 1h / 4h.
+- **Handy:** Levels- und VWAP-Zeile bleiben einzeilig (Auswahl schrumpft).
+- App/SW **3.85.0**, Dienst unverändert **2.15.4** (kein neuer Installer-Lauf nötig).
+
 ## 3.84.0 / Dienst 2.15.4 (Claude): Schlüssel-Levels, VWAP, Kalibrierung, Markt-Lage, schlankere Speicherschicht
 
 - Ausführlich: [docs/3.84.0-AENDERUNGEN.md](docs/3.84.0-AENDERUNGEN.md).

@@ -16,7 +16,7 @@ const until = async (fn, ms = 20000, step = 200) => { const t0 = Date.now(); for
     await page.waitForTimeout(1200);
     await page.evaluate(() => { const t = document.querySelector('.overlay-toggles'); const d = t.closest('details'); if (d) d.open = true; t.scrollIntoView({ block: 'center' }); });
     const btn = await page.evaluate(() => { const b = document.querySelector('.overlay-toggles [data-overlay="kl"]'), sel = document.getElementById('kl-set'); return b && { text: b.textContent.trim(), pressed: b.getAttribute('aria-pressed'), visible: b.getBoundingClientRect().width > 0, selVisible: sel.getBoundingClientRect().width > 0, opts: [...sel.options].map(o => o.textContent).join('|'), tip: !!document.getElementById('kl-tip'), title: b.title }; });
-    check('Knopf „Levels“ mit Auswahl und ⓘ; anfangs aus, keine Linien', btn?.text === 'Levels' && btn.pressed === 'false' && btn.visible && btn.selVisible && btn.opts === 'Alle|Tag|Woche/Monat|Sitzungen' && btn.tip && /Vortag/.test(btn.title) && await page.evaluate(() => !document.querySelector('.kl-line')), JSON.stringify(btn));
+    check('Knopf „Levels“ mit Auswahl und ⓘ; anfangs aus, keine Linien', btn?.text === 'Levels' && btn.pressed === 'false' && btn.visible && btn.selVisible && btn.opts === 'Nächste|Alle|Tag|Woche/Monat|Sitzungen' && btn.tip && /Vortag/.test(btn.title) && await page.evaluate(() => !document.querySelector('.kl-line')), JSON.stringify(btn));
     // Kerzen aus der Attrappe (wie sie die App lädt) und unabhängig daraus die erwarteten Marken
     const rows = await page.evaluate(async () => (await (await fetch('https://data-api.binance.vision/api/v3/klines?symbol=BTCUSDT&interval=1d&limit=45')).json()).map(r => ({ time: r[0], open: +r[1], high: +r[2], low: +r[3] })));
     const now = await page.evaluate(() => Date.now()), D = 864e5, day0 = Math.floor(now / D) * D, at = t => rows.find(r => r.time === t);
@@ -25,7 +25,7 @@ const until = async (fn, ms = 20000, step = 200) => { const t0 = Date.now(); for
     check('Attrappe liefert heutige und gestrige Tageskerze (Voraussetzung der Prüfung)', expected.do > 0 && expected.pdh > 0 && rows.length >= 8, `${rows.length} Tageskerzen`);
     await page.click('[data-overlay="kl"]');
     const toast = await until(() => page.evaluate(() => [...document.querySelectorAll('#toasts .toast')].map(t => t.textContent).find(t => /Levels an/.test(t))));
-    check('Einschalten: Rückmeldung mit nächster Marke über und unter dem Kurs', /Levels an \(\d+\)\./.test(toast || '') && /Nächstes über dem Kurs: .+ H|Darunter: /.test(toast || ''), toast);
+    check('Einschalten: Rückmeldung mit nächster Marke über und unter dem Kurs', /Levels an \(die nächsten \d+ von \d+; „Alle“ zeigt alle\)\./.test(toast || '') && /Nächstes über dem Kurs: .+ H|Darunter: /.test(toast || ''), toast);
     await until(() => page.evaluate(() => __kl.levels().length > 0));
     const levels = await page.evaluate(() => __kl.levels().map(l => ({ id: l.id, price: l.price, group: l.group, label: l.label, from: l.from, live: l.live })));
     const lv = id => levels.find(l => l.id === id)?.price;
@@ -37,9 +37,19 @@ const until = async (fn, ms = 20000, step = 200) => { const t0 = Date.now(); for
     await page.click('.chart-toolbar .intervals [data-interval="1d"]'); await page.waitForFunction(() => __g05.state.interval === '1d' && !__g05.state.busy, null, { timeout: 20000 }); await page.waitForTimeout(800);
     const lines = () => page.evaluate(() => [...document.querySelectorAll('#chart .kl-line')].map(l => ({ id: l.getAttribute('class').split(' ').pop(), x1: +l.getAttribute('x1'), x2: +l.getAttribute('x2'), y: +l.getAttribute('y1'), dash: l.getAttribute('stroke-dasharray'), title: l.querySelector('title')?.textContent })));
     const labels = () => page.evaluate(() => [...document.querySelectorAll('#chart .kl-label')].map(t => ({ id: t.getAttribute('class').split(' ').pop(), text: t.textContent })));
+    // Standard „Nächste“: je drei Marken über und unter dem Kurs – erwartet, unabhängig aus den im „Alle“-Modus sichtbaren Marken berechnet
+    const nearIds = (await labels()).map(t => t.id), cur = await page.evaluate(() => __g05.state.candles.at(-1).close);
+    check('Standard ist „Nächste“', await page.evaluate(() => document.getElementById('kl-set').value === 'near' && __kl.set === 'near'));
+    await page.selectOption('#kl-set', 'all'); await page.waitForTimeout(600);
+    const allIds = (await labels()).map(t => t.id), pr = id => lv(id);
+    const above = allIds.filter(id => pr(id) > cur).sort((a, b) => pr(a) - pr(b)).slice(0, 3), below = allIds.filter(id => pr(id) <= cur).sort((a, b) => pr(b) - pr(a)).slice(0, 3), expectNear = [...above, ...below].sort().join(',');
+    check('„Nächste“ zeigt genau die drei Marken über und die drei unter dem Kurs, „Alle“ mehr', nearIds.length > 0 && nearIds.length <= 6 && nearIds.slice().sort().join(',') === expectNear && allIds.length >= nearIds.length, `${nearIds} · erwartet ${expectNear} · alle ${allIds.length} · Kurs ${cur}`);
     let L = await lines(), T = await labels();
-    check('Linien im Chart: je sichtbarer Marke eine Linie mit Beschriftung „Name Preis“ und Erklärung beim Darüberfahren', L.length > 0 && L.length === T.length && L.every(l => l.x2 > l.x1 && /gilt ab/.test(l.title)) && T.some(t => /^Vortag H /.test(t.text)) && T.some(t => /^Tag-Open /.test(t.text)), JSON.stringify(T.map(t => t.text)));
-    check('Eröffnungen gepunktet, Hoch/Tief gestrichelt; alle Linien bis zum rechten Rand', L.filter(l => /^(do|wo|mo)$/.test(l.id)).every(l => l.dash === '2 4') && L.filter(l => /^(pdh|pdl|pwh|pwl)$/.test(l.id)).every(l => l.dash === '7 4') && new Set(L.map(l => l.x2)).size === 1);
+    check('Linien im Chart: je sichtbarer Marke eine Linie mit Beschriftung „Name Preis“ und Erklärung beim Darüberfahren', L.length > 0 && L.length === T.length && L.every(l => l.x2 > l.x1 && /gilt ab/.test(l.title)) && T.some(t => /Vortag H /.test(t.text)) && T.some(t => /Tag-Open /.test(t.text)), JSON.stringify(T.map(t => t.text)));
+    check('Eröffnungen gepunktet, Hoch/Tief gestrichelt; alle Linien bis zum rechten Rand', L.filter(l => /^(do|wo|mo)$/.test(l.id)).every(l => l.dash === '2 4') && L.filter(l => /^(pdh|pdl|pwh|pwl)$/.test(l.id)).every(l => l.dash === '6 4') && new Set(L.map(l => l.x2)).size === 1);
+    const geo = await page.evaluate(() => { const lines = [...document.querySelectorAll('#chart .kl-line')], txt = [...document.querySelectorAll('#chart .kl-label')]; return txt.map(t => { const id = t.getAttribute('class').split(' ').pop(), l = lines.find(x => x.getAttribute('class').split(' ').pop() === id); return { id, ty: +t.getAttribute('y') - 4, ly: +l.getAttribute('y1') }; }).sort((a, b) => a.ty - b.ty); });
+    const gaps = geo.slice(1).map((g, i) => g.ty - geo[i].ty), far = geo.filter(g => Math.abs(g.ty - g.ly) > 12 * geo.length);
+    check('Beschriftungen überlappen nicht (mindestens 12 px Abstand) und bleiben nah an ihrer Linie', geo.length > 1 && gaps.every(g => g >= 11.9) && !far.length, JSON.stringify({ n: geo.length, gaps: gaps.map(g => +g.toFixed(1)), far }));
     const ys = L.map(l => ({ id: l.id, y: l.y })), pdh = lv('pdh'), pdl = lv('pdl');
     check('Vortag-Hoch liegt im Chart über Vortag-Tief (Höhe folgt dem Preis)', !L.some(l => l.id === 'pdh') || !L.some(l => l.id === 'pdl') || ys.find(l => l.id === 'pdh').y < ys.find(l => l.id === 'pdl').y, `${pdh} / ${pdl}`);
     // Hinweis für Analysen: Marken zwischen Einstieg und Ziel 1
@@ -56,7 +66,7 @@ const until = async (fn, ms = 20000, step = 200) => { const t0 = Date.now(); for
     // Erklärung
     await page.click('#kl-tip > summary'); await page.waitForTimeout(300);
     const tip = await page.evaluate(() => { const b = document.querySelector('#kl-tip .tip-body'); return { open: document.getElementById('kl-tip').open, vis: b.getBoundingClientRect().height > 0, text: b.textContent }; });
-    check('ⓘ erklärt: Tag, Woche/Monat, Sitzungen mit Zeiten, nichts wird geschätzt, kein Handelssignal', tip.open && tip.vis && /Vortag H\/T/.test(tip.text) && /Woche-Open/.test(tip.text) && /Asien \(00–08 UTC\)/.test(tip.text) && /nichts geschätzt/.test(tip.text) && /kein Handelssignal/.test(tip.text));
+    check('ⓘ erklärt: Tag, Woche/Monat, Sitzungen mit Zeiten, nichts wird geschätzt, kein Handelssignal', tip.open && tip.vis && /Nächste/.test(tip.text) && /Vortag H\/T/.test(tip.text) && /Woche-Open/.test(tip.text) && /Asien \(00–08 UTC\)/.test(tip.text) && /nichts geschätzt/.test(tip.text) && /kein Handelssignal/.test(tip.text));
     await page.click('#kl-tip > summary');
     // gespeichert, Neustart
     await page.selectOption('#kl-set', 'higher'); await page.waitForTimeout(300);
