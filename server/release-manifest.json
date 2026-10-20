@@ -1,6 +1,6 @@
 {
   "version": "2.16.0",
-  "appVersion": "3.88.0",
+  "appVersion": "3.89.0",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
@@ -251,6 +251,11 @@
       "path": "shared/chart-detail.mjs",
       "sha256": "8f9faf895d414c9e8f310881cf6c53cea19dc02ff2e28baf5c9e685ee90ec513",
       "bytes": 10271
+    },
+    {
+      "path": "shared/chart-layers.mjs",
+      "sha256": "6b56f8dcd17ca9369ee1b37ce8c84a992979ced8042d36deb82fde2a3cd42c32",
+      "bytes": 2753
     },
     {
       "path": "shared/chart-pattern-chips.mjs",
@@ -819,8 +824,8 @@
     },
     {
       "path": "shared/watch-signal-reasons.mjs",
-      "sha256": "332d925c40f71e31b7dc96935c80409d85a6eefb07ed734867f1c81852c40e09",
-      "bytes": 18249
+      "sha256": "fa2374c0b74ea392b3898343b4b87e9f334101b05927360459b1fd05cb00c337",
+      "bytes": 18229
     },
     {
       "path": "shared/widget-state.mjs",

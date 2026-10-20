@@ -1,3 +1,12 @@
+## 3.89.0 / Dienst 2.16.0 (Claude): Bereich „Chart-Ebenen“ überarbeitet
+
+- Ausführlich: [docs/3.89.0-AENDERUNGEN.md](docs/3.89.0-AENDERUNGEN.md).
+- **Anlass:** Bild des Bereichs „Chart-Ebenen, Whales & Werkzeuge“ mit Bitte um Bewertung, dann „komplett in Perfektion“. Kritik: 18 gleiche Schalter ohne Ordnung, An/Aus kaum zu unterscheiden, gesperrt nur im Tooltip erklärt,
+  Einstellungen im Fluss, uneinheitliche ⓘ, unpassender Titel.
+- **Jetzt:** Titel „Chart-Ebenen“ mit Zähler („11 von 18 aktiv“), vier Gruppen mit Überschrift, an = Akzentfläche mit Haken / aus = Rahmen / gesperrt = gestrichelt mit Schloss, Hinweiszeile zu gesperrten Ebenen,
+  Auswahl „Ansicht“ (Trend, Niveaus, Wellen, Orderflow, Nur Kerzen), Schalter + Einstellung + ⓘ als Kapsel, einheitliches ⓘ, Erklärliste „Was zeigt welche Ebene?“, Vollbild unverändert als schmale Leiste.
+- Neues Modul `shared/chart-layers.mjs` (Gruppen/Ansichten; `unit-chart-layers` prüft auch, dass das HTML dazu passt), Browser-Test `m147`. Berechnung, Zeichnen, Sperren, Speicherformat und Dienst unverändert (**3.89.0**, Dienst **2.16.0**).
+
 ## 3.88.0 / Dienst 2.16.0 (Claude): Orderflow-Seite verdichtet
 
 - Ausführlich: [docs/3.88.0-AENDERUNGEN.md](docs/3.88.0-AENDERUNGEN.md).

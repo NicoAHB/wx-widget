@@ -43,7 +43,7 @@ const tests = {
       const { ctx, page, errors } = await open(browser, view);
       const s = await strip(page), box = await page.evaluate(() => { const i = document.querySelector('#chart svg image.lmap'), svg = i?.closest('svg'); return i ? { first: svg.querySelector('g[clip-path]').firstElementChild === i, w: +i.getAttribute('width'), href: (i.getAttribute('href') || '').slice(0, 22) } : null; });
       check(`${name}: Heatmap-Bild liegt als unterste Ebene im Chart`, s.img && box?.first && box.w > 100 && box.href === 'data:image/png;base64,', JSON.stringify(box));
-      check(`${name}: Leiste zeigt Datenstand und je ein Cluster oberhalb/unterhalb`, !s.hidden && /Open Interest 5m · Stand \d\d:\d\d UTC/.test(s.src) && s.short > s.long && /^[\d.,]+ · \+[\d,]+ % · [\d.,]+ (Mio|Tsd|Mrd)\./.test(s.shortText) && /· −[\d,]+ % ·/.test(s.longText), `${s.src} | ${s.shortText} | ${s.longText}`);
+      check(`${name}: Leiste zeigt Datenstand und je ein Cluster oberhalb/unterhalb`, !s.hidden && /Open Interest 5m · Stand \d\d:\d\d MEZ\/MESZ/.test(s.src) && s.short > s.long && /^[\d.,]+ · \+[\d,]+ % · [\d.,]+ (Mio|Tsd|Mrd)\./.test(s.shortText) && /· −[\d,]+ % ·/.test(s.longText), `${s.src} | ${s.shortText} | ${s.longText}`);
       const cur = await page.evaluate(() => Number(document.getElementById('price').textContent.replace(/\./g, '').replace(',', '.')));
       check(`${name}: Shorts liegen über, Longs unter dem Kurs (±10 %)`, s.short > cur && s.long < cur && s.short < cur * 1.1 && s.long > cur * .9, `${s.long} < ${cur} < ${s.short}`);
       check(`${name}: keine Fehler`, !errors.length, errors.join(' | ')); await ctx.close();
