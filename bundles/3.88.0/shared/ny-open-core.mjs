@@ -9,7 +9,7 @@ export const NY_OPEN = Object.freeze({ id:'ny-open', version:'ny-open-1', timezo
   ranges:Object.freeze({'5m':Object.freeze({minutes:5,endHour:10,endMinute:30}),'15m':Object.freeze({minutes:15,endHour:10,endMinute:30}),'1h':Object.freeze({minutes:60,endHour:11,endMinute:30})}), defaultRange:'5m',
   minRangePct:.15, bodyRatio:.60, atrPeriod:14, atrWarmup:30, fvgATR:.3, stopBufferATR:.1, rewardRisk:2, breakevenR:1, minStopPct:.15, maxStopPct:1,
   limitMinutes:15, holdMinutes:120, maxSignalsPerDay:1, signalAgeMs:60000, closeGraceMs:60000, requestSpacingMs:750,outcomeRetries:3,retryMaxMs:300000,
-  futureShare:.25,futureSlotsMin:6,futureSlotsMax:60, backtestDays:60, feePct:.05, slippagePct:.02, cacheEntries:128, journalDays:90, maxCoins:30 });
+  futureShare:.25,futureSlotsMin:6,futureSlotsMax:60, backtestDays:60, feePct:.05, slippagePct:.02, cacheEntries:128, journalDays:90, maxCoins:30, pastShown:5 });
 export const NY_JOURNAL_KEY='scalpdesk.idb.ny-open.journal.v1', NY_BACKTEST_KEY='scalpdesk.idb.ny-open.backtest.v1';
 export const NY_DEFAULT_OPTIONS=Object.freeze({skipHolidays:true,biasFilter:true,limitEntry:false,breakeven:true});
 export const NY_RANGE_IDS=Object.freeze(Object.keys(NY_OPEN.ranges));
@@ -99,7 +99,33 @@ export function nyOutcome(signal, candles, now, breakeven=signal.options?.breake
   if(now>=deadline&&Number.isFinite(lastClose))return{status:'open_2h',filledAt,checkedAt,at:deadline,exit:lastClose,stop,oneRAt,grossR:s.direction*(lastClose-s.entry)/risk};
   return{status:now>=deadline?'open_2h':'open',filledAt,checkedAt,stop,oneRAt};
 }
+// 3.87.1: frühere Signale eines Coins aus dem Journal (neueste zuerst), ohne das gerade angezeigte – für die blassen Linien im Chart
+export function nyPastSignals(journal,{symbol,market,exclude=null,limit=NY_OPEN.pastShown}={}){
+  return Object.values(journal?.records||{})
+    .filter(r=>r?.signal&&r.symbol===symbol&&r.market===market&&Number.isFinite(r.signal.at)&&r.signal.at!==exclude?.at)
+    .sort((a,b)=>b.signal.at-a.signal.at).slice(0,limit)
+    .map(r=>({day:r.day,signal:r.signal,outcome:r.outcome||null}));
+}
 export const nyTerminal=o=>!!o&&(['target','stop','breakeven','expired','open_2h'].includes(o.status)||o.status==='data-gap'&&o.final===true);
 export function compactNySignal(s){const out={...s};delete out.chart;return out;}
 export function nyRecord(result, previous={}, candles=[], now){const s=previous.signal||result.signal,ranges={...nyRecordRanges(previous),...result.ranges};return{...previous,day:result.session.day,symbol:result.symbol,market:result.market,range:result.range||previous.range||Object.values(ranges)[0],ranges,session:result.session,signal:s?compactNySignal(s):null,outcome:s?nyOutcome(s,candles,now):null,updatedAt:now};}
+// 3.87.2: kurzer Grund für das Chart-Feld, solange es heute kein Signal gibt (der ganze Text steht in der Erklärung ⓘ und in der Karte)
+export function nyNoSignalText(r){
+  const reason=r?.reason||'';
+  if(!r?.phase)return r?.ready===false&&/pausiert oder offline/.test(reason)?'Analyse pausiert oder offline':'';
+  switch(r.phase){
+    case'forming':return'Range wird gebildet';
+    case'waiting':return'Noch kein Signal · wartet auf Ausbruch';
+    case'weak':return`Kein Signal: Ausbruchskörper < ${NY_OPEN.bodyRatio*100} %`;
+    case'fvg':return/^Kein gleichgerichtetes FVG/.test(reason)?`Kein Signal: FVG ≥ ${NY_OPEN.fvgATR.toLocaleString('de-DE')} ATR fehlt`:'Kein Signal: FVG-Bestätigung fehlt';
+    case'risk':return'Kein Signal: Stop zu weit oder zu eng';
+    case'bias':return/neutral/.test(reason)?'Kein Signal: 4h-Bias neutral':'Kein Signal: gegen den 4h-Bias';
+    case'bias-data':return'Kein Signal: 4h-Vorlauf fehlt';
+    case'range-small':return`Kein Signal: Range < ${NY_OPEN.minRangePct.toLocaleString('de-DE')} %`;
+    case'data':return'Kein Signal: Kerzendaten fehlen';
+    case'closed':return'Heute kein Signal · Fenster beendet';
+    case'closed-day':return'Kein NY-Handelstag';
+    default:return'';
+  }
+}
 export function nyLiveRange(price,range){if(!(price>0)||!range)return{kind:'none',text:'Live-Kurs fehlt.'};const dir=price>range.high?1:price<range.low?-1:0,pct=dir?(price/(dir===1?range.high:range.low)-1)*100:0;return{kind:dir===1?'above':dir===-1?'below':'inside',direction:dir,text:dir?`${dir===1?'Über Range-Hoch':'Unter Range-Tief'} (${pct>=0?'+':'−'}${Math.abs(pct).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})} %)`:'Im Range'};}

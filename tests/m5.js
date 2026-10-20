@@ -108,7 +108,7 @@ const tests = {
     await page.evaluate(() => document.getElementById('alarms').scrollIntoView()); await page.waitForTimeout(400);
     const off = await count();
     await page.locator('#chart').scrollIntoViewIfNeeded(); await page.waitForTimeout(600);
-    const back = await page.evaluate(() => !!document.querySelector('#chart svg') && /UTC/.test(document.getElementById('updated').textContent));
+    const back = await page.evaluate(() => !!document.querySelector('#chart svg') && /MEZ\/MESZ/.test(document.getElementById('updated').textContent)); // seit 3.77.7 steht die Anzeigezeit in MEZ/MESZ statt UTC
     check('Chart sichtbar: wird live neu gezeichnet', vis >= 2, `${vis}× in 4 s`);
     check('Chart außerhalb des Bildes: kein Neuzeichnen', off === 0, `${off}× in 4 s`);
     check('Zurückgescrollt: Chart sofort aktuell', back);

@@ -1,3 +1,12 @@
+## 3.88.0 / Dienst 2.16.0 (Claude): Orderflow-Seite verdichtet
+
+- Ausführlich: [docs/3.88.0-AENDERUNGEN.md](docs/3.88.0-AENDERUNGEN.md).
+- **Anlass:** Der Nutzer fand, dass die Orderflow-Seite zu viel Platz belegt und das Wichtigste untergeht. Gemessen: 3.096 px (iPad hochkant), davon 60 % die zwei Kerzenlisten.
+  Entscheidung: alles verdichten, Demo und Positionsbegleitung behalten.
+- **Jetzt:** Kerzen als schmale Zeilen (Antippen zeigt O/H/T/S und Kerzentext), 1h-Liste zu, schlankere Signal- und BTC-Karte, Gruppen/Einstellungen/Journal in einem zugeklappten Bereich,
+  Positionsbegleitung zugeklappt mit Zustand in der Kopfzeile → 1.270 px. **Fehler behoben:** Eingabefelder im Orderflow-Bereich hatten keinen Rahmen.
+- **Unverändert:** alle Regeln und Rechnungen; nur App (**3.88.0**), Dienst **2.16.0**. Tests `m74`, `m77`, `m78`, `m79` angepasst.
+
 ## 3.87.2 / Dienst 2.16.0 (Claude): NY Open – Grund „Kein Signal“ direkt im Chart-Feld
 
 - Ausführlich: [docs/3.87.2-AENDERUNGEN.md](docs/3.87.2-AENDERUNGEN.md).

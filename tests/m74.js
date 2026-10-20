@@ -53,6 +53,8 @@ const check = (name, ok, detail = '') => { ok ? pass++ : fail++; console.log(`${
     check('Coinwechsel berechnet neu, verspätete fremde Antwort bleibt wirkungslos', foreign.unchanged && foreign.symbol === 'ETHUSDT', JSON.stringify(foreign));
     await page.selectOption('#of-unit', 'coins'); await page.reload(); await page.waitForFunction(() => window.__pdf1 && __pdf1.view.state.symbol);
     check('Neustart stellt Einheit wieder her', await page.inputValue('#of-unit') === 'coins');
+    // 3.88.0: die 1-Stunden-Kerzen starten zugeklappt; für die Maßprüfung beide Blöcke aufklappen (zugeklappte Inhalte haben kein Layout)
+    await page.evaluate(() => document.querySelectorAll('.of-block').forEach(b => { b.open = true; }));
     for (const layout of ['standard', 'dashboard']) for (const [width, height] of [[320, 844], [390, 844], [768, 1024], [1024, 768]]) {
       await page.setViewportSize({ width, height }); await page.evaluate(layout => { document.documentElement.dataset.presentation = layout; document.documentElement.dataset.layout = 'tablet'; }, layout);
       check(`${layout} ${width}×${height}: Panel im Bild, kein Seitenüberlauf`, await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1 && document.getElementById('orderflow-panel').scrollWidth <= document.getElementById('orderflow-panel').clientWidth + 1));
