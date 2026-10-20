@@ -15,6 +15,12 @@ Ab Version 2.0 steuert die App ihn über eine gesicherte HTTPS-Adresse: Chat-Sch
 
 **Schritt-für-Schritt-Anleitung für Oracle Cloud (Neueinrichtung, Aktualisieren, Fehlerhilfe): [ANLEITUNG-ORACLE.md](ANLEITUNG-ORACLE.md)**
 
+### 2.16.0 – optionale Einschätzung der VWAP-Lage
+
+App 3.87.0 zeigt im Info-Punkt des VWAP die „Aktuelle Lage“ (Zahlen und Sätze, rein lokal). Auf Knopfdruck fragt sie zusätzlich `POST /v1/vwap/explain` am Dienst: Die KI nennt eine Tendenz – „Eher kaufen“, „Eher verkaufen“ oder „Abwarten“ – und begründet sie in wenigen Sätzen. Sie bekommt nur fertige Zahlen (Coin, Anker, Kurs, VWAP, Band, Abstand, Steigung, Zählung der letzten Schlusskurse), keine Kerzenlisten, und erfindet keine Werte. Das ist keine Anlageberatung und kein Signal der App; der Dienst ändert nichts an Positionen oder Meldungen und sendet nichts an Telegram.
+
+Gleiche Einrichtung wie bei 2.10.0 (`/etc/scalpdesk-ai.env`, `SCALPDESK_AI_MODELS`; Anbieter und Modell wählt die App unter Analysen › Orderflow-Signal › Einstellungen). Ohne Einrichtung oder mit einem älteren Dienst bleibt die Lage ohne KI sichtbar und die App nennt den Grund. Eigene 30-Sekunden-Sperre je Dienst, getrennt von der Orderflow-Erklärung. **Nach dem Aktualisieren der Dateien den Installer erneut ausführen.**
+
 ### 2.10.0 – optionale Erklärung des Orderflow-Signals
 
 App 3.54.0 berechnet das zusätzliche Orderflow-/BTC-Signal im Browser. Der authentifizierte Endpoint `POST /v1/orderflow/explain` erklärt nur die fertige Entscheidung; er verändert weder Signal noch Positionen und platziert keine Orders. Ohne Einrichtung oder bei einem alten Dienst bleibt „Nur Regeln“ aktiv. Dies ist kein neuer Telegram-Sender.

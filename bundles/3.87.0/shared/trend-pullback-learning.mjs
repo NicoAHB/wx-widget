@@ -12,6 +12,8 @@ export function pullbackVector(s,coins) {
   for(const coin of coins)v.push(s.symbol===coin?1:0);return v;
 }
 const outcomeY=r=>r.outcome.first.status==='target1'||r.outcome.first.status==='target2'?1:0;
+// 3.84.0: abgeschlossene Signale mit der beim Signal gespeicherten Wahrscheinlichkeit (für die Kalibrierung)
+export const pullbackCalibrationSamples=records=>completed(records).filter(r=>finite(r.signal.probability)).map(r=>({p:r.signal.probability,y:outcomeY(r),live:r.source==='live'}));
 function predictRaw(model,s){return predictLogit(model,pullbackVector(s,model.coins));}
 export function pullbackLearningStatus(records,model={}) {
   const done=completed(records),valid=done.length>=PULLBACK.learningMin&&model.active?.valid===true&&model.active.version===PULLBACK.version;

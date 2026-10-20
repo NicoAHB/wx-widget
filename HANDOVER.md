@@ -1,3 +1,15 @@
+## 3.87.0 / Dienst 2.16.0 (Claude): VWAP – Aktuelle Lage und optionale KI-Einschätzung im Info-Punkt
+
+- Ausführlich: [docs/3.87.0-AENDERUNGEN.md](docs/3.87.0-AENDERUNGEN.md).
+- **Aktuelle Lage** (lokal, immer): oben im ⓘ des VWAP für jeden der 16 Anker – VWAP, Band, Start, Abstand in % und σ, Zone zum Band, Steigung, letzte 24 Schlusskurse
+  (über/unter, Seitenwechsel, Serie), junger Anker, Bedeutung des Ankers. Rechenkern `shared/vwap-situation.mjs`; die Oberfläche (`vwSitPaint`) malt nur.
+- **KI-Einschätzung** (optional, nur auf Knopfdruck): „KI-Einschätzung: kaufen, verkaufen oder abwarten?“ → App schickt nur Zahlen an `POST /v1/vwap/explain` des eigenen
+  24/7-Dienstes; Antwort: Tendenz „Eher kaufen / Eher verkaufen / Abwarten“ plus Begründung. Anbieter/Modell wie bei der Orderflow-Erklärung (Analysen › Orderflow-Signal ›
+  Einstellungen). Antworten für einen anderen Anker/Coin werden verworfen; keine Anlageberatung, kein Signal der App.
+- **Dienst 2.16.0** (`server/orderflow-explainer.mjs`: `VwapExplainer`, Route in `scalpdesk-247.mjs`): **Installer auf dem Server erneut ausführen**; ohne das zeigt die App
+  „Dein 24/7-Dienst kennt diese Funktion noch nicht“ und die Lage bleibt sichtbar.
+- Nebenbei: `svcFetch(…, { keep429 })` – die 30-s-Sperre der KI ist kein „falscher Zugangsschlüssel“.
+
 ## 3.86.1 / Dienst 2.15.4 (Claude): Euro-Wert in der Kopfzeile bleibt sichtbar
 
 - Ausführlich: [docs/3.86.1-AENDERUNGEN.md](docs/3.86.1-AENDERUNGEN.md).

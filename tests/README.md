@@ -1,5 +1,8 @@
 # Tests für Scalp Desk
 
+**3.87.0 VWAP: Aktuelle Lage und optionale KI-Einschätzung im Info-Punkt (Claude):**
+- **Neu in `run-all.sh`:** `unit-vwap-situation` (Zonen zum Band, Steigung, letzte Schlusskurse, Seitenwechsel, junger Anker, Sätze und Kontext für alle 16 Anker, Prüfung der Antwort), `unit-vwap-explainer` (Dienst: Kontextprüfung, Erlaubnisliste, Tendenz „kaufen/verkaufen/abwarten“ aus dem ersten Satz, 30-s-Sperre, 401/403 vor dem KI-Aufruf, Dienstversion 2.16.0), `m144` (Lage und KI-Einschätzung für jeden Anker mit gespieltem Dienst: gesendeter Kontext, Tendenz-Marke, verworfene Antworten, Meldungen für 404/429/502/503/400/Netz/ohne Dienst/ohne Modell, Anker-Wechsel während der Anfrage, Breiten 320–1440 px; mit `M144_SHOT=<Ordner>` entstehen Bilder).
+
 **3.86.1 Euro-Wert in der Kopfzeile (Claude):**
 - **Neu in `run-all.sh`:** `m143` (Kopfzeile „Offen … USDT (… €)“: Euro im Normalbetrieb mit Kurs 1,164 gerechnet, Kurs gespeichert, Neustart ohne erreichbaren EUR/USDT-Abruf, Wiederkehr nach Ausfall binnen 15 s, hängender Marktabruf, gespeicherter Kurs 2 Stunden alt = „Kurs veraltet“ und 8 Tage alt = „(€ n. v.)“, gespeicherter Kurs nie in `state.fx`). Vor der Korrektur schlagen 6 der 12 Prüfungen fehl.
 

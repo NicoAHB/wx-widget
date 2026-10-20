@@ -1,11 +1,11 @@
 {
-  "version": "2.15.4",
-  "appVersion": "3.86.1",
+  "version": "2.16.0",
+  "appVersion": "3.87.0",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
-      "sha256": "e59b6883a333e58d120e7d6697ab7b3a127ee2fb450f6424df957e9b5c30495e",
-      "bytes": 138819
+      "sha256": "c1cf491453c45727908cea9de0da1910844aca38b8ea483adebe7aa04a44210a",
+      "bytes": 139271
     },
     {
       "path": "pattern-engine.mjs",
@@ -54,8 +54,8 @@
     },
     {
       "path": "orderflow-explainer.mjs",
-      "sha256": "b591fc77af8ff8735841c3d182518d710bf194e4efb1120eeb685efff9ab8b0d",
-      "bytes": 3864
+      "sha256": "7cf3c800c551d6f7e5d2aedb486674ebd9118d125b9255fa6333e7fef3e60ea9",
+      "bytes": 7044
     },
     {
       "path": "install.sh",
@@ -786,6 +786,11 @@
       "path": "shared/volume-profile.mjs",
       "sha256": "bbaec08e51be6297058ce38c76e4306695d6f9b9fa0e6450aa41d05ab490cb24",
       "bytes": 2387
+    },
+    {
+      "path": "shared/vwap-situation.mjs",
+      "sha256": "39d28f378a8aa0b00d0240c6db73f7d40c91356004e6941abac285a9cce368ed",
+      "bytes": 8942
     },
     {
       "path": "shared/vwap.mjs",

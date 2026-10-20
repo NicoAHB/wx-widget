@@ -52,7 +52,7 @@ import { PQ, patternConfig, patternCandles, patternCases, patternFresh, patternT
 import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT } from './telegram-format.mjs';
 import { ConfluenceService, kiMessage, Po3Service, po3Message, BotSimulationRuntime } from './ki-monitor.mjs';
 
-export const VERSION = '2.15.4';   // 2.15.4: Gewinn-/Verlust-Alarm als Text, wenn kein Bild möglich ist (statt still verworfen); verworfene Meldungen setzen das Ereignis auf „fehlgeschlagen“; 2.13.0: Qualitätsfilter für Chartmuster-Meldungen; 2.14.0: Chartmuster als Trading-Karte (Text als Ersatz); 2.14.1: Schrift mitgeliefert; 2.14.4: Installer mit Zeitlimits und Fortschritt; 2.14.3: Status nennt den Chartmuster-Filter; 2.14.2: Installer macht den Programmstand für den Dienstbenutzer lesbar; 2.15.0: Chartmuster-Signalkarte (Gesamturteil, Jetzt, Mini-Chart), schwache Signale nur mit Schalter
+export const VERSION = '2.16.0';   // 2.16.0: optionale KI-Erklärung der VWAP-Lage (POST /v1/vwap/explain: Tendenz eher kaufen / eher verkaufen / abwarten mit Begründung); 2.15.4: Gewinn-/Verlust-Alarm als Text, wenn kein Bild möglich ist (statt still verworfen); verworfene Meldungen setzen das Ereignis auf „fehlgeschlagen“; 2.13.0: Qualitätsfilter für Chartmuster-Meldungen; 2.14.0: Chartmuster als Trading-Karte (Text als Ersatz); 2.14.1: Schrift mitgeliefert; 2.14.4: Installer mit Zeitlimits und Fortschritt; 2.14.3: Status nennt den Chartmuster-Filter; 2.14.2: Installer macht den Programmstand für den Dienstbenutzer lesbar; 2.15.0: Chartmuster-Signalkarte (Gesamturteil, Jetzt, Mini-Chart), schwache Signale nur mit Schalter
 // 2.14.0: Kartenrenderer (pattern-card.mjs + resvg) nur bei Bedarf laden; fehlt er, bleibt es bei der Textmeldung
 let cardModule = null;
 const loadCards = () => (cardModule ??= import('./pattern-card.mjs').catch(() => null));
@@ -1068,6 +1068,10 @@ export class Watcher {
     if (route === 'POST /v1/orderflow/explain') {
       if (!this.orderflowExplainer) { const { OrderflowExplainer } = await import('./orderflow-explainer.mjs'); this.orderflowExplainer = new OrderflowExplainer({ now: this.now }); }
       const result = await this.orderflowExplainer.explain(body); return send(result.status, result.body);
+    }
+    if (route === 'POST /v1/vwap/explain') {
+      if (!this.vwapExplainer) { const { VwapExplainer } = await import('./orderflow-explainer.mjs'); this.vwapExplainer = new VwapExplainer({ now: this.now }); }
+      const result = await this.vwapExplainer.explain(body); return send(result.status, result.body);
     }
     if (route === 'POST /v1/policy') {
       const before = policyView(this.pol), r = policyApply(this.pol, this.cmds, body, t);
