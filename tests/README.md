@@ -1,5 +1,9 @@
 # Tests für Scalp Desk
 
+**3.87.2 NY Open: Grund „Kein Signal“ im Chart-Feld (Claude):**
+- **Neu in `run-all.sh`:** `m146` (Uhr gefälscht; Chart-Feld zeigt „Range wird gebildet“, „Noch kein Signal · wartet auf Ausbruch“, „Kein Signal: Range < 0,15 %“, „Kein Signal: Ausbruchskörper < 60 %“, „Heute kein Signal · Fenster beendet“; kein Hinweis, solange ein Signal von heute gilt; Erklärung und Karte nennen denselben ausführlichen Grund; Breiten 320 / 390 / 1440 px; mit `M146_SHOT=<Ordner>` entstehen Bilder).
+- **Erweitert:** `unit-ny-open` (+2: `nyNoSignalText` für jede Phase und gegen echte Auswertungen).
+
 **3.87.1 NY Open: frühere Signale bleiben im Chart (Claude):**
 - **Neu in `run-all.sh`:** `m145` (Uhr gefälscht, Freitag-Signal, am Montag 09:20 / 09:40 / 10:40 im 1h-, 15m- und 1m-Chart: blasse Linien mit Datum und Preisen, nicht doppelt zum aktuellen Signal, Erklärungstext, Breiten 320–1440 px). Mit dem alten Stand schlagen 9 von 16 Prüfungen fehl.
 - **Erweitert:** `unit-ny-open` (+1: `nyPastSignals` – Reihenfolge, Coin und Markt, ohne das angezeigte Signal, Begrenzung, ungültige Einträge).

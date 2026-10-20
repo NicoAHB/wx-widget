@@ -1,3 +1,11 @@
+## 3.87.2 / Dienst 2.16.0 (Claude): NY Open – Grund „Kein Signal“ direkt im Chart-Feld
+
+- Ausführlich: [docs/3.87.2-AENDERUNGEN.md](docs/3.87.2-AENDERUNGEN.md).
+- **Anlass:** Im Chart standen weder Ziel noch Stop, und man musste ⓘ oder die Karte öffnen, um zu sehen, warum (z. B. „Ausbruchskörper kleiner als 60 % der Kerzenlänge“).
+- **Jetzt:** Unter „NY Open · …“ steht ein zweites Feld mit dem kurzen Grund, solange es heute kein Signal gibt (`nyNoSignalText` in `shared/ny-open-core.mjs`, gezeichnet in
+  `shared/ny-open-chart.mjs`); Tippen zeigt wie bisher die ausführliche Erklärung. Mit Signal von heute entfällt das Feld.
+- **Unverändert:** alle Signalregeln (Körper ≥ 60 %, FVG ≥ 0,3 ATR, Stop 0,15–1 %, 4h-Bias, Fenster) – bewusst nicht gelockert; Rücktest, Lernen, Telegram. Nur App (**3.87.2**), Dienst **2.16.0**.
+
 ## 3.87.1 / Dienst 2.16.0 (Claude): NY Open – frühere Signale (Einstieg, Stop, Ziel) bleiben im Chart
 
 - Ausführlich: [docs/3.87.1-AENDERUNGEN.md](docs/3.87.1-AENDERUNGEN.md).

@@ -1,10 +1,10 @@
-import { NY_OPEN, NY_JOURNAL_KEY, nyOptions, nySession, nyRecordKey, nyRecord, nyTerminal, evaluateNyOpen } from './ny-open-core.mjs';
+import { NY_OPEN, NY_RANGE_IDS, NY_JOURNAL_KEY, nySettings, nySession, nyRecordKey, nyRecord, nyRecordRanges, nyRangeText, nyClock, nyTerminal, nyPastSignals, evaluateNyOpen } from './ny-open-core.mjs';
 import { TOP_DOWN } from './analysis-top-down.mjs';
 const MINUTE=60000,H4=14400000;
 export function nyJournal(value={}){return {records:Object.fromEntries(Object.entries(value?.records||{}).filter(([,r])=>r&&r.symbol&&r.day&&r.range).slice(-NY_OPEN.journalDays*NY_OPEN.maxCoins))};}
 export function createNyRuntime({context,now,changed,signal,log,history,read=()=>null,write=()=>{},learning}){
   const state={entries:new Map(),busy:false,requests:0,evaluations:0};let controller=null,signature='',generation=0;
-  const options=()=>nyOptions(context().options?.[NY_OPEN.id]);
+  const options=()=>nySettings(context().options?.[NY_OPEN.id]);
   function sync(){
     const c=context(),key=JSON.stringify([!c.paused&&!c.hidden&&c.online!==false,(c.symbols||[]).filter(s=>s.analyses.includes(NY_OPEN.id)),options()]);
     if(key!==signature){signature=key;generation++;controller?.abort();controller=null;state.busy=false;for(const e of state.entries.values())e.wanted=false;
@@ -17,12 +17,17 @@ export function createNyRuntime({context,now,changed,signal,log,history,read=()=
   }
   function outstanding(e){return Object.values(nyJournal(read(NY_JOURNAL_KEY)).records).filter(r=>r.symbol===e.symbol&&r.market===e.market&&r.signal&&!nyTerminal(r.outcome)).sort((a,b)=>a.day.localeCompare(b.day));}
   function record(e){return Object.values(nyJournal(read(NY_JOURNAL_KEY)).records).filter(r=>r.symbol===e.symbol&&r.market===e.market).sort((a,b)=>b.day.localeCompare(a.day))[0];}
-  function result(symbol,market){const e=state.entries.get(symbol+'|'+market),s=nySession(now(),options()),r=record({symbol,market}),base={ready:true,analysisId:NY_OPEN.id,symbol,market,session:s,range:r?.range||null,record:r,signal:r?.signal||null,direction:r?.signal?.direction||0,stage:0,expiresAt:Infinity,at:Math.floor(now()/MINUTE)*MINUTE};
+  // 3.87.1: jedes Ergebnis trägt die früheren Signale mit (Journal), damit der Chart sie auch dann zeigt, wenn heute ein anderes Ergebnis gilt
+  function result(symbol,market){const value=currentResult(symbol,market);return value?{...value,past:nyPastSignals(nyJournal(read(NY_JOURNAL_KEY)),{symbol,market,exclude:value.signal})}:value;}
+  function currentResult(symbol,market){const e=state.entries.get(symbol+'|'+market),s=nySession(now(),options()),r=record({symbol,market}),today=r?.day===s.day?r:null,known=nyRecordRanges(r)[s.rangeLength]||null,base={ready:true,analysisId:NY_OPEN.id,symbol,market,session:s,range:known,record:r,signal:r?.signal||null,direction:r?.signal?.direction||0,stage:0,expiresAt:Infinity,at:Math.floor(now()/MINUTE)*MINUTE};
     const c=context();if(c.paused||c.hidden||c.online===false)return{...base,ready:false,signal:null,reason:'Analyse pausiert oder offline.'};
     if(e?.error)return{...base,ready:false,signal:null,reason:e.error};
-    if(r?.day===s.day&&r.range&&now()>=s.rangeEnd&&(r.signal||r.range.pct<NY_OPEN.minRangePct)){const value=evaluateNyOpen({now:now(),symbol,market,options:options(),record:r});if(value.signal&&e?.rows['1m'])value.signal={...value.signal,chart:e.rows['1m'].filter(c=>c.end<=value.signal.at).slice(-60)};return{...value,record:r,expiresAt:Infinity};}
+    const range=today&&nyRecordRanges(today)[s.rangeLength];
+    if(today&&(today.signal||range&&now()>=s.rangeEnd&&range.pct<NY_OPEN.minRangePct)){const value=evaluateNyOpen({now:now(),symbol,market,options:options(),record:today});if(value.signal&&e?.rows['1m'])value.signal={...value.signal,chart:e.rows['1m'].filter(c=>c.end<=value.signal.at).slice(-60)};return{...value,record:today,expiresAt:Infinity};}
+    // 3.86.0: nach dem Umschalten der Range-Länge sofort aus den schon geladenen 1m-Kerzen neu bewerten (kein neuer Abruf, nicht erst im nächsten Takt)
+    if(e?.result&&e.rows['1m']&&e.result.session.day===s.day&&e.result.session.rangeLength!==s.rangeLength){try{e.result=evaluateNyOpen({candles:e.rows,now:now(),symbol,market,options:options(),record:today});}catch{e.result=null;}}
     if(e?.result&&e.result.session.day===s.day&&now()<=s.windowEnd+NY_OPEN.closeGraceMs)return{...e.result,record:r,expiresAt:Infinity};
-    return{...base,phase:!s.eligible?'closed-day':now()<s.rangeEnd?'before':'closed',reason:!s.eligible?s.reason:now()<s.rangeEnd?'Nächste Range: 09:30–09:35 New York.':r?.day===s.day?'Signalfenster beendet; die heutige Range bleibt sichtbar.':'Keine heutige Range gespeichert; Abrufe und neue Signale nur 09:35–10:30 New York.'};
+    return{...base,phase:!s.eligible?'closed-day':now()<s.rangeStart?'before':now()<s.rangeEnd?'forming':'closed',reason:!s.eligible?s.reason:now()<s.rangeStart?`Nächste Range: ${nyRangeText(s)} New York.`:now()<s.rangeEnd?`Range wird gebildet: ${nyRangeText(s)}.`:r?.day===s.day?'Signalfenster beendet; die heutige Range bleibt sichtbar.':`Keine heutige Range gespeichert; Abrufe und neue Signale nur ${nyClock(s.rangeEnd)}–${nyClock(s.windowEnd)} New York.`};
   }
   function save(r){const j=nyJournal(read(NY_JOURNAL_KEY)),key=nyRecordKey(r.symbol,r.day),existing=j.records[key];if(existing?.signal&&r.market!==existing.market)return;if(existing?.signal&&r.signal?.at!==existing.signal.at)r={...r,signal:existing.signal,outcome:existing.outcome};j.records[key]=r;const cutoff=now()-NY_OPEN.journalDays*86400000;for(const [k,v]of Object.entries(j.records))if(v.range.end<cutoff)delete j.records[k];write(NY_JOURNAL_KEY,j);}
   // 3.82.2: schon während des Versands als versucht markieren (der Tick wartet nicht mehr darauf); bei false oder Fehler wieder frei
@@ -31,7 +36,9 @@ export function createNyRuntime({context,now,changed,signal,log,history,read=()=
     if(!sync()||state.busy||!history)return;const e=[...state.entries.values()].filter(e=>now()>=e.next).sort((a,b)=>a.next-b.next)[0];if(!e)return;
     const gen=generation,at=now(),cfg=options(),session=nySession(at,cfg),old=record(e);e.next=Math.floor(at/MINUTE)*MINUTE+MINUTE+2500;
     const daily=nyJournal(read(NY_JOURNAL_KEY)).records[nyRecordKey(e.symbol,session.day)];
-    const form=!daily?.signal&&e.wanted&&session.eligible&&at>=session.rangeEnd&&at<=session.windowEnd+NY_OPEN.closeGraceMs&&!(old?.day===session.day&&(old.signal||old.range?.pct<NY_OPEN.minRangePct));
+    // 3.86.0: ab Ende der 5m-Range laufend 1m-Kerzen laden (alle Range-Längen entstehen daraus). Mit festgeschriebenem Signal nur noch, solange eine abgeschlossene Länge noch nicht gespeichert ist.
+    const stored=nyRecordRanges(daily),missing=NY_RANGE_IDS.some(id=>!stored[id]&&at>=session.rangeStart+NY_OPEN.ranges[id].minutes*MINUTE);
+    const form=e.wanted&&session.eligible&&at>=session.baseRangeEnd&&at<=session.windowEnd+NY_OPEN.closeGraceMs&&(!daily?.signal||missing);
     const monitoring=outstanding(e).length>0;
     if(!form&&!monitoring){e.result=null;changed();return;}
     controller=new AbortController();const abort=controller.signal;state.busy=true;
@@ -41,14 +48,13 @@ export function createNyRuntime({context,now,changed,signal,log,history,read=()=
       if(e.day!==session.day){e.rows={};e.day=session.day;}
       const closed=Math.floor(at/MINUTE)*MINUTE;
       if(form){
-        if(!e.rows['5m'])e.rows['5m']=await get('5m',session.rangeStart,session.rangeEnd);
-        const from=session.rangeEnd-NY_OPEN.atrWarmup*MINUTE,to=Math.min(closed,session.windowEnd),last=e.rows['1m']?.at(-1)?.end||from;
+        const from=session.atrFrom,to=Math.min(closed,session.windowEnd),last=e.rows['1m']?.at(-1)?.end||from;
         if(to>last)e.rows['1m']=[...(e.rows['1m']||[]),...await get('1m',last,to)];
         const hEnd=Math.floor(at/H4)*H4;if(cfg.biasFilter&&e.rows['4h']?.at(-1)?.end!==hEnd)e.rows['4h']=await get('4h',hEnd-TOP_DOWN.history*H4,hEnd);
         if(abort.aborted||gen!==generation)return;
         const existing=old?.day===session.day?old:null,r=evaluateNyOpen({candles:e.rows,now:at,symbol:e.symbol,market:e.market,options:cfg,record:existing});state.evaluations++;e.result=r;
         if(r.signal&&learning)r.signal=learning.capture(r.signal);
-        if(r.range){const saved=nyRecord(r,existing||{},e.rows['1m'],at);save(saved);if(saved.signal)learning?.observeNy(saved.signal,e.rows['1m'],at);e.result.record=saved;}
+        if(r.range||Object.keys(r.ranges||{}).length){const saved=nyRecord(r,existing||{},e.rows['1m'],at);save(saved);if(saved.signal)learning?.observeNy(saved.signal,e.rows['1m'],at);e.result.record=saved;}
         // 3.82.2: nicht abwarten – ein Signal gilt nur 60 s; ein langsamer Telegram-Versand hielt sonst alle anderen Coins auf
         if(r.signal)void send(e,r.signal).catch(error=>log({kind:'error',symbol:e.symbol,text:`${e.symbol} · NY Open: Versand fehlgeschlagen – ${error?.message||error}`}));
       }

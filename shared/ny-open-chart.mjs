@@ -1,4 +1,4 @@
-import { NY_OPEN, nyLiveRange, nyTerminal, nyClock } from './ny-open-core.mjs';
+import { NY_OPEN, nyLiveRange, nyTerminal, nyClock, nyNoSignalText } from './ny-open-core.mjs';
 import { NY_OUTCOME_TEXT } from './ny-open-view.mjs';
 // Verwendet Geometrie und die bestehende Touch-/Info-Behandlung des Hauptcharts.
 export function drawNyChart({node,svg,under,over,result:r,geometry:g,palette:p,price,explain,livePrice}){
@@ -31,6 +31,9 @@ export function drawNyChart({node,svg,under,over,result:r,geometry:g,palette:p,p
       group.append(title);front.append(group);
     }
   }
+  // 3.87.2: gibt es heute kein Signal, steht der Grund kurz unter dem Statusfeld (Tippen erklärt ausführlich)
+  const note=hasSignal?'':nyNoSignalText(r);
+  if(note){const reasonButton=button(left+4,top+50,`${note} ⓘ`,p.muted||p.up,Math.min(330,pw-8));reasonButton.dataset.nyChartReason='';}
   drawPast();
   if(!range&&!hasSignal)return; // Range der gewählten Länge noch im Bau: Linien erst am Range-Ende, ein vorhandenes Signal bleibt sichtbar
   if(range){const x0=Math.max(left,Math.min(right,timeX(range.time))),y0=Math.max(top,y(range.high)),y1=Math.min(bottom,y(range.low));
