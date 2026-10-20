@@ -139,4 +139,22 @@ await check('Frühere Signale: neueste zuerst, nur dieser Coin und Markt, ohne d
   assert.deepEqual(C.nyPastSignals(null,{symbol:'BTCUSDT',market:'spot'}),[]); assert.equal(C.nyPastSignals(journal,{symbol:'BTCUSDT',market:'spot',limit:2}).length,2);
   const first=all[0]; assert.ok(first.signal.entry===100&&first.outcome.status==='target'&&first.day==='2026-10-19','Signal, Ergebnis und Tag werden mitgegeben');
 });
+// ---------- 3.87.2: kurzer Grund im Chart-Feld, solange es heute kein Signal gibt ----------
+await check('Chart-Feld: kurzer Grund je Phase (Ausbruchskörper, FVG, Stopabstand, Bias, Range, Fenster) – ohne Signal',()=>{
+  const t=(phase,reason='',extra={})=>C.nyNoSignalText({phase,reason,...extra});
+  assert.equal(t('weak'),'Kein Signal: Ausbruchskörper < 60 %');
+  assert.equal(t('fvg','Kein gleichgerichtetes FVG mit mindestens 0,3 ATR.'),'Kein Signal: FVG ≥ 0,3 ATR fehlt'); assert.equal(t('fvg','Starker Ausbruch; FVG-Bestätigung der Folgekerze fehlt.'),'Kein Signal: FVG-Bestätigung fehlt');
+  assert.equal(t('risk'),'Kein Signal: Stop zu weit oder zu eng');
+  assert.equal(t('bias','4h-Bias neutral – kein Signal.'),'Kein Signal: 4h-Bias neutral'); assert.equal(t('bias','Ausbruch entgegen dem 4h-Bias – kein Signal.'),'Kein Signal: gegen den 4h-Bias'); assert.equal(t('bias-data'),'Kein Signal: 4h-Vorlauf fehlt');
+  assert.equal(t('range-small'),'Kein Signal: Range < 0,15 %'); assert.equal(t('data'),'Kein Signal: Kerzendaten fehlen');
+  assert.equal(t('waiting'),'Noch kein Signal · wartet auf Ausbruch'); assert.equal(t('forming'),'Range wird gebildet'); assert.equal(t('closed'),'Heute kein Signal · Fenster beendet'); assert.equal(t('closed-day'),'Kein NY-Handelstag');
+  assert.equal(t('before'),'','vor der Range gibt es nichts zu sagen'); assert.equal(t('signal'),'','mit Signal kein Hinweis'); assert.equal(t('unbekannt'),'');
+  assert.equal(C.nyNoSignalText({ready:false,reason:'Analyse pausiert oder offline.'}),'Analyse pausiert oder offline'); assert.equal(C.nyNoSignalText(null),''); assert.equal(C.nyNoSignalText({}),'');
+});
+await check('Chart-Feld: die Texte folgen den echten Auswertungen (Range wird gebildet, wartet auf Ausbruch, Signal, Fenster beendet)',()=>{
+  assert.equal(C.nyNoSignalText(ev(9,32,'5m')),'Range wird gebildet'); assert.equal(C.nyNoSignalText(ev(9,36,'5m')),'Noch kein Signal · wartet auf Ausbruch');
+  assert.equal(C.nyNoSignalText(ev(9,50,'5m')),'','Signal vorhanden: kein Hinweis'); assert.equal(C.nyNoSignalText(ev(9,20,'5m')),'','vor 09:30 nichts');
+  const late=C.evaluateNyOpen({candles:{'1m':scenario().filter(c=>c.time<at(9,36))},now:at(10,45),symbol:'BTCUSDT',market:'spot',options:{biasFilter:false}});
+  assert.equal(late.phase,'closed'); assert.equal(C.nyNoSignalText(late),'Heute kein Signal · Fenster beendet');
+});
 console.log(`${pass}/${pass+fail} bestanden`);if(fail)process.exitCode=1;})().catch(e=>{console.error(e);process.exitCode=1;});

@@ -120,7 +120,7 @@ export function createAnalysisView({ root, definitions = ANALYSES, read, save, g
     const key = JSON.stringify(card); if (target.statusKey === key) return; target.statusKey = key;
     const status = target.status, detail = card.detail, overview = analysisOverview(card);
     const folds = new Map([...status.querySelectorAll('details[data-status-fold]')].map(d => [d.dataset.statusFold, d.open]));
-    const activeFold = doc.activeElement?.closest('details[data-status-fold]')?.dataset.statusFold;
+    const activeFold = doc.activeElement?.closest('details[data-status-fold]')?.dataset.statusFold, activeRange = doc.activeElement?.closest?.('.analysis-range-bar') ? doc.activeElement.dataset.nyRange : null;
     const line = make(doc, 'div', 'analysis-overview-head'), context = make(doc, 'div', 'analysis-context');
     line.setAttribute('aria-live', 'polite'); line.setAttribute('aria-atomic', 'true');
     context.append(make(doc, 'strong', 'analysis-pair', card.pair || ''), make(doc, 'span', 'analysis-stage-count', detail?.counter||`${overview.stage}/3 Stufen`));
@@ -134,6 +134,17 @@ export function createAnalysisView({ root, definitions = ANALYSES, read, save, g
         item.append(make(doc, 'span', 'analysis-step-number', step.done ? '✓' : String(i + 1)), make(doc, 'span', '', step.label)); progress.append(item);
       }
       status.append(progress);
+      // Umschaltleiste der Range-Länge (NY Open): im Stil der Zeitrahmen-Knöpfe; noch nicht freigeschaltete Längen sind ausgegraut
+      if (detail?.rangeBar && !card.inactive) {
+        const bar = make(doc, 'div', 'intervals analysis-range-bar'); bar.setAttribute('role', 'group'); bar.setAttribute('aria-label', 'Range-Länge');
+        for (const item of detail.rangeBar.items) {
+          const choice = make(doc, 'button', item.active ? 'active' : '', item.label); choice.type = 'button'; choice.dataset.nyRange = item.id; choice.title = item.title || '';
+          choice.setAttribute('aria-pressed', String(item.active)); choice.disabled = !item.enabled;
+          choice.addEventListener('click', () => { const d = definitions.find(x => x.id === card.id); settings.rows[card.id].options = d.normalizeOptions({ ...settings.rows[card.id].options, rangeLength: item.id, rangeDay: detail.rangeBar.day }); commit(); paint(); });
+          bar.append(choice);
+        }
+        status.append(bar);
+      }
     }
     status.append(make(doc, 'p', 'analysis-current-reason', overview.reason));
     if(card.fit){const fit=make(doc,'details','analysis-fit'),summary=make(doc,'summary','',`ⓘ ${card.fit.label}`);fit.dataset.statusFold=card.id+'|phase';fit.open=folds.get(fit.dataset.statusFold)??false;fit.dataset.fit=card.fit.state;fit.append(summary,make(doc,'p','',card.fit.text+(card.fit.at&&toolServices.time?' Letzter 1H-Schluss: '+toolServices.time(card.fit.at):'')));status.append(fit);}
@@ -171,6 +182,7 @@ export function createAnalysisView({ root, definitions = ANALYSES, read, save, g
     }
     // Auch bei einer tatsächlich neuen geschlossenen Kerze den Tastaturfokus erhalten.
     if (activeFold) [...status.querySelectorAll('details[data-status-fold]')].find(d => d.dataset.statusFold === activeFold)?.querySelector('summary')?.focus({ preventScroll: true });
+    if (activeRange) status.querySelector(`[data-ny-range="${activeRange}"]`)?.focus({ preventScroll: true });
   }
   function paintResult(text, entries = [], cards = [], events=[]) {
     const next=JSON.stringify(events);if(next!==commonKey){commonKey=next;commonEvents.hidden=!events.length;const target=commonEvents.lastElementChild;target.replaceChildren(make(doc,'p','analysis-hint','Mehrere Modelle für denselben Coin sind ein Marktereignis und keine unabhängigen Bestätigungen. Gegensätzliche Richtungen bleiben als Konflikt sichtbar. Telegram und Signalpunkte bleiben unverändert.'));for(const event of events){const line=make(doc,'p','analysis-common-event'),coin=button(event.symbol.replace('USDT','/USDT'),'analysis-inline-coin');coin.addEventListener('click',()=>{activate(event.models[0].id);openCoin(event.symbol,event.models[0].id);});line.append(coin,make(doc,'span','',`${event.direction===1?'Long':'Short'} · ${event.models.map(m=>m.name).join(' + ')}${event.conflict?' · Richtungskonflikt':''}`));target.append(line);}}
