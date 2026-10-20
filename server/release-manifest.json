@@ -1,6 +1,6 @@
 {
   "version": "2.15.4",
-  "appVersion": "3.85.0",
+  "appVersion": "3.86.1",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
@@ -119,8 +119,8 @@
     },
     {
       "path": "shared/analysis-card.mjs",
-      "sha256": "a282890b6ff48d7d706e3ac6a853cb6189d867f32b18f506df455f76469e065e",
-      "bytes": 10741
+      "sha256": "c3bc1dc6fbc6a8822d8d89d9204b3de4872a23052e9157a2695079fd65db14ca",
+      "bytes": 10809
     },
     {
       "path": "shared/analysis-channel.mjs",
@@ -134,8 +134,8 @@
     },
     {
       "path": "shared/analysis-config.mjs",
-      "sha256": "1a9199e2cad73b708c3b7abd005b4b821e046ec2f7147c01698ff75e1d936dec",
-      "bytes": 6750
+      "sha256": "3a8f21c3650210f950c81249212589eb1c600adbbccba6b2a1ac11b9aad337c1",
+      "bytes": 6752
     },
     {
       "path": "shared/analysis-context.mjs",
@@ -189,8 +189,8 @@
     },
     {
       "path": "shared/analysis-overview.mjs",
-      "sha256": "6f7c27d027b3f9603dfb6271e396c64f85d85c3f62e917d057225068a7d8748b",
-      "bytes": 2322
+      "sha256": "bb47be0565eecfeb237db599f8a5af433bfe017f485fd544afb5dcb5ed2485a1",
+      "bytes": 2373
     },
     {
       "path": "shared/analysis-status.mjs",
@@ -204,8 +204,8 @@
     },
     {
       "path": "shared/analysis-view.mjs",
-      "sha256": "c3688b1c05ff9219b0984a614f8af5c344f4c130bdaed6ff7cdb44332c1874a0",
-      "bytes": 21697
+      "sha256": "016209ea29eb513270f846feaf17a71ccdf98f4cb175206a0c968a85a4afe648",
+      "bytes": 22931
     },
     {
       "path": "shared/bitget-patterns.mjs",
@@ -524,23 +524,23 @@
     },
     {
       "path": "shared/ny-open-backtest.mjs",
-      "sha256": "e122a406c2f44603976461cf461991cd651f32739f46424bde9974ab3ae2a88c",
-      "bytes": 4010
+      "sha256": "75b8a3da127c55dedd8b599cad39e89d650300bc3ce22e1ec83e44ae825ef212",
+      "bytes": 3879
     },
     {
       "path": "shared/ny-open-chart.mjs",
-      "sha256": "c0759af3b5139b793e634a88a648237139a961112ac29e6d6ac7c9c678825f66",
-      "bytes": 5314
+      "sha256": "40461f7091836abb87538a02cac7471dfcef8fd7dcf1b078262c16922a4d5be4",
+      "bytes": 5727
     },
     {
       "path": "shared/ny-open-core.mjs",
-      "sha256": "7ecd171692e3478afb4d6e94366a83ddc4d97773b75cc67e1538e0f77aea1af1",
-      "bytes": 10704
+      "sha256": "036f2aec80040037245e2d49fed38199fa6d36b0f60a41a7de27c2858cceb1e6",
+      "bytes": 14433
     },
     {
       "path": "shared/ny-open-feed.mjs",
-      "sha256": "81b27457a46f32d088a04ad8b471c3c93b08c0a9cbd6217bab69ebbaba67b827",
-      "bytes": 9438
+      "sha256": "1c3e08c82008d94424f9347fef7a823a74f634481c2b6f7769ae24d9a80d5ee4",
+      "bytes": 10330
     },
     {
       "path": "shared/ny-open-history.mjs",
@@ -559,8 +559,8 @@
     },
     {
       "path": "shared/ny-open-view.mjs",
-      "sha256": "f722044ed945d7c9f04501655522c68af46f7ba6f86c066cfdbc4113f5b85760",
-      "bytes": 8751
+      "sha256": "9c6c1ced008147a5101202e0aad553f3300d470403a7aabb2e8315b9e6e81c8f",
+      "bytes": 9579
     },
     {
       "path": "shared/orderflow-core.mjs",

@@ -1,5 +1,12 @@
 # Tests für Scalp Desk
 
+**3.86.1 Euro-Wert in der Kopfzeile (Claude):**
+- **Neu in `run-all.sh`:** `m143` (Kopfzeile „Offen … USDT (… €)“: Euro im Normalbetrieb mit Kurs 1,164 gerechnet, Kurs gespeichert, Neustart ohne erreichbaren EUR/USDT-Abruf, Wiederkehr nach Ausfall binnen 15 s, hängender Marktabruf, gespeicherter Kurs 2 Stunden alt = „Kurs veraltet“ und 8 Tage alt = „(€ n. v.)“, gespeicherter Kurs nie in `state.fx`). Vor der Korrektur schlagen 6 der 12 Prüfungen fehl.
+
+**3.86.0 NY Open Killzone: umschaltbare Range-Länge (Claude):**
+- **Neu in `run-all.sh`:** `m142` (Uhr per Playwright gefälscht: 09:20, 09:32, 09:36, 09:50, 10:31, 12:00, nächster Tag 09:20, Neuladen; Leiste 5m | 15m | 1h mit Freischaltung der Reihe nach, Umschalten ohne neue Kerzenabfrage, Stufentexte, Chartlinien erst am Range-Ende, Bestandssignal bleibt, Breiten 320 bis 1440 px; mit `M142_SHOT=<Ordner>` entstehen Bilder).
+- **Erweitert:** `unit-ny-open` (+ Freischaltzeiten, Fenster je Länge mit Sommer-/Winterzeit, Hoch/Tief aller Längen aus denselben 1m-Kerzen, Stufen 1 bis 3 je Länge, ein Signal je Coin und Tag, Rückfall auf 5m am neuen Handelstag), `unit-analysis-learning` (Gleichwertigkeit mit Bündel 3.80.1 ohne die neuen, rein zusätzlichen Felder).
+
 **3.85.0 Levels übersichtlich, VWAP-Anker (Claude):**
 - **Erweitert:** `unit-key-levels` (Zusammenfassen, Nächste, Beschriftungen ordnen), `unit-vwap` (Anker-Vorschläge aus synthetischen Kerzen), `m139` (Standard „Nächste“, Beschriftungen ohne Überlappung), `m140` (gruppiertes Menü, ⚓ nur bei „ab Anker“, zehn Anker gegen unabhängige Rechnung, Handy).
 
