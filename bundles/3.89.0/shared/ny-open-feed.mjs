@@ -1,4 +1,4 @@
-import { NY_OPEN, NY_RANGE_IDS, NY_JOURNAL_KEY, nySettings, nySession, nyRecordKey, nyRecord, nyRecordRanges, nyRangeText, nyClock, nyTerminal, evaluateNyOpen } from './ny-open-core.mjs';
+import { NY_OPEN, NY_RANGE_IDS, NY_JOURNAL_KEY, nySettings, nySession, nyRecordKey, nyRecord, nyRecordRanges, nyRangeText, nyClock, nyTerminal, nyPastSignals, evaluateNyOpen } from './ny-open-core.mjs';
 import { TOP_DOWN } from './analysis-top-down.mjs';
 const MINUTE=60000,H4=14400000;
 export function nyJournal(value={}){return {records:Object.fromEntries(Object.entries(value?.records||{}).filter(([,r])=>r&&r.symbol&&r.day&&r.range).slice(-NY_OPEN.journalDays*NY_OPEN.maxCoins))};}
@@ -17,7 +17,9 @@ export function createNyRuntime({context,now,changed,signal,log,history,read=()=
   }
   function outstanding(e){return Object.values(nyJournal(read(NY_JOURNAL_KEY)).records).filter(r=>r.symbol===e.symbol&&r.market===e.market&&r.signal&&!nyTerminal(r.outcome)).sort((a,b)=>a.day.localeCompare(b.day));}
   function record(e){return Object.values(nyJournal(read(NY_JOURNAL_KEY)).records).filter(r=>r.symbol===e.symbol&&r.market===e.market).sort((a,b)=>b.day.localeCompare(a.day))[0];}
-  function result(symbol,market){const e=state.entries.get(symbol+'|'+market),s=nySession(now(),options()),r=record({symbol,market}),today=r?.day===s.day?r:null,known=nyRecordRanges(r)[s.rangeLength]||null,base={ready:true,analysisId:NY_OPEN.id,symbol,market,session:s,range:known,record:r,signal:r?.signal||null,direction:r?.signal?.direction||0,stage:0,expiresAt:Infinity,at:Math.floor(now()/MINUTE)*MINUTE};
+  // 3.87.1: jedes Ergebnis trägt die früheren Signale mit (Journal), damit der Chart sie auch dann zeigt, wenn heute ein anderes Ergebnis gilt
+  function result(symbol,market){const value=currentResult(symbol,market);return value?{...value,past:nyPastSignals(nyJournal(read(NY_JOURNAL_KEY)),{symbol,market,exclude:value.signal})}:value;}
+  function currentResult(symbol,market){const e=state.entries.get(symbol+'|'+market),s=nySession(now(),options()),r=record({symbol,market}),today=r?.day===s.day?r:null,known=nyRecordRanges(r)[s.rangeLength]||null,base={ready:true,analysisId:NY_OPEN.id,symbol,market,session:s,range:known,record:r,signal:r?.signal||null,direction:r?.signal?.direction||0,stage:0,expiresAt:Infinity,at:Math.floor(now()/MINUTE)*MINUTE};
     const c=context();if(c.paused||c.hidden||c.online===false)return{...base,ready:false,signal:null,reason:'Analyse pausiert oder offline.'};
     if(e?.error)return{...base,ready:false,signal:null,reason:e.error};
     const range=today&&nyRecordRanges(today)[s.rangeLength];

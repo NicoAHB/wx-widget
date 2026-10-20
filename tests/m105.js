@@ -1,4 +1,4 @@
-// 3.70.0 – FVG-Ebene im Chart: Knopf „FVG“ in „Chart-Ebenen, Whales & Werkzeuge“ mit ⓘ-Erklärung, Boxen grün/rot (Deckkraft 0,2)
+// 3.70.0 – FVG-Ebene im Chart: Knopf „FVG“ in „Chart-Ebenen“ mit ⓘ-Erklärung, Boxen grün/rot (Deckkraft 0,2)
 // bis zur schließenden Kerze bzw. offen bis zur letzten Kerze, Rückmeldung beim Einschalten, gespeichert, „Alle ausblenden“,
 // Heikin-Ashi (Erkennung auf echten Kerzen), Handy. Feste Kerzen aus der Attrappe: bullisch 100,2…101 (an Kerze 40, berührt
 // bei 70, geschlossen bei 75) und bärisch 99,8…100,3 (an Kerze 92, offen) – je 100 = Grundpreis.
@@ -22,7 +22,7 @@ const until = async (fn, ms = 15000, step = 200) => { const t0 = Date.now(); for
     await page.waitForTimeout(1200);
     await page.evaluate(() => { const t = document.querySelector('.overlay-toggles'); const d = t.closest('details'); if (d) d.open = true; t.scrollIntoView({ block: 'center' }); });
     const btn = await page.evaluate(() => { const b = document.querySelector('.overlay-toggles [data-overlay="fvg"]'), tip = b?.nextElementSibling; return b && { text: b.textContent.trim(), pressed: b.getAttribute('aria-pressed'), tip: tip?.id, visible: b.getBoundingClientRect().width > 0, title: b.title }; });
-    check('Knopf „FVG“ in „Chart-Ebenen, Whales & Werkzeuge“, daneben ⓘ; anfangs aus, keine Boxen', btn?.text === 'FVG' && btn.pressed === 'false' && btn.tip === 'fvg-tip' && btn.visible && /Kerze 1 und Kerze 3/.test(btn.title) && await page.evaluate(() => !document.querySelector('.fvg-box')), JSON.stringify({ sh, btn }));
+    check('Knopf „FVG“ in „Chart-Ebenen“, daneben ⓘ; anfangs aus, keine Boxen', btn?.text === 'FVG' && btn.pressed === 'false' && btn.tip === 'fvg-tip' && btn.visible && /Kerze 1 und Kerze 3/.test(btn.title) && await page.evaluate(() => !document.querySelector('.fvg-box')), JSON.stringify({ sh, btn }));
     await page.click('[data-overlay="fvg"]'); await page.waitForTimeout(600);
     const toast = await page.evaluate(() => [...document.querySelectorAll('#toasts .toast')].map(t => t.textContent).join(' | '));
     check('Einschalten: Rückmeldung mit offenen/geschlossenen Lücken und der nächsten offenen', /FVG an: 1 offen \(0 bullisch grün, 1 bärisch rot\), 1 schon geschlossen\. Nächste offene: bärisch 149,7\d* – 150,45/.test(toast), toast);

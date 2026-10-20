@@ -1,5 +1,7 @@
 # Tests für Scalp Desk
 
+**3.89.0 Chart-Ebenen (Claude):** neu `unit-chart-layers` (Gruppen/Ansichten, `ovViewId`/`ovApplyView`, HTML passt zum Modul: Gruppen, Reihenfolge, Titel jeder Ebene, Ansicht-Optionen) und `m147` (Aufbau, Zustände an/aus/gesperrt per `::before`, Zähler, Hinweis, jede Ansicht, Neuladen, Kapseln, ⓘ, Erklärliste, Breiten 320–1440, Vollbild; `workspace:'fresh'`, gesperrte Ebene per `click({ force: true })` wegen `aria-disabled`); `m124` (MACD-Info-Trefferfläche über `::after`), `m105` (Titel), `m6` (Stand in MEZ/MESZ statt UTC) und `m139` (Linienlänge ≥ 0) angepasst.
+
 **3.88.0 Orderflow-Seite verdichtet (Claude):** keine neuen Tests; `m74` (1h-Block für die Maßprüfung aufklappen), `m77`/`m78` (Werkzeug-Bereich `#of-signal-tools` öffnen, Zeile antippen, dann O/H/T/S), `m79` (Standard-Klappzustände: 1m und Signal offen, 1h/Position/Werkzeuge zu; O/T-Prüfung an aufgeklappter Zeile) an das neue Layout angepasst. `m79` brach außerdem schon auf `main` vor dem Coinwechsel ab (Kürzel-Feld ohne Fläche nach der Farbprüfung); der Wechsel läuft jetzt über `__intervals.setMarket`.
 
 **3.87.2 NY Open: Grund „Kein Signal“ im Chart-Feld (Claude):**

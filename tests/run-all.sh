@@ -4,6 +4,7 @@ set -o pipefail
 failed=0
 trap 'failed=1' ERR
 echo "== unit-market-strategies"; timeout 240 node unit-market-strategies.js 2>&1 | grep -E "✗|bestanden"
+echo "== m147"; timeout 900 node m147.js 2>&1 | grep -E "✗|bestanden|Abbruch"
 echo "== m146"; timeout 900 node m146.js 2>&1 | grep -E "✗|bestanden|Abbruch"
 echo "== m145"; timeout 900 node m145.js 2>&1 | grep -E "✗|bestanden|Abbruch"
 echo "== m144"; timeout 900 node m144.js 2>&1 | grep -E "✗|bestanden|Abbruch"
