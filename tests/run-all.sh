@@ -155,6 +155,7 @@ echo "== unit-macd-notice"; timeout 180 node unit-macd-notice.js 2>&1 | grep -E 
 echo "== unit-chart-time-axis"; timeout 180 node unit-chart-time-axis.js 2>&1 | grep -E "✗|bestanden|Abbruch"
 echo "== unit-projection-inspector"; timeout 180 node unit-projection-inspector.js 2>&1 | grep -E "✗|bestanden|Abbruch"
 echo "== unit-store-keys"; timeout 60 node unit-store-keys.js 2>&1 | grep -E "✗|bestanden"
+echo "== unit-store"; timeout 60 node unit-store.js 2>&1 | grep -E "✗|bestanden"
 echo "== unit-247d"; timeout 120 node unit-247d.js 2>&1 | grep -E "✗|bestanden"
 echo "== unit-247c"; timeout 180 node unit-247c.js 2>&1 | grep -E "✗|bestanden|Abbruch"
 echo "== unit-pulse"; timeout 120 node unit-pulse.js 2>&1 | grep -E "✗|bestanden|Abbruch"
