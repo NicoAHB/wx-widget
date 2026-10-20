@@ -125,4 +125,18 @@ await check('Anzeige: Stufentitel mit Länge und Zeitfenster, Umschaltleiste mit
     const sig5=ev(9,50,'5m'),own=view.nyStatus({...sig5,record:null},{price:pr,time:tm}),rec5=C.nyRecord(sig5,{},[],at(9,50)),other=view.nyStatus({...C.evaluateNyOpen({candles:{'1m':scenario().filter(c=>c.end<=at(10,0))},now:at(10,0),symbol:'ETCUSDT',market:'spot',options:choose('15m'),record:rec5}),record:rec5},{price:pr,time:tm});
     assert.ok(!/Signal der/.test(own.steps[1].text),'gleiche Länge: Text wie bisher');assert.match(other.steps[1].text,/ · Signal der 5m Range$/,'andere Länge gewählt: Hinweis auf die Länge des Signals');assert.equal(other.rangeBar.active,'15m');
     const ov=O.analysisOverview({id:'ny-open',detail:view.nyStatus({...ev(9,36,'5m'),record:null},{price:pr,time:tm}),phase:'waiting',reason:''});assert.equal(ov.steps[0].label,'5m Range, 09:30–09:35');assert.equal(ov.badge,'Range steht');});});
+// ---------- 3.87.1: frühere Signale bleiben im Chart ----------
+await check('Frühere Signale: neueste zuerst, nur dieser Coin und Markt, ohne das gerade angezeigte, höchstens fünf',()=>{
+  const rec=(day,symbol,market,atMs,extra={})=>({day,symbol,market,signal:{at:atMs,entry:100,stop:99,target:102,direction:1,nyDay:day},outcome:{status:'target',at:atMs+600000,exit:102},...extra});
+  const journal={records:{
+    'BTCUSDT|2026-10-12':rec('2026-10-12','BTCUSDT','spot',1000),'BTCUSDT|2026-10-13':rec('2026-10-13','BTCUSDT','spot',2000),'BTCUSDT|2026-10-14':rec('2026-10-14','BTCUSDT','spot',3000),
+    'BTCUSDT|2026-10-15':rec('2026-10-15','BTCUSDT','spot',4000),'BTCUSDT|2026-10-16':rec('2026-10-16','BTCUSDT','spot',5000),'BTCUSDT|2026-10-19':rec('2026-10-19','BTCUSDT','spot',6000),
+    'ETHUSDT|2026-10-19':rec('2026-10-19','ETHUSDT','spot',7000),'BTCUSDT|f':rec('2026-10-18','BTCUSDT','futures',8000),'BTCUSDT|ohne':{day:'2026-10-17',symbol:'BTCUSDT',market:'spot',signal:null,range:{}},'BTCUSDT|kaputt':{day:'x',symbol:'BTCUSDT',market:'spot',signal:{at:NaN}}}};
+  const all=C.nyPastSignals(journal,{symbol:'BTCUSDT',market:'spot'});
+  assert.deepEqual(all.map(x=>x.day),['2026-10-19','2026-10-16','2026-10-15','2026-10-14','2026-10-13'],'fünf neueste, Eintrag ohne Signal und mit ungültiger Zeit fehlen');
+  assert.deepEqual(C.nyPastSignals(journal,{symbol:'BTCUSDT',market:'spot',exclude:{at:6000}}).map(x=>x.day),['2026-10-16','2026-10-15','2026-10-14','2026-10-13','2026-10-12'],'das angezeigte Signal fehlt, der Rest rückt nach');
+  assert.deepEqual(C.nyPastSignals(journal,{symbol:'BTCUSDT',market:'futures'}).map(x=>x.day),['2026-10-18']); assert.deepEqual(C.nyPastSignals(journal,{symbol:'XRPUSDT',market:'spot'}),[]);
+  assert.deepEqual(C.nyPastSignals(null,{symbol:'BTCUSDT',market:'spot'}),[]); assert.equal(C.nyPastSignals(journal,{symbol:'BTCUSDT',market:'spot',limit:2}).length,2);
+  const first=all[0]; assert.ok(first.signal.entry===100&&first.outcome.status==='target'&&first.day==='2026-10-19','Signal, Ergebnis und Tag werden mitgegeben');
+});
 console.log(`${pass}/${pass+fail} bestanden`);if(fail)process.exitCode=1;})().catch(e=>{console.error(e);process.exitCode=1;});

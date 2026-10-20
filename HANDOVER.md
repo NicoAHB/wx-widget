@@ -1,3 +1,12 @@
+## 3.87.1 / Dienst 2.16.0 (Claude): NY Open – frühere Signale (Einstieg, Stop, Ziel) bleiben im Chart
+
+- Ausführlich: [docs/3.87.1-AENDERUNGEN.md](docs/3.87.1-AENDERUNGEN.md).
+- **Fehlerbild:** Die Linien von Einstieg, Stop und Ziel verschwanden mit Beginn der neuen Sitzung (ab 09:35 New York) aus dem Chart, obwohl die Kerzen des Trades noch im Bild waren: Das
+  Ergebnis des Tages ersetzte das Signal von gestern, ältere Signale wurden nie gezeichnet (seit 3.79.0, keine Regression von 3.86).
+- **Jetzt:** `result()` im Feed trägt `past` mit (die letzten fünf früheren Signale des Coins aus dem Journal, `nyPastSignals` in `shared/ny-open-core.mjs`); der Chart (`drawPast` in
+  `shared/ny-open-chart.mjs`) zeichnet sie blass mit Datum, Preisen und Ergebnis, solange ihre Kerzen sichtbar sind. Das aktuelle Signal wird unverändert gezeichnet und nie doppelt.
+- Nur App (**3.87.1**); Dienst unverändert **2.16.0**, keine neue Einstellung, kein neuer Speicherschlüssel.
+
 ## 3.87.0 / Dienst 2.16.0 (Claude): VWAP – Aktuelle Lage und optionale KI-Einschätzung im Info-Punkt
 
 - Ausführlich: [docs/3.87.0-AENDERUNGEN.md](docs/3.87.0-AENDERUNGEN.md).
