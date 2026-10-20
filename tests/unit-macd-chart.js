@@ -9,6 +9,8 @@ const check=(name,test)=>{try{test();passed++;console.log('✓ '+name);}catch(e)
  const run=x=>F(x.r,x.s,x.options);
  check('35 Schlusskerzen als gemeinsamer Mindestbedarf',()=>assert.equal(C.minBars,35));
  for(const direction of[1,-1])for(const age of[0,1,2])check((direction>0?'Bullish':'Bearish')+'e Signal- und Nullkreuzung mit Alter '+age,()=>{const f=run(cross(direction,age));assert.equal(f.ready,true);for(const k of['signal','zero']){assert.equal(f.events[k].direction,direction);assert.equal(f.events[k].age,age);assert.equal(f.events[k].confirmedAt,(80-age)*step);}});
+ check('3.83.0: Bestätigung erst mit der endgültig geschlossenen Kerze (final), nicht schon nach der Uhr',()=>{const x=cross(1,0);x.r[79].final=false;const open=run(x);assert.equal(open.events.signal,undefined);assert.equal(open.pending.signal?.direction,1);x.r[79].final=true;assert.equal(run(x).events.signal.direction,1);delete x.r[79].final;assert.equal(run(x).events.signal.direction,1,'ohne Kennung (REST/Rücktest) wie bisher nach der Uhr');});
+ check('3.83.0: Kerze mit Folgekerze gilt als geschlossen, auch wenn ihr final fehlt',()=>{const x=cross(1,1);x.r[78].final=false;assert.equal(run(x).events.signal.direction,1);});
  check('Bloß oberhalb der Linie sein ist kein neuer Crossover',()=>{const x=cross(1,5);assert.deepEqual(run(x).events,{});});
  check('Drei Kerzen alte Kreuzung ist abgelaufen',()=>assert.deepEqual(run(cross(1,3)).events,{}));
  check('Neue Gegenkreuzung hebt den Befund auf und ist zunächst unbestätigt',()=>{const x=cross(1,2);x.s.line[79]=-1;const f=run(x);assert.deepEqual(f.events,{});assert.equal(f.pending.signal.direction,-1);assert.equal(f.pending.zero.direction,-1);});

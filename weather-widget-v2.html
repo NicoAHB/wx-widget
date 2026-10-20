@@ -2555,77 +2555,78 @@ html[data-analysis-focus] .mtf-c:not([data-trend-interval="4h"]):not([data-trend
 .analysis-fit{margin:6px 0;border-top:1px solid var(--line);font-size:.75rem}.analysis-fit>summary{min-height:44px;display:flex;align-items:center;cursor:pointer;line-height:1.5;color:var(--muted)}.analysis-fit[data-fit=fit]>summary{color:var(--mint)}.analysis-fit[data-fit=unfavorable]>summary{color:var(--amber)}.analysis-fit p{margin:0 0 10px;overflow-wrap:anywhere}.analysis-strength-note{display:block;color:var(--muted);line-height:1.6}.analysis-common-events{margin-top:12px;border-top:1px solid var(--line);font-size:.75rem}.analysis-common-events[hidden]{display:none}.analysis-common-events>summary{min-height:44px;cursor:pointer;display:flex;align-items:center;color:var(--mint)}.analysis-common-event{display:flex;align-items:center;gap:12px;flex-wrap:wrap;overflow-wrap:anywhere}.analysis-common-event span{flex:1;min-width:140px}.analysis-ranking{padding:0;list-style:none}.analysis-ranking li{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:12px;border-top:1px solid var(--line);min-height:44px}.analysis-ranking span{color:var(--muted);overflow-wrap:anywhere}.strategy-tools{margin-top:12px;font-size:.75rem;line-height:1.6}.strategy-actions{display:flex;flex-wrap:wrap;gap:8px}.strategy-tools button,.strategy-tools summary,.strategy-tools input{min-height:44px}.strategy-tools summary{display:flex;align-items:center;cursor:pointer;color:var(--mint)}.strategy-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,140px),1fr));gap:12px;margin-bottom:12px}.strategy-fields label{display:grid;gap:4px;min-width:0}.strategy-fields input{min-width:0;width:100%;box-sizing:border-box}.strategy-test-report p,.strategy-protocol p{overflow-wrap:anywhere}.strategy-protocol>div{max-height:360px;overflow:auto}.strategy-test-report details{border-top:1px solid var(--line)}
 </style>
   <script type="module">
-import { MARKET_INTERVALS, CHART_INTERVALS, SIGNAL_INTERVALS, INTERVAL_MS, nearestChartInterval } from './bundles/3.82.2/shared/market-intervals.mjs';
-import { createDetailCandles, detailOptions, detailChoice, closedSeries, timeIndex, DETAIL_VISIBLE_MAX } from './bundles/3.82.2/shared/chart-detail.mjs';
-import { patternChipRows, patternChipKey } from './bundles/3.82.2/shared/chart-pattern-chips.mjs';
-import { PATTERN_QUALITY_CONFIG, chartPatternQuality, repricePatternQuality, sortPatternQuality, patternOverview } from './bundles/3.82.2/shared/chart-pattern-quality.mjs';
-import { createPatternOverviewFeed } from './bundles/3.82.2/shared/chart-pattern-overview-feed.mjs';
+import { MARKET_INTERVALS, CHART_INTERVALS, SIGNAL_INTERVALS, INTERVAL_MS, nearestChartInterval } from './bundles/3.83.0/shared/market-intervals.mjs';
+import { createDetailCandles, detailOptions, detailChoice, closedSeries, timeIndex, DETAIL_VISIBLE_MAX } from './bundles/3.83.0/shared/chart-detail.mjs';
+import { patternChipRows, patternChipKey } from './bundles/3.83.0/shared/chart-pattern-chips.mjs';
+import { PATTERN_QUALITY_CONFIG, chartPatternQuality, repricePatternQuality, sortPatternQuality, patternOverview } from './bundles/3.83.0/shared/chart-pattern-quality.mjs';
+import { createPatternOverviewFeed } from './bundles/3.83.0/shared/chart-pattern-overview-feed.mjs';
 // Arbeitsstand: bei der gemeinsamen Release-Freigabe in das neue Versionsbündel übernehmen.
-import { createPositioningFeed } from './bundles/3.82.2/shared/positioning-score.mjs';
-import { CRYPTO_CALENDAR, parseCryptoCalendar, cryptoCalendarEvents } from './bundles/3.82.2/shared/crypto-calendar.mjs';
-import { createMusterClient } from './bundles/3.82.2/shared/muster-bot-feed.mjs';
-import { createMusterPaper } from './bundles/3.82.2/shared/muster-bot-paper.mjs';
-import { readMusterPaper, writeMusterPaper } from './bundles/3.82.2/shared/muster-bot-store.mjs';
-import { projectPatternLines, projectionSettings, projectionTime } from './bundles/3.82.2/shared/pattern-projection.mjs';
-import { MACD_CHART, macdFindings, macdPaneLayout, drawMacdPane, createMacdHelp } from './bundles/3.82.2/shared/macd-chart.mjs';
-import { MACD_NOTICE } from './bundles/3.82.2/shared/macd-notice.mjs';
+import { createPositioningFeed } from './bundles/3.83.0/shared/positioning-score.mjs';
+import { CRYPTO_CALENDAR, parseCryptoCalendar, cryptoCalendarEvents } from './bundles/3.83.0/shared/crypto-calendar.mjs';
+import { createMusterClient } from './bundles/3.83.0/shared/muster-bot-feed.mjs';
+import { createMusterPaper } from './bundles/3.83.0/shared/muster-bot-paper.mjs';
+import { readMusterPaper, writeMusterPaper } from './bundles/3.83.0/shared/muster-bot-store.mjs';
+import { projectPatternLines, projectionSettings, projectionTime } from './bundles/3.83.0/shared/pattern-projection.mjs';
+import { MACD_CHART, macdFindings, macdPaneLayout, drawMacdPane, createMacdHelp } from './bundles/3.83.0/shared/macd-chart.mjs';
+import { MACD_NOTICE } from './bundles/3.83.0/shared/macd-notice.mjs';
 // NEU 3.77.3: Zeitachse mit Datum und kollisionsfreien Beschriftungen.
-import { chartTimeTicks } from './bundles/3.82.2/shared/chart-time-axis.mjs';
-import { createProjectionInspector, projectionPrice, projectionIndexTime, projectionTimeIndex } from './bundles/3.82.2/shared/projection-inspector.mjs';
-import { createGithubSyncView } from './bundles/3.82.2/shared/github-sync-view.mjs';
-import { createDocViewer } from './bundles/3.82.2/shared/doc-viewer.mjs';
-import { PATTERN_FILTER_PRESET_NAMES, PATTERN_FILTER_FIELDS, PATTERN_CARD_FIELDS, HIGHER_TIMEFRAME, patternFilterSettings, patternFilterFromForm, evaluatePatternSignal, selectPatternSignals, patternJournalEntry, addPatternJournal, resolvePatternJournal, patternHitStats, patternJournalStats, PATTERN_OUTCOME_NAMES, backtestPatternFilter } from './bundles/3.82.2/shared/pattern-quality.mjs';
-import { stripSyncSecrets } from './bundles/3.82.2/shared/github-sync.mjs';
-import { createMusterView } from './bundles/3.82.2/shared/muster-bot-view.mjs';
-import { computeKiZones, KI_ZONE_INTERVALS } from './bundles/3.82.2/shared/ki-zones.mjs';
-import { heikinAshi } from './bundles/3.82.2/shared/heikin-ashi.mjs';
-import { detectFvgs, fvgSummary } from './bundles/3.82.2/shared/fvg.mjs';
-import { scoreZoneStrength, ZONE_STRENGTH, ZONE_SIGNAL, zoneSignal, zoneStep, zoneOutcome, summarizeZoneBacktest } from './bundles/3.82.2/shared/zone-strength.mjs';
+import { chartTimeTicks } from './bundles/3.83.0/shared/chart-time-axis.mjs';
+import { createProjectionInspector, projectionPrice, projectionIndexTime, projectionTimeIndex } from './bundles/3.83.0/shared/projection-inspector.mjs';
+import { createGithubSyncView } from './bundles/3.83.0/shared/github-sync-view.mjs';
+import { createDocViewer } from './bundles/3.83.0/shared/doc-viewer.mjs';
+import { PATTERN_FILTER_PRESET_NAMES, PATTERN_FILTER_FIELDS, PATTERN_CARD_FIELDS, HIGHER_TIMEFRAME, patternFilterSettings, patternFilterFromForm, evaluatePatternSignal, selectPatternSignals, patternJournalEntry, addPatternJournal, resolvePatternJournal, patternHitStats, patternJournalStats, PATTERN_OUTCOME_NAMES, backtestPatternFilter } from './bundles/3.83.0/shared/pattern-quality.mjs';
+import { stripSyncSecrets } from './bundles/3.83.0/shared/github-sync.mjs';
+import { createMusterView } from './bundles/3.83.0/shared/muster-bot-view.mjs';
+import { computeKiZones, KI_ZONE_INTERVALS } from './bundles/3.83.0/shared/ki-zones.mjs';
+import { heikinAshi } from './bundles/3.83.0/shared/heikin-ashi.mjs';
+import { detectFvgs, fvgSummary } from './bundles/3.83.0/shared/fvg.mjs';
+import { scoreZoneStrength, ZONE_STRENGTH, ZONE_SIGNAL, zoneSignal, zoneStep, zoneOutcome, summarizeZoneBacktest } from './bundles/3.83.0/shared/zone-strength.mjs';
 // 3.68.0: KI-Signale/Trading-Bot entfernt; der GitHub-Sync behält sein Format inklusive vorhandener Modelloriginale.
-import { exportModelArchive, importModelArchive, validateModelArchive, restoreModelOriginals } from './bundles/3.82.2/shared/model-archive.mjs';
-import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT, patternGrade } from './bundles/3.82.2/shared/telegram-format.mjs';
-import { patternSignalCard, patternChartData } from './bundles/3.82.2/shared/pattern-signal-card.mjs';   // 3.71.0: Chartmuster-Signalkarte
-import { pnlAlarmCard } from './bundles/3.82.2/shared/pnl-alarm-card.mjs';   // 3.71.0: Gewinn-/Verlust-Alarm als Bild
-import { priceAlarmCard } from './bundles/3.82.2/shared/price-alarm-card.mjs';   // 3.71.0: Kurs-Alarm als Bild
-import { createOrderflowView } from './bundles/3.82.2/shared/orderflow-view.mjs';
-import { createMarketRadarView } from './bundles/3.82.2/shared/market-radar-view.mjs';
-import { createPanelAppearanceSettings } from './bundles/3.82.2/shared/panel-appearance.mjs';
-import { createSignalView } from './bundles/3.82.2/shared/orderflow-signal-view.mjs';
-import { neutralMacdSignal } from './bundles/3.82.2/shared/indicators.mjs';
-import { WATCH_MODEL_KEY, WATCH_COMPARE_KEY } from './bundles/3.82.2/shared/watch-model-core.mjs';
-import { rsiSignal } from './bundles/3.82.2/shared/rsi-momentum.mjs';
-import { createWatchModelFeed } from './bundles/3.82.2/shared/watch-model-feed.mjs';
-import { createSignalReasonsView } from './bundles/3.82.2/shared/watch-signal-reasons.mjs';
-import { unknownPhase } from './bundles/3.82.2/shared/market-phase-core.mjs';
-import { createMarketPhaseFeed } from './bundles/3.82.2/shared/market-phase-feed.mjs';
-import { createMarketPhaseView } from './bundles/3.82.2/shared/market-phase-view.mjs';
-import { createWatchModelView } from './bundles/3.82.2/shared/watch-model-view.mjs';
-import { networkState, createWidgetBoundary } from './bundles/3.82.2/shared/widget-state.mjs';
-import { volumeProfile } from './bundles/3.82.2/shared/volume-profile.mjs';
-import { analysisChannelState, analysisChannelAllows } from './bundles/3.82.2/shared/analysis-channel.mjs';
-import { createAnalysisLearning } from './bundles/3.82.2/shared/analysis-learning-feed.mjs';
-import { ANALYSIS_LEARNING_KEY, LEARNING_IDS, mergeLearningData, validateLearningData } from './bundles/3.82.2/shared/analysis-learning.mjs';
-import { ANALYSES, ANALYSIS_KEY, ANALYSIS_LOG_KEY, analysisCoinAllowed, analysisDestination } from './bundles/3.82.2/shared/analysis-config.mjs';
-import { analysisChartModel, analysisChartExplanation, drawAnalysisChart, installAnalysisChartTap, createAnalysisChartHelp } from './bundles/3.82.2/shared/analysis-chart.mjs';
-import { createAnalysisView } from './bundles/3.82.2/shared/analysis-view.mjs';
-import { createAnalysisFeed } from './bundles/3.82.2/shared/analysis-feed.mjs';
-import { NY_OPEN, NY_JOURNAL_KEY, nyDailySignalKey, nyLiveRange } from './bundles/3.82.2/shared/ny-open-core.mjs';
-import { nyNoticeEvents } from './bundles/3.82.2/shared/ny-open-notices.mjs';
-import { mergeNyJournals } from './bundles/3.82.2/shared/ny-open-feed.mjs';
-import { createNyHistory } from './bundles/3.82.2/shared/ny-open-history.mjs';
-import { drawNyChart } from './bundles/3.82.2/shared/ny-open-chart.mjs';
-import { analysisCard, analysisTestSignal } from './bundles/3.82.2/shared/analysis-card.mjs';
-import { displayTimeParts } from './bundles/3.82.2/shared/display-time.mjs';
-import { createAnalysisDelivery } from './bundles/3.82.2/shared/analysis-delivery.mjs';
-import { PULLBACK, PULLBACK_DATA_KEY, PULLBACK_MODEL_KEY, PULLBACK_ACK_KEY, PULLBACK_DELIVERY_KEY, pullbackEligible } from './bundles/3.82.2/shared/trend-pullback-core.mjs';
-import { pullbackData, pullbackBackupData, mergePullbackData, validatePullbackData, validatePullbackModel } from './bundles/3.82.2/shared/trend-pullback-store.mjs';
-import { pullbackHighlights } from './bundles/3.82.2/shared/trend-pullback-notices.mjs';
-import { drawPullbackChart } from './bundles/3.82.2/shared/trend-pullback-chart.mjs';
-import { MARKET_STRATEGY, STRATEGY_IDS, STRATEGY_DATA_KEY, STRATEGY_REPORT_KEY, strategyData, mergeStrategyData, validateStrategyData, strategyAlertCurrent } from './bundles/3.82.2/shared/market-strategy-core.mjs';
-import { strategyNoticeEvents } from './bundles/3.82.2/shared/market-strategy-feed.mjs';
-import { analysisSuitability, groupAnalysisEvents } from './bundles/3.82.2/shared/analysis-context.mjs';
-import { createPullbackReplies } from './bundles/3.82.2/shared/trend-pullback-delivery.mjs';
-import { ANALYSIS_NOTICE_KEY, analysisNoticeState, observeAnalysis, analysisNoticeCurrent } from './bundles/3.82.2/shared/analysis-notices.mjs';
+import { exportModelArchive, importModelArchive, validateModelArchive, restoreModelOriginals } from './bundles/3.83.0/shared/model-archive.mjs';
+import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT, patternGrade } from './bundles/3.83.0/shared/telegram-format.mjs';
+import { patternSignalCard, patternChartData } from './bundles/3.83.0/shared/pattern-signal-card.mjs';   // 3.71.0: Chartmuster-Signalkarte
+import { pnlAlarmCard } from './bundles/3.83.0/shared/pnl-alarm-card.mjs';   // 3.71.0: Gewinn-/Verlust-Alarm als Bild
+import { priceAlarmCard } from './bundles/3.83.0/shared/price-alarm-card.mjs';   // 3.71.0: Kurs-Alarm als Bild
+import { createOrderflowView } from './bundles/3.83.0/shared/orderflow-view.mjs';
+import { createMarketRadarView } from './bundles/3.83.0/shared/market-radar-view.mjs';
+import { RADAR_KEY, radarBook } from './bundles/3.83.0/shared/market-radar-journal.mjs';
+import { createPanelAppearanceSettings } from './bundles/3.83.0/shared/panel-appearance.mjs';
+import { createSignalView } from './bundles/3.83.0/shared/orderflow-signal-view.mjs';
+import { neutralMacdSignal } from './bundles/3.83.0/shared/indicators.mjs';
+import { WATCH_MODEL_KEY, WATCH_COMPARE_KEY } from './bundles/3.83.0/shared/watch-model-core.mjs';
+import { rsiSignal, RSI_MOMENTUM } from './bundles/3.83.0/shared/rsi-momentum.mjs';
+import { createWatchModelFeed } from './bundles/3.83.0/shared/watch-model-feed.mjs';
+import { createSignalReasonsView } from './bundles/3.83.0/shared/watch-signal-reasons.mjs';
+import { unknownPhase } from './bundles/3.83.0/shared/market-phase-core.mjs';
+import { createMarketPhaseFeed } from './bundles/3.83.0/shared/market-phase-feed.mjs';
+import { createMarketPhaseView } from './bundles/3.83.0/shared/market-phase-view.mjs';
+import { createWatchModelView } from './bundles/3.83.0/shared/watch-model-view.mjs';
+import { networkState, createWidgetBoundary } from './bundles/3.83.0/shared/widget-state.mjs';
+import { volumeProfile } from './bundles/3.83.0/shared/volume-profile.mjs';
+import { analysisChannelState, analysisChannelAllows } from './bundles/3.83.0/shared/analysis-channel.mjs';
+import { createAnalysisLearning } from './bundles/3.83.0/shared/analysis-learning-feed.mjs';
+import { ANALYSIS_LEARNING_KEY, LEARNING_IDS, mergeLearningData, validateLearningData } from './bundles/3.83.0/shared/analysis-learning.mjs';
+import { ANALYSES, ANALYSIS_KEY, ANALYSIS_LOG_KEY, analysisCoinAllowed, analysisDestination } from './bundles/3.83.0/shared/analysis-config.mjs';
+import { analysisChartModel, analysisChartExplanation, drawAnalysisChart, installAnalysisChartTap, createAnalysisChartHelp } from './bundles/3.83.0/shared/analysis-chart.mjs';
+import { createAnalysisView } from './bundles/3.83.0/shared/analysis-view.mjs';
+import { createAnalysisFeed } from './bundles/3.83.0/shared/analysis-feed.mjs';
+import { NY_OPEN, NY_JOURNAL_KEY, nyDailySignalKey, nyLiveRange } from './bundles/3.83.0/shared/ny-open-core.mjs';
+import { nyNoticeEvents } from './bundles/3.83.0/shared/ny-open-notices.mjs';
+import { mergeNyJournals } from './bundles/3.83.0/shared/ny-open-feed.mjs';
+import { createNyHistory } from './bundles/3.83.0/shared/ny-open-history.mjs';
+import { drawNyChart } from './bundles/3.83.0/shared/ny-open-chart.mjs';
+import { analysisCard, analysisTestSignal } from './bundles/3.83.0/shared/analysis-card.mjs';
+import { displayTimeParts } from './bundles/3.83.0/shared/display-time.mjs';
+import { createAnalysisDelivery } from './bundles/3.83.0/shared/analysis-delivery.mjs';
+import { PULLBACK, PULLBACK_DATA_KEY, PULLBACK_MODEL_KEY, PULLBACK_ACK_KEY, PULLBACK_DELIVERY_KEY, pullbackEligible } from './bundles/3.83.0/shared/trend-pullback-core.mjs';
+import { pullbackData, pullbackBackupData, mergePullbackData, validatePullbackData, validatePullbackModel } from './bundles/3.83.0/shared/trend-pullback-store.mjs';
+import { pullbackHighlights } from './bundles/3.83.0/shared/trend-pullback-notices.mjs';
+import { drawPullbackChart } from './bundles/3.83.0/shared/trend-pullback-chart.mjs';
+import { MARKET_STRATEGY, STRATEGY_IDS, STRATEGY_DATA_KEY, STRATEGY_REPORT_KEY, strategyData, mergeStrategyData, validateStrategyData, strategyAlertCurrent } from './bundles/3.83.0/shared/market-strategy-core.mjs';
+import { strategyNoticeEvents, strategyNoticeRecords } from './bundles/3.83.0/shared/market-strategy-feed.mjs';
+import { analysisSuitability, groupAnalysisEvents } from './bundles/3.83.0/shared/analysis-context.mjs';
+import { createPullbackReplies } from './bundles/3.83.0/shared/trend-pullback-delivery.mjs';
+import { ANALYSIS_NOTICE_KEY, analysisNoticeState, observeAnalysis, analysisNoticeCurrent } from './bundles/3.83.0/shared/analysis-notices.mjs';
 // Pure, unrounded calculations. Prices are USDT per unit; FX is USDT per EUR.
 function rsi(closes, period = 14) {
   const out = Array(closes.length).fill(null);
@@ -3448,7 +3449,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
 // 3.43.0 (G10a): reiner Fachkern in shared/; Datenquelle und Karten folgen getrennt.
 // 3.44.0 (G10b): öffentlicher Adapter in shared/bitget-public.mjs; sichtbare Anbindung folgt mit G10(c).
-const APP_VERSION = '3.82.2', docEl = document.documentElement;
+const APP_VERSION = '3.83.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -6047,7 +6048,7 @@ function backupStatus(msg) { put('history-status', msg); }
 // Löschungen, Prüfliste, offene Konflikte, Anzeige-Einstellungen und das eigene Musterlernen (der öffentliche Startbestand nur als
 // Verweis mit Version). Nie enthalten: Zugangsdaten (Telegram-Token und API-Schlüssel), die Übergabe an den 24/7-Dienst, Sendesperren
 // und andere gerätegebundene Zustände. Alle Felder von Schema 7 bleiben gleich – ältere App-Versionen lesen die Datei weiter.
-const PREF_KEYS = [STRATEGY_DATA_KEY,STRATEGY_REPORT_KEY,ANALYSIS_LEARNING_KEY,PULLBACK_DATA_KEY, PULLBACK_MODEL_KEY, 'scalpdesk.analysis.v1', 'scalpdesk.panel-style.v1', 'scalpdesk.market-radar.v1', 'scalpdesk.watch-model.v1', 'scalpdesk.watch-compare.v1', 'scalpdesk.pattern-projection.v1', 'scalpdesk.orderflow-journal.v1', 'scalpdesk.orderflow-position.v1', 'scalpdesk.orderflow-signal.v1', 'scalpdesk.orderflow.v1', 'scalpdesk.ki.risk-view.v1', 'scalpdesk.theme.v1', 'scalpdesk.presentation.v1', 'scalpdesk.background.v1', 'scalpdesk.overlays.v1', 'scalpdesk.zigzag.v1', 'scalpdesk.whale.v1', 'scalpdesk.orderbook.v1', 'scalpdesk.ladder.v1', 'scalpdesk.vola.v1', 'scalpdesk.econ.v1', 'scalpdesk.cnews.v1', 'scalpdesk.wlspan.v1', 'scalpdesk.titleprice.v1', 'scalpdesk.details.v1', 'scalpdesk.posdefaults.v1', 'scalpdesk.daylimitnote.v1', 'scalpdesk.warnclose.v1', 'scalpdesk.evalyear.v1', 'scalpdesk.acctrange.v1', 'scalpdesk.anaiv.v1', 'scalpdesk.decouple.v1', 'scalpdesk.kizones.v1', 'scalpdesk.heikin.v1', 'scalpdesk.zonesig.v1', 'scalpdesk.patfilter.v1'];
+// PREF_KEYS (Sicherung/Einstellungen) entsteht aus der zentralen Liste STORE_KEYS (Abschnitt „Speicherschlüssel“, vor dem GitHub-Abgleich).
 const personalBackupItem = x => !['dpos','dtrade'].includes(x.kind) && !['dpos','dtrade'].includes(x.localKind) && ![DEMO_POS_KEY,DEMO_HIST_KEY,'scalpdesk.orderflow-demo.v1'].includes(x.raw?.key) && !['demoPositions','demoHistory'].includes(x.raw?.field);
 // Übungsdaten können auch in Positionsbegleitung/Signaljournal stehen; nur die Exportkopie bereinigen.
 const demoContext = x => x?.demo === true || x?.practice === true || /^(demo|practice)\|/.test(x?.id || '');
@@ -7985,7 +7986,8 @@ function onTick(now) {
 // Laufende Kerze aus dem Stream übernehmen; eine neue Kerze wird angehängt, eine Lücke per REST geschlossen.
 function applyLiveCandle(k) {
   const arr = state.candles; if (!arr.length || state.loadedSymbol !== state.symbol) return false;
-  const last = arr.at(-1), c = { time: k.t, open: k.o, high: k.h, low: k.l, close: k.c, volume: k.v, closeTime: k.T };
+  // 3.83.0: final = Börse hat die Kerze endgültig geschlossen (x). MACD bestätigt nichts, solange nur die Uhr die Schlusszeit überschritten hat.
+  const last = arr.at(-1), c = { time: k.t, open: k.o, high: k.h, low: k.l, close: k.c, volume: k.v, closeTime: k.T, final: !!k.x };
   if (![c.time, c.open, c.high, c.low, c.close, c.volume, c.closeTime].every(Number.isFinite) || c.low <= 0 || c.high < c.low) return false;
   if (c.time === last.time) arr[arr.length - 1] = c;
   else if (c.time > last.time) {
@@ -8052,7 +8054,7 @@ function onKline(m) {
   if (state.paused) return;
   orderflow?.kline(m);
   orderflowSignal?.feed.kline(m);
-  if (detailResolution && detail.live({symbol:m.s,source:m.m},m.i,{time:m.k.t,open:m.k.o,high:m.k.h,low:m.k.l,close:m.k.c,volume:m.k.v,closeTime:m.k.T})) scheduleLiveRender(true);
+  if (detailResolution && detail.live({symbol:m.s,source:m.m},m.i,{time:m.k.t,open:m.k.o,high:m.k.h,low:m.k.l,close:m.k.c,volume:m.k.v,closeTime:m.k.T,final:!!m.k.x})) scheduleLiveRender(true);
   // Zusätzliche Futures-Kerzen des Panels dürfen Spot-Kurse, Positionen und Alarme nicht verändern.
   if (!baseStreams[m.m]?.has(`${m.s.toLowerCase()}@kline_${m.i}`)) return;
   clockSample(m.E); // Binance-Zeit weiter ausschließlich aus den bisherigen App-Streams.
@@ -8460,7 +8462,7 @@ addEventListener('beforeunload', e => {
 });
 // ---------- Abgleich zwischen offenen Tabs ----------
 const bc = (() => { try { return new BroadcastChannel('scalpdesk'); } catch { return null; } })();
-const SYNC_KEYS = [STRATEGY_DATA_KEY,STRATEGY_REPORT_KEY,ANALYSIS_LEARNING_KEY,PULLBACK_DATA_KEY,PULLBACK_MODEL_KEY,PULLBACK_ACK_KEY,PULLBACK_DELIVERY_KEY,NY_JOURNAL_KEY, 'scalpdesk.analysis.v1', 'scalpdesk.watch-model.v1', POS_KEY, HIST_KEY, MONEY_KEY, BAL_KEY, ALARM_KEY, SETUP_KEY, WATCH_KEY, CHANGES_KEY, 'scalpdesk.channels.v1', ZZP_KEY, 'scalpdesk.s247.v1', 'scalpdesk.pnlalarm.v1', 'scalpdesk.deleted.v1', 'scalpdesk.settingsat.v1', 'scalpdesk.listsat.v1', 'scalpdesk.demopositions.v1', 'scalpdesk.demohistory.v1', 'scalpdesk.quarantine.v1', 'scalpdesk.conflicts.v1', 'scalpdesk.settingsh.v1', 'scalpdesk.deletedh.v1', 'scalpdesk.svc.v1', 'scalpdesk.policy.v1', 'scalpdesk.tradeimg.v1'];
+// SYNC_KEYS (Abgleich zwischen offenen Tabs) entsteht aus der zentralen Liste STORE_KEYS.
 function broadcastData(keys) { if (!bc || !keys.length) return; try { bc.postMessage({ t: 'data', from: TAB_ID, items: keys.map(k => [k, store.get(k)]) }); } catch {} }
 function adoptData(items) {
   const pat = items.find(([k]) => k === ZZP_KEY); if (pat) { store.adopt(ZZP_KEY, pat[1]); zzpMem = null; items = items.filter(([k]) => k !== ZZP_KEY); if (!items.length) return; }
@@ -8474,6 +8476,8 @@ function adoptData(items) {
     if(k===PULLBACK_DATA_KEY){store.set(k,mergePullbackData(store.get(k),v),{force:true});analysisFeed?.sync();analysisPaint();continue;}
     if(k===PULLBACK_ACK_KEY){const old=store.get(k)||{},coins={...old.coins};for(const [symbol,keys]of Object.entries(v?.coins||{}))coins[symbol]=[...new Set([...(coins[symbol]||[]),...keys])];store.set(k,{row:[...new Set([...(old.row||[]),...(v?.row||[])])],coins},{force:true});analysisPaint();continue;}
     if(k===PULLBACK_MODEL_KEY||k===PULLBACK_DELIVERY_KEY){store.adopt(k,v);analysisPaint();continue;}
+    // 3.83.0: Marktradar – Beobachtungen beider Tabs zusammenführen; ein Tab mit altem Stand überschreibt keine neueren Einträge mehr
+    if(k===RADAR_KEY){const seen=new Map();for(const r of [...radarBook(store.get(k)).observations,...radarBook(v).observations]){const o=seen.get(r.id);seen.set(r.id,o?{...o,after15:o.after15||r.after15,after60:o.after60||r.after60}:r);}store.set(k,radarBook({...radarBook(v),observations:[...seen.values()]}),{force:true});continue;}
     store.adopt(k, v);
     if (k === WATCH_MODEL_KEY) wmRefresh();
     if (k === POS_KEY) state.positions = loadRecords(POS_KEY, 'pos', 'sync');
@@ -10308,15 +10312,19 @@ function zzLearnFor(c = state.candles, pct = zzPct()) {
 // der App (500-Kerzen-Fenster) lag die tatsächliche Trefferquote im Mittel so hoch wie die angezeigte; bei Zufallskursen
 // erschien fast nie eine Zahl.
 var ZZP = { nMin: 100, zGate: 2.77, zEst: 1.645, margin: .03, zShow: 2.33, from: 250 }, zzpMem = null, zzpRun = '', zzpIndCache = { key: '', v: null };
+// 3.83.0: Regel 2 – die Signal-Bewertung im Muster (M) zählt RSI wie die Signal-Übersicht (Erholung unter 30 ODER ungewöhnlicher Anstieg,
+// rsiSignal). Vorher galt nur die alte Erholungsregel, beide Anzeigen konnten sich widersprechen. Lernstände nach Regel 1 (Kennung S)
+// werden nicht mit neuen vermischt: alter Stand, alter Startbestand und alte Sicherungen werden für die Prognose nicht mehr verwendet.
+const ZZP_RULE = 2;
 function wilsonLow(k, n, z) { if (!(n > 0)) return 0; const p = k / n, z2 = z * z; return (p + z2 / (2 * n) - z * Math.sqrt(p * (1 - p) / n + z2 / (4 * n * n))) / (1 + z2 / n); }
 function zzpIndicators(closes) { return { e200: ema(closes, 200), e20: ema(closes, 20), e50: ema(closes, 50), r: rsi(closes), m: macd(closes) }; }
 function zzpKey(closes, ind, t, dir) {
   const { e200, e20, e50, r, m } = ind, cl = closes[t];
   if (![e200[t], e20[t], e50[t], r[t], r[t - 1], m.line[t], m.signal[t]].every(Number.isFinite)) return null;
-  const score = Math.sign(e20[t] - e50[t]) + Math.sign(cl - e20[t]) + (r[t] < 30 && r[t] > r[t - 1] ? 1 : r[t] > 70 && r[t] < r[t - 1] ? -1 : 0) + Math.sign(m.line[t] - m.signal[t]);
+  const score = Math.sign(e20[t] - e50[t]) + Math.sign(cl - e20[t]) + rsiSignal(r.slice(Math.max(0, t - RSI_MOMENTUM.periods), t + 1)).score + Math.sign(m.line[t] - m.signal[t]);
   const T = Math.sign(cl - e200[t]) === dir ? '+' : '-', S = score * dir >= 2 ? '+' : score * dir <= -2 ? '-' : '0';
   const R = dir > 0 ? (r[t] < 35 ? '+' : r[t] > 65 ? '-' : '0') : (r[t] > 65 ? '+' : r[t] < 35 ? '-' : '0');
-  return `T${T}S${S}R${R}`;
+  return `T${T}M${S}R${R}`;
 }
 const zzpWords = k => `Trend ${k[1] === '+' ? 'dafür' : 'dagegen'}, Signal-Bewertung ${k[3] === '+' ? 'dafür' : k[3] === '-' ? 'dagegen' : 'neutral'}, RSI ${k[5] === '+' ? 'günstig' : k[5] === '-' ? 'ungünstig' : 'neutral'}`;
 // Momente der abgeschlossenen Kerzen c: hit true = zuerst in Prognoserichtung, false = zuerst dagegen, null = beide in einer
@@ -10337,7 +10345,7 @@ function zzMoments(c, pct) {
   return out;
 }
 function zzpData() {
-  if (!zzpMem) { const v = store.get(ZZP_KEY); zzpMem = v?.v === 1 && v.s && typeof v.s === 'object' && v.r && typeof v.r === 'object' ? v : { v: 1, s: {}, r: {} }; }
+  if (!zzpMem) { const v = store.get(ZZP_KEY); zzpMem = v?.v === 1 && v.rule === ZZP_RULE && v.s && typeof v.s === 'object' && v.r && typeof v.r === 'object' ? v : { v: 1, rule: ZZP_RULE, s: {}, r: {} }; }
   return zzpMem;
 }
 // Neue, aufgelöste Momente einer Reihe (Symbol|Intervall|Mindestbewegung) in zeitlicher Folge übernehmen: bis zum ersten
@@ -10387,7 +10395,7 @@ function zzpVerdict(up, pct = zzPct(), c = state.candles) {
 // Sicherung (zzpBackup): beim Einspielen je Muster die Fassung mit mehr Fällen, je Reihe den späteren Stand behalten
 // base: Version eines eingespielten Startbestands (Ablaufplan Schritt 2); Rückgabe: Zahl der übernommenen Einträge
 function zzpImport(x, base = '') {
-  if (x?.v !== 1 || !x.s || typeof x.s !== 'object' || !x.r || typeof x.r !== 'object') return 0;
+  if (x?.v !== 1 || x.rule !== ZZP_RULE || !x.s || typeof x.s !== 'object' || !x.r || typeof x.r !== 'object') return 0;   // 3.83.0: nur Lernstände derselben Regel
   const P = zzpData(); let changed = 0;
   for (const [k, v] of Object.entries(x.s)) if (Array.isArray(v) && v[0] >= 0 && v[1] >= 0 && v[1] <= v[0] && Number.isInteger(v[0]) && Number.isInteger(v[1]) && !(P.s[k]?.[0] >= v[0])) { P.s[k] = [v[0], v[1]]; changed++; }
   for (const [k, v] of Object.entries(x.r)) if (Array.isArray(v) && Number.isFinite(v[0]) && !(P.r[k]?.[0] >= v[0])) { P.r[k] = [v[0], Number(v[1]) || 0, typeof v[2] === 'string' ? v[2] : '']; changed++; }
@@ -10415,12 +10423,12 @@ function zzpBackup() {
   const P = zzpData(), x = zzpStartSet;
   if (!P.base || !x || String(x.version) !== P.base || !x.s || typeof x.s !== 'object') return P;
   const s = {}; for (const [k, v] of Object.entries(P.s)) { const b = x.s[k]; if (!Array.isArray(b) || b[0] !== v[0] || b[1] !== v[1]) s[k] = v; }
-  return { v: 1, s, r: P.r, base: P.base, rev: P.rev, at: P.at, delta: true };
+  return { v: 1, rule: ZZP_RULE, s, r: P.r, base: P.base, rev: P.rev, at: P.at, delta: true };
 }
 // Nur die Muster (ohne Positionen, Trades, Zugänge): Datei für einen neuen Startbestand
 function zzpExportFile() {
   const P = zzpData(), d = new Date().toISOString().slice(0, 10);
-  return { name: `muster-${d}.json`, text: JSON.stringify({ kind: 'scalpdesk-patterns', v: 1, version: `${d}.${Number(P.rev) || 0}`, created: d, source: 'Export aus Scalp Desk: gelernte Chartmuster, ohne persönliche Daten', base: P.base || '', s: P.s, r: P.r }) };
+  return { name: `muster-${d}.json`, text: JSON.stringify({ kind: 'scalpdesk-patterns', v: 1, rule: ZZP_RULE, version: `${d}.${Number(P.rev) || 0}`, created: d, source: 'Export aus Scalp Desk: gelernte Chartmuster, ohne persönliche Daten', base: P.base || '', s: P.s, r: P.r }) };
 }
 // Startbestand aus dem GitHub-Projekt (data/muster-start.json): beim Programmstart einmal je Version wie eine Sicherung
 // eingespielt – je Muster die Fassung mit mehr Fällen, je Reihe der spätere Stand, nichts doppelt. Neue Nutzer, ein neues Gerät
@@ -11743,9 +11751,9 @@ function wldBox() {
   title.id = 'wl-d-title'; close.setAttribute('aria-label', 'Detailfeld schließen'); close.title = 'Schließen (Esc)';
   const phaseHost=el('span','market-phase-host');
   head.append(title, phaseHost, meta, close);
-  const phase=createMarketPhaseView({root:phaseHost,getMarktphase,now:serverNow,read:key=>store.get(key),write:(key,value)=>store.set(key,value),
+  const phase=createMarketPhaseView({root:phaseHost,getMarktphase,now:serverNow,read:key=>store.get(key),write:(key,value)=>{store.set(key,value);return store.ok;},
     symbols:()=>state.watch.map(wlSym).map(symbol=>{const e=wl?.c.get(symbol);return{symbol,market:e?.at&&!e.error?e.market:null};}),history:q=>nyHistory(q),
-    available:()=>!document.hidden&&!state.paused&&navigator.onLine!==false,workerFactory:()=>new Worker(new URL('./bundles/3.82.2/shared/market-phase-worker.mjs',import.meta.url),{type:'module'})});
+    available:()=>!document.hidden&&!state.paused&&navigator.onLine!==false,workerFactory:()=>new Worker(new URL('./bundles/3.83.0/shared/market-phase-worker.mjs',import.meta.url),{type:'module'})});
   const patb = el('button', 'wl-d-pat'); patb.type = 'button';
   patb.addEventListener('click', () => patFromWl(wldSel));
   const r24 = el('p', 'wl-d-24h'); r24.append(el('span', 'wl-d-24k', '24h'), el('span', 'wl-d-24v', ''));
@@ -14751,7 +14759,7 @@ window.__g06 = { timgData: id => timgData(id), timgRange: d => timgRange(d), tgt
   // 3.69.0: Kerzen-Speicher, Kennzahlen und zuletzt gezeichnete Beschriftungen der Trade-Karte
   candles: id => timgCandles(timgData(id)), stored: id => tcGet(id), stats: async id => { const d = timgData(id); return timgStats(d, await timgCandles(d)); }, get layout() { return timg.layout || null; }, set wait(v) { TIMG_WAIT = v; } };
 window.__g05 = { get state() { return state; }, get workspace() { return workspace; }, get chan() { return chan; }, get svc() { return svc; }, get svcLog() { return svcLog; }, get chanState() { return chanState; },
-  readChanForm, saveChannels, sendTgBackup, notifyChannels, svcRefresh, alarmSub, persist, renderAlarms, syncStreams, tgTarget, backupPayload, alarmEventId };
+  readChanForm, saveChannels, sendTgBackup, notifyChannels, svcRefresh, alarmSub, persist, renderAlarms, syncStreams, tgTarget, backupPayload, alarmEventId, pulseLast };
 // Sekundentakt: mit Dienst jede Minute den bestätigten Stand lesen (andere Geräte, Neustart des Dienstes)
 function svcTick(now) { if (svcOn() && !svc.busy && !document.hidden && now - svc.at > SVC_POLL) void svcRefresh(); if (typeof patSvcRender === 'function') patSvcRender(); }
 // ---- 3.42.0 (G09 C6b): Vorauswahl bewusst per HTTPS übernehmen; nur Metadaten, keine Bot-Token ----
@@ -15437,7 +15445,7 @@ chartBoundary = createWidgetBoundary($('chart-sec'), 'Chart / Market Cap', () =>
 // 3.54.0: neue Panelhöhen auch im vorhandenen Safari-Scrollausgleich berücksichtigen.
 orderflow = createOrderflowView({ root: $('orderflow-panel'), selectedQuote: orderflowSelectedQuote, explainCandle: (hit, meta) => patCandleInfo(hit, meta), updateLayout: fn => nativeAnchor ? fn() : withAnchor(fn), context: () => ({ symbol: state.symbol, paused: state.paused, connected: live.markets.futures?.st === 'live' }), now: serverNow,
   fetchRows: (symbol, interval, limit, signal) => api.get(FUTURES, '/fapi/v1/klines', { symbol, interval, limit }, signal), readPrefs: () => store.get('scalpdesk.orderflow.v1'), savePrefs: prefs => store.set('scalpdesk.orderflow.v1', prefs), streamsChanged: () => syncStreams(), formatPrice: priceText,
-  readDemo: () => store.get('scalpdesk.orderflow-demo.v1'), saveDemo: book => { if (!store.set('scalpdesk.orderflow-demo.v1', book)) throw new Error('Demo konnte nicht gespeichert werden. Browser-Speicher prüfen.'); } });
+  readDemo: () => store.get('scalpdesk.orderflow-demo.v1'), saveDemo: book => { store.set('scalpdesk.orderflow-demo.v1', book); if (!store.ok) throw new Error('Demo konnte nicht gespeichert werden. Browser-Speicher prüfen.'); } });
 var orderflowSignal = createSignalView({ root: $('orderflow-panel'), fold: orderflow.fold, chartHost: document.querySelector('#chart-sec .chart-toolbar'), updateLayout: fn => nativeAnchor ? fn() : withAnchor(fn),
   context: () => ({ symbol: state.symbol, paused: state.paused, connected: live.markets.futures?.st === 'live', unavailable: orderflow.state.unavailable, events: (ec.data?.events || []).filter(e => e.impact === 'high' && e.cur === 'USD').map(e => ({ at: e.t, title: e.title })) }), now: serverNow,
   fetchKlines: (symbol, interval, limit, signal) => api.get(FUTURES, '/fapi/v1/klines', { symbol, interval, limit }, signal),
@@ -15768,7 +15776,7 @@ const musterPaper = createMusterPaper({ read: readMusterPaper, write: writeMuste
   } });
 const MUSTER_TG_NAMES = { hammer: 'Hammer', engulfing: 'Bullish Engulfing', confluence: 'Konfluenz', po3: 'Power of Three' };
 musterView = createMusterView({ host: musterHost, selection: musterSelection, currentPrice: (symbol, market) => state.symbol === symbol && state.source === market ? currentPrice() : null,
-  prefs: store.get('scalpdesk.muster.settings.v1', {}), savePrefs: value => store.set('scalpdesk.muster.settings.v1', value), workerFactory: () => new Worker(new URL('./bundles/3.82.2/shared/muster-bot-worker.mjs', import.meta.url), { type: 'module' }), paper: musterPaper, onMarkers: scheduleDraw,
+  prefs: store.get('scalpdesk.muster.settings.v1', {}), savePrefs: value => store.set('scalpdesk.muster.settings.v1', value), workerFactory: () => new Worker(new URL('./bundles/3.83.0/shared/muster-bot-worker.mjs', import.meta.url), { type: 'module' }), paper: musterPaper, onMarkers: scheduleDraw,
   telegramStatus: () => tgtReady('trades') ? null : 'Hinweis: Telegram ist noch nicht eingerichtet oder das Ziel „Trades“ ist aus (Einstellungen → Telegram).' });
 void musterPaper.restore().then(() => musterPaper.poll());
 function musterDraw(svg, data, x, y, bottom) {
@@ -15796,7 +15804,7 @@ function marketRadarInput() {
 const radarHost = el('div', 'market-overview'), radarRoot = el('details', 'market-radar');
 $('workspace-orderflow').before(radarHost); radarHost.append(radarRoot, $('workspace-orderflow'));
 marketRadarView = createMarketRadarView({ root: radarRoot, input: marketRadarInput, read: () => store.get('scalpdesk.market-radar.v1'),
-  save: value => { if (!store.set('scalpdesk.market-radar.v1', value)) throw Error('Marktradar konnte nicht gespeichert werden.'); broadcastData(['scalpdesk.market-radar.v1']); }, navigate: goTo });
+  save: value => { const changed = store.set(RADAR_KEY, value); if (!store.ok) throw Error('Marktradar konnte nicht gespeichert werden.'); if (changed) broadcastData([RADAR_KEY]); }, navigate: goTo });
 marketRadarBoundary = createWidgetBoundary(radarRoot, 'Marktradar', () => marketRadarView.tick());
 
 // 3.78.0: Analyse-Menü und Hintergrundprüfung; kein weiterer Kurs-/Trade-Alarm, kein Dienst-Policy-Eingriff.
@@ -15822,13 +15830,13 @@ function analysisLog(entry) {
 }
 function analysisBaseAllowed(s) { return tgtReady('analysis')&&analysisChannelAllows(analysisChatState(),s.at)&&!!analysisView && store.info.idb === 'aktiv' && !state.paused && !document.hidden && navigator.onLine !== false && analysisCoinAllowed(analysisView.settings, s.analysisId, s.symbol, analysisCoins()); }
 function analysisAllowed(s) { return analysisBaseAllowed(s)&&(!STRATEGY_IDS.includes(s.analysisId)||strategyAlertCurrent(s,serverNow()))&&(s.analysisId!==PULLBACK.id||pullbackEligible(s,store.get(PULLBACK_MODEL_KEY)?.active,analysisView.settings.rows[PULLBACK.id].options)); }
-const nyHistory = createNyHistory({ read:key=>store.get(key),write:(key,value)=>store.set(key,value),remove:key=>store.del(key),peek:async(symbol,market,iv)=>{const c=await kcGet(symbol,iv);return c?.source===market?c.candles.map(c=>({...c,end:c.closeTime+1})):null;} });
-const nyServices = {read:key=>store.get(key),write:(key,value)=>{const ok=store.set(key,value);if(ok&&[STRATEGY_DATA_KEY,STRATEGY_REPORT_KEY,NY_JOURNAL_KEY,ANALYSIS_LEARNING_KEY,PULLBACK_DATA_KEY,PULLBACK_MODEL_KEY,PULLBACK_ACK_KEY,PULLBACK_DELIVERY_KEY].includes(key))broadcastData([key]);return ok;},history:nyHistory,now:serverNow,available:()=>!document.hidden&&!state.paused&&navigator.onLine!==false,
+const nyHistory = createNyHistory({ read:key=>store.get(key),write:(key,value)=>{store.set(key,value);return store.ok;},remove:key=>store.del(key),peek:async(symbol,market,iv)=>{const c=await kcGet(symbol,iv);return c?.source===market?c.candles.map(c=>({...c,end:c.closeTime+1})):null;} });
+const nyServices = {read:key=>store.get(key),write:(key,value)=>{const changed=store.set(key,value);if(changed&&SYNC_KEYS.includes(key))broadcastData([key]);return store.ok;},history:nyHistory,now:serverNow,available:()=>!document.hidden&&!state.paused&&navigator.onLine!==false,
   symbols:()=>analysisCoins().map(symbol=>({symbol,market:wl?.c.get(symbol)?.market||null})),time:analysisFormats.time,price:priceText,
   strategySymbols:id=>analysisCoins().filter(symbol=>analysisView?.settings.rows[id]?.coins[symbol]!==false).map(symbol=>{const e=wl?.c.get(symbol);return {symbol,market:e?.at&&!e.error?e.market:null};}),
-  strategyRuntime:id=>analysisFeed?.runtime(id),getPhase:(symbol,market)=>{if(!analysisCoins().includes(symbol))return {ready:false,reason:'Coin ist nicht in der Vorauswahl; dafür wird keine feste 1H-Phase geladen.'};const r=getMarktphase(symbol);return r.market===market?r:{ready:false,reason:'Die feste 1H-Phase gehört noch nicht zum angefragten Börsenmarkt.'};},strategyWorkerFactory:()=>new Worker(new URL('./bundles/3.82.2/shared/market-strategy-worker.mjs',import.meta.url),{type:'module'}),
-  pullbackRuntime:()=>analysisFeed?.runtime(PULLBACK.id),pullbackWorkerFactory:()=>new Worker(new URL('./bundles/3.82.2/shared/trend-pullback-worker.mjs',import.meta.url),{type:'module'})};
-const analysisLearning=createAnalysisLearning({...nyServices,options:id=>analysisView?.settings.rows[id]?.options||{},changed:()=>analysisPaint(),log:analysisLog,workerFactory:()=>new Worker(new URL('./bundles/3.82.2/shared/analysis-learning-worker.mjs',import.meta.url),{type:'module'})});
+  strategyRuntime:id=>analysisFeed?.runtime(id),getPhase:(symbol,market)=>{if(!analysisCoins().includes(symbol))return {ready:false,reason:'Coin ist nicht in der Vorauswahl; dafür wird keine feste 1H-Phase geladen.'};const r=getMarktphase(symbol);return r.market===market?r:{ready:false,reason:'Die feste 1H-Phase gehört noch nicht zum angefragten Börsenmarkt.'};},strategyWorkerFactory:()=>new Worker(new URL('./bundles/3.83.0/shared/market-strategy-worker.mjs',import.meta.url),{type:'module'}),
+  pullbackRuntime:()=>analysisFeed?.runtime(PULLBACK.id),pullbackWorkerFactory:()=>new Worker(new URL('./bundles/3.83.0/shared/trend-pullback-worker.mjs',import.meta.url),{type:'module'})};
+const analysisLearning=createAnalysisLearning({...nyServices,options:id=>analysisView?.settings.rows[id]?.options||{},changed:()=>analysisPaint(),log:analysisLog,workerFactory:()=>new Worker(new URL('./bundles/3.83.0/shared/analysis-learning-worker.mjs',import.meta.url),{type:'module'})});
 nyServices.learning=analysisLearning;
 const pullbackReplies=createPullbackReplies({...nyServices,destination:()=>tgTarget('analysis'),allowed:analysisBaseAllowed,claim:(key,ttl)=>store.claim(key,ttl,{strict:true}),log:analysisLog,
   sendReply:async(target,id,text)=>{const fd=new FormData();fd.append('chat_id',target.chat);if(target.thread)fd.append('message_thread_id',target.thread);fd.append('text',text);fd.append('reply_parameters',JSON.stringify({message_id:id,allow_sending_without_reply:false}));await tgPost('sendMessage',fd,false,target.token);return {ok:true};}});
@@ -15854,7 +15862,7 @@ function analysisObserve() {
       const update = observeAnalysis(value, { signal: notify?result.signal:null, symbol: entry.symbol, market: entry.market, rows: entry.rows['15m'], now: serverNow() }); value = update.state; changed ||= update.changed;
     }
   }
-  for(const event of strategyNoticeEvents(Object.values(strategyData(store.get(STRATEGY_DATA_KEY)).records),serverNow()))if((event.symbol===state.symbol&&(analysisRoot.open||analysisView.shown(event.analysisId))||analysisView.settings.rows[event.analysisId]?.coins[event.symbol]!==false)&&!value.events.some(e=>e.id===event.id)){value.events.push(event);changed=true;}
+  for(const event of strategyNoticeEvents(strategyNoticeRecords(strategyData(store.get(STRATEGY_DATA_KEY)).records,serverNow()),serverNow()))if((event.symbol===state.symbol&&(analysisRoot.open||analysisView.shown(event.analysisId))||analysisView.settings.rows[event.analysisId]?.coins[event.symbol]!==false)&&!value.events.some(e=>e.id===event.id)){value.events.push(event);changed=true;}
   for(const event of nyNoticeEvents(store.get(NY_JOURNAL_KEY),serverNow())) if((event.symbol===state.symbol&&(analysisRoot.open||analysisView.shown(NY_OPEN.id))||analysisCoinAllowed(analysisView.settings,NY_OPEN.id,event.symbol,analysisCoins()))&&!value.events.some(e=>e.id===event.id)){value.events.push(event);changed=true;}
   if (changed) store.set(ANALYSIS_NOTICE_KEY, analysisNoticeState(value));
 }
@@ -15874,11 +15882,13 @@ function analysisPaint() {
   if (ANALYSES.some(d => analysisView.settings.rows[d.id].telegram) && !tgTarget('analysis')) cards.push({ text:'Analyse-Telegram: eigenen Bot und Chat unter „Alarme aufs Smartphone → Analyse-Signale“ einrichten.' });
   analysisView.paintResult(cards.map(c => [c.pair, c.text].filter(Boolean).join('\n')).join('\n\n'), [...store.get(ANALYSIS_LOG_KEY, []), ...notices.events.map(e => ({ at:e.at, text:`${displayTimeParts(e.at).clock} ${displayTimeParts(e.at).zone} · ${e.reason}` }))].sort((a, b) => a.at - b.at), cards,groupAnalysisEvents(analysisCoins().flatMap(symbol=>{const market=wl?.c.get(symbol)?.market;return market?ANALYSES.map(d=>analysisFeed?.result(symbol,market,d.id)?.signal).filter(Boolean):[];}),at));
 }
+// 3.83.0: Liste je gespeichertem Stand merken – die sekündliche Runde baute sonst jedes Mal bis zu 20 000 Einträge neu auf
+const recordLists = new WeakMap(), recordList = records => { let list = recordLists.get(records); if (!list) recordLists.set(records, list = Object.values(records)); return list; };
 function analysisTick() { if (!analysisFeed) return;
   for (const symbol of analysisCoins()) { const error = wl?.c.get(symbol)?.error, enabled = ANALYSES.some(d => analysisCoinAllowed(analysisView.settings, d.id, symbol, analysisCoins()));
     if (enabled && error && analysisSkipped.get(symbol) !== error) { analysisSkipped.set(symbol, error); analysisLog({ symbol, kind: 'error', text: `${symbol}: Vorauswahl-Datenfehler; Analyse übersprungen (${error}).` }); } else if (!error) analysisSkipped.delete(symbol);
   }
-  void analysisFeed.tick();void analysisLearning.tick();analysisObserve(); if (!document.hidden) { analysisPaint(); nyLivePaint(); } void pullbackReplies.reconcile(Object.values(pullbackData(store.get(PULLBACK_DATA_KEY)).records)).catch(e=>analysisLog({kind:'error',text:'Rücksetzer-Ergebnis: '+e.message}));
+  void analysisFeed.tick();void analysisLearning.tick();analysisObserve(); if (!document.hidden) { analysisPaint(); nyLivePaint(); } void pullbackReplies.reconcile(recordList(pullbackData(store.get(PULLBACK_DATA_KEY)).records)).catch(e=>analysisLog({kind:'error',text:'Rücksetzer-Ergebnis: '+e.message}));
 }
 function nyLivePaint() {
   if (!analysisView) return; const r=analysisFeed?.result(state.symbol,chartMarket(),NY_OPEN.id), p=!state.paused&&navigator.onLine!==false&&!state.marketError&&state.loadedSymbol===state.symbol?currentPrice():null;
@@ -15928,15 +15938,15 @@ window.__marketRadar = { view: marketRadarView, input: marketRadarInput, tick: (
 wmFeed = createWatchModelFeed({ now: serverNow, context: () => ({ enabled: wmStrict(), paused: state.paused, hidden: document.hidden, online: navigator.onLine,
   symbols: state.watch.map(wlSym).map(symbol => { const e = wl?.c.get(symbol); return e?.at && !e.error ? { symbol, market: e.market } : null; }).filter(Boolean) }), fetchRows: cachedKlines,
   changed: () => { if (!userScrolling()) wlPaint(Date.now(), true); } });
-marketPhaseFeed=createMarketPhaseFeed({now:serverNow,fetchRows:cachedKlines,read:key=>store.get(key),write:(key,value)=>store.set(key,value),
+marketPhaseFeed=createMarketPhaseFeed({now:serverNow,fetchRows:cachedKlines,read:key=>store.get(key),write:(key,value)=>{store.set(key,value);return store.ok;},
   context:()=>({paused:state.paused,hidden:document.hidden,online:navigator.onLine,symbols:state.watch.map(wlSym).map(symbol=>{const e=wl?.c.get(symbol);return e?.at&&!e.error?{symbol,market:e.market}:null;}).filter(Boolean)}),
-  workerFactory:()=>new Worker(new URL('./bundles/3.82.2/shared/market-phase-worker.mjs',import.meta.url),{type:'module'}),changed:()=>{if(wldSel)wld?.phase.paint(wldSel);}});
+  workerFactory:()=>new Worker(new URL('./bundles/3.83.0/shared/market-phase-worker.mjs',import.meta.url),{type:'module'}),changed:()=>{if(wldSel)wld?.phase.paint(wldSel);}});
 window.__marketPhase={feed:marketPhaseFeed,getMarktphase};
 const wmSave = async (key, value) => { store.set(key, value); if (!store.ok || !await store.flush()) throw new Error('Modelltest konnte nicht gespeichert werden.'); };
 wmView = createWatchModelView({ host: document.querySelector('#workspace-settings .workspace-settings-grid'), read: key => store.get(key), save: wmSave, getMode: wmMode,
   setMode: async mode => { const before = wmMode(); try { await wmSave(WATCH_MODEL_KEY, mode === 'strict' ? 'strict' : 'classic'); } catch (e) { store.set(WATCH_MODEL_KEY, before); throw e; } broadcastData([WATCH_MODEL_KEY]); wmRefresh(); },
   now: serverNow, symbols: () => state.watch.map(wlSym), history: createMusterClient().history, available: () => !document.hidden && !state.paused && navigator.onLine !== false,
-  workerFactory: () => new Worker(new URL('./bundles/3.82.2/shared/watch-model-worker.mjs', import.meta.url), { type: 'module' }) });
+  workerFactory: () => new Worker(new URL('./bundles/3.83.0/shared/watch-model-worker.mjs', import.meta.url), { type: 'module' }) });
 function wmAvailability() {
   wmFeed.sync();
   marketPhaseFeed?.sync();wld?.phase.availabilityChanged();
@@ -16026,16 +16036,41 @@ function cryptoCalendarBuild() {
 }
 cryptoCalendarBuild();
 var panelAppearanceView = createPanelAppearanceSettings({ host: $('view-panel'), read: () => store.get('scalpdesk.panel-style.v1'),
-  save: value => { if (!store.set('scalpdesk.panel-style.v1', value)) throw Error('Darstellung konnte nicht gespeichert werden.'); }, adopt: value => store.adopt('scalpdesk.panel-style.v1', value) });
+  save: value => { store.set('scalpdesk.panel-style.v1', value); if (!store.ok) throw Error('Darstellung konnte nicht gespeichert werden.'); }, adopt: value => store.adopt('scalpdesk.panel-style.v1', value) });
 window.__panelAppearance = panelAppearanceView;
 
 window.__cryptoCalendar = { tick: cryptoCalendarTick, fetch: cryptoCalendarFetch, paint: cryptoCalendarPaint, get state() { return cryptoCal; } };
 // Privater GitHub-Sync nutzt denselben geprüften persönlichen Import, mit zusätzlicher lokaler Notfallkopie.
 const GH_EMERGENCY_KEY = 'scalpdesk.github-emergency.v1';
-const GH_PREF_KEYS = [...new Set([...PREF_KEYS, 'scalpdesk.chart-interval.v1', WORKSPACE_KEY, LAYOUT_KEY, OVHIDE_KEY, DEC_RANK_KEY, DEC_SPOT_KEY, 'scalpdesk.ki.settings.v1', 'scalpdesk.po3.settings.v1', 'scalpdesk.paper.settings.v1', 'scalpdesk.muster.settings.v1', PK_KEY, PK_Q])];
-// Schlüssel, die nach 3.71 dazukamen: in älteren Sync-Dateien fehlen sie (3.82.2: Darstellung und Marktradar ergänzt – solche Dateien
-// wurden seit 3.74 als „kein gültiger Scalp-Desk-Stand“ abgelehnt). Neue Präferenzschlüssel hier mit eintragen.
-const GH_OPTIONAL_KEYS = [WATCH_MODEL_KEY, WATCH_COMPARE_KEY, ANALYSIS_KEY, ANALYSIS_LEARNING_KEY, PULLBACK_DATA_KEY, PULLBACK_MODEL_KEY, STRATEGY_DATA_KEY, STRATEGY_REPORT_KEY, 'scalpdesk.panel-style.v1', 'scalpdesk.market-radar.v1'];
+// ---------- 3.83.0: Speicherschlüssel – eine zentrale Liste ----------
+// Neue Schlüssel NUR hier eintragen; die Listen darunter entstehen daraus (vorher vier getrennte Listen, die auseinanderliefen:
+// GitHub-Dateien aus 3.71–3.73 wurden abgelehnt, der Marktradar wurde zwischen Tabs nicht abgeglichen). Kennbuchstaben:
+//   b = in der Sicherung und im Einstellungs-Abgleich (PREF_KEYS)      s = zwischen offenen Tabs abgleichen (SYNC_KEYS)
+//   g = zusätzlich im GitHub-Abgleich (GH_PREF_KEYS; alles mit b ist dort immer dabei)
+//   o = darf in GitHub-Dateien fehlen, weil nach 3.71 dazugekommen (GH_OPTIONAL_KEYS) – bei jedem neuen b-/g-Schlüssel setzen
+const STORE_KEYS = [
+  [STRATEGY_DATA_KEY, 'bso'], [STRATEGY_REPORT_KEY, 'bso'], [ANALYSIS_LEARNING_KEY, 'bso'], [PULLBACK_DATA_KEY, 'bso'], [PULLBACK_MODEL_KEY, 'bso'],
+  [ANALYSIS_KEY, 'bso'], ['scalpdesk.panel-style.v1', 'bo'], [RADAR_KEY, 'bso'], [WATCH_MODEL_KEY, 'bso'], [WATCH_COMPARE_KEY, 'bo'],
+  ['scalpdesk.pattern-projection.v1', 'b'], ['scalpdesk.orderflow-journal.v1', 'b'], ['scalpdesk.orderflow-position.v1', 'b'], ['scalpdesk.orderflow-signal.v1', 'b'],
+  ['scalpdesk.orderflow.v1', 'b'], ['scalpdesk.ki.risk-view.v1', 'b'], ['scalpdesk.theme.v1', 'b'], ['scalpdesk.presentation.v1', 'b'],
+  ['scalpdesk.background.v1', 'b'], ['scalpdesk.overlays.v1', 'b'], ['scalpdesk.zigzag.v1', 'b'], ['scalpdesk.whale.v1', 'b'],
+  ['scalpdesk.orderbook.v1', 'b'], ['scalpdesk.ladder.v1', 'b'], ['scalpdesk.vola.v1', 'b'], ['scalpdesk.econ.v1', 'b'],
+  ['scalpdesk.cnews.v1', 'b'], ['scalpdesk.wlspan.v1', 'b'], ['scalpdesk.titleprice.v1', 'b'], ['scalpdesk.details.v1', 'b'],
+  ['scalpdesk.posdefaults.v1', 'b'], ['scalpdesk.daylimitnote.v1', 'b'], ['scalpdesk.warnclose.v1', 'b'], ['scalpdesk.evalyear.v1', 'b'],
+  ['scalpdesk.acctrange.v1', 'b'], ['scalpdesk.anaiv.v1', 'b'], ['scalpdesk.decouple.v1', 'b'], ['scalpdesk.kizones.v1', 'b'],
+  ['scalpdesk.heikin.v1', 'b'], ['scalpdesk.zonesig.v1', 'b'], ['scalpdesk.patfilter.v1', 'b'],
+  [PULLBACK_ACK_KEY, 's'], [PULLBACK_DELIVERY_KEY, 's'], [NY_JOURNAL_KEY, 's'], [POS_KEY, 's'], [HIST_KEY, 's'],
+  [MONEY_KEY, 's'], [BAL_KEY, 's'], [ALARM_KEY, 's'], [SETUP_KEY, 's'], [WATCH_KEY, 's'],
+  [CHANGES_KEY, 's'], ['scalpdesk.channels.v1', 's'], [ZZP_KEY, 's'], ['scalpdesk.s247.v1', 's'], ['scalpdesk.pnlalarm.v1', 's'],
+  ['scalpdesk.deleted.v1', 's'], ['scalpdesk.settingsat.v1', 's'], ['scalpdesk.listsat.v1', 's'], ['scalpdesk.demopositions.v1', 's'], ['scalpdesk.demohistory.v1', 's'],
+  ['scalpdesk.quarantine.v1', 's'], ['scalpdesk.conflicts.v1', 's'], ['scalpdesk.settingsh.v1', 's'], ['scalpdesk.deletedh.v1', 's'], ['scalpdesk.svc.v1', 's'],
+  ['scalpdesk.policy.v1', 's'], ['scalpdesk.tradeimg.v1', 's'], [PULSE_KEY, 's'],   // 3.83.0: Puls-Sperre kam vorher nicht im anderen Tab an
+  ['scalpdesk.chart-interval.v1', 'g'], [WORKSPACE_KEY, 'g'], [LAYOUT_KEY, 'g'], [OVHIDE_KEY, 'g'],
+  [DEC_RANK_KEY, 'g'], [DEC_SPOT_KEY, 'g'], ['scalpdesk.ki.settings.v1', 'g'], ['scalpdesk.po3.settings.v1', 'g'],
+  ['scalpdesk.paper.settings.v1', 'g'], ['scalpdesk.muster.settings.v1', 'g'], [PK_KEY, 'g'], [PK_Q, 'g']
+];
+const storeKeys = flag => [...new Set(STORE_KEYS.filter(([, f]) => f.includes(flag)).map(([k]) => k))];
+const PREF_KEYS = storeKeys('b'), SYNC_KEYS = storeKeys('s'), GH_PREF_KEYS = [...new Set([...PREF_KEYS, ...storeKeys('g')])], GH_OPTIONAL_KEYS = storeKeys('o');
 const ghEmergencyKeys = [...new Set([...UNDO_KEYS, ...GH_PREF_KEYS, RL_KEY, IMPORTS_KEY, UNDO_KEY, CHANGES_KEY, BACKUP_META_KEY])];
 const ghSnapshot = () => ghEmergencyKeys.map(key => { const value = store.get(key); return value === undefined ? { key, present: false } : { key, present: true, value: structuredClone(value) }; });
 async function ghRestoreEmergency(copy) {
@@ -16045,7 +16080,11 @@ async function ghRestoreEmergency(copy) {
   if (!store.ok || !await store.flush()) throw new Error('Notfallkopie konnte nicht vollständig wiederhergestellt werden. Sie bleibt erhalten; Speicher prüfen und erneut versuchen.');
 }
 async function ghCollect() {
-  const data = { app: 'scalpdesk-github-sync', version: 1, backup: backupPayload(), preferences: GH_PREF_KEYS.map(key => {
+  // 3.83.0: backup.prefs entfällt – dieselben Werte (PREF_KEYS ⊆ GH_PREF_KEYS) stehen in preferences und werden beim Laden ohnehin
+  // daraus gesetzt; vorher standen alle Lernstände (je bis 20 000 Einträge) doppelt in der Datei. Ältere Apps lesen die Datei
+  // weiter: planBackup behandelt prefs als optional.
+  const backup = backupPayload(); delete backup.prefs;
+  const data = { app: 'scalpdesk-github-sync', version: 1, backup, preferences: GH_PREF_KEYS.map(key => {
     const v = store.get(key); if (v === undefined) return { key, present: false };
     const value = structuredClone(personalBackupPref(key, v));
     if (['scalpdesk.ki.settings.v1', 'scalpdesk.po3.settings.v1'].includes(key) && isObj(value)) value.on = false; // kein Versand/Analyse-Start auf einem anderen Gerät

@@ -5,6 +5,8 @@ const h = require('./harness'), fs = require('fs'), path = require('path');
 const results = [];
 const check = (name, cond, detail = '') => { results.push({ name, ok: !!cond, detail }); console.log(`${cond ? '  ✓' : '  ✗'} ${name}${detail ? ' — ' + detail : ''}`); };
 const START = JSON.parse(fs.readFileSync(require('path').join(__dirname, '..', 'data/muster-start.json'), 'utf8'));
+// 3.83.0: Version aus der Datei (der Startbestand wird mit tools/zzp-start.mjs neu berechnet), nächste Version für den Startweg
+const SV = String(START.version), NV = String(Number(START.version) + 1);
 // Der Test sperrt den Service Worker (sonst liefe der Startbestand an der Test-Umleitung vorbei) – die Warnung dazu zählt nicht
 const real = errs => errs.filter(e => !/Service Worker registration blocked by Playwright/.test(e));
 const desk = { viewport: { width: 1440, height: 900 }, acceptDownloads: true, serviceWorkers: 'block' };
@@ -32,9 +34,9 @@ const download = async (page, fn) => { const [dl] = await Promise.all([page.wait
     let { ctx, page, errors } = await open(browser);
     let p = await pat(page); await openData(page); await page.waitForTimeout(300); p = await pat(page);
     const personal = await page.evaluate(() => ['scalpdesk.positions.v1', 'scalpdesk.history.v1', 'scalpdesk.alarms.v1'].map(k => JSON.parse(localStorage.getItem(k) || '[]').length));
-    check('Neuer Nutzer: Startbestand (Version 1) beim Start geladen', p.base === '1' && p.n1h > 100 && p.keys >= Object.keys(START.s).length, JSON.stringify({ base: p.base, muster: p.keys, fälle1h3: p.n1h }));
+    check(`Neuer Nutzer: Startbestand (Version ${SV}) beim Start geladen`, p.base === SV && p.n1h > 100 && p.keys >= Object.keys(START.s).length, JSON.stringify({ base: p.base, muster: p.keys, fälle1h3: p.n1h }));
     check('Neuer Nutzer: keine persönlichen Daten übernommen', personal.every(n => n === 0), JSON.stringify(personal));
-    check('Datensicherung zeigt den Musterbestand mit Startbestand-Version', /Fälle in \d+ Mustern · Startbestand Version 1 eingespielt/.test(p.info), p.info);
+    check('Datensicherung zeigt den Musterbestand mit Startbestand-Version', new RegExp(`Fälle in \\d+ Mustern · Startbestand Version ${SV} eingespielt`).test(p.info), p.info);
     check('keine Fehler (neuer Nutzer)', !real(errors).length, real(errors).join(' | ')); await ctx.close();
     // 2. Neu gelerntes Testmuster (ZigZag-Prognose, 1m, 0,25 %) übersteht Neuladen
     ({ ctx, page, errors } = await open(browser, { init: [zzOn] }));
@@ -42,7 +44,7 @@ const download = async (page, fn) => { const [dl] = await Promise.all([page.wait
     check('Testmuster gelernt und sofort gespeichert (mit Versionsstand)', learned.n1m >= 10 && learned.series && learned.rev >= 2 && learned.at > 0, JSON.stringify({ fälle1m: learned.n1m, rev: learned.rev }));
     await page.reload(); await page.waitForFunction(() => document.getElementById('status').dataset.feed === 'live', null, { timeout: 20000 }).catch(() => {}); await page.waitForTimeout(2000);
     const afterReload = await pat(page);
-    check('Neuladen: Testmuster bleibt (mindestens so viele Fälle)', afterReload.n1m >= learned.n1m && afterReload.base === '1', `${learned.n1m} → ${afterReload.n1m}`);
+    check('Neuladen: Testmuster bleibt (mindestens so viele Fälle)', afterReload.n1m >= learned.n1m && afterReload.base === SV, `${learned.n1m} → ${afterReload.n1m}`);
     // 3. Normaler Reset: Handelsdaten weg, Muster bleiben; Sicherung davor als Datei
     await page.evaluate(() => { const now = Date.now(); localStorage.setItem('scalpdesk.positions.v1', JSON.stringify([{ id: 'p-test', symbol: 'BTCUSDT', side: 'long', mode: 'isolated', entry: 60000, leverage: 10, qty: 0.01, margin: 60, openedAt: now, source: 'spot', liqExchange: null, preRealized: 0, sl: null, tp: null, ack: { sl: false, tp: false } }])); });
     await page.reload(); await page.waitForTimeout(2500); await openData(page); await page.waitForTimeout(300);
@@ -55,7 +57,7 @@ const download = async (page, fn) => { const [dl] = await Promise.all([page.wait
     const afterReset = await pat(page), posAfter = await page.evaluate(() => JSON.parse(localStorage.getItem('scalpdesk.positions.v1') || '[]').length), msg = await page.textContent('#history-status');
     const preFile = JSON.parse(pre.text);
     check('Reset: vorher Sicherungsdatei mit Position und Mustern', /^backup-vor-zuruecksetzen-\d{4}-\d\d-\d\d\.json$/.test(pre.name) && preFile.positions.length === 1 && (preFile.patterns?.s ? Object.keys(preFile.patterns.s).some(k => k.startsWith('1m|0.25|')) : false), pre.name);
-    check('Reset: Positionen gelöscht, gelernte Muster erhalten', posBefore === 1 && posAfter === 0 && afterReset.n1m >= before.n1m && afterReset.base === '1', JSON.stringify({ positionen: [posBefore, posAfter], fälle1m: [before.n1m, afterReset.n1m] }));
+    check('Reset: Positionen gelöscht, gelernte Muster erhalten', posBefore === 1 && posAfter === 0 && afterReset.n1m >= before.n1m && afterReset.base === SV, JSON.stringify({ positionen: [posBefore, posAfter], fälle1m: [before.n1m, afterReset.n1m] }));
     check('Reset: Meldung nennt die Sicherungsdatei', /Handelsdaten zurückgesetzt/.test(msg) && /backup-vor-zuruecksetzen/.test(msg), msg);
     // 4. Musterbestand exportieren: nur Muster, keine persönlichen Daten
     const exp = await download(page, () => page.click('#zzp-export')), ex = JSON.parse(exp.text);
@@ -68,7 +70,7 @@ const download = async (page, fn) => { const [dl] = await Promise.all([page.wait
     await page.setInputFiles('#backup-file', tmp); await page.waitForTimeout(600);
     await page.evaluate(() => document.querySelector('#sync-preview .sp-actions .button.primary-lite')?.click()); await page.waitForTimeout(500); // 3.27.0: Vorschau → „Übernehmen“
     const restored = await pat(page), posR = await page.evaluate(() => JSON.parse(localStorage.getItem('scalpdesk.positions.v1') || '[]').length);
-    check('Geleerter Speicher: Startbestand sofort wieder da, eigenes Testmuster noch nicht', fresh.base === '1' && fresh.n1h > 100 && fresh.n1m === 0, JSON.stringify({ base: fresh.base, fälle1m: fresh.n1m }));
+    check('Geleerter Speicher: Startbestand sofort wieder da, eigenes Testmuster noch nicht', fresh.base === SV && fresh.n1h > 100 && fresh.n1m === 0, JSON.stringify({ base: fresh.base, fälle1m: fresh.n1m }));
     check('Wiederherstellen aus der Sicherung: Testmuster und Position zurück', restored.n1m >= before.n1m && posR === 1, JSON.stringify({ fälle1m: restored.n1m, positionen: posR }));
     // 6. Musterbestand-Datei einspielen (ohne Sicherung drumherum)
     const tmp2 = path.join(__dirname, 'm37-muster.json'); fs.writeFileSync(tmp2, exp.text);
@@ -77,10 +79,10 @@ const download = async (page, fn) => { const [dl] = await Promise.all([page.wait
     check('Musterbestand-Datei einspielen: klare Meldung, nichts doppelt', /^Musterbestand: nichts Neues|^Musterbestand übernommen/.test(m6msg) && (await pat(page)).n1m === restored.n1m, m6msg);
     check('keine Fehler (Wiederherstellen)', !real(errors).length, real(errors).join(' | ')); await ctx.close();
     // 7. Startweg für neue Nutzer: der exportierte Bestand als neuer Startbestand (Version 2) im GitHub-Projekt
-    const v2 = { ...ex, version: '2' };
+    const v2 = { ...ex, version: NV };
     ({ ctx, page, errors } = await open(browser, { start: v2 }));
     const nu = await pat(page);
-    check('Neuer Nutzer über den Startweg: gelerntes Testmuster verfügbar (Startbestand Version 2)', nu.base === '2' && nu.n1m >= before.n1m, JSON.stringify({ base: nu.base, fälle1m: nu.n1m }));
+    check(`Neuer Nutzer über den Startweg: gelerntes Testmuster verfügbar (Startbestand Version ${NV})`, nu.base === NV && nu.n1m >= before.n1m, JSON.stringify({ base: nu.base, fälle1m: nu.n1m }));
     // Neue Version auf einem Gerät mit älterem Stand: je Muster die Fassung mit mehr Fällen, nichts doppelt
     await page.reload(); await page.waitForTimeout(2500); const again = await pat(page);
     check('Gleiche Version erneut geladen: nichts doppelt gezählt', again.n1m === nu.n1m && again.n1h === nu.n1h, `${nu.n1m}/${nu.n1h} → ${again.n1m}/${again.n1h}`);

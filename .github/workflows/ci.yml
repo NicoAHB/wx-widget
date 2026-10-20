@@ -1,0 +1,49 @@
+# Prüfung bei jedem Pull Request und jedem Stand auf main (3.83.0): Lint, Lieferlisten/Bündel (build-release --check) und alle
+# Einheitentests. Rund 5–8 Minuten. Ein roter Haken heißt: nicht zusammenführen, erst reparieren.
+# Die Browser-Tests (tests/run-all.sh, rund 2,5 h) laufen nachts in nachtlauf.yml.
+name: Prüfung
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pruefung-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pruefung:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      TZ: UTC
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Abhängigkeiten (Tests, Kartenrenderer, ESLint, Chromium für unit-fmt)
+        run: |
+          npm ci --prefix tests --no-audit --no-fund
+          npm ci --prefix server --no-audit --no-fund
+          npm install -g eslint@10.1.0 --no-audit --no-fund
+          npm install --prefix tests --no-save --no-audit --no-fund playwright@1.56.1
+          npx --prefix tests playwright install --with-deps chromium
+
+      - name: Lint (App, Kopfskript, shared/)
+        run: bash tests/lint.sh
+
+      - name: Lieferlisten und Bündel aktuell
+        run: node tools/build-release.mjs --check
+
+      - name: Einheitentests
+        run: bash tests/run-unit.sh

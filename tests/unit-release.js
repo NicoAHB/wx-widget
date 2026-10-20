@@ -14,5 +14,9 @@ const check = (name, ok) => { ok ? pass++ : fail++; console.log(`${ok ? '✓' : 
   check('Keine QR-Bibliothek mehr im Lieferstand (3.67.0: QR-Übertragung entfernt)', !fs.existsSync(path.join(base, 'vendor')) && !manifest.files.some(x => /jsQR/i.test(x.path)) && !/jsQR|qr-dialog/.test(html));
   check('SVG-Musterkatalog bleibt im versionierten HTML, keine neue Erkennungsengine', html.includes('function patSvg(') && fs.readFileSync(path.join(base, 'server/pattern-engine.mjs')).equals(fs.readFileSync(path.join(root, 'server/pattern-engine.mjs'))));
   check('Service Worker syntaktisch gültig und löscht keinen persönlichen Datenspeicher', (() => { try { new Function(sw); return !/indexedDB\.deleteDatabase|localStorage\.clear/.test(sw); } catch { return false; } })());
+  // 3.83.0: Aufräumen alter Bündel (tools/prune-bundles.mjs) behält jede Version, die ein Test als Vergleichsstand lädt, und die neuesten fünf
+  const { bundlePlan, testedBundles } = await import('../tools/prune-bundles.mjs'), plan = bundlePlan(root), tested = [...testedBundles(root)];
+  check('Jedes von Tests geladene Vergleichsbündel ist vorhanden und bleibt beim Aufräumen erhalten', tested.every(v => fs.existsSync(path.join(root, 'bundles', v)) && plan.kept.includes(v)));
+  check('Aufräumen behält die aktuelle Version und die vier davor', plan.kept.includes(version) && plan.all.slice(-5).every(v => plan.kept.includes(v)) && !plan.removed.includes(version));
   console.log(`${pass}/${pass + fail} bestanden`); process.exitCode = fail ? 1 : 0;
 })().catch(e => { console.error(e); process.exitCode = 1; });

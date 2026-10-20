@@ -1,4 +1,4 @@
-import { ANALYSIS_LEARNING, compactLearningSignal, learningVersion, topDownLearningOutcome } from './analysis-learning.mjs';
+import { ANALYSIS_LEARNING, compactLearningSignal, learningVersion, topDownLearningOutcome, nyFirst } from './analysis-learning.mjs';
 import { evaluateTopDown, TOP_DOWN } from './analysis-top-down.mjs';
 import { runNyBacktest } from './ny-open-backtest.mjs';
 import { nyWait } from './ny-open-history.mjs';
@@ -17,4 +17,4 @@ export async function runAnalysisLearningBacktest({id,symbols,options,history,no
     for(const iv of ['4h','1h','15m']){const ms=INTERVAL_MS[iv],end=Math.floor(to/ms)*ms,start=Math.floor(from/ms)*ms-TOP_DOWN.history*ms;let rows=[];for(let cursor=start;cursor<end;){cancelled(signal);const next=Math.min(end,cursor+ANALYSIS_LEARNING.historyChunkDays*86400000);progress({done,total:symbols.length,symbol:coin.symbol,interval:iv});const batch=await history({...coin,timeframe:iv,from:cursor,to:next,signal});if(batch.length!==(next-cursor)/ms||batch.some((c,i)=>c.time!==cursor+i*ms||c.end!==c.time+ms))throw Error(iv+': historisches Fenster unvollständig.');rows=rows.concat(batch);cursor=next;}candles[iv]=rows;}
     const job={type:'scan',candles,...coin,from,to},batch=worker?await worker(job,signal):await scanTopDownLearning({...job,signal});records.push(...batch);done++;await completed(batch);
   }catch(e){cancelled(signal);errors.push({symbol:coin.symbol,text:e.message});}}return{id,at:now,from,to,checked:done,symbols,errors,records};}
-export function nyLearningOutcomeFromTrade(t){const o=t.signal.options?.breakeven!==false?t.breakeven:t.fixed;return{status:o.status,first:['target','stop','breakeven'].includes(o.status)?{...o,status:o.status==='target'?'target1':o.status}:null,complete:['target','stop','breakeven','expired','open_2h'].includes(o.status),fixed:t.fixed,breakeven:t.breakeven,checkedAt:o.checkedAt};}
+export function nyLearningOutcomeFromTrade(t){const o=t.signal.options?.breakeven!==false?t.breakeven:t.fixed;return{status:o.status,first:nyFirst(o),complete:['target','stop','breakeven','expired','open_2h'].includes(o.status),fixed:t.fixed,breakeven:t.breakeven,checkedAt:o.checkedAt};}

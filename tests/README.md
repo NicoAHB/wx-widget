@@ -1,5 +1,23 @@
 # Tests für Scalp Desk
 
+**3.83.0 Prüfautomatik, Speicherschlüssel, Trading-Logik, Leistung (Claude):**
+- **Prüfautomatik:** `run-unit.sh` führt alle `unit-*.js` nacheinander aus (Fehlercode bei ✗); GitHub Actions ruft es bei jedem PR auf
+  (`.github/workflows/ci.yml`), den Gesamtlauf `run-all.sh` jede Nacht (`nachtlauf.yml`).
+- **Neu in `run-all.sh`:**
+  - `unit-store-keys`: zentrale Liste `STORE_KEYS`; gesendete Schlüssel im Tab-Abgleich, neuere GitHub-Schlüssel optional;
+  - `m136`: zwei Tabs, Marktradar zusammenführen, BTC-Puls-Sperre;
+  - `m137`: Analyse-Runde mit 2 × 20 000 Einträgen unter 50 ms Median (vorher ~155 ms).
+- **Erweitert:**
+  - `unit-zzp`, `m11`, `m37`: ZigZag-Regel 2, Startbestand-Version aus der Datei;
+  - `unit-macd-chart`: nur endgültig geschlossene Kerzen;
+  - `unit-analysis-learning`, `unit-ny-open`: NY `learn-2`, New-York-Zeit, Schlusskurs an der Frist;
+  - `unit-market-phase`: schlanke Protokolleinträge;
+  - `unit-market-strategies`, `unit-trend-pullback`: Verzeichnis folgt jedem neuen Stand;
+  - `unit-release`: Bündel-Aufräumen behält Testvergleichsstände und die neuesten fünf;
+  - `m90`: keine doppelten Daten in der GitHub-Datei.
+- **Vergleichsbündel:** Ein Test, der gegen ein älteres Bündel vergleicht, schreibt den Pfad `bundles/X.Y.Z/` wörtlich – nur dann behält
+  `tools/prune-bundles.mjs` es.
+
 **3.82.2 Prüfung des ChatGPT-Stands (Dienst 2.15.4, Claude):**
 - **Repariert:**
   - `unit-wl` (Schnittmarke seit 3.75.1 „3.75.1: eine gemeinsame Signalübersicht“);
