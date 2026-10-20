@@ -117,7 +117,7 @@
   --rsi-low:#65576c;--rsi-mid:#35443f;--rsi-high:#6a6046;--band-out:#3a2c33;--band-in:#23313d;
   --grid:#252c35;--axis:#99a5b4;--cross:#81918d;--stripe:#1b222b;--noscript:#492932;
   --shadow:0 12px 32px rgba(0,0,0,.5);--backdrop:rgba(11,15,19,.94);--statusbar:#0b0f13;
-  --c-liq:#ff5a73;--c-magnet:#ffcf6e;--c-hz:#f5a35c;--c-up:#90e4bf;--c-down:#ed8b9a;--c-bb:#7fb0e0;--c-ema:#b69cf2;--c-vp:#e2bb76;--c-vpbar:#8f9bab;--c-short:#f0a0ad;--c-last:#96b8a8;--c-zero:#8f9bab;--c-bd-pos:#2f6b52;--c-bd-neg:#7a3a47;
+  --c-liq:#ff5a73;--c-magnet:#ffcf6e;--c-hz:#f5a35c;--c-vwap:#6fd6d1;--c-up:#90e4bf;--c-down:#ed8b9a;--c-bb:#7fb0e0;--c-ema:#b69cf2;--c-vp:#e2bb76;--c-vpbar:#8f9bab;--c-short:#f0a0ad;--c-last:#96b8a8;--c-zero:#8f9bab;--c-bd-pos:#2f6b52;--c-bd-neg:#7a3a47;
   --buy:#2fbf71;--buy-ink:#04140b;--sell:#e4798b;--sell-ink:#1c070c;--hold:#2a323c;--hold-ink:#d7dee6;
   --t-p3:rgba(47,191,113,.30);--t-p2:rgba(47,191,113,.19);--t-p1:rgba(47,191,113,.09);--t-m1:rgba(228,121,139,.08);--t-m2:rgba(228,121,139,.16);--t-m3:rgba(228,121,139,.25);
   --toast-up-bg:#16301f;--toast-up-text:#7ee2a0;--toast-up-border:#2f6b45;--toast-down-bg:#3a2615;--toast-down-text:#ffb561;--toast-down-border:#7a4a1c}
@@ -136,7 +136,7 @@
   --rsi-low:#d9c6e2;--rsi-mid:#cfe6d9;--rsi-high:#ecdcb2;--band-out:#f3d7de;--band-in:#dbe7f2;
   --grid:#e6ebf0;--axis:#5c6977;--cross:#7b8794;--stripe:#e9edf2;--noscript:#fbe0e5;
   --shadow:0 12px 32px rgba(20,30,45,.18);--backdrop:rgba(238,241,245,.94);--statusbar:#0b0f13;
-  --c-liq:#d1183b;--c-magnet:#b8741a;--c-hz:#c2650f;--c-up:#0e9f6e;--c-down:#e0485f;--c-bb:#3b7fc4;--c-ema:#7c5cd6;--c-vp:#c28a1a;--c-vpbar:#7b8794;--c-short:#d33c58;--c-last:#4f7f69;--c-zero:#7b8794;--c-bd-pos:#7fcfa8;--c-bd-neg:#eea6b3;
+  --c-liq:#d1183b;--c-magnet:#b8741a;--c-hz:#c2650f;--c-vwap:#0d8f8a;--c-up:#0e9f6e;--c-down:#e0485f;--c-bb:#3b7fc4;--c-ema:#7c5cd6;--c-vp:#c28a1a;--c-vpbar:#7b8794;--c-short:#d33c58;--c-last:#4f7f69;--c-zero:#7b8794;--c-bd-pos:#7fcfa8;--c-bd-neg:#eea6b3;
   --buy:#15a35a;--buy-ink:#ffffff;--sell:#f2b6c0;--sell-ink:#5a0f1e;--hold:#e3e8ee;--hold-ink:#2f3a46;
   --t-p3:rgba(21,163,90,.26);--t-p2:rgba(21,163,90,.16);--t-p1:rgba(21,163,90,.07);--t-m1:rgba(214,64,92,.06);--t-m2:rgba(214,64,92,.12);--t-m3:rgba(214,64,92,.2);
   --toast-up-bg:#dcf5e6;--toast-up-text:#0b5c33;--toast-up-border:#86cfa3;--toast-down-bg:#fdebd8;--toast-down-text:#8a4300;--toast-down-border:#f0b77a}
@@ -431,7 +431,7 @@ html[data-chartfull] .of-chart-grid,html[data-chartfull] .of-chart-pane{display:
 .zoom-controls button{min-width:40px;min-height:38px;border:1px solid var(--border);border-radius:7px;background:var(--field);color:var(--text-2);font-size:1rem;padding:0 8px}
 .zoom-controls button:disabled{opacity:.35}
 .zoom-controls #pan-now{font-size:.75rem;font-weight:600;color:var(--mint);border-color:var(--up-border)}
-.ohlc{padding:10px 20px 4px;color:var(--muted);font-size:.75rem;font-variant-numeric:tabular-nums;min-height:36px;overflow-wrap:anywhere}
+.ohlc{padding:10px 20px 4px;color:var(--muted);font-size:.75rem;font-variant-numeric:tabular-nums;min-height:50px;overflow-wrap:anywhere}  /* zwei Zeilen reserviert: mit dem Zeitstempel beim Überfahren bricht der Text um, der Chart darf dabei nicht springen */
 .chart{height:340px;width:100%;position:relative;overflow:hidden;touch-action:pan-y;cursor:crosshair;-webkit-user-select:none;user-select:none}
 /* 3.76.1: unsichtbare Fingerziele, ein Wert-Label; keine weitere Chart-/Glasebene. */
 .pat-projection-hit{stroke:transparent;stroke-width:26;fill:none;pointer-events:stroke;vector-effect:non-scaling-stroke;cursor:pointer;-webkit-touch-callout:none}
@@ -1409,6 +1409,20 @@ html[data-chartfull]:not([data-chartbar=open]) .chart-toolbar,html[data-chartful
   .fs-note{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:16px;max-height:32px}
 }
 @container (max-width:560px){.fib-strip{padding:8px 14px}}
+/* Querformat mit zwei Spalten (Chart + Orderflow, Container 900–1032 px, z. B. iPad): die Leiste sitzt nur in der linken Spalte (Container − 392 px, also höchstens 640 px) –
+   dort gilt dieselbe zweizeilige Form wie oben, sonst werden Kurse abgeschnitten. Im PC-Arbeitsbereich (focus) bleibt es einspaltig und damit einzeilig. */
+@media (orientation:landscape){@container orderflow-chart (min-width:900px) and (max-width:1032px){
+  :where(html:not([data-workspace=focus])) .fib-strip{grid-template-rows:40px;gap:0 6px}
+  :where(html:not([data-workspace=focus])) .fs-head{flex-direction:column;gap:0}
+  :where(html:not([data-workspace=focus])) .fs-head .tip>summary{margin:-4px}
+  @media (pointer:coarse){:where(html:not([data-workspace=focus])) .fs-head .tip>summary{margin:-12px}}
+  :where(html:not([data-workspace=focus])) .fs-chip{display:grid;grid-template-columns:auto auto;justify-content:center;align-content:center;gap:1px 5px;padding:0 6px;border-radius:12px}
+  :where(html:not([data-workspace=focus])) .fs-chip .fs-r,:where(html:not([data-workspace=focus])) .fs-chip .fs-dist{grid-row:1;font-size:.6875rem}
+  :where(html:not([data-workspace=focus])) .fs-chip .fs-dist{grid-column:2}
+  :where(html:not([data-workspace=focus])) .fs-chip .fs-dist::before,:where(html:not([data-workspace=focus])) .fs-chip .fs-dist::after{content:none}
+  :where(html:not([data-workspace=focus])) .fs-chip .fs-val{grid-row:2;grid-column:1/-1;font-weight:600;text-align:center}
+  :where(html:not([data-workspace=focus])) .fs-note{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:16px;max-height:32px}
+}}
 /* sehr schmal (Handy mit 320–360 px): Marke ohne „%“, etwas kleinere erste Zeile – alle drei Knöpfe bleiben lesbar */
 @container (max-width:340px){
   .fib-strip{gap:0 4px}
@@ -1580,7 +1594,13 @@ svg .hl-mark.lo text{fill:var(--c-down)}
 .sw.hilo{height:8px;background:linear-gradient(180deg,var(--c-up) 0 2px,transparent 2px 6px,var(--c-down) 6px)}
 .sw.fvg{width:16px;height:10px;border-radius:2px;background:linear-gradient(90deg,color-mix(in srgb,var(--c-up) 70%,transparent) 0 50%,color-mix(in srgb,var(--c-down) 70%,transparent) 50%);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--text) 18%,transparent)} /* 3.70.0: Fair Value Gaps */
 .ov-pair{display:inline-flex;align-items:center;gap:2px;flex:0 0 auto} /* Knopf und ⓘ bleiben beim Umbrechen zusammen */
-html[data-chartfull] .fvg-tip{display:none} /* im Vollbild würde die Erklärung abgeschnitten – dort erklärt der Hinweis beim Einschalten */
+.ov-pair.kl-pair,.ov-pair.vw-pair{flex-wrap:wrap;max-width:100%;row-gap:6px} /* Knopf + Auswahl + ⚓ + ⓘ sind am schmalen Handy breiter als die Zeile: dann innerhalb des Paars umbrechen */
+.market-context .mkt-headline{margin:0;font-weight:600}.market-context .mkt-headline[data-status="alt"]{color:var(--mint)}.market-context .mkt-headline[data-status="btc"]{color:var(--c-vp)}.mkt-list{display:grid;gap:6px;margin:0}.mkt-list>div{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:0 8px;align-items:baseline}.mkt-list dt{color:var(--muted);font-size:.8125rem}.mkt-list dd{margin:0;font-variant-numeric:tabular-nums;text-align:right;font-weight:600}.mkt-list dd.mkt-change{grid-column:1/-1;text-align:left;font-weight:400;font-size:.75rem;color:var(--muted)}.mkt-list dd.mkt-change:empty{display:none} /* 3.84.0: Markt-Lage */
+.calibration{margin:10px 0}.calibration-hint{display:block;color:var(--muted);font-size:.8125rem}.calibration-line{margin:4px 0}.calibration-line[data-verdict="optimistic"],.calibration-line[data-verdict="no-skill"],.calibration-drift[data-verdict="warn"]{color:var(--down);font-weight:600}.calibration-line[data-verdict="ok"]{color:var(--mint)}.calibration-line[data-verdict="cautious"]{color:var(--c-vp)}
+.calibration-table{border-collapse:collapse;width:100%;margin:6px 0;font-variant-numeric:tabular-nums}.calibration-table th,.calibration-table td{padding:4px 6px;border-bottom:1px solid var(--border);text-align:right}.calibration-table th:first-child,.calibration-table td:first-child{text-align:left}.calibration-table tr.thin td{color:var(--muted)} /* 3.84.0: Kalibrierung der Lern-Prozente */
+.sw.vwap{width:16px;height:10px;background:linear-gradient(180deg,transparent 0 3px,var(--c-vwap) 3px 5px,transparent 5px);box-shadow:0 -3px 0 -1px color-mix(in srgb,var(--c-vwap) 45%,transparent),0 3px 0 -1px color-mix(in srgb,var(--c-vwap) 45%,transparent)} /* 3.84.0: VWAP */
+.sw.kl{width:16px;height:10px;background:linear-gradient(180deg,var(--c-vp) 0 1.5px,transparent 1.5px 4px,var(--c-bb) 4px 5.5px,transparent 5.5px 8px,var(--c-hz) 8px 9.5px);opacity:.95} /* 3.84.0: Schlüssel-Levels */
+html[data-chartfull] .fvg-tip,html[data-chartfull] .kl-tip,html[data-chartfull] .vw-tip{display:none} /* im Vollbild würde die Erklärung abgeschnitten – dort erklärt der Hinweis beim Einschalten */
 
 /* ---------- 4.1 Wirtschaftskalender unter dem Chart, Warnung in der Live-Leiste ---------- */
 /* Tablet/Handy (Reihenfolge per order): direkt nach dem Chart (gleiche Stufe, im Dokument dahinter), vor der Signal-Übersicht */
@@ -2555,98 +2575,84 @@ html[data-analysis-focus] .mtf-c:not([data-trend-interval="4h"]):not([data-trend
 .analysis-fit{margin:6px 0;border-top:1px solid var(--line);font-size:.75rem}.analysis-fit>summary{min-height:44px;display:flex;align-items:center;cursor:pointer;line-height:1.5;color:var(--muted)}.analysis-fit[data-fit=fit]>summary{color:var(--mint)}.analysis-fit[data-fit=unfavorable]>summary{color:var(--amber)}.analysis-fit p{margin:0 0 10px;overflow-wrap:anywhere}.analysis-strength-note{display:block;color:var(--muted);line-height:1.6}.analysis-common-events{margin-top:12px;border-top:1px solid var(--line);font-size:.75rem}.analysis-common-events[hidden]{display:none}.analysis-common-events>summary{min-height:44px;cursor:pointer;display:flex;align-items:center;color:var(--mint)}.analysis-common-event{display:flex;align-items:center;gap:12px;flex-wrap:wrap;overflow-wrap:anywhere}.analysis-common-event span{flex:1;min-width:140px}.analysis-ranking{padding:0;list-style:none}.analysis-ranking li{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:12px;border-top:1px solid var(--line);min-height:44px}.analysis-ranking span{color:var(--muted);overflow-wrap:anywhere}.strategy-tools{margin-top:12px;font-size:.75rem;line-height:1.6}.strategy-actions{display:flex;flex-wrap:wrap;gap:8px}.strategy-tools button,.strategy-tools summary,.strategy-tools input{min-height:44px}.strategy-tools summary{display:flex;align-items:center;cursor:pointer;color:var(--mint)}.strategy-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,140px),1fr));gap:12px;margin-bottom:12px}.strategy-fields label{display:grid;gap:4px;min-width:0}.strategy-fields input{min-width:0;width:100%;box-sizing:border-box}.strategy-test-report p,.strategy-protocol p{overflow-wrap:anywhere}.strategy-protocol>div{max-height:360px;overflow:auto}.strategy-test-report details{border-top:1px solid var(--line)}
 </style>
   <script type="module">
-import { MARKET_INTERVALS, CHART_INTERVALS, SIGNAL_INTERVALS, INTERVAL_MS, nearestChartInterval } from './bundles/3.83.1/shared/market-intervals.mjs';
-import { createDetailCandles, detailOptions, detailChoice, closedSeries, timeIndex, DETAIL_VISIBLE_MAX } from './bundles/3.83.1/shared/chart-detail.mjs';
-import { patternChipRows, patternChipKey } from './bundles/3.83.1/shared/chart-pattern-chips.mjs';
-import { PATTERN_QUALITY_CONFIG, chartPatternQuality, repricePatternQuality, sortPatternQuality, patternOverview } from './bundles/3.83.1/shared/chart-pattern-quality.mjs';
-import { createPatternOverviewFeed } from './bundles/3.83.1/shared/chart-pattern-overview-feed.mjs';
+import { MARKET_INTERVALS, CHART_INTERVALS, SIGNAL_INTERVALS, INTERVAL_MS, nearestChartInterval } from './bundles/3.84.0/shared/market-intervals.mjs';
+import { createDetailCandles, detailOptions, detailChoice, closedSeries, timeIndex, DETAIL_VISIBLE_MAX } from './bundles/3.84.0/shared/chart-detail.mjs';
+import { patternChipRows, patternChipKey } from './bundles/3.84.0/shared/chart-pattern-chips.mjs';
+import { PATTERN_QUALITY_CONFIG, chartPatternQuality, repricePatternQuality, sortPatternQuality, patternOverview } from './bundles/3.84.0/shared/chart-pattern-quality.mjs';
+import { createPatternOverviewFeed } from './bundles/3.84.0/shared/chart-pattern-overview-feed.mjs';
 // Arbeitsstand: bei der gemeinsamen Release-Freigabe in das neue Versionsbündel übernehmen.
-import { createPositioningFeed } from './bundles/3.83.1/shared/positioning-score.mjs';
-import { CRYPTO_CALENDAR, parseCryptoCalendar, cryptoCalendarEvents } from './bundles/3.83.1/shared/crypto-calendar.mjs';
-import { createMusterClient } from './bundles/3.83.1/shared/muster-bot-feed.mjs';
-import { createMusterPaper } from './bundles/3.83.1/shared/muster-bot-paper.mjs';
-import { readMusterPaper, writeMusterPaper } from './bundles/3.83.1/shared/muster-bot-store.mjs';
-import { projectPatternLines, projectionSettings, projectionTime } from './bundles/3.83.1/shared/pattern-projection.mjs';
-import { MACD_CHART, macdFindings, macdPaneLayout, drawMacdPane, createMacdHelp } from './bundles/3.83.1/shared/macd-chart.mjs';
-import { MACD_NOTICE } from './bundles/3.83.1/shared/macd-notice.mjs';
+import { createPositioningFeed } from './bundles/3.84.0/shared/positioning-score.mjs';
+import { CRYPTO_CALENDAR, parseCryptoCalendar, cryptoCalendarEvents } from './bundles/3.84.0/shared/crypto-calendar.mjs';
+import { createMusterClient } from './bundles/3.84.0/shared/muster-bot-feed.mjs';
+import { createMusterPaper } from './bundles/3.84.0/shared/muster-bot-paper.mjs';
+import { readMusterPaper, writeMusterPaper } from './bundles/3.84.0/shared/muster-bot-store.mjs';
+import { projectPatternLines, projectionSettings, projectionTime } from './bundles/3.84.0/shared/pattern-projection.mjs';
+import { MACD_CHART, macdFindings, macdPaneLayout, drawMacdPane, createMacdHelp } from './bundles/3.84.0/shared/macd-chart.mjs';
+import { MACD_NOTICE } from './bundles/3.84.0/shared/macd-notice.mjs';
 // NEU 3.77.3: Zeitachse mit Datum und kollisionsfreien Beschriftungen.
-import { chartTimeTicks } from './bundles/3.83.1/shared/chart-time-axis.mjs';
-import { createProjectionInspector, projectionPrice, projectionIndexTime, projectionTimeIndex } from './bundles/3.83.1/shared/projection-inspector.mjs';
-import { createGithubSyncView } from './bundles/3.83.1/shared/github-sync-view.mjs';
-import { createDocViewer } from './bundles/3.83.1/shared/doc-viewer.mjs';
-import { PATTERN_FILTER_PRESET_NAMES, PATTERN_FILTER_FIELDS, PATTERN_CARD_FIELDS, HIGHER_TIMEFRAME, patternFilterSettings, patternFilterFromForm, evaluatePatternSignal, selectPatternSignals, patternJournalEntry, addPatternJournal, resolvePatternJournal, patternHitStats, patternJournalStats, PATTERN_OUTCOME_NAMES, backtestPatternFilter } from './bundles/3.83.1/shared/pattern-quality.mjs';
-import { stripSyncSecrets } from './bundles/3.83.1/shared/github-sync.mjs';
-import { createMusterView } from './bundles/3.83.1/shared/muster-bot-view.mjs';
-import { computeKiZones, KI_ZONE_INTERVALS } from './bundles/3.83.1/shared/ki-zones.mjs';
-import { heikinAshi } from './bundles/3.83.1/shared/heikin-ashi.mjs';
-import { detectFvgs, fvgSummary } from './bundles/3.83.1/shared/fvg.mjs';
-import { scoreZoneStrength, ZONE_STRENGTH, ZONE_SIGNAL, zoneSignal, zoneStep, zoneOutcome, summarizeZoneBacktest } from './bundles/3.83.1/shared/zone-strength.mjs';
+import { chartTimeTicks } from './bundles/3.84.0/shared/chart-time-axis.mjs';
+import { createProjectionInspector, projectionPrice, projectionIndexTime, projectionTimeIndex } from './bundles/3.84.0/shared/projection-inspector.mjs';
+import { createGithubSyncView } from './bundles/3.84.0/shared/github-sync-view.mjs';
+import { createDocViewer } from './bundles/3.84.0/shared/doc-viewer.mjs';
+import { PATTERN_FILTER_PRESET_NAMES, PATTERN_FILTER_FIELDS, PATTERN_CARD_FIELDS, HIGHER_TIMEFRAME, patternFilterSettings, patternFilterFromForm, evaluatePatternSignal, selectPatternSignals, patternJournalEntry, addPatternJournal, resolvePatternJournal, patternHitStats, patternJournalStats, PATTERN_OUTCOME_NAMES, backtestPatternFilter } from './bundles/3.84.0/shared/pattern-quality.mjs';
+import { stripSyncSecrets } from './bundles/3.84.0/shared/github-sync.mjs';
+import { createMusterView } from './bundles/3.84.0/shared/muster-bot-view.mjs';
+import { computeKiZones, KI_ZONE_INTERVALS } from './bundles/3.84.0/shared/ki-zones.mjs';
+import { heikinAshi } from './bundles/3.84.0/shared/heikin-ashi.mjs';
+import { detectFvgs, fvgSummary } from './bundles/3.84.0/shared/fvg.mjs';
+import { KEY_LEVELS, KEY_LEVEL_SETS, keyLevels, keyLevelSet, levelsInPath, nearestLevels } from './bundles/3.84.0/shared/key-levels.mjs';
+import { MARKET_CONTEXT, parseMarketContext, marketContext } from './bundles/3.84.0/shared/market-context.mjs';
+import { VWAP, vwapMode, modeName as vwModeName, periodStart as vwPeriodStart, anchorFromPivots, vwapSeries } from './bundles/3.84.0/shared/vwap.mjs';
+import { scoreZoneStrength, ZONE_STRENGTH, ZONE_SIGNAL, zoneSignal, zoneStep, zoneOutcome, summarizeZoneBacktest } from './bundles/3.84.0/shared/zone-strength.mjs';
 // 3.68.0: KI-Signale/Trading-Bot entfernt; der GitHub-Sync behält sein Format inklusive vorhandener Modelloriginale.
-import { exportModelArchive, importModelArchive, validateModelArchive, restoreModelOriginals } from './bundles/3.83.1/shared/model-archive.mjs';
-import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT, patternGrade } from './bundles/3.83.1/shared/telegram-format.mjs';
-import { patternSignalCard, patternChartData } from './bundles/3.83.1/shared/pattern-signal-card.mjs';   // 3.71.0: Chartmuster-Signalkarte
-import { pnlAlarmCard } from './bundles/3.83.1/shared/pnl-alarm-card.mjs';   // 3.71.0: Gewinn-/Verlust-Alarm als Bild
-import { priceAlarmCard } from './bundles/3.83.1/shared/price-alarm-card.mjs';   // 3.71.0: Kurs-Alarm als Bild
-import { createOrderflowView } from './bundles/3.83.1/shared/orderflow-view.mjs';
-import { createMarketRadarView } from './bundles/3.83.1/shared/market-radar-view.mjs';
-import { RADAR_KEY, radarBook } from './bundles/3.83.1/shared/market-radar-journal.mjs';
-import { createPanelAppearanceSettings } from './bundles/3.83.1/shared/panel-appearance.mjs';
-import { createSignalView } from './bundles/3.83.1/shared/orderflow-signal-view.mjs';
-import { neutralMacdSignal } from './bundles/3.83.1/shared/indicators.mjs';
-import { WATCH_MODEL_KEY, WATCH_COMPARE_KEY } from './bundles/3.83.1/shared/watch-model-core.mjs';
-import { rsiSignal, RSI_MOMENTUM } from './bundles/3.83.1/shared/rsi-momentum.mjs';
-import { createWatchModelFeed } from './bundles/3.83.1/shared/watch-model-feed.mjs';
-import { createSignalReasonsView } from './bundles/3.83.1/shared/watch-signal-reasons.mjs';
-import { unknownPhase } from './bundles/3.83.1/shared/market-phase-core.mjs';
-import { createMarketPhaseFeed } from './bundles/3.83.1/shared/market-phase-feed.mjs';
-import { createMarketPhaseView } from './bundles/3.83.1/shared/market-phase-view.mjs';
-import { createWatchModelView } from './bundles/3.83.1/shared/watch-model-view.mjs';
-import { networkState, createWidgetBoundary } from './bundles/3.83.1/shared/widget-state.mjs';
-import { volumeProfile } from './bundles/3.83.1/shared/volume-profile.mjs';
-import { analysisChannelState, analysisChannelAllows } from './bundles/3.83.1/shared/analysis-channel.mjs';
-import { createAnalysisLearning } from './bundles/3.83.1/shared/analysis-learning-feed.mjs';
-import { ANALYSIS_LEARNING_KEY, LEARNING_IDS, mergeLearningData, validateLearningData } from './bundles/3.83.1/shared/analysis-learning.mjs';
-import { ANALYSES, ANALYSIS_KEY, ANALYSIS_LOG_KEY, analysisCoinAllowed, analysisDestination } from './bundles/3.83.1/shared/analysis-config.mjs';
-import { analysisChartModel, analysisChartExplanation, drawAnalysisChart, installAnalysisChartTap, createAnalysisChartHelp } from './bundles/3.83.1/shared/analysis-chart.mjs';
-import { createAnalysisView } from './bundles/3.83.1/shared/analysis-view.mjs';
-import { createAnalysisFeed } from './bundles/3.83.1/shared/analysis-feed.mjs';
-import { NY_OPEN, NY_JOURNAL_KEY, nyDailySignalKey, nyLiveRange } from './bundles/3.83.1/shared/ny-open-core.mjs';
-import { nyNoticeEvents } from './bundles/3.83.1/shared/ny-open-notices.mjs';
-import { mergeNyJournals } from './bundles/3.83.1/shared/ny-open-feed.mjs';
-import { createNyHistory } from './bundles/3.83.1/shared/ny-open-history.mjs';
-import { drawNyChart } from './bundles/3.83.1/shared/ny-open-chart.mjs';
-import { analysisCard, analysisTestSignal } from './bundles/3.83.1/shared/analysis-card.mjs';
-import { displayTimeParts } from './bundles/3.83.1/shared/display-time.mjs';
-import { createAnalysisDelivery } from './bundles/3.83.1/shared/analysis-delivery.mjs';
-import { PULLBACK, PULLBACK_DATA_KEY, PULLBACK_MODEL_KEY, PULLBACK_ACK_KEY, PULLBACK_DELIVERY_KEY, pullbackEligible } from './bundles/3.83.1/shared/trend-pullback-core.mjs';
-import { pullbackData, pullbackBackupData, mergePullbackData, validatePullbackData, validatePullbackModel } from './bundles/3.83.1/shared/trend-pullback-store.mjs';
-import { pullbackHighlights } from './bundles/3.83.1/shared/trend-pullback-notices.mjs';
-import { drawPullbackChart } from './bundles/3.83.1/shared/trend-pullback-chart.mjs';
-import { MARKET_STRATEGY, STRATEGY_IDS, STRATEGY_DATA_KEY, STRATEGY_REPORT_KEY, strategyData, mergeStrategyData, validateStrategyData, strategyAlertCurrent } from './bundles/3.83.1/shared/market-strategy-core.mjs';
-import { strategyNoticeEvents, strategyNoticeRecords } from './bundles/3.83.1/shared/market-strategy-feed.mjs';
-import { analysisSuitability, groupAnalysisEvents } from './bundles/3.83.1/shared/analysis-context.mjs';
-import { createPullbackReplies } from './bundles/3.83.1/shared/trend-pullback-delivery.mjs';
-import { ANALYSIS_NOTICE_KEY, analysisNoticeState, observeAnalysis, analysisNoticeCurrent } from './bundles/3.83.1/shared/analysis-notices.mjs';
+import { exportModelArchive, importModelArchive, validateModelArchive, restoreModelOriginals } from './bundles/3.84.0/shared/model-archive.mjs';
+import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT, patternGrade } from './bundles/3.84.0/shared/telegram-format.mjs';
+import { patternSignalCard, patternChartData } from './bundles/3.84.0/shared/pattern-signal-card.mjs';   // 3.71.0: Chartmuster-Signalkarte
+import { pnlAlarmCard } from './bundles/3.84.0/shared/pnl-alarm-card.mjs';   // 3.71.0: Gewinn-/Verlust-Alarm als Bild
+import { priceAlarmCard } from './bundles/3.84.0/shared/price-alarm-card.mjs';   // 3.71.0: Kurs-Alarm als Bild
+import { createOrderflowView } from './bundles/3.84.0/shared/orderflow-view.mjs';
+import { createMarketRadarView } from './bundles/3.84.0/shared/market-radar-view.mjs';
+import { RADAR_KEY, radarBook } from './bundles/3.84.0/shared/market-radar-journal.mjs';
+import { createPanelAppearanceSettings } from './bundles/3.84.0/shared/panel-appearance.mjs';
+import { createSignalView } from './bundles/3.84.0/shared/orderflow-signal-view.mjs';
+import { ema, macd, rsi } from './bundles/3.84.0/shared/indicators.mjs';
+import { zigzag, zzForecast as zzForecastCore, zzLearn } from './bundles/3.84.0/shared/zigzag.mjs';
+import { ZZP, ZZP_RULE, wilsonLow, zzpIndicators, zzpKey, zzpWords, zzMoments, zzpApply } from './bundles/3.84.0/shared/zigzag-patterns.mjs';
+import { WATCH_MODEL_KEY, WATCH_COMPARE_KEY } from './bundles/3.84.0/shared/watch-model-core.mjs';
+import { rsiSignal } from './bundles/3.84.0/shared/rsi-momentum.mjs';
+import { createWatchModelFeed } from './bundles/3.84.0/shared/watch-model-feed.mjs';
+import { createSignalReasonsView } from './bundles/3.84.0/shared/watch-signal-reasons.mjs';
+import { unknownPhase } from './bundles/3.84.0/shared/market-phase-core.mjs';
+import { createMarketPhaseFeed } from './bundles/3.84.0/shared/market-phase-feed.mjs';
+import { createMarketPhaseView } from './bundles/3.84.0/shared/market-phase-view.mjs';
+import { createWatchModelView } from './bundles/3.84.0/shared/watch-model-view.mjs';
+import { networkState, createWidgetBoundary } from './bundles/3.84.0/shared/widget-state.mjs';
+import { volumeProfile } from './bundles/3.84.0/shared/volume-profile.mjs';
+import { analysisChannelState, analysisChannelAllows } from './bundles/3.84.0/shared/analysis-channel.mjs';
+import { createAnalysisLearning } from './bundles/3.84.0/shared/analysis-learning-feed.mjs';
+import { ANALYSIS_LEARNING_KEY, LEARNING_IDS, mergeLearningData, validateLearningData } from './bundles/3.84.0/shared/analysis-learning.mjs';
+import { ANALYSES, ANALYSIS_KEY, ANALYSIS_LOG_KEY, analysisCoinAllowed, analysisDestination } from './bundles/3.84.0/shared/analysis-config.mjs';
+import { analysisChartModel, analysisChartExplanation, drawAnalysisChart, installAnalysisChartTap, createAnalysisChartHelp } from './bundles/3.84.0/shared/analysis-chart.mjs';
+import { createAnalysisView } from './bundles/3.84.0/shared/analysis-view.mjs';
+import { createAnalysisFeed } from './bundles/3.84.0/shared/analysis-feed.mjs';
+import { NY_OPEN, NY_JOURNAL_KEY, nyDailySignalKey, nyLiveRange } from './bundles/3.84.0/shared/ny-open-core.mjs';
+import { nyNoticeEvents } from './bundles/3.84.0/shared/ny-open-notices.mjs';
+import { mergeNyJournals } from './bundles/3.84.0/shared/ny-open-feed.mjs';
+import { createNyHistory } from './bundles/3.84.0/shared/ny-open-history.mjs';
+import { drawNyChart } from './bundles/3.84.0/shared/ny-open-chart.mjs';
+import { analysisCard, analysisTestSignal } from './bundles/3.84.0/shared/analysis-card.mjs';
+import { displayTimeParts } from './bundles/3.84.0/shared/display-time.mjs';
+import { createAnalysisDelivery } from './bundles/3.84.0/shared/analysis-delivery.mjs';
+import { PULLBACK, PULLBACK_DATA_KEY, PULLBACK_MODEL_KEY, PULLBACK_ACK_KEY, PULLBACK_DELIVERY_KEY, pullbackEligible } from './bundles/3.84.0/shared/trend-pullback-core.mjs';
+import { pullbackData, pullbackBackupData, mergePullbackData, validatePullbackData, validatePullbackModel } from './bundles/3.84.0/shared/trend-pullback-store.mjs';
+import { pullbackHighlights } from './bundles/3.84.0/shared/trend-pullback-notices.mjs';
+import { drawPullbackChart } from './bundles/3.84.0/shared/trend-pullback-chart.mjs';
+import { MARKET_STRATEGY, STRATEGY_IDS, STRATEGY_DATA_KEY, STRATEGY_REPORT_KEY, strategyData, mergeStrategyData, validateStrategyData, strategyAlertCurrent } from './bundles/3.84.0/shared/market-strategy-core.mjs';
+import { strategyNoticeEvents, strategyNoticeRecords } from './bundles/3.84.0/shared/market-strategy-feed.mjs';
+import { analysisSuitability, groupAnalysisEvents } from './bundles/3.84.0/shared/analysis-context.mjs';
+import { createPullbackReplies } from './bundles/3.84.0/shared/trend-pullback-delivery.mjs';
+import { ANALYSIS_NOTICE_KEY, analysisNoticeState, observeAnalysis, analysisNoticeCurrent } from './bundles/3.84.0/shared/analysis-notices.mjs';
 // Pure, unrounded calculations. Prices are USDT per unit; FX is USDT per EUR.
-function rsi(closes, period = 14) {
-  const out = Array(closes.length).fill(null);
-  if (closes.length <= period) return out;
-  let gain = 0, loss = 0;
-  for (let i = 1; i <= period; i++) {
-    const d = closes[i] - closes[i - 1];
-    gain += Math.max(d, 0); loss += Math.max(-d, 0);
-  }
-  gain /= period; loss /= period;
-  const value = () => gain === 0 && loss === 0 ? 50 : loss === 0 ? 100 : 100 - 100 / (1 + gain / loss);
-  out[period] = value();
-  for (let i = period + 1; i < closes.length; i++) {
-    const d = closes[i] - closes[i - 1];
-    gain = (gain * (period - 1) + Math.max(d, 0)) / period;
-    loss = (loss * (period - 1) + Math.max(-d, 0)) / period;
-    out[i] = value();
-  }
-  return out;
-}
 
 function trueRanges(candles) {
   return candles.map((c, i) => i === 0 ? c.high - c.low : Math.max(c.high - c.low, Math.abs(c.high - candles[i - 1].close), Math.abs(c.low - candles[i - 1].close)));
@@ -2689,21 +2695,6 @@ function volumeComparison(candles) {
   return { current, average, ratio: average > 0 ? current / average : null };
 }
 
-function ema(values, period) {
-  const out = Array(values.length).fill(null);
-  if (values.length < period) return out;
-  let e = values.slice(0, period).reduce((a, b) => a + b, 0) / period; out[period - 1] = e;
-  const k = 2 / (period + 1);
-  for (let i = period; i < values.length; i++) { e = values[i] * k + e * (1 - k); out[i] = e; }
-  return out;
-}
-function macd(values, fast = 12, slow = 26, signalPeriod = 9) {
-  const f = ema(values, fast), s = ema(values, slow);
-  const line = values.map((_, i) => f[i] === null || s[i] === null ? null : f[i] - s[i]);
-  const start = line.findIndex(v => v !== null), signal = Array(values.length).fill(null);
-  if (start >= 0) ema(line.slice(start), signalPeriod).forEach((v, j) => { signal[start + j] = v; });
-  return { line, signal: neutralMacdSignal(line, signal, values) };
-}
 // Regelbasierte Bewertung auf abgeschlossenen Kerzen: vier Regeln je +1/0/−1.
 function signalRating(closed) {
   const closes = closed.map(c => c.close);
@@ -3449,14 +3440,18 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
 // 3.43.0 (G10a): reiner Fachkern in shared/; Datenquelle und Karten folgen getrennt.
 // 3.44.0 (G10b): öffentlicher Adapter in shared/bitget-public.mjs; sichtbare Anbindung folgt mit G10(c).
-const APP_VERSION = '3.83.1', docEl = document.documentElement;
+const APP_VERSION = '3.84.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
-  const cache = new Map(), pending = new Set(), lastJson = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
+  const cache = new Map(), pending = new Set(), lastStamp = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
   let db = null, timer = null, lsReliable = true, persistAsked = false;
   const lsGet = k => { try { const raw = localStorage.getItem(k); if (raw === null) return undefined; try { return JSON.parse(raw); } catch { return raw; } } catch { info.ls = false; return undefined; } };
   const lsSet = (k, v) => { try { if (v === undefined) localStorage.removeItem(k); else localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; } };
   const json = v => { try { return JSON.stringify(v); } catch { return null; } };
+  // 3.84.0: Merkmal des zuletzt gespeicherten Texts (Länge + 53-Bit-Fingerabdruck) statt des Volltexts. Der Vergleich „unverändert?“
+  // bleibt gleich genau (Textgleichheit ⇔ gleiches Merkmal, Kollision ~2^-53), aber bei vollen Lernspeichern (3 × 20 000 Einträge)
+  // liegen nicht mehr zusätzlich rund 20 MB Text im Arbeitsspeicher.
+  const stamp = j => (typeof j === 'string' ? j.length + '.' + fp(j) : j);
   const withTimeout = (p, ms) => Promise.race([p, new Promise((_, reject) => setTimeout(() => reject(new Error('IndexedDB antwortet nicht')), ms))]);
   const open = () => new Promise((resolve, reject) => {
     if (!globalThis.indexedDB) return reject(new Error('IndexedDB fehlt in diesem Browser'));
@@ -3519,22 +3514,23 @@ const store = (() => {
       for (const [k, v] of cache) if (!k.startsWith(IDB_ONLY) && (primary !== ls || !ls.has(k))) lsSet(k, v);
       // 3.45.0: KI-Karten werden atomar verwaltet; ein Start-Snapshot darf keine neueren Karten überschreiben.
       if (db) { for (const k of cache.keys()) if (k !== 'scalpdesk.idb.ki.cards.v1' && (!idb.has(k) || primary !== idb)) pending.add(k); await flush(); }
-      for (const [k, v] of cache) { const j = json(v); if (j !== null) lastJson.set(k, j); }
+      for (const [k, v] of cache) { const j = json(v); if (j !== null) lastStamp.set(k, stamp(j)); }
       try { if (navigator.storage?.persisted) info.persisted = await withTimeout(navigator.storage.persisted(), 1000); } catch {}
     },
     get(k, fallback) { const v = cache.get(k); return v === undefined ? fallback : v; },
     // Gibt true zurück, wenn sich der Wert geändert hat; unveränderte Werte werden nicht erneut geschrieben.
     set(k, v, { force = false } = {}) {
       const j = json(v); cache.set(k, v);
-      if (!force && j !== null && lastJson.get(k) === j) return false;
-      if (j !== null) lastJson.set(k, j);
+      const st = stamp(j);
+      if (!force && j !== null && lastStamp.get(k) === st) return false;
+      if (j !== null) lastStamp.set(k, st);
       if (!k.startsWith(IDB_ONLY) && !lsSet(k, v)) { lsReliable = false; info.ls = false; try { localStorage.removeItem(SAVED_KEY); } catch {} }
       touch(); pending.add(k); schedule();
       return true;
     },
-    del(k) { if (!cache.has(k)) return; cache.delete(k); lastJson.delete(k); if (!k.startsWith(IDB_ONLY)) lsSet(k, undefined); touch(); pending.add(k); schedule(); },
+    del(k) { if (!cache.has(k)) return; cache.delete(k); lastStamp.delete(k); if (!k.startsWith(IDB_ONLY)) lsSet(k, undefined); touch(); pending.add(k); schedule(); },
     // Wert aus einem anderen Tab übernehmen: der hat ihn bereits gespeichert
-    adopt(k, v) { cache.set(k, v); const j = json(v); if (j !== null) lastJson.set(k, j); },
+    adopt(k, v) { cache.set(k, v); const j = json(v); if (j !== null) lastStamp.set(k, stamp(j)); },
     flush,
     get ok() { return !!db || lsReliable; },
     // Ein Ereignis tab-übergreifend für sich beanspruchen (z. B. eine Benachrichtigung nur einmal senden): Lesen und Schreiben
@@ -4027,7 +4023,7 @@ function ema200Closed(closed) {
   return { value: ema(closed.map(x => x.close), 200).at(-1), closeTime: closed.at(-1).closeTime, count: closed.length };
 }
 function loadOverlays() {
-  const d = { vp: true, ema200: true, bb: true, liq: true, lmap: true, zz: true, div: true, ew: true, ewfc: false, fib: true, whale: true, hilo: true, hz: false, fvg: false, macd: false };
+  const d = { vp: true, ema200: true, bb: true, liq: true, lmap: true, zz: true, div: true, ew: true, ewfc: false, fib: true, whale: true, hilo: true, hz: false, fvg: false, kl: false, vwap: false, macd: false };
   const v = store.get(OVERLAY_KEY); if (v && typeof v === 'object') for (const k of Object.keys(d)) if (typeof v[k] === 'boolean') d[k] = v[k];
   return d;
 }
@@ -7195,6 +7191,8 @@ function renderChartContent(levels={}, ov={}, start=null, end=null) {
   if (bbU) { over.append(node('path',{d:pathOf(bbU),fill:'none',stroke:PAL.bb,'stroke-width':1,opacity:.75}),node('path',{d:pathOf(bbL),fill:'none',stroke:PAL.bb,'stroke-width':1,opacity:.75}),node('path',{d:pathOf(bbM),fill:'none',stroke:PAL.bb,'stroke-width':1,'stroke-dasharray':'4 4',opacity:.45})); }
   if (e200) over.append(node('path',{d:pathOf(e200),fill:'none',stroke:PAL.ema,'stroke-width':1.7,opacity:.95}));
   if (!analysisOnly && show.hz && !ovLock('hz')) hzDraw(svg, over, { data, x, y, left, pw, top, bottom, min, max, rx, step }); // 3.35.0 (G07): höhere Zonen
+  if (!analysisOnly && show.kl && !ovLock('kl')) klDraw(over, { data, x, y, timeX, left, pw, min, max, rx }); // 3.84.0: Schlüssel-Levels
+  if (!analysisOnly && show.vwap && !ovLock('vwap')) vwDraw(over, { data, x, y, timeX, left, pw, rx }); // 3.84.0: VWAP
   if (!analysisOnly && pat.on) patDraw(svg, over, { data, x, y, timeX, left, pw, top, bottom, min, max, rx, step }); // 3.37.0 (G09): erkannte Chartmuster
   if (!analysisOnly) patDrawProjection(svg, over, { data, x, y, timeX, left, pw, top, bottom, min, max, rx, step });
   if (!analysisOnly) patDrawChips(svg, over, {data,x,y,timeX,left,pw,top,bottom,min,max,rx,step});
@@ -7630,7 +7628,7 @@ $('zoom-reset').addEventListener('click',chartViewReset);
   });
   const end=e=>{
     if(!pts.has(e.pointerId))return; pts.delete(e.pointerId);
-    if(g?.type==='tap'&&e.type==='pointerup'){if(!g.moved&&projectionInspector.tap(e,!magnet.on,g.target))lastTap=0;else if(magnet.on&&magnetCommit(e))lastTap=0;else{const now=Date.now();if(now-lastTap<320){if(g.macd&&lastTapPane==='macd'){macdExpanded=!macdExpanded;scheduleDraw();}else setPan(0);lastTap=0;}else{lastTap=now;lastTapPane=g.macd?'macd':'price';chartGeom?.select(idxAt(e.clientX));}}}
+    if(g?.type==='tap'&&e.type==='pointerup'){if(!g.moved&&projectionInspector.tap(e,!magnet.on,g.target))lastTap=0;else if(magnet.on&&magnetCommit(e))lastTap=0;else{const now=Date.now();if(now-lastTap<320){if(g.macd&&lastTapPane==='macd'){macdExpanded=!macdExpanded;scheduleDraw();}else setPan(0);lastTap=0;}else{lastTap=now;lastTapPane=g.macd?'macd':'price';chartGeom?.select(idxAt(e.clientX));state.pickedTime=state.selectedTime;state.pickedAt=Date.now();}}} // 3.84.0: angetippte/angeklickte Kerze für den VWAP-Anker merken (die Auswahl selbst endet, sobald die Maus den Chart verlässt)
     if(g?.type==='scrub'&&e.type==='pointerup'){chartGeom?.select(idxAt(e.clientX));lastTap=0;}
     if(g?.type==='pinch'&&pts.size===1){const [p]=[...pts.values()];g={type:'pan',x0:p.x,y0:p.y,pan0:L.pan,trail:[]};return;} // ein Finger bleibt: weiter blättern
     if(pts.size)return;
@@ -7963,6 +7961,7 @@ function onTick(now) {
   whaleTick(); lastTagTick(); // 3.3: Countdown am Kurs-Schild, auch ohne Neuzeichnen
   econTick();
   cryptoCalendarTick(); // Öffentlicher Krypto-Kalender: eigener, passiver Verbraucher.
+  mktTick(); // 3.84.0: Markt-Lage (BTC-Dominanz, ETH/BTC), nur solange das Feld offen ist
   cnewsTick(); // 3.20: wichtige News und Termine zum geöffneten Coin
   analysisTick(); // 3.78.0: nur fällige Schlusskerzen, keine Tick-Auswertung
   wlTick(now); // 4.2: Mini-Watchlist laden und malen
@@ -8206,7 +8205,7 @@ function acceptOwnColor(value) {
 }
 const desktopMq = matchMedia('(min-width:1100px) and (hover:hover) and (pointer:fine)');
 let PAL = {};
-function readPalette() { const cs = getComputedStyle(docEl), g = n => cs.getPropertyValue(n).trim(); PAL = { up: g('--c-up'), down: g('--c-down'), bb: g('--c-bb'), ema: g('--c-ema'), vp: g('--c-vp'), vpBar: g('--c-vpbar'), short: g('--c-short'), last: g('--c-last'), zero: g('--c-zero'), liq: g('--c-liq'), hz: g('--c-hz'), lm: [1, 2, 3, 4, 5].map(i => g('--c-lm' + i)), magnet: g('--c-magnet'), muted: g('--muted') }; }
+function readPalette() { const cs = getComputedStyle(docEl), g = n => cs.getPropertyValue(n).trim(); PAL = { up: g('--c-up'), down: g('--c-down'), bb: g('--c-bb'), ema: g('--c-ema'), vp: g('--c-vp'), vpBar: g('--c-vpbar'), short: g('--c-short'), last: g('--c-last'), zero: g('--c-zero'), liq: g('--c-liq'), hz: g('--c-hz'), vwap: g('--c-vwap'), lm: [1, 2, 3, 4, 5].map(i => g('--c-lm' + i)), magnet: g('--c-magnet'), muted: g('--muted') }; }
 function applyTheme(t, save = true, background = null) {
   const previous = store.get(BACKGROUND_KEY, null), color = appearance.evaluate(background?.color || previous?.color).ok ? appearance.normalize(background?.color || previous?.color) : appearance.palette[0].color;
   const custom = t === 'custom', palette = custom ? appearance.build(color) : null;
@@ -10178,33 +10177,6 @@ $('fb-rot').addEventListener('click', () => { store.set(FSROT_KEY, docEl.dataset
 // macht sie ein neues Extrem in Trendrichtung, zählt ihr Gegen-Extrem nicht als Umkehr (übliche ZigZag-Regel).
 // Schrittweise Erkennung: Kerze für Kerze fortschreibbar (für die Walk-Forward-Auswertung der Prognose); zigzag()
 // ist derselbe Ablauf über alle Kerzen.
-function zzStepper(pct) {
-  const f = pct / 100, conf = []; let dir = 0, hi = 0, hiI = -1, hiT = 0, lo = 0, loI = -1, loT = 0;
-  const pivot = (i, t, price, type) => conf.push({ i, t, price, type, ok: true });
-  return {
-    conf,
-    push(k, i) {
-      const h = k.high, l = k.low;
-      if (hiI < 0) { hi = h; hiI = i; hiT = k.time; lo = l; loI = i; loT = k.time; return; }
-      if (dir === 0) { // Richtung noch offen: die erste Bewegung um die Mindestgröße entscheidet
-        if (h > hi) { hi = h; hiI = i; hiT = k.time; }
-        if (l < lo) { lo = l; loI = i; loT = k.time; }
-        if (loI < hiI && hi >= lo * (1 + f)) { pivot(loI, loT, lo, 'L'); dir = 1; }
-        else if (hiI < loI && lo <= hi * (1 - f)) { pivot(hiI, hiT, hi, 'H'); dir = -1; }
-      } else if (dir === 1) { // aufwärts: Hoch nachziehen, Umkehr erst nach einem Rückgang um die Mindestgröße
-        if (h >= hi) { hi = h; hiI = i; hiT = k.time; } else if (l <= hi * (1 - f)) { pivot(hiI, hiT, hi, 'H'); dir = -1; lo = l; loI = i; loT = k.time; }
-      } else { // abwärts: Tief nachziehen, Umkehr erst nach einem Anstieg um die Mindestgröße
-        if (l <= lo) { lo = l; loI = i; loT = k.time; } else if (h >= lo * (1 + f)) { pivot(loI, loT, lo, 'L'); dir = 1; hi = h; hiI = i; hiT = k.time; }
-      }
-    },
-    open() { return dir === 1 ? { i: hiI, t: hiT, price: hi, type: 'H', ok: false } : dir === -1 ? { i: loI, t: loT, price: lo, type: 'L', ok: false } : null; },
-  };
-}
-function zigzag(c, pct) {
-  if (!(c?.length > 1) || !(pct > 0)) return [];
-  const s = zzStepper(pct); c.forEach((k, i) => s.push(k, i));
-  const o = s.open(); return o ? [...s.conf, o] : [...s.conf];
-}
 // var statt const/let: renderChart kann schon laufen, bevor dieser Abschnitt ausgewertet ist
 var ZZ_KEY = 'scalpdesk.zigzag.v1', ZZ_STEPS = [0.25, 0.5, 1, 2, 3, 5, 8], zzCache = { key: '', piv: [] };
 function zzCfg() { const v = store.get(ZZ_KEY); return v && typeof v === 'object' ? v : {}; }
@@ -10230,65 +10202,8 @@ function drawZigzag(g, { offset, stop, x, y }) {
 }
 $('zz-pct').value = String(zzPct());
 $('zz-pct').addEventListener('change', e => { store.set(ZZ_KEY, { ...zzCfg(), pct: Number(e.target.value) }); zzCache.key = ''; renderMarket(); });
-// ---------- ZigZag-Prognose (statistische Projektion des nächsten Schwungs) ----------
-// Aus den bestätigten Schwüngen dieses Charts: Median-Größe und -Dauer der Schwünge in Gegenrichtung zum laufenden,
-// dazu die mittlere Hälfte (25–75 %) als Band. Annahme: der laufende Extrempunkt ist die nächste Umkehr. Keine
-// Vorhersage, sondern „so groß und so lang waren die Gegenbewegungen hier bisher typischerweise“.
-function zzForecast(piv = pivotsFor(), n = state.candles.length) {
-  const conf = piv.filter(p => p.ok), last = piv.at(-1);
-  if (!last || last.ok || conf.length < 3) return null;
-  const up = last.type === 'L', legs = [];
-  for (let k = 1; k < conf.length; k++) { const a = conf[k - 1], b = conf[k]; if ((b.price > a.price) === up) legs.push({ pct: Math.abs(b.price / a.price - 1) * 100, bars: b.i - a.i }); }
-  const same = legs.slice(-20); if (same.length < 3) return null;
-  const q = (arr, f) => { const s = [...arr].sort((x, y) => x - y), k = (s.length - 1) * f, i = Math.floor(k); return s[i] + ((s[Math.ceil(k)] ?? s[i]) - s[i]) * (k - i); };
-  const pcts = same.map(l => l.pct), med = q(pcts, .5), p25 = q(pcts, .25), p75 = q(pcts, .75), bars = Math.max(1, Math.round(q(same.map(l => l.bars), .5)));
-  const at = p => last.price * (1 + (up ? 1 : -1) * p / 100);
-  return { from: last, up, n: same.length, pct: med, p25, p75, bars, to: { i: Math.max(last.i + bars, n), price: at(med) }, lo: at(p25), hi: at(p75) };
-}
-// ---------- Lernen aus eingetroffenen und verfehlten Prognosen (Walk-Forward) ----------
-// Die App geht die geladenen Kerzen durch und rechnet zu jedem Zeitpunkt nur mit dem, was damals bekannt war:
-// – Lernfaktor: für jeden abgeschlossenen Schwung das Verhältnis tatsächliche Größe / damalige Prognose; der Median der
-//   letzten (bis zu 12) Verhältnisse je Richtung korrigiert die nächste Prognose (bisher zu groß geschätzt → kleiner und
-//   umgekehrt). Ein ZigZag-Schwung ist nie kleiner als die Mindestbewegung, das Ziel also auch nicht.
-//   Angewendet wird er nur, solange er die Größenschätzung in diesem Chart bisher genauer gemacht hat (Summe der
-//   Abweichungen |ln(tatsächlich / geschätzt)| mit und ohne Korrektur, mind. 6 Schwünge mit Korrektur). Bei zufälligem
-//   Kursverlauf gibt es nichts zu lernen – dann würde die Korrektur nur Rauschen hinzufügen.
-// – Trefferquote: Anteil der Zeitpunkte, an denen der Kurs das Prognoseziel innerhalb der doppelten erwarteten Dauer
-//   erreichte, bevor er den Extrempunkt um mehr als die halbe Mindestbewegung überschritt (gleiche Kerze: zählt als Fehler).
-//   Gezählt wird, was die App zum jeweiligen Zeitpunkt angezeigt hätte; zum Vergleich auch ohne Lernfaktor.
-//   Die laufende letzte Kerze bleibt außen vor.
-function zzLearn(c, pct) {
-  const n = c.length - 1, f = pct / 100, out = { n: 0, hits: 0, plain: 0, corr: { up: 1, down: 1 }, raw: { up: 1, down: 1 }, use: false, swings: 0, k: 0, dev: { c: 0, p: 0 } };
-  if (!(n >= 40) || !(f > 0)) return out;
-  const s = zzStepper(pct), ratios = { up: [], down: [] }, pend = [], err = { c: 0, p: 0 };
-  const med = a => { const x = [...a].sort((p, q) => p - q), m = x.length >> 1; return x.length % 2 ? x[m] : (x[m - 1] + x[m]) / 2; };
-  const corrOf = up => { const r = ratios[up ? 'up' : 'down'].slice(-12); return r.length >= 3 ? Math.min(2, Math.max(.4, med(r))) : 1; };
-  const use = () => out.k >= 6 && err.c < err.p;
-  const at = (fc, p) => fc.from.price * (1 + (fc.up ? 1 : -1) * Math.max(pct, p) / 100);
-  for (let t = 0; t < n; t++) {
-    const k = c[t];
-    for (let j = pend.length - 1; j >= 0; j--) { // Stichproben früherer Zeitpunkte mit dieser Kerze auflösen
-      const p = pend[j], broke = p.up ? k.low <= p.stop : k.high >= p.stop, late = t > p.until;
-      for (const key of ['c', 'p']) if (p[key] === undefined) p[key] = broke || late ? false : (p.up ? k.high >= p[key + 't'] : k.low <= p[key + 't']) || undefined;
-      if (p.c !== undefined && p.p !== undefined) { out.n++; out.hits += p.c ? 1 : 0; out.plain += p.p ? 1 : 0; pend.splice(j, 1); }
-    }
-    const before = s.conf.length; s.push(k, t);
-    for (let q = Math.max(2, before); q < s.conf.length; q++) { // Schwung abgeschlossen: tatsächliche Größe / damalige Prognose
-      const a = s.conf[q - 1], b = s.conf[q], fc = zzForecast([...s.conf.slice(0, q - 1), { ...a, ok: false }], a.i + 1);
-      if (!fc) continue;
-      const real = Math.abs(b.price / a.price - 1) * 100, corr = corrOf(fc.up);
-      err.p += Math.abs(Math.log(real / fc.pct)); err.c += Math.abs(Math.log(real / Math.max(pct, fc.pct * corr)));
-      out.swings++; if (corr !== 1) out.k++;
-      ratios[fc.up ? 'up' : 'down'].push(real / fc.pct);
-    }
-    const o = s.open(); if (!o) continue;
-    const fc = zzForecast([...s.conf, o], t + 1); if (!fc) continue;
-    pend.push({ up: fc.up, ct: at(fc, fc.pct * (use() ? corrOf(fc.up) : 1)), pt: at(fc, fc.pct), stop: fc.from.price * (1 - (fc.up ? 1 : -1) * f / 2), until: t + Math.max(3, 2 * fc.bars) });
-  }
-  out.use = use(); out.raw = { up: corrOf(true), down: corrOf(false) }; if (out.use) out.corr = out.raw;
-  if (out.swings) out.dev = { c: Math.exp(err.c / out.swings) - 1, p: Math.exp(err.p / out.swings) - 1 }; // typische Abweichung
-  return out;
-}
+// ---------- ZigZag-Prognose und Lernen aus Prognosen: Rechnung in shared/zigzag.mjs (zzForecast, zzLearn); hier nur die Anbindung an den Chart ----------
+function zzForecast(piv = pivotsFor(), n = state.candles.length) { return zzForecastCore(piv, n); } // Rechnung in shared/zigzag.mjs, hier die Standardwerte des angezeigten Charts
 var zzLearnCache = { key: '', v: null };
 function zzLearnFor(c = state.candles, pct = zzPct()) {
   const key = [state.symbol, state.interval, pct, c.length, c.at(-2)?.time].join('|');
@@ -10296,79 +10211,13 @@ function zzLearnFor(c = state.candles, pct = zzPct()) {
   return zzLearnCache.v;
 }
 // ---------- Gelernte Muster: Richtung mit Wahrscheinlichkeit – nur bei nachgewiesenem Vorteil nach Gebühren ----------
-// Frage je Moment (abgeschlossene Kerze mit Prognose): Erreicht der Kurs ab dem Schlusskurs zuerst +Mindestbewegung oder
-// −Mindestbewegung? Berühren beide Schwellen dieselbe Kerze, zählt der Moment nicht. Muster = drei Merkmale relativ zur
-// Prognoserichtung (+ dafür, − dagegen):
-//   T Trend: Schlusskurs auf der Seite der EMA 200, in die die Prognose zeigt
-//   S Signal-Bewertung (die vier Regeln der Signal-Übersicht): Summe ≥ 2 in Prognoserichtung (+), ≤ −2 (−), sonst 0
-//   R RSI 14: + unter 35 bei Aufwärts- bzw. über 65 bei Abwärtsprognose, − umgekehrt, sonst 0
-// Backtest mit echten BTC-Stundenkerzen (Coinbase und Bitfinex 2017–2019, Walk-Forward, Gebühr 0,06 % je Seite): Die
-// ZigZag-Umkehr allein trifft die Richtung zu 47–50 %. Mit diesen Mustern – Umkehr oder Fortsetzung – zeigte die
-// App-Simulation bei 2–3 % Mindestbewegung 55,6–57,1 %, nach Gebühren im Schnitt +0,14 bis +0,24 % je Trade (auch im
-// späteren Testzeitraum im Plus); bei 1 % keine einzige Zahl.
-// Klassische Muster (Doppelboden/-top, RSI-Divergenz, Bollinger-Ausbruch) verschlechterten das Ergebnis und fehlen deshalb.
-// Gelernt wird je Intervall, Mindestbewegung und Muster über alle Symbole, eine Stichprobe je Muster und Extrempunkt,
-// dauerhaft gespeichert und in der Sicherung enthalten. Eine Zahl erscheint nur, wenn das Muster mit hoher Sicherheit
-// (untere Grenze bei z = 2,77, mind. 100 Fälle) über der Gewinnschwelle nach Gebühren liegt und die untere 95-%-Grenze
-// sie um mind. 3 Punkte übertrifft. Angezeigt wird die untere 99-%-Grenze (vorsichtige Schätzung): In der Simulation
-// der App (500-Kerzen-Fenster) lag die tatsächliche Trefferquote im Mittel so hoch wie die angezeigte; bei Zufallskursen
-// erschien fast nie eine Zahl.
-var ZZP = { nMin: 100, zGate: 2.77, zEst: 1.645, margin: .03, zShow: 2.33, from: 250 }, zzpMem = null, zzpRun = '', zzpIndCache = { key: '', v: null };
-// 3.83.0: Regel 2 – die Signal-Bewertung im Muster (M) zählt RSI wie die Signal-Übersicht (Erholung unter 30 ODER ungewöhnlicher Anstieg,
-// rsiSignal). Vorher galt nur die alte Erholungsregel, beide Anzeigen konnten sich widersprechen. Lernstände nach Regel 1 (Kennung S)
-// werden nicht mit neuen vermischt: alter Stand, alter Startbestand und alte Sicherungen werden für die Prognose nicht mehr verwendet.
-const ZZP_RULE = 2;
-function wilsonLow(k, n, z) { if (!(n > 0)) return 0; const p = k / n, z2 = z * z; return (p + z2 / (2 * n) - z * Math.sqrt(p * (1 - p) / n + z2 / (4 * n * n))) / (1 + z2 / n); }
-function zzpIndicators(closes) { return { e200: ema(closes, 200), e20: ema(closes, 20), e50: ema(closes, 50), r: rsi(closes), m: macd(closes) }; }
-function zzpKey(closes, ind, t, dir) {
-  const { e200, e20, e50, r, m } = ind, cl = closes[t];
-  if (![e200[t], e20[t], e50[t], r[t], r[t - 1], m.line[t], m.signal[t]].every(Number.isFinite)) return null;
-  const score = Math.sign(e20[t] - e50[t]) + Math.sign(cl - e20[t]) + rsiSignal(r.slice(Math.max(0, t - RSI_MOMENTUM.periods), t + 1)).score + Math.sign(m.line[t] - m.signal[t]);
-  const T = Math.sign(cl - e200[t]) === dir ? '+' : '-', S = score * dir >= 2 ? '+' : score * dir <= -2 ? '-' : '0';
-  const R = dir > 0 ? (r[t] < 35 ? '+' : r[t] > 65 ? '-' : '0') : (r[t] > 65 ? '+' : r[t] < 35 ? '-' : '0');
-  return `T${T}M${S}R${R}`;
-}
-const zzpWords = k => `Trend ${k[1] === '+' ? 'dafür' : 'dagegen'}, Signal-Bewertung ${k[3] === '+' ? 'dafür' : k[3] === '-' ? 'dagegen' : 'neutral'}, RSI ${k[5] === '+' ? 'günstig' : k[5] === '-' ? 'ungünstig' : 'neutral'}`;
-// Momente der abgeschlossenen Kerzen c: hit true = zuerst in Prognoserichtung, false = zuerst dagegen, null = beide in einer
-// Kerze, undefined = noch offen
-function zzMoments(c, pct) {
-  const n = c.length, f = pct / 100, out = []; if (!(n > ZZP.from + 1) || !(f > 0)) return out;
-  const closes = c.map(k => k.close), ind = zzpIndicators(closes), s = zzStepper(pct);
-  for (let t = 0; t < n; t++) {
-    s.push(c[t], t);
-    if (t < ZZP.from) continue;
-    const o = s.open(); if (!o) continue;
-    const fc = zzForecast([...s.conf, o], t + 1); if (!fc) continue;
-    const dir = fc.up ? 1 : -1, key = zzpKey(closes, ind, t, dir); if (!key) continue;
-    const hi = closes[t] * (1 + f), lo = closes[t] * (1 - f); let hit;
-    for (let j = t + 1; j < n; j++) { const u = c[j].high >= hi, d = c[j].low <= lo; if (u && d) { hit = null; break; } if (u || d) { hit = (u ? 1 : -1) === dir; break; } }
-    out.push({ time: c[t].time, ext: o.t, key, up: fc.up, hit });
-  }
-  return out;
-}
+// Die Rechnung (Momente, Musterschlüssel, Übernahme in die Statistik) und ihre Erklärung stehen in shared/zigzag-patterns.mjs; hier Speicher, Sicherung,
+// Urteil und Anzeige.
+var zzpMem = null, zzpRun = '', zzpIndCache = { key: '', v: null }; // ZZP (Schwellen) und ZZP_RULE kommen aus shared/zigzag-patterns.mjs
 function zzpData() {
   if (!zzpMem) { const v = store.get(ZZP_KEY); zzpMem = v?.v === 1 && v.rule === ZZP_RULE && v.s && typeof v.s === 'object' && v.r && typeof v.r === 'object' ? v : { v: 1, rule: ZZP_RULE, s: {}, r: {} }; }
   return zzpMem;
 }
-// Neue, aufgelöste Momente einer Reihe (Symbol|Intervall|Mindestbewegung) in zeitlicher Folge übernehmen: bis zum ersten
-// noch offenen Moment, jeder Moment genau einmal (Merker „bis“ je Reihe), je Muster und Extrempunkt eine Stichprobe.
-function zzpApply(P, ms, series, prefix) {
-  const rec = P.r[series] || [0, 0, ''], seen = new Set(rec[2] ? rec[2].split(',') : []); let [until, ext] = rec, moved = false;
-  for (const m of ms) {
-    if (m.time <= until) continue;
-    if (m.hit === undefined) break;
-    until = m.time; moved = true;
-    if (m.hit === null) continue;
-    if (m.ext !== ext) { ext = m.ext; seen.clear(); }
-    if (seen.has(m.key)) continue; seen.add(m.key);
-    const k = `${prefix}|${m.key}`, st = P.s[k] || (P.s[k] = [0, 0]); st[0]++; if (m.hit) st[1]++;
-  }
-  if (!moved) return false;
-  P.r[series] = [until, ext, [...seen].join(',')];
-  const rk = Object.keys(P.r); if (rk.length > 300) rk.sort((a, b) => P.r[a][0] - P.r[b][0]).slice(0, rk.length - 300).forEach(k => delete P.r[k]);
-  return true;
-}
-// Still im Hintergrund, einmal je abgeschlossener Kerze des angezeigten Charts; bei mehreren Tabs lernt nur einer.
 function zzpLearn(c = state.candles, pct = zzPct()) {
   if (!ZZP) return; const closed = c.length - 1, last = c[closed - 1]; if (!last || closed < ZZP.from + 2) return;
   const series = `${state.symbol}|${state.interval}|${pct}`, prefix = `${state.interval}|${pct}`, run = `${series}|${last.time}|${closed}`;
@@ -11180,6 +11029,127 @@ function fvgAnnounce() {
 }
 document.querySelector('[data-overlay="fvg"]')?.addEventListener('click', () => { if (state.overlays.fvg) setTimeout(fvgAnnounce, 0); });
 window.__fvg = { list: () => fvgList(), summary: () => fvgSummary(fvgList(), state.candles.at(-1)?.close), get drawn() { return fvgMemo.drawn; } };
+// ---------- 3.84.0: Schlüssel-Levels (shared/key-levels.mjs) ----------
+// Vortag/Vorwoche (Hoch, Tief), Eröffnung von Tag, Woche und Monat und Hoch/Tief der Sitzungen Asien, London und New York. Gerechnet aus
+// Tageskerzen (45) und 15m-Kerzen (400) des Coins aus dem Kerzen-Zwischenspeicher – unabhängig vom Chart-Zeitrahmen. Fehlt eine Kerze,
+// entfällt die betroffene Marke (nichts wird geschätzt). Linien beginnen dort, wo die Marke gilt, und laufen bis zum rechten Rand.
+var KL_KEY = 'scalpdesk.keylevels.v1', klMemo = { symbol: '', at: 0, daily: null, intraday: null, busy: null, error: '', key: '', levels: [] };
+function klSet() { const v = store.get(KL_KEY)?.set; return KEY_LEVEL_SETS.some(([k]) => k === v) ? v : 'all'; }
+function klLevels() {
+  const m = klMemo, minute = Math.floor(serverNow() / 6e4), key = `${m.symbol}|${m.at}|${minute}`;
+  if (m.key !== key) { m.key = key; m.levels = m.daily || m.intraday ? keyLevels({ daily: m.daily || [], intraday: m.intraday || [], now: serverNow() }) : []; }
+  return m.levels;
+}
+function klLoad(force = false) {
+  const symbol = state.symbol; if (!symbol || state.paused) return Promise.resolve();
+  if (klMemo.busy) return klMemo.busy; // laufender Abruf: dasselbe Versprechen zurück, damit die Rückmeldung beim Einschalten die Daten abwartet
+  if (!force && klMemo.symbol === symbol && Date.now() - klMemo.at < KEY_LEVELS.refreshMs) return Promise.resolve();
+  return klMemo.busy = (async () => {
+    try {
+      const [d, q] = await Promise.all([cachedKlines(symbol, '1d', KEY_LEVELS.dailyLimit), cachedKlines(symbol, KEY_LEVELS.intradayInterval, KEY_LEVELS.intradayLimit)]);
+      if (state.symbol !== symbol) return;
+      Object.assign(klMemo, { symbol, at: Date.now(), daily: d.candles, intraday: q.candles, error: '', key: '' });
+    } catch (e) { Object.assign(klMemo, { symbol, at: Date.now(), error: e?.message || 'Kerzen nicht erreichbar', key: '' }); }
+    finally { klMemo.busy = null; scheduleDraw(); }
+  })();
+}
+function klDraw(over, { data, x, y, timeX, left, pw, min, max, rx }) {
+  if (klMemo.symbol !== state.symbol) { void klLoad(); return; }
+  void klLoad();
+  const g = node('g', { class: 'kl-layer' }), color = { day: PAL.vp, week: PAL.bb, month: PAL.ema, sessions: PAL.hz }; let n = 0;
+  for (const l of keyLevelSet(klLevels(), klSet())) {
+    if (l.price < min || l.price > max) continue;
+    const yl = y(l.price), x0 = Math.min(left + pw, Math.max(left, timeX(l.from))), col = color[l.group] || PAL.muted;
+    const line = node('line', { x1: x0.toFixed(1), y1: yl.toFixed(1), x2: (left + pw).toFixed(1), y2: yl.toFixed(1), stroke: col, 'stroke-width': l.kind === 'open' ? 1 : 1.2, 'stroke-dasharray': l.kind === 'open' ? '2 4' : '7 4', opacity: l.live ? .95 : .75, class: `kl-line ${l.id}` });
+    line.append(node('title', {}, `${l.name} ${priceText(l.price)} · gilt ab ${deDate(l.from)} MEZ/MESZ`));
+    g.append(line, node('text', { x: rx, y: (yl - 4).toFixed(1), class: `axis-label kl-label ${l.id}`, 'text-anchor': 'end', style: `fill:${col};font-weight:600` }, `${l.label} ${priceText(l.price)}`)); n++;
+  }
+  klMemo.drawn = n; if (n) over.append(g);
+}
+// Hinweis in den Analyse-Details: Schlüssel-Marken zwischen Einstieg und Ziel 1 (die nächsten drei, mit Abstand zum Einstieg). Unabhängig
+// davon, ob die Ebene im Chart an ist; die Kerzen kommen aus dem Zwischenspeicher und werden bei Bedarf geladen.
+function klPathRow(signal) {
+  if (!signal || !(signal.entry > 0)) return null;
+  void klLoad();
+  const target = signal.target1 ?? signal.target; if (klMemo.symbol !== state.symbol || !(target > 0)) return null;
+  const all = klLevels(); if (!all.length) return null;
+  const path = levelsInPath(all, signal.entry, target);
+  return ['Schlüssel-Level im Weg', path.length ? path.slice(0, 3).map(l => `${l.label} ${priceText(l.price)} (${number(Math.abs(l.price - signal.entry) / signal.entry * 100, 2)} %)`).join(' · ') + (path.length > 3 ? ` · +${path.length - 3}` : '') : 'keines bis Ziel 1'];
+}
+function klAnnounce() {
+  void klLoad(true).then(() => {
+    const price = state.candles.at(-1)?.close, set = keyLevelSet(klLevels(), klSet()), nl = nearestLevels(set, price), p = l => `${l.label} ${priceText(l.price)}`;
+    infoToast(!set.length ? (klMemo.error ? `Levels: Kerzen nicht erreichbar (${klMemo.error}).` : 'Levels an – die Kerzen werden geladen; die Linien erscheinen von selbst.')
+      : `Levels an (${set.length}). ${nl.above ? `Nächstes über dem Kurs: ${p(nl.above)} (${signed(nl.abovePct)} %).` : ''} ${nl.below ? `Darunter: ${p(nl.below)} (${signed(nl.belowPct)} %).` : ''} Orientierung, kein Handelssignal.`.replace(/\s+/g, ' '), 7000);
+  });
+}
+$('kl-set').value = klSet();
+$('kl-set').addEventListener('change', e => { store.set(KL_KEY, { set: e.target.value }); scheduleDraw(); });
+document.querySelector('[data-overlay="kl"]')?.addEventListener('click', () => { if (state.overlays.kl) setTimeout(klAnnounce, 0); });
+window.__kl = { levels: () => klLevels(), pathRow: s => klPathRow(s), load: force => klLoad(force), get drawn() { return klMemo.drawn || 0; }, get error() { return klMemo.error; }, get set() { return klSet(); } };
+// ---------- 3.84.0: VWAP (shared/vwap.mjs) ----------
+// Volumengewichteter Durchschnittspreis ab einem Anker mit Band ±1 Standardabweichung. Tag, Woche und Monat entstehen aus 15m-, 1h- bzw.
+// 4h-Kerzen des Coins aus dem Zwischenspeicher (unabhängig vom Chart-Zeitrahmen); „ab Swing-Tief/-Hoch“ beginnt am letzten bestätigten
+// ZigZag-Umkehrpunkt, „ab Anker“ an der Kerze, die man angetippt und mit ⚓ bestätigt hat – beides aus den Kerzen des Charts.
+// Ohne lückenlose Kerzen ab dem Anker gibt es keinen VWAP (nichts wird geschätzt).
+var VW_KEY = 'scalpdesk.vwap.v1', vwMemo = { symbol: '', mode: '', at: 0, rows: null, busy: null, error: '', drawn: 0, why: '' };
+function vwCfg() { const v = store.get(VW_KEY); return v && typeof v === 'object' ? v : {}; }
+function vwMode() { return vwapMode(vwCfg().mode); }
+function vwAnchor() { const a = vwCfg().anchor; return a && a.symbol === state.symbol && Number.isFinite(a.time) ? a.time : null; }
+function vwLoad(force = false) {
+  const mode = vwMode(), src = VWAP.sources[mode], symbol = state.symbol; if (!src || !symbol || state.paused) return Promise.resolve();
+  if (vwMemo.busy) return vwMemo.busy;
+  if (!force && vwMemo.symbol === symbol && vwMemo.mode === mode && Date.now() - vwMemo.at < KEY_LEVELS.refreshMs) return Promise.resolve();
+  return vwMemo.busy = (async () => {
+    try { const r = await cachedKlines(symbol, src[0], src[2]); if (state.symbol !== symbol || vwMode() !== mode) return; Object.assign(vwMemo, { symbol, mode, at: Date.now(), rows: r.candles, error: '' }); }
+    catch (e) { Object.assign(vwMemo, { symbol, mode, at: Date.now(), rows: null, error: e?.message || 'Kerzen nicht erreichbar' }); }
+    finally { vwMemo.busy = null; scheduleDraw(); }
+  })();
+}
+// → { series, why }: series null mit Grund, wenn es (noch) keinen VWAP gibt
+function vwCompute() {
+  const mode = vwMode(), now = serverNow(), src = VWAP.sources[mode];
+  if (src) {
+    if (vwMemo.symbol !== state.symbol || vwMemo.mode !== mode) return { series: null, why: vwMemo.error || `${src[0]}-Kerzen werden geladen.` };
+    const start = vwPeriodStart(mode, now), series = vwapSeries(vwMemo.rows, start, { ms: src[1], now });
+    return { series, why: series ? '' : vwMemo.error || `Für den ${vwModeName(mode)}-VWAP fehlen lückenlose ${src[0]}-Kerzen ab ${deDate(start)} MEZ/MESZ.` };
+  }
+  const rows = chartRows(), ms = rows.length > 1 ? rows[1].time - rows[0].time : (IV_MS[state.interval] || 6e4);
+  const start = mode === 'anchor' ? vwAnchor() : anchorFromPivots(pivotsFor(), mode === 'low' ? 'L' : 'H');
+  if (start == null) return { series: null, why: mode === 'anchor' ? 'Noch kein Anker gesetzt: im Chart eine Kerze antippen, dann ⚓ drücken.' : `Im geladenen Zeitraum gibt es keinen bestätigten Umkehrpunkt (ZigZag ${number(zzPct(), zzPct() % 1 ? 2 : 0)} %).` };
+  const series = vwapSeries(rows, start, { ms, now });
+  return { series, why: series ? '' : `Der Anker (${deDate(start)} MEZ/MESZ) liegt vor den geladenen Kerzen dieses Charts.` };
+}
+function vwDraw(over, { data, x, y, timeX, left, pw, rx }) {
+  void vwLoad(); const { series, why } = vwCompute(); vwMemo.why = why; vwMemo.drawn = 0; if (!series || !data.length) return;
+  let from = series.points.findIndex(p => p.time >= data[0].time); from = from < 0 ? series.points.length : Math.max(0, from - 1);
+  const pts = series.points.slice(from); if (!pts.length) return;
+  const px = p => timeX(p.time).toFixed(1), line = key => 'M' + pts.map(p => `${px(p)} ${y(p[key]).toFixed(1)}`).join('L');
+  const g = node('g', { class: 'vw-layer' }), col = PAL.vwap;
+  g.append(node('path', { d: line('upper') + 'L' + pts.slice().reverse().map(p => `${px(p)} ${y(p.lower).toFixed(1)}`).join('L') + 'Z', fill: col, opacity: .07, class: 'vw-band' }),
+    node('path', { d: line('upper'), fill: 'none', stroke: col, 'stroke-width': 1, 'stroke-dasharray': '4 4', opacity: .55, class: 'vw-upper' }), node('path', { d: line('lower'), fill: 'none', stroke: col, 'stroke-width': 1, 'stroke-dasharray': '4 4', opacity: .55, class: 'vw-lower' }));
+  const main = node('path', { d: line('vwap'), fill: 'none', stroke: col, 'stroke-width': 1.8, opacity: .95, class: 'vw-line' });
+  main.append(node('title', {}, `VWAP ${vwModeName(vwMode())} ${priceText(series.last.vwap)} · Band ${priceText(series.last.lower)} – ${priceText(series.last.upper)} · ab ${deDate(series.start)} MEZ/MESZ`)); g.append(main);
+  g.append(node('text', { x: rx, y: (y(series.last.vwap) - 5).toFixed(1), class: 'axis-label vw-label', 'text-anchor': 'end', style: `fill:${col};font-weight:700` }, `VWAP ${vwModeName(vwMode())} ${priceText(series.last.vwap)}`));
+  vwMemo.drawn = pts.length; over.append(g);
+}
+function vwAnnounce() {
+  void vwLoad(true).then(() => {
+    const { series, why } = vwCompute(), price = state.candles.at(-1)?.close;
+    infoToast(!series ? `VWAP ${vwModeName(vwMode())} an – aber noch ohne Linie: ${why}` : `VWAP ${vwModeName(vwMode())} an: ${priceText(series.last.vwap)} (Band ${priceText(series.last.lower)} – ${priceText(series.last.upper)}). Der Kurs liegt ${number(Math.abs(price - series.last.vwap) / series.last.vwap * 100, 2)} % ${price >= series.last.vwap ? 'über' : 'unter'} dem VWAP. Orientierung, kein Handelssignal.`, 7000);
+  });
+}
+$('vw-mode').value = vwMode();
+$('vw-mode').addEventListener('change', e => { store.set(VW_KEY, { ...vwCfg(), mode: vwapMode(e.target.value) }); vwMemo.at = 0; if (state.overlays.vwap) { void vwLoad(true); setTimeout(vwAnnounce, 0); } scheduleDraw(); });
+$('vw-anchor').addEventListener('click', () => {
+  // die zuletzt angetippte/angeklickte Kerze (bis eine Minute her), sonst die gerade gewählte
+  const t = Date.now() - (state.pickedAt || 0) < 6e4 && Number.isFinite(state.pickedTime) ? state.pickedTime : state.selectedTime;
+  if (!Number.isFinite(t)) { infoToast('Erst im Chart eine Kerze antippen oder anklicken, dann ⚓ drücken – der VWAP beginnt an dieser Kerze.', 6000); return; }
+  store.set(VW_KEY, { ...vwCfg(), mode: 'anchor', anchor: { symbol: state.symbol, time: t } }); $('vw-mode').value = 'anchor';
+  if (!state.overlays.vwap) ovToggle('vwap'); else { scheduleDraw(); setTimeout(vwAnnounce, 0); }
+});
+document.querySelector('[data-overlay="vwap"]')?.addEventListener('click', () => { if (state.overlays.vwap) setTimeout(vwAnnounce, 0); });
+window.__vw = { compute: () => vwCompute(), pivot: type => anchorFromPivots(pivotsFor(), type), load: force => vwLoad(force), get drawn() { return vwMemo.drawn; }, get mode() { return vwMode(); }, get anchor() { return vwAnchor(); } };
 function hiLoPoints(data) {
   let hi = -1, lo = -1;
   data.forEach((c, i) => { if (hi < 0 || c.high >= data[hi].high) hi = i; if (lo < 0 || c.low <= data[lo].low) lo = i; });
@@ -11755,7 +11725,7 @@ function wldBox() {
   head.append(title, phaseHost, meta, close);
   const phase=createMarketPhaseView({root:phaseHost,getMarktphase,now:serverNow,read:key=>store.get(key),write:(key,value)=>{store.set(key,value);return store.ok;},
     symbols:()=>state.watch.map(wlSym).map(symbol=>{const e=wl?.c.get(symbol);return{symbol,market:e?.at&&!e.error?e.market:null};}),history:q=>nyHistory(q),
-    available:()=>!document.hidden&&!state.paused&&navigator.onLine!==false,workerFactory:()=>new Worker(new URL('./bundles/3.83.1/shared/market-phase-worker.mjs',import.meta.url),{type:'module'})});
+    available:()=>!document.hidden&&!state.paused&&navigator.onLine!==false,workerFactory:()=>new Worker(new URL('./bundles/3.84.0/shared/market-phase-worker.mjs',import.meta.url),{type:'module'})});
   const patb = el('button', 'wl-d-pat'); patb.type = 'button';
   patb.addEventListener('click', () => patFromWl(wldSel));
   const r24 = el('p', 'wl-d-24h'); r24.append(el('span', 'wl-d-24k', '24h'), el('span', 'wl-d-24v', ''));
@@ -15778,7 +15748,7 @@ const musterPaper = createMusterPaper({ read: readMusterPaper, write: writeMuste
   } });
 const MUSTER_TG_NAMES = { hammer: 'Hammer', engulfing: 'Bullish Engulfing', confluence: 'Konfluenz', po3: 'Power of Three' };
 musterView = createMusterView({ host: musterHost, selection: musterSelection, currentPrice: (symbol, market) => state.symbol === symbol && state.source === market ? currentPrice() : null,
-  prefs: store.get('scalpdesk.muster.settings.v1', {}), savePrefs: value => store.set('scalpdesk.muster.settings.v1', value), workerFactory: () => new Worker(new URL('./bundles/3.83.1/shared/muster-bot-worker.mjs', import.meta.url), { type: 'module' }), paper: musterPaper, onMarkers: scheduleDraw,
+  prefs: store.get('scalpdesk.muster.settings.v1', {}), savePrefs: value => store.set('scalpdesk.muster.settings.v1', value), workerFactory: () => new Worker(new URL('./bundles/3.84.0/shared/muster-bot-worker.mjs', import.meta.url), { type: 'module' }), paper: musterPaper, onMarkers: scheduleDraw,
   telegramStatus: () => tgtReady('trades') ? null : 'Hinweis: Telegram ist noch nicht eingerichtet oder das Ziel „Trades“ ist aus (Einstellungen → Telegram).' });
 void musterPaper.restore().then(() => musterPaper.poll());
 function musterDraw(svg, data, x, y, bottom) {
@@ -15836,9 +15806,9 @@ const nyHistory = createNyHistory({ read:key=>store.get(key),write:(key,value)=>
 const nyServices = {read:key=>store.get(key),write:(key,value)=>{const changed=store.set(key,value);if(changed&&SYNC_KEYS.includes(key))broadcastData([key]);return store.ok;},history:nyHistory,now:serverNow,available:()=>!document.hidden&&!state.paused&&navigator.onLine!==false,
   symbols:()=>analysisCoins().map(symbol=>({symbol,market:wl?.c.get(symbol)?.market||null})),time:analysisFormats.time,price:priceText,
   strategySymbols:id=>analysisCoins().filter(symbol=>analysisView?.settings.rows[id]?.coins[symbol]!==false).map(symbol=>{const e=wl?.c.get(symbol);return {symbol,market:e?.at&&!e.error?e.market:null};}),
-  strategyRuntime:id=>analysisFeed?.runtime(id),getPhase:(symbol,market)=>{if(!analysisCoins().includes(symbol))return {ready:false,reason:'Coin ist nicht in der Vorauswahl; dafür wird keine feste 1H-Phase geladen.'};const r=getMarktphase(symbol);return r.market===market?r:{ready:false,reason:'Die feste 1H-Phase gehört noch nicht zum angefragten Börsenmarkt.'};},strategyWorkerFactory:()=>new Worker(new URL('./bundles/3.83.1/shared/market-strategy-worker.mjs',import.meta.url),{type:'module'}),
-  pullbackRuntime:()=>analysisFeed?.runtime(PULLBACK.id),pullbackWorkerFactory:()=>new Worker(new URL('./bundles/3.83.1/shared/trend-pullback-worker.mjs',import.meta.url),{type:'module'})};
-const analysisLearning=createAnalysisLearning({...nyServices,options:id=>analysisView?.settings.rows[id]?.options||{},changed:()=>analysisPaint(),log:analysisLog,workerFactory:()=>new Worker(new URL('./bundles/3.83.1/shared/analysis-learning-worker.mjs',import.meta.url),{type:'module'})});
+  strategyRuntime:id=>analysisFeed?.runtime(id),getPhase:(symbol,market)=>{if(!analysisCoins().includes(symbol))return {ready:false,reason:'Coin ist nicht in der Vorauswahl; dafür wird keine feste 1H-Phase geladen.'};const r=getMarktphase(symbol);return r.market===market?r:{ready:false,reason:'Die feste 1H-Phase gehört noch nicht zum angefragten Börsenmarkt.'};},strategyWorkerFactory:()=>new Worker(new URL('./bundles/3.84.0/shared/market-strategy-worker.mjs',import.meta.url),{type:'module'}),
+  pullbackRuntime:()=>analysisFeed?.runtime(PULLBACK.id),pullbackWorkerFactory:()=>new Worker(new URL('./bundles/3.84.0/shared/trend-pullback-worker.mjs',import.meta.url),{type:'module'})};
+const analysisLearning=createAnalysisLearning({...nyServices,options:id=>analysisView?.settings.rows[id]?.options||{},changed:()=>analysisPaint(),log:analysisLog,workerFactory:()=>new Worker(new URL('./bundles/3.84.0/shared/analysis-learning-worker.mjs',import.meta.url),{type:'module'})});
 nyServices.learning=analysisLearning;
 const pullbackReplies=createPullbackReplies({...nyServices,destination:()=>tgTarget('analysis'),allowed:analysisBaseAllowed,claim:(key,ttl)=>store.claim(key,ttl,{strict:true}),log:analysisLog,
   sendReply:async(target,id,text)=>{const fd=new FormData();fd.append('chat_id',target.chat);if(target.thread)fd.append('message_thread_id',target.thread);fd.append('text',text);fd.append('reply_parameters',JSON.stringify({message_id:id,allow_sending_without_reply:false}));await tgPost('sendMessage',fd,false,target.token);return {ok:true};}});
@@ -15879,7 +15849,7 @@ function analysisPaint() {
     if(d.information)base.ranking=analysisCoins().map(symbol=>analysisFeed?.result(symbol,wl?.c.get(symbol)?.market,d.id)?.strength).filter(Boolean);
     if(d.observe&&!analysisCoins().includes(state.symbol))return {...base,text:'Für dieses Modell den Coin zuerst in die Vorauswahl aufnehmen.'};
     if (!r?.ready) return { ...base, text:r?.reason || 'Analyse auswählen, um Kerzen zu laden.' };
-    return { ...base, phase:r.phase, reason:r.reason, inactive:r.phase === 'closed-day', text:d.describe ? d.describe(r, analysisFormats) : r.reason || 'Analyse ausgewertet.', detail:(()=>{const detail=d.status?.(r,analysisFormats);if(detail&&LEARNING_IDS.includes(d.id)&&r.signal?.probabilityText)return {...detail,levels:[...(detail.levels||[]),['Ziel vor Stop',r.signal.probabilityText],...(r.signal.expectedMinutes?[["Dauer · Median",Math.round(r.signal.expectedMinutes)+' Min.']]:[])]};return detail;})() };
+    return { ...base, phase:r.phase, reason:r.reason, inactive:r.phase === 'closed-day', text:d.describe ? d.describe(r, analysisFormats) : r.reason || 'Analyse ausgewertet.', detail:(()=>{let detail=d.status?.(r,analysisFormats);if(detail&&LEARNING_IDS.includes(d.id)&&r.signal?.probabilityText)detail={...detail,levels:[...(detail.levels||[]),['Ziel vor Stop',r.signal.probabilityText],...(r.signal.expectedMinutes?[["Dauer · Median",Math.round(r.signal.expectedMinutes)+' Min.']]:[])]};const row=detail&&klPathRow(r.signal);return row?{...detail,levels:[...(detail.levels||[]),row]}:detail;})() };
   });
   if (ANALYSES.some(d => analysisView.settings.rows[d.id].telegram) && !tgTarget('analysis')) cards.push({ text:'Analyse-Telegram: eigenen Bot und Chat unter „Alarme aufs Smartphone → Analyse-Signale“ einrichten.' });
   analysisView.paintResult(cards.map(c => [c.pair, c.text].filter(Boolean).join('\n')).join('\n\n'), [...store.get(ANALYSIS_LOG_KEY, []), ...notices.events.map(e => ({ at:e.at, text:`${displayTimeParts(e.at).clock} ${displayTimeParts(e.at).zone} · ${e.reason}` }))].sort((a, b) => a.at - b.at), cards,groupAnalysisEvents(analysisCoins().flatMap(symbol=>{const market=wl?.c.get(symbol)?.market;return market?ANALYSES.map(d=>analysisFeed?.result(symbol,market,d.id)?.signal).filter(Boolean):[];}),at));
@@ -15942,13 +15912,13 @@ wmFeed = createWatchModelFeed({ now: serverNow, context: () => ({ enabled: wmStr
   changed: () => { if (!userScrolling()) wlPaint(Date.now(), true); } });
 marketPhaseFeed=createMarketPhaseFeed({now:serverNow,fetchRows:cachedKlines,read:key=>store.get(key),write:(key,value)=>{store.set(key,value);return store.ok;},
   context:()=>({paused:state.paused,hidden:document.hidden,online:navigator.onLine,symbols:state.watch.map(wlSym).map(symbol=>{const e=wl?.c.get(symbol);return e?.at&&!e.error?{symbol,market:e.market}:null;}).filter(Boolean)}),
-  workerFactory:()=>new Worker(new URL('./bundles/3.83.1/shared/market-phase-worker.mjs',import.meta.url),{type:'module'}),changed:()=>{if(wldSel)wld?.phase.paint(wldSel);}});
+  workerFactory:()=>new Worker(new URL('./bundles/3.84.0/shared/market-phase-worker.mjs',import.meta.url),{type:'module'}),changed:()=>{if(wldSel)wld?.phase.paint(wldSel);}});
 window.__marketPhase={feed:marketPhaseFeed,getMarktphase};
 const wmSave = async (key, value) => { store.set(key, value); if (!store.ok || !await store.flush()) throw new Error('Modelltest konnte nicht gespeichert werden.'); };
 wmView = createWatchModelView({ host: document.querySelector('#workspace-settings .workspace-settings-grid'), read: key => store.get(key), save: wmSave, getMode: wmMode,
   setMode: async mode => { const before = wmMode(); try { await wmSave(WATCH_MODEL_KEY, mode === 'strict' ? 'strict' : 'classic'); } catch (e) { store.set(WATCH_MODEL_KEY, before); throw e; } broadcastData([WATCH_MODEL_KEY]); wmRefresh(); },
   now: serverNow, symbols: () => state.watch.map(wlSym), history: createMusterClient().history, available: () => !document.hidden && !state.paused && navigator.onLine !== false,
-  workerFactory: () => new Worker(new URL('./bundles/3.83.1/shared/watch-model-worker.mjs', import.meta.url), { type: 'module' }) });
+  workerFactory: () => new Worker(new URL('./bundles/3.84.0/shared/watch-model-worker.mjs', import.meta.url), { type: 'module' }) });
 function wmAvailability() {
   wmFeed.sync();
   marketPhaseFeed?.sync();wld?.phase.availabilityChanged();
@@ -16037,6 +16007,61 @@ function cryptoCalendarBuild() {
   explanationFold([note], 'Quelle & Grenzen', 'crypto-calendar-info'); cryptoCalendarPaint();
 }
 cryptoCalendarBuild();
+// ---------- 3.84.0: Markt-Lage (shared/market-context.mjs) ----------
+// Laufen Altcoins gerade eher besser oder schlechter als Bitcoin? BTC-Dominanz, ETH-Anteil und Stablecoin-Anteil kommen stündlich von
+// CoinGecko über den GitHub-Ablauf „Markt-Lage“ (Zweig markt-lage, wie Nachrichten und Kalender), ETH/BTC aus Binance-Tageskerzen.
+// Nur eine Orientierung auf Wochensicht – kein Handelssignal. Geladen wird nur, solange das Feld offen ist.
+const MKT_KEY = 'scalpdesk.idb.market-context', MKT_URL = 'https://raw.githubusercontent.com/NicoAHB/wx-widget/markt-lage/markt-lage.json';
+var mkt = null;
+async function mktFetch() {
+  if (!mkt || mkt.busy) return;
+  mkt.busy = true; mkt.refresh.disabled = true;
+  const controller = new AbortController(), timeout = setTimeout(() => controller.abort(), 15000), errors = [];
+  try {
+    const [file, eth] = await Promise.allSettled([
+      fetch(MKT_URL, { cache: 'no-store', credentials: 'omit', referrerPolicy: 'no-referrer', signal: controller.signal }).then(async r => {
+        if (!r.ok) throw new Error(r.status === 404 ? 'BTC-Dominanz: noch nicht veröffentlicht – der stündliche GitHub-Ablauf „Markt-Lage“ muss einmal gelaufen sein.' : `BTC-Dominanz nicht erreichbar (${r.status}).`);
+        return parseMarketContext(await r.json());
+      }),
+      cachedKlines(MARKET_CONTEXT.ethBtcSymbol, '1d', 14, controller.signal)
+    ]);
+    if (file.status === 'fulfilled') mkt.history = file.value.history; else errors.push(controller.signal.aborted ? 'BTC-Dominanz: Abruf zu langsam.' : file.reason instanceof TypeError ? 'BTC-Dominanz: offline oder nicht erreichbar; letzter Stand bleibt.' : file.reason.message);
+    if (eth.status === 'fulfilled') mkt.ethbtc = eth.value.candles; else errors.push(`ETH/BTC nicht erreichbar (${eth.reason?.message || 'Fehler'}); letzter Stand bleibt.`);
+    mkt.error = errors.join(' '); mkt.retryAt = errors.length ? Date.now() + 5 * 60000 : 0;
+    if (!errors.length || mkt.history.length) { mkt.at = Date.now(); store.set(MKT_KEY, { at: mkt.at, history: mkt.history, ethbtc: mkt.ethbtc.slice(-14) }); }
+  } finally { clearTimeout(timeout); mkt.busy = false; mkt.refresh.disabled = false; mktPaint(); }
+}
+function mktPaint() {
+  if (!mkt) return;
+  const c = marketContext({ history: mkt.history, ethbtc: mkt.ethbtc, now: serverNow() }), pp = v => (v === null ? '–' : `${signed(v, 1)} Pkt.`), pc = v => (v === null ? '–' : `${signed(v, 1)} %`);
+  mkt.headline.textContent = c.headline; mkt.headline.dataset.status = c.status;
+  const rows = [];
+  if (c.now) rows.push(['BTC-Dominanz', `${number(c.now.btc, 1)} %`, `24 h ${pp(c.dom24)} · 7 T ${pp(c.dom7)}`], ['ETH-Anteil', `${number(c.now.eth, 1)} %`, ''], ['Stablecoins (USDT + USDC)', `${number(c.now.stable, 1)} %`, `7 T ${pp(c.stable7)}`],
+    ['Gesamtmarkt', `${number(c.now.total / 1e12, 2)} Bio. $`, c.now.chg24 === null ? '' : `24 h ${pc(c.now.chg24)}`]);
+  if (c.ethBtc.now !== null) rows.push(['ETH/BTC', number(c.ethBtc.now, 5), `24 h ${pc(c.ethBtc.d1)} · 7 T ${pc(c.ethBtc.d7)}`]);
+  mkt.list.replaceChildren(...rows.map(([k, v, n]) => { const row = el('div'); row.append(el('dt', '', k), el('dd', '', v), el('dd', 'mkt-change', n)); return row; }));
+  mkt.hint.textContent = c.hint; mkt.hint.hidden = !c.hint;
+  const stamp = c.now ? `Stand ${deDate(c.now.at)} MEZ/MESZ${c.stale ? ' – älter als 6 Stunden, der stündliche Ablauf liefert gerade nichts Neues' : ''}.` : '';
+  mkt.status.textContent = [mkt.error, stamp].filter(Boolean).join(' '); mkt.status.classList.toggle('err', !!mkt.error || c.stale);
+  mkt.lastStatus = c.status;
+}
+function mktTick() {
+  if (!mkt || !mkt.root.open || document.hidden || state.paused || !mkt.root.getBoundingClientRect().height) return;
+  const now = Date.now(); if (!mkt.busy && now >= mkt.retryAt && (!mkt.at || now - mkt.at >= MARKET_CONTEXT.refreshMs)) void mktFetch();
+}
+function mktBuild() {
+  const root = el('details', 'crypto-calendar market-context'); root.id = 'market-context'; root.append(el('summary', '', 'Markt-Lage · BTC-Dominanz & ETH/BTC'));
+  const body = el('div', 'crypto-calendar-content'), headline = el('p', 'mkt-headline'), list = el('dl', 'mkt-list'), hint = el('p', 'crypto-calendar-note'), status = el('p', 'crypto-calendar-note'), tools = el('div', 'crypto-calendar-tools'), refresh = el('button', 'button ghost', 'Aktualisieren');
+  refresh.type = 'button'; refresh.id = 'market-context-refresh'; status.id = 'market-context-status'; status.setAttribute('role', 'status'); headline.setAttribute('role', 'status'); tools.append(refresh);
+  const note = el('p', 'crypto-calendar-note', 'BTC-Dominanz, ETH- und Stablecoin-Anteil: stündlicher Auszug von CoinGecko (kostenfrei) über einen GitHub-Ablauf; ETH/BTC: Binance-Tageskerzen. Die Einschätzung vergleicht die Entwicklung über sieben Tage (BTC-Dominanz um mindestens 0,5 Punkte, ETH/BTC um mindestens 1,5 %). Ein Hinweis zur Lage, keine Kursprognose und kein Handelssignal. Ein steigender Stablecoin-Anteil kann auch nur heißen, dass der übrige Markt schrumpft.');
+  body.append(headline, list, hint, tools, status, note); root.append(body); $('econ').append(root);
+  mkt = { root, headline, list, hint, status, refresh, history: [], ethbtc: [], at: 0, error: '', busy: false, retryAt: 0, lastStatus: '' };
+  try { const cached = store.get(MKT_KEY); if (cached?.history?.length) { mkt.history = cached.history; mkt.ethbtc = cached.ethbtc || []; mkt.at = Number(cached.at) || 0; } } catch { /* kaputter lokaler Stand wird neu geladen */ }
+  refresh.addEventListener('click', () => void mktFetch()); root.addEventListener('toggle', () => { if (root.open) { mktPaint(); mktTick(); } });
+  explanationFold([note], 'Quelle & Grenzen', 'market-context-info'); mktPaint();
+}
+mktBuild();
+window.__marketContext = { tick: mktTick, fetch: mktFetch, paint: mktPaint, get state() { return mkt; } };
 var panelAppearanceView = createPanelAppearanceSettings({ host: $('view-panel'), read: () => store.get('scalpdesk.panel-style.v1'),
   save: value => { store.set('scalpdesk.panel-style.v1', value); if (!store.ok) throw Error('Darstellung konnte nicht gespeichert werden.'); }, adopt: value => store.adopt('scalpdesk.panel-style.v1', value) });
 window.__panelAppearance = panelAppearanceView;
@@ -16060,7 +16085,7 @@ const STORE_KEYS = [
   ['scalpdesk.cnews.v1', 'b'], ['scalpdesk.wlspan.v1', 'b'], ['scalpdesk.titleprice.v1', 'b'], ['scalpdesk.details.v1', 'b'],
   ['scalpdesk.posdefaults.v1', 'b'], ['scalpdesk.daylimitnote.v1', 'b'], ['scalpdesk.warnclose.v1', 'b'], ['scalpdesk.evalyear.v1', 'b'],
   ['scalpdesk.acctrange.v1', 'b'], ['scalpdesk.anaiv.v1', 'b'], ['scalpdesk.decouple.v1', 'b'], ['scalpdesk.kizones.v1', 'b'],
-  ['scalpdesk.heikin.v1', 'b'], ['scalpdesk.zonesig.v1', 'b'], ['scalpdesk.patfilter.v1', 'b'],
+  ['scalpdesk.heikin.v1', 'b'], ['scalpdesk.zonesig.v1', 'b'], ['scalpdesk.patfilter.v1', 'b'], ['scalpdesk.keylevels.v1', 'bo'], ['scalpdesk.vwap.v1', 'bo'],
   [PULLBACK_ACK_KEY, 's'], [PULLBACK_DELIVERY_KEY, 's'], [NY_JOURNAL_KEY, 's'], [POS_KEY, 's'], [HIST_KEY, 's'],
   [MONEY_KEY, 's'], [BAL_KEY, 's'], [ALARM_KEY, 's'], [SETUP_KEY, 's'], [WATCH_KEY, 's'],
   [CHANGES_KEY, 's'], ['scalpdesk.channels.v1', 's'], [ZZP_KEY, 's'], ['scalpdesk.s247.v1', 's'], ['scalpdesk.pnlalarm.v1', 's'],
@@ -16241,7 +16266,7 @@ render();startLive();void showCachedChart();void refresh();void initAutoBackup()
         <div class="fib-strip" id="fib-strip" role="group" aria-label="Fibonacci-Marken 38,2 / 50 / 61,8 % mit Abstand zum aktuellen Kurs – antippen legt einen Alarm an" hidden><div class="fs-head"><b id="fs-head">Fib</b><details class="tip left" id="fs-tip"><summary aria-label="Fibonacci-Marken erklärt"><span>i</span></summary><div class="tip-body"><p><b>Fibonacci-Retracement:</b> Wie weit läuft der Kurs nach einer Bewegung zurück? Gemessen in Prozent der letzten Schwungbewegung.</p><p id="fs-tip-swing">Grundlage ist der letzte abgeschlossene ZigZag-Schwung.</p><ul class="fs-tip-list"><li><b>23,6 %</b><span data-fl="23,6"></span> – flacher Rücklauf, gilt als Zeichen eines starken Trends</li><li><b>38,2 %</b><span data-fl="38,2"></span> – erste häufig beachtete Marke</li><li><b>50 %</b><span data-fl="50"></span> – halber Rücklauf; keine Fibonacci-Zahl, aber traditionell beachtet</li><li><b>61,8 %</b><span data-fl="61,8"></span> – der „goldene Schnitt“; 50–61,8&nbsp;% ist die „goldene Zone“ (im Chart hinterlegt)</li><li><b>78,6 %</b><span data-fl="78,6"></span> – tiefer Rücklauf, der Schwung ist dann fast ganz zurückgenommen</li></ul><p><b>So nutzen:</b> als Orientierung, wo Rücksetzer oder Erholungen oft vermutet werden. Eine Marke antippen legt dort einen Alarm an – dann die Reaktion des Kurses abwarten. Viele Trader achten besonders auf Marken, die mit anderen Levels zusammenfallen (POC, EMA 200, Unterstützung); geprüft ist das hier nicht.</p><p><b>Ehrlich:</b> Im Backtest mit echten BTC-Stundenkerzen (2017–2019) endeten Gegenbewegungen nicht häufiger an diesen Marken als an um 6 Punkte verschobenen (27–31&nbsp;% gegenüber 23–35&nbsp;%); knapp die Hälfte lief sogar über 100&nbsp;% hinaus. Deshalb keine Trefferquote – Orientierung, kein Handelssignal.</p><p>Die ZigZag-Mindestbewegung bestimmt den Schwung: kleiner heißt kürzere Schwünge und Marken näher am Kurs.</p></div></details></div><button type="button" class="fs-chip" data-fib="38,2" disabled><span class="fs-r">38,2<span class="fs-pc"> %</span></span><span class="fs-val skel">—</span><span class="fs-dist"></span></button><button type="button" class="fs-chip" data-fib="50" disabled><span class="fs-r">50<span class="fs-pc"> %</span></span><span class="fs-val skel">—</span><span class="fs-dist"></span></button><button type="button" class="fs-chip" data-fib="61,8" disabled><span class="fs-r">61,8<span class="fs-pc"> %</span></span><span class="fs-val skel">—</span><span class="fs-dist"></span></button><span class="fs-note" id="fs-note" hidden></span></div>
         <div class="lmap-strip" id="lmap-strip" hidden><span class="lm-head"><b>Liq-Heatmap</b><span class="lm-src" id="lm-src">Schätzung aus Open Interest</span><span class="lm-scale" role="img" aria-label="Farbskala: je kräftiger, desto mehr geschätzte Liquidationen"><small>wenig</small><i></i><small>viel</small></span><details class="tip left"><summary aria-label="So entsteht die Liquidations-Heatmap"><span>i</span></summary><div class="tip-body"><p><b>Wo würden viele gehebelte Positionen liquidiert?</b> Binance veröffentlicht das nicht – die Heatmap schätzt es aus öffentlichen Futures-Daten.</p><p>Steigt das Open Interest (offene Kontrakte) in einem Zeitraum, wurden neue Positionen eröffnet – zum Durchschnittspreis dieses Zeitraums. Den Long-/Short-Anteil liefern die Taker-Käufe. Für die Hebel gilt eine typische Verteilung (5× 10 %, 10× 25 %, 20× 30 %, 50× 20 %, 100× 15 %); die Liquidationspreise rechnet das Dashboard wie im Rechner, mit der dort eingestellten Maintenance Margin.</p><p>Sinkt das Open Interest, werden alle Zonen anteilig schwächer. Läuft der Kurs durch eine Zone, gilt sie als aufgelöst und endet im Chart. Je kräftiger die Farbe, desto mehr geschätzte Positionen.</p><p>Oberhalb des Kurses liegen Short-, unterhalb Long-Liquidationen. Die Knöpfe zeigen das stärkste Cluster je Seite im Bereich ±10 % – antippen legt einen Alarm an. Viele Trader sehen große Cluster als mögliche Kursziele; eine Garantie ist das nicht.</p></div></details></span><button type="button" class="lm-chip" id="lm-short" data-lm="short" disabled><span class="lm-side">Shorts ▲</span><span class="lm-val skel" id="lm-short-v">—</span></button><button type="button" class="lm-chip" id="lm-long" data-lm="long" disabled><span class="lm-side">Longs ▼</span><span class="lm-val skel" id="lm-long-v">—</span></button><span class="lm-note" id="lm-note" hidden></span></div>
         <div class="wh-strip" id="wh-strip" hidden><div class="wh-head"><b>Whales</b><select id="wh-min" class="wh-min" aria-label="Whale-Schwelle: Orders ab"><option value="100000">ab 100 Tsd.</option><option value="250000">ab 250 Tsd.</option><option value="500000">ab 500 Tsd.</option><option value="1000000">ab 1 Mio.</option></select><span class="wh-src" id="wh-src">letzte 60 s</span><span class="wh-last" id="wh-last"><span class="wl-l" id="wh-last-l"></span><span class="wl-s" id="wh-last-s"></span></span><details class="tip left"><summary aria-label="So funktioniert der Whale-Alert"><span>i</span></summary><div class="tip-body"><p><b>Große Marktorders („Whales“)</b> im Chart-Kürzel ab der gewählten Schwelle (Standard 100.000 USDT), live aus dem Einzel-Trade-Stream von Binance.</p><p>Räumt eine große Marktorder mehrere Preisstufen ab, meldet Binance mehrere Teil-Trades mit derselben Handelszeit, deren Preis in Order-Richtung weiterläuft (Kauf steigend, Verkauf fallend). Die App fasst genau diese zu einer Order zusammen; angezeigt wird der Durchschnittspreis.</p><p><b>Kauf</b> heißt: Jemand hat aktiv zum Marktpreis gekauft (Taker-Kauf), <b>Verkauf</b> entsprechend. Die Zeile „Alle Trades“ zeigt den Anteil der Taker-Käufe am gesamten Umsatz der letzten 60 s – aller Trades, nicht nur der großen.</p><p><b>Ehrlich:</b> Das beschreibt den laufenden Handel und ist keine Vorhersage. Ob große Orders den Kurs weiter in ihre Richtung treiben, ist hier nicht geprüft – dafür bräuchte es Einzel-Trade-Daten über lange Zeit.</p><p><b>Reiter „Orderbuch“:</b> wartende große Limit-Orders („Wände“) – die größte Kauf-Wand unter und die größte Verkaufs-Wand über dem Kurs im Bereich ±2 %. Als Wand gilt eine Preiszone (0,1 % des Kurses) mit mindestens doppelt so viel wie im Schnitt. Geladen wird nur bei offenem Reiter, alle 10 s (1000 Stufen je Seite; reicht das nicht bis ±2 %, steht der erfasste Bereich dabei). Limit-Orders können jederzeit zurückgezogen werden, auch absichtlich („Spoofing“), versteckte Orders sind nicht sichtbar – „seit …“ zeigt, wie lange eine Wand schon steht. Momentaufnahme, kein Versprechen.</p></div></details></div><div class="wh-chip buy" id="wh-buy" title="Große Kauforders der letzten 60 s: Anzahl · Summe in USDT"><span class="wh-k">▲<span class="wk-w"> Käufe</span></span><span class="wh-v skel" id="wh-buy-v">—</span></div><div class="wh-chip sell" id="wh-sell" title="Große Verkaufsorders der letzten 60 s: Anzahl · Summe in USDT"><span class="wh-k">▼<span class="wk-w"> Verkäufe</span></span><span class="wh-v skel" id="wh-sell-v">—</span></div><div class="wh-flow" id="wh-flow"><span class="wh-k">Alle Trades</span><span class="wh-bar" id="wh-bar"><i id="wh-bar-b"></i></span><span class="wh-v" id="wh-flow-v">—</span></div><details class="ob" id="ob"><summary class="ob-sum">Orderbuch <small id="ob-note">größte Wände ±2 %</small></summary><div class="ob-row"><button type="button" class="ob-chip bid" id="ob-bid" data-ob="bid" disabled><span class="ob-k"><span class="wl-l">Kauf-Wand</span><span class="wl-s">Kauf</span></span><span class="ob-p" id="ob-bid-p">—</span><span class="ob-d" id="ob-bid-d"></span><span class="ob-u" id="ob-bid-u"></span><span class="ob-a" id="ob-bid-a" hidden><span class="wl-l" id="ob-bid-al"></span><span class="wl-s" id="ob-bid-as"></span></span></button><button type="button" class="ob-chip ask" id="ob-ask" data-ob="ask" disabled><span class="ob-k"><span class="wl-l">Verkaufs-Wand</span><span class="wl-s">Verkauf</span></span><span class="ob-p" id="ob-ask-p">—</span><span class="ob-d" id="ob-ask-d"></span><span class="ob-u" id="ob-ask-u"></span><span class="ob-a" id="ob-ask-a" hidden><span class="wl-l" id="ob-ask-al"></span><span class="wl-s" id="ob-ask-as"></span></span></button></div></details></div>
-        <div class="chart-footer"><div class="chart-legend"><span class="lg"><i class="legend-line support"></i><span>Unterstützung<small id="lg-support" class="skel">—</small></span></span><span class="lg"><i class="legend-line resistance"></i><span>Widerstand<small id="lg-resistance" class="skel">—</small></span></span><span class="overlay-toggles" role="group" aria-label="Chart-Ebenen ein- und ausblenden"><button type="button" id="ov-all" class="ov-all" aria-pressed="false" title="Alle Chart-Ebenen auf einmal ausblenden – noch einmal tippen: genau dieselben wieder einblenden">👁 Alle ausblenden</button><button type="button" data-overlay="vp" aria-pressed="true"><i class="sw vp"></i>Volumenprofil · POC</button><button type="button" data-overlay="ema200" aria-pressed="true"><i class="sw ema"></i>EMA 200</button><button type="button" data-overlay="hz" aria-pressed="false" title="Höhere Zonen: EMA 200, Bollinger und POC/Value Area des Analyse-Intervalls – je Kerze der damals schon bestätigte Stand"><i class="sw hz"></i><span class="hz-l">Zonen 4h</span></button><button type="button" data-overlay="bb" aria-pressed="true"><i class="sw bb"></i>Bollinger</button><button type="button" data-overlay="hilo" aria-pressed="true" title="Hoch und Tief: höchster und tiefster Kurs der sichtbaren Kerzen, fett in Grün bzw. Rot an der Dochtspitze"><i class="sw hilo"></i>Hoch/Tief</button><button type="button" data-overlay="liq" aria-pressed="true" title="Liquidationspreise: offene Positionen (Wert der Börse oder Modell bei isolierter Margin) und Rechner-Szenario"><i class="sw liq"></i>Liquidation</button><button type="button" data-overlay="lmap" aria-pressed="true" title="Liquidations-Heatmap: geschätzte Zonen aus Open Interest und typischen Hebeln"><i class="sw lmap"></i>Liq-Heatmap</button><button type="button" data-overlay="zz" aria-pressed="true" title="ZigZag: Umkehrpunkte (Pivots) ab der eingestellten Mindestbewegung – Grundlage für Divergenzen, Elliott-Wellen und Fibonacci"><i class="sw zz"></i>ZigZag</button><select id="zz-pct" class="zz-pct" aria-label="ZigZag: Mindestbewegung für einen Umkehrpunkt" title="Mindestbewegung für einen Umkehrpunkt"><option value="0.25">0,25 %</option><option value="0.5">0,5 %</option><option value="1">1 %</option><option value="2">2 %</option><option value="3">3 %</option><option value="5">5 %</option><option value="8">8 %</option></select><button type="button" id="zz-fc" class="zz-fc-btn" aria-pressed="false" title="Prognose: statistische Projektion des nächsten ZigZag-Schwungs (Median bisheriger Schwünge dieses Charts) – keine Vorhersage"><i class="sw zzfc"></i>Prognose</button><button type="button" data-overlay="div" aria-pressed="true" title="RSI-Divergenzen: Kurs und RSI 14 laufen an den ZigZag-Umkehrpunkten auseinander (letzte 40 abgeschlossene Kerzen) – Hinweis, kein Handelssignal"><i class="sw div"></i>RSI-Div.</button><button type="button" data-overlay="ew" aria-pressed="true" title="Elliott-Wellen: schematische Zuordnung 1–5 und A–C auf den ZigZag-Umkehrpunkten nach den drei Grundregeln (ab 50 Kerzen) – andere Zählungen sind möglich, keine Prognose"><i class="sw ew"></i><span>Elliott</span></button><button type="button" data-overlay="ewfc" aria-pressed="false" title="Wellen-Prognose: schematischer Weg der nächsten Elliott-Wellen nach den üblichen Fibonacci-Faustregeln (nur bei einer aktuellen Zählung) – keine Prozentzahl, kein Handelssignal"><i class="sw ewfc"></i><span>Wellen-Prognose</span></button><button type="button" data-overlay="fib" aria-pressed="true" title="Fibonacci-Retracement: 23,6 bis 78,6 % des letzten abgeschlossenen ZigZag-Schwungs – Orientierung für Rücksetzer, kein Handelssignal"><i class="sw fib"></i>Fibonacci</button><span class="ov-pair"><button type="button" data-overlay="fvg" aria-pressed="false" title="Fair Value Gaps: Preislücken zwischen Kerze 1 und Kerze 3 – grün bullisch, rot bärisch; die Box endet, sobald eine Kerze die Lücke mit dem Docht komplett schließt"><i class="sw fvg"></i>FVG</button><details class="tip left fvg-tip" id="fvg-tip"><summary aria-label="Was ist ein FVG?"><span>i</span></summary><div class="tip-body"><p><b>Fair Value Gap (FVG)</b> – eine Preislücke aus drei Kerzen: Die mittlere Kerze bewegt den Kurs so schnell, dass sich die Dochte von <b>Kerze 1 und Kerze 3 nicht überlappen</b>. Dort wurde nur in eine Richtung gehandelt – ein <b>Marktungleichgewicht</b>.</p><p><b>Grün (bullisch):</b> Tief von Kerze 3 über dem Hoch von Kerze 1, mittlere Kerze grün. <b>Rot (bärisch):</b> Hoch von Kerze 3 unter dem Tief von Kerze 1, mittlere Kerze rot.</p><p>Läuft der Kurs später zurück in die Lücke, reagiert er dort oft. Schließt eine spätere Kerze die Lücke mit ihrem Docht <b>komplett</b>, gilt sie als <b>mitigiert</b> – die Box endet an dieser Kerze. Offene Lücken reichen bis zur letzten Kerze.</p><p>Berechnet auf allen geladenen Kerzen des Charts (normale Kerzen, auch bei Heikin-Ashi). Orientierung, kein Handelssignal. Eine lernende Bewertung gibt es im Begleitprogramm <code>fvg-ki/</code>.</p></div></details></span><span class="ov-pair macd-pair"><button type="button" data-overlay="macd" aria-pressed="false" title="MACD 12/26/9: blaue MACD-Linie, orange Signallinie, Nulllinie und Histogramm unter dem Kurschart"><i class="sw macd"></i>MACD</button><button type="button" id="macd-info" class="macd-info" aria-label="MACD und Handelsstrategien erklären" aria-haspopup="dialog" aria-controls="macd-help" title="MACD: Linien, Kreuzungen und Divergenzen erklären">i</button></span><button type="button" data-overlay="whale" aria-pressed="true" title="Whale-Alert: große Marktorders ab 100.000 USDT und Verhältnis der Käufe zu Verkäufen der letzten 60 s – Beschreibung, keine Vorhersage"><i class="sw whale"></i>Whales</button></span></div><span id="chart-caption">Zeitachse MEZ/MESZ · 1m</span></div></div><aside class="of-panel" id="orderflow-panel" aria-label="Kauf- und Verkaufsvolumen der Binance-Futures-Kerzen"></aside></div><i class="div-halo" id="div-halo" hidden aria-hidden="true"><b></b></i>
+        <div class="chart-footer"><div class="chart-legend"><span class="lg"><i class="legend-line support"></i><span>Unterstützung<small id="lg-support" class="skel">—</small></span></span><span class="lg"><i class="legend-line resistance"></i><span>Widerstand<small id="lg-resistance" class="skel">—</small></span></span><span class="overlay-toggles" role="group" aria-label="Chart-Ebenen ein- und ausblenden"><button type="button" id="ov-all" class="ov-all" aria-pressed="false" title="Alle Chart-Ebenen auf einmal ausblenden – noch einmal tippen: genau dieselben wieder einblenden">👁 Alle ausblenden</button><button type="button" data-overlay="vp" aria-pressed="true"><i class="sw vp"></i>Volumenprofil · POC</button><button type="button" data-overlay="ema200" aria-pressed="true"><i class="sw ema"></i>EMA 200</button><button type="button" data-overlay="hz" aria-pressed="false" title="Höhere Zonen: EMA 200, Bollinger und POC/Value Area des Analyse-Intervalls – je Kerze der damals schon bestätigte Stand"><i class="sw hz"></i><span class="hz-l">Zonen 4h</span></button><button type="button" data-overlay="bb" aria-pressed="true"><i class="sw bb"></i>Bollinger</button><button type="button" data-overlay="hilo" aria-pressed="true" title="Hoch und Tief: höchster und tiefster Kurs der sichtbaren Kerzen, fett in Grün bzw. Rot an der Dochtspitze"><i class="sw hilo"></i>Hoch/Tief</button><button type="button" data-overlay="liq" aria-pressed="true" title="Liquidationspreise: offene Positionen (Wert der Börse oder Modell bei isolierter Margin) und Rechner-Szenario"><i class="sw liq"></i>Liquidation</button><button type="button" data-overlay="lmap" aria-pressed="true" title="Liquidations-Heatmap: geschätzte Zonen aus Open Interest und typischen Hebeln"><i class="sw lmap"></i>Liq-Heatmap</button><button type="button" data-overlay="zz" aria-pressed="true" title="ZigZag: Umkehrpunkte (Pivots) ab der eingestellten Mindestbewegung – Grundlage für Divergenzen, Elliott-Wellen und Fibonacci"><i class="sw zz"></i>ZigZag</button><select id="zz-pct" class="zz-pct" aria-label="ZigZag: Mindestbewegung für einen Umkehrpunkt" title="Mindestbewegung für einen Umkehrpunkt"><option value="0.25">0,25 %</option><option value="0.5">0,5 %</option><option value="1">1 %</option><option value="2">2 %</option><option value="3">3 %</option><option value="5">5 %</option><option value="8">8 %</option></select><button type="button" id="zz-fc" class="zz-fc-btn" aria-pressed="false" title="Prognose: statistische Projektion des nächsten ZigZag-Schwungs (Median bisheriger Schwünge dieses Charts) – keine Vorhersage"><i class="sw zzfc"></i>Prognose</button><button type="button" data-overlay="div" aria-pressed="true" title="RSI-Divergenzen: Kurs und RSI 14 laufen an den ZigZag-Umkehrpunkten auseinander (letzte 40 abgeschlossene Kerzen) – Hinweis, kein Handelssignal"><i class="sw div"></i>RSI-Div.</button><button type="button" data-overlay="ew" aria-pressed="true" title="Elliott-Wellen: schematische Zuordnung 1–5 und A–C auf den ZigZag-Umkehrpunkten nach den drei Grundregeln (ab 50 Kerzen) – andere Zählungen sind möglich, keine Prognose"><i class="sw ew"></i><span>Elliott</span></button><button type="button" data-overlay="ewfc" aria-pressed="false" title="Wellen-Prognose: schematischer Weg der nächsten Elliott-Wellen nach den üblichen Fibonacci-Faustregeln (nur bei einer aktuellen Zählung) – keine Prozentzahl, kein Handelssignal"><i class="sw ewfc"></i><span>Wellen-Prognose</span></button><button type="button" data-overlay="fib" aria-pressed="true" title="Fibonacci-Retracement: 23,6 bis 78,6 % des letzten abgeschlossenen ZigZag-Schwungs – Orientierung für Rücksetzer, kein Handelssignal"><i class="sw fib"></i>Fibonacci</button><span class="ov-pair"><button type="button" data-overlay="fvg" aria-pressed="false" title="Fair Value Gaps: Preislücken zwischen Kerze 1 und Kerze 3 – grün bullisch, rot bärisch; die Box endet, sobald eine Kerze die Lücke mit dem Docht komplett schließt"><i class="sw fvg"></i>FVG</button><details class="tip left fvg-tip" id="fvg-tip"><summary aria-label="Was ist ein FVG?"><span>i</span></summary><div class="tip-body"><p><b>Fair Value Gap (FVG)</b> – eine Preislücke aus drei Kerzen: Die mittlere Kerze bewegt den Kurs so schnell, dass sich die Dochte von <b>Kerze 1 und Kerze 3 nicht überlappen</b>. Dort wurde nur in eine Richtung gehandelt – ein <b>Marktungleichgewicht</b>.</p><p><b>Grün (bullisch):</b> Tief von Kerze 3 über dem Hoch von Kerze 1, mittlere Kerze grün. <b>Rot (bärisch):</b> Hoch von Kerze 3 unter dem Tief von Kerze 1, mittlere Kerze rot.</p><p>Läuft der Kurs später zurück in die Lücke, reagiert er dort oft. Schließt eine spätere Kerze die Lücke mit ihrem Docht <b>komplett</b>, gilt sie als <b>mitigiert</b> – die Box endet an dieser Kerze. Offene Lücken reichen bis zur letzten Kerze.</p><p>Berechnet auf allen geladenen Kerzen des Charts (normale Kerzen, auch bei Heikin-Ashi). Orientierung, kein Handelssignal. Eine lernende Bewertung gibt es im Begleitprogramm <code>fvg-ki/</code>.</p></div></details></span><span class="ov-pair kl-pair"><button type="button" data-overlay="kl" aria-pressed="false" title="Schlüssel-Levels: Vortag und Vorwoche (Hoch/Tief), Eröffnung von Tag, Woche und Monat, Hoch/Tief der Sitzungen Asien, London und New York"><i class="sw kl"></i>Levels</button><select id="kl-set" class="zz-pct" aria-label="Schlüssel-Levels: welche Marken" title="Welche Marken gezeigt werden"><option value="all">Alle</option><option value="day">Tag</option><option value="higher">Woche/Monat</option><option value="sessions">Sitzungen</option></select><details class="tip left kl-tip" id="kl-tip"><summary aria-label="Was sind Schlüssel-Levels?"><span>i</span></summary><div class="tip-body"><p><b>Schlüssel-Levels</b> sind Preismarken, an denen der Kurs oft reagiert, weil viele Händler sie beobachten.</p><p><b>Tag:</b> Vortag H/T = Hoch und Tief des Vortags, Tag-Open = Eröffnung von heute (00:00 UTC). <b>Woche/Monat:</b> Vorwoche H/T (Montag bis Sonntag), Woche-Open (Montag 00:00 UTC), Monat-Open (1. des Monats).</p><p><b>Sitzungen:</b> Hoch/Tief von Asien (00–08 UTC), London (08–16 Uhr Londoner Zeit) und New York (09:30–16:00 Uhr New Yorker Zeit, mit Sommerzeit). Eine laufende Sitzung zeigt ihren bisherigen Stand, sonst gilt die zuletzt beendete.</p><p>Jede Linie beginnt dort, wo die Marke entsteht, und läuft nach rechts. Fehlt eine Kerze, entfällt die Marke – es wird nichts geschätzt. Orientierung, kein Handelssignal.</p></div></details></span><span class="ov-pair vw-pair"><button type="button" data-overlay="vwap" aria-pressed="false" title="VWAP: volumengewichteter Durchschnittspreis ab Tag, Woche, Monat, Swing-Punkt oder eigenem Anker, mit Band ±1 Standardabweichung"><i class="sw vwap"></i>VWAP</button><select id="vw-mode" class="zz-pct" aria-label="VWAP: ab wann" title="Ab wann der VWAP rechnet"><option value="day">Tag</option><option value="week">Woche</option><option value="month">Monat</option><option value="low">ab Swing-Tief</option><option value="high">ab Swing-Hoch</option><option value="anchor">ab Anker</option></select><button type="button" id="vw-anchor" class="zz-fc-btn" title="Anker setzen: erst im Chart eine Kerze antippen oder anklicken, dann ⚓ – der VWAP beginnt an dieser Kerze" aria-label="VWAP-Anker auf die angetippte Kerze setzen">⚓</button><details class="tip left vw-tip" id="vw-tip"><summary aria-label="Was ist der VWAP?"><span>i</span></summary><div class="tip-body"><p><b>VWAP</b> = volumengewichteter Durchschnittspreis ab einem Startpunkt (Anker): Jede Kerze zählt mit (Hoch + Tief + Schluss) ÷ 3, gewichtet mit ihrem Volumen. Er zeigt, zu welchem Preis im Schnitt gehandelt wurde. Das Band ist ±1 volumengewichtete Standardabweichung.</p><p><b>Tag, Woche, Monat:</b> ab 00:00 UTC, ab Montag 00:00 UTC bzw. ab dem 1. – gerechnet aus 15m-, 1h- bzw. 4h-Kerzen (Näherung an den Tick-VWAP). <b>ab Swing-Tief/-Hoch:</b> ab dem letzten bestätigten ZigZag-Umkehrpunkt dieses Charts. <b>ab Anker:</b> im Chart eine Kerze antippen oder anklicken, dann ⚓ – der VWAP beginnt an dieser Kerze.</p><p>Liegt der Kurs über dem VWAP, haben die Käufer seit dem Anker im Schnitt Gewinn; darunter die Verkäufer. Fehlt eine Kerze ab dem Anker, gibt es keine Linie – es wird nichts geschätzt. Orientierung, kein Handelssignal.</p></div></details></span><span class="ov-pair macd-pair"><button type="button" data-overlay="macd" aria-pressed="false" title="MACD 12/26/9: blaue MACD-Linie, orange Signallinie, Nulllinie und Histogramm unter dem Kurschart"><i class="sw macd"></i>MACD</button><button type="button" id="macd-info" class="macd-info" aria-label="MACD und Handelsstrategien erklären" aria-haspopup="dialog" aria-controls="macd-help" title="MACD: Linien, Kreuzungen und Divergenzen erklären">i</button></span><button type="button" data-overlay="whale" aria-pressed="true" title="Whale-Alert: große Marktorders ab 100.000 USDT und Verhältnis der Käufe zu Verkäufen der letzten 60 s – Beschreibung, keine Vorhersage"><i class="sw whale"></i>Whales</button></span></div><span id="chart-caption">Zeitachse MEZ/MESZ · 1m</span></div></div><aside class="of-panel" id="orderflow-panel" aria-label="Kauf- und Verkaufsvolumen der Binance-Futures-Kerzen"></aside></div><i class="div-halo" id="div-halo" hidden aria-hidden="true"><b></b></i>
       </section>
       <section class="panel econ cq" id="econ" data-tabs="chart" aria-labelledby="econ-title"><div class="econ-head"><div class="head-line"><h2 id="econ-title">Wirtschaftskalender</h2><details class="tip left"><summary aria-label="Woher die Termine kommen und wann gewarnt wird"><span>i</span></summary><div class="tip-body"><p>Wichtige Wirtschaftstermine wie Zinsentscheide der US-Notenbank (Fed), Inflations- und Arbeitsmarktdaten. Um solche Termine schwankt der Kurs oft stark, auch bei Kryptowährungen.</p><p>Quelle: Wochenkalender von Forex Factory. Ein GitHub-Job im Repository holt ihn alle 3 Stunden ab, die App lädt ihn alle 30 Minuten. Titel im Original (englisch), Zeiten in deiner Ortszeit. Angaben ohne Gewähr.</p><p>Warnung: ab der eingestellten Zeit vor einem Termin mit hoher Bedeutung bis 15 Minuten danach, oben in der Live-Leiste und hier. Vorab einmal als Hinweis mit Ton und, falls eingerichtet, an Telegram – nur solange die App offen ist.</p><p>Punkte: rot hohe, orange mittlere Bedeutung. Feiertage bedeuten oft wenig Handel.</p></div></details></div><span class="econ-src" id="econ-src"></span></div><div class="econ-warn" id="econ-warn" role="status" hidden></div><div class="econ-list" id="econ-list"></div><div class="econ-foot"><label>Währung <select id="econ-cur"><option value="usd">USD</option><option value="all">alle</option></select></label><label>Bedeutung <select id="econ-imp"><option value="high">hoch</option><option value="medium">hoch + mittel</option></select></label><label>Warnen <select id="econ-warn-min"><option value="0">aus</option><option value="5">5 min vorher</option><option value="15">15 min vorher</option><option value="30">30 min vorher</option><option value="60">60 min vorher</option></select></label><button type="button" class="button ghost econ-more" id="econ-more" hidden>Ganze Woche</button></div></section>
       <section class="panel cnews cq" id="cnews" data-tabs="chart" aria-labelledby="cnews-title"><div class="econ-head"><div class="head-line"><h2 id="cnews-title">News &amp; Termine · <span id="cnews-coin">BTC</span></h2><details class="tip left"><summary aria-label="Woher die Meldungen kommen und was als wichtig gilt"><span>i</span></summary><div class="tip-body"><p>Nur ganz wichtige Meldungen und Termine zum geöffneten Coin.</p><p><b>Binance:</b> Listings, Delistings, entfernte USDT-Handelspaare, Netzwerk-Upgrades und Hard Forks (Ein- und Auszahlungen ruhen dann), Token-Tausch und die Beobachtungsliste (Monitoring-Tag: erhöhtes Risiko, ein Delisting ist möglich).</p><p><b>Schlagzeilen</b> deutschsprachiger Medien über Google News, für 36 bekannte Coins. Sehr wichtig: Hacks und gestohlene Gelder, ETF-Entscheidungen, Behörden und Gerichte (z. B. SEC, Klagen), Upgrades, Forks und Netzwerk-Ausfälle, Delistings und Listings großer Börsen, Insolvenzen. Mit „auch wichtig“ dazu ETF-Zuflüsse, Escrow und Token-Freigaben, Regulierung und Übernahmen. Kursprognosen und Marktberichte fallen weg; dieselbe Geschichte aus mehreren Medien steht nur einmal da.</p><p>Ausgewählt wird über Stichwörter – Wichtiges kann fehlen, Unwichtiges durchrutschen. Ein GitHub-Job sammelt stündlich, die App lädt alle 15 Minuten. Kein Kauf- oder Verkaufssignal.</p></div></details></div><span class="econ-src" id="cnews-src"></span></div><div class="cn-list" id="cnews-list"></div><div class="econ-foot"><label>Bedeutung <select id="cnews-imp"><option value="high">sehr wichtig</option><option value="medium">auch wichtig</option></select></label><button type="button" class="button ghost econ-more" id="cnews-more" hidden>Alle anzeigen</button></div></section>

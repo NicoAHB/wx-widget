@@ -90,9 +90,9 @@ const tests = {
     const { ctx, page, errors } = await open(browser);
     await page.waitForFunction(() => /\d/.test(document.getElementById('overall-score').textContent), null, { timeout: 15000 }).catch(() => {});
     const st = await page.evaluate(() => ({ score: document.getElementById('overall-score').textContent, title: document.getElementById('overall-score').title, arrow: document.querySelector('#overall-score .trend')?.className || '', bars: document.querySelectorAll('#overall-spark rect').length, label: document.getElementById('overall-spark').getAttribute('aria-label'), detail: document.getElementById('overall-detail').textContent, lb: document.querySelector('#lb-heat .trend')?.textContent || '' }));
-    const m = /(\d+) Kauf · \d+ Halten · (\d+) Verkauf/.exec(st.detail), net = m ? Number(m[1]) - Number(m[2]) : NaN;
+    const m = /(\d+) Long · \d+ Neutral · (\d+) Short/.exec(st.detail), net = m ? Number(m[1]) - Number(m[2]) : NaN;
     const shown = Number(st.score.replace('−', '-').replace(/[^\d+-]/g, ''));
-    check('Gesamtscore = Kauf- minus Verkaufssignale', shown === net, `${st.score} / ${st.detail}`);
+    check('Gesamtscore = Long- minus Short-Signale', shown === net, `${st.score} / ${st.detail}`);
     check('Trendpfeil mit Stand vor 5 Minuten', /trend (up|down|flat)/.test(st.arrow) && /vor 5 Min\.: [+−]?\d/.test(st.title), `${st.arrow} · ${st.title}`);
     check('Verlauf über 60 Minuten gezeichnet', /Gesamtscore der letzten \d+ Minuten/.test(st.label || ''), `${st.bars} Balken · ${st.label}`);
     check('Trendpfeil auch in der Live-Leiste', /[↗↘→]/.test(st.lb), st.lb);
@@ -119,7 +119,7 @@ const tests = {
     await page.fill('#tp2-move', '0,3'); await page.waitForTimeout(150);
     check('Fehler: Ziele nicht aufsteigend', /TP 2 muss weiter entfernt liegen als TP 1/.test(await text(page, '#ladder-out')));
     await page.fill('#tp2-move', '1');
-    await page.click('[data-side="short"]'); await page.waitForTimeout(150); out = await text(page, '#ladder-out');
+    await page.click('#calc-sec [data-side="short"]'); await page.waitForTimeout(150); out = await text(page, '#ladder-out');
     const cur = await page.evaluate(() => Number(document.getElementById('price').textContent.replace(/\./g, '').replace(',', '.')));
     const tp1 = Number((/TP 1 · 0,50 % → ([\d.,]+) USDT/.exec(out) || [])[1]?.replace(/\./g, '').replace(',', '.'));
     check('Short: Zielkurs unter dem Einstieg', tp1 > 0 && tp1 < cur, `${tp1} < ${cur}`);
@@ -243,7 +243,7 @@ const tests = {
   const names = process.argv.slice(2).length ? process.argv.slice(2) : Object.keys(tests);
   await h.setup(); await h.ctl('/reset');
   const browser = await h.launch();
-  try { for (const n of names) { console.log(`▶ ${n}`); await h.ctl('/reset'); try { await tests[n](browser); } catch (e) { check(n + ' (Abbruch)', false, e.message.split('\n')[0]); } } }
+  try { for (const n of names) { console.log(`▶ ${n}`); await h.ctl('/reset'); try { await tests[n](browser); } catch (e) { check(n + ' (Abbruch)', false, process.env.M3_DEBUG ? e.message : e.message.split('\n')[0]); } } }
   finally { await browser.close(); await h.teardown(); }
   const bad = results.filter(r => !r.ok); console.log(`\n${results.length - bad.length}/${results.length} bestanden`); process.exit(bad.length ? 1 : 0);
 })();

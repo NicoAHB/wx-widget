@@ -4,9 +4,11 @@ const fs = require('fs'), path = require('path');
 const html = fs.readFileSync(process.env.HTML || path.join(__dirname, '..', 'weather-widget-v2.html'), 'utf8');
 const grab = name => { const a = html.indexOf(`function ${name}(`); if (a < 0) throw new Error(name); let d = 0, b = a; for (; b < html.length; b++) { if (html[b] === '{') d++; else if (html[b] === '}' && --d === 0) break; } return html.slice(a, b + 1); };
 const ewLine = html.match(/var EW = \{[^}]*\}[^\n]*\n/)[0], zzLine = html.match(/var ZZ_KEY = [^\n]*\n/)[0];
-const make = pct => new Function(`const state = { symbol: 'TEST', interval: '1h', candles: [] }; const zzPct = () => ${pct};
-${zzLine}${ewLine}${['zzStepper', 'zigzag', 'pivotsFor', 'elliottCount', 'elliottWaves', 'elliottForecast'].map(grab).join('\n')}
-return { state, elliottCount, elliottWaves, elliottForecast, zigzag };`)();
+// 3.84.0: ZigZag kommt aus shared/zigzag.mjs (vorher aus der HTML-Datei herausgeschnitten); Pivot-Cache und Elliott-Zählung stehen noch in der App
+const { zzStepper, zigzag } = require('../shared/zigzag.mjs');
+const make = pct => new Function('zzStepper', 'zigzag', `const state = { symbol: 'TEST', interval: '1h', candles: [] }; const zzPct = () => ${pct};
+${zzLine}${ewLine}${['pivotsFor', 'elliottCount', 'elliottWaves', 'elliottForecast'].map(grab).join('\n')}
+return { state, elliottCount, elliottWaves, elliottForecast, zigzag };`)(zzStepper, zigzag);
 let pass = 0, fail = 0; const check = (n, ok, info = '') => { ok ? pass++ : fail++; console.log(`${ok ? '✓' : '✗'} ${n}${info ? ' — ' + info : ''}`); };
 const A = make(3);
 // Pivot-Folge aus Kursen; beginnt mit Tief (t='L') oder Hoch, wechselt ab; open = letzter Punkt unbestätigt

@@ -47,4 +47,5 @@ zusammenführen, erst reparieren.** Der komplette Lauf `tests/run-all.sh` (rund 
 ## Stil
 - Oberfläche, Kommentare, Commit-Texte und Doku auf Deutsch, kurz und verständlich für Nicht-Programmierer.
 - Neuer Code in `shared/` lesbar formatieren (eine Anweisung pro Zeile, keine Einzeiler mit mehreren hundert Zeichen).
+- Rechenlogik (Indikatoren, Muster, Lernen, Levels, Statistik …) als reines Modul nach `shared/`, ohne Zugriff auf `state`, `store` und DOM, und in Tests direkt importieren (`require('../shared/x.mjs')` geht in Node 22). In `weather-widget-v2.html` bleiben Zustand, Speicher, Zeichnen und die Anbindung. Keine neuen Tests, die Funktionen per Textsuche aus der HTML-Datei herausschneiden.
 - Keine Modellnamen von KI-Assistenten in Code, Commits oder Doku.

@@ -4,6 +4,9 @@ set -o pipefail
 failed=0
 trap 'failed=1' ERR
 echo "== unit-market-strategies"; timeout 240 node unit-market-strategies.js 2>&1 | grep -E "✗|bestanden"
+echo "== m141"; timeout 600 node m141.js 2>&1 | grep -E "✗|bestanden|Abbruch"
+echo "== m140"; timeout 600 node m140.js 2>&1 | grep -E "✗|bestanden|Abbruch"
+echo "== m139"; timeout 600 node m139.js 2>&1 | grep -E "✗|bestanden|Abbruch"
 echo "== m138"; timeout 600 node m138.js 2>&1 | grep -E "✗|bestanden|Abbruch"
 echo "== m137"; timeout 600 node m137.js 2>&1 | grep -E "✗|bestanden|Abbruch"
 echo "== m136"; timeout 600 node m136.js 2>&1 | grep -E "✗|bestanden|Abbruch"
@@ -155,6 +158,11 @@ echo "== unit-macd-notice"; timeout 180 node unit-macd-notice.js 2>&1 | grep -E 
 echo "== unit-chart-time-axis"; timeout 180 node unit-chart-time-axis.js 2>&1 | grep -E "✗|bestanden|Abbruch"
 echo "== unit-projection-inspector"; timeout 180 node unit-projection-inspector.js 2>&1 | grep -E "✗|bestanden|Abbruch"
 echo "== unit-store-keys"; timeout 60 node unit-store-keys.js 2>&1 | grep -E "✗|bestanden"
+echo "== unit-store"; timeout 60 node unit-store.js 2>&1 | grep -E "✗|bestanden"
+echo "== unit-key-levels"; timeout 60 node unit-key-levels.js 2>&1 | grep -E "✗|bestanden"
+echo "== unit-vwap"; timeout 60 node unit-vwap.js 2>&1 | grep -E "✗|bestanden"
+echo "== unit-calibration"; timeout 60 node unit-calibration.js 2>&1 | grep -E "✗|bestanden"
+echo "== unit-market-context"; timeout 60 node unit-market-context.js 2>&1 | grep -E "✗|bestanden"
 echo "== unit-247d"; timeout 120 node unit-247d.js 2>&1 | grep -E "✗|bestanden"
 echo "== unit-247c"; timeout 180 node unit-247c.js 2>&1 | grep -E "✗|bestanden|Abbruch"
 echo "== unit-pulse"; timeout 120 node unit-pulse.js 2>&1 | grep -E "✗|bestanden|Abbruch"

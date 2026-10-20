@@ -38,7 +38,7 @@ const tests = {
     const { ctx, page, errors } = await openPage(browser);
     await anaReady(page);
     const a = await page.evaluate(() => ({ iv: __g07.ana.iv, chart: document.querySelector('[data-interval].active')?.dataset.interval, ctx: document.getElementById('zones-context').textContent, ic: document.getElementById('indicator-context').textContent, n: __g07.ana.closed.length, last: __g07.ana.closed.at(-1)?.closeTime, now: Date.now(), btn: document.querySelector('.ana-bar [data-ana="4h"]').getAttribute('aria-pressed') }));
-    check('Start: Analyse 4h, Chart weiter 1m – beide Bereiche nennen „Analyse 4h · abgeschlossene Kerzen bis … UTC“', a.iv === '4h' && a.chart === '1m' && a.btn === 'true' && /^Analyse 4h · abgeschlossene Kerzen bis \d\d\.\d\d\.\d{4}, \d\d:\d\d UTC$/.test(a.ctx) && a.ic === a.ctx, JSON.stringify(a));
+    check('Start: Analyse 4h, Chart weiter 1m – beide Bereiche nennen „Analyse 4h · abgeschlossene Kerzen bis … MEZ/MESZ“', a.iv === '4h' && a.chart === '1m' && a.btn === 'true' && /^Analyse 4h · abgeschlossene Kerzen bis \d\d\.\d\d\.\d{4}, \d\d:\d\d MEZ\/MESZ$/.test(a.ctx) && a.ic === a.ctx, JSON.stringify(a));
     const k = await page.evaluate(async () => { const r = await fetch('https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=4h&limit=2').then(x => x.json()); return { runOpen: r.at(-1)[0], runClose: r.at(-1)[6] }; });
     check('Nur abgeschlossene 4h-Kerzen: die laufende fehlt, die letzte gezählte endete vor jetzt', a.last < a.now && a.last < k.runOpen && k.runClose >= a.now && a.n >= 200, JSON.stringify({ last: a.last, runOpen: k.runOpen }));
     const nextAt = await page.evaluate(() => __g07.ana.nextAt);
@@ -105,7 +105,7 @@ const tests = {
     check('Chart 15m, Analyse 4h: „Zonen 4h“ zuschaltbar, anfangs aus', b.t === 'Zonen 4h' && b.dis === 'false' && b.on === 'false', JSON.stringify(b));
     await page.click('[data-overlay="hz"]'); await page.waitForTimeout(800);
     const d = await page.evaluate(() => ({ on: document.querySelector('[data-overlay="hz"]').getAttribute('aria-pressed'), cap: [...document.querySelectorAll('#chart svg text')].map(t => t.textContent).filter(t => /^Zonen 4h · Stand|EMA 200 · 4h|POC 4h/.test(t)) }));
-    check('Eingeschaltet: Linien mit Intervall und Zeitpunkt („Zonen 4h · Stand … UTC“, „EMA 200 · 4h“)', d.on === 'true' && d.cap.some(t => /^Zonen 4h · Stand \d\d\.\d\d\.\d{4}, \d\d:\d\d UTC$/.test(t)) && d.cap.some(t => /EMA 200 · 4h/.test(t)), JSON.stringify(d));
+    check('Eingeschaltet: Linien mit Intervall und Zeitpunkt („Zonen 4h · Stand … MEZ/MESZ“, „EMA 200 · 4h“)', d.on === 'true' && d.cap.some(t => /^Zonen 4h · Stand \d\d\.\d\d\.\d{4}, \d\d:\d\d MEZ\/MESZ$/.test(t)) && d.cap.some(t => /EMA 200 · 4h/.test(t)), JSON.stringify(d));
     const nl = await page.evaluate(() => { const s = __g07.hzSeries(window.__g05.state.candles), c = __g07.ana.closed, A = __g07.ana.calc; let bad = 0, n = 0;
       window.__g05.state.candles.forEach((k, i) => { const v = s.e200[i]; if (v === null) return; n++; const j = c.findLastIndex(x => x.closeTime < k.time); if (A.e200s[j] !== v) bad++; });
       const lastIn = window.__g05.state.candles.filter(k => k.time <= A.last.closeTime).length, pocBefore = s.after.slice(0, lastIn).some(Boolean); return { bad, n, pocBefore }; });
@@ -126,7 +126,7 @@ const tests = {
     const lg = await capLog();
     check('Mehrfach umgeschaltet (5×): genau eine Anfrage an CoinGecko (stündlich, 90 Tage)', lg.length === 1 && lg[0].prov === 'cg' && lg[0].path === '/api/v3/coins/bitcoin/market_chart' && lg[0].q.days === '90', JSON.stringify(lg.map(x => x.path + JSON.stringify(x.q))));
     const v = await page.evaluate(() => ({ ohlc: document.getElementById('ohlc').textContent, texts: [...document.querySelectorAll('#chart svg text')].map(t => t.textContent), rects: document.querySelectorAll('#chart svg rect').length, data: __g07.cap.data && { prov: __g07.cap.data.prov, res: __g07.cap.data.res, first: __g07.cap.data.pts[0], last: __g07.cap.data.pts.at(-1) } }));
-    check('Ansicht: „Market Cap (USD) · CoinGecko · stündlich (Chart 1m) · Datenstand … UTC“, Quelle, Achse in USD', v.texts.some(t => /^Market Cap \(USD\) · CoinGecko · stündlich \(Chart 1m\) · Datenstand \d\d\.\d\d\.\d{4}, \d\d:\d\d UTC$/.test(t)) && v.texts.some(t => /^Daten: CoinGecko/.test(t)) && v.texts.filter(t => / (Bio|Mrd)\. USD$/.test(t)).length >= 4 && /^MCap \d+,\d+ (Bio|Mrd)\. USD · CoinGecko$/.test(v.ohlc), JSON.stringify({ ohlc: v.ohlc, t: v.texts.slice(0, 8) }));
+    check('Ansicht: „Market Cap (USD) · CoinGecko · stündlich (Chart 1m) · Datenstand … MEZ/MESZ“, Quelle, Achse in USD', v.texts.some(t => /^Market Cap \(USD\) · CoinGecko · stündlich \(Chart 1m\) · Datenstand \d\d\.\d\d\.\d{4}, \d\d:\d\d MEZ\/MESZ$/.test(t)) && v.texts.some(t => /^Daten: CoinGecko/.test(t)) && v.texts.filter(t => / (Bio|Mrd)\. USD$/.test(t)).length >= 4 && /^MCap \d+,\d+ (Bio|Mrd)\. USD · CoinGecko$/.test(v.ohlc), JSON.stringify({ ohlc: v.ohlc, t: v.texts.slice(0, 8) }));
     const j = await page.evaluate(() => fetch('https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=90').then(r => r.json()));
     check('Werte aus market_caps (nicht aus prices); nie CoinLore', v.data.first[1] === j.market_caps[0][1] && v.data.first[1] !== j.prices[0][1] && Math.abs(v.data.first[1] / j.prices[0][1] - v.data.last[1] / j.prices.at(-1)[1]) > 1 && !(await capLog()).some(x => x.prov === 'lore'), JSON.stringify({ cap0: v.data.first, price0: j.prices[0] }));
     const o = await page.evaluate(() => ({ dis: [...document.querySelectorAll('[data-overlay]')].every(b => b.getAttribute('aria-disabled') === 'true'), why: document.querySelector('[data-overlay="ema200"]').title, alarm: [...document.querySelectorAll('#chart svg text')].some(t => /🔔|Einstieg|SL |TP /.test(t.textContent)), fib: getComputedStyle(document.getElementById('fib-strip')).display, mag: getComputedStyle(document.getElementById('magnet')).pointerEvents }));
@@ -195,7 +195,7 @@ const tests = {
     await page.evaluate(async () => { for (const r of [['1d', '365d'], ['now', 'now']]) { const k = __g07.capKey('cg', 'bitcoin', ...r), e = await __g07.capGet(k); e.fetchedAt = Date.now() - 26 * 3600e3; await __g07.capPut(e); } localStorage.removeItem('scalpdesk.capbudget.v1'); });
     await h.ctl('/cap?cg=fail&cp=fail'); await toPrice(page); await toCap(page); await capReady(page);
     const st = await page.evaluate(() => [...document.querySelectorAll('#chart svg text')].map(t => t.textContent).find(t => /^Daten:/.test(t)) || '');
-    check('Abgelaufen und Anbieter gestört: Kurve bleibt, mit „abgelaufen, Stand … UTC“ und Grund', /abgelaufen, Stand \d\d\.\d\d\.\d{4}, \d\d:\d\d UTC – CoinGecko antwortet mit Fehler 500/.test(st), st);
+    check('Abgelaufen und Anbieter gestört: Kurve bleibt, mit „abgelaufen, Stand … MEZ/MESZ“ und Grund', /abgelaufen, Stand \d\d\.\d\d\.\d{4}, \d\d:\d\d MEZ\/MESZ – CoinGecko antwortet mit Fehler 500/.test(st), st);
     await h.ctl('/cap?cg=ok&cp=ok');
     // Grenze (verkleinert): älteste ungenutzte Einträge zuerst verdrängt
     const ev = await page.evaluate(async () => {

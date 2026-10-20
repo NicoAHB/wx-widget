@@ -52,6 +52,7 @@ const watch = (page, secs) => page.evaluate(async secs => {
 }, secs);
 const tests = {
   async noside(browser) {
+    await h.ctl('/walk?on=0'); // fester Kurs: der Verlust der Test-Positionen darf nicht zufällig über 1.000 USDT wachsen und die Live-Leiste am 320er sprengen
     for (const w of [320, 360, 375, 390, 414, 430]) {
       const { ctx, page, errors } = await open(browser, phone(w));
       const bad = [];
@@ -72,7 +73,7 @@ const tests = {
       const { ctx, page, errors } = await open(browser, w < 600 ? phone(w) : { viewport: { width: w, height: 900 } });
       await page.waitForFunction(() => document.querySelector('#lb-heat .verdict .v-long'), null, { timeout: 15000 }).catch(() => {});
       const r = await page.evaluate(() => { const vis = s => { const e = document.querySelector(s); return !!e && e.getClientRects().length > 0; }; return { long: vis('#lb-heat .v-long'), short: vis('#lb-heat .v-short'), text: document.querySelector('#lb-heat .verdict')?.innerText }; });
-      check(`${w}px: Gesamturteil in der Live-Leiste ${short ? 'kurz (Kauf/Verkauf/Halten)' : 'ausgeschrieben'}`, short ? r.short && !r.long && /^(Kauf|Verkauf|Halten)$/.test(r.text) : r.long && !r.short && /^(Kaufsignal|Verkaufssignal|Halten)$/.test(r.text), JSON.stringify(r));
+      check(`${w}px: Gesamturteil in der Live-Leiste ${short ? 'kurz (Long/Short/Warten)' : 'ausgeschrieben'}`, short ? r.short && !r.long && /^(Long|Short|Warten)$/.test(r.text) : r.long && !r.short && /^(Long-Tendenz|Short-Tendenz|Abwarten)$/.test(r.text), JSON.stringify(r));
       check(`${w}px: keine Fehler`, !errors.length, errors.join(' | ')); await ctx.close();
     }
   },

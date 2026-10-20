@@ -1,5 +1,5 @@
-# Startbestand der ZigZag-Prognose (data/muster-start.json) neu berechnen (3.83.0). Läuft, wenn sich das Rechenskript oder dieser
-# Workflow auf einem Arbeitszweig ändert, oder von Hand („Actions → Startbestand → Run workflow“). Holt die Coinbase-Stundenkerzen
+# Startbestand der ZigZag-Prognose (data/muster-start.json) neu berechnen (3.83.0). Läuft, wenn sich das Rechenskript, die Lernregeln
+# (shared/zigzag*.mjs, indicators.mjs, rsi-momentum.mjs) oder dieser Workflow auf einem Arbeitszweig ändern, oder von Hand („Actions → Startbestand → Run workflow“). Holt die Coinbase-Stundenkerzen
 # (dafür braucht es Internet, das hier vorhanden ist), lernt mit den Funktionen der App, baut das Bündel neu und legt das Ergebnis
 # als Commit auf denselben Zweig. Auf main läuft er nicht automatisch – dort kommt der Bestand nur über einen geprüften PR an.
 name: Startbestand
@@ -7,7 +7,7 @@ name: Startbestand
 on:
   push:
     branches-ignore: [main]
-    paths: ['tools/zzp-start.mjs', '.github/workflows/startbestand.yml']
+    paths: ['tools/zzp-start.mjs', '.github/workflows/startbestand.yml', 'shared/zigzag.mjs', 'shared/zigzag-patterns.mjs', 'shared/indicators.mjs', 'shared/rsi-momentum.mjs']
   workflow_dispatch:
 
 permissions:

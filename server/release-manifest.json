@@ -1,6 +1,6 @@
 {
   "version": "2.15.4",
-  "appVersion": "3.83.1",
+  "appVersion": "3.84.0",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
@@ -169,8 +169,8 @@
     },
     {
       "path": "shared/analysis-learning-view.mjs",
-      "sha256": "9a55e6afcccff04b8b05fe9d1f8dd8270357de9954a67648737e9d7b0899c55f",
-      "bytes": 8768
+      "sha256": "5e34476862df1379d57c1c96790ea0e00df860c43a102768cf8b6a0024680e11",
+      "bytes": 9112
     },
     {
       "path": "shared/analysis-learning-worker.mjs",
@@ -179,8 +179,8 @@
     },
     {
       "path": "shared/analysis-learning.mjs",
-      "sha256": "ca5c61089768c71a0ceba8a97eaa31f16bd5856f77218ffea19d10f0a3366fd6",
-      "bytes": 12528
+      "sha256": "4b6537b0922ffa3361d0791fc61122cd34f01e2d4715e6de7d32cb87ec58c518",
+      "bytes": 12825
     },
     {
       "path": "shared/analysis-notices.mjs",
@@ -236,6 +236,16 @@
       "path": "shared/bot-view.mjs",
       "sha256": "5f9d5ff1e03d729d461b57ef674e5c8dd36858deb2132d7dd1c6574c506b5dba",
       "bytes": 34079
+    },
+    {
+      "path": "shared/calibration-view.mjs",
+      "sha256": "eb9ffed16b6dda7afb6600bfe74fbf6b92fe8e2bd00488c69897bb187df0c786",
+      "bytes": 1845
+    },
+    {
+      "path": "shared/calibration.mjs",
+      "sha256": "cd8c8a96d28b2afde97653767c7c3bae2400eddc3637945b92a61c007e56e1f4",
+      "bytes": 5312
     },
     {
       "path": "shared/chart-detail.mjs",
@@ -379,8 +389,13 @@
     },
     {
       "path": "shared/indicators.mjs",
-      "sha256": "d61f7fdb7c2fb577487da7a5badffa70f485d09be2a05038f6d42ab7b599fdc5",
-      "bytes": 10275
+      "sha256": "a3888ebea48bc694c1d003595e40a5114738bc980301f7a0a088e1a8e10ae8fd",
+      "bytes": 11130
+    },
+    {
+      "path": "shared/key-levels.mjs",
+      "sha256": "de92669b02b2f0c4ea3cead268572f12b0a6cd9008317a8d9110334ef5eed403",
+      "bytes": 6847
     },
     {
       "path": "shared/ki-zones.mjs",
@@ -396,6 +411,11 @@
       "path": "shared/macd-notice.mjs",
       "sha256": "348685cba3459013e6a3df7e4478f6c99dc953568be7b3b7c723e08efb670821",
       "bytes": 2330
+    },
+    {
+      "path": "shared/market-context.mjs",
+      "sha256": "bad6eb788afdde54929612d41ad1af1a73b71a5f80acae9a5f595654cbc9573e",
+      "bytes": 5450
     },
     {
       "path": "shared/market-intervals.mjs",
@@ -739,8 +759,8 @@
     },
     {
       "path": "shared/trend-pullback-learning.mjs",
-      "sha256": "93fd6c06cdd4c1350e2f20a86b89467a2de35ce26f47c8e23bd217c5cde292c7",
-      "bytes": 5088
+      "sha256": "03f9cce6331a683d5ba74c1c6ec444af4178aa8142b4c66ff169e15ea025e1bd",
+      "bytes": 5380
     },
     {
       "path": "shared/trend-pullback-notices.mjs",
@@ -754,8 +774,8 @@
     },
     {
       "path": "shared/trend-pullback-view.mjs",
-      "sha256": "7da1224eed613681176d6430dddc76f0cd27d4dddbc32cef626e7f4adfb66524",
-      "bytes": 10661
+      "sha256": "7af79c51a9c75f1333ccde79370bfbe6a1959d12438d91b65e1b81e3a8b45d67",
+      "bytes": 11007
     },
     {
       "path": "shared/trend-pullback-worker.mjs",
@@ -766,6 +786,11 @@
       "path": "shared/volume-profile.mjs",
       "sha256": "bbaec08e51be6297058ce38c76e4306695d6f9b9fa0e6450aa41d05ab490cb24",
       "bytes": 2387
+    },
+    {
+      "path": "shared/vwap.mjs",
+      "sha256": "b006d23fad0b131693a72faa0e126353cad6ddb1c48e11df1bdcd0575eb5a254",
+      "bytes": 2943
     },
     {
       "path": "shared/watch-model-core.mjs",
@@ -796,6 +821,16 @@
       "path": "shared/widget-state.mjs",
       "sha256": "70092b206adad502d0cc1b16c4b642cc28b2914d392a046a1cf25d4f8b77214a",
       "bytes": 1598
+    },
+    {
+      "path": "shared/zigzag-patterns.mjs",
+      "sha256": "2f833190bab79dce529b9d1883f5ce2eeb3da89c66195afce5530dee947be3db",
+      "bytes": 6172
+    },
+    {
+      "path": "shared/zigzag.mjs",
+      "sha256": "7f953ee6bd441cbf968a87108e5d3ce57e3ac70cbf7e0f99f14a272d6c72961d",
+      "bytes": 7319
     },
     {
       "path": "shared/zone-strength.mjs",

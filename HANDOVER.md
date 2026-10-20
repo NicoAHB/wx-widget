@@ -1,3 +1,21 @@
+## 3.84.0 / Dienst 2.15.4 (Claude): Schlüssel-Levels, VWAP, Kalibrierung, Markt-Lage, schlankere Speicherschicht
+
+- Ausführlich: [docs/3.84.0-AENDERUNGEN.md](docs/3.84.0-AENDERUNGEN.md).
+- **Neu im Chart** (beide standardmäßig aus, „Chart-Ebenen“):
+  - **Levels:** Vortag/Vorwoche Hoch/Tief, Tag-/Woche-/Monat-Open, Sitzungen Asien/London/New York (`shared/key-levels.mjs`); die Analyse-Details nennen „Schlüssel-Level im Weg“.
+  - **VWAP:** Tag/Woche/Monat, ab Swing-Tief/-Hoch oder ab angeklickter Kerze (⚓), Band ±1σ (`shared/vwap.mjs`).
+- **Neu in den Lernständen:** „Stimmen die Prozentzahlen?“ – genannte Wahrscheinlichkeit gegen Ausgang, Trennschärfe, Live gegen Rücktest (`shared/calibration.mjs`).
+- **Neu im Reiter Analysen:** Feld „Markt-Lage“ (BTC-Dominanz aus dem stündlichen GitHub-Ablauf `markt-lage.yml`, Zweig `markt-lage`; ETH/BTC aus Binance).
+  Der Verlauf füllt sich ab dem ersten Lauf auf `main` stündlich.
+- **Speicherschicht:** Merkmal statt Volltext → Heap mit vollen Lernspeichern 78 → 42 MB.
+- **HTML aufgeteilt:** ZigZag, Prognose, Muster-Lernen und RSI liegen in `shared/` (`zigzag.mjs`, `zigzag-patterns.mjs`, `indicators.mjs`); Werkzeug und Tests importieren statt
+  Text aus der HTML zu schneiden. Rechnung bewiesen identisch. `sw.js`: Dateigrenze 160 → 220.
+- **Rote Tests von `main` repariert** (m3, m7, m18, m19, m39, m56, m106), dabei drei echte Fehler behoben: Chart sprang beim Hover (OHLC-Zeile bricht um →
+  `min-height:50px`), Fib-Leiste am iPad im Querformat schnitt Kurse ab (Zweispaltenmodus bekommt die zweizeilige Form), VWAP-Paar am 320er zu breit (bricht um).
+  Details und das bekannte Live-Leisten-Randproblem: Abschnitt 7 der Änderungsdoku.
+- Bewusst nicht: Telegram-Nachricht bei rotem Nachtlauf (auf Wunsch).
+- App/SW **3.84.0**, Dienst unverändert **2.15.4** (kein neuer Installer-Lauf nötig).
+
 ## 3.83.1 / Dienst 2.15.4 (Claude): Vorauswahl-Liste zeigt Kurse beim Start in normaler Größe
 
 - Fehler seit 3.82.2: In der Listenansicht standen Kurse und Änderungen beim Start winzig da (~5 px) und wurden erst bei der nächsten
