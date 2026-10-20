@@ -12,8 +12,8 @@ export async function runNyBacktest({symbols,history,now=Date.now(),options={},f
   for(const coin of coins){stop();let higher=[];if(!coin.market){errors.push({symbol:coin.symbol,text:'Börsenmarkt aus Vorauswahl noch nicht verfügbar.'});done+=sessions.length;continue;}
     if(cfg.biasFilter&&sessions.length){try{higher=await history({...coin,timeframe:'4h',from:Math.floor(sessions[0].rangeStart/14400000)*14400000-TOP_DOWN.history*14400000,to:Math.floor(sessions.at(-1).windowEnd/14400000)*14400000,signal});}catch(e){stop();errors.push({symbol:coin.symbol,text:e.message});done+=sessions.length;continue;}}
     for(const session of sessions){stop();progress({done,total,symbol:coin.symbol,day:session.day});try{
-      const five=await history({...coin,timeframe:'5m',from:session.rangeStart,to:session.rangeEnd,signal}),one=await history({...coin,timeframe:'1m',from:session.rangeEnd-NY_OPEN.atrWarmup*60000,to:session.windowEnd+(NY_OPEN.holdMinutes+(cfg.limitEntry?NY_OPEN.limitMinutes:0))*60000,signal});stop();
-      const r=evaluateNyOpen({candles:{'5m':five,'1m':one,'4h':higher},now:session.windowEnd,symbol:coin.symbol,market:coin.market,options:cfg});
+      const one=await history({...coin,timeframe:'1m',from:session.atrFrom,to:session.windowEnd+(NY_OPEN.holdMinutes+(cfg.limitEntry?NY_OPEN.limitMinutes:0))*60000,signal});stop();
+      const r=evaluateNyOpen({candles:{'1m':one,'4h':higher},now:session.windowEnd,symbol:coin.symbol,market:coin.market,options:cfg});
       if(!r.ready||r.phase==='bias-data')throw Error(r.reason);
       checked++;if(r.signal){const s=r.signal,end=one.at(-1).end;trades.push({signal:s,fixed:nyOutcome(s,one,end,false),breakeven:nyOutcome(s,one,end,true)});delete s.chart;}
     }catch(e){stop();errors.push({symbol:coin.symbol,day:session.day,text:e.message});}finally{done++;progress({done,total,symbol:coin.symbol,day:session.day});}}

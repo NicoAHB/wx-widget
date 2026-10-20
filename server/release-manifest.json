@@ -1,6 +1,6 @@
 {
   "version": "2.16.0",
-  "appVersion": "3.87.0",
+  "appVersion": "3.87.1",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
@@ -529,18 +529,18 @@
     },
     {
       "path": "shared/ny-open-chart.mjs",
-      "sha256": "40461f7091836abb87538a02cac7471dfcef8fd7dcf1b078262c16922a4d5be4",
-      "bytes": 5727
+      "sha256": "639594fa989423ca26ca676b5ee94c78e37fb82f4e4842cd68aca5a50ea56caf",
+      "bytes": 8189
     },
     {
       "path": "shared/ny-open-core.mjs",
-      "sha256": "036f2aec80040037245e2d49fed38199fa6d36b0f60a41a7de27c2858cceb1e6",
-      "bytes": 14433
+      "sha256": "6344a229e511d05b9283c5b474ed602cdb4e5235bb6356ff5fa1c41160755bdf",
+      "bytes": 14973
     },
     {
       "path": "shared/ny-open-feed.mjs",
-      "sha256": "1c3e08c82008d94424f9347fef7a823a74f634481c2b6f7769ae24d9a80d5ee4",
-      "bytes": 10330
+      "sha256": "1fcc33ce539483b1225605a4305b10cad5a054c392a744824cc95ca3d617421f",
+      "bytes": 10693
     },
     {
       "path": "shared/ny-open-history.mjs",

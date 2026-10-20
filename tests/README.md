@@ -1,5 +1,9 @@
 # Tests für Scalp Desk
 
+**3.87.1 NY Open: frühere Signale bleiben im Chart (Claude):**
+- **Neu in `run-all.sh`:** `m145` (Uhr gefälscht, Freitag-Signal, am Montag 09:20 / 09:40 / 10:40 im 1h-, 15m- und 1m-Chart: blasse Linien mit Datum und Preisen, nicht doppelt zum aktuellen Signal, Erklärungstext, Breiten 320–1440 px). Mit dem alten Stand schlagen 9 von 16 Prüfungen fehl.
+- **Erweitert:** `unit-ny-open` (+1: `nyPastSignals` – Reihenfolge, Coin und Markt, ohne das angezeigte Signal, Begrenzung, ungültige Einträge).
+
 **3.87.0 VWAP: Aktuelle Lage und optionale KI-Einschätzung im Info-Punkt (Claude):**
 - **Neu in `run-all.sh`:** `unit-vwap-situation` (Zonen zum Band, Steigung, letzte Schlusskurse, Seitenwechsel, junger Anker, Sätze und Kontext für alle 16 Anker, Prüfung der Antwort), `unit-vwap-explainer` (Dienst: Kontextprüfung, Erlaubnisliste, Tendenz „kaufen/verkaufen/abwarten“ aus dem ersten Satz, 30-s-Sperre, 401/403 vor dem KI-Aufruf, Dienstversion 2.16.0), `m144` (Lage und KI-Einschätzung für jeden Anker mit gespieltem Dienst: gesendeter Kontext, Tendenz-Marke, verworfene Antworten, Meldungen für 404/429/502/503/400/Netz/ohne Dienst/ohne Modell, Anker-Wechsel während der Anfrage, Breiten 320–1440 px; mit `M144_SHOT=<Ordner>` entstehen Bilder).
 

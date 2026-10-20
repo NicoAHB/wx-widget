@@ -9,7 +9,7 @@ export const NY_OPEN = Object.freeze({ id:'ny-open', version:'ny-open-1', timezo
   ranges:Object.freeze({'5m':Object.freeze({minutes:5,endHour:10,endMinute:30}),'15m':Object.freeze({minutes:15,endHour:10,endMinute:30}),'1h':Object.freeze({minutes:60,endHour:11,endMinute:30})}), defaultRange:'5m',
   minRangePct:.15, bodyRatio:.60, atrPeriod:14, atrWarmup:30, fvgATR:.3, stopBufferATR:.1, rewardRisk:2, breakevenR:1, minStopPct:.15, maxStopPct:1,
   limitMinutes:15, holdMinutes:120, maxSignalsPerDay:1, signalAgeMs:60000, closeGraceMs:60000, requestSpacingMs:750,outcomeRetries:3,retryMaxMs:300000,
-  futureShare:.25,futureSlotsMin:6,futureSlotsMax:60, backtestDays:60, feePct:.05, slippagePct:.02, cacheEntries:128, journalDays:90, maxCoins:30 });
+  futureShare:.25,futureSlotsMin:6,futureSlotsMax:60, backtestDays:60, feePct:.05, slippagePct:.02, cacheEntries:128, journalDays:90, maxCoins:30, pastShown:5 });
 export const NY_JOURNAL_KEY='scalpdesk.idb.ny-open.journal.v1', NY_BACKTEST_KEY='scalpdesk.idb.ny-open.backtest.v1';
 export const NY_DEFAULT_OPTIONS=Object.freeze({skipHolidays:true,biasFilter:true,limitEntry:false,breakeven:true});
 export const NY_RANGE_IDS=Object.freeze(Object.keys(NY_OPEN.ranges));
@@ -98,6 +98,13 @@ export function nyOutcome(signal, candles, now, breakeven=signal.options?.breake
   // Trades in Trefferquote, Ø-R und Lernen (rechtszensiert); die Kerzen bis zur Frist sind vollständig geprüft
   if(now>=deadline&&Number.isFinite(lastClose))return{status:'open_2h',filledAt,checkedAt,at:deadline,exit:lastClose,stop,oneRAt,grossR:s.direction*(lastClose-s.entry)/risk};
   return{status:now>=deadline?'open_2h':'open',filledAt,checkedAt,stop,oneRAt};
+}
+// 3.87.1: frühere Signale eines Coins aus dem Journal (neueste zuerst), ohne das gerade angezeigte – für die blassen Linien im Chart
+export function nyPastSignals(journal,{symbol,market,exclude=null,limit=NY_OPEN.pastShown}={}){
+  return Object.values(journal?.records||{})
+    .filter(r=>r?.signal&&r.symbol===symbol&&r.market===market&&Number.isFinite(r.signal.at)&&r.signal.at!==exclude?.at)
+    .sort((a,b)=>b.signal.at-a.signal.at).slice(0,limit)
+    .map(r=>({day:r.day,signal:r.signal,outcome:r.outcome||null}));
 }
 export const nyTerminal=o=>!!o&&(['target','stop','breakeven','expired','open_2h'].includes(o.status)||o.status==='data-gap'&&o.final===true);
 export function compactNySignal(s){const out={...s};delete out.chart;return out;}
