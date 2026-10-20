@@ -1,0 +1,57 @@
+# Markt-Lage für Scalp Desk (3.84.0): holt stündlich die Marktanteile (BTC-Dominanz, ETH, Stablecoins) von CoinGecko (frei, ohne Schlüssel),
+# schreibt sie als Verlauf der letzten 14 Tage fort und legt markt-lage.json im Zweig „markt-lage“ ab. Die App liest die Datei über
+# raw.githubusercontent.com (wie Nachrichten und Kalender). Der Zweig enthält immer nur eine Version (wird ersetzt), die Historie wächst nicht.
+# Ist CoinGecko nicht erreichbar, bleibt der bisherige Stand stehen (Warnung im Lauf, kein Fehler).
+name: Markt-Lage
+
+on:
+  schedule:
+    - cron: '23 * * * *'
+  workflow_dispatch:
+  push:
+    paths: ['.github/workflows/markt-lage.yml', '.github/markt/build.mjs', 'shared/market-context.mjs']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: markt-lage
+  cancel-in-progress: false
+
+jobs:
+  markt:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            .github/markt
+            shared/market-context.mjs
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Marktanteile holen und fortschreiben
+        id: build
+        run: |
+          curl -fsS --max-time 30 -o prev.json "https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/markt-lage/markt-lage.json" || echo "Noch kein voriger Stand."
+          code=0
+          node .github/markt/build.mjs prev.json markt-lage.json || code=$?
+          if [ "$code" = 3 ]; then echo "skip=1" >> "$GITHUB_OUTPUT"; exit 0; fi
+          exit "$code"
+
+      - name: Im Zweig „markt-lage“ ablegen
+        if: steps.build.outputs.skip != '1'
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir out && cp markt-lage.json out/ && cd out
+          git init -q -b markt-lage
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add markt-lage.json
+          git commit -q -m "Markt-Lage $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push -q -f "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" markt-lage

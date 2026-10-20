@@ -7,7 +7,7 @@ if (!fs.existsSync(path.join(dir, 'key.pem')) || !fs.existsSync(path.join(dir, '
   require('child_process').execFileSync('openssl', ['req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '3650', '-subj', '/CN=localhost', '-keyout', path.join(dir, 'key.pem'), '-out', path.join(dir, 'cert.pem')], { stdio: 'ignore' });
 const tls = { key: fs.readFileSync(path.join(dir, 'key.pem')), cert: fs.readFileSync(path.join(dir, 'cert.pem')) };
 const IV = { '1s': 1e3, '1m': 6e4, '3m': 18e4, '5m': 3e5, '15m': 9e5, '30m': 18e5, '1h': 36e5, '2h': 72e5, '4h': 144e5, '12h': 432e5, '1d': 864e5, '1w': 6048e5, '1M': 2592e6 };
-const SPOT = { BTCUSDT: 64000, ETHUSDT: 2500, XRPUSDT: 1.47, ETCUSDT: 18, BCHUSDT: 330, LTCUSDT: 70, NEARUSDT: 2.4, EURUSDT: 1.164, SOLUSDT: 150, PAXGUSDT: 2650, KASUSDT: 0.12 };
+const SPOT = { BTCUSDT: 64000, ETHUSDT: 2500, XRPUSDT: 1.47, ETCUSDT: 18, BCHUSDT: 330, LTCUSDT: 70, NEARUSDT: 2.4, EURUSDT: 1.164, SOLUSDT: 150, PAXGUSDT: 2650, KASUSDT: 0.12, ETHBTC: 0.039 };
 const FUT = { ...SPOT, BSVUSDT: 32 };
 const orderflowMock = { multiplier: 1, hold: false, missing: false, staleMs: 0 };
 delete FUT.EURUSDT; delete FUT.PAXGUSDT; // PAXG: nur Spot (keine Futures, kein Open Interest)
@@ -405,6 +405,13 @@ function rest(req, res) {
         { id: 'cmc-101', t: today + 86400000, end: today + 86400000, dayOnly: true, title: 'Öffentlicher Kalender-Testtermin', coins: ['BTC'], url: 'https://coinmarketcal.com/event/kalender-testtermin' }
       ] });
     }
+    // 3.84.0 – Markt-Lage: markt-lage.json wie vom GitHub-Ablauf (Zweig „markt-lage“): 8 Tage stündlich, BTC-Dominanz fällt von 55,0 auf 53,4 %,
+    // Stablecoin-Anteil steigt von 5,0 auf 5,5 %. /markt?mode=ok|fehlt|alt|kaputt
+    if (u.pathname === '/NicoAHB/wx-widget/markt-lage/markt-lage.json') {
+      const mode = cfg.markt || 'ok'; if (mode === 'fehlt') return json(res, 404, { message: 'Not Found' }); if (mode === 'kaputt') return json(res, 200, { v: 9, history: [] });
+      const H = 36e5, base = mode === 'alt' ? Date.now() - 20 * H : Date.now();
+      return json(res, 200, { v: 1, updated: new Date(base).toISOString(), history: Array.from({ length: 8 * 24 }, (_, i) => { const f = i / (8 * 24 - 1); return { t: base - (8 * 24 - 1 - i) * H, btc: +(55 - 1.6 * f).toFixed(3), eth: 12.4, stable: +(5 + .5 * f).toFixed(3), total: 3.2e12, chg24: 1.2 }; }) });
+    }
     return void (u.pathname.startsWith('/NicoAHB/wx-widget/news/') ? newsFile(req, res, u) : calendar(req, res, u));
   }
   if (cfg.restDelay && !req.delayed) { req.delayed = true; return void setTimeout(() => rest(req, res), cfg.restDelay); }
@@ -620,6 +627,7 @@ http.createServer((req, res) => {
     case '/restfail': cfg.restFail = q.on === '1'; return ok();
     case '/klinefail': cfg.klineFail = q.hosts ? { hosts: q.hosts.split(','), n: q.n ? Number(q.n) : Infinity, code: Number(q.code) || 503 } : null; return ok();
     case '/bybit': cfg.bybit = q.mode === 'fail' ? 'fail' : 'ok'; return ok();
+    case '/markt': cfg.markt = ['ok', 'fehlt', 'alt', 'kaputt'].includes(q.mode) ? q.mode : 'ok'; return ok(); // 3.84.0: markt-lage.json (Zweig markt-lage)
     case '/dec': { if (q.reset === '1') Object.assign(decCfg, decCfg0()); for (const k of ['lore', 'bin']) if (k in q) decCfg[k] = q[k]; if ('ra' in q) decCfg.ra = Number(q.ra) || 0; if ('delay' in q) decCfg.delay = Number(q.delay) || 0;
       for (const k of ['zero', 'stale', 'inactive']) if (k in q) decCfg[k] = q[k] ? q[k].split(',') : []; if ('nobtc' in q) decCfg.nobtc = q.nobtc === '1';
       if (q.chg) for (const e of q.chg.split(',')) { const [sy, w, v] = e.split(':'); (decCfg.chg[sy] ||= {})[w] = Number(v); } if (q.clear === '1') decCfg.log.length = 0; return ok({ log: decCfg.log }); }
@@ -637,7 +645,7 @@ http.createServer((req, res) => {
       return ok({ ...volaCfg });
     }
     case '/reset': if (volaCfg.mode !== 'normal' || volaCfg.drift !== null) { Object.assign(volaCfg, { mode: 'normal', drift: null }); for (const k of Object.keys(H)) if (k.endsWith('|1h')) delete H[k]; }
-      Object.assign(decCfg, decCfg0()); Object.assign(calCfg, { mode: 'normal', min: 10, hits: 0 }); Object.assign(newsCfg, { mode: 'normal', hits: 0 }); clearInterval(cfg.flood); cfg.flood = null; cfg.log.length = 0; Object.assign(oiCfg, { mode: 'wave', ago: 10, amount: 0.06 }); cfg.walk = true; cfg.silent = false; cfg.blockWs = false; cfg.restFail = false; cfg.klineFail = null; cfg.bybit = 'ok'; cfg.restDelay = 0; cfg.chanNoCors = false; cfg.tg429 = 0; cfg.tgFormat = 0; cfg.tgDocFail = false; cfg.tgUpdates = true; cfg.tgMulti = false; cfg.tg502 = 0; cfg.tgFail = null; cfg.tickFail = {}; cfg.tickDelay = {}; cfg.tickOld = {}; cfg.eurHist = 'on'; cfg.t24 = 'ok'; cfg.tgDrop = 0; cfg.photoDrop = 0; cfg.photoCut = 0; cfg.photoFail = 0; cfg.photoDelay = 0; Object.assign(capCfg, { cg: 'ok', cp: 'ok', ra: 120, delay: 0 }); capCfg.log.length = 0; sent.length = 0; Object.assign(bookCfg, { walls: [], step: 0.0002, levels: 1000 }); return ok();
+      Object.assign(decCfg, decCfg0()); Object.assign(calCfg, { mode: 'normal', min: 10, hits: 0 }); Object.assign(newsCfg, { mode: 'normal', hits: 0 }); clearInterval(cfg.flood); cfg.flood = null; cfg.log.length = 0; Object.assign(oiCfg, { mode: 'wave', ago: 10, amount: 0.06 }); cfg.walk = true; cfg.silent = false; cfg.blockWs = false; cfg.restFail = false; cfg.klineFail = null; cfg.bybit = 'ok'; cfg.markt = 'ok'; cfg.restDelay = 0; cfg.chanNoCors = false; cfg.tg429 = 0; cfg.tgFormat = 0; cfg.tgDocFail = false; cfg.tgUpdates = true; cfg.tgMulti = false; cfg.tg502 = 0; cfg.tgFail = null; cfg.tickFail = {}; cfg.tickDelay = {}; cfg.tickOld = {}; cfg.eurHist = 'on'; cfg.t24 = 'ok'; cfg.tgDrop = 0; cfg.photoDrop = 0; cfg.photoCut = 0; cfg.photoFail = 0; cfg.photoDelay = 0; Object.assign(capCfg, { cg: 'ok', cp: 'ok', ra: 120, delay: 0 }); capCfg.log.length = 0; sent.length = 0; Object.assign(bookCfg, { walls: [], step: 0.0002, levels: 1000 }); return ok();
     case '/restdelay': cfg.restDelay = Number(q.ms) || 0; return ok();
     case '/eurhist': cfg.eurHist = q.mode || 'on'; return ok({ mode: cfg.eurHist });
     case '/t24': cfg.t24 = q.mode || 'ok'; return ok({ mode: cfg.t24 });

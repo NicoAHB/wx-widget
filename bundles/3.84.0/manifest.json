@@ -368,6 +368,12 @@
       "alias": "./shared/macd-notice.mjs"
     },
     {
+      "path": "./bundles/3.84.0/shared/market-context.mjs",
+      "sha256": "bad6eb788afdde54929612d41ad1af1a73b71a5f80acae9a5f595654cbc9573e",
+      "bytes": 5450,
+      "alias": "./shared/market-context.mjs"
+    },
+    {
       "path": "./bundles/3.84.0/shared/market-intervals.mjs",
       "sha256": "8d2781e22bed81fa13a361aa1ccd25dafa62364fa1845dfc730893eae502d812",
       "bytes": 2532,
@@ -873,8 +879,8 @@
     },
     {
       "path": "./weather-widget-v2.html",
-      "sha256": "5db0bd548d72d5e9788db1966c21e56c2b10c41069625ff80160596b41970bbe",
-      "bytes": 1810300
+      "sha256": "3c593bd080b4a77ead65646fc69e1f11e7b961fdc64aa698d8002fd6fa9a64be",
+      "bytes": 1817051
     },
     {
       "path": "./manifest.webmanifest",

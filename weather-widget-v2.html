@@ -1580,6 +1580,7 @@ svg .hl-mark.lo text{fill:var(--c-down)}
 .sw.hilo{height:8px;background:linear-gradient(180deg,var(--c-up) 0 2px,transparent 2px 6px,var(--c-down) 6px)}
 .sw.fvg{width:16px;height:10px;border-radius:2px;background:linear-gradient(90deg,color-mix(in srgb,var(--c-up) 70%,transparent) 0 50%,color-mix(in srgb,var(--c-down) 70%,transparent) 50%);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--text) 18%,transparent)} /* 3.70.0: Fair Value Gaps */
 .ov-pair{display:inline-flex;align-items:center;gap:2px;flex:0 0 auto} /* Knopf und ⓘ bleiben beim Umbrechen zusammen */
+.market-context .mkt-headline{margin:0;font-weight:600}.market-context .mkt-headline[data-status="alt"]{color:var(--mint)}.market-context .mkt-headline[data-status="btc"]{color:var(--c-vp)}.mkt-list{display:grid;gap:6px;margin:0}.mkt-list>div{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:0 8px;align-items:baseline}.mkt-list dt{color:var(--muted);font-size:.8125rem}.mkt-list dd{margin:0;font-variant-numeric:tabular-nums;text-align:right;font-weight:600}.mkt-list dd.mkt-change{grid-column:1/-1;text-align:left;font-weight:400;font-size:.75rem;color:var(--muted)}.mkt-list dd.mkt-change:empty{display:none} /* 3.84.0: Markt-Lage */
 .calibration{margin:10px 0}.calibration-hint{display:block;color:var(--muted);font-size:.8125rem}.calibration-line{margin:4px 0}.calibration-line[data-verdict="optimistic"],.calibration-line[data-verdict="no-skill"],.calibration-drift[data-verdict="warn"]{color:var(--down);font-weight:600}.calibration-line[data-verdict="ok"]{color:var(--mint)}.calibration-line[data-verdict="cautious"]{color:var(--c-vp)}
 .calibration-table{border-collapse:collapse;width:100%;margin:6px 0;font-variant-numeric:tabular-nums}.calibration-table th,.calibration-table td{padding:4px 6px;border-bottom:1px solid var(--border);text-align:right}.calibration-table th:first-child,.calibration-table td:first-child{text-align:left}.calibration-table tr.thin td{color:var(--muted)} /* 3.84.0: Kalibrierung der Lern-Prozente */
 .sw.vwap{width:16px;height:10px;background:linear-gradient(180deg,transparent 0 3px,var(--c-vwap) 3px 5px,transparent 5px);box-shadow:0 -3px 0 -1px color-mix(in srgb,var(--c-vwap) 45%,transparent),0 3px 0 -1px color-mix(in srgb,var(--c-vwap) 45%,transparent)} /* 3.84.0: VWAP */
@@ -2585,6 +2586,7 @@ import { computeKiZones, KI_ZONE_INTERVALS } from './bundles/3.84.0/shared/ki-zo
 import { heikinAshi } from './bundles/3.84.0/shared/heikin-ashi.mjs';
 import { detectFvgs, fvgSummary } from './bundles/3.84.0/shared/fvg.mjs';
 import { KEY_LEVELS, KEY_LEVEL_SETS, keyLevels, keyLevelSet, levelsInPath, nearestLevels } from './bundles/3.84.0/shared/key-levels.mjs';
+import { MARKET_CONTEXT, parseMarketContext, marketContext } from './bundles/3.84.0/shared/market-context.mjs';
 import { VWAP, vwapMode, modeName as vwModeName, periodStart as vwPeriodStart, anchorFromPivots, vwapSeries } from './bundles/3.84.0/shared/vwap.mjs';
 import { scoreZoneStrength, ZONE_STRENGTH, ZONE_SIGNAL, zoneSignal, zoneStep, zoneOutcome, summarizeZoneBacktest } from './bundles/3.84.0/shared/zone-strength.mjs';
 // 3.68.0: KI-Signale/Trading-Bot entfernt; der GitHub-Sync behält sein Format inklusive vorhandener Modelloriginale.
@@ -7976,6 +7978,7 @@ function onTick(now) {
   whaleTick(); lastTagTick(); // 3.3: Countdown am Kurs-Schild, auch ohne Neuzeichnen
   econTick();
   cryptoCalendarTick(); // Öffentlicher Krypto-Kalender: eigener, passiver Verbraucher.
+  mktTick(); // 3.84.0: Markt-Lage (BTC-Dominanz, ETH/BTC), nur solange das Feld offen ist
   cnewsTick(); // 3.20: wichtige News und Termine zum geöffneten Coin
   analysisTick(); // 3.78.0: nur fällige Schlusskerzen, keine Tick-Auswertung
   wlTick(now); // 4.2: Mini-Watchlist laden und malen
@@ -16171,6 +16174,61 @@ function cryptoCalendarBuild() {
   explanationFold([note], 'Quelle & Grenzen', 'crypto-calendar-info'); cryptoCalendarPaint();
 }
 cryptoCalendarBuild();
+// ---------- 3.84.0: Markt-Lage (shared/market-context.mjs) ----------
+// Laufen Altcoins gerade eher besser oder schlechter als Bitcoin? BTC-Dominanz, ETH-Anteil und Stablecoin-Anteil kommen stündlich von
+// CoinGecko über den GitHub-Ablauf „Markt-Lage“ (Zweig markt-lage, wie Nachrichten und Kalender), ETH/BTC aus Binance-Tageskerzen.
+// Nur eine Orientierung auf Wochensicht – kein Handelssignal. Geladen wird nur, solange das Feld offen ist.
+const MKT_KEY = 'scalpdesk.idb.market-context', MKT_URL = 'https://raw.githubusercontent.com/NicoAHB/wx-widget/markt-lage/markt-lage.json';
+var mkt = null;
+async function mktFetch() {
+  if (!mkt || mkt.busy) return;
+  mkt.busy = true; mkt.refresh.disabled = true;
+  const controller = new AbortController(), timeout = setTimeout(() => controller.abort(), 15000), errors = [];
+  try {
+    const [file, eth] = await Promise.allSettled([
+      fetch(MKT_URL, { cache: 'no-store', credentials: 'omit', referrerPolicy: 'no-referrer', signal: controller.signal }).then(async r => {
+        if (!r.ok) throw new Error(r.status === 404 ? 'BTC-Dominanz: noch nicht veröffentlicht – der stündliche GitHub-Ablauf „Markt-Lage“ muss einmal gelaufen sein.' : `BTC-Dominanz nicht erreichbar (${r.status}).`);
+        return parseMarketContext(await r.json());
+      }),
+      cachedKlines(MARKET_CONTEXT.ethBtcSymbol, '1d', 14, controller.signal)
+    ]);
+    if (file.status === 'fulfilled') mkt.history = file.value.history; else errors.push(controller.signal.aborted ? 'BTC-Dominanz: Abruf zu langsam.' : file.reason instanceof TypeError ? 'BTC-Dominanz: offline oder nicht erreichbar; letzter Stand bleibt.' : file.reason.message);
+    if (eth.status === 'fulfilled') mkt.ethbtc = eth.value.candles; else errors.push(`ETH/BTC nicht erreichbar (${eth.reason?.message || 'Fehler'}); letzter Stand bleibt.`);
+    mkt.error = errors.join(' '); mkt.retryAt = errors.length ? Date.now() + 5 * 60000 : 0;
+    if (!errors.length || mkt.history.length) { mkt.at = Date.now(); store.set(MKT_KEY, { at: mkt.at, history: mkt.history, ethbtc: mkt.ethbtc.slice(-14) }); }
+  } finally { clearTimeout(timeout); mkt.busy = false; mkt.refresh.disabled = false; mktPaint(); }
+}
+function mktPaint() {
+  if (!mkt) return;
+  const c = marketContext({ history: mkt.history, ethbtc: mkt.ethbtc, now: serverNow() }), pp = v => (v === null ? '–' : `${signed(v, 1)} Pkt.`), pc = v => (v === null ? '–' : `${signed(v, 1)} %`);
+  mkt.headline.textContent = c.headline; mkt.headline.dataset.status = c.status;
+  const rows = [];
+  if (c.now) rows.push(['BTC-Dominanz', `${number(c.now.btc, 1)} %`, `24 h ${pp(c.dom24)} · 7 T ${pp(c.dom7)}`], ['ETH-Anteil', `${number(c.now.eth, 1)} %`, ''], ['Stablecoins (USDT + USDC)', `${number(c.now.stable, 1)} %`, `7 T ${pp(c.stable7)}`],
+    ['Gesamtmarkt', `${number(c.now.total / 1e12, 2)} Bio. $`, c.now.chg24 === null ? '' : `24 h ${pc(c.now.chg24)}`]);
+  if (c.ethBtc.now !== null) rows.push(['ETH/BTC', number(c.ethBtc.now, 5), `24 h ${pc(c.ethBtc.d1)} · 7 T ${pc(c.ethBtc.d7)}`]);
+  mkt.list.replaceChildren(...rows.map(([k, v, n]) => { const row = el('div'); row.append(el('dt', '', k), el('dd', '', v), el('dd', 'mkt-change', n)); return row; }));
+  mkt.hint.textContent = c.hint; mkt.hint.hidden = !c.hint;
+  const stamp = c.now ? `Stand ${deDate(c.now.at)} MEZ/MESZ${c.stale ? ' – älter als 6 Stunden, der stündliche Ablauf liefert gerade nichts Neues' : ''}.` : '';
+  mkt.status.textContent = [mkt.error, stamp].filter(Boolean).join(' '); mkt.status.classList.toggle('err', !!mkt.error || c.stale);
+  mkt.lastStatus = c.status;
+}
+function mktTick() {
+  if (!mkt || !mkt.root.open || document.hidden || state.paused || !mkt.root.getBoundingClientRect().height) return;
+  const now = Date.now(); if (!mkt.busy && now >= mkt.retryAt && (!mkt.at || now - mkt.at >= MARKET_CONTEXT.refreshMs)) void mktFetch();
+}
+function mktBuild() {
+  const root = el('details', 'crypto-calendar market-context'); root.id = 'market-context'; root.append(el('summary', '', 'Markt-Lage · BTC-Dominanz & ETH/BTC'));
+  const body = el('div', 'crypto-calendar-content'), headline = el('p', 'mkt-headline'), list = el('dl', 'mkt-list'), hint = el('p', 'crypto-calendar-note'), status = el('p', 'crypto-calendar-note'), tools = el('div', 'crypto-calendar-tools'), refresh = el('button', 'button ghost', 'Aktualisieren');
+  refresh.type = 'button'; refresh.id = 'market-context-refresh'; status.id = 'market-context-status'; status.setAttribute('role', 'status'); headline.setAttribute('role', 'status'); tools.append(refresh);
+  const note = el('p', 'crypto-calendar-note', 'BTC-Dominanz, ETH- und Stablecoin-Anteil: stündlicher Auszug von CoinGecko (kostenfrei) über einen GitHub-Ablauf; ETH/BTC: Binance-Tageskerzen. Die Einschätzung vergleicht die Entwicklung über sieben Tage (BTC-Dominanz um mindestens 0,5 Punkte, ETH/BTC um mindestens 1,5 %). Ein Hinweis zur Lage, keine Kursprognose und kein Handelssignal. Ein steigender Stablecoin-Anteil kann auch nur heißen, dass der übrige Markt schrumpft.');
+  body.append(headline, list, hint, tools, status, note); root.append(body); $('econ').append(root);
+  mkt = { root, headline, list, hint, status, refresh, history: [], ethbtc: [], at: 0, error: '', busy: false, retryAt: 0, lastStatus: '' };
+  try { const cached = store.get(MKT_KEY); if (cached?.history?.length) { mkt.history = cached.history; mkt.ethbtc = cached.ethbtc || []; mkt.at = Number(cached.at) || 0; } } catch { /* kaputter lokaler Stand wird neu geladen */ }
+  refresh.addEventListener('click', () => void mktFetch()); root.addEventListener('toggle', () => { if (root.open) { mktPaint(); mktTick(); } });
+  explanationFold([note], 'Quelle & Grenzen', 'market-context-info'); mktPaint();
+}
+mktBuild();
+window.__marketContext = { tick: mktTick, fetch: mktFetch, paint: mktPaint, get state() { return mkt; } };
 var panelAppearanceView = createPanelAppearanceSettings({ host: $('view-panel'), read: () => store.get('scalpdesk.panel-style.v1'),
   save: value => { store.set('scalpdesk.panel-style.v1', value); if (!store.ok) throw Error('Darstellung konnte nicht gespeichert werden.'); }, adopt: value => store.adopt('scalpdesk.panel-style.v1', value) });
 window.__panelAppearance = panelAppearanceView;
