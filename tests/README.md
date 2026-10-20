@@ -1,5 +1,8 @@
 # Tests für Scalp Desk
 
+**3.83.1 Vorauswahl-Liste (Claude):** `m138` (in `run-all.sh`) – Listenansicht bei ruhigem Markt: Kurse und Änderungen haben direkt
+nach dem Start dieselbe Größe wie nach einer erzwungenen Neuberechnung (390 px und 320 px); vorher ~5 px bis zur nächsten Kursänderung.
+
 **3.83.0 Prüfautomatik, Speicherschlüssel, Trading-Logik, Leistung (Claude):**
 - **Prüfautomatik:** `run-unit.sh` führt alle `unit-*.js` nacheinander aus (Fehlercode bei ✗); GitHub Actions ruft es bei jedem PR auf
   (`.github/workflows/ci.yml`), den Gesamtlauf `run-all.sh` jede Nacht (`nachtlauf.yml`).
