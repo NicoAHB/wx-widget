@@ -1,3 +1,16 @@
+## 3.86.0 / Dienst 2.15.4 (Claude): NY Open Killzone mit umschaltbarer Range-Länge (5m | 15m | 1h)
+
+- Ausführlich: [docs/3.86.0-AENDERUNGEN.md](docs/3.86.0-AENDERUNGEN.md).
+- **Range-Länge:** ab 09:30 New York (mit Sommerzeit) wahlweise 5m (bis 09:35), 15m (bis 09:45) oder 1h (bis 10:30). Hoch/Tief aller drei Längen kommen aus denselben
+  1m-Kerzen (kein 5m-Abruf mehr) – Umschalten ist sofort, ohne neue Abfrage. Kern: `shared/ny-open-core.mjs` (`nySession`, `nyRanges`, `nyRangeChoice`, `nySettings`).
+- **Leiste** `5m | 15m | 1h` in der Karte „NY Open Killzone“ (Stil der vorhandenen `.intervals`-Knöpfe, Standard 5m). 15m ab 09:35, 1h ab 09:45 wählbar, sonst
+  ausgegraut; kürzer wählen geht immer. Eine Wahl für alle Coins. Mit dem neuen Handelstag (09:30 New York) springt sie auf 5m zurück.
+- **Stufen:** Stufe 1 „{Länge} Range, 09:30–09:45“, solange die gewählte Range läuft „Range wird gebildet“; Stufe 2 beginnt erst mit dem Range-Ende; Linien im Chart erst dann.
+  Signalfenster bis 10:30, bei 1h bis 11:30. Weiter ein Signal je Coin und Tag, das erste bleibt eingefroren (Hinweis „Signal der X Range“); Telegram-Karte nennt die Länge,
+  keine Doppelmeldung beim Umschalten (gleicher Tagesschlüssel).
+- **Unverändert:** Rücktest und Lernen bleiben bei 5m; `learningVersion` gleich (`nyOptions` liefert weiter vier Schalter, die Wahl liegt in `nySettings`
+  und wird erst nach einer Auswahl gespeichert). Dienst unverändert **2.15.4** (kein neuer Installer-Lauf nötig). App/SW **3.86.0**.
+
 ## 3.85.0 / Dienst 2.15.4 (Claude): Levels übersichtlich, VWAP mit vorgeschlagenen Ankern
 
 - Ausführlich: [docs/3.85.0-AENDERUNGEN.md](docs/3.85.0-AENDERUNGEN.md).
