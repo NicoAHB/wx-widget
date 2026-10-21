@@ -86,5 +86,5 @@ export const EXAMPLE_PNL = Object.freeze({ profit: false, pnl: -170.1, level: 17
 const EX_T = Date.UTC(2026, 9, 14, 18, 50), EX_STEP = 3e5;
 const EX_K = Array.from({ length: 41 }, (_, i) => ({ t: EX_T - (40 - i) * EX_STEP, c: i === 40 ? 1.137 : +(1.131 + 0.0002 * i + 0.012 * (1 - i / 44) * Math.sin(i / 2.2)).toFixed(4) }));
 export const EXAMPLE_SIGNAL = Object.freeze({ pattern: 'Symmetrisches Dreieck', symbol: 'DOTUSDT', market: 'Spot', timeframe: '5m', status: 'Ausbruch bestätigt', direction: 'bull',
-  entry: 1.137, target: 1.1598, invalid: 1.1294, quality: 88, model: 'pat-1', learned: { available: 0, minimum: 10 }, score: 44, marks: { trend: '✖', volume: '✖' }, rr: 2.99, atr: 0.009,
+  entry: 1.137, target: 1.1598, invalid: 1.1294, quality: 88, model: 'pat-1', learned: { available: 0, minimum: 30 }, score: 44, marks: { trend: '✖', volume: '✖' }, rr: 2.99, atr: 0.009,
   price: 1.1381, tc: EX_T, at: EX_T + EX_STEP + 9000, chart: SC.patternChartData(EX_K, { t0: EX_K[0].t, lines: [[0, 1.145, 38, 1.1335, 'res'], [0, 1.118, 38, 1.1305, 'sup']] }) });

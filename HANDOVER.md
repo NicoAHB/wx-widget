@@ -1,3 +1,12 @@
+## 3.92.0 / Dienst 2.17.0 (Claude): Chartmuster-Trefferzählung je Muster statt je Coin
+
+- Ausführlich: [docs/3.92.0-AENDERUNGEN.md](docs/3.92.0-AENDERUNGEN.md). Veröffentlicht zusammen mit 3.91.0.
+- **Anlass:** Telegram zeigte „Bullischer Wimpel 0/10 Fälle“, „Inverse SKS 1/10 Fälle“ – gezählt je Coin. Der Nutzer fragte, ob je Muster sinnvoller ist; Empfehlung angenommen.
+- **Jetzt:** Neues gemeinsames Modul `shared/pattern-knowledge.mjs` (App und 24/7-Dienst): Zählung je **Muster + Intervall + Richtung** über alle Coins und beide Märkte, Fall in Spot und Futures zählt einmal, **mindestens 30 Fälle**, live vor rekonstruiert, 95-%-Bereich (Wilson) mit **Zeitpunkten** als wirksamer Fallzahl, Coin-Zahl nur als Zusatz ab 30 eigenen Fällen, Zufallsvergleich aus den letzten 250 Kerzen (nur in der App-Meldung/im Dienst, nicht auf dem Weg App → Dienst). Telegram-Text, Signalkarte (dynamische Höhe) und Info-Blatt zeigen die neuen Zeilen. Der alte `pkStats` (coinbezogen) bleibt für die Bänder im Info-Blatt.
+- **Optik:** Relative-Stärke-Zeile mit farbigem Rang/Stärke (Text unverändert), AMD-Chart-Beschriftungen links vom Preisband, Signalkarte mit mehr Abstand.
+- **Offen/Hinweis:** Oracle-Installer erneut ausführen (**2.17.0**; 2.16.0 mit VWAP-KI ebenfalls noch offen); iPad-PWA ganz schließen. Der Signal-Score zählt weiter getrennt (Zielerreichung aus dem Journal, ab 10 Fällen) – bewusst nicht vermischt. `m92` (Monatschart Wochen-Detail, Zeitachse) ist auf `main` weiterhin rot und unabhängig davon.
+- Tests: `unit-pattern-knowledge` (14), `unit-pattern-learned` (6), `unit-pattern-card`, `unit-telegram-format`, `unit-247e`, `unit-rs-order`, `unit-amd-view`, `m58`, `m135`, `m148`. App **3.92.0**, Dienst **2.17.0**.
+
 ## 3.91.0 / Dienst 2.16.0 (Claude): Relative-Stärke-Zeile mit zwei Werten, AMD-Rückblick auf 30 Tage
 
 - Ausführlich: [docs/3.91.0-AENDERUNGEN.md](docs/3.91.0-AENDERUNGEN.md).

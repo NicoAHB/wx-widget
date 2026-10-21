@@ -1,11 +1,11 @@
 {
-  "version": "2.16.0",
-  "appVersion": "3.91.0",
+  "version": "2.17.0",
+  "appVersion": "3.92.0",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
-      "sha256": "c1cf491453c45727908cea9de0da1910844aca38b8ea483adebe7aa04a44210a",
-      "bytes": 139271
+      "sha256": "1d5d69caba068063c997cdc34e27959aaf6aee8aa8c8e3ed26fd4274d4f74186",
+      "bytes": 139425
     },
     {
       "path": "pattern-engine.mjs",
@@ -14,12 +14,12 @@
     },
     {
       "path": "pattern-monitor.mjs",
-      "sha256": "d87f203c0876bed570c81035646d55586843ddb8ab8bcb7053933591024cc19b",
-      "bytes": 7766
+      "sha256": "749238106cffa6f1f32c3cb896e65dc114b29dab66296ee729cba0799498d2ea",
+      "bytes": 7618
     },
     {
       "path": "pattern-card.mjs",
-      "sha256": "b7c55a1d8cd0c2f8d90973da311b2164022a2ec0dc57cbb47a37a7344b9dc64d",
+      "sha256": "7ec9e5eeab3c362ae06352ecabe47c9f8b1370e242d59eafe86c5c7d97e6584f",
       "bytes": 8604
     },
     {
@@ -134,8 +134,8 @@
     },
     {
       "path": "shared/amd-view.mjs",
-      "sha256": "a8e186c41074eda38911f1f3cb023202960fa0402deb9a1255ced7efaf29fb49",
-      "bytes": 20203
+      "sha256": "99f3ee2df161d527828110ed1bc4913b87e1b8b286944b6f89c64a667d98be00",
+      "bytes": 20326
     },
     {
       "path": "shared/analysis-card.mjs",
@@ -224,8 +224,8 @@
     },
     {
       "path": "shared/analysis-view.mjs",
-      "sha256": "c2e111b444accf2d6922746b64d11da6a07c632c810ef9f4c72e3e8fa055a0dc",
-      "bytes": 24408
+      "sha256": "fe2b5c3532b582ea57b2cfe98146adbac958189c936151e4a1c2caad7044304c",
+      "bytes": 25302
     },
     {
       "path": "shared/bitget-patterns.mjs",
@@ -653,6 +653,11 @@
       "bytes": 19219
     },
     {
+      "path": "shared/pattern-knowledge.mjs",
+      "sha256": "2e7be18aaef5dce999a3a522b9f994ea4ea28ecdf7ef056000c840bb14ce44a6",
+      "bytes": 5553
+    },
+    {
       "path": "shared/pattern-lifecycle.mjs",
       "sha256": "7c17bf87dff9e389a5f7351d7ba09b2deb19bca9921aa0d0669e922f11f18dae",
       "bytes": 5587
@@ -674,8 +679,8 @@
     },
     {
       "path": "shared/pattern-signal-card.mjs",
-      "sha256": "82f15c5c2239454082999cc7e57937389d28f8bb608eb2f3d943ab3c4c5a3981",
-      "bytes": 21230
+      "sha256": "bc5f88ce22299d341f202dbfed25061acc6a059170ab9cc44c46cbddf432f68c",
+      "bytes": 21513
     },
     {
       "path": "shared/pnl-alarm-card.mjs",
@@ -754,8 +759,8 @@
     },
     {
       "path": "shared/telegram-format.mjs",
-      "sha256": "03f4b2740dfbe6c35af10dc80629b648c3752e39fece97ca598aac874bb0f467",
-      "bytes": 22759
+      "sha256": "4c758deb9789f5481485c4889bafa6c04f5a6d84e4d06df77712ef429e9d45a9",
+      "bytes": 23861
     },
     {
       "path": "shared/trend-pullback-backtest.mjs",

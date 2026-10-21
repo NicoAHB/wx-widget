@@ -39,7 +39,7 @@ let pass = 0, fail = 0; const check = (name, ok) => { ok ? pass++ : fail++; cons
     const before = requests.length, answer = await send({ authorization: 'Bearer ' + 'k'.repeat(43), origin: 'https://nicoahb.github.io' }), json = await answer.json();
     check('Authentifizierter Endpunkt: 200, CORS, Modus und Tendenz', answer.status === 200 && answer.headers.get('access-control-allow-origin') === 'https://nicoahb.github.io' && json.mode === 'pdh' && json.lean === 'buy' && requests.length === before + 1);
     check('HTTP-Prüfung lehnt ungültigen Kontext ab (400)', (await send({ authorization: 'Bearer ' + 'k'.repeat(43) }, { ...request, context: { ...context, zone: 'x' } })).status === 400);
-    const health = await (await fetch('http://127.0.0.1:' + port + '/v1/health')).json(); check('Dienstversion 2.16.0', health.v === '2.16.0');
+    const health = await (await fetch('http://127.0.0.1:' + port + '/v1/health')).json(); check('Dienstversion 2.17.0', health.v === '2.17.0');
   } finally { await new Promise(r => server.close(r)); }
   console.log(`${pass}/${pass + fail} bestanden`); process.exitCode = fail ? 1 : 0;
 })().catch(e => { console.error(e); process.exitCode = 1; });

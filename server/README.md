@@ -15,6 +15,10 @@ Ab Version 2.0 steuert die App ihn über eine gesicherte HTTPS-Adresse: Chat-Sch
 
 **Schritt-für-Schritt-Anleitung für Oracle Cloud (Neueinrichtung, Aktualisieren, Fehlerhilfe): [ANLEITUNG-ORACLE.md](ANLEITUNG-ORACLE.md)**
 
+### 2.17.0 – Chartmuster: Trefferzählung je Muster statt je Coin
+
+Die Zeile „Erlernt“ in den Chartmuster-Meldungen zählt jetzt **je Muster, Intervall und Richtung über alle Coins** (Spot und Futures zusammen, derselbe Fall einmal) und zeigt die Zahl ab **30** abgeschlossenen Fällen (vorher je Coin ab 10). Darunter stehen der Bereich (95 %, gerechnet mit der Zahl der Zeitpunkte, weil Coins gemeinsam laufen), die Zahl des eigenen Coins (nur ab 30 eigenen Fällen) und – wenn der Dienst die Kerzen hat – ein Zufallsvergleich der letzten 250 Kerzen. Rechnung: `shared/pattern-knowledge.mjs` (wird mit dem Installer mitgeliefert). Nach dem Aktualisieren des Dienstes den Installer erneut ausführen.
+
 ### 2.16.0 – optionale Einschätzung der VWAP-Lage
 
 App 3.87.0 zeigt im Info-Punkt des VWAP die „Aktuelle Lage“ (Zahlen und Sätze, rein lokal). Auf Knopfdruck fragt sie zusätzlich `POST /v1/vwap/explain` am Dienst: Die KI nennt eine Tendenz – „Eher kaufen“, „Eher verkaufen“ oder „Abwarten“ – und begründet sie in wenigen Sätzen. Sie bekommt nur fertige Zahlen (Coin, Anker, Kurs, VWAP, Band, Abstand, Steigung, Zählung der letzten Schlusskurse), keine Kerzenlisten, und erfindet keine Werte. Das ist keine Anlageberatung und kein Signal der App; der Dienst ändert nichts an Positionen oder Meldungen und sendet nichts an Telegram.

@@ -50,6 +50,11 @@ const check = (name, fn) => { try { fn(); pass++; console.log('✓ ' + name); } 
     const inputs = root.querySelectorAll('[data-amd-option]'); inputs[0].value = '9'; inputs[0].listeners.change[0](); assert.strictEqual(options.maxHeightAtr, 4); inputs[1].value = '2,5'; inputs[1].listeners.change[0](); assert.strictEqual(options.minRR, 2.5);
     assert.ok(root.textContent.includes('Fehlausbruch') && root.textContent.includes('Strukturbruch'));
   });
+  check('Chart: Linienbeschriftungen enden links vom Preisband (g.rx), ohne rx am Rand der Zeichenfläche', () => {
+    const wide = draw(signalResult), narrow = draw(signalResult, { rx: 700 });
+    assert.ok(wide.labelX.length >= 2, 'Beschriftungen vorhanden'); assert.ok(wide.labelX.every(v => v <= 756), wide.labelX.join(','));
+    assert.ok(narrow.labelX.every(v => v <= 698), narrow.labelX.join(',')); assert.ok(Math.max(...narrow.labelX) < Math.max(...wide.labelX) || Math.max(...wide.labelX) <= 698);
+  });
   check('Chart: drei Kästen mit den vorgegebenen Farben (blau, rot, grün), Beschriftung, Range-Linien nach rechts bis zum Rand', () => {
     const g = draw(signalResult), kinds = g.rects.map(r => r['data-amd-box']);
     assert.deepStrictEqual(kinds.sort(), ['accumulation', 'distribution', 'manipulation']);
@@ -116,14 +121,14 @@ const check = (name, fn) => { try { fn(); pass++; console.log('✓ ' + name); } 
     await root.querySelectorAll('[data-amd-review]')[0].listeners.click[0](); assert.match(root.textContent, /keinen einzigen Durchbruch: Sie ist zu streng/);
   });
 
-  function draw(result) {
-    const rects = [], lines = [], labels = [], buttons = [], explanations = [];
-    const node = (tag, attrs = {}, text) => { const n = { tag, attrs, children: [], dataset: {}, append(...c) { n.children.push(...c); }, addEventListener() {}, text }; if (tag === 'rect') rects.push(attrs); if (tag === 'line') lines.push(attrs); if (tag === 'text') labels.push(text); return n; };
+  function draw(result, extra = {}) {
+    const rects = [], lines = [], labels = [], buttons = [], explanations = [], labelX = [];
+    const node = (tag, attrs = {}, text) => { const n = { tag, attrs, children: [], dataset: {}, append(...c) { n.children.push(...c); }, addEventListener() {}, text }; if (tag === 'rect') rects.push(attrs); if (tag === 'line') lines.push(attrs); if (tag === 'text') { labels.push(text); if (/amd-line-label/.test(attrs.class || '')) labelX.push(attrs.x); } return n; };
     const left = 20, pw = 740, top = 10, bottom = 300, min = 90, max = 110, step = 10, t0 = T0, x = i => left + (i + .5) * step, timeX = t => x((t - t0) / Q), y = v => top + (max - v) / (max - min) * (bottom - top);
     const svg = { append(n) { if (n.attrs?.class?.includes('amd-chart-info')) { buttons.push(n.children.find(c => c.tag === 'text').text); explanations.push(n.__analysisExplanation); } } }, store = () => ({ append() {} });
-    V.drawAmdChart({ node, svg, under: store(), over: store(), result, geometry: { left, pw, top, bottom, min, max, timeX, y, x }, palette: { up: '#3ddc84', down: '#ff5b6e', muted: '#8a93a3', zero: '#888' }, price: fmt.price, explain() {} });
+    V.drawAmdChart({ node, svg, under: store(), over: store(), result, geometry: { left, pw, top, bottom, min, max, timeX, y, x, ...extra }, palette: { up: '#3ddc84', down: '#ff5b6e', muted: '#8a93a3', zero: '#888' }, price: fmt.price, explain() {} });
     // Kinder der Gruppen einsammeln: rects/lines wurden bereits beim Erzeugen erfasst
-    return { rects: rects.filter(r => r['data-amd-box']).map(r => ({ ...r, fill: r.fill })), lines, labels, buttons, explanations };
+    return { rects: rects.filter(r => r['data-amd-box']).map(r => ({ ...r, fill: r.fill })), lines, labels, buttons, explanations, labelX };
   }
   function domStub() {
     class El { constructor(tag) { this.tag = tag; this.children = []; this.dataset = {}; this.attrs = {}; this.className = ''; this._text = ''; this.listeners = {}; this.value = ''; }
