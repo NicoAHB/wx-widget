@@ -1,3 +1,10 @@
+## 3.93.0 / Dienst 2.17.0 (Claude): Kurs-Schild per Tipp ausblenden, Vorauswahl lädt parallel
+
+- Ausführlich: [docs/3.93.0-AENDERUNGEN.md](docs/3.93.0-AENDERUNGEN.md).
+- **Anlass:** Das Kurs-Schild im Chart verdeckte Volumen/Kurswerte; die Vorauswahl brauchte beim Öffnen ca. 5 s.
+- **Jetzt:** Tipp auf das Schild blendet es bis zur nächsten vollen Minute aus (nur für den getippten Coin, Kurslinie bleibt, Raster kehrt zurück; `lastTagHidden`). Die Vorauswahl lädt über `wlPump` bis zu 4 Coins gleichzeitig und stößt den nächsten Abruf sofort an (vorher ein Coin je Sekundentakt); Mock-Messung 6 Coins: Kacheln 7–8 s → ca. 2,3 s, Spalten 13–14 s → ca. 2,5 s. Echte Börse nicht messbar (Hosts gesperrt).
+- Tests: neu `m149`; geprüft `m12`, `m26`, `m27`, `m111`, `m112`, `m118`, `m119`, `m131`. App **3.93.0**, Dienst **2.17.0** (Oracle-Installer für 2.17.0 weiterhin nötig; iPad-PWA ganz neu öffnen).
+
 ## 3.92.0 / Dienst 2.17.0 (Claude): Chartmuster-Trefferzählung je Muster statt je Coin
 
 - Ausführlich: [docs/3.92.0-AENDERUNGEN.md](docs/3.92.0-AENDERUNGEN.md). Veröffentlicht zusammen mit 3.91.0.
