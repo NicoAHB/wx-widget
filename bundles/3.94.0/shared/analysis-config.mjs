@@ -5,6 +5,9 @@ import { NY_OPEN, nySettings, evaluateNyOpen } from './ny-open-core.mjs';
 import { createNyRuntime } from './ny-open-feed.mjs';
 import { describeNyOpen, nyStatus, createNyTools } from './ny-open-view.mjs';
 import { describeTopDown, topDownStatus } from './analysis-status.mjs';
+import { AMD, amdOptions } from './amd-core.mjs';
+import { createAmdRuntime } from './amd-feed.mjs';
+import { describeAmd, amdStatus, createAmdTools, drawAmdChart } from './amd-view.mjs';
 import { PULLBACK, pullbackOptions, evaluatePullback } from './trend-pullback-core.mjs';
 import { createPullbackRuntime } from './trend-pullback-feed.mjs';
 import { describePullback, pullbackStatus, createPullbackTools } from './trend-pullback-view.mjs';
@@ -23,6 +26,9 @@ export const ANALYSES = Object.freeze([
     describe: describeTopDown, status: topDownStatus, learning:true, tools:args=>createAnalysisLearningTools({...args,id:'top-down',name:'Top-Down'}) }),
   Object.freeze({ id:NY_OPEN.id, name:"NY Open Killzone", version:NY_OPEN.version, indicators:Object.freeze([]), intervals:Object.freeze([]), evaluate:evaluateNyOpen, createRuntime:createNyRuntime, normalizeOptions:nySettings, tools:args=>createAnalysisLearningTools({...args,id:NY_OPEN.id,name:'NY Open Killzone',existing:createNyTools(args)}), learning:true,
     description:"09:30–09:35 New York: Opening Range. 09:35–10:30: 1m-Ausbruch mit starkem Körper und bestätigtem FVG. Fester Stop, Ziel 2R; nur normale, geschlossene Kerzen. Maximal ein Signal pro Coin und NY-Handelstag.", describe:describeNyOpen, status:nyStatus }),
+  Object.freeze({ id:AMD.id, name:AMD.name, version:AMD.version, indicators:Object.freeze([]), intervals:Object.freeze([]), defaultInterval:AMD.defaultInterval, observe:true,
+    createRuntime:createAmdRuntime, normalizeOptions:amdOptions, status:amdStatus, describe:describeAmd, draw:drawAmdChart, tools:createAmdTools,
+    description:'Accumulation, Manipulation, Distribution (Zeitrahmen 5m bis 1M wählbar): Seitwärtsrange ab 12 Kerzen (Höhe höchstens 1,5 × ATR), Durchbruch als Manipulation, Bestätigung durch Schluss zurück in der Range und 1m-Strukturbruch. Ziel ist die Gegenseite der Range; gemeldet wird nur ab CRV 1:2. Ein Telegram-Bild je Setup.' }),
   Object.freeze({ id:PULLBACK.id, name:PULLBACK.name, version:PULLBACK.version, indicators:Object.freeze([]), intervals:Object.freeze([]), evaluate:evaluatePullback,
     createRuntime:createPullbackRuntime, normalizeOptions:pullbackOptions, tools:createPullbackTools, focusOnName:true, learning:true,
     description:'4h-Trend mit EMA 21/50/200, Struktur und ADX. 1h-Fibonacci-Rücksetzer in EMA-Band oder 4h-Zone. 15m: mindestens zwei Bestätigungen, CRV/Stop-Filter. Lokale, zeitlich getrennt geprüfte logistische Regression; feste Regeln bleiben unverändert.',

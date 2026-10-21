@@ -1,3 +1,13 @@
+## 3.94.0 / Dienst 2.17.0 (Claude): Start-Gerüst statt leerem Hintergrund
+
+- Ausführlich: [docs/3.94.0-AENDERUNGEN.md](docs/3.94.0-AENDERUNGEN.md).
+- **Anlass:** Die App öffnete „leer“ (nur Hintergrund / halbfertiger Rohaufbau), nach etwa einer Sekunde sprang die komplette Vorauswahl ein.
+- **Befund (gemessen, CPU 3× gedrosselt):** erstes Zeichnen ≈ 0,6 s, fertige Oberfläche ≈ 1,75 s; dazwischen läuft das Hauptskript (131 Module übersetzen, Seite umbauen, mehrere erzwungene Layouts). `modulepreload` brachte nichts (verworfen). **Die Zeit bis zur fertigen Oberfläche ist unverändert.**
+- **Jetzt:** `html[data-boot]` + Platzhalter (`#boot-skel`) mit den gemessenen Maßen der echten Oberfläche (Zeitrahmen-Leiste, Reiter, Vorauswahl-Rahmen, sieben Kacheln; Handy / Tablet / breit bis 1400 px); Aufbau darunter per `visibility` unsichtbar; Entfernen am Ende des Hauptskripts; Notbremse nach 6 s; nur bei gespeichertem Bereich „Chart“. Test `m150` (inkl. Geometrievergleich mit der echten Vorauswahl).
+- **Achtung Tests:** `h.launch()` ordnet die App in die alte „Fixture“-Ansicht um; Aussagen zum echten Layout nur mit `h.launch({ workspace: 'fresh' })` prüfen.
+- **Offen/Idee:** Echtes Beschleunigen = Modulbündelung + Hauptskript in eine zwischengespeicherte Datei auslagern (Umbau der Auslieferung, nur auf Wunsch). iPad-PWA ganz neu öffnen; Oracle-Installer für 2.17.0 weiterhin offen.
+- Tests: neu `m150`; geprüft `m3`, `m4`, `m12`, `m26`, `m27`, `m45`, `m53`, `m111`, `m112`, `m118`, `m129`, `m131`, `m135`, `m147`, `m148`, `m149`. App **3.94.0**, Dienst **2.17.0**.
+
 ## 3.93.0 / Dienst 2.17.0 (Claude): Kurs-Schild per Tipp ausblenden, Vorauswahl lädt parallel
 
 - Ausführlich: [docs/3.93.0-AENDERUNGEN.md](docs/3.93.0-AENDERUNGEN.md).

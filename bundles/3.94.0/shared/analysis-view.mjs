@@ -54,7 +54,7 @@ export function createAnalysisView({ root, definitions = ANALYSES, read, save, g
   const hint = make(doc, 'p', 'analysis-hint', 'Modellname klappt Coins auf oder zu. Rücksetzer: Modellname aktiviert den Chart-Fokus, „Coins“ klappt die Liste. Telegram schaltet Nachrichten für das Modell. Chart-Haken: nur diese Analyse anzeigen; ausschalten beendet den Fokus. Coin-Name öffnet dessen Chart. Prüfung & Erklärung zeigt alle Stufen und Werte.');
   const messages = make(doc, 'div', 'analysis-messages'); messages.setAttribute('role', 'status'); messages.hidden = true;
   const info = make(doc, 'details', 'analysis-info'), infoSummary = make(doc, 'summary', '', 'ⓘ Bedienung & Erklärungen');
-  info.append(infoSummary, make(doc, 'p', '', definitions.map(d => d.name + ': ' + d.description).join(' ')), make(doc, 'p', '', 'EMA 200 zeigt den langfristigen Trend. Ein Order Block ist die letzte Gegenkerze vor einem Impuls von mindestens 1,5 ATR mit Strukturbruch. FVG ist eine noch offene Drei-Kerzen-Lücke. Ein Sweep durchsticht ein früher bestätigtes Hoch/Tief und schließt wieder dahinter. Liquiditätspools sind aus ähnlichen Hochs/Tiefs abgeleitete Preisbereiche; Beim Top-Down-Fokus erscheinen nur die tatsächlichen Konfluenzzonen und ihre Bausteine, die 4h-EMA-200 sowie MACD. Allgemeine Heatmaps, Muster und Prognosen bleiben ausgeblendet. Zonen und Markierungen antippen: Begründung und Werte öffnen. Top-Down zeichnet erst nach 15m-Bestätigung einen Einstieg ein. NY Open zeigt ausschließlich Opening Range, Signalfenster, FVG und bestätigte NY-Einstiegs-/Ausstiegsmarken.'), make(doc, 'p', '', 'Nur normale, geschlossene Börsenkerzen. Top-Down: Ein Setup braucht mindestens zwei unterschiedliche Bausteinarten. Eine Umkehr allein genügt nicht: erst der folgende 15m-Schluss über/unter der davor bekannten Mikrostruktur bestätigt. Ziele sind vorhandene Levels; fehlen zwei passende Ziele, gibt es kein Signal. CRV ist brutto, ohne Gebühren/Slippage.'), make(doc, 'p', '', 'Telegram muss für Analyse, Coin global und Coin in dieser Analyse an sein. Standard: Analyse aus, alle Coins freigegeben. Die App prüft die freigegebenen Coins im Hintergrund, solange sie geöffnet und aktiv ist. Spätere 24/7-Dienstübergabe ist vorbereitet; aktuell sendet der Dienst diese Analyse noch nicht. Top-Down: ein Signal je Setup, anschließend mindestens zwei Stunden Sperre je Coin und Richtung. NY Open: höchstens ein Signal pro Coin und NY-Handelstag, auch bei Richtungswechsel oder Neustart. Geprüfte Wahrscheinlichkeiten erscheinen ausschließlich nach ausreichenden Lerndaten und einem bestandenen zeitlichen Test.'));
+  info.append(infoSummary, make(doc, 'p', '', definitions.map(d => d.name + ': ' + d.description).join(' ')), make(doc, 'p', '', 'EMA 200 zeigt den langfristigen Trend. Ein Order Block ist die letzte Gegenkerze vor einem Impuls von mindestens 1,5 ATR mit Strukturbruch. FVG ist eine noch offene Drei-Kerzen-Lücke. Ein Sweep durchsticht ein früher bestätigtes Hoch/Tief und schließt wieder dahinter. Liquiditätspools sind aus ähnlichen Hochs/Tiefs abgeleitete Preisbereiche; Beim Top-Down-Fokus erscheinen nur die tatsächlichen Konfluenzzonen und ihre Bausteine, die 4h-EMA-200 sowie MACD. Allgemeine Heatmaps, Muster und Prognosen bleiben ausgeblendet. Zonen und Markierungen antippen: Begründung und Werte öffnen. Top-Down zeichnet erst nach 15m-Bestätigung einen Einstieg ein. NY Open zeigt ausschließlich Opening Range, Signalfenster, FVG und bestätigte NY-Einstiegs-/Ausstiegsmarken.'), make(doc, 'p', '', 'Nur normale, geschlossene Börsenkerzen. Top-Down: Ein Setup braucht mindestens zwei unterschiedliche Bausteinarten. Eine Umkehr allein genügt nicht: erst der folgende 15m-Schluss über/unter der davor bekannten Mikrostruktur bestätigt. Ziele sind vorhandene Levels; fehlen zwei passende Ziele, gibt es kein Signal. CRV ist brutto, ohne Gebühren/Slippage.'), make(doc, 'p', '', 'Telegram muss für Analyse, Coin global und Coin in dieser Analyse an sein. Standard: Analyse aus, alle Coins freigegeben. Die App prüft die freigegebenen Coins im Hintergrund, solange sie geöffnet und aktiv ist. Spätere 24/7-Dienstübergabe ist vorbereitet; aktuell sendet der Dienst diese Analyse noch nicht. Top-Down: ein Signal je Setup, anschließend mindestens zwei Stunden Sperre je Coin und Richtung. NY Open: höchstens ein Signal pro Coin und NY-Handelstag, auch bei Richtungswechsel oder Neustart. AMD: ein Telegram-Bild je bestätigtem Setup (Schluss in der Range plus 1m-Strukturbruch, CRV mindestens 1:2), nur bei eingeschaltetem AMD-Schalter. Geprüfte Wahrscheinlichkeiten erscheinen ausschließlich nach ausreichenden Lerndaten und einem bestandenen zeitlichen Test.'));
   info.insertBefore(hint, infoSummary.nextSibling);
   const log = make(doc, 'details', 'analysis-log'), logSummary = make(doc, 'summary', '', 'Analyse-Protokoll'), logList = make(doc, 'ol'); log.append(logSummary, logList);
   const commonEvents=make(doc,'details','analysis-common-events');commonEvents.hidden=true;commonEvents.append(make(doc,'summary','','Gemeinsame Marktereignisse'),make(doc,'div'));let commonKey='';
@@ -77,19 +77,43 @@ export function createAnalysisView({ root, definitions = ANALYSES, read, save, g
       }
     }
     const ranking = new Map((row.ranking || []).map(item => [item.symbol, item]));
+    // Relative Stärke (3.90.0): Reihenfolge und angezeigter Wert stammen aus derselben Zahl (Stärke), stärkster Coin oben, schwächster unten
+    const scoreOf = symbol => { const item = ranking.get(symbol); return d.information && settings.rows[d.id].coins[symbol] !== false && Number.isFinite(item?.score) ? item.score : -Infinity; };
+    if (d.information) {
+      if (!row.rankNote) {
+        const note = make(doc, 'details', 'analysis-rank-note'), more = make(doc, 'p', 'analysis-hint', 'Stärke = 20 % der 1h-, 30 % der 4h- und 50 % der 24h-Veränderung relativ zu BTC, geteilt durch die ATR in % (gleicher Maßstab für ruhige und unruhige Coins). Über 0: läuft besser als BTC, unter 0: schwächer. Die Zahl bestimmt die Reihenfolge; daneben steht nur die 4h-Veränderung zu BTC. Alle drei Werte stehen in der Prüfung des Modells.');
+        note.append(make(doc, 'summary', '', 'ⓘ Stärkster Coin oben, schwächster unten'), more); row.rankNote = note; row.details.prepend(note);
+      }
+      const ordered = [...row.coinList.children].sort((a, b) => scoreOf(b.dataset.coin) - scoreOf(a.dataset.coin) || symbols.indexOf(a.dataset.coin) - symbols.indexOf(b.dataset.coin));
+      ordered.forEach((choice, i) => { if (row.coinList.children[i] !== choice) row.coinList.insertBefore(choice, row.coinList.children[i] || null); });
+    }
+    const signed = (v, digits = 2) => { const r = Number(v.toFixed(digits)); return `${r > 0 ? '+' : r < 0 ? '−' : ''}${Math.abs(r).toLocaleString('de-DE', { maximumFractionDigits: digits })}`; };   // ohne „−0“
+    let position = 0;
     for (const choice of row.coinList.children) {
       const symbol = choice.dataset.coin, on = settings.rows[d.id].coins[symbol] !== false, name = choice.querySelector('.analysis-inline-coin');
       if (symbol === selectedCoin()) name.setAttribute('aria-current', 'true'); else name.removeAttribute('aria-current');
       choice.querySelector('input').checked = on; choice.querySelector('label span').textContent = on ? 'An' : 'Aus';
-      const item = ranking.get(symbol);
-      choice.querySelector('small').textContent = d.information
-        ? !on ? 'Aus Auswahlhilfe ausgeblendet' : item ? `${item.rank}. · 4h ${item.changes[1].toLocaleString('de-DE', { maximumFractionDigits: 2 })} % zu BTC${item.stretched ? ' · weit gelaufen' : ''}` : '– · BTC-Vergleich wird geladen'
-        : settings.globalCoins[symbol] === false ? 'Global stumm' : !settings.rows[d.id].telegram ? 'Analyse-Telegram aus' : on ? 'Telegram freigegeben' : 'Telegram stumm';
+      const item = ranking.get(symbol), ranked = d.information && on && Number.isFinite(item?.score);
+      if (ranked) position++;
+      const small = choice.querySelector('small');
+      if (d.information && on && ranked) {
+        // 3.92.0: Rang, Stärke (grün über 0, rot darunter) und 4h getrennt gesetzt – der Text bleibt derselbe, nur die Zahl wird lesbar
+        const key = `${position}|${symbol}|${item.score}|${item.changes[1]}|${item.stretched}`;
+        if (small.dataset.key !== key) {
+          small.dataset.key = key;
+          if (symbol === 'BTCUSDT') small.replaceChildren(make(doc, 'b', 'rs-rank', `${position}.`), ' · ', make(doc, 'span', 'rs-base', 'Vergleichsbasis (Stärke 0)'));
+          else {
+            const tone = Number(item.score.toFixed(2)) > 0 ? 'up' : Number(item.score.toFixed(2)) < 0 ? 'down' : 'flat', score = make(doc, 'b', `rs-score rs-${tone}`, `Stärke ${signed(item.score)}`);
+            small.replaceChildren(make(doc, 'b', 'rs-rank', `${position}.`), ' · ', score, ' · ', make(doc, 'span', 'rs-4h', `4h ${signed(item.changes[1])} % zu BTC`), ...(item.stretched ? [' · ', make(doc, 'span', 'rs-far', 'weit gelaufen')] : []));
+          }
+        }
+      } else {
+        delete small.dataset.key;
+        small.textContent = d.information
+          ? !on ? 'Aus Auswahlhilfe ausgeblendet' : '– · BTC-Vergleich wird geladen'
+          : settings.globalCoins[symbol] === false ? 'Global stumm' : !settings.rows[d.id].telegram ? 'Analyse-Telegram aus' : on ? 'Telegram freigegeben' : 'Telegram stumm';
+      }
       if (d.information) name.textContent = symbol.replace(/USDT$/, '/USDT');
-    }
-    if (d.information) {
-      const ordered = [...row.coinList.children].sort((a, b) => (ranking.get(a.dataset.coin)?.rank ?? Infinity) - (ranking.get(b.dataset.coin)?.rank ?? Infinity) || symbols.indexOf(a.dataset.coin) - symbols.indexOf(b.dataset.coin));
-      ordered.forEach((choice, i) => { if (row.coinList.children[i] !== choice) row.coinList.insertBefore(choice, row.coinList.children[i] || null); });
     }
   }
   function reload() {
