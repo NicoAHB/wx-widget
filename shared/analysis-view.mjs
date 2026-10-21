@@ -81,7 +81,7 @@ export function createAnalysisView({ root, definitions = ANALYSES, read, save, g
     const scoreOf = symbol => { const item = ranking.get(symbol); return d.information && settings.rows[d.id].coins[symbol] !== false && Number.isFinite(item?.score) ? item.score : -Infinity; };
     if (d.information) {
       if (!row.rankNote) {
-        const note = make(doc, 'details', 'analysis-rank-note'), more = make(doc, 'p', 'analysis-hint', 'Stärke = 20 % der 1h-, 30 % der 4h- und 50 % der 24h-Veränderung relativ zu BTC, geteilt durch die ATR in % (gleicher Maßstab für ruhige und unruhige Coins). Über 0: läuft besser als BTC, unter 0: schwächer. Die Zahl bestimmt die Reihenfolge.');
+        const note = make(doc, 'details', 'analysis-rank-note'), more = make(doc, 'p', 'analysis-hint', 'Stärke = 20 % der 1h-, 30 % der 4h- und 50 % der 24h-Veränderung relativ zu BTC, geteilt durch die ATR in % (gleicher Maßstab für ruhige und unruhige Coins). Über 0: läuft besser als BTC, unter 0: schwächer. Die Zahl bestimmt die Reihenfolge; daneben steht nur die 4h-Veränderung zu BTC. Alle drei Werte stehen in der Prüfung des Modells.');
         note.append(make(doc, 'summary', '', 'ⓘ Stärkster Coin oben, schwächster unten'), more); row.rankNote = note; row.details.prepend(note);
       }
       const ordered = [...row.coinList.children].sort((a, b) => scoreOf(b.dataset.coin) - scoreOf(a.dataset.coin) || symbols.indexOf(a.dataset.coin) - symbols.indexOf(b.dataset.coin));
@@ -95,9 +95,24 @@ export function createAnalysisView({ root, definitions = ANALYSES, read, save, g
       choice.querySelector('input').checked = on; choice.querySelector('label span').textContent = on ? 'An' : 'Aus';
       const item = ranking.get(symbol), ranked = d.information && on && Number.isFinite(item?.score);
       if (ranked) position++;
-      choice.querySelector('small').textContent = d.information
-        ? !on ? 'Aus Auswahlhilfe ausgeblendet' : ranked ? (symbol === 'BTCUSDT' ? `${position}. · Vergleichsbasis (Stärke 0)` : `${position}. · Stärke ${signed(item.score)} · 1h ${signed(item.changes[0])} % · 4h ${signed(item.changes[1])} % · 24h ${signed(item.changes[2])} % zu BTC${item.stretched ? ' · weit gelaufen' : ''}`) : '– · BTC-Vergleich wird geladen'
-        : settings.globalCoins[symbol] === false ? 'Global stumm' : !settings.rows[d.id].telegram ? 'Analyse-Telegram aus' : on ? 'Telegram freigegeben' : 'Telegram stumm';
+      const small = choice.querySelector('small');
+      if (d.information && on && ranked) {
+        // 3.92.0: Rang, Stärke (grün über 0, rot darunter) und 4h getrennt gesetzt – der Text bleibt derselbe, nur die Zahl wird lesbar
+        const key = `${position}|${symbol}|${item.score}|${item.changes[1]}|${item.stretched}`;
+        if (small.dataset.key !== key) {
+          small.dataset.key = key;
+          if (symbol === 'BTCUSDT') small.replaceChildren(make(doc, 'b', 'rs-rank', `${position}.`), ' · ', make(doc, 'span', 'rs-base', 'Vergleichsbasis (Stärke 0)'));
+          else {
+            const tone = Number(item.score.toFixed(2)) > 0 ? 'up' : Number(item.score.toFixed(2)) < 0 ? 'down' : 'flat', score = make(doc, 'b', `rs-score rs-${tone}`, `Stärke ${signed(item.score)}`);
+            small.replaceChildren(make(doc, 'b', 'rs-rank', `${position}.`), ' · ', score, ' · ', make(doc, 'span', 'rs-4h', `4h ${signed(item.changes[1])} % zu BTC`), ...(item.stretched ? [' · ', make(doc, 'span', 'rs-far', 'weit gelaufen')] : []));
+          }
+        }
+      } else {
+        delete small.dataset.key;
+        small.textContent = d.information
+          ? !on ? 'Aus Auswahlhilfe ausgeblendet' : '– · BTC-Vergleich wird geladen'
+          : settings.globalCoins[symbol] === false ? 'Global stumm' : !settings.rows[d.id].telegram ? 'Analyse-Telegram aus' : on ? 'Telegram freigegeben' : 'Telegram stumm';
+      }
       if (d.information) name.textContent = symbol.replace(/USDT$/, '/USDT');
     }
   }

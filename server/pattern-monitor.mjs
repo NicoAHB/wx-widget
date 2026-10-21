@@ -7,6 +7,7 @@ import fs from 'node:fs';
 const SHARED = fs.existsSync(new URL('./shared/pattern-quality.mjs', import.meta.url)) ? './shared/' : '../shared/';
 export const PQ = await import(new URL(SHARED + 'pattern-quality.mjs', import.meta.url));
 const SC = await import(new URL(SHARED + 'pattern-signal-card.mjs', import.meta.url));   // 3.71.0: Mini-Chart-Daten der Signalkarte
+const PK = await import(new URL(SHARED + 'pattern-knowledge.mjs', import.meta.url));   // 2.17.0: Trefferzählung je Muster über alle Coins
 export const PAT_STEPS = PATTERN_STEPS;
 export const patternId = c => [c.mkt, c.sym, c.iv, c.pat, c.t0, c.t1, c.model].join('|');
 export const patternEnd = intervalEnd;
@@ -67,10 +68,10 @@ export const patternFilterLog = (c, ev, decision) => `Chartmuster ${decision.sen
 // Mini-Chart (aus den Kerzen k und den Musterlinien; ohne k ein schon fertiges h.chart, z. B. aus der App)
 export function patternMessageData(c, h, archive = [], ev = null, k = null) {
   const lv = h.levels || {};
-  const counts = src => { const a = archive.filter(x => x.mkt === c.mkt && x.sym === c.sym && x.iv === c.iv && x.pat === c.pat && x.model === c.model && x.profile === c.profile && x.src === src && x.res); return { n: a.length, auf: a.filter(x => x.res.out === 'auf').length, ab: a.filter(x => x.res.out === 'ab').length, seit: a.filter(x => x.res.out === 'seitwärts').length }; };
-  const live = counts('live'), rek = counts('rekonstruiert'), st = live.n >= 10 ? live : rek.n >= 10 ? rek : null;
+  // 2.17.0: je Muster, Intervall und Richtung über alle Coins (ab 30 Fällen) statt je Coin; Zufallsvergleich aus den Kerzen des Coins
+  const learned = PK.patternLearned(archive, { pat: c.pat, iv: c.iv, dir: c.dir, sym: c.sym, mkt: c.mkt, model: c.model, profile: c.profile }, { baseline: Array.isArray(k) ? PK.patternBaseline(k) : null });
   return { pattern: PAT_NAMES[c.pat], symbol: c.sym, market: c.mkt === 'spot' ? 'Spot' : 'Futures', timeframe: c.iv, status: 'Ausbruch bestätigt', direction: c.dir, entry: c.p0, target: lv.tgt, invalid: lv.inv, quality: c.q, model: c.model || 'pat-1',
-    learned: st ? { ...st, source: st === live ? 'live protokolliert' : 'rekonstruiert', horizon: 12 } : { available: live.n + rek.n, minimum: 10 }, score: ev?.score, scoreWhy: ev?.summary,
+    learned, score: ev?.score, scoreWhy: ev?.summary,
     marks: ev?.marks || null, rr: ev?.rr ?? null, atr: ev?.atr ?? null, price: ev?.price ?? null, tc: c.tc, now: Number.isFinite(c.at) ? c.at : undefined,   // „Jetzt“ im Kurztext zur Erkennungszeit
     chart: (k ? SC.patternChartData(k, h) : null) || h.chart || null, ...(ev?.settings ? { settings: { ...PQ.patternCardSettings(ev.settings), minRR: ev.settings.minRR } } : {}) };
 }
