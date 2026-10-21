@@ -15,10 +15,10 @@ const signalRating = closed => { ratedLen = closed.length; return closed.length 
 const number = (x, d) => x.toFixed(d).replace('.', ',');
 const signed = (x, d = 2) => (x > 0 ? '+' : x < 0 ? '−' : '') + number(Math.abs(x), d);
 // eine Instanz der App (zweiter Aufruf = App neu geladen, derselbe Speicher)
-const load = () => new Function('state', 'store', 'cachedKlines', 'signalRating', 'priceText', 'number', 'scoreText', '$', 'userScrolling', 'syncStreams', 'renderWatchlist', 'wldPaint', 'window', 'document', 'signed',
-  `${src}\nreturn { wl, WL_SPANS: wlSpans(), WL_SPAN_KEY, WL_LIMIT, WL_WINDOW, wlSpanKey, wlSpan, wlSetSpan, wlAdd, wlKline, wlRef, wlPrice, wlSpark, wlView, wlRules, wlVerdict, wlTone, wlMove, wlStreams, wlTick, wlLoad, wlCandle, wlTfCols, wlTfRef };`)(
+const load = () => new Function('state', 'store', 'cachedKlines', 'signalRating', 'priceText', 'number', 'scoreText', '$', 'userScrolling', 'syncStreams', 'renderWatchlist', 'wldPaint', 'window', 'document', 'signed', 'wlPat', 'wldSel',
+  `${src}\nreturn { wl, WL_SPANS: wlSpans(), WL_SPAN_KEY, WL_LIMIT, WL_WINDOW, WL_PARALLEL, wlSpanKey, wlSpan, wlSetSpan, wlAdd, wlKline, wlRef, wlPrice, wlSpark, wlView, wlRules, wlVerdict, wlTone, wlMove, wlStreams, wlTick, wlLoad, wlCandle, wlTfCols, wlTfRef };`)(
   state, store, cachedKlines, signalRating, p => number(p, 2), number, s => (s > 0 ? '+' : s < 0 ? '−' : '') + Math.abs(s),
-  () => null, () => false, () => { syncs++; }, () => { renders++; }, () => {}, {}, { hidden: false }, signed);
+  () => null, () => false, () => { syncs++; }, () => { renders++; }, () => {}, {}, { hidden: false }, signed, () => null, null);   // wlPat, wldSel: Chartmuster-Rechnung läuft verzögert (setTimeout), hier ohne Wirkung
 const A = load();
 const M = 60e3, I = 5 * M, T0 = Date.UTC(2026, 8, 29, 20, 0);
 const IVMS = { '1m': M, '3m': 3 * M, '5m': I, '15m': 15 * M, '1h': 60 * M, '2h': 120 * M }, IVN = Object.fromEntries(Object.entries(IVMS).map(([n, ms]) => [ms, n]));
@@ -166,7 +166,7 @@ check('Spalten: 1m · 5m · 1h · 1d; bei 30 Minuten bzw. 4 Stunden steht der ge
 }
 (async () => {
   const tick = () => new Promise(r => setTimeout(r, 0));
-  // ---- Laden: nacheinander, mit Spot/Futures, Fehler und neuer Versuch ----
+  // ---- Laden: gleichzeitig (3.93.0, bis zu 4), mit Spot/Futures, Fehler und neuer Versuch ----
   // (3.71.0: dazwischen lädt die Vorauswahl je Coin 1m- und 1h-Kerzen für die Spalten – hier zählen nur die Reihen des Zeitraums)
   const main = () => loads.filter(l => l[2] === 260);
   A.wl.c.clear(); loads = []; state.watch = ['BTC', 'XRP', 'NEAR'];
@@ -174,21 +174,21 @@ check('Spalten: 1m · 5m · 1h · 1d; bei 30 Minuten bzw. 4 Stunden steht der ge
   const series = (ivMs, source) => { const b = Math.floor(nowR / ivMs) * ivMs; return { candles: [...Array.from({ length: 259 }, (_, i) => ({ ...mk(0, 100 + i), time: b - (259 - i) * ivMs, closeTime: b - (259 - i) * ivMs + ivMs - 1 })), { ...mk(0, 400), time: b, closeTime: b + ivMs - 1 }], source }; };
   klineAnswer = (sym, iv) => series(IVMS[iv], sym === 'XRPUSDT' ? 'futures' : 'spot');
   A.wlTick(nowR);
-  check('Takt: Einträge für alle Vorauswahl-Coins, genau ein Abruf gestartet: 260 Kerzen zu 5 Minuten', A.wl.c.size === 3 && loads.length === 1 && loads[0].join() === 'BTCUSDT,5m,260' && [...A.wl.c.values()].every(y => y.iv === '5m'), JSON.stringify(loads));
+  check('Takt: Einträge für alle Vorauswahl-Coins, alle drei Reihen gleichzeitig gestartet (3.93.0): 260 Kerzen zu 5 Minuten', A.wl.c.size === 3 && loads.length === 3 && loads.map(l => l.join()).join('|') === 'BTCUSDT,5m,260|XRPUSDT,5m,260|NEARUSDT,5m,260' && [...A.wl.c.values()].every(y => y.iv === '5m'), JSON.stringify(loads));
   A.wlTick(nowR + 10);
-  check('Während ein Abruf läuft, startet kein zweiter', loads.length === 1);
+  check('Während die Abrufe laufen, startet für dieselben Coins kein zweiter', loads.length === 3);
   await tick();
   const b = A.wl.c.get('BTCUSDT');
   check('Geladen: abgeschlossene Kerzen, laufende Kerze, Tendenz aus den letzten 199, Streams neu abgestimmt', b.closed.length === 259 && b.run?.close === 400 && b.rating && ratedLen === 199 && !b.loading && b.at > 0 && syncs >= 1, JSON.stringify({ n: b.closed.length, run: b.run?.close, ratedLen, syncs }));
-  A.wlTick(nowR + 400); await tick(); A.wlTick(nowR + 800); await tick();
-  check('Nacheinander: danach XRP (Futures) und NEAR', main().map(l => l[0]).join() === 'BTCUSDT,XRPUSDT,NEARUSDT' && A.wl.c.get('XRPUSDT').market === 'futures', loads.map(l => l[0]).join());
+  check('Gleichzeitig geladen: BTC, XRP (Futures) und NEAR', main().map(l => l[0]).join() === 'BTCUSDT,XRPUSDT,NEARUSDT' && A.wl.c.get('XRPUSDT').market === 'futures' && A.wl.c.get('NEARUSDT').at > 0, loads.map(l => l[0]).join());
   // Coin entfernt: Eintrag weg
   state.watch = ['BTC', 'NEAR']; A.wlTick(nowR + 1200);
   check('Aus der Vorauswahl entfernt: Eintrag gelöscht, kein neuer Abruf', !A.wl.c.has('XRPUSDT') && main().length === 3);
   await tick();
-  check('3.71.0: alle Reihen geladen → danach je Coin 1m- (61) und 1h-Kerzen (26) für die Spalten, ein Coin nach dem anderen', loads.filter(l => l[2] !== 260).map(l => l.join(':')).join() === 'BTCUSDT:1m:61,BTCUSDT:1h:26' && A.wl.c.get('BTCUSDT').tf?.m1.length > 0, JSON.stringify(loads.filter(l => l[2] !== 260)));
-  A.wlTick(nowR + 1550); await tick();
-  check('… dann NEAR; BTC erst nach 15 Minuten wieder', loads.filter(l => l[2] !== 260).map(l => l[0]).join() === 'BTCUSDT,BTCUSDT,NEARUSDT,NEARUSDT', loads.filter(l => l[2] !== 260).map(l => l[0]).join());
+  const tfOf = sym => loads.filter(l => l[2] !== 260 && l[0] === sym).map(l => `${l[1]}:${l[2]}`).sort().join();
+  check('3.71.0: sobald eine Reihe da ist, je Coin 1m- (61) und 1h-Kerzen (26) für die Spalten', tfOf('BTCUSDT') === '1h:26,1m:61' && tfOf('NEARUSDT') === '1h:26,1m:61' && A.wl.c.get('BTCUSDT').tf?.m1.length > 0, JSON.stringify(loads.filter(l => l[2] !== 260)));
+  const tfBefore = loads.filter(l => l[2] !== 260).length; A.wlTick(nowR + 1550); await tick();
+  check('… jeder Coin nur einmal; erneut erst nach 15 Minuten', loads.filter(l => l[2] !== 260).length === tfBefore && tfOf('BTCUSDT') === '1h:26,1m:61', String(tfBefore));
   // Fehler und neuer Versuch nach einer Minute
   state.watch = ['BTC', 'NEAR', 'ABC']; klineAnswer = new Error('ABCUSDT ist bei Binance weder als Spot- noch als Futures-Paar verfügbar.');
   A.wlTick(nowR + 1900); await tick();
@@ -199,9 +199,9 @@ check('Spalten: 1m · 5m · 1h · 1d; bei 30 Minuten bzw. 4 Stunden steht der ge
   A.wlTick(abc.retryAt + 1); await tick();
   check('… nach einer Minute erneut', main().length === 5 && main().at(-1)[0] === 'ABCUSDT');
   // Lücke → neu laden
-  klineAnswer = () => ({ candles: [{ ...mk(0, 1), time: m0 - I, closeTime: m0 - 1 }], source: 'spot' }); A.wl.c.get('NEARUSDT').gap = true;
+  klineAnswer = () => ({ candles: [{ ...mk(0, 1), time: m0 - I, closeTime: m0 - 1 }], source: 'spot' }); A.wl.c.get('NEARUSDT').gap = true; const nearLoads = main().filter(l => l[0] === 'NEARUSDT').length;
   A.wlTick(nowR + 70e3 + 100); await tick();
-  check('Lücke im Stream: Reihe wird neu geladen', main().at(-1)[0] === 'NEARUSDT' && A.wl.c.get('NEARUSDT').gap === false);
+  check('Lücke im Stream: Reihe wird neu geladen', main().filter(l => l[0] === 'NEARUSDT').length === nearLoads + 1 && A.wl.c.get('NEARUSDT').gap === false);
   // Pause: nichts laden
   state.paused = true; const n0 = loads.length; A.wl.c.get('BTCUSDT').gap = true; A.wlTick(nowR + 80e3);
   check('Pause: kein Abruf', loads.length === n0); state.paused = false;
@@ -210,7 +210,7 @@ check('Spalten: 1m · 5m · 1h · 1d; bei 30 Minuten bzw. 4 Stunden steht der ge
   state.watch = ['BTC', 'XRP']; klineAnswer = (sym, iv) => series(IVMS[iv], sym === 'XRPUSDT' ? 'futures' : 'spot');
   const r0 = renders, s0 = syncs, l0 = loads.length;
   A.wlSetSpan('4h');
-  check('4 Stunden gewählt: gespeichert, alte Reihen verworfen, sofort neu geladen (15-Minuten-Kerzen), Kacheln und Streams neu', mem.get(A.WL_SPAN_KEY) === '4h' && A.wlSpan().iv === '15m' && loads.length === l0 + 1 && loads.at(-1).join() === 'BTCUSDT,15m,260' && renders === r0 + 1 && syncs > s0 && A.wl.c.size === 2 && [...A.wl.c.values()].every(y => y.iv === '15m'), JSON.stringify({ span: mem.get(A.WL_SPAN_KEY), loads: loads.slice(l0), renders: renders - r0 }));
+  check('4 Stunden gewählt: gespeichert, alte Reihen verworfen, sofort neu geladen (15-Minuten-Kerzen), Kacheln und Streams neu', mem.get(A.WL_SPAN_KEY) === '4h' && A.wlSpan().iv === '15m' && loads.length === l0 + 2 && loads.slice(l0).map(l => l.join()).join('|') === 'BTCUSDT,15m,260|XRPUSDT,15m,260' && renders === r0 + 1 && syncs > s0 && A.wl.c.size === 2 && [...A.wl.c.values()].every(y => y.iv === '15m'), JSON.stringify({ span: mem.get(A.WL_SPAN_KEY), loads: loads.slice(l0), renders: renders - r0 }));
   await tick();
   const bb = A.wl.c.get('BTCUSDT'), nb = bb.closed.length;
   check('… Streams mit 15-Minuten-Kerzen', A.wlStreams().every(s => s.s.endsWith('@kline_15m')) && nb === 259, JSON.stringify(A.wlStreams()));
@@ -228,5 +228,23 @@ check('Spalten: 1m · 5m · 1h · 1d; bei 30 Minuten bzw. 4 Stunden steht der ge
     A.wlSetSpan(key); seen.push(`${key}:${A.wlSpan().iv}:${loads.at(-1)[1]}:${A.wlStreams().every(s => s.s.endsWith('@kline_' + iv))}`); await tick();
   }
   check('Alle Zeiträume: 1 Minute → 1m, 30 Minuten → 3m, 1 Tag → 2h, zurück auf 1 Stunde → 5m (Laden und Streams)', seen.join() === '1m:1m:1m:true,30m:3m:3m:true,1d:2h:2h:true,1h:5m:5m:true' && mem.get(A.WL_SPAN_KEY) === '1h', seen.join());
+  // ---- 3.93.0: höchstens WL_PARALLEL gleichzeitig, der nächste startet sofort nach dem Ende; keine Dauerabrufe bei Fehlern oder veralteten Daten ----
+  state.watch = ['BTC', 'XRP', 'NEAR', 'ETC', 'BCH', 'LTC']; A.wl.c.clear(); loads = []; state.paused = false;
+  const gates = []; klineAnswer = (sym, iv) => new Promise(res => gates.push(() => res(series(IVMS[iv], 'spot'))));
+  A.wlTick(Date.now());
+  check('3.93.0: sechs Coins – höchstens 4 Abrufe gleichzeitig', A.WL_PARALLEL === 4 && loads.length === 4 && [...A.wl.c.values()].filter(y => y.loading).length === 4, JSON.stringify(loads));
+  gates.shift()(); await tick(); await tick();
+  check('… ein beendeter Abruf stößt den nächsten sofort an (ohne auf den Takt zu warten)', loads.filter(l => l[2] === 260).length === 5, JSON.stringify(loads.map(l => l.join(':'))));
+  for (let i = 0; i < 40 && gates.length; i++) { gates.shift()(); await tick(); await tick(); }
+  check('… am Ende sind alle sechs Reihen und Spalten geladen', [...A.wl.c.values()].every(y => y.at > 0 && y.tf), JSON.stringify([...A.wl.c.values()].map(y => [y.sym, !!y.at, !!y.tf])));
+  state.watch = ['BTC', 'ABC']; A.wl.c.clear(); loads = []; klineAnswer = new Error('Paar nicht verfügbar');
+  A.wlTick(Date.now()); await tick(); await tick(); await tick();
+  check('3.93.0: bei einem Fehler wird nicht sofort erneut geladen (je Coin ein Abruf, dann eine Minute Pause)', loads.length === 2 && [...A.wl.c.values()].every(y => y.error && y.retryAt > Date.now() + 50e3), JSON.stringify(loads));
+  state.watch = ['BTC']; A.wl.c.clear(); loads = [];
+  klineAnswer = () => ({ candles: [{ ...mk(0, 1), time: m0 - 100 * I, closeTime: m0 - 99 * I - 1 }], source: 'spot' });
+  A.wlTick(Date.now()); await tick(); await tick(); await tick();
+  check('3.93.0: veraltete Daten (keine laufende Kerze) lösen keine Abruf-Schleife aus', loads.filter(l => l[2] === 260).length === 1, JSON.stringify(loads));
+  A.wlTick(Date.now() + 1500); await tick(); await tick();
+  check('… der nächste Takt lädt die Reihe erneut (frühestens 0,9 s nach dem letzten Erfolg)', loads.filter(l => l[2] === 260).length === 2, JSON.stringify(loads));
   console.log(`\n${pass}/${pass + fail} bestanden`); process.exit(fail ? 1 : 0);
 })().catch(err => { console.log('✗ Abbruch — ' + err.stack); process.exit(1); });
