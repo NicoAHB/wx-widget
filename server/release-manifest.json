@@ -1,6 +1,6 @@
 {
   "version": "2.16.0",
-  "appVersion": "3.89.0",
+  "appVersion": "3.90.0",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
@@ -118,9 +118,24 @@
       "bytes": 21867
     },
     {
+      "path": "shared/amd-core.mjs",
+      "sha256": "2b2189a7a7b1edba3e69c1c32836ecaf66b0a9894b8e509c893af5944d14d5c9",
+      "bytes": 18637
+    },
+    {
+      "path": "shared/amd-feed.mjs",
+      "sha256": "8561a56a78655a0980745ea4de391f94a812e65e5d422464db7954b7b2cd76f6",
+      "bytes": 7246
+    },
+    {
+      "path": "shared/amd-view.mjs",
+      "sha256": "1918bf1f08a78688bb9b0cd1f4ee307b7175e7cd34da70ea72423da655665516",
+      "bytes": 15306
+    },
+    {
       "path": "shared/analysis-card.mjs",
-      "sha256": "c3bc1dc6fbc6a8822d8d89d9204b3de4872a23052e9157a2695079fd65db14ca",
-      "bytes": 10809
+      "sha256": "fbd3a64f2d6aed4afca923cc7f8579fa7c739b3a1975a6f4c24f1377a84f8a22",
+      "bytes": 14180
     },
     {
       "path": "shared/analysis-channel.mjs",
@@ -129,18 +144,18 @@
     },
     {
       "path": "shared/analysis-chart.mjs",
-      "sha256": "082b874b4a02145cd72f28cec2fffc3a68fe4a1089bdafbaf453b5865dadc8d4",
-      "bytes": 13612
+      "sha256": "790bcfeb60dee70fa595253322802f3dfc6dd855b2853816d8e627364b24a10e",
+      "bytes": 13618
     },
     {
       "path": "shared/analysis-config.mjs",
-      "sha256": "3a8f21c3650210f950c81249212589eb1c600adbbccba6b2a1ac11b9aad337c1",
-      "bytes": 6752
+      "sha256": "7f63afeae4192aa5f53de2a7e7c10ba1a65c648db4b490fd7b956b2f0e65f985",
+      "bytes": 7609
     },
     {
       "path": "shared/analysis-context.mjs",
-      "sha256": "aa9a17787ed8b69965647d4ef5600043ce37faa9769f6e5309a61b2210fd93ae",
-      "bytes": 2804
+      "sha256": "72fe98a617b2128ec5eb5fae72a2fc5dbeac92b8560724cfe967fb7477bafeac",
+      "bytes": 3075
     },
     {
       "path": "shared/analysis-delivery.mjs",
@@ -204,8 +219,8 @@
     },
     {
       "path": "shared/analysis-view.mjs",
-      "sha256": "016209ea29eb513270f846feaf17a71ccdf98f4cb175206a0c968a85a4afe648",
-      "bytes": 22931
+      "sha256": "c97f773c4edff65ea730c8d3016e35a411419f20b0159a14ac64c87e80e7f161",
+      "bytes": 24381
     },
     {
       "path": "shared/bitget-patterns.mjs",

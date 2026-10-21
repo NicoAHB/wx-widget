@@ -1,3 +1,15 @@
+## 3.90.0 / Dienst 2.16.0 (Claude): neue Analyse „AMD“ und Relative Stärke nach Stärke sortiert
+
+- Ausführlich: [docs/3.90.0-AENDERUNGEN.md](docs/3.90.0-AENDERUNGEN.md).
+- **Anlass:** Der Nutzer wollte **AMD (Accumulation, Manipulation, Distribution)** wie Top-Down und NY Open Killzone: feste Zeile, Telegram An/Aus, Chart-Haken (blendet alle Indikatoren aus), Zeitrahmen 5m–1M,
+  Range ≥ 12 Kerzen und ≤ 1,5 × ATR, Durchbruch als Manipulation, Bestätigung = Schluss in der Range **und** 1m-Strukturbruch, Distribution mit Einstieg/Stop/Ziel und CRV ≥ 1:2, ein Telegram-Bild je Setup, alle Vorauswahl-Coins im Hintergrund.
+  Außerdem die Liste der Relativen Stärke zu BTC mit dem stärksten Coin oben.
+- **Jetzt:** `shared/amd-core.mjs` (reine Rechnung), `amd-feed.mjs` (Hintergrundprüfung, Abrufe, Versand), `amd-view.mjs` (Status, Einstellungen, Chart-Boxen blau/rot/grün, ungültig grau); Eintrag im Katalog nach NY Open, Karte mit drei Boxen
+  und Testkarte. Relative Stärke sortiert nach der **ATR-normierten Stärke** und zeigt dieselbe Zahl samt 1h/4h/24h (vorher nur die 4h-Zahl, daher wirkte die Reihenfolge falsch).
+- **Offen/bitte prüfen:** „Höhe max. ca. 1,5 × ATR“ als Rangehöhe ≤ 1,5 × ATR(14) umgesetzt (selten; einstellbar 0,5–4). Mindestdurchbruch und Stop-Puffer je 0,1 ATR sind meine Festlegung. 1m-Prüfung bei 1d/1w/1M nur die letzten ~16 h.
+  Sendet nur die offene, aktive App (kein Dienst). Gültigkeit eines Hinweises 15 Minuten (5m: 10).
+- Tests: `unit-amd-core`, `unit-amd-feed`, `unit-amd-view`, `unit-rs-order`, `m148`; angepasst `unit-analysis`, `unit-trend-pullback`, `unit-market-strategies`, `m129`, `m131`, `m133`, `m135`. Dienst unverändert (**2.16.0**), App **3.90.0**.
+
 ## 3.89.0 / Dienst 2.16.0 (Claude): Bereich „Chart-Ebenen“ überarbeitet
 
 - Ausführlich: [docs/3.89.0-AENDERUNGEN.md](docs/3.89.0-AENDERUNGEN.md).
