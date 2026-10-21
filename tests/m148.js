@@ -8,8 +8,8 @@ const real = errs => errs.filter(e => !/Service Worker registration blocked|Fail
 const Q = 900000, M = 60000, AT = Date.UTC(2026, 9, 20, 10, 45), TJ = AT - Q, NOW = AT + 5000;
 
 // 70 ruhige 15m-Kerzen (Höhe 2 → ATR 2, Range 99–101); die letzten Kerzen formen je nach Coin den Ablauf
-function candles15(kind) {
-  const N = 70, rows = []; for (let i = 0; i < N; i++) { const o = 99.6 + (i * 7 % 9) * .1, c = 99.6 + (i * 5 % 9) * .1; rows.push([AT - (N - i) * Q, o, 101, 99, c]); }   // Dochte 99–101 (ATR 2), Körper wechseln
+function candles15(kind, N = 70) {
+  const rows = []; for (let i = 0; i < N; i++) { const o = 99.6 + (i * 7 % 9) * .1, c = 99.6 + (i * 5 % 9) * .1; rows.push([AT - (N - i) * Q, o, 101, 99, c]); }   // Dochte 99–101 (ATR 2), Körper wechseln
   const set = (back, o, hi, lo, c) => { rows[N - 1 - back] = [AT - (back + 1) * Q, o, hi, lo, c]; };
   if (kind === 'long') set(0, 99.55, 99.8, 98.7, 99.2);
   if (kind === 'quiet') set(0, 100, 100.6, 99.4, 100.2);
@@ -32,6 +32,7 @@ const wire = (r, ms) => [r[0], String(r[1]), String(r[2]), String(r[3]), String(
   const wall = Date.now(), clockNow = () => NOW + Date.now() - wall, photos = [], errors = [];
   const tg = { token: '111111111:' + 'A'.repeat(35), chat: '111000001', btoken: '222222222:' + 'B'.repeat(35), bchat: '222000002', ttoken: '333333333:' + 'C'.repeat(35), tchat: '333000003', ptoken: '444444444:' + 'D'.repeat(35), pchat: '444000004', atoken: '555555555:' + 'E'.repeat(35), achat: '555000005' };
   const fixtures = { BTCUSDT: candles15('long'), ETCUSDT: candles15('quiet'), LTCUSDT: candles15('invalid') };
+  const longer = { BTCUSDT: candles15('long', 4400), ETCUSDT: candles15('quiet', 4400), LTCUSDT: candles15('invalid', 4400) };   // für Anfragen mit Zeitfenster (Rückblick)
   try {
     const ctx = await browser.newContext({ viewport: { width: +process.env.WX_W || 390, height: +process.env.WX_H || 844 }, hasTouch: true, isMobile: true, timezoneId: 'Europe/Berlin' }), p = await ctx.newPage();
     p.on('pageerror', e => { errors.push(e.message); console.log('APP ERROR', e.message); });
@@ -48,7 +49,7 @@ const wire = (r, ms) => [r[0], String(r[1]), String(r[2]), String(r[3]), String(
       if (!ms || !fixtures[symbol] || iv === '15m' && false) return route.fallback();
       requests.push(symbol + '|' + iv);
       let rows;
-      if (iv === '15m') { rows = fixtures[symbol].map(r => [...r]); const last = rows.at(-1), time = Math.floor(clockNow() / Q) * Q; if (last[0] < time) rows.push([time, last[4], last[4] + .1, last[4] - .1, last[4]]); }
+      if (iv === '15m') { rows = (q.has('startTime') ? longer : fixtures)[symbol].map(r => [...r]); const last = rows.at(-1), time = Math.floor(clockNow() / Q) * Q; if (last[0] < time) rows.push([time, last[4], last[4] + .1, last[4] - .1, last[4]]); }
       else if (symbol === 'BTCUSDT') rows = minutes1(Math.floor(clockNow() / M) * M);
       else { rows = []; for (let t = Math.floor(clockNow() / M) * M - 999 * M; t <= Math.floor(clockNow() / M) * M; t += M) rows.push([t, 100, 100.1, 99.9, 100]); }
       if (q.has('startTime')) rows = rows.filter(r => r[0] >= +q.get('startTime')); if (q.has('endTime')) rows = rows.filter(r => r[0] <= +q.get('endTime'));
@@ -137,7 +138,20 @@ const wire = (r, ms) => [r[0], String(r[1]), String(r[2]), String(r[3]), String(
     check('Rangehöhe wird auf höchstens 4 × ATR begrenzt und gespeichert', await maxH.inputValue() === '4' && await p.evaluate(() => __analysis.view.settings.rows.amd.options.maxHeightAtr === 4));
     await maxH.fill('1.5'); await maxH.press('Tab');
 
-    // ---------- 8. Layout ----------
+    // ---------- 8. Rückblick ----------
+    await coinsOpen(); if (!await tools.evaluate(n => n.open)) await tools.locator('>summary').click();
+    await tools.locator('[data-amd-review]').click();
+    try { await p.waitForFunction(() => document.querySelectorAll('[data-amd-level]').length === 4, null, { timeout: 120000 }); } catch { console.log('REVIEW DEBUG', await tools.locator('.amd-review-report').textContent().catch(() => ''), await tools.locator('p[role=status]').textContent()); }
+    const review = await p.evaluate(() => ({ levels: [...document.querySelectorAll('[data-amd-level]')].map(n => [n.dataset.amdLevel, n.dataset.current, n.textContent]), note: document.querySelector('.amd-tools p[role=status]').textContent, coins: document.querySelector('.amd-review-coins')?.textContent || '' }));
+    check('Rückblick: vier Rangehöhen (1,5 · 2 · 3 · 4 × ATR), eingestellte Stufe markiert, Hinweis „nichts gesendet“', review.levels.map(l => l[0]).join() === '1.5,2,3,4' && review.levels[0][1] === 'true' && /Rückblick fertig: 3\/3 Coins/.test(review.note) && /nichts/i.test(review.note), JSON.stringify(review));
+    check('Rückblick zählt die Abläufe der Mock-Daten: 3 Accumulationen, 2 Manipulationen, 1 mit Schluss in der Range, 1 bestätigt und gemeldet', /3 Accumulationen · 2 Manipulationen · 1 mit Schluss in der Range · 1 bestätigt · 1 gemeldet/.test(review.levels[0][2]), review.levels[0][2]);
+    check('Rückblick je Coin: BTC bestätigt, ETC nur Range, LTC echter Ausbruch', /BTC: 1 Accumulation · 1 Manipulation · 1 mit Schluss in der Range · 1 bestätigt/.test(review.coins) && /ETC: 1 Accumulation · 0 Manipulationen/.test(review.coins) && /LTC: 1 Accumulation · 1 Manipulation · 0 mit Schluss/.test(review.coins), review.coins);
+    check('Rückblick sendet nichts', photos.length === 1, photos.length);
+    await tools.locator('[data-amd-adopt="3"]').click();
+    check('„Übernehmen“ stellt die Rangehöhe 3 × ATR ein, die Marke wandert mit', await p.evaluate(() => __analysis.view.settings.rows.amd.options.maxHeightAtr === 3 && document.querySelector('[data-amd-level="3"]').dataset.current === 'true' && document.querySelector('[data-amd-level="1.5"]').dataset.current === 'false'));
+    await tools.locator('[data-amd-option=maxHeightAtr]').fill('1.5'); await tools.locator('[data-amd-option=maxHeightAtr]').press('Tab');
+
+    // ---------- 9. Layout ----------
     const layout = await p.evaluate(() => { const panel = document.getElementById('analysis-panel'), r = document.querySelector('[data-analysis="amd"]'); return { doc: document.documentElement.scrollWidth <= innerWidth + 1, row: r.scrollWidth <= r.clientWidth + 1, panel: panel.scrollWidth <= panel.clientWidth + 1 }; });
     check('Bei 390 px kein waagerechter Überlauf in der AMD-Zeile', layout.doc && layout.row && layout.panel, JSON.stringify(layout));
     check('Testkarten-Knopf „AMD“ in den Telegram-Einstellungen vorhanden', await p.locator('#analysis-amd-test-card').count() === 1);

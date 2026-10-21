@@ -102,11 +102,11 @@ function walk({ rows, minutes, j, dir, range, depth }) {
   const mins = minutes.map(flip), covered = minutes.length > 0 && minutes[0].time < rows[j].end && minutes.at(-1).end > rows[j].time;
   let k = j, n = minutes.findIndex(c => c.end > rows[j].time); if (n < 0) n = minutes.length;
   let tracking = minutes.length > 0 && minutes[0].time > rows[j].time;     // 1m beginnt erst nach dem Durchbruch: ab der ersten Kerze verfolgen
-  let outside = 0, inside = false, extreme = null, level = null, bos = null, aext = Infinity, seen = 0;
+  let outside = 0, inside = false, insideSeen = false, extreme = null, level = null, bos = null, aext = Infinity, seen = 0;
   const original = v => dir === 1 ? v : -v;
   const result = (status, at, more = {}) => {
     const found = [aext === Infinity ? null : original(aext), extreme ? original(extreme.price) : null].filter(Number.isFinite);
-    return { status, at, k, covered, extreme: found.length ? (dir === 1 ? Math.min(...found) : Math.max(...found)) : null, ...more };
+    return { status, at, k, covered, closedInside: insideSeen, extreme: found.length ? (dir === 1 ? Math.min(...found) : Math.max(...found)) : null, ...more };
   };
   for (;;) {
     const ta = k < rows.length ? rows[k].end : Infinity, tm = n < mins.length ? minutes[n].end : Infinity;
@@ -126,7 +126,7 @@ function walk({ rows, minutes, j, dir, range, depth }) {
     const c = flip(rows[k]); aext = Math.min(aext, c.low); k++;
     const end = rows[k - 1].end;
     if (k - 1 > j && c.high > hi + depth) return result('invalid', end, { reason: 'Die Gegenseite der Range wurde erreicht, bevor die Bestätigung stand.' });
-    if (c.close >= lo && c.close <= hi) { inside = true; outside = 0; }
+    if (c.close >= lo && c.close <= hi) { inside = insideSeen = true; outside = 0; }
     else if (c.close < lo) { inside = false; outside++; if (outside >= AMD.maxOutsideCloses) return result('invalid', end, { reason: `${AMD.maxOutsideCloses} Schlüsse in Folge außerhalb der Range – echter Ausbruch, kein Fehlausbruch.` }); }
     else return result('invalid', end, { reason: 'Schluss auf der Gegenseite der Range – kein Fehlausbruch.' });
     if (bos && inside) return result('confirmed', end, { bos, entryPrice: rows[k - 1].close });
@@ -164,7 +164,7 @@ export function amdScan(rows, minutes, options) {
     const up = rows[j].high > range.high + depth, down = rows[j].low < range.low - depth;
     if (up && down) { from = j + 1; continue; }                      // beide Seiten in einer Kerze: kein verwertbarer Ablauf
     const dir = down ? 1 : -1, w = walk({ rows, minutes, j, dir, range, depth });
-    const ep = { status: w.status, direction: dir, range: box, breakIndex: j, breakAt: rows[j].time, extreme: w.extreme, reason: w.reason, endAt: w.at ?? rows.at(-1).end, ...(w.status === 'manipulating' ? { inside: w.inside, bosAt: w.bos?.at ?? null } : {}) };
+    const ep = { status: w.status, direction: dir, range: box, breakIndex: j, breakAt: rows[j].time, extreme: w.extreme, closedInside: w.closedInside, reason: w.reason, endAt: w.at ?? rows.at(-1).end, ...(w.status === 'manipulating' ? { inside: w.inside, bosAt: w.bos?.at ?? null } : {}) };
     if (w.status === 'confirmed') {
       const entry = w.entryPrice, extreme = w.extreme;
       const stop = extreme - dir * AMD.stopBufferAtr * range.atr, target = dir === 1 ? range.high : range.low;

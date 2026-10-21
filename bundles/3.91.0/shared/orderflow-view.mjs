@@ -4,7 +4,7 @@ import { createWidgetBoundary } from './widget-state.mjs';
 
 // Verbraucher des bestehenden Binance-Workers; kein zweiter Worker/keine doppelten Futures-Abos, keine Signale/Orders.
 export function createOrderflowView({ root, context, now, fetchRows, readPrefs, savePrefs, streamsChanged, formatPrice = String, readDemo = () => null, saveDemo = () => {}, selectedQuote, updateLayout = fn => fn(), explainCandle = null }) {
-  const doc = root.ownerDocument, state = { symbol: '', paused: false, unit: 'usdt', series: { '1m': [], '1h': [] }, errors: {}, unavailable: false, epoch: 0, since: 0 };
+  const doc = root.ownerDocument, state = { symbol: '', paused: false, unit: 'usdt', series: { '1m': [], '1h': [] }, errors: {}, unavailable: false, epoch: 0, since: 0, open: {} };
   const blocks = {}, pending = new Map(), attempted = new Set(), loadedAt = {}, repaired = {};
   let paintTimer = null, initialTimer = null, lastConnected = false, lastTick = 0;
   const el = (tag, cls, text) => { const n = doc.createElement(tag); if (cls) n.className = cls; if (text) n.textContent = text; return n; };
@@ -37,7 +37,7 @@ export function createOrderflowView({ root, context, now, fetchRows, readPrefs, 
   const date = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
   for (const [iv, name] of [['1m', '1-Minuten-Kerzen'], ['1h', '1-Stunden-Kerzen']]) {
     const section = el('details', 'of-block of-fold'), heading = el('summary', 'of-block-head'), h = el('h4', '', name), countdown = el('span', 'of-countdown'), quality = el('small', 'of-quality'), legend = el('div', 'of-row of-legend');
-    fold(section, iv, true);
+    fold(section, iv, iv === '1m'); // 3.88.0: 1-Stunden-Kerzen starten zugeklappt
     quality.hidden = true; heading.append(h, countdown);
     legend.append(el('span', '', 'UTC'), el('span', '', 'Kerze · Kauf / Verkauf'), el('span', '', 'Delta')); section.dataset.interval = iv; section.append(heading, quality, legend);
     const rows = Array.from({ length: 5 }, () => {
@@ -54,6 +54,11 @@ export function createOrderflowView({ root, context, now, fetchRows, readPrefs, 
       rowCountdown.hidden = true; rowCountdown.title = 'Restlaufzeit bis zum Kerzenschluss (UTC)'; time.append(timeLabel, rowCountdown);
       fill.setAttribute('aria-hidden', 'true'); volumes.append(fill, buy, sell); main.append(glyph, volumes); row.append(time, main, delta, values); section.append(row);
       patternInfo.addEventListener('click', () => { const hit = patternInfo._hit; if (hit && explainCandle) explainCandle(hit, { interval: iv, symbol: state.symbol }); });
+      // 3.88.0: je Kerze eine schmale Zeile; Antippen zeigt O/H/T/S und den Kerzentext (die Kerze, nicht der Platz, bleibt aufgeklappt)
+      row.tabIndex = 0; row.setAttribute('aria-expanded', 'false');
+      const toggle = () => { const t = Number(row.dataset.time); if (!Number.isFinite(t)) return; state.open[iv] = state.open[iv] === t ? 0 : t; paint(); };
+      row.addEventListener('click', e => { if (!e.target.closest('button')) toggle(); });
+      row.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target === row) { e.preventDefault(); toggle(); } });
       return { row, time, timeLabel, rowCountdown, volumes, fill, buy, sell, delta, glyph, svg, wick, body, empty, prices, assessment, pattern, patternText, patternInfo };
     }); blocks[iv] = { section, quality, countdown, rows }; root.append(section);
   }
@@ -85,6 +90,7 @@ export function createOrderflowView({ root, context, now, fetchRows, readPrefs, 
       slots.forEach((slot, i) => {
         const r = b.rows[i], v = slot.candle?.[state.unit]; r.row.dataset.time = String(slot.t); r.row.dataset.running = String(slot.running); r.row.dataset.closed = String(!!slot.candle?.closed);
         r.row.classList.toggle('of-running', slot.running); r.row.classList.toggle('of-missing', !v || !slot.running && !slot.candle.closed);
+        const expanded = state.open[iv] === slot.t; r.row.dataset.open = String(expanded); r.row.setAttribute('aria-expanded', String(expanded));
         text(r.timeLabel, slot.running ? 'jetzt' : utc.format(slot.t)); r.time.title = date.format(slot.t) + ' MEZ/MESZ'; r.rowCountdown.hidden = !slot.running; text(r.rowCountdown, slot.running ? remaining : ''); r.rowCountdown.setAttribute('aria-label', 'Restlaufzeit der ' + (iv === '1m' ? 'Minutenkerze' : 'Stundenkerze') + ': ' + remaining);
         text(r.buy, compactVolume(v?.buy)); text(r.sell, compactVolume(v?.sell)); text(r.delta, compactVolume(v?.delta, true));
         r.delta.dataset.tone = v?.delta > 0 ? 'up' : v?.delta < 0 ? 'down' : 'neutral';
@@ -131,7 +137,7 @@ export function createOrderflowView({ root, context, now, fetchRows, readPrefs, 
     if (changed || ctx.paused !== state.paused) {
       state.epoch++; state.since = Date.now(); for (const c of pending.values()) c.abort(); pending.clear(); clearTimeout(initialTimer);
       state.symbol = ctx.symbol; state.paused = ctx.paused; attempted.clear();
-      if (changed) { state.series = { '1m': [], '1h': [] }; state.errors = {}; state.unavailable = false; for (const iv of Object.keys(blocks)) { loadedAt[iv] = 0; repaired[iv] = ''; } }
+      if (changed) { state.series = { '1m': [], '1h': [] }; state.errors = {}; state.open = {}; state.unavailable = false; for (const iv of Object.keys(blocks)) { loadedAt[iv] = 0; repaired[iv] = ''; } }
       if (resumed) for (const iv of Object.keys(blocks)) loadedAt[iv] = 0;
       if (!state.paused) initialTimer = setTimeout(() => { for (const iv of Object.keys(blocks)) {
         const history = visibleCandles(state.series[iv], iv, now()).slice(0, 4);

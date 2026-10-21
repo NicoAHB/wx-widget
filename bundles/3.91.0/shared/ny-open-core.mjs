@@ -109,4 +109,23 @@ export function nyPastSignals(journal,{symbol,market,exclude=null,limit=NY_OPEN.
 export const nyTerminal=o=>!!o&&(['target','stop','breakeven','expired','open_2h'].includes(o.status)||o.status==='data-gap'&&o.final===true);
 export function compactNySignal(s){const out={...s};delete out.chart;return out;}
 export function nyRecord(result, previous={}, candles=[], now){const s=previous.signal||result.signal,ranges={...nyRecordRanges(previous),...result.ranges};return{...previous,day:result.session.day,symbol:result.symbol,market:result.market,range:result.range||previous.range||Object.values(ranges)[0],ranges,session:result.session,signal:s?compactNySignal(s):null,outcome:s?nyOutcome(s,candles,now):null,updatedAt:now};}
+// 3.87.2: kurzer Grund für das Chart-Feld, solange es heute kein Signal gibt (der ganze Text steht in der Erklärung ⓘ und in der Karte)
+export function nyNoSignalText(r){
+  const reason=r?.reason||'';
+  if(!r?.phase)return r?.ready===false&&/pausiert oder offline/.test(reason)?'Analyse pausiert oder offline':'';
+  switch(r.phase){
+    case'forming':return'Range wird gebildet';
+    case'waiting':return'Noch kein Signal · wartet auf Ausbruch';
+    case'weak':return`Kein Signal: Ausbruchskörper < ${NY_OPEN.bodyRatio*100} %`;
+    case'fvg':return/^Kein gleichgerichtetes FVG/.test(reason)?`Kein Signal: FVG ≥ ${NY_OPEN.fvgATR.toLocaleString('de-DE')} ATR fehlt`:'Kein Signal: FVG-Bestätigung fehlt';
+    case'risk':return'Kein Signal: Stop zu weit oder zu eng';
+    case'bias':return/neutral/.test(reason)?'Kein Signal: 4h-Bias neutral':'Kein Signal: gegen den 4h-Bias';
+    case'bias-data':return'Kein Signal: 4h-Vorlauf fehlt';
+    case'range-small':return`Kein Signal: Range < ${NY_OPEN.minRangePct.toLocaleString('de-DE')} %`;
+    case'data':return'Kein Signal: Kerzendaten fehlen';
+    case'closed':return'Heute kein Signal · Fenster beendet';
+    case'closed-day':return'Kein NY-Handelstag';
+    default:return'';
+  }
+}
 export function nyLiveRange(price,range){if(!(price>0)||!range)return{kind:'none',text:'Live-Kurs fehlt.'};const dir=price>range.high?1:price<range.low?-1:0,pct=dir?(price/(dir===1?range.high:range.low)-1)*100:0;return{kind:dir===1?'above':dir===-1?'below':'inside',direction:dir,text:dir?`${dir===1?'Über Range-Hoch':'Unter Range-Tief'} (${pct>=0?'+':'−'}${Math.abs(pct).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})} %)`:'Im Range'};}

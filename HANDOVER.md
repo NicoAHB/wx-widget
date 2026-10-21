@@ -1,3 +1,11 @@
+## 3.91.0 / Dienst 2.16.0 (Claude): Relative-Stärke-Zeile mit zwei Werten, AMD-Rückblick auf 30 Tage
+
+- Ausführlich: [docs/3.91.0-AENDERUNGEN.md](docs/3.91.0-AENDERUNGEN.md).
+- **Anlass:** Der Nutzer fand die Relative-Stärke-Zeile mit 1h/4h/24h unübersichtlich und AMD möglicherweise zu streng („prüfe, wie viele Accumulationen und Manipulationen im letzten Monat erkannt wurden“).
+- **Jetzt:** Zeile „Stärke · 4h“ (Sortierzahl plus ein Wert). AMD-Einstellungen haben einen **Rückblick · letzte 30 Tage** (`shared/amd-review.mjs`): zählt für die Vorauswahl-Coins je Rangehöhe 1,5/2/3/4 × ATR Accumulationen, Manipulationen, Schluss in der Range, bestätigt, gemeldet; „Übernehmen“ stellt eine Stufe ein.
+- **Nicht erledigt:** Die echte Monatszahl konnte ich nicht ermitteln (Börsen-Hosts in der Entwicklungsumgebung gesperrt, keine echten Kerzen im Repo) – der Nutzer misst jetzt in der App. Standard-Rangehöhe bleibt 1,5, bis Zahlen vorliegen; danach ggf. Standard anpassen.
+- Tests: `unit-amd-review`, `unit-amd-view`, `m148` erweitert; `unit-rs-order`, `m135` angepasst. Dienst unverändert (**2.16.0**), App **3.91.0**.
+
 ## 3.90.0 / Dienst 2.16.0 (Claude): neue Analyse „AMD“ und Relative Stärke nach Stärke sortiert
 
 - Ausführlich: [docs/3.90.0-AENDERUNGEN.md](docs/3.90.0-AENDERUNGEN.md).

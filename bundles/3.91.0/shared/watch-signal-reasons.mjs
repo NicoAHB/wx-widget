@@ -46,7 +46,7 @@ function ruleHelp({ key, strict, up, ready, passed, interval, values: v, evidenc
     }
   }
   if (key === 'macd') {
-    meaning = 'Der MACD beschreibt den Kursschwung: EMA 12 minus EMA 26. Sein geglätteter 9er-Durchschnitt heißt Signallinie. Im Chart unter „Chart-Ebenen, Whales & Werkzeuge“ MACD einschalten: Der eigene Bereich zeigt die blaue MACD-Linie, die orange Signallinie und die graue Nulllinie. Hier gelten weiterhin die Werte des angegebenen Prüfzeitraums.';
+    meaning = 'Der MACD beschreibt den Kursschwung: EMA 12 minus EMA 26. Sein geglätteter 9er-Durchschnitt heißt Signallinie. Im Chart unter „Chart-Ebenen“ MACD einschalten: Der eigene Bereich zeigt die blaue MACD-Linie, die orange Signallinie und die graue Nulllinie. Hier gelten weiterhin die Werte des angegebenen Prüfzeitraums.';
     rule = strict ? `Histogramm bedeutet MACD minus Signallinie. Für ${direction} muss es ${up ? 'positiv sein und gegenüber der vorigen Kerze steigen' : 'negativ sein und gegenüber der vorigen Kerze fallen'}.` : `Für ${direction}: Der MACD muss ${over} seiner Signallinie liegen. Eine neue Kreuzung auf dieser Kerze ist dafür nicht nötig.`;
     measured = strict ? `Histogramm vorher ${indicator(e.macd?.previous)} · zuletzt ${indicator(e.macd?.current)}.` : `MACD ${indicator(v.mLine)} · Signallinie ${indicator(v.mSig)}.`;
   }

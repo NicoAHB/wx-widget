@@ -1,6 +1,6 @@
 {
   "version": "2.16.0",
-  "appVersion": "3.90.0",
+  "appVersion": "3.91.0",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
@@ -119,8 +119,8 @@
     },
     {
       "path": "shared/amd-core.mjs",
-      "sha256": "2b2189a7a7b1edba3e69c1c32836ecaf66b0a9894b8e509c893af5944d14d5c9",
-      "bytes": 18637
+      "sha256": "d886c68ea46c93c6b1ba0dc479aa1cd5fd94e94c01b2c7ecc147f84fe2fb0570",
+      "bytes": 18726
     },
     {
       "path": "shared/amd-feed.mjs",
@@ -128,9 +128,14 @@
       "bytes": 7246
     },
     {
+      "path": "shared/amd-review.mjs",
+      "sha256": "26426fa30f1f824310a62d3de103cbb69cda365dad68f135f64a967903af1b58",
+      "bytes": 5639
+    },
+    {
       "path": "shared/amd-view.mjs",
-      "sha256": "1918bf1f08a78688bb9b0cd1f4ee307b7175e7cd34da70ea72423da655665516",
-      "bytes": 15306
+      "sha256": "a8e186c41074eda38911f1f3cb023202960fa0402deb9a1255ced7efaf29fb49",
+      "bytes": 20203
     },
     {
       "path": "shared/analysis-card.mjs",
@@ -219,8 +224,8 @@
     },
     {
       "path": "shared/analysis-view.mjs",
-      "sha256": "c97f773c4edff65ea730c8d3016e35a411419f20b0159a14ac64c87e80e7f161",
-      "bytes": 24381
+      "sha256": "c2e111b444accf2d6922746b64d11da6a07c632c810ef9f4c72e3e8fa055a0dc",
+      "bytes": 24408
     },
     {
       "path": "shared/bitget-patterns.mjs",

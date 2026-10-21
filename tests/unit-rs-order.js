@@ -28,8 +28,8 @@ const check = (name, fn) => { try { fn(); pass++; console.log('✓ ' + name); } 
   const list = row.querySelector('.analysis-coin-list'), order = () => list.children.map(c => c.dataset.coin), hints = () => list.children.map(c => c.querySelector('small').textContent);
   check('Stärkster Coin oben, schwächster unten; Coin ohne Daten ganz unten', () => assert.deepStrictEqual(order(), ['SOLUSDT', 'ETHUSDT', 'BTCUSDT', 'XRPUSDT', 'DOGEUSDT']));
   check('Nummerierung folgt der Reihenfolge (1., 2., 3., 4.); BTC ist die Vergleichsbasis in der Mitte', () => {
-    const h = hints(); assert.ok(h[0].startsWith('1. · Stärke +2,4 · 1h +0,6 % · 4h +1,2 % · 24h +3,1 % zu BTC · weit gelaufen'), h[0]);
-    assert.ok(h[1].startsWith('2. · Stärke +0,8'), h[1]); assert.strictEqual(h[2], '3. · Vergleichsbasis (Stärke 0)'); assert.ok(h[3].startsWith('4. · Stärke −1,7 · 1h −0,2 % · 4h −0,8 % · 24h −2,5 % zu BTC'), h[3]); assert.strictEqual(h[4], '– · BTC-Vergleich wird geladen');
+    const h = hints(); assert.strictEqual(h[0], '1. · Stärke +2,4 · 4h +1,2 % zu BTC · weit gelaufen'); assert.ok(!/1h|24h/.test(h[0]), 'nur zwei Werte');
+    assert.ok(h[1].startsWith('2. · Stärke +0,8'), h[1]); assert.strictEqual(h[2], '3. · Vergleichsbasis (Stärke 0)'); assert.strictEqual(h[3], '4. · Stärke −1,7 · 4h −0,8 % zu BTC'); assert.strictEqual(h[4], '– · BTC-Vergleich wird geladen');
   });
   check('Die angezeigte Stärke fällt von oben nach unten (Anzeige und Reihenfolge nutzen dieselbe Zahl)', () => {
     const values = hints().slice(0, 4).map(t => /Stärke ([+−]?[\d,]+)/.exec(t)?.[1]).map(v => v === undefined ? 0 : Number(v.replace('−', '-').replace(',', '.')));
@@ -51,7 +51,7 @@ const check = (name, fn) => { try { fn(); pass++; console.log('✓ ' + name); } 
   check('Winzige Werte erscheinen als 0 – nie als „−0“ oder „+0“', () => {
     view.settings.rows['relative-strength'].coins.ETHUSDT = true;
     view.paintResult('', [], [{ id: 'relative-strength', ranking: [item('ETHUSDT', -0.004, [-0.002, 0.004, -0.001]), item('BTCUSDT', 0, [0, 0, 0])] }]);
-    const h = hints().find(t => t.includes('1h')); assert.ok(/Stärke 0 · 1h 0 % · 4h 0 % · 24h 0 %/.test(h), h);
+    const h = hints().find(t => t.includes('4h')); assert.strictEqual(h, '2. · Stärke 0 · 4h 0 % zu BTC');
   });
   console.log(`\n${pass}/${pass + fail} bestanden`); process.exit(fail ? 1 : 0);
 })();

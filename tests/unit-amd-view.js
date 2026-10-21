@@ -85,6 +85,37 @@ const check = (name, fn) => { try { fn(); pass++; console.log('✓ ' + name); } 
     assert.ok(svg.includes('Short') && /ETH\/USDT · Short/.test(svg)); assert.ok(r.signal.stop > r.signal.entry && r.signal.target < r.signal.entry);
   });
 
+  const asyncChecks = [];
+  const acheck = (name, fn) => asyncChecks.push([name, fn]);
+  acheck('Rückblick in den Einstellungen: Knopf, Fortschritt, vier Rangehöhen mit Zählung, eingestellte Stufe markiert, „Übernehmen“ für die anderen', async () => {
+    const R = await import('../shared/amd-review.mjs'); void R;
+    const NOW = Date.UTC(2026, 9, 21, 12, 0, 0), END = Math.floor(NOW / Q) * Q, FIRST = END - 40 * 86400000, longAt = END - 20 * 86400000;
+    const base = Array.from({ length: 40 * 96 }, (_, i) => { const o = 99.6 + (i * 7 % 9) * .1, c = 99.6 + (i * 5 % 9) * .1; return { ...bar(FIRST + i * Q, Q, o, 101, 99, c), end: FIRST + (i + 1) * Q }; });
+    base[(longAt - FIRST) / Q] = { ...bar(longAt, Q, 99.55, 99.8, 98.7, 99.2), end: longAt + Q };
+    const history = async q => { const ms = q.timeframe === '1m' ? M : Q, rows = []; for (let t = Math.floor(q.from / ms) * ms; t < Math.floor(q.to / ms) * ms; t += ms) rows.push(ms === M ? { ...bar(t, M, ...(t >= longAt && t < longAt + Q ? path[(t - longAt) / M] : [100, 100.1, 99.9, 100])), end: t + M } : base[(t - FIRST) / Q]); return rows; };
+    const { El } = domStub(), root = new El('div'); let options = { interval: '15m', maxHeightAtr: 1.5, minRR: 2 };
+    const tools = V.createAmdTools({ root, getOptions: () => options, setOptions: v => { options = Core.amdOptions(v); }, services: { available: () => true, history, symbols: () => [{ symbol: 'ETHUSDT', market: 'futures' }], now: () => NOW } });
+    const [start] = root.querySelectorAll('[data-amd-review]'); assert.ok(start && /Rückblick · letzte 30 Tage/.test(start.textContent));
+    await start.listeners.click[0]();
+    const levels = root.querySelectorAll('[data-amd-level]'); assert.deepStrictEqual(levels.map(l => l.dataset.amdLevel), ['1.5', '2', '3', '4']);
+    assert.deepStrictEqual(levels.map(l => l.dataset.current), ['true', 'false', 'false', 'false']);
+    assert.match(levels[0].textContent, /Rangehöhe bis 1,5 × ATR · eingestellt/); assert.match(levels[0].textContent, /1 Manipulation · 1 mit Schluss in der Range · 1 bestätigt · 1 gemeldet/);
+    const adopt = root.querySelectorAll('[data-amd-adopt]'); assert.deepStrictEqual(adopt.map(b => b.dataset.amdAdopt), ['2', '3', '4']);
+    adopt[1].listeners.click[0](); assert.strictEqual(options.maxHeightAtr, 3); const after = root.querySelectorAll('[data-amd-level]'); assert.deepStrictEqual(after.map(l => l.dataset.current), ['false', 'false', 'true', 'false']);
+    assert.ok(root.textContent.includes('Je Coin') && root.textContent.includes('ETH:'));
+    options = { ...options, maxHeightAtr: 2.5 }; tools.paint(); const withCurrent = root.querySelectorAll('[data-amd-level]'); assert.ok(withCurrent.length === 4 && withCurrent.every(l => l.dataset.current === 'false'), 'Marke folgt der Einstellung');
+  });
+  acheck('Rückblick: Meldungen bei pausierter App, bei Datenfehler und bei zu strenger Einstellung', async () => {
+    const { El } = domStub(); let root = new El('div'), options = { interval: '15m', maxHeightAtr: 1.5, minRR: 2 };
+    V.createAmdTools({ root, getOptions: () => options, setOptions() {}, services: { available: () => false } });
+    await root.querySelectorAll('[data-amd-review]')[0].listeners.click[0](); assert.match(root.textContent, /aktiv, online und ungepaust/);
+    root = new El('div'); V.createAmdTools({ root, getOptions: () => ({ ...options, interval: '1d' }), setOptions() {}, services: { available: () => true, history: async () => [], symbols: () => [{ symbol: 'ETHUSDT', market: 'spot' }], now: () => Date.now() } });
+    await root.querySelectorAll('[data-amd-review]')[0].listeners.click[0](); assert.match(root.textContent, /Rückblick läuft für 5m, 15m, 1h, 4h/);
+    root = new El('div'); const flat = async q => { const rows = []; for (let t = Math.floor(q.from / Q) * Q; t < Math.floor(q.to / Q) * Q; t += Q) rows.push({ ...bar(t, Q, 100, 101, 99, 100), end: t + Q }); return rows; };
+    V.createAmdTools({ root, getOptions: () => options, setOptions() {}, services: { available: () => true, history: flat, symbols: () => [{ symbol: 'ETHUSDT', market: 'spot' }], now: () => Date.UTC(2026, 9, 21, 12) } });
+    await root.querySelectorAll('[data-amd-review]')[0].listeners.click[0](); assert.match(root.textContent, /keinen einzigen Durchbruch: Sie ist zu streng/);
+  });
+
   function draw(result) {
     const rects = [], lines = [], labels = [], buttons = [], explanations = [];
     const node = (tag, attrs = {}, text) => { const n = { tag, attrs, children: [], dataset: {}, append(...c) { n.children.push(...c); }, addEventListener() {}, text }; if (tag === 'rect') rects.push(attrs); if (tag === 'line') lines.push(attrs); if (tag === 'text') labels.push(text); return n; };
@@ -98,9 +129,10 @@ const check = (name, fn) => { try { fn(); pass++; console.log('✓ ' + name); } 
     class El { constructor(tag) { this.tag = tag; this.children = []; this.dataset = {}; this.attrs = {}; this.className = ''; this._text = ''; this.listeners = {}; this.value = ''; }
       set textContent(v) { this._text = String(v); if (!v) this.children = []; } get textContent() { return this._text || this.children.map(c => c.textContent).join(''); } get ownerDocument() { return doc; }
       get classList() { const s = this; return { toggle(c, on) { const set = new Set(s.className.split(/\s+/).filter(Boolean)); if (on) set.add(c); else set.delete(c); s.className = [...set].join(' '); } }; }
-      append(...n) { this.children.push(...n); } setAttribute(k, v) { this.attrs[k] = String(v); } addEventListener(t, f) { (this.listeners[t] ||= []).push(f); }
+      append(...n) { this.children.push(...n); } replaceChildren(...n) { this.children = []; this.append(...n); } setAttribute(k, v) { this.attrs[k] = String(v); } addEventListener(t, f) { (this.listeners[t] ||= []).push(f); }
       querySelectorAll(sel) { const out = [], key = /^\[data-([a-z-]+)\]$/.exec(sel)?.[1].replace(/-(\w)/g, (_, c) => c.toUpperCase()); const walk = n => { for (const c of n.children) { if (key in c.dataset) out.push(c); walk(c); } }; walk(this); return out; } }
     const doc = { createElement: t => new El(t), activeElement: null }; return { El, doc };
   }
+  for (const [name, fn] of asyncChecks) { try { await fn(); pass++; console.log('✓ ' + name); } catch (e) { fail++; console.log('✗ ' + name + ' — ' + e.message.split('\n')[0]); } }
   console.log(`\n${pass}/${pass + fail} bestanden`); process.exit(fail ? 1 : 0);
 })();
