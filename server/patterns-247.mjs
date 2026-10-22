@@ -4,13 +4,13 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { klines, bookTicker } from './scalpdesk-247.mjs';
-import { PAT_STEPS, PQ, patternCandles, patternCases, patternFresh, patternText, patternMessageData, patternEnd, patternEvaluate, patternFilterLog } from './pattern-monitor.mjs';
+import { PAT_STEPS, PQ, patternCandles, patternCases, patternHistory, patternFresh, patternText, patternMessageData, patternEnd, patternEvaluate, patternFilterLog } from './pattern-monitor.mjs';
 import { formatMessage, telegramFields, telegramPlain, telegramFormatRejected } from './telegram-format.mjs';
 import { renderPatternCard, patternCaption, cardRendererStatus, EXAMPLE_SIGNAL } from './pattern-card.mjs';
 import { monthStart, purgeSentMessages, purgeReport } from './pattern-retention.mjs';
 // 1.1.0: Qualitätsfilter (K.O.-Kriterien, Signalscore, Anti-Spam, Ergebnis-Tracking)
 // 1.2.0: Meldung als Trading-Karte (PNG per sendPhoto, Text als Ersatz), monatliche Bereinigung gesendeter Nachrichten
-export const PATTERNS_VERSION = '1.3.0';   // 1.2.1: Schrift mitgeliefert, keine Karten ohne Text; 1.3.0: Signalkarte (Gesamturteil, Jetzt, Mini-Chart), schwache Signale nur mit Schalter
+export const PATTERNS_VERSION = '1.4.0';   // 1.4.0: Lernbestand aus dem Kerzenverlauf (rekonstruiert, ohne Blick in die Zukunft);  1.2.1: Schrift mitgeliefert, keine Karten ohne Text; 1.3.0: Signalkarte (Gesamturteil, Jetzt, Mini-Chart), schwache Signale nur mit Schalter
 // Telegram-Fehler, die das Ziel betreffen (dann hilft auch der Text nicht)
 const CHAT_PROBLEM = /chat|thread|topic|blocked|kicked|deactivated|not enough rights|have no rights/i;
 export function readPatternEnvironment(file) {
@@ -49,7 +49,7 @@ export class PatternsOnlyService {
     for (const event of Object.values(this.state.events)) if (event.st === 'sending') { event.st = 'unconfirmed'; this.log('Nach Neustart unbestätigte Zustellung: kein Doppelversand'); }
     if (!Array.isArray(this.state.signals)) this.state.signals = [];   // 1.1.0: Journal aller bewerteten Signale (gesendet und gefiltert)
     if (!Array.isArray(this.state.sent)) this.state.sent = [];         // 1.1.0: gesendete Meldungen für die Anti-Spam-Regeln
-    this.config = config; this.persist();
+    this.learnAt = new Map(); this.config = config; this.persist();
   }
   persist() { atomicPatternState(this.stateFile, this.state); }
   async telegram(html) {
@@ -102,6 +102,14 @@ export class PatternsOnlyService {
     }
     const res = await this.send(e.text); return { via: 'text', id: res?.message_id };
   }
+  // 1.4.0: Lernbestand aus dem Kerzenverlauf „als ob live“ (einmal je 12 Stunden und Markt): vorher enthielt er nur frisch gemeldete Fälle, daher „0/30 Fälle“
+  learn(item, k) {
+    const name = `${item.mkt}|${item.sym}|${item.iv}`, now = this.now();
+    if (now - (this.learnAt.get(name) || 0) < 12 * 36e5 || Object.keys(this.state.cases).length > 20000) return;
+    this.learnAt.set(name, now); let added = 0;
+    for (const c of patternHistory(k, item, now)) if (!this.state.cases[c.id]) { this.state.cases[c.id] = c; added++; }
+    if (added) this.log(`Lernbestand: ${added} Fälle aus dem Kerzenverlauf (${name})`);
+  }
   resolve(item, k) {
     const index = new Map(k.map((x, i) => [x.t, i]));
     for (const c of Object.values(this.state.cases)) {
@@ -137,7 +145,7 @@ export class PatternsOnlyService {
       for (const item of this.config.items) {
         const key = `${item.mkt}|${item.sym}|${item.iv}`; if ((this.due.get(key) || 0) > this.now()) continue;
         try {
-          const k = patternCandles(await this.fetchRows(item), item.iv, this.now()); this.resolve(item, k);
+          const k = patternCandles(await this.fetchRows(item), item.iv, this.now()); this.resolve(item, k); this.learn(item, k);
           PQ.resolvePatternJournal(this.state.signals, item, k, this.now());
           for (const { c, h } of patternCases(k, item, this.now())) {
             if (!patternFresh(c, this.now(), this.state.since) || this.state.events[c.id] || this.state.signals.some(e => e.id === c.id)) continue;

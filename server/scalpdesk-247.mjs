@@ -48,11 +48,11 @@ import http from 'node:http';
 import crypto from 'node:crypto';
 import { Buffer } from 'node:buffer';
 import { fileURLToPath } from 'node:url';
-import { PQ, patternConfig, patternCandles, patternCases, patternFresh, patternText, patternMessageData, patternEnd, patternEvaluate, patternFilterLog } from './pattern-monitor.mjs';
+import { PQ, patternConfig, patternCandles, patternCases, patternHistory, patternOutcome, patternFresh, patternText, patternMessageData, patternEnd, patternEvaluate, patternFilterLog } from './pattern-monitor.mjs';
 import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT } from './telegram-format.mjs';
 import { ConfluenceService, kiMessage, Po3Service, po3Message, BotSimulationRuntime } from './ki-monitor.mjs';
 
-export const VERSION = '2.17.0';   // 2.17.0: Trefferzählung der Chartmuster-Meldungen je Muster über alle Coins (ab 30 Fällen) statt je Coin, dazu Bereich, Coin-Zahl und Zufallsvergleich; 2.16.0: optionale KI-Erklärung der VWAP-Lage (POST /v1/vwap/explain: Tendenz eher kaufen / eher verkaufen / abwarten mit Begründung); 2.15.4: Gewinn-/Verlust-Alarm als Text, wenn kein Bild möglich ist (statt still verworfen); verworfene Meldungen setzen das Ereignis auf „fehlgeschlagen“; 2.13.0: Qualitätsfilter für Chartmuster-Meldungen; 2.14.0: Chartmuster als Trading-Karte (Text als Ersatz); 2.14.1: Schrift mitgeliefert; 2.14.4: Installer mit Zeitlimits und Fortschritt; 2.14.3: Status nennt den Chartmuster-Filter; 2.14.2: Installer macht den Programmstand für den Dienstbenutzer lesbar; 2.15.0: Chartmuster-Signalkarte (Gesamturteil, Jetzt, Mini-Chart), schwache Signale nur mit Schalter
+export const VERSION = '2.18.0';   // 2.18.0: Lernarchiv der Chartmuster füllt sich selbst (Kerzenverlauf „als ob live“, offene Fälle werden nach 12 Kerzen ausgewertet, auch gefilterte Fälle zählen) – vorher „0/30 Fälle“ bei den meisten Mustern; Archivstatus je Muster; 2.17.0: Trefferzählung der Chartmuster-Meldungen je Muster über alle Coins (ab 30 Fällen) statt je Coin, dazu Bereich, Coin-Zahl und Zufallsvergleich; 2.16.0: optionale KI-Erklärung der VWAP-Lage (POST /v1/vwap/explain: Tendenz eher kaufen / eher verkaufen / abwarten mit Begründung); 2.15.4: Gewinn-/Verlust-Alarm als Text, wenn kein Bild möglich ist (statt still verworfen); verworfene Meldungen setzen das Ereignis auf „fehlgeschlagen“; 2.13.0: Qualitätsfilter für Chartmuster-Meldungen; 2.14.0: Chartmuster als Trading-Karte (Text als Ersatz); 2.14.1: Schrift mitgeliefert; 2.14.4: Installer mit Zeitlimits und Fortschritt; 2.14.3: Status nennt den Chartmuster-Filter; 2.14.2: Installer macht den Programmstand für den Dienstbenutzer lesbar; 2.15.0: Chartmuster-Signalkarte (Gesamturteil, Jetzt, Mini-Chart), schwache Signale nur mit Schalter
 // 2.14.0: Kartenrenderer (pattern-card.mjs + resvg) nur bei Bedarf laden; fehlt er, bleibt es bei der Textmeldung
 let cardModule = null;
 const loadCards = () => (cardModule ??= import('./pattern-card.mjs').catch(() => null));
@@ -417,7 +417,7 @@ export function caseValid(c) {
 }
 export class PatternArchive {
   constructor({ file, backupDir = '', now = () => Date.now(), log = () => {} }) {
-    Object.assign(this, { file, backupDir, now, log }); this.idx = new Map(); this.bad = 0; this.bytes = 0; this.restored = false; this.timer = null;
+    Object.assign(this, { file, backupDir, now, log }); this.idx = new Map(); this.pending = new Map(); this.bad = 0; this.bytes = 0; this.restored = false; this.timer = null;   // pending: Fälle ohne Ergebnis (2.18.0: der Dienst löst sie selbst auf)
     this.backup = { at: 0, ok: null, why: 'noch keine Sicherung' };
     this.load();
   }
@@ -431,8 +431,8 @@ export class PatternArchive {
     for (const line of raw.split('\n')) {
       if (!line.trim()) continue;
       let e; try { e = JSON.parse(line); } catch { badLines.push(line); continue; }
-      if (e?.t === 'case' && caseValid(e.c)) { if (!this.idx.has(e.c.id)) this.idx.set(e.c.id, { res: e.c.res ? e.c.res.out : null }); }
-      else if (e?.t === 'res' && this.idx.has(e.id)) { const x = this.idx.get(e.id); if (!x.res) x.res = e.res?.out || null; }
+      if (e?.t === 'case' && caseValid(e.c)) { if (!this.idx.has(e.c.id)) { this.idx.set(e.c.id, { res: e.c.res ? e.c.res.out : null, k: `${e.c.pat}|${e.c.iv}|${e.c.dir}` }); if (!e.c.res) this.pending.set(e.c.id, { mkt: e.c.mkt, sym: e.c.sym, iv: e.c.iv, tc: e.c.tc, p0: e.c.p0 }); } }
+      else if (e?.t === 'res' && this.idx.has(e.id)) { const x = this.idx.get(e.id); if (!x.res) x.res = e.res?.out || null; if (x.res) this.pending.delete(e.id); }
       else if (e?.t !== 'conflict') badLines.push(line);
     }
     this.bad = badLines.length;
@@ -443,13 +443,20 @@ export class PatternArchive {
     for (const c of Array.isArray(list) ? list.slice(0, 200) : []) {
       if (!caseValid(c)) { r.rejected++; continue; }
       const x = this.idx.get(c.id), out = c.res?.out || null;
-      if (!x) { this.idx.set(c.id, { res: out }); lines.push(JSON.stringify({ t: 'case', at: t, c })); r.stored++; }
-      else if (out && !x.res) { x.res = out; lines.push(JSON.stringify({ t: 'res', at: t, id: c.id, res: c.res })); r.results++; }
+      if (!x) { this.idx.set(c.id, { res: out, k: `${c.pat}|${c.iv}|${c.dir}` }); if (!out) this.pending.set(c.id, { mkt: c.mkt, sym: c.sym, iv: c.iv, tc: c.tc, p0: c.p0 }); lines.push(JSON.stringify({ t: 'case', at: t, c })); r.stored++; }
+      else if (out && !x.res) { x.res = out; this.pending.delete(c.id); lines.push(JSON.stringify({ t: 'res', at: t, id: c.id, res: c.res })); r.results++; }
       else if (out && x.res && out !== x.res) { lines.push(JSON.stringify({ t: 'conflict', at: t, id: c.id, res: c.res })); r.conflicts++; }
       else r.dup++;
     }
     if (lines.length) { fs.mkdirSync(path.dirname(this.file), { recursive: true }); const s = lines.join('\n') + '\n'; fs.appendFileSync(this.file, s); this.bytes += Buffer.byteLength(s); this.backupSoon(); }
     return r;
+  }
+  // 2.18.0: Ergebnis eines schon gespeicherten Falls nachtragen (der Dienst wertet seine eigenen Fälle nach PK.horizon Kerzen selbst aus)
+  resolve(id, res) {
+    const x = this.idx.get(id); if (!x || x.res || !res || !['auf', 'ab', 'seitwärts'].includes(res.out)) return false;
+    x.res = res.out; this.pending.delete(id);
+    fs.mkdirSync(path.dirname(this.file), { recursive: true }); const s = JSON.stringify({ t: 'res', at: this.now(), id, res }) + '\n'; fs.appendFileSync(this.file, s); this.bytes += Buffer.byteLength(s); this.backupSoon();
+    return true;
   }
   backupSoon(ms = 3000) { clearTimeout(this.timer); this.timer = setTimeout(() => this.backupNow(), ms); this.timer.unref?.(); }
   backupNow() {
@@ -462,7 +469,13 @@ export class PatternArchive {
     if (!this.backup.ok) this.log('Muster-Archiv: Sicherung fehlgeschlagen – ' + this.backup.why);
     return this.backup;
   }
-  status() { let res = 0; for (const x of this.idx.values()) if (x.res) res++; return { ok: true, count: this.idx.size, results: res, bytes: this.bytes, bad: this.bad, restored: this.restored, backup: this.backup }; }
+  // 2.18.0: dazu je Muster, Zeitrahmen und Richtung: Fälle und davon mit Ergebnis (so lässt sich prüfen, wie weit die 30 Fälle für die „Erlernt“-Zeile sind)
+  status() {
+    let res = 0; const by = new Map();
+    for (const x of this.idx.values()) { if (x.res) res++; const r = by.get(x.k) || { n: 0, done: 0 }; r.n++; if (x.res) r.done++; by.set(x.k, r); }
+    const patterns = [...by].map(([k, v]) => { const [pat, iv, dir] = String(k).split('|'); return { pat, iv, dir, ...v }; }).sort((a, b) => b.done - a.done || b.n - a.n).slice(0, 80);
+    return { ok: true, count: this.idx.size, results: res, bytes: this.bytes, bad: this.bad, restored: this.restored, backup: this.backup, patterns };
+  }
   // bereinigter Bestand (nur Marktdaten, je Fall der erste Ergebnisstand) für Export und Veröffentlichung
   export() {
     const m = new Map(); if (!fs.existsSync(this.file)) return [];
@@ -478,7 +491,7 @@ export class Watcher {
   constructor({ token, chat, patternToken = '', kiUsers = [], kiClient, key = '', origins = [APP_ORIGIN], listen = LISTEN, host = '', statePath = '', now = () => Date.now(), log = (...a) => console.log(...a), patternFetch = klines, patternSpread = c => bookTicker(c.mkt, c.sym), patternCards = true, pnlCards = true, alarmCards = true }) {
     Object.assign(this, { token, chat, patternToken, kiUsers, key, origins, listen, host, statePath, now, log, patternFetch, patternSpread, patternCards, pnlCards, alarmCards });   // 2.15.0: pnlCards/alarmCards – Gewinn-/Verlust- und Kurs-Alarm als Bild
     this.kiStartedAt = now(); this.kiOffset = null; this.kiCommandsBusy = false;
-    this.patternWatch = { rev: 0, since: 0, config: null }; this.patternProgress = new Map(); this.patternBusy = false;
+    this.patternWatch = { rev: 0, since: 0, config: null }; this.patternProgress = new Map(); this.patternBusy = false; this.patternLearnAt = new Map();
     this.patSignals = []; this.patSent = [];   // 2.13.0: Journal aller bewerteten Chartmuster-Signale und gesendete Meldungen (Anti-Spam)
     // 2.0 (G05): Ziel-Schalter (Revision, Epoche, Einschaltzeit), ausgeführte Aufträge, Ereignis-Freigaben, Episoden
     this.pol = policyNew(now()); this.cmds = []; this.evs = {}; this.eps = {}; this.server = null; this.authFail = { n: 0, t: 0 };
@@ -1009,6 +1022,23 @@ export class Watcher {
     }
     this.saveState(); return out;
   }
+  // 2.18.0: Lernbestand des Dienstes selbst füllen. Vorher bekam das Archiv nur gemeldete Fälle (und nie ein Ergebnis dazu), alles andere kam aus der App –
+  // dadurch standen bei den meisten Mustern „0/30 Fälle“. Jetzt: (1) offene Fälle dieses Marktes nach 12 Kerzen auswerten, (2) einmal je 12 Stunden den
+  // geladenen Kerzenverlauf „als ob live“ durchgehen (patternHistory) und die Fälle mit Ergebnis ablegen; gleiche Fall-ID zählt einmal.
+  learnPatterns(item, k, now) {
+    if (!this.arch || this.arch.idx.size > 50000) return;
+    const index = new Map(k.map((x, i) => [x.t, i]));
+    for (const [id, o] of this.arch.pending) {
+      if (o.mkt !== item.mkt || o.sym !== item.sym || o.iv !== item.iv) continue;
+      const i = index.get(o.tc), res = i === undefined ? null : patternOutcome(k, i, o.p0, now); if (res) this.arch.resolve(id, res);
+    }
+    const name = `${item.mkt}|${item.sym}|${item.iv}`;
+    if (now - (this.patternLearnAt.get(name) || 0) < 12 * 36e5) return;
+    this.patternLearnAt.set(name, now);
+    const list = patternHistory(k, item, now); let stored = 0;
+    for (let i = 0; i < list.length; i += 200) stored += this.arch.add(list.slice(i, i + 200)).stored;
+    if (stored) this.log(`Muster-Archiv: ${stored} Fälle aus dem Kerzenverlauf (${name})`);
+  }
   patternStatistics() { return { pat: PQ.patternJournalStats(this.patSignals, 'pat'), iv: PQ.patternJournalStats(this.patSignals, 'iv'), sym: PQ.patternJournalStats(this.patSignals, 'sym'), recent: this.patSignals.slice(-50).reverse() }; }
   async checkPatterns() {
     if (this.patternBusy || !this.patternWatch.config || !this.pol.targets.patterns.on) return;
@@ -1025,6 +1055,7 @@ export class Watcher {
           const k = patternCandles(rows, item.iv, now);
           if (k.length < 40) throw new Error('Weniger als 40 abgeschlossene Kerzen.');
           PQ.resolvePatternJournal(this.patSignals, item, k, now);
+          this.learnPatterns(item, k, now);
           for (const { c, h } of patternCases(k, item, now)) {
             if (this.patSignals.some(e => e.id === c.id) || this.evs[`pat:${c.id}`]) continue;
             const ev = await patternEvaluate({ c, h, k, fetchRows: (x, limit) => this.patternFetch(x.mkt, x.sym, limit, x.iv), fetchSpread: this.patternSpread, cache, settings: cfg.filter, journal: this.patSignals, now });
@@ -1033,6 +1064,7 @@ export class Watcher {
           this.patternProgress.set(name, { next: patternEnd(patternEnd(k.at(-1).t, item.iv), item.iv) + 2000, at: now }); this.clear(`Chartmuster ${name}`);
         } catch (e) { this.patternProgress.set(name, { next: this.now() + 30e3 }); this.note(`Chartmuster ${name}`, e.message); }
       }
+      if (candidates.length && this.arch) this.arch.add(candidates.slice(0, 200).map(x => x.c));   // 2.18.0: auch gefilterte Fälle ins Lernarchiv (Ergebnis folgt nach 12 Kerzen)
       if (rev === this.patternWatch.rev && epoch === this.pol.targets.patterns.epoch) for (const x of await this.gatePatterns(candidates)) if (!x.filtered) await this.notifyPattern(x.c, x.h, x.eval, x.k);
     } finally { this.patternBusy = false; }
   }
