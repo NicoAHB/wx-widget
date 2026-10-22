@@ -46,6 +46,30 @@ export function patternCases(k, item, now) {
     .map(h => { const c = { ...item, pat: h.id, kind: 'form', dir: h.dir, t0: h.t0, t1: h.t1, tc: k[h.i1].t, p0: k[h.i1].c,
       model: 'pat-1', profile: 'H12-e0.10', q: h.q, at: now, src: 'live', rules: h.rules.map(r => [r.k, r.w, r.ok]), res: null }; c.id = patternId(c); return { c, h }; });
 }
+// 2.18.0: Fälle aus dem Kerzenverlauf „als ob live“. Das Ende des Fensters wird Kerze für Kerze zurückgesetzt: Die Engine sieht jeweils nur die Daten bis
+// dahin (kein Blick in die Zukunft), und es zählt, was der Dienst damals genauso gemeldet hätte (frisch bestätigte Formation, Regelgüte ≥ 80 %).
+// Ergebnis nach PK.horizon Kerzen wie bei den Live-Fällen (±0,10 %); Quelle „rekonstruiert“. Ohne diese Fälle blieb der Lernbestand des Dienstes fast leer
+// (er bekam nur gemeldete Fälle und hatte nie ein Ergebnis dazu) – deshalb stand bei den meisten Mustern „0/30 Fälle“.
+export function patternHistory(k, item, now) {
+  const H = PK.PK.horizon, step = PAT_STEPS[item.iv], out = new Map();
+  if (k.length < 40 + H) return [];
+  for (let end = 39; end + H < k.length; end++) {
+    const part = k.slice(0, end + 1);
+    for (const h of engine.detect(part, { from: Math.max(0, part.length - 500), step, gap: false, running: false, formOnly: true }).hits) {
+      if (h.prelim || h.kind !== 'form' || h.dir === 'neutral' || !/^Ausbruch/.test(h.status) || h.q < 80 || h.i1 < part.length - 2) continue;
+      const c = { ...item, pat: h.id, kind: 'form', dir: h.dir, t0: h.t0, t1: h.t1, tc: k[h.i1].t, p0: k[h.i1].c, model: 'pat-1', profile: 'H12-e0.10', q: h.q, at: now, src: 'rekonstruiert',
+        rules: h.rules.map(r => [r.k, r.w, r.ok]), res: null };
+      c.id = patternId(c); if (!out.has(c.id)) { c.res = patternOutcome(k, h.i1, c.p0, now); out.set(c.id, c); }
+    }
+  }
+  return [...out.values()];
+}
+// Ergebnis eines Falls aus den Kerzen: Schlusskurs PK.horizon Kerzen nach der Bestätigung gegen ±PK.eps % (null, solange die Kerze noch fehlt)
+export function patternOutcome(k, i, p0, now) {
+  const H = PK.PK.horizon, e = PK.PK.eps; if (!k[i + H]) return null;
+  const path = k.slice(i, i + H + 1).map(x => +((x.c / p0 - 1) * 100).toFixed(4)), r = path[H];
+  return { at: now, tH: k[i + H].t, ph: k[i + H].c, r, out: r > e ? 'auf' : r < -e ? 'ab' : 'seitwärts', path };
+}
 export function patternFresh(c, now, since) {
   return !!c && c.id === patternId(c) && Object.hasOwn(PAT_NAMES, c.pat) && c.kind === 'form' && c.model === 'pat-1'
     && c.src === 'live' && c.q >= 80 && c.q <= 100 && ['bull', 'bear'].includes(c.dir) && ['spot', 'futures'].includes(c.mkt)

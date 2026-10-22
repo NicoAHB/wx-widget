@@ -15,6 +15,10 @@ Ab Version 2.0 steuert die App ihn über eine gesicherte HTTPS-Adresse: Chat-Sch
 
 **Schritt-für-Schritt-Anleitung für Oracle Cloud (Neueinrichtung, Aktualisieren, Fehlerhilfe): [ANLEITUNG-ORACLE.md](ANLEITUNG-ORACLE.md)**
 
+### 2.18.0 – Chartmuster: Lernarchiv füllt sich selbst (Ursache der vielen „0/30 Fälle“)
+
+Der Dienst legt jetzt **alle** frisch bestätigten Chartmuster (auch gefilterte) im Lernarchiv ab, **wertet seine offenen Fälle nach 12 Kerzen selbst aus** und geht einmal je 12 Stunden und Markt den geladenen Kerzenverlauf „als ob live“ durch (nur Daten bis zum jeweiligen Zeitpunkt, kein Blick in die Zukunft). Vorher bekam das Archiv nur gemeldete Fälle ohne Ergebnis, deshalb standen bei den meisten Mustern „0/30 Fälle“. Chartmusterdienst 1.4.0: dasselbe in seinem Lernbestand. `GET /v1/patterns/status` nennt je Muster, Zeitrahmen und Richtung die Zahl der Fälle. Keine zusätzlichen Börsenabrufe. Details: [docs/DIENST-2.18.0-AENDERUNGEN.md](../docs/DIENST-2.18.0-AENDERUNGEN.md).
+
 ### 2.17.0 – Chartmuster: Trefferzählung je Muster statt je Coin
 
 Die Zeile „Erlernt“ in den Chartmuster-Meldungen zählt jetzt **je Muster, Intervall und Richtung über alle Coins** (Spot und Futures zusammen, derselbe Fall einmal) und zeigt die Zahl ab **30** abgeschlossenen Fällen (vorher je Coin ab 10). Darunter stehen der Bereich (95 %, gerechnet mit der Zahl der Zeitpunkte, weil Coins gemeinsam laufen), die Zahl des eigenen Coins (nur ab 30 eigenen Fällen) und – wenn der Dienst die Kerzen hat – ein Zufallsvergleich der letzten 250 Kerzen. Rechnung: `shared/pattern-knowledge.mjs` (wird mit dem Installer mitgeliefert). Nach dem Aktualisieren des Dienstes den Installer erneut ausführen.

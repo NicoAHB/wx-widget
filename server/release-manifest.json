@@ -1,11 +1,11 @@
 {
-  "version": "2.17.0",
+  "version": "2.18.0",
   "appVersion": "3.94.0",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
-      "sha256": "1d5d69caba068063c997cdc34e27959aaf6aee8aa8c8e3ed26fd4274d4f74186",
-      "bytes": 139425
+      "sha256": "390da4573a02cabeea56af54ff9fb23764373c2c2bf853f9abe6fe12daf2e170",
+      "bytes": 142772
     },
     {
       "path": "pattern-engine.mjs",
@@ -14,8 +14,8 @@
     },
     {
       "path": "pattern-monitor.mjs",
-      "sha256": "749238106cffa6f1f32c3cb896e65dc114b29dab66296ee729cba0799498d2ea",
-      "bytes": 7618
+      "sha256": "4b7d7286abedb8bc7b13dfeefd76e77de172da338655d8eb1dafe09922fd164c",
+      "bytes": 9632
     },
     {
       "path": "pattern-card.mjs",
@@ -44,8 +44,8 @@
     },
     {
       "path": "patterns-247.mjs",
-      "sha256": "fb63f3f2dc92ed995291e6dee3fe6f49364877d26ebc6f77e1f283346b8248e6",
-      "bytes": 19909
+      "sha256": "d1d14e157254aa1850c52aa402aab79202f275f2f1ea8bac6fe0f7d5a5960c69",
+      "bytes": 20694
     },
     {
       "path": "ki-monitor.mjs",

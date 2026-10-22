@@ -1,5 +1,7 @@
 # Tests für Scalp Desk
 
+**Dienst 2.18.0 Lernarchiv (Claude):** neu `unit-pattern-history` (Verlauf „als ob live“ findet wiederholte Formationen, kein Blick in die Zukunft, Ergebnisregel ±0,10 % nach 12 Kerzen, keine Doppelten, offene Fälle werden vom Dienst selbst ausgewertet, Neustart, Chartmusterdienst, Archivstatus je Muster, Wirkung auf die „Erlernt“-Zeile); `unit-vwap-explainer` (Dienstversion 2.18.0).
+
 **3.94.0 Start-Gerüst (Claude):** neu `m150` (Gerüst während des Aufbaus, Aufbau darunter unsichtbar, danach entfernt; Geometrie des Gerüsts liegt auf der echten Vorauswahl bei 390 / 820 / 1180 / 1366 px; anderer Bereich oder über 1400 px: kein Gerüst; Notbremse nach 6 s). Läuft mit `launch({ workspace: 'fresh' })` – der Standard-Harness ordnet die App in die alte Fixture-Ansicht um und taugt nicht für Layoutaussagen.
 
 **3.93.0 Kurs-Schild und Vorauswahl-Laden (Claude):** `unit-wl` für das gleichzeitige Laden angepasst (+6: Obergrenze 4, sofortiger Folgeabruf, kein Dauerabruf bei Fehler/veralteten Daten), neu `m149` (Vorauswahl lädt 2–4 Coins gleichzeitig und ist mit künstlicher Antwortzeit unter 6 s fertig, Spalten füllen sich; Tipp blendet das Kurs-Schild aus, Kurslinie bleibt, Raster kehrt zurück, Wiedererscheinen zur nächsten Minute, anderer Coin zeigt es sofort).

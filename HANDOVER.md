@@ -1,3 +1,12 @@
+## Dienst 2.18.0 / Chartmusterdienst 1.4.0 (Claude; App unverändert 3.94.0): „0 von 30 Fällen“ behoben – das Lernarchiv der Dienste füllt sich selbst
+
+- Ausführlich: [docs/DIENST-2.18.0-AENDERUNGEN.md](docs/DIENST-2.18.0-AENDERUNGEN.md).
+- **Anlass:** Telegram zeigte weiter oft „0 von 30 Fällen“ (z. B. bärische Flagge).
+- **Befund:** Nicht das Zählen (2.17.0), sondern das **leere Archiv**: Der Dienst legte nur gesendete Fälle ab, **wertete sie nie aus** (Ergebnis kam nur aus der App, und nur für Coins/Zeitrahmen, die der Nutzer angesehen hatte) und nutzte seine 540 Kerzen nie für die Vorgeschichte.
+- **Jetzt:** `patternHistory` (Kerzenfenster Kerze für Kerze zurückgesetzt = kein Blick in die Zukunft, Regelgüte ≥ 80 %, Ergebnis nach 12 Kerzen, Quelle „rekonstruiert“), offene Fälle werden selbst ausgewertet (`PatternArchive.resolve`), auch gefilterte Fälle kommen ins Archiv, Status je Muster. Einmal je 12 h und Markt, keine zusätzlichen Abrufe.
+- **Ehrlich:** Ob 30 Fälle erreicht werden, hängt von der Häufigkeit ab (seltene Muster mit sechs Coins: lange nicht). Optionen: Lernuniversum aus mehr Coins, Mindestzahl senken, längere Vorgeschichte, Zeile ausblenden – bewusst noch nicht entschieden.
+- **Offen:** Installer auf Oracle erneut ausführen (2.18.0, enthält 2.17.0). Test: `unit-pattern-history` (17).
+
 ## 3.94.0 / Dienst 2.17.0 (Claude): Start-Gerüst statt leerem Hintergrund
 
 - Ausführlich: [docs/3.94.0-AENDERUNGEN.md](docs/3.94.0-AENDERUNGEN.md).
