@@ -17,7 +17,9 @@ concurrency:
 
 jobs:
   gesamtlauf:
-    runs-on: ubuntu-latest
+    # 3.95.0: fest auf 24.04 – „ubuntu-latest“ zeigt inzwischen auf 26.04, und Playwright 1.56.1 installiert dort Chromium nicht
+    # ("Playwright does not support chromium on ubuntu26.04-x64"). Erst auf ein neueres Playwright wechseln, dann wieder latest.
+    runs-on: ubuntu-24.04
     timeout-minutes: 330
     env:
       TZ: UTC
