@@ -69,7 +69,11 @@ let pass=0,fail=0;const check=(name,ok,extra='')=>{ok?pass++:fail++;console.log(
     await page.evaluate(()=>__intervals.setMarket('BTCUSDT','1M'));await page.waitForFunction(()=>__g05.state.interval==='1M'&&__g05.state.loadedSymbol==='BTCUSDT'&&!__g05.state.busy);
     await page.selectOption('#chart-detail-resolution','1w');await page.locator('#chart').scrollIntoViewIfNeeded();await page.waitForFunction(()=>__chartDetail.state.iv==='1w'&&!__chartDetail.state.busy&&__chartDetail.state.candles.length>200&&document.querySelector('#chart .detail-candles'));
     check('Monatschart mit echten Montag-UTC-Wochen als Detailauflösung',await page.evaluate(()=>__chartDetail.state.candles.every((c,i,a)=>new Date(c.time).getUTCDay()===1&&(!i||c.time-a[i-1].time===604800000))));
-    check('Mehrjährige Detail-Zeitachse nennt auch das Jahr',await page.locator('#chart .axis-label').evaluateAll(nodes=>nodes.filter(n=>/^\d{2}\.\d{2}\.\d{2}$/.test(n.textContent)).length>=3));
+    // Standardansicht: 80 Wochenkerzen = rund 1,5 Jahre – „06.04.“ allein wäre mehrdeutig (3.95.0: Jahr dabei; bis 3.77.1 stand es dort, 3.77.2 verlor es)
+    check('Detail-Zeitachse über mehr als ein Jahr: Datum mit zweistelligem Jahr und Uhrzeit',await page.locator('#chart .chart-time-label').evaluateAll(nodes=>nodes.length>=2&&nodes.every(n=>/^\d{2}\.\d{2}\.\d{2} \d{2}:\d{2}$/.test(n.textContent))),await page.locator('#chart .chart-time-label').allTextContents());
+    await page.locator('#chart').focus();for(let i=0;i<4;i++)await page.keyboard.press('-');
+    await page.waitForFunction(()=>{const l=[...document.querySelectorAll('#chart .chart-time-label')].map(n=>n.textContent);return l.length>=2&&l.every(t=>/^\d{2}\.\d{2}\.\d{2} \d{2}:\d{2}$/.test(t));},null,{timeout:8000}).catch(()=>{});
+    check('Mehrjährige Detail-Zeitachse nennt auch das Jahr',await page.locator('#chart .chart-time-label').evaluateAll(nodes=>nodes.length>=2&&nodes.every(n=>/^\d{2}\.\d{2}\.\d{2} \d{2}:\d{2}$/.test(n.textContent))&&new Set(nodes.map(n=>n.textContent.slice(6,8))).size>=2),await page.locator('#chart .chart-time-label').allTextContents());
     await page.selectOption('#chart-detail-resolution','');
     // Tatsächliche pat-1-Erkennung: Ascending-Triangle-Fixture erzeugt mehrere verschiedene Formationen.
     const src=fs.readFileSync(__dirname+'/m58.js','utf8'),B=vm.runInNewContext(src.slice(src.indexOf('const BUILD = () => {'),src.indexOf('\nconst tests = {'))+'\nBUILD()'),shape=B.path(B.F.asc_triangle),ms=3600000,base=Math.floor(Date.now()/ms)*ms-500*ms;

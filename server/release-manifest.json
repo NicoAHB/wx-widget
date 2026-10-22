@@ -1,6 +1,6 @@
 {
   "version": "2.18.0",
-  "appVersion": "3.94.0",
+  "appVersion": "3.95.0",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
@@ -294,8 +294,8 @@
     },
     {
       "path": "shared/chart-time-axis.mjs",
-      "sha256": "cd85877611559fc39cbe87235510d5d66616a87507e47af6f33127927b0d087b",
-      "bytes": 2382
+      "sha256": "6c9fc3d2854db0ddfda6c4cb48d255a83cc0e157254b8f1514e58f1a76fd2ad3",
+      "bytes": 2949
     },
     {
       "path": "shared/confluence-core.mjs",

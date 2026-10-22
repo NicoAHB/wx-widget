@@ -1,6 +1,6 @@
 // G13: nur vollständig geladene/geprüfte Modulbündel aktivieren. Nutzerdaten nie löschen.
-const VERSION = '3.94.0';
-const BUILD_ID = '482919dc74ffda4b';
+const VERSION = '3.95.0';
+const BUILD_ID = 'c3e1bdaeac99a2aa';
 const CACHE = 'scalpdesk-' + VERSION + '-' + BUILD_ID;
 const scope = self.registration.scope;
 const absolute = path => new URL(path, scope).href;

@@ -5,6 +5,10 @@ export function chartTimeTicks(rows, { intervalMs, x, left, right, measure = tex
   if (!rows.length || right <= left) return [];
   const day = time => displayTimeParts(time)?.day;
   const hourly = intervalMs >= 36e5, candidates = new Map();
+  // 3.95.0: Das Jahr (zweistellig) steht dabei, sobald die sichtbare Spanne ein Jahr erreicht oder die Kerzen Monate lang sind – sonst wäre „06.04.“ über mehrere
+  // Jahre nicht eindeutig (bis 3.77.1 stand es dort, die Umstellung auf diese Achse hatte es verloren; m92 meldete das seither).
+  const multiYear = Number.isFinite(rows.at(-1)?.time) && Number.isFinite(rows[0]?.time) && (rows.at(-1).time - rows[0].time >= 365 * 864e5 || intervalMs >= 28 * 864e5);
+  const dayText = date => multiYear ? date.day.slice(0, 6) + date.day.slice(8) : date.day.slice(0, 6);
   const add = (index, priority) => {
     if (!Number.isFinite(rows[index]?.time)) return;
     const old = candidates.get(index);
@@ -13,7 +17,7 @@ export function chartTimeTicks(rows, { intervalMs, x, left, right, measure = tex
     // Doppelte Stunde bei der Rückstellung (25.10.: 02:00–02:59 gibt es als MESZ und als MEZ): jeder Tick in dieser Stunde bekommt die Zone,
     // nicht nur der erste nach der Umstellung – sonst liefe die Achse ohne Kennzeichnung rückwärts.
     const twin = displayTimeParts(rows[index].time + (date.zone === 'MEZ' ? -36e5 : 36e5)), repeatedHour = !!twin && twin.clock === date.clock && twin.day === date.day;
-    const label = (hourly || dayChange ? date.day.slice(0, 6) + ' ' : '') + date.clock + (repeatedHour ? ' ' + date.zone : '');
+    const label = (hourly || dayChange ? dayText(date) + ' ' : '') + date.clock + (repeatedHour ? ' ' + date.zone : '');
     const width = measure(label);
     if (width > right - left) return;
     const position = Math.max(left + width / 2, Math.min(right - width / 2, x(index)));

@@ -185,13 +185,14 @@ export function patternCardSvg(m, { preview = false } = {}) {
     if (st) { out.push(T(Rr, y + 62, m.now.label, { size: 32, weight: 800, fill: col, anchor: 'end' })); if (m.now.detail) out.push(T(Rr, y + 102, m.now.detail, { size: 26, weight: 500, fill: C.soft, anchor: 'end' })); }
     y += jh + 24;
   }
-  // 2) Musterqualität (neutral blau, keine Erfolgswahrscheinlichkeit), Erlernt erst ab 10 Fällen mit Zahl
-  const qh = 150 + (m.learned ? 44 : 0);
+  // 2) Musterqualität (neutral blau, keine Erfolgswahrscheinlichkeit), Erlernt je Muster erst ab 30 Fällen mit Zahl, darunter Bereich, Coin-Zahl und Zufallsvergleich
+  const more = m.learned ? m.learnedMore || [] : [], qh = 150 + (m.learned ? 44 : 0) + (more.length ? more.length * 38 + 18 : 0);
   out.push(R(X, y, Wp, qh, 24, C.panel, C.line, 2), T(L, y + 58, 'MUSTERQUALITÄT', { size: 26, weight: 700, fill: C.label, spacing: 3 }));
   out.push(T(Rr, y + 64, m.quality, { size: na(m.quality) ? 32 : 48, weight: na(m.quality) ? 600 : 800, fill: na(m.quality) ? C.muted : C.text, anchor: 'end' }));
   out.push(R(L, y + 84, Rr - L, 18, 9, C.track)); if (m.qualityBar !== null) out.push(R(L, y + 84, n1(Math.max(18, (Rr - L) * m.qualityBar / 100)), 18, 9, C.blue));
   out.push(T(L, y + 136, m.qualityNote, { size: fitSize(m.qualityNote, 26, 500, Rr - L, 20), weight: 500, fill: C.soft }));
   if (m.learned) { const t = `Erlernt: ${m.learned}.`; out.push(T(L, y + 178, t, { size: fitSize(t, 26, 500, Rr - L, 20), weight: 500, fill: C.soft })); }
+  more.forEach((t, i) => out.push(T(L, y + 216 + i * 38, t, { size: fitSize(t, 24, 500, Rr - L, 18), weight: 500, fill: C.muted })));
   y += qh;
   // 6) Fuß: Hinweis klein, Zeitstempel mit Datum und Modell
   const H = y + 88, foot = `${m.time} · Modell ${m.model}`;

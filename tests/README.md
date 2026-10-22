@@ -1,5 +1,7 @@
 # Tests für Scalp Desk
 
+**3.95.0 Zeitachse mit Jahr (Claude):** `unit-chart-time-axis` (31) prüft das zweistellige Jahr bei Spanne ≥ 365 Tage oder Monatskerzen, keins darunter, „01.01. 00:00“ bei kurzen Zeitrahmen und Passen in die Fläche (Toleranz 1e-9); `m92` (43) fasst die Jahr-Prüfung neu (Standardansicht und nach viermal „–“, alle Marken mit Jahr, mindestens zwei Jahre). `harness.js` nennt bei `EACCES` den Grund (Port 443). Der Mock braucht Port 443: lokal als root, im Nachtlauf per `net.ipv4.ip_unprivileged_port_start=0`.
+
 **Dienst 2.18.0 Lernarchiv (Claude):** neu `unit-pattern-history` (Verlauf „als ob live“ findet wiederholte Formationen, kein Blick in die Zukunft, Ergebnisregel ±0,10 % nach 12 Kerzen, keine Doppelten, offene Fälle werden vom Dienst selbst ausgewertet, Neustart, Chartmusterdienst, Archivstatus je Muster, Wirkung auf die „Erlernt“-Zeile); `unit-vwap-explainer` (Dienstversion 2.18.0).
 
 **3.94.0 Start-Gerüst (Claude):** neu `m150` (Gerüst während des Aufbaus, Aufbau darunter unsichtbar, danach entfernt; Geometrie des Gerüsts liegt auf der echten Vorauswahl bei 390 / 820 / 1180 / 1366 px; anderer Bereich oder über 1400 px: kein Gerüst; Notbremse nach 6 s). Läuft mit `launch({ workspace: 'fresh' })` – der Standard-Harness ordnet die App in die alte Fixture-Ansicht um und taugt nicht für Layoutaussagen.
