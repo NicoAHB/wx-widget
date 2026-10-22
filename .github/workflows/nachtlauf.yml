@@ -38,6 +38,12 @@ jobs:
           npm install --prefix tests --no-save --no-audit --no-fund playwright@1.56.1
           npx --prefix tests playwright install --with-deps chromium
 
+      # 3.95.0: Der Binance-Mock (tests/mock-binance.js) und die Telegram-Attrappe des Installertests lauschen auf Port 443. Der
+      # Runner-Benutzer darf das nicht (EACCES) – dann endete jeder Browser-Test sofort mit „mock exited 1“ und der Rest hing
+      # bis zum Zeitlimit. Lokal laufen die Tests als root; hier wird der Port für alle Benutzer freigegeben.
+      - name: Port 443 für den Testserver freigeben
+        run: sudo sysctl -w net.ipv4.ip_unprivileged_port_start=0
+
       - name: Gesamtlauf
         run: |
           set -o pipefail

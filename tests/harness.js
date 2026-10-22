@@ -20,8 +20,10 @@ function startMock() {
   return new Promise((resolve, reject) => {
     mock = spawn('node', [path.join(__dirname, 'mock-binance.js')], { stdio: ['ignore', 'pipe', 'pipe'] });
     mock.stdout.on('data', d => { if (String(d).includes('mock ready')) resolve(); });
-    mock.stderr.on('data', d => process.stderr.write('[mock] ' + d));
-    mock.on('exit', c => reject(new Error('mock exited ' + c)));
+    let errText = '';
+    mock.stderr.on('data', d => { errText += d; process.stderr.write('[mock] ' + d); });
+    // Ohne Rechte für Port 443 (EACCES, z. B. Runner-Benutzer) steht der Grund sonst nur im verworfenen Fehlerstrom.
+    mock.on('exit', c => reject(new Error('mock exited ' + c + (/EACCES/.test(errText) ? ' – keine Berechtigung (EACCES), meist Port 443: als root starten oder net.ipv4.ip_unprivileged_port_start=0 setzen' : ''))));
   });
 }
 const ctl = async (p) => { const r = await fetch('http://127.0.0.1:8790' + p); return r.json(); };
