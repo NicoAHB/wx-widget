@@ -1,5 +1,6 @@
 // AMD (3.90.0): Anzeige – Statuskarte, Einstellungen und Chart-Zeichnung. Keine Handels- oder Signalregel (siehe amd-core.mjs).
 import { AMD, AMD_INTERVALS, AMD_STAGE_NAMES, amdOptions } from './amd-core.mjs';
+import { AMD_REVIEW, runAmdReview } from './amd-review.mjs';
 
 const BLUE = '#4aa8ff', GREY = '#8a93a3', INK = '#10151c';
 const de = (v, digits = 2) => Number.isFinite(v) ? v.toLocaleString('de-DE', { maximumFractionDigits: digits }) : '–';
@@ -64,11 +65,45 @@ export function createAmdTools({ root, getOptions, setOptions, services = {} }) 
     input.addEventListener('change', () => { setOptions({ ...getOptions(), [key]: Number(String(input.value).replace(',', '.')) }); paint(); });
     row.append(make(d, 'span', '', label), input); fields.append(row); inputs.set(key, input);
   }
-  box.append(make(d, 'p', 'analysis-hint', 'Zeitrahmen der Analyse (gilt für alle Coins der Vorauswahl):'), bar, fields, make(d, 'p', 'analysis-hint amd-rules', AMD_RULES));
+  // Rückblick: zählt für die Vorauswahl-Coins, wie oft in den letzten 30 Tagen eine Range, ein Durchbruch und eine Bestätigung vorkamen
+  const actions = make(d, 'div', 'amd-review-actions'), start = make(d, 'button', 'button ghost', `Rückblick · letzte ${AMD_REVIEW.days} Tage`), cancel = make(d, 'button', 'button ghost', 'Abbrechen'), note = make(d, 'p', 'analysis-hint'), report = make(d, 'div', 'amd-review-report');
+  start.type = cancel.type = 'button'; start.dataset.amdReview = ''; cancel.hidden = true; note.setAttribute('role', 'status'); note.textContent = 'Der Rückblick zählt für alle Coins der Vorauswahl, wie oft die Regeln im letzten Monat angeschlagen hätten – bei mehreren Rangehöhen nebeneinander. Er sendet nichts.'; actions.append(start, cancel);
+  box.append(make(d, 'p', 'analysis-hint', 'Zeitrahmen der Analyse (gilt für alle Coins der Vorauswahl):'), bar, fields, actions, note, report, make(d, 'p', 'analysis-hint amd-rules', AMD_RULES));
+  let controller = null, last = null, shownFor = null;
+  const sum = (c, key) => c[key] ?? 0, plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+  function line(c) { return `${plural(sum(c, 'accumulations'), 'Accumulation', 'Accumulationen')} · ${plural(sum(c, 'manipulations'), 'Manipulation', 'Manipulationen')} · ${sum(c, 'closedInside')} mit Schluss in der Range · ${sum(c, 'confirmed')} bestätigt · ${sum(c, 'reported')} gemeldet${sum(c, 'filtered') ? ` (${sum(c, 'filtered')} mit CRV unter dem Mindestwert)` : ''}`; }
+  function paintReport() {
+    report.replaceChildren(); if (!last) return;
+    const o = amdOptions(getOptions()); shownFor = o.maxHeightAtr;
+    report.append(make(d, 'p', 'analysis-hint', `Letzte ${last.days} Tage · ${last.interval} · ${last.checked}/${last.coins} Coins${last.minuteCheck ? ` · ${last.windows} Minutenfenster für den 1m-Strukturbruch` : ' · ohne 1m-Prüfung (Zeitrahmen zu groß): bestätigt wird hier nicht gezählt'} · gemeldet = CRV ab 1:${(last.minRR).toLocaleString('de-DE')}`));
+    for (const level of last.levels) {
+      const current = level === o.maxHeightAtr, card = make(d, 'div', 'amd-review-level'), c = last.total[level], head = make(d, 'strong', '', `Rangehöhe bis ${level.toLocaleString('de-DE')} × ATR${current ? ' · eingestellt' : ''}`);
+      card.dataset.amdLevel = String(level); card.dataset.current = String(current); card.append(head, make(d, 'span', '', line(c)));
+      if (!current) { const adopt = make(d, 'button', 'chip-tool', 'Übernehmen'); adopt.type = 'button'; adopt.dataset.amdAdopt = String(level); adopt.addEventListener('click', () => { setOptions({ ...getOptions(), maxHeightAtr: level }); paint(); paintReport(); }); card.append(adopt); }
+      report.append(card);
+    }
+    const now = last.total[o.maxHeightAtr];
+    if (now && !now.manipulations) report.append(make(d, 'p', 'analysis-hint', 'Mit der eingestellten Rangehöhe gab es im Rückblick keinen einzigen Durchbruch: Sie ist zu streng. Eine Stufe mit Treffern lässt sich mit „Übernehmen“ einstellen.'));
+    const per = make(d, 'details', 'amd-review-coins'); per.append(make(d, 'summary', '', 'Je Coin (eingestellte Rangehöhe)'));
+    for (const coin of last.perCoin) per.append(make(d, 'p', 'analysis-hint', `${coin.symbol.replace(/USDT$/, '')}: ${line(coin.cells[o.maxHeightAtr] || coin.cells[last.levels[0]] || {})}`));
+    report.append(per);
+    if (last.errors.length) { const bad = make(d, 'details', 'amd-review-errors'); bad.append(make(d, 'summary', '', `${last.errors.length} Datenfehler`)); for (const e of last.errors.slice(0, 30)) bad.append(make(d, 'p', 'analysis-hint', `${e.symbol}: ${e.text}`)); report.append(bad); }
+  }
+  cancel.addEventListener('click', () => controller?.abort());
+  start.addEventListener('click', async () => {
+    if (controller) return;
+    if (!services.available?.() || !services.history || !services.symbols) { note.textContent = 'Für den Rückblick die App aktiv, online und ungepaust lassen.'; return; }
+    const o = amdOptions(getOptions()); controller = new AbortController(); start.disabled = true; cancel.hidden = false; note.textContent = 'Kerzen der letzten 30 Tage werden geladen …';
+    try {
+      last = await runAmdReview({ symbols: services.symbols(), history: services.history, now: services.now(), interval: o.interval, thresholds: [...AMD_REVIEW.thresholds, o.maxHeightAtr], minRR: o.minRR, signal: controller.signal, progress: p => { note.textContent = `${p.checked}/${p.total} Coins · ${p.symbol.replace(/USDT$/, '')} · ${p.step === '1m' ? '1m-Fenster' : 'Kerzen'} …`; } });
+      note.textContent = `Rückblick fertig: ${last.checked}/${last.coins} Coins geprüft. Nichts wurde gesendet oder gespeichert.`; paintReport();
+    } catch (error) { note.textContent = controller.signal.aborted ? 'Rückblick abgebrochen.' : error.message; } finally { controller = null; start.disabled = false; cancel.hidden = true; }
+  });
   function paint() {
     const o = amdOptions(getOptions());
     for (const [id, b] of buttons) { b.classList.toggle('active', id === o.interval); b.setAttribute('aria-pressed', String(id === o.interval)); }
     for (const [key, input] of inputs) if (d.activeElement !== input) input.value = String(o[key]);
+    if (last && shownFor !== o.maxHeightAtr) paintReport();
   }
   paint();
   return { paint };
@@ -76,7 +111,7 @@ export function createAmdTools({ root, getOptions, setOptions, services = {} }) 
 
 // Zeichnung im Hauptchart: blaue Accumulation, rote Manipulation, grüne/rote Distribution; ungültige Abläufe grau
 export function drawAmdChart({ node, svg, under, over, result: r, geometry: g, palette: p, price, explain }) {
-  const { left, pw, top, bottom, min, max, timeX, y, x } = g, right = left + pw, half = Number.isFinite(x(1) - x(0)) ? Math.abs(x(1) - x(0)) / 2 : 0;
+  const { left, pw, top, bottom, min, max, timeX, y, x } = g, right = left + pw, labelRight = Math.min(right - 4, (Number.isFinite(g.rx) ? g.rx : right) - 2), half = Number.isFinite(x(1) - x(0)) ? Math.abs(x(1) - x(0)) / 2 : 0;
   const back = node('g', { class: 'analysis-chart amd-chart' }), front = node('g', { class: 'analysis-chart amd-chart' }); under.append(back); over.append(front);
   const e0 = r?.current, iv = r?.interval || AMD.defaultInterval, o = r?.options || amdOptions();
   const state = r?.phase === 'signal' ? `${r.direction === 1 ? 'Long' : 'Short'} bestätigt` : r?.ready ? BADGES[r.phase] || 'AMD' : 'Daten fehlen';
@@ -104,7 +139,7 @@ export function drawAmdChart({ node, svg, under, over, result: r, geometry: g, p
   function line(value, x0, x1, col, kind, label, dash = '6 4') {
     if (!(x1 - x0 >= 1) || value > max || value < min) return;
     const yy = y(value); front.append(node('line', { x1: x0, x2: x1, y1: yy, y2: yy, stroke: col, 'stroke-width': 1.1, 'stroke-dasharray': dash, 'stroke-opacity': .85, 'pointer-events': 'none', class: 'amd-line', 'data-amd-line': kind }));
-    if (label) text(Math.min(right - 4, x1 - 2), yy - 3, `${label} ${price(value)}`, col, 'amd-line-label', 'end', 9);
+    if (label) text(Math.min(labelRight, x1 - 2), yy - 3, `${label} ${price(value)}`, col, 'amd-line-label', 'end', 9);   // links vom Preisband und der Kurs-Marke
   }
   const episodes = r?.episodes || [];
   for (const e of episodes) {

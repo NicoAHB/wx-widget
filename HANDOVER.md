@@ -1,3 +1,12 @@
+## 3.95.0 (Claude; Dienst unverändert 2.18.0): Jahreszahl in der Zeitachse, Nachtlauf repariert
+
+- Ausführlich: [docs/3.95.0-AENDERUNGEN.md](docs/3.95.0-AENDERUNGEN.md).
+- **Anlass:** „m92 prüfen“ (Prüfung „Mehrjährige Detail-Zeitachse nennt auch das Jahr“ rot).
+- **Befund 1 (echter Fehler):** Die Achse `shared/chart-time-axis.mjs` verlor mit 3.77.2 das zweistellige Jahr. **Jetzt:** Jahr (`dd.mm.yy HH:MM`) bei sichtbarer Spanne ≥ 365 Tage oder Kerzen ≥ 28 Tage, sonst wie bisher `dd.mm. HH:MM`. Tests: `unit-chart-time-axis` (31), `m92` (43, Prüfung neu gefasst: Standardansicht und weiter herausgezoomt), Fließkomma-Toleranz in der Randprüfung.
+- **Befund 2 (Nachtlauf nie wirklich gelaufen):** Der Mock lauscht auf Port 443; der Runner-Benutzer darf das nicht (`EACCES`) → fast alle Browser-Tests „mock exited 1“, ein Dutzend hing je 10 Minuten, `inst-247` nur 16/37. **Jetzt:** Schritt `sudo sysctl -w net.ipv4.ip_unprivileged_port_start=0` in `nachtlauf.yml`, klarere Fehlermeldung in `tests/harness.js`. Nachgestellt (Nicht-Root mit/ohne Freigabe), aber **ein echter Nachtlauf mit der Änderung steht aus** – erste echte Browser-Fehler dort (z. B. `m6`, schlägt auch lokal auf unverändertem `main` fehl) wären älter als diese Änderung.
+- **Offen:** Nachtlauf von Hand starten oder den nächsten abwarten und die Ergebnisse prüfen (AGENTS.md: roter Nachtlauf = erster Auftrag). Oracle-Installer für 2.18.0 (Nutzer). iPad-PWA ganz neu öffnen.
+- Tests: geändert `unit-chart-time-axis`, `m92`; geprüft `m4`, `m12`, `m27`, `m125`, `m128`. App **3.95.0**, Dienst **2.18.0**.
+
 ## Dienst 2.18.0 / Chartmusterdienst 1.4.0 (Claude; App unverändert 3.94.0): „0 von 30 Fällen“ behoben – das Lernarchiv der Dienste füllt sich selbst
 
 - Ausführlich: [docs/DIENST-2.18.0-AENDERUNGEN.md](docs/DIENST-2.18.0-AENDERUNGEN.md).
