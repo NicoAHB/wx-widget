@@ -1,4 +1,4 @@
-## 3.96.0: POC-Preis und sichtbarer Zeitraum im Chart (zur Prüfung, nicht veröffentlicht)
+## 3.96.0: POC-Preis und sichtbarer Zeitraum im Chart
 
 - Ausgangspunkt: `main` / 3.95.0 (`d6158ca`), Dienst unverändert 2.18.0.
 - Ergänzt: Preis neben POC, tatsächliche Abdeckung der sichtbaren Kerzen (auch Detail-Kerzen); Antippen blendet nur die Beschriftung bis zur nächsten Server-Minute aus. POC-Linie, Profilrechnung und Live-Kursschild bleiben unabhängig.
@@ -7,7 +7,7 @@
 - Ein beim Entwickeln durch die POC-Tippfläche ausgelöster Gestenkonflikt wurde durch durchgängige Pointer-Ereignisse behoben. `m110` prüft die Kerzenauswahl auf freier Chartfläche, `m151` zusätzlich ausdrücklich das Wischen ab der POC-Beschriftung; `m4` findet die goldene Linie unabhängig von verschobener Beschriftung. Keine Prüfung gestrichen oder übersprungen.
 - Prüfung des letzten Nachtlaufs 39886067565: bereits auf dem unveränderten Ausgangsstand fehlgeschlagen (u. a. m145, m131, m112, m91, m79, m64, m58, m57, m52, m28, m16, m9 und ui). Kein grüner Gesamtlauf behauptet; dieser Auftrag bleibt auf die POC-Anzeige begrenzt.
 - Dokumentation: [docs/3.96.0-AENDERUNGEN.md](docs/3.96.0-AENDERUNGEN.md), Testeintrag und Registrierung beider neuer Tests in `run-all.sh`. Bündel erzeugt, unbenutztes 3.91.0 nach Aufräumregel entfernt. Der Dienst bleibt **2.18.0**, kein Oracle-Update nötig.
-- Offen: Prüfung auf echtem iPhone/Safari und Freigabe zur Veröffentlichung. Kein lokaler Gesamtlauf beauftragt; nicht zusammenführen oder online stellen.
+- Veröffentlichung am 23.10.2026 vom Nutzer ausdrücklich freigegeben; Bereitstellung über PR #180 nach erfolgreichen automatischen PR-Prüfungen. Offen: Prüfung auf echtem iPhone/Safari. Kein lokaler Gesamtlauf beauftragt.
 
 ## 3.95.0 (Claude; Dienst unverändert 2.18.0): Jahreszahl in der Zeitachse, Nachtlauf repariert
 
