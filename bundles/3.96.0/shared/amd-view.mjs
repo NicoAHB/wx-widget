@@ -111,7 +111,7 @@ export function createAmdTools({ root, getOptions, setOptions, services = {} }) 
 
 // Zeichnung im Hauptchart: blaue Accumulation, rote Manipulation, grüne/rote Distribution; ungültige Abläufe grau
 export function drawAmdChart({ node, svg, under, over, result: r, geometry: g, palette: p, price, explain }) {
-  const { left, pw, top, bottom, min, max, timeX, y, x } = g, right = left + pw, half = Number.isFinite(x(1) - x(0)) ? Math.abs(x(1) - x(0)) / 2 : 0;
+  const { left, pw, top, bottom, min, max, timeX, y, x } = g, right = left + pw, labelRight = Math.min(right - 4, (Number.isFinite(g.rx) ? g.rx : right) - 2), half = Number.isFinite(x(1) - x(0)) ? Math.abs(x(1) - x(0)) / 2 : 0;
   const back = node('g', { class: 'analysis-chart amd-chart' }), front = node('g', { class: 'analysis-chart amd-chart' }); under.append(back); over.append(front);
   const e0 = r?.current, iv = r?.interval || AMD.defaultInterval, o = r?.options || amdOptions();
   const state = r?.phase === 'signal' ? `${r.direction === 1 ? 'Long' : 'Short'} bestätigt` : r?.ready ? BADGES[r.phase] || 'AMD' : 'Daten fehlen';
@@ -139,7 +139,7 @@ export function drawAmdChart({ node, svg, under, over, result: r, geometry: g, p
   function line(value, x0, x1, col, kind, label, dash = '6 4') {
     if (!(x1 - x0 >= 1) || value > max || value < min) return;
     const yy = y(value); front.append(node('line', { x1: x0, x2: x1, y1: yy, y2: yy, stroke: col, 'stroke-width': 1.1, 'stroke-dasharray': dash, 'stroke-opacity': .85, 'pointer-events': 'none', class: 'amd-line', 'data-amd-line': kind }));
-    if (label) text(Math.min(right - 4, x1 - 2), yy - 3, `${label} ${price(value)}`, col, 'amd-line-label', 'end', 9);
+    if (label) text(Math.min(labelRight, x1 - 2), yy - 3, `${label} ${price(value)}`, col, 'amd-line-label', 'end', 9);   // links vom Preisband und der Kurs-Marke
   }
   const episodes = r?.episodes || [];
   for (const e of episodes) {

@@ -16,7 +16,7 @@ const phone = () => ({ viewport: { width: 390, height: 844 }, hasTouch: true, is
 // Bildschirmkoordinaten einer waagrechten Chart-Linie, erkannt an ihrer Beschriftung (SVG-Koordinaten → Client)
 const lineAt = (page, label, dy = 5) => page.evaluate(([label, dy]) => {
   const svg = document.querySelector('#chart svg'), t = [...svg.querySelectorAll('text')].find(x => x.textContent.startsWith(label)); if (!t) return null;
-  const r = svg.getBoundingClientRect(), vb = svg.viewBox.baseVal, y = Number(t.getAttribute('y')) + dy;
+  const r = svg.getBoundingClientRect(), vb = svg.viewBox.baseVal, y = label === 'POC' && svg.querySelector('.poc-line') ? Number(svg.querySelector('.poc-line').getAttribute('y1')) : Number(t.getAttribute('y')) + dy;
   return { x: r.left + r.width * 0.45, y: r.top + y * r.height / vb.height };
 }, [label, dy]);
 // Der geprüfte Hauptchart ist Spot. Zusätzliche Futures-Historien und der unabhängige
