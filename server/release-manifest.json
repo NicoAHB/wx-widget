@@ -1,6 +1,6 @@
 {
   "version": "2.18.0",
-  "appVersion": "3.95.0",
+  "appVersion": "3.96.0",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
@@ -291,6 +291,11 @@
       "path": "shared/chart-pattern-quality.mjs",
       "sha256": "4a9c5525927f491d83d0661cfe5011b31bdb9c563234067932e1837163cfa288",
       "bytes": 10681
+    },
+    {
+      "path": "shared/chart-poc.mjs",
+      "sha256": "c43f19adfa36fd134913cdb855dd34523fbe342ee09e4daeaa9e3488e0847fff",
+      "bytes": 1199
     },
     {
       "path": "shared/chart-time-axis.mjs",

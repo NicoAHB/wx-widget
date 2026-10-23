@@ -65,7 +65,7 @@ export function formatMessage(type, d = {}) {
       m.grade ? `${m.grade.icon} <b>${m.grade.label} ${escapeTelegram(m.score)}</b> · Trend ${ok(m.trend)} · Volumen ${ok(m.volume)} · Chance/Risiko ${m.rr ? `${ok(m.rrOk)} ${escapeTelegram(m.rr)}` : '–'}` : m.rr ? `⚖️ Chance/Risiko: ${escapeTelegram(m.rr)}` : ''],
     [na(m.entry) ? '' : `💰 Einstieg: <code>${escapeTelegram(m.entry)}</code>`, na(m.target) ? '' : `🎯 Ziel: <b>${escapeTelegram(m.target)}</b>${m.targetPct ? ' (' + escapeTelegram(m.targetPct) + ')' : ''}`,
       na(m.stop) ? '' : `🛑 Stop: <code>${escapeTelegram(m.stop)}</code>${m.stopPct ? ' (' + escapeTelegram(m.stopPct) + ')' : ''}`, m.stopTight ? `⚠️ ${escapeTelegram(m.stopTight)}` : '', nowLine],
-    [na(m.quality) ? '' : `🧠 Musterqualität: ${escapeTelegram(m.quality)} · keine Erfolgswahrscheinlichkeit`, m.learned ? `📚 Erlernt: ${escapeTelegram(m.learned)}` : '',
+    [na(m.quality) ? '' : `🧠 Musterqualität: ${escapeTelegram(m.quality)} · keine Erfolgswahrscheinlichkeit`, m.learned ? `📚 Erlernt: ${escapeTelegram(m.learned)}` : '', ...(m.learnedMore || []).map(t => `↳ ${escapeTelegram(t)}`),
       `<i>${escapeTelegram(m.hint)}</i>`, na(m.model) ? '' : 'Modell · Datum: ' + escapeTelegram(m.model)]];
   } else if (type === 'alarm') {
     const distance = finite(d.price) && finite(d.level) ? d.price - d.level : null;
@@ -162,11 +162,16 @@ export function patternSignalModel(d = {}, { now = d.now ?? d.at, timezone = d.t
   const left = finite(until) && finite(now) && step ? Math.max(0, Math.ceil((until - now) / step)) : null;
   const longWindow = finite(until) && step >= 864e5 / 2, untilText = finite(until) ? stamp(until, timezone, longWindow ? { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' } : { hour: '2-digit', minute: '2-digit' }).replace(', ', ' ') : null;
   const detail = !finite(until) ? '' : expired ? `seit ${untilText}` : `bis ${untilText}${left !== null ? ` · noch ${left} ${left === 1 ? 'Kerze' : 'Kerzen'}` : ''}`;
-  // Erlernt: Zahl erst ab 10 abgeschlossenen Fällen
-  const L = d.learned || null; let learned = null;
+  // Erlernt (3.92.0): Zahl je MUSTER über alle Coins (ab 30 Fällen; shared/pattern-knowledge.mjs) – darunter Bereich, Coin-Zahl und Zufallsvergleich
+  const L = d.learned || null, pctOf = v => `${telegramNumber(v * 100, 0)} %`, plural = (n, one, many) => `${telegramNumber(n, 0)} ${n === 1 ? one : many}`; let learned = null; const learnedMore = [];
   if (L) {
-    const n = L.total ?? L.n, yes = sign > 0 ? L.up ?? L.auf : sign < 0 ? L.down ?? L.ab : null, min = L.minimum ?? 10;
-    learned = finite(n) && n >= min && finite(yes) ? `${telegramNumber(yes, 0)}/${telegramNumber(n, 0)} Fälle in Musterrichtung${value(L.source) ? ` (${L.source})` : ''}` : `noch nicht bewertet (${telegramNumber(Math.min(min, finite(n) ? n : finite(L.available) ? L.available : 0), 0)}/${telegramNumber(min, 0)} Fälle)`;
+    const n = L.total ?? L.n, yes = finite(L.yes) ? L.yes : sign > 0 ? L.up ?? L.auf : sign < 0 ? L.down ?? L.ab : null, min = L.minimum ?? 30;
+    if (finite(n) && n >= min && finite(yes)) {
+      learned = [`${telegramNumber(yes, 0)}/${telegramNumber(n, 0)} Fälle in Musterrichtung (${pctOf(yes / n)})`, value(L.scope) ? L.scope : '', value(L.source) ? L.source : ''].filter(Boolean).join(' · ');
+      if (finite(L.lo) && finite(L.hi) && finite(L.moments)) learnedMore.push(`Bereich ${telegramNumber(L.lo * 100, 0)}–${telegramNumber(L.hi * 100, 0)} % (${plural(L.moments, 'Zeitpunkt', 'Zeitpunkte')}${finite(L.coins) ? `, ${plural(L.coins, 'Coin', 'Coins')}` : ''})`);
+      const extra = [L.coin && finite(L.coin.n) && finite(L.coin.yes) ? `Dieser Coin: ${telegramNumber(L.coin.yes, 0)}/${telegramNumber(L.coin.n, 0)}` : '', L.base && finite(L.base.rate) ? `Ohne Muster: ${pctOf(L.base.rate)} (letzte ${telegramNumber(L.base.n, 0)} Kerzen)` : ''].filter(Boolean);
+      if (extra.length) learnedMore.push(extra.join(' · '));
+    } else learned = `noch nicht bewertet (${telegramNumber(Math.min(min, finite(n) ? n : finite(L.available) ? L.available : 0), 0)}/${telegramNumber(min, 0)} Fälle dieses Musters)`;
   }
   const status = value(d.status) ? String(d.status) : null, at = finite(d.at) ? d.at : null;
   return {
@@ -178,7 +183,7 @@ export function patternSignalModel(d = {}, { now = d.now ?? d.at, timezone = d.t
     stopTight: finite(d.atr) && d.atr > 0 && risk !== null && risk < d.atr ? `Stop enger als normale Schwankung (ATR 14: ${telegramNumber(d.atr, priceDigits(entry))} USD)` : null,
     now: { state, price: money(price), dist: finite(dist) ? telegramPercent(dist) : null, label: { valid: 'Einstieg gültig', missed: 'Einstieg verpasst', expired: 'Einstieg abgelaufen' }[state] || '', detail, until: finite(until) ? until : null, left },
     quality: finite(d.quality) ? telegramNumber(d.quality, Number.isInteger(d.quality) ? 0 : 2) + ' %' : PATTERN_NA, qualityBar: finite(d.quality) ? Math.max(0, Math.min(100, d.quality)) : null,
-    qualityNote: 'Wie sauber das Muster ist, keine Erfolgswahrscheinlichkeit.', learned,
+    qualityNote: 'Wie sauber das Muster ist, keine Erfolgswahrscheinlichkeit.', learned, learnedMore,
     hint: 'Kursrichtung ≠ Zieltreffer', time: at !== null ? stamp(at, timezone, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }).replace(', ', ' · ') : PATTERN_NA,
     model: value(d.model) ? String(d.model) : PATTERN_NA,
     levels: { entry, target, stop, price }, chart: d.chart || null

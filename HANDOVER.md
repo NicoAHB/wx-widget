@@ -1,3 +1,14 @@
+## 3.96.0: POC-Preis und sichtbarer Zeitraum im Chart
+
+- Ausgangspunkt: `main` / 3.95.0 (`d6158ca`), Dienst unverändert 2.18.0.
+- Ergänzt: Preis neben POC, tatsächliche Abdeckung der sichtbaren Kerzen (auch Detail-Kerzen); Antippen blendet nur die Beschriftung bis zur nächsten Server-Minute aus. POC-Linie, Profilrechnung und Live-Kursschild bleiben unabhängig.
+- Umsetzung: reine Zeitspannen-Hilfe `shared/chart-poc.mjs`; kompakte zweizeilige SVG-Beschriftung mit 44-px-Tippfläche, Tastaturbedienung und gemeinsamer Entzerrung. Kein Speicher, zusätzlicher Timer oder Datenabruf. Beim Wischen/Zoomen behalten die Chartgesten Vorrang; bei aktiviertem Magnet der Kursalarm.
+- Geprüft am 23.10.2026: alle **123 Einheitentest-Dateien** erfolgreich; neue `unit-chart-poc` **15/15**. Browser nacheinander: `m151` **18/18**, `m110` **16/16**, `m4` **42/42**, `m12` **17/17**, `m149` **10/10** = **103/103**. Chromium mit Touch und Breiten 320/390/820/1440 px; echtes iPhone/Safari noch offen. Lint **0 Fehler**, sechs schon auf dem Ausgangsstand vorhandene Warnungen; `build-release --check` und `git diff --check` erfolgreich.
+- Ein beim Entwickeln durch die POC-Tippfläche ausgelöster Gestenkonflikt wurde durch durchgängige Pointer-Ereignisse behoben. `m110` prüft die Kerzenauswahl auf freier Chartfläche, `m151` zusätzlich ausdrücklich das Wischen ab der POC-Beschriftung; `m4` findet die goldene Linie unabhängig von verschobener Beschriftung. Keine Prüfung gestrichen oder übersprungen.
+- Prüfung des letzten Nachtlaufs 39886067565: bereits auf dem unveränderten Ausgangsstand fehlgeschlagen (u. a. m145, m131, m112, m91, m79, m64, m58, m57, m52, m28, m16, m9 und ui). Kein grüner Gesamtlauf behauptet; dieser Auftrag bleibt auf die POC-Anzeige begrenzt.
+- Dokumentation: [docs/3.96.0-AENDERUNGEN.md](docs/3.96.0-AENDERUNGEN.md), Testeintrag und Registrierung beider neuer Tests in `run-all.sh`. Bündel erzeugt, unbenutztes 3.91.0 nach Aufräumregel entfernt. Der Dienst bleibt **2.18.0**, kein Oracle-Update nötig.
+- Veröffentlichung am 23.10.2026 vom Nutzer ausdrücklich freigegeben; Bereitstellung über PR #180 nach erfolgreichen automatischen PR-Prüfungen. Offen: Prüfung auf echtem iPhone/Safari. Kein lokaler Gesamtlauf beauftragt.
+
 ## 3.95.0 (Claude; Dienst unverändert 2.18.0): Jahreszahl in der Zeitachse, Nachtlauf repariert
 
 - Ausführlich: [docs/3.95.0-AENDERUNGEN.md](docs/3.95.0-AENDERUNGEN.md).

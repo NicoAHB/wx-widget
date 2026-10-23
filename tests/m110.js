@@ -83,9 +83,16 @@ const candleAt = (page, x) => page.evaluate(x => { const box = document.getEleme
     const pEnd = (await view(page)).pan;
     check('Wischen nach rechts: blättert zurück und läuft nach dem Loslassen mit Schwung weiter', pEnd > p0 && pEnd > atRelease + 2 && Number.isInteger(pEnd), `vorher ${p0} · beim Loslassen ${atRelease} · danach ${pEnd}`);
     // Tippen wählt weiter eine Kerze, doppelt tippen springt zurück zu jetzt
-    await page.waitForTimeout(400); await page.touchscreen.tap(cx, cy); await page.waitForTimeout(400);
+    await page.waitForTimeout(400);
+    // 3.96.0: Die POC-Beschriftung ist jetzt selbst antippbar (ausblenden). Kerzenauswahl auf freier Chartfläche prüfen.
+    const tapPoint = await page.evaluate(([cx, cy]) => {
+      const r = document.getElementById('chart').getBoundingClientRect();
+      for (const x of [cx, r.x + r.width * .7, r.x + r.width * .8]) if (!document.elementFromPoint(x, cy)?.closest('.poc-tag,.last-tag,.last-hit')) return { x, y: cy };
+      throw Error('Keine freie Chartfläche für die Kerzenauswahl');
+    }, [cx, cy]);
+    await page.touchscreen.tap(tapPoint.x, tapPoint.y); await page.waitForTimeout(400);
     const sel = await page.evaluate(() => __g05.state.selected);
-    await page.touchscreen.tap(cx, cy); await page.waitForTimeout(80); await page.touchscreen.tap(cx, cy); await page.waitForTimeout(600);
+    await page.touchscreen.tap(tapPoint.x, tapPoint.y); await page.waitForTimeout(80); await page.touchscreen.tap(tapPoint.x, tapPoint.y); await page.waitForTimeout(600);
     check('Tippen wählt eine Kerze; doppelt tippen springt zurück zu jetzt', sel !== null && sel !== undefined && (await view(page)).pan === 0, `Auswahl ${sel} · pan ${(await view(page)).pan}`);
     check('keine Fehler (iPhone)', !real(errors).length, real(errors).join(' | '));
     await ctx.close();

@@ -1642,6 +1642,10 @@ svg .last-tag text{fill:var(--mint-ink);font-variant-numeric:tabular-nums}
 svg .last-tag .last-price{font-size:12px;font-weight:700}
 svg .last-tag .last-cd{font-size:11px;font-weight:600}
 svg .last-hit{fill:transparent;cursor:pointer}svg .last-tag{cursor:pointer}
+/* 3.96.0: kompakte POC-Beschriftung mit eigenständiger Tippfläche. */
+svg .poc-tag{cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+svg .poc-tag text{font-variant-numeric:tabular-nums}
+svg .poc-tag:focus-visible rect:not(.poc-hit){stroke:var(--c-vp);stroke-width:2}
 
 /* ---------- 3.4 Hoch und Tief des sichtbaren Zeitraums (fett, grün bzw. rot, mit Rand in Hintergrundfarbe) ---------- */
 svg .hl-mark line{stroke:var(--c-up);stroke-width:1}
@@ -2693,87 +2697,88 @@ html[data-analysis-focus] .mtf-c:not([data-trend-interval="4h"]):not([data-trend
 .analysis-rank-note{margin:0 0 6px;font-size:.75rem;color:var(--muted)}.analysis-rank-note>summary{min-height:44px;display:flex;align-items:center;cursor:pointer}.analysis-rank-note p{margin:0 0 10px;overflow-wrap:anywhere}
 </style>
   <script type="module">
-import { MARKET_INTERVALS, CHART_INTERVALS, SIGNAL_INTERVALS, INTERVAL_MS, nearestChartInterval } from './bundles/3.95.0/shared/market-intervals.mjs';
-import { createDetailCandles, detailOptions, detailChoice, closedSeries, timeIndex, DETAIL_VISIBLE_MAX } from './bundles/3.95.0/shared/chart-detail.mjs';
-import { patternChipRows, patternChipKey } from './bundles/3.95.0/shared/chart-pattern-chips.mjs';
-import { PATTERN_QUALITY_CONFIG, chartPatternQuality, repricePatternQuality, sortPatternQuality, patternOverview } from './bundles/3.95.0/shared/chart-pattern-quality.mjs';
-import { createPatternOverviewFeed } from './bundles/3.95.0/shared/chart-pattern-overview-feed.mjs';
+import { MARKET_INTERVALS, CHART_INTERVALS, SIGNAL_INTERVALS, INTERVAL_MS, nearestChartInterval } from './bundles/3.96.0/shared/market-intervals.mjs';
+import { createDetailCandles, detailOptions, detailChoice, closedSeries, timeIndex, DETAIL_VISIBLE_MAX } from './bundles/3.96.0/shared/chart-detail.mjs';
+import { patternChipRows, patternChipKey } from './bundles/3.96.0/shared/chart-pattern-chips.mjs';
+import { PATTERN_QUALITY_CONFIG, chartPatternQuality, repricePatternQuality, sortPatternQuality, patternOverview } from './bundles/3.96.0/shared/chart-pattern-quality.mjs';
+import { createPatternOverviewFeed } from './bundles/3.96.0/shared/chart-pattern-overview-feed.mjs';
 // Arbeitsstand: bei der gemeinsamen Release-Freigabe in das neue Versionsbündel übernehmen.
-import { createPositioningFeed } from './bundles/3.95.0/shared/positioning-score.mjs';
-import { CRYPTO_CALENDAR, parseCryptoCalendar, cryptoCalendarEvents } from './bundles/3.95.0/shared/crypto-calendar.mjs';
-import { createMusterClient } from './bundles/3.95.0/shared/muster-bot-feed.mjs';
-import { createMusterPaper } from './bundles/3.95.0/shared/muster-bot-paper.mjs';
-import { readMusterPaper, writeMusterPaper } from './bundles/3.95.0/shared/muster-bot-store.mjs';
-import { projectPatternLines, projectionSettings, projectionTime } from './bundles/3.95.0/shared/pattern-projection.mjs';
-import { MACD_CHART, macdFindings, macdPaneLayout, drawMacdPane, createMacdHelp } from './bundles/3.95.0/shared/macd-chart.mjs';
-import { OV_GROUPS, OV_KEYS, OV_TOTAL, OV_VIEWS, ovViewId, ovApplyView } from './bundles/3.95.0/shared/chart-layers.mjs';
-import { MACD_NOTICE } from './bundles/3.95.0/shared/macd-notice.mjs';
+import { createPositioningFeed } from './bundles/3.96.0/shared/positioning-score.mjs';
+import { CRYPTO_CALENDAR, parseCryptoCalendar, cryptoCalendarEvents } from './bundles/3.96.0/shared/crypto-calendar.mjs';
+import { createMusterClient } from './bundles/3.96.0/shared/muster-bot-feed.mjs';
+import { createMusterPaper } from './bundles/3.96.0/shared/muster-bot-paper.mjs';
+import { readMusterPaper, writeMusterPaper } from './bundles/3.96.0/shared/muster-bot-store.mjs';
+import { projectPatternLines, projectionSettings, projectionTime } from './bundles/3.96.0/shared/pattern-projection.mjs';
+import { MACD_CHART, macdFindings, macdPaneLayout, drawMacdPane, createMacdHelp } from './bundles/3.96.0/shared/macd-chart.mjs';
+import { OV_GROUPS, OV_KEYS, OV_TOTAL, OV_VIEWS, ovViewId, ovApplyView } from './bundles/3.96.0/shared/chart-layers.mjs';
+import { MACD_NOTICE } from './bundles/3.96.0/shared/macd-notice.mjs';
 // NEU 3.77.3: Zeitachse mit Datum und kollisionsfreien Beschriftungen.
-import { chartTimeTicks } from './bundles/3.95.0/shared/chart-time-axis.mjs';
-import { createProjectionInspector, projectionPrice, projectionIndexTime, projectionTimeIndex } from './bundles/3.95.0/shared/projection-inspector.mjs';
-import { createGithubSyncView } from './bundles/3.95.0/shared/github-sync-view.mjs';
-import { createDocViewer } from './bundles/3.95.0/shared/doc-viewer.mjs';
-import { PATTERN_FILTER_PRESET_NAMES, PATTERN_FILTER_FIELDS, PATTERN_CARD_FIELDS, HIGHER_TIMEFRAME, patternFilterSettings, patternFilterFromForm, evaluatePatternSignal, selectPatternSignals, patternJournalEntry, addPatternJournal, resolvePatternJournal, patternHitStats, patternJournalStats, PATTERN_OUTCOME_NAMES, backtestPatternFilter } from './bundles/3.95.0/shared/pattern-quality.mjs';
-import { patternLearned, patternBaseline, patternEvents, patternStat } from './bundles/3.95.0/shared/pattern-knowledge.mjs';
-import { stripSyncSecrets } from './bundles/3.95.0/shared/github-sync.mjs';
-import { createMusterView } from './bundles/3.95.0/shared/muster-bot-view.mjs';
-import { computeKiZones, KI_ZONE_INTERVALS } from './bundles/3.95.0/shared/ki-zones.mjs';
-import { heikinAshi } from './bundles/3.95.0/shared/heikin-ashi.mjs';
-import { detectFvgs, fvgSummary } from './bundles/3.95.0/shared/fvg.mjs';
-import { KEY_LEVELS, KEY_LEVEL_SETS, DEFAULT_KEY_LEVEL_SET, keyLevels, keyLevelSet, shownLevels, stackLabels, levelsInPath, nearestLevels } from './bundles/3.95.0/shared/key-levels.mjs';
-import { MARKET_CONTEXT, parseMarketContext, marketContext } from './bundles/3.95.0/shared/market-context.mjs';
-import { VWAP_MODE_GROUPS, vwapMode, vwapSource, modeName as vwModeName, anchorStart, anchorFromPivots, vwapSeries } from './bundles/3.95.0/shared/vwap.mjs';
-import { vwapSituation, vwapSituationLines, vwapExplainContext, vwapExplainAnswer, VWAP_LEANS } from './bundles/3.95.0/shared/vwap-situation.mjs';
-import { scoreZoneStrength, ZONE_STRENGTH, ZONE_SIGNAL, zoneSignal, zoneStep, zoneOutcome, summarizeZoneBacktest } from './bundles/3.95.0/shared/zone-strength.mjs';
+import { chartTimeTicks } from './bundles/3.96.0/shared/chart-time-axis.mjs';
+import { createProjectionInspector, projectionPrice, projectionIndexTime, projectionTimeIndex } from './bundles/3.96.0/shared/projection-inspector.mjs';
+import { createGithubSyncView } from './bundles/3.96.0/shared/github-sync-view.mjs';
+import { createDocViewer } from './bundles/3.96.0/shared/doc-viewer.mjs';
+import { PATTERN_FILTER_PRESET_NAMES, PATTERN_FILTER_FIELDS, PATTERN_CARD_FIELDS, HIGHER_TIMEFRAME, patternFilterSettings, patternFilterFromForm, evaluatePatternSignal, selectPatternSignals, patternJournalEntry, addPatternJournal, resolvePatternJournal, patternHitStats, patternJournalStats, PATTERN_OUTCOME_NAMES, backtestPatternFilter } from './bundles/3.96.0/shared/pattern-quality.mjs';
+import { patternLearned, patternBaseline, patternEvents, patternStat } from './bundles/3.96.0/shared/pattern-knowledge.mjs';
+import { stripSyncSecrets } from './bundles/3.96.0/shared/github-sync.mjs';
+import { createMusterView } from './bundles/3.96.0/shared/muster-bot-view.mjs';
+import { computeKiZones, KI_ZONE_INTERVALS } from './bundles/3.96.0/shared/ki-zones.mjs';
+import { heikinAshi } from './bundles/3.96.0/shared/heikin-ashi.mjs';
+import { detectFvgs, fvgSummary } from './bundles/3.96.0/shared/fvg.mjs';
+import { KEY_LEVELS, KEY_LEVEL_SETS, DEFAULT_KEY_LEVEL_SET, keyLevels, keyLevelSet, shownLevels, stackLabels, levelsInPath, nearestLevels } from './bundles/3.96.0/shared/key-levels.mjs';
+import { MARKET_CONTEXT, parseMarketContext, marketContext } from './bundles/3.96.0/shared/market-context.mjs';
+import { VWAP_MODE_GROUPS, vwapMode, vwapSource, modeName as vwModeName, anchorStart, anchorFromPivots, vwapSeries } from './bundles/3.96.0/shared/vwap.mjs';
+import { vwapSituation, vwapSituationLines, vwapExplainContext, vwapExplainAnswer, VWAP_LEANS } from './bundles/3.96.0/shared/vwap-situation.mjs';
+import { scoreZoneStrength, ZONE_STRENGTH, ZONE_SIGNAL, zoneSignal, zoneStep, zoneOutcome, summarizeZoneBacktest } from './bundles/3.96.0/shared/zone-strength.mjs';
 // 3.68.0: KI-Signale/Trading-Bot entfernt; der GitHub-Sync behält sein Format inklusive vorhandener Modelloriginale.
-import { exportModelArchive, importModelArchive, validateModelArchive, restoreModelOriginals } from './bundles/3.95.0/shared/model-archive.mjs';
-import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT, patternGrade } from './bundles/3.95.0/shared/telegram-format.mjs';
-import { patternSignalCard, patternChartData } from './bundles/3.95.0/shared/pattern-signal-card.mjs';   // 3.71.0: Chartmuster-Signalkarte
-import { pnlAlarmCard } from './bundles/3.95.0/shared/pnl-alarm-card.mjs';   // 3.71.0: Gewinn-/Verlust-Alarm als Bild
-import { priceAlarmCard } from './bundles/3.95.0/shared/price-alarm-card.mjs';   // 3.71.0: Kurs-Alarm als Bild
-import { createOrderflowView } from './bundles/3.95.0/shared/orderflow-view.mjs';
-import { createMarketRadarView } from './bundles/3.95.0/shared/market-radar-view.mjs';
-import { RADAR_KEY, radarBook } from './bundles/3.95.0/shared/market-radar-journal.mjs';
-import { createPanelAppearanceSettings } from './bundles/3.95.0/shared/panel-appearance.mjs';
-import { createSignalView } from './bundles/3.95.0/shared/orderflow-signal-view.mjs';
-import { ema, macd, rsi } from './bundles/3.95.0/shared/indicators.mjs';
-import { zigzag, zzForecast as zzForecastCore, zzLearn } from './bundles/3.95.0/shared/zigzag.mjs';
-import { ZZP, ZZP_RULE, wilsonLow, zzpIndicators, zzpKey, zzpWords, zzMoments, zzpApply } from './bundles/3.95.0/shared/zigzag-patterns.mjs';
-import { WATCH_MODEL_KEY, WATCH_COMPARE_KEY } from './bundles/3.95.0/shared/watch-model-core.mjs';
-import { rsiSignal } from './bundles/3.95.0/shared/rsi-momentum.mjs';
-import { createWatchModelFeed } from './bundles/3.95.0/shared/watch-model-feed.mjs';
-import { createSignalReasonsView } from './bundles/3.95.0/shared/watch-signal-reasons.mjs';
-import { unknownPhase } from './bundles/3.95.0/shared/market-phase-core.mjs';
-import { createMarketPhaseFeed } from './bundles/3.95.0/shared/market-phase-feed.mjs';
-import { createMarketPhaseView } from './bundles/3.95.0/shared/market-phase-view.mjs';
-import { createWatchModelView } from './bundles/3.95.0/shared/watch-model-view.mjs';
-import { networkState, createWidgetBoundary } from './bundles/3.95.0/shared/widget-state.mjs';
-import { volumeProfile } from './bundles/3.95.0/shared/volume-profile.mjs';
-import { analysisChannelState, analysisChannelAllows } from './bundles/3.95.0/shared/analysis-channel.mjs';
-import { createAnalysisLearning } from './bundles/3.95.0/shared/analysis-learning-feed.mjs';
-import { ANALYSIS_LEARNING_KEY, LEARNING_IDS, mergeLearningData, validateLearningData } from './bundles/3.95.0/shared/analysis-learning.mjs';
-import { ANALYSES, ANALYSIS_KEY, ANALYSIS_LOG_KEY, analysisCoinAllowed, analysisDestination } from './bundles/3.95.0/shared/analysis-config.mjs';
-import { analysisChartModel, analysisChartExplanation, drawAnalysisChart, installAnalysisChartTap, createAnalysisChartHelp } from './bundles/3.95.0/shared/analysis-chart.mjs';
-import { createAnalysisView } from './bundles/3.95.0/shared/analysis-view.mjs';
-import { createAnalysisFeed } from './bundles/3.95.0/shared/analysis-feed.mjs';
-import { NY_OPEN, NY_JOURNAL_KEY, nyDailySignalKey, nyLiveRange } from './bundles/3.95.0/shared/ny-open-core.mjs';
-import { AMD, amdOptions } from './bundles/3.95.0/shared/amd-core.mjs';
-import { nyNoticeEvents } from './bundles/3.95.0/shared/ny-open-notices.mjs';
-import { mergeNyJournals } from './bundles/3.95.0/shared/ny-open-feed.mjs';
-import { createNyHistory } from './bundles/3.95.0/shared/ny-open-history.mjs';
-import { drawNyChart } from './bundles/3.95.0/shared/ny-open-chart.mjs';
-import { analysisCard, analysisTestSignal } from './bundles/3.95.0/shared/analysis-card.mjs';
-import { displayTimeParts } from './bundles/3.95.0/shared/display-time.mjs';
-import { createAnalysisDelivery } from './bundles/3.95.0/shared/analysis-delivery.mjs';
-import { PULLBACK, PULLBACK_DATA_KEY, PULLBACK_MODEL_KEY, PULLBACK_ACK_KEY, PULLBACK_DELIVERY_KEY, pullbackEligible } from './bundles/3.95.0/shared/trend-pullback-core.mjs';
-import { pullbackData, pullbackBackupData, mergePullbackData, validatePullbackData, validatePullbackModel } from './bundles/3.95.0/shared/trend-pullback-store.mjs';
-import { pullbackHighlights } from './bundles/3.95.0/shared/trend-pullback-notices.mjs';
-import { drawPullbackChart } from './bundles/3.95.0/shared/trend-pullback-chart.mjs';
-import { MARKET_STRATEGY, STRATEGY_IDS, STRATEGY_DATA_KEY, STRATEGY_REPORT_KEY, strategyData, mergeStrategyData, validateStrategyData, strategyAlertCurrent } from './bundles/3.95.0/shared/market-strategy-core.mjs';
-import { strategyNoticeEvents, strategyNoticeRecords } from './bundles/3.95.0/shared/market-strategy-feed.mjs';
-import { analysisSuitability, groupAnalysisEvents } from './bundles/3.95.0/shared/analysis-context.mjs';
-import { createPullbackReplies } from './bundles/3.95.0/shared/trend-pullback-delivery.mjs';
-import { ANALYSIS_NOTICE_KEY, analysisNoticeState, observeAnalysis, analysisNoticeCurrent } from './bundles/3.95.0/shared/analysis-notices.mjs';
+import { exportModelArchive, importModelArchive, validateModelArchive, restoreModelOriginals } from './bundles/3.96.0/shared/model-archive.mjs';
+import { formatMessage, telegramFields, telegramPlain, finishTelegram, telegramFormatRejected, TELEGRAM_CAPTION_LIMIT, patternGrade } from './bundles/3.96.0/shared/telegram-format.mjs';
+import { patternSignalCard, patternChartData } from './bundles/3.96.0/shared/pattern-signal-card.mjs';   // 3.71.0: Chartmuster-Signalkarte
+import { pnlAlarmCard } from './bundles/3.96.0/shared/pnl-alarm-card.mjs';   // 3.71.0: Gewinn-/Verlust-Alarm als Bild
+import { priceAlarmCard } from './bundles/3.96.0/shared/price-alarm-card.mjs';   // 3.71.0: Kurs-Alarm als Bild
+import { createOrderflowView } from './bundles/3.96.0/shared/orderflow-view.mjs';
+import { createMarketRadarView } from './bundles/3.96.0/shared/market-radar-view.mjs';
+import { RADAR_KEY, radarBook } from './bundles/3.96.0/shared/market-radar-journal.mjs';
+import { createPanelAppearanceSettings } from './bundles/3.96.0/shared/panel-appearance.mjs';
+import { createSignalView } from './bundles/3.96.0/shared/orderflow-signal-view.mjs';
+import { ema, macd, rsi } from './bundles/3.96.0/shared/indicators.mjs';
+import { zigzag, zzForecast as zzForecastCore, zzLearn } from './bundles/3.96.0/shared/zigzag.mjs';
+import { ZZP, ZZP_RULE, wilsonLow, zzpIndicators, zzpKey, zzpWords, zzMoments, zzpApply } from './bundles/3.96.0/shared/zigzag-patterns.mjs';
+import { WATCH_MODEL_KEY, WATCH_COMPARE_KEY } from './bundles/3.96.0/shared/watch-model-core.mjs';
+import { rsiSignal } from './bundles/3.96.0/shared/rsi-momentum.mjs';
+import { createWatchModelFeed } from './bundles/3.96.0/shared/watch-model-feed.mjs';
+import { createSignalReasonsView } from './bundles/3.96.0/shared/watch-signal-reasons.mjs';
+import { unknownPhase } from './bundles/3.96.0/shared/market-phase-core.mjs';
+import { createMarketPhaseFeed } from './bundles/3.96.0/shared/market-phase-feed.mjs';
+import { createMarketPhaseView } from './bundles/3.96.0/shared/market-phase-view.mjs';
+import { createWatchModelView } from './bundles/3.96.0/shared/watch-model-view.mjs';
+import { networkState, createWidgetBoundary } from './bundles/3.96.0/shared/widget-state.mjs';
+import { volumeProfile } from './bundles/3.96.0/shared/volume-profile.mjs';
+import { pocWindow } from './bundles/3.96.0/shared/chart-poc.mjs';
+import { analysisChannelState, analysisChannelAllows } from './bundles/3.96.0/shared/analysis-channel.mjs';
+import { createAnalysisLearning } from './bundles/3.96.0/shared/analysis-learning-feed.mjs';
+import { ANALYSIS_LEARNING_KEY, LEARNING_IDS, mergeLearningData, validateLearningData } from './bundles/3.96.0/shared/analysis-learning.mjs';
+import { ANALYSES, ANALYSIS_KEY, ANALYSIS_LOG_KEY, analysisCoinAllowed, analysisDestination } from './bundles/3.96.0/shared/analysis-config.mjs';
+import { analysisChartModel, analysisChartExplanation, drawAnalysisChart, installAnalysisChartTap, createAnalysisChartHelp } from './bundles/3.96.0/shared/analysis-chart.mjs';
+import { createAnalysisView } from './bundles/3.96.0/shared/analysis-view.mjs';
+import { createAnalysisFeed } from './bundles/3.96.0/shared/analysis-feed.mjs';
+import { NY_OPEN, NY_JOURNAL_KEY, nyDailySignalKey, nyLiveRange } from './bundles/3.96.0/shared/ny-open-core.mjs';
+import { AMD, amdOptions } from './bundles/3.96.0/shared/amd-core.mjs';
+import { nyNoticeEvents } from './bundles/3.96.0/shared/ny-open-notices.mjs';
+import { mergeNyJournals } from './bundles/3.96.0/shared/ny-open-feed.mjs';
+import { createNyHistory } from './bundles/3.96.0/shared/ny-open-history.mjs';
+import { drawNyChart } from './bundles/3.96.0/shared/ny-open-chart.mjs';
+import { analysisCard, analysisTestSignal } from './bundles/3.96.0/shared/analysis-card.mjs';
+import { displayTimeParts } from './bundles/3.96.0/shared/display-time.mjs';
+import { createAnalysisDelivery } from './bundles/3.96.0/shared/analysis-delivery.mjs';
+import { PULLBACK, PULLBACK_DATA_KEY, PULLBACK_MODEL_KEY, PULLBACK_ACK_KEY, PULLBACK_DELIVERY_KEY, pullbackEligible } from './bundles/3.96.0/shared/trend-pullback-core.mjs';
+import { pullbackData, pullbackBackupData, mergePullbackData, validatePullbackData, validatePullbackModel } from './bundles/3.96.0/shared/trend-pullback-store.mjs';
+import { pullbackHighlights } from './bundles/3.96.0/shared/trend-pullback-notices.mjs';
+import { drawPullbackChart } from './bundles/3.96.0/shared/trend-pullback-chart.mjs';
+import { MARKET_STRATEGY, STRATEGY_IDS, STRATEGY_DATA_KEY, STRATEGY_REPORT_KEY, strategyData, mergeStrategyData, validateStrategyData, strategyAlertCurrent } from './bundles/3.96.0/shared/market-strategy-core.mjs';
+import { strategyNoticeEvents, strategyNoticeRecords } from './bundles/3.96.0/shared/market-strategy-feed.mjs';
+import { analysisSuitability, groupAnalysisEvents } from './bundles/3.96.0/shared/analysis-context.mjs';
+import { createPullbackReplies } from './bundles/3.96.0/shared/trend-pullback-delivery.mjs';
+import { ANALYSIS_NOTICE_KEY, analysisNoticeState, observeAnalysis, analysisNoticeCurrent } from './bundles/3.96.0/shared/analysis-notices.mjs';
 // Pure, unrounded calculations. Prices are USDT per unit; FX is USDT per EUR.
 
 function trueRanges(candles) {
@@ -3562,7 +3567,7 @@ const api = new BinanceClient(globalThis.fetch, () => Date.now(), 10000, describ
 // Schlüssel mit "scalpdesk.idb." bleiben nur in der IndexedDB (z. B. Datei-Handles, die sich nicht als JSON speichern lassen).
 // 3.43.0 (G10a): reiner Fachkern in shared/; Datenquelle und Karten folgen getrennt.
 // 3.44.0 (G10b): öffentlicher Adapter in shared/bitget-public.mjs; sichtbare Anbindung folgt mit G10(c).
-const APP_VERSION = '3.95.0', docEl = document.documentElement;
+const APP_VERSION = '3.96.0', docEl = document.documentElement;
 const SAVED_KEY = 'scalpdesk.savedat.v1', IDB_ONLY = 'scalpdesk.idb.', TAB_ID = Math.random().toString(36).slice(2, 10);
 const store = (() => {
   const cache = new Map(), pending = new Set(), lastStamp = new Map(), info = { idb: 'wird geprüft', ls: true, persisted: null, error: null };
@@ -7345,7 +7350,11 @@ function renderChartContent(levels={}, ov={}, start=null, end=null) {
   if (!analysisOnly) patDrawProjection(svg, over, { data, x, y, timeX, left, pw, top, bottom, min, max, rx, step });
   if (!analysisOnly) patDrawChips(svg, over, {data,x,y,timeX,left,pw,top,bottom,min,max,rx,step});
   if (!analysisOnly) patDrawGhost(svg, over, {data,x,y,timeX,left,pw,top,bottom,min,max,rx,step}); // 3.70.0: beendetes Muster ausgegraut
-  if (prof) { const yp=y(prof.poc); over.append(node('line',{x1:left,y1:yp,x2:left+pw,y2:yp,stroke:PAL.vp,'stroke-width':1.5,opacity:.95}),node('text',{x:left+6,y:yp-5,class:'axis-label',style:'fill:'+PAL.vp+';font-weight:600'},'POC')); }
+  if (prof) {
+    const yp = y(prof.poc);
+    over.append(node('line', { x1: left, y1: yp, x2: left + pw, y2: yp, stroke: PAL.vp, 'stroke-width': 1.5, opacity: .95, class: 'poc-line' }));
+    if (!pocTagHidden()) drawPocTag(over, prof.poc, data, { left, right: Math.min(left + pw - 6, rx), yp });
+  }
   // 3.28.0: Demo-Positionen auch im Chart – blasser und mit „DEMO“ beschriftet (nur Anzeige)
   const chartPos = [...state.positions, ...state.demoPositions].filter(p => p.symbol === state.symbol), demoTag = p => isDemoPos(p) ? 'DEMO ' : '';
   for (const pos of chartPos) {
@@ -7810,7 +7819,7 @@ $('zoom-reset').addEventListener('click',chartViewReset);
   });
   const end=e=>{
     if(!pts.has(e.pointerId))return; pts.delete(e.pointerId);
-    if(g?.type==='tap'&&e.type==='pointerup'){if(!g.moved&&projectionInspector.tap(e,!magnet.on,g.target))lastTap=0;else if(magnet.on&&magnetCommit(e))lastTap=0;else{const now=Date.now();if(now-lastTap<320){if(g.macd&&lastTapPane==='macd'){macdExpanded=!macdExpanded;scheduleDraw();}else setPan(0);lastTap=0;}else{lastTap=now;lastTapPane=g.macd?'macd':'price';chartGeom?.select(idxAt(e.clientX));state.pickedTime=state.selectedTime;state.pickedAt=Date.now();}}} // 3.84.0: angetippte/angeklickte Kerze für den VWAP-Anker merken (die Auswahl selbst endet, sobald die Maus den Chart verlässt)
+    if(g?.type==='tap'&&e.type==='pointerup'&&!e.defaultPrevented){if(!g.moved&&projectionInspector.tap(e,!magnet.on,g.target))lastTap=0;else if(magnet.on&&magnetCommit(e))lastTap=0;else{const now=Date.now();if(now-lastTap<320){if(g.macd&&lastTapPane==='macd'){macdExpanded=!macdExpanded;scheduleDraw();}else setPan(0);lastTap=0;}else{lastTap=now;lastTapPane=g.macd?'macd':'price';chartGeom?.select(idxAt(e.clientX));state.pickedTime=state.selectedTime;state.pickedAt=Date.now();}}} // 3.84.0: angetippte/angeklickte Kerze für den VWAP-Anker merken (die Auswahl selbst endet, sobald die Maus den Chart verlässt)
     if(g?.type==='scrub'&&e.type==='pointerup'){chartGeom?.select(idxAt(e.clientX));lastTap=0;}
     if(g?.type==='pinch'&&pts.size===1){const [p]=[...pts.values()];g={type:'pan',x0:p.x,y0:p.y,pan0:L.pan,trail:[]};return;} // ein Finger bleibt: weiter blättern
     if(pts.size)return;
@@ -8142,6 +8151,7 @@ function onTick(now) {
   if (titleNeedsPoll(now)) void pollTitlePrices(now);
   whaleTick(); lastTagTick(); // 3.3: Countdown am Kurs-Schild, auch ohne Neuzeichnen
   if (lastTagHide && !lastTagHidden()) scheduleDraw(); // 3.93.0: neue Minute – das ausgeblendete Kurs-Schild kommt wieder
+  if (pocTagHide && !pocTagHidden()) scheduleDraw(); // 3.96.0: POC-Beschriftung unabhängig vom Kurs-Schild zurückholen
   econTick();
   cryptoCalendarTick(); // Öffentlicher Krypto-Kalender: eigener, passiver Verbraucher.
   mktTick(); // 3.84.0: Markt-Lage (BTC-Dominanz, ETH/BTC), nur solange das Feld offen ist
@@ -11183,6 +11193,51 @@ function lastTagHidden() {
   if (lastTagHide.symbol === state.symbol && lastTagHide.minute === Math.floor(serverNow() / 60e3)) return true;
   lastTagHide = null; return false;
 }
+// 3.96.0: POC-Preis und tatsächlicher sichtbarer Zeitraum, nur vorübergehend ausblendbar.
+// Die Profilrechnung und die POC-Linie bleiben unverändert; Detail-Kerzen verwenden ihren eigenen Ausschnitt.
+var pocTagHide = null;
+const pocTagKey = () => `${state.symbol}|${chartMarket()}|${state.interval}|${chartInterval()}`;
+function pocTagHidden() {
+  if (!pocTagHide) return false;
+  if (pocTagHide.key === pocTagKey() && pocTagHide.minute === Math.floor(serverNow() / 60e3)) return true;
+  pocTagHide = null;
+  return false;
+}
+function drawPocTag(parent, price, data, { left, right, yp }) {
+  const range = pocWindow(data, chartInterval()), priceLine = `POC ${priceText(price)} USDT`;
+  const periodLine = range ? `Sichtbar: ${range.label}` : 'Sichtbarer Zeitraum';
+  const available = Math.max(100, right - left - 6), width = Math.min(available, Math.max(priceLine.length * 7, periodLine.length * 6.1) + 12);
+  const start = range && displayTimeParts(range.start), end = range && displayTimeParts(range.end - 1);
+  const title = `${priceLine}. ${periodLine}${start && end ? `, ${start.day} ${start.clock} bis ${end.day} ${end.clock} MEZ/MESZ` : ''}. Näherung aus dem Volumen der sichtbaren Kerzen. Antippen blendet die Beschriftung bis zur nächsten Minute aus; die Linie bleibt.`;
+  const group = node('g', { class: 'poc-tag', role: 'button', tabindex: '0', 'aria-label': title, 'data-minutes': range?.minutes ?? '', 'data-price': price, 'data-interval': chartInterval(), 'data-symbol': state.symbol });
+  group.append(node('title', {}, title),
+    node('rect', { x: left + 2, y: yp - 25, width: width + 8, height: 44, fill: 'transparent', class: 'poc-hit' }),
+    node('rect', { x: left + 4, y: yp - 19, width, height: 33, rx: 4, fill: 'var(--surface)', 'fill-opacity': .86 }),
+    node('text', { x: left + 10, y: yp - 5, class: 'axis-label poc-price', style: `fill:${PAL.vp};font-weight:600`, ...(priceLine.length * 7 > width - 12 ? { textLength: width - 12, lengthAdjust: 'spacingAndGlyphs' } : {}) }, priceLine),
+    node('text', { x: left + 10, y: yp + 9, class: 'axis-label poc-period', style: `fill:${PAL.vp};font-size:11px`, ...(periodLine.length * 6.1 > width - 12 ? { textLength: width - 12, lengthAdjust: 'spacingAndGlyphs' } : {}) }, periodLine));
+  parent.append(group);
+}
+{
+  let tap = null;
+  const hide = () => { pocTagHide = { key: pocTagKey(), minute: Math.floor(serverNow() / 60e3) }; scheduleDraw(); };
+  $('chart').addEventListener('pointerdown', e => {
+    const hit = e.target.closest?.('.poc-tag');
+    tap = hit && !magnet.on && e.isPrimary !== false && e.button === 0 ? { id: e.pointerId, x: e.clientX, y: e.clientY, at: Date.now(), key: pocTagKey() } : null;
+  }, true);
+  document.addEventListener('pointermove', e => {
+    if (tap && e.pointerId === tap.id && Math.hypot(e.clientX - tap.x, e.clientY - tap.y) >= 8) tap = null;
+  }, true);
+  document.addEventListener('pointerup', e => {
+    const p = tap; tap = null;
+    if (!p || p.id !== e.pointerId || p.key !== pocTagKey() || Math.hypot(e.clientX - p.x, e.clientY - p.y) >= 8 || Date.now() - p.at >= 800) return;
+    e.preventDefault(); hide(); // Gestenverwaltung darf den Finger trotzdem freigeben; nur die Kerzenauswahl entfällt.
+  }, true);
+  document.addEventListener('pointercancel', () => { tap = null; }, true);
+  $('chart').addEventListener('keydown', e => {
+    if (!e.target.closest?.('.poc-tag') || !['Enter', ' '].includes(e.key) || magnet.on) return;
+    e.preventDefault(); e.stopPropagation(); hide();
+  }, true);
+}
 {
   let tap = null;
   $('chart').addEventListener('pointerdown', e => { const t = e.target.closest?.('.last-tag, .last-hit'); tap = t ? { x: e.clientX, y: e.clientY, at: Date.now() } : null; if (t) e.stopPropagation(); }, true);
@@ -11995,7 +12050,7 @@ function wldBox() {
   head.append(title, phaseHost, meta, close);
   const phase=createMarketPhaseView({root:phaseHost,getMarktphase,now:serverNow,read:key=>store.get(key),write:(key,value)=>{store.set(key,value);return store.ok;},
     symbols:()=>state.watch.map(wlSym).map(symbol=>{const e=wl?.c.get(symbol);return{symbol,market:e?.at&&!e.error?e.market:null};}),history:q=>nyHistory(q),
-    available:()=>!document.hidden&&!state.paused&&navigator.onLine!==false,workerFactory:()=>new Worker(new URL('./bundles/3.95.0/shared/market-phase-worker.mjs',import.meta.url),{type:'module'})});
+    available:()=>!document.hidden&&!state.paused&&navigator.onLine!==false,workerFactory:()=>new Worker(new URL('./bundles/3.96.0/shared/market-phase-worker.mjs',import.meta.url),{type:'module'})});
   const patb = el('button', 'wl-d-pat'); patb.type = 'button';
   patb.addEventListener('click', () => patFromWl(wldSel));
   const r24 = el('p', 'wl-d-24h'); r24.append(el('span', 'wl-d-24k', '24h'), el('span', 'wl-d-24v', ''));
@@ -15665,14 +15720,16 @@ function timgViewStatus() {
 function declutterChart(svg, { top, bottom, left, right }) {
   const box = el => { try { const b = el.getBBox(); return b.width || b.height ? { x: b.x, y: b.y, w: b.width, h: b.height } : null; } catch { return null; } };
   const area = (a, b) => Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x) + 1) * Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y) + 1);
-  const shift = (el, dy) => { if (!dy) return; for (const e of el.tagName === 'g' ? el.querySelectorAll('circle, text') : [el]) { const k = e.tagName === 'circle' ? 'cy' : 'y'; e.setAttribute(k, (+e.getAttribute(k) + dy).toFixed(1)); } };
+  const shift = (el, dy) => { if (!dy) return; if (el.classList.contains('poc-tag')) { el.setAttribute('transform', `translate(0 ${dy})`); return; } for (const e of el.tagName === 'g' ? el.querySelectorAll('circle, text') : [el]) { const k = e.tagName === 'circle' ? 'cy' : 'y'; e.setAttribute(k, (+e.getAttribute(k) + dy).toFixed(1)); } };
   const points = [...svg.querySelectorAll('.rsi-div-label, .ew-lbl')], tags = [...svg.querySelectorAll('.ew-tag')], movers = [...points, ...tags], moving = el => movers.some(m => m === el || m.contains(el));
-  const texts = [...svg.querySelectorAll('text')].filter(t => !moving(t));
+  const pocTags = [...svg.querySelectorAll('.poc-tag')];
+  const texts = [...svg.querySelectorAll('text')].filter(t => !moving(t) && !t.closest('.poc-tag'));
   const isLine = t => { const x = +t.getAttribute('x'), y = +t.getAttribute('y'); return y > top - 14 && y < bottom + 20 && x >= left - 1 && x <= right + 1 && !t.classList.contains('axis-in') && !t.classList.contains('zz-fc-label') && !t.closest('.zz-fc, .last-tag, .hl-mark, .analysis-chart, .analysis-chart-button, .kl-layer'); };
   const item = (el, dirs, max) => ({ el, b: box(el), dirs, max }), away = el => [+el.getAttribute('data-away') || -1];
   // Fibonacci-Marken zuletzt: sie weichen Einstieg, SL/TP, Liquidation und Co.
   // (höchstens 6 px, damit ihre Reihenfolge erhalten bleibt – sie stehen mindestens 13 px auseinander)
   const lines = texts.filter(isLine).map(el => item(el, [1, -1], el.classList.contains('fib-label') ? 6 : 44)).filter(o => o.b).sort((a, b) => a.el.classList.contains('fib-label') - b.el.classList.contains('fib-label') || a.b.y - b.b.y);
+  lines.unshift(...pocTags.map(el => item(el, [1, -1], 44)).filter(o => o.b));
   const placed = [...texts.filter(t => !isLine(t)), ...svg.querySelectorAll('rect.axis-tag, .last-tag rect')].map(box).filter(Boolean);
   const todo = [...points.map(el => item(el, away(el), 40)), ...tags.map(el => item(el, [...away(el), -away(el)[0]], 80)), ...lines].filter(o => o.b);
   // zwei Runden: in der zweiten sieht jede Beschriftung alle anderen an ihrem neuen Platz und darf nachrücken
@@ -16025,7 +16082,7 @@ const musterPaper = createMusterPaper({ read: readMusterPaper, write: writeMuste
   } });
 const MUSTER_TG_NAMES = { hammer: 'Hammer', engulfing: 'Bullish Engulfing', confluence: 'Konfluenz', po3: 'Power of Three' };
 musterView = createMusterView({ host: musterHost, selection: musterSelection, currentPrice: (symbol, market) => state.symbol === symbol && state.source === market ? currentPrice() : null,
-  prefs: store.get('scalpdesk.muster.settings.v1', {}), savePrefs: value => store.set('scalpdesk.muster.settings.v1', value), workerFactory: () => new Worker(new URL('./bundles/3.95.0/shared/muster-bot-worker.mjs', import.meta.url), { type: 'module' }), paper: musterPaper, onMarkers: scheduleDraw,
+  prefs: store.get('scalpdesk.muster.settings.v1', {}), savePrefs: value => store.set('scalpdesk.muster.settings.v1', value), workerFactory: () => new Worker(new URL('./bundles/3.96.0/shared/muster-bot-worker.mjs', import.meta.url), { type: 'module' }), paper: musterPaper, onMarkers: scheduleDraw,
   telegramStatus: () => tgtReady('trades') ? null : 'Hinweis: Telegram ist noch nicht eingerichtet oder das Ziel „Trades“ ist aus (Einstellungen → Telegram).' });
 void musterPaper.restore().then(() => musterPaper.poll());
 function musterDraw(svg, data, x, y, bottom) {
@@ -16084,9 +16141,9 @@ const nyServices = {read:key=>store.get(key),write:(key,value)=>{const changed=s
   symbols:()=>analysisCoins().map(symbol=>({symbol,market:wl?.c.get(symbol)?.market||null})),time:analysisFormats.time,price:priceText,
   showInterval:iv=>{if(analysisView?.shown(AMD.id)&&iv!==state.interval)void setMarket(state.symbol,iv);},
   strategySymbols:id=>analysisCoins().filter(symbol=>analysisView?.settings.rows[id]?.coins[symbol]!==false).map(symbol=>{const e=wl?.c.get(symbol);return {symbol,market:e?.at&&!e.error?e.market:null};}),
-  strategyRuntime:id=>analysisFeed?.runtime(id),getPhase:(symbol,market)=>{if(!analysisCoins().includes(symbol))return {ready:false,reason:'Coin ist nicht in der Vorauswahl; dafür wird keine feste 1H-Phase geladen.'};const r=getMarktphase(symbol);return r.market===market?r:{ready:false,reason:'Die feste 1H-Phase gehört noch nicht zum angefragten Börsenmarkt.'};},strategyWorkerFactory:()=>new Worker(new URL('./bundles/3.95.0/shared/market-strategy-worker.mjs',import.meta.url),{type:'module'}),
-  pullbackRuntime:()=>analysisFeed?.runtime(PULLBACK.id),pullbackWorkerFactory:()=>new Worker(new URL('./bundles/3.95.0/shared/trend-pullback-worker.mjs',import.meta.url),{type:'module'})};
-const analysisLearning=createAnalysisLearning({...nyServices,options:id=>analysisView?.settings.rows[id]?.options||{},changed:()=>analysisPaint(),log:analysisLog,workerFactory:()=>new Worker(new URL('./bundles/3.95.0/shared/analysis-learning-worker.mjs',import.meta.url),{type:'module'})});
+  strategyRuntime:id=>analysisFeed?.runtime(id),getPhase:(symbol,market)=>{if(!analysisCoins().includes(symbol))return {ready:false,reason:'Coin ist nicht in der Vorauswahl; dafür wird keine feste 1H-Phase geladen.'};const r=getMarktphase(symbol);return r.market===market?r:{ready:false,reason:'Die feste 1H-Phase gehört noch nicht zum angefragten Börsenmarkt.'};},strategyWorkerFactory:()=>new Worker(new URL('./bundles/3.96.0/shared/market-strategy-worker.mjs',import.meta.url),{type:'module'}),
+  pullbackRuntime:()=>analysisFeed?.runtime(PULLBACK.id),pullbackWorkerFactory:()=>new Worker(new URL('./bundles/3.96.0/shared/trend-pullback-worker.mjs',import.meta.url),{type:'module'})};
+const analysisLearning=createAnalysisLearning({...nyServices,options:id=>analysisView?.settings.rows[id]?.options||{},changed:()=>analysisPaint(),log:analysisLog,workerFactory:()=>new Worker(new URL('./bundles/3.96.0/shared/analysis-learning-worker.mjs',import.meta.url),{type:'module'})});
 nyServices.learning=analysisLearning;
 const pullbackReplies=createPullbackReplies({...nyServices,destination:()=>tgTarget('analysis'),allowed:analysisBaseAllowed,claim:(key,ttl)=>store.claim(key,ttl,{strict:true}),log:analysisLog,
   sendReply:async(target,id,text)=>{const fd=new FormData();fd.append('chat_id',target.chat);if(target.thread)fd.append('message_thread_id',target.thread);fd.append('text',text);fd.append('reply_parameters',JSON.stringify({message_id:id,allow_sending_without_reply:false}));await tgPost('sendMessage',fd,false,target.token);return {ok:true};}});
@@ -16190,13 +16247,13 @@ wmFeed = createWatchModelFeed({ now: serverNow, context: () => ({ enabled: wmStr
   changed: () => { if (!userScrolling()) wlPaint(Date.now(), true); } });
 marketPhaseFeed=createMarketPhaseFeed({now:serverNow,fetchRows:cachedKlines,read:key=>store.get(key),write:(key,value)=>{store.set(key,value);return store.ok;},
   context:()=>({paused:state.paused,hidden:document.hidden,online:navigator.onLine,symbols:state.watch.map(wlSym).map(symbol=>{const e=wl?.c.get(symbol);return e?.at&&!e.error?{symbol,market:e.market}:null;}).filter(Boolean)}),
-  workerFactory:()=>new Worker(new URL('./bundles/3.95.0/shared/market-phase-worker.mjs',import.meta.url),{type:'module'}),changed:()=>{if(wldSel)wld?.phase.paint(wldSel);}});
+  workerFactory:()=>new Worker(new URL('./bundles/3.96.0/shared/market-phase-worker.mjs',import.meta.url),{type:'module'}),changed:()=>{if(wldSel)wld?.phase.paint(wldSel);}});
 window.__marketPhase={feed:marketPhaseFeed,getMarktphase};
 const wmSave = async (key, value) => { store.set(key, value); if (!store.ok || !await store.flush()) throw new Error('Modelltest konnte nicht gespeichert werden.'); };
 wmView = createWatchModelView({ host: document.querySelector('#workspace-settings .workspace-settings-grid'), read: key => store.get(key), save: wmSave, getMode: wmMode,
   setMode: async mode => { const before = wmMode(); try { await wmSave(WATCH_MODEL_KEY, mode === 'strict' ? 'strict' : 'classic'); } catch (e) { store.set(WATCH_MODEL_KEY, before); throw e; } broadcastData([WATCH_MODEL_KEY]); wmRefresh(); },
   now: serverNow, symbols: () => state.watch.map(wlSym), history: createMusterClient().history, available: () => !document.hidden && !state.paused && navigator.onLine !== false,
-  workerFactory: () => new Worker(new URL('./bundles/3.95.0/shared/watch-model-worker.mjs', import.meta.url), { type: 'module' }) });
+  workerFactory: () => new Worker(new URL('./bundles/3.96.0/shared/watch-model-worker.mjs', import.meta.url), { type: 'module' }) });
 function wmAvailability() {
   wmFeed.sync();
   marketPhaseFeed?.sync();wld?.phase.availabilityChanged();
