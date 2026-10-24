@@ -1,0 +1,243 @@
+{
+  "v": 1,
+  "source": "CoinMarketCal · öffentlicher Auszug",
+  "fetchedAt": "2026-10-24T18:54:47.057Z",
+  "page": "https://coinmarketcal.com/en/",
+  "coverage": "Öffentlicher Ausschnitt, keine vollständige API-Historie",
+  "events": [
+    {
+      "id": "cmc-99855",
+      "t": 1792195200000,
+      "end": 1792800000000,
+      "dayOnly": true,
+      "title": "Alpha V6 Vote Passed",
+      "coins": [
+        "AZTEC"
+      ],
+      "category": "Other",
+      "url": "https://coinmarketcal.com/event/alpha-v6-vote-65717070-1",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-100248",
+      "t": 1792800000000,
+      "end": 1792800000000,
+      "dayOnly": true,
+      "title": "Bridge Initiation Deadline",
+      "coins": [
+        "LSK"
+      ],
+      "category": "Other",
+      "url": "https://coinmarketcal.com/event/bridge-initiation-deadline-29044102-1",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-100250",
+      "t": 1792800000000,
+      "end": 1792800000000,
+      "dayOnly": true,
+      "title": "Ethereum pool incentives live",
+      "coins": [
+        "AERO"
+      ],
+      "category": "Staking/Farming",
+      "url": "https://coinmarketcal.com/event/ethereum-pool-incentives-live-17585476-1",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-98704",
+      "t": 1789516800000,
+      "end": 1792800000000,
+      "dayOnly": true,
+      "title": "Harmonia RFP opens",
+      "coins": [
+        "SOL"
+      ],
+      "category": "Partnership",
+      "url": "https://coinmarketcal.com/event/harmonia-rfp-opens-40878241-1",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-100249",
+      "t": 1792800000000,
+      "end": 1792800000000,
+      "dayOnly": true,
+      "title": "Poker Game Launch",
+      "coins": [
+        "ARX"
+      ],
+      "category": "Release",
+      "url": "https://coinmarketcal.com/event/poker-game-launch-29719667-1",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-100247",
+      "t": 1792800000000,
+      "end": 1792800000000,
+      "dayOnly": true,
+      "title": "Upbit KRW listing",
+      "coins": [
+        "BMT"
+      ],
+      "category": "Exchange",
+      "url": "https://coinmarketcal.com/event/upbit-krw-listing-52498351-1",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-100027",
+      "t": 1792368000000,
+      "end": 1792886400000,
+      "dayOnly": true,
+      "title": "ENSv2 Activation Vote",
+      "coins": [
+        "ENS"
+      ],
+      "category": "Other",
+      "url": "https://coinmarketcal.com/event/ensv2-activation-vote-48326839-1",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-100215",
+      "t": 1792713600000,
+      "end": 1793059200000,
+      "dayOnly": true,
+      "title": "Listing Strategy Vote",
+      "coins": [
+        "COINDEPO"
+      ],
+      "category": "Other",
+      "url": "https://coinmarketcal.com/event/listing-strategy-vote-57091659-1",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-99280",
+      "t": 1792454400000,
+      "end": 1793577600000,
+      "dayOnly": true,
+      "title": "Issuance cut vote",
+      "coins": [
+        "NEAR"
+      ],
+      "category": "Tokenomics",
+      "url": "https://coinmarketcal.com/event/issuance-cut-vote-42162658-1",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-99164",
+      "t": 1790812800000,
+      "end": 1796083200000,
+      "dayOnly": true,
+      "title": "Staking Rewards Boost",
+      "coins": [
+        "POL"
+      ],
+      "category": "Staking/Farming",
+      "url": "https://coinmarketcal.com/event/pol-staking-boost-71656278-1",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-97688",
+      "t": 1788220800000,
+      "end": 1798675200000,
+      "dayOnly": true,
+      "title": "First Token Buyback",
+      "coins": [
+        "VSN"
+      ],
+      "category": "Tokenomics",
+      "url": "https://coinmarketcal.com/event/first-token-buyback-63131711-1",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-99869",
+      "t": 1792454400000,
+      "end": 1801353600000,
+      "dayOnly": true,
+      "title": "Season 2 Claims",
+      "coins": [
+        "CHIP"
+      ],
+      "category": "Airdrop/Snapshot",
+      "url": "https://coinmarketcal.com/event/season-2-claims-48163972-4",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-99867",
+      "t": 1792022400000,
+      "end": 1807660800000,
+      "dayOnly": true,
+      "title": "Season 3 Begins",
+      "coins": [
+        "CHIP"
+      ],
+      "category": "Staking/Farming",
+      "url": "https://coinmarketcal.com/event/season-3-begins-48163972-2",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-100244",
+      "t": 1792886400000,
+      "end": 1792886400000,
+      "dayOnly": true,
+      "title": "Bridge Access Ends",
+      "coins": [
+        "G"
+      ],
+      "category": "Other",
+      "url": "https://coinmarketcal.com/event/bridge-access-ends-19574580-2",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-100106",
+      "t": 1792886400000,
+      "end": 1792886400000,
+      "dayOnly": true,
+      "title": "Inflation Vote Closes",
+      "coins": [
+        "OSMO"
+      ],
+      "category": "Other",
+      "url": "https://coinmarketcal.com/event/inflation-vote-closes-71850396-1",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-100184",
+      "t": 1793059200000,
+      "end": 1793059200000,
+      "dayOnly": true,
+      "title": "v32 Upgrade",
+      "coins": [
+        "OSMO"
+      ],
+      "category": "Release",
+      "url": "https://coinmarketcal.com/event/v32-upgrade-91464430-1",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-100169",
+      "t": 1793145600000,
+      "end": 1793145600000,
+      "dayOnly": true,
+      "title": "Buybacks and Unstaking Lock",
+      "coins": [
+        "GMX"
+      ],
+      "category": "Tokenomics",
+      "url": "https://coinmarketcal.com/event/solana-revenue-buybacks-96133782-1",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-100116",
+      "t": 1793232000000,
+      "end": 1793232000000,
+      "dayOnly": true,
+      "title": "Community town hall",
+      "coins": [
+        "VELO"
+      ],
+      "category": "AMA/Team Update",
+      "url": "https://coinmarketcal.com/event/community-town-hall-70868659-1",
+      "source": "CoinMarketCal · öffentlich"
+    }
+  ]
+}
