@@ -27,7 +27,11 @@ const check = (name, ok, detail = '') => { ok ? pass++ : fail++; console.log((ok
     await p.clock.setSystemTime(now);
     await ctx.routeWebSocket('**/*', socket => socket.onMessage(() => {}));
     await ctx.route('**/api/v3/time*', r => r.fulfill({ headers: { 'access-control-allow-origin': '*' }, json: { serverTime: clock() } }));
-    await ctx.route(/\/(?:api|fapi)\/v[13]\/klines\?/, async route => {
+    // 3.97.0: Der Test-Prozess bedient alle Kerzen-Abrufe nacheinander. Je mehr die App gleichzeitig lädt (Vorauswahl ab 3.93.0), desto länger warten die
+    // Abrufe der Analyse; eine feste Wartezeit nach jedem Uhrsprung reichte deshalb nicht mehr. Jetzt wird auf Ruhe bei den Abrufen gewartet.
+    let inflight = 0, lastReq = Date.now();
+    const track = fn => async route => { inflight++; try { return await fn(route); } finally { inflight--; lastReq = Date.now(); } };
+    await ctx.route(/\/(?:api|fapi)\/v[13]\/klines\?/, track(async route => {
       const q = new URL(route.request().url()).searchParams, iv = q.get('interval'), ms = ({ '1m': 60000, '5m': 300000, '15m': 900000, '1h': 3600000, '2h': 7200000, '4h': 14400000, '1d': 86400000 })[iv];
       if (!ms) return route.fallback(); if (iv === '5m' && q.has('endTime') && Number(q.get('startTime')) === at(9, 30)) { fetched5m++; console.log('5m-Abruf:', route.request().url().slice(-160), 'um', new Date(clock()).toISOString()); } // früher holte die Analyse genau dieses 5m-Fenster (09:30–09:35)
       let source = rows(502, ms, (Math.floor(clock() / ms) + 1) * ms).map(c => ({ ...c, open: 100, close: 100, high: 100.04, low: 99.96 }));
@@ -36,11 +40,12 @@ const check = (name, ok, detail = '') => { ok ? pass++ : fail++; console.log((ok
       if (q.has('startTime')) source = source.filter(c => c.time >= Number(q.get('startTime'))); if (q.has('endTime')) source = source.filter(c => c.time <= Number(q.get('endTime')));
       const limit = Number(q.get('limit')) || 500; source = q.has('startTime') ? source.slice(0, limit) : source.slice(-limit);
       return route.fulfill({ headers: { 'access-control-allow-origin': '*' }, json: source.map(c => [c.time, String(c.open), String(c.high), String(c.low), String(c.close), String(c.volume), c.end - 1, '10000', 5, '50', '5000', '0']) });
-    });
+    }));
     await p.goto(h.URL_BASE + '/weather-widget-v2.html'); await p.waitForFunction(() => window.__analysis && __g05.state.candles.length);
     await p.click('[data-workspace-target=chart]'); await p.locator('#analysis-panel>summary').click();
     const row = p.locator('[data-analysis="ny-open"]');
-    const setTime = async (hh, mm, sec = 0, day = DAY) => { now = at(hh, mm, sec, day); wall = Date.now(); await p.clock.setSystemTime(now); await p.waitForTimeout(1300); };
+    const quiet = async (ms = 20000) => { const t0 = Date.now(); while (Date.now() - t0 < ms && (inflight > 0 || Date.now() - lastReq < 900)) await p.waitForTimeout(150); };
+    const setTime = async (hh, mm, sec = 0, day = DAY) => { now = at(hh, mm, sec, day); wall = Date.now(); await p.clock.setSystemTime(now); await p.waitForTimeout(1300); await quiet(); };
     const bar = () => p.evaluate(() => [...document.querySelectorAll('[data-analysis="ny-open"] .analysis-range-bar button')].map(b => ({ id: b.dataset.nyRange, text: b.textContent, on: b.getAttribute('aria-pressed') === 'true', disabled: b.disabled, cls: b.className, title: b.title })));
     const reason = () => p.evaluate(() => document.querySelector('[data-analysis="ny-open"] .analysis-current-reason')?.textContent || '');
     const badge = () => p.evaluate(() => document.querySelector('[data-analysis="ny-open"] .analysis-overview-head .analysis-direction')?.textContent || '');

@@ -6,7 +6,7 @@ const results = [];
 const check = (name, cond, detail = '') => { results.push({ name, ok: !!cond, detail }); console.log(`${cond ? '  ✓' : '  ✗'} ${name}${detail ? ' — ' + detail : ''}`); };
 const fc = page => page.evaluate(() => {
   const b = document.querySelector('[data-overlay="ewfc"]'), g = document.querySelector('#chart svg .ew-fc'), svg = document.querySelector('#chart svg');
-  const candles = [...svg.querySelectorAll(':scope > rect')].map(r => +r.getAttribute('x') + +r.getAttribute('width') / 2), lastX = candles.length ? Math.max(...candles) : 0;
+  const candles = [...svg.querySelectorAll(':scope > rect:not(.last-hit)')].map(r => +r.getAttribute('x') + +r.getAttribute('width') / 2), lastX = candles.length ? Math.max(...candles) : 0;
   const line = g?.querySelector('.ew-fc-line'), pts = line ? line.getAttribute('points').trim().split(/\s+/).map(p => p.split(',').map(Number)) : [];
   return { pressed: b?.getAttribute('aria-pressed'), dis: b?.getAttribute('aria-disabled'), na: b?.classList.contains('na'), g: !!g, tip: g?.querySelector('title')?.textContent || '',
     lbl: g ? [...g.querySelectorAll('.ew-fc-lbl')].map(l => l.dataset.wave).join(' ') : '', note: g?.querySelector('.ew-fc-note')?.textContent || '', pts, lastX, vbw: +svg.getAttribute('viewBox').split(' ')[2] };

@@ -308,7 +308,7 @@ const tests = {
     T = await trades(page); let tm = T.find(t => t.id === mid);
     check('Kein gültiger Kurs (Binance gestört): Abschluss trotzdem in USDT gespeichert, fx null, kein Eurobetrag', tm && tm.pnl === 5 && tm.fx === null && tm.eur === undefined && /kein gültiger Kurs zum Abschlusszeitpunkt/.test(pvm), `${JSON.stringify(tm)} · ${pvm}`);
     await histOpen(page);
-    check('Trade-Liste: „(€ n. v.)“ mit Hinweis „EUR zum Abschlusszeitpunkt nicht verfügbar“', /\(€ n\. v\.\)/.test(await rowOf(page, mid)) && await page.evaluate(id => document.querySelector(`#history-list [data-trade="${id}"] small`).title, mid) === 'EUR zum Abschlusszeitpunkt nicht verfügbar');
+    check('Trade-Liste: „(€ n. v.)“ mit Hinweis „EUR zum Abschlusszeitpunkt nicht verfügbar“', /\(€ n\. v\.\)/.test(await rowOf(page, mid)) && await page.evaluate(id => document.querySelector(`#history-list [data-trade="${id}"] .trade-profit small`).title, mid) === 'EUR zum Abschlusszeitpunkt nicht verfügbar', await rowOf(page, mid) + ' | ' + await page.evaluate(id => document.querySelector(`#history-list [data-trade="${id}"] small`)?.title, mid));
     await h.ctl('/eurhist?mode=on');
     await jsClick(page, `#history-list [data-trade="${mid}"] [data-action="trade-fx"]`); await page.waitForTimeout(150);
     await jsClick(page, `#history-list [data-trade="${mid}"] [data-action="fx-fetch"]`);
