@@ -1,6 +1,6 @@
 {
   "version": "2.18.0",
-  "appVersion": "3.96.0",
+  "appVersion": "3.97.0",
   "files": [
     {
       "path": "scalpdesk-247.mjs",
@@ -751,6 +751,11 @@
       "path": "shared/rsi-momentum.mjs",
       "sha256": "b16f43572d38ef9f08c6558d499444de4823c6b161bb72f1336e4fa919fc0ebf",
       "bytes": 2215
+    },
+    {
+      "path": "shared/scroll-hint.mjs",
+      "sha256": "dcb24db5ef4994f8622cb6522ddbefe8216e79cabf67bfa7c2c25af363e1c97d",
+      "bytes": 3359
     },
     {
       "path": "shared/signal-learning.mjs",

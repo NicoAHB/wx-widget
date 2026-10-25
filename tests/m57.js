@@ -93,6 +93,9 @@ const tests = {
   async corr(browser) {
     // Korrelation optional, anfangs aus; eingeschaltet nur für angezeigte Treffer, BTC-Reihe einmal geteilt
     const { ctx, page, errors } = await openPage(browser);
+    // 3.97.0: Die Vorauswahl lädt ihre Reihen (Spanne 1 h = 5m-Kerzen) ohnehin – seit 3.93.0 alle gleichzeitig und nach dem Start des Tests. Erst abwarten,
+    // bis die Abrufe ruhen, sonst zählt die Prüfung „keine Kerzen für die Korrelation“ das normale Laden von LTC/XRP mit.
+    for (let last = -1, since = Date.now(), t00 = Date.now(); Date.now() - t00 < 20000;) { const n = (await h.ctl('/log')).length; if (n !== last) { last = n; since = Date.now(); } else if (Date.now() - since > 1500) break; await h.sleep(250); }
     const t0 = Date.now(); await openDec(page); await decReady(page);
     const HITS = ['SOLUSDT', 'LTCUSDT', 'XRPUSDT'], kl = async () => (await h.ctl(`/log?since=${t0}`)).filter(e => e.path === '/api/v3/klines' && e.q.interval === '5m' && HITS.includes(e.q.symbol));   // BTC-5m lädt die App auch für ihre Signale
     check('Korrelation anfangs aus: keine Kerzen für die Korrelation geladen, keine Spalte', !(await page.evaluate(() => __g08.dec.cfg.corr)) && !(await kl()).length && !(await page.evaluate(() => document.querySelector('#dec-list .dec-r'))));

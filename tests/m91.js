@@ -1,7 +1,7 @@
 // Tatsächlicher Worker-/Multipart-Versand: HTML zuerst, Klartext nur nach eindeutigem Formatfehler.
 const h = require('./harness');
 let pass = 0, fail = 0;
-const check = (name, ok) => { ok ? pass++ : fail++; console.log(`${ok ? '✓' : '✗'} ${name}`); };
+const check = (name, ok, detail = '') => { ok ? pass++ : fail++; console.log(`${ok ? '✓' : '✗'} ${name}${!ok && detail !== '' ? ' — ' + String(detail).slice(0, 500) : ''}`); };
 async function waitSent(filter, count) { for (let i = 0; i < 60; i++) { const rows = (await h.ctl('/sent')).filter(filter); if (rows.length >= count) return rows; await h.sleep(100); } return (await h.ctl('/sent')).filter(filter); }
 (async () => {
   await h.setup(); const browser = await h.launch();
@@ -28,9 +28,10 @@ async function waitSent(filter, count) { for (let i = 0; i < 60; i++) { const ro
     await page.evaluate(() => { document.getElementById('tgb-on').checked = false; document.getElementById('tgb-on').dispatchEvent(new Event('change')); });
     await page.evaluate(() => __g06.timgPreview('fallback-photo-91')); await page.waitForSelector('#timg-img:not([hidden])'); await h.ctl('/sentreset'); await h.ctl('/chan?tgformat=1'); await page.click('#timg-send');
     sent = await waitSent(s => s.method === 'sendPhoto', 1); await page.waitForTimeout(1200); sent = (await h.ctl('/sent')).filter(s => s.method === 'sendPhoto'); await h.ctl('/chan?tgformat=0');
-    // 3.71.0: Die Bildunterschrift des Trade-Bilds ist eine Zeile ohne HTML („XRP/USDT Long 20× · +43,88 € (+89,5 %) · 1:52 Std.“) – keine Formatablehnung, kein Zweitversand
-    check('3.71.0: Trade-Bild: einzeilige Bildunterschrift ohne HTML, genau ein Versand in den Trades-Chat (keine Formatablehnung möglich)', sent.length === 1 && !sent[0].parse_mode && !sent[0].formatRejected && sent[0].chat_id === '9002' && /^[A-Z0-9]+\/USDT (Long|Short) [\d,]+× · [+−][\d.,]+ (€|USD)/.test(sent[0].caption) && !/[<>\n]/.test(sent[0].caption), JSON.stringify(sent.map(s => ({ pm: s.parse_mode, rej: s.formatRejected, cap: s.caption }))));
-    check('… vollständiges PNG (1080 breit)', sent.length === 1 && sent[0].bytes > 10000 && sent[0].png && sent[0].w === 1080);
+    // 3.71.4: Das Trade-Bild trägt den ausführlichen Text (Ergebnis, Haltedauer, Max. Gewinn/Verlust) als Bildunterschrift: HTML zuerst; lehnt Telegram das Format ab,
+    // folgt genau ein Klartext-Zweitversand mit demselben Bild (3.71.0 hatte noch eine einzeilige Beschriftung – seit 3.71.4 überholt).
+    check('3.71.4: Trade-Bild: ausführlicher Text als HTML, bei Formatablehnung genau ein Klartext-Zweitversand, beide in den Trades-Chat', sent.length === 2 && sent[0].parse_mode === 'HTML' && sent[0].formatRejected && !sent[1].parse_mode && !sent[1].formatRejected && sent.every(x => x.chat_id === '9002') && /^<b>[^<]*(GEWINN|VERLUST)[^<]*[A-Z0-9]+\/USDT (Long|Short)<\/b>/.test(sent[0].caption) && /Netto: /.test(sent[0].caption), JSON.stringify(sent.map(x => ({ pm: x.parse_mode, rej: x.formatRejected, chat: x.chat_id, cap: (x.caption || '').slice(0, 80) }))));
+    check('… Klartext ohne HTML-Zeichen, beide Beschriftungen im Telegram-Limit (1024 Zeichen), beide Male dasselbe vollständige PNG (1080 breit)', sent.length === 2 && !/[<>]/.test(sent[1].caption) && /Netto: /.test(sent[1].caption) && sent.every(x => x.caption.length <= 1024 && x.bytes > 10000 && x.png && x.w === 1080), JSON.stringify(sent.map(x => ({ len: (x.caption || '').length, bytes: x.bytes, png: x.png, w: x.w }))));
     check('Keine Laufzeitfehler', errors.length === 0); await ctx.close();
   } finally { await browser.close(); await h.teardown(); }
   console.log(`\n${pass}/${pass + fail} bestanden`); process.exitCode = fail ? 1 : 0;

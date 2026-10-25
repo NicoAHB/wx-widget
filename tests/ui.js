@@ -49,8 +49,11 @@ const tests = {
     check('Analysen lassen sich gezielt aufklappen', await page.locator('#zones-sec > summary').count() > 0);
     if (!await page.locator('#zones-sec').evaluate(n => n.open)) await page.click('#zones-sec > summary');
     await page.reload(); await page.waitForFunction(() => window.__g05 && document.documentElement.dataset.workspaceView === 'ind');
+    // 3.97.0: Der Aufklappzustand wird erst nach dem Start wiederhergestellt – auf die Bedingung warten statt sofort lesen (sonst wackelig).
+    await page.waitForFunction(() => document.getElementById('zones-sec')?.open, null, { timeout: 8000 }).catch(() => {});
     check('Bereich und aufgeklappte Analyse werden gemerkt', await page.evaluate(() => document.documentElement.dataset.workspaceView === 'ind' && document.getElementById('zones-sec').open));
     await page.setViewportSize({ width: 1600, height: 1000 });
+    await page.waitForFunction(() => document.documentElement.dataset.layout === 'desktop' && document.documentElement.dataset.presentation === 'dashboard', null, { timeout: 8000 }).catch(() => {});   // Layout stellt sich nach dem Größenwechsel asynchron um
     check('Breites PC-Fenster zeigt automatisch wieder zwei Dashboard-Spalten', await page.evaluate(() => document.documentElement.dataset.layout === 'desktop' && document.documentElement.dataset.presentation === 'dashboard'));
     check('keine Fehler', !errors.length, errors.join(' | ')); await ctx.close();
     } finally { await native.close(); }
