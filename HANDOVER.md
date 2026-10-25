@@ -1,3 +1,12 @@
+## 3.97.0 (Claude; Dienst unverändert 2.18.0): Randhinweis an wischbaren Chart-Zeilen, Nachtlauf-Tests repariert
+
+- Ausführlich: [docs/3.97.0-AENDERUNGEN.md](docs/3.97.0-AENDERUNGEN.md). Ausgangspunkt `main` 3.96.0 (ChatGPT, POC-Preis); Auftrag: „optisch und technisch optimieren“.
+- **Optisch:** Zeitrahmen- und Werkzeugzeile des Charts sind wischbar, wirkten auf dem Handy aber abgeschnitten („1I“ statt „1M“, Vollbild-Taste angeschnitten). Jetzt `shared/scroll-hint.mjs` → `data-scroll-more="start|end|both"` + CSS-Verlauf (`mask-image`); gemessen wird an den **sichtbaren Kindern**, nicht an `scrollWidth` (das geschlossene Hilfefenster ragt auf dem PC 8 px über). Tests `unit-scroll-hint` (12), `m152` (20).
+- **Technisch:** Der Nachtlauf läuft seit 3.95.0 wirklich und zeigte am 25.10. elf rote Browser-Tests. Alle lokal nachgestellt, Ursachen **in den Tests** (App unverändert): `m145` (feste Wartezeit zu knapp seit paralleler Vorauswahl 3.93.0, per Bisektion belegt), `m125` (Zeitumstellung), `m28` (Zeitzone), `m64`, `m52`, `m16` (`rect.last-hit`), `m91` (seit 3.71.4 ausführliche Bildunterschrift), `m57`, `m95`, `ui`. Einzelheiten in der Änderungsdatei.
+- **Offen:** `m58` und `m112` sind nur im Nachtlauf rot (lokal grün, auch auf einem CPU-Kern) – nächsten Nachtlauf prüfen. `m95` hängt lokal bei der LTC-Positionierung (auch auf 3.92.0), im Nachtlauf nicht. `m6` war im Nachtlauf nicht auffällig. Oracle-Installer für 2.18.0 liegt beim Nutzer; Entscheidung zu „x/30“ offen (Mehr Daten / Zeile ausblenden / Mindestzahl 20).
+- Hinweis zu Tests: Keine festen Wartezeiten nach Uhrsprüngen; auf Bedingung oder Ruhe bei den Kerzen-Abrufen warten (Beispiel `m145`).
+- Tests: neu `unit-scroll-hint`, `m152`; geprüft `m4`, `m12`, `m110`, `m151`, `m146`, `m149`, `m125`, `m27`. App **3.97.0**, Dienst **2.18.0**.
+
 ## 3.96.0: POC-Preis und sichtbarer Zeitraum im Chart
 
 - Ausgangspunkt: `main` / 3.95.0 (`d6158ca`), Dienst unverändert 2.18.0.
