@@ -47,7 +47,11 @@ const tests = {
     check('Chart nach Bereichswechsel gezeichnet', await page.evaluate(() => document.querySelectorAll('#chart svg rect').length > 50));
     await page.click('[data-workspace-target="ind"]');
     check('Analysen lassen sich gezielt aufklappen', await page.locator('#zones-sec > summary').count() > 0);
-    if (!await page.locator('#zones-sec').evaluate(n => n.open)) await page.click('#zones-sec > summary');
+    if (!await page.locator('#zones-sec').evaluate(n => n.open)) {
+      await page.click('#zones-sec > summary');
+      // 3.97.0: Die App speichert den Zustand erst einen Takt nach dem Klick (setTimeout); bei langsamem Rechner (Nachtlauf) kam das Neuladen zuvor.
+      await page.waitForFunction(() => { try { return Object.entries(JSON.parse(localStorage.getItem('scalpdesk.details.v1') || '{}')).some(([k, v]) => /zones-sec$/.test(k) && v === true); } catch { return false; } }, null, { timeout: 8000 }).catch(() => {});
+    }
     await page.reload(); await page.waitForFunction(() => window.__g05 && document.documentElement.dataset.workspaceView === 'ind');
     // 3.97.0: Der Aufklappzustand wird erst nach dem Start wiederhergestellt – auf die Bedingung warten statt sofort lesen (sonst wackelig).
     await page.waitForFunction(() => document.getElementById('zones-sec')?.open, null, { timeout: 8000 }).catch(() => {});

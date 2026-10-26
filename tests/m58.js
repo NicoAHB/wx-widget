@@ -204,12 +204,17 @@ const tests = {
     // G09 C4: Fälle zusätzlich im Muster-Archiv des 24/7-Dienstes (eigener HTTPS-Weg, kein Sicherungsbot); Dienst hier abgefangen
     const { ctx, page, errors } = await openPage(browser);
     let bodies = [], mode = 'ok';
+    // 3.97.0: Playwright fängt die Anfrage mit Vorabprüfung (CORS) an eine nicht auflösbare Adresse gelegentlich nicht ab (ERR_NAME_NOT_RESOLVED, etwa jeder
+    // dritte Lauf, im Nachtlauf häufiger). Das ist die Prüfumgebung, nicht die App: erreicht der Aufruf den Handler nicht, wird er wiederholt.
+    let hits = 0;
     await page.route('https://svc.test/v1/patterns/cases', async route => {
+      hits++;
       const b = JSON.parse(route.request().postData() || '{}'); bodies.push({ auth: route.request().headers().authorization, b });
       if (mode === 'ok') return route.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ ok: true, count: b.cases.length, stored: b.cases.length, results: 0, dup: 0, conflicts: 0, rejected: 0, backup: { ok: true, at: Date.now() + 5000, why: '' } }) });
       return route.fulfill({ status: 503, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ ok: false, error: 'Muster-Archiv nicht eingerichtet (kein Zustandsordner).' }) });
     });
-    const run = async () => page.evaluate(async () => { const keep = { ...__g05.svc.cfg }; __g05.svc.cfg = { ...keep, url: 'https://svc.test', key: 'k'.repeat(40) }; await __g09.pkSync(); await new Promise(r => setTimeout(r, 1800)); await __g09.pkSync(); __g05.svc.cfg = keep; });
+    const runOnce = () => page.evaluate(async () => { const keep = { ...__g05.svc.cfg }; __g05.svc.cfg = { ...keep, url: 'https://svc.test', key: 'k'.repeat(40) }; await __g09.pkSync(); await new Promise(r => setTimeout(r, 1800)); await __g09.pkSync(); __g05.svc.cfg = keep; });
+    const run = async () => { for (let attempt = 0; attempt < 4; attempt++) { const before = hits; await runOnce(); if (hits > before) return; } };
     await page.evaluate(() => { const mk = (i, out) => { const c = { mkt: 'spot', sym: 'SYNCUSDT', iv: '1h', pat: 'double_top', kind: 'form', dir: 'bear', t0: 3e12 + i * 1e7, t1: 3e12 + i * 1e7 + 5e6, tc: 3e12 + i * 1e7 + 6e6, p0: 50, model: 'pat-1', profile: 'H12-e0.10', q: 70, at: Date.now(), src: 'live', rules: [['Regel', 2, true]], res: out ? { at: 1, tH: 2, ph: 49, r: -2, out, path: [0, -2] } : null }; c.id = __g09.pkId(c); return c; };
       __g09.pkMerge(Array.from({ length: 30 }, (_, i) => mk(i, i % 3 ? null : 'ab'))); });
     mode = 'fail'; await run();
@@ -226,7 +231,7 @@ const tests = {
     await page.evaluate(() => { __g05.svc.cfg = { ...__g05.svc.cfg, url: 'https://svc.test', key: 'k'.repeat(40) }; document.getElementById('chart').scrollIntoView(); });
     await page.click('#pat-btn'); await page.waitForFunction(() => __g09.pat.res && !__g09.pat.busy, null, { timeout: 10000 });
     await page.evaluate(() => __g09.info(0));
-    const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 8000 }).catch(() => null), page.click('text=Archiv vom Dienst als Datei sichern')]);
+    let dl = null; for (let attempt = 0; attempt < 3 && !dl; attempt++) [dl] = await Promise.all([page.waitForEvent('download', { timeout: 8000 }).catch(() => null), page.click('text=Archiv vom Dienst als Datei sichern')]);   // gleiche Abfangroutine wie oben: bei Fehlschlag erneut
     const fileOk = dl && /^muster-archiv-\d{4}-\d\d-\d\d\.json$/.test(dl.suggestedFilename()) && JSON.parse(require('fs').readFileSync(await dl.path(), 'utf8')).cases.length === 2;
     await page.evaluate(() => { __g05.svc.cfg = { ...__g05.svc.cfg, url: '', key: '' }; });
     check('„Archiv vom Dienst als Datei sichern“: bereinigter Bestand als Datei auf dem Gerät (unabhängige Kopie)', !!fileOk, dl ? dl.suggestedFilename() : 'kein Download');
@@ -283,7 +288,8 @@ const tests = {
     const txt = String(s[0]?.caption || s[0]?.text || '').replace(/\r/g, '');
     const allFresh = (await h.ctl('/sent')).filter(m => m.svc === 'tg' && (!m.method || m.method === 'sendPhoto') && m.at >= t);
     if (s[0]?.path) console.log('BILD app-signalkarte: ' + s[0].path);
-    check('Frisch bestätigte Formation (live, ≥ 80 %): genau eine Meldung in den Chartmuster-Chat, nicht in Kursalarm', s.length === 1 && allFresh.length === 1, JSON.stringify({ patterns: s.map(x => x.text?.split('\n')[0]), all: allFresh.map(x => ({ chat: String(x.chat_id), at: x.at, title: x.text?.split('\n')[0] })) }));
+    // 3.97.0: Eine zeitgleiche BTC-Puls-Meldung (unabhängiges Feature, ausgelöst durch die Kursbewegung der Testbörse) gehört nicht zur Mustermeldung.
+    check('Frisch bestätigte Formation (live, ≥ 80 %): genau eine Meldung in den Chartmuster-Chat, nicht in Kursalarm', s.length === 1 && allFresh.filter(x => !/BTC-PULS/.test(String(x.text || x.caption || ''))).length === 1, JSON.stringify({ patterns: s.map(x => x.text?.split('\n')[0]), all: allFresh.map(x => ({ chat: String(x.chat_id), at: x.at, title: x.text?.split('\n')[0] })) }));
     check('3.71.0: Meldung als Signalkarte (PNG 1024 breit) mit Kurztext: Kopf, Muster · Status, Gesamturteil (Trend/Volumen/Chance-Risiko), Ziel, Stop, Jetzt, Musterqualität, „Erlernt: noch nicht bewertet“, Datum', s[0]?.method === 'sendPhoto' && s[0].png && s[0].w === 1024 && s[0].h > 1500 && s[0].parse_mode === 'HTML' && /^<b>📐 TG\/USDT · Spot · 1 Std · 🟢⬆️ AUFWÄRTS<\/b>\n<b>Doppel-Boden<\/b> · ✅ Ausbruch bestätigt\n(🟠|🟡|🟢) <b>(Schwaches|Mittleres|Starkes) Signal \d+\/100<\/b> · Trend [✔✖?] · Volumen [✔✖?] · Chance\/Risiko /u.test(txt) && /🎯 Ziel: <b>[\d.,]+ USD<\/b>/.test(txt) && /🛑 Stop: <code>[\d.,]+ USD<\/code>/.test(txt) && /⏱ Jetzt: .*Einstieg (gültig|verpasst|abgelaufen)/.test(txt) && /🧠 Musterqualität: 85 % · keine Erfolgswahrscheinlichkeit/.test(txt) && /📚 Erlernt: noch nicht bewertet \(\d+\/30 Fälle dieses Musters\)/.test(txt) && /🕐 \d\d\.\d\d\.\d{4} · \d\d:\d\d:\d\d · Modell pat-1$/.test(txt) && !/zu wenig Daten|Regelgüte|Ungültig bei/.test(txt) && txt.length <= 1024, JSON.stringify({ method: s[0]?.method, w: s[0]?.w, h: s[0]?.h, txt }));
     t = Date.now(); await fire(); await fire({ q: 70, shift: 1 }); await fire({ kind: 'candle', id: 'hammer', shift: 2 }); await fire({ back: 5, shift: 3 }); await page.waitForTimeout(1500); s = await sentP(t);
     check('Gleicher Fall nicht noch einmal; Regelgüte < 80 %, Einzelkerze und älter bestätigte Formation: keine Meldung', s.length === 0, JSON.stringify(s.map(x => x.text?.split('\n')[0])));
