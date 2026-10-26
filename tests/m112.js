@@ -132,7 +132,10 @@ const center = (page, selector) => page.$eval(selector, e => { const r = e.getBo
       document.querySelectorAll('#watchlist .wl-tfv').forEach(n => { n.dataset.full = '+11,11'; n.dataset.compact = '+11,1'; n.textContent = n.dataset.full; });
     });
     await page.setViewportSize({ width: 321, height: 844 }); await page.waitForTimeout(200);
-    check('Tabellenziffern: auch eine proportionale Schrift und viele Einsen bleiben vollständig im Feld', await page.$$eval('#watchlist .wl-price,#watchlist .wl-tfv', ns => ns.every(n => { const r = document.createRange(); r.selectNodeContents(n); return r.getBoundingClientRect().width <= n.clientWidth + .5; })));
+    // 3.97.0: Die Einpassung läuft nach dem Größenwechsel asynchron; im langsamen Nachtlauf reichten 200 ms nicht. Auf die Bedingung warten, dann streng prüfen.
+    const digitsFit = () => [...document.querySelectorAll('#watchlist .wl-price,#watchlist .wl-tfv')].every(n => { const r = document.createRange(); r.selectNodeContents(n); return r.getBoundingClientRect().width <= n.clientWidth + .5; });
+    await page.waitForFunction(digitsFit, null, { timeout: 6000 }).catch(() => {});
+    check('Tabellenziffern: auch eine proportionale Schrift und viele Einsen bleiben vollständig im Feld', await page.evaluate(digitsFit));
     await page.setViewportSize({ width: 320, height: 844 }); await page.tap('button[data-wlview="list"]'); await page.waitForTimeout(200);
     check('320px-Liste: lange Preise bleiben vollständig im Feld', await page.$$eval('#watchlist .wl-price', ns => ns.every(n => n.scrollWidth <= n.clientWidth + 1)));
     check('Kein Textmarkieren beim langen Drücken', await page.$eval(tile('BTC'), t => (getComputedStyle(t).webkitUserSelect || getComputedStyle(t).userSelect) === 'none'));
