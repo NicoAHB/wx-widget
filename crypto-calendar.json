@@ -1,0 +1,100 @@
+{
+  "v": 1,
+  "source": "CoinMarketCal · öffentlicher Auszug",
+  "fetchedAt": "2026-10-31T12:50:31.772Z",
+  "page": "https://coinmarketcal.com/en/",
+  "coverage": "Öffentlicher Ausschnitt, keine vollständige API-Historie",
+  "events": [
+    {
+      "id": "cmc-38742",
+      "t": 1793404800000,
+      "end": 1793404800000,
+      "dayOnly": true,
+      "title": "Waypoint Migration",
+      "coins": [
+        "RON"
+      ],
+      "category": "Other",
+      "url": "https://coinmarketcal.com/event/waypoint-migration-16581705-1",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-99280",
+      "t": 1792454400000,
+      "end": 1793577600000,
+      "dayOnly": true,
+      "title": "Issuance cut vote",
+      "coins": [
+        "NEAR"
+      ],
+      "category": "Tokenomics",
+      "url": "https://coinmarketcal.com/event/issuance-cut-vote-42162658-1",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-100276",
+      "t": 1792972800000,
+      "end": 1793577600000,
+      "dayOnly": true,
+      "title": "OIP-198 vote live",
+      "coins": [
+        "OHM"
+      ],
+      "category": "Other",
+      "url": "https://coinmarketcal.com/event/oip-198-vote-live-60373250-1",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-99164",
+      "t": 1790812800000,
+      "end": 1796083200000,
+      "dayOnly": true,
+      "title": "Staking Rewards Boost",
+      "coins": [
+        "POL"
+      ],
+      "category": "Staking/Farming",
+      "url": "https://coinmarketcal.com/event/pol-staking-boost-71656278-1",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-97688",
+      "t": 1788220800000,
+      "end": 1798675200000,
+      "dayOnly": true,
+      "title": "First Token Buyback",
+      "coins": [
+        "VSN"
+      ],
+      "category": "Tokenomics",
+      "url": "https://coinmarketcal.com/event/first-token-buyback-63131711-1",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-99869",
+      "t": 1792454400000,
+      "end": 1801353600000,
+      "dayOnly": true,
+      "title": "Season 2 Claims",
+      "coins": [
+        "CHIP"
+      ],
+      "category": "Airdrop/Snapshot",
+      "url": "https://coinmarketcal.com/event/season-2-claims-48163972-4",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-99867",
+      "t": 1792022400000,
+      "end": 1807660800000,
+      "dayOnly": true,
+      "title": "Season 3 Begins",
+      "coins": [
+        "CHIP"
+      ],
+      "category": "Staking/Farming",
+      "url": "https://coinmarketcal.com/event/season-3-begins-48163972-2",
+      "source": "CoinMarketCal · öffentlich"
+    }
+  ]
+}
