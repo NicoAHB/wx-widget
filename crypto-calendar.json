@@ -1,0 +1,178 @@
+{
+  "v": 1,
+  "source": "CoinMarketCal · öffentlicher Auszug",
+  "fetchedAt": "2026-11-07T06:16:11.904Z",
+  "page": "https://coinmarketcal.com/en/",
+  "coverage": "Öffentlicher Ausschnitt, keine vollständige API-Historie",
+  "events": [
+    {
+      "id": "cmc-99164",
+      "t": 1790812800000,
+      "end": 1796083200000,
+      "dayOnly": true,
+      "title": "Staking Rewards Boost",
+      "coins": [
+        "POL"
+      ],
+      "category": "Staking/Farming",
+      "url": "https://coinmarketcal.com/event/pol-staking-boost-71656278-1",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-100569",
+      "t": 1793750400000,
+      "end": 1796342400000,
+      "dayOnly": true,
+      "title": "Stage 6 claim window",
+      "coins": [
+        "ASTER"
+      ],
+      "category": "Airdrop/Snapshot",
+      "url": "https://coinmarketcal.com/event/stage-6-claim-window-59299440-1",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-97688",
+      "t": 1788220800000,
+      "end": 1798675200000,
+      "dayOnly": true,
+      "title": "First Token Buyback",
+      "coins": [
+        "VSN"
+      ],
+      "category": "Tokenomics",
+      "url": "https://coinmarketcal.com/event/first-token-buyback-63131711-1",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-99869",
+      "t": 1792454400000,
+      "end": 1801353600000,
+      "dayOnly": true,
+      "title": "Season 2 Claims",
+      "coins": [
+        "CHIP"
+      ],
+      "category": "Airdrop/Snapshot",
+      "url": "https://coinmarketcal.com/event/season-2-claims-48163972-4",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-99867",
+      "t": 1792022400000,
+      "end": 1807660800000,
+      "dayOnly": true,
+      "title": "Season 3 Begins",
+      "coins": [
+        "CHIP"
+      ],
+      "category": "Staking/Farming",
+      "url": "https://coinmarketcal.com/event/season-3-begins-48163972-2",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-98847",
+      "t": 1794182400000,
+      "end": 1794182400000,
+      "dayOnly": true,
+      "title": "Elysium Mainnet Launch",
+      "coins": [
+        "KNTQ"
+      ],
+      "category": "Release",
+      "url": "https://coinmarketcal.com/event/elysium-mainnet-launch-26931724-2",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-99574",
+      "t": 1794182400000,
+      "end": 1794182400000,
+      "dayOnly": true,
+      "title": "Relaychain Upgrade",
+      "coins": [
+        "ENJ"
+      ],
+      "category": "Release",
+      "url": "https://coinmarketcal.com/event/relaychain-upgrade-34285567-1",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-1014",
+      "t": 1794268800000,
+      "end": 1794268800000,
+      "dayOnly": true,
+      "title": "Binance Alpha & Futures List",
+      "coins": [
+        "JCT"
+      ],
+      "category": "Exchange",
+      "url": "https://coinmarketcal.com/event/binance-alpha-futures-list-14137366-1",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-100178",
+      "t": 1794528000000,
+      "end": 1794528000000,
+      "dayOnly": true,
+      "title": "ETF Registration Amendment",
+      "coins": [
+        "CC"
+      ],
+      "category": "Regulation",
+      "url": "https://coinmarketcal.com/event/etf-registration-amendment-63083216-5",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-100563",
+      "t": 1794700800000,
+      "end": 1794700800000,
+      "dayOnly": true,
+      "title": "Faster Blocks Lock-In",
+      "coins": [
+        "BCH"
+      ],
+      "category": "Other",
+      "url": "https://coinmarketcal.com/event/faster-blocks-lock-in-95264712-1",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-99363",
+      "t": 1794700800000,
+      "end": 1794700800000,
+      "dayOnly": true,
+      "title": "Network Upgrade",
+      "coins": [
+        "XEC"
+      ],
+      "category": "Fork/Swap",
+      "url": "https://coinmarketcal.com/event/network-upgrade-88541770-1",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-99575",
+      "t": 1794787200000,
+      "end": 1794787200000,
+      "dayOnly": true,
+      "title": "Matrixchain Upgrade",
+      "coins": [
+        "ENJ"
+      ],
+      "category": "Release",
+      "url": "https://coinmarketcal.com/event/matrixchain-upgrade-34285567-2",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-99971",
+      "t": 1794787200000,
+      "end": 1794787200000,
+      "dayOnly": true,
+      "title": "Upbit Trading Ends",
+      "coins": [
+        "ZIL"
+      ],
+      "category": "Exchange",
+      "url": "https://coinmarketcal.com/event/upbit-trading-ends-50868398-1",
+      "source": "CoinMarketCal · öffentlich"
+    }
+  ]
+}
