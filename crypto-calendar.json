@@ -1,0 +1,230 @@
+{
+  "v": 1,
+  "source": "CoinMarketCal · öffentlicher Auszug",
+  "fetchedAt": "2026-11-21T11:27:56.915Z",
+  "page": "https://coinmarketcal.com/en/",
+  "coverage": "Öffentlicher Ausschnitt, keine vollständige API-Historie",
+  "events": [
+    {
+      "id": "cmc-101860",
+      "t": 1795219200000,
+      "end": 1795219200000,
+      "dayOnly": true,
+      "title": "Trade Receivables Pilot",
+      "coins": [
+        "INJ"
+      ],
+      "category": "Integration",
+      "url": "https://coinmarketcal.com/event/trade-receivables-pilot-21223705-1",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-101591",
+      "t": 1795132800000,
+      "end": 1795392000000,
+      "dayOnly": true,
+      "title": "1:40 Token Migration",
+      "coins": [
+        "SHARE"
+      ],
+      "category": "Fork/Swap",
+      "url": "https://coinmarketcal.com/event/liquidity-transition-begins-10677386-2",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-99164",
+      "t": 1790812800000,
+      "end": 1796083200000,
+      "dayOnly": true,
+      "title": "Staking Rewards Boost",
+      "coins": [
+        "POL"
+      ],
+      "category": "Staking/Farming",
+      "url": "https://coinmarketcal.com/event/pol-staking-boost-71656278-1",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-100569",
+      "t": 1793750400000,
+      "end": 1796342400000,
+      "dayOnly": true,
+      "title": "Stage 6 claim window",
+      "coins": [
+        "ASTER"
+      ],
+      "category": "Airdrop/Snapshot",
+      "url": "https://coinmarketcal.com/event/stage-6-claim-window-59299440-1",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-97688",
+      "t": 1788220800000,
+      "end": 1798675200000,
+      "dayOnly": true,
+      "title": "First Token Buyback",
+      "coins": [
+        "VSN"
+      ],
+      "category": "Tokenomics",
+      "url": "https://coinmarketcal.com/event/first-token-buyback-63131711-1",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-99869",
+      "t": 1792454400000,
+      "end": 1801353600000,
+      "dayOnly": true,
+      "title": "Season 2 Claims",
+      "coins": [
+        "CHIP"
+      ],
+      "category": "Airdrop/Snapshot",
+      "url": "https://coinmarketcal.com/event/season-2-claims-48163972-4",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-99474",
+      "t": 1794873600000,
+      "end": 1802822400000,
+      "dayOnly": true,
+      "title": "1:1 Token Migration",
+      "coins": [
+        "CPOOL"
+      ],
+      "category": "Fork/Swap",
+      "url": "https://coinmarketcal.com/event/1-1-token-migration-49496300-2",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-99867",
+      "t": 1792022400000,
+      "end": 1807660800000,
+      "dayOnly": true,
+      "title": "Season 3 Begins",
+      "coins": [
+        "CHIP"
+      ],
+      "category": "Staking/Farming",
+      "url": "https://coinmarketcal.com/event/season-3-begins-48163972-2",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-100091",
+      "t": 1795392000000,
+      "end": 1795392000000,
+      "dayOnly": true,
+      "title": "Mainnet Upgrade",
+      "coins": [
+        "XLM"
+      ],
+      "category": "Release",
+      "url": "https://coinmarketcal.com/event/mainnet-upgrade-89094776-2",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-100662",
+      "t": 1795392000000,
+      "end": 1795392000000,
+      "dayOnly": true,
+      "title": "New Staking Contract",
+      "coins": [
+        "KAIA"
+      ],
+      "category": "Staking/Farming",
+      "url": "https://coinmarketcal.com/event/new-staking-contract-15338027-2",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-100821",
+      "t": 1795392000000,
+      "end": 1795392000000,
+      "dayOnly": true,
+      "title": "OKXICE Venue Launch",
+      "coins": [
+        "SECZ"
+      ],
+      "category": "Integration",
+      "url": "https://coinmarketcal.com/event/okxice-venue-launch-84356159-1",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-101837",
+      "t": 1795392000000,
+      "end": 1795392000000,
+      "dayOnly": true,
+      "title": "Pomelo Mainnet Upgrade",
+      "coins": [
+        "CTR"
+      ],
+      "category": "Release",
+      "url": "https://coinmarketcal.com/event/pomelo-mainnet-upgrade-60352048-2",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-101846",
+      "t": 1795392000000,
+      "end": 1795392000000,
+      "dayOnly": true,
+      "title": "Pre-Genesis Staking Opens",
+      "coins": [
+        "ZRO"
+      ],
+      "category": "Staking/Farming",
+      "url": "https://coinmarketcal.com/event/pre-genesis-staking-opens-64772751-1",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-101592",
+      "t": 1795478400000,
+      "end": 1795478400000,
+      "dayOnly": true,
+      "title": "Snapshot and Airdrop",
+      "coins": [
+        "SHARE"
+      ],
+      "category": "Airdrop/Snapshot",
+      "url": "https://coinmarketcal.com/event/snapshot-and-airdrop-10677386-3",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-100941",
+      "t": 1795478400000,
+      "end": 1795478400000,
+      "dayOnly": true,
+      "title": "Veyra Mainnet Upgrade",
+      "coins": [
+        "INJ"
+      ],
+      "category": "Release",
+      "url": "https://coinmarketcal.com/event/veyra-mainnet-upgrade-88789499-2",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-100995",
+      "t": 1795564800000,
+      "end": 1795564800000,
+      "dayOnly": true,
+      "title": "3.2% Supply Unlock",
+      "coins": [
+        "ALT"
+      ],
+      "category": "Tokenomics",
+      "url": "https://coinmarketcal.com/event/token-unlock-db22a6ef-1",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-100671",
+      "t": 1795651200000,
+      "end": 1795651200000,
+      "dayOnly": true,
+      "title": "Staking Contract Migration",
+      "coins": [
+        "KAIA"
+      ],
+      "category": "Fork/Swap",
+      "url": "https://coinmarketcal.com/event/staking-contract-migration-12624278-1",
+      "source": "CoinMarketCal · öffentlich"
+    }
+  ]
+}
