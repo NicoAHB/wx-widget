@@ -1,0 +1,178 @@
+{
+  "v": 1,
+  "source": "CoinMarketCal · öffentlicher Auszug",
+  "fetchedAt": "2026-11-28T08:08:33.547Z",
+  "page": "https://coinmarketcal.com/en/",
+  "coverage": "Öffentlicher Ausschnitt, keine vollständige API-Historie",
+  "events": [
+    {
+      "id": "cmc-102196",
+      "t": 1795824000000,
+      "end": 1795824000000,
+      "dayOnly": true,
+      "title": "Bithumb Spot Listing",
+      "coins": [
+        "BTW"
+      ],
+      "category": "Exchange",
+      "url": "https://coinmarketcal.com/event/bithumb-spot-listing-33007555-1",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-102081",
+      "t": 1795824000000,
+      "end": 1795824000000,
+      "dayOnly": true,
+      "title": "Legacy Staking Rewards End",
+      "coins": [
+        "NOS"
+      ],
+      "category": "Staking/Farming",
+      "url": "https://coinmarketcal.com/event/legacy-staking-rewards-end-29426394-2",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-101981",
+      "t": 1795564800000,
+      "end": 1795824000000,
+      "dayOnly": true,
+      "title": "Year 4 Emissions Vote",
+      "coins": [
+        "RENDER"
+      ],
+      "category": "Other",
+      "url": "https://coinmarketcal.com/event/year-4-emissions-vote-58869155-1",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-99164",
+      "t": 1790812800000,
+      "end": 1796083200000,
+      "dayOnly": true,
+      "title": "Staking Rewards Boost",
+      "coins": [
+        "POL"
+      ],
+      "category": "Staking/Farming",
+      "url": "https://coinmarketcal.com/event/pol-staking-boost-71656278-1",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-100569",
+      "t": 1793750400000,
+      "end": 1796342400000,
+      "dayOnly": true,
+      "title": "Stage 6 claim window",
+      "coins": [
+        "ASTER"
+      ],
+      "category": "Airdrop/Snapshot",
+      "url": "https://coinmarketcal.com/event/stage-6-claim-window-59299440-1",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-97688",
+      "t": 1788220800000,
+      "end": 1798675200000,
+      "dayOnly": true,
+      "title": "First Token Buyback",
+      "coins": [
+        "VSN"
+      ],
+      "category": "Tokenomics",
+      "url": "https://coinmarketcal.com/event/first-token-buyback-63131711-1",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-99869",
+      "t": 1792454400000,
+      "end": 1801353600000,
+      "dayOnly": true,
+      "title": "Season 2 Claims",
+      "coins": [
+        "CHIP"
+      ],
+      "category": "Airdrop/Snapshot",
+      "url": "https://coinmarketcal.com/event/season-2-claims-48163972-4",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-99474",
+      "t": 1794873600000,
+      "end": 1802822400000,
+      "dayOnly": true,
+      "title": "1:1 Token Migration",
+      "coins": [
+        "CPOOL"
+      ],
+      "category": "Fork/Swap",
+      "url": "https://coinmarketcal.com/event/1-1-token-migration-49496300-2",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-102085",
+      "t": 1795651200000,
+      "end": 1805328000000,
+      "dayOnly": true,
+      "title": "Pendle Yield Rewards",
+      "coins": [
+        "CAP"
+      ],
+      "category": "Staking/Farming",
+      "url": "https://coinmarketcal.com/event/pendle-yield-rewards-03285210-2",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-99867",
+      "t": 1792022400000,
+      "end": 1807660800000,
+      "dayOnly": true,
+      "title": "Season 3 Begins",
+      "coins": [
+        "CHIP"
+      ],
+      "category": "Staking/Farming",
+      "url": "https://coinmarketcal.com/event/season-3-begins-48163972-2",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-101072",
+      "t": 1795910400000,
+      "end": 1795910400000,
+      "dayOnly": true,
+      "title": "~4.3% Supply Unlock",
+      "coins": [
+        "CARDS"
+      ],
+      "category": "Tokenomics",
+      "url": "https://coinmarketcal.com/event/token-unlock-1d73f986-1",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-101147",
+      "t": 1795910400000,
+      "end": 1795910400000,
+      "dayOnly": true,
+      "title": "41% Supply Unlock",
+      "coins": [
+        "GRVT"
+      ],
+      "category": "Tokenomics",
+      "url": "https://coinmarketcal.com/event/token-unlock-19580762-1",
+      "source": "CoinMarketCal · öffentlich"
+    },
+    {
+      "id": "cmc-99736",
+      "t": 1795996800000,
+      "end": 1795996800000,
+      "dayOnly": true,
+      "title": "Zero Mainnet & ATLAS Launch",
+      "coins": [
+        "ZRO"
+      ],
+      "category": "Release",
+      "url": "https://coinmarketcal.com/event/zero-mainnet-launch-93316420-8",
+      "source": "CoinMarketCal · öffentlich"
+    }
+  ]
+}
